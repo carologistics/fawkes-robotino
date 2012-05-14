@@ -1,0 +1,3 @@
+[submodule "fawkes"]
+	path = fawkes
+	url = ../fawkes.git
