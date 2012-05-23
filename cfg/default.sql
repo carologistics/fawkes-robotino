@@ -159,8 +159,9 @@ INSERT INTO "config" VALUES('/hardware/katana/openrave/enabled','bool','0','Use 
 INSERT INTO "config" VALUES('/hardware/katana/openrave/use_viewer','bool','1','Use OpenRAVE qtcoin viewer (i.e. see 3D robot model)?');
 INSERT INTO "config" VALUES('/hardware/katana/openrave/auto_load_ik','bool','1','Automatically generate IK database for OpenRAVE robot model?');
 INSERT INTO "config" VALUES('/hardware/katana/openrave/robot_file','string','../fawkes/res/openrave/caesar.robot.xml','robot.xml file to be loaded into OpenRAVE');
-INSERT INTO "config" VALUES('/hardware/laser/urg/active','bool',0,'Enable this configuration?');
+INSERT INTO "config" VALUES('/hardware/laser/urg/active','bool',1,'Enable this configuration?');
 INSERT INTO "config" VALUES('/hardware/laser/urg/type','string','urg','Configuration is for Hokuyo URG laser range finder using URG library');
+INSERT INTO "config" VALUES('/hardware/laser/urg/frame','string','/base_laser','Coordinate frame for laser');
 INSERT INTO "config" VALUES('/hardware/laser/urg/device','string','/dev/ttyACM0','Device file');
 INSERT INTO "config" VALUES('/hardware/laser/urg_gbx/active','bool',0,'Enable this configuration?');
 INSERT INTO "config" VALUES('/hardware/laser/urg_gbx/type','string','urg_gbx','Configuration is for Hokuyo URG laser range finder using the Gearbox library');
@@ -213,7 +214,9 @@ INSERT INTO "config" VALUES('/hardware/robotino/quit_on_disconnect','bool',1,'If
 INSERT INTO "config" VALUES('/hardware/robotino/joystick/axis_forward','unsigned int',1,'Axis index for forward/backward movement.');
 INSERT INTO "config" VALUES('/hardware/robotino/joystick/axis_sideward','unsigned int',0,'Axis index for sideward movement.');
 INSERT INTO "config" VALUES('/hardware/robotino/joystick/axis_rotation','unsigned int',3,'Axis index for rotational movement.');
-INSERT INTO "config" VALUES('/hardware/robotino/joystick/max_velocity','float',800.0,'Maximum velocity factor [0.0-1.0]');
+INSERT INTO "config" VALUES('/hardware/robotino/max_vx','float',1.0,'Maximum velocity forward; m');
+INSERT INTO "config" VALUES('/hardware/robotino/max_vy','float',1.0,'Maximum velocity sideward; m');
+INSERT INTO "config" VALUES('/hardware/robotino/max_omega','float',360.0,'Maximum rotation; deg');
 INSERT INTO "config" VALUES('/hardware/nao/chestbut_triple_long_click_shutdown','bool',1,'If true, triple long click on chest button causes shutdown. This requires the SetUID bit to be set on /sbin/poweroff (or whatever it links to).');
 INSERT INTO "config" VALUES('/plugins/laserht/laser_interface_id','string','Laser','Interface ID of the Laser360Interface to get data from');
 INSERT INTO "config" VALUES('/plugins/laserht/line/num_samples','unsigned int',12,'Number of samples to take per data point on the range of 180 deg');
@@ -252,11 +255,11 @@ INSERT INTO "config" VALUES('/plugins/openni/run_sensor_server','bool',1,'Should
 INSERT INTO "config" VALUES('/plugins/openni/sensor_server_bin','string','/usr/bin/XnSensorServer','Full path to the XnSensorServer binary; path');
 INSERT INTO "config" VALUES('/plugins/openni-image/debayering','string','bilinear','De-bayering mode, can be bilinear or nearest_neighbor');
 INSERT INTO "config" VALUES('/plugins/static-transforms/update-interval','float',1.0,'Interval in which to post static transform updates; sec');
-INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/katana_kni/frame','string','/katana/base','Katana Arm to KNI base, parent frame ID');
-INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/katana_kni/child_frame','string','/katana/kni','Katana Arm to KNI base, child frame ID');
-INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/katana_kni/trans_x','float',0.0,'Katana Arm to KNI base, translation X');
-INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/katana_kni/trans_y','float',0.0,'Katana Arm to KNI base, translation Y');
-INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/katana_kni/trans_z','float',0.2015,'Katana Arm to KNI base, translation Z');
+INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/frame','string','/base_link','Motor to laser, parent frame ID');
+INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/child_frame','string','/base_laser','Base to laser, child frame ID');
+INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/trans_x','float',0.15,'Base to laser, translation X');
+INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/trans_y','float',0.0,'Base to laser, translation Y');
+INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/trans_z','float',0.11,'Base to laser, translation Z');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/depth_filter_min_x','float',0.0,'Minimum X value (i.e. distance to camera) to consider a point; m');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/depth_filter_max_x','float',3.0,'Maximum X value (i.e. distance to camera) to consider a point; m');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/voxel_leaf_size','float',0.02,'Leaf size for voxel grid downsampling; m');
