@@ -41,7 +41,7 @@ INSERT INTO "config" VALUES('/webview/use_basic_auth','bool',0,'Use basic authen
 INSERT INTO "config" VALUES('/webview/users/fawkes','string','fawkes','Example user, delete or change password!');
 INSERT INTO "config" VALUES('/xmlrpc/port','unsigned int','3008','TCP port for XML-RPC HTTP requests; TCP port');
 INSERT INTO "config" VALUES('/ballposlog/log_level','unsigned int','0','Log level for ballposlog example plugin; sum of any of debug=0, info=1, warn=2, error=4, none=8');
-INSERT INTO "config" VALUES('/skiller/skillspace','string','robotino','Skill space');
+INSERT INTO "config" VALUES('/skiller/skillspace','string','nao','Skill space');
 INSERT INTO "config" VALUES('/skiller/watch_files','bool',1,'Watch lua files for modification and automatically reload Lua if files have been changed; true to enable');
 INSERT INTO "config" VALUES('/skiller/interfaces/test/reading/navigator','string','NavigatorInterface::Navigator',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/test/reading/pose','string','ObjectPositionInterface::WM Pose',NULL);
@@ -188,6 +188,13 @@ INSERT INTO "config" VALUES('/hardware/laser/lase_edl/irq','unsigned int',0,'IRQ
 INSERT INTO "config" VALUES('/hardware/laser/lase_edl/num_init_tries','unsigned int',5,'Number of times to try initialization');
 INSERT INTO "config" VALUES('/hardware/laser/lase_edl/mount_rotation','float',180,'Rotation of the laser towards front; degree');
 INSERT INTO "config" VALUES('/hardware/laser/lase_edl/use_dead_spots_filter','bool','0','If true, the fflaser_calibrate tool must be used to gain information about dead spots, which are then extracted with a filter');
+INSERT INTO "config" VALUES('/plugins/laser-filter/urg/in/urg','string','Laser360Interface::Laser urg','URG input interface');
+INSERT INTO "config" VALUES('/plugins/laser-filter/urg/out/filtered','string','Laser360Interface::Laser urg filtered','URG filtered output interface');
+INSERT INTO "config" VALUES('/plugins/laser-filter/urg/filters/1-min','string','min_circle','Threshold for minimum value to get rid of errorneous beams on most black surfaces.');
+INSERT INTO "config" VALUES('/plugins/laser-filter/urg/filters/1-min/radius','float',0.12,'Radius of minimum length; m');
+INSERT INTO "config" VALUES('/plugins/laser-filter/urg/filters/2-sector','string','circle_sector','Select useful beams');
+INSERT INTO "config" VALUES('/plugins/laser-filter/urg/filters/2-sector/from','unsigned int',260,'Index of start beam');
+INSERT INTO "config" VALUES('/plugins/laser-filter/urg/filters/2-sector/to','unsigned int',100,'Index of end beam');
 INSERT INTO "config" VALUES('/hardware/roomba/connection_type','string','serial','Connection type to use, one of rootooth or serial');
 INSERT INTO "config" VALUES('/hardware/roomba/mode','string','safe','Operating mode, one of passive, safe, or full');
 INSERT INTO "config" VALUES('/hardware/roomba/device','string','/dev/ttyUSB0','Device file for the serial connection to the Roomba.');
