@@ -29,4 +29,8 @@ print("Initializing Lua skill space for Robotino")
 --skillenv.use_skill("skills.generic.goto")
 
 -- Robotino specific skills
-skillenv.use_skill("skills.robotino.eight_drive")
+skillenv.use_skill("skills.robotino.motor_test")
+skillenv.use_skill("skills.robotino.grab_puck")
+skillenv.use_skill("skills.robotino.take_puck")
+skillenv.use_skill("skills.robotino.chase_puck")
+skillenv.use_skill("skills.robotino.approach_puck")
