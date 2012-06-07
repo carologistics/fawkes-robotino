@@ -27,7 +27,7 @@ name               = "approach_puck"
 fsm                = SkillHSM:new{name=name, start="SEE_PUCK", debug=false}
 depends_skills     = {}
 depends_interfaces = {
-	{v = "OmniPuck", type="Position3DInterface"},
+	{v = "OmniPuck", type="Position3DInterface", id="OmniPuck1" },
 	{v = "navigator", type="NavigatorInterface"}
 }
 

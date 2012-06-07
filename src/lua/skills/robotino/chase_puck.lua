@@ -27,7 +27,7 @@ name               = "chase_puck"
 fsm                = SkillHSM:new{name=name, start="SEE_PUCK", debug=true}
 depends_skills     = { "grab_puck" }
 depends_interfaces = {
-	{v = "OmniPuck", type="Position3DInterface"},
+	{v = "OmniPuck1", type="Position3DInterface",id = "OmniPuck1"},
 	{v = "sensor", type="RobotinoSensorInterface"},
 	{v = "motor", type="MotorInterface"}
 --	{v = "navigator", type="NavigatorInterface"}
@@ -39,7 +39,9 @@ documentation      = [==[Move to puck pickup position]==]
 skillenv.skill_module(...)
 
 function no_puck()
-	return OmniPuck:visibility_history() < 0
+	print("OmniPuck1_visibiltiy_historty: ".. (OmniPuck1:visibility_history()))
+
+	return OmniPuck1:visibility_history() < 0
 end
 
 function puck()
@@ -75,8 +77,8 @@ end
 
 function puck_moved()
 	
-	local new_angle = correct_angle(correct_angle(math.atan2(OmniPuck:translation(1),
-		OmniPuck:translation(0))) 
+	local new_angle = correct_angle(correct_angle(math.atan2(OmniPuck1:translation(1),
+		OmniPuck1:translation(0))) 
 		+ gyro_angle_turned())
 
 	printf("new angle=" .. new_angle.. " old loc=" .. fsm.vars.puck_loc.angle )
@@ -89,20 +91,23 @@ end
 
 function puck_moved2()
 	
-	local new_angle = correct_angle(math.atan2(OmniPuck:translation(1),
-		OmniPuck:translation(0)))
+	local new_angle = correct_angle(math.atan2(OmniPuck1:translation(1),
+		OmniPuck1:translation(0)))
 
 	printf("new angle=" .. new_angle )
-	if math.abs(OmniPuck:translation(1)) > 0.15 then
-		fsm.vars.puck_loc.angle = correct_angle(math.atan2(OmniPuck:translation(1),
-		OmniPuck:translation(0)))
+	if math.abs(OmniPuck1:translation(1)) > 0.15 then
+		fsm.vars.puck_loc.angle = correct_angle(math.atan2(OmniPuck1:translation(1),
+		OmniPuck1:translation(0)))
 		return true
 	end
 	return false
 end
 
 function puck_in_range()
+
 	return sensor:distance(0) > 0
+
+
 end
 
 fsm:add_transitions{
@@ -129,8 +134,16 @@ function SEE_PUCK:init()
 	-- store relative puck coordinates
 	self.fsm.vars.puck_loc = {}
 	self.fsm.vars.gyro_start_angle = correct_angle(sensor:gyro_angle())
-	self.fsm.vars.puck_loc.x = OmniPuck:translation(0)
-	self.fsm.vars.puck_loc.y = OmniPuck:translation(1)
+
+if  Omnipuck1 == nil then
+print("nil")
+else
+print("not nil")
+end	
+	
+	
+	self.fsm.vars.puck_loc.x = OmniPuck1:translation(0)
+	self.fsm.vars.puck_loc.y = OmniPuck1:translation(1)
 	self.fsm.vars.puck_loc.angle = 
 		correct_angle(math.atan2(
 			self.fsm.vars.puck_loc.y, self.fsm.vars.puck_loc.x))
