@@ -264,9 +264,9 @@ INSERT INTO "config" VALUES('/plugins/openni-image/debayering','string','bilinea
 INSERT INTO "config" VALUES('/plugins/static-transforms/update-interval','float',1.0,'Interval in which to post static transform updates; sec');
 INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/frame','string','/base_link','Motor to laser, parent frame ID');
 INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/child_frame','string','/base_laser','Base to laser, child frame ID');
-INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/trans_x','float',0.15,'Base to laser, translation X');
+INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/trans_x','float',0.085,'Base to laser, translation X');
 INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/trans_y','float',0.0,'Base to laser, translation Y');
-INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/trans_z','float',0.11,'Base to laser, translation Z');
+INSERT INTO "config" VALUES('/plugins/static-transforms/transforms/base_laser/trans_z','float',0.15,'Base to laser, translation Z');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/depth_filter_min_x','float',0.0,'Minimum X value (i.e. distance to camera) to consider a point; m');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/depth_filter_max_x','float',3.0,'Maximum X value (i.e. distance to camera) to consider a point; m');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/voxel_leaf_size','float',0.02,'Leaf size for voxel grid downsampling; m');
