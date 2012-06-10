@@ -109,34 +109,29 @@ void RobotinoOmniVisionPipelineThread::init() {
 	// init puck interfaces
 
 	try {
-				int i;
-				for (i = 1; i <= 10; i++) {
-					Position3DInterface *puckif;
-					char *omni_name;
-					asprintf(&omni_name, "OmniPuck%d", i);
-					puckif = blackboard->open_for_writing<Position3DInterface>(omni_name);
-					puckif->set_frame(cfg_frame_.c_str());
-					puckif->set_visibility_history(-1);
-					puckif->write();
-					//free(omni_name);
-					pucks.push_back(puckif);
-				}
-			} catch (Exception &e) {
-				e.append("Opening puck interfaces for writing failed");
-				throw;
-			}
+		int i;
+		for (i = 1; i <= 10; i++) {
+			Position3DInterface *puckif;
+			char *omni_name;
+			asprintf(&omni_name, "OmniPuck%d", i);
+			puckif = blackboard->open_for_writing<Position3DInterface>(omni_name);
+			puckif->set_frame(cfg_frame_.c_str());
+			puckif->set_visibility_history(-1);
+			puckif->write();
+			//free(omni_name);
+			pucks.push_back(puckif);
+		}
+	} catch (Exception &e) {
+		e.append("Opening puck interfaces for writing failed");
+		throw;
+	}
 
-	/*// interface
-	 try {
-	 puckif_ = blackboard->open_for_writing<Position3DInterface>("OmniPuck");
-	 puck_if_->set_frame(cfg_frame_.c_str());
-	 puck_if_->write();
-	 } catch (Exception &e) {
-	 delete cam_;
-	 cam_ = NULL;
-	 e.append("Opening puck interface for writing failed");
-	 throw;
-	 }*/
+	try {
+		switchInterface = blackboard->open_for_reading<SwitchInterface>("omnivisionSwitch");
+	} catch (Exception &e) {
+		e.append("Opening switch interface for reading failed");
+		throw;
+	}
 
 	// image properties
 	img_width_ = cam_->pixel_width();
@@ -233,6 +228,10 @@ void RobotinoOmniVisionPipelineThread::finalize() {
  * position of the closest such object as puck position.
  */
 void RobotinoOmniVisionPipelineThread::loop() {
+	if (switchInterface->is_enabled() == false){
+		usleep(500000);
+	}
+
 	cam_->capture();
 	convert(cspace_from_, cspace_to_, cam_->buffer(), buffer_, img_width_,img_height_);
 

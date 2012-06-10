@@ -34,6 +34,8 @@
 #include <fvutils/base/types.h>
 #include <fvutils/base/roi.h>
 
+#include <interfaces/SwitchInterface.h>
+
 #include <string>
 
 
@@ -49,6 +51,7 @@ class Drawer;
 }
 namespace fawkes {
 class Position3DInterface;
+class SwitchInterface;
 }
 
 class RobotinoOmniVisionPipelineThread: public fawkes::Thread,
@@ -87,6 +90,8 @@ private:
 	firevision::RelativePositionModel *rel_pos_;
 	firevision::SimpleColorClassifier *classifier_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
+
+	fawkes::SwitchInterface *switchInterface;
 
 	unsigned char *buffer_;
 
