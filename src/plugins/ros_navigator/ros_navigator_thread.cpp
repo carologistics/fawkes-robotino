@@ -48,20 +48,11 @@ RosNavigatorThread::init()
     throw;
   }
 
-  //
-  int a=0; char** b=0;
-  ros::init(a,b,"fawkes_navigation_goals");
-
   //tell the action client that we want to spin a thread by default
-  ac = new MoveBaseClient("move_base", true);
+  ac = new MoveBaseClient("move_base", false);
 
+  logger->log_error( name(),"Change Interface (x,y) ");
   iterator = 0;
-
-  //wait for the action server to come up
-  while(!ac->waitForServer(ros::Duration(5.0))){
-	  ROS_INFO("Waiting for the move_base action server to come up");
-  }
-
 }
 
 void
@@ -84,8 +75,9 @@ RosNavigatorThread::getStatus(){
 		nav_if_->set_final(true);
 		logger->log_info( name(), "Goal %f,%f achieved",nav_if_->dest_x(), nav_if_->dest_y() );
 	}
-	else
+	else{
 		nav_if_->set_final(false);
+	}
 }
 
 void
@@ -110,88 +102,90 @@ RosNavigatorThread::sendRosMessage(){
 void
 RosNavigatorThread::loop()
 {
-  // process incoming messages from fawkes
-  while ( ! nav_if_->msgq_empty()) {
 
-	// stop
-    if (NavigatorInterface::StopMessage *msg = nav_if_->msgq_first_safe(msg)) {
-      logger->log_info( name(),"Stop message received" );
-      nav_if_->set_dest_x( 0 );
-      nav_if_->set_dest_y( 0 );
-      nav_if_->set_dest_ori( 0 );
-    }
+	if( ac && ac->isServerConnected() ){
 
-    // cartesian goto
-    else if (NavigatorInterface::CartesianGotoMessage *msg = nav_if_->msgq_first_safe(msg)) {
-      logger->log_info( name(),"Cartesian goto message received (x,y) = (%f,%f)", msg->x(), msg->y() );
-      nav_if_->set_dest_x( msg->x() );
-      nav_if_->set_dest_y( msg->y() );
-      nav_if_->set_dest_ori( msg->orientation() );
-    }
+		// process incoming messages from fawkes
+	  while ( ! nav_if_->msgq_empty()) {
 
-    // polar goto
-    else if (NavigatorInterface::PolarGotoMessage *msg = nav_if_->msgq_first_safe(msg)) {
-      logger->log_info( name(),"Polar goto message received (phi,dist) = (%f,%f)",msg->phi(), msg->dist() );
-      nav_if_->set_dest_x( msg->dist() * cos(msg->phi()) );
-      nav_if_->set_dest_y( msg->dist() * cos(msg->phi()) );
-      nav_if_->set_dest_ori( msg->phi() );
-    }
-	  
-    // max velocity
-    else if (NavigatorInterface::SetMaxVelocityMessage *msg = nav_if_->msgq_first_safe(msg)) {
-      logger->log_info( name(),"velocity message received %f",msg->max_velocity() );
-      nav_if_->set_max_velocity( msg->max_velocity() );
-    }
+		// stop
+		if (NavigatorInterface::StopMessage *msg = nav_if_->msgq_first_safe(msg)) {
+		  logger->log_info( name(),"Stop message received" );
+		  nav_if_->set_dest_x( 0 );
+		  nav_if_->set_dest_y( 0 );
+		  nav_if_->set_dest_ori( 0 );
+		}
 
-    else if (NavigatorInterface::SetSecurityDistanceMessage *msg = nav_if_->msgq_first_safe(msg)) {
-      logger->log_info( name(),"velocity message received %f",msg->security_distance () );
-      nav_if_->set_security_distance ( msg->security_distance () );
-    }
+		// cartesian goto
+		else if (NavigatorInterface::CartesianGotoMessage *msg = nav_if_->msgq_first_safe(msg)) {
+		  logger->log_info( name(),"Cartesian goto message received (x,y) = (%f,%f)", msg->x(), msg->y() );
+		  nav_if_->set_dest_x( msg->x() );
+		  nav_if_->set_dest_y( msg->y() );
+		  nav_if_->set_dest_ori( msg->orientation() );
+		}
 
-    nav_if_->msgq_pop();
+		// polar goto
+		else if (NavigatorInterface::PolarGotoMessage *msg = nav_if_->msgq_first_safe(msg)) {
+		  logger->log_info( name(),"Polar goto message received (phi,dist) = (%f,%f)",msg->phi(), msg->dist() );
+		  nav_if_->set_dest_x( msg->dist() * cos(msg->phi()) );
+		  nav_if_->set_dest_y( msg->dist() * cos(msg->phi()) );
+		  nav_if_->set_dest_ori( msg->phi() );
+		}
 
-    nav_if_->write();
-    this->sendRosMessage();
+		// max velocity
+		else if (NavigatorInterface::SetMaxVelocityMessage *msg = nav_if_->msgq_first_safe(msg)) {
+		  logger->log_info( name(),"velocity message received %f",msg->max_velocity() );
+		  nav_if_->set_max_velocity( msg->max_velocity() );
+		}
 
-  }
+		else if (NavigatorInterface::SetSecurityDistanceMessage *msg = nav_if_->msgq_first_safe(msg)) {
+		  logger->log_info( name(),"velocity message received %f",msg->security_distance () );
+		  nav_if_->set_security_distance ( msg->security_distance () );
+		}
 
+		nav_if_->msgq_pop();
 
-  //get the status of the Ros-navigation
-  this->getStatus();
-  nav_if_->write();
-
-  // write msg data to navigator interface
-  //nav_if_->write();
-
-  if (nav_if_->is_final() || iterator == 0){
-
-	  iterator++;
-	  iterator %=4;
-
-	  switch(iterator){
-	  	  case(1):
-	  			  nav_if_->set_dest_x( 2.0 );
-	  	  	  	  nav_if_->set_dest_y( 0.0 );
-	  	  	  	  nav_if_->set_dest_ori( 0.0 );
-	  			  break;
-	  	  case(2):
-	  			  nav_if_->set_dest_x( 0.0 );
-	  		  	  nav_if_->set_dest_y( 2.0 );
-	  		  	  nav_if_->set_dest_ori( 3.14 );
-	  		  	  break;
-	  	  case(3):
-	  			  nav_if_->set_dest_x( 0.2 );
-	  		  	  nav_if_->set_dest_y( 0.0 );
-	  		  	  nav_if_->set_dest_ori( 0.0 );
-	  		  	  break;
-	  	  case(4):
-	  			  nav_if_->set_dest_x( 0.0 );
-	  		  	  nav_if_->set_dest_y( 2.0 );
-	  		  	  nav_if_->set_dest_ori( 3.14 );
-	  		  	  break;
 	  }
 
+
+	  //get the status of the Ros-navigation
+	  this->getStatus();
 	  nav_if_->write();
-	  this->sendRosMessage();
-  }
+
+	  // write msg data to navigator interface
+	  //nav_if_->write();
+
+	  if (nav_if_->is_final() || iterator == 0){
+
+		  iterator++;
+		  iterator %=4;
+
+		  switch(iterator){
+			  case(1):
+					  nav_if_->set_dest_x( 0.5 );
+					  nav_if_->set_dest_y( 0.0 );
+					  nav_if_->set_dest_ori( 0.0 );
+					  break;
+			  case(2):
+					  nav_if_->set_dest_x( 0.0 );
+					  nav_if_->set_dest_y( 0.5 );
+					  nav_if_->set_dest_ori( 3.14 );
+					  break;
+			  case(3):
+					  nav_if_->set_dest_x( 0.5 );
+					  nav_if_->set_dest_y( 0.0 );
+					  nav_if_->set_dest_ori( 0.0 );
+					  break;
+			  case(4):
+					  nav_if_->set_dest_x( 0.0 );
+					  nav_if_->set_dest_y( 0.5 );
+					  nav_if_->set_dest_ori( 3.14 );
+					  break;
+		  }
+
+		  nav_if_->write();
+		  this->sendRosMessage();
+	  }
+	}
+	else logger->log_info( name()," ROS-ActionServer is not up yet" );
 }
