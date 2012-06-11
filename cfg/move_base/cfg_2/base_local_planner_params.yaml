@@ -1,0 +1,21 @@
+TrajectoryPlannerROS:
+  max_vel_x: 0.45
+  min_vel_x: 0.1
+  max_rotational_vel: 1.2
+  min_in_place_rotational_vel: 0.4
+
+  acc_lim_th: 3.2
+  acc_lim_x: 2.5
+  acc_lim_y: 2.5
+
+  holonomic_robot: true
+
+  yaw_goal_tolerance: 0.05
+  xy_goal_tolerance: 0.1
+
+  #dwa: true
+  #publish_cost_grid_pc: true
+  #global_frame_id: robotino_odometry
+
+  #sim_time: 1.0
+
