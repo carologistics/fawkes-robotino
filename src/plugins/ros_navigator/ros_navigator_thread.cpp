@@ -53,6 +53,7 @@ RosNavigatorThread::init()
 
   logger->log_error( name(),"Change Interface (x,y) ");
   iterator = 0;
+  isFirst = true;
 }
 
 void
@@ -71,12 +72,14 @@ RosNavigatorThread::finalize()
 void
 RosNavigatorThread::getStatus(){
 
-	if( ac->getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
-		nav_if_->set_final(true);
-		logger->log_info( name(), "Goal %f,%f achieved",nav_if_->dest_x(), nav_if_->dest_y() );
-	}
-	else{
-		nav_if_->set_final(false);
+	//DRECKIG!!
+	if(!isFirst){
+		if( ac->getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
+			nav_if_->set_final(true);
+		}
+		else{
+			nav_if_->set_final(false);
+		}
 	}
 }
 
@@ -104,6 +107,7 @@ RosNavigatorThread::loop()
 {
 
 	if( ac && ac->isServerConnected() ){
+
 
 		// process incoming messages from fawkes
 	  while ( ! nav_if_->msgq_empty()) {
@@ -144,48 +148,17 @@ RosNavigatorThread::loop()
 		}
 
 		nav_if_->msgq_pop();
+		nav_if_->write();
+		this->sendRosMessage();
 
-	  }
-
+		isFirst = false;
+	  } // while
 
 	  //get the status of the Ros-navigation
 	  this->getStatus();
 	  nav_if_->write();
 
-	  // write msg data to navigator interface
-	  //nav_if_->write();
-
-	  if (nav_if_->is_final() || iterator == 0){
-
-		  iterator++;
-		  iterator %=4;
-
-		  switch(iterator){
-			  case(1):
-					  nav_if_->set_dest_x( 0.5 );
-					  nav_if_->set_dest_y( 0.0 );
-					  nav_if_->set_dest_ori( 0.0 );
-					  break;
-			  case(2):
-					  nav_if_->set_dest_x( 0.0 );
-					  nav_if_->set_dest_y( 0.5 );
-					  nav_if_->set_dest_ori( 3.14 );
-					  break;
-			  case(3):
-					  nav_if_->set_dest_x( 0.5 );
-					  nav_if_->set_dest_y( 0.0 );
-					  nav_if_->set_dest_ori( 0.0 );
-					  break;
-			  case(4):
-					  nav_if_->set_dest_x( 0.0 );
-					  nav_if_->set_dest_y( 0.5 );
-					  nav_if_->set_dest_ori( 3.14 );
-					  break;
-		  }
-
-		  nav_if_->write();
-		  this->sendRosMessage();
-	  }
-	}
+	} // if
 	else logger->log_info( name()," ROS-ActionServer is not up yet" );
-}
+
+} // function
