@@ -41,11 +41,13 @@ skillenv.skill_module(...)
 function no_puck()
 	print("OmniPuck1_visibiltiy_historty: ".. (OmniPuck1:visibility_history()))
 
-	return OmniPuck1:visibility_history() < 0
+	--return OmniPuck1:visibility_history() < 0
+	return OmniPuck1:visibility_history() < 10
 end
 
 function puck()
-	return not no_puck()
+	return OmniPuck1:visibility_history() >=10
+	--return not no_puck()
 end
 
 function no_puck_in_front()
@@ -112,7 +114,7 @@ end
 
 fsm:add_transitions{
 	closure={motor=motor},
-	{"SEE_PUCK", "FAILED", cond=no_puck, desc="No puck seen by OmniVision"},
+--	{"SEE_PUCK", "FAILED", cond=no_puck, desc="No puck seen by OmniVision"},
 	{"SEE_PUCK", "TURN_TO_PUCK", cond=puck},
 	{"TURN_TO_PUCK", "APPROACH_PUCK", cond=gyro_rot_reached},
 	--{"TURN_TO_PUCK", "TURN_TO_PUCK", cond=puck_moved},
@@ -144,6 +146,8 @@ end
 	
 	self.fsm.vars.puck_loc.x = OmniPuck1:translation(0)
 	self.fsm.vars.puck_loc.y = OmniPuck1:translation(1)
+	print(OmniPuck1:translation(0))
+	print(OmniPuck1:translation(1))
 	self.fsm.vars.puck_loc.angle = 
 		correct_angle(math.atan2(
 			self.fsm.vars.puck_loc.y, self.fsm.vars.puck_loc.x))

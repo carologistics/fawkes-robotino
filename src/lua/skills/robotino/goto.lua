@@ -24,11 +24,9 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "goto"
-fsm                = SkillHSM:new{name=name, start="SEND_MOVE"}
-depends_skills     = nil
+fsm                = SkillHSM:new{name=name, start="DO_RELGOTO"}
+depends_skills     = { "relgoto" }
 depends_interfaces = {
-   {v = "navigator", type = "NavigatorInterface" }
-    {v = "motor", type = "MotorInterface", id="Robotino" }
 }
 
 documentation      = [==[Move to a known (named) location.
@@ -48,8 +46,8 @@ D1-D3 = Delivery1-Delivery3:  Delivery gates 1-3.
 local margin = 0.605
 --0.605 sind sicherheitsabstand etc zusammengerechnet
 machine_pos = {
-	M1 = {x = 1.68 -margin , y = 1.68 	   , ori = 0}, 
-	M2 = {x = 3.9		, y = 1.68+margin , ori = -math.pi/2}, 
+	M1 = {x = 1.68-margin   , y = 1.68        , ori = 0}, 
+	M2 = {x = 3.9 	 		, y = 1.68+margin , ori = -math.pi/2}, 
 	M3 = {x = 0.56 		, y = 2.80-margin , ori =  math.pi/2},
 	M4 = {x = 1.68 -margin	, y = 2.80  	   , ori = 0},
 	M5 = {x = 2.80 +margin	, y = 2.80  	   , ori =  math.pi},
@@ -69,7 +67,7 @@ machine_pos = {
 	TEST = T, Test = T,
 
 	EGI = {x = 3.60 + margin, y = 5.35 ,ori =math.pi},
-	ExpressGoodInsertion = EGI
+	ExpressGoodInsertion = EGI,
 
 	D1 = {x = 3.15, y = 0.26+margin ,ori =-math.pi/2},
 	D2 = {x = 2.80, y = 0.26+margin ,ori = -math.pi/2},
@@ -84,18 +82,46 @@ skillenv.skill_module(...)
 
 
 fsm:add_transitions{
-	closure={motor=motor},
-	{"SEND_MOVE", "FINAL", skill = move_to_global,fail_to = "FAILED"}
-
+	{"DO_RELGOTO", "FINAL", skill=relgoto, fail_to="FAILED"}
 }
 
 
-function SEND_MOVE:INIT()
-	local name = self.fsm.vars.goto_name
-	self.fsm.args.global_goto = {
-		x = machine_pos[name].x,
-		y = machine_pos[name].y,
+function DO_RELGOTO:init()
+	local x, y, ori
+	if self.fsm.vars.goto_name then
+		local name = self.fsm.vars.goto_name
+		x = machine_pos[name].x
+		y = machine_pos[name].y
 		ori = machine_pos[name].ori
+	else
+		x = self.fsm.vars.goto_x
+		y = self.fsm.vars.goto_y
+		ori = self.fsm.vars.goto_ori
+	end
+
+	local global_t = fawkes.tf.Vector3:new(x, y, 0)
+	local global_r = fawkes.tf.Quaternion:new(ori, 0, 0)
+	local global_p = fawkes.tf.Pose:new(global_r, global_t)
+	local global_sp = fawkes.tf.StampedPose(global_p, fawkes.Time:new(0, 0), "/map")
+	local rel_sp = fawkes.tf.StampedPose:new()
+	tf:transform_pose("/base_link", global_sp, rel_sp)
+	local rel_t = rel_sp:getOrigin()
+	local rel_r = rel_sp:getRotation()
+
+	printf("Global: (%f,%f,%f) (%f,%f,%f,%f)  Relative: (%f,%f,%f)  (%f,%f,%f,%f)",
+		global_t:x(), global_t:y(), global_t:z(), 
+		global_r:x(), global_r:y(), global_r:z(), global_r:w(),
+		rel_t:x(), rel_t:y(), rel_t:z(),
+		rel_r:x(), rel_r:y(), rel_r:z(), rel_r:w())
+
+	self.args = {
+		rel_x = rel_t:x(),
+		rel_y = rel_t:y(),
+		rel_ori = math.asin(rel_r:w()) * 2
 	}
 end
+
+
+
+
 
