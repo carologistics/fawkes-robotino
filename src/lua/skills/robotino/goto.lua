@@ -30,8 +30,10 @@ depends_interfaces = {
 }
 
 documentation      = [==[Move to a known (named) location.
-@param goto_name Name of the place we want to go to.
-@
+@param goto_name Name of the place we want to go to. Mutually exclusive with the other params.
+@param goto_x    Absolute x coodinate
+@param goto_y    dito y
+@param goto_ori  dito orientation
 
 Available names:
 ================
