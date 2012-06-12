@@ -1,0 +1,18 @@
+<launch>
+  <param name="robot_description" command="cat $(find move_base_robotino)/cfg/robotino.urdf" />
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find move_base_robotino)/cfg/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find move_base_robotino)/cfg/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find move_base_robotino)/cfg/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find move_base_robotino)/cfg/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find move_base_robotino)/cfg/base_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find move_base_robotino)/cfg/base_global_planner_params.yaml" command="load" />
+
+    <!-- <rosparam file="$(find move_base_robotino)/cfg/dwa_local_planner_params.yaml" command="load" /> -->
+    <!-- <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />-->
+
+    <param name="recovery_behavior_enabled" value="true" type="bool" />
+    <param name="conservative_reset_dist" value="5.6" type="double" />
+  </node>
+</launch>
