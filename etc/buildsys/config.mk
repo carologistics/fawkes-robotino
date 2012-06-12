@@ -27,5 +27,9 @@ else
   include $(BUILDSYSDIR)/config.mk
 endif
 
+# Globally enable optimization for the Robotino platform
+CFLAGS_BASE  += -mtune=geode -march=geode -m32 -O2
+LDFLAGS_BASE += -m32 -O2
+
 endif # __robotino_config_mk_
 
