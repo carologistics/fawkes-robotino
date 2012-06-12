@@ -118,6 +118,8 @@ RosNavigatorThread::loop()
 		  nav_if_->set_dest_x( 0 );
 		  nav_if_->set_dest_y( 0 );
 		  nav_if_->set_dest_ori( 0 );
+
+		  nav_if_->set_msgid( msg->id() );
 		}
 
 		// cartesian goto
@@ -126,6 +128,8 @@ RosNavigatorThread::loop()
 		  nav_if_->set_dest_x( msg->x() );
 		  nav_if_->set_dest_y( msg->y() );
 		  nav_if_->set_dest_ori( msg->orientation() );
+
+		  nav_if_->set_msgid( msg->id() );
 		}
 
 		// polar goto
@@ -134,17 +138,23 @@ RosNavigatorThread::loop()
 		  nav_if_->set_dest_x( msg->dist() * cos(msg->phi()) );
 		  nav_if_->set_dest_y( msg->dist() * cos(msg->phi()) );
 		  nav_if_->set_dest_ori( msg->phi() );
+
+		  nav_if_->set_msgid( msg->id() );
 		}
 
 		// max velocity
 		else if (NavigatorInterface::SetMaxVelocityMessage *msg = nav_if_->msgq_first_safe(msg)) {
 		  logger->log_info( name(),"velocity message received %f",msg->max_velocity() );
 		  nav_if_->set_max_velocity( msg->max_velocity() );
+
+		  nav_if_->set_msgid( msg->id() );
 		}
 
 		else if (NavigatorInterface::SetSecurityDistanceMessage *msg = nav_if_->msgq_first_safe(msg)) {
 		  logger->log_info( name(),"velocity message received %f",msg->security_distance () );
 		  nav_if_->set_security_distance ( msg->security_distance () );
+
+		  nav_if_->set_msgid( msg->id() );
 		}
 
 		nav_if_->msgq_pop();

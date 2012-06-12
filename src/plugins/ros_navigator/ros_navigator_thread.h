@@ -65,6 +65,7 @@ class RosNavigatorThread
   MoveBaseClient *ac;
   move_base_msgs::MoveBaseGoal goal;
   int iterator;
+  bool isFirst;
 };
 
 #endif /* __ROS_NAVIGATOR_THREAD_H_ */
