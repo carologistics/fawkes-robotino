@@ -30,7 +30,6 @@ depends_interfaces = {
 	{v = "OmniPuck1", type="Position3DInterface",id = "OmniPuck1"},
 	{v = "sensor", type="RobotinoSensorInterface"},
 	{v = "motor", type="MotorInterface"}
---	{v = "navigator", type="NavigatorInterface"}
 }
 
 documentation      = [==[Move to puck pickup position]==]
@@ -41,13 +40,13 @@ skillenv.skill_module(...)
 function no_puck()
 	print("OmniPuck1_visibiltiy_historty: ".. (OmniPuck1:visibility_history()))
 
-	--return OmniPuck1:visibility_history() < 0
+	
 	return OmniPuck1:visibility_history() < 10
 end
 
 function puck()
 	return OmniPuck1:visibility_history() >=10
-	--return not no_puck()
+	
 end
 
 function no_puck_in_front()
@@ -77,33 +76,11 @@ function gyro_rot_reached()
 	return math.abs( fsm.vars.puck_loc.angle  - gyro_angle_turned()) < 0.08
 end
 
-function puck_moved()
-	
-	local new_angle = correct_angle(correct_angle(math.atan2(OmniPuck1:translation(1),
-		OmniPuck1:translation(0))) 
-		+ gyro_angle_turned())
-
-	printf("new angle=" .. new_angle.. " old loc=" .. fsm.vars.puck_loc.angle )
-	if math.abs(fsm.vars.puck_loc.angle - new_angle) > math.pi / 4 then
-		fsm.vars.puck_loc.angle = new_angle
-		return true
-	end
-	return false
+function gyro_not_yet_reached()
+	return not math.abs( fsm.vars.puck_loc.angle  - gyro_angle_turned()) < 0.08
 end
 
-function puck_moved2()
-	
-	local new_angle = correct_angle(math.atan2(OmniPuck1:translation(1),
-		OmniPuck1:translation(0)))
 
-	printf("new angle=" .. new_angle )
-	if math.abs(OmniPuck1:translation(1)) > 0.15 then
-		fsm.vars.puck_loc.angle = correct_angle(math.atan2(OmniPuck1:translation(1),
-		OmniPuck1:translation(0)))
-		return true
-	end
-	return false
-end
 
 function puck_in_range()
 
@@ -114,14 +91,23 @@ end
 
 fsm:add_transitions{
 	closure={motor=motor},
---	{"SEE_PUCK", "FAILED", cond=no_puck, desc="No puck seen by OmniVision"},
+	{"SEE_PUCK", "FAILED", cond=no_puck, desc="No puck seen by OmniVision"},
 	{"SEE_PUCK", "TURN_TO_PUCK", cond=puck},
 	{"TURN_TO_PUCK", "APPROACH_PUCK", cond=gyro_rot_reached},
-	--{"TURN_TO_PUCK", "TURN_TO_PUCK", cond=puck_moved},
-	--{"APPROACH_PUCK", "TURN_TO_PUCK", cond=puck_moved2},
+	{"TURN_TO_PUCK", "TURN_TO_PUCK", cond=gyro_not_yet_reached},
+	
+	
 	{"APPROACH_PUCK", "SKILL_GRAB_PUCK", cond=puck_in_range},
 	{"SKILL_GRAB_PUCK", "FINAL", skill=grab_puck, fail_to="FAILED"}
 }
+
+function send_transrot(vx, vy, omega)
+   local oc  = motor:controller()
+   local ocn = motor:controller_thread_name()
+   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
+   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
+   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
+end
 
 function correct_angle(a)
 	a = a % (2 * math.pi)
@@ -167,10 +153,4 @@ function TURN_TO_PUCK:init()
 	end
 end
 
-function send_transrot(vx, vy, omega)
-   local oc  = motor:controller()
-   local ocn = motor:controller_thread_name()
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
-   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
-end
+
