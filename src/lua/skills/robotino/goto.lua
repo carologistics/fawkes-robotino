@@ -30,10 +30,8 @@ depends_interfaces = {
 }
 
 documentation      = [==[Move to a known (named) location.
-@param goto_name Name of the place we want to go to. Mutually exclusive with the other params.
-@param goto_x    Absolute x coodinate
-@param goto_y    dito y
-@param goto_ori  dito orientation
+@param goto_name Name of the place we want to go to.
+@
 
 Available names:
 ================
@@ -119,7 +117,7 @@ function DO_RELGOTO:init()
 	self.args = {
 		rel_x = rel_t:x(),
 		rel_y = rel_t:y(),
-		rel_ori = math.asin(rel_r:w()) * 2
+		rel_ori = 2*math.acos(rel_r:w())
 	}
 end
 
