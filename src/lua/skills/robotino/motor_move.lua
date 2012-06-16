@@ -72,25 +72,25 @@ end
 function target_reached()
 	calc_status()
 
-	if math.abs(dist_x) < 0.07 then
+	if fsm.vars.x and math.abs(dist_x) < 0.07 then
 		fsm.vars.motor_vx = dir_x * 0.04
+		if math.abs(dist_x) < 0.03 then
+			fsm.vars.motor_vx = 0
+		end
 	end
-	if math.abs(dist_y) < 0.07 then
+	if fsm.vars.y and math.abs(dist_y) < 0.07 then
 		fsm.vars.motor_vy = dir_y * 0.04
+		if math.abs(dist_y) < 0.03 then
+			fsm.vars.motor_vy = 0
+		end
 	end
-	if math.abs(dist_ori) < 0.2 then
+	if fsm.vars.ori and math.abs(dist_ori) < 0.2 then
 		fsm.vars.motor_omega = dir_ori * 0.1
+		if math.abs(dist_ori) < 0.03 then
+			fsm.vars.motor_omega = 0
+		end
 	end
 
-	if math.abs(dist_x) < 0.03 then
-		fsm.vars.motor_vx = 0
-	end
-	if math.abs(dist_y) < 0.03 then
-		fsm.vars.motor_vy = 0
-	end
-	if math.abs(dist_ori) < 0.03 then
-		fsm.vars.motor_omega = 0
-	end
 	printf("x: " .. dist_x .. "\t" .. fsm.vars.motor_vx)
 	printf("y: " .. dist_y .. "\t" .. fsm.vars.motor_vy)
 	printf("ori: " .. dist_ori .. "\t" .. fsm.vars.motor_omega)
