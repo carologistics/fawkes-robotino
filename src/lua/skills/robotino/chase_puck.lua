@@ -39,13 +39,11 @@ skillenv.skill_module(...)
 
 function no_puck()
 	print("OmniPuck1_visibiltiy_historty: ".. (OmniPuck1:visibility_history()))
-
-	
-	return OmniPuck1:visibility_history() < 10
+	return OmniPuck1:visibility_history() < 3
 end
 
 function puck()
-	return OmniPuck1:visibility_history() >=10
+	return OmniPuck1:visibility_history() >= 3
 	
 end
 
@@ -77,7 +75,7 @@ function gyro_rot_reached()
 end
 
 function gyro_not_yet_reached()
-	return not math.abs( fsm.vars.puck_loc.angle  - gyro_angle_turned()) < 0.08
+	return not (math.abs( fsm.vars.puck_loc.angle  - gyro_angle_turned()) < 0.08)
 end
 
 
@@ -94,9 +92,7 @@ fsm:add_transitions{
 	{"SEE_PUCK", "FAILED", cond=no_puck, desc="No puck seen by OmniVision"},
 	{"SEE_PUCK", "TURN_TO_PUCK", cond=puck},
 	{"TURN_TO_PUCK", "APPROACH_PUCK", cond=gyro_rot_reached},
-	{"TURN_TO_PUCK", "TURN_TO_PUCK", cond=gyro_not_yet_reached},
-	
-	
+	--{"TURN_TO_PUCK", "TURN_TO_PUCK", cond=gyro_not_yet_reached},
 	{"APPROACH_PUCK", "SKILL_GRAB_PUCK", cond=puck_in_range},
 	{"SKILL_GRAB_PUCK", "FINAL", skill=grab_puck, fail_to="FAILED"}
 }
@@ -123,11 +119,11 @@ function SEE_PUCK:init()
 	self.fsm.vars.puck_loc = {}
 	self.fsm.vars.gyro_start_angle = correct_angle(sensor:gyro_angle())
 
-if  Omnipuck1 == nil then
-print("nil")
-else
-print("not nil")
-end	
+	if  Omnipuck1 == nil then
+		print("nil")
+	else
+		print("not nil")
+	end	
 	
 	
 	self.fsm.vars.puck_loc.x = OmniPuck1:translation(0)
@@ -147,9 +143,9 @@ end
 function TURN_TO_PUCK:init()
 	send_transrot(0, 0, 0)
 	if self.fsm.vars.puck_loc.angle > math.pi then
-		send_transrot(0, 0, -0.05)
+		send_transrot(0, 0, -0.3)
 	else
-		send_transrot(0, 0, 0.05)
+		send_transrot(0, 0, 0.3)
 	end
 end
 
