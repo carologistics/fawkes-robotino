@@ -7,8 +7,8 @@ CREATE TABLE config (
   PRIMARY KEY (path)
 );
 INSERT INTO "config" VALUES('/fawkes/mainapp/blackboard_size','unsigned int','2097152','Size of BlackBoard memory segment; bytes');
-INSERT INTO "config" VALUES('/fawkes/mainapp/desired_loop_time','unsigned int',600000,'Desired loop time of main thread, 0 to disable; microseconds');
-INSERT INTO "config" VALUES('/fawkes/mainapp/max_thread_time','unsigned int',600000,'Maximum time a thread may run per loop, 0 to disable; microseconds');
+INSERT INTO "config" VALUES('/fawkes/mainapp/desired_loop_time','unsigned int',66333,'Desired loop time of main thread, 0 to disable; microseconds');
+INSERT INTO "config" VALUES('/fawkes/mainapp/max_thread_time','unsigned int',133333,'Maximum time a thread may run per loop, 0 to disable; microseconds');
 INSERT INTO "config" VALUES('/fawkes/mainapp/net/tcp_port','unsigned int',1910,'Port for Fawkes Network Protocol service; TCP port');
 INSERT INTO "config" VALUES('/fawkes/mainapp/net/service_name','string','Fawkes on %h','Name for Fawkes service, announced via Avahi, %h is replaced by short hostname');
 INSERT INTO "config" VALUES('/fawkes/meta_plugins/nao_default','string','naoqi-motion,naoqi-speechsynth,naoqi-buttons,naoqi-leds','Meta plugin loaded by default on the Nao (and on the Nao only)');
@@ -44,6 +44,7 @@ INSERT INTO "config" VALUES('/ballposlog/log_level','unsigned int','0','Log leve
 INSERT INTO "config" VALUES('/skiller/skillspace','string','robotino','Skill space');
 INSERT INTO "config" VALUES('/skiller/watch_files','bool',1,'Watch lua files for modification and automatically reload Lua if files have been changed; true to enable');
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/motor','string','MotorInterface::Robotino',NULL);
+INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/Machine_0','string','Position3DInterface::Machine_0',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/sensor','string','RobotinoSensorInterface::Robotino',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck1','string','Position3DInterface::OmniPuck1',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck2','string','Position3DInterface::OmniPuck2',NULL);
@@ -55,25 +56,9 @@ INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck7','st
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck8','string','Position3DInterface::OmniPuck8',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck9','string','Position3DInterface::OmniPuck9',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck10','string','Position3DInterface::OmniPuck10',NULL);
-INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/navigator','string','NavigatorInterface::Robotino',NULL);
-INSERT INTO "config" VALUES('/skiller/interfaces/test/reading/navigator','string','NavigatorInterface::Navigator',NULL);
-INSERT INTO "config" VALUES('/skiller/interfaces/test/reading/pose','string','ObjectPositionInterface::WM Pose',NULL);
-INSERT INTO "config" VALUES('/skiller/interfaces/test/reading/speechsynth','string','SpeechSynthInterface::Flite',NULL);
-INSERT INTO "config" VALUES('/skiller/interfaces/test/reading/katanaarm','string','KatanaInterface::Katana',NULL);
-INSERT INTO "config" VALUES('/skiller/interfaces/test/reading/ptu_RX28','string','PanTiltInterface::PanTilt RX28',NULL);
-INSERT INTO "config" VALUES('/skiller/interfaces/test/reading/ptu_EviD100P','string','PanTiltInterface::PanTilt EviD100P',NULL);
+INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/navigator','string','NavigatorInterface::Navigator',NULL);
 INSERT INTO "config" VALUES('/luaagent/agent','string','naojoystick',NULL);
 INSERT INTO "config" VALUES('/luaagent/watch_files','bool',1,NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/joystick','string','JoystickInterface::Joystick',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/naosensors','string','NaoSensorInterface::Nao Sensors',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/naomotion','string','HumanoidMotionInterface::NaoQi Motion',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/naojoints','string','NaoJointPositionInterface::Nao Joint Positions',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/naostiffness','string','NaoJointStiffnessInterface::Nao Joint Stiffness',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/wm_ball','string','ObjectPositionInterface::WM Ball',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/chestbutton','string','SwitchInterface::Nao Button Chest',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/lfootbumper','string','SwitchInterface::Nao Button Foot Left',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/rfootbumper','string','SwitchInterface::Nao Button Foot Right',NULL);
-INSERT INTO "config" VALUES('/luaagent/interfaces/naojoystick/reading/penalty','string','SoccerPenaltyInterface::SPL Penalty',NULL);
 INSERT INTO "config" VALUES('/worldmodel/confspace','string','trunk',NULL);
 INSERT INTO "config" VALUES('/worldmodel/wi_send/trunk/enable_send','bool','0','Enable sending of world info messages?');
 INSERT INTO "config" VALUES('/worldmodel/interfaces/trunk/pose/type','string','ObjectPositionInterface',NULL);
@@ -292,8 +277,8 @@ INSERT INTO "config" VALUES('/plugins/amcl/laser_max_range','float',-1.0,'Laser 
 INSERT INTO "config" VALUES('/plugins/amcl/max_beams','unsigned int',30,'Laser Maximum Beams');
 INSERT INTO "config" VALUES('/plugins/amcl/min_particles','unsigned int',100,'Minimum Particles');
 INSERT INTO "config" VALUES('/plugins/amcl/max_particles','unsigned int',2000,'Maximum Particles');
-INSERT INTO "config" VALUES('/plugins/amcl/pf_err','float',0.01,'Pf error');
-INSERT INTO "config" VALUES('/plugins/amcl/pf_z','float',0.99,'Pf Z Value');
+INSERT INTO "config" VALUES('/plugins/amcl/kld_err','float',0.01,'Pf error');
+INSERT INTO "config" VALUES('/plugins/amcl/kld_z','float',0.99,'Pf Z Value');
 INSERT INTO "config" VALUES('/plugins/amcl/alpha1','float',0.2,'Expected noise in odometry''s rotation estimate from the rotational component of the robot''s motion');
 INSERT INTO "config" VALUES('/plugins/amcl/alpha2','float',0.2,'Expected noise in odometry''s rotation estimate from the translational component of the robot''s motion');
 INSERT INTO "config" VALUES('/plugins/amcl/alpha3','float',0.2,'Expected noise in odometry''s translational estimate from the translational component of the robot''s motion');
@@ -310,8 +295,14 @@ INSERT INTO "config" VALUES('/plugins/amcl/laser_interface_id','string','Laser u
 INSERT INTO "config" VALUES('/plugins/amcl/pose_interface_id','string','Pose','Pose interface ID');
 INSERT INTO "config" VALUES('/plugins/amcl/laser_model_type','string','likelihood_field','Laser Model type, beam or likelihood_field');
 INSERT INTO "config" VALUES('/plugins/amcl/odom_model_type','string','omni','Odometry Model type - differential or omni');
+<<<<<<< HEAD
 INSERT INTO "config" VALUES('/plugins/amcl/d_thresh','float',-1.0,'Update minimum D Thresh');
 INSERT INTO "config" VALUES('/plugins/amcl/a_thresh','float',-1.0,'Update minimum A Thresh - should be PI/6');
+=======
+INSERT INTO "config" VALUES('/plugins/amcl/d_thresh','float',0.2,'Update minimum D Thresh');
+INSERT INTO "config" VALUES('/plugins/amcl/a_thresh','float',0.3,'Update minimum A Thresh - should be PI/6');
+INSERT INTO "config" VALUES('/plugins/amcl/t_thresh','float',3.0,'Time to update after stopping to move; sec');
+>>>>>>> default.sql: merge with other branches
 INSERT INTO "config" VALUES('/plugins/amcl/odom_frame_id','string','/robotino_odometry','Odometry Frame ID');
 INSERT INTO "config" VALUES('/plugins/amcl/base_frame_id','string','/base_link','Base Frame ID');
 INSERT INTO "config" VALUES('/plugins/amcl/global_frame_id','string','/map','Global Frame ID');
@@ -335,4 +326,11 @@ INSERT INTO "config" VALUES('/hardware/robotino/omnivision/colormap_file','strin
 INSERT INTO "config" VALUES('/hardware/robotino/omnivision/frame','string','/base_link','Used Coordinate System');
 INSERT INTO "config" VALUES('/hardware/robotino/omnivision/mirror_file','string','/bulb-colormap/masle.bulb','Location of the bulb in relation to cfg directory');
 INSERT INTO "config" VALUES('/hardware/robotino/omnivision/puck_radius','float','0.075','Radius of the Puck in m');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/cluster_min_size','unsigned int',2,'minimum number of laser points a cluster must consist of');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_min_length','float',0.1,'minimum of laser distance to be considered');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_max_length','float',1.0,'maximum of laser distance to be considered');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_scanrange','unsigned int',100,'number of laserscans considered, centered in front of the laser scanner');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/dist_threshold','float',0.05,'allowed difference in distance compared to first laser point in cluster');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/valid_cluster_radius','float',0.02,'cluster is regarded as valid iff no point is more than radius away from center');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_interface','string','Laser urg','interface to read laser data from');
 COMMIT;
