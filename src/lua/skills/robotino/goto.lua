@@ -27,6 +27,7 @@ name               = "goto"
 fsm                = SkillHSM:new{name=name, start="DO_RELGOTO"}
 depends_skills     = { "relgoto" }
 depends_interfaces = {
+	{v = "pose", type="Position3DInterface", id="Pose"}
 }
 
 documentation      = [==[Move to a known (named) location.
@@ -75,14 +76,27 @@ machine_pos = {
 	Delivery1 = D1, Delivery2 = D2, Delivery3 = D3
 }
 
+local MAX_TRANSERR = 0.05
+local MAX_ROTERR = 0.1
+
 --Input_Store = {x=0,y=0,ori=0}
 
 -- Initialize as skill module
 skillenv.skill_module(...)
 
 
+function target_missed()
+	if (math.abs(fsm.vars.goto_x - pose:translation(0)) > MAX_TRANSERR)
+		or (math.abs(fsm.vars.goto_y - pose:translation(1)) > MAX_TRANSERR)
+		or (math.abs(fsm.vars.goto_ori - 2*math.acos(pose:rotation(3))) > MAX_ROTERR) then
+		return true
+	end
+	return false
+end
+
 fsm:add_transitions{
-	{"DO_RELGOTO", "FINAL", skill=relgoto, fail_to="FAILED"}
+	{"DO_RELGOTO", "FINAL", skill=relgoto, fail_to="FAILED"},
+	{"DO_RELGOTO", "FAILED", cond=target_missed}
 }
 
 
@@ -94,9 +108,9 @@ function DO_RELGOTO:init()
 		y = machine_pos[name].y
 		ori = machine_pos[name].ori
 	else
-		x = self.fsm.vars.goto_x
-		y = self.fsm.vars.goto_y
-		ori = self.fsm.vars.goto_ori
+		x = self.fsm.vars.goto_x or pose:translation(0)
+		y = self.fsm.vars.goto_y or pose:translation(1)
+		ori = self.fsm.vars.goto_ori or 2*math.acos(pose:translation(3))
 	end
 
 	local global_t = fawkes.tf.Vector3:new(x, y, 0)
@@ -120,8 +134,5 @@ function DO_RELGOTO:init()
 		rel_ori = 2*math.acos(rel_r:w())
 	}
 end
-
-
-
 
 
