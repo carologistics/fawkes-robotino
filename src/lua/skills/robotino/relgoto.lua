@@ -44,10 +44,9 @@ function cannot_navigate()
 end
 
 function target_reached()
-	return navigator:is_final()
-end
-
-function target_not_reached()
+	if navigator:msgid() == fsm.vars.goto_msgid then
+		return navigator:is_final()
+	end
 	return false
 end
 
@@ -55,8 +54,13 @@ fsm:add_transitions{
 	{ "CHECK_INPUT", "FAILED", cond=cannot_navigate },
 	{ "CHECK_INPUT", "MOVING", cond=can_navigate },
 	{ "MOVING", "FINAL", cond=target_reached },
-	{ "MOVING", "FAILED", cond=target_not_reached }
 }
+
+function CHECK_INPUT:init()
+		self.fsm.vars.rel_ori = self.fsm.vars.rel_ori or 0
+		self.fsm.vars.rel_x = self.fsm.vars.rel_x or 0
+		self.fsm.vars.rel_y = self.fsm.vars.rel_y or 0
+end
 
 function MOVING:init()
 	send_navmsg(self.fsm.vars.rel_x, self.fsm.vars.rel_y, self.fsm.vars.rel_ori)
@@ -64,7 +68,7 @@ end
 
 function send_navmsg(x, y, ori)
 	local msg = navigator.CartesianGotoMessage:new(x, y, ori)
-	navigator:msgq_enqueue_copy(msg)
+	fsm.vars.goto_msgid = navigator:msgq_enqueue_copy(msg)
 end
 
 
