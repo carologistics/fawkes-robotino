@@ -88,7 +88,7 @@ function target_reached()
 	if math.abs(dist_y) < 0.03 then
 		fsm.vars.motor_vy = 0
 	end
-	if math.abs(dist_ori) < 0.07 then
+	if math.abs(dist_ori) < 0.03 then
 		fsm.vars.motor_omega = 0
 	end
 	printf("x: " .. dist_x .. "\t" .. fsm.vars.motor_vx)
