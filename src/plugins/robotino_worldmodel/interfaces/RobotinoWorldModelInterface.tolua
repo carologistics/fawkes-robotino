@@ -1,0 +1,70 @@
+$#include <interfaces/RobotinoWorldModelInterface.h>
+$using namespace fawkes;
+namespace fawkes {
+class RobotinoWorldModelInterface : public Interface
+{
+
+  typedef enum {
+    EXPRESS_MACHINE,
+    M1,
+    M2,
+    M3,
+    M1_2,
+    M2_3,
+    UNKNOWN,
+    RECYCLING,
+    TEST
+  } machine_name_t;
+
+  typedef enum {
+    S0_ONLY,
+    S1_ONLY,
+    S2_ONLY,
+    P,
+    S1_S2
+  } machine_state_t;
+
+  machine_name_t machine_names(int index);
+  void set_machine_names(unsigned int index, const machine_name_t new_machine_names);
+  int maxlenof_machine_names() const;
+  machine_state_t machine_states(int index);
+  void set_machine_states(unsigned int index, const machine_state_t new_machine_states);
+  int maxlenof_machine_states() const;
+  char * express_machine();
+  void set_express_machine(const char * new_express_machine);
+  int maxlenof_express_machine() const;
+  bool                    oftype(const char *interface_type) const;
+  const void *            datachunk() const;
+  unsigned int            datasize() const;
+  const char *            type() const;
+  const char *            id() const;
+  const char *            uid() const;
+  unsigned int            serial() const;
+  unsigned int            mem_serial() const;
+  bool                    operator== (Interface &comp) const;
+  const unsigned char *   hash() const;
+  int                     hash_size() const;
+  const char *            hash_printable() const;
+  bool                    is_writer() const;
+  void                    set_from_chunk(void *chunk);
+  virtual Message *   create_message(const char *type) const = 0;
+  void          read();
+  void          write();
+  bool          has_writer() const;
+  unsigned int  num_readers() const;
+  unsigned int  msgq_enqueue_copy(Message *message);
+  void          msgq_remove(Message *message);
+  void          msgq_remove(unsigned int message_id);
+  unsigned int  msgq_size();
+  void          msgq_flush();
+  void          msgq_lock();
+  bool          msgq_try_lock();
+  void          msgq_unlock();
+  void          msgq_pop();
+  Message *     msgq_first();
+  bool          msgq_empty();
+
+
+};
+
+}

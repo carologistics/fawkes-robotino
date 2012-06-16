@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="RobotinoWorldModelInterface" author="Daniel Ewert"
+	year="2012">
+	<constants>
+		<enum name="machine_name_t">
+			<comment>
+				Enumeration for the type of a machine
+			</comment>
+			<item name="EXPRESS_MACHINE">Express Machine</item>
+			<item name="M1">M1</item>
+			<item name="M2">M1</item>
+			<item name="M3">M1</item>
+			<item name="M1_2">M1 or M2</item>
+			<item name="M2_3">M2 or M3</item>
+			<item name="UNKNOWN">Unknown machine type</item>
+			<item name="RECYCLING">Recycling machine</item>
+			<item name="TEST">Test machine</item>
+		</enum>
+
+		<enum name="machine_state_t">
+			<comment>
+				States describe which pucks are currently located at the
+				machine and the
+				state of the machine itsself.
+			</comment>
+			<item name="S0_ONLY">S0 at machine</item>
+			<item name="S1_ONLY">S1 at machine</item>
+			<item name="S2_ONLY">S2 at machine</item>
+			<item name="P">P at machine</item>
+			<item name="S1_S2">S1 and S2 at machine</item>
+		</enum>
+	</constants>
+	<data>
+		<comment>Complete world model for the Logistics Competition</comment>
+		<field type="machine_name_t" name="machine_names" length="13">Names
+			of the machines on the field</field>
+		<field type="machine_state_t" name="machine_states" length="13">States
+			of all machines on the field</field>
+		<field type="string" name="express_machine">Name of the machine reserved for the
+			express route</field>
+	</data>
+</interface>
