@@ -51,6 +51,8 @@
 			<item name="S2_ONLY">S2 at machine</item>
 			<item name="P">P at machine</item>
 			<item name="S1_S2">S1 and S2 at machine</item>
+			<item name="S0_S1">S0 and S1 at machine</item>
+			<item name="S0_S2">S0 and S2 at machine</item>
 		</enum>
 	</constants>
 	<data>

@@ -181,8 +181,8 @@ void RobotinoWorldModelThread::wipe_worldmodel(
 {
 	for (unsigned int i = 0; i < wm_if->maxlenof_machine_states(); ++i)
 	{
-		wm_if->set_machine_states(i, RobotinoWorldModelInterface::UNKNOWN);
-		wm_if->set_machine_types(i, RobotinoWorldModelInterface::UNKNOWN_TYPE);
+		wm_if->set_machine_states(i, RobotinoWorldModelInterface::STATE_UNKNOWN);
+		wm_if->set_machine_types(i, RobotinoWorldModelInterface::TYPE_UNKNOWN);
 
 	}
 }

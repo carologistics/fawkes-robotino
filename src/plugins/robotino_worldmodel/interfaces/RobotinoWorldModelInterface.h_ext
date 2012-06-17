@@ -55,7 +55,7 @@ class RobotinoWorldModelInterface : public Interface
 				Enumeration for the type of a machine
 			 */
   typedef enum {
-    UNKNOWN_TYPE /**< Unknown machine type */,
+    TYPE_UNKNOWN /**< Unknown machine type */,
     EXPRESS_MACHINE /**< Express Machine */,
     M1 /**< M1 */,
     M2 /**< M1 */,
@@ -73,7 +73,7 @@ class RobotinoWorldModelInterface : public Interface
 				state of the machine itsself.
 			 */
   typedef enum {
-    UNKNOWN /**< Unknown state */,
+    STATE_UNKNOWN /**< Unknown state */,
     EMPTY /**< Empty machine */,
     CONSUMED_1 /**< Machine with one consumed puck */,
     CONSUMED_2 /**< Machine with two consumed pucks */,
@@ -81,7 +81,9 @@ class RobotinoWorldModelInterface : public Interface
     S1_ONLY /**< S1 at machine */,
     S2_ONLY /**< S2 at machine */,
     P /**< P at machine */,
-    S1_S2 /**< S1 and S2 at machine */
+    S1_S2 /**< S1 and S2 at machine */,
+    S0_S1 /**< S0 and S1 at machine */,
+    S0_S2 /**< S0 and S2 at machine */
   } machine_state_t;
   const char * tostring_machine_state_t(machine_state_t value) const;
 
