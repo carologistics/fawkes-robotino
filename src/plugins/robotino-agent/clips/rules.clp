@@ -40,30 +40,30 @@
   (state IDLE)
   (holding S0)
   (machine (mtype M3) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S0 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s0-m12-s1
   (state IDLE)
   (holding S0)
   (machine (mtype M1_2) (loaded-with $?l&:(subsetp (create$ S1) ?l)) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S0 2 -- Need to go to M1_2 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s0-m23-s1
   (state IDLE)
   (holding S0)
   (machine (mtype M2_3) (loaded-with $?l&:(subsetp (create$ S1) ?l)) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S0 3 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 
@@ -72,20 +72,20 @@
   (state IDLE)
   (holding S0)
   (machine (mtype M2) (loaded-with $?l&:(subsetp (create$ S1) ?l)) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S0 4 -- Need to go to M2 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s0-m1
   (state IDLE)
   (holding S0)
   (machine (mtype M1) (egc NO) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S0 5 -- Need to go to M1 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s0-m-random
@@ -93,10 +93,10 @@
   (holding S0)
   (machine (mtype UNKNOWN) (name ?name))
   (not (machine (mtype M1)))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S0 6 -- Need to go to M? named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 
@@ -104,60 +104,60 @@
   (state IDLE)
   (holding S1)
   (machine (mtype M3) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S1 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s1-m23-s0
   (state IDLE)
   (holding S1)
   (machine (mtype M2_3) (loaded-with $?l&:(subsetp (create$ S0) ?l)) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S1 2 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s1-m2-not-s1
   (state IDLE)
   (holding S1)
   (machine (mtype M2) (name ?name) (loaded-with $?l&~:(subsetp (create$ S1) ?l)))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S1 3 -- Need to go to M2 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s1-m-random
   (state IDLE)
   (holding S1)
   (machine (mtype UNKNOWN) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S1 4 -- Need to go to M? named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s2-m3
   (state IDLE)
   (holding S2)
   (machine (mtype M3) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S2 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule s2-m23
   (state IDLE)
   (holding S2)
   (machine (mtype M2_3) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S2 2 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 
@@ -165,19 +165,19 @@
   (state IDLE)
   (holding S2)
   (machine (mtype UNKNOWN) (name ?name))
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
   =>
   (if (debug 1) then (printout t "S2 3 -- Need to go to M? named " ?name crlf))
-  (modify ?g (nodes (append$ ?nodes ?name)))
+  (modify ?g (machines (append$ ?machines ?name)))
 )
 
 (defrule deliver-p
   (state IDLE)
   (holding P)
-  ?g <- (goto (nodes $?nodes&~:(subsetp (create$ "deliver") ?nodes)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ "deliver") ?machines)))
   =>
   (if (debug 1) then (printout t "P -- Need to deliver P " crlf))
-  (modify ?g (nodes "deliver"))
+  (modify ?g (machines "deliver"))
 )
 
 ; --- RULES for skill execution
@@ -197,12 +197,12 @@
   (declare (salience ?*PRIORITY_SKILL*))
   ; put first here to not match empty clause
   ?s <- (state IDLE)
-  ?g <- (goto (nodes ?first $?nodes))
+  ?g <- (goto (machines ?first $?machines))
   (holding ?h)
   =>
-  (if (debug 1) then (printout t "Calling goto for " ?first ?nodes crlf))
+  (if (debug 1) then (printout t "Calling goto for " ?first ?machines crlf))
   (goto-machine ?first ?h)
-  (modify ?g (nodes))
+  (modify ?g (machines))
   (retract ?s)
   (assert (state GOTO))
   (assert (goto-holding ?h))
@@ -211,13 +211,13 @@
 
 (defrule skill-goto-final
   ?s  <- (state GOTO-FINAL)
-  ?gt <- (goto-target ?node)
+  ?gt <- (goto-target ?machine)
   ?gh <- (goto-holding ?was-holding)
-  (machine (name ?node))
+  (machine (name ?machine))
   (holding ?now-holding)
   =>
   (retract ?s ?gt ?gh)
-  (assert (wm-eval (machine ?node)
+  (assert (wm-eval (machine ?machine)
                    (was-holding ?was-holding) (now-holding ?now-holding)))
   (assert (state IDLE))
 )

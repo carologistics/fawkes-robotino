@@ -51,12 +51,13 @@
   ?l <- (s0-left ?n&:(<= ?n 0))
   =>
   (if (debug 1) then (printout t "NO MORE S0 AVAILABLE" crlf))
+  (facts)
 )
 
 
 (defrule goto-succeeds-s0
   ?s  <- (state GOTO)
-  ?gf <- (goto-final)
+  ?gf <- (goto-final ?now-holding)
   ?h  <- (holding S0)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk)) 
@@ -92,7 +93,7 @@
 (defrule goto-succeeds-s1
   ?s  <- (state GOTO)
   ?h  <- (holding S1)
-  ?gf <- (goto-final)
+  ?gf <- (goto-final ?now-holding)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt)
                       (loaded-with $?loaded) (junk ?junk)) 
@@ -127,7 +128,7 @@
 (defrule goto-succeeds-s2
   ?s  <- (state GOTO)
   ?h  <- (holding S2)
-  ?gf <- (goto-final)
+  ?gf <- (goto-final ?now-holding)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk))
   =>
@@ -156,7 +157,7 @@
 (defrule goto-succeeds-p
   ?s  <- (state GOTO)
   ?h  <- (holding P)
-  ?gf <- (goto-final)
+  ?gf <- (goto-final ?now-holding)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype DELIVER) (delivered ?delivered)) 
   =>

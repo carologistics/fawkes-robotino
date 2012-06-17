@@ -8,7 +8,7 @@
 ;---------------------------------------------------------------------------
 
 (deftemplate goto
-  (multislot nodes (type STRING))
+  (multislot machines (type STRING))
 )
 
 (deftemplate machine
@@ -38,28 +38,7 @@
   (machine (name "m3"))
   (machine (name "m2"))
   (machine (name "m1"))
-  (goto (nodes))
+  (goto (machines))
   (state WAIT_START)
   (holding NONE)
 )
-
-
-; (defrule reset-goto
-;   ?r <- (reset-goto)
-;   (not (goto (nodes)))
-;   ?g <- (goto (nodes&(create$)))
-;   =>
-;   (retract ?r)
-;   (modify ?g (nodes))
-; )
-
-; (defrule reset-goto-none
-;   ?r <- (reset-goto)
-;   (goto (nodes))
-;   =>
-;   (retract ?r)
-; )
-
-; (deffunction reset-goto ()
-;   (assert (reset-goto))
-; )
