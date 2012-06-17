@@ -26,7 +26,7 @@ LIBS     += $(VISION_LIBS)
 LIBS_robotino_omnivisionmult_thread = m \
 	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
 	fawkesgeometry fvutils fvcams fvmodels fvclassifiers fvfilters \
-	Position3DInterface
+	Position3DInterface SwitchInterface
 OBJS_robotino_omnivisionmult_thread = robotino_omnivision_plugin.o pipeline_thread.o sensor_thread.o
 
 OBJS_all    = $(OBJS_robotino_omnivisionmult_thread)
