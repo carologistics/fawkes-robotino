@@ -111,10 +111,10 @@
   (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
 )
 
-(defrule s1-m2-s0
+(defrule s1-m2-not-s1
   (state IDLE)
   (holding S1)
-  (machine (mtype M2) (name ?name) (loaded-with $?l&:(subsetp (create$ S1) ?l)))
+  (machine (mtype M2) (name ?name) (loaded-with $?l&~:(subsetp (create$ S1) ?l)))
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S1 3 -- Need to go to M2 named " ?name crlf))
@@ -141,7 +141,7 @@
   (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
 )
 
-(defrule s2-m3
+(defrule s2-m23
   (state IDLE)
   (holding S2)
   (machine (mtype M2_3) (name ?name))

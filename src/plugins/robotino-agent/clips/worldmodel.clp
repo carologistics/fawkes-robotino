@@ -209,6 +209,17 @@
           (productions (+ ?productions 1)))
 )
 
+; A production of an M2 or M3 has been finished, set loaded-with to
+; the empty set and increase junk cound accordingly
+(defrule wm-delivered
+  (declare (salience ?*PRIORITY_WM_DEF*))
+  ?w <- (wm-eval (machine ?name) (was-holding P) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype DELIVER) (productions ?productions))
+  =>
+  (retract ?w)
+  (modify ?m (productions (+ ?productions 1)))
+)
+
 
 (defrule wm-cleanup-wm-eval
   (declare (salience ?*PRIORITY_CLEANUP*))

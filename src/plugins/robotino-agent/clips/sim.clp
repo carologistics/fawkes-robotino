@@ -12,6 +12,7 @@
   (slot mtype (type SYMBOL) (allowed-values M1 M2 M3 DELIVER))
   (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
   (slot junk (type INTEGER) (default 0))
+  (slot delivered (type INTEGER) (default 0))
 )
 
 (deffacts simulation
@@ -26,7 +27,7 @@
   (sim-machine (name "m9")  (mtype M3))
   (sim-machine (name "m10") (mtype M3))
   (sim-machine (name "deliver") (mtype DELIVER))
-  (s0-left 4)
+  (s0-left 20)
 )
 
 
@@ -152,10 +153,11 @@
   ?s  <- (state GOTO)
   ?h  <- (holding P)
   (goto-target ?node)
-  ?m  <- (sim-machine (name ?node) (mtype DELIVER)) 
+  ?m  <- (sim-machine (name ?node) (mtype DELIVER) (delivered ?delivered)) 
   =>
   (if (debug 1) then (printout t "***** DELIVERED a P! *****" crlf))
   (retract ?s ?h)
+  (modify ?m (delivered (+ ?delivered 1)))
   (assert (holding NONE))
   (assert (state GOTO-FINAL))
 )
