@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  leave_area_with_puck.lua
+--  leave_area.lua - generic global goto
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
@@ -24,25 +24,39 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "leave_area"
-fsm                = SkillHSM:new{name=name, start="DRIVE_BACKWARDS", debug=true}
-depends_skills     = {"motor_move"}
-depends_interfaces = {
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+depends_skills     = {"relgoto"}
+depends_interfaces = nil
 
-}
 
-documentation      = [==[Leaves area by driving backwards]==]
+documentation      = [==[
+leaves area without puck
+
+
+]==]
+-- Constants
+
 
 -- Initialize as skill module
 skillenv.skill_module(...)
 
+--functions
+
+
+
 
 fsm:add_transitions{
 	closure={motor=motor},
-	{"DRIVE_BACKWARDS", "FINAL", skill=motor_move, fail_to="FAILED"},
+   	{"INIT","LEAVES_AREA",cond = true},
+	{"LEAVE_AREA","FINAL",skill = relgoto , fail_to = "FAILED"}
+
 }
 
-function DRIVE_BACKWARDS:init()
-	self.args = {x=-0.3,y=0,ori=0}
+function LEAVE_AREA:init()
+
+self.args = {rel_x = -0.2}
+
 end
+
 
 
