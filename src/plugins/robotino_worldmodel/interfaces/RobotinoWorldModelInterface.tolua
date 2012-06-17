@@ -18,19 +18,22 @@ class RobotinoWorldModelInterface : public Interface
   static const unsigned int r2;
 
   typedef enum {
+    UNKNOWN_TYPE,
     EXPRESS_MACHINE,
     M1,
     M2,
     M3,
     M1_2,
     M2_3,
-    UNKNOWN,
     RECYCLING,
     TEST
   } machine_type_t;
 
   typedef enum {
+    UNKNOWN,
     EMPTY,
+    CONSUMED_1,
+    CONSUMED_2,
     S0_ONLY,
     S1_ONLY,
     S2_ONLY,

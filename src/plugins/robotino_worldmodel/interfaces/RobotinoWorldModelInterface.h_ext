@@ -55,13 +55,13 @@ class RobotinoWorldModelInterface : public Interface
 				Enumeration for the type of a machine
 			 */
   typedef enum {
+    UNKNOWN_TYPE /**< Unknown machine type */,
     EXPRESS_MACHINE /**< Express Machine */,
     M1 /**< M1 */,
     M2 /**< M1 */,
     M3 /**< M1 */,
     M1_2 /**< M1 or M2 */,
     M2_3 /**< M2 or M3 */,
-    UNKNOWN /**< Unknown machine type */,
     RECYCLING /**< Recycling machine */,
     TEST /**< Test machine */
   } machine_type_t;
@@ -73,7 +73,10 @@ class RobotinoWorldModelInterface : public Interface
 				state of the machine itsself.
 			 */
   typedef enum {
+    UNKNOWN /**< Unknown state */,
     EMPTY /**< Empty machine */,
+    CONSUMED_1 /**< Machine with one consumed puck */,
+    CONSUMED_2 /**< Machine with two consumed pucks */,
     S0_ONLY /**< S0 at machine */,
     S1_ONLY /**< S1 at machine */,
     S2_ONLY /**< S2 at machine */,

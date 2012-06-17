@@ -9,12 +9,14 @@
 #define WMSTATE_H_
 
 #include <interfaces/RobotinoWorldModelInterface.h>
+#include <logging/logger.h>
 #include <map>
 
 class WmState
 {
 public:
 	WmState();
+	void set_logger(fawkes::Logger* logger);
 	virtual ~WmState();
 
 	void update_worldmodel(fawkes::RobotinoWorldModelInterface* wm_if);
@@ -24,9 +26,10 @@ public:
 			fawkes::RobotinoWorldModelInterface *wm_if);
 
 private:
-	fawkes::RobotinoWorldModelInterface::machine_state_t* machine_states_;
-	fawkes::RobotinoWorldModelInterface::machine_type_t* machine_types_;
+	fawkes::RobotinoWorldModelInterface::machine_state_t machine_states_[13];
+	fawkes::RobotinoWorldModelInterface::machine_type_t machine_types_[13];
 	u_int32_t express_machine;
+	fawkes::Logger* logger_;
 
 };
 

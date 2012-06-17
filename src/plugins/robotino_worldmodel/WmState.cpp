@@ -12,6 +12,7 @@ using namespace fawkes;
 
 WmState::WmState()
 {
+
 }
 
 WmState::~WmState()
@@ -19,17 +20,24 @@ WmState::~WmState()
 	// TODO Auto-generated destructor stub
 }
 
+void WmState::set_logger(fawkes::Logger* logger)
+{
+	logger_ = logger;
+}
+
 /**
  * Copies the values of the given interface.
  */
 void WmState::update_worldmodel(RobotinoWorldModelInterface* wm_if)
 {
-	std::copy(wm_if->machine_states(),
-			wm_if->machine_states() + wm_if->maxlenof_machine_states(),
-			machine_states_);
-	std::copy(wm_if->machine_types(),
-			wm_if->machine_types() + wm_if->maxlenof_machine_types(),
-			machine_types_);
+	for (unsigned int i = 0; i < wm_if->maxlenof_machine_states(); ++i)
+	{
+		machine_states_[i] = wm_if->machine_states(i);
+	}
+	for (unsigned int i = 0; i < wm_if->maxlenof_machine_types(); ++i)
+	{
+		machine_types_[i] = wm_if->machine_types(i);
+	}
 	express_machine = wm_if->express_machine();
 
 }
@@ -44,7 +52,12 @@ std::map<uint32_t, RobotinoWorldModelInterface::machine_state_t> WmState::get_ch
 	for (uint32_t i = 0; i < wm_if->maxlenof_machine_states(); ++i)
 	{
 		if (wm_if->machine_states(i) != machine_states_[i])
+		{
+			logger_->log_debug("WmState", "State of %i changed from %i to %i",
+					i, machine_states_[i], wm_if->machine_states(i));
 			changes[i] = wm_if->machine_states(i);
+
+		}
 	}
 	return changes;
 }
@@ -59,7 +72,12 @@ std::map<uint32_t, RobotinoWorldModelInterface::machine_type_t> WmState::get_cha
 	for (uint32_t i = 0; i < wm_if->maxlenof_machine_types(); ++i)
 	{
 		if (wm_if->machine_types(i) != machine_types_[i])
+		{
 			changes[i] = wm_if->machine_types(i);
+			logger_->log_debug("WmState", "Type of %i changed from %i to %i", i,
+					machine_types_[i], wm_if->machine_types(i));
+		}
 	}
+
 	return changes;
 }

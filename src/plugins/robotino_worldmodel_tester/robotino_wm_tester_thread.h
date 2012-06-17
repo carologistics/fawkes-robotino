@@ -27,24 +27,24 @@
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/clock.h>
 
 #include <string>
 #include <map>
 #include <vector>
 #include <interfaces/RobotinoWorldModelInterface.h>
 
-#include "WmState.h"
-
-class RobotinoWorldModelThread:
+class RobotinoWMTesterThread:
 		public fawkes::Thread,
 		public fawkes::BlockedTimingAspect,
 		public fawkes::LoggingAspect,
 		public fawkes::ConfigurableAspect,
-		public fawkes::BlackBoardAspect
+		public fawkes::BlackBoardAspect,
+		public fawkes::ClockAspect
 {
 
 public:
-	RobotinoWorldModelThread();
+	RobotinoWMTesterThread();
 
 	virtual void init();
 	virtual void loop();
@@ -59,27 +59,16 @@ protected:
 	}
 
 private:
-	void publish_changes();
-	void write_state_changes(fawkes::RobotinoWorldModelInterface* wm_if,
-			std::map<uint32_t,
-					fawkes::RobotinoWorldModelInterface::machine_state_t> changed_machine_states);
-	void write_type_changes(fawkes::RobotinoWorldModelInterface* wm_if,
-			std::map<uint32_t,
-					fawkes::RobotinoWorldModelInterface::machine_type_t> changed_machine_types);
-	void merge_worldmodels(fawkes::RobotinoWorldModelInterface* wm_sink_if,
-			fawkes::RobotinoWorldModelInterface* wm_source_if);
-	void wipe_worldmodel(fawkes::RobotinoWorldModelInterface* wm_if);
+	void apply_random_change();
 
 private:
 	fawkes::RobotinoWorldModelInterface* wm_if_;
 	fawkes::RobotinoWorldModelInterface* wm_ext1_if_;
 	fawkes::RobotinoWorldModelInterface* wm_ext2_if_;
-	fawkes::RobotinoWorldModelInterface* wm_merged_if_;
-	fawkes::RobotinoWorldModelInterface* wm_changed_if_;
 
-	WmState wm_if_data_;
-	WmState wm_ext1_if_data_;
-	WmState wm_ext2_if_data_;
+	fawkes::Time time_;
+	int state_;
+	int type_;
 };
 
 #endif

@@ -25,13 +25,13 @@
 			<comment>
 				Enumeration for the type of a machine
 			</comment>
+			<item name="TYPE_UNKNOWN">Unknown machine type</item>
 			<item name="EXPRESS_MACHINE">Express Machine</item>
 			<item name="M1">M1</item>
 			<item name="M2">M1</item>
 			<item name="M3">M1</item>
 			<item name="M1_2">M1 or M2</item>
 			<item name="M2_3">M2 or M3</item>
-			<item name="UNKNOWN">Unknown machine type</item>
 			<item name="RECYCLING">Recycling machine</item>
 			<item name="TEST">Test machine</item>
 		</enum>
@@ -42,6 +42,7 @@
 				machine and the
 				state of the machine itsself.
 			</comment>
+			<item name="STATE_UNKNOWN">Unknown state</item>
 			<item name="EMPTY">Empty machine</item>
 			<item name="CONSUMED_1">Machine with one consumed puck</item>
 			<item name="CONSUMED_2">Machine with two consumed pucks</item>

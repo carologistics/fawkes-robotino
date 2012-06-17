@@ -79,7 +79,7 @@ RobotinoWorldModelInterface::RobotinoWorldModelInterface() : Interface()
   add_fieldinfo(IFT_ENUM, "machine_types", 13, &data->machine_types, "machine_type_t");
   add_fieldinfo(IFT_ENUM, "machine_states", 13, &data->machine_states, "machine_state_t");
   add_fieldinfo(IFT_UINT32, "express_machine", 1, &data->express_machine);
-  unsigned char tmp_hash[] = {0xe5, 0x4d, 0x41, 0xe2, 0x3c, 0xe1, 0x3a, 0x4f, 0x27, 0x90, 0x97, 0xbe, 0x5, 0xa, 0xc, 0x13};
+  unsigned char tmp_hash[] = {0x5c, 0x3e, 0x54, 0x83, 0x89, 0x43, 0xd5, 0xe6, 0xeb, 0x76, 0x29, 0xb1, 0x39, 0x24, 0x6d, 0xcc};
   set_hash(tmp_hash);
 }
 
@@ -96,13 +96,13 @@ const char *
 RobotinoWorldModelInterface::tostring_machine_type_t(machine_type_t value) const
 {
   switch (value) {
+  case UNKNOWN_TYPE: return "UNKNOWN_TYPE";
   case EXPRESS_MACHINE: return "EXPRESS_MACHINE";
   case M1: return "M1";
   case M2: return "M2";
   case M3: return "M3";
   case M1_2: return "M1_2";
   case M2_3: return "M2_3";
-  case UNKNOWN: return "UNKNOWN";
   case RECYCLING: return "RECYCLING";
   case TEST: return "TEST";
   default: return "UNKNOWN";
@@ -116,7 +116,10 @@ const char *
 RobotinoWorldModelInterface::tostring_machine_state_t(machine_state_t value) const
 {
   switch (value) {
+  case UNKNOWN: return "UNKNOWN";
   case EMPTY: return "EMPTY";
+  case CONSUMED_1: return "CONSUMED_1";
+  case CONSUMED_2: return "CONSUMED_2";
   case S0_ONLY: return "S0_ONLY";
   case S1_ONLY: return "S1_ONLY";
   case S2_ONLY: return "S2_ONLY";
