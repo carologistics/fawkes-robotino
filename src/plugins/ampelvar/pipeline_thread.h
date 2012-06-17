@@ -49,7 +49,6 @@ namespace firevision {
 }
 namespace fawkes {
   class SwitchInterface;
-  class Laser360Interface;
   class Position3DInterface;
 }
 
@@ -87,10 +86,9 @@ class RobotinoAmpelVarPipelineThread
   fawkes::SwitchInterface *ampel_orange_if_;
   fawkes::SwitchInterface *ampel_green_if_;
   
-  fawkes::Laser360Interface *laser_if_;
   fawkes::Position3DInterface *laser_pos_if_;
 
-  fawkes::SwitchInterface *check_ampel_if_;
+  fawkes::SwitchInterface *ampel_switch_if_;
 
   fawkes::polar_coord_2d_t pol;
   const fawkes::polar_coord_2d_t * map;
@@ -101,12 +99,10 @@ class RobotinoAmpelVarPipelineThread
   std::string cfg_camera_;
   std::string cfg_mirror_file_;
   std::string cfg_frame_;
-  std::string cfg_laser_;
+
   float cfg_camera_height_;
   bool cfg_debug_buffer_;
 
-  float laserdistances[90];
-  float *distances;
   float d;
   float theta;
 
@@ -117,7 +113,6 @@ class RobotinoAmpelVarPipelineThread
   float distance_red;
   float distance_orange;
   float distance_green;
-  float offset_laser;
 
   unsigned int px_position_red_x;
   unsigned int px_position_orange_x;

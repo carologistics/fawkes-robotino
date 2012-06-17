@@ -34,7 +34,6 @@
 
 #include <fvcams/camera.h>
 #include <interfaces/SwitchInterface.h>
-#include <interfaces/Laser360Interface.h>
 #include <interfaces/Position3DInterface.h>
 
 #include <utils/system/hostinfo.h>
@@ -73,7 +72,6 @@ RobotinoAmpelVarPipelineThread::RobotinoAmpelVarPipelineThread()
   ampel_orange_if_ = NULL;
   ampel_green_if_ = NULL;
 
-  laser_if_ = NULL;
   laser_pos_if_ = NULL;
 
   cspace_to_ = YUV422_PLANAR;
@@ -95,15 +93,13 @@ RobotinoAmpelVarPipelineThread::~RobotinoAmpelVarPipelineThread()
 void
 RobotinoAmpelVarPipelineThread::init()
 {
-  cfg_prefix_        = "/hardware/robotino/omnivision/";
+  cfg_prefix_        = "/plugins/ampelvar/";
   cfg_camera_        = config->get_string((cfg_prefix_ + "camera").c_str());
   cfg_camera_height_ = config->get_float((cfg_prefix_ + "camera_height").c_str());
   cfg_debug_buffer_	 = config->get_bool((cfg_prefix_ + "debug_buffer").c_str());
   cfg_frame_         = config->get_string((cfg_prefix_ + "frame").c_str());
   cfg_mirror_file_   = std::string(CONFDIR) + "/" +
     config->get_string((cfg_prefix_ + "mirror_file").c_str());
-  cfg_laser_		 = "Laser urg";
-		  //config->get_string((cfg_prefix_ + "laser_interface_id").c_str());
 
   // camera
   cam_ = vision_master->register_for_camera( cfg_camera_.c_str(), this );
@@ -117,7 +113,6 @@ RobotinoAmpelVarPipelineThread::init()
 	ampel_green_if_ = blackboard->open_for_writing<SwitchInterface>("ampel_green");
 	ampel_green_if_->write();
 	
-	laser_if_ = blackboard->open_for_reading<Laser360Interface>(cfg_laser_.c_str());
 	laser_pos_if_ = blackboard->open_for_reading<Position3DInterface>("Machine_0");
 	
   } catch (Exception &e) {
@@ -126,6 +121,14 @@ RobotinoAmpelVarPipelineThread::init()
     e.append("Opening ampel interfaces for writing failed");
     throw;
   }
+
+  try {
+	  ampel_switch_if_ = blackboard->open_for_writing<SwitchInterface>("ampelswitch");
+  } catch (Exception &e) {
+	  e.append("Opening ampelswitch interface for writing failed");
+	  throw;
+  }
+
 
   // image properties
   img_width_ = cam_->pixel_width();
@@ -170,9 +173,6 @@ RobotinoAmpelVarPipelineThread::init()
     ampel_orange_if_ = NULL;
     blackboard->close(ampel_green_if_);
     ampel_green_if_ = NULL;
-    
-    blackboard->close(laser_if_);
-    laser_if_ = NULL;
     
     blackboard->close(laser_pos_if_);
     laser_pos_if_ = NULL;
@@ -229,8 +229,10 @@ RobotinoAmpelVarPipelineThread::finalize()
     ampel_green_if_->write();
     blackboard->close(ampel_green_if_);
     
+    ampel_switch_if_->write();
+    blackboard->close(ampel_switch_if_);
+
     blackboard->close(laser_pos_if_);
-    blackboard->close(laser_if_);
 
     delete ROI_colors[0];
     delete ROI_colors[1];
@@ -255,6 +257,26 @@ RobotinoAmpelVarPipelineThread::finalize()
 void
 RobotinoAmpelVarPipelineThread::loop()
 {
+  // check if there is a msg in the msg-queue
+  while ( !ampel_switch_if_->msgq_empty() ) {
+	if (SwitchInterface::DisableSwitchMessage *msg = ampel_switch_if_->msgq_first_safe(msg)) {
+	  logger->log_info( name(),"Switch disable message received" );
+	  ampel_switch_if_->set_enabled(false);
+	}
+	else if (SwitchInterface::EnableSwitchMessage *msg = ampel_switch_if_->msgq_first_safe(msg)) {
+	  logger->log_info( name(),"Switch enable message received" );
+	  ampel_switch_if_->set_enabled(true);
+	}
+	ampel_switch_if_->msgq_pop();
+	ampel_switch_if_->write();
+  }
+
+  if (ampel_switch_if_->is_enabled() == false){
+	usleep(500000);
+	return;
+  }
+
+
   starttime = clock->now();
   laser_pos_if_->read();
 
@@ -549,7 +571,7 @@ RobotinoAmpelVarPipelineThread::loop()
 
   logger->log_info(name(),"Zeit: %f",clock->elapsed(&starttime));
 
-  if(!cfg_debug_buffer){
+  if(!cfg_debug_buffer_){
 	cam_->dispose_buffer();
   }
 

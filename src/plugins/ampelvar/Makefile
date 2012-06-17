@@ -26,7 +26,7 @@ LIBS     += $(VISION_LIBS)
 LIBS_robotino_ampelvar = m \
 	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
 	fawkesgeometry fvutils fvcams fvmodels fvclassifiers \
-	SwitchInterface Laser360Interface Position3DInterface
+	SwitchInterface Position3DInterface
 OBJS_robotino_ampelvar = robotino_ampelvar_plugin.o pipeline_thread.o
 
 OBJS_all    = $(OBJS_robotino_ampelvar)
