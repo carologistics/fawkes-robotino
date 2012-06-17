@@ -1,0 +1,186 @@
+
+;---------------------------------------------------------------------------
+;  worldmodel.clp - Robotino agent -- world model update rules
+;
+;  Created: Sat Jun 16 18:50:53 2012 (Mexico City)
+;  Copyright  2012  Tim Niemueller [www.niemueller.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+; knowledge evaluation request
+(deftemplate wm-eval
+  (slot machine (type STRING))
+  (slot was-holding (type SYMBOL) (allowed-values S0 S1 S2 P NONE))
+  (slot now-holding (type SYMBOL) (allowed-values S0 S1 S2 P NONE))
+)
+
+; Knowledge we can gain if pushing puck to unkown machine
+
+(defrule wm-determine-unk-s0-s1
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding S1))
+  ?m <- (machine (name ?name) (mtype UNKNOWN))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M1) (loaded-with))
+)
+
+(defrule wm-determine-unk-s0-none
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype UNKNOWN) (loaded-with $?loaded))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M2_3) (loaded-with (insert$ ?loaded 1 S0)))
+)
+
+(defrule wm-determine-unk-s1-none
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype UNKNOWN) (loaded-with $?loaded))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M2_3) (loaded-with (insert$ ?loaded 1 S1)))
+)
+
+(defrule wm-determine-unk-s1-s1
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding S1))
+  ?m <- (machine (name ?name) (mtype UNKNOWN))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M1))
+)
+
+(defrule wm-determine-unk-s2-s2
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S2) (now-holding S2))
+  ?m <- (machine (name ?name) (mtype UNKNOWN))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M1_2))
+)
+
+(defrule wm-determine-unk-s2-none
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S2) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype UNKNOWN) (loaded-with $?loaded))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M3) (loaded-with (insert$ ?loaded 1 S2)))
+)
+
+
+; Knowledge we can gain if pushing puck to m1,2 machine
+
+(defrule wm-determine-m12-s0-s1
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding S1))
+  ?m <- (machine (name ?name) (mtype M1_2))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M1) (loaded-with))
+)
+
+(defrule wm-determine-m12-s0-none
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype M1_2) (loaded-with $?loaded))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M2) (loaded-with (insert$ ?loaded 1 S0)))
+)
+
+(defrule wm-determine-m12-s1-s1
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding S1))
+  ?m <- (machine (name ?name) (mtype M1_2))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M1))
+)
+
+(defrule wm-determine-m12-s1-s2
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding S2))
+  ?m <- (machine (name ?name) (mtype M1_2))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M2) (loaded-with))
+)
+
+(defrule wm-determine-m12-s1-none
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype M1_2) (loaded-with $?loaded))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M2) (loaded-with (insert$ ?loaded 1 S1)))
+)
+
+
+; Knowledge we can gain if pushing puck to m2,3 machine
+
+(defrule wm-determine-m23-s0-s2
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding S2))
+  ?m <- (machine (name ?name) (mtype M2_3))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M2) (loaded-with))
+)
+
+(defrule wm-determine-m23-s1-s2
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding S2))
+  ?m <- (machine (name ?name) (mtype M2_3))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M2) (loaded-with))
+)
+
+(defrule wm-determine-m23-s2-none
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S2) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype M2_3) (loaded-with $?loaded))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M3) (loaded-with (insert$ ?loaded 1 S2)))
+)
+
+(defrule wm-determine-m23-s2-s2
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S2) (now-holding S2))
+  ?m <- (machine (name ?name) (mtype M2_3))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M2))
+)
+
+(defrule wm-determine-m23_s1-s0-none
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype M2_3)
+                 (loaded-with $?l&:(subsetp (create$ S1) ?l)))
+  =>
+  (retract ?w)
+  (modify ?m (mtype M3) (loaded-with (insert$ ?l 1 S0)))
+)
+
+(defrule wm-default
+  (declare (salience ?*PRIORITY_WM_DEF*))
+  ?w <- (wm-eval (machine ?name) (was-holding ?p&~NONE) (now-holding NONE))
+  ?m <- (machine (name ?name)
+                 (loaded-with $?l&~:(subsetp (create$ ?p) ?l)))
+  =>
+  (retract ?w)
+  (modify ?m (loaded-with (insert$ ?l 1 ?p)))
+)
+
+
+(defrule wm-cleanup-wm-eval
+  (declare (salience ?*PRIORITY_CLEANUP*))
+  ?w <- (wm-eval)
+  =>
+  (retract ?w)
+)
