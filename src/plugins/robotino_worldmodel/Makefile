@@ -13,7 +13,6 @@
 #   (at your option) any later version.
 #
 #*****************************************************************************
-# JUST REPLACE ALL OCCURENCES OF plugin-template AND REPLACE THEM ACCORDING TO YOUR NEEDS
 #
 #
 
@@ -24,7 +23,7 @@ include $(BUILDCONFDIR)/tf/tf.mk
 LIBS_robotino_worldmodel = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface RobotinoWorldModelInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_robotino_worldmodel = robotino_worldmodel_plugin.o robotino_worldmodel_thread.o
+OBJS_robotino_worldmodel = robotino_worldmodel_plugin.o robotino_worldmodel_thread.o WmState.o
 
 #names of the plugins you want to build
 PLUGINS_all = $(PLUGINDIR)/robotino-worldmodel.$(SOEXT)

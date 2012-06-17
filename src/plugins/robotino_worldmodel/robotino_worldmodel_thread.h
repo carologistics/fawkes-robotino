@@ -1,4 +1,3 @@
-
 /***************************************************************************
  *  robotino_worldmodel_thread.h - empty example
  *
@@ -30,36 +29,53 @@
 #include <aspect/blackboard.h>
 
 #include <string>
+#include <map>
+#include <vector>
+#include <interfaces/RobotinoWorldModelInterface.h>
 
-namespace fawkes {
-  class RobotinoWorldModelInterface;
-}
+#include "WmState.h"
 
-class RobotinoWorldModelThread
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect
+class RobotinoWorldModelThread:
+		public fawkes::Thread,
+		public fawkes::BlockedTimingAspect,
+		public fawkes::LoggingAspect,
+		public fawkes::ConfigurableAspect,
+		public fawkes::BlackBoardAspect
 {
 
- public:
-  RobotinoWorldModelThread();
+public:
+	RobotinoWorldModelThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual bool prepare_finalize_user();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual bool prepare_finalize_user();
+	virtual void finalize();
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+	virtual void run()
+	{
+		Thread::run();
+	}
 
- private:
+private:
+	void publish_changes();
+	void write_state_changes(
+			std::map<uint32_t,
+					fawkes::RobotinoWorldModelInterface::machine_state_t> changed_machine_states);
+	void write_type_changes(
+			std::map<uint32_t,
+					fawkes::RobotinoWorldModelInterface::machine_type_t> changed_machine_types);
 
+private:
+	fawkes::RobotinoWorldModelInterface* wm_if_;
+	fawkes::RobotinoWorldModelInterface* wm_ext1_if_;
+	fawkes::RobotinoWorldModelInterface* wm_ext2_if_;
+	fawkes::RobotinoWorldModelInterface* wm_merged_if_;
 
- private:
-  fawkes::RobotinoWorldModelInterface* wm_if_;
+	WmState wm_if_data_;
+	WmState wm_ext1_if_data_;
+	WmState wm_ext2_if_data_;
 };
-
 
 #endif
