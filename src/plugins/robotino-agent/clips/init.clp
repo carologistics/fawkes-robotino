@@ -24,6 +24,7 @@
 (watch rules)
 
 (load* (resolve-file priorities.clp))
+(load* (resolve-file utils.clp))
 (load* (resolve-file time.clp))
 (load* (resolve-file facts.clp))
 (load* (resolve-file worldmodel.clp))

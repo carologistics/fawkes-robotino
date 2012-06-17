@@ -34,7 +34,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S0 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s0-m12-s1
@@ -44,7 +44,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S0 2 -- Need to go to M1_2 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s0-m23-s1
@@ -54,7 +54,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S0 3 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 
@@ -66,7 +66,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S0 4 -- Need to go to M2 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s0-m1
@@ -76,7 +76,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S0 5 -- Need to go to M1 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s0-m-random
@@ -87,7 +87,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S0 6 -- Need to go to M? named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 
@@ -98,7 +98,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S1 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s1-m23-s0
@@ -108,7 +108,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S1 2 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s1-m2-not-s1
@@ -118,7 +118,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S1 3 -- Need to go to M2 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s1-m-random
@@ -128,7 +128,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S1 4 -- Need to go to M? named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s2-m3
@@ -138,7 +138,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S2 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule s2-m23
@@ -148,7 +148,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S2 2 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 
@@ -159,7 +159,7 @@
   ?g <- (goto (nodes $?nodes&~:(subsetp (create$ ?name) ?nodes)))
   =>
   (if (debug 1) then (printout t "S2 3 -- Need to go to M? named " ?name crlf))
-  (modify ?g (nodes (insert$ ?nodes (+ (length$ ?nodes) 1) ?name)))
+  (modify ?g (nodes (append$ ?nodes ?name)))
 )
 
 (defrule deliver-p
