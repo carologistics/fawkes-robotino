@@ -17,4 +17,12 @@
   ?*PRIORITY_SKILL*   = -150
   ?*PRIORITY_CLEANUP* = -400
   ?*PRIORITY_LAST*    = -500
+
+  ?*GOTOPRIO_DELIVER* = 50
+  ?*GOTOPRIO_M3*      = 40
+  ?*GOTOPRIO_M1_2*    = 35
+  ?*GOTOPRIO_M2_3*    = 30
+  ?*GOTOPRIO_M2*      = 20
+  ?*GOTOPRIO_M1*      = 10
+  ?*GOTOPRIO_UNK*     =  0
 )

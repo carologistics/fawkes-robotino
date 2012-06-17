@@ -40,30 +40,33 @@
   (state IDLE)
   (holding S0)
   (machine (mtype M3) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M3*)))
   =>
   (if (debug 1) then (printout t "S0 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M3*))
 )
 
 (defrule s0-m12-s1
   (state IDLE)
   (holding S0)
   (machine (mtype M1_2) (loaded-with $?l&:(subsetp (create$ S1) ?l)) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M1_2*)))
   =>
   (if (debug 1) then (printout t "S0 2 -- Need to go to M1_2 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M1_2*))
 )
 
 (defrule s0-m23-s1
   (state IDLE)
   (holding S0)
   (machine (mtype M2_3) (loaded-with $?l&:(subsetp (create$ S1) ?l)) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M2_3*)))
   =>
   (if (debug 1) then (printout t "S0 3 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M2_3*))
 )
 
 
@@ -72,20 +75,22 @@
   (state IDLE)
   (holding S0)
   (machine (mtype M2) (loaded-with $?l&:(subsetp (create$ S1) ?l)) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M2*)))
   =>
   (if (debug 1) then (printout t "S0 4 -- Need to go to M2 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M2*))
 )
 
 (defrule s0-m1
   (state IDLE)
   (holding S0)
   (machine (mtype M1) (egc NO) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M1*)))
   =>
   (if (debug 1) then (printout t "S0 5 -- Need to go to M1 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M1*))
 )
 
 (defrule s0-m-random
@@ -93,10 +98,11 @@
   (holding S0)
   (machine (mtype UNKNOWN) (name ?name))
   (not (machine (mtype M1)))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_UNK*)))
   =>
   (if (debug 1) then (printout t "S0 6 -- Need to go to M? named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_UNK*))
 )
 
 
@@ -104,60 +110,66 @@
   (state IDLE)
   (holding S1)
   (machine (mtype M3) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M3*)))
   =>
   (if (debug 1) then (printout t "S1 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M3*))
 )
 
 (defrule s1-m23-s0
   (state IDLE)
   (holding S1)
   (machine (mtype M2_3) (loaded-with $?l&:(subsetp (create$ S0) ?l)) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M2_3*)))
   =>
   (if (debug 1) then (printout t "S1 2 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M2_3*))
 )
 
 (defrule s1-m2-not-s1
   (state IDLE)
   (holding S1)
   (machine (mtype M2) (name ?name) (loaded-with $?l&~:(subsetp (create$ S1) ?l)))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M2*)))
   =>
   (if (debug 1) then (printout t "S1 3 -- Need to go to M2 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M2*))
 )
 
 (defrule s1-m-random
   (state IDLE)
   (holding S1)
   (machine (mtype UNKNOWN) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_UNK*)))
   =>
   (if (debug 1) then (printout t "S1 4 -- Need to go to M? named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_UNK*))
 )
 
 (defrule s2-m3
   (state IDLE)
   (holding S2)
   (machine (mtype M3) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M3*)))
   =>
   (if (debug 1) then (printout t "S2 1 -- Need to go to M3 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M3*))
 )
 
 (defrule s2-m23
   (state IDLE)
   (holding S2)
   (machine (mtype M2_3) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_M2_3*)))
   =>
   (if (debug 1) then (printout t "S2 2 -- Need to go to M2_3 named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_M2_3*))
 )
 
 
@@ -165,19 +177,21 @@
   (state IDLE)
   (holding S2)
   (machine (mtype UNKNOWN) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_UNK*)))
   =>
   (if (debug 1) then (printout t "S2 3 -- Need to go to M? named " ?name crlf))
-  (modify ?g (machines (append$ ?machines ?name)))
+  (modify ?g (machines (append$ ?machines ?name)) (min-prio ?*GOTOPRIO_UNK*))
 )
 
 (defrule deliver-p
   (state IDLE)
   (holding P)
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ "deliver") ?machines)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ "deliver") ?machines))
+              (min-prio ?mp&:(<= ?mp ?*GOTOPRIO_DELIVER*)))
   =>
   (if (debug 1) then (printout t "P -- Need to deliver P " crlf))
-  (modify ?g (machines "deliver"))
+  (modify ?g (machines "deliver") (min-prio ?*GOTOPRIO_DELIVER*))
 )
 
 ; --- RULES for skill execution
@@ -200,9 +214,11 @@
   ?g <- (goto (machines ?first $?machines))
   (holding ?h)
   =>
-  (if (debug 1) then (printout t "Calling goto for " ?first ?machines crlf))
-  (goto-machine ?first ?h)
-  (modify ?g (machines))
+  (if (debug 1) then
+    (printout t "Calling take_puck_to_best for " (create$ ?first ?machines)
+              " and puck " ?h crlf))
+  (goto-machine (implode$ (create$ ?first ?machines)) ?h)
+  (modify ?g (machines) (min-prio ?*GOTOPRIO_UNK*))
   (retract ?s)
   (assert (state GOTO))
   (assert (goto-holding ?h))

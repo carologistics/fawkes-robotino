@@ -8,6 +8,7 @@
 ;---------------------------------------------------------------------------
 
 (deftemplate goto
+  (slot min-prio (type INTEGER) (default 0))
   (multislot machines (type STRING))
 )
 
