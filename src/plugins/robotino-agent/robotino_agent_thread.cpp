@@ -32,7 +32,7 @@ using namespace fawkes;
 /** Constructor. */
 RobotinoClipsAgentThread::RobotinoClipsAgentThread()
   : Thread("RobotinoClipsAgentThread", Thread::OPMODE_WAITFORWAKEUP),
-    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL)
+    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK)
 {
 }
 
