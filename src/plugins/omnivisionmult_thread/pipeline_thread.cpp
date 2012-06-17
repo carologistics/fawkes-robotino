@@ -3,6 +3,7 @@
  *
  *  Created: Thu May 24 17:17:46 2012
  *  Copyright  2005-2012  Tim Niemueller [www.niemueller.de]
+ *             2012		  Sebastian Reuter
  *             2007       Daniel Beck
  *             2005       Martin Heracles
  ****************************************************************************/
@@ -40,6 +41,8 @@
 #include <utils/system/hostinfo.h>
 #include <geometry/hom_point.h>
 #include <geometry/hom_vector.h>
+
+#include <interfaces/SwitchInterface.h>
 
 #include <utils/misc/string_conversions.h>
 
@@ -113,13 +116,14 @@ void RobotinoOmniVisionPipelineThread::init() {
 		for (i = 1; i <= 10; i++) {
 			Position3DInterface *puckif;
 			char *omni_name;
-			asprintf(&omni_name, "OmniPuck%d", i);
-			puckif = blackboard->open_for_writing<Position3DInterface>(omni_name);
-			puckif->set_frame(cfg_frame_.c_str());
-			puckif->set_visibility_history(-1);
-			puckif->write();
-			//free(omni_name);
-			pucks.push_back(puckif);
+			if ( asprintf(&omni_name, "OmniPuck%d", i) != -1){
+				puckif = blackboard->open_for_writing<Position3DInterface>(omni_name);
+				puckif->set_frame(cfg_frame_.c_str());
+				puckif->set_visibility_history(-1);
+				puckif->write();
+				free(omni_name);
+				pucks.push_back(puckif);
+			}
 		}
 	} catch (Exception &e) {
 		e.append("Opening puck interfaces for writing failed");
@@ -127,9 +131,9 @@ void RobotinoOmniVisionPipelineThread::init() {
 	}
 
 	try {
-		switchInterface = blackboard->open_for_reading<SwitchInterface>("omnivisionSwitch");
+		switchInterface = blackboard->open_for_writing<SwitchInterface>("omnivisionSwitch");
 	} catch (Exception &e) {
-		e.append("Opening switch interface for reading failed");
+		e.append("Opening switch interface for writing failed");
 		throw;
 	}
 
@@ -208,18 +212,23 @@ void RobotinoOmniVisionPipelineThread::finalize() {
 	logger->log_debug(name(), "Unregistering from vision master");
 	vision_master->unregister_thread(this);
 	delete cam_;
+
 	try {
-			std::list<fawkes::Position3DInterface*>::iterator puck;
-			puck = pucks.begin();
-			for (puck = pucks.begin(); puck != pucks.end(); puck++) {
-				(*puck)->set_visibility_history(0);
-				(*puck)->write();
-				blackboard->close(*puck);
-			}
-		} catch (Exception &e) {
-			e.append("Closing puck interface failed");
-			throw;
+		std::list<fawkes::Position3DInterface*>::iterator puck;
+		puck = pucks.begin();
+		for (puck = pucks.begin(); puck != pucks.end(); puck++) {
+			(*puck)->set_visibility_history(0);
+			(*puck)->write();
+			blackboard->close(*puck);
 		}
+
+		blackboard->close(switchInterface);
+
+	} catch (Exception& e) {
+		logger->log_error( name(), "Closing interface failed!" );
+		logger->log_error( name(), e );
+		throw;
+	}
 }
 
 /** Process image to detect objects.
@@ -228,9 +237,28 @@ void RobotinoOmniVisionPipelineThread::finalize() {
  * position of the closest such object as puck position.
  */
 void RobotinoOmniVisionPipelineThread::loop() {
+
+	// check if there is a msg in the msg-queue
+	while ( ! switchInterface->msgq_empty()) {
+
+		if (SwitchInterface::DisableSwitchMessage *msg = switchInterface->msgq_first_safe(msg)) {
+				  logger->log_info( name(),"Switch disable message received" );
+				  switchInterface->set_enabled(false);
+		}
+		else if (SwitchInterface::EnableSwitchMessage *msg = switchInterface->msgq_first_safe(msg)) {
+				  logger->log_info( name(),"Switch enable message received" );
+				  switchInterface->set_enabled(true);
+		}
+		switchInterface->msgq_pop();
+		switchInterface->write();
+	}
+
 	if (switchInterface->is_enabled() == false){
 		usleep(500000);
+		return;
 	}
+
+	logger->log_info( name()," IF - Switch Interface is true" );
 
 	cam_->capture();
 	convert(cspace_from_, cspace_to_, cam_->buffer(), buffer_, img_width_,img_height_);
@@ -246,8 +274,8 @@ void RobotinoOmniVisionPipelineThread::loop() {
 
 	 FilterROIDraw f(rois_);
 	 f.set_src_buffer(buffer_, NULL);
-   	 f.set_dst_buffer(buffer_, NULL);
-   	 f.apply();
+	 f.set_dst_buffer(buffer_, NULL);
+	 f.apply();
 
 	// post-process ROIs
 	std::list<firevision::ROI>::iterator r;
@@ -266,7 +294,7 @@ void RobotinoOmniVisionPipelineThread::loop() {
 		for (r = rois_->begin(); r != rois_->end();) {
 			classifier_->get_mass_point_of_color(&(*r), &mass_point_);
 			rel_pos_->set_center( mass_point_.x, mass_point_.y );
-		    rel_pos_->calc_unfiltered();
+			rel_pos_->calc_unfiltered();
 			if (roicounter > PUCK_AMOUNT || rel_pos_->get_distance() > min_dist_) {
 				r = rois_->erase(r);
 				continue;
@@ -325,8 +353,7 @@ void RobotinoOmniVisionPipelineThread::loop() {
 			}
 		}
 	}
-}
-;
+};
 
 
 RobotinoOmniVisionPipelineThread::sortFunctor::sortFunctor(firevision::RelativePositionModel* rp,firevision::SimpleColorClassifier* c): relpos(rp) , classifier(c){}
