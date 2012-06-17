@@ -39,7 +39,7 @@
   (machine (name "m2"))
   (machine (name "m1"))
   (goto (nodes))
-  (state IDLE)
+  (state WAIT_START)
   (holding NONE)
 )
 

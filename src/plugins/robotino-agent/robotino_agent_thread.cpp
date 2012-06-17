@@ -4,7 +4,6 @@
  *
  *  Created: Sat Jun 16 14:40:56 2012 (Mexico City)
  *  Copyright  2006-2012  Tim Niemueller [www.niemueller.de]
- *
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -47,6 +46,11 @@ RobotinoClipsAgentThread::~RobotinoClipsAgentThread()
 void
 RobotinoClipsAgentThread::init()
 {
+  cfg_clips_debug_ = false;
+  try {
+    cfg_clips_debug_ = config->get_bool("/plugins/robotino-agent/clips-debug");
+  } catch (Exception &e) {} // ignore, use default
+
   cfg_clips_dir_ = std::string(SRCDIR) + "/clips/";
 
   clips->add_function("get-clips-dir", sigc::slot<std::string>(sigc::mem_fun(*this, &RobotinoClipsAgentThread::clips_get_clips_dir)));
@@ -56,6 +60,13 @@ RobotinoClipsAgentThread::init()
   if (!clips->batch_evaluate(cfg_clips_dir_ + "init.clp")) {
     logger->log_error(name(), "Failed to initialize CLIPS environment, "
                       "batch file failed.");
+    throw Exception("Failed to initialize CLIPS environment, batch file failed.");
+  }
+
+  if (cfg_clips_debug_) {
+    clips->assert_fact("(enable-debug)");
+    clips->refresh_agenda();
+    clips->run();
   }
 }
 
@@ -69,6 +80,13 @@ RobotinoClipsAgentThread::finalize()
 void
 RobotinoClipsAgentThread::loop()
 {
+  if (! started_) {
+    clips->assert_fact("(start)");
+    started_ = true;
+  }
+
+  // might be used to trigger loop events
+  // must be cleaned up each loop from within the CLIPS code
   //clips->assert_fact("(time (now))");
   clips->refresh_agenda();
   clips->run();

@@ -20,8 +20,16 @@
   (return (str-cat ?*CLIPS_DIR* ?file))
 )
 
-(watch facts)
-(watch rules)
+(defrule enable-debug
+  ?e <- (enable-debug)
+  =>
+  (printout t "Robotino Agent: enabling debugging" crlf)
+  (retract ?e)
+  (watch facts)
+  (watch rules)
+)
+
+;(dribble-on "trace.txt")
 
 (load* (resolve-file priorities.clp))
 (load* (resolve-file utils.clp))
@@ -36,6 +44,4 @@
 (printout t "Robotino Agent initialization complete" crlf)
 
 ;(assert (holding S0))
-
-(facts)
-
+;(facts)

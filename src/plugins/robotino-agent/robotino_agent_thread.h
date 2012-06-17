@@ -61,6 +61,9 @@ class RobotinoClipsAgentThread
 
  private:
   std::string cfg_clips_dir_;
+  bool        cfg_clips_debug_;
+
+  bool          started_;
 
 };
 

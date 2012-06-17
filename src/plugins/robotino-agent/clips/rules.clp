@@ -18,6 +18,15 @@
 
 ; --- RULES - next machine/place to go to
 
+(defrule start
+  ?s <- (state WAIT_START)
+  (start)
+  =>
+  (retract ?s)
+  (assert (state IDLE))
+)
+
+
 (defrule get-s0
   (state IDLE)
   (holding NONE)
@@ -170,7 +179,6 @@
   (if (debug 1) then (printout t "P -- Need to deliver P " crlf))
   (modify ?g (nodes "deliver"))
 )
-
 
 ; --- RULES for skill execution
 (defrule skill-get-s0
