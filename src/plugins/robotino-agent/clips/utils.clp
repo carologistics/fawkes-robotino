@@ -10,3 +10,30 @@
 (deffunction append$ (?list $?items)
   (insert$ ?list (+ (length$ ?list) 1) ?items)
 )
+
+(deffunction enqueue-goto-target (?target_list ?name ?priority)
+  (append$ ?target_list (implode$ (create$ ?name ?priority)))
+)
+
+(deffunction goto-target-prio (?m)
+  (nth$ 2 (explode$ ?m))
+)
+
+(deffunction goto-target> (?a ?b)
+  (> (goto-target-prio ?a) (goto-target-prio ?b))
+)
+
+(deffunction filter-goto-target ($?machines)
+  (bind ?tm (sort goto-target> ?machines))
+  (bind ?rv (create$))
+  (bind ?prio 0)
+  (foreach ?m ?tm
+           (bind ?mprio (goto-target-prio ?m))
+           (if (>= ?mprio ?prio) then
+             (bind ?prio ?mprio)
+             (append$ ?rv ?m)
+           else
+             (break)
+           )
+  )
+)
