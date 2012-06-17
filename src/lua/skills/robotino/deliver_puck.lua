@@ -25,12 +25,10 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="CHECK_PUCK_FETCHED", debug=true}
-depends_skills     = nil
+depends_skills     = {"goto","move_under_rfid","determine_signal_rock","leave_area"}
 depends_interfaces = {
---	{v = "OmniPuck1", type="Position3DInterface",id = "OmniPuck1"},
-	{v = "sensor", type="RobotinoSensorInterface"},
-	{v = "motor", type="MotorInterface"}
---	{v = "navigator", type="NavigatorInterface"}
+	{ v="light",type ="RobotinoAmpelInterface" } 
+ 
 
 }
 
@@ -38,7 +36,6 @@ documentation     = [==[delivers already fetched puck to specified location]==]
 -- Constants
 
 local THRESHOLD_DISTANCE =0.1
-local traffic_light_green_var = false
 
 -- Initialize as skill module
 skillenv.skill_module(...)
@@ -55,8 +52,6 @@ function puck_not_infront()
 end
 
 function puck_infront()
-print("bla")
-
 local curDistance = sensor:distance(0)
         if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
                 printf("puckgrapped")
@@ -68,9 +63,10 @@ local curDistance = sensor:distance(0)
 
 end
 
-function traffic_light_green()
+function ampel_green()
 
-return traffic_light_green_var --von visiongruppe nachzureichen
+	return light:state() ==light.GREEN
+
 end
 
 function traffic_light_red()
@@ -82,70 +78,34 @@ fsm:add_transitions{
 	closure={motor=motor},
 	{"CHECK_PUCK_FETCHED", "FAILED", cond=puck_not_infront, desc="No puck seen by Infrared"},
 	{"CHECK_PUCK_FETCHED", "CHECK_1ST_TRAFFIC_LIGHT", cond=puck_infront},
-	{"CHECK_1ST_TRAFFIC_LIGHT","MOVE_UNDER_TRAFFIC_LIGHT",cond = traffic_light_green},
-	{"CHECK_1ST_TRAFFIC_LIGHT","MOVE_TO_2ND",cond = traffic_light_red}, 
-	{"MOVE_TO_2ND","CHECK_2ND_TRAFFIC_LIGHT",wait_sec = 1},--skill von victor
+	{"CHECK_1ST_TRAFFIC_LIGHT","1ST_CHECKED",skill= determine_signal_rock, fail_to="FAILED"},
+	{"1ST_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
+	{"1ST_CHECKED", "MOVE_TO_2ND" ,cond = true},
+	{"MOVE_TO_2ND", "CHECK_2ND_TRAFFIC_LIGHT",skill = goto , fail_to = "FAILED"},
+	{"CHECK_2ND_TRAFFIC_LIGHT" , "2ND_CHECKED",skill= determine_signal_rock, fail_to="FAILED"},
+	{"2ND_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
+	{"2ND_CHECKED", "MOVE_TO_3RD", cond = true}, 
+	{"MOVE_TO_3RD", "CHECK_3RD_TRAFFIC_LIGHT", skill = goto,fail_to ="FAILED"},
+	{"CHECK_3RD_TRAFFIC_LIGHT" , "3RD_CHECKED",skill= determine_signal_rock, fail_to="FAILED"},
+	{"3RD_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
+	{"3RD_CHECKED",  "FAILED",cond = true,desc = "all delivery spots appear unuseable"},
 
-	{"CHECK_2ND_TRAFFIC_LIGHT","MOVE_UNDER_TRAFFIC_LIGHT",cond = traffic_light_green},
-	{"CHECK_2ND_TRAFFIC_LIGHT","MOVE_TO_3RD",cond = traffic_light_red},
-
-	{"MOVE_TO_3RD","CHECK_3RD_TRAFFIC_LIGHT",wait_sec = 1},
-	{"CHECK_3RD_TRAFFIC_LIGHT","MOVE_UNDER_TRAFFIC_LIGHT",cond = traffic_light_green},
-	{"CHECK_3RD_TRAFFIC_LIGHT","FAILED",cond = traffic_light_red,desc= "all deliveryspots appear unuseable"},
-
-	{"MOVE_UNDER_TRAFFIC_LIGHT","MOVE_AWAY_FROM_TRAFFIC_LIGHT",wait_sec = 1},
-	{"MOVE_AWAY_FROM_TRAFFIC_LIGHT","FINAL",wait_sec = 1 }
+	{"MOVE_UNDER_RFID","LEAVE_AREA",skill = move_under_rfid, fail_to= "FAILED"},
+	{"LEAVE_AREA" , "FINAL" , skill = leave_area, fail_to="FAILED"}
 
 
 
 }
 
-function MOVE_AWAY_FROM_TRAFFIC_LIGHT:init()
-
-send_transrot(-0.2,0,0)
-
-end
-
-
-function MOVE_UNDER_TRAFFIC_LIGHT:init()
-send_transrot(0.2,0,0)
+function CHECK_1ST_TRAFFIC_LIGHT:init()
+	self.fsm.args = {kind = "DELIVER"}
 
 end
 
 function MOVE_TO_2ND:init()
-trafic_light_green_var = true
-send_transrot(0,0.2,0)
-
+	self.args = {goto_name = "D2"}
 end
-
 function MOVE_TO_3RD:init()
-
-send_transrot(0,0.2,0)
-
+	self.args = {goto_name = "D3"}
 end
 
-function CHECK_1ST_TRAFFIC_LIGHT:init()
-
-send_transrot(0,0,0)
-
-end
-
-function CHECK_2ND_TRAFFIC_LIGHT:init()
-
-send_transrot(0,0,0)
-
-end
-
-function CHECK_3RD_TRAFFIC_LIGHT:init()
-
-send_transrot(0,0,0)
-
-end
-
-function send_transrot(vx, vy, omega)
-   local oc  = motor:controller()
-   local ocn = motor:controller_thread_name()
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
-   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
-end
