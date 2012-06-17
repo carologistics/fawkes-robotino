@@ -11,6 +11,7 @@
   (slot name (type STRING))
   (slot mtype (type SYMBOL) (allowed-values M1 M2 M3 DELIVER))
   (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
+  (slot junk (type INTEGER) (default 0))
 )
 
 (deffacts simulation
@@ -55,7 +56,7 @@
   ?s  <- (state GOTO)
   ?h  <- (holding S0)
   (goto-target ?node)
-  ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded)) 
+  ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk)) 
   =>
   (retract ?s ?h)
   (if (eq ?mt M1) then
@@ -64,7 +65,7 @@
     (if (eq ?mt M2) then
       (if (subsetp (create$ S1) ?loaded) then
         (assert (holding S2))
-        (modify ?m (loaded-with))
+        (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
       else
         (assert (holding NONE))
         (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S0)))
@@ -73,7 +74,7 @@
       (if (eq ?mt M3) then
         (if (subsetp (create$ S1 S2) ?loaded) then
           (assert (holding P))
-          (modify ?m (loaded-with))
+          (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
         else
           (assert (holding NONE))
           (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S0)))
@@ -89,7 +90,8 @@
   ?s  <- (state GOTO)
   ?h  <- (holding S1)
   (goto-target ?node)
-  ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded)) 
+  ?m  <- (sim-machine (name ?node) (mtype ?mt)
+                      (loaded-with $?loaded) (junk ?junk)) 
   =>
   (retract ?s ?h)
   (if (eq ?mt M1) then
@@ -98,7 +100,7 @@
     (if (eq ?mt M2) then
       (if (subsetp (create$ S0) ?loaded) then
         (assert (holding S2))
-          (modify ?m (loaded-with))
+        (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
       else
         (assert (holding NONE))
         (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S1)))
@@ -107,7 +109,7 @@
       (if (eq ?mt M3) then
         (if (subsetp (create$ S0 S2) ?loaded) then
           (assert (holding P))
-          (modify ?m (loaded-with))
+          (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
         else
           (assert (holding NONE))
           (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S1)))
@@ -122,7 +124,7 @@
   ?s  <- (state GOTO)
   ?h  <- (holding S2)
   (goto-target ?node)
-  ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded)) 
+  ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk))
   =>
   (retract ?s ?h)
   (if (eq ?mt M1) then
@@ -130,12 +132,12 @@
   else
     (if (eq ?mt M2) then
       (assert (holding S2))
-      (modify ?m (loaded-with))
+      (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
     else
       (if (eq ?mt M3) then
         (if (subsetp (create$ S0 S1) ?loaded) then
           (assert (holding P))
-          (modify ?m (loaded-with))
+          (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
         else
           (assert (holding NONE))
           (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S2)))

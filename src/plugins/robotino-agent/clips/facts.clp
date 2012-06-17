@@ -17,6 +17,8 @@
         (allowed-values UNKNOWN M1 M2 M3 M1_2 M2_3) (default UNKNOWN))
   (slot egc (type SYMBOL) (allowed-values YES NO) (default NO))
   (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
+  (slot junk (type INTEGER) (default 0))
+  (slot productions (type INTEGER) (default 0))
 )
 
 ;(deftemplate holding
@@ -38,7 +40,6 @@
   (goto (nodes))
   (state IDLE)
   (holding NONE)
-  (is-at NONE)
 )
 
 

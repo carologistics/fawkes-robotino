@@ -205,7 +205,7 @@
   ?s  <- (state GOTO-FINAL)
   ?gt <- (goto-target ?node)
   ?gh <- (goto-holding ?was-holding)
-  (machine (name ?node) (loaded-with $?loaded))
+  (machine (name ?node))
   (holding ?now-holding)
   =>
   (retract ?s ?gt ?gh)

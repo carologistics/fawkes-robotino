@@ -19,10 +19,11 @@
 (defrule wm-determine-unk-s0-s1
   (declare (salience ?*PRIORITY_WM*))
   ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding S1))
-  ?m <- (machine (name ?name) (mtype UNKNOWN))
+  ; no junk at M1 ever
+  ?m <- (machine (name ?name) (mtype UNKNOWN) (productions ?productions))
   =>
   (retract ?w)
-  (modify ?m (mtype M1) (loaded-with))
+  (modify ?m (mtype M1) (loaded-with) (productions (+ ?productions 1)))
 )
 
 (defrule wm-determine-unk-s0-none
@@ -76,10 +77,11 @@
 (defrule wm-determine-m12-s0-s1
   (declare (salience ?*PRIORITY_WM*))
   ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding S1))
-  ?m <- (machine (name ?name) (mtype M1_2))
+  ; it's a M1 really, no junk ever
+  ?m <- (machine (name ?name) (mtype M1_2) (productions ?productions))
   =>
   (retract ?w)
-  (modify ?m (mtype M1) (loaded-with))
+  (modify ?m (mtype M1) (loaded-with) (productions (+ ?productions 1)))
 )
 
 (defrule wm-determine-m12-s0-none
@@ -103,10 +105,12 @@
 (defrule wm-determine-m12-s1-s2
   (declare (salience ?*PRIORITY_WM*))
   ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding S2))
-  ?m <- (machine (name ?name) (mtype M1_2))
+  ?m <- (machine (name ?name) (mtype M1_2) (loaded-with $?loaded) (junk ?junk)
+                 (productions ?productions))
   =>
   (retract ?w)
-  (modify ?m (mtype M2) (loaded-with))
+  (modify ?m (mtype M2) (loaded-with) (junk (+ ?junk (length$ ?loaded)))
+          (productions (+ ?productions 1)))
 )
 
 (defrule wm-determine-m12-s1-none
@@ -124,19 +128,23 @@
 (defrule wm-determine-m23-s0-s2
   (declare (salience ?*PRIORITY_WM*))
   ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding S2))
-  ?m <- (machine (name ?name) (mtype M2_3))
+  ?m <- (machine (name ?name) (mtype M2_3) (loaded-with $?loaded) (junk ?junk)
+                 (productions ?productions))
   =>
   (retract ?w)
-  (modify ?m (mtype M2) (loaded-with))
+  (modify ?m (mtype M2) (loaded-with) (junk (+ ?junk (length$ ?loaded)))
+          (productions (+ ?productions 1)))
 )
 
 (defrule wm-determine-m23-s1-s2
   (declare (salience ?*PRIORITY_WM*))
   ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding S2))
-  ?m <- (machine (name ?name) (mtype M2_3))
+  ?m <- (machine (name ?name) (mtype M2_3) (loaded-with $?loaded) (junk ?junk)
+                 (productions ?productions))
   =>
   (retract ?w)
-  (modify ?m (mtype M2) (loaded-with))
+  (modify ?m (mtype M2) (loaded-with) (junk (+ ?junk (length$ ?loaded)))
+          (productions (+ ?productions 1)))
 )
 
 (defrule wm-determine-m23-s2-none
@@ -167,7 +175,7 @@
   (modify ?m (mtype M3) (loaded-with (insert$ ?l 1 S0)))
 )
 
-(defrule wm-default
+(defrule wm-good-consumed
   (declare (salience ?*PRIORITY_WM_DEF*))
   ?w <- (wm-eval (machine ?name) (was-holding ?p&~NONE) (now-holding NONE))
   ?m <- (machine (name ?name)
@@ -175,6 +183,30 @@
   =>
   (retract ?w)
   (modify ?m (loaded-with (insert$ ?l 1 ?p)))
+)
+
+; A production of an M1 has been finished
+(defrule wm-m1-production-done
+  (declare (salience ?*PRIORITY_WM_DEF*))
+  ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding S1))
+  ?m <- (machine (name ?name) (mtype M1) (productions ?productions))
+  =>
+  (retract ?w)
+  (modify ?m (loaded-with) (productions (+ ?productions 1)))
+)
+
+; A production of an M2 or M3 has been finished, set loaded-with to
+; the empty set and increase junk cound accordingly
+(defrule wm-m2-m3-production-done
+  (declare (salience ?*PRIORITY_WM_DEF*))
+  ?w <- (wm-eval (machine ?name)
+                 (was-holding ?wh&~NONE) (now-holding ?n&~NONE&:(neq ?wh ?n)))
+  ?m <- (machine (name ?name) (mtype M2|M3) (loaded-with $?loaded) (junk ?junk)
+                 (productions ?productions))
+  =>
+  (retract ?w)
+  (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded)))
+          (productions (+ ?productions 1)))
 )
 
 
