@@ -26,6 +26,8 @@
 #include <cmath>
 #include <map>
 
+#define CFG_PREFIX "/plugins/robotinoworldmodel/"
+
 using namespace fawkes;
 
 /** @class RobotinoWorldModelThread "robotino_worldmodel_thread.h"
@@ -47,11 +49,11 @@ void RobotinoWorldModelThread::init()
 	wm_ext1_if_data_.set_logger(logger);
 	wm_ext2_if_data_.set_logger(logger);
 	wm_if_ = blackboard->open_for_reading<RobotinoWorldModelInterface>(
-			"Model fll");
+			config->get_string(CFG_PREFIX"local_model").c_str());
 	wm_ext1_if_ = blackboard->open_for_reading<RobotinoWorldModelInterface>(
-			"Model fll ext1");
+			config->get_string(CFG_PREFIX"ext_model_1").c_str());
 	wm_ext2_if_ = blackboard->open_for_reading<RobotinoWorldModelInterface>(
-			"Model fll ext2");
+			config->get_string(CFG_PREFIX"ext_model_2").c_str());
 	wm_changed_if_ = blackboard->open_for_writing<RobotinoWorldModelInterface>(
 			"Model fll changes_only");
 	wm_merged_if_ = blackboard->open_for_writing<RobotinoWorldModelInterface>(
@@ -181,7 +183,8 @@ void RobotinoWorldModelThread::wipe_worldmodel(
 {
 	for (unsigned int i = 0; i < wm_if->maxlenof_machine_states(); ++i)
 	{
-		wm_if->set_machine_states(i, RobotinoWorldModelInterface::STATE_UNKNOWN);
+		wm_if->set_machine_states(i,
+				RobotinoWorldModelInterface::STATE_UNKNOWN);
 		wm_if->set_machine_types(i, RobotinoWorldModelInterface::TYPE_UNKNOWN);
 
 	}
