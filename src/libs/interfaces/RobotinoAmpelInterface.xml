@@ -6,11 +6,11 @@
       <comment>
 	This determines the current status of skill execution.
       </comment>
-      <item name="YELLOW"> true if ONLY yellow is active.</item>
-      <item name="YELLOW_GREEN"> true if green and yellow is active.</item>
-      <item name="GREEN">true if ONLY green is active.</item>
-      <item name="RED">true if ONLY red is active.</item>
+      <item name="YELLOW"> true if ONLY yellow is activ.</item>
+      <item name="GREEN">true if ONLY green is active .</item>
+      <item name="RED">true if ONLY red is active .</item>
       <item name="YELLOW_FLASHING">true if yellow is falshing.</item>
+      <item name="NO_CHANGE"> true if ampel didnt change  </item>
     </enum>
   </constants>
   <data>
