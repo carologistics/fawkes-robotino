@@ -37,6 +37,7 @@
 (load* (resolve-file facts.clp))
 (load* (resolve-file worldmodel.clp))
 (load* (resolve-file sim.clp))
+;(load* (resolve-file skills.clp))
 (load* (resolve-file rules.clp))
 
 (reset)

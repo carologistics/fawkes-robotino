@@ -32,9 +32,10 @@
 
 
 (defrule get-s0-succeeds
-  ?s <- (state GET-S0)
-  ?h <- (holding NONE)
-  ?l <- (s0-left ?n&:(> ?n 0))
+  ?s  <- (state GET-S0)
+  ?h  <- (holding NONE)
+  ?gf <- (get-s0-final)
+  ?l  <- (s0-left ?n&:(> ?n 0))
   =>
   (if (debug 1) then (printout t "get-s0 succeeded" crlf))
   (retract ?s ?h ?l)
@@ -55,11 +56,12 @@
 
 (defrule goto-succeeds-s0
   ?s  <- (state GOTO)
+  ?gf <- (goto-final)
   ?h  <- (holding S0)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk)) 
   =>
-  (retract ?s ?h)
+  (retract ?s ?h ?gf)
   (if (eq ?mt M1) then
     (assert (holding S1))
   else
@@ -90,11 +92,12 @@
 (defrule goto-succeeds-s1
   ?s  <- (state GOTO)
   ?h  <- (holding S1)
+  ?gf <- (goto-final)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt)
                       (loaded-with $?loaded) (junk ?junk)) 
   =>
-  (retract ?s ?h)
+  (retract ?s ?h ?gf)
   (if (eq ?mt M1) then
     (assert (holding S1))
   else
@@ -124,10 +127,11 @@
 (defrule goto-succeeds-s2
   ?s  <- (state GOTO)
   ?h  <- (holding S2)
+  ?gf <- (goto-final)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk))
   =>
-  (retract ?s ?h)
+  (retract ?s ?h ?gf)
   (if (eq ?mt M1) then
     (assert (holding S2))
   else
@@ -152,11 +156,12 @@
 (defrule goto-succeeds-p
   ?s  <- (state GOTO)
   ?h  <- (holding P)
+  ?gf <- (goto-final)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype DELIVER) (delivered ?delivered)) 
   =>
   (if (debug 1) then (printout t "***** DELIVERED a P! *****" crlf))
-  (retract ?s ?h)
+  (retract ?s ?h ?gf)
   (modify ?m (delivered (+ ?delivered 1)))
   (assert (holding NONE))
   (assert (state GOTO-FINAL))

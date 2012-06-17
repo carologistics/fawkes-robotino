@@ -30,8 +30,13 @@
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <plugins/clips/aspect/clips.h>
+#include <utils/time/time.h>
 
 #include <clipsmm.h>
+
+namespace fawkes {
+  class SkillerInterface;
+}
 
 class RobotinoClipsAgentThread
 : public fawkes::Thread,
@@ -56,14 +61,26 @@ class RobotinoClipsAgentThread
  private:
   std::string clips_get_clips_dir();
   CLIPS::Values clips_now();
-  void clips_goto_machine(CLIPS::Values nodes);
-
+  void clips_goto_machine(std::string machine, std::string puck);
+  void clips_get_s0();
 
  private:
   std::string cfg_clips_dir_;
   bool        cfg_clips_debug_;
 
+  fawkes::SkillerInterface *skiller_if_;
+  bool          ctrl_recheck_;
+
   bool          started_;
+  bool          goto_started_;
+  fawkes::Time *goto_start_time_;
+  std::string   goto_machine_;
+  std::string   goto_puck_;
+  std::string   goto_skill_string_;
+
+  bool          get_s0_started_;
+  fawkes::Time *get_s0_start_time_;
+  std::string   get_s0_skill_string_;
 
 };
 

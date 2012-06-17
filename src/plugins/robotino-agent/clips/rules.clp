@@ -187,7 +187,7 @@
   ?g <- (get-s0)
   =>
   (if (debug 1) then (printout t "Calling get-s0" crlf))
-  ;(get-s0)
+  (get-s0)
   (retract ?s ?g)
   (assert (state GET-S0))
 )
@@ -201,7 +201,7 @@
   (holding ?h)
   =>
   (if (debug 1) then (printout t "Calling goto for " ?first ?nodes crlf))
-  ;(goto-machine (create$ ?first ?nodes))
+  (goto-machine ?first ?h)
   (modify ?g (nodes))
   (retract ?s)
   (assert (state GOTO))
