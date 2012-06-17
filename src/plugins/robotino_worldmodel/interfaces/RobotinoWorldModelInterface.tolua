@@ -3,6 +3,19 @@ $using namespace fawkes;
 namespace fawkes {
 class RobotinoWorldModelInterface : public Interface
 {
+  static const unsigned int Test;
+  static const unsigned int m1;
+  static const unsigned int m2;
+  static const unsigned int m3;
+  static const unsigned int m4;
+  static const unsigned int m5;
+  static const unsigned int m6;
+  static const unsigned int m7;
+  static const unsigned int m8;
+  static const unsigned int m9;
+  static const unsigned int m10;
+  static const unsigned int r1;
+  static const unsigned int r2;
 
   typedef enum {
     EXPRESS_MACHINE,
@@ -14,9 +27,10 @@ class RobotinoWorldModelInterface : public Interface
     UNKNOWN,
     RECYCLING,
     TEST
-  } machine_name_t;
+  } machine_type_t;
 
   typedef enum {
+    EMPTY,
     S0_ONLY,
     S1_ONLY,
     S2_ONLY,
@@ -24,14 +38,14 @@ class RobotinoWorldModelInterface : public Interface
     S1_S2
   } machine_state_t;
 
-  machine_name_t machine_names(int index);
-  void set_machine_names(unsigned int index, const machine_name_t new_machine_names);
-  int maxlenof_machine_names() const;
+  machine_type_t machine_types(int index);
+  void set_machine_types(unsigned int index, const machine_type_t new_machine_types);
+  int maxlenof_machine_types() const;
   machine_state_t machine_states(int index);
   void set_machine_states(unsigned int index, const machine_state_t new_machine_states);
   int maxlenof_machine_states() const;
-  char * express_machine();
-  void set_express_machine(const char * new_express_machine);
+  unsigned int express_machine();
+  void set_express_machine(const unsigned int new_express_machine);
   int maxlenof_express_machine() const;
   bool                    oftype(const char *interface_type) const;
   const void *            datachunk() const;

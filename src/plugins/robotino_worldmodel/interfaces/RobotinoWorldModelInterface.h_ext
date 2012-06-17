@@ -37,6 +37,19 @@ class RobotinoWorldModelInterface : public Interface
  /// @endcond
  public:
   /* constants */
+  static const uint32_t Test;
+  static const uint32_t m1;
+  static const uint32_t m2;
+  static const uint32_t m3;
+  static const uint32_t m4;
+  static const uint32_t m5;
+  static const uint32_t m6;
+  static const uint32_t m7;
+  static const uint32_t m8;
+  static const uint32_t m9;
+  static const uint32_t m10;
+  static const uint32_t r1;
+  static const uint32_t r2;
 
   /** 
 				Enumeration for the type of a machine
@@ -51,8 +64,8 @@ class RobotinoWorldModelInterface : public Interface
     UNKNOWN /**< Unknown machine type */,
     RECYCLING /**< Recycling machine */,
     TEST /**< Test machine */
-  } machine_name_t;
-  const char * tostring_machine_name_t(machine_name_t value) const;
+  } machine_type_t;
+  const char * tostring_machine_type_t(machine_type_t value) const;
 
   /** 
 				States describe which pucks are currently located at the
@@ -60,6 +73,7 @@ class RobotinoWorldModelInterface : public Interface
 				state of the machine itsself.
 			 */
   typedef enum {
+    EMPTY /**< Empty machine */,
     S0_ONLY /**< S0 at machine */,
     S1_ONLY /**< S1 at machine */,
     S2_ONLY /**< S2 at machine */,
@@ -74,12 +88,13 @@ class RobotinoWorldModelInterface : public Interface
   typedef struct {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-    int32_t machine_names[13]; /**< Names
+    int32_t machine_types[13]; /**< Types
 			of the machines on the field */
     int32_t machine_states[13]; /**< States
 			of all machines on the field */
-    char express_machine; /**< Name of the machine reserved for the
-			express route */
+    uint32_t express_machine; /**< The machine reserved for the
+			express
+			route */
   } RobotinoWorldModelInterface_data_t;
 #pragma pack(pop)
 
@@ -94,18 +109,18 @@ class RobotinoWorldModelInterface : public Interface
 
  public:
   /* Methods */
-  machine_name_t * machine_names() const;
-  machine_name_t machine_names(unsigned int index) const;
-  void set_machine_names(unsigned int index, const machine_name_t new_machine_names);
-  void set_machine_names(const machine_name_t * new_machine_names);
-  size_t maxlenof_machine_names() const;
+  machine_type_t * machine_types() const;
+  machine_type_t machine_types(unsigned int index) const;
+  void set_machine_types(unsigned int index, const machine_type_t new_machine_types);
+  void set_machine_types(const machine_type_t * new_machine_types);
+  size_t maxlenof_machine_types() const;
   machine_state_t * machine_states() const;
   machine_state_t machine_states(unsigned int index) const;
   void set_machine_states(unsigned int index, const machine_state_t new_machine_states);
   void set_machine_states(const machine_state_t * new_machine_states);
   size_t maxlenof_machine_states() const;
-  char * express_machine() const;
-  void set_express_machine(const char * new_express_machine);
+  uint32_t express_machine() const;
+  void set_express_machine(const uint32_t new_express_machine);
   size_t maxlenof_express_machine() const;
   virtual Message * create_message(const char *type) const;
 

@@ -32,11 +32,41 @@ namespace fawkes {
 
 /** @class RobotinoWorldModelInterface <interfaces/RobotinoWorldModelInterface.h>
  * RobotinoWorldModelInterface Fawkes BlackBoard Interface.
- * Complete world model for the Logistics Competition
+ * Complete world model for the Logistics Competition.
+			There are
+			13 Machines, the data for each machine can be accessed via the
+			related fields of the arrays
+		
  * @ingroup FawkesInterfaces
  */
 
 
+/** Test constant */
+const uint32_t RobotinoWorldModelInterface::Test = 0u;
+/** m1 constant */
+const uint32_t RobotinoWorldModelInterface::m1 = 1u;
+/** m2 constant */
+const uint32_t RobotinoWorldModelInterface::m2 = 2u;
+/** m3 constant */
+const uint32_t RobotinoWorldModelInterface::m3 = 3u;
+/** m4 constant */
+const uint32_t RobotinoWorldModelInterface::m4 = 4u;
+/** m5 constant */
+const uint32_t RobotinoWorldModelInterface::m5 = 5u;
+/** m6 constant */
+const uint32_t RobotinoWorldModelInterface::m6 = 6u;
+/** m7 constant */
+const uint32_t RobotinoWorldModelInterface::m7 = 7u;
+/** m8 constant */
+const uint32_t RobotinoWorldModelInterface::m8 = 8u;
+/** m9 constant */
+const uint32_t RobotinoWorldModelInterface::m9 = 9u;
+/** m10 constant */
+const uint32_t RobotinoWorldModelInterface::m10 = 10u;
+/** r1 constant */
+const uint32_t RobotinoWorldModelInterface::r1 = 11u;
+/** r2 constant */
+const uint32_t RobotinoWorldModelInterface::r2 = 12u;
 
 /** Constructor */
 RobotinoWorldModelInterface::RobotinoWorldModelInterface() : Interface()
@@ -46,10 +76,10 @@ RobotinoWorldModelInterface::RobotinoWorldModelInterface() : Interface()
   data      = (RobotinoWorldModelInterface_data_t *)data_ptr;
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
-  add_fieldinfo(IFT_ENUM, "machine_names", 13, &data->machine_names, "machine_name_t");
+  add_fieldinfo(IFT_ENUM, "machine_types", 13, &data->machine_types, "machine_type_t");
   add_fieldinfo(IFT_ENUM, "machine_states", 13, &data->machine_states, "machine_state_t");
-  add_fieldinfo(IFT_STRING, "express_machine", 1, data->express_machine);
-  unsigned char tmp_hash[] = {0x4c, 0x38, 0x80, 0x43, 0xe1, 0x95, 0x91, 0x77, 0x10, 0x93, 0x40, 0x5d, 0x3c, 0xb1, 0xca, 0x2b};
+  add_fieldinfo(IFT_UINT32, "express_machine", 1, &data->express_machine);
+  unsigned char tmp_hash[] = {0xe5, 0x4d, 0x41, 0xe2, 0x3c, 0xe1, 0x3a, 0x4f, 0x27, 0x90, 0x97, 0xbe, 0x5, 0xa, 0xc, 0x13};
   set_hash(tmp_hash);
 }
 
@@ -58,12 +88,12 @@ RobotinoWorldModelInterface::~RobotinoWorldModelInterface()
 {
   free(data_ptr);
 }
-/** Convert machine_name_t constant to string.
+/** Convert machine_type_t constant to string.
  * @param value value to convert to string
  * @return constant value as string.
  */
 const char *
-RobotinoWorldModelInterface::tostring_machine_name_t(machine_name_t value) const
+RobotinoWorldModelInterface::tostring_machine_type_t(machine_type_t value) const
 {
   switch (value) {
   case EXPRESS_MACHINE: return "EXPRESS_MACHINE";
@@ -86,6 +116,7 @@ const char *
 RobotinoWorldModelInterface::tostring_machine_state_t(machine_state_t value) const
 {
   switch (value) {
+  case EMPTY: return "EMPTY";
   case S0_ONLY: return "S0_ONLY";
   case S1_ONLY: return "S1_ONLY";
   case S2_ONLY: return "S2_ONLY";
@@ -95,68 +126,68 @@ RobotinoWorldModelInterface::tostring_machine_state_t(machine_state_t value) con
   }
 }
 /* Methods */
-/** Get machine_names value.
- * Names
+/** Get machine_types value.
+ * Types
 			of the machines on the field
- * @return machine_names value
+ * @return machine_types value
  */
-RobotinoWorldModelInterface::machine_name_t *
-RobotinoWorldModelInterface::machine_names() const
+RobotinoWorldModelInterface::machine_type_t *
+RobotinoWorldModelInterface::machine_types() const
 {
-  return (RobotinoWorldModelInterface::machine_name_t *)data->machine_names;
+  return (RobotinoWorldModelInterface::machine_type_t *)data->machine_types;
 }
 
-/** Get machine_names value at given index.
- * Names
+/** Get machine_types value at given index.
+ * Types
 			of the machines on the field
  * @param index index of value
- * @return machine_names value
+ * @return machine_types value
  * @exception Exception thrown if index is out of bounds
  */
-RobotinoWorldModelInterface::machine_name_t
-RobotinoWorldModelInterface::machine_names(unsigned int index) const
+RobotinoWorldModelInterface::machine_type_t
+RobotinoWorldModelInterface::machine_types(unsigned int index) const
 {
   if (index > 13) {
     throw Exception("Index value %u out of bounds (0..13)", index);
   }
-  return (RobotinoWorldModelInterface::machine_name_t)data->machine_names[index];
+  return (RobotinoWorldModelInterface::machine_type_t)data->machine_types[index];
 }
 
-/** Get maximum length of machine_names value.
- * @return length of machine_names value, can be length of the array or number of 
+/** Get maximum length of machine_types value.
+ * @return length of machine_types value, can be length of the array or number of 
  * maximum number of characters for a string
  */
 size_t
-RobotinoWorldModelInterface::maxlenof_machine_names() const
+RobotinoWorldModelInterface::maxlenof_machine_types() const
 {
   return 13;
 }
 
-/** Set machine_names value.
- * Names
+/** Set machine_types value.
+ * Types
 			of the machines on the field
- * @param new_machine_names new machine_names value
+ * @param new_machine_types new machine_types value
  */
 void
-RobotinoWorldModelInterface::set_machine_names(const machine_name_t * new_machine_names)
+RobotinoWorldModelInterface::set_machine_types(const machine_type_t * new_machine_types)
 {
-  memcpy(data->machine_names, new_machine_names, sizeof(machine_name_t) * 13);
+  memcpy(data->machine_types, new_machine_types, sizeof(machine_type_t) * 13);
   data_changed = true;
 }
 
-/** Set machine_names value at given index.
- * Names
+/** Set machine_types value at given index.
+ * Types
 			of the machines on the field
- * @param new_machine_names new machine_names value
+ * @param new_machine_types new machine_types value
  * @param index index for of the value
  */
 void
-RobotinoWorldModelInterface::set_machine_names(unsigned int index, const machine_name_t new_machine_names)
+RobotinoWorldModelInterface::set_machine_types(unsigned int index, const machine_type_t new_machine_types)
 {
   if (index > 13) {
     throw Exception("Index value %u out of bounds (0..13)", index);
   }
-  data->machine_names[index] = new_machine_names;
+  data->machine_types[index] = new_machine_types;
 }
 /** Get machine_states value.
  * States
@@ -222,11 +253,12 @@ RobotinoWorldModelInterface::set_machine_states(unsigned int index, const machin
   data->machine_states[index] = new_machine_states;
 }
 /** Get express_machine value.
- * Name of the machine reserved for the
-			express route
+ * The machine reserved for the
+			express
+			route
  * @return express_machine value
  */
-char *
+uint32_t
 RobotinoWorldModelInterface::express_machine() const
 {
   return data->express_machine;
@@ -243,14 +275,15 @@ RobotinoWorldModelInterface::maxlenof_express_machine() const
 }
 
 /** Set express_machine value.
- * Name of the machine reserved for the
-			express route
+ * The machine reserved for the
+			express
+			route
  * @param new_express_machine new express_machine value
  */
 void
-RobotinoWorldModelInterface::set_express_machine(const char * new_express_machine)
+RobotinoWorldModelInterface::set_express_machine(const uint32_t new_express_machine)
 {
-  strncpy(data->express_machine, new_express_machine, sizeof(data->express_machine));
+  data->express_machine = new_express_machine;
   data_changed = true;
 }
 
@@ -280,8 +313,8 @@ RobotinoWorldModelInterface::copy_values(const Interface *other)
 const char *
 RobotinoWorldModelInterface::enum_tostring(const char *enumtype, int val) const
 {
-  if (strcmp(enumtype, "machine_name_t") == 0) {
-    return tostring_machine_name_t((machine_name_t)val);
+  if (strcmp(enumtype, "machine_type_t") == 0) {
+    return tostring_machine_type_t((machine_type_t)val);
   }
   if (strcmp(enumtype, "machine_state_t") == 0) {
     return tostring_machine_state_t((machine_state_t)val);
