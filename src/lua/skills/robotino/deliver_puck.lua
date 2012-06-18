@@ -25,9 +25,9 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="CHECK_PUCK_FETCHED", debug=true}
-depends_skills     = {"goto","move_under_rfid","determine_signal","leave_area"}
+depends_skills     = {"take_puck_to","move_under_rfid","determine_signal","leave_area"}
 depends_interfaces = {
-	{ v="light",type ="RobotinoAmpelInterface" } 
+	{ v="light",type ="RobotinoAmpelInterface", id ="light" } 
  
 
 }
@@ -81,11 +81,11 @@ fsm:add_transitions{
 	{"CHECK_1ST_TRAFFIC_LIGHT","1ST_CHECKED",skill= determine_signal, fail_to="FAILED"},
 	{"1ST_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
 	{"1ST_CHECKED", "MOVE_TO_2ND" ,cond = true},
-	{"MOVE_TO_2ND", "CHECK_2ND_TRAFFIC_LIGHT",skill = goto , fail_to = "FAILED"},
+	{"MOVE_TO_2ND", "CHECK_2ND_TRAFFIC_LIGHT",skill = take_puck_to , fail_to = "FAILED"},
 	{"CHECK_2ND_TRAFFIC_LIGHT" , "2ND_CHECKED",skill= determine_signal, fail_to="FAILED"},
 	{"2ND_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
 	{"2ND_CHECKED", "MOVE_TO_3RD", cond = true}, 
-	{"MOVE_TO_3RD", "CHECK_3RD_TRAFFIC_LIGHT", skill = goto,fail_to ="FAILED"},
+	{"MOVE_TO_3RD", "CHECK_3RD_TRAFFIC_LIGHT", skill = take_puck_to,fail_to ="FAILED"},
 	{"CHECK_3RD_TRAFFIC_LIGHT" , "3RD_CHECKED",skill= determine_signal, fail_to="FAILED"},
 	{"3RD_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
 	{"3RD_CHECKED",  "FAILED",cond = true,desc = "all delivery spots appear unuseable"},
