@@ -19,6 +19,9 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
+
+PRESUBDIRS = interfaces
+
 #The necessary libraries your plugin needs.
 LIBS_robotino_worldmodel = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface RobotinoWorldModelInterface
