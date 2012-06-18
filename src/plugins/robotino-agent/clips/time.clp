@@ -31,3 +31,12 @@
 (deffunction timeout (?now ?time ?timeout)
   (return (> (time-diff-sec ?now ?time) ?timeout))
 )
+
+
+; --- RULES - general housekeeping
+(defrule retract-time
+  (declare (salience ?*PRIORITY_LAST*))
+  ?f <- (time $?)
+  =>
+  (retract ?f)
+)

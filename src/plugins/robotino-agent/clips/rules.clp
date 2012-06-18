@@ -7,17 +7,8 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-; --- RULES - general housekeeping
-(defrule retract-time
-  (declare (salience ?*PRIORITY_LAST*))
-  ?f <- (time $?)
-  =>
-  (retract ?f)
-  ;(facts)
-)
 
-; --- RULES - next machine/place to go to
-
+; --- RULES - wait for start signal
 (defrule start
   ?s <- (state WAIT_START)
   (start)
@@ -26,6 +17,7 @@
   (assert (state IDLE))
 )
 
+; --- RULES - next machine/place to go to
 
 (defrule get-s0
   (state IDLE)
