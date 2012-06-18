@@ -338,4 +338,5 @@ INSERT INTO "config" VALUES('/plugins/amcl/init_cov_xx','float',0.25,'Initial Co
 INSERT INTO "config" VALUES('/plugins/amcl/init_cov_yy','float',0.25,'Initial Covariance yy');
 INSERT INTO "config" VALUES('/plugins/amcl/init_cov_aa','float',0.0685,'Initial Covariance aa');
 INSERT INTO "config" VALUES('/plugins/amcl/angle_increment','float',1.0,'angle_increment');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/clips-debug','bool',0,'Enable clips debugging (watching facts and rules)');
 COMMIT;
