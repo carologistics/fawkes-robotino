@@ -66,6 +66,7 @@ class RosNavigatorThread
   move_base_msgs::MoveBaseGoal goal;
   int iterator;
   bool isFirst;
+  bool connected_history;
 };
 
 #endif /* __ROS_NAVIGATOR_THREAD_H_ */

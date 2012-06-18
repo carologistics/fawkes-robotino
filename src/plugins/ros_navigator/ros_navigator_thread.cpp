@@ -54,6 +54,7 @@ RosNavigatorThread::init()
   logger->log_error( name(),"Change Interface (x,y) ");
   iterator = 0;
   isFirst = true;
+  connected_history = false;
 }
 
 void
@@ -76,9 +77,15 @@ RosNavigatorThread::getStatus(){
 	if(!isFirst){
 		if( ac->getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
 			nav_if_->set_final(true);
+			nav_if_->set_error_code(0);
 		}
-		else{
+		else if( ac->getState() == actionlib::SimpleClientGoalState::ABORTED ||
+				  ac->getState() == actionlib::SimpleClientGoalState::REJECTED){
+			nav_if_->set_error_code(2);
+		}
+		else {
 			nav_if_->set_final(false);
+			nav_if_->set_error_code(0);
 		}
 	}
 }
@@ -106,9 +113,9 @@ void
 RosNavigatorThread::loop()
 {
 
-	if( ac && ac->isServerConnected() ){
+	if( ac->isServerConnected() ){
 
-
+		connected_history = true;
 		// process incoming messages from fawkes
 	  while ( ! nav_if_->msgq_empty()) {
 
@@ -169,6 +176,14 @@ RosNavigatorThread::loop()
 	  nav_if_->write();
 
 	} // if
-	else logger->log_info( name()," ROS-ActionServer is not up yet" );
+	else{
+		logger->log_info( name(),"ROS-ActionServer is not up yet" );
+
+		if (connected_history){
+			ac->~SimpleActionClient();
+			ac = new MoveBaseClient("move_base", false);
+			connected_history = false;
+		}
+	}
 
 } // function
