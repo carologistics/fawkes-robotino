@@ -145,6 +145,17 @@
   (modify ?g (machines (merge-goto-machines ?mp (machine-prio ?mt) ?machines ?name)) (min-prio (machine-prio ?mt)))
 )
 
+(defrule s2-m3-has-some-but-not-s2
+  (state IDLE)
+  (holding S2)
+  (machine (mtype ?mt&M3) (name ?name) (loaded-with $?l&:(> (length$ ?l) 0)&~:(subsetp (create$ S2) ?l)))
+  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+              (min-prio ?mp&:(<= ?mp (machine-prio ?mt))))
+  =>
+  (if (debug 2) then (printout t "S2 1 -- Considering M3 named " ?name crlf))
+  (modify ?g (machines (merge-goto-machines ?mp (machine-prio ?mt) ?machines ?name)) (min-prio (machine-prio ?mt)))
+)
+
 (defrule s2-m3
   (state IDLE)
   (holding S2)
