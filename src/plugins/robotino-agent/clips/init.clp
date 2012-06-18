@@ -10,18 +10,16 @@
 (defglobal
   ?*CLIPS_DIR* = (get-clips-dir)
   ?*DEBUG* = 2  ;debug levels: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
-  ?*RANDOMIZE* = TRUE
-)
-
-(deffunction debug (?level)
-  (return (<= ?level ?*DEBUG*))
 )
 
 (deffunction resolve-file (?file)
   (return (str-cat ?*CLIPS_DIR* ?file))
 )
 
+(load* (resolve-file priorities.clp))
+
 (defrule enable-debug
+  (declare (salience ?*PRIORITY_HIGH*))
   ?e <- (enable-debug)
   =>
   (printout t "Robotino Agent: enabling debugging" crlf)
@@ -30,20 +28,33 @@
   (watch rules)
 )
 
+(defrule enable-sim-load
+  ?e <- (enable-sim ?randomization)
+  =>
+  (printout t "Loading simulation" crlf)
+  (load* (resolve-file sim.clp))
+)
+
+(defrule enable-skills
+  ?e <- (enable-skills)
+  =>
+  (printout t "Enabling skill execution" crlf)
+  (retract ?e)
+  (load* (resolve-file skills.clp))
+)
+
 ;(dribble-on "trace.txt")
 
-(load* (resolve-file priorities.clp))
 (load* (resolve-file utils.clp))
 (load* (resolve-file time.clp))
 (load* (resolve-file facts.clp))
 (load* (resolve-file worldmodel.clp))
-(load* (resolve-file sim.clp))
-;(load* (resolve-file skills.clp))
 (load* (resolve-file rules.clp))
 
 (reset)
 (run)
-(printout t "Robotino Agent initialization complete" crlf)
+
+
 
 ;(assert (holding S0))
 ;(facts)

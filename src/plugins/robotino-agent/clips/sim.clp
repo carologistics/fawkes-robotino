@@ -15,39 +15,34 @@
   (slot delivered (type INTEGER) (default 0))
 )
 
-(deffacts simulation
-  (sim-machine (name "m1")  (mtype M1))
-  (sim-machine (name "m2")  (mtype M1))
-  (sim-machine (name "m3")  (mtype M1))
-  (sim-machine (name "m4")  (mtype M1))
-  (sim-machine (name "m5")  (mtype M2))
-  (sim-machine (name "m6")  (mtype M2))
-  (sim-machine (name "m7")  (mtype M2))
-  (sim-machine (name "m8")  (mtype M3))
-  (sim-machine (name "m9")  (mtype M3))
-  (sim-machine (name "m10") (mtype M3))
-  (sim-machine (name "deliver") (mtype DELIVER))
-  (s0-left 20)
-)
-
-(defrule sim-init-assignments
-  (initial-fact)
+(defrule sim-enable-sim
+  ?e <- (enable-sim ?randomization)
   =>
-  (if ?*RANDOMIZE* then
-    (seed (integer (time)))
-    (bind ?r (randomize$ (create$ M1 M1 M1 M1 M2 M2 M2 M3 M3 M3)))
-    (loop-for-count (?i (length$ ?r)) do
-      (do-for-fact ((?sm sim-machine))
-                   (eq ?sm:name (str-cat "m" ?i))
-                   ;(printout t "Am at " ?sm:name " setting it from " ?sm:mtype
-                   ;          " to " (nth$ ?i ?r) crlf)
-                   (modify ?sm (mtype (nth$ ?i ?r)))
-      )
-    )
-    (printout t "Randomized assignment: " ?r crlf)
-  )
-)
+  (retract ?e)
+  (bind ?assignment (create$ M1 M1 M1 M1 M2 M2 M2 M3 M3 M3))
 
+  (if (eq ?randomization randomize) then
+    (seed (integer (time)))
+    (bind ?assignment (randomize$ ?assignment))
+  )
+
+  (assert
+   (sim-machine (name "m1")  (mtype (nth$  1 ?assignment)))
+   (sim-machine (name "m2")  (mtype (nth$  2 ?assignment)))
+   (sim-machine (name "m3")  (mtype (nth$  3 ?assignment)))
+   (sim-machine (name "m4")  (mtype (nth$  4 ?assignment)))
+   (sim-machine (name "m5")  (mtype (nth$  5 ?assignment)))
+   (sim-machine (name "m6")  (mtype (nth$  6 ?assignment)))
+   (sim-machine (name "m7")  (mtype (nth$  7 ?assignment)))
+   (sim-machine (name "m8")  (mtype (nth$  8 ?assignment)))
+   (sim-machine (name "m9")  (mtype (nth$  9 ?assignment)))
+   (sim-machine (name "m10") (mtype (nth$ 10 ?assignment)))
+   (sim-machine (name "deliver") (mtype DELIVER))
+   (s0-left 20)
+  )
+
+  (printout t "Simulation machine assignment: " ?assignment crlf)
+)
 
 (defrule get-s0-succeeds
   ?s  <- (state GET-S0)

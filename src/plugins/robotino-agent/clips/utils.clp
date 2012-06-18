@@ -7,6 +7,10 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(deffunction debug (?level)
+  (return (<= ?level ?*DEBUG*))
+)
+
 (deffunction append$ (?list $?items)
   (insert$ ?list (+ (length$ ?list) 1) ?items)
 )

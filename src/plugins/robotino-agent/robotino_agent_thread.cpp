@@ -53,8 +53,17 @@ RobotinoClipsAgentThread::init()
 {
   cfg_clips_debug_ = false;
   cfg_skill_sim_time_ = 2.0;
+  cfg_use_sim_ = false;
+  cfg_sim_randomize_ = false;
   try {
     cfg_clips_debug_ = config->get_bool("/plugins/robotino-agent/clips-debug");
+  } catch (Exception &e) {} // ignore, use default
+  try {
+    cfg_use_sim_ = config->get_bool("/plugins/robotino-agent/use-sim");
+  } catch (Exception &e) {} // ignore, use default
+  try {
+    cfg_sim_randomize_ =
+      config->get_bool("/plugins/robotino-agent/sim-randomize-machines");
   } catch (Exception &e) {} // ignore, use default
   try {
     cfg_skill_sim_time_ =
@@ -97,9 +106,16 @@ RobotinoClipsAgentThread::init()
 
   if (cfg_clips_debug_) {
     clips->assert_fact("(enable-debug)");
-    clips->refresh_agenda();
-    clips->run();
   }
+
+  if (cfg_sim_randomize_) {
+    clips->assert_fact_f("(enable-sim  %s)",
+                         cfg_sim_randomize_ ? "randomize" : "ordered");
+  } else {
+    clips->assert_fact("(enable-skills)");
+  }
+  clips->refresh_agenda();
+  clips->run();
 
   ctrl_recheck_ = true;
 

@@ -339,5 +339,7 @@ INSERT INTO "config" VALUES('/plugins/amcl/init_cov_yy','float',0.25,'Initial Co
 INSERT INTO "config" VALUES('/plugins/amcl/init_cov_aa','float',0.0685,'Initial Covariance aa');
 INSERT INTO "config" VALUES('/plugins/amcl/angle_increment','float',1.0,'angle_increment');
 INSERT INTO "config" VALUES('/plugins/robotino-agent/clips-debug','bool',1,'Enable clips debugging (watching facts and rules)');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/use-sim','bool',1,'Enable simulation mode (do not actually invoke skills)?');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/sim-randomize-machines','bool',1,'Enable randomization of machine assignments in simulation?');
 INSERT INTO "config" VALUES('/plugins/robotino-agent/skill-sim-time','float',0.1,'Time to wait until reporting skill success in simulation; sec');
 COMMIT;
