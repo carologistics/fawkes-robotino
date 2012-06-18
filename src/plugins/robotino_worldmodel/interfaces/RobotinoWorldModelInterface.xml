@@ -1,72 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE interface SYSTEM "interface.dtd">
-<interface name="RobotinoWorldModelInterface" author="Daniel Ewert"
-	year="2012">
-	<constants>
-		<!-- Constants for mapping machine ids to array indexes -->
-		<constant type="uint32" value="0" name="Test">test machine</constant>
-		<constant type="uint32" value="1" name="m1">machine 1</constant>
-		<constant type="uint32" value="2" name="m2">machine 2</constant>
-		<constant type="uint32" value="3" name="m3">machine 3</constant>
-		<constant type="uint32" value="4" name="m4">machine 4</constant>
-		<constant type="uint32" value="5" name="m5">machine 5</constant>
-		<constant type="uint32" value="6" name="m6">machine 6</constant>
-		<constant type="uint32" value="7" name="m7">machine 7</constant>
-		<constant type="uint32" value="8" name="m8">machine 8</constant>
-		<constant type="uint32" value="9" name="m9">machine 9</constant>
-		<constant type="uint32" value="10" name="m10">machine 10</constant>
-		<constant type="uint32" value="11" name="r1">recycling machine 1</constant>
-		<constant type="uint32" value="12" name="r2">recycling machine 2</constant>
+<interface name="RobotinoWorldModelInterface" author="Daniel Ewert" year="2012">
+  <constants>
+    <!-- Constants for mapping machine ids to array indexes -->
+    <constant type="uint32" value="0" name="Test">test machine</constant>
+    <constant type="uint32" value="1" name="m1">machine 1</constant>
+    <constant type="uint32" value="2" name="m2">machine 2</constant>
+    <constant type="uint32" value="3" name="m3">machine 3</constant>
+    <constant type="uint32" value="4" name="m4">machine 4</constant>
+    <constant type="uint32" value="5" name="m5">machine 5</constant>
+    <constant type="uint32" value="6" name="m6">machine 6</constant>
+    <constant type="uint32" value="7" name="m7">machine 7</constant>
+    <constant type="uint32" value="8" name="m8">machine 8</constant>
+    <constant type="uint32" value="9" name="m9">machine 9</constant>
+    <constant type="uint32" value="10" name="m10">machine 10</constant>
+    <constant type="uint32" value="11" name="r1">recycling machine 1</constant>
+    <constant type="uint32" value="12" name="r2">recycling machine 2</constant>
 
+    <enum name="machine_type_t">
+      <comment>
+        Enumeration for the type of a machine
+      </comment>
+      <item name="TYPE_UNKNOWN">Unknown machine type</item>
+      <item name="M1_EXPRESS">Express Machine</item>
+      <item name="M1">M1</item>
+      <item name="M2">M1</item>
+      <item name="M3">M1</item>
+      <item name="M1_2">M1 or M2</item>
+      <item name="M2_3">M2 or M3</item>
+      <item name="RECYCLING">Recycling machine</item>
+      <item name="TEST">Test machine</item>
+      <item name="IGNORED">The agent ignores this machine (typically commanded by the agent designer)</item>
+    </enum>
 
-
-
-		<enum name="machine_type_t">
-			<comment>
-				Enumeration for the type of a machine
-			</comment>
-			<item name="TYPE_UNKNOWN">Unknown machine type</item>
-			<item name="M1_EXPRESS">Express Machine</item>
-			<item name="M1">M1</item>
-			<item name="M2">M1</item>
-			<item name="M3">M1</item>
-			<item name="M1_2">M1 or M2</item>
-			<item name="M2_3">M2 or M3</item>
-			<item name="RECYCLING">Recycling machine</item>
-			<item name="TEST">Test machine</item>
-		</enum>
-
-		<enum name="machine_state_t">
-			<comment>
-				States describe which pucks are currently located at the
-				machine and the
-				state of the machine itsself.
-			</comment>
-			<item name="STATE_UNKNOWN">Unknown state</item>
-			<item name="EMPTY">Empty machine</item>
-			<item name="CONSUMED_1">Machine with one consumed puck</item>
-			<item name="CONSUMED_2">Machine with two consumed pucks</item>
-			<item name="S0_ONLY">S0 at machine</item>
-			<item name="S1_ONLY">S1 at machine</item>
-			<item name="S2_ONLY">S2 at machine</item>
-			<item name="P">P at machine</item>
-			<item name="S1_S2">S1 and S2 at machine</item>
-			<item name="S0_S1">S0 and S1 at machine</item>
-			<item name="S0_S2">S0 and S2 at machine</item>
-		</enum>
-	</constants>
-	<data>
-		<comment>Complete world model for the Logistics Competition.
-			There are
-			13 Machines, the data for each machine can be accessed via the
-			related fields of the arrays
-		</comment>
-		<field type="machine_type_t" name="machine_types" length="13">Types
-			of the machines on the field</field>
-		<field type="machine_state_t" name="machine_states" length="13">States
-			of all machines on the field</field>
-		<field type="uint32" name="express_machine">The machine reserved for the
-			express
-			route</field>
-	</data>
+    <enum name="machine_state_t">
+      <comment>
+        States describe which pucks are currently located at the
+        machine and the
+        state of the machine itsself.
+      </comment>
+      <item name="STATE_UNKNOWN">Unknown state</item>
+      <item name="EMPTY">Empty machine</item>
+      <item name="CONSUMED_1">Machine with one consumed puck</item>
+      <item name="CONSUMED_2">Machine with two consumed pucks</item>
+      <item name="S0_ONLY">S0 at machine</item>
+      <item name="S1_ONLY">S1 at machine</item>
+      <item name="S2_ONLY">S2 at machine</item>
+      <item name="P">P at machine</item>
+      <item name="S1_S2">S1 and S2 at machine</item>
+      <item name="S0_S1">S0 and S1 at machine</item>
+      <item name="S0_S2">S0 and S2 at machine</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>Complete world model for the Logistics Competition.
+    There are
+    13 Machines, the data for each machine can be accessed via the
+    related fields of the arrays
+    </comment>
+    <field type="machine_type_t" name="machine_types" length="13">Types
+    of the machines on the field</field>
+    <field type="machine_state_t" name="machine_states" length="13">States
+    of all machines on the field</field>
+    <field type="uint32" name="express_machine">The machine reserved for the
+    express
+    route</field>
+  </data>
 </interface>

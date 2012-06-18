@@ -52,8 +52,8 @@ class RobotinoWorldModelInterface : public Interface
   static const uint32_t r2;
 
   /** 
-				Enumeration for the type of a machine
-			 */
+        Enumeration for the type of a machine
+       */
   typedef enum {
     TYPE_UNKNOWN /**< Unknown machine type */,
     M1_EXPRESS /**< Express Machine */,
@@ -63,15 +63,16 @@ class RobotinoWorldModelInterface : public Interface
     M1_2 /**< M1 or M2 */,
     M2_3 /**< M2 or M3 */,
     RECYCLING /**< Recycling machine */,
-    TEST /**< Test machine */
+    TEST /**< Test machine */,
+    IGNORED /**< The agent ignores this machine (typically commanded by the agent designer) */
   } machine_type_t;
   const char * tostring_machine_type_t(machine_type_t value) const;
 
   /** 
-				States describe which pucks are currently located at the
-				machine and the
-				state of the machine itsself.
-			 */
+        States describe which pucks are currently located at the
+        machine and the
+        state of the machine itsself.
+       */
   typedef enum {
     STATE_UNKNOWN /**< Unknown state */,
     EMPTY /**< Empty machine */,
@@ -94,12 +95,12 @@ class RobotinoWorldModelInterface : public Interface
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     int32_t machine_types[13]; /**< Types
-			of the machines on the field */
+    of the machines on the field */
     int32_t machine_states[13]; /**< States
-			of all machines on the field */
+    of all machines on the field */
     uint32_t express_machine; /**< The machine reserved for the
-			express
-			route */
+    express
+    route */
   } RobotinoWorldModelInterface_data_t;
 #pragma pack(pop)
 

@@ -26,7 +26,8 @@ class RobotinoWorldModelInterface : public Interface
     M1_2,
     M2_3,
     RECYCLING,
-    TEST
+    TEST,
+    IGNORED
   } machine_type_t;
 
   typedef enum {
