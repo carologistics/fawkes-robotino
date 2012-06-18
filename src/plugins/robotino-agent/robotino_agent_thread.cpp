@@ -52,8 +52,13 @@ void
 RobotinoClipsAgentThread::init()
 {
   cfg_clips_debug_ = false;
+  cfg_skill_sim_time_ = 2.0;
   try {
     cfg_clips_debug_ = config->get_bool("/plugins/robotino-agent/clips-debug");
+  } catch (Exception &e) {} // ignore, use default
+  try {
+    cfg_skill_sim_time_ =
+      config->get_float("/plugins/robotino-agent/skill-sim-time");
   } catch (Exception &e) {} // ignore, use default
 
   cfg_clips_dir_ = std::string(SRCDIR) + "/clips/";
@@ -194,7 +199,7 @@ RobotinoClipsAgentThread::loop()
 
   if (goto_started_) {
     Time now(clock);
-    if ((now - goto_start_time_) >= 0.1) {
+    if ((now - goto_start_time_) >= cfg_skill_sim_time_) {
       logger->log_warn(name(), "GOTO is final");
       clips->assert_fact("(goto-final NONE)");
       goto_started_ = false;
@@ -203,7 +208,7 @@ RobotinoClipsAgentThread::loop()
 
   if (get_s0_started_) {
     Time now(clock);
-    if ((now - get_s0_start_time_) >= 0.1) {
+    if ((now - get_s0_start_time_) >= cfg_skill_sim_time_) {
       logger->log_warn(name(), "GET-S0 is final");
       clips->assert_fact("(get-s0-final)");
       get_s0_started_ = false;

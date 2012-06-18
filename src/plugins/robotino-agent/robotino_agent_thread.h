@@ -70,6 +70,7 @@ class RobotinoClipsAgentThread
  private:
   std::string cfg_clips_dir_;
   bool        cfg_clips_debug_;
+  float       cfg_skill_sim_time_;
 
   fawkes::SkillerInterface *skiller_if_;
   fawkes::RobotinoWorldModelInterface *wm_in_if_;
