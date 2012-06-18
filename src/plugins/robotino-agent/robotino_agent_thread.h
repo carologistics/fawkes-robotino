@@ -74,7 +74,7 @@ class RobotinoClipsAgentThread
   bool          started_;
   bool          goto_started_;
   fawkes::Time *goto_start_time_;
-  std::string   goto_machine_;
+  std::string   goto_machines_;
   std::string   goto_puck_;
   std::string   goto_skill_string_;
 

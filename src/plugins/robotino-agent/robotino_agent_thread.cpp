@@ -143,7 +143,7 @@ RobotinoClipsAgentThread::loop()
 
   if (goto_started_) {
     Time now(clock);
-    if ((now - goto_start_time_) >= 1.) {
+    if ((now - goto_start_time_) >= 0.1) {
       logger->log_warn(name(), "GOTO is final");
       clips->assert_fact("(goto-final NONE)");
       goto_started_ = false;
@@ -152,7 +152,7 @@ RobotinoClipsAgentThread::loop()
 
   if (get_s0_started_) {
     Time now(clock);
-    if ((now - get_s0_start_time_) >= 1.) {
+    if ((now - get_s0_start_time_) >= 0.1) {
       logger->log_warn(name(), "GET-S0 is final");
       clips->assert_fact("(get-s0-final)");
       get_s0_started_ = false;
@@ -206,19 +206,20 @@ RobotinoClipsAgentThread::clips_get_s0()
 
 
 void
-RobotinoClipsAgentThread::clips_goto_machine(std::string machine, std::string puck)
+RobotinoClipsAgentThread::clips_goto_machine(std::string machines,
+                                             std::string puck)
 {
-  logger->log_info(name(), "Goto machine %s with puck %s",
-                   machine.c_str(), puck.c_str());
+  logger->log_info(name(), "Goto of the machines (%s) with puck %s",
+                   machines.c_str(), puck.c_str());
 
-  goto_machine_ = machine;
+  goto_machines_ = machines;
   goto_puck_ = puck;
 
   if (USE_SKILLER) {
     try {
       char *sstr_temp;
-      if (asprintf(&sstr_temp, "goto{machine=\"%s\", puck=\"%s\"}",
-                   machine.c_str(), puck.c_str()) != -1)
+      if (asprintf(&sstr_temp, "take_puck_to_best{machines=\"%s\", puck=\"%s\"}",
+                   machines.c_str(), puck.c_str()) != -1)
       {
         goto_skill_string_ = sstr_temp;
         free(sstr_temp);
