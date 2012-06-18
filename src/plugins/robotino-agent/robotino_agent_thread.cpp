@@ -58,23 +58,6 @@ RobotinoClipsAgentThread::init()
 
   cfg_clips_dir_ = std::string(SRCDIR) + "/clips/";
 
-  clips->add_function("get-clips-dir", sigc::slot<std::string>(sigc::mem_fun(*this, &RobotinoClipsAgentThread::clips_get_clips_dir)));
-  clips->add_function("now", sigc::slot<CLIPS::Values>(sigc::mem_fun( *this, &RobotinoClipsAgentThread::clips_now)));
-  clips->add_function("goto-machine", sigc::slot<void, std::string, std::string>(sigc::mem_fun( *this, &RobotinoClipsAgentThread::clips_goto_machine)));
-  clips->add_function("get-s0", sigc::slot<void>(sigc::mem_fun( *this, &RobotinoClipsAgentThread::clips_get_s0)));
-
-  if (!clips->batch_evaluate(cfg_clips_dir_ + "init.clp")) {
-    logger->log_error(name(), "Failed to initialize CLIPS environment, "
-                      "batch file failed.");
-    throw Exception("Failed to initialize CLIPS environment, batch file failed.");
-  }
-
-  if (cfg_clips_debug_) {
-    clips->assert_fact("(enable-debug)");
-    clips->refresh_agenda();
-    clips->run();
-  }
-
   skiller_if_ = blackboard->open_for_reading<SkillerInterface>("Skiller");
 
   if (! skiller_if_->has_writer()) {
@@ -86,8 +69,32 @@ RobotinoClipsAgentThread::init()
     throw Exception("Skiller already has a different exclusive controller");
   }
 
-  wm_if_ =
+  wm_in_if_ =
     blackboard->open_for_reading<RobotinoWorldModelInterface>("Model fll merged");
+  wm_out_if_ =
+    blackboard->open_for_writing<RobotinoWorldModelInterface>("Agent Belief");
+
+
+  clips->add_function("get-clips-dir", sigc::slot<std::string>(sigc::mem_fun(*this, &RobotinoClipsAgentThread::clips_get_clips_dir)));
+  clips->add_function("now", sigc::slot<CLIPS::Values>(sigc::mem_fun( *this, &RobotinoClipsAgentThread::clips_now)));
+  clips->add_function("goto-machine", sigc::slot<void, std::string, std::string>(sigc::mem_fun( *this, &RobotinoClipsAgentThread::clips_goto_machine)));
+  clips->add_function("get-s0", sigc::slot<void>(sigc::mem_fun( *this, &RobotinoClipsAgentThread::clips_get_s0)));
+  clips->add_function("wm-publish", sigc::slot<void, std::string, std::string, CLIPS::Values, int>(sigc::mem_fun( *this, &RobotinoClipsAgentThread::clips_wm_pub)));
+
+  if (!clips->batch_evaluate(cfg_clips_dir_ + "init.clp")) {
+    logger->log_error(name(), "Failed to initialize CLIPS environment, "
+                      "batch file failed.");
+    blackboard->close(skiller_if_);
+    blackboard->close(wm_in_if_);
+    blackboard->close(wm_out_if_);
+    throw Exception("Failed to initialize CLIPS environment, batch file failed.");
+  }
+
+  if (cfg_clips_debug_) {
+    clips->assert_fact("(enable-debug)");
+    clips->refresh_agenda();
+    clips->run();
+  }
 
   ctrl_recheck_ = true;
 
@@ -113,7 +120,8 @@ RobotinoClipsAgentThread::finalize()
   }
 
   blackboard->close(skiller_if_);
-  blackboard->close(wm_if_);
+  blackboard->close(wm_in_if_);
+  blackboard->close(wm_out_if_);
 }
 
 
@@ -141,18 +149,20 @@ RobotinoClipsAgentThread::loop()
     started_ = true;
   }
 
-  wm_if_->read();
-  if (wm_if_->changed()) {
+  worldmodel_changed_ = false;
+
+  wm_in_if_->read();
+  if (wm_in_if_->changed()) {
     logger->log_debug(name(), "WM Update");
 
     for (unsigned int i = 1; i <= 10; ++i) {
       // ignore unknown machines, the information can
       // only be as bad as or even worse than ours
-      if (wm_if_->machine_types(i) == RobotinoWorldModelInterface::TYPE_UNKNOWN)
+      if (wm_in_if_->machine_types(i) == RobotinoWorldModelInterface::TYPE_UNKNOWN)
         continue;
 
       const char *loaded_with = NULL;
-      switch (wm_if_->machine_states(i)) {
+      switch (wm_in_if_->machine_states(i)) {
       case RobotinoWorldModelInterface::EMPTY:
         loaded_with = "(loaded-with)"; break;
       case RobotinoWorldModelInterface::S0_ONLY:
@@ -173,7 +183,7 @@ RobotinoClipsAgentThread::loop()
 
       clips->assert_fact_f(
         "(wm-ext-update (machine \"m%u\") (mtype %s) %s)",
-        i, wm_if_->tostring_machine_type_t(wm_if_->machine_types(i)),
+        i, wm_in_if_->tostring_machine_type_t(wm_in_if_->machine_types(i)),
         loaded_with);
     }
   }
@@ -202,6 +212,10 @@ RobotinoClipsAgentThread::loop()
 
   clips->refresh_agenda();
   clips->run();
+
+  if (worldmodel_changed_) {
+    wm_out_if_->write();
+  }
 }
 
 
@@ -278,5 +292,77 @@ RobotinoClipsAgentThread::clips_goto_machine(std::string machines,
   } else {
     goto_start_time_->stamp();
     goto_started_ = true;
+  }
+}
+
+void
+RobotinoClipsAgentThread::clips_wm_pub(std::string machine, std::string mtype,
+                                       CLIPS::Values loaded_with, int junk)
+{
+  bool loaded_s0 = false, loaded_s1 = false, loaded_s2 = false;
+  unsigned int machine_id = 0;
+
+  if (sscanf(machine.c_str(), "m%u", &machine_id) == 1) {
+    // valid machine name
+    if (mtype == "M1") {
+      wm_out_if_->set_machine_types(machine_id, RobotinoWorldModelInterface::M1);
+    } else if (mtype == "M2") {
+      wm_out_if_->set_machine_types(machine_id, RobotinoWorldModelInterface::M2);
+    } else if (mtype == "M3") {
+      wm_out_if_->set_machine_types(machine_id, RobotinoWorldModelInterface::M3);
+    } else if (mtype == "M1_2") {
+      wm_out_if_->set_machine_types(machine_id, RobotinoWorldModelInterface::M1_2);
+    } else if (mtype == "M2_3") {
+      wm_out_if_->set_machine_types(machine_id, RobotinoWorldModelInterface::M2_3);
+    } else if (mtype == "M1_EXPRESS") {
+      wm_out_if_->set_machine_types(machine_id,
+                                    RobotinoWorldModelInterface::M1_EXPRESS);
+      wm_out_if_->set_express_machine(machine_id);
+    } else if (mtype == "IGNORED") {
+      wm_out_if_->set_machine_types(machine_id,
+                                    RobotinoWorldModelInterface::IGNORED);
+    }
+
+    CLIPS::Values::iterator v;
+    for (v = loaded_with.begin(); v != loaded_with.end(); ++v) {
+      if (v->as_string() == "S0") {
+        loaded_s0 = true;
+      } else if (v->as_string() == "S1") {
+        loaded_s1 = true;
+      } else if (v->as_string() == "S2") {
+        loaded_s2 = true;
+      }
+    }
+
+    if (! (loaded_s0 || loaded_s1 || loaded_s2)) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::EMPTY);
+    } else if (  loaded_s0 && ! loaded_s1 && ! loaded_s2) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::S0_ONLY);
+    } else if ( ! loaded_s0 &&   loaded_s1 && ! loaded_s2) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::S1_ONLY);
+    } else if ( ! loaded_s0 && ! loaded_s1 &&   loaded_s2) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::S2_ONLY);
+    } else if (   loaded_s0 &&   loaded_s1 && ! loaded_s2) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::S0_S1);
+    } else if (   loaded_s0 && ! loaded_s1 &&   loaded_s2) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::S0_S2);
+    } else if ( ! loaded_s0 &&   loaded_s1 &&   loaded_s2) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::S1_S2);
+    } else if (junk == 1) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::CONSUMED_1);
+    } else if (junk >= 2) {
+      wm_out_if_->set_machine_states(machine_id,
+                                     RobotinoWorldModelInterface::CONSUMED_2);
+    }
+
+    worldmodel_changed_ = true;
   }
 }

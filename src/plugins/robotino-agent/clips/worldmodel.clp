@@ -274,8 +274,18 @@
 )
 
 
-; Cleanup world model requests if left over
+; Send world model information
+(defrule wm-publish
+  (declare (salience ?*PRIORITY_WM_PUB*))
+  ;(time $?now)
+  (machine (name ?name) (mtype ?mt&~UNKNOWN) (loaded-with $?lw) (junk ?j))
+  =>
+  (if (debug 3) then (printout t "Publishing world model" crlf))
+  (wm-publish ?name (str-cat ?mt) ?lw ?j)
+)
 
+
+; Cleanup world model requests if left over
 (defrule wm-cleanup-wm-eval
   (declare (salience ?*PRIORITY_CLEANUP*))
   ?w <- (wm-eval)

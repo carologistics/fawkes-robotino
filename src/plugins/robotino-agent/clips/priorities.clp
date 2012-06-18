@@ -16,6 +16,7 @@
   ?*PRIORITY_P*       =   30
   ?*PRIORITY_LOW*     = -100
   ?*PRIORITY_SKILL*   = -150
+  ?*PRIORITY_WM_PUB*  = -200
   ?*PRIORITY_CLEANUP* = -400
   ?*PRIORITY_LAST*    = -500
 

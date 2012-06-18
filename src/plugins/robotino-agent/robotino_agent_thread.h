@@ -64,13 +64,16 @@ class RobotinoClipsAgentThread
   CLIPS::Values clips_now();
   void clips_goto_machine(std::string machine, std::string puck);
   void clips_get_s0();
+  void clips_wm_pub(std::string machine, std::string mtype,
+                    CLIPS::Values loaded_with, int junk);
 
  private:
   std::string cfg_clips_dir_;
   bool        cfg_clips_debug_;
 
   fawkes::SkillerInterface *skiller_if_;
-  fawkes::RobotinoWorldModelInterface *wm_if_;
+  fawkes::RobotinoWorldModelInterface *wm_in_if_;
+  fawkes::RobotinoWorldModelInterface *wm_out_if_;
 
   bool          ctrl_recheck_;
 
@@ -84,6 +87,8 @@ class RobotinoClipsAgentThread
   bool          get_s0_started_;
   fawkes::Time *get_s0_start_time_;
   std::string   get_s0_skill_string_;
+
+  bool          worldmodel_changed_;
 
 };
 
