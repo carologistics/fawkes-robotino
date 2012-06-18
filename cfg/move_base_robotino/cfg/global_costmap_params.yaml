@@ -1,6 +1,6 @@
 global_costmap:
   global_frame: robotino_odometry
   robot_base_frame: base_link
-  update_frequency: 5.0
+  update_frequency: 2.0
   static_map: true
   rolling_window: false
