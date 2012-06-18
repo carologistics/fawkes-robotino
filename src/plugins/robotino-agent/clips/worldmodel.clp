@@ -48,6 +48,7 @@
   ?m <- (machine (name ?name) (mtype UNKNOWN) (productions ?productions))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M1" crlf))
   (modify ?m (mtype M1) (loaded-with) (productions (+ ?productions 1)))
 )
 
@@ -57,6 +58,7 @@
   ?m <- (machine (name ?name) (mtype UNKNOWN) (loaded-with $?loaded))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M2 or M3" crlf))
   (modify ?m (mtype M2_3) (loaded-with (insert$ ?loaded 1 S0)))
 )
 
@@ -66,6 +68,7 @@
   ?m <- (machine (name ?name) (mtype UNKNOWN) (loaded-with $?loaded))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M2 or M3" crlf))
   (modify ?m (mtype M2_3) (loaded-with (insert$ ?loaded 1 S1)))
 )
 
@@ -75,6 +78,7 @@
   ?m <- (machine (name ?name) (mtype UNKNOWN))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M1" crlf))
   (modify ?m (mtype M1))
 )
 
@@ -84,6 +88,7 @@
   ?m <- (machine (name ?name) (mtype UNKNOWN))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M1 or M2" crlf))
   (modify ?m (mtype M1_2))
 )
 
@@ -93,6 +98,7 @@
   ?m <- (machine (name ?name) (mtype UNKNOWN) (loaded-with $?loaded))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M3" crlf))
   (modify ?m (mtype M3) (loaded-with (insert$ ?loaded 1 S2)))
 )
 
@@ -106,6 +112,7 @@
   ?m <- (machine (name ?name) (mtype M1_2) (productions ?productions))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M1" crlf))
   (modify ?m (mtype M1) (loaded-with) (productions (+ ?productions 1)))
 )
 
@@ -115,6 +122,7 @@
   ?m <- (machine (name ?name) (mtype M1_2) (loaded-with $?loaded))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M2" crlf))
   (modify ?m (mtype M2) (loaded-with (insert$ ?loaded 1 S0)))
 )
 
@@ -124,6 +132,7 @@
   ?m <- (machine (name ?name) (mtype M1_2))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M1" crlf))
   (modify ?m (mtype M1))
 )
 
@@ -134,6 +143,7 @@
                  (productions ?productions))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M2" crlf))
   (modify ?m (mtype M2) (loaded-with) (junk (+ ?junk (length$ ?loaded)))
           (productions (+ ?productions 1)))
 )
@@ -144,6 +154,7 @@
   ?m <- (machine (name ?name) (mtype M1_2) (loaded-with $?loaded))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M2" crlf))
   (modify ?m (mtype M2) (loaded-with (insert$ ?loaded 1 S1)))
 )
 
@@ -157,6 +168,7 @@
                  (productions ?productions))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M2" crlf))
   (modify ?m (mtype M2) (loaded-with) (junk (+ ?junk (length$ ?loaded)))
           (productions (+ ?productions 1)))
 )
@@ -168,6 +180,7 @@
                  (productions ?productions))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M2" crlf))
   (modify ?m (mtype M2) (loaded-with) (junk (+ ?junk (length$ ?loaded)))
           (productions (+ ?productions 1)))
 )
@@ -178,6 +191,7 @@
   ?m <- (machine (name ?name) (mtype M2_3) (loaded-with $?loaded))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M3" crlf))
   (modify ?m (mtype M3) (loaded-with (insert$ ?loaded 1 S2)))
 )
 
@@ -187,6 +201,7 @@
   ?m <- (machine (name ?name) (mtype M2_3))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M2" crlf))
   (modify ?m (mtype M2))
 )
 
@@ -197,6 +212,7 @@
                  (loaded-with $?l&:(subsetp (create$ S1) ?l)))
   =>
   (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M3" crlf))
   (modify ?m (mtype M3) (loaded-with (insert$ ?l 1 S0)))
 )
 
