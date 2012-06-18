@@ -29,7 +29,7 @@ depends_interfaces = {
    { v="worldmodel", type="WorldModel"},
    { v="omnivisionSwitch",type = "SwitchInterface" , id = "omnivisionSwitch"}, --todo
    { v="OmniPuck1",type = "Position3DInterface", id = "OmniPuck1"},
-   { v="light",type ="RobotinoAmpelInterface" } 
+   { v="light",type ="RobotinoAmpelInterface", id = "light" } 
   
 }
 
@@ -100,8 +100,6 @@ fsm:add_transitions{
 }
 function INIT:init()
 --init everything if needed
-self.fsm.vars.greenchecked = 0
-
 end
 
 function WAIT_PUCK:init()
