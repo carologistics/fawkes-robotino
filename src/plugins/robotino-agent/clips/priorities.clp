@@ -10,6 +10,7 @@
 (defglobal
   ?*PRIORITY_HIGH*    =  500
   ?*PRIORITY_WM*      =  100
+  ?*PRIORITY_WM_EXT*  =   90
   ?*PRIORITY_WM_DEF*  =   80
   ?*PRIORITY_S2*      =   20
   ?*PRIORITY_P*       =   30

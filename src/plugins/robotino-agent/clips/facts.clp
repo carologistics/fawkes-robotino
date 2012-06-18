@@ -14,8 +14,8 @@
 
 (deftemplate machine
   (slot name (type STRING))
-  (slot mtype (type SYMBOL)
-        (allowed-values UNKNOWN M1 M2 M3 M1_2 M2_3 DELIVER) (default UNKNOWN))
+  (slot mtype (type SYMBOL) (default UNKNOWN)
+        (allowed-values UNKNOWN M1 M2 M3 M1_2 M2_3 DELIVER M1_EXPRESS IGNORED))
   (slot egc (type SYMBOL) (allowed-values YES NO) (default NO))
   (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
   (slot junk (type INTEGER) (default 0))
@@ -30,9 +30,10 @@
 (deffacts startup
   (holding NONE)
   (machine (name "deliver") (mtype DELIVER))
+  (machine (name "m10"))
   (machine (name "m9"))
   (machine (name "m8"))
-  (machine (name "m7"))
+  (machine (name "m7") (mtype IGNORED))
   (machine (name "m6"))
   (machine (name "m5"))
   (machine (name "m4"))

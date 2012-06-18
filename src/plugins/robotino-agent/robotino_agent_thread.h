@@ -36,6 +36,7 @@
 
 namespace fawkes {
   class SkillerInterface;
+  class RobotinoWorldModelInterface;
 }
 
 class RobotinoClipsAgentThread
@@ -69,6 +70,8 @@ class RobotinoClipsAgentThread
   bool        cfg_clips_debug_;
 
   fawkes::SkillerInterface *skiller_if_;
+  fawkes::RobotinoWorldModelInterface *wm_if_;
+
   bool          ctrl_recheck_;
 
   bool          started_;

@@ -22,6 +22,7 @@
 #include "robotino_agent_thread.h"
 
 #include <interfaces/SkillerInterface.h>
+#include <interfaces/RobotinoWorldModelInterface.h>
 
 #define USE_SKILLER false
 
@@ -85,6 +86,8 @@ RobotinoClipsAgentThread::init()
     throw Exception("Skiller already has a different exclusive controller");
   }
 
+  wm_if_ =
+    blackboard->open_for_reading<RobotinoWorldModelInterface>("Model fll merged");
 
   ctrl_recheck_ = true;
 
@@ -110,6 +113,7 @@ RobotinoClipsAgentThread::finalize()
   }
 
   blackboard->close(skiller_if_);
+  blackboard->close(wm_if_);
 }
 
 
@@ -135,6 +139,43 @@ RobotinoClipsAgentThread::loop()
   if (! started_) {
     clips->assert_fact("(start)");
     started_ = true;
+  }
+
+  wm_if_->read();
+  if (wm_if_->changed()) {
+    logger->log_debug(name(), "WM Update");
+
+    for (unsigned int i = 1; i <= 10; ++i) {
+      // ignore unknown machines, the information can
+      // only be as bad as or even worse than ours
+      if (wm_if_->machine_types(i) == RobotinoWorldModelInterface::TYPE_UNKNOWN)
+        continue;
+
+      const char *loaded_with = NULL;
+      switch (wm_if_->machine_states(i)) {
+      case RobotinoWorldModelInterface::EMPTY:
+        loaded_with = "(loaded-with)"; break;
+      case RobotinoWorldModelInterface::S0_ONLY:
+        loaded_with = "(loaded-with S0)"; break;
+      case RobotinoWorldModelInterface::S1_ONLY:
+        loaded_with = "(loaded-with S1)"; break;
+      case RobotinoWorldModelInterface::S2_ONLY:
+        loaded_with = "(loaded-with S2)"; break;
+      case RobotinoWorldModelInterface::S1_S2:
+        loaded_with = "(loaded-with S1 S2)"; break;
+      case RobotinoWorldModelInterface::S0_S1:
+        loaded_with = "(loaded-with S0 S1)"; break;
+      case RobotinoWorldModelInterface::S0_S2:
+        loaded_with = "(loaded-with S0 S2)"; break;
+      default:
+        loaded_with = ""; break;
+      }
+
+      clips->assert_fact_f(
+        "(wm-ext-update (machine \"m%u\") (mtype %s) %s)",
+        i, wm_if_->tostring_machine_type_t(wm_if_->machine_types(i)),
+        loaded_with);
+    }
   }
 
   // might be used to trigger loop events

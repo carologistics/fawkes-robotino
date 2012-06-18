@@ -14,6 +14,31 @@
   (slot now-holding (type SYMBOL) (allowed-values S0 S1 S2 P NONE))
 )
 
+; updates from external source
+(deftemplate wm-ext-update
+  (slot machine (type STRING))
+  (slot mtype (type SYMBOL)
+        (allowed-values M1_EXPRESS M1 M2 M3 M1_2 M2_3 RECYCLING TEST))
+  (multislot loaded-with (type SYMBOL) (allowed-values S0 S1 S2))
+)
+
+(defrule wm-ext-mtype
+  (declare (salience ?*PRIORITY_WM_EXT*))
+  (wm-ext-update (machine ?name) (mtype ?mt))
+  ?m <- (machine (name ?name) (mtype UNKNOWN))
+  =>
+  (modify ?m (mtype ?mt))
+)
+
+(defrule wm-ext-loaded-with
+  (declare (salience ?*PRIORITY_WM_EXT*))
+  (wm-ext-update (machine ?name) (loaded-with $?lw))
+  ?m <- (machine (name ?name) (loaded-with $?l&:(> (length$ ?lw) 0)&:(subsetp ?l ?lw)))
+  =>
+  (modify ?m (loaded-with ?lw))
+)
+
+
 ; Knowledge we can gain if pushing puck to unkown machine
 
 (defrule wm-determine-unk-s0-s1
@@ -224,6 +249,13 @@
 (defrule wm-cleanup-wm-eval
   (declare (salience ?*PRIORITY_CLEANUP*))
   ?w <- (wm-eval)
+  =>
+  (retract ?w)
+)
+
+(defrule wm-cleanup-ext-update
+  (declare (salience ?*PRIORITY_CLEANUP*))
+  ?w <- (wm-ext-update)
   =>
   (retract ?w)
 )
