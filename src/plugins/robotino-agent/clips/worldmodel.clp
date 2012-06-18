@@ -38,9 +38,19 @@
   (modify ?m (loaded-with ?lw))
 )
 
+; The first M1 is reserved for the express
+(defrule wm-m1-express
+  (declare (salience ?*PRIORITY_WM*))
+  ?m <- (machine (name ?name) (mtype M1))
+  (not (machine (mtype M1_EXPRESS)))
+  =>
+  (if (debug 2) then (printout t "Reserving M1 " ?name " for EXPRESS good" crlf))
+  (modify ?m (mtype M1_EXPRESS))
+)
+  
+
 
 ; Knowledge we can gain if pushing puck to unkown machine
-
 (defrule wm-determine-unk-s0-s1
   (declare (salience ?*PRIORITY_WM*))
   ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding S1))
@@ -216,6 +226,8 @@
   (modify ?m (mtype M3) (loaded-with (insert$ ?l 1 S0)))
 )
 
+; --- Post-production
+
 (defrule wm-good-consumed
   (declare (salience ?*PRIORITY_WM_DEF*))
   ?w <- (wm-eval (machine ?name) (was-holding ?p&~NONE) (now-holding NONE))
@@ -261,6 +273,8 @@
   (modify ?m (productions (+ ?productions 1)))
 )
 
+
+; Cleanup world model requests if left over
 
 (defrule wm-cleanup-wm-eval
   (declare (salience ?*PRIORITY_CLEANUP*))
