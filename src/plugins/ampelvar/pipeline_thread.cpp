@@ -101,6 +101,10 @@ RobotinoAmpelVarPipelineThread::init()
   cfg_mirror_file_   = std::string(CONFDIR) + "/" +
     config->get_string((cfg_prefix_ + "mirror_file").c_str());
 
+  cfg_red_height_	 = config->get_float((cfg_prefix_ + "red_height").c_str());
+  cfg_orange_height_ = config->get_float((cfg_prefix_ + "orange_height").c_str());
+  cfg_green_height_	 = config->get_float((cfg_prefix_ + "green_height").c_str());
+
   // camera
   cam_ = vision_master->register_for_camera( cfg_camera_.c_str(), this );
 
@@ -200,15 +204,10 @@ RobotinoAmpelVarPipelineThread::init()
   center = mirror_->getCenter();
   /*center.x=158;
   center.y=121;*/
-  
-  //offset_laser = 0.115f; // Offset laser zwischen Laser und Omnivision
-  height_red=0.28f;
-  height_orange=0.245f;
-  height_green=0.21f;
 
   luminance_threshold = 2;
 
-  logger->log_info(name(),"init=> center: x=%i, y=%i", center.x, center.y);
+  logger->log_debug(name(),"init=> center: x=%i, y=%i", center.x, center.y);
 }
 
 
@@ -256,7 +255,7 @@ RobotinoAmpelVarPipelineThread::finalize()
  */
 void
 RobotinoAmpelVarPipelineThread::loop()
-{
+{/*
   // check if there is a msg in the msg-queue
   while ( !ampel_switch_if_->msgq_empty() ) {
 	if (SwitchInterface::DisableSwitchMessage *msg = ampel_switch_if_->msgq_first_safe(msg)) {
@@ -274,12 +273,13 @@ RobotinoAmpelVarPipelineThread::loop()
   if (ampel_switch_if_->is_enabled() == false){
 	usleep(500000);
 	return;
-  }
+  }*/
 
 
   starttime = clock->now();
   laser_pos_if_->read();
 
+  //wenn der debug buffer geschrieben werden soll
   if(cfg_debug_buffer_) {
 	cam_->capture();
 	convert(cspace_from_, cspace_to_, cam_->buffer(), buffer_, img_width_, img_height_);
@@ -289,45 +289,42 @@ RobotinoAmpelVarPipelineThread::loop()
 	buffer_=cam_->buffer(); //dispose buffer dann am ende!
   }
 
-  /*laser_if_->read();
-  distances = laser_if_->distances();
-  distance_ampel=0.3f;*/
-
-  //theta = 0.1f;
   ampel_x = laser_pos_if_->translation(0);
   ampel_y = laser_pos_if_->translation(1);
 
   cart2polar2d(ampel_x,ampel_y, &theta, &distance_ampel);
 
-  logger->log_info(name(),"ampel x %f", ampel_x);
-  logger->log_info(name(),"ampel y %f", ampel_y);
+  logger->log_debug(name(),"ampel x %f", ampel_x);
+  logger->log_debug(name(),"ampel y %f", ampel_y);
 
-  logger->log_info(name(),"theta ampel: %f",theta);
-  logger->log_info(name(),"distance ampel: %f",distance_ampel);
+  logger->log_debug(name(),"theta ampel: %f",theta);
+  logger->log_debug(name(),"distance ampel: %f",distance_ampel);
 
-  logger->log_info(name(),"cam height: %f",cfg_camera_height_);
+  logger->log_debug(name(),"cam height: %f",cfg_camera_height_);
 
 
   //Berechnung des projezierten Abstandes der Ampelfarben auf der Nullebene
+  distance_red=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_red_height_);
+  distance_orange=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_orange_height_);
+  distance_green=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_green_height_);
 
-  distance_red=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-height_red);
-  distance_orange=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-height_orange);
-  distance_green=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-height_green);
-
-  logger->log_info(name(),"result distance red: %f",distance_red);
-  logger->log_info(name(),"result distance orange: %f",distance_orange);
-  logger->log_info(name(),"result distance green: %f",distance_green);
+  logger->log_debug(name(),"result distance red: %f",distance_red);
+  logger->log_debug(name(),"result distance orange: %f",distance_orange);
+  logger->log_debug(name(),"result distance green: %f",distance_green);
 
   // px position aus bulb! nearest neighbour
   // aus Laser: distance d und winkel theta
 
 
   //theta um 180° drehen
-  theta = theta + M_PI;
+  /*theta = theta + M_PI;
   if(theta > 2*M_PI)
-	  theta = theta - 2*M_PI;
+	  theta = theta - 2*M_PI;*/
 
-
+  if(theta > M_PI)
+	  theta = theta - M_PI;
+  else
+	  theta = theta + M_PI;
 
   d = distance_red;
   gefunden = false;
@@ -338,9 +335,14 @@ RobotinoAmpelVarPipelineThread::loop()
 		  pol = map[h * img_width_ + w];
 		  pol.r = pol.r * 100;
 
-		  pol.phi = pol.phi + M_PI;
+		  /*pol.phi = pol.phi + M_PI;
 		  if(pol.phi > 2*M_PI)
-			  pol.phi = pol.phi - 2*M_PI;
+			  pol.phi = pol.phi - 2*M_PI;*/
+
+		  if(pol.phi > M_PI)
+			  pol.phi = pol.phi - M_PI;
+		  else
+			  pol.phi = pol.phi + M_PI;
 
 		  if(pol.phi <= theta && pol.r <= d) {
 			  gefunden = true;
@@ -365,9 +367,14 @@ RobotinoAmpelVarPipelineThread::loop()
 		  pol = map[h * img_width_ + w];
 		  pol.r = pol.r * 100;
 
-		  pol.phi = pol.phi + M_PI;
+		  /*pol.phi = pol.phi + M_PI;
 		  if(pol.phi > 2*M_PI)
-			  pol.phi = pol.phi - 2*M_PI;
+			  pol.phi = pol.phi - 2*M_PI;*/
+
+		  if(pol.phi > M_PI)
+			  pol.phi = pol.phi - M_PI;
+		  else
+			  pol.phi = pol.phi + M_PI;
 
 		  if(pol.phi <= theta && pol.r <= d) {
 			  gefunden = true;
@@ -392,9 +399,15 @@ RobotinoAmpelVarPipelineThread::loop()
 	  for(w = 1; w < img_width_; ++w) {
 		  pol = map[h * img_width_ + w];
 		  pol.r = pol.r * 100;
-		  pol.phi = pol.phi + M_PI;
+
+		  /*pol.phi = pol.phi + M_PI;
 		  if(pol.phi > 2*M_PI)
-			  pol.phi = pol.phi - 2*M_PI;
+			  pol.phi = pol.phi - 2*M_PI;*/
+
+		  if(pol.phi > M_PI)
+			  pol.phi = pol.phi - M_PI;
+		  else
+			  pol.phi = pol.phi + M_PI;
 
 		  if(pol.phi <= theta && pol.r <= d) {
 			  gefunden = true;
@@ -410,13 +423,13 @@ RobotinoAmpelVarPipelineThread::loop()
   px_position_green_y = h;
 
 
-  logger->log_info(name(),"result px_position_red_x: %i",px_position_red_x);
-  logger->log_info(name(),"result px_position_orange_x: %i",px_position_orange_x);
-  logger->log_info(name(),"result px_position_green_x: %i",px_position_green_x);
+  logger->log_debug(name(),"result px_position_red_x: %i",px_position_red_x);
+  logger->log_debug(name(),"result px_position_orange_x: %i",px_position_orange_x);
+  logger->log_debug(name(),"result px_position_green_x: %i",px_position_green_x);
 
-  logger->log_info(name(),"result px_position_red_y: %i",px_position_red_y);
-  logger->log_info(name(),"result px_position_orange_y: %i",px_position_orange_y);
-  logger->log_info(name(),"result px_position_green_y: %i",px_position_green_y);
+  logger->log_debug(name(),"result px_position_red_y: %i",px_position_red_y);
+  logger->log_debug(name(),"result px_position_orange_y: %i",px_position_orange_y);
+  logger->log_debug(name(),"result px_position_green_y: %i",px_position_green_y);
 
   luminance_threshold = 2;
 
@@ -529,7 +542,7 @@ RobotinoAmpelVarPipelineThread::loop()
 			  bucket[62]+
 			  bucket[63];
 
-  logger->log_info(name(),"bucket[0] green: %i",bucket[0]);
+  logger->log_debug(name(),"bucket[0] green: %i",bucket[0]);
 
   if(bucket[0]>= luminance_threshold) {
 	  is_green = true;
@@ -565,11 +578,11 @@ RobotinoAmpelVarPipelineThread::loop()
   ampel_green_if_->write();
 
 
-  logger->log_info(name(),"result red: %i",ampel_red_if_->is_enabled());
-  logger->log_info(name(),"result orange: %i",ampel_orange_if_->is_enabled());
-  logger->log_info(name(),"result green: %i",ampel_green_if_->is_enabled());
+  logger->log_debug(name(),"result red: %i",ampel_red_if_->is_enabled());
+  logger->log_debug(name(),"result orange: %i",ampel_orange_if_->is_enabled());
+  logger->log_debug(name(),"result green: %i",ampel_green_if_->is_enabled());
 
-  logger->log_info(name(),"Zeit: %f",clock->elapsed(&starttime));
+  logger->log_debug(name(),"Zeit: %f",clock->elapsed(&starttime));
 
   if(!cfg_debug_buffer_){
 	cam_->dispose_buffer();

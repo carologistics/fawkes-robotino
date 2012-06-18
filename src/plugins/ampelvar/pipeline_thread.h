@@ -103,12 +103,13 @@ class RobotinoAmpelVarPipelineThread
   float cfg_camera_height_;
   bool cfg_debug_buffer_;
 
+  float cfg_red_height_;
+  float cfg_orange_height_;
+  float cfg_green_height_;
+
   float d;
   float theta;
 
-  float height_red;
-  float height_orange;
-  float height_green;
   float distance_ampel;
   float distance_red;
   float distance_orange;
