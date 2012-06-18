@@ -26,7 +26,7 @@
 				Enumeration for the type of a machine
 			</comment>
 			<item name="TYPE_UNKNOWN">Unknown machine type</item>
-			<item name="EXPRESS_MACHINE">Express Machine</item>
+			<item name="M1_EXPRESS">Express Machine</item>
 			<item name="M1">M1</item>
 			<item name="M2">M1</item>
 			<item name="M3">M1</item>

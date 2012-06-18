@@ -56,7 +56,7 @@ class RobotinoWorldModelInterface : public Interface
 			 */
   typedef enum {
     TYPE_UNKNOWN /**< Unknown machine type */,
-    EXPRESS_MACHINE /**< Express Machine */,
+    M1_EXPRESS /**< Express Machine */,
     M1 /**< M1 */,
     M2 /**< M1 */,
     M3 /**< M1 */,

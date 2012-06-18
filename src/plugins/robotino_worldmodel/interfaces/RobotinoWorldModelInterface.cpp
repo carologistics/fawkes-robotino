@@ -79,7 +79,7 @@ RobotinoWorldModelInterface::RobotinoWorldModelInterface() : Interface()
   add_fieldinfo(IFT_ENUM, "machine_types", 13, &data->machine_types, "machine_type_t");
   add_fieldinfo(IFT_ENUM, "machine_states", 13, &data->machine_states, "machine_state_t");
   add_fieldinfo(IFT_UINT32, "express_machine", 1, &data->express_machine);
-  unsigned char tmp_hash[] = {0xc8, 0x78, 0x7e, 0xbd, 0x25, 0x65, 0xb5, 0x1d, 0x2e, 0x2e, 0x93, 0x8a, 0x2, 0x1d, 0x99, 0xfa};
+  unsigned char tmp_hash[] = {0x7, 0x76, 0x19, 0xa1, 0xda, 0x78, 0xbf, 0xa6, 0x29, 0x3f, 0xeb, 0x4f, 0x54, 0x45, 0x8a, 0x18};
   set_hash(tmp_hash);
 }
 
@@ -97,7 +97,7 @@ RobotinoWorldModelInterface::tostring_machine_type_t(machine_type_t value) const
 {
   switch (value) {
   case TYPE_UNKNOWN: return "TYPE_UNKNOWN";
-  case EXPRESS_MACHINE: return "EXPRESS_MACHINE";
+  case M1_EXPRESS: return "M1_EXPRESS";
   case M1: return "M1";
   case M2: return "M2";
   case M3: return "M3";
@@ -193,6 +193,7 @@ RobotinoWorldModelInterface::set_machine_types(unsigned int index, const machine
     throw Exception("Index value %u out of bounds (0..13)", index);
   }
   data->machine_types[index] = new_machine_types;
+  data_changed = true;
 }
 /** Get machine_states value.
  * States
@@ -256,6 +257,7 @@ RobotinoWorldModelInterface::set_machine_states(unsigned int index, const machin
     throw Exception("Index value %u out of bounds (0..13)", index);
   }
   data->machine_states[index] = new_machine_states;
+  data_changed = true;
 }
 /** Get express_machine value.
  * The machine reserved for the

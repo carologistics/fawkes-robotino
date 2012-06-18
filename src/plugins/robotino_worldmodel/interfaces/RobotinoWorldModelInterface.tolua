@@ -19,7 +19,7 @@ class RobotinoWorldModelInterface : public Interface
 
   typedef enum {
     TYPE_UNKNOWN,
-    EXPRESS_MACHINE,
+    M1_EXPRESS,
     M1,
     M2,
     M3,
