@@ -39,15 +39,11 @@ local ORI_OFFSET = 0.15
 -- Initialize as skill module
 skillenv.skill_module(...)
 
+local pm = require 'puck_loc_module'
+
 function get_puck_loc()
-	if omnipuck:visibility_history() >= 5 then
-		fsm.vars.puck_loc = {
-			x = omnipuck.translation(0)
-			y = omnipuck.translation(1)
-		}
-		return true
-	end
-	return false
+	fsm.vars.puck_loc = pm.get_puck_loc(omnipuck)
+	return fsm.vars.puck_loc 
 end
 
 function no_puck()
