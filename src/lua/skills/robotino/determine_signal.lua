@@ -27,11 +27,11 @@ name               = "determine_signal"
 fsm                = SkillHSM:new{name=name,  start="INIT",  debug=false}
 depends_skills     = nil
 depends_interfaces = {
-   {v ="all_ampel",  type = "SwitchInterface",  id = "all_ampel"},   --ändern (todo)
+   {v ="ampelswitch",  type = "SwitchInterface",  id = "ampelswitch"},
    { v="ampel_green", type = "SwitchInterface",  id = "ampel_green"}, 
    { v="ampel_red", type = "SwitchInterface",  id = "ampel_red"}, 
    { v="ampel_orange", type = "SwitchInterface",  id = "ampel_orange"}, 
-   { v="light", type ="RobotinoAmpelInterface" writing =true  } 
+   { v="light", type ="RobotinoAmpelInterface",id = "light", writing =true  } 
   
 }
 
@@ -54,12 +54,16 @@ function is_normal()
 end
 
 function not_normal()
+	if not is_normal() then
+		ampelswitch:set_enabled(false)
+	end 
 	return not is_normal()
 end
 
 function flashing()
 	if self.fsm.vars.yellow_flashing>=2 then
 		light:set_state(light.YELLOW_FLASHING) 
+		ampelswitch:set_enabled(false) 
 	end
 	return self.fsm.vars.yellow_flashing>=2
 end
@@ -78,6 +82,7 @@ end
 function is_waiting_4_good()
 	if ampel_yellow:is_enabled() then
 		light:set_state(light.YELLOW) 
+		ampelswitch:set_enabled(false) 
 	end
 	return ampel_yellow:is_enabled()
 end
@@ -94,14 +99,16 @@ end
 function no_change()
 	if self.fsm.vars.last_color == "green" then
 		if ampel_green:is_enabled() then
-			light:set_state(light.NO_CHANGE) 
+			light:set_state(light.NO_CHANGE)
+			ampelswitch:set_enabled(false) 
 			return true
 		else 
 			self.fsm.vars.no_change=3
 		end
-	else if self.fsm.vars.last_color == "yellow" then
+	elseif self.fsm.vars.last_color == "yellow" then
 		if ampel_orange:is_enabled() then
 			light:set_state(light.NO_CHANGE) 
+			ampelswitch:set_enabled(false) 
 			return true
 		else 
 			self.fsm.vars.no_change=3
@@ -110,14 +117,20 @@ function no_change()
 
 	if ampel_green:is_enabled() and ampel_orange:is_enabled() then
 		self.fsm.vars.no_change =3
-	else if ampel_green:is_enabled() then
+	elseif ampel_green:is_enabled() then
 		self.fsm.vars.last_color = "green"
-	else if ampel_orange:is_enabled() then
+	elseif ampel_orange:is_enabled() then
 		self.fsm.vars.last_color = "yellow"
 	else 
 		self.fsm.vars.no_change =3
 	end
 
+end
+
+function is_offline()
+	
+	ampelswitch:set_enabled(false) 
+	return true
 end
 
 -- TODO nochange einbauen
@@ -142,12 +155,12 @@ fsm:add_transitions{
 	{"CHECK_WAITING_4_GOOD",  "FINAL",  cond = is_waiting_4_good}, 
 	{"CHECK_WAITING_4_GOOD", "CHECK_OUTOFORDER", cond =true}, 
 	{"CHECK_OUTOFORDER", "LOOP_START", cond = is_outoforder}, 
-	{"CHECK_OUTOFORDER", "FAILED", cond = true, desc = "all turned off"}
+	{"CHECK_OUTOFORDER", "FAILED", cond = is_offline, desc = "all turned off"}
 
 }
 
 function INIT:init()
-	all_ampel:set_enabled(true)
+	ampelswitch:set_enabled(true)
 	self.fsm.vars.no_change = 0
 	self.fsm.vars.last_color = nil
 end
@@ -162,32 +175,32 @@ function CHECK:init()
 		if ampel_red:is_enabled() then
 	 		light:set_state(light.RED) 
 		end
-	else if  self.fsm.vars.mode == "EXP" then	
+	elseif  self.fsm.vars.mode == "EXP" then	
 		if ampel_green:is_enabled() and ampel_orange:is_enabled() then
 			light:set_state(light.YELLOW_GREEN) 
-		else if ampel_green:is_enabled() then
+		elseif ampel_green:is_enabled() then
 			light:set_state(light.GREEN) 
-		else if ampel_orange:is_enabled() then
+		elseif ampel_orange:is_enabled() then
 			light:set_state(light.YELLOW_FLASHING) 
-		else if ampel_orange:is_enabled() then 
+		elseif ampel_orange:is_enabled() then 
 			light:set_state(light.RED) 
-		else if not ampel_orange:is_enabled() and not ampel_green:is_enabled() and not ampel_red:is_enabled() then
+		elseif not ampel_orange:is_enabled() and not ampel_green:is_enabled() and not ampel_red:is_enabled() then
 			light:set_state(light.YELLOW_FLASHING) 
 		end
-	else if self.fsm.vars.mode == "DELIVER" then
+	elseif self.fsm.vars.mode == "DELIVER" then
 		if ampel_green:is_enabled() then
 			light:set_state(light.GREEN) 
 		else 
 			light:set_state(light.RED) 	
 		end
-	else if self.fsm.vars.mode == "TEST" then
+	elseif self.fsm.vars.mode == "TEST" then
 		--to be implemented			
-	else if self.fsm.vars.mode == "RECYCLE" then
+	elseif self.fsm.vars.mode == "RECYCLE" then
 		if ampel_red:is_enabled() then
 			light:set_state(light.RED) 
-		else if ampel_orange:is_enabled() then
+		elseif ampel_orange:is_enabled() then
 			light:set_state(light.YELLOW_GREEN) 
-		else if ampel_green:is_enabled() then
+		elseif ampel_green:is_enabled() then
 			light:set_state(light.GREEN)  	
 		end
 	end
@@ -196,7 +209,8 @@ end
 
 
 function CHECK_YELLOW_FLASHING:init()
-	if ampel_orange:is_enabled() or (not ampel_green:is_enabled() and not ampel_orange:is_enabled() and not ampel_red:is_enabled() ) then
+
+	if ampel_orange:is_enabled() or (not ampel_green:is_enabled() and not ampel_orange:is_enabled() and not ampel_red:is_enabled() ) 	then
 		self.fsm.vars.yellow_flashing = 1
 		if ampel_orange:is_enabled() then
 			self.fsm.vars.orange = true			
@@ -207,11 +221,11 @@ function CHECK_YELLOW_FLASHING:init()
 end
 
 function CHECK_YELLOW_FLASHING_2:init()
-	if ampel_orange:is_enabled or (not ampel_green:is_enabled() and not ampel_orange:is_enabled() and not ampel_red:is_enabled() ) then
+	if ampel_orange:is_enabled() or (not ampel_green:is_enabled() and not ampel_orange:is_enabled() and not ampel_red:is_enabled() ) then
 		
 		if ampel_orange:is_enabled() and self.fsm.vars.orange ~= true then
 			self.fsm.vars.yellow_flashing = self.fsm.vars.yellow_flashing+1
-		else if (not ampel_green:is_enabled() and not ampel_orange:is_enabled() and not ampel_red:is_enabled() ) and 			self.fsm.vars.orange== true then
+		elseif (not ampel_green:is_enabled() and not ampel_orange:is_enabled() and not ampel_red:is_enabled() ) and 			self.fsm.vars.orange== true then
 			self.fsm.vars.yellow_flashing = self.fsm.vars.yellow_flashing+1
 			
 		end
