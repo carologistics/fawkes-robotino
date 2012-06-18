@@ -47,8 +47,6 @@
   (if (debug 2) then (printout t "Reserving M1 " ?name " for EXPRESS good" crlf))
   (modify ?m (mtype M1_EXPRESS))
 )
-  
-
 
 ; Knowledge we can gain if pushing puck to unkown machine
 (defrule wm-determine-unk-s0-s1

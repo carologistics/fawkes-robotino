@@ -44,8 +44,8 @@
                    (modify ?sm (mtype (nth$ ?i ?r)))
       )
     )
+    (printout t "Randomized assignment: " ?r crlf)
   )
-  (printout t "Randomized assignment: " ?r crlf)
 )
 
 
@@ -68,7 +68,9 @@
   ?h <- (holding NONE)
   ?l <- (s0-left ?n&:(<= ?n 0))
   =>
-  (if (debug 1) then (printout t "NO MORE S0 AVAILABLE" crlf))
+  (if (debug 1) then (printout t "***** GAME OVER -- NO MORE S0 AVAILABLE *****" crlf))
+  (retract ?s)
+  (assert (state GAME-OVER))
   (facts)
 )
 
