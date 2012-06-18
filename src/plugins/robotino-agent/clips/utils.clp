@@ -11,29 +11,41 @@
   (insert$ ?list (+ (length$ ?list) 1) ?items)
 )
 
-(deffunction enqueue-goto-target (?target_list ?name ?priority)
-  (append$ ?target_list (implode$ (create$ ?name ?priority)))
+(deffunction machine-prio (?machine)
+  (if (eq ?machine DELIVER) then
+    (return ?*GOTOPRIO_DELIVER*)
+  else
+    (if (eq ?machine M3) then
+      (return ?*GOTOPRIO_M3*)
+    else
+      (if (eq ?machine M1_2) then
+        (return ?*GOTOPRIO_M1_2*)
+      else
+        (if (eq ?machine M2_3) then
+          (return ?*GOTOPRIO_M2_3*)
+        else
+          (if (eq ?machine M2) then
+            (return ?*GOTOPRIO_M2*)
+          else
+            (if (eq ?machine M1) then
+              (return ?*GOTOPRIO_M1*)
+            else
+              (return ?*GOTOPRIO_UNK*)
+            )
+          )
+        )
+      )
+    )
+  )
 )
 
-(deffunction goto-target-prio (?m)
-  (nth$ 2 (explode$ ?m))
-)
-
-(deffunction goto-target> (?a ?b)
-  (> (goto-target-prio ?a) (goto-target-prio ?b))
-)
-
-(deffunction filter-goto-target ($?machines)
-  (bind ?tm (sort goto-target> ?machines))
-  (bind ?rv (create$))
-  (bind ?prio 0)
-  (foreach ?m ?tm
-           (bind ?mprio (goto-target-prio ?m))
-           (if (>= ?mprio ?prio) then
-             (bind ?prio ?mprio)
-             (append$ ?rv ?m)
-           else
-             (break)
-           )
+(deffunction merge-goto-machines (?cur-min-prio ?new-min-prio ?machines ?name)
+  (if (< ?cur-min-prio ?new-min-prio) then
+    (if (> (length$ ?machines) 0) then
+      (printout t "#### OVERWRITING candidate machines ####" crlf)
+    )
+    (return (create$ ?name))
+  else
+    (return (append$ ?machines ?name))
   )
 )

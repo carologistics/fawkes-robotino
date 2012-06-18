@@ -9,7 +9,7 @@
 
 (defglobal
   ?*CLIPS_DIR* = (get-clips-dir)
-  ?*DEBUG* = 3  ;debug levels: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+  ?*DEBUG* = 2  ;debug levels: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
 )
 
 (deffunction debug (?level)
