@@ -10,6 +10,7 @@
 (defglobal
   ?*CLIPS_DIR* = (get-clips-dir)
   ?*DEBUG* = 2  ;debug levels: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+  ?*RANDOMIZE* = TRUE
 )
 
 (deffunction debug (?level)

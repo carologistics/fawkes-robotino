@@ -30,6 +30,24 @@
   (s0-left 20)
 )
 
+(defrule sim-init-assignments
+  (initial-fact)
+  =>
+  (if ?*RANDOMIZE* then
+    (seed (integer (time)))
+    (bind ?r (randomize$ (create$ M1 M1 M1 M1 M2 M2 M2 M3 M3 M3)))
+    (loop-for-count (?i (length$ ?r)) do
+      (do-for-fact ((?sm sim-machine))
+                   (eq ?sm:name (str-cat "m" ?i))
+                   ;(printout t "Am at " ?sm:name " setting it from " ?sm:mtype
+                   ;          " to " (nth$ ?i ?r) crlf)
+                   (modify ?sm (mtype (nth$ ?i ?r)))
+      )
+    )
+  )
+  (printout t "Randomized assignment: " ?r crlf)
+)
+
 
 (defrule get-s0-succeeds
   ?s  <- (state GET-S0)

@@ -11,6 +11,18 @@
   (insert$ ?list (+ (length$ ?list) 1) ?items)
 )
 
+(deffunction randomize$ (?list)
+  (bind ?l (length$ ?list))
+  (loop-for-count 200 do
+    (bind ?a (random 1 ?l))
+    (bind ?b (random 1 ?l))
+    (bind ?tmp (nth$ ?a ?list))
+    (bind ?list (replace$ ?list ?a ?a (nth$ ?b ?list)))
+    (bind ?list (replace$ ?list ?b ?b ?tmp))
+  )
+  (return ?list)
+)
+
 (deffunction machine-prio (?machine)
   (if (eq ?machine DELIVER) then
     (return ?*GOTOPRIO_DELIVER*)
