@@ -81,19 +81,19 @@ function left_and_right_ok()
 end
 function is_left()
 	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle <= -0.3 then
+	if angle <= -0.05 then
 		return true
 	end
 end	
 function is_right()
 	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle >= 0.3  then
+	if angle >= 0.05  then
 		return true
 	end
 end
 function angle_ok()
 	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle < 0.3 and angle > -0.3 then
+	if angle < 0.05 and angle > -0.3 then
 		send_transrot(0,0,0)
 		return true
 	end
@@ -154,7 +154,7 @@ end
 --	self.args = {x=0,y=0,ori=math.atan(Machine_0:translation(1)/Machine_0:translation(0))}
 --end
 function SKILL_APPROACH_AMPEL:init()
-	self.args = {x=0.125,y=0,ori=0}
+	self.args = {x=0.13,y=0,ori=0}
 end
 function CHECK_POSITION:init()
 end
