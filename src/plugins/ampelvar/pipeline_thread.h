@@ -90,7 +90,8 @@ class RobotinoAmpelVarPipelineThread
 
   fawkes::SwitchInterface *ampel_switch_if_;
 
-  fawkes::polar_coord_2d_t pol;
+  fawkes::polar_coord_2d_t pol_l;
+  fawkes::polar_coord_2d_t pol_r;
   const fawkes::polar_coord_2d_t * map;
 
   std::list< firevision::ROI > *rois_;
