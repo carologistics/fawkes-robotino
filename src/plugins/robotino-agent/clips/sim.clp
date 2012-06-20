@@ -72,30 +72,35 @@
 
 (defrule goto-succeeds-s0
   ?s  <- (state GOTO)
-  ?gf <- (goto-final ?now-holding)
+  ?gf <- (goto-final ?light)
   ?h  <- (holding S0)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk)) 
   =>
-  (retract ?s ?h ?gf)
+  (retract ?s ?gf)
   (if (eq ?mt M1) then
-    (assert (holding S1))
+    ;(assert (holding S1))
+    (assert (light green))
   else
     (if (eq ?mt M2) then
       (if (subsetp (create$ S1) ?loaded) then
-        (assert (holding S2))
+        ;(assert (holding S2))
+        (assert (light green))
         (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
       else
-        (assert (holding NONE))
+        ;(assert (holding NONE))
+        (assert (light yellow))
         (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S0)))
       )
     else
       (if (eq ?mt M3) then
         (if (subsetp (create$ S1 S2) ?loaded) then
-          (assert (holding P))
+          ;(assert (holding P))
+          (assert (light green))
           (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
         else
-          (assert (holding NONE))
+          ;(assert (holding NONE))
+          (assert (light yellow))
           (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S0)))
         )
       )
@@ -108,30 +113,35 @@
 (defrule goto-succeeds-s1
   ?s  <- (state GOTO)
   ?h  <- (holding S1)
-  ?gf <- (goto-final ?now-holding)
+  ?gf <- (goto-final ?light)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt)
                       (loaded-with $?loaded) (junk ?junk)) 
   =>
-  (retract ?s ?h ?gf)
+  (retract ?s ?gf)
   (if (eq ?mt M1) then
-    (assert (holding S1))
+    ;(assert (holding S1))
+    (assert (light green))
   else
     (if (eq ?mt M2) then
       (if (subsetp (create$ S0) ?loaded) then
-        (assert (holding S2))
+        ;(assert (holding S2))
+        (assert (light green))
         (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
       else
-        (assert (holding NONE))
+        ;(assert (holding NONE))
+        (assert (light yellow))
         (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S1)))
       )
     else
       (if (eq ?mt M3) then
         (if (subsetp (create$ S0 S2) ?loaded) then
-          (assert (holding P))
+          ;(assert (holding P))
+          (assert (light green))
           (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
         else
-          (assert (holding NONE))
+          ;(assert (holding NONE))
+          (assert (light yellow))
           (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S1)))
         )
       )
@@ -143,24 +153,27 @@
 (defrule goto-succeeds-s2
   ?s  <- (state GOTO)
   ?h  <- (holding S2)
-  ?gf <- (goto-final ?now-holding)
+  ?gf <- (goto-final ?light)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk))
   =>
-  (retract ?s ?h ?gf)
+  (retract ?s ?gf)
   (if (eq ?mt M1) then
-    (assert (holding S2))
+    ;(assert (holding S2))
+    (assert (light green))
   else
     (if (eq ?mt M2) then
-      (assert (holding S2))
-      (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
+      ;(assert (holding S2))
+      (assert (light yellow-flashing))
     else
       (if (eq ?mt M3) then
         (if (subsetp (create$ S0 S1) ?loaded) then
-          (assert (holding P))
+          ;(assert (holding P))
+          (assert (light green))
           (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
         else
-          (assert (holding NONE))
+          ;(assert (holding NONE))
+          (assert (light yellow))
           (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S2)))
         )
       )
@@ -171,14 +184,14 @@
 
 (defrule goto-succeeds-p
   ?s  <- (state GOTO)
-  ?h  <- (holding P)
-  ?gf <- (goto-final ?now-holding)
+  ;?h  <- (holding P)
+  ?gf <- (goto-final ?light)
   (goto-target ?node)
   ?m  <- (sim-machine (name ?node) (mtype DELIVER) (delivered ?delivered)) 
   =>
   (if (debug 1) then (printout t "***** DELIVERED a P! *****" crlf))
-  (retract ?s ?h ?gf)
+  (retract ?s ?gf)
   (modify ?m (delivered (+ ?delivered 1)))
-  (assert (holding NONE))
+  (assert (light green))
   (assert (state GOTO-FINAL))
 )

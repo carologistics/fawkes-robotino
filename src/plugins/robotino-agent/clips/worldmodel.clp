@@ -38,6 +38,154 @@
   (modify ?m (loaded-with ?lw))
 )
 
+; rules for puck change on ampel placement
+(defrule wm-holding-notnone-yellow-none
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ~NONE)
+  ?l <- (light yellow)
+  =>
+  (retract ?l ?h)
+  (assert (holding NONE))
+)
+
+(defrule wm-holding-unk-none-green-s1
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype UNKNOWN) (loaded-with))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding S1))
+)
+
+(defrule wm-holding-unk-one-green-s2
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype UNKNOWN) (loaded-with $?lw&:(= (length$ ?lw) 1)))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding S2))
+)
+
+; should not actually happen as on the first visit we already
+; constrain its type, but since it 15 minutes before the first game...
+(defrule wm-holding-unk-two-green-P
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype UNKNOWN) (loaded-with $?lw&:(= (length$ ?lw) 2)))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding P))
+)
+
+(defrule wm-holding-m1-green-s1
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype M1))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding S1))
+)
+
+(defrule wm-holding-m12-none-green-s1
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype M1_2) (loaded-with ?w&:(= (length$ ?w) 0)))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding S1))
+)
+
+
+(defrule wm-holding-m12-one-green-s2
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype M1_2) (loaded-with ?w&:(= (length$ ?w) 1)))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding S2))
+)
+
+(defrule wm-holding-m2-green-s2
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype M2))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding S2))
+)
+
+(defrule wm-holding-m23-one-green-s2
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype M2_3) (loaded-with $?w&:(= (length$ ?w) 1)))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding S2))
+)
+
+(defrule wm-holding-m23-two-green-P
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype M2_3) (loaded-with $?w&:(= (length$ ?w) 2)))
+  ?l <- (light green)
+  =>
+  (printout t "LENGTH: " ?w "  " (length$ ?w) crlf)
+  (retract ?l ?h)
+  (assert (holding P))
+)
+
+(defrule wm-holding-m3-green-p
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype M3))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding P))
+)
+
+(defrule wm-holding-deliver-green-none
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ?any)
+  (goto-target ?name)
+  (machine (name ?name) (mtype DELIVER))
+  ?l <- (light green)
+  =>
+  (retract ?l ?h)
+  (assert (holding NONE))
+)
+
+
 ; The first M1 is reserved for the express
 (defrule wm-m1-express
   (declare (salience ?*PRIORITY_WM*))

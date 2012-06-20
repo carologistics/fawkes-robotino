@@ -22,55 +22,26 @@
 
 (defrule get-s0-fails
   ?s <- (state GET-S0)
-  ?h <- (holding NONE)
-  ?l <- (s0-left ?n&:(<= ?n 0))
+  ?gf <- (get-s0-failed)
   =>
-  (if (debug 1) then (printout t "NO MORE S0 AVAILABLE" crlf))
+  (if (debug 1) then (printout t "get-s0 FAILED" crlf))
+  (assert (state IDLE))
 )
 
-
-(defrule goto-succeeds-s0
+(defrule goto-succeeds
   ?s  <- (state GOTO)
-  ?gs <- (goto-final ?now-holding)
-  ?h  <- (holding S0)
-  (goto-target ?node)
+  ?gs <- (goto-final ?light)
   =>
-  (retract ?s ?gs ?h)
-  (assert (holding ?now-holding))
+  (retract ?s ?gs)
+  (assert (light ?light))
   (assert (state GOTO-FINAL))
 )
 
-
-(defrule goto-succeeds-s1
-  ?s  <- (state GOTO)
-  ?gs <- (goto-final ?now-holding)
-  ?h  <- (holding S1)
-  (goto-target ?node)
+(defrule goto-fails
+  ?s <- (state GOTO)
+  ?gf <- (goto-failed)
   =>
-  (retract ?s ?gs ?h)
-  (assert (holding ?now-holding))
-  (assert (state GOTO-FINAL))
+  (retract ?s ?gf)
+  (assert (state GOTO-FAILED))
 )
 
-(defrule goto-succeeds-s2
-  ?s  <- (state GOTO)
-  ?gs <- (goto-final)
-  ?h  <- (holding ?now-holding)
-  (goto-target ?node)
-  =>
-  (retract ?s ?gs ?h)
-  (assert (holding P))
-  (assert (state GOTO-FINAL))
-)
-
-(defrule goto-succeeds-p
-  ?s  <- (state GOTO)
-  ?gs <- (goto-final ?now-holding)
-  ?h  <- (holding P)
-  (goto-target ?node)
-  =>
-  (if (debug 1) then (printout t "***** DELIVERED a P! *****" crlf))
-  (retract ?s ?gs ?h)
-  (assert (holding ?now-holding))
-  (assert (state GOTO-FINAL))
-)
