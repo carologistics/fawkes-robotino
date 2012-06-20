@@ -244,3 +244,16 @@
                    (was-holding ?was-holding) (now-holding ?now-holding)))
   (assert (state IDLE))
 )
+
+(defrule skill-goto-failed
+  ?s  <- (state GOTO-FAILED)
+  ?gt <- (goto-target ?machine)
+  ?gh <- (goto-holding ?was-holding)
+  ?h  <- (holding ?any)
+  =>
+  (retract ?s ?gt ?gh)
+  (assert (state IDLE))
+  (assert (holding NONE))
+
+)
+
