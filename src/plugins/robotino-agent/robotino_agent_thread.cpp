@@ -23,6 +23,7 @@
 
 #include <interfaces/SkillerInterface.h>
 #include <interfaces/RobotinoWorldModelInterface.h>
+#include <interfaces/RobotinoAmpelInterface.h>
 #include <interfaces/SwitchInterface.h>
 
 using namespace fawkes;
@@ -83,6 +84,7 @@ RobotinoClipsAgentThread::init()
   }
 
   switch_if_ = blackboard->open_for_reading<SwitchInterface>("GameCtrl");
+  ampel_if_ = blackboard->open_for_reading<RobotinoAmpelInterface>("light");
   wm_in_if_ =
     blackboard->open_for_reading<RobotinoWorldModelInterface>("Model fll merged");
   wm_out_if_ =
@@ -101,6 +103,7 @@ RobotinoClipsAgentThread::init()
     blackboard->close(skiller_if_);
     blackboard->close(wm_in_if_);
     blackboard->close(wm_out_if_);
+    blackboard->close(ampel_if_);
     throw Exception("Failed to initialize CLIPS environment, batch file failed.");
   }
 
@@ -144,6 +147,7 @@ RobotinoClipsAgentThread::finalize()
   blackboard->close(wm_in_if_);
   blackboard->close(wm_out_if_);
   blackboard->close(switch_if_);
+  blackboard->close(ampel_if_);
 }
 
 
@@ -217,21 +221,75 @@ RobotinoClipsAgentThread::loop()
   // must be cleaned up each loop from within the CLIPS code
   //clips->assert_fact("(time (now))");
 
-  if (goto_started_) {
-    Time now(clock);
-    if ((now - goto_start_time_) >= cfg_skill_sim_time_) {
-      logger->log_warn(name(), "GOTO is final");
-      clips->assert_fact("(goto-final NONE)");
-      goto_started_ = false;
-    }
-  }
 
-  if (get_s0_started_) {
-    Time now(clock);
-    if ((now - get_s0_start_time_) >= cfg_skill_sim_time_) {
-      logger->log_warn(name(), "GET-S0 is final");
-      clips->assert_fact("(get-s0-final)");
-      get_s0_started_ = false;
+  if (! cfg_use_sim_) {
+    skiller_if_->read();
+    if (goto_started_) {
+      if (goto_skill_string_ == skiller_if_->skill_string()) {
+	switch (skiller_if_->status()) {
+	case SkillerInterface::S_FINAL:
+	  {
+	    ampel_if_->read();
+	    const char *ampel_state = "no-change";
+	    switch (ampel_if_->state()) {
+	    case RobotinoAmpelInterface::YELLOW:
+	      ampel_state = "yellow"; break;
+	    case RobotinoAmpelInterface::YELLOW_FLASHING:
+	      ampel_state = "yellow-flashing"; break;
+	    case RobotinoAmpelInterface::GREEN:
+	      ampel_state = "green"; break;
+	    default: break;
+	    }
+	    clips->assert_fact_f("(goto-final %s)", ampel_state);
+	    goto_started_ = false;
+	  }
+	  break;
+
+	case SkillerInterface::S_FAILED:
+	  clips->assert_fact("(goto-failed)");
+	  goto_started_ = false;
+	  break;
+
+	default: break;
+	}
+      }
+    }
+
+    if (get_s0_started_) {
+      if (get_s0_skill_string_ == skiller_if_->skill_string()) {
+	switch (skiller_if_->status()) {
+	case SkillerInterface::S_FINAL:
+	  clips->assert_fact("(get-s0-final)");
+	  get_s0_started_ = false;
+	  break;
+	    
+	case SkillerInterface::S_FAILED:
+	  clips->assert_fact("(get-s0-failed)");
+	  get_s0_started_ = false;
+	  break;
+
+	default: break;
+	}
+      }
+    }
+
+  } else {
+    if (goto_started_) {
+      Time now(clock);
+      if ((now - goto_start_time_) >= cfg_skill_sim_time_) {
+        logger->log_warn(name(), "GOTO is final");
+        clips->assert_fact("(goto-final NONE)");
+        goto_started_ = false;
+      }
+    }
+
+    if (get_s0_started_) {
+      Time now(clock);
+      if ((now - get_s0_start_time_) >= cfg_skill_sim_time_) {
+        logger->log_warn(name(), "GET-S0 is final");
+        clips->assert_fact("(get-s0-final)");
+        get_s0_started_ = false;
+      }
     }
   }
 

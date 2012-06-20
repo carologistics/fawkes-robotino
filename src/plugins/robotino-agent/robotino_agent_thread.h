@@ -37,6 +37,7 @@
 namespace fawkes {
   class SkillerInterface;
   class RobotinoWorldModelInterface;
+  class RobotinoAmpelInterface;
   class SwitchInterface;
 }
 
@@ -78,6 +79,7 @@ class RobotinoClipsAgentThread
   fawkes::SkillerInterface *skiller_if_;
   fawkes::RobotinoWorldModelInterface *wm_in_if_;
   fawkes::RobotinoWorldModelInterface *wm_out_if_;
+  fawkes::RobotinoAmpelInterface *ampel_if_;
   fawkes::SwitchInterface *switch_if_;
 
   bool          ctrl_recheck_;
