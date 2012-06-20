@@ -23,6 +23,7 @@
 
 #include <interfaces/SkillerInterface.h>
 #include <interfaces/RobotinoWorldModelInterface.h>
+#include <interfaces/SwitchInterface.h>
 
 #define USE_SKILLER false
 
@@ -83,6 +84,7 @@ RobotinoClipsAgentThread::init()
     throw Exception("Skiller already has a different exclusive controller");
   }
 
+  switch_if_ = blackboard->open_for_reading<SwitchInterface>("GameCtrl");
   wm_in_if_ =
     blackboard->open_for_reading<RobotinoWorldModelInterface>("Model fll merged");
   wm_out_if_ =
@@ -143,6 +145,7 @@ RobotinoClipsAgentThread::finalize()
   blackboard->close(skiller_if_);
   blackboard->close(wm_in_if_);
   blackboard->close(wm_out_if_);
+  blackboard->close(switch_if_);
 }
 
 
@@ -165,7 +168,7 @@ RobotinoClipsAgentThread::loop()
     return;
   }
 
-  if (! started_) {
+  if (! started_ && switch_if_->is_enabled()) {
     clips->assert_fact("(start)");
     started_ = true;
   }

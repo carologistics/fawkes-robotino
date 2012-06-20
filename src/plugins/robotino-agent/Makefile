@@ -20,7 +20,7 @@ include $(BUILDSYSDIR)/clips.mk
 LIBS_robotino_clips_agent = \
 	fawkescore fawkesutils fawkesaspects fawkesblackboard \
         fawkesinterface fawkesclipsaspect \
-	SkillerInterface RobotinoWorldModelInterface
+	SkillerInterface RobotinoWorldModelInterface SwitchInterface
 OBJS_robotino_clips_agent = robotino_agent_plugin.o robotino_agent_thread.o
 
 OBJS_all = $(OBJS_robotino_clips_agent)
