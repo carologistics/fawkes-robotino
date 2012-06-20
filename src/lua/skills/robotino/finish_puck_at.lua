@@ -26,9 +26,11 @@ module(..., skillenv.module_init)
 name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
 depends_skills     = { "take_puck_to", "determine_signal", "deposit_puck", "leave_area", "deliver" }
-depends_interfaces = { }
+depends_interfaces = { v="Pose", type="Position3DInterface", id="Pose" }
 
 documentation      = [==[Go to target without losing teh puck]==]
+
+local mpos = require 'machine_pos_module'
 
 -- Initialize as skill module
 skillenv.skill_module(...)
@@ -45,6 +47,16 @@ fsm:add_transitions{
 }
 
 function SKILL_TAKE_PUCK:init()
+	local min_dist = 9999
+	for i,name in ipairs(self.fsm.vars.goto_names) do
+		local gpos = mpos.delivery_goto[name]
+		local d = math.sqrt((gpos.x - Pose:translation(0))^2
+			+ (gpos.y - Pose:translation(1))^2)
+		if d < min_dist then
+			min_dist = d
+			self.fsm.vars.goto_name = name
+		end
+	end
 	self.args = { goto_name = self.fsm.vars.goto_name }
 end
 
