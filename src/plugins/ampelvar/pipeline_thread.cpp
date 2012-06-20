@@ -274,7 +274,7 @@ RobotinoAmpelVarPipelineThread::finalize()
  */
 void
 RobotinoAmpelVarPipelineThread::loop()
-{/*
+{
   // check if there is a msg in the msg-queue
   while ( !ampel_switch_if_->msgq_empty() ) {
 	if (SwitchInterface::DisableSwitchMessage *msg = ampel_switch_if_->msgq_first_safe(msg)) {
@@ -292,7 +292,7 @@ RobotinoAmpelVarPipelineThread::loop()
   if (ampel_switch_if_->is_enabled() == false){
 	usleep(500000);
 	return;
-  }*/
+  }//*/
 
 
   starttime = clock->now();
