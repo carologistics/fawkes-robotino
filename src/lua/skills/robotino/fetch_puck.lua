@@ -112,8 +112,8 @@ end
 
 function GRAB_PUCK:init()
 	self.args = {
-		x = self.fsm.vars.puck_loc.x/2,
-		y = self.fsm.vars.puck_loc.y/2,
+		x = self.fsm.vars.puck_loc.x-0.05,
+		y = self.fsm.vars.puck_loc.y,
 		ori = 0
 	}
 end

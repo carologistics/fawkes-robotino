@@ -26,7 +26,6 @@ module(..., skillenv.module_init)
 name               = "take_puck_to"
 fsm                = SkillHSM:new{name=name, start="SKILL_GOTO", debug=true}
 depends_skills     = { "goto", "relgoto", "motor_move" }
---depends_skills     = { "relgoto" }
 depends_interfaces = {
 	{ v = "sensor", type = "RobotinoSensorInterface", id = "Robotino" },
 	{ v = "omnivisionSwitch", type = "SwitchInterface", id = "omnivisionSwitch" },
@@ -155,11 +154,6 @@ fsm:add_transitions{
 }
 
 function SKILL_GOTO:init()
-	--self.args = {
-	--	rel_x = self.fsm.vars.rel_x,
-	--	rel_y = self.fsm.vars.rel_y,
-	--	rel_ori = self.fsm.vars.rel_ori
-	--}
 	self.args = { goto_name = self.fsm.vars.goto_name }
 	self.fsm.vars.avg_idx = 1
 	self.fsm.vars.avg_val = {}
@@ -197,3 +191,4 @@ function SKILL_FETCH_PUCK:init()
 		x = math.sqrt(self.fsm.vars.puck_rel.x^2 + self.fsm.vars.puck_rel.y^2),
 	}
 end
+
