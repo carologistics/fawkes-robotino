@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "fetch_puck"
 fsm                = SkillHSM:new{name=name, start="TURN_ON_OMNIVISION", debug=false}
-depends_skills     = { "grab_puck", "relgoto", "motor_move" }
+depends_skills     = { "motor_move" }
 depends_interfaces = {
 	 {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
 	 {v = "omnipuck", type="Position3DInterface", id="OmniPuck1"},
@@ -33,8 +33,8 @@ depends_interfaces = {
 }
 
 documentation      = [==[Move to puck pickup position]==]
-local TIMEOUT = 5
-local ORI_OFFSET = 0.15
+local TIMEOUT = 30
+local ORI_OFFSET = 0.03
 local THRESHOLD_DISTANCE = 0.1
 
 -- Initialize as skill module
@@ -60,10 +60,15 @@ function puck()
 end
 
 function puck_in_front()
+	printf("front: %f, %f", fsm.vars.puck_loc.x, fsm.vars.puck_loc.y)
 	if get_puck_loc() and math.abs(math.atan2(fsm.vars.puck_loc.y, fsm.vars.puck_loc.x)) < ORI_OFFSET then
 		return true
 	end
 	return false
+end
+
+function puck_not_in_front()
+	return not puck_in_front()
 end
 
 function have_puck()
@@ -85,7 +90,7 @@ fsm:add_transitions{
 	{"SEE_PUCK", "FAILED", cond=no_puck, desc="No puck found by OmniVision"},
 	{"SEE_PUCK", "TURN_TO_PUCK", cond=puck, desc="Found a puck"},
 	{"TURN_TO_PUCK", "ARRIVED", skill=motor_move, fail_to="SEE_PUCK"},
-	{"ARRIVED", "SEE_PUCK", cond=no_puck, desc="Puck gone after approach"},
+	{"ARRIVED", "SEE_PUCK", cond=puck_not_in_front, desc="Puck gone after approach"},
 	{"ARRIVED", "GRAB_PUCK", cond=puck_in_front},
 	{"GRAB_PUCK", "MOVE_DONE", skill=motor_move, fail_to="FAILED" },
 	{"MOVE_DONE", "SEE_PUCK", cond=dont_have_puck },
@@ -107,8 +112,8 @@ end
 
 function GRAB_PUCK:init()
 	self.args = {
-		x = self.fsm.vars.puck_loc.x,
-		y = self.fsm.vars.puck_loc.y,
+		x = self.fsm.vars.puck_loc.x/2,
+		y = self.fsm.vars.puck_loc.y/2,
 		ori = 0
 	}
 end
