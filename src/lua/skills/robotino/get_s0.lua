@@ -45,6 +45,6 @@ fsm:add_transitions{
 }
 
 function GOTO_IS:init()
-	self.fsm.args = {goto_name=start}
+	self.args = {goto_name=start}
 end
 
