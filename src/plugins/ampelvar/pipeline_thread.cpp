@@ -206,9 +206,27 @@ RobotinoAmpelVarPipelineThread::init()
   /*center.x=158;
   center.y=121;*/
 
-  luminance_threshold = 2;
+  luminance_threshold = 60;
 
   logger->log_debug(name(),"init=> center: x=%i, y=%i", center.x, center.y);
+
+  /* static values for non-dynamic-approach */
+  upper_left_red_x_man = 53;
+  upper_left_orange_x_man = 53;
+  upper_left_green_x_man = 53;
+
+  upper_left_red_y_man = 38;
+  upper_left_orange_y_man = 57;
+  upper_left_green_y_man = 72;
+
+  red_width_man = 16;
+  orange_width_man = 16;
+  green_width_man = 16;
+
+  red_height_man = 10;
+  orange_height_man = 10;
+  green_height_man = 10;
+
 }
 
 
@@ -284,31 +302,33 @@ RobotinoAmpelVarPipelineThread::loop()
 
   buffer_=cam_->buffer(); //dispose buffer dann am ende!
 
-  ampel_x = laser_pos_if_->translation(0);
-  ampel_y = laser_pos_if_->translation(1);
+  if(!cfg_is_static_)
+  {
+	ampel_x = laser_pos_if_->translation(0);
+	ampel_y = laser_pos_if_->translation(1);
 
-  cart2polar2d(ampel_x,ampel_y, &theta, &distance_ampel);
+	cart2polar2d(ampel_x,ampel_y, &theta, &distance_ampel);
 
-  if(cfg_is_static_) {
-	distance_ampel = 0.285f;
-	theta = +0.001f;
-  }
+	if(cfg_is_static_) {
+	distance_ampel = 0.265f;
+	theta = 0.f;
+	}
 
-  //Berechnung des projezierten Abstandes der Ampelfarben auf der Nullebene
-  distance_red=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_red_height_);
-  distance_orange=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_orange_height_);
-  distance_green=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_green_height_);
+	//Berechnung des projezierten Abstandes der Ampelfarben auf der Nullebene
+	distance_red=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_red_height_);
+	distance_orange=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_orange_height_);
+	distance_green=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_green_height_);
 
-  //logger->log_debug(name(),"red %f, orange %f, green %f",distance_red,distance_orange,distance_green);
+	//logger->log_debug(name(),"red %f, orange %f, green %f",distance_red,distance_orange,distance_green);
 
-  // px position aus bulb! nearest neighbour
-  // aus Laser: distance d und winkel theta
+	// px position aus bulb! nearest neighbour
+	// aus Laser: distance d und winkel theta
 
-  d = distance_red;
-  gefunden = false;
-  map = mirror_->get_lut();
+	d = distance_red;
+	gefunden = false;
+	map = mirror_->get_lut();
 
-  for(h = 1; h < img_height_ / 2; ++h) {
+	for(h = 1; h < img_height_ / 2; ++h) {
 	  for(w = 1; w < img_width_ - 1; ++w) {
 		  pol_l = map[h * img_width_ + w];
 		  pol_r = map[h * img_width_ + w + 1];
@@ -333,54 +353,17 @@ RobotinoAmpelVarPipelineThread::loop()
 	  }
 	  if(gefunden)
 		  break;
-  }
+	}
 
-  px_position_red_x = w;
-  px_position_red_y = h;
-
-
-  d = distance_orange;
-  gefunden = false;
-  map = mirror_->get_lut();
-
-  for(h = 1; h < img_height_ / 2; ++h) {
-	  for(w = 1; w < img_width_ - 1; ++w) {
-		  pol_l = map[h * img_width_ + w];
-		  pol_r = map[h * img_width_ + w + 1];
-		  pol_l.r = pol_l.r * 100;
-
-		  if(pol_l.phi < -M_PI) {
-			  pol_l.phi = pol_l.phi + 2*M_PI;
-		  }
-
-		  if(pol_l.phi < -M_PI) {
-			  pol_r.phi = pol_r.phi + 2*M_PI;
-		  }
-
-		  if(pol_l.phi <= theta && pol_l.r <= d && pol_r.phi >= theta) {
-			  logger->log_debug(name(),"gefunden");
-			  gefunden = true;
-		  }
-		  if(pol_l.phi >= theta && pol_l.r <= d && pol_r.phi <= theta) {
-			  gefunden = true;
-		  }
-		  if(gefunden)
-			  break;
-	  }
-	  if(gefunden)
-		  break;
-  }
-  px_position_orange_x = w;
-  px_position_orange_y = h;
+	px_position_red_x = w;
+	px_position_red_y = h;
 
 
+	d = distance_orange;
+	gefunden = false;
+	map = mirror_->get_lut();
 
-
-  d = distance_green;
-  gefunden = false;
-  map = mirror_->get_lut();
-
-  for(h = 1; h < img_height_ / 2; ++h) {
+	for(h = 1; h < img_height_ / 2; ++h) {
 	  for(w = 1; w < img_width_ - 1; ++w) {
 		  pol_l = map[h * img_width_ + w];
 		  pol_r = map[h * img_width_ + w + 1];
@@ -405,25 +388,67 @@ RobotinoAmpelVarPipelineThread::loop()
 	  }
 	  if(gefunden)
 		  break;
+	}
+	px_position_orange_x = w;
+	px_position_orange_y = h;
+
+
+
+
+	d = distance_green;
+	gefunden = false;
+	map = mirror_->get_lut();
+
+	for(h = 1; h < img_height_ / 2; ++h) {
+	  for(w = 1; w < img_width_ - 1; ++w) {
+		  pol_l = map[h * img_width_ + w];
+		  pol_r = map[h * img_width_ + w + 1];
+		  pol_l.r = pol_l.r * 100;
+
+		  if(pol_l.phi < -M_PI) {
+			  pol_l.phi = pol_l.phi + 2*M_PI;
+		  }
+
+		  if(pol_l.phi < -M_PI) {
+			  pol_r.phi = pol_r.phi + 2*M_PI;
+		  }
+
+		  if(pol_l.phi <= theta && pol_l.r <= d && pol_r.phi >= theta) {
+			  gefunden = true;
+		  }
+		  if(pol_l.phi >= theta && pol_l.r <= d && pol_r.phi <= theta) {
+			  gefunden = true;
+		  }
+		  if(gefunden)
+			  break;
+	  }
+	  if(gefunden)
+		  break;
+	}
+
+	px_position_green_x = w;
+	px_position_green_y = h;
   }
-
-  px_position_green_x = w;
-  px_position_green_y = h;
-
-
-  logger->log_debug(name(),"px_red_x: %i,px_orange_x: %i,px_green_x: %i",px_position_red_x,px_position_orange_x,px_position_green_x);
-  logger->log_debug(name(),"px_red_y: %i,px_orange_y: %i,px_green_y: %i",px_position_red_y,px_position_orange_y,px_position_green_y);
 
   luminance_threshold = 2;
 
   //set ROI parameter for each color
-  try{
-  ROI_colors[0] = new ROI(px_position_red_x,px_position_red_y,6,2,img_width_,img_height_);
-  ROI_colors[1] = new ROI(px_position_orange_x,px_position_orange_y,6,2,img_width_,img_height_);
-  ROI_colors[2] = new ROI(px_position_green_x,px_position_green_y,6,2,img_width_,img_height_);
-  } catch(Exception &e) {
+  if(!cfg_is_static_){
+	try{
+	ROI_colors[0] = new ROI(px_position_red_x,px_position_red_y,6,2,img_width_,img_height_);
+	ROI_colors[1] = new ROI(px_position_orange_x,px_position_orange_y,6,2,img_width_,img_height_);
+	ROI_colors[2] = new ROI(px_position_green_x,px_position_green_y,6,2,img_width_,img_height_);
+	} catch(Exception &e) {
 	  e.append("ROIs out of bound");
 	  throw;
+	}
+  }
+
+  //static ROIs
+  if(cfg_is_static_){
+  ROI_colors[0] = new ROI(upper_left_red_x_man,upper_left_red_y_man,red_width_man,red_height_man,img_width_,img_height_);
+  ROI_colors[1] = new ROI(upper_left_orange_x_man,upper_left_orange_y_man,orange_width_man,orange_height_man,img_width_,img_height_);
+  ROI_colors[2] = new ROI(upper_left_green_x_man,upper_left_green_y_man,green_width_man,green_height_man,img_width_,img_height_);
   }
 
   //detect red
@@ -438,7 +463,7 @@ RobotinoAmpelVarPipelineThread::loop()
 	  ++(*scanline_);
   }
 
-  bucket[0] = bucket[53]+
+  bucket[0] =
 		  	  bucket[54]+
 		  	  bucket[55]+
 		  	  bucket[56]+
@@ -450,7 +475,7 @@ RobotinoAmpelVarPipelineThread::loop()
 			  bucket[62]+
 			  bucket[63];
 
-  logger->log_debug(name(),"bucket[0] red: %i",bucket[0]);
+  //logger->log_debug(name(),"bucket[0] red: %i",bucket[0]);
   if(bucket[0]>= luminance_threshold) {
 	  is_red = true;
   }
@@ -476,8 +501,7 @@ RobotinoAmpelVarPipelineThread::loop()
 	  ++(*scanline_);
   }
 
-  bucket[0] = bucket[53]+
-			  bucket[54]+
+  bucket[0] =             bucket[54]+
 			  bucket[55]+
 			  bucket[56]+
 			  bucket[57]+
@@ -488,7 +512,7 @@ RobotinoAmpelVarPipelineThread::loop()
 			  bucket[62]+
 			  bucket[63];
 
-  logger->log_debug(name(),"bucket[0] orange: %i",bucket[0]);
+  //logger->log_debug(name(),"bucket[0] orange: %i",bucket[0]);
   if(bucket[0]>= luminance_threshold) {
 	  //drawer_->draw_circle(center.x,center.y-px_position_orange,3);
 	  is_orange = true;
@@ -515,8 +539,7 @@ RobotinoAmpelVarPipelineThread::loop()
   }
 
 
-  bucket[0] = bucket[53]+
-			  bucket[54]+
+  bucket[0] =		  bucket[54]+
 			  bucket[55]+
 			  bucket[56]+
 			  bucket[57]+
@@ -527,7 +550,7 @@ RobotinoAmpelVarPipelineThread::loop()
 			  bucket[62]+
 			  bucket[63];
 
-  logger->log_debug(name(),"bucket[0] green: %i",bucket[0]);
+  //logger->log_debug(name(),"bucket[0] green: %i",bucket[0]);
 
   if(bucket[0]>= luminance_threshold) {
 	  is_green = true;
@@ -538,9 +561,9 @@ RobotinoAmpelVarPipelineThread::loop()
   if(cfg_debug_buffer_) {
 	  //wenn der debug buffer geschrieben werden soll
 	convert(cspace_from_, cspace_to_, cam_->buffer(), shm_buffer_->buffer(), img_width_, img_height_);
-	drawer_->draw_rectangle(px_position_red_x,px_position_red_y,6,3);
-	drawer_->draw_rectangle(px_position_orange_x,px_position_orange_y,6,3);
-	drawer_->draw_rectangle(px_position_green_x,px_position_green_y,6,3);
+	drawer_->draw_rectangle(upper_left_red_x_man,upper_left_red_y_man,red_width_man,red_height_man);
+	drawer_->draw_rectangle(upper_left_orange_x_man,upper_left_orange_y_man,orange_width_man,orange_height_man);
+	drawer_->draw_rectangle(upper_left_green_x_man,upper_left_green_y_man,green_width_man,green_height_man);
   }
 
   for(unsigned int i=0; i<=63; i++){
@@ -564,6 +587,9 @@ RobotinoAmpelVarPipelineThread::loop()
   ampel_orange_if_->write();
   ampel_green_if_->write();
 
+  delete ROI_colors[0];
+  delete ROI_colors[1];
+  delete ROI_colors[2];
 
   //logger->log_debug(name(),"result red: %i, orange: %i, green: %i",ampel_red_if_->is_enabled(),ampel_orange_if_->is_enabled(),ampel_green_if_->is_enabled());
   //logger->log_debug(name(),"Zeit: %f",clock->elapsed(&starttime));

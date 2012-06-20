@@ -128,6 +128,22 @@ class RobotinoAmpelVarPipelineThread
   unsigned int current_x;
   unsigned int current_y;
 
+  unsigned int upper_left_red_x_man;
+  unsigned int upper_left_orange_x_man;
+  unsigned int upper_left_green_x_man;
+
+  unsigned int upper_left_red_y_man;
+  unsigned int upper_left_orange_y_man;
+  unsigned int upper_left_green_y_man;
+
+  unsigned int red_width_man;
+  unsigned int orange_width_man;
+  unsigned int green_width_man;
+
+  unsigned int red_height_man;
+  unsigned int orange_height_man;
+  unsigned int green_height_man;
+
   double ampel_x;
   double ampel_y;
 
