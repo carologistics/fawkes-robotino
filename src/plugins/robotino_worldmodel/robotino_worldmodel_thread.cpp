@@ -46,21 +46,17 @@ void RobotinoWorldModelThread::init()
 {
 	logger->log_info(name(), "Plugin Template starts up");
 	wm_if_data_.set_logger(logger);
-	wm_ext1_if_data_.set_logger(logger);
-	wm_ext2_if_data_.set_logger(logger);
+	wm_ext_if_data_.set_logger(logger);
 	wm_if_ = blackboard->open_for_reading<RobotinoWorldModelInterface>(
 			config->get_string(CFG_PREFIX"local_model").c_str());
-	wm_ext1_if_ = blackboard->open_for_reading<RobotinoWorldModelInterface>(
-			config->get_string(CFG_PREFIX"ext_model_1").c_str());
-	wm_ext2_if_ = blackboard->open_for_reading<RobotinoWorldModelInterface>(
-			config->get_string(CFG_PREFIX"ext_model_2").c_str());
+	wm_ext_if_ = blackboard->open_for_reading<RobotinoWorldModelInterface>(
+			config->get_string(CFG_PREFIX"ext_model").c_str());
 	wm_changed_if_ = blackboard->open_for_writing<RobotinoWorldModelInterface>(
 			"Model fll changes_only");
 	wm_merged_if_ = blackboard->open_for_writing<RobotinoWorldModelInterface>(
 			"Model fll merged");
 	wm_if_data_.update_worldmodel(wm_if_);
-	wm_ext1_if_data_.update_worldmodel(wm_ext1_if_);
-	wm_ext2_if_data_.update_worldmodel(wm_ext2_if_);
+	wm_ext_if_data_.update_worldmodel(wm_ext_if_);
 
 }
 
@@ -72,8 +68,7 @@ bool RobotinoWorldModelThread::prepare_finalize_user()
 void RobotinoWorldModelThread::finalize()
 {
 	blackboard->close(wm_if_);
-	blackboard->close(wm_ext1_if_);
-	blackboard->close(wm_ext2_if_);
+	blackboard->close(wm_ext_if_);
 	blackboard->close(wm_merged_if_);
 	blackboard->close(wm_changed_if_);
 }
@@ -109,8 +104,7 @@ void RobotinoWorldModelThread::publish_changes()
 	wm_changed_if_->write();
 	wm_merged_if_->write();
 	wm_if_data_.update_worldmodel(wm_if_);
-	wm_ext1_if_data_.update_worldmodel(wm_ext1_if_);
-	wm_ext2_if_data_.update_worldmodel(wm_ext2_if_);
+	wm_ext_if_data_.update_worldmodel(wm_ext_if_);
 
 }
 
@@ -122,28 +116,19 @@ void RobotinoWorldModelThread::loop()
 	 * It's ugly anyways..
 	 */
 	wm_if_->read();
-	wm_ext1_if_->read();
-	wm_ext2_if_->read();
+	wm_ext_if_->read();
 	std::map<uint32_t, RobotinoWorldModelInterface::machine_state_t> changed_machine_states =
 			wm_if_data_.get_changed_states(wm_if_);
-	std::map<uint32_t, RobotinoWorldModelInterface::machine_state_t> changed_machine_states_ext1 =
-			wm_ext1_if_data_.get_changed_states(wm_ext1_if_);
-	std::map<uint32_t, RobotinoWorldModelInterface::machine_state_t> changed_machine_states_ext2 =
-			wm_ext2_if_data_.get_changed_states(wm_ext2_if_);
-	changed_machine_states.insert(changed_machine_states_ext1.begin(),
-			changed_machine_states_ext1.end());
-	changed_machine_states.insert(changed_machine_states_ext2.begin(),
-			changed_machine_states_ext2.end());
+	std::map<uint32_t, RobotinoWorldModelInterface::machine_state_t> changed_machine_states_ext =
+			wm_ext_if_data_.get_changed_states(wm_ext_if_);
+	changed_machine_states.insert(changed_machine_states_ext.begin(),
+			changed_machine_states_ext.end());
 	std::map<uint32_t, RobotinoWorldModelInterface::machine_type_t> changed_machine_types =
 			wm_if_data_.get_changed_types(wm_if_);
-	std::map<uint32_t, RobotinoWorldModelInterface::machine_type_t> changed_machine_types_ext1 =
-			wm_ext1_if_data_.get_changed_types(wm_ext1_if_);
-	std::map<uint32_t, RobotinoWorldModelInterface::machine_type_t> changed_machine_types_ext2 =
-			wm_ext2_if_data_.get_changed_types(wm_ext2_if_);
-	changed_machine_types.insert(changed_machine_types_ext1.begin(),
-			changed_machine_types_ext1.end());
-	changed_machine_types.insert(changed_machine_types_ext2.begin(),
-			changed_machine_types_ext2.end());
+	std::map<uint32_t, RobotinoWorldModelInterface::machine_type_t> changed_machine_types_ext =
+			wm_ext_if_data_.get_changed_types(wm_ext_if_);
+	changed_machine_types.insert(changed_machine_types_ext.begin(),
+			changed_machine_types_ext.end());
 	if (!(changed_machine_states.empty() && changed_machine_types.empty()))
 	{
 		wipe_worldmodel(wm_changed_if_);

@@ -72,14 +72,12 @@ private:
 
 private:
 	fawkes::RobotinoWorldModelInterface* wm_if_;
-	fawkes::RobotinoWorldModelInterface* wm_ext1_if_;
-	fawkes::RobotinoWorldModelInterface* wm_ext2_if_;
+	fawkes::RobotinoWorldModelInterface* wm_ext_if_;
 	fawkes::RobotinoWorldModelInterface* wm_merged_if_;
 	fawkes::RobotinoWorldModelInterface* wm_changed_if_;
 
 	WmState wm_if_data_;
-	WmState wm_ext1_if_data_;
-	WmState wm_ext2_if_data_;
+	WmState wm_ext_if_data_;
 };
 
 #endif
