@@ -24,9 +24,9 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "take_puck_to"
-fsm                = SkillHSM:new{name=name, start="SKILL_GOTO", debug=false}
---depends_skills     = { "goto", "relgoto" }
-depends_skills     = { "relgoto" }
+fsm                = SkillHSM:new{name=name, start="SKILL_GOTO", debug=true}
+depends_skills     = { "goto", "relgoto", "motor_move" }
+--depends_skills     = { "relgoto" }
 depends_interfaces = {
 	{ v = "sensor", type = "RobotinoSensorInterface", id = "Robotino" },
 	{ v = "omnivisionSwitch", type = "SwitchInterface", id = "omnivisionSwitch" },
@@ -44,8 +44,9 @@ skillenv.skill_module(...)
 
 -- Constants
 local AVG_LEN = 10
-local FIND_TIMEOUT = 5
-local omnipucks = { omnipuck1 omnipuck2 omnipuck3 omnipuck4 omnipuck5 }
+local FIND_TIMEOUT = 10
+local ORI_OFFSET = 0.15
+local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
 -- Imports
 local pm = require 'puck_loc_module'
@@ -76,19 +77,90 @@ function lost_puck()
 	return false
 end
 
+function find_best_puck()
+	local p_rel, p_loc, d
+	local min_d = 1000
+
+	-- iterate over omnipuck interfaces
+	for i,op in ipairs(omnipucks) do
+		p_rel = pm.get_puck_loc(op)
+
+		-- omnipuck iface op found a puck with a high visibility history
+		if p_rel then
+			p_loc = tf.transform(
+				{
+					x = p_rel.x,
+					y = p_rel.y,
+					ori = math.atan2(p_rel.y, p_rel.x)
+				}, "/base_link", "/map")
+
+			if p_loc.x == 0 or p_loc.y == 0 then break end
+
+			for k,field in pairs(machine_pos.fields) do
+				if not ( (p_loc.x > field.x and p_loc.x < field.x + machine_pos.field_size)
+				 and (p_loc.y > field.y and p_loc.y < field.y + machine_pos.field_size) ) then
+				 	-- puck is not in a machine field, so we're done
+					fsm.vars.puck_loc = p_loc
+					fsm.vars.puck_rel = p_rel
+					return true
+				end
+			end
+		end
+	end
+
+	return false
+end
+
+function no_puck_found()
+	return (not find_best_puck()) and (os.time() - fsm.vars.start_time > FIND_TIMEOUT/2)
+end
+
+function no_writer()
+	return not omnivisionSwitch:has_writer()
+end
+
+function best_puck_in_front()
+	if not find_best_puck() then
+		return false
+	end
+	if math.abs(math.atan2(fsm.vars.puck_rel.y, fsm.vars.puck_rel.x)) < ORI_OFFSET then
+		return true
+	end
+	return false
+end
+
+function best_puck_not_in_front()
+	return not best_puck_in_front()
+end
+
+function timeout()
+	return best_puck_not_in_front and (os.time() - fsm.vars.start_time > FIND_TIMEOUT)
+end
+
 fsm:add_transitions{
-	{ "SKILL_GOTO", "FINAL", skill=relgoto, fail_to="FAILED" },
-	{ "SKILL_GOTO", "LOST_PUCK", cond=lost_puck },
+    { "SKILL_GOTO", "FAILED", cond=lost_puck, precond=true, desc="Called without puck" },
+	{ "SKILL_GOTO", "FAILED", cond=no_writer, precond=true, desc="No omnivision writer" },
+	{ "SKILL_GOTO", "FINAL", skill=goto, fail_to="FAILED", desc="Goto failed" },
+	{ "SKILL_GOTO", "LOST_PUCK", cond=lost_puck, desc="Lost puck" },
 	{ "LOST_PUCK", "TURN_ON_OMNIVISION", skill=relgoto, fail_to="FAILED" },
-	{ "TURN_ON_OMNIVISION", "LOCATE_PUCK", cond=true },
+	{ "TURN_ON_OMNIVISION", "LOCATE_PUCK", wait_sec=1, desc="Wait for Omnivision" },
+	{ "LOCATE_PUCK", "WAIT_FOR_VISION", cond=no_puck_found, desc="No valid Puck found" },
+	{ "WAIT_FOR_VISION", "LOCATE_PUCK", wait_sec=0.33333, desc="Wait, retry" },
+	{ "LOCATE_PUCK", "TURN_TO_PUCK", cond=find_best_puck, desc="Found lost puck" },
+	{ "TURN_TO_PUCK", "VERIFY_TURN", skill=relgoto, fail_to="FAILED" },
+	{ "VERIFY_TURN", "LOCATE_PUCK", cond=best_puck_not_in_front },
+	{ "VERIFY_TURN", "SKILL_FETCH_PUCK", cond=best_puck_in_front },
+	{ "VERIFY_TURN", "FAILED", cond=timeout, desc="Couldn't recover: Timeout" },
+	{ "SKILL_FETCH_PUCK", "SKILL_GOTO", skill=motor_move, fail_to="FAILED", desc="recover puck" }
 }
 
 function SKILL_GOTO:init()
-	self.args = {
-		rel_x = self.fsm.vars.rel_x,
-		rel_y = self.fsm.vars.rel_y,
-		rel_ori = self.fsm.vars.rel_ori
-	}
+	--self.args = {
+	--	rel_x = self.fsm.vars.rel_x,
+	--	rel_y = self.fsm.vars.rel_y,
+	--	rel_ori = self.fsm.vars.rel_ori
+	--}
+	self.args = { goto_name = self.fsm.vars.goto_name }
 	self.fsm.vars.avg_idx = 1
 	self.fsm.vars.avg_val = {}
 end
@@ -102,44 +174,26 @@ function LOST_PUCK:init()
 end
 
 function TURN_ON_OMNIVISION:init()
+	-- turn on omnivision
 	local msg = omnivisionSwitch.EnableSwitchMessage:new()
 	omnivisionSwitch:msgq_enqueue_copy(msg)
+	-- remember current time
+	self.fsm.vars.start_time = os.time()
 end
 
-function LOCATE_PUCK:init()
-	local p = find_best_puck()
-	if p then
-		
-	end
+function TURN_TO_PUCK:init()
+	self.args = {
+		rel_x = 0,
+		rel_y = 0,
+		rel_ori = math.atan2(self.fsm.vars.puck_rel.y, self.fsm.vars.puck_rel.x)
+	}
 end
 
-function find_best_puck()
-	local p_rel, p_loc, d
-	local min_d = 1000
-
-	for i,op in ipairs(omnipucks) do
-		p_rel = pm.puck_loc(op)
-
-		if p_rel then
-
-			p_loc = tf.transform(
-				{
-					x = p_rel.x,
-					y = p_rel.y,
-					ori = math.atan2(p_rel.y, p_rel.x)
-				}, "/base_link", "/map")
-
-			if p_loc.x == 0 or p_loc.y == 0 then break end
-
-			for k,field in pairs(machine_pos.fields) do
-				if not ( (x > field.x and x < field.x + field.size)
-				 and (y > field.y and y < field.y + field.size) ) then
-					return p_loc
-				end
-			end
-		end
-	end
-
-	return nil
+function SKILL_FETCH_PUCK:init()
+	-- turn on omnivision
+	local msg = omnivisionSwitch.DisableSwitchMessage:new()
+	omnivisionSwitch:msgq_enqueue_copy(msg)
+	self.args = {
+		x = math.sqrt(self.fsm.vars.puck_rel.x^2 + self.fsm.vars.puck_rel.y^2),
+	}
 end
-

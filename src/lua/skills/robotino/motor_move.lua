@@ -41,64 +41,16 @@ documentation      = [==[Move somewhere using the motor and odometry directly
 -- Initialize as skill module
 skillenv.skill_module(...)
 
+local tfm = require("tf_module")
 
-function calc_status()
-	dist_x = fsm.vars.motor_target_x - motor:odometry_position_x()
-	dist_y = fsm.vars.motor_target_y - motor:odometry_position_y()
-	dist_ori = fsm.vars.motor_target_ori - motor:odometry_orientation()
-	
-	dir_x = 0
-	dir_y = 0
-	dir_ori = 0
-
-	if dist_x > 0 then
-		dir_x = 1
-	elseif dist_x < 0 then
-		dir_x = -1
-	end
-	if dist_y > 0 then
-		dir_y = 1
-	elseif dist_y < 0 then
-		dir_y = -1
-	end
-	if dist_ori > 0 then
-		dir_ori = 1
-	elseif dist_ori < 0 then
-		dir_ori = -1
-	end
-end
-
-
-function target_reached()
-	calc_status()
-
-	if fsm.vars.x and math.abs(dist_x) < 0.07 then
-		fsm.vars.motor_vx = dir_x * 0.04
-		if math.abs(dist_x) < 0.03 then
-			fsm.vars.motor_vx = 0
-		end
-	end
-	if fsm.vars.y and math.abs(dist_y) < 0.07 then
-		fsm.vars.motor_vy = dir_y * 0.04
-		if math.abs(dist_y) < 0.03 then
-			fsm.vars.motor_vy = 0
-		end
-	end
-	if fsm.vars.ori and math.abs(dist_ori) < 0.2 then
-		fsm.vars.motor_omega = dir_ori * 0.1
-		if math.abs(dist_ori) < 0.03 then
-			fsm.vars.motor_omega = 0
-		end
-	end
-
-	printf("x: " .. dist_x .. "\t" .. fsm.vars.motor_vx)
-	printf("y: " .. dist_y .. "\t" .. fsm.vars.motor_vy)
-	printf("ori: " .. dist_ori .. "\t" .. fsm.vars.motor_omega)
-	send_transrot(fsm.vars.motor_vx, fsm.vars.motor_vy, fsm.vars.motor_omega)
-
-	if fsm.vars.motor_vx == 0 and fsm.vars.motor_vy == 0 and fsm.vars.motor_omega == 0 then
+function target_reached(self)
+	if math.abs(self.fsm.vars.dx) < 0.03 and math.abs(self.fsm.vars.dy) < 0.03 then
 		return true
 	end
+
+	printf("x: " .. self.fsm.vars.dx .. "\t" .. self.fsm.vars.motor_vx)
+	printf("y: " .. self.fsm.vars.dy .. "\t" .. self.fsm.vars.motor_vy)
+
 	return false
 end
 
@@ -109,12 +61,85 @@ function invalid_input()
 	return false
 end
 
+function ori_reached(self)
+	if math.abs(self.fsm.vars.dist_ori) < 0.03 then
+		return true
+	end
+	return false
+end
+
 fsm:add_transitions{
 	closure={motor=motor},
 	{"DRIVE", "FAILED", cond=invalid_input, precond=true, desc="ori must be < pi"},
-	{"DRIVE", "STOP", cond=target_reached},
+	{"DRIVE", "TURN", cond=target_reached},
+	{"TURN", "STOP", cond=ori_reached},
 	{"STOP", "FINAL", cond=true}
 }
+
+function calc_status(self)
+
+	local t_bl = tfm.transform({x=fsm.vars.motor_target_x, y=fsm.vars.motor_target_y, ori=0}, "/robotino_odometry", "/base_link") 
+
+	self.fsm.vars.dx = t_bl.x
+	self.fsm.vars.dy = t_bl.y
+
+	self.fsm.vars.dir_x = 0
+	self.fsm.vars.dir_y = 0
+	if self.fsm.vars.dx > 0 then
+		self.fsm.vars.dir_x = 1
+	elseif self.fsm.vars.dx < 0 then
+		self.fsm.vars.dir_x = -1
+	end
+	if self.fsm.vars.dy > 0 then
+		self.fsm.vars.dir_y = 1
+	elseif self.fsm.vars.dy < 0 then
+		self.fsm.vars.dir_y = -1
+	end
+end
+
+function DRIVE:loop()
+
+	calc_status(self)
+
+	if math.abs(self.fsm.vars.dx) < 0.07 then
+		self.fsm.vars.motor_vx = self.fsm.vars.dir_x * 0.04
+		if math.abs(self.fsm.vars.dx) < 0.03 then
+			self.fsm.vars.motor_vx = 0
+		end
+	end
+	if math.abs(self.fsm.vars.dy) < 0.07 then
+		self.fsm.vars.motor_vy = self.fsm.vars.dir_y * 0.04
+		if math.abs(self.fsm.vars.dy) < 0.03 then
+			self.fsm.vars.motor_vy = 0
+		end
+	end
+
+	send_transrot(self.fsm.vars.motor_vx, self.fsm.vars.motor_vy, 0)
+end
+
+function TURN:init()
+	send_transrot(0, 0, 0)
+end
+
+function TURN:loop()
+	local dir_ori = 0
+	self.fsm.vars.dist_ori = self.fsm.vars.motor_target_ori - motor:odometry_orientation()
+	printf("ori=%f\t%f", motor:odometry_orientation(), self.fsm.vars.motor_omega)
+
+	if self.fsm.vars.dist_ori < 0 then
+		dir_ori = -1
+	else
+		dir_ori = 1
+	end
+
+	if math.abs(self.fsm.vars.dist_ori) < 0.2 then
+		self.fsm.vars.motor_omega = dir_ori * 0.1
+		if math.abs(self.fsm.vars.dist_ori) < 0.03 then
+			self.fsm.vars.motor_omega = 0
+		end
+	end
+	send_transrot(0, 0, self.fsm.vars.motor_omega)
+end
 
 function send_transrot(vx, vy, omega)
 	local oc  = motor:controller()
@@ -127,58 +152,50 @@ end
 function DRIVE:init()
 	local x = self.fsm.vars.x or 0
 	local y = self.fsm.vars.y or 0
-	local ori = self.fsm.vars.ori or math.atan2(y, x)
+	local ori = self.fsm.vars.ori or 0
+	
+	local odo_tgt = tfm.transform({x=x, y=y, ori=ori}, "/base_link", "/robotino_odometry")
 
+	self.fsm.vars.motor_target_x = odo_tgt.x
+	self.fsm.vars.motor_target_y = odo_tgt.y
 
-	local baselink_t = fawkes.tf.Vector3:new(x, y, 0)
-        local baselink_r = fawkes.tf.Quaternion:new(ori, 0, 0)
-        local baselink_p = fawkes.tf.Pose:new(baselink_r, baselink_t)
-        local odom_sp = fawkes.tf.StampedPose:new()
-        local baselink_sp = fawkes.tf.StampedPose(baselink_p, fawkes.Time:new(0, 0), "/base_link")
-	tf:transform_pose("/robotino_odometry", baselink_sp, odom_sp)
-	local odom_t = odom_sp:getOrigin()
-        local odom_r = odom_sp:getRotation()
-	printf("Baselink: (%f,%f,%f) (%f,%f,%f,%f)  Odom: (%f,%f,%f)  (%f,%f,%f,%f)",
-               baselink_t:x(), baselink_t:y(), baselink_t:z(),
-               baselink_r:x(), baselink_r:y(), baselink_r:z(), baselink_r:w(),
-               odom_t:x(), odom_t:y(), odom_t:z(),
-               odom_r:x(), odom_r:y(), odom_r:z(), odom_r:w())
+	printf("odo_tgt=%f, odo_now=%f", odo_tgt.ori, motor:odometry_orientation())
 
-
-	self.fsm.vars.motor_target_x = odom_t:x()
-	self.fsm.vars.motor_target_y = odom_t:y()
-	local odo_ori = motor:odometry_orientation()
-	if odo_ori < 0 then
-		if odo_ori + ori < -math.pi then
-			self.fsm.vars.motor_target_ori = odo_ori - ori
-		else
-			self.fsm.vars.motor_target_ori = odo_ori + ori
-		end
-	else
-		if odo_ori + ori > math.pi then
-			self.fsm.vars.motor_target_ori = odo_ori - ori
-		else
-			self.fsm.vars.motor_target_ori = odo_ori + ori
-		end
-	end
-	printf("t_ori=" .. self.fsm.vars.motor_target_ori)
 	self.fsm.vars.motor_vx = 0
 	self.fsm.vars.motor_vy = 0
-	self.fsm.vars.motor_omega = 0
 
-	calc_status()
+    local odo_ori = motor:odometry_orientation()
+    if odo_ori < 0 then
+        if odo_ori + ori < -math.pi then
+            self.fsm.vars.motor_target_ori = odo_ori - ori
+        else
+            self.fsm.vars.motor_target_ori = odo_ori + ori
+        end
+    else
+        if odo_ori + ori > math.pi then
+            self.fsm.vars.motor_target_ori = odo_ori - ori
+        else
+            self.fsm.vars.motor_target_ori = odo_ori + ori
+        end
+    end
 
-	if x ~= 0 then
-		self.fsm.vars.motor_vx = dir_x * 0.1
+	self.fsm.vars.dist_ori = self.fsm.vars.motor_target_ori - motor:odometry_orientation()
+	
+	calc_status(self)
+
+	if self.fsm.vars.dx ~= 0 then
+		self.fsm.vars.motor_vx = self.fsm.vars.dir_x * 0.1
 	end
-	if y ~= 0 then
-		self.fsm.vars.motor_vy = dir_y * 0.1
+	if self.fsm.vars.dy ~= 0 then
+		self.fsm.vars.motor_vy = self.fsm.vars.dir_y * 0.1
 	end
-	if ori ~= 0 then
-		self.fsm.vars.motor_omega = dir_ori * 0.3
+	if self.fsm.vars.motor_target_ori - motor:odometry_orientation() > 0 then
+		self.fsm.vars.motor_omega = 0.3
+	elseif self.fsm.vars.motor_target_ori - motor:odometry_orientation() < 0 then
+		self.fsm.vars.motor_omega = -0.3
 	end
 
-	send_transrot(self.fsm.vars.motor_vx, self.fsm.vars.motor_vy, self.fsm.vars.motor_omega)
+	send_transrot(self.fsm.vars.motor_vx, self.fsm.vars.motor_vy, 0)
 end
 
 function STOP:init()
