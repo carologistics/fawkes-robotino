@@ -48,8 +48,8 @@ function target_reached(self)
 		return true
 	end
 
-	printf("x: " .. self.fsm.vars.dx .. "\t" .. self.fsm.vars.motor_vx)
-	printf("y: " .. self.fsm.vars.dy .. "\t" .. self.fsm.vars.motor_vy)
+--	printf("x: " .. self.fsm.vars.dx .. "\t" .. self.fsm.vars.motor_vx)
+--	printf("y: " .. self.fsm.vars.dy .. "\t" .. self.fsm.vars.motor_vy)
 
 	return false
 end
@@ -124,7 +124,7 @@ end
 function TURN:loop()
 	local dir_ori = 0
 	self.fsm.vars.dist_ori = self.fsm.vars.motor_target_ori - motor:odometry_orientation()
-	printf("ori=%f\t%f", motor:odometry_orientation(), self.fsm.vars.motor_omega)
+--	printf("ori=%f\t%f", motor:odometry_orientation(), self.fsm.vars.motor_omega)
 
 	if self.fsm.vars.dist_ori < 0 then
 		dir_ori = -1
@@ -159,7 +159,7 @@ function DRIVE:init()
 	self.fsm.vars.motor_target_x = odo_tgt.x
 	self.fsm.vars.motor_target_y = odo_tgt.y
 
-	printf("odo_tgt=%f, odo_now=%f", odo_tgt.ori, motor:odometry_orientation())
+--	printf("odo_tgt=%f, odo_now=%f", odo_tgt.ori, motor:odometry_orientation())
 
 	self.fsm.vars.motor_vx = 0
 	self.fsm.vars.motor_vy = 0
