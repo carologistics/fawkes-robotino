@@ -103,6 +103,7 @@ class RobotinoAmpelVarPipelineThread
 
   float cfg_camera_height_;
   bool cfg_debug_buffer_;
+  bool cfg_is_static_;
 
   float cfg_red_height_;
   float cfg_orange_height_;

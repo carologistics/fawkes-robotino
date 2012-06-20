@@ -104,6 +104,7 @@ RobotinoAmpelVarPipelineThread::init()
   cfg_red_height_	 = config->get_float((cfg_prefix_ + "red_height").c_str());
   cfg_orange_height_ = config->get_float((cfg_prefix_ + "orange_height").c_str());
   cfg_green_height_	 = config->get_float((cfg_prefix_ + "green_height").c_str());
+  cfg_is_static_	 = config->get_bool((cfg_prefix_ + "static").c_str());
 
   // camera
   cam_ = vision_master->register_for_camera( cfg_camera_.c_str(), this );
@@ -287,9 +288,11 @@ RobotinoAmpelVarPipelineThread::loop()
   ampel_y = laser_pos_if_->translation(1);
 
   cart2polar2d(ampel_x,ampel_y, &theta, &distance_ampel);
-  distance_ampel = 0.4f;
 
-  logger->log_debug(name(),"ampel x %f, ampel y %f", ampel_x,ampel_y);
+  if(cfg_is_static_) {
+	distance_ampel = 0.285f;
+	theta = +0.001f;
+  }
 
   //Berechnung des projezierten Abstandes der Ampelfarben auf der Nullebene
   distance_red=cfg_camera_height_*100*distance_ampel/(cfg_camera_height_-cfg_red_height_);
@@ -301,17 +304,6 @@ RobotinoAmpelVarPipelineThread::loop()
   // px position aus bulb! nearest neighbour
   // aus Laser: distance d und winkel theta
 
-
-  //theta um 180° drehen
-  /*theta = theta + M_PI;
-  if(theta > 2*M_PI)
-	  theta = theta - 2*M_PI;*/
-
-  if(theta > M_PI)
-	  theta = theta - M_PI;
-  else
-	  theta = theta + M_PI;
-
   d = distance_red;
   gefunden = false;
   map = mirror_->get_lut();
@@ -322,17 +314,18 @@ RobotinoAmpelVarPipelineThread::loop()
 		  pol_r = map[h * img_width_ + w + 1];
 		  pol_l.r = pol_l.r * 100;
 
-		  if(pol_l.phi > M_PI)
-			  pol_l.phi = pol_l.phi - M_PI;
-		  else
-			  pol_l.phi = pol_l.phi + M_PI;
+		  if(pol_l.phi < -M_PI) {
+			  pol_l.phi = pol_l.phi + 2*M_PI;
+		  }
 
-		  if(pol_r.phi > M_PI)
-			  pol_r.phi = pol_r.phi - M_PI;
-		  else
-			  pol_r.phi = pol_r.phi + M_PI;
+		  if(pol_l.phi < -M_PI) {
+			  pol_r.phi = pol_r.phi + 2*M_PI;
+		  }
 
 		  if(pol_l.phi <= theta && pol_l.r <= d && pol_r.phi >= theta) {
+			  gefunden = true;
+		  }
+		  if(pol_l.phi >= theta && pol_l.r <= d && pol_r.phi <= theta) {
 			  gefunden = true;
 		  }
 		  if(gefunden)
@@ -356,21 +349,19 @@ RobotinoAmpelVarPipelineThread::loop()
 		  pol_r = map[h * img_width_ + w + 1];
 		  pol_l.r = pol_l.r * 100;
 
-		  /*pol.phi = pol.phi + M_PI;
-		  if(pol.phi > 2*M_PI)
-			  pol.phi = pol.phi - 2*M_PI;*/
+		  if(pol_l.phi < -M_PI) {
+			  pol_l.phi = pol_l.phi + 2*M_PI;
+		  }
 
-		  if(pol_l.phi > M_PI)
-			  pol_l.phi = pol_l.phi - M_PI;
-		  else
-			  pol_l.phi = pol_l.phi + M_PI;
-
-		  if(pol_r.phi > M_PI)
-			  pol_r.phi = pol_r.phi - M_PI;
-		  else
-			  pol_r.phi = pol_r.phi + M_PI;
+		  if(pol_l.phi < -M_PI) {
+			  pol_r.phi = pol_r.phi + 2*M_PI;
+		  }
 
 		  if(pol_l.phi <= theta && pol_l.r <= d && pol_r.phi >= theta) {
+			  logger->log_debug(name(),"gefunden");
+			  gefunden = true;
+		  }
+		  if(pol_l.phi >= theta && pol_l.r <= d && pol_r.phi <= theta) {
 			  gefunden = true;
 		  }
 		  if(gefunden)
@@ -395,21 +386,18 @@ RobotinoAmpelVarPipelineThread::loop()
 		  pol_r = map[h * img_width_ + w + 1];
 		  pol_l.r = pol_l.r * 100;
 
-		  /*pol.phi = pol.phi + M_PI;
-		  if(pol.phi > 2*M_PI)
-			  pol.phi = pol.phi - 2*M_PI;*/
+		  if(pol_l.phi < -M_PI) {
+			  pol_l.phi = pol_l.phi + 2*M_PI;
+		  }
 
-		  if(pol_l.phi > M_PI)
-			  pol_l.phi = pol_l.phi - M_PI;
-		  else
-			  pol_l.phi = pol_l.phi + M_PI;
-
-		  if(pol_r.phi > M_PI)
-			  pol_r.phi = pol_r.phi - M_PI;
-		  else
-			  pol_r.phi = pol_r.phi + M_PI;
+		  if(pol_l.phi < -M_PI) {
+			  pol_r.phi = pol_r.phi + 2*M_PI;
+		  }
 
 		  if(pol_l.phi <= theta && pol_l.r <= d && pol_r.phi >= theta) {
+			  gefunden = true;
+		  }
+		  if(pol_l.phi >= theta && pol_l.r <= d && pol_r.phi <= theta) {
 			  gefunden = true;
 		  }
 		  if(gefunden)
@@ -423,15 +411,20 @@ RobotinoAmpelVarPipelineThread::loop()
   px_position_green_y = h;
 
 
-  //logger->log_debug(name(),"px_red_x: %i,px_orange_x: %i,px_green_x: %i",px_position_red_x,px_position_orange_x,px_position_green_x);
-  //logger->log_debug(name(),"px_red_y: %i,px_orange_y: %i,px_green_y: %i",px_position_red_y,px_position_orange_y,px_position_green_y);
+  logger->log_debug(name(),"px_red_x: %i,px_orange_x: %i,px_green_x: %i",px_position_red_x,px_position_orange_x,px_position_green_x);
+  logger->log_debug(name(),"px_red_y: %i,px_orange_y: %i,px_green_y: %i",px_position_red_y,px_position_orange_y,px_position_green_y);
 
   luminance_threshold = 2;
 
   //set ROI parameter for each color
+  try{
   ROI_colors[0] = new ROI(px_position_red_x,px_position_red_y,6,2,img_width_,img_height_);
   ROI_colors[1] = new ROI(px_position_orange_x,px_position_orange_y,6,2,img_width_,img_height_);
   ROI_colors[2] = new ROI(px_position_green_x,px_position_green_y,6,2,img_width_,img_height_);
+  } catch(Exception &e) {
+	  e.append("ROIs out of bound");
+	  throw;
+  }
 
   //detect red
   scanline_->reset();
