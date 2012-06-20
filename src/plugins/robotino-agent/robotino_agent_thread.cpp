@@ -25,8 +25,6 @@
 #include <interfaces/RobotinoWorldModelInterface.h>
 #include <interfaces/SwitchInterface.h>
 
-#define USE_SKILLER false
-
 using namespace fawkes;
 
 /** @class RobotinoClipsAgentThread "clips_thread.h"
@@ -268,7 +266,7 @@ RobotinoClipsAgentThread::clips_get_s0()
 {
   logger->log_info(name(), "Get new S0");
 
-  if (USE_SKILLER) {
+  if (! cfg_use_sim_) {
     try {
       get_s0_skill_string_ = "get_s0()";
       SkillerInterface::ExecSkillContinuousMessage *msg =
@@ -297,7 +295,7 @@ RobotinoClipsAgentThread::clips_goto_machine(std::string machines,
   goto_machines_ = machines;
   goto_puck_ = puck;
 
-  if (USE_SKILLER) {
+  if (! cfg_use_sim_) {
     try {
       char *sstr_temp;
       if (asprintf(&sstr_temp, "take_puck_to_best{machines=\"%s\", puck=\"%s\"}",
