@@ -9,12 +9,13 @@
 
 ; --- RULES for skill outcome
 
-(defrule get-s0-succeeds
-  ?s <- (state GET-S0)
-  ?h <- (holding NONE)
+(defrule get-s0-succeeded
+  ?s  <- (state GET-S0)
+  ?gf <- (get-s0-succeeded)
+  ?h  <- (holding NONE)
   =>
   (if (debug 1) then (printout t "get-s0 succeeded" crlf))
-  (retract ?s ?h)
+  (retract ?s ?gf ?h)
   (assert (holding S0))
   (assert (state IDLE))
 )
