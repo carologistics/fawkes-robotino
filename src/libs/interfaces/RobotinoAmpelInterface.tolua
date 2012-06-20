@@ -6,10 +6,10 @@ class RobotinoAmpelInterface : public Interface
 
   typedef enum {
     YELLOW,
-    YELLOW_GREEN,
     GREEN,
     RED,
-    YELLOW_FLASHING
+    YELLOW_FLASHING,
+    NO_CHANGE
   } AmpelState;
 
   AmpelState state();

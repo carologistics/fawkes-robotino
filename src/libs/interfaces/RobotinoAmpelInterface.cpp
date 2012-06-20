@@ -49,7 +49,7 @@ RobotinoAmpelInterface::RobotinoAmpelInterface() : Interface()
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
   add_fieldinfo(IFT_ENUM, "state", 1, &data->state, "AmpelState");
-  unsigned char tmp_hash[] = {0x5c, 0x62, 0x60, 0x10, 0x36, 0x97, 0xe1, 0x59, 0x7a, 0x50, 0x98, 0xb4, 0x99, 0xde, 0x79, 0x86};
+  unsigned char tmp_hash[] = {0xd9, 0x87, 0x6d, 0xe2, 0x91, 0x55, 0xc2, 0x11, 0x8, 0x94, 0xf5, 0xd6, 0x83, 0xdd, 0xb5, 0x3c};
   set_hash(tmp_hash);
 }
 
@@ -67,10 +67,10 @@ RobotinoAmpelInterface::tostring_AmpelState(AmpelState value) const
 {
   switch (value) {
   case YELLOW: return "YELLOW";
-  case YELLOW_GREEN: return "YELLOW_GREEN";
   case GREEN: return "GREEN";
   case RED: return "RED";
   case YELLOW_FLASHING: return "YELLOW_FLASHING";
+  case NO_CHANGE: return "NO_CHANGE";
   default: return "UNKNOWN";
   }
 }

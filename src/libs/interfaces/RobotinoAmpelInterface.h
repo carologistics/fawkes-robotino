@@ -42,11 +42,11 @@ class RobotinoAmpelInterface : public Interface
 	This determines the current status of skill execution.
        */
   typedef enum {
-    YELLOW /**<  true if ONLY yellow is active. */,
-    YELLOW_GREEN /**<  true if green and yellow is active. */,
-    GREEN /**< true if ONLY green is active. */,
-    RED /**< true if ONLY red is active. */,
-    YELLOW_FLASHING /**< true if yellow is falshing. */
+    YELLOW /**<  true if ONLY yellow is activ. */,
+    GREEN /**< true if ONLY green is active . */,
+    RED /**< true if ONLY red is active . */,
+    YELLOW_FLASHING /**< true if yellow is falshing. */,
+    NO_CHANGE /**<  true if ampel didnt change   */
   } AmpelState;
   const char * tostring_AmpelState(AmpelState value) const;
 
