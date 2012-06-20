@@ -43,7 +43,9 @@ skillenv.skill_module(...)
 
 -- Constants
 local AVG_LEN = 10
-local FIND_TIMEOUT = 10
+local FIND_TIMEOUT = 30
+local TIMEOUT_MOVE_BACK = 10
+local TIMEOUT_MOVE_LEFT = 20
 local ORI_OFFSET = 0.15
 local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
@@ -136,6 +138,14 @@ function timeout()
 	return best_puck_not_in_front and (os.time() - fsm.vars.start_time > FIND_TIMEOUT)
 end
 
+function timeout_move_left()
+	return os.time() - fsm.vars.start_time > TIMEOUT_MOVE_BACK
+end
+
+function timeout_move_right()
+	return timeout_move_left and os.time() - fsm.vars.start_time > TIMEOUT_MOVE_LEFT
+end
+
 fsm:add_transitions{
     { "SKILL_GOTO", "FAILED", cond=lost_puck, precond=true, desc="Called without puck" },
 	{ "SKILL_GOTO", "FAILED", cond=no_writer, precond=true, desc="No omnivision writer" },
@@ -144,6 +154,10 @@ fsm:add_transitions{
 	{ "LOST_PUCK", "TURN_ON_OMNIVISION", skill=relgoto, fail_to="FAILED" },
 	{ "TURN_ON_OMNIVISION", "LOCATE_PUCK", wait_sec=1, desc="Wait for Omnivision" },
 	{ "LOCATE_PUCK", "WAIT_FOR_VISION", cond=no_puck_found, desc="No valid Puck found" },
+	{ "LOCATE_PUCK", "MOVE_BACK", cond=timeout_move_left, desc="move left a bit" },
+	{ "LOCATE_PUCK", "MOVE_LEFT", cond=timeout_move_right, desc="move right a bit" },
+	{ "MOVE_BACK", "LOCATE_PUCK", skill=relgoto, fail_to="MOVE_LEFT" },
+	{ "MOVE_LEFT", "LOCATE_PUCK", skill=relgoto, fail_to="FAILED" },
 	{ "WAIT_FOR_VISION", "LOCATE_PUCK", wait_sec=0.33333, desc="Wait, retry" },
 	{ "LOCATE_PUCK", "TURN_TO_PUCK", cond=find_best_puck, desc="Found lost puck" },
 	{ "TURN_TO_PUCK", "VERIFY_TURN", skill=relgoto, fail_to="FAILED" },
@@ -152,6 +166,14 @@ fsm:add_transitions{
 	{ "VERIFY_TURN", "FAILED", cond=timeout, desc="Couldn't recover: Timeout" },
 	{ "SKILL_FETCH_PUCK", "SKILL_GOTO", skill=motor_move, fail_to="FAILED", desc="recover puck" }
 }
+
+function MOVE_BACK:init()
+	self.args = { rel_x = -0.1 }
+end
+
+function MOVE_LEFT:init()
+	self.args = { rel_y = 0.1 }
+end
 
 function SKILL_GOTO:init()
 	self.args = { goto_name = self.fsm.vars.goto_name }
