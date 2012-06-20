@@ -110,7 +110,7 @@ RobotinoClipsAgentThread::init()
     clips->assert_fact("(enable-debug)");
   }
 
-  if (cfg_sim_randomize_) {
+  if (cfg_use_sim_) {
     clips->assert_fact_f("(enable-sim  %s)",
                          cfg_sim_randomize_ ? "randomize" : "ordered");
   } else {
