@@ -159,26 +159,20 @@ function DRIVE:init()
 	self.fsm.vars.motor_target_x = odo_tgt.x
 	self.fsm.vars.motor_target_y = odo_tgt.y
 
---	printf("odo_tgt=%f, odo_now=%f", odo_tgt.ori, motor:odometry_orientation())
+	printf("odo_tgt=%f, odo_now=%f", odo_tgt.ori, motor:odometry_orientation())
 
 	self.fsm.vars.motor_vx = 0
 	self.fsm.vars.motor_vy = 0
 
     local odo_ori = motor:odometry_orientation()
-    if odo_ori < 0 then
-        if odo_ori + ori < -math.pi then
-            self.fsm.vars.motor_target_ori = odo_ori - ori
-        else
-            self.fsm.vars.motor_target_ori = odo_ori + ori
-        end
-    else
-        if odo_ori + ori > math.pi then
-            self.fsm.vars.motor_target_ori = odo_ori - ori
-        else
-            self.fsm.vars.motor_target_ori = odo_ori + ori
-        end
-    end
-
+	if odo_ori + ori > math.pi then
+		self.fsm.vars.motor_target_ori = odo_ori + ori - 2*math.pi
+	elseif odo_ori + ori < -math.pi then
+		self.fsm.vars.motor_target_ori = odo_ori + ori + 2*math.pi
+	else
+		self.fsm.vars.motor_target_ori = odo_ori + ori
+	end
+        
 	self.fsm.vars.dist_ori = self.fsm.vars.motor_target_ori - motor:odometry_orientation()
 	
 	calc_status(self)
