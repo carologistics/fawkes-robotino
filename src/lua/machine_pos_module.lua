@@ -27,7 +27,7 @@ delivery_goto = {
     D1 =  {x = 3.15,        y = 0.26+margin, ori = -math.pi/2, d_skill="deliver_puck"},
     D2 =  {x = 2.80,        y = 0.26+margin, ori = -math.pi/2, d_skill="deliver_puck"},
     D3 =  {x = 2.45,        y = 0.26+margin, ori = -math.pi/2, d_skill="deliver_puck"},
-    
+    Is =  {x = 2.25,	    y = 4.9,	     ori = math.pi/2}, 
     m1 = M1, m2 = M2, m3 = M3, m4 = M4, m5 = M5, m6 = M6, m7 = M7, m8 = M8, m9 = M9,
     m10 = M10,
     
