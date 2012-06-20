@@ -168,9 +168,12 @@ RobotinoClipsAgentThread::loop()
     return;
   }
 
-  if (! started_ && switch_if_->is_enabled()) {
-    clips->assert_fact("(start)");
-    started_ = true;
+  if (! started_) {
+    switch_if_->read();
+    if (switch_if_->is_enabled()) {
+      clips->assert_fact("(start)");
+      started_ = true;
+    }
   }
 
   worldmodel_changed_ = false;
