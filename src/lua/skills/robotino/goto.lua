@@ -43,9 +43,9 @@ EGI = ExpressGoodInsertion:   Express good insertion area,
 D1-D3 = Delivery1-Delivery3:  Delivery gates 1-3.
 ]==]
 
-local MAX_TRANSERR = 0.12
-local MAX_ROTERR = 0.12
-local MAX_POS_MIS = 4
+local MAX_TRANSERR = 0.16
+local MAX_ROTERR = 0.16
+local MAX_POS_MISS = 4
 -- Initialize as skill module
 skillenv.skill_module(...)
 
@@ -53,26 +53,26 @@ local machine_pos = require 'machine_pos_module'
 local tf_mod = require 'tf_module'
 
 
-function pose_ok()
+function pose_ok(self)
 	return (math.abs(self.fsm.vars.goto_x - pose:translation(0)) <= MAX_TRANSERR
 	 and math.abs(self.fsm.vars.goto_y - pose:translation(1)) <= MAX_TRANSERR
 	 and math.abs(self.fsm.vars.goto_ori - 2*math.acos(pose:rotation(3))) <= MAX_ROTERR)
 end
 
-function pose_not_ok()
-	return not pose_ok()
+function pose_not_ok(self)
+	return not pose_ok(self)
 end
 
-function missed_to_often()
- return (self.fsm.vars.num_pos_missed>= MAX_POS_MIS)
+function missed_to_often(self)
+ return (self.fsm.vars.num_pos_missed>= MAX_POS_MISS)
 end
 
-function not_missed_to_often()
- return not missed_to_often()
+function not_missed_to_often(self)
+ return not missed_to_often(self)
 end
 
 fsm:add_transitions{
-  {"START_RELGOTO","DO_RELGOTO"},
+  {"START_RELGOTO","DO_RELGOTO",cond=true},
 	{"DO_RELGOTO", "WAIT_POSE", skill=relgoto, fail_to="FAILED"},
 	{"WAIT_POSE", "CHECK_POSE", wait_sec=3.0},
 	{"CHECK_POSE", "FINAL", cond=pose_ok, desc="Pose reached" },
