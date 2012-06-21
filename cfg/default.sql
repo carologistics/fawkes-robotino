@@ -11,8 +11,7 @@ INSERT INTO "config" VALUES('/fawkes/mainapp/desired_loop_time','unsigned int',6
 INSERT INTO "config" VALUES('/fawkes/mainapp/max_thread_time','unsigned int',133333,'Maximum time a thread may run per loop, 0 to disable; microseconds');
 INSERT INTO "config" VALUES('/fawkes/mainapp/net/tcp_port','unsigned int',1910,'Port for Fawkes Network Protocol service; TCP port');
 INSERT INTO "config" VALUES('/fawkes/mainapp/net/service_name','string','Fawkes on %h','Name for Fawkes service, announced via Avahi, %h is replaced by short hostname');
-INSERT INTO "config" VALUES('/fawkes/meta_plugins/nao_default','string','naoqi-motion,naoqi-speechsynth,naoqi-buttons,naoqi-leds','Meta plugin loaded by default on the Nao (and on the Nao only)');
-INSERT INTO "config" VALUES('/fawkes/meta_plugins/robotino_default','string','robotino,joystick,robotino-joystick,webview','Example default meta plugin for the Robotino');
+INSERT INTO "config" VALUES('/fawkes/meta_plugins/robotino_default','string','robotino,static-transforms,fvbase,fvretriever,fvfountain,laser,laser-filter,laserclusterdetector,robotino-omnivisionmult-thread,robotino-ros-joints,ros,ros_cmdvel,ros_odometry,ros-tf,skiller,amcl','Example default meta plugin for the Robotino');
 INSERT INTO "config" VALUES('/fawkes/bbsync/check_interval','unsigned int',5000,'Interval between checking for remote BB aliveness; ms');
 INSERT INTO "config" VALUES('/fawkes/bbsync/peers/localhost/host','string','localhost','Host name of remote peer; hostname');
 INSERT INTO "config" VALUES('/fawkes/bbsync/peers/localhost/port','unsigned int',1911,'Port of remote peer; TCP port');
