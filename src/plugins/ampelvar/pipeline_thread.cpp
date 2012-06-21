@@ -219,9 +219,9 @@ RobotinoAmpelVarPipelineThread::init()
   upper_left_orange_y_man = 57;
   upper_left_green_y_man = 72;
 
-  red_width_man = 16;
-  orange_width_man = 16;
-  green_width_man = 16;
+  red_width_man = 24;
+  orange_width_man = 24;
+  green_width_man = 24;
 
   red_height_man = 10;
   orange_height_man = 10;
