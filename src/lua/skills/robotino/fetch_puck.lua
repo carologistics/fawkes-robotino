@@ -89,7 +89,9 @@ fsm:add_transitions{
 	{"WAIT_FOR_VISION", "SEE_PUCK", wait_sec=0.333 },
 	{"SEE_PUCK", "FAILED", cond=no_puck, desc="No puck found by OmniVision"},
 	{"SEE_PUCK", "TURN_TO_PUCK", cond=puck, desc="Found a puck"},
-	{"TURN_TO_PUCK", "ARRIVED", skill=motor_move, fail_to="SEE_PUCK"},
+	{"TURN_TO_PUCK", "MOVE_TOWARDS", skill=motor_move, fail_to="SEE_PUCK"},
+	{"MOVE_TOWARDS", "ARRIVED", skill=motor_move, fail_to="SEE_PUCK"},
+	{"MOVE_TOWARDS", "FINAL", cond=have_puck },
 	{"ARRIVED", "SEE_PUCK", cond=puck_not_in_front, desc="Puck gone after approach"},
 	{"ARRIVED", "GRAB_PUCK", cond=puck_in_front},
 	{"GRAB_PUCK", "MOVE_DONE", skill=motor_move, fail_to="FAILED" },
@@ -104,6 +106,14 @@ function TURN_ON_OMNIVISION:init()
 	self.fsm.vars.start_time = os.time()
 end
 
+function MOVE_TOWARDS:init()
+	self.args = {
+		x = self.fsm.vars.puck_loc.x/3,
+		y = self.fsm.vars.puck_loc.y,
+		ori = 0
+	}
+end
+
 function TURN_TO_PUCK:init()
 	self.args = { x=0, y=0,
 		ori=math.atan2(self.fsm.vars.puck_loc.y, self.fsm.vars.puck_loc.x)
@@ -113,7 +123,7 @@ end
 function GRAB_PUCK:init()
 	self.args = {
 		x = self.fsm.vars.puck_loc.x-0.05,
-		y = self.fsm.vars.puck_loc.y,
+		y = 0,
 		ori = 0
 	}
 end
