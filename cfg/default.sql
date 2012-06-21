@@ -11,7 +11,7 @@ INSERT INTO "config" VALUES('/fawkes/mainapp/desired_loop_time','unsigned int',6
 INSERT INTO "config" VALUES('/fawkes/mainapp/max_thread_time','unsigned int',133333,'Maximum time a thread may run per loop, 0 to disable; microseconds');
 INSERT INTO "config" VALUES('/fawkes/mainapp/net/tcp_port','unsigned int',1910,'Port for Fawkes Network Protocol service; TCP port');
 INSERT INTO "config" VALUES('/fawkes/mainapp/net/service_name','string','Fawkes on %h','Name for Fawkes service, announced via Avahi, %h is replaced by short hostname');
-INSERT INTO "config" VALUES('/fawkes/meta_plugins/robotino_default','string','robotino,static-transforms,fvbase,fvretriever,fvfountain,laser,laser-filter,laserclusterdetector,robotino-omnivisionmult-thread,ros,robotino-ros-joints,ros_cmdvel,ros_odometry,ros-tf,ros-laserscan,ros-navigator,skiller,amcl','Example default meta plugin for the Robotino');
+INSERT INTO "config" VALUES('/fawkes/meta_plugins/robotino_default','string','robotino,static-transforms,fvbase,fvretriever,fvfountain,laser,laser-filter,laserclusterdetector,robotino-omnivisionmult-thread,ros,robotino-ros-joints,ros_cmdvel,ros_odometry,ros-tf,ros-laserscan,ros-navigator,skiller,amcl,webview','Example default meta plugin for the Robotino');
 INSERT INTO "config" VALUES('/fawkes/bbsync/check_interval','unsigned int',5000,'Interval between checking for remote BB aliveness; ms');
 INSERT INTO "config" VALUES('/fawkes/bbsync/peers/localhost/host','string','localhost','Host name of remote peer; hostname');
 INSERT INTO "config" VALUES('/fawkes/bbsync/peers/localhost/port','unsigned int',1911,'Port of remote peer; TCP port');
@@ -348,4 +348,8 @@ INSERT INTO "config" VALUES('/plugins/ampelvar/red_height','float',0.245,'height
 INSERT INTO "config" VALUES('/plugins/ampelvar/orange_height','float',0.2125,'height of orange center');
 INSERT INTO "config" VALUES('/plugins/ampelvar/green_height','float',0.1825,'height of green center');
 INSERT INTO "config" VALUES('/plugins/ampelvar/static','bool',1,'static or dynamic ampel detection. static assumes a distance of 0.285 m');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/clips-debug','bool',1,'Enable clips debugging (watching facts and rules)');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/use-sim','bool',0,'Enable simulation mode (do not actually invoke skills)?');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/sim-randomize-machines','bool',1,'Enable randomization of machine assignments in simulation?');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/skill-sim-time','float',0.1,'Time to wait until reporting skill success in simulation; sec');
 COMMIT;
