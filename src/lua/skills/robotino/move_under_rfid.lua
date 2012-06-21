@@ -154,7 +154,7 @@ end
 --	self.args = {x=0,y=0,ori=math.atan(Machine_0:translation(1)/Machine_0:translation(0))}
 --end
 function SKILL_APPROACH_AMPEL:init()
-	self.args = {x=0.13,y=0,ori=0}
+	self.args = {x=0.16,y=0,ori=0}
 end
 function CHECK_POSITION:init()
 end
