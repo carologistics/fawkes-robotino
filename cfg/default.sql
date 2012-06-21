@@ -55,7 +55,6 @@ INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck7','st
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck8','string','Position3DInterface::OmniPuck8',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck9','string','Position3DInterface::OmniPuck9',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/OmniPuck10','string','Position3DInterface::OmniPuck10',NULL);
-INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/light','string','RobotinoAmpelInterface::light',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/pose','string','Position3DInterface::Pose',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/navigator','string','NavigatorInterface::Navigator',NULL);
 INSERT INTO "config" VALUES('/skiller/interfaces/robotino/reading/omnivisionSwitch','string','SwitchInterface::omnivisionSwitch',NULL);
