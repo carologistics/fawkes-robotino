@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_s0"
 fsm                = SkillHSM:new{name=name, start="GOTO_IS", debug=false}
-depends_skills     = {"goto","fetch_puck","leave_area_with_puck"}
+depends_skills     = {"goto","fetch_puck","leave_IS"}
 depends_interfaces = {
 	
 }
@@ -41,7 +41,7 @@ fsm:add_transitions{
 	closure={motor=motor},
 	{"GOTO_IS", "SKILL_FETCH_PUCK", skill=goto, fail_to="FAILED"},
 	{"SKILL_FETCH_PUCK", "SKILL_LEAVE_AREA", skill=fetch_puck, fail_to="FAILED"},
-	{"SKILL_LEAVE_AREA", "FINAL", skill=leave_area_with_puck, fail_to="FAILED"},
+	{"SKILL_LEAVE_AREA", "FINAL", skill=leave_IS, fail_to="FAILED"},
 }
 
 function GOTO_IS:init()
