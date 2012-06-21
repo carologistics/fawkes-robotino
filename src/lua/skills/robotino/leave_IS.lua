@@ -38,7 +38,7 @@ skillenv.skill_module(...)
 local m_pos = require("machine_pos_module")
 
 function get_ori_diff()
-	local ori = 2*math.acos(pose:w()) 
+	local ori = 2*math.acos(pose:rotation(3)) 
 	local is_ori = m_pos.delivery_goto.Is.ori
 	local diff = 0
 	if ori > is_ori then 
@@ -67,7 +67,7 @@ function oriented_right()
 	end
 end
 function needs_turn()
-	if abs(diff) > 1.05 then
+	if math.abs(get_ori_diff()) < 1.05 then
 		return true
 	end
 end
@@ -87,14 +87,15 @@ function CHECK_TURN:init()
 end
 function TURN:init()
 	--1.05 = 60°
-	if oriented_left then
-		self.args = {x=0, y=0, ori=1.05-get_ori_diff()}
+	if oriented_left() then
+		self.args = {x=0, y=0, ori=1.05-math.abs(get_ori_diff())}
 	else
-		self.args = {x=0, y=0, ori=-1.05-get_ori_diff()}
+		self.args = {x=0, y=0, ori=-1.05+math.abs(get_ori_diff())}
 	end
+	print(get_ori_diff())
 end
 function SKILL_MOTOR_MOVE:init()
-	if oriented_left then
+	if oriented_left() then
 		self.args = {x=0, y=0.5, ori=0}
 	else
 		self.args = {x=0, y=-0.5, ori=0}
