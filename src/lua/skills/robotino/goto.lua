@@ -43,8 +43,8 @@ EGI = ExpressGoodInsertion:   Express good insertion area,
 D1-D3 = Delivery1-Delivery3:  Delivery gates 1-3.
 ]==]
 
-local MAX_TRANSERR = 0.05
-local MAX_ROTERR = 0.1
+local MAX_TRANSERR = 0.12
+local MAX_ROTERR = 0.12
 
 -- Initialize as skill module
 skillenv.skill_module(...)
@@ -52,8 +52,20 @@ skillenv.skill_module(...)
 local machine_pos = require 'machine_pos_module'
 local tf_mod = require 'tf_module'
 
+function pose_ok()
+	return (math.abs(self.fsm.vars.goto_x - pose:translation(0)) <= MAX_TRANSERR
+	 and math.abs(self.fsm.vars.goto_y - pose:translation(1)) <= MAX_TRANSERR
+	 and math.abs(self.fsm.vars.goto_ori - 2*math.acos(pose:rotation(3))) <= MAX_ROTERR)
+end
+
+function pose_not_ok()
+	return not pose_ok()
+end
+
 fsm:add_transitions{
-	{"DO_RELGOTO", "FINAL", skill=relgoto, fail_to="FAILED"},
+	{"DO_RELGOTO", "CHECK_POSE", skill=relgoto, fail_to="FAILED"},
+	{"CHECK_POSE", "FINAL", cond=pose_ok, desc="Pose reached" },
+	{"CHECK_POSE", "FINAL", cond=pose_not_ok, desc="Pose missed" }
 }
 
 
@@ -69,6 +81,10 @@ function DO_RELGOTO:init()
 		y = self.fsm.vars.goto_y or pose:translation(1)
 		ori = self.fsm.vars.goto_ori or 2*math.acos(pose:translation(3))
 	end
+
+	self.fsm.vars.goto_x = x
+	self.fsm.vars.goto_y = y
+	self.fsm.vars.goto_ori = ori
 
 	local rel_pos = tf_mod.transform({x = x, y = y, ori = ori}, "/map", "/base_link")
 

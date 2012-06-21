@@ -45,13 +45,24 @@ end
 
 function target_reached()
 	if navigator:msgid() == fsm.vars.goto_msgid then
-		return navigator:is_final() or navigator:error_code()
+		if navigator:is_final() and navigator:error_code() ~= 0 then
+			return false
+		end
+		return navigator:is_final()
+	end
+	return false
+end
+
+function navi_failure()
+	if navigator:msgid() == fsm.vars.goto_msgid then
+		return navigator:is_final() and navigator:error_code() ~= 0
 	end
 	return false
 end
 
 fsm:add_transitions{
 	{ "CHECK_INPUT", "FAILED", cond=cannot_navigate },
+	{ "MOVING", "FAILED", cond=navi_failure },
 	{ "CHECK_INPUT", "MOVING", cond=can_navigate },
 	{ "MOVING", "FINAL", cond=target_reached },
 }
