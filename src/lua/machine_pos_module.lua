@@ -28,15 +28,27 @@ delivery_goto = {
     D2 =  {x = 2.80,        y = 0.26+margin, ori = -math.pi/2, d_skill="deliver_puck"},
     D3 =  {x = 2.45,        y = 0.26+margin, ori = -math.pi/2, d_skill="deliver_puck"},
     Is =  {x = 2.25,	    y = 4.9,	     ori = math.pi/2}, 
-    m1 = M1, m2 = M2, m3 = M3, m4 = M4, m5 = M5, m6 = M6, m7 = M7, m8 = M8, m9 = M9,
-    m10 = M10,
-    
-    TEST = T, Test = T,
-
-    ExpressGoodInsertion = EGI,
-
-    Delivery1 = D1, Delivery2 = D2, Delivery3 = D3
 }
+
+delivery_goto.m1 = delivery_goto.M1
+delivery_goto.m2 = delivery_goto.M2
+delivery_goto.m3 = delivery_goto.M3
+delivery_goto.m4 = delivery_goto.M4
+delivery_goto.m5 = delivery_goto.M5
+delivery_goto.m6 = delivery_goto.M6
+delivery_goto.m7 = delivery_goto.M7
+delivery_goto.m8 = delivery_goto.M8
+delivery_goto.m9 = delivery_goto.M9
+delivery_goto.m10 = delivery_goto.M10
+
+delivery_goto.TEST = delivery_goto.T
+delivery_goto.Test = delivery_goto.T
+
+delivery_goto.ExpressGoodInsertion = delivery_goto.EGI
+
+delivery_goto.Delivery1 = delivery_goto.D1
+delivery_goto.Delivery2 = delivery_goto.D2
+delivery_goto.Delivery3 = delivery_goto.D3
 
 fields = {
     M1  = {x = 1.68-fmrgin, y = 1.68-fmrgin}, 
@@ -57,13 +69,25 @@ fields = {
     D2  = {x = 2.80-fmrgin, y = 0.26-fmrgin},
     D3  = {x = 2.45-fmrgin, y = 0.26-fmrgin},
     
-    m1 = M1, m2 = M2, m3 = M3, m4 = M4, m5 = M5, m6 = M6, m7 = M7, m8 = M8, m9 = M9,
-    m10 = M10,
-    
-    TEST = T, Test = T,
-
-    ExpressGoodInsertion = EGI,
-
-    Delivery1 = D1, Delivery2 = D2, Delivery3 = D3
 }
+
+fields.m1 = fields.M1
+fields.m2 = fields.M2
+fields.m3 = fields.M3
+fields.m4 = fields.M4
+fields.m5 = fields.M5
+fields.m6 = fields.M6
+fields.m7 = fields.M7
+fields.m8 = fields.M8
+fields.m9 = fields.M9
+fields.m10 = fields.M10
+
+fields.TEST = fields.T
+fields.Test = fields.T
+
+fields.ExpressGoodInsertion = fields.EGI
+
+fields.Delivery1 = fields.D1
+fields.Delivery2 = fields.D2
+fields.Delivery3 = fields.D3
 
