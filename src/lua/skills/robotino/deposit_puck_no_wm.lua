@@ -48,7 +48,7 @@ fsm:add_transitions{
 }
 
 function SKILL_DRIVE_LEFT:init()
-	self.args = {x=0,y=0.22,ori=0}
+	self.args = {x=0,y=0.25,ori=0}
 end
 
 function SKILL_DRIVE_FORWARD:init()
