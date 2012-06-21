@@ -81,19 +81,19 @@ function left_and_right_ok()
 end
 function is_left()
 	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle <= -0.05 then
+	if angle <= -0.07 then
 		return true
 	end
 end	
 function is_right()
 	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle >= 0.05  then
+	if angle >= 0.07  then
 		return true
 	end
 end
 function angle_ok()
 	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle < 0.05 and angle > -0.3 then
+	if angle < 0.07 and angle > -0.07 then
 		send_transrot(0,0,0)
 		return true
 	end
@@ -139,10 +139,10 @@ end
 function DESC_CHECK_IF_FRONT:init()
 end
 function CORRECT_LEFT:init()
-	self.args = {x=0,y=-1,ori=0}
+	self.args = {x=0,y=-0.4,ori=0}
 end
 function CORRECT_RIGHT:init()
-	self.args = {x=0,y=1,ori=0}
+	self.args = {x=0,y=0.4,ori=0}
 end
 --function SKILL_TURN_TO_AMPEL:init()
 --	self.args = {x=0,y=0,ori=self.fsm.vars.ampel_loc.angle}
@@ -159,8 +159,8 @@ end
 function CHECK_POSITION:init()
 end
 function RIGHT_TOO_FAR:init()
-	self.args = {x=0,y=1,ori=0}
+	self.args = {x=0,y=0.3,ori=0}
 end
 function LEFT_TOO_FAR:init()
-	self.args = {x=0,y=-1,ori=0}
+	self.args = {x=0,y=-0.3,ori=0}
 end
