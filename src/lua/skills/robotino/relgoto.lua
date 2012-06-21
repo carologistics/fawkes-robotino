@@ -45,7 +45,7 @@ end
 
 function target_reached()
 	if navigator:msgid() == fsm.vars.goto_msgid then
-		return navigator:is_final() and navigator:error_code()
+		return navigator:is_final() or navigator:error_code()
 	end
 	return false
 end
