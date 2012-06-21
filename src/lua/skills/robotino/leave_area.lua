@@ -24,8 +24,8 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "leave_area"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"relgoto"}
+fsm                = SkillHSM:new{name=name, start="LEAVE_AREA", debug=false}
+depends_skills     = {"motor_move"}
 depends_interfaces = nil
 
 
@@ -47,14 +47,13 @@ skillenv.skill_module(...)
 
 fsm:add_transitions{
 	closure={motor=motor},
-   	{"INIT","LEAVES_AREA",cond = true},
-	{"LEAVE_AREA","FINAL",skill = relgoto , fail_to = "FAILED"}
+	{"LEAVE_AREA","FINAL",skill = motor_move , fail_to = "FAILED"}
 
 }
 
 function LEAVE_AREA:init()
 
-self.args = {rel_x = -0.2}
+self.args = {x=-0.2, y=0, ori=0}
 
 end
 
