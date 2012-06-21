@@ -325,7 +325,7 @@ INSERT INTO "config" VALUES('/plugins/amcl/init_cov_yy','float',0.25,'Initial Co
 INSERT INTO "config" VALUES('/plugins/amcl/init_cov_aa','float',0.0685,'Initial Covariance aa');
 INSERT INTO "config" VALUES('/plugins/amcl/angle_increment','float',1.0,'angle_increment');
 INSERT INTO "config" VALUES('/firevision/retriever/camera/cam0','string','v4l2:omni:device=/dev/video0:size=320x240','Used Camera for firevision Plugin');
-INSERT INTO "config" VALUES('/firevision/retriever/camera/cam1','string','v4l2:omni:device=/dev/video1:size=160x120','Used Camera for firevision Plugin');
+INSERT INTO "config" VALUES('/firevision/retriever/camera/cam1','string','v4l2:front:device=/dev/video1:size=160x120','Used Camera for firevision Plugin');
 INSERT INTO "config" VALUES('/firevision/retriever/camera/cam0/frame','string','/base_link','Used Coordinate System');
 INSERT INTO "config" VALUES('/firevision/retriever/camera/cam1/frame','string','/base_link','Used Coordinate System');
 INSERT INTO "config" VALUES('/hardware/robotino/omnivision/camera','string','v4l2:omni:device=/dev/video0:size=320x240','Used Camera for omnivision Plugin');
