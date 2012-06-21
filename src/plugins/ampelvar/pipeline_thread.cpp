@@ -211,21 +211,21 @@ RobotinoAmpelVarPipelineThread::init()
   logger->log_debug(name(),"init=> center: x=%i, y=%i", center.x, center.y);
 
   /* static values for non-dynamic-approach */
-  upper_left_red_x_man = 53;
+  upper_left_red_x_man = 53;		//ima3, ima2: each 53
   upper_left_orange_x_man = 53;
   upper_left_green_x_man = 53;
 
-  upper_left_red_y_man = 38;
-  upper_left_orange_y_man = 57;
-  upper_left_green_y_man = 72;
+  upper_left_red_y_man = 35;		//ima3: 38, ima2: 35
+  upper_left_orange_y_man = 56;		//ima3: 57, ima2: 56
+  upper_left_green_y_man = 84;		//ima3: 72, ima2: 84
 
   red_width_man = 24;
   orange_width_man = 24;
   green_width_man = 24;
 
-  red_height_man = 10;
-  orange_height_man = 10;
-  green_height_man = 10;
+  red_height_man = 12;				//ima3: each 10, ima2: each 12
+  orange_height_man = 12;
+  green_height_man = 12;
 
 }
 
