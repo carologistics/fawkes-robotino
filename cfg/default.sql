@@ -339,9 +339,9 @@ INSERT INTO "config" VALUES('/plugins/laserclusterdetector/valid_cluster_radius'
 INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_interface','string','Laser urg','interface to read laser data from');
 INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_offset','float',0.07,'');
 INSERT INTO "config" VALUES('/plugins/laserclusterdetector/buffer_size','unsigned int',10,'');
-INSERT INTO "config" VALUES('/plugins/ampelvar/camera','string','v4l2:omni:device=/dev/video1:size=160x120','camera beeing used');
+INSERT INTO "config" VALUES('/plugins/ampelvar/camera','string','v4l2:front:device=/dev/video1:size=160x120','camera beeing used');
 INSERT INTO "config" VALUES('/plugins/ampelvar/camera_height','float',0.41,'interface to read laser data from');
-INSERT INTO "config" VALUES('/plugins/ampelvar/debug_buffer','bool',1,'decide wether a debug buffer is written or not');
+INSERT INTO "config" VALUES('/plugins/ampelvar/debug_buffer','bool',0,'decide wether a debug buffer is written or not');
 INSERT INTO "config" VALUES('/plugins/ampelvar/frame','string','/base_link','coordinate system');
 INSERT INTO "config" VALUES('/plugins/ampelvar/mirror_file','string','/bulb-colormap/masle.bulb','path to bulb file');
 INSERT INTO "config" VALUES('/plugins/ampelvar/red_height','float',0.245,'height of red center');
