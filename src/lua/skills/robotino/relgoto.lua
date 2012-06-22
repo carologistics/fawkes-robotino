@@ -61,8 +61,8 @@ function navi_failure()
 end
 
 fsm:add_transitions{
-	{ "CHECK_INPUT", "FAILED", cond=cannot_navigate },
-	{ "MOVING", "FAILED", cond=navi_failure },
+	{ "CHECK_INPUT", "FAILED", cond=cannot_navigate, desc="Navigator not running" },
+	{ "MOVING", "FAILED", cond=navi_failure, desc="Navigator returned error" },
 	{ "CHECK_INPUT", "MOVING", cond=can_navigate },
 	{ "MOVING", "FINAL", cond=target_reached },
 }
