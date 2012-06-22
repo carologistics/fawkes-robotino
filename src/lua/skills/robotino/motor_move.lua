@@ -118,12 +118,31 @@ function DRIVE:loop()
 end
 
 function TURN:init()
+	self.fsm.vars.dist_ori = get_ori_diff(self.fsm.vars.motor_target_ori, motor:odometry_orientation())
 	send_transrot(0, 0, 0)
+end
+
+function get_ori_diff(ori, is_ori)
+    local diff = 0
+    if ori > is_ori then
+            if ori - is_ori < math.pi then
+            diff = ori - is_ori
+        else
+            diff = -2.0 * math.pi + ori - is_ori
+        end
+    else
+        if is_ori - ori < math.pi then
+            diff = ori - is_ori
+        else
+            diff = 2.0 * math.pi - is_ori + ori;
+            end
+    end
+    return diff
 end
 
 function TURN:loop()
 	local dir_ori = 0
-	self.fsm.vars.dist_ori = self.fsm.vars.motor_target_ori - motor:odometry_orientation()
+	self.fsm.vars.dist_ori = get_ori_diff(self.fsm.vars.motor_target_ori, motor:odometry_orientation())
 --	printf("ori=%f\t%f", motor:odometry_orientation(), self.fsm.vars.motor_omega)
 
 	if self.fsm.vars.dist_ori < 0 then
@@ -132,6 +151,7 @@ function TURN:loop()
 		dir_ori = 1
 	end
 
+	self.fsm.vars.motor_omega = 0.3 * dir_ori
 	if math.abs(self.fsm.vars.dist_ori) < 0.2 then
 		self.fsm.vars.motor_omega = dir_ori * 0.1
 		if math.abs(self.fsm.vars.dist_ori) < 0.03 then
@@ -153,6 +173,8 @@ function DRIVE:init()
 	local x = self.fsm.vars.x or 0
 	local y = self.fsm.vars.y or 0
 	local ori = self.fsm.vars.ori or 0
+	if ori == math.pi then ori = ori - 1e-6 end
+	if ori == -math.pi then ori = ori + 1e-6 end
 	
 	local odo_tgt = tfm.transform({x=x, y=y, ori=ori}, "/base_link", "/robotino_odometry")
 
@@ -172,9 +194,13 @@ function DRIVE:init()
 	else
 		self.fsm.vars.motor_target_ori = odo_ori + ori
 	end
-        
-	self.fsm.vars.dist_ori = self.fsm.vars.motor_target_ori - motor:odometry_orientation()
-	
+    
+	if ori < 0 then
+		self.fsm.vars.dir_ori = -1
+	else
+		self.fsm.vars.dir_ori = 1
+	end
+
 	calc_status(self)
 
 	if self.fsm.vars.dx ~= 0 then
