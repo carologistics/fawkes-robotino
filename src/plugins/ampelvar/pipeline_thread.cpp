@@ -290,7 +290,6 @@ RobotinoAmpelVarPipelineThread::loop()
   }
 
   if (ampel_switch_if_->is_enabled() == false){
-	usleep(500000);
 	return;
   }//*/
 
