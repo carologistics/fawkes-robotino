@@ -38,7 +38,6 @@ skillenv.skill_module(...)
 
 
 fsm:add_transitions{
-	closure={motor=motor},
 	{"GOTO_IS", "SKILL_FETCH_PUCK", skill=goto, fail_to="FAILED"},
 	{"SKILL_FETCH_PUCK", "SKILL_LEAVE_AREA", skill=fetch_puck, fail_to="FAILED"},
 	{"SKILL_LEAVE_AREA", "FINAL", skill=leave_IS, fail_to="FAILED"},
