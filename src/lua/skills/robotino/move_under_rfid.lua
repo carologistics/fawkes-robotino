@@ -39,7 +39,7 @@ skillenv.skill_module(...)
 
 function ampel()
 	distance = math.sqrt((Machine_0:translation(0))^2+(Machine_0:translation(1))^2)
-	return (distance > 0)
+	return (distance > 0) and (distance < 1)
 end
 
 function no_ampel()
