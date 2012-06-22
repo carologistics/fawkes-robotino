@@ -174,7 +174,7 @@ function TURN_TO_PUCK:init()
 end
 
 function GRAB_PUCK:init()
-	local x = math.sqrt(self.fsm.vars.puck_bl.x^2 + self.fsm.vars.puck_bl.y^2) + 0.2,
+	local x = math.sqrt(self.fsm.vars.puck_bl.x^2 + self.fsm.vars.puck_bl.y^2) + 0.2
 	printf("dist=%f", x)
 	self.args = {
 		x = x,
