@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "take_puck_to"
-fsm                = SkillHSM:new{name=name, start="SKILL_GOTO", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "goto", "relgoto", "motor_move" }
 depends_interfaces = {
 	{ v = "sensor", type = "RobotinoSensorInterface", id = "Robotino" },
@@ -47,6 +47,8 @@ local FIND_TIMEOUT = 30
 local TIMEOUT_MOVE_BACK = 10
 local TIMEOUT_MOVE_LEFT = 20
 local ORI_OFFSET = 0.15
+local MAX_RETRIES = 3
+local LOSTPUCK_DIST = 0.1
 local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
 -- Imports
@@ -69,12 +71,12 @@ function lost_puck()
 		count = count + 1
 	end
 	local avg = sum / count
-	printf("moving avg: %f", avg)
+--	printf("moving avg: %f", avg)
 
 	fsm.vars.avg_val = val
 	fsm.vars.avg_idx = idx
 
-	if avg > 0.075 or avg == 0 then return true end
+	if avg > LOSTPUCK_DIST or avg == 0 then return true end
 	return false
 end
 
@@ -146,30 +148,50 @@ function timeout_move_right()
 	return no_puck_found() and timeout_move_left() and os.time() - fsm.vars.start_time > TIMEOUT_MOVE_LEFT
 end
 
+function retry_goto()
+	return fsm.vars.goto_retries < MAX_RETRIES
+end
+
 fsm:add_transitions{
 	closure = { lost_puck = lost_puck },
-    { "SKILL_GOTO", "FAILED", cond=lost_puck, precond=true, desc="Called without puck" },
-	{ "SKILL_GOTO", "FAILED", cond=no_writer, precond=true, desc="No omnivision writer" },
-	{ "SKILL_GOTO", "FINAL", skill=goto, fail_to="FAILED", desc="Goto failed" },
+	{ "INIT", "SKILL_GOTO", cond=true },
+    { "SKILL_GOTO", "CLEANFAIL", cond=lost_puck, precond=true, desc="Called without puck" },
+	{ "SKILL_GOTO", "CLEANFAIL", cond=no_writer, precond=true, desc="No omnivision writer" },
+	{ "SKILL_GOTO", "FINAL", skill=goto, fail_to="RETRY_GOTO", desc="Goto failed" },
 	{ "SKILL_GOTO", "LOST_PUCK", cond=lost_puck, desc="Lost puck" },
-	{ "LOST_PUCK", "TURN_ON_OMNIVISION", skill=relgoto, fail_to="FAILED" },
+	{ "RETRY_GOTO", "SKILL_GOTO", cond=retry_goto, desc="Retry goto" },
+	{ "LOST_PUCK", "TURN_ON_OMNIVISION", skill=relgoto, fail_to="CLEANFAIL" },
 	{ "TURN_ON_OMNIVISION", "LOCATE_PUCK", wait_sec=1, desc="Wait for Omnivision" },
 	{ "LOCATE_PUCK", "SKILL_GOTO", cond="not lost_puck()" },
-	{ "LOCATE_PUCK", "FAILED", cond=timeout_move_left, desc="move left a bit" },
+	{ "LOCATE_PUCK", "CLEANFAIL", cond=timeout_move_left, desc="move left a bit" },
 	{ "LOCATE_PUCK", "WAIT_FOR_VISION", cond=no_puck_found, desc="No valid Puck found" },
 	{ "LOCATE_PUCK", "TURN_TO_PUCK", cond=find_best_puck, desc="Found lost puck" },
 --	{ "MOVE_BACK", "LOCATE_PUCK", skill=relgoto, fail_to="MOVE_LEFT" },
 	{ "WAIT_FOR_VISION", "LOCATE_PUCK", wait_sec=0.33333, desc="Wait, retry" },
-	{ "TURN_TO_PUCK", "VERIFY_TURN", skill=relgoto, fail_to="FAILED" },
+	{ "TURN_TO_PUCK", "VERIFY_TURN", skill=relgoto, fail_to="CLEANFAIL" },
 	{ "VERIFY_TURN", "LOCATE_PUCK", cond=best_puck_not_in_front },
 	{ "VERIFY_TURN", "SKILL_FETCH_PUCK", cond=best_puck_in_front },
-	{ "VERIFY_TURN", "FAILED", cond=timeout, desc="Couldn't recover: Timeout" },
-	{ "SKILL_FETCH_PUCK", "SKILL_GOTO", skill=motor_move, fail_to="FAILED", desc="recover puck" }
+	{ "VERIFY_TURN", "CLEANFAIL", cond=timeout, desc="Couldn't recover: Timeout" },
+	{ "SKILL_FETCH_PUCK", "SKILL_GOTO", skill=motor_move, fail_to="CLEANFAIL", desc="recover puck" },
+	{ "CLEANFAIL", "FAILED", true }
 }
+
+function CLEANFAIL:init()
+	local msg = omnivisionSwitch.DisableSwitchMessage:new()
+	omnivisionSwitch:msgq_enqueue_copy(msg)
+end
+
+function INIT:init()
+	self.fsm.vars.goto_retries = 0
+end
 
 --function MOVE_BACK:init()
 --	self.args = { rel_x = -0.1 }
 --end
+
+function RETRY_GOTO:init()
+	self.fsm.vars.goto_retries = self.fsm.vars.goto_retries + 1
+end
 
 function SKILL_GOTO:init()
 	self.args = { goto_name = self.fsm.vars.goto_name }
