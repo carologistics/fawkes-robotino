@@ -200,6 +200,9 @@ function SKILL_GOTO:init()
 end
 
 function LOST_PUCK:init()
+	-- remember current time
+	self.fsm.vars.start_time = os.time()
+
 	self.args = {
 		rel_x = 0,
 		rel_y = 0,
@@ -211,8 +214,6 @@ function TURN_ON_OMNIVISION:init()
 	-- turn on omnivision
 	local msg = omnivisionSwitch.EnableSwitchMessage:new()
 	omnivisionSwitch:msgq_enqueue_copy(msg)
-	-- remember current time
-	self.fsm.vars.start_time = os.time()
 end
 
 function TURN_TO_PUCK:init()
