@@ -24,9 +24,9 @@ function transform(src_pos, from_sys, to_sys)
 		ori = 2*math.acos(to_r:w())
 	}
 
-	printf("Transform %s (%f,%f,%f) to %s (%f,%f,%f).",
-	 from_sys, from_t:x(), from_t:y(), 2*math.acos(from_r:w()),
-	 to_sys, rv.x, rv.y, rv.ori)
+--	printf("Transform %s (%f,%f,%f) to %s (%f,%f,%f).",
+--	 from_sys, from_t:x(), from_t:y(), 2*math.acos(from_r:w()),
+--	 to_sys, rv.x, rv.y, rv.ori)
 
 	return rv
 end
