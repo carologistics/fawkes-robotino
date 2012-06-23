@@ -259,12 +259,15 @@ RobotinoClipsAgentThread::loop()
       if (get_s0_skill_string_ == skiller_if_->skill_string()) {
 	switch (skiller_if_->status()) {
 	case SkillerInterface::S_FINAL:
+          logger->log_info(name(), "get_s0 is final");
 	  clips->assert_fact("(get-s0-final)");
 	  get_s0_started_ = false;
 	  break;
 	    
 	case SkillerInterface::S_FAILED:
+          logger->log_info(name(), "get_s0 failed");
 	  clips->assert_fact("(get-s0-failed)");
+          logger->log_error(name(), "GET-S0 HAS FAILED");
 	  get_s0_started_ = false;
 	  break;
 
@@ -331,6 +334,7 @@ RobotinoClipsAgentThread::clips_get_s0()
         new SkillerInterface::ExecSkillContinuousMessage(get_s0_skill_string_.c_str());
       
       skiller_if_->msgq_enqueue(msg);
+      get_s0_started_ = true;
     } catch (Exception &e) {
       logger->log_error(name(), "Failed to execute goto skill");
       logger->log_error(name(), e);
@@ -356,8 +360,8 @@ RobotinoClipsAgentThread::clips_goto_machine(std::string machines,
   if (! cfg_use_sim_) {
     try {
       char *sstr_temp;
-      if (asprintf(&sstr_temp, "take_puck_to_best{machines=\"%s\", puck=\"%s\"}",
-                   machines.c_str(), puck.c_str()) != -1)
+      if (asprintf(&sstr_temp, "finish_puck_at{goto_name=\"%s\"}",
+                   machines.c_str()) != -1)
       {
         goto_skill_string_ = sstr_temp;
         free(sstr_temp);
@@ -368,6 +372,7 @@ RobotinoClipsAgentThread::clips_goto_machine(std::string machines,
         new SkillerInterface::ExecSkillContinuousMessage(goto_skill_string_.c_str());
       
       skiller_if_->msgq_enqueue(msg);
+      goto_started_ = true;
     } catch (Exception &e) {
       logger->log_error(name(), "Failed to execute goto skill");
       logger->log_error(name(), e);

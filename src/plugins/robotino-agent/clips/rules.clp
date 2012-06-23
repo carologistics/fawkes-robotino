@@ -208,9 +208,9 @@
   ?g <- (get-s0)
   =>
   (if (debug 3) then (printout t "Calling get-s0" crlf))
-  (get-s0)
   (retract ?s ?g)
   (assert (state GET-S0))
+  (get-s0)
 )
 
 
@@ -224,7 +224,8 @@
   (if (debug 1) then
     (printout t "Calling take_puck_to_best for " (create$ ?first ?machines)
               " and puck " ?h crlf))
-  (goto-machine (implode$ (create$ ?first ?machines)) ?h)
+  ;(goto-machine (implode$ (create$ ?first ?machines)) ?h)
+  (goto-machine ?first ?h)
   (modify ?g (machines) (min-prio ?*GOTOPRIO_UNK*))
   (retract ?s)
   (assert (state GOTO))
