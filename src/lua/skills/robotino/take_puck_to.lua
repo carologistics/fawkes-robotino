@@ -48,7 +48,7 @@ local TIMEOUT_MOVE_BACK = 10
 local TIMEOUT_MOVE_LEFT = 20
 local ORI_OFFSET = 0.15
 local MAX_RETRIES = 3
-local LOSTPUCK_DIST = 0.1
+local LOSTPUCK_DIST = 0.16
 local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
 -- Imports
@@ -153,13 +153,14 @@ function retry_goto()
 end
 
 fsm:add_transitions{
-	closure = { lost_puck = lost_puck },
+	closure = { lost_puck = lost_puck, retry_goto = retry_goto },
 	{ "INIT", "SKILL_GOTO", cond=true },
     { "SKILL_GOTO", "CLEANFAIL", cond=lost_puck, precond=true, desc="Called without puck" },
 	{ "SKILL_GOTO", "CLEANFAIL", cond=no_writer, precond=true, desc="No omnivision writer" },
 	{ "SKILL_GOTO", "FINAL", skill=goto, fail_to="RETRY_GOTO", desc="Goto failed" },
 	{ "SKILL_GOTO", "LOST_PUCK", cond=lost_puck, desc="Lost puck" },
 	{ "RETRY_GOTO", "SKILL_GOTO", cond=retry_goto, desc="Retry goto" },
+    { "RETRY_GOTO", "CLEANFAIL", cond="not retry_goto", desc="giveup goto" },
 	{ "LOST_PUCK", "TURN_ON_OMNIVISION", skill=relgoto, fail_to="CLEANFAIL" },
 	{ "TURN_ON_OMNIVISION", "LOCATE_PUCK", wait_sec=1, desc="Wait for Omnivision" },
 	{ "LOCATE_PUCK", "SKILL_GOTO", cond="not lost_puck()" },
