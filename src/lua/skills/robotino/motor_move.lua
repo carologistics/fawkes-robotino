@@ -39,7 +39,13 @@ documentation      = [==[Move somewhere using the motor and odometry directly
 -- Constants
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
+
+fsm:define_states{ export_to=_M,
+   {"DRIVE", JumpState},
+   {"TURN", JumpState},
+   {"STOP", JumpState}
+}
 
 local tfm = require("tf_module")
 

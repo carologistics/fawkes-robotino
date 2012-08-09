@@ -37,7 +37,12 @@ documentation      = [==[Move forward till puck is inside arm]==]
 local THRESHOLD_DISTANCE = 0.1
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
+
+fsm:define_states{ export_to=_M,
+   {"DRIVE", JumpState},
+   {"STOP", JumpState}
+}
 
 function no_writer(state)
    return not motor:has_writer()
