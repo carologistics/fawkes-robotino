@@ -55,21 +55,27 @@ skillenv.skill_module(...)
 
 fsm:add_transitions{
    closure={motor=motor, ampelswitch=ampelswitch, ampel_red=ampel_red}, 
-   --{"INIT", "FAILED", cond="not ampelswitch:has_writer()", precond=true},
+   {"INIT", "FAILED", cond="not ampelswitch:has_writer()", precond=true},
    {"INIT", "DETERMINE", wait_sec=1}, -- let vision settle
    {"INIT", "WAIT_OUT_OF_ORDER", cond="ampel_red:is_enabled()", precond=true},
    {"WAIT_OUT_OF_ORDER", "DETERMINE", cond="not ampel_red:is_enabled()"},
    {"DETERMINE", "CHECK_NO_CHANGE", wait_sec=2.0},
    {"DETERMINE", "WAIT_OUT_OF_ORDER", cond="ampel_red:is_enabled()"},
-   {"DETERMINE", "FINAL", cond="vars.determined"},
+   {"DETERMINE", "STOP_VISION", cond="vars.determined"},
    {"CHECK_NO_CHANGE", "NO_CHANGE", "not vars.changed"},
    {"CHECK_NO_CHANGE", "DETERMINE", true},
-   {"NO_CHANGE", "FINAL", true}
+   {"NO_CHANGE", "STOP_VISION", true},
+   {"STOP_VISION","FINAL",true}
 }
 
 function INIT:init()
-   --local m = ampelswitch.EnableMessage:new()
-   --ampelswitch:msgq_enqueue_copy(m)
+   local m = ampelswitch.EnableSwitchMessage:new()
+   ampelswitch:msgq_enqueue_copy(m)
+end
+
+function STOP_VISION:init()
+   local m = ampelswitch.DisableSwitchMessage:new()
+   ampelswitch:msgq_enqueue_copy(m)
 end
 
 function DETERMINE:loop()
