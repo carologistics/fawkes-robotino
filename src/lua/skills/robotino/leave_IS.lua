@@ -33,7 +33,7 @@ depends_interfaces = {
 documentation      = [==[Leaves area with puck by driving left and rotating]==]
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
 local m_pos = require("machine_pos_module")
 
@@ -75,12 +75,15 @@ function needs_no_turn()
 	return not needs_turn()
 end
 
+fsm:define_states{ export_to=_M,
+   {"CHECK_TURN", JumpState},
+   {"TURN", SkillJumpState, skills=motor_move, final_to="SKILL_MOTOR_MOVE", fail_to="FAILED"},
+   {"SKILL_MOTOR_MOVE", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"}
+}
+
 fsm:add_transitions{
-	closure={motor=motor},
 	{"CHECK_TURN", "TURN", cond = needs_turn},
 	{"CHECK_TURN", "SKILL_MOTOR_MOVE", cond = needs_no_turn},
-	{"TURN", "SKILL_MOTOR_MOVE",skill=motor_move, fail_to="FAILED"},
-	{"SKILL_MOTOR_MOVE", "FINAL", skill=motor_move, fail_to="FAILED"}
 }
 
 function CHECK_TURN:init()
