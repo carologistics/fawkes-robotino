@@ -36,30 +36,29 @@ depends_interfaces = {
 
 
 documentation      = [==[
-<<<<<<< HEAD
-mode € {EXP,  (TEST),  DELIVER,  RECYCLE,  NORMAL,  OUTOFORDER}  € = element aus  
-=======
-mode is one of {EXP,  (TEST),  DELIVER,  RECYCLE,  NORMAL,  OUTOFORDER}
->>>>>>> skills: rewritten determine_signal skill
-
 writes ampel data into the light interface 
-
 ]==]
 -- Constants
 
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
---functions
+fsm:define_states{ export_to=_M,
+   {"INIT", JumpState},
+   {"DETERMINE", JumpState},
+   {"WAIT_OUT_OF_ORDER", JumpState},
+   {"CHECK_NO_CHANGE", JumpState},
+   {"NO_CHANGE", JumpState}
+}
 
 fsm:add_transitions{
    closure={motor=motor, ampelswitch=ampelswitch, ampel_red=ampel_red}, 
    {"INIT", "FAILED", cond="not ampelswitch:has_writer()", precond=true},
-   {"INIT", "DETERMINE", wait_sec=1}, -- let vision settle
+   {"INIT", "DETERMINE", timeout=1}, -- let vision settle
    {"INIT", "WAIT_OUT_OF_ORDER", cond="ampel_red:is_enabled()", precond=true},
    {"WAIT_OUT_OF_ORDER", "DETERMINE", cond="not ampel_red:is_enabled()"},
-   {"DETERMINE", "CHECK_NO_CHANGE", wait_sec=2.0},
+   {"DETERMINE", "CHECK_NO_CHANGE", timeout=2.0},
    {"DETERMINE", "WAIT_OUT_OF_ORDER", cond="ampel_red:is_enabled()"},
    {"DETERMINE", "STOP_VISION", cond="vars.determined"},
    {"CHECK_NO_CHANGE", "NO_CHANGE", "not vars.changed"},
