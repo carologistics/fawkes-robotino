@@ -34,13 +34,13 @@ documentation      = [==[test der bisherigen skills später eigener skill mit pu
 --constants
 local start = "Is"
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
-
-fsm:add_transitions{
-	{"GOTO_IS", "SKILL_FETCH_PUCK", skill=goto, fail_to="FAILED"},
-	{"SKILL_FETCH_PUCK", "SKILL_LEAVE_AREA", skill=fetch_puck, fail_to="FAILED"},
-	{"SKILL_LEAVE_AREA", "FINAL", skill=leave_IS, fail_to="FAILED"},
+fsm:define_states{ export_to=_M,
+   {"GOTO_IS", SkillJumpState, skills=goto, final_to="SKILL_FETCH_PUCK", fail_to="FAILED"},
+   {"SKILL_FETCH_PUCK", SkillJumpState, skills=fetch_puck, final_to="SKILL_LEAVE_AREA",
+      fail_to="FAILED"},
+   {"SKILL_LEAVE_AREA", SkillJumpState, skills=leave_IS, final_to="FINAL", fail_to="FAILED"}
 }
 
 function GOTO_IS:init()
