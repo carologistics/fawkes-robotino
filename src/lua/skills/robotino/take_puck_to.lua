@@ -39,7 +39,7 @@ depends_interfaces = {
 documentation      = [==[Go to target without losing teh puck]==]
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
 -- Constants
 local AVG_LEN = 10
@@ -152,27 +152,42 @@ function retry_goto()
 	return fsm.vars.goto_retries < MAX_RETRIES
 end
 
+
+fsm:define_states{ export_to=_M,
+   {"INIT", JumpState},
+   {"SKILL_GOTO", SkillJumpState, skills=goto, final_to="FINAL", fail_to="RETRY_GOTO"},
+   {"CLEANFAIL", JumpState},
+   {"LOST_PUCK", SkillJumpState, skills=relgoto, final_to="TURN_ON_OMNIVISION",
+      fail_to="CLEANFAIL"},
+   {"RETRY_GOTO", JumpState},
+   {"TURN_ON_OMNIVISION", JumpState},
+   {"LOCATE_PUCK", JumpState},
+   {"WAIT_FOR_VISION", JumpState},
+   {"TURN_TO_PUCK", SkillJumpState, skills=relgoto, final_to="VERIFY_TURN",
+      fail_to="CLEANFAIL" },
+   {"VERIFY_TURN", JumpState},
+   {"SKILL_FETCH_PUCK", SkillJumpState, skills=motor_move, final_to="SKILL_GOTO",
+      fail_to="CLEANFAIL"}
+}
+
 fsm:add_transitions{
 	closure = { lost_puck = lost_puck },
 	{ "INIT", "SKILL_GOTO", cond=true },
-    { "SKILL_GOTO", "CLEANFAIL", cond=lost_puck, precond=true, desc="Called without puck" },
+   { "SKILL_GOTO", "CLEANFAIL", cond=lost_puck, precond=true, desc="Called without puck" },
 	{ "SKILL_GOTO", "CLEANFAIL", cond=no_writer, precond=true, desc="No omnivision writer" },
-	{ "SKILL_GOTO", "FINAL", skill=goto, fail_to="RETRY_GOTO", desc="Goto failed" },
 	{ "SKILL_GOTO", "LOST_PUCK", cond=lost_puck, desc="Lost puck" },
 	{ "RETRY_GOTO", "SKILL_GOTO", cond=retry_goto, desc="Retry goto" },
-	{ "LOST_PUCK", "TURN_ON_OMNIVISION", skill=relgoto, fail_to="CLEANFAIL" },
-	{ "TURN_ON_OMNIVISION", "LOCATE_PUCK", wait_sec=1, desc="Wait for Omnivision" },
+   { "RETRY_GOTO", "CLEANFAIL", cond="not retry_goto", desc="giveup goto" },
+	{ "TURN_ON_OMNIVISION", "LOCATE_PUCK", timeout=1, desc="Wait for Omnivision" },
 	{ "LOCATE_PUCK", "SKILL_GOTO", cond="not lost_puck()" },
 	{ "LOCATE_PUCK", "CLEANFAIL", cond=timeout_move_left, desc="move left a bit" },
 	{ "LOCATE_PUCK", "WAIT_FOR_VISION", cond=no_puck_found, desc="No valid Puck found" },
 	{ "LOCATE_PUCK", "TURN_TO_PUCK", cond=find_best_puck, desc="Found lost puck" },
 --	{ "MOVE_BACK", "LOCATE_PUCK", skill=relgoto, fail_to="MOVE_LEFT" },
-	{ "WAIT_FOR_VISION", "LOCATE_PUCK", wait_sec=0.33333, desc="Wait, retry" },
-	{ "TURN_TO_PUCK", "VERIFY_TURN", skill=relgoto, fail_to="CLEANFAIL" },
+	{ "WAIT_FOR_VISION", "LOCATE_PUCK", timeout=0.33333, desc="Wait, retry" },
 	{ "VERIFY_TURN", "LOCATE_PUCK", cond=best_puck_not_in_front },
 	{ "VERIFY_TURN", "SKILL_FETCH_PUCK", cond=best_puck_in_front },
 	{ "VERIFY_TURN", "CLEANFAIL", cond=timeout, desc="Couldn't recover: Timeout" },
-	{ "SKILL_FETCH_PUCK", "SKILL_GOTO", skill=motor_move, fail_to="CLEANFAIL", desc="recover puck" },
 	{ "CLEANFAIL", "FAILED", true }
 }
 
