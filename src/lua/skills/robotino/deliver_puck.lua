@@ -24,88 +24,64 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "deliver_puck"
-fsm                = SkillHSM:new{name=name, start="CHECK_PUCK_FETCHED", debug=true}
-depends_skills     = {"take_puck_to","move_under_rfid","determine_signal","leave_area"}
+fsm                = SkillHSM:new{name=name, start="CHECK_PUCK", debug=true}
+depends_skills     = {"take_puck_to", "move_under_rfid", "determine_signal", "leave_area"}
 depends_interfaces = {
-	{ v="light",type ="RobotinoAmpelInterface", id ="light" } 
- 
-
+	{ v="light", type="RobotinoAmpelInterface", id="light" } 
 }
 
 documentation     = [==[delivers already fetched puck to specified location]==]
 -- Constants
-
-local THRESHOLD_DISTANCE =0.1
+local THRESHOLD_DISTANCE = 0.1
+local DELIVERY_GATES = { "D1", "D2", "D3" }
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
-function puck_not_infront()
-        local curDistance = sensor:distance(0)
-        if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
-  
-                return false
-        end
-        return true
-
-
-end
-
-function puck_infront()
+function have_puck()
 local curDistance = sensor:distance(0)
-        if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
-                printf("puckgrapped")
-                return true
-        end
-        return false
-
-
-
+   if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
+      return true
+   end
+   return false
 end
 
 function ampel_green()
-
-	return light:state() ==light.GREEN
-
+	return light:state() == light.GREEN
 end
 
-function traffic_light_red()
-return not traffic_light_green
-end
-
+fsm:define_states{ export_to=_M,
+   {"CHECK_PUCK", JumpState},
+   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills=determine_signal,
+      final_to="DECIDE_DELIVER", fail_to="FAILED"},
+   {"DECIDE_DELIVER", JumpState},
+   {"MOVE_TO_NEXT", SkillJumpState, skills=take_puck_to, final_to="SKILL_DETERMINE_SIGNAL",
+      fail_to="FAILED"},
+   {"MOVE_UNDER_RFID", SkillJumpState, skills=move_under_rfid, final_to="LEAVE_AREA",
+      fail_to="FAILED"},
+   {"LEAVE_AREA", SkillJumpState, skills=leave_area, final_to="FINAL", fail_to="FAILED"}
+}
+   
 
 fsm:add_transitions{
-	closure={motor=motor},
-	{"CHECK_PUCK_FETCHED", "FAILED", cond=puck_not_infront, desc="No puck seen by Infrared"},
-	{"CHECK_PUCK_FETCHED", "CHECK_1ST_TRAFFIC_LIGHT", cond=puck_infront},
-	{"CHECK_1ST_TRAFFIC_LIGHT","1ST_CHECKED",skill= determine_signal, fail_to="FAILED"},
-	{"1ST_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
-	{"1ST_CHECKED", "MOVE_TO_2ND" ,cond = true},
-	{"MOVE_TO_2ND", "CHECK_2ND_TRAFFIC_LIGHT",skill = take_puck_to , fail_to = "FAILED"},
-	{"CHECK_2ND_TRAFFIC_LIGHT" , "2ND_CHECKED",skill= determine_signal, fail_to="FAILED"},
-	{"2ND_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
-	{"2ND_CHECKED", "MOVE_TO_3RD", cond = true}, 
-	{"MOVE_TO_3RD", "CHECK_3RD_TRAFFIC_LIGHT", skill = take_puck_to,fail_to ="FAILED"},
-	{"CHECK_3RD_TRAFFIC_LIGHT" , "3RD_CHECKED",skill= determine_signal, fail_to="FAILED"},
-	{"3RD_CHECKED" , "MOVE_UNDER_RFID", cond = ampel_green},
-	{"3RD_CHECKED",  "FAILED",cond = true,desc = "all delivery spots appear unuseable"},
-
-	{"MOVE_UNDER_RFID","LEAVE_AREA",skill = move_under_rfid, fail_to= "FAILED"},
-	{"LEAVE_AREA" , "FINAL" , skill = leave_area, fail_to="FAILED"}
-
-
-
+	closure = {motor=motor, have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
+      dg=DELIVERY_GATES, ampel_green=ampel_green},
+	{"CHECK_PUCK", "FAILED", cond="not have_puck", desc="No puck seen by Infrared"},
+	{"CHECK_PUCK", "SKILL_DETERMINE_SIGNAL", cond=have_puck},
+	{"DECIDE_DELIVER", "MOVE_UNDER_RFID", cond=ampel_green},
+	{"DECIDE_DELIVER", "MOVE_TO_NEXT", cond="idx < #dg"},
+   {"DECIDE_DELIVER", "FAILED", cond="not ampel_green and idx >= #dg"}
 }
 
-function CHECK_1ST_TRAFFIC_LIGHT:init()
+function CHECK_PUCK:init()
+   self.fsm.vars.cur_gate_idx = 1
+end
+
+function SKILL_DETERMINE_SIGNAL:init()
 	self.args = {mode = "DELIVER"}
-
 end
 
-function MOVE_TO_2ND:init()
-	self.args = {goto_name = "D2"}
+function MOVE_TO_NEXT:init()
+   self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
+   self.args = {goto_name = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]}
 end
-function MOVE_TO_3RD:init()
-	self.args = {goto_name = "D3"}
-end
-
