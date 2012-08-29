@@ -33,7 +33,7 @@ depends_interfaces = {
 documentation      = [==[deposits the used puck at the side of the traffic light]==]
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
 function no_puck()
 	--return worldModel:numberOfPucks=0
@@ -47,19 +47,22 @@ function one_left()
 	return true
 end
 
-fsm:add_transitions{
-   closure={motor=motor},
-   {"DESC_DIRECTION", "SKILL_DRIVE_LEFT", cond=no_puck, desc="There is no Puck in the storage"},
-   {"DESC_DIRECTION", "SKILL_DRIVE_RIGHT", cond=one_left},
-   {"SKILL_DRIVE_LEFT", "SKILL_DRIVE_FORWARD", skill=motor_move, fail_to="FAILED"},
-   {"SKILL_DRIVE_RIGHT", "SKILL_DRIVE_FORWARD", skill=motor_move, fail_to="FAILED"},
-   {"SKILL_DRIVE_FORWARD", "SKILL_DRIVE_BACKWARD", skill=motor_move, fail_to="FAILED"},
-   {"SKILL_DRIVE_BACKWARD", "FINAL", skill=motor_move, fail_to="FAILED"}
+fsm:define_states{export_to=_M,
+   {"DESC_DIRECTION", JumpState},
+   {"SKILL_DRIVE_LEFT", SkillJumpState, skills=motor_move, final_to="SKILL_DRIVE_FORWARD",
+      fail_to="FAILED"},
+   {"SKILL_DRIVE_RIGHT", SkillJumpState, skills=motor_move, final_to="SKILL_DRIVE_FORWARD",
+      fail_to="FAILED"},
+   {"SKILL_DRIVE_FORWARD", SkillJumpState, skills=motor_move, final_to="SKILL_DRIVE_BACKWARD",
+      fail_to="FAILED"},
+   {"SKILL_DRIVE_BACKWARD", SkillJumpState, skills=motor_move, final_to="FINAL",
+      fail_to="FAILED"}
 }
 
-function DESC_DIRECTION:init()
-	
-end
+fsm:add_transitions{
+   {"DESC_DIRECTION", "SKILL_DRIVE_LEFT", cond=no_puck, desc="No Puck in storage"},
+   {"DESC_DIRECTION", "SKILL_DRIVE_RIGHT", cond=one_left},
+}
 
 function SKILL_DRIVE_LEFT:init()
 	self.args = {x=0,y=0.18,ori=0}
