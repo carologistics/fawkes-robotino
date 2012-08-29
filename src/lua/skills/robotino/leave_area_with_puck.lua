@@ -26,20 +26,16 @@ module(..., skillenv.module_init)
 name               = "leave_area_with_puck"
 fsm                = SkillHSM:new{name=name, start="DRIVE_LEFT", debug=true}
 depends_skills     = {"motor_move"}
-depends_interfaces = {
+depends_interfaces = nil
 
-}
-
-documentation      = [==[Leaves area with puck by driving left and rotating]==]
+documentation      = [==[Leave area with puck by driving left and rotating]==]
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
-
-fsm:add_transitions{
-	closure={motor=motor},
-	{"DRIVE_LEFT", "ROTATE", skill=motor_move, fail_to="FAILED"},
-	{"ROTATE", "FINAL", skill=motor_move, fail_to="FAILED"}
+fsm:define_states{ export_to=_M,
+   {"DRIVE_LEFT", SkillJumpState, skills=motor_move, final_to="ROTATE", fail_to="FAILED"},
+   {"ROTATE", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"}
 }
 
 function DRIVE_LEFT:init()
