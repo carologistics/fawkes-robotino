@@ -31,15 +31,12 @@ documentation     = [==[moves blindly to the next light of the delivery zone]==]
 -- Constants
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
-
-
-fsm:add_transitions{
-	closure={motor=motor},
-  {"ROTATE_RIGHT","STRAFE_RIGHT", skill=motor_move, fail_to="FAILED"},
-  {"STRAFE_RIGHT","ROTATE_LEFT", skill=motor_move, fail_to="FAILED"},
-  {"ROTATE_LEFT","FINAL", skill=motor_move, fail_to="FAILED"}
+fsm:define_states{ export_to=_M,
+   {"ROTATE_RIGHT", SkillJumpState, final_to="STRAFE_RIGHT", skills=motor_move, fail_to="FAILED"},
+   {"STRAFE_RIGHT", SkillJumpState, final_to="ROTATE_LEFT", skills=motor_move, fail_to="FAILED"},
+   {"ROTATE_LEFT", SkillJumpState, final_to="FINAL", skills=motor_move, fail_to="FAILED"}
 }
 
 function ROTATE_RIGHT:init()
