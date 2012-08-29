@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  take_puck_to.lua
+--  finish_puck_at.lua
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
@@ -25,17 +25,17 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
-depends_skills     = { "take_puck_to", "determine_signal", "deposit_puck", "leave_area", "move_under_rfid","motor_move" }
+depends_skills     = { "take_puck_to", "determine_signal", "deposit_puck", "leave_area", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
 		      { v="light", type="RobotinoAmpelInterface", id="light" },
 		}
 
-documentation      = [==[Go to target without losing teh puck]==]
+documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.]==]
 
 local mpos = require 'machine_pos_module'
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
 function end_rfid()
 	printf( mpos.delivery_goto[fsm.vars.goto_name].d_skill)
@@ -55,18 +55,27 @@ function is_not_yellow()
 	return not is_ampel_yellow()
 end
 
+fsm:define_states{ export_to=_M,
+   {"SKILL_TAKE_PUCK", SkillJumpState, skills=take_puck_to, final_to="DECIDE_ENDSKILL",
+      fail_to="FAILED"},
+   {"DECIDE_ENDSKILL", JumpState},
+   {"SKILL_RFID", SkillJumpState, skills=move_under_rfid, final_to="SKILL_DETERMINE_SIGNAL",
+      fail_to="FAILED"},
+   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills=determine_signal, final_to="DECIDE",
+      fail_to="FAILED"},
+   {"DECIDE", JumpState},
+   {"SKILL_DRIVE_LEFT", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_DEPOSIT", SkillJumpState, skills=deposit_puck, final_to="SKILL_LEAVE",
+      fail_to="FAILED"},
+   {"SKILL_LEAVE", SkillJumpState, skills=leave_area, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_DELIVER", SkillJumpState, skills=deliver_puck, final_to="FINAL", fail_to="FAILED" },
+}
+
 fsm:add_transitions{
-	{ "SKILL_TAKE_PUCK", "DECIDE_ENDSKILL", skill=take_puck_to, fail_to="FAILED" },
 	{ "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
 	{ "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
-	{ "SKILL_RFID", "SKILL_DETERMINE_SIGNAL", skill=move_under_rfid, fail_to="FAILED" },
-	{ "SKILL_DETERMINE_SIGNAL", "DECIDE", skill=determine_signal, fail_to="FAILED" },
 	{ "DECIDE", "SKILL_DEPOSIT", cond=is_ampel_yellow },
 	{ "DECIDE", "SKILL_DRIVE_LEFT", cond=is_not_yellow},
-	{ "SKILL_DRIVE_LEFT", "FINAL", skill=motor_move,fail_to="FAILED"},
-	{ "SKILL_DEPOSIT", "SKILL_LEAVE", skill=deposit_puck, fail_to="FAILED" },
-	{ "SKILL_LEAVE", "FINAL", skill=leave_area, fail_to="FAILED" },
-	{ "SKILL_DELIVER", "FINAL", skill=deliver, fail_to="FAILED" }
 }
 
 function SKILL_TAKE_PUCK:init()
@@ -87,5 +96,4 @@ end
 function SKILL_DRIVE_LEFT:init()
 	self.args = {x=0,y=-0.5,ori=0}
 end
-
 
