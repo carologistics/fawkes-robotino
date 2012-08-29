@@ -47,7 +47,7 @@ local MAX_TRANSERR = 0.16
 local MAX_ROTERR = 0.16
 local MAX_POS_MISS = 4
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
 local machine_pos = require 'machine_pos_module'
 local tf_mod = require 'tf_module'
@@ -71,10 +71,18 @@ function not_missed_to_often(self)
  return not missed_to_often(self)
 end
 
+fsm:define_states{ export_to=_M,
+   {"START_RELGOTO", JumpState},
+   {"DO_RELGOTO", SkillJumpState, skills=relgoto, final_to="WAIT_POSE", fail_to="FAILED"},
+   {"WAIT_POSE", JumpState},
+   {"CHECK_POSE", JumpState},
+   {"MISSED", JumpState}
+}
+
+
 fsm:add_transitions{
   {"START_RELGOTO","DO_RELGOTO",cond=true},
-	{"DO_RELGOTO", "WAIT_POSE", skill=relgoto, fail_to="FAILED"},
-	{"WAIT_POSE", "CHECK_POSE", wait_sec=3.0},
+	{"WAIT_POSE", "CHECK_POSE", timeout=3.0},
 	{"CHECK_POSE", "FINAL", cond=pose_ok, desc="Pose reached" },
 	{"CHECK_POSE", "MISSED", cond=pose_not_ok, },
   {"MISSED", "DO_RELGOTO", cond=not_missed_to_often},
