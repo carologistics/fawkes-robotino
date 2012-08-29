@@ -35,7 +35,7 @@ depends_interfaces = {
 documentation      = [==[Move under the RFID Reader/Writer]==]
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
 function ampel()
 	distance = math.sqrt((Machine_0:translation(0))^2+(Machine_0:translation(1))^2)
@@ -98,6 +98,23 @@ function angle_ok()
 		return true
 	end
 end
+
+fsm:define_states{ export_to=_M,
+   {"SEE_AMPEL", JumpState},
+   {"DESC_CHECK_IF_FRONT", JumpState},
+   {"CORRECT_LEFT", SkillJumpState, skills=motor_move, final_to="APPROACH_AMPEL_CLOSER",
+      fail_to="FAILED"},
+   {"CORRECT_RIGHT", SkillJumpState, skills=motor_move, final_to="APPROACH_AMPEL_CLOSER",
+      fail_to="FAILED"},
+   {"APPROACH_AMPEL_CLOSER", SkillJumpState, skills=motor_move,
+      final_to="SKILL_APPROACH_AMPEL", fail_to="FAILED"},
+   {"SKILL_APPROACH_AMPEL", SkillJumpState, skills=motor_move, final_to="CHECK_POSITION",
+      fail_to="FAILED"},
+   {"CHECK_POSITION", JumpState},
+   {"LEFT_TOO_FAR", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"},
+   {"RIGHT_TOO_FAR", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"}
+}
+
 fsm:add_transitions{
 	closure={motor=motor},
 	{"SEE_AMPEL", "FAILED", cond=no_ampel, desc="No Ampel seen with laser"},
@@ -105,22 +122,16 @@ fsm:add_transitions{
 	{"DESC_CHECK_IF_FRONT", "CORRECT_LEFT", cond=is_left},
 	{"DESC_CHECK_IF_FRONT", "CORRECT_RIGHT", cond=is_right},
 	{"DESC_CHECK_IF_FRONT", "APPROACH_AMPEL_CLOSER", cond=angle_ok},
-	{"CORRECT_LEFT", "APPROACH_AMPEL_CLOSER", skill=motor_move,fail_to="FAILED"},
 	{"CORRECT_LEFT", "APPROACH_AMPEL_CLOSER", cond=angle_ok},
-	{"CORRECT_RIGHT", "APPROACH_AMPEL_CLOSER", skill=motor_move,fail_to="FAILED"},
 	{"CORRECT_RIGHT", "APPROACH_AMPEL_CLOSER", cond=angle_ok},
 	--{"SKILL_TURN_TO_AMPEL", "APPROACH_AMPEL_CLOSER", skill=motor_move, fail_to="FAILED"},
-	{"APPROACH_AMPEL_CLOSER", "SKILL_APPROACH_AMPEL", skill=motor_move,fail_to="FAILED"},
 	{"APPROACH_AMPEL_CLOSER", "SKILL_APPROACH_AMPEL", cond=see_ampel},
 	--{"SKILL_TURN_TO_AMPEL_CLOSER", "SKILL_APPROACH_AMPEL", skill=motor_move, fail_to="FAILED"},
 	--{"SKILL_APPROACH_AMPEL", "CHECK_POSITION", skill=motor_move, fail_to="FAILED"},
-	{"SKILL_APPROACH_AMPEL", "CHECK_POSITION", skill=motor_move, fail_to="FAILED"},
 	{"CHECK_POSITION", "LEFT_TOO_FAR", cond=position_left},
 	{"CHECK_POSITION", "RIGHT_TOO_FAR", cond=position_right},
 	{"CHECK_POSITION", "FINAL", cond=left_and_right_ok},
-	{"LEFT_TOO_FAR", "FINAL", skill=motor_move,fail_to="FAILED"},
 	{"LEFT_TOO_FAR", "FINAL", cond=left_ok},
-	{"RIGHT_TOO_FAR", "FINAL", skill=motor_move,fail_to="FAILED"},
 	{"RIGHT_TOO_FAR", "FINAL", cond=right_ok},
 }
 function send_transrot(vx, vy, omega)
