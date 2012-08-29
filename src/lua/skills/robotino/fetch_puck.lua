@@ -39,7 +39,7 @@ depends_interfaces = {
 
 documentation      = [==[Move to puck pickup position]==]
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
 local TIMEOUT = 30
 local ORI_OFFSET = 0.03
@@ -127,19 +127,33 @@ function send_transrot(vx, vy, omega)
     motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
 end
 
+fsm:define_states{ export_to=_M,
+   {"TURN_ON_OMNIVISION", JumpState},
+   {"WAIT_FOR_VISION", JumpState},
+   {"SEE_PUCK", JumpState},
+   {"OMNIFAIL", JumpState},
+   {"TURN_TO_PUCK", SkillJumpState, skills=motor_move, final_to="GRAB_PUCK",
+      fail_to="SEE_PUCK"},
+   {"GRAB_PUCK", SkillJumpState, skills=motor_move, final_to="MOVE_DONE",
+      fail_to="OMNIFAIL"},
+   -- GRAB_PUCK motor_move's too far and preempts if have_puck. If motor_move finishes we
+   -- MOVE_MORE an extra 5 cm to be sure.
+   {"MOVE_DONE", JumpState},
+   {"MOVE_MORE", SkillJumpState, skills=motor_move, final_to="TURN_OFF_OMNIVISION",
+      fail_to="OMNIFAIL"},
+   {"TURN_OFF_OMNIVISION", JumpState}
+}
+
 fsm:add_transitions{
 	{"TURN_ON_OMNIVISION", "WAIT_FOR_VISION", cond=true },
-	{"WAIT_FOR_VISION", "SEE_PUCK", wait_sec=0.333 },
+	{"WAIT_FOR_VISION", "SEE_PUCK", timeout=0.333 },
 	{"SEE_PUCK", "OMNIFAIL", cond=no_puck, desc="No puck found by OmniVision"},
 	{"SEE_PUCK", "TURN_TO_PUCK", cond=puck, desc="Found a puck"},
 --	{"TURN_TO_PUCK", "MOVE_FORWARD", skill=motor_move, fail_to="SEE_PUCK"},
-	{"TURN_TO_PUCK", "GRAB_PUCK", skill=motor_move, fail_to="SEE_PUCK"},
 --	{"MOVE_FORWARD", "ARRIVED", skill=motor_move, fail_to="SEE_PUCK"},
 --	{"ARRIVED", "SEE_PUCK", cond=puck_not_in_front, desc="Puck gone after approach"},
 --	{"ARRIVED", "GRAB_PUCK", cond=puck_in_front},
-	{"GRAB_PUCK", "MOVE_DONE", skill=motor_move, fail_to="OMNIFAIL" },
 	{"GRAB_PUCK", "MOVE_MORE", cond=have_puck },
-	{"MOVE_MORE", "TURN_OFF_OMNIVISION", skill=motor_move },
 	{"MOVE_DONE", "SEE_PUCK", cond=dont_have_puck },
 	{"MOVE_DONE", "TURN_OFF_OMNIVISION", cond=have_puck },
 	{"TURN_OFF_OMNIVISION", "FINAL", cond=true },
