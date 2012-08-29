@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  chase_puck.lua
+--  relgoto.lua
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
@@ -25,23 +25,31 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "relgoto"
 fsm                = SkillHSM:new{name=name, start="CHECK_INPUT", debug=true}
-depends_skills     = { }
+depends_skills     = nil
 depends_interfaces = {
 	{v = "navigator", type="NavigatorInterface", id="Navigator"}
 }
 
-documentation      = [==[Move to puck pickup position]==]
+documentation      = [==[Move to base_link coords using navigator. Fail on navigator error only.
+@param rel_x The target x coordinate
+@param rel_y dito y
+@param rel_ori dito orientation]==]
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
+
+fsm:define_states{ export_to=_M,
+   {"CHECK_INPUT", JumpState},
+   {"MOVING", JumpState}
+}
 
 function can_navigate()
 	return navigator:has_writer()
 end
 
-function cannot_navigate()
-	return not can_navigate()
-end
+--function cannot_navigate()
+--	return not can_navigate()
+--end
 
 function target_reached()
 	if navigator:msgid() == fsm.vars.goto_msgid then
@@ -61,7 +69,7 @@ function navi_failure()
 end
 
 fsm:add_transitions{
-	{ "CHECK_INPUT", "FAILED", cond=cannot_navigate, desc="Navigator not running" },
+	{ "CHECK_INPUT", "FAILED", cond="not can_navigate", desc="Navigator not running" },
 	{ "MOVING", "FAILED", cond=navi_failure, desc="Navigator returned error" },
 	{ "CHECK_INPUT", "MOVING", cond=can_navigate },
 	{ "MOVING", "FINAL", cond=target_reached },
