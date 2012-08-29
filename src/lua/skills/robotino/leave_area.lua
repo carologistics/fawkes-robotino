@@ -30,31 +30,20 @@ depends_interfaces = nil
 
 
 documentation      = [==[
-leaves area without puck
-
-
+leave area without puck
 ]==]
 -- Constants
 
 
 -- Initialize as skill module
-skillenv.skill_module(...)
+skillenv.skill_module(_M)
 
---functions
-
-
-
-
-fsm:add_transitions{
-	closure={motor=motor},
-	{"LEAVE_AREA","FINAL",skill = motor_move , fail_to = "FAILED"}
-
+fsm:define_states{ export_to=_M,
+   {"LEAVE_AREA", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"}
 }
 
 function LEAVE_AREA:init()
-
-self.args = {x=-0.2, y=0, ori=0}
-
+   self.args = {x=-0.2, y=0, ori=0}
 end
 
 
