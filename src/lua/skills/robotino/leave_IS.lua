@@ -27,7 +27,7 @@ name               = "leave_IS"
 fsm                = SkillHSM:new{name=name, start="CHECK_TURN", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = {
-	{v="pose", type="Position3DInterface",id = "Pose"}
+   {v="pose", type="Position3DInterface",id = "Pose"}
 }
 
 documentation      = [==[Leaves area with puck by driving left and rotating]==]
@@ -38,41 +38,41 @@ skillenv.skill_module(_M)
 local m_pos = require("machine_pos_module")
 
 function get_ori_diff()
-	local ori = 2*math.acos(pose:rotation(3)) 
-	local is_ori = m_pos.delivery_goto.Is.ori
-	local diff = 0
-	if ori > is_ori then 
-      		if ori - is_ori < math.pi then
-			diff =  ori - is_ori 
-		else
-			diff =  - 2.0 * math.pi + ori - is_ori
-		end
-  	else
-		if is_ori - ori < math.pi then
-			diff = ori - is_ori 
-		else
-			diff = 2.0 * math.pi - is_ori + ori;
-    		end
-	end
-	return diff
+   local ori = 2*math.acos(pose:rotation(3)) 
+   local is_ori = m_pos.delivery_goto.Is.ori
+   local diff = 0
+   if ori > is_ori then 
+            if ori - is_ori < math.pi then
+         diff =  ori - is_ori 
+      else
+         diff =  - 2.0 * math.pi + ori - is_ori
+      end
+     else
+      if is_ori - ori < math.pi then
+         diff = ori - is_ori 
+      else
+         diff = 2.0 * math.pi - is_ori + ori;
+          end
+   end
+   return diff
 end
 function oriented_left()
-	if get_ori_diff() >= 0 then
-		return true
-	end
+   if get_ori_diff() >= 0 then
+      return true
+   end
 end
 function oriented_right()
-	if get_ori_diff() < 0 then
-		return true
-	end
+   if get_ori_diff() < 0 then
+      return true
+   end
 end
 function needs_turn()
-	if math.abs(get_ori_diff()) < 1.05 then
-		return true
-	end
+   if math.abs(get_ori_diff()) < 1.05 then
+      return true
+   end
 end
 function needs_no_turn()
-	return not needs_turn()
+   return not needs_turn()
 end
 
 fsm:define_states{ export_to=_M,
@@ -82,27 +82,27 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-	{"CHECK_TURN", "TURN", cond = needs_turn},
-	{"CHECK_TURN", "SKILL_MOTOR_MOVE", cond = needs_no_turn},
+   {"CHECK_TURN", "TURN", cond = needs_turn},
+   {"CHECK_TURN", "SKILL_MOTOR_MOVE", cond = needs_no_turn},
 }
 
 function CHECK_TURN:init()
 end
 function TURN:init()
-	--1.05 = 60°
-	if oriented_left() then
-		self.args = {x=0, y=0, ori=1.05-math.abs(get_ori_diff())}
-	else
-		self.args = {x=0, y=0, ori=-1.05+math.abs(get_ori_diff())}
-	end
-	print(get_ori_diff())
+   --1.05 = 60°
+   if oriented_left() then
+      self.args = {x=0, y=0, ori=1.05-math.abs(get_ori_diff())}
+   else
+      self.args = {x=0, y=0, ori=-1.05+math.abs(get_ori_diff())}
+   end
+   print(get_ori_diff())
 end
 function SKILL_MOTOR_MOVE:init()
-	if oriented_left() then
-		self.args = {x=0, y=0.5, ori=0}
-	else
-		self.args = {x=0, y=-0.5, ori=0}
-	end
-	
+   if oriented_left() then
+      self.args = {x=0, y=0.5, ori=0}
+   else
+      self.args = {x=0, y=-0.5, ori=0}
+   end
+   
 end
 

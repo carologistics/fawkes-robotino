@@ -27,7 +27,7 @@ name               = "get_s0"
 fsm                = SkillHSM:new{name=name, start="GOTO_IS", debug=false}
 depends_skills     = {"goto","fetch_puck","leave_IS"}
 depends_interfaces = {
-	
+   
 }
 
 documentation      = [==[test der bisherigen skills später eigener skill mit puck_aufname_location und puck_abgabe_location]==]
@@ -44,6 +44,6 @@ fsm:define_states{ export_to=_M,
 }
 
 function GOTO_IS:init()
-	self.args = {goto_name=start}
+   self.args = {goto_name=start}
 end
 

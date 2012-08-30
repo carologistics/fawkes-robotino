@@ -27,12 +27,12 @@ name               = "fetch_puck"
 fsm                = SkillHSM:new{name=name, start="TURN_ON_OMNIVISION", debug=true}
 depends_skills     = { "motor_move" }
 depends_interfaces = {
-	 {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
-	 {v = "omnipuck1", type="Position3DInterface", id="OmniPuck1"},
---	 {v = "omnipuck2", type="Position3DInterface", id="OmniPuck2"},
---	 {v = "omnipuck3", type="Position3DInterface", id="OmniPuck3"},
---	 {v = "omnipuck4", type="Position3DInterface", id="OmniPuck4"},
---	 {v = "omnipuck5", type="Position3DInterface", id="OmniPuck5"},
+    {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
+    {v = "omnipuck1", type="Position3DInterface", id="OmniPuck1"},
+--    {v = "omnipuck2", type="Position3DInterface", id="OmniPuck2"},
+--    {v = "omnipuck3", type="Position3DInterface", id="OmniPuck3"},
+--    {v = "omnipuck4", type="Position3DInterface", id="OmniPuck4"},
+--    {v = "omnipuck5", type="Position3DInterface", id="OmniPuck5"},
      {v = "sensor", type="RobotinoSensorInterface"},
      {v = "motor", type = "MotorInterface", id="Robotino" }
 }
@@ -50,60 +50,60 @@ local pm = require 'puck_loc_module'
 local tfm = require 'tf_module'
 
 function get_puck_loc()
---	local bestpuck = nil
---	local max_vis_hist = -1
---	local min_angle = 2*math.pi
---	for i,op in ipairs(omnipucks) do
-		op = omnipuck1
-		local p_bl = pm.get_puck_loc(op)
---		if p_bl then
---			p_bl.hist = op:visibility_history()
---			if not fsm.vars.puck_bl then
---				-- 1st time: prefer best visibility history
---				if p_bl.hist > max_vis_hist then
-					bestpuck = p_bl
---				end
---			else
---				-- every other time: prefer puck with least angle
---				local angle = math.atan2(p_bl.y, p_bl.x)
---				if math.abs(angle) < min_angle then
---					bestpuck = p_bl
---				end
---			end
---		end
---	end
-	if bestpuck then
-		printf("bestpuck= %f, %f", bestpuck.x, bestpuck.y)
-		fsm.vars.puck_bl = bestpuck
-		fsm.vars.puck_loc = bestpuck
-		return true
-	end
-	return false
+--   local bestpuck = nil
+--   local max_vis_hist = -1
+--   local min_angle = 2*math.pi
+--   for i,op in ipairs(omnipucks) do
+      op = omnipuck1
+      local p_bl = pm.get_puck_loc(op)
+--      if p_bl then
+--         p_bl.hist = op:visibility_history()
+--         if not fsm.vars.puck_bl then
+--            -- 1st time: prefer best visibility history
+--            if p_bl.hist > max_vis_hist then
+               bestpuck = p_bl
+--            end
+--         else
+--            -- every other time: prefer puck with least angle
+--            local angle = math.atan2(p_bl.y, p_bl.x)
+--            if math.abs(angle) < min_angle then
+--               bestpuck = p_bl
+--            end
+--         end
+--      end
+--   end
+   if bestpuck then
+      printf("bestpuck= %f, %f", bestpuck.x, bestpuck.y)
+      fsm.vars.puck_bl = bestpuck
+      fsm.vars.puck_loc = bestpuck
+      return true
+   end
+   return false
 end
 
 function no_puck()
-	if os.time() - fsm.vars.start_time > TIMEOUT and not fsm.vars.puck_loc then
-		return true
-	end
-	return false
+   if os.time() - fsm.vars.start_time > TIMEOUT and not fsm.vars.puck_loc then
+      return true
+   end
+   return false
 end
 
 function puck()
-	if get_puck_loc() then return true end
-	return false
+   if get_puck_loc() then return true end
+   return false
 end
 
 function puck_in_front()
-	if get_puck_loc() and math.abs(math.atan2(
-	 fsm.vars.puck_bl.y, fsm.vars.puck_bl.x)) < ORI_OFFSET then
-		printf("front: %f, %f", fsm.vars.puck_loc.x, fsm.vars.puck_loc.y)
-		return true
-	end
-	return false
+   if get_puck_loc() and math.abs(math.atan2(
+    fsm.vars.puck_bl.y, fsm.vars.puck_bl.x)) < ORI_OFFSET then
+      printf("front: %f, %f", fsm.vars.puck_loc.x, fsm.vars.puck_loc.y)
+      return true
+   end
+   return false
 end
 
 function puck_not_in_front()
-	return not puck_in_front()
+   return not puck_in_front()
 end
 
 function have_puck()
@@ -116,7 +116,7 @@ function have_puck()
 end
 
 function dont_have_puck()
-	return not have_puck()
+   return not have_puck()
 end
 
 function send_transrot(vx, vy, omega)
@@ -145,62 +145,62 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-	{"TURN_ON_OMNIVISION", "WAIT_FOR_VISION", cond=true },
-	{"WAIT_FOR_VISION", "SEE_PUCK", timeout=0.333 },
-	{"SEE_PUCK", "OMNIFAIL", cond=no_puck, desc="No puck found by OmniVision"},
-	{"SEE_PUCK", "TURN_TO_PUCK", cond=puck, desc="Found a puck"},
---	{"TURN_TO_PUCK", "MOVE_FORWARD", skill=motor_move, fail_to="SEE_PUCK"},
---	{"MOVE_FORWARD", "ARRIVED", skill=motor_move, fail_to="SEE_PUCK"},
---	{"ARRIVED", "SEE_PUCK", cond=puck_not_in_front, desc="Puck gone after approach"},
---	{"ARRIVED", "GRAB_PUCK", cond=puck_in_front},
-	{"GRAB_PUCK", "MOVE_MORE", cond=have_puck },
-	{"MOVE_DONE", "SEE_PUCK", cond=dont_have_puck },
-	{"MOVE_DONE", "TURN_OFF_OMNIVISION", cond=have_puck },
-	{"TURN_OFF_OMNIVISION", "FINAL", cond=true },
-	{"OMNIFAIL", "FAILED", cond=true }
+   {"TURN_ON_OMNIVISION", "WAIT_FOR_VISION", cond=true },
+   {"WAIT_FOR_VISION", "SEE_PUCK", timeout=0.333 },
+   {"SEE_PUCK", "OMNIFAIL", cond=no_puck, desc="No puck found by OmniVision"},
+   {"SEE_PUCK", "TURN_TO_PUCK", cond=puck, desc="Found a puck"},
+--   {"TURN_TO_PUCK", "MOVE_FORWARD", skill=motor_move, fail_to="SEE_PUCK"},
+--   {"MOVE_FORWARD", "ARRIVED", skill=motor_move, fail_to="SEE_PUCK"},
+--   {"ARRIVED", "SEE_PUCK", cond=puck_not_in_front, desc="Puck gone after approach"},
+--   {"ARRIVED", "GRAB_PUCK", cond=puck_in_front},
+   {"GRAB_PUCK", "MOVE_MORE", cond=have_puck },
+   {"MOVE_DONE", "SEE_PUCK", cond=dont_have_puck },
+   {"MOVE_DONE", "TURN_OFF_OMNIVISION", cond=have_puck },
+   {"TURN_OFF_OMNIVISION", "FINAL", cond=true },
+   {"OMNIFAIL", "FAILED", cond=true }
 }
 
 --function MOVE_FORWARD:init()
---	local d = math.sqrt(self.fsm.vars.puck_bl.x^2 + self.fsm.vars.puck_bl.y^2)
---	self.args = { x = d/3, y = 0, ori = 0 }
+--   local d = math.sqrt(self.fsm.vars.puck_bl.x^2 + self.fsm.vars.puck_bl.y^2)
+--   self.args = { x = d/3, y = 0, ori = 0 }
 --end
 
 function MOVE_MORE:init()
-	self.args = { x = 0.05, y = 0, ori = 0 }
+   self.args = { x = 0.05, y = 0, ori = 0 }
 end
 
 function OMNIFAIL:init()
     local msg = omnivisionSwitch.DisableSwitchMessage:new()
-    omnivisionSwitch:msgq_enqueue_copy(msg)	
+    omnivisionSwitch:msgq_enqueue_copy(msg)   
 end
 
 function TURN_ON_OMNIVISION:init()
-	local msg = omnivisionSwitch.EnableSwitchMessage:new()
-	omnivisionSwitch:msgq_enqueue_copy(msg)
-	self.fsm.vars.start_time = os.time()
+   local msg = omnivisionSwitch.EnableSwitchMessage:new()
+   omnivisionSwitch:msgq_enqueue_copy(msg)
+   self.fsm.vars.start_time = os.time()
 end
 
 
 function TURN_TO_PUCK:init()
-	self.args = { x=0, y=0,
-		ori=math.atan2(self.fsm.vars.puck_bl.y, self.fsm.vars.puck_bl.x)
-	}
+   self.args = { x=0, y=0,
+      ori=math.atan2(self.fsm.vars.puck_bl.y, self.fsm.vars.puck_bl.x)
+   }
 end
 
 function GRAB_PUCK:init()
-	local x = math.sqrt(self.fsm.vars.puck_bl.x^2 + self.fsm.vars.puck_bl.y^2) + 0.2
-	printf("dist=%f", x)
-	self.args = {
-		x = x,
-		y = 0,
-		ori = 0
-	}
+   local x = math.sqrt(self.fsm.vars.puck_bl.x^2 + self.fsm.vars.puck_bl.y^2) + 0.2
+   printf("dist=%f", x)
+   self.args = {
+      x = x,
+      y = 0,
+      ori = 0
+   }
 end
 
 function TURN_OFF_OMNIVISION:init()
-	send_transrot(0, 0, 0)
-    local msg = omnivisionSwitch.DisableSwitchMessage:new()
-    omnivisionSwitch:msgq_enqueue_copy(msg)	
+   send_transrot(0, 0, 0)
+   local msg = omnivisionSwitch.DisableSwitchMessage:new()
+   omnivisionSwitch:msgq_enqueue_copy(msg)   
 end
 
 

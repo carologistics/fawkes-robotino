@@ -27,8 +27,8 @@ name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
 depends_skills     = { "take_puck_to", "determine_signal", "deposit_puck", "leave_area", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
-		      { v="light", type="RobotinoAmpelInterface", id="light" },
-		}
+            { v="light", type="RobotinoAmpelInterface", id="light" },
+      }
 
 documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.]==]
 
@@ -38,21 +38,21 @@ local mpos = require 'machine_pos_module'
 skillenv.skill_module(_M)
 
 function end_rfid()
-	printf( mpos.delivery_goto[fsm.vars.goto_name].d_skill)
-	return mpos.delivery_goto[fsm.vars.goto_name].d_skill == "move_under_rfid"
+   printf( mpos.delivery_goto[fsm.vars.goto_name].d_skill)
+   return mpos.delivery_goto[fsm.vars.goto_name].d_skill == "move_under_rfid"
 end
 
 function end_deliver()
-	printf( mpos.delivery_goto[fsm.vars.goto_name].d_skill)
-	return mpos.delivery_goto[fsm.vars.goto_name].d_skill == "deliver"
+   printf( mpos.delivery_goto[fsm.vars.goto_name].d_skill)
+   return mpos.delivery_goto[fsm.vars.goto_name].d_skill == "deliver"
 end
 
 function is_ampel_yellow()
-	return light:state() == light.YELLOW
+   return light:state() == light.YELLOW
 end
 
 function is_not_yellow()
-	return not is_ampel_yellow()
+   return not is_ampel_yellow()
 end
 
 fsm:define_states{ export_to=_M,
@@ -72,28 +72,28 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-	{ "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
-	{ "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
-	{ "DECIDE", "SKILL_DEPOSIT", cond=is_ampel_yellow },
-	{ "DECIDE", "SKILL_DRIVE_LEFT", cond=is_not_yellow},
+   { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
+   { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
+   { "DECIDE", "SKILL_DEPOSIT", cond=is_ampel_yellow },
+   { "DECIDE", "SKILL_DRIVE_LEFT", cond=is_not_yellow},
 }
 
 function SKILL_TAKE_PUCK:init()
-	local min_dist = 9999
-	if self.fsm.vars.goto_names then
-		for i,name in ipairs(self.fsm.vars.goto_names) do
-			local gpos = mpos.delivery_goto[name]
-			local d = math.sqrt((gpos.x - Pose:translation(0))^2
-				+ (gpos.y - Pose:translation(1))^2)
-			if d < min_dist then
-				min_dist = d
-				self.fsm.vars.goto_name = name
-			end
-		end
-	end
-	self.args = { goto_name = self.fsm.vars.goto_name }
+   local min_dist = 9999
+   if self.fsm.vars.goto_names then
+      for i,name in ipairs(self.fsm.vars.goto_names) do
+         local gpos = mpos.delivery_goto[name]
+         local d = math.sqrt((gpos.x - Pose:translation(0))^2
+            + (gpos.y - Pose:translation(1))^2)
+         if d < min_dist then
+            min_dist = d
+            self.fsm.vars.goto_name = name
+         end
+      end
+   end
+   self.args = { goto_name = self.fsm.vars.goto_name }
 end
 function SKILL_DRIVE_LEFT:init()
-	self.args = {x=0,y=-0.5,ori=0}
+   self.args = {x=0,y=-0.5,ori=0}
 end
 

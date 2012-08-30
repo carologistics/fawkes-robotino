@@ -40,11 +40,11 @@ fsm:define_states{ export_to=_M,
 }
 
 function ROTATE_RIGHT:init()
-	self.args = {x=0,y=0,ori=-(math.pi/9)}
+   self.args = {x=0,y=0,ori=-(math.pi/9)}
 end
 
 function STRAFE_RIGHT:init()
-	self.args = {x=0,y=-0.35,ori=0}
+   self.args = {x=0,y=-0.35,ori=0}
 end
 
 function ROTATE_LEFT:init()

@@ -27,7 +27,7 @@ name               = "goto"
 fsm                = SkillHSM:new{name=name, start="START_RELGOTO"}
 depends_skills     = { "relgoto" }
 depends_interfaces = {
-	{v = "pose", type="Position3DInterface", id="Pose"}
+   {v = "pose", type="Position3DInterface", id="Pose"}
 }
 
 documentation      = [==[Move to a known (named) location.
@@ -54,21 +54,21 @@ local tf_mod = require 'tf_module'
 
 
 function pose_ok(self)
-	return (math.abs(self.fsm.vars.goto_x - pose:translation(0)) <= MAX_TRANSERR
-	 and math.abs(self.fsm.vars.goto_y - pose:translation(1)) <= MAX_TRANSERR
-	 and math.abs(self.fsm.vars.goto_ori - 2*math.acos(pose:rotation(3))) <= MAX_ROTERR)
+   return (math.abs(self.fsm.vars.goto_x - pose:translation(0)) <= MAX_TRANSERR
+    and math.abs(self.fsm.vars.goto_y - pose:translation(1)) <= MAX_TRANSERR
+    and math.abs(self.fsm.vars.goto_ori - 2*math.acos(pose:rotation(3))) <= MAX_ROTERR)
 end
 
 function pose_not_ok(self)
-	return not pose_ok(self)
+   return not pose_ok(self)
 end
 
-function missed_to_often(self)
- return (self.fsm.vars.num_pos_missed>= MAX_POS_MISS)
+function missed_too_often(self)
+   return (self.fsm.vars.num_pos_missed>= MAX_POS_MISS)
 end
 
-function not_missed_to_often(self)
- return not missed_to_often(self)
+function not_missed_too_often(self)
+   return not missed_too_often(self)
 end
 
 fsm:define_states{ export_to=_M,
@@ -81,12 +81,12 @@ fsm:define_states{ export_to=_M,
 
 
 fsm:add_transitions{
-  {"START_RELGOTO","DO_RELGOTO",cond=true},
-	{"WAIT_POSE", "CHECK_POSE", timeout=3.0},
-	{"CHECK_POSE", "FINAL", cond=pose_ok, desc="Pose reached" },
-	{"CHECK_POSE", "MISSED", cond=pose_not_ok, },
-  {"MISSED", "DO_RELGOTO", cond=not_missed_to_often},
-  {"MISSED", "FAILED", cond=missed_to_often, desc="Posed missed"}
+   {"START_RELGOTO","DO_RELGOTO",cond=true},
+   {"WAIT_POSE", "CHECK_POSE", timeout=3.0},
+   {"CHECK_POSE", "FINAL", cond=pose_ok, desc="Pose reached" },
+   {"CHECK_POSE", "MISSED", cond=pose_not_ok, },
+   {"MISSED", "DO_RELGOTO", cond=not_missed_too_often},
+   {"MISSED", "FAILED", cond=missed_too_often, desc="Posed missed"}
 }
 
 function START_RELGOTO:init()
@@ -98,29 +98,29 @@ function MISSED:init()
 end
 
 function DO_RELGOTO:init()
-	local x, y, ori
-	if self.fsm.vars.goto_name then
-		local name = self.fsm.vars.goto_name
-		x = machine_pos.delivery_goto[name].x
-		y = machine_pos.delivery_goto[name].y
-		ori = machine_pos.delivery_goto[name].ori
-	else
-		x = self.fsm.vars.goto_x or pose:translation(0)
-		y = self.fsm.vars.goto_y or pose:translation(1)
-		ori = self.fsm.vars.goto_ori or 2*math.acos(pose:translation(3))
-	end
+   local x, y, ori
+   if self.fsm.vars.goto_name then
+      local name = self.fsm.vars.goto_name
+      x = machine_pos.delivery_goto[name].x
+      y = machine_pos.delivery_goto[name].y
+      ori = machine_pos.delivery_goto[name].ori
+   else
+      x = self.fsm.vars.goto_x or pose:translation(0)
+      y = self.fsm.vars.goto_y or pose:translation(1)
+      ori = self.fsm.vars.goto_ori or 2*math.acos(pose:translation(3))
+   end
 
-	self.fsm.vars.goto_x = x
-	self.fsm.vars.goto_y = y
-	self.fsm.vars.goto_ori = ori
+   self.fsm.vars.goto_x = x
+   self.fsm.vars.goto_y = y
+   self.fsm.vars.goto_ori = ori
 
-	local rel_pos = tf_mod.transform({x = x, y = y, ori = ori}, "/map", "/base_link")
+   local rel_pos = tf_mod.transform({x = x, y = y, ori = ori}, "/map", "/base_link")
 
-	self.args = {
-		rel_x = rel_pos.x,
-		rel_y = rel_pos.y,
-		rel_ori = rel_pos.ori
-	}
+   self.args = {
+      rel_x = rel_pos.x,
+      rel_y = rel_pos.y,
+      rel_ori = rel_pos.ori
+   }
 end
 
 

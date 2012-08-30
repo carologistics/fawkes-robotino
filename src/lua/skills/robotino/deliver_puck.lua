@@ -27,7 +27,7 @@ name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="CHECK_PUCK", debug=true}
 depends_skills     = {"take_puck_to", "move_under_rfid", "determine_signal", "leave_area"}
 depends_interfaces = {
-	{ v="light", type="RobotinoAmpelInterface", id="light" } 
+   { v="light", type="RobotinoAmpelInterface", id="light" } 
 }
 
 documentation     = [==[delivers already fetched puck to specified location]==]
@@ -47,7 +47,7 @@ local curDistance = sensor:distance(0)
 end
 
 function ampel_green()
-	return light:state() == light.GREEN
+   return light:state() == light.GREEN
 end
 
 fsm:define_states{ export_to=_M,
@@ -64,12 +64,12 @@ fsm:define_states{ export_to=_M,
    
 
 fsm:add_transitions{
-	closure = {motor=motor, have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
+   closure = {motor=motor, have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
       dg=DELIVERY_GATES, ampel_green=ampel_green},
-	{"CHECK_PUCK", "FAILED", cond="not have_puck", desc="No puck seen by Infrared"},
-	{"CHECK_PUCK", "SKILL_DETERMINE_SIGNAL", cond=have_puck},
-	{"DECIDE_DELIVER", "MOVE_UNDER_RFID", cond=ampel_green},
-	{"DECIDE_DELIVER", "MOVE_TO_NEXT", cond="idx < #dg"},
+   {"CHECK_PUCK", "FAILED", cond="not have_puck", desc="No puck seen by Infrared"},
+   {"CHECK_PUCK", "SKILL_DETERMINE_SIGNAL", cond=have_puck},
+   {"DECIDE_DELIVER", "MOVE_UNDER_RFID", cond=ampel_green},
+   {"DECIDE_DELIVER", "MOVE_TO_NEXT", cond="idx < #dg"},
    {"DECIDE_DELIVER", "FAILED", cond="not ampel_green and idx >= #dg"}
 }
 
@@ -78,7 +78,7 @@ function CHECK_PUCK:init()
 end
 
 function SKILL_DETERMINE_SIGNAL:init()
-	self.args = {mode = "DELIVER"}
+   self.args = {mode = "DELIVER"}
 end
 
 function MOVE_TO_NEXT:init()

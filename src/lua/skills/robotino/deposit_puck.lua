@@ -36,15 +36,15 @@ documentation      = [==[deposits the used puck at the side of the traffic light
 skillenv.skill_module(_M)
 
 function no_puck()
-	--return worldModel:numberOfPucks=0
-	return false
+   --return worldModel:numberOfPucks=0
+   return false
 end
 
 
 function one_left()
-	--pucksLeft = worldModel:getNumberOfPucks(right,machine)
-	--return (pucksLeft == 1)
-	return true
+   --pucksLeft = worldModel:getNumberOfPucks(right,machine)
+   --return (pucksLeft == 1)
+   return true
 end
 
 fsm:define_states{export_to=_M,
@@ -65,19 +65,19 @@ fsm:add_transitions{
 }
 
 function SKILL_DRIVE_LEFT:init()
-	self.args = {x=0,y=0.18,ori=0}
+   self.args = {x=0,y=0.18,ori=0}
 end
 
 function SKILL_DRIVE_RIGHT:init()
-	self.args = {x=0,y=-0.18,ori=0}
+   self.args = {x=0,y=-0.18,ori=0}
 end
 
 function SKILL_DRIVE_FORWARD:init()
-	self.args = {x=0.2,y=0,ori=0}
+   self.args = {x=0.2,y=0,ori=0}
 end
 
 function SKILL_DRIVE_BACKWARD:init()
-	self.args = {x=-0.2,y=0,ori=0}
+   self.args = {x=-0.2,y=0,ori=0}
  --TODO UPDATE WORLD MODEL WENN FINAL
 end
 

@@ -39,9 +39,9 @@ fsm:define_states{ export_to=_M,
 }
 
 function DRIVE_LEFT:init()
-	self.args = {x=0,y=0.2,ori=0}
+   self.args = {x=0,y=0.2,ori=0}
 end
 function ROTATE:init()
-	self.args = {x=0, y=0, ori=math.pi}
+   self.args = {x=0, y=0, ori=math.pi}
 end
 
