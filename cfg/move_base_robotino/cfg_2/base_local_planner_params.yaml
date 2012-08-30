@@ -15,7 +15,7 @@ TrajectoryPlannerROS:
 
   #dwa: true
   #publish_cost_grid_pc: true
-  #global_frame_id: robotino_odometry
+  #global_frame_id: odom
 
   #sim_time: 1.0
 
