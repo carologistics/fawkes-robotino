@@ -45,6 +45,7 @@ writes ampel data into the light interface
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
+   closure={ampelswitch=ampelswitch, ampel_red=ampel_red}, 
    {"INIT", JumpState},
    {"DETERMINE", JumpState},
    {"WAIT_OUT_OF_ORDER", JumpState},
@@ -54,7 +55,6 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   closure={motor=motor, ampelswitch=ampelswitch, ampel_red=ampel_red}, 
    {"INIT", "FAILED", cond="not ampelswitch:has_writer()", precond=true},
    {"INIT", "DETERMINE", timeout=1}, -- let vision settle
    {"INIT", "WAIT_OUT_OF_ORDER", cond="ampel_red:is_enabled()", precond=true},
