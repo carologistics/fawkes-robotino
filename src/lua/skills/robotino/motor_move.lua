@@ -84,7 +84,7 @@ fsm:add_transitions{
 
 function calc_status(self)
 
-   local t_bl = tfm.transform({x=fsm.vars.motor_target_x, y=fsm.vars.motor_target_y, ori=0}, "/robotino_odometry", "/base_link") 
+   local t_bl = tfm.transform({x=fsm.vars.motor_target_x, y=fsm.vars.motor_target_y, ori=0}, "/odom", "/base_link") 
 
    self.fsm.vars.dx = t_bl.x
    self.fsm.vars.dy = t_bl.y
@@ -182,7 +182,7 @@ function DRIVE:init()
    if ori == math.pi then ori = ori - 1e-6 end
    if ori == -math.pi then ori = ori + 1e-6 end
    
-   local odo_tgt = tfm.transform({x=x, y=y, ori=ori}, "/base_link", "/robotino_odometry")
+   local odo_tgt = tfm.transform({x=x, y=y, ori=ori}, "/base_link", "/odom")
 
    self.fsm.vars.motor_target_x = odo_tgt.x
    self.fsm.vars.motor_target_y = odo_tgt.y
