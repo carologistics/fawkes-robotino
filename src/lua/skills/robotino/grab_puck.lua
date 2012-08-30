@@ -39,39 +39,38 @@ local THRESHOLD_DISTANCE = 0.1
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-fsm:define_states{ export_to=_M,
-   {"DRIVE", JumpState},
-   {"STOP", JumpState}
-}
-
 function no_writer(state)
    return not motor:has_writer()
 end
 
 
 function puck_is_away()
-	local curDistance = sensor:distance(0)
-	if not fsm.vars.checked_away then
-		fsm.vars.checked_away = true
-		if (curDistance > THRESHOLD_DISTANCE) or (cur_distance == 0) then
-			printf("away: " .. curDistance)
-			return true
-		end
-	end
-	return false
+   local curDistance = sensor:distance(0)
+   if not fsm.vars.checked_away then
+      fsm.vars.checked_away = true
+      if (curDistance > THRESHOLD_DISTANCE) or (cur_distance == 0) then
+         printf("away: " .. curDistance)
+         return true
+      end
+   end
+   return false
 end
 
 function puck_is_near()
-	local curDistance = sensor:distance(0)
-	if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
-		printf("near: " .. curDistance)
-		return true
-	end
-	return false
+   local curDistance = sensor:distance(0)
+   if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
+      printf("near: " .. curDistance)
+      return true
+   end
+   return false
 end
 
+fsm:define_states{ export_to=_M,
+   {"DRIVE", JumpState},
+   {"STOP", JumpState}
+}
+
 fsm:add_transitions{
-   closure={motor=motor},
    {"DRIVE", "FAILED", cond=no_writer, desc="No writer for motor", precond=true},
    {"DRIVE", "STOP", cond=puck_is_near},
    {"DRIVE", "DRIVE", cond=puck_is_away, desc="away"},
@@ -87,14 +86,14 @@ function send_transrot(vx, vy, omega)
 end
 
 function DRIVE:init()
-	send_transrot(0.2,0,0)
+   send_transrot(0.2,0,0)
 end
 
 function STOP:init()
-	send_transrot(0,0,0)
+   send_transrot(0,0,0)
 end
 
 function DRIVE:loop()
-	self.fsm.vars.checked_away = false
+   self.fsm.vars.checked_away = false
 end
 
