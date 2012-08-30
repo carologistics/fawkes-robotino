@@ -49,7 +49,8 @@ fsm:define_states{ export_to=_M,
    {"DETERMINE", JumpState},
    {"WAIT_OUT_OF_ORDER", JumpState},
    {"CHECK_NO_CHANGE", JumpState},
-   {"NO_CHANGE", JumpState}
+   {"NO_CHANGE", JumpState},
+   {"STOP_VISION", JumpState}
 }
 
 fsm:add_transitions{
