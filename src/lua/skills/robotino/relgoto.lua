@@ -38,11 +38,6 @@ documentation      = [==[Move to base_link coords using navigator. Fail on navig
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-fsm:define_states{ export_to=_M,
-   {"CHECK_INPUT", JumpState},
-   {"MOVING", JumpState}
-}
-
 function can_navigate()
    return navigator:has_writer()
 end
@@ -68,8 +63,14 @@ function navi_failure()
    return false
 end
 
+fsm:define_states{ export_to=_M,
+   closure={can_navigate=can_navigate},
+   {"CHECK_INPUT", JumpState},
+   {"MOVING", JumpState}
+}
+
 fsm:add_transitions{
-   { "CHECK_INPUT", "FAILED", cond="not can_navigate", desc="Navigator not running" },
+   { "CHECK_INPUT", "FAILED", cond="not can_navigate()", desc="Navigator not running" },
    { "MOVING", "FAILED", cond=navi_failure, desc="Navigator returned error" },
    { "CHECK_INPUT", "MOVING", cond=can_navigate },
    { "MOVING", "FINAL", cond=target_reached },
