@@ -51,6 +51,8 @@ function ampel_green()
 end
 
 fsm:define_states{ export_to=_M,
+   closure = {motor=motor, have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
+      dg=DELIVERY_GATES, ampel_green=ampel_green},
    {"CHECK_PUCK", JumpState},
    {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills=determine_signal,
       final_to="DECIDE_DELIVER", fail_to="FAILED"},
@@ -64,13 +66,11 @@ fsm:define_states{ export_to=_M,
    
 
 fsm:add_transitions{
-   closure = {motor=motor, have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
-      dg=DELIVERY_GATES, ampel_green=ampel_green},
-   {"CHECK_PUCK", "FAILED", cond="not have_puck", desc="No puck seen by Infrared"},
+   {"CHECK_PUCK", "FAILED", cond="not have_puck()", desc="No puck seen by Infrared"},
    {"CHECK_PUCK", "SKILL_DETERMINE_SIGNAL", cond=have_puck},
    {"DECIDE_DELIVER", "MOVE_UNDER_RFID", cond=ampel_green},
    {"DECIDE_DELIVER", "MOVE_TO_NEXT", cond="idx < #dg"},
-   {"DECIDE_DELIVER", "FAILED", cond="not ampel_green and idx >= #dg"}
+   {"DECIDE_DELIVER", "FAILED", cond="(not ampel_green()) and (idx >= #dg)"}
 }
 
 function CHECK_PUCK:init()
