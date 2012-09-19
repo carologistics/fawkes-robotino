@@ -56,19 +56,19 @@ function is_not_yellow()
 end
 
 fsm:define_states{ export_to=_M,
-   {"SKILL_TAKE_PUCK", SkillJumpState, skills=take_puck_to, final_to="DECIDE_ENDSKILL",
+   {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="DECIDE_ENDSKILL",
       fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
-   {"SKILL_RFID", SkillJumpState, skills=move_under_rfid, final_to="SKILL_DETERMINE_SIGNAL",
+   {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_DETERMINE_SIGNAL",
       fail_to="FAILED"},
-   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills=determine_signal, final_to="DECIDE",
+   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills={{determine_signal}}, final_to="DECIDE",
       fail_to="FAILED"},
    {"DECIDE", JumpState},
-   {"SKILL_DRIVE_LEFT", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"},
-   {"SKILL_DEPOSIT", SkillJumpState, skills=deposit_puck, final_to="SKILL_LEAVE",
+   {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="SKILL_LEAVE",
       fail_to="FAILED"},
-   {"SKILL_LEAVE", SkillJumpState, skills=leave_area, final_to="FINAL", fail_to="FAILED"},
-   {"SKILL_DELIVER", SkillJumpState, skills=deliver_puck, final_to="FINAL", fail_to="FAILED" },
+   {"SKILL_LEAVE", SkillJumpState, skills={{leave_area}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED" },
 }
 
 fsm:add_transitions{
@@ -91,9 +91,12 @@ function SKILL_TAKE_PUCK:init()
          end
       end
    end
-   self.args = { goto_name = self.fsm.vars.goto_name }
+   self.skills[1].goto_name = self.fsm.vars.goto_name
 end
+
 function SKILL_DRIVE_LEFT:init()
-   self.args = {x=0,y=-0.5,ori=0}
+   self.skills[1].x=0 
+   self.skills[1].y=-0.5 
+   self.skills[1].ori=0
 end
 
