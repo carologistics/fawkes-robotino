@@ -34,14 +34,18 @@ documentation      = [==[Leave area with puck by driving left and rotating]==]
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   {"DRIVE_LEFT", SkillJumpState, skills=motor_move, final_to="ROTATE", fail_to="FAILED"},
-   {"ROTATE", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"}
+   {"DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="ROTATE", fail_to="FAILED"},
+   {"ROTATE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 function DRIVE_LEFT:init()
-   self.args = {x=0,y=0.2,ori=0}
+   self.skills[1].x=0 
+   self.skills[1].y=0.2 
+   self.skills[1].ori=0
 end
 function ROTATE:init()
-   self.args = {x=0, y=0, ori=math.pi}
+   self.skills[1].x=0 
+   self.skills[1].y=0 
+   self.skills[1].ori=math.pi
 end
 

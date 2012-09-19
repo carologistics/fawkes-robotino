@@ -34,20 +34,26 @@ documentation     = [==[moves blindly to the next light of the delivery zone]==]
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   {"ROTATE_RIGHT", SkillJumpState, final_to="STRAFE_RIGHT", skills=motor_move, fail_to="FAILED"},
-   {"STRAFE_RIGHT", SkillJumpState, final_to="ROTATE_LEFT", skills=motor_move, fail_to="FAILED"},
-   {"ROTATE_LEFT", SkillJumpState, final_to="FINAL", skills=motor_move, fail_to="FAILED"}
+   {"ROTATE_RIGHT", SkillJumpState, final_to="STRAFE_RIGHT", skills={{motor_move}}, fail_to="FAILED"},
+   {"STRAFE_RIGHT", SkillJumpState, final_to="ROTATE_LEFT", skills={{motor_move}}, fail_to="FAILED"},
+   {"ROTATE_LEFT", SkillJumpState, final_to="FINAL", skills={{motor_move}}, fail_to="FAILED"}
 }
 
 function ROTATE_RIGHT:init()
-   self.args = {x=0,y=0,ori=-(math.pi/9)}
+   self.skills[1].x=0 
+   self.skills[1].y=0 
+   self.skills[1].ori=-(math.pi/9)
 end
 
 function STRAFE_RIGHT:init()
-   self.args = {x=0,y=-0.35,ori=0}
+   self.skills[1].x=0 
+   self.skills[1].y=-0.35 
+   self.skills[1].ori=0
 end
 
 function ROTATE_LEFT:init()
- self.args = {x=0,y=-0,ori=(math.pi/9)}
+   self.skills[1].x=0 
+   self.skills[1].y=-0 
+   self.skills[1].ori=(math.pi/9)
 end
 

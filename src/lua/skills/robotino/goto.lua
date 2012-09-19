@@ -73,7 +73,7 @@ end
 
 fsm:define_states{ export_to=_M,
    {"START_RELGOTO", JumpState},
-   {"DO_RELGOTO", SkillJumpState, skills=relgoto, final_to="WAIT_POSE", fail_to="FAILED"},
+   {"DO_RELGOTO", SkillJumpState, skills={{relgoto}}, final_to="WAIT_POSE", fail_to="FAILED"},
    {"WAIT_POSE", JumpState},
    {"CHECK_POSE", JumpState},
    {"MISSED", JumpState}
@@ -104,6 +104,7 @@ function DO_RELGOTO:init()
       x = machine_pos.delivery_goto[name].x
       y = machine_pos.delivery_goto[name].y
       ori = machine_pos.delivery_goto[name].ori
+      printf("%f, %f, %f", x, y, ori)
    else
       x = self.fsm.vars.goto_x or pose:translation(0)
       y = self.fsm.vars.goto_y or pose:translation(1)
@@ -116,11 +117,9 @@ function DO_RELGOTO:init()
 
    local rel_pos = tf_mod.transform({x = x, y = y, ori = ori}, "/map", "/base_link")
 
-   self.args = {
-      rel_x = rel_pos.x,
-      rel_y = rel_pos.y,
-      rel_ori = rel_pos.ori
-   }
+   self.skills[1].rel_x = rel_pos.x 
+   self.skills[1].rel_y = rel_pos.y 
+   self.skills[1].rel_ori = rel_pos.ori
 end
 
 

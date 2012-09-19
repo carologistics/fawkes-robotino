@@ -154,24 +154,24 @@ end
 
 
 fsm:define_states{ export_to=_M,
+   closure = { lost_puck = lost_puck },
    {"INIT", JumpState},
-   {"SKILL_GOTO", SkillJumpState, skills=goto, final_to="FINAL", fail_to="RETRY_GOTO"},
+   {"SKILL_GOTO", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="RETRY_GOTO"},
    {"CLEANFAIL", JumpState},
-   {"LOST_PUCK", SkillJumpState, skills=relgoto, final_to="TURN_ON_OMNIVISION",
+   {"LOST_PUCK", SkillJumpState, skills={{relgoto}}, final_to="TURN_ON_OMNIVISION",
       fail_to="CLEANFAIL"},
    {"RETRY_GOTO", JumpState},
    {"TURN_ON_OMNIVISION", JumpState},
    {"LOCATE_PUCK", JumpState},
    {"WAIT_FOR_VISION", JumpState},
-   {"TURN_TO_PUCK", SkillJumpState, skills=relgoto, final_to="VERIFY_TURN",
+   {"TURN_TO_PUCK", SkillJumpState, skills={{relgoto}}, final_to="VERIFY_TURN",
       fail_to="CLEANFAIL" },
    {"VERIFY_TURN", JumpState},
-   {"SKILL_FETCH_PUCK", SkillJumpState, skills=motor_move, final_to="SKILL_GOTO",
+   {"SKILL_FETCH_PUCK", SkillJumpState, skills={{motor_move}}, final_to="SKILL_GOTO",
       fail_to="CLEANFAIL"}
 }
 
 fsm:add_transitions{
-   closure = { lost_puck = lost_puck },
    { "INIT", "SKILL_GOTO", cond=true },
    { "SKILL_GOTO", "CLEANFAIL", cond=lost_puck, precond=true, desc="Called without puck" },
    { "SKILL_GOTO", "CLEANFAIL", cond=no_writer, precond=true, desc="No omnivision writer" },
@@ -209,17 +209,15 @@ function RETRY_GOTO:init()
 end
 
 function SKILL_GOTO:init()
-   self.args = { goto_name = self.fsm.vars.goto_name }
+   self.skills[1].goto_name = self.fsm.vars.goto_name
    self.fsm.vars.avg_idx = 1
    self.fsm.vars.avg_val = {}
 end
 
 function LOST_PUCK:init()
-   self.args = {
-      rel_x = 0,
-      rel_y = 0,
-      rel_ori = 0
-   }
+   self.skills[1].rel_x = 0
+   self.skills[1].rel_y = 0
+   self.skills[1].rel_ori = 0
 end
 
 function TURN_ON_OMNIVISION:init()
@@ -231,19 +229,15 @@ function TURN_ON_OMNIVISION:init()
 end
 
 function TURN_TO_PUCK:init()
-   self.args = {
-      rel_x = 0,
-      rel_y = 0,
-      rel_ori = math.atan2(self.fsm.vars.puck_rel.y, self.fsm.vars.puck_rel.x)
-   }
+   self.skills[1].rel_x = 0 
+   self.skills[1].rel_y = 0 
+   self.skills[1].rel_ori = math.atan2(self.fsm.vars.puck_rel.y, self.fsm.vars.puck_rel.x)
 end
 
 function SKILL_FETCH_PUCK:init()
    -- turn on omnivision
    local msg = omnivisionSwitch.DisableSwitchMessage:new()
    omnivisionSwitch:msgq_enqueue_copy(msg)
-   self.args = {
-      x = math.sqrt(self.fsm.vars.puck_rel.x^2 + self.fsm.vars.puck_rel.y^2),
-   }
+   self.skills[1].x = math.sqrt(self.fsm.vars.puck_rel.x^2 + self.fsm.vars.puck_rel.y^2)
 end
 

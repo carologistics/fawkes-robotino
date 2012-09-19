@@ -102,21 +102,20 @@ end
 fsm:define_states{ export_to=_M,
    {"SEE_AMPEL", JumpState},
    {"DESC_CHECK_IF_FRONT", JumpState},
-   {"CORRECT_LEFT", SkillJumpState, skills=motor_move, final_to="APPROACH_AMPEL_CLOSER",
+   {"CORRECT_LEFT", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL_CLOSER",
       fail_to="FAILED"},
-   {"CORRECT_RIGHT", SkillJumpState, skills=motor_move, final_to="APPROACH_AMPEL_CLOSER",
+   {"CORRECT_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL_CLOSER",
       fail_to="FAILED"},
-   {"APPROACH_AMPEL_CLOSER", SkillJumpState, skills=motor_move,
+   {"APPROACH_AMPEL_CLOSER", SkillJumpState, skills={{motor_move}},
       final_to="SKILL_APPROACH_AMPEL", fail_to="FAILED"},
-   {"SKILL_APPROACH_AMPEL", SkillJumpState, skills=motor_move, final_to="CHECK_POSITION",
+   {"SKILL_APPROACH_AMPEL", SkillJumpState, skills={{motor_move}}, final_to="CHECK_POSITION",
       fail_to="FAILED"},
    {"CHECK_POSITION", JumpState},
-   {"LEFT_TOO_FAR", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"},
-   {"RIGHT_TOO_FAR", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"}
+   {"LEFT_TOO_FAR", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"RIGHT_TOO_FAR", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
-	closure={motor=motor},
 	{"SEE_AMPEL", "FAILED", cond=no_ampel, desc="No Ampel seen with laser"},
 	{"SEE_AMPEL", "DESC_CHECK_IF_FRONT", cond=ampel, desc="Ampel seen with laser"},
 	{"DESC_CHECK_IF_FRONT", "CORRECT_LEFT", cond=is_left},
@@ -150,28 +149,41 @@ end
 function DESC_CHECK_IF_FRONT:init()
 end
 function CORRECT_LEFT:init()
-	self.args = {x=0,y=-0.4,ori=0}
+   self.skills[1].x=0 
+   self.skills[1].y=-0.4 
+   self.skills[1].ori=0
 end
 function CORRECT_RIGHT:init()
-	self.args = {x=0,y=0.4,ori=0}
+   self.skills[1].x=0 
+   self.skills[1].y=0.4 
+   self.skills[1].ori=0
 end
 --function SKILL_TURN_TO_AMPEL:init()
 --	self.args = {x=0,y=0,ori=self.fsm.vars.ampel_loc.angle}
 --end
 function APPROACH_AMPEL_CLOSER:init()
-	self.args = {x=1,y=0,ori=0}
+   self.skills[1].x=1 
+   self.skills[1].y=0 
+   self.skills[1].ori=0
 end
 --function SKILL_TURN_TO_AMPEL_CLOSER:init()
 --	self.args = {x=0,y=0,ori=math.atan(Machine_0:translation(1)/Machine_0:translation(0))}
 --end
 function SKILL_APPROACH_AMPEL:init()
-	self.args = {x=0.16,y=0,ori=0}
+   self.skills[1].x=0.16 
+   self.skills[1].y=0 
+   self.skills[1].ori=0
 end
 function CHECK_POSITION:init()
 end
 function RIGHT_TOO_FAR:init()
-	self.args = {x=0,y=0.3,ori=0}
+   self.skills[1].x=0 
+   self.skills[1].y=0.3 
+   self.skills[1].ori=0
 end
 function LEFT_TOO_FAR:init()
-	self.args = {x=0,y=-0.3,ori=0}
+   self.skills[1].x=0 
+   self.skills[1].y=-0.3 
+   self.skills[1].ori=0
 end
+

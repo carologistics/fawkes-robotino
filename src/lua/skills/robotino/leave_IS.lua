@@ -77,8 +77,8 @@ end
 
 fsm:define_states{ export_to=_M,
    {"CHECK_TURN", JumpState},
-   {"TURN", SkillJumpState, skills=motor_move, final_to="SKILL_MOTOR_MOVE", fail_to="FAILED"},
-   {"SKILL_MOTOR_MOVE", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"}
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="SKILL_MOTOR_MOVE", fail_to="FAILED"},
+   {"SKILL_MOTOR_MOVE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -91,17 +91,25 @@ end
 function TURN:init()
    --1.05 = 60°
    if oriented_left() then
-      self.args = {x=0, y=0, ori=1.05-math.abs(get_ori_diff())}
+      self.skills[1].x=0
+      self.skills[1].y=0
+      self.skills[1].ori=1.05-math.abs(get_ori_diff())
    else
-      self.args = {x=0, y=0, ori=-1.05+math.abs(get_ori_diff())}
+      self.skills[1].x=0
+      self.skills[1].y=0
+      self.skills[1].ori=-1.05+math.abs(get_ori_diff())
    end
    print(get_ori_diff())
 end
 function SKILL_MOTOR_MOVE:init()
    if oriented_left() then
-      self.args = {x=0, y=0.5, ori=0}
+      self.skills[1].x=0
+      self.skills[1].y=0.5
+      self.skills[1].ori=0
    else
-      self.args = {x=0, y=-0.5, ori=0}
+      self.skills[1].x=0
+      self.skills[1].y=-0.5
+      self.skills[1].ori=0
    end
    
 end

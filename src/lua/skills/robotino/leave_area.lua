@@ -39,11 +39,13 @@ leave area without puck
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   {"LEAVE_AREA", SkillJumpState, skills=motor_move, final_to="FINAL", fail_to="FAILED"}
+   {"LEAVE_AREA", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 function LEAVE_AREA:init()
-   self.args = {x=-0.2, y=0, ori=0}
+   self.skills[1].x=-0.2 
+   self.skills[1].y=0 
+   self.skills[1].ori=0
 end
 
 

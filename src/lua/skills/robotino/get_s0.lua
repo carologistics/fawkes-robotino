@@ -37,13 +37,13 @@ local start = "Is"
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   {"GOTO_IS", SkillJumpState, skills=goto, final_to="SKILL_FETCH_PUCK", fail_to="FAILED"},
-   {"SKILL_FETCH_PUCK", SkillJumpState, skills=fetch_puck, final_to="SKILL_LEAVE_AREA",
+   {"GOTO_IS", SkillJumpState, skills={{goto}}, final_to="SKILL_FETCH_PUCK", fail_to="FAILED"},
+   {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="SKILL_LEAVE_AREA",
       fail_to="FAILED"},
-   {"SKILL_LEAVE_AREA", SkillJumpState, skills=leave_IS, final_to="FINAL", fail_to="FAILED"}
+   {"SKILL_LEAVE_AREA", SkillJumpState, skills={{leave_IS}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 function GOTO_IS:init()
-   self.args = {goto_name=start}
+   self.skills[1].goto_name = start
 end
 
