@@ -132,14 +132,14 @@ fsm:define_states{ export_to=_M,
    {"WAIT_FOR_VISION", JumpState},
    {"SEE_PUCK", JumpState},
    {"OMNIFAIL", JumpState},
-   {"TURN_TO_PUCK", SkillJumpState, skills=motor_move, final_to="GRAB_PUCK",
+   {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB_PUCK",
       fail_to="SEE_PUCK"},
-   {"GRAB_PUCK", SkillJumpState, skills=motor_move, final_to="MOVE_DONE",
+   {"GRAB_PUCK", SkillJumpState, skills={{motor_move}}, final_to="MOVE_DONE",
       fail_to="OMNIFAIL"},
    -- GRAB_PUCK motor_move's too far and preempts if have_puck. If motor_move finishes we
    -- MOVE_MORE an extra 5 cm to be sure.
    {"MOVE_DONE", JumpState},
-   {"MOVE_MORE", SkillJumpState, skills=motor_move, final_to="TURN_OFF_OMNIVISION",
+   {"MOVE_MORE", SkillJumpState, skills={{motor_move}}, final_to="TURN_OFF_OMNIVISION",
       fail_to="OMNIFAIL"},
    {"TURN_OFF_OMNIVISION", JumpState}
 }
@@ -162,11 +162,13 @@ fsm:add_transitions{
 
 --function MOVE_FORWARD:init()
 --   local d = math.sqrt(self.fsm.vars.puck_bl.x^2 + self.fsm.vars.puck_bl.y^2)
---   self.args = { x = d/3, y = 0, ori = 0 }
+--   self.skills[1].motor_move.args = { x = d/3, y = 0, ori = 0 }
 --end
 
 function MOVE_MORE:init()
-   self.args = { x = 0.05, y = 0, ori = 0 }
+   self.skills[1].x = 0.05 
+   self.skills[1].y = 0 
+   self.skills[1].ori = 0
 end
 
 function OMNIFAIL:init()
@@ -182,19 +184,17 @@ end
 
 
 function TURN_TO_PUCK:init()
-   self.args = { x=0, y=0,
-      ori=math.atan2(self.fsm.vars.puck_bl.y, self.fsm.vars.puck_bl.x)
-   }
+   self.skills[1].x = 0 
+   self.skills[1].y = 0
+   self.skills[1].ori = math.atan2(self.fsm.vars.puck_bl.y, self.fsm.vars.puck_bl.x)
 end
 
 function GRAB_PUCK:init()
    local x = math.sqrt(self.fsm.vars.puck_bl.x^2 + self.fsm.vars.puck_bl.y^2) + 0.2
    printf("dist=%f", x)
-   self.args = {
-      x = x,
-      y = 0,
-      ori = 0
-   }
+   self.skills[1].x = x 
+   self.skills[1].y = 0 
+   self.skills[1].ori = 0
 end
 
 function TURN_OFF_OMNIVISION:init()
