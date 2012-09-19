@@ -54,14 +54,14 @@ fsm:define_states{ export_to=_M,
    closure = {motor=motor, have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
       dg=DELIVERY_GATES, ampel_green=ampel_green},
    {"CHECK_PUCK", JumpState},
-   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills=determine_signal,
+   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills={{determine_signal}},
       final_to="DECIDE_DELIVER", fail_to="FAILED"},
    {"DECIDE_DELIVER", JumpState},
-   {"MOVE_TO_NEXT", SkillJumpState, skills=take_puck_to, final_to="SKILL_DETERMINE_SIGNAL",
+   {"MOVE_TO_NEXT", SkillJumpState, skills={{take_puck_to}}, final_to="SKILL_DETERMINE_SIGNAL",
       fail_to="FAILED"},
-   {"MOVE_UNDER_RFID", SkillJumpState, skills=move_under_rfid, final_to="LEAVE_AREA",
+   {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="LEAVE_AREA",
       fail_to="FAILED"},
-   {"LEAVE_AREA", SkillJumpState, skills=leave_area, final_to="FINAL", fail_to="FAILED"}
+   {"LEAVE_AREA", SkillJumpState, skills={{leave_area}}, final_to="FINAL", fail_to="FAILED"}
 }
    
 
@@ -78,10 +78,10 @@ function CHECK_PUCK:init()
 end
 
 function SKILL_DETERMINE_SIGNAL:init()
-   self.args = {mode = "DELIVER"}
+   self.skills[1].mode = "DELIVER"
 end
 
 function MOVE_TO_NEXT:init()
    self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
-   self.args = {goto_name = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]}
+   self.skills[1].goto_name = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]
 end
