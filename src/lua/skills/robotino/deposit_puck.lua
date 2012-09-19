@@ -49,13 +49,13 @@ end
 
 fsm:define_states{export_to=_M,
    {"DESC_DIRECTION", JumpState},
-   {"SKILL_DRIVE_LEFT", SkillJumpState, skills=motor_move, final_to="SKILL_DRIVE_FORWARD",
+   {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DRIVE_FORWARD",
       fail_to="FAILED"},
-   {"SKILL_DRIVE_RIGHT", SkillJumpState, skills=motor_move, final_to="SKILL_DRIVE_FORWARD",
+   {"SKILL_DRIVE_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DRIVE_FORWARD",
       fail_to="FAILED"},
-   {"SKILL_DRIVE_FORWARD", SkillJumpState, skills=motor_move, final_to="SKILL_DRIVE_BACKWARD",
+   {"SKILL_DRIVE_FORWARD", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DRIVE_BACKWARD",
       fail_to="FAILED"},
-   {"SKILL_DRIVE_BACKWARD", SkillJumpState, skills=motor_move, final_to="FINAL",
+   {"SKILL_DRIVE_BACKWARD", SkillJumpState, skills={{motor_move}}, final_to="FINAL",
       fail_to="FAILED"}
 }
 
@@ -64,20 +64,28 @@ fsm:add_transitions{
    {"DESC_DIRECTION", "SKILL_DRIVE_RIGHT", cond=one_left},
 }
 
-function SKILL_DRIVE_LEFT:init()
-   self.args = {x=0,y=0.18,ori=0}
+function SKILL_DRIVE_LEFT:init() 
+   self.skills[1].x=0 
+   self.skills[1].y=0.18 
+   self.skills[1].ori=0
 end
 
 function SKILL_DRIVE_RIGHT:init()
-   self.args = {x=0,y=-0.18,ori=0}
+   self.skills[1].x=0 
+   self.skills[1].y=-0.18 
+   self.skills[1].ori=0
 end
 
 function SKILL_DRIVE_FORWARD:init()
-   self.args = {x=0.2,y=0,ori=0}
+   self.skills[1].x=0.2 
+   self.skills[1].y=0 
+   self.skills[1].ori=0
 end
 
 function SKILL_DRIVE_BACKWARD:init()
-   self.args = {x=-0.2,y=0,ori=0}
+   self.skills[1].x=-0.2 
+   self.skills[1].y=0 
+   self.skills[1].ori=0
  --TODO UPDATE WORLD MODEL WENN FINAL
 end
 
