@@ -37,8 +37,13 @@ documentation      = [==[Move under the RFID Reader/Writer]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+local tfm = require('tf_module')
+
 function ampel()
-	distance = math.sqrt((Machine_0:translation(0))^2+(Machine_0:translation(1))^2)
+   local mx = Machine_0:translation(0)
+   local my = Machine_0:translation(1)
+   local bl_mach = tfm.transform({x=mx, y=my, ori=0}, "/base_laser", "/base_link")
+	distance = math.sqrt(bl_mach.x^2 + bl_mach.y^2)
 	return (distance > 0) and (distance < 1)
 end
 
