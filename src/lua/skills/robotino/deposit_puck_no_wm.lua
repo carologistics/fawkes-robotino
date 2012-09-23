@@ -48,14 +48,20 @@ fsm:add_transitions{
 }
 
 function SKILL_DRIVE_LEFT:init()
-	self.args = {x=0,y=0.28,ori=0}
+	self.skills[1].x=0
+  	self.skills[1].y=0.28
+  	self.skills[1].ori=0
 end
 
 function SKILL_DRIVE_FORWARD:init()
-	self.args = {x=0.05,y=0,ori=0}
+	self.skills[1].x=0.05
+  	self.skills[1].y=0
+  	self.skills[1].ori=0
 end
 
 function SKILL_DRIVE_BACKWARD:init()
-	self.args = {x=-0.2,y=0,ori=0}
+	self.skills[1].x=-0.2
+   self.skills[1].y=0
+   self.skills[1].ori=0
 end
 
