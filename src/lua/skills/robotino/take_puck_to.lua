@@ -198,6 +198,8 @@ end
 
 function INIT:init()
    self.fsm.vars.goto_retries = 0
+   self.fsm.vars.avg_idx = 1
+   self.fsm.vars.avg_val = {}
 end
 
 --function MOVE_BACK:init()
