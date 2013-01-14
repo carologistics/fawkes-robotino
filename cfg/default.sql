@@ -285,7 +285,6 @@ INSERT INTO "config" VALUES('/perception/tabletop-objects/cluster_max_size','uns
 INSERT INTO "config" VALUES('/perception/tabletop-objects/result_frame','string','/base_link','The frame in which the result should be published; frame');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/visualization/show_frustrum','bool',1,'Show the frustrum according to configured horizontal and vertical viewing angle.');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/visualization/show_convex_hull_vertices','bool',1,'Show text with convex hull vertex IDs?');
-INSERT INTO "config" VALUES('/perception/tabletop-objects/visualization/show_convex_hull_line_highlighting','bool',1,'Show highlighted hull lines to understand edge selection? Otherwise plain hull is shown.');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/visualization/show_convex_hull_vertex_ids','bool',1,'Show text with convex hull vertex IDs?');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/visualization/display_duration','unsigned int',120,'Time to show marker elements when not updated. Useful to still analyze the seen after program has been terminated; sec');
 INSERT INTO "config" VALUES('/perception/tabletop-objects/horizontal_viewing_angle','float',57.0,'Horizontal viewing angle of the camera, used for frustrum, value is for Kinect; deg');
@@ -338,4 +337,17 @@ INSERT INTO "config" VALUES('/plugins/amcl/init_cov_xx','float',0.25,'Initial Co
 INSERT INTO "config" VALUES('/plugins/amcl/init_cov_yy','float',0.25,'Initial Covariance yy');
 INSERT INTO "config" VALUES('/plugins/amcl/init_cov_aa','float',0.0685,'Initial Covariance aa');
 INSERT INTO "config" VALUES('/plugins/amcl/angle_increment','float',1.0,'angle_increment');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/cluster_min_size','unsigned int',2,'minimum number of laser points a cluster must consist of');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_min_length','float',0.1,'minimum of laser distance to be considered');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_max_length','float',1.0,'maximum of laser distance to be considered');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_scanrange','unsigned int',100,'number of laserscans considered, centered in front of the laser scanner');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/dist_threshold','float',0.05,'allowed difference in distance compared to first laser point in cluster');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/valid_cluster_radius','float',0.02,'cluster is regarded as valid iff no point is more than radius away from center');
+INSERT INTO "config" VALUES('/plugins/laserclusterdetector/laser_interface','string','Laser sim','interface to read laser data from');
+INSERT INTO "config" VALUES('/plugins/ampelvar/camera','string','v4l2:omni:device=/dev/video0:size=320x240','camera beeing used');
+INSERT INTO "config" VALUES('/plugins/ampelvar/camera_height','float',0.41f,'interface to read laser data from');
+INSERT INTO "config" VALUES('/plugins/ampelvar/debug_buffer','bool',0,'decide wether a debug buffer is written or not');
+INSERT INTO "config" VALUES('/plugins/ampelvar/frame','string','/base_link','coordinate system');
+INSERT INTO "config" VALUES('/plugins/ampelvar/mirror_file','string','/bulb-colormap/masle.bulb','path to bulb file');
+
 COMMIT;
