@@ -194,6 +194,7 @@ RobotinoWorldModelInterface::set_machine_types(unsigned int index, const machine
     throw Exception("Index value %u out of bounds (0..13)", index);
   }
   data->machine_types[index] = new_machine_types;
+  data_changed = true;
 }
 /** Get machine_states value.
  * States
@@ -257,6 +258,7 @@ RobotinoWorldModelInterface::set_machine_states(unsigned int index, const machin
     throw Exception("Index value %u out of bounds (0..13)", index);
   }
   data->machine_states[index] = new_machine_states;
+  data_changed = true;
 }
 /** Get express_machine value.
  * The machine reserved for the
