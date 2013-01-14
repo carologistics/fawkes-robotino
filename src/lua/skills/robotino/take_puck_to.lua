@@ -24,8 +24,8 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "take_puck_to"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = { "goto", "relgoto", "motor_move" }
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+depends_skills     = { "goto", "relgoto", "motor_move", "ppgoto" }
 depends_interfaces = {
    { v = "sensor", type = "RobotinoSensorInterface", id = "Robotino" },
    { v = "omnivisionSwitch", type = "SwitchInterface", id = "omnivisionSwitch" },
@@ -48,7 +48,7 @@ local TIMEOUT_MOVE_BACK = 10
 local TIMEOUT_MOVE_LEFT = 20
 local ORI_OFFSET = 0.15
 local MAX_RETRIES = 3
-local LOSTPUCK_DIST = 0.1
+local LOSTPUCK_DIST = 0.13
 local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
 -- Imports
@@ -156,10 +156,10 @@ end
 fsm:define_states{ export_to=_M,
    closure = { lost_puck = lost_puck },
    {"INIT", JumpState},
-   {"SKILL_GOTO", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="RETRY_GOTO"},
+   {"SKILL_GOTO", SkillJumpState, skills={{ppgoto}}, final_to="FINAL", fail_to="RETRY_GOTO"},
    {"CLEANFAIL", JumpState},
-   {"LOST_PUCK", SkillJumpState, skills={{relgoto}}, final_to="TURN_ON_OMNIVISION",
-      fail_to="CLEANFAIL"},
+   {"LOST_PUCK", SkillJumpState, skills={{ppgoto}}, final_to="TURN_ON_OMNIVISION",
+      fail_to="TURN_ON_OMNIVISION"},
    {"RETRY_GOTO", JumpState},
    {"TURN_ON_OMNIVISION", JumpState},
    {"LOCATE_PUCK", JumpState},
@@ -211,15 +211,13 @@ function RETRY_GOTO:init()
 end
 
 function SKILL_GOTO:init()
-   self.skills[1].goto_name = self.fsm.vars.goto_name
+   self.skills[1].place = self.fsm.vars.goto_name
    self.fsm.vars.avg_idx = 1
    self.fsm.vars.avg_val = {}
 end
 
 function LOST_PUCK:init()
-   self.skills[1].rel_x = 0
-   self.skills[1].rel_y = 0
-   self.skills[1].rel_ori = 0
+   self.skills[1].stop = true
 end
 
 function TURN_ON_OMNIVISION:init()
