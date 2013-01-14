@@ -1,7 +1,7 @@
 #*****************************************************************************
-#                      Makefile Build System for Fawkes
+#                  Makefile Build System for Fawkes: Tools
 #                            -------------------
-#   Created on Mon May 14 11:38:00 2012
+#   Created on Tue Jun 19 20:35:00 2012
 #   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
 #
 #*****************************************************************************
@@ -13,15 +13,10 @@
 #
 #*****************************************************************************
 
-BASEDIR = ..
-
-SUBDIRS = libs plugins
-
+BASEDIR = ../..
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDSYSDIR)/rules.mk
 
-# Explicit dependencies, this is needed to have make bail out if there is any
-# error. This is also necessary for working parallel build (i.e. for dual core)
-plugins: libs
-#tools: plugins
+SUBDIRS	= gamectrl
+
+include $(BUILDSYSDIR)/rules.mk
 

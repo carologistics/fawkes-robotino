@@ -1,8 +1,9 @@
+
 #*****************************************************************************
-#                      Makefile Build System for Fawkes
+#         Makefile Build System for Fawkes: Robotino GameCtrl Tool
 #                            -------------------
-#   Created on Mon May 14 11:38:00 2012
-#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
+#   Created on Tue Jun 19 20:36:45 2012
+#   Copyright (C) 2012 by Tim Niemueller, AllemaniACs RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,15 +14,14 @@
 #
 #*****************************************************************************
 
-BASEDIR = ..
-
-SUBDIRS = libs plugins
-
+BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDSYSDIR)/rules.mk
 
-# Explicit dependencies, this is needed to have make bail out if there is any
-# error. This is also necessary for working parallel build (i.e. for dual core)
-plugins: libs
-#tools: plugins
+LIBS_gamectrl = m fawkescore fawkesutils  \
+		fawkesblackboard fawkesinterface SwitchInterface
+OBJS_gamectrl = gamectrl.o
 
+BINS_all = $(BINDIR)/gamectrl
+OBJS_all = $(OBJS_gamectrl)
+
+include $(BUILDSYSDIR)/base.mk

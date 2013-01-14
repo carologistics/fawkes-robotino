@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="RobotinoAmpelInterface" author="Jens Wittmeyer" year="2012">
+  <constants>
+    <enum name="AmpelState">
+      <comment>
+	This determines the current status of skill execution.
+      </comment>
+      <item name="YELLOW"> true if ONLY yellow is activ.</item>
+      <item name="GREEN">true if ONLY green is active .</item>
+      <item name="RED">true if ONLY red is active .</item>
+      <item name="YELLOW_FLASHING">true if yellow is falshing.</item>
+      <item name="NO_CHANGE"> true if ampel didnt change  </item>
+    </enum>
+  </constants>
+  <data>
+    <comment>
+     Storage about the Ampel.
+    </comment>
+<field type="AmpelState" name="state">
+</field>
+  </data>
+</interface>

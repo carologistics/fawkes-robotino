@@ -1,8 +1,8 @@
 #*****************************************************************************
-#                      Makefile Build System for Fawkes
+#                  Makefile Build System for Fawkes: Libraries
 #                            -------------------
-#   Created on Mon May 14 11:38:00 2012
-#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
+#   Created on Tue Nov 07 16:12:59 2006
+#   copyright (C) 2006-2011 by Tim Niemueller, AllemaniACs RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,15 +13,12 @@
 #
 #*****************************************************************************
 
-BASEDIR = ..
-
-SUBDIRS = libs plugins
-
+BASEDIR = ../..
 include $(BASEDIR)/etc/buildsys/config.mk
+include $(BUILDSYSDIR)/fvconf.mk
+
+SUBDIRS = interfaces
+
 include $(BUILDSYSDIR)/rules.mk
 
-# Explicit dependencies, this is needed to have make bail out if there is any
-# error. This is also necessary for working parallel build (i.e. for dual core)
-plugins: libs
-#tools: plugins
 
