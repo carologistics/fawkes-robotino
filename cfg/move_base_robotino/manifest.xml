@@ -1,0 +1,11 @@
+<package>
+  <description brief="robotino_2Dnav">
+     Configuration files for running move base with the robotino.
+  </description>
+  <author>Sebastian Reuter</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/</url>
+  <depend package="move_base"/>
+</package>
+

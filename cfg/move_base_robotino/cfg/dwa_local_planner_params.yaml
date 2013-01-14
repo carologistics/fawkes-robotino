@@ -1,0 +1,28 @@
+DWAPlannerROS:
+  max_vel_x: 0.8
+  min_vel_x: 0.2
+  max_rotational_vel: 0.8
+  min_in_place_rotational_vel: 0.2
+
+  #acc_lim_th: 3.2
+  #acc_lim_x: 2.5
+  #acc_lim_y: 2.5
+  acc_lim_th: 1.5
+  acc_lim_x: 1.3
+  acc_lim_y: 1.3
+
+  holonomic_robot: true
+
+  #The tolerance for the controller when achieving its goal 
+  yaw_goal_tolerance: 0.05
+  xy_goal_tolerance: 0.1
+
+  #The amount of time to forward-simulate trajectories in seconds 
+  sim_time: 1.0
+
+
+  dwa: true
+  #publish_cost_grid_pc: true
+  global_frame_id: odom
+
+

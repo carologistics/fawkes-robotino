@@ -1,0 +1,25 @@
+<launch>
+  <param name="robot_description" command="cat $(find move_base_robotino)/cfg/robotino.urdf" />
+
+  <node  name="map_server" pkg="map_server" type="map_server" args="$(find move_base_robotino)/map/map.yaml">
+    <remap from="/map" to="/obstacle_map" />
+  </node>
+  
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find move_base_robotino)/cfg/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find move_base_robotino)/cfg/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find move_base_robotino)/cfg/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find move_base_robotino)/cfg/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find move_base_robotino)/cfg/base_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find move_base_robotino)/cfg/base_global_planner_params.yaml" command="load" />
+    <!-- <rosparam file="$(find move_base_robotino)/cfg/recovery_behaviors.yaml" command="load" /> -->
+
+    <remap from="/map" to="/obstacle_map" />
+
+    <param name="recovery_behavior_enabled" value="true" type="bool" />
+    <param name="conservative_reset_dist" value="5.6" type="double" />
+    <param name="shutdown_costmaps" value="true" type="bool" />
+    <param name="controller_frequency" value="5" type="double" />
+  </node>
+
+</launch>
