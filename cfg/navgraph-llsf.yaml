@@ -1,0 +1,245 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,navgraph/
+---
+graph-name: LLSF
+root: SW
+nodes:
+  - name: South West
+    pos: [1.0, 1.1]
+
+  - name: West
+    pos: [1.0, 2.9]
+
+  - name: North West
+    pos: [1.0, 4.5]
+
+  - name: South
+    pos: [2.9, 1.1]
+
+  - name: South East
+    pos: [4.8, 1.1]
+
+  - name: deliver
+    pos: [4.6, 2.9]
+    properties:
+      - orientation: 0.0 
+      - travel_tolerance: 0.2 
+
+  - name: North East
+    pos: [4.8, 4.5]
+
+  - name: North
+    pos: [2.9, 4.5]
+
+  - name: M1
+    pos: [3.95, 1.4]
+    properties:
+      - orientation: 1.57
+
+  - name: M1C
+    pos: [3.95, 1.1]
+    properties:
+      - travel_tolerance: 0.2
+
+  - name: M2
+    pos: [3.5, 3.95]
+    properties:
+      - orientation: 0.0
+
+  - name: M2C
+    pos: [3.5, 4.5]
+    properties:
+      - travel_tolerance: 0.2
+
+  - name: M3
+    pos: [3.4, 0.6]
+    properties:
+      - orientation: 3.14
+
+  - name: M3C
+    pos: [3.4, 1.1]
+    properties:
+      - travel_tolerance: 0.2
+
+  - name: M4
+    pos: [2.85, 1.4]
+    properties:
+      - orientation: 1.57
+
+  - name: M5
+    pos: [2.85, 3.1]
+    properties:
+      - orientation: -1.57
+
+  - name: M5C
+    pos: [2.85, 3.4]
+    properties:
+      - travel_tolerance: 0.2
+
+  - name: M6
+    pos: [2.5, 3.95]
+    properties:
+      - orientation: 0.0
+
+  - name: M6CO
+    pos: [2.5, 4.5]
+    properties:
+      - travel_tolerance: 0.2
+
+  - name: M6CI
+    pos: [2.5, 3.4]
+    properties:
+      - travel_tolerance: 0.2
+
+  - name: M7
+    pos: [2.85, 5.45]
+    properties:
+      - orientation: -1.57
+
+  - name: M7C
+    pos: [2.5, 5.45]
+    properties:
+      - travel_tolerance: 0.2
+
+  - name: M8
+    pos: [2.1, 1.75]
+    properties:
+      - orientation: 3.14
+
+  - name: M8CO
+    pos: [2.1, 1.1]
+    properties:
+      - orientation: 3.14
+      - travel_tolerance: 0.35
+
+  - name: M9
+    pos: [1.4, 3.95]
+    properties:
+      - orientation: 0.0
+
+  - name: M9C
+    pos: [1.0, 3.95]
+    properties:
+      - travel_tolerance: 0.2
+
+  - name: M10
+    pos: [1.75, 4.8]
+    properties:
+      - orientation: 1.57
+
+  - name: R1
+    pos: [0.5, 5.2]
+    properties:
+      - orientation: 2.36
+
+  - name: R2
+    pos: [5.2, 0.5]
+    properties:
+      - orientation: -0.78
+
+  - name: T
+    pos: [5.2, 5.2]
+    properties:
+      - orientation: 0.78
+
+  - name: Ins
+    pos: [0.7, 2.3]
+    properties:
+      - orientation: 2.36
+
+  - name: C1
+    pos: [4.0, 2.3]
+
+  - name: C1I
+    pos: [3.5, 2.3]
+
+  - name: C1O
+    pos: [3.5, 1.1]
+
+  - name: C2
+    pos: [4.0, 3.4]
+
+  - name: C3
+    pos: [2.0, 3.4]
+
+  - name: C4
+    pos: [2.0, 2.3]
+
+  - name: D1
+    pos: [5.1, 3.2]
+    properties:
+      - orientation: 0.0
+      - target_tolerance: 0.1
+
+  - name: D2
+    pos: [5.1, 2.85]
+    properties:
+      - orientation: 0.0
+
+  - name: D3
+    pos: [5.1, 2.5]
+    properties:
+      - orientation: 0.0
+
+
+# Possible directional tags:
+# !bidir (bidirectional, default), !dir (directed)
+connections:
+  - [South West, West]
+  - [West, M9C]
+  - [M9C, North West]
+  - [North West, M6CO]
+  - [M6CO, North]
+  - [North, M2C]
+  - [M2C, North East]
+  - [North East, deliver]
+  - [deliver, South East]
+  - [South East, M1C]
+  - [M1C, C1O]
+  - [M3C, C1O]
+  - [M3C, South]
+  - [South, M8CO]
+  - [M8CO, South West]
+  - [M1, M1C]
+  - [M2, M2C]
+  - [M2, M5C]
+  - [M3, M3C]
+  - [M4, South]
+  - [M5, M5C]
+  - [M6, M6CO]
+  - [M6, M6CI]
+  - [M6, C3]
+  - [M7, M7C]
+  - [M7, T]
+  - [M7C, M6CI]
+  - [M8, M8CO]
+  - [M8, C4]
+  - [M9, M9C]
+  - [M10, North West]
+  - [M10, M6CO]
+  - [R1, North West]
+  - [R2, South East]
+  - [T, North East]
+  - [Ins, South West]
+  - [Ins, West]
+  - [C1, C2]
+  - [C1, South East]
+  - [C1I, C1O]
+  - [C2, M5C]
+  - [M5C, M6CI]
+  - [M6CI, C3]
+  - [C2, C1I]
+  - [C3, C4]
+  - [C3, M9C]
+  - [C4, C1I]
+  - [C4, South West]
+  - [C1I, C1]
+  - [deliver, C1]
+  - [deliver, C2]
+  - [North East, C2]
+  - [C2, M2]
+  - [West, C3]
+  - [West, C4]
+  - [deliver, D1]
+  - [deliver, D2]
+  - [deliver, D3]
