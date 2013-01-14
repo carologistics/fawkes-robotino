@@ -19,14 +19,15 @@ class RobotinoWorldModelInterface : public Interface
 
   typedef enum {
     TYPE_UNKNOWN,
-    EXPRESS_MACHINE,
+    M1_EXPRESS,
     M1,
     M2,
     M3,
     M1_2,
     M2_3,
     RECYCLING,
-    TEST
+    TEST,
+    IGNORED
   } machine_type_t;
 
   typedef enum {

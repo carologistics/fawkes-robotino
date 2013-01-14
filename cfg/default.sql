@@ -375,4 +375,8 @@ INSERT INTO "config" VALUES('/fawkes/bbsync/peers/carologistics-25/writing/trans
 INSERT INTO "config" VALUES('/fawkes/bbsync/peers/carologistics-25/writing/transform_odom','string','TransformInterface::TF Robotino Odometry=TF Robotino Odometry Sync','send the transform');
 INSERT INTO "config" VALUES('/fawkes/bbsync/peers/carologistics-25/writing/transform_static','string','TransformInterface::TF static=TF static Sync','send the transform');
 INSERT INTO "config" VALUES('/ros/node-name','string','robotino','name for the node');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/clips-debug','bool',1,'Enable clips debugging (watching facts and rules)');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/use-sim','bool',1,'Enable simulation mode (do not actually invoke skills)?');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/sim-randomize-machines','bool',1,'Enable randomization of machine assignments in simulation?');
+INSERT INTO "config" VALUES('/plugins/robotino-agent/skill-sim-time','float',0.1,'Time to wait until reporting skill success in simulation; sec');
 COMMIT;
