@@ -44,6 +44,7 @@ function ampel()
    local my = Machine_0:translation(1)
    local bl_mach = tfm.transform({x=mx, y=my, ori=0}, "/base_laser", "/base_link")
 	distance = math.sqrt(bl_mach.x^2 + bl_mach.y^2)
+	print(distance)
 	return (distance > 0) and (distance < 1)
 end
 
@@ -52,7 +53,12 @@ function no_ampel()
 end
 
 function see_ampel()
-	if sensor:analog_in(0) > 8 or sensor:analog_in(1) >8 then
+	if sensor:analog_in(0) > 8  then
+		sensor_distance=0.06
+		return true
+	end
+	if sensor:analog_in(4) > 8 then
+		sensor_distance=0.25
 		return true
 	end
 end
@@ -62,7 +68,7 @@ function position_left()
 	end
 end
 function position_right()
-	if sensor:analog_in(1) < 1 then
+	if sensor:analog_in(4) < 1 then
 		return true
 	end
 end
@@ -73,13 +79,13 @@ function left_ok() -- if coming from left, when the left sensor jumps
 	end
 end
 function right_ok()
-	if sensor:analog_in(1) > 8 then
+	if sensor:analog_in(4) > 8 then
 		send_transrot(0,0,0)
 		return true
 	end
 end
 function left_and_right_ok()
-	if sensor:analog_in(0) > 8 and sensor:analog_in(1) > 8 then
+	if sensor:analog_in(0) > 8 and sensor:analog_in(4) > 8 then
 		send_transrot(0,0,0)
 		return true
 	end
@@ -175,7 +181,7 @@ end
 --	self.args = {x=0,y=0,ori=math.atan(Machine_0:translation(1)/Machine_0:translation(0))}
 --end
 function SKILL_APPROACH_AMPEL:init()
-   self.skills[1].x=0.16 
+   self.skills[1].x=sensor_distance
    self.skills[1].y=0 
    self.skills[1].ori=0
 end
