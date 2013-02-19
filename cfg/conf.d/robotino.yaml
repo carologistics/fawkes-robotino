@@ -1,7 +1,7 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/roomba
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/robotino
 ---
 hardware/robotino:
   # Host to connect to
@@ -29,3 +29,22 @@ hardware/robotino:
 
     # Maximum rotation; rad/s
     max_omega: 1.57
+
+  omnivision:
+    # Camera used for omnivision plugin
+    camera: v4l2:omni:device=/dev/video0:size=320x240
+
+    # Height of the Mirror in m
+    camera_height: 0.41
+
+    # Path to the colormap file (relative to cfg directory)
+    colormap_file: /bulb-colormap/map4.colormap
+
+    # Reference frame
+    frame: /base_link
+
+    # Path to the bulb file (relative to cfg directory)
+    mirror_file: /bulb-colormap/masle.bulb
+
+    # Radius of the Puck in m
+    puck_radius: 0.075

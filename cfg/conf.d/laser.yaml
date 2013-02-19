@@ -8,7 +8,7 @@ hardware/laser:
   # URG using vendor library
   urg:
     # Enable this configuration?
-    active: false
+    active: true
 
     # Configuration is for Hokuyo URG laser range finder using URG library
     type: urg

@@ -5,13 +5,36 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/skiller
 ---
 skiller:
   # Skill space
-  skillspace: nao
+  skillspace: robotino
 
   # Watch lua files for modification and automatically reload
   # Lua if files have been changed; true to enable
   watch_files: true
 
   interfaces:
+    robotino:
+      reading:
+        motor: MotorInterface::Robotino
+        Machine_0: Position3DInterface::Machine_0
+        Omnipuck1: Position3DInterface::OmniPuck1
+        Omnipuck2: Position3DInterface::OmniPuck2
+        Omnipuck3: Position3DInterface::OmniPuck3
+        Omnipuck4: Position3DInterface::OmniPuck4
+        Omnipuck5: Position3DInterface::OmniPuck5
+        Omnipuck6: Position3DInterface::OmniPuck6
+        Omnipuck7: Position3DInterface::OmniPuck7
+        Omnipuck8: Position3DInterface::OmniPuck8
+        Omnipuck9: Position3DInterface::OmniPuck9
+        Omnipuck10: Position3DInterface::OmniPuck10
+        pose: Position3DInterface::Pose
+        navigator: NavigatorInterface::Navigator
+        ppnavi: NavigatorInterface::Pathplan
+        omnivisionSwitch: SwitchInterface::omnivisionSwitch
+        ampelswitch: SwitchInterface::ampelswitch
+        ampel_green: SwitchInterface::ampel_green
+        ampel_red: SwitchInterface::ampel_red
+        ampel_orange: SwitchInterface::ampel_orange
+      light: RobotinoAmpelInterface::light
     test:
       reading:
         navigator: NavigatorInterface::Navigator

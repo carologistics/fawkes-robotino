@@ -8,6 +8,16 @@ firevision:
   fountain:
     tcp_port: !tcp-port 2208
 
+retriever:
+  camera:
+    cam0:
+      # Camera used for firevision plugin
+      string: v4l2:omni:device=/dev/video0:size=320x240
+      frame: !frame /base_link
+    cam1:
+      string: v4l2:front:device=/dev/video1:size=160x120
+      frame: !frame /base_link
+
 # Retriever camera example
 retriever_example:
   camera:

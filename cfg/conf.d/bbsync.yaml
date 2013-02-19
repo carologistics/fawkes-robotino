@@ -12,7 +12,7 @@ fawkes/bbsync:
     # Example peer that connects to a second Fawkes on the local host
     localhost:
       # Is peer active? If omitted true is assumed.
-      active: false
+      active: true
 
       # Host name of remote peer; hostname
       host: localhost
@@ -29,3 +29,28 @@ fawkes/bbsync:
       reading:
         laser: Laser360Interface::Laser
         speechsynth: SpeechSynthInterface::Flite
+
+    carologistics-25:
+      # Is peer active? If omitted true is assumed.
+      active: true
+
+      # Host name of remote peer; hostname
+      host: carologistics-25.local
+
+      # Port of remote peer; TCP port
+      port: !tcp-port 1910
+
+      # Interval in which to check for aliveness,
+      # if omitted defaults to 5 seconds; ms
+      check_interval: 1000
+
+      # Interface to synchronize, reading instance on remote,
+      # mapped to remote instance locally
+      reading:
+        transform_pose: TransformInterface::TF Pose=TF Pose
+        pose: Position3DInterface::Pose=Pose
+      writing:
+        laser: Laser360Interface::Laser urg filtered=Laser urg filtered
+        transform_ros: TransformInterface::TF ROS=TF ROS Sync
+        transform_odom: TransformInterface::TF Robotino Odometry=TF Robotino Odometry Sync
+        transform_static: TransformInterface::TF static=TF static Sync

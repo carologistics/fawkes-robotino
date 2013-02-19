@@ -16,3 +16,9 @@ plugins/static-transforms:
       trans_x: 0.0
       trans_y: 0.0
       trans_z: 0.2015
+    base_laser:
+      frame: !frame /base_link
+      child_frame: /base_laser
+      trans_x: 0.085
+      trans_y: 0.0
+      trans_z: 0.15

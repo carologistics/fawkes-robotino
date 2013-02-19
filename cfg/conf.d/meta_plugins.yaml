@@ -6,5 +6,5 @@ fawkes/meta_plugins:
   nao_default: naoqi-motion,naoqi-speechsynth,naoqi-buttons,naoqi-leds
 
   # Meta plugin with useful base plugins for the Robotino
-  robotino_default: robotino,joystick,robotino-joystick,webview
+  robotino_default: robotino,static-transforms,fvbase,fvretriever,fvfountain,laser,laser-filter,laserclusterdetector,robotino-omnivisionmult-thread,ros,robotino-ros-joints,ros_cmdvel,ros_odometry,ros-tf,ros-laserscan,ros_navigator,skiller,amcl,webview
 

@@ -17,10 +17,10 @@ fawkes:
     # Size of BlackBoard memory segment; bytes
     blackboard_size: 2097152
     # Desired loop time of main thread, 0 to disable; microseconds
-    desired_loop_time: 33333
+    desired_loop_time: 66333
 
     # Maximum time a thread may run per loop, 0 to disable; microseconds
-    max_thread_time: 66666
+    max_thread_time: 133333
 
     net:
       # Port for Fawkes Network Protocol service; TCP port
