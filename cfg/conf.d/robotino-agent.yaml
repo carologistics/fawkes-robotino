@@ -1,0 +1,18 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laserclusterdetector
+---
+
+plugins/robotino-agent:
+  # Enable clips debugging (watching facts and rules)
+  clips-debug: true
+
+  # Enable simulation mode (do not actually invoke skills)
+  use-sim: true
+
+  # Enable randomization of machine assignments in simulation?
+  sim-randomize-machines: true
+
+  # Time to wait until reporting skill success in simulation; sec
+  skill-sim-time: 0.1

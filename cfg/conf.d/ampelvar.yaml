@@ -1,0 +1,33 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laserclusterdetector
+---
+
+plugins/ampelvar:
+  # camera being used
+  camera: v4l2:front:device=/dev/video1:size=160x120
+
+  # interface to read laser data from
+  camera_height: 0.41
+
+  # decide wether a debug buffer is written or not
+  debug_buffer: 0
+
+  # coordinate system
+  frame: /base_link
+
+  # path to bulb file (relative to cfg dir!)
+  mirror_file: /bulb-colormap/masle.bulb
+
+  # height of red center
+  red_height: 0.245
+
+  # height of orange center
+  orange_height: 0.2125
+
+  # height of green center
+  green_height: 0.1825
+
+  # static or dynamic ampel detection. static assumes a distance of 0.285 m
+  static: true
