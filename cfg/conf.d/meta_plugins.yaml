@@ -2,9 +2,9 @@
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
 fawkes/meta_plugins:
-  # Meta plugin loaded by default on the Nao (and on the Nao only)
-  nao_default: naoqi-motion,naoqi-speechsynth,naoqi-buttons,naoqi-leds
+  # Meta plugin with useful functionality for the robotino-laptop
+  robotino_default: bbsync,static-transforms,fvbase,fvretriever,fvfountain,laser,laser-filter,laserclusterdetector,robotino-omnivisionmult-thread,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,skiller,amcl,webview
 
-  # Meta plugin with useful base plugins for the Robotino
-  robotino_default: robotino,static-transforms,fvbase,fvretriever,fvfountain,laser,laser-filter,laserclusterdetector,robotino-omnivisionmult-thread,ros,robotino-ros-joints,ros_cmdvel,ros_odometry,ros-tf,ros-laserscan,ros_navigator,skiller,amcl,webview
-
+  # Minimal meta plugin with just the hardware abstractions for the robotino onboard system
+  robotino_base_default: robotino,webview,laser,laser-filter
+  
