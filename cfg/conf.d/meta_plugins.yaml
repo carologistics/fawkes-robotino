@@ -6,5 +6,5 @@ fawkes/meta_plugins:
   robotino_default: bbsync,static-transforms,fvbase,fvretriever,fvfountain,laser,laser-filter,laserclusterdetector,robotino-omnivisionmult-thread,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,skiller,amcl,webview
 
   # Minimal meta plugin with just the hardware abstractions for the robotino onboard system
-  robotino_base_default: robotino,webview,laser,laser-filter
+  robotino_base_default: robotino,webview
   
