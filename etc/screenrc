@@ -1,0 +1,3 @@
+source .screenrc
+screen /bin/bash -c "source /opt/ros/fuerte/setup.bash; fawkes-robotino/bin/fawkes -p robotino_base_default; bash -l"
+screen
