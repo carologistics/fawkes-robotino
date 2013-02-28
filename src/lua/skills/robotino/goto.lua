@@ -76,8 +76,8 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"CHECK_PARAMS", "DO_RELGOTO", cond="not vars.place"},
-   {"CHECK_PARAMS", "DO_PPGOTO", cond=self.vars.place},
-   {"CHECK_PARAMS", "FAILED", cond=self.vars.goto_name, desc="goto_name param is deprecated!"},
+   {"CHECK_PARAMS", "DO_PPGOTO", cond="fsm.vars.place"},
+   {"CHECK_PARAMS", "FAILED", cond="fsm.vars.goto_name", desc="goto_name param is deprecated!"},
    {"WAIT_POSE", "CHECK_POSE", timeout=0.5},
    {"CHECK_POSE", "FINAL", cond=pose_ok, desc="Pose reached" },
    {"CHECK_POSE", "MISSED", cond="not pose_ok()"},
