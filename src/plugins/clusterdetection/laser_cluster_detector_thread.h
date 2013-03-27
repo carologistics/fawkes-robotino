@@ -58,16 +58,20 @@ public:
 	virtual bool prepare_finalize_user();
 	virtual void finalize();
 
-	typedef std::map<int,float> laserscan;
-	typedef std::pair<int,float> laserreading;
-
-	struct polarPos{
+	struct PolarPos{
 		int angle;
 		float distance;
 
-		polarPos(int angle,float distance):
+		PolarPos(int angle,float distance):
 			angle(angle),distance(distance){}
+
+		PolarPos(){
+			angle = 0;
+			distance =0;
+		}
 	};
+
+	typedef std::list<PolarPos> laserscan;
 
 	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
@@ -90,7 +94,7 @@ private:
 	fawkes::PolarPosition2DInterface *polar_if_;
 	bool transform_available();
 
-	std::list<polarPos> lights_;
+	std::list<PolarPos> lights_;
 	unsigned int num_scans_;
 	laserscan filtered_scan_;
 

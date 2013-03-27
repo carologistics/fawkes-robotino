@@ -46,13 +46,11 @@ using namespace std;
  * @author Daniel Ewert
  */
 
-float fit_angle_to_360(float angle) {
-	if (angle < 0)
-		angle += 360;
-	if (angle > 359)
-		angle -= 360;
-	return angle;
+bool compare_polar_pos(const LaserClusterDetector::PolarPos& a, const LaserClusterDetector::PolarPos& b){
+	return a.angle < b.angle;
 }
+
+
 
 /** Constructor. */
 LaserClusterDetector::LaserClusterDetector() :
@@ -102,61 +100,53 @@ void LaserClusterDetector::find_lights() {
 
 	lights_.clear();
 
-	int last_angle =0;
-	float last_distance =0;
-	int angle_last_peak =0;
-	float distance_last_peak =0;
+	PolarPos last;
+	PolarPos last_peak;
 
-	for (laserscan::iterator it = filtered_scan_.begin();
-			it != filtered_scan_.end(); ++it) {
+	for (laserscan::iterator current = filtered_scan_.begin();
+			current != filtered_scan_.end(); ++current) {
 
-		if (it == filtered_scan_.begin()) {
-			angle_last_peak = it->first;
-			distance_last_peak = it->second;
-			last_angle = it->first;
-			last_distance = it->second;
+		if (current == filtered_scan_.begin()) {
+			last_peak=*current;
+			last=*current;
 			continue;
 		}
 
-		int current_angle = it->first;
-		float current_distance = it->second;
+
 
 		//if more than one reading was discarded between current and last scan, ignore
-		if (current_angle - last_angle > 1) {
-			last_angle = current_angle;
-			last_distance = current_distance;
+		if (current->angle - last.angle > 1) {
+			last=*current;
 			continue;
 		}
 
-		if (abs(last_distance - current_distance) > cfg_dist_threshold_) {
+		if (abs(last.distance - current->distance) > cfg_dist_threshold_) {
 			//we have a sufficient peak, can either be the begin or the end
 
 			//check if angle between current_angle and angle_last_peak
 			//given the measured distances could be an signal light
 			//with c= sqrt(a**2 + b**2 - 2 ab cos(gamma)) las of cosines
 			//c then must be a feasible diameter of the light at the measured height
-			int angle = current_angle - angle_last_peak;
+			int angle = current->angle - last_peak.angle;
 			float diam_light = sqrt(
-					distance_last_peak * distance_last_peak
-							+ current_distance * current_distance
-							- 2 * distance_last_peak * current_distance
+					last_peak.distance * last_peak.distance
+							+ current->distance * current->distance
+							- 2 * last_peak.distance * current->distance
 									* cos(angle * M_PI / 180.0));
 			if (abs(diam_light - cfg_cluster_valid_size_)
 					<= cfg_cluster_allowed_variance_) {
 
 				//We've found a light! Store it's position by it's center
-				int light_angle = current_angle - (angle / 2.0);
-				float light_distance = (distance_last_peak + current_distance)
+				int light_angle = current->angle - (angle / 2.0);
+				float light_distance = (last_peak.distance + current->distance)
 						/ 2.0;
-				lights_.push_back(polarPos(light_angle, light_distance));
+				lights_.push_back(PolarPos(light_angle, light_distance));
 
 			}
 			//Peak can be the beginning of a new light
-			distance_last_peak = current_distance;
-			angle_last_peak = current_angle;
+			last_peak = *current;
 		}
-		last_angle = current_angle;
-		last_distance = current_distance;
+		last= *current;
 	}
 
 }
@@ -181,9 +171,10 @@ void LaserClusterDetector::read_laser() {
 			//Only for calculation, needs to be undone before publishing!!!
 			angle = (angle + cfg_laser_scanrange_ / 2) % 360;
 
-			filtered_scan_.insert(laserreading(angle, distance));
+			filtered_scan_.push_back(PolarPos(angle, distance));
 		}
 	}
+	filtered_scan_.sort(compare_polar_pos);
 }
 
 void LaserClusterDetector::loop() {
