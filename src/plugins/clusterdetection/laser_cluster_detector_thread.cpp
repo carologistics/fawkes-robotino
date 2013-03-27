@@ -63,8 +63,6 @@ void LaserClusterDetector::init() {
 	logger->log_info(name(), "Laser_Cluster_Detector starts up");
 	laser_if_ = blackboard->open_for_reading<Laser360Interface>(
 			config->get_string(CFG_PREFIX"laser_interface").c_str());
-	laser_if_out_ = blackboard->open_for_writing<Laser360Interface>(
-			"Laser cluster");
 	num_scans_ = laser_if_->maxlenof_distances();
 
 	cfg_laser_min_ = config->get_float(CFG_PREFIX"laser_min_length");
@@ -93,7 +91,6 @@ bool compareReadings(const pair<unsigned int, float>& f,
 void LaserClusterDetector::finalize() {
 	blackboard->close(laser_if_);
 	blackboard->close(polar_if_);
-	blackboard->close(laser_if_out_);
 }
 
 void LaserClusterDetector::find_lights() {
@@ -181,8 +178,11 @@ void LaserClusterDetector::loop() {
 	read_laser();
 	find_lights();
 	if (lights_.size()>0){
-		//publish found lights
-		//TODO only publish closest light. Or more?
+		PolarPos nearest_light = lights_.front();
+		polar_if_->set_angle((nearest_light.angle - cfg_laser_scanrange_ / 2) % 360);
+		polar_if_->set_distance(nearest_light.distance);
+		polar_if_->set_frame(laser_if_->frame());
+		polar_if_->write();
 	}
 }
 

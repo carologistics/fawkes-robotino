@@ -90,7 +90,6 @@ private:
 
 private:
 	fawkes::Laser360Interface *laser_if_;
-	fawkes::Laser360Interface *laser_if_out_;
 	fawkes::PolarPosition2DInterface *polar_if_;
 	bool transform_available();
 
