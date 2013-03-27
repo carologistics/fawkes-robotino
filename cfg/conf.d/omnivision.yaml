@@ -1,0 +1,23 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/OmniVision
+---
+hardware/robotino/omnivision:
+     #camera used for the omnivision plugin
+     camera: firewire:any:mode=FORMAT7_0:coding=YUV422:isospeed=800:framerate=30:width=1000:height=1000:white_balance=432,402:shutter=1100:packetsize=8188
+
+     #height of the mirror in m
+     camera_height: 0.41
+
+     #location of the colormap in relation to cfg directory
+     colormap_file: /bulb-colormap/map4.colormap
+
+     #used coordinate system
+     frame: !frame /base_link
+
+     #location of the bulbmap in relation to cfg directory
+     mirror_file: /bulb-colormap/masle.bulb
+
+     #radius of the puck in m
+     puck_radius: 0.075
