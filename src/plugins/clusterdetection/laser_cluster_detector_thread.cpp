@@ -69,10 +69,8 @@ void LaserClusterDetector::init() {
 	cfg_laser_max_ = config->get_float(CFG_PREFIX"laser_max_length");
 	cfg_laser_scanrange_ = config->get_uint(CFG_PREFIX"laser_scanrange");
 	cfg_dist_threshold_ = config->get_float(CFG_PREFIX"dist_threshold");
-	cfg_laser_offset_ = config->get_float(CFG_PREFIX"laser_offset");
-
-	cfg_valid_cluster_radius_ = config->get_float(
-			CFG_PREFIX"valid_cluster_radius");
+	cfg_cluster_valid_size_ = config->get_float(CFG_PREFIX"cluster_size");
+	cfg_cluster_allowed_variance_ = config->get_float(CFG_PREFIX"cluster_variance");
 
 	polar_if_ = blackboard->open_for_writing<PolarPosition2DInterface>(
 			"Closest_Machine");

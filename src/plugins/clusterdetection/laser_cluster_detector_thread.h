@@ -38,7 +38,6 @@ namespace fawkes
 {
 class Laser360Interface;
 class PolarPosition2DInterface;
-class TransformInterface;
 }
 
 class LaserClusterDetector:
@@ -46,8 +45,7 @@ class LaserClusterDetector:
 		public fawkes::BlockedTimingAspect,
 		public fawkes::LoggingAspect,
 		public fawkes::ConfigurableAspect,
-		public fawkes::BlackBoardAspect,
-		public fawkes::ClockAspect
+		public fawkes::BlackBoardAspect
 {
 
 public:
@@ -83,15 +81,11 @@ protected:
 private:
 	void find_lights();
 	void read_laser();
-	void publish_cluster_position();
-	void publish_cluster_as_laser();
-	void add_offset(float x, float y, float *offset_x, float *offset_y);
 
 
 private:
 	fawkes::Laser360Interface *laser_if_;
 	fawkes::PolarPosition2DInterface *polar_if_;
-	bool transform_available();
 
 	std::list<PolarPos> lights_;
 	unsigned int num_scans_;
@@ -103,10 +97,7 @@ private:
 	unsigned int cfg_laser_scanrange_;
 	unsigned int cfg_cluster_valid_size_;
 	unsigned int cfg_cluster_allowed_variance_;
-
 	float cfg_dist_threshold_;
-	float cfg_valid_cluster_radius_;
-	float cfg_laser_offset_;
 
 };
 
