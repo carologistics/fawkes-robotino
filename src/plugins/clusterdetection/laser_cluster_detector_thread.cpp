@@ -23,17 +23,9 @@
 
 #include <interfaces/PolarPosition2DInterface.h>
 #include <interfaces/Laser360Interface.h>
-#include <interfaces/TransformInterface.h>
-#include <tf/types.h>
 
-#include <vector>
-#include <utility>
-#include <algorithm>
 
 #include <cmath>
-#include <cfloat>
-#include <utils/math/coord.h>
-#include <utils/math/angle.h>
 
 #define CFG_PREFIX "/plugins/laserclusterdetector/"
 
@@ -41,8 +33,8 @@
 using namespace fawkes;
 using namespace std;
 
-/** @class MachinePositionerThread "machinepositioner_thread.h"
- * Reducing a laserscan to the relevant clusters
+/** @class LaserClusterDetector "laser_cluster_detector_thread.h"
+ * Find clusters in a laser scan
  * @author Daniel Ewert
  */
 

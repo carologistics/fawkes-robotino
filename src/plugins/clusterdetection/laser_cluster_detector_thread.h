@@ -29,8 +29,7 @@
 #include <aspect/blackboard.h>
 #include <aspect/clock.h>
 #include <aspect/tf.h>
-#include <vector>
-#include <utility>
+#include <list>
 
 #include <string>
 
