@@ -21,3 +21,9 @@ hardware/robotino/omnivision:
 
      #radius of the puck in m
      puck_radius: 0.075
+
+     #neighbourhood min match
+     neighbors: 13
+
+     #box_extend basic extend of a new roi
+     basic_roi_size: 10
