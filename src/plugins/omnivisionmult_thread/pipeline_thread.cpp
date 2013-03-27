@@ -69,8 +69,8 @@ using namespace firevision;
 
 /** Constructor. */
 RobotinoOmniVisionPipelineThread::RobotinoOmniVisionPipelineThread() :
-		Thread("RobotinoOmniVisionThread", Thread::OPMODE_CONTINUOUS), VisionAspect(
-				VisionAspect::CONTINUOUS) {
+		Thread("RobotinoOmniVisionThread", Thread::OPMODE_WAITFORWAKEUP), VisionAspect(
+				VisionAspect::CYCLIC) {
 
 	scanline_ = NULL;
 	cm_ = NULL;
@@ -106,6 +106,8 @@ void RobotinoOmniVisionPipelineThread::init() {
 			+ config->get_string((cfg_prefix_ + "mirror_file").c_str());
 	cfg_colormap_file_ = std::string(CONFDIR) + "/"
 			+ config->get_string((cfg_prefix_ + "colormap_file").c_str());
+	cfg_neighbors    = config->get_float((cfg_prefix_ + "neighbors").c_str());
+	cfg_basic_roi_size    = config->get_float((cfg_prefix_ + "basic_roi_size").c_str());
 
 	// camera
 	cam_ = vision_master->register_for_camera(cfg_camera_.c_str(), this);
@@ -181,7 +183,7 @@ void RobotinoOmniVisionPipelineThread::init() {
 	rel_pos_ = new OmniRelative(mirror_);
 
 	// classifier
-	classifier_ = new SimpleColorClassifier(scanline_, cm_, 0, 6,false,1,4);
+	classifier_ = new SimpleColorClassifier(scanline_, cm_, 0, cfg_basic_roi_size,false,cfg_neighbors,4);
 	/** Constructor.
 	 * @param scanline_model scanline model
 	 * @param color_model color model
@@ -259,7 +261,6 @@ void RobotinoOmniVisionPipelineThread::loop() {
 		return;
 	}
 
-	logger->log_info( name()," IF - Switch Interface is true" );
 
 	cam_->capture();
 	convert(cspace_from_, cspace_to_, cam_->buffer(), buffer_, img_width_,img_height_);
@@ -273,14 +274,13 @@ void RobotinoOmniVisionPipelineThread::loop() {
 
 	cam_->dispose_buffer();
 
-	 FilterROIDraw f(rois_);
-	 f.set_src_buffer(buffer_, NULL);
-	 f.set_dst_buffer(buffer_, NULL);
-	 f.apply();
+	 FilterROIDraw *f = new FilterROIDraw();
+	 f->set_src_buffer(buffer_, ROI::full_image(img_width_,img_height_),0);
 
 	// post-process ROIs
 	std::list<firevision::ROI>::iterator r;
 	if (rois_->empty()) {
+		logger->log_debug(name(),"keine ROIS gefunden");
 		shm_buffer_->set_circle_found(false);
 		} else {
 		// if we have at least one ROI
@@ -296,6 +296,9 @@ void RobotinoOmniVisionPipelineThread::loop() {
 			classifier_->get_mass_point_of_color(&(*r), &mass_point_);
 			rel_pos_->set_center( mass_point_.x, mass_point_.y );
 			rel_pos_->calc_unfiltered();
+			f->set_dst_buffer(buffer_,&(*r));
+			f->set_style(FilterROIDraw::DASHED_HINT);
+			f->apply();
 			if (roicounter > PUCK_AMOUNT || rel_pos_->get_distance() > min_dist_) {
 				r = rois_->erase(r);
 				continue;
@@ -313,6 +316,7 @@ void RobotinoOmniVisionPipelineThread::loop() {
 		if (puck_visible_) {
 			classifier_->get_mass_point_of_color(&(*r), &mass_point_);
 			rel_pos_->set_center(mass_point_.x, mass_point_.y);
+			logger->log_debug(name(), "hier wird noch gemalt");
 			drawer_->draw_circle(mass_point_.x, mass_point_.y, 6);
 			if (rel_pos_->is_pos_valid()) {
 				rel_pos_->calc();
