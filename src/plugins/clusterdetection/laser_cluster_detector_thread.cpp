@@ -24,8 +24,8 @@
 #include <interfaces/PolarPosition2DInterface.h>
 #include <interfaces/Laser360Interface.h>
 
-
 #include <cmath>
+#include <iterator>
 
 #define CFG_PREFIX "/plugins/laserclusterdetector/"
 
@@ -38,11 +38,10 @@ using namespace std;
  * @author Daniel Ewert
  */
 
-bool compare_polar_pos(const LaserClusterDetector::PolarPos& a, const LaserClusterDetector::PolarPos& b){
+bool compare_polar_pos(const LaserClusterDetector::PolarPos& a,
+		const LaserClusterDetector::PolarPos& b) {
 	return a.angle < b.angle;
 }
-
-
 
 /** Constructor. */
 LaserClusterDetector::LaserClusterDetector() :
@@ -61,12 +60,25 @@ void LaserClusterDetector::init() {
 	cfg_laser_max_ = config->get_float(CFG_PREFIX"laser_max_length");
 	cfg_laser_scanrange_ = config->get_uint(CFG_PREFIX"laser_scanrange");
 	cfg_dist_threshold_ = config->get_float(CFG_PREFIX"dist_threshold");
+
 	cfg_cluster_valid_size_ = config->get_float(CFG_PREFIX"cluster_size");
-	cfg_cluster_allowed_variance_ = config->get_float(CFG_PREFIX"cluster_variance");
+
+	cfg_cluster_allowed_variance_ = config->get_float(
+			CFG_PREFIX"cluster_variance");
+
+	logger->log_debug(name(), "Configuration values:");
+	logger->log_debug(name(), "laser_min_length: %f", cfg_laser_min_);
+	logger->log_debug(name(), "laser_max_length: %f", cfg_laser_max_);
+	logger->log_debug(name(), "laser_scanrange: %d", cfg_laser_scanrange_);
+	logger->log_debug(name(), "threshold: %f", cfg_dist_threshold_);
+	logger->log_debug(name(), "cluster size: %f", cfg_cluster_valid_size_);
+	logger->log_debug(name(), "cluster_variance: %f",
+			cfg_cluster_allowed_variance_);
 
 	polar_if_ = blackboard->open_for_writing<PolarPosition2DInterface>(
 			"Closest_Machine");
 
+	loopcnt = 0;
 }
 
 bool LaserClusterDetector::prepare_finalize_user() {
@@ -87,53 +99,86 @@ void LaserClusterDetector::find_lights() {
 
 	lights_.clear();
 
-	PolarPos last;
-	PolarPos last_peak;
+	PolarPos last_peak = filtered_scan_.front();
+	if (filtered_scan_.size() < 5) {
+		logger->log_error(name(), "not enough laser scan points!!");
+		return;
+	}
 
-	for (laserscan::iterator current = filtered_scan_.begin();
-			current != filtered_scan_.end(); ++current) {
+	//Incredibly ugly, but i need a list, and i need to know predec and succ..
+	laserscan::iterator beforebefore = filtered_scan_.begin();
+	laserscan::iterator before = filtered_scan_.begin();
+	before++;
 
-		if (current == filtered_scan_.begin()) {
-			last_peak=*current;
-			last=*current;
-			continue;
-		}
+	laserscan::iterator current = filtered_scan_.begin();
+	std::advance(current, 2);
 
+	laserscan::iterator following = filtered_scan_.begin();
+	std::advance(following, 3);
+	laserscan::iterator followingfollowing = filtered_scan_.begin();
+	std::advance(followingfollowing, 4);
 
+	while (followingfollowing != filtered_scan_.end()) {
+		//we can either have a peak (the begin or end of a cluster) iff
+		// - the difference between two adjacent values is bigger than threshold
+		// - we read to invalid readings before or after the current reading
+		if (current->distance != -1
+				&& (abs(before->distance - current->distance)
+						> cfg_dist_threshold_
+						|| (before->distance == -1
+								&& beforebefore->distance == -1)
+						|| (following->distance == -1
+								&& followingfollowing->distance == -1)
 
-		//if more than one reading was discarded between current and last scan, ignore
-		if (current->angle - last.angle > 1) {
-			last=*current;
-			continue;
-		}
-
-		if (abs(last.distance - current->distance) > cfg_dist_threshold_) {
+				)) {
 			//we have a sufficient peak, can either be the begin or the end
 
-			//check if angle between current_angle and angle_last_peak
-			//given the measured distances could be an signal light
-			//with c= sqrt(a**2 + b**2 - 2 ab cos(gamma)) las of cosines
-			//c then must be a feasible diameter of the light at the measured height
-			int angle = current->angle - last_peak.angle;
-			float diam_light = sqrt(
-					last_peak.distance * last_peak.distance
-							+ current->distance * current->distance
-							- 2 * last_peak.distance * current->distance
-									* cos(angle * M_PI / 180.0));
-			if (abs(diam_light - cfg_cluster_valid_size_)
-					<= cfg_cluster_allowed_variance_) {
+			if (debug)
+				logger->log_debug(name(), "peak at %d", current->angle);
 
-				//We've found a light! Store it's position by it's center
-				int light_angle = current->angle - (angle / 2.0);
-				float light_distance = (last_peak.distance + current->distance)
-						/ 2.0;
-				lights_.push_back(PolarPos(light_angle, light_distance));
+			//check if we have a valid last_peak.
+			//if not, go on
+			if (last_peak.distance != -1.0) {
 
+				//check if angle between current_angle and angle_last_peak
+				//given the measured distances could be an signal light
+				//with c= sqrt(a**2 + b**2 - 2 ab cos(gamma)) las of cosines
+				//c then must be a feasible diameter of the light at the measured height
+				int angle = current->angle - last_peak.angle;
+
+				float diam_light = sqrt(
+						last_peak.distance * last_peak.distance
+								+ current->distance * current->distance
+								- 2 * last_peak.distance * current->distance
+										* cos(angle * M_PI / 180.0));
+
+				if (debug)
+					logger->log_debug(name(),
+							"lastpeak angle: %d, current angle: %d,-> angle: %d, Distance: %f, Size of cluster: %f",
+							last_peak.angle, current->angle, angle,
+							last_peak.distance, diam_light);
+
+				if (abs(diam_light - cfg_cluster_valid_size_)
+						<= cfg_cluster_allowed_variance_) {
+					if (debug)
+						logger->log_debug(name(), "Valid light!");
+					//We've found a light! Store it's position by it's center
+					int light_angle = current->angle - (angle / 2.0);
+					float light_distance = (last_peak.distance
+							+ current->distance) / 2.0;
+					lights_.push_back(PolarPos(light_angle, light_distance));
+					return; //for the moment only interested in one light
+
+				}
 			}
 			//Peak can be the beginning of a new light
 			last_peak = *current;
 		}
-		last= *current;
+		++beforebefore;
+		++before;
+		++current;
+		++following;
+		++followingfollowing;
 	}
 
 }
@@ -148,28 +193,32 @@ void LaserClusterDetector::read_laser() {
 		//filter and transform to correct orientation
 		float distance = laser_if_->distances(i);
 
-		if (isfinite(distance) // valid number?
+		if (!(isfinite(distance) // valid number?
 		&& distance > cfg_laser_min_ //big enough?
-		&& distance < cfg_laser_max_) { //small enough?
-
-			int angle = 360 - i; //invert to clockwise laser scan
-
-			//rotate angles so that scan starts at left scan range limit
-			//Only for calculation, needs to be undone before publishing!!!
-			angle = (angle + cfg_laser_scanrange_ / 2) % 360;
-
-			filtered_scan_.push_back(PolarPos(angle, distance));
+		&& distance < cfg_laser_max_)) { //small enough?
+			distance = -1;
 		}
+		int angle = 360 - i; //invert to clockwise laser scan
+
+		//rotate angles so that scan starts at left scan range limit
+		//Only for calculation, needs to be undone before publishing!!!
+		angle = (angle + cfg_laser_scanrange_ / 2) % 360;
+		filtered_scan_.push_back(PolarPos(angle, distance));
 	}
 	filtered_scan_.sort(compare_polar_pos);
 }
 
 void LaserClusterDetector::loop() {
+	debug = (loopcnt++ % 20) == 0;
+	if (debug)
+		logger->log_debug(name(),
+				"#################################################");
 	read_laser();
 	find_lights();
-	if (lights_.size()>0){
+	if (lights_.size() > 0) {
 		PolarPos nearest_light = lights_.front();
-		polar_if_->set_angle((nearest_light.angle - cfg_laser_scanrange_ / 2) % 360);
+		polar_if_->set_angle(
+				(nearest_light.angle - cfg_laser_scanrange_ / 2) % 360);
 		polar_if_->set_distance(nearest_light.distance);
 		polar_if_->set_frame(laser_if_->frame());
 		polar_if_->write();

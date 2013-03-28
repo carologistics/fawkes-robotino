@@ -94,10 +94,12 @@ private:
 	float cfg_laser_min_;
 	float cfg_laser_max_;
 	unsigned int cfg_laser_scanrange_;
-	unsigned int cfg_cluster_valid_size_;
-	unsigned int cfg_cluster_allowed_variance_;
+	float cfg_cluster_valid_size_;
+	float cfg_cluster_allowed_variance_;
 	float cfg_dist_threshold_;
 
+	int loopcnt;
+	bool debug;
 };
 
 #endif
