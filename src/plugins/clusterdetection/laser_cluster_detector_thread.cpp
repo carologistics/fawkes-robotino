@@ -265,7 +265,7 @@ void LaserClusterDetector::loop() {
 		polar_if_->set_angle(
 				(nearest_light.angle - cfg_laser_scanrange_ / 2) % 360);
 		polar_if_->set_distance(nearest_light.distance);
-		polar_if_->set_frame(laser_if_->frame());
+		polar_if_->set_frame("/base_link");
 		polar_if_->write();
 	}
 }
