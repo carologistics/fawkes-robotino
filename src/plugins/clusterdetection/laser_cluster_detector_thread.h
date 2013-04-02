@@ -55,16 +55,27 @@ public:
 	virtual bool prepare_finalize_user();
 	virtual void finalize();
 
-	struct PolarPos{
+	struct PolarPos {
 		int angle;
 		float distance;
 
-		PolarPos(int angle,float distance):
-			angle(angle),distance(distance){}
+		PolarPos(int angle, float distance) :
+				angle(angle), distance(distance) {
+		}
 
-		PolarPos(){
+		PolarPos() {
 			angle = 0;
-			distance =0;
+			distance = 0;
+		}
+
+		void toCart(float* x, float* y) {
+			*x = distance * cos(angle * M_PI / 180.0);
+			*y = distance * sin(angle * M_PI / 180.0);
+		}
+
+		void fromCart(float x, float y) {
+			angle = atan2f(y, x) * 180 / M_PI;
+			distance = sqrtf(x * x + y * y);
 		}
 	};
 
@@ -89,7 +100,6 @@ private:
 	std::list<PolarPos> lights_;
 	unsigned int num_scans_;
 	laserscan filtered_scan_;
-
 
 	float cfg_laser_min_;
 	float cfg_laser_max_;
