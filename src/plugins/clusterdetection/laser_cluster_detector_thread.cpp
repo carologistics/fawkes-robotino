@@ -123,7 +123,7 @@ void LaserClusterDetector::find_lights() {
 	while (followingfollowing != filtered_scan_.end()) {
 		//we can either have a peak (the begin or end of a cluster) iff
 		// - the difference between two adjacent values is bigger than threshold
-		// - we read to invalid readings before or after the current reading
+		// - we read two invalid readings before or after the current reading
 		if (current->distance != -1
 				&& (abs(before->distance - current->distance)
 						> cfg_dist_threshold_
@@ -167,10 +167,9 @@ void LaserClusterDetector::find_lights() {
 					//We've found a light! Store it's position by it's center
 					int light_angle = current->angle - (angle / 2.0);
 
-					//since the current peak marks the angle where we already left the
-					//light, we need to take the distance of the prior reading
+
 					float light_distance = (last_peak.distance
-							+ before->distance) / 2.0;
+							+ current->distance) / 2.0;
 					lights_.push_back(PolarPos(light_angle, light_distance));
 					return; //for the moment only interested in one light
 
