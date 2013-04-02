@@ -23,6 +23,8 @@
 
 #include <interfaces/PolarPosition2DInterface.h>
 #include <interfaces/Laser360Interface.h>
+#include <utils/math/coord.h>
+#include <utils/math/angle.h>
 
 #include <cmath>
 #include <iterator>
@@ -213,6 +215,44 @@ void LaserClusterDetector::read_laser() {
 	filtered_scan_.sort(compare_polar_pos);
 }
 
+LaserClusterDetector::PolarPos LaserClusterDetector::apply_tf(
+		LaserClusterDetector::PolarPos src) {
+
+	const char* target_frame = "/base_link";
+	const char* source_frame = "/base_laser";
+
+	bool link_frame_exists = tf_listener->frame_exists(target_frame);
+	bool laser_frame_exists = tf_listener->frame_exists(source_frame);
+
+	if (!link_frame_exists || !laser_frame_exists) {
+		logger->log_warn(name(), "Frame missing: %s %s   %s %s", source_frame,
+				link_frame_exists ? "exists" : "missing", target_frame,
+				laser_frame_exists ? "exists" : "missing");
+	} else {
+		tf::StampedTransform transform;
+		try {
+			tf_listener->lookup_transform(target_frame, source_frame,
+					transform);
+		} catch (tf::ExtrapolationException &e) {
+			logger->log_debug(name(), "Extrapolation error");
+			return src;
+		} catch (tf::ConnectivityException &e) {
+			logger->log_debug(name(), "Connectivity exception: %s", e.what());
+			return src;
+		}
+
+		float x = abs(transform.getOrigin().getX());
+		float src_x, src_y;
+		src.toCart(&src_x, &src_y);
+		src_x += x;
+		PolarPos target;
+		target.fromCart(src_x, src_y);
+		return target;
+
+	}
+	return src;
+}
+
 void LaserClusterDetector::loop() {
 	debug = (loopcnt++ % 20) == 0;
 	if (debug)
@@ -221,7 +261,7 @@ void LaserClusterDetector::loop() {
 	read_laser();
 	find_lights();
 	if (lights_.size() > 0) {
-		PolarPos nearest_light = lights_.front();
+		PolarPos nearest_light = apply_tf(lights_.front());
 		polar_if_->set_angle(
 				(nearest_light.angle - cfg_laser_scanrange_ / 2) % 360);
 		polar_if_->set_distance(nearest_light.distance);

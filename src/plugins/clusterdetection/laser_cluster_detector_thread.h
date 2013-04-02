@@ -30,22 +30,22 @@
 #include <aspect/clock.h>
 #include <aspect/tf.h>
 #include <list>
+#include <cmath>
 
 #include <string>
 
-namespace fawkes
-{
+namespace fawkes {
 class Laser360Interface;
 class PolarPosition2DInterface;
 }
 
-class LaserClusterDetector:
-		public fawkes::Thread,
+class LaserClusterDetector: public fawkes::Thread,
 		public fawkes::BlockedTimingAspect,
 		public fawkes::LoggingAspect,
 		public fawkes::ConfigurableAspect,
-		public fawkes::BlackBoardAspect
-{
+		public fawkes::BlackBoardAspect,
+		public fawkes::ClockAspect,
+		public fawkes::TransformAspect {
 
 public:
 	LaserClusterDetector();
@@ -83,15 +83,14 @@ public:
 
 	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-	virtual void run()
-	{
+	virtual void run() {
 		Thread::run();
 	}
 
 private:
 	void find_lights();
 	void read_laser();
-
+	PolarPos apply_tf(PolarPos src);
 
 private:
 	fawkes::Laser360Interface *laser_if_;
