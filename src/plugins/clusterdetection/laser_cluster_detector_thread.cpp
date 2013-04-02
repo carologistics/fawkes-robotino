@@ -164,8 +164,11 @@ void LaserClusterDetector::find_lights() {
 						logger->log_debug(name(), "Valid light!");
 					//We've found a light! Store it's position by it's center
 					int light_angle = current->angle - (angle / 2.0);
+
+					//since the current peak marks the angle where we already left the
+					//light, we need to take the distance of the prior reading
 					float light_distance = (last_peak.distance
-							+ current->distance) / 2.0;
+							+ before->distance) / 2.0;
 					lights_.push_back(PolarPos(light_angle, light_distance));
 					return; //for the moment only interested in one light
 
@@ -174,6 +177,8 @@ void LaserClusterDetector::find_lights() {
 			//Peak can be the beginning of a new light
 			last_peak = *current;
 		}
+
+		//yeah, it's ugly.
 		++beforebefore;
 		++before;
 		++current;
