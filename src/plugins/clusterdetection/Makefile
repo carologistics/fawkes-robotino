@@ -27,8 +27,9 @@ ifeq ($(HAVE_TF),1)
   LDFLAGS += $(LDFLAGS_TF)
   
 #The necessary libraries your plugin needs.
-LIBS_laserclusterdetector = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface Laser360Interface TransformInterface PolarPosition2DInterface
+LIBS_laserclusterdetector = m fawkescore fawkesutils fawkestf\
+		fawkesaspects fawkesbaseapp fawkesblackboard fawkesinterface\
+		Laser360Interface TransformInterface PolarPosition2DInterface\
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_laserclusterdetector = laser_cluster_detector_plugin.o laser_cluster_detector_thread.o
 
