@@ -167,7 +167,6 @@ void LaserClusterDetector::find_lights() {
 					//We've found a light! Store it's position by it's center
 					int light_angle = current->angle - (angle / 2.0);
 
-
 					float light_distance = (last_peak.distance
 							+ current->distance) / 2.0;
 					lights_.push_back(PolarPos(light_angle, light_distance));
@@ -210,6 +209,11 @@ void LaserClusterDetector::read_laser() {
 		//Only for calculation, needs to be undone before publishing!!!
 		angle = (angle + cfg_laser_scanrange_ / 2) % 360;
 		filtered_scan_.push_back(PolarPos(angle, distance));
+
+		//skip all the readings that are not to be considered:
+		if (i == cfg_laser_scanrange_ / 2)
+			i = (360 - cfg_laser_scanrange_ / 2) - 1;
+
 	}
 	filtered_scan_.sort(compare_polar_pos);
 }
@@ -260,9 +264,18 @@ void LaserClusterDetector::loop() {
 	read_laser();
 	find_lights();
 	if (lights_.size() > 0) {
-		PolarPos nearest_light = apply_tf(lights_.front());
-		polar_if_->set_angle(
-				(nearest_light.angle - cfg_laser_scanrange_ / 2) % 360);
+		if (debug)
+			logger->log_debug(name(), "before tf: %s",
+					lights_.front().to_string().c_str());
+
+		PolarPos nearest_light = lights_.front();
+		nearest_light.angle = (nearest_light.angle - cfg_laser_scanrange_ / 2
+		) % 360;
+		nearest_light = apply_tf(nearest_light);
+		if (debug)
+			logger->log_debug(name(), "after tf: %s",
+					nearest_light.to_string().c_str());
+		polar_if_->set_angle(nearest_light.angle);
 		polar_if_->set_distance(nearest_light.distance);
 		polar_if_->set_frame("/base_link");
 		polar_if_->write();
