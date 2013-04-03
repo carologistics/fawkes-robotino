@@ -15,9 +15,9 @@
       as many positive sightings. 0 shall only be used during the initialization of the
       interface or if the visibility history is not updated.
     </field>
-    <field type="double" name="angle">
+    <field type="int32" name="angle">
      Angle between the x-axis of frame (e.g. the pov of the robot) and the center of 
-     the detected object
+     the detected object in degree
     </field>
     <field type="double" name="distance">
      distance between origin of frame and center of the detected object
