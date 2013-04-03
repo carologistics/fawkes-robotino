@@ -1,0 +1,42 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laserclusterdetector
+---
+
+plugins/plugin_light:
+  # camera being used
+  camera: v4l2:front:device=/dev/video0:size=160x120
+#  camera: v4l2:light:device=/dev/video1:size=320x240:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
+
+  # coordinate system
+  frame: /base_link
+
+  # path to bulb file (relative to cfg dir!)
+  mirror_file: bulb-colormap/masle.bulb
+
+  # height of mirror in m
+  mirror_height: 0.5
+
+  # roboter radius in m
+  robot_radius: 0.15
+
+  # height of red center in m
+  red_height: 0.245
+
+  # height of orange center in m
+  orange_height: 0.2125
+
+  # height of green center in m
+  green_height: 0.1825
+
+  # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
+  threashold_brightness: 50
+
+  # threashold for detecting ROI's in pixle (big ROI's are reflections) (width * height < threashold_roiMaxSize)
+  # 40 = 4 * 10 (long ample)
+  threashold_roiMaxSize: 5000
+
+  #removed pixle height of camera
+  camera_offset_top: 158
+  camera_offset_bottom: 105
