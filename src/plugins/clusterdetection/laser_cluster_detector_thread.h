@@ -31,6 +31,7 @@
 #include <aspect/tf.h>
 #include <list>
 #include <cmath>
+#include <sstream>
 
 #include <string>
 
@@ -76,6 +77,12 @@ public:
 		void fromCart(float x, float y) {
 			angle = atan2f(y, x) * 180 / M_PI;
 			distance = sqrtf(x * x + y * y);
+		}
+
+		std::string to_string() {
+			std::stringstream str;
+			str << "(a: " << angle << ", dist: " << distance << ")";
+			return str.str();
 		}
 	};
 
