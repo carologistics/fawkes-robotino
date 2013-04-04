@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <unistd.h>
 
 using namespace fawkes;
 
