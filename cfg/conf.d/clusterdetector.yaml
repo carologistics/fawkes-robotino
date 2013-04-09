@@ -27,3 +27,4 @@ plugins/laserclusterdetector:
   # allowed variance between cluster_size and detected cluster
   cluster_variance: 0.05
   
+  show_debug_messages: true

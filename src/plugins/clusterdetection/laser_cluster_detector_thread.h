@@ -115,7 +115,7 @@ private:
 	float cfg_dist_threshold_;
 
 	int loopcnt;
-	bool debug;
+	bool cfg_debug_;
 };
 
 #endif

@@ -62,6 +62,7 @@ void LaserClusterDetector::init() {
 	cfg_laser_max_ = config->get_float(CFG_PREFIX"laser_max_length");
 	cfg_laser_scanrange_ = config->get_uint(CFG_PREFIX"laser_scanrange");
 	cfg_dist_threshold_ = config->get_float(CFG_PREFIX"dist_threshold");
+	cfg_debug_ = config->get_bool(CFG_PREFIX"show_debug_messages");
 
 	cfg_cluster_valid_size_ = config->get_float(CFG_PREFIX"cluster_size");
 
@@ -135,7 +136,7 @@ void LaserClusterDetector::find_lights() {
 				)) {
 			//we have a sufficient peak, can either be the begin or the end
 
-			if (debug)
+			if (cfg_debug_)
 				logger->log_debug(name(), "peak at %d", current->angle);
 
 			//check if we have a valid last_peak.
@@ -154,7 +155,7 @@ void LaserClusterDetector::find_lights() {
 								- 2 * last_peak.distance * current->distance
 										* cos(angle * M_PI / 180.0));
 
-				if (debug)
+				if (cfg_debug_)
 					logger->log_debug(name(),
 							"lastpeak angle: %d, current angle: %d,-> angle: %d, Distance: %f, Size of cluster: %f",
 							last_peak.angle, current->angle, angle,
@@ -162,7 +163,7 @@ void LaserClusterDetector::find_lights() {
 
 				if (abs(diam_light - cfg_cluster_valid_size_)
 						<= cfg_cluster_allowed_variance_) {
-					if (debug)
+					if (cfg_debug_)
 						logger->log_debug(name(), "Valid light!");
 					//We've found a light! Store it's position by it's center
 					int light_angle = current->angle - (angle / 2.0);
@@ -257,14 +258,14 @@ LaserClusterDetector::PolarPos LaserClusterDetector::apply_tf(
 }
 
 void LaserClusterDetector::loop() {
-	debug = (loopcnt++ % 20) == 0;
-	if (debug)
+	cfg_debug_ = (loopcnt++ % 20) == 0;
+	if (cfg_debug_)
 		logger->log_debug(name(),
 				"#################################################");
 	read_laser();
 	find_lights();
 	if (lights_.size() > 0) {
-		if (debug)
+		if (cfg_debug_)
 			logger->log_debug(name(), "before tf: %s",
 					lights_.front().to_string().c_str());
 
@@ -272,7 +273,7 @@ void LaserClusterDetector::loop() {
 		nearest_light.angle = (nearest_light.angle - cfg_laser_scanrange_ / 2
 		) % 360;
 		nearest_light = apply_tf(nearest_light);
-		if (debug)
+		if (cfg_debug_)
 			logger->log_debug(name(), "after tf: %s",
 					nearest_light.to_string().c_str());
 		polar_if_->set_angle(nearest_light.angle);
