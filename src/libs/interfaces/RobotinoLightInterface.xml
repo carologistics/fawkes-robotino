@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="RobotinoLightInterface" author="Florian Nolden, Viktor Mataré, Tobias Neumann" year="2013">
+  <constants>
+    <enum name="LightState">
+      <comment>
+	This determines the current status of skill execution.
+      </comment>
+      <item name="ON"> true if Light is on.</item>
+      <item name="OFF">true if Light is off.</item>
+      <item name="BLINKING">true if Light is blinking.</item>
+      </enum>
+  </constants>
+  <data>
+    <comment>
+     Storage about the Ampel.
+    </comment>
+	<field type="LightState" name="red">State of red light</field>
+	<field type="LightState" name="yellow">State of yellow light</field>
+	<field type="LightState" name="green">State of green light</field>
+	<field type="int32" name="visibility_history">visibility history</field>
+	<field type="bool" name="ready">Data valid and ready</field>
+  </data>
+</interface>
