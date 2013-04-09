@@ -26,6 +26,7 @@ PluginLightThread::PluginLightThread()
 
 	this->img_width_ = 0;
 	this->img_height_ = 0;
+	this->img_heightMinusOffset = 0;
 
 	this->camOffsetTop = 0;
 	this->camOffsetBottom = 0;
@@ -65,7 +66,7 @@ PluginLightThread::init()
 
 	this->cspace_from_ = this->cam_->colorspace();
 	this->cspace_to_ = firevision::YUV422_PLANAR;
-
+//
 	this->scanline_ = new firevision::ScanlineGrid( this->img_width_, this->img_height_, 1, 1 );
 	this->colorModel_ = new firevision::ColorModelBrightness(this->cfg_threashold_brightness_);
 
@@ -80,18 +81,18 @@ PluginLightThread::init()
 			firevision::C_WHITE													//color
 			);
 
+	//for later remove of unused parts of the picture
+	this->img_heightMinusOffset = this->img_height_								//buffer height is ori height - top and bottom offset
+									 - this->camOffsetTop
+									 - this->camOffsetBottom;
+
 	// SHM image buffer
-//	unsigned int img_heightMinusOffset = this->img_height_						//buffer height is ori height - top and bottom offset
-//											 - this->camOffsetTop
-//											 - this->camOffsetBottom;
-
-
 	this->shm_buffer_YCbCr = new firevision::SharedMemoryImageBuffer(
 			"Light-cam YUV",
 			this->cspace_to_,
 			this->img_width_,
-			this->img_height_
-//			img_heightMinusOffset
+//			this->img_height_
+			this->img_heightMinusOffset
 			);
 	if (!shm_buffer_YCbCr->is_valid()) {
 		throw fawkes::Exception("Shared memory segment not valid");
@@ -101,6 +102,14 @@ PluginLightThread::init()
 	this->buffer_YCbCr = this->shm_buffer_YCbCr->buffer();
 
 	logger->log_debug(name(), "Plugin-light: end of init()");
+
+}
+
+unsigned char*
+PluginLightThread::calculatePositionInCamBuffer()
+{
+	return this->cam_->buffer()													//startpossition of buffer is ori position + top offset
+				+ ( this->camOffsetTop * this->img_width_ ) ;
 }
 
 void
@@ -123,33 +132,34 @@ PluginLightThread::loop()
 	cam_->capture();
 
 	//copy cam buffer to local buffer and remove picture parts at the top and bottom
-//	unsigned char* camBufferStartPosition = this->cam_->buffer()				//startpossition of buffer is ori position + top offset
-//											+ ( this->camOffsetTop * this->img_width_ ) ;
-//	unsigned int img_heightMinusOffset = this->img_height_						//buffer height is ori height - top and bottom offset
-//										 - this->camOffsetTop
-//										 - this->camOffsetBottom;
+	unsigned char* camBufferStartPosition = this->calculatePositionInCamBuffer();
 
-	std::memcpy(this->shm_buffer_YCbCr->buffer(), this->cam_->buffer(), this->cam_->buffer_size());
-
-//	firevision::convert(
-//			this->cspace_from_,
-//			this->cspace_to_,
-//			camBufferStartPosition,
-////			this->cam_->buffer(),
-//			this->buffer_YCbCr,
-//			this->img_width_,
-//			img_heightMinusOffset
-////			this->img_height_
-//			);
+	firevision::convert(
+			this->cspace_from_,
+			this->cspace_to_,
+			camBufferStartPosition,
+//			this->cam_->buffer(),
+			this->buffer_YCbCr,
+			this->img_width_,
+			this->img_heightMinusOffset
+//			this->img_height_
+			);
+	this->cam_->dispose_buffer();
 
 	//search for ROIs
-//	this->getROIs(camBufferStartPosition, this->img_width_, img_heightMinusOffset);
+//	std::list<firevision::ROI>* ROIs =
+//	this->getROIs(
+//											camBufferStartPosition,
+//											this->img_width_,
+//											this->img_heightMinusOffset
+//											);
 
 	//draw ROIs in buffer
 
 	//do stuff with rois
 
-	this->cam_->dispose_buffer();
+
+//	delete ROIs;
 }
 
 PluginLightThread::~PluginLightThread()
@@ -162,10 +172,12 @@ PluginLightThread::getROIs(unsigned char *buffer, unsigned int imgWidth, unsigne
 {
 	std::list<firevision::ROI>* roiList = new std::list<firevision::ROI>();
 
+	//search for ROIs
 	scanline_->reset();
 	this->classifier_light_->set_src_buffer(buffer, imgWidth, imgHeight_);
-	this->classifier_light_->classify();
+	roiList = this->classifier_light_->classify();
 
+	//remove ROIs that are too big
 	std::list<firevision::ROI> *roiListSmall = new std::list<firevision::ROI>();
 	firevision::ROI *tmpRoi = NULL;
 
@@ -177,6 +189,7 @@ PluginLightThread::getROIs(unsigned char *buffer, unsigned int imgWidth, unsigne
 		} else {
 			roiListSmall->push_back(*tmpRoi);
 		}
+		delete tmpRoi;
 		roiList->pop_front();
 	}
 	delete roiList;
