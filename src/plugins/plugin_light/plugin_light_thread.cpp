@@ -55,10 +55,6 @@ PluginLightThread::init()
 	this->camOffsetTop = this->config->get_uint((this->cfg_prefix_ + "camera_offset_top").c_str());
 	this->camOffsetBottom = this->config->get_uint((this->cfg_prefix_ + "camera_offset_bottom").c_str());
 
-//	const char* file = this->config->get_string((this->cfg_prefix_ + "imgcam").c_str()).c_str();
-//	logger->log_info(name(), file);
-//	this->cam_ = new firevision::FileLoader(file);
-//	this->cam_->open();
 	this->cam_ = vision_master->register_for_camera(this->cfg_camera_.c_str(), this);
 
 	this->img_width_ = this->cam_->pixel_width();
@@ -102,23 +98,6 @@ PluginLightThread::init()
 	this->buffer_YCbCr = this->shm_buffer_YCbCr->buffer();
 
 	logger->log_debug(name(), "Plugin-light: end of init()");
-
-//	cam_->capture();
-//
-//	//copy cam buffer to local buffer and remove picture parts at the top and bottom
-//	unsigned char* camBufferStartPosition = this->calculatePositionInCamBuffer();
-//
-//	firevision::convert(
-//			this->cspace_from_,
-//			this->cspace_to_,
-//			camBufferStartPosition,
-////			this->cam_->buffer(),
-//			this->buffer_YCbCr,
-//			this->img_width_,
-//			this->img_heightMinusOffset
-////			this->img_height_
-//			);
-//	this->cam_->dispose_buffer();
 }
 
 unsigned char*
@@ -145,7 +124,6 @@ PluginLightThread::finalize()
 void
 PluginLightThread::loop()
 {
-	logger->log_info(name(), "loop");
 	cam_->capture();
 
 	//copy cam buffer to local buffer and remove picture parts at the top and bottom
