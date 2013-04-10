@@ -22,7 +22,6 @@ PluginLightThread::PluginLightThread()
 	this->cfg_frame_ = "";
 
 	this->cfg_threashold_brightness_ = 0;
-	this->cfg_threashold_roiMaxSize_ = 0;
 
 	this->img_width_ = 0;
 	this->img_height_ = 0;
@@ -50,7 +49,6 @@ PluginLightThread::init()
 	this->cfg_frame_  = this->config->get_string((this->cfg_prefix_ + "frame").c_str());
 
 	this->cfg_threashold_brightness_ = this->config->get_uint((this->cfg_prefix_ + "threashold_brightness").c_str());
-	this->cfg_threashold_roiMaxSize_ = this->config->get_uint((this->cfg_prefix_ + "threashold_roiMaxSize").c_str());
 
 	this->camOffsetTop = this->config->get_uint((this->cfg_prefix_ + "camera_offset_top").c_str());
 	this->camOffsetBottom = this->config->get_uint((this->cfg_prefix_ + "camera_offset_bottom").c_str());
@@ -62,7 +60,7 @@ PluginLightThread::init()
 
 	this->cspace_from_ = this->cam_->colorspace();
 	this->cspace_to_ = firevision::YUV422_PLANAR;
-//
+
 	this->scanline_ = new firevision::ScanlineGrid( this->img_width_, this->img_height_, 1, 1 );
 	this->colorModel_ = new firevision::ColorModelBrightness(this->cfg_threashold_brightness_);
 
@@ -141,20 +139,20 @@ PluginLightThread::loop()
 			);
 	this->cam_->dispose_buffer();
 
-//	//search for ROIs
-//	std::list<firevision::ROI>* ROIs =
-//	this->getROIs(
-//			camBufferStartPosition,
-//			this->img_width_,
-//			this->img_heightMinusOffset
-//			);
+	//search for ROIs
+	std::list<firevision::ROI>* ROIs =
+	this->getROIs(
+			camBufferStartPosition,
+			this->img_width_,
+			this->img_heightMinusOffset
+			);
 
 	//draw ROIs in buffer
 
 	//do stuff with rois
 
 
-//	delete ROIs;
+	delete ROIs;
 }
 
 PluginLightThread::~PluginLightThread()

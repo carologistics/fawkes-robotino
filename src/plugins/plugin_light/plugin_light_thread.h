@@ -49,19 +49,22 @@ class PluginLightThread
 
 private:
 	std::string cfg_prefix_;
+
 	std::string cfg_camera_;
-	std::string cfg_frame_;
-
-	unsigned int cfg_threashold_brightness_;
-	unsigned int cfg_threashold_roiMaxSize_;
-
+	double cfg_cameraAngle_horizontal;
+	double cfg_cameraAngle_vertical;
 	unsigned int img_width_;
 	unsigned int img_height_;
 
 	unsigned int camOffsetTop;
 	unsigned int camOffsetBottom;
-
 	unsigned int img_heightMinusOffset;
+
+	std::string cfg_frame_;
+
+	unsigned int cfg_threashold_brightness_;
+	double cfg_lightSize_width;
+	double cfg_lightSize_height;
 
 	firevision::Camera *cam_;
 	firevision::ScanlineModel *scanline_;
@@ -72,8 +75,6 @@ private:
 
 	firevision::colorspace_t cspace_from_;
 	firevision::colorspace_t cspace_to_;
-
-//	firevision::RelativePositionModel *rel_pos_;
 
 	unsigned char* calculatePositionInCamBuffer();
 
