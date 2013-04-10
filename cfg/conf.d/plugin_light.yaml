@@ -6,8 +6,9 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laserclusterdetector
 
 plugins/plugin_light:
   # camera being used
-  camera: v4l2:light:device=/dev/video0
   imgcam: "/home/tobias/Dropbox/Carologistics/fawkes/sampleImages/vlcsnap-2013-03-18-16h27m40s14.jpeg"
+ # camera: v4l2:light:device=/dev/video0
+  camera: "file:file:file=/home/tobias/Dropbox/Carologistics/fawkes/sampleImages/vlcsnap-2013-03-18-16h27m40s14.jpeg"
 #  camera: v4l2:light:device=/dev/video1:size=320x240:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
 
   # coordinate system
