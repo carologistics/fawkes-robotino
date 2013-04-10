@@ -51,20 +51,20 @@ private:
 	std::string cfg_prefix_;
 
 	std::string cfg_camera_;
-	double cfg_cameraAngle_horizontal;
-	double cfg_cameraAngle_vertical;
+	float cfg_cameraAngleHorizontal;
+	float cfg_cameraAngleVertical;
 	unsigned int img_width_;
 	unsigned int img_height_;
 
-	unsigned int camOffsetTop;
-	unsigned int camOffsetBottom;
+	unsigned int cfg_cameraOffsetTop;
+	unsigned int cfg_cameraOffsetBottom;
 	unsigned int img_heightMinusOffset;
 
 	std::string cfg_frame_;
 
 	unsigned int cfg_threashold_brightness_;
-	double cfg_lightSize_width;
-	double cfg_lightSize_height;
+	float cfg_lightSize_width;
+	float cfg_lightSize_height;
 
 	firevision::Camera *cam_;
 	firevision::ScanlineModel *scanline_;
@@ -79,6 +79,7 @@ private:
 	unsigned char* calculatePositionInCamBuffer();
 
 	std::list<firevision::ROI>* getROIs(unsigned char *buffer, unsigned int imgWidth, unsigned int imgHeight_);
+	void drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight);
 
 protected:
 	virtual void run() { Thread::run(); }

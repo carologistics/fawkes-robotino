@@ -27,8 +27,8 @@ PluginLightThread::PluginLightThread()
 	this->img_height_ = 0;
 	this->img_heightMinusOffset = 0;
 
-	this->camOffsetTop = 0;
-	this->camOffsetBottom = 0;
+	this->cfg_cameraOffsetTop = 0;
+	this->cfg_cameraOffsetBottom = 0;
 
 	this->buffer_YCbCr = NULL;
 
@@ -45,13 +45,21 @@ PluginLightThread::init()
 	logger->log_info(name(), "Plugin-light: starts up");
 
 	this->cfg_prefix_ = "/plugins/plugin_light/";
-	this->cfg_camera_ = this->config->get_string((this->cfg_prefix_ + "camera").c_str());
+
 	this->cfg_frame_  = this->config->get_string((this->cfg_prefix_ + "frame").c_str());
+
+	this->cfg_camera_ = this->config->get_string((this->cfg_prefix_ + "camera").c_str());
+	this->cfg_cameraOffsetTop = this->config->get_uint((this->cfg_prefix_ + "camera_offset_top").c_str());
+	this->cfg_cameraOffsetBottom = this->config->get_uint((this->cfg_prefix_ + "camera_offset_bottom").c_str());
+	this->cfg_cameraAngleHorizontal = this->config->get_float((this->cfg_prefix_ + "camera_angle_horizontal").c_str());
+	this->cfg_cameraAngleVertical = this->config->get_float((this->cfg_prefix_ + "camera_angle_vertical").c_str());
 
 	this->cfg_threashold_brightness_ = this->config->get_uint((this->cfg_prefix_ + "threashold_brightness").c_str());
 
-	this->camOffsetTop = this->config->get_uint((this->cfg_prefix_ + "camera_offset_top").c_str());
-	this->camOffsetBottom = this->config->get_uint((this->cfg_prefix_ + "camera_offset_bottom").c_str());
+	this->cfg_lightSize_height = this->config->get_float((this->cfg_prefix_ + "light_size_height").c_str());
+	this->cfg_lightSize_width = this->config->get_float((this->cfg_prefix_ + "light_size_width").c_str());
+
+	std::string shmID = this->config->get_string((this->cfg_prefix_ + "shm_image_id").c_str());
 
 	this->cam_ = vision_master->register_for_camera(this->cfg_camera_.c_str(), this);
 
@@ -77,12 +85,12 @@ PluginLightThread::init()
 
 	//for later remove of unused parts of the picture
 	this->img_heightMinusOffset = this->img_height_								//buffer height is ori height - top and bottom offset
-									 - this->camOffsetTop
-									 - this->camOffsetBottom;
+									 - this->cfg_cameraOffsetTop
+									 - this->cfg_cameraOffsetBottom;
 
 	// SHM image buffer
 	this->shm_buffer_YCbCr = new firevision::SharedMemoryImageBuffer(
-			"Light-cam YUV",
+			shmID.c_str(),
 			this->cspace_to_,
 			this->img_width_,
 //			this->img_height_
@@ -102,7 +110,7 @@ unsigned char*
 PluginLightThread::calculatePositionInCamBuffer()
 {
 	return this->cam_->buffer()													//startpossition of buffer is ori position + top offset
-				+ ( this->camOffsetTop * this->img_width_ ) ;
+				+ ( this->cfg_cameraOffsetTop * this->img_width_ ) ;
 }
 
 void
@@ -138,6 +146,11 @@ PluginLightThread::loop()
 //			this->img_height_
 			);
 	this->cam_->dispose_buffer();
+
+	fawkes::polar_coord_2d_t lightPosition;
+	lightPosition.phi = 0;
+	lightPosition.r = 1;
+	this->drawLightIntoBuffer(lightPosition);
 
 	//search for ROIs
 	std::list<firevision::ROI>* ROIs =
@@ -191,7 +204,11 @@ PluginLightThread::getROIs(unsigned char *buffer, unsigned int imgWidth, unsigne
 	return roiList;
 }
 
+void
+PluginLightThread::drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight)
+{
 
+}
 
 
 
