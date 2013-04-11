@@ -103,6 +103,25 @@ PluginLightThread::init()
 
 	this->buffer_YCbCr = this->shm_buffer_YCbCr->buffer();
 
+//
+//	//new
+//	this->shm_buffer_results = new firevision::SharedMemoryImageBuffer(
+//				shmID.c_str(),
+//				this->cspace_to_,
+//				this->img_width_,
+//	//			this->img_height_
+//				this->img_heightMinusOffset
+//			);
+//	if (!shm_buffer_results->is_valid()) {
+//		throw fawkes::Exception("Shared memory segment not valid");
+//	}
+//	this->shm_buffer_results->set_frame_id(this->cfg_frame_.c_str()+'result');
+//	if (!shm_buffer_results->is_valid()) {
+//		throw fawkes::Exception("Shared memory segment not valid");
+//	}
+//	this->shm_buffer_results->set_frame_id(this->cfg_frame_.c_str()+'result');
+//	//new end
+
 	logger->log_debug(name(), "Plugin-light: end of init()");
 }
 
@@ -153,19 +172,19 @@ PluginLightThread::loop()
 	this->drawLightIntoBuffer(lightPosition);
 
 	//search for ROIs
-	std::list<firevision::ROI>* ROIs =
-	this->getROIs(
-			camBufferStartPosition,
-			this->img_width_,
-			this->img_heightMinusOffset
-			);
+//	std::list<firevision::ROI>* ROIs =
+//	this->getROIs(
+//			camBufferStartPosition,
+//			this->img_width_,
+//			this->img_heightMinusOffset
+//			);
 
 	//draw ROIs in buffer
 
 	//do stuff with rois
 
 
-	delete ROIs;
+//	delete ROIs;
 }
 
 PluginLightThread::~PluginLightThread()
@@ -207,8 +226,32 @@ PluginLightThread::getROIs(unsigned char *buffer, unsigned int imgWidth, unsigne
 void
 PluginLightThread::drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight)
 {
+//	positionOfLight.phi
+//	positionOfLight.r
 
+	int expectedLightSizeHeigth = 60;//*this->cfg_lightSize_height;
+	int expectedLightSizeWidth =  20;//*this->cfg_lightSize_width;
+
+	float radPerPixelHorizonal = img_width_/cfg_cameraAngleHorizontal;
+//	float radPerPixelVertical = img_width_/cfg_cameraAngleVertical;
+
+	int startX = positionOfLight.phi*radPerPixelHorizonal + (img_width_-expectedLightSizeWidth)/2;
+	int startY = (img_heightMinusOffset-expectedLightSizeHeigth)/2;
+
+	firevision::ROI *light = new firevision::ROI(startX,startY,expectedLightSizeWidth,expectedLightSizeHeigth,img_width_,img_heightMinusOffset);
+
+	firevision::FilterROIDraw *drawer = new firevision::FilterROIDraw();
+	drawer->set_src_buffer(this->buffer_YCbCr, firevision::ROI::full_image(img_width_, img_heightMinusOffset), 0);
+	drawer->set_dst_buffer(this->buffer_YCbCr, light);
+	drawer->set_style(firevision::FilterROIDraw::INVERTED);
+	drawer->apply();
+
+	logger->log_info(name(), "Plugin-light: drawed element in buffer");
 }
+
+
+
+
 
 
 
