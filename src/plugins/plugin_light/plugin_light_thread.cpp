@@ -21,6 +21,12 @@ PluginLightThread::PluginLightThread()
 	this->cfg_camera_ = "";
 	this->cfg_frame_ = "";
 
+	this->cfg_cameraAngleHorizontal = 0;
+	this->cfg_cameraAngleVertical = 0;
+
+	this->cfg_lightSize_height = 0;
+	this->cfg_lightSize_width = 0;
+
 	this->cfg_threashold_brightness_ = 0;
 
 	this->img_width_ = 0;
@@ -32,11 +38,18 @@ PluginLightThread::PluginLightThread()
 
 	this->buffer_YCbCr = NULL;
 
+	this->cspace_from_ = firevision::YUV422_PLANAR;
+	this->cspace_to_ = firevision::YUV422_PLANAR;
+
 	this->cam_ = NULL;
 	this->scanline_ = NULL;
 	this->colorModel_ = NULL;
 	this->classifier_light_ = NULL;
 	this->shm_buffer_YCbCr = NULL;
+
+	this->lightPositionLaster_if = NULL;
+
+	this->cfg_debugMessages = false;
 }
 
 void
@@ -69,7 +82,6 @@ PluginLightThread::init()
 	this->img_height_ = this->cam_->pixel_height();
 
 	this->cspace_from_ = this->cam_->colorspace();
-	this->cspace_to_ = firevision::YUV422_PLANAR;
 
 	this->scanline_ = new firevision::ScanlineGrid( this->img_width_, this->img_height_, 1, 1 );
 	this->colorModel_ = new firevision::ColorModelBrightness(this->cfg_threashold_brightness_);
@@ -105,26 +117,15 @@ PluginLightThread::init()
 
 	this->buffer_YCbCr = this->shm_buffer_YCbCr->buffer();
 
-//
-//	//new
-//	this->shm_buffer_results = new firevision::SharedMemoryImageBuffer(
-//				shmID.c_str(),
-//				this->cspace_to_,
-//				this->img_width_,
-//	//			this->img_height_
-//				this->img_heightMinusOffset
-//			);
-//	if (!shm_buffer_results->is_valid()) {
-//		throw fawkes::Exception("Shared memory segment not valid");
-//	}
-//	this->shm_buffer_results->set_frame_id(this->cfg_frame_.c_str()+'result');
-//	if (!shm_buffer_results->is_valid()) {
-//		throw fawkes::Exception("Shared memory segment not valid");
-//	}
-//	this->shm_buffer_results->set_frame_id(this->cfg_frame_.c_str()+'result');
-//	//new end
+	//open interfaces
+	this->lightPositionLaster_if = blackboard->open_for_reading<fawkes::PolarPosition2DInterface>(
+			this->config->get_string((this->cfg_prefix_ + "light_position_if").c_str()).c_str());
 
 	logger->log_debug(name(), "Plugin-light: end of init()");
+
+//	if (this->cfg_debugMessages) {
+//		logger->log_info(name(), "");
+//	}
 }
 
 unsigned char*
@@ -144,6 +145,8 @@ PluginLightThread::finalize()
 	delete this->colorModel_;
 	delete this->classifier_light_;
 	delete this->shm_buffer_YCbCr;
+
+//	blackboard->close(this->lightPositionLaster_if);							//TODO finde fehler
 
 	logger->log_info(name(), "Plugin-light: ends");
 }
@@ -168,9 +171,18 @@ PluginLightThread::loop()
 			);
 	this->cam_->dispose_buffer();
 
+	//read laser if
+	this->lightPositionLaster_if->read();
 	fawkes::polar_coord_2d_t lightPosition;
-	lightPosition.phi = 0;
-	lightPosition.r = 1;
+
+	lightPosition.phi = this->lightPositionLaster_if->get_angle();
+	lightPosition.r = this->lightPositionLaster_if->get_distance();
+
+	//transform coorodinate-system from laser -> camera
+	//from this->lightPositionLaster_if->get_frame();
+	//to this->cfg_frame_;
+
+	//draw expected camera in buffer
 	this->drawLightIntoBuffer(lightPosition);
 
 	//search for ROIs

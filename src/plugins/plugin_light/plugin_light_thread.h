@@ -19,6 +19,7 @@
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/vision.h>
+//#include <aspect/tf.h>
 
 //#include <fvcams/camera.h>
 #include <fvcams/fileloader.h>
@@ -39,12 +40,17 @@
 
 #include "brightness.h"
 
+namespace fawkes {
+	class PolarPosition2DInterface;
+}
+
 class PluginLightThread
 :	public fawkes::Thread,
 	public fawkes::LoggingAspect,
 	public fawkes::ConfigurableAspect,
 	public fawkes::VisionAspect,
-	public fawkes::BlackBoardAspect
+	public fawkes::BlackBoardAspect/*,
+	public fawkes::TransformAspect*/
 {
 
 private:
@@ -77,6 +83,8 @@ private:
 
 	firevision::colorspace_t cspace_from_;
 	firevision::colorspace_t cspace_to_;
+
+	fawkes::PolarPosition2DInterface *lightPositionLaster_if;
 
 	unsigned char* calculatePositionInCamBuffer();
 

@@ -34,5 +34,8 @@ plugins/plugin_light:
 
   # coordinate system
   frame: /cam_front
-  
+
+  #Interfacename of the light position fawkes::PolarPosition2DInterface
+  light_position_if: "Closest_Machine"  
+
   show_debug_messages: true
