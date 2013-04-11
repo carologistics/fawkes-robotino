@@ -21,6 +21,8 @@
 #include <aspect/vision.h>
 //#include <aspect/tf.h>
 
+#include <interfaces/PolarPosition2DInterface.h>
+
 //#include <fvcams/camera.h>
 #include <fvcams/fileloader.h>
 
@@ -54,37 +56,37 @@ class PluginLightThread
 {
 
 private:
-	std::string cfg_prefix_;
+	std::string cfg_prefix;
 
-	std::string cfg_camera_;
+	std::string cfg_camera;
 	float cfg_cameraAngleHorizontal;
 	float cfg_cameraAngleVertical;
-	unsigned int img_width_;
-	unsigned int img_height_;
+	unsigned int img_width;
+	unsigned int img_height;
 
 	unsigned int cfg_cameraOffsetTop;
 	unsigned int cfg_cameraOffsetBottom;
 	unsigned int img_heightMinusOffset;
 
-	std::string cfg_frame_;
+	std::string cfg_frame;
 
-	unsigned int cfg_threashold_brightness_;
-	float cfg_lightSize_width;
-	float cfg_lightSize_height;
+	unsigned int cfg_threasholdBrightness;
+	float cfg_lightSizeWidth;
+	float cfg_lightSizeHeight;
 
 	bool cfg_debugMessages;
 
-	firevision::Camera *cam_;
-	firevision::ScanlineModel *scanline_;
-	firevision::ColorModelBrightness *colorModel_;
-	firevision::SimpleColorClassifier *classifier_light_;
-	firevision::SharedMemoryImageBuffer *shm_buffer_YCbCr;
-	unsigned char *buffer_YCbCr;												//reference to the buffer of shm_buffer_YCbCr (to use in code)
+	firevision::Camera *camera;
+	firevision::ScanlineModel *scanline;
+	firevision::ColorModelBrightness *colorModel;
+	firevision::SimpleColorClassifier *classifierLight;
+	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
+	unsigned char *bufferYCbCr;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
 
-	firevision::colorspace_t cspace_from_;
-	firevision::colorspace_t cspace_to_;
+	firevision::colorspace_t cspaceFrom;
+	firevision::colorspace_t cspaceTo;
 
-	fawkes::PolarPosition2DInterface *lightPositionLaster_if;
+	fawkes::PolarPosition2DInterface *lightPositionLasterIF;
 
 	unsigned char* calculatePositionInCamBuffer();
 

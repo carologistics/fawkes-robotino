@@ -17,37 +17,37 @@ PluginLightThread::PluginLightThread()
 :	Thread("PluginLightThread", Thread::OPMODE_WAITFORWAKEUP),
  	VisionAspect(VisionAspect::CYCLIC)
 {
-	this->cfg_prefix_ = "";
-	this->cfg_camera_ = "";
-	this->cfg_frame_ = "";
+	this->cfg_prefix = "";
+	this->cfg_camera = "";
+	this->cfg_frame = "";
 
 	this->cfg_cameraAngleHorizontal = 0;
 	this->cfg_cameraAngleVertical = 0;
 
-	this->cfg_lightSize_height = 0;
-	this->cfg_lightSize_width = 0;
+	this->cfg_lightSizeHeight = 0;
+	this->cfg_lightSizeWidth = 0;
 
-	this->cfg_threashold_brightness_ = 0;
+	this->cfg_threasholdBrightness = 0;
 
-	this->img_width_ = 0;
-	this->img_height_ = 0;
+	this->img_width = 0;
+	this->img_height = 0;
 	this->img_heightMinusOffset = 0;
 
 	this->cfg_cameraOffsetTop = 0;
 	this->cfg_cameraOffsetBottom = 0;
 
-	this->buffer_YCbCr = NULL;
+	this->bufferYCbCr = NULL;
 
-	this->cspace_from_ = firevision::YUV422_PLANAR;
-	this->cspace_to_ = firevision::YUV422_PLANAR;
+	this->cspaceFrom = firevision::YUV422_PLANAR;
+	this->cspaceTo = firevision::YUV422_PLANAR;
 
-	this->cam_ = NULL;
-	this->scanline_ = NULL;
-	this->colorModel_ = NULL;
-	this->classifier_light_ = NULL;
-	this->shm_buffer_YCbCr = NULL;
+	this->camera = NULL;
+	this->scanline = NULL;
+	this->colorModel = NULL;
+	this->classifierLight = NULL;
+	this->shmBufferYCbCr = NULL;
 
-	this->lightPositionLaster_if = NULL;
+	this->lightPositionLasterIF = NULL;
 
 	this->cfg_debugMessages = false;
 }
@@ -57,38 +57,38 @@ PluginLightThread::init()
 {
 	logger->log_info(name(), "Plugin-light: starts up");
 
-	this->cfg_prefix_ = "/plugins/plugin_light/";
+	this->cfg_prefix = "/plugins/plugin_light/";
 
-	this->cfg_frame_  = this->config->get_string((this->cfg_prefix_ + "frame").c_str());
+	this->cfg_frame  = this->config->get_string((this->cfg_prefix + "frame").c_str());
 
-	this->cfg_camera_ = this->config->get_string((this->cfg_prefix_ + "camera").c_str());
-	this->cfg_cameraOffsetTop = this->config->get_uint((this->cfg_prefix_ + "camera_offset_top").c_str());
-	this->cfg_cameraOffsetBottom = this->config->get_uint((this->cfg_prefix_ + "camera_offset_bottom").c_str());
-	this->cfg_cameraAngleHorizontal = this->config->get_float((this->cfg_prefix_ + "camera_angle_horizontal").c_str());
-	this->cfg_cameraAngleVertical = this->config->get_float((this->cfg_prefix_ + "camera_angle_vertical").c_str());
+	this->cfg_camera = this->config->get_string((this->cfg_prefix + "camera").c_str());
+	this->cfg_cameraOffsetTop = this->config->get_uint((this->cfg_prefix + "camera_offset_top").c_str());
+	this->cfg_cameraOffsetBottom = this->config->get_uint((this->cfg_prefix + "camera_offset_bottom").c_str());
+	this->cfg_cameraAngleHorizontal = this->config->get_float((this->cfg_prefix + "camera_angle_horizontal").c_str());
+	this->cfg_cameraAngleVertical = this->config->get_float((this->cfg_prefix + "camera_angle_vertical").c_str());
 
-	this->cfg_debugMessages = this->config->get_bool((this->cfg_prefix_ + "show_debug_messages").c_str());
+	this->cfg_debugMessages = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
 
-	this->cfg_threashold_brightness_ = this->config->get_uint((this->cfg_prefix_ + "threashold_brightness").c_str());
+	this->cfg_threasholdBrightness = this->config->get_uint((this->cfg_prefix + "threashold_brightness").c_str());
 
-	this->cfg_lightSize_height = this->config->get_float((this->cfg_prefix_ + "light_size_height").c_str());
-	this->cfg_lightSize_width = this->config->get_float((this->cfg_prefix_ + "light_size_width").c_str());
+	this->cfg_lightSizeHeight = this->config->get_float((this->cfg_prefix + "light_size_height").c_str());
+	this->cfg_lightSizeWidth = this->config->get_float((this->cfg_prefix + "light_size_width").c_str());
 
-	std::string shmID = this->config->get_string((this->cfg_prefix_ + "shm_image_id").c_str());
+	std::string shmID = this->config->get_string((this->cfg_prefix + "shm_image_id").c_str());
 
-	this->cam_ = vision_master->register_for_camera(this->cfg_camera_.c_str(), this);
+	this->camera = vision_master->register_for_camera(this->cfg_camera.c_str(), this);
 
-	this->img_width_ = this->cam_->pixel_width();
-	this->img_height_ = this->cam_->pixel_height();
+	this->img_width = this->camera->pixel_width();
+	this->img_height = this->camera->pixel_height();
 
-	this->cspace_from_ = this->cam_->colorspace();
+	this->cspaceFrom = this->camera->colorspace();
 
-	this->scanline_ = new firevision::ScanlineGrid( this->img_width_, this->img_height_, 1, 1 );
-	this->colorModel_ = new firevision::ColorModelBrightness(this->cfg_threashold_brightness_);
+	this->scanline = new firevision::ScanlineGrid( this->img_width, this->img_height, 1, 1 );
+	this->colorModel = new firevision::ColorModelBrightness(this->cfg_threasholdBrightness);
 
-	this->classifier_light_ = new firevision::SimpleColorClassifier(
-			this->scanline_,													//scanmodel
-			this->colorModel_,													//colorModel
+	this->classifierLight = new firevision::SimpleColorClassifier(
+			this->scanline,													//scanmodel
+			this->colorModel,													//colorModel
 			1,																	//num_min_points
 			2,																	//box_extend
 			false,																//upward
@@ -98,28 +98,28 @@ PluginLightThread::init()
 			);
 
 	//for later remove of unused parts of the picture
-	this->img_heightMinusOffset = this->img_height_								//buffer height is ori height - top and bottom offset
+	this->img_heightMinusOffset = this->img_height								//buffer height is ori height - top and bottom offset
 									 - this->cfg_cameraOffsetTop
 									 - this->cfg_cameraOffsetBottom;
 
 	// SHM image buffer
-	this->shm_buffer_YCbCr = new firevision::SharedMemoryImageBuffer(
+	this->shmBufferYCbCr = new firevision::SharedMemoryImageBuffer(
 			shmID.c_str(),
-			this->cspace_to_,
-			this->img_width_,
+			this->cspaceTo,
+			this->img_width,
 //			this->img_height_
 			this->img_heightMinusOffset
 			);
-	if (!shm_buffer_YCbCr->is_valid()) {
+	if (!shmBufferYCbCr->is_valid()) {
 		throw fawkes::Exception("Shared memory segment not valid");
 	}
-	this->shm_buffer_YCbCr->set_frame_id(this->cfg_frame_.c_str());
+	this->shmBufferYCbCr->set_frame_id(this->cfg_frame.c_str());
 
-	this->buffer_YCbCr = this->shm_buffer_YCbCr->buffer();
+	this->bufferYCbCr = this->shmBufferYCbCr->buffer();
 
 	//open interfaces
-	this->lightPositionLaster_if = blackboard->open_for_reading<fawkes::PolarPosition2DInterface>(
-			this->config->get_string((this->cfg_prefix_ + "light_position_if").c_str()).c_str());
+	this->lightPositionLasterIF = blackboard->open_for_reading<fawkes::PolarPosition2DInterface>(
+			this->config->get_string((this->cfg_prefix + "light_position_if").c_str()).c_str());
 
 	logger->log_debug(name(), "Plugin-light: end of init()");
 
@@ -131,8 +131,8 @@ PluginLightThread::init()
 unsigned char*
 PluginLightThread::calculatePositionInCamBuffer()
 {
-	return this->cam_->buffer()													//startpossition of buffer is ori position + top offset
-				+ ( this->cfg_cameraOffsetTop * this->img_width_ ) ;
+	return this->camera->buffer()													//startpossition of buffer is ori position + top offset
+				+ ( this->cfg_cameraOffsetTop * this->img_width ) ;
 }
 
 void
@@ -140,11 +140,11 @@ PluginLightThread::finalize()
 {
 	logger->log_debug(name(), "Plugin-light: start to free memory");
 
-	delete this->cam_;
-	delete this->scanline_;
-	delete this->colorModel_;
-	delete this->classifier_light_;
-	delete this->shm_buffer_YCbCr;
+	delete this->camera;
+	delete this->scanline;
+	delete this->colorModel;
+	delete this->classifierLight;
+	delete this->shmBufferYCbCr;
 
 //	blackboard->close(this->lightPositionLaster_if);							//TODO finde fehler
 
@@ -154,29 +154,29 @@ PluginLightThread::finalize()
 void
 PluginLightThread::loop()
 {
-	cam_->capture();
+	camera->capture();
 
 	//copy cam buffer to local buffer and remove picture parts at the top and bottom
 	unsigned char* camBufferStartPosition = this->calculatePositionInCamBuffer();
 
 	firevision::convert(
-			this->cspace_from_,
-			this->cspace_to_,
+			this->cspaceFrom,
+			this->cspaceTo,
 			camBufferStartPosition,
 //			this->cam_->buffer(),
-			this->buffer_YCbCr,
-			this->img_width_,
+			this->bufferYCbCr,
+			this->img_width,
 			this->img_heightMinusOffset
 //			this->img_height_
 			);
-	this->cam_->dispose_buffer();
+	this->camera->dispose_buffer();
 
 	//read laser if
-	this->lightPositionLaster_if->read();
+	this->lightPositionLasterIF->read();
 	fawkes::polar_coord_2d_t lightPosition;
 
-	lightPosition.phi = this->lightPositionLaster_if->get_angle();
-	lightPosition.r = this->lightPositionLaster_if->get_distance();
+	lightPosition.phi = this->lightPositionLasterIF->get_angle();
+	lightPosition.r = this->lightPositionLasterIF->get_distance();
 
 	//transform coorodinate-system from laser -> camera
 	//from this->lightPositionLaster_if->get_frame();
@@ -186,12 +186,12 @@ PluginLightThread::loop()
 	this->drawLightIntoBuffer(lightPosition);
 
 	//search for ROIs
-//	std::list<firevision::ROI>* ROIs =
-//	this->getROIs(
-//			camBufferStartPosition,
-//			this->img_width_,
-//			this->img_heightMinusOffset
-//			);
+	std::list<firevision::ROI>* ROIs =
+	this->getROIs(
+			camBufferStartPosition,
+			this->img_width,
+			this->img_heightMinusOffset
+			);
 
 	//draw ROIs in buffer
 
@@ -212,9 +212,9 @@ PluginLightThread::getROIs(unsigned char *buffer, unsigned int imgWidth, unsigne
 	std::list<firevision::ROI>* roiList = new std::list<firevision::ROI>();
 
 	//search for ROIs
-	scanline_->reset();
-	this->classifier_light_->set_src_buffer(buffer, imgWidth, imgHeight_);
-	roiList = this->classifier_light_->classify();
+	scanline->reset();
+	this->classifierLight->set_src_buffer(buffer, imgWidth, imgHeight_);
+	roiList = this->classifierLight->classify();
 
 //	//remove ROIs that are too big
 //	std::list<firevision::ROI> *roiListSmall = new std::list<firevision::ROI>();
