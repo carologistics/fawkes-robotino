@@ -35,4 +35,4 @@ plugins/plugin_light:
   # coordinate system
   frame: /cam_front
   
-
+  show_debug_messages: true

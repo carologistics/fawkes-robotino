@@ -54,6 +54,8 @@ PluginLightThread::init()
 	this->cfg_cameraAngleHorizontal = this->config->get_float((this->cfg_prefix_ + "camera_angle_horizontal").c_str());
 	this->cfg_cameraAngleVertical = this->config->get_float((this->cfg_prefix_ + "camera_angle_vertical").c_str());
 
+	this->cfg_debugMessages = this->config->get_bool((this->cfg_prefix_ + "show_debug_messages").c_str());
+
 	this->cfg_threashold_brightness_ = this->config->get_uint((this->cfg_prefix_ + "threashold_brightness").c_str());
 
 	this->cfg_lightSize_height = this->config->get_float((this->cfg_prefix_ + "light_size_height").c_str());

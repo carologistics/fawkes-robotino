@@ -66,6 +66,8 @@ private:
 	float cfg_lightSize_width;
 	float cfg_lightSize_height;
 
+	bool cfg_debugMessages;
+
 	firevision::Camera *cam_;
 	firevision::ScanlineModel *scanline_;
 	firevision::ColorModelBrightness *colorModel_;
