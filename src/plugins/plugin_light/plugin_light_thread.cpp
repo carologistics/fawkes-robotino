@@ -146,7 +146,7 @@ PluginLightThread::finalize()
 	delete this->classifierLight;
 	delete this->shmBufferYCbCr;
 
-//	blackboard->close(this->lightPositionLaster_if);							//TODO finde fehler
+	blackboard->close(this->lightPositionLasterIF);
 
 	logger->log_info(name(), "Plugin-light: ends");
 }
@@ -179,9 +179,7 @@ PluginLightThread::loop()
 	lightPosition.r = this->lightPositionLasterIF->distance();
 
 	//transform coorodinate-system from laser -> camera
-	//from this->lightPositionLasterIF->frame();
-	//to this->cfg_frame;
-	//beispiel: fawkes-robotino/fawkes/src/plugins/examples/tf_example
+	lightPosition = this->transformPolarCoord2D(lightPosition, this->lightPositionLasterIF->frame(), this->cfg_frame);
 
 	//draw expected camera in buffer
 	this->drawLightIntoBuffer(lightPosition);
@@ -236,6 +234,76 @@ PluginLightThread::getROIs(unsigned char *buffer, unsigned int imgWidth, unsigne
 //	roiList = roiListSmall;
 
 	return roiList;
+}
+
+fawkes::polar_coord_2d_t
+PluginLightThread::transformPolarCoord2D(fawkes::polar_coord_2d_t polFrom, std::string from, std::string to)
+{
+	bool world_frame_exists = tf_listener->frame_exists(from);
+	bool robot_frame_exists = tf_listener->frame_exists(to);
+
+	if (! world_frame_exists || ! robot_frame_exists) {
+	logger->log_warn(name(), "Frame missing: %s %s   %s %s",
+					 from.c_str(), world_frame_exists ? "exists" : "missing",
+					 to.c_str(), robot_frame_exists ? "exists" : "missing");
+	} else {
+		fawkes::tf::StampedTransform transform;
+		try {
+			tf_listener->lookup_transform(to, from, transform);
+		} catch (fawkes::tf::ExtrapolationException &e) {
+			logger->log_debug(name(), "Extrapolation error");
+			return polFrom;
+		} catch (fawkes::tf::ConnectivityException &e) {
+			logger->log_debug(name(), "Connectivity exception: %s", e.what());
+			return polFrom;
+		}
+
+//		fawkes::Time now;
+//		double diff;
+//		if (now >= transform.stamp) {
+//			diff = now - &transform.stamp;
+//		} else {
+//			diff = transform.stamp - &now;
+//		}
+
+		fawkes::tf::Vector3 v   = transform.getOrigin();
+
+//		const fawkes::tf::TimeCache *world_cache = tf_listener->get_frame_cache(from);
+//		const fawkes::tf::TimeCache *robot_cache = tf_listener->get_frame_cache(to);
+
+//		logger->log_info(name(), "Transform %s -> %s, %f sec old: "
+//		"T(%f,%f,%f)  Q(%f,%f,%f,%f)",
+//		transform.frame_id.c_str(), transform.child_frame_id.c_str(),
+//		diff, v.x(), v.y(), v.z(), q.x(), q.y(), q.z(), q.w());
+//
+//		logger->log_info(name(), "World cache size: %zu  Robot cache size: %zu",
+//		world_cache->get_list_length(),
+//		robot_cache->get_list_length());
+
+		fawkes::polar_coord_2d_t polTo;
+		float fromX, fromY, toX, toY;
+		this->polToCart(polFrom, fromX, fromY);
+
+		toX = fromX + v.getX();
+		toY = fromY + v.getY();
+		this->cartToPol(polTo, toX, toY);
+
+		logger->log_info(name(), "From: %s X: %f Y: %f", from.c_str(), fromX, fromY);
+		logger->log_info(name(), "To  : %s X: %f Y: %f", to.c_str(), toX, toY);
+		return polTo;
+	}
+
+	return polFrom;
+}
+
+void PluginLightThread::polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y) {
+	x = pol.r * cos(pol.phi * M_PI / 180.0);
+	y = pol.r * sin(pol.phi * M_PI / 180.0);
+}
+
+void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y) {
+	pol.phi = atan2f(y, x) * 180 / M_PI;
+	pol.r = sqrtf(x * x + y * y);
 }
 
 void

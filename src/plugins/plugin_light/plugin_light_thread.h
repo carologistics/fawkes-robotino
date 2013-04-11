@@ -19,7 +19,7 @@
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/vision.h>
-//#include <aspect/tf.h>
+#include <aspect/tf.h>
 
 #include <interfaces/PolarPosition2DInterface.h>
 
@@ -44,6 +44,9 @@
 
 namespace fawkes {
 	class PolarPosition2DInterface;
+	namespace tf {
+		class TransformListener;
+	}
 }
 
 class PluginLightThread
@@ -51,8 +54,8 @@ class PluginLightThread
 	public fawkes::LoggingAspect,
 	public fawkes::ConfigurableAspect,
 	public fawkes::VisionAspect,
-	public fawkes::BlackBoardAspect/*,
-	public fawkes::TransformAspect*/
+	public fawkes::BlackBoardAspect,
+	public fawkes::TransformAspect
 {
 
 private:
@@ -92,6 +95,10 @@ private:
 
 	std::list<firevision::ROI>* getROIs(unsigned char *buffer, unsigned int imgWidth, unsigned int imgHeight_);
 	void drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight);
+	fawkes::polar_coord_2d_t transformPolarCoord2D(fawkes::polar_coord_2d_t polFrom, std::string from, std::string to);
+
+	void polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y);
+	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 
 protected:
 	virtual void run() { Thread::run(); }

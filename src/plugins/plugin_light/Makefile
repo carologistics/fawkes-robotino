@@ -20,6 +20,10 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/fvconf.mk
 
+ifeq ($(HAVE_TF),1)
+  CFLAGS  += $(CFLAGS_TF)
+  LDFLAGS += $(LDFLAGS_TF)
+  
 CFLAGS   += $(VISION_CFLAGS)
 LDFLAGS  += $(VISION_LDFLAGS)
 INCDIRS  += $(VISION_INCDIRS)
@@ -30,7 +34,7 @@ LIBS     += $(VISION_LIBS)
 LIBS_plugin_light = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
 		fvclassifiers fawkesgeometry fvfilters TransformInterface \
-		PolarPosition2DInterface
+		PolarPosition2DInterface fawkestf
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_plugin_light = plugin_light_plugin.o plugin_light_thread.o brightness.o
 
@@ -38,6 +42,10 @@ OBJS_plugin_light = plugin_light_plugin.o plugin_light_thread.o brightness.o
 PLUGINS_all = $(PLUGINDIR)/plugin-light.$(SOEXT)
 
 OBJS_all = $(OBJS_plugin_light)
+
+else
+  WARN_TARGETS += warning_tf
+endif
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
