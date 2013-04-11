@@ -175,12 +175,13 @@ PluginLightThread::loop()
 	this->lightPositionLasterIF->read();
 	fawkes::polar_coord_2d_t lightPosition;
 
-	lightPosition.phi = this->lightPositionLasterIF->get_angle();
-	lightPosition.r = this->lightPositionLasterIF->get_distance();
+	lightPosition.phi = this->lightPositionLasterIF->angle();
+	lightPosition.r = this->lightPositionLasterIF->distance();
 
 	//transform coorodinate-system from laser -> camera
-	//from this->lightPositionLasterIF->get_frame();
+	//from this->lightPositionLasterIF->frame();
 	//to this->cfg_frame;
+	//beispiel: fawkes-robotino/fawkes/src/plugins/examples/tf_example
 
 	//draw expected camera in buffer
 	this->drawLightIntoBuffer(lightPosition);

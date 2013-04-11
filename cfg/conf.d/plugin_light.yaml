@@ -33,7 +33,7 @@ plugins/plugin_light:
   distance_cam_laser: 0.15
 
   # coordinate system
-  frame: /cam_front
+  frame: /base_camFront
 
   #Interfacename of the light position fawkes::PolarPosition2DInterface
   light_position_if: "Closest_Machine"  
