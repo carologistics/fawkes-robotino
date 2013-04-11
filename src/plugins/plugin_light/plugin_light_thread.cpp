@@ -179,8 +179,8 @@ PluginLightThread::loop()
 	lightPosition.r = this->lightPositionLasterIF->get_distance();
 
 	//transform coorodinate-system from laser -> camera
-	//from this->lightPositionLaster_if->get_frame();
-	//to this->cfg_frame_;
+	//from this->lightPositionLasterIF->get_frame();
+	//to this->cfg_frame;
 
 	//draw expected camera in buffer
 	this->drawLightIntoBuffer(lightPosition);
