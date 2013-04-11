@@ -21,10 +21,11 @@
 
 #include "laser_cluster_detector_thread.h"
 
-#include <interfaces/PolarPosition2DInterface.h>
+#include <interfaces/Position3DInterface.h>
 #include <interfaces/Laser360Interface.h>
 #include <utils/math/coord.h>
 #include <utils/math/angle.h>
+#include <tf/types.h>
 
 #include <cmath>
 #include <iterator>
@@ -78,7 +79,7 @@ void LaserClusterDetector::init() {
 	logger->log_debug(name(), "cluster_variance: %f",
 			cfg_cluster_allowed_variance_);
 
-	polar_if_ = blackboard->open_for_writing<PolarPosition2DInterface>(
+	pos3d_if_ = blackboard->open_for_writing<Position3DInterface>(
 			"Closest_Machine");
 
 	loopcnt = 0;
@@ -95,7 +96,7 @@ bool compareReadings(const pair<unsigned int, float>& f,
 
 void LaserClusterDetector::finalize() {
 	blackboard->close(laser_if_);
-	blackboard->close(polar_if_);
+	blackboard->close(pos3d_if_);
 }
 
 void LaserClusterDetector::find_lights() {
@@ -219,11 +220,14 @@ void LaserClusterDetector::read_laser() {
 	filtered_scan_.sort(compare_polar_pos);
 }
 
-LaserClusterDetector::PolarPos LaserClusterDetector::apply_tf(
-		LaserClusterDetector::PolarPos src) {
+tf::Stamped<tf::Point> LaserClusterDetector::apply_tf(
+		tf::Stamped<tf::Point> src) {
 
 	const char* target_frame = "/base_link";
 	const char* source_frame = "/base_laser";
+
+	tf::Stamped<tf::Point> targetPoint;
+	targetPoint.frame_id = target_frame;
 
 	bool link_frame_exists = tf_listener->frame_exists(target_frame);
 	bool laser_frame_exists = tf_listener->frame_exists(source_frame);
@@ -233,10 +237,9 @@ LaserClusterDetector::PolarPos LaserClusterDetector::apply_tf(
 				link_frame_exists ? "exists" : "missing", target_frame,
 				laser_frame_exists ? "exists" : "missing");
 	} else {
-		tf::StampedTransform transform;
+		src.frame_id = source_frame;
 		try {
-			tf_listener->lookup_transform(target_frame, source_frame,
-					transform);
+			tf_listener->transform_point(target_frame, src, targetPoint);
 		} catch (tf::ExtrapolationException &e) {
 			logger->log_debug(name(), "Extrapolation error");
 			return src;
@@ -245,13 +248,7 @@ LaserClusterDetector::PolarPos LaserClusterDetector::apply_tf(
 			return src;
 		}
 
-		float x = abs(transform.getOrigin().getX());
-		float src_x, src_y;
-		src.toCart(&src_x, &src_y);
-		src_x += x;
-		PolarPos target;
-		target.fromCart(src_x, src_y);
-		return target;
+		return targetPoint;
 
 	}
 	return src;
@@ -270,16 +267,24 @@ void LaserClusterDetector::loop() {
 					lights_.front().to_string().c_str());
 
 		PolarPos nearest_light = lights_.front();
-		nearest_light.angle = (nearest_light.angle - cfg_laser_scanrange_ / 2
-		) % 360;
-		nearest_light = apply_tf(nearest_light);
+		nearest_light.angle = (nearest_light.angle - cfg_laser_scanrange_ / 2)
+				% 360;
+		float x;
+		float y;
+		nearest_light.toCart(&x,&y);
+		tf::Stamped<tf::Point> light;
+		light.setX(x);
+		light.setY(y);
+		light.setZ(0);
+
+		light = apply_tf(light);
 		if (cfg_debug_)
 			logger->log_debug(name(), "after tf: %s",
 					nearest_light.to_string().c_str());
-		polar_if_->set_angle(nearest_light.angle);
-		polar_if_->set_distance(nearest_light.distance);
-		polar_if_->set_frame("/base_link");
-		polar_if_->write();
+		pos3d_if_->set_translation(0,light.getX());
+		pos3d_if_->set_translation(1,light.getY());
+		pos3d_if_->set_frame("/base_link");
+		pos3d_if_->write();
 	}
 }
 

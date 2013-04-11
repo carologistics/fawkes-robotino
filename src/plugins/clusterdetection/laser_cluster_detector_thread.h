@@ -29,6 +29,7 @@
 #include <aspect/blackboard.h>
 #include <aspect/clock.h>
 #include <aspect/tf.h>
+#include <tf/types.h>
 #include <list>
 #include <cmath>
 #include <sstream>
@@ -37,7 +38,7 @@
 
 namespace fawkes {
 class Laser360Interface;
-class PolarPosition2DInterface;
+class Position3DInterface;
 }
 
 class LaserClusterDetector: public fawkes::Thread,
@@ -97,11 +98,11 @@ protected:
 private:
 	void find_lights();
 	void read_laser();
-	PolarPos apply_tf(PolarPos src);
+	fawkes::tf::Stamped<fawkes::tf::Point> apply_tf(fawkes::tf::Stamped<fawkes::tf::Point> src);
 
 private:
 	fawkes::Laser360Interface *laser_if_;
-	fawkes::PolarPosition2DInterface *polar_if_;
+	fawkes::Position3DInterface *pos3d_if_;
 
 	std::list<PolarPos> lights_;
 	unsigned int num_scans_;
