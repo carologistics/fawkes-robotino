@@ -67,10 +67,6 @@ private:
 	unsigned int img_width;
 	unsigned int img_height;
 
-	unsigned int cfg_cameraOffsetTop;
-	unsigned int cfg_cameraOffsetBottom;
-	unsigned int img_heightMinusOffset;
-
 	std::string cfg_frame;
 
 	unsigned int cfg_threasholdBrightness;

@@ -15,13 +15,9 @@ plugins/plugin_light:
   light_size_height: 0.15
   light_size_width: 0.05
 
-  # camare viewport angles in rad, 120 deg -> 2.08 rad
-  camera_angle_horizontal: 2.08
-  camera_angle_vertical: 2.08	
-
-  #removed pixle height of camera
-  camera_offset_top: 158
-  camera_offset_bottom: 105
+  # camare viewport angles in rad, 120 deg -> 2.08 rad logitech webcam
+  camera_angle_horizontal: 1.08		#62°
+  camera_angle_vertical: 0.73		#42°
 
   #Shared Memory Imagebuffer name
   shm_image_id: "lightCam"

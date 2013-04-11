@@ -31,10 +31,6 @@ PluginLightThread::PluginLightThread()
 
 	this->img_width = 0;
 	this->img_height = 0;
-	this->img_heightMinusOffset = 0;
-
-	this->cfg_cameraOffsetTop = 0;
-	this->cfg_cameraOffsetBottom = 0;
 
 	this->bufferYCbCr = NULL;
 
@@ -62,8 +58,6 @@ PluginLightThread::init()
 	this->cfg_frame  = this->config->get_string((this->cfg_prefix + "frame").c_str());
 
 	this->cfg_camera = this->config->get_string((this->cfg_prefix + "camera").c_str());
-	this->cfg_cameraOffsetTop = this->config->get_uint((this->cfg_prefix + "camera_offset_top").c_str());
-	this->cfg_cameraOffsetBottom = this->config->get_uint((this->cfg_prefix + "camera_offset_bottom").c_str());
 	this->cfg_cameraAngleHorizontal = this->config->get_float((this->cfg_prefix + "camera_angle_horizontal").c_str());
 	this->cfg_cameraAngleVertical = this->config->get_float((this->cfg_prefix + "camera_angle_vertical").c_str());
 
@@ -97,18 +91,12 @@ PluginLightThread::init()
 			firevision::C_WHITE													//color
 			);
 
-	//for later remove of unused parts of the picture
-	this->img_heightMinusOffset = this->img_height								//buffer height is ori height - top and bottom offset
-									 - this->cfg_cameraOffsetTop
-									 - this->cfg_cameraOffsetBottom;
-
 	// SHM image buffer
 	this->shmBufferYCbCr = new firevision::SharedMemoryImageBuffer(
 			shmID.c_str(),
 			this->cspaceTo,
 			this->img_width,
-//			this->img_height_
-			this->img_heightMinusOffset
+			this->img_height
 			);
 	if (!shmBufferYCbCr->is_valid()) {
 		throw fawkes::Exception("Shared memory segment not valid");
@@ -126,13 +114,6 @@ PluginLightThread::init()
 //	if (this->cfg_debugMessages) {
 //		logger->log_info(name(), "");
 //	}
-}
-
-unsigned char*
-PluginLightThread::calculatePositionInCamBuffer()
-{
-	return this->camera->buffer()													//startpossition of buffer is ori position + top offset
-				+ ( this->cfg_cameraOffsetTop * this->img_width ) ;
 }
 
 void
@@ -156,18 +137,13 @@ PluginLightThread::loop()
 {
 	camera->capture();
 
-	//copy cam buffer to local buffer and remove picture parts at the top and bottom
-	unsigned char* camBufferStartPosition = this->calculatePositionInCamBuffer();
-
 	firevision::convert(
 			this->cspaceFrom,
 			this->cspaceTo,
-			camBufferStartPosition,
-//			this->cam_->buffer(),
+			this->camera->buffer(),
 			this->bufferYCbCr,
 			this->img_width,
-			this->img_heightMinusOffset
-//			this->img_height_
+			this->img_height
 			);
 	this->camera->dispose_buffer();
 
@@ -302,14 +278,14 @@ PluginLightThread::drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight)
 	float radPerPixelHorizonal = img_width_/cfg_cameraAngleHorizontal;
 //	float radPerPixelVertical = img_width_/cfg_cameraAngleVertical;
 
-	int startX = positionOfLight.phi*radPerPixelHorizonal + (img_width_-expectedLightSizeWidth)/2;
-	int startY = (img_heightMinusOffset-expectedLightSizeHeigth)/2;
+	int startX = positionOfLight.phi*radPerPixelHorizonal + (img_width-expectedLightSizeWidth)/2;
+	int startY = (img_height-expectedLightSizeHeigth)/2;
 
-	firevision::ROI *light = new firevision::ROI(startX,startY,expectedLightSizeWidth,expectedLightSizeHeigth,img_width_,img_heightMinusOffset);
+	firevision::ROI *light = new firevision::ROI(startX,startY,expectedLightSizeWidth,expectedLightSizeHeigth,img_width,img_height);
 
 	firevision::FilterROIDraw *drawer = new firevision::FilterROIDraw();
-	drawer->set_src_buffer(this->buffer_YCbCr, firevision::ROI::full_image(img_width_, img_heightMinusOffset), 0);
-	drawer->set_dst_buffer(this->buffer_YCbCr, light);
+	drawer->set_src_buffer(this->bufferYCbCr, firevision::ROI::full_image(img_width, img_height), 0);
+	drawer->set_dst_buffer(this->bufferYCbCr, light);
 	drawer->set_style(firevision::FilterROIDraw::INVERTED);
 	drawer->apply();
 
