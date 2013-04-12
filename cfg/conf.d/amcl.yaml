@@ -7,7 +7,7 @@ plugins/amcl:
   # Image file containing the map, must be a PNG file
   # If path starts with slash (/) it's considered to be absolute,
   # otherwise relative to the config directory
-  map_file: map.png
+  map_file: map/llsf-map-2.png
   # Resolution of the map; meters per pixel
   resolution: 0.05
 
@@ -34,10 +34,10 @@ plugins/amcl:
   laser_min_range: 0.04
 
   # Laser Maximum Range, beams longer than this are ignored
-  laser_max_range: 5.6
+  laser_max_range: 4.0
 
   # Maximum number of beams to consider
-  max_beams: 30
+  max_beams: 60
 
   # Minimum and maximum number of particles
   min_particles: 100
@@ -49,9 +49,9 @@ plugins/amcl:
 
   # Motion model parameters, alph5 is only used for omni-drive model
   # Expected noise in rotation estimate from rotational component
-  alpha1: 1
+  alpha1: 5
   # Expected noise in rotation estimate from translational component
-  alpha2: 1
+  alpha2: 5
   # Expected noise in translation estimate from translational component
   alpha3: 0.6
   # Expected noise in translation estimate from rotational component
@@ -72,7 +72,7 @@ plugins/amcl:
   lambda_short: 0.1
 
   # Maximum discovery distance for likelihood field model
-  laser_likelihood_max_dist: 1.0
+  laser_likelihood_max_dist: 2.5
 
   # Laser model type, must be beam or likelihood_field
   laser_model_type: likelihood_field
@@ -110,9 +110,9 @@ plugins/amcl:
   transform_tolerance: 3.0
 
   # Recovery alpha values for robustness against kidnapping.
-  # Good valus are 0.001 and 0.01.
-  alpha_slow: 0.001
-  alpha_fast: 0.01
+  # Good valus are 0.001 and 0.01, set to 0.0/0.0 to disable.
+  alpha_slow: 0.0
+  alpha_fast: 0.0
 
   # Initial pose (x, y, yaw)
   init_pose_x: 0.0
@@ -123,8 +123,6 @@ plugins/amcl:
   init_cov_xx: 0.25
   init_cov_yy: 0.25
   init_cov_aa: 0.0685
-
-  angle_increment: 1.0
 
   # Parameters for fake laser generation
   map-lasergen:

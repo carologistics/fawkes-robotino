@@ -6,3 +6,11 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/ros
 ros:
   # name for the node
   node-name: robotino
+
+  cmdvel:
+    motor_interface_id: Robotino
+
+  odometry:
+    motor_interface_id: Robotino
+    odom_frame_id: odom
+    base_frame_id: base_link

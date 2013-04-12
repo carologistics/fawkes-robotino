@@ -4,141 +4,304 @@
 graph-name: LLSF
 root: SW
 nodes:
-  - name: South West
-    pos: [1.0, 1.1]
-
-  - name: West
-    pos: [1.0, 2.9]
-
-  - name: North West
-    pos: [1.0, 4.5]
-
-  - name: South
-    pos: [2.9, 1.1]
-
-  - name: South East
-    pos: [4.8, 1.1]
-
-  - name: deliver
-    pos: [4.6, 2.9]
-    properties:
-      - orientation: 0.0 
-      - travel_tolerance: 0.2 
-
-  - name: North East
-    pos: [4.8, 4.5]
-
-  - name: North
-    pos: [2.9, 4.5]
 
   - name: M1
-    pos: [3.95, 1.4]
+    pos: [3.92, 1.23]
     properties:
       - orientation: 1.57
 
-  - name: M1C
-    pos: [3.95, 1.1]
+#  - name: M1_NOTRH
+#    pos: [3.92, 1.98]
+#    properties:
+#      - orientation: -1.57
+
+#  - name: M1_EAST
+#    pos: [4.22, 1.68]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M1_SOUTH
+#    pos: [3.92, 1.38]
+#    properties:
+#      - orientation: 1.57
+
+#  - name: M1_West
+#    pos: [3.62, 1.68]
+#    properties:
+#      - orientation: 0
+
+  - name: M1S
+    pos: [3.92, 1.1]
     properties:
-      - travel_tolerance: 0.2
+      - travel_tolerance: 0.4 
 
   - name: M2
-    pos: [3.5, 3.95]
+    pos: [3.5, 3.92]
     properties:
       - orientation: 0.0
 
-  - name: M2C
-    pos: [3.5, 4.5]
+#  - name: M2_NORTH
+#    pos: [3.92, 4.22]
+#    properties:
+#      - orientation: -1.57
+
+#  - name: M2_EAST
+#    pos: [4.22, 3.92]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M2_SOUTH
+#    pos: [3.92, 3.62]
+#    properties:
+#      - orientation: 1.57
+  
+#  - name: M2_WEST
+#    pos: [3.62, 3.92]
+#    properties:
+#      - orientation: 0.0
+
+  - name: M2W
+    pos: [3.4, 3.92]
     properties:
-      - travel_tolerance: 0.2
+      - travel_tolerance: 0.4
 
   - name: M3
-    pos: [3.4, 0.6]
+    pos: [3.3, 0.56]
     properties:
       - orientation: 3.14
 
-  - name: M3C
-    pos: [3.4, 1.1]
+#  - name: M3_NOTRH
+#    pos: [2.8, 0.86]
+#    properties:
+#      - orientation: -1.57
+
+#  - name: M3_EAST
+#    pos: [3.1, 0.56]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M3_West
+#    pos: [2.5, 0.56]
+#    properties:
+#      - orientation: 0
+
+  - name: M3E
+    pos: [3.4, 0.56]
     properties:
-      - travel_tolerance: 0.2
+      - travel_tolerance: 0.4
 
   - name: M4
-    pos: [2.85, 1.4]
+    pos: [2.8, 1.23]
     properties:
       - orientation: 1.57
+
+#  - name: M4_NOTRH
+#    pos: [2.8, 1.98]
+#    properties:
+#      - orientation: -1.57
+
+#  - name: M4_EAST
+#    pos: [3.1, 1.68]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M4_SOUTH
+#    pos: [2.8, 1.38]
+#    properties:
+#      - orientation: 1.57
+
+#  - name: M4_West
+#    pos: [2.5, 1.68]
+#    properties:
+#      - orientation: 0
+
+  - name: M4S
+    pos: [2.8, 1.1]
+    properties:
+      - travel_tolerance: 0.4
 
   - name: M5
-    pos: [2.85, 3.1]
-    properties:
-      - orientation: -1.57
-
-  - name: M5C
-    pos: [2.85, 3.4]
-    properties:
-      - travel_tolerance: 0.2
-
-  - name: M6
-    pos: [2.5, 3.95]
-    properties:
-      - orientation: 0.0
-
-  - name: M6CO
-    pos: [2.5, 4.5]
-    properties:
-      - travel_tolerance: 0.2
-
-  - name: M6CI
-    pos: [2.5, 3.4]
-    properties:
-      - travel_tolerance: 0.2
-
-  - name: M7
-    pos: [2.85, 5.45]
-    properties:
-      - orientation: -1.57
-
-  - name: M7C
-    pos: [2.5, 5.45]
-    properties:
-      - travel_tolerance: 0.2
-
-  - name: M8
-    pos: [2.1, 1.75]
-    properties:
-      - orientation: 3.14
-
-  - name: M8CO
-    pos: [2.1, 1.1]
-    properties:
-      - orientation: 3.14
-      - travel_tolerance: 0.35
-
-  - name: M9
-    pos: [1.4, 3.95]
-    properties:
-      - orientation: 0.0
-
-  - name: M9C
-    pos: [1.0, 3.95]
-    properties:
-      - travel_tolerance: 0.2
-
-  - name: M10
-    pos: [1.75, 4.8]
+    pos: [2.8, 2.35]
     properties:
       - orientation: 1.57
 
+#  - name: M5_NOTRH
+#    pos: [2.8, 3.1]
+#    properties:
+#      - orientation: -1.57
+
+#  - name: M5_EAST
+#    pos: [3.1, 2.8]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M5_SOUTH
+#    pos: [2.8, 2.5]
+#    properties:
+#      - orientation: 1.57
+
+#  - name: M5_West
+#    pos: [2.5, 2.8]
+#    properties:
+#      - orientation: 0
+
+  - name: M5S
+    pos: [2.8, 2.2]
+    properties:
+      - travel_tolerance: 0.4
+
+  - name: M6
+    pos: [2.35, 3.92]
+    properties:
+      - orientation: 0.0
+
+#  - name: M6_NOTRH
+#    pos: [2.8, 4.22]
+#    properties:
+#      - orientation: -1.57
+
+#  - name: M6_EAST
+#    pos: [3.1, 3.92]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M6_SOUTH
+#    pos: [3.8, 2.62]
+#    properties:
+#      - orientation: 1.57
+
+#  - name: M6_West
+#    pos: [2.35, 3.92]
+#    properties:
+#      - orientation: 0
+
+  - name: M6W
+    pos: [2.2, 3.92]
+    properties:
+      - travel_tolerance: 0.4
+
+  - name: M7
+    pos: [2.8, 4.5]
+    properties:
+      - orientation: 1.57
+
+#  - name: M7_EAST
+#    pos: [3.1, 5.04]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M7_SOUTH
+#    pos: [2.8, 4.74]
+#    properties:
+#      - orientation: 1.57
+
+#  - name: M7_West
+#    pos: [2.5, 5.04]
+#    properties:
+#      - orientation: 0
+
+  - name: M7S
+    pos: [2.8, 4.48]
+    properties:
+      - travel_tolerance: 0.4
+
+  - name: M8
+    pos: [2.13, 1.68]
+    properties:
+      - orientation: 3.14
+
+#  - name: M8_NOTRH
+#    pos: [1.68, 1.98]
+#    properties:
+#      - orientation: -1.57
+
+#  - name: M8_EAST
+#    pos: [1.98, 1.68]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M8_SOUTH
+#    pos: [1.68, 1.38]
+#    properties:
+#      - orientation: 1.57
+
+#  - name: M8_West
+#    pos: [1.38, 1.68]
+#    properties:
+#      - orientation: 0
+
+  - name: M8E
+    pos: [2.2, 1.68]
+    properties:
+      - travel_tolerance: 0.4
+
+  - name: M9
+    pos: [1.1, 3.92]
+    properties:
+      - orientation: 0.0
+
+#  - name: M9_NOTRH
+#    pos: [1.68, 4.22]
+#    properties:
+#      - orientation: -1.57
+
+#  - name: M9_EAST
+#    pos: [1.98, 3.92]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M9_SOUTH
+#    pos: [1.68, 3.62]
+#    properties:
+#      - orientation: 1.57
+
+#  - name: M9_West
+#    pos: [1.38, 3.92]
+#    properties:
+#      - orientation: 0
+
+  - name: M9W
+    pos: [1.0, 3.92]
+    properties:
+      - travel_tolerance: 0.4
+
+  - name: M10
+    pos: [1.68, 4.5]
+    properties:
+      - orientation: 1.57
+
+#  - name: M10_EAST
+#    pos: [1.98, 5.04]
+#    properties:
+#      - orientation: 3.14
+
+#  - name: M10_SOUTH
+#    pos: [1.68, 4.74]
+#    properties:
+#      - orientation: 1.57
+
+#  - name: M10_West
+#    pos: [1.38, 5.04]
+#    properties:
+#      - orientation: 0
+
+  - name: M10S
+    pos: [1.68, 4.5]
+    properties:
+      - travel_tolerance: 0.4
+
   - name: R1
-    pos: [0.5, 5.2]
+    pos: [0.7, 5.0]
     properties:
       - orientation: 2.36
 
   - name: R2
-    pos: [5.2, 0.5]
+    pos: [5.0, 0.7]
     properties:
       - orientation: -0.78
 
   - name: T
-    pos: [5.2, 5.2]
+    pos: [5.0, 5.0]
     properties:
       - orientation: 0.78
 
@@ -147,99 +310,163 @@ nodes:
     properties:
       - orientation: 2.36
 
-  - name: C1
-    pos: [4.0, 2.3]
-
-  - name: C1I
-    pos: [3.5, 2.3]
-
-  - name: C1O
-    pos: [3.5, 1.1]
-
-  - name: C2
-    pos: [4.0, 3.4]
-
-  - name: C3
-    pos: [2.0, 3.4]
-
-  - name: C4
-    pos: [2.0, 2.3]
-
   - name: D1
-    pos: [5.1, 3.2]
+    pos: [4.9, 3.2]
     properties:
       - orientation: 0.0
-      - target_tolerance: 0.1
 
   - name: D2
-    pos: [5.1, 2.85]
+    pos: [4.9, 2.85]
     properties:
       - orientation: 0.0
 
   - name: D3
-    pos: [5.1, 2.5]
+    pos: [4.9, 2.5]
     properties:
       - orientation: 0.0
 
+  - name: P11
+    pos: [1.0, 1.1]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P12
+    pos: [1.0, 2.2]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P13
+    pos: [1.0, 3.4]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P14
+    pos: [1.0, 4.5]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P21
+    pos: [2.2, 1.1]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P22
+    pos: [2.2, 2.2]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P23
+    pos: [2.2, 3.4]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P24
+    pos: [2.2, 4.5]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P31
+    pos: [3.4, 1.1]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P32
+    pos: [3.4, 2.2]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P33
+    pos: [3.4, 3.4]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P34
+    pos: [3.4, 4.5]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P41
+    pos: [4.7, 1.1]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P42
+    pos: [4.7, 2.2]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P43
+    pos: [4.7, 3.4]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: P44
+    pos: [4.7, 4.5]
+    properties:
+      - travel_tolerance: 0.4 
+
+  - name: deliver
+    pos: [4.7, 2.8]
+    properties:
+      - orientation: 0.0 
+      - travel_tolerance: 0.4 
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
-  - [South West, West]
-  - [West, M9C]
-  - [M9C, North West]
-  - [North West, M6CO]
-  - [M6CO, North]
-  - [North, M2C]
-  - [M2C, North East]
-  - [North East, deliver]
-  - [deliver, South East]
-  - [South East, M1C]
-  - [M1C, C1O]
-  - [M3C, C1O]
-  - [M3C, South]
-  - [South, M8CO]
-  - [M8CO, South West]
-  - [M1, M1C]
-  - [M2, M2C]
-  - [M2, M5C]
-  - [M3, M3C]
-  - [M4, South]
-  - [M5, M5C]
-  - [M6, M6CO]
-  - [M6, M6CI]
-  - [M6, C3]
-  - [M7, M7C]
-  - [M7, T]
-  - [M7C, M6CI]
-  - [M8, M8CO]
-  - [M8, C4]
-  - [M9, M9C]
-  - [M10, North West]
-  - [M10, M6CO]
-  - [R1, North West]
-  - [R2, South East]
-  - [T, North East]
-  - [Ins, South West]
-  - [Ins, West]
-  - [C1, C2]
-  - [C1, South East]
-  - [C1I, C1O]
-  - [C2, M5C]
-  - [M5C, M6CI]
-  - [M6CI, C3]
-  - [C2, C1I]
-  - [C3, C4]
-  - [C3, M9C]
-  - [C4, C1I]
-  - [C4, South West]
-  - [C1I, C1]
-  - [deliver, C1]
-  - [deliver, C2]
-  - [North East, C2]
-  - [C2, M2]
-  - [West, C3]
-  - [West, C4]
+  - [P11, P12]
+  - [P11, P21]
+  - [P12, P13]
+  - [P12, P22]
+  - [P12, P23]
+  - [P13, M9W]
+  - [M9W, P14]
+  - [P13, P23]
+  - [P13, P22]
+  - [P14, M10S]
+  - [M10S, P24]
+  - [P21, M8E]
+  - [M8E, P22]
+  - [P21, M4S]
+  - [M4S, P31]
+  - [P22, P23]
+  - [P22, M5S]
+  - [M5S, P32]
+  - [P23, M6W]
+  - [M6W, P24]
+  - [P23, P33]
+  - [P24, M7S]
+  - [M7S, P34]
+  - [P31, P32]
+  - [P31, M1S]
+  - [M1S, P41]
+  - [P31, M3E]
+  - [P32, P33]
+  - [P32, P42]
+  - [P33, M2W]
+  - [M2W, P34]
+  - [P33, P43]
+  - [P34, P44]
+  - [P41, P42]
+  - [P42, deliver]
+  - [deliver, P43]
+  - [P43, P44]
+  - [M1, M1S]
+  - [M2, M2W]
+  - [M3, M3E]
+  - [M4, M4S]
+  - [M5, M5S]
+  - [M6, M6W]
+  - [M7, M7S]
+  - [M8, M8E]
+  - [M9, M9W]
+  - [M10, M10S]
+  - [R1, P14]
+  - [R2, P41]
+  - [T, P44]
+  - [Ins, P12]
+  - [P32, deliver]
+  - [P33, deliver]
   - [deliver, D1]
   - [deliver, D2]
   - [deliver, D3]

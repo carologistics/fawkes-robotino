@@ -6,7 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laserclusterdetector
 
 plugins/ampelvar:
   # camera being used
-  camera: v4l2:front:device=/dev/video1:size=160x120
+  camera: v4l2:front:device=/dev/video0
 
   # interface to read laser data from
   camera_height: 0.41

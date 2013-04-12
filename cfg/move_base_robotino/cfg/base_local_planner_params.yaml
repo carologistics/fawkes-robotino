@@ -10,12 +10,14 @@ TrajectoryPlannerROS:
 
   holonomic_robot: true
 
-  yaw_goal_tolerance: 0.15
-  xy_goal_tolerance: 0.15
+  yaw_goal_tolerance: 0.05
+  xy_goal_tolerance: 0.10
+
+  path_distance_bias: 1.0
 
   dwa: true
   #publish_cost_grid_pc: true
   global_frame_id: odom
 
-  sim_time: 1.0
+  sim_time: 2.0
 
