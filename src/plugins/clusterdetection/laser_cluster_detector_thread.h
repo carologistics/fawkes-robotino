@@ -82,7 +82,7 @@ public:
 
 		std::string to_string() {
 			std::stringstream str;
-			str << "(a: " << angle << ", dist: " << distance << ")";
+			str << "(angle: " << angle << ", distance: " << distance << ")";
 			return str.str();
 		}
 	};
@@ -98,6 +98,7 @@ protected:
 private:
 	void find_lights();
 	void read_laser();
+	void write_laser_to_file();
 	fawkes::tf::Stamped<fawkes::tf::Point> apply_tf(fawkes::tf::Stamped<fawkes::tf::Point> src);
 
 private:

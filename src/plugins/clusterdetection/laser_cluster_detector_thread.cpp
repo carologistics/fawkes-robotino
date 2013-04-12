@@ -26,6 +26,7 @@
 #include <utils/math/coord.h>
 #include <utils/math/angle.h>
 #include <tf/types.h>
+#include <utils/system/file.h>
 
 #include <cmath>
 #include <iterator>
@@ -205,11 +206,10 @@ void LaserClusterDetector::read_laser() {
 		&& distance < cfg_laser_max_)) { //small enough?
 			distance = -1;
 		}
-		int angle = 360 - i; //invert to clockwise laser scan
 
-		//rotate angles so that scan starts at left scan range limit
+		//rotate angles so that scan starts at right scan range limit
 		//Only for calculation, needs to be undone before publishing!!!
-		angle = (angle + cfg_laser_scanrange_ / 2) % 360;
+		int angle = (i + cfg_laser_scanrange_ / 2) % 360;
 		filtered_scan_.push_back(PolarPos(angle, distance));
 
 		//skip all the readings that are not to be considered:
@@ -254,17 +254,24 @@ tf::Stamped<tf::Point> LaserClusterDetector::apply_tf(
 	return src;
 }
 
+//for analyzing laserdata manually
+void LaserClusterDetector::write_laser_to_file(){
+	fawkes::File file("laserdata.csv",fawkes::File::ADD_SUFFIX);
+	for (laserscan::iterator it = filtered_scan_.begin();it!=filtered_scan_.end();++it ){
+		fprintf(file.stream(),"%s\n ", it->to_string().c_str());
+
+	}
+}
+
+
 void LaserClusterDetector::loop() {
-	cfg_debug_ = (loopcnt++ % 20) == 0;
-	if (cfg_debug_)
-		logger->log_debug(name(),
-				"#################################################");
+	cfg_debug_ = (loopcnt++ % 50) == 0;
 	read_laser();
+	//if (cfg_debug_)
+	//	write_laser_to_file();
 	find_lights();
+
 	if (lights_.size() > 0) {
-		if (cfg_debug_)
-			logger->log_debug(name(), "before tf: %s",
-					lights_.front().to_string().c_str());
 
 		PolarPos nearest_light = lights_.front();
 		nearest_light.angle = (nearest_light.angle - cfg_laser_scanrange_ / 2)
@@ -272,6 +279,10 @@ void LaserClusterDetector::loop() {
 		float x;
 		float y;
 		nearest_light.toCart(&x,&y);
+		if (cfg_debug_)
+					logger->log_debug(name(), "before tf: %s, which is x: %f, y: %f",
+							nearest_light.to_string().c_str(),x,y);
+
 		tf::Stamped<tf::Point> light;
 		light.setX(x);
 		light.setY(y);
@@ -279,8 +290,8 @@ void LaserClusterDetector::loop() {
 
 		light = apply_tf(light);
 		if (cfg_debug_)
-			logger->log_debug(name(), "after tf: %s",
-					nearest_light.to_string().c_str());
+			logger->log_debug(name(), "transformed: x: %f, y: %f",
+					light.getX(),light.getY());
 		pos3d_if_->set_translation(0,light.getX());
 		pos3d_if_->set_translation(1,light.getY());
 		pos3d_if_->set_frame("/base_link");
