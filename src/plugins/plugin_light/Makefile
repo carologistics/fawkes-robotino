@@ -34,7 +34,7 @@ LIBS     += $(VISION_LIBS)
 LIBS_plugin_light = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
 		fvclassifiers fawkesgeometry fvfilters TransformInterface \
-		PolarPosition2DInterface fawkestf RobotinoLightInterface
+		fawkestf RobotinoLightInterface Position3DInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_plugin_light = plugin_light_plugin.o plugin_light_thread.o brightness.o
 

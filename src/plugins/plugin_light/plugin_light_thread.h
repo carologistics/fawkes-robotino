@@ -21,7 +21,7 @@
 #include <aspect/vision.h>
 #include <aspect/tf.h>
 
-#include <interfaces/PolarPosition2DInterface.h>
+#include <interfaces/Position3DInterface.h>
 #include <interfaces/RobotinoLightInterface.h>
 
 //#include <fvcams/camera.h>
@@ -44,7 +44,7 @@
 #include "brightness.h"
 
 namespace fawkes {
-	class PolarPosition2DInterface;
+	class Position3DInterface;
 	class RobotinoLightInterface;
 	namespace tf {
 		class TransformListener;
@@ -87,8 +87,10 @@ private:
 	firevision::colorspace_t cspaceFrom;
 	firevision::colorspace_t cspaceTo;
 
-	fawkes::PolarPosition2DInterface *lightPositionLasterIF;
+	fawkes::Position3DInterface *lightPositionLasterIF;
 	fawkes::RobotinoLightInterface *lightStateIF;
+
+	firevision::FilterROIDraw *drawer;
 
 	unsigned char* calculatePositionInCamBuffer();
 
@@ -103,10 +105,10 @@ private:
 							 bool resetVisibilityHistory = false
 							 );
 
-	void drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight);
-	fawkes::polar_coord_2d_t transformPolarCoord2D(fawkes::polar_coord_2d_t polFrom, std::string from, std::string to);
+	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::INVERTED);
+	fawkes::polar_coord_2d_t transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
-	void polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y);
+//	void polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y);
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 
 protected:

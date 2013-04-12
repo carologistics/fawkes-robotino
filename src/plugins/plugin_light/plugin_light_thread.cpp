@@ -46,6 +46,8 @@ PluginLightThread::PluginLightThread()
 	this->lightPositionLasterIF = NULL;
 	this->lightStateIF = NULL;
 
+	this->drawer = NULL;
+
 	this->cfg_debugMessages = false;
 }
 
@@ -107,11 +109,14 @@ PluginLightThread::init()
 	this->bufferYCbCr = this->shmBufferYCbCr->buffer();
 
 	//open interfaces
-	this->lightPositionLasterIF = blackboard->open_for_reading<fawkes::PolarPosition2DInterface>(
+	this->lightPositionLasterIF = blackboard->open_for_reading<fawkes::Position3DInterface>(
 			this->config->get_string((this->cfg_prefix + "light_position_if").c_str()).c_str());
 
 	this->lightStateIF = blackboard->open_for_writing<fawkes::RobotinoLightInterface>(
 			this->config->get_string((this->cfg_prefix + "light_state_if").c_str()).c_str());
+
+	//ROIs
+	this->drawer = new firevision::FilterROIDraw();
 
 	logger->log_debug(name(), "Plugin-light: end of init()");
 
@@ -153,15 +158,21 @@ PluginLightThread::loop()
 
 	//read laser if
 	this->lightPositionLasterIF->read();
-	fawkes::polar_coord_2d_t lightPosition;
+	fawkes::cart_coord_3d_t lightPosition;
 
-	lightPosition.phi = this->lightPositionLasterIF->angle();
-	lightPosition.r = this->lightPositionLasterIF->distance();
+	lightPosition.x = this->lightPositionLasterIF->translation(0);
+	lightPosition.y = this->lightPositionLasterIF->translation(1);
+	lightPosition.z = this->lightPositionLasterIF->translation(2);
 
 	//transform coorodinate-system from laser -> camera
 	std::string lightPosFrame = this->lightPositionLasterIF->frame();
 
-	lightPosition = this->transformPolarCoord2D(lightPosition, lightPosFrame, this->cfg_frame);
+	fawkes::polar_coord_2d_t lightPositionPolar = this->transformPolarCoord2D(lightPosition, lightPosFrame, this->cfg_frame);
+
+	firevision::ROI light = this->calculateLightPos(lightPositionPolar);
+
+	//draw expected light in buffer
+	this->drawROIIntoBuffer(light);
 
 //	//search for ROIs
 //	std::list<firevision::ROI>* ROIs =
@@ -170,21 +181,10 @@ PluginLightThread::loop()
 //			this->img_width,
 //			this->img_height
 //			);
-//
-//	firevision::ROI light;
-//	light.image_height = this->img_height;
-//	light.image_width = this->img_width;
-//	light.height = 60;
-//	light.width = 20;
-//	light.start.x = 200;
-//	light.start.y = 150;
-//
+
 //	//remove unimportant ROIs
 //	std::list<firevision::ROI>* ROIsInLightArea =
 //	this->removeUnimportantROIs(ROIs, light);
-//
-//	//draw expected camera in buffer
-//	this->drawLightIntoBuffer(lightPosition);
 
 	//draw ROIs in buffer
 
@@ -244,8 +244,11 @@ PluginLightThread::removeUnimportantROIs(std::list<firevision::ROI>* ROIs, firev
 }
 
 fawkes::polar_coord_2d_t
-PluginLightThread::transformPolarCoord2D(fawkes::polar_coord_2d_t polFrom, std::string from, std::string to)
+PluginLightThread::transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to)
 {
+	fawkes::polar_coord_2d_t polErrorReturnValue;
+	this->cartToPol(polErrorReturnValue, cartFrom.x, cartFrom.y);
+
 	bool world_frame_exists = tf_listener->frame_exists(from);
 	bool robot_frame_exists = tf_listener->frame_exists(to);
 
@@ -259,36 +262,35 @@ PluginLightThread::transformPolarCoord2D(fawkes::polar_coord_2d_t polFrom, std::
 			tf_listener->lookup_transform(to, from, transform);
 		} catch (fawkes::tf::ExtrapolationException &e) {
 			logger->log_debug(name(), "Extrapolation error");
-			return polFrom;
+			return polErrorReturnValue;
 		} catch (fawkes::tf::ConnectivityException &e) {
 			logger->log_debug(name(), "Connectivity exception: %s", e.what());
-			return polFrom;
+			return polErrorReturnValue;
 		}
 
 		fawkes::tf::Vector3 v   = transform.getOrigin();
 
 		fawkes::polar_coord_2d_t polTo;
-		float fromX, fromY, toX, toY;
-		this->polToCart(polFrom, fromX, fromY);
+		float toX, toY;
 
-		toX = fromX + v.getX();
-		toY = fromY + v.getY();
+		toX = cartFrom.x + v.getX();
+		toY = cartFrom.y + v.getY();
 		this->cartToPol(polTo, toX, toY);
 
 		if (this->cfg_debugMessages) {
-			logger->log_info(name(), "From: %s X: %f Y: %f", from.c_str(), fromX, fromY);
+			logger->log_info(name(), "From: %s X: %f Y: %f", from.c_str(), cartFrom.x, cartFrom.y);
 			logger->log_info(name(), "To  : %s X: %f Y: %f", to.c_str(), toX, toY);
 		}
 		return polTo;
 	}
 
-	return polFrom;
+	return polErrorReturnValue;
 }
 
-void PluginLightThread::polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y) {
-	x = pol.r * cos(pol.phi * M_PI / 180.0);
-	y = pol.r * sin(pol.phi * M_PI / 180.0);
-}
+//void PluginLightThread::polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y) {
+//	x = pol.r * cos(pol.phi * M_PI / 180.0);
+//	y = pol.r * sin(pol.phi * M_PI / 180.0);
+//}
 
 void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y) {
 	pol.phi = atan2f(y, x) * 180 / M_PI;
@@ -296,37 +298,38 @@ void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float 
 }
 
 void
-PluginLightThread::drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight)
+PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
 {
-//	positionOfLight.phi
-//	positionOfLight.r
+	this->drawer->set_src_buffer(this->bufferYCbCr, firevision::ROI::full_image(img_width, img_height), 0);
+	this->drawer->set_dst_buffer(this->bufferYCbCr, &roi);
+	this->drawer->set_style(borderStyle);
+	this->drawer->apply();
 
+	if (this->cfg_debugMessages) {
+		logger->log_info(name(), "Plugin-light: drawed element in buffer");
+	}
+}
+
+firevision::ROI
+PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)			//TODO fill with real calculation
+{
 	int expectedLightSizeHeigth = 60;//*this->cfg_lightSize_height;
 	int expectedLightSizeWidth =  20;//*this->cfg_lightSize_width;
 
 	float radPerPixelHorizonal = img_width_/cfg_cameraAngleHorizontal;
 //	float radPerPixelVertical = img_width_/cfg_cameraAngleVertical;
 
-	int startX = positionOfLight.phi*radPerPixelHorizonal + (img_width-expectedLightSizeWidth)/2;
+	int startX = lightPos.phi*radPerPixelHorizonal + (img_width-expectedLightSizeWidth)/2;
 	int startY = (img_height-expectedLightSizeHeigth)/2;
 
-	firevision::ROI *light = new firevision::ROI(startX,startY,expectedLightSizeWidth,expectedLightSizeHeigth,img_width,img_height);
-
-	firevision::FilterROIDraw *drawer = new firevision::FilterROIDraw();
-	drawer->set_src_buffer(this->bufferYCbCr, firevision::ROI::full_image(img_width, img_height), 0);
-	drawer->set_dst_buffer(this->bufferYCbCr, light);
-	drawer->set_style(firevision::FilterROIDraw::INVERTED);
-	drawer->apply();
-
-	logger->log_info(name(), "Plugin-light: drawed element in buffer");
-}
-
-firevision::ROI
-PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
-{
 	firevision::ROI light;
 
-
+	light.image_height = this->img_height;
+	light.image_width = this->img_width;
+	light.height = expectedLightSizeHeigth;
+	light.width = expectedLightSizeWidth;
+	light.start.x = startX;
+	light.start.y = startY;
 
 	return light;
 }
