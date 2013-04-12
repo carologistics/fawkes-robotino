@@ -22,6 +22,7 @@
 #include <aspect/tf.h>
 
 #include <interfaces/PolarPosition2DInterface.h>
+#include <interfaces/RobotinoLightInterface.h>
 
 //#include <fvcams/camera.h>
 #include <fvcams/fileloader.h>
@@ -44,6 +45,7 @@
 
 namespace fawkes {
 	class PolarPosition2DInterface;
+	class RobotinoLightInterface;
 	namespace tf {
 		class TransformListener;
 	}
@@ -86,10 +88,21 @@ private:
 	firevision::colorspace_t cspaceTo;
 
 	fawkes::PolarPosition2DInterface *lightPositionLasterIF;
+	fawkes::RobotinoLightInterface *lightStateIF;
 
 	unsigned char* calculatePositionInCamBuffer();
 
 	std::list<firevision::ROI>* getROIs(unsigned char *buffer, unsigned int imgWidth, unsigned int imgHeight_);
+	std::list<firevision::ROI>* removeUnimportantROIs(std::list<firevision::ROI>* ROIs, firevision::ROI light);
+	firevision::ROI calculateLightPos(fawkes::polar_coord_2d_t lightPos);
+
+	void writeLightInterface(fawkes::RobotinoLightInterface::LightState red,
+							 fawkes::RobotinoLightInterface::LightState yellow,
+							 fawkes::RobotinoLightInterface::LightState green,
+							 bool ready,
+							 bool resetVisibilityHistory = false
+							 );
+
 	void drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight);
 	fawkes::polar_coord_2d_t transformPolarCoord2D(fawkes::polar_coord_2d_t polFrom, std::string from, std::string to);
 

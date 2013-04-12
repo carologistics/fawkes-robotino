@@ -44,6 +44,7 @@ PluginLightThread::PluginLightThread()
 	this->shmBufferYCbCr = NULL;
 
 	this->lightPositionLasterIF = NULL;
+	this->lightStateIF = NULL;
 
 	this->cfg_debugMessages = false;
 }
@@ -109,6 +110,9 @@ PluginLightThread::init()
 	this->lightPositionLasterIF = blackboard->open_for_reading<fawkes::PolarPosition2DInterface>(
 			this->config->get_string((this->cfg_prefix + "light_position_if").c_str()).c_str());
 
+	this->lightStateIF = blackboard->open_for_writing<fawkes::RobotinoLightInterface>(
+			this->config->get_string((this->cfg_prefix + "light_state_if").c_str()).c_str());
+
 	logger->log_debug(name(), "Plugin-light: end of init()");
 
 //	if (this->cfg_debugMessages) {
@@ -159,23 +163,43 @@ PluginLightThread::loop()
 
 	lightPosition = this->transformPolarCoord2D(lightPosition, lightPosFrame, this->cfg_frame);
 
-	//draw expected camera in buffer
-	this->drawLightIntoBuffer(lightPosition);
-
-	//search for ROIs
-	std::list<firevision::ROI>* ROIs =
-	this->getROIs(
-			camBufferStartPosition,
-			this->img_width,
-			this->img_heightMinusOffset
-			);
+//	//search for ROIs
+//	std::list<firevision::ROI>* ROIs =
+//	this->getROIs(
+//			this->bufferYCbCr,
+//			this->img_width,
+//			this->img_height
+//			);
+//
+//	firevision::ROI light;
+//	light.image_height = this->img_height;
+//	light.image_width = this->img_width;
+//	light.height = 60;
+//	light.width = 20;
+//	light.start.x = 200;
+//	light.start.y = 150;
+//
+//	//remove unimportant ROIs
+//	std::list<firevision::ROI>* ROIsInLightArea =
+//	this->removeUnimportantROIs(ROIs, light);
+//
+//	//draw expected camera in buffer
+//	this->drawLightIntoBuffer(lightPosition);
 
 	//draw ROIs in buffer
 
 	//do stuff with rois
 
+	//write light state
+	this->writeLightInterface(
+			fawkes::RobotinoLightInterface::ON,
+			fawkes::RobotinoLightInterface::BLINKING,
+			fawkes::RobotinoLightInterface::OFF,
+			true
+			);
 
 //	delete ROIs;
+//	delete ROIsInLightArea;
 }
 
 PluginLightThread::~PluginLightThread()
@@ -193,25 +217,30 @@ PluginLightThread::getROIs(unsigned char *buffer, unsigned int imgWidth, unsigne
 	this->classifierLight->set_src_buffer(buffer, imgWidth, imgHeight_);
 	roiList = this->classifierLight->classify();
 
-//	//remove ROIs that are too big
-//	std::list<firevision::ROI> *roiListSmall = new std::list<firevision::ROI>();
-//	firevision::ROI *tmpRoi = NULL;
-//
-//	while ( ! roiList->empty() ) {
-//		tmpRoi = new firevision::ROI(roiList->front());
-//
-//		if(tmpRoi->get_height() * tmpRoi->get_width() > this->cfg_threashold_roiMaxSize_) {
-//
-//		} else {
-//			roiListSmall->push_back(*tmpRoi);
-//		}
-//		delete tmpRoi;
-//		roiList->pop_front();
-//	}
-//	delete roiList;
-//	roiList = roiListSmall;
-
 	return roiList;
+}
+
+std::list<firevision::ROI>*
+PluginLightThread::removeUnimportantROIs(std::list<firevision::ROI>* ROIs, firevision::ROI light)
+{
+	//	//remove ROIs that are too big
+	//	std::list<firevision::ROI> *roiListSmall = new std::list<firevision::ROI>();
+	//	firevision::ROI *tmpRoi = NULL;
+	//
+	//	while ( ! roiList->empty() ) {
+	//		tmpRoi = new firevision::ROI(roiList->front());
+	//
+	//		if(tmpRoi->get_height() * tmpRoi->get_width() > this->cfg_threashold_roiMaxSize_) {
+	//
+	//		} else {
+	//			roiListSmall->push_back(*tmpRoi);
+	//		}
+	//		delete tmpRoi;
+	//		roiList->pop_front();
+	//	}
+	//	delete roiList;
+	//	roiList = roiListSmall;
+	return ROIs;
 }
 
 fawkes::polar_coord_2d_t
@@ -292,9 +321,39 @@ PluginLightThread::drawLightIntoBuffer(fawkes::polar_coord_2d_t positionOfLight)
 	logger->log_info(name(), "Plugin-light: drawed element in buffer");
 }
 
+firevision::ROI
+PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
+{
+	firevision::ROI light;
 
 
 
+	return light;
+}
+
+void
+PluginLightThread::writeLightInterface(fawkes::RobotinoLightInterface::LightState red,
+		 fawkes::RobotinoLightInterface::LightState yellow,
+		 fawkes::RobotinoLightInterface::LightState green,
+		 bool ready,
+		 bool resetVisibilityHistory)
+{
+	if (resetVisibilityHistory) {
+		this->lightStateIF->set_visibility_history(-1);
+	} else {
+		this->lightStateIF->read();
+		int vis = this->lightStateIF->visibility_history();
+		this->lightStateIF->set_visibility_history(vis + 1);
+	}
+
+	this->lightStateIF->set_green(green);
+	this->lightStateIF->set_yellow(yellow);
+	this->lightStateIF->set_red(red);
+
+	this->lightStateIF->set_ready(ready);
+
+	this->lightStateIF->write();
+}
 
 
 
