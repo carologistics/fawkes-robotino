@@ -88,6 +88,7 @@ public:
 	};
 
 	typedef std::list<PolarPos> laserscan;
+	typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
 
 	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
@@ -100,7 +101,7 @@ private:
 	void read_laser();
 	void write_laser_to_file();
 	void publish_nearest_light();
-	fawkes::tf::Stamped<fawkes::tf::Point> apply_tf(fawkes::tf::Stamped<fawkes::tf::Point> src);
+	Point3d apply_tf(Point3d src);
 
 private:
 	fawkes::Laser360Interface *laser_if_;
@@ -109,12 +110,13 @@ private:
 	std::list<PolarPos> lights_;
 	unsigned int num_scans_;
 	laserscan filtered_scan_;
-
+	Point3d last_light_;
 	float cfg_laser_min_;
 	float cfg_laser_max_;
 	unsigned int cfg_laser_scanrange_;
 	float cfg_cluster_valid_size_;
 	float cfg_cluster_allowed_variance_;
+	float cfg_cluster_allowed_variance_over_time_;
 	float cfg_dist_threshold_;
 
 	int loopcnt;

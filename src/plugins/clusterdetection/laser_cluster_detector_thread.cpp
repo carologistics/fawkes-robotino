@@ -70,6 +70,8 @@ void LaserClusterDetector::init() {
 
 	cfg_cluster_allowed_variance_ = config->get_float(
 			CFG_PREFIX"cluster_variance");
+	cfg_cluster_allowed_variance_over_time_ = config->get_float(
+			CFG_PREFIX"cluster_variance_over_time_");
 
 	logger->log_debug(name(), "Configuration values:");
 	logger->log_debug(name(), "laser_min_length: %f", cfg_laser_min_);
@@ -264,6 +266,7 @@ void LaserClusterDetector::write_laser_to_file() {
 }
 
 void LaserClusterDetector::publish_nearest_light() {
+	Point3d light;
 	if (lights_.size() > 0) {
 		PolarPos& nearest_light = lights_.front();
 		float min_distance = nearest_light.distance;
@@ -286,27 +289,48 @@ void LaserClusterDetector::publish_nearest_light() {
 					nearest_light_transformed.to_string().c_str(),
 					nearest_light.to_string().c_str(), x, y);
 
-		tf::Stamped<tf::Point> light;
 		light.setX(x);
 		light.setY(y);
 		light.setZ(0);
 
 		light = apply_tf(light);
+
 		if (cfg_debug_)
 			logger->log_debug(name(), "transformed: x: %f, y: %f", light.getX(),
 					light.getY());
 		pos3d_if_->set_translation(0, light.getX());
 		pos3d_if_->set_translation(1, light.getY());
 		pos3d_if_->set_frame("/base_link");
-		pos3d_if_->write();
 	}
+
+	if (lights_.size() == 0) {
+		// if we have no light, we set visibility history to at least -1
+		pos3d_if_->set_visibility_history(
+				min(pos3d_if_->visibility_history() - 1, -1));
+
+	} else if (pos3d_if_->visibility_history() <= 0) {
+		// we see a light for the first time (or again but not the last time)
+		pos3d_if_->set_visibility_history(1);
+		last_light_ = light;
+	} else if (distance(light.getX(), last_light_.getX(), light.getY(),
+			last_light_.getY()) < cfg_cluster_allowed_variance_over_time_) {
+		//distance small enough to count up
+		pos3d_if_->set_visibility_history(
+				(pos3d_if_->visibility_history() + 1));
+		last_light_ = light;
+	} else {
+		//distance to large -> new light
+		pos3d_if_->set_visibility_history(1);
+		last_light_ = light;
+	}
+	pos3d_if_->write();
 }
 
 void LaserClusterDetector::loop() {
 	cfg_debug_ = (loopcnt++ % 50) == 0;
 	read_laser();
-	//if (cfg_debug_)
-	//	write_laser_to_file();
+//if (cfg_debug_)
+//	write_laser_to_file();
 	find_lights();
 	publish_nearest_light();
 
