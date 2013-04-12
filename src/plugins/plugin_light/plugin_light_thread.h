@@ -64,10 +64,13 @@ private:
 	std::string cfg_prefix;
 
 	std::string cfg_camera;
-	float cfg_cameraAngleHorizontal;
-	float cfg_cameraAngleVertical;
+	float cfg_cameraFactorHorizontal;
+	float cfg_cameraFactorVertical;
 	unsigned int img_width;
 	unsigned int img_height;
+
+	int cfg_cameraOffsetVertical;
+	float cfg_cameraOffsetHorizontalRad;
 
 	std::string cfg_frame;
 
@@ -105,7 +108,7 @@ private:
 							 bool resetVisibilityHistory = false
 							 );
 
-	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::INVERTED);
+	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 	fawkes::polar_coord_2d_t transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
 //	void polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y);

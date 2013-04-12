@@ -21,8 +21,8 @@ PluginLightThread::PluginLightThread()
 	this->cfg_camera = "";
 	this->cfg_frame = "";
 
-	this->cfg_cameraAngleHorizontal = 0;
-	this->cfg_cameraAngleVertical = 0;
+	this->cfg_cameraFactorHorizontal = 0;
+	this->cfg_cameraFactorVertical = 0;
 
 	this->cfg_lightSizeHeight = 0;
 	this->cfg_lightSizeWidth = 0;
@@ -61,8 +61,11 @@ PluginLightThread::init()
 	this->cfg_frame  = this->config->get_string((this->cfg_prefix + "frame").c_str());
 
 	this->cfg_camera = this->config->get_string((this->cfg_prefix + "camera").c_str());
-	this->cfg_cameraAngleHorizontal = this->config->get_float((this->cfg_prefix + "camera_angle_horizontal").c_str());
-	this->cfg_cameraAngleVertical = this->config->get_float((this->cfg_prefix + "camera_angle_vertical").c_str());
+	this->cfg_cameraFactorHorizontal = this->config->get_float((this->cfg_prefix + "camera_factor_horizontal").c_str());
+	this->cfg_cameraFactorVertical = this->config->get_float((this->cfg_prefix + "camera_factor_vertical").c_str());
+
+	this->cfg_cameraOffsetHorizontalRad = this->config->get_float((this->cfg_prefix + "camera_offset_horizontal_rad").c_str());
+	this->cfg_cameraOffsetVertical = this->config->get_int((this->cfg_prefix + "camera_offset_vertical").c_str());
 
 	this->cfg_debugMessages = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
 
@@ -126,7 +129,7 @@ PluginLightThread::init()
 }
 
 void
-PluginLightThread::finalize()
+PluginLightThread::finalize()													//TODO check if everthing gets deleted
 {
 	logger->log_debug(name(), "Plugin-light: start to free memory");
 
@@ -144,18 +147,6 @@ PluginLightThread::finalize()
 void
 PluginLightThread::loop()
 {
-	camera->capture();
-
-	firevision::convert(
-			this->cspaceFrom,
-			this->cspaceTo,
-			this->camera->buffer(),
-			this->bufferYCbCr,
-			this->img_width,
-			this->img_height
-			);
-	this->camera->dispose_buffer();
-
 	//read laser if
 	this->lightPositionLasterIF->read();
 	fawkes::cart_coord_3d_t lightPosition;
@@ -169,7 +160,23 @@ PluginLightThread::loop()
 
 	fawkes::polar_coord_2d_t lightPositionPolar = this->transformPolarCoord2D(lightPosition, lightPosFrame, this->cfg_frame);
 
+	lightPositionPolar.r = 2;
+	lightPositionPolar.phi = 0;
 	firevision::ROI light = this->calculateLightPos(lightPositionPolar);
+
+	logger->log_info(name(), "x: %u, y: %u, h: %u, w: %u", light.start.x, light.start.x, light.height, light.width);
+
+	camera->capture();
+
+	firevision::convert(
+			this->cspaceFrom,
+			this->cspaceTo,
+			this->camera->buffer(),
+			this->bufferYCbCr,
+			this->img_width,
+			this->img_height
+			);
+	this->camera->dispose_buffer();
 
 	//draw expected light in buffer
 	this->drawROIIntoBuffer(light);
@@ -300,7 +307,7 @@ void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float 
 void
 PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
 {
-	this->drawer->set_src_buffer(this->bufferYCbCr, firevision::ROI::full_image(img_width, img_height), 0);
+	this->drawer->set_src_buffer(this->bufferYCbCr, firevision::ROI::full_image(this->img_width, this->img_height), 0);
 	this->drawer->set_dst_buffer(this->bufferYCbCr, &roi);
 	this->drawer->set_style(borderStyle);
 	this->drawer->apply();
@@ -311,16 +318,18 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 }
 
 firevision::ROI
-PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)			//TODO fill with real calculation
+PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 {
-	int expectedLightSizeHeigth = 60;//*this->cfg_lightSize_height;
-	int expectedLightSizeWidth =  20;//*this->cfg_lightSize_width;
+	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;	//TODO überprüfe welche einheit das Position3D interface nutzt, wenn es Meter sind, dann ist alles ok wenn es cm sind dann muss hier noch mit 100 Multiliziert werden
+	int expectedLightSizeWidth = this->img_width / (lightPos.r * this->cfg_cameraFactorHorizontal) * this->cfg_lightSizeWidth;
 
-	float radPerPixelHorizonal = img_width_/cfg_cameraAngleHorizontal;
-//	float radPerPixelVertical = img_width_/cfg_cameraAngleVertical;
+	float radPerPixelHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
+//	float radPerPixelVertical = img_width/cfg_cameraAngleVertical;
 
-	int startX = lightPos.phi*radPerPixelHorizonal + (img_width-expectedLightSizeWidth)/2;
-	int startY = (img_height-expectedLightSizeHeigth)/2;
+	int startX = lightPos.phi * radPerPixelHorizonal + (this->img_width - expectedLightSizeWidth) / 2
+							+ this->cfg_cameraOffsetHorizontalRad * lightPos.r * radPerPixelHorizonal;	//TODO suche richtige werte der Kamera
+	int startY = (this->img_height - expectedLightSizeHeigth) / 2
+							+ this->cfg_cameraOffsetVertical;											//TODO suche richtige werte der Kamera
 
 	firevision::ROI light;
 
