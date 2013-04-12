@@ -173,7 +173,6 @@ void LaserClusterDetector::find_lights() {
 					float light_distance = (last_peak.distance
 							+ current->distance) / 2.0;
 					lights_.push_back(PolarPos(light_angle, light_distance));
-					return; //for the moment only interested in one light
 
 				}
 			}
@@ -255,33 +254,37 @@ tf::Stamped<tf::Point> LaserClusterDetector::apply_tf(
 }
 
 //for analyzing laserdata manually
-void LaserClusterDetector::write_laser_to_file(){
-	fawkes::File file("laserdata.csv",fawkes::File::ADD_SUFFIX);
-	for (laserscan::iterator it = filtered_scan_.begin();it!=filtered_scan_.end();++it ){
-		fprintf(file.stream(),"%s\n ", it->to_string().c_str());
+void LaserClusterDetector::write_laser_to_file() {
+	fawkes::File file("laserdata.csv", fawkes::File::ADD_SUFFIX);
+	for (laserscan::iterator it = filtered_scan_.begin();
+			it != filtered_scan_.end(); ++it) {
+		fprintf(file.stream(), "%s\n ", it->to_string().c_str());
 
 	}
 }
 
-
-void LaserClusterDetector::loop() {
-	cfg_debug_ = (loopcnt++ % 50) == 0;
-	read_laser();
-	//if (cfg_debug_)
-	//	write_laser_to_file();
-	find_lights();
-
+void LaserClusterDetector::publish_nearest_light() {
 	if (lights_.size() > 0) {
-
-		PolarPos nearest_light = lights_.front();
-		nearest_light.angle = (nearest_light.angle - cfg_laser_scanrange_ / 2)
-				% 360;
+		PolarPos& nearest_light = lights_.front();
+		float min_distance = nearest_light.distance;
+		for (std::list<PolarPos>::iterator it = lights_.begin();
+				it != lights_.end(); ++it) {
+			if (it->distance < min_distance) {
+				nearest_light = *it;
+				min_distance = nearest_light.distance;
+			}
+		}
+		PolarPos nearest_light_transformed(
+				(nearest_light.angle - cfg_laser_scanrange_ / 2) % 360,
+				nearest_light.distance);
 		float x;
 		float y;
-		nearest_light.toCart(&x,&y);
+		nearest_light_transformed.toCart(&x, &y);
 		if (cfg_debug_)
-					logger->log_debug(name(), "before tf: %s, which is x: %f, y: %f",
-							nearest_light.to_string().c_str(),x,y);
+			logger->log_debug(name(),
+					"before tf: %s, which is rotated to %s -> x: %f, y: %f",
+					nearest_light_transformed.to_string().c_str(),
+					nearest_light.to_string().c_str(), x, y);
 
 		tf::Stamped<tf::Point> light;
 		light.setX(x);
@@ -290,12 +293,22 @@ void LaserClusterDetector::loop() {
 
 		light = apply_tf(light);
 		if (cfg_debug_)
-			logger->log_debug(name(), "transformed: x: %f, y: %f",
-					light.getX(),light.getY());
-		pos3d_if_->set_translation(0,light.getX());
-		pos3d_if_->set_translation(1,light.getY());
+			logger->log_debug(name(), "transformed: x: %f, y: %f", light.getX(),
+					light.getY());
+		pos3d_if_->set_translation(0, light.getX());
+		pos3d_if_->set_translation(1, light.getY());
 		pos3d_if_->set_frame("/base_link");
 		pos3d_if_->write();
 	}
+}
+
+void LaserClusterDetector::loop() {
+	cfg_debug_ = (loopcnt++ % 50) == 0;
+	read_laser();
+	//if (cfg_debug_)
+	//	write_laser_to_file();
+	find_lights();
+	publish_nearest_light();
+
 }
 

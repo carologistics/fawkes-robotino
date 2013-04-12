@@ -99,6 +99,7 @@ private:
 	void find_lights();
 	void read_laser();
 	void write_laser_to_file();
+	void publish_nearest_light();
 	fawkes::tf::Stamped<fawkes::tf::Point> apply_tf(fawkes::tf::Stamped<fawkes::tf::Point> src);
 
 private:
