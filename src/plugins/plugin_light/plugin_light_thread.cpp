@@ -150,6 +150,7 @@ PluginLightThread::finalize()													//TODO check if everthing gets deleted
 	delete this->shmBufferYCbCr;
 
 	blackboard->close(this->lightPositionLaserIF);
+	blackboard->close(this->lightStateIF);
 
 	logger->log_info(name(), "Plugin-light: ends");
 }
@@ -160,20 +161,24 @@ PluginLightThread::loop()
 	//read laser if
 	this->lightPositionLaserIF->read();
 
-	if (this->lightPositionLaserIF->visibility_history() <= 0) {
+	logger->log_info(name(), "th: %i", this->cfg_visibilityHistoryThreashold);
+	if (this->lightPositionLaserIF->visibility_history() > this->laser_visibilityHistory
+		&& this->lightPositionLaserIF->visibility_history() > this->cfg_visibilityHistoryThreashold) {
 
+		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture();
+		this->writeLightInterface(lightSignalCurrentPicture);
+
+		if (this->cfg_debugMessages) {
+			logger->log_info(name(), "updatingLightInterface");
+		}
+	} else {
 		this->resetLightInterface();
 
 		if (this->cfg_debugMessages) {
 			logger->log_info(name(), "resetLightInterface");
 		}
-
-	} else if (this->lightPositionLaserIF->visibility_history() > this->laser_visibilityHistory
-			&& this->lightPositionLaserIF->visibility_history() > this->laser_visibilityHistoryThrashold) {
-
-		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture();
-		this->writeLightInterface(lightSignalCurrentPicture);
 	}
+
 	this->laser_visibilityHistory = this->lightPositionLaserIF->visibility_history();
 }
 
@@ -191,8 +196,25 @@ PluginLightThread::detectLightInCurrentPicture()
 
 	fawkes::polar_coord_2d_t lightPositionPolar = this->transformPolarCoord2D(lightPosition, lightPosFrame, this->cfg_frame);
 
-	lightPositionPolar.r = 1;
-	lightPositionPolar.phi = 0;
+	float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 ) - 0.2;
+	if ( lightPositionPolar.phi >= cameraAngleDetectionArea
+		 || - lightPositionPolar.phi >= cameraAngleDetectionArea ) {
+
+		PluginLightThread::lightSignal noLightSignal;
+
+		noLightSignal.red = fawkes::RobotinoLightInterface::OFF;
+		noLightSignal.yellow = fawkes::RobotinoLightInterface::OFF;
+		noLightSignal.green = fawkes::RobotinoLightInterface::OFF;
+
+		if (this->cfg_debugMessages) {
+			logger->log_info(name(), "Light out of camera-view area");
+		}
+
+		return noLightSignal;
+	}
+
+//	lightPositionPolar.r = 1;
+//	lightPositionPolar.phi = 0;
 	PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 
 	logger->log_info(name(), "x: %u, y: %u, h: %u, w: %u", lightROIs.light.start.x, lightROIs.light.start.x, lightROIs.light.height, lightROIs.light.width);
@@ -277,11 +299,12 @@ PluginLightThread::transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::
 }
 
 void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y) {
-	pol.phi = atan2f(y, x) * 180 / M_PI;
+	pol.phi = atan2f(y, x);	//TODO check maybe back to * 180 / M_PI
 	pol.r = sqrtf(x * x + y * y);
 
 	if (this->cfg_debugMessages) {
-		logger->log_info(name(), "Calculated phi: %f", pol.phi);
+		logger->log_info(name(), "x: %f; y: %f", x, y);
+		logger->log_info(name(), "Calculated r: %f; phi: %f", pol.r, pol.phi);
 	}
 }
 
@@ -304,13 +327,17 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;	//TODO überprüfe welche einheit das Position3D interface nutzt, wenn es Meter sind, dann ist alles ok wenn es cm sind dann muss hier noch mit 100 Multiliziert werden
 	int expectedLightSizeWidth = this->img_width / (lightPos.r * this->cfg_cameraFactorHorizontal) * this->cfg_lightSizeWidth;
 
-	float radPerPixelHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
+	float pixelPerRadHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
 //	float radPerPixelVertical = img_width/cfg_cameraAngleVertical;
 
-	int startX = lightPos.phi * radPerPixelHorizonal + (this->img_width - expectedLightSizeWidth) / 2
-							+ this->cfg_cameraOffsetHorizontalRad * lightPos.r * radPerPixelHorizonal;	//TODO suche richtige werte der Kamera
-	int startY = (this->img_height - expectedLightSizeHeigth) / 2
-							+ this->cfg_cameraOffsetVertical;											//TODO suche richtige werte der Kamera
+	int startX = this->img_width / 2											//picture center
+				- lightPos.phi * pixelPerRadHorizonal							//move to the light
+				- expectedLightSizeWidth / 2									//light center to light top cornor
+				+ this->cfg_cameraOffsetHorizontalRad * lightPos.r * pixelPerRadHorizonal;	//TODO suche richtige werte der Kamera
+
+	int startY = this->img_height / 2											//picture center
+				- expectedLightSizeHeigth / 2									//light center to light cornor
+				+ this->cfg_cameraOffsetVertical;											//TODO suche richtige werte der Kamera
 
 	PluginLightThread::lightROIs lightROIs;
 
