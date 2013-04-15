@@ -81,6 +81,8 @@ void LaserClusterDetector::init() {
 	logger->log_debug(name(), "cluster size: %f", cfg_cluster_valid_size_);
 	logger->log_debug(name(), "cluster_variance: %f",
 			cfg_cluster_allowed_variance_);
+	logger->log_debug(name(), "cluster_variance_over_time: %f",
+			cfg_cluster_allowed_variance_over_time_);
 
 	pos3d_if_ = blackboard->open_for_writing<Position3DInterface>(
 			"Closest_Machine");
@@ -302,7 +304,6 @@ void LaserClusterDetector::publish_nearest_light() {
 		pos3d_if_->set_translation(1, light.getY());
 		pos3d_if_->set_frame("/base_link");
 	}
-
 	if (lights_.size() == 0) {
 		// if we have no light, we set visibility history to at least -1
 		pos3d_if_->set_visibility_history(
@@ -312,16 +313,22 @@ void LaserClusterDetector::publish_nearest_light() {
 		// we see a light for the first time (or again but not the last time)
 		pos3d_if_->set_visibility_history(1);
 		last_light_ = light;
-	} else if (distance(light.getX(), last_light_.getX(), light.getY(),
-			last_light_.getY()) < cfg_cluster_allowed_variance_over_time_) {
-		//distance small enough to count up
-		pos3d_if_->set_visibility_history(
-				(pos3d_if_->visibility_history() + 1));
-		last_light_ = light;
 	} else {
-		//distance to large -> new light
-		pos3d_if_->set_visibility_history(1);
-		last_light_ = light;
+		float distance = fawkes::distance(light.getX(), light.getY(),
+				last_light_.getX(), last_light_.getY());
+		if (cfg_debug_) {
+			logger->log_debug(name(), "Distance to last cluster: %f", distance);
+		}
+		if (distance < cfg_cluster_allowed_variance_over_time_) {
+			//distance small enough to count up
+			pos3d_if_->set_visibility_history(
+					(pos3d_if_->visibility_history() + 1));
+			last_light_ = light;
+		} else {
+			//distance to large -> new light
+			pos3d_if_->set_visibility_history(1);
+			last_light_ = light;
+		}
 	}
 	pos3d_if_->write();
 }
