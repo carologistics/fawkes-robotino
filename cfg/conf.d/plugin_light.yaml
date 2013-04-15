@@ -28,9 +28,8 @@ plugins/plugin_light:
 
   # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
   threashold_brightness: 200
-
-  # Distance between camera and laser for corretion of transformation
-  distance_cam_laser: 0.15
+  threashold_visibility_history: 50
+  light_number_of_wrong_detections: 10
 
   # coordinate system
   frame: /base_camFront

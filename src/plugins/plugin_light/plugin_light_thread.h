@@ -69,6 +69,18 @@ private:
 		firevision::ROI green;
 	};
 
+	struct lightSignal{
+		fawkes::RobotinoLightInterface::LightState red;
+		fawkes::RobotinoLightInterface::LightState yellow;
+		fawkes::RobotinoLightInterface::LightState green;
+	};
+
+	struct lightHistory{
+		int red;
+		int yellow;
+		int green;
+	};
+
 	std::string cfg_prefix;
 
 	std::string cfg_camera;
@@ -80,6 +92,9 @@ private:
 	int cfg_cameraOffsetVertical;
 	float cfg_cameraOffsetHorizontalRad;
 
+	int cfg_lightNumberOfWrongDetections;
+	int cfg_visibilityHistoryThreashold;
+
 	std::string cfg_frame;
 
 	unsigned int cfg_threasholdBrightness;
@@ -87,6 +102,8 @@ private:
 	float cfg_lightSizeHeight;
 
 	bool cfg_debugMessages;
+
+	PluginLightThread::lightHistory lightHistory;
 
 	firevision::Camera *camera;
 	firevision::ScanlineModel *scanline;
@@ -99,30 +116,30 @@ private:
 	firevision::colorspace_t cspaceTo;
 
 	fawkes::Position3DInterface *lightPositionLasterIF;
+	int laser_visibilityHistory;
+	int laser_visibilityHistoryThrashold;
+
 	fawkes::RobotinoLightInterface *lightStateIF;
 
 	firevision::FilterROIDraw *drawer;
 
+	PluginLightThread::lightSignal detectLightInCurrentPicture();
+	fawkes::RobotinoLightInterface::LightState signalLightCurrentPicture(firevision::ROI signal);
+	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory, int visibilityHistory);
+
 	unsigned char* calculatePositionInCamBuffer();
 
-	std::list<firevision::ROI>* getROIs(unsigned char *buffer, unsigned int imgWidth, unsigned int imgHeight_);
-	std::list<firevision::ROI>* removeUnimportantROIs(std::list<firevision::ROI>* ROIs, firevision::ROI light);
 	PluginLightThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
 
-	void writeLightInterface(fawkes::RobotinoLightInterface::LightState red,
-							 fawkes::RobotinoLightInterface::LightState yellow,
-							 fawkes::RobotinoLightInterface::LightState green,
-							 bool ready,
-							 bool resetVisibilityHistory = false
-							 );
+	void writeLightInterface(PluginLightThread::lightSignal lightSignalCurrent);
+
+	void resetLightInterface();
 
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 	fawkes::polar_coord_2d_t transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
 //	void polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y);
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
-
-	bool isSignalOn(firevision::ROI signal);
 
 protected:
 	virtual void run() { Thread::run(); }
