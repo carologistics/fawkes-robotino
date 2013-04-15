@@ -46,7 +46,7 @@ PluginLightThread::PluginLightThread()
 	this->classifierLight = NULL;
 	this->shmBufferYCbCr = NULL;
 
-	this->lightPositionLasterIF = NULL;
+	this->lightPositionLaserIF = NULL;
 	this->lightStateIF = NULL;
 
 	this->drawer = NULL;
@@ -120,7 +120,7 @@ PluginLightThread::init()
 	this->bufferYCbCr = this->shmBufferYCbCr->buffer();
 
 	//open interfaces
-	this->lightPositionLasterIF = blackboard->open_for_reading<fawkes::Position3DInterface>(
+	this->lightPositionLaserIF = blackboard->open_for_reading<fawkes::Position3DInterface>(
 			this->config->get_string((this->cfg_prefix + "light_position_if").c_str()).c_str());
 
 	this->lightStateIF = blackboard->open_for_writing<fawkes::RobotinoLightInterface>(
@@ -149,7 +149,7 @@ PluginLightThread::finalize()													//TODO check if everthing gets deleted
 	delete this->classifierLight;
 	delete this->shmBufferYCbCr;
 
-	blackboard->close(this->lightPositionLasterIF);
+	blackboard->close(this->lightPositionLaserIF);
 
 	logger->log_info(name(), "Plugin-light: ends");
 }
@@ -158,9 +158,9 @@ void
 PluginLightThread::loop()
 {
 	//read laser if
-	this->lightPositionLasterIF->read();
+	this->lightPositionLaserIF->read();
 
-	if (this->lightPositionLasterIF->visibility_history() <= 0) {
+	if (this->lightPositionLaserIF->visibility_history() <= 0) {
 
 		this->resetLightInterface();
 
@@ -168,15 +168,13 @@ PluginLightThread::loop()
 			logger->log_info(name(), "resetLightInterface");
 		}
 
-	} else if (this->lightPositionLasterIF->visibility_history() > this->laser_visibilityHistory
-			&& this->lightPositionLasterIF->visibility_history() > this->laser_visibilityHistoryThrashold) {
+	} else if (this->lightPositionLaserIF->visibility_history() > this->laser_visibilityHistory
+			&& this->lightPositionLaserIF->visibility_history() > this->laser_visibilityHistoryThrashold) {
 
 		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture();
 		this->writeLightInterface(lightSignalCurrentPicture);
-
-
 	}
-	this->laser_visibilityHistory = this->lightPositionLasterIF->visibility_history();
+	this->laser_visibilityHistory = this->lightPositionLaserIF->visibility_history();
 }
 
 PluginLightThread::lightSignal
@@ -184,12 +182,12 @@ PluginLightThread::detectLightInCurrentPicture()
 {
 	fawkes::cart_coord_3d_t lightPosition;
 
-	lightPosition.x = this->lightPositionLasterIF->translation(0);
-	lightPosition.y = this->lightPositionLasterIF->translation(1);
-	lightPosition.z = this->lightPositionLasterIF->translation(2);
+	lightPosition.x = this->lightPositionLaserIF->translation(0);
+	lightPosition.y = this->lightPositionLaserIF->translation(1);
+	lightPosition.z = this->lightPositionLaserIF->translation(2);
 
 	//transform coorodinate-system from laser -> camera
-	std::string lightPosFrame = this->lightPositionLasterIF->frame();
+	std::string lightPosFrame = this->lightPositionLaserIF->frame();
 
 	fawkes::polar_coord_2d_t lightPositionPolar = this->transformPolarCoord2D(lightPosition, lightPosFrame, this->cfg_frame);
 
@@ -278,14 +276,13 @@ PluginLightThread::transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::
 	return polErrorReturnValue;
 }
 
-//void PluginLightThread::polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y) {
-//	x = pol.r * cos(pol.phi * M_PI / 180.0);
-//	y = pol.r * sin(pol.phi * M_PI / 180.0);
-//}
-
 void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y) {
 	pol.phi = atan2f(y, x) * 180 / M_PI;
 	pol.r = sqrtf(x * x + y * y);
+
+	if (this->cfg_debugMessages) {
+		logger->log_info(name(), "Calculated phi: %f", pol.phi);
+	}
 }
 
 void

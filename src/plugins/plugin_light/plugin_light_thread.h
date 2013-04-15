@@ -115,7 +115,7 @@ private:
 	firevision::colorspace_t cspaceFrom;
 	firevision::colorspace_t cspaceTo;
 
-	fawkes::Position3DInterface *lightPositionLasterIF;
+	fawkes::Position3DInterface *lightPositionLaserIF;
 	int laser_visibilityHistory;
 	int laser_visibilityHistoryThrashold;
 
@@ -138,7 +138,6 @@ private:
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 	fawkes::polar_coord_2d_t transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
-//	void polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y);
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 
 protected:
