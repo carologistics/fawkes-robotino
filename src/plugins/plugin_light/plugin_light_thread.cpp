@@ -160,11 +160,11 @@ PluginLightThread::loop()
 
 	fawkes::polar_coord_2d_t lightPositionPolar = this->transformPolarCoord2D(lightPosition, lightPosFrame, this->cfg_frame);
 
-	lightPositionPolar.r = 2;
+	lightPositionPolar.r = 1;
 	lightPositionPolar.phi = 0;
-	firevision::ROI light = this->calculateLightPos(lightPositionPolar);
+	PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 
-	logger->log_info(name(), "x: %u, y: %u, h: %u, w: %u", light.start.x, light.start.x, light.height, light.width);
+	logger->log_info(name(), "x: %u, y: %u, h: %u, w: %u", lightROIs.light.start.x, lightROIs.light.start.x, lightROIs.light.height, lightROIs.light.width);
 
 	camera->capture();
 
@@ -179,19 +179,15 @@ PluginLightThread::loop()
 	this->camera->dispose_buffer();
 
 	//draw expected light in buffer
-	this->drawROIIntoBuffer(light);
+	this->drawROIIntoBuffer(lightROIs.light);
+//	this->drawROIIntoBuffer(lightROIs.red);
+//	this->drawROIIntoBuffer(lightROIs.yellow);
+//	this->drawROIIntoBuffer(lightROIs.green);
 
-//	//search for ROIs
-//	std::list<firevision::ROI>* ROIs =
-//	this->getROIs(
-//			this->bufferYCbCr,
-//			this->img_width,
-//			this->img_height
-//			);
-
-//	//remove unimportant ROIs
-//	std::list<firevision::ROI>* ROIsInLightArea =
-//	this->removeUnimportantROIs(ROIs, light);
+	//detect signals
+	this->isSignalOn(lightROIs.red);
+	this->isSignalOn(lightROIs.yellow);
+	this->isSignalOn(lightROIs.green);
 
 	//draw ROIs in buffer
 
@@ -317,7 +313,7 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 	}
 }
 
-firevision::ROI
+PluginLightThread::lightROIs
 PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 {
 	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;	//TODO überprüfe welche einheit das Position3D interface nutzt, wenn es Meter sind, dann ist alles ok wenn es cm sind dann muss hier noch mit 100 Multiliziert werden
@@ -331,16 +327,30 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 	int startY = (this->img_height - expectedLightSizeHeigth) / 2
 							+ this->cfg_cameraOffsetVertical;											//TODO suche richtige werte der Kamera
 
-	firevision::ROI light;
+	PluginLightThread::lightROIs lightROIs;
 
-	light.image_height = this->img_height;
-	light.image_width = this->img_width;
-	light.height = expectedLightSizeHeigth;
-	light.width = expectedLightSizeWidth;
-	light.start.x = startX;
-	light.start.y = startY;
+	//light ROI size
+	lightROIs.light.image_height = this->img_height;
+	lightROIs.light.image_width = this->img_width;
+	lightROIs.light.height = expectedLightSizeHeigth;
+	lightROIs.light.width = expectedLightSizeWidth;
+	lightROIs.light.start.x = startX;
+	lightROIs.light.start.y = startY;
 
-	return light;
+	lightROIs.red = lightROIs.light;
+	lightROIs.yellow = lightROIs.light;
+	lightROIs.green = lightROIs.light;
+
+	//Signale ROIs
+	lightROIs.red.height /= 3;
+
+	lightROIs.yellow.height /= 3;
+	lightROIs.yellow.start.y += lightROIs.red.height;
+
+	lightROIs.green.height /= 3;
+	lightROIs.green.start.y += lightROIs.red.height + lightROIs.yellow.height;
+
+	return lightROIs;
 }
 
 void
@@ -367,7 +377,28 @@ PluginLightThread::writeLightInterface(fawkes::RobotinoLightInterface::LightStat
 	this->lightStateIF->write();
 }
 
+bool
+PluginLightThread::isSignalOn(firevision::ROI signal)
+{
+	this->scanline->reset();
+	this->scanline->set_roi(&signal);
 
+	this->classifierLight->set_src_buffer(this->bufferYCbCr, this->img_width, this->img_height);
+
+	std::list<firevision::ROI> *ROIs = this->classifierLight->classify();
+
+	if (this->cfg_debugMessages) {
+		int countedROIs = (int)ROIs->size();
+		logger->log_info(name(), "Detect: %i", countedROIs);
+
+		for (int i = 0; i < countedROIs; ++i) {
+			this->drawROIIntoBuffer(ROIs->front());
+			ROIs->pop_front();
+		}
+	}
+
+	return true;
+}
 
 
 

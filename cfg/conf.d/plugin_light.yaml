@@ -8,7 +8,7 @@ plugins/plugin_light:
   # camera being used
   # camera: v4l2:light:device=/dev/video0
   # camera: "file:file:file=/home/florian/Dropbox/fawkes/sampleImages/vlcsnap-2013-03-18-13h45m18s129.png"
-  camera: "file:file:file=/home/tobias/Dropbox/Carologistics/fawkes/sampleImages/Webcam/2013-04-11-184037-200cm.jpg"
+  camera: "file:file:file=/home/tobias/Dropbox/Carologistics/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
   # camera: v4l2:light:device=/dev/video1:size=640x480:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
 
   # Size of the light (Ampel) in m, without the sockel to determine the light search areas
@@ -20,14 +20,14 @@ plugins/plugin_light:
   camera_factor_vertical: 1.33
 
   # camare offset of the front cam
-  camera_offset_horizontal_rad: 0#-0.0735
+  camera_offset_horizontal_rad: -0.124#-0.0735
   camera_offset_vertical: 38
 
   #Shared Memory Imagebuffer name
   shm_image_id: "lightCam"
 
   # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
-  threashold_brightness: 50
+  threashold_brightness: 200
 
   # Distance between camera and laser for corretion of transformation
   distance_cam_laser: 0.15

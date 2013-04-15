@@ -61,6 +61,14 @@ class PluginLightThread
 {
 
 private:
+
+	struct lightROIs{
+		firevision::ROI light;
+		firevision::ROI red;
+		firevision::ROI yellow;
+		firevision::ROI green;
+	};
+
 	std::string cfg_prefix;
 
 	std::string cfg_camera;
@@ -99,7 +107,7 @@ private:
 
 	std::list<firevision::ROI>* getROIs(unsigned char *buffer, unsigned int imgWidth, unsigned int imgHeight_);
 	std::list<firevision::ROI>* removeUnimportantROIs(std::list<firevision::ROI>* ROIs, firevision::ROI light);
-	firevision::ROI calculateLightPos(fawkes::polar_coord_2d_t lightPos);
+	PluginLightThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
 
 	void writeLightInterface(fawkes::RobotinoLightInterface::LightState red,
 							 fawkes::RobotinoLightInterface::LightState yellow,
@@ -113,6 +121,8 @@ private:
 
 //	void polToCart(fawkes::polar_coord_2d_t pol, float &x, float &y);
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
+
+	bool isSignalOn(firevision::ROI signal);
 
 protected:
 	virtual void run() { Thread::run(); }
