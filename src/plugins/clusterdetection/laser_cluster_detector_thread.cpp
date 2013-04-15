@@ -71,7 +71,7 @@ void LaserClusterDetector::init() {
 	cfg_cluster_allowed_variance_ = config->get_float(
 			CFG_PREFIX"cluster_variance");
 	cfg_cluster_allowed_variance_over_time_ = config->get_float(
-			CFG_PREFIX"cluster_variance_over_time_");
+			CFG_PREFIX"cluster_variance_over_time");
 
 	logger->log_debug(name(), "Configuration values:");
 	logger->log_debug(name(), "laser_min_length: %f", cfg_laser_min_);
