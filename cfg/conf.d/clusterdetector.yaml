@@ -29,4 +29,9 @@ plugins/laserclusterdetector:
   
   # cluster is regarded as same iff distance from last reading is less than 
   cluster_variance_over_time: 0.1
+
+  # more output
   show_debug_messages: true
+
+  # show found clusters as a laser interface
+  visualize_clusters: true
