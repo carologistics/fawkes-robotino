@@ -52,7 +52,7 @@ int LaserClusterDetector::angle_to_scanrange(int angle){
 }
 
 int LaserClusterDetector::scanrange_to_angle(int scanrange){
-	return (scanrange - cfg_laser_scanrange_ / 2) % 360;
+	return ((scanrange - cfg_laser_scanrange_ / 2)+360) % 360;
 }
 
 /** Constructor. */
@@ -348,12 +348,18 @@ void LaserClusterDetector::publish_nearest_light() {
 }
 
 
+
+
 void LaserClusterDetector::loop() {
 	cfg_debug_ = (loopcnt++ % 50) == 0;
 	read_laser();
 	float* f = (float*) calloc(laser_vis_->maxlenof_distances(),sizeof(float));
 	laser_vis_->set_distances(f);
 	free(f);
+	//for(laserscan::iterator it = filtered_scan_.begin(); it != filtered_scan_.end();++it){
+	//	laser_vis_->set_distances(scanrange_to_angle(it->angle),abs(it->distance));
+	//}
+
 //if (cfg_debug_)
 //	write_laser_to_file();
 	find_lights();
