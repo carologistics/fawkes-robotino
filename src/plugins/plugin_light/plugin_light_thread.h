@@ -93,13 +93,17 @@ private:
 	float cfg_cameraOffsetHorizontalRad;
 
 	int cfg_lightNumberOfWrongDetections;
-	int cfg_visibilityHistoryThreashold;
+	int cfg_detectionCycleTime;
+	int detectionCycleTimeFrames;
+	int loopCounter;
 
 	std::string cfg_frame;
 
 	unsigned int cfg_threasholdBrightness;
 	float cfg_lightSizeWidth;
 	float cfg_lightSizeHeight;
+
+	float cfg_desiredLoopTime;
 
 	bool cfg_debugMessagesActivated;
 
@@ -131,14 +135,15 @@ private:
 
 	PluginLightThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
 
-	void writeLightInterface(PluginLightThread::lightSignal lightSignalCurrent);
-
+	void updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent);
 	void resetLightInterface();
 
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 	fawkes::polar_coord_2d_t transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
+	void resetLocalHistory();
+	void writeLightInterface();
 
 protected:
 	virtual void run() { Thread::run(); }
