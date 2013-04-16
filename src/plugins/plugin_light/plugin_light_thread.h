@@ -136,7 +136,7 @@ private:
 	void resetLightInterface();
 
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
-	fawkes::polar_coord_2d_t transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
+	fawkes::polar_coord_2d_t transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 

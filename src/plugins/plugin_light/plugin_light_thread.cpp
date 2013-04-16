@@ -132,10 +132,6 @@ PluginLightThread::init()
 	this->resetLightInterface();
 
 	logger->log_debug(name(), "Plugin-light: end of init()");
-
-//	if (this->cfg_debugMessages) {
-//		logger->log_info(name(), "");
-//	}
 }
 
 void
@@ -161,7 +157,6 @@ PluginLightThread::loop()
 	//read laser if
 	this->lightPositionLaserIF->read();
 
-	logger->log_info(name(), "th: %i", this->cfg_visibilityHistoryThreashold);
 	if (this->lightPositionLaserIF->visibility_history() > this->laser_visibilityHistory
 		&& this->lightPositionLaserIF->visibility_history() > this->cfg_visibilityHistoryThreashold) {
 
@@ -194,7 +189,7 @@ PluginLightThread::detectLightInCurrentPicture()
 	//transform coorodinate-system from laser -> camera
 	std::string lightPosFrame = this->lightPositionLaserIF->frame();
 
-	fawkes::polar_coord_2d_t lightPositionPolar = this->transformPolarCoord2D(lightPosition, lightPosFrame, this->cfg_frame);
+	fawkes::polar_coord_2d_t lightPositionPolar = this->transformCoordinateSystem(lightPosition, lightPosFrame, this->cfg_frame);
 
 	float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 ) - 0.2;
 	if ( lightPositionPolar.phi >= cameraAngleDetectionArea
@@ -213,11 +208,11 @@ PluginLightThread::detectLightInCurrentPicture()
 		return noLightSignal;
 	}
 
-//	lightPositionPolar.r = 1;
-//	lightPositionPolar.phi = 0;
 	PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 
-	logger->log_info(name(), "x: %u, y: %u, h: %u, w: %u", lightROIs.light.start.x, lightROIs.light.start.x, lightROIs.light.height, lightROIs.light.width);
+	if (this->cfg_debugMessages) {
+		logger->log_debug(name(), "x: %u, y: %u, h: %u, w: %u", lightROIs.light.start.x, lightROIs.light.start.x, lightROIs.light.height, lightROIs.light.width);
+	}
 
 	camera->capture();
 
@@ -233,7 +228,7 @@ PluginLightThread::detectLightInCurrentPicture()
 
 	//draw expected light in buffer
 	if (this->cfg_debugMessages) {
-//		this->drawROIIntoBuffer(lightROIs.light);
+		this->drawROIIntoBuffer(lightROIs.light);
 		this->drawROIIntoBuffer(lightROIs.red);
 		this->drawROIIntoBuffer(lightROIs.yellow);
 		this->drawROIIntoBuffer(lightROIs.green);
@@ -255,7 +250,7 @@ PluginLightThread::~PluginLightThread()
 }
 
 fawkes::polar_coord_2d_t
-PluginLightThread::transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to)
+PluginLightThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to)
 {
 	fawkes::polar_coord_2d_t polErrorReturnValue;
 	this->cartToPol(polErrorReturnValue, cartFrom.x, cartFrom.y);
@@ -299,12 +294,12 @@ PluginLightThread::transformPolarCoord2D(fawkes::cart_coord_3d_t cartFrom, std::
 }
 
 void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y) {
-	pol.phi = atan2f(y, x);	//TODO check maybe back to * 180 / M_PI
+	pol.phi = atan2f(y, x);
 	pol.r = sqrtf(x * x + y * y);
 
 	if (this->cfg_debugMessages) {
-		logger->log_info(name(), "x: %f; y: %f", x, y);
-		logger->log_info(name(), "Calculated r: %f; phi: %f", pol.r, pol.phi);
+		logger->log_debug(name(), "x: %f; y: %f", x, y);
+		logger->log_debug(name(), "Calculated r: %f; phi: %f", pol.r, pol.phi);
 	}
 }
 
@@ -317,27 +312,28 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 	this->drawer->apply();
 
 	if (this->cfg_debugMessages) {
-		logger->log_info(name(), "Plugin-light: drawed element in buffer");
+		logger->log_debug(name(), "Plugin-light: drawed element in buffer");
 	}
 }
 
 PluginLightThread::lightROIs
 PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 {
-	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;	//TODO überprüfe welche einheit das Position3D interface nutzt, wenn es Meter sind, dann ist alles ok wenn es cm sind dann muss hier noch mit 100 Multiliziert werden
 	int expectedLightSizeWidth = this->img_width / (lightPos.r * this->cfg_cameraFactorHorizontal) * this->cfg_lightSizeWidth;
+	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;	//TODO überprüfe welche einheit das Position3D interface nutzt, wenn es Meter sind, dann ist alles ok wenn es cm sind dann muss hier noch mit 100 Multiliziert werden
 
 	float pixelPerRadHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
-//	float radPerPixelVertical = img_width/cfg_cameraAngleVertical;
 
 	int startX = this->img_width / 2											//picture center
 				- lightPos.phi * pixelPerRadHorizonal							//move to the light
 				- expectedLightSizeWidth / 2									//light center to light top cornor
-				+ this->cfg_cameraOffsetHorizontalRad * lightPos.r * pixelPerRadHorizonal;	//TODO suche richtige werte der Kamera
+				+ this->cfg_cameraOffsetHorizontalRad * pixelPerRadHorizonal;	//angle of camera to robotor
+				//TODO suche richtige werte der Kamera
 
 	int startY = this->img_height / 2											//picture center
 				- expectedLightSizeHeigth / 2									//light center to light cornor
-				+ this->cfg_cameraOffsetVertical;											//TODO suche richtige werte der Kamera
+				+ this->cfg_cameraOffsetVertical;								//error of picture position to light
+				//TODO suche richtige werte der Kamera
 
 	PluginLightThread::lightROIs lightROIs;
 
@@ -349,18 +345,22 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 	lightROIs.light.start.x = startX;
 	lightROIs.light.start.y = startY;
 
+	//Signale ROIs
+
 	lightROIs.red = lightROIs.light;
 	lightROIs.yellow = lightROIs.light;
 	lightROIs.green = lightROIs.light;
 
-	//Signale ROIs
-	lightROIs.red.height /= 3;
+	int roiHeight = lightROIs.light / 9;
 
-	lightROIs.yellow.height /= 3;
-	lightROIs.yellow.start.y += lightROIs.red.height;
+	lightROIs.red.height = roiHeight;
+	lightROIs.red.start.y += roiHeight;											//Middle of the top thirds
 
-	lightROIs.green.height /= 3;
-	lightROIs.green.start.y += lightROIs.red.height + lightROIs.yellow.height;
+	lightROIs.yellow.height = roiHeight;
+	lightROIs.yellow.start.y += roiHeight * 4;									//Middle of the middle thirds
+
+	lightROIs.green.height = roiHeight;
+	lightROIs.green.start.y += roiHeight * 7;									//Middle of the bottom thirds
 
 	return lightROIs;
 }
@@ -402,7 +402,7 @@ PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSigna
 }
 
 void
-PluginLightThread::resetLightInterface()
+PluginLightThread::resetLightInterface()	//TODO Es muss runtergezählt werden
 {
 	if(this->lightStateIF->visibility_history() < 0){
 		this->lightStateIF->set_visibility_history(this->lightStateIF->visibility_history() -1);
@@ -450,7 +450,7 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 
 fawkes::RobotinoLightInterface::LightState
 PluginLightThread::signalLightWithHistory(int lightHistory, int visibilityHistory)
-{
+{	//TODO etwas anderes machen
 	if (lightHistory > ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) ) {
 		return fawkes::RobotinoLightInterface::ON;
 	} else if (lightHistory > ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) / 2) {
