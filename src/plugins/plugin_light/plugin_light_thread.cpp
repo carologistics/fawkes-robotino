@@ -351,7 +351,7 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 	lightROIs.yellow = lightROIs.light;
 	lightROIs.green = lightROIs.light;
 
-	int roiHeight = lightROIs.light / 9;
+	int roiHeight = lightROIs.light.height / 9;
 
 	lightROIs.red.height = roiHeight;
 	lightROIs.red.start.y += roiHeight;											//Middle of the top thirds
