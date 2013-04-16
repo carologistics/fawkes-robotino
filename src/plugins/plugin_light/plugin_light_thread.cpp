@@ -368,9 +368,15 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 void
 PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSignalCurrent)
 {
+	int vis = this->lightStateIF->visibility_history();
 	this->lightStateIF->read();
-	int vis = this->lightStateIF->visibility_history() + 1;
+	if(vis<0){
+		vis = 1;
+	}else{
+		vis = this->lightStateIF->visibility_history() + 1;
+	}
 	this->lightStateIF->set_visibility_history(vis);
+
 
 	if (lightSignalCurrent.red == fawkes::RobotinoLightInterface::ON) {
 		this->lightHistory.red++;
@@ -398,9 +404,14 @@ PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSigna
 void
 PluginLightThread::resetLightInterface()
 {
-	this->lightStateIF->set_visibility_history(-1);
-	this->lightStateIF->set_ready(false);
+	if(this->lightStateIF->visibility_history() < 0){
+		this->lightStateIF->set_visibility_history(this->lightStateIF->visibility_history() -1);
+	}
+	else{
+		this->lightStateIF->set_visibility_history(-1);
+	}
 
+	this->lightStateIF->set_ready(false);
 	this->lightStateIF->write();
 
 	lightHistory.red = -1;
