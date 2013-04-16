@@ -131,6 +131,7 @@ private:
 	int loopcnt;
 	bool cfg_debug_;
 	bool cfg_publish_laser_vis_;
+	float cfg_cluster_max_distance_;
 };
 
 #endif

@@ -26,6 +26,10 @@ plugins/laserclusterdetector:
 
   # allowed variance between cluster_size and detected cluster
   cluster_variance: 0.05
+
+  # clusters are only regarded when within that distance.
+  # Keep it smaller than laser_max_length!!
+  cluster_max_distance: 0.8
   
   # cluster is regarded as same iff distance from last reading is less than 
   cluster_variance_over_time: 0.1
