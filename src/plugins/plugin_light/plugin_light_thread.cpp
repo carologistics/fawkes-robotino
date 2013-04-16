@@ -51,7 +51,7 @@ PluginLightThread::PluginLightThread()
 
 	this->drawer = NULL;
 
-	this->cfg_debugMessages = false;
+	this->cfg_debugMessagesActivated = false;
 
 	this->laser_visibilityHistory = 0;
 	this->laser_visibilityHistoryThrashold = 10;
@@ -75,7 +75,7 @@ PluginLightThread::init()
 
 	this->cfg_lightNumberOfWrongDetections = this->config->get_int((this->cfg_prefix + "light_number_of_wrong_detections").c_str());
 	this->cfg_visibilityHistoryThreashold = this->config->get_int((this->cfg_prefix + "threashold_visibility_history").c_str());
-	this->cfg_debugMessages = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
+	this->cfg_debugMessagesActivated = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
 
 	this->cfg_threasholdBrightness = this->config->get_uint((this->cfg_prefix + "threashold_brightness").c_str());
 
@@ -163,13 +163,13 @@ PluginLightThread::loop()
 		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture();
 		this->writeLightInterface(lightSignalCurrentPicture);
 
-		if (this->cfg_debugMessages) {
+		if (this->cfg_debugMessagesActivated) {
 			logger->log_info(name(), "updatingLightInterface");
 		}
 	} else {
 		this->resetLightInterface();
 
-		if (this->cfg_debugMessages) {
+		if (this->cfg_debugMessagesActivated) {
 			logger->log_info(name(), "resetLightInterface");
 		}
 	}
@@ -191,9 +191,11 @@ PluginLightThread::detectLightInCurrentPicture()
 
 	fawkes::polar_coord_2d_t lightPositionPolar = this->transformCoordinateSystem(lightPosition, lightPosFrame, this->cfg_frame);
 
-	float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 ) - 0.2;
-	if ( lightPositionPolar.phi >= cameraAngleDetectionArea
-		 || - lightPositionPolar.phi >= cameraAngleDetectionArea ) {
+	//check if the light is in the camera-view area
+	float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 )
+									 - 0.1;
+
+	if ( std::abs(lightPositionPolar.phi) >= cameraAngleDetectionArea  ) {
 
 		PluginLightThread::lightSignal noLightSignal;
 
@@ -201,16 +203,17 @@ PluginLightThread::detectLightInCurrentPicture()
 		noLightSignal.yellow = fawkes::RobotinoLightInterface::OFF;
 		noLightSignal.green = fawkes::RobotinoLightInterface::OFF;
 
-		if (this->cfg_debugMessages) {
+		if (this->cfg_debugMessagesActivated) {
 			logger->log_info(name(), "Light out of camera-view area");
 		}
 
 		return noLightSignal;
 	}
 
+	//calculate the expected position of the light
 	PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 
-	if (this->cfg_debugMessages) {
+	if (this->cfg_debugMessagesActivated) {
 		logger->log_debug(name(), "x: %u, y: %u, h: %u, w: %u", lightROIs.light.start.x, lightROIs.light.start.x, lightROIs.light.height, lightROIs.light.width);
 	}
 
@@ -227,7 +230,7 @@ PluginLightThread::detectLightInCurrentPicture()
 	this->camera->dispose_buffer();
 
 	//draw expected light in buffer
-	if (this->cfg_debugMessages) {
+	if (this->cfg_debugMessagesActivated) {
 		this->drawROIIntoBuffer(lightROIs.light);
 		this->drawROIIntoBuffer(lightROIs.red);
 		this->drawROIIntoBuffer(lightROIs.yellow);
@@ -283,7 +286,7 @@ PluginLightThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, s
 		toY = cartFrom.y + v.getY();
 		this->cartToPol(polTo, toX, toY);
 
-		if (this->cfg_debugMessages) {
+		if (this->cfg_debugMessagesActivated) {
 			logger->log_info(name(), "From: %s X: %f Y: %f", from.c_str(), cartFrom.x, cartFrom.y);
 			logger->log_info(name(), "To  : %s X: %f Y: %f", to.c_str(), toX, toY);
 		}
@@ -297,7 +300,7 @@ void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float 
 	pol.phi = atan2f(y, x);
 	pol.r = sqrtf(x * x + y * y);
 
-	if (this->cfg_debugMessages) {
+	if (this->cfg_debugMessagesActivated) {
 		logger->log_debug(name(), "x: %f; y: %f", x, y);
 		logger->log_debug(name(), "Calculated r: %f; phi: %f", pol.r, pol.phi);
 	}
@@ -311,7 +314,7 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 	this->drawer->set_style(borderStyle);
 	this->drawer->apply();
 
-	if (this->cfg_debugMessages) {
+	if (this->cfg_debugMessagesActivated) {
 		logger->log_debug(name(), "Plugin-light: drawed element in buffer");
 	}
 }
@@ -393,10 +396,24 @@ PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSigna
 	this->lightStateIF->set_yellow( this->signalLightWithHistory(this->lightHistory.yellow, vis) );
 	this->lightStateIF->set_green( this->signalLightWithHistory(this->lightHistory.green, vis) );
 
-	if (vis > this->cfg_visibilityHistoryThreashold) {
+	//TODO vllt. noch alles resetten wenn zu lange unknown
+
+	if ( vis > this->cfg_visibilityHistoryThreashold
+		&& this->lightStateIF->red() != fawkes::RobotinoLightInterface::UNKNOWN
+		&& this->lightStateIF->yellow() != fawkes::RobotinoLightInterface::UNKNOWN
+		&& this->lightStateIF->green() != fawkes::RobotinoLightInterface::UNKNOWN
+	   ) {
+
 		this->lightStateIF->set_ready(true);
-	} else {
+
+	} else if (vis <= this->cfg_visibilityHistoryThreashold) {
+
 		this->lightStateIF->set_ready(false);
+
+	} else {
+
+		this->resetLightInterface();
+
 	}
 
 	this->lightStateIF->write();
@@ -435,7 +452,7 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 
 	bool isOn = ! ROIs->empty();
 
-	if (this->cfg_debugMessages) {
+	if (this->cfg_debugMessagesActivated) {
 		int countedROIs = (int)ROIs->size();
 		logger->log_info(name(), "Detect: %i", countedROIs);
 
@@ -454,13 +471,18 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 
 fawkes::RobotinoLightInterface::LightState
 PluginLightThread::signalLightWithHistory(int lightHistory, int visibilityHistory)
-{	//TODO etwas anderes machen
-	if (lightHistory > ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) ) {
+{
+	if ( lightHistory > ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) ) {
 		return fawkes::RobotinoLightInterface::ON;
-	} else if (lightHistory > ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) / 2) {
+
+	} else if ( lightHistory > ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) / 2
+			&&  lightHistory < ( visibilityHistory + this->cfg_lightNumberOfWrongDetections ) / 2 ) {
 		return fawkes::RobotinoLightInterface::BLINKING;
-	} else {
+
+	} else if ( lightHistory < this->cfg_lightNumberOfWrongDetections ) {
 		return fawkes::RobotinoLightInterface::OFF;
+	} else {
+		return fawkes::RobotinoLightInterface::UNKNOWN;
 	}
 }
 

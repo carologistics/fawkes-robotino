@@ -101,7 +101,7 @@ private:
 	float cfg_lightSizeWidth;
 	float cfg_lightSizeHeight;
 
-	bool cfg_debugMessages;
+	bool cfg_debugMessagesActivated;
 
 	PluginLightThread::lightHistory lightHistory;
 
