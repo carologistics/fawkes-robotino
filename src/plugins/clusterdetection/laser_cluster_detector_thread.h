@@ -102,10 +102,16 @@ private:
 	void write_laser_to_file();
 	void publish_nearest_light();
 	Point3d apply_tf(Point3d src);
+	int angle_to_scanrange(int angle);
+	int scanrange_to_angle(int scanrange);
+	//TODO
 
 private:
 	fawkes::Laser360Interface *laser_if_;
+	fawkes::Laser360Interface *laser_vis_;
 	fawkes::Position3DInterface *pos3d_if_;
+
+
 
 	std::list<PolarPos> lights_;
 	unsigned int num_scans_;

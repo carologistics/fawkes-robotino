@@ -47,6 +47,14 @@ bool compare_polar_pos(const LaserClusterDetector::PolarPos& a,
 	return a.angle < b.angle;
 }
 
+int LaserClusterDetector::angle_to_scanrange(int angle){
+	return (angle + cfg_laser_scanrange_ / 2) % 360;
+}
+
+int LaserClusterDetector::scanrange_to_angle(int scanrange){
+	return (scanrange - cfg_laser_scanrange_ / 2) % 360;
+}
+
 /** Constructor. */
 LaserClusterDetector::LaserClusterDetector() :
 		Thread("MachinePositionerThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
@@ -87,6 +95,8 @@ void LaserClusterDetector::init() {
 	pos3d_if_ = blackboard->open_for_writing<Position3DInterface>(
 			"Closest_Machine");
 
+	laser_vis_ = blackboard->open_for_writing<Laser360Interface>("Cluster Vis");
+
 	loopcnt = 0;
 }
 
@@ -102,6 +112,7 @@ bool compareReadings(const pair<unsigned int, float>& f,
 void LaserClusterDetector::finalize() {
 	blackboard->close(laser_if_);
 	blackboard->close(pos3d_if_);
+	blackboard->close(laser_vis_);
 }
 
 void LaserClusterDetector::find_lights() {
@@ -173,9 +184,12 @@ void LaserClusterDetector::find_lights() {
 						logger->log_debug(name(), "Valid light!");
 					//We've found a light! Store it's position by it's center
 					int light_angle = current->angle - (angle / 2.0);
-
 					float light_distance = (last_peak.distance
-							+ current->distance) / 2.0;
+												+ current->distance) / 2.0;
+
+					laser_vis_->set_distances(scanrange_to_angle(last_peak.angle),last_peak.distance);
+					laser_vis_->set_distances(scanrange_to_angle(current->angle),current->distance);
+					laser_vis_->set_distances(scanrange_to_angle(light_angle),light_distance);
 					lights_.push_back(PolarPos(light_angle, light_distance));
 
 				}
@@ -212,7 +226,7 @@ void LaserClusterDetector::read_laser() {
 
 		//rotate angles so that scan starts at right scan range limit
 		//Only for calculation, needs to be undone before publishing!!!
-		int angle = (i + cfg_laser_scanrange_ / 2) % 360;
+		int angle = angle_to_scanrange(i);
 		filtered_scan_.push_back(PolarPos(angle, distance));
 
 		//skip all the readings that are not to be considered:
@@ -280,7 +294,7 @@ void LaserClusterDetector::publish_nearest_light() {
 			}
 		}
 		PolarPos nearest_light_transformed(
-				(nearest_light.angle - cfg_laser_scanrange_ / 2) % 360,
+				scanrange_to_angle(nearest_light.angle),
 				nearest_light.distance);
 		float x;
 		float y;
@@ -333,13 +347,18 @@ void LaserClusterDetector::publish_nearest_light() {
 	pos3d_if_->write();
 }
 
+
 void LaserClusterDetector::loop() {
 	cfg_debug_ = (loopcnt++ % 50) == 0;
 	read_laser();
+	float* f = (float*) calloc(laser_vis_->maxlenof_distances(),sizeof(float));
+	laser_vis_->set_distances(f);
+	free(f);
 //if (cfg_debug_)
 //	write_laser_to_file();
 	find_lights();
 	publish_nearest_light();
+	laser_vis_->write();
 
 }
 
