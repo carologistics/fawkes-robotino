@@ -13,26 +13,26 @@ plugins/plugin_light:
 
   # Size of the light (Ampel) in m, without the sockel to determine the light search areas
   light_size_height: 0.10
-  light_size_width: 0.035
+  light_size_width: 0.02
 
   # camare viewport factor logitech webcam
   camera_factor_horizontal: 1.08 #1.7
-  camera_factor_vertical: 0.73 #1.33
+  camera_factor_vertical: 0.85 #1.33
 
   # camare offset of the front cam
-  camera_offset_horizontal_rad: -0.124 #-0.0735
-  camera_offset_vertical: 38
+  camera_offset_horizontal_rad: 0.013 #-0.0735
+  camera_offset_vertical: 30
 
   #Shared Memory Imagebuffer name
   shm_image_id: "lightCam"
 
   # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
   threashold_brightness: 200
-  threashold_visibility_history: 50
-  light_number_of_wrong_detections: 10
+  detection_cycle_time: 1
+  light_number_of_wrong_detections: 2
 
   # coordinate system
-  frame: /base_camFront
+  frame: /cam_front
 
   #Interfacename of the light position fawkes::PolarPosition2DInterface
   light_position_if: "Closest_Machine"  
