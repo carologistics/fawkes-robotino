@@ -42,9 +42,10 @@ class RobotinoLightInterface : public Interface
 	This determines the current status of skill execution.
        */
   typedef enum {
-    ON /**<  true if Light is on. */,
-    OFF /**< true if Light is off. */,
-    BLINKING /**< true if Light is blinking. */
+    ON /**< the signal is on */,
+    OFF /**< the signal is on */,
+    BLINKING /**< the signal is blinking. */,
+    UNKNOWN /**< the signal state is unknown */
   } LightState;
   const char * tostring_LightState(LightState value) const;
 

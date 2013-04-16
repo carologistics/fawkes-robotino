@@ -6,9 +6,10 @@
       <comment>
 	This determines the current status of skill execution.
       </comment>
-      <item name="ON"> true if Light is on.</item>
-      <item name="OFF">true if Light is off.</item>
-      <item name="BLINKING">true if Light is blinking.</item>
+      <item name="ON">the signal is on</item>
+      <item name="OFF">the signal is on</item>
+      <item name="BLINKING">the signal is blinking.</item>
+      <item name="UNKNOWN">the signal state is unknown</item>
       </enum>
   </constants>
   <data>

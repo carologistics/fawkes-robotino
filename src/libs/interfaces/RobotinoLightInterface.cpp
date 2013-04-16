@@ -53,7 +53,7 @@ RobotinoLightInterface::RobotinoLightInterface() : Interface()
   add_fieldinfo(IFT_ENUM, "green", 1, &data->green, "LightState");
   add_fieldinfo(IFT_INT32, "visibility_history", 1, &data->visibility_history);
   add_fieldinfo(IFT_BOOL, "ready", 1, &data->ready);
-  unsigned char tmp_hash[] = {0x36, 0x94, 0xaa, 0xc7, 0xfc, 0xbe, 0x14, 0x8d, 0x7a, 0x52, 0xb9, 0x46, 0x61, 0xdf, 0xef, 0xe9};
+  unsigned char tmp_hash[] = {0x83, 0xd8, 0xe6, 0xf5, 0x26, 0xc, 0xaa, 0xad, 0x7a, 0x8c, 0x44, 0xd5, 0xec, 0x92, 0x93, 0x53};
   set_hash(tmp_hash);
 }
 
@@ -73,6 +73,7 @@ RobotinoLightInterface::tostring_LightState(LightState value) const
   case ON: return "ON";
   case OFF: return "OFF";
   case BLINKING: return "BLINKING";
+  case UNKNOWN: return "UNKNOWN";
   default: return "UNKNOWN";
   }
 }
