@@ -104,6 +104,9 @@ private:
 	Point3d apply_tf(Point3d src);
 	int angle_to_scanrange(int angle);
 	int scanrange_to_angle(int scanrange);
+	double calculate_cluster_size(const PolarPos& last_peak,
+			const PolarPos& current);
+
 	//TODO
 
 private:

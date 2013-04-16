@@ -121,6 +121,20 @@ void LaserClusterDetector::finalize() {
 	}
 }
 
+double LaserClusterDetector::calculate_cluster_size(const PolarPos& last_peak,
+		const PolarPos& current) {
+	//check if angle between current_angle and angle_last_peak
+	//given the measured distances could be an signal light
+	//with c= sqrt(a**2 + b**2 - 2 ab cos(gamma)) law of cosines
+	//c then must be a feasible diameter of the light at the measured height
+	double angle = (current.angle - last_peak.angle) * M_PI / 180.0;
+	return sqrt(
+			last_peak.distance * last_peak.distance
+					+ current.distance * current.distance
+					- 2 * last_peak.distance * current.distance
+							* cos(angle));
+}
+
 void LaserClusterDetector::find_lights() {
 
 	lights_.clear();
@@ -166,23 +180,14 @@ void LaserClusterDetector::find_lights() {
 			//if not, go on
 			if (last_peak.distance != -1.0) {
 
-				//check if angle between current_angle and angle_last_peak
-				//given the measured distances could be an signal light
-				//with c= sqrt(a**2 + b**2 - 2 ab cos(gamma)) las of cosines
-				//c then must be a feasible diameter of the light at the measured height
-				int angle = current->angle - last_peak.angle;
 
-				float diam_light = sqrt(
-						last_peak.distance * last_peak.distance
-								+ current->distance * current->distance
-								- 2 * last_peak.distance * current->distance
-										* cos(angle * M_PI / 180.0));
+				int angle = current->angle - last_peak.angle;
+				float diam_light = calculate_cluster_size(last_peak, *current);
 
 				if (cfg_debug_)
 					logger->log_debug(name(),
-							"lastpeak angle: %d, current angle: %d,-> angle: %d, Distance: %f, Size of cluster: %f",
-							last_peak.angle, current->angle, angle,
-							last_peak.distance, diam_light);
+							"last peak: %s current peak: %s; cluster size: %f",
+							last_peak.to_string().c_str(), current->to_string().c_str(),diam_light);
 
 				if (abs(diam_light - cfg_cluster_valid_size_)
 						<= cfg_cluster_allowed_variance_) {
