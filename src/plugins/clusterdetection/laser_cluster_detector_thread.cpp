@@ -180,25 +180,25 @@ void LaserClusterDetector::find_lights() {
 				)) {
 			//we have a sufficient peak, can either be the begin or the end
 
-			if (cfg_debug_)
+			if (debug_)
 				logger->log_debug(name(), "peak at %d", current->angle);
 
 			//check if we have a valid last_peak.
 			//if not, go on
 			if (last_peak.distance != -1.0) {
 
-
 				int angle = current->angle - last_peak.angle;
 				float diam_light = calculate_cluster_size(last_peak, *current);
 
-				if (cfg_debug_)
+				if (debug_)
 					logger->log_debug(name(),
 							"last peak: %s current peak: %s; cluster size: %f",
-							last_peak.to_string().c_str(), current->to_string().c_str(),diam_light);
+							last_peak.to_string().c_str(),
+							current->to_string().c_str(), diam_light);
 
 				if (abs(diam_light - cfg_cluster_valid_size_)
 						<= cfg_cluster_allowed_variance_) {
-					if (cfg_debug_)
+					if (debug_)
 						logger->log_debug(name(), "Valid light!");
 					//We've found a light! Store it's position by it's center
 					int light_angle = current->angle - (angle / 2.0);
@@ -340,59 +340,47 @@ void LaserClusterDetector::publish_nearest_light() {
 		PolarPos nearest_light_transformed(
 				scanrange_to_angle(nearest_light.angle),
 				nearest_light.distance);
-		float x;
-		float y;
-		nearest_light_transformed.toCart(&x, &y);
-		if (cfg_debug_)
-			logger->log_debug(name(),
-					"before tf: %s, which is rotated to %s -> x: %f, y: %f",
-					nearest_light_transformed.to_string().c_str(),
-					nearest_light.to_string().c_str(), x, y);
 
-		light.setX(x);
-		light.setY(y);
-		light.setZ(0);
+		light = apply_tf(nearest_light_transformed.toPoint3d());
 
-		light = apply_tf(light);
-
-		if (cfg_debug_)
-			logger->log_debug(name(), "transformed: x: %f, y: %f", light.getX(),
+		if (debug_)
+			logger->log_debug(name(), "found cluster at (%f, %f)", light.getX(),
 					light.getY());
-		pos3d_if_->set_translation(0, light.getX());
-		pos3d_if_->set_translation(1, light.getY());
-		pos3d_if_->set_frame("/base_link");
+		pos3d_nearest_cluster_if_->set_translation(0, light.getX());
+		pos3d_nearest_cluster_if_->set_translation(1, light.getY());
+		pos3d_nearest_cluster_if_->set_frame("/base_link");
 	}
 	if (lights_.size() == 0) {
 		// if we have no light, we set visibility history to at least -1
-		pos3d_if_->set_visibility_history(
-				min(pos3d_if_->visibility_history() - 1, -1));
+		pos3d_nearest_cluster_if_->set_visibility_history(
+				min(pos3d_nearest_cluster_if_->visibility_history() - 1, -1));
 
-	} else if (pos3d_if_->visibility_history() <= 0) {
+	} else if (pos3d_nearest_cluster_if_->visibility_history() <= 0) {
 		// we see a light for the first time (or again but not the last time)
-		pos3d_if_->set_visibility_history(1);
+		pos3d_nearest_cluster_if_->set_visibility_history(1);
 		last_light_ = light;
 	} else {
 		float distance = fawkes::distance(light.getX(), light.getY(),
 				last_light_.getX(), last_light_.getY());
-		if (cfg_debug_) {
+		if (debug_) {
 			logger->log_debug(name(), "Distance to last cluster: %f", distance);
 		}
 		if (distance < cfg_cluster_allowed_variance_over_time_) {
 			//distance small enough to count up
-			pos3d_if_->set_visibility_history(
-					(pos3d_if_->visibility_history() + 1));
+			pos3d_nearest_cluster_if_->set_visibility_history(
+					(pos3d_nearest_cluster_if_->visibility_history() + 1));
 			last_light_ = light;
 		} else {
 			//distance to large -> new light
-			pos3d_if_->set_visibility_history(1);
+			pos3d_nearest_cluster_if_->set_visibility_history(1);
 			last_light_ = light;
 		}
 	}
-	pos3d_if_->write();
+	pos3d_nearest_cluster_if_->write();
 }
 
 void LaserClusterDetector::loop() {
-	cfg_debug_ = (loopcnt++ % 50) == 0;
+	debug_ = cfg_debug_ && (loopcnt++ % 50) == 0; //show debug only every 50th loop
 	read_laser();
 	float* f = (float*) calloc(laser_vis_->maxlenof_distances(), sizeof(float));
 	laser_vis_->set_distances(f);
@@ -401,7 +389,7 @@ void LaserClusterDetector::loop() {
 	//	laser_vis_->set_distances(scanrange_to_angle(it->angle),abs(it->distance));
 	//}
 
-//if (cfg_debug_)
+//if (debug_)
 //	write_laser_to_file();
 	find_lights();
 	publish_nearest_light();

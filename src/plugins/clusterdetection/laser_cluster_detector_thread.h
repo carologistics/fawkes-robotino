@@ -140,6 +140,7 @@ private:
 
 	int loopcnt;
 	bool cfg_debug_;
+	bool debug_;
 	bool cfg_publish_laser_vis_;
 	float cfg_cluster_max_distance_;
 	fawkes::Position3DInterface* pos3d_nearest_laser_if_;
