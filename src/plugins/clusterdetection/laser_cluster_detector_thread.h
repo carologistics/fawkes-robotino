@@ -123,9 +123,8 @@ private:
 private:
 	fawkes::Laser360Interface *laser_if_;
 	fawkes::Laser360Interface *laser_vis_;
-	fawkes::Position3DInterface *pos3d_if_;
-
-
+	fawkes::Position3DInterface *pos3d_nearest_cluster_if_;
+	fawkes::Position3DInterface *pos3d_nearest_reading_if_;
 
 	std::list<PolarPos> lights_;
 	unsigned int num_scans_;
@@ -143,6 +142,7 @@ private:
 	bool cfg_debug_;
 	bool cfg_publish_laser_vis_;
 	float cfg_cluster_max_distance_;
+	fawkes::Position3DInterface* pos3d_nearest_laser_if_;
 };
 
 #endif

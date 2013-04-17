@@ -95,8 +95,11 @@ void LaserClusterDetector::init() {
 	logger->log_debug(name(), "cluster_variance_over_time: %f",
 			cfg_cluster_allowed_variance_over_time_);
 
-	pos3d_if_ = blackboard->open_for_writing<Position3DInterface>(
-			"Closest_Machine");
+	pos3d_nearest_cluster_if_ =
+			blackboard->open_for_writing<Position3DInterface>(
+					"Closest_Machine");
+	pos3d_nearest_laser_if_ = blackboard->open_for_writing<Position3DInterface>(
+			"Closest_Laser_Reading");
 
 	if (cfg_publish_laser_vis_) {
 		laser_vis_ = blackboard->open_for_writing<Laser360Interface>(
@@ -117,7 +120,8 @@ bool compareReadings(const pair<unsigned int, float>& f,
 
 void LaserClusterDetector::finalize() {
 	blackboard->close(laser_if_);
-	blackboard->close(pos3d_if_);
+	blackboard->close(pos3d_nearest_cluster_if_);
+	blackboard->close(pos3d_nearest_laser_if_);
 	if (cfg_publish_laser_vis_) {
 		blackboard->close(laser_vis_);
 	}
@@ -235,6 +239,10 @@ void LaserClusterDetector::read_laser() {
 	//laser is reading counterclockwise
 	laser_if_->read();
 	filtered_scan_.clear();
+
+	float laser_min = cfg_laser_max_;
+	int laser_min_index = -1;
+
 	for (size_t i = 0; i < num_scans_; i++) {
 		//filter and transform to correct orientation
 		float distance = laser_if_->distances(i);
@@ -243,6 +251,11 @@ void LaserClusterDetector::read_laser() {
 		&& distance > cfg_laser_min_ //big enough?
 		&& distance < cfg_laser_max_)) { //small enough?
 			distance = -1;
+		}
+
+		if (distance != -1 && distance < laser_min) {
+			laser_min = distance;
+			laser_min_index = i;
 		}
 
 		//rotate angles so that scan starts at right scan range limit
