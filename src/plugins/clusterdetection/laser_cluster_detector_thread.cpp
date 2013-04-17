@@ -81,7 +81,8 @@ void LaserClusterDetector::init() {
 	cfg_cluster_allowed_variance_over_time_ = config->get_float(
 			CFG_PREFIX"cluster_variance_over_time");
 	cfg_publish_laser_vis_ = config->get_bool(CFG_PREFIX"visualize_clusters");
-	cfg_cluster_max_distance_ = config->get_float(CFG_PREFIX"cluster_max_distance");
+	cfg_cluster_max_distance_ = config->get_float(
+			CFG_PREFIX"cluster_max_distance");
 
 	logger->log_debug(name(), "Configuration values:");
 	logger->log_debug(name(), "laser_min_length: %f", cfg_laser_min_);
@@ -163,7 +164,8 @@ void LaserClusterDetector::find_lights() {
 		//we can either have a peak (the begin or end of a cluster) iff
 		// - the difference between two adjacent values is bigger than threshold
 		// - we read two invalid readings before or after the current reading
-		if (current->distance != -1 && current->distance <= cfg_cluster_max_distance_
+		if (current->distance != -1
+				&& current->distance <= cfg_cluster_max_distance_
 				&& (abs(before->distance - current->distance)
 						> cfg_dist_threshold_
 						|| (before->distance == -1
@@ -253,11 +255,21 @@ void LaserClusterDetector::read_laser() {
 			i = (360 - cfg_laser_scanrange_ / 2) - 1;
 
 	}
+	if (laser_min_index != -1) {
+
+		PolarPos nearest_laser_polar(laser_min_index, laser_min);
+		Point3d nearest_laser_cart = apply_tf(nearest_laser_polar.toPoint3d());
+		if (debug_)
+		pos3d_nearest_laser_if_->set_translation(0, nearest_laser_cart.getX());
+		pos3d_nearest_laser_if_->set_translation(1, nearest_laser_cart.getY());
+		pos3d_nearest_laser_if_->set_frame("/base_link");
+		pos3d_nearest_laser_if_->write();
+	}
+
 	filtered_scan_.sort(compare_polar_pos);
 }
 
-tf::Stamped<tf::Point> LaserClusterDetector::apply_tf(
-		tf::Stamped<tf::Point> src) {
+LaserClusterDetector::Point3d LaserClusterDetector::apply_tf(Point3d src) {
 
 	const char* target_frame = "/base_link";
 	const char* source_frame = "/base_laser";

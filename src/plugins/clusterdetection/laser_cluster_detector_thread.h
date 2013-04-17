@@ -57,6 +57,9 @@ public:
 	virtual bool prepare_finalize_user();
 	virtual void finalize();
 
+
+	typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
+
 	struct PolarPos {
 		int angle;
 		float distance;
@@ -80,6 +83,15 @@ public:
 			distance = sqrtf(x * x + y * y);
 		}
 
+		LaserClusterDetector::Point3d toPoint3d() {
+			Point3d p3d;
+			float x = distance * cos(angle * M_PI / 180.0);
+			float y = distance * sin(angle * M_PI / 180.0);
+			p3d.setX(x);
+			p3d.setY(y);
+			return p3d;
+		}
+
 		std::string to_string() {
 			std::stringstream str;
 			str << "(angle: " << angle << ", distance: " << distance << ")";
@@ -88,7 +100,6 @@ public:
 	};
 
 	typedef std::list<PolarPos> laserscan;
-	typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
 
 	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
