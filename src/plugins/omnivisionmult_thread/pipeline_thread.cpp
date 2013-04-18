@@ -69,8 +69,8 @@ using namespace firevision;
 
 /** Constructor. */
 RobotinoOmniVisionPipelineThread::RobotinoOmniVisionPipelineThread() :
-		Thread("RobotinoOmniVisionThread", Thread::OPMODE_WAITFORWAKEUP), VisionAspect(
-				VisionAspect::CYCLIC) {
+		Thread("RobotinoOmniVisionThread", Thread::OPMODE_CONTINUOUS), VisionAspect(
+				VisionAspect::CONTINUOUS) {
 
 	scanline_ = NULL;
 	cm_ = NULL;
