@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="PolarPosition2DInterface" author="Daniel Ewert" year="2013">
+ <data>
+    <comment>
+      Storage for a polar coordinate in 2d. Intended to hold the angle and distance to an object
+    </comment>
+    <field type="string" length="32" name="frame">
+      Reference coordinate frame for the data.
+    </field>
+    <field type="int32" name="visibility_history">
+      The visibilitiy history indicates the number of consecutive positive or negative
+      sightings. If the history is negative, there have been as many negative sightings
+      (object not visible) as the absolute value of the history. A positive value denotes
+      as many positive sightings. 0 shall only be used during the initialization of the
+      interface or if the visibility history is not updated.
+    </field>
+    <field type="int32" name="angle">
+     Angle between the x-axis of frame (e.g. the pov of the robot) and the center of 
+     the detected object in degree
+    </field>
+    <field type="double" name="distance">
+     distance between origin of frame and center of the detected object
+    </field>
+  </data>
+</interface>
+

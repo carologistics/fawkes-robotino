@@ -1,0 +1,41 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clusterdetection
+---
+plugins/laserclusterdetector:
+
+  # laser interface to read from
+  laser_interface: laser urg
+  
+  # discard laser readings closer than
+  laser_min_length: 0.15
+
+  # discard laser readings more distant than
+  laser_max_length: 1.0
+
+  # regard an area of x degrees in front of the robot
+  laser_scanrange: 100
+
+  # difference between adjacent readings to regard
+  # them as a begin or end of a cluster
+  dist_threshold: 0.2
+
+  # expected diameter of a cluster
+  cluster_size: 0.08
+
+  # allowed variance between cluster_size and detected cluster
+  cluster_variance: 0.05
+
+  # clusters are only regarded when within that distance.
+  # Keep it smaller than laser_max_length!!
+  cluster_max_distance: 0.8
+  
+  # cluster is regarded as same iff distance from last reading is less than 
+  cluster_variance_over_time: 0.1
+
+  # more output
+  show_debug_messages: true
+
+  # show found clusters as a laser interface
+  visualize_clusters: true
