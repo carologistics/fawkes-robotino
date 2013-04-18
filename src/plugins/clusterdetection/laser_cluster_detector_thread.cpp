@@ -133,12 +133,11 @@ double LaserClusterDetector::calculate_cluster_size(const PolarPos& last_peak,
 	//given the measured distances could be an signal light
 	//with c= sqrt(a**2 + b**2 - 2 ab cos(gamma)) law of cosines
 	//c then must be a feasible diameter of the light at the measured height
-	double angle = (current.angle - last_peak.angle) * M_PI / 180.0;
+	double angle = fawkes::deg2rad(abs(current.angle - last_peak.angle));
 	return sqrt(
 			last_peak.distance * last_peak.distance
 					+ current.distance * current.distance
-					- 2 * last_peak.distance * current.distance
-							* cos(angle));
+					- 2 * last_peak.distance * current.distance * cos(angle));
 }
 
 void LaserClusterDetector::find_lights() {
@@ -190,12 +189,12 @@ void LaserClusterDetector::find_lights() {
 				int angle = current->angle - last_peak.angle;
 				float diam_light = calculate_cluster_size(last_peak, *current);
 
-				if (debug_)
+				if (debug_) {
 					logger->log_debug(name(),
 							"last peak: %s current peak: %s; cluster size: %f",
 							last_peak.to_string().c_str(),
 							current->to_string().c_str(), diam_light);
-
+				}
 				if (abs(diam_light - cfg_cluster_valid_size_)
 						<= cfg_cluster_allowed_variance_) {
 					if (debug_)
@@ -273,7 +272,8 @@ void LaserClusterDetector::read_laser() {
 		PolarPos nearest_laser_polar(laser_min_index, laser_min);
 		Point3d nearest_laser_cart = apply_tf(nearest_laser_polar.toPoint3d());
 		if (debug_)
-		pos3d_nearest_laser_if_->set_translation(0, nearest_laser_cart.getX());
+			pos3d_nearest_laser_if_->set_translation(0,
+					nearest_laser_cart.getX());
 		pos3d_nearest_laser_if_->set_translation(1, nearest_laser_cart.getY());
 		pos3d_nearest_laser_if_->set_frame("/base_link");
 		pos3d_nearest_laser_if_->write();
