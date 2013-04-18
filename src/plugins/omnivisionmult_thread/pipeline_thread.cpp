@@ -319,11 +319,8 @@ void RobotinoOmniVisionPipelineThread::loop() {
 			drawer_->draw_circle(mass_point_.x, mass_point_.y, 6);
 			if (rel_pos_->is_pos_valid()) {
 				rel_pos_->calc();
-				float distance = rel_pos_->get_distance();
-				float cam_angle = atan2f(cfg_cam_height_, distance);
-				distance -= cfg_puck_radius_ / tan(cam_angle);
-				float puck_x = cos(rel_pos_->get_bearing()) * distance;
-				float puck_y = sin(rel_pos_->get_bearing()) * distance;
+				float puck_x = rel_pos_->get_x();
+				float puck_y = rel_pos_->get_y();
 				if (visibility_history >= 0) {
 					(*puck)->set_visibility_history(visibility_history + 1);
 				} else {
