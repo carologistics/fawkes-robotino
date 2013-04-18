@@ -316,7 +316,6 @@ void RobotinoOmniVisionPipelineThread::loop() {
 		if (puck_visible_) {
 			classifier_->get_mass_point_of_color(&(*r), &mass_point_);
 			rel_pos_->set_center(mass_point_.x, mass_point_.y);
-			logger->log_debug(name(), "hier wird noch gemalt");
 			drawer_->draw_circle(mass_point_.x, mass_point_.y, 6);
 			if (rel_pos_->is_pos_valid()) {
 				rel_pos_->calc();
