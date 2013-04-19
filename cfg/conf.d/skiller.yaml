@@ -36,6 +36,9 @@ skiller:
         ampel_red: SwitchInterface::ampel_red
         ampel_orange: SwitchInterface::ampel_orange
         sensor: RobotinoSensorInterface::Robotino
+        light_plugin: RobotinoLightInterface::Light_State
+        closest_machine: Position3DInterface::Closest_Machine
       writing:
         light: RobotinoAmpelInterface::light
+        light_determined: RobotinoLightInterface::determined
 
