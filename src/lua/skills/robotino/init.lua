@@ -41,4 +41,5 @@ skillenv.use_skill("skills.robotino.leave_IS")
 skillenv.use_skill("skills.robotino.get_s0")
 skillenv.use_skill("skills.robotino.move_to_next_deliver")
 skillenv.use_skill("skills.robotino.finish_puck_at")
+skillenv.use_skill("skills.robotino.enable_switch")
 
