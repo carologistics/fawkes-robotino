@@ -19,7 +19,7 @@ plugins/laserclusterdetector:
 
   # difference between adjacent readings to regard
   # them as a begin or end of a cluster
-  dist_threshold: 0.25
+  dist_threshold: 0.3
 
   # expected diameter of a cluster
   cluster_size: 0.08
@@ -27,9 +27,11 @@ plugins/laserclusterdetector:
   # allowed variance between cluster_size and detected cluster
   cluster_variance: 0.05
 
+  # distance between nearest and most distant laser reading
+  cluster_coherence: 0.15
   # clusters are only regarded when within that distance.
   # Keep it smaller than laser_max_length!!
-  cluster_max_distance: 0.8
+  cluster_max_distance: 0.9
   
   # cluster is regarded as same iff distance from last reading is less than 
   cluster_variance_over_time: 0.1
