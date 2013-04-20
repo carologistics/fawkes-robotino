@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <unistd.h>
 
 using namespace fawkes;
 
@@ -61,7 +62,7 @@ main(int argc, char **argv)
 
   BlackBoard *remote_bb = new RemoteBlackBoard(host.c_str(), port);
   SwitchInterface *gamectrl_if =
-    remote_bb->open_for_writing<SwitchInterface>("GameCtrl");
+    remote_bb->open_for_writing<SwitchInterface>("Clips Agent Start");
 
   if (strcmp(argp.items()[0], "start") == 0) {
     printf("Sending START to robot %s\n", host.c_str());
