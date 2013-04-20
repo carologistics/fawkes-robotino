@@ -24,8 +24,11 @@ clips-agent:
   
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  agent: llsf2012/llsf2012
+  agent: llsf2013/llsf2013
 
-  llsf2012:
+  #llsf2012:
+  #  enable-sim: true
+
+  llsf2013:
     enable-sim: true
 

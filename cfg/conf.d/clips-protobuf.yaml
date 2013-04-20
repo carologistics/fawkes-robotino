@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-protobuf
 ---
 clips-protobuf:
   env-name: agent
-  proto-dirs: ["@BASEDIR@/src/agents/llsf2012/msgs"]
+  proto-dirs: ["@BASEDIR@/src/agents/llsf2013/msgs"]
 
   unwatch-facts: [protobuf-msg]
   unwatch-rules: [protobuf-cleanup-message]
