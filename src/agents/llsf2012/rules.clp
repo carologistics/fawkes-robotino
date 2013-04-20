@@ -56,8 +56,8 @@
 (defrule s0-m23-s1
   (state IDLE)
   (holding S0)
-  (machine (mtype ?mt&M2_3) (loaded-with $?l&:(subsetp (create$ S1) ?l)) (name ?name))
-  ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
+  (machine (name ?name) (mtype ?mt&M2_3) (loaded-with $?l&:(member$ S1 ?l)))
+  ?g <- (goto (machines $?machines&~:(member$ ?name ?machines))
               (min-prio ?mp&:(<= ?mp (machine-prio ?mt))))
   =>
   (if (debug 2) then (printout t "S0 3 -- Considering M2_3 named " ?name crlf))
@@ -69,7 +69,7 @@
   (declare (salience ?*PRIORITY_S2*))
   (state IDLE)
   (holding S0)
-  (machine (mtype ?mt&M2) (loaded-with $?l&:(subsetp (create$ S1) ?l)) (name ?name))
+  (machine (mtype ?mt&M2) (loaded-with $?l&:(member$ S1 ?l)) (name ?name))
   ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
               (min-prio ?mp&:(<= ?mp (machine-prio ?mt))))
   =>
@@ -115,7 +115,7 @@
 (defrule s1-m23-s0
   (state IDLE)
   (holding S1)
-  (machine (mtype ?mt&M2_3) (loaded-with $?l&:(subsetp (create$ S0) ?l)) (name ?name))
+  (machine (mtype ?mt&M2_3) (loaded-with $?l&:(member$ S0 ?l)) (name ?name))
   ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
               (min-prio ?mp&:(<= ?mp (machine-prio ?mt))))
   =>
@@ -192,7 +192,7 @@
 
 (defrule deliver-p
   (state IDLE)
-  (holding P)
+  (holding P1|P2|P3)
   (machine (mtype ?mt&DELIVER) (name ?name))
   ?g <- (goto (machines $?machines&~:(subsetp (create$ ?name) ?machines))
               (min-prio ?mp&:(<= ?mp (machine-prio ?mt))))

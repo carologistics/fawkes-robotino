@@ -8,190 +8,212 @@
 ;---------------------------------------------------------------------------
 
 (deftemplate sim-machine
-  (slot name (type STRING))
-  (slot mtype (type SYMBOL) (allowed-values M1 M2 M3 DELIVER))
-  (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
-  (slot junk (type INTEGER) (default 0))
-  (slot delivered (type INTEGER) (default 0))
+  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
+  (slot mtype (type SYMBOL) (allowed-values T1 T2 T3 T4 T5 DELIVER TEST RECYCLE) (default TEST))
+  (multislot loaded-with (type INTEGER) (default))
+  (multislot lights (type SYMBOL)
+	     (allowed-values RED-ON RED-BLINK YELLOW-ON YELLOW-BLINK GREEN-ON GREEN-BLINK)
+	     (default) (cardinality 0 3))
+  (slot puck-id (type INTEGER) (default 0))
+   ; x y theta (meters and rad)
+  (multislot pose (type FLOAT) (cardinality 3 3) (default 0.0 0.0 0.0))
 )
+
+(deftemplate sim-machine-spec
+  (slot mtype (type SYMBOL) (allowed-values T1 T2 T3 T4 T5 DELIVER TEST RECYCLE))
+  (multislot inputs (type SYMBOL) (allowed-symbols S0 S1 S2) (default))
+  (slot output (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3))
+)
+
+(deftemplate sim-puck
+  (slot index (type INTEGER))
+  (slot id (type INTEGER))
+  (slot state (type SYMBOL) (allowed-values S0 S1 S2 P1 P2 P3 CONSUMED) (default S0))
+)
+
+(deftemplate sim
+  (slot state (allowed-values IDLE GET-S0 GOTO WAIT-PROC) (default IDLE))
+  (slot proc-state (allowed-values IDLE WAIT PROC) (default IDLE))
+  (slot rb-client-id (type INTEGER))
+  (slot goto-target (type SYMBOL))
+  (slot holding-puck-id (type INTEGER))
+  (slot placed-puck-id (type INTEGER))
+)
+
 
 (defrule sim-enable-sim
-  ?e <- (enable-sim ?randomization)
+  (confval (path "/clips-agent/llsf2012/enable-sim") (type BOOL) (value true))
   =>
-  (retract ?e)
-  (bind ?assignment (create$ M1 M1 M1 M1 M2 M2 M2 M3 M3 M3))
-
-  (if (eq ?randomization randomize) then
-    (seed (integer (time)))
-    (bind ?assignment (randomize$ ?assignment))
+  (bind ?client-id (pb-connect "localhost" 4444))
+  (assert (sim (rb-client-id ?client-id))
+	  (sim-machine (name M1))
+	  (sim-machine (name M2))
+	  (sim-machine (name M3))
+	  (sim-machine (name M4))
+	  (sim-machine (name M5))
+	  (sim-machine (name M6))
+	  (sim-machine (name M7))
+	  (sim-machine (name M8))
+	  (sim-machine (name M9))
+	  (sim-machine (name M10))
+	  (sim-machine (name R1))
+	  (sim-machine (name R2))
+	  (sim-machine (name TST))
+	  (sim-machine (name D1))
+	  (sim-machine (name D2))
+	  (sim-machine (name D3))
   )
-
-  (assert
-   (sim-machine (name "m1")  (mtype (nth$  1 ?assignment)))
-   (sim-machine (name "m2")  (mtype (nth$  2 ?assignment)))
-   (sim-machine (name "m3")  (mtype (nth$  3 ?assignment)))
-   (sim-machine (name "m4")  (mtype (nth$  4 ?assignment)))
-   (sim-machine (name "m5")  (mtype (nth$  5 ?assignment)))
-   (sim-machine (name "m6")  (mtype (nth$  6 ?assignment)))
-   (sim-machine (name "m7")  (mtype (nth$  7 ?assignment)))
-   (sim-machine (name "m8")  (mtype (nth$  8 ?assignment)))
-   (sim-machine (name "m9")  (mtype (nth$  9 ?assignment)))
-   (sim-machine (name "m10") (mtype (nth$ 10 ?assignment)))
-   (sim-machine (name "deliver") (mtype DELIVER))
-   (s0-left 20)
-  )
-
-  (printout t "Simulation machine assignment: " ?assignment crlf)
 )
 
-(defrule get-s0-succeeds
-  ?s  <- (state GET-S0)
-  ?h  <- (holding NONE)
-  ?gf <- (get-s0-final)
-  ?l  <- (s0-left ?n&:(> ?n 0))
+(defrule sim-connected
+  (sim (rb-client-id ?client-id))
+  ?cf <- (protobuf-client-connected ?client-id)
   =>
-  (if (debug 1) then (printout t "get-s0 succeeded" crlf))
-  (retract ?s ?h ?l)
-  (assert (s0-left (- ?n 1)))
-  (assert (holding S0))
-  (assert (state IDLE))
+  (retract ?cf)
+  (printout t "Simulation connected to refbox" crlf)
 )
 
+;(defrule sim-disconnected
+;  ?sf <- (sim (rb-client-id ?client-id))
+;  ?df <- (protobuf-client-disconnected ?client-id)
+;  =>
+;  (retract ?df)
+;  (modify ?sf (rb-client-id 0))
+;)
 
-(defrule get-s0-fails
-  ?s <- (state GET-S0)
-  ?h <- (holding NONE)
-  ?l <- (s0-left ?n&:(<= ?n 0))
+(defrule sim-recv-PuckInfo
+  (protobuf-msg (type "llsf_msgs.PuckInfo") (ptr ?p))
   =>
-  (if (debug 1) then (printout t "***** GAME OVER -- NO MORE S0 AVAILABLE *****" crlf))
-  (retract ?s)
-  (assert (state GAME-OVER))
-  (facts)
-)
-
-
-(defrule goto-succeeds-s0
-  ?s  <- (state GOTO)
-  ?gf <- (goto-final ?light)
-  ?h  <- (holding S0)
-  (goto-target ?node)
-  ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk)) 
-  =>
-  (retract ?s ?gf)
-  (if (eq ?mt M1) then
-    ;(assert (holding S1))
-    (assert (light green))
-  else
-    (if (eq ?mt M2) then
-      (if (subsetp (create$ S1) ?loaded) then
-        ;(assert (holding S2))
-        (assert (light green))
-        (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
-      else
-        ;(assert (holding NONE))
-        (assert (light yellow))
-        (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S0)))
+  (if (any-factp ((?pt sim-puck)) TRUE)
+  then
+    (foreach ?pp (pb-field-list ?p "pucks")
+      (do-for-fact ((?puck sim-puck)) (eq ?puck:id (pb-field-value ?pp "id"))
+        (bind ?new-state (pb-field-value ?pp "state"))
+        (if (neq ?puck:state ?new-state) then (modify ?puck (state ?new-state)))
       )
-    else
-      (if (eq ?mt M3) then
-        (if (subsetp (create$ S1 S2) ?loaded) then
-          ;(assert (holding P))
-          (assert (light green))
-          (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
-        else
-          ;(assert (holding NONE))
-          (assert (light yellow))
-          (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S0)))
-        )
+    )
+  else
+    (foreach ?pp (pb-field-list ?p "pucks")
+      (assert (sim-puck (id (pb-field-value ?pp "id")) (state (pb-field-value ?pp "state"))))
+    )
+  )
+)
+
+(defrule sim-recv-MachineInfo
+  ?pf <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
+  =>
+  (retract ?pf)
+  (foreach ?m (pb-field-list ?p "machines")
+    ;(printout t "Processing machine " (pb-field-value ?m "name") crlf)
+    (do-for-fact ((?machine sim-machine))
+		 (eq ?machine:name (sym-cat (pb-field-value ?m "name")))
+
+      (bind ?new-puck ?machine:puck-id)
+      (if (pb-has-field ?m "puck_under_rfid") then
+        (bind ?new-puck (pb-field-value (pb-field-value ?m "puck_under_rfid") "id"))
+        ;(printout t "puck under rfid " ?new-puck crlf)
+      )
+
+      (bind ?new-lights (create$))
+      (progn$ (?l (pb-field-list ?m "lights"))
+	(bind ?light (sym-cat (pb-field-value ?l "color") "-" (pb-field-value ?l "state")))
+        (bind ?new-lights (append$ ?new-lights ?light))
+      )
+
+      (bind ?new-lw (create$))
+      (progn$ (?l (pb-field-list ?m "loaded_with"))
+        (bind ?new-lw (append$ ?new-lw (pb-field-value ?l "id")))
+      )
+
+      (bind ?new-mtype (sym-cat (pb-field-value ?m "type")))
+
+      (if (or (neq ?machine:mtype ?new-mtype) (neq ?machine:lights ?new-lights)
+	      (neq ?machine:puck-id ?new-puck) (neq ?machine:loaded-with ?new-lw))
+        then
+        (printout t ?machine:name "|" ?new-mtype " modified - L " ?new-lights
+		  " P " ?new-puck " " ?new-lw crlf)
+        (modify ?machine (mtype ?new-mtype) (lights ?new-lights)
+		(puck-id ?new-puck) (loaded-with ?new-lw))
       )
     )
   )
-  (assert (state GOTO-FINAL))
 )
 
 
-(defrule goto-succeeds-s1
-  ?s  <- (state GOTO)
-  ?h  <- (holding S1)
-  ?gf <- (goto-final ?light)
-  (goto-target ?node)
-  ?m  <- (sim-machine (name ?node) (mtype ?mt)
-                      (loaded-with $?loaded) (junk ?junk)) 
+(defrule sim-get-s0-final
+  (skill (name "get_s0") (status FINAL))
+  (sim-puck (state S0) (id ?puck-id))
+  (not (sim-machine (puck-id ?puck-id)))
+  (not (sim-machine (loaded-with $?lw&:(member$ ?puck-id ?lw))))
+  ?sf <- (sim (holding-puck-id 0))
   =>
-  (retract ?s ?gf)
-  (if (eq ?mt M1) then
-    ;(assert (holding S1))
-    (assert (light green))
-  else
-    (if (eq ?mt M2) then
-      (if (subsetp (create$ S0) ?loaded) then
-        ;(assert (holding S2))
-        (assert (light green))
-        (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
-      else
-        ;(assert (holding NONE))
-        (assert (light yellow))
-        (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S1)))
-      )
-    else
-      (if (eq ?mt M3) then
-        (if (subsetp (create$ S0 S2) ?loaded) then
-          ;(assert (holding P))
-          (assert (light green))
-          (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
-        else
-          ;(assert (holding NONE))
-          (assert (light yellow))
-          (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S1)))
-        )
-      )
-    )
-  )
-  (assert (state GOTO-FINAL))
+  (modify ?sf (holding-puck-id ?puck-id))
+  (assert (get-s0-final))
 )
 
-(defrule goto-succeeds-s2
-  ?s  <- (state GOTO)
-  ?h  <- (holding S2)
-  ?gf <- (goto-final ?light)
-  (goto-target ?node)
-  ?m  <- (sim-machine (name ?node) (mtype ?mt) (loaded-with $?loaded) (junk ?junk))
+(defrule sim-goto-final
+  (skill (name "finish_puck_at") (status FINAL))
+  (goto-target ?gt)
+  ?sf <- (sim (rb-client-id ?client-id) (holding-puck-id ?puck-id&~0))
   =>
-  (retract ?s ?gf)
-  (if (eq ?mt M1) then
-    ;(assert (holding S2))
-    (assert (light green))
-  else
-    (if (eq ?mt M2) then
-      ;(assert (holding S2))
-      (assert (light yellow-flashing))
-    else
-      (if (eq ?mt M3) then
-        (if (subsetp (create$ S0 S1) ?loaded) then
-          ;(assert (holding P))
-          (assert (light green))
-          (modify ?m (loaded-with) (junk (+ ?junk (length$ ?loaded))))
-        else
-          ;(assert (holding NONE))
-          (assert (light yellow))
-          (modify ?m (loaded-with (insert$ ?loaded (+ (length$ ?loaded) 1) S2)))
-        )
-      )
-    )
-  )
-  (assert (state GOTO-FINAL))
+  (printout warn "Placing " ?puck-id " under " ?gt crlf)
+  (bind ?m (pb-create "llsf_msgs.PlacePuckUnderMachine"))
+  (pb-set-field ?m "machine_name" ?gt)
+  (pb-set-field ?m "puck_id" ?puck-id)
+  (pb-send ?client-id ?m)
+  (pb-destroy ?m)
+  (modify ?sf (proc-state WAIT) (holding-puck-id 0) (placed-puck-id ?puck-id) (goto-target ?gt))
 )
 
-(defrule goto-succeeds-p
-  ?s  <- (state GOTO)
-  ;?h  <- (holding P)
-  ?gf <- (goto-final ?light)
-  (goto-target ?node)
-  ?m  <- (sim-machine (name ?node) (mtype DELIVER) (delivered ?delivered)) 
+(defrule sim-proc-start
+  ?sf <- (sim (proc-state WAIT) (goto-target ?gt))
+  (sim-machine (name ?gt) (lights GREEN-ON YELLOW-ON))
   =>
-  (if (debug 1) then (printout t "***** DELIVERED a P! *****" crlf))
-  (retract ?s ?gf)
-  (modify ?m (delivered (+ ?delivered 1)))
-  (assert (light green))
-  (assert (state GOTO-FINAL))
+  (modify ?sf (proc-state PROC))
+)
+
+
+(defrule sim-proc-final
+  ?sf <- (sim (proc-state PROC) (goto-target ?gt) (rb-client-id ?client-id)
+	      (placed-puck-id ?puck-id&~0))
+  (sim-machine (name ?gt) (mtype ~DELIVER)
+	       (puck-id ?puck-id) (lights ?light&GREEN-ON|YELLOW-ON))
+  =>
+  (bind ?m (pb-create "llsf_msgs.RemovePuckFromMachine"))
+  (pb-set-field ?m "machine_name" ?gt)
+  (pb-set-field ?m "puck_id" ?puck-id)
+  (pb-send ?client-id ?m)
+  (pb-destroy ?m)
+  (modify ?sf (proc-state IDLE) (placed-puck-id 0)
+	  (holding-puck-id (if (eq ?light GREEN-ON) then ?puck-id else 0)))
+  (assert (goto-final (if (eq ?light GREEN-ON) then green else yellow)))
+)
+
+(defrule sim-proc-delivered
+  ?sf <- (sim (proc-state PROC) (goto-target ?gt) (rb-client-id ?client-id)
+	      (placed-puck-id ?puck-id&~0))
+  (sim-machine (name ?gt) (mtype DELIVER)
+	       (puck-id ?puck-id) (lights GREEN-ON YELLOW-ON RED-ON))
+  =>
+  (bind ?m (pb-create "llsf_msgs.RemovePuckFromMachine"))
+  (pb-set-field ?m "machine_name" ?gt)
+  (pb-set-field ?m "puck_id" ?puck-id)
+  (pb-send ?client-id ?m)
+  (pb-destroy ?m)
+  (modify ?sf (proc-state IDLE) (placed-puck-id 0) (holding-puck-id 0))
+  (assert (goto-final green))
+)
+
+(defrule sim-proc-fail
+  ?sf <- (sim (proc-state WAIT) (goto-target ?gt) (rb-client-id ?client-id)
+	      (placed-puck-id ?puck-id&~0))
+  (sim-machine (puck-id ?puck-id) (lights ?light&YELLOW-BLINK))
+  =>
+  (bind ?m (pb-create "llsf_msgs.RemovePuckFromMachine"))
+  (pb-set-field ?m "machine_name" ?gt)
+  (pb-set-field ?m "puck_id" ?puck-id)
+  (pb-send ?client-id ?m)
+  (pb-destroy ?m)
+  (modify ?sf (proc-state IDLE) (placed-puck-id 0) (holding-puck-id ?puck-id))
+  (assert (goto-final yellow-flashing))
 )

@@ -9,6 +9,14 @@
 
 ; --- RULES for skill outcome
 
+(deffunction goto-machine (?name ?holding)
+  (skill-call finish_puck_at goto_name ?name)
+)
+
+(deffunction get-s0 ()
+  (skill-call get_s0)
+)
+
 (defrule get-s0-final
   ?s  <- (state GET-S0)
   ?gf <- (get-s0-final)
