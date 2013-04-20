@@ -162,7 +162,9 @@ void LaserClusterDetector::find_lights() {
 	std::advance(following, 3);
 	laserscan::iterator followingfollowing = filtered_scan_.begin();
 	std::advance(followingfollowing, 4);
-
+	if (debug_){
+			logger->log_debug(name(),"======  Scanning ========== ");
+		}
 	while (followingfollowing != filtered_scan_.end()) {
 		//we can either have a peak (the begin or end of a cluster) iff
 		// - the difference between two adjacent values is bigger than threshold
@@ -229,6 +231,9 @@ void LaserClusterDetector::find_lights() {
 		++following;
 		++followingfollowing;
 	}
+	if (debug_){
+			logger->log_debug(name(),"======  SCAN ENDED ========== ");
+		}
 
 }
 
@@ -271,12 +276,14 @@ void LaserClusterDetector::read_laser() {
 
 		PolarPos nearest_laser_polar(laser_min_index, laser_min);
 		Point3d nearest_laser_cart = apply_tf(nearest_laser_polar.toPoint3d());
-		if (debug_)
+		if (debug_) {
 			pos3d_nearest_laser_if_->set_translation(0,
 					nearest_laser_cart.getX());
-		pos3d_nearest_laser_if_->set_translation(1, nearest_laser_cart.getY());
-		pos3d_nearest_laser_if_->set_frame("/base_link");
-		pos3d_nearest_laser_if_->write();
+			pos3d_nearest_laser_if_->set_translation(1,
+					nearest_laser_cart.getY());
+			pos3d_nearest_laser_if_->set_frame("/base_link");
+			pos3d_nearest_laser_if_->write();
+		}
 	}
 
 	filtered_scan_.sort(compare_polar_pos);
@@ -380,7 +387,7 @@ void LaserClusterDetector::publish_nearest_light() {
 }
 
 void LaserClusterDetector::loop() {
-	debug_ = cfg_debug_ && (loopcnt++ % 50) == 0; //show debug only every 50th loop
+	debug_ = cfg_debug_ && ((loopcnt++ % 10) == 0); //show debug only every nth loop
 	read_laser();
 	float* f = (float*) calloc(laser_vis_->maxlenof_distances(), sizeof(float));
 	laser_vis_->set_distances(f);
