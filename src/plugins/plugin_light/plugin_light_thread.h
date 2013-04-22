@@ -90,20 +90,26 @@ private:
 	float cfg_cameraOffsetHorizontalRad;
 
 	int cfg_lightNumberOfWrongDetections;
+	//new
+	int cfg_laserVisibilityThreashold;
+	float cfg_lightDistanceAllowedBetweenFrames;
+
 	int cfg_detectionCycleTime;
 	int detectionCycleTimeFrames;
 
 	std::string cfg_frame;
 
-	unsigned int cfg_threasholdBrightness;
+	unsigned int cfg_brightnessThreashold;
 	float cfg_lightSizeWidth;
 	float cfg_lightSizeHeight;
 
 	float cfg_desiredLoopTime;
 
 	bool cfg_debugMessagesActivated;
+	bool cfg_paintROIsActivated;
 
 	boost::circular_buffer<lightSignal> *historyBuffer;
+	//std::deque<lightSignal> *historyBuffer;
 
 	firevision::Camera *camera;
 	firevision::ScanlineModel *scanline;
@@ -117,7 +123,7 @@ private:
 	firevision::colorspace_t cspaceTo;
 
 	fawkes::Position3DInterface *nearestMaschineIF;
-	int laser_visibilityHistory;
+
 	int laser_visibilityHistoryThrashold;
 
 	fawkes::RobotinoLightInterface *lightStateIF;
@@ -132,15 +138,19 @@ private:
 
 	PluginLightThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
 
+	bool isValidSuccessor(lightSignal previous,lightSignal current);
+
 	void updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent);
-	void resetLightInterface();
+	void resetLightInterface(std::string message="");
 
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 	fawkes::polar_coord_2d_t transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
+	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
 	void resetLocalHistory();
 	void writeLightInterface();
+	void createUnknownLightSignal();
 
 protected:
 	virtual void run() { Thread::run(); }

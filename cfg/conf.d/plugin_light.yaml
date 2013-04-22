@@ -20,7 +20,7 @@ plugins/plugin_light:
   camera_factor_vertical: 0.85 #1.33
 
   # camare offset of the front cam
-  camera_offset_horizontal_rad: 0.013 #-0.0735
+  camera_offset_horizontal_rad: -0.013 #-0.0735
   camera_offset_vertical: 30
 
   #Shared Memory Imagebuffer name
@@ -29,7 +29,9 @@ plugins/plugin_light:
   # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
   threashold_brightness: 200
   detection_cycle_time: 1
+  threashold_laser_visibility: -6
   light_number_of_wrong_detections: 2
+  light_distance_allowed_betwen_frames: 0.1 
 
   # coordinate system
   frame: /cam_front
@@ -39,3 +41,4 @@ plugins/plugin_light:
   light_state_if: "Light_State"
 
   show_debug_messages: true
+  draw_rois: true
