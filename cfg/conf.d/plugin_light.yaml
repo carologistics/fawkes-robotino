@@ -32,6 +32,7 @@ plugins/plugin_light:
   threashold_laser_visibility: -6
   light_number_of_wrong_detections: 2
   light_distance_allowed_betwen_frames: 0.1 
+  light_out_of_range_thrashold: 2
 
   # coordinate system
   frame: /cam_front

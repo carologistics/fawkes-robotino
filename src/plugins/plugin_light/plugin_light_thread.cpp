@@ -33,6 +33,8 @@ PluginLightThread::PluginLightThread()
 	this->cfg_brightnessThreashold = 0;
 	this->cfg_paintROIsActivated = false;
 
+	this->cfg_lightOutOfRangeThrashold = 0;
+
 	this->img_width = 0;
 	this->img_height = 0;
 
@@ -56,12 +58,15 @@ PluginLightThread::PluginLightThread()
 
 	this->laser_visibilityHistoryThrashold = 10;
 	this->cfg_lightDistanceAllowedBetweenFrames = 0;
+	this->lightOutOfRangeCounter = 0;
 }
 
 void
 PluginLightThread::init()
 {
 	logger->log_info(name(), "Plugin-light: starts up");
+
+	this->lightOutOfRangeCounter = 0;
 
 	this->cfg_prefix = "/plugins/plugin_light/";
 
@@ -82,6 +87,7 @@ PluginLightThread::init()
 	this->cfg_brightnessThreashold = this->config->get_uint((this->cfg_prefix + "threashold_brightness").c_str());
 	this->cfg_laserVisibilityThreashold = this->config->get_int((this->cfg_prefix + "threashold_laser_visibility").c_str());
 	this->cfg_lightDistanceAllowedBetweenFrames = this->config->get_float((this->cfg_prefix + "light_distance_allowed_betwen_frames").c_str());
+	this->cfg_lightOutOfRangeThrashold = this->config->get_int((this->cfg_prefix + "light_out_of_range_thrashold").c_str());
 
 	this->cfg_lightSizeHeight = this->config->get_float((this->cfg_prefix + "light_size_height").c_str());
 	this->cfg_lightSizeWidth = this->config->get_float((this->cfg_prefix + "light_size_width").c_str());
@@ -179,95 +185,86 @@ PluginLightThread::finalize()													//TODO check if everthing gets deleted
 void
 PluginLightThread::loop()
 {
+	bool contiueToPictureProcess = false;
+
 	//read laser if
 	this->nearestMaschineIF->read();
+	int clusterVisibilityHistory = this->nearestMaschineIF->visibility_history();
 
-	//TODO ignore -1 just an error with -4 or something... Search at last point
-	if (this->nearestMaschineIF->visibility_history() > this->cfg_laserVisibilityThreashold ) {
+	fawkes::cart_coord_3d_t lightPosition;
+	lightPosition.x = this->nearestMaschineIF->translation(0);
+	lightPosition.y = this->nearestMaschineIF->translation(1);
+	lightPosition.z = this->nearestMaschineIF->translation(2);
+	fawkes::polar_coord_2d_t lightPositionPolar;
 
-		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture();
-		lightSignalCurrentPicture.nearestMaschine_history = this->nearestMaschineIF->visibility_history(); // visibility history from laser copy to lightSignal
-		this->updateLocalHistory(lightSignalCurrentPicture);
+	if ( clusterVisibilityHistory > this->cfg_laserVisibilityThreashold ) {
+		if( clusterVisibilityHistory > 0 ){
+			lightPositionPolar = this->transformCoordinateSystem(lightPosition, this->nearestMaschineIF->frame(), this->cfg_frame);
 
-		if (this->cfg_debugMessagesActivated) {
-			logger->log_info(name(), "updatingLightInterface");
+			if( this->isLightInViewarea(lightPositionPolar) ){
+				this->lightOutOfRangeCounter = 0;
+				contiueToPictureProcess = true;
+			}
+			else{
+				if ( this->lightOutOfRangeCounter < this->cfg_lightOutOfRangeThrashold ) {
+					if ( ! this->historyBuffer->empty()) {
+						lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
+
+						contiueToPictureProcess = true;
+					} else {
+						this->resetLightInterface("light is out of range and buffer is empty");
+					}
+				} else {
+					this->resetLightInterface("light is to often out of range for camera");
+					this->resetLocalHistory();
+				}
+			}
+		} else if ( ! this->historyBuffer->empty()) {
+			lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
+			contiueToPictureProcess = true;
+		} else {
+			this->resetLightInterface("laser visibility is < 0 but buffer is empty");
 		}
-	} else {
+	} else{
 		this->resetLightInterface("laser visibility lower than threashold");
+		this->resetLocalHistory();
+	}
+
+	if ( contiueToPictureProcess ) {
+		PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
+		this->takePicture(lightROIs);
+
+		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
+		lightSignalCurrentPicture.nearestMaschine_pos = lightPositionPolar;
+		lightSignalCurrentPicture.nearestMaschine_history = clusterVisibilityHistory;
+		this->historyBuffer->push_front(lightSignalCurrentPicture);
+
+		this->processHistoryBuffer();
 	}
 }
 
-PluginLightThread::lightSignal
-PluginLightThread::detectLightInCurrentPicture()
+bool
+PluginLightThread::isLightInViewarea(fawkes::polar_coord_2d_t light)
 {
-	fawkes::polar_coord_2d_t lightPositionPolar;
-	if( this->nearestMaschineIF->visibility_history() > 0 ){
+	float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 ) - 0.1;
 
-		fawkes::cart_coord_3d_t lightPosition;
-
-		lightPosition.x = this->nearestMaschineIF->translation(0);
-		lightPosition.y = this->nearestMaschineIF->translation(1);
-		lightPosition.z = this->nearestMaschineIF->translation(2);
-
-		//transform coorodinate-system from laser -> camera
-		std::string lightPosFrame = this->nearestMaschineIF->frame();
-
-		lightPositionPolar = this->transformCoordinateSystem(lightPosition, lightPosFrame, this->cfg_frame);
-
-		//check if the light is in the camera-view area
-		float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 )
-										 - 0.1;
-
-		if ( std::abs(lightPositionPolar.phi) >= cameraAngleDetectionArea  ) {
-
-			PluginLightThread::lightSignal noLightSignal;
-
-			noLightSignal.red = fawkes::RobotinoLightInterface::UNKNOWN;
-			noLightSignal.yellow = fawkes::RobotinoLightInterface::UNKNOWN;
-			noLightSignal.green = fawkes::RobotinoLightInterface::UNKNOWN;
-			noLightSignal.nearestMaschine_pos = lightPositionPolar;
-
-			this->resetLightInterface("light out of camera-view area");
-
-			return noLightSignal;
-		}
-
-	} else if( ! this->historyBuffer->empty() ){
-		//  previous value
-		lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
+	if ( std::abs(light.phi) >= cameraAngleDetectionArea ) {
+		return false;
+	} else {
+		return true;
 	}
-	else{
-		PluginLightThread::lightSignal noLightSignal;
+}
 
-		noLightSignal.red = fawkes::RobotinoLightInterface::UNKNOWN;
-		noLightSignal.yellow = fawkes::RobotinoLightInterface::UNKNOWN;
-		noLightSignal.green = fawkes::RobotinoLightInterface::UNKNOWN;
-		noLightSignal.nearestMaschine_pos = lightPositionPolar;
-
-		this->resetLightInterface("no light history (buffer empty)");
-
-		return noLightSignal;
-	}
-
-
-	//todo refactor in own method
-	//calculate the expected position of the light
-	PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
-
-	if (this->cfg_debugMessagesActivated) {
-		logger->log_debug(name(), "x: %u, y: %u, h: %u, w: %u", lightROIs.light.start.x, lightROIs.light.start.x, lightROIs.light.height, lightROIs.light.width);
-	}
+void
+PluginLightThread::takePicture(PluginLightThread::lightROIs lightROIs) {
 
 	camera->capture();
-
-	firevision::convert(
-			this->cspaceFrom,
+	firevision::convert(this->cspaceFrom,
 			this->cspaceTo,
 			this->camera->buffer(),
 			this->bufferYCbCr,
 			this->img_width,
-			this->img_height
-			);
+			this->img_height);
 	this->camera->dispose_buffer();
 
 	//draw expected light in buffer
@@ -277,16 +274,42 @@ PluginLightThread::detectLightInCurrentPicture()
 		this->drawROIIntoBuffer(lightROIs.yellow);
 		this->drawROIIntoBuffer(lightROIs.green);
 	}
+}
 
-	//detect signals
+PluginLightThread::lightSignal
+PluginLightThread::detectLightInCurrentPicture(PluginLightThread::lightROIs lightROIs)
+{
 	PluginLightThread::lightSignal lightSignal;
 
 	lightSignal.red = this->signalLightCurrentPicture(lightROIs.red);
 	lightSignal.yellow = this->signalLightCurrentPicture(lightROIs.yellow);
 	lightSignal.green = this->signalLightCurrentPicture(lightROIs.green);
-	lightSignal.nearestMaschine_pos = lightPositionPolar;
 
 	return lightSignal;
+}
+
+void
+PluginLightThread::processHistoryBuffer()
+{
+	if ( this->historyBuffer->full() ) {
+		PluginLightThread::lightSignal lighSignal;
+
+		if ( this->lightFromHistoryBuffer(lighSignal) ) {
+			if ( lighSignal.red != fawkes::RobotinoLightInterface::UNKNOWN
+			  && lighSignal.yellow != fawkes::RobotinoLightInterface::UNKNOWN
+			  && lighSignal.green != fawkes::RobotinoLightInterface::UNKNOWN ) {
+
+				this->writeLightInterface(lighSignal, true);
+
+			} else {
+				this->resetLightInterface("light couldn't detected");
+			}
+		} else {
+			this->resetLightInterface("cluster jumped");
+		}
+	} else {
+		this->writeLightInterface(this->historyBuffer->front(), false);
+	}
 }
 
 PluginLightThread::~PluginLightThread()
@@ -415,7 +438,8 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 	return lightROIs;
 }
 
-void PluginLightThread::writeLightInterface() {
+void
+PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSignal, bool ready) {
 	this->lightStateIF->read();
 	int vis = this->lightStateIF->visibility_history();
 
@@ -425,37 +449,26 @@ void PluginLightThread::writeLightInterface() {
 		vis++;
 	}
 	this->lightStateIF->set_visibility_history(vis);
-	lightSignal detectedLightSignal =  this->lightFromHistoryBuffer();
 
-	this->lightStateIF->set_red(detectedLightSignal.red);
-	this->lightStateIF->set_yellow(detectedLightSignal.yellow);
-	this->lightStateIF->set_green(detectedLightSignal.green);
+	this->lightStateIF->set_red(lightSignal.red);
+	this->lightStateIF->set_yellow(lightSignal.yellow);
+	this->lightStateIF->set_green(lightSignal.green);
 
-	//TODO vllt. noch alles resetten wenn zu lange unknown
-
-	if (this->lightStateIF->red() != fawkes::RobotinoLightInterface::UNKNOWN
-	 && this->lightStateIF->yellow() != fawkes::RobotinoLightInterface::UNKNOWN
-	 && this->lightStateIF->green() != fawkes::RobotinoLightInterface::UNKNOWN) {
-
-		this->lightStateIF->set_ready(true);
-	} else {
-
-		this->resetLightInterface("unknown value detected");
-	}
+	this->lightStateIF->set_ready(ready);
 
 	this->lightStateIF->write();
 }
 
-void
-PluginLightThread::updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent)
-{
-	this->historyBuffer->push_front(lightSignalCurrent);
-
-	if ( this->historyBuffer->full() ) {
-		this->writeLightInterface();
-	}
-
-}
+//void
+//PluginLightThread::updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent)
+//{
+//	this->historyBuffer->push_front(lightSignalCurrent);
+//
+//	if ( this->historyBuffer->full() ) {
+//		this->writeLightInterface();
+//	}
+//
+//}
 
 void
 PluginLightThread::resetLocalHistory() {
@@ -512,24 +525,18 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 	}
 }
 
-PluginLightThread::lightSignal
-PluginLightThread::lightFromHistoryBuffer(){
+bool
+PluginLightThread::lightFromHistoryBuffer(PluginLightThread::lightSignal &lighSignal){
 
 	int red = 0;
 	int yellow = 0;
 	int green = 0;
  // todo buffer von anfang nach ende durchlaufen
 	PluginLightThread::lightSignal previousLight;
-	for(boost::circular_buffer<PluginLightThread::lightSignal>::iterator it = this->historyBuffer->end(); it != this->historyBuffer->begin(); --it){
-		if(it != this->historyBuffer->end()){
-			if(! isValidSuccessor(*it,previousLight)){
-				PluginLightThread::lightSignal noLightSignal;
-
-				noLightSignal.red = fawkes::RobotinoLightInterface::UNKNOWN;
-				noLightSignal.yellow = fawkes::RobotinoLightInterface::UNKNOWN;
-				noLightSignal.green = fawkes::RobotinoLightInterface::UNKNOWN;
-				return noLightSignal;
-
+	for(boost::circular_buffer<PluginLightThread::lightSignal>::iterator it = this->historyBuffer->begin(); it != this->historyBuffer->end(); ++it){
+		if(it != this->historyBuffer->begin()) {
+			if( ! isValidSuccessor(*it,previousLight)){
+				return false;
 			}
 		}
 		if(it->red == fawkes::RobotinoLightInterface::ON){
@@ -547,12 +554,11 @@ PluginLightThread::lightFromHistoryBuffer(){
 		previousLight = *it;
 	}
 
-	lightSignal returnValue;
-	returnValue.red = signalLightWithHistory(red);
-	returnValue.yellow = signalLightWithHistory(yellow);
-	returnValue.green = signalLightWithHistory(green);
+	lighSignal.red = signalLightWithHistory(red);
+	lighSignal.yellow = signalLightWithHistory(yellow);
+	lighSignal.green = signalLightWithHistory(green);
 
-	return returnValue;
+	return true;
 }
 
 bool

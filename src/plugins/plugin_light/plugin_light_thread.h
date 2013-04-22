@@ -97,6 +97,9 @@ private:
 	int cfg_detectionCycleTime;
 	int detectionCycleTimeFrames;
 
+	int lightOutOfRangeCounter;
+	int cfg_lightOutOfRangeThrashold;
+
 	std::string cfg_frame;
 
 	unsigned int cfg_brightnessThreashold;
@@ -130,17 +133,17 @@ private:
 
 	firevision::FilterROIDraw *drawer;
 
-	PluginLightThread::lightSignal detectLightInCurrentPicture();
+	PluginLightThread::lightSignal detectLightInCurrentPicture(PluginLightThread::lightROIs lightROIs);
 	fawkes::RobotinoLightInterface::LightState signalLightCurrentPicture(firevision::ROI signal);
 	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory);
-	PluginLightThread::lightSignal lightFromHistoryBuffer();
+	bool lightFromHistoryBuffer(PluginLightThread::lightSignal &lighSignal);
 	unsigned char* calculatePositionInCamBuffer();
 
 	PluginLightThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
 
 	bool isValidSuccessor(lightSignal previous,lightSignal current);
 
-	void updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent);
+//	void updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent);
 	void resetLightInterface(std::string message="");
 
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
@@ -149,8 +152,13 @@ private:
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
 	void resetLocalHistory();
-	void writeLightInterface();
+	void writeLightInterface(PluginLightThread::lightSignal lightSignal, bool ready);
 	void createUnknownLightSignal();
+
+	bool isLightInViewarea(fawkes::polar_coord_2d_t light);
+	void takePicture(PluginLightThread::lightROIs lightROIs);
+
+	void processHistoryBuffer();
 
 protected:
 	virtual void run() { Thread::run(); }
