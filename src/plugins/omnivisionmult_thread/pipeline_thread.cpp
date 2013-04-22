@@ -248,7 +248,7 @@ void RobotinoOmniVisionPipelineThread::finalize() {
  * position of the closest such object as puck position.
  */
 void RobotinoOmniVisionPipelineThread::loop() {
-	if_puck_map_current_.clear(); //delete current association of pucks to
+	old_pucks_= current_pucks_;
 	// check if there is a msg in the msg-queue
 	while (!switchInterface->msgq_empty()) {
 
@@ -349,14 +349,11 @@ void RobotinoOmniVisionPipelineThread::loop() {
 
 void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 
-	float min_dist = 10;
-	Position3DInterface* min_if = NULL;
 	vector<Point3d> old_pucks;
-	vector<Point3d> current_pucks;
 
 	hungarian_problem_t cost_matrix;
 	cost_matrix.num_rows = old_pucks.size();
-	cost_matrix.num_cols = current_pucks.size();
+	cost_matrix.num_cols = current_pucks_.size();
 	cost_matrix.cost = (int**) calloc(cost_matrix.num_rows, sizeof(int*));
 	for (int i = 0; i < cost_matrix.num_rows; ++i) {
 		cost_matrix.cost[i] = (int*) calloc(cost_matrix.num_cols, sizeof(int*));
@@ -364,12 +361,12 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 	for (unsigned int index_old = 0; index_old < old_pucks.size();
 			++index_old) {
 		for (unsigned int index_current = 0;
-				index_current < current_pucks.size(); ++index_current) {
+				index_current < current_pucks_.size(); ++index_current) {
 			//hungarian method takes int, so we transform our floats to suitable ints
 			//e.g.: 0.015 -> 15
 			cost_matrix.cost[index_old][index_current] =
 					(int) old_pucks[index_old].distance(
-							current_pucks[index_current]) * 1000;
+							current_pucks_[index_current]) * 1000;
 		}
 	}
 	HungarianMethod hSolver;
@@ -380,16 +377,16 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 	int size_assignment;
 	int* assignment = hSolver.get_assignment(size_assignment);
 	list<Position3DInterface*> unused_ifs(puck_ifs_);
-	list<Point3d&> new_pucks;
+	list<Point3d> new_pucks;
 	map<Point3d, fawkes::Position3DInterface*>* if_puck_map_current = new map<Point3d, fawkes::Position3DInterface*>();
 	for (int i = 0; i < size_assignment; ++i) {
 		Point3d& old_puck = old_pucks[i];
-		Point3d& new_puck = current_pucks[assignment[i]];
+		Point3d& new_puck = current_pucks_[assignment[i]];
 		map<Point3d, Position3DInterface*>::iterator old_if = if_puck_map_->find(
 				old_puck);
 		if (old_if != if_puck_map_->end()) {
 			unused_ifs.remove(old_if->second);
-			if_puck_map_current[new_puck] = old_if->second;
+			(*if_puck_map_current)[new_puck] = old_if->second;
 			old_if->second->set_visibility_history(old_if->second->visibility_history()+1);
 		} else {
 			new_pucks.push_back(new_puck);
@@ -400,13 +397,14 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 		if (unused_ifs.size() == 0) {
 			break;
 		}
-		Position3DInterface* pos_if = unused_ifs.pop_front();
+		Position3DInterface* pos_if = unused_ifs.front();
+		unused_ifs.pop_front();
 		pos_if->set_visibility_history(1);
-		if_puck_map_current[new_puck] = pos_if;
+		(*if_puck_map_current)[new_puck] = pos_if;
 	}
 	delete if_puck_map_;
 	if_puck_map_=if_puck_map_current;
-	for (auto& p:if_puck_map_){
+	for (auto& p:*if_puck_map_){
 		Position3DInterface* pos_if = p.second;
 		pos_if->set_translation(0,p.first.getX());
 		pos_if->set_translation(1,p.first.getY());

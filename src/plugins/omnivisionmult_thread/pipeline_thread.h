@@ -91,7 +91,8 @@ public:
 	std::list<fawkes::Position3DInterface*> puck_ifs_;
 private:
 	std::map<Point3d,fawkes::Position3DInterface*>* if_puck_map_;
-	std::list<Point3d> current_pucks_;
+	std::vector<Point3d> current_pucks_;
+	std::vector<Point3d> old_pucks_;
 	void associate_pucks_with_ifs();
 
 	Point3d apply_tf_to_global(Point3d src);
