@@ -14,3 +14,10 @@ plugins/static-transforms:
       trans_x: 0.13
       trans_y: 0.0
       trans_z: 0.11
+
+    cam_front:
+      frame: !frame /base_laser
+      child_frame: /cam_front
+      trans_x: -0.085
+      trans_y: 0.0
+      trans_z: 0.09
