@@ -42,6 +42,7 @@
 #include <cmath>
 
 #include "brightness.h"
+#include <boost/circular_buffer.hpp>
 
 namespace fawkes {
 	class Position3DInterface;
@@ -73,12 +74,8 @@ private:
 		fawkes::RobotinoLightInterface::LightState red;
 		fawkes::RobotinoLightInterface::LightState yellow;
 		fawkes::RobotinoLightInterface::LightState green;
-	};
-
-	struct lightHistory{
-		int red;
-		int yellow;
-		int green;
+		fawkes::polar_coord_2d_t nearestMaschine_pos;
+		int nearestMaschine_history;
 	};
 
 	std::string cfg_prefix;
@@ -95,7 +92,6 @@ private:
 	int cfg_lightNumberOfWrongDetections;
 	int cfg_detectionCycleTime;
 	int detectionCycleTimeFrames;
-	int loopCounter;
 
 	std::string cfg_frame;
 
@@ -107,19 +103,20 @@ private:
 
 	bool cfg_debugMessagesActivated;
 
-	PluginLightThread::lightHistory lightHistory;
+	boost::circular_buffer<lightSignal> *historyBuffer;
 
 	firevision::Camera *camera;
 	firevision::ScanlineModel *scanline;
 	firevision::ColorModelBrightness *colorModel;
-	firevision::SimpleColorClassifier *classifierLight;
+	firevision::SimpleColorClassifier *classifierWhite;
+	firevision::SimpleColorClassifier *classifierBlack;
 	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
 	unsigned char *bufferYCbCr;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
 
 	firevision::colorspace_t cspaceFrom;
 	firevision::colorspace_t cspaceTo;
 
-	fawkes::Position3DInterface *lightPositionLaserIF;
+	fawkes::Position3DInterface *nearestMaschineIF;
 	int laser_visibilityHistory;
 	int laser_visibilityHistoryThrashold;
 
@@ -129,8 +126,8 @@ private:
 
 	PluginLightThread::lightSignal detectLightInCurrentPicture();
 	fawkes::RobotinoLightInterface::LightState signalLightCurrentPicture(firevision::ROI signal);
-	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory, int visibilityHistory);
-
+	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory);
+	PluginLightThread::lightSignal lightFromHistoryBuffer();
 	unsigned char* calculatePositionInCamBuffer();
 
 	PluginLightThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);

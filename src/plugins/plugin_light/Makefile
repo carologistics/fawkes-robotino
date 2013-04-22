@@ -19,6 +19,7 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/fvconf.mk
+include $(BUILDSYSDIR)/boost.mk
 
 ifeq ($(HAVE_TF),1)
   CFLAGS  += $(CFLAGS_TF)
@@ -34,7 +35,7 @@ LIBS     += $(VISION_LIBS)
 LIBS_plugin_light = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
 		fvclassifiers fawkesgeometry fvfilters TransformInterface \
-		fawkestf RobotinoLightInterface Position3DInterface
+		fawkestf RobotinoLightInterface Position3DInterface 
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_plugin_light = plugin_light_plugin.o plugin_light_thread.o brightness.o
 

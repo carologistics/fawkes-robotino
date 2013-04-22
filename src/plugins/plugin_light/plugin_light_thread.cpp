@@ -35,8 +35,6 @@ PluginLightThread::PluginLightThread()
 	this->img_width = 0;
 	this->img_height = 0;
 
-	this->loopCounter = 0;
-
 	this->bufferYCbCr = NULL;
 
 	this->cspaceFrom = firevision::YUV422_PLANAR;
@@ -45,10 +43,10 @@ PluginLightThread::PluginLightThread()
 	this->camera = NULL;
 	this->scanline = NULL;
 	this->colorModel = NULL;
-	this->classifierLight = NULL;
+	this->classifierWhite = NULL;
 	this->shmBufferYCbCr = NULL;
 
-	this->lightPositionLaserIF = NULL;
+	this->nearestMaschineIF = NULL;
 	this->lightStateIF = NULL;
 
 	this->drawer = NULL;
@@ -86,7 +84,6 @@ PluginLightThread::init()
 	this->cfg_detectionCycleTime = this->config->get_int((this->cfg_prefix + "detection_cycle_time").c_str());
 	this->cfg_desiredLoopTime = this->config->get_float("/fawkes/mainapp/desired_loop_time") / 1000000;
 	this->detectionCycleTimeFrames = cfg_detectionCycleTime / cfg_desiredLoopTime;
-	this->loopCounter = 0;
 
 	std::string shmID = this->config->get_string((this->cfg_prefix + "shm_image_id").c_str());
 
@@ -100,7 +97,7 @@ PluginLightThread::init()
 	this->scanline = new firevision::ScanlineGrid( this->img_width, this->img_height, 1, 1 );
 	this->colorModel = new firevision::ColorModelBrightness(this->cfg_threasholdBrightness);
 
-	this->classifierLight = new firevision::SimpleColorClassifier(
+	this->classifierWhite = new firevision::SimpleColorClassifier(
 			this->scanline,														//scanmodel
 			this->colorModel,													//colorModel
 			30,																	//num_min_points
@@ -110,6 +107,20 @@ PluginLightThread::init()
 			0,																	//grow_by
 			firevision::C_WHITE													//color
 			);
+
+	this->classifierBlack = new firevision::SimpleColorClassifier(
+				this->scanline,														//scanmodel
+				this->colorModel,													//colorModel
+				30,																	//num_min_points
+				0,																	//box_extend
+				false,																//upward
+				2,																	//neighberhoud_min_match
+				0,																	//grow_by
+				firevision::C_BLACK													//color
+				);
+
+	// Create a ringbuffer with the size of the configured frame count
+	this->historyBuffer = new boost::circular_buffer<lightSignal>(this->detectionCycleTimeFrames);
 
 	// SHM image buffer
 	this->shmBufferYCbCr = new firevision::SharedMemoryImageBuffer(
@@ -126,7 +137,7 @@ PluginLightThread::init()
 	this->bufferYCbCr = this->shmBufferYCbCr->buffer();
 
 	//open interfaces
-	this->lightPositionLaserIF = blackboard->open_for_reading<fawkes::Position3DInterface>(
+	this->nearestMaschineIF = blackboard->open_for_reading<fawkes::Position3DInterface>(
 			this->config->get_string((this->cfg_prefix + "light_position_if").c_str()).c_str());
 
 	this->lightStateIF = blackboard->open_for_writing<fawkes::RobotinoLightInterface>(
@@ -150,10 +161,10 @@ PluginLightThread::finalize()													//TODO check if everthing gets deleted
 	delete this->camera;
 	delete this->scanline;
 	delete this->colorModel;
-	delete this->classifierLight;
+	delete this->classifierWhite;
 	delete this->shmBufferYCbCr;
 
-	blackboard->close(this->lightPositionLaserIF);
+	blackboard->close(this->nearestMaschineIF);
 	blackboard->close(this->lightStateIF);
 
 	logger->log_info(name(), "Plugin-light: ends");
@@ -163,12 +174,13 @@ void
 PluginLightThread::loop()
 {
 	//read laser if
-	this->lightPositionLaserIF->read();
+	this->nearestMaschineIF->read();
 
 	//TODO ignore -1 just an error with -4 or something... Search at last point
-	if (this->lightPositionLaserIF->visibility_history() > this->laser_visibilityHistory) {
+	if (this->nearestMaschineIF->visibility_history() > this->laser_visibilityHistory) {
 
 		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture();
+		lightSignalCurrentPicture.nearestMaschine_history = this->nearestMaschineIF->visibility_history();
 		this->updateLocalHistory(lightSignalCurrentPicture);
 
 		if (this->cfg_debugMessagesActivated) {
@@ -182,7 +194,7 @@ PluginLightThread::loop()
 		}
 	}
 
-	this->laser_visibilityHistory = this->lightPositionLaserIF->visibility_history();
+	this->laser_visibilityHistory = this->nearestMaschineIF->visibility_history();
 }
 
 PluginLightThread::lightSignal
@@ -190,12 +202,12 @@ PluginLightThread::detectLightInCurrentPicture()
 {
 	fawkes::cart_coord_3d_t lightPosition;
 
-	lightPosition.x = this->lightPositionLaserIF->translation(0);
-	lightPosition.y = this->lightPositionLaserIF->translation(1);
-	lightPosition.z = this->lightPositionLaserIF->translation(2);
+	lightPosition.x = this->nearestMaschineIF->translation(0);
+	lightPosition.y = this->nearestMaschineIF->translation(1);
+	lightPosition.z = this->nearestMaschineIF->translation(2);
 
 	//transform coorodinate-system from laser -> camera
-	std::string lightPosFrame = this->lightPositionLaserIF->frame();
+	std::string lightPosFrame = this->nearestMaschineIF->frame();
 
 	fawkes::polar_coord_2d_t lightPositionPolar = this->transformCoordinateSystem(lightPosition, lightPosFrame, this->cfg_frame);
 
@@ -210,7 +222,7 @@ PluginLightThread::detectLightInCurrentPicture()
 		noLightSignal.red = fawkes::RobotinoLightInterface::OFF;
 		noLightSignal.yellow = fawkes::RobotinoLightInterface::OFF;
 		noLightSignal.green = fawkes::RobotinoLightInterface::OFF;
-
+		noLightSignal.nearestMaschine_pos = lightPositionPolar;
 		if (this->cfg_debugMessagesActivated) {
 			logger->log_info(name(), "Light out of camera-view area");
 		}
@@ -253,6 +265,7 @@ PluginLightThread::detectLightInCurrentPicture()
 	lightSignal.red = this->signalLightCurrentPicture(lightROIs.red);
 	lightSignal.yellow = this->signalLightCurrentPicture(lightROIs.yellow);
 	lightSignal.green = this->signalLightCurrentPicture(lightROIs.green);
+	lightSignal.nearestMaschine_pos = lightPositionPolar;
 
 	return lightSignal;
 }
@@ -388,10 +401,11 @@ void PluginLightThread::writeLightInterface() {
 		vis++;
 	}
 	this->lightStateIF->set_visibility_history(vis);
+	lightSignal detectedLightSignal =  this->lightFromHistoryBuffer();
 
-	this->lightStateIF->set_red(this->signalLightWithHistory(this->lightHistory.red, this->loopCounter));
-	this->lightStateIF->set_yellow(this->signalLightWithHistory(this->lightHistory.yellow, this->loopCounter));
-	this->lightStateIF->set_green(this->signalLightWithHistory(this->lightHistory.green, this->loopCounter));
+	this->lightStateIF->set_red(detectedLightSignal.red);
+	this->lightStateIF->set_yellow(detectedLightSignal.yellow);
+	this->lightStateIF->set_green(detectedLightSignal.green);
 
 	//TODO vllt. noch alles resetten wenn zu lange unknown
 
@@ -411,30 +425,17 @@ void PluginLightThread::writeLightInterface() {
 void
 PluginLightThread::updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent)
 {
-	this->loopCounter++;
+	this->historyBuffer->push_front(lightSignalCurrent);
 
-	if (this->loopCounter >= this->detectionCycleTimeFrames ) {
+	if (this->historyBuffer->full() ) {
 		this->writeLightInterface();
-		this->resetLocalHistory();
 	}
 
-	if (lightSignalCurrent.red == fawkes::RobotinoLightInterface::ON) {
-		this->lightHistory.red++;
-	}
-	if (lightSignalCurrent.yellow == fawkes::RobotinoLightInterface::ON) {
-		this->lightHistory.yellow++;
-	}
-	if (lightSignalCurrent.green == fawkes::RobotinoLightInterface::ON) {
-		this->lightHistory.green++;
-	}
 }
 
 void
 PluginLightThread::resetLocalHistory() {
-	this->loopCounter = 0;
-	this->lightHistory.red = 0;
-	this->lightHistory.yellow = 0;
-	this->lightHistory.green = 0;
+	this->historyBuffer->clear();
 }
 
 void
@@ -462,9 +463,9 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 	this->scanline->reset();
 	this->scanline->set_roi(&signal);
 
-	this->classifierLight->set_src_buffer(this->bufferYCbCr, this->img_width, this->img_height);
+	this->classifierWhite->set_src_buffer(this->bufferYCbCr, this->img_width, this->img_height);
 
-	std::list<firevision::ROI> *ROIs = this->classifierLight->classify();
+	std::list<firevision::ROI> *ROIs = this->classifierWhite->classify();
 
 	bool isOn = ! ROIs->empty();
 
@@ -485,15 +486,48 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 	}
 }
 
+PluginLightThread::lightSignal
+PluginLightThread::lightFromHistoryBuffer(){
+
+	int red = 0;
+	int yellow = 0;
+	int green = 0;
+
+	for(unsigned int i=0; i < this->historyBuffer->size(); ++i){
+		PluginLightThread::lightSignal it =  this->historyBuffer->at(i);
+
+		if(it.red == fawkes::RobotinoLightInterface::ON){
+			red++;
+		}
+
+		if(it.yellow == fawkes::RobotinoLightInterface::ON){
+			yellow++;
+		}
+
+		if(it.green == fawkes::RobotinoLightInterface::ON){
+			green++;
+		}
+	}
+
+	lightSignal returnValue;
+	returnValue.red = signalLightWithHistory(red);
+	returnValue.yellow = signalLightWithHistory(yellow);
+	returnValue.green = signalLightWithHistory(green);
+
+	return returnValue;
+}
+
 fawkes::RobotinoLightInterface::LightState
-PluginLightThread::signalLightWithHistory(int lightHistory, int visibilityHistory)
+PluginLightThread::signalLightWithHistory(int lightHistory)
 {
+	int visibilityHistory = this->historyBuffer->size();
+
 	if ( lightHistory > ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) ) {
 		return fawkes::RobotinoLightInterface::ON;
 
 	} else if ( lightHistory > visibilityHistory / 2 - this->cfg_lightNumberOfWrongDetections
 			&&  lightHistory < visibilityHistory / 2 + this->cfg_lightNumberOfWrongDetections ) {
-		return fawkes::RobotinoLightInterface::BLINKING;
+		return fawkes::RobotinoLightInterface::BLINKING; // todo check blinking max allowed errors
 
 	} else if ( lightHistory < this->cfg_lightNumberOfWrongDetections ) {
 		return fawkes::RobotinoLightInterface::OFF;
