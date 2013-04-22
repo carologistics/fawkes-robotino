@@ -39,6 +39,10 @@ documentation      = [==[Move under the RFID Reader/Writer]==]
 skillenv.skill_module(_M)
 
 local tfm = require('tf_module')
+local TURN_CORRECTION = 0.13 --angle in rad
+local LASER_SIDEWARDS_CORRECTION = 0.1 
+local LASER_FORWARD_CORRECTION = 0.20
+local LIGHT_SENSOR_DELAY_CORRECTION = 0.04
 function ampel(self)
    return (self.fsm.vars.ampel_loc.distance > 0) and (self.fsm.vars.ampel_loc.distance < 1)
 end
@@ -91,7 +95,7 @@ function is_right(self)
 	end
 end
 function angle_reached(self)
-   if (2*math.acos(pose:rotation(3))) >=  (math.ceil(self.fsm.vars.loc_angle/(math.pi/2.0)) * (math.pi/2.0)) then
+   if ((2*math.acos(pose:rotation(3))) + TURN_CORRECTION) >=  (math.ceil(self.fsm.vars.loc_angle/(math.pi/2.0)) * (math.pi/2.0)) then
 	return true
    --- falls 0 durchlaufen wird:
    elseif (2*math.acos(pose:rotation(3))) <= 0.07 then
@@ -120,8 +124,10 @@ fsm:define_states{ export_to=_M,
    {"APPROACH_AMPEL_CLOSER", SkillJumpState, skills={{motor_move}},
       final_to="CHECK_POSITION", fail_to="FAILED"},
    {"CHECK_POSITION", JumpState},
-   {"LEFT_TOO_FAR", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
-   {"RIGHT_TOO_FAR", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   {"LEFT_TOO_FAR", SkillJumpState, skills={{motor_move}}, final_to="CORRECT_DELAY_RIGHT", fail_to="FAILED"},
+   {"RIGHT_TOO_FAR", SkillJumpState, skills={{motor_move}}, final_to="CORRECT_DELAY_LEFT", fail_to="FAILED"},
+   {"CORRECT_DELAY_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},--both are needed because of a delay of the sensor
+   {"CORRECT_DELAY_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -134,8 +140,8 @@ fsm:add_transitions{
    {"CHECK_POSITION", "LEFT_TOO_FAR", cond=position_left},
    {"CHECK_POSITION", "RIGHT_TOO_FAR", cond=position_right},
    {"CHECK_POSITION", "FINAL", cond=left_and_right_ok},
-   {"LEFT_TOO_FAR", "FINAL", cond=left_ok},
-   {"RIGHT_TOO_FAR", "FINAL", cond=right_ok},
+   {"LEFT_TOO_FAR", "CORRECT_DELAY_RIGHT", cond=left_ok},
+   {"RIGHT_TOO_FAR", "CORRECT_DELAY_LEFT", cond=right_ok},
 }
 function send_transrot(vx, vy, omega)
    local oc  = motor:controller()
@@ -165,16 +171,16 @@ function DESC_CHECK_IF_FRONT:init()
 end
 function CORRECT_LEFT:init()
    self.skills[1].x=0 
-   self.skills[1].y=self.fsm.vars.ampel_loc.y + 0.1 --TODO
+   self.skills[1].y=self.fsm.vars.ampel_loc.y 
    self.skills[1].ori=0
 end
 function CORRECT_RIGHT:init()
    self.skills[1].x=0 
-   self.skills[1].y=self.fsm.vars.ampel_loc.y
+   self.skills[1].y=self.fsm.vars.ampel_loc.y - LASER_SIDEWARDS_CORRECTION
    self.skills[1].ori=0
 end
 function APPROACH_AMPEL_CLOSER:init()
-   self.skills[1].x=self.fsm.vars.ampel_loc.x - 0.22 --TODO 
+   self.skills[1].x=self.fsm.vars.ampel_loc.x - LASER_FORWARD_CORRECTION
    self.skills[1].y=0 
    self.skills[1].ori=0
 end
@@ -190,4 +196,13 @@ function LEFT_TOO_FAR:init()
    self.skills[1].y=-0.3 
    self.skills[1].ori=0
 end
-
+function CORRECT_DELAY_RIGHT:init()
+   self.skills[1].x=0 
+   self.skills[1].y=LIGHT_SENSOR_DELAY_CORRECTION 
+   self.skills[1].ori=0
+end
+function CORRECT_DELAY_LEFT:init()
+   self.skills[1].x=0 
+   self.skills[1].y=-LIGHT_SENSOR_DELAY_CORRECTION
+   self.skills[1].ori=0
+end
