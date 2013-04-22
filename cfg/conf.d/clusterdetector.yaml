@@ -41,3 +41,8 @@ plugins/laserclusterdetector:
 
   # show found clusters as a laser interface
   visualize_clusters: true
+
+  # add some delta to the detected cluster
+  # (this is only used in case of a bad cluster, since we detect the tip
+  # of the RFID sensor then, which is to far away from the signal light
+  cluster_distance_delta: 0.03

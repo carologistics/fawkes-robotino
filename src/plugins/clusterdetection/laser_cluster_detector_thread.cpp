@@ -84,6 +84,7 @@ void LaserClusterDetector::init() {
 	cfg_cluster_max_distance_ = config->get_float(
 			CFG_PREFIX"cluster_max_distance");
 	cfg_cluster_coherence_ = config->get_float(CFG_PREFIX"cluster_coherence");
+	cfg_cluster_distance_delta_ = config->get_float(CFG_PREFIX"cluster_distance_delta");
 
 	logger->log_debug(name(), "Configuration values:");
 	logger->log_debug(name(), "laser_min_length: %f", cfg_laser_min_);
@@ -243,7 +244,7 @@ void LaserClusterDetector::find_lights() {
 						//cluster is too widespread, assume reflection from signal light and
 						// chose minimal values as correct readings
 
-						light_distance = min_dist;
+						light_distance = min_dist + cfg_cluster_distance_delta_;
 						light_angle = min_angle;
 						PolarPos lastpeak_corrected(last_peak->angle, min_dist);
 						PolarPos current_corrected(current->angle, min_dist);

@@ -143,6 +143,7 @@ private:
 	float cfg_cluster_coherence_;
 	bool cfg_publish_laser_vis_;
 	float cfg_cluster_max_distance_;
+	float cfg_cluster_distance_delta_;
 
 	int loopcnt;
 	bool cfg_debug_;
