@@ -48,7 +48,7 @@ local TIMEOUT_MOVE_BACK = 10
 local TIMEOUT_MOVE_LEFT = 20
 local ORI_OFFSET = 0.15
 local MAX_RETRIES = 3
-local LOSTPUCK_DIST = 0.13
+local LOSTPUCK_DIST = 0.08
 local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
 -- Imports
@@ -60,7 +60,7 @@ function lost_puck()
    local val = fsm.vars.avg_val
    local idx = fsm.vars.avg_idx
 
-   val[idx] = sensor:distance(0)
+   val[idx] = sensor:distance(8)
    idx = idx + 1
    if idx > AVG_LEN then idx = 1 end
 

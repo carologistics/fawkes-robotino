@@ -43,7 +43,7 @@ skillenv.skill_module(_M)
 
 local TIMEOUT = 30
 local ORI_OFFSET = 0.03
-local THRESHOLD_DISTANCE = 0.07
+local THRESHOLD_DISTANCE = 0.08
 local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
 local pm = require 'puck_loc_module'
@@ -107,7 +107,7 @@ function puck_not_in_front()
 end
 
 function have_puck()
-    local curDistance = sensor:distance(0)
+    local curDistance = sensor:distance(8)
     if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
         printf("near: " .. curDistance)
         return true
