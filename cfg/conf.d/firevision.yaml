@@ -16,3 +16,5 @@ firevision:
         frame: !frame /base_link
       cam1:
         string: v4l2:front:device=/dev/video0
+        frame: !frame /base_link
+
