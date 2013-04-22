@@ -41,7 +41,7 @@ skillenv.skill_module(_M)
 local tfm = require('tf_module')
 local TURN_CORRECTION = 0.13 --angle in rad
 local LASER_SIDEWARDS_CORRECTION = 0.1 
-local LASER_FORWARD_CORRECTION = 0.20
+local LASER_FORWARD_CORRECTION = 0.18
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.04
 function ampel(self)
    return (self.fsm.vars.ampel_loc.distance > 0) and (self.fsm.vars.ampel_loc.distance < 1)
