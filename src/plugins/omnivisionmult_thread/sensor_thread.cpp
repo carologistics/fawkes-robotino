@@ -62,7 +62,7 @@ void OmniVisionSensorThread::loop() {
 	if (__aqt->lock_if_new_data()) {
 		//Iterator over the List in the Pipeline Thread whilst iterating over the sensor thread list
 		std::list<fawkes::Position3DInterface*>::iterator pipeline_pucks;
-		for (pipeline_pucks = __aqt->pucks.begin(); pipeline_pucks!=__aqt->pucks.end(); pipeline_pucks++) {
+		for (pipeline_pucks = __aqt->puck_ifs_.begin(); pipeline_pucks!=__aqt->puck_ifs_.end(); pipeline_pucks++) {
 //			char *history;
 //			char *translation_x;
 //			char *translation_y;
