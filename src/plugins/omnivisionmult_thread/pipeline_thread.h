@@ -138,7 +138,6 @@ private:
 	float cfg_puck_radius_;
 
 	firevision::Drawer *drawer_;
-	float cfg_allowed_puck_jitter_;
 
 protected:
 	fawkes::Mutex    *_data_mutex;

@@ -111,8 +111,6 @@ void RobotinoOmniVisionPipelineThread::init() {
 	cfg_neighbors = config->get_float((cfg_prefix_ + "neighbors").c_str());
 	cfg_basic_roi_size = config->get_float(
 			(cfg_prefix_ + "basic_roi_size").c_str());
-	cfg_allowed_puck_jitter_ = config->get_float(
-			(cfg_prefix_ + "allowed_puck_jitter").c_str());
 
 	// camera
 	cam_ = vision_master->register_for_camera(cfg_camera_.c_str(), this);
