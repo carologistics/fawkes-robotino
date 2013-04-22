@@ -28,7 +28,7 @@ fsm                = SkillHSM:new{name=name, start="SEE_AMPEL", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = {
 	{v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
-	{v = "Closest_Machine", type="Position3DInterface", id = "Closest_Machine"},
+	{v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
 	{v = "motor", type = "MotorInterface", id="Robotino" },	
     {v = "pose", type="Position3DInterface", id="Pose"}
 }
@@ -103,8 +103,8 @@ function angle_reached(self)
       end
 end
 function angle_ok(self)
-   self.fsm.vars.ampel_loc.x = Closest_Machine:translation(0)
-   self.fsm.vars.ampel_loc.y = Closest_Machine:translation(1)
+   self.fsm.vars.ampel_loc.x = euclidean_cluster:translation(0)
+   self.fsm.vars.ampel_loc.y = euclidean_cluster:translation(1)
    self.fsm.vars.ampel_loc.distance = math.sqrt(self.fsm.vars.ampel_loc.x^2,self.fsm.vars.ampel_loc.y^2)
    self.fsm.vars.ampel_loc.angle = math.atan(self.fsm.vars.ampel_loc.x,self.fsm.vars.ampel_loc.y)
    if self.fsm.vars.ampel_loc.angle < 0.07 and self.fsm.vars.ampel_loc.angle > -0.07 then
@@ -152,8 +152,8 @@ function send_transrot(vx, vy, omega)
 end
 function SEE_AMPEL:init()
    self.fsm.vars.ampel_loc = {}
-   self.fsm.vars.ampel_loc.x = Closest_Machine:translation(0)
-   self.fsm.vars.ampel_loc.y = Closest_Machine:translation(1)
+   self.fsm.vars.ampel_loc.x = euclidean_cluster:translation(0)
+   self.fsm.vars.ampel_loc.y = euclidean_cluster:translation(1)
    self.fsm.vars.ampel_loc.distance = math.sqrt(self.fsm.vars.ampel_loc.x^2,self.fsm.vars.ampel_loc.y^2)
    self.fsm.vars.ampel_loc.angle = math.atan(self.fsm.vars.ampel_loc.x,self.fsm.vars.ampel_loc.y)
 end
@@ -163,8 +163,8 @@ function SKILL_TURN_ZERO:init()
    self.skills[1].ori=self.fsm.vars.turn_angle
 end
 function DESC_CHECK_IF_FRONT:init()
-   self.fsm.vars.ampel_loc.x = Closest_Machine:translation(0)
-   self.fsm.vars.ampel_loc.y = Closest_Machine:translation(1)
+   self.fsm.vars.ampel_loc.x = euclidean_cluster:translation(0)
+   self.fsm.vars.ampel_loc.y = euclidean_cluster:translation(1)
    self.fsm.vars.ampel_loc.distance = math.sqrt(self.fsm.vars.ampel_loc.x^2,self.fsm.vars.ampel_loc.y^2)
    self.fsm.vars.ampel_loc.angle = math.atan(self.fsm.vars.ampel_loc.x,self.fsm.vars.ampel_loc.y)
    print(self.fsm.vars.ampel_loc.angle)
