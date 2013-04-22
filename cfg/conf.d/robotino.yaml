@@ -11,6 +11,9 @@ hardware/robotino:
   # retry connection. If run from LCD menu should be set to true.
   quit_on_disconnect: true
 
+  # Time threshold after all motor velocities are set to zero if no new messages arrived inbetween
+  deadman_time_threshold: 0.5
+
   joystick:
     # Axis index for forward/backward movement
     axis_forward: 1
@@ -30,21 +33,3 @@ hardware/robotino:
     # Maximum rotation; rad/s
     max_omega: 1.57
 
-  omnivision:
-    # Camera used for omnivision plugin
-    camera: v4l2:omni:device=/dev/video0:size=320x240
-
-    # Height of the Mirror in m
-    camera_height: 0.41
-
-    # Path to the colormap file (relative to cfg directory)
-    colormap_file: /bulb-colormap/map4.colormap
-
-    # Reference frame
-    frame: /base_link
-
-    # Path to the bulb file (relative to cfg directory)
-    mirror_file: /bulb-colormap/masle.bulb
-
-    # Radius of the Puck in m
-    puck_radius: 0.075
