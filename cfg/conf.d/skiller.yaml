@@ -41,5 +41,5 @@ skiller:
         closest_machine: Position3DInterface::Closest_Machine
         euclidean_cluster: Position3DInterface::Euclidean Laser Cluster
       writing:
-        light: RobotinoAmpelInterface::light
+        light: RobotinoAmpelInterface::Light determined
 

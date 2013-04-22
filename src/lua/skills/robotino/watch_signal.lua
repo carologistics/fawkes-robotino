@@ -28,7 +28,7 @@ fsm                = SkillHSM:new{name=name,  start="INIT",  debug=false}
 depends_skills     = { "motor_move" }
 depends_interfaces = {
    { v="plugin", type="RobotinoLightInterface", id="Light_State" },
-   { v="output", type="RobotinoLightInterface", id="determined", writing=true }   
+   { v="output", type="RobotinoLightInterface", id="Light determined", writing=true }   
 }
 
 
