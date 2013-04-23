@@ -96,10 +96,13 @@ private:
 	        return a.getX() + a.getY()*10 < b.getX()+ b.getY()*10;
 	    }
 	};
-	typedef std::map<Point3d,fawkes::Position3DInterface*,cmpByLocation> PuckMap;
+	typedef std::map<Point3d,fawkes::Position3DInterface*,cmpByLocation> PuckIfMap;
 
+	typedef std::map<Point3d,Point3d,cmpByLocation> PuckPuckMap;
 
-	PuckMap* if_puck_map_;
+	PuckPuckMap relPositions_;
+
+	PuckIfMap* if_puck_map_;
 	std::vector<Point3d> current_pucks_;
 	std::vector<Point3d> old_pucks_;
 	void associate_pucks_with_ifs();

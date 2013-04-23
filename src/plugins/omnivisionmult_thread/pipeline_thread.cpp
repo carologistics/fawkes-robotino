@@ -83,7 +83,7 @@ RobotinoOmniVisionPipelineThread::RobotinoOmniVisionPipelineThread() :
 	_new_data = false;
 
 	_data_mutex = new Mutex();
-	if_puck_map_ = new PuckMap();
+	if_puck_map_ = new PuckIfMap();
 
 	cspace_to_ = YUV422_PLANAR;
 	drawer_ = 0;
@@ -316,6 +316,7 @@ void RobotinoOmniVisionPipelineThread::loop() {
 	puckif_it = puck_ifs_.begin();
 	_data_mutex->lock();
 	current_pucks_.clear();
+	relPositions_.clear();
 	for (r = rois_->begin(); r != rois_->end(); r++) {
 		if (puck_visible_) {
 			classifier_->get_mass_point_of_color(&(*r), &mass_point_);
@@ -328,8 +329,9 @@ void RobotinoOmniVisionPipelineThread::loop() {
 				Point3d puck_relative;
 				puck_relative.setX(rel_pos_->get_x());
 				puck_relative.setY(rel_pos_->get_y());
-
-				current_pucks_.push_back(apply_tf_to_global(puck_relative));
+				Point3d puck_absolute = apply_tf_to_global(puck_relative);
+				current_pucks_.push_back(puck_absolute);
+				relPositions_[puck_absolute]=puck_relative;
 				logger->log_debug(name(),
 						"transformation applied: (%f|%f)->(%f|%f)",
 						puck_relative.getX(), puck_relative.getY(),
@@ -379,7 +381,7 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 
 	list<Position3DInterface*> unused_ifs(puck_ifs_);
 	list<Point3d> new_pucks;
-	PuckMap* if_puck_map_current = new PuckMap();
+	PuckIfMap* if_puck_map_current = new PuckIfMap();
 
 	for (int i = 0; i < size_assignment; ++i) {
 		if ((unsigned int) i >= old_pucks_.size()) {
@@ -425,8 +427,9 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 	for (auto& p : *if_puck_map_) {
 
 		Position3DInterface* pos_if = p.second;
-		pos_if->set_translation(0, p.first.getX());
-		pos_if->set_translation(1, p.first.getY());
+		Point3d relpos = relPositions_[p.first];
+		pos_if->set_translation(0, relpos.getX());
+		pos_if->set_translation(1, relpos.getY());
 		pos_if->write();
 	}
 
