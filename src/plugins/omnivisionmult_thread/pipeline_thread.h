@@ -90,7 +90,16 @@ public:
 
 	std::list<fawkes::Position3DInterface*> puck_ifs_;
 private:
-	std::map<Point3d,fawkes::Position3DInterface*>* if_puck_map_;
+
+	struct cmpByLocation {
+	    bool operator()(const Point3d& a, const Point3d& b) const {
+	        return a.getX() + a.getY()*10 < b.getX()+ b.getY()*10;
+	    }
+	};
+	typedef std::map<Point3d,fawkes::Position3DInterface*,cmpByLocation> PuckMap;
+
+
+	PuckMap* if_puck_map_;
 	std::vector<Point3d> current_pucks_;
 	std::vector<Point3d> old_pucks_;
 	void associate_pucks_with_ifs();

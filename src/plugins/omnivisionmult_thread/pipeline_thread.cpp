@@ -83,7 +83,7 @@ RobotinoOmniVisionPipelineThread::RobotinoOmniVisionPipelineThread() :
 	_new_data = false;
 
 	_data_mutex = new Mutex();
-	if_puck_map_ = new map<Point3d,Position3DInterface*>();
+	if_puck_map_ = new PuckMap();
 
 	cspace_to_ = YUV422_PLANAR;
 	drawer_ = 0;
@@ -246,10 +246,9 @@ void RobotinoOmniVisionPipelineThread::finalize() {
  * position of the closest such object as puck position.
  */
 void RobotinoOmniVisionPipelineThread::loop() {
-	old_pucks_= current_pucks_;
+	old_pucks_ = current_pucks_;
 	// check if there is a msg in the msg-queue
 	while (!switchInterface->msgq_empty()) {
-
 		if (SwitchInterface::DisableSwitchMessage *msg =
 				switchInterface->msgq_first_safe(msg)) {
 			logger->log_info(name(), "Switch disable message received");
@@ -271,19 +270,16 @@ void RobotinoOmniVisionPipelineThread::loop() {
 	cam_->capture();
 	convert(cspace_from_, cspace_to_, cam_->buffer(), buffer_, img_width_,
 			img_height_);
-
 	puck_visible_ = false;
 
 	// run classifier
 	classifier_->set_src_buffer(cam_->buffer(), img_width_, img_height_);
 
 	rois_ = classifier_->classify();
-
 	cam_->dispose_buffer();
 
 	FilterROIDraw *f = new FilterROIDraw();
 	f->set_src_buffer(buffer_, ROI::full_image(img_width_, img_height_), 0);
-
 	// post-process ROIs
 	std::list<firevision::ROI>::iterator r;
 	if (rois_->empty()) {
@@ -338,32 +334,39 @@ void RobotinoOmniVisionPipelineThread::loop() {
 				puck_relative.setY(sin(rel_pos_->get_bearing()) * distance);
 
 				current_pucks_.push_back(apply_tf_to_global(puck_relative));
-
+				logger->log_debug(name(),
+						"transformation applied: (%f|%f)->(%f|%f)",
+						puck_relative.getX(), puck_relative.getY(),
+						current_pucks_.back().getX(),
+						current_pucks_.back().getY());
+				//TODO tf doesn't seem to work!!
 			}
 		}
 	}
+	logger->log_debug(name(), "we have %d pucks!", current_pucks_.size());
 	associate_pucks_with_ifs();
+	_new_data = true;
+	_data_mutex->unlock();
+
 }
 
 void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 
-	vector<Point3d> old_pucks;
-
 	hungarian_problem_t cost_matrix;
-	cost_matrix.num_rows = old_pucks.size();
+	cost_matrix.num_rows = old_pucks_.size();
 	cost_matrix.num_cols = current_pucks_.size();
 	cost_matrix.cost = (int**) calloc(cost_matrix.num_rows, sizeof(int*));
 	for (int i = 0; i < cost_matrix.num_rows; ++i) {
 		cost_matrix.cost[i] = (int*) calloc(cost_matrix.num_cols, sizeof(int*));
 	}
-	for (unsigned int index_old = 0; index_old < old_pucks.size();
+	for (unsigned int index_old = 0; index_old < old_pucks_.size();
 			++index_old) {
 		for (unsigned int index_current = 0;
 				index_current < current_pucks_.size(); ++index_current) {
 			//hungarian method takes int, so we transform our floats to suitable ints
 			//e.g.: 0.015 -> 15
 			cost_matrix.cost[index_old][index_current] =
-					(int) old_pucks[index_old].distance(
+					(int) old_pucks_[index_old].distance(
 							current_pucks_[index_current]) * 1000;
 		}
 	}
@@ -399,14 +402,19 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 		unused_ifs.pop_front();
 		pos_if->set_visibility_history(1);
 		(*if_puck_map_current)[new_puck] = pos_if;
+		logger->log_debug(name(), "Puck at (%f|%f) gets if %s", new_puck.getX(),
+				new_puck.getY(), pos_if->id());
 	}
 	delete if_puck_map_;
-	if_puck_map_=if_puck_map_current;
-	for (auto& p:*if_puck_map_){
+	if_puck_map_ = if_puck_map_current;
+	for (auto& p : *if_puck_map_) {
+
 		Position3DInterface* pos_if = p.second;
-		pos_if->set_translation(0,p.first.getX());
-		pos_if->set_translation(1,p.first.getY());
+		pos_if->set_translation(0, p.first.getX());
+		pos_if->set_translation(1, p.first.getY());
 		pos_if->write();
+		logger->log_debug(name(), "Published puck (%f|%f) on if %s",
+				p.first.getX(), p.first.getY(), pos_if->id());
 	}
 
 }
@@ -414,8 +422,8 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 RobotinoOmniVisionPipelineThread::Point3d RobotinoOmniVisionPipelineThread::apply_tf_to_global(
 		Point3d src) {
 
-	const char* target_frame = "/base_link";
-	const char* source_frame = "/map";
+	const char* source_frame = "/base_link";
+	const char* target_frame = "/map";
 
 	Point3d targetPoint;
 	targetPoint.frame_id = target_frame;
@@ -432,7 +440,7 @@ RobotinoOmniVisionPipelineThread::Point3d RobotinoOmniVisionPipelineThread::appl
 		try {
 			tf_listener->transform_point(target_frame, src, targetPoint);
 		} catch (tf::ExtrapolationException &e) {
-			logger->log_debug(name(), "Extrapolation error");
+			logger->log_debug(name(), "Extrapolation error: %s", e.what());
 			return src;
 		} catch (tf::ConnectivityException &e) {
 			logger->log_debug(name(), "Connectivity exception: %s", e.what());
