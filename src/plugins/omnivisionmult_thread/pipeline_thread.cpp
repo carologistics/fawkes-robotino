@@ -365,9 +365,12 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 				index_current < current_pucks_.size(); ++index_current) {
 			//hungarian method takes int, so we transform our floats to suitable ints
 			//e.g.: 0.015 -> 15
-			cost_matrix.cost[index_old][index_current] =
-					(int) old_pucks_[index_old].distance(
-							current_pucks_[index_current]) * 1000;
+			int dist_in_int = (int) old_pucks_[index_old].distance(
+					current_pucks_[index_current]) * 1000;
+			// take the square distance
+			cost_matrix.cost[index_old][index_current] = dist_in_int * dist_in_int;
+
+
 		}
 	}
 	HungarianMethod hSolver;
