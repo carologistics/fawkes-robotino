@@ -325,13 +325,9 @@ void RobotinoOmniVisionPipelineThread::loop() {
 
 				rel_pos_->calc();
 
-				float distance = rel_pos_->get_distance();
-				float cam_angle = atan2f(cfg_cam_height_, distance);
-				distance -= cfg_puck_radius_ / tan(cam_angle);
-
 				Point3d puck_relative;
-				puck_relative.setX(cos(rel_pos_->get_bearing()) * distance);
-				puck_relative.setY(sin(rel_pos_->get_bearing()) * distance);
+				puck_relative.setX(rel_pos_->get_x());
+				puck_relative.setY(rel_pos_->get_y());
 
 				current_pucks_.push_back(apply_tf_to_global(puck_relative));
 				logger->log_debug(name(),
