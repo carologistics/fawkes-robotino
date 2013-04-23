@@ -377,20 +377,36 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 
 	int size_assignment;
 	int* assignment = hSolver.get_assignment(size_assignment);
+
 	list<Position3DInterface*> unused_ifs(puck_ifs_);
 	list<Point3d> new_pucks;
-	map<Point3d, fawkes::Position3DInterface*>* if_puck_map_current = new map<Point3d, fawkes::Position3DInterface*>();
+	PuckMap* if_puck_map_current = new PuckMap();
+
 	for (int i = 0; i < size_assignment; ++i) {
-		Point3d& old_puck = old_pucks[i];
-		Point3d& new_puck = current_pucks_[assignment[i]];
-		map<Point3d, Position3DInterface*>::iterator old_if = if_puck_map_->find(
-				old_puck);
-		if (old_if != if_puck_map_->end()) {
-			unused_ifs.remove(old_if->second);
-			(*if_puck_map_current)[new_puck] = old_if->second;
-			old_if->second->set_visibility_history(old_if->second->visibility_history()+1);
+		if ((unsigned int) i >= old_pucks_.size()) {
+			//new puck detected, no match to old
+			new_pucks.push_back(current_pucks_[assignment[i]]);
+		} else if ((unsigned int) assignment[i] >= current_pucks_.size()) {
+			// puck has been lost
+			continue;
 		} else {
-			new_pucks.push_back(new_puck);
+			Point3d& old_puck = old_pucks_[i];
+			Point3d& new_puck = current_pucks_[assignment[i]];
+			logger->log_debug(name(), "Old: (%f|%f) matches New: (%f|%f)",
+					old_puck.getX(), old_puck.getY(), new_puck.getX(),
+					new_puck.getY());
+			map<Point3d, Position3DInterface*>::iterator old_if =
+					if_puck_map_->find(old_puck);
+			if (old_if != if_puck_map_->end()) {
+				logger->log_debug(name(), "Gets old if %s",
+						old_if->second->id());
+				unused_ifs.remove(old_if->second);
+				(*if_puck_map_current)[new_puck] = old_if->second;
+				old_if->second->set_visibility_history(
+						old_if->second->visibility_history() + 1);
+			} else {
+				new_pucks.push_back(new_puck);
+			}
 		}
 	}
 	// assign new pucks
@@ -413,8 +429,6 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 		pos_if->set_translation(0, p.first.getX());
 		pos_if->set_translation(1, p.first.getY());
 		pos_if->write();
-		logger->log_debug(name(), "Published puck (%f|%f) on if %s",
-				p.first.getX(), p.first.getY(), pos_if->id());
 	}
 
 }
