@@ -332,16 +332,14 @@ void RobotinoOmniVisionPipelineThread::loop() {
 				Point3d puck_absolute = apply_tf_to_global(puck_relative);
 				current_pucks_.push_back(puck_absolute);
 				relPositions_[puck_absolute]=puck_relative;
-				logger->log_debug(name(),
-						"transformation applied: (%f|%f)->(%f|%f)",
-						puck_relative.getX(), puck_relative.getY(),
-						current_pucks_.back().getX(),
-						current_pucks_.back().getY());
-				//TODO tf doesn't seem to work!!
+				//logger->log_debug(name(),
+				//		"transformation applied: (%f|%f)->(%f|%f)",
+				//		puck_relative.getX(), puck_relative.getY(),
+				//		current_pucks_.back().getX(),
+				//		current_pucks_.back().getY());
 			}
 		}
 	}
-	logger->log_debug(name(), "we have %d pucks!", current_pucks_.size());
 	associate_pucks_with_ifs();
 	_new_data = true;
 	_data_mutex->unlock();
@@ -393,14 +391,14 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 		} else {
 			Point3d& old_puck = old_pucks_[i];
 			Point3d& new_puck = current_pucks_[assignment[i]];
-			logger->log_debug(name(), "Old: (%f|%f) matches New: (%f|%f)",
-					old_puck.getX(), old_puck.getY(), new_puck.getX(),
-					new_puck.getY());
+			//logger->log_debug(name(), "Old: (%f|%f) matches New: (%f|%f)",
+			//		old_puck.getX(), old_puck.getY(), new_puck.getX(),
+			//		new_puck.getY());
 			map<Point3d, Position3DInterface*>::iterator old_if =
 					if_puck_map_->find(old_puck);
 			if (old_if != if_puck_map_->end()) {
-				logger->log_debug(name(), "Gets old if %s",
-						old_if->second->id());
+				//logger->log_debug(name(), "Gets old if %s",
+				//		old_if->second->id());
 				unused_ifs.remove(old_if->second);
 				(*if_puck_map_current)[new_puck] = old_if->second;
 				old_if->second->set_visibility_history(
@@ -419,8 +417,8 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 		unused_ifs.pop_front();
 		pos_if->set_visibility_history(1);
 		(*if_puck_map_current)[new_puck] = pos_if;
-		logger->log_debug(name(), "Puck at (%f|%f) gets if %s", new_puck.getX(),
-				new_puck.getY(), pos_if->id());
+		//logger->log_debug(name(), "Puck at (%f|%f) gets if %s", new_puck.getX(),
+		//		new_puck.getY(), pos_if->id());
 	}
 	delete if_puck_map_;
 	if_puck_map_ = if_puck_map_current;
