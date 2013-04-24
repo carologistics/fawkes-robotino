@@ -27,7 +27,8 @@ name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="CHECK_PUCK", debug=true}
 depends_skills     = {"take_puck_to", "move_under_rfid", "determine_signal", "leave_area", "motor_move"}
 depends_interfaces = {
-   { v="light", type="RobotinoLightInterface", id="Light determined" } 
+   { v="light", type="RobotinoLightInterface", id="Light determined" },
+   { v="sensor", type="RobotinoSensorInterface", id="Robotino" }
 }
 
 documentation     = [==[delivers already fetched puck to specified location]==]
