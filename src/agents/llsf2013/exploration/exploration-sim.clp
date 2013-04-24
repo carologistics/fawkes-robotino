@@ -152,7 +152,7 @@
 
 
 (defrule sim-recv-MachineInfo
-  ?pf <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
+  ?pf <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p) (rcvd-via STREAM))
   =>
   (foreach ?m (pb-field-list ?p "machines")
   (retract ?pf)

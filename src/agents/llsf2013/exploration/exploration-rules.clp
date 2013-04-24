@@ -39,13 +39,14 @@
 
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
 (defrule arrived-at-machine
-  (skill (name "ppgoto") (status FINAL) (skill-string ?skill)) 
+  (declare (salience 0))
+  ?final <- (skill (name "ppgoto") (status FINAL) (skill-string ?skill)) 
   ?s <- (status "drivingToMachine")
   (time $?now)
   =>
   (printout t "arrived. skill string was: " ?skill crlf)
   (printout t "Read light now" crlf)
-  (retract ?s)
+  (retract ?s ?final)
   (assert (status "waitingAtMachine"))
   (assert (signal (name "waitingSince") (time ?now) (seq 1)))
 
@@ -93,6 +94,7 @@
   ;;;;;Tell the refbox;;;;;;;;;;;;;;;
   (time $?now)  
   ?ws <- (signal (name "refboxSendLoop") (time $?t&:(timeout ?now ?t 1.0)) (seq 2))
+  
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
 
@@ -111,7 +113,7 @@
 
 ;Recieve light-pattern-to-type matchig and save it in a fact
 (defrule recieve-type-light-pattern-matching
-  ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p))
+  ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p) (rcvd-via BROADCAST))
 
   =>
   
@@ -166,7 +168,10 @@
   (assert (status "idle"))
   (assert (nextInCycle ?nextMachine))
 
-  ;(if )
+  (if (not (matching-type-light (type ?) (red ?) (yellow ?) (green ?)))
+    then
+    (printout t "DO NOT HAVE A MATCHING FACT! Exploration Info?" crlf)
+    )
 )
 
 ;Find next machine and assert drinve command in the first round
