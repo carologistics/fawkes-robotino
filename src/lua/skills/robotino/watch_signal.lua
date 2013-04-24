@@ -28,7 +28,8 @@ fsm                = SkillHSM:new{name=name,  start="INIT",  debug=false}
 depends_skills     = { "motor_move" }
 depends_interfaces = {
    { v="plugin", type="RobotinoLightInterface", id="Light_State" },
-   { v="output", type="RobotinoLightInterface", id="Light determined", writing=true }   
+   { v="output", type="RobotinoLightInterface", id="Light determined", writing=true },
+   { v="laserswitch", type="SwitchInterface", id="laser-cluster" }
 }
 
 
@@ -64,6 +65,7 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.move_idx = 1
+   laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
 end
 
 function MOVE:init()
@@ -75,6 +77,8 @@ function FINAL:init()
    output:set_red(plugin:red())
    output:set_yellow(plugin:yellow())
    output:set_green(plugin:green())
-   self.fsm.determine_done = true
+   output:set_visibility_history(plugin:visibility_history())
+   output:set_ready(plugin:is_ready())
+   laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
 end
 
