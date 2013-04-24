@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
-depends_skills     = { "take_puck_to", "determine_signal", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
+depends_skills     = { "take_puck_to", "watch_signal", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
             { v="light", type="RobotinoLightInterface", id="Light determined" },
       }
@@ -62,7 +62,7 @@ fsm:define_states{ export_to=_M,
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_DETERMINE_SIGNAL",
       fail_to="SKILL_TAKE_PUCK"},
-   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills={{determine_signal}}, final_to="DECIDE",
+   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills={{watch_signal}}, final_to="DECIDE",
       fail_to="FAILED"},
    {"DECIDE", JumpState},
    {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
