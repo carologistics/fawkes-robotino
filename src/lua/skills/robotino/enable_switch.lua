@@ -6,7 +6,7 @@ parameters:
 iface: Interface to toggle.
 
 Switchable interfaces:
-omnivision, ampel]==]
+omnivision, ampel, laser]==]
 
 
 -- Crucial skill information
@@ -15,7 +15,8 @@ fsm                = SkillHSM:new{name=name, start="SWITCH", debug=true}
 depends_skills     = {}
 depends_interfaces = {
    {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
-   {v = "ampelSwitch", type="SwitchInterface", id="ampelswitch"}
+   {v = "ampelSwitch", type="SwitchInterface", id="ampelswitch"},
+   {v = "laserSwitch", type="SwitchInterface", id="laser-cluster"}
 }
 
 -- Initialize as skill module
@@ -32,7 +33,8 @@ fsm:add_transitions{
 function SWITCH:init()
    ifmap = {
       omnivision = omnivisionSwitch,
-      ampel = ampelSwitch
+      ampel = ampelSwitch,
+      laser = laserSwitch
    }
    iface = ifmap[self.fsm.vars.iface]
    if self.fsm.vars.enable then
