@@ -121,7 +121,7 @@ private:
 	firevision::ColorModelBrightness *colorModel;
 	firevision::ColorModelDarkness *colorModelBlack;
 	firevision::SimpleColorClassifier *classifierWhite;
-	firevision::SimpleColorClassifier *classifierBlack;
+//	firevision::SimpleColorClassifier *classifierBlack;
 	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
 	unsigned char *bufferYCbCr;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
 

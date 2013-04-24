@@ -24,10 +24,16 @@ PluginLightThread::PluginLightThread()
 	this->cfg_cameraFactorHorizontal = 0;
 	this->cfg_cameraFactorVertical = 0;
 
+	this->cfg_cameraOffsetHorizontalRad = 0;
+	this->cfg_cameraOffsetVertical = 0;
+
 	this->cfg_lightSizeHeight = 0;
 	this->cfg_lightSizeWidth = 0;
 
 	this->cfg_lightNumberOfWrongDetections = 0;
+	this->cfg_detectionCycleTime = 0;
+
+	this->cfg_desiredLoopTime = 0;
 	this->cfg_detectionCycleTime = 0;
 
 	this->cfg_brightnessThreashold = 0;
@@ -35,9 +41,14 @@ PluginLightThread::PluginLightThread()
 	this->cfg_paintROIsActivated = false;
 
 	this->cfg_lightOutOfRangeThrashold = 0;
+	this->cfg_laserVisibilityThreashold = 0;
 
 	this->img_width = 0;
 	this->img_height = 0;
+
+	this->detectionCycleTimeFrames = 0;
+
+	this->historyBuffer = NULL;
 
 	this->bufferYCbCr = NULL;
 
@@ -122,17 +133,16 @@ PluginLightThread::init()
 			firevision::C_WHITE													//color
 			);
 
-	this->colorModelBlack = new firevision::ColorModelDarkness(this->cfg_darknessThreashold);
-	this->classifierBlack = new firevision::SimpleColorClassifier(
-			this->scanline,														//scanmodel
-			this->colorModelBlack,													//colorModel
-			30,																	//num_min_points
-			0,																	//box_extend
-			false,																//upward
-			2,																	//neighberhoud_min_match
-			0,																	//grow_by
-			firevision::C_BLACK													//color
-			);
+//	this->classifierBlack = new firevision::SimpleColorClassifier(
+//			this->scanline,														//scanmodel
+//			this->colorModel,													//colorModel
+//			30,																	//num_min_points
+//			0,																	//box_extend
+//			false,																//upward
+//			2,																	//neighberhoud_min_match
+//			0,																	//grow_by
+//			firevision::C_BLACK													//color
+//			);
 
 	// Create a ringbuffer with the size of the configured frame count
 	this->historyBuffer = new boost::circular_buffer<lightSignal>(this->detectionCycleTimeFrames);
@@ -179,6 +189,7 @@ PluginLightThread::finalize()													//TODO check if everthing gets deleted
 	delete this->colorModel;
 	delete this->classifierWhite;
 	delete this->shmBufferYCbCr;
+	delete this->historyBuffer;		//TODO ok?
 
 	blackboard->close(this->nearestMaschineIF);
 	blackboard->close(this->lightStateIF);
@@ -263,8 +274,8 @@ PluginLightThread::isLightInViewarea(fawkes::polar_coord_2d_t light)
 }
 
 void
-PluginLightThread::takePicture(PluginLightThread::lightROIs lightROIs) {
-
+PluginLightThread::takePicture(PluginLightThread::lightROIs lightROIs)
+{
 	camera->capture();
 	firevision::convert(this->cspaceFrom,
 			this->cspaceTo,
@@ -414,7 +425,7 @@ PluginLightThread::detectLightInCurrentPicture(PluginLightThread::lightROIs ligh
 }
 
 void
-PluginLightThread::processHistoryBuffer()
+PluginLightThread::processHistoryBuffer()	//TODO change function name to say that the interface is writen
 {
 	if ( this->historyBuffer->full() ) {
 		PluginLightThread::lightSignal lighSignal;
@@ -427,7 +438,7 @@ PluginLightThread::processHistoryBuffer()
 				this->writeLightInterface(lighSignal, true);
 
 			} else {
-				this->resetLightInterface("light couldn't detected");
+				this->resetLightInterface("light couldn't get detected");
 			}
 		} else {
 			this->resetLightInterface("cluster jumped");
@@ -584,17 +595,6 @@ PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSigna
 	this->lightStateIF->write();
 }
 
-//void
-//PluginLightThread::updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent)
-//{
-//	this->historyBuffer->push_front(lightSignalCurrent);
-//
-//	if ( this->historyBuffer->full() ) {
-//		this->writeLightInterface();
-//	}
-//
-//}
-
 void
 PluginLightThread::resetLocalHistory() {
 	this->historyBuffer->clear();
@@ -646,15 +646,19 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 
 	bool isOn = ! ROIs->empty();
 
-	if (this->cfg_debugMessagesActivated) {
+	if ( this->cfg_debugMessagesActivated ) {
 		int countedROIs = (int)ROIs->size();
 		logger->log_info(name(), "Detect: %i", countedROIs);
-
+	}
+	if ( this->cfg_paintROIsActivated ) {
+		int countedROIs = (int)ROIs->size();
 		for (int i = 0; i < countedROIs; ++i) {
 			this->drawROIIntoBuffer(ROIs->front());
 			ROIs->pop_front();
 		}
 	}
+
+	delete ROIs;
 
 	if (isOn) {
 		return fawkes::RobotinoLightInterface::ON;
@@ -692,16 +696,16 @@ PluginLightThread::lightFromHistoryBuffer(PluginLightThread::lightSignal &lighSi
 		previousLight = *it;
 	}
 
-	lighSignal.red = signalLightWithHistory(red);
-	lighSignal.yellow = signalLightWithHistory(yellow);
-	lighSignal.green = signalLightWithHistory(green);
+	lighSignal.red = this->signalLightWithHistory(red);
+	lighSignal.yellow = this->signalLightWithHistory(yellow);
+	lighSignal.green = this->signalLightWithHistory(green);
 
 	return true;
 }
 
 bool
-PluginLightThread::isValidSuccessor(lightSignal previous,lightSignal current){
-
+PluginLightThread::isValidSuccessor(lightSignal previous,lightSignal current)
+{
 	float px,py;
 	float cx,cy;
 	float dx,dy;
@@ -711,7 +715,7 @@ PluginLightThread::isValidSuccessor(lightSignal previous,lightSignal current){
 	dx = cx - px;
 	dy = cy - py;
 
-	if(std::sqrt( (dx * dx) + (dy * dy)) < this->cfg_lightDistanceAllowedBetweenFrames ){
+	if(std::sqrt( (dx * dx) + (dy * dy) ) < this->cfg_lightDistanceAllowedBetweenFrames ){
 		return true;
 	}
 	return false;
