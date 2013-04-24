@@ -549,10 +549,10 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 				+ this->cfg_cameraOffsetVertical;								//error of picture position to light
 				//TODO suche richtige werte der Kamera
 
-	if ( startX < 0
-	  || startY < 0
-	  || expectedLightSizeHeigth + startY < (int)this->img_height
-	  || expectedLightSizeWidth + startX < (int)this->img_width
+	if ( startX <= 0
+	  || startY <= 0
+	  || expectedLightSizeHeigth + startY >= (int)this->img_height
+	  || expectedLightSizeWidth + startX >= (int)this->img_width
 	  ) {
 		throw fawkes::Exception("ROI is outsite of the buffer");
 	}
