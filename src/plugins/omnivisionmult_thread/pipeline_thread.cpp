@@ -441,6 +441,7 @@ RobotinoOmniVisionPipelineThread::Point3d RobotinoOmniVisionPipelineThread::appl
 	const char* source_frame = "/base_link";
 	const char* target_frame = "/map";
 
+	src.stamp = Time(0,0);
 	Point3d targetPoint;
 	targetPoint.frame_id = target_frame;
 
