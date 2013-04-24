@@ -6,7 +6,7 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-(deftemplate sim-machine
+(deftemplate sim-machine-exp
   (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
   (slot mtype (type SYMBOL) (allowed-values T1 T2 T3 T4 T5 DELIVER TEST RECYCLE) (default TEST))
   (multislot loaded-with (type INTEGER) (default))
@@ -18,19 +18,7 @@
   (multislot pose (type FLOAT) (cardinality 3 3) (default 0.0 0.0 0.0))
 )
 
-(deftemplate sim-machine-spec
-  (slot mtype (type SYMBOL) (allowed-values T1 T2 T3 T4 T5 DELIVER TEST RECYCLE))
-  (multislot inputs (type SYMBOL) (allowed-symbols S0 S1 S2) (default))
-  (slot output (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3))
-)
-
-(deftemplate sim-puck
-  (slot index (type INTEGER))
-  (slot id (type INTEGER))
-  (slot state (type SYMBOL) (allowed-values S0 S1 S2 P1 P2 P3 CONSUMED) (default S0))
-)
-
-(deftemplate sim
+(deftemplate sim-exp
   (slot state (allowed-values IDLE GET-S0 GOTO WAIT-PROC) (default IDLE))
   (slot proc-state (allowed-values IDLE WAIT PROC) (default IDLE))
   (slot rb-client-id (type INTEGER))
@@ -40,26 +28,26 @@
 )
 
 
-(defrule sim-enable-sim
+(defrule sim-enable-sim-exp
   (confval (path "/clips-agent/llsf2013/enable-sim") (type BOOL) (value true))
   =>
   (bind ?client-id (pb-connect "localhost" 4444))
-  (assert (sim (rb-client-id ?client-id))
-	  (sim-machine (name M1))
-	  (sim-machine (name M2))
-	  (sim-machine (name M3))
-	  (sim-machine (name M4))
-	  (sim-machine (name M5))
-	  (sim-machine (name M6))
-	  (sim-machine (name M7))
-	  (sim-machine (name M8))
-	  (sim-machine (name M9))
-	  (sim-machine (name M10))
+  (assert (sim-exp (rb-client-id ?client-id))
+	  (sim-machine-exp (name M1))
+	  (sim-machine-exp (name M2))
+	  (sim-machine-exp (name M3))
+	  (sim-machine-exp (name M4))
+	  (sim-machine-exp (name M5))
+	  (sim-machine-exp (name M6))
+	  (sim-machine-exp (name M7))
+	  (sim-machine-exp (name M8))
+	  (sim-machine-exp (name M9))
+	  (sim-machine-exp (name M10))
   )
   (assert (simulation-is-running))
 )
 
-(defrule sim-start
+(defrule sim-start-exp
   (declare (salience ?*PRIORITY_HIGH*))
   (simulation-is-running)
   (start)
@@ -68,16 +56,16 @@
   (assert (Position3DInterface (id "Pose") (translation (create$ 0.5 0.5 0.0))))
 )
 
-(defrule sim-connected
-  (sim (rb-client-id ?client-id))
+(defrule sim-connected-exp
+  (sim-exp (rb-client-id ?client-id))
   ?cf <- (protobuf-client-connected ?client-id)
   =>
   (retract ?cf)
   (printout t "Simulation connected to refbox" crlf)
 )
 
-;(defrule sim-disconnected
-;  ?sf <- (sim (rb-client-id ?client-id))
+;(defrule sim-disconnected-exp
+;  ?sf <- (sim-exp (rb-client-id ?client-id))
 ;  ?df <- (protobuf-client-disconnected ?client-id)
 ;  =>
 ;  (retract ?df)
@@ -87,7 +75,7 @@
   (declare (salience 10))
   (skill (name "ppgoto") (status FINAL))
   (simulation-is-running)
-  (sim-machine (name ?m) (lights $?lights))
+  (sim-machine-exp (name ?m) (lights $?lights))
   (goalmachine ?m)
   =>
   (assert (RobotinoLightInterface (id "Light_State") (red OFF) (yellow OFF) (green OFF) (ready FALSE)));gess at all
@@ -149,7 +137,7 @@
 
 ;use recived via stream in simulation
 
-;(defrule test-refbox-communication
+;(defrule test-refbox-communication-exp
 ;  (protobuf-msg (type ?type))
 ;
 ;  =>
@@ -158,13 +146,13 @@
 
 
 
-(defrule sim-recv-MachineInfo
+(defrule sim-recv-MachineInfo-exp
   ?pf <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p) (rcvd-via STREAM))
   =>
   (foreach ?m (pb-field-list ?p "machines")
   (retract ?pf)
     ;(printout t "Processing machine " (pb-field-value ?m "name") crlf)
-    (do-for-fact ((?machine sim-machine))
+    (do-for-fact ((?machine sim-machine-exp))
 		 (eq ?machine:name (sym-cat (pb-field-value ?m "name")))
 
       (bind ?new-puck ?machine:puck-id)

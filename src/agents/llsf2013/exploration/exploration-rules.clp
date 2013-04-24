@@ -118,14 +118,22 @@
   (modify ?ws (name "refboxSendLoop") (time ?now) (seq 2))
 )
 
+(defrule all-matchings-are-there
+  (matching-type-light (type T1) (red ?) (yellow ?) (green ?)) 
+  (matching-type-light (type T2) (red ?) (yellow ?) (green ?))
+  (matching-type-light (type T3) (red ?) (yellow ?) (green ?))
+  (matching-type-light (type T4) (red ?) (yellow ?) (green ?))
+  (matching-type-light (type T5) (red ?) (yellow ?) (green ?))
+  =>
+  (assert (have-all-matchings))
+
+  (printout t "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL" crlf)
+)
+
 ;Recieve light-pattern-to-type matchig and save it in a fact
 (defrule recieve-type-light-pattern-matching
   ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p) (rcvd-via BROADCAST))
-;  (or (not (matching-type-light (type T1) (red ?) (yellow ?) (green ?))) 
-;      (not (matching-type-light (type T2) (red ?) (yellow ?) (green ?)))
-;      (not (matching-type-light (type T3) (red ?) (yellow ?) (green ?)))
-;      (not (matching-type-light (type T4) (red ?) (yellow ?) (green ?)))
-;      (not (matching-type-light (type T5) (red ?) (yellow ?) (green ?))))
+  (not (have-all-matchings))
 
   =>
   
