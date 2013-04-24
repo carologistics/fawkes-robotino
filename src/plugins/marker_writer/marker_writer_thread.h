@@ -62,7 +62,7 @@ protected:
 	}
 
 private:
-	std::vector<fawkes::Position3DInterface*> pos_ifs_;
+	std::list<fawkes::Position3DInterface*> pos_ifs_;
 
 	ros::Publisher* pub_;
 	float cfg_duration_;

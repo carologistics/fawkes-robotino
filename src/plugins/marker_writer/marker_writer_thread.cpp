@@ -47,14 +47,11 @@ MarkerWriterThread::MarkerWriterThread() :
 
 void MarkerWriterThread::init() {
 	cfg_duration_ = config->get_float(CFG_PREFIX"display_duration");
-	vector<string> interface_ids = config->get_strings(CFG_PREFIX"interfaces");
-	for (string if_id : interface_ids) {
-		pos_ifs_.push_back(
-				blackboard->open_for_reading<Position3DInterface>(
-						if_id.c_str()));
-	}
 
 	*pub_ = rosnode->advertise<visualization_msgs::MarkerArray>("Position3dInterface_marker_array", 100);
+
+	string wildcard_pattern = config->get_string(CFG_PREFIX"wildcard_pattern");
+	pos_ifs_ = blackboard->open_multiple_for_reading<Position3DInterface>(wildcard_pattern.c_str());
 
 }
 
