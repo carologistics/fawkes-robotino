@@ -91,7 +91,8 @@ private:
 	float cfg_cameraOffsetHorizontalRad;
 
 	int cfg_lightNumberOfWrongDetections;
-	//new
+
+	float cfg_lightMoveUnderRfidThrashold;
 	int cfg_laserVisibilityThreashold;
 	float cfg_lightDistanceAllowedBetweenFrames;
 
@@ -100,6 +101,7 @@ private:
 
 	int lightOutOfRangeCounter;
 	int cfg_lightOutOfRangeThrashold;
+	float cfg_lightToCloseThrashold;
 
 	std::string cfg_frame;
 
@@ -121,7 +123,7 @@ private:
 	firevision::ColorModelBrightness *colorModel;
 	firevision::ColorModelDarkness *colorModelBlack;
 	firevision::SimpleColorClassifier *classifierWhite;
-//	firevision::SimpleColorClassifier *classifierBlack;
+	firevision::SimpleColorClassifier *classifierBlack;
 	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
 	unsigned char *bufferYCbCr;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
 
@@ -159,6 +161,7 @@ private:
 	void resetLocalHistory();
 	void writeLightInterface(PluginLightThread::lightSignal lightSignal, bool ready);
 	void createUnknownLightSignal();
+	fawkes::cart_coord_3d_t getNearestMaschineFromInterface();
 
 	bool isLightInViewarea(fawkes::polar_coord_2d_t light);
 	void takePicture(PluginLightThread::lightROIs lightROIs);

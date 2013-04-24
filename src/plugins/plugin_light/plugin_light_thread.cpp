@@ -42,6 +42,7 @@ PluginLightThread::PluginLightThread()
 
 	this->cfg_lightOutOfRangeThrashold = 0;
 	this->cfg_laserVisibilityThreashold = 0;
+	this->cfg_lightMoveUnderRfidThrashold = 0;
 
 	this->img_width = 0;
 	this->img_height = 0;
@@ -102,6 +103,8 @@ PluginLightThread::init()
 	this->cfg_laserVisibilityThreashold = this->config->get_int((this->cfg_prefix + "threashold_laser_visibility").c_str());
 	this->cfg_lightDistanceAllowedBetweenFrames = this->config->get_float((this->cfg_prefix + "light_distance_allowed_betwen_frames").c_str());
 	this->cfg_lightOutOfRangeThrashold = this->config->get_int((this->cfg_prefix + "light_out_of_range_thrashold").c_str());
+	this->cfg_lightMoveUnderRfidThrashold = this->config->get_float((this->cfg_prefix + "light_move_under_rfid_thrashold").c_str());
+	this->cfg_lightToCloseThrashold = this->config->get_float((this->cfg_prefix + "light_to_close_thrashold").c_str());
 
 	this->cfg_lightSizeHeight = this->config->get_float((this->cfg_prefix + "light_size_height").c_str());
 	this->cfg_lightSizeWidth = this->config->get_float((this->cfg_prefix + "light_size_width").c_str());
@@ -133,16 +136,16 @@ PluginLightThread::init()
 			firevision::C_WHITE													//color
 			);
 
-//	this->classifierBlack = new firevision::SimpleColorClassifier(
-//			this->scanline,														//scanmodel
-//			this->colorModel,													//colorModel
-//			30,																	//num_min_points
-//			0,																	//box_extend
-//			false,																//upward
-//			2,																	//neighberhoud_min_match
-//			0,																	//grow_by
-//			firevision::C_BLACK													//color
-//			);
+	this->classifierBlack = new firevision::SimpleColorClassifier(
+			this->scanline,														//scanmodel
+			this->colorModel,													//colorModel
+			30,																	//num_min_points
+			0,																	//box_extend
+			false,																//upward
+			2,																	//neighberhoud_min_match
+			0,																	//grow_by
+			firevision::C_BLACK													//color
+			);
 
 	// Create a ringbuffer with the size of the configured frame count
 	this->historyBuffer = new boost::circular_buffer<lightSignal>(this->detectionCycleTimeFrames);
@@ -203,13 +206,9 @@ PluginLightThread::loop()
 	bool contiueToPictureProcess = false;
 
 	//read laser if
-	this->nearestMaschineIF->read();
-	int clusterVisibilityHistory = 5;// this->nearestMaschineIF->visibility_history();
+	fawkes::cart_coord_3d_t lightPosition = this->getNearestMaschineFromInterface();
 
-	fawkes::cart_coord_3d_t lightPosition;
-	lightPosition.x = 1; //this->nearestMaschineIF->translation(0);
-	lightPosition.y = .04; //this->nearestMaschineIF->translation(1);
-	lightPosition.z = this->nearestMaschineIF->translation(2);
+	int clusterVisibilityHistory = this->nearestMaschineIF->visibility_history();
 	fawkes::polar_coord_2d_t lightPositionPolar;
 
 	if ( clusterVisibilityHistory > this->cfg_laserVisibilityThreashold ) {
@@ -245,19 +244,24 @@ PluginLightThread::loop()
 		this->resetLocalHistory();
 	}
 
-	if ( contiueToPictureProcess ) {
-		PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
-		this->takePicture(lightROIs);
+	try {
+		if ( contiueToPictureProcess ) {
+			PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
+			this->takePicture(lightROIs);
 
-		lightROIs = this->correctLightRoisWithBlack(lightROIs);
-		drawROIIntoBuffer(lightROIs.light);
+			PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
+			lightSignalCurrentPicture.nearestMaschine_pos = lightPositionPolar;
+			lightSignalCurrentPicture.nearestMaschine_history = clusterVisibilityHistory;
+			this->historyBuffer->push_front(lightSignalCurrentPicture);
 
-		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
-		lightSignalCurrentPicture.nearestMaschine_pos = lightPositionPolar;
-		lightSignalCurrentPicture.nearestMaschine_history = clusterVisibilityHistory;
-		this->historyBuffer->push_front(lightSignalCurrentPicture);
+			this->processHistoryBuffer();
+		}
+	} catch(fawkes::Exception &e) {
+		this->resetLightInterface();
 
-		this->processHistoryBuffer();
+		logger->log_info(name(), "ROI is outsite of the buffer");
+
+		this->resetLocalHistory();
 	}
 }
 
@@ -266,7 +270,8 @@ PluginLightThread::isLightInViewarea(fawkes::polar_coord_2d_t light)
 {
 	float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 ) - 0.1;
 
-	if ( std::abs(light.phi) >= cameraAngleDetectionArea ) {
+	if ( std::abs(light.phi) >= cameraAngleDetectionArea
+	  && light.r < this->cfg_lightToCloseThrashold ) {
 		return false;
 	} else {
 		return true;
@@ -544,6 +549,14 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 				+ this->cfg_cameraOffsetVertical;								//error of picture position to light
 				//TODO suche richtige werte der Kamera
 
+	if ( startX < 0
+	  || startY < 0
+	  || expectedLightSizeHeigth + startY < (int)this->img_height
+	  || expectedLightSizeWidth + startX < (int)this->img_width
+	  ) {
+		throw fawkes::Exception("ROI is outsite of the buffer");
+	}
+
 	PluginLightThread::lightROIs lightROIs;
 
 	//light ROI size
@@ -727,21 +740,38 @@ PluginLightThread::signalLightWithHistory(int lightHistory)
 {
 	int visibilityHistory = this->historyBuffer->size();
 
-	if ( lightHistory > ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) ) {
+	if ( lightHistory >= ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) ) {
 		return fawkes::RobotinoLightInterface::ON;
 
-	} else if ( lightHistory > visibilityHistory / 2 - this->cfg_lightNumberOfWrongDetections
-			&&  lightHistory < visibilityHistory / 2 + this->cfg_lightNumberOfWrongDetections ) {
+	} else if ( lightHistory >= visibilityHistory / 2 - this->cfg_lightNumberOfWrongDetections
+			&&  lightHistory <= visibilityHistory / 2 + this->cfg_lightNumberOfWrongDetections ) {
 		return fawkes::RobotinoLightInterface::BLINKING; // todo check blinking max allowed errors
 
-	} else if ( lightHistory < this->cfg_lightNumberOfWrongDetections ) {
+	} else if ( lightHistory <= this->cfg_lightNumberOfWrongDetections ) {
 		return fawkes::RobotinoLightInterface::OFF;
 	} else {
+		logger->log_info(name(), "Detected: %i, vis: %i", lightHistory, visibilityHistory);
 		return fawkes::RobotinoLightInterface::UNKNOWN;
 	}
 }
 
+fawkes::cart_coord_3d_t
+PluginLightThread::getNearestMaschineFromInterface()
+{
+	fawkes::cart_coord_3d_t lightPosition;
 
+	this->nearestMaschineIF->read();
+	lightPosition.x = this->nearestMaschineIF->translation(0);
+	lightPosition.y = this->nearestMaschineIF->translation(1);
+	lightPosition.z = this->nearestMaschineIF->translation(2);
+
+	//if the light is directly in front (by x coordinate) set y to 0 because it is likly to detecd wrong values
+	if ( lightPosition.x < this->cfg_lightMoveUnderRfidThrashold ) {
+		lightPosition.y = 0.0;
+	}
+
+	return lightPosition;
+}
 
 
 
