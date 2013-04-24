@@ -57,6 +57,13 @@
 	  (sim-machine (name M10))
   )
   (assert (simulation-is-running))
+)
+
+(defrule sim-start
+  (declare (salience ?*PRIORITY_HIGH*))
+  (simulation-is-running)
+  (start)
+  =>
   (printout t "Simulation of exploration phase needs the Robotino position to find the nearest machine. Simulated position is always (0.5 0.5 0.0)." crlf)
   (assert (Position3DInterface (id "Pose") (translation (create$ 0.5 0.5 0.0))))
 )

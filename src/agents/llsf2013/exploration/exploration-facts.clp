@@ -1,4 +1,4 @@
-(deftemplate machine
+(deftemplate machine-exploration
   (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
   (slot x (type FLOAT))
   (slot y (type FLOAT))
@@ -33,14 +33,14 @@
 
 ;machine name, coordinates, next machine in exploration cycle
 (assert 
-  (machine (name M10) (x 2.18) (y 4.74) (next M9))
-  (machine (name M9) (x 1.38) (y 3.42) (next M5))
-  (machine (name M8) (x 1.38) (y 2.18) (next M3))
-  (machine (name M7) (x 2.5) (y 4.5) (next M6))
-  (machine (name M6) (x 3.1) (y 4.42) (next M10))
-  (machine (name M5) (x 2.3) (y 3.1) (next M4))
-  (machine (name M4) (x 3.1) (y 2.13) (next M8))
-  (machine (name M3) (x 3.1) (y 1.06) (next M1))
-  (machine (name M2) (x 4.42) (y 3.62) (next M7))
-  (machine (name M1) (x 3.62) (y 1.18) (next M2))
+  (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9))
+  (machine-exploration (name M9) (x 1.38) (y 3.42) (next M5))
+  (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3))
+  (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6))
+  (machine-exploration (name M6) (x 3.1) (y 4.42) (next M10))
+  (machine-exploration (name M5) (x 2.3) (y 3.1) (next M4))
+  (machine-exploration (name M4) (x 3.1) (y 2.13) (next M8))
+  (machine-exploration (name M3) (x 3.1) (y 1.06) (next M1))
+  (machine-exploration (name M2) (x 4.42) (y 3.62) (next M7))
+  (machine-exploration (name M1) (x 3.62) (y 1.18) (next M2))
 )

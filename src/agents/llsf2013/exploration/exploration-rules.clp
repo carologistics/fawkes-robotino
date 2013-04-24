@@ -20,12 +20,19 @@
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
 
+(defrule test
+  (Position3DInterface (id "Pose") (translation $?pos))
+  (time $?now)
+  =>
+  (printout t "HAVE pos" crlf)
+)
+
 ;Robotino drives to the nearest machine to start the first round
 (defrule goto-nearest-machine
   ?s <- (status "start")
   (status "firstround")
-  (machine (name ?v) (x ?x) (y ?y) (next ?))
-  (forall (machine (name ?) (x ?x1) (y ?y1) (next ?))
+  (machine-exploration (name ?v) (x ?x) (y ?y) (next ?))
+  (forall (machine-exploration (name ?) (x ?x1) (y ?y1) (next ?))
     (Position3DInterface (id "Pose") (translation $?pos&:(<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x1 (nth$ 1 ?pos)) (- ?x1 (nth$ 1 ?pos))) (* (- ?y1 (nth$ 2 ?pos)) (- ?y1 (nth$ 2 ?pos)))))))
   )
   =>
@@ -61,7 +68,7 @@
   ?ws <- (signal (name "waitingSince") (time $?) (seq ?))
   ?s <- (status "waitingAtMachine")
   ?g <- (goalmachine ?old)
-  (machine (name ?old) (x ?) (y ?) (next ?nextMachine))
+  (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (ready TRUE))
 
   =>
@@ -114,6 +121,11 @@
 ;Recieve light-pattern-to-type matchig and save it in a fact
 (defrule recieve-type-light-pattern-matching
   ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p) (rcvd-via BROADCAST))
+;  (or (not (matching-type-light (type T1) (red ?) (yellow ?) (green ?))) 
+;      (not (matching-type-light (type T2) (red ?) (yellow ?) (green ?)))
+;      (not (matching-type-light (type T3) (red ?) (yellow ?) (green ?)))
+;      (not (matching-type-light (type T4) (red ?) (yellow ?) (green ?)))
+;      (not (matching-type-light (type T5) (red ?) (yellow ?) (green ?))))
 
   =>
   
@@ -156,7 +168,7 @@
   ?ws <- (signal (name "waitingSince") (time $?t&:(timeout ?now ?t 3.0)) (seq 1))
   ?s <- (status "waitingAtMachine")
   ?g <- (goalmachine ?old)
-  (machine (name ?old) (x ?) (y ?) (next ?nextMachine))
+  (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
 
   =>
  
@@ -168,10 +180,10 @@
   (assert (status "idle"))
   (assert (nextInCycle ?nextMachine))
 
-  (if (not (matching-type-light (type ?) (red ?) (yellow ?) (green ?)))
-    then
-    (printout t "DO NOT HAVE A MATCHING FACT! Exploration Info?" crlf)
-    )
+;  (if (not (matching-type-light (type ?) (red ?) (yellow ?) (green ?)))
+;    then
+;    (printout t "DO NOT HAVE A MATCHING FACT! Exploration Info?" crlf)
+;    )
 )
 
 ;Find next machine and assert drinve command in the first round
@@ -211,9 +223,9 @@
 (defrule retry-nearest-unrecognized
   (status "retryRound")
   ?s <- (status "idle")
-  (machine (name ?m) (x ?x) (y ?y) (next ?))
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?))
   (not (machineRecognized ?m))
-  (forall (machine (name ?m2) (x ?x1) (y ?y1) (next ?))
+  (forall (machine-exploration (name ?m2) (x ?x1) (y ?y1) (next ?))
     (or (machineRecognized ?m2)
         (Position3DInterface (id "Pose") (translation $?pos&:(<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x1 (nth$ 1 ?pos)) (- ?x1 (nth$ 1 ?pos))) (* (- ?y1 (nth$ 2 ?pos)) (- ?y1 (nth$ 2 ?pos)))))))
     )
@@ -232,7 +244,7 @@
 
 ;Finish exploration phase if all machines are recognized
 (defrule finish-exploration
-  (forall (machine (name ?m) (x ?) (y ?) (next ?))
+  (forall (machine-exploration (name ?m) (x ?) (y ?) (next ?))
     (machineRecognized ?m))
   ?s <- (status "retryRound")
   

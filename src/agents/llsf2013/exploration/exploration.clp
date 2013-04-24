@@ -12,7 +12,7 @@
 (blackboard-add-interface "RobotinoLightInterface" "Light_State")
 
 ;load exploration rules and simulationrules if ready
-(defrule initialize
+(defrule initialize-exploration
   (declare (salience ?*PRIORITY_HIGH*))
   (agent-init)
   (protobuf-available)
@@ -36,4 +36,8 @@
   (assert (init))
   ;(reset)
   ;(facts)
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;TEST
+  ;(load* (resolve-file llsf2013/llsf2013.clp))
+  
+
 )
