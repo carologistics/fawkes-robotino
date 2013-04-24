@@ -27,7 +27,7 @@ name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
 depends_skills     = { "take_puck_to", "determine_signal", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
-            { v="light", type="RobotinoAmpelInterface", id="light" },
+            { v="light", type="RobotinoLightInterface", id="Light determined" },
       }
 
 documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.]==]
@@ -48,7 +48,7 @@ function end_deliver()
 end
 
 function is_ampel_yellow()
-   return light:state() == light.YELLOW
+   return light:yellow() == light.ON
 end
 
 function is_not_yellow()
