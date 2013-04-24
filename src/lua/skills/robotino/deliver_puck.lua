@@ -23,18 +23,18 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "deliver_puck_fallback"
+name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="CHECK_PUCK", debug=true}
-depends_skills     = {"take_puck_to", "move_under_rfid", "determine_signal", "leave_area"}
+depends_skills     = {"take_puck_to", "move_under_rfid", "determine_signal", "leave_area", "motor_move"}
 depends_interfaces = {
-   {v = "sensor", type="RobotinoSensorInterface"},
-   { v="light", type="RobotinoAmpelInterface", id="light" } 
+   { v="light", type="RobotinoLightInterface", id="Light determined" } 
 }
 
 documentation     = [==[delivers already fetched puck to specified location]==]
 -- Constants
-local THRESHOLD_DISTANCE = 0.08
-local DELIVERY_GATES = { "D1", "D2", "D3" }
+local THRESHOLD_DISTANCE = 0.07
+local DELIVERY_GATES = { "D2", "D1", "D3" }
+local ANGLES = { 0, 0.2*math.pi, -0.2*math.pi}
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -48,20 +48,19 @@ local curDistance = sensor:distance(8)
 end
 
 function ampel_green()
-   return light:state() == light.GREEN
+   return light:green() == light.ON
 end
 
 fsm:define_states{ export_to=_M,
-   closure = {motor=motor, have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
+   closure = {have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
       dg=DELIVERY_GATES, ampel_green=ampel_green},
    {"CHECK_PUCK", JumpState},
-   {"MOVE_UNDER_FIRST_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_DETERMINE_SIGNAL",
-      fail_to="FAILED"},
    {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills={{determine_signal}},
       final_to="DECIDE_DELIVER", fail_to="FAILED"},
    {"DECIDE_DELIVER", JumpState},
-   {"MOVE_TO_NEXT", SkillJumpState, skills={{take_puck_to}}, final_to="SKILL_DETERMINE_SIGNAL",
+   {"TURN_TO_NEXT", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DETERMINE_SIGNAL",
       fail_to="FAILED"},
+   {"TAKE_PUCK_TO", SkillJumpState, skills={{take_puck_to}}, final_to="MOVE_UNDER_RFID", fail_to="FAILED"},
    {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="LEAVE_AREA",
       fail_to="FAILED"},
    {"LEAVE_AREA", SkillJumpState, skills={{leave_area}}, final_to="FINAL", fail_to="FAILED"}
@@ -70,9 +69,10 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"CHECK_PUCK", "FAILED", cond="not have_puck()", desc="No puck seen by Infrared"},
-   {"CHECK_PUCK", "MOVE_UNDER_FIRST_RFID", cond=have_puck},
-   {"DECIDE_DELIVER", "MOVE_UNDER_RFID", cond=ampel_green},
-   {"DECIDE_DELIVER", "MOVE_TO_NEXT", cond="idx < #dg"},
+   {"CHECK_PUCK", "SKILL_DETERMINE_SIGNAL", cond=have_puck},
+   {"DECIDE_DELIVER", "MOVE_UNDER_RFID", cond="ampel_green() and vars.cur_gate_idx == 2", desc="Gate 2 green"},
+   {"DECIDE_DELIVER", "TAKE_PUCK_TO", cond="ampel_green() and vars.cur_gate_idx ~= 2", desc="Gate 1 or 3 green"},
+   {"DECIDE_DELIVER", "TURN_TO_NEXT", cond="idx < #dg"},
    {"DECIDE_DELIVER", "FAILED", cond="(not ampel_green()) and (idx >= #dg)"}
 }
 
@@ -80,11 +80,11 @@ function CHECK_PUCK:init()
    self.fsm.vars.cur_gate_idx = 1
 end
 
-function SKILL_DETERMINE_SIGNAL:init()
-   self.skills[1].mode = "DELIVER"
+function TURN_TO_NEXT:init()
+   self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
+   self.skills[1].ori = ANGLES[self.fsm.vars.cur_gate_idx]
 end
 
-function MOVE_TO_NEXT:init()
-   self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
+function TAKE_PUCK_TO:init()
    self.skills[1].goto_name = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]
 end
