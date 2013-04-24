@@ -38,7 +38,7 @@ writes ampel data into the light interface
 ]==]
 
 -- Constants
-local MIN_VIS_HIST = 4
+local MIN_VIS_HIST = 20
 local TIMEOUT = 10
 local MOVES = { 0.08, -0.15, 0.32, -0.5 }
 
@@ -46,7 +46,8 @@ local MOVES = { 0.08, -0.15, 0.32, -0.5 }
 skillenv.skill_module(_M)
 
 function plugin_sure()
-   return plugin:visibility_history() >= MIN_VIS_HIST
+   return (plugin:visibility_history() >= MIN_VIS_HIST
+       and plugin:is_ready() == true)
 end
 
 fsm:define_states{ export_to=_M,
