@@ -13,7 +13,7 @@ clips-agent:
 
   # Automatically assert the (start) fact after successful initialization,
   # otherwise wait until the an enalble message has been received
-  auto-start: false
+  auto-start: true
 
   # If set to true, will trigger the assertion of a (time (now)) fact in
   # each loop. This can be used to trigger loop events in CLIPS.
