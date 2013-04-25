@@ -211,7 +211,7 @@ function RETRY_GOTO:init()
 end
 
 function SKILL_GOTO:init()
-   self.skills[1].place = self.fsm.vars.goto_name or self.fsm.vars.place
+   self.skills[1].place = self.fsm.vars.place or self.fsm.vars.goto_name
    self.fsm.vars.avg_idx = 1
    self.fsm.vars.avg_val = {}
 end
