@@ -21,7 +21,7 @@ clips-agent:
 
   # Directory where to look for CLIPS files
   clips-dirs: ["@BASEDIR@/src/agents/"]
-  
+
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
   agent: llsf2013/llsf2013
@@ -31,4 +31,10 @@ clips-agent:
 
   llsf2013:
     enable-sim: true
+
+    peer-address: 192.168.122.255
+    peer-send-port: 4445
+    peer-recv-port: 4444
+
+    unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
 

@@ -8,23 +8,23 @@
 ;---------------------------------------------------------------------------
 
 (defglobal
-  ?*PRIORITY_HIGH*    =  500
-  ?*PRIORITY_WM*      =  100
-  ?*PRIORITY_WM_EXT*  =   90
-  ?*PRIORITY_WM_DEF*  =   80
-  ?*PRIORITY_S2*      =   20
-  ?*PRIORITY_P*       =   30
-  ?*PRIORITY_LOW*     = -100
-  ?*PRIORITY_SKILL*   = -150
-  ?*PRIORITY_WM_PUB*  = -200
-  ?*PRIORITY_CLEANUP* = -400
-  ?*PRIORITY_LAST*    = -500
+  ; evaluation priorities
+  ?*PRIORITY-HIGH*    =  500
+  ?*PRIORITY-SIM*     =  300
+  ?*PRIORITY-WM*      =  200
+  ?*PRIORITY-LOW*     = -100
+  ?*PRIORITY-SKILL*   = -150
+  ?*PRIORITY-CLEANUP* = -400
+  ?*PRIORITY-LAST*    = -500
 
-  ?*GOTOPRIO_DELIVER* = 50
-  ?*GOTOPRIO_M3*      = 40
-  ?*GOTOPRIO_M1_2*    = 35
-  ?*GOTOPRIO_M2_3*    = 30
-  ?*GOTOPRIO_M2*      = 20
-  ?*GOTOPRIO_M1*      = 10
-  ?*GOTOPRIO_UNK*     =  0
+  ; production order priorities
+  ?*PRIORITY-DELIVER* =   100
+  ?*PRIORITY-P*       =   90
+  ?*PRIORITY-S2*      =   80
+  ?*PRIORITY-S1*      =   70
+  ?*PRIORITY-T5*      =    0
+  ?*PRIORITY-T4*      =    0
+  ?*PRIORITY-T3*      =   20
+  ?*PRIORITY-T2*      =   10
+  ?*PRIORITY-T1*      =    5
 )

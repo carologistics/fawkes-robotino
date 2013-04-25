@@ -20,12 +20,15 @@
 (deffacts init (init))
 
 (defrule initialize
-  (declare (salience ?*PRIORITY_HIGH*))
+  (declare (salience ?*PRIORITY-HIGH*))
   (agent-init)
   (protobuf-available)
   =>
   (load-config "/clips-agent")
 
+  (blackboard-add-interface "RobotinoLightInterface" "Light detected")
+
+  (load* (resolve-file llsf2013/net.clp))
   (load* (resolve-file llsf2013/utils.clp))
   (if
     (any-factp ((?conf confval))
@@ -40,4 +43,27 @@
   (load* (resolve-file llsf2013/rules.clp))
   (reset)
   ;(facts)
+)
+
+
+(defrule late-silence-debug-facts
+  (declare (salience -1000))
+  (init)
+  (protobuf-available)
+  (confval (path "/clips-agent/clips-debug") (type BOOL) (value true))
+  (confval (path "/clips-agent/llsf2013/unwatch-facts") (type STRING) (is-list TRUE) (list-value $?lv))
+  =>
+  (printout t "Disabling watching of the following facts: " ?lv crlf)
+  (foreach ?v ?lv (unwatch facts (sym-cat ?v)))
+)
+
+(defrule late-silence-debug-rules
+  (declare (salience -1000))
+  (init)
+  (protobuf-available)
+  (confval (path "/clips-agent/clips-debug") (type BOOL) (value true))
+  (confval (path "/clips-agent/llsf2013/unwatch-rules") (type STRING) (is-list TRUE) (list-value $?lv))
+  =>
+  (printout t "Disabling watching of the following rules: " ?lv crlf)
+  (foreach ?v ?lv (unwatch rules (sym-cat ?v)))
 )

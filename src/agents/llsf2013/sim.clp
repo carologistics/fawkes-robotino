@@ -32,7 +32,6 @@
 )
 
 (deftemplate sim
-  (slot state (allowed-values IDLE GET-S0 GOTO WAIT-PROC) (default IDLE))
   (slot proc-state (allowed-values IDLE WAIT PROC) (default IDLE))
   (slot rb-client-id (type INTEGER))
   (slot goto-target (type SYMBOL))
@@ -82,7 +81,7 @@
 ;)
 
 (defrule sim-recv-PuckInfo
-  (protobuf-msg (type "llsf_msgs.PuckInfo") (ptr ?p))
+  (protobuf-msg (type "llsf_msgs.PuckInfo") (ptr ?p) (rcvd-via STREAM))
   =>
   (if (any-factp ((?pt sim-puck)) TRUE)
   then
@@ -100,7 +99,7 @@
 )
 
 (defrule sim-recv-MachineInfo
-  ?pf <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
+  ?pf <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p) (rcvd-via STREAM))
   =>
   (retract ?pf)
   (foreach ?m (pb-field-list ?p "machines")
@@ -141,6 +140,7 @@
 
 
 (defrule sim-get-s0-final
+  (declare (salience ?*PRIORITY-SIM*))
   (skill (name "get_s0") (status FINAL))
   (sim-puck (state S0) (id ?puck-id))
   (not (sim-machine (puck-id ?puck-id)))
@@ -148,10 +148,27 @@
   ?sf <- (sim (holding-puck-id 0))
   =>
   (modify ?sf (holding-puck-id ?puck-id))
-  (assert (get-s0-final))
+)
+
+(defrule sim-goto-final-deliver
+  (declare (salience ?*PRIORITY-SIM*))
+  (skill (name "finish_puck_at") (status FINAL))
+  (goto-target deliver)
+  ?sf <- (sim (rb-client-id ?client-id) (holding-puck-id ?puck-id&~0))
+  (sim-machine (name ?name) (mtype DELIVER) (lights GREEN-ON))
+  =>
+  (printout warn "Placing " ?puck-id " under " ?name crlf)
+  (bind ?m (pb-create "llsf_msgs.PlacePuckUnderMachine"))
+  (pb-set-field ?m "machine_name" ?name)
+  (pb-set-field ?m "puck_id" ?puck-id)
+  (pb-send ?client-id ?m)
+  (pb-destroy ?m)
+  (modify ?sf (proc-state WAIT) (holding-puck-id 0) (placed-puck-id ?puck-id)
+	  (goto-target ?name))
 )
 
 (defrule sim-goto-final
+  (declare (salience ?*PRIORITY-SIM*))
   (skill (name "finish_puck_at") (status FINAL))
   (goto-target ?gt)
   ?sf <- (sim (rb-client-id ?client-id) (holding-puck-id ?puck-id&~0))
@@ -166,6 +183,7 @@
 )
 
 (defrule sim-proc-start
+  (declare (salience ?*PRIORITY-SIM*))
   ?sf <- (sim (proc-state WAIT) (goto-target ?gt))
   (sim-machine (name ?gt) (lights GREEN-ON YELLOW-ON))
   =>
@@ -174,6 +192,7 @@
 
 
 (defrule sim-proc-final
+  (declare (salience ?*PRIORITY-SIM*))
   ?sf <- (sim (proc-state PROC) (goto-target ?gt) (rb-client-id ?client-id)
 	      (placed-puck-id ?puck-id&~0))
   (sim-machine (name ?gt) (mtype ~DELIVER)
@@ -186,10 +205,11 @@
   (pb-destroy ?m)
   (modify ?sf (proc-state IDLE) (placed-puck-id 0)
 	  (holding-puck-id (if (eq ?light GREEN-ON) then ?puck-id else 0)))
-  (assert (goto-final (if (eq ?light GREEN-ON) then green else yellow)))
+  (assert (lights ?light))
 )
 
 (defrule sim-proc-delivered
+  (declare (salience ?*PRIORITY-SIM*))
   ?sf <- (sim (proc-state PROC) (goto-target ?gt) (rb-client-id ?client-id)
 	      (placed-puck-id ?puck-id&~0))
   (sim-machine (name ?gt) (mtype DELIVER)
@@ -201,13 +221,14 @@
   (pb-send ?client-id ?m)
   (pb-destroy ?m)
   (modify ?sf (proc-state IDLE) (placed-puck-id 0) (holding-puck-id 0))
-  (assert (goto-final green))
+  (assert (lights GREEN-ON YELLOW-ON RED-ON))
 )
 
 (defrule sim-proc-fail
+  (declare (salience ?*PRIORITY-SIM*))
   ?sf <- (sim (proc-state WAIT) (goto-target ?gt) (rb-client-id ?client-id)
 	      (placed-puck-id ?puck-id&~0))
-  (sim-machine (puck-id ?puck-id) (lights ?light&YELLOW-BLINK))
+  (sim-machine (puck-id ?puck-id) (lights ?lights&YELLOW-BLINK))
   =>
   (bind ?m (pb-create "llsf_msgs.RemovePuckFromMachine"))
   (pb-set-field ?m "machine_name" ?gt)
@@ -215,5 +236,5 @@
   (pb-send ?client-id ?m)
   (pb-destroy ?m)
   (modify ?sf (proc-state IDLE) (placed-puck-id 0) (holding-puck-id ?puck-id))
-  (assert (goto-final yellow-flashing))
+  (assert (lights ?lights))
 )

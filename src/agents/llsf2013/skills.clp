@@ -9,49 +9,29 @@
 
 ; --- RULES for skill outcome
 
-(deffunction goto-machine (?name ?holding)
+(deffunction goto-machine (?name)
   (skill-call finish_puck_at goto_name ?name)
+  (assert (state GOTO))
+  (assert (goto-target ?name))
 )
 
 (deffunction get-s0 ()
   (skill-call get_s0)
 )
 
-(defrule get-s0-final
-  ?s  <- (state GET-S0)
-  ?gf <- (get-s0-final)
-  ?h  <- (holding NONE)
+(defrule skill-get-s0-done
+  ?sf <- (state GET-S0)
+  (skill (name "get_s0") (status ?s&FINAL|FAILED))
   =>
-  (if (debug 1) then (printout t "get-s0 succeeded" crlf))
-  (retract ?s ?gf ?h)
-  (assert (holding S0))
-  (assert (state IDLE))
+  (if (debug 1) then (printout (if (eq ?s FAILED) then warn else t) "get-s0 done: " ?s crlf))
+  (retract ?sf)
+  (assert (state (sym-cat GET-S0- ?s)))
 )
 
-
-(defrule get-s0-fails
-  ?s <- (state GET-S0)
-  ?gf <- (get-s0-failed)
+(defrule skill-goto-done
+  ?sf <- (state GOTO)
+  (skill (name "finish_puck_at") (status ?s&FINAL|FAILED))
   =>
-  (if (debug 1) then (printout t "get-s0 FAILED" crlf))
-  (retract ?s ?gf)
-  (assert (state IDLE))
+  (retract ?sf)
+  (assert (state (sym-cat GOTO- ?s)))
 )
-
-(defrule goto-succeeds
-  ?s  <- (state GOTO)
-  ?gs <- (goto-final ?light)
-  =>
-  (retract ?s ?gs)
-  (assert (light ?light))
-  (assert (state GOTO-FINAL))
-)
-
-(defrule goto-fails
-  ?s <- (state GOTO)
-  ?gf <- (goto-failed)
-  =>
-  (retract ?s ?gf)
-  (assert (state GOTO-FAILED))
-)
-
