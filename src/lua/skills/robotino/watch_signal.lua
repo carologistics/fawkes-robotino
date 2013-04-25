@@ -58,6 +58,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
+   {"INIT", "FAILED", cond="not plugin:has_writer()", precond=true},
    {"INIT", "DETERMINE", timeout=1}, -- let vision settle
    {"DETERMINE", "FINAL", cond=plugin_sure},
    {"DETERMINE", "FAILED", cond="vars.move_idx > #MOVES"},
