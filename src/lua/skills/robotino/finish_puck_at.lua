@@ -73,7 +73,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "TIMEOUT","DECIDE_ENDSKILL", timeout=3, desc="test purpose" },
-   { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
+   { "DECIDE_ENDSKILL", "SKILL_RFID", timeout=1, cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE", "SKILL_DEPOSIT", cond=is_ampel_yellow },
    { "DECIDE", "SKILL_DRIVE_LEFT", cond=is_not_yellow},
