@@ -152,6 +152,7 @@ private:
 	unsigned char* calculatePositionInCamBuffer();
 
 	PluginLightThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
+	PluginLightThread::lightROIs createLightROIs(firevision::ROI light);
 
 	bool isValidSuccessor(lightSignal previous,lightSignal current);
 
@@ -173,6 +174,7 @@ private:
 
 	void processHistoryBuffer();
 	firevision::ROI getBiggestRoi(std::list<firevision::ROI>* roiList);
+	void checkIfROIIsInBuffer(const firevision::ROI& light);
 
 protected:
 	virtual void run() { Thread::run(); }

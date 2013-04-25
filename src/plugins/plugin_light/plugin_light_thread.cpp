@@ -265,7 +265,9 @@ PluginLightThread::loop()
 			// correct light position
 			if(cfg_lightPositionCorrection){
 				lightROIs = this->correctLightRoisWithBlack(lightROIs);
-				//drawROIIntoBuffer(lightROIs.light);
+				if (this->cfg_paintROIsActivated) {
+					drawROIIntoBuffer(lightROIs.light);
+				}
 			}
 
 			PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
@@ -331,7 +333,8 @@ firevision::ROI PluginLightThread::getBiggestRoi( std::list<firevision::ROI>* ro
 }
 
 PluginLightThread::lightROIs
-PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expectedLight){
+PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expectedLight)
+{
 	// Look in area around the red light for the back top of the light
 
 	firevision::ROI* top = new firevision::ROI(expectedLight.light);
@@ -340,43 +343,15 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 	top->width =  expectedLight.light.width * 3;
 	top->height = 2*expectedLight.light.width;
 
-	//this->drawROIIntoBuffer(top);
+	if (this->cfg_paintROIsActivated) {
+		this->drawROIIntoBuffer(top);
+	}
 
-
-
-
-
-	// Shrink or reposition the rois if sucessfully
-
-//	int minStartX = 0;
-//	int minStartY = 0;
-//	int maxStartX = 0;
-//	int maxStartY = 0;
-//
-//	std::list<firevision::ROI>* topBlack = this->classifyInRoi( top 	,this->classifierBlack);
-//	for (std::list<firevision::ROI>::iterator it = topBlack->begin(); it != topBlack->end(); ++it) {
-//		if(minStartX > (*it).start.x){
-//			minStartX = (*it).start.x;
-//		}
-//
-//		if(minStartY > (*it).start.y){
-//			minStartY = (*it).start.y;
-//		}
-//
-//		if(maxStartX < (*it).start.x){
-//					minStartX = (*it).start.x;
-//		}
-//
-//		if(maxStartY < (*it).start.y){
-//			maxStartY = (*it).start.y;
-//		}
-//
-//	}
 	std::list<firevision::ROI>* topBlackList = this->classifyInRoi( top ,this->classifierBlack);
-	if(!topBlackList->empty()){
+	if ( ! topBlackList->empty() ) {
 		firevision::ROI topBiggestRoi = getBiggestRoi(topBlackList);
 
-		this->drawROIIntoBuffer(topBiggestRoi);
+//		this->drawROIIntoBuffer(topBiggestRoi, firevision::FilterROIDraw::DASHED_HINT);
 
 		if (this->cfg_debugMessagesActivated) {
 				logger->log_debug(name(), "Top: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
@@ -389,63 +364,27 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 		bottem->height = expectedLight.green.height * 6;
 
 		std::list<firevision::ROI>* bottemBlackList = this->classifyInRoi( bottem ,this->classifierBlack);
-		if(!bottemBlackList->empty()){
+		if ( ! bottemBlackList->empty() ) {
 
 			firevision::ROI bottemBiggestRoi = getBiggestRoi(bottemBlackList);
-			this->drawROIIntoBuffer(bottemBiggestRoi);
+//			this->drawROIIntoBuffer(bottemBiggestRoi, firevision::FilterROIDraw::DASHED_HINT);
 
 			if (this->cfg_debugMessagesActivated) {
 							logger->log_debug(name(), "Bottem: X: %u Y: %u Height: %u Width: %u",bottemBiggestRoi.start.x , bottemBiggestRoi.start.y, bottemBiggestRoi.height, bottemBiggestRoi.width);
 			}
-			int TopDiffX = 0;
-			int TopDiffY = 0;
-//			int TopDiffWidth = 0;
-			int width = std::min(topBiggestRoi.width, bottemBiggestRoi.width);
+			firevision::ROI light;
+			light.start.x = topBiggestRoi.start.x;
+			light.start.y = topBiggestRoi.start.y + topBiggestRoi.height;
+			light.height = bottemBiggestRoi.start.y - (topBiggestRoi.start.y + topBiggestRoi.height);
+			light.width = std::min(topBiggestRoi.width, bottemBiggestRoi.width);
 
-	//		this->drawROIIntoBuffer(topBiggestRoi);
-			TopDiffX = expectedLight.light.start.x - topBiggestRoi.start.x;
-			TopDiffY = expectedLight.light.start.y - topBiggestRoi.start.y - topBiggestRoi.height;
-
-			expectedLight.light.start.x = expectedLight.light.start.x - TopDiffX;
-			expectedLight.light.start.y = expectedLight.light.start.y - TopDiffY;
-			expectedLight.light.width = width; // expectedLight.light.width - TopDiffWidth;
-
-			expectedLight.red.start.x = expectedLight.red.start.x - TopDiffX;
-			expectedLight.red.start.y = expectedLight.red.start.y - TopDiffY;
-			expectedLight.red.width = width; //  expectedLight.light.width;
-
-			expectedLight.yellow.start.x = expectedLight.yellow.start.x - TopDiffX;
-			expectedLight.yellow.start.y = expectedLight.yellow.start.y - TopDiffY;
-			expectedLight.yellow.width = width; //  expectedLight.light.width;
-
-			expectedLight.green.start.x = expectedLight.green.start.x - TopDiffX;
-			expectedLight.green.start.y = expectedLight.green.start.y - TopDiffY;
-			expectedLight.green.width = width; //  expectedLight.light.width;
-
-//			drawROIIntoBuffer(expectedLight.red);
-//			drawROIIntoBuffer(expectedLight.yellow);
-//			drawROIIntoBuffer(expectedLight.green);
+			this->checkIfROIIsInBuffer(light);
+			expectedLight = this->createLightROIs(light);
 		}
-//
-//		this->drawROIIntoBuffer(expectedLight.light);
 	}else{
 		logger->log_debug(name(), "No black roi found");
 	}
 
-
-//
-//
-//
-//	//std::list<firevision::ROI>* bottemBlackList = this->classifyInRoi( bottem	,this->classifierBlack);
-//	//firevision::ROI* bottemBiggestRoi = getBiggestRoi(bottemBlackList);
-
-
-
-//	int BottemDiffX = 0;
-//	int BottemDiffY = 0;
-//	if( bottemBiggestRoi != NULL) {
-//
-//	}
 	return expectedLight;
 }
 
@@ -562,6 +501,14 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 	}
 }
 
+void PluginLightThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
+	if (light.start.x <= 0 || light.start.y <= 0
+			|| light.height + light.start.y >= (int) (this->img_height)
+			|| light.width + light.start.x >= (int) (this->img_width)) {
+		throw fawkes::Exception("ROI is outsite of the buffer");
+	}
+}
+
 PluginLightThread::lightROIs
 PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 {
@@ -581,23 +528,26 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 				+ this->cfg_cameraOffsetVertical;								//error of picture position to light
 				//TODO suche richtige werte der Kamera
 
-	if ( startX <= 0
-	  || startY <= 0
-	  || expectedLightSizeHeigth + startY >= (int)this->img_height
-	  || expectedLightSizeWidth + startX >= (int)this->img_width
-	  ) {
-		throw fawkes::Exception("ROI is outsite of the buffer");
-	}
+	firevision::ROI light;
+	light.start.x = startX;
+	light.start.y = startY;
+	light.height = expectedLightSizeHeigth;
+	light.width = expectedLightSizeWidth;
 
+	this->checkIfROIIsInBuffer(light);
+
+	return this->createLightROIs(light);
+}
+
+PluginLightThread::lightROIs
+PluginLightThread::createLightROIs(firevision::ROI light)
+{
 	PluginLightThread::lightROIs lightROIs;
 
 	//light ROI size
+	lightROIs.light = light;
 	lightROIs.light.image_height = this->img_height;
 	lightROIs.light.image_width = this->img_width;
-	lightROIs.light.height = expectedLightSizeHeigth;
-	lightROIs.light.width = expectedLightSizeWidth;
-	lightROIs.light.start.x = startX;
-	lightROIs.light.start.y = startY;
 
 	//Signale ROIs
 
