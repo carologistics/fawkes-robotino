@@ -507,10 +507,14 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 }
 
 void PluginLightThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
-	if (light.start.x <= 0 || light.start.y <= 0
-			|| light.height + light.start.y >= (this->img_height)
-			|| light.width + light.start.x >= (this->img_width)) {
+	if (light.start.x >= this->img_width || light.start.y >= this->img_height
+			|| light.height + light.start.y >= this->img_height
+			|| light.width + light.start.x >= this->img_width) {
 		throw fawkes::Exception("ROI is outsite of the buffer");
+	} else {
+		if (this->cfg_debugMessagesActivated) {
+			logger->log_info(name(), "Size check ok");
+		}
 	}
 }
 
@@ -570,6 +574,13 @@ PluginLightThread::createLightROIs(firevision::ROI light)
 
 	lightROIs.green.height = roiHeight;
 	lightROIs.green.start.y += roiHeight * 7;									//Middle of the bottom thirds
+
+	if (this->cfg_debugMessagesActivated) {
+		logger->log_info(name(), "light.start.x %u, light.start.y %u, height: %u", lightROIs.light.start.x, lightROIs.light.start.y, lightROIs.light.height);
+		logger->log_info(name(), "red.start.x %u, red.start.y %u, red: %u", lightROIs.red.start.x, lightROIs.red.start.y, lightROIs.red.height);
+		logger->log_info(name(), "yellow.start.x %u, yellow.start.y %u, yellow: %u", lightROIs.yellow.start.x, lightROIs.yellow.start.y, lightROIs.yellow.height);
+		logger->log_info(name(), "green.start.x %u, green.start.y %u, green: %u", lightROIs.green.start.x, lightROIs.green.start.y, lightROIs.green.height);
+	}
 
 	return lightROIs;
 }
