@@ -23,7 +23,7 @@
 module(...,  skillenv.module_init)
 
 -- Crucial skill information
-name               = "determine_signal"
+name               = "wait_produce"
 fsm                = SkillHSM:new{name=name,  start="INIT",  debug=false}
 depends_skills     = nil
 depends_interfaces = {
