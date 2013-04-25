@@ -21,7 +21,7 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 LIBS_voltagelogger = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface BatteryInterface 
+		fawkesblackboard fawkesinterface BatteryInterface fawkeslogging
 OBJS_voltagelogger = voltagelogger_plugin.o voltagelogger_thread.o
 
 PLUGINS_all = $(PLUGINDIR)/voltagelogger.$(SOEXT)
