@@ -12,10 +12,13 @@
   (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p) (rcvd-via BROADCAST))
   (not (machine-info-received))
   =>
+  (printout t "***** Received MachineInfo *****" crlf)
   (assert (machine-info-received))
   (foreach ?m (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
       (eq ?machine:name (sym-cat (pb-field-value ?m "name")))
+      (printout t "Machine " (pb-field-value ?m "name") " is of type "
+		(pb-field-value ?m "type") crlf)
       (modify ?machine (mtype (sym-cat (pb-field-value ?m "type")))
 	      (output (sym-cat (pb-field-value ?m "output"))))
     )
