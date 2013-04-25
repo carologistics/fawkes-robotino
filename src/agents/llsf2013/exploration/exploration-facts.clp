@@ -14,8 +14,8 @@
 )
 
 (deftemplate machine-type
-  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
-  (slot type (type SYMBOL) (allowed-values T1 T2 T3 T4 T5 DELIVER TEST RECYCLE) (default TEST))
+  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10) (default M1))
+  (slot type (type SYMBOL) (allowed-values T1 T2 T3 T4 T5) (default T1))
 )
 
 (deftemplate matching-type-light
@@ -26,10 +26,19 @@
 )
 
 (deftemplate signal
+  (slot type)
   (slot name (type STRING))
   (multislot time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot seq (type INTEGER) (default 1))
+  (slot count (type INTEGER) (default 1))
 )
+
+;(deftemplate signal
+;  (slot type)
+;  (multislot time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+;  (slot seq (type INTEGER) (default 1))
+;  (slot count (type INTEGER) (default 1))
+;)
 
 ;machine name, coordinates, next machine in exploration cycle
 (assert 

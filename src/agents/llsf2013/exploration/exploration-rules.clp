@@ -1,11 +1,11 @@
 ;Clips program for exploration phase
 
-(defrule init
-  (init)
-  (protobuf-available)
-  =>
-  (pb-peer-enable "172.16.35.255" 4445 4444)
-)
+;(defrule init
+;  (init)
+;  (protobuf-available)
+;  =>
+;  (pb-peer-enable "172.16.35.255" 4444 4444)
+;)
 
 ;Set up the status
 ;there are two rounds. In the first the robotino drives to each machine in a defined cycle. After the first round the robotino drives to unrecognized machines again.
@@ -18,14 +18,15 @@
   (assert (status "firstround"))
   (assert (signal (name "refboxSendLoop") (time ?now) (seq 2)))
   (assert (signal (name "readLightsNotRecognizedOutput") (time ?now) (seq 1)))
+  (assert (signal (type beacon) (time ?now) (seq 0)))
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
 
 ;(defrule test
-;  (Position3DInterface (id "Pose") (translation $?pos))
+;  (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (ready ?))
 ;  (time $?now)
 ;  =>
-;  (printout t "HAVE pos" crlf)
+;  (printout t "GOT PLUGIN LIGHT INTERFACE" crlf)
 ;)
 
 ;Robotino drives to the nearest machine to start the first round
@@ -70,7 +71,7 @@
   ?s <- (status "waitingAtMachine")
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
-  ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (ready TRUE))
+  ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh 20)) (ready TRUE))
 
   =>
 
@@ -87,10 +88,11 @@
 )
 
 (defrule test-light
-  ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (ready TRUE))
+  (status "waitingAtMachine")
+  ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (ready ?ready))
   =>
-  (printout t "See light red: " ?red " yellow: " ?yellow " green: " ?green crlf)
-  (printout t "Have to see it when waiting at a machine" crlf)
+  (printout t "WAITING AT MACHINE" crlf)
+  (printout t "See light red: " ?red " yellow: " ?yellow " green: " ?green " ready: " ?ready crlf)
 )
 
 ;Matching of recognized lights to the machine types
@@ -128,7 +130,7 @@
 
 (defrule print-read-but-not-recognized-lights
   (time $?now)  
-  ?ws <- (signal (name "readLightsNotRecognizedOutput") (time $?t&:(timeout ?now ?t 2.0)) (seq ?))
+  ?ws <- (signal (name "readLightsNotRecognizedOutput") (time $?t&:(timeout ?now ?t 1.0)) (seq ?))
   =>
   (do-for-all-facts ((?read machine-light)) TRUE
     (printout t "Read light with no type matching: " ?read:name ", red " ?read:red ", yellow " ?read:yellow ", green " ?read:green crlf)
@@ -153,6 +155,7 @@
 
   =>
   
+  (printout t "GOT MESSAGE FROM REFBOX (EXPLORATION-INFO)" crlf)
   (retract ?pbm)
   (foreach ?sig (pb-field-list ?p "signals")
     (bind ?type (pb-field-value ?sig "type"))
@@ -189,7 +192,7 @@
 (defrule recognized-machine-failed
   ;?final <- (skill (name "relgoto") (status FAILED) (skill-string ?skill))
   (time $?now)
-  ?ws <- (signal (name "waitingSince") (time $?t&:(timeout ?now ?t 3.0)) (seq 1))
+  ?ws <- (signal (name "waitingSince") (time $?t&:(timeout ?now ?t 5.0)) (seq 1))
   ?s <- (status "waitingAtMachine")
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
@@ -197,6 +200,7 @@
   =>
  
   (printout t "Reading light at " ?old " failed." crlf)
+  (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE" crlf)
   (retract ?s)  
   (retract ?g)
   (retract ?ws)  

@@ -11,14 +11,24 @@
 (blackboard-add-interface "Position3DInterface" "Pose")
 (blackboard-add-interface "RobotinoLightInterface" "Light_State")
 
+
 ;load exploration rules and simulationrules if ready
 (defrule initialize-exploration
   (declare (salience 500))
   (agent-init)
   (protobuf-available)
   =>
-  (printout t "==== Load Config clips-agent ===== " crlf)
+  ;(printout t "==== Load Config clips-agent ===== " crlf)
   ;(load-config "/clips-agent")
+
+  (printout t "==== Load global variables ===== " crlf)
+  (load* (resolve-file llsf2013/globals.clp))
+
+  (printout t "==== Load Exploration-Facts ===== " crlf)
+  (batch* (resolve-file llsf2013/exploration/exploration-facts.clp))
+
+  (printout t "==== Load RefboxCommunication-Interfaces ===== " crlf)
+  (load* (resolve-file llsf2013/net.clp))
 
   (if
     (any-factp ((?conf confval))
@@ -28,8 +38,6 @@
     (printout t "==== Loading Simulation ====" crlf)
     (batch* (resolve-file llsf2013/exploration/exploration-sim.clp))
   )
-  (printout t "==== Load Exploration-Facts ===== " crlf)
-  (batch* (resolve-file llsf2013/exploration/exploration-facts.clp))
   (printout t "==== Loading Exploration Rules ====" crlf)
   (load* (resolve-file llsf2013/exploration/exploration-rules.clp))
 

@@ -79,7 +79,7 @@
   (sim-machine-exp (name ?m) (lights $?lights))
   (goalmachine ?m)
   =>
-  (assert (RobotinoLightInterface (id "Light_State") (time (create$ 5 5)) (red OFF) (yellow OFF) (green OFF) (visibility_history 13) (ready FALSE)));gess at all
+  (assert (RobotinoLightInterface (id "Light_State") (time (create$ 5 5)) (red OFF) (yellow OFF) (green OFF) (visibility_history 100) (ready FALSE)));gess at all
   ;assert facts for modification
   (foreach ?l ?lights
     (assert (sim-machine-light ?m ?l))
