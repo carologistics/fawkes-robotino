@@ -27,8 +27,8 @@ name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
 depends_skills     = { "take_puck_to", "watch_signal", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
-            { v="light", type="RobotinoLightInterface", id="Light determined" },
-      }
+   { v="light", type="RobotinoLightInterface", id="Light determined" },
+}
 
 documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.]==]
 
@@ -38,7 +38,7 @@ local mpos = require 'machine_pos_module'
 skillenv.skill_module(_M)
 
 function end_rfid()
-   printf( mpos.delivery_goto[fsm.vars.goto_name].d_skill)
+   printf(mpos.delivery_goto[fsm.vars.goto_name].d_skill)
    return mpos.delivery_goto[fsm.vars.goto_name].d_skill == "move_under_rfid"
 end
 
