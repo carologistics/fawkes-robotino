@@ -9,8 +9,9 @@ plugins/plugin_light:
   # camera: v4l2:light:device=/dev/video0
   # camera: "file:file:file=/home/florian/Dropbox/fawkes/sampleImages/vlcsnap-2013-03-18-13h45m18s129.png"
   #camera: "file:file:file=/home/fnolden/Dropbox/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
-  camera: "file:file:file=/home/tobias/Dropbox/Carologistics/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
-  #camera: v4l2:light:device=/dev/video0:size=640x480:awb=false:aec=false:agc=false:exposure=305
+  #camera: "file:file:file=/home/tobias/Dropbox/Carologistics/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
+  camera: v4l2:front:device=/dev/video0
+#:size=640x480:awb=false:aec=false:agc=false:exposure=305
   #camera: v4l2:light:device=/dev/video1:size=640x480:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
 
   # Size of the light (Ampel) in m, without the sockel to determine the light search areas
@@ -30,16 +31,16 @@ plugins/plugin_light:
 
   # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
   threashold_brightness: 200
-  threashold_black: 60
+  threashold_black: 30
   detection_cycle_time: 1
   threashold_laser_visibility: -6
 
   light_number_of_wrong_detections: 2
   light_distance_allowed_betwen_frames: 0.1 
   light_out_of_range_thrashold: 2
-  light_position_correction: true
+  light_position_correction: false
 
-  light_move_under_rfid_thrashold: 0.3			#distance thrashold if the light is very close (normaly at move_under_rfid)
+  light_move_under_rfid_thrashold: 0.35			#distance thrashold if the light is very close (normaly at move_under_rfid)
   light_to_close_thrashold: 0.2				#get a light pos that is unreal close (and creats an out of bounce error)
 
   # coordinate system

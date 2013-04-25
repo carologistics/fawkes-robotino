@@ -266,7 +266,10 @@ PluginLightThread::loop()
 			if(cfg_lightPositionCorrection){
 				lightROIs = this->correctLightRoisWithBlack(lightROIs);
 				if (this->cfg_paintROIsActivated) {
-					drawROIIntoBuffer(lightROIs.light);
+					this->drawROIIntoBuffer(lightROIs.light);
+					this->drawROIIntoBuffer(lightROIs.red);
+					this->drawROIIntoBuffer(lightROIs.yellow);
+					this->drawROIIntoBuffer(lightROIs.green);
 				}
 			}
 
@@ -351,7 +354,7 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 	if ( ! topBlackList->empty() ) {
 		firevision::ROI topBiggestRoi = getBiggestRoi(topBlackList);
 
-//		this->drawROIIntoBuffer(topBiggestRoi, firevision::FilterROIDraw::DASHED_HINT);
+		this->drawROIIntoBuffer(topBiggestRoi);
 
 		if (this->cfg_debugMessagesActivated) {
 				logger->log_debug(name(), "Top: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
@@ -367,7 +370,7 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 		if ( ! bottemBlackList->empty() ) {
 
 			firevision::ROI bottemBiggestRoi = getBiggestRoi(bottemBlackList);
-//			this->drawROIIntoBuffer(bottemBiggestRoi, firevision::FilterROIDraw::DASHED_HINT);
+			this->drawROIIntoBuffer(bottemBiggestRoi);
 
 			if (this->cfg_debugMessagesActivated) {
 							logger->log_debug(name(), "Bottem: X: %u Y: %u Height: %u Width: %u",bottemBiggestRoi.start.x , bottemBiggestRoi.start.y, bottemBiggestRoi.height, bottemBiggestRoi.width);
@@ -380,6 +383,8 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 
 			this->checkIfROIIsInBuffer(light);
 			expectedLight = this->createLightROIs(light);
+		} else {
+			logger->log_debug(name(), "No black-bottom roi found");
 		}
 	}else{
 		logger->log_debug(name(), "No black roi found");
@@ -503,8 +508,8 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 
 void PluginLightThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
 	if (light.start.x <= 0 || light.start.y <= 0
-			|| light.height + light.start.y >= (int) (this->img_height)
-			|| light.width + light.start.x >= (int) (this->img_width)) {
+			|| light.height + light.start.y >= (this->img_height)
+			|| light.width + light.start.x >= (this->img_width)) {
 		throw fawkes::Exception("ROI is outsite of the buffer");
 	}
 }
@@ -753,6 +758,8 @@ PluginLightThread::getNearestMaschineFromInterface()
 	//if the light is directly in front (by x coordinate) set y to 0 because it is likly to detecd wrong values
 	if ( lightPosition.x < this->cfg_lightMoveUnderRfidThrashold ) {
 		lightPosition.y = 0.0;
+	} else {
+		logger->log_debug(name(), "Not a close mashine");
 	}
 
 	return lightPosition;
