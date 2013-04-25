@@ -276,11 +276,10 @@ PluginLightThread::loop()
 			this->processHistoryBuffer();
 		}
 	} catch(fawkes::Exception &e) {
-		this->resetLightInterface();
-
-		logger->log_info(name(), "ROI is outsite of the buffer");
-
+		this->resetLightInterface("ROI is outsite of the buffer");
 		this->resetLocalHistory();
+
+		logger->log_info(name(), "ROI is outsite of the buffer");				//TODO remove later
 	}
 }
 
@@ -663,7 +662,7 @@ PluginLightThread::resetLightInterface(std::string message)
 	this->lightStateIF->write();
 
 	if (this->cfg_debugMessagesActivated) {
-			logger->log_debug(name(), "Plugin-light: Resetting interface, %s",message.c_str());
+			logger->log_info(name(), "Plugin-light: Resetting interface, %s",message.c_str());
 	}
 }
 
@@ -694,7 +693,7 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 
 	if ( this->cfg_debugMessagesActivated ) {
 		int countedROIs = (int)ROIs->size();
-		logger->log_info(name(), "Detect: %i", countedROIs);
+		logger->log_debug(name(), "Detect: %i", countedROIs);
 	}
 	if ( this->cfg_paintROIsActivated ) {
 		int countedROIs = (int)ROIs->size();
@@ -783,7 +782,9 @@ PluginLightThread::signalLightWithHistory(int lightHistory)
 	} else if ( lightHistory <= this->cfg_lightNumberOfWrongDetections ) {
 		return fawkes::RobotinoLightInterface::OFF;
 	} else {
-		logger->log_info(name(), "Detected: %i, vis: %i", lightHistory, visibilityHistory);
+		if (this->cfg_debugMessagesActivated) {
+			logger->log_info(name(), "Detected: %i ON out of %i Pictures (ON: %i OFF: %i BLINKING: %i)", lightHistory, visibilityHistory, visibilityHistory, 0, visibilityHistory / 2);
+		}
 		return fawkes::RobotinoLightInterface::UNKNOWN;
 	}
 }
