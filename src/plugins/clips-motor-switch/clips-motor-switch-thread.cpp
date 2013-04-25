@@ -57,8 +57,7 @@ ClipsMotorSwitchThread::init()
   MutexLocker lock(clips.objmutex_ptr());
 
   clips->add_function("motor-enable", sigc::slot<void>(sigc::mem_fun(*this, &ClipsMotorSwitchThread::clips_motor_enable)));
-  clips->add_function("motor-disable", sigc::slot<void>(sigc::mem_fun(*this, &ClipsMotorSwitchThread::clips_motor_enable)));
-
+  clips->add_function("motor-disable", sigc::slot<void>(sigc::mem_fun(*this, &ClipsMotorSwitchThread::clips_motor_disable)));
 }
 
 
