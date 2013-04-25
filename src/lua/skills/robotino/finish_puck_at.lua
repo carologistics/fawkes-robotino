@@ -83,11 +83,8 @@ fsm:add_transitions{
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
 }
 
-function INIT:init()
-   self.fsm.vars.goto_name = self.fsm.vars.place or self.fsm.vars.goto_name
-end
-
 function SKILL_TAKE_PUCK:init()
+   self.fsm.vars.goto_name = self.fsm.vars.place or self.fsm.vars.goto_name
    self.skills[1].place = self.fsm.vars.place
 end
 
