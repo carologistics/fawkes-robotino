@@ -27,7 +27,7 @@ name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
 depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
-   { v="ampel_orange", type="SwitchInterface", id="ampel_orange" },
+   { v="light", type="RobotinoLightInterface", id="Light determined" }
 }
 
 documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.]==]
@@ -47,12 +47,16 @@ function end_deliver()
    return mpos.delivery_goto[fsm.vars.goto_name].d_skill == "deliver_puck"
 end
 
-function is_ampel_yellow()
-   return ampel_orange:enabled() == true
+function prod_unfinished()
+   return light:yellow() == light.ON
+      and light:green()  == light.OFF
+      and light:red()    == light.OFF
 end
 
-function is_not_yellow()
-   return not is_ampel_yellow()
+function prod_finished()
+   return light:green() == light.ON
+      and light:yellow() == light.OFF
+      and light:red() == light.OFF
 end
 
 fsm:define_states{ export_to=_M,
@@ -75,8 +79,8 @@ fsm:add_transitions{
    { "TIMEOUT","DECIDE_ENDSKILL", timeout=3, desc="test purpose" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", timeout=1, cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
-   { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=is_ampel_yellow },
-   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=is_not_yellow},
+   { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
+   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
 }
 
 function SKILL_TAKE_PUCK:init()
