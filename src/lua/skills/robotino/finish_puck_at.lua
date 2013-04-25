@@ -48,7 +48,7 @@ function end_deliver()
 end
 
 function is_ampel_yellow()
-   return ampel_orange:enabled == true
+   return ampel_orange:enabled() == true
 end
 
 function is_not_yellow()
