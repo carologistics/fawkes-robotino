@@ -6,7 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-cluster
 laser-cluster:
 
   # Automatically start, i.e. set enabled to true?
-  auto-start: false
+  auto-start: true
 
   line_removal: false
   
@@ -46,4 +46,4 @@ laser-cluster:
 
 
   # transpose the x-position of the detected cluster by the given offset
-  offset_x: 0.0
+  offset_x: 0.05
