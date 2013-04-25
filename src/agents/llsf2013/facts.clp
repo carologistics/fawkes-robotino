@@ -45,6 +45,8 @@
   (machine (name M9))
   (machine (name M10))
   (state WAIT_START)
+  (phase PRE_GAME)
+  (refbox-state WAIT_START)
 
   (signal (type beacon) (time (create$ 0 0)) (seq 1))
 )

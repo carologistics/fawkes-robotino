@@ -9,12 +9,64 @@
 
 
 ; --- RULES - wait for start signal
-(defrule start
-  ?s <- (state WAIT_START)
-  (start)
+;(defrule start
+;  ?s <- (state WAIT_START)
+;  (start)
+;  =>
+;  (retract ?s)
+;  (assert (state IDLE))
+;)
+
+; --- GAME STATE handling
+
+(defrule change-phase
+  ?cf <- (change-phase ?phase)
+  ?pf <- (phase ?)
   =>
-  (retract ?s)
+  (retract ?cf ?pf)
+  (assert (phase ?phase))
+)
+
+(defrule change-state-ignore
+  (phase ~PRODUCTION)
+  ?cf <- (change-state ?)
+  =>
+  (retract ?cf)
+)
+
+(defrule start
+  (phase PRODUCTION)
+  ?sf <- (state WAIT_START)
+  ?cf <- (change-state RUNNING)
+  ?rf <- (refbox-state ?)
+  =>
+  (retract ?sf ?cf ?rf)
   (assert (state IDLE))
+  (assert (refbox-state RUNNING))
+)
+
+(defrule pause
+  ?sf <- (state ?state&~PAUSED)
+  ?cf <- (change-state ?cs&~RUNNING)
+  ?rf <- (refbox-state ~?cs)
+  =>
+  (retract ?sf ?cf ?rf)
+  (motor-disable)
+  (assert (state PAUSED))
+  (assert (refbox-state PAUSED))
+  (assert (pre-pause-state ?state))
+)
+
+(defrule unpause
+  ?sf <- (state PAUSED)
+  ?pf <- (pre-pause-state ?old-state)
+  ?cf <- (change-state RUNNING)
+  ?rf <- (refbox-state PAUSED)
+  =>
+  (retract ?sf ?pf ?cf ?rf)
+  (assert (state ?old-state))
+  (assert (refbox-state RUNNING))
+  (motor-enable)
 )
 
 

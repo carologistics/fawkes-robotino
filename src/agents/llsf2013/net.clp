@@ -45,3 +45,21 @@
   (pb-broadcast ?beacon)
   (pb-destroy ?beacon)
 )
+
+(defrule net-recv-GameState
+  (phase ?phase)
+  (refbox-state ?state)
+  (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-via BROADCAST))
+  =>
+  (bind ?new-state (pb-field-value ?p "state"))
+  (bind ?new-phase (pb-field-value ?p "phase"))
+  ;(printout t "GameState received: "
+  ;	    ?state " <> " ?new-state "  " ?phase " <> " ?new-phase crlf)
+
+  (if (neq ?phase ?new-phase) then
+    (assert (change-phase ?new-phase))
+  )
+  (if (neq ?state ?new-state) then
+    (assert (change-state ?new-state))
+  )
+)
