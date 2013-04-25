@@ -11,7 +11,7 @@ nodes:
       - orientation: 1.07
 
   - name: M1S
-    pos: [3.92, 1.1]
+    pos: [3.62, 1.1]
     properties:
       - travel_tolerance: 0.4 
 
@@ -21,44 +21,49 @@ nodes:
       - orientation: 2.64
 
   - name: M2O
-    pos: [4.7, 3.95]
+    pos: [4.7, 3.62]
     properties:
       - travel_tolerance: 0.4
 
   - name: M3
     pos: [3.1, 1.06]
     properties:
-      - orientation: -2.64
+      - orientation: -2.07
 
   - name: M3N
-    pos: [2.8, 1.1]
+    pos: [3.1, 1.1]
     properties:
       - travel_tolerance: 0.4
 
   - name: M4
     pos: [3.1, 2.13]
     properties:
-      - orientation: -2.64
+      - orientation: -2.07
 
   - name: M4N
-    pos: [2.8, 2.2]
+    pos: [3.1, 2.2]
     properties:
       - travel_tolerance: 0.4
 
   - name: M5
     pos: [2.3, 3.1]
     properties:
-      - orientation: -1.07
+      - orientation: -0.5
 
   - name: M5W
-    pos: [2.2, 2.8]
+    pos: [2.3, 3.1]
     properties:
       - travel_tolerance: 0.4
 
   - name: M6
     pos: [3.1, 4.42]
     properties:
-      - orientation: -2.64
+      - orientation: -2.07
+
+  - name: M6N
+    pos: [3.1, 4.5]
+    properties:
+      - travel_tolerance: 0.4
 
   - name: M7
     pos: [2.5, 4.5]
@@ -66,27 +71,27 @@ nodes:
       - orientation: 1.07
 
   - name: M7S
-    pos: [2.8, 4.5]
+    pos: [2.5, 4.5]
     properties:
       - travel_tolerance: 0.4
 
   - name: M8
-    pos: [1.38, 2.18]
+    pos: [1.18, 1.98]
     properties:
-      - orientation: -1.07
+      - orientation: -0.5
 
   - name: M8W
-    pos: [1.0, 1.65]
+    pos: [1.0, 1.98]
     properties:
       - travel_tolerance: 0.4
 
   - name: M9
     pos: [1.38, 3.42]
     properties:
-      - orientation: 0.5
+      - orientation: 1.07
 
   - name: M9S
-    pos: [1.6, 3.4]
+    pos: [1.38, 3.4]
     properties:
       - travel_tolerance: 0.4
 
@@ -96,7 +101,7 @@ nodes:
       - orientation: 2.64
 
   - name: M10E
-    pos: [2.2, 5.0]
+    pos: [2.3, 4.74]
     properties:
       - travel_tolerance: 0.4
 
@@ -132,7 +137,7 @@ nodes:
 
   - name: D3
     pos: [4.84, 2.8]
-    properties:
+    roperties:
       - orientation: -0.5
 
   - name: P11
@@ -156,22 +161,22 @@ nodes:
       - travel_tolerance: 0.4 
 
   - name: P21
-    pos: [2.2, 1.1]
+    pos: [2.3, 1.1]
     properties:
       - travel_tolerance: 0.4 
 
   - name: P22
-    pos: [2.2, 2.2]
+    pos: [2.3, 2.2]
     properties:
       - travel_tolerance: 0.4 
 
   - name: P23
-    pos: [2.2, 3.4]
+    pos: [2.3, 3.4]
     properties:
       - travel_tolerance: 0.4 
 
   - name: P24
-    pos: [2.2, 4.5]
+    pos: [2.3, 4.5]
     properties:
       - travel_tolerance: 0.4 
 
@@ -245,8 +250,9 @@ connections:
   - [P23, P24]
   - [P23, P33]
   - [P24, M7S]
+  - [M7S, M6N]
+  - [M6N, P34]
   - [P24, M10E]
-  - [M7S, P34]
   - [P31, P32]
   - [P31, M1S]
   - [M1S, P41]
@@ -265,7 +271,7 @@ connections:
   - [M3, M3N]
   - [M4, M4N]
   - [M5, M5W]
-  - [M6, M7S]
+  - [M6, M6N]
   - [M7, M7S]
   - [M8, M8W]
   - [M9, M9S]
