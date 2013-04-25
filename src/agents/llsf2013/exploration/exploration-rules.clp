@@ -86,6 +86,13 @@
   (assert (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green)))
 )
 
+(defrule test-light
+  ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (ready TRUE))
+  =>
+  (printout t "See light red: " ?red " yellow: " ?yellow " green: " ?green crlf)
+  (printout t "Have to see it when waiting at a machine" crlf)
+)
+
 ;Matching of recognized lights to the machine types
 (defrule match-light-types
   ?ml <- (machine-light (name ?name) (red ?red) (yellow ?yellow) (green ?green))
