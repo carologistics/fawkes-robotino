@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
-depends_skills     = { "take_puck_to", "determine_signal", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
+depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
    { v="ampel_orange", type="SwitchInterface", id="ampel_orange" },
 }
@@ -60,11 +60,11 @@ fsm:define_states{ export_to=_M,
       fail_to="FAILED"},
    {"TIMEOUT", JumpState},
    {"DECIDE_ENDSKILL", JumpState},
-   {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_DETERMINE_SIGNAL",
+   {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
       fail_to="SKILL_TAKE_PUCK"},
-   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills={{determine_signal}}, final_to="DECIDE",
+   {"SKILL_WAIT_PRODUCE", SkillJumpState, skills={{wait_produce}}, final_to="DECIDE_DEPOSIT",
       fail_to="FAILED"},
-   {"DECIDE", JumpState},
+   {"DECIDE_DEPOSIT", JumpState},
    {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="FINAL",
       fail_to="FAILED"},
@@ -75,8 +75,8 @@ fsm:add_transitions{
    { "TIMEOUT","DECIDE_ENDSKILL", timeout=3, desc="test purpose" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", timeout=1, cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
-   { "DECIDE", "SKILL_DEPOSIT", cond=is_ampel_yellow },
-   { "DECIDE", "SKILL_DRIVE_LEFT", cond=is_not_yellow},
+   { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=is_ampel_yellow },
+   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=is_not_yellow},
 }
 
 function SKILL_TAKE_PUCK:init()
