@@ -17,15 +17,16 @@
   (assert (status "start"))
   (assert (status "firstround"))
   (assert (signal (name "refboxSendLoop") (time ?now) (seq 2)))
+  (assert (signal (name "readLightsNotRecognizedOutput") (time ?now) (seq 1)))
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
 
-(defrule test
-  (Position3DInterface (id "Pose") (translation $?pos))
-  (time $?now)
-  =>
-  (printout t "HAVE pos" crlf)
-)
+;(defrule test
+;  (Position3DInterface (id "Pose") (translation $?pos))
+;  (time $?now)
+;  =>
+;  (printout t "HAVE pos" crlf)
+;)
 
 ;Robotino drives to the nearest machine to start the first round
 (defrule goto-nearest-machine
@@ -62,7 +63,7 @@
 )
 
 ;Recognizing succseded => memorize light-signals for further rules and prepare to drive to the next machine
-(defrule recognized-machine
+(defrule read-light-at-machine
   ;;;;;;; change relgoto to waiting skill ;;;;;
   ;?final <- (skill (name "relgoto") (status FINAL) (skill-string ?skill)) 
   ?ws <- (signal (name "waitingSince") (time $?) (seq ?))
@@ -100,7 +101,7 @@
 (defrule send-recognized-machines
   ;;;;;Tell the refbox;;;;;;;;;;;;;;;
   (time $?now)  
-  ?ws <- (signal (name "refboxSendLoop") (time $?t&:(timeout ?now ?t 1.0)) (seq 2))
+  ?ws <- (signal (name "refboxSendLoop") (time $?t&:(timeout ?now ?t 0.5)) (seq 2))
   
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
@@ -118,6 +119,16 @@
   (modify ?ws (name "refboxSendLoop") (time ?now) (seq 2))
 )
 
+(defrule print-read-but-not-recognized-lights
+  (time $?now)  
+  ?ws <- (signal (name "readLightsNotRecognizedOutput") (time $?t&:(timeout ?now ?t 2.0)) (seq 2))
+  =>
+  (do-for-all-facts ((?read machine-light)) TRUE
+    (printout t "Read light with no type matching: " ?read:name ", red " ?read:red ", yellow " ?read:yellow ", green " ?read:green crlf)
+  )
+  (modify ?ws (name "readLightsNotRecognizedOutput") (time ?now) (seq 2))
+)
+
 (defrule all-matchings-are-there
   (matching-type-light (type T1) (red ?) (yellow ?) (green ?)) 
   (matching-type-light (type T2) (red ?) (yellow ?) (green ?))
@@ -126,8 +137,6 @@
   (matching-type-light (type T5) (red ?) (yellow ?) (green ?))
   =>
   (assert (have-all-matchings))
-
-  (printout t "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL" crlf)
 )
 
 ;Recieve light-pattern-to-type matchig and save it in a fact
