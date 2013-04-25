@@ -252,9 +252,12 @@ PluginLightThread::loop()
 			this->resetLightInterface("laser visibility is < 0 and buffer is empty");
 		}
 	} else{
-		//TODO mache ROI das auf ampel passt wenn genau davor (mindestens ein licht muss an sein (pro sec)
-		this->resetLightInterface("laser visibility lower than threashold");
-		this->resetLocalHistory();
+		//if the laser doen't see anything, use it as the robot is directy in front of the light
+		lightPositionPolar.r = this->cfg_lightToCloseThrashold + 0.02;//0.22;
+		lightPositionPolar.phi = 0.0;
+		contiueToPictureProcess = true;
+//		this->resetLightInterface("laser visibility lower than threashold");
+//		this->resetLocalHistory();
 	}
 
 	if ( contiueToPictureProcess ) {
@@ -280,10 +283,8 @@ PluginLightThread::loop()
 
 			this->processHistoryBuffer();
 		} catch(fawkes::Exception &e) {
-			this->resetLightInterface("ROI is outsite of the buffer");
+			this->resetLightInterface("ROI is outside of the buffer");
 			this->resetLocalHistory();
-
-			logger->log_info(name(), "ROI is outsite of the buffer");				//TODO remove later
 		}
 	}
 }
