@@ -77,15 +77,23 @@ ClipsMotorSwitchThread::loop()
 void
 ClipsMotorSwitchThread::clips_motor_enable()
 {
-  SwitchInterface::EnableSwitchMessage *msg =
-    new SwitchInterface::EnableSwitchMessage();
-  switch_if_->msgq_enqueue(msg);
+  try {
+    SwitchInterface::EnableSwitchMessage *msg =
+      new SwitchInterface::EnableSwitchMessage();
+    switch_if_->msgq_enqueue(msg);
+  } catch (Exception &e) {
+    logger->log_warn(name(), "Cannot enable motor");
+  }
 }
 
 void
 ClipsMotorSwitchThread::clips_motor_disable()
 {
-  SwitchInterface::DisableSwitchMessage *msg =
-    new SwitchInterface::DisableSwitchMessage();
-  switch_if_->msgq_enqueue(msg);
+  try {
+    SwitchInterface::DisableSwitchMessage *msg =
+      new SwitchInterface::DisableSwitchMessage();
+    switch_if_->msgq_enqueue(msg);
+  } catch (Exception &e) {
+    logger->log_warn(name(), "Cannot disable motor");
+  }
 }
