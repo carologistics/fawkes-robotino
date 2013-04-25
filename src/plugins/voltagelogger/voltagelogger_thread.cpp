@@ -25,14 +25,13 @@
 
 #include <cmath>
 
-#define FORWARD_SPEED 1.0f
-#define SIDEWARD_SPEED 1.0f
-#define ROTATIONAL_SPEED 1.0f
+#define FILENAME "voltages.log"
+#define INTERVAL 30
 
 using namespace fawkes;
 
-/** @class PluginTemplateThread "plugin_template_thread.h"
- * Introductional example thread which makes the robotino drive along a 8-shaped course
+/** @class VoltageLoggerThread "voltagelogger_thread.h"
+ * Read voltage every n seconds and store it in a file
  * @author Daniel Ewert
  */
 
@@ -40,6 +39,7 @@ using namespace fawkes;
 VoltageLoggerThread::VoltageLoggerThread() :
 		Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
 				BlockedTimingAspect::WAKEUP_HOOK_SKILL) {
+	flogger_ = new FileLogger(FILENAME,Logger::LL_DEBUG);
 }
 
 void VoltageLoggerThread::init() {
@@ -54,12 +54,13 @@ bool VoltageLoggerThread::prepare_finalize_user() {
 
 void VoltageLoggerThread::finalize() {
 	blackboard->close(bat_if_);
+	delete flogger_;
 }
 
 
 void VoltageLoggerThread::loop() {
 	bat_if_->read();
-	bat_if_->voltage();
+	flogger_->log_info(name(),"voltage[V]: %f",(bat_if_->voltage()/1000.f));
 
 }
 

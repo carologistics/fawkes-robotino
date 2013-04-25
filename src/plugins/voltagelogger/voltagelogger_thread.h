@@ -29,6 +29,8 @@
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <logging/file.h>
+
 
 #include <string>
 
@@ -60,6 +62,7 @@ class VoltageLoggerThread
 
  private:
  fawkes::BatteryInterface* bat_if_;
+ fawkes::FileLogger* flogger_;
   
 };
 
