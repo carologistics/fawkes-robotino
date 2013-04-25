@@ -222,7 +222,7 @@ PluginLightThread::loop()
 		clusterVisibilityHistory = cfg_simulate_laser_history;
 	}
 
-		fawkes::polar_coord_2d_t lightPositionPolar;
+	fawkes::polar_coord_2d_t lightPositionPolar;
 
 	if ( clusterVisibilityHistory > this->cfg_laserVisibilityThreashold ) {
 		if( clusterVisibilityHistory > 0 ){
@@ -231,8 +231,7 @@ PluginLightThread::loop()
 			if( this->isLightInViewarea(lightPositionPolar) ){
 				this->lightOutOfRangeCounter = 0;
 				contiueToPictureProcess = true;
-			}
-			else{
+			} else {
 				if ( this->lightOutOfRangeCounter < this->cfg_lightOutOfRangeThrashold ) {
 					if ( ! this->historyBuffer->empty()) {
 						lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
@@ -250,15 +249,16 @@ PluginLightThread::loop()
 			lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
 			contiueToPictureProcess = true;
 		} else {
-			this->resetLightInterface("laser visibility is < 0 but buffer is empty");
+			this->resetLightInterface("laser visibility is < 0 and buffer is empty");
 		}
 	} else{
+		//TODO mache ROI das auf ampel passt wenn genau davor (mindestens ein licht muss an sein (pro sec)
 		this->resetLightInterface("laser visibility lower than threashold");
 		this->resetLocalHistory();
 	}
 
-	try {
-		if ( contiueToPictureProcess ) {
+	if ( contiueToPictureProcess ) {
+		try {
 			PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 			this->takePicture(lightROIs);
 
@@ -279,12 +279,12 @@ PluginLightThread::loop()
 			this->historyBuffer->push_front(lightSignalCurrentPicture);
 
 			this->processHistoryBuffer();
-		}
-	} catch(fawkes::Exception &e) {
-		this->resetLightInterface("ROI is outsite of the buffer");
-		this->resetLocalHistory();
+		} catch(fawkes::Exception &e) {
+			this->resetLightInterface("ROI is outsite of the buffer");
+			this->resetLocalHistory();
 
-		logger->log_info(name(), "ROI is outsite of the buffer");				//TODO remove later
+			logger->log_info(name(), "ROI is outsite of the buffer");				//TODO remove later
+		}
 	}
 }
 
@@ -414,7 +414,13 @@ PluginLightThread::processHistoryBuffer()	//TODO change function name to say tha
 		if ( this->lightFromHistoryBuffer(lighSignal) ) {
 			if ( lighSignal.red != fawkes::RobotinoLightInterface::UNKNOWN
 			  && lighSignal.yellow != fawkes::RobotinoLightInterface::UNKNOWN
-			  && lighSignal.green != fawkes::RobotinoLightInterface::UNKNOWN ) {
+			  && lighSignal.green != fawkes::RobotinoLightInterface::UNKNOWN
+			  && ! (
+					  lighSignal.red == fawkes::RobotinoLightInterface::OFF
+				   && lighSignal.yellow == fawkes::RobotinoLightInterface::OFF
+				   && lighSignal.green == fawkes::RobotinoLightInterface::OFF
+				   )
+			   ) {
 
 				this->writeLightInterface(lighSignal, true);
 
