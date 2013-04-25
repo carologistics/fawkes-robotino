@@ -26,7 +26,6 @@
 #include <ros/ros.h>
 #include <cmath>
 
-
 #define CFG_PREFIX "/plugins/markerwriter/"
 
 using namespace fawkes;
@@ -48,10 +47,15 @@ MarkerWriterThread::MarkerWriterThread() :
 void MarkerWriterThread::init() {
 	cfg_duration_ = config->get_float(CFG_PREFIX"display_duration");
 
-	*pub_ = rosnode->advertise<visualization_msgs::MarkerArray>("Position3dInterface_marker_array", 100);
+	*pub_ = rosnode->advertise < visualization_msgs::MarkerArray
+			> ("Position3dInterface_marker_array", 100);
 
 	string wildcard_pattern = config->get_string(CFG_PREFIX"wildcard_pattern");
-	pos_ifs_ = blackboard->open_multiple_for_reading<Position3DInterface>(wildcard_pattern.c_str());
+	pos_ifs_ = blackboard->open_multiple_for_reading<Position3DInterface>(
+			wildcard_pattern.c_str());
+	for (Position3DInterface* pos_if : pos_ifs_) {
+		logger->log_debug(name(), "visualizing %s", pos_if->id());
+	}
 
 }
 
@@ -65,6 +69,7 @@ void MarkerWriterThread::finalize() {
 	}
 	pub_->shutdown();
 	delete pub_;
+	delete &pos_ifs_;
 }
 
 void MarkerWriterThread::loop() {
@@ -72,7 +77,6 @@ void MarkerWriterThread::loop() {
 	visualization_msgs::MarkerArray m;
 	for (Position3DInterface* pos_if : pos_ifs_) {
 		pos_if->read();
-
 
 		visualization_msgs::Marker text;
 		text.header.frame_id = "/base_link";
@@ -114,5 +118,4 @@ void MarkerWriterThread::loop() {
 	}
 	pub_->publish(m);
 }
-
 
