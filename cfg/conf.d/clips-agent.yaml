@@ -17,7 +17,7 @@ clips-agent:
 
   # If set to true, will trigger the assertion of a (time (now)) fact in
   # each loop. This can be used to trigger loop events in CLIPS.
-  assert-time-each-loop: false
+  assert-time-each-loop: true
 
   # Directory where to look for CLIPS files
   clips-dirs: ["@BASEDIR@/src/agents/"]
@@ -38,3 +38,6 @@ clips-agent:
 
     unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
 
+
+    team-name: Carologistics
+    robot-name: R-1

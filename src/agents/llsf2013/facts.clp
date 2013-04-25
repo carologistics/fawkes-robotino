@@ -21,6 +21,13 @@
 ;  (slot puck (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P) (default NONE))
 ;)
 
+(deftemplate signal
+  (slot type)
+  (multislot time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+  (slot seq (type INTEGER) (default 1))
+  (slot count (type INTEGER) (default 1))
+)
+
 
 (deffacts startup
   (holding NONE)
@@ -38,4 +45,6 @@
   (machine (name M9))
   (machine (name M10))
   (state WAIT_START)
+
+  (signal (type beacon) (time (create$ 0 0)) (seq 1))
 )

@@ -9,6 +9,7 @@
 
 ; LLSF2013 agent includes
 (load* (resolve-file llsf2013/priorities.clp))
+(load* (resolve-file llsf2013/globals.clp))
 (load* (resolve-file llsf2013/facts.clp))
 
 (defrule load-config
