@@ -43,14 +43,13 @@ writes ampel data into the light interface
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   closure={laserswitch=laserwitch, done=done, plugin=plugin}, 
+   closure={laserswitch=laserwitch, plugin=plugin}, 
    {"INIT", JumpState},
    {"WAIT", JumpState},
-   {"STOP_VISION", JumpState}
 }
 
-function light_red()
-   return plugin:is_ready() and plugin:red() == plugin.ON
+function plugin_missing()
+   return not (laserswitch:has_writer() and plugin:has_writer())
 end
 
 function done()
@@ -66,7 +65,7 @@ function done()
 end
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond="not (laserswitch:has_writer() and plugin:has_writer())", precond=true},
+   {"INIT", "FAILED", cond=plugin_missing, precond=true},
    {"INIT", "WAIT", timeout=1}, -- let vision settle
    {"WAIT", "FINAL", cond=done},
 }
