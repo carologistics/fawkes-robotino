@@ -31,6 +31,7 @@ PluginLightThread::PluginLightThread()
 	this->cfg_detectionCycleTime = 0;
 
 	this->cfg_brightnessThreashold = 0;
+	this->cfg_darknessThreashold = 0;
 	this->cfg_paintROIsActivated = false;
 
 	this->cfg_lightOutOfRangeThrashold = 0;
@@ -47,6 +48,7 @@ PluginLightThread::PluginLightThread()
 	this->scanline = NULL;
 	this->colorModel = NULL;
 	this->classifierWhite = NULL;
+	this->classifierBlack = NULL;
 	this->shmBufferYCbCr = NULL;
 
 	this->nearestMaschineIF = NULL;
@@ -85,6 +87,7 @@ PluginLightThread::init()
 	this->cfg_paintROIsActivated = this->config->get_bool((this->cfg_prefix + "draw_rois").c_str());
 
 	this->cfg_brightnessThreashold = this->config->get_uint((this->cfg_prefix + "threashold_brightness").c_str());
+	this->cfg_darknessThreashold = this->config->get_uint((this->cfg_prefix + "threashold_black").c_str());
 	this->cfg_laserVisibilityThreashold = this->config->get_int((this->cfg_prefix + "threashold_laser_visibility").c_str());
 	this->cfg_lightDistanceAllowedBetweenFrames = this->config->get_float((this->cfg_prefix + "light_distance_allowed_betwen_frames").c_str());
 	this->cfg_lightOutOfRangeThrashold = this->config->get_int((this->cfg_prefix + "light_out_of_range_thrashold").c_str());
@@ -119,16 +122,17 @@ PluginLightThread::init()
 			firevision::C_WHITE													//color
 			);
 
+	this->colorModelBlack = new firevision::ColorModelDarkness(this->cfg_darknessThreashold);
 	this->classifierBlack = new firevision::SimpleColorClassifier(
-				this->scanline,														//scanmodel
-				this->colorModel,													//colorModel
-				30,																	//num_min_points
-				0,																	//box_extend
-				false,																//upward
-				2,																	//neighberhoud_min_match
-				0,																	//grow_by
-				firevision::C_BLACK													//color
-				);
+			this->scanline,														//scanmodel
+			this->colorModelBlack,													//colorModel
+			30,																	//num_min_points
+			0,																	//box_extend
+			false,																//upward
+			2,																	//neighberhoud_min_match
+			0,																	//grow_by
+			firevision::C_BLACK													//color
+			);
 
 	// Create a ringbuffer with the size of the configured frame count
 	this->historyBuffer = new boost::circular_buffer<lightSignal>(this->detectionCycleTimeFrames);
@@ -189,11 +193,11 @@ PluginLightThread::loop()
 
 	//read laser if
 	this->nearestMaschineIF->read();
-	int clusterVisibilityHistory = this->nearestMaschineIF->visibility_history();
+	int clusterVisibilityHistory = 5;// this->nearestMaschineIF->visibility_history();
 
 	fawkes::cart_coord_3d_t lightPosition;
-	lightPosition.x = this->nearestMaschineIF->translation(0);
-	lightPosition.y = this->nearestMaschineIF->translation(1);
+	lightPosition.x = 1; //this->nearestMaschineIF->translation(0);
+	lightPosition.y = .04; //this->nearestMaschineIF->translation(1);
 	lightPosition.z = this->nearestMaschineIF->translation(2);
 	fawkes::polar_coord_2d_t lightPositionPolar;
 
@@ -233,6 +237,9 @@ PluginLightThread::loop()
 	if ( contiueToPictureProcess ) {
 		PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 		this->takePicture(lightROIs);
+
+		lightROIs = this->correctLightRoisWithBlack(lightROIs);
+		drawROIIntoBuffer(lightROIs.light);
 
 		PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
 		lightSignalCurrentPicture.nearestMaschine_pos = lightPositionPolar;
@@ -274,6 +281,124 @@ PluginLightThread::takePicture(PluginLightThread::lightROIs lightROIs) {
 		this->drawROIIntoBuffer(lightROIs.yellow);
 		this->drawROIIntoBuffer(lightROIs.green);
 	}
+}
+
+firevision::ROI PluginLightThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
+	firevision::ROI* biggestRoi = new firevision::ROI();
+
+	for (std::list<firevision::ROI>::iterator it = roiList->begin();
+			it != roiList->end(); ++it) {
+		if (biggestRoi == NULL || biggestRoi->width * biggestRoi->height
+				< (*it).width * (*it).height) {
+			biggestRoi = &(*it);
+		}
+	}
+	return biggestRoi;
+}
+
+PluginLightThread::lightROIs
+PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expectedLight){
+	// Look in area around the red light for the back top of the light
+
+	firevision::ROI* top = new firevision::ROI(expectedLight.light);
+	top->start.x = expectedLight.light.start.x - expectedLight.light.width;
+	top->start.y = expectedLight.light.start.y - expectedLight.light.width;
+	top->width =  expectedLight.light.width * 3;
+	top->height = 2*expectedLight.light.width;
+
+	this->drawROIIntoBuffer(top);
+
+	// Look in the area around the green light for the black bottem
+//	firevision::ROI* bottem = new firevision::ROI(top);
+//	bottem->start.y = bottem->start.y + bottem->height;
+
+
+
+	// Shrink or reposition the rois if sucessfully
+
+//	int minStartX = 0;
+//	int minStartY = 0;
+//	int maxStartX = 0;
+//	int maxStartY = 0;
+//
+//	std::list<firevision::ROI>* topBlack = this->classifyInRoi( top 	,this->classifierBlack);
+//	for (std::list<firevision::ROI>::iterator it = topBlack->begin(); it != topBlack->end(); ++it) {
+//		if(minStartX > (*it).start.x){
+//			minStartX = (*it).start.x;
+//		}
+//
+//		if(minStartY > (*it).start.y){
+//			minStartY = (*it).start.y;
+//		}
+//
+//		if(maxStartX < (*it).start.x){
+//					minStartX = (*it).start.x;
+//		}
+//
+//		if(maxStartY < (*it).start.y){
+//			maxStartY = (*it).start.y;
+//		}
+//
+//	}
+	std::list<firevision::ROI>* topBlackList = this->classifyInRoi( top ,this->classifierBlack);
+	if(!topBlackList->empty()){
+		firevision::ROI topBiggestRoi = getBiggestRoi(topBlackList);
+		this->drawROIIntoBuffer(topBiggestRoi);
+		if (this->cfg_debugMessagesActivated) {
+				logger->log_debug(name(), "BiggestRoi: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
+		}
+
+		int TopDiffX = 0;
+		int TopDiffY = 0;
+		int TopDiffWidth = 0;
+
+
+//			this->drawROIIntoBuffer(topBiggestRoi);
+		TopDiffX = expectedLight.light.start.x - topBiggestRoi.start.x;
+		TopDiffY = expectedLight.light.start.y - topBiggestRoi.start.y - topBiggestRoi.height;
+		TopDiffWidth = expectedLight.light.width - topBiggestRoi.width;
+
+		expectedLight.light.start.x = expectedLight.light.start.x - TopDiffX;
+		expectedLight.light.start.y = expectedLight.light.start.y - TopDiffY;
+		expectedLight.light.width = expectedLight.light.width - TopDiffWidth;
+
+		expectedLight.red.start.x = expectedLight.red.start.x - TopDiffX;
+		expectedLight.red.start.y = expectedLight.red.start.y - TopDiffY;
+		expectedLight.red.width = expectedLight.light.width;
+
+		expectedLight.yellow.start.x = expectedLight.yellow.start.x - TopDiffX;
+		expectedLight.yellow.start.y = expectedLight.yellow.start.y - TopDiffY;
+		expectedLight.yellow.width = expectedLight.light.width;
+
+		expectedLight.green.start.x = expectedLight.green.start.x - TopDiffX;
+		expectedLight.green.start.y = expectedLight.green.start.y - TopDiffY;
+		expectedLight.green.width = expectedLight.light.width;
+
+		drawROIIntoBuffer(expectedLight.red);
+		drawROIIntoBuffer(expectedLight.yellow);
+		drawROIIntoBuffer(expectedLight.green);
+
+//
+//		this->drawROIIntoBuffer(expectedLight.light);
+	}else{
+		logger->log_debug(name(), "No black roi found");
+	}
+
+
+//
+//
+//
+//	//std::list<firevision::ROI>* bottemBlackList = this->classifyInRoi( bottem	,this->classifierBlack);
+//	//firevision::ROI* bottemBiggestRoi = getBiggestRoi(bottemBlackList);
+
+
+
+//	int BottemDiffX = 0;
+//	int BottemDiffY = 0;
+//	if( bottemBiggestRoi != NULL) {
+//
+//	}
+	return expectedLight;
 }
 
 PluginLightThread::lightSignal
@@ -494,6 +619,19 @@ PluginLightThread::resetLightInterface(std::string message)
 	if (this->cfg_debugMessagesActivated) {
 			logger->log_debug(name(), "Plugin-light: Resetting interface, %s",message.c_str());
 	}
+}
+
+std::list<firevision::ROI>*
+PluginLightThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier)
+{
+	this->scanline->reset();
+	this->scanline->set_roi(&searchArea);
+
+	classifier->set_src_buffer(this->bufferYCbCr, this->img_width, this->img_height);
+
+	std::list<firevision::ROI> *ROIs = classifier->classify();
+
+	return ROIs;
 }
 
 fawkes::RobotinoLightInterface::LightState

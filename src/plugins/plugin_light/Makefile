@@ -37,7 +37,7 @@ LIBS_plugin_light = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fvclassifiers fawkesgeometry fvfilters TransformInterface \
 		fawkestf RobotinoLightInterface Position3DInterface 
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_plugin_light = plugin_light_plugin.o plugin_light_thread.o brightness.o
+OBJS_plugin_light = plugin_light_plugin.o plugin_light_thread.o brightness.o darkness.o
 
 #names of the plugins you want to build
 PLUGINS_all = $(PLUGINDIR)/plugin-light.$(SOEXT)

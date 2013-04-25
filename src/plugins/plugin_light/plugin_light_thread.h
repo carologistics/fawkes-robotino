@@ -42,6 +42,7 @@
 #include <cmath>
 
 #include "brightness.h"
+#include "darkness.h"
 #include <boost/circular_buffer.hpp>
 
 namespace fawkes {
@@ -103,6 +104,7 @@ private:
 	std::string cfg_frame;
 
 	unsigned int cfg_brightnessThreashold;
+	unsigned int cfg_darknessThreashold;
 	float cfg_lightSizeWidth;
 	float cfg_lightSizeHeight;
 
@@ -117,6 +119,7 @@ private:
 	firevision::Camera *camera;
 	firevision::ScanlineModel *scanline;
 	firevision::ColorModelBrightness *colorModel;
+	firevision::ColorModelDarkness *colorModelBlack;
 	firevision::SimpleColorClassifier *classifierWhite;
 	firevision::SimpleColorClassifier *classifierBlack;
 	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
@@ -134,8 +137,10 @@ private:
 	firevision::FilterROIDraw *drawer;
 
 	PluginLightThread::lightSignal detectLightInCurrentPicture(PluginLightThread::lightROIs lightROIs);
+	PluginLightThread::lightROIs correctLightRoisWithBlack(PluginLightThread::lightROIs expectedLight);
 	fawkes::RobotinoLightInterface::LightState signalLightCurrentPicture(firevision::ROI signal);
 	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory);
+	std::list<firevision::ROI>* classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);
 	bool lightFromHistoryBuffer(PluginLightThread::lightSignal &lighSignal);
 	unsigned char* calculatePositionInCamBuffer();
 
@@ -159,6 +164,7 @@ private:
 	void takePicture(PluginLightThread::lightROIs lightROIs);
 
 	void processHistoryBuffer();
+	firevision::ROI getBiggestRoi(std::list<firevision::ROI>* roiList);
 
 protected:
 	virtual void run() { Thread::run(); }
