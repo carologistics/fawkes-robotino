@@ -29,7 +29,7 @@
 
 
 (defrule sim-enable-sim-exp
-  (declare (salience ?*PRIORITY_HIGH*))
+  (declare (salience 500))
   (confval (path "/clips-agent/llsf2013/enable-sim") (type BOOL) (value true))
   =>
   (bind ?client-id (pb-connect "localhost" 4444))
@@ -49,7 +49,7 @@
 )
 
 (defrule sim-start-exp
-  (declare (salience ?*PRIORITY_HIGH*))
+  (declare (salience 500))
   (simulation-is-running)
   (start)
   =>

@@ -13,7 +13,7 @@
 
 ;load exploration rules and simulationrules if ready
 (defrule initialize-exploration
-  (declare (salience ?*PRIORITY_HIGH*))
+  (declare (salience 500))
   (agent-init)
   (protobuf-available)
   =>
