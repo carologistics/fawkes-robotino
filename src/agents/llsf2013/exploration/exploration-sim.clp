@@ -29,6 +29,7 @@
 
 
 (defrule sim-enable-sim-exp
+  (declare (salience ?*PRIORITY_HIGH*))
   (confval (path "/clips-agent/llsf2013/enable-sim") (type BOOL) (value true))
   =>
   (bind ?client-id (pb-connect "localhost" 4444))
@@ -78,7 +79,7 @@
   (sim-machine-exp (name ?m) (lights $?lights))
   (goalmachine ?m)
   =>
-  (assert (RobotinoLightInterface (id "Light_State") (red OFF) (yellow OFF) (green OFF) (ready FALSE)));gess at all
+  (assert (RobotinoLightInterface (id "Light_State") (time (create$ 5 5)) (red OFF) (yellow OFF) (green OFF) (visibility_history 13) (ready FALSE)));gess at all
   ;assert facts for modification
   (foreach ?l ?lights
     (assert (sim-machine-light ?m ?l))

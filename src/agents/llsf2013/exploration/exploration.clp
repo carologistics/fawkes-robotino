@@ -37,6 +37,7 @@
   ;(reset)
   ;(facts)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;TEST
+  ;(printout t "==== Loading Production ====" crlf)
   ;(load* (resolve-file llsf2013/llsf2013.clp))
   
 

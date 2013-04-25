@@ -121,7 +121,7 @@
 
 (defrule print-read-but-not-recognized-lights
   (time $?now)  
-  ?ws <- (signal (name "readLightsNotRecognizedOutput") (time $?t&:(timeout ?now ?t 2.0)) (seq 2))
+  ?ws <- (signal (name "readLightsNotRecognizedOutput") (time $?t&:(timeout ?now ?t 2.0)) (seq ?))
   =>
   (do-for-all-facts ((?read machine-light)) TRUE
     (printout t "Read light with no type matching: " ?read:name ", red " ?read:red ", yellow " ?read:yellow ", green " ?read:green crlf)
