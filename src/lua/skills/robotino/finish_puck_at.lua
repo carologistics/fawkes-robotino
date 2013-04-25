@@ -80,19 +80,7 @@ fsm:add_transitions{
 }
 
 function SKILL_TAKE_PUCK:init()
-   local min_dist = 9999
-   if self.fsm.vars.goto_names then
-      for i,name in ipairs(self.fsm.vars.goto_names) do
-         local gpos = mpos.delivery_goto[name]
-         local d = math.sqrt((gpos.x - Pose:translation(0))^2
-            + (gpos.y - Pose:translation(1))^2)
-         if d < min_dist then
-            min_dist = d
-            self.fsm.vars.goto_name = name
-         end
-      end
-   end
-   self.skills[1].goto_name = self.fsm.vars.goto_name
+   self.skills[1].place = self.fsm.vars.place or self.fsm.vars.goto_name
 end
 
 function SKILL_DRIVE_LEFT:init()
