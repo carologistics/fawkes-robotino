@@ -166,7 +166,7 @@ fsm:add_transitions{
 --end
 
 function MOVE_MORE:init()
-   self.skills[1].x = 0.05 
+   self.skills[1].x = 0.08 
    self.skills[1].y = 0 
    self.skills[1].ori = 0
 end
