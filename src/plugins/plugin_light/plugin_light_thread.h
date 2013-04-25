@@ -112,8 +112,13 @@ private:
 
 	float cfg_desiredLoopTime;
 
+	bool cfg_lightPositionCorrection;
 	bool cfg_debugMessagesActivated;
 	bool cfg_paintROIsActivated;
+	bool cfg_simulateLaserData;
+	float cfg_simulate_laser_x;
+	float cfg_simulate_laser_y;
+	int cfg_simulate_laser_history;
 
 	boost::circular_buffer<lightSignal> *historyBuffer;
 	//std::deque<lightSignal> *historyBuffer;

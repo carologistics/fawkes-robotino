@@ -113,6 +113,13 @@ PluginLightThread::init()
 	this->cfg_desiredLoopTime = this->config->get_float("/fawkes/mainapp/desired_loop_time") / 1000000;
 	this->detectionCycleTimeFrames = cfg_detectionCycleTime / cfg_desiredLoopTime;
 
+	this->cfg_lightPositionCorrection = this->config->get_bool((this->cfg_prefix + "light_position_correction").c_str());
+	this->cfg_simulateLaserData = this->config->get_bool((this->cfg_prefix + "simulate_laser").c_str());
+	this->cfg_simulate_laser_x = this->config->get_float((this->cfg_prefix + "simulate_laser_data_x").c_str());
+	this->cfg_simulate_laser_y = this->config->get_float((this->cfg_prefix + "simulate_laser_data_y").c_str());
+	this->cfg_simulate_laser_history = this->config->get_int((this->cfg_prefix + "simulate_laser_data_visibility").c_str());
+
+
 	std::string shmID = this->config->get_string((this->cfg_prefix + "shm_image_id").c_str());
 
 	this->camera = vision_master->register_for_camera(this->cfg_camera.c_str(), this);
@@ -207,9 +214,15 @@ PluginLightThread::loop()
 
 	//read laser if
 	fawkes::cart_coord_3d_t lightPosition = this->getNearestMaschineFromInterface();
-
 	int clusterVisibilityHistory = this->nearestMaschineIF->visibility_history();
-	fawkes::polar_coord_2d_t lightPositionPolar;
+
+	if(cfg_simulateLaserData){
+		lightPosition.x = cfg_simulate_laser_x;
+		lightPosition.y = cfg_simulate_laser_y;
+		clusterVisibilityHistory = cfg_simulate_laser_history;
+	}
+
+		fawkes::polar_coord_2d_t lightPositionPolar;
 
 	if ( clusterVisibilityHistory > this->cfg_laserVisibilityThreashold ) {
 		if( clusterVisibilityHistory > 0 ){
@@ -248,6 +261,12 @@ PluginLightThread::loop()
 		if ( contiueToPictureProcess ) {
 			PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 			this->takePicture(lightROIs);
+
+			// correct light position
+			if(cfg_lightPositionCorrection){
+				lightROIs = this->correctLightRoisWithBlack(lightROIs);
+				//drawROIIntoBuffer(lightROIs.light);
+			}
 
 			PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
 			lightSignalCurrentPicture.nearestMaschine_pos = lightPositionPolar;
@@ -322,11 +341,9 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 	top->width =  expectedLight.light.width * 3;
 	top->height = 2*expectedLight.light.width;
 
-	this->drawROIIntoBuffer(top);
+	//this->drawROIIntoBuffer(top);
 
-	// Look in the area around the green light for the black bottem
-//	firevision::ROI* bottem = new firevision::ROI(top);
-//	bottem->start.y = bottem->start.y + bottem->height;
+
 
 
 
@@ -359,41 +376,57 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 	std::list<firevision::ROI>* topBlackList = this->classifyInRoi( top ,this->classifierBlack);
 	if(!topBlackList->empty()){
 		firevision::ROI topBiggestRoi = getBiggestRoi(topBlackList);
+
 		this->drawROIIntoBuffer(topBiggestRoi);
+
 		if (this->cfg_debugMessagesActivated) {
-				logger->log_debug(name(), "BiggestRoi: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
+				logger->log_debug(name(), "Top: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
 		}
 
-		int TopDiffX = 0;
-		int TopDiffY = 0;
-		int TopDiffWidth = 0;
+		// Look in the area around the green light for the black bottem for validation
+		firevision::ROI* bottem = new firevision::ROI(topBiggestRoi);
 
+		bottem->start.y = expectedLight.light.start.y + 2 * (expectedLight.light.height / 3);
+		bottem->height = expectedLight.green.height * 6;
 
-//			this->drawROIIntoBuffer(topBiggestRoi);
-		TopDiffX = expectedLight.light.start.x - topBiggestRoi.start.x;
-		TopDiffY = expectedLight.light.start.y - topBiggestRoi.start.y - topBiggestRoi.height;
-		TopDiffWidth = expectedLight.light.width - topBiggestRoi.width;
+		std::list<firevision::ROI>* bottemBlackList = this->classifyInRoi( bottem ,this->classifierBlack);
+		if(!bottemBlackList->empty()){
 
-		expectedLight.light.start.x = expectedLight.light.start.x - TopDiffX;
-		expectedLight.light.start.y = expectedLight.light.start.y - TopDiffY;
-		expectedLight.light.width = expectedLight.light.width - TopDiffWidth;
+			firevision::ROI bottemBiggestRoi = getBiggestRoi(bottemBlackList);
+			this->drawROIIntoBuffer(bottemBiggestRoi);
 
-		expectedLight.red.start.x = expectedLight.red.start.x - TopDiffX;
-		expectedLight.red.start.y = expectedLight.red.start.y - TopDiffY;
-		expectedLight.red.width = expectedLight.light.width;
+			if (this->cfg_debugMessagesActivated) {
+							logger->log_debug(name(), "Bottem: X: %u Y: %u Height: %u Width: %u",bottemBiggestRoi.start.x , bottemBiggestRoi.start.y, bottemBiggestRoi.height, bottemBiggestRoi.width);
+			}
+			int TopDiffX = 0;
+			int TopDiffY = 0;
+//			int TopDiffWidth = 0;
+			int width = std::min(topBiggestRoi.width, bottemBiggestRoi.width);
 
-		expectedLight.yellow.start.x = expectedLight.yellow.start.x - TopDiffX;
-		expectedLight.yellow.start.y = expectedLight.yellow.start.y - TopDiffY;
-		expectedLight.yellow.width = expectedLight.light.width;
+	//		this->drawROIIntoBuffer(topBiggestRoi);
+			TopDiffX = expectedLight.light.start.x - topBiggestRoi.start.x;
+			TopDiffY = expectedLight.light.start.y - topBiggestRoi.start.y - topBiggestRoi.height;
 
-		expectedLight.green.start.x = expectedLight.green.start.x - TopDiffX;
-		expectedLight.green.start.y = expectedLight.green.start.y - TopDiffY;
-		expectedLight.green.width = expectedLight.light.width;
+			expectedLight.light.start.x = expectedLight.light.start.x - TopDiffX;
+			expectedLight.light.start.y = expectedLight.light.start.y - TopDiffY;
+			expectedLight.light.width = width; // expectedLight.light.width - TopDiffWidth;
 
-		drawROIIntoBuffer(expectedLight.red);
-		drawROIIntoBuffer(expectedLight.yellow);
-		drawROIIntoBuffer(expectedLight.green);
+			expectedLight.red.start.x = expectedLight.red.start.x - TopDiffX;
+			expectedLight.red.start.y = expectedLight.red.start.y - TopDiffY;
+			expectedLight.red.width = width; //  expectedLight.light.width;
 
+			expectedLight.yellow.start.x = expectedLight.yellow.start.x - TopDiffX;
+			expectedLight.yellow.start.y = expectedLight.yellow.start.y - TopDiffY;
+			expectedLight.yellow.width = width; //  expectedLight.light.width;
+
+			expectedLight.green.start.x = expectedLight.green.start.x - TopDiffX;
+			expectedLight.green.start.y = expectedLight.green.start.y - TopDiffY;
+			expectedLight.green.width = width; //  expectedLight.light.width;
+
+//			drawROIIntoBuffer(expectedLight.red);
+//			drawROIIntoBuffer(expectedLight.yellow);
+//			drawROIIntoBuffer(expectedLight.green);
+		}
 //
 //		this->drawROIIntoBuffer(expectedLight.light);
 	}else{
@@ -761,6 +794,7 @@ PluginLightThread::getNearestMaschineFromInterface()
 	fawkes::cart_coord_3d_t lightPosition;
 
 	this->nearestMaschineIF->read();
+
 	lightPosition.x = this->nearestMaschineIF->translation(0);
 	lightPosition.y = this->nearestMaschineIF->translation(1);
 	lightPosition.z = this->nearestMaschineIF->translation(2);
