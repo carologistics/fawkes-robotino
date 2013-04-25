@@ -30,7 +30,8 @@ depends_interfaces = {
 	{v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
 	{v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
 	{v = "motor", type = "MotorInterface", id="Robotino" },	
-   {v = "pose", type="Position3DInterface", id="Pose"}
+   {v = "pose", type="Position3DInterface", id="Pose"},
+   { v="laserswitch", type="SwitchInterface", id="laser-cluster" }
 }
 
 documentation      = [==[Move under the RFID Reader/Writer]==]
@@ -96,6 +97,7 @@ function CHECK_POSITION:init()
 end
 
 function SEE_AMPEL:init()
+   laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
    self.fsm.vars.ampel_loc = {}
    self.fsm.vars.ampel_loc.x = euclidean_cluster:translation(0)
    self.fsm.vars.ampel_loc.y = euclidean_cluster:translation(1)
@@ -110,6 +112,7 @@ function SKILL_TURN_ZERO:init()
                                   -- round     (                                        )
    local turn_angle = floor_angle + math.floor(((self_angle - floor_angle)/(math.pi/2.0)) + 0.5) * (math.pi/2.0)
    local tgt_baselink = tfm.transform({x=0, y=0, ori=turn_angle}, "/map", "/base_link")
+   --local graph = fawkes.utils.TopologicalMapGraph:new("navgraph-llsf.yaml")
    self.skills[1].ori = tgt_baselink.ori
 end
 
@@ -135,3 +138,6 @@ function CORRECT_SENSOR_DELAY:init()
    self.skills[1].y = self.fsm.vars.correct_dir * -1 * LIGHT_SENSOR_DELAY_CORRECTION 
 end
 
+function FINAL:init()
+   laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
+end
