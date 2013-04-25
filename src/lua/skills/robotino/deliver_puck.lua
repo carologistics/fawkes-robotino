@@ -33,7 +33,7 @@ depends_interfaces = {
 
 documentation     = [==[delivers already fetched puck to specified location]==]
 -- Constants
-local THRESHOLD_DISTANCE = 0.075
+local THRESHOLD_DISTANCE = 0.07
 local DELIVERY_GATES = { "D2", "D1", "D3" }
 local ANGLES = { 0, 0.17*math.pi, -0.34*math.pi}
 
@@ -94,5 +94,9 @@ function TURN_TO_NEXT:init()
 end
 
 function TAKE_PUCK_TO:init()
-   self.skills[1].goto_name = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]
+   self.skills[1].place = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]
+end
+
+function MOVE_UNDER_RFID:init()
+   self.skills[1].place = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]
 end
