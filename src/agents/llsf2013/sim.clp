@@ -141,7 +141,7 @@
 
 (defrule sim-get-s0-final
   (declare (salience ?*PRIORITY-SIM*))
-  (skill (name "get_s0") (status FINAL))
+  (skill-done (name "get_s0") (status FINAL))
   (sim-puck (state S0) (id ?puck-id))
   (not (sim-machine (puck-id ?puck-id)))
   (not (sim-machine (loaded-with $?lw&:(member$ ?puck-id ?lw))))
@@ -152,7 +152,7 @@
 
 (defrule sim-goto-final-deliver
   (declare (salience ?*PRIORITY-SIM*))
-  (skill (name "finish_puck_at") (status FINAL))
+  (skill-done (name "finish_puck_at") (status FINAL))
   (goto-target deliver)
   ?sf <- (sim (rb-client-id ?client-id) (holding-puck-id ?puck-id&~0))
   (sim-machine (name ?name) (mtype DELIVER) (lights GREEN-ON))
@@ -169,7 +169,7 @@
 
 (defrule sim-goto-final
   (declare (salience ?*PRIORITY-SIM*))
-  (skill (name "finish_puck_at") (status FINAL))
+  (skill-done (name "finish_puck_at") (status FINAL))
   (goto-target ?gt)
   ?sf <- (sim (rb-client-id ?client-id) (holding-puck-id ?puck-id&~0))
   =>

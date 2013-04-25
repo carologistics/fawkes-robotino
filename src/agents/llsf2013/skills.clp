@@ -9,8 +9,13 @@
 
 ; --- RULES for skill outcome
 
+(deftemplate skill-done
+  (slot name)
+  (slot status (allowed-values FINAL FAILED))
+)
+
 (deffunction goto-machine (?name)
-  (skill-call finish_puck_at goto_name ?name)
+  (skill-call finish_puck_at place ?name)
   (assert (state GOTO))
   (assert (goto-target ?name))
 )
@@ -19,19 +24,25 @@
   (skill-call get_s0)
 )
 
+(defrule skill-done
+  (skill (name ?name) (status ?s&FINAL|FAILED))
+  =>
+  (assert (skill-done (name ?name) (status ?s)))
+)
+
 (defrule skill-get-s0-done
   ?sf <- (state GET-S0)
-  (skill (name "get_s0") (status ?s&FINAL|FAILED))
+  ?df <- (skill-done (name "get_s0") (status ?s))
   =>
   (if (debug 1) then (printout (if (eq ?s FAILED) then warn else t) "get-s0 done: " ?s crlf))
-  (retract ?sf)
+  (retract ?sf ?df)
   (assert (state (sym-cat GET-S0- ?s)))
 )
 
 (defrule skill-goto-done
   ?sf <- (state GOTO)
-  (skill (name "finish_puck_at") (status ?s&FINAL|FAILED))
+  ?df <- (skill-done (name "finish_puck_at") (status ?s))
   =>
-  (retract ?sf)
+  (retract ?sf ?df)
   (assert (state (sym-cat GOTO- ?s)))
 )

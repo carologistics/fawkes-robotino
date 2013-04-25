@@ -31,6 +31,7 @@
 
   (load* (resolve-file llsf2013/net.clp))
   (load* (resolve-file llsf2013/utils.clp))
+  (load* (resolve-file llsf2013/skills.clp))
   (if
     (any-factp ((?conf confval))
       (and (eq ?conf:path "/clips-agent/llsf2013/enable-sim")
@@ -39,7 +40,6 @@
     (printout t "Loading simulation" crlf)
     (load* (resolve-file llsf2013/sim.clp))
   )
-  (load* (resolve-file llsf2013/skills.clp))
   (load* (resolve-file llsf2013/worldmodel.clp))
   (load* (resolve-file llsf2013/rules.clp))
   (reset)
