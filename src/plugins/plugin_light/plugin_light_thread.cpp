@@ -183,6 +183,7 @@ PluginLightThread::init()
 	this->drawer = new firevision::FilterROIDraw();
 
 	this->resetLightInterface();
+	this->resetLocalHistory();
 
 	logger->log_debug(name(), "Plugin-light: end of init()");
 }
@@ -239,6 +240,7 @@ PluginLightThread::loop()
 						contiueToPictureProcess = true;
 					} else {
 						this->resetLightInterface("light is out of range and buffer is empty");
+						this->resetLocalHistory();
 					}
 				} else {
 					this->resetLightInterface("light is to often out of range for camera");
@@ -250,6 +252,7 @@ PluginLightThread::loop()
 			contiueToPictureProcess = true;
 		} else {
 			this->resetLightInterface("laser visibility is < 0 and buffer is empty");
+			this->resetLocalHistory();
 		}
 	} else{
 		//if the laser doen't see anything, use it as the robot is directy in front of the light
