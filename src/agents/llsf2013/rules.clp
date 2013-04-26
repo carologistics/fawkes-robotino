@@ -87,6 +87,14 @@
   (assert (state IDLE))
 )
 
+(defrule goto-failed
+  ?sf <- (state GOTO-FAILED)
+  (not (goto-target ?))
+  =>
+  (retract ?sf)
+  (assert (state IDLE))
+)
+
 ; --- RULES - next machine/place to go to
 
 (defrule get-s0

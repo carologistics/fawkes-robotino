@@ -50,6 +50,17 @@
   (printout t "***** Lights 5 " ?lights crlf)
 )
 
+(defrule wm-goto-failed
+  (declare (salience ?*PRIORITY-WM*))
+  (state GOTO-FAILED)
+  ?tf <- (goto-target ?name)
+  ?hf <- (holding ?)
+  =>
+  (retract ?tf ?hf)
+  (assert (holding NONE))
+  (printout t "Production failed at " ?name crlf) 
+)
+
 (defrule wm-goto-light
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
