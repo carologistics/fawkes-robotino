@@ -62,9 +62,10 @@
   ?s <- (status "start")
   (status "firstround")
   ?first-machine <- (first-exploration-machine ?v)
+  (machine-exploration (name ?v) (x ?) (y ?) (next ?) (look-pos ?lp))
   =>
   (printout t "First machine:" ?v crlf)
-  (skill-call ppgoto place (str-cat ?v))
+  (skill-call ppgoto place (str-cat ?lp))
   (retract ?s ?first-machine)
   (assert (status "drivingToMachine"))
   (assert (goalmachine ?v))
@@ -237,11 +238,6 @@
   (assert (nextInCycle ?nextMachine))
   (assert (blocked ?old ?now))
   (printout t "asserted block of " ?old crlf)
-
-;  (if (not (matching-type-light (type ?) (red ?) (yellow ?) (green ?)))
-;    then
-;    (printout t "DO NOT HAVE A MATCHING FACT! Exploration Info?" crlf)
-;    )
 )
 
 ;Find next machine and assert drinve command in the first round
@@ -250,6 +246,7 @@
   ?s <- (status "idle")
   ?n <- (nextInCycle ?nextMachine)
   (not (machineRecognized ?nextMachine))
+  (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
 
   =>
 
@@ -259,7 +256,7 @@
   (assert (status "drivingToMachine"))
   (assert (goalmachine ?nextMachine))
 
-  (skill-call ppgoto place (str-cat ?nextMachine))
+  (skill-call ppgoto place (str-cat ?lp))
 )
 
 ;finish the first round and begin retry round
@@ -290,7 +287,7 @@
 (defrule retry-nearest-unrecognized
   (status "retryRound")
   ?s <- (status "idle")
-  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?))
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
   (not (machineRecognized ?m))
   (not (blocked ?m $?))
   (machine-exploration (name ?m2&~?m))
@@ -305,7 +302,7 @@
   (assert (status "drivingToMachine"))
   (assert (goalmachine ?m))
 
-  (skill-call ppgoto place (str-cat ?m))
+  (skill-call ppgoto place (str-cat ?lp))
 )
 
 ;Do not retry the recently failed machine, free the block here
