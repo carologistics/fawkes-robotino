@@ -25,7 +25,7 @@
   (slot y (type FLOAT))
   (slot light (type SYMBOL) (allowed-values GREEN ORANGE RED OFF) (default OFF))
   (slot next (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
-  (slot look-pos (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
+  (slot look-pos (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 eM1 eM2 eM3 eM4 eM5 eM6 eM7 eM8 eM9 eM10 D1 D2 D3 TST R1 R2) (default M1))
 )
 
 (deftemplate machine-light

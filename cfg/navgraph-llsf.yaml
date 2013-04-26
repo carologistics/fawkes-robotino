@@ -5,6 +5,11 @@ graph-name: LLSF
 root: SW
 nodes:
 
+  - name: eM1
+    pos: [3.62, 1.18]
+    properties:
+      - orientation: 1.07
+
   - name: M1
     pos: [3.62, 1.18]
     properties:
@@ -13,7 +18,7 @@ nodes:
   - name: M1S
     pos: [3.62, 1.1]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: M2
     pos: [4.42, 3.62]
@@ -23,7 +28,7 @@ nodes:
   - name: M2O
     pos: [4.7, 3.62]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.0
 
   - name: M3
     pos: [3.1, 1.06]
@@ -33,7 +38,7 @@ nodes:
   - name: M3N
     pos: [3.1, 1.1]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
 
   - name: M4
     pos: [3.1, 2.13]
@@ -53,7 +58,7 @@ nodes:
   - name: M5W
     pos: [2.3, 3.1]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
 
   - name: M6
     pos: [3.1, 4.42]
@@ -63,7 +68,7 @@ nodes:
   - name: M6N
     pos: [3.1, 4.5]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
 
   - name: M7
     pos: [2.5, 4.5]
@@ -73,7 +78,7 @@ nodes:
   - name: M7S
     pos: [2.5, 4.5]
     properties:
-      - travel_tolerance: 0.4
+      - orientation: 1.57
 
   - name: M8
     pos: [1.18, 1.98]
@@ -83,7 +88,7 @@ nodes:
   - name: M8W
     pos: [1.0, 1.98]
     properties:
-      - travel_tolerance: 0.4
+      - orientation: -1.57
 
   - name: M9
     pos: [1.38, 3.42]
@@ -93,7 +98,7 @@ nodes:
   - name: M9S
     pos: [1.38, 3.4]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
 
   - name: M10
     pos: [2.18, 4.74]
@@ -103,7 +108,7 @@ nodes:
   - name: M10E
     pos: [2.3, 4.74]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
 
   - name: R2
     pos: [0.55, 4.84]
