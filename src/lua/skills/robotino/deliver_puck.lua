@@ -35,7 +35,7 @@ documentation     = [==[delivers already fetched puck to specified location]==]
 -- Constants
 local THRESHOLD_DISTANCE = 0.05
 local DELIVERY_GATES = { "D2", "D1", "D3" }
-local ANGLES = { 0, 0.17*math.pi, -0.34*math.pi}
+local MOVES = { {}, {y=0.35}, {y=0.7} }
 local MAX_TRIES = 3
 
 -- Initialize as skill module
@@ -65,7 +65,7 @@ fsm:define_states{ export_to=_M,
    {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills={{watch_signal}},
       final_to="DECIDE_DELIVER", fail_to="FAILED"},
    {"DECIDE_DELIVER", JumpState},
-   {"TURN_TO_NEXT", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DETERMINE_SIGNAL",
+   {"MOVE_TO_NEXT", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DETERMINE_SIGNAL",
       fail_to="FAILED"},
    {"TAKE_PUCK_WAIT", JumpState},
    {"TAKE_PUCK_TO", SkillJumpState, skills={{take_puck_to}}, final_to="MOVE_UNDER_RFID", fail_to="FAILED"},
@@ -81,27 +81,28 @@ fsm:add_transitions{
    {"DECIDE_DELIVER", "MOVE_UNDER_RFID", cond="ampel_green() and vars.cur_gate_idx == 1", desc="Gate 2 green"},
    {"DECIDE_DELIVER", "TAKE_PUCK_WAIT", cond="ampel_green() and vars.cur_gate_idx ~= 1", desc="Gate 1 or 3 green"},
    {"TAKE_PUCK_WAIT", "TAKE_PUCK_TO", timeout=1},
-   {"DECIDE_DELIVER", "TURN_TO_NEXT", cond="vars.cur_gate_idx < #dg"},
+   {"DECIDE_DELIVER", "MOVE_TO_NEXT", cond="vars.cur_gate_idx < #dg"},
    {"DECIDE_DELIVER", "SKILL_DETERMINE_SIGNAL", cond=try_again},
    {"DECIDE_DELIVER", "FAILED", cond="(not ampel_green()) and (vars.cur_gate_idx >= #dg)"}
 }
 
 function CHECK_PUCK:init()
-   self.fsm.vars.cur_gate_idx = 1
    self.fsm.vars.numtries = 0
+end
+
+function SKILL_DETERMINE_SIGNAL:init()
+   self.fsm.vars.cur_gate_idx = 1
 end
 
 function DECIDE_DELIVER:init()
    self.fsm.vars.numtries = self.fsm.vars.numtries + 1
 end
 
-function TURN_TO_NEXT:init()
+function MOVE_TO_NEXT:init()
    self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
-   --turn_bl = tfm.transform({x=0, y=0, ori=ANGLES[self.fsm.vars.cur_gate_idx]}, "/map", "/base_link")
-   turn_bl = {}
-   turn_bl.ori = ANGLES[self.fsm.vars.cur_gate_idx]
-   print(turn_bl.ori)
-   self.skills[1].ori = turn_bl.ori
+   self.skills[1].ori = MOVES[self.fsm.vars.cur_gate_idx].ori or 0
+   self.skills[1].x = MOVES[self.fsm.vars.cur_gate_idx].x or 0
+   self.skills[1].y = MOVES[self.fsm.vars.cur_gate_idx].y or 0
 end
 
 function TAKE_PUCK_TO:init()
