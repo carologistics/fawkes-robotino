@@ -34,17 +34,29 @@
   (assert (holding S0))
 )
 
-(defrule wm-goto-light
+(defrule wm-store-lights
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FINAL)
-  (not (lights))
-  (RobotinoLightInterface (id "Light determined") (ready TRUE)
-			  (red ?red) (green ?green) (yellow ?yellow))
+  ?rf <- (RobotinoLightInterface (id "Light determined") (ready TRUE)
+				 (red ?red) (green ?green) (yellow ?yellow))
   =>
+  (retract ?rf)
+  ; remove all possibly existing last-lights facts
+  (delayed-do-for-all-facts ((?ll last-lights)) TRUE (retract ?ll))
   (bind ?lights (create$))
   (if (neq ?red OFF) then (bind ?lights (create$ ?lights (sym-cat RED- ?red))))
   (if (neq ?green OFF) then (bind ?lights (create$ ?lights (sym-cat GREEN- ?green))))
   (if (neq ?yellow OFF) then (bind ?lights (create$ ?lights (sym-cat YELLOW- ?yellow))))
+  (assert (last-lights ?lights))
+  (printout t "***** Lights 5 " ?lights crlf)
+)
+
+(defrule wm-goto-light
+  (declare (salience ?*PRIORITY-WM*))
+  (state GOTO-FINAL)
+  (not (lights))
+  ?lf <- (last-lights $?lights&:(> (length$ ?lights) 0))
+  =>
+  (retract ?lf)
   (assert (lights ?lights))
 )
 
@@ -52,7 +64,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
-  ?hf <- (holding ?any)
+  ?hf <- (holding ?)
   ?lf <- (lights GREEN-ON)
   ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output))
   =>
@@ -92,7 +104,7 @@
   (state GOTO-FINAL)
   ?tf <- (goto-target deliver)
   ?hf <- (holding ?was-holding)
-  ?lf <- (lights GREEN-ON YELLOW-ON RED-ON)
+  ?lf <- (lights RED-ON GREEN-ON YELLOW-ON)
   =>
   (retract ?hf ?lf ?tf)
   (assert (holding NONE))
@@ -103,9 +115,9 @@
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
-  ?lf <- (lights ~YELLOW-BLINK&~GREEN-ON&~YELLOW-ON)
+  ?lf <- (lights $?)
   (machine (name ?name) (mtype ?mtype))
   =>
-  (printout t "Unknown light code at " ?name "|" ?mtype crlf) 
+  (printout warn "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
   (retract ?lf)
 )

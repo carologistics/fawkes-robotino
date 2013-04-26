@@ -205,7 +205,10 @@
   (pb-destroy ?m)
   (modify ?sf (proc-state IDLE) (placed-puck-id 0)
 	  (holding-puck-id (if (eq ?light GREEN-ON) then ?puck-id else 0)))
-  (assert (lights ?light))
+  (assert (RobotinoLightInterface (id "Light determined") (ready TRUE)
+				 (red OFF)
+				 (green (if (eq ?light GREEN-ON) then ON else OFF))
+				 (yellow (if (eq ?light YELLOW-ON) then ON else OFF))))
 )
 
 (defrule sim-proc-delivered
@@ -221,7 +224,8 @@
   (pb-send ?client-id ?m)
   (pb-destroy ?m)
   (modify ?sf (proc-state IDLE) (placed-puck-id 0) (holding-puck-id 0))
-  (assert (lights GREEN-ON YELLOW-ON RED-ON))
+  (assert (RobotinoLightInterface (id "Light determined") (ready TRUE)
+				 (red ON) (green ON) (yellow ON)))
 )
 
 (defrule sim-proc-fail
@@ -236,5 +240,6 @@
   (pb-send ?client-id ?m)
   (pb-destroy ?m)
   (modify ?sf (proc-state IDLE) (placed-puck-id 0) (holding-puck-id ?puck-id))
-  (assert (lights ?lights))
+  (assert (RobotinoLightInterface (id "Light determined") (ready TRUE)
+				 (red OFF) (green OFF) (yellow BLINK)))
 )

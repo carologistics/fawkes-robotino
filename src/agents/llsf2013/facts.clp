@@ -28,8 +28,8 @@
   (slot count (type INTEGER) (default 1))
 )
 
-
 (deffacts startup
+  (last-lights)
   (holding NONE)
   (machine (name D1) (mtype DELIVER))
   (machine (name D2) (mtype DELIVER))
