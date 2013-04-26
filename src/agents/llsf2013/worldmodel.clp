@@ -38,8 +38,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
   (not (lights))
-  (RobotinoLightInterface (id "Light detected")
-			  (ready TRUE) (visibility_history ?vh&:(> ?vh 5))
+  (RobotinoLightInterface (id "Light determined") (ready TRUE)
 			  (red ?red) (green ?green) (yellow ?yellow))
   =>
   (bind ?lights (create$))

@@ -27,7 +27,7 @@
   =>
   (load-config "/clips-agent")
 
-  (blackboard-add-interface "RobotinoLightInterface" "Light detected")
+  (blackboard-add-interface "RobotinoLightInterface" "Light determined")
 
   (load* (resolve-file llsf2013/net.clp))
   (load* (resolve-file llsf2013/utils.clp))
