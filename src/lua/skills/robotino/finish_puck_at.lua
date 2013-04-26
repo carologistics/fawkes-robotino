@@ -61,7 +61,7 @@ end
 
 fsm:define_states{ export_to=_M,
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
-      fail_to="FAILED"},
+      fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
@@ -76,22 +76,25 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   { "TIMEOUT","DECIDE_ENDSKILL", timeout=3, desc="test purpose" },
+   { "TIMEOUT", "FAILED", cond="vars.tries > 3" },
+   { "TIMEOUT", "DECIDE_ENDSKILL", timeout=1, desc="test purpose" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", timeout=1, cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
-   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
+   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
 }
 
 function SKILL_TAKE_PUCK:init()
    self.fsm.vars.goto_name = self.fsm.vars.place or self.fsm.vars.goto_name
    self.skills[1].place = self.fsm.vars.place
+   if not self.fsm.vars.tries then
+      self.fsm.vars.tries = 0
+   end
+   self.fsm.vars.tries = self.fsm.vars.tries + 1
 end
 
 function SKILL_DRIVE_LEFT:init()
-   self.skills[1].x=0 
-   self.skills[1].y=-0.5 
-   self.skills[1].ori=0
+   self.skills[1].y=0.5 
 end
 
 function SKILL_RFID:init()
