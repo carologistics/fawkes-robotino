@@ -45,6 +45,7 @@
 (defrule path-clockwise
   (confval (path "/clips-agent/llsf2013/exploration-agent-cycle-clockwise") (value true));;;;;;Capital?
   =>
+  (printout t "Driving clockwise" crlf)
   (assert 
     (machine-exploration (name M10) (x 2.18) (y 4.74) (next M7))
     (machine-exploration (name M9) (x 1.38) (y 3.42) (next M10))
@@ -57,13 +58,14 @@
     (machine-exploration (name M2) (x 4.42) (y 3.62) (next M1))
     (machine-exploration (name M1) (x 3.62) (y 1.18) (next M3))
 
-    ;(first-exploration-machine M9)
+    (first-exploration-machine M9)
   )
 )
 
 (defrule path-anti-clockwise
   (confval (path "/clips-agent/llsf2013/exploration-agent-cycle-clockwise") (value false));;;;;;Capital?
   =>
+  (printout t "Driving anti-clockwise" crlf)
   (assert 
     (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9))
     (machine-exploration (name M9) (x 1.38) (y 3.42) (next M5))
@@ -76,7 +78,7 @@
     (machine-exploration (name M2) (x 4.42) (y 3.62) (next M6))
     (machine-exploration (name M1) (x 3.62) (y 1.18) (next M2))
 
-    ;(first-exploration-machine M5)
+    (first-exploration-machine M5)
   )
 )
 

@@ -57,18 +57,15 @@
 ;  (printout t "GOT PLUGIN LIGHT INTERFACE" crlf)
 ;)
 
-;Robotino drives to the nearest machine to start the first round
-(defrule goto-nearest-machine
+;Robotino drives to the first machine to start the first round
+(defrule goto-first
   ?s <- (status "start")
   (status "firstround")
-  (machine-exploration (name ?v) (x ?x) (y ?y) (next ?))
-  (forall (machine-exploration (name ?) (x ?x1) (y ?y1) (next ?))
-    (Position3DInterface (id "Pose") (translation $?pos&:(<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x1 (nth$ 1 ?pos)) (- ?x1 (nth$ 1 ?pos))) (* (- ?y1 (nth$ 2 ?pos)) (- ?y1 (nth$ 2 ?pos)))))))
-  )
+  ?first-machine <- (first-exploration-machine ?v)
   =>
-  (printout t "nearest machine:" ?v crlf)
+  (printout t "First machine:" ?v crlf)
   (skill-call ppgoto place (str-cat ?v))
-  (retract ?s)
+  (retract ?s ?first-machine)
   (assert (status "drivingToMachine"))
   (assert (goalmachine ?v))
   (assert (startmachine ?v))
