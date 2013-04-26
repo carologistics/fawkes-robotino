@@ -42,12 +42,24 @@ local tfm = require("tf_module")
 skillenv.skill_module(_M)
 
 local tfm = require('tf_module')
-local LASER_SIDEWARDS_CORRECTION = 0.1
-local LASER_FORWARD_CORRECTION = 0.25
+local LASER_FORWARD_CORRECTION = 0.2
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
+local MIN_VIS_HIST = 15
+
+function get_ampel()
+   local ampel_loc = {}
+   ampel_loc.x = euclidean_cluster:translation(0)
+   ampel_loc.y = euclidean_cluster:translation(1)
+   ampel_loc.distance = math.sqrt(ampel_loc.x^2, ampel_loc.y^2)
+   ampel_loc.angle = math.atan(ampel_loc.x, ampel_loc.y)
+   return ampel_loc
+end
 
 function ampel()
-   return (fsm.vars.ampel_loc.distance > 0) and (fsm.vars.ampel_loc.distance < 1)
+   local ampel = get_ampel()
+   return (ampel.distance > 0)
+      and (ampel.distance < 1)
+      and (euclidean_cluster:visibility_history() > MIN_VIS_HIST)
 end
 
 function rough_correct_done()
@@ -60,19 +72,18 @@ end
 
 fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
    {"SEE_AMPEL", JumpState},
-   {"SKILL_TURN_ZERO",SkillJumpState, skills={{motor_move}}, final_to="STRAFE", fail_to="FAILED"},
-   {"STRAFE", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL",
-      fail_to="FAILED"},
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL", fail_to="FAILED"},
    {"APPROACH_AMPEL", SkillJumpState, skills={{motor_move}},
       final_to="CHECK_POSITION", fail_to="FAILED"},
    {"CHECK_POSITION", JumpState},
-   {"CORRECT_POSITION", SkillJumpState, skills={{motor_move}}, final_to="CORRECT_SENSOR_DELAY", fail_to="FAILED"},
+   {"CORRECT_POSITION", SkillJumpState, skills={{motor_move}},
+      final_to="CORRECT_SENSOR_DELAY", fail_to="FAILED"},
    {"CORRECT_SENSOR_DELAY", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
-   {"SEE_AMPEL", "FAILED", cond="not ampel()", desc="No Ampel seen with laser"},
-   {"SEE_AMPEL", "SKILL_TURN_ZERO", cond=ampel, desc="Ampel seen with laser"},
+   {"SEE_AMPEL", "FAILED", timeout=10, desc="No Ampel seen with laser"},
+   {"SEE_AMPEL", "TURN", cond=ampel, desc="Ampel seen with laser"},
    {"CHECK_POSITION", "FINAL", cond="vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond="vars.correct_dir ~= 0"},
    {"CORRECT_POSITION", "CORRECT_SENSOR_DELAY", cond=rough_correct_done} 
@@ -98,36 +109,17 @@ end
 
 function SEE_AMPEL:init()
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
-   self.fsm.vars.ampel_loc = {}
-   self.fsm.vars.ampel_loc.x = euclidean_cluster:translation(0)
-   self.fsm.vars.ampel_loc.y = euclidean_cluster:translation(1)
-   self.fsm.vars.ampel_loc.distance = math.sqrt(self.fsm.vars.ampel_loc.x^2,self.fsm.vars.ampel_loc.y^2)
-   self.fsm.vars.ampel_loc.angle = math.atan(self.fsm.vars.ampel_loc.x,self.fsm.vars.ampel_loc.y)
-   self.fsm.vars.ampel_map = tfm.transform({x=self.fsm.vars.ampel_loc.x, y=self.fsm.vars.ampel_loc.y, ori=self.fsm.vars.ampel_loc.angle}, "/base_link", "/map")
 end
 
-function SKILL_TURN_ZERO:init()
-   local self_angle = 2*math.acos(pose:rotation(3))
-   local floor_angle = math.floor(self_angle/(math.pi/2.0)) * (math.pi/2.0)
-                                  -- round     (                                        )
-   local turn_angle = floor_angle + math.floor(((self_angle - floor_angle)/(math.pi/2.0)) + 0.5) * (math.pi/2.0)
-   local tgt_baselink = tfm.transform({x=0, y=0, ori=turn_angle}, "/map", "/base_link")
-   --local graph = fawkes.utils.TopologicalMapGraph:new("navgraph-llsf.yaml")
-   self.skills[1].ori = tgt_baselink.ori
-end
-
-function STRAFE:init()
-   local ampel_baselink = tfm.transform(self.fsm.vars.ampel_map, "/map", "/base_link")
-   if ampel_baselink.y < 0 then
-      corr = -1 * LASER_SIDEWARDS_CORRECTION
-   else
-      corr = LASER_SIDEWARDS_CORRECTION
-   end
-   self.skills[1].y = ampel_baselink.y + corr
+function TURN:init()
+   local ampel = get_ampel()
+   self.skills[1].ori = math.atan2(ampel.y, ampel.x)
 end
 
 function APPROACH_AMPEL:init()
-   self.skills[1].x = self.fsm.vars.ampel_loc.x - LASER_FORWARD_CORRECTION
+   local ampel = get_ampel()
+   self.skills[1].x = ampel.x - LASER_FORWARD_CORRECTION
+   self.skills[1].y = ampel.y
 end
 
 function CORRECT_POSITION:init()
