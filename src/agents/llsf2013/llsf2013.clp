@@ -28,6 +28,8 @@
   (load-config "/clips-agent")
 
   (blackboard-add-interface "RobotinoLightInterface" "Light determined")
+  (blackboard-add-interface "Position3DInterface" "Pose")
+  (blackboard-add-interface "RobotinoLightInterface" "Light_State")
 
   (load* (resolve-file llsf2013/net.clp))
   (load* (resolve-file llsf2013/utils.clp))
@@ -40,8 +42,10 @@
     (printout t "Loading simulation" crlf)
     (load* (resolve-file llsf2013/sim.clp))
   )
+  (load* (resolve-file llsf2013/game.clp))
   (load* (resolve-file llsf2013/worldmodel.clp))
   (load* (resolve-file llsf2013/production.clp))
+  (load* (resolve-file llsf2013/exploration.clp))
   (reset)
   ;(facts)
 )

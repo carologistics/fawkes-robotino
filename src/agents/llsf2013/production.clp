@@ -7,79 +7,18 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-
-; --- RULES - wait for start signal
-;(defrule start
-;  ?s <- (state WAIT_START)
-;  (start)
-;  =>
-;  (retract ?s)
-;  (assert (state IDLE))
-;)
-
-; --- GAME STATE handling
-
-(defrule change-phase
-  ?cf <- (change-phase ?phase)
-  ?pf <- (phase ?)
-  =>
-  (retract ?cf ?pf)
-  (assert (phase ?phase))
-)
-
-(defrule change-state-ignore
-  (phase ~PRODUCTION)
-  ?cf <- (change-state ?)
-  =>
-  (retract ?cf)
-)
-
-(defrule start
-  (phase PRODUCTION)
-  ?sf <- (state WAIT_START)
-  ?cf <- (change-state RUNNING)
-  ?rf <- (refbox-state ?)
-  =>
-  (retract ?sf ?cf ?rf)
-  (assert (state IDLE))
-  (assert (refbox-state RUNNING))
-)
-
-(defrule pause
-  ?sf <- (state ?state&~PAUSED)
-  ?cf <- (change-state ?cs&~RUNNING)
-  ?rf <- (refbox-state ~?cs)
-  =>
-  (retract ?sf ?cf ?rf)
-  (motor-disable)
-  (assert (state PAUSED))
-  (assert (refbox-state PAUSED))
-  (assert (pre-pause-state ?state))
-)
-
-(defrule unpause
-  ?sf <- (state PAUSED)
-  ?pf <- (pre-pause-state ?old-state)
-  ?cf <- (change-state RUNNING)
-  ?rf <- (refbox-state PAUSED)
-  =>
-  (retract ?sf ?pf ?cf ?rf)
-  (assert (state ?old-state))
-  (assert (refbox-state RUNNING))
-  (motor-enable)
-)
-
-
 ; --- RULES - skill done
 
-(defrule get-s0-done
+(defrule prod-get-s0-done
+  (phase PRODUCTION)
   ?sf <- (state GET-S0-FINAL|GET-S0-FAILED)
   =>
   (retract ?sf)
   (assert (state IDLE))
 )
 
-(defrule goto-final
+(defrule prod-goto-final
+  (phase PRODUCTION)
   ?sf <- (state GOTO-FINAL)
   (not (goto-target ?))
   =>
@@ -87,7 +26,8 @@
   (assert (state IDLE))
 )
 
-(defrule goto-failed
+(defrule prod-goto-failed
+  (phase PRODUCTION)
   ?sf <- (state GOTO-FAILED)
   (not (goto-target ?))
   =>
@@ -97,7 +37,8 @@
 
 ; --- RULES - next machine/place to go to
 
-(defrule get-s0
+(defrule prod-get-s0
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding NONE)
   =>
@@ -107,8 +48,9 @@
   (get-s0)
 )
 
-(defrule s0-t5
+(defrule prod-s0-t5
   (declare (salience ?*PRIORITY-P*))
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T5) (name ?name))
@@ -118,8 +60,9 @@
   (goto-machine ?name)  
 )
 
-(defrule s0-t3-s1-s2
+(defrule prod-s0-t3-s1-s2
   (declare (salience ?*PRIORITY-P*))
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T3) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name))
@@ -129,8 +72,9 @@
   (goto-machine ?name)
 )
 
-(defrule s0-t2-s1
+(defrule prod-s0-t2-s1
   (declare (salience ?*PRIORITY-S1*))
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T2) (loaded-with $?l&:(member$ S1 ?l)) (name ?name))
@@ -140,8 +84,9 @@
   (goto-machine ?name)
 )
 
-(defrule s0-t1
+(defrule prod-s0-t1
   (declare (salience ?*PRIORITY-T1*))
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T1) (name ?name))
@@ -151,8 +96,9 @@
   (goto-machine ?name)
 )
 
-(defrule s1-t3-s2
+(defrule prod-s1-t3-s2
   (declare (salience ?*PRIORITY-S2*))
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding S1)
   (machine (mtype T3) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name))
@@ -162,8 +108,9 @@
   (goto-machine ?name)
 )
 
-(defrule s1-t2-not-s1
+(defrule prod-s1-t2-not-s1
   (declare (salience ?*PRIORITY-T2*))  
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding S1)
   (machine (mtype T2) (name ?name) (loaded-with $?l&~:(subsetp (create$ S1) ?l)))
@@ -173,8 +120,9 @@
   (goto-machine ?name)
 )
 
-(defrule s2-t3-has-some-but-not-s2
+(defrule prod-s2-t3-has-some-but-not-s2
   (declare (salience ?*PRIORITY-T3*))  
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding S2)
   (machine (mtype T3) (name ?name)
@@ -185,8 +133,9 @@
   (goto-machine ?name)
 )
 
-(defrule s2-t3-empty
+(defrule prod-s2-t3-empty
   (declare (salience ?*PRIORITY-T3*))  
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding S2)
   (machine (mtype T3) (name ?name) (loaded-with $?l&:(= (length$ ?l) 0)))
@@ -197,8 +146,9 @@
 )
 
 
-(defrule deliver-p
+(defrule prod-deliver-p
   (declare (salience ?*PRIORITY-DELIVER*))
+  (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding P1|P2|P3)
   =>

@@ -7,6 +7,49 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+; GENERIC
+
+(deftemplate signal
+  (slot type)
+  (multislot time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+  (slot seq (type INTEGER) (default 1))
+  (slot count (type INTEGER) (default 1))
+)
+
+
+; EXPLORATION
+
+(deftemplate machine-exploration
+  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
+  (slot x (type FLOAT))
+  (slot y (type FLOAT))
+  (slot light (type SYMBOL) (allowed-values GREEN ORANGE RED OFF) (default OFF))
+  (slot next (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
+  (slot look-pos (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
+)
+
+(deftemplate machine-light
+  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
+  (slot red (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
+  (slot yellow (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
+  (slot green (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
+)
+
+(deftemplate machine-type
+  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10) (default M1))
+  (slot type (type SYMBOL) (allowed-values T1 T2 T3 T4 T5) (default T1))
+)
+
+(deftemplate matching-type-light
+  (slot type (type SYMBOL) (allowed-values T1 T2 T3 T4 T5 DELIVER TEST RECYCLE) (default TEST))
+  (slot red (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
+  (slot yellow (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
+  (slot green (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
+)
+
+
+; PRODUCTION
+
 (deftemplate machine
   (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
   (slot mtype (type SYMBOL) (default UNKNOWN)
@@ -21,14 +64,8 @@
 ;  (slot puck (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P) (default NONE))
 ;)
 
-(deftemplate signal
-  (slot type)
-  (multislot time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
-  (slot seq (type INTEGER) (default 1))
-  (slot count (type INTEGER) (default 1))
-)
 
-(deffacts startup
+(deffacts startup-production
   (last-lights)
   (holding NONE)
   (machine (name D1) (mtype DELIVER))

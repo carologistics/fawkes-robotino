@@ -61,6 +61,7 @@
 	  (sim-machine (name D1))
 	  (sim-machine (name D2))
 	  (sim-machine (name D3))
+	  (simulation-is-running)
   )
 )
 
@@ -138,8 +139,85 @@
   )
 )
 
+; EXPLORATION
 
-(defrule sim-get-s0-final
+(defrule sim-exp-read-light-pattern
+  (declare (salience 10))
+  (skill (name "ppgoto") (status FINAL))
+  (simulation-is-running)
+  (sim-machine (name ?m) (lights $?lights))
+  (goalmachine ?m)
+  =>
+  (assert (RobotinoLightInterface (id "Light_State") (time (create$ 5 5)) (red OFF) (yellow OFF) (green OFF) (visibility_history 100) (ready FALSE)));gess at all
+  ;assert facts for modification
+  (foreach ?l ?lights
+    (assert (sim-machine-light ?m ?l))
+  )
+)
+
+(defrule sim-exp-give-pos-when-retrying
+  (blocked ?m $?)
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?))
+  (time $?now)
+  =>
+  (assert (Position3DInterface (id "Pose") (translation (create$ ?x ?y 0.0))))
+)
+
+(defrule sim-exp-match-light-on-interface-redon
+  ?f <- (sim-machine-light ? RED-ON)
+  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  =>
+  (retract ?f)
+  (modify ?i (red ON))
+)
+(defrule sim-exp-match-light-on-interface-redblink
+  ?f <- (sim-machine-light ? RED-BLINK)
+  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  =>
+  (retract ?f)
+  (modify ?i (red BLINKING))
+)
+(defrule sim-exp-match-light-on-interface-yellowon
+  ?f <- (sim-machine-light ? YELLOW-ON)
+  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  =>
+  (retract ?f)
+  (modify ?i (yellow ON))
+)
+(defrule sim-exp-match-light-on-interface-yellowblink
+  ?f <- (sim-machine-light ? YELLOW-BLINK)
+  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  =>
+  (retract ?f)
+  (modify ?i (yellow BLINKING))
+)
+(defrule sim-exp-match-light-on-interface-greenon
+  ?f <- (sim-machine-light ? GREEN-ON)
+  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  =>
+  (retract ?f)
+  (modify ?i (green ON))
+)
+(defrule sim-exp-match-light-on-interface-greenblink
+  ?f <- (sim-machine-light ? GREEN-BLINK)
+  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  =>
+  (retract ?f)
+  (modify ?i (green BLINKING))
+)
+
+(defrule sim-exp-match-light-on-interface-finished
+  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  (not (sim-machine-light ? ?))
+  =>
+  (modify ?i (ready TRUE))
+)
+
+
+
+; PRODUCTION
+
+(defrule sim-proc-get-s0-final
   (declare (salience ?*PRIORITY-SIM*))
   (skill-done (name "get_s0") (status FINAL))
   (sim-puck (state S0) (id ?puck-id))
@@ -150,7 +228,7 @@
   (modify ?sf (holding-puck-id ?puck-id))
 )
 
-(defrule sim-goto-final-deliver
+(defrule sim-proc-goto-final-deliver
   (declare (salience ?*PRIORITY-SIM*))
   (skill-done (name "finish_puck_at") (status FINAL))
   (goto-target deliver)
@@ -167,7 +245,7 @@
 	  (goto-target ?name))
 )
 
-(defrule sim-goto-final
+(defrule sim-proc-goto-final
   (declare (salience ?*PRIORITY-SIM*))
   (skill-done (name "finish_puck_at") (status FINAL))
   (goto-target ?gt)
@@ -182,7 +260,7 @@
   (modify ?sf (proc-state WAIT) (holding-puck-id 0) (placed-puck-id ?puck-id) (goto-target ?gt))
 )
 
-(defrule sim-proc-start
+(defrule sim-proc-proc-start
   (declare (salience ?*PRIORITY-SIM*))
   ?sf <- (sim (proc-state WAIT) (goto-target ?gt))
   (sim-machine (name ?gt) (lights GREEN-ON YELLOW-ON))
@@ -191,7 +269,7 @@
 )
 
 
-(defrule sim-proc-final
+(defrule sim-proc-proc-final
   (declare (salience ?*PRIORITY-SIM*))
   ?sf <- (sim (proc-state PROC) (goto-target ?gt) (rb-client-id ?client-id)
 	      (placed-puck-id ?puck-id&~0))
@@ -211,7 +289,7 @@
 				 (yellow (if (eq ?light YELLOW-ON) then ON else OFF))))
 )
 
-(defrule sim-proc-delivered
+(defrule sim-proc-proc-delivered
   (declare (salience ?*PRIORITY-SIM*))
   ?sf <- (sim (proc-state PROC) (goto-target ?gt) (rb-client-id ?client-id)
 	      (placed-puck-id ?puck-id&~0))
@@ -228,7 +306,7 @@
 				 (red ON) (green ON) (yellow ON)))
 )
 
-(defrule sim-proc-fail
+(defrule sim-proc-proc-fail
   (declare (salience ?*PRIORITY-SIM*))
   ?sf <- (sim (proc-state WAIT) (goto-target ?gt) (rb-client-id ?client-id)
 	      (placed-puck-id ?puck-id&~0))

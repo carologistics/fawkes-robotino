@@ -1,43 +1,61 @@
-;Clips program for exploration phase
 
-;(defrule init
-;  (init)
-;  (protobuf-available)
-;  =>
-;  (pb-peer-enable "172.16.35.255" 4444 4444)
-;)
+;---------------------------------------------------------------------------
+;  exploration.clp - Robotino agent for exploration phase
+;
+;  Created: Fri Apr 26 18:38:18 2013 (Magdeburg)
+;  Copyright  2013  Frederik Zwilling
+;             2013  Tim Niemueller [www.niemueller.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
 
-(defrule change-phase
-  ?cf <- (change-phase ?phase)
-  ?pf <- (phase ?)
+
+;should the agent go clockwise or anticlockwise?
+;machine name, coordinates, next machine in exploration cycle
+(defrule exp-config-path-clockwise
+  (confval (path "/clips-agent/llsf2013/exploration-agent-cycle-clockwise") (value true))
   =>
-  (retract ?cf ?pf)
-  (assert (phase ?phase))
-  (facts)
+  (printout t "Driving clockwise" crlf)
+  (assert 
+    (machine-exploration (name M10) (x 2.18) (y 4.74) (next M7) (look-pos M10))
+    (machine-exploration (name M9) (x 1.38) (y 3.42) (next M10) (look-pos M9))
+    (machine-exploration (name M8) (x 1.38) (y 2.18) (next M4) (look-pos M8))
+    (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6) (look-pos M7))
+    (machine-exploration (name M6) (x 3.1) (y 4.42) (next M2) (look-pos M6))
+    (machine-exploration (name M5) (x 2.3) (y 3.1) (next M9) (look-pos M5))
+    (machine-exploration (name M4) (x 3.1) (y 2.13) (next M5) (look-pos M4))
+    (machine-exploration (name M3) (x 3.1) (y 1.06) (next M8) (look-pos M3))
+    (machine-exploration (name M2) (x 4.42) (y 3.62) (next M1) (look-pos M2))
+    (machine-exploration (name M1) (x 3.62) (y 1.18) (next M3) (look-pos M1))
+
+    (first-exploration-machine M9)
+  )
 )
 
-(defrule change-state-ignore
-  (phase ~EXPLORATION)
-  ?cf <- (change-state ?)
+(defrule exp-config-path-counter-clockwise
+  (confval (path "/clips-agent/llsf2013/exploration-agent-cycle-clockwise") (value false))
   =>
-  (retract ?cf)
+  (printout t "Driving anti-clockwise" crlf)
+  (assert 
+    (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos M10))
+    (machine-exploration (name M9) (x 1.38) (y 3.42) (next M5) (look-pos M9))
+    (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3) (look-pos M8))
+    (machine-exploration (name M7) (x 2.5) (y 4.5) (next M10) (look-pos M7))
+    (machine-exploration (name M6) (x 3.1) (y 4.42) (next M7) (look-pos M6))
+    (machine-exploration (name M5) (x 2.3) (y 3.1) (next M4) (look-pos M5))
+    (machine-exploration (name M4) (x 3.1) (y 2.13) (next M8) (look-pos M4))
+    (machine-exploration (name M3) (x 3.1) (y 1.06) (next M1) (look-pos M3))
+    (machine-exploration (name M2) (x 4.42) (y 3.62) (next M6) (look-pos M2))
+    (machine-exploration (name M1) (x 3.62) (y 1.18) (next M2) (look-pos M1))
+
+    (first-exploration-machine M5)
+  )
 )
 
-(defrule start-refbox
-  (phase EXPLORATION)
-  ?sf <- (state WAIT_START)
-  ?cf <- (change-state RUNNING)
-  ?rf <- (refbox-state ?)
-  =>
-  (retract ?sf ?cf ?rf)
-  (assert (state IDLE))
-  (assert (refbox-state RUNNING))
-  (assert (exploration-start))
-)
 
 ;Set up the status
 ;there are two rounds. In the first the robotino drives to each machine in a defined cycle. After the first round the robotino drives to unrecognized machines again.
-(defrule start
+(defrule exp-start
+  (phase EXPLORATION)
   ?st  <- (exploration-start)
   (time $?now)
   =>
@@ -45,8 +63,8 @@
   (assert (status "start"))
   (assert (status "firstround"))
   (assert (status "explorationRunning"))
-  (assert (signal (name "refboxSendLoop") (time ?now) (seq 2)))
-  (assert (signal (name "readLightsNotRecognizedOutput") (time ?now) (seq 1)))
+  (assert (signal (type send-machine-reports)))
+  (assert (signal (type print-unrecognized-lights)))
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
 
@@ -58,7 +76,8 @@
 ;)
 
 ;Robotino drives to the first machine to start the first round
-(defrule goto-first
+(defrule exp-goto-first
+  (phase EXPLORATION)
   ?s <- (status "start")
   (status "firstround")
   ?first-machine <- (first-exploration-machine ?v)
@@ -73,8 +92,8 @@
 )
 
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
-(defrule arrived-at-machine
-  (declare (salience 0))
+(defrule exp-arrived-at-machine
+  (phase EXPLORATION)
   ?final <- (skill (name "ppgoto") (status FINAL) (skill-string ?skill)) 
   ?s <- (status "drivingToMachine")
   (time $?now)
@@ -83,18 +102,19 @@
   (printout t "Read light now" crlf)
   (retract ?s ?final)
   (assert (status "waitingAtMachine"))
-  (assert (signal (name "waitingSince") (time ?now) (seq 1)))
+  (assert (signal (type waiting-since) (time ?now) (seq 1)))
 
   ;;;;;;; this  should be the waiting skill ;;;;;
   ;(skill-call relgoto rel_x 0 rel_y 0)
 )
 
 ;Recognizing succseded => memorize light-signals for further rules and prepare to drive to the next machine
-(defrule read-light-at-machine
+(defrule exp-read-light-at-machine
+  (phase EXPLORATION)
   ;;;;;;; change relgoto to waiting skill ;;;;;
   ;?final <- (skill (name "relgoto") (status FINAL) (skill-string ?skill)) 
   (time $?now)
-  ?ws <- (signal (name "waitingSince") (time $?) (seq ?))
+  ?ws <- (signal (type waiting-since))
   ?s <- (status "waitingAtMachine")
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
@@ -116,7 +136,8 @@
   (printout t "asserted block of " ?old crlf)
 )
 
-(defrule test-light
+(defrule exp-test-light
+  (phase EXPLORATION)
   (status "waitingAtMachine")
   ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (ready ?ready))
   =>
@@ -125,7 +146,8 @@
 )
 
 ;Matching of recognized lights to the machine types
-(defrule match-light-types
+(defrule exp-match-light-types
+  (phase EXPLORATION)
   ?ml <- (machine-light (name ?name) (red ?red) (yellow ?yellow) (green ?green))
   (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
@@ -136,10 +158,10 @@
 )
 
 ;Sending all results to the refbox every second
-(defrule send-recognized-machines
-  ;;;;;Tell the refbox;;;;;;;;;;;;;;;
-  (time $?now)  
-  ?ws <- (signal (name "refboxSendLoop") (time $?t&:(timeout ?now ?t 0.5)) (seq 2))
+(defrule exp-send-recognized-machines "Tell the refbox"
+  (phase EXPLORATION)
+  (time $?now)
+  ?ws <- (signal (type send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
   
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
@@ -154,20 +176,22 @@
   )
 
   (pb-broadcast ?mr)
-  (modify ?ws (name "refboxSendLoop") (time ?now) (seq 2))
+  (modify ?ws (time ?now) (seq (+ ?seq 1)))
 )
 
-(defrule print-read-but-not-recognized-lights
+(defrule exp-print-read-but-not-recognized-lights
+  (phase EXPLORATION)
   (time $?now)  
-  ?ws <- (signal (name "readLightsNotRecognizedOutput") (time $?t&:(timeout ?now ?t 1.0)) (seq ?))
+  ?ws <- (signal (type print-unrecognized-lights) (time $?t&:(timeout ?now ?t 1.0)) (seq ?seq))
   =>
   (do-for-all-facts ((?read machine-light)) TRUE
     (printout t "Read light with no type matching: " ?read:name ", red " ?read:red ", yellow " ?read:yellow ", green " ?read:green crlf)
   )
-  (modify ?ws (name "readLightsNotRecognizedOutput") (time ?now) (seq 2))
+  (modify ?ws (time ?now) (seq (+ ?seq 1)))
 )
 
-(defrule all-matchings-are-there
+(defrule exp-all-matchings-are-there
+  (phase EXPLORATION)
   (matching-type-light (type T1) (red ?) (yellow ?) (green ?)) 
   (matching-type-light (type T2) (red ?) (yellow ?) (green ?))
   (matching-type-light (type T3) (red ?) (yellow ?) (green ?))
@@ -178,7 +202,8 @@
 )
 
 ;Recieve light-pattern-to-type matchig and save it in a fact
-(defrule recieve-type-light-pattern-matching
+(defrule exp-recieve-type-light-pattern-matching
+  (phase EXPLORATION)
   ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p) (rcvd-via BROADCAST))
   (not (have-all-matchings))
 
@@ -198,8 +223,9 @@
 )
 
 ;the refbox sends BLINK but in the interface BLINKING is used. This rule converts BLINK to BLINKING
-(defrule convert-blink-to-blinking
-  (declare (salience 10));this rule has to fire before compose-type-light-pattern-matching
+(defrule exp-convert-blink-to-blinking
+  (declare (salience 10)) ; this rule has to fire before compose-type-light-pattern-matching
+  (phase EXPLORATION)
   ?tsp <- (type-spec-pre ?type ?light-color BLINK)
   =>
   ;(retract ?tsp)
@@ -207,8 +233,9 @@
 )
 
 ;Compose information sent by the refbox as one
-(defrule compose-type-light-pattern-matching
+(defrule exp-compose-type-light-pattern-matching
   (declare (salience 0));this rule has to fire after convert-blink-to-blinking
+  (phase EXPLORATION)
   ?r <- (type-spec-pre ?type RED ?red-state)
   ?y <- (type-spec-pre ?type YELLOW ?yellow-state)
   ?g <- (type-spec-pre ?type GREEN ?green-state)
@@ -218,10 +245,11 @@
 )
 
 ;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
-(defrule recognized-machine-failed
+(defrule exp-recognized-machine-failed
   ;?final <- (skill (name "relgoto") (status FAILED) (skill-string ?skill))
+  (phase EXPLORATION)
   (time $?now)
-  ?ws <- (signal (name "waitingSince") (time $?t&:(timeout ?now ?t 5.0)) (seq 1))
+  ?ws <- (signal (type waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
   ?s <- (status "waitingAtMachine")
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
@@ -241,7 +269,8 @@
 )
 
 ;Find next machine and assert drinve command in the first round
-(defrule goto-next-machine-first-round
+(defrule exp-goto-next-machine-first-round
+  (phase EXPLORATION)
   (status "firstround")
   ?s <- (status "idle")
   ?n <- (nextInCycle ?nextMachine)
@@ -260,7 +289,8 @@
 )
 
 ;finish the first round and begin retry round
-(defrule finish-first-round
+(defrule exp-finish-first-round
+  (phase EXPLORATION)
   ?r <- (status "firstround")
   ?s <- (status "idle")
   ?n <- (nextInCycle ?nextMachine)
@@ -284,7 +314,8 @@
 )
 
 ;Drive to the nearest unrecognized machine in the retry round
-(defrule retry-nearest-unrecognized
+(defrule exp-retry-nearest-unrecognized
+  (phase EXPLORATION)
   (status "retryRound")
   ?s <- (status "idle")
   (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
@@ -306,7 +337,8 @@
 )
 
 ;Do not retry the recently failed machine, free the block here
-(defrule free-blocked
+(defrule exp-free-blocked
+  (phase EXPLORATION)
   (time $?now)
   ?b <- (blocked ?m $?t&:(timeout ?now ?t 0.2))
   =>
@@ -316,7 +348,8 @@
 
 
 ;Finish exploration phase if all machines are recognized
-(defrule finish-exploration
+(defrule exp-finish-exploration
+  (phase EXPLORATION)
   (forall (machine-exploration (name ?m) (x ?) (y ?) (next ?))
     (machineRecognized ?m))
   ?s <- (status "retryRound")
