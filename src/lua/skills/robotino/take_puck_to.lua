@@ -48,7 +48,7 @@ local TIMEOUT_MOVE_BACK = 10
 local TIMEOUT_MOVE_LEFT = 20
 local ORI_OFFSET = 0.15
 local MAX_RETRIES = 3
-local LOSTPUCK_DIST = 0.08
+local LOSTPUCK_DIST = 0.05
 local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
 -- Imports
