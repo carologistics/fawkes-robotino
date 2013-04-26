@@ -22,9 +22,10 @@ plugins/plugin_light:
   camera_factor_horizontal: 1.08 #1.7
   camera_factor_vertical: 0.85 #1.33
 
-  # camare offset of the front cam
-  camera_offset_horizontal_rad: -0.013 #-0.0735
-  camera_offset_vertical: 45
+# TO SET IN host.yaml
+#  # camare offset of the front cam
+#  camera_offset_horizontal_rad: -0.013
+#  camera_offset_vertical: 45
 
   #Shared Memory Imagebuffer name
   shm_image_id: "lightCam"
