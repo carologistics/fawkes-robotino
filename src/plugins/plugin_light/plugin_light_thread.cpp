@@ -600,18 +600,28 @@ PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSigna
 	this->lightStateIF->read();
 	int vis = this->lightStateIF->visibility_history();
 
-	if (vis < 0) {
+	if ( vis < 0
+	  || this->lightStateIF->red() != lightSignal.red
+	  || this->lightStateIF->yellow() != lightSignal.yellow
+	  || this->lightStateIF->green() != lightSignal.green
+	   ) {
 		vis = 1;
+		ready = false;
 	} else {
 		vis++;
 	}
+
 	this->lightStateIF->set_visibility_history(vis);
 
 	this->lightStateIF->set_red(lightSignal.red);
 	this->lightStateIF->set_yellow(lightSignal.yellow);
 	this->lightStateIF->set_green(lightSignal.green);
 
-	this->lightStateIF->set_ready(ready);
+	if (vis >= this->detectionCycleTimeFrames) {
+		this->lightStateIF->set_ready(ready);
+	} else {
+		this->lightStateIF->set_ready(false);
+	}
 
 	this->lightStateIF->write();
 }
