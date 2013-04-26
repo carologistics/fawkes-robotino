@@ -33,9 +33,10 @@ depends_interfaces = {
 
 documentation     = [==[delivers already fetched puck to specified location]==]
 -- Constants
-local THRESHOLD_DISTANCE = 0.07
+local THRESHOLD_DISTANCE = 0.05
 local DELIVERY_GATES = { "D2", "D1", "D3" }
 local ANGLES = { 0, 0.17*math.pi, -0.34*math.pi}
+local MAX_TRIES = 3
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -48,6 +49,10 @@ local curDistance = sensor:distance(8)
       return true
    end
    return false
+end
+
+function try_again()
+ return (not ampel_green()) and (vars.cur_gate_idx >= #dg) and (vars.numtries<MAX_TRIES)
 end
 
 function ampel_green()
@@ -77,11 +82,17 @@ fsm:add_transitions{
    {"DECIDE_DELIVER", "TAKE_PUCK_WAIT", cond="ampel_green() and vars.cur_gate_idx ~= 1", desc="Gate 1 or 3 green"},
    {"TAKE_PUCK_WAIT", "TAKE_PUCK_TO", timeout=1},
    {"DECIDE_DELIVER", "TURN_TO_NEXT", cond="vars.cur_gate_idx < #dg"},
+   {"DECIDE_DELIVER", "SKILL_DETERMINE_SIGNAL", cond=try_again},
    {"DECIDE_DELIVER", "FAILED", cond="(not ampel_green()) and (vars.cur_gate_idx >= #dg)"}
 }
 
 function CHECK_PUCK:init()
    self.fsm.vars.cur_gate_idx = 1
+   self.fsm.vars.numtries = 0
+end
+
+function DECIDE_DELIVER:init()
+   self.fsm.vars.numtries = self.fsm.vars.numtries + 1
 end
 
 function TURN_TO_NEXT:init()
