@@ -43,7 +43,7 @@ skillenv.skill_module(_M)
 
 local TIMEOUT = 30
 local ORI_OFFSET = 0.03
-local THRESHOLD_DISTANCE = 0.075
+local THRESHOLD_DISTANCE = 0.05
 local omnipucks = { omnipuck1, omnipuck2, omnipuck3, omnipuck4, omnipuck5 }
 
 local pm = require 'puck_loc_module'
