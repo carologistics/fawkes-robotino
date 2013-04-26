@@ -31,7 +31,10 @@ clips-agent:
 
   llsf2013:
     enable-sim: true
-    exploration-agent-cycle-clockwise: true
+    double-exploration: true
+
+    #If playing the exploration-phase with TWO ROBOTS only the Counterclockwise will do Production!!!!!!!!!!!
+    exploration-agent-cycle-clockwise: true 
     #exploration-agent-cycle-clockwise: false
 
     peer-address: 172.16.35.255
