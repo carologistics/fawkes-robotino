@@ -53,7 +53,7 @@
   (simulation-is-running)
   (exploration-start)
   =>
-  (printout t "Simulation of exploration phase needs the Robotino position to find the nearest machine. Simulated position is always (0.5 0.5 0.0)." crlf)
+  (printout t "Simulation of exploration phase needs the Robotino position to find the nearest machine. Simulated position is (0.5 0.5 0.0)." crlf)
   (assert (Position3DInterface (id "Pose") (translation (create$ 0.5 0.5 0.0))))
 )
 
@@ -84,6 +84,14 @@
   (foreach ?l ?lights
     (assert (sim-machine-light ?m ?l))
   )
+)
+
+(defrule give-pos-when-retrying
+  (blocked ?m $?)
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?))
+  (time $?now)
+  =>
+  (assert (Position3DInterface (id "Pose") (translation (create$ ?x ?y 0.0))))
 )
 
 (defrule match-light-on-interface-redon
@@ -119,7 +127,7 @@
   ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
   =>
   (retract ?f)
-  (modify ?i (green ON))
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;,(modify ?i (green ON))
 )
 (defrule match-light-on-interface-greenblink
   ?f <- (sim-machine-light ? GREEN-BLINK)

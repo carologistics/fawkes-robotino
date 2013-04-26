@@ -95,6 +95,7 @@
 (defrule read-light-at-machine
   ;;;;;;; change relgoto to waiting skill ;;;;;
   ;?final <- (skill (name "relgoto") (status FINAL) (skill-string ?skill)) 
+  (time $?now)
   ?ws <- (signal (name "waitingSince") (time $?) (seq ?))
   ?s <- (status "waitingAtMachine")
   ?g <- (goalmachine ?old)
@@ -113,6 +114,8 @@
   (assert (status "idle"))
   (assert (nextInCycle ?nextMachine))
   (assert (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green)))
+  (assert (blocked ?old ?now))
+  (printout t "asserted block of " ?old crlf)
 )
 
 (defrule test-light
@@ -183,7 +186,7 @@
 
   =>
   
-  (printout t "GOT MESSAGE FROM REFBOX (EXPLORATION-INFO)" crlf)
+  ;(printout t "GOT MESSAGE FROM REFBOX (EXPLORATION-INFO)" crlf)
   (retract ?pbm)
   (foreach ?sig (pb-field-list ?p "signals")
     (bind ?type (pb-field-value ?sig "type"))
@@ -235,6 +238,8 @@
   ;(retract ?final)
   (assert (status "idle"))
   (assert (nextInCycle ?nextMachine))
+  (assert (blocked ?old ?now))
+  (printout t "asserted block of " ?old crlf)
 
 ;  (if (not (matching-type-light (type ?) (red ?) (yellow ?) (green ?)))
 ;    then
@@ -275,17 +280,32 @@
   (assert (status "idle"))
 )
 
+(deffunction machine-is-closer (?x ?y ?x2 ?y2 $?pos)
+  (if (<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x2 (nth$ 1 ?pos)) (- ?x2 (nth$ 1 ?pos))) (* (- ?y2 (nth$ 2 ?pos)) (- ?y2 (nth$ 2 ?pos)))))
+    then
+      TRUE
+    else
+      FALSE
+  )
+)
+
 ;Drive to the nearest unrecognized machine in the retry round
 (defrule retry-nearest-unrecognized
   (status "retryRound")
   ?s <- (status "idle")
   (machine-exploration (name ?m) (x ?x) (y ?y) (next ?))
   (not (machineRecognized ?m))
-  (forall (machine-exploration (name ?m2) (x ?x1) (y ?y1) (next ?))
-    (or (machineRecognized ?m2)
-        (Position3DInterface (id "Pose") (translation $?pos&:(<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x1 (nth$ 1 ?pos)) (- ?x1 (nth$ 1 ?pos))) (* (- ?y1 (nth$ 2 ?pos)) (- ?y1 (nth$ 2 ?pos)))))))
-    )
-  )
+  (not (blocked ?m $?))
+  (machine-exploration (name ?m2&~?m))
+  (not (machineRecognized ?m2))
+  (Position3DInterface (id "Pose") (translation $?pos))
+  (machine-exploration (name ?m2) (x ?x2) (y ?y2&~:(machine-is-closer ?x2 ?y2 ?x ?y ?pos)))
+
+;  (forall (machine-exploration (name ?m2) (x ?x1) (y ?y1) (next ?))
+;    (or (machineRecognized ?m2)
+;        (Position3DInterface (id "Pose") (translation $?pos&:(<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x1 (nth$ 1 ?pos)) (- ?x1 (nth$ 1 ?pos))) (* (- ?y1 (nth$ 2 ?pos)) (- ?y1 (nth$ 2 ?pos)))))))
+;    )
+;  )
 
   =>
 
@@ -295,6 +315,40 @@
   (assert (goalmachine ?m))
 
   (skill-call ppgoto place (str-cat ?m))
+)
+(defrule retry-nearest-unrecognized-test-no-pos
+  (status "retryRound")
+  ?s <- (status "idle")
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?))
+  (not (machineRecognized ?m))
+  (not (blocked ?m $?))
+  =>
+  (printout t ?m "Robot not located, want retry" crlf)
+)
+(defrule retry-nearest-unrecognized-test-is-blocked
+  (status "retryRound")
+  ?s <- (status "idle")
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?))
+  (not (machineRecognized ?m))
+  (blocked ?m $?)
+  (forall (machine-exploration (name ?m2) (x ?x1) (y ?y1) (next ?))
+    (or (machineRecognized ?m2)
+        (Position3DInterface (id "Pose") (translation $?pos&:(<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x1 (nth$ 1 ?pos)) (- ?x1 (nth$ 1 ?pos))) (* (- ?y1 (nth$ 2 ?pos)) (- ?y1 (nth$ 2 ?pos)))))))
+    )
+  )
+
+  =>
+
+  (printout t ?m "is blocked and would be retried" crlf)
+)
+
+;Do not retry the recently failed machine, free the block here
+(defrule free-blocked
+  (time $?now)
+  ?b <- (blocked ?m $?t&:(timeout ?now ?t 0.2))
+  =>
+  (retract ?b)
+  (printout t "Removed blocking of " ?m crlf)
 )
 
 
