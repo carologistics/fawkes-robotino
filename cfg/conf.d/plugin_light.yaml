@@ -16,7 +16,7 @@ plugins/plugin_light:
 
   # Size of the light (Ampel) in m, without the sockel to determine the light search areas
   light_size_height: 0.10	#0.10
-  light_size_width: 0.02	#0.035
+  light_size_width: 0.03	#0.035
 
   # camare viewport factor logitech webcam
   camera_factor_horizontal: 1.08 #1.7
