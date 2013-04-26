@@ -49,12 +49,13 @@
 (defrule net-recv-GameState
   (phase ?phase)
   (refbox-state ?state)
-  (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-via BROADCAST))
+  ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-via BROADCAST) (rcvd-from ?host ?port))
   =>
+  (retract ?pf)
   (bind ?new-state (pb-field-value ?p "state"))
   (bind ?new-phase (pb-field-value ?p "phase"))
-  ;(printout t "GameState received: "
-  ;	    ?state " <> " ?new-state "  " ?phase " <> " ?new-phase crlf)
+  (printout t "GameState received from " ?host ":" ?port ": "
+  	    ?state " <> " ?new-state "  " ?phase " <> " ?new-phase crlf)
 
   (if (neq ?phase ?new-phase) then
     (assert (change-phase ?new-phase))
@@ -63,3 +64,10 @@
     (assert (change-state ?new-state))
   )
 )
+
+(defrule net-recv-BeaconSignal
+  ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p) (rcvd-via BROADCAST))
+  =>
+  (retract ?pf)
+)
+

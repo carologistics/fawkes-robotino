@@ -7,18 +7,46 @@
 ;  (pb-peer-enable "172.16.35.255" 4444 4444)
 ;)
 
+(defrule change-phase
+  ?cf <- (change-phase ?phase)
+  ?pf <- (phase ?)
+  =>
+  (retract ?cf ?pf)
+  (assert (phase ?phase))
+  (facts)
+)
+
+(defrule change-state-ignore
+  (phase ~EXPLORATION)
+  ?cf <- (change-state ?)
+  =>
+  (retract ?cf)
+)
+
+(defrule start-refbox
+  (phase EXPLORATION)
+  ?sf <- (state WAIT_START)
+  ?cf <- (change-state RUNNING)
+  ?rf <- (refbox-state ?)
+  =>
+  (retract ?sf ?cf ?rf)
+  (assert (state IDLE))
+  (assert (refbox-state RUNNING))
+  (assert (exploration-start))
+)
+
 ;Set up the status
 ;there are two rounds. In the first the robotino drives to each machine in a defined cycle. After the first round the robotino drives to unrecognized machines again.
 (defrule start
-  ?st  <- (start)
+  ?st  <- (exploration-start)
   (time $?now)
   =>
   (retract ?st)
   (assert (status "start"))
   (assert (status "firstround"))
+  (assert (status "explorationRunning"))
   (assert (signal (name "refboxSendLoop") (time ?now) (seq 2)))
   (assert (signal (name "readLightsNotRecognizedOutput") (time ?now) (seq 1)))
-  (assert (signal (type beacon) (time ?now) (seq 0)))
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
 

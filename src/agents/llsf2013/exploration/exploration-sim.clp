@@ -51,7 +51,7 @@
 (defrule sim-start-exp
   (declare (salience 500))
   (simulation-is-running)
-  (start)
+  (exploration-start)
   =>
   (printout t "Simulation of exploration phase needs the Robotino position to find the nearest machine. Simulated position is always (0.5 0.5 0.0)." crlf)
   (assert (Position3DInterface (id "Pose") (translation (create$ 0.5 0.5 0.0))))

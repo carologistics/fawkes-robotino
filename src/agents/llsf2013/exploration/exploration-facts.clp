@@ -52,4 +52,8 @@
   (machine-exploration (name M3) (x 3.1) (y 1.06) (next M1))
   (machine-exploration (name M2) (x 4.42) (y 3.62) (next M6))
   (machine-exploration (name M1) (x 3.62) (y 1.18) (next M2))
+  (phase PRE_GAME)
+  (state WAIT_START)
+  (refbox-state WAIT_START)
+  (signal (type beacon) (time (create$ 0 0)) (seq 1))
 )
