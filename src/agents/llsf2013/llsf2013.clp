@@ -41,7 +41,7 @@
     (load* (resolve-file llsf2013/sim.clp))
   )
   (load* (resolve-file llsf2013/worldmodel.clp))
-  (load* (resolve-file llsf2013/rules.clp))
+  (load* (resolve-file llsf2013/production.clp))
   (reset)
   ;(facts)
 )
