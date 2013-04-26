@@ -99,6 +99,17 @@
   (get-s0)
 )
 
+(defrule s0-t5
+  (declare (salience ?*PRIORITY-P*))
+  ?sf <- (state IDLE)
+  (holding S0)
+  (machine (mtype T5) (name ?name))
+  =>
+  (if (debug 2) then (printout t "S0 2 -- Going to T5 named " ?name crlf))
+  (retract ?sf)
+  (goto-machine ?name)  
+)
+
 (defrule s0-t3-s1-s2
   (declare (salience ?*PRIORITY-P*))
   ?sf <- (state IDLE)
