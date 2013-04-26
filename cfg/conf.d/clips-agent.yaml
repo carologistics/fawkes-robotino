@@ -31,6 +31,8 @@ clips-agent:
 
   llsf2013:
     enable-sim: true
+    exploration-agent-cycle-clockwise: true
+    #exploration-agent-cycle-clockwise: false
 
     peer-address: 192.168.122.255
     peer-send-port: 4445

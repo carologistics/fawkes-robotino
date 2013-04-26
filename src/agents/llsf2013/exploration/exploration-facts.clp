@@ -40,18 +40,48 @@
 ;  (slot count (type INTEGER) (default 1))
 ;)
 
+;should the agent go clockwise or anticlockwise?
 ;machine name, coordinates, next machine in exploration cycle
+(defrule path-clockwise
+  (confval (path "/clips-agent/llsf2013/exploration-agent-cycle-clockwise") (value true));;;;;;Capital?
+  =>
+  (assert 
+    (machine-exploration (name M10) (x 2.18) (y 4.74) (next M7))
+    (machine-exploration (name M9) (x 1.38) (y 3.42) (next M10))
+    (machine-exploration (name M8) (x 1.38) (y 2.18) (next M4))
+    (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6))
+    (machine-exploration (name M6) (x 3.1) (y 4.42) (next M2))
+    (machine-exploration (name M5) (x 2.3) (y 3.1) (next M9))
+    (machine-exploration (name M4) (x 3.1) (y 2.13) (next M5))
+    (machine-exploration (name M3) (x 3.1) (y 1.06) (next M8))
+    (machine-exploration (name M2) (x 4.42) (y 3.62) (next M1))
+    (machine-exploration (name M1) (x 3.62) (y 1.18) (next M3))
+
+    ;(first-exploration-machine M9)
+  )
+)
+
+(defrule path-anti-clockwise
+  (confval (path "/clips-agent/llsf2013/exploration-agent-cycle-clockwise") (value false));;;;;;Capital?
+  =>
+  (assert 
+    (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9))
+    (machine-exploration (name M9) (x 1.38) (y 3.42) (next M5))
+    (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3))
+    (machine-exploration (name M7) (x 2.5) (y 4.5) (next M10))
+    (machine-exploration (name M6) (x 3.1) (y 4.42) (next M7))
+    (machine-exploration (name M5) (x 2.3) (y 3.1) (next M4))
+    (machine-exploration (name M4) (x 3.1) (y 2.13) (next M8))
+    (machine-exploration (name M3) (x 3.1) (y 1.06) (next M1))
+    (machine-exploration (name M2) (x 4.42) (y 3.62) (next M6))
+    (machine-exploration (name M1) (x 3.62) (y 1.18) (next M2))
+
+    ;(first-exploration-machine M5)
+  )
+)
+
+
 (assert 
-  (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9))
-  (machine-exploration (name M9) (x 1.38) (y 3.42) (next M5))
-  (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3))
-  (machine-exploration (name M7) (x 2.5) (y 4.5) (next M10))
-  (machine-exploration (name M6) (x 3.1) (y 4.42) (next M7))
-  (machine-exploration (name M5) (x 2.3) (y 3.1) (next M4))
-  (machine-exploration (name M4) (x 3.1) (y 2.13) (next M8))
-  (machine-exploration (name M3) (x 3.1) (y 1.06) (next M1))
-  (machine-exploration (name M2) (x 4.42) (y 3.62) (next M6))
-  (machine-exploration (name M1) (x 3.62) (y 1.18) (next M2))
   (phase PRE_GAME)
   (state WAIT_START)
   (refbox-state WAIT_START)

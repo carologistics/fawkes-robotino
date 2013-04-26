@@ -127,7 +127,7 @@
   ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
   =>
   (retract ?f)
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;,(modify ?i (green ON))
+  (modify ?i (green ON))
 )
 (defrule match-light-on-interface-greenblink
   ?f <- (sim-machine-light ? GREEN-BLINK)
