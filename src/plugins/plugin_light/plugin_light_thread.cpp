@@ -790,7 +790,9 @@ PluginLightThread::getNearestMaschineFromInterface()
 	if ( lightPosition.x < this->cfg_lightMoveUnderRfidThrashold ) {
 		lightPosition.y = 0.0;
 	} else {
-		logger->log_debug(name(), "Not a close mashine");
+		if (this->cfg_debugMessagesActivated) {
+			logger->log_debug(name(), "Not a close mashine");
+		}
 	}
 
 	return lightPosition;
