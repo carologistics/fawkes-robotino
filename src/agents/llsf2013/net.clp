@@ -54,8 +54,8 @@
   (retract ?pf)
   (bind ?new-state (pb-field-value ?p "state"))
   (bind ?new-phase (pb-field-value ?p "phase"))
-  (printout t "GameState received from " ?host ":" ?port ": "
-  	    ?state " <> " ?new-state "  " ?phase " <> " ?new-phase crlf)
+  ;(printout t "GameState received from " ?host ":" ?port ": "
+  ;	    ?state " <> " ?new-state "  " ?phase " <> " ?new-phase crlf)
 
   (if (neq ?phase ?new-phase) then
     (assert (change-phase ?new-phase))
