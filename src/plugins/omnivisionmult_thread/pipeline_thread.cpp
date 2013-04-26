@@ -420,6 +420,14 @@ void RobotinoOmniVisionPipelineThread::associate_pucks_with_ifs() {
 		//logger->log_debug(name(), "Puck at (%f|%f) gets if %s", new_puck.getX(),
 		//		new_puck.getY(), pos_if->id());
 	}
+
+	//count down visibility of unseen pucks
+	for (Position3DInterface* unused_if: unused_ifs){
+		int vis = min(-1,unused_if->visibility_history()-1);
+		unused_if->set_visibility_history(vis);
+		unused_if->write();
+	}
+
 	delete if_puck_map_;
 	if_puck_map_ = if_puck_map_current;
 	for (auto& p : *if_puck_map_) {

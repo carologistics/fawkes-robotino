@@ -43,7 +43,8 @@ using namespace std;
  * @param cfg_prefix configuration path prefix
  * @param aqt LaserAcquisitionThread to get data from
  */
-OmniVisionSensorThread::OmniVisionSensorThread(RobotinoOmniVisionPipelineThread *aqt) :
+OmniVisionSensorThread::OmniVisionSensorThread(
+		RobotinoOmniVisionPipelineThread *aqt) :
 		Thread("OmniVisionSensorThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
 				BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS) {
 	__aqt = aqt;
@@ -62,21 +63,15 @@ void OmniVisionSensorThread::loop() {
 	if (__aqt->lock_if_new_data()) {
 		//Iterator over the List in the Pipeline Thread whilst iterating over the sensor thread list
 		std::list<fawkes::Position3DInterface*>::iterator pipeline_pucks;
-		for (pipeline_pucks = __aqt->puck_ifs_.begin(); pipeline_pucks!=__aqt->puck_ifs_.end(); pipeline_pucks++) {
-//			char *history;
-//			char *translation_x;
-//			char *translation_y;
+		for (pipeline_pucks = __aqt->puck_ifs_.begin();
+				pipeline_pucks != __aqt->puck_ifs_.end(); pipeline_pucks++) {
 			(*pipeline_pucks)->write();
-//			asprintf(&history, "Visbility History: %d",(*pipeline_pucks)->visibility_history());
-//			asprintf(&translation_x, "Translation X: %f",(*pipeline_pucks)->translation(0));
-//			asprintf(&translation_y, "Translation Y: %f",(*pipeline_pucks)->translation(1));
-//			logger->log_debug(name(), history);
-//			logger->log_debug(name(), translation_x);
-//			logger->log_debug(name(), translation_y);
-			// set x and y translation to zero so it will count down below zero when not seen
-			(*pipeline_pucks)->set_translation(0,0);
-			(*pipeline_pucks)->set_translation(1,0);
+
+			//experimental comment, I am not sure of the consequences
+			// (I am not sure if we need this here at all..) --DE
+			//(*pipeline_pucks)->set_translation(0,0);
+			//(*pipeline_pucks)->set_translation(1,0);
 		}
-	} 
+	}
 	__aqt->unlock();
 }
