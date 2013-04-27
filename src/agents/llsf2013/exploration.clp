@@ -391,36 +391,42 @@
 )
 
 (defrule exp-move-second-agent-away-finished
+  (declare (salience ?*PRIORITY-HIGH*))
   (status "finishedExploration")
   (second-robotino)
   =>
-  (assert (status "flee"))
+  (assert (end-status "flee"))
 )
 (defrule exp-move-second-agent-away-prod-started
+  (declare (salience ?*PRIORITY-HIGH*))
   (phase PRODUCTION)
   (second-robotino)
   =>
-  (assert (status "flee"))
+  (assert (end-status "flee"))
 )
 
 (defrule exp-in-die-stille-ecke
+  (declare (salience ?*PRIORITY-HIGH*))
   (second-robotino)
-  (status "flee")
+  (end-status "flee")
   (stille-ecke ?l)
+  (time $?)
   =>
   (skill-call ppgoto place (str-cat ?l))
 )
 (defrule exp-remove-phases
+  (declare (salience ?*PRIORITY-HIGH*))
   (second-robotino)
-  (status "flee")
+  (end-status "flee")
   ?p <- (phase ?)
   (time $?)
   =>
   (retract ?p)
 )
 (defrule exp-remove-status
+  (declare (salience ?*PRIORITY-HIGH*))
   (second-robotino)
-  (status "flee")
+  (end-status "flee")
   ?s <- (status ?)
   (time $?)
   =>
