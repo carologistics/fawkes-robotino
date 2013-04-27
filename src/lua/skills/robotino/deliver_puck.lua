@@ -35,7 +35,7 @@ documentation     = [==[delivers already fetched puck to specified location]==]
 -- Constants
 local THRESHOLD_DISTANCE = 0.05
 local DELIVERY_GATES = { "D2", "D1", "D3" }
-local MOVES = { {}, {y=0.35}, {y=0.7} }
+local MOVES = { {}, {y=0.35}, {y=-0.7} }
 local MAX_TRIES = 3
 
 -- Initialize as skill module
@@ -88,9 +88,6 @@ fsm:add_transitions{
 
 function CHECK_PUCK:init()
    self.fsm.vars.numtries = 0
-end
-
-function SKILL_DETERMINE_SIGNAL:init()
    self.fsm.vars.cur_gate_idx = 1
 end
 
@@ -99,7 +96,7 @@ function DECIDE_DELIVER:init()
 end
 
 function MOVE_TO_NEXT:init()
-   self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
+   self.fsm.vars.cur_gate_idx = (self.fsm.vars.cur_gate_idx % #MOVES) + 1
    self.skills[1].ori = MOVES[self.fsm.vars.cur_gate_idx].ori or 0
    self.skills[1].x = MOVES[self.fsm.vars.cur_gate_idx].x or 0
    self.skills[1].y = MOVES[self.fsm.vars.cur_gate_idx].y or 0
