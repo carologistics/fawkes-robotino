@@ -25,6 +25,16 @@
   (retract ?cf)
 )
 
+(defrule enable-motor-on-start
+  (declare (salience ?*PRIORITY-HIGH*))
+  (phase EXPLORATION|PRODUCTION)
+  (state WAIT_START)
+  (change-state RUNNING)
+  =>
+  (printout warn "***** Enabling motor *****" crlf)
+  (motor-enable)
+)
+
 (defrule start
   (phase EXPLORATION|PRODUCTION)
   ?sf <- (state WAIT_START)
