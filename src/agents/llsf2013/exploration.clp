@@ -31,13 +31,19 @@
       (machine-exploration (name M1) (x 3.62) (y 1.18) (next M3) (look-pos M1))
     )
     else
+;double
     (assert
       (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos M10))
-      (machine-exploration (name M9) (x 1.38) (y 3.42) (next R2) (look-pos M9))
+      (machine-exploration (name M9) (x 1.38) (y 3.42) (next M8) (look-pos M9))
+      (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3) (look-pos M8))
       (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6) (look-pos M7))
       (machine-exploration (name M6) (x 3.1) (y 4.42) (next M10) (look-pos M6))
-      (machine-exploration (name M2) (x 4.42) (y 3.62) (next M7) (look-pos M2));;;;;;;;;; QUICK WORKAROUND
-      (machine-exploration (name R2) (x 0.8) (y 4.8) (next R2) (look-pos R2))  ;;;;;;;;;; QUICK WORKAROUND
+      (machine-exploration (name M5) (x 2.3) (y 3.1) (next R2) (look-pos M5))
+      (machine-exploration (name M4) (x 3.1) (y 2.13) (next M5) (look-pos M4))
+      (machine-exploration (name M3) (x 3.1) (y 1.06) (next M1) (look-pos M3))
+      (machine-exploration (name M2) (x 4.42) (y 3.62) (next M7) (look-pos M2))
+      (machine-exploration (name M1) (x 3.62) (y 1.18) (next M4) (look-pos M1))
+      (machine-exploration (name R2) (x 3.62) (y 1.18) (next R2) (look-pos R2))
       (second-robotino)
       (stille-ecke R2)
     )
