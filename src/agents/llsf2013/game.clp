@@ -26,7 +26,7 @@
 )
 
 (defrule start
-  (phase EXPLORATION)
+  (phase EXPLORATION|PRODUCTION)
   ?sf <- (state WAIT_START)
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state ?)
