@@ -36,7 +36,8 @@
       (machine-exploration (name M9) (x 1.38) (y 3.42) (next M10) (look-pos M9))
       (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6) (look-pos M7))
       (machine-exploration (name M6) (x 3.1) (y 4.42) (next M2) (look-pos M6))
-      (machine-exploration (name M2) (x 4.42) (y 3.62) (next M9) (look-pos M2))
+      (machine-exploration (name M2) (x 4.42) (y 3.62) (next M9) (look-pos R2));;;;;;;;;; QUICK WORKAROUND
+      (machine-exploration (name R2) (x 0.8) (y 4.8) (next R2) (look-pos R2))  ;;;;;;;;;; QUICK WORKAROUND
       (second-robotino)
       (stille-ecke R2)
     )
@@ -94,6 +95,7 @@
   (assert (status "explorationRunning"))
   (assert (signal (type send-machine-reports)))
   (assert (signal (type print-unrecognized-lights)))
+  (assert (signal (type in-die-stille-ecke-command)))
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
 
@@ -410,7 +412,6 @@
   (second-robotino)
   (end-status "flee")
   (stille-ecke ?l)
-  (time $?)
   =>
   (skill-call ppgoto place (str-cat ?l))
 )
