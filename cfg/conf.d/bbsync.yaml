@@ -32,5 +32,4 @@ fawkes/bbsync:
         motor: MotorInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino
         odometry: TransformInterface::TF Robotino Odometry
-        laser_filtered: Laser360Interface::Laser urg filtered
-        laser: Laser360Interface::Laser urg
+        motor-switch: SwitchInterface::Robotino Motor
