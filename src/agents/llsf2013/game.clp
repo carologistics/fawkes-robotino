@@ -60,3 +60,15 @@
   (assert (refbox-state RUNNING))
   (motor-enable)
 )
+
+(defrule play-exploration-without-refbox
+  (confval (path "/clips-agent/llsf2013/play-exploration-without-refbox") (value true))
+  =>
+  (assert 
+    (exploration-start)
+    (phase EXPLORATION)
+    (state IDLE)
+    (refbox-state RUNNING)
+  )
+  (printout t "PLAYING EXPLORATION WITHOUT REFBOX!" crlf)
+)

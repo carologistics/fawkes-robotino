@@ -30,8 +30,13 @@ clips-agent:
   #  enable-sim: true
 
   llsf2013:
-    enable-sim: true
-    double-exploration: true
+    enable-sim: false
+
+    double-exploration: tue
+
+    play-exploration-without-refbox: true
+    #uncomment following line ONLY if you are playing without refbox
+    #unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
 
     #If playing the exploration-phase with TWO ROBOTS only the Counterclockwise will do Production!!!!!!!!!!!
     exploration-agent-cycle-clockwise: true 
@@ -42,7 +47,6 @@ clips-agent:
     peer-send-port: 4445
     #peer-port: 4444
 
-    unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
 
 
     team-name: Carologistics
