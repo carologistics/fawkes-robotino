@@ -22,6 +22,8 @@ fawkes:
     # Maximum time a thread may run per loop, 0 to disable; microseconds
     max_thread_time: 133333
 
+    loggers: console;file/debug:debug.log
+
     net:
       # Port for Fawkes Network Protocol service; TCP port
       tcp_port: !tcp-port 1910
