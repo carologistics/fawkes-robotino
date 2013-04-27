@@ -341,6 +341,18 @@
   (assert (status "idle"))
 )
 
+;should be unnecessary but hack for safety
+(defrule exp-finish-first-round-and-flee
+  ?sr <- (status "retryRound")
+  ?si <- (status "idle")
+  (second-robotino)
+  (stille-ecke ?l)
+  =>
+  (skill-call ppgoto place (str-cat ?l))
+  (retract ?sr ?si)
+  (assert (end-status "flee"))  
+)
+
 (deffunction machine-is-closer (?x ?y ?x2 ?y2 $?pos)
   (if (<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x2 (nth$ 1 ?pos)) (- ?x2 (nth$ 1 ?pos))) (* (- ?y2 (nth$ 2 ?pos)) (- ?y2 (nth$ 2 ?pos)))))
     then
