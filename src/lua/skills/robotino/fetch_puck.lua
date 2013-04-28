@@ -44,14 +44,6 @@ local MIN_VIS_HIST = 5
 
 local tfm = require 'tf_module'
 
-function puck_in_front()
-   if math.abs(math.atan2(omnipuck:translation(1), omnipuck:translation(0))) < ORI_OFFSET then
-      printf("front: %f, %f", omnipuck:translation(0), omnipuck:translation(1))
-      return true
-   end
-   return false
-end
-
 function have_puck()
     local curDistance = sensor:distance(8)
     if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
@@ -66,11 +58,10 @@ function visible()
 end
 
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck, omnipuck=omnipuck,
-      visible=visible, puck_in_front=puck_in_front},
+      visible=visible},
    {"WAIT_FOR_VISION", JumpState},
-   {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_TURN",
+   {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB",
       fail_to="WAIT_FOR_VISION"},
-   {"CHECK_TURN", JumpState},
    {"GRAB", SkillJumpState, skills={{motor_move}}, final_to="GRAB_DONE",
       fail_to="FAILED"},
    -- GRAB motor_move's too far and preempts if have_puck. If motor_move finishes we
@@ -83,9 +74,6 @@ fsm:define_states{ export_to=_M, closure={have_puck=have_puck, omnipuck=omnipuck
 fsm:add_transitions{
    {"WAIT_FOR_VISION", "TURN_TO_PUCK", cond=visible },
    {"WAIT_FOR_VISION", "FAILED", timeout=TIMEOUT},
-   {"CHECK_TURN", "GRAB", cond="visible() and puck_in_front()"},
-   {"CHECK_TURN", "WAIT_FOR_VISION", cond="visible() and not puck_in_front()"},
-   {"CHECK_TURN", "FAILED", timeout=TIMEOUT},
    {"GRAB", "MOVE_MORE", cond=have_puck},
    {"GRAB_DONE", "WAIT_FOR_VISION", cond="not have_puck()"},
    {"GRAB_DONE", "MOVE_MORE", cond=have_puck},
@@ -98,17 +86,20 @@ end
 function WAIT_FOR_VISION:init()
    local msg = omnivisionSwitch.EnableSwitchMessage:new()
    omnivisionSwitch:msgq_enqueue_copy(msg)
+   local x = omnipuck:translation(0)
+   local y = omnipuck:translation(1)
+   self.fsm.vars.target = tfm.transform({x = x, y = y, ori = 0}, "/base_link", "/odom")
 end
 
 function TURN_TO_PUCK:init()
-   self.skills[1].ori = math.atan2(omnipuck:translation(1), omnipuck:translation(0))
+   local target = tfm.transform(self.fsm.vars.target, "/odom", "/base_link")
+   self.skills[1].ori = math.atan2(target.y, target.x)
 end
 
 function GRAB:init()
-   local x = omnipuck:translation(0)
-   local y = omnipuck:translation(1)
-   printf("GRAB: %f,%f", x, y)
-   self.skills[1].x = math.sqrt(x^2 + y^2) + 0.3 
+   local target = tfm.transform(self.fsm.vars.target, "/odom", "/base_link")
+   printf("GRAB: %f,%f", target.x, target.y)
+   self.skills[1].x = math.sqrt(target.x^2 + target.y^2) + 0.3 
 end
 
 function cleanup()
