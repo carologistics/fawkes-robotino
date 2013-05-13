@@ -32,16 +32,14 @@ clips-agent:
   llsf2013:
     enable-sim: false
 
-    double-exploration: true
-
+    # Possible roles for the agent:
+    # EXPLORATION_ONLY
+    # EXPLORATION_PRODUCTION
+    agent-role: EXPLORATION_PRODUCTION
+    
     play-exploration-without-refbox: false
     #uncomment following line ONLY if you are playing without refbox
     #unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
-
-    #If playing the exploration-phase with TWO ROBOTS only the Counterclockwise will do Production!!!!!!!!!!!
-    #TODO: rename
-    #exploration-agent-cycle-clockwise: true 
-    exploration-agent-cycle-clockwise: false
 
     peer-address: 172.16.35.255
     peer-recv-port: 4444

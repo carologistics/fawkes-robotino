@@ -9,90 +9,28 @@
 ;---------------------------------------------------------------------------
 
 
-;should the agent go clockwise or anticlockwise?
-;machine name, coordinates, next machine in exploration cycle
-(defrule exp-config-path-clockwise
-  (confval (path "/clips-agent/llsf2013/exploration-agent-cycle-clockwise") (value true))
-  (confval (path "/clips-agent/llsf2013/double-exploration") (value ?double-exploration))
+;Determine the first machine in dependency of the role
+(defrule exp-determine-first-machine
+  (role ?role)
   =>
-  (printout t "Driving clockwise" crlf)
-  (if (eq ?double-exploration false)
+  (if (eq ?role EXPLORATION_ONLY)
     then
-    (assert 
-      (machine-exploration (name M10) (x 2.18) (y 4.74) (next M7) (look-pos M10))
-      (machine-exploration (name M9) (x 1.38) (y 3.42) (next M10) (look-pos M9))
-      (machine-exploration (name M8) (x 1.38) (y 2.18) (next M9) (look-pos M8))
-      (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6) (look-pos M7))
-      (machine-exploration (name M6) (x 3.1) (y 4.42) (next M2) (look-pos M6))
-      (machine-exploration (name M5) (x 2.3) (y 3.1) (next M4) (look-pos M5))
-      (machine-exploration (name M4) (x 3.1) (y 2.13) (next M1) (look-pos M4))
-      (machine-exploration (name M3) (x 3.1) (y 1.06) (next M8) (look-pos M3))
-      (machine-exploration (name M2) (x 4.42) (y 3.62) (next M5) (look-pos M2))
-      (machine-exploration (name M1) (x 3.62) (y 1.18) (next M3) (look-pos M1))
-    )
+      (assert (first-exploration-machine M2))
     else
-;double
-    (assert
-      (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos M10))
-      (machine-exploration (name M9) (x 1.38) (y 3.42) (next R2) (look-pos M9))
-      (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6) (look-pos M7))
-      (machine-exploration (name M6) (x 3.1) (y 4.42) (next M10) (look-pos M6))
-      (machine-exploration (name M2) (x 4.42) (y 3.62) (next M7) (look-pos M2))
-      (machine-exploration (name R2) (x 3.62) (y 1.18) (next R2) (look-pos R2))
-      (second-robotino)
-      (stille-ecke R2)
-    )
-  )
-  (assert
-    (first-exploration-machine M2)
+      (if (eq ?role EXPLORATION_PRODUCTION)
+	then
+	  (assert (first-exploration-machine M8))
+	else
+	  (printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! ")
+      )
   )
 )
-
-(defrule exp-config-path-counter-clockwise
-  (confval (path "/clips-agent/llsf2013/exploration-agent-cycle-clockwise") (value false))
-  (confval (path "/clips-agent/llsf2013/double-exploration") (value ?double-exploration))
-  =>
-  (printout t "Driving anti-clockwise" crlf)
-  (if (eq ?double-exploration false)
-    then
-    (assert 
-      (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos M10))
-      (machine-exploration (name M9) (x 1.38) (y 3.42) (next M8) (look-pos M9))
-      (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3) (look-pos M8))
-      (machine-exploration (name M7) (x 2.5) (y 4.5) (next M10) (look-pos M7))
-      (machine-exploration (name M6) (x 3.1) (y 4.42) (next M7) (look-pos M6))
-      (machine-exploration (name M5) (x 2.3) (y 3.1) (next M2) (look-pos M5))
-      (machine-exploration (name M4) (x 3.1) (y 2.13) (next M5) (look-pos M4))
-      (machine-exploration (name M3) (x 3.1) (y 1.06) (next M1) (look-pos M3))
-      (machine-exploration (name M2) (x 4.42) (y 3.62) (next M6) (look-pos M2))
-      (machine-exploration (name M1) (x 3.62) (y 1.18) (next M4) (look-pos M1))
-    )
-    else
-    (assert
-      (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos M10))
-      (machine-exploration (name M9) (x 1.38) (y 3.42) (next M8) (look-pos M9))
-      (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3) (look-pos M8))
-      (machine-exploration (name M7) (x 2.5) (y 4.5) (next M10) (look-pos M7))
-      (machine-exploration (name M6) (x 3.1) (y 4.42) (next M7) (look-pos M6))
-      (machine-exploration (name M5) (x 2.3) (y 3.1) (next M2) (look-pos M5))
-      (machine-exploration (name M4) (x 3.1) (y 2.13) (next M5) (look-pos M4))
-      (machine-exploration (name M3) (x 3.1) (y 1.06) (next M1) (look-pos M3))
-      (machine-exploration (name M2) (x 4.42) (y 3.62) (next M6) (look-pos M2))
-      (machine-exploration (name M1) (x 3.62) (y 1.18) (next M4) (look-pos M1))
-      (first-robotino)
-    )
-  )
-  (assert
-    (first-exploration-machine M8)
-  )
-)
-
 
 ;Set up the status
 ;there are two rounds. In the first the robotino drives to each machine in a defined cycle. After the first round the robotino drives to unrecognized machines again.
 (defrule exp-start
   (phase EXPLORATION)
-  ?st  <- (exploration-start)
+  ?st <- (exploration-start)
   (time $?now)
   =>
   (retract ?st)
@@ -101,7 +39,6 @@
   (assert (status "explorationRunning"))
   (assert (signal (type send-machine-reports)))
   (assert (signal (type print-unrecognized-lights)))
-  (assert (signal (type in-die-stille-ecke-command)))
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
 
@@ -413,21 +350,21 @@
 (defrule exp-move-second-agent-away-finished
   (declare (salience ?*PRIORITY-HIGH*))
   (status "finishedExploration")
-  (second-robotino)
+  (role EXPLORATION_ONLY)
   =>
   (assert (end-status "flee"))
 )
 (defrule exp-move-second-agent-away-prod-started
   (declare (salience ?*PRIORITY-HIGH*))
   (phase PRODUCTION)
-  (second-robotino)
+  (role EXPLORATION_ONLY)
   =>
   (assert (end-status "flee"))
 )
 
 (defrule exp-in-die-stille-ecke
   (declare (salience ?*PRIORITY-HIGH*))
-  (second-robotino)
+  (role EXPLORATION_ONLY)
   (end-status "flee")
   (stille-ecke ?l)
   =>
@@ -435,7 +372,7 @@
 )
 (defrule exp-remove-phases
   (declare (salience ?*PRIORITY-HIGH*))
-  (second-robotino)
+  (role EXPLORATION_ONLY)
   (end-status "flee")
   ?p <- (phase ?)
   (time $?)
@@ -444,7 +381,7 @@
 )
 (defrule exp-remove-status
   (declare (salience ?*PRIORITY-HIGH*))
-  (second-robotino)
+  (role EXPLORATION_ONLY)
   (end-status "flee")
   ?s <- (status ?)
   (time $?)
