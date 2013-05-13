@@ -28,16 +28,16 @@
   )
 )
 
-;Set up the status
+;Set up the state
 ;there are two rounds. In the first the robotino drives to each machine in a defined cycle. After the first round the robotino drives to unrecognized machines again.
 (defrule exp-start
   (phase EXPLORATION)
   ?st <- (exploration-start)
   =>
   (retract ?st)
-  (assert (status "start")
-          (round "first")
-          (status "explorationRunning")
+  (assert (state EXP_START)
+          (round FIRST)
+          (state EXP_EXPLORATION_RUNNING)
           (signal (type send-machine-reports))
           (signal (type print-unrecognized-lights))
   )
@@ -51,15 +51,15 @@
 ;Robotino drives to the first machine to start the first round
 (defrule exp-goto-first
   (phase EXPLORATION)
-  ?s <- (status "start")
-  (round "first")
+  ?s <- (state EXP_START)
+  (round FIRST)
   ?first-machine <- (first-exploration-machine ?v)
   (machine-exploration (name ?v) (x ?) (y ?) (next ?) (look-pos ?lp))
   =>
   (printout t "First machine:" ?v crlf)
   (skill-call ppgoto place (str-cat ?lp))
   (retract ?s ?first-machine)
-  (assert (status "drivingToMachine")
+  (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?v)
           (startmachine ?v))
 )
@@ -68,13 +68,13 @@
 (defrule exp-arrived-at-machine
   (phase EXPLORATION)
   ?final <- (skill (name "ppgoto") (status FINAL) (skill-string ?skill)) 
-  ?s <- (status "drivingToMachine")
+  ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
   (printout t "arrived. skill string was: " ?skill crlf)
   (printout t "Read light now" crlf)
   (retract ?s ?final)
-  (assert (status "waitingAtMachine")
+  (assert (state EXP_WAITING_AT_MACHINE)
           (signal (type waiting-since) (time ?now) (seq 1))
   )
 )
@@ -84,7 +84,7 @@
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (signal (type waiting-since))
-  ?s <- (status "waitingAtMachine")
+  ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh 20)) (ready TRUE))
@@ -92,20 +92,11 @@
   (printout t "Read light red: " ?red " yellow: " ?yellow " green: " ?green crlf)
   (printout t "asserted block of " ?old crlf)
   (retract ?s ?g ?rli ?ws)
-  (assert (status "idle")
+  (assert (state EXP_IDLE)
           (nextInCycle ?nextMachine)
           (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green))
           (blocked ?old ?now)
   )
-)
-
-(defrule exp-test-light
-  (phase EXPLORATION)
-  (status "waitingAtMachine")
-  ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (ready ?ready))
-  =>
-  (printout t "WAITING AT MACHINE" crlf)
-  (printout t "See light red: " ?red " yellow: " ?yellow " green: " ?green " ready: " ?ready crlf)
 )
 
 ;Matching of recognized lights to the machine types
@@ -206,7 +197,7 @@
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (signal (type waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
-  ?s <- (status "waitingAtMachine")
+  ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   =>
@@ -214,7 +205,7 @@
   (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE" crlf)
   (printout t "asserted block of " ?old crlf)
   (retract ?s ?g ?ws)
-  (assert (status "idle")
+  (assert (state EXP_IDLE)
           (nextInCycle ?nextMachine)
           (blocked ?old ?now)
   )
@@ -223,15 +214,15 @@
 ;Find next machine and assert drinve command in the first round
 (defrule exp-goto-next-machine-first-round
   (phase EXPLORATION)
-  (round "first")
-  ?s <- (status "idle")
+  (round FIRST)
+  ?s <- (state EXP_IDLE)
   ?n <- (nextInCycle ?nextMachine)
   (not (machineRecognized ?nextMachine))
   (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
   =>
   (printout t "Going to next machine" crlf)
   (retract ?s ?n)
-  (assert (status "drivingToMachine")
+  (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine)
   )
   (skill-call ppgoto place (str-cat ?lp))
@@ -240,28 +231,28 @@
 ;finish the first round and begin retry round
 (defrule exp-finish-first-round
   (phase EXPLORATION)
-  ?r <- (round "first")
-  ?s <- (status "idle")
+  ?r <- (round FIRST)
+  ?s <- (state EXP_IDLE)
   ?n <- (nextInCycle ?nextMachine)
   (machineRecognized ?nextMachine)
   =>
   (printout t "Finished first round" crlf)
   (retract ?s ?r ?n) 
-  (assert (round "retry")
-          (status "idle")
+  (assert (round RETRY)
+          (state EXP_IDLE)
   )
 )
 
 ;should be unnecessary but hack for safety
 (defrule exp-finish-first-round-and-flee
-  ?sr <- (round "retry")
-  ?si <- (status "idle")
+  ?sr <- (round RETRY)
+  ?si <- (state EXP_IDLE)
   (second-robotino)
   (stille-ecke ?l)
   =>
   (skill-call ppgoto place (str-cat ?l))
   (retract ?sr ?si)
-  (assert (end-status "flee"))  
+  (assert (end-state FLEE))  
 )
 
 (deffunction machine-is-closer (?x ?y ?x2 ?y2 $?pos)
@@ -276,8 +267,8 @@
 ;Drive to the nearest unrecognized machine in the retry round
 (defrule exp-retry-nearest-unrecognized
   (phase EXPLORATION)
-  (round "retry")
-  ?s <- (status "idle")
+  (round RETRY)
+  ?s <- (state EXP_IDLE)
   (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
   (not (machineRecognized ?m))
   (not (blocked ?m $?))
@@ -288,7 +279,7 @@
   =>
   (printout t "Retry machine" crlf)
   (retract ?s)
-  (assert (status "drivingToMachine")
+  (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?m)
   )
   (skill-call ppgoto place (str-cat ?lp))
@@ -310,32 +301,32 @@
   (phase EXPLORATION)
   (forall (machine-exploration (name ?m) (x ?) (y ?) (next ?))
     (machineRecognized ?m))
-  ?s <- (round "retry")
+  ?s <- (round RETRY)
   =>
   (printout t "Finished Exploration :-)" crlf)
   (retract ?s)
-  (assert (status "finishedExploration"))
+  (assert (state EXP_FINISHED_EXPLORATION))
 )
 
 (defrule exp-move-second-agent-away-finished
   (declare (salience ?*PRIORITY-HIGH*))
-  (status "finishedExploration")
+  (state EXP_FINISHED_EXPLORATION)
   (role EXPLORATION_ONLY)
   =>
-  (assert (end-status "flee"))
+  (assert (end-state FLEE))
 )
 (defrule exp-move-second-agent-away-prod-started
   (declare (salience ?*PRIORITY-HIGH*))
   (phase PRODUCTION)
   (role EXPLORATION_ONLY)
   =>
-  (assert (end-status "flee"))
+  (assert (end-state FLEE))
 )
 
 (defrule exp-in-die-stille-ecke
   (declare (salience ?*PRIORITY-HIGH*))
   (role EXPLORATION_ONLY)
-  (end-status "flee")
+  (end-state FLEE)
   (stille-ecke ?l)
   =>
   (skill-call ppgoto place (str-cat ?l))
@@ -343,17 +334,17 @@
 (defrule exp-remove-phases
   (declare (salience ?*PRIORITY-HIGH*))
   (role EXPLORATION_ONLY)
-  (end-status "flee")
+  (end-state FLEE)
   ?p <- (phase ?)
   (time $?)
   =>
   (retract ?p)
 )
-(defrule exp-remove-status
+(defrule exp-remove-state
   (declare (salience ?*PRIORITY-HIGH*))
   (role EXPLORATION_ONLY)
-  (end-status "flee")
-  ?s <- (status ?)
+  (end-state FLEE)
+  ?s <- (state ?)
   (time $?)
   =>
   (retract ?s)
