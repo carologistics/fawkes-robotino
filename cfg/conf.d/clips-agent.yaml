@@ -42,9 +42,11 @@ clips-agent:
     #unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
 
     peer-address: 172.16.35.255
-    peer-recv-port: 4444
-    peer-send-port: 4445
-    #peer-port: 4444
+    #use this for talking to the refbox on the same laptop:
+    #peer-recv-port: 4444
+    #peer-send-port: 4445
+    #use this for talking to the real refbox:
+    peer-port: 4444
 
 
 
