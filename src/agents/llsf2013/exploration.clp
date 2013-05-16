@@ -14,14 +14,16 @@
 (defrule exp-determine-first-machine
   (phase EXPLORATION)
   (role ?role)
+  (confval (path "/clips-agent/llsf2013/start-machine-exploration-only") (value ?first-machine-exp-only))
+  (confval (path "/clips-agent/llsf2013/start-machine-exploration-production") (value ?first-machine-exp-prod))
   =>
   (if (eq ?role EXPLORATION_ONLY)
     then
-      (assert (first-exploration-machine M2))
+      (assert (first-exploration-machine (sym-cat ?first-machine-exp-only)))
     else
       (if (eq ?role EXPLORATION_PRODUCTION)
 	then
-	  (assert (first-exploration-machine M8))
+	  (assert (first-exploration-machine (sym-cat ?first-machine-exp-prod)))
 	else
 	  (printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! ")
       )

@@ -36,6 +36,9 @@ clips-agent:
     # EXPLORATION_ONLY
     # EXPLORATION_PRODUCTION
     agent-role: EXPLORATION_PRODUCTION
+
+    start-machine-exploration-only: M2
+    start-machine-exploration-production: M8
     
     play-exploration-without-refbox: false
     #uncomment following line ONLY if you are playing without refbox
