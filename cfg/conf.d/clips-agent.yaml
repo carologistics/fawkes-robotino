@@ -39,6 +39,7 @@ clips-agent:
 
     start-machine-exploration-only: M2
     start-machine-exploration-production: M8
+    waiting-for-production-point: Ins
     
     play-exploration-without-refbox: false
     #uncomment following line ONLY if you are playing without refbox

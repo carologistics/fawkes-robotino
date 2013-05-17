@@ -284,7 +284,7 @@
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?m)
   )
-  (skill-call ppgoto place (str-cat ?lp))
+   (skill-call ppgoto place (str-cat ?lp))
 )
 
 ;Do not retry the recently failed machine, free the block here
@@ -308,6 +308,18 @@
   (printout t "Finished Exploration :-)" crlf)
   (retract ?s)
   (assert (state EXP_FINISHED_EXPLORATION))
+)
+
+(defrule exp-goto-input-after-exploration
+  (phase EXPLORATION)
+  (state EXP_FINISHED_EXPLORATION)
+  (role EXPLORATION_PRODUCTION)
+  (not (driven-to-insertion))
+  (confval (path "/clips-agent/llsf2013/waiting-for-production-point") (value ?waiting-for-prod-point))
+  =>
+  (printout t "Finished Exploration - Driving to waiting-point" crlf)
+  (assert (driven-to-insertion))
+  (skill-call ppgoto place (str-cat ?waiting-for-prod-point))
 )
 
 (defrule exp-move-second-agent-away-finished
