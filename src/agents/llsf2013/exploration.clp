@@ -22,10 +22,10 @@
       (assert (first-exploration-machine (sym-cat ?first-machine-exp-only)))
     else
       (if (eq ?role EXPLORATION_PRODUCTION)
-	then
-	  (assert (first-exploration-machine (sym-cat ?first-machine-exp-prod)))
-	else
-	  (printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! ")
+				then
+					(assert (first-exploration-machine (sym-cat ?first-machine-exp-prod)))
+				else
+					(printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! ")
       )
   )
 )
@@ -39,7 +39,6 @@
   (retract ?st)
   (assert (state EXP_START)
           (round FIRST)
-          (state EXP_EXPLORATION_RUNNING)
           (signal (type send-machine-reports))
           (signal (type print-unrecognized-lights))
   )
@@ -58,12 +57,11 @@
   ?first-machine <- (first-exploration-machine ?v)
   (machine-exploration (name ?v) (x ?) (y ?) (next ?) (look-pos ?lp))
   =>
-  (printout t "First machine:" ?v crlf)
+  (printout t "First machine: " ?v crlf)
   (skill-call ppgoto place (str-cat ?lp))
-  (retract ?s ?first-machine)
+  (retract ?s)
   (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?v)
-          (startmachine ?v))
+          (goalmachine ?v))
 )
 
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
@@ -73,15 +71,15 @@
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
-  (printout t "arrived. skill string was: " ?skill crlf)
-  (printout t "Read light now" crlf)
+  (printout t "Arrived. Skill string was: " ?skill crlf)
+  (printout t "Read light now." crlf)
   (retract ?s ?final)
   (assert (state EXP_WAITING_AT_MACHINE)
           (signal (type waiting-since) (time ?now) (seq 1))
   )
 )
 
-;Recognizing succseded => memorize light-signals for further rules and prepare to drive to the next machine
+;Recognizing succeeded => memorize light-signals for further rules and prepare to drive to the next machine
 (defrule exp-read-light-at-machine
   (phase EXPLORATION)
   (time $?now)
@@ -91,13 +89,11 @@
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh 20)) (ready TRUE))
   =>
-  (printout t "Read light red: " ?red " yellow: " ?yellow " green: " ?green crlf)
-  (printout t "asserted block of " ?old crlf)
+  (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
   (retract ?s ?g ?rli ?ws)
   (assert (state EXP_IDLE)
           (nextInCycle ?nextMachine)
           (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green))
-          (blocked ?old ?now)
   )
 )
 
@@ -110,7 +106,6 @@
   (printout t "Identified machine" crlf)
   (retract ?ml)
   (assert (machine-type (name ?name) (type ?type))
-          (machineRecognized ?name)
   )
 )
 
@@ -155,8 +150,8 @@
   (assert (have-all-matchings))
 )
 
-;Recieve light-pattern-to-type matchig and save it in a fact
-(defrule exp-recieve-type-light-pattern-matching
+;Receive light-pattern-to-type matchig and save it in a fact
+(defrule exp-receive-type-light-pattern-matching
   (phase EXPLORATION)
   ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p) (rcvd-via BROADCAST))
   (not (have-all-matchings))
@@ -170,6 +165,17 @@
       ;assert the read type color and state to compose it together in compose-type-light-pattern-matching 
       (assert (type-spec-pre ?type ?light-color ?light-state))
     )
+  )
+)
+
+(defrule exp-receive-recognized-machines
+  (phase EXPLORATION)
+  ?pbm <- (protobuf-msg (type "llsf_msgs.MachineReportInfo") (ptr ?p))
+  =>
+  (retract ?pbm)
+  (foreach ?machine (pb-field-list ?p "reported_machines")
+    (assert (machineRecognized ?machine))
+    (printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
   )
 )
 
@@ -204,12 +210,10 @@
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   =>
   (printout t "Reading light at " ?old " failed." crlf)
-  (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE" crlf)
-  (printout t "asserted block of " ?old crlf)
+  (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE." crlf)
   (retract ?s ?g ?ws)
   (assert (state EXP_IDLE)
           (nextInCycle ?nextMachine)
-          (blocked ?old ?now)
   )
 )
 
@@ -273,7 +277,6 @@
   ?s <- (state EXP_IDLE)
   (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
   (not (machineRecognized ?m))
-  (not (blocked ?m $?))
   (machine-exploration (name ?m2&~?m))
   (not (machineRecognized ?m2))
   (Position3DInterface (id "Pose") (translation $?pos))
@@ -285,16 +288,6 @@
           (goalmachine ?m)
   )
    (skill-call ppgoto place (str-cat ?lp))
-)
-
-;Do not retry the recently failed machine, free the block here
-(defrule exp-free-blocked
-  (phase EXPLORATION)
-  (time $?now)
-  ?b <- (blocked ?m $?t&:(timeout ?now ?t 0.2))
-  =>
-  (printout t "Removed blocking of " ?m crlf)
-  (retract ?b)
 )
 
 
