@@ -30,7 +30,7 @@ clips-agent:
   #  enable-sim: true
 
   llsf2013:
-    enable-sim: false
+    enable-sim: true
 
     # Possible roles for the agent:
     # EXPLORATION_ONLY
@@ -39,18 +39,19 @@ clips-agent:
 
     start-machine-exploration-only: M2
     start-machine-exploration-production: M8
+    exploration-only-work-finished-point: R2
     waiting-for-production-point: Ins
     
     play-exploration-without-refbox: false
     #uncomment following line ONLY if you are playing without refbox
     #unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
 
-    peer-address: 172.16.35.255
+    peer-address: 134.61.78.242
     #use this for talking to the refbox on the same laptop:
-    #peer-recv-port: 4444
-    #peer-send-port: 4445
+    peer-recv-port: 4444
+    peer-send-port: 4445
     #use this for talking to the real refbox:
-    peer-port: 4444
+    #peer-port: 4444
 
 
 
