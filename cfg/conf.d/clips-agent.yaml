@@ -46,7 +46,8 @@ clips-agent:
     #uncomment following line ONLY if you are playing without refbox
     #unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
 
-    peer-address: 134.61.78.242
+    
+    peer-address: 172.16.35.255
     #use this for talking to the refbox on the same laptop:
     peer-recv-port: 4444
     peer-send-port: 4445

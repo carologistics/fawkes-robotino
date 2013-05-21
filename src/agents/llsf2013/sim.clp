@@ -156,8 +156,9 @@
 )
 
 (defrule sim-exp-give-pos-when-retrying
-  (blocked ?m $?)
-  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?))
+  (state EXP_IDLE)
+  (nextInCycle ?nextMachine)
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?nextMachine))
   (time $?now)
   =>
   (assert (Position3DInterface (id "Pose") (translation (create$ ?x ?y 0.0))))

@@ -127,26 +127,37 @@
   (skill-call ppgoto place (str-cat ?lp))
 )
 
+(defrule exp-go-to-nextnext-machine-first-round
+  (phase EXPLORATION)
+  (round FIRST)
+  (state EXP_IDLE)
+  ?n <- (nextInCycle ?nextMachine)
+  (machineRecognized ?nextMachine)
+  (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?nextnext) (look-pos ?lp))
+  (not (first-exploration-machine ?nextMachine))
+  =>
+  (retract ?n)
+  (assert (nextInCycle ?nextnext))
+)
+
 ;Finish first round
 (defrule exp-finish-first-round
   (phase EXPLORATION)
   ?r <- (round FIRST)
-  ?s <- (state EXP_IDLE)
+  (state EXP_IDLE)
   ?n <- (nextInCycle ?nextMachine)
   (first-exploration-machine ?nextMachine)
   =>
   (printout t "Finished first round." crlf)
-  (retract ?s ?r ?n) 
+  (retract ?r ?n) 
   (assert (round FIRST_FINISHED)
-          (state EXP_IDLE)
   )
 )
 
 ;Start retry round if EXPLORATION_ONLY
 (defrule exp-start-retry-round
-	(phase EXPLORATION)
+  (phase EXPLORATION)
   ?r <- (round FIRST_FINISHED)
-  ?s <- (state EXP_IDLE)
   (role EXPLORATION_ONLY)
   =>
   (printout t "Starting retry round." crlf)
@@ -156,7 +167,7 @@
 
 ;Move EXPLORATION_PRODUCTION away after first round
 (defrule exp-move-away-after-finished
-	(declare (salience ?*PRIORITY-HIGH*))
+  (declare (salience ?*PRIORITY-HIGH*))
   ?sr <- (round FIRST_FINISHED)
   ?si <- (state EXP_IDLE)
   (role EXPLORATION_PRODUCTION)
@@ -179,23 +190,41 @@
 )
 
 ;Drive to the nearest unrecognized machine in the retry round
-(defrule exp-retry-nearest-unrecognized
+(defrule exp-retry-unrecognized
   (phase EXPLORATION)
   (round RETRY)
   ?s <- (state EXP_IDLE)
-  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
+  (machine-exploration (name ?m))
   (not (machineRecognized ?m))
-  (machine-exploration (name ?m2&~?m))
-  (not (machineRecognized ?m2))
+  =>
+  (assert (want-to-retry ?m))
+)
+(defrule retry-nearer-unrecognized
+  (declare (salience ?*PRIORITY-HIGH*))
+  (phase EXPLORATION)
+  (round RETRY)
+  ?r <- (want-to-retry ?m)  
   (Position3DInterface (id "Pose") (translation $?pos))
-  (machine-exploration (name ?m2) (x ?x2) (y ?y2&~:(machine-is-closer ?x2 ?y2 ?x ?y ?pos)))
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
+  (machine-exploration (name ?m2) (x ?x2) (y ?y2&~:(machine-is-closer ?x ?y ?x2 ?y2 ?pos)))
+  (not (machineRecognized ?m2))
+  =>
+  (retract ?r)
+  (assert (want-to-retry ?m2))
+)
+(defrule execute-retry
+  (phase EXPLORATION)
+  (round RETRY)
+  ?s <- (state EXP_IDLE)
+  ?r <- (want-to-retry ?m)
+  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
   =>
   (printout t "Retry machine" crlf)
-  (retract ?s)
+  (retract ?s ?r)
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?m)
   )
-   (skill-call ppgoto place (str-cat ?lp))
+  (skill-call ppgoto place (str-cat ?lp))  
 )
 
 ;Finish exploration phase if all machines are recognized
@@ -211,14 +240,18 @@
   (assert (end-state FLEE))
 )
 
+;don't retract when two robots produce
 (defrule exp-production-phase-started
-  (phase PRODUCTION)
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?p <- (phase PRODUCTION)
   (role EXPLORATION_ONLY)
   =>
+  (retract ?p)
   (assert (end-state FLEE))
 )
 
 (defrule exp-move-exploration-only-away
+  (declare (salience ?*PRIORITY-HIGH*))
   (role EXPLORATION_ONLY)
   ?s <- (end-state FLEE)
 	(confval (path "/clips-agent/llsf2013/exploration-only-work-finished-point") (value ?work-finished-point))
@@ -282,7 +315,7 @@
 )
 
 ;Sending all results to the refbox every second
-(defrule exp-send-recognized-machines "Tell the refbox"
+(defrule exp-send-recognized-machines
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (signal (type send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
@@ -304,8 +337,8 @@
   =>
   (retract ?pbm)
   (foreach ?machine (pb-field-list ?p "reported_machines")
-    (assert (machineRecognized ?machine))
-    (printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
+    (assert (machineRecognized (sym-cat ?machine)))
+    ;(printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
   )
 )
 
