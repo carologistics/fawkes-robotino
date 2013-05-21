@@ -279,13 +279,11 @@
   ?ws <- (signal (type send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
-  (printout t "Ich sende jetzt folgende Maschinen:" crlf)
   (do-for-all-facts ((?machine machine-type)) TRUE
     (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
     (pb-set-field ?mre "name" (str-cat ?machine:name))
     (pb-set-field ?mre "type" (str-cat ?machine:type))
     (pb-add-list ?mr "machines" ?mre)
-    (printout t "Maschine " ?machine:name ", Typ " ?machine:type crlf)
   )
   (pb-broadcast ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
