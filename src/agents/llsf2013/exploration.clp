@@ -169,6 +169,15 @@
   (assert (driven-to-waiting-point))  
 )
 
+(deffunction machine-is-closer (?x ?y ?x2 ?y2 $?pos)
+  (if (<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x2 (nth$ 1 ?pos)) (- ?x2 (nth$ 1 ?pos))) (* (- ?y2 (nth$ 2 ?pos)) (- ?y2 (nth$ 2 ?pos)))))
+    then
+      TRUE
+    else
+      FALSE
+  )
+)
+
 ;Drive to the nearest unrecognized machine in the retry round
 (defrule exp-retry-nearest-unrecognized
   (phase EXPLORATION)
@@ -318,15 +327,6 @@
   (type-spec-pre ?type ?light-color BLINK)
   =>
   (assert (type-spec-pre ?type ?light-color BLINKING))
-)
-
-(deffunction machine-is-closer (?x ?y ?x2 ?y2 $?pos)
-  (if (<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x2 (nth$ 1 ?pos)) (- ?x2 (nth$ 1 ?pos))) (* (- ?y2 (nth$ 2 ?pos)) (- ?y2 (nth$ 2 ?pos)))))
-    then
-      TRUE
-    else
-      FALSE
-  )
 )
 
 (defrule exp-remove-phases
