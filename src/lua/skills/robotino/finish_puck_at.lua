@@ -94,7 +94,11 @@ function SKILL_TAKE_PUCK:init()
 end
 
 function SKILL_DRIVE_LEFT:init()
-   self.skills[1].y=0.5 
+   if self.fsm.vars.goto_name == "M3" then
+      self.skills[1].y=-0.5
+   else
+      self.skills[1].y=0.5
+   end
 end
 
 function SKILL_RFID:init()
