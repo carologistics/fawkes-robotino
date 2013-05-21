@@ -39,8 +39,8 @@ skillenv.skill_module(_M)
 
 local TIMEOUT = 15
 local ORI_OFFSET = 0.03
-local THRESHOLD_DISTANCE = 0.05
-local MIN_VIS_HIST = 5
+local THRESHOLD_DISTANCE = 0.067
+local MIN_VIS_HIST = 15
 
 local tfm = require 'tf_module'
 
@@ -86,19 +86,20 @@ end
 function WAIT_FOR_VISION:init()
    local msg = omnivisionSwitch.EnableSwitchMessage:new()
    omnivisionSwitch:msgq_enqueue_copy(msg)
-   local x = omnipuck:translation(0)
-   local y = omnipuck:translation(1)
-   self.fsm.vars.target = tfm.transform({x = x, y = y, ori = 0}, "/base_link", "/odom")
 end
 
 function TURN_TO_PUCK:init()
-   local target = tfm.transform(self.fsm.vars.target, "/odom", "/base_link")
+   local x = omnipuck:translation(0)
+   local y = omnipuck:translation(1)
+   printf("GRAB local: %f,%f", x, y)
+   self.fsm.vars.target = tfm.transform({x = x, y = y, ori = 0}, "/base_link", "/map")
+   printf("GRAB global: %f,%f", self.fsm.vars.target.x, self.fsm.vars.target.y)
+   local target = tfm.transform(self.fsm.vars.target, "/map", "/base_link")
    self.skills[1].ori = math.atan2(target.y, target.x)
 end
 
 function GRAB:init()
-   local target = tfm.transform(self.fsm.vars.target, "/odom", "/base_link")
-   printf("GRAB: %f,%f", target.x, target.y)
+   local target = tfm.transform(self.fsm.vars.target, "/map", "/base_link")
    self.skills[1].x = math.sqrt(target.x^2 + target.y^2) + 0.3 
 end
 
