@@ -175,6 +175,7 @@ private:
 	void processHistoryBuffer();
 	firevision::ROI getBiggestRoi(std::list<firevision::ROI>* roiList);
 	void checkIfROIIsInBuffer(const firevision::ROI& light);
+	void drawLightRois(const PluginLightThread::lightROIs& lightROIs);
 
 protected:
 	virtual void run() { Thread::run(); }
