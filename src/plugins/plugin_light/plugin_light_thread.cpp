@@ -184,6 +184,7 @@ PluginLightThread::init()
 	this->drawer = new firevision::FilterROIDraw();
 
 	this->resetLightInterface();
+	this->resetLocalHistory();
 
 	logger->log_debug(name(), "Plugin-light: end of init()");
 }
@@ -208,14 +209,6 @@ PluginLightThread::finalize()													//TODO check if everthing gets deleted
 	logger->log_info(name(), "Plugin-light: ends");
 }
 
-void PluginLightThread::drawLightRois(
-		const PluginLightThread::lightROIs& lightROIs) {
-	this->drawROIIntoBuffer(lightROIs.light);
-	this->drawROIIntoBuffer(lightROIs.red);
-	this->drawROIIntoBuffer(lightROIs.yellow);
-	this->drawROIIntoBuffer(lightROIs.green);
-}
-
 void
 PluginLightThread::loop()
 {
@@ -233,7 +226,7 @@ PluginLightThread::loop()
 		clusterVisibilityHistory = cfg_simulate_laser_history;
 	}
 
-		fawkes::polar_coord_2d_t lightPositionPolar;
+	fawkes::polar_coord_2d_t lightPositionPolar;
 
 	if ( clusterVisibilityHistory > this->cfg_laserVisibilityThreashold ) {
 		if( clusterVisibilityHistory > 0 ){
@@ -242,8 +235,7 @@ PluginLightThread::loop()
 			if( this->isLightInViewarea(lightPositionPolar) ){
 				this->lightOutOfRangeCounter = 0;
 				contiueToPictureProcess = true;
-			}
-			else{
+			} else {
 				if ( this->lightOutOfRangeCounter < this->cfg_lightOutOfRangeThrashold ) {
 					if ( ! this->historyBuffer->empty()) {
 						lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
@@ -251,6 +243,7 @@ PluginLightThread::loop()
 						contiueToPictureProcess = true;
 					} else {
 						this->resetLightInterface("light is out of range and buffer is empty");
+						this->resetLocalHistory();
 					}
 				} else {
 					this->resetLightInterface("light is to often out of range for camera");
@@ -261,23 +254,31 @@ PluginLightThread::loop()
 			lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
 			contiueToPictureProcess = true;
 		} else {
-			this->resetLightInterface("laser visibility is < 0 but buffer is empty");
+			this->resetLightInterface("laser visibility is < 0 and buffer is empty");
+			this->resetLocalHistory();
 		}
 	} else{
-		this->resetLightInterface("laser visibility lower than threashold");
-		this->resetLocalHistory();
+		//if the laser doen't see anything, use it as the robot is directy in front of the light
+		lightPositionPolar.r = this->cfg_lightToCloseThrashold + 0.02;//0.22;
+		lightPositionPolar.phi = 0.0;
+		contiueToPictureProcess = true;
+//		this->resetLightInterface("laser visibility lower than threashold");
+//		this->resetLocalHistory();
 	}
 
-	try {
-		if ( contiueToPictureProcess ) {
+	if ( contiueToPictureProcess ) {
+		try {
 			PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 			this->takePicture(lightROIs);
-			//drawLightRois(lightROIs);
+
 			// correct light position
 			if(cfg_lightPositionCorrection){
 				lightROIs = this->correctLightRoisWithBlack(lightROIs);
 				if (this->cfg_paintROIsActivated) {
-					drawLightRois(lightROIs);
+					this->drawROIIntoBuffer(lightROIs.light);
+					this->drawROIIntoBuffer(lightROIs.red);
+					this->drawROIIntoBuffer(lightROIs.yellow);
+					this->drawROIIntoBuffer(lightROIs.green);
 				}
 			}
 
@@ -287,12 +288,10 @@ PluginLightThread::loop()
 			this->historyBuffer->push_front(lightSignalCurrentPicture);
 
 			this->processHistoryBuffer();
+		} catch(fawkes::Exception &e) {
+			this->resetLightInterface("ROI is outside of the buffer");
+			this->resetLocalHistory();
 		}
-	} catch(fawkes::Exception &e) {
-		this->resetLightInterface("ROI is outsite of the buffer");
-		this->resetLocalHistory();
-
-		logger->log_info(name(), "ROI is outsite of the buffer");				//TODO remove later
 	}
 }
 
@@ -323,7 +322,10 @@ PluginLightThread::takePicture(PluginLightThread::lightROIs lightROIs)
 
 	//draw expected light in buffer
 	if (this->cfg_paintROIsActivated) {
-		drawLightRois(lightROIs);
+		this->drawROIIntoBuffer(lightROIs.light);
+		this->drawROIIntoBuffer(lightROIs.red);
+		this->drawROIIntoBuffer(lightROIs.yellow);
+		this->drawROIIntoBuffer(lightROIs.green);
 	}
 }
 
@@ -345,47 +347,46 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 {
 	// Look in area around the red light for the back top of the light
 
-	firevision::ROI* searchAreaBottem = new firevision::ROI(expectedLight.light);
-	searchAreaBottem->start.x = expectedLight.light.start.x - 3*expectedLight.light.width;
-	searchAreaBottem->start.y = expectedLight.light.start.y + expectedLight.light.height - expectedLight.light.width;
-	searchAreaBottem->width =  expectedLight.light.width * 6;
-	searchAreaBottem->height = 2*expectedLight.light.width;
+	firevision::ROI* top = new firevision::ROI(expectedLight.light);
+	top->start.x = expectedLight.light.start.x - expectedLight.light.width;
+	top->start.y = expectedLight.light.start.y - expectedLight.light.width;
+	top->width =  expectedLight.light.width * 3;
+	top->height = 2*expectedLight.light.width;
 
 	if (this->cfg_paintROIsActivated) {
-		this->drawROIIntoBuffer(searchAreaBottem);
+		this->drawROIIntoBuffer(top);
 	}
 
-	std::list<firevision::ROI>* bottemBlackRoiList = this->classifyInRoi( searchAreaBottem ,this->classifierBlack);
+	std::list<firevision::ROI>* topBlackList = this->classifyInRoi( top ,this->classifierBlack);
+	if ( ! topBlackList->empty() ) {
+		firevision::ROI topBiggestRoi = getBiggestRoi(topBlackList);
 
-	if ( ! bottemBlackRoiList->empty() ) {
-		firevision::ROI bottemBlackRoi = getBiggestRoi(bottemBlackRoiList);
-
-		this->drawROIIntoBuffer(bottemBlackRoi);
+		this->drawROIIntoBuffer(topBiggestRoi);
 
 		if (this->cfg_debugMessagesActivated) {
-				logger->log_debug(name(), "Bottem: X: %u Y: %u Height: %u Width: %u",bottemBlackRoi.start.x , bottemBlackRoi.start.y, bottemBlackRoi.height, bottemBlackRoi.width);
+				logger->log_debug(name(), "Top: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
 		}
 
-		// Look in the area around the Red light for a black roi (top cap) for validation
-		firevision::ROI* searchAreaTop = new firevision::ROI(bottemBlackRoi);
+		// Look in the area around the green light for the black bottem for validation
+		firevision::ROI* bottem = new firevision::ROI(topBiggestRoi);
 
-		searchAreaTop->start.y = expectedLight.light.start.y - 2 * (expectedLight.light.height / 3);
-		searchAreaTop->height = expectedLight.green.height * 6;
+		bottem->start.y = expectedLight.light.start.y + 2 * (expectedLight.light.height / 3);
+		bottem->height = expectedLight.green.height * 6;
 
-		std::list<firevision::ROI>* topBlackRoiList = this->classifyInRoi( searchAreaTop ,this->classifierBlack);
-		if ( ! topBlackRoiList->empty() ) {
+		std::list<firevision::ROI>* bottemBlackList = this->classifyInRoi( bottem ,this->classifierBlack);
+		if ( ! bottemBlackList->empty() ) {
 
-			firevision::ROI topBiggestRoi = getBiggestRoi(topBlackRoiList);
-			this->drawROIIntoBuffer(topBiggestRoi);
+			firevision::ROI bottemBiggestRoi = getBiggestRoi(bottemBlackList);
+			this->drawROIIntoBuffer(bottemBiggestRoi);
 
 			if (this->cfg_debugMessagesActivated) {
-							logger->log_debug(name(), "Top: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
+							logger->log_debug(name(), "Bottem: X: %u Y: %u Height: %u Width: %u",bottemBiggestRoi.start.x , bottemBiggestRoi.start.y, bottemBiggestRoi.height, bottemBiggestRoi.width);
 			}
 			firevision::ROI light;
-			light.start.x = bottemBlackRoi.start.x;
+			light.start.x = topBiggestRoi.start.x;
 			light.start.y = topBiggestRoi.start.y + topBiggestRoi.height;
-			light.height = bottemBlackRoi.start.y - (topBiggestRoi.start.y + topBiggestRoi.height);
-			light.width = std::min(bottemBlackRoi.width, topBiggestRoi.width);
+			light.height = bottemBiggestRoi.start.y - (topBiggestRoi.start.y + topBiggestRoi.height);
+			light.width = std::min(topBiggestRoi.width, bottemBiggestRoi.width);
 
 			this->checkIfROIIsInBuffer(light);
 			expectedLight = this->createLightROIs(light);
@@ -420,7 +421,13 @@ PluginLightThread::processHistoryBuffer()	//TODO change function name to say tha
 		if ( this->lightFromHistoryBuffer(lighSignal) ) {
 			if ( lighSignal.red != fawkes::RobotinoLightInterface::UNKNOWN
 			  && lighSignal.yellow != fawkes::RobotinoLightInterface::UNKNOWN
-			  && lighSignal.green != fawkes::RobotinoLightInterface::UNKNOWN ) {
+			  && lighSignal.green != fawkes::RobotinoLightInterface::UNKNOWN
+			  && ! (
+					  lighSignal.red == fawkes::RobotinoLightInterface::OFF
+				   && lighSignal.yellow == fawkes::RobotinoLightInterface::OFF
+				   && lighSignal.green == fawkes::RobotinoLightInterface::OFF
+				   )
+			   ) {
 
 				this->writeLightInterface(lighSignal, true);
 
@@ -513,10 +520,14 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 }
 
 void PluginLightThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
-	if (light.start.x <= 0 || light.start.y <= 0
-			|| light.height + light.start.y >= (this->img_height)
-			|| light.width + light.start.x >= (this->img_width)) {
+	if (light.start.x >= this->img_width || light.start.y >= this->img_height
+			|| light.height + light.start.y >= this->img_height
+			|| light.width + light.start.x >= this->img_width) {
 		throw fawkes::Exception("ROI is outsite of the buffer");
+	} else {
+		if (this->cfg_debugMessagesActivated) {
+			logger->log_info(name(), "Size check ok");
+		}
 	}
 }
 
@@ -577,6 +588,13 @@ PluginLightThread::createLightROIs(firevision::ROI light)
 	lightROIs.green.height = roiHeight;
 	lightROIs.green.start.y += roiHeight * 7;									//Middle of the bottom thirds
 
+	if (this->cfg_debugMessagesActivated) {
+		logger->log_info(name(), "light.start.x %u, light.start.y %u, height: %u", lightROIs.light.start.x, lightROIs.light.start.y, lightROIs.light.height);
+		logger->log_info(name(), "red.start.x %u, red.start.y %u, red: %u", lightROIs.red.start.x, lightROIs.red.start.y, lightROIs.red.height);
+		logger->log_info(name(), "yellow.start.x %u, yellow.start.y %u, yellow: %u", lightROIs.yellow.start.x, lightROIs.yellow.start.y, lightROIs.yellow.height);
+		logger->log_info(name(), "green.start.x %u, green.start.y %u, green: %u", lightROIs.green.start.x, lightROIs.green.start.y, lightROIs.green.height);
+	}
+
 	return lightROIs;
 }
 
@@ -585,18 +603,28 @@ PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSigna
 	this->lightStateIF->read();
 	int vis = this->lightStateIF->visibility_history();
 
-	if (vis < 0) {
+	if ( vis < 0
+	  || this->lightStateIF->red() != lightSignal.red
+	  || this->lightStateIF->yellow() != lightSignal.yellow
+	  || this->lightStateIF->green() != lightSignal.green
+	   ) {
 		vis = 1;
+		ready = false;
 	} else {
 		vis++;
 	}
+
 	this->lightStateIF->set_visibility_history(vis);
 
 	this->lightStateIF->set_red(lightSignal.red);
 	this->lightStateIF->set_yellow(lightSignal.yellow);
 	this->lightStateIF->set_green(lightSignal.green);
 
-	this->lightStateIF->set_ready(ready);
+	if (vis >= this->detectionCycleTimeFrames) {
+		this->lightStateIF->set_ready(ready);
+	} else {
+		this->lightStateIF->set_ready(false);
+	}
 
 	this->lightStateIF->write();
 }
@@ -765,7 +793,9 @@ PluginLightThread::getNearestMaschineFromInterface()
 	if ( lightPosition.x < this->cfg_lightMoveUnderRfidThrashold ) {
 		lightPosition.y = 0.0;
 	} else {
-		logger->log_debug(name(), "Not a close mashine");
+		if (this->cfg_debugMessagesActivated) {
+			logger->log_debug(name(), "Not a close mashine");
+		}
 	}
 
 	return lightPosition;
