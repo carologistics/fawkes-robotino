@@ -124,6 +124,7 @@ LaserClusterThread::init()
   cfg_cluster_min_y_         = config->get_float(CFG_PREFIX"cluster_min_y");
   cfg_cluster_max_y_         = config->get_float(CFG_PREFIX"cluster_max_y");
   cfg_cluster_switch_tolerance_ = config->get_float(CFG_PREFIX"cluster_switch_tolerance");
+  cfg_offset_x_               = config->get_float(CFG_PREFIX"offset_x");
 
   finput_ = pcl_manager->get_pointcloud<PointType>(cfg_input_pcl_.c_str());
   input_ = pcl_utils::cloudptr_from_refptr(finput_);
@@ -138,7 +139,12 @@ LaserClusterThread::init()
 
     switch_if_ = NULL;
     switch_if_ = blackboard->open_for_writing<SwitchInterface>("laser-cluster");
-    switch_if_->set_enabled(true);
+
+    bool autostart = true;
+    try {
+      autostart = config->get_bool(CFG_PREFIX"auto-start");
+    } catch (Exception &e) {} // ignored, use default
+    switch_if_->set_enabled(autostart);
     switch_if_->write();
   } catch (Exception &e) {
     blackboard->close(cluster_pos_if_);
@@ -212,7 +218,7 @@ LaserClusterThread::loop()
   }
 
   if (! switch_if_->is_enabled()) {
-    TimeWait::wait(250000);
+    //TimeWait::wait(250000);
     return;
   }
 
@@ -226,7 +232,7 @@ LaserClusterThread::loop()
     // and not synchronized with main loop, but point cloud acquisition thread is
     // synchronized, we might start before any data has been read
     //logger->log_warn(name(), "Empty voxelized point cloud, omitting loop");
-    TimeWait::wait(50000);
+    //TimeWait::wait(50000);
     return;
   }
 
@@ -364,12 +370,12 @@ LaserClusterThread::loop()
 	   (centroid.y() >= cfg_cluster_min_y_) && (centroid.y() <= cfg_cluster_max_y_))
       {
 	double abs_angle = fabs(std::atan2(centroid.y(), centroid.x()));
-	if (min_index != std::numeric_limits<unsigned int>::max()) {
-	  logger->log_info(name(), "[L %u] (%f,%f,%f)|%f vs. (%f,%f,%f)|%f: %s", loop_count_,
-			   centroid.x(), centroid.y(), centroid.z(), abs_angle,
-			   min_centroid.x(), min_centroid.y(), min_centroid.z(), min_angle,
-			   (abs_angle < min_angle) ? "true" : "false");
-	}
+	//if (min_index != std::numeric_limits<unsigned int>::max()) {
+	  //logger->log_info(name(), "[L %u] (%f,%f,%f)|%f vs. (%f,%f,%f)|%f: %s", loop_count_,
+	  //		   centroid.x(), centroid.y(), centroid.z(), abs_angle,
+	  //		   min_centroid.x(), min_centroid.y(), min_centroid.z(), min_angle,
+	  //		   (abs_angle < min_angle) ? "true" : "false");
+	//}
 	if (abs_angle < min_angle) {
 	  min_index    = i;
 	  min_angle    = abs_angle;
@@ -435,7 +441,12 @@ LaserClusterThread::set_position(fawkes::Position3DInterface *iface,
                                     const Eigen::Quaternionf &attitude)
 {
   tf::Stamped<tf::Pose> baserel_pose;
+
   try{
+    // Note that we add a correction offset to the centroid X value.
+    // This offset is determined empirically and just turns out to be helpful
+    // in certain situations.
+
     tf::Stamped<tf::Pose>
       spose(tf::Pose(tf::Quaternion(attitude.x(), attitude.y(), attitude.z(), attitude.w()),
                      tf::Vector3(centroid[0], centroid[1], centroid[2])),
@@ -443,12 +454,16 @@ LaserClusterThread::set_position(fawkes::Position3DInterface *iface,
     tf_listener->transform_pose(cfg_result_frame_, spose, baserel_pose);
     iface->set_frame(cfg_result_frame_.c_str());
   } catch (tf::TransformException &e) {
+	  logger->log_warn(name(),"Transform exception:");
+	  logger->log_warn(name(),e);
     is_visible = false;
   }
 
   int visibility_history = iface->visibility_history();
   if (is_visible) {
-    Eigen::Vector4f last_centroid(iface->translation(0), iface->translation(1),
+	  //we have to subtract the previously added offset to be
+	  //able to compare against the current centroid
+    Eigen::Vector4f last_centroid(iface->translation(0) -cfg_offset_x_, iface->translation(1),
 				  iface->translation(2), 0.);
     bool different_cluster =
       fabs((last_centroid - centroid).norm()) > cfg_cluster_switch_tolerance_;
@@ -460,7 +475,9 @@ LaserClusterThread::set_position(fawkes::Position3DInterface *iface,
     }
     tf::Vector3 &origin = baserel_pose.getOrigin();
     tf::Quaternion quat = baserel_pose.getRotation();
-    double translation[3] = { origin.x(), origin.y(), origin.z() };
+
+    //add the offset and publish
+    double translation[3] = { origin.x() + cfg_offset_x_, origin.y(), origin.z() };
     double rotation[4] = { quat.x(), quat.y(), quat.z(), quat.w() };
     iface->set_translation(translation);
     iface->set_rotation(rotation);
