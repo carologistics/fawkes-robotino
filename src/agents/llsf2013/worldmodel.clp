@@ -115,9 +115,9 @@
   (state GOTO-FINAL)
   ?tf <- (goto-target deliver)
   ?hf <- (holding ?was-holding)
-  ?lf <- (lights $?)
+  ;?lf <- (lights $?)
   =>
-  (retract ?hf ?lf ?tf)
+  (retract ?hf ?tf)
   (assert (holding NONE))
   (printout t "Delivered " ?was-holding crlf)
 )
