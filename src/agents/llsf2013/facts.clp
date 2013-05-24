@@ -16,6 +16,14 @@
   (slot count (type INTEGER) (default 1))
 )
 
+(deftemplate active-robot
+  (slot name (type SYMBOL) (allowed-values R1 R2))
+  (multislot last-seen (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+  (slot x (type FLOAT) (default 0.0))
+  (slot y (type FLOAT) (default 0.0))
+)
+
+
 ; EXPLORATION
 
 (deftemplate machine-exploration
@@ -47,6 +55,9 @@
 )
 
 (deffacts startup-exploration
+  (active-robot (name R1))
+  (active-robot (name R2))
+
   (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos ExpM10))
   (machine-exploration (name M9) (x 1.38) (y 3.42) (next M8) (look-pos ExpM9))
   (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3) (look-pos ExpM8))
