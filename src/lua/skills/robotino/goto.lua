@@ -24,8 +24,8 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "goto"
-fsm                = SkillHSM:new{name=name, start="START_RELGOTO"}
-depends_skills     = { "relgoto" }
+fsm                = SkillHSM:new{name=name, start="CHECK_PARAMS"}
+depends_skills     = { "relgoto", "ppgoto" }
 depends_interfaces = {
    {v = "pose", type="Position3DInterface", id="Pose"}
 }
@@ -49,7 +49,6 @@ local MAX_POS_MISS = 4
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local machine_pos = require 'machine_pos_module'
 local tf_mod = require 'tf_module'
 
 
@@ -59,21 +58,16 @@ function pose_ok(self)
     and math.abs(self.fsm.vars.goto_ori - 2*math.acos(pose:rotation(3))) <= MAX_ROTERR)
 end
 
-function pose_not_ok(self)
-   return not pose_ok(self)
-end
-
 function missed_too_often(self)
-   return (self.fsm.vars.num_pos_missed>= MAX_POS_MISS)
-end
-
-function not_missed_too_often(self)
-   return not missed_too_often(self)
+   return (self.fsm.vars.num_pos_missed >= MAX_POS_MISS)
 end
 
 fsm:define_states{ export_to=_M,
-   {"START_RELGOTO", JumpState},
+   closure={missed_too_often = missed_too_often,
+      pose_ok = pose_ok},
+   {"CHECK_PARAMS", JumpState},
    {"DO_RELGOTO", SkillJumpState, skills={{relgoto}}, final_to="WAIT_POSE", fail_to="FAILED"},
+   {"DO_PPGOTO", SkillJumpState, skills={{ppgoto}}, final_to="WAIT_POSE", fail_to="FAILED"},
    {"WAIT_POSE", JumpState},
    {"CHECK_POSE", JumpState},
    {"MISSED", JumpState}
@@ -81,45 +75,50 @@ fsm:define_states{ export_to=_M,
 
 
 fsm:add_transitions{
-   {"START_RELGOTO","DO_RELGOTO",cond=true},
-   {"WAIT_POSE", "CHECK_POSE", timeout=3.0},
+   {"CHECK_PARAMS", "DO_RELGOTO", cond="not vars.place"},
+   {"CHECK_PARAMS", "DO_PPGOTO", cond="fsm.vars.place"},
+   {"CHECK_PARAMS", "FAILED", cond="fsm.vars.goto_name", desc="goto_name param is deprecated!"},
+   {"WAIT_POSE", "CHECK_POSE", timeout=0.5},
    {"CHECK_POSE", "FINAL", cond=pose_ok, desc="Pose reached" },
-   {"CHECK_POSE", "MISSED", cond=pose_not_ok, },
-   {"MISSED", "DO_RELGOTO", cond=not_missed_too_often},
+   {"CHECK_POSE", "MISSED", cond="not pose_ok()"},
+   {"MISSED", "DO_RELGOTO", cond="not missed_too_often()"},
    {"MISSED", "FAILED", cond=missed_too_often, desc="Posed missed"}
 }
 
-function START_RELGOTO:init()
-  self.fsm.vars.num_pos_missed=0
+function CHECK_PARAMS:init()
+   self.fsm.vars.num_pos_missed=0
+
+   if self.fsm.vars.place then
+      return
+   else
+      self.fsm.vars.x   = self.fsm.vars.x
+                       or self.fsm.vars.goto_x
+                       or pose:translation(0)
+      self.fsm.vars.y   = self.fsm.vars.y
+                       or self.fsm.vars.goto_y
+                       or pose:translation(1)
+      self.fsm.vars.ori = self.fsm.vars.ori
+                       or self.fsm.vars.goto_ori
+                       or 2*math.acos(pose:translation(3))
+   end
 end
 
 function MISSED:init()
-  self.fsm.vars.num_pos_missed=self.fsm.vars.num_pos_missed+1
+   self.fsm.vars.num_pos_missed = self.fsm.vars.num_pos_missed + 1
 end
 
 function DO_RELGOTO:init()
-   local x, y, ori
-   if self.fsm.vars.goto_name then
-      local name = self.fsm.vars.goto_name
-      x = machine_pos.delivery_goto[name].x
-      y = machine_pos.delivery_goto[name].y
-      ori = machine_pos.delivery_goto[name].ori
-      printf("%f, %f, %f", x, y, ori)
-   else
-      x = self.fsm.vars.goto_x or pose:translation(0)
-      y = self.fsm.vars.goto_y or pose:translation(1)
-      ori = self.fsm.vars.goto_ori or 2*math.acos(pose:translation(3))
-   end
+   local rel_pos = tf_mod.transform({
+         x = self.fsm.vars.x,
+         y = self.fsm.vars.y,
+         ori = self.fsm.vars.ori},
+      "/map", "/base_link")
 
-   self.fsm.vars.goto_x = x
-   self.fsm.vars.goto_y = y
-   self.fsm.vars.goto_ori = ori
-
-   local rel_pos = tf_mod.transform({x = x, y = y, ori = ori}, "/map", "/base_link")
-
-   self.skills[1].rel_x = rel_pos.x 
-   self.skills[1].rel_y = rel_pos.y 
-   self.skills[1].rel_ori = rel_pos.ori
+   self.skills[1].x = rel_pos.x
+   self.skills[1].y = rel_pos.y
+   self.skills[1].ori = rel_pos.ori
 end
 
-
+function DO_PPGOTO:init()
+   self.skills[1].place = self.fsm.vars.place
+end

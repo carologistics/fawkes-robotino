@@ -27,174 +27,109 @@ name               = "move_under_rfid"
 fsm                = SkillHSM:new{name=name, start="SEE_AMPEL", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = {
-	{v = "Machine_0", type="Position3DInterface",id = "Machine_0"},
-	{v = "sensor", type="RobotinoSensorInterface"},
-	{v = "motor", type = "MotorInterface", id="Robotino" }	
+	{v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
+	{v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
+	{v = "motor", type = "MotorInterface", id="Robotino" },	
+   {v = "pose", type="Position3DInterface", id="Pose"},
+   { v="laserswitch", type="SwitchInterface", id="laser-cluster" }
 }
 
 documentation      = [==[Move under the RFID Reader/Writer]==]
+
+local tfm = require("tf_module")
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 local tfm = require('tf_module')
+local LASER_FORWARD_CORRECTION = 0.2
+local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
+local MIN_VIS_HIST = 15
+
+function get_ampel()
+   local ampel_loc = {}
+   ampel_loc.x = euclidean_cluster:translation(0)
+   ampel_loc.y = euclidean_cluster:translation(1)
+   ampel_loc.distance = math.sqrt(ampel_loc.x^2, ampel_loc.y^2)
+   ampel_loc.angle = math.atan(ampel_loc.x, ampel_loc.y)
+   return ampel_loc
+end
 
 function ampel()
-   local mx = Machine_0:translation(0)
-   local my = Machine_0:translation(1)
-   local bl_mach = tfm.transform({x=mx, y=my, ori=0}, "/base_laser", "/base_link")
-	distance = math.sqrt(bl_mach.x^2 + bl_mach.y^2)
-	print(distance)
-	return (distance > 0) and (distance < 1)
+   local ampel = get_ampel()
+   return (ampel.distance > 0)
+      and (ampel.distance < 1)
+      and (euclidean_cluster:visibility_history() > MIN_VIS_HIST)
 end
 
-function no_ampel()
-	return not ampel()
+function rough_correct_done()
+   if fsm.vars.correct_dir == -1 then
+      return sensor:analog_in(4) < 1
+   else
+       return sensor:analog_in(0) < 1
+   end
 end
 
-function see_ampel()
-	if sensor:analog_in(0) > 8  then
-		sensor_distance=0.06
-		return true
-	end
-	if sensor:analog_in(4) > 8 then
-		sensor_distance=0.25
-		return true
-	end
-end
-function position_left()
-	if sensor:analog_in(0) < 1 then
-		return true
-	end
-end
-function position_right()
-	if sensor:analog_in(4) < 1 then
-		return true
-	end
-end
-function left_ok() -- if coming from left, when the left sensor jumps
-	if sensor:analog_in(0) > 8 then
-		send_transrot(0,0,0)
-		return true
-	end
-end
-function right_ok()
-	if sensor:analog_in(4) > 8 then
-		send_transrot(0,0,0)
-		return true
-	end
-end
-function left_and_right_ok()
-	if sensor:analog_in(0) > 8 and sensor:analog_in(4) > 8 then
-		send_transrot(0,0,0)
-		return true
-	end
-end
-function is_left()
-	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle <= -0.07 then
-		return true
-	end
-end	
-function is_right()
-	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle >= 0.07  then
-		return true
-	end
-end
-function angle_ok()
-	angle = math.atan(Machine_0:translation(1)/Machine_0:translation(0))
-	if angle < 0.07 and angle > -0.07 then
-		send_transrot(0,0,0)
-		return true
-	end
-end
-
-fsm:define_states{ export_to=_M,
+fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
    {"SEE_AMPEL", JumpState},
-   {"DESC_CHECK_IF_FRONT", JumpState},
-   {"CORRECT_LEFT", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL_CLOSER",
-      fail_to="FAILED"},
-   {"CORRECT_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL_CLOSER",
-      fail_to="FAILED"},
-   {"APPROACH_AMPEL_CLOSER", SkillJumpState, skills={{motor_move}},
-      final_to="SKILL_APPROACH_AMPEL", fail_to="FAILED"},
-   {"SKILL_APPROACH_AMPEL", SkillJumpState, skills={{motor_move}}, final_to="CHECK_POSITION",
-      fail_to="FAILED"},
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL", fail_to="FAILED"},
+   {"APPROACH_AMPEL", SkillJumpState, skills={{motor_move}},
+      final_to="CHECK_POSITION", fail_to="FAILED"},
    {"CHECK_POSITION", JumpState},
-   {"LEFT_TOO_FAR", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
-   {"RIGHT_TOO_FAR", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   {"CORRECT_POSITION", SkillJumpState, skills={{motor_move}},
+      final_to="CORRECT_SENSOR_DELAY", fail_to="FAILED"},
+   {"CORRECT_SENSOR_DELAY", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
-	{"SEE_AMPEL", "FAILED", cond=no_ampel, desc="No Ampel seen with laser"},
-	{"SEE_AMPEL", "DESC_CHECK_IF_FRONT", cond=ampel, desc="Ampel seen with laser"},
-	{"DESC_CHECK_IF_FRONT", "CORRECT_LEFT", cond=is_left},
-	{"DESC_CHECK_IF_FRONT", "CORRECT_RIGHT", cond=is_right},
-	{"DESC_CHECK_IF_FRONT", "APPROACH_AMPEL_CLOSER", cond=angle_ok},
-	{"CORRECT_LEFT", "APPROACH_AMPEL_CLOSER", cond=angle_ok},
-	{"CORRECT_RIGHT", "APPROACH_AMPEL_CLOSER", cond=angle_ok},
-	--{"SKILL_TURN_TO_AMPEL", "APPROACH_AMPEL_CLOSER", skill=motor_move, fail_to="FAILED"},
-	{"APPROACH_AMPEL_CLOSER", "SKILL_APPROACH_AMPEL", cond=see_ampel},
-	--{"SKILL_TURN_TO_AMPEL_CLOSER", "SKILL_APPROACH_AMPEL", skill=motor_move, fail_to="FAILED"},
-	--{"SKILL_APPROACH_AMPEL", "CHECK_POSITION", skill=motor_move, fail_to="FAILED"},
-	{"CHECK_POSITION", "LEFT_TOO_FAR", cond=position_left},
-	{"CHECK_POSITION", "RIGHT_TOO_FAR", cond=position_right},
-	{"CHECK_POSITION", "FINAL", cond=left_and_right_ok},
-	{"LEFT_TOO_FAR", "FINAL", cond=left_ok},
-	{"RIGHT_TOO_FAR", "FINAL", cond=right_ok},
+   {"SEE_AMPEL", "FAILED", timeout=10, desc="No Ampel seen with laser"},
+   {"SEE_AMPEL", "TURN", cond=ampel, desc="Ampel seen with laser"},
+   {"CHECK_POSITION", "FINAL", cond="vars.correct_dir == 0"},
+   {"CHECK_POSITION", "CORRECT_POSITION", cond="vars.correct_dir ~= 0"},
+   {"CORRECT_POSITION", "CORRECT_SENSOR_DELAY", cond=rough_correct_done} 
 }
+
 function send_transrot(vx, vy, omega)
-	local oc  = motor:controller()
-	local ocn = motor:controller_thread_name()
-	motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
-	motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
-	motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
-end
-function SEE_AMPEL:init()
-	self.fsm.vars.ampel_loc = {}
-	self.fsm.vars.ampel_loc.x = Machine_0:translation(0)
-	self.fsm.vars.ampel_loc.y = Machine_0:translation(1)
-	self.fsm.vars.ampel_loc.angle = math.atan(self.fsm.vars.ampel_loc.y/self.fsm.vars.ampel_loc.x)
-end
-function DESC_CHECK_IF_FRONT:init()
-end
-function CORRECT_LEFT:init()
-   self.skills[1].x=0 
-   self.skills[1].y=-0.4 
-   self.skills[1].ori=0
-end
-function CORRECT_RIGHT:init()
-   self.skills[1].x=0 
-   self.skills[1].y=0.4 
-   self.skills[1].ori=0
-end
---function SKILL_TURN_TO_AMPEL:init()
---	self.args = {x=0,y=0,ori=self.fsm.vars.ampel_loc.angle}
---end
-function APPROACH_AMPEL_CLOSER:init()
-   self.skills[1].x=1 
-   self.skills[1].y=0 
-   self.skills[1].ori=0
-end
---function SKILL_TURN_TO_AMPEL_CLOSER:init()
---	self.args = {x=0,y=0,ori=math.atan(Machine_0:translation(1)/Machine_0:translation(0))}
---end
-function SKILL_APPROACH_AMPEL:init()
-   self.skills[1].x=sensor_distance
-   self.skills[1].y=0 
-   self.skills[1].ori=0
-end
-function CHECK_POSITION:init()
-end
-function RIGHT_TOO_FAR:init()
-   self.skills[1].x=0 
-   self.skills[1].y=0.3 
-   self.skills[1].ori=0
-end
-function LEFT_TOO_FAR:init()
-   self.skills[1].x=0 
-   self.skills[1].y=-0.3 
-   self.skills[1].ori=0
+   local oc  = motor:controller()
+   local ocn = motor:controller_thread_name()
+   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
+   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
+   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
 end
 
+function CHECK_POSITION:init()
+   if sensor:analog_in(0) < 1 then
+      self.fsm.vars.correct_dir = -1
+   elseif sensor:analog_in(4) < 1 then
+      self.fsm.vars.correct_dir = 1
+   else
+      self.fsm.vars.correct_dir = 0
+   end
+end
+
+function SEE_AMPEL:init()
+   laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
+end
+
+function TURN:init()
+   local ampel = get_ampel()
+   self.skills[1].ori = math.atan2(ampel.y, ampel.x)
+end
+
+function APPROACH_AMPEL:init()
+   local ampel = get_ampel()
+   self.skills[1].x = ampel.x - LASER_FORWARD_CORRECTION
+   self.skills[1].y = ampel.y
+end
+
+function CORRECT_POSITION:init()
+   self.skills[1].y = self.fsm.vars.correct_dir * 0.3
+end
+
+function CORRECT_SENSOR_DELAY:init()
+   self.skills[1].y = self.fsm.vars.correct_dir * -1 * LIGHT_SENSOR_DELAY_CORRECTION 
+end
+
+function FINAL:init()
+   laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
+end

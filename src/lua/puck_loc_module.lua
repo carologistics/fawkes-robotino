@@ -13,3 +13,7 @@ function get_puck_loc(omnipuck)
 	return rv
 end
 
+function get_puck_dist(omnipuck)
+   local loc = get_puck_loc(omnipuck)
+   return math.sqrt(loc.x^2 + loc.y^2)
+end

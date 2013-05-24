@@ -77,17 +77,16 @@ fsm:add_transitions{
 }
 
 function CHECK_INPUT:init()
-      self.fsm.vars.rel_ori = self.fsm.vars.rel_ori or 0
-      self.fsm.vars.rel_x = self.fsm.vars.rel_x or 0
-      self.fsm.vars.rel_y = self.fsm.vars.rel_y or 0
+      self.fsm.vars.x   = self.fsm.vars.x   or self.fsm.vars.rel_x or 0
+      self.fsm.vars.y   = self.fsm.vars.y   or self.fsm.vars.rel_y or 0
+      self.fsm.vars.ori = self.fsm.vars.ori or self.fsm.vars.rel_ori or 0
 end
 
 function MOVING:init()
-   send_navmsg(self.fsm.vars.rel_x, self.fsm.vars.rel_y, self.fsm.vars.rel_ori)
-end
-
-function send_navmsg(x, y, ori)
-   local msg = navigator.CartesianGotoMessage:new(x, y, ori)
+   local msg = navigator.CartesianGotoMessage:new(
+      self.fsm.vars.x,
+      self.fsm.vars.y,
+      self.fsm.vars.ori)
    fsm.vars.goto_msgid = navigator:msgq_enqueue_copy(msg)
 end
 

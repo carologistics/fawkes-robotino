@@ -28,6 +28,7 @@ skiller:
         Omnipuck10: Position3DInterface::OmniPuck10
         Closest_Machine: Position3DInterface::Closest_Machine
         pose: Position3DInterface::Pose
+        Closest_Machine: Position3DInterface::Closest_Machine
         navigator: NavigatorInterface::Navigator
         ppnavi: NavigatorInterface::Pathplan
         omnivisionSwitch: SwitchInterface::omnivisionSwitch
@@ -35,7 +36,12 @@ skiller:
         ampel_green: SwitchInterface::ampel_green
         ampel_red: SwitchInterface::ampel_red
         ampel_orange: SwitchInterface::ampel_orange
+        laserswitch: SwitchInterface::laser-cluster
         sensor: RobotinoSensorInterface::Robotino
+        light_plugin: RobotinoLightInterface::Light_State
+        closest_machine: Position3DInterface::Closest_Machine
+        euclidean_cluster: Position3DInterface::Euclidean Laser Cluster
+        ampel_fallback: RobotinoAmpelInterface::light
       writing:
-        light: RobotinoAmpelInterface::light
+        light: RobotinoLightInterface::Light determined
 

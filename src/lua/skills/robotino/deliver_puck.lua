@@ -24,40 +24,64 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "deliver_puck"
-fsm                = SkillHSM:new{name=name, start="CHECK_PUCK", debug=true}
-depends_skills     = {"take_puck_to", "move_under_rfid", "determine_signal", "leave_area"}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+depends_skills     = {"take_puck_to", "move_under_rfid", "watch_signal", "leave_area", "motor_move", "relgoto" }
 depends_interfaces = {
-   { v="light", type="RobotinoAmpelInterface", id="light" } 
+   { v="light", type="RobotinoLightInterface", id="Light_State" },
+   { v="sensor", type="RobotinoSensorInterface", id="Robotino" },
+   { v="laser", type="SwitchInterface", id="laser-cluster" },
+   { v="pose", type="Position3DInterface", id="Pose" }
 }
 
 documentation     = [==[delivers already fetched puck to specified location]==]
 -- Constants
-local THRESHOLD_DISTANCE = 0.1
+local THRESHOLD_DISTANCE = 0.05
 local DELIVERY_GATES = { "D1", "D2", "D3" }
+local MOVES = { {y=-0.35}, {y=-0.35}, {y=0.7} }
+local MAX_TRIES = 3
+local MAX_ORI_ERR = 0.15
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+local tfm = require("tf_module")
+
 function have_puck()
-local curDistance = sensor:distance(0)
+local curDistance = sensor:distance(8)
    if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
       return true
    end
    return false
 end
 
+function try_again()
+ return (not ampel_green()) and (vars.cur_gate_idx >= #dg) and (vars.numtries<MAX_TRIES)
+end
+
 function ampel_green()
-   return light:state() == light.GREEN
+   return light:green() == light.ON and light:visibility_history() > 15
+end
+
+function ampel_red()
+   return light:red() == light.ON and light:visibility_history() > 15
+end
+
+function pose_ok()
+   print(math.abs(2*math.acos(pose:rotation(3))))
+   return math.abs(2*math.acos(pose:rotation(3))) <= MAX_ORI_ERR
 end
 
 fsm:define_states{ export_to=_M,
-   closure = {motor=motor, have_puck=have_puck, idx=fsm.vars.cur_gate_idx,
-      dg=DELIVERY_GATES, ampel_green=ampel_green},
-   {"CHECK_PUCK", JumpState},
-   {"SKILL_DETERMINE_SIGNAL", SkillJumpState, skills={{determine_signal}},
-      final_to="DECIDE_DELIVER", fail_to="FAILED"},
-   {"DECIDE_DELIVER", JumpState},
-   {"MOVE_TO_NEXT", SkillJumpState, skills={{take_puck_to}}, final_to="SKILL_DETERMINE_SIGNAL",
+   closure = {have_puck=have_puck, ampel_green=ampel_green, MAX_TRIES=MAX_TRIES, pose_ok=pose_ok,
+      MOVES=MOVES},
+   {"INIT", JumpState}, -- initial state
+   {"CHECK_POSE", JumpState},
+   {"CORRECT_TURN", SkillJumpState, skills={{relgoto}}, final_to="TRY_GATE",
+      fail_to="FAILED"},
+   {"TRY_GATE", JumpState},
+   {"MOVE_TO_NEXT", SkillJumpState, skills={{motor_move}}, final_to="TRY_GATE",
+      fail_to="FAILED"},
+   {"RESTART", SkillJumpState, skills={{take_puck_to}}, final_to="CHECK_POSE",
       fail_to="FAILED"},
    {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="LEAVE_AREA",
       fail_to="FAILED"},
@@ -66,22 +90,52 @@ fsm:define_states{ export_to=_M,
    
 
 fsm:add_transitions{
-   {"CHECK_PUCK", "FAILED", cond="not have_puck()", desc="No puck seen by Infrared"},
-   {"CHECK_PUCK", "SKILL_DETERMINE_SIGNAL", cond=have_puck},
-   {"DECIDE_DELIVER", "MOVE_UNDER_RFID", cond=ampel_green},
-   {"DECIDE_DELIVER", "MOVE_TO_NEXT", cond="idx < #dg"},
-   {"DECIDE_DELIVER", "FAILED", cond="(not ampel_green()) and (idx >= #dg)"}
+   {"INIT", "FAILED", cond="not have_puck()", desc="No puck seen by Infrared"},
+   {"INIT", "CHECK_POSE", cond=have_puck},
+   {"CHECK_POSE", "CORRECT_TURN", cond="not pose_ok()"},
+   {"CHECK_POSE", "TRY_GATE", cond=pose_ok},
+   {"TRY_GATE", "MOVE_UNDER_RFID", cond=ampel_green, desc="green"},
+   {"TRY_GATE", "MOVE_UNDER_RFID", cond="vars.numtries > MAX_TRIES"}, --blind guess, doesnt harm
+   {"TRY_GATE", "MOVE_TO_NEXT", cond=ampel_red, desc="red"},
+   {"TRY_GATE", "MOVE_TO_NEXT", timeout=4},
+   {"TRY_GATE", "RESTART", cond="vars.cur_gate_idx >= #MOVES"}
 }
 
-function CHECK_PUCK:init()
+function INIT:init()
+   self.fsm.vars.numtries = 1
    self.fsm.vars.cur_gate_idx = 1
-end
-
-function SKILL_DETERMINE_SIGNAL:init()
-   self.skills[1].mode = "DELIVER"
+   laser:msgq_enqueue_copy(laser.EnableSwitchMessage:new())
 end
 
 function MOVE_TO_NEXT:init()
+   self.skills[1].ori = MOVES[self.fsm.vars.cur_gate_idx].ori or 0
+   self.skills[1].x = MOVES[self.fsm.vars.cur_gate_idx].x or 0
+   self.skills[1].y = MOVES[self.fsm.vars.cur_gate_idx].y or 0
+
    self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
-   self.skills[1].goto_name = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]
 end
+
+function CORRECT_TURN:init()
+   local t_bl = tfm.transform({x=0, y=0, ori=0}, "/map", "/base_link")
+   print(t_bl.ori)
+   self.skills[1].ori = t_bl.ori
+end
+
+function RESTART:init()
+   self.fsm.vars.numtries = self.fsm.vars.numtries + 1
+   self.fsm.vars.cur_gate_idx = 1
+   self.skills[1].place = "deliver"
+end
+
+function MOVE_UNDER_RFID:init()
+   self.skills[1].place = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]
+end
+
+function FINAL:init()
+   laser:msgq_enqueue_copy(laser.DisableSwitchMessage:new())
+end
+
+function FAILED:init()
+   laser:msgq_enqueue_copy(laser.DisableSwitchMessage:new())
+end
+
