@@ -5,11 +5,6 @@ graph-name: LLSF
 root: SW
 nodes:
 
-  - name: eM1
-    pos: [3.62, 1.18]
-    properties:
-      - orientation: 1.07
-
   - name: M1
     pos: [3.92, 2.05]
     properties:
@@ -306,59 +301,6 @@ nodes:
     properties:
       - travel_tolerance: 0.5
 
-
-#Positions for exploration agent to look at the machines        
-  - name: ExpM1
-    pos: [4.6, 1.68]
-    properties:
-      - orientation: 0.78
-
-  - name: ExpM2
-    pos: [4.6, 3.92]
-    properties:
-      - orientation: 3.14
-
-  - name: ExpM3
-    pos: [2.1, 0.56]
-    properties:
-      - orientation: 0.0
-
-  - name: ExpM4
-    pos: [3.35, 1.1]
-    properties:
-      - orientation: 2.36
-
-  - name: ExpM5
-    pos: [3.5, 2.8]
-    properties:
-      - orientation: 3.14
-
-  - name: ExpM6
-    pos: [2.8, 4.5]
-    properties:
-      - orientation: -1.57
-
-  - name: ExpM7
-    pos: [3.5, 5.04]
-    properties:
-      - orientation: 3.14
-
-  - name: ExpM8
-    pos: [1.26, 1.26]
-    properties:
-      - orientation: 0.785
-
-  - name: ExpM9
-    pos: [1.0, 3.92]
-    properties:
-      - orientation: 0.0
-
-  - name: ExpM10
-    pos: [1.68, 4.5]
-    properties:
-      - orientation: 1.57
-
-        
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
