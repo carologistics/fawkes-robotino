@@ -6,104 +6,174 @@ root: SW
 nodes:
 
   - name: M1
-    pos: [3.62, 1.18]
+    pos: [3.92, 2.05]
     properties:
-      - orientation: 1.07
+      - orientation: -1.57
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
 
-  - name: M1S
-    pos: [3.62, 1.1]
+  - name: ExpM1
+    pos: [3.5, 1.2]
     properties:
-      - travel_tolerance: 0.4 
+      - orientation: 0.97
+
+  - name: M1N
+    pos: [3.92, 2.15]
+    properties:
+      - travel_tolerance: 0.5 
 
   - name: M2
-    pos: [4.42, 3.62]
+    pos: [3.5, 3.92]
     properties:
-      - orientation: 2.64
+      - orientation: 0.0
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
+
+  - name: ExpM2
+    pos: [3.5, 3.92]
+    properties:
+      - orientation: 0.0
 
   - name: M2O
-    pos: [4.7, 3.62]
+    pos: [4.7, 3.92]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
+
+  - name: M2W
+    pos: [3.4, 3.92]
+    properties:
+      - travel_tolerance: 0.5
 
   - name: M3
-    pos: [3.1, 1.06]
+    pos: [3.3, 0.55]
     properties:
-      - orientation: -2.07
+      - orientation: 3.14
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
+
+  - name: ExpM3
+    pos: [2.8, 1.0]
+    properties:
+      - orientation: -1.57
+
+  - name: M3E
+    pos: [3.4, 0.55]
+    properties:
+      - travel_tolerance: 0.5
 
   - name: M3N
-    pos: [3.1, 1.1]
+    pos: [2.8, 1.1]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
 
   - name: M4
-    pos: [3.1, 2.13]
+    pos: [2.8, 1.2]
     properties:
-      - orientation: -2.07
+      - orientation: 1.57
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
+
+  - name: ExpM4
+    pos: [2.8, 1.2]
+    properties:
+      - orientation: 1.57
 
   - name: M4N
-    pos: [3.1, 2.2]
+    pos: [2.75, 2.15]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
 
   - name: M5
-    pos: [2.3, 3.1]
+    pos: [2.75, 2.25]
     properties:
-      - orientation: -0.5
+      - orientation: 1.57
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
 
-  - name: M5W
-    pos: [2.3, 3.1]
+  - name: ExpM5
+    pos: [3.3, 2.25]
     properties:
-      - travel_tolerance: 0.4
+      - orientation: 2.36
 
   - name: M6
-    pos: [3.1, 4.42]
+    pos: [2.4, 3.92]
     properties:
-      - orientation: -2.07
+      - orientation: 0.0
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
+
+  - name: ExpM6
+    pos: [2.75, 4.3]
+    properties:
+      - orientation: -1.57
 
   - name: M6N
-    pos: [3.1, 4.5]
+    pos: [2.75, 4.4]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
+
+  - name: M6W
+    pos: [2.3, 3.92]
+    properties:
+      - travel_tolerance: 0.5
 
   - name: M7
-    pos: [2.5, 4.5]
+    pos: [2.75, 4.5]
     properties:
-      - orientation: 1.07
+      - orientation: 1.57
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
 
-  - name: M7S
-    pos: [2.5, 4.5]
+  - name: ExpM7
+    pos: [2.75, 4.5]
     properties:
-      - travel_tolerance: 0.4
+      - orientation: 1.57
 
   - name: M8
-    pos: [1.18, 1.98]
+    pos: [1.2, 1.7]
     properties:
-      - orientation: -0.5
+      - orientation: 0.0
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
+
+  - name: ExpM8
+    pos: [2.2, 1.2]
+    properties:
+      - orientation: 2.36
 
   - name: M8W
-    pos: [1.0, 1.98]
+    pos: [1.0, 1.7]
     properties:
-      - travel_tolerance: 0.4
+      - travel_tolerance: 0.5
 
   - name: M9
-    pos: [1.38, 3.42]
+    pos: [2.2, 3.92]
     properties:
-      - orientation: 1.07
+      - orientation: 3.14
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
 
-  - name: M9S
-    pos: [1.38, 3.4]
+  - name: ExpM9
+    pos: [1.68, 4.3]
     properties:
-      - travel_tolerance: 0.4
+      - orientation: -1.57
+
+  - name: M9N
+    pos: [1.68, 4.4]
+    properties:
+      - travel_tolerance: 0.5
 
   - name: M10
-    pos: [2.18, 4.74]
+    pos: [1.68, 4.5]
     properties:
-      - orientation: 2.64
+      - orientation: 1.57
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
 
-  - name: M10E
-    pos: [2.3, 4.74]
+  - name: ExpM10
+    pos: [1.68, 4.5]
     properties:
-      - travel_tolerance: 0.4
+      - orientation: 1.57
 
   - name: R2
     pos: [0.55, 4.84]
@@ -120,33 +190,32 @@ nodes:
     properties:
       - orientation: 0.78
 
+#  - name: Ins
+#    pos: [0.7, 2.0]
+#    properties:
+#      - orientation: 2.36
   - name: Ins
-    pos: [0.7, 2.3]
+    pos: [0.85, 2.4]
     properties:
-      - orientation: 2.36
+      - orientation: 2.8
 
-  - name: D1
-    pos: [4.84, 3.5]
+  - name: SR1
+    pos: [0.4, 0.5]
     properties:
-      - orientation: -0.5
+      - orientation: 0.25
 
-  - name: D2
-    pos: [4.84, 3.15]
+  - name: SR2
+    pos: [0.4, 1.75]
     properties:
-      - orientation: -0.5
-
-  - name: D3
-    pos: [4.84, 2.8]
-    roperties:
-      - orientation: -0.5
+      - orientation: 0.2
 
   - name: P11
     pos: [1.0, 1.1]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5
 
   - name: P12
-    pos: [1.0, 2.2]
+    pos: [1.0, 2.15]
     properties:
       - travel_tolerance: 0.4 
 
@@ -156,17 +225,17 @@ nodes:
       - travel_tolerance: 0.4 
 
   - name: P14
-    pos: [1.0, 4.5]
+    pos: [1.0, 4.4]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5
 
   - name: P21
     pos: [2.3, 1.1]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P22
-    pos: [2.3, 2.2]
+    pos: [2.3, 2.15]
     properties:
       - travel_tolerance: 0.4 
 
@@ -176,112 +245,128 @@ nodes:
       - travel_tolerance: 0.4 
 
   - name: P24
-    pos: [2.3, 4.5]
+    pos: [2.3, 4.4]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P31
     pos: [3.4, 1.1]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P32
-    pos: [3.4, 2.2]
+    pos: [3.4, 2.15]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P33
     pos: [3.4, 3.4]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P34
-    pos: [3.4, 4.5]
+    pos: [3.4, 4.4]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P41
     pos: [4.7, 1.1]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P42
-    pos: [4.7, 2.2]
+    pos: [4.7, 2.15]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P43
     pos: [4.7, 3.4]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: P44
-    pos: [4.7, 4.5]
+    pos: [4.7, 4.4]
     properties:
-      - travel_tolerance: 0.4 
+      - travel_tolerance: 0.5 
 
   - name: deliver
-    pos: [4.7, 2.8]
+    pos: [4.8, 3.1]
     properties:
-      - orientation: -0.05
-      - travel_tolerance: 0.4 
+      - orientation: 0.0
+#      - travel_tolerance: 0.1
+#      - orientation_tolerance: 0.1
+
+  - name: DW
+    pos: [4.7, 3.1]
+    properties:
+      - travel_tolerance: 0.5
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
   - [P11, P21]
   - [P11, M8W]
+  - [P11, SR1]
+  - [P12, SR2]
   - [M8W, P12]
   - [P12, P13]
   - [P12, P22]
   - [P12, P23]
   - [P13, P14]
-  - [P13, M9S]
-  - [M9S, P23]
+  - [P13, P23]
   - [P13, P22]
-  - [P14, P24]
+  - [P14, M9N]
+  - [M9N, P24]
   - [P21, P22]
   - [P21, M3N]
   - [M3N, P31]
+  - [P31, M3E]
   - [P22, M4N]
   - [M4N, P32]
-  - [P22, M5W]
-  - [M5W, P23]
-  - [P23, P24]
+  - [P22, P23]
+  - [P23, M6W]
+  - [M6W, P24]
   - [P23, P33]
-  - [P24, M7S]
-  - [M7S, M6N]
+  - [P24, M6N]
   - [M6N, P34]
-  - [P24, M10E]
   - [P31, P32]
-  - [P31, M1S]
-  - [M1S, P41]
+  - [P31, P41]
+  - [P32, M1N]
+  - [M1N, P42]
   - [P32, P33]
-  - [P32, P42]
-  - [P33, P34]
+  - [P33, M2W]
+  - [M2W, P34]
   - [P33, P43]
   - [P43, M2O]
   - [M2O, P44]
   - [P34, P44]
   - [P41, P42]
-  - [P42, deliver]
-  - [deliver, P43]
-  - [M1, M1S]
-  - [M2, M2O]
-  - [M3, M3N]
-  - [M4, M4N]
-  - [M5, M5W]
-  - [M6, M6N]
-  - [M7, M7S]
+  - [P42, DW]
+  - [DW, P43]
+  - [M1, M1N]
+  - [ExpM1, P31]
+  - [M2, M2W]
+  - [ExpM2, M2W]
+  - [M3, M3E]
+  - [ExpM3, M3N]
+  - [M4, M3N]
+  - [ExpM4, M3N]
+  - [M5, M4N]
+  - [ExpM5, P32]
+  - [M6, M6W]
+  - [ExpM6, M6N]
+  - [M7, M6N]
+  - [ExpM7, M6N]
   - [M8, M8W]
-  - [M9, M9S]
-  - [M10, M10E]
+  - [ExpM8, P21]
+  - [M9, M6W]
+  - [ExpM9, M9N]
+  - [M10, M9N]
+  - [ExpM10, M9N]
   - [R2, P14]
   - [R1, P41]
   - [T, P44]
   - [Ins, P12]
-  - [P32, deliver]
-  - [P33, deliver]
-  - [deliver, D1]
-  - [deliver, D2]
-  - [deliver, D3]
+  - [P32, DW]
+  - [P33, DW]
+  - [DW, deliver]
