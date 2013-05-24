@@ -29,7 +29,7 @@ plugins/navgraph:
   
   # Max. distance between actual and target orientation to deem the target
   # reached. This value is for the last node on a path; rad
-  orientation_tolerance: 0.1
+  orientation_tolerance: 0.2
 
   # Visualize graph and current actions?
   visualization: true
