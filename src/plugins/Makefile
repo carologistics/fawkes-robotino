@@ -16,7 +16,7 @@
 BASEDIR = ../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= ampelvar omnivisionmult_thread robotino_worldmodel robotino-agent
+SUBDIRS	= ampelvar omnivisionmult_thread robotino_worldmodel
 
 include $(BUILDSYSDIR)/rules.mk
 

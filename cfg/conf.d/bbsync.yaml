@@ -32,3 +32,4 @@ fawkes/bbsync:
         motor: MotorInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino
         odometry: TransformInterface::TF Robotino Odometry
+        motor-switch: SwitchInterface::Robotino Motor

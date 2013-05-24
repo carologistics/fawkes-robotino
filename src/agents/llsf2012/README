@@ -1,0 +1,10 @@
+LLSF 2012+ agent
+
+This agent plays a slightly extended version of the 2012 game. This means
+while effectively only being able to produce a P (now P1 in 2013) it uses
+the 2013 refbox to play the game in simulation.
+
+To play this against the refbox change the initial machine distribution in
+the globals.clp file (of the refbox!) to contain only T1, T2, and T3
+machines.
+

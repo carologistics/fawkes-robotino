@@ -1,5 +1,5 @@
 #*****************************************************************************
-#        Makefile Build System for Fawkes: Robotino CLIPS Agent Plugin
+#           Makefile Build System for Fawkes: CLIPS Agent Plugin
 #                            -------------------
 #   Created on Sat Jun 16 15:00:02 2012
 #   Copyright (C) 2006-2012 by Tim Niemueller, AllemaniACs RoboCup Team
@@ -17,31 +17,28 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/clips.mk
 
-LIBS_robotino_clips_agent = \
-	fawkescore fawkesutils fawkesaspects fawkesblackboard \
-        fawkesinterface fawkesclipsaspect \
-	SkillerInterface RobotinoWorldModelInterface SwitchInterface \
-	RobotinoAmpelInterface
-OBJS_robotino_clips_agent = robotino_agent_plugin.o robotino_agent_thread.o
+LIBS_clips_motor_switch = \
+	fawkescore fawkesutils fawkesaspects fawkesclipsaspect \
+	fawkesblackboard fawkesinterface SwitchInterface
+OBJS_clips_motor_switch = clips-motor-switch-plugin.o clips-motor-switch-thread.o
 
-OBJS_all = $(OBJS_robotino_clips_agent)
+OBJS_all = $(OBJS_clips_motor_switch)
+
 
 ifeq ($(HAVE_CLIPS),1)
   CFLAGS  += $(CFLAGS_CLIPS)
-  LDFLAGS += $(LDFLAGS_CLIPS)
+  LDFLAGS += $(LDFLAGS_CLIPS) \
 
-  PLUGINS_all = $(PLUGINDIR)/robotino-clips-agent.so
+  PLUGINS_all = $(PLUGINDIR)/clips-motor-switch.so
 else
-  WARN_TARGETS += warning_clips
+  WARN_TARGETS = warning_clips
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-
 .PHONY: warning_clips
 warning_clips:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting Robotino CLIPS Agent Plugins$(TNORMAL) (CLIPS not found)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips-motor-switch plugin$(TNORMAL) (CLIPS not found)"
 endif
 
 include $(BUILDSYSDIR)/base.mk
-

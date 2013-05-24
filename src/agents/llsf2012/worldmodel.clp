@@ -9,14 +9,14 @@
 
 ; knowledge evaluation request
 (deftemplate wm-eval
-  (slot machine (type STRING))
-  (slot was-holding (type SYMBOL) (allowed-values S0 S1 S2 P NONE))
-  (slot now-holding (type SYMBOL) (allowed-values S0 S1 S2 P NONE))
+  (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
+  (slot was-holding (type SYMBOL) (allowed-values S0 S1 S2 P1 P2 P3 NONE))
+  (slot now-holding (type SYMBOL) (allowed-values S0 S1 S2 P1 P2 P3 NONE))
 )
 
 ; updates from external source
 (deftemplate wm-ext-update
-  (slot machine (type STRING))
+  (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
   (slot mtype (type SYMBOL)
         (allowed-values M1_EXPRESS M1 M2 M3 M1_2 M2_3 RECYCLING TEST))
   (multislot loaded-with (type SYMBOL) (allowed-values S0 S1 S2))
@@ -47,6 +47,15 @@
   =>
   (retract ?l ?h)
   (assert (holding NONE))
+)
+
+(defrule wm-holding-notnone-yellow-flashing
+  (declare (salience ?*PRIORITY_WM*))
+  (state GOTO-FINAL)
+  ?h <- (holding ~NONE)
+  ?l <- (light yellow-flashing)
+  =>
+  (retract ?l)
 )
 
 (defrule wm-holding-unk-none-green-s1
@@ -84,7 +93,7 @@
   ?l <- (light green)
   =>
   (retract ?l ?h)
-  (assert (holding P))
+  (assert (holding P1))
 )
 
 (defrule wm-holding-m1-green-s1
@@ -158,7 +167,7 @@
   =>
   (printout t "LENGTH: " ?w "  " (length$ ?w) crlf)
   (retract ?l ?h)
-  (assert (holding P))
+  (assert (holding P1))
 )
 
 (defrule wm-holding-m3-green-p
@@ -170,7 +179,7 @@
   ?l <- (light green)
   =>
   (retract ?l ?h)
-  (assert (holding P))
+  (assert (holding P1))
 )
 
 (defrule wm-holding-deliver-green-none
@@ -361,15 +370,26 @@
   (modify ?m (mtype M2))
 )
 
-(defrule wm-determine-m23_s1-s0-none
+(defrule wm-determine-m23-s1-s0-none
   (declare (salience ?*PRIORITY_WM*))
   ?w <- (wm-eval (machine ?name) (was-holding S0) (now-holding NONE))
   ?m <- (machine (name ?name) (mtype M2_3)
-                 (loaded-with $?l&:(subsetp (create$ S1) ?l)))
+                 (loaded-with $?l&:(member$ S1 ?l)))
   =>
   (retract ?w)
   (if (debug 2) then (printout t "Identified " ?name " to be an M3" crlf))
   (modify ?m (mtype M3) (loaded-with (insert$ ?l 1 S0)))
+)
+
+(defrule wm-determine-m23-s0-s1-none
+  (declare (salience ?*PRIORITY_WM*))
+  ?w <- (wm-eval (machine ?name) (was-holding S1) (now-holding NONE))
+  ?m <- (machine (name ?name) (mtype M2_3)
+                 (loaded-with $?l&:(member$ S0 ?l)))
+  =>
+  (retract ?w)
+  (if (debug 2) then (printout t "Identified " ?name " to be an M3" crlf))
+  (modify ?m (mtype M3) (loaded-with (insert$ ?l 1 S1)))
 )
 
 ; --- Post-production
@@ -412,7 +432,7 @@
 ; the empty set and increase junk cound accordingly
 (defrule wm-delivered
   (declare (salience ?*PRIORITY_WM_DEF*))
-  ?w <- (wm-eval (machine ?name) (was-holding P) (now-holding NONE))
+  ?w <- (wm-eval (machine ?name) (was-holding P1|P2|P3) (now-holding NONE))
   ?m <- (machine (name ?name) (mtype DELIVER) (productions ?productions))
   =>
   (retract ?w)
@@ -426,8 +446,8 @@
   ;(time $?now)
   (machine (name ?name) (mtype ?mt&~UNKNOWN) (loaded-with $?lw) (junk ?j))
   =>
-  (if (debug 3) then (printout t "Publishing world model" crlf))
-  (wm-publish ?name (str-cat ?mt) ?lw ?j)
+  (if (debug 3) then (printout t "Publishing world model -- DISABLED" crlf))
+  ;(wm-publish ?name (str-cat ?mt) ?lw ?j)
 )
 
 

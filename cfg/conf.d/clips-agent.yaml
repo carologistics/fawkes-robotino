@@ -1,0 +1,60 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
+---
+clips-agent:
+  clips-debug: true
+  skill-sim: true
+  skill-sim-time: 0.5
+
+  # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+  debug-level: 3
+
+  # Automatically assert the (start) fact after successful initialization,
+  # otherwise wait until the an enalble message has been received
+  auto-start: false
+
+  # If set to true, will trigger the assertion of a (time (now)) fact in
+  # each loop. This can be used to trigger loop events in CLIPS.
+  assert-time-each-loop: true
+
+  # Directory where to look for CLIPS files
+  clips-dirs: ["@BASEDIR@/src/agents/"]
+
+  # Agent name. On startup the clips-agent will try to resolve a file named
+  # <agent name>.clp. It must be in the CLIPS path directories.
+  agent: llsf2013/llsf2013
+
+  #llsf2012:
+  #  enable-sim: true
+
+  llsf2013:
+    enable-sim: true
+
+    # Possible roles for the agent:
+    # EXPLORATION_ONLY
+    # EXPLORATION_PRODUCTION
+    agent-role: EXPLORATION_PRODUCTION
+
+    start-machine-exploration-only: M2
+    start-machine-exploration-production: M8
+    exploration-only-work-finished-point: R2
+    waiting-for-production-point: Ins
+    
+    play-exploration-without-refbox: false
+    #uncomment following line ONLY if you are playing without refbox
+    #unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
+
+    
+    peer-address: 172.16.35.255
+    #use this for talking to the refbox on the same laptop:
+    peer-recv-port: 4444
+    peer-send-port: 4445
+    #use this for talking to the real refbox:
+    #peer-port: 4444
+
+
+
+    team-name: Carologistics
+    robot-name: R-1

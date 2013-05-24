@@ -1,9 +1,9 @@
 
 /***************************************************************************
- *  clips_plugin.cpp - Plugin to access CLIPS features
+ *  clips-motor-switch-plugin.cpp - CLIPS support for switching the motors
  *
- *  Created: Sat Jun 16 14:36:13 2012 (Mexico City)
- *  Copyright  2006-2012  Tim Niemueller [www.niemueller.de]
+ *  Created: Thu Apr 25 12:29:18 2013 (Magdeburg)
+ *  Copyright  2006-2013  Tim Niemueller [www.niemueller.de]
  *
  ****************************************************************************/
 
@@ -20,26 +20,27 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "robotino_agent_thread.h"
+#include "clips-motor-switch-thread.h"
 #include <core/plugin.h>
 
 using namespace fawkes;
 
-/** Robotino CLIPS agent plugin.
+/** CLIPS motor switching plugin.
  * @author Tim Niemueller
  */
-class RobotinoClipsAgentPlugin : public fawkes::Plugin
+class ClipsMotorSwitchPlugin : public fawkes::Plugin
 {
  public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  RobotinoClipsAgentPlugin(Configuration *config) : Plugin(config)
+  ClipsMotorSwitchPlugin(Configuration *config) : Plugin(config)
   {
-    thread_list.push_back(new RobotinoClipsAgentThread());
+    std::string cfg_clips_env = config->get_string("/clips-motor-switch/env-name");
+    thread_list.push_back(new ClipsMotorSwitchThread(cfg_clips_env));
   }
 };
 
 
-PLUGIN_DESCRIPTION("CLIPS-based Robotino Agent")
-EXPORT_PLUGIN(RobotinoClipsAgentPlugin)
+PLUGIN_DESCRIPTION("Motor switching from CLIPS")
+EXPORT_PLUGIN(ClipsMotorSwitchPlugin)
