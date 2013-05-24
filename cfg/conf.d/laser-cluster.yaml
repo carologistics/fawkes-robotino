@@ -26,7 +26,7 @@ laser-cluster:
   cluster_min_size: 4
 
   # Minimum number of points in cluster to consider
-  cluster_max_size: 25
+  cluster_max_size: 15
 
   # not that these values are in the sensor frame!
   cluster_min_x:  0.02
@@ -46,4 +46,4 @@ laser-cluster:
 
 
   # transpose the x-position of the detected cluster by the given offset
-  offset_x: 0.05
+  offset_x: 0.0
