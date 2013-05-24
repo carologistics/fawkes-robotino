@@ -4,7 +4,7 @@
 fawkes/meta_plugins:
   
 # Meta plugin with useful functionality for the robotino-laptop
-  robotino_default: bbsync,static-transforms,fvbase,fvfountain,robotino-omnivisionmult-thread,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,webview,clips,navgraph,skiller,laser-pointclouds,laser-cluster
+  robotino_default: bbsync,static-transforms,fvbase,fvfountain,omnivision-pucks,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,webview,clips,navgraph,skiller,laser-pointclouds,laser-cluster
   robotino_default_nocam: bbsync,static-transforms,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,webview,clips,navgraph,skiller,laser-pointclouds,laser-cluster
   robotino_default_bare: bbsync,static-transforms,webview
 
