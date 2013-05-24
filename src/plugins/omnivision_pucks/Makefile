@@ -28,14 +28,14 @@ INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-LIBS_robotino_omnivisionmult_thread = m \
+LIBS_omnivision_pucks = m \
 	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
 	fawkesgeometry fvutils fvcams fvmodels fvclassifiers fvfilters \
 	Position3DInterface SwitchInterface fawkestf 
-OBJS_robotino_omnivisionmult_thread = robotino_omnivision_plugin.o pipeline_thread.o sensor_thread.o
+OBJS_omnivision_pucks = omnivision_pucks_plugin.o pipeline_thread.o sensor_thread.o
 
-OBJS_all    = $(OBJS_robotino_omnivisionmult_thread)
-PLUGINS_all = $(PLUGINDIR)/robotino-omnivisionmult-thread.$(SOEXT)
+OBJS_all    = $(OBJS_omnivision_pucks)
+PLUGINS_all = $(PLUGINDIR)/omnivision-pucks.$(SOEXT)
 
 else
   WARN_TARGETS += warning_tf

@@ -33,21 +33,21 @@
 #include "pipeline_thread.h"
 
 namespace fawkes {
-	class Position3DInterface;
+  class Position3DInterface;
 }
 namespace firevision {
-class Camera;
+  class Camera;
 }
 
 
-class OmniVisionSensorThread: public fawkes::Thread,
+class OmniVisionPucksSensorThread: public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect
 {
  public:
-  OmniVisionSensorThread(RobotinoOmniVisionPipelineThread *aqt);
+  OmniVisionPucksSensorThread(OmniVisionPucksPipelineThread *aqt);
 
   virtual void init();
   virtual void finalize();
@@ -59,7 +59,7 @@ class OmniVisionSensorThread: public fawkes::Thread,
  private:
   std::string            cfg_frame_;
 
-  RobotinoOmniVisionPipelineThread *__aqt;
+  OmniVisionPucksPipelineThread *__aqt;
 };
 
 

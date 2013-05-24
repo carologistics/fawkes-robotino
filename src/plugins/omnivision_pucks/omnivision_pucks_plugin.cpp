@@ -1,7 +1,7 @@
 
 /***************************************************************************
- *  robotino_omnivision_plugin.cpp - Robotino OmniVision Plugin
- *                                   (based on Mid-Size omni_ball)
+ *  omnivision_pucks_plugin.cpp - Robotino OmniVision Plugin to detect pucks
+ *                                (based on Mid-Size omni_ball)
  *
  *  Created: Thu May 24 17:11:46 2012
  *  Copyright  2007-2012  Tim Niemueller [www.niemueller.de]
@@ -33,21 +33,21 @@ using namespace fawkes;
  * puck and colored field positions relative to the robot.
  * @author Tim Niemueller
  */
-class RobotinoOmniVisionPlugin : public fawkes::Plugin
+class OmniVisionPucksPlugin : public fawkes::Plugin
 {
  public:
 
   /** Constructor.
    * @param config Fawkes configuration
    */
-  RobotinoOmniVisionPlugin(Configuration *config)
+  OmniVisionPucksPlugin(Configuration *config)
     : Plugin(config)
   {
-	RobotinoOmniVisionPipelineThread *t = new RobotinoOmniVisionPipelineThread();
+    OmniVisionPucksPipelineThread *t = new OmniVisionPucksPipelineThread();
     thread_list.push_back(t);
-    thread_list.push_back(new OmniVisionSensorThread(t));
+    thread_list.push_back(new OmniVisionPucksSensorThread(t));
   }
 };
 
-PLUGIN_DESCRIPTION("Robotino omni-vision image processing")
-EXPORT_PLUGIN(RobotinoOmniVisionPlugin)
+PLUGIN_DESCRIPTION("Detect LLSF pucks through omni-vision")
+EXPORT_PLUGIN(OmniVisionPucksPlugin)

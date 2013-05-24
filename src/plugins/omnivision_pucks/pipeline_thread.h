@@ -5,6 +5,7 @@
  *  Copyright  2005-2012  Tim Niemueller [www.niemueller.de]
  *             2007       Daniel Beck
  *             2005       Martin Heracles
+ *             2012-2013  Johannes Rothe
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -20,8 +21,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef __PLUGINS_ROBOTINO_OMNIVISION_PIPELINE_THREAD_H_
-#define __PLUGINS_ROBOTINO_OMNIVISION_PIPELINE_THREAD_H_
+#ifndef __PLUGINS_OMNIVISION_PUCKS_PIPELINE_THREAD_H_
+#define __PLUGINS_OMNIVISION_PUCKS_PIPELINE_THREAD_H_
 
 #include <core/threading/thread.h>
 
@@ -43,118 +44,118 @@
 
 
 namespace firevision {
-class Camera;
-class ScanlineModel;
-class ColorModel;
-class MirrorModel;
-class SimpleColorClassifier;
-class RelativePositionModel;
-class SharedMemoryImageBuffer;
-class Drawer;
+  class Camera;
+  class ScanlineModel;
+  class ColorModel;
+  class MirrorModel;
+  class SimpleColorClassifier;
+  class RelativePositionModel;
+  class SharedMemoryImageBuffer;
+  class Drawer;
 }
 namespace fawkes {
-class Position3DInterface;
-class SwitchInterface;
+  class Position3DInterface;
+  class SwitchInterface;
 }
 
-class RobotinoOmniVisionPipelineThread: public fawkes::Thread,
-		public fawkes::LoggingAspect,
-		public fawkes::VisionAspect,
-		public fawkes::ConfigurableAspect,
-		public fawkes::BlackBoardAspect,
-		public fawkes::TransformAspect
-		{
+class OmniVisionPucksPipelineThread: public fawkes::Thread,
+  public fawkes::LoggingAspect,
+  public fawkes::VisionAspect,
+  public fawkes::ConfigurableAspect,
+  public fawkes::BlackBoardAspect,
+  public fawkes::TransformAspect
+{
 
-	// sort functor for sorting ROI Lists
-
-
-public:
-	typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
+  // sort functor for sorting ROI Lists
 
 
-	struct sortFunctor {
-			sortFunctor(firevision::RelativePositionModel* rp,firevision::SimpleColorClassifier* c);
-			bool operator()(firevision::ROI i, firevision::ROI j);
-			firevision::RelativePositionModel* relpos;
-			firevision::SimpleColorClassifier* classifier;
-		};
-	RobotinoOmniVisionPipelineThread();
-	virtual ~RobotinoOmniVisionPipelineThread();
-
-	virtual void init();
-	virtual void finalize();
-	virtual void loop();
-
-	bool lock_if_new_data();
-	void unlock();
+ public:
+  typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
 
 
-	std::list<fawkes::Position3DInterface*> puck_ifs_;
-private:
+  struct sortFunctor {
+    sortFunctor(firevision::RelativePositionModel* rp,firevision::SimpleColorClassifier* c);
+    bool operator()(firevision::ROI i, firevision::ROI j);
+    firevision::RelativePositionModel* relpos;
+    firevision::SimpleColorClassifier* classifier;
+  };
+  OmniVisionPucksPipelineThread();
+  virtual ~OmniVisionPucksPipelineThread();
 
-	struct cmpByLocation {
-	    bool operator()(const Point3d& a, const Point3d& b) const {
-	        return a.getX() + a.getY()*10 < b.getX()+ b.getY()*10;
-	    }
-	};
-	typedef std::map<Point3d,fawkes::Position3DInterface*,cmpByLocation> PuckIfMap;
+  virtual void init();
+  virtual void finalize();
+  virtual void loop();
 
-	typedef std::map<Point3d,Point3d,cmpByLocation> PuckPuckMap;
-
-	PuckPuckMap relPositions_;
-
-	PuckIfMap* if_puck_map_;
-	std::vector<Point3d> current_pucks_;
-	std::vector<Point3d> old_pucks_;
-	void associate_pucks_with_ifs();
-
-	Point3d apply_tf_to_global(Point3d src);
+  bool lock_if_new_data();
+  void unlock();
 
 
-	firevision::Camera *cam_;
-	firevision::ScanlineModel *scanline_;
-	firevision::ColorModel *cm_;
-	firevision::MirrorModel *mirror_;
-	firevision::RelativePositionModel *rel_pos_;
-	firevision::SimpleColorClassifier *classifier_;
-	firevision::SharedMemoryImageBuffer *shm_buffer_;
+  std::list<fawkes::Position3DInterface*> puck_ifs_;
+ private:
 
-	fawkes::tf::TransformListener* tf_listener_;
+  struct cmpByLocation {
+    bool operator()(const Point3d& a, const Point3d& b) const {
+      return a.getX() + a.getY()*10 < b.getX()+ b.getY()*10;
+    }
+  };
+  typedef std::map<Point3d,fawkes::Position3DInterface*,cmpByLocation> PuckIfMap;
 
-	fawkes::SwitchInterface *switchInterface;
+  typedef std::map<Point3d,Point3d,cmpByLocation> PuckPuckMap;
 
-	unsigned char *buffer_;
+  PuckPuckMap relPositions_;
 
-	unsigned int img_width_;
-	unsigned int img_height_;
+  PuckIfMap* if_puck_map_;
+  std::vector<Point3d> current_pucks_;
+  std::vector<Point3d> old_pucks_;
+  void associate_pucks_with_ifs();
 
-	firevision::colorspace_t cspace_from_;
-	firevision::colorspace_t cspace_to_;
-
-	bool puck_visible_;
-	unsigned int puck_image_x_;
-	unsigned int puck_image_y_;
-	fawkes::point_t mass_point_;
-	float min_dist_;
+  Point3d apply_tf_to_global(Point3d src);
 
 
-	std::list<firevision::ROI> *rois_;
+  firevision::Camera *cam_;
+  firevision::ScanlineModel *scanline_;
+  firevision::ColorModel *cm_;
+  firevision::MirrorModel *mirror_;
+  firevision::RelativePositionModel *rel_pos_;
+  firevision::SimpleColorClassifier *classifier_;
+  firevision::SharedMemoryImageBuffer *shm_buffer_;
 
-	std::string cfg_prefix_;
-	std::string cfg_camera_;
-	std::string cfg_mirror_file_;
-	std::string cfg_colormap_file_;
-	std::string cfg_frame_;
-	float cfg_neighbors;
-	float cfg_basic_roi_size;
-	float cfg_cam_height_;
-	float cfg_puck_radius_;
+  fawkes::tf::TransformListener* tf_listener_;
 
-	firevision::Drawer *drawer_;
+  fawkes::SwitchInterface *switchInterface;
 
-protected:
-	fawkes::Mutex    *_data_mutex;
-	bool _new_data;
+  unsigned char *buffer_;
+
+  unsigned int img_width_;
+  unsigned int img_height_;
+
+  firevision::colorspace_t cspace_from_;
+  firevision::colorspace_t cspace_to_;
+
+  bool puck_visible_;
+  unsigned int puck_image_x_;
+  unsigned int puck_image_y_;
+  fawkes::point_t mass_point_;
+  float min_dist_;
+
+
+  std::list<firevision::ROI> *rois_;
+
+  std::string cfg_prefix_;
+  std::string cfg_camera_;
+  std::string cfg_mirror_file_;
+  std::string cfg_colormap_file_;
+  std::string cfg_frame_;
+  float cfg_neighbors;
+  float cfg_basic_roi_size;
+  float cfg_cam_height_;
+  float cfg_puck_radius_;
+
+  firevision::Drawer *drawer_;
+
+ protected:
+  fawkes::Mutex    *_data_mutex;
+  bool _new_data;
 };
 
 #endif

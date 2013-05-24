@@ -2,8 +2,8 @@
  *  sensor_thread.cpp - Laser thread that puses data into the interface
  *
  *  Created: Wed Oct 08 13:32:57 2008
- *  Copyright  2006-2008  Tim Niemueller [www.niemueller.de]
- *
+ *  Copyright  2006-2012  Tim Niemueller [www.niemueller.de]
+ *             2012-2013  Johannes Rothe
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -31,11 +31,12 @@
 
 using namespace fawkes;
 using namespace std;
-/** @class OmniVisionSensorThread "sensor_thread.h"
+/** @class OmniVisionPucksSensorThread "sensor_thread.h"
  * Laser sensor thread.
  * This thread integrates into the Fawkes main loop at the sensor hook and
  * publishes new data when available from the LaserAcquisitionThread.
  * @author Tim Niemueller
+ * @author Johannes Rothe
  */
 
 /** Constructor.
@@ -43,35 +44,35 @@ using namespace std;
  * @param cfg_prefix configuration path prefix
  * @param aqt LaserAcquisitionThread to get data from
  */
-OmniVisionSensorThread::OmniVisionSensorThread(
-		RobotinoOmniVisionPipelineThread *aqt) :
-		Thread("OmniVisionSensorThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
-				BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS) {
-	__aqt = aqt;
-	cfg_frame_ = ("/hardware/robotino/omnivision/frame");
+OmniVisionPucksSensorThread::OmniVisionPucksSensorThread(OmniVisionPucksPipelineThread *aqt)
+  : Thread("OmniVisionPucksSensorThread", Thread::OPMODE_WAITFORWAKEUP),
+    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
+{
+  __aqt = aqt;
+  cfg_frame_ = ("/hardware/robotino/omnivision/frame");
 }
 
-void OmniVisionSensorThread::init() {
-
-}
-
-void OmniVisionSensorThread::finalize() {
+void OmniVisionPucksSensorThread::init() {
 
 }
 
-void OmniVisionSensorThread::loop() {
-	if (__aqt->lock_if_new_data()) {
-		//Iterator over the List in the Pipeline Thread whilst iterating over the sensor thread list
-		std::list<fawkes::Position3DInterface*>::iterator pipeline_pucks;
-		for (pipeline_pucks = __aqt->puck_ifs_.begin();
-				pipeline_pucks != __aqt->puck_ifs_.end(); pipeline_pucks++) {
-			(*pipeline_pucks)->write();
+void OmniVisionPucksSensorThread::finalize() {
 
-			//experimental comment, I am not sure of the consequences
-			// (I am not sure if we need this here at all..) --DE
-			//(*pipeline_pucks)->set_translation(0,0);
-			//(*pipeline_pucks)->set_translation(1,0);
-		}
-	}
-	__aqt->unlock();
+}
+
+void OmniVisionPucksSensorThread::loop() {
+  if (__aqt->lock_if_new_data()) {
+    //Iterator over the List in the Pipeline Thread whilst iterating over the sensor thread list
+    std::list<fawkes::Position3DInterface*>::iterator pipeline_pucks;
+    for (pipeline_pucks = __aqt->puck_ifs_.begin();
+	 pipeline_pucks != __aqt->puck_ifs_.end(); pipeline_pucks++) {
+      (*pipeline_pucks)->write();
+
+      //experimental comment, I am not sure of the consequences
+      // (I am not sure if we need this here at all..) --DE
+      //(*pipeline_pucks)->set_translation(0,0);
+      //(*pipeline_pucks)->set_translation(1,0);
+    }
+  }
+  __aqt->unlock();
 }
