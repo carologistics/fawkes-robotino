@@ -16,6 +16,11 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/fvconf.mk
+include $(BUILDCONFDIR)/tf/tf.mk
+
+ifeq ($(HAVE_TF),1)
+  CFLAGS  += $(CFLAGS_TF)
+  LDFLAGS += $(LDFLAGS_TF)
 
 CFLAGS   += $(VISION_CFLAGS)
 LDFLAGS  += $(VISION_LDFLAGS)
@@ -26,10 +31,15 @@ LIBS     += $(VISION_LIBS)
 LIBS_robotino_omnivisionmult_thread = m \
 	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
 	fawkesgeometry fvutils fvcams fvmodels fvclassifiers fvfilters \
-	Position3DInterface SwitchInterface
+	Position3DInterface SwitchInterface fawkestf 
 OBJS_robotino_omnivisionmult_thread = robotino_omnivision_plugin.o pipeline_thread.o sensor_thread.o
 
 OBJS_all    = $(OBJS_robotino_omnivisionmult_thread)
 PLUGINS_all = $(PLUGINDIR)/robotino-omnivisionmult-thread.$(SOEXT)
+
+else
+  WARN_TARGETS += warning_tf
+endif
+
 
 include $(BUILDSYSDIR)/base.mk

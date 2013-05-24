@@ -35,6 +35,8 @@
 #include <fvutils/base/roi.h>
 
 #include <interfaces/SwitchInterface.h>
+#include <aspect/tf.h>
+#include <tf/types.h>
 
 #include <string>
 
@@ -58,13 +60,17 @@ class RobotinoOmniVisionPipelineThread: public fawkes::Thread,
 		public fawkes::LoggingAspect,
 		public fawkes::VisionAspect,
 		public fawkes::ConfigurableAspect,
-		public fawkes::BlackBoardAspect
+		public fawkes::BlackBoardAspect,
+		public fawkes::TransformAspect
 		{
 
 	// sort functor for sorting ROI Lists
 
 
 public:
+	typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
+
+
 	struct sortFunctor {
 			sortFunctor(firevision::RelativePositionModel* rp,firevision::SimpleColorClassifier* c);
 			bool operator()(firevision::ROI i, firevision::ROI j);
@@ -81,8 +87,29 @@ public:
 	bool lock_if_new_data();
 	void unlock();
 
-	std::list<fawkes::Position3DInterface*> pucks;
+
+	std::list<fawkes::Position3DInterface*> puck_ifs_;
 private:
+
+	struct cmpByLocation {
+	    bool operator()(const Point3d& a, const Point3d& b) const {
+	        return a.getX() + a.getY()*10 < b.getX()+ b.getY()*10;
+	    }
+	};
+	typedef std::map<Point3d,fawkes::Position3DInterface*,cmpByLocation> PuckIfMap;
+
+	typedef std::map<Point3d,Point3d,cmpByLocation> PuckPuckMap;
+
+	PuckPuckMap relPositions_;
+
+	PuckIfMap* if_puck_map_;
+	std::vector<Point3d> current_pucks_;
+	std::vector<Point3d> old_pucks_;
+	void associate_pucks_with_ifs();
+
+	Point3d apply_tf_to_global(Point3d src);
+
+
 	firevision::Camera *cam_;
 	firevision::ScanlineModel *scanline_;
 	firevision::ColorModel *cm_;
@@ -90,6 +117,8 @@ private:
 	firevision::RelativePositionModel *rel_pos_;
 	firevision::SimpleColorClassifier *classifier_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
+
+	fawkes::tf::TransformListener* tf_listener_;
 
 	fawkes::SwitchInterface *switchInterface;
 
@@ -121,6 +150,7 @@ private:
 	float cfg_puck_radius_;
 
 	firevision::Drawer *drawer_;
+
 protected:
 	fawkes::Mutex    *_data_mutex;
 	bool _new_data;
