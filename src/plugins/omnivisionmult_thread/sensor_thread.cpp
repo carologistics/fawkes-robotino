@@ -60,7 +60,6 @@ void OmniVisionSensorThread::finalize() {
 
 void OmniVisionSensorThread::loop() {
 	if (__aqt->lock_if_new_data()) {
-		logger->log_info(name(),"Sensor Thread loop new data");
 		//Iterator over the List in the Pipeline Thread whilst iterating over the sensor thread list
 		std::list<fawkes::Position3DInterface*>::iterator pipeline_pucks;
 		for (pipeline_pucks = __aqt->pucks.begin(); pipeline_pucks!=__aqt->pucks.end(); pipeline_pucks++) {
@@ -78,8 +77,6 @@ void OmniVisionSensorThread::loop() {
 			(*pipeline_pucks)->set_translation(0,0);
 			(*pipeline_pucks)->set_translation(1,0);
 		}
-	} else {
-		logger->log_info(name(),"Sensor Thread loop NO new data");
-	}
+	} 
 	__aqt->unlock();
 }

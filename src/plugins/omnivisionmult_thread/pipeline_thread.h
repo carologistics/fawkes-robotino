@@ -115,6 +115,8 @@ private:
 	std::string cfg_mirror_file_;
 	std::string cfg_colormap_file_;
 	std::string cfg_frame_;
+	float cfg_neighbors;
+	float cfg_basic_roi_size;
 	float cfg_cam_height_;
 	float cfg_puck_radius_;
 
