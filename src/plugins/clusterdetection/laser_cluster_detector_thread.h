@@ -117,6 +117,9 @@ private:
 	int scanrange_to_angle(int scanrange);
 	double calculate_cluster_size(const PolarPos& last_peak,
 			const PolarPos& current);
+	void calc_average_of_distances(
+			std::list<PolarPos>::iterator last_peak, std::list<PolarPos>::iterator current,
+			float* average_distance, float* variance);
 
 	//TODO
 
@@ -137,13 +140,17 @@ private:
 	float cfg_cluster_allowed_variance_;
 	float cfg_cluster_allowed_variance_over_time_;
 	float cfg_dist_threshold_;
+	float cfg_cluster_coherence_;
+	bool cfg_publish_laser_vis_;
+	float cfg_cluster_max_distance_;
+	float cfg_cluster_distance_delta_;
 
 	int loopcnt;
 	bool cfg_debug_;
 	bool debug_;
-	bool cfg_publish_laser_vis_;
-	float cfg_cluster_max_distance_;
+
 	fawkes::Position3DInterface* pos3d_nearest_laser_if_;
+
 };
 
 #endif
