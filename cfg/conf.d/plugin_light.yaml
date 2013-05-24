@@ -1,0 +1,63 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/plugin-light
+---
+
+plugins/plugin_light:
+  # camera being used
+  #camera: "file:file:file=/home/fnolden/Dropbox/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
+  camera: v4l2:front:device=/dev/video0
+#:size=640x480:awb=false:aec=false:agc=false:exposure=305
+  #camera: v4l2:front:device=/dev/video1:size=640x480:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
+
+  # Size of the light (Ampel) in m, without the sockel to determine the light search areas
+  light_size_height: 0.10	#0.10
+  light_size_width: 0.02	#0.035
+
+  #Robotino specific start:
+  #should be defined in host.yaml
+  #camare viewport factor logitech webcam
+  camera_factor_horizontal: 1.08 #1.7
+  camera_factor_vertical: 0.85 #1.33
+
+  #camare offset of the front cam
+  camera_offset_horizontal_rad: -0.013 #-0.0735
+  camera_offset_vertical: 45
+  #Robotino specific end
+
+  #Shared Memory Imagebuffer name
+  shm_image_id: "lightCam"
+
+  # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
+  threashold_brightness: 200
+  threashold_black: 60
+  detection_cycle_time: 1
+  threashold_laser_visibility: -6
+
+  light_number_of_wrong_detections: 2
+  light_distance_allowed_betwen_frames: 0.1 
+  light_out_of_range_thrashold: 2
+  light_position_correction: false
+
+  light_move_under_rfid_thrashold: 0.35			#distance thrashold if the light is very close (normaly at move_under_rfid)
+  light_to_close_thrashold: 0.2				#get a light pos that is unreal close (and creats an out of bounce error)
+
+  # coordinate system
+  frame: /cam_front
+
+  #Interfacename of the light position fawkes::PolarPosition2DInterface
+
+  #light_position_if: "Closest_Machine"  
+  light_position_if: "Euclidean Laser Cluster"
+  light_state_if: "Light_State"
+
+  show_debug_messages: false
+  draw_rois: true
+
+  
+  #simulate laser data
+  simulate_laser: false
+  simulate_laser_data_x: 0.95
+  simulate_laser_data_y: 0.09;
+  simulate_laser_data_visibility: 5
