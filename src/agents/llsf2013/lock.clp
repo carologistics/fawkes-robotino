@@ -13,8 +13,6 @@
   (signal (type send-lock-msg) (time (create$ 0 0)) (seq 1))
   (signal (type send-master-announce) (time (create$ 0 0)) (seq 1))
   (init-locking)
-  ;DEBUG:
-  ;(lock (type GET) (agent ?*ROBOT-NAME*) (resource INS))
 )
 
 (defrule lock-init
