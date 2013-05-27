@@ -106,28 +106,24 @@
   (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE." crlf)
   (retract ?s ?g ?ws)
   (assert (state EXP_IDLE)
-          (nextInCycle ?nextMachine)
+          (nextInCycle ?nextMachine))
   )
 )
 
-;Find next machine and assert drinve command in the first round
-(defrule exp-goto-next-machine-first-round
+;Find next machine in list
+(defrule exp-find-next-machine-first-round
   (phase EXPLORATION)
   (round FIRST)
   ?s <- (state EXP_IDLE)
-  ?n <- (nextInCycle ?nextMachine)
+  (nextInCycle ?nextMachine)
   (not (machineRecognized ?nextMachine))
-  (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
   =>
-  (printout t "Going to next machine" crlf)
-  (retract ?s ?n)
-  (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?nextMachine)
-  )
-  (skill-call ppgoto place (str-cat ?lp))
+  (retract ?s)
+  (assert (state EXP_FOUND_NEXT_MACHINE))
 )
 
-(defrule exp-go-to-nextnext-machine-first-round
+;If next machine is already recognized, find next unrecognized machine in list
+(defrule exp-find-next-machine-if-recognized-first-round
   (phase EXPLORATION)
   (round FIRST)
   (state EXP_IDLE)
@@ -138,6 +134,47 @@
   =>
   (retract ?n)
   (assert (nextInCycle ?nextnext))
+)
+
+;Require resource-locking
+(defrule exp-require-resource-locking
+	(phase EXPLORATION)
+	(round FIRST)
+	?s <- (state EXP_FOUND_NEXT_MACHINE)
+  (nextInCycle ?nextMachine)
+  =>
+	(printout t "Require lock for " ?nextMachine crlf)
+	(retract ?s)
+	(assert (state EXP_LOCK_REQUIRED)
+					(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine))
+)
+
+;Wait for answer from MASTER
+(defrule exp-check-resource-locking
+  (phase EXPLORATION)
+  (round FIRST)
+  ?s <- (state EXP_LOCK_REQUIRED)
+  (nextInCycle ?nextMachine)
+  ?l <- (lock (type ACCEPT) (agent ?*ROBOT-NAME*) (resource ?nextMachine))
+  =>
+  (printout t "Lock accepted." crlf)
+  (retract ?s ?l)
+  (assert (state EXP_LOCK_ACCEPTED))
+)
+
+;Drive to next machine
+(defrule exp-go-to-next-machine-first-round
+  (phase EXPLORATION)
+  (round FIRST)
+  ?s <- (state EXP_LOCK_ACCEPTED)
+  ?n <- (nextInCycle ?nextMachine)
+  (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
+  =>
+  (printout t "Going to next machine." crlf)
+  (retract ?s ?n)
+  (assert (state EXP_DRIVING_TO_MACHINE)
+          (goalmachine ?nextMachine))
+  (skill-call ppgoto place (str-cat ?lp))
 )
 
 ;Finish first round
@@ -321,7 +358,7 @@
   ?ws <- (signal (type send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
-  (do-for-all-facts ((?machine machine-type)) TRUE
+  (do-for-all-facts (?machine machine-type) TRUE
     (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
     (pb-set-field ?mre "name" (str-cat ?machine:name))
     (pb-set-field ?mre "type" (str-cat ?machine:type))
