@@ -22,19 +22,12 @@
   =>
   (printout t "Sending lock-message with type " ?type " of " ?r " from agent " ?a crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
-  (printout t "bla 1" crlf)
   (bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
-  (printout t "bla 2" crlf)
   (pb-set-field ?lock-msg "type" ?type)
-  (printout t "bla 3" crlf)
   (pb-set-field ?lock-msg "agent" (str-cat ?a))
-  (printout t "bla 4" crlf)
   (pb-set-field ?lock-msg "resource" (str-cat ?r))
-  (printout t "bla 5" crlf)
   (pb-broadcast ?lock-msg)
-  (printout t "bla 6" crlf)
   (pb-destroy ?lock-msg)
-  (printout t "bla 7" crlf)
 )
 
 (defrule lock-receive-message
