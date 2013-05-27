@@ -1,0 +1,48 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/light_compass
+---
+
+plugins/light_compass:
+  # camera being used
+#  camera: firewire:any:mode=FORMAT7_0:coding=YUV422:packetsize=8188:width=1000:height=1000:startx=0:starty=0:brightness=211:auto_exposure=50:white_balance=444,0:shutter=1659:gain=320:trigger_delay=off:framerate=30:focus=manual:hue=off:saturation=off:gamma=off:isospeed=800
+#  camera: firewire:any:mode=FORMAT7_0:coding=YUV422:packetsize=8188:width=1000:height=1000:startx=0:starty=0:brightness=211:auto_exposure=50:white_balance=444,380:shutter=500:gain=100:trigger_delay=off:framerate=30:focus=manual:hue=off:saturation=off:gamma=off:isospeed=800
+  #camera: "file:file:file=/home/fnolden/Dropbox/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
+
+  # coordinate system
+  frame: /base_link
+
+  # path to bulb file (relative to cfg dir!)
+  mirror_file: bulb-colormap/masle.bulb
+  mirror_correction: true
+
+  # height of mirror in m
+  mirror_height: 0.5
+
+  # roboter radius in m  (to remove reflections on robotino)
+  robot_radius: 0.15
+
+  # height of red center in m
+  red_height: 0.245
+
+  # height of orange center in m
+  orange_height: 0.2125
+
+  # height of green center in m
+  green_height: 0.1825
+
+  # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
+  threashold_brightness: 220
+
+  # threashold for detecting ROI's in pixle (big ROI's are reflections) (width * height < threashold_roiMaxSize)
+  # 40 = 4 * 10 (long ample)
+  threashold_roiMaxSize: 5000
+
+  #Max allowed light distance between frames to continue with visibilty history
+  light_distance_allowed_betwen_frames: 0.2
+
+  debug: false
+
+
+
