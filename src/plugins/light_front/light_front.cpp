@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  plugin_light_plugin.cpp - Empty example
+ *  light_front_plugin.cpp - Empty example
  *
  *  Created: Mi 23. Mai 18:07:14 CEST 2012
  *  Copyright  2012  Daniel Ewert
@@ -22,25 +22,25 @@
 
 #include <core/plugin.h>
 
-#include "plugin_light_thread.h"
+#include "light_front_thread.h"
 
 using namespace fawkes;
 
-/** Light! Makes the robotino move forward for 3 seconds
- * @author Daniel Ewert
+/** Light Detection with front cam and Laser
+ * @author Florian Nolden & Tobias Neumann
  */
-class PluginLightPlugin : public fawkes::Plugin
+class LightFront : public fawkes::Plugin
 {
  public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  PluginLightPlugin(Configuration *config)
+  LightFront(Configuration *config)
     : Plugin(config)
   {
-    thread_list.push_back(new PluginLightThread());
+    thread_list.push_back(new LightFrontThread());
   }
 };
 
-PLUGIN_DESCRIPTION("Plugin Light")
-EXPORT_PLUGIN(PluginLightPlugin)
+PLUGIN_DESCRIPTION("Front camera light detection")
+EXPORT_PLUGIN(LightFront)

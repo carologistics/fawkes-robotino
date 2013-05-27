@@ -1,9 +1,9 @@
 
 #*****************************************************************************
-#         Makefile Build System for Fawkes: Robotino Light Plugin
+#         Makefile Build System for Fawkes: Robotino Front Light Plugin
 #                            -------------------
 #   Created on Wed May 23 18:31:45 2012
-#   Copyright (C) 2012 by Tobias Neumann and Daniel Ewert, Carologistics RoboCup Team
+#   Copyright (C) 2013 by Tobias Neumann & Florian Nolden, Carologistics RoboCup Team
 #
 #*****************************************************************************
 #
@@ -32,17 +32,17 @@ LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
 #The necessary libraries your plugin needs.
-LIBS_plugin_light = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+LIBS_light_front = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
 		fvclassifiers fawkesgeometry fvfilters TransformInterface \
 		fawkestf RobotinoLightInterface Position3DInterface 
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_plugin_light = plugin_light_plugin.o plugin_light_thread.o brightness.o darkness.o
+OBJS_light_front = light_front.o light_front_thread.o
 
 #names of the plugins you want to build
-PLUGINS_all = $(PLUGINDIR)/plugin-light.$(SOEXT)
+PLUGINS_all = $(PLUGINDIR)/light_front.$(SOEXT)
 
-OBJS_all = $(OBJS_plugin_light)
+OBJS_all = $(OBJS_light_front)
 
 else
   WARN_TARGETS += warning_tf

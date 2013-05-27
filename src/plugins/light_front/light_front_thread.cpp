@@ -11,10 +11,10 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "plugin_light_thread.h"
+#include "light_front_thread.h"
 
-PluginLightThread::PluginLightThread()
-:	Thread("PluginLightThread", Thread::OPMODE_WAITFORWAKEUP),
+LightFrontThread::LightFrontThread()
+:	Thread("LightFrontThread", Thread::OPMODE_WAITFORWAKEUP),
  	VisionAspect(VisionAspect::CYCLIC)
 {
 	this->cfg_prefix = "";
@@ -76,13 +76,13 @@ PluginLightThread::PluginLightThread()
 }
 
 void
-PluginLightThread::init()
+LightFrontThread::init()
 {
 	logger->log_info(name(), "Plugin-light: starts up");
 
 	this->lightOutOfRangeCounter = 0;
 
-	this->cfg_prefix = "/plugins/plugin_light/";
+	this->cfg_prefix = "/plugins/light_front/";
 
 	this->cfg_frame  = this->config->get_string((this->cfg_prefix + "frame").c_str());
 
@@ -130,7 +130,7 @@ PluginLightThread::init()
 	this->cspaceFrom = this->camera->colorspace();
 
 	this->scanline = new firevision::ScanlineGrid( this->img_width, this->img_height, 1, 1 );
-	this->colorModel = new firevision::ColorModelBrightness(this->cfg_brightnessThreashold);
+	this->colorModel = new firevision::ColorModelLuminance(this->cfg_brightnessThreashold);
 
 	this->classifierWhite = new firevision::SimpleColorClassifier(
 			this->scanline,														//scanmodel
@@ -143,7 +143,7 @@ PluginLightThread::init()
 			firevision::C_WHITE													//color
 			);
 
-	this->colorModelBlack = new firevision::ColorModelDarkness(this->cfg_darknessThreashold);
+	this->colorModelBlack = new firevision::ColorModelBlack(this->cfg_darknessThreashold);
 	this->classifierBlack = new firevision::SimpleColorClassifier(
 			this->scanline,														//scanmodel
 			this->colorModelBlack,													//colorModel
@@ -186,13 +186,13 @@ PluginLightThread::init()
 	this->resetLightInterface();
 	this->resetLocalHistory();
 
-	logger->log_debug(name(), "Plugin-light: end of init()");
+	logger->log_debug(name(), "end of init()");
 }
 
 void
-PluginLightThread::finalize()													//TODO check if everthing gets deleted
+LightFrontThread::finalize()													//TODO check if everthing gets deleted
 {
-	logger->log_debug(name(), "Plugin-light: start to free memory");
+	logger->log_debug(name(), "start to free memory");
 
 	vision_master->unregister_thread(this);
 
@@ -206,11 +206,11 @@ PluginLightThread::finalize()													//TODO check if everthing gets deleted
 	blackboard->close(this->nearestMaschineIF);
 	blackboard->close(this->lightStateIF);
 
-	logger->log_info(name(), "Plugin-light: ends");
+	logger->log_info(name(), "ends");
 }
 
 void
-PluginLightThread::loop()
+LightFrontThread::loop()
 {
 	bool contiueToPictureProcess = false;
 
@@ -268,7 +268,7 @@ PluginLightThread::loop()
 
 	if ( contiueToPictureProcess ) {
 		try {
-			PluginLightThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
+			LightFrontThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
 			this->takePicture(lightROIs);
 
 			// correct light position
@@ -282,7 +282,7 @@ PluginLightThread::loop()
 				}
 			}
 
-			PluginLightThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
+			LightFrontThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
 			lightSignalCurrentPicture.nearestMaschine_pos = lightPositionPolar;
 			lightSignalCurrentPicture.nearestMaschine_history = clusterVisibilityHistory;
 			this->historyBuffer->push_front(lightSignalCurrentPicture);
@@ -296,7 +296,7 @@ PluginLightThread::loop()
 }
 
 bool
-PluginLightThread::isLightInViewarea(fawkes::polar_coord_2d_t light)
+LightFrontThread::isLightInViewarea(fawkes::polar_coord_2d_t light)
 {
 	float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 ) - 0.1;
 
@@ -309,7 +309,7 @@ PluginLightThread::isLightInViewarea(fawkes::polar_coord_2d_t light)
 }
 
 void
-PluginLightThread::takePicture(PluginLightThread::lightROIs lightROIs)
+LightFrontThread::takePicture(LightFrontThread::lightROIs lightROIs)
 {
 	camera->capture();
 	firevision::convert(this->cspaceFrom,
@@ -329,7 +329,7 @@ PluginLightThread::takePicture(PluginLightThread::lightROIs lightROIs)
 	}
 }
 
-firevision::ROI PluginLightThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
+firevision::ROI LightFrontThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
 	firevision::ROI* biggestRoi = new firevision::ROI();
 
 	for (std::list<firevision::ROI>::iterator it = roiList->begin();
@@ -342,8 +342,8 @@ firevision::ROI PluginLightThread::getBiggestRoi( std::list<firevision::ROI>* ro
 	return biggestRoi;
 }
 
-PluginLightThread::lightROIs
-PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expectedLight)
+LightFrontThread::lightROIs
+LightFrontThread::correctLightRoisWithBlack(LightFrontThread::lightROIs expectedLight)
 {
 	// Look in area around the red light for the back top of the light
 
@@ -401,10 +401,10 @@ PluginLightThread::correctLightRoisWithBlack(PluginLightThread::lightROIs expect
 	return expectedLight;
 }
 
-PluginLightThread::lightSignal
-PluginLightThread::detectLightInCurrentPicture(PluginLightThread::lightROIs lightROIs)
+LightFrontThread::lightSignal
+LightFrontThread::detectLightInCurrentPicture(LightFrontThread::lightROIs lightROIs)
 {
-	PluginLightThread::lightSignal lightSignal;
+	LightFrontThread::lightSignal lightSignal;
 
 	lightSignal.red = this->signalLightCurrentPicture(lightROIs.red);
 	lightSignal.yellow = this->signalLightCurrentPicture(lightROIs.yellow);
@@ -414,10 +414,10 @@ PluginLightThread::detectLightInCurrentPicture(PluginLightThread::lightROIs ligh
 }
 
 void
-PluginLightThread::processHistoryBuffer()	//TODO change function name to say that the interface is writen
+LightFrontThread::processHistoryBuffer()	//TODO change function name to say that the interface is writen
 {
 	if ( this->historyBuffer->full() ) {
-		PluginLightThread::lightSignal lighSignal;
+		LightFrontThread::lightSignal lighSignal;
 
 		if ( this->lightFromHistoryBuffer(lighSignal) ) {
 			if ( lighSignal.red != fawkes::RobotinoLightInterface::UNKNOWN
@@ -443,13 +443,13 @@ PluginLightThread::processHistoryBuffer()	//TODO change function name to say tha
 	}
 }
 
-PluginLightThread::~PluginLightThread()
+LightFrontThread::~LightFrontThread()
 {
 	// TODO Auto-generated destructor stub
 }
 
 fawkes::polar_coord_2d_t
-PluginLightThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to)
+LightFrontThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to)
 {
 	fawkes::polar_coord_2d_t polErrorReturnValue;
 	this->cartToPol(polErrorReturnValue, cartFrom.x, cartFrom.y);
@@ -492,7 +492,7 @@ PluginLightThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, s
 	return polErrorReturnValue;
 }
 
-void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y) {
+void LightFrontThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y) {
 	pol.phi = atan2f(y, x);
 	pol.r = sqrtf(x * x + y * y);
 
@@ -502,13 +502,13 @@ void PluginLightThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float 
 	}
 }
 
-void PluginLightThread::polToCart(float &x, float &y,fawkes::polar_coord_2d_t pol){
+void LightFrontThread::polToCart(float &x, float &y,fawkes::polar_coord_2d_t pol){
 	x = pol.r * std::cos(pol.phi);
 	y = pol.r * std::sin(pol.phi);
 }
 
 void
-PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
+LightFrontThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
 {
 	this->drawer->set_src_buffer(this->bufferYCbCr, firevision::ROI::full_image(this->img_width, this->img_height), 0);
 	this->drawer->set_dst_buffer(this->bufferYCbCr, &roi);
@@ -516,11 +516,11 @@ PluginLightThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROID
 	this->drawer->apply();
 
 	if (this->cfg_debugMessagesActivated) {
-		logger->log_debug(name(), "Plugin-light: drawed element in buffer");
+		logger->log_debug(name(), "drawed element in buffer");
 	}
 }
 
-void PluginLightThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
+void LightFrontThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
 	if (light.start.x >= this->img_width || light.start.y >= this->img_height
 			|| light.height + light.start.y >= this->img_height
 			|| light.width + light.start.x >= this->img_width) {
@@ -532,8 +532,8 @@ void PluginLightThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
 	}
 }
 
-PluginLightThread::lightROIs
-PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
+LightFrontThread::lightROIs
+LightFrontThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 {
 	int expectedLightSizeWidth = this->img_width / (lightPos.r * this->cfg_cameraFactorHorizontal) * this->cfg_lightSizeWidth;
 	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;	//TODO überprüfe welche einheit das Position3D interface nutzt, wenn es Meter sind, dann ist alles ok wenn es cm sind dann muss hier noch mit 100 Multiliziert werden
@@ -562,10 +562,10 @@ PluginLightThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 	return this->createLightROIs(light);
 }
 
-PluginLightThread::lightROIs
-PluginLightThread::createLightROIs(firevision::ROI light)
+LightFrontThread::lightROIs
+LightFrontThread::createLightROIs(firevision::ROI light)
 {
-	PluginLightThread::lightROIs lightROIs;
+	LightFrontThread::lightROIs lightROIs;
 
 	//light ROI size
 	lightROIs.light = light;
@@ -600,7 +600,7 @@ PluginLightThread::createLightROIs(firevision::ROI light)
 }
 
 void
-PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSignal, bool ready) {
+LightFrontThread::writeLightInterface(LightFrontThread::lightSignal lightSignal, bool ready) {
 	this->lightStateIF->read();
 	int vis = this->lightStateIF->visibility_history();
 
@@ -631,12 +631,12 @@ PluginLightThread::writeLightInterface(PluginLightThread::lightSignal lightSigna
 }
 
 void
-PluginLightThread::resetLocalHistory() {
+LightFrontThread::resetLocalHistory() {
 	this->historyBuffer->clear();
 }
 
 void
-PluginLightThread::resetLightInterface(std::string message)
+LightFrontThread::resetLightInterface(std::string message)
 {
 	this->lightStateIF->read();
 	int vis = this->lightStateIF->visibility_history();
@@ -652,12 +652,12 @@ PluginLightThread::resetLightInterface(std::string message)
 	this->lightStateIF->write();
 
 	if (this->cfg_debugMessagesActivated) {
-			logger->log_info(name(), "Plugin-light: Resetting interface, %s",message.c_str());
+			logger->log_info(name(), "Resetting interface, %s",message.c_str());
 	}
 }
 
 std::list<firevision::ROI>*
-PluginLightThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier)
+LightFrontThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier)
 {
 	this->scanline->reset();
 	this->scanline->set_roi(&searchArea);
@@ -670,7 +670,7 @@ PluginLightThread::classifyInRoi(firevision::ROI searchArea, firevision::Classif
 }
 
 fawkes::RobotinoLightInterface::LightState
-PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
+LightFrontThread::signalLightCurrentPicture(firevision::ROI signal)
 {
 	this->scanline->reset();
 	this->scanline->set_roi(&signal);
@@ -703,14 +703,14 @@ PluginLightThread::signalLightCurrentPicture(firevision::ROI signal)
 }
 
 bool
-PluginLightThread::lightFromHistoryBuffer(PluginLightThread::lightSignal &lighSignal){
+LightFrontThread::lightFromHistoryBuffer(LightFrontThread::lightSignal &lighSignal){
 
 	int red = 0;
 	int yellow = 0;
 	int green = 0;
  // todo buffer von anfang nach ende durchlaufen
-	PluginLightThread::lightSignal previousLight;
-	for(boost::circular_buffer<PluginLightThread::lightSignal>::iterator it = this->historyBuffer->begin(); it != this->historyBuffer->end(); ++it){
+	LightFrontThread::lightSignal previousLight;
+	for(boost::circular_buffer<LightFrontThread::lightSignal>::iterator it = this->historyBuffer->begin(); it != this->historyBuffer->end(); ++it){
 		if(it != this->historyBuffer->begin()) {
 			if( ! isValidSuccessor(*it,previousLight)){
 				return false;
@@ -739,7 +739,7 @@ PluginLightThread::lightFromHistoryBuffer(PluginLightThread::lightSignal &lighSi
 }
 
 bool
-PluginLightThread::isValidSuccessor(lightSignal previous,lightSignal current)
+LightFrontThread::isValidSuccessor(lightSignal previous,lightSignal current)
 {
 	float px,py;
 	float cx,cy;
@@ -758,7 +758,7 @@ PluginLightThread::isValidSuccessor(lightSignal previous,lightSignal current)
 }
 
 fawkes::RobotinoLightInterface::LightState
-PluginLightThread::signalLightWithHistory(int lightHistory)
+LightFrontThread::signalLightWithHistory(int lightHistory)
 {
 	int visibilityHistory = this->historyBuffer->size();
 
@@ -780,7 +780,7 @@ PluginLightThread::signalLightWithHistory(int lightHistory)
 }
 
 fawkes::cart_coord_3d_t
-PluginLightThread::getNearestMaschineFromInterface()
+LightFrontThread::getNearestMaschineFromInterface()
 {
 	fawkes::cart_coord_3d_t lightPosition;
 

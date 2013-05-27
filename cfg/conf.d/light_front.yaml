@@ -1,15 +1,12 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/plugin-light
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/light_front
 ---
 
-plugins/plugin_light:
+plugins/light_front:
   # camera being used
-  # camera: v4l2:light:device=/dev/video0
-  # camera: "file:file:file=/home/florian/Dropbox/fawkes/sampleImages/vlcsnap-2013-03-18-13h45m18s129.png"
   #camera: "file:file:file=/home/fnolden/Dropbox/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
-  #camera: "file:file:file=/home/tobias/Dropbox/Carologistics/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
   camera: v4l2:front:device=/dev/video0
 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
   #camera: v4l2:light:device=/dev/video1:size=640x480:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
@@ -57,7 +54,7 @@ plugins/plugin_light:
 
   
   #simulate laser data
-  simulate_laser: false
+  simulate_laser: true
   simulate_laser_data_x: 1
   simulate_laser_data_y: 0.05
   simulate_laser_data_visibility: 5

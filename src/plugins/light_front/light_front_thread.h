@@ -11,8 +11,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef PLUGIN_LIGHT_THREAD_H_
-#define PLUGIN_LIGHT_THREAD_H_
+#ifndef LIGHT_FRONT_THREAD_H_
+#define LIGHT_FRONT_THREAD_H_
 
 #include <core/threading/thread.h>
 #include <aspect/logging.h>
@@ -29,7 +29,8 @@
 
 #include <fvutils/ipc/shm_image.h>
 #include <fvutils/color/conversions.h>
-
+#include <fvmodels/color/thresholds_luminance.h>
+#include <fvmodels/color/threasholds_black.h>
 #include <fvmodels/scanlines/grid.h>
 
 #include <fvclassifiers/simple.h>
@@ -41,8 +42,6 @@
 #include <list>
 #include <cmath>
 
-#include "brightness.h"
-#include "darkness.h"
 #include <boost/circular_buffer.hpp>
 
 namespace fawkes {
@@ -53,7 +52,7 @@ namespace fawkes {
 	}
 }
 
-class PluginLightThread
+class LightFrontThread
 :	public fawkes::Thread,
 	public fawkes::LoggingAspect,
 	public fawkes::ConfigurableAspect,
@@ -125,8 +124,8 @@ private:
 
 	firevision::Camera *camera;
 	firevision::ScanlineModel *scanline;
-	firevision::ColorModelBrightness *colorModel;
-	firevision::ColorModelDarkness *colorModelBlack;
+	firevision::ColorModelLuminance *colorModel;
+	firevision::ColorModelBlack *colorModelBlack;
 	firevision::SimpleColorClassifier *classifierWhite;
 	firevision::SimpleColorClassifier *classifierBlack;
 	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
@@ -143,20 +142,20 @@ private:
 
 	firevision::FilterROIDraw *drawer;
 
-	PluginLightThread::lightSignal detectLightInCurrentPicture(PluginLightThread::lightROIs lightROIs);
-	PluginLightThread::lightROIs correctLightRoisWithBlack(PluginLightThread::lightROIs expectedLight);
+	LightFrontThread::lightSignal detectLightInCurrentPicture(LightFrontThread::lightROIs lightROIs);
+	LightFrontThread::lightROIs correctLightRoisWithBlack(LightFrontThread::lightROIs expectedLight);
 	fawkes::RobotinoLightInterface::LightState signalLightCurrentPicture(firevision::ROI signal);
 	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory);
 	std::list<firevision::ROI>* classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);
-	bool lightFromHistoryBuffer(PluginLightThread::lightSignal &lighSignal);
+	bool lightFromHistoryBuffer(LightFrontThread::lightSignal &lighSignal);
 	unsigned char* calculatePositionInCamBuffer();
 
-	PluginLightThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
-	PluginLightThread::lightROIs createLightROIs(firevision::ROI light);
+	LightFrontThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
+	LightFrontThread::lightROIs createLightROIs(firevision::ROI light);
 
 	bool isValidSuccessor(lightSignal previous,lightSignal current);
 
-//	void updateLocalHistory(PluginLightThread::lightSignal lightSignalCurrent);
+//	void updateLocalHistory(LightFrontThread::lightSignal lightSignalCurrent);
 	void resetLightInterface(std::string message="");
 
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
@@ -165,12 +164,12 @@ private:
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
 	void resetLocalHistory();
-	void writeLightInterface(PluginLightThread::lightSignal lightSignal, bool ready);
+	void writeLightInterface(LightFrontThread::lightSignal lightSignal, bool ready);
 	void createUnknownLightSignal();
 	fawkes::cart_coord_3d_t getNearestMaschineFromInterface();
 
 	bool isLightInViewarea(fawkes::polar_coord_2d_t light);
-	void takePicture(PluginLightThread::lightROIs lightROIs);
+	void takePicture(LightFrontThread::lightROIs lightROIs);
 
 	void processHistoryBuffer();
 	firevision::ROI getBiggestRoi(std::list<firevision::ROI>* roiList);
@@ -180,12 +179,12 @@ protected:
 	virtual void run() { Thread::run(); }
 
 public:
-	PluginLightThread();
-	virtual ~PluginLightThread();
+	LightFrontThread();
+	virtual ~LightFrontThread();
 
 	virtual void init();
 	virtual void loop();
 	virtual void finalize();
 };
 
-#endif /* PLUGIN_LIGHT_THREAD_H_ */
+#endif /* LIGHT_FRONT_THREAD_H_ */
