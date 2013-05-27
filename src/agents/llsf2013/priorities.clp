@@ -27,4 +27,7 @@
   ?*PRIORITY-T3*      =   20
   ?*PRIORITY-T2*      =   10
   ?*PRIORITY-T1*      =    5
+
+  ; locking priorities
+  ?*PRIORITY-LOCK-SEND*    = -100 ;so they get only send if not used by the agent itself
 )

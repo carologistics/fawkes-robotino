@@ -10,6 +10,7 @@
 (defglobal
   ; network sending periods; seconds
   ?*BEACON-PERIOD* = 1.0
+  ?*LOCK-PERIOD* = 0.2
 
   ?*TEAM-NAME*  = "?"
   ?*ROBOT-NAME* = "?"

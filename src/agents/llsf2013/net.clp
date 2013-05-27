@@ -96,7 +96,6 @@
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
   (if (eq ?name (sym-cat ?beacon-name))
       then
-      (retract ?pf)
       (bind ?beacon-time (pb-field-value ?p "time"))
       (modify ?ar (last-seen ?beacon-time))
       (if (pb-has-field ?p "pose")
@@ -104,8 +103,9 @@
           (bind ?beacon-pose (pb-field-value ?p "pose"))
           (modify ?ar (x (nth$ 1 ?beacon-pose)) (y (nth$ 2 ?beacon-pose)))
 	  (printout t "Got Beacon Signal from " ?beacon-name "with Pose" crlf)
-  
-    )
+	  
+      )
+      (retract ?pf)
   )
 )
 
