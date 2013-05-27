@@ -146,7 +146,7 @@
 	(printout t "Require lock for " ?nextMachine crlf)
 	(retract ?s)
 	(assert (state EXP_LOCK_REQUIRED)
-					(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine))
+					(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine)))
 )
 
 ;Wait for answer from MASTER
@@ -155,7 +155,7 @@
   (round FIRST)
   ?s <- (state EXP_LOCK_REQUIRED)
   (nextInCycle ?nextMachine)
-  ?l <- (lock (type ACCEPT) (agent ?*ROBOT-NAME*) (resource ?nextMachine))
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
   =>
   (printout t "Lock accepted." crlf)
   (retract ?s ?l)
@@ -358,7 +358,7 @@
   ?ws <- (signal (type send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
-  (do-for-all-facts (?machine machine-type) TRUE
+  (do-for-all-facts ((?machine machine-type)) TRUE
     (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
     (pb-set-field ?mre "name" (str-cat ?machine:name))
     (pb-set-field ?mre "type" (str-cat ?machine:type))

@@ -92,7 +92,7 @@
   =>
   (printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
-	(do-for-all-facts (?lock lock) TRUE
+	(do-for-all-facts ((?lock lock)) TRUE
 		(printout "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
 		(bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
 		(pb-set-field ?lock-msg "type" ?lock:type)
@@ -132,7 +132,7 @@
   =>
 	(assert (locked-resource (resource ?r) (agent ?a))
 					(lock (type ACCEPT) (agent ?a) (resource ?r)))
-	(if (not (eq ?a ?*ROBOT-NAME*))
+	(if (not (eq ?a ?*ROBOT-NAME*)) then
 		(retract ?l)
 	)
 )
@@ -143,7 +143,7 @@
 	?lm <- (locked-resource (resource ?r) (agent ?))
   =>
 	(assert (lock (type REFUSE) (agent ?a) (resource ?r)))
-	(if (not (eq ?a ?*ROBOT-NAME*))
+	(if (not (eq ?a ?*ROBOT-NAME*)) then
 		(retract ?l)
 	)
 )
