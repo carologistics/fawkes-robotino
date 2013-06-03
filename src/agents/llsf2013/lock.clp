@@ -77,10 +77,21 @@
 )
 
 (defrule lock-retract-get
+  (declare (salience ?*PRIORITY-HIGH*))
 	?l <- (lock (type GET) (agent ?a) (resource ?r))
 	?la <- (lock (type ACCEPT) (agent ?a) (resource ?r))
 	=>
 	(retract ?l)
+	(printout t "----- Get retracted: " ?r crlf)
+)
+
+(defrule lock-retract-release
+  (declare (salience ?*PRIORITY-HIGH*))
+	?l <- (lock (type GET) (agent ?a) (resource ?r))
+	?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
+	=>
+	(retract ?lr)
+	(printout t "----- Release retracted: " ?r crlf)
 )
 
 ;;;;SENDING and RECEIVING;;;;
@@ -89,17 +100,21 @@
   (declare (salience ?*PRIORITY-LOCK-SEND*))
   (time $?now)
   ?s <- (signal (type send-lock-msg) (time $?t&:(timeout ?now ?t ?*LOCK-PERIOD*)) (seq ?seq))
+	(lock-role ?role)
   =>
   (printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
 	(do-for-all-facts ((?lock lock)) TRUE
-		(printout "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
-		(bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
-		(pb-set-field ?lock-msg "type" ?lock:type)
-		(pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
-		(pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
-		(pb-broadcast ?lock-msg)
-		(pb-destroy ?lock-msg)
+		(if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE)))
+						(and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) then
+			(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
+			(bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
+			(pb-set-field ?lock-msg "type" ?lock:type)
+			(pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
+			(pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
+			(pb-broadcast ?lock-msg)
+			(pb-destroy ?lock-msg)
+		)
 	)
 )
 

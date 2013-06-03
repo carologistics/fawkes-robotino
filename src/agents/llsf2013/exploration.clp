@@ -90,7 +90,15 @@
   (assert (state EXP_IDLE)
           (nextInCycle ?nextMachine)
           (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green))
+					(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
   )
+	(printout t "Release gesetzt: " ?old crlf)
+)
+
+(defrule exp-test-locks
+	?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
+	=>
+	(printout t "============================================= Folgender Release-Fakt: Agent: " ?a ", Ressource: " ?r crlf)
 )
 
 ;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
@@ -106,7 +114,8 @@
   (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE." crlf)
   (retract ?s ?g ?ws)
   (assert (state EXP_IDLE)
-          (nextInCycle ?nextMachine))
+          (nextInCycle ?nextMachine)
+					(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
   )
 )
 
@@ -159,6 +168,7 @@
   =>
   (printout t "Lock accepted." crlf)
   (retract ?s ?l)
+	(printout t "----- Accept retracted: " ?nextMachine crlf)
   (assert (state EXP_LOCK_ACCEPTED))
 )
 
