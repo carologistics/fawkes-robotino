@@ -27,7 +27,6 @@
   =>
   (load-config "/clips-agent")
 
-  (blackboard-add-interface "RobotinoLightInterface" "Light determined")
   (blackboard-add-interface "Position3DInterface" "Pose")
   (blackboard-add-interface "RobotinoLightInterface" "Light_State")
 
