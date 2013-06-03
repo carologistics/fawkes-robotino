@@ -38,7 +38,7 @@
   (time $?now)
   ?s <- (signal (type send-master-announce) (time $?t&:(timeout ?now ?t ?*MASTER-ANNOUNCE-PERIOD*)) (seq ?seq))
   =>
-  (printout t "Announcing MASTER role" crlf)
+  ;(printout t "Announcing MASTER role" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
   (bind ?lock-msg (pb-create "llsf_msgs.LockMasterAnnounce"))
   (pb-set-field ?lock-msg "agent" (str-cat ?*ROBOT-NAME*))
@@ -82,7 +82,7 @@
 	?la <- (lock (type ACCEPT) (agent ?a) (resource ?r))
 	=>
 	(retract ?l)
-	(printout t "----- Get retracted: " ?r crlf)
+	;(printout t "----- Get retracted: " ?r crlf)
 )
 
 (defrule lock-retract-release
@@ -91,7 +91,7 @@
 	?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
 	=>
 	(retract ?lr)
-	(printout t "----- Release retracted: " ?r crlf)
+	;(printout t "----- Release retracted: " ?r crlf)
 )
 
 ;;;;SENDING and RECEIVING;;;;
@@ -102,12 +102,12 @@
   ?s <- (signal (type send-lock-msg) (time $?t&:(timeout ?now ?t ?*LOCK-PERIOD*)) (seq ?seq))
 	(lock-role ?role)
   =>
-  (printout t "Sending all lock-messages:" crlf)
+  ;(printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
 	(do-for-all-facts ((?lock lock)) TRUE
 		(if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE)))
 						(and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) then
-			(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
+			;(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
 			(bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
 			(pb-set-field ?lock-msg "type" ?lock:type)
 			(pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
