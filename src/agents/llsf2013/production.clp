@@ -14,25 +14,34 @@
   ?sf <- (state GET-S0-FINAL|GET-S0-FAILED)
   =>
   (retract ?sf)
-  (assert (state IDLE))
+  (if (debug 3) then (printout t "Release Lock for INS" crlf))
+  (assert (state IDLE)
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource INS))
+  )
 )
 
 (defrule prod-goto-final
   (phase PRODUCTION)
   ?sf <- (state GOTO-FINAL)
   (not (goto-target ?))
+  ?f <- (goto-has-locked ?goal)
   =>
-  (retract ?sf)
-  (assert (state IDLE))
+  (retract ?sf ?f)
+  (assert (state IDLE)
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?goal))
+  )
 )
 
 (defrule prod-goto-failed
   (phase PRODUCTION)
   ?sf <- (state GOTO-FAILED)
   (not (goto-target ?))
+  ?f <- (goto-has-locked ?goal)
   =>
-  (retract ?sf)
-  (assert (state IDLE))
+  (retract ?sf ?f)
+  (assert (state IDLE)
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?goal))
+  )
 )
 
 ; --- RULES - next machine/place to go to
@@ -43,7 +52,20 @@
   (holding NONE)
   =>
   (if (debug 3) then (printout t "Need to get S0" crlf))
+  (if (debug 3) then (printout t "Requirering Lock for INS" crlf))
   (retract ?sf)
+  (assert (state PROD_LOCK_REQUIRED_GET-S0)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource INS))
+  )
+)
+
+(defrule prod-execute-get-s0
+  (phase PRODUCTION)
+  ?sf <- (state PROD_LOCK_REQUIRED_GET-S0)
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
+  =>
+  (if (debug 3) then (printout t "Lock accepted -> Get S0" crlf))
+  (retract ?sf ?l)
   (assert (state GET-S0))
   (get-s0)
 )
@@ -57,7 +79,7 @@
   =>
   (if (debug 2) then (printout t "S0 2 -- Going to T5 named " ?name crlf))
   (retract ?sf)
-  (goto-machine ?name)  
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))  
 )
 
 (defrule prod-s0-t3-s1-s2
@@ -69,7 +91,7 @@
   =>
   (if (debug 2) then (printout t "S0 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
-  (goto-machine ?name)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
 )
 
 (defrule prod-s0-t2-s1
@@ -81,7 +103,7 @@
   =>
   (if (debug 2) then (printout t "S0 4 -- Going to T2 named " ?name crlf))
   (retract ?sf)
-  (goto-machine ?name)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
 )
 
 (defrule prod-s0-t1
@@ -93,7 +115,7 @@
   =>
   (if (debug 2) then (printout t "S0 5 -- Going to T1 named " ?name crlf))
   (retract ?sf)
-  (goto-machine ?name)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
 )
 
 (defrule prod-s1-t3-s2
@@ -105,7 +127,7 @@
   =>
   (if (debug 2) then (printout t "S1 1 -- Going T3 named " ?name crlf))
   (retract ?sf)
-  (goto-machine ?name)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
 )
 
 (defrule prod-s1-t2-not-s1
@@ -117,7 +139,7 @@
   =>
   (if (debug 2) then (printout t "S1 3 -- Going to T2 named " ?name crlf))
   (retract ?sf)
-  (goto-machine ?name)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
 )
 
 (defrule prod-s2-t3-has-some-but-not-s2
@@ -130,7 +152,7 @@
   =>
   (if (debug 2) then (printout t "S2 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
-  (goto-machine ?name)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
 )
 
 (defrule prod-s2-t3-empty
@@ -142,7 +164,7 @@
   =>
   (if (debug 2) then (printout t "S2 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
-  (goto-machine ?name)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
 )
 
 
@@ -154,5 +176,23 @@
   =>
   (if (debug 2) then (printout t "P -- Need to deliver P " crlf))
   (retract ?sf)
-  (goto-machine deliver)
+  (assert (state PROD_LOCK_REQUIRED_GOTO deliver))
+)
+
+(defrule prod-goto-request-lock
+  (phase PRODUCTION)
+  (state PROD_LOCK_REQUIRED_GOTO ?goal)
+  =>
+  (if (debug 2) then (printout t "Requirering lock of " ?goal crlf))
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?goal)))
+)
+
+(defrule prod-execute-goto-machine
+  (phase PRODUCTION)
+  ?sf <- (state PROD_LOCK_REQUIRED_GOTO ?goal)
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?goal))
+  =>
+  (retract ?sf ?l)
+  (assert (goto-has-locked ?goal))
+  (goto-machine ?goal)
 )
