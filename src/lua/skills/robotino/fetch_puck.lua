@@ -39,7 +39,8 @@ skillenv.skill_module(_M)
 
 local TIMEOUT = 15
 local ORI_OFFSET = 0.03
-local THRESHOLD_DISTANCE = 0.067
+-- you can find the config value in /cfg/host.yaml
+local THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
 local MIN_VIS_HIST = 15
 
 local tfm = require 'tf_module'
