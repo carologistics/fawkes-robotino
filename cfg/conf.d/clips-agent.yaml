@@ -37,10 +37,10 @@ clips-agent:
     # EXPLORATION_P3
     agent-role: EXPLORATION_P3
 
-    start-machine-exploration-only: M2
-    start-machine-exploration-production: M8
-    exploration-only-work-finished-point: R2
-    waiting-for-production-point: Ins
+    start-machine-exploration-p1p2: M2
+    start-machine-exploration-p3: M8
+    waiting-for-p1p2-prouction-point: R2
+    waiting-for-p3-production-point: Ins
     
     play-exploration-without-refbox: false
     #uncomment following line ONLY if you are playing without refbox

@@ -14,8 +14,8 @@
 (defrule exp-determine-first-machine
   (phase EXPLORATION)
   (role ?role)
-  (confval (path "/clips-agent/llsf2013/start-machine-exploration-only") (value ?first-machine-exp-only))
-  (confval (path "/clips-agent/llsf2013/start-machine-exploration-production") (value ?first-machine-exp-prod))
+  (confval (path "/clips-agent/llsf2013/start-machine-exploration-p1p2") (value ?first-machine-exp-only))
+  (confval (path "/clips-agent/llsf2013/start-machine-exploration-p3") (value ?first-machine-exp-prod))
   =>
   (if (eq ?role EXPLORATION_P1P2)
     then
@@ -216,7 +216,7 @@
   ?si <- (state EXP_IDLE)
   (role EXPLORATION_P3)
   (not (driven-to-waiting-point))
-  (confval (path "/clips-agent/llsf2013/waiting-for-production-point") (value ?waiting-for-prod-point))
+  (confval (path "/clips-agent/llsf2013/waiting-for-p3-production-point") (value ?waiting-for-prod-point))
   =>
   (skill-call ppgoto place (str-cat ?waiting-for-prod-point))
   (printout t "Driving away..." crlf)
@@ -278,31 +278,12 @@
     (machineRecognized ?m))
   (role EXPLORATION_P1P2)
   ?s <- (round RETRY)
+  (confval (path "/clips-agent/llsf2013/waiting-for-p1p2-prouction-point") (value ?work-finished-point))
   =>
   (printout t "Finished Exploration :-)" crlf)
   (retract ?s)
-  (assert (end-state FLEE))
-)
-
-;don't retract when two robots produce
-(defrule exp-production-phase-started
-  (declare (salience ?*PRIORITY-HIGH*))
-  ?p <- (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
-  =>
-  (retract ?p)
-  (assert (end-state FLEE))
-)
-
-(defrule exp-move-exploration-only-away
-  (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_P1P2)
-  ?s <- (end-state FLEE)
-	(confval (path "/clips-agent/llsf2013/exploration-only-work-finished-point") (value ?work-finished-point))
-  =>
   (skill-call ppgoto place (str-cat ?work-finished-point))
   (printout t "Driving away." crlf)
-	(retract ?s)
 )
 
 ;Receive light-pattern-to-type matchig and save it in a fact
@@ -405,24 +386,3 @@
   =>
   (assert (type-spec-pre ?type ?light-color BLINKING))
 )
-
-(defrule exp-remove-phases
-  (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_P1P2)
-  (end-state FLEE)
-  ?p <- (phase ?)
-  (time $?)
-  =>
-  (retract ?p)
-)
-
-(defrule exp-remove-state
-  (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_P1P2)
-  (end-state FLEE)
-  ?s <- (state ?)
-  (time $?)
-  =>
-  (retract ?s)
-)
-
