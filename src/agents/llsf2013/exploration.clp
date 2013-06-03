@@ -50,14 +50,18 @@
   (phase EXPLORATION)
   ?s <- (state EXP_START)
   (round FIRST)
-  ?first-machine <- (first-exploration-machine ?v)
+  (first-exploration-machine ?v)
   (machine-exploration (name ?v) (x ?) (y ?) (next ?) (look-pos ?lp))
   =>
   (printout t "First machine: " ?v crlf)
-  (skill-call ppgoto place (str-cat ?lp))
+  ;(skill-call ppgoto place (str-cat ?lp))
   (retract ?s)
-  (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?v))
+  ;(assert (state EXP_DRIVING_TO_MACHINE)
+  ;        (goalmachine ?v))
+	(assert (state EXP_LOCK_REQUIRED)
+					(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?v))
+					(nextInCycle ?v)
+	)
 )
 
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
@@ -92,13 +96,6 @@
           (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green))
 					(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
   )
-	(printout t "Release gesetzt: " ?old crlf)
-)
-
-(defrule exp-test-locks
-	?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
-	=>
-	(printout t "============================================= Folgender Release-Fakt: Agent: " ?a ", Ressource: " ?r crlf)
 )
 
 ;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
