@@ -33,9 +33,9 @@ clips-agent:
     enable-sim: true
 
     # Possible roles for the agent:
-    # EXPLORATION_ONLY
-    # EXPLORATION_PRODUCTION
-    agent-role: EXPLORATION_PRODUCTION
+    # EXPLORATION_P1_P2
+    # EXPLORATION_P3
+    agent-role: EXPLORATION_P3
 
     start-machine-exploration-only: M2
     start-machine-exploration-production: M8

@@ -17,11 +17,11 @@
   (confval (path "/clips-agent/llsf2013/start-machine-exploration-only") (value ?first-machine-exp-only))
   (confval (path "/clips-agent/llsf2013/start-machine-exploration-production") (value ?first-machine-exp-prod))
   =>
-  (if (eq ?role EXPLORATION_ONLY)
+  (if (eq ?role EXPLORATION_P1P2)
     then
       (assert (first-exploration-machine (sym-cat ?first-machine-exp-only)))
     else
-      (if (eq ?role EXPLORATION_PRODUCTION)
+      (if (eq ?role EXPLORATION_P3)
 				then
 					(assert (first-exploration-machine (sym-cat ?first-machine-exp-prod)))
 				else
@@ -198,23 +198,23 @@
   )
 )
 
-;Start retry round if EXPLORATION_ONLY
+;Start retry round if EXPLORATION_P1P2
 (defrule exp-start-retry-round
   (phase EXPLORATION)
   ?r <- (round FIRST_FINISHED)
-  (role EXPLORATION_ONLY)
+  (role EXPLORATION_P1P2)
   =>
   (printout t "Starting retry round." crlf)
 	(retract ?r)
   (assert (round RETRY))
 )
 
-;Move EXPLORATION_PRODUCTION away after first round
+;Move EXPLORATION_P3 away after first round
 (defrule exp-move-away-after-finished
   (declare (salience ?*PRIORITY-HIGH*))
   ?sr <- (round FIRST_FINISHED)
   ?si <- (state EXP_IDLE)
-  (role EXPLORATION_PRODUCTION)
+  (role EXPLORATION_P3)
   (not (driven-to-waiting-point))
   (confval (path "/clips-agent/llsf2013/waiting-for-production-point") (value ?waiting-for-prod-point))
   =>
@@ -276,7 +276,7 @@
   (phase EXPLORATION)
   (forall (machine-exploration (name ?m) (x ?) (y ?) (next ?))
     (machineRecognized ?m))
-  (role EXPLORATION_ONLY)
+  (role EXPLORATION_P1P2)
   ?s <- (round RETRY)
   =>
   (printout t "Finished Exploration :-)" crlf)
@@ -288,7 +288,7 @@
 (defrule exp-production-phase-started
   (declare (salience ?*PRIORITY-HIGH*))
   ?p <- (phase PRODUCTION)
-  (role EXPLORATION_ONLY)
+  (role EXPLORATION_P1P2)
   =>
   (retract ?p)
   (assert (end-state FLEE))
@@ -296,7 +296,7 @@
 
 (defrule exp-move-exploration-only-away
   (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_ONLY)
+  (role EXPLORATION_P1P2)
   ?s <- (end-state FLEE)
 	(confval (path "/clips-agent/llsf2013/exploration-only-work-finished-point") (value ?work-finished-point))
   =>
@@ -408,7 +408,7 @@
 
 (defrule exp-remove-phases
   (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_ONLY)
+  (role EXPLORATION_P1P2)
   (end-state FLEE)
   ?p <- (phase ?)
   (time $?)
@@ -418,7 +418,7 @@
 
 (defrule exp-remove-state
   (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_ONLY)
+  (role EXPLORATION_P1P2)
   (end-state FLEE)
   ?s <- (state ?)
   (time $?)
