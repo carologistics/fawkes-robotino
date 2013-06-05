@@ -42,7 +42,7 @@
 #include <fvmodels/global_position/omni_global.h>
 #include <fvmodels/scanlines/radial.h>
 #include <fvmodels/mirror/bulb.h>
-#include <fvmodels/color/thresholds_luminance.h>
+#include <fvmodels/color/ColorModelRange.h>
 
 #include <fvclassifiers/simple.h>
 #include <fvfilters/roidraw.h>
@@ -105,8 +105,14 @@ private:
 	bool cfg_useBulbFile_;
 	bool cfg_debugOutput_;
 
- 	unsigned int cfg_threashold_brightness_;
  	unsigned int cfg_threashold_roiMaxSize_;
+
+ 	unsigned int cfg_color_y_min;
+ 	unsigned int cfg_color_y_max;
+ 	unsigned int cfg_color_u_min;
+ 	unsigned int cfg_color_u_max;
+ 	unsigned int cfg_color_v_min;
+ 	unsigned int cfg_color_v_max;
 
  	void drawROIsInBuffer(unsigned char* buffer, unsigned int width, unsigned int height, std::list<firevision::ROI> *rois);
  	void drawROIInBuffer(unsigned char* buffer, unsigned int width, unsigned int height, firevision::ROI *roi);
@@ -121,20 +127,18 @@ private:
 	unsigned int img_width_;
 	unsigned int img_height_;
 
-	unsigned char *buffer_YCbCr;
 	unsigned char *buffer_filtered;
 
 	firevision::Camera *cam_;
 	firevision::ScanlineModel *scanline_;
-	firevision::ColorModel *cm_;
+	//firevision::ColorModel *cm_;
 	firevision::MirrorModel *mirror_;
 	firevision::RelativePositionModel *rel_pos_;
-	firevision::SimpleColorClassifier *classifier_white_;
-	firevision::SharedMemoryImageBuffer *shm_buffer_YCbCr;
+	firevision::SimpleColorClassifier *classifierExpected_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_filtered;
 	firevision::colorspace_t cspace_from_;
 	firevision::colorspace_t cspace_to_;
-	firevision::ColorModelLuminance *colorModel_;
+	firevision::ColorModelRange *colorModel_;
 
 	firevision::FilterROIDraw *filterROIDraw;
 
