@@ -30,8 +30,8 @@
   (blackboard-add-interface "Position3DInterface" "Pose")
   (blackboard-add-interface "RobotinoLightInterface" "Light_State")
 
-  (load* (resolve-file llsf2013/net.clp))
   (load* (resolve-file llsf2013/utils.clp))
+  (load* (resolve-file llsf2013/net.clp))
   (load* (resolve-file llsf2013/skills.clp))
   (load* (resolve-file llsf2013/lock.clp))
 
