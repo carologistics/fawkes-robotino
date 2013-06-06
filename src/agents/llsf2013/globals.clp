@@ -13,8 +13,9 @@
   ?*MASTER-ANNOUNCE-PERIOD* = 0.5
   ?*LOCK-PERIOD* = 0.2
 
-  ?*TEAM-NAME*  = "?"
-  ?*ROBOT-NAME* = "?"
+  ?*TEAM-NAME*    = "?"
+  ?*ROBOT-NAME*   = "?"
+  ?*ROBOT-NUMBER* = 0
 
   ; Time before the slave becomes the master
   ;(if there is a master the timeout gets larger)
@@ -31,4 +32,10 @@
   (confval (path "/clips-agent/llsf2013/robot-name") (type STRING) (value ?robot-name))
   =>
   (bind ?*ROBOT-NAME* ?robot-name)
+)
+
+(defrule globals-config-robot-number
+  (confval (path "/clips-agent/llsf2013/robot-number") (type UINT) (value ?robot-number))
+  =>
+  (bind ?*ROBOT-NUMBER* ?robot-number)
 )
