@@ -42,6 +42,8 @@
   (pb-set-field ?beacon "seq" ?seq)
   (pb-set-field ?beacon "team_name" ?*TEAM-NAME*)
   (pb-set-field ?beacon "peer_name" ?*ROBOT-NAME*)
+  (pb-set-field ?beacon "bumber" ?*ROBOT-NUMBER*)
+
   (do-for-fact ((?pose Position3DInterface)) (eq ?pose:id "Pose")
     (bind ?beacon-pose (pb-field-value ?beacon "pose"))
     (pb-set-field ?beacon-pose "x" (nth$ 1 ?pose:translation))
