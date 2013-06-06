@@ -58,7 +58,7 @@ LightCompassThread::LightCompassThread() :
 
 void LightCompassThread::init()
 {
-	logger->log_info(name(), "Plugin light-compass starts up");
+	logger->log_info(name(), "starts up");
 
 	this->cfg_prefix_        = "/plugins/light_compass/";
 	this->cfg_camera_        = this->config->get_string((cfg_prefix_ + "camera").c_str());

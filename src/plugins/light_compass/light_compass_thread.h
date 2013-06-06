@@ -23,6 +23,7 @@
 #ifndef __PLUGINS_LIGHT_COMPASS_THREAD_H_
 #define __PLUGINS_LIGHT_COMPASS_THREAD_H_
 
+#include "ColorModelRange.h"
 #include <core/threading/thread.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
@@ -42,7 +43,7 @@
 #include <fvmodels/global_position/omni_global.h>
 #include <fvmodels/scanlines/radial.h>
 #include <fvmodels/mirror/bulb.h>
-#include <fvmodels/color/ColorModelRange.h>
+
 
 #include <fvclassifiers/simple.h>
 #include <fvfilters/roidraw.h>

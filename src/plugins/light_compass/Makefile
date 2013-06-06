@@ -32,7 +32,7 @@ LIBS     += $(VISION_LIBS)
 LIBS_light_compass = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels fvclassifiers fawkesgeometry Position3DInterface fvfilters
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_light_compass = light_compass.o light_compass_thread.o
+OBJS_light_compass = light_compass.o light_compass_thread.o ColorModelRange.o
 
 #names of the plugins you want to build
 PLUGINS_all = $(PLUGINDIR)/light_compass.$(SOEXT)
