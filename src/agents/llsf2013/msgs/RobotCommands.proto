@@ -1,8 +1,8 @@
 
 /***************************************************************************
- *  MachineInfo.proto - LLSF Protocol - Machine Specification message
+ *  RobotCommands.proto - Robot commands
  *
- *  Created: Mon Feb 25 11:36:50 2013
+ *  Created: Wed Jun 05 11:58:05 2013
  *  Copyright  2013  Tim Niemueller [www.niemueller.de]
  ****************************************************************************/
 
@@ -36,68 +36,15 @@
 
 package llsf_msgs;
 
-import "Pose2D.proto";
-import "PuckInfo.proto";
-
 option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "MachineInfoProtos";
+option java_outer_classname = "RobotCommandsProtos";
 
-enum LightColor {
-  RED = 0;
-  YELLOW = 1;
-  GREEN = 2;
-}
-
-enum LightState {
-  OFF = 0;
-  ON = 1;
-  BLINK = 2;
-}
-
-message LightSpec {
+message SetRobotMaintenance {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 10;
+    MSG_TYPE = 91;
   }
 
-  // Color and state of described light
-  required LightColor color = 1;
-  required LightState state = 2;
-}
-
-message Machine {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 12;
-  }
-  // Machine name and type
-  required string    name     = 1;
-  optional string    type     = 2;
-
-  // Required inputs and produced output
-  // Only set for field machines T*
-  repeated PuckState inputs  = 3;
-  optional PuckState output  = 4;
-  // Puck currently in the machine area
-  repeated Puck      loaded_with = 5;
-  // Puck currently under the RFID sensor
-  optional Puck      puck_under_rfid = 6;
-
-  // Current state of the lights
-  repeated LightSpec lights = 7;
-  // Optional pose if known to refbox
-  optional Pose2D    pose = 8;
-  // Only set during exploration phase
-  // True if correctly reported, false otherwise
-  optional bool      correctly_reported = 9;
-}
-
-message MachineInfo {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 13;
-  }
-
-  // List of machines states
-  repeated Machine machines = 1;
+  required uint32 robot_number = 1;
+  required bool   maintenance  = 3;
 }

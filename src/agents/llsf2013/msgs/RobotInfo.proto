@@ -39,17 +39,27 @@ package llsf_msgs;
 import "Time.proto";
 import "Pose2D.proto";
 
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "RobotInfoProtos";
+
+enum RobotState {
+  ACTIVE       = 1;
+  MAINTENANCE  = 2;
+  DISQUALIFIED = 3;
+}
+
 message Robot {
   enum CompType {
     COMP_ID  = 2002;
     MSG_TYPE = 31;
   }
 
-  // Name and team of the robot as it was
-  // announced by the robot in the
-  // BeaconSignal message.
+  // Name, team, and number of the robot
+  // as it was announced by the robot in
+  // the BeaconSignal message.
   required string name = 1;
   required string team = 2;
+  required uint32 number = 7;
   // Host from where the BeaconSignal
   // was received
   required string host = 3;
@@ -59,6 +69,16 @@ message Robot {
 
   // Optional pose information
   optional Pose2D pose = 6;
+
+  // Current state of this robot
+  optional RobotState state = 8;
+
+  // Time in seconds remaining in current
+  // maintenance cycle, if negative grace time
+  optional float  maintenance_time_remaining = 9 [default = 0.0];
+  // number of times maintenance
+  // has been performed, including current
+  optional uint32 maintenance_cycles = 10;
 }
 
 message RobotInfo {

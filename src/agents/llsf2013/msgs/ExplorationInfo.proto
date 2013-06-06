@@ -39,6 +39,9 @@ package llsf_msgs;
 import "MachineInfo.proto";
 import "Pose2D.proto";
 
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "ExplorationInfoProtos";
+
 message ExplorationSignal {
   enum CompType {
     COMP_ID  = 2000;
