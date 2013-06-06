@@ -55,11 +55,17 @@ message GameState {
   }
 
   enum Phase {
-    PRE_GAME = 0;
-    EXPLORATION = 1;
-    PRODUCTION = 2;
-    POST_GAME = 3;
+    PRE_GAME    = 0;
+    SETUP       = 10;
+    EXPLORATION = 20;
+    PRODUCTION  = 30;
+    POST_GAME   = 40;
+
+    OPEN_CHALLENGE        = 1000;
+    NAVIGATION_CHALLENGE  = 1001;
+    WHAC_A_MOLE_CHALLENGE = 1002;
   }
+
 
   // Time in seconds since game start
   required Time   game_time = 1;
