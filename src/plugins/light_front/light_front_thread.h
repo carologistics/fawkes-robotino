@@ -30,7 +30,7 @@
 #include <fvutils/ipc/shm_image.h>
 #include <fvutils/color/conversions.h>
 #include <fvmodels/color/thresholds_luminance.h>
-#include <fvmodels/color/threasholds_black.h>
+#include <fvmodels/color/thresholds_black.h>
 #include <fvmodels/scanlines/grid.h>
 
 #include <fvclassifiers/simple.h>
