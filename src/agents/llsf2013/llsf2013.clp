@@ -48,6 +48,7 @@
   (load* (resolve-file llsf2013/worldmodel.clp))
   (load* (resolve-file llsf2013/production.clp))
   (load* (resolve-file llsf2013/exploration.clp))
+  (load* (resolve-file llsf2013/strategy.clp))
   (reset)
   ;(facts)
 )
