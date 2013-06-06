@@ -6,7 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/light_compass
 
 plugins/light_compass:
   # camera being used
-  camera: firewire:any:mode=FORMAT7_0:coding=YUV422:packetsize=8188:width=1000:height=1000:startx=0:starty=0:brightness=211:auto_exposure=50:white_balance=444,0:shutter=1659:gain=320:trigger_delay=off:framerate=30:focus=manual:hue=off:saturation=off:gamma=off:isospeed=800
+  camera: firewire:any:mode=FORMAT7_0:coding=YUV422:isospeed=800:framerate=30:width=1000:height=1000:white_balance=432,402:shutter=500:packetsize=8188
 # camera: firewire:any:mode=FORMAT7_0:coding=YUV422:packetsize=8188:width=1000:height=1000:startx=0:starty=0:brightness=211:auto_exposure=50:white_balance=444,380:shutter=500:gain=100:trigger_delay=off:framerate=30:focus=manual:hue=off:saturation=off:gamma=off:isospeed=800
 #  camera: "file:file:file=/home/fnolden/Bilder/omnivision/omni-abends-magdeburg.jpg"
 
