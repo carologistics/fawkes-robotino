@@ -123,7 +123,7 @@ void LightCompassThread::init()
 				false,																//upward
 				2,																	//neighberhoud_min_match
 				0,																	//grow_by
-				firevision::C_EXPECTED												//color
+				firevision::C_WHITE												//color
 				);
 
 

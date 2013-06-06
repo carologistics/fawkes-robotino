@@ -55,7 +55,7 @@ ColorModelRange::determine(unsigned int y,
   if ( y >= threshold_y_low_ && y <= threshold_y_high_ &&
  	u >= threshold_u_low_ && u <= threshold_u_high_ &&
 	v >= threshold_v_low_ && v <= threshold_v_high_ ) {
-    return C_EXPECTED;
+    return C_WHITE;
   }
   else {
     return C_OTHER;
