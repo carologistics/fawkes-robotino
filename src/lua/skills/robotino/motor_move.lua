@@ -35,61 +35,22 @@ documentation      = [==[Move somewhere using the motor and odometry directly
 ]==]
 
 -- Tunables
-local V_MAX =     { x=0.6,  y=0.6,  ori=1 }
+local V_MAX =     { x=0.8,  y=0.8,  ori=1.5 }
 local V_MIN =     { x=0.04, y=0.04, ori=0.15 }
 local TOLERANCE = { x=0.01, y=0.01, ori=0.03 }
-local D_ACCEL =   { x=0.07, y=0.07, ori=0.1 }
-local ACCEL =     { x=0.02, y=0.02, ori=0.03 }
+local D_ACCEL =   { x=0.07, y=0.07, ori=0.05 }
+local ACCEL =     { x=0.08, y=0.08, ori=0.15 }
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
 
-function round(x)
-  if x%2 ~= 0.5 then
-    return math.floor(x+0.5)
-  end
-  return x-0.5
-end
-
-function normalize_mirror_rad(x)
-   if x < -math.pi or x >= math.pi then
-      return ( x - 2*math.pi*round(x/(2*math.pi)))
-   end
-   return x
-end
-
-function normalize_rad(x)
-   if x < 0 or x >= 2*math.pi then
-      return x - 2*math.pi * math.floor(x/(2*math.pi))
-   end
-   return x
-end
-
 function invalid_input()
    if fsm.vars.ori and math.abs(fsm.vars.ori) > math.pi then
       return true
    end
    return false
-end
-
-function get_ori_diff(ori, is_ori)
-    local diff = 0
-    if ori > is_ori then
-        if ori - is_ori < math.pi then
-            diff = ori - is_ori
-        else
-            diff = -2.0 * math.pi + ori - is_ori
-        end
-    else
-        if is_ori - ori < math.pi then
-            diff = ori - is_ori
-        else
-            diff = 2.0 * math.pi - is_ori + ori;
-        end
-    end
-    return diff
 end
 
 function send_transrot(vx, vy, omega)
@@ -101,31 +62,35 @@ function send_transrot(vx, vy, omega)
 end
 
 function set_speed(self)
-   dist_target = tfm.transform_mirror_rad(
+   dist_target = tfm.transform(
       { x   = self.fsm.vars.odo_target.x,
         y   = self.fsm.vars.odo_target.y,
         ori = self.fsm.vars.odo_target.ori },
       self.fsm.vars.frame, "/base_link")
 
-   dist_target.ori = get_ori_diff(self.fsm.vars.odo_target.ori, motor:odometry_orientation())
+   --dist_target.ori = get_ori_diff(self.fsm.vars.odo_target.ori, motor:odometry_orientation())
 
    local v = { x=1, y=1, ori=1 }
+   local a = { x=0, y=0, ori=0 }
 
    for k, _ in pairs(dist_target) do
       if math.abs(dist_target[k]) > TOLERANCE[k] then
-         if d_accel[k] > 0 then a[k] = V_MAX[k] / d_accel[k] end
+         if D_ACCEL[k] > 0 then a[k] = V_MAX[k] / D_ACCEL[k] end
 
          -- speed if we're accelerating.
          -- We cannot accelerate based on the distance from the starting
          -- point since odometry tends to lag by 0.5 seconds when accelerating,
          -- i.e. the distance driven will stay at 0 for a short while.
-         v_acc = self.fsm.vars.speed[k] + ACCEL[k]
+         v_acc = self.fsm.vars.cycle * ACCEL[k]
 
          -- speed if we're decelerating
          v_dec = a[k]/5 * math.abs(dist_target[k])
-
+         
          -- decide if we wanna decelerate, accelerate or max out
-         v[k] = math.max(V_MIN[k], math.min(V_MAX[k], v_acc, v_dec))
+         v[k] = math.min(
+            self.fsm.vars.vmin_arg[k],
+            math.max(V_MIN[k], math.min(V_MAX[k], v_acc, v_dec))
+         )
 
          -- finally reverse if the target is behind us
          -- hopefully the deceleration function(dist_target[k])
@@ -142,6 +107,7 @@ function set_speed(self)
 --   printf("a=(%f,%f,%f), dist_start=(%f,%f,%f), dist_target=(%f,%f,%f)",
 --      a.x, a.y, a.ori, dist_start.x, dist_start.y, dist_start.ori,
 --      dist_target.x, dist_target.y, dist_target.ori)
+   self.fsm.vars.cycle = self.fsm.vars.cycle + 1
 
    send_transrot(v.x, v.y, v.ori)
    self.fsm.vars.speed = v
@@ -168,24 +134,29 @@ function DRIVE:init()
    local x = self.fsm.vars.x or 0
    local y = self.fsm.vars.y or 0
    local ori = self.fsm.vars.ori or 0
-   local self.fsm.vars.frame = self.fsm.vars.frame or "/odom"
+   
    if ori == math.pi then ori = ori - 1e-6 end
    if ori == -math.pi then ori = ori + 1e-6 end
+
+   local frame = self.fsm.vars.frame or "/odom"
+   self.fsm.vars.frame = frame
+
+   self.fsm.vars.cycle = 0
    
    self.fsm.vars.bl_target = { x=x, y=y, ori=ori }
-   self.fsm.vars.odo_target = tfm.transform_mirror_rad (
+   self.fsm.vars.odo_target = tfm.transform(
       { x=x, y=y, ori=ori },
       "/base_link",
       self.fsm.vars.frame
    )
-   local odo_ori = motor:odometry_orientation()
-   if odo_ori + ori > math.pi then
-      self.fsm.vars.odo_target.ori = odo_ori + ori - 2*math.pi
-   elseif odo_ori + ori < -math.pi then
-      self.fsm.vars.odo_target.ori = odo_ori + ori + 2*math.pi
-   else
-      self.fsm.vars.odo_target.ori = odo_ori + ori
-   end
+  
+   local vmin_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
+   local vmin_rot = self.fsm.vars.vel_rot or V_MAX.ori
+   self.fsm.vars.vmin_arg = { x=vmin_arg, y=vmin_arg, ori=vmin_rot }
+
+   printf("%f, %f", self.fsm.vars.vel_trans, self.fsm.vars.vel_rot)
+
+   self.fsm.vars.speed = { x=0, y=0, ori=0 }
 
    set_speed(self)
 end
