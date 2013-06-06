@@ -350,7 +350,7 @@ LightFrontThread::correctLightRoisWithBlack(LightFrontThread::lightROIs expected
 	firevision::ROI* searchAreaBottem = new firevision::ROI(expectedLight.light);
 	searchAreaBottem->start.x = expectedLight.light.start.x - 3*expectedLight.light.width;
 	searchAreaBottem->start.y = expectedLight.light.start.y + expectedLight.light.height - expectedLight.light.width;
-	searchAreaBottem->width =  expectedLight.light.width * 6;
+	searchAreaBottem->width =  expectedLight.light.width * 7;
 	searchAreaBottem->height = 2*expectedLight.light.width;
 
 	if (this->cfg_paintROIsActivated) {
@@ -384,7 +384,7 @@ LightFrontThread::correctLightRoisWithBlack(LightFrontThread::lightROIs expected
 							logger->log_debug(name(), "Top: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
 			}
 			firevision::ROI light;
-			light.start.x = bottemBlackRoi.start.x;
+			light.start.x = topBiggestRoi.start.x;
 			light.start.y = topBiggestRoi.start.y + topBiggestRoi.height;
 			light.height = bottemBlackRoi.start.y - (topBiggestRoi.start.y + topBiggestRoi.height);
 			light.width = std::min(bottemBlackRoi.width, topBiggestRoi.width);

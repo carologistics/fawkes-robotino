@@ -24,11 +24,11 @@ plugins/light_front:
   camera_offset_vertical: 45
 
   #Shared Memory Imagebuffer name
-  shm_image_id: "lightCam"
+  shm_image_id: "light_front"
 
   # threashold for detecting brightness 0-255 YUV (Y) (maybe change to: 150(evening) or 200(morning)
   threashold_brightness: 200
-  threashold_black: 30
+  threashold_black: 80
   detection_cycle_time: 1
   threashold_laser_visibility: -6
 
@@ -50,11 +50,11 @@ plugins/light_front:
   light_state_if: "Light_State"
 
   show_debug_messages: false
-  draw_rois: true
+  draw_rois: false
 
-  
-  #simulate laser data
-  simulate_laser: true
+    
+  #simulate laser data, this should be set to false in real use cases!
+  simulate_laser: false
   simulate_laser_data_x: 1
   simulate_laser_data_y: 0.05
   simulate_laser_data_visibility: 5
