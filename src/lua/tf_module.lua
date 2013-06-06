@@ -1,4 +1,5 @@
 require("fawkes.modinit")
+local tf = tf
 module(..., fawkes.modinit.module_init)
 
 function transform(src_pos, from_sys, to_sys)

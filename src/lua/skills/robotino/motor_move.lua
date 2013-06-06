@@ -28,18 +28,21 @@ depends_interfaces = {
     {v = "motor", type = "MotorInterface", id="Robotino" }
 }
 
-documentation      = [==[Move somewhere using the motor and odometry directly
-@param x The target X coordinate, relative to base frame
-@param y dito
-@param ori relative rotation. -pi <= ori <= pi.
+documentation      = [==[Move on a (kind of) straight line relative to /base_link.
+@param x The target X coordinate
+@param y Dito
+@param ori Relative rotation. -pi <= ori <= pi.
+@param frame Measure distances relative to this frame. Can be "/map" or "/odom" (default).
+@param vel_trans Translational top-speed. Upper limit: hardcoded tunable in skill module.
+@param vel_rot Rotational top-speed. Upper limit: dito.
 ]==]
 
 -- Tunables
-local V_MAX =     { x=0.8,  y=0.8,  ori=1.5 }
-local V_MIN =     { x=0.04, y=0.04, ori=0.15 }
-local TOLERANCE = { x=0.01, y=0.01, ori=0.03 }
-local D_ACCEL =   { x=0.07, y=0.07, ori=0.05 }
-local ACCEL =     { x=0.08, y=0.08, ori=0.15 }
+local V_MAX =     { x=0.8,  y=0.8,  ori=2.2 }    -- ultimate limit
+local V_MIN =     { x=0.04, y=0.04, ori=0.15 }   -- below the motor won't even start
+local TOLERANCE = { x=0.005, y=0.005, ori=0.01 } -- accuracy
+local D_DECEL =   { x=0.07, y=0.07, ori=0.2 }    -- deceleration distance
+local ACCEL =     { x=0.08, y=0.08, ori=0.15 }   -- accelerate by this factor every loop
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -68,14 +71,12 @@ function set_speed(self)
         ori = self.fsm.vars.odo_target.ori },
       self.fsm.vars.frame, "/base_link")
 
-   --dist_target.ori = get_ori_diff(self.fsm.vars.odo_target.ori, motor:odometry_orientation())
-
    local v = { x=1, y=1, ori=1 }
    local a = { x=0, y=0, ori=0 }
 
    for k, _ in pairs(dist_target) do
       if math.abs(dist_target[k]) > TOLERANCE[k] then
-         if D_ACCEL[k] > 0 then a[k] = V_MAX[k] / D_ACCEL[k] end
+         if D_DECEL[k] > 0 then a[k] = V_MAX[k] / D_DECEL[k] end
 
          -- speed if we're accelerating.
          -- We cannot accelerate based on the distance from the starting
@@ -88,7 +89,7 @@ function set_speed(self)
          
          -- decide if we wanna decelerate, accelerate or max out
          v[k] = math.min(
-            self.fsm.vars.vmin_arg[k],
+            self.fsm.vars.vmax_arg[k],
             math.max(V_MIN[k], math.min(V_MAX[k], v_acc, v_dec))
          )
 
@@ -104,9 +105,6 @@ function set_speed(self)
       end
    end
    
---   printf("a=(%f,%f,%f), dist_start=(%f,%f,%f), dist_target=(%f,%f,%f)",
---      a.x, a.y, a.ori, dist_start.x, dist_start.y, dist_start.ori,
---      dist_target.x, dist_target.y, dist_target.ori)
    self.fsm.vars.cycle = self.fsm.vars.cycle + 1
 
    send_transrot(v.x, v.y, v.ori)
@@ -150,11 +148,9 @@ function DRIVE:init()
       self.fsm.vars.frame
    )
   
-   local vmin_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
+   local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
    local vmin_rot = self.fsm.vars.vel_rot or V_MAX.ori
-   self.fsm.vars.vmin_arg = { x=vmin_arg, y=vmin_arg, ori=vmin_rot }
-
-   printf("%f, %f", self.fsm.vars.vel_trans, self.fsm.vars.vel_rot)
+   self.fsm.vars.vmax_arg = { x=vmax_arg, y=vmax_arg, ori=vmin_rot }
 
    self.fsm.vars.speed = { x=0, y=0, ori=0 }
 
