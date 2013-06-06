@@ -36,6 +36,9 @@
 
 package llsf_msgs;
 
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "TimeProtos";
+
 // Time stamp and duration structure.
 // Can be used for absolute times or
 // durations alike.

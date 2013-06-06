@@ -38,6 +38,9 @@ package llsf_msgs;
 
 import "Time.proto";
 
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "GameStateProtos";
+
 message GameState {
   enum CompType {
     COMP_ID  = 2000;
@@ -67,6 +70,8 @@ message GameState {
   required Phase  phase = 4;
   // Awarded points
   optional uint32 points = 5;
+  // Name of the currently playing team
+  optional string team = 6;
 }
 
 // Request setting of a new game state
