@@ -89,7 +89,7 @@
   (role EXPLORATION_P1P2)
   ?sf <- (state IDLE)
   (holding S0)
-  (machine (mtype T3) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name) (allowed TRUE))
+  (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name) (allowed TRUE))
   =>
   (if (debug 2) then (printout t "S0 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
@@ -128,7 +128,7 @@
   (role EXPLORATION_P1P2)
   ?sf <- (state IDLE)
   (holding S1)
-  (machine (mtype T3) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name) (allowed TRUE))
+  (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name) (allowed TRUE))
   =>
   (if (debug 2) then (printout t "S1 1 -- Going T3 named " ?name crlf))
   (retract ?sf)
@@ -154,7 +154,7 @@
   (role EXPLORATION_P1P2)
   ?sf <- (state IDLE)
   (holding S2)
-  (machine (mtype T3) (name ?name)
+  (machine (mtype T3|T4) (name ?name)
 	   (loaded-with $?l&:(> (length$ ?l) 0)&~:(subsetp (create$ S2) ?l)) (allowed TRUE))
   =>
   (if (debug 2) then (printout t "S2 1 -- Going to T3 named " ?name crlf))
@@ -168,7 +168,7 @@
   (role EXPLORATION_P1P2)
   ?sf <- (state IDLE)
   (holding S2)
-  (machine (mtype T3) (name ?name) (loaded-with $?l&:(= (length$ ?l) 0)) (allowed TRUE))
+  (machine (mtype T3|T4) (name ?name) (loaded-with $?l&:(= (length$ ?l) 0)) (allowed TRUE))
   =>
   (if (debug 2) then (printout t "S2 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
