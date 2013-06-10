@@ -25,7 +25,7 @@
 				then
 					(assert (first-exploration-machine (sym-cat ?first-machine-exp-prod)))
 				else
-					(printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! ")
+					(printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! " crlf)
       )
   )
 )

@@ -11,9 +11,3 @@
 (deffunction distance (?x ?y ?x2 ?y2)
   (return (float (sqrt (float(+ (* (- ?x ?x2) (- ?x ?x2)) (* (- ?y ?y2) (- ?y ?y2)))))))
 )
-
-; Note that this function only works if the roll and pitch are zero, i.e.
-; that a pointing vector is in the x-y plane.
-(deffunction yaw-from-quaternion (?q)
-  (return (* 2 (acos (nth$ 4 ?q)) (if (> (nth$ 3 ?q) 0) then 1 else -1)))
-)
