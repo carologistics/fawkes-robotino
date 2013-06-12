@@ -36,6 +36,7 @@ local mpos = require 'machine_pos_module'
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+graph = fawkes.load_yaml_navgraph("/home/robotino/fawkes-robotino/cfg/navgraph-llsf.yaml")
 
 function end_rfid()
    printf(mpos.delivery_goto[fsm.vars.goto_name].d_skill)
@@ -94,7 +95,7 @@ function SKILL_TAKE_PUCK:init()
 end
 
 function SKILL_DRIVE_LEFT:init()
-   if self.fsm.vars.goto_name == "M3" then
+   if graph:node(self.fsm.vars.goto_name):has_property("leave_right") then
       self.skills[1].y=-0.5
    else
       self.skills[1].y=0.5
