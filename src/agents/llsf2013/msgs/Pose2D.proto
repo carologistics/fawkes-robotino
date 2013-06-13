@@ -38,6 +38,9 @@ package llsf_msgs;
 
 import "Time.proto";
 
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "Pose2DProtos";
+
 // Pose information on 2D map
 // Data is relative to the LLSF field frame
 message Pose2D {
