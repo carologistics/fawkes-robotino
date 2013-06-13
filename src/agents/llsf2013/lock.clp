@@ -184,3 +184,15 @@
   =>
   (retract ?l)
 )
+
+(defrule lock-delete-all-locks-when-changing-the-phase
+  (declare (salience ?*PRIORITY-HIGH*))
+  (change-phase ?new-phase) 
+  =>
+  (do-for-all-facts ((?lock lock)) TRUE
+    (retract ?lock)
+  )
+  (do-for-all-facts ((?lock locked-resource)) TRUE
+    (retract ?lock)
+  ) 
+)
