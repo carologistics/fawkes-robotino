@@ -50,7 +50,7 @@ enum RobotState {
 
 message Robot {
   enum CompType {
-    COMP_ID  = 2002;
+    COMP_ID  = 2000;
     MSG_TYPE = 31;
   }
 
@@ -67,8 +67,10 @@ message Robot {
   // was received last from this robot
   required Time   last_seen = 4;
 
-  // Optional pose information
+  // Pose information (reported by robot)
   optional Pose2D pose = 6;
+  // Pose information (reported by vision)
+  optional Pose2D vision_pose = 11;
 
   // Current state of this robot
   optional RobotState state = 8;
@@ -83,7 +85,7 @@ message Robot {
 
 message RobotInfo {
   enum CompType {
-    COMP_ID  = 2002;
+    COMP_ID  = 2000;
     MSG_TYPE = 30;
   }
 

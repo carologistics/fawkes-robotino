@@ -1,8 +1,8 @@
 
 /***************************************************************************
- *  GameState.proto - GameState information
+ *  Sync.proto - Game synchronization messages
  *
- *  Created: Mon Jan 21 12:05:03 2013
+ *  Created: Tue Jun 11 16:10:41 2013
  *  Copyright  2013  Tim Niemueller [www.niemueller.de]
  ****************************************************************************/
 
@@ -36,74 +36,54 @@
 
 package llsf_msgs;
 
-import "Time.proto";
+import "MachineInfo.proto";
+import "OrderInfo.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "GameStateProtos";
+option java_outer_classname = "SyncProtos";
 
-message GameState {
+message MachineTimeSpec {
+  required string machine_name = 1;
+  required float gt_from = 2;
+  required float gt_to = 3;
+}
+
+message MachineProcTime {
+  required string machine_type = 1;
+  required uint32 proc_time    = 2;
+}
+
+message MachineLightSpec {
+  required string    machine_type = 1;
+  repeated LightSpec lights = 2;
+}
+
+message MachineTypeSpec {
+  required string name = 1;
+  required string type = 2;
+}
+
+message SyncInfo {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 20;
+    MSG_TYPE = 5;
   }
 
-  enum State {
-    INIT = 0;
-    WAIT_START = 1;
-    RUNNING = 2;
-    PAUSED = 3;
-  }
+  repeated MachineTypeSpec  machines = 2;
+  repeated Order            orders = 3;
 
-  enum Phase {
-    PRE_GAME    = 0;
-    SETUP       = 10;
-    EXPLORATION = 20;
-    PRODUCTION  = 30;
-    POST_GAME   = 40;
+  repeated MachineTimeSpec  down_times = 4;
+  repeated MachineTimeSpec  delivery_gates = 5;
 
-    OPEN_CHALLENGE         = 1000;
-    NAVIGATION_CHALLENGE   = 1001;
-    WHACK_A_MOLE_CHALLENGE = 1002;
-  }
+  repeated MachineProcTime  proc_times = 6;
 
-  enum RefBoxMode {
-    STANDALONE  = 0;
-    MASTER      = 1;
-    SLAVE       = 2;
-  }
-
-
-  // Time in seconds since game start
-  required Time   game_time = 1;
-
-  // Current game state
-  required State  state = 3;
-  // Current game phase
-  required Phase  phase = 4;
-  // Awarded points
-  optional uint32 points = 5;
-  // Name of the currently playing team
-  optional string team = 6;
-
-  optional RefBoxMode refbox_mode = 7 [default = STANDALONE];
+  repeated MachineLightSpec exploration_lights = 7;
 }
 
 // Request setting of a new game state
-message SetGameState {
+message InitiateSync {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 21;
+    MSG_TYPE = 6;
   }
-  // The new desired state
-  required GameState.State state = 1;
-}
-
-// Request setting of a new game phase
-message SetGamePhase {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 22;
-  }
-  // The new desired phase
-  required GameState.Phase phase = 1;
 }
