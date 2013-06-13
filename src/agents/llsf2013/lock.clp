@@ -139,15 +139,15 @@
 )
 
 (defrule lock-accept-get
-	(lock-role MASTER)
-	?l <- (lock (type GET) (agent ?a) (resource ?r))
-	(not (locked-resource (resource ?r) (agent ?)))
+  (lock-role MASTER)
+  ?l <- (lock (type GET) (agent ?a) (resource ?r))
+  (not (locked-resource (resource ?r) (agent ?)))
   =>
-	(assert (locked-resource (resource ?r) (agent ?a))
-					(lock (type ACCEPT) (agent ?a) (resource ?r)))
-	(if (not (eq ?a ?*ROBOT-NAME*)) then
-		(retract ?l)
-	)
+  (assert (locked-resource (resource ?r) (agent ?a))
+          (lock (type ACCEPT) (agent ?a) (resource ?r)))
+  (if (not (eq ?a ?*ROBOT-NAME*)) then
+    (retract ?l)
+  )
 )
 
 (defrule lock-retract-already-accepted-get
@@ -160,14 +160,14 @@
 )
 
 (defrule lock-refuse-get
-	(lock-role MASTER)
-	?l <- (lock (type GET) (agent ?a) (resource ?r))
-	?lm <- (locked-resource (resource ?r) (agent ~?a))
+  (lock-role MASTER)
+  ?l <- (lock (type GET) (agent ?a) (resource ?r))
+  ?lm <- (locked-resource (resource ?r) (agent ~?a))	
   =>
-	(assert (lock (type REFUSE) (agent ?a) (resource ?r)))
-	(if (not (eq ?a ?*ROBOT-NAME*)) then
-		(retract ?l)
-	)
+  (assert (lock (type REFUSE) (agent ?a) (resource ?r)))
+  (if (not (eq ?a ?*ROBOT-NAME*)) then
+    (retract ?l)
+  )
 )
 
 (defrule lock-release
