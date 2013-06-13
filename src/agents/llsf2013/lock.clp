@@ -230,9 +230,16 @@
 )
 
 (defrule lock-release
-	(lock-role MASTER)
-	?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
-	?lm <- (locked-resource (resource ?r) (agent ?))
+  (lock-role MASTER)
+  ?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
+  ?lm <- (locked-resource (resource ?r) (agent ?a))
   =>
-	(retract ?l ?lm)
+  (retract ?l ?lm)
+)
+
+(defrule lock-retract-accept-after-release
+  (not (locked-resource (resource ?r) (agent ?a)))
+  ?l <- (lock (type ACCEPT) (agent ?a) (resource ?r))
+  =>
+  (retract ?l)
 )
