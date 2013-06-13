@@ -180,7 +180,7 @@
   (lock-role ?role)
   =>
   (bind ?type (sym-cat (pb-field-value ?p "type")))
-  (bind ?a (sym-cat (pb-field-value ?p "agent")))
+  (bind ?a (str-cat (pb-field-value ?p "agent")))
   (bind ?r (sym-cat (pb-field-value ?p "resource")))
   (printout t "Received lock message with type " ?type " of " ?r " from " ?a crlf)
   (retract ?msg)
@@ -209,10 +209,19 @@
 	)
 )
 
+(defrule lock-retract-already-accepted-get
+  (lock-role MASTER)
+  ?l <- (lock (type GET) (agent ?a) (resource ?r))
+  (locked-resource (resource ?r) (agent ?a))
+  =>
+  (retract ?l)
+  (printout t "retracting already accepted locking GET" crlf)
+)
+
 (defrule lock-refuse-get
 	(lock-role MASTER)
 	?l <- (lock (type GET) (agent ?a) (resource ?r))
-	?lm <- (locked-resource (resource ?r) (agent ?))
+	?lm <- (locked-resource (resource ?r) (agent ~?a))
   =>
 	(assert (lock (type REFUSE) (agent ?a) (resource ?r)))
 	(if (not (eq ?a ?*ROBOT-NAME*)) then
