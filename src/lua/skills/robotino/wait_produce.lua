@@ -60,6 +60,9 @@ function done()
           or (plugin:green()      == plugin.OFF
               and plugin:yellow() == plugin.ON
               and plugin:red()    == plugin.OFF)
+          or (plugin:green()      == plugin.OFF
+              and plugin:yellow() == plugin.BLINKING
+              and plugin:red()    == plugin.OFF)
    end
    return false
 end
