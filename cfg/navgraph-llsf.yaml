@@ -199,6 +199,12 @@ nodes:
     properties:
       - orientation: 2.8
 
+  - name: WAIT_FOR_INS
+    pos: [0.7, 0.5]
+
+  - name: WAIT_FOR_DELIVER
+    pos: [5.2, 4.0]
+
   - name: SR1
     pos: [0.4, 0.5]
     properties:
@@ -307,6 +313,7 @@ connections:
   - [P11, P21]
   - [P11, M8W]
   - [P11, SR1]
+  - [P11, WAIT_FOR_INS]
   - [P12, SR2]
   - [M8W, P12]
   - [P12, P13]
@@ -337,6 +344,7 @@ connections:
   - [P33, M2W]
   - [M2W, P34]
   - [P33, P43]
+  - [P43, WAIT_FOR_DELIVER]
   - [P43, M2O]
   - [M2O, P44]
   - [P34, P44]
