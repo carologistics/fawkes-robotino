@@ -13,9 +13,9 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM1
-    pos: [3.5, 1.2]
+    pos: [4.4, 1.7]
     properties:
-      - orientation: 0.97
+      - orientation: 3.14
 
   - name: M1N
     pos: [3.92, 2.15]
@@ -30,9 +30,9 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM2
-    pos: [3.5, 3.92]
+    pos: [4.5, 3.92]
     properties:
-      - orientation: 0.0
+      - orientation: 3.14
 
   - name: M2O
     pos: [4.7, 3.92]
@@ -52,9 +52,9 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM3
-    pos: [2.8, 1.0]
+    pos: [2.3, 1.0]
     properties:
-      - orientation: -1.57
+      - orientation: -0.97
 
   - name: M3E
     pos: [3.4, 0.55]
@@ -74,9 +74,9 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM4
-    pos: [2.8, 1.2]
+    pos: [3.3, 1.2]
     properties:
-      - orientation: 1.57
+      - orientation: 2.54
 
   - name: M4N
     pos: [2.75, 2.15]
@@ -91,9 +91,9 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM5
-    pos: [3.3, 2.25]
+    pos: [3.3, 2.8]
     properties:
-      - orientation: 2.36
+      - orientation: 3.14
 
   - name: M6
     pos: [2.4, 3.92]
@@ -125,9 +125,9 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM7
-    pos: [2.75, 4.5]
+    pos: [3.4, 5.0]
     properties:
-      - orientation: 1.57
+      - orientation: 3.14
 
   - name: M8
     pos: [1.2, 1.7]
@@ -137,9 +137,9 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM8
-    pos: [2.2, 1.2]
+    pos: [1.2, 1.2]
     properties:
-      - orientation: 2.36
+      - orientation: 0.97
 
   - name: M8W
     pos: [1.0, 1.7]
@@ -154,9 +154,9 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM9
-    pos: [1.68, 4.3]
+    pos: [1.2, 3.92]
     properties:
-      - orientation: -1.57
+      - orientation: 0.0
 
   - name: M9N
     pos: [1.68, 4.4]
@@ -198,6 +198,12 @@ nodes:
     pos: [0.85, 2.4]
     properties:
       - orientation: 2.8
+
+  - name: WAIT_FOR_INS
+    pos: [0.7, 0.5]
+
+  - name: WAIT_FOR_DELIVER
+    pos: [5.1, 4.3]
 
   - name: SR1
     pos: [0.4, 0.5]
@@ -307,6 +313,7 @@ connections:
   - [P11, P21]
   - [P11, M8W]
   - [P11, SR1]
+  - [P11, WAIT_FOR_INS]
   - [P12, SR2]
   - [M8W, P12]
   - [P12, P13]
@@ -337,6 +344,7 @@ connections:
   - [P33, M2W]
   - [M2W, P34]
   - [P33, P43]
+  - [P43, WAIT_FOR_DELIVER]
   - [P43, M2O]
   - [M2O, P44]
   - [P34, P44]
@@ -344,23 +352,24 @@ connections:
   - [P42, DW]
   - [DW, P43]
   - [M1, M1N]
-  - [ExpM1, P31]
+  - [ExpM1, P41]
+  - [ExpM1, P42]
   - [M2, M2W]
-  - [ExpM2, M2W]
+  - [ExpM2, M2O]
   - [M3, M3E]
-  - [ExpM3, M3N]
+  - [ExpM3, P21]
   - [M4, M3N]
-  - [ExpM4, M3N]
+  - [ExpM4, P31]
   - [M5, M4N]
   - [ExpM5, P32]
   - [M6, M6W]
   - [ExpM6, M6N]
   - [M7, M6N]
-  - [ExpM7, M6N]
+  - [ExpM7, P34]
   - [M8, M8W]
-  - [ExpM8, P21]
+  - [ExpM8, P11]
   - [M9, M6W]
-  - [ExpM9, M9N]
+  - [ExpM9, P14]
   - [M10, M9N]
   - [ExpM10, M9N]
   - [R2, P14]
