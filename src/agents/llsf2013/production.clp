@@ -59,11 +59,14 @@
   )
 )
 
-(defrule prod-figure-out-waiting-for-ins-point
+(defrule prod-figure-out-waiting-points
   (phase PRODUCTION)
   (confval (path "/clips-agent/llsf2013/wait-for-ins-point") (value ?ins-wait-point))
+  (confval (path "/clips-agent/llsf2013/wait-for-deliver-point") (value ?deliver-wait-point))
   =>
-  (assert (ins-wait-point ?ins-wait-point))
+  (assert (ins-wait-point ?ins-wait-point)
+	  (deliver-wait-point ?deliver-wait-point)
+  )
 )
 
 (defrule prod-wait-for-gets0-at-insert-area
@@ -220,4 +223,14 @@
   (retract ?sf ?l)
   (assert (goto-has-locked ?goal))
   (goto-machine ?goal)
+)
+
+(defrule prod-wait-for-deliver
+  (phase PRODUCTION)
+  ?sf <- (state PROD_LOCK_REQUIRED_GOTO deliver)
+  ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
+  (deliver-wait-point ?wait-point)
+  =>
+  (printout t "Waiting for lock of DELIVER at " ?wait-point crlf)
+  (skill-call ppgoto place (str-cat ?wait-point))
 )
