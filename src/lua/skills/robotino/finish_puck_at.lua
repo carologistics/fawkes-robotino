@@ -58,6 +58,11 @@ function prod_finished()
       and light:yellow() == light.OFF
       and light:red() == light.OFF
 end
+function orange_blinking()
+   return light:green() == light.OFF
+      and light:yellow() == light.BLINKING
+      and light:red() == light.OFF
+end
 
 fsm:define_states{ export_to=_M,
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
@@ -81,6 +86,7 @@ fsm:add_transitions{
    { "DECIDE_ENDSKILL", "SKILL_RFID", timeout=1, cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
+   { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
 }
 
