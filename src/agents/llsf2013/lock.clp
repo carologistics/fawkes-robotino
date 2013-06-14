@@ -185,6 +185,13 @@
   (retract ?l)
 )
 
+(defrule lock-retract-refuse-after-accept
+  (lock (type ACCEPT) (agent ?a) (resource ?r))
+  ?lr <- (lock (type REFUSE) (agent ?a) (resource ?r))
+  =>
+  (retract ?lr)
+)
+
 (defrule lock-delete-all-locks-when-changing-the-phase
   (declare (salience ?*PRIORITY-HIGH*))
   (change-phase ?new-phase) 

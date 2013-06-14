@@ -59,6 +59,23 @@
   )
 )
 
+(defrule prod-figure-out-waiting-for-ins-point
+  (phase PRODUCTION)
+  (confval (path "/clips-agent/llsf2013/wait-for-ins-point") (value ?ins-wait-point))
+  =>
+  (assert (ins-wait-point ?ins-wait-point))
+)
+
+(defrule prod-wait-for-gets0-at-insert-area
+  (phase PRODUCTION)
+  ?sf <- (state PROD_LOCK_REQUIRED_GET-S0)
+  ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
+  (ins-wait-point ?ins-wait-point)
+  =>
+  (printout t "Waiting for lock of INS at " ?ins-wait-point crlf)
+  (skill-call ppgoto place (str-cat ?ins-wait-point))
+)
+
 (defrule prod-execute-get-s0
   (phase PRODUCTION)
   ?sf <- (state PROD_LOCK_REQUIRED_GET-S0)

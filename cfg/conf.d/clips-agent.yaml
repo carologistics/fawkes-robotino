@@ -41,6 +41,7 @@ clips-agent:
     start-machine-exploration-p3: M8
     waiting-for-p1p2-prouction-point: R2
     waiting-for-p3-production-point: Ins
+    wait-for-ins-point: SR1
     
     play-exploration-without-refbox: false
     #uncomment following line ONLY if you are playing without refbox
