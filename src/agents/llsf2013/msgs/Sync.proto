@@ -1,8 +1,8 @@
 
 /***************************************************************************
- *  MachineInfo.proto - LLSF Protocol - Machine Specification message
+ *  Sync.proto - Game synchronization messages
  *
- *  Created: Mon Feb 25 11:36:50 2013
+ *  Created: Tue Jun 11 16:10:41 2013
  *  Copyright  2013  Tim Niemueller [www.niemueller.de]
  ****************************************************************************/
 
@@ -36,68 +36,54 @@
 
 package llsf_msgs;
 
-import "Pose2D.proto";
-import "PuckInfo.proto";
+import "MachineInfo.proto";
+import "OrderInfo.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "MachineInfoProtos";
+option java_outer_classname = "SyncProtos";
 
-enum LightColor {
-  RED = 0;
-  YELLOW = 1;
-  GREEN = 2;
+message MachineTimeSpec {
+  required string machine_name = 1;
+  required float gt_from = 2;
+  required float gt_to = 3;
 }
 
-enum LightState {
-  OFF = 0;
-  ON = 1;
-  BLINK = 2;
+message MachineProcTime {
+  required string machine_type = 1;
+  required uint32 proc_time    = 2;
 }
 
-message LightSpec {
+message MachineLightSpec {
+  required string    machine_type = 1;
+  repeated LightSpec lights = 2;
+}
+
+message MachineTypeSpec {
+  required string name = 1;
+  required string type = 2;
+}
+
+message SyncInfo {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 10;
+    MSG_TYPE = 5;
   }
 
-  // Color and state of described light
-  required LightColor color = 1;
-  required LightState state = 2;
+  repeated MachineTypeSpec  machines = 2;
+  repeated Order            orders = 3;
+
+  repeated MachineTimeSpec  down_times = 4;
+  repeated MachineTimeSpec  delivery_gates = 5;
+
+  repeated MachineProcTime  proc_times = 6;
+
+  repeated MachineLightSpec exploration_lights = 7;
 }
 
-message Machine {
+// Request setting of a new game state
+message InitiateSync {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 12;
+    MSG_TYPE = 6;
   }
-  // Machine name and type
-  required string    name     = 1;
-  optional string    type     = 2;
-
-  // Required inputs and produced output
-  // Only set for field machines T*
-  repeated PuckState inputs  = 3;
-  optional PuckState output  = 4;
-  // Puck currently in the machine area
-  repeated Puck      loaded_with = 5;
-  // Puck currently under the RFID sensor
-  optional Puck      puck_under_rfid = 6;
-
-  // Current state of the lights
-  repeated LightSpec lights = 7;
-  // Optional pose if known to refbox
-  optional Pose2D    pose = 8;
-  // Only set during exploration phase
-  // True if correctly reported, false otherwise
-  optional bool      correctly_reported = 9;
-}
-
-message MachineInfo {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 13;
-  }
-
-  // List of machines states
-  repeated Machine machines = 1;
 }

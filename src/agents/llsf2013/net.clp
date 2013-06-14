@@ -28,10 +28,9 @@
   (assert (peer-enabled))
 )
 
-(defrule net-send-BeaconSignal-with-pose
+(defrule net-send-BeaconSignal
   (time $?now)
   ?f <- (signal (type beacon) (time $?t&:(timeout ?now ?t ?*BEACON-PERIOD*)) (seq ?seq))
-  (Position3DInterface (id "Pose") (translation $?pos))
   =>
   (modify ?f (time ?now) (seq (+ ?seq 1)))
   (if (debug 3) then (printout t "Sending beacon" crlf))
@@ -43,29 +42,20 @@
   (pb-set-field ?beacon "seq" ?seq)
   (pb-set-field ?beacon "team_name" ?*TEAM-NAME*)
   (pb-set-field ?beacon "peer_name" ?*ROBOT-NAME*)
-  (bind ?beacon-pose (pb-field-value ?beacon "pose"))
-  (pb-set-field ?beacon-pose "x" (nth$ 1 ?pos))
-  (pb-set-field ?beacon-pose "y" (nth$ 2 ?pos))
-  (pb-set-field ?beacon "pose" ?beacon-pose)
-  (pb-broadcast ?beacon)
-  (pb-destroy ?beacon)
-)
+  (pb-set-field ?beacon "number" ?*ROBOT-NUMBER*)
 
-(defrule net-send-BeaconSignal-without-pose
-  (declare (salience ?*PRIORITY-LOW*))
-  (time $?now)
-  ?f <- (signal (type beacon) (time $?t&:(timeout ?now ?t ?*BEACON-PERIOD*)) (seq ?seq))
-  =>
-  (modify ?f (time ?now) (seq (+ ?seq 1)))
-  (if (debug 3) then (printout t "Sending beacon" crlf))
-  (bind ?beacon (pb-create "llsf_msgs.BeaconSignal"))
-  (bind ?beacon-time (pb-field-value ?beacon "time"))
-  (pb-set-field ?beacon-time "sec" (nth$ 1 ?now))
-  (pb-set-field ?beacon-time "nsec" (* (nth$ 2 ?now) 1000))
-  (pb-set-field ?beacon "time" ?beacon-time) ; destroys ?beacon-time!
-  (pb-set-field ?beacon "seq" ?seq)
-  (pb-set-field ?beacon "team_name" ?*TEAM-NAME*)
-  (pb-set-field ?beacon "peer_name" ?*ROBOT-NAME*)
+  (do-for-fact ((?pose Position3DInterface)) (eq ?pose:id "Pose")
+    (bind ?beacon-pose (pb-field-value ?beacon "pose"))
+    (pb-set-field ?beacon-pose "x" (nth$ 1 ?pose:translation))
+    (pb-set-field ?beacon-pose "y" (nth$ 2 ?pose:translation))
+    (pb-set-field ?beacon-pose "ori" (yaw-from-quaternion ?pose:rotation))
+    (bind ?beacon-pose-time (pb-field-value ?beacon-pose "timestamp"))
+    (pb-set-field ?beacon-pose-time "sec" (nth$ 1 ?pose:time))
+    (pb-set-field ?beacon-pose-time "nsec" (* (nth$ 2 ?pose:time) 1000))
+    (pb-set-field ?beacon-pose "timestamp" ?beacon-pose-time)
+    (pb-set-field ?beacon "pose" ?beacon-pose)
+  )
+
   (pb-broadcast ?beacon)
   (pb-destroy ?beacon)
 )
