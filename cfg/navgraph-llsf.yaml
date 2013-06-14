@@ -203,7 +203,7 @@ nodes:
     pos: [0.7, 0.5]
 
   - name: WAIT_FOR_DELIVER
-    pos: [5.2, 4.0]
+    pos: [5.1, 4.3]
 
   - name: SR1
     pos: [0.4, 0.5]
