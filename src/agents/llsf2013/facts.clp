@@ -55,16 +55,16 @@
 )
 
 (deffacts startup-exploration
-  (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos M10))
-  (machine-exploration (name M9) (x 1.38) (y 3.42) (next M8) (look-pos M9))
-  (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3) (look-pos M8))
-  (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6) (look-pos M7))
-  (machine-exploration (name M6) (x 3.1) (y 4.42) (next M10) (look-pos M6))
-  (machine-exploration (name M5) (x 2.3) (y 3.1) (next M2) (look-pos M5))
-  (machine-exploration (name M4) (x 3.1) (y 2.13) (next M1) (look-pos M4))
-  (machine-exploration (name M3) (x 3.1) (y 1.06) (next M4) (look-pos M3))
-  (machine-exploration (name M2) (x 4.42) (y 3.62) (next M7) (look-pos M2))
-  (machine-exploration (name M1) (x 3.62) (y 1.18) (next M5) (look-pos M1))
+  (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos ExpM10))
+  (machine-exploration (name M9) (x 1.38) (y 3.42) (next M8) (look-pos ExpM9))
+  (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3) (look-pos ExpM8))
+  (machine-exploration (name M7) (x 2.5) (y 4.5) (next M6) (look-pos ExpM7))
+  (machine-exploration (name M6) (x 3.1) (y 4.42) (next M10) (look-pos ExpM6))
+  (machine-exploration (name M5) (x 2.3) (y 3.1) (next M2) (look-pos ExpM5))
+  (machine-exploration (name M4) (x 3.1) (y 2.13) (next M1) (look-pos ExpM4))
+  (machine-exploration (name M3) (x 3.1) (y 1.06) (next M4) (look-pos ExpM3))
+  (machine-exploration (name M2) (x 4.42) (y 3.62) (next M7) (look-pos ExpM2))
+  (machine-exploration (name M1) (x 3.62) (y 1.18) (next M5) (look-pos ExpM1))
 )
 
 
