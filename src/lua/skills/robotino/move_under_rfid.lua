@@ -124,7 +124,7 @@ end
 
 function CORRECT_POSITION:init()
    self.skills[1].y = self.fsm.vars.correct_dir * 0.3
-   self.skills[1].vel_trans = 0.1
+   self.skills[1].vel_trans = 0.05
 end
 
 function CORRECT_SENSOR_DELAY:init()
