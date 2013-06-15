@@ -5,8 +5,8 @@
 )
 
 (deftemplate locked-resource
-	(slot resource (type SYMBOL))
-	(slot agent (type SYMBOL))
+  (slot resource (type SYMBOL))
+  (slot agent (type SYMBOL))
 )
 
 (deffacts lock-facts
@@ -25,7 +25,7 @@
   (seed (nth$ 2 ?now))
   (retract ?i)
   (assert (master-last-seen ?now)
-          (lock-role SLAVE)
+	  (lock-role SLAVE)
   )  
 )
 
@@ -56,7 +56,7 @@
   (bind ?*CURRENT-MASTER-TIMEOUT* ?*ROBOT-TIMEOUT*)
   (if (and (eq ?role MASTER) (not (eq ?a ?*ROBOT-NAME*)))
       then
-      (printout t "TWO MASTERS DETECTED, WAITING RANDOM TIME AS SLAVE!!!")
+      (printout warn "TWO MASTERS DETECTED, WAITING RANDOM TIME AS SLAVE!!!" crlf)
       (retract ?r)
       (assert (lock-role SLAVE))
       ;TODO: are there consequences of the change?
@@ -76,20 +76,20 @@
 
 (defrule lock-retract-get
   (declare (salience ?*PRIORITY-HIGH*))
-	?l <- (lock (type GET) (agent ?a) (resource ?r))
-	?la <- (lock (type ACCEPT) (agent ?a) (resource ?r))
-	=>
-	(retract ?l)
-	;(printout t "----- Get retracted: " ?r crlf)
+  ?l <- (lock (type GET) (agent ?a) (resource ?r))
+  ?la <- (lock (type ACCEPT) (agent ?a) (resource ?r))
+  =>
+  (retract ?l)
+  ;(printout t "----- Get retracted: " ?r crlf)
 )
 
 (defrule lock-retract-release
   (declare (salience ?*PRIORITY-HIGH*))
-	?l <- (lock (type GET) (agent ?a) (resource ?r))
-	?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
-	=>
-	(retract ?lr)
-	;(printout t "----- Release retracted: " ?r crlf)
+  ?l <- (lock (type GET) (agent ?a) (resource ?r))
+  ?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
+  =>
+  (retract ?lr)
+  ;(printout t "----- Release retracted: " ?r crlf)
 )
 
 ;;;;SENDING and RECEIVING;;;;
@@ -98,22 +98,23 @@
   (declare (salience ?*PRIORITY-LOCK-SEND*))
   (time $?now)
   ?s <- (signal (type send-lock-msg) (time $?t&:(timeout ?now ?t ?*LOCK-PERIOD*)) (seq ?seq))
-	(lock-role ?role)
+  (lock-role ?role)
   =>
   ;(printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
-	(do-for-all-facts ((?lock lock)) TRUE
-		(if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE)))
-						(and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) then
-			;(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
-			(bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
-			(pb-set-field ?lock-msg "type" ?lock:type)
-			(pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
-			(pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
-			(pb-broadcast ?lock-msg)
-			(pb-destroy ?lock-msg)
-		)
-	)
+  (do-for-all-facts ((?lock lock)) TRUE
+    (if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE)))
+	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) 
+      then
+      ;(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
+      (bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
+      (pb-set-field ?lock-msg "type" ?lock:type)
+      (pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
+      (pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
+      (pb-broadcast ?lock-msg)
+      (pb-destroy ?lock-msg)
+    )
+  )
 )
 
 (defrule lock-receive-message
@@ -123,18 +124,21 @@
   (bind ?type (sym-cat (pb-field-value ?p "type")))
   (bind ?a (str-cat (pb-field-value ?p "agent")))
   (bind ?r (sym-cat (pb-field-value ?p "resource")))
-  (printout t "Received lock message with type " ?type " of " ?r " from " ?a crlf)
+  ;(printout t "Received lock message with type " ?type " of " ?r " from " ?a crlf)
   (retract ?msg)
-  (if (eq ?role MASTER) then
-		(if (or (eq ?type GET) (eq ?type RELEASE)) then
-			(assert (lock (type ?type) (agent ?a) (resource ?r)))
-		)
-	else
-		(if (or (eq ?type ACCEPT) (eq ?type REFUSE)) then
-			(if (eq ?a ?*ROBOT-NAME*) then
-				(assert (lock (type ?type) (agent ?a) (resource ?r)))
-			)
-		)
+  (if (eq ?role MASTER)
+    then
+    (if (or (eq ?type GET) (eq ?type RELEASE)) then
+      (assert (lock (type ?type) (agent ?a) (resource ?r)))
+    )
+    else
+    (if (or (eq ?type ACCEPT) (eq ?type REFUSE))
+      then
+      (if (eq ?a ?*ROBOT-NAME*)
+        then
+        (assert (lock (type ?type) (agent ?a) (resource ?r)))
+      )
+    )
   )
 )
 
