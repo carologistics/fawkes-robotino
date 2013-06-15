@@ -48,6 +48,8 @@ nodes:
     pos: [3.3, 0.55]
     properties:
       - orientation: 3.14
+      #needed for finish_puck_at 
+      - leave_right
 #      - travel_tolerance: 0.1
 #      - orientation_tolerance: 0.1
 
