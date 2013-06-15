@@ -62,3 +62,8 @@ clips-agent:
     robot-name: R-1
     robot-number: 1
 
+    #Timeouts used in the locking:
+    #Timeout a new started robot waits for a master before it gets the master itself
+    initial-master-timeout: 2.0
+    #If a robot has not been seen this time it is assumed that he is lost
+    robot-timeout: 6.0

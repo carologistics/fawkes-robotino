@@ -41,3 +41,11 @@
   =>
   (bind ?*ROBOT-NUMBER* ?robot-number)
 )
+
+(defrule globals-config-timeouts
+  (confval (path "/clips-agent/llsf2013/initial-master-timeout") (type FLOAT) (value ?initial))
+  (confval (path "/clips-agent/llsf2013/robot-timeout") (type FLOAT) (value ?robot-timeout))
+  =>
+  (bind ?*ROBOT-TIMEOUT* ?robot-timeout)
+  (bind ?*INITIAL-MASTER-TIMEOUT* ?initial)
+)
