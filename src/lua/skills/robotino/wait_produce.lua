@@ -67,6 +67,7 @@ end
 fsm:add_transitions{
    {"INIT", "FAILED", cond=plugin_missing, precond=true},
    {"INIT", "WAIT", timeout=1}, -- let vision settle
+   {"WAIT", "FAILED", timeout=70},
    {"WAIT", "FINAL", cond=done},
 }
 
