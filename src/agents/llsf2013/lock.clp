@@ -203,3 +203,17 @@
     (retract ?lock)
   ) 
 )
+
+(defrule lock-delete-locks-of-lost-robot
+  (time $?now)
+  ?ar <- (active-robot (name ?name) (last-seen $?last-seen&:(timeout ?now ?last-seen ?*ROBOT-TIMEOUT*)))
+  =>
+  (printout warn "Lost connection to " ?name " Deliting all of its locks!" crlf)
+  (do-for-all-facts ((?lock lock)) (eq ?lock:agent ?name)
+    (retract ?lock)
+  )
+  (do-for-all-facts ((?resource locked-resource)) (eq ?resource:agent ?name)
+    (retract ?resource)
+  )
+  (retract ?ar)
+)
