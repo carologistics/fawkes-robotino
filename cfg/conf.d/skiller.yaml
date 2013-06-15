@@ -42,6 +42,7 @@ skiller:
         closest_machine: Position3DInterface::Closest_Machine
         euclidean_cluster: Position3DInterface::Euclidean Laser Cluster
         ampel_fallback: RobotinoAmpelInterface::light
+        laser_cluster: LaserClusterInterface::laser-cluster
       writing:
         light: RobotinoLightInterface::Light determined
 
