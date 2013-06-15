@@ -127,8 +127,10 @@
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?lf <- (lights $?)
+  ?hf <- (holding ?)
   (machine (name ?name) (mtype ?mtype))
   =>
   (printout warn "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
-  (retract ?lf)
+  (retract ?lf ?tf ?hf)
+  (assert (holding NONE))
 )
