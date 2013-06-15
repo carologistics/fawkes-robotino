@@ -136,9 +136,15 @@
   ?tf <- (goto-target ?name)
   ?lf <- (lights $?)
   ?hf <- (holding ?)
-  (machine (name ?name) (mtype ?mtype))
+  ?mf <- (machine (name ?name) (mtype ?mtype))
   =>
   (printout warn "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
   (assert (holding NONE))
+  (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
+    then
+    ;forget machine and choose an other one
+    (strat-allow-all ?mtype)
+    (modify ?mf (allowed FALSE))
+  )
 )
