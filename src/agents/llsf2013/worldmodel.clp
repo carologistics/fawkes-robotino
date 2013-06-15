@@ -104,12 +104,18 @@
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?lf <- (lights YELLOW-BLINK)
-  (machine (name ?name) (mtype ?mtype))
+  ?mf <- (machine (name ?name) (mtype ?mtype))
   ?hf <- (holding ?)
   =>
   (printout t "Production invalid at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
   (assert (holding NONE))
+  (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
+    then
+    ;forget machine and choose an other one
+    (strat-allow-all ?mtype)
+    (modify ?mf (allowed FALSE))
+  )
 )
 
 (defrule wm-proc-delivered
