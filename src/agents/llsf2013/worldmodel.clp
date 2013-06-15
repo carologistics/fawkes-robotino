@@ -105,9 +105,11 @@
   ?tf <- (goto-target ?name)
   ?lf <- (lights YELLOW-BLINK)
   (machine (name ?name) (mtype ?mtype))
+  ?hf <- (holding ?)
   =>
   (printout t "Production invalid at " ?name "|" ?mtype crlf) 
-  (retract ?lf ?tf)
+  (retract ?lf ?tf ?hf)
+  (assert (holding NONE))
 )
 
 (defrule wm-proc-delivered
