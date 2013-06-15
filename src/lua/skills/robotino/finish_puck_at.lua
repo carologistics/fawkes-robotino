@@ -27,7 +27,8 @@ name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
 depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
-   { v="light", type="RobotinoLightInterface", id="Light determined" }
+   { v="light", type="RobotinoLightInterface", id="Light determined" },
+   { v="laser_cluster", type="LaserClusterInterface", id="laser-cluster" }
 }
 
 documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.]==]
@@ -104,3 +105,15 @@ end
 function SKILL_RFID:init()
    self.skills[1].place = self.fsm.vars.place
 end
+function SKILL_WAIT_PRODUCE:init()
+  laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.15))
+end
+
+function FINAL:init()
+  laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
+end
+
+function FAILED:init()
+  laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
+end
+  
