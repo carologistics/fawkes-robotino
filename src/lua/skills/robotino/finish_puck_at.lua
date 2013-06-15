@@ -93,6 +93,10 @@ function SKILL_TAKE_PUCK:init()
    self.fsm.vars.tries = self.fsm.vars.tries + 1
 end
 
+function SKILL_WAIT_PRODUCE:init()
+   self.skills[1].place = self.fsm.vars.place
+end
+
 function SKILL_DRIVE_LEFT:init()
    if self.fsm.vars.goto_name == "M3" then
       self.skills[1].y=-0.5
