@@ -19,7 +19,7 @@
   ?i <- (init-locking)
   (time $?now)
   =>
-  (bind ?*MASTER-TIMEOUT* 2.0)
+  (bind ?*CURRENT-MASTER-TIMEOUT* ?*INITIAL-MASTER-TIMEOUT*)
   (printout t "Initial lock-role is SLAVE" crlf)
   ;seed for random numbers (needed for problem solving if there are two masters)
   (seed (nth$ 2 ?now))
@@ -53,21 +53,21 @@
   (bind ?a (sym-cat (pb-field-value ?p "agent")))
   (retract ?mls ?msg)
   (assert (master-last-seen ?now))
-  (bind ?*MASTER-TIMEOUT* 10.0)
+  (bind ?*CURRENT-MASTER-TIMEOUT* ?*ROBOT-TIMEOUT*)
   (if (and (eq ?role MASTER) (not (eq ?a ?*ROBOT-NAME*)))
       then
       (printout t "TWO MASTERS DETECTED, WAITING RANDOM TIME AS SLAVE!!!")
       (retract ?r)
       (assert (lock-role SLAVE))
       ;TODO: are there consequences of the change?
-      (bind ?*MASTER-TIMEOUT* (float (random 0 10)))
+      (bind ?*CURRENT-MASTER-TIMEOUT* (float (random 0 10)))
   )
 )
 
 (defrule lock-getting-master
   ?r <- (lock-role SLAVE)
   (time $?now)
-  ?mls <- (master-last-seen $?last&:(timeout ?now ?last ?*MASTER-TIMEOUT*))
+  ?mls <- (master-last-seen $?last&:(timeout ?now ?last ?*CURRENT-MASTER-TIMEOUT*))
   =>
   (printout t "MASTER timed out -> Getting MASTER" crlf)
   (retract ?r)

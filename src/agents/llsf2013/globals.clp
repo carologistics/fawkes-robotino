@@ -11,7 +11,7 @@
   ; network sending periods; seconds
   ?*BEACON-PERIOD* = 1.0
   ?*MASTER-ANNOUNCE-PERIOD* = 0.5
-  ?*LOCK-PERIOD* = 0.2
+  ?*LOCK-PERIOD* = 0.5
 
   ?*TEAM-NAME*    = "?"
   ?*ROBOT-NAME*   = "?"
@@ -19,7 +19,9 @@
 
   ; Time before the slave becomes the master
   ;(if there is a master the timeout gets larger)
-  ?*MASTER-TIMEOUT* = 2.0 
+  ?*CURRENT-MASTER-TIMEOUT* = 2.0
+  ?*INITIAL-MASTER-TIMEOUT* = 2.0
+  ?*ROBOT-TIMEOUT* = 6.0
 )
 
 (defrule globals-config-team-name
