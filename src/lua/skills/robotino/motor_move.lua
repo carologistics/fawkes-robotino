@@ -66,9 +66,9 @@ end
 
 function set_speed(self)
    dist_target = tfm.transform(
-      { x   = self.fsm.vars.odo_target.x,
-        y   = self.fsm.vars.odo_target.y,
-        ori = self.fsm.vars.odo_target.ori },
+      { x   = self.fsm.vars.target.x,
+        y   = self.fsm.vars.target.y,
+        ori = self.fsm.vars.target.ori },
       self.fsm.vars.frame, "/base_link")
 
    local v = { x=1, y=1, ori=1 }
@@ -98,8 +98,8 @@ function set_speed(self)
          -- slowed us down a bit before doing this ;-)
          if dist_target[k] < 0 then v[k] = v[k] * -1 end
 
-      --   printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
-      --      k, dist_target[k], v_acc, v_dec, v[k])
+         -- printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
+         --  k, dist_target[k], v_acc, v_dec, v[k])
       else
          v[k] = 0
       end
@@ -124,7 +124,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    closure={motor=motor},
    {"DRIVE", "FAILED", cond=invalid_input, precond=true, desc="ori must be < pi"},
---   {"DRIVE", "FAILED", cond="not motor:has_writer()", precond=true},
+   {"DRIVE", "FAILED", cond="not motor:has_writer()", precond=true},
    {"DRIVE", "FINAL", cond=drive_done},
 }
 
@@ -141,12 +141,15 @@ function DRIVE:init()
 
    self.fsm.vars.cycle = 0
    
-   self.fsm.vars.bl_target = { x=x, y=y, ori=ori }
-   self.fsm.vars.odo_target = tfm.transform(
-      { x=x, y=y, ori=ori },
-      "/base_link",
-      self.fsm.vars.frame
-   )
+   if not self.fsm.vars.global then
+      self.fsm.vars.target = tfm.transform(
+         { x=x, y=y, ori=ori },
+         "/base_link",
+         self.fsm.vars.frame
+      )
+   else
+      self.fsm.vars.target = { x=x, y=y, ori=ori }
+   end
   
    local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
    local vmin_rot = self.fsm.vars.vel_rot or V_MAX.ori
