@@ -71,21 +71,25 @@ function SKILL_DRIVE_LEFT:init()
 end
 
 function SKILL_DRIVE_RIGHT:init()
-   self.skills[1].x=0 
-   self.skills[1].y=-0.23 
-   self.skills[1].ori=0
+   if self.fsm.vars.mtype == nil then
+      self.skills[1].y = -0.23 
+   elseif self.fsm.vars.mtype == "deliver" then
+      print("drive right at delivery")
+      self.skills[1].y = -0.21
+   end 
 end
 
 function SKILL_DRIVE_FORWARD:init()
-   self.skills[1].x=0.1 
-   self.skills[1].y=0 
-   self.skills[1].ori=0
+   if self.fsm.vars.mtype == nil then
+      self.skills[1].x = 0.1 
+   elseif self.fsm.vars.mtype == "deliver" then
+      print("drive forward at delivery")
+      self.skills[1].x = 0.08
+   end 
 end
 
 function SKILL_DRIVE_BACKWARD:init()
    self.skills[1].x=-0.25 
-   self.skills[1].y=0 
-   self.skills[1].ori=0
  --TODO UPDATE WORLD MODEL WENN FINAL
 end
 

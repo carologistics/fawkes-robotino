@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"take_puck_to", "move_under_rfid", "watch_signal", "leave_area", "motor_move", "relgoto" }
+depends_skills     = {"take_puck_to", "move_under_rfid", "watch_signal", "leave_area", "motor_move", "relgoto", "deposit_puck" }
 depends_interfaces = {
    { v="light", type="RobotinoLightInterface", id="Light_State" },
    { v="sensor", type="RobotinoSensorInterface", id="Robotino" },
@@ -69,6 +69,10 @@ function ampel_red()
    return light:red() == light.ON and light:visibility_history() > 15
 end
 
+function orange_blinking()
+   return light:yellow() == light.BLINKING and light:visibility_history() > 15
+end
+
 function pose_ok()
    print(math.abs(2*math.acos(pose:rotation(3))))
    return math.abs(2*math.acos(pose:rotation(3))) <= MAX_ORI_ERR
@@ -86,9 +90,11 @@ fsm:define_states{ export_to=_M,
       fail_to="FAILED"},
    {"RESTART", SkillJumpState, skills={{take_puck_to}}, final_to="CHECK_POSE",
       fail_to="FAILED"},
-   {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="LEAVE_AREA",
+   {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="CHECK_ORANGE_BLINKING",
       fail_to="FAILED"},
-   {"LEAVE_AREA", SkillJumpState, skills={{leave_area}}, final_to="FINAL", fail_to="FAILED"}
+   {"CHECK_ORANGE_BLINKING", JumpState},
+   {"LEAVE_AREA", SkillJumpState, skills={{leave_area}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="FAILED", fail_to="FAILED"} -- just leave the puck not harming the other delivery processes
 }
    
 
@@ -101,7 +107,9 @@ fsm:add_transitions{
    {"TRY_GATE", "MOVE_UNDER_RFID", cond="vars.numtries > MAX_TRIES"}, --blind guess, doesnt harm
    {"TRY_GATE", "MOVE_TO_NEXT", cond=ampel_red, desc="red"},
    {"TRY_GATE", "MOVE_TO_NEXT", timeout=4},
-   {"TRY_GATE", "RESTART", cond="vars.cur_gate_idx >= #MOVES"}
+   {"TRY_GATE", "RESTART", cond="vars.cur_gate_idx >= #MOVES"},
+   {"CHECK_ORANGE_BLINKING", "SKILL_DEPOSIT", cond=orange_blinking},
+   {"CHECK_ORANGE_BLINKING", "LEAVE_AREA", cond="not orange_blinking()"}
 }
 
 function INIT:init()
@@ -132,6 +140,10 @@ end
 
 function MOVE_UNDER_RFID:init()
    self.skills[1].place = DELIVERY_GATES[self.fsm.vars.cur_gate_idx]
+end
+
+function SKILL_DEPOSIT:init()
+   self.skills[1].mtype = "deliver"
 end
 
 function FINAL:init()
