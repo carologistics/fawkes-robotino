@@ -14,8 +14,8 @@
   (slot status (allowed-values FINAL FAILED))
 )
 
-(deffunction goto-machine (?name)
-  (skill-call finish_puck_at place ?name)
+(deffunction goto-machine (?name ?mtype)
+  (skill-call finish_puck_at place ?name mtype ?mtype)
   (assert (state GOTO))
   (assert (goto-target ?name))
 )

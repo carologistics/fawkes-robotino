@@ -218,11 +218,22 @@
 (defrule prod-execute-goto-machine
   (phase PRODUCTION)
   ?sf <- (state PROD_LOCK_REQUIRED_GOTO ?goal)
+  (machine (name ?goal) (mtype ?mtype))
   ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?goal))
   =>
   (retract ?sf ?l)
   (assert (goto-has-locked ?goal))
-  (goto-machine ?goal)
+  (goto-machine ?goal ?mtype)
+)
+
+(defrule prod-execute-deliver
+  (phase PRODUCTION)
+  ?sf <- (state PROD_LOCK_REQUIRED_GOTO deliver)
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource deliver))
+  =>
+  (retract ?sf ?l)
+  (assert (goto-has-locked deliver))
+  (goto-machine deliver DE)
 )
 
 (defrule prod-wait-for-deliver
