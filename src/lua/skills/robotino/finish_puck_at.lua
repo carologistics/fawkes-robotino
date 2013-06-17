@@ -101,7 +101,7 @@ function SKILL_TAKE_PUCK:init()
 end
 
 function SKILL_WAIT_PRODUCE:init()
-   self.skills[1].place = self.fsm.vars.place
+   self.skills[1].mtype = self.fsm.vars.mtype
 end
 
 function SKILL_DRIVE_LEFT:init()
