@@ -124,7 +124,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    closure={motor=motor},
    {"DRIVE", "FAILED", cond=invalid_input, precond=true, desc="ori must be < pi"},
-   {"DRIVE", "FAILED", cond="not motor:has_writer()", precond=true},
+--   {"DRIVE", "FAILED", cond="not motor:has_writer()", precond=true},
    {"DRIVE", "FINAL", cond=drive_done},
 }
 
@@ -148,9 +148,9 @@ function DRIVE:init()
    )
    if self.fsm.vars.global then
       -- Overwrite tf'd coords with values from arguments
-      if self.fsm.vars.x then self.fsm.vars.target.x = self.fsm.vars.x
-      if self.fsm.vars.y then self.fsm.vars.target.y = self.fsm.vars.y
-      if self.fsm.vars.ori then self.fsm.vars.target.ori = self.fsm.vars.ori
+      if self.fsm.vars.x then self.fsm.vars.target.x = self.fsm.vars.x end
+      if self.fsm.vars.y then self.fsm.vars.target.y = self.fsm.vars.y end
+      if self.fsm.vars.ori then self.fsm.vars.target.ori = self.fsm.vars.ori end
    end
   
    local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
