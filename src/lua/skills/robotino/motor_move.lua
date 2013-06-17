@@ -141,14 +141,16 @@ function DRIVE:init()
 
    self.fsm.vars.cycle = 0
    
-   if not self.fsm.vars.global then
-      self.fsm.vars.target = tfm.transform(
-         { x=x, y=y, ori=ori },
-         "/base_link",
-         self.fsm.vars.frame
-      )
-   else
-      self.fsm.vars.target = { x=x, y=y, ori=ori }
+   self.fsm.vars.target = tfm.transform(
+      { x=x, y=y, ori=ori },
+      "/base_link",
+      self.fsm.vars.frame
+   )
+   if self.fsm.vars.global then
+      -- Overwrite tf'd coords with values from arguments
+      if self.fsm.vars.x then self.fsm.vars.target.x = self.fsm.vars.x
+      if self.fsm.vars.y then self.fsm.vars.target.y = self.fsm.vars.y
+      if self.fsm.vars.ori then self.fsm.vars.target.ori = self.fsm.vars.ori
    end
   
    local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
