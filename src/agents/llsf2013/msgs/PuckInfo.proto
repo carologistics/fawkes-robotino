@@ -50,6 +50,7 @@ enum PuckState {
   P2 = 5;
   P3 = 6;
   CONSUMED = 7;
+  FINISHED = 8;
 }
 
 message Puck {
