@@ -81,7 +81,7 @@ fsm:add_transitions{
 }
 
 function MOVE_MORE:init()
-   self.skills[1].x = 0.08
+   self.skills[1].x = 0.05
 end
 
 function WAIT_FOR_VISION:init()
@@ -101,7 +101,8 @@ end
 
 function GRAB:init()
    local target = tfm.transform(self.fsm.vars.target, "/map", "/base_link")
-   self.skills[1].x = math.sqrt(target.x^2 + target.y^2) + 0.3 
+   self.skills[1].x = math.sqrt(target.x^2 + target.y^2) + 0.3
+   self.skills[1].vel_trans = 0.25 
 end
 
 function cleanup()
