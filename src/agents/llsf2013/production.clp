@@ -12,11 +12,12 @@
 (defrule prod-get-s0-done
   (phase PRODUCTION)
   ?sf <- (state GET-S0-FINAL|GET-S0-FAILED)
+  (Position3DInterface (id "Pose") (translation $?pos))
   =>
   (retract ?sf)
-  (if (debug 3) then (printout t "Release Lock for INS" crlf))
+  (if (debug 3) then (printout t "Want to release Lock for INS, waiting till 0.5m away" crlf))
   (assert (state IDLE)
-	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource INS))
+	  (want-to-release ?*ROBOT-NAME* INS $?pos)
   )
 )
 
@@ -25,10 +26,11 @@
   ?sf <- (state GOTO-FINAL)
   (not (goto-target ?))
   ?f <- (goto-has-locked ?goal)
+  (Position3DInterface (id "Pose") (translation $?pos))
   =>
   (retract ?sf ?f)
   (assert (state IDLE)
-	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?goal))
+	  (want-to-release ?*ROBOT-NAME* ?goal $?pos)
   )
 )
 
@@ -37,11 +39,21 @@
   ?sf <- (state GOTO-FAILED)
   (not (goto-target ?))
   ?f <- (goto-has-locked ?goal)
+  (Position3DInterface (id "Pose") (translation $?pos))
   =>
   (retract ?sf ?f)
   (assert (state IDLE)
-	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?goal))
+	  (want-to-release ?*ROBOT-NAME* ?goal $?pos)
   )
+)
+
+(defrule prod-release-after-driving-away
+  ?wtr <- (want-to-release ?agent ?res $?oldPos)
+  (Position3DInterface (id "Pose") (translation $?pos&:(> (distance (nth$ 1 ?pos) (nth$ 2 ?pos) (nth$ 1 ?oldPos) (nth$ 2 ?oldPos)) ?*RELEASE-DISTANCE*)))
+  =>
+  (printout t "Released " ?res crlf)
+  (retract ?wtr)
+  (assert (lock (type RELEASE) (agent ?agent) (resource ?res)))
 )
 
 ; --- RULES - next machine/place to go to

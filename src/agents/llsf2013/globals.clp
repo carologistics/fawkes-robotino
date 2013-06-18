@@ -22,6 +22,7 @@
   ?*CURRENT-MASTER-TIMEOUT* = 2.0
   ?*INITIAL-MASTER-TIMEOUT* = 2.0
   ?*ROBOT-TIMEOUT* = 6.0
+  ?*RELEASE-DISTANCE* = 0.5
 )
 
 (defrule globals-config-team-name
@@ -48,4 +49,10 @@
   =>
   (bind ?*ROBOT-TIMEOUT* ?robot-timeout)
   (bind ?*INITIAL-MASTER-TIMEOUT* ?initial)
+)
+
+(defrule globals-config-timeouts
+  (confval (path "/clips-agent/llsf2013/release-distance") (type FLOAT) (value ?d))
+  =>
+  (bind ?*RELEASE-DISTANCE* ?d)
 )

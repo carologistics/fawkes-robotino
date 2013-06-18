@@ -65,6 +65,10 @@
   )
 )
 
+(defglobal
+  ?*SIM-POS-INDEX* = 0
+)
+
 (defrule sim-connected
   (sim (rb-client-id ?client-id))
   ?cf <- (protobuf-client-connected ?client-id)
@@ -321,4 +325,37 @@
   (modify ?sf (proc-state IDLE) (placed-puck-id 0) (holding-puck-id ?puck-id))
   (assert (RobotinoLightInterface (id "Light determined") (ready TRUE)
 				 (red OFF) (green OFF) (yellow BLINK)))
+)
+
+(defrule sim-create-pos-after-skill
+  (skill (name ?name) (status ?status))
+  =>
+  (do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
+    (retract ?pos-inf)
+  )
+  (if (eq ?*SIM-POS-INDEX* 0)
+    then
+    (assert (Position3DInterface (id "Pose") (translation (create$ 0.0 0.0 0.0))))
+    (bind ?*SIM-POS-INDEX* 1)
+    else
+    (assert (Position3DInterface (id "Pose") (translation (create$ 5.0 5.0 0.0))))
+    (bind ?*SIM-POS-INDEX* 0)
+  )
+)
+
+
+(defrule sim-create-pos-after-produce
+  (holding ?)
+  =>
+  (do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
+    (retract ?pos-inf)
+  )
+  (if (eq ?*SIM-POS-INDEX* 0)
+    then
+    (assert (Position3DInterface (id "Pose") (translation (create$ 0.0 0.0 0.0))))
+    (bind ?*SIM-POS-INDEX* 1)
+    else
+    (assert (Position3DInterface (id "Pose") (translation (create$ 5.0 5.0 0.0))))
+    (bind ?*SIM-POS-INDEX* 0)
+  )
 )

@@ -67,3 +67,6 @@ clips-agent:
     initial-master-timeout: 2.0
     #If a robot has not been seen this time it is assumed that he is lost
     robot-timeout: 6.0
+
+    #distance needed before a robot releases a lock
+    release-distance: 0.5
