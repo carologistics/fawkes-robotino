@@ -43,6 +43,7 @@ skiller:
         euclidean_cluster: Position3DInterface::Euclidean Laser Cluster
         ampel_fallback: RobotinoAmpelInterface::light
         laser_cluster: LaserClusterInterface::laser-cluster
+        motor_switch: SwitchInterface::Robotino Motor
       writing:
         light: RobotinoLightInterface::Light determined
 
