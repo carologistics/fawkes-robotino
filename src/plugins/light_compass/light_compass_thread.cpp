@@ -206,10 +206,20 @@ void LightCompassThread::loop()
 		//rechnte cartesische coordinaten
 		float bestPosCartX=0;
 		float bestPosCartY=0;
+
 		fawkes::polar2cart2d(bestLightPosRelPolar.phi, bestLightPosRelPolar.r, &bestPosCartX, &bestPosCartY);
 
+		//translate from relativ to absolute positions
+		Point3d light_relative;
+		light_relative.setX(bestPosCartX);
+		light_relative.setY(bestPosCartY);
+		Point3d puck_absolute = apply_tf_to_global(light_relative);
+
+		double absLightX = puck_absolute.getX();
+		double absLightY = puck_absolute.getY();
+
 		//speicher in interface
-		this->UpdateInterface((double)bestPosCartX,(double)bestPosCartY, &bestLightPosRelPolar);
+		this->UpdateInterface(absLightX,absLightY, &bestLightPosRelPolar);
 
 		if(cfg_debugOutput_){
 			logger->log_debug(name(),"Position Pixel: %u, %u", bestRoi->start.x , bestRoi->start.y);
@@ -270,6 +280,49 @@ LightCompassThread::ResetInterface(){
 	}
 	this->lightif->write();
 }
+
+
+LightCompassThread::Point3d LightCompassThread::apply_tf_to_global(
+											 Point3d src) {
+
+  const char* source_frame = "/base_link";
+  const char* target_frame = "/map";
+
+  src.stamp = Time(0,0);
+  Point3d targetPoint;
+  targetPoint.frame_id = target_frame;
+
+  bool link_frame_exists = tf_listener->frame_exists(target_frame);
+  bool laser_frame_exists = tf_listener->frame_exists(source_frame);
+
+  if (!link_frame_exists || !laser_frame_exists) {
+    logger->log_warn(name(), "Frame missing: %s %s   %s %s", source_frame,
+		     link_frame_exists ? "exists" : "missing", target_frame,
+		     laser_frame_exists ? "exists" : "missing");
+  } else {
+    src.frame_id = source_frame;
+    try {
+      tf_listener->transform_point(target_frame, src, targetPoint);
+    } catch (tf::ExtrapolationException &e) {
+      logger->log_debug(name(), "Extrapolation error: %s", e.what());
+      return src;
+    } catch (tf::ConnectivityException &e) {
+          logger->log_debug(name(), "Connectivity exception: %s", e.what());
+          return src;
+    } catch (Exception &e) {
+        logger->log_debug(name(), "fawkes exception: %s", e.what());
+        return src;
+    } catch (std::exception &e) {
+        logger->log_debug(name(), "generic exception: %s", e.what());
+        return src;
+    }
+
+    return targetPoint;
+
+  }
+  return src;
+}
+
 
 void
 LightCompassThread::UpdateInterface(double lightPosX, double lightPosY, fawkes::polar_coord_2d_t * lightPol){

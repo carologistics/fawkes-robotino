@@ -22,6 +22,10 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/fvconf.mk
 
+
+CFLAGS  += $(CFLAGS_TF)
+LDFLAGS += $(LDFLAGS_TF)
+
 CFLAGS   += $(VISION_CFLAGS)
 LDFLAGS  += $(VISION_LDFLAGS)
 INCDIRS  += $(VISION_INCDIRS)
@@ -30,7 +34,7 @@ LIBS     += $(VISION_LIBS)
 
 #The necessary libraries your plugin needs.
 LIBS_light_compass = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface fvutils fvcams fvmodels fvclassifiers fawkesgeometry Position3DInterface fvfilters
+		fawkesblackboard fawkesinterface fvutils fvcams fvmodels fvclassifiers fawkestf fawkesgeometry Position3DInterface fvfilters
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_light_compass = light_compass.o light_compass_thread.o ColorModelRange.o
 

@@ -52,6 +52,10 @@
 #include <geometry/hom_point.h>
 #include <geometry/hom_vector.h>
 
+#include <aspect/tf.h>
+#include <tf/types.h>
+#include <tf/transform_listener.h>
+
 #include <utils/math/coord.h>
 
 
@@ -75,10 +79,12 @@ class LightCompassThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::VisionAspect,
-  public fawkes::BlackBoardAspect
+  public fawkes::BlackBoardAspect,
+  public fawkes::TransformAspect
 {
 
  public:
+	typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
 	LightCompassThread();
 
 	virtual void init();
@@ -124,6 +130,8 @@ private:
  	void UpdateInterface(double lightPosX, double lightPosY, fawkes::polar_coord_2d_t * lightPol);
  	void ResetInterface();
  	bool isValidSuccessor(float px, float py, float cx, float cy);
+
+ 	Point3d apply_tf_to_global(Point3d src);
 
 	unsigned int img_width_;
 	unsigned int img_height_;
