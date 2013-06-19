@@ -7,9 +7,9 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/puck_vision
 plugins/puck_vision:
   # camera being used
   #camera: "file:file:file=/home/fnolden/Dropbox/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
-  camera: "file:file:file=/home/fnolden/Bilder/omnivision/omni-abends-magdeburg.jpg"
-  camera: v4l2:front:device=/dev/video0 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
-  #camera: v4l2:light:device=/dev/video1:size=640x480:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
+  #camera: "file:file:file=/home/fnolden/Bilder/omnivision/omni-abends-magdeburg.jpg"
+  #camera: v4l2:front:device=/dev/video0 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
+  camera: v4l2:light:device=/dev/video1:size=1600x1200:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
 
   # camare viewport factor logitech webcam
   camera_factor_horizontal: 1.08 #1.7
@@ -30,15 +30,26 @@ plugins/puck_vision:
   nearest_puck_if: "puck_front"
 
   # Accepted Color range
-  color_y_min: 70
+  color_y_min: 40
   color_y_max: 120
   color_u_min: 0
   color_u_max: 150
   color_v_min: 150
   color_v_max: 255
 
+  p1_width: 123
+  p1_distance: 0.3
+
+  p2_width: 220
+  p2_distance: 0.2
+
+  puck_radius: 0.04
+
+  camera_height: 0.22
+  camera_center_distance: 0.24
+
   # Debugging
-  show_debug_messages: false
+  show_debug_messages: true
   draw_rois: true
 
   

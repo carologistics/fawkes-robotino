@@ -28,7 +28,7 @@
 
 #include <fvutils/ipc/shm_image.h>
 #include <fvutils/color/conversions.h>
-#include <fvmodels/color/ColorModelRange.h>
+#include "ColorModelRange.h"
 #include <fvmodels/scanlines/grid.h>
 
 #include <fvclassifiers/simple.h>
@@ -76,6 +76,13 @@ private:
 	unsigned int cfg_color_v_min;
 	unsigned int cfg_color_v_max;
 
+	double cfg_p1_distance;
+	double cfg_p1_width;
+	double cfg_p2_distance;
+	double cfg_p2_width;
+	float cfg_puck_radius;
+	double m;
+
 	bool cfg_debugMessagesActivated;
 	bool cfg_paintROIsActivated;
 	std::string cfg_frame;
@@ -85,6 +92,7 @@ private:
 	firevision::ColorModelRange *colorModel;
 	firevision::SimpleColorClassifier *classifierExpected;
 	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
+	firevision::ROI roi_center;
 	unsigned char *bufferYCbCr;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
 
 	firevision::colorspace_t cspaceFrom;
@@ -99,10 +107,11 @@ private:
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 	fawkes::polar_coord_2d_t transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
-	double* positionFromRoi(firevision::ROI* roi);
+	fawkes::polar_coord_2d_t positionFromRoi(firevision::ROI* roi);
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
 
+	double distanceCorrection(double x_in);
 
 	firevision::ROI* getBiggestRoi(std::list<firevision::ROI>* roiList);
 	std::list<firevision::ROI>*	classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);

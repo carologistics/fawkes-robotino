@@ -60,7 +60,6 @@ PuckVisionThread::init()
 {
 	logger->log_info(name(), "puck_vision: starts up");
 
-
 	this->cfg_prefix = "/plugins/puck_vision/";
 
 	this->cfg_frame  = this->config->get_string((this->cfg_prefix + "frame").c_str());
@@ -74,6 +73,18 @@ PuckVisionThread::init()
 
 	this->cfg_debugMessagesActivated = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
 	this->cfg_paintROIsActivated = this->config->get_bool((this->cfg_prefix + "draw_rois").c_str());
+
+	this->cfg_puck_radius = this->config->get_float((this->cfg_prefix + "puck_radius").c_str());
+
+	this->cfg_p1_distance =(double) this->config->get_float((this->cfg_prefix + "p1_distance").c_str());
+	this->cfg_p1_width = (double)this->config->get_float((this->cfg_prefix + "p1_width").c_str());
+	this->cfg_p2_distance = (double)this->config->get_float((this->cfg_prefix + "p2_distance").c_str());
+	this->cfg_p2_width =(double) this->config->get_float((this->cfg_prefix + "p2_width").c_str());
+	this->m = double( cfg_p2_distance - cfg_p1_distance )/double( cfg_p2_width - cfg_p1_width) ;
+	logger->log_info(name(),"Points P1(%f,%f) P2(%f,%f)  =>  m = %f",cfg_p1_width, cfg_p1_distance, cfg_p2_width, cfg_p2_distance,m);
+
+
+
 
 	this->cfg_color_y_min = this->config->get_uint((this->cfg_prefix + "color_y_min").c_str());
 	this->cfg_color_y_max = this->config->get_uint((this->cfg_prefix + "color_y_max").c_str());
@@ -105,7 +116,7 @@ PuckVisionThread::init()
 			false,																//upward
 			2,																	//neighberhoud_min_match
 			0,																	//grow_by
-			firevision::C_EXPECTED												//color
+			firevision::C_WHITE													//color
 			);
 
 
@@ -131,6 +142,13 @@ PuckVisionThread::init()
 
 	//ROIs
 	this->drawer = new firevision::FilterROIDraw();
+
+	roi_center.start.x=(img_width/2) -2;
+	roi_center.start.y=(img_height/2) -2;
+	roi_center.width=4;
+	roi_center.height=4;
+	roi_center.image_height=img_height;
+	roi_center.image_width=img_width;
 
 	logger->log_debug(name(), "end of init()");
 }
@@ -177,6 +195,7 @@ PuckVisionThread::loop()
 			drawROIIntoBuffer(rois->front(), firevision::FilterROIDraw::DASHED_HINT);
 			rois->pop_front();
 		}
+		drawROIIntoBuffer(roi_center, firevision::FilterROIDraw::INVERTED);
 	}
 
 
@@ -291,20 +310,42 @@ PuckVisionThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifi
 	return ROIs;
 }
 
-double*
+fawkes::polar_coord_2d_t
 PuckVisionThread::positionFromRoi(firevision::ROI* roi){
-	double *vector = new double[3];
-	vector[0] = (img_width / 2)+ roi->start.x + (roi->width/2);
-	vector[2] = (img_width-roi->width)/12.58;
-	vector[1] = sqrt(vector[0] * vector[0] - vector[2]*vector[2]);
 
+	// x = width, y = distance
+	fawkes::polar_coord_2d_t puck_position;
+	puck_position.r = distanceCorrection(roi->width) + cfg_puck_radius;
+	//puck_position.r = m * (roi->width - cfg_p1_width) +  cfg_p1_distance + cfg_puck_radius;
+	logger->log_info(name(),"Distance = %f, rois: center (%u, %u) width,height (%u, %u)",puck_position.r , roi->start.x + (roi->width/2),roi->start.y + (roi->height/2), roi->width, roi->height);
 
-    // Notebook 5  cm ->  image_width == roi->width
-	// Notebook 50 cm ->  roi_width = (image_width*1.5) / 13
-	// puck size 7,5 cm = 0.075m
-	//vector[2] = roi->width; //size -> distance
+	float pixelPerRadHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
 
-	return vector;
+	puck_position.phi = ((roi->start.x + roi->width/2)	- this->img_width / 2)
+					/ pixelPerRadHorizonal;
+
+	return puck_position;
+}
+
+double
+PuckVisionThread::distanceCorrection(double x_in)
+{
+	//front
+//	double temp;
+//	temp = 0.0;
+//	// coefficients
+//	double a = 8.4095039634708191E-01;
+//	double b = -7.9038576694095385E-03;
+//	temp = a * exp(b*x_in);
+//	return temp;
+//	//top
+	 double temp;
+	temp = 0.0;
+	// coefficients
+	double a = 1.6793033074297550E+00;
+	double b = -1.6433635226927507E-02;
+	temp = a * exp(b*x_in);
+	return temp;
 }
 
 void
@@ -314,13 +355,15 @@ PuckVisionThread::updateInterface(firevision::ROI* puck){
 		nearestPuck->set_visibility_history(-1);
 	}
 	else{
-		double* lightifValuse = positionFromRoi(puck);
+		fawkes::polar_coord_2d_t polar = positionFromRoi(puck);
 
-		fawkes::polar_coord_2d_t polar;
-		cartToPol(polar,lightifValuse[0],lightifValuse[1]);
+		float x,y;
+
+		polToCart(x,y,polar);
 
 		nearestPuck->set_visibility_history(nearestPuck->visibility_history()+1);
-		nearestPuck->set_translation(lightifValuse);
+		nearestPuck->set_translation(0,x);
+		nearestPuck->set_translation(1,y);
 		nearestPuck->set_rotation(0,polar.phi);
 		nearestPuck->set_rotation(1,polar.r);
 	}
