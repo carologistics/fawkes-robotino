@@ -8,7 +8,10 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-(blackboard-add-interface "Position3DInterface" "Light")
+(blackboard-add-interface "Position3DInterface" "nearest_light_on")
 (blackboard-add-interface "Position3DInterface" "Pose")
 
 (printout t "==== INIT ===== " crlf)
+
+(assert (status "South"))
+(assert (start))
