@@ -113,7 +113,7 @@
   (assert (second-recognize-try)
   )
   (modify ?ws (time ?now))
-  (skill-call motor_move x 0 y 0.05 vel_trans 0.1)
+  (skill-call motor_move x 0 y 0.2 vel_trans 0.1)
 )
 
 ;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
