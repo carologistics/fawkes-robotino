@@ -17,7 +17,7 @@
   (retract ?sf)
   (if (debug 3) then (printout t "Want to release Lock for INS, waiting till 0.5m away" crlf))
   (assert (state IDLE)
-	  (want-to-release ?*ROBOT-NAME* INS $?pos)
+	  (want-to-release INS $?pos)
   )
 )
 
@@ -27,9 +27,9 @@
   (Position3DInterface (id "Pose") (translation $?pos))
   ?f <- (goto-has-locked ?machine)
   =>
-  (retract ?sf)
+  (retract ?sf ?f)
   (assert (state IDLE)
-	  (want-to-release ?*ROBOT-NAME* ?machine $?pos)
+	  (want-to-release ?machine $?pos)
   )
 )
 
@@ -42,7 +42,7 @@
   =>
   (retract ?sf ?f)
   (assert (state IDLE)
-	  (want-to-release ?*ROBOT-NAME* ?goal $?pos)
+	  (want-to-release ?goal $?pos)
   )
 )
 
@@ -55,17 +55,17 @@
   =>
   (retract ?sf ?f)
   (assert (state IDLE)
-	  (want-to-release ?*ROBOT-NAME* ?goal $?pos)
+	  (want-to-release ?goal $?pos)
   )
 )
 
 (defrule prod-release-after-driving-away
-  ?wtr <- (want-to-release ?agent ?res $?oldPos)
+  ?wtr <- (want-to-release ?res $?oldPos)
   (Position3DInterface (id "Pose") (translation $?pos&:(> (distance (nth$ 1 ?pos) (nth$ 2 ?pos) (nth$ 1 ?oldPos) (nth$ 2 ?oldPos)) ?*RELEASE-DISTANCE*)))
   =>
   (printout t "Released " ?res crlf)
   (retract ?wtr)
-  (assert (lock (type RELEASE) (agent ?agent) (resource ?res)))
+  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
 )
 
 ; --- RULES - next machine/place to go to
@@ -80,7 +80,7 @@
   (if (debug 3) then (printout t "Requirering Lock for INS" crlf))
   (retract ?sf)
   (assert (state PROD_LOCK_REQUIRED_GET-S0)
-	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource INS))
+	  (want-to-get-lock INS)
   )
 )
 
@@ -96,7 +96,7 @@
                      (printout t "Requirering Lock for " ?goal crlf))
   (retract ?sf)
   (assert (state PROD_LOCK_REQUIRED_RECYCLE ?goal)
-	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?goal))
+	  (want-to-get-lock ?goal)
   )
 )
 
@@ -113,7 +113,7 @@
   (if (debug 3) then (printout t "Requirering Lock for " ?goal crlf))
   (retract ?sf)
   (assert (state PROD_LOCK_REQUIRED_RECYCLE ?goal)
-	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?goal))
+	  (want-to-get-lock ?goal)
   )
 )
 
@@ -293,7 +293,7 @@
   (state PROD_LOCK_REQUIRED_GOTO ?goal)
   =>
   (if (debug 2) then (printout t "Requirering lock of " ?goal crlf))
-  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?goal)))
+  (assert (want-to-get-lock ?goal))
 )
 
 (defrule prod-execute-goto-machine
@@ -325,4 +325,23 @@
   =>
   (printout t "Waiting for lock of DELIVER at " ?wait-point crlf)
   (skill-call ppgoto place (str-cat ?wait-point))
+)
+
+(defrule prod-reuse-lock
+  (phase PRODUCTION)
+  ?wgf <- (want-to-get-lock ?res)
+  ?wrf <- (want-to-release ?res $?)
+  =>
+  (printout t "Reusing lock of " ?res crlf)
+  (retract ?wgf ?wrf)
+  (assert (lock (type ACCEPT) (agent ?*ROBOT-NAME*) (resource ?res)))
+)
+
+(defrule prod-call-get-lock
+  (phase PRODUCTION)
+  ?wf <- (want-to-get-lock ?res)
+  (not (want-to-release ?res $?))
+  =>
+  (retract ?wf)
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
 )

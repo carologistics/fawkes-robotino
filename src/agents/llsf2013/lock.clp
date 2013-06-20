@@ -164,6 +164,7 @@
 )
 
 (defrule lock-refuse-get
+  (declare (salience ?*PRIORITY-CLEANUP*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
   ?lm <- (locked-resource (resource ?r) (agent ~?a))	
@@ -175,6 +176,7 @@
 )
 
 (defrule lock-release
+  (declare (salience ?*PRIORITY-LOCKING-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
   ?lm <- (locked-resource (resource ?r) (agent ?a))

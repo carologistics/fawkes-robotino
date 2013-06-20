@@ -32,6 +32,10 @@
   ?*PRIORITY-GET-S0-INS*     =    0
   ?*PRIORITY-GET-S0-RECYCLE* =  100
 
+  ;Locking priorities
+  ?*PRIORITY-LOCKING-HIGH* = 200
+  ?*PRIORITY-LOCKING-LOW* = 10
+
   ; locking priorities
   ?*PRIORITY-LOCK-SEND*    = -100 ;so they get only send if not used by the agent itself
 )
