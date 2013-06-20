@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 clips-agent:
   clips-debug: true
-  skill-sim: true
+  skill-sim: false
   skill-sim-time: 0.5
 
   # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
@@ -30,7 +30,7 @@ clips-agent:
   #  enable-sim: true
 
   llsf2013:
-    enable-sim: true
+    enable-sim: false
 
     # Possible roles for the agent:
     # EXPLORATION_P1P2
@@ -51,12 +51,10 @@ clips-agent:
     
     peer-address: 172.16.35.255
     #use this for talking to the refbox on the same laptop:
-    peer-recv-port: 4444
-    peer-send-port: 4445
+    #peer-recv-port: 4444
+    #peer-send-port: 4445
     #use this for talking to the real refbox:
-    #peer-port: 4444
-
-
+    peer-port: 4444
 
     team-name: Carologistics
     robot-name: R-1
@@ -70,3 +68,4 @@ clips-agent:
 
     #distance needed before a robot releases a lock
     release-distance: 0.5
+
