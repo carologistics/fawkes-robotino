@@ -121,7 +121,7 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding CO)
-  (machine (mtype RE) (name ?name))
+  (machine (mtype RECYCLE) (name ?name))
   =>
   (if (debug 2) then (printout t "Recycling consumed puck" ?name crlf))
   (retract ?sf)
