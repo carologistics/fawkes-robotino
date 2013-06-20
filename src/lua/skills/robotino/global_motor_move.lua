@@ -32,7 +32,7 @@ documentation      = [==[
 ]==]
 
 -- Tunables
-TOLERANCE = { x=0.04, y=0.02, ori=0.02 }
+TOLERANCE = { x=0.04, y=0.03, ori=0.02 }
 MAXTRIES = 3
 
 -- Initialize as skill module
@@ -51,7 +51,9 @@ end
 function pose_ok()
    local dist = tfm.transform(fsm.vars.target, "/map", "/base_link")
    printf("dist: %f, %f, %f", dist.x, dist.y, dist.ori)
-   return dist.x <= TOLERANCE.x and dist.y <= TOLERANCE.y and dist.ori <= TOLERANCE.ori
+   return math.abs(dist.x) <= TOLERANCE.x
+      and math.abs(dist.y) <= TOLERANCE.y
+      and math.abs(dist.ori) <= TOLERANCE.ori
 end
 
 local mm_tolerance = {
@@ -59,6 +61,11 @@ local mm_tolerance = {
    y = TOLERANCE.y * 0.75,
    ori = TOLERANCE.ori * 0.75
 }
+
+function trans_error()
+   return math.abs(fsm.vars.bl_target.x) > mm_tolerance.x
+      or math.abs(fsm.vars.bl_target.y) > mm_tolerance.y
+end
 
 fsm:define_states{ export_to=_M,
    closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, mm_tolerance=mm_tolerance},
@@ -72,9 +79,11 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "TURN", cond="vars.puck and vars.bl_target.x < -mm_tolerance.x"},
-   {"INIT", "DRIVE", cond=true},
+   {"INIT", "DRIVE", cond=trans_error},
+   {"INIT", "TURN_BACK", cond="math.abs(vars.bl_target.ori) > mm_tolerance.ori"},
+   {"INIT", "FINAL", cond=true},
    {"WAIT", "CHECK_POSE", timeout=1.5},
-   {"CHECK_POSE", "TURN", cond="not pose_ok() and vars.tries < MAXTRIES"},
+   {"CHECK_POSE", "INIT", cond="not pose_ok() and vars.tries < MAXTRIES"},
    {"CHECK_POSE", "FINAL", cond=pose_ok},
    {"CHECK_POSE", "FAILED", cond="vars.tries >= MAXTRIES"}
 }
@@ -113,7 +122,7 @@ function TURN:init()
    self.skills[1].vel_rot = 1.2
    self.skills[1].puck = true
    self.skills[1].tolerance = mm_tolerance
-   self.skills[1].frame = "/map"
+   self.skills[1].frame = "/odom"
 end
 
 function DRIVE:init()
@@ -121,15 +130,11 @@ function DRIVE:init()
       x=self.fsm.vars.target.x,
       y=self.fsm.vars.target.y,
       ori=self.fsm.vars.target.ori}, "/map", "/base_link")
-   if self.fsm.vars.puck then
-      self.skills[1].x = self.fsm.vars.bl_target.x > mm_tolerance.x and self.fsm.vars.bl_target.x or 0
-   else
-      self.skills[1].x = self.fsm.vars.bl_target.x
-   end
+   self.skills[1].x = self.fsm.vars.bl_target.x
    self.skills[1].y = self.fsm.vars.bl_target.y
    self.skills[1].puck = true
    self.skills[1].tolerance = mm_tolerance
-   self.skills[1].frame = "/map"
+   self.skills[1].frame = "/odom"
 end
 
 function TURN_BACK:init()
@@ -141,6 +146,6 @@ function TURN_BACK:init()
    self.skills[1].vel_rot = 1.2
    self.skills[1].puck = true
    self.skills[1].tolerance = mm_tolerance
-   self.skills[1].frame = "/map"
+   self.skills[1].frame = "/odom"
 end
 
