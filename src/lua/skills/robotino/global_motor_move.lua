@@ -28,16 +28,12 @@ depends_interfaces = {
     {v = "motor", type = "MotorInterface", id="Robotino" }
 }
 
-documentation      = [==[Move on a (kind of) straight line relative to /base_link.
-@param x The target X coordinate
-@param y Dito
-@param ori Relative rotation. -pi <= ori <= pi.
-@param frame Measure distances relative to this frame. Can be "/map" or "/odom" (default).
-@param vel_trans Translational top-speed. Upper limit: hardcoded tunable in skill module.
-@param vel_rot Rotational top-speed. Upper limit: dito.
+documentation      = [==[
 ]==]
 
 -- Tunables
+TOLERANCE = { x=0.03, y=0.015, ori=0.02 }
+MAXTRIES = 3
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -52,23 +48,42 @@ function invalid_input()
    return false
 end
 
+function pose_ok()
+   local dist = tfm.transform(fsm.vars.target, "/map", "/base_link")
+   return dist.x <= TOLERANCE.x and dist.y <= TOLERANCE.y and dist.ori <= TOLERANCE.ori
+end
+
 fsm:define_states{ export_to=_M,
+   closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES},
    {"INIT", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
    {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="TURN_BACK", fail_to="FAILED"},
-   {"TURN_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   {"TURN_BACK", SkillJumpState, skills={{motor_move}}, final_to="WAIT", fail_to="FAILED"},
+   {"WAIT", JumpState},
+   {"CHECK_POSE", JumpState},
 }
 
 fsm:add_transitions{
-   closure={motor=motor},
-   {"INIT", "TURN", cond="vars.puck and vars.dist_target.x < 0"},
+   {"INIT", "TURN", cond="vars.puck and vars.bl_target.x < 0"},
+   {"INIT", "DRIVE", cond=true},
+   {"WAIT", "CHECK_POSE", timeout=0.5},
+   {"CHECK_POSE", "TURN", cond="not pose_ok() and vars.tries < MAXTRIES"},
+   {"CHECK_POSE", "FINAL", cond=pose_ok},
+   {"CHECK_POSE", "FAILED", cond="vars.tries >= MAXTRIES"}
+}
+
+local mm_tolerance = {
+   x = TOLERANCE.x - 0.005,
+   y = TOLERANCE.y - 0.005,
+   ori = TOLERANCE.ori - 0.005
 }
 
 function INIT:init()
-   self.fsm.vars.mypos = tfm.transform({x=0, y=0, ori=0}, "/base_link", "/map")
-   local x = self.fsm.vars.x or self.fsm.vars.mypos.x
-   local y = self.fsm.vars.y or self.fsm.vars.mypos.y
-   local ori = self.fsm.vars.ori or self.fsm.vars.mypos.ori
+   self.fsm.vars.startpos = tfm.transform({x=0, y=0, ori=0}, "/base_link", "/map")
+   self.fsm.vars.tries = 0
+   local x = self.fsm.vars.x or self.fsm.vars.startpos.x
+   local y = self.fsm.vars.y or self.fsm.vars.startpos.y
+   local ori = self.fsm.vars.ori or self.fsm.vars.startpos.ori
    if type(self.fsm.vars.place) == "string" then
       local node = navgraph:node(self.fsm.vars.place)
       if node then
@@ -76,27 +91,49 @@ function INIT:init()
          y = node:y()
          ori = node:has_property("orientation")
             and node:property_as_float("orientation")
-            or self.fsm.vars.mypos.ori
+            or self.fsm.vars.startpos.ori
       end
    end
    self.fsm.vars.target = { x=x, y=y, ori=ori }
-
-   self.fsm.vars.dist_target = tfm.transform(target, "/map", "/base_link")
+   self.fsm.vars.bl_target = tfm.transform({x=x, y=y, ori=ori}, "/map", "/base_link")
+   printf("%f, %f, %f", self.fsm.vars.bl_target.x, self.fsm.vars.bl_target.y, self.fsm.vars.bl_target.ori)
 end
 
 function TURN:init()
-   self.skills[1].ori = math.tan(self.fsm.vars.target.x/self.fsm.vars.target.y)
+   self.fsm.vars.tries = self.fsm.vars.tries + 1
+   self.fsm.vars.bl_target = tfm.transform({
+       x=self.fsm.vars.startpos.x,
+       y=self.fsm.vars.startpos.y,
+       ori=math.atan2(self.fsm.vars.target.y, self.fsm.vars.target.x)},
+      "/map", "/base_link")
+   self.skills[1].ori = self.fsm.vars.bl_target.ori --]]--
+   self.skills[1].vel_rot = 1.2
+   self.skills[1].puck = true
+   self.skills[1].tolerance = mm_tolerance
    self.skills[1].frame = "/map"
 end
 
 function DRIVE:init()
-   self.skills[1].x = self.fsm.vars.target.x
-   self.skills[1].y = self.fsm.vars.terget.y
+   self.fsm.vars.bl_target = tfm.transform({
+      x=self.fsm.vars.target.x,
+      y=self.fsm.vars.target.y,
+      ori=self.fsm.vars.target.ori}, "/map", "/base_link")
+   self.skills[1].x = self.fsm.vars.bl_target.x
+   self.skills[1].y = self.fsm.vars.bl_target.y
+   self.skills[1].puck = true
+   self.skills[1].tolerance = mm_tolerance
    self.skills[1].frame = "/map"
 end
 
 function TURN_BACK:init()
-   self.skills[1].ori = self.fsm.vars.target.ori
+   self.fsm.vars.bl_target = tfm.transform({
+      x=self.fsm.vars.target.x,
+      y=self.fsm.vars.target.y,
+      ori=self.fsm.vars.target.ori}, "/map", "/base_link")
+   self.skills[1].ori = self.fsm.vars.bl_target.ori
+   self.skills[1].vel_rot = 1.2
+   self.skills[1].puck = true
+   self.skills[1].tolerance = mm_tolerance
    self.skills[1].frame = "/map"
 end
 
