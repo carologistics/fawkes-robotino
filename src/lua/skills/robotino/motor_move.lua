@@ -104,6 +104,8 @@ function set_speed(self)
          v[k] = 0
       end
    end
+
+   if self.fsm.vars.puck and v.x < 0 then v.x = 0 end
    
    self.fsm.vars.cycle = self.fsm.vars.cycle + 1
 
