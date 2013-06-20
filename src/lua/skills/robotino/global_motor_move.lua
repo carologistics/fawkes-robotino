@@ -102,11 +102,13 @@ end
 function TURN:init()
    self.fsm.vars.tries = self.fsm.vars.tries + 1
    self.fsm.vars.bl_target = tfm.transform({
-       x=self.fsm.vars.startpos.x,
-       y=self.fsm.vars.startpos.y,
+       x=self.fsm.vars.target.x,
+       y=self.fsm.vars.target.y,
        ori=math.atan2(self.fsm.vars.target.y, self.fsm.vars.target.x)},
       "/map", "/base_link")
-   self.skills[1].ori = self.fsm.vars.bl_target.ori --]]--
+   printf("tf'd ori: %f", self.fsm.vars.bl_target.ori)
+   self.skills[1].ori = math.atan2(self.fsm.vars.bl_target.y, self.fsm.vars.bl_target.x)
+   printf("atan ori: %f", self.skills[1].ori)
    self.skills[1].vel_rot = 1.2
    self.skills[1].puck = true
    self.skills[1].tolerance = mm_tolerance
