@@ -69,3 +69,7 @@ clips-agent:
     #distance needed before a robot releases a lock
     release-distance: 0.5
 
+    #recycle pucks to get s0
+    #possible values: no,ifpossible
+    recycle: ifpossible
+    
