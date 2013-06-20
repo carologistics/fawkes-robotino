@@ -148,3 +148,30 @@
     (modify ?mf (allowed FALSE))
   )
 )
+
+(defrule wm-get-consumed-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state GET-CONSUMED-FINAL)
+  ?tf <- (get-consumed-target ?name)
+  ?hf <- (holding NONE)
+  ?mf <- (machine (name ?name) (junk ?))
+  =>
+  (retract ?hf ?tf)
+  (assert (holding CO))
+  (printout t "Got Consumed Puck." crlf) 
+  (modify ?mf (junk 0)) ;because we only want to recycle the last one (easier for the skill)
+  ;TODO: be able to get the other ones as well and fix this hack
+)
+
+(defrule wm-get-consumed-failed
+  (declare (salience ?*PRIORITY-WM*))
+  (state GET-CONSUMED-FAILED)
+  ?tf <- (get-consumed-target ?name)
+  ?hf <- (holding NONE)
+  ?mf <- (machine (name ?name) (junk ?))
+  =>
+  (retract ?hf ?tf)
+  (assert (holding NONE))
+  (printout warn "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf) 
+  (modify ?mf (junk 0))
+)

@@ -21,6 +21,18 @@
   )
 )
 
+(defrule prod-get-consumed-done
+  (phase PRODUCTION)
+  ?sf <- (state GET-CONSUMED-FINAL|GET-CONSUMED-FAILED)
+  (Position3DInterface (id "Pose") (translation $?pos))
+  ?f <- (goto-has-locked ?machine)
+  =>
+  (retract ?sf)
+  (assert (state IDLE)
+	  (want-to-release ?*ROBOT-NAME* ?machine $?pos)
+  )
+)
+
 (defrule prod-goto-final
   (phase PRODUCTION)
   ?sf <- (state GOTO-FINAL)
@@ -70,6 +82,30 @@
 	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource INS))
   )
 )
+(defrule prod-recycle-to-get-s0
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (holding NONE)
+  ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal))
+  =>
+  (if (debug 3) then (printout t "Need to get S0, Recycle to get one" crlf))
+  (if (debug 3) then (printout t "Requirering Lock for " ?goal crlf))
+  (retract ?sf)
+  (assert (state PROD_LOCK_REQUIRED_RECYCLE ?name)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?goal))
+  )
+)
+
+(defrule prod-recycle-puck
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (holding CO)
+  (machine (mtype RECYCLE) (name ?name))
+  =>
+  (if (debug 2) then (printout t "Recycling consumed puck" ?name crlf))
+  (retract ?sf)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))    
+)
 
 (defrule prod-figure-out-waiting-points
   (phase PRODUCTION)
@@ -100,6 +136,18 @@
   (retract ?sf ?l)
   (assert (state GET-S0))
   (get-s0)
+)
+
+(defrule prod-execute-recycle
+  (phase PRODUCTION)
+  ?sf <- (state PROD_LOCK_REQUIRED_RECYCLE ?goal)
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?goal))
+  =>
+  (printout t "Lock accepted -> Get Consumed Puck at " ?goal crlf)
+  (retract ?sf ?l)
+  (assert (state GET-CONSUMED)
+	  (goto-has-locked ?goal))
+  (get-consumed ?goal)
 )
 
 (defrule prod-s0-t5
