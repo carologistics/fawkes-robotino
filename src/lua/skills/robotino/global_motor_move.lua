@@ -32,7 +32,7 @@ documentation      = [==[
 ]==]
 
 -- Tunables
-TOLERANCE = { x=0.03, y=0.015, ori=0.02 }
+TOLERANCE = { x=0.04, y=0.02, ori=0.02 }
 MAXTRIES = 3
 
 -- Initialize as skill module
@@ -50,11 +50,18 @@ end
 
 function pose_ok()
    local dist = tfm.transform(fsm.vars.target, "/map", "/base_link")
+   printf("dist: %f, %f, %f", dist.x, dist.y, dist.ori)
    return dist.x <= TOLERANCE.x and dist.y <= TOLERANCE.y and dist.ori <= TOLERANCE.ori
 end
 
+local mm_tolerance = {
+   x = TOLERANCE.x * 0.75,
+   y = TOLERANCE.y * 0.75,
+   ori = TOLERANCE.ori * 0.75
+}
+
 fsm:define_states{ export_to=_M,
-   closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES},
+   closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, TOLERANCE=TOLERANCE},
    {"INIT", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
    {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="TURN_BACK", fail_to="FAILED"},
@@ -64,18 +71,12 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "TURN", cond="vars.puck and vars.bl_target.x < 0"},
+   {"INIT", "TURN", cond="vars.puck and vars.bl_target.x < -mm_tolerace.x"},
    {"INIT", "DRIVE", cond=true},
-   {"WAIT", "CHECK_POSE", timeout=0.5},
+   {"WAIT", "CHECK_POSE", timeout=1.5},
    {"CHECK_POSE", "TURN", cond="not pose_ok() and vars.tries < MAXTRIES"},
    {"CHECK_POSE", "FINAL", cond=pose_ok},
    {"CHECK_POSE", "FAILED", cond="vars.tries >= MAXTRIES"}
-}
-
-local mm_tolerance = {
-   x = TOLERANCE.x - 0.005,
-   y = TOLERANCE.y - 0.005,
-   ori = TOLERANCE.ori - 0.005
 }
 
 function INIT:init()
@@ -120,7 +121,11 @@ function DRIVE:init()
       x=self.fsm.vars.target.x,
       y=self.fsm.vars.target.y,
       ori=self.fsm.vars.target.ori}, "/map", "/base_link")
-   self.skills[1].x = self.fsm.vars.bl_target.x
+   if self.fsm.vars.puck then
+      self.skills[1].x = self.fsm.vars.bl_target.x > mm_tolerance.x and self.fsm.vars.bl_target.x or 0
+   else
+      self.skills[1].x = self.fsm.vars.bl_target.x
+   end
    self.skills[1].y = self.fsm.vars.bl_target.y
    self.skills[1].puck = true
    self.skills[1].tolerance = mm_tolerance
