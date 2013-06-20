@@ -30,6 +30,7 @@
   (phase EXPLORATION|PRODUCTION)
   (state WAIT_START)
   (change-state RUNNING)
+  (not (simulation-is-running))
   =>
   (printout warn "***** Enabling motor *****" crlf)
   (motor-enable)
@@ -51,6 +52,7 @@
   ?sf <- (state ?state&~PAUSED)
   ?cf <- (change-state ?cs&~RUNNING)
   ?rf <- (refbox-state ~?cs)
+  (not (simulation-is-running))
   =>
   (retract ?sf ?cf ?rf)
   (motor-disable)
@@ -64,6 +66,7 @@
   ?pf <- (pre-pause-state ?old-state)
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state PAUSED)
+  (not (simulation-is-running))
   =>
   (retract ?sf ?pf ?cf ?rf)
   (assert (state ?old-state))

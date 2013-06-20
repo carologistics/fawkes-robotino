@@ -81,21 +81,22 @@
 
 (defrule net-recv-BeaconSignal
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p) (rcvd-via BROADCAST))
-  ?ar <- (active-robot (name ?name) (last-seen $?last-seen) (x ?x) (y ?y))
+  (time $?now)
   =>
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
-  (if (eq ?name (sym-cat ?beacon-name))
-      then
-      (retract ?pf)
-      (bind ?beacon-time (pb-field-value ?p "time"))
-      (modify ?ar (last-seen ?beacon-time))
-      (if (pb-has-field ?p "pose")
-	  then
-          (bind ?beacon-pose (pb-field-value ?p "pose"))
-          (modify ?ar (x (nth$ 1 ?beacon-pose)) (y (nth$ 2 ?beacon-pose)))
-	  (printout t "Got Beacon Signal from " ?beacon-name "with Pose" crlf)
-  
-    )
+  (do-for-all-facts ((?active-robot active-robot)) (eq ?active-robot:name (sym-cat ?beacon-name))
+      ;no modify because the active-robot-fact may not be there before
+      (retract ?active-robot)
   )
+  (bind ?x 0.0)
+  (bind ?y 0.0)
+  (if (pb-has-field ?p "pose")
+    then
+    (bind ?beacon-pose (pb-field-value ?p "pose"))
+    (bind ?x (pb-field-value ?beacon-pose "x"))
+    (bind ?y (pb-field-value ?beacon-pose "y"))
+  )
+  (assert (active-robot (name (sym-cat ?beacon-name)) (last-seen ?now) (x ?x) (y ?y)))     
+  (retract ?pf) 
 )
 

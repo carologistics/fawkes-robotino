@@ -10,10 +10,19 @@
 (defglobal
   ; network sending periods; seconds
   ?*BEACON-PERIOD* = 1.0
+  ?*MASTER-ANNOUNCE-PERIOD* = 0.5
+  ?*LOCK-PERIOD* = 0.5
 
   ?*TEAM-NAME*    = "?"
   ?*ROBOT-NAME*   = "?"
   ?*ROBOT-NUMBER* = 0
+
+  ; Time before the slave becomes the master
+  ;(if there is a master the timeout gets larger)
+  ?*CURRENT-MASTER-TIMEOUT* = 2.0
+  ?*INITIAL-MASTER-TIMEOUT* = 2.0
+  ?*ROBOT-TIMEOUT* = 6.0
+  ?*RELEASE-DISTANCE* = 0.5
 )
 
 (defrule globals-config-team-name
@@ -32,4 +41,18 @@
   (confval (path "/clips-agent/llsf2013/robot-number") (type UINT) (value ?robot-number))
   =>
   (bind ?*ROBOT-NUMBER* ?robot-number)
+)
+
+(defrule globals-config-timeouts
+  (confval (path "/clips-agent/llsf2013/initial-master-timeout") (type FLOAT) (value ?initial))
+  (confval (path "/clips-agent/llsf2013/robot-timeout") (type FLOAT) (value ?robot-timeout))
+  =>
+  (bind ?*ROBOT-TIMEOUT* ?robot-timeout)
+  (bind ?*INITIAL-MASTER-TIMEOUT* ?initial)
+)
+
+(defrule globals-config-timeouts
+  (confval (path "/clips-agent/llsf2013/release-distance") (type FLOAT) (value ?d))
+  =>
+  (bind ?*RELEASE-DISTANCE* ?d)
 )

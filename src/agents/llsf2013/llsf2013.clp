@@ -46,6 +46,7 @@
   )
   (load* (resolve-file llsf2013/game.clp))
   (load* (resolve-file llsf2013/general.clp))
+  (load* (resolve-file llsf2013/strategy.clp))
   (load* (resolve-file llsf2013/worldmodel.clp))
   (load* (resolve-file llsf2013/production.clp))
   (load* (resolve-file llsf2013/exploration.clp))

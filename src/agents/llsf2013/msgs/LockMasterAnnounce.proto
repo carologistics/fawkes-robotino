@@ -1,9 +1,9 @@
 
 /***************************************************************************
- *  PuckInfo.proto - LLSF Protocol - Puck information
+ *  LockMasterAnnounce.proto - Announces the Master of the Locking System
  *
- *  Created: Mon Feb 25 11:36:50 2013
- *  Copyright  2013  Tim Niemueller [www.niemueller.de]
+ *  Created: Mon May 27 02:43:11 2013
+ *  Copyright  2013  Frederik Zwilling
  ****************************************************************************/
 
 /*  Redistribution and use in source and binary forms, with or without
@@ -36,54 +36,10 @@
 
 package llsf_msgs;
 
-import "Pose2D.proto";
-
-option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "PuckInfoProtos";
-
-// Current state of a puck
-enum PuckState {
-  S0 = 0;
-  S1 = 1;
-  S2 = 2;
-  P1 = 4;
-  P2 = 5;
-  P3 = 6;
-  CONSUMED = 7;
-  FINISHED = 8;
-}
-
-message Puck {
+message LockMasterAnnounce {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 50;
+    MSG_TYPE = 1338;
   }
-
-  // Puck unique ID
-  required uint32    id = 1;
-  // Current state of the puck
-  required PuckState state = 2;
-
-  // Optional pose information
-  optional Pose2D    pose = 3;
-}
-
-message PuckInfo {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 51;
-  }
-
-  // List of all known pucks
-  repeated Puck pucks = 1;
-}
-
-message SetPucks {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 52;
-  }
-
-  // List of all known pucks
-  repeated uint32 ids = 1;
+  required string       agent = 1;
 }

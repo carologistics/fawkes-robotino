@@ -33,14 +33,16 @@ clips-agent:
     enable-sim: true
 
     # Possible roles for the agent:
-    # EXPLORATION_ONLY
-    # EXPLORATION_PRODUCTION
-    agent-role: EXPLORATION_PRODUCTION
+    # EXPLORATION_P1P2
+    # EXPLORATION_P3
+    agent-role: EXPLORATION_P1P2
 
-    start-machine-exploration-only: M2
-    start-machine-exploration-production: M8
-    exploration-only-work-finished-point: R2
-    waiting-for-production-point: Ins
+    start-machine-exploration-p1p2: M2
+    start-machine-exploration-p3: M8
+    waiting-for-p1p2-prouction-point: R2
+    waiting-for-p3-production-point: Ins
+    wait-for-ins-point: WAIT_FOR_INS
+    wait-for-deliver-point: WAIT_FOR_DELIVER
     
     play-exploration-without-refbox: false
     #uncomment following line ONLY if you are playing without refbox
@@ -60,3 +62,11 @@ clips-agent:
     robot-name: R-1
     robot-number: 1
 
+    #Timeouts used in the locking:
+    #Timeout a new started robot waits for a master before it gets the master itself
+    initial-master-timeout: 2.0
+    #If a robot has not been seen this time it is assumed that he is lost
+    robot-timeout: 6.0
+
+    #distance needed before a robot releases a lock
+    release-distance: 0.5
