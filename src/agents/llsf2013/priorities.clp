@@ -28,6 +28,10 @@
   ?*PRIORITY-T2*      =   10
   ?*PRIORITY-T1*      =    5
 
+  ; get s0 from insertion or recycling
+  ?*PRIORITY-GET-S0-INS*     =    0
+  ?*PRIORITY-GET-S0-RECYCLE* =  100
+
   ; locking priorities
   ?*PRIORITY-LOCK-SEND*    = -100 ;so they get only send if not used by the agent itself
 )

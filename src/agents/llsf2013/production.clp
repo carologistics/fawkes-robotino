@@ -71,6 +71,7 @@
 ; --- RULES - next machine/place to go to
 
 (defrule prod-get-s0
+  (declare (salience ?*PRIORITY-GET-S0-INS*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding NONE)
@@ -84,6 +85,7 @@
 )
 
 (defrule prod-recycle-to-get-s0
+  (declare (salience ?*PRIORITY-GET-S0-RECYCLE*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding NONE)
@@ -99,6 +101,7 @@
 )
 
 (defrule prod-recycle-to-get-s0-after-deliver
+  (declare (salience ?*PRIORITY-GET-S0-RECYCLE*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding NONE)
