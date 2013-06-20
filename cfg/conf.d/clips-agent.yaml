@@ -70,6 +70,6 @@ clips-agent:
     release-distance: 0.5
 
     #recycle pucks to get s0
-    #possible values: no,ifpossible
+    #possible values: no,ifpossible,afterdeliver
     recycle: ifpossible
     

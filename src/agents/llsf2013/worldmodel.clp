@@ -126,7 +126,9 @@
   ;?lf <- (lights $?)
   =>
   (retract ?hf ?tf)
-  (assert (holding NONE))
+  (assert (holding NONE)
+	  (delivered ?was-holding)
+  )
   (printout t "Delivered " ?was-holding crlf)
 )
 

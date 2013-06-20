@@ -82,12 +82,29 @@
 	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource INS))
   )
 )
+
 (defrule prod-recycle-to-get-s0
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding NONE)
   ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal))
   (confval (path "/clips-agent/llsf2013/recycle") (type STRING) (value "ifpossible"))
+  =>
+  (if (debug 3) then (printout t "Need to get S0, Recycle to get one" crlf))
+  (if (debug 3) then (printout t "Requirering Lock for " ?goal crlf))
+  (retract ?sf)
+  (assert (state PROD_LOCK_REQUIRED_RECYCLE ?name)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?goal))
+  )
+)
+
+(defrule prod-recycle-to-get-s0-after-deliver
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (holding NONE)
+  ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal))
+  (confval (path "/clips-agent/llsf2013/recycle") (type STRING) (value "afterdeliver"))
+  (delivered P1|P2)
   =>
   (if (debug 3) then (printout t "Need to get S0, Recycle to get one" crlf))
   (if (debug 3) then (printout t "Requirering Lock for " ?goal crlf))
