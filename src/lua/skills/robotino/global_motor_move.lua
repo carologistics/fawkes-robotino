@@ -71,7 +71,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "TURN", cond="vars.puck and vars.bl_target.x < -mm_tolerace.x"},
+   {"INIT", "TURN", cond="vars.puck and vars.bl_target.x < -mm_tolerance.x"},
    {"INIT", "DRIVE", cond=true},
    {"WAIT", "CHECK_POSE", timeout=1.5},
    {"CHECK_POSE", "TURN", cond="not pose_ok() and vars.tries < MAXTRIES"},
