@@ -98,25 +98,52 @@
   )
 )
 
-;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
-(defrule exp-recognized-machine-failed
+;Recognizing of lights failed => ty again with a slightly other position
+(defrule exp-recognized-machine-failed-once
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (signal (type waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
+  (not (second-recognize-try))
+  =>
+  (printout t "Reading light at " ?old " failed first time." crlf)
+  (printout t "Try again in from an other position." crlf)
+  (assert (second-recognize-try)
+  )
+  (modify ?ws (time ?now))
+  (skill-call motor_move x 0 y 0.05 vel_trans 0.1)
+)
+
+;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
+(defrule exp-recognized-machine-failed-twice
+  (phase EXPLORATION)
+  (time $?now)
+  ?ws <- (signal (type waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
+  ?s <- (state EXP_WAITING_AT_MACHINE)
+  ?g <- (goalmachine ?old)
+  (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
+  ?srt <- (second-recognize-try)
   =>
   (printout t "Reading light at " ?old " failed." crlf)
   (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE." crlf)
-  (retract ?s ?g ?ws)
+  (retract ?s ?g ?ws ?srt)
   (assert (state EXP_IDLE)
           (nextInCycle ?nextMachine)
 					(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
   )
 )
 
-;Find next machine in list
+;delete second-recognize-try fact
+(defrule
+  (state EXP_DRIVING_TO_MACHINE)
+  ?srt <- (second-recognize-try)
+  =>
+  (retract ?srt)
+)
+
+;Find next machine and assert drinve command in the first round
 (defrule exp-find-next-machine-first-round
   (phase EXPLORATION)
   (round FIRST)
