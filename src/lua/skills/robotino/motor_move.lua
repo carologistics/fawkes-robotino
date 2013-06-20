@@ -75,7 +75,7 @@ function set_speed(self)
    local a = { x=0, y=0, ori=0 }
 
    for k, _ in pairs(dist_target) do
-      if math.abs(dist_target[k]) > TOLERANCE[k] then
+      if math.abs(dist_target[k]) > self.fsm.vars.tolerance_arg[k] then
          if D_DECEL[k] > 0 then a[k] = V_MAX[k] / D_DECEL[k] end
 
          -- speed if we're accelerating.
@@ -160,6 +160,7 @@ function DRIVE:init()
    self.fsm.vars.vmax_arg = { x=vmax_arg, y=vmax_arg, ori=vmin_rot }
 
    self.fsm.vars.speed = { x=0, y=0, ori=0 }
+   self.fsm.vars.tolerance_arg = self.fsm.vars.tolerance or TOLERANCE
 
    set_speed(self)
 end
