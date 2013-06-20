@@ -21,6 +21,10 @@
 		(pb-field-value ?m "type") crlf)
       (modify ?machine (mtype (sym-cat (pb-field-value ?m "type")))
 	      (output (sym-cat (pb-field-value ?m "output"))))
+      (if (eq (sym-cat (pb-field-value ?m "type")) RECYCLE)
+        then
+	(modify ?machine (output S0))
+      )
     )
   )
 )
@@ -77,12 +81,12 @@
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
   ?lf <- (lights GREEN-ON)
-  ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output))
+  ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn))
   =>
   (retract ?tf ?hf ?lf)
   (assert (holding ?output))
   (printout t "Production completed at " ?name "|" ?mtype crlf) 
-  (modify ?mf (loaded-with))
+  (modify ?mf (loaded-with) (junk (+ ?jn (length$ ?lw))))
 )
 
 (defrule wm-proc-inprogress

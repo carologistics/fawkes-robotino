@@ -26,6 +26,7 @@
 
 (deffunction get-consumed (?goal)
   (skill-call get_consumed_product_from place ?goal)
+  (assert (get-consumed-target ?goal))
 )
 
 (defrule skill-done
