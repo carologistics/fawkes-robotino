@@ -61,7 +61,7 @@ local mm_tolerance = {
 }
 
 fsm:define_states{ export_to=_M,
-   closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, TOLERANCE=TOLERANCE},
+   closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, mm_tolerance=mm_tolerance},
    {"INIT", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
    {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="TURN_BACK", fail_to="FAILED"},
