@@ -346,7 +346,7 @@ connections:
   - [P33, M2W]
   - [M2W, P34]
   - [P33, P43]
-  - [P43, WAIT_FOR_DELIVER]
+  - [P34, WAIT_FOR_DELIVER]
   - [P43, M2O]
   - [M2O, P44]
   - [P34, P44]
