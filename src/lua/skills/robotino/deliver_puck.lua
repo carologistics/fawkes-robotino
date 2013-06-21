@@ -80,7 +80,7 @@ end
 
 fsm:define_states{ export_to=_M,
    closure = {have_puck=have_puck, ampel_green=ampel_green, MAX_TRIES=MAX_TRIES, pose_ok=pose_ok,
-      MOVES=MOVES},
+      MOVES=MOVES, orange_blinking=orange_blinking},
    {"INIT", JumpState}, -- initial state
    {"CHECK_POSE", JumpState},
    {"CORRECT_TURN", SkillJumpState, skills={{relgoto}}, final_to="TRY_GATE",
