@@ -330,7 +330,7 @@
 (defrule sim-create-pos-after-skill
   (skill (name ?name) (status ?status))
   =>
-  (do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
+  (delayed-do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
     (retract ?pos-inf)
   )
   (if (eq ?*SIM-POS-INDEX* 0)
@@ -347,7 +347,7 @@
 (defrule sim-create-pos-after-produce
   (holding ?)
   =>
-  (do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
+  (delayed-do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
     (retract ?pos-inf)
   )
   (if (eq ?*SIM-POS-INDEX* 0)

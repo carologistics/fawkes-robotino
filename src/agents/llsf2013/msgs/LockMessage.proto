@@ -48,6 +48,7 @@ message LockMessage {
     REFUSE = 2;
     ACCEPT = 3;
     RELEASE = 4;
+    RELEASE_RVCD = 5;
   }
 
   required Type         type = 1;
