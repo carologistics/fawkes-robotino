@@ -136,7 +136,7 @@
 )
 
 ;delete second-recognize-try fact
-(defrule
+(defrule exp-second-retry-fact-retract
   (state EXP_DRIVING_TO_MACHINE)
   ?srt <- (second-recognize-try)
   =>
