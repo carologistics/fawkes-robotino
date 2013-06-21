@@ -32,6 +32,7 @@
 ;;;;MASTER/SLAVE selection;;;;
 
 (defrule lock-master-announce
+  (declare (salience ?*PRIORITY-LOCK-SEND*))
   (lock-role MASTER)
   (time $?now)
   ?s <- (signal (type send-master-announce) (time $?t&:(timeout ?now ?t ?*MASTER-ANNOUNCE-PERIOD*)) (seq ?seq))
@@ -74,8 +75,8 @@
   (assert (lock-role MASTER))
 )
 
-(defrule lock-retract-get
-  (declare (salience ?*PRIORITY-HIGH*))
+(defrule lock-retract-accepted-get
+  (declare (salience ?*PRIORITY-CLEAN*))
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
   ?la <- (lock (type ACCEPT) (agent ?a) (resource ?r))
   =>
@@ -160,7 +161,8 @@
   (locked-resource (resource ?r) (agent ?a))
   =>
   (retract ?l)
-  (printout t "retracting already accepted locking GET" crlf)
+  (printout t "Accept already locked GET" crlf)
+  (assert (lock (type ACCEPT) (agent ?a) (resource ?r)))
 )
 
 (defrule lock-refuse-get
@@ -183,13 +185,15 @@
 )
 
 (defrule lock-retract-accept-after-release
-  (not (locked-resource (resource ?r) (agent ?a)))
+  (declare (salience ?*PRIORITY-LOCK-CLEAN*))
+  (lock (type RELEASE) (agent ?a) (resource ?r))
   ?l <- (lock (type ACCEPT) (agent ?a) (resource ?r))
   =>
   (retract ?l)
 )
 
 (defrule lock-retract-refuse-after-accept
+  (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   (lock (type ACCEPT) (agent ?a) (resource ?r))
   ?lr <- (lock (type REFUSE) (agent ?a) (resource ?r))
   =>

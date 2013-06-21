@@ -84,9 +84,10 @@
 (defrule prod-wait-for-gets0-at-insert-area
   (phase PRODUCTION)
   ?sf <- (state PROD_LOCK_REQUIRED_GET-S0)
-  ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
   (ins-wait-point ?ins-wait-point)
   =>
+  (retract ?l)
   (printout t "Waiting for lock of INS at " ?ins-wait-point crlf)
   (skill-call ppgoto place (str-cat ?ins-wait-point))
 )
