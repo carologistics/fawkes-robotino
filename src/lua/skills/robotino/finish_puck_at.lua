@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
-depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
+depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck","global_motor_move" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
    { v="light", type="RobotinoLightInterface", id="Light determined" },
    { v="laser_cluster", type="LaserClusterInterface", id="laser-cluster" }
@@ -70,6 +70,7 @@ fsm:define_states{ export_to=_M,
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
+   {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
       fail_to="SKILL_TAKE_PUCK"},
@@ -84,7 +85,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "TIMEOUT", "FAILED", cond="vars.tries > 3" },
-   { "TIMEOUT", "DECIDE_ENDSKILL", timeout=1, desc="test purpose" },
+   { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE", timeout=1, desc="test purpose" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", timeout=1, cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
@@ -94,15 +95,16 @@ fsm:add_transitions{
 
 function SKILL_TAKE_PUCK:init()
    self.fsm.vars.goto_name = self.fsm.vars.place or self.fsm.vars.goto_name
-   self.skills[1].place = self.fsm.vars.place
+   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, ""):name()
    if not self.fsm.vars.tries then
       self.fsm.vars.tries = 0
    end
    self.fsm.vars.tries = self.fsm.vars.tries + 1
 end
 
-function SKILL_WAIT_PRODUCE:init()
-   self.skills[1].mtype = self.fsm.vars.mtype
+function SKILL_GLOBAL_MOTOR_MOVE:init()
+   self.skills[1].place = self.fsm.vars.place
+   self.skills[1].puck = true
 end
 
 function SKILL_DRIVE_LEFT:init()
@@ -117,14 +119,15 @@ function SKILL_RFID:init()
    self.skills[1].place = self.fsm.vars.place
 end
 function SKILL_WAIT_PRODUCE:init()
-  laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.15))
+   self.skills[1].mtype = self.fsm.vars.mtype
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.15))
 end
 
 function FINAL:init()
-  laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
 end
 
 function FAILED:init()
-  laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
 end
   
