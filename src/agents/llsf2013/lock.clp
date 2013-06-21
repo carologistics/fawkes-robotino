@@ -1,5 +1,5 @@
 (deftemplate lock
-  (slot type (type SYMBOL) (allowed-values GET REFUSE ACCEPT RELEASE))
+  (slot type (type SYMBOL) (allowed-values GET REFUSE ACCEPT RELEASE RELEASE_RVCD))
   (slot agent (type SYMBOL))
   (slot resource (type SYMBOL))
 )
@@ -75,24 +75,6 @@
   (assert (lock-role MASTER))
 )
 
-(defrule lock-retract-accepted-get
-  (declare (salience ?*PRIORITY-CLEAN*))
-  ?l <- (lock (type GET) (agent ?a) (resource ?r))
-  ?la <- (lock (type ACCEPT) (agent ?a) (resource ?r))
-  =>
-  (retract ?l)
-  ;(printout t "----- Get retracted: " ?r crlf)
-)
-
-(defrule lock-retract-release
-  (declare (salience ?*PRIORITY-HIGH*))
-  ?l <- (lock (type GET) (agent ?a) (resource ?r))
-  ?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
-  =>
-  (retract ?lr)
-  ;(printout t "----- Release retracted: " ?r crlf)
-)
-
 ;;;;SENDING and RECEIVING;;;;
 
 (defrule lock-send-message
@@ -104,7 +86,7 @@
   ;(printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
   (do-for-all-facts ((?lock lock)) TRUE
-    (if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE)))
+    (if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE) (eq ?lock:type RELEASE_RVCD)))
 	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) 
       then
       ;(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
@@ -114,6 +96,12 @@
       (pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
       (pb-broadcast ?lock-msg)
       (pb-destroy ?lock-msg)
+
+      ;send RELEASE_RCVD only once
+      (if (eq ?lock:type RELEASE_RVCD)
+        then
+	(retract ?lock)
+      )
     )
   )
 )
@@ -133,7 +121,7 @@
       (assert (lock (type ?type) (agent ?a) (resource ?r)))
     )
     else
-    (if (or (eq ?type ACCEPT) (eq ?type REFUSE))
+    (if (or (eq ?type ACCEPT) (eq ?type REFUSE) (eq ?type RELEASE_RVCD))
       then
       (if (eq ?a ?*ROBOT-NAME*)
         then
@@ -144,6 +132,7 @@
 )
 
 (defrule lock-accept-get
+  (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
   (not (locked-resource (resource ?r) (agent ?)))
@@ -156,6 +145,7 @@
 )
 
 (defrule lock-retract-already-accepted-get
+  (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
   (locked-resource (resource ?r) (agent ?a))
@@ -166,6 +156,7 @@
 )
 
 (defrule lock-refuse-get
+  (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
   ?lm <- (locked-resource (resource ?r) (agent ~?a))	
@@ -177,11 +168,28 @@
 )
 
 (defrule lock-release
+  (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
   ?lm <- (locked-resource (resource ?r) (agent ?a))
   =>
   (retract ?l ?lm)
+  (if (neq ?a ?*ROBOT-NAME*)
+    then
+    (assert (lock (type RELEASE_RVCD) (agent ?a) (resource ?r)))
+  )
+)
+
+(defrule lock-received-old-release
+  (declare (salience ?*PRIORITY-LOCK-CLEAN*))
+  (lock-role MASTER)
+  ?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
+  =>
+  (retract ?l)
+  (if (neq ?a ?*ROBOT-NAME*)
+    then
+    (assert (lock (type RELEASE_RVCD) (agent ?a) (resource ?r)))
+  )
 )
 
 (defrule lock-retract-accept-after-release
@@ -198,6 +206,32 @@
   ?lr <- (lock (type REFUSE) (agent ?a) (resource ?r))
   =>
   (retract ?lr)
+)
+
+(defrule lock-retract-accepted-get
+  (declare (salience ?*PRIORITY-LOCK-CLEAN*))
+  ?l <- (lock (type GET) (agent ?a) (resource ?r))
+  ?la <- (lock (type ACCEPT) (agent ?a) (resource ?r))
+  =>
+  (retract ?l)
+  ;(printout t "----- Get retracted: " ?r crlf)
+)
+
+(defrule lock-retract-release
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?lrcvd <- (lock (type RELEASE_RVCD) (agent ?a) (resource ?r))
+  ?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
+  =>
+  (retract ?lrcvd ?lr)
+  ;(printout t "----- Release retracted: " ?r crlf)
+)
+
+(defrule lock-retract-old-release-received
+  (declare (salience ?*PRIORITY-LOCK-CLEAN*))
+  ?l <- (lock (type RELEASE_RVCD) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?r))
+  (not (lock (type RELEASE) (agent ?a) (resource ?r)))
+  =>
+  (retract ?l)
 )
 
 (defrule lock-delete-all-locks-when-changing-the-phase

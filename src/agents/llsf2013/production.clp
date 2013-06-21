@@ -84,7 +84,7 @@
 (defrule prod-wait-for-gets0-at-insert-area
   (phase PRODUCTION)
   ?sf <- (state PROD_LOCK_REQUIRED_GET-S0)
-  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
+  ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
   (ins-wait-point ?ins-wait-point)
   =>
   (retract ?l)
