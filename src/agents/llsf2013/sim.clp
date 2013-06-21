@@ -91,7 +91,7 @@
   (if (any-factp ((?pt sim-puck)) TRUE)
   then
     (foreach ?pp (pb-field-list ?p "pucks")
-      (delayed-do-for-fact ((?puck sim-puck)) (eq ?puck:id (pb-field-value ?pp "id"))
+      (do-for-fact ((?puck sim-puck)) (eq ?puck:id (pb-field-value ?pp "id"))
         (bind ?new-state (pb-field-value ?pp "state"))
         (if (neq ?puck:state ?new-state) then (modify ?puck (state ?new-state)))
       )
@@ -109,7 +109,7 @@
   (retract ?pf)
   (foreach ?m (pb-field-list ?p "machines")
     ;(printout t "Processing machine " (pb-field-value ?m "name") crlf)
-    (delayed-do-for-fact ((?machine sim-machine))
+    (do-for-fact ((?machine sim-machine))
 		 (eq ?machine:name (sym-cat (pb-field-value ?m "name")))
 
       (bind ?new-puck ?machine:puck-id)
