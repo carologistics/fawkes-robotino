@@ -57,9 +57,7 @@ class PuckVisionThread
 {
 
 private:
-
 	std::string cfg_prefix;
-
 	std::string cfg_camera;
 	float cfg_cameraFactorHorizontal;
 	float cfg_cameraFactorVertical;
@@ -69,6 +67,12 @@ private:
 	int cfg_cameraOffsetVertical;
 	float cfg_cameraOffsetHorizontalRad;
 
+	float cfg_width_top_in_m;
+	float cfg_width_bottem_in_m;
+
+	float m_per_pixel_height;
+
+
 	unsigned int cfg_color_y_min;
 	unsigned int cfg_color_y_max;
 	unsigned int cfg_color_u_min;
@@ -76,12 +80,9 @@ private:
 	unsigned int cfg_color_v_min;
 	unsigned int cfg_color_v_max;
 
-	double cfg_p1_distance;
-	double cfg_p1_width;
-	double cfg_p2_distance;
-	double cfg_p2_width;
 	float cfg_puck_radius;
-	double m;
+	float cfg_distance_function_a;
+	float cfg_distance_function_b;
 
 	bool cfg_debugMessagesActivated;
 	bool cfg_paintROIsActivated;
@@ -99,10 +100,7 @@ private:
 	firevision::colorspace_t cspaceTo;
 
 	fawkes::Position3DInterface *nearestPuck;
-
-
 	firevision::FilterROIDraw *drawer;
-
 
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 	fawkes::polar_coord_2d_t transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
@@ -111,7 +109,8 @@ private:
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
 
-	double distanceCorrection(double x_in);
+	double distanceCorrection(unsigned int x_in);
+	double positionCorrectionY(firevision::ROI* roi);
 
 	firevision::ROI* getBiggestRoi(std::list<firevision::ROI>* roiList);
 	std::list<firevision::ROI>*	classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);

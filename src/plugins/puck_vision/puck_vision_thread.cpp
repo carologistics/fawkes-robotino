@@ -21,12 +21,6 @@ PuckVisionThread::PuckVisionThread()
 	this->cfg_camera = "";
 	this->cfg_frame = "";
 
-	this->cfg_cameraFactorHorizontal = 0;
-	this->cfg_cameraFactorVertical = 0;
-
-	this->cfg_cameraOffsetHorizontalRad = 0;
-	this->cfg_cameraOffsetVertical = 0;
-
 	this->img_width = 0;
 	this->img_height = 0;
 
@@ -36,6 +30,8 @@ PuckVisionThread::PuckVisionThread()
 	this->cfg_color_u_max = 0;
 	this->cfg_color_v_min = 0;
 	this->cfg_color_v_max = 0;
+	this->cfg_distance_function_a = 0;
+	this->cfg_distance_function_b = 0;
 
 	this->bufferYCbCr = NULL;
 
@@ -49,6 +45,9 @@ PuckVisionThread::PuckVisionThread()
 	this->shmBufferYCbCr = NULL;
 
 	this->nearestPuck = NULL;
+
+	this->cfg_width_bottem_in_m = 0;
+	this->cfg_width_top_in_m = 0;
 
 	this->drawer = NULL;
 
@@ -65,26 +64,11 @@ PuckVisionThread::init()
 	this->cfg_frame  = this->config->get_string((this->cfg_prefix + "frame").c_str());
 
 	this->cfg_camera = this->config->get_string((this->cfg_prefix + "camera").c_str());
-	this->cfg_cameraFactorHorizontal = this->config->get_float((this->cfg_prefix + "camera_factor_horizontal").c_str());
-	this->cfg_cameraFactorVertical = this->config->get_float((this->cfg_prefix + "camera_factor_vertical").c_str());
-
-	this->cfg_cameraOffsetHorizontalRad = this->config->get_float((this->cfg_prefix + "camera_offset_horizontal_rad").c_str());
-	this->cfg_cameraOffsetVertical = this->config->get_int((this->cfg_prefix + "camera_offset_vertical").c_str());
 
 	this->cfg_debugMessagesActivated = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
 	this->cfg_paintROIsActivated = this->config->get_bool((this->cfg_prefix + "draw_rois").c_str());
 
 	this->cfg_puck_radius = this->config->get_float((this->cfg_prefix + "puck_radius").c_str());
-
-	this->cfg_p1_distance =(double) this->config->get_float((this->cfg_prefix + "p1_distance").c_str());
-	this->cfg_p1_width = (double)this->config->get_float((this->cfg_prefix + "p1_width").c_str());
-	this->cfg_p2_distance = (double)this->config->get_float((this->cfg_prefix + "p2_distance").c_str());
-	this->cfg_p2_width =(double) this->config->get_float((this->cfg_prefix + "p2_width").c_str());
-	this->m = double( cfg_p2_distance - cfg_p1_distance )/double( cfg_p2_width - cfg_p1_width) ;
-	logger->log_info(name(),"Points P1(%f,%f) P2(%f,%f)  =>  m = %f",cfg_p1_width, cfg_p1_distance, cfg_p2_width, cfg_p2_distance,m);
-
-
-
 
 	this->cfg_color_y_min = this->config->get_uint((this->cfg_prefix + "color_y_min").c_str());
 	this->cfg_color_y_max = this->config->get_uint((this->cfg_prefix + "color_y_max").c_str());
@@ -93,12 +77,20 @@ PuckVisionThread::init()
 	this->cfg_color_v_min = this->config->get_uint((this->cfg_prefix + "color_v_min").c_str());
 	this->cfg_color_v_max = this->config->get_uint((this->cfg_prefix + "color_v_max").c_str());
 
+	this->cfg_distance_function_a = this->config->get_float((this->cfg_prefix + "distance_function_a").c_str());
+	this->cfg_distance_function_b = this->config->get_float((this->cfg_prefix + "distance_function_b").c_str());
+
+	this->cfg_width_top_in_m = this->config->get_float((this->cfg_prefix + "visible_width_max_distance").c_str());
+	this->cfg_width_bottem_in_m = this->config->get_float((this->cfg_prefix + "visible_width_min_distance").c_str());
+
 	std::string shmID = this->config->get_string((this->cfg_prefix + "shm_image_id").c_str());
 
 	this->camera = vision_master->register_for_camera(this->cfg_camera.c_str(), this);
 
 	this->img_width = this->camera->pixel_width();
 	this->img_height = this->camera->pixel_height();
+
+	this->m_per_pixel_height = (cfg_width_top_in_m - cfg_width_bottem_in_m)/img_height;
 
 	this->cspaceFrom = this->camera->colorspace();
 
@@ -315,7 +307,7 @@ PuckVisionThread::positionFromRoi(firevision::ROI* roi){
 
 	// x = width, y = distance
 	fawkes::polar_coord_2d_t puck_position;
-	puck_position.r = distanceCorrection(roi->width) + cfg_puck_radius;
+	puck_position.r = distanceCorrection(roi->start.y + (roi->height/2)) + cfg_puck_radius;
 	//puck_position.r = m * (roi->width - cfg_p1_width) +  cfg_p1_distance + cfg_puck_radius;
 	logger->log_info(name(),"Distance = %f, rois: center (%u, %u) width,height (%u, %u)",puck_position.r , roi->start.x + (roi->width/2),roi->start.y + (roi->height/2), roi->width, roi->height);
 
@@ -328,24 +320,25 @@ PuckVisionThread::positionFromRoi(firevision::ROI* roi){
 }
 
 double
-PuckVisionThread::distanceCorrection(double x_in)
+PuckVisionThread::distanceCorrection(unsigned int x_in)
 {
-	//front
-//	double temp;
-//	temp = 0.0;
-//	// coefficients
-//	double a = 8.4095039634708191E-01;
-//	double b = -7.9038576694095385E-03;
-//	temp = a * exp(b*x_in);
-//	return temp;
-//	//top
-	 double temp;
+	double temp;
 	temp = 0.0;
-	// coefficients
-	double a = 1.6793033074297550E+00;
-	double b = -1.6433635226927507E-02;
-	temp = a * exp(b*x_in);
+	temp = cfg_distance_function_a * exp(cfg_distance_function_b*x_in);
 	return temp;
+}
+
+double
+PuckVisionThread::positionCorrectionY(firevision::ROI* roi)
+{
+	double width_at_height = m_per_pixel_height * (img_height - (roi->start.y + roi->height/2)) + cfg_width_bottem_in_m;
+
+	int roi_center_x = (roi->start.x + (roi->width/2));
+	int position_in_picuture = roi_center_x - (img_width/2);
+	double y_position = - position_in_picuture * (width_at_height/img_width);
+	//double
+	//logger->log_info(name(),"center: %i width_at_height: %f position_in_picture_x: %i y: %f",roi_center_x,  width_at_height, position_in_picuture,y_position);
+	return y_position;
 }
 
 void
@@ -355,11 +348,14 @@ PuckVisionThread::updateInterface(firevision::ROI* puck){
 		nearestPuck->set_visibility_history(-1);
 	}
 	else{
-		fawkes::polar_coord_2d_t polar = positionFromRoi(puck);
+		fawkes::polar_coord_2d_t polar;
 
 		float x,y;
+		x = distanceCorrection(puck->start.y + (puck->height/2)) + cfg_puck_radius;
+		y = positionCorrectionY(puck);
+		cartToPol(polar,x,y);
 
-		polToCart(x,y,polar);
+		logger->log_info(name(),"x: %f y: %f r: %f phi: %f",x,  y, polar.r, polar.phi);
 
 		nearestPuck->set_visibility_history(nearestPuck->visibility_history()+1);
 		nearestPuck->set_translation(0,x);
