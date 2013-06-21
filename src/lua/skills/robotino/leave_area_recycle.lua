@@ -43,20 +43,20 @@ fsm:define_states{ export_to=_M,
 function ROTATE_FIRST:init()
    self.skills[1].x=0 
    self.skills[1].y=0 
-   self.skills[1].ori=math.pi
+   self.skills[1].ori=math.pi/4
 end
 function DRIVE_LEFT:init()
    self.skills[1].x=0 
    self.skills[1].y=0.2 
    self.skills[1].ori=0
 end
-function ROTATE:init()
+function U_TURN:init()
    self.skills[1].x=0 
    self.skills[1].y=0 
    self.skills[1].ori=math.pi
 end
-function DRIVE_LEFT:init()
-   self.skills[1].x=0 
-   self.skills[1].y=0.2 
+function DRIVE_FORWARD:init()
+   self.skills[1].x=0.1 
+   self.skills[1].y=0 
    self.skills[1].ori=0
 end
