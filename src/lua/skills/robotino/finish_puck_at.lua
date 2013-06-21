@@ -95,7 +95,7 @@ fsm:add_transitions{
 
 function SKILL_TAKE_PUCK:init()
    self.fsm.vars.goto_name = self.fsm.vars.place or self.fsm.vars.goto_name
-   self.skills[1].place = self.fsm.vars.place
+   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, ""):name()
    if not self.fsm.vars.tries then
       self.fsm.vars.tries = 0
    end
