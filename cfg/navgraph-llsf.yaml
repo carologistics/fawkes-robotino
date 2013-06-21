@@ -137,7 +137,7 @@ nodes:
 #      - orientation_tolerance: 0.1
 
   - name: ExpM8
-    pos: [1.4, 1.2]
+    pos: [1.45, 1.2]
     properties:
       - orientation: 0.97
 
