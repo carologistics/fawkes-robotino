@@ -37,7 +37,13 @@ documentation      = [==[
 writes ampel data into the light interface 
 ]==]
 -- Constants
-
+local TIMEOUTS = {
+   T1 = 12,
+   T2 = 30,
+   T3 = 70,
+   T4 = 70,
+   T5 = 50
+}
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -67,9 +73,18 @@ function done()
    return false
 end
 
+function out_of_order()
+   return plugin:is_ready()
+      and plugin:green()  == plugin.OFF
+      and plugin:yellow() == plugin.OFF
+      and plugin:red()    == plugin.ON
+end
+
 fsm:add_transitions{
    {"INIT", "FAILED", cond=plugin_missing, precond=true},
    {"INIT", "WAIT", timeout=1}, -- let vision settle
+   {"WAIT", "WAIT", cond=out_of_order},
+   {"WAIT", "FAILED", timeout=fsm.vars.mtype and TIMEOUTS[fsm.vars.mtype] or 70},
    {"WAIT", "FINAL", cond=done},
 }
 
