@@ -66,16 +66,16 @@ end
 
 function set_speed(self)
    dist_target = tfm.transform(
-      { x   = self.fsm.vars.odo_target.x,
-        y   = self.fsm.vars.odo_target.y,
-        ori = self.fsm.vars.odo_target.ori },
+      { x   = self.fsm.vars.target.x,
+        y   = self.fsm.vars.target.y,
+        ori = self.fsm.vars.target.ori },
       self.fsm.vars.frame, "/base_link")
 
    local v = { x=1, y=1, ori=1 }
    local a = { x=0, y=0, ori=0 }
 
    for k, _ in pairs(dist_target) do
-      if math.abs(dist_target[k]) > TOLERANCE[k] then
+      if math.abs(dist_target[k]) > self.fsm.vars.tolerance_arg[k] then
          if D_DECEL[k] > 0 then a[k] = V_MAX[k] / D_DECEL[k] end
 
          -- speed if we're accelerating.
@@ -98,12 +98,14 @@ function set_speed(self)
          -- slowed us down a bit before doing this ;-)
          if dist_target[k] < 0 then v[k] = v[k] * -1 end
 
-      --   printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
-      --      k, dist_target[k], v_acc, v_dec, v[k])
+         -- printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
+         --  k, dist_target[k], v_acc, v_dec, v[k])
       else
          v[k] = 0
       end
    end
+
+   if self.fsm.vars.puck and v.x < 0 then v.x = 0 end
    
    self.fsm.vars.cycle = self.fsm.vars.cycle + 1
 
@@ -141,18 +143,24 @@ function DRIVE:init()
 
    self.fsm.vars.cycle = 0
    
-   self.fsm.vars.bl_target = { x=x, y=y, ori=ori }
-   self.fsm.vars.odo_target = tfm.transform(
+   self.fsm.vars.target = tfm.transform(
       { x=x, y=y, ori=ori },
       "/base_link",
       self.fsm.vars.frame
    )
+   if self.fsm.vars.global then
+      -- Overwrite tf'd coords with values from arguments
+      if self.fsm.vars.x then self.fsm.vars.target.x = self.fsm.vars.x end
+      if self.fsm.vars.y then self.fsm.vars.target.y = self.fsm.vars.y end
+      if self.fsm.vars.ori then self.fsm.vars.target.ori = self.fsm.vars.ori end
+   end
   
    local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
    local vmin_rot = self.fsm.vars.vel_rot or V_MAX.ori
    self.fsm.vars.vmax_arg = { x=vmax_arg, y=vmax_arg, ori=vmin_rot }
 
    self.fsm.vars.speed = { x=0, y=0, ori=0 }
+   self.fsm.vars.tolerance_arg = self.fsm.vars.tolerance or TOLERANCE
 
    set_speed(self)
 end
