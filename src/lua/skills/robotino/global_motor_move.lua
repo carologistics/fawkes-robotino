@@ -70,6 +70,7 @@ end
 fsm:define_states{ export_to=_M,
    closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, mm_tolerance=mm_tolerance},
    {"INIT", JumpState},
+   {"STARTPOSE", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
    {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="TURN_BACK", fail_to="FAILED"},
    {"TURN_BACK", SkillJumpState, skills={{motor_move}}, final_to="WAIT", fail_to="FAILED"},
@@ -78,12 +79,13 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "TURN", cond="vars.puck and vars.bl_target.x < -mm_tolerance.x"},
-   {"INIT", "DRIVE", cond=trans_error},
-   {"INIT", "TURN_BACK", cond="math.abs(vars.bl_target.ori) > mm_tolerance.ori"},
-   {"INIT", "FINAL", cond=true},
+   {"INIT", "STARTPOSE", cond=true},
+   {"STARTPOSE", "TURN", cond="vars.puck and vars.bl_target.x < -mm_tolerance.x"},
+   {"STARTPOSE", "DRIVE", cond=trans_error},
+   {"STARTPOSE", "TURN_BACK", cond="math.abs(vars.bl_target.ori) > mm_tolerance.ori"},
+   {"STARTPOSE", "FINAL", cond=true},
    {"WAIT", "CHECK_POSE", timeout=1.5},
-   {"CHECK_POSE", "INIT", cond="not pose_ok() and vars.tries < MAXTRIES"},
+   {"CHECK_POSE", "STARTPOSE", cond="not pose_ok() and vars.tries < MAXTRIES"},
    {"CHECK_POSE", "FINAL", cond=pose_ok},
    {"CHECK_POSE", "FAILED", cond="vars.tries >= MAXTRIES"}
 }
@@ -105,7 +107,13 @@ function INIT:init()
       end
    end
    self.fsm.vars.target = { x=x, y=y, ori=ori }
-   self.fsm.vars.bl_target = tfm.transform({x=x, y=y, ori=ori}, "/map", "/base_link")
+end
+
+function STARTPOSE:init()
+   self.fsm.vars.bl_target = tfm.transform({
+      x=self.fsm.vars.target.x,
+      y=self.fsm.vars.target.y,
+      ori=self.fsm.vars.target.ori}, "/map", "/base_link")
    printf("%f, %f, %f", self.fsm.vars.bl_target.x, self.fsm.vars.bl_target.y, self.fsm.vars.bl_target.ori)
 end
 
