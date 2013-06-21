@@ -85,7 +85,7 @@
   =>
   ;(printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
-  (do-for-all-facts ((?lock lock)) TRUE
+  (delayed-do-for-all-facts ((?lock lock)) TRUE
     (if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE) (eq ?lock:type RELEASE_RVCD)))
 	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) 
       then
@@ -178,7 +178,7 @@
     then
     (assert (lock (type RELEASE_RVCD) (agent ?a) (resource ?r)))
   )
-  (do-for-all-facts ((?accept lock)) (and (eq lock:type ACCEPT) (eq lock:agent ?a) (eq lock:resource ?r))
+  (delayed-do-for-all-facts ((?accept lock)) (and (eq ?accept:type ACCEPT) (eq ?accept:agent ?a) (eq ?accept:resource ?r))
     (retract ?accept)
   )
 )
@@ -241,10 +241,10 @@
   (declare (salience ?*PRIORITY-HIGH*))
   (change-phase ?new-phase) 
   =>
-  (do-for-all-facts ((?lock lock)) TRUE
+  (delayed-do-for-all-facts ((?lock lock)) TRUE
     (retract ?lock)
   )
-  (do-for-all-facts ((?lock locked-resource)) TRUE
+  (delayed-do-for-all-facts ((?lock locked-resource)) TRUE
     (retract ?lock)
   ) 
 )
@@ -254,10 +254,10 @@
   ?ar <- (active-robot (name ?name) (last-seen $?last-seen&:(timeout ?now ?last-seen ?*ROBOT-TIMEOUT*)))
   =>
   (printout warn "Lost connection to " ?name " Deliting all of its locks!" crlf)
-  (do-for-all-facts ((?lock lock)) (eq ?lock:agent ?name)
+  (delayed-do-for-all-facts ((?lock lock)) (eq ?lock:agent ?name)
     (retract ?lock)
   )
-  (do-for-all-facts ((?resource locked-resource)) (eq ?resource:agent ?name)
+  (delayed-do-for-all-facts ((?resource locked-resource)) (eq ?resource:agent ?name)
     (retract ?resource)
   )
   (retract ?ar)

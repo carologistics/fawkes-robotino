@@ -44,18 +44,18 @@
 )
 
 (deffunction strat-allow-all (?type)
-  (do-for-all-facts ((?machine machine)) (eq ?machine:mtype ?type)
+  (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:mtype ?type)
     (modify ?machine (allowed TRUE))
   )
   (if (eq ?type T3)
     then
-    (do-for-all-facts ((?machine machine)) (eq ?machine:mtype T4)
+    (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:mtype T4)
       (modify ?machine (allowed TRUE))
     )
     else
     (if (eq ?type T4)
       then
-      (do-for-all-facts ((?machine machine)) (eq ?machine:mtype T3)
+      (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:mtype T3)
         (modify ?machine (allowed TRUE))
       )
     )

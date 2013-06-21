@@ -91,7 +91,7 @@
   (if (any-factp ((?pt sim-puck)) TRUE)
   then
     (foreach ?pp (pb-field-list ?p "pucks")
-      (do-for-fact ((?puck sim-puck)) (eq ?puck:id (pb-field-value ?pp "id"))
+      (delayed-do-for-fact ((?puck sim-puck)) (eq ?puck:id (pb-field-value ?pp "id"))
         (bind ?new-state (pb-field-value ?pp "state"))
         (if (neq ?puck:state ?new-state) then (modify ?puck (state ?new-state)))
       )
@@ -109,7 +109,7 @@
   (retract ?pf)
   (foreach ?m (pb-field-list ?p "machines")
     ;(printout t "Processing machine " (pb-field-value ?m "name") crlf)
-    (do-for-fact ((?machine sim-machine))
+    (delayed-do-for-fact ((?machine sim-machine))
 		 (eq ?machine:name (sym-cat (pb-field-value ?m "name")))
 
       (bind ?new-puck ?machine:puck-id)
@@ -330,7 +330,7 @@
 (defrule sim-create-pos-after-skill
   (skill (name ?name) (status ?status))
   =>
-  (do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
+  (delayed-do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
     (retract ?pos-inf)
   )
   (if (eq ?*SIM-POS-INDEX* 0)
@@ -347,7 +347,7 @@
 (defrule sim-create-pos-after-produce
   (holding ?)
   =>
-  (do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
+  (delayed-do-for-all-facts ((?pos-inf Position3DInterface)) TRUE
     (retract ?pos-inf)
   )
   (if (eq ?*SIM-POS-INDEX* 0)
