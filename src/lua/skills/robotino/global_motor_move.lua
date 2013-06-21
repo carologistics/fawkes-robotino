@@ -32,7 +32,7 @@ documentation      = [==[
 ]==]
 
 -- Tunables
-TOLERANCE = { x=0.05, y=0.03, ori=0.02 }
+TOLERANCE = { x=0.08, y=0.04, ori=0.02 }
 MAXTRIES = 3
 
 -- Initialize as skill module
