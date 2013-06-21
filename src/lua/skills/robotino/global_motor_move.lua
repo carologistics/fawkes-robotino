@@ -51,9 +51,9 @@ end
 function pose_ok()
    local dist = tfm.transform(fsm.vars.target, "/map", "/base_link")
    printf("dist: %f, %f, %f", dist.x, dist.y, dist.ori)
-   return (not fsm.vars.x or math.abs(dist.x) <= TOLERANCE.x)
-      and (not fsm.vars.y or math.abs(dist.y) <= TOLERANCE.y)
-      and (not fsm.vars.ori or math.abs(dist.ori) <= TOLERANCE.ori)
+   return math.abs(dist.x) <= TOLERANCE.x
+      and math.abs(dist.y) <= TOLERANCE.y
+      and math.abs(dist.ori) <= TOLERANCE.ori
 end
 
 local mm_tolerance = {
