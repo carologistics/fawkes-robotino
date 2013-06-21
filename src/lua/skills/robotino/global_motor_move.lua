@@ -32,7 +32,7 @@ documentation      = [==[
 ]==]
 
 -- Tunables
-TOLERANCE = { x=0.04, y=0.03, ori=0.02 }
+TOLERANCE = { x=0.05, y=0.03, ori=0.02 }
 MAXTRIES = 3
 
 -- Initialize as skill module
@@ -51,9 +51,9 @@ end
 function pose_ok()
    local dist = tfm.transform(fsm.vars.target, "/map", "/base_link")
    printf("dist: %f, %f, %f", dist.x, dist.y, dist.ori)
-   return math.abs(dist.x) <= TOLERANCE.x
-      and math.abs(dist.y) <= TOLERANCE.y
-      and math.abs(dist.ori) <= TOLERANCE.ori
+   return (not fsm.vars.x or math.abs(dist.x) <= TOLERANCE.x)
+      and (not fsm.vars.y or math.abs(dist.y) <= TOLERANCE.y)
+      and (not fsm.vars.ori or math.abs(dist.ori) <= TOLERANCE.ori)
 end
 
 local mm_tolerance = {
@@ -80,9 +80,9 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "STARTPOSE", cond=true},
-   {"STARTPOSE", "TURN", cond="vars.puck and vars.bl_target.x < -mm_tolerance.x"},
+   {"STARTPOSE", "TURN", cond="vars.puck and vars.bl_target.x < -TOLERANCE.x"},
    {"STARTPOSE", "DRIVE", cond=trans_error},
-   {"STARTPOSE", "TURN_BACK", cond="math.abs(vars.bl_target.ori) > mm_tolerance.ori"},
+   {"STARTPOSE", "TURN_BACK", cond="math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
    {"STARTPOSE", "FINAL", cond=true},
    {"WAIT", "CHECK_POSE", timeout=1.5},
    {"CHECK_POSE", "STARTPOSE", cond="not pose_ok() and vars.tries < MAXTRIES"},
