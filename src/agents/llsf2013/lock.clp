@@ -178,6 +178,9 @@
     then
     (assert (lock (type RELEASE_RVCD) (agent ?a) (resource ?r)))
   )
+  (do-for-all-facts ((?accept lock)) (and (eq lock:type ACCEPT) (eq lock:agent ?a) (eq lock:resource ?r))
+    (retract ?accept)
+  )
 )
 
 (defrule lock-received-old-release
