@@ -225,3 +225,10 @@
   )
   (retract ?ar)
 )
+
+(defrule debug-check-inconsistency
+  (lock (type REFUSE) (agent ?a) (resource ?res))
+  (lock (type ACCEPT) (agent ?a) (resource ?res))
+  =>
+  (printout warn "Found inconsistency in locks (accept + refuse)!!!!!!!" crlf)
+)
