@@ -41,6 +41,7 @@ local move_right_count = 0
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
+   closure = {move_right_count=move_right_count, MOVE_RIGHT_MAX_MOVEMENTS=MOVE_RIGHT_MAX_MOVEMENTS}
    {"GOTO_IS", SkillJumpState, skills={{ppgoto}}, final_to="SKILL_FETCH_PUCK", fail_to="FAILED"},
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="SKILL_LEAVE_AREA",
       fail_to="CHECK_RETRY"},
