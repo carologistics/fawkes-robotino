@@ -197,7 +197,7 @@ nodes:
 #    properties:
 #      - orientation: 2.36
   - name: Ins
-    pos: [0.85, 2.8]
+    pos: [0.85, 2.4]
     properties:
       - orientation: 3.14
 
