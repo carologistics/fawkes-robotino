@@ -34,8 +34,8 @@ depends_interfaces = {
 documentation      = [==[test der bisherigen skills später eigener skill mit puck_aufname_location und puck_abgabe_location]==]
 --constants
 local start = "Ins"
-local MOVE_RIGHT_DISTANCE = 0.5
-local MOVE_RIGHT_MAX_MOVEMENTS = 1
+local MOVE_RIGHT_DISTANCE = -0.5
+local MOVE_RIGHT_MAX_MOVEMENTS = 2
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
