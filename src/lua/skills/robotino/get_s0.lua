@@ -36,12 +36,11 @@ documentation      = [==[test der bisherigen skills später eigener skill mit pu
 local start = "Ins"
 local MOVE_RIGHT_DISTANCE = 0.5
 local MOVE_RIGHT_MAX_MOVEMENTS = 1
-local move_right_count = 0
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   closure = {move_right_count=move_right_count, MOVE_RIGHT_MAX_MOVEMENTS=MOVE_RIGHT_MAX_MOVEMENTS}
+   closure = {MOVE_RIGHT_MAX_MOVEMENTS=MOVE_RIGHT_MAX_MOVEMENTS},
    {"GOTO_IS", SkillJumpState, skills={{ppgoto}}, final_to="SKILL_FETCH_PUCK", fail_to="FAILED"},
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="SKILL_LEAVE_AREA",
       fail_to="CHECK_RETRY"},
@@ -51,8 +50,8 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"CHECK_RETRY", "MOVE_RIGHT", cond="move_right_count <= MOVE_RIGHT_MAX_MOVEMENTS"},
-   {"CHECK_RETRY", "FAILED", cond="move_right_count > MOVE_RIGHT_MAX_MOVEMENTS"}
+   {"CHECK_RETRY", "MOVE_RIGHT", cond="vars.move_right_count <= MOVE_RIGHT_MAX_MOVEMENTS"},
+   {"CHECK_RETRY", "FAILED", cond="vars.move_right_count > MOVE_RIGHT_MAX_MOVEMENTS"}
 }
 
 function SKILL_FETCH_PUCK:init()
@@ -65,6 +64,7 @@ end
 --}
 
 function GOTO_IS:init()
+   self.fsm.vars.move_right_count = 0
    self.skills[1].place = start
 end
 
@@ -77,5 +77,5 @@ function MOVE_RIGHT:init()
 end
 
 function CHECK_RETRY:init()
-   move_right_count = move_right_count + 1
+   self.fsm.vars.move_right_count = self.fsm.vars.move_right_count + 1
 end
