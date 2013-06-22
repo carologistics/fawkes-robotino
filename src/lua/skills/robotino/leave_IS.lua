@@ -56,20 +56,23 @@ function get_ori_diff()
    end
    return diff
 end
-function oriented_left()
-   local ori = 2*math.acos(pose:rotation(3))
-   if  ori >= math.pi and ori <= 2*math.pi then
+function oriented_right()
+   local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
+   local ori = fawkes.tf.get_yaw(q)
+   print(ori)
+   if  ori >= 0 and ori <= math.pi then
       return true
    end
 end
 function turned_to_zero()
-   local ori = 2*math.acos(pose:rotation(3))
+   local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
+   local ori = fawkes.tf.get_yaw(q)
    if ori <= 0.05 and ori >= -0.05 then
 	return true
    end
 end
 fsm:define_states{ export_to=_M,
-   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="STOP", fail_to="FAILED"},
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
    {"STOP", SkillJumpState, skills={{motor_move}},final_to="FINAL", fail_to="FAILED"}
 }
 
@@ -77,15 +80,10 @@ fsm:add_transitions{
    {"TURN", "STOP", cond = turned_to_zero}
 }
 function TURN:init()
-   if oriented_left() then
-      self.skills[1].x=0
-      self.skills[1].y=0
-      self.skills[1].ori=math.pi
-   else  
-      self.skills[1].x=0
-      self.skills[1].y=0
-      self.skills[1].ori=-math.pi
-   end
+   local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
+   local ori = fawkes.tf.get_yaw(q)
+   self.skills[1].ori = -ori
+   self.skills[1].vel_rot = 1.1
 end
 function STOP:init()
    self.skills[1].x=0
