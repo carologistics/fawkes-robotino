@@ -37,7 +37,7 @@ documentation      = [==[Move to puck pickup position]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local TIMEOUT = 15
+local TIMEOUT = 3
 local ORI_OFFSET = 0.03
 -- you can find the config value in /cfg/host.yaml
 local THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
