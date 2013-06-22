@@ -72,21 +72,17 @@ function turned_to_zero()
    end
 end
 fsm:define_states{ export_to=_M,
-   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
-   {"STOP", SkillJumpState, skills={{motor_move}},final_to="FINAL", fail_to="FAILED"}
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="SKILL_MOTOR_MOVE", fail_to="FAILED"},
+   {"SKILL_MOTOR_MOVE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
-fsm:add_transitions{
-   {"TURN", "STOP", cond = turned_to_zero}
-}
 function TURN:init()
    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
    local ori = fawkes.tf.get_yaw(q)
    self.skills[1].ori = -ori
    self.skills[1].vel_rot = 1.1
 end
-function STOP:init()
-   self.skills[1].x=0
-   self.skills[1].y=0
-   self.skills[1].ori=0
+
+function SKILL_MOTOR_MOVE:init()
+   self.skills[1].x = 0.4
 end
