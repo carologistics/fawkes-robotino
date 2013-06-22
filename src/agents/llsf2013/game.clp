@@ -19,7 +19,7 @@
 )
 
 (defrule change-state-ignore
-  (phase ~PRODUCTION&~EXPLORATION)
+  (phase ~PRODUCTION&~EXPLORATION&~WHACK_A_MOLE_CHALLENGE)
   ?cf <- (change-state ?)
   =>
   (retract ?cf)
@@ -27,7 +27,7 @@
 
 (defrule enable-motor-on-start
   (declare (salience ?*PRIORITY-HIGH*))
-  (phase EXPLORATION|PRODUCTION)
+  (phase EXPLORATION|PRODUCTIONWHACK_A_MOLE_CHALLENGE)
   (state WAIT_START)
   (change-state RUNNING)
   (not (simulation-is-running))
@@ -37,7 +37,7 @@
 )
 
 (defrule start
-  (phase EXPLORATION|PRODUCTION)
+  (phase EXPLORATION|PRODUCTION|WHACK_A_MOLE_CHALLENGE)
   ?sf <- (state WAIT_START)
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state ?)
