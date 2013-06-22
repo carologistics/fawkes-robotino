@@ -27,7 +27,7 @@ name               = "get_s0"
 fsm                = SkillHSM:new{name=name, start="GOTO_IS", debug=false}
 depends_skills     = {"ppgoto","fetch_puck","leave_IS", "motor_move"}
 depends_interfaces = {
-   {v = "ppnavi", type = "NavigatorInterface"}
+   {v = "ppnavi", type = "NavigatorInterface"},
    {v = "motor", type = "MotorInterface", id="Robotino" }
 }
 
