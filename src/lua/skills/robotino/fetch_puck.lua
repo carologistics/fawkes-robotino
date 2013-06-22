@@ -61,7 +61,7 @@ end
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck, omnipuck=omnipuck,
       visible=visible},
    {"WAIT_FOR_VISION", JumpState},
-   {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB",
+   {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="TURN_TO_PUCK",
       fail_to="WAIT_FOR_VISION"},
    {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB",
       fail_to="WAIT_FOR_VISION"},
