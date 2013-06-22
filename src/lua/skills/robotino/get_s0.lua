@@ -67,6 +67,10 @@ function GOTO_IS:init()
    self.skills[1].place = start
 end
 
+function SKILL_FETCH_PUCK:init()
+   self.skills[1].move_sideways = "true"
+end
+
 function MOVE_RIGHT:init()
    self.skills[1].y = MOVE_RIGHT_DISTANCE
 end
