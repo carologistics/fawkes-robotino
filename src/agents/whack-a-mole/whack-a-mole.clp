@@ -15,8 +15,10 @@
 (defrule whack-running-message
   (phase WHACK_A_MOLE_CHALLENGE)
   (state IDLE)
+  (not (already-started))
   =>
   (printout t "Go! Go! Go!" crlf)
+  (assert (already-started))
 )
 
 (defrule whack-try-to-find-light
