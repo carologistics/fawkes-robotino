@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"take_puck_to", "move_under_rfid", "watch_signal", "leave_area", "motor_move", "relgoto", "deposit_puck" }
+depends_skills     = {"take_puck_to", "move_under_rfid", "watch_signal", "leave_area", "motor_move", "relgoto", "deposit_puck", "global_motor_move" }
 depends_interfaces = {
    { v="light", type="RobotinoLightInterface", id="Light_State" },
    { v="sensor", type="RobotinoSensorInterface", id="Robotino" },
@@ -44,7 +44,7 @@ local THRESHOLD_DISTANCE = 0.05
 -- you can find the config value in /cfg/host.yaml
 local THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
 local DELIVERY_GATES = { "D1", "D2", "D3" }
-local MOVES = { {y=-0.37}, {y=-0.43}, {y=0.7} }
+local MOVES = { {y=-0.37}, {y=-0.42}, {y=0.7} }
 local MAX_TRIES = 2
 local MAX_ORI_ERR = 0.15
 
@@ -90,7 +90,7 @@ fsm:define_states{ export_to=_M,
    {"DECIDE_RESTART", JumpState},
    {"MOVE_TO_NEXT", SkillJumpState, skills={{motor_move}}, final_to="TRY_GATE",
       fail_to="FAILED"},
-   {"RESTART", SkillJumpState, skills={{take_puck_to}}, final_to="CHECK_POSE",
+   {"RESTART", SkillJumpState, skills={{global_motor_move}}, final_to="CHECK_POSE",
       fail_to="FAILED"},
    {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="CHECK_ORANGE_BLINKING",
       fail_to="FAILED"},
@@ -108,7 +108,7 @@ fsm:add_transitions{
    {"TRY_GATE", "MOVE_UNDER_RFID", cond=ampel_green, desc="green"},
    {"TRY_GATE", "DECIDE_RESTART", cond=ampel_red, desc="red"},
    {"TRY_GATE", "DECIDE_RESTART", timeout=4},
-   {"DECIDE_RESTART", "MOVE_UNDER_RFID", cond="vars.numtries > MAX_TRIES and vars.cur_gate_idx >= #MOVES"}, --blind guess, doesnt harm
+   {"DECIDE_RESTART", "MOVE_UNDER_RFID", cond="vars.numtries >= MAX_TRIES and vars.cur_gate_idx >= #MOVES"}, --blind guess, doesnt harm
    {"DECIDE_RESTART", "RESTART", cond="vars.cur_gate_idx >= #MOVES"},
    {"DECIDE_RESTART", "MOVE_TO_NEXT", cond="vars.cur_gate_idx < #MOVES"},
    {"CHECK_ORANGE_BLINKING", "SKILL_DEPOSIT", cond=orange_blinking},
