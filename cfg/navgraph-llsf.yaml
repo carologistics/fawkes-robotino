@@ -193,9 +193,9 @@ nodes:
       - orientation: 0.78
 
   - name: Ins
-    pos: [0.85, 2.4]
+    pos: [0.85, 2.8]
     properties:
-      - orientation: 2.8
+      - orientation: 3.14
 
   - name: WAIT_FOR_INS
     pos: [0.7, 0.5]
