@@ -6,6 +6,19 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(defrule whack-starting-message
+  (phase WHACK_A_MOLE_CHALLENGE)
+  =>
+  (printout t "Yippi ka yeah. I am playing the Whack-A-Mole-Challenge. Waiting for start." crlf)
+)
+
+(defrule whack-running-message
+  (phase WHACK_A_MOLE_CHALLENGE)
+  (state IDLE)
+  =>
+  (printout t "Go! Go! Go!" crlf)
+)
+
 (defrule whack-try-to-find-light
   (phase WHACK_A_MOLE_CHALLENGE)
   ?sf <- (state IDLE)
