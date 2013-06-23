@@ -171,15 +171,15 @@
 
 ;Require resource-locking
 (defrule exp-require-resource-locking
-	(phase EXPLORATION)
-	(round FIRST)
-	?s <- (state EXP_FOUND_NEXT_MACHINE)
+  (phase EXPLORATION)
+  (round FIRST)
+  ?s <- (state EXP_FOUND_NEXT_MACHINE)
   (nextInCycle ?nextMachine)
   =>
-	(printout t "Require lock for " ?nextMachine crlf)
-	(retract ?s)
-	(assert (state EXP_LOCK_REQUIRED)
-					(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine)))
+  (printout t "Require lock for " ?nextMachine crlf)
+  (retract ?s)
+  (assert (state EXP_LOCK_REQUIRED)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine)))
 )
 
 ;Wait for answer from MASTER
@@ -192,8 +192,28 @@
   =>
   (printout t "Lock accepted." crlf)
   (retract ?s ?l)
-	(printout t "----- Accept retracted: " ?nextMachine crlf)
   (assert (state EXP_LOCK_ACCEPTED))
+)
+
+;Pass slow robotino
+(defrule exp-pass-slow-robotino
+  (phase EXPLORATION)
+  (round FIRST)
+  (state EXP_LOCK_REQUIRED)
+  ?n <- (nextInCycle ?next)
+  (machine-exploration (name ?next) (next ?second-next))
+  (machine-exploration (name ?second-next) (next ?third-next))
+  (not (machineRecognized ?next))
+  (not (machineRecognized ?second-next))
+  (not (machineRecognized ?third-next))
+  ?lg <- (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
+  ?lr <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
+  =>
+  (printout warn "Passing slow robotino. Going for " ?third-next crlf)
+  (retract ?n ?lg ?lr)
+  (assert (nextInCycle ?third-next)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?third-next))
+  )
 )
 
 ;Drive to next machine
