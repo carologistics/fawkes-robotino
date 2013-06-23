@@ -35,7 +35,7 @@ LIBS     += $(VISION_LIBS)
 LIBS_light_front = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
 		fvclassifiers fawkesgeometry fvfilters TransformInterface \
-		fawkestf RobotinoLightInterface Position3DInterface 
+		fawkestf RobotinoLightInterface Position3DInterface SwitchInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_light_front = light_front.o light_front_thread.o
 

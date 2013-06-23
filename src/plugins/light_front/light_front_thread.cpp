@@ -180,6 +180,16 @@ LightFrontThread::init()
 	this->lightStateIF = blackboard->open_for_writing<fawkes::RobotinoLightInterface>(
 			this->config->get_string((this->cfg_prefix + "light_state_if").c_str()).c_str());
 
+	try {
+		    switchInterface = blackboard->open_for_writing<fawkes::SwitchInterface>(
+										    "light_front_switch");
+		    switchInterface->set_enabled(true);
+		    switchInterface->write();
+		  } catch (fawkes::Exception &e) {
+		    e.append("Opening switch interface for writing failed");
+		    throw;
+		  }
+
 	//ROIs
 	this->drawer = new firevision::FilterROIDraw();
 
@@ -187,6 +197,8 @@ LightFrontThread::init()
 	this->resetLocalHistory();
 
 	logger->log_debug(name(), "end of init()");
+
+
 }
 
 void
@@ -205,6 +217,7 @@ LightFrontThread::finalize()													//TODO check if everthing gets deleted
 
 	blackboard->close(this->nearestMaschineIF);
 	blackboard->close(this->lightStateIF);
+	blackboard->close(this->switchInterface);
 
 	logger->log_info(name(), "ends");
 }
@@ -212,6 +225,26 @@ LightFrontThread::finalize()													//TODO check if everthing gets deleted
 void
 LightFrontThread::loop()
 {
+	while (!switchInterface->msgq_empty()) {
+	    if (fawkes::SwitchInterface::DisableSwitchMessage *msg = switchInterface->msgq_first_safe(msg)) {
+	      switchInterface->set_enabled(false);
+	      this->resetLocalHistory();
+	      this->resetLightInterface("Switch disable message received");
+	    }
+	    else if (fawkes::SwitchInterface::EnableSwitchMessage *msg = switchInterface->msgq_first_safe(msg)) {
+	      switchInterface->set_enabled(true);
+	      this->resetLocalHistory();
+	      this->resetLightInterface("Switch enable message received");
+	    }
+	    switchInterface->msgq_pop();
+	    switchInterface->write();
+	  }
+
+	 if (!switchInterface->is_enabled()){
+	    return;
+	 }
+
+
 	bool contiueToPictureProcess = false;
 
 	//read laser if
