@@ -54,3 +54,9 @@
   (assert (state NO_LIGHT_VISIBLE))
 )
 
+;(defrule debug-skill-fail
+;  (declare (salience ?*PRIORITY-HIGH*))
+;  ?skf <- (skill (name "drive_to_closest_light") (status FINAL))
+;  =>
+;  (modify ?skf (status FAILED))  
+;)

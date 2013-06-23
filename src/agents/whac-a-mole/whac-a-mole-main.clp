@@ -6,10 +6,10 @@
 ;  Licensed under BSD license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-;(printout t "Starting whac-a-mole agent..." crlf)
+(printout t "Starting whac-a-mole agent..." crlf)
 
 (load* (resolve-file llsf2013/priorities.clp))
-(load* (resolve-file llsf2013/globals.clp)
+(load* (resolve-file llsf2013/globals.clp))
 (load* (resolve-file whac-a-mole/whac-a-mole-facts.clp))
 
 (defrule load-config
@@ -21,35 +21,22 @@
 
 (deffacts init (init))
 
-(defrule init1
+(defrule initialize
+  (declare (salience ?*PRIORITY-HIGH*))
   (agent-init)
-  =>
-  (printout warn here1 crlf)
-)
-
-(defrule init2
   (protobuf-available)
   =>
-  (printout warn here2 crlf)
+  (load-config "/clips-agent")
+
+  (blackboard-add-interface "Position3DInterface" "nearest_light_on")
+  (blackboard-add-interface "Position3DInterface" "Pose")
+
+  (load* (resolve-file llsf2013/utils.clp))
+  (load* (resolve-file llsf2013/net.clp))
+  (load* (resolve-file llsf2013/game.clp))
+  (batch* (resolve-file whac-a-mole/whac-a-mole.clp))
+
+  (reset)
 )
-
-
-
- (defrule initialize
-   (declare (salience ?*PRIORITY-HIGH*))
-  (agent-init)
-   (protobuf-available)
-   =>
-;   (load-config "/clips-agent")
-
-;   (blackboard-add-interface "Position3DInterface" "nearest_light_on")
-;   (blackboard-add-interface "Position3DInterface" "Pose")
-
-;   (load* (resolve-file llsf2013/net.clp)
-;   (load* (resolve-file llsf2013/game.clp)
-;   (batch* (resolve-file whac-a-mole/whac-a-mole.clp))
-
-   (reset)
- )
 
 
