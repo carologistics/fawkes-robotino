@@ -21,6 +21,7 @@
 #include <aspect/vision.h>
 #include <aspect/tf.h>
 
+#include <interfaces/SwitchInterface.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/RobotinoLightInterface.h>
 
@@ -138,6 +139,7 @@ private:
 
 	int laser_visibilityHistoryThrashold;
 
+	fawkes::SwitchInterface *switchInterface;
 	fawkes::RobotinoLightInterface *lightStateIF;
 
 	firevision::FilterROIDraw *drawer;
