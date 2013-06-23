@@ -44,8 +44,8 @@ local THRESHOLD_DISTANCE = 0.05
 -- you can find the config value in /cfg/host.yaml
 local THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
 local DELIVERY_GATES = { "D1", "D2", "D3" }
-local MOVES = { {y=-0.37}, {y=-0.35}, {y=0.7} }
-local MAX_TRIES = 3
+local MOVES = { {y=-0.37}, {y=-0.43}, {y=0.7} }
+local MAX_TRIES = 2
 local MAX_ORI_ERR = 0.15
 
 local tfm = require("tf_module")
@@ -106,9 +106,9 @@ fsm:add_transitions{
    {"CHECK_POSE", "CORRECT_TURN", cond="not pose_ok()"},
    {"CHECK_POSE", "TRY_GATE", cond=pose_ok},
    {"TRY_GATE", "MOVE_UNDER_RFID", cond=ampel_green, desc="green"},
-   {"TRY_GATE", "MOVE_UNDER_RFID", cond="vars.numtries > MAX_TRIES"}, --blind guess, doesnt harm
    {"TRY_GATE", "DECIDE_RESTART", cond=ampel_red, desc="red"},
    {"TRY_GATE", "DECIDE_RESTART", timeout=4},
+   {"DECIDE_RESTART", "MOVE_UNDER_RFID", cond="vars.numtries > MAX_TRIES and vars.cur_gate_idx >= #MOVES"}, --blind guess, doesnt harm
    {"DECIDE_RESTART", "RESTART", cond="vars.cur_gate_idx >= #MOVES"},
    {"DECIDE_RESTART", "MOVE_TO_NEXT", cond="vars.cur_gate_idx < #MOVES"},
    {"CHECK_ORANGE_BLINKING", "SKILL_DEPOSIT", cond=orange_blinking},
