@@ -6,28 +6,29 @@ root: SW
 nodes:
 
   - name: M1
-    pos: [3.92, 2.05]
+    pos: [3.90, 1.25]
     properties:
-      - orientation: -1.57
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
+      - orientation: 1.57
 
   - name: ExpM1
     pos: [4.4, 1.7]
     properties:
       - orientation: 3.14
 
-  - name: M1N
-    pos: [3.92, 2.15]
+  - name: M1E
+    pos: [4.70, 1.70]
     properties:
-      - travel_tolerance: 0.5 
+      - travel_tolerance: 0.5
+
+  - name: M1S
+    pos: [3.90, 1.1]
+    properties:
+      - travel_tolerance: 0.5
 
   - name: M2
     pos: [3.5, 3.92]
     properties:
       - orientation: 0.0
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
 
   - name: ExpM2
     pos: [4.5, 3.92]
@@ -50,8 +51,6 @@ nodes:
       - orientation: 3.14
       #needed for finish_puck_at 
       - leave_right
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
 
   - name: ExpM3
     pos: [2.35, 1.0]
@@ -63,7 +62,7 @@ nodes:
     properties:
       - travel_tolerance: 0.5
 
-  - name: M3N
+  - name: M4S
     pos: [2.8, 1.1]
     properties:
       - travel_tolerance: 0.5
@@ -72,25 +71,21 @@ nodes:
     pos: [2.8, 1.2]
     properties:
       - orientation: 1.57
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
 
   - name: ExpM4
     pos: [3.3, 1.3]
     properties:
       - orientation: 2.54
 
-  - name: M4N
-    pos: [2.75, 2.15]
+  - name: M5
+    pos: [2.8, 3.25]
+    properties:
+      - orientation: -1.57
+
+  - name: M5E
+    pos: [3.4, 2.8]
     properties:
       - travel_tolerance: 0.5
-
-  - name: M5
-    pos: [2.75, 2.25]
-    properties:
-      - orientation: 1.57
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
 
   - name: ExpM5
     pos: [3.3, 2.8]
@@ -101,8 +96,6 @@ nodes:
     pos: [2.4, 3.92]
     properties:
       - orientation: 0.0
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
 
   - name: ExpM6
     pos: [2.75, 4.4]
@@ -114,17 +107,25 @@ nodes:
     properties:
       - travel_tolerance: 0.5
 
+  - name: M6S
+    pos: [2.8, 3.40]
+    properties:
+      - travel_tolerance: 0.5
+
   - name: M6W
     pos: [2.3, 3.92]
     properties:
       - travel_tolerance: 0.5
 
   - name: M7
-    pos: [2.75, 4.5]
+    pos: [3.25, 5.05]
     properties:
-      - orientation: 1.57
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
+      - orientation: 3.14
+
+  - name: M7E
+    pos: [3.4, 5.05]
+    properties:
+      - travel_tolerance: 0.5
 
   - name: ExpM7
     pos: [3.4, 4.7]
@@ -132,28 +133,24 @@ nodes:
       - orientation: 2.5
 
   - name: M8
-    pos: [1.2, 1.7]
+    pos: [2.15, 1.7]
     properties:
-      - orientation: 0.0
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
+      - orientation: 3.14
 
   - name: ExpM8
     pos: [1.45, 1.2]
     properties:
       - orientation: 0.97
 
-  - name: M8W
-    pos: [1.0, 1.7]
+  - name: M8E
+    pos: [2.3, 1.7]
     properties:
       - travel_tolerance: 0.5
 
   - name: M9
-    pos: [2.2, 3.92]
+    pos: [1.25, 3.9]
     properties:
-      - orientation: 3.14
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
+      - orientation: 0.0
 
   - name: ExpM9
     pos: [1.2, 3.92]
@@ -165,12 +162,15 @@ nodes:
     properties:
       - travel_tolerance: 0.5
 
+  - name: M9W
+    pos: [1.0, 3.9]
+    properties:
+      - travel_tolerance: 0.5
+
   - name: M10
     pos: [1.68, 4.5]
     properties:
       - orientation: 1.57
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
 
   - name: ExpM10
     pos: [1.68, 4.5]
@@ -192,10 +192,6 @@ nodes:
     properties:
       - orientation: 0.78
 
-#  - name: Ins
-#    pos: [0.7, 2.0]
-#    properties:
-#      - orientation: 2.36
   - name: Ins
     pos: [0.85, 2.4]
     properties:
@@ -211,11 +207,13 @@ nodes:
     pos: [0.4, 0.5]
     properties:
       - orientation: 0.25
+      - travel_tolerance: 0.5
 
   - name: SR2
     pos: [0.4, 1.75]
     properties:
       - orientation: 0.2
+      - travel_tolerance: 0.5
 
   - name: P11
     pos: [1.0, 1.1]
@@ -301,8 +299,6 @@ nodes:
     pos: [4.8, 3.1]
     properties:
       - orientation: 0.0
-#      - travel_tolerance: 0.1
-#      - orientation_tolerance: 0.1
 
   - name: DW
     pos: [4.7, 3.1]
@@ -313,37 +309,40 @@ nodes:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
   - [P11, P21]
-  - [P11, M8W]
+  - [P11, P12]
   - [P11, SR1]
   - !dir [P21, WAIT_FOR_INS]
   - !dir [WAIT_FOR_INS, P11]
   - [P12, SR2]
-  - [M8W, P12]
   - [P12, P13]
   - [P12, P22]
   - [P12, P23]
-  - [P13, P14]
+  - [P13, M9W]
+  - [M9W, P14]
   - [P13, P23]
   - [P13, P22]
   - [P14, M9N]
   - [M9N, P24]
-  - [P21, P22]
-  - [P21, M3N]
-  - [M3N, P31]
+  - [P21, M8E]
+  - [M8E, P22]
+  - [P21, M4S]
+  - [M4S, P31]
   - [P31, M3E]
-  - [P22, M4N]
-  - [M4N, P32]
+  - [P22, P32]
   - [P22, P23]
   - [P23, M6W]
   - [M6W, P24]
-  - [P23, P33]
+  - [P23, M6S]
+  - [M6S, P33]
   - [P24, M6N]
   - [M6N, P34]
+  - [P34, M7E]
   - [P31, P32]
-  - [P31, P41]
-  - [P32, M1N]
-  - [M1N, P42]
-  - [P32, P33]
+  - [P31, M1S]
+  - [M1S, P41]
+  - [P32, P42]
+  - [P32, M5E]
+  - [M5E, P33]
   - [P33, M2W]
   - [M2W, P34]
   - [P33, P43]
@@ -352,28 +351,28 @@ connections:
   - [P43, M2O]
   - [M2O, P44]
   - [P34, P44]
-  - [P41, P42]
+  - [P41, M1E]
+  - [M1E, P42]
   - [P42, DW]
   - [DW, P43]
-  - [M1, M1N]
-  - [ExpM1, P41]
-  - [ExpM1, P42]
+  - [M1, M1S]
+  - [ExpM1, M1E]
   - [M2, M2W]
   - [ExpM2, M2O]
   - [M3, M3E]
   - [ExpM3, P21]
-  - [M4, M3N]
+  - [M4, M4S]
   - [ExpM4, P31]
-  - [M5, M4N]
-  - [ExpM5, P32]
+  - [M5, M6S]
+  - [ExpM5, M5E]
   - [M6, M6W]
   - [ExpM6, M6N]
-  - [M7, M6N]
+  - [M7, M7E]
   - [ExpM7, P34]
-  - [M8, M8W]
+  - [M8, M8E]
   - [ExpM8, P11]
-  - [M9, M6W]
-  - [ExpM9, P14]
+  - [M9, M9W]
+  - [ExpM9, M9W]
   - [M10, M9N]
   - [ExpM10, M9N]
   - [R2, P14]
