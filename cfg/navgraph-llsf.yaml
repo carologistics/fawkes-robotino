@@ -192,6 +192,11 @@ nodes:
     properties:
       - orientation: 0.78
 
+  - name: IA
+    pos: [1.0, 2.8]
+    properties:
+      - travel_tolerance: 0.8
+
   - name: Ins
     pos: [0.85, 2.8]
     properties:
@@ -314,13 +319,14 @@ connections:
   - !dir [P21, WAIT_FOR_INS]
   - !dir [WAIT_FOR_INS, P11]
   - [P12, SR2]
-  - [P12, P13]
+  - [P12, IA]
+  - [IA, P13]
   - [P12, P22]
-  - [P12, P23]
+  - [IA, P23]
   - [P13, M9W]
   - [M9W, P14]
   - [P13, P23]
-  - [P13, P22]
+  - [IA, P22]
   - [P14, M9N]
   - [M9N, P24]
   - [P21, M8E]
@@ -378,7 +384,7 @@ connections:
   - [R2, P14]
   - [R1, P41]
   - [T, P44]
-  - [Ins, P12]
+  - [Ins, IA]
   - [P32, DW]
   - [P33, DW]
   - [DW, deliver]
