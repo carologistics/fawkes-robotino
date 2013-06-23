@@ -88,13 +88,15 @@
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh 20)) (ready TRUE))
+  (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
+  (printout t "Identified machine" crlf)
   (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
   (retract ?s ?g ?rli ?ws)
   (assert (state EXP_IDLE)
-          (nextInCycle ?nextMachine)
-          (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green))
-					(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
+    (nextInCycle ?nextMachine)
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
+    (machine-type (name ?old) (type ?type))
   )
 )
 
@@ -331,18 +333,6 @@
   )
 )
 
-;Matching of recognized lights to the machine types
-(defrule exp-match-light-types
-  (phase EXPLORATION)
-  ?ml <- (machine-light (name ?name) (red ?red) (yellow ?yellow) (green ?green))
-  (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
-  =>
-  (printout t "Identified machine" crlf)
-  (retract ?ml)
-  (assert (machine-type (name ?name) (type ?type))
-  )
-)
-
 ;Compose information sent by the refbox as one
 (defrule exp-compose-type-light-pattern-matching
   (declare (salience 0));this rule has to fire after convert-blink-to-blinking
@@ -392,17 +382,6 @@
     (assert (machineRecognized (sym-cat ?machine)))
     ;(printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
   )
-)
-
-(defrule exp-print-read-but-not-recognized-lights
-  (phase EXPLORATION)
-  (time $?now)  
-  ?ws <- (signal (type print-unrecognized-lights) (time $?t&:(timeout ?now ?t 1.0)) (seq ?seq))
-  =>
-  (do-for-all-facts ((?read machine-light)) TRUE
-    (printout t "Read light with no type matching: " ?read:name ", red " ?read:red ", yellow " ?read:yellow ", green " ?read:green crlf)
-  )
-  (modify ?ws (time ?now) (seq (+ ?seq 1)))
 )
 
 ;the refbox sends BLINK but in the interface BLINKING is used. This rule converts BLINK to BLINKING
