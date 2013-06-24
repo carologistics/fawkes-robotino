@@ -64,13 +64,13 @@ local m_pos = require("machine_pos_module")
 --       return true
 --    end
 -- end
--- function turned_to_zero()
---    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
---    local ori = fawkes.tf.get_yaw(q)
---    if ori <= 0.05 and ori >= -0.05 then
--- 	return true
---    end
--- end
+function turned_to_zero()
+   local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
+   local ori = fawkes.tf.get_yaw(q)
+   if ori <= 0.05 and ori >= -0.05 then
+      return true
+   end
+end
 
 fsm:define_states{ export_to=_M,
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
