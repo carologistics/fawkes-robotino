@@ -39,7 +39,7 @@ depends_interfaces = {
     {v = "omnipuck9", type="Position3DInterface", id="OmniPuck9"},
     {v = "omnipuck10", type="Position3DInterface", id="OmniPuck10"},
     {v = "omnipuck11", type="Position3DInterface", id="OmniPuck11"},
-    {v = "omnipuck12", type="Position3DInterface", id="OmniPuc12"},
+    {v = "omnipuck12", type="Position3DInterface", id="OmniPuck12"},
     {v = "omnipuck13", type="Position3DInterface", id="OmniPuck13"},
     {v = "omnipuck14", type="Position3DInterface", id="OmniPuck14"},
     {v = "omnipuck15", type="Position3DInterface", id="OmniPuck15"},
@@ -72,7 +72,7 @@ local omnipucks = {
    omnipuck7,
    omnipuck8,
    omnipuck9,
-   omnipuck10
+   omnipuck10,
    omnipuck11, 
    omnipuck12,
    omnipuck13,
