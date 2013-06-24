@@ -68,9 +68,9 @@ function set_speed(self)
         ori = self.fsm.vars.target.ori },
       self.fsm.vars.frame, "/base_link")
 
-   if self.fsm.vars.ori > math.pi and dist_target.ori < 0 then
+   if self.fsm.vars.ori > math.pi and dist_target.ori < -self.fsm.vars.tolerance_arg.ori then
       dist_target.ori = 2*math.pi + dist_target.ori
-   elseif self.fsm.vars.ori < -math.pi and dist_target.ori > 0 then
+   elseif self.fsm.vars.ori < -math.pi and dist_target.ori > self.fsm.vars.tolerance_arg.ori then
       dist_target.ori = -2*math.pi + dist_target.ori
    end
 
