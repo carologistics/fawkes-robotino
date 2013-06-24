@@ -38,6 +38,16 @@ depends_interfaces = {
     {v = "omnipuck8", type="Position3DInterface", id="OmniPuck8"},
     {v = "omnipuck9", type="Position3DInterface", id="OmniPuck9"},
     {v = "omnipuck10", type="Position3DInterface", id="OmniPuck10"},
+    {v = "omnipuck11", type="Position3DInterface", id="OmniPuck11"},
+    {v = "omnipuck12", type="Position3DInterface", id="OmniPuc12"},
+    {v = "omnipuck13", type="Position3DInterface", id="OmniPuck13"},
+    {v = "omnipuck14", type="Position3DInterface", id="OmniPuck14"},
+    {v = "omnipuck15", type="Position3DInterface", id="OmniPuck15"},
+    {v = "omnipuck16", type="Position3DInterface", id="OmniPuck16"},
+    {v = "omnipuck17", type="Position3DInterface", id="OmniPuck17"},
+    {v = "omnipuck18", type="Position3DInterface", id="OmniPuck18"},
+    {v = "omnipuck19", type="Position3DInterface", id="OmniPuck19"},
+    {v = "omnipuck20", type="Position3DInterface", id="OmniPuck20"},
     {v = "sensor", type="RobotinoSensorInterface"},
     {v = "motor", type = "MotorInterface", id="Robotino" }
 }
@@ -52,7 +62,8 @@ local ORI_OFFSET = 0.03
 local THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
 local MIN_VIS_HIST = 15
 local EPSILON = 0.07
-local omnipucks = {omnipuck1, 
+local omnipucks = {
+   omnipuck1, 
    omnipuck2,
    omnipuck3,
    omnipuck4,
@@ -62,6 +73,16 @@ local omnipucks = {omnipuck1,
    omnipuck8,
    omnipuck9,
    omnipuck10
+   omnipuck11, 
+   omnipuck12,
+   omnipuck13,
+   omnipuck14,
+   omnipuck15,
+   omnipuck16,
+   omnipuck17,
+   omnipuck18,
+   omnipuck19,
+   omnipuck20
 }
 
 
