@@ -37,40 +37,41 @@ skillenv.skill_module(_M)
 
 local m_pos = require("machine_pos_module")
 
-function get_ori_diff()
-   local ori = 2*math.acos(pose:rotation(3)) 
-   local is_ori = m_pos.delivery_goto.Is.ori
-   local diff = 0
-   if ori > is_ori then 
-            if ori - is_ori < math.pi then
-         diff =  ori - is_ori 
-      else
-         diff =  - 2.0 * math.pi + ori - is_ori
-      end
-     else
-      if is_ori - ori < math.pi then
-         diff = ori - is_ori 
-      else
-         diff = 2.0 * math.pi - is_ori + ori;
-          end
-   end
-   return diff
-end
-function oriented_right()
-   local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
-   local ori = fawkes.tf.get_yaw(q)
-   print(ori)
-   if  ori >= 0 and ori <= math.pi then
-      return true
-   end
-end
+-- function get_ori_diff()
+--    local ori = 2*math.acos(pose:rotation(3)) 
+--    local is_ori = m_pos.delivery_goto.Is.ori
+--    local diff = 0
+--    if ori > is_ori then 
+--       if ori - is_ori < math.pi then
+--          diff =  ori - is_ori 
+--       else
+--          diff =  - 2.0 * math.pi + ori - is_ori
+--       end
+--    else
+--       if is_ori - ori < math.pi then
+--          diff = ori - is_ori 
+--       else
+--          diff = 2.0 * math.pi - is_ori + ori;
+--       end
+--    end
+--    return diff
+-- end
+-- function oriented_right()
+--    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
+--    local ori = fawkes.tf.get_yaw(q)
+--    print(ori)
+--    if  ori >= 0 and ori <= math.pi then
+--       return true
+--    end
+-- end
 function turned_to_zero()
    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
    local ori = fawkes.tf.get_yaw(q)
    if ori <= 0.05 and ori >= -0.05 then
-	return true
+      return true
    end
 end
+
 fsm:define_states{ export_to=_M,
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="SKILL_MOTOR_MOVE", fail_to="FAILED"},
    {"SKILL_MOTOR_MOVE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
@@ -79,7 +80,11 @@ fsm:define_states{ export_to=_M,
 function TURN:init()
    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
    local ori = fawkes.tf.get_yaw(q)
-   self.skills[1].ori = -ori
+   if ori < 0 then
+      self.skills[1].ori = 2*math.pi - math.abs(ori)
+   else
+      self.skills[1].ori = ori
+   end
    self.skills[1].vel_rot = 1.1
 end
 
