@@ -65,13 +65,27 @@
 )
 
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
-(defrule exp-arrived-at-machine
+(defrule exp-ppgoto-arrived-at-machine
   (phase EXPLORATION)
-  ?final <- (skill (name "ppgoto") (status FINAL) (skill-string ?skill)) 
+  ?final <- (skill (name "ppgoto") (status FINAL)) 
   ?s <- (state EXP_DRIVING_TO_MACHINE)
+  (goalmachine ?name)
+  (machine-exploration (name ?name) (look-pos ?goal))
+  =>
+  (printout t "PPGoto Arrived. Calling global_motor_move." crlf)
+  (retract ?s ?final)
+  (assert (state EXP_DRIVING_TO_MACHINE_GLOBAL))
+  (skill-call global_motor_move place (str-cat ?goal))
+)
+
+;redo movement with global motor move
+(defrule exp-global-motor-move-finished
+  (phase EXPLORATION)
+  ?final <- (skill (name "global_motor_move") (status FINAL|FAILED)) 
+  ?s <- (state EXP_DRIVING_TO_MACHINE_GLOBAL)
   (time $?now)
   =>
-  (printout t "Arrived. Skill string was: " ?skill crlf)
+  (printout t "Arrived." crlf)
   (printout t "Read light now." crlf)
   (retract ?s ?final)
   (assert (state EXP_WAITING_AT_MACHINE)
@@ -88,13 +102,15 @@
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh 20)) (ready TRUE))
+  (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
+  (printout t "Identified machine" crlf)
   (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
   (retract ?s ?g ?rli ?ws)
   (assert (state EXP_IDLE)
-          (nextInCycle ?nextMachine)
-          (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green))
-					(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
+    (nextInCycle ?nextMachine)
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
+    (machine-type (name ?old) (type ?type))
   )
 )
 
@@ -113,7 +129,7 @@
   (assert (second-recognize-try)
   )
   (modify ?ws (time ?now))
-  (skill-call motor_move x 0 y 0.2 vel_trans 0.1)
+  (skill-call motor_move x 0 y 0.15 vel_trans 0.1)
 )
 
 ;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
@@ -171,15 +187,15 @@
 
 ;Require resource-locking
 (defrule exp-require-resource-locking
-	(phase EXPLORATION)
-	(round FIRST)
-	?s <- (state EXP_FOUND_NEXT_MACHINE)
+  (phase EXPLORATION)
+  (round FIRST)
+  ?s <- (state EXP_FOUND_NEXT_MACHINE)
   (nextInCycle ?nextMachine)
   =>
-	(printout t "Require lock for " ?nextMachine crlf)
-	(retract ?s)
-	(assert (state EXP_LOCK_REQUIRED)
-					(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine)))
+  (printout t "Require lock for " ?nextMachine crlf)
+  (retract ?s)
+  (assert (state EXP_LOCK_REQUIRED)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine)))
 )
 
 ;Wait for answer from MASTER
@@ -192,8 +208,28 @@
   =>
   (printout t "Lock accepted." crlf)
   (retract ?s ?l)
-	(printout t "----- Accept retracted: " ?nextMachine crlf)
   (assert (state EXP_LOCK_ACCEPTED))
+)
+
+;Pass slow robotino
+(defrule exp-pass-slow-robotino
+  (phase EXPLORATION)
+  (round FIRST)
+  (state EXP_LOCK_REQUIRED)
+  ?n <- (nextInCycle ?next)
+  (machine-exploration (name ?next) (next ?second-next))
+  (machine-exploration (name ?second-next) (next ?third-next))
+  (not (machineRecognized ?next))
+  (not (machineRecognized ?second-next))
+  (not (machineRecognized ?third-next))
+  ?lg <- (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
+  ?lr <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
+  =>
+  (printout warn "Passing slow robotino. Going for " ?third-next crlf)
+  (retract ?n ?lg ?lr)
+  (assert (nextInCycle ?third-next)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?third-next))
+  )
 )
 
 ;Drive to next machine
@@ -331,18 +367,6 @@
   )
 )
 
-;Matching of recognized lights to the machine types
-(defrule exp-match-light-types
-  (phase EXPLORATION)
-  ?ml <- (machine-light (name ?name) (red ?red) (yellow ?yellow) (green ?green))
-  (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
-  =>
-  (printout t "Identified machine" crlf)
-  (retract ?ml)
-  (assert (machine-type (name ?name) (type ?type))
-  )
-)
-
 ;Compose information sent by the refbox as one
 (defrule exp-compose-type-light-pattern-matching
   (declare (salience 0));this rule has to fire after convert-blink-to-blinking
@@ -392,17 +416,6 @@
     (assert (machineRecognized (sym-cat ?machine)))
     ;(printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
   )
-)
-
-(defrule exp-print-read-but-not-recognized-lights
-  (phase EXPLORATION)
-  (time $?now)  
-  ?ws <- (signal (type print-unrecognized-lights) (time $?t&:(timeout ?now ?t 1.0)) (seq ?seq))
-  =>
-  (do-for-all-facts ((?read machine-light)) TRUE
-    (printout t "Read light with no type matching: " ?read:name ", red " ?read:red ", yellow " ?read:yellow ", green " ?read:green crlf)
-  )
-  (modify ?ws (time ?now) (seq (+ ?seq 1)))
 )
 
 ;the refbox sends BLINK but in the interface BLINKING is used. This rule converts BLINK to BLINKING

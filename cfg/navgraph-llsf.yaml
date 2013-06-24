@@ -53,7 +53,6 @@ nodes:
     pos: [3.3, 0.55]
     properties:
       - orientation: 3.14
-      #needed for finish_puck_at 
       - leave_right
 
   - name: ExpM3

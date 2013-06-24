@@ -1,12 +1,12 @@
 (deftemplate lock
   (slot type (type SYMBOL) (allowed-values GET REFUSE ACCEPT RELEASE RELEASE_RVCD))
-  (slot agent (type SYMBOL))
+  (slot agent (type STRING))
   (slot resource (type SYMBOL))
 )
 
 (deftemplate locked-resource
   (slot resource (type SYMBOL))
-  (slot agent (type SYMBOL))
+  (slot agent (type STRING))
 )
 
 (deffacts lock-facts

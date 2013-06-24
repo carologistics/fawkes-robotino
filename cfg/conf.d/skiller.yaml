@@ -26,6 +26,16 @@ skiller:
         Omnipuck8: Position3DInterface::OmniPuck8
         Omnipuck9: Position3DInterface::OmniPuck9
         Omnipuck10: Position3DInterface::OmniPuck10
+        Omnipuck11: Position3DInterface::OmniPuck11
+        Omnipuck12: Position3DInterface::OmniPuck12
+        Omnipuck13: Position3DInterface::OmniPuck13
+        Omnipuck14: Position3DInterface::OmniPuck14
+        Omnipuck15: Position3DInterface::OmniPuck15
+        Omnipuck16: Position3DInterface::OmniPuck16
+        Omnipuck17: Position3DInterface::OmniPuck17
+        Omnipuck18: Position3DInterface::OmniPuck18
+        Omnipuck19: Position3DInterface::OmniPuck19
+        Omnipuck20: Position3DInterface::OmniPuck20
         Closest_Machine: Position3DInterface::Closest_Machine
         pose: Position3DInterface::Pose
         Closest_Machine: Position3DInterface::Closest_Machine

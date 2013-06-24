@@ -69,7 +69,7 @@ using namespace firevision;
  */
 
 /** Amount of pucks */
-#define PUCK_AMOUNT 10
+#define PUCK_AMOUNT 20
 
 /** Constructor. */
 OmniVisionPucksPipelineThread::OmniVisionPucksPipelineThread()
@@ -121,7 +121,7 @@ void OmniVisionPucksPipelineThread::init() {
 
   try {
     int i;
-    for (i = 1; i <= 10; i++) {
+    for (i = 1; i <= PUCK_AMOUNT; i++) {
       Position3DInterface *puckif;
       char *omni_name;
       if (asprintf(&omni_name, "OmniPuck%d", i) != -1) {

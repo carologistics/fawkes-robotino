@@ -20,12 +20,12 @@ plugins/navgraph:
   # Max. distance between actual and target positions to deem the target
   # reached. This value is for intermediate nodes on a path; m
   # The value can be overwritten per node in the graph file.
-  travel_tolerance: 0.25
+  travel_tolerance: 0.4 #0.25
 
   # Max. distance between actual and target positions to deem the target
   # reached. This value is for the last node on a path; m
   # The value can be overwritten per node in the graph file.
-  target_tolerance: 0.15
+  target_tolerance: 0.2 #0.15
   
   # Max. distance between actual and target orientation to deem the target
   # reached. This value is for the last node on a path; rad
