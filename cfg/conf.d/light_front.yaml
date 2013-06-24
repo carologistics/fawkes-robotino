@@ -16,13 +16,14 @@ plugins/light_front:
   light_size_width: 0.02	#0.035
 
   # camare viewport factor logitech webcam
-  camera_factor_horizontal: 1.08 #1.7
-  camera_factor_vertical: 0.85 #1.33
+  camera_factor_horizontal: 1.08 
+  camera_factor_vertical: 0.85 
 
   # camare offset of the front cam
-  camera_offset_horizontal_rad: -0.013 #-0.0735
+  camera_offset_horizontal_rad: -0.013 
   camera_offset_vertical: 45
-
+  camera_angle_horizontal_rad: .00
+  
   #Shared Memory Imagebuffer name
   shm_image_id: "light_front"
 

@@ -78,7 +78,7 @@ LightFrontThread::LightFrontThread()
 void
 LightFrontThread::init()
 {
-	logger->log_info(name(), "Plugin-light: starts up");
+	logger->log_info(name(), "light_front: starts up");
 
 	this->lightOutOfRangeCounter = 0;
 
@@ -92,7 +92,7 @@ LightFrontThread::init()
 
 	this->cfg_cameraOffsetHorizontalRad = this->config->get_float((this->cfg_prefix + "camera_offset_horizontal_rad").c_str());
 	this->cfg_cameraOffsetVertical = this->config->get_int((this->cfg_prefix + "camera_offset_vertical").c_str());
-
+	this->cfg_cameraAngleVerticalRad = this->config->get_float((this->cfg_prefix + "camera_angle_horizontal_rad").c_str());
 	this->cfg_lightNumberOfWrongDetections = this->config->get_int((this->cfg_prefix + "light_number_of_wrong_detections").c_str());
 
 	this->cfg_debugMessagesActivated = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
@@ -565,12 +565,18 @@ void LightFrontThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
 	}
 }
 
+int
+LightFrontThread::positionCorrection(float distance){
+	return this->img_height / (distance * this->cfg_cameraFactorVertical) * tan(cfg_cameraAngleVerticalRad);
+}
+
 LightFrontThread::lightROIs
 LightFrontThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 {
-	int expectedLightSizeWidth = this->img_width / (lightPos.r * this->cfg_cameraFactorHorizontal) * this->cfg_lightSizeWidth;
-	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;	//TODO überprüfe welche einheit das Position3D interface nutzt, wenn es Meter sind, dann ist alles ok wenn es cm sind dann muss hier noch mit 100 Multiliziert werden
+	// todo add horizonal and vertical angle offset;
 
+	int expectedLightSizeWidth = this->img_width / (lightPos.r * this->cfg_cameraFactorHorizontal) * this->cfg_lightSizeWidth;
+	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;
 	float pixelPerRadHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
 
 	int startX = this->img_width / 2											//picture center
@@ -581,7 +587,8 @@ LightFrontThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 
 	int startY = this->img_height / 2											//picture center
 				- expectedLightSizeHeigth / 2									//light center to light cornor
-				+ this->cfg_cameraOffsetVertical;								//error of picture position to light
+				+ this->cfg_cameraOffsetVertical								//error of picture position to light
+				+ this->positionCorrection(lightPos.r);
 				//TODO suche richtige werte der Kamera
 
 	firevision::ROI light;

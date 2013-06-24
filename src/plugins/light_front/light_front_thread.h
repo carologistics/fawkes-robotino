@@ -84,6 +84,7 @@ private:
 	std::string cfg_camera;
 	float cfg_cameraFactorHorizontal;
 	float cfg_cameraFactorVertical;
+	float cfg_cameraAngleVerticalRad;
 	unsigned int img_width;
 	unsigned int img_height;
 
@@ -152,6 +153,7 @@ private:
 	bool lightFromHistoryBuffer(LightFrontThread::lightSignal &lighSignal);
 	unsigned char* calculatePositionInCamBuffer();
 
+	int positionCorrection(float distance);
 	LightFrontThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
 	LightFrontThread::lightROIs createLightROIs(firevision::ROI light);
 
