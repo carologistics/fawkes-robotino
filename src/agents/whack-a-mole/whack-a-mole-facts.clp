@@ -41,6 +41,7 @@
   (phase PRE_GAME)
   (refbox-state WAIT_START)
   (signal (type beacon) (time (create$ 0 0)) (seq 1))
+  (signal (type waitforhistory) (time (create$ 0 0)) (seq 1))
 
   (driven-to P22)
 )

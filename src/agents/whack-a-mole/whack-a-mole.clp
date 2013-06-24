@@ -48,17 +48,33 @@
 (defrule whack-ppgoto-finished
   ?skf <- (skill (name "ppgoto") (status FINAL|FAILED) (skill-string ?skill))
   ?sf <- (state DRIVING)
+  ?signal <- (signal (type waitforhistory))
+  (time $?now)
   =>
   (retract ?skf ?sf)
+  (assert (state WAIT_FOR_VIS_HISTORY))
+  (modify ?signal (time ?now))
+)
+
+(defrule whack-wait-for-vis-history-finish
+  ?sf <- (state WAIT_FOR_VIS_HISTORY)
+  (time $?now)
+  (signal (type waitforhistory) (time $?start&:(timeout ?now ?start 1.0)))
+  =>
+  (retract ?sf)
   (assert (state IDLE))
 )
 
 (defrule whack-find-light-final
   ?skf <- (skill (name "drive_to_closest_light") (status FINAL))
   ?sf <- (state SEARCHING)
+  ?signal <- (signal (type waitforhistory))
+  (time $?now)
+  
   =>
+  (modify ?signal (time ?now))
   (retract ?skf ?sf)
-  (assert (state IDLE))
+  (assert (state WAIT_FOR_VIS_HISTORY))
 )
 
 (defrule whack-find-light-failed
