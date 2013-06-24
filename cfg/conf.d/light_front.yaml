@@ -50,7 +50,9 @@ plugins/light_front:
   light_state_if: "Light_State"
 
   show_debug_messages: false
-  draw_rois: false
+  draw_rois: true
+
+
 
     
   #simulate laser data, this should be set to false in real use cases!
