@@ -84,7 +84,7 @@ function TURN:init()
    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
    local ori = fawkes.tf.get_yaw(q)
    if ori < 0 then
-      self.skills[1].ori = math.max(2*math.pi - math.abs(ori), math.pi - 0.001)
+      self.skills[1].ori = math.min(2*math.pi - math.abs(ori), math.pi - 0.001)
    else
       self.skills[1].ori = ori
    end
