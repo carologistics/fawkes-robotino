@@ -28,15 +28,19 @@
 )
 
 (deffacts startup
-  (navpath (start P21) (goal P41))
-  (navpath (start P41) (goal P44))
-  (navpath (start P44) (goal P14))
-  (navpath (start P14) (goal P21))
+  (navpath (start P21) (goal P31))
+  (navpath (start P31) (goal P32))
+  (navpath (start P32) (goal P33))
+  (navpath (start P33) (goal P34))
+  (navpath (start P34) (goal P24))
+  (navpath (start P24) (goal P23))
+  (navpath (start P23) (goal P22))
+  (navpath (start P22) (goal P21))
 
   (state WAIT_START)
   (phase PRE_GAME)
   (refbox-state WAIT_START)
   (signal (type beacon) (time (create$ 0 0)) (seq 1))
 
-  (driven-to P44)
+  (driven-to P22)
 )
