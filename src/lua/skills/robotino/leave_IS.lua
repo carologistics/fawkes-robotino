@@ -42,17 +42,17 @@ function get_ori_diff()
    local is_ori = m_pos.delivery_goto.Is.ori
    local diff = 0
    if ori > is_ori then 
-            if ori - is_ori < math.pi then
+      if ori - is_ori < math.pi then
          diff =  ori - is_ori 
       else
          diff =  - 2.0 * math.pi + ori - is_ori
       end
-     else
+   else
       if is_ori - ori < math.pi then
          diff = ori - is_ori 
       else
          diff = 2.0 * math.pi - is_ori + ori;
-          end
+      end
    end
    return diff
 end
