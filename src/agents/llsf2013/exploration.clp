@@ -65,13 +65,27 @@
 )
 
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
-(defrule exp-arrived-at-machine
+(defrule exp-ppgoto-arrived-at-machine
   (phase EXPLORATION)
-  ?final <- (skill (name "ppgoto") (status FINAL) (skill-string ?skill)) 
+  ?final <- (skill (name "ppgoto") (status FINAL)) 
   ?s <- (state EXP_DRIVING_TO_MACHINE)
+  (goalmachine ?name)
+  (machine-exploration (name ?name) (look-pos ?goal))
+  =>
+  (printout t "PPGoto Arrived. Calling global_motor_move." crlf)
+  (retract ?s ?final)
+  (assert (state EXP_DRIVING_TO_MACHINE_GLOBAL))
+  (skill-call global_motor_move place (str-cat ?goal))
+)
+
+;redo movement with global motor move
+(defrule exp-global-motor-move-finished
+  (phase EXPLORATION)
+  ?final <- (skill (name "global_motor_move") (status FINAL|FAILED)) 
+  ?s <- (state EXP_DRIVING_TO_MACHINE_GLOBAL)
   (time $?now)
   =>
-  (printout t "Arrived. Skill string was: " ?skill crlf)
+  (printout t "Arrived." crlf)
   (printout t "Read light now." crlf)
   (retract ?s ?final)
   (assert (state EXP_WAITING_AT_MACHINE)
@@ -115,7 +129,7 @@
   (assert (second-recognize-try)
   )
   (modify ?ws (time ?now))
-  (skill-call motor_move x 0 y 0.2 vel_trans 0.1)
+  (skill-call motor_move x 0 y 0.15 vel_trans 0.1)
 )
 
 ;Recognizing of lights failed => drive to next mashine or retry (depending on the round)

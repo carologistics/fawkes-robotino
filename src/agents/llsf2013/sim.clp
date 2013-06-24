@@ -147,7 +147,7 @@
 
 (defrule sim-exp-read-light-pattern
   (declare (salience 10))
-  (skill (name "ppgoto") (status FINAL))
+  (skill (name "global_motor_move") (status FINAL|FAILED))
   (simulation-is-running)
   (sim-machine (name ?m) (lights $?lights))
   (goalmachine ?m)
