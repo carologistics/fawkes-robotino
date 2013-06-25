@@ -129,12 +129,12 @@ nodes:
       - travel_tolerance: 0.5
 
   - name: M7
-    pos: [3.25, 5.10]
+    pos: [3.25, 5.05]
     properties:
       - orientation: 3.14
 
   - name: M7E
-    pos: [3.4, 5.10]
+    pos: [3.4, 5.05]
     properties:
       - travel_tolerance: 0.5
 
