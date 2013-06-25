@@ -30,7 +30,8 @@ depends_interfaces = {
    { v="plugin", type ="RobotinoLightInterface", id = "Light_State" },
    { v="output", type ="RobotinoLightInterface", id = "Light determined" },
    { v="laserswitch", type="SwitchInterface", id="laser-cluster" },
-   { v="lightswitch", type="SwitchInterface", id="light_front_switch" }
+   { v="lightswitch", type="SwitchInterface", id="light_front_switch" },
+   { v="laser_cluster", type="LaserClusterInterface", id="laser-cluster" }
 }
 
 
@@ -90,15 +91,17 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   local m = laserswitch.EnableSwitchMessage:new()
-   laserswitch:msgq_enqueue_copy(m)
-   local l = lightswitch.EnableSwitchMessage:new()
-   lightswitch:msgq_enqueue_copy(l)
+   laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
+   lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.15))   
+end
+
+function WAIT:exit()
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))   
 end
 
 function FINAL:init()
-   local m = laserswitch.DisableSwitchMessage:new()
-   laserswitch:msgq_enqueue_copy(m)
+   laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
    output:set_red(plugin:red())
    output:set_yellow(plugin:yellow())
    output:set_green(plugin:green())
