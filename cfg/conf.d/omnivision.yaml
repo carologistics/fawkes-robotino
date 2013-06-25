@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/OmniVision
 ---
 hardware/robotino/omnivision:
      #camera used for the omnivision plugin
-     camera: firewire:any:mode=FORMAT7_0:coding=YUV422:isospeed=800:framerate=30:width=1000:height=1000:white_balance=432,402:shutter=1100:packetsize=8188
+     string: firewire:any:mode=FORMAT7_0:coding=YUV422:isospeed=800:framerate=30:width=1000:height=1000:white_balance=432,402:shutter=1400:packetsize=8188:gain=150
 
      #height of the mirror in m
      camera_height: 0.41

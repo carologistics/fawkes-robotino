@@ -12,7 +12,7 @@ firevision:
     camera:
       cam0:
         # Camera used for firevision plugin
-        string: firewire:any:mode=FORMAT7_0:coding=YUV422:isospeed=800:framerate=30:width=1000:height=1000:white_balance=432,402:shutter=1100:packetsize=8188
+        string: firewire:any:mode=FORMAT7_0:coding=YUV422:isospeed=800:framerate=30:width=1000:height=1000:white_balance=432,402:shutter=1400:packetsize=8188:gain=150
         frame: !frame /base_link
       cam1:
         string: v4l2:front:device=/dev/video0
