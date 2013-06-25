@@ -31,7 +31,8 @@ depends_interfaces = {
 	{v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
 	{v = "motor", type = "MotorInterface", id="Robotino" },	
    {v = "pose", type="Position3DInterface", id="Pose"},
-   { v="laserswitch", type="SwitchInterface", id="laser-cluster" }
+   {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
+   {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" }
 }
 
 documentation      = [==[Move under the RFID Reader/Writer]==]
@@ -44,7 +45,7 @@ skillenv.skill_module(_M)
 local tfm = require('tf_module')
 local LASER_FORWARD_CORRECTION = 0.2
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
-local MIN_VIS_HIST = 3
+local MIN_VIS_HIST = 6
 
 function get_ampel()
    local ampel_loc = {}
@@ -109,6 +110,7 @@ end
 
 function SEE_AMPEL:init()
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
 end
 
 function TURN:init()
