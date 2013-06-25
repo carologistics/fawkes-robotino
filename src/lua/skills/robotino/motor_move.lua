@@ -49,11 +49,8 @@ skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
 
-function invalid_input()
-   if fsm.vars.ori and math.abs(fsm.vars.ori) > math.pi then
-      return true
-   end
-   return false
+function invalid_params(self)
+   return self.fsm.vars.ori <= -2 * math.pi or self.fsm.vars.ori >= 2 * math.pi
 end
 
 function send_transrot(vx, vy, omega)
@@ -65,11 +62,17 @@ function send_transrot(vx, vy, omega)
 end
 
 function set_speed(self)
-   dist_target = tfm.transform(
+   local dist_target = tfm.transform(
       { x   = self.fsm.vars.target.x,
         y   = self.fsm.vars.target.y,
         ori = self.fsm.vars.target.ori },
       self.fsm.vars.frame, "/base_link")
+
+   if self.fsm.vars.ori > math.pi and dist_target.ori < -self.fsm.vars.tolerance_arg.ori then
+      dist_target.ori = 2*math.pi + dist_target.ori
+   elseif self.fsm.vars.ori < -math.pi and dist_target.ori > self.fsm.vars.tolerance_arg.ori then
+      dist_target.ori = -2*math.pi + dist_target.ori
+   end
 
    local v = { x=1, y=1, ori=1 }
    local a = { x=0, y=0, ori=0 }
@@ -105,6 +108,7 @@ function set_speed(self)
       end
    end
 
+   -- do not drive backwards with puck
    if self.fsm.vars.puck and v.x < 0 then v.x = 0 end
    
    self.fsm.vars.cycle = self.fsm.vars.cycle + 1
@@ -125,8 +129,9 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"DRIVE", "FAILED", cond=invalid_input, precond=true, desc="ori must be < pi"},
+   {"DRIVE", "FAILED", cond=invalid_params, desc="|ori| >= 2*PI"},
    {"DRIVE", "FAILED", cond="not motor:has_writer()", precond=true},
+   {"DRIVE", "FINAL", cond=drive_done},
    {"DRIVE", "FINAL", cond=drive_done},
 }
 
@@ -134,7 +139,10 @@ function DRIVE:init()
    local x = self.fsm.vars.x or 0
    local y = self.fsm.vars.y or 0
    local ori = self.fsm.vars.ori or 0
-   
+
+   -- make sure it is set, even if it was not before
+   self.fsm.vars.ori = ori
+
    if ori == math.pi then ori = ori - 1e-6 end
    if ori == -math.pi then ori = ori + 1e-6 end
 
@@ -144,11 +152,8 @@ function DRIVE:init()
    self.fsm.vars.cycle = 0
    
    self.fsm.vars.target = tfm.transform(
-      { x=x, y=y, ori=ori },
-      "/base_link",
-      self.fsm.vars.frame
-   )
-  
+      { x=x, y=y, ori=ori }, "/base_link", self.fsm.vars.frame)
+
    local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
    local vmin_rot = self.fsm.vars.vel_rot or V_MAX.ori
    self.fsm.vars.vmax_arg = { x=vmax_arg, y=vmax_arg, ori=vmin_rot }
