@@ -29,7 +29,8 @@ depends_skills     = nil
 depends_interfaces = {
    { v="plugin", type ="RobotinoLightInterface", id = "Light_State" },
    { v="output", type ="RobotinoLightInterface", id = "Light determined" },
-   { v="laserswitch", type="SwitchInterface", id="laser-cluster" }
+   { v="laserswitch", type="SwitchInterface", id="laser-cluster" },
+   { v="lightswitch", type="SwitchInterface", id="light_front_switch" }
 }
 
 
@@ -91,6 +92,8 @@ fsm:add_transitions{
 function INIT:init()
    local m = laserswitch.EnableSwitchMessage:new()
    laserswitch:msgq_enqueue_copy(m)
+   local l = lightswitch.EnableSwitchMessage:new()
+   lightswitch:msgq_enqueue_copy(l)
 end
 
 function FINAL:init()

@@ -54,6 +54,7 @@ skiller:
         ampel_fallback: RobotinoAmpelInterface::light
         laser_cluster: LaserClusterInterface::laser-cluster
         motor_switch: SwitchInterface::Robotino Motor
+        lightFrontSwitch: SwitchInterface::light_front_switch
       writing:
         light: RobotinoLightInterface::Light determined
 
