@@ -50,12 +50,6 @@ local TIMEOUTS = {
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-fsm:define_states{ export_to=_M,
-   closure={laserswitch=laserwitch, plugin=plugin}, 
-   {"INIT", JumpState},
-   {"WAIT", JumpState},
-}
-
 function plugin_missing()
    return not (laserswitch:has_writer() and plugin:has_writer())
 end
@@ -82,10 +76,18 @@ function out_of_order()
       and plugin:red()    == plugin.ON
 end
 
+fsm:define_states{ export_to=_M,
+   closure={laserswitch=laserwitch, plugin=plugin, out_of_order=out_of_order},
+   {"INIT", JumpState},
+   {"OUT_OF_ORDER", JumpState},
+   {"WAIT", JumpState},
+}
+
 fsm:add_transitions{
    {"INIT", "FAILED", cond=plugin_missing, precond=true},
    {"INIT", "WAIT", timeout=1}, -- let vision settle
-   {"WAIT", "WAIT", cond=out_of_order},
+   {"WAIT", "OUT_OF_ORDER", cond=out_of_order},
+   {"OUT_OF_ORDER", "WAIT", cond="not out_of_order()"},
    {"WAIT", "FAILED", timeout=fsm.vars.mtype and TIMEOUTS[fsm.vars.mtype] or 70},
    {"WAIT", "FINAL", cond=done},
 }
