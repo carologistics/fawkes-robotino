@@ -110,6 +110,7 @@ function INIT:init()
 end
 
 function STARTPOSE:init()
+   self.fsm.vars.tries = self.fsm.vars.tries + 1
    self.fsm.vars.bl_target = tfm.transform({
       x=self.fsm.vars.target.x,
       y=self.fsm.vars.target.y,
@@ -118,7 +119,6 @@ function STARTPOSE:init()
 end
 
 function TURN:init()
-   self.fsm.vars.tries = self.fsm.vars.tries + 1
    self.fsm.vars.bl_target = tfm.transform({
        x=self.fsm.vars.target.x,
        y=self.fsm.vars.target.y,
@@ -140,7 +140,7 @@ function DRIVE:init()
       ori=self.fsm.vars.target.ori}, "/map", "/base_link")
    self.skills[1].x = self.fsm.vars.bl_target.x
    self.skills[1].y = self.fsm.vars.bl_target.y
-   self.skills[1].puck = true
+   self.skills[1].puck = self.fsm.vars.puck
    self.skills[1].tolerance = mm_tolerance
    self.skills[1].frame = "/odom"
 end
