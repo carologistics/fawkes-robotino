@@ -63,7 +63,7 @@ local THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dis
 local MIN_VIS_HIST = 15
 local EPSILON_X = 0.07
 local EPSILON_PHI = 0.2
-local OFFSET_X_SIDE_SEARCH = 0.15
+local OFFSET_X_SIDE_SEARCH = 0.30
 local omnipucks = {
    omnipuck1, 
    omnipuck2,
@@ -211,6 +211,7 @@ function DRIVE_SIDEWAYS_TO_PUCK:init()
          end
       end
    end
+
    local chosen_candidate
    for _,c in ipairs(candidates) do
       if c.y > max_y then
@@ -218,9 +219,15 @@ function DRIVE_SIDEWAYS_TO_PUCK:init()
          max_y = c.y
       end
    end
-   printf("GRAB local: %f,%f", chosen_candidate.x, chosen_candidate.y)
-   self.skills[1].y = chosen_candidate.y
-   self.fsm.vars.target = chosen_candidate
+
+   if chosen_candidate ~= nil then
+      printf("GRAB local: %f,%f", chosen_candidate.x, chosen_candidate.y)
+      self.skills[1].y = chosen_candidate.y
+--      self.fsm.vars.target = chosen_candidate
+   else
+      printf("NO PUCK IN FRONT")
+      self.skills[1].y = 0.0
+   end
 end
 
 function GRAB:init()
