@@ -45,7 +45,7 @@ skillenv.skill_module(_M)
 local tfm = require('tf_module')
 local LASER_FORWARD_CORRECTION = 0.2
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
-local MIN_VIS_HIST = 6
+local MIN_VIS_HIST = 15
 
 function get_ampel()
    local ampel_loc = {}
