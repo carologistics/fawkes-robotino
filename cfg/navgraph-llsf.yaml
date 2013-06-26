@@ -146,7 +146,7 @@ nodes:
       - target_tolerance: 0.15
 
   - name: M8
-    pos: [2.10, 1.65]
+    pos: [2.05, 1.65]
     properties:
       - orientation: 3.14
 
