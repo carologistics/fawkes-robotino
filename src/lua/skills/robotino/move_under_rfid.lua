@@ -43,7 +43,7 @@ local tfm = require("tf_module")
 skillenv.skill_module(_M)
 
 local tfm = require('tf_module')
-local LASER_FORWARD_CORRECTION = 0.2
+local LASER_FORWARD_CORRECTION = 0.17
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
 local MIN_VIS_HIST = 15
 
