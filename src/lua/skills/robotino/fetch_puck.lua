@@ -157,6 +157,7 @@ function TURN_TO_PUCK:init()
       end
    end
    self.skills[1].ori = min_ori
+   self.skills[1].tolerance = { x=0.05, y=0.05, ori=0.04 }
    self.fsm.vars.target = target
 end
 
@@ -198,7 +199,8 @@ end
 
 function GRAB:init()
    self.skills[1].x = math.sqrt(self.fsm.vars.target.x^2 + self.fsm.vars.target.y^2) + 0.3
-   self.skills[1].vel_trans = 0.25 
+   self.skills[1].vel_trans = 0.25
+   self.skills[1].tolerance = { x=0.05, y=0.05, ori=0.05 }
 end
 
 function cleanup()
