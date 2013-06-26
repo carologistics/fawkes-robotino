@@ -12,7 +12,7 @@
 
 (defrule change-phase
   ?cf <- (change-phase ?phase)
-  ?pf <- (phase ?)
+  ?pf <- (phase ?old)
   =>
   (retract ?cf ?pf)
   (assert (phase ?phase))
@@ -36,13 +36,22 @@
   (motor-enable)
 )
 
-(defrule start
+(defrule start-move-into-field
   (phase EXPLORATION|PRODUCTION)
   ?sf <- (state WAIT_START)
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state ?)
   =>
   (retract ?sf ?cf ?rf)
+  (assert (state MOVING_INTO_FIELD))
+  (skill-call motor_move x 0.25 y 0)
+)
+
+(defrule start-playing
+  ?sf <- (state MOVING_INTO_FIELD)
+  ?skf <- (skill (name "motor_move") (status FINAL|FAILED)) 
+  =>
+  (retract ?sf ?skf)
   (assert (state IDLE))
   (assert (refbox-state RUNNING))
   (assert (exploration-start))
