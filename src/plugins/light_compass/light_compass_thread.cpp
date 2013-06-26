@@ -213,13 +213,23 @@ void LightCompassThread::loop()
 		Point3d light_relative;
 		light_relative.setX(bestPosCartX);
 		light_relative.setY(bestPosCartY);
-		Point3d puck_absolute = apply_tf_to_global(light_relative);
 
-		double absLightX = puck_absolute.getX();
-		double absLightY = puck_absolute.getY();
+		try {
+		  Point3d puck_absolute = apply_tf_to_global(light_relative);
+		  /* logger->log_debug(name(), "original: (%f,%f,%f)   map: (%f,%f,%f)",
+		   		   light_relative.x(), light_relative.y(),
+		   		   light_relative.z(), puck_absolute.x(),
+		   		   puck_absolute.y(), puck_absolute.z());//*/
 
-		//speicher in interface
-		this->UpdateInterface(absLightX,absLightY, &bestLightPosRelPolar);
+		  double absLightX = puck_absolute.getX();
+		  double absLightY = puck_absolute.getY();
+
+		  //speicher in interface
+		  this->UpdateInterface(absLightX, absLightY, cfg_frame_);
+		} catch (Exception &e) {
+		  this->UpdateInterface(light_relative.x(), light_relative.y(),
+					"/base_link");
+		}
 
 		if(cfg_debugOutput_){
 			logger->log_debug(name(),"Position Pixel: %u, %u", bestRoi->start.x , bestRoi->start.y);
@@ -286,7 +296,7 @@ LightCompassThread::Point3d LightCompassThread::apply_tf_to_global(
 											 Point3d src) {
 
   const char* source_frame = "/base_link";
-  const char* target_frame = "/map";
+  const char* target_frame = cfg_frame_.c_str();
 
   src.stamp = Time(0,0);
   Point3d targetPoint;
@@ -296,36 +306,37 @@ LightCompassThread::Point3d LightCompassThread::apply_tf_to_global(
   bool laser_frame_exists = tf_listener->frame_exists(source_frame);
 
   if (!link_frame_exists || !laser_frame_exists) {
-    logger->log_warn(name(), "Frame missing: %s %s   %s %s", source_frame,
-		     link_frame_exists ? "exists" : "missing", target_frame,
+    logger->log_warn(name(), "Frame missing: %s %s   %s %s", target_frame,
+		     link_frame_exists ? "exists" : "missing", source_frame,
 		     laser_frame_exists ? "exists" : "missing");
+    throw Exception("Frame missing: %s %s   %s %s", target_frame,
+		    link_frame_exists ? "exists" : "missing", source_frame,
+		    laser_frame_exists ? "exists" : "missing");
   } else {
     src.frame_id = source_frame;
     try {
       tf_listener->transform_point(target_frame, src, targetPoint);
+      return targetPoint;
     } catch (tf::ExtrapolationException &e) {
-      logger->log_debug(name(), "Extrapolation error: %s", e.what());
-      return src;
+      logger->log_warn(name(), "Extrapolation error: %s", e.what_no_backtrace());
+      throw;
     } catch (tf::ConnectivityException &e) {
-          logger->log_debug(name(), "Connectivity exception: %s", e.what());
-          return src;
+      logger->log_warn(name(), "Connectivity exception: %s", e.what_no_backtrace());
+      throw;
     } catch (Exception &e) {
-        logger->log_debug(name(), "fawkes exception: %s", e.what());
-        return src;
+      logger->log_warn(name(), "fawkes exception: %s", e.what_no_backtrace());
+      throw;
     } catch (std::exception &e) {
-        logger->log_debug(name(), "generic exception: %s", e.what());
-        return src;
+      logger->log_warn(name(), "generic exception: %s", e.what());
+      throw Exception("Generic exception: %s", e.what());
     }
-
-    return targetPoint;
-
   }
-  return src;
 }
 
 
 void
-LightCompassThread::UpdateInterface(double lightPosX, double lightPosY, fawkes::polar_coord_2d_t * lightPol){
+LightCompassThread::UpdateInterface(double lightPosX, double lightPosY, std::string frame)
+{
 	//wert in interface schreiben
 	this->lightif->read();
 	double lightifValuse[3];
@@ -342,10 +353,10 @@ LightCompassThread::UpdateInterface(double lightPosX, double lightPosY, fawkes::
 
 	lightifValuse[0] = lightPosX;
 	lightifValuse[1] = lightPosY;
-	lightifValuse[2] = (double)lightPol->r;
+	//lightifValuse[2] = (double)lightPol->r;
 
 	this->lightif->set_translation(lightifValuse);
-	this->lightif->set_rotation(0,(double)lightPol->phi);
+	//this->lightif->set_rotation(0,(double)lightPol->phi);
 	this->lightif->write();
 
 	//logger->log_info(name(), "X = %f, Y = %f, R = %f", lightifValuse[0], lightifValuse[1], lightifValuse[2]);
