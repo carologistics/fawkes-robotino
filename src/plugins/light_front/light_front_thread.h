@@ -90,7 +90,7 @@ private:
 	unsigned int img_height;
 
 	int cfg_cameraOffsetVertical;
-	float cfg_cameraOffsetHorizontalRad;
+	int cfg_cameraOffsetHorizontal;
 
 	int cfg_lightNumberOfWrongDetections;
 
@@ -154,8 +154,8 @@ private:
 	bool lightFromHistoryBuffer(LightFrontThread::lightSignal &lighSignal);
 	unsigned char* calculatePositionInCamBuffer();
 
-	int positionCorrectionHeight(float distance);
-	int positionCorrectionWidth(float distance);
+	int angleCorrectionY(float distance);
+	int angleCorrectionX(float distance);
 	LightFrontThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
 	LightFrontThread::lightROIs createLightROIs(firevision::ROI light);
 

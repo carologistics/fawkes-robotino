@@ -24,7 +24,7 @@ LightFrontThread::LightFrontThread()
 	this->cfg_cameraFactorHorizontal = 0;
 	this->cfg_cameraFactorVertical = 0;
 
-	this->cfg_cameraOffsetHorizontalRad = 0;
+	this->cfg_cameraOffsetHorizontal = 0;
 	this->cfg_cameraOffsetVertical = 0;
 
 	this->cfg_lightSizeHeight = 0;
@@ -90,7 +90,7 @@ LightFrontThread::init()
 	this->cfg_cameraFactorHorizontal = this->config->get_float((this->cfg_prefix + "camera_factor_horizontal").c_str());
 	this->cfg_cameraFactorVertical = this->config->get_float((this->cfg_prefix + "camera_factor_vertical").c_str());
 
-	this->cfg_cameraOffsetHorizontalRad = this->config->get_float((this->cfg_prefix + "camera_offset_horizontal_rad").c_str());
+	this->cfg_cameraOffsetHorizontal = this->config->get_int((this->cfg_prefix + "camera_offset_horizontal").c_str());
 	this->cfg_cameraOffsetVertical = this->config->get_int((this->cfg_prefix + "camera_offset_vertical").c_str());
 	this->cfg_cameraAngleVerticalRad = this->config->get_float((this->cfg_prefix + "camera_angle_vertical_rad").c_str());
 	this->cfg_cameraAngleHorizontalRad = this->config->get_float((this->cfg_prefix + "camera_angle_horizontal_rad").c_str());
@@ -120,6 +120,14 @@ LightFrontThread::init()
 	this->cfg_simulate_laser_y = this->config->get_float((this->cfg_prefix + "simulate_laser_data_y").c_str());
 	this->cfg_simulate_laser_history = this->config->get_int((this->cfg_prefix + "simulate_laser_data_visibility").c_str());
 
+
+	logger->log_debug(name(), "Camera offset horizontal: %i",this->cfg_cameraOffsetHorizontal);
+	logger->log_debug(name(), "Camera offset vertical: %i",this->cfg_cameraOffsetVertical);
+
+	logger->log_debug(name(), "Camera offset angle horizontal: %f",this->cfg_cameraAngleHorizontalRad);
+	logger->log_debug(name(), "Camera offset angle vertical: %f",this->cfg_cameraAngleVerticalRad);
+
+	logger->log_debug(name(), "Simulate laser: %b",this->cfg_simulateLaserData);
 
 	std::string shmID = this->config->get_string((this->cfg_prefix + "shm_image_id").c_str());
 
@@ -293,7 +301,7 @@ LightFrontThread::loop()
 		}
 	} else{
 		//if the laser doen't see anything, use it as the robot is directy in front of the light
-		lightPositionPolar.r = this->cfg_lightToCloseThrashold + 0.02;//0.22;
+		lightPositionPolar.r = this->cfg_lightToCloseThrashold;
 		lightPositionPolar.phi = 0.0;
 		contiueToPictureProcess = true;
 //		this->resetLightInterface("laser visibility lower than threashold");
@@ -567,36 +575,39 @@ void LightFrontThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
 }
 
 int
-LightFrontThread::positionCorrectionHeight(float distance){
+LightFrontThread::angleCorrectionY(float distance){
 	return this->img_height / (distance * this->cfg_cameraFactorVertical) * tan(cfg_cameraAngleVerticalRad);
 }
 
 int
-LightFrontThread::positionCorrectionWidth(float distance){
+LightFrontThread::angleCorrectionX(float distance){
 	return this->img_width / (distance * this->cfg_cameraFactorHorizontal) * tan(cfg_cameraAngleHorizontalRad);
 }
 
 LightFrontThread::lightROIs
 LightFrontThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 {
-	// todo add horizonal and vertical angle offset;
-
 	int expectedLightSizeWidth = this->img_width / (lightPos.r * this->cfg_cameraFactorHorizontal) * this->cfg_lightSizeWidth;
 	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;
 	float pixelPerRadHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
 
 	int startX = this->img_width / 2											//picture center
-				- lightPos.phi * pixelPerRadHorizonal							//move to the light
-				- expectedLightSizeWidth / 2									//light center to light top cornor
-				- this->cfg_cameraOffsetHorizontalRad * pixelPerRadHorizonal	//angle of camera to robotor
-				+ this->positionCorrectionWidth(lightPos.r);
-				//TODO suche richtige werte der Kamera
+					- lightPos.phi * pixelPerRadHorizonal							//move to the light
+					- expectedLightSizeWidth / 2;
 
 	int startY = this->img_height / 2											//picture center
-				- expectedLightSizeHeigth / 2									//light center to light cornor
-				+ this->cfg_cameraOffsetVertical								//error of picture position to light
-				+ this->positionCorrectionHeight(lightPos.r);
-				//TODO suche richtige werte der Kamera
+					- expectedLightSizeHeigth / 2;									//light center to light cornor;                                                                  //light center to light cornor
+
+
+	//if(cfg_lightMoveUnderRfidThrashold < lightPos.r){
+		startX = startX
+				+ this->cfg_cameraOffsetHorizontal 								// pixels to move to side
+				+ this->angleCorrectionX(lightPos.r);									//light center to light top cornor
+		startY = startY
+				+ this->cfg_cameraOffsetVertical                                                                //error of picture position to light
+				+ this->angleCorrectionY(lightPos.r);
+	//}
+
 
 	firevision::ROI light;
 	light.start.x = startX;
@@ -702,6 +713,8 @@ LightFrontThread::resetLightInterface(std::string message)
 			logger->log_info(name(), "Resetting interface, %s",message.c_str());
 	}
 }
+
+
 
 std::list<firevision::ROI>*
 LightFrontThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier)
