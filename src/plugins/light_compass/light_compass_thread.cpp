@@ -353,7 +353,6 @@ LightCompassThread::UpdateInterface(double lightPosX, double lightPosY, std::str
 
 	lightifValuse[0] = lightPosX;
 	lightifValuse[1] = lightPosY;
-	//lightifValuse[2] = (double)lightPol->r;
 
 	this->lightif->set_translation(lightifValuse);
 	//this->lightif->set_rotation(0,(double)lightPol->phi);
@@ -382,7 +381,7 @@ firevision::ROI* LightCompassThread::getBestROI(unsigned char* bufferYCbCr)
 		if(cfg_debugOutput_){
 			logger->log_debug(name(),"Rois: Position: %u, %u", roi->start.x ,  roi->start.y);
 		}
-		drawROIInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roi);
+		//drawROIInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roi);
 		if(roi->get_height() * roi->get_width() > this->cfg_threashold_roiMaxSize_)
 		{
 			logger->log_debug(name(), "DELETED, roi size is %f", roi->get_height() * roi->get_width() );
@@ -399,7 +398,7 @@ firevision::ROI* LightCompassThread::getBestROI(unsigned char* bufferYCbCr)
 	}
 
 	//firevision::convert(cspace_from_, cspace_to_, cam_->buffer(), buffer_filtered, img_width_,img_height_);
-	this->drawROIsInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roisGood);
+	//this->drawROIsInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roisGood);
 
 	//setze ROI mit geringstem abstand zum roboter in return value
 	if ( ! roisGood->empty() ) {
@@ -408,7 +407,8 @@ firevision::ROI* LightCompassThread::getBestROI(unsigned char* bufferYCbCr)
 
 			float newRoiDistance = this->mirror_->getWorldPointRelative((*it).start.x,(*it).start.y).r;
 			float oldRoidDistance = this->mirror_->getWorldPointRelative(roi->start.x,roi->start.y).r;
-			if (newRoiDistance < oldRoidDistance) {
+
+			if (newRoiDistance > oldRoidDistance) {
 				roi = new firevision::ROI(*it);
 			}
 		}
@@ -419,6 +419,7 @@ firevision::ROI* LightCompassThread::getBestROI(unsigned char* bufferYCbCr)
 	delete roisGood;
 	delete rois;
 
+	drawROIInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roi);
 	return roi;
 }
 
