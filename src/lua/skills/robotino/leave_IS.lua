@@ -80,12 +80,14 @@ fsm:define_states{ export_to=_M,
 function TURN:init()
    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
    local ori = fawkes.tf.get_yaw(q)
-   if ori < 0 then
-      self.skills[1].ori = 2*math.pi - math.abs(ori)
+   if ori > 0 then
+      self.skills[1].ori = 2*math.pi - ori
    else
-      self.skills[1].ori = ori
+      self.skills[1].ori = math.abs(ori)
    end
    self.skills[1].vel_rot = 1.1
+
+   printf("ori=%f  skill_ori=%f", ori, self.skills[1].ori)
 end
 
 function SKILL_MOTOR_MOVE:init()

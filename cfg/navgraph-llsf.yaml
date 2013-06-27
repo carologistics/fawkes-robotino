@@ -217,7 +217,7 @@ nodes:
       - travel_tolerance: 0.8
 
   - name: Ins
-    pos: [0.85, 2.8]
+    pos: [0.80, 2.8]
     properties:
       - orientation: 3.14
 

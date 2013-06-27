@@ -61,7 +61,9 @@ local ORI_OFFSET = 0.03
 -- you can find the config value in /cfg/host.yaml
 local THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
 local MIN_VIS_HIST = 15
-local EPSILON = 0.07
+local EPSILON_X = 0.07
+local EPSILON_PHI = 0.2
+local OFFSET_X_SIDE_SEARCH = 0.30
 local omnipucks = {
    omnipuck1, 
    omnipuck2,
@@ -141,22 +143,46 @@ function WAIT_FOR_VISION:init()
 end
 
 function TURN_TO_PUCK:init()
-   local min_ori_abs = 10
-   local min_ori = 0
+   local min_d = 10
    local target
+   local candidates = {}
+   
    for _,o in ipairs(omnipucks) do
       if o:visibility_history() >= MIN_VIS_HIST then
          local x = o:translation(0)
          local y = o:translation(1)
          local ori = math.atan2(y, x)
-         if math.abs(ori) < min_ori_abs then
-            min_ori_abs = math.abs(ori)
-            min_ori = ori
-            target = {x = x, y = y}
+         if math.abs(ori) < EPSILON_PHI then
+            table.insert(candidates,  {x = x, y = y})
          end
       end
    end
-   self.skills[1].ori = min_ori
+
+   if #candidates == 0 then
+      local min_dist = 1000000
+      for _,o in ipairs(omnipucks) do
+         if o:visibility_history() >= MIN_VIS_HIST then
+            local x = o:translation(0)
+            local y = o:translation(1)
+            local dist = x*x + y*y
+
+            if dist < min_dist then
+               min_dist = dist
+               table.insert(candidates, {x = x, y = y})
+            end
+         end
+      end
+   end
+
+   for _,o in ipairs(candidates) do
+      local d = math.sqrt(o.y * o.y + o.x * o.x)
+      if d < min_d then
+         min_d = d
+         target = o
+      end
+   end
+
+   self.skills[1].ori = math.atan2(target.y, target.x)
    self.skills[1].tolerance = { x=0.05, y=0.05, ori=0.04 }
    self.fsm.vars.target = target
 end
@@ -169,22 +195,23 @@ function DRIVE_SIDEWAYS_TO_PUCK:init()
       if o:visibility_history() >= MIN_VIS_HIST then
          local x = o:translation(0)
          local y = o:translation(1)
-         if x > 0 and x < min_x then
+         if x > OFFSET_X_SIDE_SEARCH and x < min_x then
             printf("Case 1: %f %f", x, y)
             local new_candidates = {{x = x, y = y}}
             for _,c in ipairs(candidates) do
-               if c.x < x + EPSILON then
+               if c.x < x + EPSILON_X then
                   table.insert(new_candidates, c)
                end
             end
             candidates = new_candidates
             min_x = x
-         elseif x > 0 and x < min_x + EPSILON then
+         elseif x > OFFSET_X_SIDE_SEARCH and x < min_x + EPSILON_X then
             printf("Case 2: %f %f", x, y)
             table.insert(candidates, {x = x, y = y})
          end
       end
    end
+
    local chosen_candidate
    for _,c in ipairs(candidates) do
       if c.y > max_y then
@@ -192,9 +219,15 @@ function DRIVE_SIDEWAYS_TO_PUCK:init()
          max_y = c.y
       end
    end
-   printf("GRAB local: %f,%f", chosen_candidate.x, chosen_candidate.y)
-   self.skills[1].y = chosen_candidate.y
-   self.fsm.vars.target = chosen_candidate
+
+   if chosen_candidate ~= nil then
+      printf("GRAB local: %f,%f", chosen_candidate.x, chosen_candidate.y)
+      self.skills[1].y = chosen_candidate.y
+--      self.fsm.vars.target = chosen_candidate
+   else
+      printf("NO PUCK IN FRONT")
+      self.skills[1].y = 0.0
+   end
 end
 
 function GRAB:init()
