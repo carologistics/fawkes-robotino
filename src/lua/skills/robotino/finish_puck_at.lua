@@ -66,10 +66,12 @@ function orange_blinking()
 end
 
 fsm:define_states{ export_to=_M,
+   closure={end_rfid=end_rfid, end_deliver=end_deliver},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
-   {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="MAYBE_FAIL"},
+   {"MAYBE_FAIL", JumpState},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
       fail_to="SKILL_TAKE_PUCK"},
@@ -86,8 +88,10 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    { "TIMEOUT", "FAILED", cond="vars.tries > 3" },
    { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE", timeout=1, desc="test purpose" },
-   { "DECIDE_ENDSKILL", "SKILL_RFID", timeout=1, cond=end_rfid, desc="move under rfid" },
-   { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
+   { "MAYBE_FAIL", "DECIDE_ENDSKILL", cond=true },
+   { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
+   { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond="not vars.mm_failed and end_deliver", desc="deliver" },
+   { "DECIDE_ENDSKILL", "FAILED", cond="vars.mm_failed and end_deliver", desc="global_mm failed, don't deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
@@ -105,6 +109,10 @@ end
 function SKILL_GLOBAL_MOTOR_MOVE:init()
    self.skills[1].place = self.fsm.vars.place
    self.skills[1].puck = true
+end
+
+function MAYBE_FAIL:init()
+   self.fsm.vars.mm_failed = true
 end
 
 function SKILL_DRIVE_LEFT:init()
