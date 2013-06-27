@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "deliver_puck"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="CHECK_POSE", debug=true}
 depends_skills     = {"take_puck_to", "move_under_rfid", "watch_signal", "leave_area", "motor_move", "relgoto", "deposit_puck", "global_motor_move" }
 depends_interfaces = {
    { v="light", type="RobotinoLightInterface", id="Light_State" },
@@ -82,7 +82,6 @@ end
 fsm:define_states{ export_to=_M,
    closure = {have_puck=have_puck, ampel_green=ampel_green, MAX_TRIES=MAX_TRIES, pose_ok=pose_ok,
       MOVES=MOVES, orange_blinking=orange_blinking},
-   {"INIT", JumpState}, -- initial state
    {"CHECK_POSE", JumpState},
    {"CORRECT_TURN", SkillJumpState, skills={{relgoto}}, final_to="TRY_GATE",
       fail_to="FAILED"},
@@ -101,8 +100,6 @@ fsm:define_states{ export_to=_M,
    
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond="not have_puck()", desc="No puck seen by Infrared"},
-   {"INIT", "CHECK_POSE", cond=have_puck},
    {"CHECK_POSE", "CORRECT_TURN", cond="not pose_ok()"},
    {"CHECK_POSE", "TRY_GATE", cond=pose_ok},
    {"TRY_GATE", "MOVE_UNDER_RFID", cond=ampel_green, desc="green"},
@@ -115,7 +112,7 @@ fsm:add_transitions{
    {"CHECK_ORANGE_BLINKING", "LEAVE_AREA", cond="not orange_blinking()"}
 }
 
-function INIT:init()
+function CHECK_POSE:init()
    self.fsm.vars.numtries = 1
    self.fsm.vars.cur_gate_idx = 1
    laser:msgq_enqueue_copy(laser.EnableSwitchMessage:new())
