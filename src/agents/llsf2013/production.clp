@@ -252,7 +252,7 @@
 (defrule prod-wait-for-deliver
   (phase PRODUCTION)
   (state PROD_LOCK_REQUIRED_GOTO deliver)
-  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource deliver))
   (deliver-wait-point ?wait-point)
   =>
   (printout t "Waiting for lock of DELIVER at " ?wait-point crlf)
