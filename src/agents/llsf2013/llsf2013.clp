@@ -31,9 +31,11 @@
   (blackboard-add-interface "Position3DInterface" "Pose")
   (blackboard-add-interface "RobotinoLightInterface" "Light_State")
 
-  (load* (resolve-file llsf2013/net.clp))
   (load* (resolve-file llsf2013/utils.clp))
+  (load* (resolve-file llsf2013/net.clp))
   (load* (resolve-file llsf2013/skills.clp))
+  (load* (resolve-file llsf2013/lock.clp))
+
   (if
     (any-factp ((?conf confval))
       (and (eq ?conf:path "/clips-agent/llsf2013/enable-sim")
@@ -44,6 +46,7 @@
   )
   (load* (resolve-file llsf2013/game.clp))
   (load* (resolve-file llsf2013/general.clp))
+  (load* (resolve-file llsf2013/strategy.clp))
   (load* (resolve-file llsf2013/worldmodel.clp))
   (load* (resolve-file llsf2013/production.clp))
   (load* (resolve-file llsf2013/exploration.clp))

@@ -69,7 +69,7 @@ using namespace firevision;
  */
 
 /** Amount of pucks */
-#define PUCK_AMOUNT 10
+#define PUCK_AMOUNT 20
 
 /** Constructor. */
 OmniVisionPucksPipelineThread::OmniVisionPucksPipelineThread()
@@ -121,7 +121,7 @@ void OmniVisionPucksPipelineThread::init() {
 
   try {
     int i;
-    for (i = 1; i <= 10; i++) {
+    for (i = 1; i <= PUCK_AMOUNT; i++) {
       Position3DInterface *puckif;
       char *omni_name;
       if (asprintf(&omni_name, "OmniPuck%d", i) != -1) {
@@ -129,7 +129,7 @@ void OmniVisionPucksPipelineThread::init() {
 								   omni_name);
 	puckif->set_frame(cfg_frame_.c_str());
 	puckif->set_visibility_history(-1);
-	puckif->write();
+    puckif->write();
 	free(omni_name);
 	puck_ifs_.push_back(puckif);
       }
@@ -229,7 +229,6 @@ void OmniVisionPucksPipelineThread::finalize() {
     puck = puck_ifs_.begin();
     for (puck = puck_ifs_.begin(); puck != puck_ifs_.end(); puck++) {
       (*puck)->set_visibility_history(0);
-      (*puck)->write();
       blackboard->close(*puck);
     }
 
@@ -265,6 +264,12 @@ void OmniVisionPucksPipelineThread::loop() {
   }
 
   if (!switchInterface->is_enabled()) {
+    std::list<fawkes::Position3DInterface*>::iterator puck;
+    puck = puck_ifs_.begin();
+    for (puck = puck_ifs_.begin(); puck != puck_ifs_.end(); puck++) {
+      (*puck)->set_visibility_history(0);
+      (*puck)->write();
+    }
     usleep(500000);
     return;
   }
@@ -438,7 +443,6 @@ void OmniVisionPucksPipelineThread::associate_pucks_with_ifs() {
     Point3d relpos = relPositions_[p.first];
     pos_if->set_translation(0, relpos.getX());
     pos_if->set_translation(1, relpos.getY());
-    pos_if->write();
   }
 
 }
@@ -469,6 +473,12 @@ OmniVisionPucksPipelineThread::Point3d OmniVisionPucksPipelineThread::apply_tf_t
       return src;
     } catch (tf::ConnectivityException &e) {
       logger->log_debug(name(), "Connectivity exception: %s", e.what());
+      return src;
+    } catch (Exception &e) {
+      logger->log_debug(name(), "Fawkes exception: %s", e.what());
+      return src;
+    } catch (std::exception &e) {
+      logger->log_debug(name(), "Generic exception: %s", e.what());
       return src;
     }
 

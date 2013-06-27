@@ -28,10 +28,9 @@
   (assert (peer-enabled))
 )
 
-(defrule net-send-BeaconSignal-with-pose
+(defrule net-send-BeaconSignal
   (time $?now)
   ?f <- (signal (type beacon) (time $?t&:(timeout ?now ?t ?*BEACON-PERIOD*)) (seq ?seq))
-  (Position3DInterface (id "Pose") (translation $?pos))
   =>
   (modify ?f (time ?now) (seq (+ ?seq 1)))
   (if (debug 3) then (printout t "Sending beacon" crlf))
@@ -43,29 +42,20 @@
   (pb-set-field ?beacon "seq" ?seq)
   (pb-set-field ?beacon "team_name" ?*TEAM-NAME*)
   (pb-set-field ?beacon "peer_name" ?*ROBOT-NAME*)
-  (bind ?beacon-pose (pb-field-value ?beacon "pose"))
-  (pb-set-field ?beacon-pose "x" (nth$ 1 ?pos))
-  (pb-set-field ?beacon-pose "y" (nth$ 2 ?pos))
-  (pb-set-field ?beacon "pose" ?beacon-pose)
-  (pb-broadcast ?beacon)
-  (pb-destroy ?beacon)
-)
+  (pb-set-field ?beacon "number" ?*ROBOT-NUMBER*)
 
-(defrule net-send-BeaconSignal-without-pose
-  (declare (salience ?*PRIORITY-LOW*))
-  (time $?now)
-  ?f <- (signal (type beacon) (time $?t&:(timeout ?now ?t ?*BEACON-PERIOD*)) (seq ?seq))
-  =>
-  (modify ?f (time ?now) (seq (+ ?seq 1)))
-  (if (debug 3) then (printout t "Sending beacon" crlf))
-  (bind ?beacon (pb-create "llsf_msgs.BeaconSignal"))
-  (bind ?beacon-time (pb-field-value ?beacon "time"))
-  (pb-set-field ?beacon-time "sec" (nth$ 1 ?now))
-  (pb-set-field ?beacon-time "nsec" (* (nth$ 2 ?now) 1000))
-  (pb-set-field ?beacon "time" ?beacon-time) ; destroys ?beacon-time!
-  (pb-set-field ?beacon "seq" ?seq)
-  (pb-set-field ?beacon "team_name" ?*TEAM-NAME*)
-  (pb-set-field ?beacon "peer_name" ?*ROBOT-NAME*)
+  (do-for-fact ((?pose Position3DInterface)) (eq ?pose:id "Pose")
+    (bind ?beacon-pose (pb-field-value ?beacon "pose"))
+    (pb-set-field ?beacon-pose "x" (nth$ 1 ?pose:translation))
+    (pb-set-field ?beacon-pose "y" (nth$ 2 ?pose:translation))
+    (pb-set-field ?beacon-pose "ori" (yaw-from-quaternion ?pose:rotation))
+    (bind ?beacon-pose-time (pb-field-value ?beacon-pose "timestamp"))
+    (pb-set-field ?beacon-pose-time "sec" (nth$ 1 ?pose:time))
+    (pb-set-field ?beacon-pose-time "nsec" (* (nth$ 2 ?pose:time) 1000))
+    (pb-set-field ?beacon-pose "timestamp" ?beacon-pose-time)
+    (pb-set-field ?beacon "pose" ?beacon-pose)
+  )
+
   (pb-broadcast ?beacon)
   (pb-destroy ?beacon)
 )
@@ -91,21 +81,22 @@
 
 (defrule net-recv-BeaconSignal
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p) (rcvd-via BROADCAST))
-  ?ar <- (active-robot (name ?name) (last-seen $?last-seen) (x ?x) (y ?y))
+  (time $?now)
   =>
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
-  (if (eq ?name (sym-cat ?beacon-name))
-      then
-      (retract ?pf)
-      (bind ?beacon-time (pb-field-value ?p "time"))
-      (modify ?ar (last-seen ?beacon-time))
-      (if (pb-has-field ?p "pose")
-	  then
-          (bind ?beacon-pose (pb-field-value ?p "pose"))
-          (modify ?ar (x (nth$ 1 ?beacon-pose)) (y (nth$ 2 ?beacon-pose)))
-	  (printout t "Got Beacon Signal from " ?beacon-name "with Pose" crlf)
-  
-    )
+  (do-for-all-facts ((?active-robot active-robot)) (eq ?active-robot:name (sym-cat ?beacon-name))
+      ;no modify because the active-robot-fact may not be there before
+      (retract ?active-robot)
   )
+  (bind ?x 0.0)
+  (bind ?y 0.0)
+  (if (pb-has-field ?p "pose")
+    then
+    (bind ?beacon-pose (pb-field-value ?p "pose"))
+    (bind ?x (pb-field-value ?beacon-pose "x"))
+    (bind ?y (pb-field-value ?beacon-pose "y"))
+  )
+  (assert (active-robot (name (sym-cat ?beacon-name)) (last-seen ?now) (x ?x) (y ?y)))     
+  (retract ?pf) 
 )
 

@@ -23,6 +23,7 @@
 #ifndef __PLUGINS_LIGHT_COMPASS_THREAD_H_
 #define __PLUGINS_LIGHT_COMPASS_THREAD_H_
 
+#include "ColorModelRange.h"
 #include <core/threading/thread.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
@@ -42,7 +43,7 @@
 #include <fvmodels/global_position/omni_global.h>
 #include <fvmodels/scanlines/radial.h>
 #include <fvmodels/mirror/bulb.h>
-#include <fvmodels/color/ColorModelRange.h>
+
 
 #include <fvclassifiers/simple.h>
 #include <fvfilters/roidraw.h>
@@ -50,6 +51,10 @@
 #include <utils/system/hostinfo.h>
 #include <geometry/hom_point.h>
 #include <geometry/hom_vector.h>
+
+#include <aspect/tf.h>
+#include <tf/types.h>
+#include <tf/transform_listener.h>
 
 #include <utils/math/coord.h>
 
@@ -74,10 +79,12 @@ class LightCompassThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::VisionAspect,
-  public fawkes::BlackBoardAspect
+  public fawkes::BlackBoardAspect,
+  public fawkes::TransformAspect
 {
 
  public:
+	typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
 	LightCompassThread();
 
 	virtual void init();
@@ -120,9 +127,11 @@ private:
 
  	firevision::ROI* getBestROI(unsigned char* bufferYCbCr);
  	fawkes::polar_coord_2d_t distanceCorrectionOfAmple(fawkes::polar_coord_2d_t polatCooredOfMessuredLight, float ampleHeight);
- 	void UpdateInterface(double lightPosX, double lightPosY, fawkes::polar_coord_2d_t * lightPol);
+ 	void UpdateInterface(double lightPosX, double lightPosY, std::string frame_id);
  	void ResetInterface();
  	bool isValidSuccessor(float px, float py, float cx, float cy);
+
+ 	Point3d apply_tf_to_global(Point3d src);
 
 	unsigned int img_width_;
 	unsigned int img_height_;

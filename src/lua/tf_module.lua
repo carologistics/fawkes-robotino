@@ -15,20 +15,10 @@ function transform(src_pos, from_sys, to_sys)
 	local from_sp = fawkes.tf.StampedPose(from_p, fawkes.Time:new(0, 0), from_sys)
 	local to_sp = fawkes.tf.StampedPose:new()
 	tf:transform_pose(to_sys, from_sp, to_sp)
-	local to_t = to_sp:getOrigin()
-	local to_r = to_sp:getRotation()
 
-	local rv = {
-		x = to_t:x(),
-		y = to_t:y(),
-		ori = 2*math.acos(to_r:w())
-	}
-
---	printf("Transform %s (%f,%f,%f) to %s (%f,%f,%f).",
---	 from_sys, from_t:x(), from_t:y(), 2*math.acos(from_r:w()),
---	 to_sys, rv.x, rv.y, rv.ori)
-
-	return rv
+	return { x = to_sp:getOrigin():x(),
+            y = to_sp:getOrigin():y(),
+            ori = fawkes.tf.get_yaw(to_sp:getRotation())
+   }
 end
-
 

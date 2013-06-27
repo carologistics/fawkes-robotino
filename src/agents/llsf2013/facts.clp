@@ -17,7 +17,7 @@
 )
 
 (deftemplate active-robot
-  (slot name (type SYMBOL) (allowed-values R1 R2))
+  (slot name (type SYMBOL) (allowed-values R-1 R-2))
   (multislot last-seen (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
@@ -35,13 +35,6 @@
   (slot look-pos (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 ExpM1 ExpM2 ExpM3 ExpM4 ExpM5 ExpM6 ExpM7 ExpM8 ExpM9 ExpM10 D1 D2 D3 TST R1 R2) (default M1))
 )
 
-(deftemplate machine-light
-  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2) (default M1))
-  (slot red (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
-  (slot yellow (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
-  (slot green (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
-)
-
 (deftemplate machine-type
   (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10) (default M1))
   (slot type (type SYMBOL) (allowed-values T1 T2 T3 T4 T5) (default T1))
@@ -55,9 +48,6 @@
 )
 
 (deffacts startup-exploration
-  (active-robot (name R1))
-  (active-robot (name R2))
-
   (machine-exploration (name M10) (x 2.18) (y 4.74) (next M9) (look-pos ExpM10))
   (machine-exploration (name M9) (x 1.38) (y 3.42) (next M8) (look-pos ExpM9))
   (machine-exploration (name M8) (x 1.38) (y 2.18) (next M3) (look-pos ExpM8))
@@ -81,6 +71,9 @@
   (slot junk (type INTEGER) (default 0))
   (slot productions (type INTEGER) (default 0))
   (slot output (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3))
+  (slot x (type FLOAT))
+  (slot y (type FLOAT))
+  (slot allowed (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
 )
 
 ;(deftemplate holding
@@ -93,16 +86,16 @@
   (machine (name D1) (mtype DELIVER))
   (machine (name D2) (mtype DELIVER))
   (machine (name D3) (mtype DELIVER))
-  (machine (name M1))
-  (machine (name M2))
-  (machine (name M3))
-  (machine (name M4))
-  (machine (name M5))
-  (machine (name M6))
-  (machine (name M7))
-  (machine (name M8))
-  (machine (name M9))
-  (machine (name M10))
+  (machine (name M1) (x 3.62) (y 1.18))
+  (machine (name M2) (x 4.42) (y 3.62))
+  (machine (name M3) (x 3.1) (y 1.06))
+  (machine (name M4) (x 3.1) (y 2.13))
+  (machine (name M5) (x 2.3) (y 3.1))
+  (machine (name M6) (x 3.1) (y 4.42))
+  (machine (name M7) (x 2.5) (y 4.5))
+  (machine (name M8) (x 1.38) (y 2.18))
+  (machine (name M9) (x 1.38) (y 3.42))
+  (machine (name M10) (x 2.18) (y 4.74))
   (state WAIT_START)
   (phase PRE_GAME)
   (refbox-state WAIT_START)

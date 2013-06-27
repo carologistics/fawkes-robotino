@@ -38,6 +38,9 @@ package llsf_msgs;
 
 import "Time.proto";
 
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "GameStateProtos";
+
 message GameState {
   enum CompType {
     COMP_ID  = 2000;
@@ -52,11 +55,23 @@ message GameState {
   }
 
   enum Phase {
-    PRE_GAME = 0;
-    EXPLORATION = 1;
-    PRODUCTION = 2;
-    POST_GAME = 3;
+    PRE_GAME    = 0;
+    SETUP       = 10;
+    EXPLORATION = 20;
+    PRODUCTION  = 30;
+    POST_GAME   = 40;
+
+    OPEN_CHALLENGE         = 1000;
+    NAVIGATION_CHALLENGE   = 1001;
+    WHACK_A_MOLE_CHALLENGE = 1002;
   }
+
+  enum RefBoxMode {
+    STANDALONE  = 0;
+    MASTER      = 1;
+    SLAVE       = 2;
+  }
+
 
   // Time in seconds since game start
   required Time   game_time = 1;
@@ -67,6 +82,10 @@ message GameState {
   required Phase  phase = 4;
   // Awarded points
   optional uint32 points = 5;
+  // Name of the currently playing team
+  optional string team = 6;
+
+  optional RefBoxMode refbox_mode = 7 [default = STANDALONE];
 }
 
 // Request setting of a new game state

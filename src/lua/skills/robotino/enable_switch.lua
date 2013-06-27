@@ -16,7 +16,9 @@ depends_skills     = {}
 depends_interfaces = {
    {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
    {v = "ampelSwitch", type="SwitchInterface", id="ampelswitch"},
-   {v = "laserSwitch", type="SwitchInterface", id="laser-cluster"}
+   {v = "laserSwitch", type="SwitchInterface", id="laser-cluster"},
+   {v = "motorSwitch", type="SwitchInterface", id="Robotino Motor"},
+   {v = "lightFrontSwitch", type="SwitchInterface", id="light_front_switch"}
 }
 
 -- Initialize as skill module
@@ -34,7 +36,10 @@ function SWITCH:init()
    ifmap = {
       omnivision = omnivisionSwitch,
       ampel = ampelSwitch,
-      laser = laserSwitch
+      laser = laserSwitch,
+      motor = motorSwitch,
+      lightFront = lightFrontSwitch
+
    }
    iface = ifmap[self.fsm.vars.iface]
    if self.fsm.vars.enable then

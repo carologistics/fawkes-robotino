@@ -28,7 +28,26 @@ fsm                = SkillHSM:new{name=name, start="WAIT_FOR_VISION", debug=true
 depends_skills     = { "motor_move" }
 depends_interfaces = {
     {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
-    {v = "omnipuck", type="Position3DInterface", id="OmniPuck1"},
+    {v = "omnipuck1", type="Position3DInterface", id="OmniPuck1"},
+    {v = "omnipuck2", type="Position3DInterface", id="OmniPuck2"},
+    {v = "omnipuck3", type="Position3DInterface", id="OmniPuck3"},
+    {v = "omnipuck4", type="Position3DInterface", id="OmniPuck4"},
+    {v = "omnipuck5", type="Position3DInterface", id="OmniPuck5"},
+    {v = "omnipuck6", type="Position3DInterface", id="OmniPuck6"},
+    {v = "omnipuck7", type="Position3DInterface", id="OmniPuck7"},
+    {v = "omnipuck8", type="Position3DInterface", id="OmniPuck8"},
+    {v = "omnipuck9", type="Position3DInterface", id="OmniPuck9"},
+    {v = "omnipuck10", type="Position3DInterface", id="OmniPuck10"},
+    {v = "omnipuck11", type="Position3DInterface", id="OmniPuck11"},
+    {v = "omnipuck12", type="Position3DInterface", id="OmniPuck12"},
+    {v = "omnipuck13", type="Position3DInterface", id="OmniPuck13"},
+    {v = "omnipuck14", type="Position3DInterface", id="OmniPuck14"},
+    {v = "omnipuck15", type="Position3DInterface", id="OmniPuck15"},
+    {v = "omnipuck16", type="Position3DInterface", id="OmniPuck16"},
+    {v = "omnipuck17", type="Position3DInterface", id="OmniPuck17"},
+    {v = "omnipuck18", type="Position3DInterface", id="OmniPuck18"},
+    {v = "omnipuck19", type="Position3DInterface", id="OmniPuck19"},
+    {v = "omnipuck20", type="Position3DInterface", id="OmniPuck20"},
     {v = "sensor", type="RobotinoSensorInterface"},
     {v = "motor", type = "MotorInterface", id="Robotino" }
 }
@@ -37,10 +56,37 @@ documentation      = [==[Move to puck pickup position]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local TIMEOUT = 15
+local TIMEOUT = 3
 local ORI_OFFSET = 0.03
-local THRESHOLD_DISTANCE = 0.067
+-- you can find the config value in /cfg/host.yaml
+local THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
 local MIN_VIS_HIST = 15
+local EPSILON_X = 0.07
+local EPSILON_PHI = 0.2
+local OFFSET_X_SIDE_SEARCH = 0.30
+local omnipucks = {
+   omnipuck1, 
+   omnipuck2,
+   omnipuck3,
+   omnipuck4,
+   omnipuck5,
+   omnipuck6,
+   omnipuck7,
+   omnipuck8,
+   omnipuck9,
+   omnipuck10,
+   omnipuck11, 
+   omnipuck12,
+   omnipuck13,
+   omnipuck14,
+   omnipuck15,
+   omnipuck16,
+   omnipuck17,
+   omnipuck18,
+   omnipuck19,
+   omnipuck20
+}
+
 
 local tfm = require 'tf_module'
 
@@ -54,12 +100,19 @@ function have_puck()
 end
 
 function visible()
-   return omnipuck:visibility_history() >= MIN_VIS_HIST
+   for _,o in ipairs(omnipucks) do
+      if o:visibility_history() >= MIN_VIS_HIST then
+         return true
+      end
+   end
+   return false
 end
 
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck, omnipuck=omnipuck,
       visible=visible},
    {"WAIT_FOR_VISION", JumpState},
+   {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="TURN_TO_PUCK",
+      fail_to="WAIT_FOR_VISION"},
    {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB",
       fail_to="WAIT_FOR_VISION"},
    {"GRAB", SkillJumpState, skills={{motor_move}}, final_to="GRAB_DONE",
@@ -72,7 +125,8 @@ fsm:define_states{ export_to=_M, closure={have_puck=have_puck, omnipuck=omnipuck
 }
 
 fsm:add_transitions{
-   {"WAIT_FOR_VISION", "TURN_TO_PUCK", cond=visible },
+   {"WAIT_FOR_VISION", "TURN_TO_PUCK", cond="visible() and not  vars.move_sideways" },
+   {"WAIT_FOR_VISION", "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and vars.move_sideways" },
    {"WAIT_FOR_VISION", "FAILED", timeout=TIMEOUT},
    {"GRAB", "MOVE_MORE", cond=have_puck},
    {"GRAB_DONE", "WAIT_FOR_VISION", cond="not have_puck()"},
@@ -80,7 +134,7 @@ fsm:add_transitions{
 }
 
 function MOVE_MORE:init()
-   self.skills[1].x = 0.08
+   self.skills[1].x = 0.05
 end
 
 function WAIT_FOR_VISION:init()
@@ -89,18 +143,97 @@ function WAIT_FOR_VISION:init()
 end
 
 function TURN_TO_PUCK:init()
-   local x = omnipuck:translation(0)
-   local y = omnipuck:translation(1)
-   printf("GRAB local: %f,%f", x, y)
-   self.fsm.vars.target = tfm.transform({x = x, y = y, ori = 0}, "/base_link", "/map")
-   printf("GRAB global: %f,%f", self.fsm.vars.target.x, self.fsm.vars.target.y)
-   local target = tfm.transform(self.fsm.vars.target, "/map", "/base_link")
+   local min_d = 10
+   local target
+   local candidates = {}
+   
+   for _,o in ipairs(omnipucks) do
+      if o:visibility_history() >= MIN_VIS_HIST then
+         local x = o:translation(0)
+         local y = o:translation(1)
+         local ori = math.atan2(y, x)
+         if math.abs(ori) < EPSILON_PHI then
+            table.insert(candidates,  {x = x, y = y})
+         end
+      end
+   end
+
+   if #candidates == 0 then
+      local min_dist = 1000000
+      for _,o in ipairs(omnipucks) do
+         if o:visibility_history() >= MIN_VIS_HIST then
+            local x = o:translation(0)
+            local y = o:translation(1)
+            local dist = x*x + y*y
+
+            if dist < min_dist then
+               min_dist = dist
+               table.insert(candidates, {x = x, y = y})
+            end
+         end
+      end
+   end
+
+   for _,o in ipairs(candidates) do
+      local d = math.sqrt(o.y * o.y + o.x * o.x)
+      if d < min_d then
+         min_d = d
+         target = o
+      end
+   end
+
    self.skills[1].ori = math.atan2(target.y, target.x)
+   self.skills[1].tolerance = { x=0.05, y=0.05, ori=0.04 }
+   self.fsm.vars.target = target
+end
+
+function DRIVE_SIDEWAYS_TO_PUCK:init()
+   local min_x =  1000
+   local max_y = -1000
+   local candidates = {}
+   for _,o in ipairs(omnipucks) do
+      if o:visibility_history() >= MIN_VIS_HIST then
+         local x = o:translation(0)
+         local y = o:translation(1)
+         if x > OFFSET_X_SIDE_SEARCH and x < min_x then
+            printf("Case 1: %f %f", x, y)
+            local new_candidates = {{x = x, y = y}}
+            for _,c in ipairs(candidates) do
+               if c.x < x + EPSILON_X then
+                  table.insert(new_candidates, c)
+               end
+            end
+            candidates = new_candidates
+            min_x = x
+         elseif x > OFFSET_X_SIDE_SEARCH and x < min_x + EPSILON_X then
+            printf("Case 2: %f %f", x, y)
+            table.insert(candidates, {x = x, y = y})
+         end
+      end
+   end
+
+   local chosen_candidate
+   for _,c in ipairs(candidates) do
+      if c.y > max_y then
+         chosen_candidate = c
+         max_y = c.y
+      end
+   end
+
+   if chosen_candidate ~= nil then
+      printf("GRAB local: %f,%f", chosen_candidate.x, chosen_candidate.y)
+      self.skills[1].y = chosen_candidate.y
+--      self.fsm.vars.target = chosen_candidate
+   else
+      printf("NO PUCK IN FRONT")
+      self.skills[1].y = 0.0
+   end
 end
 
 function GRAB:init()
-   local target = tfm.transform(self.fsm.vars.target, "/map", "/base_link")
-   self.skills[1].x = math.sqrt(target.x^2 + target.y^2) + 0.3 
+   self.skills[1].x = math.sqrt(self.fsm.vars.target.x^2 + self.fsm.vars.target.y^2) + 0.3
+   self.skills[1].vel_trans = 0.25
+   self.skills[1].tolerance = { x=0.05, y=0.05, ori=0.05 }
 end
 
 function cleanup()

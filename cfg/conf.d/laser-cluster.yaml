@@ -23,7 +23,7 @@ laser-cluster:
   cluster_tolerance: 0.1
 
   # Minimum number of points in cluster to consider
-  cluster_min_size: 4
+  cluster_min_size: 2
 
   # Minimum number of points in cluster to consider
   cluster_max_size: 15

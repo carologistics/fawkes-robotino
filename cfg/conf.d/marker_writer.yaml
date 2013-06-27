@@ -1,0 +1,13 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/marker_writer	
+
+plugins/markerwriter:
+  
+  # pattern to identify the Position3DInterfaces to display
+  wildcard_pattern: "*"
+
+  # time that objects are displayed without update
+  display_duration: 60
+  

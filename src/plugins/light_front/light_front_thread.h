@@ -21,6 +21,7 @@
 #include <aspect/vision.h>
 #include <aspect/tf.h>
 
+#include <interfaces/SwitchInterface.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/RobotinoLightInterface.h>
 
@@ -30,7 +31,7 @@
 #include <fvutils/ipc/shm_image.h>
 #include <fvutils/color/conversions.h>
 #include <fvmodels/color/thresholds_luminance.h>
-#include <fvmodels/color/threasholds_black.h>
+#include <fvmodels/color/thresholds_black.h>
 #include <fvmodels/scanlines/grid.h>
 
 #include <fvclassifiers/simple.h>
@@ -83,11 +84,13 @@ private:
 	std::string cfg_camera;
 	float cfg_cameraFactorHorizontal;
 	float cfg_cameraFactorVertical;
+	float cfg_cameraAngleVerticalRad;
+	float cfg_cameraAngleHorizontalRad;
 	unsigned int img_width;
 	unsigned int img_height;
 
 	int cfg_cameraOffsetVertical;
-	float cfg_cameraOffsetHorizontalRad;
+	int cfg_cameraOffsetHorizontal;
 
 	int cfg_lightNumberOfWrongDetections;
 
@@ -138,6 +141,7 @@ private:
 
 	int laser_visibilityHistoryThrashold;
 
+	fawkes::SwitchInterface *switchInterface;
 	fawkes::RobotinoLightInterface *lightStateIF;
 
 	firevision::FilterROIDraw *drawer;
@@ -150,6 +154,8 @@ private:
 	bool lightFromHistoryBuffer(LightFrontThread::lightSignal &lighSignal);
 	unsigned char* calculatePositionInCamBuffer();
 
+	int angleCorrectionY(float distance);
+	int angleCorrectionX(float distance);
 	LightFrontThread::lightROIs calculateLightPos(fawkes::polar_coord_2d_t lightPos);
 	LightFrontThread::lightROIs createLightROIs(firevision::ROI light);
 

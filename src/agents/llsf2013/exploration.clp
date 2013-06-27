@@ -14,18 +14,18 @@
 (defrule exp-determine-first-machine
   (phase EXPLORATION)
   (role ?role)
-  (confval (path "/clips-agent/llsf2013/start-machine-exploration-only") (value ?first-machine-exp-only))
-  (confval (path "/clips-agent/llsf2013/start-machine-exploration-production") (value ?first-machine-exp-prod))
+  (confval (path "/clips-agent/llsf2013/start-machine-exploration-p1p2") (value ?first-machine-exp-only))
+  (confval (path "/clips-agent/llsf2013/start-machine-exploration-p3") (value ?first-machine-exp-prod))
   =>
-  (if (eq ?role EXPLORATION_ONLY)
+  (if (eq ?role EXPLORATION_P1P2)
     then
       (assert (first-exploration-machine (sym-cat ?first-machine-exp-only)))
     else
-      (if (eq ?role EXPLORATION_PRODUCTION)
+      (if (eq ?role EXPLORATION_P3)
 				then
 					(assert (first-exploration-machine (sym-cat ?first-machine-exp-prod)))
 				else
-					(printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! ")
+					(printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! " crlf)
       )
   )
 )
@@ -50,24 +50,42 @@
   (phase EXPLORATION)
   ?s <- (state EXP_START)
   (round FIRST)
-  ?first-machine <- (first-exploration-machine ?v)
+  (first-exploration-machine ?v)
   (machine-exploration (name ?v) (x ?) (y ?) (next ?) (look-pos ?lp))
   =>
   (printout t "First machine: " ?v crlf)
-  (skill-call ppgoto place (str-cat ?lp))
+  ;(skill-call ppgoto place (str-cat ?lp))
   (retract ?s)
-  (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?v))
+  ;(assert (state EXP_DRIVING_TO_MACHINE)
+  ;        (goalmachine ?v))
+	(assert (state EXP_LOCK_REQUIRED)
+					(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?v))
+					(nextInCycle ?v)
+	)
 )
 
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
-(defrule exp-arrived-at-machine
+(defrule exp-ppgoto-arrived-at-machine
   (phase EXPLORATION)
-  ?final <- (skill (name "ppgoto") (status FINAL) (skill-string ?skill)) 
+  ?final <- (skill (name "ppgoto") (status FINAL)) 
   ?s <- (state EXP_DRIVING_TO_MACHINE)
+  (goalmachine ?name)
+  (machine-exploration (name ?name) (look-pos ?goal))
+  =>
+  (printout t "PPGoto Arrived. Calling global_motor_move." crlf)
+  (retract ?s ?final)
+  (assert (state EXP_DRIVING_TO_MACHINE_GLOBAL))
+  (skill-call global_motor_move place (str-cat ?goal))
+)
+
+;redo movement with global motor move
+(defrule exp-global-motor-move-finished
+  (phase EXPLORATION)
+  ?final <- (skill (name "global_motor_move") (status FINAL|FAILED)) 
+  ?s <- (state EXP_DRIVING_TO_MACHINE_GLOBAL)
   (time $?now)
   =>
-  (printout t "Arrived. Skill string was: " ?skill crlf)
+  (printout t "Arrived." crlf)
   (printout t "Read light now." crlf)
   (retract ?s ?final)
   (assert (state EXP_WAITING_AT_MACHINE)
@@ -84,50 +102,77 @@
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh 20)) (ready TRUE))
+  (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
+  (printout t "Identified machine" crlf)
   (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
   (retract ?s ?g ?rli ?ws)
   (assert (state EXP_IDLE)
-          (nextInCycle ?nextMachine)
-          (machine-light (name ?old) (red ?red) (yellow ?yellow) (green ?green))
+    (nextInCycle ?nextMachine)
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
+    (machine-type (name ?old) (type ?type))
   )
 )
 
-;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
-(defrule exp-recognized-machine-failed
+;Recognizing of lights failed => ty again with a slightly other position
+(defrule exp-recognized-machine-failed-once
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (signal (type waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
+  (not (second-recognize-try))
+  =>
+  (printout t "Reading light at " ?old " failed first time." crlf)
+  (printout t "Try again in from an other position." crlf)
+  (assert (second-recognize-try)
+  )
+  (modify ?ws (time ?now))
+  (skill-call motor_move x 0 y 0.15 vel_trans 0.1)
+)
+
+;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
+(defrule exp-recognized-machine-failed-twice
+  (phase EXPLORATION)
+  (time $?now)
+  ?ws <- (signal (type waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
+  ?s <- (state EXP_WAITING_AT_MACHINE)
+  ?g <- (goalmachine ?old)
+  (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
+  ?srt <- (second-recognize-try)
   =>
   (printout t "Reading light at " ?old " failed." crlf)
   (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE." crlf)
-  (retract ?s ?g ?ws)
+  (retract ?s ?g ?ws ?srt)
   (assert (state EXP_IDLE)
           (nextInCycle ?nextMachine)
+					(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
   )
+)
+
+;delete second-recognize-try fact
+(defrule exp-second-retry-fact-retract
+  (state EXP_DRIVING_TO_MACHINE)
+  ?srt <- (second-recognize-try)
+  =>
+  (retract ?srt)
 )
 
 ;Find next machine and assert drinve command in the first round
-(defrule exp-goto-next-machine-first-round
+(defrule exp-find-next-machine-first-round
   (phase EXPLORATION)
   (round FIRST)
   ?s <- (state EXP_IDLE)
-  ?n <- (nextInCycle ?nextMachine)
+  (nextInCycle ?nextMachine)
   (not (machineRecognized ?nextMachine))
-  (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
   =>
-  (printout t "Going to next machine" crlf)
-  (retract ?s ?n)
-  (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?nextMachine)
-  )
-  (skill-call ppgoto place (str-cat ?lp))
+  (retract ?s)
+  (assert (state EXP_FOUND_NEXT_MACHINE))
 )
 
-(defrule exp-go-to-nextnext-machine-first-round
+;If next machine is already recognized, find next unrecognized machine in list
+(defrule exp-find-next-machine-if-recognized-first-round
   (phase EXPLORATION)
   (round FIRST)
   (state EXP_IDLE)
@@ -138,6 +183,68 @@
   =>
   (retract ?n)
   (assert (nextInCycle ?nextnext))
+)
+
+;Require resource-locking
+(defrule exp-require-resource-locking
+  (phase EXPLORATION)
+  (round FIRST)
+  ?s <- (state EXP_FOUND_NEXT_MACHINE)
+  (nextInCycle ?nextMachine)
+  =>
+  (printout t "Require lock for " ?nextMachine crlf)
+  (retract ?s)
+  (assert (state EXP_LOCK_REQUIRED)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine)))
+)
+
+;Wait for answer from MASTER
+(defrule exp-check-resource-locking
+  (phase EXPLORATION)
+  (round FIRST)
+  ?s <- (state EXP_LOCK_REQUIRED)
+  (nextInCycle ?nextMachine)
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
+  =>
+  (printout t "Lock accepted." crlf)
+  (retract ?s ?l)
+  (assert (state EXP_LOCK_ACCEPTED))
+)
+
+;Pass slow robotino
+(defrule exp-pass-slow-robotino
+  (phase EXPLORATION)
+  (round FIRST)
+  (state EXP_LOCK_REQUIRED)
+  ?n <- (nextInCycle ?next)
+  (machine-exploration (name ?next) (next ?second-next))
+  (machine-exploration (name ?second-next) (next ?third-next))
+  (not (machineRecognized ?next))
+  (not (machineRecognized ?second-next))
+  (not (machineRecognized ?third-next))
+  ?lg <- (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
+  ?lr <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
+  =>
+  (printout warn "Passing slow robotino. Going for " ?third-next crlf)
+  (retract ?n ?lg ?lr)
+  (assert (nextInCycle ?third-next)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?third-next))
+  )
+)
+
+;Drive to next machine
+(defrule exp-go-to-next-machine-first-round
+  (phase EXPLORATION)
+  (round FIRST)
+  ?s <- (state EXP_LOCK_ACCEPTED)
+  ?n <- (nextInCycle ?nextMachine)
+  (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
+  =>
+  (printout t "Going to next machine." crlf)
+  (retract ?s ?n)
+  (assert (state EXP_DRIVING_TO_MACHINE)
+          (goalmachine ?nextMachine))
+  (skill-call ppgoto place (str-cat ?lp))
 )
 
 ;Finish first round
@@ -154,25 +261,25 @@
   )
 )
 
-;Start retry round if EXPLORATION_ONLY
+;Start retry round if EXPLORATION_P1P2
 (defrule exp-start-retry-round
   (phase EXPLORATION)
   ?r <- (round FIRST_FINISHED)
-  (role EXPLORATION_ONLY)
+  (role EXPLORATION_P1P2)
   =>
   (printout t "Starting retry round." crlf)
 	(retract ?r)
   (assert (round RETRY))
 )
 
-;Move EXPLORATION_PRODUCTION away after first round
+;Move EXPLORATION_P3 away after first round
 (defrule exp-move-away-after-finished
   (declare (salience ?*PRIORITY-HIGH*))
   ?sr <- (round FIRST_FINISHED)
   ?si <- (state EXP_IDLE)
-  (role EXPLORATION_PRODUCTION)
+  (role EXPLORATION_P3)
   (not (driven-to-waiting-point))
-  (confval (path "/clips-agent/llsf2013/waiting-for-production-point") (value ?waiting-for-prod-point))
+  (confval (path "/clips-agent/llsf2013/waiting-for-p3-production-point") (value ?waiting-for-prod-point))
   =>
   (skill-call ppgoto place (str-cat ?waiting-for-prod-point))
   (printout t "Driving away..." crlf)
@@ -232,33 +339,14 @@
   (phase EXPLORATION)
   (forall (machine-exploration (name ?m) (x ?) (y ?) (next ?))
     (machineRecognized ?m))
-  (role EXPLORATION_ONLY)
+  (role EXPLORATION_P1P2)
   ?s <- (round RETRY)
+  (confval (path "/clips-agent/llsf2013/waiting-for-p1p2-prouction-point") (value ?work-finished-point))
   =>
   (printout t "Finished Exploration :-)" crlf)
   (retract ?s)
-  (assert (end-state FLEE))
-)
-
-;don't retract when two robots produce
-(defrule exp-production-phase-started
-  (declare (salience ?*PRIORITY-HIGH*))
-  ?p <- (phase PRODUCTION)
-  (role EXPLORATION_ONLY)
-  =>
-  (retract ?p)
-  (assert (end-state FLEE))
-)
-
-(defrule exp-move-exploration-only-away
-  (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_ONLY)
-  ?s <- (end-state FLEE)
-	(confval (path "/clips-agent/llsf2013/exploration-only-work-finished-point") (value ?work-finished-point))
-  =>
   (skill-call ppgoto place (str-cat ?work-finished-point))
   (printout t "Driving away." crlf)
-	(retract ?s)
 )
 
 ;Receive light-pattern-to-type matchig and save it in a fact
@@ -276,18 +364,6 @@
       ;assert the read type color and state to compose it together in compose-type-light-pattern-matching 
       (assert (type-spec-pre ?type ?light-color ?light-state))
     )
-  )
-)
-
-;Matching of recognized lights to the machine types
-(defrule exp-match-light-types
-  (phase EXPLORATION)
-  ?ml <- (machine-light (name ?name) (red ?red) (yellow ?yellow) (green ?green))
-  (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
-  =>
-  (printout t "Identified machine" crlf)
-  (retract ?ml)
-  (assert (machine-type (name ?name) (type ?type))
   )
 )
 
@@ -342,17 +418,6 @@
   )
 )
 
-(defrule exp-print-read-but-not-recognized-lights
-  (phase EXPLORATION)
-  (time $?now)  
-  ?ws <- (signal (type print-unrecognized-lights) (time $?t&:(timeout ?now ?t 1.0)) (seq ?seq))
-  =>
-  (do-for-all-facts ((?read machine-light)) TRUE
-    (printout t "Read light with no type matching: " ?read:name ", red " ?read:red ", yellow " ?read:yellow ", green " ?read:green crlf)
-  )
-  (modify ?ws (time ?now) (seq (+ ?seq 1)))
-)
-
 ;the refbox sends BLINK but in the interface BLINKING is used. This rule converts BLINK to BLINKING
 (defrule exp-convert-blink-to-blinking
   (declare (salience 10)) ; this rule has to fire before compose-type-light-pattern-matching
@@ -361,24 +426,3 @@
   =>
   (assert (type-spec-pre ?type ?light-color BLINKING))
 )
-
-(defrule exp-remove-phases
-  (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_ONLY)
-  (end-state FLEE)
-  ?p <- (phase ?)
-  (time $?)
-  =>
-  (retract ?p)
-)
-
-(defrule exp-remove-state
-  (declare (salience ?*PRIORITY-HIGH*))
-  (role EXPLORATION_ONLY)
-  (end-state FLEE)
-  ?s <- (state ?)
-  (time $?)
-  =>
-  (retract ?s)
-)
-

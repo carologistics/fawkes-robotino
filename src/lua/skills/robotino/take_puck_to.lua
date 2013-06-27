@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "take_puck_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "goto", "relgoto", "fetch_puck", "ppgoto" }
+depends_skills     = { "relgoto", "fetch_puck", "ppgoto" }
 depends_interfaces = {
    { v = "sensor", type = "RobotinoSensorInterface", id = "Robotino" },
    { v = "omnivisionSwitch", type = "SwitchInterface", id = "omnivisionSwitch" },
@@ -40,7 +40,8 @@ skillenv.skill_module(_M)
 -- Constants
 local AVG_LEN = 10
 local MAX_RETRIES = 3
-local LOSTPUCK_DIST = 0.053
+-- you can find the config value in /cfg/host.yaml
+local LOSTPUCK_DIST = config:get_float("/skills/take_puck_to/front_sensor_dist")
 
 -- Imports
 local pm = require 'puck_loc_module'

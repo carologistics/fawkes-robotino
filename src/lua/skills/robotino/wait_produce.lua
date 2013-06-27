@@ -29,7 +29,9 @@ depends_skills     = nil
 depends_interfaces = {
    { v="plugin", type ="RobotinoLightInterface", id = "Light_State" },
    { v="output", type ="RobotinoLightInterface", id = "Light determined" },
-   { v="laserswitch", type="SwitchInterface", id="laser-cluster" }
+   { v="laserswitch", type="SwitchInterface", id="laser-cluster" },
+   { v="lightswitch", type="SwitchInterface", id="light_front_switch" },
+   { v="laser_cluster", type="LaserClusterInterface", id="laser-cluster" }
 }
 
 
@@ -37,16 +39,16 @@ documentation      = [==[
 writes ampel data into the light interface 
 ]==]
 -- Constants
-
+local TIMEOUTS = {
+   T1 = 12,
+   T2 = 30,
+   T3 = 70,
+   T4 = 70,
+   T5 = 50
+}
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-
-fsm:define_states{ export_to=_M,
-   closure={laserswitch=laserwitch, plugin=plugin}, 
-   {"INIT", JumpState},
-   {"WAIT", JumpState},
-}
 
 function plugin_missing()
    return not (laserswitch:has_writer() and plugin:has_writer())
@@ -60,24 +62,48 @@ function done()
           or (plugin:green()      == plugin.OFF
               and plugin:yellow() == plugin.ON
               and plugin:red()    == plugin.OFF)
+          or (plugin:green()      == plugin.OFF
+              and plugin:yellow() == plugin.BLINKING
+              and plugin:red()    == plugin.OFF)
    end
    return false
 end
 
+function out_of_order()
+   return plugin:is_ready()
+      and plugin:green()  == plugin.OFF
+      and plugin:yellow() == plugin.OFF
+      and plugin:red()    == plugin.ON
+end
+
+fsm:define_states{ export_to=_M,
+   closure={laserswitch=laserwitch, plugin=plugin, out_of_order=out_of_order},
+   {"INIT", JumpState},
+   {"OUT_OF_ORDER", JumpState},
+   {"WAIT", JumpState},
+}
+
 fsm:add_transitions{
    {"INIT", "FAILED", cond=plugin_missing, precond=true},
    {"INIT", "WAIT", timeout=1}, -- let vision settle
+   {"WAIT", "OUT_OF_ORDER", cond=out_of_order},
+   {"OUT_OF_ORDER", "WAIT", cond="not out_of_order()"},
+   {"WAIT", "FAILED", timeout=fsm.vars.mtype and TIMEOUTS[fsm.vars.mtype] or 70},
    {"WAIT", "FINAL", cond=done},
 }
 
 function INIT:init()
-   local m = laserswitch.EnableSwitchMessage:new()
-   laserswitch:msgq_enqueue_copy(m)
+   laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
+   lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.15))   
+end
+
+function WAIT:exit()
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))   
 end
 
 function FINAL:init()
-   local m = laserswitch.DisableSwitchMessage:new()
-   laserswitch:msgq_enqueue_copy(m)
+   laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
    output:set_red(plugin:red())
    output:set_yellow(plugin:yellow())
    output:set_green(plugin:green())

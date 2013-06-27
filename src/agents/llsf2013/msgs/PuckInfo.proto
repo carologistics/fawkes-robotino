@@ -38,6 +38,9 @@ package llsf_msgs;
 
 import "Pose2D.proto";
 
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "PuckInfoProtos";
+
 // Current state of a puck
 enum PuckState {
   S0 = 0;
@@ -47,6 +50,7 @@ enum PuckState {
   P2 = 5;
   P3 = 6;
   CONSUMED = 7;
+  FINISHED = 8;
 }
 
 message Puck {
@@ -72,4 +76,14 @@ message PuckInfo {
 
   // List of all known pucks
   repeated Puck pucks = 1;
+}
+
+message SetPucks {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 52;
+  }
+
+  // List of all known pucks
+  repeated uint32 ids = 1;
 }

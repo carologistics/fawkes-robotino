@@ -58,7 +58,7 @@ LightCompassThread::LightCompassThread() :
 
 void LightCompassThread::init()
 {
-	logger->log_info(name(), "Plugin light-compass starts up");
+	logger->log_info(name(), "starts up");
 
 	this->cfg_prefix_        = "/plugins/light_compass/";
 	this->cfg_camera_        = this->config->get_string((cfg_prefix_ + "camera").c_str());
@@ -123,7 +123,7 @@ void LightCompassThread::init()
 				false,																//upward
 				2,																	//neighberhoud_min_match
 				0,																	//grow_by
-				firevision::C_EXPECTED												//color
+				firevision::C_WHITE												//color
 				);
 
 
@@ -206,10 +206,30 @@ void LightCompassThread::loop()
 		//rechnte cartesische coordinaten
 		float bestPosCartX=0;
 		float bestPosCartY=0;
+
 		fawkes::polar2cart2d(bestLightPosRelPolar.phi, bestLightPosRelPolar.r, &bestPosCartX, &bestPosCartY);
 
-		//speicher in interface
-		this->UpdateInterface((double)bestPosCartX,(double)bestPosCartY, &bestLightPosRelPolar);
+		//translate from relativ to absolute positions
+		Point3d light_relative;
+		light_relative.setX(bestPosCartX);
+		light_relative.setY(bestPosCartY);
+
+		try {
+		  Point3d puck_absolute = apply_tf_to_global(light_relative);
+		  /* logger->log_debug(name(), "original: (%f,%f,%f)   map: (%f,%f,%f)",
+		   		   light_relative.x(), light_relative.y(),
+		   		   light_relative.z(), puck_absolute.x(),
+		   		   puck_absolute.y(), puck_absolute.z());//*/
+
+		  double absLightX = puck_absolute.getX();
+		  double absLightY = puck_absolute.getY();
+
+		  //speicher in interface
+		  this->UpdateInterface(absLightX, absLightY, cfg_frame_);
+		} catch (Exception &e) {
+		  this->UpdateInterface(light_relative.x(), light_relative.y(),
+					"/base_link");
+		}
 
 		if(cfg_debugOutput_){
 			logger->log_debug(name(),"Position Pixel: %u, %u", bestRoi->start.x , bestRoi->start.y);
@@ -271,8 +291,52 @@ LightCompassThread::ResetInterface(){
 	this->lightif->write();
 }
 
+
+LightCompassThread::Point3d LightCompassThread::apply_tf_to_global(
+											 Point3d src) {
+
+  const char* source_frame = "/base_link";
+  const char* target_frame = cfg_frame_.c_str();
+
+  src.stamp = Time(0,0);
+  Point3d targetPoint;
+  targetPoint.frame_id = target_frame;
+
+  bool link_frame_exists = tf_listener->frame_exists(target_frame);
+  bool laser_frame_exists = tf_listener->frame_exists(source_frame);
+
+  if (!link_frame_exists || !laser_frame_exists) {
+    logger->log_warn(name(), "Frame missing: %s %s   %s %s", target_frame,
+		     link_frame_exists ? "exists" : "missing", source_frame,
+		     laser_frame_exists ? "exists" : "missing");
+    throw Exception("Frame missing: %s %s   %s %s", target_frame,
+		    link_frame_exists ? "exists" : "missing", source_frame,
+		    laser_frame_exists ? "exists" : "missing");
+  } else {
+    src.frame_id = source_frame;
+    try {
+      tf_listener->transform_point(target_frame, src, targetPoint);
+      return targetPoint;
+    } catch (tf::ExtrapolationException &e) {
+      logger->log_warn(name(), "Extrapolation error: %s", e.what_no_backtrace());
+      throw;
+    } catch (tf::ConnectivityException &e) {
+      logger->log_warn(name(), "Connectivity exception: %s", e.what_no_backtrace());
+      throw;
+    } catch (Exception &e) {
+      logger->log_warn(name(), "fawkes exception: %s", e.what_no_backtrace());
+      throw;
+    } catch (std::exception &e) {
+      logger->log_warn(name(), "generic exception: %s", e.what());
+      throw Exception("Generic exception: %s", e.what());
+    }
+  }
+}
+
+
 void
-LightCompassThread::UpdateInterface(double lightPosX, double lightPosY, fawkes::polar_coord_2d_t * lightPol){
+LightCompassThread::UpdateInterface(double lightPosX, double lightPosY, std::string frame)
+{
 	//wert in interface schreiben
 	this->lightif->read();
 	double lightifValuse[3];
@@ -289,10 +353,9 @@ LightCompassThread::UpdateInterface(double lightPosX, double lightPosY, fawkes::
 
 	lightifValuse[0] = lightPosX;
 	lightifValuse[1] = lightPosY;
-	lightifValuse[2] = (double)lightPol->r;
 
 	this->lightif->set_translation(lightifValuse);
-	this->lightif->set_rotation(0,(double)lightPol->phi);
+	//this->lightif->set_rotation(0,(double)lightPol->phi);
 	this->lightif->write();
 
 	//logger->log_info(name(), "X = %f, Y = %f, R = %f", lightifValuse[0], lightifValuse[1], lightifValuse[2]);
@@ -318,7 +381,7 @@ firevision::ROI* LightCompassThread::getBestROI(unsigned char* bufferYCbCr)
 		if(cfg_debugOutput_){
 			logger->log_debug(name(),"Rois: Position: %u, %u", roi->start.x ,  roi->start.y);
 		}
-		drawROIInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roi);
+		//drawROIInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roi);
 		if(roi->get_height() * roi->get_width() > this->cfg_threashold_roiMaxSize_)
 		{
 			logger->log_debug(name(), "DELETED, roi size is %f", roi->get_height() * roi->get_width() );
@@ -335,7 +398,7 @@ firevision::ROI* LightCompassThread::getBestROI(unsigned char* bufferYCbCr)
 	}
 
 	//firevision::convert(cspace_from_, cspace_to_, cam_->buffer(), buffer_filtered, img_width_,img_height_);
-	this->drawROIsInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roisGood);
+	//this->drawROIsInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roisGood);
 
 	//setze ROI mit geringstem abstand zum roboter in return value
 	if ( ! roisGood->empty() ) {
@@ -344,7 +407,8 @@ firevision::ROI* LightCompassThread::getBestROI(unsigned char* bufferYCbCr)
 
 			float newRoiDistance = this->mirror_->getWorldPointRelative((*it).start.x,(*it).start.y).r;
 			float oldRoidDistance = this->mirror_->getWorldPointRelative(roi->start.x,roi->start.y).r;
-			if (newRoiDistance < oldRoidDistance) {
+
+			if (newRoiDistance > oldRoidDistance) {
 				roi = new firevision::ROI(*it);
 			}
 		}
@@ -355,6 +419,7 @@ firevision::ROI* LightCompassThread::getBestROI(unsigned char* bufferYCbCr)
 	delete roisGood;
 	delete rois;
 
+	drawROIInBuffer(this->buffer_filtered, this->img_width_, this->img_height_, roi);
 	return roi;
 }
 
