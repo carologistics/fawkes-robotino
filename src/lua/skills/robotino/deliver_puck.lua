@@ -44,7 +44,7 @@ local THRESHOLD_DISTANCE = 0.05
 -- you can find the config value in /cfg/host.yaml
 local THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
 local DELIVERY_GATES = { "D1", "D2", "D3" }
-local MOVES = { {y=-0.37}, {y=-0.42}, {y=0.7} }
+local MOVES = { {y=-0.37}, {y=-0.39}, {y=0.7} }
 local MAX_TRIES = 2
 local MAX_ORI_ERR = 0.15
 
