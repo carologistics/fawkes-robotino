@@ -114,9 +114,11 @@ end
 
 function SKILL_DRIVE_LEFT:init()
    if graph:node(self.fsm.vars.goto_name):has_property("leave_right") then
-      self.skills[1].y=-0.5
+      self.skills[1].y = -0.4
+      self.skills[1].ori = -math.pi
    else
-      self.skills[1].y=0.5
+      self.skills[1].y = 0.4
+      self.skills[1].ori = math.pi
    end
 end
 
