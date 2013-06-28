@@ -103,7 +103,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FAILED)
   ?tf <- (goto-target ?name)
-  ?lf <- (lights YELLOW-BLINK)
+  ?lf <- (lights YELLOW-BLINKING)
   ?mf <- (machine (name ?name) (mtype ?mtype))
   ?hf <- (holding ?)
   =>
