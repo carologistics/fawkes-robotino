@@ -90,8 +90,8 @@ fsm:add_transitions{
    { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE", timeout=1, desc="test purpose" },
    { "MAYBE_FAIL", "DECIDE_ENDSKILL", cond=true },
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
-   { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond="not vars.mm_failed and end_deliver", desc="deliver" },
-   { "DECIDE_ENDSKILL", "FAILED", cond="vars.mm_failed and end_deliver", desc="global_mm failed, don't deliver" },
+   { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond="not vars.mm_failed and end_deliver()", desc="deliver" },
+   { "DECIDE_ENDSKILL", "FAILED", cond="vars.mm_failed and end_deliver()", desc="global_mm failed, don't deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
