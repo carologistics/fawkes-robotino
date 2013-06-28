@@ -101,7 +101,7 @@
 
 (defrule wm-proc-invalid
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FAILED)
+  (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?lf <- (lights YELLOW-BLINKING)
   ?mf <- (machine (name ?name) (mtype ?mtype))
