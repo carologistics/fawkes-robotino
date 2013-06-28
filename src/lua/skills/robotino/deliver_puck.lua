@@ -48,7 +48,7 @@ local MOVES = { {y=-0.37}, {y=-0.39}, {y=0.7} }
 local MAX_TRIES = 2
 local MAX_RFID_TRIES = 2
 local MAX_ORI_ERR = 0.15
-local PLUGIN_LIGHT_TIMEOUT = 300
+local PLUGIN_LIGHT_TIMEOUT = 2 -- seconds
 
 local tfm = require("tf_module")
 
