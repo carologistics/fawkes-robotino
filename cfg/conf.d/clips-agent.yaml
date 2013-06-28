@@ -12,9 +12,9 @@ clips-agent:
   agent: llsf2013/llsf2013
 
   llsf2013:
-    start-machine-exploration-p1p2: M2
-    start-machine-exploration-p3: M8
-    waiting-for-p1p2-prouction-point: R1
+    start-machine-exploration-p1p2: M8
+    start-machine-exploration-p3: M2
+    waiting-for-p1p2-prouction-point: WAIT_FOR_INS
     waiting-for-p3-production-point: Ins
     wait-for-ins-point: WAIT_FOR_INS
     wait-for-deliver-point: WAIT_FOR_DELIVER
