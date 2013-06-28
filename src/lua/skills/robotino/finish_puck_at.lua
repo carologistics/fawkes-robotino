@@ -70,8 +70,7 @@ fsm:define_states{ export_to=_M,
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
-   {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="MAYBE_FAIL"},
-   {"MAYBE_FAIL", JumpState},
+   {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
       fail_to="SKILL_TAKE_PUCK"},
@@ -88,7 +87,6 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    { "TIMEOUT", "FAILED", cond="vars.tries > 3" },
    { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE", timeout=1, desc="test purpose" },
-   { "MAYBE_FAIL", "DECIDE_ENDSKILL", cond=true },
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond="not vars.mm_failed and end_deliver()", desc="deliver" },
    { "DECIDE_ENDSKILL", "FAILED", cond="vars.mm_failed and end_deliver()", desc="global_mm failed, don't deliver" },
@@ -109,10 +107,6 @@ end
 function SKILL_GLOBAL_MOTOR_MOVE:init()
    self.skills[1].place = self.fsm.vars.place
    self.skills[1].puck = true
-end
-
-function MAYBE_FAIL:init()
-   self.fsm.vars.mm_failed = true
 end
 
 function SKILL_DRIVE_LEFT:init()
