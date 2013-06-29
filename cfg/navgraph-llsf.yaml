@@ -205,6 +205,8 @@ nodes:
 
   - name: WAIT_FOR_INS
     pos: [0.7, 0.5]
+    properties:
+      - orientation: 0.78
 
   - name: WAIT_FOR_DELIVER
     pos: [5.1, 4.3]
