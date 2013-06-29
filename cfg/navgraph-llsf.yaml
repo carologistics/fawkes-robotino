@@ -15,7 +15,7 @@ nodes:
     properties:
       - orientation: 3.14
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M1E
     pos: [4.70, 1.70]
@@ -37,7 +37,7 @@ nodes:
     properties:
       - orientation: 3.14
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M2O
     pos: [4.7, 3.92]
@@ -60,7 +60,7 @@ nodes:
     properties:
       - orientation: -0.97
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M3E
     pos: [3.4, 0.55]
@@ -82,7 +82,7 @@ nodes:
     properties:
       - orientation: 2.54
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M5
     pos: [2.75, 3.25]
@@ -99,7 +99,7 @@ nodes:
     properties:
       - orientation: 3.14
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M6
     pos: [2.3, 3.85]
@@ -111,7 +111,7 @@ nodes:
     properties:
       - orientation: -1.57
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M6N
     pos: [2.75, 4.4]
@@ -143,7 +143,7 @@ nodes:
     properties:
       - orientation: 2.5
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M8
     pos: [2.05, 1.65]
@@ -155,7 +155,7 @@ nodes:
     properties:
       - orientation: 0.97
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M8E
     pos: [2.20, 1.65]
@@ -172,7 +172,7 @@ nodes:
     properties:
       - orientation: 0.0
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: M9N
     pos: [1.68, 4.4]
@@ -194,7 +194,7 @@ nodes:
     properties:
       - orientation: 1.57
       - travel_tolerance: 0.25
-      - target_tolerance: 0.15
+      - target_tolerance: 0.2
 
   - name: R2
     pos: [0.55, 4.84]
