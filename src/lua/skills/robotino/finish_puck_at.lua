@@ -91,7 +91,7 @@ fsm:add_transitions{
    { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE", timeout=1, desc="test purpose" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
-   { "RETRY_PRODUCTION", "SKILL_RFID", cond="vars.tries <= RFID_MAXTRIES" },
+   { "RETRY_PRODUCTION", "SKILL_RFID", cond="vars.prod_tries <= RFID_MAXTRIES" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
