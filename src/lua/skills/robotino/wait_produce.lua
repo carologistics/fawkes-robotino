@@ -102,11 +102,7 @@ function WAIT:exit()
    laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))   
 end
 
-<<<<<<< Updated upstream
-function FINAL:init()
-=======
 function cleanup()
->>>>>>> Stashed changes
    laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
    output:set_red(plugin:red())
    output:set_yellow(plugin:yellow())
@@ -115,8 +111,6 @@ function cleanup()
    output:set_ready(plugin:is_ready())
 end
 
-<<<<<<< Updated upstream
-=======
 function FINAL:init()
    cleanup()
 end
@@ -124,4 +118,3 @@ end
 function FAILED:init()
    cleanup()
 end
->>>>>>> Stashed changes
