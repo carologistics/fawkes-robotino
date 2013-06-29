@@ -61,7 +61,7 @@ local curDistance = sensor:distance(8)
 end
 
 function ampel_green()
-   return light:green() == light.ON and light:is_ready()
+   return light:green() == light.ON and light:visibility_history() >= 10
 end
 
 function ampel_red()
