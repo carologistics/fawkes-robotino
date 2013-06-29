@@ -24,7 +24,7 @@ module(...,  skillenv.module_init)
 
 -- Crucial skill information
 name               = "wait_produce"
-fsm                = SkillHSM:new{name=name,  start="INIT",  debug=false}
+fsm                = SkillHSM:new{name=name,  start="INIT",  debug=true}
 depends_skills     = nil
 depends_interfaces = {
    { v="plugin", type ="RobotinoLightInterface", id = "Light_State" },
