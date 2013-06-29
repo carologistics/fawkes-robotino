@@ -66,7 +66,7 @@ function orange_blinking()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light},
+   closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light, orange_blinking=orange_blinking},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
