@@ -254,10 +254,10 @@
   ?ar <- (active-robot (name ?name) (last-seen $?last-seen&:(timeout ?now ?last-seen ?*ROBOT-TIMEOUT*)))
   =>
   (printout warn "Lost connection to " ?name " Deliting all of its locks!" crlf)
-  (delayed-do-for-all-facts ((?lock lock)) (eq ?lock:agent ?name)
+  (delayed-do-for-all-facts ((?lock lock)) (eq (str-cat ?lock:agent) (str-cat ?name))
     (retract ?lock)
   )
-  (delayed-do-for-all-facts ((?resource locked-resource)) (eq ?resource:agent ?name)
+  (delayed-do-for-all-facts ((?resource locked-resource)) (eq (str-cat ?resource:agent) (str-cat ?name))
     (retract ?resource)
   )
   (retract ?ar)
