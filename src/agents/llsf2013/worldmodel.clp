@@ -62,8 +62,8 @@
 )
 
 (defrule wm-goto-failed-p3
-  (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FAILED)
+  (declare (salience ?*PRIORITY-WM-MID*))
+  (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype T5))
@@ -73,8 +73,8 @@
 )
 
 (defrule wm-goto-failed-p1p2
-  (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FAILED)
+  (declare (salience ?*PRIORITY-WM-MID*))
+  (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype T3|T4) (output ?output) (loaded-with $?lw&:(> (length$ ?lw) 1)) )
@@ -154,7 +154,7 @@
 )
 
 (defrule wm-proc-wtf
-  (declare (salience ?*PRIORITY-WM*))
+  (declare (salience ?*PRIORITY-WM-LOW*))
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?lf <- (lights $?)
