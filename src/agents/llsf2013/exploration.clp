@@ -52,6 +52,7 @@
   (round FIRST)
   (first-exploration-machine ?v)
   (machine-exploration (name ?v) (x ?) (y ?) (next ?) (look-pos ?lp))
+  (not (driven-to-waiting-point))
   =>
   (printout t "First machine: " ?v crlf)
   ;(skill-call ppgoto place (str-cat ?lp))
@@ -71,6 +72,7 @@
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (goalmachine ?name)
   (machine-exploration (name ?name) (look-pos ?goal))
+  (not (driven-to-waiting-point))
   =>
   (printout t "PPGoto Arrived. Calling global_motor_move." crlf)
   (retract ?s ?final)
@@ -239,6 +241,7 @@
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (nextInCycle ?nextMachine)
   (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
+  (not (driven-to-waiting-point))
   =>
   (printout t "Going to next machine." crlf)
   (retract ?s ?n)
