@@ -34,8 +34,6 @@ documentation      = [==[Take puck to nearest target in goto_names and take appr
 
 local mpos = require 'machine_pos_module'
 
-local RFID_MAXTRIES = 2
-
 -- Initialize as skill module
 skillenv.skill_module(_M)
 graph = fawkes.load_yaml_navgraph("/home/robotino/fawkes-robotino/cfg/navgraph-llsf.yaml")
@@ -68,7 +66,7 @@ function orange_blinking()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={end_rfid=end_rfid, end_deliver=end_deliver, RFID_MAXTRIES=RFID_MAXTRIES, orange_blinking=orange_blinking},
+   closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
@@ -77,13 +75,14 @@ fsm:define_states{ export_to=_M,
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
       fail_to="SKILL_TAKE_PUCK"},
    {"SKILL_WAIT_PRODUCE", SkillJumpState, skills={{wait_produce}}, final_to="DECIDE_DEPOSIT",
-      fail_to="RETRY_PRODUCTION"},
+      fail_to="PRODUCE_FAILED"},
+   {"PRODUCE_FAILED", JumpState},
    {"DECIDE_DEPOSIT", JumpState},
    {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="FINAL",
       fail_to="FAILED"},
-   {"RETRY_PRODUCTION", JumpState},
-   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED"},
+   {"DEPOSIT_THEN_FAIL", SkillJumpState, skills={{deposit_puck}}, final_to="FAILED", fail_to="FAILED"},
+   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED" },
 }
 
 fsm:add_transitions{
@@ -91,12 +90,12 @@ fsm:add_transitions{
    { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE", timeout=1, desc="test purpose" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
-   { "RETRY_PRODUCTION", "SKILL_RFID", cond="vars.prod_tries <= RFID_MAXTRIES" },
-   { "RETRY_PRODUCTION", "DECIDE_DEPOSIT", cond="vars.prod_tries > RFID_MAXTRIES" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="vars.final_product and not orange_blinking()" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
-   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
+   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
+   { "PRODUCE_FAILED", "FINAL", cond=fsm.vars.final_product},
+   { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true}
 }
 
 function SKILL_TAKE_PUCK:init()
@@ -106,7 +105,6 @@ function SKILL_TAKE_PUCK:init()
       self.fsm.vars.tries = 0
    end
    self.fsm.vars.tries = self.fsm.vars.tries + 1
-   self.fsm.vars.prod_tries = 0
 end
 
 function SKILL_GLOBAL_MOTOR_MOVE:init()
@@ -127,13 +125,9 @@ function SKILL_DRIVE_LEFT:init()
 end
 
 function SKILL_RFID:init()
-   self.fsm.vars.prod_tries = self.fsm.vars.prod_tries + 1
    self.skills[1].place = self.fsm.vars.place
 end
-
 function SKILL_WAIT_PRODUCE:init()
    self.skills[1].mtype = self.fsm.vars.mtype
 end
-
-
 
