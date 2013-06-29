@@ -62,7 +62,7 @@
 )
 
 (defrule wm-goto-failed-p3
-  (declare (salience ?*PRIORIITY-WM*))
+  (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FAILED)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
@@ -74,7 +74,7 @@
 )
 
 (defrule wm-goto-failed-p1p2
-  (declare (salience ?*PRIORIITY-WM*))
+  (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FAILED)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
