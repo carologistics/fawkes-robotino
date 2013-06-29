@@ -70,7 +70,6 @@
   =>
   (retract ?tf ?hf)
   (assert (holding P3))
-  (printout t "P3 timeout, hoping for the best" ?name "|" ?mtype crlf) 
 )
 
 (defrule wm-goto-failed-p1p2
@@ -82,7 +81,6 @@
   =>
   (retract ?tf ?hf)
   (assert (holding ?output))
-  (printout t "P1P2 timeout, hoping for the best" ?name "|" ?mtype crlf)
   (modify ?mf (loaded-with))
 )
 
