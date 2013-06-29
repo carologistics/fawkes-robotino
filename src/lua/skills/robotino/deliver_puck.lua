@@ -65,7 +65,7 @@ function ampel_green()
 end
 
 function ampel_red()
-   return light:red() == light.ON and light:is_ready()
+   return light:green() == light.OFF and light:red() == light.ON and light:is_ready()
 end
 
 function orange_blinking()
