@@ -89,7 +89,7 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding NONE)
-  ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal))
+  ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal&~M7))
   (confval (path "/clips-agent/llsf2013/recycle") (type STRING) (value "ifpossible"))
   =>
   (if (debug 3) then (printout t "Need to get S0, Recycle to get one" crlf)
@@ -105,7 +105,7 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding NONE)
-  ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal))
+  ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal&~M7))
   (confval (path "/clips-agent/llsf2013/recycle") (type STRING) (value "afterdeliver"))
   (delivered P1|P2)
   =>
