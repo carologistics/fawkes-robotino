@@ -121,7 +121,7 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding CO)
-  (machine (mtype RECYCLE) (name ?name))
+  (machine (mtype RECYCLE) (name ?name) (allowed TRUE))
   =>
   (if (debug 2) then (printout t "Recycling consumed puck" ?name crlf))
   (retract ?sf)
@@ -319,12 +319,12 @@
 
 (defrule prod-wait-for-deliver
   (phase PRODUCTION)
-  ?sf <- (state PROD_LOCK_REQUIRED_GOTO deliver)
-  ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
+  (state PROD_LOCK_REQUIRED_GOTO deliver)
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
   (deliver-wait-point ?wait-point)
   =>
   (printout t "Waiting for lock of DELIVER at " ?wait-point crlf)
-  (skill-call ppgoto place (str-cat ?wait-point))
+  (skill-call take_puck_to place (str-cat ?wait-point))
 )
 
 (defrule prod-reuse-lock
