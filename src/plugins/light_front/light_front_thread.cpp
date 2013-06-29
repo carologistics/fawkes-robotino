@@ -599,15 +599,14 @@ LightFrontThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 					- expectedLightSizeHeigth / 2;									//light center to light cornor;                                                                  //light center to light cornor
 
 
-	//if(cfg_lightMoveUnderRfidThrashold < lightPos.r){
+	if(cfg_lightMoveUnderRfidThrashold < lightPos.r){
 		startX = startX
 				+ this->cfg_cameraOffsetHorizontal 								// pixels to move to side
 				+ this->angleCorrectionX(lightPos.r);									//light center to light top cornor
-		startY = startY
-				+ this->cfg_cameraOffsetVertical                                                                //error of picture position to light
-				+ this->angleCorrectionY(lightPos.r);
-	//}
-
+	}
+	startY = startY	
+			+ this->cfg_cameraOffsetVertical                                                                //error of picture position to light
+			+ this->angleCorrectionY(lightPos.r);
 
 	firevision::ROI light;
 	light.start.x = startX;
