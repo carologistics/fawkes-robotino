@@ -68,7 +68,7 @@ function orange_blinking()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={end_rfid=end_rfid, end_deliver=end_deliver, RFID_MAXTRIES=RFID_MAXTRIES},
+   closure={end_rfid=end_rfid, end_deliver=end_deliver, RFID_MAXTRIES=RFID_MAXTRIES, orange_blinking=orange_blinking},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
@@ -92,7 +92,9 @@ fsm:add_transitions{
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "RETRY_PRODUCTION", "SKILL_RFID", cond="vars.prod_tries <= RFID_MAXTRIES" },
+   { "RETRY_PRODUCTION", "DECIDE_DEPOSIT", cond="vars.prod_tries > RFID_MAXTRIES" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
+   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="vars.final_product and not orange_blinking()" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
 }
