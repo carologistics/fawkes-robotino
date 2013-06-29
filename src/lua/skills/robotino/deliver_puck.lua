@@ -48,7 +48,7 @@ local MOVES = { {y=-0.37}, {y=-0.39}, {y=0.7} }
 local MAX_TRIES = 3
 local MAX_RFID_TRIES = 2
 local MAX_ORI_ERR = 0.15
-local PLUGIN_LIGHT_TIMEOUT = 2 -- seconds
+local PLUGIN_LIGHT_TIMEOUT = 2.5 -- seconds
 
 local tfm = require("tf_module")
 
@@ -65,7 +65,7 @@ function ampel_green()
 end
 
 function ampel_red()
-   return light:green() == light.OFF and light:red() == light.ON and light:is_ready()
+   return light:green() == light.OFF and light:red() == light.ON and light:visibility_history() >= 10
 end
 
 function orange_blinking()
