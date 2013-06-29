@@ -14,8 +14,6 @@ nodes:
     pos: [4.4, 1.7]
     properties:
       - orientation: 3.14
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
 
   - name: M1E
     pos: [4.70, 1.70]
@@ -36,8 +34,6 @@ nodes:
     pos: [4.5, 3.92]
     properties:
       - orientation: 3.14
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
 
   - name: M2O
     pos: [4.7, 3.92]
@@ -56,11 +52,9 @@ nodes:
       - leave_right
 
   - name: ExpM3
-    pos: [2.35, 1.0]
+    pos: [2.2, 0.55]
     properties:
-      - orientation: -0.97
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
+      - orientation: 0.0
 
   - name: M3E
     pos: [3.4, 0.55]
@@ -78,11 +72,9 @@ nodes:
       - orientation: 1.57
 
   - name: ExpM4
-    pos: [3.3, 1.3]
+    pos: [2.75, 1.1]
     properties:
-      - orientation: 2.54
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
+      - orientation: 1.57
 
   - name: M5
     pos: [2.75, 3.25]
@@ -98,8 +90,6 @@ nodes:
     pos: [3.3, 2.8]
     properties:
       - orientation: 3.14
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
 
   - name: M6
     pos: [2.3, 3.85]
@@ -110,8 +100,6 @@ nodes:
     pos: [2.75, 4.4]
     properties:
       - orientation: -1.57
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
 
   - name: M6N
     pos: [2.75, 4.4]
@@ -142,8 +130,6 @@ nodes:
     pos: [3.4, 4.7]
     properties:
       - orientation: 2.5
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
 
   - name: M8
     pos: [2.05, 1.65]
@@ -168,11 +154,9 @@ nodes:
       - orientation: 0.0
 
   - name: ExpM9
-    pos: [1.2, 3.92]
+    pos: [1.1, 3.92]
     properties:
       - orientation: 0.0
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
 
   - name: M9N
     pos: [1.68, 4.4]
@@ -193,8 +177,6 @@ nodes:
     pos: [1.68, 4.5]
     properties:
       - orientation: 1.57
-      - travel_tolerance: 0.25
-      - target_tolerance: 0.2
 
   - name: R2
     pos: [0.55, 4.84]
@@ -387,7 +369,7 @@ connections:
   - [M3, M3E]
   - [ExpM3, P21]
   - [M4, M4S]
-  - [ExpM4, P31]
+  - [ExpM4, M4S]
   - [M5, M6S]
   - [ExpM5, M5E]
   - [M6, M6W]
