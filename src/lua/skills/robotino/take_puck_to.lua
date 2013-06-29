@@ -40,8 +40,11 @@ skillenv.skill_module(_M)
 -- Constants
 local AVG_LEN = 10
 local MAX_RETRIES = 3
--- you can find the config value in /cfg/host.yaml
-local LOSTPUCK_DIST = config:get_float("/skills/take_puck_to/front_sensor_dist")
+local LOSTPUCK_DIST = 0.08
+if config:exists("/skills/take_puck_to/front_sensor_dist") then
+   -- you can find the config value in /cfg/host.yaml
+   LOSTPUCK_DIST = config:get_float("/skills/take_puck_to/front_sensor_dist")
+end
 
 -- Imports
 local pm = require 'puck_loc_module'

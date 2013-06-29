@@ -41,8 +41,10 @@ skillenv.skill_module(_M)
 
 -- Constants
 local THRESHOLD_DISTANCE = 0.05
--- you can find the config value in /cfg/host.yaml
-local THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
+if config:exists("/skills/deliver_puck/front_sensor_dist") then
+   -- you can find the config value in /cfg/host.yaml
+   THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
+end
 local DELIVERY_GATES = { "D1", "D2", "D3" }
 local MOVES = { {y=-0.37}, {y=-0.39}, {y=0.7} }
 local MAX_TRIES = 3
@@ -102,7 +104,7 @@ fsm:define_states{ export_to=_M,
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="LEAVE_AREA", fail_to="FAILED"},
    {"LEAVE_AREA", SkillJumpState, skills={{leave_area}}, final_to="FINAL", fail_to="FAILED"},
 }
-   
+
 
 fsm:add_transitions{
    {"INIT", "CHECK_POSE", cond=true},

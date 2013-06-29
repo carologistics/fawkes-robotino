@@ -58,14 +58,17 @@ skillenv.skill_module(_M)
 
 local TIMEOUT = 3
 local ORI_OFFSET = 0.03
--- you can find the config value in /cfg/host.yaml
-local THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
+local THRESHOLD_DISTANCE = 0.074
+if config:exists("/skills/fetch_puck/front_sensor_dist") then
+   -- you can find the config value in /cfg/host.yaml
+   THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
+end
 local MIN_VIS_HIST = 15
 local EPSILON_X = 0.07
 local EPSILON_PHI = 0.2
 local OFFSET_X_SIDE_SEARCH = 0.30
 local omnipucks = {
-   omnipuck1, 
+   omnipuck1,
    omnipuck2,
    omnipuck3,
    omnipuck4,
@@ -75,7 +78,7 @@ local omnipucks = {
    omnipuck8,
    omnipuck9,
    omnipuck10,
-   omnipuck11, 
+   omnipuck11,
    omnipuck12,
    omnipuck13,
    omnipuck14,
@@ -146,7 +149,7 @@ function TURN_TO_PUCK:init()
    local min_d = 10
    local target
    local candidates = {}
-   
+
    for _,o in ipairs(omnipucks) do
       if o:visibility_history() >= MIN_VIS_HIST then
          local x = o:translation(0)
@@ -243,7 +246,7 @@ function cleanup()
    motor:msgq_enqueue_copy(motor.TransRotMessage:new(0, 0, 0))
    motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
    local msg = omnivisionSwitch.DisableSwitchMessage:new()
-   omnivisionSwitch:msgq_enqueue_copy(msg)   
+   omnivisionSwitch:msgq_enqueue_copy(msg)
 end
 
 function FAILED:init() cleanup() end
