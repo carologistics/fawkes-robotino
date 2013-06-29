@@ -94,7 +94,7 @@ fsm:add_transitions{
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="vars.final_product and not orange_blinking()" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
-   { "PRODUCE_FAILED", "FINAL", cond=fsm.vars.final_product},
+   { "PRODUCE_FAILED", "FINAL", cond="vars.final_product"},
    { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true}
 }
 
