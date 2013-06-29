@@ -114,7 +114,9 @@
     then
     ;forget machine and choose an other one
     (strat-allow-all ?mtype)
-    (modify ?mf (allowed FALSE))
+  )
+  (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:name ?name) 
+    (modify ?machine (allowed FALSE))
   )
 )
 
