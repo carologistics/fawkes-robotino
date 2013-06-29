@@ -81,7 +81,7 @@ end
 
 function SKILL_DRIVE_FORWARD:init()
    if self.fsm.vars.mtype == nil then
-      self.skills[1].x = 0.1 
+      self.skills[1].x = 0.15
    elseif self.fsm.vars.mtype == "deliver" then
       print("drive forward at delivery")
       self.skills[1].x = 0.08
