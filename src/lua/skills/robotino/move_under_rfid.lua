@@ -122,7 +122,7 @@ function APPROACH_AMPEL:init()
    local ampel = get_ampel()
    self.skills[1].x = ampel.x - LASER_FORWARD_CORRECTION
    self.skills[1].y = ampel.y
-   self.skills[1].vel_trans = 0.2
+   self.skills[1].vel_trans = 0.1
 end
 
 function CORRECT_POSITION:init()
