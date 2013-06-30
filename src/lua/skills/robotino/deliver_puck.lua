@@ -112,7 +112,7 @@ fsm:add_transitions{
    {"DECIDE_NEXT_MOVE", "MOVE_UNDER_RFID", cond="vars.num_tries >= MAX_TRIES and vars.cur_gate_idx >= #MOVES"}, --blind guess, doesnt harm
    {"DECIDE_NEXT_MOVE", "RESTART", cond="vars.cur_gate_idx >= #MOVES"},
    {"DECIDE_NEXT_MOVE", "MOVE_TO_NEXT", cond="vars.cur_gate_idx < #MOVES"},
-   {"WAIT_FOR_SIGNAL", "CHECK_RESULT", timeout=1.5}, -- wait for deliver
+   {"WAIT_FOR_SIGNAL", "CHECK_RESULT", timeout=2}, -- wait for deliver
    {"CHECK_RESULT", "SKILL_DEPOSIT", cond="vars.rfid_tries >= MAX_RFID_TRIES"},
    {"CHECK_RESULT", "MOVE_UNDER_RFID", timeout=PLUGIN_LIGHT_TIMEOUT},
    {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok},
