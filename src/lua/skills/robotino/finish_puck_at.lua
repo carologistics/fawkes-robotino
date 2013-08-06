@@ -36,7 +36,8 @@ local mpos = require 'machine_pos_module'
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-graph = fawkes.load_yaml_navgraph("/home/robotino/fawkes-robotino/cfg/navgraph-llsf.yaml")
+--fawkes.load_yaml_navgraph already searches in the cfg directory
+graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 
 function end_rfid()
    printf(mpos.delivery_goto[fsm.vars.goto_name].d_skill)
