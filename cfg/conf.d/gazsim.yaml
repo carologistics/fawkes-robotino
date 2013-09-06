@@ -22,4 +22,8 @@ gazsim:
   robotino:
     gripper-laser-threshold: 0.18
     gripper-laser-value-far: 0.17
-    gripper-laser-value-near: 9.99
+    gripper-laser-value-near: 9.99    
+    
+    # does the odometry change if the robotino drives against an obstacle?
+    slippery-wheels-enabled: true
+    slippery-wheels-threshold: 0.8
