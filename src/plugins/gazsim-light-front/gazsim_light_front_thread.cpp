@@ -73,6 +73,12 @@ void LightFrontSimThread::init()
     (light_state_if_name_.c_str());
   pose_if_ = blackboard->open_for_reading<fawkes::Position3DInterface>
     (light_pos_if_name_.c_str());
+  switch_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>("light_front_switch");
+
+  //enable plugin by default
+  switch_if_->set_enabled(true);
+  switch_if_->write();
+
 
   //subscribing to gazebo publisher
   light_signals_sub_ = gazebonode->Subscribe
@@ -85,18 +91,38 @@ void LightFrontSimThread::finalize()
 {
   blackboard->close(light_if_);
   blackboard->close(pose_if_);
+  blackboard->close(switch_if_);
 }
 
 void LightFrontSimThread::loop()
 {
   //the acual work takes place in on_light_signals_msg
 
-  //TODO switch interface
+  //check messages of the switch interface
+  while (!switch_if_->msgq_empty()) 
+  {
+    if (SwitchInterface::DisableSwitchMessage *msg = switch_if_->msgq_first_safe(msg)) 
+    {
+      switch_if_->set_enabled(false);
+    } 
+    else if (SwitchInterface::EnableSwitchMessage *msg = switch_if_->msgq_first_safe(msg))
+    {
+      switch_if_->set_enabled(true);
+    }
+    switch_if_->msgq_pop();
+    switch_if_->write();
+  }
 }
 
 void LightFrontSimThread::on_light_signals_msg(ConstAllMachineSignalsPtr &msg)
 {
   //logger->log_info(name(), "Got new Machine Light signals.\n");
+
+  //stop if the switch is dibabled
+  if (!switch_if_->is_enabled())
+  {
+    return;
+  }
 
   //read cluster position to determine 
   //on which machine the robotino is looking at

@@ -31,6 +31,7 @@
 #include <plugins/gazebo/aspect/gazebo.h>
 #include <interfaces/RobotinoLightInterface.h>
 #include <interfaces/Position3DInterface.h>
+#include <interfaces/SwitchInterface.h>
 #include <protobuf_msgs/LightSignals.pb.h>
 #include <string.h>
 
@@ -74,6 +75,7 @@ class LightFrontSimThread
 
   //provided interface
   fawkes::RobotinoLightInterface *light_if_;
+  fawkes::SwitchInterface *switch_if_;
 
   //handler function for incoming messages about the machine light signals
   void on_light_signals_msg(ConstAllMachineSignalsPtr &msg);
