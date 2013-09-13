@@ -4,21 +4,26 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 gazsim:
+  proto-dirs: ["@BASEDIR@/src/agents/llsf2013/msgs"]
+    
   llsf-rb-comm:
-    proto-dirs: ["@BASEDIR@/src/agents/llsf2013/msgs"]
     refbox-host: "localhost"
     refbox-port: 4444
+
   laser:
     max_range: 5.5
+
   light-front:
     max-distance: 0.1
     success-visibility-history: 300
     fail-visibility-history: -300
+
   puck-detection:
     number-pucks: 20
     max-distance: 1.5
     success-visibility-history: 300
     fail-visibility-history: -300 
+
   robotino:
     gripper-laser-threshold: 0.18
     gripper-laser-value-far: 0.17
@@ -26,7 +31,19 @@ gazsim:
 
     motor:    
       # does the odometry change if the robotino drives against an obstacle?
-      slippery-wheels-enabled: true
+      slippery-wheels-enabled: false
       slippery-wheels-threshold: 0.8
       moving-speed-factor: 1.0
       rotation-speed-factor: 1.0
+
+  comm:
+    package-loss: 0.1
+    #all peers which need the comm plugin
+    # write down as follows:
+    # adrresses:  ["address_1", "address_2", ...]
+    # send-ports: [send_port_1, send_port_2, ...]
+    # revc-ports: [recv_port_1, recv_port_2, ...]
+    # refbox, robotino1, robotino2, robotino3
+    addresses:  ["localhost", "localhost", "localhost", "localhost"]
+    send-ports: [4445,         4411,       4412,        4413]
+    recv-ports: [4444,         4421,       4422,        4423]

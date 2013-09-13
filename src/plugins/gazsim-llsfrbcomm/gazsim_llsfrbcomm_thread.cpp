@@ -63,7 +63,7 @@ GazsimLLSFRbCommThread::init()
   //read config values
   refbox_host_ = config->get_string("/gazsim/llsf-rb-comm/refbox-host");
   refbox_port_ = config->get_uint("/gazsim/llsf-rb-comm/refbox-port");
-  proto_dirs_ = config->get_strings("/gazsim/llsf-rb-comm/proto-dirs");
+  proto_dirs_ = config->get_strings("/gazsim/proto-dirs");
   //resolve proto paths
   try {
     proto_dirs_ = config->get_strings("/clips-protobuf/proto-dirs");

@@ -54,6 +54,10 @@ clips-agent:
     robot-name: R-3
     robot-number: 3
 
+    peer-address: 127.0.0.1
+    peer-recv-port: 4413
+    peer-send-port: 4423
+
 
 
 skills/take_puck_to:

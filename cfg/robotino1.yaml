@@ -25,7 +25,7 @@ fawkes:
     loggers: console;file/debug:debug.log
 
     net:
-      tcp_port: !tcp-port 1911
+      tcp_port: !tcp-port 1921
       service_name: "Fawkes on Gazsim Robotino 1"
 
 # Log level for ballposlog example plugin; sum of any of

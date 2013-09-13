@@ -11,7 +11,6 @@ webview:
   port: !tcp-port 8081
 
 
-
 fawkes:
   bblogreplay:
     qatest-2013-05-29-15-28-50:
@@ -55,6 +54,9 @@ clips-agent:
     robot-name: R-1
     robot-number: 1
 
+    peer-address: 127.0.0.1
+    peer-recv-port: 4411
+    peer-send-port: 4421
 
 
 skills/take_puck_to:
