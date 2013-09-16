@@ -18,7 +18,7 @@ case $1 in
 	if [[ $4 = ros ]] ; then
 	    robotino_plugins=gazsim-full-robotino-ros,clips,clips-agent,clips-protobuf,clips-motor-switch
 	else
-	    robotino_plugins=gazsim-full-robotino,clips,clips-agent,clips-protobuf,clips-motor-switch
+	    robotino_plugins=gazsim-full-robotino
 	fi
 	
 	
