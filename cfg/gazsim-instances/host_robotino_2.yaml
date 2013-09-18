@@ -67,7 +67,7 @@ clips-agent:
 
 skills/take_puck_to:
    #front sensor distance when the puck is lost
-   front_sensor_dist: 0.08
+   front_sensor_dist: 0.072
 
 skills/fetch_puck:
    #front sensor distance when fetching the puck
