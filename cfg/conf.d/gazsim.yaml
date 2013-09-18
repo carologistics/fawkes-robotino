@@ -5,6 +5,9 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 gazsim:
   proto-dirs: ["@BASEDIR@/src/agents/llsf2013/msgs"]
+  world-name: "LLSF"
+  #default robot name
+  robot-name: ""
     
   llsf-rb-comm:
     refbox-host: "localhost"
@@ -31,8 +34,8 @@ gazsim:
 
     motor:    
       # does the odometry change if the robotino drives against an obstacle?
-      slippery-wheels-enabled: false
-      slippery-wheels-threshold: 0.8
+      slippery-wheels-enabled: true
+      slippery-wheels-threshold: 0.5
       moving-speed-factor: 1.0
       rotation-speed-factor: 1.0
 
@@ -47,3 +50,11 @@ gazsim:
     addresses:  ["localhost", "localhost", "localhost", "localhost"]
     send-ports: [4445,         4411,       4412,        4413]
     recv-ports: [4444,         4421,       4422,        4423]
+  visualization:
+    location-scripts: "model://label/materials/scripts"
+    location-textures: "model://label/materials/textures"
+    label-arrow-name: "label/arrowredup"
+    localization:
+      #parent model::link to attach visuals on
+      parent-name: "ground_plane::link"
+      update-rate: 2.0 #in Hz

@@ -16,7 +16,7 @@ case $1 in
     fawkes ) 
 	export ROS_MASTER_URI=http://localhost:$2
 	if [[ $4 = ros ]] ; then
-	    robotino_plugins=gazsim-full-robotino-ros,clips,clips-agent,clips-protobuf,clips-motor-switch
+	    robotino_plugins=gazsim-full-robotino-ros,clips,clips-agent,clips-protobuf,clips-motor-switch,gazsim-vis-localization
 	else
 	    robotino_plugins=gazsim-full-robotino
 	fi

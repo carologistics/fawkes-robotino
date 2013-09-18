@@ -11,6 +11,11 @@ webview:
   port: !tcp-port 8082
 
 
+gazsim:
+  robot-name: "robotino2"
+  visualization:
+    label-script-name: "label/robotino2"
+
 fawkes:
   bblogreplay:
     qatest-2013-05-29-15-28-50:

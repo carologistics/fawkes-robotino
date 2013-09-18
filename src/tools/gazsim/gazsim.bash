@@ -23,7 +23,7 @@ fi
 
 #start gazebo
 gnome-terminal -t Gazebo -x bash -c "$startup_script_location gazebo"
-sleep 20s
+sleep 30s
 
 if [  $1  == start-ros ]; then
     echo 'Starting Ros'
