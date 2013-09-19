@@ -22,7 +22,7 @@ case $1 in
 	fi
 	
 	
-	comm_plugins=gazebo,gazsim-llsfrbcomm,gazsim-comm
+	comm_plugins=gazsim-organization
 	case $3 in
 	    robotino1 ) ~/fawkes-robotino/bin/fawkes -c robotino1.yaml -p $robotino_plugins
 		;;
