@@ -130,6 +130,11 @@ void LightFrontSimThread::on_light_signals_msg(ConstAllMachineSignalsPtr &msg)
   pose_if_->read();
   double rel_x = pose_if_->translation(0);
   double rel_y = pose_if_->translation(1);
+  //if both is 0 light-front looks direct in front (e.g. when under the rfid)
+  if(rel_x == 0 && rel_y == 0)
+  {
+    rel_x = 0.28;//distance between laser and light signal when standing under the rfid
+  }
   double look_pos_x = robot_x_ 
     + cos(robot_ori_) * rel_x - sin(robot_ori_) * rel_y;
   double look_pos_y = robot_y_ 
