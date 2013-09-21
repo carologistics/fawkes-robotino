@@ -16,6 +16,14 @@ gazsim:
   laser:
     max_range: 5.5
 
+  webcam:
+    topic-suffix: "/webcam/link/webcam_sensor/image"
+    width: 320
+    height: 240
+    #Shared Memory Imagebuffer name
+    shm-image-id: "light_front"
+    frame: "/cam_front" #without "" in light_front.yaml?
+    
   light-front:
     max-distance: 0.1
     success-visibility-history: 300
@@ -38,7 +46,7 @@ gazsim:
       slippery-wheels-threshold: 0.5
       moving-speed-factor: 1.0
       rotation-speed-factor: 1.0
-
+      
   comm:
     package-loss: 0.1
     #all peers which need the comm plugin
