@@ -10,6 +10,10 @@ webview:
   # TCP port for Webview HTTP requests; TCP port
   port: !tcp-port 8083
 
+#seperate the shared memory images for the webcam:
+firevision:
+  fountain:
+    tcp_port: !tcp-port 2213
 
 gazsim:
   robot-name: "robotino3"
