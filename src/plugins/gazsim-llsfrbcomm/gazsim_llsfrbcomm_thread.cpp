@@ -29,6 +29,7 @@
 
 #include "gazsim_llsfrbcomm_thread.h"
 #include <protobuf_msgs/MachineInfo.pb.h>
+#include <protobuf_msgs/GameState.pb.h>
 
 using namespace fawkes;
 using namespace protobuf_comm;
@@ -97,9 +98,10 @@ GazsimLLSFRbCommThread::init()
   disconnected_recently_ = true;
 
   //create publisher and subscriber for connection with gazebo node
-  machine_info_pub_ = gazebonode->Advertise<llsf_msgs::MachineInfo>("~/LLSFRbSim/MachineInfo/");
-  place_puck_under_machine_sub_ = gazebonode->Subscribe(std::string("~/LLSFRbSim/PlacePuckUnderMachine/"), &GazsimLLSFRbCommThread::on_puck_place_msg, this);
-  remove_puck_under_machine_sub_ = gazebonode->Subscribe(std::string("~/LLSFRbSim/RemovePuckFromMachine/"), &GazsimLLSFRbCommThread::on_puck_remove_msg, this);
+  machine_info_pub_ = gazebo_world_node->Advertise<llsf_msgs::MachineInfo>("~/LLSFRbSim/MachineInfo/");
+  game_state_pub_ = gazebo_world_node->Advertise<llsf_msgs::GameState>("~/LLSFRbSim/GameState/");
+  place_puck_under_machine_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/PlacePuckUnderMachine/"), &GazsimLLSFRbCommThread::on_puck_place_msg, this);
+  remove_puck_under_machine_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/RemovePuckFromMachine/"), &GazsimLLSFRbCommThread::on_puck_remove_msg, this);
 }
 
 
@@ -148,6 +150,14 @@ GazsimLLSFRbCommThread::client_msg(uint16_t comp_id, uint16_t msg_type,
   {
     //logger->log_info(name(), "Sending MachineInfo to gazebo");
     machine_info_pub_->Publish(*msg);
+    return;
+  }
+  
+  if(msg->GetTypeName() == "llsf_msgs.GameState")
+  {
+    //logger->log_info(name(), "Sending MachineInfo to gazebo");
+    game_state_pub_->Publish(*msg);
+    return;
   }
 }
 

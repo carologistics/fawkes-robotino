@@ -87,6 +87,7 @@ class GazsimLLSFRbCommThread
 
   //Publisher and subscriber for the connection to gazebo
   gazebo::transport::PublisherPtr machine_info_pub_;
+  gazebo::transport::PublisherPtr game_state_pub_;
   gazebo::transport::SubscriberPtr place_puck_under_machine_sub_;
   gazebo::transport::SubscriberPtr remove_puck_under_machine_sub_;
 
