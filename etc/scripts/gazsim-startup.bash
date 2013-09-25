@@ -9,6 +9,8 @@ echo "$1"
 echo "$2"
 echo "$3"
 
+ulimit -c unlimited
+
 case $1 in
     gazebo ) 
 	gazebo ~/.gazebo/plugins/llsf/llsf.world
@@ -40,6 +42,7 @@ case $1 in
 	;;
     move_base ) 
 	export ROS_MASTER_URI=http://localhost:$2
+	#rosparam set /use_sim_time true
 	roslaunch ~/fawkes-robotino/cfg/move_base_robotino/launch/move_base.launch
 	;;
     refbox )
