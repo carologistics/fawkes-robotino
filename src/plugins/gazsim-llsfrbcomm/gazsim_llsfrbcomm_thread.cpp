@@ -102,6 +102,7 @@ GazsimLLSFRbCommThread::init()
   game_state_pub_ = gazebo_world_node->Advertise<llsf_msgs::GameState>("~/LLSFRbSim/GameState/");
   place_puck_under_machine_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/PlacePuckUnderMachine/"), &GazsimLLSFRbCommThread::on_puck_place_msg, this);
   remove_puck_under_machine_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/RemovePuckFromMachine/"), &GazsimLLSFRbCommThread::on_puck_remove_msg, this);
+  time_sync_sub_ = gazebo_world_node->Subscribe("~/gazsim/time-sync/", &GazsimLLSFRbCommThread::on_time_sync_msg, this);
 }
 
 
@@ -199,5 +200,18 @@ void GazsimLLSFRbCommThread::on_puck_remove_msg(ConstRemovePuckFromMachinePtr &m
     return;
   }
   llsf_msgs::RemovePuckFromMachine to_rb = *msg;
+  client_->send(to_rb);
+}
+
+void GazsimLLSFRbCommThread::on_time_sync_msg(ConstTimeSyncPtr &msg)
+{
+  // logger->log_info(name(), "Sending Simulation Time");
+  
+  //provide time source with newest message
+  if(!client_->connected())
+  {
+    return;
+  }
+  gazsim_msgs::TimeSync to_rb = *msg;
   client_->send(to_rb);
 }

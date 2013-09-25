@@ -37,6 +37,8 @@
 #include <plugins/gazebo/aspect/gazebo.h>
 #include <protobuf_msgs/MachineInfo.pb.h>
 #include <protobuf_msgs/MachineCommands.pb.h>
+#include <protobuf_msgs/TimeSync.pb.h>
+
 
 //from Gazebo
 #include <gazebo/transport/TransportTypes.hh>
@@ -46,7 +48,7 @@
 typedef const boost::shared_ptr<llsf_msgs::MachineInfo const> ConstMachineInfoPtr;
 typedef const boost::shared_ptr<llsf_msgs::PlacePuckUnderMachine const> ConstPlacePuckUnderMachinePtr;
 typedef const boost::shared_ptr<llsf_msgs::RemovePuckFromMachine const> ConstRemovePuckFromMachinePtr;
-
+typedef const boost::shared_ptr<gazsim_msgs::TimeSync const> ConstTimeSyncPtr;
 
 
 namespace protobuf_comm {
@@ -90,10 +92,12 @@ class GazsimLLSFRbCommThread
   gazebo::transport::PublisherPtr game_state_pub_;
   gazebo::transport::SubscriberPtr place_puck_under_machine_sub_;
   gazebo::transport::SubscriberPtr remove_puck_under_machine_sub_;
+  gazebo::transport::SubscriberPtr time_sync_sub_;
 
   //handler methods
   void on_puck_place_msg(ConstPlacePuckUnderMachinePtr &msg);
   void on_puck_remove_msg(ConstRemovePuckFromMachinePtr &msg);
+  void on_time_sync_msg(ConstTimeSyncPtr &msg);
 
   //helper variables
   bool disconnected_recently_;
