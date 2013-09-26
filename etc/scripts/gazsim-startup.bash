@@ -9,11 +9,13 @@ echo "$1"
 echo "$2"
 echo "$3"
 
-ulimit -c unlimited
+#ulimit -c unlimited
 
 case $1 in
     gazebo ) 
-	gazebo ~/.gazebo/plugins/llsf/llsf.world
+	#use optirun if available
+	opti=$(command -v optirun)
+	$opti gazebo ~/.gazebo/plugins/llsf/llsf.world
 	;;
     fawkes ) 
 	export ROS_MASTER_URI=http://localhost:$2
