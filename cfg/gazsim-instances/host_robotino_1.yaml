@@ -20,6 +20,10 @@ gazsim:
   visualization:
     label-script-name: "label/robotino1"
 
+plugins/light_front:
+  #Camera for gazebo simulation:
+  camera: shmem:gazsim_cam:image_id=robotino1/gazsim_light_front:deep_copy=true 
+    
 fawkes:
   bblogreplay:
     qatest-2013-05-29-15-28-50:
@@ -30,7 +34,7 @@ fawkes:
       logs:
         test:
           file: /home/robotino/fawkes-robotino/log/qatest-TestInterface-BBLoggerTest-2013-05-29-15-31-27.log
-
+          
 clips-agent:
   clips-debug: true
   skill-sim: false

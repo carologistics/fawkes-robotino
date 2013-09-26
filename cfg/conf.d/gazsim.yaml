@@ -21,7 +21,7 @@ gazsim:
     width: 320
     height: 240
     #Shared Memory Imagebuffer name
-    shm-image-id: "light_front"
+    shm-image-id: "gazsim_light_front"
     frame: "/cam_front" #without "" in light_front.yaml?
     
   light-front:
