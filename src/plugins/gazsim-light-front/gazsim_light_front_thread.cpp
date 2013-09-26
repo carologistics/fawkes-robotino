@@ -200,5 +200,7 @@ void LightFrontSimThread::on_localization_msg(ConstPosePtr &msg)
   //read data from message
   robot_x_ = msg->position().x();
   robot_y_ = msg->position().y();
-  robot_ori_ = msg->orientation().z();
+  //calculate ori from quaternion
+  robot_ori_ = tf::get_yaw(tf::Quaternion(msg->orientation().x(), msg->orientation().y()
+					  , msg->orientation().z(), msg->orientation().w()));
 }
