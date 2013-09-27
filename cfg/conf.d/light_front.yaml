@@ -6,11 +6,14 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/light_front
 
 plugins/light_front:
   # camera being used
-  #camera: "file:file:file=/home/fnolden/Dropbox/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
+  #camera: "file:file:file=/home/zwilling/Bilder/RoboCup.JPG"
   camera: v4l2:front:device=/dev/light_front 
 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
   #camera: v4l2:light:device=/dev/video1:size=640x480:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
 
+  #Camera for gazebo simulation:
+  camera: shmem:gazsim_cam:image_id=gazsim_light_front:deep_copy=true  
+  
   # Size of the light (Ampel) in m, without the sockel to determine the light search areas
   light_size_height: 0.10	#0.10
   light_size_width: 0.02	#0.035
@@ -20,9 +23,11 @@ plugins/light_front:
   camera_factor_vertical: 0.85 
 
   # camare offset of the front cam
-  camera_offset_horizontal_rad: -0.013 
+  camera_offset_horizontal: 0
+  camera_offset_horizontal_rad: -0.013
   camera_offset_vertical: 45
   camera_angle_horizontal_rad: .00
+  camera_angle_vertical_rad: .00
   
   #Shared Memory Imagebuffer name
   shm_image_id: "light_front"

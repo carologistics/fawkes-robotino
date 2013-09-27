@@ -30,12 +30,12 @@ clips-agent:
     wait-for-ins-point: WAIT_FOR_INS
     wait-for-deliver-point: WAIT_FOR_DELIVER
     
-    peer-address: 172.26.255.255
+    peer-address: 127.0.0.1 #172.26.255.255
     #use this for talking to the refbox on the same laptop:
-    #peer-recv-port: 4444
-    #peer-send-port: 4445
+    peer-recv-port: 4444
+    peer-send-port: 4445
     #use this for talking to the real refbox:
-    peer-port: 4444
+    #peer-port: 4444
 
     team-name: Carologistics
 
