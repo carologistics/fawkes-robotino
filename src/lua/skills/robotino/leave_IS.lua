@@ -81,7 +81,13 @@ function TURN:init()
    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
    local ori = fawkes.tf.get_yaw(q)
    if ori > 0 then
-      self.skills[1].ori = 2*math.pi - ori
+      if ori > 2.5 then
+	 --turn left to turn away from untouched pucks
+	 self.skills[1].ori = 2*math.pi - ori
+      else
+	 -- turn right to be sure not to turn against the wall
+	 self.skills[1].ori = -ori
+      end
    else
       self.skills[1].ori = math.abs(ori)
    end
