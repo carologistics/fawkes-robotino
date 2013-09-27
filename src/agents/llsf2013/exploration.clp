@@ -14,20 +14,9 @@
 (defrule exp-determine-first-machine
   (phase EXPLORATION)
   (role ?role)
-  (confval (path "/clips-agent/llsf2013/start-machine-exploration-p1p2") (value ?first-machine-exp-only))
-  (confval (path "/clips-agent/llsf2013/start-machine-exploration-p3") (value ?first-machine-exp-prod))
+  (confval (path "/clips-agent/llsf2013/start-machine-exploration") (value ?first-machine))
   =>
-  (if (eq ?role EXPLORATION_P1P2)
-    then
-      (assert (first-exploration-machine (sym-cat ?first-machine-exp-only)))
-    else
-      (if (eq ?role EXPLORATION_P3)
-				then
-					(assert (first-exploration-machine (sym-cat ?first-machine-exp-prod)))
-				else
-					(printout t "UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! UNKNOWN ROLE! " crlf)
-      )
-  )
+  (assert (first-exploration-machine (sym-cat ?first-machine)))
 )
 
 ;Set up the state

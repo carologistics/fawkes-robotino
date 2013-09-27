@@ -12,8 +12,11 @@ clips-agent:
   agent: llsf2013/llsf2013
 
   llsf2013:
-    start-machine-exploration-p1p2: M8
-    start-machine-exploration-p3: M2
+    #agent-role defined in host.yaml (this is only the default!)
+    agent-role: EXPLORATION_P3
+    #start-machine-exploration defined in host.yaml (this is only the default!)
+    start-machine-exploration: M8
+    
     waiting-for-p1p2-prouction-point: WAIT_FOR_INS
     waiting-for-p3-production-point: Ins
     wait-for-ins-point: WAIT_FOR_INS
