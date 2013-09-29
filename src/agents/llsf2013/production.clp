@@ -214,10 +214,15 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding P1|P2|P3)
+  (holding ?p)
   =>
   (if (debug 2) then (printout t "P -- Need to deliver P " crlf))
   (retract ?sf)
   (assert (state PROD_LOCK_REQUIRED_GOTO deliver))
+  (if (or (eq ?p P1) (eq ?p P2))
+    then
+    (assert (delivered-p1p2))
+  )
 )
 
 (defrule prod-goto-request-lock

@@ -40,3 +40,7 @@ clips-agent:
     #distance needed before a robot releases a lock
     release-distance: 0.5
 
+    dynamic-role-change:
+      enabled: true
+      p1p2-to-p3-after-delivery: true
+
