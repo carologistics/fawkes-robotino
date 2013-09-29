@@ -106,7 +106,7 @@
 (defrule prod-s0-t5
   (declare (salience ?*PRIORITY-P*))
   (phase PRODUCTION)
-  (role EXPLORATION_P3)
+  (role P3)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T5) (name ?name) (allowed TRUE))
@@ -119,7 +119,7 @@
 (defrule prod-s0-t3-s1-s2
   (declare (salience ?*PRIORITY-P*))
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name) (allowed TRUE))
@@ -132,7 +132,7 @@
 (defrule prod-s0-t2-s1
   (declare (salience ?*PRIORITY-S1*))
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T2) (loaded-with $?l&:(member$ S1 ?l)) (name ?name) (allowed TRUE))
@@ -145,7 +145,7 @@
 (defrule prod-s0-t1
   (declare (salience ?*PRIORITY-T1*))
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T1) (name ?name) (allowed TRUE))
@@ -158,7 +158,7 @@
 (defrule prod-s1-t3-s2
   (declare (salience ?*PRIORITY-S2*))
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   ?sf <- (state IDLE)
   (holding S1)
   (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name) (allowed TRUE))
@@ -171,7 +171,7 @@
 (defrule prod-s1-t2-not-s1
   (declare (salience ?*PRIORITY-T2*))  
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   ?sf <- (state IDLE)
   (holding S1)
   (machine (mtype T2) (name ?name) (loaded-with $?l&~:(subsetp (create$ S1) ?l)) (allowed TRUE))
@@ -184,7 +184,7 @@
 (defrule prod-s2-t3-has-some-but-not-s2
   (declare (salience ?*PRIORITY-T3*))  
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   ?sf <- (state IDLE)
   (holding S2)
   (machine (mtype T3|T4) (name ?name)
@@ -198,7 +198,7 @@
 (defrule prod-s2-t3-empty
   (declare (salience ?*PRIORITY-T3*))  
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   ?sf <- (state IDLE)
   (holding S2)
   (machine (mtype T3|T4) (name ?name) (loaded-with $?l&:(= (length$ ?l) 0)) (allowed TRUE))

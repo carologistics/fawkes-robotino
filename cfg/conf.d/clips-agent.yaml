@@ -13,7 +13,7 @@ clips-agent:
 
   llsf2013:
     #agent-role defined in host.yaml (this is only the default!)
-    agent-role: EXPLORATION_P3
+    agent-role: P3
     #start-machine-exploration defined in host.yaml (this is only the default!)
     start-machine-exploration: M8
     

@@ -253,23 +253,23 @@
   )
 )
 
-;Start retry round if EXPLORATION_P1P2
+;Start retry round if P1P2
 (defrule exp-start-retry-round
   (phase EXPLORATION)
   ?r <- (round FIRST_FINISHED)
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   =>
   (printout t "Starting retry round." crlf)
 	(retract ?r)
   (assert (round RETRY))
 )
 
-;Move EXPLORATION_P3 away after first round
+;Move P3 away after first round
 (defrule exp-move-away-after-finished
   (declare (salience ?*PRIORITY-HIGH*))
   ?sr <- (round FIRST_FINISHED)
   ?si <- (state EXP_IDLE)
-  (role EXPLORATION_P3)
+  (role P3)
   (not (driven-to-waiting-point))
   (confval (path "/clips-agent/llsf2013/waiting-for-p3-production-point") (value ?waiting-for-prod-point))
   =>
@@ -331,7 +331,7 @@
   (phase EXPLORATION)
   (forall (machine-exploration (name ?m) (x ?) (y ?) (next ?))
     (machineRecognized ?m))
-  (role EXPLORATION_P1P2)
+  (role P1P2)
   ?s <- (round RETRY)
   (confval (path "/clips-agent/llsf2013/waiting-for-p1p2-prouction-point") (value ?work-finished-point))
   =>

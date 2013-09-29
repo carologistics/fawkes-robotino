@@ -73,10 +73,10 @@
 (defrule strat-p1p2-to-p3-after-delivery
   (dynamic-role-change true)
   (confval (path "/clips-agent/llsf2013/dynamic-role-change/p1p2-to-p3-after-delivery") (type BOOL) (value true))
-  ?r <- (role EXPLORATION_P1P2)
+  ?r <- (role P1P2)
   (delivered-p1p2)
   =>
   (printout t "Changing Role from P1P2 to P3 because I have finished the first product" crlf)
   (retract ?r)
-  (assert (role EXPLORATION_P3))
+  (assert (role P3))
 )
