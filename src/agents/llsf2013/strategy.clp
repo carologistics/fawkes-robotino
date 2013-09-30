@@ -73,10 +73,31 @@
 (defrule strat-p1p2-to-p3-after-delivery
   (dynamic-role-change true)
   (confval (path "/clips-agent/llsf2013/dynamic-role-change/p1p2-to-p3-after-delivery") (type BOOL) (value true))
+  (phase PRODUCTION)
   ?r <- (role P1P2)
   (delivered-p1p2)
   =>
-  (printout t "Changing Role from P1P2 to P3 because I have finished the first product" crlf)
+  (printout warn "Changing Role from P1P2 to P3 because I have finished the first product." crlf)
   (retract ?r)
   (assert (role P3))
+)
+
+;change role from p1p2 to p3 if the estimated time for production is greater than the time left
+(defrule strat-p1p2-to-p3-no-time
+  (dynamic-role-change true)
+  (confval (path "/clips-agent/llsf2013/dynamic-role-change/p1p2-to-p3-time") (type BOOL) (value true))
+  ?r <- (role P1P2)
+  (confval (path "/clips-agent/llsf2013/dynamic-role-change/production-durations/p1p2") (type UINT) (value ?p-duration))
+  (phase PRODUCTION)
+  ;before starting a new p1/p2 production the agent has no puck and there is no allowed machine whick is loaded
+  (holding NONE)
+  (not (machine (allowed TRUE) (loaded-with $?lw&:(> (length$ ?lw) 0))))
+  ;not enough time:
+  (game-duration ?g-duration)
+  (game-time $?gt&:(> ?p-duration (- ?g-duration (nth$ 1 ?gt))))
+  =>
+  (printout warn "Changing Role from P1P2 to P3 because there is not enough time for an other p1 or p2" crlf)
+  (retract ?r)
+  (assert (role P3))
+       
 )

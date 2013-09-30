@@ -42,5 +42,10 @@ clips-agent:
 
     dynamic-role-change:
       enabled: true
-      p1p2-to-p3-after-delivery: true
-
+      # the p1p2 agent gets a p3 agent if he has finished the first p1/p2
+      p1p2-to-p3-after-delivery: false
+      # the p1p2 agent gets a p3 agent if there is not enough time left for an other p1/p2
+      p1p2-to-p3-time: true
+      #estimated production durations from start in sec
+      production-durations:
+        p1p2: 420

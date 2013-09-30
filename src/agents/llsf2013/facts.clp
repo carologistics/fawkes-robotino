@@ -99,6 +99,8 @@
   (state WAIT_START)
   (phase PRE_GAME)
   (refbox-state WAIT_START)
-
+  (game-time (create$ 0 0))
+  (game-duration (* 15 60))
+  
   (signal (type beacon) (time (create$ 0 0)) (seq 1))
 )
