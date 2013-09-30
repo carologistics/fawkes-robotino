@@ -8,9 +8,9 @@
 ;---------------------------------------------------------------------------
 
 (defrule strat-allow-t5
-  ?m <- (machine (mtype T5) (name ?name) (allowed FALSE))
+  ?m <- (machine (mtype T5) (name ?name))
   =>
-  (modify ?m (allowed TRUE))
+  (assert (machine-alloc (machine ?name) (role P3)))
 )
 
 ;choose machines with the maximum distance to the T5
@@ -26,37 +26,38 @@
   (do-for-all-facts ((?m machine)) TRUE
     (bind ?dist (distance ?x5 ?y5 ?m:x ?m:y))
     (switch ?m:mtype
-      (case T1 then (if (> ?dist ?t1-dist) then (bind ?t1 ?m) (bind ?t1-dist ?dist)))
-      (case T2 then (if (> ?dist ?t2-dist) then (bind ?t2 ?m) (bind ?t2-dist ?dist)))
-      (case T3 then (if (> ?dist ?t34-dist) then (bind ?t34 ?m) (bind ?t34-dist ?dist)))
-      (case T4 then (if (> ?dist ?t34-dist) then (bind ?t34 ?m) (bind ?t34-dist ?dist)))
+      (case T1 then (if (> ?dist ?t1-dist) then (bind ?t1 ?m) (bind ?t1-dist ?dist) (bind ?t1-name ?m:name)))
+      (case T2 then (if (> ?dist ?t2-dist) then (bind ?t2 ?m) (bind ?t2-dist ?dist) (bind ?t2-name ?m:name)))
+      (case T3 then (if (> ?dist ?t34-dist) then (bind ?t34 ?m) (bind ?t34-dist ?dist) (bind ?t34-name ?m:name)))
+      (case T4 then (if (> ?dist ?t34-dist) then (bind ?t34 ?m) (bind ?t34-dist ?dist) (bind ?t34-name ?m:name)))
     )
   )
-  (modify ?t1 (allowed TRUE))
-  (modify ?t2 (allowed TRUE))
-  (modify ?t34 (allowed TRUE))
+  (assert (machine-alloc (machine ?t1-name) (role P1P2)))
+  (assert (machine-alloc (machine ?t2-name) (role P1P2)))
+  (assert (machine-alloc (machine ?t34-name) (role P1P2)))
 )
 
 (defrule strat-show-allowed-machines
-  ?m <- (machine (mtype ?type) (name ?name) (allowed TRUE))
+  (machine-alloc (machine ?name) (role ?role))
+  (machine (name ?name) (mtype ?t))
   =>
-  (printout t "Allowing " ?name " as " ?type crlf)
+  (printout t "Allowing " ?name " as " ?t " for the role " ?role crlf)
 )
 
-(deffunction strat-allow-all (?type)
+(deffunction strat-allow-all (?type ?role)
   (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:mtype ?type)
-    (modify ?machine (allowed TRUE))
+    (assert (machine-alloc (machine ?machine:name) (role ?role)))
   )
   (if (eq ?type T3)
     then
     (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:mtype T4)
-      (modify ?machine (allowed TRUE))
+      (assert (machine-alloc (machine ?machine:name) (role ?role)))
     )
     else
     (if (eq ?type T4)
       then
       (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:mtype T3)
-        (modify ?machine (allowed TRUE))
+        (assert (machine-alloc (machine ?machine:name) (role ?role)))
       )
     )
   )
@@ -91,7 +92,10 @@
   (phase PRODUCTION)
   ;before starting a new p1/p2 production the agent has no puck and there is no allowed machine whick is loaded
   (holding NONE)
-  (not (machine (allowed TRUE) (loaded-with $?lw&:(> (length$ ?lw) 0))))
+  (forall (machine-alloc (machine ?name) (role P1P2))
+	  (machine (name ?name) (loaded-with $?lw&:(eq (length$ ?lw) 0)))
+  )
+  ;(not (machine (name ?name) (loaded-with $?lw&:(> (length$ ?lw) 0))))
   ;not enough time:
   (game-duration ?g-duration)
   (game-time $?gt&:(> ?p-duration (- ?g-duration (nth$ 1 ?gt))))

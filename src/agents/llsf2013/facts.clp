@@ -73,7 +73,12 @@
   (slot output (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3))
   (slot x (type FLOAT))
   (slot y (type FLOAT))
-  (slot allowed (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
+)
+
+;allocation of the mashines to the roles
+(deftemplate machine-alloc
+  (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
+  (slot role (type SYMBOL))
 )
 
 ;(deftemplate holding
