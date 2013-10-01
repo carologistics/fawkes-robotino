@@ -106,11 +106,11 @@
 (defrule prod-s0-t5
   (declare (salience ?*PRIORITY-P*))
   (phase PRODUCTION)
-  (role P3)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T5) (name ?name))
-  (machine-alloc (machine ?name) (role P5))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S0 2 -- Going to T5 named " ?name crlf))
   (retract ?sf)
@@ -120,11 +120,11 @@
 (defrule prod-s0-t3-s1-s2
   (declare (salience ?*PRIORITY-P*))
   (phase PRODUCTION)
-  (role P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name))
-  (machine-alloc (machine ?name) (role P1P2))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S0 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
@@ -134,11 +134,11 @@
 (defrule prod-s0-t2-s1
   (declare (salience ?*PRIORITY-S1*))
   (phase PRODUCTION)
-  (role P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T2) (loaded-with $?l&:(member$ S1 ?l)) (name ?name))
-  (machine-alloc (machine ?name) (role P1P2))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S0 4 -- Going to T2 named " ?name crlf))
   (retract ?sf)
@@ -148,11 +148,11 @@
 (defrule prod-s0-t1
   (declare (salience ?*PRIORITY-T1*))
   (phase PRODUCTION)
-  (role P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S0)
   (machine (mtype T1) (name ?name))
-  (machine-alloc (machine ?name) (role P1P2))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S0 5 -- Going to T1 named " ?name crlf))
   (retract ?sf)
@@ -162,11 +162,11 @@
 (defrule prod-s1-t3-s2
   (declare (salience ?*PRIORITY-S2*))
   (phase PRODUCTION)
-  (role P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S1)
   (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name))
-  (machine-alloc (machine ?name) (role P1P2))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S1 1 -- Going T3 named " ?name crlf))
   (retract ?sf)
@@ -176,11 +176,11 @@
 (defrule prod-s1-t2-not-s1
   (declare (salience ?*PRIORITY-T2*))  
   (phase PRODUCTION)
-  (role P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S1)
   (machine (mtype T2) (name ?name) (loaded-with $?l&~:(subsetp (create$ S1) ?l)))
-  (machine-alloc (machine ?name) (role P1P2))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S1 3 -- Going to T2 named " ?name crlf))
   (retract ?sf)
@@ -190,12 +190,12 @@
 (defrule prod-s2-t3-has-some-but-not-s2
   (declare (salience ?*PRIORITY-T3*))  
   (phase PRODUCTION)
-  (role P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S2)
   (machine (mtype T3|T4) (name ?name)
 	   (loaded-with $?l&:(> (length$ ?l) 0)&~:(subsetp (create$ S2) ?l)))
-  (machine-alloc (machine ?name) (role P1P2))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S2 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
@@ -205,11 +205,11 @@
 (defrule prod-s2-t3-empty
   (declare (salience ?*PRIORITY-T3*))  
   (phase PRODUCTION)
-  (role P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S2)
   (machine (mtype T3|T4) (name ?name) (loaded-with $?l&:(= (length$ ?l) 0)))
-  (machine-alloc (machine ?name) (role P1P2))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S2 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)

@@ -14,7 +14,7 @@
 )
 
 ;choose machines with the maximum distance to the T5
-(defrule strat-allow-other-machines
+(defrule strat-allow-P1P2
   (machine (mtype T5) (name ?name-t5) (x ?x5) (y ?y5))
   =>
   (bind ?t1 BLA)
@@ -35,6 +35,42 @@
   (assert (machine-alloc (machine ?t1-name) (role P1P2)))
   (assert (machine-alloc (machine ?t2-name) (role P1P2)))
   (assert (machine-alloc (machine ?t34-name) (role P1P2)))
+)
+
+;allow machines for role P1 and P2 (disjunct)
+(defrule strat-allow-role-P1-and-role-P2
+  (machine (mtype T3) (name ?name-t3) (x ?x3) (y ?y3))
+  (machine (mtype T4) (name ?name-t4) (x ?x4) (y ?y4))
+  =>
+  (assert (machine-alloc (machine ?name-t3) (role P1))
+	  (machine-alloc (machine ?name-t4) (role P2))
+  )
+  ;nearest machines to the T3
+  (bind ?p1-t1-dist 100.0)
+  (bind ?p1-t2-dist 100.0)
+  (do-for-all-facts ((?m machine)) TRUE
+    (bind ?dist (distance ?x3 ?y3 ?m:x ?m:y))
+    (switch ?m:mtype
+      (case T1 then (if (< ?dist ?p1-t1-dist) then (bind ?p1-t1 ?m) (bind ?p1-t1-dist ?dist) (bind ?p1-t1-name ?m:name)))
+      (case T2 then (if (< ?dist ?p1-t2-dist) then (bind ?p1-t2 ?m) (bind ?p1-t2-dist ?dist) (bind ?p1-t2-name ?m:name)))
+    )
+  )
+  (assert (machine-alloc (machine ?p1-t1-name) (role P1))
+	  (machine-alloc (machine ?p1-t2-name) (role P1))
+  )
+  ;nearest machines to the T4 that are not allowed for P1
+  (bind ?p2-t1-dist 100.0)
+  (bind ?p2-t2-dist 100.0)
+  (do-for-all-facts ((?m machine)) (and (neq ?m:name ?p1-t1-name) (neq ?m:name ?p1-t2-name))
+    (bind ?dist (distance ?x4 ?y4 ?m:x ?m:y))
+    (switch ?m:mtype
+      (case T1 then (if (< ?dist ?p2-t1-dist) then (bind ?p2-t1 ?m) (bind ?p2-t1-dist ?dist) (bind ?p2-t1-name ?m:name)))
+      (case T2 then (if (< ?dist ?p2-t2-dist) then (bind ?p2-t2 ?m) (bind ?p2-t2-dist ?dist) (bind ?p2-t2-name ?m:name)))
+    )
+  )
+  (assert (machine-alloc (machine ?p2-t1-name) (role P2))
+	  (machine-alloc (machine ?p2-t2-name) (role P2))
+  )
 )
 
 (defrule strat-show-allowed-machines
