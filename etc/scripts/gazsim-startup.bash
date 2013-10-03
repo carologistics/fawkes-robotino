@@ -1,56 +1,122 @@
 #!/bin/bash
 # Automated startup of a Gazebo simulation
-# programm to start indicated by argument $1
-# ros_port  indicated by argument $2
-# $3 fakes purpose (robotino1, robotino2, robotino3 or comm)
-# $4 ros?
 
-echo "$1"
-echo "$2"
-echo "$3"
+usage()
+{
+cat << EOF
+usage: $0 options
+
+This script starts a specified program for simulation
+
+OPTIONS:
+   -h             Show this message
+   -x gazebo|fawkes|comm|roscore|move_base|refbox|refbox_shell  
+                  Start specified program
+   -c arg         (when using fawkes) 
+                  Use a specific configuration-folder
+                  in cfg/gazsim-configurations/
+   -p arg         Specify ros port
+   -l             (when using gazebo)
+                  Run Gazebo headless
+   -r             (when using fawkes)
+                  Start ros
+   -s             (when using fawkes)
+                  Keep statistics and shutdown after game
+   -i robotino[1|2|3]
+                   Robotino instance
+EOF
+}
+ 
+#check options
+
+COMMAND=
+CONF=gazsim-configurations/default
+VISUALIZATION=visualization
+ROS=false
+SHUTDOWN=
+PORT=11311
+ROBOTINO=
+while getopts “hx:c:lrsp:i:” OPTION
+do
+     case $OPTION in
+         h)
+             usage
+             exit 1
+             ;;
+         c)
+	     CONF=gazsim-configurations/$OPTARG
+             ;;
+         l)
+	     VISUALIZATION=headless
+             ;;
+         x)
+	     COMMAND=$OPTARG
+             ;;
+	 r)
+	     ROS=true
+	     ;;
+	 s)
+	     SHUTDOWN=,gazsim-llsf-statistics,gazsim-llsf-control
+	     ;;
+	 p)
+	     PORT=$OPTARG
+	     ;;
+	 i)
+	     ROBOTINO=$OPTARG
+	     ;;
+         ?)
+             usage
+             exit
+             ;;
+     esac
+done
+
+if [[ -z $COMMAND ]]
+then
+     usage
+     exit 1
+fi
+
 
 #ulimit -c unlimited
 
-case $1 in
+case $COMMAND in
     gazebo ) 
 	#use optirun if available
 	opti=$(command -v optirun)
-	$opti gazebo ~/.gazebo/plugins/llsf/llsf.world
+	if [ $VISUALIZATION == headless ]
+	then
+	    $opti gzserver ~/.gazebo/plugins/llsf/llsf.world
+	else
+	    $opti gazebo ~/.gazebo/plugins/llsf/llsf.world
+	fi
 	;;
     fawkes ) 
-	export ROS_MASTER_URI=http://localhost:$2
-	if [[ $4 = ros ]] ; then
+	export ROS_MASTER_URI=http://localhost:$PORT
+	if [ $ROS == true ] ; then
 	    robotino_plugins=gazsim-full-robotino-ros,clips,clips-agent,clips-protobuf,clips-motor-switch,gazsim-vis-localization
 	else
 	    robotino_plugins=gazsim-full-robotino
 	fi
-	
-	
-	comm_plugins=gazsim-organization
-	case $3 in
-	    robotino1 ) ~/fawkes-robotino/bin/fawkes -c robotino1.yaml -p $robotino_plugins
-		;;
-	    robotino2 ) ~/fawkes-robotino/bin/fawkes -c robotino2.yaml -p $robotino_plugins
-		;;
-	    robotino3 ) ~/fawkes-robotino/bin/fawkes -c robotino3.yaml -p $robotino_plugins
-		;;
-	    comm ) ~/fawkes-robotino/bin/fawkes -p $comm_plugins
-		;;
-	esac
+	~/fawkes-robotino/bin/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
+	;;
+    comm )
+	comm_plugins=gazsim-organization$SHUTDOWN
+	~/fawkes-robotino/bin/fawkes -p $comm_plugins
 	;;
     roscore ) 
-	export ROS_MASTER_URI=http://localhost:$2
-	roscore -p $2
+	export ROS_MASTER_URI=http://localhost:$PORT
+	roscore -p $PORT
 	;;
     move_base ) 
-	export ROS_MASTER_URI=http://localhost:$2
+	export ROS_MASTER_URI=http://localhost:$PORT
 	#rosparam set /use_sim_time true
 	roslaunch ~/fawkes-robotino/cfg/move_base_robotino/launch/move_base.launch
 	;;
     refbox )
 	~/llsf-refbox/bin/llsf-refbox
 	;;
-    refbox_shell )
+    refbox-shell )
 	~/llsf-refbox/bin/llsf-refbox-shell
 	;;
 esac
