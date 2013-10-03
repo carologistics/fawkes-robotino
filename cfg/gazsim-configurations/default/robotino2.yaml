@@ -1,13 +1,13 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg,gazsim/
 ---
-#start fawkes with this configuration file if you want to control robotino 3 in the simulation
+#start fawkes with this configuration file if you want to control robotino 2 in the simulation
 
 #include main config file
 include:
   - !ignore-missing conf.d/
   #concrete configuration in an other file because I could not override config values when using a single file
-  - !host-specific gazsim-instances/host_robotino_3.yaml
+  - !host-specific gazsim-configurations/default/host_robotino_2.yaml
 ---
 
 fawkes:
@@ -25,14 +25,13 @@ fawkes:
     loggers: console;file/debug:debug.log
 
     net:
-      tcp_port: !tcp-port 1923
-      service_name: "Fawkes on Gazsim Robotino 3"
+      tcp_port: !tcp-port 1922
+      service_name: "Fawkes on Gazsim Robotino 2"
 
 # Log level for ballposlog example plugin; sum of any of
 # debug=0, info=1, warn=2, error=4, none=8
 ballposlog/log_level: 0
 
-
 gazsim:
   #channel for gazebo communication to differ topics of different robots
-  gazebo-communication-channel: "robotino3"
+  gazebo-communication-channel: "robotino2"
