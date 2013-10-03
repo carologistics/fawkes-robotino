@@ -81,8 +81,9 @@ fi
 
 echo 'Automated Simulation control'
 
-startup_script_location=~/fawkes-robotino/bin/gazsim-startup.bash 
-
+script_path=~/fawkes-robotino/bin
+startup_script_location=$script_path/gazsim-startup.bash 
+initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash 
 
 if [  $COMMAND  == kill ]; then
     echo 'Kill Gazebo-sim'
@@ -137,9 +138,6 @@ if [  $COMMAND  == start ]; then
     #start refbox shell
     gnome-terminal $KEEP -t Refbox_Shell --geometry=87x82 -x bash -c "$startup_script_location -x refbox-shell"
 
-    #start fawkes for communication, llsfrbcomm and eventually statistics
-    gnome-terminal $KEEP -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311  $SHUTDOWN"
-
     #start fawkes for robotinos
     echo "$startup_script_location -x fawkes -p 11311 -i robotino1 $CONF $ROS"
     gnome-terminal $KEEP -t Fawkes_Robotino_1 -x bash -c "$startup_script_location -x fawkes -p 11311 -i robotino1 $CONF $ROS"
@@ -151,6 +149,26 @@ if [  $COMMAND  == start ]; then
 	    gnome-terminal $KEEP -t Fawkes_Robotino_3 -x bash -c "$startup_script_location -x fawkes -p 11313 -i robotino3 $CONF $ROS"
 	fi
     fi
+
+    sleep 2s
+
+    #start fawkes for communication, llsfrbcomm and eventually statistics
+    gnome-terminal $KEEP -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311  $SHUTDOWN"
+
+    sleep 1s
+
+    # publish initial poses
+    #start move_bases
+    $initial_pose_script_location -x 0.4 -y 0.5 -p 11311
+    if [ $NUM_ROBOTINOS -ge 2 ]
+    then
+	$initial_pose_script_location -x 0.4 -y 1.2 -p 11312
+	if [ $NUM_ROBOTINOS -ge 3 ]
+	    then
+	    $initial_pose_script_location -x 0.4 -y 1.9 -p 11313
+	fi
+    fi
+
     else
     usage
 fi
