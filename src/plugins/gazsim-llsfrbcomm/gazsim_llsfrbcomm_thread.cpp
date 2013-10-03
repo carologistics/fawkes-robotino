@@ -105,6 +105,7 @@ GazsimLLSFRbCommThread::init()
   place_puck_under_machine_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/PlacePuckUnderMachine/"), &GazsimLLSFRbCommThread::on_puck_place_msg, this);
   remove_puck_under_machine_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/RemovePuckFromMachine/"), &GazsimLLSFRbCommThread::on_puck_remove_msg, this);
   time_sync_sub_ = gazebo_world_node->Subscribe("~/gazsim/time-sync/", &GazsimLLSFRbCommThread::on_time_sync_msg, this);
+  set_game_state_sub_ = gazebo_world_node->Subscribe("~/LLSFRbSim/SetGameState/", &GazsimLLSFRbCommThread::on_set_game_state_msg, this);
 }
 
 
@@ -223,5 +224,16 @@ void GazsimLLSFRbCommThread::on_time_sync_msg(ConstSimTimeSyncPtr &msg)
   }
   llsf_msgs::SimTimeSync to_rb = *msg;
   //send it and make refbox able to handle the msg
+  client_->send(to_rb);
+}
+
+void GazsimLLSFRbCommThread::on_set_game_state_msg(ConstSetGameStatePtr &msg)
+{
+  //logger->log_info(name(), "Sending SetGameState to refbox");
+  if(!client_->connected())
+  {
+    return;
+  }
+  llsf_msgs::SetGameState to_rb = *msg;
   client_->send(to_rb);
 }

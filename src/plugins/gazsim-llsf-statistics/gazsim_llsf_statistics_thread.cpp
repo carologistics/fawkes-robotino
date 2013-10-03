@@ -26,6 +26,7 @@
 #include <math.h>
 #include <string.h>
 #include <sstream>
+#include <stdlib.h>
 
 #include <interfaces/Position3DInterface.h>
 

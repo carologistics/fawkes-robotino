@@ -39,6 +39,7 @@
 #include <protobuf_msgs/MachineCommands.pb.h>
 #include <protobuf_msgs/SimTimeSync.pb.h>
 #include <protobuf_msgs/PuckInfo.pb.h>
+#include <protobuf_msgs/GameState.pb.h>
 
 
 //from Gazebo
@@ -50,6 +51,7 @@ typedef const boost::shared_ptr<llsf_msgs::MachineInfo const> ConstMachineInfoPt
 typedef const boost::shared_ptr<llsf_msgs::PlacePuckUnderMachine const> ConstPlacePuckUnderMachinePtr;
 typedef const boost::shared_ptr<llsf_msgs::RemovePuckFromMachine const> ConstRemovePuckFromMachinePtr;
 typedef const boost::shared_ptr<llsf_msgs::SimTimeSync const> ConstSimTimeSyncPtr;
+typedef const boost::shared_ptr<llsf_msgs::SetGameState const> ConstSetGameStatePtr;
 
 
 namespace protobuf_comm {
@@ -95,11 +97,13 @@ class GazsimLLSFRbCommThread
   gazebo::transport::SubscriberPtr place_puck_under_machine_sub_;
   gazebo::transport::SubscriberPtr remove_puck_under_machine_sub_;
   gazebo::transport::SubscriberPtr time_sync_sub_;
+  gazebo::transport::SubscriberPtr set_game_state_sub_;
 
   //handler methods
   void on_puck_place_msg(ConstPlacePuckUnderMachinePtr &msg);
   void on_puck_remove_msg(ConstRemovePuckFromMachinePtr &msg);
   void on_time_sync_msg(ConstSimTimeSyncPtr &msg);
+  void on_set_game_state_msg(ConstSetGameStatePtr &msg);
 
   //helper variables
   bool disconnected_recently_;

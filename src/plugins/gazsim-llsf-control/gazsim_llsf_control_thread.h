@@ -1,6 +1,5 @@
 /***************************************************************************
- *  gazsim_llsf_statistics_plugin.h - Plugin generates a statistic about
- *     a game
+ *  gazsim_llsf_control_plugin.h - Plugin controls the llsf simulation
  *
  *  Created: Mon Sep 23 17:12:33 2013
  *  Copyright  2013 Frederik Zwilling
@@ -20,8 +19,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef __PLUGINS_GAZSIM_LLSF_STATISTICS_THREAD_H_
-#define __PLUGINS_GAZSIM_LLSF_STATISTICS_THREAD_H_
+#ifndef __PLUGINS_GAZSIM_LLSF_CONTROL_THREAD_H_
+#define __PLUGINS_GAZSIM_LLSF_CONTROL_THREAD_H_
 
 #include <core/threading/thread.h>
 #include <aspect/clock.h>
@@ -45,8 +44,9 @@ namespace fawkes {
 }
 
 typedef const boost::shared_ptr<llsf_msgs::GameState const> ConstGameStatePtr;
+typedef const boost::shared_ptr<llsf_msgs::SetGameState const> ConstSetGameStatePtr;
 
-class LlsfStatisticsSimThread
+class LlsfControlSimThread
 : public fawkes::Thread,
   public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
@@ -56,7 +56,7 @@ class LlsfStatisticsSimThread
   public fawkes::GazeboAspect
 {
  public:
-  LlsfStatisticsSimThread();
+  LlsfControlSimThread();
 
   virtual void init();
   virtual void loop();
@@ -65,13 +65,22 @@ class LlsfStatisticsSimThread
  private:
   //suscribers for gazebo nodes (refbox messages forwarded by gazsim-llsfrbcomm)
   gazebo::transport::SubscriberPtr game_state_sub_;
+  //Publisher to start the refbox
+  gazebo::transport::PublisherPtr set_game_state_pub_;
+
+  //config values
+  bool start_game_automatically_;
+  float time_to_wait_before_start_;
+  bool post_game_simulation_shutdown_;
+  std::string fawkes_path_;
+  std::string simulation_shutdown_script_;
   
   //handler functions
   void on_game_state_msg(ConstGameStatePtr &msg);
 
-  //statistics
-  int exp_points_, prod_points_;
-  bool written_;
+  //helper variables
+  float start_time_;
+  bool start_sent_;
 };
 
 #endif

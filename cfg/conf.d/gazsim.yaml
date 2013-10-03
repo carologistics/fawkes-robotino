@@ -66,3 +66,10 @@ gazsim:
       #parent model::link to attach visuals on
       parent-name: "ground_plane::link"
       update-rate: 2.0 #in Hz
+
+  llsf-control:
+    start-game-automatically: true
+    time-to-wait-before-start: 5.0
+    simulation-shutdown-after-game: true
+    fawkes-path: "~/fawkes-robotino/" #TODO: find it in cpp source
+    simulation-shutdown-script: "bin/gazsim.bash -x kill"
