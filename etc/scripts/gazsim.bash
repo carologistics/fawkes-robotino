@@ -18,6 +18,7 @@ OPTIONS:
    -r             Start ros
    -k             Keep started shells open after finish
    -s             Keep statistics and shutdown after game
+   -e arg         Record replay
 EOF
 }
  
@@ -30,7 +31,8 @@ ROS=false
 KEEP=
 SHUTDOWN=
 NUM_ROBOTINOS=3
-while getopts “hx:c:lrksn:” OPTION
+REPLAY=
+while getopts “hx:c:lrksn:e:” OPTION
 do
      case $OPTION in
          h)
@@ -57,6 +59,9 @@ do
 	     ;;
 	 n)
 	     NUM_ROBOTINOS=$OPTARG
+	     ;;
+	 e)
+	     REPLAY="-e $OPTARG"
 	     ;;
          ?)
              usage
@@ -100,7 +105,7 @@ fi
 if [  $COMMAND  == start ]; then
     #start gazebo
     
-    gnome-terminal $KEEP -t Gazebo -x bash -c "$startup_script_location -x gazebo $VISUALIZATION"
+    gnome-terminal $KEEP -t Gazebo -x bash -c "$startup_script_location -x gazebo $VISUALIZATION $REPLAY"
     sleep 25s
 
     if [  $ROS  == "-r" ]; then

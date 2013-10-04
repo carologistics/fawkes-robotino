@@ -74,8 +74,9 @@ do
 	replace_config run $RUN
 	replace_config configuration-name "\"$CONF\""
 	replace_config collection "\"$TIME\""
-	#echo $STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF
-	#$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF
+	replace_config replay "\"~\/.gazebo\/log\/gazsim-runs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
+        REPLAY_PATH=~/.gazebo/log/gazsim-runs/$TIME/$CONF\_$RUN
+	$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF -e $REPLAY_PATH -k
         #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	echo Waiting for shutdown of the simulation
 	for (( ; ; ))

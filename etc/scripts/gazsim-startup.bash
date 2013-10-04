@@ -16,14 +16,16 @@ OPTIONS:
                   Use a specific configuration-folder
                   in cfg/gazsim-configurations/
    -p arg         Specify ros port
-   -l             (when using gazebo)
-                  Run Gazebo headless
    -r             (when using fawkes)
                   Start ros
    -s             (when using fawkes)
                   Keep statistics and shutdown after game
    -i robotino[1|2|3]
                    Robotino instance
+
+   -l             (when using gazebo)
+                  Run Gazebo headless
+   -e arg         Record Replay
 EOF
 }
  
@@ -36,7 +38,8 @@ ROS=false
 SHUTDOWN=
 PORT=11311
 ROBOTINO=
-while getopts “hx:c:lrsp:i:” OPTION
+REPLAY=
+while getopts “hx:c:lrsp:i:e:” OPTION
 do
      case $OPTION in
          h)
@@ -64,6 +67,9 @@ do
 	 i)
 	     ROBOTINO=$OPTARG
 	     ;;
+	 e)
+	     REPLAY=-r\ --record_path\ $OPTARG
+	     ;;
          ?)
              usage
              exit
@@ -86,9 +92,9 @@ case $COMMAND in
 	opti=$(command -v optirun)
 	if [ $VISUALIZATION == headless ]
 	then
-	    $opti gzserver ~/.gazebo/plugins/llsf/llsf.world
+	    $opti gzserver $REPLAY ~/.gazebo/plugins/llsf/llsf.world
 	else
-	    $opti gazebo ~/.gazebo/plugins/llsf/llsf.world
+	    $opti gazebo $REPLAY ~/.gazebo/plugins/llsf/llsf.world
 	fi
 	;;
     fawkes ) 
