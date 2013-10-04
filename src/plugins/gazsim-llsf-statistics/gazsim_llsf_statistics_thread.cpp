@@ -35,8 +35,12 @@
 #include <gazebo/transport/transport.hh>
 #include <aspect/logging.h>
 
+#include <mongo/client/dbclient.h>
+#include <mongo/client/gridfs.h>
+
 using namespace fawkes;
 using namespace gazebo;
+using namespace mongo;
 
 /** @class LlsfStatisticsSimThread "gazsim_llsf_statistics_thread.h"
  * Thread generates statistics of a llsf game in gazebo
@@ -47,7 +51,7 @@ using namespace gazebo;
 /** Constructor. */
 LlsfStatisticsSimThread::LlsfStatisticsSimThread()
   : Thread("LlsfStatisticsSimThread", Thread::OPMODE_WAITFORWAKEUP),
-    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE)
+     BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE)
 {
 }
 
@@ -59,15 +63,24 @@ void LlsfStatisticsSimThread::init()
   game_state_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/GameState/"), &LlsfStatisticsSimThread::on_game_state_msg, this);
 
   //read config values
+  db_name_ = config->get_string("/gazsim/llsf-statistics/db-name");
+  collection_ = config->get_string("/gazsim/llsf-statistics/collection");
+  namespace_ = db_name_ + "." + collection_;
+  configuration_ = config->get_string("/gazsim/llsf-statistics/configuration-name");
+  replay_ = config->get_string("/gazsim/llsf-statistics/replay");
+  run_ = config->get_uint("/gazsim/llsf-statistics/run");
 
   //init statistics
   exp_points_ = 0;
   prod_points_ = 0;
   written_ = false;
+  
+  mongodb_ = mongodb_client;
 }
 
 void LlsfStatisticsSimThread::finalize()
 {
+  write_statistics();
 }
 
 void LlsfStatisticsSimThread::loop()
@@ -88,11 +101,24 @@ void LlsfStatisticsSimThread::on_game_state_msg(ConstGameStatePtr &msg)
   }
   else if(msg->phase() == llsf_msgs::GameState::POST_GAME)
   {
-    if(!written_)
-    {
-      //TODO: write statistics to file/DB
+    write_statistics();
+  }
+}
 
-      written_ = true;
-    }
+void LlsfStatisticsSimThread::write_statistics()
+{
+  if(!written_)
+  {
+    written_ = true;
+
+    BSONObjBuilder builder;
+    builder.append("configuration", configuration_.c_str());
+    builder.append("run", run_);
+    builder.append("exp-points", exp_points_);
+    builder.append("prod-points", prod_points_);
+    builder.append("total-points", exp_points_ + prod_points_);
+    builder.append("replay", replay_.c_str());
+    BSONObj entry = builder.obj();
+    mongodb_->insert(namespace_.c_str(), entry);
   }
 }

@@ -58,6 +58,7 @@ gazsim:
     addresses:  ["localhost", "localhost", "localhost", "localhost"]
     send-ports: [4445,         4411,       4412,        4413]
     recv-ports: [4444,         4421,       4422,        4423]
+
   visualization:
     location-scripts: "model://label/materials/scripts"
     location-textures: "model://label/materials/textures"
@@ -73,3 +74,11 @@ gazsim:
     simulation-shutdown-after-game: true
     fawkes-path: "~/fawkes-robotino/" #TODO: find it in cpp source
     simulation-shutdown-script: "bin/gazsim.bash -x kill"
+
+  llsf-statistics:
+    #these fields can be overridden by the gazsim-schedule script
+    db-name: "gazsim-runs"
+    collection: "manual"
+    configuration-name: "default"
+    replay: ""
+    run: 1

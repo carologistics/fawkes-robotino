@@ -20,19 +20,20 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
+include $(BASEDIR)/fawkes/src/plugins/mongodb/mongodb.mk
 
 LIBS_gazsim_llsf_statistics = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard protobufmsgs\
 	       Position3DInterface TransformInterface \
 	       SwitchInterface RobotinoLightInterface \
-	       fawkesgazeboaspect
+	       fawkesgazeboaspect fawkesmongodbaspect
 OBJS_gazsim_llsf_statistics = gazsim_llsf_statistics_plugin.o gazsim_llsf_statistics_thread.o
 
 OBJS_all    = $(OBJS_gazsim_llsf_statistics)
 
 ifeq ($(HAVE_TF),1)
-  CFLAGS  += $(CFLAGS_TF)
-  LDFLAGS += $(LDFLAGS_TF)
+  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_MONGODB)
+  LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_MONGODB)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
 

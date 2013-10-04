@@ -16,6 +16,11 @@ OPTIONS:
    -n arg  The amount of test-runs
 EOF
 }
+
+replace_config() #args: 1:config-name 2:new value
+{
+    sed -i "s/$1:.*/$1: $2/" ~/fawkes-robotino/cfg/conf.d/test.yaml
+}
  
 #check options
 
@@ -32,6 +37,7 @@ do
          c)
 	     CONFIGURATIONS[0]=$OPTARG
 	     let "NUM_CONF++"
+
 	     echo Configuration $NUM_CONF is $OPTARG
 	     ;;
          l)
@@ -58,13 +64,18 @@ fi
 
 STARTUP_SCRIPT_LOCATION=~/fawkes-robotino/bin/gazsim.bash
 
+TIME=$(date +'%y-%m-%d_%H-%M')
+
 for ((RUN=1 ; RUN<=$NUM_RUNS ;RUN++))
 do
     for CONF in ${CONFIGURATIONS[@]}
     do
 	echo Executing simulation-run $RUN with configuration $CONF
+	replace_config run $RUN
+	replace_config configuration-name "\"$CONF\""
+	replace_config collection "\"$TIME\""
 	#echo $STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF
-	$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF
+	#$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF
         #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	echo Waiting for shutdown of the simulation
 	for (( ; ; ))

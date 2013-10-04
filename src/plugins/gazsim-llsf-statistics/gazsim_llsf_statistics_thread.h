@@ -33,8 +33,8 @@
 #include <interfaces/Position3DInterface.h>
 #include <protobuf_msgs/GameState.pb.h>
 #include <string.h>
+#include <plugins/mongodb/aspect/mongodb.h>
 
-//from Gazebo
 #include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/msgs/MessageTypes.hh>
 #include <gazebo/transport/transport.hh>
@@ -42,6 +42,11 @@
 
 namespace fawkes {
   class Position3DInterface;
+}
+
+namespace mongo{
+  class GridFS;
+  class BSONObj;
 }
 
 typedef const boost::shared_ptr<llsf_msgs::GameState const> ConstGameStatePtr;
@@ -53,7 +58,8 @@ class LlsfStatisticsSimThread
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
   public fawkes::BlockedTimingAspect,
-  public fawkes::GazeboAspect
+  public fawkes::GazeboAspect,
+  public fawkes::MongoDBAspect
 {
  public:
   LlsfStatisticsSimThread();
@@ -65,13 +71,21 @@ class LlsfStatisticsSimThread
  private:
   //suscribers for gazebo nodes (refbox messages forwarded by gazsim-llsfrbcomm)
   gazebo::transport::SubscriberPtr game_state_sub_;
+
+  //Mongo stuff
+  mongo::DBClientBase *mongodb_;
+  std::map<std::string, mongo::GridFS*> mongogrids_;
   
   //handler functions
   void on_game_state_msg(ConstGameStatePtr &msg);
 
   //statistics
+  std::string configuration_, replay_, namespace_, db_name_, collection_;
+  int run_;
   int exp_points_, prod_points_;
   bool written_;
+
+  void write_statistics();
 };
 
 #endif
