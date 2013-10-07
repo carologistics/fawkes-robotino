@@ -13,6 +13,6 @@ fawkes/meta_plugins:
   agent: clips,clips-agent,clips-motor-switch,clips-protobuf,clips-webview
 
   gazsim-full-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-puck-detection,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-light-front,gazsim-timesource,webview,skiller
-  gazsim-full-robotino-ros: gazsim-full-robotino,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,navgraph,gazsim-timesource,gazsim-llsf-statistics
-  gazsim-full-robotino-ros-cam: gazsim-full-robotino,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,navgraph,gazsim-llsf-statistics,fvbase,fvfountain,gazsim-webcam
+  gazsim-full-robotino-ros: gazsim-full-robotino,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,navgraph,gazsim-timesource
+  gazsim-full-robotino-ros-cam: gazsim-full-robotino,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,navgraph,fvbase,fvfountain,gazsim-webcam
   gazsim-organization: gazebo,gazsim-llsfrbcomm,gazsim-comm
