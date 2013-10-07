@@ -56,6 +56,13 @@ do
 	     ;;
 	 s)
 	     SHUTDOWN=-s
+	     #done in two steps because otherwise ps would find grep serching for the pattern
+	     PS=$(ps -ef)
+	     if [[ -z $(echo $PS | grep -i 'mongod') ]]
+	     then
+		 echo Please start the mongodb service \(sudo service mongod start\)
+		 exit
+	     fi
 	     ;;
 	 n)
 	     NUM_ROBOTINOS=$OPTARG
@@ -75,6 +82,7 @@ then
      usage
      exit 1
 fi
+
 if [ $NUM_ROBOTINOS -lt 1 ] || [ $NUM_ROBOTINOS -gt 3 ]
 then
      echo Number Robotinos wrong

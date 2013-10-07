@@ -19,7 +19,7 @@ EOF
 
 replace_config() #args: 1:config-name 2:new value
 {
-    sed -i "s/$1:.*/$1: $2/" ~/fawkes-robotino/cfg/conf.d/test.yaml
+    sed -i "s/$1:.*/$1: $2/" ~/fawkes-robotino/cfg/conf.d/gazsim.yaml
 }
  
 #check options
@@ -64,7 +64,7 @@ fi
 
 STARTUP_SCRIPT_LOCATION=~/fawkes-robotino/bin/gazsim.bash
 
-TIME=$(date +'%y-%m-%d_%H-%M')
+TIME=$(date +'%y_%m_%d_%H_%M')
 
 for ((RUN=1 ; RUN<=$NUM_RUNS ;RUN++))
 do
@@ -73,10 +73,10 @@ do
 	echo Executing simulation-run $RUN with configuration $CONF
 	replace_config run $RUN
 	replace_config configuration-name "\"$CONF\""
-	replace_config collection "\"$TIME\""
+	replace_config collection "\"test_$TIME\""
 	replace_config replay "\"~\/.gazebo\/log\/gazsim-runs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
         REPLAY_PATH=~/.gazebo/log/gazsim-runs/$TIME/$CONF\_$RUN
-	$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF -e $REPLAY_PATH -k
+	$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF -e $REPLAY_PATH
         #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	echo Waiting for shutdown of the simulation
 	for (( ; ; ))

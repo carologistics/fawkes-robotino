@@ -59,7 +59,7 @@ do
 	     ROS=true
 	     ;;
 	 s)
-	     SHUTDOWN=,gazsim-llsf-statistics,gazsim-llsf-control
+	     SHUTDOWN=,mongodb,gazsim-llsf-statistics,gazsim-llsf-control
 	     ;;
 	 p)
 	     PORT=$OPTARG
