@@ -72,6 +72,7 @@ gazsim:
     start-game-automatically: true
     time-to-wait-before-start: 5.0
     simulation-shutdown-after-game: true
+    time-to-wait-before-shutdown: 5.0
     fawkes-path: "~/fawkes-robotino/" #TODO: find it in cpp source
     simulation-shutdown-script: "bin/gazsim.bash -x kill"
 

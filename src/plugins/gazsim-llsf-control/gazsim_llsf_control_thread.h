@@ -72,6 +72,7 @@ class LlsfControlSimThread
   bool start_game_automatically_;
   float time_to_wait_before_start_;
   bool post_game_simulation_shutdown_;
+  float time_to_wait_before_shutdown_;
   std::string fawkes_path_;
   std::string simulation_shutdown_script_;
   
@@ -81,6 +82,8 @@ class LlsfControlSimThread
   //helper variables
   float start_time_;
   bool start_sent_;
+  bool shutdown_initiated_;
+  float shutdown_initiated_time_;
 };
 
 #endif

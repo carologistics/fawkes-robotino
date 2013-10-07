@@ -66,9 +66,11 @@ void LlsfControlSimThread::init()
   simulation_shutdown_script_ = config->get_string("/gazsim/llsf-control/simulation-shutdown-script");
   start_game_automatically_ = config->get_bool("/gazsim/llsf-control/start-game-automatically");
   time_to_wait_before_start_ = config->get_float("/gazsim/llsf-control/time-to-wait-before-start");
+  time_to_wait_before_shutdown_ = config->get_float("/gazsim/llsf-control/time-to-wait-before-shutdown");
 
   start_sent_ = false;
   start_time_ = clock->now().in_sec();
+  shutdown_initiated_ = false;
 }
 
 void LlsfControlSimThread::finalize()
@@ -86,6 +88,13 @@ void LlsfControlSimThread::loop()
 
     start_sent_ = true;
   }
+
+  if(shutdown_initiated_ && (clock->now().in_sec() - shutdown_initiated_time_) > time_to_wait_before_shutdown_)
+  {
+    logger->log_info(name(), "shutting down, ttwbs: %f, now: %f, sit: %f", time_to_wait_before_shutdown_, clock->now().in_sec(), shutdown_initiated_time_);
+      std::string command = fawkes_path_ + simulation_shutdown_script_;
+      system(command.c_str());
+  }
 }
 
 void LlsfControlSimThread::on_game_state_msg(ConstGameStatePtr &msg)
@@ -95,9 +104,9 @@ void LlsfControlSimThread::on_game_state_msg(ConstGameStatePtr &msg)
   {
     if(post_game_simulation_shutdown_)
     {
-      //shutdownsimulation
-      std::string command = fawkes_path_ + simulation_shutdown_script_;
-      system(command.c_str());
+      //countdown for simulation shutdown
+      shutdown_initiated_time_ = clock->now().in_sec();
+      shutdown_initiated_ = true;
     }
   }
 }
