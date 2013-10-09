@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
-depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck","global_motor_move" }
+depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck","global_motor_move", "leave_area_recycle" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
    { v="light", type="RobotinoLightInterface", id="Light determined" },
    { v="laser_cluster", type="LaserClusterInterface", id="laser-cluster" }
@@ -34,6 +34,7 @@ depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
 documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.]==]
 
 local mpos = require 'machine_pos_module'
+local mtype = ""
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -60,10 +61,15 @@ function prod_finished()
       and light:yellow() == light.OFF
       and light:red() == light.OFF
 end
+
 function orange_blinking()
    return light:green() == light.OFF
       and light:yellow() == light.BLINKING
       and light:red() == light.OFF
+end
+
+function at_recycle_machine()
+   return mtype == "RE"
 end
 
 fsm:define_states{ export_to=_M,
@@ -78,9 +84,11 @@ fsm:define_states{ export_to=_M,
       fail_to="FAILED"},
    {"DECIDE_DEPOSIT", JumpState},
    {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"LEAVE_RECYCLE_AREA", SkillJumpState, skills={{leave_area_recycle}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="FINAL",
       fail_to="FAILED"},
-   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED" },
+   {"DEPOSIT_THEN_FAIL", SkillJumpState, skills={{deposit_puck}}, final_to="FAILED", fail_to="FAILED"},
+   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED" }
 }
 
 fsm:add_transitions{
@@ -89,6 +97,7 @@ fsm:add_transitions{
    { "DECIDE_ENDSKILL", "SKILL_RFID", timeout=1, cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
+   { "DECIDE_DEPOSIT", "LEAVE_RECYCLE_AREA", cond=at_recycle_machine },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
 }
@@ -100,6 +109,7 @@ function SKILL_TAKE_PUCK:init()
       self.fsm.vars.tries = 0
    end
    self.fsm.vars.tries = self.fsm.vars.tries + 1
+   mtype = self.fsm.vars.mtype
 end
 
 function SKILL_GLOBAL_MOTOR_MOVE:init()
