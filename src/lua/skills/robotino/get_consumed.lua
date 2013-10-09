@@ -73,7 +73,7 @@ end
 function LEAVE_TURN:init()
    self.skills[1].x=0
    self.skills[1].y=0
-   self.skills[1].ori=-math.pi
+   self.skills[1].ori=-3.0
 end
 
 function LEAVE_FORWARD:init()
