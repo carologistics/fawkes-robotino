@@ -21,6 +21,19 @@ replace_config() #args: 1:config-name 2:new value
 {
     sed -i "s/$1:.*/$1: $2/" ~/fawkes-robotino/cfg/conf.d/gazsim.yaml
 }
+
+restore_record() #args 1: file
+{
+    echo RESTORIG_RECORD
+    echo d1: $1
+    END_FLAG=$(grep '</gazebo_log>' $1)
+    echo ef: $END_FLAG
+    if [[ -z $END_FLAG ]]
+    then
+	echo appending
+	echo '</gazebo_log>' >> $1
+    fi
+}
  
 #check options
 
@@ -59,7 +72,6 @@ then
      exit 1
 fi
 
-
 #run simulations
 
 STARTUP_SCRIPT_LOCATION=~/fawkes-robotino/bin/gazsim.bash
@@ -90,5 +102,6 @@ do
 		break
 	    fi
 	done
+	restore_record "$REPLAY_PATH/state.log"
     done
 done
