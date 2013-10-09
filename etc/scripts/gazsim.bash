@@ -163,7 +163,7 @@ if [  $COMMAND  == start ]; then
 	fi
     fi
 
-    sleep 2s
+    sleep 5s
 
     #start fawkes for communication, llsfrbcomm and eventually statistics
     gnome-terminal $KEEP -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311  $SHUTDOWN"
