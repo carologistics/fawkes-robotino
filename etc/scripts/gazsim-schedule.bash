@@ -102,13 +102,29 @@ do
 	for (( ; ; ))
 	do
 	    sleep 10s
-	    #check if gazebo is still running
-	    GAZEBO=$(ps -a | grep -i gzserver | wc -l)
+	    #check if simulation is still running
+	    GAZEBO=$(ps -a | grep -i 'gzserver\|fawkes\|roscore\|roslaunch\|llsf-refbox' | wc -l)
             if [ $GAZEBO -eq 0 ]
 	    then
 		echo Simulation-run $RUN with configuration $CONF finished
 		break
 	    fi
+
+	    #check if something went wrong (workaround for unsolved crashs)
+	    GZSERVER=$(ps -a | grep -i 'gzserver' | wc -l)
+	    FAWKES=$(ps -a | grep -i 'fawkes' | wc -l)
+	    REFBOX=$(ps -a | grep -i 'llsf-refbox' | wc -l)
+	    ROS=$(ps -a | grep -i 'roscore' | wc -l)
+	    MOVE_BASE=$(ps -a | grep -i 'roslaunch' | wc -l)
+	    if [ $GZSERVER -lt 1 ] || [ $FAWKES -lt 4 ] || [ $REFBOX -lt 1 ] || [ $ROS -lt 1 ] || [ $MOVE_BASE -lt 1 ]
+	    then
+		echo something went wrong
+		echo restarting run
+		$STARTUP_SCRIPT_LOCATION -x kill
+		$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF -e $REPLAY_PATH
+		sleep 30
+	    fi
+	    
 	done
 	restore_record "$REPLAY_PATH/state.log"
     done
