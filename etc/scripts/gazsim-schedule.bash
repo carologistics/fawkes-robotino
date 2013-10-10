@@ -24,13 +24,9 @@ replace_config() #args: 1:config-name 2:new value
 
 restore_record() #args 1: file
 {
-    echo RESTORIG_RECORD
-    echo d1: $1
     END_FLAG=$(grep '</gazebo_log>' $1)
-    echo ef: $END_FLAG
     if [[ -z $END_FLAG ]]
     then
-	echo appending
 	echo '</gazebo_log>' >> $1
     fi
 }
@@ -78,18 +74,30 @@ STARTUP_SCRIPT_LOCATION=~/fawkes-robotino/bin/gazsim.bash
 
 TIME=$(date +'%y_%m_%d_%H_%M')
 
+
 for ((RUN=1 ; RUN<=$NUM_RUNS ;RUN++))
 do
     for CONF in ${CONFIGURATIONS[@]}
     do
+	#create and go to log folder
+	cd ~/fawkes-robotino/
+	mkdir -p "gazsim-logs/$TIME/${CONF}_$RUN"
+	cd "gazsim-logs/$TIME/${CONF}_$RUN"
+
 	echo Executing simulation-run $RUN with configuration $CONF
+
+	#set config values
 	replace_config run $RUN
 	replace_config configuration-name "\"$CONF\""
 	replace_config collection "\"test_$TIME\""
-	replace_config replay "\"~\/.gazebo\/log\/gazsim-runs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
-        REPLAY_PATH=~/.gazebo/log/gazsim-runs/$TIME/$CONF\_$RUN
+	replace_config log "\"~\/fawkes-robotino\/gazsim-logs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
+        
+
+	#start simulation
+	REPLAY_PATH="~/fawkes-robotino/gazsim-logs/$TIME/${CONF}_$RUN"
 	$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF -e $REPLAY_PATH
-        #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
+        
+	#wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	echo Waiting for shutdown of the simulation
 	for (( ; ; ))
 	do
