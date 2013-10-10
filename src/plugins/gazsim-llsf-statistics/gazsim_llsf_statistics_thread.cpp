@@ -67,7 +67,7 @@ void LlsfStatisticsSimThread::init()
   collection_ = config->get_string("/gazsim/llsf-statistics/collection");
   namespace_ = db_name_ + "." + collection_;
   configuration_ = config->get_string("/gazsim/llsf-statistics/configuration-name");
-  replay_ = config->get_string("/gazsim/llsf-statistics/replay");
+  replay_ = config->get_string("/gazsim/llsf-statistics/log");
   run_ = config->get_uint("/gazsim/llsf-statistics/run");
 
   //init statistics
@@ -111,13 +111,36 @@ void LlsfStatisticsSimThread::write_statistics()
   {
     written_ = true;
 
+    //get refbox game summery from ninja bash script
+    std::string refbox_log_file = replay_ + "/refbox.log";
+    std::string command = std::string("~/fawkes-robotino/etc/scripts/gazsim-get-refbox-summery.bash ") + refbox_log_file;
+    logger->log_info(name(), "command %s\n", command.c_str());
+    FILE *bash_output = popen(command.c_str(), "r");
+    std::string refbox_score_log = "";
+    if(bash_output)
+    {
+      logger->log_info(name(), "shuffeling");
+      char buffer[100];
+      while (!feof(bash_output) )
+      {
+	if (fgets(buffer, 100, bash_output) == NULL)
+	{
+	  break;
+	}
+	refbox_score_log += buffer;
+      }
+      fclose (bash_output);
+    }
+    logger->log_info(name(), "summery %s\n", refbox_score_log.c_str());
+
     BSONObjBuilder builder;
     builder.append("configuration", configuration_.c_str());
     builder.append("run", run_);
     builder.append("exp-points", exp_points_);
     builder.append("prod-points", prod_points_);
     builder.append("total-points", exp_points_ + prod_points_);
-    builder.append("replay", replay_.c_str());
+    builder.append("logs_and_replay", replay_.c_str());
+    builder.append("refbox_game_summery", refbox_score_log.c_str());
     BSONObj entry = builder.obj();
     mongodb_->insert(namespace_.c_str(), entry);
   }
