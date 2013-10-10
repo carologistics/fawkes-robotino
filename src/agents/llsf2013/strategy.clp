@@ -32,6 +32,7 @@
       (case T2 then (if (> ?dist ?t2-dist) then (bind ?t2 ?m) (bind ?t2-dist ?dist) (bind ?t2-name ?m:name)))
       (case T3 then (if (> ?dist ?t34-dist) then (bind ?t34 ?m) (bind ?t34-dist ?dist) (bind ?t34-name ?m:name)))
       (case T4 then (if (> ?dist ?t34-dist) then (bind ?t34 ?m) (bind ?t34-dist ?dist) (bind ?t34-name ?m:name)))
+      (case RECYCLE then (if (> ?dist ?r-dist) then (bind ?r ?m) (bind ?r-dist ?dist) (bind ?r-name ?m:name)))
     )
   )
   (assert (machine-alloc (machine ?t1-name) (role P1P2)))
@@ -55,6 +56,7 @@
     (switch ?m:mtype
       (case T1 then (if (< ?dist ?p1-t1-dist) then (bind ?p1-t1 ?m) (bind ?p1-t1-dist ?dist) (bind ?p1-t1-name ?m:name)))
       (case T2 then (if (< ?dist ?p1-t2-dist) then (bind ?p1-t2 ?m) (bind ?p1-t2-dist ?dist) (bind ?p1-t2-name ?m:name)))
+      (case RECYCLE then (if (< ?dist ?p1-r-dist) then (bind ?r ?m) (bind ?p1-r-dist ?dist) (bind ?p1-r-name ?m:name)))
     )
   )
   (assert (machine-alloc (machine ?p1-t1-name) (role P1))
@@ -68,6 +70,7 @@
     (switch ?m:mtype
       (case T1 then (if (< ?dist ?p2-t1-dist) then (bind ?p2-t1 ?m) (bind ?p2-t1-dist ?dist) (bind ?p2-t1-name ?m:name)))
       (case T2 then (if (< ?dist ?p2-t2-dist) then (bind ?p2-t2 ?m) (bind ?p2-t2-dist ?dist) (bind ?p2-t2-name ?m:name)))
+      (case RECYCLE then (if (< ?dist ?p2-r-dist) then (bind ?r ?m) (bind ?p2-r-dist ?dist) (bind ?p2-r-name ?m:name)))
     )
   )
   (assert (machine-alloc (machine ?p2-t1-name) (role P2))

@@ -28,6 +28,7 @@
   ?f <- (goto-has-locked ?machine)
   =>
   (retract ?sf ?f)
+  (printout t "prod-get-consumed-done" crlf)
   (assert (state IDLE)
 	  (want-to-release ?machine $?pos)
   )
@@ -121,9 +122,12 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding CO)
-  (machine (mtype RECYCLE) (name ?name) (allowed TRUE))
+  (machine (mtype RECYCLE) (name ?name))
+  (role ?role)
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "Recycling consumed puck" ?name crlf))
+  (printout t "prod-recycle-puck" crlf)
   (retract ?sf)
   (assert (state PROD_LOCK_REQUIRED_GOTO ?name))    
 )
