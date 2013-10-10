@@ -69,7 +69,7 @@ function orange_blinking()
 end
 
 function at_recycle_machine()
-   return mtype == "RE"
+   return mtype == "RECYCLE"
 end
 
 fsm:define_states{ export_to=_M,

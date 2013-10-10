@@ -43,7 +43,7 @@ local TIMEOUTS = {
    T3 = 70,
    T4 = 70,
    T5 = 50,
-   RE = 10
+   RECYCLE = 10
 }
 
 -- Initialize as skill module
