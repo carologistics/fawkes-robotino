@@ -79,7 +79,7 @@ gazsim:
   llsf-statistics:
     #these fields can be overridden by the gazsim-schedule script
     db-name: "gazsim-runs"
-    collection: "manual"
+    collection: "test_13_10_14_15_26"
     configuration-name: "default"
-    replay: ""
+    log: "~/fawkes-robotino/gazsim-logs/13_10_14_15_26/default_1"
     run: 1
