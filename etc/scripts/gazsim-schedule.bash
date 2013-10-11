@@ -14,6 +14,7 @@ OPTIONS:
            (you can define multiple by "-c c1 -c c2 ...") 
    -l      Run Gazebo headless
    -n arg  The amount of test-runs
+   -d      Run a detailed simulation (e.g. with simulated vision)
 EOF
 }
 
@@ -35,8 +36,9 @@ restore_record() #args 1: file
 
 NUM_CONF=0
 HEADLESS=
+DETAILED=
 NUM_RUNS=1
-while getopts “hc:ln:” OPTION
+while getopts “hc:ln:d” OPTION
 do
      case $OPTION in
          h)
@@ -54,6 +56,9 @@ do
              ;;
          n)
 	     NUM_RUNS=$OPTARG
+             ;;
+         d)
+	     DETAILED=-d
              ;;
          ?)
              usage
@@ -95,7 +100,7 @@ do
 
 	#start simulation
 	REPLAY_PATH="~/fawkes-robotino/gazsim-logs/$TIME/${CONF}_$RUN"
-	$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF -e $REPLAY_PATH
+	$STARTUP_SCRIPT_LOCATION -x start -r -a -s $HEADLESS -c $CONF -e $REPLAY_PATH $DETAILED
         
 	#wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	echo Waiting for shutdown of the simulation

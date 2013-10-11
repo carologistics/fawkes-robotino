@@ -12,7 +12,9 @@ fawkes/meta_plugins:
 
   agent: clips,clips-agent,clips-motor-switch,clips-protobuf,clips-webview
 
-  gazsim-full-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-puck-detection,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-light-front,gazsim-timesource,webview,skiller
-  gazsim-full-robotino-ros: gazsim-full-robotino,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,navgraph,gazsim-timesource
-  gazsim-full-robotino-ros-cam: gazsim-full-robotino,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,navgraph,fvbase,fvfountain,gazsim-webcam
+  gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,skiller
+  gazsim-meta-ros: ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,navgraph,gazsim-vis-localization
+  gazsim-meta-vision: fvbase,gazsim-webcam,light_front,gazsim-puck-detection
+  gazsim-meta-robotino-default-high-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-puck-detection,gazsim-light-front
+  gazsim-meta-robotino-default-low-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-meta-vision
   gazsim-organization: gazebo,gazsim-llsfrbcomm,gazsim-comm

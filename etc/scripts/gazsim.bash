@@ -19,6 +19,8 @@ OPTIONS:
    -k             Keep started shells open after finish
    -s             Keep statistics and shutdown after game
    -e arg         Record replay
+   -a             Start with agent
+   -d             Detailed simulation (e.g. simulated webcam)
 EOF
 }
  
@@ -28,11 +30,13 @@ COMMAND=
 CONF=
 VISUALIZATION=
 ROS=false
+AGENT=
+DETAILED=
 KEEP=
 SHUTDOWN=
 NUM_ROBOTINOS=3
 REPLAY=
-while getopts “hx:c:lrksn:e:” OPTION
+while getopts “hx:c:lrksn:e:da” OPTION
 do
      case $OPTION in
          h)
@@ -69,6 +73,12 @@ do
 	     ;;
 	 e)
 	     REPLAY="-e $OPTARG"
+	     ;;
+	 d)
+	     DETAILED="-d"
+	     ;;
+	 a)
+	     AGENT="-a"
 	     ;;
          ?)
              usage
@@ -152,14 +162,13 @@ if [  $COMMAND  == start ]; then
     gnome-terminal $KEEP -t Refbox_Shell --geometry=87x82 -x bash -c "$startup_script_location -x refbox-shell"
 
     #start fawkes for robotinos
-    echo "$startup_script_location -x fawkes -p 11311 -i robotino1 $CONF $ROS"
-    gnome-terminal $KEEP -t Fawkes_Robotino_1 -x bash -c "$startup_script_location -x fawkes -p 11311 -i robotino1 $CONF $ROS"
+    gnome-terminal $KEEP -t Fawkes_Robotino_1 -x bash -c "$startup_script_location -x fawkes -p 11311 -i robotino1 $CONF $ROS $AGENT $DETAILED"
     if [ $NUM_ROBOTINOS -ge 2 ]
     then
-	gnome-terminal $KEEP -t Fawkes_Robotino_2 -x bash -c "$startup_script_location -x fawkes -p 11312 -i robotino2 $CONF $ROS"
+	gnome-terminal $KEEP -t Fawkes_Robotino_2 -x bash -c "$startup_script_location -x fawkes -p 11312 -i robotino2 $CONF $ROS $AGENT $DETAILED"
 	if [ $NUM_ROBOTINOS -ge 3 ]
 	then
-	    gnome-terminal $KEEP -t Fawkes_Robotino_3 -x bash -c "$startup_script_location -x fawkes -p 11313 -i robotino3 $CONF $ROS"
+	    gnome-terminal $KEEP -t Fawkes_Robotino_3 -x bash -c "$startup_script_location -x fawkes -p 11313 -i robotino3 $CONF $ROS $AGENT $DETAILED"
 	fi
     fi
 

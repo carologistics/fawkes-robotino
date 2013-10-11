@@ -9,20 +9,23 @@ usage: $0 options
 This script starts a specified program for simulation
 
 OPTIONS:
+  COMMON:
    -h             Show this message
    -x gazebo|fawkes|comm|roscore|move_base|refbox|refbox_shell  
                   Start specified program
-   -c arg         (when using fawkes) 
-                  Use a specific configuration-folder
-                  in cfg/gazsim-configurations/
    -p arg         Specify ros port
-   -r             (when using fawkes)
-                  Start ros
-   -s             (when using fawkes)
-                  Keep statistics and shutdown after game
-   -i robotino[1|2|3]
-                   Robotino instance
 
+  FAWKES:
+   -c arg         Use a specific configuration-folder
+                  in cfg/gazsim-configurations/
+   -r             Start with ros
+   -s             Keep statistics and shutdown after game
+   -i robotino[1|2|3]
+                  Robotino instance
+   -d             Detailed simulation (e.g. simulated webcam)
+   -a             Start with agent
+
+  GAZEBO:
    -l             (when using gazebo)
                   Run Gazebo headless
    -e arg         Record Replay
@@ -31,15 +34,18 @@ EOF
  
 #check options
 
+#default values
 COMMAND=
 CONF=gazsim-configurations/default
 VISUALIZATION=visualization
-ROS=false
+ROS=
 SHUTDOWN=
 PORT=11311
 ROBOTINO=
 REPLAY=
-while getopts “hx:c:lrsp:i:e:” OPTION
+VISION=,gazsim-light-front,gazsim-puck-detection
+AGENT=
+while getopts “hx:c:lrsp:i:e:da” OPTION
 do
      case $OPTION in
          h)
@@ -56,7 +62,7 @@ do
 	     COMMAND=$OPTARG
              ;;
 	 r)
-	     ROS=true
+	     ROS=,gazsim-meta-ros
 	     ;;
 	 s)
 	     SHUTDOWN=,mongodb,gazsim-llsf-statistics,gazsim-llsf-control
@@ -69,6 +75,12 @@ do
 	     ;;
 	 e)
 	     REPLAY=-r\ --record_path\ $OPTARG
+	     ;;
+	 d)
+	     VISION=,gazsim-meta-vision
+	     ;;
+	 a)
+	     AGENT=,clips,clips-agent,clips-protobuf,clips-motor-switch
 	     ;;
          ?)
              usage
@@ -99,11 +111,7 @@ case $COMMAND in
 	;;
     fawkes ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
-	if [ $ROS == true ] ; then
-	    robotino_plugins=gazsim-full-robotino-ros,clips,clips-agent,clips-protobuf,clips-motor-switch,gazsim-vis-localization
-	else
-	    robotino_plugins=gazsim-full-robotino
-	fi
+	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT
 	~/fawkes-robotino/bin/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
 	;;
     comm )
