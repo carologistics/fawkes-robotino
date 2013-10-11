@@ -23,6 +23,7 @@ gazsim:
 plugins/light_front:
   #Camera for gazebo simulation:
   camera: shmem:gazsim_cam:image_id=robotino2/gazsim_light_front:deep_copy=true
+  shm_image_id: "robotino2/light_front"
   
 fawkes:
   bblogreplay:

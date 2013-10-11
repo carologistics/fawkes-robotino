@@ -24,8 +24,8 @@ plugins/light_front:
 
   # camare offset of the front cam
   camera_offset_horizontal: 0
-  camera_offset_horizontal_rad: -0.013
-  camera_offset_vertical: 45
+  camera_offset_horizontal_rad: 0.0 #original: -0.013
+  camera_offset_vertical: 0 #original: 45
   camera_angle_horizontal_rad: .00
   camera_angle_vertical_rad: .00
   
