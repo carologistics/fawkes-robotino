@@ -15,19 +15,16 @@ plugins/puck_vision:
   shm_image_id: "puck_front"
 
   # coordinate system
-  frame: /cam_front
+  frame: /front_bumper
 
   #Interface name to write Positon3D of puck
 
-  nearest_puck_if: "puck_front"
+  puck_if: "puck_front"
 
-  # Accepted Color range
-  color_y_min: 40
-  color_y_max: 150
-  color_u_min: 0
-  color_u_max: 150
-  color_v_min: 150
-  color_v_max: 255
+  colormap_file_yellow: /bulb-colormap/yellow.colormap
+  colormap_file_green: /bulb-colormap/green.colormap
+  colormap_file_red: /bulb-colormap/red.colormap
+  colormap_file_blue: /bulb-colormap/blue.colormap
 
   puck_radius: 0.02
   
@@ -44,7 +41,7 @@ plugins/puck_vision:
   camera_center_distance: 0.24
 
   # Debugging
-  show_debug_messages: true
+  show_debug_messages: false
   draw_rois: true
 
   
