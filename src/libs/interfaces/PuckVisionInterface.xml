@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="PuckVisionInterface" author="Florian Nolden" year="2013">
+  <constants>
+    <enum name="PuckColor">
+      <comment>
+	Possible puck colors
+      </comment>
+      <item name="C_RED">red</item>
+      <item name="C_GREEN">green</item>
+      <item name="C_BLUE">blue</item>
+      <item name="C_BLACK">black</item>
+      <item name="C_YELLOW">yellow</item>
+      <item name="C_WHITE">white</item>
+      <item name="C_UNKNOWN">unknown</item>
+      </enum>
+  </constants>
+  <data>
+    <comment>
+     Puck detection interface
+    </comment>
+	<field type="string" length="32" name="frame">
+	      Reference coordinate frame for the data.
+    	</field>
+
+	<field type="PuckColor" name="puck1_color">Detected Puck Color</field>
+	<field type="PuckColor" name="puck2_color">Detected Puck Color</field>
+	<field type="PuckColor" name="puck3_color">Detected Puck Color</field>
+	<field type="int32" name="puck1_visibility_history">visibility history</field>
+	<field type="int32" name="puck2_visibility_history">visibility history</field>
+	<field type="int32" name="puck3_visibility_history">visibility history</field>
+	
+	<field type="double" length="3" name="puck1_translation">Translation vector from the reference frame's origin, ordered as (x, y, z).
+        </field>
+	<field type="double" length="3" name="puck2_translation">Translation vector from the reference frame's origin, ordered as (x, y, z).
+        </field>
+	<field type="double" length="3" name="puck3_translation">Translation vector from the reference frame's origin, ordered as (x, y, z).
+	</field>
+	<field type="double" length="2" name="puck1_polar">Polar koordinates (Phi, R) = (x, y).
+        </field>
+	<field type="double" length="2" name="puck2_polar">Polar koordinates (Phi, R) = (x, y).
+        </field>
+	<field type="double" length="2" name="puck3_polar">Polar koordinates (Phi, R) = (x, y).
+        </field>
+  </data>
+</interface>
