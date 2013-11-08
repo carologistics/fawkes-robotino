@@ -17,41 +17,43 @@ PuckVisionThread::PuckVisionThread()
 :	Thread("PuckVisionThread", Thread::OPMODE_WAITFORWAKEUP),
  	VisionAspect(VisionAspect::CYCLIC)
 {
-	this->cfg_prefix = "";
-	this->cfg_camera = "";
-	this->cfg_frame = "";
+	cfg_prefix_ = "";
+	cfg_camera_ = "";
+	cfg_frame_ = "";
 
-	this->img_width = 0;
-	this->img_height = 0;
+	img_width_ = 0;
+	img_height_ = 0;
 
-	this->cfg_color_y_min = 0;
-	this->cfg_color_y_max = 0;
-	this->cfg_color_u_min = 0;
-	this->cfg_color_u_max = 0;
-	this->cfg_color_v_min = 0;
-	this->cfg_color_v_max = 0;
-	this->cfg_distance_function_a = 0;
-	this->cfg_distance_function_b = 0;
+	cfg_distance_function_a_ = 0;
+	cfg_distance_function_b_ = 0;
 
-	this->bufferYCbCr = NULL;
+	buffer_ = NULL;
+	shm_buffer_ = NULL;
 
-	this->cspaceFrom = firevision::YUV422_PLANAR;
-	this->cspaceTo = firevision::YUV422_PLANAR;
+	cspaceFrom_ = firevision::YUV422_PLANAR;
+	cspaceTo_ = firevision::YUV422_PLANAR;
 
-	this->camera = NULL;
-	this->scanline = NULL;
-	this->colorModel = NULL;
-	this->classifierExpected = NULL;
-	this->shmBufferYCbCr = NULL;
+	cam_ = NULL;
+	scanline_ = NULL;
 
-	this->nearestPuck = NULL;
+	cm_yellow_ = NULL;
+	cm_red_ = NULL;
+	cm_blue_ = NULL;
+	cm_green_ = NULL;
 
-	this->cfg_width_bottem_in_m = 0;
-	this->cfg_width_top_in_m = 0;
+	classifier_yellow_ = NULL;
+	classifier_red_ = NULL;
+	classifier_green_ = NULL;
+	classifier_blue_ = NULL;
 
-	this->drawer = NULL;
 
-	this->cfg_debugMessagesActivated = false;
+	//Calibration
+	cfg_width_bottem_in_m_ = 0;
+	cfg_width_top_in_m_ = 0;
+
+	drawer_ = NULL;
+
+	cfg_debugMessagesActivated_ = false;
 }
 
 void
@@ -59,140 +61,209 @@ PuckVisionThread::init()
 {
 	logger->log_info(name(), "puck_vision: starts up");
 
-	this->cfg_prefix = "/plugins/puck_vision/";
+	cfg_prefix_= "/plugins/puck_vision/";
 
-	this->cfg_frame  = this->config->get_string((this->cfg_prefix + "frame").c_str());
+	cfg_frame_  = config->get_string((cfg_prefix_ + "frame").c_str());
+	cfg_camera_ = config->get_string((cfg_prefix_ + "camera").c_str());
 
-	this->cfg_camera = this->config->get_string((this->cfg_prefix + "camera").c_str());
+	cfg_debugMessagesActivated_ = config->get_bool((cfg_prefix_ + "show_debug_messages").c_str());
+	cfg_paintROIsActivated_ = config->get_bool((cfg_prefix_ + "draw_rois").c_str());
 
-	this->cfg_debugMessagesActivated = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
-	this->cfg_paintROIsActivated = this->config->get_bool((this->cfg_prefix + "draw_rois").c_str());
+	cfg_puck_radius_ = config->get_float((cfg_prefix_ + "puck_radius").c_str());
 
-	this->cfg_puck_radius = this->config->get_float((this->cfg_prefix + "puck_radius").c_str());
+	cfg_colormap_file_yellow_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_yellow").c_str());
+	cfg_colormap_file_red_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_red").c_str());
+	cfg_colormap_file_green_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_green").c_str());
+	cfg_colormap_file_blue_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_blue").c_str());
 
-	this->cfg_color_y_min = this->config->get_uint((this->cfg_prefix + "color_y_min").c_str());
-	this->cfg_color_y_max = this->config->get_uint((this->cfg_prefix + "color_y_max").c_str());
-	this->cfg_color_u_min = this->config->get_uint((this->cfg_prefix + "color_u_min").c_str());
-	this->cfg_color_u_max = this->config->get_uint((this->cfg_prefix + "color_u_max").c_str());
-	this->cfg_color_v_min = this->config->get_uint((this->cfg_prefix + "color_v_min").c_str());
-	this->cfg_color_v_max = this->config->get_uint((this->cfg_prefix + "color_v_max").c_str());
+	cm_yellow_ = new firevision::ColorModelLookupTable(cfg_colormap_file_yellow_.c_str(),"puckvision-yellow-colormap", true /* destroy on delete */);
+	cm_red_ = new firevision::ColorModelLookupTable(cfg_colormap_file_red_.c_str(),"puckvision-red-colormap", true /* destroy on delete */);
+	cm_green_ = new firevision::ColorModelLookupTable(cfg_colormap_file_green_.c_str(),"puckvision-green-colormap", true /* destroy on delete */);
+	cm_blue_ = new firevision::ColorModelLookupTable(cfg_colormap_file_blue_.c_str(),"puckvision-blue-colormap", true /* destroy on delete */);
 
-	this->cfg_distance_function_a = this->config->get_float((this->cfg_prefix + "distance_function_a").c_str());
-	this->cfg_distance_function_b = this->config->get_float((this->cfg_prefix + "distance_function_b").c_str());
+	cfg_distance_function_a_ = config->get_float((cfg_prefix_ + "distance_function_a").c_str());
+	cfg_distance_function_b_ = config->get_float((cfg_prefix_ + "distance_function_b").c_str());
 
-	this->cfg_width_top_in_m = this->config->get_float((this->cfg_prefix + "visible_width_max_distance").c_str());
-	this->cfg_width_bottem_in_m = this->config->get_float((this->cfg_prefix + "visible_width_min_distance").c_str());
+	cfg_width_top_in_m_ = config->get_float((cfg_prefix_ + "visible_width_max_distance").c_str());
+	cfg_width_bottem_in_m_ = config->get_float((cfg_prefix_ + "visible_width_min_distance").c_str());
 
-	std::string shmID = this->config->get_string((this->cfg_prefix + "shm_image_id").c_str());
+	std::string shmID = config->get_string((cfg_prefix_ + "shm_image_id").c_str());
 
-	this->camera = vision_master->register_for_camera(this->cfg_camera.c_str(), this);
+	cam_ = vision_master->register_for_camera(cfg_camera_.c_str(), this);
 
-	this->img_width = this->camera->pixel_width();
-	this->img_height = this->camera->pixel_height();
+	img_width_ = cam_->pixel_width();
+	img_height_ = cam_->pixel_height();
 
-	this->m_per_pixel_height = (cfg_width_top_in_m - cfg_width_bottem_in_m)/img_height;
+	m_per_pixel_height_ = (cfg_width_top_in_m_ - cfg_width_bottem_in_m_)/img_height_;
 
-	this->cspaceFrom = this->camera->colorspace();
+	cspaceFrom_ = cam_->colorspace();
 
-	this->scanline = new firevision::ScanlineGrid( this->img_width, this->img_height, 1, 1 );
+	scanline_ = new firevision::ScanlineGrid( img_width_, img_height_, 2, 2 );
 
-	this->colorModel = new firevision::ColorModelRange( cfg_color_y_min, cfg_color_y_max,
-														cfg_color_u_min, cfg_color_u_max,
-														cfg_color_v_min, cfg_color_v_max);
 
-	this->classifierExpected = new firevision::SimpleColorClassifier(
-			this->scanline,														//scanmodel
-			this->colorModel,													//colorModel
+	classifier_yellow_ = new firevision::SimpleColorClassifier(
+			scanline_,															//scanmodel
+			cm_yellow_,															//colorModel
 			30,																	//num_min_points
 			0,																	//box_extend
 			false,																//upward
 			2,																	//neighberhoud_min_match
-			0,																	//grow_by
-			firevision::C_WHITE													//color
+			0																	//grow_by
+			);
+
+	classifier_red_ = new firevision::SimpleColorClassifier(
+			scanline_,														//scanmodel
+			cm_red_,														//colorModel
+			30,																//num_min_points
+			0,																//box_extend
+			false,															//upward
+			2,																//neighberhoud_min_match
+			0																//grow_by
+			);
+
+	classifier_green_ = new firevision::SimpleColorClassifier(
+			scanline_,														//scanmodel
+			cm_green_,														//colorModel
+			30,																//num_min_points
+			0,																//box_extend
+			false,															//upward
+			2,																//neighberhoud_min_match
+			0																//grow_by
+			);
+
+	classifier_blue_ = new firevision::SimpleColorClassifier(
+			scanline_,														//scanmodel
+			cm_blue_,														//colorModel
+			30,																//num_min_points
+			0,																//box_extend
+			false,															//upward
+			2,																//neighberhoud_min_match
+			0																//grow_by
 			);
 
 
 	// SHM image buffer
-	this->shmBufferYCbCr = new firevision::SharedMemoryImageBuffer(
+	shm_buffer_ = new firevision::SharedMemoryImageBuffer(
 			shmID.c_str(),
-			this->cspaceTo,
-			this->img_width,
-			this->img_height
+			cspaceTo_,
+			img_width_,
+			img_height_
 			);
-	if (!shmBufferYCbCr->is_valid()) {
+	if (!shm_buffer_->is_valid()) {
 		throw fawkes::Exception("Shared memory segment not valid");
 	}
-	this->shmBufferYCbCr->set_frame_id(this->cfg_frame.c_str());
+	shm_buffer_->set_frame_id(cfg_frame_.c_str());
 
-	this->bufferYCbCr = this->shmBufferYCbCr->buffer();
+	buffer_ = shm_buffer_->buffer();
 
 	//open interfaces
-	this->nearestPuck = blackboard->open_for_writing<fawkes::Position3DInterface>(
-	this->config->get_string((this->cfg_prefix + "nearest_puck_if").c_str()).c_str());
-	this->nearestPuck->set_frame(this->cfg_frame.c_str());
-	this->nearestPuck->write();
+	puckInterface_ = blackboard->open_for_writing<fawkes::PuckVisionInterface>(
+			config->get_string((cfg_prefix_ + "puck_if").c_str()).c_str()
+			);
+	puckInterface_->set_frame(cfg_frame_.c_str());
 
 	//ROIs
-	this->drawer = new firevision::FilterROIDraw();
+	drawer_ = new firevision::FilterROIDraw();
 
-	roi_center.start.x=(img_width/2) -2;
-	roi_center.start.y=(img_height/2) -2;
-	roi_center.width=4;
-	roi_center.height=4;
-	roi_center.image_height=img_height;
-	roi_center.image_width=img_width;
+	//Defines the search area
+	roi_center_.start.x=(img_width_/2) -2;
+	roi_center_.start.y=(img_height_/2) -2;
+	roi_center_.width=4;
+	roi_center_.height=4;
+	roi_center_.image_height=img_height_;
+	roi_center_.image_width=img_width_;
 
 	logger->log_debug(name(), "end of init()");
 }
 
+
 void
-PuckVisionThread::finalize()													//TODO check if everthing gets deleted
-{
-	logger->log_debug(name(), "finalize starts");
+PuckVisionThread::drawRois(std::list<firevision::ROI>* rois_) {
+	for(std::list<firevision::ROI>::iterator list_iter = rois_->begin();
+	    list_iter != rois_->end(); list_iter++)
+	{
+		drawROIIntoBuffer(*list_iter, firevision::FilterROIDraw::DASHED_HINT);
+	}
+}
 
-	vision_master->unregister_thread(this);
+void
+PuckVisionThread::mergeWithColorInformation(firevision::color_t color,
+		std::list<firevision::ROI>* rois_color_,
+		std::list<firevision::ROI>* rois_all) {
+	for (unsigned int i = 0; i < rois_color_->size(); i++) {
+		rois_color_->front().color = color;
+		rois_all->push_front(rois_color_->front());
+		rois_color_->pop_front();
+	}
+}
 
-	delete this->camera;
-	delete this->scanline;
-	delete this->colorModel;
-	delete this->classifierExpected;
-	delete this->shmBufferYCbCr;
-
-	blackboard->close(this->nearestPuck);
-
-	logger->log_info(name(), "finalize ends");
+fawkes::PuckVisionInterface::PuckColor
+PuckVisionThread::getPuckInterfaceColor(firevision::ROI* roi){
+	switch (roi->color) {
+		case firevision::C_BLUE:
+			return fawkes::PuckVisionInterface::C_BLUE;
+		case firevision::C_RED:
+			return fawkes::PuckVisionInterface::C_RED;
+		case firevision::C_GREEN:
+			return fawkes::PuckVisionInterface::C_GREEN;
+		case firevision::C_YELLOW:
+			return fawkes::PuckVisionInterface::C_YELLOW;
+		case firevision::C_BLACK:
+			return fawkes::PuckVisionInterface::C_BLACK;
+		case firevision::C_WHITE:
+			return fawkes::PuckVisionInterface::C_WHITE;
+		default:
+			return fawkes::PuckVisionInterface::C_UNKNOWN;
+	}
 }
 
 void
 PuckVisionThread::loop()
 {
-	camera->capture();
-		firevision::convert(this->cspaceFrom,
-				this->cspaceTo,
-				this->camera->buffer(),
-				this->bufferYCbCr,
-				this->img_width,
-				this->img_height);
-	this->camera->dispose_buffer();
+	cam_->capture();
+	firevision::convert(cspaceFrom_,
+				cspaceTo_,
+				cam_->buffer(),
+				buffer_,
+				img_width_,
+				img_height_);
+	cam_->dispose_buffer();
 
-	scanline->reset();
-	classifierExpected->set_src_buffer(bufferYCbCr, this->img_width, this->img_height);
-	std::list<firevision::ROI> *rois = this->classifierExpected->classify();
-	//logger->log_info(name(),"Items found %i",rois->size());
-	firevision::ROI* puck = getBiggestRoi(rois);
-	updateInterface(puck);
+	scanline_->reset();
+	classifier_yellow_->set_src_buffer(buffer_, img_width_, img_height_);
+	std::list<firevision::ROI> *rois_yellow_ = classifier_yellow_->classify();
 
-	if(cfg_paintROIsActivated){
-		while(!rois->empty()){
-			drawROIIntoBuffer(rois->front(), firevision::FilterROIDraw::DASHED_HINT);
-			rois->pop_front();
-		}
-		drawROIIntoBuffer(roi_center, firevision::FilterROIDraw::INVERTED);
+	scanline_->reset();
+	classifier_red_->set_src_buffer(buffer_, img_width_, img_height_);
+	std::list<firevision::ROI> *rois_red_ = classifier_red_->classify();
+
+	scanline_->reset();
+	classifier_green_->set_src_buffer(buffer_, img_width_, img_height_);
+	std::list<firevision::ROI> *rois_green_ = classifier_green_->classify();
+
+	scanline_->reset();
+	classifier_blue_->set_src_buffer(buffer_, img_width_, img_height_);
+	std::list<firevision::ROI> *rois_blue_ = classifier_blue_->classify();
+
+
+	std::list<firevision::ROI> *rois_all_ = new std::list<firevision::ROI>();
+
+	mergeWithColorInformation(firevision::C_BLUE, rois_blue_, rois_all_);
+	mergeWithColorInformation(firevision::C_GREEN, rois_green_, rois_all_);
+	mergeWithColorInformation(firevision::C_YELLOW, rois_yellow_, rois_all_);
+	mergeWithColorInformation(firevision::C_RED, rois_red_, rois_all_);
+
+	if(cfg_paintROIsActivated_){
+			drawRois(rois_all_);
 	}
 
+	updateInterface(rois_all_);
 
-
-	delete rois;
+	delete rois_all_;
+	delete rois_green_;
+	delete rois_yellow_;
+	delete rois_red_;
+	delete rois_blue_;
 }
 
 firevision::ROI* PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
@@ -220,7 +291,7 @@ fawkes::polar_coord_2d_t
 PuckVisionThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to)
 {
 	fawkes::polar_coord_2d_t polErrorReturnValue;
-	this->cartToPol(polErrorReturnValue, cartFrom.x, cartFrom.y);
+	cartToPol(polErrorReturnValue, cartFrom.x, cartFrom.y);
 
 	bool world_frame_exists = tf_listener->frame_exists(from);
 	bool robot_frame_exists = tf_listener->frame_exists(to);
@@ -248,9 +319,9 @@ PuckVisionThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, st
 
 		toX = cartFrom.x + v.getX();
 		toY = cartFrom.y + v.getY();
-		this->cartToPol(polTo, toX, toY);
+		cartToPol(polTo, toX, toY);
 
-		if (this->cfg_debugMessagesActivated) {
+		if (cfg_debugMessagesActivated_) {
 			logger->log_debug(name(), "From: %s X: %f Y: %f", from.c_str(), cartFrom.x, cartFrom.y);
 			logger->log_debug(name(), "To  : %s X: %f Y: %f", to.c_str(), toX, toY);
 		}
@@ -264,7 +335,7 @@ void PuckVisionThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y
 	pol.phi = atan2f(y, x);
 	pol.r = sqrtf(x * x + y * y);
 
-	if (this->cfg_debugMessagesActivated) {
+	if (cfg_debugMessagesActivated_) {
 		logger->log_debug(name(), "x: %f; y: %f", x, y);
 		logger->log_debug(name(), "Calculated r: %f; phi: %f", pol.r, pol.phi);
 	}
@@ -278,12 +349,12 @@ void PuckVisionThread::polToCart(float &x, float &y,fawkes::polar_coord_2d_t pol
 void
 PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
 {
-	this->drawer->set_src_buffer(this->bufferYCbCr, firevision::ROI::full_image(this->img_width, this->img_height), 0);
-	this->drawer->set_dst_buffer(this->bufferYCbCr, &roi);
-	this->drawer->set_style(borderStyle);
-	this->drawer->apply();
+	drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(img_width_, img_height_), 0);
+	drawer_->set_dst_buffer(buffer_, &roi);
+	drawer_->set_style(borderStyle);
+	drawer_->apply();
 
-	if (this->cfg_debugMessagesActivated) {
+	if (cfg_debugMessagesActivated_) {
 		logger->log_debug(name(), "drawed element in buffer");
 	}
 }
@@ -292,10 +363,10 @@ PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDr
 std::list<firevision::ROI>*
 PuckVisionThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier)
 {
-	this->scanline->reset();
-	this->scanline->set_roi(&searchArea);
+	scanline_->reset();
+	scanline_->set_roi(&searchArea);
 
-	classifier->set_src_buffer(this->bufferYCbCr, this->img_width, this->img_height);
+	classifier->set_src_buffer(buffer_, img_width_, img_height_);
 
 	std::list<firevision::ROI> *ROIs = classifier->classify();
 
@@ -307,13 +378,14 @@ PuckVisionThread::positionFromRoi(firevision::ROI* roi){
 
 	// x = width, y = distance
 	fawkes::polar_coord_2d_t puck_position;
-	puck_position.r = distanceCorrection(roi->start.y + (roi->height/2)) + cfg_puck_radius;
+	puck_position.r = distanceCorrection(roi->start.y + (roi->height/2)) + cfg_puck_radius_;
 	//puck_position.r = m * (roi->width - cfg_p1_width) +  cfg_p1_distance + cfg_puck_radius;
-	logger->log_info(name(),"Distance = %f, rois: center (%u, %u) width,height (%u, %u)",puck_position.r , roi->start.x + (roi->width/2),roi->start.y + (roi->height/2), roi->width, roi->height);
+	if (cfg_debugMessagesActivated_) {
+		logger->log_info(name(),"Distance = %f, rois: center (%u, %u) width,height (%u, %u)",puck_position.r , roi->start.x + (roi->width/2),roi->start.y + (roi->height/2), roi->width, roi->height);
+	}
+	float pixelPerRadHorizonal = img_width_ / cfg_cameraFactorHorizontal_;
 
-	float pixelPerRadHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
-
-	puck_position.phi = ((roi->start.x + roi->width/2)	- this->img_width / 2)
+	puck_position.phi = ((roi->start.x + roi->width/2)	- img_width_ / 2)
 					/ pixelPerRadHorizonal;
 
 	return puck_position;
@@ -324,50 +396,146 @@ PuckVisionThread::distanceCorrection(unsigned int x_in)
 {
 	double temp;
 	temp = 0.0;
-	temp = cfg_distance_function_a * exp(cfg_distance_function_b*x_in);
+	temp = cfg_distance_function_a_ * exp(cfg_distance_function_b_*x_in);
 	return temp;
 }
 
 double
 PuckVisionThread::positionCorrectionY(firevision::ROI* roi)
 {
-	double width_at_height = m_per_pixel_height * (img_height - (roi->start.y + roi->height/2)) + cfg_width_bottem_in_m;
+	double width_at_height = m_per_pixel_height_ * (img_height_ - (roi->start.y + roi->height/2)) + cfg_width_bottem_in_m_;
 
 	int roi_center_x = (roi->start.x + (roi->width/2));
-	int position_in_picuture = roi_center_x - (img_width/2);
-	double y_position = - position_in_picuture * (width_at_height/img_width);
+	int position_in_picuture = roi_center_x - (img_width_/2);
+	double y_position = - position_in_picuture * (width_at_height/img_width_);
 	//double
 	//logger->log_info(name(),"center: %i width_at_height: %f position_in_picture_x: %i y: %f",roi_center_x,  width_at_height, position_in_picuture,y_position);
 	return y_position;
 }
 
-void
-PuckVisionThread::updateInterface(firevision::ROI* puck){
-	nearestPuck->read();
-	if(puck==NULL){
-		nearestPuck->set_visibility_history(-1);
+int
+PuckVisionThread::getVisibilityHistory(fawkes::polar_coord_2d_t polar,
+		fawkes::PuckVisionInterface::PuckColor color, float interface_phi, float interface_r, int interface_visibility) {
+	bool toBigRotation = polar.phi - interface_phi > 0.1;
+	bool toBigMovement = polar.r - interface_r > 0.1;
+	bool colorChanged = color != puckInterface_->puck1_color();
+	if (toBigRotation || toBigMovement || colorChanged
+			|| color == fawkes::PuckVisionInterface::C_UNKNOWN) {
+		return -1;
+	} else {
+		return ++interface_visibility;
 	}
-	else{
-		fawkes::polar_coord_2d_t polar;
-
-		float x,y;
-		x = distanceCorrection(puck->start.y + (puck->height/2)) + cfg_puck_radius;
-		y = positionCorrectionY(puck);
-		cartToPol(polar,x,y);
-
-		logger->log_info(name(),"x: %f y: %f r: %f phi: %f",x,  y, polar.r, polar.phi);
-
-		nearestPuck->set_visibility_history(nearestPuck->visibility_history()+1);
-		nearestPuck->set_translation(0,x);
-		nearestPuck->set_translation(1,y);
-		nearestPuck->set_rotation(0,polar.phi);
-		nearestPuck->set_rotation(1,polar.r);
-	}
-	nearestPuck->write();
 }
 
+void
+PuckVisionThread::updateInterface(std::list<firevision::ROI>* rois){
+	puckInterface_->read();
 
+	if (cfg_debugMessagesActivated_) {
+		logger->log_info(name(),"Roi-list size %i",rois->size());
+	}
+	for(unsigned int i=1; i<4; ++i){
 
+		fawkes::polar_coord_2d_t polar;
+		polar.phi = 0;
+		polar.r = 0;
+		float x = 0;
+		float y = 0;
+		fawkes::PuckVisionInterface::PuckColor color = fawkes::PuckVisionInterface::C_UNKNOWN;
+
+		firevision::ROI* roi = getBiggestRoi(rois);
+
+		if(roi != NULL){
+			x = distanceCorrection(roi->start.y + (roi->height/2)) + cfg_puck_radius_;
+			y = positionCorrectionY(roi);
+			cartToPol(polar,x,y);
+			if (cfg_debugMessagesActivated_) {
+				logger->log_info(name(),"%i x: %f y: %f r: %f phi: %f",i, x,  y, polar.r, polar.phi);
+			}
+			color = getPuckInterfaceColor(roi);
+			rois->remove(roi);
+		}
+		switch (i) {
+			case 1:
+				puckInterface_->set_puck1_visibility_history(
+					getVisibilityHistory(
+						polar,
+						color,
+						puckInterface_->puck1_polar(0),
+						puckInterface_->puck1_polar(1),
+						puckInterface_->puck1_visibility_history()
+					)
+				);
+				puckInterface_->set_puck1_color(color);
+				puckInterface_->set_puck1_translation(0,x);
+				puckInterface_->set_puck1_translation(1,y);
+				puckInterface_->set_puck1_polar(0,polar.phi);
+				puckInterface_->set_puck1_polar(1,polar.r);
+				break;
+
+			case 2:
+				puckInterface_->set_puck2_visibility_history(
+					getVisibilityHistory(
+						polar,
+						color,
+						puckInterface_->puck2_polar(0),
+						puckInterface_->puck2_polar(1),
+						puckInterface_->puck2_visibility_history()
+					)
+				);
+				puckInterface_->set_puck2_color(color);
+				puckInterface_->set_puck2_translation(0,x);
+				puckInterface_->set_puck2_translation(1,y);
+				puckInterface_->set_puck2_polar(0,polar.phi);
+				puckInterface_->set_puck2_polar(1,polar.r);
+				break;
+
+			case 3:
+				puckInterface_->set_puck3_visibility_history(
+					getVisibilityHistory(
+						polar,
+						color,
+						puckInterface_->puck3_polar(0),
+						puckInterface_->puck3_polar(1),
+						puckInterface_->puck3_visibility_history()
+					)
+				);
+				puckInterface_->set_puck3_color(color);
+				puckInterface_->set_puck3_translation(0,x);
+				puckInterface_->set_puck3_translation(1,y);
+				puckInterface_->set_puck3_polar(0,polar.phi);
+				puckInterface_->set_puck3_polar(1,polar.r);
+				break;
+		}
+
+	}
+	puckInterface_->write();
+}
+
+void
+PuckVisionThread::finalize()													//TODO check if everthing gets deleted
+{
+	logger->log_debug(name(), "finalize starts");
+
+	vision_master->unregister_thread(this);
+
+	delete cam_;
+	delete scanline_;
+	delete cm_blue_;
+	delete cm_yellow_;
+	delete cm_red_;
+	delete cm_green_;
+
+	delete classifier_blue_;
+	delete classifier_red_;
+	delete classifier_green_;
+	delete classifier_yellow_;
+	delete shm_buffer_;
+
+	blackboard->close(puckInterface_);
+
+	logger->log_info(name(), "finalize ends");
+}
 
 
 

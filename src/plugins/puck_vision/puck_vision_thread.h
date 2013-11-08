@@ -21,14 +21,14 @@
 #include <aspect/vision.h>
 #include <aspect/tf.h>
 
-#include <interfaces/Position3DInterface.h>
+#include <interfaces/PuckVisionInterface.h>
 
-//#include <fvcams/camera.h>
+#include <fvcams/camera.h>
 #include <fvcams/fileloader.h>
 
 #include <fvutils/ipc/shm_image.h>
 #include <fvutils/color/conversions.h>
-#include "ColorModelRange.h"
+#include <fvmodels/color/lookuptable.h>
 #include <fvmodels/scanlines/grid.h>
 
 #include <fvclassifiers/simple.h>
@@ -40,8 +40,22 @@
 #include <list>
 #include <cmath>
 
+
+namespace firevision {
+  class Camera;
+  class ScanlineModel;
+  class ColorModel;
+  class MirrorModel;
+  class SimpleColorClassifier;
+  class RelativePositionModel;
+  class SharedMemoryImageBuffer;
+  class Drawer;
+}
+
 namespace fawkes {
 	class Position3DInterface;
+	class PuckVisionInterface;
+	class SwitchInterface;
 	namespace tf {
 		class TransformListener;
 	}
@@ -54,68 +68,114 @@ class PuckVisionThread
 	public fawkes::VisionAspect,
 	public fawkes::BlackBoardAspect,
 	public fawkes::TransformAspect
+
 {
 
 private:
-	std::string cfg_prefix;
-	std::string cfg_camera;
-	float cfg_cameraFactorHorizontal;
-	float cfg_cameraFactorVertical;
-	unsigned int img_width;
-	unsigned int img_height;
+	std::string cfg_prefix_;
+	std::string cfg_camera_;
+	float cfg_cameraFactorHorizontal_;
+	float cfg_cameraFactorVertical_;
+	unsigned int img_width_;
+	unsigned int img_height_;
 
-	int cfg_cameraOffsetVertical;
-	float cfg_cameraOffsetHorizontalRad;
+	int cfg_cameraOffsetVertical_;
+	float cfg_cameraOffsetHorizontalRad_;
 
-	float cfg_width_top_in_m;
-	float cfg_width_bottem_in_m;
+	float cfg_width_top_in_m_;
+	float cfg_width_bottem_in_m_;
 
-	float m_per_pixel_height;
+	float m_per_pixel_height_;
+
+	float cfg_puck_radius_;
+	float cfg_distance_function_a_;
+	float cfg_distance_function_b_;
+
+	bool cfg_debugMessagesActivated_;
+	bool cfg_paintROIsActivated_;
+
+	std::string cfg_colormap_file_yellow_;
+	std::string	cfg_colormap_file_red_;
+	std::string	cfg_colormap_file_green_;
+	std::string	cfg_colormap_file_blue_ ;
+
+	std::string cfg_frame_;
+
+	firevision::Camera *cam_;
+	firevision::ScanlineModel *scanline_;
+
+	firevision::ColorModel *cm_yellow_;
+	firevision::ColorModel *cm_red_;
+	firevision::ColorModel *cm_green_;
+	firevision::ColorModel *cm_blue_;
+
+	//firevision::RelativePositionModel *rel_pos_;
+	firevision::SimpleColorClassifier *classifier_yellow_;
+	firevision::SimpleColorClassifier *classifier_red_;
+	firevision::SimpleColorClassifier *classifier_green_;
+	firevision::SimpleColorClassifier *classifier_blue_;
+
+	firevision::SharedMemoryImageBuffer *shm_buffer_;
+
+	//interfaces
+	fawkes::SwitchInterface *switchInterface_;
+	fawkes::PuckVisionInterface *puckInterface_;
+
+	firevision::ROI roi_center_;
+	unsigned char *buffer_;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
+
+	firevision::colorspace_t cspaceFrom_;
+	firevision::colorspace_t cspaceTo_;
+
+	firevision::FilterROIDraw *drawer_;
+
+	//Functions
+
+	fawkes::PuckVisionInterface::PuckColor
+	getPuckInterfaceColor(firevision::ROI* roi);
+
+	int
+	getVisibilityHistory(fawkes::polar_coord_2d_t polar,
+				fawkes::PuckVisionInterface::PuckColor color, float interface_phi, float interface_r, int interface_visibility);
 
 
-	unsigned int cfg_color_y_min;
-	unsigned int cfg_color_y_max;
-	unsigned int cfg_color_u_min;
-	unsigned int cfg_color_u_max;
-	unsigned int cfg_color_v_min;
-	unsigned int cfg_color_v_max;
+	void
+	drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 
-	float cfg_puck_radius;
-	float cfg_distance_function_a;
-	float cfg_distance_function_b;
+	fawkes::polar_coord_2d_t
+	transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
-	bool cfg_debugMessagesActivated;
-	bool cfg_paintROIsActivated;
-	std::string cfg_frame;
+	fawkes::polar_coord_2d_t
+	positionFromRoi(firevision::ROI* roi);
 
-	firevision::Camera *camera;
-	firevision::ScanlineModel *scanline;
-	firevision::ColorModelRange *colorModel;
-	firevision::SimpleColorClassifier *classifierExpected;
-	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
-	firevision::ROI roi_center;
-	unsigned char *bufferYCbCr;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
+	void
+	cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 
-	firevision::colorspace_t cspaceFrom;
-	firevision::colorspace_t cspaceTo;
+	void
+	polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
 
-	fawkes::Position3DInterface *nearestPuck;
-	firevision::FilterROIDraw *drawer;
+	double
+	distanceCorrection(unsigned int x_in);
 
-	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
-	fawkes::polar_coord_2d_t transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
+	double
+	positionCorrectionY(firevision::ROI* roi);
 
-	fawkes::polar_coord_2d_t positionFromRoi(firevision::ROI* roi);
-	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
-	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
+	firevision::ROI*
+	getBiggestRoi(std::list<firevision::ROI>* roiList);
 
-	double distanceCorrection(unsigned int x_in);
-	double positionCorrectionY(firevision::ROI* roi);
+	void
+	drawRois(std::list<firevision::ROI>* rois_red_);
 
-	firevision::ROI* getBiggestRoi(std::list<firevision::ROI>* roiList);
-	std::list<firevision::ROI>*	classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);
-	void updateInterface(firevision::ROI* puck);
+	void
+	mergeWithColorInformation(firevision::color_t color,
+			std::list<firevision::ROI>* rois_color_,
+			std::list<firevision::ROI>* rois_all);
 
+	std::list<firevision::ROI>*
+	classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);
+
+	void
+	updateInterface(std::list<firevision::ROI>* puck);
 
 protected:
 	virtual void run() { Thread::run(); }
