@@ -190,7 +190,7 @@ void
 PuckVisionThread::mergeWithColorInformation(firevision::color_t color,
 		std::list<firevision::ROI>* rois_color_,
 		std::list<firevision::ROI>* rois_all) {
-	for (unsigned int i = 0; i < rois_color_->size(); i++) {
+	while(rois_color_->size() !=0 ) {
 		rois_color_->front().color = color;
 		rois_all->push_front(rois_color_->front());
 		rois_color_->pop_front();
@@ -278,9 +278,6 @@ firevision::ROI* PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* ro
 	}
 	return biggestRoi;
 }
-
-
-
 
 PuckVisionThread::~PuckVisionThread()
 {
