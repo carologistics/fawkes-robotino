@@ -94,6 +94,7 @@ void LlsfControlSimThread::loop()
     logger->log_info(name(), "shutting down, ttwbs: %f, now: %f, sit: %f", time_to_wait_before_shutdown_, clock->now().in_sec(), shutdown_initiated_time_);
     std::string command = fawkes_path_ + simulation_shutdown_script_;
     int schnurz = system(command.c_str());
+    //just avoid warning that the return value of system() is ignored
     schnurz++;
   }
 }
