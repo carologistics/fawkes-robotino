@@ -92,8 +92,9 @@ void LlsfControlSimThread::loop()
   if(shutdown_initiated_ && (clock->now().in_sec() - shutdown_initiated_time_) > time_to_wait_before_shutdown_)
   {
     logger->log_info(name(), "shutting down, ttwbs: %f, now: %f, sit: %f", time_to_wait_before_shutdown_, clock->now().in_sec(), shutdown_initiated_time_);
-      std::string command = fawkes_path_ + simulation_shutdown_script_;
-      system(command.c_str());
+    std::string command = fawkes_path_ + simulation_shutdown_script_;
+    int schnurz = system(command.c_str());
+    schnurz++;
   }
 }
 
