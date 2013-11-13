@@ -31,7 +31,7 @@ OBJS_gazsim_llsf_statistics = gazsim_llsf_statistics_plugin.o gazsim_llsf_statis
 
 OBJS_all    = $(OBJS_gazsim_llsf_statistics)
 
-ifeq ($(HAVE_TF),1)
+ifeq ($(HAVE_TF)$(HAVE_MONGODB),11)
   CFLAGS  += $(CFLAGS_TF) $(CFLAGS_MONGODB)
   LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_MONGODB)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
@@ -39,15 +39,22 @@ ifeq ($(HAVE_TF),1)
 
   PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-statistics.so
 else
-  WARN_TARGETS += warning_tf
+  ifneq ($(HAVE_MONGODB),1)
+    WARN_TARGETS += warning_mongodb
+  endif
+  ifneq ($(HAVE_TF),1)
+    WARN_TARGETS += warning_tf
+  endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_tf
+.PHONY: warning_tf warning_mongodb
 warning_tf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting llsf-statistics-Sim libs" \
                          "$(TNORMAL) (tf not available)"
+warning_mongodb:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-llsf-statistics Plugin$(TNORMAL) (mongodb[-devel] not installed)"
 endif
 
 include $(BUILDSYSDIR)/base.mk
