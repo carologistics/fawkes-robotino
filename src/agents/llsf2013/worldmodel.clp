@@ -110,7 +110,8 @@
   =>
   (printout t "Production invalid at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
-  (assert (holding NONE))
+  (assert (holding NONE)
+	  (unknown-fail))
   (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
     then
     ;forget machine and choose an other one

@@ -138,6 +138,28 @@
   =>
   (printout warn "Changing Role from P1P2 to P3 because there is not enough time for an other p1 or p2" crlf)
   (retract ?r)
+  (assert (role P3))       
+)
+
+;change role from p1p2,p1 or p2 to p3 if something went wrong
+(defrule strat-p1p2-to-p3-after-delivery
+  (dynamic-role-change true)
+  (confval (path "/clips-agent/llsf2013/dynamic-role-change/p1p2-p1-p2-to-p3-after-fail") (type BOOL) (value true))
+  (phase PRODUCTION)
+  ?r <- (role P1P2|P1|P2)
+  (unknown-fail)
+  =>
+  (printout warn "Changing Role from P1P2 to P3 because I do not know why my previous production went wrong." crlf)
+  (retract ?r)
   (assert (role P3))
-       
+)
+
+;allow recycle machine for p3 if the role can change to p3
+(defrule strat-allow-recycle-for-p3-after-role-change
+  (dynamic-role-change true)
+  (role ?r)
+  (machine-alloc (machine ?r-name) (role ?r))
+  (machine (name ?r-name) (mtype RECYCLE))
+  =>
+  (assert (machine-alloc (machine ?r-name) (role P3)))
 )
