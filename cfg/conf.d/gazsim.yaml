@@ -44,8 +44,8 @@ gazsim:
       # does the odometry change if the robotino drives against an obstacle?
       slippery-wheels-enabled: true
       slippery-wheels-threshold: 0.5
-      moving-speed-factor: 1.0
-      rotation-speed-factor: 1.0
+      moving-speed-factor: 1.2
+      rotation-speed-factor: 1.2
       
   comm:
     package-loss: 0.1
