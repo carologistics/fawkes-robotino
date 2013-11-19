@@ -46,7 +46,7 @@ do
              exit 1
              ;;
          c)
-	     CONFIGURATIONS[0]=$OPTARG
+	     CONFIGURATIONS[$NUM_CONF]=$OPTARG
 	     let "NUM_CONF++"
 
 	     echo Configuration $NUM_CONF is $OPTARG
@@ -106,7 +106,7 @@ do
 	echo Waiting for shutdown of the simulation
 	for (( ; ; ))
 	do
-	    sleep 10s
+	    sleep 20s
 	    #check if simulation is still running
 	    GAZEBO=$(ps -a | grep -i 'gzserver\|fawkes\|roscore\|roslaunch\|llsf-refbox' | wc -l)
             if [ $GAZEBO -eq 0 ]
@@ -126,11 +126,13 @@ do
 		echo something went wrong
 		echo restarting run
 		$STARTUP_SCRIPT_LOCATION -x kill
-		$STARTUP_SCRIPT_LOCATION -x start -r -s $HEADLESS -c $CONF -e $REPLAY_PATH
+		$STARTUP_SCRIPT_LOCATION -x start -r -a -s $HEADLESS -c $CONF -e $REPLAY_PATH
 		sleep 30
 	    fi
 	    
 	done
+	#wait until the record is stored
+	sleep 10s
 	restore_record "$REPLAY_PATH/state.log"
     done
 done
