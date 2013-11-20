@@ -136,7 +136,11 @@ private:
 
 	int
 	getVisibilityHistory(fawkes::polar_coord_2d_t polar,
-				fawkes::PuckVisionInterface::PuckColor color, float interface_phi, float interface_r, int interface_visibility);
+				fawkes::PuckVisionInterface::PuckColor colorRoi,
+				fawkes::PuckVisionInterface::PuckColor colorInterface,
+				float interface_phi,
+				float interface_r,
+				int interface_visibility);
 
 
 	void

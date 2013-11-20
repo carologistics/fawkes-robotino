@@ -412,12 +412,16 @@ PuckVisionThread::positionCorrectionY(firevision::ROI* roi)
 
 int
 PuckVisionThread::getVisibilityHistory(fawkes::polar_coord_2d_t polar,
-		fawkes::PuckVisionInterface::PuckColor color, float interface_phi, float interface_r, int interface_visibility) {
+		fawkes::PuckVisionInterface::PuckColor colorRoi,
+		fawkes::PuckVisionInterface::PuckColor colorInterface,
+		float interface_phi, float interface_r,
+		int interface_visibility)
+{
 	bool toBigRotation = polar.phi - interface_phi > 0.1;
 	bool toBigMovement = polar.r - interface_r > 0.1;
-	bool colorChanged = color != puckInterface_->puck1_color();
+	bool colorChanged = colorRoi != colorInterface;
 	if (toBigRotation || toBigMovement || colorChanged
-			|| color == fawkes::PuckVisionInterface::C_UNKNOWN) {
+			|| colorRoi == fawkes::PuckVisionInterface::C_UNKNOWN) {
 		return -1;
 	} else {
 		return ++interface_visibility;
@@ -458,6 +462,7 @@ PuckVisionThread::updateInterface(std::list<firevision::ROI>* rois){
 					getVisibilityHistory(
 						polar,
 						color,
+						puckInterface_->puck1_color(),
 						puckInterface_->puck1_polar(0),
 						puckInterface_->puck1_polar(1),
 						puckInterface_->puck1_visibility_history()
@@ -475,6 +480,7 @@ PuckVisionThread::updateInterface(std::list<firevision::ROI>* rois){
 					getVisibilityHistory(
 						polar,
 						color,
+						puckInterface_->puck2_color(),
 						puckInterface_->puck2_polar(0),
 						puckInterface_->puck2_polar(1),
 						puckInterface_->puck2_visibility_history()
@@ -492,6 +498,7 @@ PuckVisionThread::updateInterface(std::list<firevision::ROI>* rois){
 					getVisibilityHistory(
 						polar,
 						color,
+						puckInterface_->puck3_color(),
 						puckInterface_->puck3_polar(0),
 						puckInterface_->puck3_polar(1),
 						puckInterface_->puck3_visibility_history()
