@@ -404,7 +404,7 @@ PuckVisionThread::positionCorrectionY(firevision::ROI* roi)
 
 	int roi_center_x = (roi->start.x + (roi->width/2));
 	int position_in_picuture = roi_center_x - (img_width_/2);
-	double y_position = - position_in_picuture * (width_at_height/img_width_);
+	double y_position = position_in_picuture * (width_at_height/img_width_);
 	//double
 	//logger->log_info(name(),"center: %i width_at_height: %f position_in_picture_x: %i y: %f",roi_center_x,  width_at_height, position_in_picuture,y_position);
 	return y_position;
