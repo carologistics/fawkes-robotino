@@ -46,7 +46,7 @@ plugins/puck_vision:
 
 
   # Debugging
-  show_debug_messages: false
+  show_debug_messages: true
   draw_rois: true
 
   
