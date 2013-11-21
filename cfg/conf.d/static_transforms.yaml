@@ -22,3 +22,5 @@ plugins/static-transforms:
       trans_y: -0.005
       trans_z: 0.195
       rot_pitch: 0.45 # 37.87° 
+      rot_roll: 0
+      rot_yaw: 0
