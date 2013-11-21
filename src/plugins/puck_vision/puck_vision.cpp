@@ -27,7 +27,7 @@
 using namespace fawkes;
 
 /**
- * @author Florian Nolden
+ * @author Florian Nolden & Johannes Rothe
  */
 class PuckVision : public fawkes::Plugin
 {

@@ -73,19 +73,32 @@ class PuckVisionThread
 
 private:
 	std::string cfg_prefix_;
+	std::string cfg_prefix_static_transforms_;
 	std::string cfg_camera_;
-	float cfg_cameraFactorHorizontal_;
-	float cfg_cameraFactorVertical_;
+	float cfg_camera_opening_angle_horizontal_;
+	float cfg_camera_opening_angle_vertical_;
 	unsigned int img_width_;
 	unsigned int img_height_;
 
-	int cfg_cameraOffsetVertical_;
-	float cfg_cameraOffsetHorizontalRad_;
+	float cfg_camera_opening_angle_x_;
+	float cfg_camera_opening_angle_y_;
 
 	float cfg_width_top_in_m_;
 	float cfg_width_bottem_in_m_;
 
 	float m_per_pixel_height_;
+
+	float offset_cam_x_to_groundplane_;
+	float angle_horizontal_to_opening_;
+
+
+	float visible_lenght_x_in_m_;
+	float visible_lenght_y_in_m_;
+
+	float cfg_camera_position_x_;
+	float cfg_camera_position_y_;
+	float cfg_camera_position_z_;
+	float cfg_camera_position_pitch_;
 
 	float cfg_puck_radius_;
 	float cfg_distance_function_a_;
@@ -155,11 +168,17 @@ private:
 	void
 	cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 
+	float
+	getX(firevision::ROI* roi);
+
+	float
+	getY(firevision::ROI* roi);
+
 	void
 	polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
 
 	double
-	distanceCorrection(unsigned int x_in);
+	positionCorrectionX(unsigned int x_in);
 
 	double
 	positionCorrectionY(firevision::ROI* roi);
