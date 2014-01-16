@@ -496,7 +496,7 @@ OmniVisionPucksPipelineThread::sortFunctor::sortFunctor(
 bool OmniVisionPucksPipelineThread::sortFunctor::operator()(
 							    firevision::ROI i, firevision::ROI j) {
   float leftdist, rightdist;
-  fawkes::point_t mass_point_comp;
+  fawkes::upoint_t mass_point_comp;
   classifier->get_mass_point_of_color(&i, &mass_point_comp);
   relpos->set_center(mass_point_comp.x, mass_point_comp.y);
   relpos->calc_unfiltered();

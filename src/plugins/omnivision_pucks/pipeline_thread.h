@@ -135,7 +135,7 @@ class OmniVisionPucksPipelineThread: public fawkes::Thread,
   bool puck_visible_;
   unsigned int puck_image_x_;
   unsigned int puck_image_y_;
-  fawkes::point_t mass_point_;
+  fawkes::upoint_t mass_point_;
   float min_dist_;
 
 
