@@ -36,7 +36,7 @@ using namespace fawkes;
 /** Constructor. */
 ClipsMotorSwitchThread::ClipsMotorSwitchThread(std::string &env_name)
   : Thread("ClipsMotorSwitchThread", Thread::OPMODE_WAITFORWAKEUP),
-    CLIPSAspect(env_name.c_str(), /* create */ true, /* excl */ false)
+    CLIPSFeature("motor_switch")//, CLIPSFeatureAspect(this)
 {
 }
 
@@ -44,6 +44,7 @@ ClipsMotorSwitchThread::ClipsMotorSwitchThread(std::string &env_name)
 /** Destructor. */
 ClipsMotorSwitchThread::~ClipsMotorSwitchThread()
 {
+  envs_.clear();
 }
 
 
@@ -53,11 +54,6 @@ ClipsMotorSwitchThread::init()
   cfg_iface_id_ = config->get_string("/clips-motor-switch/interface-id");
   switch_if_ =
     blackboard->open_for_reading<SwitchInterface>(cfg_iface_id_.c_str());
-
-  MutexLocker lock(clips.objmutex_ptr());
-
-  clips->add_function("motor-enable", sigc::slot<void>(sigc::mem_fun(*this, &ClipsMotorSwitchThread::clips_motor_enable)));
-  clips->add_function("motor-disable", sigc::slot<void>(sigc::mem_fun(*this, &ClipsMotorSwitchThread::clips_motor_disable)));
 }
 
 
@@ -67,6 +63,21 @@ ClipsMotorSwitchThread::finalize()
   blackboard->close(switch_if_);
 }
 
+void
+ClipsMotorSwitchThread::clips_context_init(const std::string &env_name,
+					   LockPtr<CLIPS::Environment> &clips)
+{
+  envs_[env_name] = clips;
+
+  clips->add_function("motor-enable", sigc::slot<void>(sigc::bind<0>(sigc::mem_fun(*this, &ClipsMotorSwitchThread::clips_motor_enable), env_name)));
+  clips->add_function("motor-disable", sigc::slot<void>(sigc::bind<0>(sigc::mem_fun(*this, &ClipsMotorSwitchThread::clips_motor_disable), env_name)));
+}
+
+void
+ClipsMotorSwitchThread::clips_context_destroyed(const std::string &env_name)
+{
+  envs_.erase(env_name);
+}
 
 void
 ClipsMotorSwitchThread::loop()
@@ -75,7 +86,7 @@ ClipsMotorSwitchThread::loop()
 
 
 void
-ClipsMotorSwitchThread::clips_motor_enable()
+ClipsMotorSwitchThread::clips_motor_enable(std::string env_name)
 {
   try {
     SwitchInterface::EnableSwitchMessage *msg =
@@ -87,7 +98,7 @@ ClipsMotorSwitchThread::clips_motor_enable()
 }
 
 void
-ClipsMotorSwitchThread::clips_motor_disable()
+ClipsMotorSwitchThread::clips_motor_disable(std::string env_name)
 {
   try {
     SwitchInterface::DisableSwitchMessage *msg =

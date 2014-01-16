@@ -27,7 +27,7 @@
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
-#include <plugins/clips/aspect/clips.h>
+#include <plugins/clips/aspect/clips_feature.h>
 
 #include <vector>
 #include <string>
@@ -41,7 +41,8 @@ class ClipsMotorSwitchThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
-  public fawkes::CLIPSAspect
+  public fawkes::CLIPSFeature/* , */
+  /* public fawkes::CLIPSFeatureAspect */
 {
  public:
   ClipsMotorSwitchThread(std::string &env_name);
@@ -51,12 +52,19 @@ class ClipsMotorSwitchThread
   virtual void loop();
   virtual void finalize();
 
+  // for CLIPSFeature
+  virtual void clips_context_init(const std::string &env_name,
+				  fawkes::LockPtr<CLIPS::Environment> &clips);
+  virtual void clips_context_destroyed(const std::string &env_name);
+
  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
  protected: virtual void run() { Thread::run(); }
 
  private:
-  void clips_motor_enable();
-  void clips_motor_disable();
+  void clips_motor_enable(std::string env_name);
+  void clips_motor_disable(std::string env_name);
+
+  std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 
  private:
   std::string               cfg_iface_id_;
