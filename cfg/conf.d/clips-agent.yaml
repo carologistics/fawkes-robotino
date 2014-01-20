@@ -7,6 +7,13 @@ clips-agent:
   # Directory where to look for CLIPS files
   clips-dirs: ["@BASEDIR@/src/agents/"]
 
+  # If CLIPS debugging is enabled, certain rules and facts can be excluded
+  # from watching, e.g. if they are showing up at too high frequencies or
+  # are not of interest.
+  unwatch-facts: ["time"]
+  unwatch-rules: ["time-retract", "blackboard-read"]
+
+  
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
   agent: llsf2013/llsf2013
