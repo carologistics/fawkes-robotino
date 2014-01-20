@@ -8,33 +8,52 @@
 ;---------------------------------------------------------------------------
 
 ; LLSF2013 agent includes
-(load* (resolve-file llsf2013/priorities.clp))
-(load* (resolve-file llsf2013/globals.clp))
-(load* (resolve-file llsf2013/facts.clp))
+(path-load  llsf2013/priorities.clp)
+(path-load  llsf2013/globals.clp)
+(path-load  llsf2013/facts.clp)
 
 (defrule load-config
   (init)
   =>
-  (load-config "/clips-agent")
+  (config-load "/clips-agent")
 )
 
 (deffacts init (init))
 
+; Request clips-features
+(defrule enable-blackboard
+  (ff-feature blackboard)
+  =>
+  (printout t "Requesting blackboard feature" crlf)
+  (ff-feature-request "blackboard")
+  (path-load "llsf2013/blackboard-init.clp")
+)
+(defrule enable-motor-switch
+  (ff-feature motor-switch)
+  =>
+  (printout t "Requesting motor-switch feature" crlf)
+  (ff-feature-request "motor-switch")
+)
+(defrule enable-protobuf
+  (ff-feature protobuf)
+  =>
+  (printout t "Requesting protobuf feature" crlf)
+  (ff-feature-request "protobuf")
+)
+
 (defrule initialize
+  ;when all clips features are available and the init file is loaded
   (declare (salience ?*PRIORITY-HIGH*))
   (agent-init)
-  (protobuf-available)
+  (ff-feature-loaded blackboard)
+  (loaded interfaces)
+  (ff-feature-loaded motor-switch)
+  (ff-feature-loaded protobuf)
   =>
-  (load-config "/clips-agent")
-
-  (blackboard-add-interface "RobotinoLightInterface" "Light determined")
-  (blackboard-add-interface "Position3DInterface" "Pose")
-  (blackboard-add-interface "RobotinoLightInterface" "Light_State")
-
-  (load* (resolve-file llsf2013/utils.clp))
-  (load* (resolve-file llsf2013/net.clp))
-  (load* (resolve-file llsf2013/skills.clp))
-  (load* (resolve-file llsf2013/lock.clp))
+  (path-load  llsf2013/utils.clp)
+  (path-load  llsf2013/net.clp)
+  (path-load  llsf2013/skills.clp)
+  (path-load  llsf2013/lock.clp)
 
   (if
     (any-factp ((?conf confval))
@@ -42,14 +61,14 @@
 	   (eq ?conf:type BOOL) (eq ?conf:value true)))
   then
     (printout t "Loading simulation" crlf)
-    (load* (resolve-file llsf2013/sim.clp))
+    (path-load  llsf2013/sim.clp)
   )
-  (load* (resolve-file llsf2013/game.clp))
-  (load* (resolve-file llsf2013/general.clp))
-  (load* (resolve-file llsf2013/strategy.clp))
-  (load* (resolve-file llsf2013/worldmodel.clp))
-  (load* (resolve-file llsf2013/production.clp))
-  (load* (resolve-file llsf2013/exploration.clp))
+  (path-load  llsf2013/game.clp)
+  (path-load  llsf2013/general.clp)
+  (path-load  llsf2013/strategy.clp)
+  (path-load  llsf2013/worldmodel.clp)
+  (path-load  llsf2013/production.clp)
+  (path-load  llsf2013/exploration.clp)
   (reset)
   ;(facts)
 )
