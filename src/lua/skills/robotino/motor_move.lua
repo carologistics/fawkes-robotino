@@ -130,7 +130,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"DRIVE", "FAILED", cond=invalid_params, desc="|ori| >= 2*PI"},
-   {"DRIVE", "FAILED", cond="not motor:has_writer()", precond=true},
+   {"DRIVE", "FAILED", precond="not motor:has_writer()"},
    {"DRIVE", "FINAL", cond=drive_done},
    {"DRIVE", "FINAL", cond=drive_done},
 }

@@ -71,7 +71,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"DRIVE", "FAILED", cond=no_writer, desc="No writer for motor", precond=true},
+   {"DRIVE", "FAILED", precond=no_writer, desc="No writer for motor"},
    {"DRIVE", "STOP", cond=puck_is_near},
    {"DRIVE", "DRIVE", cond=puck_is_away, desc="away"},
    {"STOP", "FINAL", cond=true}

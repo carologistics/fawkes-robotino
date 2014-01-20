@@ -84,7 +84,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond=plugin_missing, precond=true},
+   {"INIT", "FAILED", precond=plugin_missing},
    {"INIT", "WAIT", timeout=1}, -- let vision settle
    {"WAIT", "OUT_OF_ORDER", cond=out_of_order},
    {"OUT_OF_ORDER", "WAIT", cond="not out_of_order()"},

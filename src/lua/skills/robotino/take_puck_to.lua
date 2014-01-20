@@ -91,8 +91,8 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "INIT", "SKILL_GOTO", cond=true, desc="OK" },
-   { "SKILL_GOTO", "FAILED", cond="not omnivisionSwitch:has_writer()",
-      precond=true, desc="No omnivision writer" },
+   { "SKILL_GOTO", "FAILED", precond="not omnivisionSwitch:has_writer()",
+      desc="No omnivision writer" },
    { "SKILL_GOTO", "STOP", cond="sensor:distance(8) > LOSTPUCK_DIST", desc="Lost puck" },
    { "WAIT", "SKILL_FETCH_PUCK", timeout=3 },
 --   { "WAIT2", "SKILL_FETCH_PUCK", timeout=2 },

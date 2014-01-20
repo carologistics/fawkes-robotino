@@ -55,9 +55,9 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond="not ampelswitch:has_writer()", precond=true},
+   {"INIT", "FAILED", precond="not ampelswitch:has_writer()"},
    {"INIT", "DETERMINE", timeout=1}, -- let vision settle
-   {"INIT", "WAIT_OUT_OF_ORDER", cond="ampel_red:is_enabled()", precond=true},
+   {"INIT", "WAIT_OUT_OF_ORDER", precond="ampel_red:is_enabled()"},
    {"WAIT_OUT_OF_ORDER", "DETERMINE", cond="not ampel_red:is_enabled()"},
    {"DETERMINE", "CHECK_NO_CHANGE", timeout=2.0},
    {"DETERMINE", "WAIT_OUT_OF_ORDER", cond="ampel_red:is_enabled()"},
