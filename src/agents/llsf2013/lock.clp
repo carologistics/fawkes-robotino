@@ -10,8 +10,8 @@
 )
 
 (deffacts lock-facts
-  (signal (type send-lock-msg) (time (create$ 0 0)) (seq 1))
-  (signal (type send-master-announce) (time (create$ 0 0)) (seq 1))
+  (timer (name send-lock-msg) (time (create$ 0 0)) (seq 1))
+  (timer (name send-master-announce) (time (create$ 0 0)) (seq 1))
   (init-locking)
 )
 
@@ -35,7 +35,7 @@
   (declare (salience ?*PRIORITY-LOCK-SEND*))
   (lock-role MASTER)
   (time $?now)
-  ?s <- (signal (type send-master-announce) (time $?t&:(timeout ?now ?t ?*MASTER-ANNOUNCE-PERIOD*)) (seq ?seq))
+  ?s <- (timer (name send-master-announce) (time $?t&:(timeout ?now ?t ?*MASTER-ANNOUNCE-PERIOD*)) (seq ?seq))
   =>
   ;(printout t "Announcing MASTER role" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
@@ -80,7 +80,7 @@
 (defrule lock-send-message
   (declare (salience ?*PRIORITY-LOCK-SEND*))
   (time $?now)
-  ?s <- (signal (type send-lock-msg) (time $?t&:(timeout ?now ?t ?*LOCK-PERIOD*)) (seq ?seq))
+  ?s <- (timer (name send-lock-msg) (time $?t&:(timeout ?now ?t ?*LOCK-PERIOD*)) (seq ?seq))
   (lock-role ?role)
   =>
   ;(printout t "Sending all lock-messages:" crlf)
