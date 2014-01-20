@@ -39,8 +39,8 @@
   (retract ?st)
   (assert (state EXP_START)
           (round FIRST)
-          (signal (type send-machine-reports))
-          (signal (type print-unrecognized-lights))
+          (timer (name send-machine-reports))
+          (timer (name print-unrecognized-lights))
   )
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
@@ -91,7 +91,7 @@
   (printout t "Read light now." crlf)
   (retract ?s ?final)
   (assert (state EXP_WAITING_AT_MACHINE)
-          (signal (type waiting-since) (time ?now) (seq 1))
+          (timer (name waiting-since) (time ?now) (seq 1))
   )
 )
 
@@ -99,7 +99,7 @@
 (defrule exp-read-light-at-machine
   (phase EXPLORATION)
   (time $?now)
-  ?ws <- (signal (type waiting-since))
+  ?ws <- (timer (name waiting-since))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
@@ -120,7 +120,7 @@
 (defrule exp-recognized-machine-failed-once
   (phase EXPLORATION)
   (time $?now)
-  ?ws <- (signal (type waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
+  ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
@@ -138,7 +138,7 @@
 (defrule exp-recognized-machine-failed-twice
   (phase EXPLORATION)
   (time $?now)
-  ?ws <- (signal (type waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
+  ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
@@ -397,7 +397,7 @@
 (defrule exp-send-recognized-machines
   (phase EXPLORATION)
   (time $?now)
-  ?ws <- (signal (type send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
+  ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (do-for-all-facts ((?machine machine-type)) TRUE

@@ -8,14 +8,6 @@
 ;---------------------------------------------------------------------------
 
 ; GENERIC
-
-(deftemplate signal
-  (slot type)
-  (multislot time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
-  (slot seq (type INTEGER) (default 1))
-  (slot count (type INTEGER) (default 1))
-)
-
 (deftemplate active-robot
   (slot name (type SYMBOL) (allowed-values R-1 R-2))
   (multislot last-seen (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
@@ -100,5 +92,5 @@
   (phase PRE_GAME)
   (refbox-state WAIT_START)
 
-  (signal (type beacon) (time (create$ 0 0)) (seq 1))
+  (timer (name beacon) (time (create$ 0 0)) (seq 1))
 )
