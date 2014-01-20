@@ -41,8 +41,8 @@ class ClipsMotorSwitchThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
-  public fawkes::CLIPSFeature/* , */
-  /* public fawkes::CLIPSFeatureAspect */
+  public fawkes::CLIPSFeature,
+  public fawkes::CLIPSFeatureAspect
 {
  public:
   ClipsMotorSwitchThread(std::string &env_name);
