@@ -106,17 +106,19 @@
   ?lf <- (lights YELLOW-BLINKING)
   ?mf <- (machine (name ?name) (mtype ?mtype))
   ?hf <- (holding ?)
+  (role ?role)
   =>
   (printout t "Production invalid at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
-  (assert (holding NONE))
+  (assert (holding NONE)
+	  (unknown-fail))
   (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
     then
     ;forget machine and choose an other one
-    (strat-allow-all ?mtype)
+    (strat-allow-all ?mtype ?role)
   )
-  (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:name ?name) 
-    (modify ?machine (allowed FALSE))
+  (delayed-do-for-all-facts ((?ma machine-alloc)) (eq ?ma:machine ?name) 
+    (retract ?ma)
   )
 )
 
@@ -139,6 +141,8 @@
   ?lf <- (lights $?)
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype ?mtype))
+  (role ?role)
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (printout warn "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
@@ -146,7 +150,9 @@
   (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
     then
     ;forget machine and choose an other one
-    (strat-allow-all ?mtype)
-    (modify ?mf (allowed FALSE))
+    (strat-allow-all ?mtype ?role)
+    (delayed-do-for-all-facts ((?ma machine-alloc)) (eq ?ma:machine ?name) 
+      (retract ?ma)
+    )
   )
 )

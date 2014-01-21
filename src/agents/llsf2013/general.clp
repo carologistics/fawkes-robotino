@@ -13,4 +13,8 @@
   =>
   (assert (role (sym-cat ?role)))
   (printout t "I have the role " (str-cat ?role) crlf)
+  (if (not (member$ ?role (create$ P1P2 P1 P2 P3)))
+    then
+    (printout warn "I do not know the role " (str-cat ?role) "!!!" crlf)
+  )
 )
