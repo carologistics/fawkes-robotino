@@ -38,6 +38,7 @@
   (assert (machine-alloc (machine ?t1-name) (role P1P2)))
   (assert (machine-alloc (machine ?t2-name) (role P1P2)))
   (assert (machine-alloc (machine ?t34-name) (role P1P2)))
+  (assert (machine-alloc (machine ?r-name) (role P1P2)))
 )
 
 ;allow machines for role P1 and P2 (disjunct)
@@ -51,6 +52,7 @@
   ;nearest machines to the T3
   (bind ?p1-t1-dist 100.0)
   (bind ?p1-t2-dist 100.0)
+  (bind ?p1-r-dist 100.0)
   (do-for-all-facts ((?m machine)) TRUE
     (bind ?dist (distance ?x3 ?y3 ?m:x ?m:y))
     (switch ?m:mtype
@@ -61,11 +63,13 @@
   )
   (assert (machine-alloc (machine ?p1-t1-name) (role P1))
 	  (machine-alloc (machine ?p1-t2-name) (role P1))
+	  (machine-alloc (machine ?p1-r-name) (role P1))
   )
   ;nearest machines to the T4 that are not allowed for P1
   (bind ?p2-t1-dist 100.0)
   (bind ?p2-t2-dist 100.0)
-  (do-for-all-facts ((?m machine)) (and (neq ?m:name ?p1-t1-name) (neq ?m:name ?p1-t2-name))
+  (bind ?p2-r-dist 100.0)
+  (do-for-all-facts ((?m machine)) (and (neq ?m:name ?p1-t1-name) (neq ?m:name ?p1-t2-name)(neq ?m:name ?p1-r-name))
     (bind ?dist (distance ?x4 ?y4 ?m:x ?m:y))
     (switch ?m:mtype
       (case T1 then (if (< ?dist ?p2-t1-dist) then (bind ?p2-t1 ?m) (bind ?p2-t1-dist ?dist) (bind ?p2-t1-name ?m:name)))
@@ -75,6 +79,7 @@
   )
   (assert (machine-alloc (machine ?p2-t1-name) (role P2))
 	  (machine-alloc (machine ?p2-t2-name) (role P2))
+	  (machine-alloc (machine ?p2-r-name) (role P2))
   )
 )
 
