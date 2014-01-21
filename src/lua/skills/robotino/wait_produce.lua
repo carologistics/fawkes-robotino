@@ -69,9 +69,8 @@ function done()
    return false
 end
 
-function out_of_order()
-   return plugin:is_ready()
-      and plugin:green()  == plugin.OFF
+function out_of_order()  -- careful!!! no check if plugin light is ready
+   return plugin:green()  == plugin.OFF
       and plugin:yellow() == plugin.OFF
       and plugin:red()    == plugin.ON
 end
@@ -86,8 +85,9 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", precond=plugin_missing},
    {"INIT", "WAIT", timeout=1}, -- let vision settle
-   {"WAIT", "OUT_OF_ORDER", cond=out_of_order},
-   {"OUT_OF_ORDER", "WAIT", cond="not out_of_order()"},
+   {"WAIT", "OUT_OF_ORDER", cond="out_of_order() and plugin:is_ready()"},
+   {"OUT_OF_ORDER", "WAIT", cond="not out_of_order() and plugin:is_ready()"},
+   {"OUT_OF_ORDER", "WAIT", timeout=120},
    {"WAIT", "FAILED", timeout=fsm.vars.mtype and TIMEOUTS[fsm.vars.mtype] or 70},
    {"WAIT", "FINAL", cond=done},
 }
