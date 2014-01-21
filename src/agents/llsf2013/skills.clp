@@ -24,6 +24,11 @@
   (skill-call get_s0)
 )
 
+(deffunction get-consumed (?goal)
+  (skill-call get_consumed place ?goal)
+  (assert (get-consumed-target ?goal))
+)
+
 (defrule skill-done
   (skill (name ?name) (status ?s&FINAL|FAILED))
   =>
@@ -37,6 +42,15 @@
   (if (debug 1) then (printout (if (eq ?s FAILED) then warn else t) "get-s0 done: " ?s crlf))
   (retract ?sf ?df)
   (assert (state (sym-cat GET-S0- ?s)))
+)
+
+(defrule skill-get-consumed-done
+  ?sf <- (state GET-CONSUMED)
+  ?df <- (skill-done (name "get_consumed_product_from") (status ?s))
+  =>
+  (if (debug 1) then (printout (if (eq ?s FAILED) then warn else t) "get-consumed done: " ?s crlf))
+  (retract ?sf ?df)
+  (assert (state (sym-cat GET-CONSUMED- ?s)))
 )
 
 (defrule skill-goto-done

@@ -59,3 +59,7 @@ clips-agent:
       #estimated production durations from start in sec
       production-durations:
         p1p2: 420
+
+    #recycle pucks to get s0
+    #possible values: no,ifpossible,afterdeliver
+    recycle: ifpossible

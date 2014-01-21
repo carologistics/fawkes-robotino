@@ -20,9 +20,11 @@
   (bind ?t1 BLA)
   (bind ?t2 BLA)
   (bind ?t34 BLA)
+  (bind ?r BLA)
   (bind ?t1-dist 0.0)
   (bind ?t2-dist 0.0)
   (bind ?t34-dist 0.0)
+  (bind ?r-dist 0.0)
   (do-for-all-facts ((?m machine)) TRUE
     (bind ?dist (distance ?x5 ?y5 ?m:x ?m:y))
     (switch ?m:mtype

@@ -11,6 +11,7 @@
   (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
   (slot mtype (type SYMBOL) (allowed-values T1 T2 T3 T4 T5 DELIVER TEST RECYCLE) (default TEST))
   (multislot loaded-with (type INTEGER) (default))
+  (multislot junk-pucks (type INTEGER) (default))
   (multislot lights (type SYMBOL)
 	     (allowed-values RED-ON RED-BLINK YELLOW-ON YELLOW-BLINK GREEN-ON GREEN-BLINK)
 	     (default) (cardinality 0 3))
@@ -134,10 +135,19 @@
       (if (or (neq ?machine:mtype ?new-mtype) (neq ?machine:lights ?new-lights)
 	      (neq ?machine:puck-id ?new-puck) (neq ?machine:loaded-with ?new-lw))
         then
+	(bind ?junk-list ?machine:junk-pucks)
+	(progn$ (?puck ?machine:loaded-with)
+	  (printout t "old puck:" ?puck crlf)
+	  (if (eq (member$ ?puck ?new-lw) FALSE)
+	    then
+	    (printout t "junk detected: " ?puck crlf)
+	    (bind ?junk-list (insert$ ?junk-list 1 ?puck))
+	  )
+	)
         (printout t ?machine:name "|" ?new-mtype " modified - L " ?new-lights
-		  " P " ?new-puck " " ?new-lw crlf)
+		  " P " ?new-puck " " ?new-lw " junk-pucks: " ?junk-list crlf)
         (modify ?machine (mtype ?new-mtype) (lights ?new-lights)
-		(puck-id ?new-puck) (loaded-with ?new-lw))
+		(puck-id ?new-puck) (loaded-with ?new-lw) (junk-pucks ?junk-list))
       )
     )
   )
@@ -231,6 +241,18 @@
   ?sf <- (sim (holding-puck-id 0))
   =>
   (modify ?sf (holding-puck-id ?puck-id))
+)
+
+(defrule sim-proc-get-consumed-final
+  (declare (salience ?*PRIORITY-SIM*))
+  (skill-done (name "get_consumed_product_from") (status FINAL))
+  (sim-puck (state CONSUMED) (id ?puck-id))
+  ?sm <- (sim-machine (junk-pucks $?junk&:(neq (member$ ?puck-id ?junk) FALSE)))
+  ?sf <- (sim (holding-puck-id 0))
+  =>
+  (modify ?sf (holding-puck-id ?puck-id))
+  (bind ?index (member$ ?puck-id ?junk))
+  (modify ?sm (junk-pucks (delete$ ?junk ?index ?index)))
 )
 
 (defrule sim-proc-goto-final-deliver
