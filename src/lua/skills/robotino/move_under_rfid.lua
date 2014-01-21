@@ -32,7 +32,9 @@ depends_interfaces = {
 	{v = "motor", type = "MotorInterface", id="Robotino" },	
    {v = "pose", type="Position3DInterface", id="Pose"},
    {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
-   {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" }
+   { v="lightswitch", type="SwitchInterface", id="light_front_switch" },
+   {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" },
+   { v="light", type ="RobotinoLightInterface", id = "Light_State" },
 }
 
 documentation      = [==[Move under the RFID Reader/Writer]==]
@@ -71,6 +73,12 @@ function rough_correct_done()
    end
 end
 
+function producing()
+   return light:green() == light.ON
+      and light:yellow() == light.ON
+      and light:red() == light.OFF
+end
+
 fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
    {"SEE_AMPEL", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL", fail_to="FAILED"},
@@ -87,7 +95,9 @@ fsm:add_transitions{
    {"SEE_AMPEL", "TURN", cond=ampel, desc="Ampel seen with laser"},
    {"CHECK_POSITION", "FINAL", cond="vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond="vars.correct_dir ~= 0"},
-   {"CORRECT_POSITION", "CORRECT_SENSOR_DELAY", cond=rough_correct_done} 
+   {"CORRECT_POSITION", "CORRECT_SENSOR_DELAY", cond=rough_correct_done},
+   {"APPROACH_AMPEL", "FINAL", cond=producing, desc="already there"},
+   {"CORRECT_POSITION", "FINAL", precond=producing, desc="already there"} 
 }
 
 function send_transrot(vx, vy, omega)
@@ -119,6 +129,10 @@ function TURN:init()
 end
 
 function APPROACH_AMPEL:init()
+   -- enable vision to see if we already have placed the puck under the rfid
+   laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
+   lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
+
    local ampel = get_ampel()
    self.skills[1].x = ampel.x - LASER_FORWARD_CORRECTION
    self.skills[1].y = ampel.y
@@ -127,7 +141,7 @@ end
 
 function CORRECT_POSITION:init()
    self.skills[1].y = self.fsm.vars.correct_dir * 0.3
-   self.skills[1].vel_trans = 0.05
+   self.skills[1].vel_trans = 0.03
 end
 
 function CORRECT_SENSOR_DELAY:init()
