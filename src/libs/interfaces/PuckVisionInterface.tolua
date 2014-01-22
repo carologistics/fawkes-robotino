@@ -1,0 +1,90 @@
+$#include <interfaces/PuckVisionInterface.h>
+$using namespace fawkes;
+namespace fawkes {
+class PuckVisionInterface : public Interface
+{
+
+  typedef enum {
+    C_RED,
+    C_GREEN,
+    C_BLUE,
+    C_BLACK,
+    C_YELLOW,
+    C_WHITE,
+    C_UNKNOWN
+  } PuckColor;
+
+  char * frame();
+  void set_frame(const char * new_frame);
+  int maxlenof_frame() const;
+  PuckColor puck1_color();
+  void set_puck1_color(const PuckColor new_puck1_color);
+  int maxlenof_puck1_color() const;
+  PuckColor puck2_color();
+  void set_puck2_color(const PuckColor new_puck2_color);
+  int maxlenof_puck2_color() const;
+  PuckColor puck3_color();
+  void set_puck3_color(const PuckColor new_puck3_color);
+  int maxlenof_puck3_color() const;
+  int puck1_visibility_history();
+  void set_puck1_visibility_history(const int new_puck1_visibility_history);
+  int maxlenof_puck1_visibility_history() const;
+  int puck2_visibility_history();
+  void set_puck2_visibility_history(const int new_puck2_visibility_history);
+  int maxlenof_puck2_visibility_history() const;
+  int puck3_visibility_history();
+  void set_puck3_visibility_history(const int new_puck3_visibility_history);
+  int maxlenof_puck3_visibility_history() const;
+  double puck1_translation(int index);
+  void set_puck1_translation(unsigned int index, const double new_puck1_translation);
+  int maxlenof_puck1_translation() const;
+  double puck2_translation(int index);
+  void set_puck2_translation(unsigned int index, const double new_puck2_translation);
+  int maxlenof_puck2_translation() const;
+  double puck3_translation(int index);
+  void set_puck3_translation(unsigned int index, const double new_puck3_translation);
+  int maxlenof_puck3_translation() const;
+  double puck1_polar(int index);
+  void set_puck1_polar(unsigned int index, const double new_puck1_polar);
+  int maxlenof_puck1_polar() const;
+  double puck2_polar(int index);
+  void set_puck2_polar(unsigned int index, const double new_puck2_polar);
+  int maxlenof_puck2_polar() const;
+  double puck3_polar(int index);
+  void set_puck3_polar(unsigned int index, const double new_puck3_polar);
+  int maxlenof_puck3_polar() const;
+  bool                    oftype(const char *interface_type) const;
+  const void *            datachunk() const;
+  unsigned int            datasize() const;
+  const char *            type() const;
+  const char *            id() const;
+  const char *            uid() const;
+  unsigned int            serial() const;
+  unsigned int            mem_serial() const;
+  bool                    operator== (Interface &comp) const;
+  const unsigned char *   hash() const;
+  int                     hash_size() const;
+  const char *            hash_printable() const;
+  bool                    is_writer() const;
+  void                    set_from_chunk(void *chunk);
+  virtual Message *   create_message(const char *type) const = 0;
+  void          read();
+  void          write();
+  bool          has_writer() const;
+  unsigned int  num_readers() const;
+  unsigned int  msgq_enqueue_copy(Message *message);
+  void          msgq_remove(Message *message);
+  void          msgq_remove(unsigned int message_id);
+  unsigned int  msgq_size();
+  void          msgq_flush();
+  void          msgq_lock();
+  bool          msgq_try_lock();
+  void          msgq_unlock();
+  void          msgq_pop();
+  Message *     msgq_first();
+  bool          msgq_empty();
+
+
+};
+
+}
