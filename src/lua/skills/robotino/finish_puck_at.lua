@@ -67,7 +67,7 @@ function orange_blinking()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={end_rfid=end_rfid, end_deliver=end_deliver},
+   closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light, orange_blinking=orange_blinking},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
@@ -76,7 +76,8 @@ fsm:define_states{ export_to=_M,
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
       fail_to="SKILL_TAKE_PUCK"},
    {"SKILL_WAIT_PRODUCE", SkillJumpState, skills={{wait_produce}}, final_to="DECIDE_DEPOSIT",
-      fail_to="DEPOSIT_THEN_FAIL"},
+      fail_to="PRODUCE_FAILED"},
+   {"PRODUCE_FAILED", JumpState},
    {"DECIDE_DEPOSIT", JumpState},
    {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="FINAL",
@@ -91,8 +92,11 @@ fsm:add_transitions{
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
+   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="vars.final_product and not orange_blinking()" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
-   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished}
+   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
+   { "PRODUCE_FAILED", "SKILL_DRIVE_LEFT", cond="vars.final_product"},
+   { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true}
 }
 
 function SKILL_TAKE_PUCK:init()
@@ -111,9 +115,13 @@ end
 
 function SKILL_DRIVE_LEFT:init()
    if graph:node(self.fsm.vars.goto_name):has_property("leave_right") then
-      self.skills[1].y=-0.5
+      self.skills[1].y = -0.4
+      self.skills[1].vel_rot = 1
+      self.skills[1].ori = -1.3
    else
-      self.skills[1].y=0.5
+      self.skills[1].y = 0.4
+      self.skills[1].vel_rot = 1
+      self.skills[1].ori = 1.3
    end
 end
 
