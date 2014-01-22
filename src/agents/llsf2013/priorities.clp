@@ -30,6 +30,14 @@
   ?*PRIORITY-T2*      =   10
   ?*PRIORITY-T1*      =    5
 
+  ; get s0 from insertion or recycling
+  ?*PRIORITY-GET-S0-INS*     =    0
+  ?*PRIORITY-GET-S0-RECYCLE* =  100
+
+  ;Locking priorities
+  ?*PRIORITY-LOCKING-HIGH* = 200
+  ?*PRIORITY-LOCKING-LOW* = 10
+
   ; locking priorities
   ?*PRIORITY-LOCK-HIGH* = 280
   ?*PRIORITY-LOCK-CLEAN* = 250

@@ -17,7 +17,20 @@
   (retract ?sf)
   (if (debug 3) then (printout t "Want to release Lock for INS, waiting till 0.5m away" crlf))
   (assert (state IDLE)
-	  (want-to-release ?*ROBOT-NAME* INS $?pos)
+	  (want-to-release INS $?pos)
+  )
+)
+
+(defrule prod-get-consumed-done
+  (phase PRODUCTION)
+  ?sf <- (state GET-CONSUMED-FINAL|GET-CONSUMED-FAILED)
+  (Position3DInterface (id "Pose") (translation $?pos))
+  ?f <- (goto-has-locked ?machine)
+  =>
+  (retract ?sf ?f)
+  (printout t "prod-get-consumed-done" crlf)
+  (assert (state IDLE)
+	  (want-to-release ?machine $?pos)
   )
 )
 
@@ -30,7 +43,7 @@
   =>
   (retract ?sf ?f)
   (assert (state IDLE)
-	  (want-to-release ?*ROBOT-NAME* ?goal $?pos)
+	  (want-to-release ?goal $?pos)
   )
 )
 
@@ -43,22 +56,23 @@
   =>
   (retract ?sf ?f)
   (assert (state IDLE)
-	  (want-to-release ?*ROBOT-NAME* ?goal $?pos)
+	  (want-to-release ?goal $?pos)
   )
 )
 
 (defrule prod-release-after-driving-away
-  ?wtr <- (want-to-release ?agent ?res $?oldPos)
+  ?wtr <- (want-to-release ?res $?oldPos)
   (Position3DInterface (id "Pose") (translation $?pos&:(> (distance (nth$ 1 ?pos) (nth$ 2 ?pos) (nth$ 1 ?oldPos) (nth$ 2 ?oldPos)) ?*RELEASE-DISTANCE*)))
   =>
   (printout t "Released " ?res crlf)
   (retract ?wtr)
-  (assert (lock (type RELEASE) (agent ?agent) (resource ?res)))
+  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
 )
 
 ; --- RULES - next machine/place to go to
 
 (defrule prod-get-s0
+  (declare (salience ?*PRIORITY-GET-S0-INS*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding NONE)
@@ -67,8 +81,55 @@
   (if (debug 3) then (printout t "Requirering Lock for INS" crlf))
   (retract ?sf)
   (assert (state PROD_LOCK_REQUIRED_GET-S0)
-	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource INS))
+	  (want-to-get-lock INS)
   )
+)
+
+(defrule prod-recycle-to-get-s0
+  (declare (salience ?*PRIORITY-GET-S0-RECYCLE*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (holding NONE)
+  ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal&~M7))
+  (confval (path "/clips-agent/llsf2013/recycle") (type STRING) (value "ifpossible"))
+  =>
+  (if (debug 3) then (printout t "Need to get S0, Recycle to get one" crlf)
+                     (printout t "Requirering Lock for " ?goal crlf))
+  (retract ?sf)
+  (assert (state PROD_LOCK_REQUIRED_RECYCLE ?goal)
+	  (want-to-get-lock ?goal)
+  )
+)
+
+(defrule prod-recycle-to-get-s0-after-deliver
+  (declare (salience ?*PRIORITY-GET-S0-RECYCLE*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (holding NONE)
+  ?m <- (machine (junk ?n&:(> ?n 0)) (name ?goal&~M7))
+  (confval (path "/clips-agent/llsf2013/recycle") (type STRING) (value "afterdeliver"))
+  (delivered P1|P2)
+  =>
+  (if (debug 3) then (printout t "Need to get S0, Recycle to get one" crlf))
+  (if (debug 3) then (printout t "Requirering Lock for " ?goal crlf))
+  (retract ?sf)
+  (assert (state PROD_LOCK_REQUIRED_RECYCLE ?goal)
+	  (want-to-get-lock ?goal)
+  )
+)
+
+(defrule prod-recycle-puck
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (holding CO)
+  (machine (mtype RECYCLE) (name ?name))
+  (role ?role)
+  (machine-alloc (machine ?name) (role ?role))
+  =>
+  (if (debug 2) then (printout t "Recycling consumed puck" ?name crlf))
+  (printout t "prod-recycle-puck" crlf)
+  (retract ?sf)
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))    
 )
 
 (defrule prod-figure-out-waiting-points
@@ -103,13 +164,26 @@
   (get-s0)
 )
 
+(defrule prod-execute-recycle
+  (phase PRODUCTION)
+  ?sf <- (state PROD_LOCK_REQUIRED_RECYCLE ?goal)
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?goal))
+  =>
+  (printout t "Lock accepted -> Get Consumed Puck at " ?goal crlf)
+  (retract ?sf ?l)
+  (assert (state GET-CONSUMED)
+	  (goto-has-locked ?goal))
+  (get-consumed ?goal)
+)
+
 (defrule prod-s0-t5
   (declare (salience ?*PRIORITY-P*))
   (phase PRODUCTION)
-  (role EXPLORATION_P3)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S0)
-  (machine (mtype T5) (name ?name) (allowed TRUE))
+  (machine (mtype T5) (name ?name))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S0 2 -- Going to T5 named " ?name crlf))
   (retract ?sf)
@@ -121,10 +195,11 @@
 (defrule prod-s0-t3-s1-s2
   (declare (salience ?*PRIORITY-P*))
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S0)
-  (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name) (allowed TRUE))
+  (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S1 S2) ?l)) (name ?name))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S0 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
@@ -136,10 +211,11 @@
 (defrule prod-s0-t2-s1
   (declare (salience ?*PRIORITY-S1*))
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S0)
-  (machine (mtype T2) (loaded-with $?l&:(member$ S1 ?l)) (name ?name) (allowed TRUE))
+  (machine (mtype T2) (loaded-with $?l&:(member$ S1 ?l)) (name ?name))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S0 4 -- Going to T2 named " ?name crlf))
   (retract ?sf)
@@ -149,10 +225,11 @@
 (defrule prod-s0-t1
   (declare (salience ?*PRIORITY-T1*))
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S0)
-  (machine (mtype T1) (name ?name) (allowed TRUE))
+  (machine (mtype T1) (name ?name))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S0 5 -- Going to T1 named " ?name crlf))
   (retract ?sf)
@@ -162,10 +239,11 @@
 (defrule prod-s1-t3-s2
   (declare (salience ?*PRIORITY-S2*))
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S1)
-  (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name) (allowed TRUE))
+  (machine (mtype T3|T4) (loaded-with $?l&:(subsetp (create$ S2) ?l)) (name ?name))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S1 1 -- Going T3 named " ?name crlf))
   (retract ?sf)
@@ -175,10 +253,11 @@
 (defrule prod-s1-t2-not-s1
   (declare (salience ?*PRIORITY-T2*))  
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S1)
-  (machine (mtype T2) (name ?name) (loaded-with $?l&~:(subsetp (create$ S1) ?l)) (allowed TRUE))
+  (machine (mtype T2) (name ?name) (loaded-with $?l&~:(subsetp (create$ S1) ?l)))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S1 3 -- Going to T2 named " ?name crlf))
   (retract ?sf)
@@ -188,11 +267,12 @@
 (defrule prod-s2-t3-has-some-but-not-s2
   (declare (salience ?*PRIORITY-T3*))  
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S2)
   (machine (mtype T3|T4) (name ?name)
-	   (loaded-with $?l&:(> (length$ ?l) 0)&~:(subsetp (create$ S2) ?l)) (allowed TRUE))
+	   (loaded-with $?l&:(> (length$ ?l) 0)&~:(subsetp (create$ S2) ?l)))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S2 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
@@ -202,10 +282,11 @@
 (defrule prod-s2-t3-empty
   (declare (salience ?*PRIORITY-T3*))  
   (phase PRODUCTION)
-  (role EXPLORATION_P1P2)
+  (role ?role)
   ?sf <- (state IDLE)
   (holding S2)
-  (machine (mtype T3|T4) (name ?name) (loaded-with $?l&:(= (length$ ?l) 0)) (allowed TRUE))
+  (machine (mtype T3|T4) (name ?name) (loaded-with $?l&:(= (length$ ?l) 0)))
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (if (debug 2) then (printout t "S2 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
@@ -218,10 +299,15 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (holding P1|P2|P3)
+  (holding ?p)
   =>
   (if (debug 2) then (printout t "P -- Need to deliver P " crlf))
   (retract ?sf)
   (assert (state PROD_LOCK_REQUIRED_GOTO deliver))
+  (if (or (eq ?p P1) (eq ?p P2))
+    then
+    (assert (delivered-p1p2))
+  )
 )
 
 (defrule prod-goto-request-lock
@@ -229,7 +315,7 @@
   (state PROD_LOCK_REQUIRED_GOTO ?goal)
   =>
   (if (debug 2) then (printout t "Requirering lock of " ?goal crlf))
-  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?goal)))
+  (assert (want-to-get-lock ?goal))
 )
 
 ;TODO: look at this again after robocup:
@@ -275,4 +361,23 @@
   =>
   (printout t "Waiting for lock of DELIVER at " ?wait-point crlf)
   (skill-call take_puck_to place (str-cat ?wait-point))
+)
+
+(defrule prod-reuse-lock
+  (phase PRODUCTION)
+  ?wgf <- (want-to-get-lock ?res)
+  ?wrf <- (want-to-release ?res $?)
+  =>
+  (printout t "Reusing lock of " ?res crlf)
+  (retract ?wgf ?wrf)
+  (assert (lock (type ACCEPT) (agent ?*ROBOT-NAME*) (resource ?res)))
+)
+
+(defrule prod-call-get-lock
+  (phase PRODUCTION)
+  ?wf <- (want-to-get-lock ?res)
+  (not (want-to-release ?res $?))
+  =>
+  (retract ?wf)
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
 )

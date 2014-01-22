@@ -27,7 +27,7 @@
 
 (defrule enable-motor-on-start
   (declare (salience ?*PRIORITY-HIGH*))
-  (phase EXPLORATION|PRODUCTIONWHACK_A_MOLE_CHALLENGE)
+  (phase EXPLORATION|PRODUCTION|WHACK_A_MOLE_CHALLENGE)
   (state WAIT_START)
   (change-state RUNNING)
   (not (simulation-is-running))

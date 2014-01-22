@@ -20,8 +20,11 @@ clips-agent:
   #agent: whack-a-mole/whack-a-mole-main
   
   llsf2013:
-    start-machine-exploration-p1p2: M8
-    start-machine-exploration-p3: M2
+    #agent-role defined in host.yaml (this is only the default!)
+    agent-role: P3
+    #start-machine-exploration defined in host.yaml (this is only the default!)
+    start-machine-exploration: M8
+    
     waiting-for-p1p2-prouction-point: WAIT_FOR_INS
     waiting-for-p3-production-point: Ins
     wait-for-ins-point: WAIT_FOR_INS
@@ -45,3 +48,18 @@ clips-agent:
     #distance needed before a robot releases a lock
     release-distance: 0.5
 
+    dynamic-role-change:
+      enabled: true
+      # the p1p2 agent gets a p3 agent if he has finished the first p1/p2
+      p1p2-to-p3-after-delivery: false
+      # the p1p2 agent gets a p3 agent if there is not enough time left for an other p1/p2
+      p1p2-to-p3-time: true
+      # the p1p2, p1 and p2 agent gets a p3 agent if something in the production went wrong (yellow blinking for unknown reason)
+      p1p2-p1-p2-to-p3-after-fail: true
+      #estimated production durations from start in sec
+      production-durations:
+        p1p2: 420
+
+    #recycle pucks to get s0
+    #possible values: no,ifpossible,afterdeliver
+    recycle: ifpossible

@@ -21,6 +21,10 @@
 		(pb-field-value ?m "type") crlf)
       (modify ?machine (mtype (sym-cat (pb-field-value ?m "type")))
 	      (output (sym-cat (pb-field-value ?m "output"))))
+      (if (eq (sym-cat (pb-field-value ?m "type")) RECYCLE)
+        then
+	(modify ?machine (output S0))
+      )
     )
   )
 )
@@ -100,12 +104,12 @@
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
   ?lf <- (lights GREEN-ON)
-  ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output))
+  ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn))
   =>
   (retract ?tf ?hf ?lf)
   (assert (holding ?output))
   (printout t "Production completed at " ?name "|" ?mtype crlf) 
-  (modify ?mf (loaded-with))
+  (modify ?mf (loaded-with) (junk (+ ?jn (length$ ?lw))))
 )
 
 (defrule wm-proc-inprogress
@@ -129,17 +133,20 @@
   ?lf <- (lights YELLOW-BLINKING)
   ?mf <- (machine (name ?name) (mtype ?mtype))
   ?hf <- (holding ?)
+  (role ?role)
   =>
   (printout t "Production invalid at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
-  (assert (holding NONE))
+  (assert (holding NONE)
+	  (unknown-fail))
+  (modify ?mf (junk 0))
   (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
     then
     ;forget machine and choose an other one
-    (strat-allow-all ?mtype)
+    (strat-allow-all ?mtype ?role)
   )
-  (delayed-do-for-all-facts ((?machine machine)) (eq ?machine:name ?name) 
-    (modify ?machine (allowed FALSE))
+  (delayed-do-for-all-facts ((?ma machine-alloc)) (eq ?ma:machine ?name) 
+    (retract ?ma)
   )
 )
 
@@ -151,7 +158,9 @@
   ;?lf <- (lights $?)
   =>
   (retract ?hf ?tf)
-  (assert (holding NONE))
+  (assert (holding NONE)
+	  (delivered ?was-holding)
+  )
   (printout t "Delivered " ?was-holding crlf)
 )
 
@@ -162,6 +171,8 @@
   ?lf <- (lights $?)
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype ?mtype))
+  (role ?role)
+  (machine-alloc (machine ?name) (role ?role))
   =>
   (printout warn "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
@@ -169,7 +180,36 @@
   (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
     then
     ;forget machine and choose an other one
-    (strat-allow-all ?mtype)
-    (modify ?mf (allowed FALSE))
+    (strat-allow-all ?mtype ?role)
+    (delayed-do-for-all-facts ((?ma machine-alloc)) (eq ?ma:machine ?name) 
+      (retract ?ma)
+    )
   )
+)
+
+(defrule wm-get-consumed-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state GET-CONSUMED-FINAL)
+  ?tf <- (get-consumed-target ?name)
+  ?hf <- (holding NONE)
+  ?mf <- (machine (name ?name) (junk ?))
+  =>
+  (retract ?hf ?tf)
+  (assert (holding CO))
+  (printout t "Got Consumed Puck." crlf) 
+  (modify ?mf (junk 0)) ;because we only want to recycle the last one (easier for the skill)
+  ;TODO: be able to get the other ones as well and fix this hack
+)
+
+(defrule wm-get-consumed-failed
+  (declare (salience ?*PRIORITY-WM*))
+  (state GET-CONSUMED-FAILED)
+  ?tf <- (get-consumed-target ?name)
+  ?hf <- (holding NONE)
+  ?mf <- (machine (name ?name) (junk ?))
+  =>
+  (retract ?hf ?tf)
+  (assert (holding NONE))
+  (printout warn "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf) 
+  (modify ?mf (junk 0))
 )
