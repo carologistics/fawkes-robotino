@@ -14,6 +14,13 @@
   (slot status (allowed-values FINAL FAILED))
 )
 
+;dirty robocup function to use a product even if the wait_prodce has a timeout
+(deffunction goto-machine-final-product (?name ?mtype)
+  (skill-call finish_puck_at place ?name mtype ?mtype final_product TRUE)
+  (assert (state GOTO))
+  (assert (goto-target ?name))
+)
+
 (deffunction goto-machine (?name ?mtype)
   (skill-call finish_puck_at place ?name mtype ?mtype)
   (assert (state GOTO))

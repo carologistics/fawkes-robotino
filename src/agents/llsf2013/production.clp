@@ -113,7 +113,9 @@
   =>
   (if (debug 2) then (printout t "S0 2 -- Going to T5 named " ?name crlf))
   (retract ?sf)
-  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))  
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name)
+	  (want-to-produce-final-product);dirty robocup improvement
+  )  
 )
 
 (defrule prod-s0-t3-s1-s2
@@ -126,7 +128,9 @@
   =>
   (if (debug 2) then (printout t "S0 1 -- Going to T3 named " ?name crlf))
   (retract ?sf)
-  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name)
+	  (want-to-produce-final-product);dirty robocup improvement
+  )
 )
 
 (defrule prod-s0-t2-s1
@@ -228,11 +232,25 @@
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?goal)))
 )
 
+;TODO: look at this again after robocup:
+(defrule prod-execute-goto-machine-robocup-quickfix-verison
+  (phase PRODUCTION)
+  ?sf <- (state PROD_LOCK_REQUIRED_GOTO ?goal)
+  (machine (name ?goal) (mtype ?mtype))
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?goal))
+  ?wtpfp <- (want-to-produce-final-product)
+  =>
+  (retract ?sf ?l ?wtpfp)
+  (assert (goto-has-locked ?goal))
+  (goto-machine-final-product ?goal ?mtype)
+)
+
 (defrule prod-execute-goto-machine
   (phase PRODUCTION)
   ?sf <- (state PROD_LOCK_REQUIRED_GOTO ?goal)
   (machine (name ?goal) (mtype ?mtype))
   ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?goal))
+  (not (want-to-produce-final-product))
   =>
   (retract ?sf ?l)
   (assert (goto-has-locked ?goal))

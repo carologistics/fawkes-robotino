@@ -51,7 +51,7 @@
 )
 
 (defrule wm-goto-failed
-  (declare (salience ?*PRIORITY-WM*))
+  (declare (salience ?*PRIORITY-WM-LOW*))
   (state GOTO-FAILED)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
@@ -59,6 +59,29 @@
   (retract ?tf ?hf)
   (assert (holding NONE))
   (printout t "Production failed at " ?name crlf) 
+)
+
+(defrule wm-goto-failed-p3
+  (declare (salience ?*PRIORITY-WM-MID*))
+  (state GOTO-FINAL)
+  ?tf <- (goto-target ?name)
+  ?hf <- (holding ?)
+  ?mf <- (machine (name ?name) (mtype T5))
+  =>
+  (retract ?tf ?hf)
+  (assert (holding P3))
+)
+
+(defrule wm-goto-failed-p1p2
+  (declare (salience ?*PRIORITY-WM-MID*))
+  (state GOTO-FINAL)
+  ?tf <- (goto-target ?name)
+  ?hf <- (holding ?)
+  ?mf <- (machine (name ?name) (mtype T3|T4) (output ?output) (loaded-with $?lw&:(> (length$ ?lw) 1)) )
+  =>
+  (retract ?tf ?hf)
+  (assert (holding ?output))
+  (modify ?mf (loaded-with))
 )
 
 (defrule wm-goto-light
@@ -133,7 +156,7 @@
 )
 
 (defrule wm-proc-wtf
-  (declare (salience ?*PRIORITY-WM*))
+  (declare (salience ?*PRIORITY-WM-LOW*))
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?lf <- (lights $?)

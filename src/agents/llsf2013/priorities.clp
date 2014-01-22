@@ -12,6 +12,8 @@
   ?*PRIORITY-HIGH*    =  500
   ?*PRIORITY-SIM*     =  300
   ?*PRIORITY-WM*      =  200
+  ?*PRIORITY-WM-MID*  =  195
+  ?*PRIORITY-WM-LOW*  =  190
   ?*PRIORITY-LOW*     = -100
   ?*PRIORITY-SKILL*   = -150
   ?*PRIORITY-CLEANUP* = -400
