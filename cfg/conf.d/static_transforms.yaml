@@ -11,16 +11,23 @@ plugins/static-transforms:
     base_laser:
       frame: !frame /base_link
       child_frame: /base_laser
-      trans_x: 0.10
+      trans_x: 0.13 # 0.1 for hackathon setup
       trans_y: 0.0
       trans_z: 0.15
 
     cam_front:
-      frame: !frame /base_link
-      child_frame: /cam_front_puck
-      trans_x: 0.075
-      trans_y: -0.005
-      trans_z: 0.195
-      rot_pitch: 0.45 # 37.87° 
-      rot_yaw: 0
-      rot_roll: 0
+      frame: !frame /base_laser
+      child_frame: /cam_front
+      trans_x: -0.085
+      trans_y: 0.0
+      trans_z: 0.09
+
+      #Hackathon setup for puck_vision
+      # frame: !frame /base_link
+      # child_frame: /cam_front_puck
+      # trans_x: 0.075
+      # trans_y: -0.005
+      # trans_z: 0.195
+      # rot_pitch: 0.45 # 37.87° 
+      # rot_yaw: 0
+      # rot_roll: 0
