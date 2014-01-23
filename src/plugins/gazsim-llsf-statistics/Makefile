@@ -31,7 +31,7 @@ OBJS_gazsim_llsf_statistics = gazsim_llsf_statistics_plugin.o gazsim_llsf_statis
 
 OBJS_all    = $(OBJS_gazsim_llsf_statistics)
 
-ifeq ($(HAVE_TF)$(HAVE_MONGODB),11)
+ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF)$(HAVE_MONGODB),1111)
   CFLAGS  += $(CFLAGS_TF) $(CFLAGS_MONGODB)
   LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_MONGODB)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
@@ -39,6 +39,12 @@ ifeq ($(HAVE_TF)$(HAVE_MONGODB),11)
 
   PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-statistics.so
 else
+  ifneq ($(HAVE_GAZEBO),1)
+    WARN_TARGETS += warning_gazebo
+  endif
+  ifneq ($(HAVE_PROTOBUF),1)
+    WARN_TARGETS += warning_protobuf
+  endif
   ifneq ($(HAVE_MONGODB),1)
     WARN_TARGETS += warning_mongodb
   endif
@@ -49,12 +55,19 @@ endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_tf warning_mongodb
+.PHONY: warning_tf warning_mongodb warning_gazebo warning_protobuf
 warning_tf:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting llsf-statistics-Sim libs" \
-                         "$(TNORMAL) (tf not available)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-llsf-statistics Plugin$(TNORMAL) " \
+                         "(tf not available)"
 warning_mongodb:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-llsf-statistics Plugin$(TNORMAL) (mongodb[-devel] not installed)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-llsf-statistics Plugin$(TNORMAL) " \
+		"(mongodb[-devel] not installed)"
+warning_gazebo:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-llsf-statistics Plugin$(TNORMAL) " \
+		"(Gazebo Simulator not found)"
+warning_protobuf:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-llsf-statistics Plugin$(TNORMAL) " \
+		"(protobuf[-devel] not installed)"
 endif
 
 include $(BUILDSYSDIR)/base.mk

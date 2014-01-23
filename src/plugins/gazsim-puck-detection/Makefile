@@ -30,7 +30,7 @@ OBJS_gazsim_puck_detection = gazsim_puck_detection_plugin.o gazsim_puck_detectio
 
 OBJS_all    = $(OBJS_gazsim_puck_detection)
 
-ifeq ($(HAVE_TF),1)
+ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
@@ -38,15 +38,29 @@ ifeq ($(HAVE_TF),1)
 
   PLUGINS_all = $(PLUGINDIR)/gazsim-puck-detection.so
 else
-  WARN_TARGETS += warning_tf
+  ifneq ($(HAVE_GAZEBO),1)
+    WARN_TARGETS += warning_gazebo
+  endif
+  ifneq ($(HAVE_PROTOBUF),1)
+    WARN_TARGETS += warning_protobuf
+  endif
+  ifneq ($(HAVE_TF),1)
+    WARN_TARGETS += warning_tf
+  endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_tf
+.PHONY: warning_tf warning_gazebo warning_protobuf
 warning_tf:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting Puck-etection-Sim libs" \
-                         "$(TNORMAL) (tf not available)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-puck-detection Plugin$(TNORMAL) " \
+                         "(tf not available)"
+warning_gazebo:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-puck-detection Plugin$(TNORMAL) " \
+		"(Gazebo Simulator not found)"
+warning_protobuf:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-puck-detection Plugin$(TNORMAL) " \
+		"(protobuf[-devel] not installed)"
 endif
 
 include $(BUILDSYSDIR)/base.mk
