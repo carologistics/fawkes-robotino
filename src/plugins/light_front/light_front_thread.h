@@ -63,7 +63,6 @@ class LightFrontThread
 {
 
 private:
-
 	struct lightROIs{
 		firevision::ROI light;
 		firevision::ROI red;
@@ -78,6 +77,12 @@ private:
 		fawkes::polar_coord_2d_t nearestMaschine_pos;
 		int nearestMaschine_history;
 	};
+
+//	struct light{
+//
+//		fawkes::RobotinoLightInterface interface_lightState;
+//		boost::circular_buffer<lightSignal> history_buffer;
+//	};
 
 	std::string cfg_prefix;
 
@@ -95,6 +100,13 @@ private:
 	int cfg_lightNumberOfWrongDetections;
 
 	float cfg_lightMoveUnderRfidThrashold;
+	int cfg_lightOutOfRangeThrashold;
+	int cfg_laserVisibilityThreshold;
+	int cfg_center_x;
+	int cfg_center_y;
+	int cfg_center_height;
+	int cfg_center_width;
+
 	int cfg_laserVisibilityThreashold;
 	float cfg_lightDistanceAllowedBetweenFrames;
 
@@ -102,13 +114,14 @@ private:
 	int detectionCycleTimeFrames;
 
 	int lightOutOfRangeCounter;
-	int cfg_lightOutOfRangeThrashold;
+	int cfg_lightOutOfRangeThreshold;
 	float cfg_lightToCloseThrashold;
+
 
 	std::string cfg_frame;
 
-	unsigned int cfg_brightnessThreashold;
-	unsigned int cfg_darknessThreashold;
+	unsigned int cfg_brightnessThreshold;
+	unsigned int cfg_darknessThreshold;
 	float cfg_lightSizeWidth;
 	float cfg_lightSizeHeight;
 
@@ -118,12 +131,16 @@ private:
 	bool cfg_debugMessagesActivated;
 	bool cfg_paintROIsActivated;
 	bool cfg_simulateLaserData;
+	bool cfg_useMinDistanceThreashold;
+	bool cfg_useMulticluster;
 	float cfg_simulate_laser_x;
 	float cfg_simulate_laser_y;
 	int cfg_simulate_laser_history;
 
-	boost::circular_buffer<lightSignal> *historyBuffer;
-	//std::deque<lightSignal> *historyBuffer;
+	boost::circular_buffer<lightSignal> *historyBufferCluster1;
+	boost::circular_buffer<lightSignal> *historyBufferCluster2;
+	boost::circular_buffer<lightSignal> *historyBufferCluster3;
+	//std::deque<lightSignal> *historyBufferCluster1;
 
 	firevision::Camera *camera;
 	firevision::ScanlineModel *scanline;
@@ -137,21 +154,25 @@ private:
 	firevision::colorspace_t cspaceFrom;
 	firevision::colorspace_t cspaceTo;
 
-	fawkes::Position3DInterface *nearestMaschineIF;
+	fawkes::Position3DInterface *nearestMaschineIF1;
+	fawkes::Position3DInterface *nearestMaschineIF2;
+	fawkes::Position3DInterface *nearestMaschineIF3;
 
-	int laser_visibilityHistoryThrashold;
+	fawkes::RobotinoLightInterface *lightStateIF1;
+	fawkes::RobotinoLightInterface *lightStateIF2;
+	fawkes::RobotinoLightInterface *lightStateIF3;
 
 	fawkes::SwitchInterface *switchInterface;
-	fawkes::RobotinoLightInterface *lightStateIF;
 
 	firevision::FilterROIDraw *drawer;
 
 	LightFrontThread::lightSignal detectLightInCurrentPicture(LightFrontThread::lightROIs lightROIs);
 	LightFrontThread::lightROIs correctLightRoisWithBlack(LightFrontThread::lightROIs expectedLight);
 	fawkes::RobotinoLightInterface::LightState signalLightCurrentPicture(firevision::ROI signal);
-	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory);
+	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory, int buffersize);
 	std::list<firevision::ROI>* classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);
-	bool lightFromHistoryBuffer(LightFrontThread::lightSignal &lighSignal);
+	bool lightFromHistoryBuffer(boost::circular_buffer<LightFrontThread::lightSignal> *buffer, LightFrontThread::lightSignal* lighSignal);
+
 	unsigned char* calculatePositionInCamBuffer();
 
 	int angleCorrectionY(float distance);
@@ -162,24 +183,29 @@ private:
 	bool isValidSuccessor(lightSignal previous,lightSignal current);
 
 //	void updateLocalHistory(LightFrontThread::lightSignal lightSignalCurrent);
-	void resetLightInterface(std::string message="");
 
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
 	fawkes::polar_coord_2d_t transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
+
+	void resetLightInterface(fawkes::RobotinoLightInterface* interface, std::string message="");
 	void resetLocalHistory();
-	void writeLightInterface(LightFrontThread::lightSignal lightSignal, bool ready);
+	void writeLightInterface(fawkes::RobotinoLightInterface* interface, LightFrontThread::lightSignal lightSignal, bool ready);
+	fawkes::cart_coord_3d_t	getNearestMaschineFromInterface(fawkes::Position3DInterface* interface);
+
 	void createUnknownLightSignal();
-	fawkes::cart_coord_3d_t getNearestMaschineFromInterface();
 
 	bool isLightInViewarea(fawkes::polar_coord_2d_t light);
 	void takePicture(LightFrontThread::lightROIs lightROIs);
 
-	void processHistoryBuffer();
+	void processHistoryBuffer(fawkes::RobotinoLightInterface* interface, boost::circular_buffer<LightFrontThread::lightSignal> *buffer);
 	firevision::ROI getBiggestRoi(std::list<firevision::ROI>* roiList);
 	void checkIfROIIsInBuffer(const firevision::ROI& light);
+	void processSignal(fawkes::cart_coord_3d_t lightPosition,
+			bool contiueToPictureProcess);
+	void process_light(fawkes::Position3DInterface *position_interface, fawkes::RobotinoLightInterface* interface, boost::circular_buffer<LightFrontThread::lightSignal> *buffer);
 
 protected:
 	virtual void run() { Thread::run(); }

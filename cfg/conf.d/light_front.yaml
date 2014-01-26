@@ -18,11 +18,18 @@ plugins/light_front:
   # camare viewport factor logitech webcam
   camera_factor_horizontal: 1.08 
   camera_factor_vertical: 0.85 
+ 
+  # camare offset of the front cam  -> host.yaml
+  # camera_offset_horizontal: -7
+  # camera_offset_vertical: 12
+  # camera_angle_horizontal_rad: 0.002
+  # camera_angle_vertical_rad: 0.01
 
-  # camare offset of the front cam
-  camera_offset_horizontal_rad: -0.013 
-  camera_offset_vertical: 45
-  camera_angle_horizontal_rad: .00
+  #move under rfid center position -> host.yaml
+  #center_x: 300
+  #center_y: 120
+  #center_width: 60
+  #center_height: 180
   
   #Shared Memory Imagebuffer name
   shm_image_id: "light_front"
@@ -46,18 +53,18 @@ plugins/light_front:
 
   #Interfacename of the light position fawkes::PolarPosition2DInterface
 
-  #light_position_if: "Closest_Machine"  
   light_position_if: "Euclidean Laser Cluster"
   light_state_if: "Light_State"
-
-  show_debug_messages: false
-  draw_rois: true
-
-
-
     
   #simulate laser data, this should be set to false in real use cases!
-  simulate_laser: false
+  
   simulate_laser_data_x: 1
   simulate_laser_data_y: 0.05
   simulate_laser_data_visibility: 5
+
+  #General config
+  show_debug_messages: false
+  draw_rois: true
+  use_multicluster: true
+  use_min_distance_threashold: true
+  simulate_laser: false
