@@ -213,7 +213,7 @@ void GazsimLLSFRbCommThread::on_puck_remove_msg(ConstRemovePuckFromMachinePtr &m
   client_->send(to_rb);
 }
 
-void GazsimLLSFRbCommThread::on_time_sync_msg(ConstSimTimeSyncPtr &msg)
+void GazsimLLSFRbCommThread::on_time_sync_msg(ConstSimTimePtr &msg)
 {
   // logger->log_info(name(), "Sending Simulation Time");
   
@@ -222,7 +222,14 @@ void GazsimLLSFRbCommThread::on_time_sync_msg(ConstSimTimeSyncPtr &msg)
   {
     return;
   }
-  llsf_msgs::SimTimeSync to_rb = *msg;
+  //fill msg for refbox with info from gazsim_msg
+  llsf_msgs::SimTimeSync to_rb;
+  llsf_msgs::Time* time = to_rb.mutable_sim_time();
+  time->set_sec(msg->sim_time_sec());
+  time->set_nsec(msg->sim_time_nsec());
+  to_rb.set_real_time_factor(msg->real_time_factor());
+  to_rb.set_paused(msg->paused());
+
   //send it and make refbox able to handle the msg
   client_->send(to_rb);
 }

@@ -38,6 +38,7 @@
 #include <llsf_msgs/MachineInfo.pb.h>
 #include <llsf_msgs/MachineCommands.pb.h>
 #include <llsf_msgs/SimTimeSync.pb.h>
+#include <gazsim_msgs/SimTime.pb.h>
 #include <llsf_msgs/PuckInfo.pb.h>
 #include <llsf_msgs/GameState.pb.h>
 
@@ -50,7 +51,7 @@
 typedef const boost::shared_ptr<llsf_msgs::MachineInfo const> ConstMachineInfoPtr;
 typedef const boost::shared_ptr<llsf_msgs::PlacePuckUnderMachine const> ConstPlacePuckUnderMachinePtr;
 typedef const boost::shared_ptr<llsf_msgs::RemovePuckFromMachine const> ConstRemovePuckFromMachinePtr;
-typedef const boost::shared_ptr<llsf_msgs::SimTimeSync const> ConstSimTimeSyncPtr;
+typedef const boost::shared_ptr<gazsim_msgs::SimTime const> ConstSimTimePtr;
 typedef const boost::shared_ptr<llsf_msgs::SetGameState const> ConstSetGameStatePtr;
 
 
@@ -102,7 +103,7 @@ class GazsimLLSFRbCommThread
   //handler methods
   void on_puck_place_msg(ConstPlacePuckUnderMachinePtr &msg);
   void on_puck_remove_msg(ConstRemovePuckFromMachinePtr &msg);
-  void on_time_sync_msg(ConstSimTimeSyncPtr &msg);
+  void on_time_sync_msg(ConstSimTimePtr &msg);
   void on_set_game_state_msg(ConstSetGameStatePtr &msg);
 
   //helper variables
