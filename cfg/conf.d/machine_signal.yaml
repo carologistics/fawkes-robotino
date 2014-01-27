@@ -1,0 +1,10 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
+---
+
+plugins/machine_signal:
+  camera: "file:file:file=/home/ich/robotino/sampleImages/test2.jpg"
+  reference_color: [255, 0, 0]
+
