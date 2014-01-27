@@ -19,11 +19,12 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
-include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
+include $(BUILDSYSDIR)/protobuf.mk
+# include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
 include $(BASEDIR)/fawkes/src/plugins/mongodb/mongodb.mk
 
 LIBS_gazsim_llsf_statistics = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard protobufmsgs\
+	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
 	       Position3DInterface TransformInterface \
 	       SwitchInterface RobotinoLightInterface \
 	       fawkesgazeboaspect fawkesmongodbaspect

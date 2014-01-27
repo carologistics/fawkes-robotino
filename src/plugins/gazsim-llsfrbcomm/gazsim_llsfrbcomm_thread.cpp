@@ -28,9 +28,9 @@
 #include <protobuf_comm/message_register.h>
 
 #include "gazsim_llsfrbcomm_thread.h"
-#include <protobuf_msgs/MachineInfo.pb.h>
-#include <protobuf_msgs/PuckInfo.pb.h>
-#include <protobuf_msgs/GameState.pb.h>
+#include <llsf_msgs/MachineInfo.pb.h>
+#include <llsf_msgs/PuckInfo.pb.h>
+#include <llsf_msgs/GameState.pb.h>
 
 using namespace fawkes;
 using namespace protobuf_comm;

@@ -29,8 +29,7 @@
 
 #include <interfaces/SwitchInterface.h>
 #include <interfaces/Position3DInterface.h>
-#include <protobuf_msgs/Pose2D.pb.h>
-#include <protobuf_msgs/PuckDetectionResult.pb.h>
+#include <llsf_msgs/Pose2D.pb.h>
 
 #include <gazebo/transport/Node.hh>
 #include <gazebo/msgs/msgs.hh>

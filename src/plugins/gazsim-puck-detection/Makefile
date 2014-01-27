@@ -19,10 +19,11 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
-include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
+include $(BUILDSYSDIR)/protobuf.mk
+# include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
 
 LIBS_gazsim_puck_detection = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard protobufmsgs\
+	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
 	       Position3DInterface TransformInterface \
 	       SwitchInterface RobotinoLightInterface \
 	       fawkesgazeboaspect

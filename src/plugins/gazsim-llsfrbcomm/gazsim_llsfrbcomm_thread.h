@@ -35,11 +35,11 @@
 #include <protobuf_comm/client.h>
 #include <protobuf_comm/message_register.h>
 #include <plugins/gazebo/aspect/gazebo.h>
-#include <protobuf_msgs/MachineInfo.pb.h>
-#include <protobuf_msgs/MachineCommands.pb.h>
-#include <protobuf_msgs/SimTimeSync.pb.h>
-#include <protobuf_msgs/PuckInfo.pb.h>
-#include <protobuf_msgs/GameState.pb.h>
+#include <llsf_msgs/MachineInfo.pb.h>
+#include <llsf_msgs/MachineCommands.pb.h>
+#include <llsf_msgs/SimTimeSync.pb.h>
+#include <llsf_msgs/PuckInfo.pb.h>
+#include <llsf_msgs/GameState.pb.h>
 
 
 //from Gazebo

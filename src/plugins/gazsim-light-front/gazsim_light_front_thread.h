@@ -32,7 +32,7 @@
 #include <interfaces/RobotinoLightInterface.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/SwitchInterface.h>
-#include <protobuf_msgs/LightSignals.pb.h>
+#include <llsf_msgs/LightSignals.pb.h>
 #include <string.h>
 
 //from Gazebo

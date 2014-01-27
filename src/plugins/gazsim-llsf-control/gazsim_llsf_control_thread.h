@@ -30,7 +30,7 @@
 #include <aspect/blocked_timing.h>
 #include <plugins/gazebo/aspect/gazebo.h>
 #include <interfaces/Position3DInterface.h>
-#include <protobuf_msgs/GameState.pb.h>
+#include <llsf_msgs/GameState.pb.h>
 #include <string.h>
 
 //from Gazebo

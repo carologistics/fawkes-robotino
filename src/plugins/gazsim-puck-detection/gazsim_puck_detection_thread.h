@@ -32,7 +32,7 @@
 #include <plugins/gazebo/aspect/gazebo.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/SwitchInterface.h>
-#include <protobuf_msgs/PuckDetectionResult.pb.h>
+#include <llsf_msgs/PuckDetectionResult.pb.h>
 
 //from Gazebo
 #include <gazebo/transport/TransportTypes.hh>
