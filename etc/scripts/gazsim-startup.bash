@@ -104,9 +104,10 @@ case $COMMAND in
 	opti=$(command -v optirun)
 	if [ $VISUALIZATION == headless ]
 	then
-	    $opti gzserver $REPLAY ~/.gazebo/plugins/llsf/llsf.world
+	    $opti gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world/llsf.world
 	else
-	    $opti gazebo $REPLAY ~/.gazebo/plugins/llsf/llsf.world
+	    echo $GAZEBO_MODEL_PATH/llsf_world/llsf.world
+	    $opti gazebo $REPLAY $GAZEBO_MODEL_PATH/llsf_world/llsf.world
 	fi
 	;;
     fawkes ) 
