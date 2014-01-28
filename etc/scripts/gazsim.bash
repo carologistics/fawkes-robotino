@@ -104,7 +104,7 @@ fi
 
 echo 'Automated Simulation control'
 
-script_path=~/fawkes-robotino/bin
+script_path=$FAWKES_BIN
 startup_script_location=$script_path/gazsim-startup.bash 
 initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash 
 
@@ -121,6 +121,24 @@ if [  $COMMAND  == kill ]; then
 fi
 
 if [  $COMMAND  == start ]; then
+
+    #check if enviromnental variables for gazebo are set
+    if ! [[ $GAZEBO_MODEL_PATH == *fawkes-robotino/res/gazebo-models* ]]
+    then
+	echo "Missing path to Gazebo Models in GAZEBO_MODEL_PATH";
+	exit 0
+    fi
+    if ! [[ $GAZEBO_PLUGIN_PATH == *fawkes-robotino/lib/gazebo* ]]
+    then
+	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
+	exit 0
+    fi
+    if ! [[ $FAWKES_BIN == *fawkes-robotino/bin* ]]
+    then
+	echo "Missing path to fawkes-robotino/bin in FAWKES_BIN";
+	exit 0
+    fi
+
     #start gazebo
     
     gnome-terminal $KEEP -t Gazebo -x bash -c "$startup_script_location -x gazebo $VISUALIZATION $REPLAY"
