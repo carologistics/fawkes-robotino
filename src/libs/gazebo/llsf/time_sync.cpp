@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <transport/transport.hh>
 #include <physics/physics.hh>
-#include <llsf_msgs/SimTimeSync.pb.h>
+#include <gazsim_msgs/SimTime.pb.h>
 #include <cmath>
 
 #include "time_sync.h"
@@ -37,7 +37,7 @@ TimeSync::TimeSync(physics::WorldPtr world, transport::NodePtr gazebo_node)
   world_ = world;
 
   //create publisher
-  this->time_sync_pub_ = gazebo_node_->Advertise<llsf_msgs::SimTimeSync>("~/gazsim/time-sync/");
+  this->time_sync_pub_ = gazebo_node_->Advertise<gazsim_msgs::SimTime>("~/gazsim/time-sync/");
   
   //init variables
   last_real_time_ = 0.0;
@@ -53,11 +53,10 @@ void TimeSync::send_time_sync()
   double sim_time = world_->GetSimTime().Double();
   double real_time = world_->GetRealTime().Double();
 
-  llsf_msgs::SimTimeSync msg;
+  gazsim_msgs::SimTime msg;
 
-  llsf_msgs::Time* time = msg.mutable_sim_time();
-  time->set_sec(sim_time); //automatically rounded to integer
-  time->set_nsec((sim_time - time->sec()) * 1000000000.f);
+  msg.set_sim_time_sec(sim_time); //automatically rounded to integer
+  msg.set_sim_time_nsec((sim_time - msg.sim_time_sec()) * 1000000000.f);
 
   //Calculate real time factor (did not find it in gazebo api)
   double real_time_factor = (sim_time - last_sim_time_) / (real_time - last_real_time_);
