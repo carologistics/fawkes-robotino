@@ -19,4 +19,5 @@
 # Eclipse project files, some are using it...
 .cproject
 .project
+.buildpath
 
