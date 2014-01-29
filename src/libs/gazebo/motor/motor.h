@@ -1,8 +1,8 @@
 /***************************************************************************
- *  motor.h - provides motor functionality
+ *  motor.h - Plugin for controling a model through a simulated motor
  *
- *  Created: Mon Jul 29 17:33:31 2013
- *  Copyright  2013  Frederik Zwilling
+ *  Created: Wed Jan 29 16:08:32 2014
+ *  Copyright  2014  Frederik Zwilling
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -24,29 +24,37 @@
 #include <common/common.hh>
 #include <stdio.h>
 #include <transport/transport.hh>
-#include "simDevice.h"
+#include <list>
+#include <string.h>
 
 namespace gazebo
-{
-/*
-   This class displayes messages form Fawkes in the Gazebo console
- */
-  class Motor: public SimDevice
+{   
+  class Motor : public ModelPlugin
   {
   public:
-
     //Constructor
-    Motor(physics::ModelPtr, transport::NodePtr);
+    Motor();
+
     //Destructor
     ~Motor();
-  
-    virtual void init();
-    virtual void create_publishers();
-    virtual void create_subscribers();
-    virtual void update();
+
+    //Overridden ModelPlugin-Functions
+    virtual void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/);
+    virtual void OnUpdate(const common::UpdateInfo &);
+    virtual void Reset();
 
   private:
-        
+    // Pointer to the model
+    physics::ModelPtr model_;
+    // Pointer to the update event connection
+    event::ConnectionPtr update_connection_;
+    //Node for communication to fawkes
+    transport::NodePtr node_;
+    //name of the motor and the communication channel
+    std::string name_;
+
+
+    //Motor Stuff:
     //Functions for recieving Messages (registerd via suscribers)
     void on_motor_move_msg(ConstVector3dPtr &msg);
 

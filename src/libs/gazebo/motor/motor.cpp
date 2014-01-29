@@ -1,8 +1,8 @@
 /***************************************************************************
- *  motor.cpp - provides motor functionality
+ *  motor.cpp - Plugin for controling a model through a simulated motor
  *
- *  Created: Mon Jul 29 17:33:31 2013
- *  Copyright  2013  Frederik Zwilling
+ *  Created: Wed Jan 29 16:10:17 2014
+ *  Copyright  2014  Frederik Zwilling
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -24,42 +24,58 @@
 #include <common/common.hh>
 #include <stdio.h>
 #include <transport/transport.hh>
-#include "simDevice.h"
+#include <math.h>
+
 #include "motor.h"
 
 using namespace gazebo;
 
-Motor::Motor(physics::ModelPtr model, transport::NodePtr node)
- : SimDevice(model, node)
-{
-}
-Motor::~Motor()
+// Register this plugin to make it available in the simulator
+GZ_REGISTER_MODEL_PLUGIN(Motor)
+
+Motor::Motor()
 {
 }
 
-void Motor::init()
+Motor::~Motor()
 {
-  printf("Initialize Motor\n");
+  printf("Destructing Motor Plugin!\n");
+}
+
+void Motor::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/) 
+{
+  // Store the pointer to the model
+  this->model_ = _parent;
+
+  //get the model-name
+  this->name_ = model_->GetName();
+  printf("Loading Motor Plugin of model %s\n", name_.c_str());
+
+  // Listen to the update event. This event is broadcast every
+  // simulation iteration.
+  this->update_connection_ = event::Events::ConnectWorldUpdateBegin(boost::bind(&Motor::OnUpdate, this, _1));
+
+  //Create the communication Node for communication with fawkes
+  this->node_ = transport::NodePtr(new transport::Node());
+  //the namespace is set to the model name!
+  this->node_->Init(name_);
+
+
   //initialize movement commands:
   vx_ = 0.0;
   vy_ = 0.0;
   vomega_ = 0.0;
+
+  //create subscriber
+  this->motor_move_sub_ = this->node_->Subscribe(std::string("~/RobotinoSim/MotorMove/"), &Motor::on_motor_move_msg, this);
 }
 
-void Motor::create_publishers()
-{
-}
-
-void Motor::create_subscribers()
-{
-  this->motor_move_sub_ = this->node->Subscribe(std::string("~/RobotinoSim/MotorMove/"), &Motor::on_motor_move_msg, this);
-}
-
-void Motor::update()
+// Called by the world update start event
+void Motor::OnUpdate(const common::UpdateInfo & /*_info*/)
 {
   //Apply movement command
   float x,y;
-  float yaw = this->model->GetWorldPose().rot.GetAsEuler().z;
+  float yaw = this->model_->GetWorldPose().rot.GetAsEuler().z;
   //foward part
   x = cos(yaw) * vx_;
   y = sin(yaw) * vx_;
@@ -67,8 +83,12 @@ void Motor::update()
   x += cos(yaw + 3.1415926f / 2) * vy_;
   y += sin(yaw + 3.1415926f / 2) * vy_;
   // Apply velocity to the model.
-  this->model->SetLinearVel(math::Vector3(x, y, 0));
-  this->model->SetAngularVel(math::Vector3(0, 0, vomega_));
+  this->model_->SetLinearVel(math::Vector3(x, y, 0));
+  this->model_->SetAngularVel(math::Vector3(0, 0, vomega_));
+}
+
+void Motor::Reset()
+{
 }
 
 void Motor::on_motor_move_msg(ConstVector3dPtr &msg)
