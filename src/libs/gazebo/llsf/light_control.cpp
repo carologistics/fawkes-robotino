@@ -19,15 +19,15 @@
  */
 
 #include <boost/bind.hpp>
-#include <gazebo.hh>
-#include <physics/physics.hh>
-#include <common/common.hh>
+#include <gazebo/gazebo.hh>
+#include <gazebo/physics/physics.hh>
+#include <gazebo/common/common.hh>
 #include <math.h>
-#include <transport/transport.hh>
-#include <transport/Node.hh>
-#include <msgs/msgs.hh>
+#include <gazebo/transport/transport.hh>
+#include <gazebo/transport/Node.hh>
+#include <gazebo/msgs/msgs.hh>
 #include <stdio.h>
-#include <common/common.hh>
+#include <gazebo/common/common.hh>
 #include <string.h>
 
 #include "light_control.h"

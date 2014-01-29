@@ -18,12 +18,6 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <boost/bind.hpp>
-#include <gazebo.hh>
-#include <physics/physics.hh>
-#include <common/common.hh>
-#include <stdio.h>
-#include <transport/transport.hh>
 #include <math.h>
 
 #include "motor.h"

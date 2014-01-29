@@ -19,13 +19,13 @@
  */
 
 #include <boost/bind.hpp>
-#include <gazebo.hh>
-#include <physics/physics.hh>
-#include <common/common.hh>
+#include <gazebo/gazebo.hh>
+#include <gazebo/physics/physics.hh>
+#include <gazebo/common/common.hh>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <transport/transport.hh>
+#include <gazebo/transport/transport.hh>
 #include "simDevice.h"
 #include "frontCamera.h"
 #include "config.h"

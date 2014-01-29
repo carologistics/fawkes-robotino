@@ -19,7 +19,7 @@
  */
 
 #include <gazebo/gazebo.hh>
-#include <physics/physics.hh>
+#include <gazebo/physics/physics.hh>
 #include "data_table.h"
 #include "llsf_world.h"
 #include <string.h>

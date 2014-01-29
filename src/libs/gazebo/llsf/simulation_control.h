@@ -22,11 +22,11 @@
 #define SIMULATION_CONTROL_H__
 
 #include <boost/bind.hpp>
-#include <gazebo.hh>
-#include <common/common.hh>
+#include <gazebo/gazebo.hh>
+#include <gazebo/common/common.hh>
 #include <stdio.h>
-#include <transport/transport.hh>
-#include <physics/physics.hh>
+#include <gazebo/transport/transport.hh>
+#include <gazebo/physics/physics.hh>
 
 
 namespace gazebo

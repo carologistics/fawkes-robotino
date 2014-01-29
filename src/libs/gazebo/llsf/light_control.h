@@ -22,8 +22,8 @@
 #define _LIGHT_CONTROL_HH_
 
 #include <string>
-#include <msgs/msgs.hh>
-#include <physics/physics.hh>
+#include <gazebo/msgs/msgs.hh>
+#include <gazebo/physics/physics.hh>
 #include "data_table.h"
 
 namespace gazebo

@@ -23,8 +23,8 @@
 #define _FIELD_REFEREE_HH_
 
 #include <string>
-#include <gazebo.hh>
-#include <physics/physics.hh>
+#include <gazebo/gazebo.hh>
+#include <gazebo/physics/physics.hh>
 #include "data_table.h"
 
 namespace gazebo

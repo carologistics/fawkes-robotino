@@ -22,8 +22,8 @@
 #define _PUCK_HOLDER_HH_
 
 #include <string>
-#include <gazebo.hh>
-#include <physics/physics.hh>
+#include <gazebo/gazebo.hh>
+#include <gazebo/physics/physics.hh>
 #include "simDevice.h"
 #include "../llsf/data_table.h"
 

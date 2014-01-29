@@ -19,10 +19,10 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 #include <boost/bind.hpp>
-#include <gazebo.hh>
-#include <common/common.hh>
+#include <gazebo/gazebo.hh>
+#include <gazebo/common/common.hh>
 #include <stdio.h>
-#include <transport/transport.hh>
+#include <gazebo/transport/transport.hh>
 
 #include "refbox_comm.h"
 #include "data_table.h"
