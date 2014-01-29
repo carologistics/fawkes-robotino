@@ -1,8 +1,8 @@
 /***************************************************************************
- *  laserSensor.cpp - Provides laser sensor data
+ *  hokuyo.h - Plugin for getting laser sensor data from the simulation
  *
- *  Created: Wed Aug 07 18:22:45 2013
- *  Copyright  2013  Frederik Zwilling
+ *  Created: Wed Jan 29 17:04:23 2014
+ *  Copyright  2014  Frederik Zwilling
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -23,46 +23,54 @@
 #include <physics/physics.hh>
 #include <common/common.hh>
 #include <stdio.h>
-#include <math.h>
-#include <string.h>
 #include <transport/transport.hh>
-#include "simDevice.h"
-#include "laserSensor.h"
+#include <math.h>
+#include <sensors/sensors.hh>
+#include <sensors/SensorTypes.hh>
+#include <sensors/RaySensor.hh>
+#include "hokuyo.h"
 
 using namespace gazebo;
 
-LaserSensor::LaserSensor(physics::ModelPtr model, transport::NodePtr node, sensors::SensorPtr sensorPtr)
- : SimDevice(model, node)
-{
-  this->parent_sensor_ = boost::dynamic_pointer_cast<sensors::RaySensor>(sensorPtr);
-}
-LaserSensor::~LaserSensor()
+// Register this plugin to make it available in the simulator
+GZ_REGISTER_MODEL_PLUGIN(Hokuyo)
+
+Hokuyo::Hokuyo()
 {
 }
 
-void LaserSensor::init()
+Hokuyo::~Hokuyo()
 {
-  printf("Initialize LaserSensor \n");
+  printf("Destructing Hokuyo Plugin!\n");
+}
+
+void Hokuyo::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/) 
+{
+  // Store the pointer to the model
+  this->model_ = _parent;
+
+  //get the model-name
+  this->name_ = model_->GetName();
+  printf("Loading Hokuyo Plugin of model %s\n", name_.c_str());
+
+  std::string laser_name =  model_->GetWorld()->GetName() + "::" + name_ + "::hokuyo::link::laser";
+  
+  this->parent_sensor_ = boost::dynamic_pointer_cast<sensors::RaySensor>(sensors::get_sensor(laser_name.c_str()));
+
+  //Create the communication Node for communication with fawkes
+  this->node_ = transport::NodePtr(new transport::Node());
+  //the namespace is set to the model name!
+  this->node_->Init(name_);
+
 
   //Register OnNewLaserScans function
-  this->new_laser_scans_connection_ = this->parent_sensor_->GetLaserShape()->ConnectNewLaserScans(boost::bind(&LaserSensor::on_new_laser_scans, this));
+  this->new_laser_scans_connection_ = this->parent_sensor_->GetLaserShape()->ConnectNewLaserScans(boost::bind(&Hokuyo::on_new_laser_scans, this));
+
+  //create publisher
+  this->laser_pub_ = this->node_->Advertise<msgs::LaserScan>("~/RobotinoSim/LaserSensor/");
 }
 
-void LaserSensor::create_publishers()
-{
-  this->laser_pub_ = this->node->Advertise<msgs::LaserScan>("~/RobotinoSim/LaserSensor/");
-}
-
-void LaserSensor::create_subscribers()
-{
-}
-
-void LaserSensor::update()
-{
-  //sending the laser scans happens in OnNewLaserScans()
-}
-
-void LaserSensor::on_new_laser_scans()
+void Hokuyo::on_new_laser_scans()
 {
   if(laser_pub_->HasConnections())
   {
@@ -102,4 +110,9 @@ void LaserSensor::on_new_laser_scans()
     //send message
     laser_pub_->Publish(laserMsg);
     }
+}
+
+
+void Hokuyo::Reset()
+{
 }
