@@ -156,9 +156,12 @@ void Robotino::spawn_label()
   msgs::Visual msg;
 
   //set parameters
-  msg.set_name((name_ + "label").c_str());
+  msg.set_name((name_ + "::label").c_str());
   std::string parent = model_->GetName() + "::body";
-  msg.set_parent_name(parent.c_str());//"llsf_field::M1::machine_link");
+  msg.set_parent_name(parent.c_str());
+#if GAZEBO_MAJOR_VERSION >= 2  
+  msg.set_parent_id(model_->GetId());
+#endif
   msgs::Geometry *geomMsg = msg.mutable_geometry();
   geomMsg->set_type(msgs::Geometry::PLANE);
   msgs::Set(geomMsg->mutable_plane()->mutable_normal(), math::Vector3(0.0, 0.0, 1.0));
