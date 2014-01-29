@@ -1,0 +1,67 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+# Here you can override configuration values needed for the real robot
+# with configuration values needed for the simulation
+# if the configuration values are the same for all simulated robots
+
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
+---
+
+#camera setup in the simulation
+plugins/light_front:
+  camera_offset_horizontal: 0
+  camera_offset_horizontal_rad: 0.0
+  camera_offset_vertical: 0
+  camera_angle_horizontal_rad: .00
+  camera_angle_vertical_rad: .00
+  threashold_brightness: 200
+  threashold_black: 80
+
+clips-agent:
+  clips-debug: true
+  skill-sim: false
+  skill-sim-time: 0.5
+  
+  # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+  debug-level: 3
+
+  # Automatically assert the (start) fact after successful initialization,
+  # otherwise wait until the an enalble message has been received
+  auto-start: false
+
+  # If set to true, will trigger the assertion of a (time (now)) fact in
+  # each loop. This can be used to trigger loop events in CLIPS.
+  assert-time-each-loop: true
+
+  llsf2013:
+    enable-sim: false
+    play-exploration-without-refbox: false
+
+skills/take_puck_to:
+   #front sensor distance when the puck is lost
+   front_sensor_dist: 0.073
+
+skills/fetch_puck:
+   #front sensor distance when fetching the puck
+   front_sensor_dist: 0.045
+
+skills/deliver_puck:
+   #front sensor distance when checking if we still have the puck at the delivery gates
+   front_sensor_dist: 0.05
+
+fawkes:
+  # Main app relevant settings
+  mainapp:
+    # Size of BlackBoard memory segment; bytes
+    blackboard_size: 2097152
+    # Desired loop time of main thread, 0 to disable; microseconds
+    desired_loop_time: 66333
+    # Maximum time a thread may run per loop, 0 to disable; microseconds
+    max_thread_time: 133333
+
+# Log level for ballposlog example plugin; sum of any of
+# debug=0, info=1, warn=2, error=4, none=8
+ballposlog/log_level: 0
+
+
