@@ -56,9 +56,14 @@ void LightControl::update()
   /* Visuals in Gazebo can be modified by publishing a Visual msg
      on the ~/visual topic (node has to be inited with the worlds name) 
      However the messages do not override visuals defined in the sdf. */
-  
-  //update lights twice a second
+
   double time = world_->GetSimTime().Double();
+  //wait until the world is completly loaded, otherwise the lights will spawn at (0,0)
+  if(time < 12)
+  {
+    return;
+  }  
+  //update lights twice a second
   if(time - last_sent_time_ < 0.5)
   {
     return;

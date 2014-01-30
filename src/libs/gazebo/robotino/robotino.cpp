@@ -151,6 +151,12 @@ void Robotino::Reset()
 
 void Robotino::spawn_label()
 {
+  double time = model_->GetWorld()->GetSimTime().Double();
+  //wait until the world is completly loaded, otherwise the label will spawn at (0,0)
+  if(time < 12)
+  {
+    return;
+  }
   
   //create message
   msgs::Visual msg;
