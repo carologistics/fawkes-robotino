@@ -39,7 +39,8 @@ clips-agent:
  
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  agent: llsf2014/llsf2014
+  #agent: llsf2014/llsf2014
+  agent: playground/playground
 
  
   llsf2014:
