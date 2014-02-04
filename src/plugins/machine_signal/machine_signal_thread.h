@@ -27,12 +27,19 @@
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/vision.h>
+#include <config/change_handler.h>
 
 // Members
 #include <fvutils/ipc/shm_image.h>
+//#include <fvutils/base/types.h>
 #include <fvfilters/colorthreshold.h>
+#include <fvmodels/color/similarity.h>
+#include <fvclassifiers/simple.h>
 #include <fvcams/fileloader.h>
 #include <string>
+
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
 
 namespace fawkes
 {
@@ -49,27 +56,59 @@ class MachineSignalThread :
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
-  public fawkes::VisionAspect
+  public fawkes::VisionAspect,
+  public fawkes::ConfigurationChangeHandler
 {
-
-  private:
-    uint32_t _resolution_x = 320;
-    uint32_t _resolution_y = 240;
-
-    std::string const _cfg_prefix = "/plugins/machine_signal";
-
-    firevision::Camera *_camera;
-    firevision::SharedMemoryImageBuffer *_scaled_buf;
-    firevision::SharedMemoryImageBuffer *_filtered_buf;
-    firevision::FilterColorThreshold *_filter_color_thresh;
-
   public:
     MachineSignalThread();
 
     virtual void init();
     virtual void loop();
-//    virtual bool prepare_finalize_user();
     virtual void finalize();
+
+  private:
+    typedef struct {
+        firevision::SharedMemoryImageBuffer *shmbuf;
+        firevision::FilterColorThreshold *filter;
+        firevision::ColorModelSimilarity *colormodel;
+        firevision::SimpleColorClassifier *classifier;
+        firevision::color_t result;
+        std::vector<unsigned int> cfg_ref_col;
+        int cfg_chroma_thresh;
+        int cfg_sat_thresh;
+        unsigned int cfg_roi_min_points;
+        unsigned int cfg_roi_basic_size;
+        unsigned int cfg_roi_neighborhood_min_match;
+        unsigned int cfg_roi_grow_by;
+    } color_classifier_t_;
+
+    volatile bool cfg_changed_;
+
+    color_classifier_t_ cls_red_;
+    color_classifier_t_ cls_green_;
+
+    firevision::Camera *camera_;
+    firevision::SharedMemoryImageBuffer *shmbuf_cam_;
+
+    unsigned int width_, height_;
+
+    // Abstracts inherited from ConfigurationChangeHandler
+    virtual void config_tag_changed(const char *new_tag);
+    virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
+    virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
+    virtual void config_value_erased(const char *path);
+
+    template<typename T>
+    void test_set_cfg_value(T *cfg, T val) {
+      if (*cfg == val) return;
+      *cfg = val;
+      cfg_changed_ = true;
+    }
+
+
+    void setup_classifier(color_classifier_t_ *classifier);
+
+    void cleanup_classifiers();
 
   protected:
     /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
