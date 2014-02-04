@@ -1,8 +1,8 @@
 /***************************************************************************
  *  gps.h - provides ground truth position
  *
- *  Created: Mon Jul 29 17:33:31 2013
- *  Copyright  2013  Frederik Zwilling
+ *  Created: Tue Feb 04 15:05:07 2014
+ *  Copyright  2014  Frederik Zwilling
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -24,29 +24,39 @@
 #include <gazebo/common/common.hh>
 #include <stdio.h>
 #include <gazebo/transport/transport.hh>
-#include "simDevice.h"
+#include <list>
+#include <string.h>
 
 namespace gazebo
-{
-/*
-   This class provides ground-truth information about the robots position and orientation
- */
-  class Gps: public SimDevice
+{   
+  class Gps : public ModelPlugin
   {
   public:
-
     //Constructor
-    Gps(physics::ModelPtr, transport::NodePtr);
+    Gps();
+
     //Destructor
     ~Gps();
-  
-    virtual void init();
-    virtual void create_publishers();
-    virtual void create_subscribers();
-    virtual void update();
+
+    //Overridden ModelPlugin-Functions
+    virtual void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/);
+    virtual void OnUpdate(const common::UpdateInfo &);
+    virtual void Reset();
 
   private:
+    // Pointer to the model
+    physics::ModelPtr model_;
+    // Pointer to the update event connection
+    event::ConnectionPtr update_connection_;
+    //Node for communication to fawkes
+    transport::NodePtr node_;
+    //name of the gps and the communication channel
+    std::string name_;
 
+    //time variable to send in intervals
+    double last_sent_time_;
+
+    //Gps Stuff:
     //Functions for sending ionformation to fawkes:
     void send_position();
 
