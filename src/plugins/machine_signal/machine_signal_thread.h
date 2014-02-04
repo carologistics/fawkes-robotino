@@ -72,7 +72,7 @@ class MachineSignalThread :
         firevision::FilterColorThreshold *filter;
         firevision::ColorModelSimilarity *colormodel;
         firevision::SimpleColorClassifier *classifier;
-        firevision::color_t result;
+        firevision::color_t color_expect;
         std::vector<unsigned int> cfg_ref_col;
         int cfg_chroma_thresh;
         int cfg_sat_thresh;
