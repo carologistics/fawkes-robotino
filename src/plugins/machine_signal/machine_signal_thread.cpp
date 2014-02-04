@@ -43,11 +43,11 @@ MachineSignalThread::MachineSignalThread()
   cls_red_.colormodel = NULL;
   cls_red_.classifier = NULL;
   cls_red_.filter = NULL;
-  cls_red_.result = C_RED;
+  cls_red_.color_expect = C_RED;
   cls_green_.colormodel = NULL;
   cls_green_.classifier = NULL;
   cls_green_.filter = NULL;
-  cls_green_.result = C_GREEN;
+  cls_green_.color_expect = C_GREEN;
   cfg_changed_ = false;
 }
 
@@ -116,7 +116,7 @@ void MachineSignalThread::setup_classifier(color_classifier_t_ *color_data)
       (unsigned char)color_data->cfg_ref_col.at(1),
       (unsigned char)color_data->cfg_ref_col.at(2)
   };
-  color_data->colormodel->add_color(color_data->result, color, color_data->cfg_chroma_thresh, color_data->cfg_sat_thresh);
+  color_data->colormodel->add_color(color_data->color_expect, color, color_data->cfg_chroma_thresh, color_data->cfg_sat_thresh);
 
   delete color_data->classifier;
   color_data->classifier = new SimpleColorClassifier(
@@ -124,8 +124,10 @@ void MachineSignalThread::setup_classifier(color_classifier_t_ *color_data)
       color_data->colormodel,
       color_data->cfg_roi_min_points,
       color_data->cfg_roi_basic_size,
+      false,
       color_data->cfg_roi_neighborhood_min_match,
-      color_data->cfg_roi_grow_by);
+      color_data->cfg_roi_grow_by,
+      color_data->color_expect);
 
   delete color_data->filter;
   color_data->filter = new FilterColorThreshold(color, color_data->cfg_chroma_thresh, color_data->cfg_sat_thresh);
