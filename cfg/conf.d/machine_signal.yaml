@@ -6,5 +6,25 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
 
 plugins/machine_signal:
   camera: "file:file:file=/home/ich/robotino/sampleImages/test2.jpg"
-  reference_color: [255, 0, 0]
+  red:
+    reference_color: [0xff, 0, 0]
+    chroma_thresh: 80
+    saturation_thresh: 80
+    
+    min_points: 10
+    basic_roi_size: 40
+    neighborhood_min_match: 8
+    grow_by: 5
+
+
+  green:
+    reference_color: [0, 0x80, 0xe]
+    chroma_thresh: 5
+    saturation_thresh: 10
+    
+    min_points: 1
+    basic_roi_size: 4
+    neighborhood_min_match: 4
+    grow_by: 5
+
 
