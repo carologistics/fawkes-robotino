@@ -24,7 +24,7 @@ GAZEBO_LIBDIR = $(LIBDIR)/gazebo
 LIBDIRS_BASE += $(GAZEBO_LIBDIR)
 
 LIBS_gazebo_librobotino = gazsim_msgs llsf_msgs llsf
-OBJS_gazebo_librobotino = frontCamera.o gripper_laser_sensor.o \
+OBJS_gazebo_librobotino = gripper_laser_sensor.o \
 	infraredPuckSensor.o machineVision.o messageDisplay.o \
 	puck_detection.o puck_holder.o robotino.o simDevice.o
 
