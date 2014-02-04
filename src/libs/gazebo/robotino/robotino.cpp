@@ -33,7 +33,6 @@
 #include "simDevice.h"
 #include "config.h"
 #include "messageDisplay.h"
-#include "gyro.h"
 #include "gps.h"
 #include "machineVision.h"
 #include "puck_detection.h"
@@ -94,7 +93,6 @@ void Robotino::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
   
   //creating simulated devices
   devices_list_.push_back((SimDevice*) new MessageDisplay(model_, node_));
-  devices_list_.push_back((SimDevice*) new Gyro(model_, node_));
   devices_list_.push_back((SimDevice*) new Gps(model_, node_));
   devices_list_.push_back((SimDevice*) new MachineVision(model_, node_));
   devices_list_.push_back((SimDevice*) new PuckDetection(model_, node_));

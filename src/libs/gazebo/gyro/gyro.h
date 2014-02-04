@@ -1,8 +1,8 @@
 /***************************************************************************
- *  gyro.h - provides gyro values
+ *  gyro.h - Plugin for a gyro sensor on a model
  *
- *  Created: Mon Jul 29 17:33:31 2013
- *  Copyright  2013  Frederik Zwilling
+ *  Created: Tue Feb 04 14:42:29 2014
+ *  Copyright  2014  Frederik Zwilling
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -24,29 +24,37 @@
 #include <gazebo/common/common.hh>
 #include <stdio.h>
 #include <gazebo/transport/transport.hh>
-#include "simDevice.h"
+#include <list>
+#include <string.h>
 
 namespace gazebo
-{
-/*
-   This class simulates a gyro sensor
- */
-  class Gyro: public SimDevice
+{   
+  class Gyro : public ModelPlugin
   {
   public:
-
     //Constructor
-    Gyro(physics::ModelPtr, transport::NodePtr);
+    Gyro();
+
     //Destructor
     ~Gyro();
-  
-    virtual void init();
-    virtual void create_publishers();
-    virtual void create_subscribers();
-    virtual void update();
+
+    //Overridden ModelPlugin-Functions
+    virtual void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/);
+    virtual void OnUpdate(const common::UpdateInfo &);
+    virtual void Reset();
 
   private:
+    // Pointer to the model
+    physics::ModelPtr model_;
+    // Pointer to the update event connection
+    event::ConnectionPtr update_connection_;
+    //Node for communication to fawkes
+    transport::NodePtr node_;
+    //name of the gyro and the communication channel
+    std::string name_;
 
+
+    //Gyro Stuff:
     //Functions for sending ionformation to fawkes:
     void send_gyro();
 
