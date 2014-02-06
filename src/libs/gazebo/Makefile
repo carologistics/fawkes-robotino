@@ -17,5 +17,8 @@ BASEDIR = ../../..
 
 SUBDIRS = llsf carologistics-robotino
 
+#dependencies:
+carologistics-robotino: llsf
+
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/rules.mk
