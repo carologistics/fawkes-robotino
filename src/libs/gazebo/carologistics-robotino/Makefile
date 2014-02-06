@@ -23,19 +23,19 @@ include $(BUILDSYSDIR)/protobuf.mk
 GAZEBO_LIBDIR = $(LIBDIR)/gazebo
 LIBDIRS_BASE += $(GAZEBO_LIBDIR)
 
-LIBS_gazebo_librobotino = gazsim_msgs llsf_msgs llsf
-OBJS_gazebo_librobotino = gripper_laser_sensor.o \
+LIBS_gazebo_libcarologistics_robotino = gazsim_msgs llsf_msgs llsf
+OBJS_gazebo_libcarologistics_robotino = gripper_laser_sensor.o \
 	infraredPuckSensor.o machineVision.o messageDisplay.o \
 	puck_detection.o puck_holder.o robotino.o simDevice.o
 
-OBJS_all    = $(OBJS_gazebo_librobotino)
+OBJS_all    = $(OBJS_gazebo_libcarologistics_robotino)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
 
 #not a Fawkes Plugin!
-  LIBS_all = $(LIBDIR)/gazebo/librobotino.so
+  LIBS_all = $(LIBDIR)/gazebo/libcarologistics_robotino.so
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo
@@ -49,10 +49,10 @@ ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 .PHONY: warning_gazebo warning_protobuf
 warning_gazebo:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-robotino Plugin$(TNORMAL) " \
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazebo-carologistics-robotino Plugin$(TNORMAL) " \
 		"(Gazebo Simulator not found)"
 warning_protobuf:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-robotino Plugin$(TNORMAL) " \
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazebo-carologistics-robotino Plugin$(TNORMAL) " \
 		"(protobuf[-devel] not installed)"
 endif
 
