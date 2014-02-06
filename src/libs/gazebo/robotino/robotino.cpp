@@ -33,13 +33,10 @@
 #include "simDevice.h"
 #include "config.h"
 #include "messageDisplay.h"
-#include "gyro.h"
-#include "gps.h"
 #include "machineVision.h"
 #include "puck_detection.h"
 #include "infraredPuckSensor.h"
 #include "gripper_laser_sensor.h"
-#include "frontCamera.h"
 #include "puck_holder.h"
 
 using namespace gazebo;
@@ -94,8 +91,6 @@ void Robotino::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
   
   //creating simulated devices
   devices_list_.push_back((SimDevice*) new MessageDisplay(model_, node_));
-  devices_list_.push_back((SimDevice*) new Gyro(model_, node_));
-  devices_list_.push_back((SimDevice*) new Gps(model_, node_));
   devices_list_.push_back((SimDevice*) new MachineVision(model_, node_));
   devices_list_.push_back((SimDevice*) new PuckDetection(model_, node_));
   std::string infrared_name =  model_->GetWorld()->GetName() + "::" + name_ + "::infrared_sensor::link::infrared_puck_sensor";
@@ -104,8 +99,7 @@ void Robotino::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
   std::string gripper_laser_right_name =  model_->GetWorld()->GetName() + "::" + name_ + "::body::gripper_laser_right";
   devices_list_.push_back((SimDevice*) new GripperLaserSensor(model_, node_, sensors::get_sensor(gripper_laser_left_name.c_str()), LEFT));
   devices_list_.push_back((SimDevice*) new GripperLaserSensor(model_, node_, sensors::get_sensor(gripper_laser_right_name.c_str()), RIGHT));
-  std::string camera_name =  model_->GetWorld()->GetName() + "::" + name_ + "::webcam::link::webcam_sensor";
-  devices_list_.push_back((SimDevice*) new FrontCamera(model_, node_, sensors::get_sensor(camera_name.c_str())));
+
   if(ATTACH_PUCK_TO_GRIPPER_WHEN_TURNING)
   {
     devices_list_.push_back((SimDevice*) new PuckHolder(model_, node_));

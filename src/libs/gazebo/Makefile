@@ -15,7 +15,7 @@
 
 BASEDIR = ../../..
 
-SUBDIRS = llsf robotino motor hokuyo
+SUBDIRS = llsf robotino motor hokuyo gyro gps
 
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/rules.mk

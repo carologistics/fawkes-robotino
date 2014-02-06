@@ -129,7 +129,7 @@ msgs::Visual LightControl::create_vis_msg(std::string machine_name, Color color,
       {
     case RED:
       {
-	msg.set_name((machine_name + "::red").c_str());
+	msg.set_name((machine_name + "::redon").c_str());
 	msgs::Set(msg.mutable_pose(), math::Pose(0.02, 0.0, 0.253, 0, 0, 0));
 	msgs::Set(msg.mutable_material()->mutable_diffuse(), common::Color(0.8, 0, 0, 0.8));
 	msgs::Set(msg.mutable_material()->mutable_emissive(), common::Color(1.0, 0.3, 0.3, 1.0));
@@ -137,7 +137,7 @@ msgs::Visual LightControl::create_vis_msg(std::string machine_name, Color color,
       }
     case YELLOW:
       {
-	msg.set_name((machine_name + "::yellow").c_str());
+	msg.set_name((machine_name + "::yellowon").c_str());
 	msgs::Set(msg.mutable_pose(), math::Pose(0.02, 0.0, 0.219, 0, 0, 0));
 	msgs::Set(msg.mutable_material()->mutable_diffuse(), common::Color(0.9, 0.7, 0, 0.8));
 	msgs::Set(msg.mutable_material()->mutable_emissive(), common::Color(1.0, 0.9, 0.3, 1.0));
@@ -145,7 +145,7 @@ msgs::Visual LightControl::create_vis_msg(std::string machine_name, Color color,
       }
     case GREEN:
       {
-	msg.set_name((machine_name + "::green").c_str());
+	msg.set_name((machine_name + "::greenon").c_str());
 	msgs::Set(msg.mutable_pose(), math::Pose(0.02, 0.0, 0.185, 0, 0, 0));
 	msgs::Set(msg.mutable_material()->mutable_diffuse(), common::Color(0, 0.8, 0, 0.8));
 	msgs::Set(msg.mutable_material()->mutable_emissive(), common::Color(0.3, 1.0, 0.3, 1.0));
@@ -156,11 +156,12 @@ msgs::Visual LightControl::create_vis_msg(std::string machine_name, Color color,
   else
   {
     msg.set_transparency(0.0);
+    msg.set_visible(false);
     switch(color)
       {
     case RED:
       {
-	msg.set_name((machine_name + "::red").c_str());
+	msg.set_name((machine_name + "::redon").c_str());
 	msgs::Set(msg.mutable_pose(), math::Pose(0.02, 0.0, 0.253, 0, 0, 0));
 	msgs::Set(msg.mutable_material()->mutable_diffuse(), common::Color(0.8, 0, 0, 0.8));
 	msgs::Set(msg.mutable_material()->mutable_emissive(), common::Color(0.0, 0.0, 0.0, 0.0));
@@ -169,7 +170,7 @@ msgs::Visual LightControl::create_vis_msg(std::string machine_name, Color color,
       }
     case YELLOW:
       {
-	msg.set_name((machine_name + "::yellow").c_str());
+	msg.set_name((machine_name + "::yellowon").c_str());
 	msgs::Set(msg.mutable_pose(), math::Pose(0.02, 0.0, 0.219, 0, 0, 0));
 	msgs::Set(msg.mutable_material()->mutable_diffuse(), common::Color(0.9, 0.7, 0, 0.8));
 	msgs::Set(msg.mutable_material()->mutable_emissive(), common::Color(0.0, 0.0, 0.0, 0.0));
@@ -178,7 +179,7 @@ msgs::Visual LightControl::create_vis_msg(std::string machine_name, Color color,
       }
     case GREEN:
       {
-	msg.set_name((machine_name + "::green").c_str());
+	msg.set_name((machine_name + "::greenon").c_str());
 	msgs::Set(msg.mutable_pose(), math::Pose(0.02, 0.0, 0.185, 0, 0, 0));
 	msgs::Set(msg.mutable_material()->mutable_diffuse(), common::Color(0, 0.8, 0, 0.8));
 	msgs::Set(msg.mutable_material()->mutable_emissive(), common::Color(0.0, 0.0, 0.0, 0.0));

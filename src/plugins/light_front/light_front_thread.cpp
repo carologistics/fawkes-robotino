@@ -101,6 +101,8 @@ LightFrontThread::init()
 
 	this->cfg_brightnessThreashold = this->config->get_uint((this->cfg_prefix + "threashold_brightness").c_str());
 	this->cfg_darknessThreashold = this->config->get_uint((this->cfg_prefix + "threashold_black").c_str());
+	logger->log_warn(name(), "brightness threshold: %i\n", this->cfg_brightnessThreashold);
+	logger->log_warn(name(), "darkness threshold: %i\n", this->cfg_darknessThreashold);
 	this->cfg_laserVisibilityThreashold = this->config->get_int((this->cfg_prefix + "threashold_laser_visibility").c_str());
 	this->cfg_lightDistanceAllowedBetweenFrames = this->config->get_float((this->cfg_prefix + "light_distance_allowed_betwen_frames").c_str());
 	this->cfg_lightOutOfRangeThrashold = this->config->get_int((this->cfg_prefix + "light_out_of_range_thrashold").c_str());
