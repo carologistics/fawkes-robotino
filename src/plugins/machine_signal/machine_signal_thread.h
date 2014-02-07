@@ -99,16 +99,18 @@ class MachineSignalThread :
     virtual void config_value_erased(const char *path);
 
     template<typename T>
-    void test_set_cfg_value(T *cfg, T val) {
-      if (*cfg == val) return;
+    bool test_set_cfg_value(T *cfg, T val) {
+      if (*cfg == val) return false;
       *cfg = val;
-      cfg_changed_ = true;
+      return true;
     }
 
 
     void setup_classifier(color_classifier_t_ *classifier);
+    void setup_camera();
 
     void cleanup_classifiers();
+    void cleanup_camera();
 
   protected:
     /** Stub to see name in backtrace for easier debugging. @see Thread::run() */

@@ -49,6 +49,7 @@ MachineSignalThread::MachineSignalThread()
   cls_green_.filter = NULL;
   cls_green_.color_expect = C_GREEN;
   cfg_changed_ = false;
+  cam_changed_ = false;
 }
 
 
@@ -62,9 +63,10 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
     std::string sufx = path.substr(strlen(__CFG_PREFIX));
     std::string color_pfx = sufx.substr(0, sufx.substr(1).find("/")+1);
     std::string full_pfx = __CFG_PREFIX + color_pfx;
-    color_classifier_t_ *classifier;
+    std::string opt = path.substr(full_pfx.length());
 
     if (color_pfx == "/red" || color_pfx == "/green") {
+      color_classifier_t_ *classifier;
       if (color_pfx == "/red")
         classifier = &cls_red_;
       else if (color_pfx == "/green")
@@ -73,19 +75,23 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
       std::string opt = path.substr(full_pfx.length());
 
       if (opt == "/reference_color")
-        test_set_cfg_value(&(classifier->cfg_ref_col), v->get_uints());
+        cfg_changed_ = test_set_cfg_value(&(classifier->cfg_ref_col), v->get_uints());
       else if (opt == "/saturation_thresh")
-        test_set_cfg_value(&(classifier->cfg_sat_thresh), v->get_int());
+        cfg_changed_ = test_set_cfg_value(&(classifier->cfg_sat_thresh), v->get_int());
       else if (opt == "/chroma_thresh")
-        test_set_cfg_value(&(classifier->cfg_chroma_thresh), v->get_int());
+        cfg_changed_ = test_set_cfg_value(&(classifier->cfg_chroma_thresh), v->get_int());
       else if (opt == "/min_points")
-        test_set_cfg_value(&(classifier->cfg_roi_min_points), v->get_uint());
+        cfg_changed_ = test_set_cfg_value(&(classifier->cfg_roi_min_points), v->get_uint());
       else if (opt == "/basic_roi_size")
-        test_set_cfg_value(&(classifier->cfg_roi_basic_size), v->get_uint());
+        cfg_changed_ = test_set_cfg_value(&(classifier->cfg_roi_basic_size), v->get_uint());
       else if (opt == "/neighborhood_min_match")
-        test_set_cfg_value(&(classifier->cfg_roi_neighborhood_min_match), v->get_uint());
+        cfg_changed_ = test_set_cfg_value(&(classifier->cfg_roi_neighborhood_min_match), v->get_uint());
       else if (opt == "/grow_by")
-        test_set_cfg_value(&(classifier->cfg_roi_grow_by), v->get_uint());
+        cfg_changed_ = test_set_cfg_value(&(classifier->cfg_roi_grow_by), v->get_uint());
+    }
+    else if (color_pfx == "") {
+      if (opt == "/camera")
+        cam_changed_ = test_set_cfg_value(&(cfg_camera_), v->get_string());
     }
   }
 }
@@ -102,6 +108,7 @@ static inline bool check_color_vector(std::vector<uint> &v)
   }
   return true;
 }
+
 
 
 void MachineSignalThread::setup_classifier(color_classifier_t_ *color_data)
@@ -137,14 +144,11 @@ void MachineSignalThread::setup_classifier(color_classifier_t_ *color_data)
 
 void MachineSignalThread::init()
 {
-  // Setup camera
-  camera_ = vision_master->register_for_camera(
-      config->get_string((__CFG_PREFIX "/camera")).c_str(), this);
-  width_ = camera_->pixel_width();
-  height_ = camera_->pixel_height();
-  shmbuf_cam_= new SharedMemoryImageBuffer("signal", YUV422_PLANAR, width_, height_);
+  // Configure camera
+  cfg_camera_ = config->get_string(__CFG_PREFIX "/camera");
+  setup_camera();
 
-  // Setup RED classifier
+  // Configure RED classifier
   cls_red_.cfg_ref_col = config->get_uints(__CFG_PREFIX "/red/reference_color");
   cls_red_.cfg_chroma_thresh = config->get_int(__CFG_PREFIX "/red/chroma_thresh");
   cls_red_.cfg_sat_thresh = config->get_int(__CFG_PREFIX "/red/saturation_thresh");
@@ -152,10 +156,9 @@ void MachineSignalThread::init()
   cls_red_.cfg_roi_basic_size = config->get_int(__CFG_PREFIX "/red/basic_roi_size");
   cls_red_.cfg_roi_neighborhood_min_match = config->get_int(__CFG_PREFIX "/red/neighborhood_min_match");
   cls_red_.cfg_roi_grow_by = config->get_int(__CFG_PREFIX "/red/grow_by");
-  setup_classifier(&cls_red_);
   cls_red_.shmbuf = new SharedMemoryImageBuffer("signal_red", YUV422_PLANAR, width_, height_);
 
-  // Setup GREEN classifier
+  // Configure GREEN classifier
   cls_green_.cfg_ref_col = config->get_uints(__CFG_PREFIX "/green/reference_color");
   cls_green_.cfg_chroma_thresh = config->get_int(__CFG_PREFIX "/green/chroma_thresh");
   cls_green_.cfg_sat_thresh = config->get_int(__CFG_PREFIX "/green/saturation_thresh");
@@ -163,7 +166,6 @@ void MachineSignalThread::init()
   cls_green_.cfg_roi_basic_size = config->get_int(__CFG_PREFIX "/green/basic_roi_size");
   cls_green_.cfg_roi_neighborhood_min_match = config->get_int(__CFG_PREFIX "/green/neighborhood_min_match");
   cls_green_.cfg_roi_grow_by = config->get_int(__CFG_PREFIX "/green/grow_by");
-  setup_classifier(&cls_green_);
   cls_green_.shmbuf = new SharedMemoryImageBuffer("signal_green", YUV422_PLANAR, width_, height_);
 
   cfg_changed_ = true;
@@ -171,17 +173,28 @@ void MachineSignalThread::init()
   config->add_change_handler(this);
 }
 
+void MachineSignalThread::setup_camera()
+{
+  camera_ = vision_master->register_for_camera(cfg_camera_.c_str(), this);
+  width_ = camera_->pixel_width();
+  height_ = camera_->pixel_height();
+  shmbuf_cam_= new SharedMemoryImageBuffer("signal", YUV422_PLANAR, width_, height_);
+}
 
 void MachineSignalThread::finalize()
 {
-  vision_master->unregister_thread(this);
-  delete camera_;
-  delete shmbuf_cam_;
+  cleanup_camera();
   delete cls_red_.shmbuf;
   delete cls_green_.shmbuf;
   cleanup_classifiers();
 }
 
+void MachineSignalThread::cleanup_camera()
+{
+  vision_master->unregister_thread(this);
+  delete camera_;
+  delete shmbuf_cam_;
+}
 
 void MachineSignalThread::cleanup_classifiers()
 {
@@ -203,6 +216,11 @@ void MachineSignalThread::loop()
     setup_classifier(&cls_red_);
     setup_classifier(&cls_green_);
     cfg_changed_ = false;
+  }
+  if (unlikely(cam_changed_)) {
+    cleanup_camera();
+    setup_camera();
+    cam_changed_ = false;
   }
 
   camera_->capture();
