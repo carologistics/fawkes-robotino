@@ -31,12 +31,17 @@
 
 // Members
 #include <fvutils/ipc/shm_image.h>
-//#include <fvutils/base/types.h>
 #include <fvfilters/colorthreshold.h>
 #include <fvmodels/color/similarity.h>
+#include <fvmodels/color/thresholds_luminance.h>
 #include <fvclassifiers/simple.h>
 #include <fvcams/fileloader.h>
+//#include <fvcams/camera.h>
 #include <string>
+#include <core/threading/mutex.h>
+#include <atomic>
+#include <interfaces/RobotinoLightInterface.h>
+
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -82,15 +87,37 @@ class MachineSignalThread :
         unsigned int cfg_roi_grow_by;
     } color_classifier_t_;
 
-    volatile bool cfg_changed_;
+    struct sort_functor_ {
+        bool operator() (firevision::ROI r1, firevision::ROI r2) {
+          return r1.start.x <= r2.start.x;
+        }
+    } sort_rois_by_x_;
+
+    typedef struct {
+        // keep ROIs for a certain signal in a list, as well as in explicit struct members
+        std::list<firevision::ROI> signal_roi_list;
+        firevision::ROI *red_roi;
+        firevision::ROI *yellow_roi;
+        firevision::ROI *green_roi;
+    } signal_rois_t_;
+
+    std::atomic_bool cfg_changed_;
+    std::atomic_bool cam_changed_;
+
+    std::string cfg_camera_;
 
     color_classifier_t_ cls_red_;
     color_classifier_t_ cls_green_;
 
     firevision::Camera *camera_;
-    firevision::SharedMemoryImageBuffer *shmbuf_cam_;
 
-    unsigned int width_, height_;
+    unsigned int cam_width_, cam_height_;
+
+    fawkes::Mutex cfg_mutex_;
+
+    fawkes::RobotinoLightInterface::LightState *iface_red_;
+    fawkes::RobotinoLightInterface::LightState *iface_yellow_;
+    fawkes::RobotinoLightInterface::LightState *iface_green_;
 
     // Abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);
