@@ -103,6 +103,9 @@ void MachineSignalThread::init()
   cfg_camera_ = config->get_string(__CFG_PREFIX "/camera");
   setup_camera();
 
+  shmbuf_ = new SharedMemoryImageBuffer("machine_signal", YUV422_PLANAR, cam_width_, cam_height_);
+
+
   // Configure RED classifier
   cls_red_.cfg_ref_col = config->get_uints(__CFG_PREFIX "/red/reference_color");
   cls_red_.cfg_chroma_thresh = config->get_int(__CFG_PREFIX "/red/chroma_thresh");
@@ -111,7 +114,6 @@ void MachineSignalThread::init()
   cls_red_.cfg_roi_basic_size = config->get_int(__CFG_PREFIX "/red/basic_roi_size");
   cls_red_.cfg_roi_neighborhood_min_match = config->get_int(__CFG_PREFIX "/red/neighborhood_min_match");
   cls_red_.cfg_roi_grow_by = config->get_int(__CFG_PREFIX "/red/grow_by");
-  cls_red_.shmbuf = new SharedMemoryImageBuffer("signal_red", YUV422_PLANAR, cam_width_, cam_height_);
 
   // Configure GREEN classifier
   cls_green_.cfg_ref_col = config->get_uints(__CFG_PREFIX "/green/reference_color");
@@ -121,7 +123,6 @@ void MachineSignalThread::init()
   cls_green_.cfg_roi_basic_size = config->get_int(__CFG_PREFIX "/green/basic_roi_size");
   cls_green_.cfg_roi_neighborhood_min_match = config->get_int(__CFG_PREFIX "/green/neighborhood_min_match");
   cls_green_.cfg_roi_grow_by = config->get_int(__CFG_PREFIX "/green/grow_by");
-  cls_green_.shmbuf = new SharedMemoryImageBuffer("signal_green", YUV422_PLANAR, cam_width_, cam_height_);
 
   setup_classifier(&cls_red_);
   setup_classifier(&cls_green_);
@@ -142,10 +143,9 @@ void MachineSignalThread::setup_camera()
 void MachineSignalThread::finalize()
 {
   cleanup_camera();
-  delete cls_red_.shmbuf;
-  delete cls_green_.shmbuf;
   cleanup_classifiers();
   vision_master->unregister_thread(this);
+  delete shmbuf_;
 }
 
 void MachineSignalThread::cleanup_camera()
@@ -185,26 +185,20 @@ void MachineSignalThread::loop()
 
   cls_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
   rois_R = cls_red_.classifier->classify();
-  cls_red_.filter->set_src_buffer(camera_->buffer(),
-      ROI::full_image( cam_width_, cam_height_));
-  cls_red_.filter->set_dst_buffer(cls_red_.shmbuf->buffer(),
-      ROI::full_image( cam_width_, cam_height_));
-  cls_red_.filter->apply();
-  draw = new FilterROIDraw(rois_R, FilterROIDraw::DASHED_HINT);
-  draw->set_src_buffer(cls_red_.shmbuf->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
-  draw->set_dst_buffer(cls_red_.shmbuf->buffer(), NULL);
-  draw->apply();
 
   cls_green_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
   rois_G = cls_green_.classifier->classify();
-  cls_green_.filter->set_src_buffer(camera_->buffer(),
-      ROI::full_image( cam_width_, cam_height_));
-  cls_green_.filter->set_dst_buffer(cls_green_.shmbuf->buffer(),
-      ROI::full_image( cam_width_, cam_height_));
-  cls_green_.filter->apply();
+
+  memcpy(shmbuf_->buffer(), camera_->buffer(), shmbuf_->data_size());
+
+  draw = new FilterROIDraw(rois_R, FilterROIDraw::DASHED_HINT);
+  draw->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
+  draw->set_dst_buffer(shmbuf_->buffer(), NULL);
+  draw->apply();
+
   draw = new FilterROIDraw(rois_G, FilterROIDraw::DASHED_HINT);
-  draw->set_src_buffer(cls_green_.shmbuf->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
-  draw->set_dst_buffer(cls_green_.shmbuf->buffer(), NULL);
+  draw->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
+  draw->set_dst_buffer(shmbuf_->buffer(), NULL);
   draw->apply();
 
 

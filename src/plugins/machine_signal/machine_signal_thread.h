@@ -35,8 +35,8 @@
 #include <fvmodels/color/similarity.h>
 #include <fvmodels/color/thresholds_luminance.h>
 #include <fvclassifiers/simple.h>
-#include <fvcams/fileloader.h>
-//#include <fvcams/camera.h>
+//#include <fvcams/fileloader.h>
+#include <fvcams/camera.h>
 #include <string>
 #include <core/threading/mutex.h>
 #include <atomic>
@@ -73,7 +73,6 @@ class MachineSignalThread :
 
   private:
     typedef struct {
-        firevision::SharedMemoryImageBuffer *shmbuf;
         firevision::FilterColorThreshold *filter;
         firevision::ColorModelSimilarity *colormodel;
         firevision::SimpleColorClassifier *classifier;
@@ -103,6 +102,7 @@ class MachineSignalThread :
 
     std::atomic_bool cfg_changed_;
     std::atomic_bool cam_changed_;
+    firevision::SharedMemoryImageBuffer *shmbuf_;
 
     std::string cfg_camera_;
 
