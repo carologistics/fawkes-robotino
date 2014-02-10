@@ -5,26 +5,27 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
 ---
 
 plugins/machine_signal:
-  camera: "file:file:file=/home/ich/robotino/sampleImages/test2.jpg"
+  #camera: "file:file:file=/home/ich/robotino/sampleImages/test2.jpg"
+  camera: v4l2:front:device=/dev/light_front:size=640x480:exposure_auto_priority=0:white_balance_temperature_auto=0:white_balance_temperature=3000:exposure_auto=0:exposure_absolute=600
   red:
     reference_color: [0xff, 0, 0]
-    chroma_thresh: 80
-    saturation_thresh: 80
+    chroma_thresh: 30
+    saturation_thresh: 10
     
-    min_points: 10
-    basic_roi_size: 40
-    neighborhood_min_match: 8
-    grow_by: 5
+    min_points: 80
+    basic_roi_size: 10
+    neighborhood_min_match: 10
+    grow_by: 0
 
 
   green:
-    reference_color: [0, 0x80, 0xe]
+    reference_color: [0, 0x99, 15]
     chroma_thresh: 5
-    saturation_thresh: 10
+    saturation_thresh: 2
     
-    min_points: 1
-    basic_roi_size: 4
-    neighborhood_min_match: 4
-    grow_by: 5
+    min_points: 60
+    basic_roi_size: 10
+    neighborhood_min_match: 6
+    grow_by: 0
 
 
