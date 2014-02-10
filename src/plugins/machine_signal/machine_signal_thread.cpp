@@ -178,12 +178,6 @@ void MachineSignalThread::loop()
     setup_classifier(&cls_green_);
     cfg_changed_ = false;
   }
-  if (cam_changed_) {
-    MutexLocker lock(&cfg_mutex_);
-    cleanup_camera();
-    setup_camera();
-    cam_changed_ = false;
-  }
 
 #ifndef __FIREVISION_CAMS_FILELOADER_H_
   camera_->capture();
@@ -257,10 +251,6 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
         cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_roi_neighborhood_min_match), v->get_uint());
       else if (opt == "/grow_by")
         cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_roi_grow_by), v->get_uint());
-    }
-    else if (color_pfx == "") {
-      if (opt == "/camera")
-        cam_changed_ = test_set_cfg_value(&(cfg_camera_), v->get_string());
     }
   }
 }
