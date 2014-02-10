@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE interface SYSTEM "interface.dtd">
-<interface name="RobotinoLightInterface" author="Florian Nolden, Viktor Mataré, Tobias Neumann" year="2013">
+<interface name="RobotinoLightInterface" author="Florian Nolden, Victor Mataré, Tobias Neumann" year="2013">
   <constants>
     <enum name="LightState">
       <comment>
