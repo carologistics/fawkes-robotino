@@ -7,10 +7,10 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-; LLSF2013 agent includes
-(path-load  llsf2013/priorities.clp)
-(path-load  llsf2013/globals.clp)
-(path-load  llsf2013/facts.clp)
+; LLSF2014 agent includes
+(path-load  llsf2014/priorities.clp)
+(path-load  llsf2014/globals.clp)
+(path-load  llsf2014/facts.clp)
 
 (defrule load-config
   (init)
@@ -26,7 +26,7 @@
   =>
   (printout t "Requesting blackboard feature" crlf)
   (ff-feature-request "blackboard")
-  (path-load "llsf2013/blackboard-init.clp")
+  (path-load "llsf2014/blackboard-init.clp")
 )
 (defrule enable-motor-switch
   (ff-feature motor-switch)
@@ -50,25 +50,28 @@
   (ff-feature-loaded motor-switch)
   (ff-feature-loaded protobuf)
   =>
-  (path-load  llsf2013/utils.clp)
-  (path-load  llsf2013/net.clp)
-  (path-load  llsf2013/skills.clp)
-  (path-load  llsf2013/lock.clp)
+  (path-load  llsf2014/utils.clp)
+  (path-load  llsf2014/net.clp)
+  (path-load  llsf2014/skills.clp)
+  (path-load  llsf2014/lock.clp)
 
   (if
     (any-factp ((?conf confval))
-      (and (eq ?conf:path "/clips-agent/llsf2013/enable-sim")
+      (and (eq ?conf:path "/clips-agent/llsf2014/enable-sim")
 	   (eq ?conf:type BOOL) (eq ?conf:value true)))
   then
     (printout t "Loading simulation" crlf)
-    (path-load  llsf2013/sim.clp)
+    (path-load  llsf2014/sim.clp)
   )
-  (path-load  llsf2013/game.clp)
-  (path-load  llsf2013/general.clp)
-  (path-load  llsf2013/strategy.clp)
-  (path-load  llsf2013/worldmodel.clp)
-  (path-load  llsf2013/production.clp)
-  (path-load  llsf2013/exploration.clp)
+  (path-load  llsf2014/game.clp)
+  (path-load  llsf2014/general.clp)
+  (path-load  llsf2014/strategy.clp)
+  (path-load  llsf2014/worldmodel.clp)
+  (path-load  llsf2014/production.clp)
+  (path-load  llsf2014/exploration.clp)
+
+
+  (path-load  llsf2014/tasks.clp)
   (reset)
   ;(facts)
 )
@@ -79,7 +82,7 @@
   (init)
   (protobuf-available)
   (confval (path "/clips-agent/clips-debug") (type BOOL) (value true))
-  (confval (path "/clips-agent/llsf2013/unwatch-facts") (type STRING) (is-list TRUE) (list-value $?lv))
+  (confval (path "/clips-agent/llsf2014/unwatch-facts") (type STRING) (is-list TRUE) (list-value $?lv))
   =>
   (printout t "Disabling watching of the following facts: " ?lv crlf)
   (foreach ?v ?lv (unwatch facts (sym-cat ?v)))
@@ -90,7 +93,7 @@
   (init)
   (protobuf-available)
   (confval (path "/clips-agent/clips-debug") (type BOOL) (value true))
-  (confval (path "/clips-agent/llsf2013/unwatch-rules") (type STRING) (is-list TRUE) (list-value $?lv))
+  (confval (path "/clips-agent/llsf2014/unwatch-rules") (type STRING) (is-list TRUE) (list-value $?lv))
   =>
   (printout t "Disabling watching of the following rules: " ?lv crlf)
   (foreach ?v ?lv (unwatch rules (sym-cat ?v)))

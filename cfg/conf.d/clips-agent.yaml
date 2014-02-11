@@ -20,7 +20,7 @@ clips-agent:
   
   llsf2014:
     #agent-role defined in host.yaml (this is only the default!)
-    agent-role: P3
+    agent-role: nothing
     #start-machine-exploration defined in host.yaml (this is only the default!)
     start-machine-exploration: M8
     
@@ -63,6 +63,8 @@ clips-agent:
     #possible values: no,ifpossible,afterdeliver
     recycle: ifpossible
 
+
+    
   llsf2013:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: P3
