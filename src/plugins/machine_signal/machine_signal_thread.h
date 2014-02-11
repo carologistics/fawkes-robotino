@@ -46,6 +46,8 @@
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
+#define MAX_ROI_ASPECT_SKEW 1.5f
+
 namespace fawkes
 {
 class Position3DInterface;
@@ -73,7 +75,6 @@ class MachineSignalThread :
 
   private:
     typedef struct {
-        firevision::FilterColorThreshold *filter;
         firevision::ColorModelSimilarity *colormodel;
         firevision::SimpleColorClassifier *classifier;
         firevision::color_t color_expect;
@@ -94,17 +95,27 @@ class MachineSignalThread :
 
     typedef struct {
         // keep ROIs for a certain signal in a list, as well as in explicit struct members
-        std::list<firevision::ROI> signal_roi_list;
         firevision::ROI *red_roi;
         firevision::ROI *yellow_roi;
         firevision::ROI *green_roi;
     } signal_rois_t_;
+
+    std::list<firevision::ROI> all_rois_;
+
+    inline bool rois_delivery_zone(std::list<firevision::ROI>::iterator red, std::list<firevision::ROI>::iterator green);
+    inline bool roi_width_ok(std::list<firevision::ROI>::iterator);
+    inline bool rois_similar_width(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
+    inline bool rois_x_aligned(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
+    inline bool roi_aspect_ok(std::list<firevision::ROI>::iterator);
 
     std::atomic_bool cfg_changed_;
     std::atomic_bool cam_changed_;
     firevision::SharedMemoryImageBuffer *shmbuf_;
 
     std::string cfg_camera_;
+
+    /*firevision::SimpleColorClassifier *cls_black_cap_;
+    unsigned int cfg_black_thresh_;*/
 
     color_classifier_t_ cls_red_;
     color_classifier_t_ cls_green_;
@@ -138,6 +149,10 @@ class MachineSignalThread :
 
     void cleanup_classifiers();
     void cleanup_camera();
+
+    std::list<signal_rois_t_> *create_signal_rois(
+        std::list<firevision::ROI> *rois_R,
+        std::list<firevision::ROI> *rois_G);
 
   protected:
     /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
