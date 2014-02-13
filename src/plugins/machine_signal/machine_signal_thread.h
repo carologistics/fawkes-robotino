@@ -28,25 +28,32 @@
 #include <aspect/blackboard.h>
 #include <aspect/vision.h>
 #include <config/change_handler.h>
+#include <aspect/clock.h>
 
 // Members
 #include <fvutils/ipc/shm_image.h>
 #include <fvfilters/colorthreshold.h>
+#include <fvfilters/roidraw.h>
 #include <fvmodels/color/similarity.h>
 #include <fvmodels/color/thresholds_luminance.h>
+#include <fvmodels/scanlines/grid.h>
 #include <fvclassifiers/simple.h>
-//#include <fvcams/fileloader.h>
-#include <fvcams/camera.h>
+#include <fvcams/fileloader.h>
+//#include <fvcams/camera.h>
 #include <string>
 #include <core/threading/mutex.h>
 #include <atomic>
 #include <interfaces/RobotinoLightInterface.h>
+#include <boost/circular_buffer.hpp>
 
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
 #define MAX_ROI_ASPECT_SKEW 1.5f
+#define MAX_SIGNALS 3
+#define LOG_SIZE MAX_SIGNALS + 2
+#define FV_FPS 30
 
 namespace fawkes
 {
@@ -64,7 +71,8 @@ class MachineSignalThread :
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
   public fawkes::VisionAspect,
-  public fawkes::ConfigurationChangeHandler
+  public fawkes::ConfigurationChangeHandler,
+  public fawkes::ClockAspect
 {
   public:
     MachineSignalThread();
@@ -84,24 +92,35 @@ class MachineSignalThread :
         unsigned int cfg_roi_min_points;
         unsigned int cfg_roi_basic_size;
         unsigned int cfg_roi_neighborhood_min_match;
-        unsigned int cfg_roi_grow_by;
     } color_classifier_t_;
 
-    struct sort_functor_ {
+    double last_second;
+    unsigned int frame_count_;
+    float fps_;
+    firevision::FilterROIDraw *roi_drawer_;
+
+    struct {
         bool operator() (firevision::ROI r1, firevision::ROI r2) {
           return r1.start.x <= r2.start.x;
         }
     } sort_rois_by_x_;
 
     typedef struct {
-        // keep ROIs for a certain signal in a list, as well as in explicit struct members
         firevision::ROI *red_roi;
         firevision::ROI *yellow_roi;
         firevision::ROI *green_roi;
     } signal_rois_t_;
 
+    struct {
+        bool operator() (signal_rois_t_ &signal1, signal_rois_t_ &signal2) {
+          return signal1.red_roi->start.x <= signal2.red_roi->start.x;
+        }
+    } sort_signal_rois_by_x_;
+
+    // All ROIs we want to see painted in the tuning buffer
     std::list<firevision::ROI> all_rois_;
 
+    // Checks to weed out implausible ROIs
     inline bool rois_delivery_zone(std::list<firevision::ROI>::iterator red, std::list<firevision::ROI>::iterator green);
     inline bool roi_width_ok(std::list<firevision::ROI>::iterator);
     inline bool rois_similar_width(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
@@ -114,8 +133,99 @@ class MachineSignalThread :
 
     std::string cfg_camera_;
 
+    // Maybe we want to detect the black cap on top of the signal, too...?
     /*firevision::SimpleColorClassifier *cls_black_cap_;
     unsigned int cfg_black_thresh_;*/
+
+    unsigned int cfg_light_on_threshold_;
+    unsigned int cfg_light_on_min_points_;
+    unsigned int cfg_light_on_min_neighborhood_;
+    std::atomic<float> cfg_light_on_min_area_cover_;
+
+    firevision::SimpleColorClassifier *cls_light_on_;
+    firevision::ScanlineGrid *light_scangrid_;
+
+    typedef struct {
+        bool red;
+        bool yellow;
+        bool green;
+        fawkes::upoint_t pos;
+    } frame_state_t_;
+
+    typedef struct signal_state_ {
+        fawkes::RobotinoLightInterface::LightState red;
+        fawkes::RobotinoLightInterface::LightState yellow;
+        fawkes::RobotinoLightInterface::LightState green;
+        fawkes::upoint_t pos;
+        int visibility;
+        bool seen;
+        boost::circular_buffer<bool> history_R;
+        boost::circular_buffer<bool> history_Y;
+        boost::circular_buffer<bool> history_G;
+        float *fps;
+
+        signal_state_(float *fps)
+        : history_R(boost::circular_buffer<bool>(FV_FPS)),
+          history_Y(boost::circular_buffer<bool>(FV_FPS)),
+          history_G(boost::circular_buffer<bool>(FV_FPS))
+        {
+          visibility = -1;
+          seen = false;
+          red = fawkes::RobotinoLightInterface::UNKNOWN;
+          yellow = fawkes::RobotinoLightInterface::UNKNOWN;
+          green = fawkes::RobotinoLightInterface::UNKNOWN;
+          this->fps = fps;
+        }
+
+        fawkes::RobotinoLightInterface::LightState
+        inline eval_history(boost::circular_buffer<bool> const &history)
+        {
+          if (history.size() < (*fps)/2)
+            return history.front() ?
+                fawkes::RobotinoLightInterface::ON :
+                fawkes::RobotinoLightInterface::OFF;
+          int count = 0;
+          for (boost::circular_buffer<bool>::const_iterator it = history.begin(); it != history.end(); it++) {
+            count += *it ? 1 : -1;
+          }
+          if (count < -1 * (*fps) / 10.0) return fawkes::RobotinoLightInterface::OFF;
+          else if (count > (*fps) / 10.0) return fawkes::RobotinoLightInterface::ON;
+          else return fawkes::RobotinoLightInterface::BLINKING;
+        }
+
+        inline void update(frame_state_t_ const &s) {
+          history_R.push_front(s.red);
+          history_Y.push_front(s.yellow);
+          history_G.push_front(s.green);
+          pos = s.pos;
+          if (unlikely(visibility < 0)) visibility = 1;
+          else visibility++;
+          seen = true;
+          red = eval_history(history_R);
+          yellow = eval_history(history_Y);
+          green = eval_history(history_G);
+        }
+
+        inline double distance(frame_state_t_ const &s) {
+          int dx = s.pos.x - pos.x;
+          int dy = s.pos.y - pos.y;
+          return sqrt(dx*dx + dy*dy);
+        }
+
+    } signal_state_t_;
+
+
+    struct {
+        bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
+          return s1.visibility <= s2.visibility;
+        }
+    } sort_signal_states_by_visibility_;
+
+    bool get_light_state(firevision::ROI *light);
+
+    std::list<signal_state_t_> known_signals_;
+
+    std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
 
     color_classifier_t_ cls_red_;
     color_classifier_t_ cls_green_;
@@ -126,11 +236,7 @@ class MachineSignalThread :
 
     fawkes::Mutex cfg_mutex_;
 
-    fawkes::RobotinoLightInterface::LightState *iface_red_;
-    fawkes::RobotinoLightInterface::LightState *iface_yellow_;
-    fawkes::RobotinoLightInterface::LightState *iface_green_;
-
-    // Abstracts inherited from ConfigurationChangeHandler
+    // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);
     virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
     virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
@@ -142,7 +248,6 @@ class MachineSignalThread :
       *cfg = val;
       return true;
     }
-
 
     void setup_classifier(color_classifier_t_ *classifier);
     void setup_camera();
