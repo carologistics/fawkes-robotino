@@ -19,14 +19,13 @@
 
 #include "machine_signal_thread.h"
 #include <fvfilters/colorthreshold.h>
-#include <fvfilters/roidraw.h>
 #include <aspect/logging.h>
 #include <fvutils/color/colorspaces.h>
 #include <fvutils/scalers/lossy.h>
-#include <fvmodels/scanlines/grid.h>
 #include <cstring>
 #include <core/threading/mutex_locker.h>
 #include <cmath>
+#include <cfloat>
 
 using namespace fawkes;
 using namespace firevision;
@@ -40,6 +39,7 @@ MachineSignalThread::MachineSignalThread()
 {
   cam_width_ = 0;
   cam_height_ = 0;
+  cfg_light_on_threshold_ = 0;
   camera_ = NULL;
   cls_red_.colormodel = NULL;
   cls_red_.classifier = NULL;
@@ -50,6 +50,14 @@ MachineSignalThread::MachineSignalThread()
   cfg_changed_ = false;
   cam_changed_ = false;
   shmbuf_ = NULL;
+  cls_light_on_ = NULL;
+  cfg_light_on_min_neighborhood_ = 0;
+  cfg_light_on_min_points_ = 0;
+  light_scangrid_ = NULL;
+  frame_count_ = 0;
+  fps_ = FV_FPS;
+  roi_drawer_ = NULL;
+  last_second = clock->now().in_sec();
 }
 
 
@@ -87,7 +95,7 @@ void MachineSignalThread::setup_classifier(color_classifier_t_ *color_data)
       color_data->cfg_roi_basic_size,
       false,
       color_data->cfg_roi_neighborhood_min_match,
-      color_data->cfg_roi_grow_by,
+      0,
       color_data->color_expect);
 }
 
@@ -100,6 +108,7 @@ void MachineSignalThread::init()
   setup_camera();
 
   shmbuf_ = new SharedMemoryImageBuffer("machine_signal", YUV422_PLANAR, cam_width_, cam_height_);
+  roi_drawer_ = new FilterROIDraw(&all_rois_, FilterROIDraw::DASHED_HINT);
 
   // Configure RED classifier
   cls_red_.cfg_ref_col = config->get_uints(CFG_PREFIX_ "/red/reference_color");
@@ -108,7 +117,6 @@ void MachineSignalThread::init()
   cls_red_.cfg_roi_min_points = config->get_int(CFG_PREFIX_ "/red/min_points");
   cls_red_.cfg_roi_basic_size = config->get_int(CFG_PREFIX_ "/red/basic_roi_size");
   cls_red_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX_ "/red/neighborhood_min_match");
-  cls_red_.cfg_roi_grow_by = config->get_int(CFG_PREFIX_ "/red/grow_by");
 
   // Configure GREEN classifier
   cls_green_.cfg_ref_col = config->get_uints(CFG_PREFIX_ "/green/reference_color");
@@ -117,10 +125,36 @@ void MachineSignalThread::init()
   cls_green_.cfg_roi_min_points = config->get_int(CFG_PREFIX_ "/green/min_points");
   cls_green_.cfg_roi_basic_size = config->get_int(CFG_PREFIX_ "/green/basic_roi_size");
   cls_green_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX_ "/green/neighborhood_min_match");
-  cls_green_.cfg_roi_grow_by = config->get_int(CFG_PREFIX_ "/green/grow_by");
+
+  cfg_light_on_threshold_ = config->get_uint(CFG_PREFIX_ "/bright_light/min_brightness");
+  cfg_light_on_min_points_ = config->get_uint(CFG_PREFIX_ "/bright_light/min_points");
+  cfg_light_on_min_neighborhood_ = config->get_uint(CFG_PREFIX_ "/bright_light/neighborhood_min_match");
+  cfg_light_on_min_area_cover_ = config->get_float(CFG_PREFIX_ "/bright_light/min_area_cover");
 
   setup_classifier(&cls_red_);
   setup_classifier(&cls_green_);
+
+  light_scangrid_ = new ScanlineGrid(cam_width_, cam_height_, 1, 1);
+  cls_light_on_ = new SimpleColorClassifier(
+      light_scangrid_,
+      new ColorModelLuminance(cfg_light_on_threshold_),
+      cfg_light_on_min_points_,
+      8,
+      false,
+      cfg_light_on_min_neighborhood_,
+      0,
+      C_WHITE);
+  cls_light_on_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
+
+  uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
+  fps_ = 1 / ((float)loop_time / 1000000.0);
+  last_second = clock->now().in_sec();
+
+  for (int i = 0; i < MAX_SIGNALS; i++) {
+    std::string iface_name = "machine_signal_";
+    iface_name += std::to_string(i);
+    bb_signal_states_.push_back(blackboard->open_for_writing<RobotinoLightInterface>(iface_name.c_str()));
+  }
 
   config->add_change_handler(this);
 }
@@ -140,6 +174,10 @@ void MachineSignalThread::finalize()
   cleanup_camera();
   cleanup_classifiers();
   vision_master->unregister_thread(this);
+  for (std::vector<RobotinoLightInterface *>::iterator bb_it = bb_signal_states_.begin();
+      bb_it != bb_signal_states_.end(); bb_it++) {
+    blackboard->close(*bb_it);
+  }
   delete shmbuf_;
 }
 
@@ -159,22 +197,45 @@ void MachineSignalThread::cleanup_classifiers()
   delete cls_green_.classifier;
 }
 
-
 void MachineSignalThread::loop()
 {
-  FilterROIDraw *draw;
   std::list<ROI> *rois_R, *rois_G;
+  bool fps_changed;
+
+  if (unlikely(clock->now().in_sec() - last_second > 1)) {
+    fps_changed = fps_ != frame_count_;
+    fps_ = frame_count_;
+    frame_count_ = 1;
+  }
+  else frame_count_++;
 
   if (unlikely(cfg_changed_)) {
     MutexLocker lock(&cfg_mutex_);
+
     setup_classifier(&cls_red_);
     setup_classifier(&cls_green_);
+
+    delete cls_light_on_;
+    cls_light_on_ = new SimpleColorClassifier(
+        light_scangrid_,
+        new ColorModelLuminance(cfg_light_on_threshold_),
+        cfg_light_on_min_points_,
+        8,
+        false,
+        cfg_light_on_min_neighborhood_,
+        0,
+        C_WHITE);
+
     cfg_changed_ = false;
   }
+
+  all_rois_.clear();
 
 #ifndef __FIREVISION_CAMS_FILELOADER_H_
   camera_->capture();
 #endif
+
+  cls_light_on_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
   cls_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
   rois_R = cls_red_.classifier->classify();
@@ -183,24 +244,113 @@ void MachineSignalThread::loop()
 
   memcpy(shmbuf_->buffer(), camera_->buffer(), shmbuf_->data_size());
 
-  // sort ROIs to optimize red-green matching
-  rois_R->sort(sort_rois_by_x_);
-  rois_G->sort(sort_rois_by_x_);
-
   if (rois_R->empty() || rois_G->empty()) return;
 
   std::list<signal_rois_t_> *signal_rois = create_signal_rois(rois_R, rois_G);
-  signal_rois->clear();
 
-  draw = new FilterROIDraw(&all_rois_, FilterROIDraw::DASHED_HINT);
-  draw->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
-  draw->set_dst_buffer(shmbuf_->buffer(), NULL);
-  draw->apply();
+  for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
+      known_signal != known_signals_.end(); known_signal++)
+    known_signal->seen = false;
 
-  #ifndef __FIREVISION_CAMS_FILELOADER_H_
+  { std::list<signal_rois_t_>::iterator signal_it = signal_rois->begin();
+  for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); i++) {
+    frame_state_t_ frame_state({
+      get_light_state(signal_it->red_roi),
+          get_light_state(signal_it->yellow_roi),
+          get_light_state(signal_it->green_roi),
+          signal_it->red_roi->start
+    });
+
+    double dist_min = DBL_MAX;
+    std::list<signal_state_t_>::iterator best_match;
+    for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
+        known_signal != known_signals_.end(); known_signal++) {
+      if (unlikely(fps_changed)) {
+        logger->log_debug(this->name(), "FPS changed to %d", fps_);
+        known_signal->history_R.set_capacity(fps_);
+        known_signal->history_Y.set_capacity(fps_);
+        known_signal->history_G.set_capacity(fps_);
+      }
+      double dist = known_signal->distance(frame_state);
+      if (dist < dist_min) {
+        best_match = known_signal;
+        dist_min = dist;
+      }
+    }
+
+    if (dist_min < 5)
+      best_match->update(frame_state);
+    else {
+      // No historic match was found for the current signal
+      signal_state_t_ *cur_state = new signal_state_t_(&fps_);
+      cur_state->update(frame_state);
+      known_signals_.push_back(*cur_state);
+      delete cur_state;
+    }
+    delete signal_it->red_roi;
+    signal_it->red_roi = NULL;
+    delete signal_it->yellow_roi;
+    signal_it->yellow_roi = NULL;
+    delete signal_it->green_roi;
+    signal_it->green_roi = NULL;
+
+    signal_it++;
+  }
+  }
+  delete signal_rois;
+  signal_rois = NULL;
+
+  roi_drawer_->set_rois(&all_rois_);
+  roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
+  roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
+  roi_drawer_->apply();
+
+  // Throw out the signals with the worst visibility histories
+  known_signals_.sort(sort_signal_states_by_visibility_);
+  while (known_signals_.size() >= MAX_SIGNALS)
+    known_signals_.pop_back();
+
+  // Update blackboard with the new information
+  std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
+  for (int i = 0; i < MAX_SIGNALS && known_signal != known_signals_.end(); i++) {
+    bb_signal_states_[i]->set_red(known_signal->red);
+    bb_signal_states_[i]->set_yellow(known_signal->yellow);
+    bb_signal_states_[i]->set_green(known_signal->green);
+    bb_signal_states_[i]->set_visibility_history(
+      known_signal->seen ? known_signal->visibility : -1);
+    bb_signal_states_[i]->set_ready(known_signal->visibility >= fps_);
+    bb_signal_states_[i]->write();
+
+    known_signal++;
+  }
+
+  delete rois_R;
+  delete rois_G;
+
+#ifndef __FIREVISION_CAMS_FILELOADER_H_
   camera_->dispose_buffer();
 #endif
 }
+
+bool MachineSignalThread::get_light_state(firevision::ROI *light)
+{
+  light_scangrid_->set_roi(light);
+  light_scangrid_->reset();
+  std::list<ROI> *bright_rois = cls_light_on_->classify();
+
+  for (std::list<ROI>::iterator roi_it = bright_rois->begin(); roi_it != bright_rois->end(); roi_it++) {
+    float area_ratio = (float)(roi_it->width * roi_it->height) / (float)(light->width * light->height);
+    if (roi_aspect_ok(roi_it) && area_ratio > cfg_light_on_min_area_cover_) {
+      all_rois_.push_back(*roi_it);
+      delete bright_rois;
+      return true;
+    }
+  }
+
+  delete bright_rois;
+  return false;
+}
+
 
 std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_signal_rois(
     std::list<ROI> *rois_R,
@@ -220,7 +370,7 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
       if (rois_delivery_zone(it_R, it_G)) {
         // We're looking at the delivery zone. Don't expect to find any usable green ROIs
         // here, so we set the rest manually.
-        uint start_y = it_R->start.y + it_R->width; // add width since it's more reliable
+        uint start_y = it_R->start.y + it_R->width; // add width since it's more reliable than height
         ROI *roi_R = new ROI(*it_R);
         ROI *roi_Y = new ROI(it_R->start.x, start_y, it_R->width, it_R->height, it_R->image_width, it_R->image_height);
         roi_Y->color = C_YELLOW;
@@ -229,9 +379,9 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
         roi_G->color = C_GREEN;
 
         rv->push_back({roi_R, roi_Y, roi_G});
-        all_rois_.push_back(roi_R);
-        all_rois_.push_back(roi_Y);
-        all_rois_.push_back(roi_G);
+        all_rois_.push_back(*roi_R);
+        all_rois_.push_back(*roi_Y);
+        all_rois_.push_back(*roi_G);
 
         // Done with this signal, no point in looking for any further green ROIs.
         break;
@@ -250,7 +400,6 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
         all_rois_.push_back(*roi_R);
         all_rois_.push_back(*roi_Y);
         all_rois_.push_back(*roi_G);
-
       }
     }
   }
@@ -319,8 +468,16 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
         cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_roi_basic_size), v->get_uint());
       else if (opt == "/neighborhood_min_match")
         cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_roi_neighborhood_min_match), v->get_uint());
-      else if (opt == "/grow_by")
-        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_roi_grow_by), v->get_uint());
+    }
+    else if (color_pfx == "/bright_light") {
+      if (opt == "/min_brightness")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_light_on_threshold_), v->get_uint());
+      else if (opt == "/min_points")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_light_on_min_points_), v->get_uint());
+      else if (opt == "/neighborhood_min_match")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_light_on_min_neighborhood_), v->get_uint());
+      else if (opt == "/min_area_cover")
+        cfg_light_on_min_area_cover_ = v->get_float();
     }
   }
 }

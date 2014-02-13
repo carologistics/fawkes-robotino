@@ -30,7 +30,7 @@ LIBS     += $(VISION_LIBS)
 #The necessary libraries your plugin needs.
 LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
-		fvfilters fvclassifiers fawkesconfig
+		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_machine_signal = machine_signal_plugin.o machine_signal_thread.o
 
