@@ -57,36 +57,26 @@ MachineSignalThread::MachineSignalThread()
   frame_count_ = 0;
   fps_ = FV_FPS;
   roi_drawer_ = NULL;
+  color_filter_ = NULL;
+  cfg_roi_max_aspect_ratio_ = 1.7;
+  combined_colormodel_ = NULL;
   last_second = clock->now().in_sec();
 }
 
 
-static inline bool check_color_vector(std::vector<uint> &v)
-{
-  if (v.size() != 3) return false;
-  for (std::vector<uint>::iterator it = v.begin(); it != v.end(); it++) {
-    if (*it > 0xff) return false;
-  }
-  return true;
-}
-
 
 void MachineSignalThread::setup_classifier(color_classifier_t_ *color_data)
 {
-  if(!check_color_vector(color_data->cfg_ref_col)) {
-    throw Exception("reference_color_ setting must be a list with 3 values from 0 to 255!");
-  }
-
   delete color_data->classifier;
   delete color_data->colormodel;
 
+  // Update the color class used by the combined color model for the tuning filter
+  color_data->color_class->chroma_threshold = color_data->cfg_chroma_thresh;
+  color_data->color_class->saturation_threshold = color_data->cfg_sat_thresh;
+  color_data->color_class->set_reference(color_data->cfg_ref_col);
+
   color_data->colormodel = new ColorModelSimilarity();
-  RGB_t color = {
-      (unsigned char)color_data->cfg_ref_col.at(0),
-      (unsigned char)color_data->cfg_ref_col.at(1),
-      (unsigned char)color_data->cfg_ref_col.at(2)
-  };
-  color_data->colormodel->add_color(color_data->color_expect, color, color_data->cfg_chroma_thresh, color_data->cfg_sat_thresh);
+  color_data->colormodel->add_color(color_data->color_class);
 
   color_data->classifier = new SimpleColorClassifier(
       new ScanlineGrid(cam_width_, cam_height_, 2, 2),
@@ -118,6 +108,10 @@ void MachineSignalThread::init()
   cls_red_.cfg_roi_basic_size = config->get_int(CFG_PREFIX_ "/red/basic_roi_size");
   cls_red_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX_ "/red/neighborhood_min_match");
 
+  cls_red_.color_class = new ColorModelSimilarity::color_class_t(
+    cls_red_.color_expect, cls_red_.cfg_ref_col, cls_red_.cfg_chroma_thresh, cls_red_.cfg_sat_thresh);
+  setup_classifier(&cls_red_);
+
   // Configure GREEN classifier
   cls_green_.cfg_ref_col = config->get_uints(CFG_PREFIX_ "/green/reference_color");
   cls_green_.cfg_chroma_thresh = config->get_int(CFG_PREFIX_ "/green/chroma_thresh");
@@ -126,14 +120,28 @@ void MachineSignalThread::init()
   cls_green_.cfg_roi_basic_size = config->get_int(CFG_PREFIX_ "/green/basic_roi_size");
   cls_green_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX_ "/green/neighborhood_min_match");
 
+  cls_green_.color_class = new ColorModelSimilarity::color_class_t(
+    cls_green_.color_expect, cls_green_.cfg_ref_col, cls_green_.cfg_chroma_thresh, cls_green_.cfg_sat_thresh);
+  setup_classifier(&cls_green_);
+
+  // Configure brightness classifier
   cfg_light_on_threshold_ = config->get_uint(CFG_PREFIX_ "/bright_light/min_brightness");
   cfg_light_on_min_points_ = config->get_uint(CFG_PREFIX_ "/bright_light/min_points");
   cfg_light_on_min_neighborhood_ = config->get_uint(CFG_PREFIX_ "/bright_light/neighborhood_min_match");
   cfg_light_on_min_area_cover_ = config->get_float(CFG_PREFIX_ "/bright_light/min_area_cover");
 
-  setup_classifier(&cls_red_);
-  setup_classifier(&cls_green_);
+  // Other config
+  cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX_ "/roi_max_aspect_ratio");
+  cfg_tuning_mode_ = config->get_bool(CFG_PREFIX_ "/tuning_mode");
+  cfg_draw_processed_rois_ = config->get_bool(CFG_PREFIX_ "/draw_processed_rois");
 
+  // Setup combined ColorModel for tuning filter
+  combined_colormodel_ = new ColorModelSimilarity();
+  combined_colormodel_->add_color(cls_red_.color_class);
+  combined_colormodel_->add_color(cls_green_.color_class);
+  color_filter_ = new FilterColorThreshold(combined_colormodel_);
+
+  // Setup luminance classifier for light on/off detection
   light_scangrid_ = new ScanlineGrid(cam_width_, cam_height_, 1, 1);
   cls_light_on_ = new SimpleColorClassifier(
       light_scangrid_,
@@ -146,10 +154,12 @@ void MachineSignalThread::init()
       C_WHITE);
   cls_light_on_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
+  // Initialize frame rate detection
   uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
   fps_ = 1 / ((float)loop_time / 1000000.0);
   last_second = clock->now().in_sec();
 
+  // Open required blackboard interfaces
   for (int i = 0; i < MAX_SIGNALS; i++) {
     std::string iface_name = "machine_signal_";
     iface_name += std::to_string(i);
@@ -158,6 +168,7 @@ void MachineSignalThread::init()
 
   config->add_change_handler(this);
 }
+
 
 void MachineSignalThread::setup_camera()
 {
@@ -168,6 +179,7 @@ void MachineSignalThread::setup_camera()
   camera_->capture();
 #endif
 }
+
 
 void MachineSignalThread::finalize()
 {
@@ -181,6 +193,7 @@ void MachineSignalThread::finalize()
   delete shmbuf_;
 }
 
+
 void MachineSignalThread::cleanup_camera()
 {
 #ifdef __FIREVISION_CAMS_FILELOADER_H_
@@ -188,6 +201,7 @@ void MachineSignalThread::cleanup_camera()
 #endif
   delete camera_;
 }
+
 
 void MachineSignalThread::cleanup_classifiers()
 {
@@ -197,18 +211,22 @@ void MachineSignalThread::cleanup_classifiers()
   delete cls_green_.classifier;
 }
 
+
 void MachineSignalThread::loop()
 {
   std::list<ROI> *rois_R, *rois_G;
   bool fps_changed;
 
+  // Perform FPS estimation every second
   if (unlikely(clock->now().in_sec() - last_second > 1)) {
+    last_second = clock->now().in_sec();
     fps_changed = fps_ != frame_count_;
     fps_ = frame_count_;
     frame_count_ = 1;
   }
   else frame_count_++;
 
+  // Reallocate classifiers if their config changed
   if (unlikely(cfg_changed_)) {
     MutexLocker lock(&cfg_mutex_);
 
@@ -229,29 +247,44 @@ void MachineSignalThread::loop()
     cfg_changed_ = false;
   }
 
-  all_rois_.clear();
-
 #ifndef __FIREVISION_CAMS_FILELOADER_H_
   camera_->capture();
 #endif
 
   cls_light_on_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
+  // Classify red & green in full picture
   cls_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
   rois_R = cls_red_.classifier->classify();
+
+  if (rois_R->empty()) return;
+
   cls_green_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
   rois_G = cls_green_.classifier->classify();
 
-  memcpy(shmbuf_->buffer(), camera_->buffer(), shmbuf_->data_size());
+  if (unlikely(cfg_tuning_mode_)) {
+    all_rois_.clear();
 
-  if (rois_R->empty() || rois_G->empty()) return;
+    // Visualize color similarities in tuning buffer
+    color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
+    color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
+    color_filter_->apply();
 
+    if (!cfg_draw_processed_rois_) {
+      all_rois_.merge(*rois_R);
+      all_rois_.merge(*rois_G);
+    }
+  }
+
+  // Create and group ROIs that make up the red, yellow and green lights of a signal
   std::list<signal_rois_t_> *signal_rois = create_signal_rois(rois_R, rois_G);
 
+  // Reset all known signals to not-seen
   for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
       known_signal != known_signals_.end(); known_signal++)
     known_signal->seen = false;
 
+  // Go through all signals from this frame...
   { std::list<signal_rois_t_>::iterator signal_it = signal_rois->begin();
   for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); i++) {
     frame_state_t_ frame_state({
@@ -261,24 +294,26 @@ void MachineSignalThread::loop()
           signal_it->red_roi->start
     });
 
-    double dist_min = DBL_MAX;
+    // ... and match them to known signals based on the max_jitter tunable
+    float dist_min = FLT_MAX;
     std::list<signal_state_t_>::iterator best_match;
     for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
         known_signal != known_signals_.end(); known_signal++) {
       if (unlikely(fps_changed)) {
+        // Resize history buffers to 1 second
         logger->log_debug(this->name(), "FPS changed to %d", fps_);
         known_signal->history_R.set_capacity(fps_);
         known_signal->history_Y.set_capacity(fps_);
         known_signal->history_G.set_capacity(fps_);
       }
-      double dist = known_signal->distance(frame_state);
+      float dist = known_signal->distance(frame_state);
       if (dist < dist_min) {
         best_match = known_signal;
         dist_min = dist;
       }
     }
 
-    if (dist_min < 5)
+    if (dist_min < cfg_max_jitter_)
       best_match->update(frame_state);
     else {
       // No historic match was found for the current signal
@@ -287,6 +322,7 @@ void MachineSignalThread::loop()
       known_signals_.push_back(*cur_state);
       delete cur_state;
     }
+
     delete signal_it->red_roi;
     signal_it->red_roi = NULL;
     delete signal_it->yellow_roi;
@@ -297,20 +333,24 @@ void MachineSignalThread::loop()
     signal_it++;
   }
   }
+
   delete signal_rois;
   signal_rois = NULL;
 
-  roi_drawer_->set_rois(&all_rois_);
-  roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
-  roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
-  roi_drawer_->apply();
+  if (unlikely(cfg_tuning_mode_)) {
+    // Visualize the signals and bright spots we found
+    roi_drawer_->set_rois(&all_rois_);
+    roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
+    roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
+    roi_drawer_->apply();
+  }
 
   // Throw out the signals with the worst visibility histories
   known_signals_.sort(sort_signal_states_by_visibility_);
   while (known_signals_.size() >= MAX_SIGNALS)
     known_signals_.pop_back();
 
-  // Update blackboard with the new information
+  // Update blackboard with the current information
   std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
   for (int i = 0; i < MAX_SIGNALS && known_signal != known_signals_.end(); i++) {
     bb_signal_states_[i]->set_red(known_signal->red);
@@ -332,6 +372,11 @@ void MachineSignalThread::loop()
 #endif
 }
 
+/**
+ * Determine if a given color ROI can be considered lit according to the luminance model.
+ * @param light the ROI to be considered
+ * @return true if "lit" according to our criteria, false otherwise.
+ */
 bool MachineSignalThread::get_light_state(firevision::ROI *light)
 {
   light_scangrid_->set_roi(light);
@@ -341,17 +386,23 @@ bool MachineSignalThread::get_light_state(firevision::ROI *light)
   for (std::list<ROI>::iterator roi_it = bright_rois->begin(); roi_it != bright_rois->end(); roi_it++) {
     float area_ratio = (float)(roi_it->width * roi_it->height) / (float)(light->width * light->height);
     if (roi_aspect_ok(roi_it) && area_ratio > cfg_light_on_min_area_cover_) {
-      all_rois_.push_back(*roi_it);
+      if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_))
+        all_rois_.push_back(*roi_it);
       delete bright_rois;
       return true;
     }
   }
-
   delete bright_rois;
   return false;
 }
 
-
+/**
+ * Look for red and green ROIs that are likely to be part of a single signal. A red and a green ROI are considered
+ * a match if the red one is above the green one and there's space for a yellow one to fit in between.
+ * @param rois_R A list of red ROIs
+ * @param rois_G A list of green ROIs
+ * @return A list of ROIs in a struct that contains matching red, yellow and green ROIs
+ */
 std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_signal_rois(
     std::list<ROI> *rois_R,
     std::list<ROI> *rois_G)
@@ -379,32 +430,46 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
         roi_G->color = C_GREEN;
 
         rv->push_back({roi_R, roi_Y, roi_G});
-        all_rois_.push_back(*roi_R);
-        all_rois_.push_back(*roi_Y);
-        all_rois_.push_back(*roi_G);
+
+        if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
+          all_rois_.push_back(*roi_R);
+          all_rois_.push_back(*roi_Y);
+          all_rois_.push_back(*roi_G);
+        }
 
         // Done with this signal, no point in looking for any further green ROIs.
         break;
       }
 
-      if (roi_width_ok(it_G) && rois_similar_width(it_R, it_G) && rois_x_aligned(it_R, it_G)) {
-        // Here it_G should have a pretty suitable green ROI.
+      if (roi_width_ok(it_G) && rois_similar_width(it_R, it_G) && rois_x_aligned(it_R, it_G) &&
+          rois_have_vspace(it_R, it_G)) {
+        // Once we got through here it_G should have a pretty sensible green ROI.
+        it_G->height = it_G->width;
         uint start_x = (it_R->start.x + it_G->start.x) / 2;
-        ROI *roi_Y = new ROI(start_x, it_R->start.y + it_R->height, it_R->width, it_R->height, it_R->image_width,
-            it_R->image_height);
+        uint height = (it_R->height + it_G->height) / 2;
+        uint width = (it_R->width + it_G->width) / 2;
+        uint r_end_y = it_R->start.y + it_R->height;
+        uint start_y = r_end_y + (int)(it_G->start.y - r_end_y - height)/2;
+        ROI *roi_Y = new ROI(start_x, start_y,
+          width, height,
+          it_R->image_width, it_R->image_height);
         roi_Y->color = C_YELLOW;
 
         ROI *roi_R = new ROI(*it_R);
         ROI *roi_G = new ROI(*it_G);
         rv->push_back({roi_R, roi_Y, roi_G});
-        all_rois_.push_back(*roi_R);
-        all_rois_.push_back(*roi_Y);
-        all_rois_.push_back(*roi_G);
+
+        if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
+          all_rois_.push_back(*roi_R);
+          all_rois_.push_back(*roi_Y);
+          all_rois_.push_back(*roi_G);
+        }
       }
     }
   }
   return rv;
 }
+
 
 bool MachineSignalThread::rois_delivery_zone(std::list<ROI>::iterator red, std::list<ROI>::iterator green) {
   return (green->contains(red->start.x, red->start.y)
@@ -418,7 +483,7 @@ bool MachineSignalThread::roi_width_ok(std::list<ROI>::iterator r)
 
 bool MachineSignalThread::rois_similar_width(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float width_ratio = (float)r1->width / (float)r2->width;
-  return width_ratio >= 1/MAX_ROI_ASPECT_SKEW && width_ratio <= MAX_ROI_ASPECT_SKEW;
+  return width_ratio >= 1/cfg_roi_max_aspect_ratio_ && width_ratio <= cfg_roi_max_aspect_ratio_;
 }
 
 bool MachineSignalThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
@@ -426,9 +491,14 @@ bool MachineSignalThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<
   return abs(r1->start.x - r2->start.x) / avg_width < 0.4;
 }
 
-bool MachineSignalThread::roi_aspect_ok(std::list<firevision::ROI>::iterator r) {
+bool MachineSignalThread::roi_aspect_ok(std::list<ROI>::iterator r) {
   float aspect_ratio = (float)r->width / (float)r->height;
-  return aspect_ratio > 1/MAX_ROI_ASPECT_SKEW && aspect_ratio < MAX_ROI_ASPECT_SKEW;
+  return aspect_ratio > 1/cfg_roi_max_aspect_ratio_ && aspect_ratio < cfg_roi_max_aspect_ratio_;
+}
+
+bool MachineSignalThread::rois_have_vspace(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
+  float avg_height = (r1->height + r2->height) / 2.0f;
+  return r2->start.y - (r1->start.y + r1->height) > 0.6 * avg_height;
 }
 
 
@@ -478,6 +548,16 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
         cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_light_on_min_neighborhood_), v->get_uint());
       else if (opt == "/min_area_cover")
         cfg_light_on_min_area_cover_ = v->get_float();
+    }
+    else if (color_pfx == "") {
+      if (opt == "/roi_max_aspect_ratio")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_roi_max_aspect_ratio_), v->get_float());
+      if (opt == "/tuning_mode")
+        cfg_tuning_mode_ = v->get_bool();
+      if (opt == "/max_jitter")
+        cfg_max_jitter_ = v->get_float();
+      if (opt == "/draw_processed_rois")
+        cfg_draw_processed_rois_ = v->get_bool();
     }
   }
 }

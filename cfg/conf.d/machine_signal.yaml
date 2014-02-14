@@ -5,27 +5,48 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
 ---
 
 plugins/machine_signal:
-  #camera: "file:file:file=/home/ich/robotino/sampleImages/test2.jpg"
-  camera: v4l2:front:device=/dev/light_front:size=640x480:exposure_auto_priority=0:white_balance_temperature_auto=0:white_balance_temperature=3000:exposure_auto=0:exposure_absolute=600
+  camera: "file:file:file=/home/ich/robotino/sampleImages/test/95.jpg"
+  #camera: v4l2:front:device=/dev/light_front:size=640x480:exposure_auto_priority=0:white_balance_temperature_auto=0:white_balance_temperature=3000:exposure_auto=0:exposure_absolute=600
+  
+  #####################################################
+  # All settings below here can be changed at runtime #
+  #####################################################
+
+  # ROIs that exceed this aspect ratio are ignored.
+  roi_max_aspect_ratio: 2.5
+
+  # Enable the tuning buffer. Use fvviever -s machine_signal to view.
+  # Turn this off to increase performance.
+  tuning_mode: true
+
+  # Draw ROIs as they are after being filtered, tarred and feathered
+  # Disable this to see the raw ROIs as they come out of the classifier
+  # (Useful for tuning the colormodels).
+  # Ignored if tuning_mode == false.
+  draw_processed_rois: true
+
+  # Maximum distance in pixels a signal is allowed to jump between frames
+  # Increase this if you want to try and detect signals while moving.
+  max_jitter: 5.0
+
   red:
     reference_color: [0xff, 0, 0]
     chroma_thresh: 30
-    saturation_thresh: 10
-    
-    min_points: 80
+    saturation_thresh: 15
+    min_points: 40
     basic_roi_size: 10
     neighborhood_min_match: 10
-    grow_by: 0
-
 
   green:
     reference_color: [0, 0x99, 15]
     chroma_thresh: 5
     saturation_thresh: 2
-    
-    min_points: 60
+    min_points: 50
     basic_roi_size: 10
     neighborhood_min_match: 6
-    grow_by: 0
 
-
+  bright_light:
+    min_brightness: 150
+    min_points: 30
+    neighborhood_min_match: 6
+    min_area_cover: 0.2
