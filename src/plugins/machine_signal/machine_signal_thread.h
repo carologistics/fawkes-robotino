@@ -50,7 +50,6 @@
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
-#define MAX_ROI_ASPECT_SKEW 1.5f
 #define MAX_SIGNALS 3
 #define LOG_SIZE MAX_SIGNALS + 2
 #define FV_FPS 30
@@ -82,22 +81,61 @@ class MachineSignalThread :
     virtual void finalize();
 
   private:
-    typedef struct {
+    typedef struct color_classifier {
         firevision::ColorModelSimilarity *colormodel;
         firevision::SimpleColorClassifier *classifier;
-        firevision::color_t color_expect;
+        firevision::ColorModelSimilarity::color_class_t *color_class;
         std::vector<unsigned int> cfg_ref_col;
         int cfg_chroma_thresh;
         int cfg_sat_thresh;
+        firevision::color_t color_expect;
         unsigned int cfg_roi_min_points;
         unsigned int cfg_roi_basic_size;
         unsigned int cfg_roi_neighborhood_min_match;
     } color_classifier_t_;
 
+    color_classifier_t_ cls_red_;
+    color_classifier_t_ cls_green_;
+
+    std::string cfg_camera_;
+    firevision::Camera *camera_;
+    unsigned int cam_width_, cam_height_;
+
+    float cfg_roi_max_aspect_ratio_;
+    std::atomic_bool cfg_tuning_mode_;
+    std::atomic_bool cfg_draw_processed_rois_;
+    std::atomic<float> cfg_max_jitter_;
+
+    fawkes::Mutex cfg_mutex_;
+    std::atomic_bool cfg_changed_;
+    std::atomic_bool cam_changed_;
+
     double last_second;
     unsigned int frame_count_;
     float fps_;
+
+    // Maybe we want to detect the black cap on top of the signal, too...?
+    /*firevision::SimpleColorClassifier *cls_black_cap_;
+    unsigned int cfg_black_thresh_;*/
+
+    unsigned int cfg_light_on_threshold_;
+    unsigned int cfg_light_on_min_points_;
+    unsigned int cfg_light_on_min_neighborhood_;
+    std::atomic<float> cfg_light_on_min_area_cover_;
+
+    firevision::SimpleColorClassifier *cls_light_on_;
+    firevision::ScanlineGrid *light_scangrid_;
+
     firevision::FilterROIDraw *roi_drawer_;
+    firevision::SharedMemoryImageBuffer *shmbuf_;
+    firevision::FilterColorThreshold *color_filter_;
+    firevision::ColorModelSimilarity *combined_colormodel_;
+
+    void setup_classifier(color_classifier_t_ *classifier);
+    void setup_camera();
+
+    void cleanup_classifiers();
+    void cleanup_camera();
 
     struct {
         bool operator() (firevision::ROI r1, firevision::ROI r2) {
@@ -126,24 +164,8 @@ class MachineSignalThread :
     inline bool rois_similar_width(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
     inline bool rois_x_aligned(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
     inline bool roi_aspect_ok(std::list<firevision::ROI>::iterator);
+    inline bool rois_have_vspace(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
 
-    std::atomic_bool cfg_changed_;
-    std::atomic_bool cam_changed_;
-    firevision::SharedMemoryImageBuffer *shmbuf_;
-
-    std::string cfg_camera_;
-
-    // Maybe we want to detect the black cap on top of the signal, too...?
-    /*firevision::SimpleColorClassifier *cls_black_cap_;
-    unsigned int cfg_black_thresh_;*/
-
-    unsigned int cfg_light_on_threshold_;
-    unsigned int cfg_light_on_min_points_;
-    unsigned int cfg_light_on_min_neighborhood_;
-    std::atomic<float> cfg_light_on_min_area_cover_;
-
-    firevision::SimpleColorClassifier *cls_light_on_;
-    firevision::ScanlineGrid *light_scangrid_;
 
     typedef struct {
         bool red;
@@ -206,10 +228,10 @@ class MachineSignalThread :
           green = eval_history(history_G);
         }
 
-        inline double distance(frame_state_t_ const &s) {
+        inline float distance(frame_state_t_ const &s) {
           int dx = s.pos.x - pos.x;
           int dy = s.pos.y - pos.y;
-          return sqrt(dx*dx + dy*dy);
+          return (float)sqrt(dx*dx + dy*dy);
         }
 
     } signal_state_t_;
@@ -224,17 +246,7 @@ class MachineSignalThread :
     bool get_light_state(firevision::ROI *light);
 
     std::list<signal_state_t_> known_signals_;
-
     std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
-
-    color_classifier_t_ cls_red_;
-    color_classifier_t_ cls_green_;
-
-    firevision::Camera *camera_;
-
-    unsigned int cam_width_, cam_height_;
-
-    fawkes::Mutex cfg_mutex_;
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);
@@ -248,12 +260,6 @@ class MachineSignalThread :
       *cfg = val;
       return true;
     }
-
-    void setup_classifier(color_classifier_t_ *classifier);
-    void setup_camera();
-
-    void cleanup_classifiers();
-    void cleanup_camera();
 
     std::list<signal_rois_t_> *create_signal_rois(
         std::list<firevision::ROI> *rois_R,
