@@ -88,7 +88,7 @@ message Machine {
   // Optional pose if known to refbox
   optional Pose2D    pose = 8;
   // Only set during exploration phase
-  // Correctly reported?
+  // True if correctly reported, false otherwise
   optional bool      correctly_reported = 9;
 }
 

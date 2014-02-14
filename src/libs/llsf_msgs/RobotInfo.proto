@@ -76,7 +76,7 @@ message Robot {
   optional RobotState state = 8;
 
   // Time in seconds remaining in current
-  // maintenance cycle, negative if overdue
+  // maintenance cycle, if negative grace time
   optional float  maintenance_time_remaining = 9 [default = 0.0];
   // number of times maintenance
   // has been performed, including current

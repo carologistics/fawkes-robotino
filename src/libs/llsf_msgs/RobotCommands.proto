@@ -39,16 +39,12 @@ package llsf_msgs;
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "RobotCommandsProtos";
 
-// Set a robot's maintenance state
 message SetRobotMaintenance {
   enum CompType {
     COMP_ID  = 2000;
     MSG_TYPE = 91;
   }
 
-  // Number of robot to set state
   required uint32 robot_number = 1;
-  // True to activate maintenance,
-  // false to bring back robot
   required bool   maintenance  = 3;
 }

@@ -47,6 +47,6 @@ message AttentionMessage {
 
   // The message to display, be brief!
   required string message = 1;
-  // Time (sec) the msg should be visible
+  // Time in sec the message should be visible
   optional float  time_to_show = 2;
 }
