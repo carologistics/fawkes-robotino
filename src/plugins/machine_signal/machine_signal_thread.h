@@ -53,7 +53,6 @@
 
 #define MAX_SIGNALS 3
 #define HISTORY_SIZE MAX_SIGNALS + 2
-#define DEFAULT_FPS 30
 #define CFG_PREFIX "/plugins/machine_signal"
 
 
@@ -106,6 +105,7 @@ class MachineSignalThread :
 
     std::atomic<float> cfg_roi_max_aspect_ratio_;
     std::atomic<float> cfg_roi_max_width_ratio_;
+    std::atomic<float> cfg_roi_xalign_;
     std::atomic_bool cfg_tuning_mode_;
     std::atomic_bool cfg_draw_processed_rois_;
     std::atomic<float> cfg_max_jitter_;
@@ -114,9 +114,8 @@ class MachineSignalThread :
     std::atomic_bool cfg_changed_;
     std::atomic_bool cam_changed_;
 
-    double last_second_;
-    unsigned int frame_count_;
-    float fps_;
+    fawkes::Time *last_second_;
+    unsigned int buflen_;
 
     // Maybe we want to detect the black cap on top of the signal, too...?
     /*firevision::SimpleColorClassifier *cls_black_cap_;
@@ -168,7 +167,7 @@ class MachineSignalThread :
     inline bool rois_similar_width(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
     inline bool rois_x_aligned(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
     inline bool roi_aspect_ok(std::list<firevision::ROI>::iterator);
-    inline bool rois_have_vspace(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
+    inline bool rois_vspace_ok(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
 
 
     typedef struct {
@@ -186,29 +185,29 @@ class MachineSignalThread :
         fawkes::RobotinoLightInterface::LightState green;
         fawkes::upoint_t pos;
         int visibility;
-        bool seen;
+        int unseen;
         boost::circular_buffer<bool> history_R;
         boost::circular_buffer<bool> history_Y;
         boost::circular_buffer<bool> history_G;
-        float *fps;
+        unsigned int buflen;
 
-        signal_state_(float *fps)
-        : history_R(boost::circular_buffer<bool>(DEFAULT_FPS)),
-          history_Y(boost::circular_buffer<bool>(DEFAULT_FPS)),
-          history_G(boost::circular_buffer<bool>(DEFAULT_FPS))
+        signal_state_(unsigned int buflen)
+        : history_R(boost::circular_buffer<bool>(buflen)),
+          history_Y(boost::circular_buffer<bool>(buflen)),
+          history_G(boost::circular_buffer<bool>(buflen))
         {
           visibility = -1;
-          seen = false;
+          unseen = 0;
           red = fawkes::RobotinoLightInterface::UNKNOWN;
           yellow = fawkes::RobotinoLightInterface::UNKNOWN;
           green = fawkes::RobotinoLightInterface::UNKNOWN;
-          this->fps = fps;
+          this->buflen = buflen;
         }
 
         fawkes::RobotinoLightInterface::LightState
         inline eval_history(boost::circular_buffer<bool> const &history)
         {
-          if (history.size() < (*fps)/2)
+          if (history.size() < buflen/2)
             return history.front() ?
                 fawkes::RobotinoLightInterface::ON :
                 fawkes::RobotinoLightInterface::OFF;
@@ -216,9 +215,16 @@ class MachineSignalThread :
           for (boost::circular_buffer<bool>::const_iterator it = history.begin(); it != history.end(); it++) {
             count += *it ? 1 : -1;
           }
-          if (count < -1 * (*fps) / 10.0) return fawkes::RobotinoLightInterface::OFF;
-          else if (count > (*fps) / 10.0) return fawkes::RobotinoLightInterface::ON;
-          else return fawkes::RobotinoLightInterface::BLINKING;
+
+          if (count < ((int) buflen / -4.0)) {
+            return fawkes::RobotinoLightInterface::OFF;
+          }
+          else if (count > (buflen / 4.0)) {
+            return fawkes::RobotinoLightInterface::ON;
+          }
+          else {
+            return fawkes::RobotinoLightInterface::BLINKING;
+          }
         }
 
         inline void update(frame_state_t_ const &s) {
@@ -228,7 +234,7 @@ class MachineSignalThread :
           pos = s.pos;
           if (unlikely(visibility < 0)) visibility = 1;
           else visibility++;
-          seen = true;
+          unseen = 0;
           red = eval_history(history_R);
           yellow = eval_history(history_Y);
           green = eval_history(history_G);
@@ -244,14 +250,21 @@ class MachineSignalThread :
 
     struct {
         bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
-          return s1.visibility <= s2.visibility;
+          return s1.visibility > s2.visibility;
         }
     } sort_signal_states_by_visibility_;
+
+    struct {
+        bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
+          return s1.pos.x <= s2.pos.x;
+        }
+    } sort_signal_states_by_x_;
 
     bool get_light_state(firevision::ROI *light);
 
     std::list<signal_state_t_> known_signals_;
     std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
+    fawkes::RobotinoLightInterface * bb_signal_compat_;
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);

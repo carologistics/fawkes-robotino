@@ -51,13 +51,13 @@ MachineSignalThread::MachineSignalThread()
   cfg_light_on_min_neighborhood_ = 0;
   cfg_light_on_min_points_ = 0;
   light_scangrid_ = NULL;
-  frame_count_ = 0;
-  fps_ = DEFAULT_FPS;
   roi_drawer_ = NULL;
   color_filter_ = NULL;
   cfg_roi_max_aspect_ratio_ = 1.7;
   combined_colormodel_ = NULL;
-  last_second_ = clock->now().in_sec();
+  last_second_ = NULL;
+  buflen_ = 0;
+  bb_signal_compat_ = NULL;
 }
 
 
@@ -130,7 +130,9 @@ void MachineSignalThread::init()
   // Other config
   cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
   cfg_roi_max_width_ratio_ = config->get_float(CFG_PREFIX "/roi_max_r2g_width_ratio");
+  cfg_roi_xalign_ = config->get_float(CFG_PREFIX "/roi_xalign_by_width");
   cfg_tuning_mode_ = config->get_bool(CFG_PREFIX "/tuning_mode");
+  cfg_max_jitter_ = config->get_float(CFG_PREFIX "/max_jitter");
   cfg_draw_processed_rois_ = config->get_bool(CFG_PREFIX "/draw_processed_rois");
 
   // Setup combined ColorModel for tuning filter
@@ -154,8 +156,10 @@ void MachineSignalThread::init()
 
   // Initialize frame rate detection
   uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
-  fps_ = 1 / ((float)loop_time / 1000000.0);
-  last_second_ = clock->now().in_sec();
+  float fps = 1 / ((float)loop_time / 1000000.0);
+  buflen_ = (unsigned int) pow(2, ceil(log2(fps)));
+  logger->log_info(name(), "Buffer length: %d", buflen_);
+  last_second_ = new Time(clock);
 
   // Open required blackboard interfaces
   for (int i = 0; i < MAX_SIGNALS; i++) {
@@ -163,6 +167,7 @@ void MachineSignalThread::init()
     iface_name += std::to_string(i);
     bb_signal_states_.push_back(blackboard->open_for_writing<RobotinoLightInterface>(iface_name.c_str()));
   }
+  bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>("Light_State");
 
   config->add_change_handler(this);
 }
@@ -213,20 +218,17 @@ void MachineSignalThread::cleanup_classifiers()
 void MachineSignalThread::loop()
 {
   std::list<ROI> *rois_R, *rois_G;
-  bool fps_changed = false;
+  MutexLocker lock(&cfg_mutex_);
 
-  // Perform FPS estimation every second
-  if (unlikely(clock->now().in_sec() - last_second_ > 1)) {
-    last_second_ = clock->now().in_sec();
-    fps_changed = fps_ != frame_count_;
-    fps_ = frame_count_;
-    frame_count_ = 1;
+  Time now(clock);
+  if (now - last_second_ >= 125) {
+    logger->log_error(name(), "Running too slow. Ignoring this frame!");
+    return;
   }
-  else frame_count_++;
+  last_second_ = new Time(clock);
 
   // Reallocate classifiers if their config changed
   if (unlikely(cfg_changed_)) {
-    MutexLocker lock(&cfg_mutex_);
 
     setup_classifier(&cls_red_);
     setup_classifier(&cls_green_);
@@ -279,8 +281,10 @@ void MachineSignalThread::loop()
 
   // Reset all known signals to not-seen
   for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
-      known_signal != known_signals_.end(); known_signal++)
-    known_signal->seen = false;
+      known_signal != known_signals_.end(); known_signal++) {
+    if (++(known_signal->unseen) > 1)
+      known_signal->visibility = -1;
+  }
 
   // Go through all signals from this frame...
   { std::list<signal_rois_t_>::iterator signal_it = signal_rois->begin();
@@ -297,26 +301,20 @@ void MachineSignalThread::loop()
     std::list<signal_state_t_>::iterator best_match;
     for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
         known_signal != known_signals_.end(); known_signal++) {
-      if (unlikely(fps_changed)) {
-        // Resize history buffers to 1 second
-        logger->log_debug(this->name(), "FPS changed to %d", fps_);
-        known_signal->history_R.set_capacity(fps_);
-        known_signal->history_Y.set_capacity(fps_);
-        known_signal->history_G.set_capacity(fps_);
-      }
       float dist = known_signal->distance(frame_state);
       if (dist < dist_min) {
         best_match = known_signal;
         dist_min = dist;
       }
     }
-    if (dist_min < cfg_max_jitter_)
+    if (dist_min < cfg_max_jitter_) {
       best_match->update(frame_state);
+    }
     else {
       // No historic match was found for the current signal
-      signal_state_t_ *cur_state = new signal_state_t_(&fps_);
+      signal_state_t_ *cur_state = new signal_state_t_(buflen_);
       cur_state->update(frame_state);
-      known_signals_.push_back(*cur_state);
+      known_signals_.push_front(*cur_state);
       delete cur_state;
     }
 
@@ -344,7 +342,7 @@ void MachineSignalThread::loop()
 
   // Throw out the signals with the worst visibility histories
   known_signals_.sort(sort_signal_states_by_visibility_);
-  while (known_signals_.size() >= MAX_SIGNALS)
+  while (known_signals_.size() > MAX_SIGNALS)
     known_signals_.pop_back();
 
   // Update blackboard with the current information
@@ -354,12 +352,19 @@ void MachineSignalThread::loop()
     bb_signal_states_[i]->set_yellow(known_signal->yellow);
     bb_signal_states_[i]->set_green(known_signal->green);
     bb_signal_states_[i]->set_visibility_history(
-      known_signal->seen ? known_signal->visibility : -1);
-    bb_signal_states_[i]->set_ready(known_signal->visibility >= fps_);
+      known_signal->unseen > 1 ? -1 : known_signal->visibility);
+    bb_signal_states_[i]->set_ready(known_signal->visibility >= (long int) buflen_/2);
     bb_signal_states_[i]->write();
 
     known_signal++;
   }
+  bb_signal_compat_->set_red(known_signals_.begin()->red);
+  bb_signal_compat_->set_yellow(known_signals_.begin()->yellow);
+  bb_signal_compat_->set_green(known_signals_.begin()->green);
+  bb_signal_compat_->set_visibility_history(
+    known_signals_.begin()->unseen > 1 ? -1 : known_signals_.begin()->visibility);
+  bb_signal_compat_->set_ready(known_signals_.begin()->visibility >= (long int) buflen_/2);
+  bb_signal_compat_->write();
 
   delete rois_R;
   delete rois_G;
@@ -439,8 +444,13 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
         break;
       }
 
-      if (roi_width_ok(it_G) && rois_similar_width(it_R, it_G) && rois_x_aligned(it_R, it_G) &&
-          rois_have_vspace(it_R, it_G)) {
+      if (roi_width_ok(it_G) && rois_x_aligned(it_R, it_G) &&
+          rois_vspace_ok(it_R, it_G)) {
+        if (!rois_similar_width(it_R, it_G)) {
+          int wdiff = it_G->width - it_R->width;
+          it_G->start.x += wdiff/2;
+          it_G->width -= wdiff/2;
+        }
         // Once we got through here it_G should have a pretty sensible green ROI.
         it_G->height = it_G->width;
         uint start_x = (it_R->start.x + it_G->start.x) / 2;
@@ -486,7 +496,7 @@ bool MachineSignalThread::rois_similar_width(std::list<ROI>::iterator r1, std::l
 
 bool MachineSignalThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float avg_width = (r1->width + r2->width) / 2.0f;
-  return abs(r1->start.x - r2->start.x) / avg_width < 0.4;
+  return abs(r1->start.x - r2->start.x) / avg_width < cfg_roi_xalign_;
 }
 
 bool MachineSignalThread::roi_aspect_ok(std::list<ROI>::iterator r) {
@@ -494,9 +504,10 @@ bool MachineSignalThread::roi_aspect_ok(std::list<ROI>::iterator r) {
   return aspect_ratio > 1/cfg_roi_max_aspect_ratio_ && aspect_ratio < cfg_roi_max_aspect_ratio_;
 }
 
-bool MachineSignalThread::rois_have_vspace(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
+bool MachineSignalThread::rois_vspace_ok(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float avg_height = (r1->height + r2->height) / 2.0f;
-  return r2->start.y - (r1->start.y + r1->height) > 0.6 * avg_height;
+  int dist = r2->start.y - (r1->start.y + r1->height);
+  return dist > 0.6 * avg_height && dist < 1.7 * avg_height;
 }
 
 
@@ -552,6 +563,8 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
         cfg_roi_max_aspect_ratio_ = v->get_float();
       else if (opt == "/roi_max_r2g_width_ratio")
         cfg_roi_max_width_ratio_ = v->get_float();
+      else if (opt == "/roi_xalign_by_width")
+        cfg_roi_xalign_ = v->get_float();
       else if (opt == "/tuning_mode")
         cfg_tuning_mode_ = v->get_bool();
       else if (opt == "/max_jitter")
