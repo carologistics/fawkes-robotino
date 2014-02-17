@@ -5,18 +5,18 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
 ---
 
 plugins/machine_signal:
-  camera: "file:file:file=/home/ich/robotino/sampleImages/test/95.jpg"
-  #camera: v4l2:front:device=/dev/light_front:size=640x480:exposure_auto_priority=0:white_balance_temperature_auto=0:white_balance_temperature=3000:exposure_auto=0:exposure_absolute=600
+  #camera: "file:file:file=/home/ich/robotino/sampleImages/test/108.jpg"
+  camera: v4l2:front:device=/dev/light_front:size=640x480:exposure_auto_priority=0:white_balance_temperature_auto=0:white_balance_temperature=3000:exposure_auto=0:exposure_absolute=600
   
-  #####################################################
-  # All settings below here can be changed at runtime #
-  #####################################################
-
-  # ROIs that exceed this aspect ratio are ignored.
-  roi_max_aspect_ratio: 2.5
+  #
+  # All settings below here can be changed at runtime
+  #
 
   # Enable the tuning buffer. Use fvviever -s machine_signal to view.
-  # Turn this off to increase performance.
+  #
+  # ------===== ATTENTION =====-----
+  # Turn this off during matches to double performance!
+  # -----=====================-----
   tuning_mode: true
 
   # Draw ROIs as they are after being filtered, tarred and feathered
@@ -24,23 +24,32 @@ plugins/machine_signal:
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
   draw_processed_rois: true
+  
+  # Maximum width ratio between red and green ROIs. A red and a green
+  # ROI that exceed this are not considered as part of a signal.
+  roi_max_r2g_width_ratio: 1.7
+
+  roi_xalign_by_width: 0.7
+
+  # ROIs that exceed this aspect ratio are ignored.
+  roi_max_aspect_ratio: 2.5
 
   # Maximum distance in pixels a signal is allowed to jump between frames
   # Increase this if you want to try and detect signals while moving.
-  max_jitter: 5.0
+  max_jitter: 20.0
 
   red:
     reference_color: [0xff, 0, 0]
-    chroma_thresh: 30
-    saturation_thresh: 15
+    chroma_thresh: 40
+    saturation_thresh: 10
     min_points: 40
     basic_roi_size: 10
-    neighborhood_min_match: 10
+    neighborhood_min_match: 9
 
   green:
     reference_color: [0, 0x99, 15]
     chroma_thresh: 5
-    saturation_thresh: 2
+    saturation_thresh: 5
     min_points: 50
     basic_roi_size: 10
     neighborhood_min_match: 6
@@ -49,4 +58,4 @@ plugins/machine_signal:
     min_brightness: 150
     min_points: 30
     neighborhood_min_match: 6
-    min_area_cover: 0.2
+    min_area_cover: 0.1
