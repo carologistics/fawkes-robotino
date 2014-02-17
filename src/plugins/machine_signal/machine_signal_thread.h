@@ -50,9 +50,12 @@
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
+
 #define MAX_SIGNALS 3
-#define LOG_SIZE MAX_SIGNALS + 2
-#define FV_FPS 30
+#define HISTORY_SIZE MAX_SIGNALS + 2
+#define DEFAULT_FPS 30
+#define CFG_PREFIX "/plugins/machine_signal"
+
 
 namespace fawkes
 {
@@ -81,7 +84,7 @@ class MachineSignalThread :
     virtual void finalize();
 
   private:
-    typedef struct color_classifier {
+    typedef struct {
         firevision::ColorModelSimilarity *colormodel;
         firevision::SimpleColorClassifier *classifier;
         firevision::ColorModelSimilarity::color_class_t *color_class;
@@ -92,16 +95,17 @@ class MachineSignalThread :
         unsigned int cfg_roi_min_points;
         unsigned int cfg_roi_basic_size;
         unsigned int cfg_roi_neighborhood_min_match;
-    } color_classifier_t_;
+    } color_classifier_context_t_;
 
-    color_classifier_t_ cls_red_;
-    color_classifier_t_ cls_green_;
+    color_classifier_context_t_ cls_red_;
+    color_classifier_context_t_ cls_green_;
 
     std::string cfg_camera_;
     firevision::Camera *camera_;
     unsigned int cam_width_, cam_height_;
 
-    float cfg_roi_max_aspect_ratio_;
+    std::atomic<float> cfg_roi_max_aspect_ratio_;
+    std::atomic<float> cfg_roi_max_width_ratio_;
     std::atomic_bool cfg_tuning_mode_;
     std::atomic_bool cfg_draw_processed_rois_;
     std::atomic<float> cfg_max_jitter_;
@@ -110,7 +114,7 @@ class MachineSignalThread :
     std::atomic_bool cfg_changed_;
     std::atomic_bool cam_changed_;
 
-    double last_second;
+    double last_second_;
     unsigned int frame_count_;
     float fps_;
 
@@ -131,7 +135,7 @@ class MachineSignalThread :
     firevision::FilterColorThreshold *color_filter_;
     firevision::ColorModelSimilarity *combined_colormodel_;
 
-    void setup_classifier(color_classifier_t_ *classifier);
+    void setup_classifier(color_classifier_context_t_ *classifier);
     void setup_camera();
 
     void cleanup_classifiers();
@@ -174,6 +178,8 @@ class MachineSignalThread :
         fawkes::upoint_t pos;
     } frame_state_t_;
 
+    // This struct may be a bit lengthy, but it keeps everything that stores
+    // signal-related data in one place.
     typedef struct signal_state_ {
         fawkes::RobotinoLightInterface::LightState red;
         fawkes::RobotinoLightInterface::LightState yellow;
@@ -187,9 +193,9 @@ class MachineSignalThread :
         float *fps;
 
         signal_state_(float *fps)
-        : history_R(boost::circular_buffer<bool>(FV_FPS)),
-          history_Y(boost::circular_buffer<bool>(FV_FPS)),
-          history_G(boost::circular_buffer<bool>(FV_FPS))
+        : history_R(boost::circular_buffer<bool>(DEFAULT_FPS)),
+          history_Y(boost::circular_buffer<bool>(DEFAULT_FPS)),
+          history_G(boost::circular_buffer<bool>(DEFAULT_FPS))
         {
           visibility = -1;
           seen = false;
@@ -233,7 +239,6 @@ class MachineSignalThread :
           int dy = s.pos.y - pos.y;
           return (float)sqrt(dx*dx + dy*dy);
         }
-
     } signal_state_t_;
 
 

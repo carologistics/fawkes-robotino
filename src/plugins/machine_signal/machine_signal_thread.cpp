@@ -21,7 +21,6 @@
 #include <fvfilters/colorthreshold.h>
 #include <aspect/logging.h>
 #include <fvutils/color/colorspaces.h>
-#include <fvutils/scalers/lossy.h>
 #include <cstring>
 #include <core/threading/mutex_locker.h>
 #include <cmath>
@@ -30,12 +29,10 @@
 using namespace fawkes;
 using namespace firevision;
 
-#define CFG_PREFIX_ "/plugins/machine_signal"
-
 MachineSignalThread::MachineSignalThread()
     : Thread("MachineSignal", Thread::OPMODE_WAITFORWAKEUP),
       VisionAspect(VisionAspect::CYCLIC),
-      ConfigurationChangeHandler(CFG_PREFIX_)
+      ConfigurationChangeHandler(CFG_PREFIX)
 {
   cam_width_ = 0;
   cam_height_ = 0;
@@ -55,17 +52,17 @@ MachineSignalThread::MachineSignalThread()
   cfg_light_on_min_points_ = 0;
   light_scangrid_ = NULL;
   frame_count_ = 0;
-  fps_ = FV_FPS;
+  fps_ = DEFAULT_FPS;
   roi_drawer_ = NULL;
   color_filter_ = NULL;
   cfg_roi_max_aspect_ratio_ = 1.7;
   combined_colormodel_ = NULL;
-  last_second = clock->now().in_sec();
+  last_second_ = clock->now().in_sec();
 }
 
 
 
-void MachineSignalThread::setup_classifier(color_classifier_t_ *color_data)
+void MachineSignalThread::setup_classifier(color_classifier_context_t_ *color_data)
 {
   delete color_data->classifier;
   delete color_data->colormodel;
@@ -94,46 +91,47 @@ void MachineSignalThread::setup_classifier(color_classifier_t_ *color_data)
 void MachineSignalThread::init()
 {
   // Configure camera
-  cfg_camera_ = config->get_string(CFG_PREFIX_ "/camera");
+  cfg_camera_ = config->get_string(CFG_PREFIX "/camera");
   setup_camera();
 
   shmbuf_ = new SharedMemoryImageBuffer("machine_signal", YUV422_PLANAR, cam_width_, cam_height_);
   roi_drawer_ = new FilterROIDraw(&all_rois_, FilterROIDraw::DASHED_HINT);
 
   // Configure RED classifier
-  cls_red_.cfg_ref_col = config->get_uints(CFG_PREFIX_ "/red/reference_color");
-  cls_red_.cfg_chroma_thresh = config->get_int(CFG_PREFIX_ "/red/chroma_thresh");
-  cls_red_.cfg_sat_thresh = config->get_int(CFG_PREFIX_ "/red/saturation_thresh");
-  cls_red_.cfg_roi_min_points = config->get_int(CFG_PREFIX_ "/red/min_points");
-  cls_red_.cfg_roi_basic_size = config->get_int(CFG_PREFIX_ "/red/basic_roi_size");
-  cls_red_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX_ "/red/neighborhood_min_match");
+  cls_red_.cfg_ref_col = config->get_uints(CFG_PREFIX "/red/reference_color");
+  cls_red_.cfg_chroma_thresh = config->get_int(CFG_PREFIX "/red/chroma_thresh");
+  cls_red_.cfg_sat_thresh = config->get_int(CFG_PREFIX "/red/saturation_thresh");
+  cls_red_.cfg_roi_min_points = config->get_int(CFG_PREFIX "/red/min_points");
+  cls_red_.cfg_roi_basic_size = config->get_int(CFG_PREFIX "/red/basic_roi_size");
+  cls_red_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/red/neighborhood_min_match");
 
   cls_red_.color_class = new ColorModelSimilarity::color_class_t(
     cls_red_.color_expect, cls_red_.cfg_ref_col, cls_red_.cfg_chroma_thresh, cls_red_.cfg_sat_thresh);
   setup_classifier(&cls_red_);
 
   // Configure GREEN classifier
-  cls_green_.cfg_ref_col = config->get_uints(CFG_PREFIX_ "/green/reference_color");
-  cls_green_.cfg_chroma_thresh = config->get_int(CFG_PREFIX_ "/green/chroma_thresh");
-  cls_green_.cfg_sat_thresh = config->get_int(CFG_PREFIX_ "/green/saturation_thresh");
-  cls_green_.cfg_roi_min_points = config->get_int(CFG_PREFIX_ "/green/min_points");
-  cls_green_.cfg_roi_basic_size = config->get_int(CFG_PREFIX_ "/green/basic_roi_size");
-  cls_green_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX_ "/green/neighborhood_min_match");
+  cls_green_.cfg_ref_col = config->get_uints(CFG_PREFIX "/green/reference_color");
+  cls_green_.cfg_chroma_thresh = config->get_int(CFG_PREFIX "/green/chroma_thresh");
+  cls_green_.cfg_sat_thresh = config->get_int(CFG_PREFIX "/green/saturation_thresh");
+  cls_green_.cfg_roi_min_points = config->get_int(CFG_PREFIX "/green/min_points");
+  cls_green_.cfg_roi_basic_size = config->get_int(CFG_PREFIX "/green/basic_roi_size");
+  cls_green_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/green/neighborhood_min_match");
 
   cls_green_.color_class = new ColorModelSimilarity::color_class_t(
     cls_green_.color_expect, cls_green_.cfg_ref_col, cls_green_.cfg_chroma_thresh, cls_green_.cfg_sat_thresh);
   setup_classifier(&cls_green_);
 
   // Configure brightness classifier
-  cfg_light_on_threshold_ = config->get_uint(CFG_PREFIX_ "/bright_light/min_brightness");
-  cfg_light_on_min_points_ = config->get_uint(CFG_PREFIX_ "/bright_light/min_points");
-  cfg_light_on_min_neighborhood_ = config->get_uint(CFG_PREFIX_ "/bright_light/neighborhood_min_match");
-  cfg_light_on_min_area_cover_ = config->get_float(CFG_PREFIX_ "/bright_light/min_area_cover");
+  cfg_light_on_threshold_ = config->get_uint(CFG_PREFIX "/bright_light/min_brightness");
+  cfg_light_on_min_points_ = config->get_uint(CFG_PREFIX "/bright_light/min_points");
+  cfg_light_on_min_neighborhood_ = config->get_uint(CFG_PREFIX "/bright_light/neighborhood_min_match");
+  cfg_light_on_min_area_cover_ = config->get_float(CFG_PREFIX "/bright_light/min_area_cover");
 
   // Other config
-  cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX_ "/roi_max_aspect_ratio");
-  cfg_tuning_mode_ = config->get_bool(CFG_PREFIX_ "/tuning_mode");
-  cfg_draw_processed_rois_ = config->get_bool(CFG_PREFIX_ "/draw_processed_rois");
+  cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
+  cfg_roi_max_width_ratio_ = config->get_float(CFG_PREFIX "/roi_max_r2g_width_ratio");
+  cfg_tuning_mode_ = config->get_bool(CFG_PREFIX "/tuning_mode");
+  cfg_draw_processed_rois_ = config->get_bool(CFG_PREFIX "/draw_processed_rois");
 
   // Setup combined ColorModel for tuning filter
   combined_colormodel_ = new ColorModelSimilarity();
@@ -157,7 +155,7 @@ void MachineSignalThread::init()
   // Initialize frame rate detection
   uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
   fps_ = 1 / ((float)loop_time / 1000000.0);
-  last_second = clock->now().in_sec();
+  last_second_ = clock->now().in_sec();
 
   // Open required blackboard interfaces
   for (int i = 0; i < MAX_SIGNALS; i++) {
@@ -215,11 +213,11 @@ void MachineSignalThread::cleanup_classifiers()
 void MachineSignalThread::loop()
 {
   std::list<ROI> *rois_R, *rois_G;
-  bool fps_changed;
+  bool fps_changed = false;
 
   // Perform FPS estimation every second
-  if (unlikely(clock->now().in_sec() - last_second > 1)) {
-    last_second = clock->now().in_sec();
+  if (unlikely(clock->now().in_sec() - last_second_ > 1)) {
+    last_second_ = clock->now().in_sec();
     fps_changed = fps_ != frame_count_;
     fps_ = frame_count_;
     frame_count_ = 1;
@@ -289,9 +287,9 @@ void MachineSignalThread::loop()
   for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); i++) {
     frame_state_t_ frame_state({
       get_light_state(signal_it->red_roi),
-          get_light_state(signal_it->yellow_roi),
-          get_light_state(signal_it->green_roi),
-          signal_it->red_roi->start
+      get_light_state(signal_it->yellow_roi),
+      get_light_state(signal_it->green_roi),
+      signal_it->red_roi->start
     });
 
     // ... and match them to known signals based on the max_jitter tunable
@@ -312,7 +310,6 @@ void MachineSignalThread::loop()
         dist_min = dist;
       }
     }
-
     if (dist_min < cfg_max_jitter_)
       best_match->update(frame_state);
     else {
@@ -398,7 +395,8 @@ bool MachineSignalThread::get_light_state(firevision::ROI *light)
 
 /**
  * Look for red and green ROIs that are likely to be part of a single signal. A red and a green ROI are considered
- * a match if the red one is above the green one and there's space for a yellow one to fit in between.
+ * a match if the red one is above the green one and there's space for a yellow one to fit in between. Unmatched ROIs
+ * and those that violate certain (configurable) sanity criteria are thrown out.
  * @param rois_R A list of red ROIs
  * @param rois_G A list of green ROIs
  * @return A list of ROIs in a struct that contains matching red, yellow and green ROIs
@@ -483,7 +481,7 @@ bool MachineSignalThread::roi_width_ok(std::list<ROI>::iterator r)
 
 bool MachineSignalThread::rois_similar_width(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float width_ratio = (float)r1->width / (float)r2->width;
-  return width_ratio >= 1/cfg_roi_max_aspect_ratio_ && width_ratio <= cfg_roi_max_aspect_ratio_;
+  return width_ratio >= 1/cfg_roi_max_width_ratio_ && width_ratio <= cfg_roi_max_width_ratio_;
 }
 
 bool MachineSignalThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
@@ -510,15 +508,15 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
 {
   if (v->valid()) {
     std::string path = v->path();
-    std::string sufx = path.substr(strlen(CFG_PREFIX_));
+    std::string sufx = path.substr(strlen(CFG_PREFIX));
     std::string color_pfx = sufx.substr(0, sufx.substr(1).find("/")+1);
-    std::string full_pfx = CFG_PREFIX_ + color_pfx;
+    std::string full_pfx = CFG_PREFIX + color_pfx;
     std::string opt = path.substr(full_pfx.length());
 
     MutexLocker lock(&cfg_mutex_);
 
     if (color_pfx == "/red" || color_pfx == "/green") {
-      color_classifier_t_ *classifier = NULL;
+      color_classifier_context_t_ *classifier = NULL;
       if (color_pfx == "/red")
         classifier = &cls_red_;
       else if (color_pfx == "/green")
@@ -551,12 +549,14 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
     }
     else if (color_pfx == "") {
       if (opt == "/roi_max_aspect_ratio")
-        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_roi_max_aspect_ratio_), v->get_float());
-      if (opt == "/tuning_mode")
+        cfg_roi_max_aspect_ratio_ = v->get_float();
+      else if (opt == "/roi_max_r2g_width_ratio")
+        cfg_roi_max_width_ratio_ = v->get_float();
+      else if (opt == "/tuning_mode")
         cfg_tuning_mode_ = v->get_bool();
-      if (opt == "/max_jitter")
+      else if (opt == "/max_jitter")
         cfg_max_jitter_ = v->get_float();
-      if (opt == "/draw_processed_rois")
+      else if (opt == "/draw_processed_rois")
         cfg_draw_processed_rois_ = v->get_bool();
     }
   }
