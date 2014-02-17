@@ -4,11 +4,19 @@
 fawkes/meta_plugins:
   
 # Meta plugin with useful functionality for the robotino-laptop
-  robotino_default: bbsync,static-transforms,fvbase,fvfountain,omnivision-pucks,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,webview,clips,navgraph,skiller,laser-pointclouds,laser-cluster,light_front
-  robotino_default_nocam: bbsync,static-transforms,ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,webview,clips,navgraph,skiller,laser-pointclouds,laser-cluster
-  robotino_default_bare: bbsync,static-transforms,webview
-
-  robotino-default-agent: robotino_default,clips,clips-agent,clips-motor-switch,clips-protobuf,clips-webview
-
+  robotino-bare: bbsync,static-transforms,webview
+  robotino-cam: fvbase,fvfountain,omnivision-pucks,light_front
   agent: clips,clips-agent,clips-motor-switch,clips-protobuf,clips-webview
 
+  robotino-nocam: robotino-bare,ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,laser-filter,amcl,clips,navgraph,skiller,laser-pointclouds,laser-cluster
+
+  robotino-nocam-move-base: robotino-nocam,ros-cmdvel,ros-navigator
+  robotino-move-base: robotino-nocam-move-base,robotino-cam
+
+  robotino-nocam-colli: robotino-nocam,map-lasergen,colli
+  robotino-colli: robotino-nocam-colli,robotino-cam
+
+  robotino-agent-move-base: robotino-move-base,agent
+  robotino-agent-colli: robotino-colli,agent
+
+  colli-log: robotino-nocam-colli,mongodb,mongodb-log
