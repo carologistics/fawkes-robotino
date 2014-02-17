@@ -38,8 +38,8 @@
 #include <fvmodels/color/thresholds_luminance.h>
 #include <fvmodels/scanlines/grid.h>
 #include <fvclassifiers/simple.h>
-#include <fvcams/fileloader.h>
-//#include <fvcams/camera.h>
+//#include <fvcams/fileloader.h>
+#include <fvcams/camera.h>
 #include <string>
 #include <core/threading/mutex.h>
 #include <atomic>
