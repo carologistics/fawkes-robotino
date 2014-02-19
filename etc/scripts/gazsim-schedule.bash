@@ -3,7 +3,7 @@
 
 usage()
 {
-cat << EOF
+    cat << EOF
 usage: $0 options
 ]
 This script automates the execution of multiple Gazebo-simulations with different configurations
@@ -12,6 +12,10 @@ OPTIONS:
    -h      Show this message
    -c arg  A configuration-folder in cfg/gazsim-configurations/ to test 
            (you can define multiple by "-c c1 -c c2 ...") 
+   -b arg  A branch to test
+           (you can define multiple by "-b b1 -b b2 ..."
+            branch bn will be used with configuration cn)
+           default: master
    -l      Run Gazebo headless
    -n arg  The amount of test-runs
    -d      Run a detailed simulation (e.g. with simulated vision)
@@ -32,46 +36,54 @@ restore_record() #args 1: file
 	echo '</gazebo_log>' >> $1
     fi
 }
- 
-#check options
 
+#check options
 NUM_CONF=0
+NUM_BRANCHES=0
 HEADLESS=
 DETAILED=
 NUM_RUNS=1
-while getopts “hc:ln:d” OPTION
+BRANCHES[0]=origin/master
+PREVIOUS_BRANCH=
+while getopts “hc:b:ln:d” OPTION
 do
-     case $OPTION in
-         h)
-             usage
-             exit 1
-             ;;
-         c)
-	     CONFIGURATIONS[$NUM_CONF]=$OPTARG
-	     let "NUM_CONF++"
+    case $OPTION in
+        h)
+            usage
+            exit 1
+            ;;
+        c)
+	    CONFIGURATIONS[$NUM_CONF]=$OPTARG
+	    let "NUM_CONF++"
 
-	     echo Configuration $NUM_CONF is $OPTARG
-	     ;;
-         l)
-	     HEADLESS=-l
-             ;;
-         n)
-	     NUM_RUNS=$OPTARG
-             ;;
-         d)
-	     DETAILED=-d
-             ;;
-         ?)
-             usage
-             exit
-             ;;
-     esac
+	    echo Configuration $NUM_CONF is $OPTARG
+	    ;;
+        b)
+	    BRANCHES[$NUM_BRANCHES]=$OPTARG
+	    let "NUM_BRANCHES++"
+
+	    echo Branch $NUM_BRANCHES is $OPTARG
+	    ;;
+        l)
+	    HEADLESS=-l
+            ;;
+        n)
+	    NUM_RUNS=$OPTARG
+            ;;
+        d)
+	    DETAILED=-d
+            ;;
+        ?)
+            usage
+            exit
+            ;;
+    esac
 done
 
 if [[ -z $CONFIGURATIONS ]]
 then
-     echo Please specify at least one configuration
-     exit 1
+    echo Please specify at least one configuration
+    exit 1
 fi
 
 #run simulations
@@ -80,18 +92,43 @@ STARTUP_SCRIPT_LOCATION=$FAWKES_DIR/bin/gazsim.bash
 
 TIME=$(date +'%y_%m_%d_%H_%M')
 
+echo Stashing changes
+git stash
 
 for ((RUN=1 ; RUN<=$NUM_RUNS ;RUN++))
 do
-    for CONF in ${CONFIGURATIONS[@]}
+    for ((C=0 ; C<$NUM_CONF ;C++))
     do
+	#get config and branch
+	CONF=${CONFIGURATIONS[${C}]}
+	if [ $C -lt $NUM_BRANCHES ]
+	then
+	    BRANCH=${BRANCHES[${C}]}
+	else
+	    BRANCH=${BRANCHES[0]}
+	fi
+
+	cd $FAWKES_BIN/..
+
+	echo Executing simulation-run $RUN with configuration $CONF in branch $BRANCH
+
+	if [ "$BRANCH" != "$PREVIOUS_BRANCH" ]
+	then
+	    #checkout branch
+	    echo checking out and compiling branch
+	    git reset --hard HEAD
+	    git co origin/master
+	    git branch -D current-scripted-sim
+	    git co -b current-scripted-sim $BRANCH
+	    make all -j8
+	    PREVIOUS_BRANCH=$BRANCH
+	fi
+
 	#create and go to log folder
 	cd $FAWKES_DIR
 	export FAWKES_DIR_FOR_SED=$(echo $FAWKES_DIR | sed "s/\//\\\\\//g")
 	mkdir -p "gazsim-logs/$TIME/${CONF}_$RUN"
 	cd "gazsim-logs/$TIME/${CONF}_$RUN"
-
-	echo Executing simulation-run $RUN with configuration $CONF
 
 	#set config values
 	replace_config run $RUN
