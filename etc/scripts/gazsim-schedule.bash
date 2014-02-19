@@ -115,13 +115,13 @@ do
 	if [ "$BRANCH" != "$PREVIOUS_BRANCH" ]
 	then
 	    #checkout branch
-	    echo checking out and compiling branch
+	    echo Checking out branch...
 	    git reset --hard HEAD
 	    git co origin/master
 	    git branch -D current-scripted-sim
 	    git co -b current-scripted-sim $BRANCH
-	    make all -j8
-	    PREVIOUS_BRANCH=$BRANCH
+	    echo Compiling...
+	    COMPILE_OUTPUT="$(make all -j8)"
 	fi
 
 	#create and go to log folder
@@ -129,6 +129,18 @@ do
 	export FAWKES_DIR_FOR_SED=$(echo $FAWKES_DIR | sed "s/\//\\\\\//g")
 	mkdir -p "gazsim-logs/$TIME/${CONF}_$RUN"
 	cd "gazsim-logs/$TIME/${CONF}_$RUN"
+
+	if [ "$COMPILE_OUTPUT" != *Error* ]
+	then
+	    echo Skipping branch $BRANCH
+	    echo You can find the compile errors here:
+	    pwd
+	    touch compile_errors.txt
+	    echo "$COMPILE_OUTPUT" > compile_errors.txt
+	    exit 1
+	fi
+
+	PREVIOUS_BRANCH=$BRANCH
 
 	#set config values
 	replace_config run $RUN
