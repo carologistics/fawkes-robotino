@@ -14,6 +14,13 @@ hardware/robotino:
   # Time threshold after all motor velocities are set to zero if no new messages arrived inbetween
   deadman_time_threshold: 0.5
 
+  gripper:
+    # Enable gripper {ENABLED=true / DISABLED=false}
+    enable_gripper: true
+    
+    # ID of the Gripper Interface
+    gripper_id: Robotino 
+
   joystick:
     # Axis index for forward/backward movement
     axis_forward: 1
