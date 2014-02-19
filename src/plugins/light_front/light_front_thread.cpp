@@ -17,62 +17,69 @@ LightFrontThread::LightFrontThread()
 :	Thread("LightFrontThread", Thread::OPMODE_WAITFORWAKEUP),
  	VisionAspect(VisionAspect::CYCLIC)
 {
-	this->cfg_prefix = "";
-	this->cfg_camera = "";
-	this->cfg_frame = "";
+	cfg_prefix = "";
+	cfg_camera = "";
+	cfg_frame = "";
 
-	this->cfg_cameraFactorHorizontal = 0;
-	this->cfg_cameraFactorVertical = 0;
+	cfg_cameraFactorHorizontal = 0;
+	cfg_cameraFactorVertical = 0;
 
-	this->cfg_cameraOffsetHorizontal = 0;
-	this->cfg_cameraOffsetVertical = 0;
+	cfg_cameraOffsetHorizontal = 0;
+	cfg_cameraOffsetVertical = 0;
 
-	this->cfg_lightSizeHeight = 0;
-	this->cfg_lightSizeWidth = 0;
+	cfg_lightSizeHeight = 0;
+	cfg_lightSizeWidth = 0;
 
-	this->cfg_lightNumberOfWrongDetections = 0;
-	this->cfg_detectionCycleTime = 0;
+	cfg_lightNumberOfWrongDetections = 0;
+	cfg_detectionCycleTime = 0;
 
-	this->cfg_desiredLoopTime = 0;
-	this->cfg_detectionCycleTime = 0;
+	cfg_desiredLoopTime = 0;
+	cfg_detectionCycleTime = 0;
 
-	this->cfg_brightnessThreashold = 0;
-	this->cfg_darknessThreashold = 0;
-	this->cfg_paintROIsActivated = false;
+	cfg_brightnessThreshold = 0;
+	cfg_darknessThreshold = 0;
+	cfg_paintROIsActivated = false;
+	cfg_useMinDistanceThreashold = false;
+	cfg_useMulticluster = false;
 
-	this->cfg_lightOutOfRangeThrashold = 0;
-	this->cfg_laserVisibilityThreashold = 0;
-	this->cfg_lightMoveUnderRfidThrashold = 0;
+	cfg_lightOutOfRangeThreshold = 0;
+	cfg_laserVisibilityThreshold = 0;
+	cfg_lightMoveUnderRfidThrashold = 0;
 
-	this->img_width = 0;
-	this->img_height = 0;
+	img_width = 0;
+	img_height = 0;
 
-	this->detectionCycleTimeFrames = 0;
+	detectionCycleTimeFrames = 0;
 
-	this->historyBuffer = NULL;
+	historyBufferCluster1 = NULL;
+	historyBufferCluster2 = NULL;
+	historyBufferCluster3 = NULL;
 
-	this->bufferYCbCr = NULL;
+	bufferYCbCr = NULL;
 
-	this->cspaceFrom = firevision::YUV422_PLANAR;
-	this->cspaceTo = firevision::YUV422_PLANAR;
+	cspaceFrom = firevision::YUV422_PLANAR;
+	cspaceTo = firevision::YUV422_PLANAR;
 
-	this->camera = NULL;
-	this->scanline = NULL;
-	this->colorModel = NULL;
-	this->classifierWhite = NULL;
-	this->classifierBlack = NULL;
-	this->shmBufferYCbCr = NULL;
+	camera = NULL;
+	scanline = NULL;
+	colorModel = NULL;
+	classifierWhite = NULL;
+	classifierBlack = NULL;
+	shmBufferYCbCr = NULL;
 
-	this->nearestMaschineIF = NULL;
-	this->lightStateIF = NULL;
+	nearestMaschineIF1 = NULL;
+	nearestMaschineIF2 = NULL;
+	nearestMaschineIF3 = NULL;
+	lightStateIF1 = NULL;
+	lightStateIF2 = NULL;
+	lightStateIF3 = NULL;
 
-	this->drawer = NULL;
+	drawer = NULL;
 
-	this->cfg_debugMessagesActivated = false;
+	cfg_debugMessagesActivated = false;
 
-	this->laser_visibilityHistoryThrashold = 10;
-	this->cfg_lightDistanceAllowedBetweenFrames = 0;
-	this->lightOutOfRangeCounter = 0;
+	cfg_lightDistanceAllowedBetweenFrames = 0;
+	lightOutOfRangeCounter = 0;
 }
 
 void
@@ -80,70 +87,78 @@ LightFrontThread::init()
 {
 	logger->log_info(name(), "light_front: starts up");
 
-	this->lightOutOfRangeCounter = 0;
+	lightOutOfRangeCounter = 0;
 
-	this->cfg_prefix = "/plugins/light_front/";
+	cfg_prefix = "/plugins/light_front/";
 
-	this->cfg_frame  = this->config->get_string((this->cfg_prefix + "frame").c_str());
+	cfg_frame  = config->get_string((cfg_prefix + "frame").c_str());
 
-	this->cfg_camera = this->config->get_string((this->cfg_prefix + "camera").c_str());
-	this->cfg_cameraFactorHorizontal = this->config->get_float((this->cfg_prefix + "camera_factor_horizontal").c_str());
-	this->cfg_cameraFactorVertical = this->config->get_float((this->cfg_prefix + "camera_factor_vertical").c_str());
+	cfg_camera = config->get_string((cfg_prefix + "camera").c_str());
+	cfg_cameraFactorHorizontal = config->get_float((cfg_prefix + "camera_factor_horizontal").c_str());
+	cfg_cameraFactorVertical = config->get_float((cfg_prefix + "camera_factor_vertical").c_str());
 
-	this->cfg_cameraOffsetHorizontal = this->config->get_int((this->cfg_prefix + "camera_offset_horizontal").c_str());
-	this->cfg_cameraOffsetVertical = this->config->get_int((this->cfg_prefix + "camera_offset_vertical").c_str());
-	this->cfg_cameraAngleVerticalRad = this->config->get_float((this->cfg_prefix + "camera_angle_vertical_rad").c_str());
-	this->cfg_cameraAngleHorizontalRad = this->config->get_float((this->cfg_prefix + "camera_angle_horizontal_rad").c_str());
-	this->cfg_lightNumberOfWrongDetections = this->config->get_int((this->cfg_prefix + "light_number_of_wrong_detections").c_str());
+	cfg_cameraOffsetHorizontal = config->get_int((cfg_prefix + "camera_offset_horizontal").c_str());
+	cfg_cameraOffsetVertical = config->get_int((cfg_prefix + "camera_offset_vertical").c_str());
+	cfg_cameraAngleVerticalRad = config->get_float((cfg_prefix + "camera_angle_vertical_rad").c_str());
+	cfg_cameraAngleHorizontalRad = config->get_float((cfg_prefix + "camera_angle_horizontal_rad").c_str());
+	cfg_lightNumberOfWrongDetections = config->get_int((cfg_prefix + "light_number_of_wrong_detections").c_str());
 
-	this->cfg_debugMessagesActivated = this->config->get_bool((this->cfg_prefix + "show_debug_messages").c_str());
-	this->cfg_paintROIsActivated = this->config->get_bool((this->cfg_prefix + "draw_rois").c_str());
+	cfg_debugMessagesActivated = config->get_bool((cfg_prefix + "show_debug_messages").c_str());
+	cfg_paintROIsActivated = config->get_bool((cfg_prefix + "draw_rois").c_str());
 
-	this->cfg_brightnessThreashold = this->config->get_uint((this->cfg_prefix + "threashold_brightness").c_str());
-	this->cfg_darknessThreashold = this->config->get_uint((this->cfg_prefix + "threashold_black").c_str());
-	this->cfg_laserVisibilityThreashold = this->config->get_int((this->cfg_prefix + "threashold_laser_visibility").c_str());
-	this->cfg_lightDistanceAllowedBetweenFrames = this->config->get_float((this->cfg_prefix + "light_distance_allowed_betwen_frames").c_str());
-	this->cfg_lightOutOfRangeThrashold = this->config->get_int((this->cfg_prefix + "light_out_of_range_thrashold").c_str());
-	this->cfg_lightMoveUnderRfidThrashold = this->config->get_float((this->cfg_prefix + "light_move_under_rfid_thrashold").c_str());
-	this->cfg_lightToCloseThrashold = this->config->get_float((this->cfg_prefix + "light_to_close_thrashold").c_str());
+	cfg_brightnessThreshold = config->get_uint((cfg_prefix + "threashold_brightness").c_str());
+	cfg_darknessThreshold = config->get_uint((cfg_prefix + "threashold_black").c_str());
+	cfg_laserVisibilityThreshold = config->get_int((cfg_prefix + "threashold_laser_visibility").c_str());
+	cfg_lightDistanceAllowedBetweenFrames = config->get_float((cfg_prefix + "light_distance_allowed_betwen_frames").c_str());
+	cfg_lightOutOfRangeThrashold = config->get_int((cfg_prefix + "light_out_of_range_thrashold").c_str());
+	cfg_lightMoveUnderRfidThrashold = config->get_float((cfg_prefix + "light_move_under_rfid_thrashold").c_str());
+	cfg_center_x = config->get_int((cfg_prefix + "center_x").c_str());
+	cfg_center_y = config->get_int((cfg_prefix + "center_y").c_str());
+	cfg_center_height = config->get_int((cfg_prefix + "center_height").c_str());
+	cfg_center_width = config->get_int((cfg_prefix + "center_width").c_str());
 
-	this->cfg_lightSizeHeight = this->config->get_float((this->cfg_prefix + "light_size_height").c_str());
-	this->cfg_lightSizeWidth = this->config->get_float((this->cfg_prefix + "light_size_width").c_str());
+	cfg_lightToCloseThrashold = config->get_float((cfg_prefix + "light_to_close_thrashold").c_str());
 
-	this->cfg_detectionCycleTime = this->config->get_int((this->cfg_prefix + "detection_cycle_time").c_str());
-	this->cfg_desiredLoopTime = this->config->get_float("/fawkes/mainapp/desired_loop_time") / 1000000;
-	this->detectionCycleTimeFrames = cfg_detectionCycleTime / cfg_desiredLoopTime;
+	cfg_lightSizeHeight = config->get_float((cfg_prefix + "light_size_height").c_str());
+	cfg_lightSizeWidth = config->get_float((cfg_prefix + "light_size_width").c_str());
 
-	this->cfg_lightPositionCorrection = this->config->get_bool((this->cfg_prefix + "light_position_correction").c_str());
-	this->cfg_simulateLaserData = this->config->get_bool((this->cfg_prefix + "simulate_laser").c_str());
-	this->cfg_simulate_laser_x = this->config->get_float((this->cfg_prefix + "simulate_laser_data_x").c_str());
-	this->cfg_simulate_laser_y = this->config->get_float((this->cfg_prefix + "simulate_laser_data_y").c_str());
-	this->cfg_simulate_laser_history = this->config->get_int((this->cfg_prefix + "simulate_laser_data_visibility").c_str());
+	cfg_detectionCycleTime = config->get_int((cfg_prefix + "detection_cycle_time").c_str());
+	cfg_desiredLoopTime = config->get_float("/fawkes/mainapp/desired_loop_time") / 1000000;
+	detectionCycleTimeFrames = cfg_detectionCycleTime / cfg_desiredLoopTime;
+
+	cfg_useMinDistanceThreashold = config->get_bool((cfg_prefix + "use_min_distance_threashold").c_str());
+	cfg_useMulticluster = config->get_bool((cfg_prefix + "use_multicluster").c_str());
+
+	cfg_lightPositionCorrection = config->get_bool((cfg_prefix + "light_position_correction").c_str());
+	cfg_simulateLaserData = config->get_bool((cfg_prefix + "simulate_laser").c_str());
+	cfg_simulate_laser_x = config->get_float((cfg_prefix + "simulate_laser_data_x").c_str());
+	cfg_simulate_laser_y = config->get_float((cfg_prefix + "simulate_laser_data_y").c_str());
+	cfg_simulate_laser_history = config->get_int((cfg_prefix + "simulate_laser_data_visibility").c_str());
 
 
-	logger->log_debug(name(), "Camera offset horizontal: %i",this->cfg_cameraOffsetHorizontal);
-	logger->log_debug(name(), "Camera offset vertical: %i",this->cfg_cameraOffsetVertical);
+	logger->log_debug(name(), "Camera offset horizontal: %i",cfg_cameraOffsetHorizontal);
+	logger->log_debug(name(), "Camera offset vertical: %i",cfg_cameraOffsetVertical);
 
-	logger->log_debug(name(), "Camera offset angle horizontal: %f",this->cfg_cameraAngleHorizontalRad);
-	logger->log_debug(name(), "Camera offset angle vertical: %f",this->cfg_cameraAngleVerticalRad);
+	logger->log_debug(name(), "Camera offset angle horizontal: %f",cfg_cameraAngleHorizontalRad);
+	logger->log_debug(name(), "Camera offset angle vertical: %f",cfg_cameraAngleVerticalRad);
 
-	logger->log_debug(name(), "Simulate laser: %b",this->cfg_simulateLaserData);
+	logger->log_debug(name(), "Simulate laser: %b",cfg_simulateLaserData);
 
-	std::string shmID = this->config->get_string((this->cfg_prefix + "shm_image_id").c_str());
+	std::string shmID = config->get_string((cfg_prefix + "shm_image_id").c_str());
 
-	this->camera = vision_master->register_for_camera(this->cfg_camera.c_str(), this);
+	camera = vision_master->register_for_camera(cfg_camera.c_str(), this);
 
-	this->img_width = this->camera->pixel_width();
-	this->img_height = this->camera->pixel_height();
+	img_width = camera->pixel_width();
+	img_height = camera->pixel_height();
 
-	this->cspaceFrom = this->camera->colorspace();
+	cspaceFrom = camera->colorspace();
 
-	this->scanline = new firevision::ScanlineGrid( this->img_width, this->img_height, 1, 1 );
-	this->colorModel = new firevision::ColorModelLuminance(this->cfg_brightnessThreashold);
+	scanline = new firevision::ScanlineGrid( img_width, img_height, 1, 1 );
+	colorModel = new firevision::ColorModelLuminance(cfg_brightnessThreshold);
 
-	this->classifierWhite = new firevision::SimpleColorClassifier(
-			this->scanline,														//scanmodel
-			this->colorModel,													//colorModel
+	classifierWhite = new firevision::SimpleColorClassifier(
+			scanline,														//scanmodel
+			colorModel,													//colorModel
 			30,																	//num_min_points
 			0,																	//box_extend
 			false,																//upward
@@ -152,10 +167,10 @@ LightFrontThread::init()
 			firevision::C_WHITE													//color
 			);
 
-	this->colorModelBlack = new firevision::ColorModelBlack(this->cfg_darknessThreashold);
-	this->classifierBlack = new firevision::SimpleColorClassifier(
-			this->scanline,														//scanmodel
-			this->colorModelBlack,													//colorModel
+	colorModelBlack = new firevision::ColorModelBlack(cfg_darknessThreshold);
+	classifierBlack = new firevision::SimpleColorClassifier(
+			scanline,														//scanmodel
+			colorModelBlack,													//colorModel
 			30,																	//num_min_points
 			0,																	//box_extend
 			false,																//upward
@@ -164,30 +179,38 @@ LightFrontThread::init()
 			firevision::C_BLACK													//color
 			);
 
-	// Create a ringbuffer with the size of the configured frame count
-	this->historyBuffer = new boost::circular_buffer<lightSignal>(this->detectionCycleTimeFrames);
-	//this->historyBuffer = new std::deque<lightSignal>();
+
 
 	// SHM image buffer
-	this->shmBufferYCbCr = new firevision::SharedMemoryImageBuffer(
+	shmBufferYCbCr = new firevision::SharedMemoryImageBuffer(
 			shmID.c_str(),
-			this->cspaceTo,
-			this->img_width,
-			this->img_height
+			cspaceTo,
+			img_width,
+			img_height
 			);
 	if (!shmBufferYCbCr->is_valid()) {
 		throw fawkes::Exception("Shared memory segment not valid");
 	}
-	this->shmBufferYCbCr->set_frame_id(this->cfg_frame.c_str());
+	shmBufferYCbCr->set_frame_id(cfg_frame.c_str());
 
-	this->bufferYCbCr = this->shmBufferYCbCr->buffer();
+	bufferYCbCr = shmBufferYCbCr->buffer();
+
+	// Create a ringbuffer with the size of the configured frame count
+	historyBufferCluster1 = new boost::circular_buffer<lightSignal>(detectionCycleTimeFrames);
+	historyBufferCluster2 = new boost::circular_buffer<lightSignal>(detectionCycleTimeFrames);
+	historyBufferCluster3 = new boost::circular_buffer<lightSignal>(detectionCycleTimeFrames);
+	//historyBuffer = new std::deque<lightSignal>();
 
 	//open interfaces
-	this->nearestMaschineIF = blackboard->open_for_reading<fawkes::Position3DInterface>(
-			this->config->get_string((this->cfg_prefix + "light_position_if").c_str()).c_str());
+	std::string position_3d_interface_name = config->get_string((cfg_prefix + "light_position_if").c_str());
+	nearestMaschineIF1 = blackboard->open_for_reading<fawkes::Position3DInterface>((position_3d_interface_name+"1").c_str());
+	nearestMaschineIF2 = blackboard->open_for_reading<fawkes::Position3DInterface>((position_3d_interface_name+"2").c_str());
+	nearestMaschineIF3 = blackboard->open_for_reading<fawkes::Position3DInterface>((position_3d_interface_name+"3").c_str());
 
-	this->lightStateIF = blackboard->open_for_writing<fawkes::RobotinoLightInterface>(
-			this->config->get_string((this->cfg_prefix + "light_state_if").c_str()).c_str());
+	std::string light_interface_name = config->get_string((cfg_prefix + "light_state_if").c_str());
+	lightStateIF1 = blackboard->open_for_writing<fawkes::RobotinoLightInterface>((light_interface_name + "1").c_str());
+	lightStateIF2 = blackboard->open_for_writing<fawkes::RobotinoLightInterface>((light_interface_name + "2").c_str());
+	lightStateIF3 = blackboard->open_for_writing<fawkes::RobotinoLightInterface>((light_interface_name + "3").c_str());
 
 	try {
 		    switchInterface = blackboard->open_for_writing<fawkes::SwitchInterface>(
@@ -200,10 +223,13 @@ LightFrontThread::init()
 		  }
 
 	//ROIs
-	this->drawer = new firevision::FilterROIDraw();
+	drawer = new firevision::FilterROIDraw();
 
-	this->resetLightInterface();
-	this->resetLocalHistory();
+	resetLightInterface(lightStateIF1);
+	resetLightInterface(lightStateIF2);
+	resetLightInterface(lightStateIF3);
+
+	resetLocalHistory();
 
 	logger->log_debug(name(), "end of init()");
 
@@ -217,18 +243,100 @@ LightFrontThread::finalize()													//TODO check if everthing gets deleted
 
 	vision_master->unregister_thread(this);
 
-	delete this->camera;
-	delete this->scanline;
-	delete this->colorModel;
-	delete this->classifierWhite;
-	delete this->shmBufferYCbCr;
-	delete this->historyBuffer;		//TODO ok?
+	delete camera;
+	delete scanline;
+	delete colorModel;
+	delete classifierWhite;
+	delete shmBufferYCbCr;
+	delete historyBufferCluster1;
+	delete historyBufferCluster2;
+	delete historyBufferCluster3;
 
-	blackboard->close(this->nearestMaschineIF);
-	blackboard->close(this->lightStateIF);
-	blackboard->close(this->switchInterface);
+	blackboard->close(nearestMaschineIF1);
+	blackboard->close(nearestMaschineIF2);
+	blackboard->close(nearestMaschineIF3);
+	blackboard->close(lightStateIF1);
+	blackboard->close(lightStateIF2);
+	blackboard->close(lightStateIF3);
+
+	blackboard->close(switchInterface);
 
 	logger->log_info(name(), "ends");
+}
+
+void LightFrontThread::process_light(fawkes::Position3DInterface *position_interface, fawkes::RobotinoLightInterface* light_interface, boost::circular_buffer<LightFrontThread::lightSignal> *buffer) {
+	position_interface->read();
+	bool contiueToPictureProcess = false;
+	fawkes::cart_coord_3d_t lightPosition =	getNearestMaschineFromInterface(position_interface);
+	int clusterVisibilityHistory =	position_interface->visibility_history();
+	if (cfg_simulateLaserData) {
+		lightPosition.x = cfg_simulate_laser_x;
+		lightPosition.y = cfg_simulate_laser_y;
+		clusterVisibilityHistory = cfg_simulate_laser_history;
+	}
+	fawkes::polar_coord_2d_t lightPositionPolar;
+	if (clusterVisibilityHistory > cfg_laserVisibilityThreshold) {
+		if (clusterVisibilityHistory > 0) {
+			lightPositionPolar = transformCoordinateSystem(lightPosition, position_interface->frame(), cfg_frame);
+			if (isLightInViewarea(lightPositionPolar)) {
+				lightOutOfRangeCounter = 0;
+				contiueToPictureProcess = true;
+			} else {
+				if (lightOutOfRangeCounter < cfg_lightOutOfRangeThreshold) {
+					if (!buffer->empty()) {
+						lightPositionPolar = buffer->front().nearestMaschine_pos;
+						contiueToPictureProcess = true;
+					} else {
+						resetLightInterface(light_interface, "light is out of range and buffer is empty");
+						buffer->clear();
+					}
+				} else {
+					resetLightInterface(light_interface, "light is to often out of range for camera");
+					buffer->clear();
+				}
+			}
+		} else if (!buffer->empty()) {
+			lightPositionPolar = buffer->front().nearestMaschine_pos;
+			contiueToPictureProcess = true;
+		} else {
+			resetLightInterface(light_interface, "laser visibility is < 0 and buffer is empty");
+			buffer->clear();
+		}
+	} else {
+		//if the laser doen't see anything, use it as the robot is directy in front of the light
+		lightPositionPolar.r = cfg_lightToCloseThrashold;
+		lightPositionPolar.phi = 0.0;
+		contiueToPictureProcess = true;
+		//		resetLightInterface("laser visibility lower than threashold");
+		//		resetLocalHistory();
+	}
+	if (contiueToPictureProcess) {
+		try {
+			LightFrontThread::lightROIs lightROIs = calculateLightPos(
+					lightPositionPolar);
+			takePicture(lightROIs);
+			// correct light position
+			if (cfg_lightPositionCorrection) {
+				lightROIs = correctLightRoisWithBlack(lightROIs);
+				if (cfg_paintROIsActivated) {
+					drawROIIntoBuffer(lightROIs.light);
+					drawROIIntoBuffer(lightROIs.red);
+					drawROIIntoBuffer(lightROIs.yellow);
+					drawROIIntoBuffer(lightROIs.green);
+				}
+			}
+			LightFrontThread::lightSignal lightSignalCurrentPicture =
+					detectLightInCurrentPicture(lightROIs);
+			lightSignalCurrentPicture.nearestMaschine_pos = lightPositionPolar;
+			lightSignalCurrentPicture.nearestMaschine_history =
+					clusterVisibilityHistory;
+			buffer->push_front(lightSignalCurrentPicture);
+			processHistoryBuffer(light_interface, buffer);
+		} catch (fawkes::Exception& e) {
+			resetLightInterface(light_interface, "ROI is outside of the buffer");
+			buffer->clear();
+		}
+	}
 }
 
 void
@@ -237,13 +345,17 @@ LightFrontThread::loop()
 	while (!switchInterface->msgq_empty()) {
 	    if (fawkes::SwitchInterface::DisableSwitchMessage *msg = switchInterface->msgq_first_safe(msg)) {
 	      switchInterface->set_enabled(false);
-	      this->resetLocalHistory();
-	      this->resetLightInterface("Switch disable message received");
+	      resetLocalHistory();
+	      resetLightInterface(lightStateIF1, "Switch disable message received");
+	      resetLightInterface(lightStateIF2, "Switch disable message received");
+	      resetLightInterface(lightStateIF3, "Switch disable message received");
 	    }
 	    else if (fawkes::SwitchInterface::EnableSwitchMessage *msg = switchInterface->msgq_first_safe(msg)) {
 	      switchInterface->set_enabled(true);
-	      this->resetLocalHistory();
-	      this->resetLightInterface("Switch enable message received");
+	      resetLocalHistory();
+	      resetLightInterface(lightStateIF1, "Switch enable message received");
+	      resetLightInterface(lightStateIF2, "Switch enable message received");
+	      resetLightInterface(lightStateIF3, "Switch enable message received");
 	    }
 	    switchInterface->msgq_pop();
 	    switchInterface->write();
@@ -253,97 +365,25 @@ LightFrontThread::loop()
 	    return;
 	 }
 
-
-	bool contiueToPictureProcess = false;
-
 	//read laser if
-	this->nearestMaschineIF->read();
+	nearestMaschineIF1->read();
+	process_light(nearestMaschineIF1, lightStateIF1, historyBufferCluster1);
 
-	fawkes::cart_coord_3d_t lightPosition = this->getNearestMaschineFromInterface();
-	int clusterVisibilityHistory = this->nearestMaschineIF->visibility_history();
-
-	if(cfg_simulateLaserData){
-		lightPosition.x = cfg_simulate_laser_x;
-		lightPosition.y = cfg_simulate_laser_y;
-		clusterVisibilityHistory = cfg_simulate_laser_history;
-	}
-
-	fawkes::polar_coord_2d_t lightPositionPolar;
-
-	if ( clusterVisibilityHistory > this->cfg_laserVisibilityThreashold ) {
-		if( clusterVisibilityHistory > 0 ){
-			lightPositionPolar = this->transformCoordinateSystem(lightPosition, this->nearestMaschineIF->frame(), this->cfg_frame);
-
-			if( this->isLightInViewarea(lightPositionPolar) ){
-				this->lightOutOfRangeCounter = 0;
-				contiueToPictureProcess = true;
-			} else {
-				if ( this->lightOutOfRangeCounter < this->cfg_lightOutOfRangeThrashold ) {
-					if ( ! this->historyBuffer->empty()) {
-						lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
-
-						contiueToPictureProcess = true;
-					} else {
-						this->resetLightInterface("light is out of range and buffer is empty");
-						this->resetLocalHistory();
-					}
-				} else {
-					this->resetLightInterface("light is to often out of range for camera");
-					this->resetLocalHistory();
-				}
-			}
-		} else if ( ! this->historyBuffer->empty()) {
-			lightPositionPolar = this->historyBuffer->front().nearestMaschine_pos;
-			contiueToPictureProcess = true;
-		} else {
-			this->resetLightInterface("laser visibility is < 0 and buffer is empty");
-			this->resetLocalHistory();
-		}
-	} else{
-		//if the laser doen't see anything, use it as the robot is directy in front of the light
-		lightPositionPolar.r = this->cfg_lightToCloseThrashold;
-		lightPositionPolar.phi = 0.0;
-		contiueToPictureProcess = true;
-//		this->resetLightInterface("laser visibility lower than threashold");
-//		this->resetLocalHistory();
-	}
-
-	if ( contiueToPictureProcess ) {
-		try {
-			LightFrontThread::lightROIs lightROIs = this->calculateLightPos(lightPositionPolar);
-			this->takePicture(lightROIs);
-
-			// correct light position
-			if(cfg_lightPositionCorrection){
-				lightROIs = this->correctLightRoisWithBlack(lightROIs);
-				if (this->cfg_paintROIsActivated) {
-					this->drawROIIntoBuffer(lightROIs.light);
-					this->drawROIIntoBuffer(lightROIs.red);
-					this->drawROIIntoBuffer(lightROIs.yellow);
-					this->drawROIIntoBuffer(lightROIs.green);
-				}
-			}
-
-			LightFrontThread::lightSignal lightSignalCurrentPicture = this->detectLightInCurrentPicture(lightROIs);
-			lightSignalCurrentPicture.nearestMaschine_pos = lightPositionPolar;
-			lightSignalCurrentPicture.nearestMaschine_history = clusterVisibilityHistory;
-			this->historyBuffer->push_front(lightSignalCurrentPicture);
-
-			this->processHistoryBuffer();
-		} catch(fawkes::Exception &e) {
-			this->resetLightInterface("ROI is outside of the buffer");
-			this->resetLocalHistory();
-		}
+	if(cfg_useMulticluster){
+		nearestMaschineIF2->read();
+		nearestMaschineIF3->read();
+		process_light(nearestMaschineIF2, lightStateIF2, historyBufferCluster2);
+		process_light(nearestMaschineIF3, lightStateIF3, historyBufferCluster3);
 	}
 }
 
 bool
 LightFrontThread::isLightInViewarea(fawkes::polar_coord_2d_t light)
 {
-	float cameraAngleDetectionArea = ( this->cfg_cameraFactorHorizontal / 2 ) - 0.1;
+	float cameraAngleDetectionArea = ( cfg_cameraFactorHorizontal / 2 ) - 0.1;
 
 	if ( std::abs(light.phi) >= cameraAngleDetectionArea
-	  && light.r < this->cfg_lightToCloseThrashold ) {
+	  && light.r < cfg_lightToCloseThrashold ) {
 		return false;
 	} else {
 		return true;
@@ -354,20 +394,20 @@ void
 LightFrontThread::takePicture(LightFrontThread::lightROIs lightROIs)
 {
 	camera->capture();
-	firevision::convert(this->cspaceFrom,
-			this->cspaceTo,
-			this->camera->buffer(),
-			this->bufferYCbCr,
-			this->img_width,
-			this->img_height);
-	this->camera->dispose_buffer();
+	firevision::convert(cspaceFrom,
+			cspaceTo,
+			camera->buffer(),
+			bufferYCbCr,
+			img_width,
+			img_height);
+	camera->dispose_buffer();
 
 	//draw expected light in buffer
-	if (this->cfg_paintROIsActivated) {
-		this->drawROIIntoBuffer(lightROIs.light);
-		this->drawROIIntoBuffer(lightROIs.red);
-		this->drawROIIntoBuffer(lightROIs.yellow);
-		this->drawROIIntoBuffer(lightROIs.green);
+	if (cfg_paintROIsActivated) {
+		drawROIIntoBuffer(lightROIs.light);
+		drawROIIntoBuffer(lightROIs.red);
+		drawROIIntoBuffer(lightROIs.yellow);
+		drawROIIntoBuffer(lightROIs.green);
 	}
 }
 
@@ -395,18 +435,18 @@ LightFrontThread::correctLightRoisWithBlack(LightFrontThread::lightROIs expected
 	searchAreaBottem->width =  expectedLight.light.width * 7;
 	searchAreaBottem->height = 2*expectedLight.light.width;
 
-	if (this->cfg_paintROIsActivated) {
-		this->drawROIIntoBuffer(searchAreaBottem);
+	if (cfg_paintROIsActivated) {
+		drawROIIntoBuffer(searchAreaBottem);
 	}
 
-	std::list<firevision::ROI>* bottemBlackRoiList = this->classifyInRoi( searchAreaBottem ,this->classifierBlack);
+	std::list<firevision::ROI>* bottemBlackRoiList = classifyInRoi( searchAreaBottem ,classifierBlack);
 
 	if ( ! bottemBlackRoiList->empty() ) {
 		firevision::ROI bottemBlackRoi = getBiggestRoi(bottemBlackRoiList);
 
-		this->drawROIIntoBuffer(bottemBlackRoi);
+		drawROIIntoBuffer(bottemBlackRoi);
 
-		if (this->cfg_debugMessagesActivated) {
+		if (cfg_debugMessagesActivated) {
 				logger->log_debug(name(), "Bottem: X: %u Y: %u Height: %u Width: %u",bottemBlackRoi.start.x , bottemBlackRoi.start.y, bottemBlackRoi.height, bottemBlackRoi.width);
 		}
 
@@ -416,13 +456,13 @@ LightFrontThread::correctLightRoisWithBlack(LightFrontThread::lightROIs expected
 		searchAreaTop->start.y = expectedLight.light.start.y - 2 * (expectedLight.light.height / 3);
 		searchAreaTop->height = expectedLight.green.height * 6;
 
-		std::list<firevision::ROI>* topBlackRoiList = this->classifyInRoi( searchAreaTop ,this->classifierBlack);
+		std::list<firevision::ROI>* topBlackRoiList = classifyInRoi( searchAreaTop ,classifierBlack);
 		if ( ! topBlackRoiList->empty() ) {
 
 			firevision::ROI topBiggestRoi = getBiggestRoi(topBlackRoiList);
-			this->drawROIIntoBuffer(topBiggestRoi);
+			drawROIIntoBuffer(topBiggestRoi);
 
-			if (this->cfg_debugMessagesActivated) {
+			if (cfg_debugMessagesActivated) {
 							logger->log_debug(name(), "Top: X: %u Y: %u Height: %u Width: %u",topBiggestRoi.start.x , topBiggestRoi.start.y, topBiggestRoi.height, topBiggestRoi.width);
 			}
 			firevision::ROI light;
@@ -431,8 +471,8 @@ LightFrontThread::correctLightRoisWithBlack(LightFrontThread::lightROIs expected
 			light.height = bottemBlackRoi.start.y - (topBiggestRoi.start.y + topBiggestRoi.height);
 			light.width = std::min(bottemBlackRoi.width, topBiggestRoi.width);
 
-			this->checkIfROIIsInBuffer(light);
-			expectedLight = this->createLightROIs(light);
+			checkIfROIIsInBuffer(light);
+			expectedLight = createLightROIs(light);
 		} else {
 			logger->log_debug(name(), "No black-bottom roi found");
 		}
@@ -448,20 +488,20 @@ LightFrontThread::detectLightInCurrentPicture(LightFrontThread::lightROIs lightR
 {
 	LightFrontThread::lightSignal lightSignal;
 
-	lightSignal.red = this->signalLightCurrentPicture(lightROIs.red);
-	lightSignal.yellow = this->signalLightCurrentPicture(lightROIs.yellow);
-	lightSignal.green = this->signalLightCurrentPicture(lightROIs.green);
+	lightSignal.red = signalLightCurrentPicture(lightROIs.red);
+	lightSignal.yellow = signalLightCurrentPicture(lightROIs.yellow);
+	lightSignal.green = signalLightCurrentPicture(lightROIs.green);
 
 	return lightSignal;
 }
 
 void
-LightFrontThread::processHistoryBuffer()	//TODO change function name to say that the interface is writen
+LightFrontThread::processHistoryBuffer(fawkes::RobotinoLightInterface* interface, boost::circular_buffer<LightFrontThread::lightSignal> *buffer)	//TODO change function name to say that the interface is writen
 {
-	if ( this->historyBuffer->full() ) {
+	if ( historyBufferCluster1->full() ) {
 		LightFrontThread::lightSignal lighSignal;
 
-		if ( this->lightFromHistoryBuffer(lighSignal) ) {
+		if ( lightFromHistoryBuffer(buffer, &lighSignal) ) {
 			if ( lighSignal.red != fawkes::RobotinoLightInterface::UNKNOWN
 			  && lighSignal.yellow != fawkes::RobotinoLightInterface::UNKNOWN
 			  && lighSignal.green != fawkes::RobotinoLightInterface::UNKNOWN
@@ -472,16 +512,16 @@ LightFrontThread::processHistoryBuffer()	//TODO change function name to say that
 				   )
 			   ) {
 
-				this->writeLightInterface(lighSignal, true);
+				writeLightInterface(interface, lighSignal, true);
 
 			} else {
-				this->resetLightInterface("light couldn't get detected");
+				resetLightInterface(interface, "light couldn't get detected");
 			}
 		} else {
-			this->resetLightInterface("cluster jumped");
+			resetLightInterface(interface, "cluster jumped");
 		}
 	} else {
-		this->writeLightInterface(this->historyBuffer->front(), false);
+		writeLightInterface(interface, buffer->front(), false);
 	}
 }
 
@@ -494,7 +534,7 @@ fawkes::polar_coord_2d_t
 LightFrontThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to)
 {
 	fawkes::polar_coord_2d_t polErrorReturnValue;
-	this->cartToPol(polErrorReturnValue, cartFrom.x, cartFrom.y);
+	cartToPol(polErrorReturnValue, cartFrom.x, cartFrom.y);
 
 	bool world_frame_exists = tf_listener->frame_exists(from);
 	bool robot_frame_exists = tf_listener->frame_exists(to);
@@ -522,9 +562,9 @@ LightFrontThread::transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, st
 
 		toX = cartFrom.x + v.getX();
 		toY = cartFrom.y + v.getY();
-		this->cartToPol(polTo, toX, toY);
+		cartToPol(polTo, toX, toY);
 
-		if (this->cfg_debugMessagesActivated) {
+		if (cfg_debugMessagesActivated) {
 			logger->log_debug(name(), "From: %s X: %f Y: %f", from.c_str(), cartFrom.x, cartFrom.y);
 			logger->log_debug(name(), "To  : %s X: %f Y: %f", to.c_str(), toX, toY);
 		}
@@ -538,7 +578,7 @@ void LightFrontThread::cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y
 	pol.phi = atan2f(y, x);
 	pol.r = sqrtf(x * x + y * y);
 
-	if (this->cfg_debugMessagesActivated) {
+	if (cfg_debugMessagesActivated) {
 		logger->log_debug(name(), "x: %f; y: %f", x, y);
 		logger->log_debug(name(), "Calculated r: %f; phi: %f", pol.r, pol.phi);
 	}
@@ -552,23 +592,23 @@ void LightFrontThread::polToCart(float &x, float &y,fawkes::polar_coord_2d_t pol
 void
 LightFrontThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
 {
-	this->drawer->set_src_buffer(this->bufferYCbCr, firevision::ROI::full_image(this->img_width, this->img_height), 0);
-	this->drawer->set_dst_buffer(this->bufferYCbCr, &roi);
-	this->drawer->set_style(borderStyle);
-	this->drawer->apply();
+	drawer->set_src_buffer(bufferYCbCr, firevision::ROI::full_image(img_width, img_height), 0);
+	drawer->set_dst_buffer(bufferYCbCr, &roi);
+	drawer->set_style(borderStyle);
+	drawer->apply();
 
-	if (this->cfg_debugMessagesActivated) {
+	if (cfg_debugMessagesActivated) {
 		logger->log_debug(name(), "drawed element in buffer");
 	}
 }
 
 void LightFrontThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
-	if (light.start.x >= this->img_width || light.start.y >= this->img_height
-			|| light.height + light.start.y >= this->img_height
-			|| light.width + light.start.x >= this->img_width) {
+	if (light.start.x >= img_width || light.start.y >= img_height
+			|| light.height + light.start.y >= img_height
+			|| light.width + light.start.x >= img_width) {
 		throw fawkes::Exception("ROI is outsite of the buffer");
 	} else {
-		if (this->cfg_debugMessagesActivated) {
+		if (cfg_debugMessagesActivated) {
 			logger->log_info(name(), "Size check ok");
 		}
 	}
@@ -576,37 +616,38 @@ void LightFrontThread::checkIfROIIsInBuffer(const firevision::ROI& light) {
 
 int
 LightFrontThread::angleCorrectionY(float distance){
-	return this->img_height / (distance * this->cfg_cameraFactorVertical) * tan(cfg_cameraAngleVerticalRad);
+	return img_height / (distance * cfg_cameraFactorVertical) * tan(cfg_cameraAngleVerticalRad);
 }
 
 int
 LightFrontThread::angleCorrectionX(float distance){
-	return this->img_width / (distance * this->cfg_cameraFactorHorizontal) * tan(cfg_cameraAngleHorizontalRad);
+	return img_width / (distance * cfg_cameraFactorHorizontal) * tan(cfg_cameraAngleHorizontalRad);
 }
 
 LightFrontThread::lightROIs
 LightFrontThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 {
-	int expectedLightSizeWidth = this->img_width / (lightPos.r * this->cfg_cameraFactorHorizontal) * this->cfg_lightSizeWidth;
-	int expectedLightSizeHeigth = this->img_height / (lightPos.r * this->cfg_cameraFactorVertical) * this->cfg_lightSizeHeight;
-	float pixelPerRadHorizonal = this->img_width / this->cfg_cameraFactorHorizontal;
+	int expectedLightSizeWidth = img_width / (lightPos.r * cfg_cameraFactorHorizontal) * cfg_lightSizeWidth;
+	int expectedLightSizeHeigth = img_height / (lightPos.r * cfg_cameraFactorVertical) * cfg_lightSizeHeight;
+	float pixelPerRadHorizonal = img_width / cfg_cameraFactorHorizontal;
 
-	int startX = this->img_width / 2											//picture center
+	int startX = img_width / 2											//picture center
 					- lightPos.phi * pixelPerRadHorizonal							//move to the light
 					- expectedLightSizeWidth / 2;
 
-	int startY = this->img_height / 2											//picture center
-					- expectedLightSizeHeigth / 2;									//light center to light cornor;                                                                  //light center to light cornor
+	int startY = img_height / 2											//picture center
+					- expectedLightSizeHeigth / 2;									//light center to light cornor;  //light center to light cornor
 
+	startY = startY
+				+ cfg_cameraOffsetVertical                                                                //error of picture position to light
+				+ angleCorrectionY(lightPos.r);
 
-	if(cfg_lightMoveUnderRfidThrashold < lightPos.r){
-		startX = startX
-				+ this->cfg_cameraOffsetHorizontal 								// pixels to move to side
-				+ this->angleCorrectionX(lightPos.r);									//light center to light top cornor
+	if(cfg_useMinDistanceThreashold && cfg_lightMoveUnderRfidThrashold >= lightPos.r){
+		startX = cfg_center_x;
+		startY = cfg_center_y;
+		expectedLightSizeHeigth = cfg_center_height;
+		expectedLightSizeWidth = cfg_center_width;
 	}
-	startY = startY	
-			+ this->cfg_cameraOffsetVertical                                                                //error of picture position to light
-			+ this->angleCorrectionY(lightPos.r);
 
 	firevision::ROI light;
 	light.start.x = startX;
@@ -614,9 +655,9 @@ LightFrontThread::calculateLightPos(fawkes::polar_coord_2d_t lightPos)
 	light.height = expectedLightSizeHeigth;
 	light.width = expectedLightSizeWidth;
 
-	this->checkIfROIIsInBuffer(light);
+	checkIfROIIsInBuffer(light);
 
-	return this->createLightROIs(light);
+	return createLightROIs(light);
 }
 
 LightFrontThread::lightROIs
@@ -626,8 +667,8 @@ LightFrontThread::createLightROIs(firevision::ROI light)
 
 	//light ROI size
 	lightROIs.light = light;
-	lightROIs.light.image_height = this->img_height;
-	lightROIs.light.image_width = this->img_width;
+	lightROIs.light.image_height = img_height;
+	lightROIs.light.image_width = img_width;
 
 	//Signale ROIs
 
@@ -646,7 +687,7 @@ LightFrontThread::createLightROIs(firevision::ROI light)
 	lightROIs.green.height = roiHeight;
 	lightROIs.green.start.y += roiHeight * 7;									//Middle of the bottom thirds
 
-	if (this->cfg_debugMessagesActivated) {
+	if (cfg_debugMessagesActivated) {
 		logger->log_info(name(), "light.start.x %u, light.start.y %u, height: %u", lightROIs.light.start.x, lightROIs.light.start.y, lightROIs.light.height);
 		logger->log_info(name(), "red.start.x %u, red.start.y %u, red: %u", lightROIs.red.start.x, lightROIs.red.start.y, lightROIs.red.height);
 		logger->log_info(name(), "yellow.start.x %u, yellow.start.y %u, yellow: %u", lightROIs.yellow.start.x, lightROIs.yellow.start.y, lightROIs.yellow.height);
@@ -657,14 +698,14 @@ LightFrontThread::createLightROIs(firevision::ROI light)
 }
 
 void
-LightFrontThread::writeLightInterface(LightFrontThread::lightSignal lightSignal, bool ready) {
-	this->lightStateIF->read();
-	int vis = this->lightStateIF->visibility_history();
+LightFrontThread::writeLightInterface(fawkes::RobotinoLightInterface* interface, LightFrontThread::lightSignal lightSignal, bool ready) {
+	lightStateIF1->read();
+	int vis = lightStateIF1->visibility_history();
 
 	if ( vis < 0
-	  || this->lightStateIF->red() != lightSignal.red
-	  || this->lightStateIF->yellow() != lightSignal.yellow
-	  || this->lightStateIF->green() != lightSignal.green
+	  || lightStateIF1->red() != lightSignal.red
+	  || lightStateIF1->yellow() != lightSignal.yellow
+	  || lightStateIF1->green() != lightSignal.green
 	   ) {
 		vis = 1;
 		ready = false;
@@ -672,43 +713,45 @@ LightFrontThread::writeLightInterface(LightFrontThread::lightSignal lightSignal,
 		vis++;
 	}
 
-	this->lightStateIF->set_visibility_history(vis);
+	lightStateIF1->set_visibility_history(vis);
 
-	this->lightStateIF->set_red(lightSignal.red);
-	this->lightStateIF->set_yellow(lightSignal.yellow);
-	this->lightStateIF->set_green(lightSignal.green);
+	lightStateIF1->set_red(lightSignal.red);
+	lightStateIF1->set_yellow(lightSignal.yellow);
+	lightStateIF1->set_green(lightSignal.green);
 
-	if (vis >= this->detectionCycleTimeFrames) {
-		this->lightStateIF->set_ready(ready);
+	if (vis >= detectionCycleTimeFrames) {
+		lightStateIF1->set_ready(ready);
 	} else {
-		this->lightStateIF->set_ready(false);
+		lightStateIF1->set_ready(false);
 	}
 
-	this->lightStateIF->write();
+	lightStateIF1->write();
 }
 
 void
 LightFrontThread::resetLocalHistory() {
-	this->historyBuffer->clear();
+	historyBufferCluster1->clear();
+	historyBufferCluster2->clear();
+	historyBufferCluster3->clear();
 }
 
 void
-LightFrontThread::resetLightInterface(std::string message)
+LightFrontThread::resetLightInterface(fawkes::RobotinoLightInterface* interface, std::string message)
 {
-	this->lightStateIF->read();
-	int vis = this->lightStateIF->visibility_history();
+	interface->read();
+	int vis = interface->visibility_history();
 
 	if ( vis < 0 ) {
 		vis--;
 	} else {
 		vis = -1;
 	}
-	this->lightStateIF->set_visibility_history(vis);
+	interface->set_visibility_history(vis);
 
-	this->lightStateIF->set_ready(false);
-	this->lightStateIF->write();
+	interface->set_ready(false);
+	interface->write();
 
-	if (this->cfg_debugMessagesActivated) {
+	if (cfg_debugMessagesActivated) {
 			logger->log_info(name(), "Resetting interface, %s",message.c_str());
 	}
 }
@@ -718,10 +761,10 @@ LightFrontThread::resetLightInterface(std::string message)
 std::list<firevision::ROI>*
 LightFrontThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier)
 {
-	this->scanline->reset();
-	this->scanline->set_roi(&searchArea);
+	scanline->reset();
+	scanline->set_roi(&searchArea);
 
-	classifier->set_src_buffer(this->bufferYCbCr, this->img_width, this->img_height);
+	classifier->set_src_buffer(bufferYCbCr, img_width, img_height);
 
 	std::list<firevision::ROI> *ROIs = classifier->classify();
 
@@ -731,23 +774,23 @@ LightFrontThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifi
 fawkes::RobotinoLightInterface::LightState
 LightFrontThread::signalLightCurrentPicture(firevision::ROI signal)
 {
-	this->scanline->reset();
-	this->scanline->set_roi(&signal);
+	scanline->reset();
+	scanline->set_roi(&signal);
 
-	this->classifierWhite->set_src_buffer(this->bufferYCbCr, this->img_width, this->img_height);
+	classifierWhite->set_src_buffer(bufferYCbCr, img_width, img_height);
 
-	std::list<firevision::ROI> *ROIs = this->classifierWhite->classify();
+	std::list<firevision::ROI> *ROIs = classifierWhite->classify();
 
 	bool isOn = ! ROIs->empty();
 
-	if ( this->cfg_debugMessagesActivated ) {
+	if ( cfg_debugMessagesActivated ) {
 		int countedROIs = (int)ROIs->size();
 		logger->log_debug(name(), "Detect: %i", countedROIs);
 	}
-	if ( this->cfg_paintROIsActivated ) {
+	if ( cfg_paintROIsActivated ) {
 		int countedROIs = (int)ROIs->size();
 		for (int i = 0; i < countedROIs; ++i) {
-			this->drawROIIntoBuffer(ROIs->front());
+			drawROIIntoBuffer(ROIs->front());
 			ROIs->pop_front();
 		}
 	}
@@ -762,15 +805,15 @@ LightFrontThread::signalLightCurrentPicture(firevision::ROI signal)
 }
 
 bool
-LightFrontThread::lightFromHistoryBuffer(LightFrontThread::lightSignal &lighSignal){
+LightFrontThread::lightFromHistoryBuffer(boost::circular_buffer<LightFrontThread::lightSignal> *buffer, LightFrontThread::lightSignal* lighSignal){
 
 	int red = 0;
 	int yellow = 0;
 	int green = 0;
- // todo buffer von anfang nach ende durchlaufen
+
 	LightFrontThread::lightSignal previousLight;
-	for(boost::circular_buffer<LightFrontThread::lightSignal>::iterator it = this->historyBuffer->begin(); it != this->historyBuffer->end(); ++it){
-		if(it != this->historyBuffer->begin()) {
+	for(boost::circular_buffer<LightFrontThread::lightSignal>::iterator it = buffer->begin(); it != buffer->end(); ++it){
+		if(it != buffer->begin()) {
 			if( ! isValidSuccessor(*it,previousLight)){
 				return false;
 			}
@@ -790,9 +833,9 @@ LightFrontThread::lightFromHistoryBuffer(LightFrontThread::lightSignal &lighSign
 		previousLight = *it;
 	}
 
-	lighSignal.red = this->signalLightWithHistory(red);
-	lighSignal.yellow = this->signalLightWithHistory(yellow);
-	lighSignal.green = this->signalLightWithHistory(green);
+	lighSignal->red = signalLightWithHistory(red, buffer->size());
+	lighSignal->yellow = signalLightWithHistory(yellow, buffer->size());
+	lighSignal->green = signalLightWithHistory(green, buffer->size());
 
 	return true;
 }
@@ -809,7 +852,7 @@ LightFrontThread::isValidSuccessor(lightSignal previous,lightSignal current)
 	dx = cx - px;
 	dy = cy - py;
 
-	if(std::sqrt( (dx * dx) + (dy * dy) ) < this->cfg_lightDistanceAllowedBetweenFrames ){
+	if(std::sqrt( (dx * dx) + (dy * dy) ) < cfg_lightDistanceAllowedBetweenFrames ){
 		return true;
 	}
 	return false;
@@ -817,21 +860,21 @@ LightFrontThread::isValidSuccessor(lightSignal previous,lightSignal current)
 }
 
 fawkes::RobotinoLightInterface::LightState
-LightFrontThread::signalLightWithHistory(int lightHistory)
+LightFrontThread::signalLightWithHistory(int lightHistory, int buffer_size)
 {
-	int visibilityHistory = this->historyBuffer->size();
+	int visibilityHistory = buffer_size; //historyBufferCluster1->size();
 
-	if ( lightHistory >= ( visibilityHistory - this->cfg_lightNumberOfWrongDetections ) ) {
+	if ( lightHistory >= ( visibilityHistory - cfg_lightNumberOfWrongDetections ) ) {
 		return fawkes::RobotinoLightInterface::ON;
 
-	} else if ( lightHistory >= visibilityHistory / 2 - this->cfg_lightNumberOfWrongDetections
-			&&  lightHistory <= visibilityHistory / 2 + this->cfg_lightNumberOfWrongDetections ) {
-		return fawkes::RobotinoLightInterface::BLINKING; // todo check blinking max allowed errors
+	} else if ( lightHistory >= visibilityHistory / 2 - cfg_lightNumberOfWrongDetections
+			&&  lightHistory <= visibilityHistory / 2 + cfg_lightNumberOfWrongDetections ) {
+		return fawkes::RobotinoLightInterface::BLINKING;
 
-	} else if ( lightHistory <= this->cfg_lightNumberOfWrongDetections ) {
+	} else if ( lightHistory <= cfg_lightNumberOfWrongDetections ) {
 		return fawkes::RobotinoLightInterface::OFF;
 	} else {
-		if (this->cfg_debugMessagesActivated) {
+		if (cfg_debugMessagesActivated) {
 			logger->log_info(name(), "Detected: %i ON out of %i Pictures (ON: %i OFF: %i BLINKING: %i)", lightHistory, visibilityHistory, visibilityHistory, 0, visibilityHistory / 2);
 		}
 		return fawkes::RobotinoLightInterface::UNKNOWN;
@@ -839,21 +882,20 @@ LightFrontThread::signalLightWithHistory(int lightHistory)
 }
 
 fawkes::cart_coord_3d_t
-LightFrontThread::getNearestMaschineFromInterface()
+LightFrontThread::getNearestMaschineFromInterface(fawkes::Position3DInterface* interface)
 {
 	fawkes::cart_coord_3d_t lightPosition;
 
-	this->nearestMaschineIF->read();
-
-	lightPosition.x = this->nearestMaschineIF->translation(0);
-	lightPosition.y = this->nearestMaschineIF->translation(1);
-	lightPosition.z = this->nearestMaschineIF->translation(2);
+	interface->read();
+	lightPosition.x = interface->translation(0);
+	lightPosition.y = interface->translation(1);
+	lightPosition.z = interface->translation(2);
 
 	//if the light is directly in front (by x coordinate) set y to 0 because it is likly to detecd wrong values
-	if ( lightPosition.x < this->cfg_lightMoveUnderRfidThrashold ) {
+	if ( lightPosition.x < cfg_lightMoveUnderRfidThrashold ) {
 		lightPosition.y = 0.0;
 	} else {
-		if (this->cfg_debugMessagesActivated) {
+		if (cfg_debugMessagesActivated) {
 			logger->log_debug(name(), "Not a close mashine");
 		}
 	}
