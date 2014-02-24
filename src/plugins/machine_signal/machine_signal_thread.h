@@ -159,7 +159,7 @@ class MachineSignalThread :
     } sort_signal_rois_by_x_;
 
     // All ROIs we want to see painted in the tuning buffer
-    std::list<firevision::ROI> all_rois_;
+    std::list<firevision::ROI> drawn_rois_;
 
     // Checks to weed out implausible ROIs
     inline bool rois_delivery_zone(std::list<firevision::ROI>::iterator red, std::list<firevision::ROI>::iterator green);

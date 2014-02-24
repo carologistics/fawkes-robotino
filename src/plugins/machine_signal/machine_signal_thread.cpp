@@ -95,7 +95,7 @@ void MachineSignalThread::init()
   setup_camera();
 
   shmbuf_ = new SharedMemoryImageBuffer("machine_signal", YUV422_PLANAR, cam_width_, cam_height_);
-  roi_drawer_ = new FilterROIDraw(&all_rois_, FilterROIDraw::DASHED_HINT);
+  roi_drawer_ = new FilterROIDraw(&drawn_rois_, FilterROIDraw::DASHED_HINT);
 
   // Configure RED classifier
   cls_red_.cfg_ref_col = config->get_uints(CFG_PREFIX "/red/reference_color");
@@ -263,7 +263,7 @@ void MachineSignalThread::loop()
   rois_G = cls_green_.classifier->classify();
 
   if (unlikely(cfg_tuning_mode_)) {
-    all_rois_.clear();
+    drawn_rois_.clear();
 
     // Visualize color similarities in tuning buffer
     color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
@@ -271,8 +271,8 @@ void MachineSignalThread::loop()
     color_filter_->apply();
 
     if (!cfg_draw_processed_rois_) {
-      all_rois_.merge(*rois_R);
-      all_rois_.merge(*rois_G);
+      drawn_rois_.merge(*rois_R);
+      drawn_rois_.merge(*rois_G);
     }
   }
 
@@ -334,7 +334,7 @@ void MachineSignalThread::loop()
 
   if (unlikely(cfg_tuning_mode_)) {
     // Visualize the signals and bright spots we found
-    roi_drawer_->set_rois(&all_rois_);
+    roi_drawer_->set_rois(&drawn_rois_);
     roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
     roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
     roi_drawer_->apply();
@@ -389,7 +389,7 @@ bool MachineSignalThread::get_light_state(firevision::ROI *light)
     float area_ratio = (float)(roi_it->width * roi_it->height) / (float)(light->width * light->height);
     if (roi_aspect_ok(roi_it) && area_ratio > cfg_light_on_min_area_cover_) {
       if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_))
-        all_rois_.push_back(*roi_it);
+        drawn_rois_.push_back(*roi_it);
       delete bright_rois;
       return true;
     }
@@ -435,9 +435,9 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
         rv->push_back({roi_R, roi_Y, roi_G});
 
         if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          all_rois_.push_back(*roi_R);
-          all_rois_.push_back(*roi_Y);
-          all_rois_.push_back(*roi_G);
+          drawn_rois_.push_back(*roi_R);
+          drawn_rois_.push_back(*roi_Y);
+          drawn_rois_.push_back(*roi_G);
         }
 
         // Done with this signal, no point in looking for any further green ROIs.
@@ -468,9 +468,9 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
         rv->push_back({roi_R, roi_Y, roi_G});
 
         if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          all_rois_.push_back(*roi_R);
-          all_rois_.push_back(*roi_Y);
-          all_rois_.push_back(*roi_G);
+          drawn_rois_.push_back(*roi_R);
+          drawn_rois_.push_back(*roi_Y);
+          drawn_rois_.push_back(*roi_G);
         }
       }
     }
