@@ -289,42 +289,47 @@ void MachineSignalThread::loop()
   // Go through all signals from this frame...
   { std::list<signal_rois_t_>::iterator signal_it = signal_rois->begin();
   for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); i++) {
-    frame_state_t_ frame_state({
-      get_light_state(signal_it->red_roi),
-      get_light_state(signal_it->yellow_roi),
-      get_light_state(signal_it->green_roi),
-      signal_it->red_roi->start
-    });
+    try {
+      frame_state_t_ frame_state({
+        get_light_state(signal_it->red_roi),
+            get_light_state(signal_it->yellow_roi),
+            get_light_state(signal_it->green_roi),
+            signal_it->red_roi->start
+      });
 
-    // ... and match them to known signals based on the max_jitter tunable
-    float dist_min = FLT_MAX;
-    std::list<signal_state_t_>::iterator best_match;
-    for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
-        known_signal != known_signals_.end(); known_signal++) {
-      float dist = known_signal->distance(frame_state);
-      if (dist < dist_min) {
-        best_match = known_signal;
-        dist_min = dist;
+      // ... and match them to known signals based on the max_jitter tunable
+      float dist_min = FLT_MAX;
+      std::list<signal_state_t_>::iterator best_match;
+      for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
+          known_signal != known_signals_.end(); known_signal++) {
+        float dist = known_signal->distance(frame_state);
+        if (dist < dist_min) {
+          best_match = known_signal;
+          dist_min = dist;
+        }
       }
-    }
-    if (dist_min < cfg_max_jitter_) {
-      best_match->update(frame_state);
-    }
-    else {
-      // No historic match was found for the current signal
-      signal_state_t_ *cur_state = new signal_state_t_(buflen_);
-      cur_state->update(frame_state);
-      known_signals_.push_front(*cur_state);
-      delete cur_state;
-    }
+      if (dist_min < cfg_max_jitter_) {
+        best_match->update(frame_state);
+      }
+      else {
+        // No historic match was found for the current signal
+        signal_state_t_ *cur_state = new signal_state_t_(buflen_);
+        cur_state->update(frame_state);
+        known_signals_.push_front(*cur_state);
+        delete cur_state;
+      }
 
-    delete signal_it->red_roi;
-    signal_it->red_roi = NULL;
-    delete signal_it->yellow_roi;
-    signal_it->yellow_roi = NULL;
-    delete signal_it->green_roi;
-    signal_it->green_roi = NULL;
-
+      delete signal_it->red_roi;
+      signal_it->red_roi = NULL;
+      delete signal_it->yellow_roi;
+      signal_it->yellow_roi = NULL;
+      delete signal_it->green_roi;
+      signal_it->green_roi = NULL;
+    }
+    catch (OutOfBoundsException &e){
+      logger->log_error(name(), "Signal at %d,%d: Invalid ROI: %s",
+        signal_it->red_roi->start.x, signal_it->red_roi->start.y, e.what_no_backtrace());
+    }
     signal_it++;
   }
   }
