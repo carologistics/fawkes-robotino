@@ -129,7 +129,8 @@ class MachineSignalThread :
     unsigned int cfg_light_on_min_neighborhood_;
     std::atomic<float> cfg_light_on_min_area_cover_;
 
-    firevision::SimpleColorClassifier *cls_light_on_;
+    firevision::SimpleColorClassifier *light_classifier_;
+    firevision::ColorModelLuminance *light_colormodel_;
     firevision::ScanlineGrid *light_scangrid_;
 
     firevision::FilterROIDraw *roi_drawer_;
