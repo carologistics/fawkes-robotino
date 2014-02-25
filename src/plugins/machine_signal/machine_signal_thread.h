@@ -191,6 +191,7 @@ class MachineSignalThread :
         fawkes::upoint_t pos;
         int visibility;
         int unseen;
+        unsigned int area;
         boost::circular_buffer<bool> history_R;
         boost::circular_buffer<bool> history_Y;
         boost::circular_buffer<bool> history_G;
@@ -201,6 +202,7 @@ class MachineSignalThread :
           history_Y(boost::circular_buffer<bool>(buflen)),
           history_G(boost::circular_buffer<bool>(buflen))
         {
+          area = 0;
           visibility = -1;
           unseen = 0;
           red = fawkes::RobotinoLightInterface::UNKNOWN;
@@ -232,7 +234,10 @@ class MachineSignalThread :
           }
         }
 
-        inline void update(frame_state_t_ const &s) {
+        inline void update(frame_state_t_ const &s, std::list<signal_rois_t_>::iterator const &rois) {
+          area = rois->red_roi->width * rois->red_roi->height
+              + rois->yellow_roi->width * rois->yellow_roi->height
+              + rois->green_roi->width * rois->green_roi->height;
           history_R.push_front(s.red);
           history_Y.push_front(s.yellow);
           history_G.push_front(s.green);
@@ -264,6 +269,15 @@ class MachineSignalThread :
           return s1.pos.x <= s2.pos.x;
         }
     } sort_signal_states_by_x_;
+
+    struct {
+        bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
+          float size_ratio = (float)s1.area / (float)s2.area;
+          if (size_ratio < 1.5 && size_ratio > 0.67)
+            return s1.pos.x <= s2.pos.x;
+          else return s1.area > s2.area;
+        }
+    } sort_signal_states_by_area_;
 
     bool get_light_state(firevision::ROI *light);
 

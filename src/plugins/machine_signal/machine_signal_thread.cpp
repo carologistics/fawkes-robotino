@@ -330,12 +330,12 @@ void MachineSignalThread::loop()
         }
       }
       if (dist_min < cfg_max_jitter_) {
-        best_match->update(frame_state);
+        best_match->update(frame_state, signal_it);
       }
       else {
         // No historic match was found for the current signal
         signal_state_t_ *cur_state = new signal_state_t_(buflen_);
-        cur_state->update(frame_state);
+        cur_state->update(frame_state, signal_it);
         known_signals_.push_front(*cur_state);
         delete cur_state;
       }
@@ -367,7 +367,7 @@ void MachineSignalThread::loop()
   }
 
   // Throw out the signals with the worst visibility histories
-  known_signals_.sort(sort_signal_states_by_visibility_);
+  known_signals_.sort(sort_signal_states_by_area_);
   while (known_signals_.size() > MAX_SIGNALS)
     known_signals_.pop_back();
 
