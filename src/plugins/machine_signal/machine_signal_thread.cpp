@@ -53,6 +53,7 @@ MachineSignalThread::MachineSignalThread()
 
   shmbuf_ = NULL;
   cls_light_on_ = NULL;
+  shmbuf_cam_ = NULL;
   cfg_light_on_min_neighborhood_ = 0;
   cfg_light_on_min_points_ = 0;
   light_scangrid_ = NULL;
@@ -104,6 +105,7 @@ void MachineSignalThread::init()
   setup_camera();
 
   shmbuf_ = new SharedMemoryImageBuffer("machine_signal", YUV422_PLANAR, cam_width_, cam_height_);
+  shmbuf_cam_ = new SharedMemoryImageBuffer("machine_cam", YUV422_PLANAR, cam_width_, cam_height_);
   roi_drawer_ = new FilterROIDraw(&drawn_rois_, FilterROIDraw::DASHED_HINT);
 
   // Configure RED classifier
@@ -265,6 +267,7 @@ void MachineSignalThread::loop()
 #endif
 
   cls_light_on_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
+  memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
 
   // Classify red & green in full picture
   cls_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
