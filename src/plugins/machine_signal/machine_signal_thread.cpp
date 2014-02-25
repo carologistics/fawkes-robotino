@@ -38,14 +38,19 @@ MachineSignalThread::MachineSignalThread()
   cam_height_ = 0;
   cfg_light_on_threshold_ = 0;
   camera_ = NULL;
+
   cls_red_.colormodel = NULL;
   cls_red_.classifier = NULL;
+  cls_red_.scanline_grid = NULL;
   cls_red_.color_expect = C_RED;
   cls_green_.colormodel = NULL;
   cls_green_.classifier = NULL;
+  cls_green_.scanline_grid = NULL;
   cls_green_.color_expect = C_GREEN;
+
   cfg_changed_ = false;
   cam_changed_ = false;
+
   shmbuf_ = NULL;
   cls_light_on_ = NULL;
   cfg_light_on_min_neighborhood_ = 0;
@@ -66,6 +71,7 @@ void MachineSignalThread::setup_classifier(color_classifier_context_t_ *color_da
 {
   delete color_data->classifier;
   delete color_data->colormodel;
+  delete color_data->scanline_grid;
 
   // Update the color class used by the combined color model for the tuning filter
   color_data->color_class->chroma_threshold = color_data->cfg_chroma_thresh;
@@ -74,9 +80,12 @@ void MachineSignalThread::setup_classifier(color_classifier_context_t_ *color_da
 
   color_data->colormodel = new ColorModelSimilarity();
   color_data->colormodel->add_color(color_data->color_class);
+  color_data->scanline_grid = new ScanlineGrid(
+    cam_width_, cam_height_,
+    color_data->cfg_scangrid_x_offset, color_data->cfg_scangrid_y_offset);
 
   color_data->classifier = new SimpleColorClassifier(
-      new ScanlineGrid(cam_width_, cam_height_, 2, 2),
+      color_data->scanline_grid,
       color_data->colormodel,
       color_data->cfg_roi_min_points,
       color_data->cfg_roi_basic_size,
@@ -104,6 +113,8 @@ void MachineSignalThread::init()
   cls_red_.cfg_roi_min_points = config->get_int(CFG_PREFIX "/red/min_points");
   cls_red_.cfg_roi_basic_size = config->get_int(CFG_PREFIX "/red/basic_roi_size");
   cls_red_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/red/neighborhood_min_match");
+  cls_red_.cfg_scangrid_x_offset = config->get_int(CFG_PREFIX "/red/scangrid_x_offset");
+  cls_red_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/red/scangrid_y_offset");
 
   cls_red_.color_class = new ColorModelSimilarity::color_class_t(
     cls_red_.color_expect, cls_red_.cfg_ref_col, cls_red_.cfg_chroma_thresh, cls_red_.cfg_sat_thresh);
@@ -116,6 +127,8 @@ void MachineSignalThread::init()
   cls_green_.cfg_roi_min_points = config->get_int(CFG_PREFIX "/green/min_points");
   cls_green_.cfg_roi_basic_size = config->get_int(CFG_PREFIX "/green/basic_roi_size");
   cls_green_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/green/neighborhood_min_match");
+  cls_green_.cfg_scangrid_x_offset = config->get_int(CFG_PREFIX "/green/scangrid_x_offset");
+  cls_green_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/green/scangrid_y_offset");
 
   cls_green_.color_class = new ColorModelSimilarity::color_class_t(
     cls_green_.color_expect, cls_green_.cfg_ref_col, cls_green_.cfg_chroma_thresh, cls_green_.cfg_sat_thresh);
@@ -552,6 +565,10 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
         cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_roi_basic_size), v->get_uint());
       else if (opt == "/neighborhood_min_match")
         cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_roi_neighborhood_min_match), v->get_uint());
+      else if (opt == "/scangrid_x_offset")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_scangrid_x_offset), v->get_uint());
+      else if (opt == "/scangrid_y_offset")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(classifier->cfg_scangrid_y_offset), v->get_uint());
     }
     else if (color_pfx == "/bright_light") {
       if (opt == "/min_brightness")

@@ -87,6 +87,7 @@ class MachineSignalThread :
         firevision::ColorModelSimilarity *colormodel;
         firevision::SimpleColorClassifier *classifier;
         firevision::ColorModelSimilarity::color_class_t *color_class;
+        firevision::ScanlineGrid *scanline_grid;
         std::vector<unsigned int> cfg_ref_col;
         int cfg_chroma_thresh;
         int cfg_sat_thresh;
@@ -94,6 +95,8 @@ class MachineSignalThread :
         unsigned int cfg_roi_min_points;
         unsigned int cfg_roi_basic_size;
         unsigned int cfg_roi_neighborhood_min_match;
+        unsigned int cfg_scangrid_x_offset;
+        unsigned int cfg_scangrid_y_offset;
     } color_classifier_context_t_;
 
     color_classifier_context_t_ cls_red_;
