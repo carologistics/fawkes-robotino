@@ -134,6 +134,7 @@ class MachineSignalThread :
 
     firevision::FilterROIDraw *roi_drawer_;
     firevision::SharedMemoryImageBuffer *shmbuf_;
+    firevision::SharedMemoryImageBuffer *shmbuf_cam_;
     firevision::FilterColorThreshold *color_filter_;
     firevision::ColorModelSimilarity *combined_colormodel_;
 
