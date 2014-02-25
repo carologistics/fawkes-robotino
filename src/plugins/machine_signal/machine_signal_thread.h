@@ -142,9 +142,6 @@ class MachineSignalThread :
     void setup_classifier(color_classifier_context_t_ *classifier);
     void setup_camera();
 
-    void cleanup_classifiers();
-    void cleanup_camera();
-
     struct {
         bool operator() (firevision::ROI r1, firevision::ROI r2) {
           return r1.start.x <= r2.start.x;

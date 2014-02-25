@@ -205,32 +205,37 @@ void MachineSignalThread::setup_camera()
 
 void MachineSignalThread::finalize()
 {
-  cleanup_camera();
-  cleanup_classifiers();
-  vision_master->unregister_thread(this);
-  for (std::vector<RobotinoLightInterface *>::iterator bb_it = bb_signal_states_.begin();
-      bb_it != bb_signal_states_.end(); bb_it++) {
-    blackboard->close(*bb_it);
-  }
-  delete shmbuf_;
-}
-
-
-void MachineSignalThread::cleanup_camera()
-{
 #ifdef __FIREVISION_CAMS_FILELOADER_H_
   camera_->dispose_buffer();
 #endif
   delete camera_;
-}
+  delete roi_drawer_;
+  delete last_second_;
 
-
-void MachineSignalThread::cleanup_classifiers()
-{
   delete cls_red_.colormodel;
   delete cls_red_.classifier;
+  delete cls_red_.scanline_grid;
+  delete cls_red_.color_class;
   delete cls_green_.colormodel;
   delete cls_green_.classifier;
+  delete cls_green_.scanline_grid;
+  delete cls_green_.color_class;
+
+  vision_master->unregister_thread(this);
+
+  for (std::vector<RobotinoLightInterface *>::iterator bb_it = bb_signal_states_.begin();
+      bb_it != bb_signal_states_.end(); bb_it++) {
+    blackboard->close(*bb_it);
+  }
+  blackboard->close(bb_signal_compat_);
+
+  delete shmbuf_;
+  delete shmbuf_cam_;
+  delete light_scangrid_;
+  delete light_colormodel_;
+  delete light_classifier_;
+  delete combined_colormodel_;
+  delete color_filter_;
 }
 
 
@@ -244,6 +249,7 @@ void MachineSignalThread::loop()
     logger->log_error(name(), "Running too slow. Ignoring this frame!");
     return;
   }
+  delete last_second_;
   last_second_ = new Time(clock);
 
   // Reallocate classifiers if their config changed
@@ -292,8 +298,8 @@ void MachineSignalThread::loop()
     color_filter_->apply();
 
     if (!cfg_draw_processed_rois_) {
-      drawn_rois_.merge(*rois_R);
-      drawn_rois_.merge(*rois_G);
+      drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
+      drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
     }
   }
 
