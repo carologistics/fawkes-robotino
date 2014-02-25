@@ -461,16 +461,52 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
         ROI *roi_Y = new ROI(it_R->start.x, start_y, it_R->width, it_R->height, it_R->image_width, it_R->image_height);
         roi_Y->color = C_YELLOW;
         ROI *roi_G = new ROI(it_R->start.x, start_y + it_R->height, it_R->width, it_R->height, it_R->image_width,
-            it_R->image_height);
+          it_R->image_height);
         roi_G->color = C_GREEN;
 
-        rv->push_back({roi_R, roi_Y, roi_G});
+        std::list<ROI> *green_in_red = NULL;
+        std::list<ROI> *green_in_green = NULL;
+        ROI check_R(*roi_R);
+        ROI check_G(*roi_G);
 
-        if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          drawn_rois_.push_back(*roi_R);
-          drawn_rois_.push_back(*roi_Y);
-          drawn_rois_.push_back(*roi_G);
+        try {
+          // Look for a green ROI in the combined red/yellow ROI
+          check_R.extend(roi_Y->start.x + roi_Y->width, roi_Y->start.y + roi_Y->width);
+          cls_green_.scanline_grid->set_roi(&check_R);
+          cls_green_.scanline_grid->reset();
+          green_in_red = cls_green_.classifier->classify();
+
+          // Make sure our guessed green ROI actually contains something green
+          check_G.height = check_G.height * 2;
+          cls_green_.scanline_grid->set_roi(&check_G);
+          cls_green_.scanline_grid->reset();
+          green_in_green = cls_green_.classifier->classify();
+
+
+          if (!green_in_red->empty() || green_in_green->empty()) {
+            delete roi_R;
+            delete roi_Y;
+            delete roi_G;
+          }
+          else {
+            rv->push_back({roi_R, roi_Y, roi_G});
+
+            if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
+              drawn_rois_.push_back(*roi_R);
+              drawn_rois_.push_back(*roi_Y);
+              drawn_rois_.push_back(*roi_G);
+            }
+          }
         }
+        catch (OutOfBoundsException &e) {
+          // One of the ROIs was outside the picture, so the red ROI is probably bad.
+        }
+
+        delete green_in_red;
+        delete green_in_green;
+
+        cls_green_.scanline_grid->set_roi(it_R->full_image(cam_width_, cam_height_));
+        cls_green_.scanline_grid->reset();
 
         // Done with this signal, no point in looking for any further green ROIs.
         break;
