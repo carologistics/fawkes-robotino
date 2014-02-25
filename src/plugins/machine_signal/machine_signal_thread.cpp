@@ -52,11 +52,14 @@ MachineSignalThread::MachineSignalThread()
   cam_changed_ = false;
 
   shmbuf_ = NULL;
-  cls_light_on_ = NULL;
   shmbuf_cam_ = NULL;
+
+  light_classifier_ = NULL;
+  light_colormodel_ = NULL;
+  light_scangrid_ = NULL;
   cfg_light_on_min_neighborhood_ = 0;
   cfg_light_on_min_points_ = 0;
-  light_scangrid_ = NULL;
+
   roi_drawer_ = NULL;
   color_filter_ = NULL;
   cfg_roi_max_aspect_ratio_ = 1.7;
@@ -158,16 +161,17 @@ void MachineSignalThread::init()
 
   // Setup luminance classifier for light on/off detection
   light_scangrid_ = new ScanlineGrid(cam_width_, cam_height_, 1, 1);
-  cls_light_on_ = new SimpleColorClassifier(
+  light_colormodel_ = new ColorModelLuminance(cfg_light_on_threshold_);
+  light_classifier_ = new SimpleColorClassifier(
       light_scangrid_,
-      new ColorModelLuminance(cfg_light_on_threshold_),
+      light_colormodel_,
       cfg_light_on_min_points_,
       8,
       false,
       cfg_light_on_min_neighborhood_,
       0,
       C_WHITE);
-  cls_light_on_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
+  light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
   // Initialize frame rate detection
   uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
@@ -248,8 +252,8 @@ void MachineSignalThread::loop()
     setup_classifier(&cls_red_);
     setup_classifier(&cls_green_);
 
-    delete cls_light_on_;
-    cls_light_on_ = new SimpleColorClassifier(
+    delete light_classifier_;
+    light_classifier_ = new SimpleColorClassifier(
         light_scangrid_,
         new ColorModelLuminance(cfg_light_on_threshold_),
         cfg_light_on_min_points_,
@@ -266,8 +270,9 @@ void MachineSignalThread::loop()
   camera_->capture();
 #endif
 
-  cls_light_on_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
   memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
+
+  light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
   // Classify red & green in full picture
   cls_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
@@ -404,7 +409,7 @@ bool MachineSignalThread::get_light_state(firevision::ROI *light)
 {
   light_scangrid_->set_roi(light);
   light_scangrid_->reset();
-  std::list<ROI> *bright_rois = cls_light_on_->classify();
+  std::list<ROI> *bright_rois = light_classifier_->classify();
 
   for (std::list<ROI>::iterator roi_it = bright_rois->begin(); roi_it != bright_rois->end(); roi_it++) {
     float area_ratio = (float)(roi_it->width * roi_it->height) / (float)(light->width * light->height);
