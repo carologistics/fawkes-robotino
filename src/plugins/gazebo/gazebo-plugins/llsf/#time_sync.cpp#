@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <gazebo/transport/transport.hh>
 #include <gazebo/physics/physics.hh>
-#include <gazsim_msgs/SimTime.pb.h>
 #include <cmath>
 
 #include "time_sync.h"

@@ -1,8 +1,8 @@
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Libraries
+#                      Makefile Build System for Fawkes
 #                            -------------------
-#   Created on Tue Nov 07 16:12:59 2006
-#   copyright (C) 2006-2011 by Tim Niemueller, AllemaniACs RoboCup Team
+#   Created on Mon May 14 11:38:00 2012
+#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,12 +13,12 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../../..
+
+SUBDIRS = llsf carologistics-robotino
+
+#dependencies:
+carologistics-robotino: llsf
+
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDSYSDIR)/fvconf.mk
-
-SUBDIRS = interfaces llsf_msgs
-
 include $(BUILDSYSDIR)/rules.mk
-
-

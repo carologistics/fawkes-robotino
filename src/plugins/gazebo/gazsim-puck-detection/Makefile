@@ -1,7 +1,7 @@
 #*****************************************************************************
-#               Makefile Build System for Fawkes: Gazebo plugin for robotino
+#               Makefile Build System for Fawkes: Gazsim-light-front Plugin
 #
-#   Created on Tue Jan 28 13:30:39 2014
+#   Created on Tue Aug 20 22:25:41 2013
 #   Copyright (C) 2011 by Tim Niemueller, AllemaniACs RoboCup Team
 #                         Frederik Zwilling
 #
@@ -17,25 +17,27 @@
 BASEDIR = ../../../..
 
 include $(BASEDIR)/etc/buildsys/config.mk
+include $(BUILDCONFDIR)/tf/tf.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BUILDSYSDIR)/protobuf.mk
+# include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
 
-GAZEBO_LIBDIR = $(LIBDIR)/gazebo
-LIBDIRS_BASE += $(GAZEBO_LIBDIR)
+LIBS_gazsim_puck_detection = fawkescore fawkesutils fawkesaspects fvutils \
+	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
+	       Position3DInterface TransformInterface \
+	       SwitchInterface RobotinoLightInterface \
+	       fawkesgazeboaspect
+OBJS_gazsim_puck_detection = gazsim_puck_detection_plugin.o gazsim_puck_detection_thread.o
 
-LIBS_gazebo_libcarologistics_robotino = gazsim_msgs llsf_msgs llsf
-OBJS_gazebo_libcarologistics_robotino = gripper_laser_sensor.o \
-	infraredPuckSensor.o machineVision.o messageDisplay.o \
-	puck_detection.o puck_holder.o robotino.o simDevice.o
+OBJS_all    = $(OBJS_gazsim_puck_detection)
 
-OBJS_all    = $(OBJS_gazebo_libcarologistics_robotino)
-
-ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)
+ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
+  CFLAGS  += $(CFLAGS_TF)
+  LDFLAGS += $(LDFLAGS_TF)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
 
-#not a Fawkes Plugin!
-  LIBS_all = $(LIBDIR)/gazebo/libcarologistics_robotino.so
+  PLUGINS_all = $(PLUGINDIR)/gazsim-puck-detection.so
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo
@@ -43,16 +45,22 @@ else
   ifneq ($(HAVE_PROTOBUF),1)
     WARN_TARGETS += warning_protobuf
   endif
+  ifneq ($(HAVE_TF),1)
+    WARN_TARGETS += warning_tf
+  endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_gazebo warning_protobuf
+.PHONY: warning_tf warning_gazebo warning_protobuf
+warning_tf:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-puck-detection Plugin$(TNORMAL) " \
+                         "(tf not available)"
 warning_gazebo:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazebo-carologistics-robotino Plugin$(TNORMAL) " \
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-puck-detection Plugin$(TNORMAL) " \
 		"(Gazebo Simulator not found)"
 warning_protobuf:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazebo-carologistics-robotino Plugin$(TNORMAL) " \
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-puck-detection Plugin$(TNORMAL) " \
 		"(protobuf[-devel] not installed)"
 endif
 

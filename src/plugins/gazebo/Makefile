@@ -1,7 +1,7 @@
 #*****************************************************************************
-#                      Makefile Build System for Fawkes
+#                  Makefile Build System for Fawkes: plugins/gazebo
 #                            -------------------
-#   Created on Mon May 14 11:38:00 2012
+#   Created on Mon May 14 11:37:00 2012
 #   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
 #
 #*****************************************************************************
@@ -14,11 +14,10 @@
 #*****************************************************************************
 
 BASEDIR = ../../..
-
-SUBDIRS = llsf carologistics-robotino
-
-#dependencies:
-carologistics-robotino: llsf
-
 include $(BASEDIR)/etc/buildsys/config.mk
+
+SUBDIRS	= gazsim-light-front gazsim-llsfrbcomm gazsim-puck-detection \
+	  gazsim-llsf-control gazsim-llsf-statistics \
+	  gazebo-plugins
+
 include $(BUILDSYSDIR)/rules.mk

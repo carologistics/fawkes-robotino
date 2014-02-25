@@ -38,7 +38,6 @@
 #include <llsf_msgs/MachineInfo.pb.h>
 #include <llsf_msgs/MachineCommands.pb.h>
 #include <llsf_msgs/SimTimeSync.pb.h>
-#include <gazsim_msgs/SimTime.pb.h>
 #include <llsf_msgs/PuckInfo.pb.h>
 #include <llsf_msgs/GameState.pb.h>
 
@@ -47,6 +46,8 @@
 #include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/msgs/MessageTypes.hh>
 #include <gazebo/transport/transport.hh>
+
+#include "../msgs/SimTime.pb.h"
 
 typedef const boost::shared_ptr<llsf_msgs::MachineInfo const> ConstMachineInfoPtr;
 typedef const boost::shared_ptr<llsf_msgs::PlacePuckUnderMachine const> ConstPlacePuckUnderMachinePtr;
