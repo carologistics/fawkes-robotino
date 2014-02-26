@@ -36,10 +36,11 @@
 #include <fvfilters/roidraw.h>
 #include <fvmodels/color/similarity.h>
 #include <fvmodels/color/thresholds_luminance.h>
+#include <fvmodels/color/thresholds_black.h>
 #include <fvmodels/scanlines/grid.h>
 #include <fvclassifiers/simple.h>
-//#include <fvcams/fileloader.h>
-#include <fvcams/camera.h>
+#include <fvcams/fileloader.h>
+//#include <fvcams/camera.h>
 #include <string>
 #include <core/threading/mutex.h>
 #include <atomic>
@@ -128,10 +129,16 @@ class MachineSignalThread :
     unsigned int cfg_light_on_min_points_;
     unsigned int cfg_light_on_min_neighborhood_;
     std::atomic<float> cfg_light_on_min_area_cover_;
-
     firevision::SimpleColorClassifier *light_classifier_;
     firevision::ColorModelLuminance *light_colormodel_;
     firevision::ScanlineGrid *light_scangrid_;
+
+    unsigned int cfg_black_threshold_;
+    unsigned int cfg_black_min_points_;
+    unsigned int cfg_black_min_neighborhood_;
+    firevision::SimpleColorClassifier *black_classifier_;
+    firevision::ColorModelBlack *black_colormodel_;
+    firevision::ScanlineGrid *black_scangrid_;
 
     firevision::FilterROIDraw *roi_drawer_;
     firevision::SharedMemoryImageBuffer *shmbuf_;
@@ -162,6 +169,13 @@ class MachineSignalThread :
 
     // All ROIs we want to see painted in the tuning buffer
     std::list<firevision::ROI> drawn_rois_;
+
+    std::list<signal_rois_t_> *create_signal_rois(
+        std::list<firevision::ROI> *rois_R,
+        std::list<firevision::ROI> *rois_G);
+
+    std::list<signal_rois_t_> *create_delivery_rois(std::list<firevision::ROI> *rois_R);
+
 
     // Checks to weed out implausible ROIs
     inline bool rois_delivery_zone(std::list<firevision::ROI>::iterator red, std::list<firevision::ROI>::iterator green);
@@ -304,10 +318,6 @@ class MachineSignalThread :
       *cfg = val;
       return true;
     }
-
-    std::list<signal_rois_t_> *create_signal_rois(
-        std::list<firevision::ROI> *rois_R,
-        std::list<firevision::ROI> *rois_G);
 
   protected:
     /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
