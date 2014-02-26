@@ -254,6 +254,13 @@ class MachineSignalThread :
         }
     } signal_state_t_;
 
+    struct {
+        bool operator() (firevision::ROI &r1, firevision::ROI &r2) {
+          unsigned int a1 = r1.width * r1.height;
+          unsigned int a2 = r2.width * r2.height;
+          return a1 >= a2;
+        }
+    } sort_rois_by_area_;
 
     struct {
         bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
@@ -269,10 +276,13 @@ class MachineSignalThread :
 
     struct {
         bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
-          float size_ratio = (float)s1.area / (float)s2.area;
-          if (size_ratio < 1.5 && size_ratio > 0.67)
-            return s1.pos.x <= s2.pos.x;
-          else return s1.area > s2.area;
+          if ((s1.visibility < 0) == (s2.visibility < 0)) {
+            float size_ratio = (float)s1.area / (float)s2.area;
+            if (size_ratio < 1.5 && size_ratio > 0.67)
+              return s1.pos.x <= s2.pos.x;
+            else return s1.area > s2.area;
+          }
+          else return s1.visibility > 0;
         }
     } sort_signal_states_by_area_;
 
