@@ -40,8 +40,6 @@
 #include <fvcams/camera.h>
 #include <interfaces/Position3DInterface.h>
 #include <utils/system/hostinfo.h>
-#include <geometry/hom_point.h>
-#include <geometry/hom_vector.h>
 
 #include <interfaces/SwitchInterface.h>
 
