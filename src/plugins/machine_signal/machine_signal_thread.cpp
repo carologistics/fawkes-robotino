@@ -60,6 +60,13 @@ MachineSignalThread::MachineSignalThread()
   cfg_light_on_min_neighborhood_ = 0;
   cfg_light_on_min_points_ = 0;
 
+  black_classifier_ = NULL;
+  black_colormodel_ = NULL;
+  black_scangrid_ = NULL;
+  cfg_black_min_neighborhood_ = 0;
+  cfg_black_min_points_ = 0;
+  cfg_black_threshold_ = 0;
+
   roi_drawer_ = NULL;
   color_filter_ = NULL;
   cfg_roi_max_aspect_ratio_ = 1.7;
@@ -145,6 +152,11 @@ void MachineSignalThread::init()
   cfg_light_on_min_neighborhood_ = config->get_uint(CFG_PREFIX "/bright_light/neighborhood_min_match");
   cfg_light_on_min_area_cover_ = config->get_float(CFG_PREFIX "/bright_light/min_area_cover");
 
+  // Configure black classifier
+  cfg_black_threshold_ = config->get_uint(CFG_PREFIX "/black/max_luminance");
+  cfg_black_min_neighborhood_ = config->get_uint(CFG_PREFIX "/black/neighborhood_min_match");
+  cfg_black_min_points_ = config->get_uint(CFG_PREFIX "/black/min_points");
+
   // Other config
   cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
   cfg_roi_max_width_ratio_ = config->get_float(CFG_PREFIX "/roi_max_r2g_width_ratio");
@@ -172,6 +184,20 @@ void MachineSignalThread::init()
       0,
       C_WHITE);
   light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
+
+  // Setup black classifier
+  black_scangrid_ = new ScanlineGrid(cam_width_, cam_height_, 1, 1);
+  black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
+  black_classifier_ = new SimpleColorClassifier(
+    black_scangrid_,
+    black_colormodel_,
+    cfg_black_min_points_,
+    6,
+    false,
+    cfg_black_min_neighborhood_,
+    0,
+    C_BLACK);
+  black_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
   // Initialize frame rate detection
   uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
@@ -231,9 +257,15 @@ void MachineSignalThread::finalize()
 
   delete shmbuf_;
   delete shmbuf_cam_;
+
   delete light_scangrid_;
   delete light_colormodel_;
   delete light_classifier_;
+
+  delete black_scangrid_;
+  delete black_colormodel_;
+  delete black_classifier_;
+
   delete combined_colormodel_;
   delete color_filter_;
 }
@@ -269,6 +301,19 @@ void MachineSignalThread::loop()
         0,
         C_WHITE);
 
+    delete black_classifier_;
+    delete black_colormodel_;
+    black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
+    black_classifier_ = new SimpleColorClassifier(
+      black_scangrid_,
+      black_colormodel_,
+      cfg_black_min_points_,
+      6,
+      false,
+      cfg_black_min_neighborhood_,
+      0,
+      C_BLACK);
+
     cfg_changed_ = false;
   }
 
@@ -276,9 +321,13 @@ void MachineSignalThread::loop()
   camera_->capture();
 #endif
 
-  memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
+  if (unlikely(cfg_tuning_mode_)) {
+    // Untreated copy of the cam image
+    memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
+  }
 
   light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
+  black_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
   // Classify red & green in full picture
   cls_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
@@ -308,14 +357,14 @@ void MachineSignalThread::loop()
 
   // Reset all known signals to not-seen
   for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
-      known_signal != known_signals_.end(); known_signal++) {
+      known_signal != known_signals_.end(); ++known_signal) {
     if (++(known_signal->unseen) > 1)
       known_signal->visibility = -1;
   }
 
   // Go through all signals from this frame...
   { std::list<signal_rois_t_>::iterator signal_it = signal_rois->begin();
-  for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); i++) {
+  for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); ++i) {
     try {
       frame_state_t_ frame_state({
         get_light_state(signal_it->red_roi),
@@ -328,7 +377,7 @@ void MachineSignalThread::loop()
       float dist_min = FLT_MAX;
       std::list<signal_state_t_>::iterator best_match;
       for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
-          known_signal != known_signals_.end(); known_signal++) {
+          known_signal != known_signals_.end(); ++known_signal) {
         float dist = known_signal->distance(frame_state);
         if (dist < dist_min) {
           best_match = known_signal;
@@ -417,7 +466,7 @@ bool MachineSignalThread::get_light_state(firevision::ROI *light)
   light_scangrid_->reset();
   std::list<ROI> *bright_rois = light_classifier_->classify();
 
-  for (std::list<ROI>::iterator roi_it = bright_rois->begin(); roi_it != bright_rois->end(); roi_it++) {
+  for (std::list<ROI>::iterator roi_it = bright_rois->begin(); roi_it != bright_rois->end(); ++roi_it) {
     float area_ratio = (float)(roi_it->width * roi_it->height) / (float)(light->width * light->height);
     if (roi_aspect_ok(roi_it) && area_ratio > cfg_light_on_min_area_cover_) {
       if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_))
@@ -442,75 +491,19 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
     std::list<ROI> *rois_R,
     std::list<ROI> *rois_G)
 {
+  if (rois_G->begin()->width > cam_width_/2)
+    return create_delivery_rois(rois_R);
+
   std::list<MachineSignalThread::signal_rois_t_> *rv = new std::list<MachineSignalThread::signal_rois_t_>();
 
-  for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); it_R++) {
+  for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
 
     if (!(roi_width_ok(it_R) && roi_aspect_ok(it_R)))
       continue;
 
     it_R->height = it_R->width;
 
-    for (std::list<ROI>::iterator it_G = rois_G->begin(); it_G != rois_G->end(); it_G++) {
-
-      if (rois_delivery_zone(it_R, it_G)) {
-        // We're looking at the delivery zone. Don't expect to find any usable green ROIs
-        // here, so we set the rest manually.
-        uint start_y = it_R->start.y + it_R->width; // add width since it's more reliable than height
-        ROI *roi_R = new ROI(*it_R);
-        ROI *roi_Y = new ROI(it_R->start.x, start_y, it_R->width, it_R->height, it_R->image_width, it_R->image_height);
-        roi_Y->color = C_YELLOW;
-        ROI *roi_G = new ROI(it_R->start.x, start_y + it_R->height, it_R->width, it_R->height, it_R->image_width,
-          it_R->image_height);
-        roi_G->color = C_GREEN;
-
-        std::list<ROI> *green_in_red = NULL;
-        std::list<ROI> *green_in_green = NULL;
-        ROI check_R(*roi_R);
-        ROI check_G(*roi_G);
-
-        try {
-          // Look for a green ROI in the combined red/yellow ROI
-          check_R.extend(roi_Y->start.x + roi_Y->width, roi_Y->start.y + roi_Y->width);
-          cls_green_.scanline_grid->set_roi(&check_R);
-          cls_green_.scanline_grid->reset();
-          green_in_red = cls_green_.classifier->classify();
-
-          // Make sure our guessed green ROI actually contains something green
-          check_G.height = check_G.height * 2;
-          cls_green_.scanline_grid->set_roi(&check_G);
-          cls_green_.scanline_grid->reset();
-          green_in_green = cls_green_.classifier->classify();
-
-
-          if (!green_in_red->empty() || green_in_green->empty()) {
-            delete roi_R;
-            delete roi_Y;
-            delete roi_G;
-          }
-          else {
-            rv->push_back({roi_R, roi_Y, roi_G});
-
-            if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-              drawn_rois_.push_back(*roi_R);
-              drawn_rois_.push_back(*roi_Y);
-              drawn_rois_.push_back(*roi_G);
-            }
-          }
-        }
-        catch (OutOfBoundsException &e) {
-          // One of the ROIs was outside the picture, so the red ROI is probably bad.
-        }
-
-        delete green_in_red;
-        delete green_in_green;
-
-        cls_green_.scanline_grid->set_roi(it_R->full_image(cam_width_, cam_height_));
-        cls_green_.scanline_grid->reset();
-
-        // Done with this signal, no point in looking for any further green ROIs.
-        break;
-      }
+    for (std::list<ROI>::iterator it_G = rois_G->begin(); it_G != rois_G->end(); ++it_G) {
 
       if (roi_width_ok(it_G) && rois_x_aligned(it_R, it_G) &&
           rois_vspace_ok(it_R, it_G)) {
@@ -546,6 +539,76 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
   return rv;
 }
 
+std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_delivery_rois(
+  std::list<ROI> *rois_R)
+{
+  std::list<MachineSignalThread::signal_rois_t_> *rv = new std::list<MachineSignalThread::signal_rois_t_>();
+
+  std::list<ROI>::iterator it_R = rois_R->begin();
+
+  while(it_R != rois_R->end()) {
+    if (it_R->start.y > cam_height_/2) {
+      it_R = rois_R->erase(it_R);
+    }
+    else ++it_R;
+  }
+
+  rois_R->sort(sort_rois_by_area_);
+
+  unsigned int i = 0;
+  for (it_R = rois_R->begin(); it_R != rois_R->end() && i++ < MAX_SIGNALS; ++it_R) {
+    ROI check_black_top(it_R->start.x, it_R->start.y - it_R->width/3, it_R->width, it_R->width/2,
+      cam_width_, cam_height_);
+
+    black_scangrid_->set_roi(&check_black_top);
+    std::list<ROI> *black_rois_top = black_classifier_->classify();
+    if (black_rois_top->empty()) continue;
+    if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
+      drawn_rois_.insert(drawn_rois_.end(), black_rois_top->begin(), black_rois_top->end());
+    ROI black_top = *(black_rois_top->begin());
+    delete black_rois_top;
+
+    ROI *roi_R = new ROI(*it_R);
+    roi_R->width = black_top.width;
+    //roi_R->start.y = black_top.start.y + black_top.height;
+    roi_R->height = roi_R->width;
+
+    uint start_y = roi_R->start.y + roi_R->width; // add width since it's more reliable than height
+    ROI *roi_Y = new ROI(roi_R->start.x, start_y, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height);
+    roi_Y->color = C_YELLOW;
+    ROI *roi_G = new ROI(roi_R->start.x, start_y + roi_R->height, roi_R->width, roi_R->height, roi_R->image_width,
+      roi_R->image_height);
+    roi_G->color = C_GREEN;
+
+    black_scangrid_->set_roi(roi_G);
+    std::list<ROI> *black_rois_bottom = black_classifier_->classify();
+    if (!black_rois_bottom->empty()) {
+      if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
+        drawn_rois_.insert(drawn_rois_.end(), black_rois_bottom->begin(), black_rois_bottom->end());
+      ROI black_bottom = *(black_rois_bottom->begin());
+      delete black_rois_bottom;
+      unsigned int height_adj = (black_bottom.start.y - roi_R->start.y) / 3;
+      roi_R->height = height_adj;
+      roi_Y->height = height_adj;
+      roi_G->height = height_adj;
+    }
+
+    roi_G->set_image_width(cam_width_);
+    roi_G->set_image_height(cam_height_);
+    rv->push_back({roi_R, roi_Y, roi_G});
+
+    if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
+      drawn_rois_.push_back(*roi_R);
+      drawn_rois_.push_back(*roi_Y);
+      drawn_rois_.push_back(*roi_G);
+    }
+  }
+
+  cls_green_.scanline_grid->set_roi(it_R->full_image(cam_width_, cam_height_));
+  cls_green_.scanline_grid->reset();
+
+  return rv;
+}
 
 bool MachineSignalThread::rois_delivery_zone(std::list<ROI>::iterator red, std::list<ROI>::iterator green) {
   return (green->contains(red->start.x, red->start.y)
@@ -629,6 +692,14 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
         cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_light_on_min_neighborhood_), v->get_uint());
       else if (opt == "/min_area_cover")
         cfg_light_on_min_area_cover_ = v->get_float();
+    }
+    else if (color_pfx == "/black") {
+      if (opt == "/max_luminance")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_black_threshold_), v->get_uint());
+      else if (opt == "/min_points")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_black_min_points_), v->get_uint());
+      else if (opt == "/neighborhood_min_match")
+        cfg_changed_ = cfg_changed_ || test_set_cfg_value(&(cfg_black_min_neighborhood_), v->get_uint());
     }
     else if (color_pfx == "") {
       if (opt == "/roi_max_aspect_ratio")
