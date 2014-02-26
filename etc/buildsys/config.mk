@@ -21,6 +21,11 @@ TOP_BASEDIR ?= $(BASEDIR)
 BUILDSYSDIR            = $(abspath $(TOP_BASEDIR)/fawkes/etc/buildsys)
 SECONDARY_BUILDSYSDIR  = $(abspath $(TOP_BASEDIR)/etc/buildsys)
 
+# Uncomment to use clang as the compiler
+# After enabled you MUST clean and rebuild your whole tree
+#CC=clang
+#LD=clang
+
 ifeq ($(wildcard $(BUILDSYSDIR)/config.mk),)
   $(error Fawkes submodule missing. Execute "git submodule update --init")
 else
