@@ -24,7 +24,9 @@ SECONDARY_BUILDSYSDIR  = $(abspath $(TOP_BASEDIR)/etc/buildsys)
 ifeq ($(wildcard $(BUILDSYSDIR)/config.mk),)
   $(error Fawkes submodule missing. Execute "git submodule update --init")
 else
-  include $(BUILDSYSDIR)/config.mk
+  ifndef __buildsys_config_mk_
+    include $(BUILDSYSDIR)/config.mk
+  endif
 endif
 
 # Globally enable optimization for the Robotino platform
