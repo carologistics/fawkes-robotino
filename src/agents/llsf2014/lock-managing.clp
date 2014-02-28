@@ -1,3 +1,13 @@
+;---------------------------------------------------------------------------
+;  lock-managing.clp - managing of locking mechanisms
+;       includes: deftemplates, lock-managing, Master/Slave selection,
+;                  networking, lock-accepting
+;
+;  Created: Fri Feb 28 19:16:02 2014
+;  Copyright  2014 Frederik Zwilling
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
 (deftemplate lock
   (slot type (type SYMBOL) (allowed-values GET REFUSE ACCEPT RELEASE RELEASE_RVCD))
   (slot agent (type STRING))

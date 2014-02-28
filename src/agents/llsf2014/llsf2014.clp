@@ -53,7 +53,8 @@
   (path-load  llsf2014/utils.clp)
   (path-load  llsf2014/net.clp)
   (path-load  llsf2014/skills.clp)
-  (path-load  llsf2014/lock.clp)
+  (path-load  llsf2014/lock-managing.clp)
+  (path-load  llsf2014/lock-usage.clp)
 
   (if
     (any-factp ((?conf confval))
