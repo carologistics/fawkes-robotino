@@ -81,10 +81,10 @@ void LightFrontSimThread::init()
 
 
   //subscribing to gazebo publisher
-  light_signals_sub_ = gazebonode->Subscribe
-    (std::string("~/RobotinoSim/MachineVision/"), 
+  light_signals_sub_ = gazebonode->Subscribe(
+    config->get_string("/gazsim/topics/machine-lights"), 
      &LightFrontSimThread::on_light_signals_msg, this);
-  localization_sub_ = gazebonode->Subscribe(std::string("~/RobotinoSim/Gps/"), &LightFrontSimThread::on_localization_msg, this);
+  localization_sub_ = gazebonode->Subscribe(config->get_string("/gazsim/topics/gps"), &LightFrontSimThread::on_localization_msg, this);
 }
 
 void LightFrontSimThread::finalize()

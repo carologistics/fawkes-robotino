@@ -99,13 +99,13 @@ GazsimLLSFRbCommThread::init()
   disconnected_recently_ = true;
 
   //create publisher and subscriber for connection with gazebo node
-  machine_info_pub_ = gazebo_world_node->Advertise<llsf_msgs::MachineInfo>("~/LLSFRbSim/MachineInfo/");
-  game_state_pub_ = gazebo_world_node->Advertise<llsf_msgs::GameState>("~/LLSFRbSim/GameState/");
-  puck_info_pub_ = gazebo_world_node->Advertise<llsf_msgs::PuckInfo>("~/LLSFRbSim/PuckInfo/");
-  place_puck_under_machine_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/PlacePuckUnderMachine/"), &GazsimLLSFRbCommThread::on_puck_place_msg, this);
-  remove_puck_under_machine_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/RemovePuckFromMachine/"), &GazsimLLSFRbCommThread::on_puck_remove_msg, this);
-  time_sync_sub_ = gazebo_world_node->Subscribe("~/gazsim/time-sync/", &GazsimLLSFRbCommThread::on_time_sync_msg, this);
-  set_game_state_sub_ = gazebo_world_node->Subscribe("~/LLSFRbSim/SetGameState/", &GazsimLLSFRbCommThread::on_set_game_state_msg, this);
+  machine_info_pub_ = gazebo_world_node->Advertise<llsf_msgs::MachineInfo>(config->get_string("/gazsim/topics/machine-info"));
+  game_state_pub_ = gazebo_world_node->Advertise<llsf_msgs::GameState>(config->get_string("/gazsim/topics/game-state"));
+  puck_info_pub_ = gazebo_world_node->Advertise<llsf_msgs::PuckInfo>(config->get_string("/gazsim/topics/puck-info"));
+  place_puck_under_machine_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/place-puck-under-machine"), &GazsimLLSFRbCommThread::on_puck_place_msg, this);
+  remove_puck_under_machine_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/remove-puck-under-machine"), &GazsimLLSFRbCommThread::on_puck_remove_msg, this);
+  time_sync_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/time"), &GazsimLLSFRbCommThread::on_time_sync_msg, this);
+  set_game_state_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/set-game-state"), &GazsimLLSFRbCommThread::on_set_game_state_msg, this);
 }
 
 

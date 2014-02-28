@@ -60,7 +60,7 @@ void LlsfStatisticsSimThread::init()
   logger->log_debug(name(), "Initializing LLSF-Statistics Plugin");
   
   //create subscriber
-  game_state_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/GameState/"), &LlsfStatisticsSimThread::on_game_state_msg, this);
+  game_state_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/game-state"), &LlsfStatisticsSimThread::on_game_state_msg, this);
 
   //read config values
   db_name_ = config->get_string("/gazsim/llsf-statistics/db-name");
