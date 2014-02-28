@@ -8,7 +8,26 @@ gazsim:
   world-name: "LLSF"
   #default robot name
   robot-name: "carologistics-robotino"
-    
+
+  topics:
+    gps: "~/gazsim/gps/"
+    laser: "~/gazsim/LaserSensor/"
+    gyro: "~/RobotinoSim/Gyro/"
+    infrared-puck-sensor: "~/RobotinoSim/InfraredPuckSensor/"
+    gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
+    gripper-laser-right: "~/RobotinoSim/GripperLaserSensor/Right/"
+    motor-move: "~/RobotinoSim/MotorMove/"
+    puck-detection: "~/RobotinoSim/PuckDetectionResult/"
+    time: "~/gazsim/time-sync/"
+    machine-lights: "~/RobotinoSim/MachineVision/"
+    machine-info: "~/LLSFRbSim/MachineInfo/"
+    puck-info: "~/LLSFRbSim/PuckInfo/"
+    game-state: "~/LLSFRbSim/GameState/"
+    set-game-state: "~/LLSFRbSim/SetGameState/"
+    place-puck-under-machine: "~/LLSFRbSim/PlacePuckUnderMachine/"
+    remove-puck-under-machine: "~/LLSFRbSim/RemovePuckFromMachine/"
+    message: "~/RobotinoSim/String/"
+  
   llsf-rb-comm:
     refbox-host: "127.0.0.1"
     refbox-port: 4444

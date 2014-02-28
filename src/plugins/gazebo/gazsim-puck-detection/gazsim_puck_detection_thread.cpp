@@ -76,7 +76,7 @@ std::ostringstream ss;
 
   //subscribing to gazebo publisher
   puck_positions_sub_ = gazebonode->Subscribe
-    (std::string("~/RobotinoSim/PuckDetectionResult/"), 
+    (config->get_string("/gazsim/topics/puck-detection"), 
      &PuckDetectionSimThread::on_puck_positions_msg, this);
 }
 

@@ -55,10 +55,10 @@ void LlsfControlSimThread::init()
   logger->log_debug(name(), "Initializing LLSF-Control Plugin");
   
   //create subscriber
-  game_state_sub_ = gazebo_world_node->Subscribe(std::string("~/LLSFRbSim/GameState/"), &LlsfControlSimThread::on_game_state_msg, this);
+  game_state_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/game-state"), &LlsfControlSimThread::on_game_state_msg, this);
 
   //Create Publisher
-  set_game_state_pub_ = gazebo_world_node->Advertise<llsf_msgs::SetGameState>("~/LLSFRbSim/SetGameState/");
+  set_game_state_pub_ = gazebo_world_node->Advertise<llsf_msgs::SetGameState>(config->get_string("/gazsim/topics/set-game-state"));
 
   //read config values
   post_game_simulation_shutdown_ = config->get_bool("/gazsim/llsf-control/simulation-shutdown-after-game");
