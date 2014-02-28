@@ -58,6 +58,6 @@ void MessageDisplay::update()
 void MessageDisplay::on_string_msg(ConstHeaderPtr &msg)
 {
   printf("Msg from Fawkes: ");
-  printf(msg->str_id().c_str());
+  fputs(msg->str_id().c_str(),stdout);
   printf("\n");
 }
