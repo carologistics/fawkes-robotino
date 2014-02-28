@@ -12,39 +12,14 @@
 ; - pick-and-load             get S2 from T2 and bring it to T3/T4
 ; - pick-and-deliver          get P1/P2/P3 from T3/T4/T5 and deliver it
 ; - recycle-and-load-with-S0  get CO, recycle and bring it to T2/T3/T4/T5
-; - recycle-and-load-with-T1  get CO, recycle and bring it to T2/T3/T4/T5
+; - recycle-and-load-with-T1  get CO, recycle, produce at T1 and bring it to T2/T3/T4
 
 
 ;common template for a task
 (deftemplate task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-T1 pick-and-load pick-and-deliver recycle-and-load-with-S0 recycle-and-load-with-T1))
+  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle-and-load-with-S0 recycle-and-load-with-T1))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values ordered running finished) (default ordered))
-)
-
-(defrule prod-get-s0-done
-  (phase PRODUCTION)
-  ?sf <- (state GET-S0-FINAL|GET-S0-FAILED)
-;  (Position3DInterface (id "Pose") (translation $?pos))
-  =>
-  (retract ?sf)
-  ; (if (debug 3) then (printout t "Want to release Lock for INS, waiting till 0.5m away" crlf))
-  (assert (state IDLE)
-	  ; (want-to-release INS $?pos)
-  )
-)
-
-(defrule prod-goto-final
-  (phase PRODUCTION)
-  ?sf <- (state GOTO-FINAL)
-;  (not (goto-target ?))
-;  ?f <- (goto-has-locked ?goal)
-;  (Position3DInterface (id "Pose") (translation $?pos))
-  =>
-  (retract ?sf); ?f)
-  (assert (state IDLE)
-;	  (want-to-release ?goal $?pos)
-  )
 )
 
 
@@ -54,7 +29,7 @@
   (phase PRODUCTION)
   ?t <- (task (name load-with-S0) (args $?a) (state ~finished))
   (holding NONE)
-  ?s <- (state IDLE)
+  ?s <- (state TASK-CHOSEN)
   =>
   (retract ?s)
   (assert (state GET-S0))
@@ -67,7 +42,7 @@
   ?t <- (task (name load-with-S0) (args $?a) (state ~finished))
   (holding S0)
   (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
-  ?s <- (state IDLE)
+  ?s <- (state GET-S0-FINAL)
   =>
   (retract ?s)
   (assert (state GOTO))
@@ -82,7 +57,65 @@
   (holding NONE)
   ;is the machine loaded with S0?
   (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (loaded-with $?lw&:(subsetp (create$ S0) ?lw)))
-  (state IDLE)
+  ?s <- (state GOTO-FINAL)
   =>
   (modify ?t (state finished))
+  (retract ?s)
+  (assert (state IDLE))
+)
+
+
+;load-with-S1:
+(defrule task-load-with-S1--start-get-S0
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
+  (holding NONE)
+  ?s <- (state TASK-CHOSEN)
+  =>
+  (retract ?s)
+  (assert (state GET-S0))
+  (modify ?t (state running))
+  (get-s0)
+)
+(defrule task-load-with-S1--bring-S0-to-T1
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
+  (holding S0)
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
+  ?s <- (state GET-S0-FINAL)
+  =>
+  (retract ?s)
+  (assert (state GOTO))
+  (modify ?t (state running))
+  (goto-machine ?m ?mtype)
+  ;TODO: use skill which produces and waits for completion
+)
+(defrule task-load-with-S1--bring-S1-to-machine
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
+  (holding S1)
+  (machine (name ?m&:(eq ?m (nth$ 2 ?a))) (mtype ?mtype))
+  ?s <- (state GOTO-FINAL)
+  =>
+  (retract ?s)
+  (assert (state GOTO))
+  (modify ?t (state running))
+  (goto-machine ?m ?mtype)
+  ;TODO: use skill which only loads the machine/starts the production and then leaves the machine
+)
+(defrule task-load-with-S1--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
+  (holding NONE)
+  ;is the machine loaded with S1?
+  (machine (name ?m&:(eq ?m (nth$ 2 ?a))) (loaded-with $?lw&:(subsetp (create$ S1) ?lw)))
+  ?s <- (state GOTO-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state IDLE))
 )

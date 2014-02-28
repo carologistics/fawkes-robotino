@@ -4,6 +4,7 @@
 ;
 ;  Created: Sat Jun 16 20:06:24 2012 (Mexico City)
 ;  Copyright  2012  Tim Niemueller [www.niemueller.de]
+;                   Frederik Zwilling
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
@@ -20,6 +21,11 @@
   ?*PRIORITY-LAST*    = -500
 
   ; production order priorities
+  ?*PRIORITY-LOAD-T3_T4-WITH-S1* = 83
+  ?*PRIORITY-LOAD-T3_T4-WITH-S0* = 80
+  ?*PRIORITY-LOAD-T2-WITH-S0* = 70
+
+  ; old production order priorities
   ?*PRIORITY-DELIVER* =   100
   ?*PRIORITY-P*       =   90
   ?*PRIORITY-S2*      =   80

@@ -1,25 +1,55 @@
+;---------------------------------------------------------------------------
+;  production.clp - Planning for LLSF production
+;                   Here we plan which job to execute when the robot is idle
+;                   The job-execution is located in tasks.clp
+;
+;  Created: Sat Jun 16 12:35:16 2012 (Mexico City)
+;  Copyright  2012  Tim Niemueller [www.niemueller.de]
+;                   Frederik Zwilling
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
 
-; ;---------------------------------------------------------------------------
-; ;  rules.clp - Robotino agent decision testing -- rules
-; ;
-; ;  Created: Sat Jun 16 12:35:16 2012 (Mexico City)
-; ;  Copyright  2012  Tim Niemueller [www.niemueller.de]
-; ;  Licensed under GPLv2+ license, cf. LICENSE file
-; ;---------------------------------------------------------------------------
+(defrule prod-load-T3_T4-with-S1
+  (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T1) (name ?name-T1))
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l)) (name ?name-T3_T4))
+  =>
+  (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing S1 at " ?name-T1 crlf)
+  (retract ?sf)
+  (assert (state TASK-CHOSEN)
+	  (task (name load-with-S1) (args (create$ ?name-T1 ?name-T3_T4)))
+  )
+)
 
-; ; --- RULES - skill done
+(defrule prod-load-T3_T4-with-S0
+  (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S0*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S0 ?l)) (name ?name))
+  =>
+  (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
+  (retract ?sf)
+  (assert (state TASK-CHOSEN)
+	  (task (name load-with-S0) (args (create$ ?name)))
+  )
+)
 
-; (defrule prod-get-s0-done
-;   (phase PRODUCTION)
-;   ?sf <- (state GET-S0-FINAL|GET-S0-FAILED)
-;   (Position3DInterface (id "Pose") (translation $?pos))
-;   =>
-;   (retract ?sf)
-;   (if (debug 3) then (printout t "Want to release Lock for INS, waiting till 0.5m away" crlf))
-;   (assert (state IDLE)
-; 	  (want-to-release INS $?pos)
-;   )
-; )
+(defrule prod-load-T2-with-S0
+  (declare (salience ?*PRIORITY-LOAD-T2-WITH-S0*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T2) (loaded-with $?l&~:(member$ S0 ?l)) (name ?name))
+  =>
+  (printout t "PROD: Loading T2 " ?name " with S0" crlf)
+  (retract ?sf)
+  (assert (state TASK-CHOSEN)
+	  (task (name load-with-S0) (args (create$ ?name)))
+  )
+)
+
+
 
 ; (defrule prod-get-consumed-done
 ;   (phase PRODUCTION)
