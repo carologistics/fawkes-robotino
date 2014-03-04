@@ -353,7 +353,15 @@ void MachineSignalThread::loop()
   }
 
   // Create and group ROIs that make up the red, yellow and green lights of a signal
-  std::list<signal_rois_t_> *signal_rois = create_signal_rois(rois_R, rois_G);
+  std::list<signal_rois_t_> *signal_rois;
+  bool at_delivery;
+
+  if ((at_delivery = rois_G->begin()->width > cam_width_/3)) {
+    signal_rois = create_delivery_rois(rois_R);
+  }
+  else {
+    signal_rois = create_signal_rois(rois_R, rois_G);
+  }
 
   // Reset all known signals to not-seen
   for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
@@ -373,26 +381,42 @@ void MachineSignalThread::loop()
             signal_it->red_roi->start
       });
 
-      // ... and match them to known signals based on the max_jitter tunable
-      float dist_min = FLT_MAX;
-      std::list<signal_state_t_>::iterator best_match;
-      for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
-          known_signal != known_signals_.end(); ++known_signal) {
-        float dist = known_signal->distance(frame_state);
-        if (dist < dist_min) {
-          best_match = known_signal;
-          dist_min = dist;
+      // Signals with all lights off are impossible...
+      if (frame_state.red || frame_state.yellow || frame_state.green) {
+        // ... and match them to known signals based on the max_jitter tunable
+        float dist_min = FLT_MAX;
+        std::list<signal_state_t_>::iterator best_match;
+        for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
+            known_signal != known_signals_.end(); ++known_signal) {
+          float dist = known_signal->distance(frame_state);
+          if (dist < dist_min) {
+            best_match = known_signal;
+            dist_min = dist;
+          }
         }
-      }
-      if (dist_min < cfg_max_jitter_) {
-        best_match->update(frame_state, signal_it);
-      }
-      else {
-        // No historic match was found for the current signal
-        signal_state_t_ *cur_state = new signal_state_t_(buflen_);
-        cur_state->update(frame_state, signal_it);
-        known_signals_.push_front(*cur_state);
-        delete cur_state;
+        if (dist_min < cfg_max_jitter_) {
+          best_match->update(frame_state, signal_it);
+        }
+        else {
+          // No historic match was found for the current signal
+          signal_state_t_ *cur_state = new signal_state_t_(buflen_);
+          cur_state->update(frame_state, signal_it);
+          known_signals_.push_front(*cur_state);
+          delete cur_state;
+        }
+
+        signal_it->red_roi->set_image_width(cam_width_);
+        signal_it->red_roi->set_image_height(cam_height_);
+        signal_it->yellow_roi->set_image_width(cam_width_);
+        signal_it->yellow_roi->set_image_height(cam_height_);
+        signal_it->green_roi->set_image_width(cam_width_);
+        signal_it->green_roi->set_image_height(cam_height_);
+
+        if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
+          drawn_rois_.push_back(signal_it->red_roi);
+          drawn_rois_.push_back(signal_it->yellow_roi);
+          drawn_rois_.push_back(signal_it->green_roi);
+        }
       }
 
       delete signal_it->red_roi;
@@ -422,9 +446,13 @@ void MachineSignalThread::loop()
   }
 
   // Throw out the signals with the worst visibility histories
-  known_signals_.sort(sort_signal_states_by_area_);
+  known_signals_.sort(sort_signal_states_by_visibility_);
   while (known_signals_.size() > MAX_SIGNALS)
     known_signals_.pop_back();
+
+  // Then sort geometrically
+  if (at_delivery) known_signals_.sort(sort_signal_states_by_x_);
+  else known_signals_.sort(sort_signal_states_by_area_);
 
   // Update blackboard with the current information
   std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
@@ -491,9 +519,6 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
     std::list<ROI> *rois_R,
     std::list<ROI> *rois_G)
 {
-  if (rois_G->begin()->width > cam_width_/2)
-    return create_delivery_rois(rois_R);
-
   std::list<MachineSignalThread::signal_rois_t_> *rv = new std::list<MachineSignalThread::signal_rois_t_>();
 
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
@@ -527,12 +552,6 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
         ROI *roi_R = new ROI(*it_R);
         ROI *roi_G = new ROI(*it_G);
         rv->push_back({roi_R, roi_Y, roi_G});
-
-        if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          drawn_rois_.push_back(*roi_R);
-          drawn_rois_.push_back(*roi_Y);
-          drawn_rois_.push_back(*roi_G);
-        }
       }
     }
   }
@@ -557,50 +576,91 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
 
   unsigned int i = 0;
   for (it_R = rois_R->begin(); it_R != rois_R->end() && i++ < MAX_SIGNALS; ++it_R) {
-    ROI check_black_top(it_R->start.x, it_R->start.y - it_R->width/3, it_R->width, it_R->width/2,
-      cam_width_, cam_height_);
+    try {
 
-    black_scangrid_->set_roi(&check_black_top);
-    std::list<ROI> *black_rois_top = black_classifier_->classify();
-    if (black_rois_top->empty()) continue;
-    if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
-      drawn_rois_.insert(drawn_rois_.end(), black_rois_top->begin(), black_rois_top->end());
-    ROI black_top = *(black_rois_top->begin());
-    delete black_rois_top;
+      ROI *roi_R = new ROI(*it_R);
 
-    ROI *roi_R = new ROI(*it_R);
-    roi_R->width = black_top.width;
-    //roi_R->start.y = black_top.start.y + black_top.height;
-    roi_R->height = roi_R->width;
+      long int start_x, start_y;
 
-    uint start_y = roi_R->start.y + roi_R->width; // add width since it's more reliable than height
-    ROI *roi_Y = new ROI(roi_R->start.x, start_y, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height);
-    roi_Y->color = C_YELLOW;
-    ROI *roi_G = new ROI(roi_R->start.x, start_y + roi_R->height, roi_R->width, roi_R->height, roi_R->image_width,
-      roi_R->image_height);
-    roi_G->color = C_GREEN;
+      start_y = (long int)it_R->start.y - (long int)it_R->width/3;
+      if (start_y < 0) start_y = 0;
+      ROI check_black_top(it_R->start.x, start_y, it_R->width, it_R->width/2,
+        cam_width_, cam_height_);
 
-    black_scangrid_->set_roi(roi_G);
-    std::list<ROI> *black_rois_bottom = black_classifier_->classify();
-    if (!black_rois_bottom->empty()) {
       if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
-        drawn_rois_.insert(drawn_rois_.end(), black_rois_bottom->begin(), black_rois_bottom->end());
-      ROI black_bottom = *(black_rois_bottom->begin());
-      delete black_rois_bottom;
-      unsigned int height_adj = (black_bottom.start.y - roi_R->start.y) / 3;
-      roi_R->height = height_adj;
-      roi_Y->height = height_adj;
-      roi_G->height = height_adj;
+        drawn_rois_.push_back(check_black_top);
+
+      black_scangrid_->set_roi(&check_black_top);
+      std::list<ROI> *black_rois_top = black_classifier_->classify();
+
+      if (!black_rois_top->empty()) {
+        if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
+          drawn_rois_.insert(drawn_rois_.end(), black_rois_top->begin(), black_rois_top->end());
+        ROI black_top = *(black_rois_top->begin());
+        delete black_rois_top;
+
+        if (black_top.width > roi_R->width * 0.5)
+          roi_R->width = (black_top.width + roi_R->width) / 2;
+        //roi_R->start.y = black_top.start.y + black_top.height;
+      }
+      roi_R->height = roi_R->width;
+
+      start_y = (long int)roi_R->start.y + (long int)roi_R->width; // add width since it's more reliable than height
+      ROI *roi_Y = new ROI(roi_R->start.x, start_y, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height);
+      roi_Y->color = C_YELLOW;
+      ROI *roi_G = new ROI(roi_R->start.x, start_y + roi_R->height, roi_R->width, roi_R->height, roi_R->image_width,
+        roi_R->image_height);
+      roi_G->color = C_GREEN;
+
+      ROI check_black_bottom(*roi_Y);
+      start_x = (long int)roi_Y->start.x - (long int)roi_Y->width/4;
+      if (start_x < 0) start_x = 0;
+      check_black_bottom.set_start(start_x, roi_Y->start.y + roi_Y->height/2);
+      check_black_bottom.set_width(roi_Y->width * 1.5);
+      check_black_bottom.set_height(roi_Y->height * 2.5);
+      check_black_bottom.color = C_BACKGROUND;
+
+      if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
+        drawn_rois_.push_back(check_black_bottom);
+
+      black_scangrid_->set_roi(&check_black_bottom);
+      std::list<ROI> *black_rois_bottom = black_classifier_->classify();
+
+      if (!black_rois_bottom->empty()) {
+        ROI black_bottom = *(black_rois_bottom->begin());
+        delete black_rois_bottom;
+        unsigned int height_adj = (black_bottom.start.y - roi_R->start.y) / 3;
+        roi_R->height = height_adj;
+        roi_Y->height = height_adj;
+        roi_G->height = height_adj;
+      }
+
+      ROI check_black_green(*roi_G);
+      check_black_green.color = C_BACKGROUND;
+      if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
+        drawn_rois_.push_back(check_black_green);
+      black_scangrid_->set_roi(&check_black_green);
+      std::list<ROI> *black_in_green = black_classifier_->classify();
+
+      unsigned int black_in_green_area = 0;
+      unsigned int green_area = roi_G->width * roi_G->height;
+
+      if (!black_in_green->empty()) {
+        black_in_green_area = black_in_green->begin()->width * black_in_green->begin()->height;
+        if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
+          drawn_rois_.insert(drawn_rois_.end(), black_in_green->begin(), black_in_green->end());
+      }
+
+      roi_G->set_image_width(cam_width_);
+      roi_G->set_image_height(cam_height_);
+
+      if (((float)black_in_green_area / (float)green_area) < 0.2) {
+        rv->push_back({roi_R, roi_Y, roi_G});
+
+      }
     }
-
-    roi_G->set_image_width(cam_width_);
-    roi_G->set_image_height(cam_height_);
-    rv->push_back({roi_R, roi_Y, roi_G});
-
-    if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-      drawn_rois_.push_back(*roi_R);
-      drawn_rois_.push_back(*roi_Y);
-      drawn_rois_.push_back(*roi_G);
+    catch (OutOfBoundsException &e) {
+      logger->log_error(name(), "%s", e.what());
     }
   }
 
