@@ -53,7 +53,7 @@
 
 
 #define MAX_SIGNALS 3
-#define HISTORY_SIZE MAX_SIGNALS + 2
+#define TRACKED_SIGNALS MAX_SIGNALS + 2
 #define CFG_PREFIX "/plugins/machine_signal"
 
 
