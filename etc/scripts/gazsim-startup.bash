@@ -45,7 +45,7 @@ ROBOTINO=
 REPLAY=
 VISION=,gazsim-light-front,gazsim-puck-detection
 AGENT=
-while getopts “hx:c:lrsp:i:e:da” OPTION
+while getopts “hx:c:lrsp:i:e:da4” OPTION
 do
      case $OPTION in
          h)
@@ -104,10 +104,10 @@ case $COMMAND in
 	opti=$(command -v optirun)
 	if [ $VISUALIZATION == headless ]
 	then
-	    $opti gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world/llsf.world
+	    $opti gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world_2014/llsf.world
 	else
 	    echo $GAZEBO_MODEL_PATH/llsf_world/llsf.world
-	    $opti gazebo $REPLAY $GAZEBO_MODEL_PATH/llsf_world/llsf.world
+	    $opti gazebo $REPLAY $GAZEBO_MODEL_PATH/llsf_world_2014/llsf.world
 	fi
 	;;
     fawkes ) 
