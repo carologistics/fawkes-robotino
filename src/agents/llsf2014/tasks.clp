@@ -22,8 +22,9 @@
   (slot state (type SYMBOL) (allowed-values ordered running finished) (default ordered))
 )
 
-
+;;;;;;;;;;;;;;
 ;load-with-S0:
+;;;;;;;;;;;;;;
 (defrule task-load-with-S0--start-get-S0
   (declare (salience ?*PRIORITY-SUBTASK-1*))
   (phase PRODUCTION)
@@ -32,9 +33,10 @@
   ?s <- (state TASK-CHOSEN)
   =>
   (retract ?s)
-  (assert (state GET-S0))
+  (assert (state GET-S0)
+	  (lock-and-execute (skill get-s0) (res Ins1))
+  )
   (modify ?t (state running))
-  (get-s0)
 )
 (defrule task-load-with-S0--bring-to-machine
   (declare (salience ?*PRIORITY-SUBTASK-2*))
@@ -64,8 +66,9 @@
   (assert (state IDLE))
 )
 
-
+;;;;;;;;;;;;;;
 ;load-with-S1:
+;;;;;;;;;;;;;;
 (defrule task-load-with-S1--start-get-S0
   (declare (salience ?*PRIORITY-SUBTASK-1*))
   (phase PRODUCTION)
@@ -74,9 +77,10 @@
   ?s <- (state TASK-CHOSEN)
   =>
   (retract ?s)
-  (assert (state GET-S0))
+  (assert (state GET-S0)
+	  (lock-and-execute (skill get-s0) (res Ins1))
+  )
   (modify ?t (state running))
-  (get-s0)
 )
 (defrule task-load-with-S1--bring-S0-to-T1
   (declare (salience ?*PRIORITY-SUBTASK-2*))

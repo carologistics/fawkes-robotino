@@ -19,8 +19,8 @@
   (assert (goto-target ?name))
 )
 
-(deffunction get-s0 ()
-  (skill-call get_s0)
+(deffunction get-s0 (?place)
+  (skill-call get_s0 place ?place)
 )
 
 (deffunction get-consumed (?goal)

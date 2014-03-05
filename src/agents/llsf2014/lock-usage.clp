@@ -34,10 +34,10 @@
 ;;;;;;;;;;;;;;;;
 (defrule lock-use-lock-get-s0
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
-  ?lae <- (lock-and-execute (skill get-s0) (res INS) (state new))
+  ?lae <- (lock-and-execute (skill get-s0) (res ?res) (state new))
   =>
   (if (debug 3) then (printout t "Acquiring Lock for INS" crlf))
-  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource INS)))
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
   (modify ?lae (state get))
 )
 
@@ -55,23 +55,23 @@
 
 (defrule lock-use-execute-get-s0
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
-  ?lae <- (lock-and-execute (skill get-s0) (res INS) (state get))
-  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
+  ?lae <- (lock-and-execute (skill get-s0) (res ?res) (state get))
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   =>
   (if (debug 3) then (printout t "Lock accepted -> Get S0" crlf))
   (retract ?l)
   (assert (state GET-S0))
   (modify ?lae (state exe))
-  (get-s0)
+  (get-s0 ?res)
 )
 
 (defrule lock-use-get-s0-done
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
-  ?lae <- (lock-and-execute (skill get-s0) (res INS) (state exe))
+  ?lae <- (lock-and-execute (skill get-s0) (res ?res) (state exe))
   ?sf <- (state GET-S0-FINAL|GET-S0-FAILED)
   (Position3DInterface (id "Pose") (translation $?pos))
   =>
   (retract ?lae)
   (if (debug 3) then (printout t "Want to release Lock for INS, waiting till 0.5m away" crlf))
-  (assert (release-after-left INS $?pos))
+  (assert (release-after-left ?res $?pos))
 )
