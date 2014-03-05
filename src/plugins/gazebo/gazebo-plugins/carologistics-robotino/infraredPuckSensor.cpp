@@ -32,6 +32,11 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param model Model to the gazebo model of the plugin
+ * @param node Transport node to publish and subscribe messages on
+ * @param sensorPtr Pointer to the laser sensor of the model
+ */
 InfraredPuckSensor::InfraredPuckSensor(physics::ModelPtr model, transport::NodePtr node, sensors::SensorPtr sensorPtr)
  : SimDevice(model, node)
 {

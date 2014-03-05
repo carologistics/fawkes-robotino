@@ -44,6 +44,7 @@ using namespace gazebo;
 // Register this plugin to make it available in the simulator
 GZ_REGISTER_MODEL_PLUGIN(Robotino)
 
+
 Robotino::Robotino()
 {
 }
@@ -58,6 +59,9 @@ Robotino::~Robotino()
   }
 }
 
+/** Loading the Robotino plugin
+ * @param _parent model the plugin is attached to
+ */
 void Robotino::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/) 
 {
   // Store the pointer to the model
@@ -122,7 +126,9 @@ void Robotino::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
   printf("Robotino-Plugin sucessfully loaded \n");
 }
 
-// Called by the world update start event
+
+/** Called by the world update start event
+ */ 
 void Robotino::OnUpdate(const common::UpdateInfo & /*_info*/)
 {
   //update devices
@@ -139,6 +145,8 @@ void Robotino::OnUpdate(const common::UpdateInfo & /*_info*/)
   }
 }
 
+/** What to do on resetting of the plugin
+ */
 void Robotino::Reset()
 {
 }

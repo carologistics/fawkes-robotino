@@ -33,6 +33,10 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param model Model to the gazebo model of the plugin
+ * @param node Transport node to publish and subscribe messages on
+ */
 PuckDetection::PuckDetection(physics::ModelPtr model, transport::NodePtr node)
  : SimDevice(model, node)
 {

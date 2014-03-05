@@ -25,6 +25,9 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param world World, where the referee should operate
+ */
 FieldReferee::FieldReferee(physics::WorldPtr world)
 {
   table_ = LlsfDataTable::get_table();

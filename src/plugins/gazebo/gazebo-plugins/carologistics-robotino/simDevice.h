@@ -31,28 +31,40 @@
 
 namespace gazebo
 {
-   
+  /**
+   * general superclass for simulated devices
+   * @author Frederik Zwilling
+   */
   class SimDevice
   {
   public:
     //Constructor
     SimDevice(physics::ModelPtr model, transport::NodePtr node);
-    //Destructor
+    ///Destructor
     virtual ~SimDevice();
     //common functions
+    
+    /** Initialization
+     */
     virtual void init() = 0;
+    /** Creation of all publishers needed for the device
+     */
     virtual void create_publishers() = 0;
+    /** Creation of all subscribers needed for the device
+     */
     virtual void create_subscribers() = 0;
+    /** What to do in the update step of the plugin
+     */
     virtual void update() = 0;
 
 
   protected:
     //Gazebo-objects needed by every device
-    // Pointer to the model
+    /// Pointer to the gazebo model
     physics::ModelPtr model;
-    //Node for communication
+    ///Node for communication
     transport::NodePtr node;
-    //time variable to send in intervals
+    ///time variable to send in intervals
     double last_sent_time_;
   };
 }

@@ -28,6 +28,10 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param world World to control
+ * @param gazebo_node Transport node to publish and subscribe messages on
+ */
 SimulationControl::SimulationControl(physics::WorldPtr world, transport::NodePtr gazebo_node)
 {
   gazebo_node_ = gazebo_node;

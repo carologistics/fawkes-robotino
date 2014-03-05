@@ -40,7 +40,7 @@ namespace gazebo
   public: 
     //Constructor
     PuckHolder(physics::ModelPtr, transport::NodePtr);
-    //Deconstructor
+    ///Deconstructor
     ~PuckHolder();
 
     virtual void init();
@@ -50,7 +50,7 @@ namespace gazebo
 
 
   private:
-    //Pointer to simulation data
+    ///Pointer to simulation data
     LlsfDataTable *table_;
 
     bool puck_attached_;

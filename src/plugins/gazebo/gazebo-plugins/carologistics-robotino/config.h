@@ -18,13 +18,13 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-//Difference in the position needed before gazebo sends a message to fawkes
+///Difference in the position needed before gazebo sends a message to fawkes
 #define POSITION_SEND_TOLLERANCE 0.001
 
- // Frequencies in hz
+/// Frequencies in hz
 #define GPS_SEND_FREQUENCY 5.0
 #define LIGHT_SIGNAL_SEND_FREQUENCY 2.0
-//laser send frequency defined in hokuyo/model.sdf
+///laser send frequency defined in hokuyo/model.sdf
 #define PUCK_DETECTION_SEND_FREQUENCY 3.0
 #define FRONT_CAMERA_SEND_FREQUENCY 2.0
 

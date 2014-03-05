@@ -24,6 +24,9 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param world World, where to search for pucks
+ */
 PuckLocalization::PuckLocalization(physics::WorldPtr world)
 {
   table_ = LlsfDataTable::get_table();

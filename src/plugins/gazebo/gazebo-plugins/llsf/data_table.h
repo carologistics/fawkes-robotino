@@ -36,7 +36,9 @@ namespace gazebo
 {
 
   class RefboxComm;
-  
+
+  /** Enum for all available machines
+   */  
   typedef enum MachineName
   {
     M1,
@@ -58,6 +60,8 @@ namespace gazebo
     NONE
   } MachineName;
 
+  /** Enum for the states a light can have
+   */
   typedef enum LightState
   {
     OFF,
@@ -65,27 +69,47 @@ namespace gazebo
     BLINK
   } LightState;
 
+  /** Struct for machine data
+   */
   typedef struct Machine
   {
+    ///name of the machine (enum)
     MachineName name;
+    ///name of the link in the gazebo world
     std::string name_link;
+    ///name of the machine (string)
     std::string name_string;
+    ///x coordinate
     double x;
+    ///y coordinate
     double y;
+    ///orientation of the machine
     double ori;
+    ///state of the red light
     LightState red;
+    ///state of the yellow light
     LightState yellow;
+    ///state of the green light
     LightState green;
    } Machine;
 
+  /** Strunct for puck data
+   */
   typedef struct Puck
   {
+    ///number of the puck
     int number;
+    ///name of the puck ling in the gazebo world
     std::string name_link;
+    ///x coordinate
     double x;
+    ///y coordinate
     double y;
+    /// machine the puck is under
     MachineName under_rfid;
+    ///machine of the area the puck is placed in
     MachineName in_machine_area;
+    ///state of the puck (S0,P2,FI,...)
     llsf_msgs::PuckState state;
   } Puck;
 
@@ -100,10 +124,10 @@ namespace gazebo
     //Constructor (Singleton!)
     LlsfDataTable(physics::WorldPtr world, transport::NodePtr gazebo_node);
   public:
-    //Destructor
+    ///Destructor
     ~LlsfDataTable();
   private:
-    //reference to singleton
+    ///reference to singleton
     static LlsfDataTable *table_;
 
   public:
@@ -134,9 +158,9 @@ namespace gazebo
     void set_puck_state(int puck, llsf_msgs::PuckState state);
 
   private:
-    //Provides communication to the refbox
+    ///Provides communication to the refbox
     RefboxComm *refbox_comm_;
-    //llsf world to look up positions
+    ///llsf world to look up positions
     physics::WorldPtr world_;
 
 

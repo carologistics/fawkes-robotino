@@ -38,13 +38,14 @@ namespace gazebo
   public: 
     //Constructor
     FieldReferee(physics::WorldPtr world);
-    //Deconstructor
+    ///Deconstructor
     ~FieldReferee();
 
+    ///what to do on plugin update (move finished pucks outside the field)
     void update();
 
   private:
-    //Pointer to simulation data
+    ///Pointer to simulation data
     LlsfDataTable *table_;
     
     physics::WorldPtr world_;

@@ -33,6 +33,10 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param table The data table to write the changes on
+ * @param gazebo_node Transport node to publish and subscribe messages on
+ */
 RefboxComm::RefboxComm(LlsfDataTable *table, transport::NodePtr gazebo_node)
 {
   table_ = table;
@@ -51,6 +55,10 @@ RefboxComm::~RefboxComm()
 {
 }
 
+/** send protobuf msg for puck placed under rfid to fawkes and refbox
+ * @param puck number of puck
+ * @param machine machine
+ */
 void RefboxComm::send_puck_placed_under_rfid(int puck, Machine & machine)
 {
   //create the message
@@ -61,7 +69,10 @@ void RefboxComm::send_puck_placed_under_rfid(int puck, Machine & machine)
   //publish
   place_puck_under_machine_pub_->Publish(ppum);
 }
-
+/** send protobuf msg for puck removed under rfid to fawkes and refbox
+ * @param puck number of puck
+ * @param machine machine
+ */
 void RefboxComm::send_remove_puck_from_machine(int puck, Machine & machine)
 {
   //create the message

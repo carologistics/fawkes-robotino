@@ -35,6 +35,10 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param model Model to the gazebo model of the plugin
+ * @param node Transport node to publish and subscribe messages on
+ */
 MachineVision::MachineVision(physics::ModelPtr model, transport::NodePtr node)
  : SimDevice(model, node)
 {

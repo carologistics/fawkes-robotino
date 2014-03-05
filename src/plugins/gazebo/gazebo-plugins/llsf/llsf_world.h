@@ -31,45 +31,48 @@
 
 namespace gazebo
 {
+  /**
+   * Main plugin for the LLSF field
+   */
   class LlsfWorldPlugin : public WorldPlugin
   {
   public:
-    //Constructor
+    ///Constructor
     LlsfWorldPlugin();
-    //Destructor
+    ///Destructor
     ~LlsfWorldPlugin();
 
     virtual void Load(physics::WorldPtr _world, sdf::ElementPtr _sdf);
 
 
   private:
-    //update function
+    ///update function
     void Update();
     event::ConnectionPtr update_connection_;
 
-    //Node for communication
+    ///Node for communication
     transport::NodePtr node_;
     
     physics::WorldPtr world_;
 
-    //Table with simulation data
+    ///Table with simulation data
     LlsfDataTable *table_;
 
-    //Controller of machine light signals
+    ///Controller of machine light signals
     LightControl *light_control_;
 
     PuckLocalization *puck_localization_;
 
-    //the field referee removes finished pucks
+    ///the field referee removes finished pucks
     FieldReferee *field_referee_;
     
-    //checks if there is a puck under the rfid
+    ///checks if there is a puck under the rfid
     RfidSensors *rfid_sensors_;
 
-    //Sync the time with fawkes and the refbox
+    ///Sync the time with fawkes and the refbox
     TimeSync *time_sync_;
 
-    //Stop gazebo on request
+    ///Stop gazebo on request
     SimulationControl *simulation_control_;
 
     double puck_update_frequency_;

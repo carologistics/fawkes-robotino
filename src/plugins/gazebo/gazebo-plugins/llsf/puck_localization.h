@@ -36,13 +36,14 @@ namespace gazebo
   public: 
     //Constructor
     PuckLocalization(physics::WorldPtr world);
-    //Deconstructor
+    ///Deconstructor
     ~PuckLocalization();
 
+    ///what to do on plugin update (write puck positions into data table)
     void update();
 
   private:
-    //Pointer to simulation data
+    ///Pointer to simulation data
     LlsfDataTable *table_;
     
     physics::WorldPtr world_;

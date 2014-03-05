@@ -49,20 +49,21 @@ namespace gazebo
   public: 
     //Constructor
     LightControl(physics::WorldPtr world);
-    //Deconstructor
+    ///Deconstructor
     virtual ~LightControl();
-
+    
+    /// what to do on plugin update (set lights according to the data table)
     void update();
 
   private:
-    //communication node
+    ///communication node
     transport::NodePtr node_;
-    //Publisher to send visual changes to gazebo
+    ///Publisher to send visual changes to gazebo
     transport::PublisherPtr visPub_;
 
     msgs::Visual create_vis_msg(std::string machine_name, Color color, LightState state);
 
-    //time variable to send in intervals
+    ///time variable to send in intervals
     double last_sent_time_;
 
     physics::WorldPtr world_;

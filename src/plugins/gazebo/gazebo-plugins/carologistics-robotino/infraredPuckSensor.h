@@ -35,7 +35,7 @@ namespace gazebo
   /**
    *  This class simulates the infrared sensor to detect a puck 
    *  in front of the robotino by using a ray-sensor
-  */
+   */
   class InfraredPuckSensor : public SimDevice
   {
     public: 
@@ -43,7 +43,7 @@ namespace gazebo
     //Constructor
     InfraredPuckSensor(physics::ModelPtr, transport::NodePtr, sensors::SensorPtr sensorPtr);
 
-    //Destructor
+    ///Destructor
     ~InfraredPuckSensor();
 
 
@@ -53,18 +53,18 @@ namespace gazebo
     virtual void update();
 
 
-    //what happens if the sensor has new laser data
+    ///what happens if the sensor has new laser data
     void on_new_laser_scans();
 
     private:
     
-    //connection of the sensor
+    ///connection of the sensor
     event::ConnectionPtr new_laser_scans_connection_;
 
-    //Pointer to the hokuyo sensor
+    ///Pointer to the hokuyo sensor
     sensors::RaySensorPtr parent_sensor_;
 
-    //Publisher for communication to fawkes
+    ///Publisher for communication to fawkes
     transport::PublisherPtr infrared_puck_sensor_pub_;
 
   };

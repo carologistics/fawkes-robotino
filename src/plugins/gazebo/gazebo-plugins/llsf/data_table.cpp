@@ -35,6 +35,10 @@
 
 using namespace gazebo;
 
+/** Constructor (Singleton)
+ * @param world World, the data should be stored about
+ * @param gazebo_node Transport node to publish and subscribe messages on
+ */
 LlsfDataTable::LlsfDataTable(physics::WorldPtr world, transport::NodePtr gazebo_node)
 {
   world_ = world;
@@ -52,6 +56,10 @@ LlsfDataTable::~LlsfDataTable()
 
 LlsfDataTable* LlsfDataTable::table_ = NULL;
 
+/** Initialization of the data table
+ * @param world World, the data should be stored about
+ * @param gazebo_node Transport node to publish and subscribe messages on
+ */
 void LlsfDataTable::init(physics::WorldPtr world, transport::NodePtr gazebo_node)
 {
   if(!table_)
@@ -60,11 +68,16 @@ void LlsfDataTable::init(physics::WorldPtr world, transport::NodePtr gazebo_node
   }
 }
 
+/** Getter for Singleton
+ * @return pointer to singleton
+ */
 LlsfDataTable* LlsfDataTable::get_table()
 {
   return table_;
 }
 
+/** Finalize Singleton
+ */
 void LlsfDataTable::finalize()
 {
   if(table_)
@@ -73,11 +86,19 @@ void LlsfDataTable::finalize()
   }
 }
 
+/** Getter for machine data
+ * @param name Name of the machine (enum)
+ * @return machine data
+ */
 Machine LlsfDataTable::get_machine(MachineName name)
 {
   return machines_[name];
 }
 
+/** Getter for machine data
+ * @param machine Name of the machine (string)
+ * @return machine data
+ */
 Machine LlsfDataTable::get_machine(std::string machine)
 {
   for(int i = M1; i <= T; i++)
@@ -92,16 +113,30 @@ Machine LlsfDataTable::get_machine(std::string machine)
   return machines_[0];
 }
 
+/** Getter for machine data (all machines)
+ * @return pointer to machine data
+ */
 Machine* LlsfDataTable::get_machines()
 {
   return machines_;
 }
 
+/** Getter for puck data
+ * @param number number of the puck
+ * @return puck data
+ */
 Puck LlsfDataTable::get_puck(int number)
 {
   return pucks_[number]; //assuming the pucks numbers start at 0
 }
 
+
+/** Setter for light state
+ * @param machine Name of the machine (enum)
+ * @param red state of red light
+ * @param yellow state of yellow light
+ * @param green state of green light
+ */
 void LlsfDataTable::set_light_state(MachineName machine, LightState red, 
 				    LightState yellow, LightState green)
 {
@@ -110,6 +145,12 @@ void LlsfDataTable::set_light_state(MachineName machine, LightState red,
   machines_[machine].green = green;
 }
 
+/** Setter for light state
+ * @param machine Name of the machine (string)
+ * @param red state of red light
+ * @param yellow state of yellow light
+ * @param green state of green light
+ */
 void LlsfDataTable::set_light_state(std::string machine, LightState red,
 		     LightState yellow, LightState green)
 {
@@ -124,12 +165,21 @@ void LlsfDataTable::set_light_state(std::string machine, LightState red,
   }
 }
 
+/** Setter for puck position
+ * @param puck Number of the puck
+ * @param x x coordinate of position
+ * @param y y coordinate of position
+ */
 void LlsfDataTable::set_puck_pos(int puck, double x, double y)
 {
   pucks_[puck].x = x;
   pucks_[puck].y = y;
 }
 
+/** Mark a puck as placed under a machine
+ * @param puck number of the puck
+ * @param machine  name of the machine (enum)
+ */
 void LlsfDataTable::set_puck_under_rfid(int puck, MachineName machine)
 {
   pucks_[puck].under_rfid = machine;
@@ -137,6 +187,10 @@ void LlsfDataTable::set_puck_under_rfid(int puck, MachineName machine)
   refbox_comm_->send_puck_placed_under_rfid(puck, machines_[machine]);
 }
 
+/** Mark a puck as removed from a machine
+ * @param puck number of the puck
+ * @param machine  name of the machine (enum)
+ */
 void LlsfDataTable::remove_puck_under_rfid(int puck, MachineName machine)
 {
   pucks_[puck].under_rfid = NONE;
@@ -144,12 +198,20 @@ void LlsfDataTable::remove_puck_under_rfid(int puck, MachineName machine)
   refbox_comm_->send_remove_puck_from_machine(puck, machines_[machine]);
 }
 
+/** Mark a puck as placed inside a machine-area
+ * @param puck number of the puck
+ * @param machine  name of the machine (enum)
+ */
 void LlsfDataTable::set_puck_in_machine_area(int puck, MachineName machine)
 {
   pucks_[puck].in_machine_area = machine;
   //TODO: inform refbox if a puck leaves a machine area
 }
 
+/** Setter for puck state (S0,P1,FI,...)
+ * @param puck number of the puck
+ * @param state state of the puck
+ */
 void LlsfDataTable::set_puck_state(int puck, llsf_msgs::PuckState state)
 {
   pucks_[puck].state = state;

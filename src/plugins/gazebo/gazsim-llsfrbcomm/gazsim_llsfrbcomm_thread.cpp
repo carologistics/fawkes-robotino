@@ -129,12 +129,19 @@ GazsimLLSFRbCommThread::loop()
     }*/
 }
 
+
+/** Handler for successful connection to the client
+ */
 void
 GazsimLLSFRbCommThread::client_connected()
 {
   logger->log_info(name(), "Connected to Refbox");
 }
 
+
+/** Handler for loss of connection to client
+ * @param error boost error code
+ */
 void
 GazsimLLSFRbCommThread::client_disconnected(const boost::system::error_code &error)
 {
@@ -142,6 +149,11 @@ GazsimLLSFRbCommThread::client_disconnected(const boost::system::error_code &err
   create_client();
 }
 
+/** Handler for incoming msg from client
+ * @param comp_id component id of protobuf msg
+ * @param msg_type type of protobuf msg
+ * @param msg pointer to protobuf msg
+ */
 void
 GazsimLLSFRbCommThread::client_msg(uint16_t comp_id, uint16_t msg_type,
 			     std::shared_ptr<google::protobuf::Message> msg)

@@ -29,6 +29,10 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param model Model to the gazebo model of the plugin
+ * @param node Transport node to publish and subscribe messages on
+ */
 SimDevice::SimDevice(physics::ModelPtr model, transport::NodePtr node)
 {
   //Store the pointer to the model

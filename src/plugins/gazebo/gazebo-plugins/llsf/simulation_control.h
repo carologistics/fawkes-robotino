@@ -39,19 +39,19 @@ namespace gazebo
   public:
     //Constructor
     SimulationControl(physics::WorldPtr _world, transport::NodePtr gazebo_node);
-    //Destructor
+    ///Destructor
     ~SimulationControl();
 
   private:
-    //Pointer to the communication node from gazebo
+    ///Pointer to the communication node from gazebo
     transport::NodePtr gazebo_node_;
-    //World to get the time from
+    ///World to get the time from
     physics::WorldPtr world_; 
 
-    //Publisher for communication
+    ///Publisher for communication
     transport::SubscriberPtr simulation_control_sub_;
 
-    //msg handler
+    ///msg handler
     void on_string_msg(ConstHeaderPtr &msg);  
   };
 }

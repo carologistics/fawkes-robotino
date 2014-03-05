@@ -45,6 +45,10 @@ LlsfWorldPlugin::~LlsfWorldPlugin()
   delete simulation_control_;
 }
 
+/** Initialization while loading the plugin
+ * @param _world World where the plugi was loaded
+ * @param _sdf Pointer to the sdf model definition
+ */
 void LlsfWorldPlugin::Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
 {
   world_ = _world;

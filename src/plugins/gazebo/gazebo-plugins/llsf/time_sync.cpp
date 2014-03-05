@@ -30,6 +30,11 @@
 
 using namespace gazebo;
 
+
+/** Constructor
+ * @param world World, where to get the time from
+ * @param gazebo_node Transport node to publish and subscribe messages on
+ */
 TimeSync::TimeSync(physics::WorldPtr world, transport::NodePtr gazebo_node)
 {
   gazebo_node_ = gazebo_node;

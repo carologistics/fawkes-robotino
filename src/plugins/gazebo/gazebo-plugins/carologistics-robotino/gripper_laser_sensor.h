@@ -32,15 +32,18 @@
 
 namespace gazebo
 {
+  /** Is this the sensor on the left or right side?
+   */
   typedef enum Side
   {
     LEFT, RIGHT
   } Side;
-  
-  /**
+
+  /** 
    *  simulates a laser sensor at the gripper
    *  to detect the machines
-  */
+   * @author Frederik Zwilling
+   */  
   class GripperLaserSensor : public SimDevice
   {
     public: 
@@ -48,7 +51,7 @@ namespace gazebo
     //Constructor
     GripperLaserSensor(physics::ModelPtr, transport::NodePtr, sensors::SensorPtr sensorPtr, Side side);
 
-    //Destructor
+    ///Destructor
     ~GripperLaserSensor();
 
 
@@ -58,21 +61,21 @@ namespace gazebo
     virtual void update();
 
 
-    //what happens if the sensor has new laser data
+    ///what happens if the sensor has new laser data
     void on_new_laser_scans();
 
     private:
     
-    //connection of the sensor
+    ///connection of the sensor
     event::ConnectionPtr new_laser_scans_connection_;
 
-    //Pointer to the hokuyo sensor
+    ///Pointer to the hokuyo sensor
     sensors::RaySensorPtr parent_sensor_;
 
-    //Publisher for communication to fawkes
+    ///Publisher for communication to fawkes
     transport::PublisherPtr gripper_laser_sensor_pub_;
 
-    //is this the sensor on the left or right?
+    ///is this the sensor on the left or right?
     Side side_;
   };
 }

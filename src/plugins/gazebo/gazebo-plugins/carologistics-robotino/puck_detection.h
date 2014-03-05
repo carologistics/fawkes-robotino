@@ -31,7 +31,7 @@ namespace gazebo
 {
   /**
    *  This class reads out the puck positions in the simulation data table
-   *and sends it to fawkes.
+   *  and sends it to fawkes.
    */
   class PuckDetection: public SimDevice
   {
@@ -39,7 +39,7 @@ namespace gazebo
 
     //Constructor
     PuckDetection(physics::ModelPtr, transport::NodePtr);
-    //Destructor
+    ///Destructor
     ~PuckDetection();  
 
     virtual void init();
@@ -48,13 +48,13 @@ namespace gazebo
     virtual void update();
 
   private:
-    //Functions for sending ionformation to fawkes:
+    ///Functions for sending ionformation to fawkes:
     void send_puck_positions();
 
-    //Publisher for light results
+    ///Publisher for light results
     transport::PublisherPtr puck_position_pub_;
 
-    //Table with the simulation data
+    ///Table with the simulation data
     LlsfDataTable *table_;
   };
 }

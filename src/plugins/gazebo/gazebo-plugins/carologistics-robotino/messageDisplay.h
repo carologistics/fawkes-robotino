@@ -28,16 +28,17 @@
 
 namespace gazebo
 {
-/*
-   This class displayes messages form Fawkes in the Gazebo console
- */
+  /**
+   * Gazebo Plugin, which shows text messages sent from fawkes
+   * @author Frederik Zwilling
+   */
   class MessageDisplay: public SimDevice
   {
   public:
 
     //Constructor
     MessageDisplay(physics::ModelPtr, transport::NodePtr);
-    //Destructor
+    ///Destructor
     ~MessageDisplay();
 
     virtual void init();

@@ -31,16 +31,16 @@
 
 namespace gazebo
 {
-/*
-   This class simulates the results of the machine light signal detection
- */
+  /**
+   * This class simulates the results of the machine light signal detection
+   */
   class MachineVision: public SimDevice
   {
   public:
 
     //Constructor
     MachineVision(physics::ModelPtr, transport::NodePtr);
-    //Destructor
+    ///Destructor
     ~MachineVision();  
 
     virtual void init();
@@ -49,13 +49,13 @@ namespace gazebo
     virtual void update();
 
   private:
-    //Functions for sending ionformation to fawkes:
+    ///Functions for sending ionformation to fawkes:
     void send_light_results();
 
-    //Publisher for light results
+    ///Publisher for light results
     transport::PublisherPtr light_signal_pub_;
 
-    //Table with the simulation data
+    ///Table with the simulation data
     LlsfDataTable *table_;
 
     void send_lights();

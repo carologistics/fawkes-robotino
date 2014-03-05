@@ -54,25 +54,26 @@ namespace gazebo
   public:
     //Constructor
     RefboxComm(LlsfDataTable *table, transport::NodePtr gazebo_node);
-    //Destructor
+    ///Destructor
     ~RefboxComm();
 
-    //Member functions:
+    //send protobuf msg for puck placed under rfid to fawkes and refbox
     void send_puck_placed_under_rfid(int puck, Machine & machine);
+    //send protobuf msg for puck removed under rfid to fawkes and refbox
     void send_remove_puck_from_machine(int puck, Machine & machine);
 
 
   private:
-    //Pointer to the data table
+    ///Pointer to the data table
     LlsfDataTable *table_;
-    //Pointer to the communication node from gazebo
+    ///Pointer to the communication node from gazebo
     transport::NodePtr gazebo_node_;
 
-    //Publisher for communication to the refbox (via the adapter)
+    ///Publisher for communication to the refbox (via the adapter)
     transport::PublisherPtr place_puck_under_machine_pub_;
     transport::PublisherPtr remove_puck_from_machine_pub_;
 
-    //Suscriber for MachineInfos from the refbox
+    ///Suscriber for MachineInfos from the refbox
     transport::SubscriberPtr machine_info_sub_;
     transport::SubscriberPtr puck_info_sub_;
 

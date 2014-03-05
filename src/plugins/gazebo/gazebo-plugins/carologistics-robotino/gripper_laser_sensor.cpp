@@ -33,6 +33,13 @@
 
 using namespace gazebo;
 
+
+/** Constructor
+ * @param model Model to the gazebo model of the plugin
+ * @param node Transport node to publish and subscribe messages on
+ * @param sensorPtr Pointer to the laser sensor of the model
+ * @param side Is this the sensor on the left or right side?
+ */
 GripperLaserSensor::GripperLaserSensor(physics::ModelPtr model, transport::NodePtr node, sensors::SensorPtr sensorPtr, Side side)
  : SimDevice(model, node)
 {

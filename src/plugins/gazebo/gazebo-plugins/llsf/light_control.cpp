@@ -35,6 +35,9 @@
 
 using namespace gazebo;
 
+/** Constructor
+ * @param world World, where to set the lights
+ */
 LightControl::LightControl(physics::WorldPtr world)
 {
   //create node and initialize it (init is mandatory here!)

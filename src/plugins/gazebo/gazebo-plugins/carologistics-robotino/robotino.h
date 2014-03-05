@@ -29,14 +29,19 @@
 #include <string.h>
 
 namespace gazebo
-{   
+{
+
+  /** 
+   * Gazebo Plugin for the Robotino Robot
+   * @author Frederik Zwilling
+   */   
   class Robotino : public ModelPlugin
   {
   public:
-    //Constructor
+    ///Constructor
     Robotino();
 
-    //Destructor
+    ///Destructor
     ~Robotino();
 
     //Overridden ModelPlugin-Functions
@@ -46,24 +51,24 @@ namespace gazebo
 
   private:
 
-    //simulated devices
+    ///simulated devices
     std::list<SimDevice*> devices_list_;
 
-    // Pointer to the model
+    /// Pointer to the model
     physics::ModelPtr model_;
-    // Pointer to the update event connection
+    /// Pointer to the update event connection
     event::ConnectionPtr update_connection_;
-    //Node for communication to fawkes
+    ///Node for communication to fawkes
     transport::NodePtr node_;
     
-    //Node for Spawning a number label
+    ///Node for Spawning a number label
     transport::NodePtr visual_node_;
-    //Publisher for spawning a number label
+    ///Publisher for spawning a number label
     transport::PublisherPtr visual_pub_;
     void spawn_label();
     double label_last_sent_;
 
-    //name of the robotino and the communication channel
+    ///name of the robotino and the communication channel
     std::string name_;
   };
 }
