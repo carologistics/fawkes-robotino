@@ -102,15 +102,3 @@ gazsim:
     configuration-name: "default"
     log: "~/fawkes-robotino/gazsim-logs/13_10_14_15_26/default_1"
     run: 1
-
-skills/take_puck_to:
-   #front sensor distance when the puck is lost
-   front_sensor_dist: 0.073
-
-skills/fetch_puck:
-   #front sensor distance when fetching the puck
-   front_sensor_dist: 0.045
-skills/deliver_puck:
-   #front sensor distance when checking if we still have the puck at the delivery gates
-   front_sensor_dist: 0.05
-   
