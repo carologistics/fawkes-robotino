@@ -85,6 +85,8 @@ void LightFrontSimThread::init()
     config->get_string("/gazsim/topics/machine-lights"), 
      &LightFrontSimThread::on_light_signals_msg, this);
   localization_sub_ = gazebonode->Subscribe(config->get_string("/gazsim/topics/gps"), &LightFrontSimThread::on_localization_msg, this);
+
+  new_data_ = false;
 }
 
 void LightFrontSimThread::finalize()
@@ -111,6 +113,18 @@ void LightFrontSimThread::loop()
     }
     switch_if_->msgq_pop();
     switch_if_->write();
+  }
+  
+  //write light interface
+  if(new_data_)
+  {
+    new_data_ = false;
+    light_if_->set_red(red_);
+    light_if_->set_yellow(yellow_);
+    light_if_->set_green(green_);
+    light_if_->set_ready(ready_);
+    light_if_->set_visibility_history(visibility_history_);
+    light_if_->write();
   }
 }
 
@@ -162,8 +176,8 @@ void LightFrontSimThread::on_light_signals_msg(ConstAllMachineSignalsPtr &msg)
   {
     //logger->log_info(name(), "Distance between light pos and machine (%f) is too big.\n", min_distance);
     //set ready and visibility history
-    light_if_->set_ready(false);
-    light_if_->set_visibility_history(fail_visibility_history_);
+    ready_ = false;
+    visibility_history_ = fail_visibility_history_;
   }
   else{
     //read out lights
@@ -181,16 +195,16 @@ void LightFrontSimThread::on_light_signals_msg(ConstAllMachineSignalsPtr &msg)
       }
       switch(light_spec.color())
       {
-      case llsf_msgs::RED: light_if_->set_red(state); break;
-      case llsf_msgs::YELLOW: light_if_->set_yellow(state); break;
-      case llsf_msgs::GREEN: light_if_->set_green(state); break;
+      case llsf_msgs::RED: red_ = state; break;
+      case llsf_msgs::YELLOW: yellow_ = state; break;
+      case llsf_msgs::GREEN: green_ = state; break;
       }
     }
     //set ready and visibility history
-    light_if_->set_ready(true);
-    light_if_->set_visibility_history(success_visibility_history_);
+    ready_ = true;
+    visibility_history_ = success_visibility_history_;
   }
-  light_if_->write();
+  new_data_ = true;
 }
 
 void LightFrontSimThread::on_localization_msg(ConstPosePtr &msg)

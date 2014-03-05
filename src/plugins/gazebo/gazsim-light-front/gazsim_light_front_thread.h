@@ -94,7 +94,17 @@ class LightFrontSimThread
   std::string light_state_if_name_;
 
   //the robots position in the simulation
-  double robot_x_, robot_y_, robot_ori_;
+  double robot_x_;
+  double robot_y_;
+  double robot_ori_;
+
+  //interface values to write in the next loop
+  bool new_data_;
+  fawkes::RobotinoLightInterface::LightState red_;
+  fawkes::RobotinoLightInterface::LightState yellow_;
+  fawkes::RobotinoLightInterface::LightState green_;
+  bool ready_;
+  int visibility_history_;
 };
 
 #endif

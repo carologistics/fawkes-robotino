@@ -78,6 +78,8 @@ std::ostringstream ss;
   puck_positions_sub_ = gazebonode->Subscribe
     (config->get_string("/gazsim/topics/puck-detection"), 
      &PuckDetectionSimThread::on_puck_positions_msg, this);
+
+  new_data_ = false;
 }
 
 void PuckDetectionSimThread::finalize()
@@ -105,43 +107,49 @@ void PuckDetectionSimThread::loop()
     switch_if_->msgq_pop();
     switch_if_->write();
   }
+
+  if(new_data_)
+  {
+    new_data_ = false;
+    //Only write the interface if the switch is enabled
+    if(!switch_if_->is_enabled())
+      {
+	std::list<fawkes::Position3DInterface*>::iterator puck;
+	for(std::map<int, Position3DInterface*>::iterator it = map_pos_if_.begin(); it != map_pos_if_.end(); it++)
+	  {
+	    it->second->set_visibility_history(0);
+	    it->second->write();
+	  }
+	return;
+      }
+
+    for(int i = 0; i < last_msg_.positions_size(); i++)
+      {
+	int if_index = i + 1; //Pucks are enumerated starting with one
+	llsf_msgs::Pose2D pose = last_msg_.positions(i);
+	//check if the puck is in detection range
+	double distance = sqrt(pose.x() * pose.x() + pose.y() * pose.y());
+	if(distance < max_distance_)
+	  {
+	    map_pos_if_[if_index]->set_translation(0, pose.x());
+	    map_pos_if_[if_index]->set_translation(1, pose.y());
+	    map_pos_if_[if_index]->set_translation(2, 0);
+	    map_pos_if_[if_index]->set_visibility_history(success_visibility_history_);
+
+	  }
+	else
+	  {
+	    map_pos_if_[if_index]->set_visibility_history(fail_visibility_history_);
+	  }
+	map_pos_if_[if_index]->set_frame("/base_link");
+	map_pos_if_[if_index]->write();
+      }
+  }
 }
 
 void PuckDetectionSimThread::on_puck_positions_msg(ConstPuckDetectionResultPtr &msg)
 {
   //logger->log_info(name(), "Got new Puck Positions.\n");
-
-  //Only do anything if the switch is enabled
-  if(!switch_if_->is_enabled())
-  {
-    std::list<fawkes::Position3DInterface*>::iterator puck;
-    for(std::map<int, Position3DInterface*>::iterator it = map_pos_if_.begin(); it != map_pos_if_.end(); it++)
-    {
-      it->second->set_visibility_history(0);
-      it->second->write();
-    }
-    return;
-  }
-
-  for(int i = 0; i < msg->positions_size(); i++)
-  {
-    int if_index = i + 1; //Pucks are enumerated starting with one
-    llsf_msgs::Pose2D pose = msg->positions(i);
-    //check if the puck is in detection range
-    double distance = sqrt(pose.x() * pose.x() + pose.y() * pose.y());
-    if(distance < max_distance_)
-    {
-      map_pos_if_[if_index]->set_translation(0, pose.x());
-      map_pos_if_[if_index]->set_translation(1, pose.y());
-      map_pos_if_[if_index]->set_translation(2, 0);
-      map_pos_if_[if_index]->set_visibility_history(success_visibility_history_);
-
-    }
-    else
-    {
-      map_pos_if_[if_index]->set_visibility_history(fail_visibility_history_);
-    }
-    map_pos_if_[if_index]->set_frame("/base_link");
-    map_pos_if_[if_index]->write();
-  }
+  last_msg_.CopyFrom(*msg);
+  new_data_ = true;
 }
