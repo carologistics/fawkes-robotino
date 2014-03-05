@@ -52,7 +52,7 @@ using namespace gazebo;
 /** Constructor. */
 LightFrontSimThread::LightFrontSimThread()
   : Thread("LightFrontSimThread", Thread::OPMODE_WAITFORWAKEUP),
-    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE)
+    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
 {
 }
 
