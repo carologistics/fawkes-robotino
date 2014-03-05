@@ -43,14 +43,14 @@
   (phase PRODUCTION)
   ?t <- (task (name load-with-S0) (args $?a) (state ~finished))
   (holding S0)
-  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))))
   ?s <- (state GET-S0-FINAL)
   =>
   (retract ?s)
-  (assert (state GOTO))
+  (assert (state GOTO)
+	  (lock-and-execute (skill load-with) (res ?m))
+  )
   (modify ?t (state running))
-  (goto-machine ?m ?mtype)
-  ;TODO: use skill which only loads the machine/starts the production and then leaves the machine
 )
 (defrule task-load-with-S0--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))
@@ -91,10 +91,11 @@
   ?s <- (state GET-S0-FINAL)
   =>
   (retract ?s)
-  (assert (state GOTO))
+  (assert (state GOTO)
+	  (lock-and-execute (skill load-with) (res ?m))
+	  ;TODO: use skill which produces and waits for completion
+  )
   (modify ?t (state running))
-  (goto-machine ?m ?mtype)
-  ;TODO: use skill which produces and waits for completion
 )
 (defrule task-load-with-S1--bring-S1-to-machine
   (declare (salience ?*PRIORITY-SUBTASK-2*))
@@ -105,10 +106,10 @@
   ?s <- (state GOTO-FINAL)
   =>
   (retract ?s)
-  (assert (state GOTO))
+  (assert (state GOTO)
+	  (lock-and-execute (skill load-with) (res ?m))
+  )
   (modify ?t (state running))
-  (goto-machine ?m ?mtype)
-  ;TODO: use skill which only loads the machine/starts the production and then leaves the machine
 )
 (defrule task-load-with-S1--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))

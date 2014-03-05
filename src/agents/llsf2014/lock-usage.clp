@@ -9,7 +9,7 @@
 ;---------------------------------------------------------------------------
 
 (deftemplate lock-and-execute
-  (slot skill (type SYMBOL) (allowed-values get-s0))
+  (slot skill (type SYMBOL) (allowed-values get-s0 load-with))
   (slot res (type SYMBOL))
   (slot state (type SYMBOL) (allowed-values new get exe) (default new))
 )
@@ -36,7 +36,7 @@
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
   ?lae <- (lock-and-execute (skill get-s0) (res ?res) (state new))
   =>
-  (if (debug 3) then (printout t "Acquiring Lock for INS" crlf))
+  (if (debug 3) then (printout t "Acquiring Lock for " ?res crlf))
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
   (modify ?lae (state get))
 )
@@ -60,7 +60,6 @@
   =>
   (if (debug 3) then (printout t "Lock accepted -> Get S0" crlf))
   (retract ?l)
-  (assert (state GET-S0))
   (modify ?lae (state exe))
   (get-s0 ?res)
 )
@@ -72,6 +71,43 @@
   (Position3DInterface (id "Pose") (translation $?pos))
   =>
   (retract ?lae)
-  (if (debug 3) then (printout t "Want to release Lock for INS, waiting till 0.5m away" crlf))
+  (if (debug 3) then (printout t "Want to release Lock for " ?res ", waiting till 0.5m away" crlf))
+  (assert (release-after-left ?res $?pos))
+)
+
+
+;;;;;;;;;;;;;;;;
+;load-with
+;;;;;;;;;;;;;;;;
+(defrule lock-use-lock-load-with
+  (declare (salience ?*PRIORITY-LOCK_USAGE*))
+  ?lae <- (lock-and-execute (skill load-with) (res ?res) (state new))
+  =>
+  (if (debug 3) then (printout t "Acquiring Lock for " ?res crlf))
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
+  (modify ?lae (state get))
+)
+
+(defrule lock-use-execute-load-with
+  (declare (salience ?*PRIORITY-LOCK_USAGE*))
+  ?lae <- (lock-and-execute (skill load-with) (res ?res) (state get))
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
+  (machine (name ?res) (mtype ?mtype))
+  =>
+  (if (debug 3) then (printout t "Lock accepted -> loading machine" crlf))
+  (retract ?l)
+  (modify ?lae (state exe))
+  (goto-machine ?res ?mtype)
+;TODO: use skill which only loads the machine/starts the production and then leaves the machine
+)
+
+(defrule lock-use-load-with-done
+  (declare (salience ?*PRIORITY-LOCK_USAGE*))
+  ?lae <- (lock-and-execute (skill load-with) (res ?res) (state exe))
+  ?sf <- (state GOTO-FINAL|GOTO-FAILED)
+  (Position3DInterface (id "Pose") (translation $?pos))
+  =>
+  (retract ?lae)
+  (if (debug 3) then (printout t "Want to release Lock for " ?res ", waiting till 0.5m away" crlf))
   (assert (release-after-left ?res $?pos))
 )
