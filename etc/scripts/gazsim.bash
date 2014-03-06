@@ -199,13 +199,13 @@ if [  $COMMAND  == start ]; then
 
     # publish initial poses
     #start move_bases
-    $initial_pose_script_location -x 0.4 -y 0.5 -p 11311
+    $initial_pose_script_location -x 4.4 -y 0.3 -o 0 0 0.7 0.7 -p 11311
     if [ $NUM_ROBOTINOS -ge 2 ]
     then
-	$initial_pose_script_location -x 0.4 -y 1.2 -p 11312
+	$initial_pose_script_location -x 3.45 -y 0.3 -o 0 0 0.7 0.7 -p 11312
 	if [ $NUM_ROBOTINOS -ge 3 ]
 	    then
-	    $initial_pose_script_location -x 0.4 -y 1.9 -p 11313
+	    $initial_pose_script_location -x 2.5 -y 0.3 -o 0 0 0.7 0.7 -p 11313
 	fi
     fi
 
