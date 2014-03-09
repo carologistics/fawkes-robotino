@@ -30,7 +30,7 @@
   (phase PRODUCTION)
   ?t <- (task (name load-with-S0) (args $?a) (state ~finished))
   (holding NONE)
-  ?s <- (state TASK-CHOSEN)
+  ?s <- (state TASK-ORDERED)
   =>
   (retract ?s)
   (assert (state GET-S0)
@@ -63,7 +63,7 @@
   =>
   (modify ?t (state finished))
   (retract ?s)
-  (assert (state IDLE))
+  (assert (state TASK-FINISHED))
 )
 
 ;;;;;;;;;;;;;;
@@ -74,7 +74,7 @@
   (phase PRODUCTION)
   ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
   (holding NONE)
-  ?s <- (state TASK-CHOSEN)
+  ?s <- (state TASK-ORDERED)
   =>
   (retract ?s)
   (assert (state GET-S0)
@@ -122,5 +122,5 @@
   =>
   (modify ?t (state finished))
   (retract ?s)
-  (assert (state IDLE))
+  (assert (state TASK-FINISHED))
 )

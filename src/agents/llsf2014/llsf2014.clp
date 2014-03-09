@@ -69,6 +69,7 @@
   (path-load  llsf2014/strategy.clp)
   (path-load  llsf2014/worldmodel.clp)
   (path-load  llsf2014/tasks.clp)
+  (path-load  llsf2014/coordination.clp)
   (path-load  llsf2014/production.clp)
   (path-load  llsf2014/exploration.clp)
   (reset)
