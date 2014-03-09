@@ -145,7 +145,6 @@ if [  $COMMAND  == start ]; then
     sleep 25s
 
     if [  $ROS  == "-r" ]; then
-	echo 'Starting Ros'
         #start roscores
 	gnome-terminal $KEEP -t Roscore1 -x bash -c "$startup_script_location -x roscore -p 11311"
 	if [ $NUM_ROBOTINOS -ge 2 ]
@@ -198,14 +197,13 @@ if [  $COMMAND  == start ]; then
     sleep 1s
 
     # publish initial poses
-    #start move_bases
-    $initial_pose_script_location -x 4.4 -y 0.3 -o 0 0 0.7 0.7 -p 11311
+    $initial_pose_script_location -p 11311 -x 4.4 -y 0.3 -o 0 0 0.7 0.7
     if [ $NUM_ROBOTINOS -ge 2 ]
     then
-	$initial_pose_script_location -x 3.45 -y 0.3 -o 0 0 0.7 0.7 -p 11312
+	$initial_pose_script_location -p 11312 -x 3.45 -y 0.3 -o 0 0 0.7 0.7
 	if [ $NUM_ROBOTINOS -ge 3 ]
 	    then
-	    $initial_pose_script_location -x 2.5 -y 0.3 -o 0 0 0.7 0.7 -p 11313
+	    $initial_pose_script_location -p 11313 -x 2.5 -y 0.3 -o 0 0 0.7 0.7
 	fi
     fi
 

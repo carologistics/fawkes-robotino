@@ -53,7 +53,7 @@ do
 	     eval O1=\$$OPTIND
              eval O2=\$$OPTINDplus1
              eval O3=\$$OPTINDplus2
-             sc=3
+             sc=2
              ;;
 	 p)
 	     PORT=$OPTARG
@@ -96,7 +96,6 @@ fi
 #       w: 0.992193700296
 #   covariance: [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891945200942]
 # ---
-
 #choose ros master uri
 export ROS_MASTER_URI=http://localhost:$PORT
 #Publish msg
