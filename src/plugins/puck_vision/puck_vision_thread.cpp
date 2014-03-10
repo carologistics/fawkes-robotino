@@ -48,7 +48,9 @@ PuckVisionThread::PuckVisionThread()
 	classifier_red_ = NULL;
 	classifier_green_ = NULL;
 	classifier_blue_ = NULL;
+	classifier_similarity_ = NULL;
 
+	cls_red_.colormodel = NULL;
 
 	//Calibration
 	cfg_width_bottem_in_m_ = 0;
@@ -74,6 +76,27 @@ PuckVisionThread::init()
 	cfg_paintROIsActivated_ = config->get_bool((cfg_prefix_ + "draw_rois").c_str());
 
 	cfg_puck_radius_ = config->get_float((cfg_prefix_ + "puck_radius").c_str());
+
+	//Config Value for the classifier mode
+	cfg_colormodel_mode_ = config->get_string((cfg_prefix_ + "colormodel_mode").c_str());
+	// Configure Similiraty classifier
+	cls_red_.cfg_ref_col = config->get_uints((cfg_prefix_ + "/reference_color").c_str());
+	cls_red_.cfg_chroma_thresh = config->get_int((cfg_prefix_ + "/chroma_thresh").c_str());
+	cls_red_.cfg_sat_thresh = config->get_int((cfg_prefix_ + "/saturation_thresh").c_str());
+	cls_red_.cfg_roi_min_points = config->get_int((cfg_prefix_ + "/min_points").c_str());
+	cls_red_.cfg_roi_basic_size = config->get_int((cfg_prefix_ + "/basic_roi_size").c_str());
+	cls_red_.cfg_roi_neighborhood_min_match = config->get_int((cfg_prefix_ + "/neighborhood_min_match").c_str());
+	cls_red_.cfg_scangrid_x_offset = config->get_int((cfg_prefix_ + "/scangrid_x_offset").c_str());
+	cls_red_.cfg_scangrid_y_offset = config->get_int((cfg_prefix_ + "/scangrid_y_offset").c_str());
+
+	cls_red_.color_class = new firevision::ColorModelSimilarity::color_class_t(cls_red_.color_expect, cls_red_.cfg_ref_col, cls_red_.cfg_chroma_thresh, cls_red_.cfg_sat_thresh);
+
+	cls_red_.color_class->chroma_threshold = cls_red_.cfg_chroma_thresh;
+	cls_red_.color_class->saturation_threshold = cls_red_.cfg_sat_thresh;
+	cls_red_.color_class->set_reference(cls_red_.cfg_ref_col);
+
+	cls_red_.colormodel = new firevision::ColorModelSimilarity();
+	cls_red_.colormodel->add_color(cls_red_.color_class);
 
 	cfg_colormap_file_yellow_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_yellow").c_str());
 	cfg_colormap_file_red_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_red").c_str());
@@ -157,6 +180,16 @@ PuckVisionThread::init()
 			2,																//neighberhoud_min_match
 			0																//grow_by
 			);
+
+	classifier_similarity_ = new firevision::SimpleColorClassifier(
+			scanline_,														//scanmodel
+			cls_red_.colormodel,														//colorModel
+			30,																//num_min_points
+			0,																//box_extend
+			false,															//upward
+			2,																//neighberhoud_min_match
+			0																//grow_by
+	);
 
 
 	// SHM image buffer
@@ -257,29 +290,45 @@ PuckVisionThread::loop()
 				img_height_);
 	cam_->dispose_buffer();
 
-	scanline_->reset();
-	classifier_yellow_->set_src_buffer(buffer_, img_width_, img_height_);
-	std::list<firevision::ROI> *rois_yellow_ = classifier_yellow_->classify();
-
-	scanline_->reset();
-	classifier_red_->set_src_buffer(buffer_, img_width_, img_height_);
-	std::list<firevision::ROI> *rois_red_ = classifier_red_->classify();
-
-	scanline_->reset();
-	classifier_green_->set_src_buffer(buffer_, img_width_, img_height_);
-	std::list<firevision::ROI> *rois_green_ = classifier_green_->classify();
-
-	scanline_->reset();
-	classifier_blue_->set_src_buffer(buffer_, img_width_, img_height_);
-	std::list<firevision::ROI> *rois_blue_ = classifier_blue_->classify();
-
-
 	std::list<firevision::ROI> *rois_all_ = new std::list<firevision::ROI>();
 
-	mergeWithColorInformation(firevision::C_BLUE, rois_blue_, rois_all_);
-	mergeWithColorInformation(firevision::C_GREEN, rois_green_, rois_all_);
-	mergeWithColorInformation(firevision::C_YELLOW, rois_yellow_, rois_all_);
-	mergeWithColorInformation(firevision::C_RED, rois_red_, rois_all_);
+	if (cfg_colormodel_mode_ == "colormap"){
+		scanline_->reset();
+		classifier_yellow_->set_src_buffer(buffer_, img_width_, img_height_);
+		std::list<firevision::ROI> *rois_yellow_ = classifier_yellow_->classify();
+
+		scanline_->reset();
+		classifier_red_->set_src_buffer(buffer_, img_width_, img_height_);
+		std::list<firevision::ROI> *rois_red_ = classifier_red_->classify();
+
+		scanline_->reset();
+		classifier_green_->set_src_buffer(buffer_, img_width_, img_height_);
+		std::list<firevision::ROI> *rois_green_ = classifier_green_->classify();
+
+		scanline_->reset();
+		classifier_blue_->set_src_buffer(buffer_, img_width_, img_height_);
+		std::list<firevision::ROI> *rois_blue_ = classifier_blue_->classify();
+
+		mergeWithColorInformation(firevision::C_BLUE, rois_blue_, rois_all_);
+		mergeWithColorInformation(firevision::C_GREEN, rois_green_, rois_all_);
+		mergeWithColorInformation(firevision::C_YELLOW, rois_yellow_, rois_all_);
+		mergeWithColorInformation(firevision::C_RED, rois_red_, rois_all_);
+
+		delete rois_green_;
+		delete rois_yellow_;
+		delete rois_red_;
+		delete rois_blue_;
+
+	} else if(cfg_colormodel_mode_ == "similarity"){
+		scanline_->reset();
+		classifier_similarity_->set_src_buffer(buffer_, img_width_, img_height_);
+		std::list<firevision::ROI> *rois_similarity_ = classifier_similarity_->classify();
+
+		mergeWithColorInformation(firevision::C_MAGENTA, rois_similarity_, rois_all_);
+
+		delete rois_similarity_;
+	}
+
 
 	if(cfg_paintROIsActivated_){
 			drawRois(rois_all_);
@@ -288,10 +337,6 @@ PuckVisionThread::loop()
 	updateInterface(rois_all_);
 
 	delete rois_all_;
-	delete rois_green_;
-	delete rois_yellow_;
-	delete rois_red_;
-	delete rois_blue_;
 }
 
 firevision::ROI* PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
@@ -588,7 +633,10 @@ PuckVisionThread::finalize()													//TODO check if everthing gets deleted
 	delete classifier_red_;
 	delete classifier_green_;
 	delete classifier_yellow_;
+	delete classifier_similarity_;
 	delete shm_buffer_;
+
+	delete cls_red_.colormodel;
 
 	blackboard->close(puckInterface_);
 

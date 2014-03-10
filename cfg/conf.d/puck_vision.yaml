@@ -9,10 +9,14 @@ plugins/puck_vision:
   #camera: "file:file:file=/home/fnolden/Dropbox/fawkes/sampleImages/Webcam/2013-04-11-181214-100cm.jpg"
   #camera: "file:file:file=/home/fnolden/Bilder/omnivision/omni-abends-magdeburg.jpg"
   #camera: v4l2:front:device=/dev/video0 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
-  camera: v4l2:light:device=/dev/video1:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
+  #camera: v4l2:light:device=/dev/video1:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
+  camera: v4l2:light:device=/dev/light_front
 
   #Shared Memory Imagebuffer name
   shm_image_id: "puck_front"
+
+  #colormodel mode (At the moment it can be either "similarity" or "colormap"
+  colormodel_mode: "similarity"
 
   # coordinate system
   frame: /base_link
@@ -27,6 +31,17 @@ plugins/puck_vision:
   colormap_file_blue: /bulb-colormap/blue.colormap
 
   puck_radius: 0.02
+
+  #config values for the similarity colormodel
+  reference_color: [189, 28, 34]
+  chroma_thresh: 40
+  saturation_thresh: 10
+  min_points: 40
+  basic_roi_size: 10
+  neighborhood_min_match: 9
+  scangrid_x_offset: 2
+  scangrid_y_offset: 2
+
   
   # Distance function is: a * exp(b*x_in)
   # values can be optained from http://zunzun.com/Equation/2/Exponential/Exponential/ 

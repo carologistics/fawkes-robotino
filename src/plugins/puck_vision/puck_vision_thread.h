@@ -28,6 +28,7 @@
 
 #include <fvutils/ipc/shm_image.h>
 #include <fvutils/color/conversions.h>
+#include <fvmodels/color/similarity.h>
 #include <fvmodels/color/lookuptable.h>
 #include <fvmodels/scanlines/grid.h>
 
@@ -71,10 +72,29 @@ class PuckVisionThread
 
 {
 
+
 private:
+	typedef struct {
+		firevision::ColorModelSimilarity *colormodel;
+		firevision::SimpleColorClassifier *classifier;
+		firevision::ColorModelSimilarity::color_class_t *color_class;
+		firevision::ScanlineGrid *scanline_grid;
+		std::vector<unsigned int> cfg_ref_col;
+		int cfg_chroma_thresh;
+		int cfg_sat_thresh;
+		firevision::color_t color_expect;
+		unsigned int cfg_roi_min_points;
+		unsigned int cfg_roi_basic_size;
+		unsigned int cfg_roi_neighborhood_min_match;
+		unsigned int cfg_scangrid_x_offset;
+		unsigned int cfg_scangrid_y_offset;
+	} color_classifier_context_t_;
+	color_classifier_context_t_ cls_red_;
+
 	std::string cfg_prefix_;
 	std::string cfg_prefix_static_transforms_;
 	std::string cfg_camera_;
+	std::string cfg_colormodel_mode_;
 	float cfg_camera_opening_angle_horizontal_;
 	float cfg_camera_opening_angle_vertical_;
 	unsigned int img_width_;
@@ -127,6 +147,7 @@ private:
 	firevision::SimpleColorClassifier *classifier_red_;
 	firevision::SimpleColorClassifier *classifier_green_;
 	firevision::SimpleColorClassifier *classifier_blue_;
+	firevision::SimpleColorClassifier *classifier_similarity_;
 
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
