@@ -22,6 +22,7 @@ enum WorldmodelChangeType {
   REMOVE_LOADED_WITH = 1;
   ADD_INCOMING = 2;
   REMOVE_INCOMING = 3;
+  SET_NUM_CO = 4;
 }
 
 message MachineState {
@@ -59,5 +60,6 @@ message WorldmodelChange {
   required WorldmodelChangeType change = 2;
   optional IncomingAction incoming = 3;
   optional PuckState loaded_with = 4;
+  optional uint32 num_CO = 5;
 }
 

@@ -70,13 +70,14 @@
 
 (deftemplate worldmodel-change
   (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
-  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING))
+  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO))
   (slot value (type SYMBOL) (allowed-symbols S0 S1 S2 BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
+  (slot amount (type INTEGER) (default 0))
 )
 
 ;send worldmodel change
 (defrule worldmodel-sync-send-change
-  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value))
+  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value) (amount ?amount))
   (not (lock-role MASTER))
   =>
   (printout t "sending worldmodel change" crlf)
@@ -89,12 +90,15 @@
   (if (member$ ?change (create$ ADD_INCOMING REMOVE_INCOMING)) then
     (pb-set-field ?change-msg "incoming" ?value)
   )
+  (if (eq ?change SET_NUM_CO) then
+    (pb-set-field ?change-msg "num_CO" ?amount)
+  )
   (pb-broadcast ?change-msg)
   (pb-destroy ?change-msg)
   (retract ?wmc)
 )
 ;the master does not have to send the change, because it sends the whole worldmodel
-(defrule worldmodel-sync-send-loaded-with-add
+(defrule worldmodel-sync-retract-as-master
   ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value))
   (lock-role MASTER)
   =>
@@ -122,6 +126,9 @@
       )
       (case REMOVE_INCOMING then 
         (modify ?machine (incoming (delete-member$ ?machine:incoming (pb-field-value ?p "incoming"))))
+      )
+      (case SET_NUM_CO then 
+        (modify ?machine (junk (pb-field-value ?p "num_CO")))
       )
     )
   )
