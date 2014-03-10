@@ -629,10 +629,13 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
       if (!black_rois_bottom->empty()) {
         ROI black_bottom = *(black_rois_bottom->begin());
         delete black_rois_bottom;
+
         unsigned int height_adj = (black_bottom.start.y - roi_R->start.y) / 3;
         roi_R->height = height_adj;
         roi_Y->height = height_adj;
         roi_G->height = height_adj;
+        roi_Y->start.y = roi_R->start.y + roi_R->height;
+        roi_G->start.y = roi_Y->start.y + roi_Y->height;
       }
 
       ROI check_black_green(*roi_G);
@@ -654,7 +657,7 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
       roi_G->set_image_width(cam_width_);
       roi_G->set_image_height(cam_height_);
 
-      if (((float)black_in_green_area / (float)green_area) < 0.2) {
+      if (((float)black_in_green_area / (float)green_area) < 0.4) {
         rv->push_back({roi_R, roi_Y, roi_G});
 
       }
