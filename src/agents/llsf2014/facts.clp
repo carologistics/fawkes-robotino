@@ -60,7 +60,7 @@
   (slot mtype (type SYMBOL) (default UNKNOWN)
         (allowed-values UNKNOWN T1 T2 T3 T4 T5 DELIVER RECYCLE IGNORED))
   (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
-  (multislot incoming (type SYMBOL) (allowed-symbols S0 S1 S2 PICK-PROD PICK-CO))
+  (multislot incoming (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
   (slot junk (type INTEGER) (default 0))
   (slot productions (type INTEGER) (default 0))
   (slot output (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3))
@@ -103,4 +103,5 @@
   (game-duration (* 15 60))
   
   (timer (name beacon) (time (create$ 0 0)) (seq 1))
+  (timer (name send-worldmodel-sync) (time (create$ 0 0)) (seq 1))
 )

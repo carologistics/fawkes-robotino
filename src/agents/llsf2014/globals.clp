@@ -12,6 +12,7 @@
   ?*BEACON-PERIOD* = 1.0
   ?*MASTER-ANNOUNCE-PERIOD* = 0.5
   ?*LOCK-PERIOD* = 0.5
+  ?*WORLDMODEL-SYNC-PERIOD* = 0.5
 
   ?*TEAM-NAME*    = "?"
   ?*ROBOT-NAME*   = "?"

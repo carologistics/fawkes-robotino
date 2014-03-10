@@ -68,6 +68,7 @@
   (path-load  llsf2014/general.clp)
   (path-load  llsf2014/strategy.clp)
   (path-load  llsf2014/worldmodel.clp)
+  (path-load  llsf2014/worldmodel-synchronization.clp)
   (path-load  llsf2014/tasks.clp)
   (path-load  llsf2014/coordination.clp)
   (path-load  llsf2014/production.clp)
