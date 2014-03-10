@@ -277,12 +277,12 @@ void MachineSignalThread::loop()
   MutexLocker lock(&cfg_mutex_);
 
   Time now(clock);
-  if (now - last_second_ >= 125) {
-    logger->log_error(name(), "Running too slow. Ignoring this frame!");
+  double frametime = now - last_second_;
+  last_second_ = &(last_second_->stamp());
+  if (frametime >= .125) {
+    logger->log_error(name(), "Running too slow (%f sec/frame). Ignoring this frame!", frametime);
     return;
   }
-  delete last_second_;
-  last_second_ = new Time(clock);
 
   // Reallocate classifiers if their config changed
   if (unlikely(cfg_changed_)) {
