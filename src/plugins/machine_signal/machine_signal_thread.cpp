@@ -497,7 +497,7 @@ bool MachineSignalThread::get_light_state(firevision::ROI *light)
   for (std::list<ROI>::iterator roi_it = bright_rois->begin(); roi_it != bright_rois->end(); ++roi_it) {
     float area_ratio = (float)(roi_it->width * roi_it->height) / (float)(light->width * light->height);
     if (roi_aspect_ok(roi_it) && area_ratio > cfg_light_on_min_area_cover_) {
-      if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_))
+      if (unlikely(cfg_tuning_mode_))
         drawn_rois_.push_back(*roi_it);
       delete bright_rois;
       return true;
