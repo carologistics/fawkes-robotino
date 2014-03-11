@@ -38,7 +38,7 @@ ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 .PHONY: warning_clips
 warning_clips:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips-motor-switch plugin$(TNORMAL) (CLIPS not found)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips-motor-switch plugin$(TNORMAL) ($(CLIPS_ERROR))"
 endif
 
 include $(BUILDSYSDIR)/base.mk
