@@ -39,8 +39,8 @@
 #include <fvmodels/color/thresholds_black.h>
 #include <fvmodels/scanlines/grid.h>
 #include <fvclassifiers/simple.h>
-#include <fvcams/fileloader.h>
-//#include <fvcams/camera.h>
+//#include <fvcams/fileloader.h>
+#include <fvcams/v4l2.h>
 #include <string>
 #include <core/threading/mutex.h>
 #include <atomic>
@@ -100,8 +100,9 @@ class MachineSignalThread :
         unsigned int cfg_scangrid_y_offset;
     } color_classifier_context_t_;
 
-    color_classifier_context_t_ cls_red_;
-    color_classifier_context_t_ cls_green_;
+    color_classifier_context_t_ cfy_ctxt_red_;
+    color_classifier_context_t_ cfy_ctxt_red_delivery_;
+    color_classifier_context_t_ cfy_ctxt_green_;
 
     std::string cfg_camera_;
     firevision::Camera *camera_;
@@ -146,7 +147,7 @@ class MachineSignalThread :
     firevision::FilterColorThreshold *color_filter_;
     firevision::ColorModelSimilarity *combined_colormodel_;
 
-    void setup_classifier(color_classifier_context_t_ *classifier);
+    void setup_color_classifier(color_classifier_context_t_ *classifier);
     void setup_camera();
 
     struct {

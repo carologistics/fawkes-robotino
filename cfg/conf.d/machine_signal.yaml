@@ -14,9 +14,9 @@ plugins/machine_signal:
 
   # Enable the tuning buffer. Use fvviever -s machine_signal to view.
   #
-  # ------===== ATTENTION =====-----
+  #    ------=====:::  ATTENTION  :::=====-----
   # Turn this off during matches to double performance!
-  # -----=====================-----
+  #
   tuning_mode: true
 
   # Draw ROIs as they are after being filtered, tarred and feathered
@@ -39,9 +39,19 @@ plugins/machine_signal:
   max_jitter: 20.0
 
   red:
-    reference_color: [0xff, 0, 0]
-    chroma_thresh: 40
-    saturation_thresh: 10
+    reference_color: [0xff, 0, 0x20]
+    chroma_thresh: 20
+    saturation_thresh: 20
+    min_points: 40
+    basic_roi_size: 10
+    neighborhood_min_match: 9
+    scangrid_x_offset: 2
+    scangrid_y_offset: 2
+
+  red_delivery:
+    reference_color: [0xff, 0, 0x20]
+    chroma_thresh: 20
+    saturation_thresh: 20
     min_points: 40
     basic_roi_size: 10
     neighborhood_min_match: 9
@@ -49,9 +59,9 @@ plugins/machine_signal:
     scangrid_y_offset: 2
 
   green:
-    reference_color: [0, 0xff, 0]
-    chroma_thresh: 5
-    saturation_thresh: 5
+    reference_color: [0x30, 0xff, 0]
+    chroma_thresh: 6
+    saturation_thresh: 9
     min_points: 50
     basic_roi_size: 10
     neighborhood_min_match: 6
@@ -59,12 +69,14 @@ plugins/machine_signal:
     scangrid_y_offset: 2
 
   black:
-    max_luminance: 70
+    max_luminance: 35
     min_points: 10
-    neighborhood_min_match: 4
+    neighborhood_min_match: 6
 
   bright_light:
     min_brightness: 150
     min_points: 30
-    neighborhood_min_match: 6
-    min_area_cover: 0.1
+    neighborhood_min_match: 7
+    min_area_cover: 0.2
+
+
