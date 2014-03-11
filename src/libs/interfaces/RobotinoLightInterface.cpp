@@ -3,7 +3,7 @@
  *  RobotinoLightInterface.cpp - Fawkes BlackBoard Interface - RobotinoLightInterface
  *
  *  Templated created:   Thu Oct 12 10:49:19 2006
- *  Copyright  2013  Florian Nolden, Viktor Mataré, Tobias Neumann
+ *  Copyright  2013  Florian Nolden, Victor Mataré, Tobias Neumann
  *
  ****************************************************************************/
 
@@ -53,7 +53,7 @@ RobotinoLightInterface::RobotinoLightInterface() : Interface()
   add_fieldinfo(IFT_ENUM, "green", 1, &data->green, "LightState");
   add_fieldinfo(IFT_INT32, "visibility_history", 1, &data->visibility_history);
   add_fieldinfo(IFT_BOOL, "ready", 1, &data->ready);
-  unsigned char tmp_hash[] = {0x83, 0xd8, 0xe6, 0xf5, 0x26, 0xc, 0xaa, 0xad, 0x7a, 0x8c, 0x44, 0xd5, 0xec, 0x92, 0x93, 0x53};
+  unsigned char tmp_hash[] = {0x1, 0xa2, 0x4f, 0xd2, 0x45, 0xc0, 0xe3, 0xd2, 0xba, 0xf3, 0xa9, 0x52, 0xad, 0xf7, 0xb9, 0xb0};
   set_hash(tmp_hash);
 }
 
