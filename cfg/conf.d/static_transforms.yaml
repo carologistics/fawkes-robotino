@@ -22,6 +22,8 @@ plugins/static-transforms:
       trans_y: 0.0
       trans_z: 0.09
       rot_pitch: 0.45 # 37.87° 
+      rot_yaw: 0
+      rot_roll: 0
 
       #Hackathon setup for puck_vision
       # frame: !frame /base_link
