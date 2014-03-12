@@ -140,8 +140,13 @@ if [  $COMMAND  == start ]; then
     fi
 
     #start gazebo
-    
-    gnome-terminal $KEEP -t Gazebo -x bash -c "$startup_script_location -x gazebo $VISUALIZATION $REPLAY"
+    #server
+    gnome-terminal $KEEP -t Gzserver -x bash -c "$startup_script_location -x gzserver $REPLAY"
+    #client if not headless
+    if [[ -z $VISUALIZATION ]]
+    then
+        gnome-terminal $KEEP -t Gzclient -x bash -c "$startup_script_location -x gzclient"
+    fi
     sleep 25s
 
     if [  $ROS  == "-r" ]; then

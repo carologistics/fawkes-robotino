@@ -11,7 +11,7 @@ This script starts a specified program for simulation
 OPTIONS:
   COMMON:
    -h             Show this message
-   -x gazebo|fawkes|comm|roscore|move_base|refbox|refbox_shell  
+   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox_shell  
                   Start specified program
    -p arg         Specify ros port
 
@@ -26,8 +26,6 @@ OPTIONS:
    -a             Start with agent
 
   GAZEBO:
-   -l             (when using gazebo)
-                  Run Gazebo headless
    -e arg         Record Replay
 EOF
 }
@@ -37,7 +35,6 @@ EOF
 #default values
 COMMAND=
 CONF=gazsim-configurations/default
-VISUALIZATION=visualization
 ROS=
 SHUTDOWN=
 PORT=11311
@@ -54,9 +51,6 @@ do
              ;;
          c)
 	     CONF=gazsim-configurations/$OPTARG
-             ;;
-         l)
-	     VISUALIZATION=headless
              ;;
          x)
 	     COMMAND=$OPTARG
@@ -99,18 +93,17 @@ fi
 #ulimit -c unlimited
 
 case $COMMAND in
-    gazebo ) 
+    gzserver ) 
+	# change Language (in german there is an error that gazebo can not use a number with comma)
+	export LANG="en_US"
+	gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world_2014/llsf.world
+	;;
+    gzclient ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LANG="en_US"
 	#use optirun if available
 	opti=$(command -v optirun)
-	if [ $VISUALIZATION == headless ]
-	then
-	    $opti gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world_2014/llsf.world
-	else
-	    echo $GAZEBO_MODEL_PATH/llsf_world/llsf.world
-	    $opti gazebo $REPLAY $GAZEBO_MODEL_PATH/llsf_world_2014/llsf.world
-	fi
+	$opti gzclient
 	;;
     fawkes ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
