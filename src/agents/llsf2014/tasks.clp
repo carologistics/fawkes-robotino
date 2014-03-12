@@ -14,14 +14,6 @@
 ; - recycle-and-load-with-S0  get CO, recycle and bring it to T2/T3/T4/T5
 ; - recycle-and-load-with-T1  get CO, recycle, produce at T1 and bring it to T2/T3/T4
 
-
-;common template for a task
-(deftemplate task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle-and-load-with-S0 recycle-and-load-with-T1))
-  (multislot args (type SYMBOL)) ;in chronological order
-  (slot state (type SYMBOL) (allowed-values ordered running finished) (default ordered))
-)
-
 ;;;;;;;;;;;;;;
 ;load-with-S0:
 ;;;;;;;;;;;;;;

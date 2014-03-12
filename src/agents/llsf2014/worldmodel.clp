@@ -108,8 +108,12 @@
   =>
   (retract ?tf ?hf ?lf)
   (assert (holding ?output))
-  (printout t "Production completed at " ?name "|" ?mtype crlf) 
-  (modify ?mf (loaded-with) (junk (+ ?jn (length$ ?lw))))
+  (printout t "Production completed at " ?name "|" ?mtype crlf)
+  ;TODO worldmodel change sync
+  (foreach ?puck ?lw
+    (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
+  )
+  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (+ ?jn (length$ ?lw)))))
 )
 
 (defrule wm-proc-inprogress
@@ -122,8 +126,8 @@
   =>
   (retract ?hf ?lf ?tf)
   (assert (holding NONE))
-  (printout t "Production in progress at " ?name "|" ?mtype crlf) 
-  (modify ?mf (loaded-with (create$ ?lw ?was-holding)))
+  (printout t "Production in progress at " ?name "|" ?mtype crlf)
+  (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding)))
 )
 
 (defrule wm-proc-invalid
@@ -139,7 +143,7 @@
   (retract ?lf ?tf ?hf)
   (assert (holding NONE)
 	  (unknown-fail))
-  (modify ?mf (junk 0))
+  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount 0)))
   (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
     then
     ;forget machine and choose an other one
@@ -192,13 +196,12 @@
   (state GET-CONSUMED-FINAL)
   ?tf <- (get-consumed-target ?name)
   ?hf <- (holding NONE)
-  ?mf <- (machine (name ?name) (junk ?))
+  ?mf <- (machine (name ?name) (junk ?num-junk))
   =>
   (retract ?hf ?tf)
   (assert (holding CO))
-  (printout t "Got Consumed Puck." crlf) 
-  (modify ?mf (junk 0)) ;because we only want to recycle the last one (easier for the skill)
-  ;TODO: be able to get the other ones as well and fix this hack
+  (printout t "Got Consumed Puck." crlf)
+  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (- ?num-junk 1))))
 )
 
 (defrule wm-get-consumed-failed
@@ -210,6 +213,31 @@
   =>
   (retract ?hf ?tf)
   (assert (holding NONE))
-  (printout warn "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf) 
-  (modify ?mf (junk 0))
+  (printout warn "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf)
+  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount 0)))
+)
+
+(defrule wm-process-wm-change-before-sending
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE))
+  ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (junk ?junk))
+  =>
+  (switch ?change
+    (case ADD_LOADED_WITH then 
+      (modify ?m (loaded-with (append$ ?loaded-with ?value)))
+    )
+    (case REMOVE_LOADED_WITH then
+      (modify ?m (loaded-with (delete-member$ ?loaded-with ?value)))
+    )
+    (case ADD_INCOMING then 
+      (modify ?m (incoming (append$ ?incoming ?value)))
+    )
+    (case REMOVE_INCOMING then 
+      (modify ?m (incoming (delete-member$ ?incoming ?value)))
+    )
+    (case SET_NUM_CO then 
+      (modify ?m (junk ?amount))
+    )
+  )
+  (modify ?wmc (already-applied TRUE))
 )

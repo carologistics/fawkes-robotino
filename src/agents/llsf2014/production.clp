@@ -9,21 +9,21 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-; (defrule prod-load-T3_T4-with-S1
-;   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
-;   (phase PRODUCTION)
-;   ?sf <- (state IDLE)
-;   (machine (mtype T1) (name ?name-T1))
-;   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l))
-; 	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T3_T4))
-;   (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
-;   =>
-;   (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing S1 at " ?name-T1 crlf)
-;   (retract ?sf)
-;   (assert (state TASK-PROPOSED)
-; 	  (proposed-task (name load-with-S1) (args (create$ ?name-T1 ?name-T3_T4)))
-;   )
-; )
+(defrule prod-load-T3_T4-with-S1
+  (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T1) (name ?name-T1))
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l))
+	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T3_T4))
+  (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
+  =>
+  (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing S1 at " ?name-T1 crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+	  (proposed-task (name load-with-S1) (args (create$ ?name-T1 ?name-T3_T4)))
+  )
+)
 
 (defrule prod-load-T3_T4-with-S0
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S0*))

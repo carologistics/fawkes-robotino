@@ -17,18 +17,6 @@
 ; 4b. all sub-tasks were accepted => order execution of the task and go on in tasks.clp
 ; 5b. release sub-tasks-lock after execution (this also triggers changing the world state)
 
-;common template for a proposed task
-(deftemplate proposed-task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle-and-load-with-S0 recycle-and-load-with-T1))
-  (multislot args (type SYMBOL)) ;in chronological order
-  (slot state (type SYMBOL) (allowed-values proposed asked rejected) (default proposed))
-)
-(deftemplate needed-task-lock
-  ;(slot action (type SYMBOL) (allowed-symbols S0 S1 S2 PICK-PROD PICK-CO))
-  ;(slot place (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 R1 R2))
-  (slot resource (type SYMBOL))
-)
-
 
 (defrule coordination-compute-resources-to-lock
   ?pt <- (proposed-task (name ?task) (args $?a) (state proposed))
@@ -40,7 +28,10 @@
   (assert (state TASK-PROPOSED-ASKED))
   (switch ?task
     (case load-with-S0 then
-      (assert (needed-task-lock (resource (sym-cat S0 (nth$ 1 ?a)))))
+      (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a)) (resource (sym-cat BRING_S0 (nth$ 1 ?a)))))
+    )
+    (case load-with-S1 then
+      (assert (needed-task-lock (action BRING_S1) (place (nth$ 2 ?a)) (resource (sym-cat BRING_S1 (nth$ 2 ?a)))))
     )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )
@@ -51,7 +42,7 @@
   =>
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
 )
-x
+
 (defrule coordination-accept-proposed-task
   (forall (needed-task-lock (resource ?res))
 	  (lock (type ACCEPT) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
@@ -64,17 +55,17 @@ x
   (assert (task (name ?task) (args ?args)))
   (retract ?s)
   (assert (state TASK-ORDERED))
+  ;update worldmodel
+  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
+    (printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
+    (assert (worldmodel-change (machine ?ntl:place) (change ADD_INCOMING) (value ?ntl:action)))
+  )
   ;remove proposal
   (retract  ?pt)
   ;remove prevoiusly rejected proposals
   (do-for-all-facts ((?prp proposed-task)) (eq ?prp:state rejected)
     (retract ?prp)
   )
-  ; following is done at releasing
-  ; ;remove needed-task-locks and their accepts
-  ; (do-for-all-instances ((?ntl needed-task-lock) (?l lock)) (and (= ?l:type ACCEPT) (= ?l:resource (sym-cat ?ntl:action ?ntl:place)))
-  ;   (retract ?ntl ?l)
-  ; )
 )
 
 (defrule coordination-reject-proposed-task
@@ -100,11 +91,9 @@ x
   ;release all locks for subtask goals
   (do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
+    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
     (retract ?ntl)
   )
   (retract ?s ?t)
   (assert (state IDLE))
 )
-
-;TODO: use proposals
-;TODO: test

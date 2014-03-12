@@ -59,22 +59,6 @@
   )
 )
 
-(defrule debug-worldmodel
-  (lock-role MASTER)
-  ?m <- (machine (name M1))
-  (not (debug-inited))
-  =>
-  (modify ?m (loaded-with (create$ S1 S2)) (incoming (create$ PICK_PROD)))
-  (assert (debug-inited))
-)
-
-(deftemplate worldmodel-change
-  (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
-  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO))
-  (slot value (type SYMBOL) (allowed-symbols S0 S1 S2 BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
-  (slot amount (type INTEGER) (default 0))
-)
-
 ;send worldmodel change
 (defrule worldmodel-sync-send-change
   ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value) (amount ?amount))
@@ -99,9 +83,11 @@
 )
 ;the master does not have to send the change, because it sends the whole worldmodel
 (defrule worldmodel-sync-retract-as-master
+  (declare (salience ?*PRIORITY-CLEANUP*))
   ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value))
   (lock-role MASTER)
   =>
+  (printout warn "retract wmc" crlf)
   (retract ?wmc)
 )
 
