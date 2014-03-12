@@ -14,6 +14,7 @@ OPTIONS:
    -y arg              Initial y coordinate
    -p arg              Ros port 
    -o arg arg arg arg  Initial orientation (quaternion)
+   -d                  Publish default initial localization for all three robots
 EOF
 }
  
@@ -26,7 +27,7 @@ O0=0.0
 O1=0.0
 O2=0.0
 O3=1.0
-while getopts “hx:y:p:o:” OPTION
+while getopts “hx:y:p:o:d” OPTION
 do
      case $OPTION in
          h)
@@ -57,6 +58,14 @@ do
              ;;
 	 p)
 	     PORT=$OPTARG
+	     ;;
+	 d)
+	     script_path=$FAWKES_BIN
+	     initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
+	     $initial_pose_script_location -p 11311 -x 4.4 -y 0.3 -o 0 0 0.7 0.7
+	     $initial_pose_script_location -p 11312 -x 3.45 -y 0.3 -o 0 0 0.7 0.7
+	     $initial_pose_script_location -p 11313 -x 2.5 -y 0.3 -o 0 0 0.7 0.7
+	     exit 1
 	     ;;
          ?)
              usage

@@ -197,15 +197,7 @@ if [  $COMMAND  == start ]; then
     sleep 1s
 
     # publish initial poses
-    $initial_pose_script_location -p 11311 -x 4.4 -y 0.3 -o 0 0 0.7 0.7
-    if [ $NUM_ROBOTINOS -ge 2 ]
-    then
-	$initial_pose_script_location -p 11312 -x 3.45 -y 0.3 -o 0 0 0.7 0.7
-	if [ $NUM_ROBOTINOS -ge 3 ]
-	    then
-	    $initial_pose_script_location -p 11313 -x 2.5 -y 0.3 -o 0 0 0.7 0.7
-	fi
-    fi
+    $initial_pose_script_location -d
 
     else
     usage
