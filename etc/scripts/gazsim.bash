@@ -112,6 +112,7 @@ if [  $COMMAND  == kill ]; then
     echo 'Kill Gazebo-sim'
     killall gazebo
     killall gzserver
+    killall gzclient
     killall fawkes
     killall move_base
     killall roscore
