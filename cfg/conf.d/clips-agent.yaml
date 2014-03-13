@@ -26,8 +26,10 @@ clips-agent:
     
     waiting-for-p1p2-prouction-point: WAIT_FOR_INS
     waiting-for-p3-production-point: Ins
-    wait-for-ins-point: WAIT_FOR_INS
-    wait-for-deliver-point: WAIT_FOR_DELIVER
+    wait-for-ins1-point: WAIT_FOR_INS_1
+    wait-for-ins2-point: WAIT_FOR_INS_2
+    wait-for-deliver1-point: WAIT_FOR_DELIVER_1
+    wait-for-deliver2-point: WAIT_FOR_DELIVER_2
     
     peer-address: 172.26.255.255
     #use this for talking to the refbox on the same laptop:

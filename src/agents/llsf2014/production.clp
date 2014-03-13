@@ -16,7 +16,7 @@
   (machine (mtype T1) (name ?name-T1))
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l))
 	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T3_T4))
-  (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
+  (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T1 ?name-T3_T4))) (state rejected)))
   =>
   (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing S1 at " ?name-T1 crlf)
   (retract ?sf)
@@ -166,16 +166,6 @@
 ;   (printout t "prod-recycle-puck" crlf)
 ;   (retract ?sf)
 ;   (assert (state PROD_LOCK_REQUIRED_GOTO ?name))    
-; )
-
-; (defrule prod-figure-out-waiting-points
-;   (phase PRODUCTION)
-;   (confval (path "/clips-agent/llsf2013/wait-for-ins-point") (value ?ins-wait-point))
-;   (confval (path "/clips-agent/llsf2013/wait-for-deliver-point") (value ?deliver-wait-point))
-;   =>
-;   (assert (ins-wait-point ?ins-wait-point)
-; 	  (deliver-wait-point ?deliver-wait-point)
-;   )
 ; )
 
 ; (defrule prod-wait-for-gets0-at-insert-area

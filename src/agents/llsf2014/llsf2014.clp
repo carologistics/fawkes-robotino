@@ -73,6 +73,7 @@
   (path-load  llsf2014/coordination.clp)
   (path-load  llsf2014/production.clp)
   (path-load  llsf2014/exploration.clp)
+  (path-load  llsf2014/config.clp)
   (reset)
   ;(facts)
 )

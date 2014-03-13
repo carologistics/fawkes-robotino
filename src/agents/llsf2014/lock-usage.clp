@@ -29,6 +29,17 @@
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
 )
 
+(defrule prod-drive-to-waiting-point
+  (phase PRODUCTION)
+  ?lae <- (lock-and-execute (skill ?) (res ?res) (state get))
+  ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
+  (wait-point ?res ?wait-point)
+  =>
+  (retract ?l)
+  (printout t "Waiting for lock of " ?res " at " ?wait-point crlf)
+  (skill-call ppgoto place (str-cat ?wait-point))
+)
+
 ;;;;;;;;;;;;;;;;
 ;get-S0
 ;;;;;;;;;;;;;;;;
@@ -40,18 +51,6 @@
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
   (modify ?lae (state get))
 )
-
-;TODO: waiting positions
-; (defrule prod-wait-for-gets0-at-insert-area
-;   (phase PRODUCTION)
-;   ?sf <- (state PROD_LOCK_REQUIRED_GET-S0)
-;   ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource INS))
-;   (ins-wait-point ?ins-wait-point)
-;   =>
-;   (retract ?l)
-;   (printout t "Waiting for lock of INS at " ?ins-wait-point crlf)
-;   (skill-call ppgoto place (str-cat ?ins-wait-point))
-; )
 
 (defrule lock-use-execute-get-s0
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
