@@ -32,6 +32,7 @@ depends_interfaces = {
   {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
   { v="lightswitch", type="SwitchInterface", id="light_front_switch" },
   { v="light", type ="RobotinoLightInterface", id = "Light_State" },
+  {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" },
 }
 
 documentation      = [==[Get a produced puck from under the RFID]==]
