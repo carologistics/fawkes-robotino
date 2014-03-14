@@ -1,4 +1,4 @@
-(defrule prod-figure-out-waiting-points
+(defrule conf-figure-out-waiting-points
    (phase PRODUCTION)
    (confval (path "/clips-agent/llsf2014/wait-for-ins1-point") (value ?ins1-wait-point))
    (confval (path "/clips-agent/llsf2014/wait-for-ins2-point") (value ?ins2-wait-point))
@@ -7,5 +7,29 @@
    =>
   (assert (wait-point Ins1 ?ins1-wait-point) (wait-point deliver1 ?deliver1-wait-point)
           (wait-point Ins2 ?ins2-wait-point) (wait-point deliver2 ?deliver2-wait-point)
+  )
+)
+
+(defrule conf-machine-proc-times
+  (phase PRODUCTION)
+  (confval (path "/clips-agent/llsf2014/proc-min-time-t1") (value ?proc-min-time-t1))
+  (confval (path "/clips-agent/llsf2014/proc-max-time-t1") (value ?proc-max-time-t1))
+  (confval (path "/clips-agent/llsf2014/proc-min-time-t2") (value ?proc-min-time-t2))
+  (confval (path "/clips-agent/llsf2014/proc-max-time-t2") (value ?proc-max-time-t2))
+  (confval (path "/clips-agent/llsf2014/proc-min-time-t3") (value ?proc-min-time-t3))
+  (confval (path "/clips-agent/llsf2014/proc-max-time-t3") (value ?proc-max-time-t3))
+  (confval (path "/clips-agent/llsf2014/proc-min-time-t4") (value ?proc-min-time-t4))
+  (confval (path "/clips-agent/llsf2014/proc-max-time-t4") (value ?proc-max-time-t4))
+  (confval (path "/clips-agent/llsf2014/proc-min-time-t5") (value ?proc-min-time-t5))
+  (confval (path "/clips-agent/llsf2014/proc-max-time-t5") (value ?proc-max-time-t5))
+  (confval (path "/clips-agent/llsf2014/proc-min-time-recycle") (value ?proc-min-time-recycle))
+  (confval (path "/clips-agent/llsf2014/proc-max-time-recycle") (value ?proc-max-time-recycle))
+  =>
+  (assert (production-time T1 ?proc-min-time-t1 ?proc-max-time-t1)
+    (production-time T2 ?proc-min-time-t2 ?proc-max-time-t2)
+    (production-time T3 ?proc-min-time-t3 ?proc-max-time-t3)
+    (production-time T4 ?proc-min-time-t4 ?proc-max-time-t4)
+    (production-time T5 ?proc-min-time-t5 ?proc-max-time-t5)
+    (production-time RECYCLE ?proc-min-time-recycle ?proc-max-time-recycle)
   )
 )

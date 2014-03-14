@@ -115,7 +115,22 @@
   (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (+ ?jn (length$ ?lw)))))
 )
 
-(defrule wm-proc-inprogress
+(defrule wm-goto-proc-complete-without-robot
+  (declare (salience ?*PRIORITY-WM*))
+  ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn)
+          (final-prod-time $?fpt&:(and (timeout ?now ?fpt 0.5) (neq (nth$ 1 ?fpt) 0)))
+         )
+  =>
+  (printout t "Production completed at " ?name "|" ?mtype crlf)
+  ;TODO worldmodel change sync
+  (foreach ?puck ?lw
+    (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
+  )
+  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (+ ?jn (length$ ?lw)))))
+  (modify ?mf (final-prod-time (create$ 0 0)) (produced-puck ?output))
+)
+
+(defrule wm-proc-need-more-ressources
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
@@ -127,6 +142,23 @@
   (assert (holding NONE))
   (printout t "Production in progress at " ?name "|" ?mtype crlf)
   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding)))
+)
+
+(defrule wm-proc-inprogress
+  (declare (salience ?*PRIORITY-WM*))
+  (state GOTO-FINAL)
+  ?tf <- (goto-target ?name)
+  ?hf <- (holding ?was-holding)
+  ?lf <- (lights GREEN-ON YELLOW-ON)
+  ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
+  (time $?now)
+  (production-time ?mtype ?min-prod-time ?)
+  =>
+  (retract ?hf ?lf ?tf)
+  (assert (holding NONE))
+  (printout t "Production in progress at " ?name "|" ?mtype crlf)
+  (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding)))
+  (modify ?mf (final-prod-time (create$ (+ (nth$ 1 ?now) ?min-prod-time) 0)))
 )
 
 (defrule wm-proc-invalid
