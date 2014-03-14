@@ -126,7 +126,7 @@
   (foreach ?puck ?lw
     (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
   )
-  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (+ ?jn (length$ ?lw)))))
+  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (- (+ ?jn (length$ ?lw)) 1))))
   (modify ?mf (final-prod-time (create$ 0 0)) (produced-puck ?output))
 )
 
