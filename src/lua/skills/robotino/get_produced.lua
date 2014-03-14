@@ -24,8 +24,8 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "get_produced"
-fsm                = SkillHSM:new{name=name, start="SEE_AMPEL", debug=true}
-depends_skills     = {"motor_move"}
+fsm                = SkillHSM:new{name=name, start="GOTO_MACHINE", debug=true}
+depends_skills     = {"motor_move", "ppgoto", "global_motor_move"}
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
   {v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
@@ -75,6 +75,8 @@ function producing()
 end
 
 fsm:define_states{ export_to=_M, closure={producing = producing},
+   {"GOTO_MACHINE", SkillJumpState, skills={{ppgoto}}, final_to="ADJUST_POS", fail_to="FAILED"},
+   {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="SEE_AMPEL", fail_to="FAILED"},
    {"SEE_AMPEL", JumpState},
    {"CHECK_PRODUCE", JumpState},
    {"WAIT_PRODUCE", JumpState},
@@ -99,6 +101,14 @@ fsm:add_transitions{
    {"APPROACH_AMPEL", "FINAL", cond = producing, desc = "already there"},
    {"CORRECT_POSITION", "FINAL", precond = producing, desc = "already there"} 
 }
+
+function GOTO_MACHINE:init()
+   self.skills[1].place = self.fsm.vars.place
+end
+
+function ADJUST_POS:init()
+   self.skills[1].place = self.fsm.vars.place
+end
 
 function CHECK_POSITION:init()
    if sensor:analog_in(0) < 1 then
