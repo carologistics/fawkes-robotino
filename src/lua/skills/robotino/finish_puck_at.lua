@@ -79,8 +79,9 @@ fsm:define_states{ export_to=_M,
    {"TIMEOUT", JumpState},
    {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},
    {"DECIDE_ENDSKILL", JumpState},
-   {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
+   {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="DECIDE_WAIT",
       fail_to="SKILL_TAKE_PUCK"},
+   {"DECIDE_WAIT", JumpState},
    {"SKILL_WAIT_PRODUCE", SkillJumpState, skills={{wait_produce}}, final_to="DECIDE_DEPOSIT",
       fail_to="PRODUCE_FAILED"},
    {"PRODUCE_FAILED", JumpState},
@@ -90,7 +91,9 @@ fsm:define_states{ export_to=_M,
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="FINAL",
       fail_to="FAILED"},
    {"DEPOSIT_THEN_FAIL", SkillJumpState, skills={{deposit_puck}}, final_to="FAILED", fail_to="FAILED"},
-   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED" }
+   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED" },
+   {"LEAVE_PRODUCING_MACHINE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   -- TODO: Introdude safety check if machine is still producing after leaving it
 }
 
 fsm:add_transitions{
@@ -104,7 +107,9 @@ fsm:add_transitions{
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
    { "PRODUCE_FAILED", "SKILL_DRIVE_LEFT", cond="vars.final_product"},
-   { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true}
+   { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true},
+   { "DECIDE_WAIT", "LEAVE_PRODUCING_MACHINE", cond="self.fsm.vars.dont_wait", desc="leave machine to come back and pick up the produced puck later"},
+   { "DECIDE_WAIT", "SKILL_WAIT_PRODUCE", cond=true, desc="wait until production finished by default"},
 }
 
 function SKILL_TAKE_PUCK:init()
@@ -141,3 +146,6 @@ function SKILL_WAIT_PRODUCE:init()
    self.skills[1].mtype = self.fsm.vars.mtype
 end
 
+function LEAVE_PRODUCING_MACHINE:init()
+   self.skills[1].x = -0.2
+end
