@@ -34,13 +34,13 @@ else
   endif
 endif
 
-# Globally enable optimization for the Robotino platform
-CFLAGS_BASE  += -O2
-LDFLAGS_BASE += -O2
 ifeq ($(shell hostname),robotino-base)
-  CFLAGS_BASE  += -mtune=geode -march=geode -m32
-  LDFLAGS_BASE += -m32
+  CFLAGS_EXTRA  = -mtune=geode -march=geode -m32 -Wno-strict-aliasing
+  LDFLAGS_EXTRA = -m32
 endif
+
+# Globally enable optimization for the Robotino platform
+CFLAGS_EXTRA  += -g -Wall -Werror -O3
 
 endif # __robotino_config_mk_
 

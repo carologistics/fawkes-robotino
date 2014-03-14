@@ -18,10 +18,6 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/fvconf.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
-ifeq ($(HAVE_TF),1)
-  CFLAGS  += $(CFLAGS_TF)
-  LDFLAGS += $(LDFLAGS_TF)
-
 CFLAGS   += $(VISION_CFLAGS)
 LDFLAGS  += $(VISION_LDFLAGS)
 INCDIRS  += $(VISION_INCDIRS)
@@ -35,10 +31,35 @@ LIBS_omnivision_pucks = m \
 OBJS_omnivision_pucks = omnivision_pucks_plugin.o pipeline_thread.o sensor_thread.o
 
 OBJS_all    = $(OBJS_omnivision_pucks)
-PLUGINS_all = $(PLUGINDIR)/omnivision-pucks.$(SOEXT)
 
+ifeq ($(CC),gcc)
+  ifneq ($(call gcc_atleast_version,4,6),1)
+    GCC_TOO_OLD=1
+  endif
+endif
+
+ifneq ($(GCC_TOO_OLD),1)
+  ifeq ($(HAVE_TF),11)
+    CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CPP11)
+    LDFLAGS += $(LDFLAGS_TF)
+
+    PLUGINS_all = $(PLUGINDIR)/omnivision-pucks.$(SOEXT)
+  else
+    WARN_TARGETS += warning_tf
+  endif
 else
-  WARN_TARGETS += warning_tf
+  WARN_TARGETS += warning_old_gcc
+endif
+
+ifeq ($(OBJSSUBMAKE),1)
+all: $(WARN_TARGETS)
+
+.PHONY: warning_tf warning_old_gcc
+warning_tf:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting omnivision-pucks plugin and libs$(TNORMAL) (tf not available)"
+warning_old_gcc:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting CLIPS Plugins$(TNORMAL) (GCC too old, have $(GCC_VERSION), required 4.6)"
+
 endif
 
 

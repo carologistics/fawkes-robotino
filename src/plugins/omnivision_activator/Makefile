@@ -25,7 +25,6 @@ LIBS     += $(VISION_LIBS)
 
 LIBS_robotino_omnivision_activator = m \
 	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
-	fawkesgeometry fvutils fvcams fvmodels fvclassifiers fvfilters \
 	Position3DInterface SwitchInterface
 OBJS_robotino_omnivision_activator = omnivision_activator_plugin.o omnivision_activator_thread.o
 
