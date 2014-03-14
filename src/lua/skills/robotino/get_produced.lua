@@ -39,6 +39,8 @@ documentation      = [==[Get a produced puck from under the RFID]==]
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+--fawkes.load_yaml_navgraph already searches in the cfg directory
+graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 
 local LASER_FORWARD_CORRECTION = 0.17
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
@@ -84,7 +86,8 @@ fsm:define_states{ export_to=_M, closure={producing = producing},
    {"APPROACH_AMPEL", SkillJumpState, skills = {{motor_move}}, final_to = "CHECK_POSITION", fail_to = "FAILED"},
    {"CHECK_POSITION", JumpState},
    {"CORRECT_POSITION", SkillJumpState, skills = {{motor_move}}, final_to = "CORRECT_SENSOR_DELAY", fail_to = "FAILED"},
-   {"CORRECT_SENSOR_DELAY", SkillJumpState, skills = {{motor_move}}, final_to = "FINAL", fail_to = "FAILED"}
+   {"CORRECT_SENSOR_DELAY", SkillJumpState, skills = {{motor_move}}, final_to = "SKILL_DRIVE_LEFT", fail_to = "FAILED"},
+   {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -95,7 +98,7 @@ fsm:add_transitions{
    {"CHECK_PRODUCE", "WAIT_PRODUCE", cond = producing, desc = "Wait until the Product is finished"},
    {"WAIT_PRODUCE", "TURN", cond = "not producing()", desc = "The product is finished"},
    {"WAIT_PRODUCE", "FAILED", timeout = 62, desc = "Can't read the light properly"},
-   {"CHECK_POSITION", "FINAL", cond = "vars.correct_dir == 0"},
+   {"CHECK_POSITION", "SKILL_DRIVE_LEFT", cond = "vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond = "vars.correct_dir ~= 0"},
    {"CORRECT_POSITION", "CORRECT_SENSOR_DELAY", cond = rough_correct_done},
 }
@@ -144,6 +147,16 @@ end
 
 function CORRECT_SENSOR_DELAY:init()
    self.skills[1].y = self.fsm.vars.correct_dir * -1 * LIGHT_SENSOR_DELAY_CORRECTION 
+end
+
+function SKILL_DRIVE_LEFT:init()
+   if graph:node(self.fsm.vars.goto_name):has_property("leave_right") then
+      self.skills[1].y = -0.4
+      self.skills[1].vel_rot = 1
+   else
+      self.skills[1].y = 0.4
+      self.skills[1].vel_rot = 1
+   end
 end
 
 function FINAL:init()
