@@ -9,19 +9,34 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-(defrule prod-load-T3_T4-with-S1
-  (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
+(defrule prod-load-T2-with-S0
+  (declare (salience ?*PRIORITY-LOAD-T2-WITH-S0*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T2) (loaded-with $?l&~:(member$ S0 ?l))
+	   (incoming $?i&~:(member$ S0 ?i)) (name ?name))
+  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  =>
+  (printout t "PROD: Loading T2 " ?name " with S0" crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+	  (proposed-task (name load-with-S0) (args (create$ ?name)))
+  )
+)
+
+(defrule prod-load-T2-with-S1
+  (declare (salience ?*PRIORITY-LOAD-T2-WITH-S1*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (machine (mtype T1) (name ?name-T1))
-  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l))
-	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T3_T4))
-  (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T1 ?name-T3_T4))) (state rejected)))
+  (machine (mtype T2) (loaded-with $?l&~:(member$ S1 ?l))
+	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T2))
+  (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T1 ?name-T2))) (state rejected)))
   =>
-  (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing S1 at " ?name-T1 crlf)
+  (printout t "PROD: Loading T2 " ?name-T2 " with S1 after producing S1 at " ?name-T1 crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S1) (args (create$ ?name-T1 ?name-T3_T4)))
+	  (proposed-task (name load-with-S1) (args (create$ ?name-T1 ?name-T2)))
   )
 )
 
@@ -40,22 +55,51 @@
   )
 )
 
-(defrule prod-load-T2-with-S0
-  (declare (salience ?*PRIORITY-LOAD-T2-WITH-S0*))
+(defrule prod-load-T3_T4-with-S1
+  (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
-  (machine (mtype T2) (loaded-with $?l&~:(member$ S0 ?l))
-	   (incoming $?i&~:(member$ S0 ?i)) (name ?name))
-  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  (machine (mtype T1) (name ?name-T1))
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l))
+	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T3_T4))
+  (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T1 ?name-T3_T4))) (state rejected)))
   =>
-  (printout t "PROD: Loading T2 " ?name " with S0" crlf)
+  (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing S1 at " ?name-T1 crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S0) (args (create$ ?name)))
+	  (proposed-task (name load-with-S1) (args (create$ ?name-T1 ?name-T3_T4)))
   )
 )
 
+(defrule prod-load-T3_T4-with-S2
+  (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
+	   (incoming $?i&~:(member$ S2 ?i)) (name ?name))
+  (not (proposed-task (name load-with-S2) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  =>
+  (printout t "PROD: Loading T3/T4 " ?name " with S2" crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+	  (proposed-task (name load-with-S2) (args (create$ ?name)))
+  )
+)
 
+(defrule prod-load-T5-with-S0
+  (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
+    (incoming $?i&~:(member$ S0 ?i)) (name ?name))
+  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  =>
+  (printout t "PROD: Loading T5 " ?name " with S0" crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+    (proposed-task (name load-with-S0) (args (create$ ?name)))
+  )
+)
 
 ; (defrule prod-get-consumed-done
 ;   (phase PRODUCTION)

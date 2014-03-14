@@ -21,9 +21,13 @@
   ?*PRIORITY-LAST*    = -500
 
   ; production order priorities
+  ?*PRIORITY-LOAD-T3_T4-WITH-S2* = 85
   ?*PRIORITY-LOAD-T3_T4-WITH-S1* = 83
   ?*PRIORITY-LOAD-T3_T4-WITH-S0* = 80
+  ?*PRIORITY-LOAD-T2-WITH-S1* = 73
   ?*PRIORITY-LOAD-T2-WITH-S0* = 70
+  ?*PRIORITY-LOAD-T5-WITH-S0* = 68
+  
 
   ; old production order priorities
   ?*PRIORITY-DELIVER* =   100
