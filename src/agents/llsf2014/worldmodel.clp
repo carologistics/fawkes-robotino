@@ -1,4 +1,3 @@
-
 ;---------------------------------------------------------------------------
 ;  worldmodel.clp - Robotino agent -- world model update rules
 ;
@@ -144,14 +143,6 @@
   (assert (holding NONE)
 	  (unknown-fail))
   (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount 0)))
-  (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
-    then
-    ;forget machine and choose an other one
-    (strat-allow-all ?mtype ?role)
-  )
-  (delayed-do-for-all-facts ((?ma machine-alloc)) (eq ?ma:machine ?name) 
-    (retract ?ma)
-  )
 )
 
 (defrule wm-proc-delivered
@@ -176,19 +167,10 @@
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype ?mtype))
   (role ?role)
-  (machine-alloc (machine ?name) (role ?role))
   =>
   (printout warn "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
   (assert (holding NONE))
-  (if (not (or (eq ?mtype T5) (eq ?mtype T1)))
-    then
-    ;forget machine and choose an other one
-    (strat-allow-all ?mtype ?role)
-    (delayed-do-for-all-facts ((?ma machine-alloc)) (eq ?ma:machine ?name) 
-      (retract ?ma)
-    )
-  )
 )
 
 (defrule wm-get-consumed-final

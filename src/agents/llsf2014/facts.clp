@@ -68,12 +68,6 @@
   (slot y (type FLOAT))
 )
 
-;allocation of the mashines to the roles
-(deftemplate machine-alloc
-  (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
-  (slot role (type SYMBOL))
-)
-
 ;common template for a task
 (deftemplate task
   (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle-and-load-with-S0 recycle-and-load-with-T1))
