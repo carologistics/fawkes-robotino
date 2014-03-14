@@ -98,8 +98,6 @@ fsm:add_transitions{
    {"CHECK_POSITION", "FINAL", cond = "vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond = "vars.correct_dir ~= 0"},
    {"CORRECT_POSITION", "CORRECT_SENSOR_DELAY", cond = rough_correct_done},
-   {"APPROACH_AMPEL", "FINAL", cond = producing, desc = "already there"},
-   {"CORRECT_POSITION", "FINAL", precond = producing, desc = "already there"} 
 }
 
 function GOTO_MACHINE:init()
