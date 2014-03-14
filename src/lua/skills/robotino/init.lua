@@ -47,3 +47,8 @@ skillenv.use_skill("skills.robotino.leave_area_recycle")
 skillenv.use_skill("skills.robotino.finish_puck_at")
 skillenv.use_skill("skills.robotino.enable_switch")
 skillenv.use_skill("skills.robotino.get_consumed")
+
+-- Uncomment to use gripper for technical challenge
+--skillenv.use_skill("skills.robotino.gripper")
+--skillenv.use_skill("skills.robotino.grip_cylinder")
+

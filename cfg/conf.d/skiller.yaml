@@ -55,6 +55,8 @@ skiller:
         laser_cluster: LaserClusterInterface::laser-cluster
         motor_switch: SwitchInterface::Robotino Motor
         lightFrontSwitch: SwitchInterface::light_front_switch
+        # Uncomment to use gripper skills for technical challenge
+        # gripper_if: GripperInterface::Robotino
       writing:
         light: RobotinoLightInterface::Light determined
 
