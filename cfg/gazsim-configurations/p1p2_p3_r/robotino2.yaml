@@ -1,5 +1,5 @@
 %YAML 1.2
-%TAG ! tag:fawkesrobotics.org,cfg,gazsim/
+%TAG ! tag:fawkesrobotics.org,cfg/
 ---
 #start fawkes with this configuration file if you want to control robotino 2 in the simulation
 
