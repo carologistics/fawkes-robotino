@@ -62,10 +62,20 @@
   (get-s0 ?res)
 )
 
+(defrule lock-use-get-s0 failed
+  (declare (salience ?*PRIORITY-LOCK_USAGE*))
+  ?lae <- (lock-and-execute (skill get-s0) (res ?res) (state exe))
+  ?sf <- (state GET-S0-FAILED)
+  =>
+  (if (debug 3) then (printout t "Get S0 failed -> retry to get S0" crlf))
+  (retract ?sf)
+  (get-s0 ?res)
+) 
+
 (defrule lock-use-get-s0-done
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
   ?lae <- (lock-and-execute (skill get-s0) (res ?res) (state exe))
-  ?sf <- (state GET-S0-FINAL|GET-S0-FAILED)
+  ?sf <- (state GET-S0-FINAL)
   (Position3DInterface (id "Pose") (translation $?pos))
   =>
   (retract ?lae)
