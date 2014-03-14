@@ -35,7 +35,6 @@
   ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   (wait-point ?res ?wait-point)
   =>
-  (retract ?l)
   (printout t "Waiting for lock of " ?res " at " ?wait-point crlf)
   (skill-call ppgoto place (str-cat ?wait-point))
 )
