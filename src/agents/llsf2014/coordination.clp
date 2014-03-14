@@ -85,7 +85,7 @@
 )
 
 (defrule coordination-release-after-task-finished
-  ?t <- (task (name ?task) (args ?args) (state finished)) 
+  ?t <- (task (name ?task) (args $?args) (state finished)) 
   ?s <- (state TASK-FINISHED)
   =>
   ;release all locks for subtask goals
