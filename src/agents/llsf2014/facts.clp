@@ -96,6 +96,8 @@
   (slot value (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO NOTHING) (default NOTHING))
   (slot amount (type INTEGER) (default 0))
   (slot already-applied (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (multislot last-sent (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+  (slot id (type INTEGER) (default 0)) ;random id
 )
 
 (deffacts startup-production
@@ -124,4 +126,6 @@
   
   (timer (name beacon) (time (create$ 0 0)) (seq 1))
   (timer (name send-worldmodel-sync) (time (create$ 0 0)) (seq 1))
+
+  (already-received-wm-changes (create$))
 )

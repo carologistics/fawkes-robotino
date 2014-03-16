@@ -61,5 +61,14 @@ message WorldmodelChange {
   optional IncomingAction incoming = 3;
   optional PuckState loaded_with = 4;
   optional uint32 num_CO = 5;
+  required uint32 id = 6;
 }
 
+message WorldmodelChangeAck {
+
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 1342;
+  }
+  required uint32 id = 1;
+}

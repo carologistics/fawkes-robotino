@@ -61,13 +61,19 @@
 
 ;send worldmodel change
 (defrule worldmodel-sync-send-change
-  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value) (amount ?amount))
+  (time $?now)
+  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value) (amount ?amount) (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)) (id ?id))
   (not (lock-role MASTER))
   =>
   (printout t "sending worldmodel change" crlf)
+  ;set random id (needed by the master to determine if a change was already appied)
+  (if (eq ?id 0) then
+    (bind ?id (random 1 99999999))
+  )
   (bind ?change-msg (pb-create "llsf_msgs.WorldmodelChange"))
   (pb-set-field ?change-msg "machine" (str-cat ?m))
   (pb-set-field ?change-msg "change" ?change)
+  (pb-set-field ?change-msg "id" ?id)
   (if (member$ ?change (create$ ADD_LOADED_WITH REMOVE_LOADED_WITH)) then
     (pb-set-field ?change-msg "loaded_with" ?value)
   )
@@ -79,8 +85,9 @@
   )
   (pb-broadcast ?change-msg)
   (pb-destroy ?change-msg)
-  (retract ?wmc)
+  (modify ?wmc (last-sent ?now) (id ?id))
 )
+
 ;the master does not have to send the change, because it sends the whole worldmodel
 (defrule worldmodel-sync-retract-as-master
   (declare (salience ?*PRIORITY-CLEANUP*))
@@ -93,29 +100,54 @@
 
 ;receive worldmodel change
 (defrule worldmodel-sync-receive-change
-  (protobuf-msg (type "llsf_msgs.WorldmodelChange") (ptr ?p) (rcvd-via BROADCAST))
+  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChange") (ptr ?p) (rcvd-via BROADCAST))
   (lock-role MASTER)
+  ?arf <- (already-received-wm-changes $?arc)
   =>
   (printout t "receiving worldmodel change" crlf)
-  (do-for-fact ((?machine machine))
-      (eq ?machine:name (sym-cat (pb-field-value ?p "machine")))
+  ;ensure that this change was not already applied
+  (bind ?id (pb-field-value ?p "id"))
+  (if (not (member$ ?id ?arc)) then
+    (retract ?arf)
+    (assert (already-received-wm-changes (append$ ?arc ?id)))
+    ;apply change
+    (do-for-fact ((?machine machine))
+        (eq ?machine:name (sym-cat (pb-field-value ?p "machine")))
 
-    (switch (pb-field-value ?p "change")
-      (case ADD_LOADED_WITH then 
-        (modify ?machine (loaded-with (append$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
-      )
-      (case REMOVE_LOADED_WITH then
-        (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
-      )
-      (case ADD_INCOMING then 
-        (modify ?machine (incoming (append$ ?machine:incoming (pb-field-value ?p "incoming"))))
-      )
-      (case REMOVE_INCOMING then 
-        (modify ?machine (incoming (delete-member$ ?machine:incoming (pb-field-value ?p "incoming"))))
-      )
-      (case SET_NUM_CO then 
-        (modify ?machine (junk (pb-field-value ?p "num_CO")))
+      (switch (pb-field-value ?p "change")
+        (case ADD_LOADED_WITH then 
+          (modify ?machine (loaded-with (append$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+        )
+        (case REMOVE_LOADED_WITH then
+          (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+        )
+        (case ADD_INCOMING then 
+          (modify ?machine (incoming (append$ ?machine:incoming (pb-field-value ?p "incoming"))))
+        )
+        (case REMOVE_INCOMING then 
+          (modify ?machine (incoming (delete-member$ ?machine:incoming (pb-field-value ?p "incoming"))))
+        )
+        (case SET_NUM_CO then 
+          (modify ?machine (junk (pb-field-value ?p "num_CO")))
+        )
       )
     )
   )
+  (retract ?pmsg)
+  ;send acknowledgment
+  (bind ?msg-ack (pb-create "llsf_msgs.WorldmodelChangeAck"))
+  (pb-set-field ?msg-ack "id" ?id)  
+  (pb-broadcast ?msg-ack)
+  (pb-destroy ?msg-ack)
+)
+
+(defrule worldmodel-sync-receive-change-ack
+  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChangeAck") (ptr ?p) (rcvd-via BROADCAST))
+  (not (lock-role MASTER))
+  =>
+  (do-for-fact ((?wmc worldmodel-change))
+	       (eq ?wmc:id (pb-field-value ?p "id"))
+    (retract ?wmc)
+  )
+  (retract ?pmsg)
 )
