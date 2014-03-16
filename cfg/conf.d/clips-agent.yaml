@@ -23,14 +23,7 @@ clips-agent:
     agent-role: nothing
     #start-machine-exploration defined in host.yaml (this is only the default!)
     start-machine-exploration: M8
-    
-    waiting-for-p1p2-prouction-point: WAIT_FOR_INS
-    waiting-for-p3-production-point: Ins
-    wait-for-ins1-point: WAIT_FOR_INS_1
-    wait-for-ins2-point: WAIT_FOR_INS_2
-    wait-for-deliver1-point: WAIT_FOR_DELIVER_1
-    wait-for-deliver2-point: WAIT_FOR_DELIVER_2
-    
+        
     peer-address: 172.26.255.255
     #use this for talking to the refbox on the same laptop:
     #peer-recv-port: 4444
@@ -65,7 +58,27 @@ clips-agent:
     #possible values: no,ifpossible,afterdeliver
     recycle: ifpossible
 
+    waiting-points:
+      ins1: WAIT_FOR_INS_1
+      ins2: WAIT_FOR_INS_2
+      deliver1: WAIT_FOR_DELIVER_1
+      deliver2: WAIT_FOR_DELIVER_2
 
+    production-times:
+      t1-min: 3
+      t1-max: 8
+      t2-min: 15
+      t2-max: 25
+      t3-min: 40
+      t3-max: 60
+      t4-min: 40
+      t4-max: 60
+      t5-min: 20
+      t5-max: 40
+      recycle-min: 2
+      recycle-max: 2
+
+    
     
   llsf2013:
     #agent-role defined in host.yaml (this is only the default!)

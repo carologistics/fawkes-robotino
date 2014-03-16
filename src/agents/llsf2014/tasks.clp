@@ -74,7 +74,7 @@
   )
   (modify ?t (state running))
 )
-(defrule task-load-with-S1--bring-S0-to-T1
+(defrule task-load-with-S1--produce-S0-at-T1
   (declare (salience ?*PRIORITY-SUBTASK-2*))
   (phase PRODUCTION)
   ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
@@ -84,8 +84,7 @@
   =>
   (retract ?s)
   (assert (state GOTO)
-	  (lock-and-execute (skill load-with) (res ?m))
-	  ;TODO: use skill which produces and waits for completion
+	  (lock-and-execute (skill produce) (res ?m))
   )
   (modify ?t (state running))
 )

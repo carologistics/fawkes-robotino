@@ -71,20 +71,20 @@
   )
 )
 
-(defrule prod-load-T3_T4-with-S2
-  (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
-  (phase PRODUCTION)
-  ?sf <- (state IDLE)
-  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
-	   (incoming $?i&~:(member$ S2 ?i)) (name ?name))
-  (not (proposed-task (name load-with-S2) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
-  =>
-  (printout t "PROD: Loading T3/T4 " ?name " with S2" crlf)
-  (retract ?sf)
-  (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S2) (args (create$ ?name)))
-  )
-)
+; (defrule prod-load-T3_T4-with-S2
+;   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
+;   (phase PRODUCTION)
+;   ?sf <- (state IDLE)
+;   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
+; 	   (incoming $?i&~:(member$ S2 ?i)) (name ?name))
+;   (not (proposed-task (name pick-and-load) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+;   =>
+;   (printout t "PROD: Loading T3/T4 " ?name " with S2" crlf)
+;   (retract ?sf)
+;   (assert (state TASK-PROPOSED)
+; 	  (proposed-task (name pick-and-load) (args (create$ ?name)))
+;   )
+; )
 
 (defrule prod-load-T5-with-S0
   (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))

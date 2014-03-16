@@ -45,10 +45,8 @@
   (retract ?rf)
   ; remove all possibly existing last-lights facts
   (delayed-do-for-all-facts ((?ll last-lights)) TRUE (retract ?ll))
-  (bind ?lights (create$))
-  (if (neq ?red OFF) then (bind ?lights (create$ ?lights (sym-cat RED- ?red))))
-  (if (neq ?green OFF) then (bind ?lights (create$ ?lights (sym-cat GREEN- ?green))))
-  (if (neq ?yellow OFF) then (bind ?lights (create$ ?lights (sym-cat YELLOW- ?yellow))))
+  (bind ?lights (create$ (sym-cat GREEN- ?green) (sym-cat YELLOW- ?yellow) (sym-cat RED- ?red) )
+  )
   (assert (last-lights ?lights))
   (printout t "***** Lights 5 " ?lights crlf)
 )
@@ -62,29 +60,6 @@
   (retract ?tf ?hf)
   (assert (holding NONE))
   (printout t "Production failed at " ?name crlf) 
-)
-
-(defrule wm-goto-failed-p3
-  (declare (salience ?*PRIORITY-WM-MID*))
-  (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?hf <- (holding ?)
-  ?mf <- (machine (name ?name) (mtype T5))
-  =>
-  (retract ?tf ?hf)
-  (assert (holding P3))
-)
-
-(defrule wm-goto-failed-p1p2
-  (declare (salience ?*PRIORITY-WM-MID*))
-  (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?hf <- (holding ?)
-  ?mf <- (machine (name ?name) (mtype T3|T4) (output ?output) (loaded-with $?lw&:(> (length$ ?lw) 1)) )
-  =>
-  (retract ?tf ?hf)
-  (assert (holding ?output))
-  (modify ?mf (loaded-with))
 )
 
 (defrule wm-goto-light
@@ -102,7 +77,7 @@
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
-  ?lf <- (lights GREEN-ON)
+  ?lf <- (lights GREEN-ON YELLOW-OFF RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn))
   =>
   (retract ?tf ?hf ?lf)
@@ -115,8 +90,9 @@
   (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (+ ?jn (length$ ?lw)))))
 )
 
-(defrule wm-goto-proc-complete-without-robot
+(defrule wm-proc-complete-without-robot
   (declare (salience ?*PRIORITY-WM*))
+  (time $?now)
   ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn)
           (final-prod-time $?fpt&:(and (timeout ?now ?fpt 0.5) (neq (nth$ 1 ?fpt) 0)))
          )
@@ -135,12 +111,12 @@
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?was-holding)
-  ?lf <- (lights YELLOW-ON)
+  ?lf <- (lights GREEN-OFF YELLOW-ON RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
   =>
   (retract ?hf ?lf ?tf)
   (assert (holding NONE))
-  (printout t "Production in progress at " ?name "|" ?mtype crlf)
+  (printout t "Production needs more resources at " ?name "|" ?mtype crlf)
   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding)))
 )
 
@@ -149,7 +125,7 @@
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?was-holding)
-  ?lf <- (lights GREEN-ON YELLOW-ON)
+  ?lf <- (lights GREEN-ON YELLOW-ON RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
   (time $?now)
   (production-time ?mtype ?min-prod-time ?)
@@ -165,7 +141,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
-  ?lf <- (lights YELLOW-BLINKING)
+  ?lf <- (lights GREEN-OFF YELLOW-BLINKING RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype))
   ?hf <- (holding ?)
   (role ?role)
