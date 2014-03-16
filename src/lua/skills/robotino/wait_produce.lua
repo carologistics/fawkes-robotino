@@ -66,6 +66,10 @@ function done()
           or (plugin:green()      == plugin.OFF
               and plugin:yellow() == plugin.BLINKING
               and plugin:red()    == plugin.OFF)
+          or (plugin:green()      == plugin.ON
+              and plugin:yellow() == plugin.ON
+              and plugin:red()    == plugin.OFF)
+              and fsm.vars.dont_wait
    end
    return false
 end
