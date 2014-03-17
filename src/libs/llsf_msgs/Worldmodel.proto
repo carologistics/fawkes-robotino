@@ -24,6 +24,7 @@ enum WorldmodelChangeType {
   REMOVE_INCOMING = 3;
   SET_NUM_CO = 4;
   SET_PROD_FINISHED_TIME = 5;
+  REMOVE_PRODUCED = 6;
 }
 
 message MachineState {

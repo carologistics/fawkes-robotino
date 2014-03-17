@@ -9,6 +9,20 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(defrule prod-deliver-p3
+  (declare (salience ?*PRIORITY-DELIVER-P3*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T5) (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name) (produced-puck P3))
+  (not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  =>
+  (printout t "PROD: Deliver P3 from " ?name crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+	  (proposed-task (name pick-and-deliver) (args (create$ ?name)))
+  )
+)
+
 (defrule prod-load-T2-with-S0
   (declare (salience ?*PRIORITY-LOAD-T2-WITH-S0*))
   (phase PRODUCTION)

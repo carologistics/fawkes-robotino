@@ -151,6 +151,9 @@
         (case SET_PROD_FINISHED_TIME then 
           (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time")) 0))
         )
+        (case REMOVE_PRODUCED then 
+          (modify ?machine (produced-puck NONE))
+        )
       )
     )
   )

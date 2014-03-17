@@ -120,3 +120,47 @@
   (retract ?s)
   (assert (state TASK-FINISHED))
 )
+
+;;;;;;;;;;;;;;;;;;
+;pick and deliver:
+;;;;;;;;;;;;;;;;;;
+(defrule task-pick-and-deliver--start-get-produced-puck
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-deliver) (args $?a) (state ~finished))
+  (holding NONE)
+  ?s <- (state TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill get_produced (nth$ 1 ?a))
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (res (nth$ 1 ?a)))
+  )
+  (modify ?t (state running))
+)
+(defrule task-pick-and-deliver--deliver
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-deliver) (args $?a) (state ~finished))
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (output ?output))
+  (holding ?output)
+  ?s <- (state GET-PRODUCED-FINAL)
+  =>
+  (retract ?s)
+  (assert (execute-skill deliver deliver1)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (res deliver1))
+  )
+  (modify ?t (state running))
+)
+(defrule task-pick-and-deliver--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-deliver) (args $?a) (state ~finished))
+  (holding NONE)
+  ?s <- (state GOTO-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)

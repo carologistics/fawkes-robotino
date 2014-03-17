@@ -157,7 +157,7 @@
 (defrule wm-proc-delivered
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
-  ?tf <- (goto-target deliver)
+  ?tf <- (goto-target deliver1|deliver2)
   ?hf <- (holding ?was-holding)
   ;?lf <- (lights $?)
   =>
@@ -180,6 +180,32 @@
   (printout warn "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
   (assert (holding NONE))
+)
+
+(defrule wm-get-produced-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state GET-PRODUCED-FINAL)
+  ?tf <- (get-produced-target ?name)
+  ?hf <- (holding NONE)
+  ?mf <- (machine (name ?name) (output ?output))
+  =>
+  (retract ?hf ?tf)
+  (assert (holding ?output))
+  (printout t "Got Produced Puck." crlf)
+  (assert (worldmodel-change (machine ?name) (change REMOVE_PRODUCED)))
+)
+
+(defrule wm-get-produced-failed
+  (declare (salience ?*PRIORITY-WM*))
+  (state GET-PRODUCED-FAILED)
+  ?tf <- (get-produced-target ?name)
+  ?hf <- (holding NONE)
+  ;?mf <- (machine (name ?name) (output ?output))
+  =>
+  (retract ?hf ?tf)
+  (assert (holding NONE))
+  (printout warn "Got Produced Puck failed." crlf)
+  ;TODO: what is the worldmodel now?
 )
 
 (defrule wm-get-consumed-final
@@ -211,7 +237,7 @@
 (defrule wm-process-wm-change-before-sending
   (declare (salience ?*PRIORITY-WM*))
   ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE))
-  ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (junk ?junk))
+  ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (junk ?junk) (produced-puck ?produced))
   =>
   (switch ?change
     (case ADD_LOADED_WITH then 
@@ -231,6 +257,9 @@
     )
     (case SET_PROD_FINISHED_TIME then 
       (modify ?m (final-prod-time (create$ ?amount 0)))
+    )
+    (case REMOVE_PRODUCED then 
+      (modify ?m (produced-puck NONE))
     )
   )
   (modify ?wmc (already-applied TRUE))

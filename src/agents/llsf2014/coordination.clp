@@ -33,6 +33,10 @@
     (case load-with-S1 then
       (assert (needed-task-lock (action BRING_S1) (place (nth$ 2 ?a)) (resource (sym-cat BRING_S1 (nth$ 2 ?a)))))
     )
+    (case pick-and-deliver then
+      (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) (resource (sym-cat PICK_PROD (nth$ 1 ?a))))
+      )
+    )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )
 )

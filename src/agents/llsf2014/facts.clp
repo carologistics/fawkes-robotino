@@ -92,12 +92,17 @@
 
 (deftemplate worldmodel-change
   (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
-  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME))
+  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME REMOVE_PRODUCED))
   (slot value (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO NOTHING) (default NOTHING))
   (slot amount (type INTEGER) (default 0))
   (slot already-applied (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (multislot last-sent (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot id (type INTEGER) (default 0)) ;random id
+)
+
+(deftemplate wait-for-lock
+  (slot res (type SYMBOL))
+  (slot state (type SYMBOL) (allowed-values new get use finished) (default new))
 )
 
 (deffacts startup-production
