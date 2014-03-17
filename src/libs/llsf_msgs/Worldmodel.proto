@@ -23,6 +23,7 @@ enum WorldmodelChangeType {
   ADD_INCOMING = 2;
   REMOVE_INCOMING = 3;
   SET_NUM_CO = 4;
+  SET_PROD_FINISHED_TIME = 5;
 }
 
 message MachineState {
@@ -34,6 +35,8 @@ message MachineState {
   required string    name     = 1;
   repeated PuckState loaded_with  = 2;
   repeated IncomingAction incoming  = 3;
+  required uint32 prod_finished_time = 4;
+  optional PuckState puck_under_rfid = 5;
 }
 
 message Worldmodel {
@@ -56,12 +59,13 @@ message WorldmodelChange {
     MSG_TYPE = 1341;
   }
 
-  required string machine = 1;
-  required WorldmodelChangeType change = 2;
-  optional IncomingAction incoming = 3;
-  optional PuckState loaded_with = 4;
-  optional uint32 num_CO = 5;
-  required uint32 id = 6;
+  required uint32 id = 1;
+  required string machine = 2;
+  required WorldmodelChangeType change = 3;
+  optional IncomingAction incoming = 4;
+  optional PuckState loaded_with = 5;
+  optional uint32 num_CO = 6;
+  optional uint32 prod_finished_time = 7;
 }
 
 message WorldmodelChangeAck {

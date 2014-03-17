@@ -28,6 +28,12 @@
     (foreach ?incoming-action (fact-slot-value ?machine incoming)
       (pb-add-list ?m-msg "incoming" ?incoming-action)
     )
+    ;set production finished time
+    (pb-set-field ?m-msg "prod_finished_time" ?machine:final-prod-time)
+    ;set puck under rfid
+    (if (neq ?machine:produced-puck NONE) then
+      (pb-set-field ?m-msg "puck_under_rfid" ?machine:produced-puck)
+    )
     ;add sub-msg to worldmodel msg
     (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
   )
@@ -54,7 +60,16 @@
       (progn$ (?incoming-action (pb-field-list ?m-msg "incoming"))
 	(bind ?incoming (append$ ?incoming (sym-cat ?incoming-action)))
       )
-      (modify ?machine (incoming ?incoming) (loaded-with ?loaded-with))
+      ;update production finished time
+      (bind ?prod-finished-time (pb-field-value ?m-msg "prod_finished_time"))
+      (if (pb-has-field ?m-msg "puck_under_rfid")
+	then (bind ?puck-under-rfid (pb-field-value ?m-msg "puck_under_rfid"))
+	else (bind ?puck-under-rfid NONE)
+      )
+      (modify ?machine (incoming ?incoming) (loaded-with ?loaded-with)
+	               (final-prod-time (create$ ?prod-finished-time 0))
+		       (produced-puck ?puck-under-rfid)
+      )
     )
   )
 )
@@ -82,6 +97,9 @@
   )
   (if (eq ?change SET_NUM_CO) then
     (pb-set-field ?change-msg "num_CO" ?amount)
+  )
+  (if (eq ?change SET_PROD_FINISHED_TIME) then
+    (pb-set-field ?change-msg "prod_time" ?amount)
   )
   (pb-broadcast ?change-msg)
   (pb-destroy ?change-msg)
@@ -129,6 +147,9 @@
         )
         (case SET_NUM_CO then 
           (modify ?machine (junk (pb-field-value ?p "num_CO")))
+        )
+        (case SET_PROD_FINISHED_TIME then 
+          (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_time")) 0))
         )
       )
     )

@@ -133,8 +133,9 @@
   (retract ?hf ?lf ?tf)
   (assert (holding NONE))
   (printout t "Production in progress at " ?name "|" ?mtype crlf)
-  (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding)))
-  (modify ?mf (final-prod-time (create$ (+ (nth$ 1 ?now) ?min-prod-time) 0)))
+  (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding))
+	  (worldmodel-change (machine ?name) (change SET_PROD_FINISHED_TIME) (amount (+ (nth$ 1 ?now) ?min-prod-time)))
+  )
 )
 
 (defrule wm-proc-invalid
@@ -227,6 +228,9 @@
     )
     (case SET_NUM_CO then 
       (modify ?m (junk ?amount))
+    )
+    (case SET_PROD_FINISHED_TIME then 
+      (modify ?m (final-prod-time (create$ ?amount 0)))
     )
   )
   (modify ?wmc (already-applied TRUE))

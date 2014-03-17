@@ -14,7 +14,7 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (machine (mtype T2) (loaded-with $?l&~:(member$ S0 ?l))
-	   (incoming $?i&~:(member$ S0 ?i)) (name ?name))
+	   (incoming $?i&~:(member$ S0 ?i)) (name ?name) (produced-puck NONE))
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   =>
   (printout t "PROD: Loading T2 " ?name " with S0" crlf)
@@ -28,9 +28,9 @@
   (declare (salience ?*PRIORITY-LOAD-T2-WITH-S1*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
-  (machine (mtype T1) (name ?name-T1))
+  (machine (mtype T1) (name ?name-T1) (produced-puck NONE))
   (machine (mtype T2) (loaded-with $?l&~:(member$ S1 ?l))
-	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T2))
+	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T2) (produced-puck NONE))
   (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T1 ?name-T2))) (state rejected)))
   =>
   (printout t "PROD: Loading T2 " ?name-T2 " with S1 after producing S1 at " ?name-T1 crlf)
@@ -45,7 +45,7 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S0 ?l)) 
-	   (incoming $?i&~:(member$ S0 ?i)) (name ?name))
+	   (incoming $?i&~:(member$ S0 ?i)) (name ?name) (produced-puck NONE))
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   =>
   (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
@@ -59,9 +59,9 @@
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
-  (machine (mtype T1) (name ?name-T1))
+  (machine (mtype T1) (name ?name-T1) (produced-puck NONE))
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l))
-	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T3_T4))
+	   (incoming $?i&~:(member$ S1 ?i)) (name ?name-T3_T4) (produced-puck NONE))
   (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T1 ?name-T3_T4))) (state rejected)))
   =>
   (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing S1 at " ?name-T1 crlf)
@@ -76,7 +76,7 @@
 ;   (phase PRODUCTION)
 ;   ?sf <- (state IDLE)
 ;   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
-; 	   (incoming $?i&~:(member$ S2 ?i)) (name ?name))
+; 	   (incoming $?i&~:(member$ S2 ?i)) (name ?name) (produced-puck NONE))
 ;   (not (proposed-task (name pick-and-load) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
 ;   =>
 ;   (printout t "PROD: Loading T3/T4 " ?name " with S2" crlf)
@@ -91,7 +91,7 @@
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
-    (incoming $?i&~:(member$ S0 ?i)) (name ?name))
+    (incoming $?i&~:(member$ S0 ?i)) (name ?name) (produced-puck NONE))
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   =>
   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
