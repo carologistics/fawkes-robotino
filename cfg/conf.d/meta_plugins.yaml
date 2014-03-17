@@ -3,7 +3,7 @@
 ---
 fawkes/meta_plugins:
   
-# Meta plugin with useful functionality for the robotino-laptop
+  # Meta plugin with useful functionality for the robotino-laptop
   robotino-bare: bbsync,static-transforms,webview
   robotino-cam: fvbase,fvfountain,omnivision-pucks,light_front
   agent: clips,clips-agent,clips-motor-switch,clips-protobuf,clips-webview
@@ -20,3 +20,7 @@ fawkes/meta_plugins:
   robotino-agent-colli: robotino-colli,agent
 
   colli-log: robotino-nocam-colli,mongodb,mongodb-log
+
+  # Robotino base meta plugin
+  robotino-base: robotino,laser,webview
+
