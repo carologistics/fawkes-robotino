@@ -99,7 +99,7 @@
     (pb-set-field ?change-msg "num_CO" ?amount)
   )
   (if (eq ?change SET_PROD_FINISHED_TIME) then
-    (pb-set-field ?change-msg "prod_time" ?amount)
+    (pb-set-field ?change-msg "prod_finished_time" ?amount)
   )
   (pb-broadcast ?change-msg)
   (pb-destroy ?change-msg)
@@ -149,7 +149,7 @@
           (modify ?machine (junk (pb-field-value ?p "num_CO")))
         )
         (case SET_PROD_FINISHED_TIME then 
-          (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_time")) 0))
+          (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time")) 0))
         )
       )
     )
