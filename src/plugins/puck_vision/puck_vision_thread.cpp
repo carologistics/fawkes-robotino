@@ -67,7 +67,7 @@ PuckVisionThread::init()
 	logger->log_info(name(), "puck_vision: starts up");
 
 	cfg_prefix_= "/plugins/puck_vision/";
-	cfg_prefix_static_transforms_ = "/plugins/static-transforms/transforms/cam_front/";
+	cfg_prefix_static_transforms_ = "/plugins/static-transforms/transforms/cam_puck/";
 
 	cfg_frame_  = config->get_string((cfg_prefix_ + "frame").c_str());
 	cfg_camera_ = config->get_string((cfg_prefix_ + "camera").c_str());
