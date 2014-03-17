@@ -313,6 +313,7 @@ void MachineSignalThread::loop()
 
     setup_color_classifier(&cfy_ctxt_red_);
     setup_color_classifier(&cfy_ctxt_green_);
+    setup_color_classifier(&cfy_ctxt_red_delivery_);
 
     delete light_classifier_;
     light_classifier_ = new SimpleColorClassifier(
@@ -752,7 +753,7 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
 
     MutexLocker lock(&cfg_mutex_);
 
-    if (color_pfx == "/red" || color_pfx == "/green") {
+    if (color_pfx == "/red" || color_pfx == "/green" || color_pfx == "/red_delivery") {
       color_classifier_context_t_ *classifier = NULL;
       if (color_pfx == "/red")
         classifier = &cfy_ctxt_red_;
