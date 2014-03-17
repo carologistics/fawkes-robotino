@@ -37,6 +37,15 @@
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) (resource (sym-cat PICK_PROD (nth$ 1 ?a))))
       )
     )
+    (case pick-and-load then
+      ;get puck type we move
+      (do-for-fact ((?machine machine)) (eq ?machine:name (nth$ 1 ?a))
+	(bind ?puck ?machine:produced-puck)
+      )
+      (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) (resource (sym-cat PICK_PROD (nth$ 1 ?a))))
+	      (needed-task-lock (action (sym-cat BRING_ ?puck)) (place (nth$ 2 ?a)) (resource (sym-cat (sym-cat BRING_ ?puck) (nth$ 2 ?a))))
+      )
+    )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )
 )
