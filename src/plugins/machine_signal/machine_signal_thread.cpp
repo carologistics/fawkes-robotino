@@ -413,43 +413,47 @@ void MachineSignalThread::loop()
             signal_it->red_roi->start
       });
 
-      // Signals with all lights off are impossible, so check if at least one light is lit.
-      if (frame_state.red || frame_state.yellow || frame_state.green) {
-        // ... and match them to known signals based on the max_jitter tunable
-        float dist_min = FLT_MAX;
-        std::list<signal_state_t_>::iterator best_match;
-        for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
-            known_signal != known_signals_.end(); ++known_signal) {
-          float dist = known_signal->distance(frame_state);
-          if (dist < dist_min) {
-            best_match = known_signal;
-            dist_min = dist;
-          }
+      // ... and match them to known signals based on the max_jitter tunable
+      float dist_min = FLT_MAX;
+      std::list<signal_state_t_>::iterator best_match;
+      for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
+          known_signal != known_signals_.end(); ++known_signal) {
+        float dist = known_signal->distance(frame_state);
+        if (dist < dist_min) {
+          best_match = known_signal;
+          dist_min = dist;
         }
-        if (dist_min < cfg_max_jitter_) {
-          best_match->update(frame_state, signal_it);
-        }
-        else {
-          // No historic match was found for the current signal
-          signal_state_t_ *cur_state = new signal_state_t_(buflen_);
-          cur_state->update(frame_state, signal_it);
-          known_signals_.push_front(*cur_state);
-          delete cur_state;
-        }
+      }
+      if (dist_min < cfg_max_jitter_) {
+        best_match->update(frame_state, signal_it);
 
-        // Classifiers sometimes do strange things to the image width/height, so reset them here...
-        signal_it->red_roi->set_image_width(cam_width_);
-        signal_it->red_roi->set_image_height(cam_height_);
-        signal_it->yellow_roi->set_image_width(cam_width_);
-        signal_it->yellow_roi->set_image_height(cam_height_);
-        signal_it->green_roi->set_image_width(cam_width_);
-        signal_it->green_roi->set_image_height(cam_height_);
+        // All-off signals are impossible, so give them a bad visibility history
+        if (best_match->visibility >= (long int)buflen_/2
+            && best_match->red == RobotinoLightInterface::OFF
+            && best_match->yellow == RobotinoLightInterface::OFF
+            && best_match->green == RobotinoLightInterface::OFF)
+          best_match->visibility = -1;
+      }
+      else {
+        // No historic match was found for the current signal
+        signal_state_t_ *cur_state = new signal_state_t_(buflen_);
+        cur_state->update(frame_state, signal_it);
+        known_signals_.push_front(*cur_state);
+        delete cur_state;
+      }
 
-        if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          drawn_rois_.push_back(signal_it->red_roi);
-          drawn_rois_.push_back(signal_it->yellow_roi);
-          drawn_rois_.push_back(signal_it->green_roi);
-        }
+      // Classifiers sometimes do strange things to the image width/height, so reset them here...
+      signal_it->red_roi->set_image_width(cam_width_);
+      signal_it->red_roi->set_image_height(cam_height_);
+      signal_it->yellow_roi->set_image_width(cam_width_);
+      signal_it->yellow_roi->set_image_height(cam_height_);
+      signal_it->green_roi->set_image_width(cam_width_);
+      signal_it->green_roi->set_image_height(cam_height_);
+
+      if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
+        drawn_rois_.push_back(signal_it->red_roi);
+        drawn_rois_.push_back(signal_it->yellow_roi);
+        drawn_rois_.push_back(signal_it->green_roi);
       }
 
       delete signal_it->red_roi;
