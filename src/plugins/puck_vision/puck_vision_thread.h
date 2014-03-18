@@ -22,6 +22,7 @@
 #include <aspect/tf.h>
 
 #include <interfaces/PuckVisionInterface.h>
+#include <interfaces/Position3DInterface.h>
 
 #include <fvcams/camera.h>
 #include <fvcams/fileloader.h>
@@ -106,6 +107,10 @@ struct color_classifier_context_t_{
 
 struct puck_info{
 	float radius_;
+	std::vector<unsigned int> color_main;
+	std::vector<unsigned int> color_top_dots;
+	std::vector<unsigned int> color_holes;
+	std::vector<unsigned int> color_top_center;
 };
 
 private:
@@ -146,10 +151,11 @@ private:
 
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
-	unsigned int cfg_nr_puck_interfaces_;
 	//interfaces
-	fawkes::SwitchInterface *switchInterface_;
-	fawkes::PuckVisionInterface *puckInterface_;
+	std::vector<fawkes::Position3DInterface*> puck_interfaces_;
+	std::vector<firevision::ROI> detected_pucks;
+	fawkes::SwitchInterface* switchInterface_;
+	fawkes::PuckVisionInterface* puckInterface_;
 
 	firevision::ROI roi_center_;
 	unsigned char *buffer_;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
@@ -177,6 +183,9 @@ private:
 
 	fawkes::polar_coord_2d_t
 	transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
+
+	void
+	createPuckInterface();
 
 	void
 	cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);

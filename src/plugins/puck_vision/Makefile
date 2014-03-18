@@ -35,7 +35,7 @@ LIBS     += $(VISION_LIBS)
 LIBS_puck_vision = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
 		fvclassifiers fvfilters TransformInterface \
-		fawkestf RobotinoLightInterface PuckVisionInterface 
+		fawkestf RobotinoLightInterface PuckVisionInterface Position3DInterface 
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_puck_vision = puck_vision.o puck_vision_thread.o
 

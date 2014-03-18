@@ -25,6 +25,7 @@ PuckVisionThread::PuckVisionThread()
 	camera_info_.img_width_ = 0;
 	camera_info_.img_height_ = 0;
 
+
 	camera_info_.opening_angle_horizontal_ = 0;
 	camera_info_.opening_angle_vertical_ = 0;
 
@@ -53,6 +54,24 @@ PuckVisionThread::PuckVisionThread()
 	drawer_ = NULL;
 
 	cfg_debugMessagesActivated_ = false;
+}
+/*
+ * Create a new puck interface for writing and append it to puck_interfaces_ vector
+ */
+void
+PuckVisionThread::createPuckInterface(){
+	fawkes::Position3DInterface* puck_if_ = NULL;
+
+	std::string interface_name = cfg_prefix_ + "puck_"+std::to_string(puck_interfaces_.size());
+	try {
+		puck_if_ = blackboard->open_for_writing<fawkes::Position3DInterface>(interface_name.c_str() + puck_interfaces_.size());
+		puck_if_->set_visibility_history(-1);
+		puck_if_->write();
+		puck_interfaces_.push_back(puck_if_);
+	}catch (std::exception &e) {
+		finalize();
+		throw;
+	  }
 }
 
 void
@@ -102,8 +121,6 @@ PuckVisionThread::init()
 	cfg_colormap_file_green_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_green").c_str());
 	cfg_colormap_file_blue_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_blue").c_str());
 
-
-
 	logger->log_debug(name(), "cam transform X: %f y: %f z: %f pitch: %f",camera_info_.position_x_, camera_info_.position_y_, camera_info_.position_z_, camera_info_.position_pitch_);
 
 	camera_info_.opening_angle_horizontal_ = config->get_float((cfg_prefix_ + "camera_opening_angle_horizontal").c_str());
@@ -115,8 +132,6 @@ PuckVisionThread::init()
 	cm_red_ = new firevision::ColorModelLookupTable(cfg_colormap_file_red_.c_str(),"puckvision-red-colormap", true /* destroy on delete */);
 	cm_green_ = new firevision::ColorModelLookupTable(cfg_colormap_file_green_.c_str(),"puckvision-green-colormap", true /* destroy on delete */);
 	cm_blue_ = new firevision::ColorModelLookupTable(cfg_colormap_file_blue_.c_str(),"puckvision-blue-colormap", true /* destroy on delete */);
-
-	cfg_nr_puck_interfaces_ = config->get_uint((cfg_prefix_ + "nr_puck_interfaces").c_str());
 
 	std::string shmID = config->get_string((cfg_prefix_ + "shm_image_id").c_str());
 
@@ -195,13 +210,8 @@ PuckVisionThread::init()
 
 	buffer_ = shm_buffer_->buffer();
 
-
-	//open interfaces
-	puckInterface_ = blackboard->open_for_writing<fawkes::PuckVisionInterface>(
-			config->get_string((cfg_prefix_ + "puck_if").c_str()).c_str()
-			);
-
 	puckInterface_->set_frame(cfg_frame_.c_str());
+	createPuckInterface();
 
 	// Calculate visible Area
 	camera_info_.angle_horizontal_to_opening_ = (1.57 - camera_info_.position_pitch_) - (camera_info_.opening_angle_vertical_ / 2) ;
@@ -572,6 +582,14 @@ PuckVisionThread::finalize()													//TODO check if everthing gets deleted
 	logger->log_debug(name(), "finalize starts");
 
 	vision_master->unregister_thread(this);
+
+	fawkes::Position3DInterface* interface;
+	while(!puck_interfaces_.empty()){
+		interface = puck_interfaces_.back();
+		blackboard->close(interface);
+		puck_interfaces_.pop_back();
+	}
+
 	blackboard->close(puckInterface_);
 
 	delete cam_;
