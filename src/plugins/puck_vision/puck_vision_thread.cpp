@@ -52,10 +52,6 @@ PuckVisionThread::PuckVisionThread()
 
 	cls_red_.colormodel = NULL;
 
-	//Calibration
-	cfg_width_bottem_in_m_ = 0;
-	cfg_width_top_in_m_ = 0;
-
 	drawer_ = NULL;
 
 	cfg_debugMessagesActivated_ = false;
@@ -64,7 +60,7 @@ PuckVisionThread::PuckVisionThread()
 void
 PuckVisionThread::init()
 {
-	logger->log_info(name(), "puck_vision: starts up");
+	logger->log_info(name(), "starts init");
 
 	cfg_prefix_= "/plugins/puck_vision/";
 	cfg_prefix_static_transforms_ = "/plugins/static-transforms/transforms/cam_puck/";
@@ -121,11 +117,7 @@ PuckVisionThread::init()
 	cm_green_ = new firevision::ColorModelLookupTable(cfg_colormap_file_green_.c_str(),"puckvision-green-colormap", true /* destroy on delete */);
 	cm_blue_ = new firevision::ColorModelLookupTable(cfg_colormap_file_blue_.c_str(),"puckvision-blue-colormap", true /* destroy on delete */);
 
-	cfg_distance_function_a_ = config->get_float((cfg_prefix_ + "distance_function_a").c_str());
-	cfg_distance_function_b_ = config->get_float((cfg_prefix_ + "distance_function_b").c_str());
-
-	cfg_width_top_in_m_ = config->get_float((cfg_prefix_ + "visible_width_max_distance").c_str());
-	cfg_width_bottem_in_m_ = config->get_float((cfg_prefix_ + "visible_width_min_distance").c_str());
+	cfg_nr_puck_interfaces_ = config->get_uint((cfg_prefix_ + "nr_puck_interfaces").c_str());
 
 	std::string shmID = config->get_string((cfg_prefix_ + "shm_image_id").c_str());
 
@@ -133,8 +125,6 @@ PuckVisionThread::init()
 
 	img_width_ = cam_->pixel_width();
 	img_height_ = cam_->pixel_height();
-
-	m_per_pixel_height_ = (cfg_width_top_in_m_ - cfg_width_bottem_in_m_)/img_height_;
 
 	cspaceFrom_ = cam_->colorspace();
 
@@ -206,10 +196,12 @@ PuckVisionThread::init()
 
 	buffer_ = shm_buffer_->buffer();
 
+
 	//open interfaces
 	puckInterface_ = blackboard->open_for_writing<fawkes::PuckVisionInterface>(
 			config->get_string((cfg_prefix_ + "puck_if").c_str()).c_str()
 			);
+
 	puckInterface_->set_frame(cfg_frame_.c_str());
 
 	// Calculate visible Area
@@ -443,24 +435,6 @@ PuckVisionThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifi
 	return ROIs;
 }
 
-fawkes::polar_coord_2d_t
-PuckVisionThread::positionFromRoi(firevision::ROI* roi){
-
-	// x = width, y = distance
-	fawkes::polar_coord_2d_t puck_position;
-	puck_position.r = positionCorrectionX(roi->start.y + (roi->height/2)) + cfg_puck_radius_;
-	//puck_position.r = m * (roi->width - cfg_p1_width) +  cfg_p1_distance + cfg_puck_radius;
-	if (cfg_debugMessagesActivated_) {
-		logger->log_info(name(),"Distance = %f, rois: center (%u, %u) width,height (%u, %u)",puck_position.r , roi->start.x + (roi->width/2),roi->start.y + (roi->height/2), roi->width, roi->height);
-	}
-	float pixelPerRadHorizonal = img_width_ / cfg_camera_opening_angle_horizontal_;
-
-	puck_position.phi = ((roi->start.x + roi->width/2)	- img_width_ / 2)
-					/ pixelPerRadHorizonal;
-
-	return puck_position;
-}
-
 float
 PuckVisionThread::getX(firevision::ROI* roi){
 	// Distance X
@@ -484,28 +458,6 @@ PuckVisionThread::getY(firevision::ROI* roi){
 	//logger->log_debug(name(),"angle: %f, roi pos X: %i, distance y: %f, cfg %f", alpha, roiPositionX, position_y_in_m, cfg_camera_opening_angle_horizontal_);
 
 	return position_y_in_m;
-}
-
-double
-PuckVisionThread::positionCorrectionX(unsigned int x_in)
-{
-	double temp;
-	temp = 0.0;
-	temp = cfg_distance_function_a_ * exp(cfg_distance_function_b_*x_in);
-	return temp;
-}
-
-double
-PuckVisionThread::positionCorrectionY(firevision::ROI* roi)
-{
-	double width_at_height = m_per_pixel_height_ * (img_height_ - (roi->start.y + roi->height/2)) + cfg_width_bottem_in_m_;
-
-	int roi_center_x = (roi->start.x + (roi->width/2));
-	int position_in_picuture = roi_center_x - (img_width_/2);
-	double y_position = position_in_picuture * (width_at_height/img_width_);
-	//double
-	//logger->log_info(name(),"center: %i width_at_height: %f position_in_picture_x: %i y: %f",roi_center_x,  width_at_height, position_in_picuture,y_position);
-	return y_position;
 }
 
 int
@@ -546,8 +498,8 @@ PuckVisionThread::updateInterface(std::list<firevision::ROI>* rois){
 		firevision::ROI* roi = getBiggestRoi(rois);
 
 		if(roi != NULL){
-			x = getX(roi);//positionCorrectionX(roi->start.y + (roi->height/2)) + cfg_puck_radius_;
-			y = getY(roi);//positionCorrectionY(roi);
+			x = getX(roi);
+			y = getY(roi);
 			cartToPol(polar,x,y);
 			if (cfg_debugMessagesActivated_) {
 				logger->log_info(name(),"%i x: %f y: %f r: %f phi: %f",i, x,  y, polar.r, polar.phi);
@@ -621,6 +573,7 @@ PuckVisionThread::finalize()													//TODO check if everthing gets deleted
 	logger->log_debug(name(), "finalize starts");
 
 	vision_master->unregister_thread(this);
+	blackboard->close(puckInterface_);
 
 	delete cam_;
 	delete scanline_;
@@ -638,7 +591,6 @@ PuckVisionThread::finalize()													//TODO check if everthing gets deleted
 
 	delete cls_red_.colormodel;
 
-	blackboard->close(puckInterface_);
 
 	logger->log_info(name(), "finalize ends");
 }

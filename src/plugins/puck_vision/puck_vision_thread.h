@@ -93,15 +93,14 @@ private:
 
 	std::string cfg_prefix_;
 	std::string cfg_prefix_static_transforms_;
-	std::string cfg_camera_;
 	std::string cfg_colormodel_mode_;
+
+	//Camera
+	std::string cfg_camera_;
 	float cfg_camera_opening_angle_horizontal_;
 	float cfg_camera_opening_angle_vertical_;
 	unsigned int img_width_;
 	unsigned int img_height_;
-
-	float cfg_camera_opening_angle_x_;
-	float cfg_camera_opening_angle_y_;
 
 	float cfg_width_top_in_m_;
 	float cfg_width_bottem_in_m_;
@@ -151,6 +150,7 @@ private:
 
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
+	unsigned int cfg_nr_puck_interfaces_;
 	//interfaces
 	fawkes::SwitchInterface *switchInterface_;
 	fawkes::PuckVisionInterface *puckInterface_;
@@ -183,9 +183,6 @@ private:
 	fawkes::polar_coord_2d_t
 	transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
 
-	fawkes::polar_coord_2d_t
-	positionFromRoi(firevision::ROI* roi);
-
 	void
 	cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 
@@ -197,12 +194,6 @@ private:
 
 	void
 	polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
-
-	double
-	positionCorrectionX(unsigned int x_in);
-
-	double
-	positionCorrectionY(firevision::ROI* roi);
 
 	firevision::ROI*
 	getBiggestRoi(std::list<firevision::ROI>* roiList);
