@@ -9,7 +9,7 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-(defrule prod-deliver-p3
+(defrule prod-deliver-P3
   (declare (salience ?*PRIORITY-DELIVER-P3*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
@@ -20,6 +20,36 @@
   (retract ?sf)
   (assert (state TASK-PROPOSED)
 	  (proposed-task (name pick-and-deliver) (args (create$ ?name)))
+  )
+)
+
+(defrule prod-deliver-P1-P2
+  (declare (salience ?*PRIORITY-DELIVER-P1P2*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T3|T4) (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name) (produced-puck P1|P2))
+  (not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  =>
+  (printout t "PROD: Deliver P1 or P2 from " ?name crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+	  (proposed-task (name pick-and-deliver) (args (create$ ?name)))
+  )
+)
+
+(defrule prod-start-T2-with-S0
+  (declare (salience ?*PRIORITY-START-T2-WITH-S0*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T2) (loaded-with $?l&~:(member$ S0 ?l))
+	   (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE))
+  (machine (name ?name) (loaded-with $?l) (incoming $?i&:(or (member$ S1 ?l) (member$ BRING_S1 ?i))))
+  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  =>
+  (printout t "PROD: Starting T2 " ?name " with S0" crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+	  (proposed-task (name load-with-S0) (args (create$ ?name)))
   )
 )
 
@@ -51,6 +81,27 @@
   (retract ?sf)
   (assert (state TASK-PROPOSED)
 	  (proposed-task (name load-with-S1) (args (create$ ?name-T1 ?name-T2)))
+  )
+)
+
+(defrule prod-start-T3_T4-with-S0
+  (declare (salience ?*PRIORITY-START-T3_T4-WITH-S0*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S0 ?l)) 
+	   (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE))
+  (machine (name ?name) (loaded-with $?l)
+	   (incoming $?i&:(or (subsetp (create$ S1 S2) ?l)
+			      (subsetp (create$ BRING_S1 BRING_S2) ?i)
+			      (and (member$ S1 ?l) (member$ BRING_S2 ?i))
+			      (and (member$ S2 ?l) (member$ BRING_S1 ?i))
+			      )))
+  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  =>
+  (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+	  (proposed-task (name load-with-S0) (args (create$ ?name)))
   )
 )
 
@@ -92,30 +143,30 @@
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
 	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4) (produced-puck NONE))
   (machine (mtype T2) (produced-puck S2) 
-	   (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name_T2))
+	   (incoming $?i-T2&~:(member$ PICK_PROD ?i-T2)) (name ?name_T2))
   (not (proposed-task (name pick-and-load) (args $?args&:(subsetp ?args (create$ ?name_T2 ?name_T3T4))) (state rejected)))
   =>
-  (printout t "PROD: Loading T3/T4 " ?name " with S2" crlf)
+  (printout t "PROD: Loading T3/T4 " ?name_T3T4 " with S2 from " ?name_T2 crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
 	  (proposed-task (name pick-and-load) (args (create$ ?name_T2 ?name_T3T4)))
   )
 )
 
-(defrule prod-load-T5-with-S0
-  (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))
-  (phase PRODUCTION)
-  ?sf <- (state IDLE)
-  (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
-    (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE))
-  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
-  =>
-  (printout t "PROD: Loading T5 " ?name " with S0" crlf)
-  (retract ?sf)
-  (assert (state TASK-PROPOSED)
-    (proposed-task (name load-with-S0) (args (create$ ?name)))
-  )
-)
+; (defrule prod-load-T5-with-S0
+;   (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))
+;   (phase PRODUCTION)
+;   ?sf <- (state IDLE)
+;   (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
+;     (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE))
+;   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+;   =>
+;   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
+;   (retract ?sf)
+;   (assert (state TASK-PROPOSED)
+;     (proposed-task (name load-with-S0) (args (create$ ?name)))
+;   )
+; )
 
 ; (defrule prod-get-consumed-done
 ;   (phase PRODUCTION)
