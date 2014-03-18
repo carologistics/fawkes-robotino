@@ -626,7 +626,8 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
   rois_R->sort(sort_rois_by_area_);
 
   unsigned int i = 0;
-  for (it_R = rois_R->begin(); it_R != rois_R->end() && i++ < MAX_SIGNALS; ++it_R) {
+  for (it_R = rois_R->begin(); it_R != rois_R->end() && i++ < TRACKED_SIGNALS; ++it_R) {
+    bool found_some_black = false;
     try {
 
       ROI *roi_R = new ROI(*it_R);
@@ -648,10 +649,15 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
       std::list<ROI> *black_rois_top = black_classifier_->classify();
 
       if (!black_rois_top->empty()) {
-        if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
-          drawn_rois_.insert(drawn_rois_.end(), black_rois_top->begin(), black_rois_top->end());
+        found_some_black = true;
         ROI black_top = *(black_rois_top->begin());
-        delete black_rois_top;
+        if (unlikely(cfg_tuning_mode_)) {
+          if (cfg_draw_processed_rois_) {
+            drawn_rois_.push_back(black_top);
+            delete black_rois_top;
+          }
+          else drawn_rois_.insert(drawn_rois_.end(), black_rois_top->begin(), black_rois_top->end());
+        }
 
         if (black_top.width > roi_R->width * 0.5)
           roi_R->width = (black_top.width + roi_R->width) / 2;
@@ -686,8 +692,15 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
       std::list<ROI> *black_rois_bottom = black_classifier_->classify();
 
       if (!black_rois_bottom->empty()) {
+        found_some_black = true;
         ROI black_bottom = *(black_rois_bottom->begin());
-        delete black_rois_bottom;
+        if (unlikely(cfg_tuning_mode_)) {
+          if (cfg_draw_processed_rois_) {
+            drawn_rois_.push_back(black_bottom);
+            delete black_rois_bottom;
+          }
+          else drawn_rois_.insert(drawn_rois_.end(), black_rois_top->begin(), black_rois_top->end());
+        }
 
         unsigned int height_adj = (black_bottom.start.y - roi_R->start.y) / 3;
         roi_R->height = height_adj;
@@ -697,6 +710,7 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
         roi_G->start.y = roi_Y->start.y + roi_Y->height;
       }
 
+      /*
       ROI check_black_green(*roi_G);
       check_black_green.color = C_BACKGROUND;
       if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
@@ -716,10 +730,10 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
       roi_G->set_image_width(cam_width_);
       roi_G->set_image_height(cam_height_);
 
-      if (((float)black_in_green_area / (float)green_area) < 0.4) {
+      if (((float)black_in_green_area / (float)green_area) < 0.4) { //*/
+      if (found_some_black)
         rv->push_back({roi_R, roi_Y, roi_G});
-
-      }
+      //}
     }
     catch (OutOfBoundsException &e) {
       logger->log_error(name(), "%s", e.what());
