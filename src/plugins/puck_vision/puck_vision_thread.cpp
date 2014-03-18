@@ -18,17 +18,15 @@ PuckVisionThread::PuckVisionThread()
  	VisionAspect(VisionAspect::CYCLIC)
 {
 	cfg_prefix_ = "";
-	cfg_camera_ = "";
 	cfg_frame_ = "";
 
-	img_width_ = 0;
-	img_height_ = 0;
 
-	cfg_distance_function_a_ = 0;
-	cfg_distance_function_b_ = 0;
+	camera_info_.cfg_camera_ = "";
+	camera_info_.img_width_ = 0;
+	camera_info_.img_height_ = 0;
 
-	cfg_camera_opening_angle_horizontal_ = 0;
-	cfg_camera_opening_angle_vertical_ = 0;
+	camera_info_.opening_angle_horizontal_ = 0;
+	camera_info_.opening_angle_vertical_ = 0;
 
 	buffer_ = NULL;
 	shm_buffer_ = NULL;
@@ -66,12 +64,17 @@ PuckVisionThread::init()
 	cfg_prefix_static_transforms_ = "/plugins/static-transforms/transforms/cam_puck/";
 
 	cfg_frame_  = config->get_string((cfg_prefix_ + "frame").c_str());
-	cfg_camera_ = config->get_string((cfg_prefix_ + "camera").c_str());
+
+	camera_info_.cfg_camera_ = config->get_string((cfg_prefix_ + "camera").c_str());
+	camera_info_.position_x_ = config->get_float(( cfg_prefix_static_transforms_ + "trans_x").c_str());
+	camera_info_.position_y_ =  config->get_float(( cfg_prefix_static_transforms_ + "trans_y").c_str());
+	camera_info_.position_z_ =  config->get_float(( cfg_prefix_static_transforms_ + "trans_z").c_str());
+	camera_info_.position_pitch_ =  config->get_float(( cfg_prefix_static_transforms_ + "rot_pitch").c_str());
 
 	cfg_debugMessagesActivated_ = config->get_bool((cfg_prefix_ + "show_debug_messages").c_str());
 	cfg_paintROIsActivated_ = config->get_bool((cfg_prefix_ + "draw_rois").c_str());
 
-	cfg_puck_radius_ = config->get_float((cfg_prefix_ + "puck_radius").c_str());
+	puck_info_.radius_ = config->get_float((cfg_prefix_ + "puck_radius").c_str());
 
 	//Config Value for the classifier mode
 	cfg_colormodel_mode_ = config->get_string((cfg_prefix_ + "colormodel_mode").c_str());
@@ -99,18 +102,14 @@ PuckVisionThread::init()
 	cfg_colormap_file_green_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_green").c_str());
 	cfg_colormap_file_blue_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_blue").c_str());
 
-	cfg_camera_position_x_ = config->get_float(( cfg_prefix_static_transforms_ + "trans_x").c_str());
-	cfg_camera_position_y_ =  config->get_float(( cfg_prefix_static_transforms_ + "trans_y").c_str());
-	cfg_camera_position_z_ =  config->get_float(( cfg_prefix_static_transforms_ + "trans_z").c_str());
-	cfg_camera_position_pitch_ =  config->get_float(( cfg_prefix_static_transforms_ + "rot_pitch").c_str());
 
 
-	logger->log_debug(name(), "cam transform X: %f y: %f z: %f pitch: %f",cfg_camera_position_x_, cfg_camera_position_y_, cfg_camera_position_z_, cfg_camera_position_pitch_);
+	logger->log_debug(name(), "cam transform X: %f y: %f z: %f pitch: %f",camera_info_.position_x_, camera_info_.position_y_, camera_info_.position_z_, camera_info_.position_pitch_);
 
-	cfg_camera_opening_angle_horizontal_ = config->get_float((cfg_prefix_ + "camera_opening_angle_horizontal").c_str());
-	cfg_camera_opening_angle_vertical_ = config->get_float((cfg_prefix_ + "camera_opening_angle_vertical").c_str());
+	camera_info_.opening_angle_horizontal_ = config->get_float((cfg_prefix_ + "camera_opening_angle_horizontal").c_str());
+	camera_info_.opening_angle_vertical_ = config->get_float((cfg_prefix_ + "camera_opening_angle_vertical").c_str());
 
-	logger->log_debug(name(),"Camera opening angles Horizontal: %f Vertical: %f", cfg_camera_opening_angle_horizontal_, cfg_camera_opening_angle_vertical_);
+	logger->log_debug(name(),"Camera opening angles Horizontal: %f Vertical: %f", camera_info_.opening_angle_horizontal_, camera_info_.opening_angle_vertical_);
 
 	cm_yellow_ = new firevision::ColorModelLookupTable(cfg_colormap_file_yellow_.c_str(),"puckvision-yellow-colormap", true /* destroy on delete */);
 	cm_red_ = new firevision::ColorModelLookupTable(cfg_colormap_file_red_.c_str(),"puckvision-red-colormap", true /* destroy on delete */);
@@ -121,14 +120,14 @@ PuckVisionThread::init()
 
 	std::string shmID = config->get_string((cfg_prefix_ + "shm_image_id").c_str());
 
-	cam_ = vision_master->register_for_camera(cfg_camera_.c_str(), this);
+	cam_ = vision_master->register_for_camera(camera_info_.cfg_camera_.c_str(), this);
 
-	img_width_ = cam_->pixel_width();
-	img_height_ = cam_->pixel_height();
+	camera_info_.img_width_ = cam_->pixel_width();
+	camera_info_.img_height_ = cam_->pixel_height();
 
 	cspaceFrom_ = cam_->colorspace();
 
-	scanline_ = new firevision::ScanlineGrid( img_width_, img_height_, 2, 2 );
+	scanline_ = new firevision::ScanlineGrid( camera_info_.img_width_, camera_info_.img_height_, 2, 2 );
 
 
 	classifier_yellow_ = new firevision::SimpleColorClassifier(
@@ -186,8 +185,8 @@ PuckVisionThread::init()
 	shm_buffer_ = new firevision::SharedMemoryImageBuffer(
 			shmID.c_str(),
 			cspaceTo_,
-			img_width_,
-			img_height_
+			camera_info_.img_width_,
+			camera_info_.img_height_
 			);
 	if (!shm_buffer_->is_valid()) {
 		throw fawkes::Exception("Shared memory segment not valid");
@@ -205,26 +204,26 @@ PuckVisionThread::init()
 	puckInterface_->set_frame(cfg_frame_.c_str());
 
 	// Calculate visible Area
-	angle_horizontal_to_opening_ = (1.57 - cfg_camera_position_pitch_) - (cfg_camera_opening_angle_vertical_ / 2) ;
-	visible_lenght_x_in_m_ = cfg_camera_position_z_ * (tan( cfg_camera_opening_angle_vertical_ + angle_horizontal_to_opening_) - tan(angle_horizontal_to_opening_));
+	camera_info_.angle_horizontal_to_opening_ = (1.57 - camera_info_.position_pitch_) - (camera_info_.opening_angle_vertical_ / 2) ;
+	camera_info_.visible_lenght_x_in_m_ = camera_info_.position_z_ * (tan( camera_info_.opening_angle_vertical_ + camera_info_.angle_horizontal_to_opening_) - tan(camera_info_.angle_horizontal_to_opening_));
 
-	offset_cam_x_to_groundplane_ = cfg_camera_position_z_ * tan(angle_horizontal_to_opening_);
+	camera_info_.offset_cam_x_to_groundplane_ = camera_info_.position_z_ * tan(camera_info_.angle_horizontal_to_opening_);
 
-	visible_lenght_y_in_m_ = cfg_camera_position_z_ * tan (cfg_camera_opening_angle_horizontal_ /2 );
+	camera_info_.visible_lenght_y_in_m_ = camera_info_.position_z_ * tan (camera_info_.opening_angle_horizontal_ /2 );
 
-	logger->log_debug(name(), "Visible X: %f y: %f Offset cam groundplane: %f angle (horizontal/opening): %f ",visible_lenght_x_in_m_, visible_lenght_y_in_m_ , offset_cam_x_to_groundplane_, angle_horizontal_to_opening_);
+	logger->log_debug(name(), "Visible X: %f y: %f Offset cam groundplane: %f angle (horizontal/opening): %f ",camera_info_.visible_lenght_x_in_m_, camera_info_.visible_lenght_y_in_m_ , camera_info_.offset_cam_x_to_groundplane_, camera_info_.angle_horizontal_to_opening_);
 
 
 	//ROIs
 	drawer_ = new firevision::FilterROIDraw();
 
 	//Defines the search area
-	roi_center_.start.x=(img_width_/2) -2;
-	roi_center_.start.y=(img_height_/2) -2;
+	roi_center_.start.x=(camera_info_.img_width_/2) -2;
+	roi_center_.start.y=(camera_info_.img_height_/2) -2;
 	roi_center_.width=4;
 	roi_center_.height=4;
-	roi_center_.image_height=img_height_;
-	roi_center_.image_width=img_width_;
+	roi_center_.image_height=camera_info_.img_height_;
+	roi_center_.image_width=camera_info_.img_width_;
 
 	logger->log_debug(name(), "end of init()");
 }
@@ -278,27 +277,27 @@ PuckVisionThread::loop()
 				cspaceTo_,
 				cam_->buffer(),
 				buffer_,
-				img_width_,
-				img_height_);
+				camera_info_.img_width_,
+				camera_info_.img_height_);
 	cam_->dispose_buffer();
 
 	std::list<firevision::ROI> *rois_all_ = new std::list<firevision::ROI>();
 
 	if (cfg_colormodel_mode_ == "colormap"){
 		scanline_->reset();
-		classifier_yellow_->set_src_buffer(buffer_, img_width_, img_height_);
+		classifier_yellow_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 		std::list<firevision::ROI> *rois_yellow_ = classifier_yellow_->classify();
 
 		scanline_->reset();
-		classifier_red_->set_src_buffer(buffer_, img_width_, img_height_);
+		classifier_red_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 		std::list<firevision::ROI> *rois_red_ = classifier_red_->classify();
 
 		scanline_->reset();
-		classifier_green_->set_src_buffer(buffer_, img_width_, img_height_);
+		classifier_green_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 		std::list<firevision::ROI> *rois_green_ = classifier_green_->classify();
 
 		scanline_->reset();
-		classifier_blue_->set_src_buffer(buffer_, img_width_, img_height_);
+		classifier_blue_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 		std::list<firevision::ROI> *rois_blue_ = classifier_blue_->classify();
 
 		mergeWithColorInformation(firevision::C_BLUE, rois_blue_, rois_all_);
@@ -313,7 +312,7 @@ PuckVisionThread::loop()
 
 	} else if(cfg_colormodel_mode_ == "similarity"){
 		scanline_->reset();
-		classifier_similarity_->set_src_buffer(buffer_, img_width_, img_height_);
+		classifier_similarity_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 		std::list<firevision::ROI> *rois_similarity_ = classifier_similarity_->classify();
 
 		mergeWithColorInformation(firevision::C_MAGENTA, rois_similarity_, rois_all_);
@@ -411,7 +410,7 @@ void PuckVisionThread::polToCart(float &x, float &y,fawkes::polar_coord_2d_t pol
 void
 PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
 {
-	drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(img_width_, img_height_), 0);
+	drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(camera_info_.img_width_, camera_info_.img_height_), 0);
 	drawer_->set_dst_buffer(buffer_, &roi);
 	drawer_->set_style(borderStyle);
 	drawer_->apply();
@@ -428,7 +427,7 @@ PuckVisionThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifi
 	scanline_->reset();
 	scanline_->set_roi(&searchArea);
 
-	classifier->set_src_buffer(buffer_, img_width_, img_height_);
+	classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 
 	std::list<firevision::ROI> *ROIs = classifier->classify();
 
@@ -438,20 +437,20 @@ PuckVisionThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifi
 float
 PuckVisionThread::getX(firevision::ROI* roi){
 	// Distance X
-	int roiPositionY = img_height_ - ( roi->start.y +roi->height/2 );
-	float angle = ( (float)roiPositionY * cfg_camera_opening_angle_vertical_ ) / (float)img_height_;
-	float distance_x = cfg_camera_position_z_ * (tan( angle + angle_horizontal_to_opening_) - tan(angle_horizontal_to_opening_));
+	int roiPositionY = camera_info_.img_height_ - ( roi->start.y +roi->height/2 );
+	float angle = ( (float)roiPositionY * camera_info_.opening_angle_vertical_ ) / (float)camera_info_.img_height_;
+	float distance_x = camera_info_.position_z_ * (tan( angle + camera_info_.angle_horizontal_to_opening_) - tan(camera_info_.angle_horizontal_to_opening_));
 
 	//logger->log_debug(name(),"angle: %f, image_size x: %i y: %i,roi x: %i y: %i", (angle*180) / M_PI, img_width_, img_height_, roi->start.x, roi->start.y);
 
-	return distance_x + offset_cam_x_to_groundplane_ + cfg_camera_position_x_;
+	return distance_x + camera_info_.offset_cam_x_to_groundplane_ + camera_info_.position_x_;
 }
 
 float
 PuckVisionThread::getY(firevision::ROI* roi){
 	// Left-Right
 	int roiPositionX = ( roi->start.x + roi->width/2 );
-	float alpha = ((((float)img_width_/2) - (float)roiPositionX) / ((float)img_width_ /2 )) * (cfg_camera_opening_angle_horizontal_/2);
+	float alpha = ((((float)camera_info_.img_width_/2) - (float)roiPositionX) / ((float)camera_info_.img_width_ /2 )) * (camera_info_.opening_angle_horizontal_/2);
 	float x = getX(roi);
 	float position_y_in_m = sin(alpha * x);
 

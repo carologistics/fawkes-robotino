@@ -72,9 +72,23 @@ class PuckVisionThread
 
 {
 
+struct camera_info{
+	std::string cfg_camera_;
+	float opening_angle_horizontal_;
+	float opening_angle_vertical_;
+	unsigned int img_width_;
+	unsigned int img_height_;
+	float position_x_;
+	float position_y_;
+	float position_z_;
+	float position_pitch_;
+	float offset_cam_x_to_groundplane_;
+	float angle_horizontal_to_opening_;
+	float visible_lenght_x_in_m_;
+	float visible_lenght_y_in_m_;
+};
 
-private:
-	typedef struct {
+struct color_classifier_context_t_{
 		firevision::ColorModelSimilarity *colormodel;
 		firevision::SimpleColorClassifier *classifier;
 		firevision::ColorModelSimilarity::color_class_t *color_class;
@@ -88,7 +102,13 @@ private:
 		unsigned int cfg_roi_neighborhood_min_match;
 		unsigned int cfg_scangrid_x_offset;
 		unsigned int cfg_scangrid_y_offset;
-	} color_classifier_context_t_;
+};
+
+struct puck_info{
+	float radius_;
+};
+
+private:
 	color_classifier_context_t_ cls_red_;
 
 	std::string cfg_prefix_;
@@ -96,32 +116,8 @@ private:
 	std::string cfg_colormodel_mode_;
 
 	//Camera
-	std::string cfg_camera_;
-	float cfg_camera_opening_angle_horizontal_;
-	float cfg_camera_opening_angle_vertical_;
-	unsigned int img_width_;
-	unsigned int img_height_;
-
-	float cfg_width_top_in_m_;
-	float cfg_width_bottem_in_m_;
-
-	float m_per_pixel_height_;
-
-	float offset_cam_x_to_groundplane_;
-	float angle_horizontal_to_opening_;
-
-
-	float visible_lenght_x_in_m_;
-	float visible_lenght_y_in_m_;
-
-	float cfg_camera_position_x_;
-	float cfg_camera_position_y_;
-	float cfg_camera_position_z_;
-	float cfg_camera_position_pitch_;
-
-	float cfg_puck_radius_;
-	float cfg_distance_function_a_;
-	float cfg_distance_function_b_;
+	camera_info camera_info_;
+	puck_info puck_info_;
 
 	bool cfg_debugMessagesActivated_;
 	bool cfg_paintROIsActivated_;
@@ -175,7 +171,6 @@ private:
 				float interface_phi,
 				float interface_r,
 				int interface_visibility);
-
 
 	void
 	drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
