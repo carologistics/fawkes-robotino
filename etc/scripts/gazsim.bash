@@ -36,6 +36,7 @@ KEEP=
 SHUTDOWN=
 NUM_ROBOTINOS=3
 REPLAY=
+FAWKES_BIN=$FAWKES_DIR/bin
 while getopts “hx:c:lrksn:e:da” OPTION
 do
      case $OPTION in
@@ -110,7 +111,7 @@ initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
 
 if [  $COMMAND  == kill ]; then
     echo 'Kill Gazebo-sim'
-    killall gazebo
+    #killall gazebo
     killall gzserver
     killall gzclient
     killall fawkes
@@ -124,20 +125,19 @@ fi
 if [  $COMMAND  == start ]; then
 
     #check if enviromnental variables for gazebo are set
-    if ! [[ $GAZEBO_MODEL_PATH == *fawkes-robotino/res/gazebo-models* ]]
+    if [ -z "$FAWKES_DIR" ]; then
+	echo "FAWKES_DIR is not set"
+	exit 1
+    fi
+    if ! [[ $GAZEBO_MODEL_PATH == *$FAWKES_DIR/res/gazebo-models* ]]
     then
 	echo "Missing path to Gazebo Models in GAZEBO_MODEL_PATH";
-	exit 0
+	exit 1
     fi
-    if ! [[ $GAZEBO_PLUGIN_PATH == *fawkes-robotino/lib/gazebo* ]]
+    if ! [[ $GAZEBO_PLUGIN_PATH == *$FAWKES_DIR/lib/gazebo* ]]
     then
 	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
-	exit 0
-    fi
-    if ! [[ $FAWKES_BIN == *fawkes-robotino/bin* ]]
-    then
-	echo "Missing path to fawkes-robotino/bin in FAWKES_BIN";
-	exit 0
+	exit 1
     fi
 
     #start gazebo

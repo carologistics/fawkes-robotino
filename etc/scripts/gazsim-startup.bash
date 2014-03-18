@@ -42,6 +42,7 @@ ROBOTINO=
 REPLAY=
 VISION=,gazsim-light-front,gazsim-puck-detection
 AGENT=
+FAWKES_BIN=$FAWKES_DIR/bin
 while getopts “hx:c:lrsp:i:e:da4” OPTION
 do
      case $OPTION in
@@ -108,11 +109,11 @@ case $COMMAND in
     fawkes ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
 	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT
-	~/fawkes-robotino/bin/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
+	$FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
 	;;
     comm )
 	comm_plugins=gazsim-organization$SHUTDOWN
-	~/fawkes-robotino/bin/fawkes -p $comm_plugins
+	$FAWKES_BIN/fawkes -p $comm_plugins
 	;;
     roscore ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
@@ -121,12 +122,12 @@ case $COMMAND in
     move_base ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
 	#rosparam set /use_sim_time true
-	roslaunch ~/fawkes-robotino/cfg/move_base_robotino/launch/move_base.launch
+	roslaunch $FAWKES_DIR/cfg/move_base_robotino/launch/move_base.launch
 	;;
     refbox )
-	~/llsf-refbox/bin/llsf-refbox
+	$LLSF_REFBOX_DIR/bin/llsf-refbox
 	;;
     refbox-shell )
-	~/llsf-refbox/bin/llsf-refbox-shell
+	$LLSF_REFBOX_DIR/bin/llsf-refbox-shell
 	;;
 esac

@@ -20,7 +20,7 @@ EOF
 
 replace_config() #args: 1:config-name 2:new value
 {
-    sed -i "s/$1:.*/$1: $2/" ~/fawkes-robotino/cfg/conf.d/gazsim.yaml
+    sed -i "s/$1:.*/$1: $2/" $FAWKES_DIR/cfg/conf.d/gazsim.yaml
 }
 
 restore_record() #args 1: file
@@ -75,7 +75,7 @@ fi
 
 #run simulations
 
-STARTUP_SCRIPT_LOCATION=~/fawkes-robotino/bin/gazsim.bash
+STARTUP_SCRIPT_LOCATION=$FAWKES_DIR/bin/gazsim.bash
 
 TIME=$(date +'%y_%m_%d_%H_%M')
 
@@ -85,7 +85,7 @@ do
     for CONF in ${CONFIGURATIONS[@]}
     do
 	#create and go to log folder
-	cd ~/fawkes-robotino/
+	cd $FAWKES_DIR
 	mkdir -p "gazsim-logs/$TIME/${CONF}_$RUN"
 	cd "gazsim-logs/$TIME/${CONF}_$RUN"
 
@@ -95,11 +95,11 @@ do
 	replace_config run $RUN
 	replace_config configuration-name "\"$CONF\""
 	replace_config collection "\"test_$TIME\""
-	replace_config log "\"~\/fawkes-robotino\/gazsim-logs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
+	replace_config log "\"$FAWKES_DIR\/gazsim-logs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
         
 
 	#start simulation
-	REPLAY_PATH="~/fawkes-robotino/gazsim-logs/$TIME/${CONF}_$RUN"
+	REPLAY_PATH="$FAWKES_DIR/gazsim-logs/$TIME/${CONF}_$RUN"
 	$STARTUP_SCRIPT_LOCATION -x start -r -a -s $HEADLESS -c $CONF -e $REPLAY_PATH $DETAILED
         
 	#wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
