@@ -398,7 +398,7 @@ void MachineSignalThread::loop()
   // Reset all known signals to not-seen
   for (std::list<signal_state_t_>::iterator known_signal = known_signals_.begin();
       known_signal != known_signals_.end(); ++known_signal) {
-    if (++(known_signal->unseen) > 1)
+    if (++(known_signal->unseen) > 2)
       known_signal->visibility = -1;
   }
 
