@@ -581,8 +581,12 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
           rois_vspace_ok(it_R, it_G)) {
         if (!rois_similar_width(it_R, it_G)) {
           int wdiff = it_G->width - it_R->width;
-          it_G->start.x += wdiff/2;
-          it_G->width -= wdiff/2;
+          int start_x = it_G->start.x + wdiff/2;
+          if (start_x < 0) start_x = 0;
+          it_G->start.x = start_x;
+          int width = it_G->width - wdiff/2;
+          if (start_x + width > cam_width_) width = cam_width_ - start_x;
+          it_G->width = width;
         }
         // Once we got through here it_G should have a pretty sensible green ROI.
         it_G->height = it_G->width;
@@ -627,12 +631,15 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
 
       ROI *roi_R = new ROI(*it_R);
 
-      long int start_x, start_y;
+      long int start_x, start_y, width, height;
 
       start_y = (long int)it_R->start.y - (long int)it_R->width/3;
       if (start_y < 0) start_y = 0;
-      ROI check_black_top(it_R->start.x, start_y, it_R->width, it_R->width/2,
-        cam_width_, cam_height_);
+      height = it_R->width/2;
+      if (start_y + height > cam_height_) height = cam_height_ - start_y;
+      ROI check_black_top(*it_R);
+      check_black_top.set_start(it_R->start.x, start_y);
+      check_black_top.set_height(height);
 
       if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
         drawn_rois_.push_back(check_black_top);
@@ -662,9 +669,14 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
       ROI check_black_bottom(*roi_Y);
       start_x = (long int)roi_Y->start.x - (long int)roi_Y->width/4;
       if (start_x < 0) start_x = 0;
-      check_black_bottom.set_start(start_x, roi_Y->start.y + roi_Y->height/2);
-      check_black_bottom.set_width(roi_Y->width * 1.5);
-      check_black_bottom.set_height(roi_Y->height * 2.5);
+      width = roi_Y->width * 1.5;
+      if (start_x + width > cam_width_) width = cam_width_ - start_x;
+      start_y = roi_Y->start.y + roi_Y->height/2;
+      height = roi_Y->height * 2.5;
+      if (start_y + height > cam_height_) height = cam_height_ - start_y;
+      check_black_bottom.set_start(start_x, start_y);
+      //check_black_bottom.set_width(width);
+      check_black_bottom.set_height(height);
       check_black_bottom.color = C_BACKGROUND;
 
       if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
@@ -737,7 +749,9 @@ bool MachineSignalThread::rois_similar_width(std::list<ROI>::iterator r1, std::l
 
 bool MachineSignalThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float avg_width = (r1->width + r2->width) / 2.0f;
-  return abs(r1->start.x - r2->start.x) / avg_width < cfg_roi_xalign_;
+  int mid1 = r1->start.x + r1->width/2;
+  int mid2 = r1->start.x + r2->width/2;
+  return abs(mid1 - mid2) / avg_width < cfg_roi_xalign_;
 }
 
 bool MachineSignalThread::roi_aspect_ok(std::list<ROI>::iterator r) {
