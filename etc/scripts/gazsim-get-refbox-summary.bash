@@ -1,13 +1,13 @@
 #!/bin/bash
-# Outputs the last refbox game summery of the given file
+# Outputs the last refbox game summary of the given file
 
 
 usage()
 {
 cat << EOF
-Outputs the last refbox game summery of the given file
+Usage: $0 file
 
-Usage: gazsim-get-refbox-summery.bash file
+Outputs the last refbox game summary of the given file
 EOF
 }
 
