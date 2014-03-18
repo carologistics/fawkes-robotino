@@ -43,7 +43,8 @@ REPLAY=
 VISION=,gazsim-light-front,gazsim-puck-detection
 AGENT=
 FAWKES_BIN=$FAWKES_DIR/bin
-while getopts “hx:c:lrsp:i:e:da4” OPTION
+KEEP=
+while getopts “hx:c:lrsp:i:e:da4k” OPTION
 do
      case $OPTION in
          h)
@@ -77,6 +78,9 @@ do
 	 a)
 	     AGENT=,clips,clips-agent,clips-protobuf,clips-motor-switch,clips-webview
 	     ;;
+         k)
+             KEEP=yes
+             ;;
          ?)
              usage
              exit
@@ -131,3 +135,9 @@ case $COMMAND in
 	$LLSF_REFBOX_DIR/bin/llsf-refbox-shell
 	;;
 esac
+
+
+if [ "$KEEP" == "yes" ]; then
+	read
+fi
+

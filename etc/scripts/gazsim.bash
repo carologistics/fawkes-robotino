@@ -54,7 +54,7 @@ do
 	     COMMAND=$OPTARG
              ;;
          k)
-	     KEEP=--profile\ refbox-shell 
+	     KEEP=-k
              ;;
 	 r)
 	     ROS=-r
@@ -142,63 +142,66 @@ if [  $COMMAND  == start ]; then
 
     #start gazebo
     #server
-    gnome-terminal $KEEP -t Gzserver -x bash -c "$startup_script_location -x gzserver $REPLAY"
+    gnome-terminal -t Gzserver -x bash -c "$startup_script_location -x gzserver $REPLAY $KEEP" $CLIENT
     #client if not headless
     if [[ -z $VISUALIZATION ]]
     then
-        gnome-terminal $KEEP -t Gzclient -x bash -c "$startup_script_location -x gzclient"
+	gnome-terminal -t Gzclient -x bash -c "$startup_script_location -x gzclient $KEEP"
     fi
     sleep 25s
 
     if [  $ROS  == "-r" ]; then
         #start roscores
-	gnome-terminal $KEEP -t Roscore1 -x bash -c "$startup_script_location -x roscore -p 11311"
+	gnome-terminal --tab -t Roscore1 -x bash -c "$startup_script_location -x roscore -p 11311 $KEEP"
 	if [ $NUM_ROBOTINOS -ge 2 ]
 	then
 	    sleep 1s
-	    gnome-terminal $KEEP -t Roscore2 -x bash -c "$startup_script_location -x roscore -p 11312"
+	    gnome-terminal --tab -t Roscore2 -x bash -c "$startup_script_location -x roscore -p 11312 $KEEP"
 	    if [ $NUM_ROBOTINOS -ge 3 ]
 	    then
 		sleep 1s
-		gnome-terminal $KEEP -t Roscore3 -x bash -c "$startup_script_location -x roscore -p 11313"
+		gnome-terminal --tab -t Roscore3 -x bash -c "$startup_script_location -x roscore -p 11313 $KEEP"
 	    fi
 	fi
 	
 	sleep 2s #move_base quits if there is no roscore
 
         #start move_bases
-	gnome-terminal $KEEP -t Move_base1 -x bash -c "$startup_script_location -x move_base -p 11311"
+	gnome-terminal --tab -t Move_base1 -x bash -c "$startup_script_location -x move_base -p 11311 $KEEP"
 	if [ $NUM_ROBOTINOS -ge 2 ]
 	then
-	    gnome-terminal $KEEP -t Move_base2 -x bash -c "$startup_script_location -x move_base -p 11312"
+	    gnome-terminal --tab -t Move_base2 -x bash -c "$startup_script_location -x move_base -p 11312 $KEEP"
 	    if [ $NUM_ROBOTINOS -ge 3 ]
 	    then
-		gnome-terminal $KEEP -t Move_base3 -x bash -c "$startup_script_location -x move_base -p 11313"
+		gnome-terminal --tab -t Move_base3 -x bash -c "$startup_script_location -x move_base -p 11313 $KEEP"
 	    fi
 	fi
     fi
 
     #start refbox
-    gnome-terminal $KEEP -t Refbox -x bash -c "$startup_script_location -x refbox"
+    gnome-terminal -t Refbox -x bash -c "$startup_script_location -x refbox $KEEP"
     sleep 2s
     #start refbox shell
-    gnome-terminal $KEEP -t Refbox_Shell --geometry=87x82 -x bash -c "$startup_script_location -x refbox-shell"
+    gnome-terminal --geometry=87x82 -t Refbox_Shell -x bash -c "$startup_script_location -x refbox-shell $KEEP"
+
+
+    sleep 2s
 
     #start fawkes for robotinos
-    gnome-terminal $KEEP -t Fawkes_Robotino_1 -x bash -c "$startup_script_location -x fawkes -p 11311 -i robotino1 $CONF $ROS $AGENT $DETAILED"
+    gnome-terminal -t Fawkes_Robotino_1 -x bash -c "$startup_script_location -x fawkes -p 11311 -i robotino1 $KEEP $CONF $ROS $AGENT $DETAILED"
     if [ $NUM_ROBOTINOS -ge 2 ]
     then
-	gnome-terminal $KEEP -t Fawkes_Robotino_2 -x bash -c "$startup_script_location -x fawkes -p 11312 -i robotino2 $CONF $ROS $AGENT $DETAILED"
+	gnome-terminal --tab -t Fawkes_Robotino_2 -x bash -c "$startup_script_location -x fawkes -p 11312 -i robotino2 $KEEP $CONF $ROS $AGENT $DETAILED"
 	if [ $NUM_ROBOTINOS -ge 3 ]
 	then
-	    gnome-terminal $KEEP -t Fawkes_Robotino_3 -x bash -c "$startup_script_location -x fawkes -p 11313 -i robotino3 $CONF $ROS $AGENT $DETAILED"
+	    gnome-terminal --tab -t Fawkes_Robotino_3 -x bash -c "$startup_script_location -x fawkes -p 11313 -i robotino3 $KEEP $CONF $ROS $AGENT $DETAILED"
 	fi
     fi
 
     sleep 5s
 
     #start fawkes for communication, llsfrbcomm and eventually statistics
-    gnome-terminal $KEEP -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311  $SHUTDOWN"
+    gnome-terminal --tab -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN"
 
     sleep 1s
 
