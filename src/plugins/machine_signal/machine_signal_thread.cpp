@@ -487,18 +487,18 @@ void MachineSignalThread::loop()
   while (known_signals_.size() > MAX_SIGNALS)
     known_signals_.pop_back();
 
-  signal_state_t_ best_signal; // Goes into the backward compatible bb interface
+  std::list<signal_state_t_>::iterator best_signal; // Goes into the backward compatible bb interface
 
   // Then sort geometrically
   if (at_delivery) {
     // Ordering is critical here
-    best_signal = *(known_signals_.begin());
+    best_signal = known_signals_.begin();
     known_signals_.sort(sort_signal_states_by_x_);
   }
   else {
     // Ordering is critical here
     known_signals_.sort(sort_signal_states_by_area_);
-    best_signal = *(known_signals_.begin());
+    best_signal = known_signals_.begin();
   }
 
   // Update blackboard with the current information
@@ -514,12 +514,12 @@ void MachineSignalThread::loop()
 
     known_signal++;
   }
-  bb_signal_compat_->set_red(best_signal.red);
-  bb_signal_compat_->set_yellow(best_signal.yellow);
-  bb_signal_compat_->set_green(best_signal.green);
+  bb_signal_compat_->set_red(best_signal->red);
+  bb_signal_compat_->set_yellow(best_signal->yellow);
+  bb_signal_compat_->set_green(best_signal->green);
   bb_signal_compat_->set_visibility_history(
-    known_signals_.begin()->unseen > 1 ? -1 : best_signal.visibility);
-  bb_signal_compat_->set_ready(best_signal.visibility >= (long int) buflen_/2);
+    known_signals_.begin()->unseen > 1 ? -1 : best_signal->visibility);
+  bb_signal_compat_->set_ready(best_signal->visibility >= (long int) buflen_/2);
   bb_signal_compat_->write();
 
   delete rois_R;
@@ -585,7 +585,7 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
           if (start_x < 0) start_x = 0;
           it_G->start.x = start_x;
           int width = it_G->width - wdiff/2;
-          if (start_x + width > cam_width_) width = cam_width_ - start_x;
+          if ((unsigned int)(start_x + width) > cam_width_) width = cam_width_ - start_x;
           it_G->width = width;
         }
         // Once we got through here it_G should have a pretty sensible green ROI.
