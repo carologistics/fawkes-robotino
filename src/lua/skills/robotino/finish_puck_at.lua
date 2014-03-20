@@ -74,10 +74,6 @@ function prod_in_progress()
       and light:red() == light.OFF
 end
 
-function at_recycle_machine()
-   return mtype == "RECYCLE"
-end
-
 fsm:define_states{ export_to=_M,
    closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light, orange_blinking=orange_blinking},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
@@ -92,7 +88,6 @@ fsm:define_states{ export_to=_M,
    {"PRODUCE_FAILED", JumpState},
    {"DECIDE_DEPOSIT", JumpState},
    {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
-   {"LEAVE_RECYCLE_AREA", SkillJumpState, skills={{leave_area_recycle}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="FINAL",
       fail_to="FAILED"},
    {"DEPOSIT_THEN_FAIL", SkillJumpState, skills={{deposit_puck}}, final_to="FAILED", fail_to="FAILED"},
@@ -108,7 +103,6 @@ fsm:add_transitions{
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="vars.final_product and not orange_blinking()" },
-   { "DECIDE_DEPOSIT", "LEAVE_RECYCLE_AREA", cond=at_recycle_machine },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
    { "DECIDE_DEPOSIT", "LEAVE_PRODUCING_MACHINE", cond=prod_in_progress, desc="leave machine to come back and pick up the produced puck later"},
