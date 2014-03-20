@@ -11,8 +11,7 @@
 ; - load-with-T1              get S0, produce at T1 and bring to T2/T3/T4
 ; - pick-and-load             get S2 from T2 and bring it to T3/T4
 ; - pick-and-deliver          get P1/P2/P3 from T3/T4/T5 and deliver it
-; - recycle-and-load-with-S0  get CO, recycle and bring it to T2/T3/T4/T5
-; - recycle-and-load-with-T1  get CO, recycle, produce at T1 and bring it to T2/T3/T4
+; - recycle                   get CO and recycle
 
 ;;;;;;;;;;;;;;
 ;load-with-S0:
@@ -203,6 +202,50 @@
   (phase PRODUCTION)
   ?t <- (task (name pick-and-load) (args $?a) (state ~finished))
   (holding NONE)
+  ?s <- (state GOTO-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
+;;;;;;;;;;;;;;;;;;
+;recylce:
+;;;;;;;;;;;;;;;;;;
+(defrule task-recycle--start-get-consumed-puck
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name recycle) (args $?a) (state ~finished))
+  (holding NONE)
+  ?s <- (state TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill get_consumed (nth$ 1 ?a))
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (res (nth$ 1 ?a)))
+  )
+  (modify ?t (state running))
+)
+(defrule task-recycle--recycle
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name recycle) (args $?a) (state ~finished))
+  (machine (name ?m&:(eq ?m (nth$ 2 ?a))) (mtype RECYCLE))
+  (holding CO)
+  ?s <- (state GET-CONSUMED-FINAL)
+  =>
+  (retract ?s)
+  (assert (execute-skill finish_puck_at ?m RECYCLE false)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (res ?m))
+  )
+  (modify ?t (state running))
+)
+(defrule task-recycle--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name recycle) (args $?a) (state ~finished))
+  (holding S0)
   ?s <- (state GOTO-FINAL)
   =>
   (modify ?t (state finished))

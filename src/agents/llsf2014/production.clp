@@ -37,6 +37,22 @@
   )
 )
 
+(defrule prod-recycle
+  (declare (salience ?*PRIORITY-RECYCLE*))
+  (phase PRODUCTION)
+  ?sf <- (state IDLE)
+  (machine (name ?name) (mtype T2|T3|T4) (junk ?j&:(> ?j 0))
+	   (incoming $?i&~:(member$ PICK_CO ?i)) (produced-puck NONE))
+  (machine (name ?recycle) (mtype RECYCLE))
+  (not (proposed-task (name recycle) (args $?args&:(subsetp ?args (create$ ?name ?recycle))) (state rejected)))
+  =>
+  (printout t "PROD: Recycling from " ?name crlf)
+  (retract ?sf)
+  (assert (state TASK-PROPOSED)
+	  (proposed-task (name recycle) (args (create$ ?name ?recycle)))
+  )
+)
+
 (defrule prod-start-T2-with-S0
   (declare (salience ?*PRIORITY-START-T2-WITH-S0*))
   (phase PRODUCTION)
