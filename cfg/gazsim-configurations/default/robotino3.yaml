@@ -20,7 +20,3 @@ fawkes:
     net:
       tcp_port: !tcp-port 1923
       service_name: "Fawkes on Gazsim Robotino 3"
-
-gazsim:
-  #channel for gazebo communication to differ topics of different robots
-  gazebo-communication-channel: "robotino3"

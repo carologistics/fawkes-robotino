@@ -90,7 +90,7 @@ void Robotino::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
   }
   else
   {
-    this->node_->Init(name_);
+    this->node_->Init(model_->GetWorld()->GetName()+"/"+name_);
   } 
   
   //creating simulated devices
