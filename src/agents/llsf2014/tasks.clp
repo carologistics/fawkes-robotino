@@ -36,7 +36,7 @@
   ?t <- (task (name load-with-S0) (args $?a) (state ~finished))
   (holding S0)
   (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
-  ?s <- (state GET-S0-FINAL)
+  ?s <- (state GET-S0-FINAL|TASK-ORDERED)
   =>
   (retract ?s)
   (assert (execute-skill finish_puck_at ?m ?mtype true)
@@ -82,7 +82,7 @@
   ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
   (holding S0)
   (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
-  ?s <- (state GET-S0-FINAL)
+  ?s <- (state GET-S0-FINAL|TASK-ORDERED)
   =>
   (retract ?s)
   (assert (execute-skill finish_puck_at ?m ?mtype false)
@@ -97,7 +97,7 @@
   ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
   (holding S1)
   (machine (name ?m&:(eq ?m (nth$ 2 ?a))) (mtype ?mtype))
-  ?s <- (state GOTO-FINAL)
+  ?s <- (state GOTO-FINAL|TASK-ORDERED)
   =>
   (retract ?s)
   (assert (execute-skill finish_puck_at ?m ?mtype true)
