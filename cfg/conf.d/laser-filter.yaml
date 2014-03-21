@@ -25,6 +25,20 @@ plugins/laser-filter:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
         type: circle_sector
 
-        from: 270
-        to: 90
+        from: 260
+        to: 100
+
+  colli:
+
+    # URG input interface
+    in/map: Laser360Interface::Map Laser
+    in/urg: Laser360Interface::Laser urg filtered
+
+    # URG filtered output interface
+    out/filtered: Laser360Interface::Laser colli
+
+    filters:
+
+      1-mix:
+        type: min_merge
 
