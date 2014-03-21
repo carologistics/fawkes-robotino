@@ -60,7 +60,7 @@ do
 	     PORT=$OPTARG
 	     ;;
 	 d)
-	     script_path=$FAWKES_BIN
+	     script_path=$FAWKES_DIR/bin
 	     initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
 	     $initial_pose_script_location -p 11311 -x 4.4 -y 0.3 -o 0 0 0.7 0.7
 	     $initial_pose_script_location -p 11312 -x 3.45 -y 0.3 -o 0 0 0.7 0.7
