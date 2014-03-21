@@ -15,6 +15,10 @@
   (slot y (type FLOAT) (default 0.0))
 )
 
+(deftemplate pose
+  (slot x (type FLOAT) (default 0.0))
+  (slot y (type FLOAT) (default 0.0))
+)
 
 ; EXPLORATION
 
@@ -133,4 +137,6 @@
   (timer (name send-worldmodel-sync) (time (create$ 0 0)) (seq 1))
 
   (already-received-wm-changes (create$))
+
+  (pose (x 0.0) (y 0.0))
 )

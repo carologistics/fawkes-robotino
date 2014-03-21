@@ -81,13 +81,15 @@
   (phase PRODUCTION)
   ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
   (holding S0)
-  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (x ?goal-x) (y ?goal-y))
+  (pose (x ?pos-x) (y ?pos-y))
   ?s <- (state GET-S0-FINAL|TASK-ORDERED)
   =>
+  (bind ?m-T1 (tac-find-best-T1 (nth$ 1 ?a) ?goal-x ?goal-y ?pos-x ?pos-y))
   (retract ?s)
-  (assert (execute-skill finish_puck_at ?m ?mtype false)
+  (assert (execute-skill finish_puck_at ?m-T1 T1 false)
           (state WAIT-FOR-LOCK)
-	  (wait-for-lock (res ?m))
+	  (wait-for-lock (res ?m-T1))
   )
   (modify ?t (state running))
 )
@@ -96,7 +98,7 @@
   (phase PRODUCTION)
   ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
   (holding S1)
-  (machine (name ?m&:(eq ?m (nth$ 2 ?a))) (mtype ?mtype))
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
   ?s <- (state GOTO-FINAL|TASK-ORDERED)
   =>
   (retract ?s)
@@ -112,7 +114,7 @@
   ?t <- (task (name load-with-S1) (args $?a) (state ~finished))
   (holding NONE)
   ;is the machine loaded with S1?
-  (machine (name ?m&:(eq ?m (nth$ 2 ?a))) (loaded-with $?lw&:(subsetp (create$ S1) ?lw)))
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (loaded-with $?lw&:(subsetp (create$ S1) ?lw)))
   ?s <- (state GOTO-FINAL)
   =>
   (modify ?t (state finished))

@@ -17,4 +17,3 @@
 (deffunction yaw-from-quaternion (?q)
   (return (* 2 (acos (nth$ 4 ?q)) (if (> (nth$ 3 ?q) 0) then 1 else -1)))
 )
-

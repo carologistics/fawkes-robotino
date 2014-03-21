@@ -32,8 +32,8 @@
 				(resource (sym-cat BRING_S0 (nth$ 1 ?a)))))
     )
     (case load-with-S1 then
-      (assert (needed-task-lock (action BRING_S1) (place (nth$ 2 ?a)) 
-				(resource (sym-cat BRING_S1 (nth$ 2 ?a)))))
+      (assert (needed-task-lock (action BRING_S1) (place (nth$ 1 ?a)) 
+				(resource (sym-cat BRING_S1 (nth$ 1 ?a)))))
     )
     (case pick-and-deliver then
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
