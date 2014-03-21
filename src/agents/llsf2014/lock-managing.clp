@@ -22,6 +22,7 @@
 (deffacts lock-facts
   (timer (name send-lock-msg) (time (create$ 0 0)) (seq 1))
   (timer (name send-master-announce) (time (create$ 0 0)) (seq 1))
+  (timer (name send-status-of-all-locks) (time (create$ 0 0)) (seq 1))
   (init-locking)
 )
 
@@ -140,6 +141,46 @@
     )
   )
 )
+
+(defrule lock-send-status-of-all-locks-to-slaves
+  (time $?now)
+  ?s <- (timer (name send-status-of-all-locks) (time $?t&:(timeout ?now ?t ?*LOCK-STATUS-SEND-PERIOD*)) (seq ?seq))
+  (lock-role MASTER)
+  =>
+  ;(printout t "Sending all lock-messages:" crlf)
+  (modify ?s (time ?now) (seq (+ ?seq 1)))
+  (bind ?complete-lock-msg (pb-create "llsf_msgs.CompleteLockStatus"))
+  (do-for-all-facts ((?lock locked-resource)) TRUE
+    (bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
+    (pb-set-field ?lock-msg "type" ACCEPT)
+    (pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
+    (pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
+    (pb-add-list ?complete-lock-msg "locks" ?lock-msg)
+  )
+  (pb-broadcast ?complete-lock-msg)
+  (pb-destroy ?complete-lock-msg)
+)
+
+
+(defrule lock-receive-status-of-all-locks-from-master
+  ?msg <- (protobuf-msg (type "llsf_msgs.CompleteLockStatus") (ptr ?p))
+  (lock-role SLAVE)
+  =>
+  ;(printout t "Receiving all locks:" crlf)
+  ;retract old locks
+  (do-for-all-facts ((?lock locked-resource)) TRUE
+    (retract ?lock)
+  )
+  ;read current locks
+  (foreach ?lock (pb-field-list ?p "locks")
+    (bind ?a (str-cat (pb-field-value ?lock "agent")))
+    (bind ?r (sym-cat (pb-field-value ?lock "resource")))
+    (assert (locked-resource (agent ?a) (resource ?r)))
+  )
+)
+
+;;;;;; accepting, releasing and refusing locks ;;;;;;;
+
 
 (defrule lock-accept-get
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
