@@ -259,7 +259,7 @@
   (exp-tactic NEAREST)
   ?s <- (state EXP_IDLE)
   ?g <- (goalmachine ?old)
-  (machine-exploration (name ?old) (x ?x) (y ?y))
+  (machine-exploration (name ?old) (x ?x) (y ?y) (recognized ?recognized))
   =>
   ;find next machine nearest to last machine
   (bind ?nearest NONE)
@@ -283,7 +283,15 @@
     (assert (state EXP_FOUND_NEXT_MACHINE)
 	    (exp-next-machine ?nearest))
     else
-    (printout error "TODO: handle last machine wrong read" crlf)
+    (if (not ?recognized)
+      then
+      (printout t "Retrying last machine" crlf)
+      (assert (state EXP_FOUND_NEXT_MACHINE)
+	      (exp-next-machine ?old))
+      else
+      (printout error "IMPLEMENT: prepare for production" crlf)
+    )
+
   )
 )
 
