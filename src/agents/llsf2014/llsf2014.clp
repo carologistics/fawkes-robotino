@@ -49,6 +49,7 @@
   (loaded interfaces)
   (ff-feature-loaded motor-switch)
   (ff-feature-loaded protobuf)
+  (ff-feature navgraph)
   =>
   (path-load  llsf2014/utils.clp)
   (path-load  llsf2014/net.clp)
@@ -99,4 +100,13 @@
   =>
   (printout t "Disabling watching of the following rules: " ?lv crlf)
   (foreach ?v ?lv (unwatch rules (sym-cat ?v)))
+)
+
+;this rule should happen before the init but  the reset retracts all navgraph facts
+(defrule enable-navgraph
+  (init)
+  =>
+  (printout t "Requesting navgraph feature" crlf)
+  (ff-feature-request "navgraph")
+  (path-load  llsf2014/navgraph.clp)
 )
