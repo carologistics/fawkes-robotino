@@ -8,9 +8,9 @@
 ;---------------------------------------------------------------------------
 
 (defrule net-enable-local
-  (confval (path "/clips-agent/llsf2013/peer-address") (value ?peer-address))
-  (confval (path "/clips-agent/llsf2013/peer-send-port") (value ?peer-send-port))
-  (confval (path "/clips-agent/llsf2013/peer-recv-port") (value ?peer-recv-port))
+  (confval (path "/clips-agent/llsf2014/peer-address") (value ?peer-address))
+  (confval (path "/clips-agent/llsf2014/peer-send-port") (value ?peer-send-port))
+  (confval (path "/clips-agent/llsf2014/peer-recv-port") (value ?peer-recv-port))
   (not (peer-enabled))
   =>
   (printout t "Enabling local peer" crlf)
@@ -19,8 +19,8 @@
 )
 
 (defrule net-enable
-  (confval (path "/clips-agent/llsf2013/peer-address") (value ?peer-address))
-  (confval (path "/clips-agent/llsf2013/peer-port") (value ?peer-port))
+  (confval (path "/clips-agent/llsf2014/peer-address") (value ?peer-address))
+  (confval (path "/clips-agent/llsf2014/peer-port") (value ?peer-port))
   (not (peer-enabled))
   =>
   (printout t "Enabling remote peer" crlf)

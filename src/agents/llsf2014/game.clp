@@ -84,7 +84,7 @@
 )
 
 (defrule play-exploration-without-refbox
-  (confval (path "/clips-agent/llsf2013/play-exploration-without-refbox") (value true))
+  (confval (path "/clips-agent/llsf2014/play-exploration-without-refbox") (value true))
   =>
   (assert 
     (exploration-start)

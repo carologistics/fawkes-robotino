@@ -42,7 +42,7 @@
 
 
 (defrule sim-enable-sim
-  (confval (path "/clips-agent/llsf2013/enable-sim") (type BOOL) (value true))
+  (confval (path "/clips-agent/llsf2014/enable-sim") (type BOOL) (value true))
   =>
   (bind ?client-id (pb-connect "localhost" 4444))
   (assert (sim (rb-client-id ?client-id))
