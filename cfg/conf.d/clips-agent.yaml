@@ -21,8 +21,6 @@ clips-agent:
   llsf2014:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: nothing
-    #start-machine-exploration defined in host.yaml (this is only the default!)
-    start-machine-exploration: M8
         
     peer-address: 172.26.255.255
     #use this for talking to the refbox on the same laptop:
@@ -78,8 +76,16 @@ clips-agent:
       recycle-min: 2
       recycle-max: 2
 
-    
-    
+    exploration:
+      #row defined in host.yaml (this is only the default!)
+      row: MID
+      
+      row-high: ["M12", "M11", "M8", "M5", "M17", "M20", "M23", "M24"]
+      row-mid: ["M10", "M7", "M4", "M2", "M14", "M16", "M19", "M22"]
+      row-low: ["M9", "M6", "M3", "M1", "M13", "M15", "M18", "M21"]
+
+
+      
   llsf2013:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: P3

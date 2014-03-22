@@ -9,14 +9,81 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+;Read exploration rows from config
+(defrule exp-cfg-get-row
+  (declare (salience ?*PRIORITY-WM*))
+  ;(phase EXPLORATION)
+  (confval (path "/clips-agent/llsf2014/exploration/row-high") (list-value $?row-high))
+  (confval (path "/clips-agent/llsf2014/exploration/row-mid") (list-value $?row-mid))
+  (confval (path "/clips-agent/llsf2014/exploration/row-low") (list-value $?row-low))
+  (confval (path "/clips-agent/llsf2014/exploration/row") (value ?agent-row))
+  =>
+  (bind $?row-high-sym (create$))
+  (progn$ (?m ?row-high)
+    (bind $?row-high-sym (append$ ?row-high-sym (sym-cat ?m)))
+  )
+  (bind $?row-mid-sym (create$))
+  (progn$ (?m ?row-mid)
+    (bind $?row-mid-sym (append$ ?row-mid-sym (sym-cat ?m)))
+  )
+  (bind $?row-low-sym (create$))
+  (progn$ (?m ?row-low)
+    (bind $?row-low-sym (append$ ?row-low-sym (sym-cat ?m)))
+  )
+  (bind ?row (sym-cat ?agent-row))
+  (switch ?row
+    (case HIGH then (assert (exp-row (name HIGH) (row ?row-high-sym))))
+    (case MID then (assert (exp-row (name MID) (row ?row-mid-sym))))
+    (case LOW then (assert (exp-row (name LOW) (row ?row-low-sym))))
+    (default (printout warn "NO EXPLORATION ROW DEFINED! UNABLE TO DO EXPLORATION!" crlf))
+  )
+  (printout t "At first, I am exploring the " ?row " row" crlf)
+)
+
+;turn over line if we start on the left field
+(defrule exp-turn-line-over
+  (declare (salience ?*PRIORITY-WM*))
+  ;(phase EXPLORATION)
+  (own-half left)
+  ?er <- (exp-row (row $?row))
+  (not (exp-line-already-turned))
+  =>
+  (bind $?turned-row (create$))
+  (progn$ (?m ?row)
+    (bind ?turned-row (insert$ ?turned-row 1 ?m))
+  )
+  (modify ?er (row ?turned-row))
+  (assert (exp-line-already-turned))
+)
+
+;which machines do we have to explore?
+(defrule exp-get-ownership
+  (declare (salience ?*PRIORITY-WM*))
+  ;(phase EXPLORATION)
+  (machine (name ?machine) (ownership TRUE))
+  ?me <- (machine-exploration (name ?machine) (ownership FALSE))
+  =>
+  (modify ?me (ownership TRUE))
+)
 
 ;Determine the first machine in dependency of the role
 (defrule exp-determine-first-machine
-  (phase EXPLORATION)
-  (role ?role)
-  (confval (path "/clips-agent/llsf2013/start-machine-exploration") (value ?first-machine))
+  ;(phase EXPLORATION)
+  (exp-row (row $?row))
   =>
-  (assert (first-exploration-machine (sym-cat ?first-machine)))
+  ;find first machine in row
+  (bind ?first NONE)
+  (progn$ (?m ?row)
+    (do-for-fact ((?me machine-exploration)) (and (eq ?m ?me:name) ?me:ownership)
+      (bind ?first ?me:name)
+    )
+    (if (neq ?first NONE)
+      then
+      (break)
+    )
+  )
+  ;TODO handle no own machine in row
+  (assert (first-exploration-machine ?first))
 )
 
 ;Set up the state
@@ -27,7 +94,7 @@
   =>
   (retract ?st)
   (assert (state EXP_START)
-          (round FIRST)
+          (exp-tactic LINE)
           (timer (name send-machine-reports))
           (timer (name print-unrecognized-lights))
   )
@@ -38,20 +105,17 @@
 (defrule exp-goto-first
   (phase EXPLORATION)
   ?s <- (state EXP_START)
-  (round FIRST)
+  (exp-tactic LINE)
   (first-exploration-machine ?v)
-  (machine-exploration (name ?v) (x ?) (y ?) (next ?) (look-pos ?lp))
+  (machine-exploration (name ?v) (x ?) (y ?) (look-pos ?lp))
   (not (driven-to-waiting-point))
   =>
   (printout t "First machine: " ?v crlf)
-  ;(skill-call ppgoto place (str-cat ?lp))
   (retract ?s)
-  ;(assert (state EXP_DRIVING_TO_MACHINE)
-  ;        (goalmachine ?v))
-	(assert (state EXP_LOCK_REQUIRED)
-					(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?v))
-					(nextInCycle ?v)
-	)
+  (assert (state EXP_LOCK_REQUIRED)
+    (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?v))
+    (exp-next-machine ?v)
+  )
 )
 
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
@@ -91,15 +155,14 @@
   ?ws <- (timer (name waiting-since))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
-  (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
+  (machine-exploration (name ?old) (x ?) (y ?))
   ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh 20)) (ready TRUE))
   (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
   (printout t "Identified machine" crlf)
   (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
-  (retract ?s ?g ?rli ?ws)
+  (retract ?s ?rli ?ws)
   (assert (state EXP_IDLE)
-    (nextInCycle ?nextMachine)
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
     (machine-type (name ?old) (type ?type))
   )
@@ -112,7 +175,7 @@
   ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
-  (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
+  (machine-exploration (name ?old) (x ?) (y ?))
   (not (second-recognize-try))
   =>
   (printout t "Reading light at " ?old " failed first time." crlf)
@@ -135,10 +198,9 @@
   =>
   (printout t "Reading light at " ?old " failed." crlf)
   (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE." crlf)
-  (retract ?s ?g ?ws ?srt)
+  (retract ?s ?ws ?srt)
   (assert (state EXP_IDLE)
-          (nextInCycle ?nextMachine)
-					(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
   )
 )
 
@@ -150,38 +212,86 @@
   (retract ?srt)
 )
 
-;Find next machine and assert drinve command in the first round
-(defrule exp-find-next-machine-first-round
+;Find next machine when driving along the line
+(defrule exp-find-next-machine-line
   (phase EXPLORATION)
-  (round FIRST)
+  ?t <- (exp-tactic LINE)
   ?s <- (state EXP_IDLE)
-  (nextInCycle ?nextMachine)
-  (not (machineRecognized ?nextMachine))
+  ?g <- (goalmachine ?old)
+  (exp-row (row $?row))
   =>
-  (retract ?s)
-  (assert (state EXP_FOUND_NEXT_MACHINE))
+  ;find next machine in the line
+  (bind ?ind (member$ ?old ?row))
+  (bind ?ind (+ ?ind 1))
+  (while (<= ?ind (length$ ?row)) do
+    ; can I go to this machine next?
+    (if (and (any-factp ((?me machine-exploration)) (and (eq ?me:name (nth$ ?ind ?row))
+							 ?me:ownership
+							 (not ?me:recognized)))
+	     (not (any-factp ((?lock locked-resource)) (eq ?lock:resource (nth$ ?ind ?row)))))
+      then
+      (break)
+    )
+    (bind ?ind (+ ?ind 1))
+  )
+  (if (<= ?ind (length$ ?row))
+    then
+    ;we found the next machine on the line
+    ;(printout t "Found next: " (nth$ ?ind ?row) crlf)
+    (retract ?s ?g)
+    (assert (state EXP_FOUND_NEXT_MACHINE)
+	    (exp-next-machine (nth$ ?ind ?row)))
+    
+    else
+    ;there is not machine on the line left
+    ;(printout warn "No next machine on the line" crlf)
+    ;change strategy
+    (printout t "Changing exploration strategy: driving to nearest machine starting at end of line" crlf)
+    (retract ?t ?g)
+    (assert (exp-tactic NEAREST)
+	    (goalmachine (nth$ (length$ ?row) ?row))) ;getting nearest from last in row
+  )
 )
 
-;If next machine is already recognized, find next unrecognized machine in list
-(defrule exp-find-next-machine-if-recognized-first-round
+;Find next machine when driving along the line
+(defrule exp-find-next-machine-nearest
   (phase EXPLORATION)
-  (round FIRST)
-  (state EXP_IDLE)
-  ?n <- (nextInCycle ?nextMachine)
-  (machineRecognized ?nextMachine)
-  (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?nextnext) (look-pos ?lp))
-  (not (first-exploration-machine ?nextMachine))
+  (exp-tactic NEAREST)
+  ?s <- (state EXP_IDLE)
+  ?g <- (goalmachine ?old)
+  (machine-exploration (name ?old) (x ?x) (y ?y))
   =>
-  (retract ?n)
-  (assert (nextInCycle ?nextnext))
+  ;find next machine nearest to last machine
+  (bind ?nearest NONE)
+  (bind ?min-dist 1000.0)
+  (do-for-all-facts ((?me machine-exploration)) (and ?me:ownership
+						     (not ?me:recognized))
+    ;check if the machine is nearer and unlocked
+    (bind ?dist (distance ?x ?y ?me:x ?me:y))
+    (if (and (not (any-factp ((?lock locked-resource)) (eq ?lock:resource ?me:name)))
+	     (< ?dist ?min-dist))
+      then
+      (bind ?min-dist ?dist)
+      (bind ?nearest ?me:name)
+    )
+  )
+  (if (neq ?nearest NONE)
+    then
+    ;we found the next machine
+    (printout warn "Found next: " ?nearest crlf)
+    (retract ?s ?g)
+    (assert (state EXP_FOUND_NEXT_MACHINE)
+	    (exp-next-machine ?nearest))
+    else
+    (printout error "TODO: handle last machine wrong read" crlf)
+  )
 )
 
 ;Require resource-locking
 (defrule exp-require-resource-locking
   (phase EXPLORATION)
-  (round FIRST)
   ?s <- (state EXP_FOUND_NEXT_MACHINE)
-  (nextInCycle ?nextMachine)
+  (exp-next-machine ?nextMachine)
   =>
   (printout t "Require lock for " ?nextMachine crlf)
   (retract ?s)
@@ -192,9 +302,8 @@
 ;Wait for answer from MASTER
 (defrule exp-check-resource-locking
   (phase EXPLORATION)
-  (round FIRST)
   ?s <- (state EXP_LOCK_REQUIRED)
-  (nextInCycle ?nextMachine)
+  (exp-next-machine ?nextMachine)
   ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
   =>
   (printout t "Lock accepted." crlf)
@@ -202,33 +311,11 @@
   (assert (state EXP_LOCK_ACCEPTED))
 )
 
-;Pass slow robotino
-(defrule exp-pass-slow-robotino
-  (phase EXPLORATION)
-  (round FIRST)
-  (state EXP_LOCK_REQUIRED)
-  ?n <- (nextInCycle ?next)
-  (machine-exploration (name ?next) (next ?second-next))
-  (machine-exploration (name ?second-next) (next ?third-next))
-  (not (machineRecognized ?next))
-  (not (machineRecognized ?second-next))
-  (not (machineRecognized ?third-next))
-  ?lg <- (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
-  ?lr <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?nextMachine))
-  =>
-  (printout warn "Passing slow robotino. Going for " ?third-next crlf)
-  (retract ?n ?lg ?lr)
-  (assert (nextInCycle ?third-next)
-	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?third-next))
-  )
-)
-
 ;Drive to next machine
-(defrule exp-go-to-next-machine-first-round
+(defrule exp-go-to-next-machine
   (phase EXPLORATION)
-  (round FIRST)
   ?s <- (state EXP_LOCK_ACCEPTED)
-  ?n <- (nextInCycle ?nextMachine)
+  ?n <- (exp-next-machine ?nextMachine)
   (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
   (not (driven-to-waiting-point))
   =>
@@ -239,107 +326,20 @@
   (skill-call ppgoto place (str-cat ?lp))
 )
 
-;Finish first round
-(defrule exp-finish-first-round
-  (phase EXPLORATION)
-  ?r <- (round FIRST)
-  (state EXP_IDLE)
-  ?n <- (nextInCycle ?nextMachine)
-  (first-exploration-machine ?nextMachine)
-  =>
-  (printout t "Finished first round." crlf)
-  (retract ?r ?n) 
-  (assert (round FIRST_FINISHED)
-  )
-)
 
-;Start retry round if P1P2
-(defrule exp-start-retry-round
-  (phase EXPLORATION)
-  ?r <- (round FIRST_FINISHED)
-  (role P1P2)
-  =>
-  (printout t "Starting retry round." crlf)
-	(retract ?r)
-  (assert (round RETRY))
-)
-
-;Move P3 away after first round
-(defrule exp-move-away-after-finished
-  (declare (salience ?*PRIORITY-HIGH*))
-  ?sr <- (round FIRST_FINISHED)
-  ?si <- (state EXP_IDLE)
-  (role P3)
-  (not (driven-to-waiting-point))
-  (confval (path "/clips-agent/llsf2013/waiting-for-p3-production-point") (value ?waiting-for-prod-point))
-  =>
-  (skill-call ppgoto place (str-cat ?waiting-for-prod-point))
-  (printout t "Driving away..." crlf)
-  (retract ?sr ?si)
-  (assert (driven-to-waiting-point))  
-)
-
-(deffunction machine-is-closer (?x ?y ?x2 ?y2 $?pos)
-  (if (<= (+ (* (- ?x (nth$ 1 ?pos)) (- ?x (nth$ 1 ?pos))) (* (- ?y (nth$ 2 ?pos)) (- ?y (nth$ 2 ?pos)))) (+ (* (- ?x2 (nth$ 1 ?pos)) (- ?x2 (nth$ 1 ?pos))) (* (- ?y2 (nth$ 2 ?pos)) (- ?y2 (nth$ 2 ?pos)))))
-    then
-      TRUE
-    else
-      FALSE
-  )
-)
-
-;Drive to the nearest unrecognized machine in the retry round
-(defrule exp-retry-unrecognized
-  (phase EXPLORATION)
-  (round RETRY)
-  ?s <- (state EXP_IDLE)
-  (machine-exploration (name ?m))
-  (not (machineRecognized ?m))
-  =>
-  (assert (want-to-retry ?m))
-)
-(defrule retry-nearer-unrecognized
-  (declare (salience ?*PRIORITY-HIGH*))
-  (phase EXPLORATION)
-  (round RETRY)
-  ?r <- (want-to-retry ?m)  
-  (Position3DInterface (id "Pose") (translation $?pos))
-  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
-  (machine-exploration (name ?m2) (x ?x2) (y ?y2&~:(machine-is-closer ?x ?y ?x2 ?y2 ?pos)))
-  (not (machineRecognized ?m2))
-  =>
-  (retract ?r)
-  (assert (want-to-retry ?m2))
-)
-(defrule execute-retry
-  (phase EXPLORATION)
-  (round RETRY)
-  ?s <- (state EXP_IDLE)
-  ?r <- (want-to-retry ?m)
-  (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
-  =>
-  (printout t "Retry machine" crlf)
-  (retract ?s ?r)
-  (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?m)
-  )
-  (skill-call ppgoto place (str-cat ?lp))  
-)
-
-;Finish exploration phase if all machines are recognized
-(defrule exp-finish-exploration
-  (phase EXPLORATION)
-  (forall (machine-exploration (name ?m) (x ?) (y ?) (next ?))
-    (machineRecognized ?m))
-  (role P1P2)
-  ?s <- (round RETRY)
-  (confval (path "/clips-agent/llsf2013/waiting-for-p1p2-prouction-point") (value ?work-finished-point))
-  =>
-  (printout t "Finished Exploration :-)" crlf)
-  (retract ?s)
-  (skill-call ppgoto place (str-cat ?work-finished-point))
-  (printout t "Driving away." crlf)
-)
+; ;Finish exploration phase if all machines are recognized
+; (defrule exp-finish-exploration
+;   (phase EXPLORATION)
+;   (not (machine-exploration (ownership TRUE) (recognized FALSE)))
+;   (role P1P2)
+;   ?s <- (round RETRY)
+;   (confval (path "/clips-agent/llsf2014/waiting-for-p1p2-prouction-point") (value ?work-finished-point))
+;   =>
+;   (printout t "Finished Exploration :-)" crlf)
+;   (retract ?s)
+;   (skill-call ppgoto place (str-cat ?work-finished-point))
+;   (printout t "Driving away." crlf)
+; )
 
 ;Receive light-pattern-to-type matchig and save it in a fact
 (defrule exp-receive-type-light-pattern-matching
@@ -405,8 +405,10 @@
   =>
   (retract ?pbm)
   (foreach ?machine (pb-field-list ?p "reported_machines")
-    (assert (machineRecognized (sym-cat ?machine)))
-    ;(printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
+    (do-for-fact ((?m machine-exploration)) (eq ?m:name (sym-cat ?machine))
+      (modify ?m (recognized TRUE))
+      ;(printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
+    )
   )
 )
 
