@@ -15,33 +15,33 @@
 #define puck_vision_THREAD_H_
 
 #include <core/threading/thread.h>
+#include <core/threading/mutex.h>
+
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/vision.h>
 #include <aspect/tf.h>
 
-#include <interfaces/PuckVisionInterface.h>
+//#include <interfaces/PuckVisionInterface.h>
 #include <interfaces/Position3DInterface.h>
 
 #include <fvcams/camera.h>
 #include <fvcams/fileloader.h>
-
+#include <fvclassifiers/simple.h>
+#include <fvutils/base/roi.h>
 #include <fvutils/ipc/shm_image.h>
 #include <fvutils/color/conversions.h>
 #include <fvmodels/color/similarity.h>
 #include <fvmodels/color/lookuptable.h>
 #include <fvmodels/scanlines/grid.h>
-
-#include <fvclassifiers/simple.h>
-
-#include <fvutils/base/roi.h>
 #include <fvfilters/roidraw.h>
+
+#include <config/change_handler.h>
 
 #include <string>
 #include <list>
 #include <cmath>
-
 
 namespace firevision {
   class Camera;
@@ -62,16 +62,6 @@ namespace fawkes {
 		class TransformListener;
 	}
 }
-
-class PuckVisionThread
-:	public fawkes::Thread,
-	public fawkes::LoggingAspect,
-	public fawkes::ConfigurableAspect,
-	public fawkes::VisionAspect,
-	public fawkes::BlackBoardAspect,
-	public fawkes::TransformAspect
-
-{
 
 struct camera_info{
 	std::string cfg_camera_;
@@ -108,13 +98,37 @@ struct color_classifier_context_t_{
 struct puck_info{
 	float radius_;
 	std::vector<unsigned int> color_main;
-	std::vector<unsigned int> color_top_dots;
-	std::vector<unsigned int> color_holes;
-	std::vector<unsigned int> color_top_center;
+//	std::vector<unsigned int> color_top_dots;
+//	std::vector<unsigned int> color_holes;
+//	std::vector<unsigned int> color_top_center;
 };
+
+struct puck{
+	double x,y,z;
+	double radius;
+	int visibiity_history;
+};
+
+class PuckVisionThread
+:	public fawkes::Thread,
+	public fawkes::LoggingAspect,
+	public fawkes::ConfigurableAspect,
+	public fawkes::VisionAspect,
+	public fawkes::BlackBoardAspect,
+	public fawkes::TransformAspect,
+	public fawkes::ConfigurationChangeHandler
+{
+public:
+	PuckVisionThread();
+	virtual ~PuckVisionThread();
+
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
 private:
 	color_classifier_context_t_ cls_red_;
+	fawkes::Mutex cfg_mutex_;
 
 	std::string cfg_prefix_;
 	std::string cfg_prefix_static_transforms_;
@@ -126,6 +140,7 @@ private:
 
 	bool cfg_debugMessagesActivated_;
 	bool cfg_paintROIsActivated_;
+	bool cfg_changed_;
 
 	std::string cfg_colormap_file_yellow_;
 	std::string	cfg_colormap_file_red_;
@@ -151,11 +166,13 @@ private:
 
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
+	puck* no_pucK_;
+
 	//interfaces
 	std::vector<fawkes::Position3DInterface*> puck_interfaces_;
 	std::vector<firevision::ROI> detected_pucks;
 	fawkes::SwitchInterface* switchInterface_;
-	fawkes::PuckVisionInterface* puckInterface_;
+	//fawkes::PuckVisionInterface* puckInterface_;
 
 	firevision::ROI roi_center_;
 	unsigned char *buffer_;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
@@ -167,16 +184,16 @@ private:
 
 	//Functions
 
-	fawkes::PuckVisionInterface::PuckColor
-	getPuckInterfaceColor(firevision::ROI* roi);
+	//fawkes::PuckVisionInterface::PuckColor
+	//getPuckInterfaceColor(firevision::ROI* roi);
 
-	int
-	getVisibilityHistory(fawkes::polar_coord_2d_t polar,
-				fawkes::PuckVisionInterface::PuckColor colorRoi,
-				fawkes::PuckVisionInterface::PuckColor colorInterface,
-				float interface_phi,
-				float interface_r,
-				int interface_visibility);
+//	int
+//	getVisibilityHistory(fawkes::polar_coord_2d_t polar,
+//				fawkes::PuckVisionInterface::PuckColor colorRoi,
+//				fawkes::PuckVisionInterface::PuckColor colorInterface,
+//				float interface_phi,
+//				float interface_r,
+//				int interface_visibility);
 
 	void
 	drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
@@ -212,20 +229,21 @@ private:
 
 	std::list<firevision::ROI>*
 	classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);
+	void
+	loadConfig();
 
 	void
-	updateInterface(std::list<firevision::ROI>* puck);
+	updatePos3dInferface(fawkes::Position3DInterface* interface, puck* p);
+	void
+	updateInterface(std::list<puck>* puck);
+
+	virtual void config_value_erased(const char *path);
+	virtual void config_tag_changed(const char *new_tag);
+	virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
+	virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
 
 protected:
 	virtual void run() { Thread::run(); }
-
-public:
-	PuckVisionThread();
-	virtual ~PuckVisionThread();
-
-	virtual void init();
-	virtual void loop();
-	virtual void finalize();
 };
 
 #endif /* puck_vision_THREAD_H_ */
