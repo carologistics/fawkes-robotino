@@ -27,7 +27,7 @@
 #include <interfaces/Position3DInterface.h>
 
 #include <fvcams/camera.h>
-#include <fvcams/fileloader.h>
+//#include <fvcams/fileloader.h>
 #include <fvclassifiers/simple.h>
 #include <fvutils/base/roi.h>
 #include <fvutils/ipc/shm_image.h>
@@ -79,28 +79,29 @@ struct camera_info{
 	float visible_lenght_y_in_m_;
 };
 
-struct color_classifier_context_t_{
-		firevision::ColorModelSimilarity *colormodel;
-		firevision::SimpleColorClassifier *classifier;
-		firevision::ColorModelSimilarity::color_class_t *color_class;
-		firevision::ScanlineGrid *scanline_grid;
-		std::vector<unsigned int> cfg_ref_col;
-		int cfg_chroma_thresh;
-		int cfg_sat_thresh;
-		firevision::color_t color_expect;
-		unsigned int cfg_roi_min_points;
-		unsigned int cfg_roi_basic_size;
-		unsigned int cfg_roi_neighborhood_min_match;
-		unsigned int cfg_scangrid_x_offset;
-		unsigned int cfg_scangrid_y_offset;
-};
+typedef struct {
+        firevision::ColorModel *colormodel;
+        firevision::SimpleColorClassifier *classifier;
+        firevision::ColorModelSimilarity::color_class_t *color_class;
+        firevision::ScanlineGrid *scanline_grid;
+        std::vector<unsigned int> cfg_ref_col;
+        int cfg_chroma_thresh;
+        int cfg_sat_thresh;
+        firevision::color_t color_expect;
+        unsigned int cfg_roi_min_points;
+        unsigned int cfg_roi_basic_size;
+        unsigned int cfg_roi_neighborhood_min_match;
+        unsigned int cfg_scangrid_x_offset;
+        unsigned int cfg_scangrid_y_offset;
+} color_classifier_context_t_;
 
-struct puck_info{
-	float radius_;
-	std::vector<unsigned int> color_main;
-//	std::vector<unsigned int> color_top_dots;
-//	std::vector<unsigned int> color_holes;
-//	std::vector<unsigned int> color_top_center;
+struct puck_features{
+	float radius;
+	float height;
+	color_classifier_context_t_ main;
+	color_classifier_context_t_ top_dots;
+	//color holes;
+	//color top_center;
 };
 
 struct puck{
@@ -127,7 +128,6 @@ public:
 	virtual void finalize();
 
 private:
-	color_classifier_context_t_ cls_red_;
 	fawkes::Mutex cfg_mutex_;
 
 	std::string cfg_prefix_;
@@ -136,43 +136,22 @@ private:
 
 	//Camera
 	camera_info camera_info_;
-	puck_info puck_info_;
+	puck_features puck_info_;
 
 	bool cfg_debugMessagesActivated_;
 	bool cfg_paintROIsActivated_;
 	bool cfg_changed_;
 
-	std::string cfg_colormap_file_yellow_;
-	std::string	cfg_colormap_file_red_;
-	std::string	cfg_colormap_file_green_;
-	std::string	cfg_colormap_file_blue_ ;
-
 	std::string cfg_frame_;
 
 	firevision::Camera *cam_;
-	firevision::ScanlineModel *scanline_;
-
-	firevision::ColorModel *cm_yellow_;
-	firevision::ColorModel *cm_red_;
-	firevision::ColorModel *cm_green_;
-	firevision::ColorModel *cm_blue_;
-
-	//firevision::RelativePositionModel *rel_pos_;
-	firevision::SimpleColorClassifier *classifier_yellow_;
-	firevision::SimpleColorClassifier *classifier_red_;
-	firevision::SimpleColorClassifier *classifier_green_;
-	firevision::SimpleColorClassifier *classifier_blue_;
-	firevision::SimpleColorClassifier *classifier_similarity_;
-
-	firevision::SharedMemoryImageBuffer *shm_buffer_;
-
 	puck* no_pucK_;
+	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
 	//interfaces
 	std::vector<fawkes::Position3DInterface*> puck_interfaces_;
 	std::vector<firevision::ROI> detected_pucks;
 	fawkes::SwitchInterface* switchInterface_;
-	//fawkes::PuckVisionInterface* puckInterface_;
 
 	firevision::ROI roi_center_;
 	unsigned char *buffer_;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
@@ -182,65 +161,42 @@ private:
 
 	firevision::FilterROIDraw *drawer_;
 
-	//Functions
-
-	//fawkes::PuckVisionInterface::PuckColor
-	//getPuckInterfaceColor(firevision::ROI* roi);
-
-//	int
-//	getVisibilityHistory(fawkes::polar_coord_2d_t polar,
-//				fawkes::PuckVisionInterface::PuckColor colorRoi,
-//				fawkes::PuckVisionInterface::PuckColor colorInterface,
-//				float interface_phi,
-//				float interface_r,
-//				int interface_visibility);
-
-	void
-	drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
-
+	//Helper functions
 	fawkes::polar_coord_2d_t
-	transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom, std::string from, std::string to);
+	transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom,
+			std::string from, std::string to);
 
-	void
-	createPuckInterface();
-
-	void
-	cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
-
-	float
-	getX(firevision::ROI* roi);
-
-	float
-	getY(firevision::ROI* roi);
-
-	void
-	polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
+	float getX(firevision::ROI* roi);
+	float getY(firevision::ROI* roi);
 
 	firevision::ROI*
 	getBiggestRoi(std::list<firevision::ROI>* roiList);
-
-	void
-	drawRois(std::list<firevision::ROI>* rois_red_);
-
-	void
-	mergeWithColorInformation(firevision::color_t color,
+	void mergeWithColorInformation(firevision::color_t color,
 			std::list<firevision::ROI>* rois_color_,
 			std::list<firevision::ROI>* rois_all);
 
+	void setup_color_classifier(color_classifier_context_t_ *color_data,
+			const char* prefix, firevision::color_t expected);
+
 	std::list<firevision::ROI>*
 	classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);
-	void
-	loadConfig();
 
-	void
-	updatePos3dInferface(fawkes::Position3DInterface* interface, puck* p);
-	void
-	updateInterface(std::list<puck>* puck);
+	void loadConfig();
+	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);
+	void createPuckInterface();
+	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
+	void drawRois(std::list<firevision::ROI>* rois_red_);
+	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
+
+	void updatePos3dInferface(fawkes::Position3DInterface* interface, puck* p);
+	void updateInterface(std::list<puck>* puck);
+	void init_with_config();
 
 	virtual void config_value_erased(const char *path);
 	virtual void config_tag_changed(const char *new_tag);
 	virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
 	virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
+	void deleteClassifier(color_classifier_context_t_* color_data);
 
 protected:
 	virtual void run() { Thread::run(); }

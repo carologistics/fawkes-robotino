@@ -38,24 +38,17 @@ PuckVisionThread::PuckVisionThread()
 	cspaceTo_ = firevision::YUV422_PLANAR;
 
 	cam_ = NULL;
-	scanline_ = NULL;
-
-	cm_yellow_ = NULL;
-	cm_red_ = NULL;
-	cm_blue_ = NULL;
-	cm_green_ = NULL;
-
-	classifier_yellow_ = NULL;
-	classifier_red_ = NULL;
-	classifier_green_ = NULL;
-	classifier_blue_ = NULL;
-	classifier_similarity_ = NULL;
-
-	cls_red_.colormodel = NULL;
-	cls_red_.color_class = NULL;
 
 	switchInterface_ = NULL;
 	no_pucK_ = NULL;
+
+	puck_info_.main.classifier = NULL;
+	puck_info_.main.colormodel = NULL;
+	puck_info_.main.scanline_grid = NULL;
+
+	puck_info_.top_dots.classifier = NULL;
+	puck_info_.top_dots.colormodel = NULL;
+	puck_info_.top_dots.scanline_grid = NULL;
 
 	drawer_ = NULL;
 
@@ -83,6 +76,27 @@ PuckVisionThread::createPuckInterface(){
 	  }
 }
 
+//void PuckVisionThread::loadColor(color* c, const char* path, firevision::color_t expected_color){
+//	std::vector<unsigned int> reference_color = config->get_uints((cfg_prefix_ + path + "/reference_color").c_str());
+//	int sat_threshold = config->get_int((cfg_prefix_  + path + "/saturation_thresh").c_str());
+//    int chroma_threshold = config->get_int((cfg_prefix_ + path + "/chroma_thresh").c_str());
+//
+//    if(c->color_class != NULL){
+//    	delete c->color_class;
+//    	c->color_class = NULL;
+//    }
+//	c->color_class = new firevision::ColorModelSimilarity::color_class_t( expected_color, reference_color, chroma_threshold, sat_threshold);
+//
+//
+////	c->color_expect = expected_color;
+//
+////	c->color_class->chroma_threshold = chroma_threshold;
+////	c->color_class->saturation_threshold = sat_threshold;
+////	c->color_class->set_reference(reference_color);
+//
+//	logger->log_info(name(), "Color %i: ref_color: %i %i %i, threasholds: sat %i chroma %i Path: %s",expected_color, reference_color[0], reference_color[1], reference_color[2], sat_threshold, chroma_threshold, (cfg_prefix_ + path+ "/").c_str() );
+//}
+
 void PuckVisionThread::loadConfig(){
 	logger->log_info(name(), "loading config");
 	cfg_prefix_ = CFG_PREFIX;
@@ -90,148 +104,40 @@ void PuckVisionThread::loadConfig(){
 
 	cfg_frame_ = config->get_string((cfg_prefix_ + "frame").c_str());
 
+	//load camera informations
 	camera_info_.cfg_camera_ = config->get_string((cfg_prefix_ + "camera").c_str());
 	camera_info_.position_x_ = config->get_float(( cfg_prefix_static_transforms_ + "trans_x").c_str());
 	camera_info_.position_y_ =  config->get_float(( cfg_prefix_static_transforms_ + "trans_y").c_str());
 	camera_info_.position_z_ =  config->get_float(( cfg_prefix_static_transforms_ + "trans_z").c_str());
 	camera_info_.position_pitch_ =  config->get_float(( cfg_prefix_static_transforms_ + "rot_pitch").c_str());
+	camera_info_.opening_angle_horizontal_ = config->get_float((cfg_prefix_ + "camera_opening_angle_horizontal").c_str());
+	camera_info_.opening_angle_vertical_ = config->get_float((cfg_prefix_ + "camera_opening_angle_vertical").c_str());
+	// Calculate visible Area
+	camera_info_.angle_horizontal_to_opening_ = (1.57 - camera_info_.position_pitch_) - (camera_info_.opening_angle_vertical_ / 2) ;
+	camera_info_.visible_lenght_x_in_m_ = camera_info_.position_z_ * (tan( camera_info_.opening_angle_vertical_ + camera_info_.angle_horizontal_to_opening_) - tan(camera_info_.angle_horizontal_to_opening_));
+	camera_info_.offset_cam_x_to_groundplane_ = camera_info_.position_z_ * tan(camera_info_.angle_horizontal_to_opening_);
+	camera_info_.visible_lenght_y_in_m_ = camera_info_.position_z_ * tan (camera_info_.opening_angle_horizontal_ /2 );
+
+	logger->log_debug(name(),"Camera opening angles Horizontal: %f Vertical: %f", camera_info_.opening_angle_horizontal_, camera_info_.opening_angle_vertical_);
 
 	cfg_debugMessagesActivated_ = config->get_bool((cfg_prefix_ + "show_debug_messages").c_str());
 	cfg_paintROIsActivated_ = config->get_bool((cfg_prefix_ + "draw_rois").c_str());
 
-	puck_info_.radius_ = config->get_float((cfg_prefix_ + "puck_radius").c_str());
-
 	//Config Value for the classifier mode
 	cfg_colormodel_mode_ = config->get_string((cfg_prefix_ + "colormodel_mode").c_str());
+
+}
+
+void PuckVisionThread::init_with_config()
+{
 	// Configure Similiraty classifier
-	cls_red_.cfg_ref_col = config->get_uints((cfg_prefix_ + "/reference_color").c_str());
-	cls_red_.cfg_chroma_thresh = config->get_int((cfg_prefix_ + "/chroma_thresh").c_str());
-	cls_red_.cfg_sat_thresh = config->get_int((cfg_prefix_ + "/saturation_thresh").c_str());
-	cls_red_.cfg_roi_min_points = config->get_int((cfg_prefix_ + "/min_points").c_str());
-	cls_red_.cfg_roi_basic_size = config->get_int((cfg_prefix_ + "/basic_roi_size").c_str());
-	cls_red_.cfg_roi_neighborhood_min_match = config->get_int((cfg_prefix_ + "/neighborhood_min_match").c_str());
-	cls_red_.cfg_scangrid_x_offset = config->get_int((cfg_prefix_ + "/scangrid_x_offset").c_str());
-	cls_red_.cfg_scangrid_y_offset = config->get_int((cfg_prefix_ + "/scangrid_y_offset").c_str());
+//	cls_red_.roi_min_points = config->get_int((cfg_prefix_ + "/min_points").c_str());
+//	cls_red_.roi_basic_size = config->get_int((cfg_prefix_ + "/basic_roi_size").c_str());
+//	cls_red_.roi_neighborhood_min_match = config->get_int((cfg_prefix_ + "/neighborhood_min_match").c_str());
+//
 
-	if(cls_red_.color_class != NULL){
-		delete cls_red_.color_class;
-	}
-	cls_red_.color_class = new firevision::ColorModelSimilarity::color_class_t(cls_red_.color_expect, cls_red_.cfg_ref_col, cls_red_.cfg_chroma_thresh, cls_red_.cfg_sat_thresh);
-
-
-	cls_red_.color_class->chroma_threshold = cls_red_.cfg_chroma_thresh;
-	cls_red_.color_class->saturation_threshold = cls_red_.cfg_sat_thresh;
-	cls_red_.color_class->set_reference(cls_red_.cfg_ref_col);
-
-	if(cls_red_.colormodel != NULL){
-		delete cls_red_.colormodel;
-	}
-	cls_red_.colormodel = new firevision::ColorModelSimilarity();
-	cls_red_.colormodel->add_color(cls_red_.color_class);
-
-	cfg_colormap_file_yellow_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_yellow").c_str());
-	cfg_colormap_file_red_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_red").c_str());
-	cfg_colormap_file_green_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_green").c_str());
-	cfg_colormap_file_blue_ = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + "colormap_file_blue").c_str());
-
-	camera_info_.opening_angle_horizontal_ = config->get_float((cfg_prefix_ + "camera_opening_angle_horizontal").c_str());
-	camera_info_.opening_angle_vertical_ = config->get_float((cfg_prefix_ + "camera_opening_angle_vertical").c_str());
-
-	logger->log_debug(name(),"Camera opening angles Horizontal: %f Vertical: %f", camera_info_.opening_angle_horizontal_, camera_info_.opening_angle_vertical_);
-
-	if(cm_yellow_ != NULL){
-			delete cm_yellow_;
-	}
-	cm_yellow_ = new firevision::ColorModelLookupTable(cfg_colormap_file_yellow_.c_str(),"puckvision-yellow-colormap", true /* destroy on delete */);
-
-	if(cm_red_ != NULL){
-			delete cm_red_;
-	}
-	cm_red_ = new firevision::ColorModelLookupTable(cfg_colormap_file_red_.c_str(),"puckvision-red-colormap", true /* destroy on delete */);
-
-	if(cm_green_ != NULL){
-			delete cm_green_;
-	}
-	cm_green_ = new firevision::ColorModelLookupTable(cfg_colormap_file_green_.c_str(),"puckvision-green-colormap", true /* destroy on delete */);
-
-	if(cm_blue_ != NULL){
-			delete cm_blue_;
-	}
-	cm_blue_ = new firevision::ColorModelLookupTable(cfg_colormap_file_blue_.c_str(),"puckvision-blue-colormap", true /* destroy on delete */);
-
-
-	if(scanline_ != NULL){
-		delete scanline_;
-	}
-	scanline_ = new firevision::ScanlineGrid( camera_info_.img_width_, camera_info_.img_height_, 2, 2 );
-
-	if(classifier_yellow_ != NULL){
-		delete classifier_yellow_;
-	}
-	classifier_yellow_ = new firevision::SimpleColorClassifier(
-			scanline_,															//scanmodel
-			cm_yellow_,															//colorModel
-			30,																	//num_min_points
-			0,																	//box_extend
-			false,																//upward
-			2,																	//neighberhoud_min_match
-			0																	//grow_by
-			);
-
-	if(classifier_red_ != NULL){
-		delete classifier_red_;
-	}
-	classifier_red_ = new firevision::SimpleColorClassifier(
-			scanline_,														//scanmodel
-			cm_red_,														//colorModel
-			30,																//num_min_points
-			0,																//box_extend
-			false,															//upward
-			2,																//neighberhoud_min_match
-			0																//grow_by
-			);
-
-	if(classifier_green_ != NULL){
-		delete classifier_green_;
-	}
-	classifier_green_ = new firevision::SimpleColorClassifier(
-			scanline_,														//scanmodel
-			cm_green_,														//colorModel
-			30,																//num_min_points
-			0,																//box_extend
-			false,															//upward
-			2,																//neighberhoud_min_match
-			0																//grow_by
-			);
-
-	if(classifier_blue_ != NULL){
-		delete classifier_blue_;
-	}
-	classifier_blue_ = new firevision::SimpleColorClassifier(
-			scanline_,														//scanmodel
-			cm_blue_,														//colorModel
-			30,																//num_min_points
-			0,																//box_extend
-			false,															//upward
-			2,																//neighberhoud_min_match
-			0																//grow_by
-			);
-
-	if(classifier_similarity_ != NULL){
-		delete classifier_similarity_;
-	}
-	classifier_similarity_ = new firevision::SimpleColorClassifier(
-			scanline_,														//scanmodel
-			cls_red_.colormodel,														//colorModel
-			30,																//num_min_points
-			0,																//box_extend
-			false,															//upward
-			2,																//neighberhoud_min_match
-			0																//grow_by
-	);
-
-
-	if(cam_ != NULL){
+	// CAM swapping not working
+	if(false && cam_ != NULL){
 		cam_->stop();
 		cam_->flush();
 		cam_->dispose_buffer();
@@ -239,46 +145,50 @@ void PuckVisionThread::loadConfig(){
 		delete cam_;
 		cam_ = NULL;
 	}
-	cam_ = vision_master->register_for_camera(camera_info_.cfg_camera_.c_str(), this);
-	cam_->start();
-	cam_->open();
-	camera_info_.img_width_ = cam_->pixel_width();
-	camera_info_.img_height_ = cam_->pixel_height();
+	if(cam_ == NULL){
+		cam_ = vision_master->register_for_camera(camera_info_.cfg_camera_.c_str(), this);
+		cam_->start();
+		cam_->open();
+		camera_info_.img_width_ = cam_->pixel_width();
+		camera_info_.img_height_ = cam_->pixel_height();
 
-	cspaceFrom_ = cam_->colorspace();
+		cspaceFrom_ = cam_->colorspace();
 
-	// SHM image buffer
-	if(shm_buffer_ != NULL){
-		delete shm_buffer_;
-		shm_buffer_ = NULL;
-		buffer_ = NULL;
+		// SHM image buffer
+		if(shm_buffer_ != NULL){
+			delete shm_buffer_;
+			shm_buffer_ = NULL;
+			buffer_ = NULL;
+		}
+		std::string shmID = config->get_string((cfg_prefix_ + "shm_image_id").c_str());
+		shm_buffer_ = new firevision::SharedMemoryImageBuffer(
+				shmID.c_str(),
+				cspaceTo_,
+				camera_info_.img_width_,
+				camera_info_.img_height_
+				);
+
+		if (!shm_buffer_->is_valid()) {
+			delete shm_buffer_;
+			delete cam_;
+			shm_buffer_ = NULL;
+			cam_ = NULL;
+			throw fawkes::Exception("Shared memory segment not valid");
+		}
+		shm_buffer_->set_frame_id(cfg_frame_.c_str());
+
+		buffer_ = shm_buffer_->buffer();
 	}
-	std::string shmID = config->get_string((cfg_prefix_ + "shm_image_id").c_str());
-	shm_buffer_ = new firevision::SharedMemoryImageBuffer(
-			shmID.c_str(),
-			cspaceTo_,
-			camera_info_.img_width_,
-			camera_info_.img_height_
-			);
 
-	if (!shm_buffer_->is_valid()) {
-		delete shm_buffer_;
-		delete cam_;
-		shm_buffer_ = NULL;
-		cam_ = NULL;
-		throw fawkes::Exception("Shared memory segment not valid");
-	}
-	shm_buffer_->set_frame_id(cfg_frame_.c_str());
+//	//load puck infos;
+	puck_info_.radius = config->get_float((cfg_prefix_ + "puck/radius").c_str());
+	puck_info_.height = config->get_float((cfg_prefix_ + "puck/height").c_str());
 
-	buffer_ = shm_buffer_->buffer();
+	//Configure classifier
+	logger->log_info(name(),"Loading colormodel %s", cfg_colormodel_mode_.c_str());
 
-	// Calculate visible Area
-	camera_info_.angle_horizontal_to_opening_ = (1.57 - camera_info_.position_pitch_) - (camera_info_.opening_angle_vertical_ / 2) ;
-	camera_info_.visible_lenght_x_in_m_ = camera_info_.position_z_ * (tan( camera_info_.opening_angle_vertical_ + camera_info_.angle_horizontal_to_opening_) - tan(camera_info_.angle_horizontal_to_opening_));
-
-	camera_info_.offset_cam_x_to_groundplane_ = camera_info_.position_z_ * tan(camera_info_.angle_horizontal_to_opening_);
-
-	camera_info_.visible_lenght_y_in_m_ = camera_info_.position_z_ * tan (camera_info_.opening_angle_horizontal_ /2 );
+	setup_color_classifier(&puck_info_.main, "puck/red", firevision::C_RED);
+	setup_color_classifier(&puck_info_.top_dots, "puck/topdots", firevision::C_YELLOW);
 
 	//Defines the search area
 	roi_center_.start.x=(camera_info_.img_width_/2) -2;
@@ -290,7 +200,6 @@ void PuckVisionThread::loadConfig(){
 
 	logger->log_debug(name(), "Visible X: %f y: %f Offset cam groundplane: %f angle (horizontal/opening): %f ",camera_info_.visible_lenght_x_in_m_, camera_info_.visible_lenght_y_in_m_ , camera_info_.offset_cam_x_to_groundplane_, camera_info_.angle_horizontal_to_opening_);
 	logger->log_debug(name(), "cam transform X: %f y: %f z: %f pitch: %f",camera_info_.position_x_, camera_info_.position_y_, camera_info_.position_z_, camera_info_.position_pitch_);
-	loop();
 }
 
 void
@@ -306,9 +215,107 @@ PuckVisionThread::init()
 	no_pucK_->visibiity_history = -9999;
 	drawer_ = new firevision::FilterROIDraw();
 	loadConfig();
+	init_with_config();
 
 	logger->log_debug(name(), "end of init()");
 }
+
+void PuckVisionThread::deleteClassifier(
+		color_classifier_context_t_* color_data) {
+	if (color_data->classifier != NULL) {
+		delete color_data->classifier;
+		color_data->classifier = NULL;
+	}
+	if (color_data->colormodel != NULL) {
+		delete color_data->colormodel;
+		color_data->colormodel = NULL;
+	}
+	if (color_data->classifier != NULL) {
+		delete color_data->scanline_grid;
+		color_data->scanline_grid = NULL;
+	}
+}
+
+void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color_data, const char* prefix, firevision::color_t expected)
+{
+  deleteClassifier(color_data);
+  //Update values from config
+  color_data->color_expect = expected;
+  color_data->cfg_ref_col = config->get_uints((cfg_prefix_ + prefix +"/reference_color").c_str());
+  color_data->cfg_chroma_thresh = config->get_int((cfg_prefix_ + prefix +"/chroma_thresh").c_str());
+  color_data->cfg_sat_thresh = config->get_int((cfg_prefix_ + prefix +"/saturation_thresh").c_str());
+  color_data->cfg_roi_min_points = config->get_int((cfg_prefix_ + prefix +"/min_points").c_str());
+  color_data->cfg_roi_basic_size = config->get_int((cfg_prefix_ + prefix +"/basic_roi_size").c_str());
+  color_data->cfg_roi_neighborhood_min_match = config->get_int((cfg_prefix_ + prefix +"/neighborhood_min_match").c_str());
+  color_data->cfg_scangrid_x_offset = config->get_int((cfg_prefix_ + prefix +"/scangrid_x_offset").c_str());
+  color_data->cfg_scangrid_y_offset = config->get_int((cfg_prefix_ + prefix +"/scangrid_y_offset").c_str());
+
+  if (cfg_colormodel_mode_ == "colormap"){
+	  std::string lutname = name() + std::string(prefix) + "/lut";
+	  std::string filename = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + prefix +"/lut").c_str());
+	  color_data->colormodel = new firevision::ColorModelLookupTable(filename.c_str(),
+			  lutname.c_str(),
+			  true /* destroy on delete */);
+
+  } else if(cfg_colormodel_mode_ == "similarity"){
+	color_data->color_class = new firevision::ColorModelSimilarity::color_class_t(
+	  color_data->color_expect,
+	  color_data->cfg_ref_col,
+	  color_data->cfg_chroma_thresh,
+	  color_data->cfg_sat_thresh
+	  );
+
+	// Update the color class used by the combined color model for the tuning filter
+	color_data->color_class->chroma_threshold = color_data->cfg_chroma_thresh;
+	color_data->color_class->saturation_threshold = color_data->cfg_sat_thresh;
+	color_data->color_class->set_reference(color_data->cfg_ref_col);
+
+	firevision::ColorModelSimilarity* cm = new firevision::ColorModelSimilarity();
+	cm->add_color(color_data->color_class);
+	color_data->colormodel = cm;
+  }
+  else{
+	throw new fawkes::Exception("selected colormodel not supported");
+  }
+
+
+  color_data->scanline_grid = new firevision::ScanlineGrid(
+	camera_info_.img_width_,
+	camera_info_.img_height_,
+    color_data->cfg_scangrid_x_offset, color_data->cfg_scangrid_y_offset);
+
+  color_data->classifier = new firevision::SimpleColorClassifier(
+      color_data->scanline_grid,
+      color_data->colormodel,
+      color_data->cfg_roi_min_points,
+      color_data->cfg_roi_basic_size,
+      false,
+      color_data->cfg_roi_neighborhood_min_match,
+      0,
+      color_data->color_expect);
+}
+
+//void setupLutClassifier(color_classifier_context_t_ *color_data, const char* lut_path, firevision::color_t expected){
+//	puck_main_color_.classifier = new firevision::SimpleColorClassifier(
+//			scanline_,															//scanmodel
+//			puck_main_color_.colormodel,										//colorModel
+//			10,																	//num_min_points
+//			10,																	//box_extend
+//			false,																//upward
+//			2,																	//neighberhoud_min_match
+//			0																	//grow_by
+//			);
+//
+//	puck_topdots_color_.classifier = new firevision::SimpleColorClassifier(
+//			scanline_,														//scanmodel
+//			puck_topdots_color_.colormodel,									//colorModel
+//			10,																//num_min_points
+//			10,																//box_extend
+//			false,															//upward
+//			2,																//neighberhoud_min_match
+//			0																//grow_by
+//			);
+//}
 
 
 void
@@ -384,29 +391,31 @@ PuckVisionThread::loop()
 
 		std::list<firevision::ROI> rois_all_;
 
-		if (cfg_colormodel_mode_ == "colormap"){
+		//scanline_->reset();
+		//puck_main_color_.classifier = cfy_ctxt_red_.classifier;
+		puck_info_.main.classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
+		std::list<firevision::ROI> *rois_red_ = puck_info_.main.classifier->classify();
+		mergeWithColorInformation(puck_info_.main.color_expect, rois_red_, &rois_all_);
+		delete rois_red_;
 
-			scanline_->reset();
-			classifier_red_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-			std::list<firevision::ROI> *rois_red_ = classifier_red_->classify();
-			mergeWithColorInformation(firevision::C_RED, rois_red_, &rois_all_);
 
-			delete rois_red_;
+		//scanline_->reset();
+		puck_info_.top_dots.classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
+		std::list<firevision::ROI> *rois_yellow_ = puck_info_.top_dots.classifier->classify();
+		mergeWithColorInformation(puck_info_.top_dots.color_expect, rois_yellow_, &rois_all_ );
+		delete rois_yellow_;
 
-		} else if(cfg_colormodel_mode_ == "similarity"){
-			scanline_->reset();
-			classifier_similarity_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-			std::list<firevision::ROI> *rois_similarity_ = classifier_similarity_->classify();
+//		scanline_->reset();
+//		classifier_yellow_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
+//		std::list<firevision::ROI> *rois_yellow_ = classifier_yellow_->classify();
+//		mergeWithColorInformation(firevision::C_YELLOW, rois_yellow_, &rois_all_);
 
-			mergeWithColorInformation(firevision::C_MAGENTA, rois_similarity_, &rois_all_);
-
-			delete rois_similarity_;
-		}
+//		delete rois_yellow_;
 
 		//cut to big rois
-
-
 		//
+
+		logger->log_info(name(), "Rois %i", rois_all_.size());
 
 		if(cfg_paintROIsActivated_){
 				drawRois(&rois_all_);
@@ -536,8 +545,9 @@ PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDr
 std::list<firevision::ROI>*
 PuckVisionThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier)
 {
-	scanline_->reset();
-	scanline_->set_roi(&searchArea);
+	//TODO FIX ME
+	//scanline_->reset();
+	//scanline_->set_roi(&searchArea);
 
 	classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 
@@ -694,19 +704,12 @@ PuckVisionThread::finalize()													//TODO check if everthing gets deleted
 		puck_interfaces_.pop_back();
 	}
 
-	delete scanline_;
-	delete cm_blue_;
-	delete cm_yellow_;
-	delete cm_red_;
-	delete cm_green_;
-
-	delete classifier_blue_;
-	delete classifier_red_;
-	delete classifier_green_;
-	delete classifier_yellow_;
-	delete classifier_similarity_;
-
-	delete cls_red_.colormodel;
+	delete puck_info_.main.classifier;
+	delete puck_info_.main.colormodel;
+	delete puck_info_.main.scanline_grid;
+	delete puck_info_.top_dots.classifier;
+	delete puck_info_.top_dots.colormodel;
+	delete puck_info_.top_dots.scanline_grid;
 
 	logger->log_info(name(), "finalize ends");
 }
@@ -718,9 +721,8 @@ void PuckVisionThread::config_comment_changed(const fawkes::Configuration::Value
 void PuckVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
 {
 	cfg_mutex_.lock();
-	cfg_changed_ = true;
 	loadConfig();
-	cfg_changed_ = false;
+	init_with_config(); // gets called for every changed entry... so init is called once per change.
 	cfg_mutex_.unlock();
 }
 
