@@ -77,6 +77,7 @@ struct camera_info{
 	float angle_horizontal_to_opening_;
 	float visible_lenght_x_in_m_;
 	float visible_lenght_y_in_m_;
+	firevision::ROI fullimage;
 };
 
 typedef struct {
@@ -108,6 +109,7 @@ struct puck{
 	double x,y,z;
 	double radius;
 	int visibiity_history;
+	firevision::ROI roi;
 };
 
 class PuckVisionThread
@@ -169,7 +171,7 @@ private:
 	float getX(firevision::ROI* roi);
 	float getY(firevision::ROI* roi);
 
-	firevision::ROI*
+	firevision::ROI
 	getBiggestRoi(std::list<firevision::ROI>* roiList);
 	void mergeWithColorInformation(firevision::color_t color,
 			std::list<firevision::ROI>* rois_color_,
@@ -179,7 +181,8 @@ private:
 			const char* prefix, firevision::color_t expected);
 
 	std::list<firevision::ROI>*
-	classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier);
+	classifyInRoi(firevision::ROI searchArea, color_classifier_context_t_* color_data);
+	std::list<firevision::ROI> detectPucks();
 
 	void loadConfig();
 	void polToCart(float &x, float &y, fawkes::polar_coord_2d_t pol);

@@ -76,27 +76,6 @@ PuckVisionThread::createPuckInterface(){
 	  }
 }
 
-//void PuckVisionThread::loadColor(color* c, const char* path, firevision::color_t expected_color){
-//	std::vector<unsigned int> reference_color = config->get_uints((cfg_prefix_ + path + "/reference_color").c_str());
-//	int sat_threshold = config->get_int((cfg_prefix_  + path + "/saturation_thresh").c_str());
-//    int chroma_threshold = config->get_int((cfg_prefix_ + path + "/chroma_thresh").c_str());
-//
-//    if(c->color_class != NULL){
-//    	delete c->color_class;
-//    	c->color_class = NULL;
-//    }
-//	c->color_class = new firevision::ColorModelSimilarity::color_class_t( expected_color, reference_color, chroma_threshold, sat_threshold);
-//
-//
-////	c->color_expect = expected_color;
-//
-////	c->color_class->chroma_threshold = chroma_threshold;
-////	c->color_class->saturation_threshold = sat_threshold;
-////	c->color_class->set_reference(reference_color);
-//
-//	logger->log_info(name(), "Color %i: ref_color: %i %i %i, threasholds: sat %i chroma %i Path: %s",expected_color, reference_color[0], reference_color[1], reference_color[2], sat_threshold, chroma_threshold, (cfg_prefix_ + path+ "/").c_str() );
-//}
-
 void PuckVisionThread::loadConfig(){
 	logger->log_info(name(), "loading config");
 	cfg_prefix_ = CFG_PREFIX;
@@ -130,12 +109,6 @@ void PuckVisionThread::loadConfig(){
 
 void PuckVisionThread::init_with_config()
 {
-	// Configure Similiraty classifier
-//	cls_red_.roi_min_points = config->get_int((cfg_prefix_ + "/min_points").c_str());
-//	cls_red_.roi_basic_size = config->get_int((cfg_prefix_ + "/basic_roi_size").c_str());
-//	cls_red_.roi_neighborhood_min_match = config->get_int((cfg_prefix_ + "/neighborhood_min_match").c_str());
-//
-
 	// CAM swapping not working
 	if(false && cam_ != NULL){
 		cam_->stop();
@@ -178,6 +151,7 @@ void PuckVisionThread::init_with_config()
 		shm_buffer_->set_frame_id(cfg_frame_.c_str());
 
 		buffer_ = shm_buffer_->buffer();
+		camera_info_.fullimage = firevision::ROI::full_image(camera_info_.img_width_, camera_info_.img_height_);
 	}
 
 //	//load puck infos;
@@ -251,7 +225,7 @@ void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color
   color_data->cfg_scangrid_y_offset = config->get_int((cfg_prefix_ + prefix +"/scangrid_y_offset").c_str());
 
   if (cfg_colormodel_mode_ == "colormap"){
-	  std::string lutname = name() + std::string(prefix) + "/lut";
+	  std::string lutname =  std::string(prefix) + "/lut"; //"puck_vison/" +
 	  std::string filename = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + prefix +"/lut").c_str());
 	  color_data->colormodel = new firevision::ColorModelLookupTable(filename.c_str(),
 			  lutname.c_str(),
@@ -278,7 +252,6 @@ void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color
 	throw new fawkes::Exception("selected colormodel not supported");
   }
 
-
   color_data->scanline_grid = new firevision::ScanlineGrid(
 	camera_info_.img_width_,
 	camera_info_.img_height_,
@@ -294,29 +267,6 @@ void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color
       0,
       color_data->color_expect);
 }
-
-//void setupLutClassifier(color_classifier_context_t_ *color_data, const char* lut_path, firevision::color_t expected){
-//	puck_main_color_.classifier = new firevision::SimpleColorClassifier(
-//			scanline_,															//scanmodel
-//			puck_main_color_.colormodel,										//colorModel
-//			10,																	//num_min_points
-//			10,																	//box_extend
-//			false,																//upward
-//			2,																	//neighberhoud_min_match
-//			0																	//grow_by
-//			);
-//
-//	puck_topdots_color_.classifier = new firevision::SimpleColorClassifier(
-//			scanline_,														//scanmodel
-//			puck_topdots_color_.colormodel,									//colorModel
-//			10,																//num_min_points
-//			10,																//box_extend
-//			false,															//upward
-//			2,																//neighberhoud_min_match
-//			0																//grow_by
-//			);
-//}
-
 
 void
 PuckVisionThread::drawRois(std::list<firevision::ROI>* rois_) {
@@ -388,77 +338,170 @@ PuckVisionThread::loop()
 					camera_info_.img_height_);
 		cam_->dispose_buffer();
 
-
-		std::list<firevision::ROI> rois_all_;
-
-		//scanline_->reset();
-		//puck_main_color_.classifier = cfy_ctxt_red_.classifier;
-		puck_info_.main.classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-		std::list<firevision::ROI> *rois_red_ = puck_info_.main.classifier->classify();
-		mergeWithColorInformation(puck_info_.main.color_expect, rois_red_, &rois_all_);
-		delete rois_red_;
-
-
-		//scanline_->reset();
-		puck_info_.top_dots.classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-		std::list<firevision::ROI> *rois_yellow_ = puck_info_.top_dots.classifier->classify();
-		mergeWithColorInformation(puck_info_.top_dots.color_expect, rois_yellow_, &rois_all_ );
-		delete rois_yellow_;
-
-//		scanline_->reset();
-//		classifier_yellow_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-//		std::list<firevision::ROI> *rois_yellow_ = classifier_yellow_->classify();
-//		mergeWithColorInformation(firevision::C_YELLOW, rois_yellow_, &rois_all_);
-
-//		delete rois_yellow_;
-
-		//cut to big rois
-		//
-
-		logger->log_info(name(), "Rois %i", rois_all_.size());
-
-		if(cfg_paintROIsActivated_){
-				drawRois(&rois_all_);
-		}
+		std::list<firevision::ROI> pucks_in_view = detectPucks();
+		std::list<puck> pucks;
 
 		//calculate ROI to POS3D
-		std::list<puck> pucKs;
 
-		//updateInterface(&list);
+		//updateInterface(&pucks_in_view);
 	}
 	cfg_mutex_.unlock();
 }
 
-void detectFeature(){
-//	scanline_->reset();
-//	classifier_yellow_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-//	std::list<firevision::ROI> *rois_yellow_ = classifier_yellow_->classify();
-//
-//	scanline_->reset();
-//	classifier_green_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-//	std::list<firevision::ROI> *rois_green_ = classifier_green_->classify();
-//
-//	scanline_->reset();
-//	classifier_blue_->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-//	std::list<firevision::ROI> *rois_blue_ = classifier_blue_->classify();
-//
-//	mergeWithColorInformation(firevision::C_BLUE, rois_blue_, rois_all_);
-//	mergeWithColorInformation(firevision::C_GREEN, rois_green_, rois_all_);
-//	mergeWithColorInformation(firevision::C_YELLOW, rois_yellow_, rois_all_);
-//
-//	delete rois_green_;
-//	delete rois_yellow_;
-//	delete rois_blue_;
+void printRoi(firevision::ROI roi){
+	std::printf("x %i y %i image_hight %i image_width %i width: %i height %i\n",
+			roi.start.x,
+			roi.start.y,
+			roi.image_height,
+			roi.image_width,
+			roi.width,
+			roi.height);
 }
 
-firevision::ROI* PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
-	firevision::ROI* biggestRoi=NULL;
+std::list<firevision::ROI>* splitROI(firevision::ROI bigroi, firevision::ROI cut){
+	std::list<firevision::ROI>* rois = new std::list<firevision::ROI>();
+
+//	unsigned int center_x = cut.start.x+cut.width/2;
+//	unsigned int center_y = cut.start.y+cut.height/2;
+//	if(bigroi.contains(center_x, center_y)){
+//		if( (bigroi.width - cut.width) > 50){ //check if roi width makes sense to cut
+//
+//			firevision::ROI roi(bigroi);
+//			int posx = bigroi.start.x - cut.start.x;
+//			if( posx > 0 ){ //cut left from roi
+//				//change width
+//			}
+//			else{
+//				//change width and start
+//
+//			}
+//		}
+//	}
+
+	return rois;
+}
+
+void fitROI(firevision::ROI &roi, int x, int y, int w, int h){
+  //Check x position in in image range
+  if(x < 0) {roi.start.x = 0; }
+  else if(x > (int)roi.image_width){ roi.start.x = roi.image_width-1; }
+  else{ roi.start.x = x; }
+
+  //Check y position in in image range
+  if(y < 0) {roi.start.y = 0;}
+  else if(y > (int)roi.image_height){ roi.start.y = roi.image_height-1; }
+  else{ roi.start.y = y; }
+
+  //Check width+start.x is in image range
+  if( w < 0){ roi.width = 0; }
+  else if(x + w > (int)roi.image_width){ roi.width = roi.image_width - roi.start.x; }
+  else{ roi.width = w; }
+
+  //Check height+start.y is in image range
+  if(h < 0) { roi.height = 0; }
+  else if(y + h > (int)roi.image_height){ roi.height = roi.image_height - roi.start.y; }
+  else{ roi.height = h; }
+}
+
+std::list<firevision::ROI> PuckVisionThread::detectPucks(){
+
+	std::list<firevision::ROI> rois_all_;
+	std::list<firevision::ROI> pucks;
+
+	//Find all Red areas
+	puck_info_.main.scanline_grid->reset();
+	puck_info_.main.scanline_grid->set_roi(&camera_info_.fullimage);
+	puck_info_.main.classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
+	std::list<firevision::ROI> *rois_red_ = puck_info_.main.classifier->classify();
+	//delete rois_red_;
+
+	for (std::list<firevision::ROI>::iterator it = rois_red_->begin();
+			it != rois_red_->end(); ++it) {
+		unsigned int resize = it->height/10;
+		it->height += resize; // yellow is usually on top of the pucks
+		it->start.y-= resize; // Move roi up after enlarging
+		firevision::ROI possible_puck = (*it);
+		std::list<firevision::ROI>* yellow_rois = classifyInRoi(possible_puck, &puck_info_.top_dots);
+		if(yellow_rois->size() < 2){
+			//rois_red_->remove(*it); // Not enough features
+			//it = rois_red_->begin(); // not nice...
+
+			logger->log_info(name(), "no yellow");
+		}
+		else{
+			//find yellow roi with lowest left corner;
+			//x min
+			//y max
+			logger->log_info(name(), "yellow");
+			firevision::ROI lowest_yellow_dot_in_roi = yellow_rois->front();
+
+			for (std::list<firevision::ROI>::iterator it = yellow_rois->begin();
+						it != yellow_rois->end(); ++it) {
+				//unsigned int center_x = (*it).start.x + (*it).width/2;
+
+				if((*it).start.y > lowest_yellow_dot_in_roi.start.y){
+					lowest_yellow_dot_in_roi = (*it);
+				}
+//				if(center_x < lowest_yellow_dot_in_roi.start.x + lowest_yellow_dot_in_roi.width/2){
+//
+//				}
+			}
+			// now we have the lowest yellow dot in the roi.
+			lowest_yellow_dot_in_roi.color = firevision::C_CYAN;
+			drawROIIntoBuffer(lowest_yellow_dot_in_roi);
+
+			// create a new smaller roi
+			int x,y,w,h;
+			h = 5*lowest_yellow_dot_in_roi.height;
+			//w = lowest_yellow_dot_in_roi.image_width;
+			w = 16*lowest_yellow_dot_in_roi.width;
+			//x = 0;
+			x = lowest_yellow_dot_in_roi.start.x - w/2;
+			y = lowest_yellow_dot_in_roi.start.y + lowest_yellow_dot_in_roi.height*2;
+
+			firevision::ROI look_for_puck(lowest_yellow_dot_in_roi);
+			fitROI(look_for_puck,x,y,w,h);
+			look_for_puck.color = firevision::C_GREEN;
+
+			drawROIIntoBuffer(look_for_puck);
+
+			std::list<firevision::ROI> *pucks_with_feature = classifyInRoi(look_for_puck, &puck_info_.main);
+			// Get biggest roi, this ist the puck
+			if(pucks_with_feature->size() > 0){
+				firevision::ROI puck = getBiggestRoi(pucks_with_feature);
+				pucks.push_back(puck);
+
+				//std::list<firevision::ROI>* splitted_roi = splitROI(possible_puck, puck);
+
+				//rois_red_->merge(*splitted_roi);
+				mergeWithColorInformation(firevision::C_BLACK, pucks_with_feature, &rois_all_ );
+			}
+
+
+
+			delete pucks_with_feature;
+		}
+		delete yellow_rois;
+	}
+	mergeWithColorInformation(puck_info_.main.color_expect, rois_red_, &rois_all_);
+
+	logger->log_info(name(), "Rois %i colormodel %s", rois_all_.size(), puck_info_.main.colormodel->get_name());
+
+	if(cfg_paintROIsActivated_){
+			drawRois(&rois_all_);
+	}
+
+	return pucks;
+}
+
+firevision::ROI PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
+	firevision::ROI biggestRoi;
 
 	for (std::list<firevision::ROI>::iterator it = roiList->begin();
 			it != roiList->end(); ++it) {
-		if (biggestRoi == NULL || biggestRoi->width * biggestRoi->height
+		if (biggestRoi.width * biggestRoi.height
 				< (*it).width * (*it).height) {
-			biggestRoi = &(*it);
+			biggestRoi = (*it);
 		}
 	}
 	return biggestRoi;
@@ -543,15 +586,13 @@ PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDr
 
 
 std::list<firevision::ROI>*
-PuckVisionThread::classifyInRoi(firevision::ROI searchArea, firevision::Classifier *classifier)
+PuckVisionThread::classifyInRoi(firevision::ROI searchArea, color_classifier_context_t_* color_data)
 {
-	//TODO FIX ME
-	//scanline_->reset();
-	//scanline_->set_roi(&searchArea);
+	color_data->scanline_grid->reset();
+	color_data->scanline_grid->set_roi(&searchArea);
+	color_data->classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 
-	classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-
-	std::list<firevision::ROI> *ROIs = classifier->classify();
+	std::list<firevision::ROI> *ROIs = color_data->classifier->classify();
 
 	return ROIs;
 }
