@@ -122,22 +122,22 @@ plugins/colli:
 
   Roboshape:
     # Define the roboshape: 1 is angular (default), 2 is round
-    ROBOSHAPE: 2
+    ROBOSHAPE: 1
     # Width_x for angular robot
-    WIDTH_X: 0.59 #0.36
+    WIDTH_X: 0.48
     # Width_y for angular robot
-    WIDTH_Y: 0.48 #0.36
+    WIDTH_Y: 0.40
     # The Lasers offset from back, seen from behind left. For angular robot
-    LASER_OFFSET_X_FROM_BACK: 0.33 #0.27
+    LASER_OFFSET_X_FROM_BACK: 0.30
     # The Lasers offset from left, seen from behind left. For angular robot
-    LASER_OFFSET_Y_FROM_LEFT: 0.24 #0.18
+    LASER_OFFSET_Y_FROM_LEFT: 0.20
     # For round roboter
-    RADIUS: 0.36
-    LASER_OFFSET_X_FROM_MIDDLE: 0.09
-    LASER_OFFSET_Y_FROM_MIDDLE: 0.0
+#    RADIUS: 0.20 #0.18
+#    LASER_OFFSET_X_FROM_MIDDLE: 0.09
+#    LASER_OFFSET_Y_FROM_MIDDLE: 0.0
 
     # Extra extension to front
-    WIDTH_ADD_FRONT: 0.11
+    WIDTH_ADD_FRONT: 0.0 #0.11
     # Extra extension to right
     WIDTH_ADD_RIGHT: 0.0
     # Extra extension to back
