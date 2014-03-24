@@ -6,11 +6,10 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/puck_vision
 
 plugins/puck_vision:
   # camera being used
-  camera: "file:file:file=/home/fnolden/Bilder/Webcam/12.jpg"
-  #camera: "file:file:file=/home/fnolden/Bilder/omnivision/omni-abends-magdeburg.jpg"
+  #camera: "file:file:file=/home/fnolden/Bilder/Webcam/13.jpg"
   #camera: v4l2:front:device=/dev/video0 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
   #camera: v4l2:light:device=/dev/video1:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
-  #camera: v4l2:light:device=/dev/puck_front
+  camera: v4l2:light:device=/dev/puck_front
 
   #Shared Memory Imagebuffer name
   shm_image_id: "puck_front"
@@ -18,19 +17,8 @@ plugins/puck_vision:
   #colormodel mode (At the moment it can be either "similarity" or "colormap"
   colormodel_mode: "similarity"
 
-  # coordinate system
-  frame: /base_link
-
-  #Interface name to write Positon3D of puck
-
-  puck_if: "puck_front"
-
-  #config values for the similarity colormodel
-  min_points: 40
-  basic_roi_size: 10
-  neighborhood_min_match: 10
-  scangrid_x_offset: 8
-  scangrid_y_offset: 8
+  # coordinate and interface frame
+  transform: /plugins/static-transforms/transforms/cam_puck/
 
   #Camare viewport factor logitech webcam
   camera_opening_angle_horizontal: 1.08 
@@ -49,8 +37,8 @@ plugins/puck_vision:
       min_points: 10
       basic_roi_size: 0
       neighborhood_min_match: 10
-      scangrid_x_offset: 1
-      scangrid_y_offset: 1
+      scangrid_x_offset: 8
+      scangrid_y_offset: 8
       lut: /bulb-colormap/red.colormap
 
   #puck topdots color (Yellow)
@@ -61,8 +49,8 @@ plugins/puck_vision:
       min_points: 10
       basic_roi_size: 4
       neighborhood_min_match: 10
-      scangrid_x_offset: 1
-      scangrid_y_offset: 1
+      scangrid_x_offset: 8
+      scangrid_y_offset: 8
       lut: /bulb-colormap/yellow.colormap
 
   #colormap_file_blue: /bulb-colormap/blue.colormap 
