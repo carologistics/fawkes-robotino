@@ -82,8 +82,22 @@
       (break)
     )
   )
-  ;TODO handle no own machine in row
   (assert (first-exploration-machine ?first))
+)
+
+(defrule exp-handle-no-own-machine-in-row
+  (declare (salience ?*PRIORITY-WM*))
+  (first-exploration-machine NONE)
+  ?s <- (state EXP_START)
+  ?et <- (exp-tactic LINE)
+  (exp-row (row $?row))
+  =>
+  ;go directly in the nearest-mode
+  (retract ?s ?et)
+  (assert (state EXP_IDLE)
+	  (exp-tactic NEAREST)
+	  (goalmachine (nth$ (length$ ?row) ?row)) ;getting nearest from last in row
+  )
 )
 
 ;Set up the state
