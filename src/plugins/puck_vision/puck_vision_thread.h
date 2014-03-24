@@ -42,6 +42,7 @@
 #include <string>
 #include <list>
 #include <cmath>
+#include <algorithm> // sort
 
 namespace firevision {
   class Camera;
@@ -106,7 +107,8 @@ struct puck_features{
 };
 
 struct puck{
-	double x,y,z;
+	fawkes::cart_coord_3d_t cart;
+	fawkes::polar_coord_2d_t pol;
 	double radius;
 	int visibiity_history;
 	firevision::ROI roi;
@@ -164,10 +166,6 @@ private:
 	firevision::FilterROIDraw *drawer_;
 
 	//Helper functions
-	fawkes::polar_coord_2d_t
-	transformCoordinateSystem(fawkes::cart_coord_3d_t cartFrom,
-			std::string from, std::string to);
-
 	float getX(firevision::ROI* roi);
 	float getY(firevision::ROI* roi);
 
@@ -182,6 +180,10 @@ private:
 
 	std::list<firevision::ROI>*
 	classifyInRoi(firevision::ROI searchArea, color_classifier_context_t_* color_data);
+
+	/** detectPucks
+	 *  Returns a list of ROIs. Each ROI contians a puck
+	 */
 	std::list<firevision::ROI> detectPucks();
 
 	void loadConfig();
@@ -190,9 +192,12 @@ private:
 	void cartToPol(fawkes::polar_coord_2d_t &pol, float x, float y);
 	void drawRois(std::list<firevision::ROI>* rois_red_);
 	void drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle = firevision::FilterROIDraw::DASHED_HINT);
+	void calculatePuckPositions(std::vector<puck> *pucks, std::list<firevision::ROI> pucks_in_view);
+	void getPuckPosition(puck *p, firevision::ROI roi);
+	void sortPucks(std::vector<puck> *pucks);
 
 	void updatePos3dInferface(fawkes::Position3DInterface* interface, puck* p);
-	void updateInterface(std::list<puck>* puck);
+	void updateInterface(std::vector<puck>* puck);
 	void init_with_config();
 
 	virtual void config_value_erased(const char *path);
