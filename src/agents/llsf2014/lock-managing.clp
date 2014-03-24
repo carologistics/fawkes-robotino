@@ -12,6 +12,7 @@
   (slot type (type SYMBOL) (allowed-values GET REFUSE ACCEPT RELEASE RELEASE_RVCD))
   (slot agent (type STRING))
   (slot resource (type SYMBOL))
+  (slot priority (type FLOAT) (default 0.0))
 )
 
 (deftemplate locked-resource
@@ -105,6 +106,7 @@
       (pb-set-field ?lock-msg "type" ?lock:type)
       (pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
       (pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
+      (pb-set-field ?lock-msg "priority" (str-cat ?lock:priority))
       (pb-broadcast ?lock-msg)
       (pb-destroy ?lock-msg)
 
@@ -124,12 +126,13 @@
   (bind ?type (sym-cat (pb-field-value ?p "type")))
   (bind ?a (str-cat (pb-field-value ?p "agent")))
   (bind ?r (sym-cat (pb-field-value ?p "resource")))
+  (bind ?p (sym-cat (pb-field-value ?p "priority")))
   ;(printout t "Received lock message with type " ?type " of " ?r " from " ?a crlf)
   (retract ?msg)
   (if (eq ?role MASTER)
     then
     (if (or (eq ?type GET) (eq ?type RELEASE)) then
-      (assert (lock (type ?type) (agent ?a) (resource ?r)))
+      (assert (lock (type ?type) (agent ?a) (resource ?r) (priority ?p)))
     )
     else
     (if (or (eq ?type ACCEPT) (eq ?type REFUSE) (eq ?type RELEASE_RVCD))
@@ -185,7 +188,8 @@
 (defrule lock-accept-get
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
-  ?l <- (lock (type GET) (agent ?a) (resource ?r))
+  ?l <- (lock (type GET) (agent ?a) (resource ?r) (priority ?p))
+  (not ((lock (type GET) (agent ?) (resource ?r) (priority ?p2&:(> ?p2 ?p)))))
   (not (locked-resource (resource ?r) (agent ?)))
   =>
   (assert (locked-resource (resource ?r) (agent ?a))
@@ -213,9 +217,6 @@
   ?lm <- (locked-resource (resource ?r) (agent ~?a))	
   =>
   (assert (lock (type REFUSE) (agent ?a) (resource ?r)))
-  (if (not (eq ?a ?*ROBOT-NAME*)) then
-    (retract ?l)
-  )
 )
 
 (defrule lock-release
@@ -238,11 +239,25 @@
   (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   (lock-role MASTER)
   ?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
+  (not (lock (type GET) (agent ?a) (resource ?r)))
   =>
   (retract ?l)
   (if (neq ?a ?*ROBOT-NAME*)
     then
     (assert (lock (type RELEASE_RVCD) (agent ?a) (resource ?r)))
+  )
+)
+
+(defrule lock-retract-not-accepted-get-after-release
+  (declare (salience ?*PRIORITY-LOCK-CLEAN*))
+  ?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
+  ?lg <- (lock (type GET) (agent ?a) (resource ?r))
+  =>
+  (retract ?lg)
+  (if (neq ?a ?*ROBOT-NAME*)
+    then
+    (assert (lock (type RELEASE_RVCD) (agent ?a) (resource ?r)))
+    (retract ?lr)
   )
 )
 
