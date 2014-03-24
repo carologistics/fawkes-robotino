@@ -273,13 +273,14 @@
   (exp-tactic NEAREST)
   ?s <- (state EXP_IDLE)
   ?g <- (goalmachine ?old)
-  (machine-exploration (name ?old) (x ?x) (y ?y) (recognized ?recognized))
+  (machine-exploration (name ?old) (x ?x) (y ?y) (ownership ?own))
   =>
   ;find next machine nearest to last machine
   (bind ?nearest NONE)
   (bind ?min-dist 1000.0)
   (do-for-all-facts ((?me machine-exploration)) (and ?me:ownership
-						     (not ?me:recognized))
+						     (not ?me:recognized)
+						     (not (any-factp ((?mt machine-type)) (eq ?mt:name ?me:name))))
     ;check if the machine is nearer and unlocked
     (bind ?dist (distance ?x ?y ?me:x ?me:y))
     (if (and (not (any-factp ((?lock locked-resource)) (eq ?lock:resource ?me:name)))
@@ -297,7 +298,8 @@
     (assert (state EXP_FOUND_NEXT_MACHINE)
 	    (exp-next-machine ?nearest))
     else
-    (if (not ?recognized)
+    (if (and (not (any-factp ((?recognized machine-type)) (eq ?recognized:name ?old)))
+	     ?own)
       then
       (printout t "Retrying last machine" crlf)
       (assert (state EXP_FOUND_NEXT_MACHINE)
@@ -394,15 +396,26 @@
 ;Sending all results to the refbox every second
 (defrule exp-send-recognized-machines
   (phase EXPLORATION)
+  (state ?s&:(neq ?s IDLE))
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
+  (game-time $?game-time)
+  (confval (path "/clips-agent/llsf2014/exploration/latest-send-last-report-time") (value ?latest-report-time))
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (do-for-all-facts ((?machine machine-type)) TRUE
-    (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
-    (pb-set-field ?mre "name" (str-cat ?machine:name))
-    (pb-set-field ?mre "type" (str-cat ?machine:type))
-    (pb-add-list ?mr "machines" ?mre)
+    ;send report for last machine only if the exploration phase is going to end
+    ;or we are prepared for production
+    (if (or (< (length (find-all-facts ((?f machine-exploration)) (and ?f:ownership ?f:recognized)))
+	       (- (length (find-all-facts ((?f machine-exploration)) ?f:ownership)) 1))
+	    (>= (nth$ 1 ?game-time) ?latest-report-time)
+	    (eq ?s EXP_PREPARE_FOR_PRODUCTION_FINISHED))
+      then
+      (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
+      (pb-set-field ?mre "name" (str-cat ?machine:name))
+      (pb-set-field ?mre "type" (str-cat ?machine:type))
+      (pb-add-list ?mr "machines" ?mre)
+    )
   )
   (pb-broadcast ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
@@ -446,21 +459,64 @@
 )
 (defrule exp-prepare-for-production-drive-to-ins
   (phase EXPLORATION)
+  (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
   (input-storage ?ins)
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   =>
   (printout t "Waiting for production at " ?ins crlf)
   (skill-call ppgoto place (str-cat ?ins))
+  (assert (prepare-for-production-goal ?ins))
 )
 (defrule exp-prepare-for-production-drive-to-wait-for-ins
   (phase EXPLORATION)
+  (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
   (input-storage ?ins)
   (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
+  ?lock <- (lock (type GET) (agent ?a) (resource ?ins))
   (wait-point ?ins ?wait-point)
   =>
   (printout t "Waiting for production at " ?wait-point crlf)
   (skill-call ppgoto place (str-cat ?wait-point))
-  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ins)))
+  (retract ?lock)
+  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ins))
+	  (prepare-for-production-goal ?wait-point))
+)
+(defrule exp-prepare-for-production-finished
+  (phase EXPLORATION)
+  ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
+  (exp-tactic GOTO-INS)
+  ?skill-f <- (skill (name "ppgoto") (status FINAL))
+  =>
+  (retract ?skill-f ?s)
+  (assert (timer (name annound-prepare-for-production-finished))
+	  (state EXP_PREPARE_FOR_PRODUCTION_FINISHED))
+)
+(defrule exp-prepare-for-production-announce-finished
+  (phase EXPLORATION)
+  (state EXP_PREPARE_FOR_PRODUCTION_FINISHED)
+  (time $?now)
+  ?timer <- (timer (name beacon) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
+  (prepare-for-production-goal ?wait-point)
+  =>
+  (modify ?timer (time ?now) (seq (+ ?seq 1)))
+  (bind ?msg (pb-create "llsf_msgs.PreparedForProduction"))
+  (pb-set-field ?msg "peer_name" ?*ROBOT-NAME*)
+  (pb-set-field ?msg "waiting_point" ?wait-point)
+  (pb-broadcast ?msg)
+  (pb-destroy ?msg)
+)
+(defrule exp-receive-prepare-for-production-announce-finished
+  (phase EXPLORATION)
+  ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
+  ?pf <- (protobuf-msg (type "llsf_msgs.PreparedForProduction") (ptr ?p) (rcvd-via BROADCAST))
+  (input-storage ?ins)
+  =>
+  ;the preperation is finished when someone stands at ins
+  (if (eq ?ins (sym-cat (pb-field-value ?p "waiting_point")))
+      then
+      (retract ?s)
+      (assert (state EXP_PREPARE_FOR_PRODUCTION_FINISHED))
+  )
 )

@@ -76,7 +76,7 @@ clips-agent:
       recycle-min: 2
       recycle-max: 2
 
-    exploration:
+    exploration:      
       #row defined in host.yaml (this is only the default!)
       row: MID
       
@@ -84,6 +84,8 @@ clips-agent:
       row-mid: ["M10", "M7", "M4", "M2", "M14", "M16", "M19", "M22"]
       row-low: ["M9", "M6", "M3", "M1", "M13", "M15", "M18", "M21"]
 
+      #the time in seconds to report all machines even if we are not prepared for production
+      latest-send-last-report-time: 165 # =2:45
 
       
   llsf2013:
