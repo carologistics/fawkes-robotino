@@ -71,11 +71,11 @@
 	  (lock (type ACCEPT) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
   )
   ;there is only one asked task at a time
-  ?pt <- (proposed-task (name ?task) (args $?args) (state asked))
+  ?pt <- (proposed-task (name ?task) (args $?args) (state asked) (priority ?p))
   ?s <- (state TASK-PROPOSED-ASKED)
   =>
   ;order taks
-  (assert (task (name ?task) (args ?args)))
+  (assert (task (name ?task) (args ?args) (priority ?p)))
   (retract ?s)
   (assert (state TASK-ORDERED))
   ;update worldmodel

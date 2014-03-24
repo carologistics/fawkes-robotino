@@ -12,7 +12,7 @@
   (slot type (type SYMBOL) (allowed-values GET REFUSE ACCEPT RELEASE RELEASE_RVCD))
   (slot agent (type STRING))
   (slot resource (type SYMBOL))
-  (slot priority (type FLOAT) (default 0.0))
+  (slot priority (type INTEGER) (default 0))
 )
 
 (deftemplate locked-resource
@@ -126,13 +126,22 @@
   (bind ?type (sym-cat (pb-field-value ?p "type")))
   (bind ?a (str-cat (pb-field-value ?p "agent")))
   (bind ?r (sym-cat (pb-field-value ?p "resource")))
-  (bind ?p (sym-cat (pb-field-value ?p "priority")))
   ;(printout t "Received lock message with type " ?type " of " ?r " from " ?a crlf)
   (retract ?msg)
   (if (eq ?role MASTER)
     then
     (if (or (eq ?type GET) (eq ?type RELEASE)) then
-      (assert (lock (type ?type) (agent ?a) (resource ?r) (priority ?p)))
+      (do-for-all-facts ((?old lock)) (and (eq ?old:type GET)
+					   (eq ?old:agent ?a)
+					   (eq ?old:resource ?r))
+	(retract ?old)
+	)
+      (if (pb-has-field ?p "priority")
+	then
+	(assert (lock (type ?type) (agent ?a) (resource ?r) (priority (pb-field-value ?p "priority"))))
+	else
+	(assert (lock (type ?type) (agent ?a) (resource ?r) (priority 0)))
+      )
     )
     else
     (if (or (eq ?type ACCEPT) (eq ?type REFUSE) (eq ?type RELEASE_RVCD))
@@ -189,7 +198,7 @@
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r) (priority ?p))
-  (not ((lock (type GET) (agent ?) (resource ?r) (priority ?p2&:(> ?p2 ?p)))))
+  (not (lock (type GET) (agent ?) (resource ?r) (priority ?p2&:(> ?p2 ?p))))
   (not (locked-resource (resource ?r) (agent ?)))
   =>
   (assert (locked-resource (resource ?r) (agent ?a))

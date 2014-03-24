@@ -101,6 +101,7 @@
   (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values ordered running finished) (default ordered))
+  (slot priority (type INTEGER) (default 0))
 )
 
 ;common template for a proposed task
@@ -108,6 +109,7 @@
   (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values proposed asked rejected) (default proposed))
+  (slot priority (type INTEGER) (default 0))
 )
 
 (deftemplate needed-task-lock
@@ -129,6 +131,7 @@
 (deftemplate wait-for-lock
   (slot res (type SYMBOL))
   (slot state (type SYMBOL) (allowed-values new get use finished) (default new))
+  (slot priority (type INTEGER))
 )
 
 (deffacts startup-production

@@ -20,7 +20,7 @@
   (printout t "PROD: Deliver P3 from " ?name crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name pick-and-deliver) (args (create$ ?name)))
+	  (proposed-task (name pick-and-deliver) (args (create$ ?name)) (priority ?*PRIORITY-DELIVER-P3*))
   )
 )
 
@@ -35,7 +35,7 @@
   (printout t "PROD: Deliver P1 or P2 from " ?name crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name pick-and-deliver) (args (create$ ?name)))
+	  (proposed-task (name pick-and-deliver) (args (create$ ?name))  (priority ?*PRIORITY-DELIVER-P1P2*))
   )
 )
 
@@ -52,7 +52,7 @@
   (printout t "PROD: Recycling from " ?name crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name recycle) (args (create$ ?name ?recycle)))
+	  (proposed-task (name recycle) (args (create$ ?name ?recycle)) (priority ?*PRIORITY-RECYCLE*))
   )
 )
 
@@ -69,7 +69,7 @@
   (printout t "PROD: Starting T2 " ?name " with S0" crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S0) (args (create$ ?name)))
+	  (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-START-T2-WITH-S0*))
   )
 )
 
@@ -85,7 +85,7 @@
   (printout t "PROD: Loading T2 " ?name " with S0" crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S0) (args (create$ ?name)))
+	  (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T2-WITH-S0*))
   )
 )
 
@@ -101,7 +101,7 @@
   (printout t "PROD: Loading T2 " ?name-T2 " with S1 after producing at a T1" crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S1) (args (create$ ?name-T2)))
+	  (proposed-task (name load-with-S1) (args (create$ ?name-T2)) (priority ?*PRIORITY-LOAD-T2-WITH-S1*))
   )
 )
 
@@ -123,7 +123,7 @@
   (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S0) (args (create$ ?name)))
+	  (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-START-T3_T4-WITH-S0*))
   )
 )
 
@@ -139,7 +139,7 @@
   (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S0) (args (create$ ?name)))
+	  (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S0*))
   )
 )
 
@@ -155,7 +155,7 @@
   (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing at T1" crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name load-with-S1) (args (create$ ?name-T3_T4)))
+	  (proposed-task (name load-with-S1) (args (create$ ?name-T3_T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
   )
 )
 
@@ -173,7 +173,7 @@
   (printout t "PROD: Loading T3/T4 " ?name_T3T4 " with S2 from " ?name_T2 crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-	  (proposed-task (name pick-and-load) (args (create$ ?name_T2 ?name_T3T4)))
+	  (proposed-task (name pick-and-load) (args (create$ ?name_T2 ?name_T3T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
   )
 )
 
@@ -189,7 +189,7 @@
   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
   (retract ?sf)
   (assert (state TASK-PROPOSED)
-    (proposed-task (name load-with-S0) (args (create$ ?name)))
+    (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T5-WITH-S0*))
   )
 )
 

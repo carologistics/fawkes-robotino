@@ -13,10 +13,10 @@
 ;;;;;;;;;;;;;;;;
 (defrule lock-use-get-lock
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
-  ?lae <- (wait-for-lock (res ?res) (state new))
+  ?lae <- (wait-for-lock (res ?res) (state new) (priority ?p))
   =>
   (if (debug 3) then (printout t "Acquiring Lock for " ?res crlf))
-  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res) (priority ?p)))
   (modify ?lae (state get))
 )
 

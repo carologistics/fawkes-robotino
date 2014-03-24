@@ -54,7 +54,7 @@ message LockMessage {
   required Type         type = 1;
   required string       agent = 2;
   required string       resource = 3;
-  optional float        priority = 4;
+  optional uint32       priority = 4;
 }
 
 message CompleteLockStatus {
