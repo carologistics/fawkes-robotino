@@ -292,10 +292,13 @@
   (declare (salience ?*PRIORITY-HIGH*))
   (change-phase ?new-phase) 
   =>
-  (delayed-do-for-all-facts ((?lock lock)) TRUE
+  ;except for Ins1/2 to allow better transition from exploration to production
+  (delayed-do-for-all-facts ((?lock lock)) (and (neq ?lock:resource Ins1)
+						(neq ?lock:resource Ins2))
     (retract ?lock)
   )
-  (delayed-do-for-all-facts ((?lock locked-resource)) TRUE
+  (delayed-do-for-all-facts ((?lock locked-resource)) (and (neq ?lock:resource Ins1)
+							   (neq ?lock:resource Ins2))
     (retract ?lock)
   ) 
 )

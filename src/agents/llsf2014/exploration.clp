@@ -12,7 +12,7 @@
 ;Read exploration rows from config
 (defrule exp-cfg-get-row
   (declare (salience ?*PRIORITY-WM*))
-  ;(phase EXPLORATION)
+  (phase EXPLORATION)
   (confval (path "/clips-agent/llsf2014/exploration/row-high") (list-value $?row-high))
   (confval (path "/clips-agent/llsf2014/exploration/row-mid") (list-value $?row-mid))
   (confval (path "/clips-agent/llsf2014/exploration/row-low") (list-value $?row-low))
@@ -43,7 +43,7 @@
 ;turn over line if we start on the left field
 (defrule exp-turn-line-over
   (declare (salience ?*PRIORITY-WM*))
-  ;(phase EXPLORATION)
+  (phase EXPLORATION)
   (own-half left)
   ?er <- (exp-row (row $?row))
   (not (exp-line-already-turned))
@@ -59,7 +59,7 @@
 ;which machines do we have to explore?
 (defrule exp-get-ownership
   (declare (salience ?*PRIORITY-WM*))
-  ;(phase EXPLORATION)
+  (phase EXPLORATION)
   (machine (name ?machine) (ownership TRUE))
   ?me <- (machine-exploration (name ?machine) (ownership FALSE))
   =>
@@ -68,7 +68,7 @@
 
 ;Determine the first machine in dependency of the role
 (defrule exp-determine-first-machine
-  ;(phase EXPLORATION)
+  (phase EXPLORATION)
   (exp-row (row $?row))
   =>
   ;find first machine in row
@@ -303,7 +303,9 @@
       (assert (state EXP_FOUND_NEXT_MACHINE)
 	      (exp-next-machine ?old))
       else
-      (printout error "IMPLEMENT: prepare for production" crlf)
+      (printout t "prepare for production" crlf)
+      (retract ?s ?g)
+      (assert (state EXP_PREPARE_FOR_PRODUCTION))
     )
 
   )
@@ -347,21 +349,6 @@
           (goalmachine ?nextMachine))
   (skill-call ppgoto place (str-cat ?lp))
 )
-
-
-; ;Finish exploration phase if all machines are recognized
-; (defrule exp-finish-exploration
-;   (phase EXPLORATION)
-;   (not (machine-exploration (ownership TRUE) (recognized FALSE)))
-;   (role P1P2)
-;   ?s <- (round RETRY)
-;   (confval (path "/clips-agent/llsf2014/waiting-for-p1p2-prouction-point") (value ?work-finished-point))
-;   =>
-;   (printout t "Finished Exploration :-)" crlf)
-;   (retract ?s)
-;   (skill-call ppgoto place (str-cat ?work-finished-point))
-;   (printout t "Driving away." crlf)
-; )
 
 ;Receive light-pattern-to-type matchig and save it in a fact
 (defrule exp-receive-type-light-pattern-matching
@@ -441,4 +428,39 @@
   (type-spec-pre ?type ?light-color BLINK)
   =>
   (assert (type-spec-pre ?type ?light-color BLINKING))
+)
+
+
+;Finish exploration phase if all machines are recognized
+(defrule exp-prepare-for-production-get-lock-for-ins
+  (phase EXPLORATION)
+  (state EXP_PREPARE_FOR_PRODUCTION)
+  ?et <- (exp-tactic NEAREST)
+  (input-storage ?ins)
+  =>
+  (printout t "Finished Exploration :-)" crlf)
+  (retract ?et)
+  (assert (exp-tactic GOTO-INS)
+	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?ins))
+  )
+)
+(defrule exp-prepare-for-production-drive-to-ins
+  (phase EXPLORATION)
+  (exp-tactic GOTO-INS)
+  (input-storage ?ins)
+  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
+  =>
+  (printout t "Waiting for production at " ?ins crlf)
+  (skill-call ppgoto place (str-cat ?ins))
+)
+(defrule exp-prepare-for-production-drive-to-wait-for-ins
+  (phase EXPLORATION)
+  (exp-tactic GOTO-INS)
+  (input-storage ?ins)
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
+  (wait-point ?ins ?wait-point)
+  =>
+  (printout t "Waiting for production at " ?wait-point crlf)
+  (skill-call ppgoto place (str-cat ?wait-point))
+  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ins)))
 )

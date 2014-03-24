@@ -1,5 +1,4 @@
 (defrule conf-figure-out-waiting-points
-   (phase PRODUCTION)
    (confval (path "/clips-agent/llsf2014/waiting-points/ins1") (value ?ins1-wait-point))
    (confval (path "/clips-agent/llsf2014/waiting-points/ins2") (value ?ins2-wait-point))
    (confval (path "/clips-agent/llsf2014/waiting-points/deliver1") (value ?deliver1-wait-point))
