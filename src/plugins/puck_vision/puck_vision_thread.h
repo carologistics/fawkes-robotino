@@ -84,7 +84,7 @@ struct camera_info{
 typedef struct {
         firevision::ColorModel *colormodel;
         firevision::SimpleColorClassifier *classifier;
-        firevision::ColorModelSimilarity::color_class_t *color_class;
+        std::vector<firevision::ColorModelSimilarity::color_class_t*> color_classes;
         firevision::ScanlineGrid *scanline_grid;
         std::vector<unsigned int> cfg_ref_col;
         int cfg_chroma_thresh;

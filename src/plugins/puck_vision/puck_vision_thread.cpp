@@ -211,6 +211,13 @@ void PuckVisionThread::deleteClassifier(
 		delete color_data->scanline_grid;
 		color_data->scanline_grid = NULL;
 	}
+	if( !color_data->color_classes.empty()){
+		while(!color_data->color_classes.empty()){
+				firevision::ColorModelSimilarity::color_class_t* color_class = color_data->color_classes.back();
+				color_data->color_classes.pop_back();
+				delete color_class;
+		}
+	}
 }
 
 void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color_data, const char* prefix, firevision::color_t expected)
@@ -250,20 +257,23 @@ void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color
 	 	  0);
 
   } else if(cfg_colormodel_mode_ == "similarity"){
-	color_data->color_class = new firevision::ColorModelSimilarity::color_class_t(
-	  color_data->color_expect,
-	  color_data->cfg_ref_col,
-	  color_data->cfg_chroma_thresh,
-	  color_data->cfg_sat_thresh
-	  );
+	  firevision::ColorModelSimilarity* cm = new firevision::ColorModelSimilarity();
 
-	// Update the color class used by the combined color model for the tuning filter
-	color_data->color_class->chroma_threshold = color_data->cfg_chroma_thresh;
-	color_data->color_class->saturation_threshold = color_data->cfg_sat_thresh;
-	color_data->color_class->set_reference(color_data->cfg_ref_col);
+	  while(!color_data->cfg_ref_col.empty()){
+		  std::vector<unsigned int> color(color_data->cfg_ref_col.begin(), color_data->cfg_ref_col.begin() + 3);
+		  color_data->cfg_ref_col = std::vector<unsigned int>(color_data->cfg_ref_col.begin() + 3, color_data->cfg_ref_col.end());
+		  firevision::ColorModelSimilarity::color_class_t* color_class = new firevision::ColorModelSimilarity::color_class_t(
+				  color_data->color_expect,
+				  color,
+				  color_data->cfg_chroma_thresh,
+				  color_data->cfg_sat_thresh
+				  );
 
-	firevision::ColorModelSimilarity* cm = new firevision::ColorModelSimilarity();
-	cm->add_color(color_data->color_class);
+		  color_data->color_classes.push_back(color_class);
+		  cm->add_color(color_class);
+		  logger->log_info(name(),"Color %i added reference color R:%i G:%i B:%i", color_data->color_expect, color[0], color[1], color[2] );
+	  }
+
 	color_data->colormodel = cm;
 
     color_data->classifier = new firevision::SimpleColorClassifier(
@@ -713,12 +723,8 @@ PuckVisionThread::finalize()													//TODO check if everthing gets deleted
 		puck_interfaces_.pop_back();
 	}
 
-	delete puck_info_.main.classifier;
-	delete puck_info_.main.colormodel;
-	delete puck_info_.main.scanline_grid;
-	delete puck_info_.top_dots.classifier;
-	delete puck_info_.top_dots.colormodel;
-	delete puck_info_.top_dots.scanline_grid;
+	deleteClassifier(&puck_info_.main);
+	deleteClassifier(&puck_info_.top_dots);
 
 	logger->log_info(name(), "finalize ends");
 }
