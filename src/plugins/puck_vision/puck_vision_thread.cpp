@@ -293,10 +293,12 @@ void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color
 
 void
 PuckVisionThread::drawRois(std::list<firevision::ROI>* rois_) {
-	for(std::list<firevision::ROI>::iterator list_iter = rois_->begin();
-	    list_iter != rois_->end(); list_iter++)
-	{
-		drawROIIntoBuffer(*list_iter, firevision::FilterROIDraw::DASHED_HINT);
+	if(cfg_paintROIsActivated_){
+		for(std::list<firevision::ROI>::iterator list_iter = rois_->begin();
+			list_iter != rois_->end(); list_iter++)
+		{
+			drawROIIntoBuffer(*list_iter, firevision::FilterROIDraw::DASHED_HINT);
+		}
 	}
 }
 
@@ -471,6 +473,7 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 		it->start.y-= resize; // Move roi up after enlarging
 		firevision::ROI possible_puck = (*it);
 		std::list<firevision::ROI>* yellow_rois = classifyInRoi(possible_puck, &puck_info_.top_dots);
+		drawRois(yellow_rois);
 		if(yellow_rois->size() < 2){
 			//rois_red_->remove(*it); // Not enough features
 			//it = rois_red_->begin(); // not nice...
@@ -519,7 +522,7 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 			std::list<firevision::ROI> *pucks_with_feature = classifyInRoi(look_for_puck, &puck_info_.main);
 			// Get biggest roi, this ist the puck
 			if(pucks_with_feature->size() > 0){
-				firevision::ROI puck = getBiggestRoi(pucks_with_feature);
+				firevision::ROI puck = getRoiContainingRoi(pucks_with_feature, lowest_yellow_dot_in_roi);
 				pucks.push_back(puck);
 
 				//TODO Split rois to find more than one puck per ROI
@@ -536,11 +539,20 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 
 	//logger->log_info(name(), "Pucks %i colormodel %s", pucks.size(), puck_info_.main.colormodel->get_name());
 
-	if(cfg_paintROIsActivated_){
-			drawRois(&rois_all_);
-	}
+
+	drawRois(&rois_all_);
 
 	return pucks;
+}
+
+firevision::ROI PuckVisionThread::getRoiContainingRoi( std::list<firevision::ROI>* roiList, firevision::ROI containing) {
+	for (std::list<firevision::ROI>::iterator it = roiList->begin();
+			it != roiList->end(); ++it) {
+		if ((*it).contains(containing.start.x + containing.width/2, + containing.start.y + containing.height/2)) {
+			return (*it);
+		}
+	}
+	return getBiggestRoi(roiList);
 }
 
 firevision::ROI PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
@@ -579,13 +591,15 @@ void PuckVisionThread::polToCart(float &x, float &y,fawkes::polar_coord_2d_t pol
 void
 PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
 {
-	drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(camera_info_.img_width_, camera_info_.img_height_), 0);
-	drawer_->set_dst_buffer(buffer_, &roi);
-	drawer_->set_style(borderStyle);
-	drawer_->apply();
+	if(cfg_paintROIsActivated_){
+		drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(camera_info_.img_width_, camera_info_.img_height_), 0);
+		drawer_->set_dst_buffer(buffer_, &roi);
+		drawer_->set_style(borderStyle);
+		drawer_->apply();
 
-	if (cfg_debugMessagesActivated_) {
-		logger->log_debug(name(), "drawed element in buffer");
+		if (cfg_debugMessagesActivated_) {
+			logger->log_debug(name(), "drawed element in buffer");
+		}
 	}
 }
 

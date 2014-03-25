@@ -171,6 +171,8 @@ private:
 
 	firevision::ROI
 	getBiggestRoi(std::list<firevision::ROI>* roiList);
+	firevision::ROI
+	getRoiContainingRoi( std::list<firevision::ROI>* roiList, firevision::ROI containing);
 	void mergeWithColorInformation(firevision::color_t color,
 			std::list<firevision::ROI>* rois_color_,
 			std::list<firevision::ROI>* rois_all);
