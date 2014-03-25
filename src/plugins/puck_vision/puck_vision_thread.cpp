@@ -62,9 +62,11 @@ void
 PuckVisionThread::createPuckInterface(){
 	fawkes::Position3DInterface* puck_if_ = NULL;
 
-	std::string interface_name = cfg_prefix_ + "puck_"+std::to_string(puck_interfaces_.size());
+	std::string interface_name = cfg_prefix_ + "puck_" + std::to_string(puck_interfaces_.size());
+	logger->log_info(name(), "Creating new Position3DInterface %s", interface_name.c_str());
+
 	try {
-		puck_if_ = blackboard->open_for_writing<fawkes::Position3DInterface>(interface_name.c_str() + puck_interfaces_.size());
+		puck_if_ = blackboard->open_for_writing<fawkes::Position3DInterface>(interface_name.c_str());
 		puck_if_->set_visibility_history(-9999);
 		puck_if_->set_frame(cfg_frame_.c_str());
 		puck_if_->write();
