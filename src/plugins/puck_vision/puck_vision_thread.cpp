@@ -227,12 +227,27 @@ void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color
   color_data->cfg_scangrid_x_offset = config->get_int((cfg_prefix_ + prefix +"/scangrid_x_offset").c_str());
   color_data->cfg_scangrid_y_offset = config->get_int((cfg_prefix_ + prefix +"/scangrid_y_offset").c_str());
 
+  color_data->scanline_grid = new firevision::ScanlineGrid(
+ 	camera_info_.img_width_,
+ 	camera_info_.img_height_,
+    color_data->cfg_scangrid_x_offset,
+    color_data->cfg_scangrid_y_offset);
+
   if (cfg_colormodel_mode_ == "colormap"){
 	  std::string lutname =  std::string(prefix) + "/lut"; //"puck_vison/" +
 	  std::string filename = std::string(CONFDIR) + "/"+ config->get_string((cfg_prefix_ + prefix +"/lut").c_str());
 	  color_data->colormodel = new firevision::ColorModelLookupTable(filename.c_str(),
 			  lutname.c_str(),
 			  true /* destroy on delete */);
+
+	  color_data->classifier = new firevision::SimpleColorClassifier(
+	 	  color_data->scanline_grid,
+	 	  color_data->colormodel,
+	 	  color_data->cfg_roi_min_points,
+	 	  color_data->cfg_roi_basic_size,
+	 	  false,
+	 	  color_data->cfg_roi_neighborhood_min_match,
+	 	  0);
 
   } else if(cfg_colormodel_mode_ == "similarity"){
 	color_data->color_class = new firevision::ColorModelSimilarity::color_class_t(
@@ -250,26 +265,20 @@ void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color
 	firevision::ColorModelSimilarity* cm = new firevision::ColorModelSimilarity();
 	cm->add_color(color_data->color_class);
 	color_data->colormodel = cm;
+
+    color_data->classifier = new firevision::SimpleColorClassifier(
+	  color_data->scanline_grid,
+	  color_data->colormodel,
+	  color_data->cfg_roi_min_points,
+	  color_data->cfg_roi_basic_size,
+	  false,
+	  color_data->cfg_roi_neighborhood_min_match,
+	  0,
+	  color_data->color_expect);
   }
   else{
 	throw new fawkes::Exception("selected colormodel not supported");
   }
-
-  color_data->scanline_grid = new firevision::ScanlineGrid(
-	camera_info_.img_width_,
-	camera_info_.img_height_,
-    color_data->cfg_scangrid_x_offset,
-    color_data->cfg_scangrid_y_offset);
-
-  color_data->classifier = new firevision::SimpleColorClassifier(
-      color_data->scanline_grid,
-      color_data->colormodel,
-      color_data->cfg_roi_min_points,
-      color_data->cfg_roi_basic_size,
-      false,
-      color_data->cfg_roi_neighborhood_min_match,
-      0,
-      color_data->color_expect);
 }
 
 void
