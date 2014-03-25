@@ -157,13 +157,14 @@ private:
 	std::vector<firevision::ROI> detected_pucks;
 	fawkes::SwitchInterface* switchInterface_;
 
-	firevision::ROI roi_center_;
 	unsigned char *buffer_;													//reference to the buffer of shm_buffer_YCbCr (to use in code)
 
 	firevision::colorspace_t cspaceFrom_;
 	firevision::colorspace_t cspaceTo_;
 
 	firevision::FilterROIDraw *drawer_;
+
+	firevision::ROI search_area;
 
 	//Helper functions
 	float getX(firevision::ROI* roi);
@@ -182,6 +183,8 @@ private:
 
 	std::list<firevision::ROI>*
 	classifyInRoi(firevision::ROI searchArea, color_classifier_context_t_* color_data);
+
+	void printRoi(firevision::ROI roi);
 
 	/** detectPucks
 	 *  Returns a list of ROIs. Each ROI contians a puck

@@ -62,7 +62,7 @@ void
 PuckVisionThread::createPuckInterface(){
 	fawkes::Position3DInterface* puck_if_ = NULL;
 
-	std::string interface_name = cfg_prefix_ + "puck_" + std::to_string(puck_interfaces_.size());
+	std::string interface_name = "puck_" + std::to_string(puck_interfaces_.size());
 	logger->log_info(name(), "Creating new Position3DInterface %s", interface_name.c_str());
 
 	try {
@@ -103,6 +103,12 @@ void PuckVisionThread::loadConfig(){
 	cfg_debugMessagesActivated_ = config->get_bool((cfg_prefix_ + "show_debug_messages").c_str());
 	cfg_paintROIsActivated_ = config->get_bool((cfg_prefix_ + "draw_rois").c_str());
 
+	search_area.start.x = config->get_uint((cfg_prefix_ + "search_area/start/x").c_str());
+	search_area.start.y = config->get_uint((cfg_prefix_ + "search_area/start/y").c_str());
+	search_area.width = config->get_uint((cfg_prefix_ + "search_area/width").c_str());
+	search_area.height = config->get_uint((cfg_prefix_ + "search_area/height").c_str());
+	search_area.color = firevision::C_BLUE;
+
 	//Config Value for the classifier mode
 	cfg_colormodel_mode_ = config->get_string((cfg_prefix_ + "colormodel_mode").c_str());
 
@@ -125,6 +131,10 @@ void PuckVisionThread::init_with_config()
 		cam_->open();
 		camera_info_.img_width_ = cam_->pixel_width();
 		camera_info_.img_height_ = cam_->pixel_height();
+
+		search_area.image_height = camera_info_.img_height_;
+		search_area.image_width = camera_info_.img_width_;
+		printRoi(search_area);
 
 		cspaceFrom_ = cam_->colorspace();
 
@@ -165,14 +175,6 @@ void PuckVisionThread::init_with_config()
 	setup_color_classifier(&puck_info_.main, "puck/red", firevision::C_RED);
 	setup_color_classifier(&puck_info_.top_dots, "puck/topdots", firevision::C_YELLOW);
 
-	//Defines the search area
-	roi_center_.start.x=(camera_info_.img_width_/2) -2;
-	roi_center_.start.y=(camera_info_.img_height_/2) -2;
-	roi_center_.width=4;
-	roi_center_.height=4;
-	roi_center_.image_height=camera_info_.img_height_;
-	roi_center_.image_width=camera_info_.img_width_;
-
 	logger->log_debug(name(), "Visible X: %f y: %f Offset cam groundplane: %f angle (horizontal/opening): %f ",camera_info_.visible_lenght_x_in_m_, camera_info_.visible_lenght_y_in_m_ , camera_info_.offset_cam_x_to_groundplane_, camera_info_.angle_horizontal_to_opening_);
 	logger->log_debug(name(), "cam transform X: %f y: %f z: %f pitch: %f",camera_info_.position_x_, camera_info_.position_y_, camera_info_.position_z_, camera_info_.position_pitch_);
 }
@@ -183,7 +185,6 @@ PuckVisionThread::init()
 	logger->log_info(name(), "starts init");
 
 	config->add_change_handler(this);
-
 
 	no_pucK_ = new puck();
 	int val_empty = -9999;
@@ -398,14 +399,15 @@ void PuckVisionThread::calculatePuckPositions(std::vector<puck> *pucks, std::lis
 	}
 }
 
-void printRoi(firevision::ROI roi){
-	std::printf("x %i y %i image_hight %i image_width %i width: %i height %i\n",
+void PuckVisionThread::printRoi(firevision::ROI roi){
+	std::printf("x: %i y: %i width: %i height: %i color: %i image_hight: %i image_width: %i \n",
 			roi.start.x,
 			roi.start.y,
-			roi.image_height,
-			roi.image_width,
 			roi.width,
-			roi.height);
+			roi.height,
+			roi.color,
+			roi.image_height,
+			roi.image_width);
 }
 
 std::list<firevision::ROI>* splitROI(firevision::ROI bigroi, firevision::ROI cut){
@@ -461,12 +463,7 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 	std::list<firevision::ROI> rois_all_;
 	std::list<firevision::ROI> pucks;
 
-	//Find all Red areas
-	puck_info_.main.scanline_grid->reset();
-	puck_info_.main.scanline_grid->set_roi(&camera_info_.fullimage);
-	puck_info_.main.classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
-	std::list<firevision::ROI> *rois_red_ = puck_info_.main.classifier->classify();
-	//delete rois_red_;
+	std::list<firevision::ROI> *rois_red_ = classifyInRoi(search_area, &puck_info_.main);
 
 	for (std::list<firevision::ROI>::iterator it = rois_red_->begin();
 			it != rois_red_->end(); ++it) {
@@ -517,7 +514,7 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 
 			firevision::ROI look_for_puck(lowest_yellow_dot_in_roi);
 			fitROI(look_for_puck,x,y,w,h);
-			look_for_puck.color = firevision::C_GREEN;
+			look_for_puck.color = firevision::C_ORANGE;
 
 			drawROIIntoBuffer(look_for_puck);
 
@@ -525,7 +522,9 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 			// Get biggest roi, this ist the puck
 			if(pucks_with_feature->size() > 0){
 				firevision::ROI puck = getRoiContainingRoi(pucks_with_feature, lowest_yellow_dot_in_roi);
+				puck.color = firevision::C_WHITE;
 				pucks.push_back(puck);
+
 
 				//TODO Split rois to find more than one puck per ROI
 				//std::list<firevision::ROI>* splitted_roi = splitROI(possible_puck, puck);
@@ -538,11 +537,11 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 		delete yellow_rois;
 	}
 	mergeWithColorInformation(puck_info_.main.color_expect, rois_red_, &rois_all_);
-
 	//logger->log_info(name(), "Pucks %i colormodel %s", pucks.size(), puck_info_.main.colormodel->get_name());
 
-
 	drawRois(&rois_all_);
+	drawRois(&pucks);
+	drawROIIntoBuffer(search_area);
 
 	return pucks;
 }

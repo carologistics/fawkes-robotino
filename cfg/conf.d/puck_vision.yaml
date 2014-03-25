@@ -24,6 +24,13 @@ plugins/puck_vision:
   camera_opening_angle_horizontal: 1.08 
   camera_opening_angle_vertical: 0.85 
 
+  search_area:
+    start:
+      x: 00
+      y: 100
+    width: 640
+    height: 300
+
   #Puck details
   puck:
     radius: 0.03
@@ -45,16 +52,17 @@ plugins/puck_vision:
 			#R  #G   #B
     topdots:
       reference_color: [172, 142, 32,  
-			190, 157, 86,  
+			155, 157, 86,  
 			255, 255, 0,  
-			255, 194, 49]
-      chroma_thresh: 4
+			255, 194, 49,
+			177, 138, 79]
+      chroma_thresh: 10
       saturation_thresh: 40
-      min_points: 10
+      min_points: 4
       basic_roi_size: 4
-      neighborhood_min_match: 4
-      scangrid_x_offset: 2
-      scangrid_y_offset: 2
+      neighborhood_min_match: 3
+      scangrid_x_offset: 1
+      scangrid_y_offset: 1
       lut: /bulb-colormap/yellow.colormap
 
   #colormap_file_blue: /bulb-colormap/blue.colormap 
