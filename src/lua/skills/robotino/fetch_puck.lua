@@ -27,27 +27,10 @@ name               = "fetch_puck"
 fsm                = SkillHSM:new{name=name, start="WAIT_FOR_VISION", debug=true}
 depends_skills     = { "motor_move" }
 depends_interfaces = {
-    {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
-    {v = "omnipuck1", type="Position3DInterface", id="OmniPuck1"},
-    {v = "omnipuck2", type="Position3DInterface", id="OmniPuck2"},
-    {v = "omnipuck3", type="Position3DInterface", id="OmniPuck3"},
-    {v = "omnipuck4", type="Position3DInterface", id="OmniPuck4"},
-    {v = "omnipuck5", type="Position3DInterface", id="OmniPuck5"},
-    {v = "omnipuck6", type="Position3DInterface", id="OmniPuck6"},
-    {v = "omnipuck7", type="Position3DInterface", id="OmniPuck7"},
-    {v = "omnipuck8", type="Position3DInterface", id="OmniPuck8"},
-    {v = "omnipuck9", type="Position3DInterface", id="OmniPuck9"},
-    {v = "omnipuck10", type="Position3DInterface", id="OmniPuck10"},
-    {v = "omnipuck11", type="Position3DInterface", id="OmniPuck11"},
-    {v = "omnipuck12", type="Position3DInterface", id="OmniPuck12"},
-    {v = "omnipuck13", type="Position3DInterface", id="OmniPuck13"},
-    {v = "omnipuck14", type="Position3DInterface", id="OmniPuck14"},
-    {v = "omnipuck15", type="Position3DInterface", id="OmniPuck15"},
-    {v = "omnipuck16", type="Position3DInterface", id="OmniPuck16"},
-    {v = "omnipuck17", type="Position3DInterface", id="OmniPuck17"},
-    {v = "omnipuck18", type="Position3DInterface", id="OmniPuck18"},
-    {v = "omnipuck19", type="Position3DInterface", id="OmniPuck19"},
-    {v = "omnipuck20", type="Position3DInterface", id="OmniPuck20"},
+--    {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
+    {v = "puck_0", type="Position3DInterface", id="puck_0"},
+    {v = "puck_1", type="Position3DInterface", id="puck_1"},
+    {v = "puck_2", type="Position3DInterface", id="puck_2"},
     {v = "sensor", type="RobotinoSensorInterface"},
     {v = "motor", type = "MotorInterface", id="Robotino" }
 }
@@ -63,31 +46,14 @@ if config:exists("/skills/fetch_puck/front_sensor_dist") then
    -- you can find the config value in /cfg/host.yaml
    THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
 end
-local MIN_VIS_HIST = 15
+local MIN_VIS_HIST = 0
 local EPSILON_X = 0.07
 local EPSILON_PHI = 0.2
 local OFFSET_X_SIDE_SEARCH = 0.30
-local omnipucks = {
-   omnipuck1,
-   omnipuck2,
-   omnipuck3,
-   omnipuck4,
-   omnipuck5,
-   omnipuck6,
-   omnipuck7,
-   omnipuck8,
-   omnipuck9,
-   omnipuck10,
-   omnipuck11,
-   omnipuck12,
-   omnipuck13,
-   omnipuck14,
-   omnipuck15,
-   omnipuck16,
-   omnipuck17,
-   omnipuck18,
-   omnipuck19,
-   omnipuck20
+local pucks = {
+   puck_0,
+   puck_1,
+   puck_2,
 }
 
 
@@ -103,7 +69,7 @@ function have_puck()
 end
 
 function visible()
-   for _,o in ipairs(omnipucks) do
+   for _,o in ipairs(pucks) do
       if o:visibility_history() >= MIN_VIS_HIST then
          return true
       end
@@ -111,8 +77,7 @@ function visible()
    return false
 end
 
-fsm:define_states{ export_to=_M, closure={have_puck=have_puck, omnipuck=omnipuck,
-      visible=visible},
+fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
    {"WAIT_FOR_VISION", JumpState},
    {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="TURN_TO_PUCK",
       fail_to="WAIT_FOR_VISION"},
@@ -141,8 +106,8 @@ function MOVE_MORE:init()
 end
 
 function WAIT_FOR_VISION:init()
-   local msg = omnivisionSwitch.EnableSwitchMessage:new()
-   omnivisionSwitch:msgq_enqueue_copy(msg)
+   --local msg = omnivisionSwitch.EnableSwitchMessage:new()
+   --omnivisionSwitch:msgq_enqueue_copy(msg)
 end
 
 function TURN_TO_PUCK:init()
@@ -150,7 +115,7 @@ function TURN_TO_PUCK:init()
    local target
    local candidates = {}
 
-   for _,o in ipairs(omnipucks) do
+   for _,o in ipairs(pucks) do
       if o:visibility_history() >= MIN_VIS_HIST then
          local x = o:translation(0)
          local y = o:translation(1)
@@ -163,7 +128,7 @@ function TURN_TO_PUCK:init()
 
    if #candidates == 0 then
       local min_dist = 1000000
-      for _,o in ipairs(omnipucks) do
+      for _,o in ipairs(pucks) do
          if o:visibility_history() >= MIN_VIS_HIST then
             local x = o:translation(0)
             local y = o:translation(1)
@@ -194,7 +159,7 @@ function DRIVE_SIDEWAYS_TO_PUCK:init()
    local min_x =  1000
    local max_y = -1000
    local candidates = {}
-   for _,o in ipairs(omnipucks) do
+   for _,o in ipairs(pucks) do
       if o:visibility_history() >= MIN_VIS_HIST then
          local x = o:translation(0)
          local y = o:translation(1)
@@ -245,12 +210,11 @@ function cleanup()
    motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
    motor:msgq_enqueue_copy(motor.TransRotMessage:new(0, 0, 0))
    motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
-   local msg = omnivisionSwitch.DisableSwitchMessage:new()
-   omnivisionSwitch:msgq_enqueue_copy(msg)
+   --local msg = omnivisionSwitch.DisableSwitchMessage:new()
+   --omnivisionSwitch:msgq_enqueue_copy(msg)
 end
 
 function FAILED:init() cleanup() end
 
 function FINAL:init() cleanup() end
-
 
