@@ -23,6 +23,7 @@
 ; Request clips-features
 (defrule enable-blackboard
   (ff-feature blackboard)
+  (not (ff-feature-loaded blackboard))
   =>
   (printout t "Requesting blackboard feature" crlf)
   (ff-feature-request "blackboard")
@@ -30,15 +31,26 @@
 )
 (defrule enable-motor-switch
   (ff-feature motor-switch)
+  (not (ff-feature-loaded motor-switch))
   =>
   (printout t "Requesting motor-switch feature" crlf)
   (ff-feature-request "motor-switch")
 )
 (defrule enable-protobuf
   (ff-feature protobuf)
+  (not (ff-feature-loaded protobuf))
   =>
   (printout t "Requesting protobuf feature" crlf)
   (ff-feature-request "protobuf")
+)
+(defrule enable-navgraph
+  (init) ;because we want to load the navgraph after the (reset), which would delete all navgraph facts
+  (ff-feature navgraph)
+  (not (ff-feature-loaded navgraph))
+  =>
+  (printout t "Requesting navgraph feature" crlf)
+  (ff-feature-request "navgraph")
+  (path-load  llsf2014/navgraph.clp)
 )
 
 (defrule initialize
@@ -100,13 +112,4 @@
   =>
   (printout t "Disabling watching of the following rules: " ?lv crlf)
   (foreach ?v ?lv (unwatch rules (sym-cat ?v)))
-)
-
-;this rule should happen before the init but  the reset retracts all navgraph facts
-(defrule enable-navgraph
-  (init)
-  =>
-  (printout t "Requesting navgraph feature" crlf)
-  (ff-feature-request "navgraph")
-  (path-load  llsf2014/navgraph.clp)
 )
