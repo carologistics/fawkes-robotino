@@ -82,7 +82,7 @@ void PuckVisionThread::loadConfig(){
 	cfg_prefix_ = CFG_PREFIX;
 	cfg_prefix_static_transforms_ = config->get_string((cfg_prefix_ + "transform").c_str());
 
-	cfg_frame_ = config->get_string((cfg_prefix_static_transforms_ + "child_frame").c_str());
+	cfg_frame_ = "/base_link"; //config->get_string((cfg_prefix_static_transforms_ + "child_frame").c_str());
 
 	//load camera informations
 	camera_info_.cfg_camera_ = config->get_string((cfg_prefix_ + "camera").c_str());
@@ -316,33 +316,6 @@ PuckVisionThread::mergeWithColorInformation(firevision::color_t color,
 	}
 }
 
-//fawkes::PuckVisionInterface::PuckColor
-//PuckVisionThread::getPuckInterfaceColor(firevision::ROI* roi){
-//	switch (roi->color) {
-//		case firevision::C_BLUE:
-//			return fawkes::PuckVisionInterface::C_BLUE;
-//		case firevision::C_RED:
-//			return fawkes::PuckVisionInterface::C_RED;
-//		case firevision::C_GREEN:
-//			return fawkes::PuckVisionInterface::C_GREEN;
-//		case firevision::C_YELLOW:
-//			return fawkes::PuckVisionInterface::C_YELLOW;
-//		case firevision::C_BLACK:
-//			return fawkes::PuckVisionInterface::C_BLACK;
-//		case firevision::C_WHITE:
-//			return fawkes::PuckVisionInterface::C_WHITE;
-//		default:
-//			return fawkes::PuckVisionInterface::C_UNKNOWN;
-//	}
-//}
-
-//void checkPadding(std::list<firevision::ROI>& dst,
-//			std::list<firevision::ROI> src){
-//	while(src.size() !=0 ) {
-//
-//	}
-//}
-
 void
 PuckVisionThread::loop()
 {
@@ -435,24 +408,25 @@ std::list<firevision::ROI>* splitROI(firevision::ROI bigroi, firevision::ROI cut
 
 void fitROI(firevision::ROI &roi, int x, int y, int w, int h){
   //Check x position in in image range
-  if(x < 0) {roi.start.x = 0; w = w+x; }
-  else if(x > (int)roi.image_width){ roi.start.x = roi.image_width-1; }
-  else{ roi.start.x = x; }
+  //printf("fit roi to, x: %i y:%i width: %i height: %i\n", x,  y, w, h);
 
-  //Check y position in in image range
-  if(y < 0) {roi.start.y = 0; h = h+y; }
-  else if(y > (int)roi.image_height){ roi.start.y = roi.image_height-1; }
-  else{ roi.start.y = y; }
+  roi.start.x = std::max(0,(std::min((int)roi.image_width, x)));
+  roi.start.y = std::max(0,(std::min((int)roi.image_height, y)));
 
-  //Check width+start.x is in image range
-  if( w < 0){ roi.width = 0; }
-  else if(x + w > (int)roi.image_width){ roi.width = roi.image_width - roi.start.x; }
-  else{ roi.width = w; }
+  roi.width = std::max(0,(std::min((int)roi.image_width, w)));
+  roi.height = std::max(0,(std::min((int)roi.image_height, h)));
 
-  //Check height+start.y is in image range
-  if(h < 0) { roi.height = 0; }
-  else if(y + h > (int)roi.image_height){ roi.height = roi.image_height - roi.start.y; }
-  else{ roi.height = h; }
+  if( roi.start.x + roi.width > roi.image_width){
+	  roi.width = roi.image_width - roi.start.x;
+  }
+
+  if( roi.start.y + roi.height > roi.image_height){
+  	  roi.height = roi.image_height - roi.start.y;
+  }
+
+  if( roi.start.y + roi.height > roi.image_height || roi.start.x + roi.width > roi.image_width){
+	  printf("Failed roi correction, x: %i y:%i width: %i height: %i , image_width: %i image_height: %i\n", roi.start.x, roi.start.y, roi.width, roi.height, roi.image_width, roi.image_height);
+  }
 }
 
 /** detectPucks
@@ -474,13 +448,9 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 		std::list<firevision::ROI>* yellow_rois = classifyInRoi(possible_puck, &puck_info_.top_dots);
 		drawRois(yellow_rois);
 		if(yellow_rois->size() < 2){
-			//rois_red_->remove(*it); // Not enough features
-			//it = rois_red_->begin(); // not nice...
+			// Not enough features
 
 			//logger->log_info(name(), "no yellow");
-
-			//Should we add possible pucks?
-			//pucks.push_back(possible_puck);
 		}
 		else{
 			//find yellow roi with lowest left corner;
@@ -505,31 +475,46 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 
 			// create a new smaller roi
 			int x,y,w,h;
-			h = possible_puck.height + possible_puck.start.y - lowest_yellow_dot_in_roi.start.y + lowest_yellow_dot_in_roi.height;//6*lowest_yellow_dot_in_roi.height;
+			h = std::min( search_area.height-2, possible_puck.height*2 + possible_puck.start.y - lowest_yellow_dot_in_roi.start.y + lowest_yellow_dot_in_roi.height);//6*lowest_yellow_dot_in_roi.height;
 			//w = lowest_yellow_dot_in_roi.image_width;
-			w = 16*lowest_yellow_dot_in_roi.width;
-			//x = 0;
+			w = std::min( search_area.width-2, 16*lowest_yellow_dot_in_roi.width);
 			x = lowest_yellow_dot_in_roi.start.x - w/2;
-			y = lowest_yellow_dot_in_roi.start.y-lowest_yellow_dot_in_roi.height;// + lowest_yellow_dot_in_roi.height;
+			y = lowest_yellow_dot_in_roi.start.y - lowest_yellow_dot_in_roi.height -20;// look also 10 points over the red dot;
 
 			firevision::ROI look_for_puck(lowest_yellow_dot_in_roi);
+
+			if(cfg_debugMessagesActivated_){
+				logger->log_debug(name(), "Fit puck %i %i %i %i",x, y, w, h);
+				printRoi(look_for_puck);
+			}
+
 			fitROI(look_for_puck,x,y,w,h);
-			look_for_puck.color = firevision::C_ORANGE;
+
+			if(cfg_debugMessagesActivated_){
+				printRoi(look_for_puck);
+				logger->log_debug(name(), "Fit end %i %i %i %i",x, y, w, h);
+			}
+
+			look_for_puck.color = firevision::C_GREEN;
 
 			drawROIIntoBuffer(look_for_puck);
 
 			std::list<firevision::ROI> *pucks_with_feature = classifyInRoi(look_for_puck, &puck_info_.main);
 			// Get biggest roi, this ist the puck
 			if(pucks_with_feature->size() > 0){
-				firevision::ROI puck = getRoiContainingRoi(pucks_with_feature, lowest_yellow_dot_in_roi);
-				puck.color = firevision::C_WHITE;
-				pucks.push_back(puck);
+				firevision::ROI* puck = getRoiContainingRoi(pucks_with_feature, lowest_yellow_dot_in_roi);
+				if(puck != NULL){
+					puck->color = firevision::C_WHITE;
+					firevision::ROI mypuck(puck);
+					pucks.push_back(mypuck);
+					delete puck;
 
+					//TODO Split rois to find more than one puck per ROI
+					//std::list<firevision::ROI>* splitted_roi = splitROI(possible_puck, puck);
 
-				//TODO Split rois to find more than one puck per ROI
-				//std::list<firevision::ROI>* splitted_roi = splitROI(possible_puck, puck);
+					//rois_red_->merge(*splitted_roi);
+				}
 
-				//rois_red_->merge(*splitted_roi);
 				mergeWithColorInformation(firevision::C_BLACK, pucks_with_feature, &rois_all_ );
 			}
 			delete pucks_with_feature;
@@ -546,14 +531,14 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 	return pucks;
 }
 
-firevision::ROI PuckVisionThread::getRoiContainingRoi( std::list<firevision::ROI>* roiList, firevision::ROI containing) {
+firevision::ROI* PuckVisionThread::getRoiContainingRoi( std::list<firevision::ROI>* roiList, firevision::ROI containing) {
 	for (std::list<firevision::ROI>::iterator it = roiList->begin();
 			it != roiList->end(); ++it) {
 		if ((*it).contains(containing.start.x + containing.width/2, + containing.start.y + containing.height/2)) {
-			return (*it);
+			return new firevision::ROI(*it);
 		}
 	}
-	return getBiggestRoi(roiList);
+	return NULL;//getBiggestRoi(roiList);
 }
 
 firevision::ROI PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
@@ -592,15 +577,18 @@ void PuckVisionThread::polToCart(float &x, float &y,fawkes::polar_coord_2d_t pol
 void
 PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDraw::border_style_t borderStyle)
 {
-	if(cfg_paintROIsActivated_){
-		drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(camera_info_.img_width_, camera_info_.img_height_), 0);
-		drawer_->set_dst_buffer(buffer_, &roi);
-		drawer_->set_style(borderStyle);
-		drawer_->apply();
-
-		if (cfg_debugMessagesActivated_) {
-			logger->log_debug(name(), "drawed element in buffer");
+	try{
+		if(cfg_paintROIsActivated_){
+			drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(camera_info_.img_width_, camera_info_.img_height_), 0);
+			drawer_->set_dst_buffer(buffer_, &roi);
+			drawer_->set_style(borderStyle);
+			drawer_->apply();
+			if (cfg_debugMessagesActivated_) {
+				logger->log_debug(name(), "drawed element in buffer");
+			}
 		}
+	}catch (fawkes::Exception &e){
+		logger->log_error(name(),e);
 	}
 }
 
@@ -608,13 +596,18 @@ PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDr
 std::list<firevision::ROI>*
 PuckVisionThread::classifyInRoi(firevision::ROI searchArea, color_classifier_context_t_* color_data)
 {
-	color_data->scanline_grid->reset();
-	color_data->scanline_grid->set_roi(&searchArea);
-	color_data->classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
+	try{
+		color_data->scanline_grid->reset();
+		color_data->scanline_grid->set_roi(&searchArea);
+		color_data->classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
 
-	std::list<firevision::ROI> *ROIs = color_data->classifier->classify();
+		std::list<firevision::ROI> *ROIs = color_data->classifier->classify();
 
-	return ROIs;
+		return ROIs;
+	}catch (fawkes::Exception &e){
+			logger->log_error(name(),e);
+	}
+	return new std::list<firevision::ROI>; // return a empty list if a exception is thrown
 }
 
 float
@@ -658,34 +651,19 @@ PuckVisionThread::getPuckPosition(puck *p, firevision::ROI roi){
 	p->roi = roi;
 	p->cart.x = getX(&roi);
 	p->cart.y = getY(&roi);
+	p->cart.z = 0;
 	cartToPol(p->pol, p->cart.x, p->cart.y );
 	p->visibiity_history = 1;
 	p->radius = position_y_in_m_R - position_y_in_m_L;
 }
-
-//int
-//PuckVisionThread::getVisibilityHistory(fawkes::polar_coord_2d_t polar,
-//		fawkes::PuckVisionInterface::PuckColor colorRoi,
-//		fawkes::PuckVisionInterface::PuckColor colorInterface,
-//		float interface_phi, float interface_r,
-//		int interface_visibility)
-//{
-//	bool toBigRotation = polar.phi - interface_phi > 0.1;
-//	bool toBigMovement = polar.r - interface_r > 0.1;
-//	bool colorChanged = colorRoi != colorInterface;
-//	if (toBigRotation || toBigMovement || colorChanged
-//			|| colorRoi == fawkes::PuckVisionInterface::C_UNKNOWN) {
-//		return -1;
-//	} else {
-//		return ++interface_visibility;
-//	}
-//}
 
 void
 PuckVisionThread::updatePos3dInferface(fawkes::Position3DInterface* interface, puck* p){
 	interface->set_translation(0, p->cart.x);
 	interface->set_translation(1, p->cart.y);
 	interface->set_translation(2, p->cart.z);
+	interface->set_rotation(0, p->pol.phi);
+	interface->set_rotation(1, p->pol.r);
 	interface->set_visibility_history(p->visibiity_history);
 }
 
@@ -702,7 +680,6 @@ PuckVisionThread::updateInterface(std::vector<puck>* pucks){
 	if(cfg_debugMessagesActivated_) {
 		logger->log_info(name(),"Detected pucks in view:  %i", pucks->size());
 	}
-
 
 	std::vector<fawkes::Position3DInterface*>::iterator interface_it = puck_interfaces_.begin();
 	std::vector<puck>::iterator puck_it = pucks->begin();

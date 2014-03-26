@@ -41,7 +41,7 @@
 
 #include <string>
 #include <list>
-#include <cmath>
+#include <math.h>
 #include <algorithm> // sort
 
 namespace firevision {
@@ -172,7 +172,7 @@ private:
 
 	firevision::ROI
 	getBiggestRoi(std::list<firevision::ROI>* roiList);
-	firevision::ROI
+	firevision::ROI*
 	getRoiContainingRoi( std::list<firevision::ROI>* roiList, firevision::ROI containing);
 	void mergeWithColorInformation(firevision::color_t color,
 			std::list<firevision::ROI>* rois_color_,
