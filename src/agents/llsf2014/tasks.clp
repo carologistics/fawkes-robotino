@@ -254,3 +254,13 @@
   (retract ?s)
   (assert (state TASK-FINISHED))
 )
+(defrule task-recycle--handle-fail
+  (phase PRODUCTION)
+  ?t <- (task (name recycle) (args $?a) (state ~finished))
+  ?s <- (state GET-CONSUMED-FINAL)
+  =>
+  ;just end the taks
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
