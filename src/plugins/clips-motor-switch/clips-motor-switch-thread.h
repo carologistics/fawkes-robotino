@@ -3,8 +3,7 @@
  *  clips-motor-switch-thread.h - Switch motor from CLIPS
  *
  *  Created: Thu Apr 25 12:30:30 2013
- *  Copyright  2006-2013  Tim Niemueller [www.niemueller.de]
- *
+ *  Copyright  2006-2014  Tim Niemueller [www.niemueller.de]
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -33,7 +32,7 @@
 #include <string>
 
 namespace fawkes {
-  class SwitchInterface;
+  class MotorInterface;
 }
 
 class ClipsMotorSwitchThread
@@ -68,7 +67,7 @@ class ClipsMotorSwitchThread
 
  private:
   std::string               cfg_iface_id_;
-  fawkes::SwitchInterface  *switch_if_;
+  fawkes::MotorInterface   *motor_if_;
 
 };
 
