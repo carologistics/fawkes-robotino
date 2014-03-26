@@ -44,7 +44,7 @@ class ClipsMotorSwitchThread
   public fawkes::CLIPSFeatureAspect
 {
  public:
-  ClipsMotorSwitchThread(std::string &env_name);
+  ClipsMotorSwitchThread();
   virtual ~ClipsMotorSwitchThread();
 
   virtual void init();

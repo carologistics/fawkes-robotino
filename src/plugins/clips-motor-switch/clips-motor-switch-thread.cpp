@@ -34,7 +34,7 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-ClipsMotorSwitchThread::ClipsMotorSwitchThread(std::string &env_name)
+ClipsMotorSwitchThread::ClipsMotorSwitchThread()
   : Thread("ClipsMotorSwitchThread", Thread::OPMODE_WAITFORWAKEUP),
     CLIPSFeature("motor-switch"), CLIPSFeatureAspect(this)
 {
