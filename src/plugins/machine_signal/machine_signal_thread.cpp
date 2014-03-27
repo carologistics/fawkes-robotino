@@ -816,7 +816,7 @@ bool MachineSignalThread::rois_similar_width(std::list<ROI>::iterator r1, std::l
 bool MachineSignalThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float avg_width = (r1->width + r2->width) / 2.0f;
   int mid1 = r1->start.x + r1->width/2;
-  int mid2 = r1->start.x + r2->width/2;
+  int mid2 = r2->start.x + r2->width/2;
   return abs(mid1 - mid2) / avg_width < cfg_roi_xalign_;
 }
 
