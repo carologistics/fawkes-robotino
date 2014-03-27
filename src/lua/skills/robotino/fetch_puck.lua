@@ -41,10 +41,12 @@ skillenv.skill_module(_M)
 
 local TIMEOUT = 3
 local ORI_OFFSET = 0.03
-local THRESHOLD_DISTANCE = 0.074
-if config:exists("/skills/fetch_puck/front_sensor_dist") then
-   -- you can find the config value in /cfg/host.yaml
-   THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
+local THRESHOLD_DISTANCE = 0.07
+--this section is not needed at the moment because the front sensors are now 
+--constructed in the same way
+--if config:exists("/skills/fetch_puck/front_sensor_dist") then
+--   -- you can find the config value in /cfg/host.yaml
+--   THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
 end
 local MIN_VIS_HIST = 0
 local EPSILON_X = 0.07
