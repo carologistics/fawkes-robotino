@@ -104,7 +104,7 @@ fsm:add_transitions{
 }
 
 function MOVE_MORE:init()
-   self.skills[1].x = 0.05
+   self.skills[1].x = 0.1
 end
 
 function TURN_TO_PUCK:init()
