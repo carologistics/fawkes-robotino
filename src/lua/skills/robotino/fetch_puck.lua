@@ -47,7 +47,7 @@ local THRESHOLD_DISTANCE = 0.07
 --if config:exists("/skills/fetch_puck/front_sensor_dist") then
 --   -- you can find the config value in /cfg/host.yaml
 --   THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
-end
+--end
 local MIN_VIS_HIST = 0
 local EPSILON_X = 0.07
 local EPSILON_PHI = 0.2
