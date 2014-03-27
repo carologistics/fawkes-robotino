@@ -170,7 +170,7 @@ private:
 	float getX(firevision::ROI* roi);
 	float getY(firevision::ROI* roi);
 
-	firevision::ROI
+	firevision::ROI*
 	getBiggestRoi(std::list<firevision::ROI>* roiList);
 	firevision::ROI*
 	getRoiContainingRoi( std::list<firevision::ROI>* roiList, firevision::ROI containing);

@@ -475,11 +475,11 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 
 			// create a new smaller roi
 			int x,y,w,h;
-			h = std::min( search_area.height-2, possible_puck.height*2 + possible_puck.start.y - lowest_yellow_dot_in_roi.start.y + lowest_yellow_dot_in_roi.height);//6*lowest_yellow_dot_in_roi.height;
+			h = std::min( search_area.height-2, lowest_yellow_dot_in_roi.height*2);//6*lowest_yellow_dot_in_roi.height;
 			//w = lowest_yellow_dot_in_roi.image_width;
-			w = std::min( search_area.width-2, 16*lowest_yellow_dot_in_roi.width);
-			x = lowest_yellow_dot_in_roi.start.x - w/2;
-			y = lowest_yellow_dot_in_roi.start.y - lowest_yellow_dot_in_roi.height -20;// look also 10 points over the red dot;
+			w = search_area.width; //std::min( search_area.width-2, 16*lowest_yellow_dot_in_roi.width);
+			x = 0; //lowest_yellow_dot_in_roi.start.x - w/2;
+			y = possible_puck.start.y + possible_puck.height - h; // search in the lowest area of the possible puck
 
 			firevision::ROI look_for_puck(lowest_yellow_dot_in_roi);
 
@@ -502,7 +502,7 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 			std::list<firevision::ROI> *pucks_with_feature = classifyInRoi(look_for_puck, &puck_info_.main);
 			// Get biggest roi, this ist the puck
 			if(pucks_with_feature->size() > 0){
-				firevision::ROI* puck = getRoiContainingRoi(pucks_with_feature, lowest_yellow_dot_in_roi);
+				firevision::ROI* puck = getBiggestRoi(pucks_with_feature);//getRoiContainingRoi(pucks_with_feature, lowest_yellow_dot_in_roi);
 				if(puck != NULL){
 					puck->color = firevision::C_WHITE;
 					firevision::ROI mypuck(puck);
@@ -541,17 +541,20 @@ firevision::ROI* PuckVisionThread::getRoiContainingRoi( std::list<firevision::RO
 	return NULL;//getBiggestRoi(roiList);
 }
 
-firevision::ROI PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
-	firevision::ROI biggestRoi;
+firevision::ROI* PuckVisionThread::getBiggestRoi( std::list<firevision::ROI>* roiList) {
+	firevision::ROI* biggestRoi = NULL;
 
 	for (std::list<firevision::ROI>::iterator it = roiList->begin();
 			it != roiList->end(); ++it) {
-		if (biggestRoi.width * biggestRoi.height
+		if (biggestRoi == NULL || biggestRoi->width * biggestRoi->height
 				< (*it).width * (*it).height) {
-			biggestRoi = (*it);
+			biggestRoi = &(*it);
 		}
 	}
-	return biggestRoi;
+	if(biggestRoi != NULL){
+		return new firevision::ROI(biggestRoi);
+	}
+	return NULL;
 }
 
 PuckVisionThread::~PuckVisionThread()
@@ -646,15 +649,17 @@ PuckVisionThread::getPuckPosition(puck *p, firevision::ROI roi){
 	float position_y_in_m_L = sin(alpha_L * x);
 	float position_y_in_m_R = sin(alpha_R * x);
 
-	//logger->log_debug(name(),"angle: %f, roi pos X: %i, distance y: %f, cfg %f", alpha, roiPositionX, position_y_in_m, cfg_camera_opening_angle_horizontal_);
-
 	p->roi = roi;
 	p->cart.x = getX(&roi);
 	p->cart.y = getY(&roi);
 	p->cart.z = 0;
 	cartToPol(p->pol, p->cart.x, p->cart.y );
 	p->visibiity_history = 1;
-	p->radius = position_y_in_m_R - position_y_in_m_L;
+	p->radius = position_y_in_m_L -position_y_in_m_R ;
+
+	if(cfg_debugMessagesActivated_){
+		logger->log_info(name(),"puck: r: %f pol: phi %f, r%f", p->radius, p->pol.phi, p->pol.r );
+	}
 }
 
 void
