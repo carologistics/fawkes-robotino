@@ -28,8 +28,6 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = { "relgoto", "fetch_puck", "ppgoto" }
 depends_interfaces = {
    { v = "sensor", type = "RobotinoSensorInterface", id = "Robotino" },
-   { v = "omnivisionSwitch", type = "SwitchInterface", id = "omnivisionSwitch" },
-   { v = "omnipuck", type = "Position3DInterface", id = "OmniPuck1" },
 }
 
 documentation      = [==[Go to target without losing teh puck]==]
@@ -80,15 +78,12 @@ end
 
 fsm:define_states{ export_to=_M,
    closure = { MAX_RETRIES=MAX_RETRIES,
-      omnivisionSwitch = omnivisionSwitch, sensor=sensor, LOSTPUCK_DIST=LOSTPUCK_DIST },
+      sensor=sensor, LOSTPUCK_DIST=LOSTPUCK_DIST },
    {"INIT", JumpState},
    {"SKILL_GOTO", SkillJumpState, skills={{ppgoto}}, final_to="FINAL", fail_to="RETRY_GOTO"},
    {"STOP", SkillJumpState, skills={{ppgoto}}, final_to="WAIT",
       fail_to="WAIT"},
    {"WAIT", JumpState},
---   {"RELSTOP", SkillJumpState, skills={{relgoto}}, final_to="WAIT2",
---      fail_to="WAIT2"},
---   {"WAIT2", JumpState},
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="RETRY_GOTO",
       fail_to="FAILED"},
    {"RETRY_GOTO", JumpState}
@@ -96,11 +91,8 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "INIT", "SKILL_GOTO", cond=true, desc="OK" },
-   { "SKILL_GOTO", "FAILED", precond="not omnivisionSwitch:has_writer()",
-      desc="No omnivision writer" },
    { "SKILL_GOTO", "STOP", cond="sensor:distance(8) > LOSTPUCK_DIST", desc="Lost puck" },
-   { "WAIT", "SKILL_FETCH_PUCK", timeout=3 },
---   { "WAIT2", "SKILL_FETCH_PUCK", timeout=2 },
+   { "WAIT", "SKILL_FETCH_PUCK", timeout=1 },
    { "RETRY_GOTO", "SKILL_GOTO", cond="vars.goto_retries <= MAX_RETRIES", desc="Retry goto" },
    { "RETRY_GOTO", "FAILED", cond="vars.goto_retries > MAX_RETRIES", desc="giveup goto" }
 }
@@ -124,10 +116,4 @@ end
 function STOP:init()
    self.skills[1].stop = true
 end
-
---function RELSTOP:init()
---   self.skills[1].x = 0
---   self.skills[1].y = 0
---   self.skills[1].ori = 0
---end
 
