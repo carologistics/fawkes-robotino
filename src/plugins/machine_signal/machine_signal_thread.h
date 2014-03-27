@@ -45,6 +45,7 @@
 #include <core/threading/mutex.h>
 #include <atomic>
 #include <interfaces/RobotinoLightInterface.h>
+#include <interfaces/SwitchInterface.h>
 #include <boost/circular_buffer.hpp>
 
 
@@ -78,12 +79,25 @@ class MachineSignalThread :
 {
   public:
     MachineSignalThread();
+    ~MachineSignalThread();
 
     virtual void init();
     virtual void loop();
     virtual void finalize();
 
   private:
+    typedef enum {
+      AUTO,
+      ON,
+      OFF
+    } delivery_switch_t_;
+
+    delivery_switch_t_ cfg_delivery_mode_;
+    bool cfg_enable_switch_;
+
+    fawkes::SwitchInterface *bb_enable_switch_;
+    fawkes::SwitchInterface *bb_delivery_switch_;
+
     typedef struct {
         firevision::ColorModelSimilarity *colormodel;
         firevision::SimpleColorClassifier *classifier;

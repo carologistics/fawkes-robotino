@@ -78,9 +78,13 @@ MachineSignalThread::MachineSignalThread()
   last_second_ = NULL;
   buflen_ = 0;
   bb_signal_compat_ = NULL;
+  bb_delivery_switch_ = NULL;
+  bb_enable_switch_ = NULL;
+  cfg_enable_switch_ = false;
+  cfg_delivery_mode_ = delivery_switch_t_::AUTO;
 }
 
-
+MachineSignalThread::~MachineSignalThread() {}
 
 void MachineSignalThread::setup_color_classifier(color_classifier_context_t_ *color_data)
 {
@@ -183,6 +187,13 @@ void MachineSignalThread::init()
   cfg_tuning_mode_ = config->get_bool(CFG_PREFIX "/tuning_mode");
   cfg_max_jitter_ = config->get_float(CFG_PREFIX "/max_jitter");
   cfg_draw_processed_rois_ = config->get_bool(CFG_PREFIX "/draw_processed_rois");
+  cfg_enable_switch_ = config->get_bool(CFG_PREFIX "/start_enabled");
+
+  std::string delivery_mode = config->get_string(CFG_PREFIX "/delivery_mode");
+  if (delivery_mode == "on") cfg_delivery_mode_ = delivery_switch_t_::ON;
+  else if (delivery_mode == "off") cfg_delivery_mode_ = delivery_switch_t_::OFF;
+  else if (delivery_mode == "auto") cfg_delivery_mode_ = delivery_switch_t_::AUTO;
+  else throw Exception("delivery_mode: invalid config value: %s", delivery_mode.c_str());
 
   // Setup combined ColorModel for tuning filter
   combined_colormodel_ = new ColorModelSimilarity();
@@ -233,6 +244,9 @@ void MachineSignalThread::init()
     bb_signal_states_.push_back(blackboard->open_for_writing<RobotinoLightInterface>(iface_name.c_str()));
   }
   bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>("Light_State");
+  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("light_front_switch");
+  bb_enable_switch_->set_enabled(cfg_enable_switch_);
+  bb_delivery_switch_ = blackboard->open_for_writing<SwitchInterface>("machine_signal_delivery_mode");
 
   config->add_change_handler(this);
 }
@@ -297,6 +311,36 @@ void MachineSignalThread::finalize()
 
 void MachineSignalThread::loop()
 {
+  while (!bb_enable_switch_->msgq_empty()) {
+    if (SwitchInterface::DisableSwitchMessage *msg = bb_enable_switch_->msgq_first_safe(msg)) {
+      cfg_enable_switch_ = false;
+    }
+    if (SwitchInterface::EnableSwitchMessage *msg = bb_enable_switch_->msgq_first_safe(msg)) {
+      cfg_enable_switch_ = true;
+    }
+    bb_enable_switch_->msgq_pop();
+  }
+  while (!bb_delivery_switch_->msgq_empty()) {
+    if (SwitchInterface::DisableSwitchMessage *msg = bb_delivery_switch_->msgq_first_safe(msg)) {
+      cfg_delivery_mode_ = delivery_switch_t_::OFF;
+    }
+    if (SwitchInterface::EnableSwitchMessage *msg = bb_delivery_switch_->msgq_first_safe(msg)) {
+      cfg_delivery_mode_ = delivery_switch_t_::ON;
+    }
+  }
+  if (cfg_delivery_mode_ == delivery_switch_t_::OFF) {
+    bb_delivery_switch_->set_enabled(false);
+    bb_delivery_switch_->write();
+  }
+  if (cfg_delivery_mode_ == delivery_switch_t_::ON) {
+    bb_delivery_switch_->set_enabled(true);
+    bb_delivery_switch_->write();
+  }
+  bb_enable_switch_->set_enabled(cfg_enable_switch_);
+  bb_enable_switch_->write();
+
+  if (!bb_enable_switch_->is_enabled()) return;
+
   std::list<ROI> *rois_R, *rois_G;
   MutexLocker lock(&cfg_mutex_);
 
@@ -357,7 +401,16 @@ void MachineSignalThread::loop()
   // First classify green to detect if we're looking at the delivery zone
   cfy_ctxt_green_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
   rois_G = cfy_ctxt_green_.classifier->classify();
-  bool at_delivery = rois_G->begin()->width > cam_width_/3;
+
+  bool at_delivery;
+  if (cfg_delivery_mode_ == delivery_switch_t_::AUTO) {
+    at_delivery = rois_G->begin()->width > cam_width_/3;
+    bb_delivery_switch_->set_enabled(at_delivery);
+    bb_delivery_switch_->write();
+  }
+  else {
+    at_delivery = bb_delivery_switch_->is_enabled();
+  }
 
   // Then use the appropriate classifier for red
   if (at_delivery) {
