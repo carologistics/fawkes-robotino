@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "fetch_puck"
-fsm                = SkillHSM:new{name=name, start="WAIT_FOR_VISION", debug=true}
+fsm                = SkillHSM:new{name=name, start="START", debug=true}
 depends_skills     = { "motor_move" }
 depends_interfaces = {
 --    {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
@@ -80,11 +80,11 @@ function visible()
 end
 
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
-   {"WAIT_FOR_VISION", JumpState},
+   {"START", JumpState},
    {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="TURN_TO_PUCK",
-      fail_to="WAIT_FOR_VISION"},
+      fail_to="START"},
    {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB",
-      fail_to="WAIT_FOR_VISION"},
+      fail_to="START"},
    {"GRAB", SkillJumpState, skills={{motor_move}}, final_to="GRAB_DONE",
       fail_to="FAILED"},
    -- GRAB motor_move's too far and preempts if have_puck. If motor_move finishes we
@@ -95,21 +95,16 @@ fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
 }
 
 fsm:add_transitions{
-   {"WAIT_FOR_VISION", "TURN_TO_PUCK", cond="visible() and not  vars.move_sideways" },
-   {"WAIT_FOR_VISION", "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and vars.move_sideways" },
-   {"WAIT_FOR_VISION", "FAILED", timeout=TIMEOUT},
+   {"START", "TURN_TO_PUCK", cond="visible() and not  vars.move_sideways" },
+   {"START", "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and vars.move_sideways" },
+   {"START", "FAILED", timeout=TIMEOUT},
    {"GRAB", "MOVE_MORE", cond=have_puck},
-   {"GRAB_DONE", "WAIT_FOR_VISION", cond="not have_puck()"},
+   {"GRAB_DONE", "START", cond="not have_puck()"},
    {"GRAB_DONE", "MOVE_MORE", cond=have_puck},
 }
 
 function MOVE_MORE:init()
    self.skills[1].x = 0.05
-end
-
-function WAIT_FOR_VISION:init()
-   --local msg = omnivisionSwitch.EnableSwitchMessage:new()
-   --omnivisionSwitch:msgq_enqueue_copy(msg)
 end
 
 function TURN_TO_PUCK:init()
