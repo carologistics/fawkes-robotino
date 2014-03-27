@@ -185,6 +185,7 @@ private:
 	classifyInRoi(firevision::ROI searchArea, color_classifier_context_t_* color_data);
 
 	void printRoi(firevision::ROI roi);
+	void fitROI(firevision::ROI &roi, int x, int y, int w, int h);
 
 	/** detectPucks
 	 *  Returns a list of ROIs. Each ROI contians a puck
