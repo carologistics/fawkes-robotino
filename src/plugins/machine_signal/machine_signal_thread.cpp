@@ -622,8 +622,7 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
 
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
 
-    if (!(roi_width_ok(it_R) && roi_aspect_ok(it_R)))
-      continue;
+    if (!(roi_width_ok(it_R))) continue;
 
     it_R->height = it_R->width;
 
