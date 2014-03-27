@@ -208,14 +208,14 @@ class MachineSignalThread :
         fawkes::upoint_t pos;
     } frame_state_t_;
 
-    // This struct may be a bit lengthy, but it keeps everything that stores
-    // signal-related data in one place.
-    typedef struct signal_state_ {
+    class SignalState {
+      public:
         fawkes::RobotinoLightInterface::LightState red;
         fawkes::RobotinoLightInterface::LightState yellow;
         fawkes::RobotinoLightInterface::LightState green;
         fawkes::upoint_t pos;
         int visibility;
+        bool ready;
         int unseen;
         unsigned int area;
         boost::circular_buffer<bool> history_R;
@@ -223,13 +223,14 @@ class MachineSignalThread :
         boost::circular_buffer<bool> history_G;
         unsigned int buflen;
 
-        signal_state_(unsigned int buflen)
+        SignalState(unsigned int buflen)
         : history_R(boost::circular_buffer<bool>(buflen)),
           history_Y(boost::circular_buffer<bool>(buflen)),
           history_G(boost::circular_buffer<bool>(buflen))
         {
           area = 0;
           visibility = -1;
+          ready = false;
           unseen = 0;
           red = fawkes::RobotinoLightInterface::UNKNOWN;
           yellow = fawkes::RobotinoLightInterface::UNKNOWN;
@@ -260,6 +261,13 @@ class MachineSignalThread :
           }
         }
 
+        inline void inc_unseen() {
+          if (++unseen > 2) {
+            visibility = -1;
+            ready = false;
+          }
+        }
+
         inline void update(frame_state_t_ const &s, std::list<signal_rois_t_>::iterator const &rois) {
           area = rois->red_roi->width * rois->red_roi->height
               + rois->yellow_roi->width * rois->yellow_roi->height
@@ -274,6 +282,11 @@ class MachineSignalThread :
           red = eval_history(history_R);
           yellow = eval_history(history_Y);
           green = eval_history(history_G);
+
+          ready = (visibility >= (long int) buflen/2)
+              && red != fawkes::RobotinoLightInterface::OFF
+              && yellow != fawkes::RobotinoLightInterface::OFF
+              && green != fawkes::RobotinoLightInterface::OFF;
         }
 
         inline float distance(frame_state_t_ const &s) {
@@ -281,7 +294,7 @@ class MachineSignalThread :
           int dy = s.pos.y - pos.y;
           return (float)sqrt(dx*dx + dy*dy);
         }
-    } signal_state_t_;
+    };
 
     struct {
         bool operator() (firevision::ROI &r1, firevision::ROI &r2) {
@@ -292,19 +305,19 @@ class MachineSignalThread :
     } sort_rois_by_area_;
 
     struct {
-        bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
+        bool operator() (SignalState &s1, SignalState &s2) {
           return s1.visibility > s2.visibility;
         }
     } sort_signal_states_by_visibility_;
 
     struct {
-        bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
+        bool operator() (SignalState &s1, SignalState &s2) {
           return s1.pos.x <= s2.pos.x;
         }
     } sort_signal_states_by_x_;
 
     struct {
-        bool operator() (signal_state_t_ &s1, signal_state_t_ &s2) {
+        bool operator() (SignalState &s1, SignalState &s2) {
           if ((s1.visibility < 0) == (s2.visibility < 0)) {
             float size_ratio = (float)s1.area / (float)s2.area;
             if (size_ratio < 1.5 && size_ratio > 0.67)
@@ -317,7 +330,7 @@ class MachineSignalThread :
 
     bool get_light_state(firevision::ROI *light);
 
-    std::list<signal_state_t_> known_signals_;
+    std::list<SignalState> known_signals_;
     std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
     fawkes::RobotinoLightInterface * bb_signal_compat_;
 
