@@ -40,16 +40,16 @@ local AVG_LEN = 10
 local MAX_RETRIES = 3
 local LOSTPUCK_DIST = 0.07
 local PUCK_SENSOR_INDEX = 8
-if config:exists("/robotino/puck_sensor/trigger_dist") then
-   LOSTPUCK_DIST = config:get_float("/robotino/puck_sensor/trigger_dist")
+if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
+   LOSTPUCK_DIST = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
 else
-   printf("NO CONFIG FOR /robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
 end
-if config:exists("/robotino/puck_sensor/index") then
+if config:exists("/hardware/robotino/puck_sensor/index") then
    -- you can find the config value in /cfg/host.yaml
-   PUCK_SENSOR_INDEX = config:get_uint("/robotino/puck_sensor/index")
+   PUCK_SENSOR_INDEX = config:get_uint("/hardware/robotino/puck_sensor/index")
 else
-   printf("NO CONFIG FOR /robotino/puck_sensor/index FOUND! Using default value\n");
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
 end
 
 -- Imports
@@ -84,7 +84,7 @@ end
 
 fsm:define_states{ export_to=_M,
    closure = { MAX_RETRIES=MAX_RETRIES,
-      sensor=sensor, LOSTPUCK_DIST=LOSTPUCK_DIST },
+      sensor=sensor, LOSTPUCK_DIST=LOSTPUCK_DIST, PUCK_SENSOR_INDEX=PUCK_SENSOR_INDEX },
    {"INIT", JumpState},
    {"SKILL_GOTO", SkillJumpState, skills={{ppgoto}}, final_to="FINAL", fail_to="RETRY_GOTO"},
    {"STOP", SkillJumpState, skills={{ppgoto}}, final_to="WAIT",

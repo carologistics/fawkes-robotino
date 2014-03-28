@@ -43,17 +43,17 @@ local TIMEOUT = 3
 local ORI_OFFSET = 0.03
 local MIN_VIS_HIST = 0
 local THRESHOLD_DISTANCE = 0.07
-if config:exists("/robotino/puck_sensor/trigger_dist") then
-   THRESHOLD_DISTANCE = config:get_float("/robotino/puck_sensor/trigger_dist")
+if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
+   THRESHOLD_DISTANCE = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
 else
-   printf("NO CONFIG FOR /robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
 end
 local PUCK_SENSOR_INDEX = 8
-if config:exists("/robotino/puck_sensor/index") then
+if config:exists("/hardware/robotino/puck_sensor/index") then
    -- you can find the config value in /cfg/host.yaml
-   PUCK_SENSOR_INDEX = config:get_uint("/robotino/puck_sensor/index")
+   PUCK_SENSOR_INDEX = config:get_uint("/hardware/robotino/puck_sensor/index")
 else
-   printf("NO CONFIG FOR /robotino/puck_sensor/index FOUND! Using default value\n");
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
 end
 local EPSILON_X = 0.07
 local EPSILON_PHI = 0.2
