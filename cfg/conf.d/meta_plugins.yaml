@@ -5,8 +5,8 @@ fawkes/meta_plugins:
   
   # Meta plugin with useful functionality for the robotino-laptop
   robotino-bare: bbsync,static-transforms,webview
-  robotino-cam: fvbase,fvfountain,omnivision-pucks,light_front
-  agent: clips,clips-agent,clips-motor-switch,clips-protobuf,clips-webview
+  robotino-cam: fvbase,fvfountain,machine-signal,puck_vision
+  agent: clips,clips-agent,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph
 
   robotino-nocam: robotino-bare,ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,laser-filter,amcl,clips,navgraph,skiller,laser-pointclouds,laser-cluster
 
