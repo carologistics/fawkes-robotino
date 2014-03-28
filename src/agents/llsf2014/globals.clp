@@ -54,7 +54,7 @@
   (bind ?*INITIAL-MASTER-TIMEOUT* ?initial)
 )
 
-(defrule globals-config-timeouts
+(defrule globals-config-release-distance
   (confval (path "/clips-agent/llsf2014/release-distance") (type FLOAT) (value ?d))
   =>
   (bind ?*RELEASE-DISTANCE* ?d)
