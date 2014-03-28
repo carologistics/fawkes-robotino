@@ -120,3 +120,19 @@
   (retract ?s ?t)
   (assert (state IDLE))
 )
+
+(defrule coordination-release-and-reject-task-after-failed
+  ?t <- (task (name ?task) (args $?args) (state failed)) 
+  ?s <- (state TASK-FAILED)
+  =>
+  ;release all locks for subtask goals
+  ;reject task because it failed
+  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
+    (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
+    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
+    (retract ?ntl)
+  )
+  (retract ?s ?t)
+  (assert (state IDLE))
+  (assert (proposed-task (name ?task) (args ?args) (state rejected)))
+)

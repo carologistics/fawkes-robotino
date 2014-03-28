@@ -264,3 +264,17 @@
   (retract ?s)
   (assert (state TASK-FINISHED))
 )
+
+;;;;;;;;;;;;;;;;;;;;
+;goto-error-handling
+;;;;;;;;;;;;;;;;;;;;
+
+(defrule task-common--goto-failed
+  (phase PRODUCTION)
+  ?t <- (task (name ?name) (args $?a) (state ~finished))
+  ?s <- (state GOTO-FAILED)
+  =>
+  (modify ?t (state failed))
+  (retract ?s)
+  (assert (state TASK-FAILED))
+)

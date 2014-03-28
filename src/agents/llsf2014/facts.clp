@@ -100,7 +100,7 @@
 (deftemplate task
   (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle))
   (multislot args (type SYMBOL)) ;in chronological order
-  (slot state (type SYMBOL) (allowed-values ordered running finished) (default ordered))
+  (slot state (type SYMBOL) (allowed-values ordered running finished failed) (default ordered))
   (slot priority (type INTEGER) (default 0))
 )
 

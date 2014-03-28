@@ -56,9 +56,13 @@
   (state GOTO-FAILED)
   ?tf <- (goto-target ?name)
   ?hf <- (holding ?)
+  (puck-in-gripper ?puck)
   =>
-  (retract ?tf ?hf)
-  (assert (holding NONE))
+  (retract ?tf)
+  (if (not ?puck) then
+    (retract ?hf)
+    (assert (holding NONE))
+  )
   (printout t "Production failed at " ?name crlf) 
 )
 
@@ -140,7 +144,7 @@
 
 (defrule wm-proc-invalid
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FINAL)
+  ?s <- (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?lf <- (lights GREEN-OFF YELLOW-BLINKING RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype))
@@ -148,9 +152,10 @@
   (role ?role)
   =>
   (printout t "Production invalid at " ?name "|" ?mtype crlf) 
-  (retract ?lf ?tf ?hf)
+  (retract ?lf ?tf ?hf ?s)
   (assert (holding NONE)
-	  (unknown-fail))
+	  (unknown-fail)
+	  (state GOTO-INVALID))
   (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount 0)))
 )
 
