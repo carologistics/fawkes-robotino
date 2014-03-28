@@ -25,6 +25,8 @@ enum WorldmodelChangeType {
   SET_NUM_CO = 4;
   SET_PROD_FINISHED_TIME = 5;
   REMOVE_PRODUCED = 6;
+  SET_PRODUCE_BLOCKED = 7;
+  SET_RECYCLE_BLOCKED = 8;
 }
 
 message MachineState {
@@ -38,6 +40,8 @@ message MachineState {
   repeated IncomingAction incoming  = 3;
   required uint32 prod_finished_time = 4;
   optional PuckState puck_under_rfid = 5;
+  required bool produce_blocked = 6;
+  required bool recycle_blocked = 7;
 }
 
 message Worldmodel {

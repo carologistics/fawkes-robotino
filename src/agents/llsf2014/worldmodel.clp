@@ -322,6 +322,12 @@
     (case REMOVE_PRODUCED then 
       (modify ?m (produced-puck NONE))
     )
+    (case SET_PRODUCE_BLOCKED then 
+      (modify ?m (produce-blocked TRUE))
+    )
+    (case SET_RECYCLE_BLOCKED then 
+      (modify ?m (recycle-blocked TRUE))
+    )
   )
   (modify ?wmc (already-applied TRUE))
 )

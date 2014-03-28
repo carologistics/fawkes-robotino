@@ -34,6 +34,8 @@
     (if (neq ?machine:produced-puck NONE) then
       (pb-set-field ?m-msg "puck_under_rfid" ?machine:produced-puck)
     )
+    (pb-set-field ?m-msg "produce_blocked" ?machine:produce-blocked)
+    (pb-set-field ?m-msg "recycle_blocked" ?machine:recycle-blocked)
     ;add sub-msg to worldmodel msg
     (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
   )
@@ -66,9 +68,16 @@
 	then (bind ?puck-under-rfid (pb-field-value ?m-msg "puck_under_rfid"))
 	else (bind ?puck-under-rfid NONE)
       )
+      (bind ?produce-blocked (if (eq 0 (pb-field-value ?m-msg "produce_blocked"))
+				 then FALSE
+				 else TRUE))
+      (bind ?recycle-blocked (if (eq 0 (pb-field-value ?m-msg "recycle_blocked"))
+				 then FALSE
+				 else TRUE))
       (modify ?machine (incoming ?incoming) (loaded-with ?loaded-with)
 	               (final-prod-time (create$ ?prod-finished-time 0))
-		       (produced-puck ?puck-under-rfid)
+		       (produced-puck ?puck-under-rfid) (produce-blocked ?produce-blocked)
+		       (recycle-blocked ?recycle-blocked)
       )
     )
   )
@@ -80,7 +89,7 @@
   ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value) (amount ?amount) (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)) (id ?id))
   (not (lock-role MASTER))
   =>
-  (printout t "sending worldmodel change" crlf)
+  ;(printout t "sending worldmodel change" crlf)
   ;set random id (needed by the master to determine if a change was already appied)
   (if (eq ?id 0) then
     (bind ?id (random 1 99999999))
@@ -153,6 +162,12 @@
         )
         (case REMOVE_PRODUCED then 
           (modify ?machine (produced-puck NONE))
+        )
+        (case SET_PRODUCE_BLOCKED then 
+          (modify ?machine (produce-blocked TRUE))
+        )
+        (case SET_RECYCLE_BLOCKED then 
+          (modify ?machine (recycle-blocked TRUE))
         )
       )
     )
