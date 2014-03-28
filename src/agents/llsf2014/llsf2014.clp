@@ -16,6 +16,7 @@
   (init)
   =>
   (config-load "/clips-agent")
+  (config-load "/hardware/robotino")
 )
 
 (deffacts init (init))

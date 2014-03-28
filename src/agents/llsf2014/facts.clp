@@ -164,6 +164,7 @@
   (already-received-wm-changes (create$))
 
   (pose (x 0.0) (y 0.0))
+  (puck-in-gripper FALSE)
   
   ;TODO: get following data from the refbox
   (own-half right)

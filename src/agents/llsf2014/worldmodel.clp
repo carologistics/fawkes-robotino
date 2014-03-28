@@ -273,3 +273,28 @@
   (modify ?pose (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)))
   (retract ?pif)
 )
+
+(defrule wm-update-puck-in-gripper
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  ?rif <- (RobotinoSensorInterface (id "Robotino") (distance $?distances))
+  ?pig <- (puck-in-gripper ?puck)
+  (confval (path "/hardware/robotino/puck_sensor/index") (value ?index))
+  (confval (path "/hardware/robotino/puck_sensor/trigger_dist") (value ?trigger))
+  =>
+  (bind ?dist (nth$ (+ ?index 1) ?distances))
+  (if (and (< ?dist ?trigger) (not ?puck))
+    then
+    ;(printout t "Have puck in gripper" crlf)
+    (retract ?pig)
+    (assert (puck-in-gripper TRUE))
+    
+    else
+    
+    (if (and (> ?dist ?trigger) ?puck)
+	then
+      ;(printout t "Have no puck in gripper" crlf)
+      (retract ?pig)
+      (assert (puck-in-gripper FALSE))
+    )
+  )
+)
