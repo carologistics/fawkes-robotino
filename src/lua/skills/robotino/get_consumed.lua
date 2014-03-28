@@ -50,10 +50,8 @@ fsm:define_states{ export_to=_M,
    {"DRIVE_TO_SIDE", SkillJumpState, skills={{motor_move}}, final_to="GRAP_CONSUMED",
       fail_to="FAILED"},
    {"GRAP_CONSUMED", SkillJumpState, skills={{fetch_puck}}, final_to="LEAVE_TURN", fail_to="FAILED"},
-   {"LEAVE_TURN", SkillJumpState, skills={{motor_move}}, final_to="LEAVE_FORWARD",
+   {"LEAVE_TURN", SkillJumpState, skills={{motor_move}}, final_to="FINAL",
       fail_to="FAILED"},
-   {"LEAVE_FORWARD", SkillJumpState, skills={{motor_move}}, final_to="FINAL",
-      fail_to="FAILED"}
 }
 
 function GOTO_MASCHINE:init()
@@ -67,17 +65,13 @@ end
 function DRIVE_TO_SIDE:init()
    self.skills[1].x=0.1
    self.skills[1].y=-0.4
-   self.skills[1].ori=0.3
+   self.skills[1].ori=0.35
 end
 
 function LEAVE_TURN:init()
    self.skills[1].x=0
-   self.skills[1].y=0
-   self.skills[1].ori=-3.0
+   self.skills[1].y=-0.2
+   self.skills[1].ori=-1
+   self.skills[1].vel_rot=1
 end
 
-function LEAVE_FORWARD:init()
-   self.skills[1].x=0.5
-   self.skills[1].y=0
-   self.skills[1].ori=0
-end
