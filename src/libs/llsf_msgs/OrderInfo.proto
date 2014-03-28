@@ -36,6 +36,8 @@
 
 package llsf_msgs;
 
+import "Team.proto";
+
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "OrderInfoProtos";
 
@@ -57,11 +59,15 @@ message Order {
     D1  = 2;
     D2  = 3;
     D3  = 4;
+    D4  = 5;
+    D5  = 6;
+    D6  = 7;
   }
 
   // ID and requested product of this order
   required uint32       id = 1;
   required ProductType  product = 2;
+  optional Team         team_color = 11;
 
   // Quantity requested and delivered
   required uint32 quantity_requested = 3;
@@ -77,8 +83,6 @@ message Order {
   optional DeliveryGate delivery_gate = 8
   	   [default = ANY];
 
-  // Only sync: is order a late order?
-  optional bool late_order = 20;
 }
 
 message OrderInfo {
@@ -89,4 +93,9 @@ message OrderInfo {
 
   // The current orders
   repeated Order orders = 1;
+
+  // Team for which the orders are
+  // only send if all orders are for
+  // the same team (broadcast)
+  optional Team  team_color   = 2;
 }

@@ -37,10 +37,13 @@
 package llsf_msgs;
 
 import "Time.proto";
+import "Team.proto";
 import "Pose2D.proto";
 
-option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "BeaconSignalProtos";
+option java_package =
+  "org.robocup_logistics.llsf_msgs";
+option java_outer_classname =
+  "BeaconSignalProtos";
 
 message BeaconSignal {
   enum CompType {
@@ -59,6 +62,8 @@ message BeaconSignal {
   required string team_name = 4;
   // The robot's name
   required string peer_name = 5;
+  // Team color, teams MUST sent this
+  optional Team   team_color = 6;
 
   // Position and orientation of the
   // robot on the LLSF playing field

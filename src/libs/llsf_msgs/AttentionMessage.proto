@@ -36,6 +36,8 @@
 
 package llsf_msgs;
 
+import "Team.proto";
+
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "AttentionMessageProtos";
 
@@ -47,6 +49,8 @@ message AttentionMessage {
 
   // The message to display, be brief!
   required string message = 1;
-  // Time in sec the message should be visible
+  // Time (sec) the msg should be visible
   optional float  time_to_show = 2;
+  // if the message only regards one team
+  optional Team   team_color = 3;
 }

@@ -38,6 +38,7 @@ package llsf_msgs;
 
 import "Time.proto";
 import "Pose2D.proto";
+import "Team.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "RobotInfoProtos";
@@ -59,6 +60,7 @@ message Robot {
   // the BeaconSignal message.
   required string name = 1;
   required string team = 2;
+  required Team   team_color = 12;
   required uint32 number = 7;
   // Host from where the BeaconSignal
   // was received
@@ -76,7 +78,7 @@ message Robot {
   optional RobotState state = 8;
 
   // Time in seconds remaining in current
-  // maintenance cycle, if negative grace time
+  // maintenance cycle, negative if overdue
   optional float  maintenance_time_remaining = 9 [default = 0.0];
   // number of times maintenance
   // has been performed, including current

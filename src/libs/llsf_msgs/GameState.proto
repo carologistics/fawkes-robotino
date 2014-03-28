@@ -80,10 +80,15 @@ message GameState {
   required State  state = 3;
   // Current game phase
   required Phase  phase = 4;
-  // Awarded points
-  optional uint32 points = 5;
+  // Awarded points, cyan
+  optional uint32 points_cyan = 5;
   // Name of the currently playing team
-  optional string team = 6;
+  optional string team_cyan = 6;
+
+  // Awarded points, magenta
+  optional uint32 points_magenta = 8;
+  // Name of the currently playing team
+  optional string team_magenta = 9;
 
   optional RefBoxMode refbox_mode = 7 [default = STANDALONE];
 }

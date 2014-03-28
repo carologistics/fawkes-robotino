@@ -38,6 +38,7 @@ package llsf_msgs;
 
 import "Pose2D.proto";
 import "PuckInfo.proto";
+import "Team.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "MachineInfoProtos";
@@ -70,9 +71,10 @@ message Machine {
     COMP_ID  = 2000;
     MSG_TYPE = 12;
   }
-  // Machine name and type
-  required string    name     = 1;
-  optional string    type     = 2;
+  // Machine name, type, and team
+  required string    name       =  1;
+  optional string    type       =  2;
+  optional Team      team_color = 10;
 
   // Required inputs and produced output
   // Only set for field machines T*
@@ -88,7 +90,7 @@ message Machine {
   // Optional pose if known to refbox
   optional Pose2D    pose = 8;
   // Only set during exploration phase
-  // True if correctly reported, false otherwise
+  // Correctly reported?
   optional bool      correctly_reported = 9;
 }
 
@@ -99,5 +101,9 @@ message MachineInfo {
   }
 
   // List of machines states
-  repeated Machine machines = 1;
+  repeated Machine machines   = 1;
+
+  // Team name if all machines belong
+  // only to a single team (broadcast)
+  optional Team    team_color = 2;
 }
