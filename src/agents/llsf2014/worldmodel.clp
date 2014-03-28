@@ -147,16 +147,72 @@
   ?s <- (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?lf <- (lights GREEN-OFF YELLOW-BLINKING RED-OFF)
-  ?mf <- (machine (name ?name) (mtype ?mtype))
-  ?hf <- (holding ?)
+  ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
+  ?hf <- (holding ?puck)
   (role ?role)
   =>
-  (printout t "Production invalid at " ?name "|" ?mtype crlf) 
-  (retract ?lf ?tf ?hf ?s)
-  (assert (holding NONE)
-	  (unknown-fail)
-	  (state GOTO-INVALID))
-  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount 0)))
+  (printout t "Production invalid at " ?name "|" ?mtype crlf)
+  ;how to handle the situation:
+  (if (or (eq ?mtype RECYCLE) 
+	  (eq ?mtype T1)
+	  (eq ?mtype T5)) 
+    then
+    ;simply ignore and go on
+    (retract ?lf ?tf ?hf)
+    (assert (holding NONE))
+    (return)
+  )
+  (if (eq ?puck S0)
+    then
+    ;it is likely that there already is a S0 because of a to early finished production
+    ;remove wrongly loaded puck in wm (if there are S1 and S2 we remove S1 and hope for the best)
+    (if (or (subsetp ?lw (create$ S1))
+	    (subsetp ?lw (create$ S1 S2)))
+      then
+      (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value S1)))
+      else
+      (if (subsetp ?lw (create$ S2))
+	then
+	(assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value S2)))
+      )
+    )
+    (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value S0)))
+    (retract ?lf ?tf ?hf)
+    (assert (holding NONE))
+    (return)
+  )
+  (if (and (eq ?puck S1) (eq ?mtype T2))
+    then
+    ;assume we brought a S0
+    (if (not(subsetp ?lw (create$ S0)))
+      then
+      (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value S0)))
+    )
+    (retract ?lf ?tf ?hf)
+    (assert (holding NONE))
+    (return)
+  )
+  (if (eq ?puck S1) ;at T3/T4
+    then
+    (if (subsetp ?lw (create$ S0))
+      then
+      ;we brought a second S0
+      (retract ?lf ?tf ?hf)
+      (assert (holding NONE))
+      (return)
+    )
+    ;there is a S0 and S2
+    ;it is more likely that the S2 is a S1 than that the S1 is a S0
+    (retract ?lf ?tf ?hf)
+    (assert (holding NONE))
+    (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value S2)))
+    (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value S1)))
+    (return)
+  )
+  ;we tried to bring a S2, it is likely that we instead brought a second S0 or S1
+  (retract ?lf ?tf ?hf)
+  (assert (holding NONE))
+  (return)
 )
 
 (defrule wm-proc-delivered
