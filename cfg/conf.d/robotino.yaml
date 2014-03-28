@@ -40,3 +40,8 @@ hardware/robotino:
     # Maximum rotation; rad/s
     max_omega: 1.57
 
+  puck_sensor:
+    #index of the puck sensor in the Distances field of the interface
+    index: 8
+    #max distance when there is a puck in the gripper
+    trigger_dist: 0.07

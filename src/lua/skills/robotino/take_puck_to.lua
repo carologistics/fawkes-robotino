@@ -39,12 +39,18 @@ skillenv.skill_module(_M)
 local AVG_LEN = 10
 local MAX_RETRIES = 3
 local LOSTPUCK_DIST = 0.07
---this section is not needed at the moment because the front sensors are now 
---constructed in the same way
---if config:exists("/skills/take_puck_to/front_sensor_dist") then
---   -- you can find the config value in /cfg/host.yaml
---   LOSTPUCK_DIST = config:get_float("/skills/take_puck_to/front_sensor_dist")
---end
+local PUCK_SENSOR_INDEX = 8
+if config:exists("/robotino/puck_sensor/trigger_dist") then
+   LOSTPUCK_DIST = config:get_float("/robotino/puck_sensor/trigger_dist")
+else
+   printf("NO CONFIG FOR /robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
+end
+if config:exists("/robotino/puck_sensor/index") then
+   -- you can find the config value in /cfg/host.yaml
+   PUCK_SENSOR_INDEX = config:get_uint("/robotino/puck_sensor/index")
+else
+   printf("NO CONFIG FOR /robotino/puck_sensor/index FOUND! Using default value\n");
+end
 
 -- Imports
 local pm = require 'puck_loc_module'
@@ -55,7 +61,7 @@ function lost_puck()
    local val = fsm.vars.avg_val
    local idx = fsm.vars.avg_idx
 
-   val[idx] = sensor:distance(8)
+   val[idx] = sensor:distance(PUCK_SENSOR_INDEX)
    idx = idx + 1
    if idx > AVG_LEN then idx = 1 end
 
@@ -91,7 +97,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "INIT", "SKILL_GOTO", cond=true, desc="OK" },
-   { "SKILL_GOTO", "STOP", cond="sensor:distance(8) > LOSTPUCK_DIST", desc="Lost puck" },
+   { "SKILL_GOTO", "STOP", cond="sensor:distance(PUCK_SENSOR_INDEX) > LOSTPUCK_DIST", desc="Lost puck" },
    { "WAIT", "SKILL_FETCH_PUCK", timeout=1 },
    { "RETRY_GOTO", "SKILL_GOTO", cond="vars.goto_retries <= MAX_RETRIES", desc="Retry goto" },
    { "RETRY_GOTO", "FAILED", cond="vars.goto_retries > MAX_RETRIES", desc="giveup goto" }

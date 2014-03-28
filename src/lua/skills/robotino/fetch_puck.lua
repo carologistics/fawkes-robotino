@@ -41,14 +41,20 @@ skillenv.skill_module(_M)
 
 local TIMEOUT = 3
 local ORI_OFFSET = 0.03
-local THRESHOLD_DISTANCE = 0.07
---this section is not needed at the moment because the front sensors are now 
---constructed in the same way
---if config:exists("/skills/fetch_puck/front_sensor_dist") then
---   -- you can find the config value in /cfg/host.yaml
---   THRESHOLD_DISTANCE = config:get_float("/skills/fetch_puck/front_sensor_dist")
---end
 local MIN_VIS_HIST = 0
+local THRESHOLD_DISTANCE = 0.07
+if config:exists("/robotino/puck_sensor/trigger_dist") then
+   THRESHOLD_DISTANCE = config:get_float("/robotino/puck_sensor/trigger_dist")
+else
+   printf("NO CONFIG FOR /robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
+end
+local PUCK_SENSOR_INDEX = 8
+if config:exists("/robotino/puck_sensor/index") then
+   -- you can find the config value in /cfg/host.yaml
+   PUCK_SENSOR_INDEX = config:get_uint("/robotino/puck_sensor/index")
+else
+   printf("NO CONFIG FOR /robotino/puck_sensor/index FOUND! Using default value\n");
+end
 local EPSILON_X = 0.07
 local EPSILON_PHI = 0.2
 local OFFSET_X_SIDE_SEARCH = 0.30
@@ -62,7 +68,7 @@ local pucks = {
 local tfm = require 'tf_module'
 
 function have_puck()
-    local curDistance = sensor:distance(8)
+    local curDistance = sensor:distance(PUCK_SENSOR_INDEX)
     if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
         printf("near: " .. curDistance)
         return true
