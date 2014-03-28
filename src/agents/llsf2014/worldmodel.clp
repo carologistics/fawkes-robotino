@@ -10,21 +10,27 @@
 (defrule wm-recv-MachineInfo
   (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p) (rcvd-via BROADCAST))
   (not (machine-info-received))
+  (team-color ?team-color&~nil)
   =>
   (printout t "***** Received MachineInfo *****" crlf)
-  (assert (machine-info-received))
-  (foreach ?m (pb-field-list ?p "machines")
-    (do-for-fact ((?machine machine))
-      (eq ?machine:name (sym-cat (pb-field-value ?m "name")))
-      (printout t "Machine " (pb-field-value ?m "name") " is of type "
-		(pb-field-value ?m "type") crlf)
-      (modify ?machine (mtype (sym-cat (pb-field-value ?m "type")))
-	      (output (sym-cat (pb-field-value ?m "output"))))
-      (if (eq (sym-cat (pb-field-value ?m "type")) RECYCLE)
-        then
-	(modify ?machine (output S0))
+  (if (eq (pb-field-value ?p "team_color") ?team-color)
+  then
+    (assert (machine-info-received))
+    (foreach ?m (pb-field-list ?p "machines")
+      (do-for-fact ((?machine machine))
+        (eq ?machine:name (sym-cat (pb-field-value ?m "name")))
+        (printout t "Machine " (pb-field-value ?m "name") " is of type "
+		  (pb-field-value ?m "type") crlf)
+	(modify ?machine (mtype (sym-cat (pb-field-value ?m "type")))
+		(output (sym-cat (pb-field-value ?m "output"))))
+        (if (eq (sym-cat (pb-field-value ?m "type")) RECYCLE)
+          then
+	  (modify ?machine (output S0))
+	)
       )
     )
+  else
+    (printout debug "Ignoring machine info for other team" crlf)
   )
 )
 

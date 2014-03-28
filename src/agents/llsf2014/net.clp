@@ -31,6 +31,7 @@
 (defrule net-send-BeaconSignal
   (time $?now)
   ?f <- (timer (name beacon) (time $?t&:(timeout ?now ?t ?*BEACON-PERIOD*)) (seq ?seq))
+  (team-color ?team-color&CYAN|MAGENTA)
   =>
   (modify ?f (time ?now) (seq (+ ?seq 1)))
   (if (debug 3) then (printout t "Sending beacon" crlf))
@@ -42,6 +43,7 @@
   (pb-set-field ?beacon "seq" ?seq)
   (pb-set-field ?beacon "team_name" ?*TEAM-NAME*)
   (pb-set-field ?beacon "peer_name" ?*ROBOT-NAME*)
+  (pb-set-field ?beacon "team_color" ?team-color)
   (pb-set-field ?beacon "number" ?*ROBOT-NUMBER*)
 
   (do-for-fact ((?pose Position3DInterface)) (eq ?pose:id "Pose")
@@ -65,10 +67,19 @@
   ?gt <- (game-time $?)
   (refbox-state ?state)
   ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-via BROADCAST) (rcvd-from ?host ?port))
+  ?tc <- (team-color ?team-color)
   =>
   (retract ?pf ?gt)
   (bind ?new-state (pb-field-value ?p "state"))
   (bind ?new-phase (pb-field-value ?p "phase"))
+  (bind ?new-team-color ?team-color)
+  (if (eq (pb-field-value ?p "team_cyan") ?*TEAM-NAME*) then (bind ?new-team-color CYAN))
+  (if (eq (pb-field-value ?p "team_magenta") ?*TEAM-NAME*) then (bind ?new-team-color MAGENTA))
+  (if (neq ?new-team-color ?team-color) then
+    (printout warn "Switching team color from " ?team-color " to " ?new-team-color crlf)
+    (retract ?tc)
+    (assert (team-color ?new-team-color))
+  )
   ;(printout t "GameState received from " ?host ":" ?port ": "
   ;	    ?state " <> " ?new-state "  " ?phase " <> " ?new-phase crlf)
   (if (neq ?phase ?new-phase) then

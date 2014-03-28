@@ -44,7 +44,7 @@
 (defrule exp-turn-line-over
   (declare (salience ?*PRIORITY-WM*))
   (phase EXPLORATION)
-  (own-half left)
+  (team-color MAGENTA)
   ?er <- (exp-row (row $?row))
   (not (exp-line-already-turned))
   =>
@@ -105,12 +105,16 @@
 (defrule exp-start
   (phase EXPLORATION)
   ?st <- (exploration-start)
+  (team-color ?team-color)
   =>
   (retract ?st)
   (assert (state EXP_START)
           (exp-tactic LINE)
           (timer (name send-machine-reports))
           (timer (name print-unrecognized-lights))
+  )
+  (if (eq ?team-color nil) then
+    (printout error "Ouch, starting exploration but I don't know my team color")
   )
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
@@ -401,9 +405,12 @@
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
   (game-time $?game-time)
-  (confval (path "/clips-agent/llsf2014/exploration/latest-send-last-report-time") (value ?latest-report-time))
+  (confval (path "/clips-agent/llsf2014/exploration/latest-send-last-report-time")
+	   (value ?latest-report-time))
+  (team-color ?team-color&~nil)
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
+  (pb-set-field ?mr "team_color" ?team-color)
   (do-for-all-facts ((?machine machine-type)) TRUE
     ;send report for last machine only if the exploration phase is going to end
     ;or we are prepared for production
@@ -450,7 +457,8 @@
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION)
   ?et <- (exp-tactic NEAREST)
-  (input-storage ?ins)
+  (team-color ?team-color)
+  (input-storage ?team-color ?ins)
   =>
   (printout t "Finished Exploration :-)" crlf)
   (retract ?et)
@@ -462,7 +470,8 @@
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
-  (input-storage ?ins)
+  (team-color ?team-color)
+  (input-storage ?team-color ?ins)
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   =>
   (printout t "Waiting for production at " ?ins crlf)
@@ -473,7 +482,8 @@
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
-  (input-storage ?ins)
+  (team-color ?team-color)
+  (input-storage ?team-color ?ins)
   (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   ?lock <- (lock (type GET) (agent ?a) (resource ?ins))
   (wait-point ?ins ?wait-point)
@@ -512,7 +522,8 @@
   (phase EXPLORATION)
   ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
   ?pf <- (protobuf-msg (type "llsf_msgs.PreparedForProduction") (ptr ?p) (rcvd-via BROADCAST))
-  (input-storage ?ins)
+  (team-color ?team-color)
+  (input-storage ?team-color ?ins)
   =>
   ;the preperation is finished when someone stands at ins
   (if (eq ?ins (sym-cat (pb-field-value ?p "waiting_point")))

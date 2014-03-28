@@ -138,6 +138,7 @@
 )
 
 (deffacts startup-production
+  (team-color nil)
   (last-lights)
   (holding NONE)
   (machine (name D1) (mtype DELIVER) (ownership TRUE))
@@ -169,7 +170,7 @@
   (pose (x 0.0) (y 0.0))
   (puck-in-gripper FALSE)
   
-  ;TODO: get following data from the refbox
-  (own-half right)
-  (input-storage Ins1)
+  ; Input storage per team color
+  (input-storage CYAN Ins1)
+  (input-storage MAGENTA Ins2)
 )
