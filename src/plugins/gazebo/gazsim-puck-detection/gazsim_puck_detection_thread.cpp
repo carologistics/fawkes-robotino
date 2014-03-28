@@ -64,11 +64,11 @@ void PuckDetectionSimThread::init()
   number_pucks_ = config->get_float("/gazsim/puck-detection/number-pucks");
   
   //open interfaces (puck enumeration starts with 1)
-  for(int i = 1; i <= number_pucks_; i++)
+  for(int i = 0; i < number_pucks_; i++)
   {
-    printf("Opening interface OmniPuck%d\n", i);
+    printf("Opening interface puck_%d\n", i);
 std::ostringstream ss;
-    ss << "OmniPuck" << i;
+    ss << "puck_" << i;
     map_pos_if_[i] = blackboard->open_for_writing<fawkes::Position3DInterface>
       (ss.str().c_str());
   } 
@@ -125,24 +125,23 @@ void PuckDetectionSimThread::loop()
 
     for(int i = 0; i < last_msg_.positions_size(); i++)
       {
-	int if_index = i + 1; //Pucks are enumerated starting with one
 	llsf_msgs::Pose2D pose = last_msg_.positions(i);
 	//check if the puck is in detection range
 	double distance = sqrt(pose.x() * pose.x() + pose.y() * pose.y());
 	if(distance < max_distance_)
 	  {
-	    map_pos_if_[if_index]->set_translation(0, pose.x());
-	    map_pos_if_[if_index]->set_translation(1, pose.y());
-	    map_pos_if_[if_index]->set_translation(2, 0);
-	    map_pos_if_[if_index]->set_visibility_history(success_visibility_history_);
+	    map_pos_if_[i]->set_translation(0, pose.x());
+	    map_pos_if_[i]->set_translation(1, pose.y());
+	    map_pos_if_[i]->set_translation(2, 0);
+	    map_pos_if_[i]->set_visibility_history(success_visibility_history_);
 
 	  }
 	else
 	  {
-	    map_pos_if_[if_index]->set_visibility_history(fail_visibility_history_);
+	    map_pos_if_[i]->set_visibility_history(fail_visibility_history_);
 	  }
-	map_pos_if_[if_index]->set_frame("/base_link");
-	map_pos_if_[if_index]->write();
+	map_pos_if_[i]->set_frame("/base_link");
+	map_pos_if_[i]->write();
       }
   }
 }
