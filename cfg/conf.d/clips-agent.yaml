@@ -33,9 +33,9 @@ clips-agent:
 
     #Timeouts used in the locking:
     #Timeout a new started robot waits for a master before it gets the master itself
-    initial-master-timeout: 10.0
+    initial-master-timeout: 20.0
     #If a robot has not been seen this time it is assumed that he is lost
-    robot-timeout: 30.0
+    robot-timeout: 20.0
 
     #distance needed before a robot releases a lock
     release-distance: 0.5
@@ -69,4 +69,4 @@ clips-agent:
       row-low: ["M9", "M6", "M3", "M1", "M13", "M15", "M18", "M21"]
 
       #the time in seconds to report all machines even if we are not prepared for production
-      latest-send-last-report-time: 165 # =2:45
+      latest-send-last-report-time: 225 # =3:45
