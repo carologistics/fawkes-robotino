@@ -31,9 +31,12 @@ depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" }
 }
 
-documentation      = [==[test der bisherigen skills später eigener skill mit puck_aufname_location und puck_abgabe_location]==]
---constants
-local start = "Ins"
+documentation      = [==[Get a new S0 resource puck
+This skill drives to an input storage and fetches a puck from there.
+
+Parameters:
+      place: name of insertion area (e.g. Ins1)
+]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
@@ -55,12 +58,16 @@ end
 --}
 
 function GOTO_IS:init()
+   if self.fsm.vars.place == nil then
+      printf("Called get_s0 without parameter place!")
+   end
+
    self.fsm.vars.move_right_count = 0
-   self.skills[1].place = start
+   self.skills[1].place = self.fsm.vars.place
 end
 
 function SKILL_GLOBAL_MOTOR_MOVE:init()
-   self.skills[1].place = self.fsm.vars.start
+   self.skills[1].place = self.fsm.vars.place
 end
 
 function SKILL_FETCH_PUCK:init()
