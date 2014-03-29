@@ -230,11 +230,11 @@ void MachineSignalThread::init()
     C_BLACK);
   black_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
-  // Initialize frame rate detection
+  // Initialize frame rate detection & buffer lengths for blinking detection
   uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
   float fps = 1 / ((float)loop_time / 1000000.0);
-  buflen_ = (unsigned int) ceil(fps/4) + 1;
-  buflen_ += buflen_ % 2;
+  buflen_ = (unsigned int) ceil(fps/3) + 1;
+  buflen_ += 1 - (buflen_ % 2); // make sure buflen is uneven
   logger->log_info(name(), "Buffer length: %d", buflen_);
   last_second_ = new Time(clock);
 
@@ -437,9 +437,6 @@ void MachineSignalThread::loop()
     }
   }
 
-  if (rois_R->empty()) return;
-
-
   // Create and group ROIs that make up the red, yellow and green lights of a signal
   std::list<signal_rois_t_> *signal_rois;
   if (at_delivery) {
@@ -455,77 +452,80 @@ void MachineSignalThread::loop()
     known_signal->inc_unseen();
   }
 
-  // Go through all signals from this frame...
-  { std::list<signal_rois_t_>::iterator signal_it = signal_rois->begin();
-  for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); ++i) {
-    try {
-      frame_state_t_ frame_state({
-        get_light_state(signal_it->red_roi),
-            get_light_state(signal_it->yellow_roi),
-            get_light_state(signal_it->green_roi),
-            signal_it->red_roi->start
-      });
+  if (!rois_R->empty()) {
 
-      // ... and match them to known signals based on the max_jitter tunable
-      float dist_min = FLT_MAX;
-      std::list<SignalState>::iterator best_match;
-      for (std::list<SignalState>::iterator known_signal = known_signals_.begin();
-          known_signal != known_signals_.end(); ++known_signal) {
-        float dist = known_signal->distance(frame_state);
-        if (dist < dist_min) {
-          best_match = known_signal;
-          dist_min = dist;
+    // Go through all signals from this frame...
+    { std::list<signal_rois_t_>::iterator signal_it = signal_rois->begin();
+    for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); ++i) {
+      try {
+        frame_state_t_ frame_state({
+          get_light_state(signal_it->red_roi),
+              get_light_state(signal_it->yellow_roi),
+              get_light_state(signal_it->green_roi),
+              signal_it->red_roi->start
+        });
+
+        // ... and match them to known signals based on the max_jitter tunable
+        float dist_min = FLT_MAX;
+        std::list<SignalState>::iterator best_match;
+        for (std::list<SignalState>::iterator known_signal = known_signals_.begin();
+            known_signal != known_signals_.end(); ++known_signal) {
+          float dist = known_signal->distance(frame_state);
+          if (dist < dist_min) {
+            best_match = known_signal;
+            dist_min = dist;
+          }
         }
-      }
-      if (dist_min < cfg_max_jitter_) {
-        best_match->update(frame_state, signal_it);
-      }
-      else {
-        // No historic match was found for the current signal
-        SignalState *cur_state = new SignalState(buflen_);
-        cur_state->update(frame_state, signal_it);
-        known_signals_.push_front(*cur_state);
-        delete cur_state;
-      }
+        if (dist_min < cfg_max_jitter_) {
+          best_match->update(frame_state, signal_it);
+        }
+        else {
+          // No historic match was found for the current signal
+          SignalState *cur_state = new SignalState(buflen_);
+          cur_state->update(frame_state, signal_it);
+          known_signals_.push_front(*cur_state);
+          delete cur_state;
+        }
 
-      // Classifiers sometimes do strange things to the image width/height, so reset them here...
-      signal_it->red_roi->set_image_width(cam_width_);
-      signal_it->red_roi->set_image_height(cam_height_);
-      signal_it->yellow_roi->set_image_width(cam_width_);
-      signal_it->yellow_roi->set_image_height(cam_height_);
-      signal_it->green_roi->set_image_width(cam_width_);
-      signal_it->green_roi->set_image_height(cam_height_);
+        // Classifiers sometimes do strange things to the image width/height, so reset them here...
+        signal_it->red_roi->set_image_width(cam_width_);
+        signal_it->red_roi->set_image_height(cam_height_);
+        signal_it->yellow_roi->set_image_width(cam_width_);
+        signal_it->yellow_roi->set_image_height(cam_height_);
+        signal_it->green_roi->set_image_width(cam_width_);
+        signal_it->green_roi->set_image_height(cam_height_);
 
-      if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-        drawn_rois_.push_back(signal_it->red_roi);
-        drawn_rois_.push_back(signal_it->yellow_roi);
-        drawn_rois_.push_back(signal_it->green_roi);
+        if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
+          drawn_rois_.push_back(signal_it->red_roi);
+          drawn_rois_.push_back(signal_it->yellow_roi);
+          drawn_rois_.push_back(signal_it->green_roi);
+        }
+
+        delete signal_it->red_roi;
+        signal_it->red_roi = NULL;
+        delete signal_it->yellow_roi;
+        signal_it->yellow_roi = NULL;
+        delete signal_it->green_roi;
+        signal_it->green_roi = NULL;
       }
-
-      delete signal_it->red_roi;
-      signal_it->red_roi = NULL;
-      delete signal_it->yellow_roi;
-      signal_it->yellow_roi = NULL;
-      delete signal_it->green_roi;
-      signal_it->green_roi = NULL;
+      catch (OutOfBoundsException &e){
+        logger->log_error(name(), "Signal at %d,%d: Invalid ROI: %s",
+          signal_it->red_roi->start.x, signal_it->red_roi->start.y, e.what_no_backtrace());
+      }
+      signal_it++;
     }
-    catch (OutOfBoundsException &e){
-      logger->log_error(name(), "Signal at %d,%d: Invalid ROI: %s",
-        signal_it->red_roi->start.x, signal_it->red_roi->start.y, e.what_no_backtrace());
     }
-    signal_it++;
-  }
-  }
 
-  delete signal_rois;
-  signal_rois = NULL;
+    delete signal_rois;
+    signal_rois = NULL;
 
-  if (unlikely(cfg_tuning_mode_)) {
-    // Visualize the signals and bright spots we found
-    roi_drawer_->set_rois(&drawn_rois_);
-    roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
-    roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
-    roi_drawer_->apply();
+    if (unlikely(cfg_tuning_mode_)) {
+      // Visualize the signals and bright spots we found
+      roi_drawer_->set_rois(&drawn_rois_);
+      roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
+      roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
+      roi_drawer_->apply();
+    }
   }
 
   // Throw out the signals with the worst visibility histories
