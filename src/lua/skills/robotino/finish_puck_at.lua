@@ -141,6 +141,7 @@ end
 function SKILL_RFID:init()
    self.skills[1].place = self.fsm.vars.place
 end
+
 function SKILL_WAIT_PRODUCE:init()
    self.skills[1].mtype = self.fsm.vars.mtype
    self.skills[1].dont_wait = self.fsm.vars.dont_wait
@@ -148,4 +149,8 @@ end
 
 function LEAVE_PRODUCING_MACHINE:init()
    self.skills[1].x = -0.2
+end
+
+function SKILL_DELIVER:init()
+   self.skills[1].place = self.fsm.vars.place
 end
