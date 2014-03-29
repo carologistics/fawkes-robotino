@@ -134,6 +134,10 @@ function SKILL_DRIVE_LEFT:init()
    end
 end
 
+function SKILL_DEPOSIT:init()
+   self.skills[1].place = self.fsm.vars.place
+end
+
 function SKILL_RFID:init()
    self.skills[1].place = self.fsm.vars.place
 end
