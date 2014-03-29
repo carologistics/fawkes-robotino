@@ -27,6 +27,7 @@
   (retract ?es ?s)
   (assert (goto-target ?name)
 	  (state GOTO)
+	  (goto-dont-wait ?dont-wait)
   )
   (if (eq ?dont-wait true) then
     ;we have to wait if we bring a puck without starting the production
