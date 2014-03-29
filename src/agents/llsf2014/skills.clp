@@ -158,3 +158,10 @@
   (assert (state (sym-cat GOTO- ?s)))
   (modify ?wfl (state finished))
 )
+
+(defrule ignore-arriving-at-wait-point
+  ?sd <- (skill-done (name "ppgoto") (status FINAL|FAILED))
+  (state WAIT_AND_LOOK_FOR_ALTERATIVE)
+  =>
+  (retract ?sd)
+)

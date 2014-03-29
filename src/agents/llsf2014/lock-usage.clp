@@ -51,12 +51,31 @@
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
 )
 
-(defrule prod-drive-to-waiting-point
+(defrule lock-drive-to-waiting-point
+  (declare (salience ?*PRIORITY-LOW*))
   (phase PRODUCTION)
   ?lae <- (wait-for-lock (res ?res) (state get))
   ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   (wait-point ?res ?wait-point)
+  (not (skill (name "ppgoto") (status RUNNING)))
   =>
   (printout t "Waiting for lock of " ?res " at " ?wait-point crlf)
   (skill-call ppgoto place (str-cat ?wait-point))
+)
+
+(defrule lock-start-waiting-and-searching-for-alternative
+  (phase PRODUCTION)
+  (wait-for-lock (res ?res) (state get))
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
+  =>
+  (assert (state WAIT_AND_LOOK_FOR_ALTERATIVE))
+)
+
+(defrule lock-end-waiting-and-searching-for-alternative
+  (declare (salience ?*PRIORITY-LOCK_USAGE*))
+  (phase PRODUCTION)
+  ?sf <- (state WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (wait-for-lock (res ?) (state use))
+  =>
+  (retract ?sf)
 )

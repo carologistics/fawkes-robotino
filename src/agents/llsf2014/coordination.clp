@@ -85,10 +85,6 @@
   )
   ;remove proposal
   (retract  ?pt)
-  ;remove prevoiusly rejected proposals
-  (do-for-all-facts ((?prp proposed-task)) (eq ?prp:state rejected)
-    (retract ?prp)
-  )
 )
 
 (defrule coordination-reject-proposed-task
@@ -108,6 +104,7 @@
 )
 
 (defrule coordination-release-after-task-finished
+  (declare (salience ?*PRIORITY-LOCK-HIGH*))
   ?t <- (task (name ?task) (args $?args) (state finished)) 
   ?s <- (state TASK-FINISHED)
   =>
@@ -119,6 +116,23 @@
   )
   (retract ?s ?t)
   (assert (state IDLE))
+  ;remove prevoiusly rejected proposals
+  (do-for-all-facts ((?prp proposed-task)) (eq ?prp:state rejected)
+    (retract ?prp)
+  )
+)
+
+(defrule coordination-release-after-task-aborted
+  (declare (salience ?*PRIORITY-LOCK-LOW*))
+  ?t <- (task (name ?task) (args $?args) (state finished))
+  =>
+  ;release all locks for subtask goals
+  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
+    (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
+    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
+    (retract ?ntl)
+  )
+  (retract ?t)
 )
 
 (defrule coordination-release-and-reject-task-after-failed
@@ -126,7 +140,6 @@
   ?s <- (state TASK-FAILED)
   =>
   ;release all locks for subtask goals
-  ;reject task because it failed
   (do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
     (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
@@ -134,5 +147,10 @@
   )
   (retract ?s ?t)
   (assert (state IDLE))
+  ;remove prevoiusly rejected proposals
+  (do-for-all-facts ((?prp proposed-task)) (eq ?prp:state rejected)
+    (retract ?prp)
+  )
+  ;reject task because it failed
   (assert (proposed-task (name ?task) (args ?args) (state rejected)))
 )
