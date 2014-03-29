@@ -46,6 +46,8 @@ void
 NavgraphBrokerThread::init()
 {
 
+	constraint_repo.lock();
+
 	robot_name_ = config->get_string("/plugins/navgraph-broker/robot_name");
 
 	// load reserved_nodes from config for testing issues
@@ -62,11 +64,17 @@ NavgraphBrokerThread::init()
 		constraint_repo->get_constraint("ReservedNodes")->add_node( navgraph->node( snodes_list[i]) );
 	}
 
+	constraint_repo.unlock();
+
 }
 
 void
 NavgraphBrokerThread::finalize()
 {
+	constraint_repo.lock();
+	constraint_repo->unregister_constraint("ReservedNodes");
+	constraint_repo.unlock();
+
 }
 
 void
