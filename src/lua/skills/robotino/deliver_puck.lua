@@ -1,9 +1,9 @@
 
 ----------------------------------------------------------------------------
---  chase_puck.lua
+--  deliver_puck.lua
 --
 --  Created: Thu Aug 14 14:32:47 2008
---  Copyright  2008  Tim Niemueller [www.niemueller.de]
+--  Copyright  2014  Carologistics
 --
 ----------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"take_puck_to", "move_under_rfid", "watch_signal", "leave_area", "motor_move", "ppgoto", "deposit_puck", "global_motor_move" }
+depends_skills     = {"take_puck_to", "move_under_rfid", "leave_area", "motor_move", "deposit_puck", "global_motor_move" }
 depends_interfaces = {
    { v="light", type="RobotinoLightInterface", id="Light_State" },
    { v="sensor", type="RobotinoSensorInterface", id="Robotino" },
@@ -48,11 +48,9 @@ if config:exists("/skills/deliver_puck/front_sensor_dist") then
    -- you can find the config value in /cfg/host.yaml
    THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
 end
---local MOVES = { {y=-0.37}, {y=-0.39}, {y=0.7} }
---local MAX_TRIES = 3
-local MAX_RFID_TRIES = 2
-local MAX_ORI_ERR = 0.15
+
 local PLUGIN_LIGHT_TIMEOUT = 2.5 -- seconds
+local SETTLE_VISION_TIME = 1 --seconds
 
 local tfm = require("tf_module")
 
@@ -77,7 +75,7 @@ function right_gate_open()
 end
 
 function orange_blinking()
-   return light:yellow() == light.BLINKING and light:is_ready()
+   return light:yellow() == light.BLINKING and light:visibility_history() > 20 --TODO light:is_ready()
 end
 
 function is_green()
@@ -92,15 +90,12 @@ function feedback_ok()
 end
 
 fsm:define_states{ export_to=_M,
-   closure = {have_puck=have_puck, ampel_green=ampel_green, MAX_TRIES=MAX_TRIES, pose_ok=pose_ok,
-      MOVES=MOVES, orange_blinking=orange_blinking, is_green=is_green, 
-      light=light, PLUGIN_LIGHT_TIMEOUT=PLUGIN_LIGHT_TIMEOUT, MAX_RFID_TRIES=MAX_RFID_TRIES},
+   closure = {have_puck=have_puck, orange_blinking=orange_blinking,
+              is_green=is_green, PLUGIN_LIGHT_TIMEOUT=PLUGIN_LIGHT_TIMEOUT,
+              SETTLE_VISION_TIME=SETTLE_VISION_TIME},
    {"INIT", JumpState},
    {"CHECK_POSE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_GATE", fail_to="DECIDE_GATE" },
    {"DECIDE_GATE", JumpState},
-   --{"DECIDE_NEXT_MOVE", JumpState},
-   --{"MOVE_TO_NEXT", SkillJumpState, skills={{motor_move}}, final_to="TRY_GATE",
-   --   fail_to="FAILED"},
    {"DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="SETTLE_VISION",
       fail_to="FAILED"},
    {"DRIVE_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="SETTLE_VISION",
@@ -126,30 +121,20 @@ fsm:add_transitions{
    {"DECIDE_GATE", "DRIVE_LEFT", cond=left_gate_open, desc="left gate open"},
    {"DECIDE_GATE", "DRIVE_RIGHT", cond=right_gate_open, desc="right gate open"},
    {"DECIDE_GATE", "DRIVE_FORWARD", cond=middle_gate_open, desc="middle gate open"},
-   {"SETTLE_VISION", "CHECK_GATE_AGAIN", timeout=1},
+   {"SETTLE_VISION", "CHECK_GATE_AGAIN", timeout=SETTLE_VISION_TIME, desc="Let the vision settle"},
    {"CHECK_GATE_AGAIN", "MOVE_UNDER_RFID", cond=is_green, desc="gate is still open"},
    {"CHECK_GATE_AGAIN", "RESTART", cond="not is_green()", desc="gate just got closed, restarting"},
-   --{"DECIDE_NEXT_MOVE", "MOVE_UNDER_RFID", cond="vars.num_tries >= MAX_TRIES and vars.cur_gate_idx >= #MOVES"}, --blind guess, doesnt harm
-   --{"DECIDE_NEXT_MOVE", "RESTART", cond="vars.cur_gate_idx >= #MOVES"},
-   --{"DECIDE_NEXT_MOVE", "MOVE_TO_NEXT", cond="vars.cur_gate_idx < #MOVES"},
    {"WAIT_FOR_SIGNAL", "CHECK_RESULT", timeout=2}, -- wait for deliver
-   --{"CHECK_RESULT", "SKILL_DEPOSIT", cond="vars.rfid_tries >= MAX_RFID_TRIES"},
    {"CHECK_RESULT", "MOVE_UNDER_RFID", timeout=PLUGIN_LIGHT_TIMEOUT},
    {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok},
    {"CHECK_RESULT", "SKILL_DEPOSIT", cond=orange_blinking},
-   --{"CHECK_RESULT", "MOVE_UNDER_RFID", cond="light:is_ready()"}
 }
 
 function INIT:init()
-   --self.fsm.vars.num_tries = 0
-   --self.fsm.vars.rfid_tries = 0
-   --self.fsm.vars.cur_gate_idx = 1
-
    laser:msgq_enqueue_copy(laser.EnableSwitchMessage:new())
 end
 
 function CHECK_POSE:init()
-   --self.fsm.vars.num_tries = self.fsm.vars.num_tries + 1
    self.skills[1].ori = 0
 end
 
@@ -161,29 +146,21 @@ end
 function DRIVE_LEFT:init()
    self.skills[1].y = 0.4
    self.skills[1].x = 0.4
-   --self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
 end
 
 function DRIVE_RIGHT:init()
    self.skills[1].y = -0.4
    self.skills[1].x = 0.4
-   --self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
 end
 
 function DRIVE_FORWARD:init()
    self.skills[1].y = 0
    self.skills[1].x = 0.4
-   --self.fsm.vars.cur_gate_idx = self.fsm.vars.cur_gate_idx + 1
 end
 
 function RESTART:init()
    self.skills[1].place = self.fsm.vars.place
 end
-
---function MOVE_UNDER_RFID:init()
-   --self.fsm.vars.rfid_tries = self.fsm.vars.rfid_tries + 1
---   printf("RFID Tries: %f", self.fsm.vars.rfid_tries)
---end
 
 function CHECK_RESULT:init()
    light_switch:msgq_enqueue_copy(light_switch.EnableSwitchMessage:new())
@@ -194,10 +171,12 @@ function SKILL_DEPOSIT:init()
 end
 
 function FINAL:init()
+   --TODO turn machine_signal off and into normal mode
    laser:msgq_enqueue_copy(laser.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
+   --TODO turn machine_signal off and into normal mode
    laser:msgq_enqueue_copy(laser.DisableSwitchMessage:new())
 end
 
