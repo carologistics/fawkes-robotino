@@ -56,25 +56,16 @@
   (assert (exp-line-already-turned))
 )
 
-;which machines do we have to explore?
-(defrule exp-get-ownership
-  (declare (salience ?*PRIORITY-WM*))
-  (phase EXPLORATION)
-  (machine (name ?machine) (ownership TRUE))
-  ?me <- (machine-exploration (name ?machine) (ownership FALSE))
-  =>
-  (modify ?me (ownership TRUE))
-)
-
 ;Determine the first machine in dependency of the role
 (defrule exp-determine-first-machine
   (phase EXPLORATION)
   (exp-row (row $?row))
+  (team-color ?team-color)
   =>
   ;find first machine in row
   (bind ?first NONE)
   (progn$ (?m ?row)
-    (do-for-fact ((?me machine-exploration)) (and (eq ?m ?me:name) ?me:ownership)
+    (do-for-fact ((?me machine-exploration)) (and (eq ?m ?me:name) (eq ?me:team ?team-color))
       (bind ?first ?me:name)
     )
     (if (neq ?first NONE)
@@ -114,7 +105,7 @@
           (timer (name print-unrecognized-lights))
   )
   (if (eq ?team-color nil) then
-    (printout error "Ouch, starting exploration but I don't know my team color")
+    (printout error "Ouch, starting exploration but I don't know my team color" crlf)
   )
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
@@ -238,6 +229,7 @@
   ?s <- (state EXP_IDLE)
   ?g <- (goalmachine ?old)
   (exp-row (row $?row))
+  (team-color ?team-color&~nil)
   =>
   ;find next machine in the line
   (bind ?ind (member$ ?old ?row))
@@ -245,7 +237,7 @@
   (while (<= ?ind (length$ ?row)) do
     ; can I go to this machine next?
     (if (and (any-factp ((?me machine-exploration)) (and (eq ?me:name (nth$ ?ind ?row))
-							 ?me:ownership
+							 (eq ?me:team ?team-color)
 							 (not ?me:recognized)))
 	     (not (any-factp ((?lock locked-resource)) (eq ?lock:resource (nth$ ?ind ?row)))))
       then
@@ -278,14 +270,16 @@
   (exp-tactic NEAREST)
   ?s <- (state EXP_IDLE)
   ?g <- (goalmachine ?old)
-  (machine-exploration (name ?old) (x ?x) (y ?y) (ownership ?own))
+  (team-color ?team-color)
+  (machine-exploration (name ?old) (x ?x) (y ?y) (team ?team))
   =>
   ;find next machine nearest to last machine
   (bind ?nearest NONE)
   (bind ?min-dist 1000.0)
-  (do-for-all-facts ((?me machine-exploration)) (and ?me:ownership
-						     (not ?me:recognized)
-						     (not (any-factp ((?mt machine-type)) (eq ?mt:name ?me:name))))
+  (do-for-all-facts ((?me machine-exploration))
+    (and (eq ?me:team ?team-color) (not ?me:recognized)
+	 (not (any-factp ((?mt machine-type)) (eq ?mt:name ?me:name))))
+
     ;check if the machine is nearer and unlocked
     (bind ?dist (distance ?x ?y ?me:x ?me:y))
     (if (and (not (any-factp ((?lock locked-resource)) (eq ?lock:resource ?me:name)))
@@ -304,7 +298,7 @@
 	    (exp-next-machine ?nearest))
     else
     (if (and (not (any-factp ((?recognized machine-type)) (eq ?recognized:name ?old)))
-	     ?own)
+	     (eq ?team ?team-color))
       then
       (printout t "Retrying last machine" crlf)
       (assert (state EXP_FOUND_NEXT_MACHINE)
@@ -373,6 +367,15 @@
       (assert (type-spec-pre ?type ?light-color ?light-state))
     )
   )
+  (foreach ?m (pb-field-list ?p "machines")
+    (bind ?name (pb-field-value ?m "name"))
+    (bind ?team (sym-cat (pb-field-value ?m "team_color")))
+    (do-for-fact ((?machine machine) (?me machine-exploration))
+      (and (eq ?machine:name ?name) (eq ?me:name ?name))
+      (modify ?machine (team ?team))
+      (modify ?me (team ?team))
+    )
+  )
 )
 
 ;Compose information sent by the refbox as one
@@ -414,11 +417,13 @@
   (do-for-all-facts ((?machine machine-type)) TRUE
     ;send report for last machine only if the exploration phase is going to end
     ;or we are prepared for production
-    (if (or (< (length (find-all-facts ((?f machine-exploration)) (and ?f:ownership ?f:recognized)))
-	       (- (length (find-all-facts ((?f machine-exploration)) ?f:ownership)) 1))
-	    (>= (nth$ 1 ?game-time) ?latest-report-time)
-	    (eq ?s EXP_PREPARE_FOR_PRODUCTION_FINISHED))
-      then
+    (if (or
+	 (< (length (find-all-facts ((?f machine-exploration))
+				    (and (eq ?f:team ?team-color) ?f:recognized)))
+	    (- (length (find-all-facts ((?f machine-exploration)) (eq ?f:team ?team-color))) 1))
+	 (>= (nth$ 1 ?game-time) ?latest-report-time)
+	 (eq ?s EXP_PREPARE_FOR_PRODUCTION_FINISHED))
+     then
       (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
       (pb-set-field ?mre "name" (str-cat ?machine:name))
       (pb-set-field ?mre "type" (str-cat ?machine:type))
