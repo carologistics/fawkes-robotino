@@ -278,3 +278,23 @@
   (retract ?s)
   (assert (state TASK-FAILED))
 )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Fallback for unhandled situation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defrule task-fallback-end-task
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  (phase PRODUCTION)
+  ?t <- (task (name ?name) (args $?a) (state ~finished))
+  ?s <- (state GOTO-FINAL|GOTO-FAILED|GET-CONSUMED-FINAL|GET-CONSUMED-FAILED|GET-PRODUCED-FINAL|GET-PRODUCED-FAILED|GET-S0-FINAL|GET-S0-FAILED)
+  (time $?now)
+  =>
+  (printout error "Unhandled situation in agent!!!" crlf)
+  (printout error "Ending task " ?name crlf)
+  (printout error "Saving fact-list to  agent-snapshot-" (nth$ 1 ?now) ".clp" crlf)
+  (save-facts (str-cat "agent-snapshot-" (nth$ 1 ?now) ".clp") visible)
+
+  (modify ?t (state failed))
+  (retract ?s)
+  (assert (state TASK-FAILED))
+)
