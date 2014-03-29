@@ -1,8 +1,8 @@
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Libraries
+#             Makefile Build System for Fawkes : Protobuf Messages
 #                            -------------------
-#   Created on Tue Nov 07 16:12:59 2006
-#   copyright (C) 2006-2011 by Tim Niemueller, AllemaniACs RoboCup Team
+#   Created on Wed Jan 16 17:43:33 2013
+#   Copyright (C) 2006-2008 by Tim Niemueller, Carologistics RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,12 +13,13 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../..
+
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDSYSDIR)/fvconf.mk
 
-SUBDIRS = interfaces llsf_msgs
+PROTOBUF_all = llsf_msgs
 
-include $(BUILDSYSDIR)/rules.mk
+MSGS_llsf_msgs = $(notdir $(patsubst %.proto,%,$(wildcard $(SRCDIR)/*.proto)))
 
-
+include $(BUILDSYSDIR)/protobuf.mk
+include $(BUILDSYSDIR)/base.mk
