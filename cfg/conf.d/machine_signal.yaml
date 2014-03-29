@@ -5,11 +5,27 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
 ---
 
 plugins/machine_signal:
-  camera: v4l2:front:device=/dev/light_front:size=640x480:awb=0:contrast=33:saturation=60:gain=70:white_balance_temperature=4000:exposure_auto_priority=0:exposure_auto=1:exposure_absolute=600
+  camera: v4l2:front:device=/dev/light_front:size=640x480:awb=0:contrast=33:saturation=50:gain=70:white_balance_temperature=4000:exposure_auto_priority=0:exposure_auto=1:exposure_absolute=600
   
   #
-  # All settings below can be changed at runtime
+  # Start running when the plugin is loaded.
+  # If set to false, signal detection needs to be activated via the light_switch
   #
+  start_enabled: true
+
+  #
+  # Which delivery mode to use initially.
+  # auto: Try to auto-detect by the width of the largest green ROI
+  # on: Assume we're looking at the delivery gates.
+  # off: Assume we're looking at the playing field
+  # After switching delivery mode on or off with the switch interface
+  # "machine_signal_delivery_mode", this config value has no effect anymore.
+  #
+  delivery_mode: "auto"
+
+  ###########################################################
+  #    All settings below can be changed at runtime         #
+  ###########################################################
 
   # Enable the tuning buffer. Use fvviever -s machine_signal to view.
   #
@@ -23,7 +39,7 @@ plugins/machine_signal:
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
   draw_processed_rois: true
-  
+ 
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
   roi_max_r2g_width_ratio: 1.8
