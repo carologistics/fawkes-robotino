@@ -70,3 +70,5 @@ clips-agent:
 
       #the time in seconds to report all machines even if we are not prepared for production
       latest-send-last-report-time: 225 # =3:45
+
+      needed-visibility-history: 15
