@@ -65,23 +65,23 @@ local curDistance = sensor:distance(8)
 end
 
 function left_gate_open()
-   return left_gate:green() == left_gate.ON and left_gate:visibility_history() > 20 --TODO and left_gate:is_ready()
+   return left_gate:green() == left_gate.ON and left_gate:visibility_history() > 10 --TODO and left_gate:is_ready()
 end
 
 function middle_gate_open()
-   return middle_gate:green() == middle_gate.ON and middle_gate:visibility_history() > 20 --TODO and middle_gate:is_ready()
+   return middle_gate:green() == middle_gate.ON and middle_gate:visibility_history() > 10 --TODO and middle_gate:is_ready()
 end
 
 function right_gate_open()
-   return right_gate:green() == right_gate.ON and right_gate:visibility_history() > 20 --TODO and right_gate:is_ready()
+   return right_gate:green() == right_gate.ON and right_gate:visibility_history() > 10 --TODO and right_gate:is_ready()
 end
 
 function orange_blinking()
-   return light:yellow() == light.BLINKING and light:visibility_history() > 20 --TODO light:is_ready()
+   return light:yellow() == light.BLINKING and light:visibility_history() > 10 --TODO light:is_ready()
 end
 
 function is_green()
-   return light:green() == light.ON and light:visibility_history() > 20 --TODO and light:is_ready()
+   return light:green() == light.ON and light:visibility_history() > 5 --TODO and light:is_ready()
 end
 
 function feedback_ok()
