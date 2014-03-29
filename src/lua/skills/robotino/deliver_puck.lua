@@ -51,8 +51,8 @@ end
 
 local PLUGIN_LIGHT_TIMEOUT = 4 -- seconds
 local SETTLE_VISION_TIME = 1 --seconds
-local num_tries = 1
 local MAX_NUM_TRIES = 3
+fsm.vars.num_tries = 1
 
 local tfm = require("tf_module")
 
@@ -92,7 +92,7 @@ function feedback_ok()
 end
 
 function max_tries_reached()
-   return num_tries >= MAX_NUM_TRIES
+   return fsm.vars.num_tries >= MAX_NUM_TRIES
 end
 
 fsm:define_states{ export_to=_M,
@@ -168,7 +168,7 @@ function DRIVE_FORWARD:init()
 end
 
 function RESTART:init()
-   num_tries = num_tries + 1
+   self.fsm.vars.num_tries = self.fsm.vars.num_tries + 1
    self.skills[1].place = self.fsm.vars.place
 end
 
