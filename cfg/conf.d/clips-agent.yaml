@@ -4,6 +4,9 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 clips-agent:
+  # If true, will enable watching of facts and rules
+  clips-debug: true
+
   # Directory where to look for CLIPS files
   clips-dirs: ["@BASEDIR@/src/agents/"]
 
@@ -13,15 +16,38 @@ clips-agent:
   unwatch-facts: ["time"]
   unwatch-rules: ["time-retract", "blackboard-read"]
 
-  
+  # If true, simulate skills (assuming they always succeed) instead of
+  # actually executing the skills. The time indicates how long it should
+  # take to declare success on skill execution. Note that this cannot
+  # simulate side effects, like a called component writing to an interface
+  skill-sim: false
+  skill-sim-time: 2.0
+
+  # automatically pre-require redefine-warning feature? Enabling
+  # this in the plugin instead of in the initial code (init.clp) is
+  # beneficial because it already catches errors in said file.
+  request-redefine-warning-feature: true
+
+  # If set to true, will trigger the assertion of a (time (now)) fact in
+  # each loop. This can be used to trigger loop events in CLIPS.
+  assert-time-each-loop: true
+
+  # If set to true will force the acquisition of the skiller control.
+  # This is particularly useful to kick an SkillGUI which is holding
+  # the lock just due to an oversight.
+  steal-skiller-control: true
+ 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
   agent: llsf2014/llsf2014
-  
+
+ 
   llsf2014:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: nothing
         
+    enable-sim: false
+
     peer-address: 172.26.255.255
     #use this for talking to the refbox on the same laptop:
     #peer-recv-port: 4444
@@ -72,3 +98,4 @@ clips-agent:
       latest-send-last-report-time: 225 # =3:45
 
       needed-visibility-history: 15
+
