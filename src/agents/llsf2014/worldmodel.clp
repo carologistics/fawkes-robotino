@@ -61,7 +61,7 @@
     (retract ?hf)
     (assert (holding NONE))
   )
-  (printout t "Production failed at " ?name crlf) 
+  (printout error "Production failed at " ?name crlf) 
 )
 
 (defrule wm-goto-light
@@ -118,6 +118,12 @@
   =>
   (retract ?hf ?lf ?tf)
   (assert (holding NONE))
+  (if (or (eq ?mtype T1) (eq ?mtype T5))
+    then
+    (printout error "ERROR: READ YELLOW-ON AT " ?name "|" ?mtype crlf)
+    (printout error "This should not happen!" crlf)
+    (return)
+  )
   (printout t "Production needs more resources at " ?name "|" ?mtype crlf)
   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding)))
 )
@@ -149,7 +155,7 @@
   ?hf <- (holding ?puck)
   (role ?role)
   =>
-  (printout t "Production invalid at " ?name "|" ?mtype crlf)
+  (printout error "Production invalid at " ?name "|" ?mtype crlf)
   ;keep problem in mind to block machine when if another problem occurs
   (assert (worldmodel-change (machine ?name) (change SET_DOUBTFUL_WORLDMODEL)))
   ;how to handle the situation:
@@ -238,7 +244,7 @@
   ?mf <- (machine (name ?name) (mtype ?mtype))
   (role ?role)
   =>
-  (printout warn "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
+  (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf)
   (assert (holding NONE))
 )
@@ -265,7 +271,7 @@
   =>
   (retract ?hf ?tf)
   (assert (holding NONE))
-  (printout warn "Got Produced Puck failed." crlf)
+  (printout error "Got Produced Puck failed." crlf)
   ;allow one problem. when the second occurs the machine gets blocked
   (assert (worldmodel-change (machine ?name) (change SET_DOUBTFUL_WORLDMODEL)))
 )
@@ -292,7 +298,7 @@
   =>
   (retract ?hf ?tf)
   (assert (holding NONE))
-  (printout warn "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf)
+  (printout error "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf)
   ;block this machine to avoid more accidents
   (assert (worldmodel-change (machine ?name) (change SET_RECYCLE_BLOCKED)))
   ;also block recycling because we want recycling points
