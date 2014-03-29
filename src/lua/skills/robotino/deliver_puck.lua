@@ -49,7 +49,7 @@ if config:exists("/skills/deliver_puck/front_sensor_dist") then
    THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
 end
 
-local PLUGIN_LIGHT_TIMEOUT = 2.5 -- seconds
+local PLUGIN_LIGHT_TIMEOUT = 4 -- seconds
 local SETTLE_VISION_TIME = 1 --seconds
 local num_tries = 1
 local MAX_NUM_TRIES = 3
