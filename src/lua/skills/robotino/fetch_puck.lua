@@ -41,7 +41,7 @@ skillenv.skill_module(_M)
 
 local TIMEOUT = 3
 local ORI_OFFSET = 0.03
-local MIN_VIS_HIST = 0
+local MIN_VIS_HIST = 1
 local THRESHOLD_DISTANCE = 0.07
 if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
    THRESHOLD_DISTANCE = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
