@@ -169,6 +169,17 @@
         (case SET_RECYCLE_BLOCKED then 
           (modify ?machine (recycle-blocked TRUE))
         )
+        (case SET_DOUBTFUL_WORLDMODEL then 
+	  (if ?machine:doubtful-worldmodel
+	    then
+	    ;second problem -> block this machine
+	    (modify ?machine (recycle-blocked TRUE))
+	    (modify ?machine (produce-blocked TRUE))
+	    else
+	    ;one time is ok, set warning
+	    (modify ?machine (doubtful-worldmodel TRUE))
+	  )
+        )
       )
     )
   )

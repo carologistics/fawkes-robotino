@@ -152,6 +152,8 @@
   (role ?role)
   =>
   (printout t "Production invalid at " ?name "|" ?mtype crlf)
+  ;keep problem in mind to block machine when if another problem occurs
+  (assert (worldmodel-change (machine ?name) (change SET_DOUBTFUL_WORLDMODEL)))
   ;how to handle the situation:
   (if (or (eq ?mtype RECYCLE) 
 	  (eq ?mtype T1)
@@ -266,7 +268,8 @@
   (retract ?hf ?tf)
   (assert (holding NONE))
   (printout warn "Got Produced Puck failed." crlf)
-  ;TODO: what is the worldmodel now?
+  ;allow one problem. when the second occurs the machine gets blocked
+  (assert (worldmodel-change (machine ?name) (change SET_DOUBTFUL_WORLDMODEL)))
 )
 
 (defrule wm-get-consumed-final
@@ -292,13 +295,16 @@
   (retract ?hf ?tf)
   (assert (holding NONE))
   (printout warn "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf)
-  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount 0)))
+  ;block this machine to avoid more accidents
+  (assert (worldmodel-change (machine ?name) (change SET_RECYCLE_BLOCKED)))
+  ;also block recycling because we want recycling points
+  (assert (worldmodel-change (machine ?name) (change SET_PRODUCE_BLOCKED)))
 )
 
 (defrule wm-process-wm-change-before-sending
   (declare (salience ?*PRIORITY-WM*))
   ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE))
-  ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (junk ?junk) (produced-puck ?produced))
+  ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (junk ?junk) (produced-puck ?produced) (doubtful-worldmodel ?doubtful-wm))
   =>
   (switch ?change
     (case ADD_LOADED_WITH then 
@@ -327,6 +333,17 @@
     )
     (case SET_RECYCLE_BLOCKED then 
       (modify ?m (recycle-blocked TRUE))
+    )
+    (case SET_DOUBTFUL_WORLDMODEL then 
+      (if ?doubtful-wm
+	then
+	;second problem -> block this machine
+	(modify ?m (recycle-blocked TRUE))
+	(modify ?m (produce-blocked TRUE))
+	else
+        ;one time is ok, set warning
+	(modify ?m (doubtful-worldmodel TRUE))
+      )
     )
   )
   (modify ?wmc (already-applied TRUE))

@@ -96,6 +96,7 @@
   (slot ownership (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot produce-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot recycle-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot doubtful-worldmodel (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
 )
 
 ;common template for a task
@@ -122,7 +123,7 @@
 
 (deftemplate worldmodel-change
   (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 D1 D2 D3 TST R1 R2))
-  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME REMOVE_PRODUCED SET_PRODUCE_BLOCKED SET_RECYCLE_BLOCKED))
+  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME REMOVE_PRODUCED SET_PRODUCE_BLOCKED SET_RECYCLE_BLOCKED SET_DOUBTFUL_WORLDMODEL))
   (slot value (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO NOTHING S0 S1 S2) (default NOTHING))
   (slot amount (type INTEGER) (default 0))
   (slot already-applied (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
