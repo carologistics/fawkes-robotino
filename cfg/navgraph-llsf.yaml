@@ -94,6 +94,7 @@ nodes:
     pos: [2.13, 1.68]
     properties:
       - orientation: 3.14
+      - leave_right
   - name: M4
     pos: [1.23, 2.8]
     properties:
@@ -114,14 +115,17 @@ nodes:
     pos: [2.35, 5.04]
     properties:
       - orientation: 0
+      - leave_right
   - name: M9
     pos: [4.35, 1.68]
     properties:
       - orientation: 3.14
+      - leave_right
   - name: M10
     pos: [3.92, 3.25]
     properties:
       - orientation: -1.57
+      - leave_right
   - name: M11
     pos: [3.92, 4.59]
     properties:
@@ -183,10 +187,12 @@ nodes:
     pos: [-5.04, 4.59]
     properties:
       - orientation: 1.57
+      - leave_right
   - name: R2
     pos: [-1.01, 5.04]
     properties:
       - orientation: 0
+      - leave_right
 
 # Highway exits:
         
