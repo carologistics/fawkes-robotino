@@ -93,16 +93,19 @@ fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
       fail_to="START"},
    {"GRAB", SkillJumpState, skills={{motor_move}}, final_to="GRAB_DONE",
       fail_to="FAILED"},
-   {"GRAB_DONE", JumpState}
+   {"GRAB_DONE", JumpState},
+   {"MOVE_MORE", SkillJumpState, skills={{motor_move}}, final_to="FINAL",
+      fail_to="FAILED"}
+
 }
 
 fsm:add_transitions{
    {"START", "TURN_TO_PUCK", cond="visible() and not  vars.move_sideways" },
    {"START", "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and vars.move_sideways" },
    {"START", "FAILED", timeout=TIMEOUT},
-   {"GRAB", "FINAL", cond=have_puck},
+   {"GRAB", "MOVE_MORE", cond=have_puck},
    {"GRAB_DONE", "START", cond="not have_puck()"},
-   {"GRAB_DONE", "FINAL", cond=have_puck},
+   {"GRAB_DONE", "MOVE_MORE", cond=have_puck},
 }
 
 function TURN_TO_PUCK:init()
@@ -196,7 +199,12 @@ end
 function GRAB:init()
    self.skills[1].x = math.sqrt(self.fsm.vars.target.x^2 + self.fsm.vars.target.y^2) - 0.3
    self.skills[1].vel_trans = 0.25
-   self.skills[1].tolerance = { x=0.05, y=0.05, ori=0.05 }
+   self.skills[1].tolerance = { x=0.01, y=0.01, ori=0.05 }
+end
+
+function MOVE_MORE:init()
+   self.skills[1].tolerance = { x=0.01, y=0.01, ori=0.05 }
+   self.skills[1].x = 0.05
 end
 
 function cleanup()
