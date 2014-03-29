@@ -220,6 +220,7 @@ class MachineSignalThread :
         light_history_t_ history_G_;
         unsigned int buflen;
         unsigned int state_buflen;
+        bool update_states;
 
         fawkes::RobotinoLightInterface::LightState
         inline eval_history(light_history_t_ &history)
@@ -231,10 +232,10 @@ class MachineSignalThread :
           }
 
           if (count < 0) {
-            history.state.push_front(true);
+            history.state.push_front(false);
           }
           else if (count > 0) {
-            history.state.push_front(false);
+            history.state.push_front(true);
           }
           /*
           else {
@@ -280,6 +281,7 @@ class MachineSignalThread :
           area = 0;
           visibility = -1;
           ready = false;
+          update_states = false;
           unseen = 0;
           red = fawkes::RobotinoLightInterface::UNKNOWN;
           yellow = fawkes::RobotinoLightInterface::UNKNOWN;
@@ -303,17 +305,30 @@ class MachineSignalThread :
           history_G_.frames.push_front(s.green);
           pos = s.pos;
 
-          if (unlikely(visibility < 0)) visibility = 1;
-          else visibility++;
           unseen = 0;
-          red = eval_history(history_R_);
-          yellow = eval_history(history_Y_);
-          green = eval_history(history_G_);
 
-          if (unlikely(red == fawkes::RobotinoLightInterface::OFF
-            && yellow != fawkes::RobotinoLightInterface::OFF
-            && green != fawkes::RobotinoLightInterface::OFF)) {
-            visibility = -1;
+          if (update_states) {
+            red = eval_history(history_R_);
+            yellow = eval_history(history_Y_);
+            green = eval_history(history_G_);
+          }
+          // update states every second time only
+          update_states = !update_states;
+
+          if (unlikely(
+            (red == fawkes::RobotinoLightInterface::OFF
+                && yellow == fawkes::RobotinoLightInterface::OFF
+                && green == fawkes::RobotinoLightInterface::OFF)
+                || red == fawkes::RobotinoLightInterface::UNKNOWN
+                || yellow == fawkes::RobotinoLightInterface::UNKNOWN
+                || green == fawkes::RobotinoLightInterface::UNKNOWN
+          )) {
+            if (visibility >= 0) visibility = -1;
+            else visibility--;
+          }
+          else {
+            if (unlikely(visibility < 0)) visibility = 1;
+            else visibility++;
           }
 
           ready = (visibility >= (long int) buflen/2);
