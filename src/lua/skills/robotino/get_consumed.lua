@@ -34,6 +34,8 @@ documentation      = [==[Drive to Maschine and ged a consumed puck]==]
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
+
 
 function have_puck()
     local curDistance = sensor:distance(8)
@@ -63,9 +65,15 @@ function ADJUST_POS:init()
 end
 
 function DRIVE_TO_SIDE:init()
-   self.skills[1].x=0.1
-   self.skills[1].y=-0.4
-   self.skills[1].ori=0.35
+   if graph:node(self.fsm.vars.place):has_property("leave_right") then
+      self.skills[1].x=0.1
+      self.skills[1].y=-0.4
+      self.skills[1].ori=0.35
+   else
+      self.skills[1].x=0.1
+      self.skills[1].y=-0.4
+      self.skills[1].ori=-0.35
+   end
 end
 
 function LEAVE_TURN:init()
