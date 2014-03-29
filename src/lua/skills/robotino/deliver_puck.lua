@@ -51,6 +51,8 @@ end
 
 local PLUGIN_LIGHT_TIMEOUT = 2.5 -- seconds
 local SETTLE_VISION_TIME = 1 --seconds
+local num_tries = 1
+local MAX_NUM_TRIES = 3
 
 local tfm = require("tf_module")
 
@@ -89,10 +91,14 @@ function feedback_ok()
       and light:red() == light.ON
 end
 
+function max_tries_reached()
+   return num_tries >= MAX_NUM_TRIES
+end
+
 fsm:define_states{ export_to=_M,
    closure = {have_puck=have_puck, orange_blinking=orange_blinking,
               is_green=is_green, PLUGIN_LIGHT_TIMEOUT=PLUGIN_LIGHT_TIMEOUT,
-              SETTLE_VISION_TIME=SETTLE_VISION_TIME},
+              SETTLE_VISION_TIME=SETTLE_VISION_TIME, max_tries_reached=max_tries_reached},
    {"INIT", JumpState},
    {"CHECK_POSE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_GATE", fail_to="DECIDE_GATE" },
    {"DECIDE_GATE", JumpState},
@@ -112,11 +118,13 @@ fsm:define_states{ export_to=_M,
    {"CHECK_RESULT", JumpState},
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="LEAVE_AREA", fail_to="FAILED"},
    {"LEAVE_AREA", SkillJumpState, skills={{leave_area}}, final_to="FINAL", fail_to="FAILED"},
+   {"GET_RID_OF_PUCK", SkillJumpState, skills={{motor_move}}, final_to="FAILED",
+      fail_to="FAILED"},
 }
 
 
 fsm:add_transitions{
-   {"INIT", "CHECK_POSE", cond=have_puck},
+   {"INIT", "CHECK_POSE", cond="have_puck and not max_tries_reached()"},
    {"INIT", "FAILED", cond="not have_puck()"},
    {"DECIDE_GATE", "DRIVE_LEFT", cond=left_gate_open, desc="left gate open"},
    {"DECIDE_GATE", "DRIVE_RIGHT", cond=right_gate_open, desc="right gate open"},
@@ -124,7 +132,8 @@ fsm:add_transitions{
    {"SETTLE_VISION", "CHECK_GATE_AGAIN", timeout=SETTLE_VISION_TIME, desc="Let the vision settle"},
    {"CHECK_GATE_AGAIN", "MOVE_UNDER_RFID", cond=is_green, desc="gate is still open"},
    {"CHECK_GATE_AGAIN", "RESTART", cond="not is_green()", desc="gate just got closed, restarting"},
-   {"WAIT_FOR_SIGNAL", "CHECK_RESULT", timeout=2}, -- wait for deliver
+   {"RESTART", "GET_RID_OF_PUCK", cond=max_tries_reached, desc="lose the puck before failing"},
+   {"WAIT_FOR_SIGNAL", "CHECK_RESULT", timeout=2, desc="wait for the deliver registry"},
    {"CHECK_RESULT", "MOVE_UNDER_RFID", timeout=PLUGIN_LIGHT_TIMEOUT},
    {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok},
    {"CHECK_RESULT", "SKILL_DEPOSIT", cond=orange_blinking},
@@ -144,21 +153,22 @@ function DECIDE_GATE:init()
 end
 
 function DRIVE_LEFT:init()
-   self.skills[1].y = 0.4
    self.skills[1].x = 0.4
+   self.skills[1].y = 0.4
 end
 
 function DRIVE_RIGHT:init()
-   self.skills[1].y = -0.4
    self.skills[1].x = 0.4
+   self.skills[1].y = -0.4
 end
 
 function DRIVE_FORWARD:init()
-   self.skills[1].y = 0
    self.skills[1].x = 0.4
+   self.skills[1].y = 0
 end
 
 function RESTART:init()
+   num_tries = num_tries + 1
    self.skills[1].place = self.fsm.vars.place
 end
 
@@ -168,6 +178,12 @@ end
 
 function SKILL_DEPOSIT:init()
    self.skills[1].mtype = "deliver"
+end
+
+function GET_RID_OF_PUCK:init()
+   self.skills[1].x = -0.2
+   self.skills[1].ori = 0.45 -- 20°
+   self.skills[1].vel_trans = 0.8
 end
 
 function FINAL:init()
