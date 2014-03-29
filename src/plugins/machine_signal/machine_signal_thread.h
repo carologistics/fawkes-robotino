@@ -209,6 +209,55 @@ class MachineSignalThread :
     } frame_state_t_;
 
     class SignalState {
+      private:
+        typedef struct {
+          boost::circular_buffer<bool> frames;
+          boost::circular_buffer<bool> state;
+        } light_history_t_;
+
+        light_history_t_ history_R_;
+        light_history_t_ history_Y_;
+        light_history_t_ history_G_;
+        unsigned int buflen;
+        unsigned int state_buflen;
+
+        fawkes::RobotinoLightInterface::LightState
+        inline eval_history(light_history_t_ &history)
+        {
+          int count = 0;
+          for (boost::circular_buffer<bool>::const_iterator it = history.frames.begin();
+              it != history.frames.end(); ++it) {
+            count += *it ? 1 : -1;
+          }
+
+          if (count < 0) {
+            history.state.push_front(true);
+          }
+          else if (count > 0) {
+            history.state.push_front(false);
+          }
+          /*
+          else {
+            history.state.push_front(history.state.front());
+          }*/
+
+          boost::circular_buffer<bool>::const_iterator it = history.state.begin();
+          bool last_state = *(it++);
+          unsigned int num_changes = 0;
+          while (it != history.state.end()) {
+            if (*it != last_state) num_changes++;
+            last_state = *(it++);
+          }
+
+          if (history.state.size() < state_buflen/2) {
+            return fawkes::RobotinoLightInterface::UNKNOWN;
+          }
+          if (num_changes >= 2) return fawkes::RobotinoLightInterface::BLINKING;
+          else return history.state.front() ?
+              fawkes::RobotinoLightInterface::ON :
+              fawkes::RobotinoLightInterface::OFF;
+        }
+
       public:
         fawkes::RobotinoLightInterface::LightState red;
         fawkes::RobotinoLightInterface::LightState yellow;
@@ -218,16 +267,16 @@ class MachineSignalThread :
         bool ready;
         int unseen;
         unsigned int area;
-        boost::circular_buffer<bool> history_R;
-        boost::circular_buffer<bool> history_Y;
-        boost::circular_buffer<bool> history_G;
-        unsigned int buflen;
 
         SignalState(unsigned int buflen)
-        : history_R(boost::circular_buffer<bool>(buflen)),
-          history_Y(boost::circular_buffer<bool>(buflen)),
-          history_G(boost::circular_buffer<bool>(buflen))
         {
+          history_R_.frames = boost::circular_buffer<bool>(buflen);
+          history_Y_.frames = boost::circular_buffer<bool>(buflen);
+          history_G_.frames = boost::circular_buffer<bool>(buflen);
+          state_buflen = ceil((float)buflen/2);
+          history_R_.state = boost::circular_buffer<bool>(state_buflen);
+          history_Y_.state = boost::circular_buffer<bool>(state_buflen);
+          history_G_.state = boost::circular_buffer<bool>(state_buflen);
           area = 0;
           visibility = -1;
           ready = false;
@@ -236,29 +285,6 @@ class MachineSignalThread :
           yellow = fawkes::RobotinoLightInterface::UNKNOWN;
           green = fawkes::RobotinoLightInterface::UNKNOWN;
           this->buflen = buflen;
-        }
-
-        fawkes::RobotinoLightInterface::LightState
-        inline eval_history(boost::circular_buffer<bool> const &history)
-        {
-          if (history.size() < buflen/2)
-            return history.front() ?
-                fawkes::RobotinoLightInterface::ON :
-                fawkes::RobotinoLightInterface::OFF;
-          int count = 0;
-          for (boost::circular_buffer<bool>::const_iterator it = history.begin(); it != history.end(); it++) {
-            count += *it ? 1 : -1;
-          }
-
-          if (count < ((int) buflen / -4.0)) {
-            return fawkes::RobotinoLightInterface::OFF;
-          }
-          else if (count > (buflen / 4.0)) {
-            return fawkes::RobotinoLightInterface::ON;
-          }
-          else {
-            return fawkes::RobotinoLightInterface::BLINKING;
-          }
         }
 
         inline void inc_unseen() {
@@ -272,21 +298,25 @@ class MachineSignalThread :
           area = rois->red_roi->width * rois->red_roi->height
               + rois->yellow_roi->width * rois->yellow_roi->height
               + rois->green_roi->width * rois->green_roi->height;
-          history_R.push_front(s.red);
-          history_Y.push_front(s.yellow);
-          history_G.push_front(s.green);
+          history_R_.frames.push_front(s.red);
+          history_Y_.frames.push_front(s.yellow);
+          history_G_.frames.push_front(s.green);
           pos = s.pos;
+
           if (unlikely(visibility < 0)) visibility = 1;
           else visibility++;
           unseen = 0;
-          red = eval_history(history_R);
-          yellow = eval_history(history_Y);
-          green = eval_history(history_G);
+          red = eval_history(history_R_);
+          yellow = eval_history(history_Y_);
+          green = eval_history(history_G_);
 
-          ready = (visibility >= (long int) buflen/2)
-              && red != fawkes::RobotinoLightInterface::OFF
-              && yellow != fawkes::RobotinoLightInterface::OFF
-              && green != fawkes::RobotinoLightInterface::OFF;
+          if (unlikely(red == fawkes::RobotinoLightInterface::OFF
+            && yellow != fawkes::RobotinoLightInterface::OFF
+            && green != fawkes::RobotinoLightInterface::OFF)) {
+            visibility = -1;
+          }
+
+          ready = (visibility >= (long int) buflen/2);
         }
 
         inline float distance(frame_state_t_ const &s) {

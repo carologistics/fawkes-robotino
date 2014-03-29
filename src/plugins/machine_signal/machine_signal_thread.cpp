@@ -233,7 +233,8 @@ void MachineSignalThread::init()
   // Initialize frame rate detection
   uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
   float fps = 1 / ((float)loop_time / 1000000.0);
-  buflen_ = (unsigned int) pow(2, ceil(log2(fps)));
+  buflen_ = (unsigned int) ceil(fps/4) + 1;
+  buflen_ += buflen_ % 2;
   logger->log_info(name(), "Buffer length: %d", buflen_);
   last_second_ = new Time(clock);
 
@@ -478,13 +479,6 @@ void MachineSignalThread::loop()
       }
       if (dist_min < cfg_max_jitter_) {
         best_match->update(frame_state, signal_it);
-
-        // All-off signals are impossible, so give them a bad visibility history
-        if (best_match->visibility >= (long int)buflen_/2
-            && best_match->red == RobotinoLightInterface::OFF
-            && best_match->yellow == RobotinoLightInterface::OFF
-            && best_match->green == RobotinoLightInterface::OFF)
-          best_match->visibility = -1;
       }
       else {
         // No historic match was found for the current signal
