@@ -61,6 +61,7 @@
   (phase EXPLORATION)
   (exp-row (row $?row))
   (team-color ?team-color&~nil)
+  (exp-machines-initialized)
   =>
   ;find first machine in row
   (bind ?first NONE)
@@ -378,6 +379,7 @@
       (modify ?me (team ?team))
     )
   )
+  (assert (exp-machines-initialized))
 )
 
 ;Compose information sent by the refbox as one
