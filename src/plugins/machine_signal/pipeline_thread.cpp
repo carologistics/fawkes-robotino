@@ -17,7 +17,7 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "machine_signal_thread.h"
+#include "pipeline_thread.h"
 #include <fvfilters/colorthreshold.h>
 #include <aspect/logging.h>
 #include <fvutils/color/colorspaces.h>
@@ -29,15 +29,21 @@
 using namespace fawkes;
 using namespace firevision;
 
-MachineSignalThread::MachineSignalThread()
-    : Thread("MachineSignal", Thread::OPMODE_WAITFORWAKEUP),
-      VisionAspect(VisionAspect::CYCLIC),
+MachineSignalPipelineThread::MachineSignalPipelineThread()
+    : Thread("MachineSignal", Thread::OPMODE_CONTINUOUS),
+      VisionAspect(VisionAspect::CONTINUOUS),
       ConfigurationChangeHandler(CFG_PREFIX)
 {
+  new_data_ = false;
+
   cam_width_ = 0;
   cam_height_ = 0;
   cfg_light_on_threshold_ = 0;
   camera_ = NULL;
+
+  time_wait_ = NULL;
+  cfg_fps_ = 0;
+  desired_frametime_ = 0;
 
   cfy_ctxt_red_.colormodel = NULL;
   cfy_ctxt_red_.classifier = NULL;
@@ -77,16 +83,15 @@ MachineSignalThread::MachineSignalThread()
   combined_colormodel_ = NULL;
   last_second_ = NULL;
   buflen_ = 0;
-  bb_signal_compat_ = NULL;
   bb_delivery_switch_ = NULL;
   bb_enable_switch_ = NULL;
   cfg_enable_switch_ = false;
   cfg_delivery_mode_ = delivery_switch_t_::AUTO;
 }
 
-MachineSignalThread::~MachineSignalThread() {}
+MachineSignalPipelineThread::~MachineSignalPipelineThread() {}
 
-void MachineSignalThread::setup_color_classifier(color_classifier_context_t_ *color_data)
+void MachineSignalPipelineThread::setup_color_classifier(color_classifier_context_t_ *color_data)
 {
   delete color_data->classifier;
   delete color_data->colormodel;
@@ -116,7 +121,7 @@ void MachineSignalThread::setup_color_classifier(color_classifier_context_t_ *co
 
 
 
-void MachineSignalThread::init()
+void MachineSignalPipelineThread::init()
 {
   // Configure camera
   cfg_camera_ = config->get_string(CFG_PREFIX "/camera");
@@ -184,10 +189,12 @@ void MachineSignalThread::init()
   cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
   cfg_roi_max_width_ratio_ = config->get_float(CFG_PREFIX "/roi_max_r2g_width_ratio");
   cfg_roi_xalign_ = config->get_float(CFG_PREFIX "/roi_xalign_by_width");
+  cfg_roi_green_horizon = config->get_uint(CFG_PREFIX "/roi_green_horizon");
   cfg_tuning_mode_ = config->get_bool(CFG_PREFIX "/tuning_mode");
   cfg_max_jitter_ = config->get_float(CFG_PREFIX "/max_jitter");
   cfg_draw_processed_rois_ = config->get_bool(CFG_PREFIX "/draw_processed_rois");
   cfg_enable_switch_ = config->get_bool(CFG_PREFIX "/start_enabled");
+  cfg_fps_ = config->get_uint(CFG_PREFIX "/fps");
 
   std::string delivery_mode = config->get_string(CFG_PREFIX "/delivery_mode");
   if (delivery_mode == "on") cfg_delivery_mode_ = delivery_switch_t_::ON;
@@ -231,20 +238,13 @@ void MachineSignalThread::init()
   black_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
   // Initialize frame rate detection & buffer lengths for blinking detection
-  uint loop_time = config->get_uint("/fawkes/mainapp/desired_loop_time");
-  float fps = 1 / ((float)loop_time / 1000000.0);
-  buflen_ = (unsigned int) ceil(fps/3) + 1;
+  buflen_ = (unsigned int) ceil(cfg_fps_/4) + 1;
+  desired_frametime_ = 1/(double)cfg_fps_;
+  time_wait_ = new TimeWait(clock, (long int)(1000000 * desired_frametime_));
   buflen_ += 1 - (buflen_ % 2); // make sure buflen is uneven
   logger->log_info(name(), "Buffer length: %d", buflen_);
   last_second_ = new Time(clock);
 
-  // Open required blackboard interfaces
-  for (int i = 0; i < MAX_SIGNALS; i++) {
-    std::string iface_name = "machine_signal_";
-    iface_name += std::to_string(i);
-    bb_signal_states_.push_back(blackboard->open_for_writing<RobotinoLightInterface>(iface_name.c_str()));
-  }
-  bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>("Light_State");
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("light_front_switch");
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_delivery_switch_ = blackboard->open_for_writing<SwitchInterface>("machine_signal_delivery_mode");
@@ -253,7 +253,7 @@ void MachineSignalThread::init()
 }
 
 
-void MachineSignalThread::setup_camera()
+void MachineSignalPipelineThread::setup_camera()
 {
   camera_ = vision_master->register_for_camera(cfg_camera_.c_str(), this);
   cam_width_ = camera_->pixel_width();
@@ -264,7 +264,7 @@ void MachineSignalThread::setup_camera()
 }
 
 
-void MachineSignalThread::finalize()
+void MachineSignalPipelineThread::finalize()
 {
 #ifdef __FIREVISION_CAMS_FILELOADER_H_
   camera_->dispose_buffer();
@@ -288,12 +288,6 @@ void MachineSignalThread::finalize()
 
   vision_master->unregister_thread(this);
 
-  for (std::vector<RobotinoLightInterface *>::iterator bb_it = bb_signal_states_.begin();
-      bb_it != bb_signal_states_.end(); bb_it++) {
-    blackboard->close(*bb_it);
-  }
-  blackboard->close(bb_signal_compat_);
-
   delete shmbuf_;
   delete shmbuf_cam_;
 
@@ -309,9 +303,43 @@ void MachineSignalThread::finalize()
   delete color_filter_;
 }
 
-
-void MachineSignalThread::loop()
+bool MachineSignalPipelineThread::lock_if_new_data()
 {
+  data_mutex_.lock();
+  if (new_data_) {
+    return true;
+  } else {
+    data_mutex_.unlock();
+    return false;
+  }
+}
+
+void MachineSignalPipelineThread::unlock()
+{
+  data_mutex_.unlock();
+}
+
+std::list<SignalState> &MachineSignalPipelineThread::get_known_signals()
+{
+  return known_signals_;
+}
+
+std::list<SignalState>::iterator MachineSignalPipelineThread::get_best_signal()
+{
+  return best_signal_;
+}
+
+void MachineSignalPipelineThread::loop()
+{
+  time_wait_->mark_start();
+
+  Time now(clock);
+  double frametime = now - last_second_;
+  last_second_ = &(last_second_->stamp());
+  if (frametime >= desired_frametime_ * 1.02) {
+    logger->log_error(name(), "Running too slow (%f sec/frame). Data will be bad!", frametime);
+  }
+
   while (!bb_enable_switch_->msgq_empty()) {
     if (SwitchInterface::DisableSwitchMessage *msg = bb_enable_switch_->msgq_first_safe(msg)) {
       cfg_enable_switch_ = false;
@@ -344,14 +372,6 @@ void MachineSignalThread::loop()
 
   std::list<ROI> *rois_R, *rois_G;
   MutexLocker lock(&cfg_mutex_);
-
-  Time now(clock);
-  double frametime = now - last_second_;
-  last_second_ = &(last_second_->stamp());
-  if (frametime >= .125) {
-    logger->log_error(name(), "Running too slow (%f sec/frame). Ignoring this frame!", frametime);
-    return;
-  }
 
   // Reallocate classifiers if their config changed
   if (unlikely(cfg_changed_)) {
@@ -438,13 +458,16 @@ void MachineSignalThread::loop()
   }
 
   // Create and group ROIs that make up the red, yellow and green lights of a signal
-  std::list<signal_rois_t_> *signal_rois;
+  std::list<SignalState::signal_rois_t_> *signal_rois;
   if (at_delivery) {
     signal_rois = create_delivery_rois(rois_R);
   }
   else {
     signal_rois = create_signal_rois(rois_R, rois_G);
   }
+
+
+  data_mutex_.lock();
 
   // Reset all known signals to not-seen
   for (std::list<SignalState>::iterator known_signal = known_signals_.begin();
@@ -455,10 +478,10 @@ void MachineSignalThread::loop()
   if (!rois_R->empty()) {
 
     // Go through all signals from this frame...
-    { std::list<signal_rois_t_>::iterator signal_it = signal_rois->begin();
+    { std::list<SignalState::signal_rois_t_>::iterator signal_it = signal_rois->begin();
     for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); ++i) {
       try {
-        frame_state_t_ frame_state({
+        SignalState::frame_state_t_ frame_state({
           get_light_state(signal_it->red_roi),
               get_light_state(signal_it->yellow_roi),
               get_light_state(signal_it->green_roi),
@@ -481,7 +504,7 @@ void MachineSignalThread::loop()
         }
         else {
           // No historic match was found for the current signal
-          SignalState *cur_state = new SignalState(buflen_);
+          SignalState *cur_state = new SignalState(buflen_, logger);
           cur_state->update(frame_state, signal_it);
           known_signals_.push_front(*cur_state);
           delete cur_state;
@@ -510,7 +533,7 @@ void MachineSignalThread::loop()
       }
       catch (OutOfBoundsException &e){
         logger->log_error(name(), "Signal at %d,%d: Invalid ROI: %s",
-          signal_it->red_roi->start.x, signal_it->red_roi->start.y, e.what_no_backtrace());
+          signal_it->red_roi->start.x, signal_it->red_roi->start.y, e.what());
       }
       signal_it++;
     }
@@ -526,47 +549,27 @@ void MachineSignalThread::loop()
       roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
       roi_drawer_->apply();
     }
+
+    // Throw out the signals with the worst visibility histories
+    known_signals_.sort(sort_signal_states_by_visibility_);
+    while (known_signals_.size() > MAX_SIGNALS)
+      known_signals_.pop_back();
+
+    // Then sort geometrically
+    if (at_delivery) {
+      // Ordering is critical here
+      best_signal_ = known_signals_.begin();
+      known_signals_.sort(sort_signal_states_by_x_);
+    }
+    else {
+      // Ordering is critical here
+      known_signals_.sort(sort_signal_states_by_area_);
+      best_signal_ = known_signals_.begin();
+    }
+    new_data_ = true;
   }
+  data_mutex_.unlock();
 
-  // Throw out the signals with the worst visibility histories
-  known_signals_.sort(sort_signal_states_by_visibility_);
-  while (known_signals_.size() > MAX_SIGNALS)
-    known_signals_.pop_back();
-
-  std::list<SignalState>::iterator best_signal; // Goes into the backward compatible bb interface
-
-  // Then sort geometrically
-  if (at_delivery) {
-    // Ordering is critical here
-    best_signal = known_signals_.begin();
-    known_signals_.sort(sort_signal_states_by_x_);
-  }
-  else {
-    // Ordering is critical here
-    known_signals_.sort(sort_signal_states_by_area_);
-    best_signal = known_signals_.begin();
-  }
-
-  // Update blackboard with the current information
-  std::list<SignalState>::iterator known_signal = known_signals_.begin();
-  for (int i = 0; i < MAX_SIGNALS && known_signal != known_signals_.end(); i++) {
-    bb_signal_states_[i]->set_red(known_signal->red);
-    bb_signal_states_[i]->set_yellow(known_signal->yellow);
-    bb_signal_states_[i]->set_green(known_signal->green);
-    bb_signal_states_[i]->set_visibility_history(
-      known_signal->unseen > 1 ? -1 : known_signal->visibility);
-    bb_signal_states_[i]->set_ready(known_signal->ready);
-    bb_signal_states_[i]->write();
-
-    known_signal++;
-  }
-  bb_signal_compat_->set_red(best_signal->red);
-  bb_signal_compat_->set_yellow(best_signal->yellow);
-  bb_signal_compat_->set_green(best_signal->green);
-  bb_signal_compat_->set_visibility_history(
-    best_signal->unseen > 1 ? -1 : best_signal->visibility);
-  bb_signal_compat_->set_ready(best_signal->ready);
-  bb_signal_compat_->write();
 
   delete rois_R;
   delete rois_G;
@@ -574,6 +577,7 @@ void MachineSignalThread::loop()
 #ifndef __FIREVISION_CAMS_FILELOADER_H_
   camera_->dispose_buffer();
 #endif
+  time_wait_->wait();
 }
 
 /**
@@ -581,7 +585,7 @@ void MachineSignalThread::loop()
  * @param light the ROI to be considered
  * @return true if "lit" according to our criteria, false otherwise.
  */
-bool MachineSignalThread::get_light_state(firevision::ROI *light)
+bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
 {
   light_scangrid_->set_roi(light);
   light_scangrid_->reset();
@@ -608,11 +612,11 @@ bool MachineSignalThread::get_light_state(firevision::ROI *light)
  * @param rois_G A list of green ROIs
  * @return A list of ROIs in a struct that contains matching red, yellow and green ROIs
  */
-std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_signal_rois(
+std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_signal_rois(
     std::list<ROI> *rois_R,
     std::list<ROI> *rois_G)
 {
-  std::list<MachineSignalThread::signal_rois_t_> *rv = new std::list<MachineSignalThread::signal_rois_t_>();
+  std::list<SignalState::signal_rois_t_> *rv = new std::list<SignalState::signal_rois_t_>();
 
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
 
@@ -621,9 +625,24 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
     it_R->height = it_R->width;
 
     for (std::list<ROI>::iterator it_G = rois_G->begin(); it_G != rois_G->end(); ++it_G) {
+      unsigned int vspace = it_G->start.y - (it_R->start.y + it_R->height);
 
       if (roi_width_ok(it_G) && rois_x_aligned(it_R, it_G) &&
-          rois_vspace_ok(it_R, it_G)) {
+          it_G->start.y > cfg_roi_green_horizon) {
+
+        if ((it_G->start.x + it_G->width/10) - it_R->start.x > 0
+            && (it_R->start.x + it_R->width*1.1) - (it_G->start.x + it_G->width) > 0
+            && roi_aspect_ok(it_G)
+            && !rois_similar_width(it_R, it_G)
+            && vspace > 0 && vspace < it_R->height * 1.5) {
+          it_R->start.x = it_G->start.x;
+          it_R->width = it_G->width;
+          int r_end = it_G->start.y - it_G->height;
+          it_R->height = r_end - it_R->start.y;
+        }
+
+        if (!rois_vspace_ok(it_R, it_G)) continue;
+
         if (!rois_similar_width(it_R, it_G)) {
           int wdiff = it_G->width - it_R->width;
           int start_x = it_G->start.x + wdiff/2;
@@ -654,10 +673,10 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_sign
   return rv;
 }
 
-std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_delivery_rois(
+std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_delivery_rois(
   std::list<ROI> *rois_R)
 {
-  std::list<MachineSignalThread::signal_rois_t_> *rv = new std::list<MachineSignalThread::signal_rois_t_>();
+  std::list<SignalState::signal_rois_t_> *rv = new std::list<SignalState::signal_rois_t_>();
 
   std::list<ROI>::iterator it_R = rois_R->begin();
 
@@ -791,45 +810,45 @@ std::list<MachineSignalThread::signal_rois_t_> *MachineSignalThread::create_deli
   return rv;
 }
 
-bool MachineSignalThread::rois_delivery_zone(std::list<ROI>::iterator red, std::list<ROI>::iterator green) {
+bool MachineSignalPipelineThread::rois_delivery_zone(std::list<ROI>::iterator red, std::list<ROI>::iterator green) {
   return (green->contains(red->start.x, red->start.y)
             && green->contains(red->start.x + red->get_width(),
                 red->start.y + red->get_height()))
             || green->width > cam_width_/4;
 }
 
-bool MachineSignalThread::roi_width_ok(std::list<ROI>::iterator r)
+bool MachineSignalPipelineThread::roi_width_ok(std::list<ROI>::iterator r)
 { return r->width < cam_width_/4; }
 
-bool MachineSignalThread::rois_similar_width(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
+bool MachineSignalPipelineThread::rois_similar_width(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float width_ratio = (float)r1->width / (float)r2->width;
   return width_ratio >= 1/cfg_roi_max_width_ratio_ && width_ratio <= cfg_roi_max_width_ratio_;
 }
 
-bool MachineSignalThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
+bool MachineSignalPipelineThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float avg_width = (r1->width + r2->width) / 2.0f;
   int mid1 = r1->start.x + r1->width/2;
   int mid2 = r2->start.x + r2->width/2;
   return abs(mid1 - mid2) / avg_width < cfg_roi_xalign_;
 }
 
-bool MachineSignalThread::roi_aspect_ok(std::list<ROI>::iterator r) {
+bool MachineSignalPipelineThread::roi_aspect_ok(std::list<ROI>::iterator r) {
   float aspect_ratio = (float)r->width / (float)r->height;
   return aspect_ratio > 1/cfg_roi_max_aspect_ratio_ && aspect_ratio < cfg_roi_max_aspect_ratio_;
 }
 
-bool MachineSignalThread::rois_vspace_ok(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
+bool MachineSignalPipelineThread::rois_vspace_ok(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
   float avg_height = (r1->height + r2->height) / 2.0f;
   int dist = r2->start.y - (r1->start.y + r1->height);
   return dist > 0.6 * avg_height && dist < 1.7 * avg_height;
 }
 
 
-void MachineSignalThread::config_value_erased(const char *path) {}
-void MachineSignalThread::config_tag_changed(const char *new_tag) {}
-void MachineSignalThread::config_comment_changed(const Configuration::ValueIterator *v) {}
+void MachineSignalPipelineThread::config_value_erased(const char *path) {}
+void MachineSignalPipelineThread::config_tag_changed(const char *new_tag) {}
+void MachineSignalPipelineThread::config_comment_changed(const Configuration::ValueIterator *v) {}
 
-void MachineSignalThread::config_value_changed(const Configuration::ValueIterator *v)
+void MachineSignalPipelineThread::config_value_changed(const Configuration::ValueIterator *v)
 {
   if (v->valid()) {
     std::string path = v->path();
@@ -899,6 +918,8 @@ void MachineSignalThread::config_value_changed(const Configuration::ValueIterato
         cfg_max_jitter_ = v->get_float();
       else if (opt == "/draw_processed_rois")
         cfg_draw_processed_rois_ = v->get_bool();
+      else if (opt == "/roi_green_horizon")
+        cfg_roi_green_horizon = v->get_uint();
     }
   }
 }

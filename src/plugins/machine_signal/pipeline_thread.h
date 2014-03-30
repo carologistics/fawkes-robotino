@@ -44,10 +44,10 @@
 #include <string>
 #include <core/threading/mutex.h>
 #include <atomic>
-#include <interfaces/RobotinoLightInterface.h>
 #include <interfaces/SwitchInterface.h>
-#include <boost/circular_buffer.hpp>
+#include <utils/time/wait.h>
 
+#include "state.h"
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -68,7 +68,7 @@ class TransformListener;
 }
 }
 
-class MachineSignalThread :
+class MachineSignalPipelineThread :
   public fawkes::Thread,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
@@ -78,12 +78,18 @@ class MachineSignalThread :
   public fawkes::ClockAspect
 {
   public:
-    MachineSignalThread();
-    ~MachineSignalThread();
+    MachineSignalPipelineThread();
+    ~MachineSignalPipelineThread();
 
     virtual void init();
     virtual void loop();
     virtual void finalize();
+
+    bool lock_if_new_data();
+    void unlock();
+
+    std::list<SignalState> &get_known_signals();
+    std::list<SignalState>::iterator get_best_signal();
 
   private:
     typedef enum {
@@ -94,6 +100,11 @@ class MachineSignalThread :
 
     delivery_switch_t_ cfg_delivery_mode_;
     bool cfg_enable_switch_;
+
+    fawkes::Mutex data_mutex_;
+    bool new_data_;
+    double desired_frametime_;
+    fawkes::TimeWait *time_wait_;
 
     fawkes::SwitchInterface *bb_enable_switch_;
     fawkes::SwitchInterface *bb_delivery_switch_;
@@ -122,9 +133,12 @@ class MachineSignalThread :
     firevision::Camera *camera_;
     unsigned int cam_width_, cam_height_;
 
+    unsigned int cfg_fps_;
+
     std::atomic<float> cfg_roi_max_aspect_ratio_;
     std::atomic<float> cfg_roi_max_width_ratio_;
     std::atomic<float> cfg_roi_xalign_;
+    std::atomic<unsigned int> cfg_roi_green_horizon;
     std::atomic_bool cfg_tuning_mode_;
     std::atomic_bool cfg_draw_processed_rois_;
     std::atomic<float> cfg_max_jitter_;
@@ -170,14 +184,8 @@ class MachineSignalThread :
         }
     } sort_rois_by_x_;
 
-    typedef struct {
-        firevision::ROI *red_roi;
-        firevision::ROI *yellow_roi;
-        firevision::ROI *green_roi;
-    } signal_rois_t_;
-
     struct {
-        bool operator() (signal_rois_t_ &signal1, signal_rois_t_ &signal2) {
+        bool operator() (SignalState::signal_rois_t_ &signal1, SignalState::signal_rois_t_ &signal2) {
           return signal1.red_roi->start.x <= signal2.red_roi->start.x;
         }
     } sort_signal_rois_by_x_;
@@ -185,11 +193,11 @@ class MachineSignalThread :
     // All ROIs we want to see painted in the tuning buffer
     std::list<firevision::ROI> drawn_rois_;
 
-    std::list<signal_rois_t_> *create_signal_rois(
+    std::list<SignalState::signal_rois_t_> *create_signal_rois(
         std::list<firevision::ROI> *rois_R,
         std::list<firevision::ROI> *rois_G);
 
-    std::list<signal_rois_t_> *create_delivery_rois(std::list<firevision::ROI> *rois_R);
+    std::list<SignalState::signal_rois_t_> *create_delivery_rois(std::list<firevision::ROI> *rois_R);
 
 
     // Checks to weed out implausible ROIs
@@ -201,159 +209,6 @@ class MachineSignalThread :
     inline bool rois_vspace_ok(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
 
 
-    typedef struct {
-        bool red;
-        bool yellow;
-        bool green;
-        fawkes::upoint_t pos;
-    } frame_state_t_;
-
-    class SignalState {
-      private:
-        typedef struct {
-          boost::circular_buffer<bool> frames;
-          boost::circular_buffer<bool> state;
-        } light_history_t_;
-
-        light_history_t_ history_R_;
-        light_history_t_ history_Y_;
-        light_history_t_ history_G_;
-        unsigned int buflen;
-        unsigned int state_buflen;
-        bool update_states;
-
-        fawkes::RobotinoLightInterface::LightState
-        inline eval_history(light_history_t_ &history)
-        {
-          int count = 0;
-          for (boost::circular_buffer<bool>::const_iterator it = history.frames.begin();
-              it != history.frames.end(); it++) {
-            count += *it ? 1 : -1;
-          }
-
-          if (update_states && count < 0) {
-            history.state.push_front(false);
-          }
-          else if (update_states && count > 0) {
-            history.state.push_front(true);
-          }
-          /*
-          else {
-            history.state.push_front(history.state.front());
-          }*/
-
-          unsigned int num_changes = 0;
-          if (!history.state.empty()) {
-            boost::circular_buffer<bool>::const_iterator it = history.state.begin();
-            bool last_state = *it;
-            while (it != history.state.end()) {
-              if (*it != last_state) num_changes++;
-              last_state = *it;
-              ++it;
-            }
-          }
-
-          if (history.state.size() < state_buflen/2) {
-            return fawkes::RobotinoLightInterface::UNKNOWN;
-          }
-          if (num_changes >= 2) return fawkes::RobotinoLightInterface::BLINKING;
-          else return history.state.front() ?
-              fawkes::RobotinoLightInterface::ON :
-              fawkes::RobotinoLightInterface::OFF;
-        }
-
-      public:
-        fawkes::RobotinoLightInterface::LightState red;
-        fawkes::RobotinoLightInterface::LightState yellow;
-        fawkes::RobotinoLightInterface::LightState green;
-        fawkes::upoint_t pos;
-        int visibility;
-        bool ready;
-        int unseen;
-        unsigned int area;
-
-        SignalState(unsigned int buflen)
-        {
-          history_R_.frames.set_capacity(buflen);
-          history_Y_.frames.set_capacity(buflen);
-          history_G_.frames.set_capacity(buflen);
-          state_buflen = ceil((float)buflen/2);
-          history_R_.state.set_capacity(state_buflen);
-          history_Y_.state.set_capacity(state_buflen);
-          history_G_.state.set_capacity(state_buflen);
-          area = 0;
-          visibility = -1;
-          ready = false;
-          update_states = false;
-          unseen = 0;
-          red = fawkes::RobotinoLightInterface::UNKNOWN;
-          yellow = fawkes::RobotinoLightInterface::UNKNOWN;
-          green = fawkes::RobotinoLightInterface::UNKNOWN;
-          this->buflen = buflen;
-        }
-
-        inline void inc_unseen() {
-          if (++unseen > 2) {
-            if (visibility >= 0) visibility = -1;
-            else visibility--;
-            ready = false;
-          }
-        }
-
-        inline void update(frame_state_t_ const &s, std::list<signal_rois_t_>::iterator const &rois) {
-          area = rois->red_roi->width * rois->red_roi->height
-              + rois->yellow_roi->width * rois->yellow_roi->height
-              + rois->green_roi->width * rois->green_roi->height;
-          history_R_.frames.push_front(s.red);
-          history_Y_.frames.push_front(s.yellow);
-          history_G_.frames.push_front(s.green);
-          pos = s.pos;
-
-          unseen = 0;
-
-          fawkes::RobotinoLightInterface::LightState new_red, new_yellow, new_green;
-          new_red = eval_history(history_R_);
-          new_yellow = eval_history(history_Y_);
-          new_green = eval_history(history_G_);
-          // update states every second time only
-          update_states = !update_states;
-
-          // decrease visibility history if:
-          // - All lights are off or
-          // - One is unknown or
-          // - A light changes from something other than unknown
-          if (
-            (new_red == fawkes::RobotinoLightInterface::OFF
-                && new_yellow == fawkes::RobotinoLightInterface::OFF
-                && new_green == fawkes::RobotinoLightInterface::OFF
-            )
-            || new_red == fawkes::RobotinoLightInterface::UNKNOWN
-            || new_yellow == fawkes::RobotinoLightInterface::UNKNOWN
-            || new_green == fawkes::RobotinoLightInterface::UNKNOWN
-            || (red != fawkes::RobotinoLightInterface::UNKNOWN && new_red != red)
-            || (yellow != fawkes::RobotinoLightInterface::UNKNOWN && new_yellow != yellow)
-            || (green != fawkes::RobotinoLightInterface::UNKNOWN && new_green != green)
-          ) {
-            if (visibility >= 0) visibility = -1;
-            else visibility--;
-          }
-          else {
-            if (unlikely(visibility < 0)) visibility = 1;
-            else visibility++;
-          }
-          red = new_red;
-          yellow = new_yellow;
-          green = new_green;
-
-          ready = (visibility >= (long int) buflen);
-        }
-
-        inline float distance(frame_state_t_ const &s) {
-          int dx = s.pos.x - pos.x;
-          int dy = s.pos.y - pos.y;
-          return (float)sqrt(dx*dx + dy*dy);
-        }
-    };
 
     struct {
         bool operator() (firevision::ROI &r1, firevision::ROI &r2) {
@@ -390,8 +245,7 @@ class MachineSignalThread :
     bool get_light_state(firevision::ROI *light);
 
     std::list<SignalState> known_signals_;
-    std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
-    fawkes::RobotinoLightInterface * bb_signal_compat_;
+    std::list<SignalState>::iterator best_signal_;
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);
