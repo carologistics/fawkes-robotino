@@ -24,7 +24,6 @@ class SignalState {
         bool red;
         bool yellow;
         bool green;
-        fawkes::upoint_t pos;
     } frame_state_t_;
 
     typedef struct {
@@ -44,10 +43,13 @@ class SignalState {
     light_history_t_ history_G_;
     unsigned int buflen_;
     unsigned int state_buflen_;
+    std::string debug_R_;
+    std::string debug_Y_;
+    std::string debug_G_;
     fawkes::Logger *logger_;
 
     fawkes::RobotinoLightInterface::LightState
-    eval_history(light_history_t_ &history);
+    eval_history(light_history_t_ &history, std::string &debug_str);
 
   public:
     fawkes::RobotinoLightInterface::LightState red;
@@ -59,9 +61,12 @@ class SignalState {
     int unseen;
     unsigned int area;
 
+    char const *get_debug_R();
+    char const *get_debug_Y();
+    char const *get_debug_G();
     void inc_unseen();
     void update(frame_state_t_ const &s, std::list<signal_rois_t_>::iterator const &rois);
-    float distance(frame_state_t_ const &s);
+    float distance(std::list<signal_rois_t_>::iterator const &s);
 };
 
 #endif /* __PLUGINS_MACHINE_SIGNAL_STATE_H_ */

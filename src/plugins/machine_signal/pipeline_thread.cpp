@@ -485,7 +485,6 @@ void MachineSignalPipelineThread::loop()
           get_light_state(signal_it->red_roi),
               get_light_state(signal_it->yellow_roi),
               get_light_state(signal_it->green_roi),
-              signal_it->red_roi->start
         });
 
         // ... and match them to known signals based on the max_jitter tunable
@@ -493,7 +492,7 @@ void MachineSignalPipelineThread::loop()
         std::list<SignalState>::iterator best_match;
         for (std::list<SignalState>::iterator known_signal = known_signals_.begin();
             known_signal != known_signals_.end(); ++known_signal) {
-          float dist = known_signal->distance(frame_state);
+          float dist = known_signal->distance(signal_it);
           if (dist < dist_min) {
             best_match = known_signal;
             dist_min = dist;
@@ -566,6 +565,11 @@ void MachineSignalPipelineThread::loop()
       known_signals_.sort(sort_signal_states_by_area_);
       best_signal_ = known_signals_.begin();
     }
+    /*
+    logger->log_info(name(), best_signal_->get_debug_R());
+    logger->log_info(name(), best_signal_->get_debug_Y());
+    logger->log_info(name(), best_signal_->get_debug_G());
+    logger->log_info(name(), "=================");//*/
     new_data_ = true;
   }
   data_mutex_.unlock();
@@ -630,7 +634,9 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
 
     if (!(roi_width_ok(it_R))) continue;
 
-    it_R->height = it_R->width;
+    if (it_R->height > it_R->width) {
+      it_R->height = it_R->width;
+    }
 
     for (std::list<ROI>::iterator it_G = rois_G->begin(); it_G != rois_G->end(); ++it_G) {
       int vspace = it_G->start.y - (it_R->start.y + it_R->height);

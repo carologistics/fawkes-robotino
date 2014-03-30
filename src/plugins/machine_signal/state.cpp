@@ -43,25 +43,35 @@ void SignalState::inc_unseen() {
   }
 }
 
+char const *SignalState::get_debug_R() {
+  return debug_R_.c_str();
+}
 
-float SignalState::distance(frame_state_t_ const &s) {
-  int dx = s.pos.x - pos.x;
-  int dy = s.pos.y - pos.y;
+char const *SignalState::get_debug_Y() {
+  return debug_Y_.c_str();
+}
+
+char const *SignalState::get_debug_G() {
+  return debug_G_.c_str();
+}
+
+float SignalState::distance(std::list<signal_rois_t_>::iterator const &s) {
+  int dx = s->yellow_roi->start.x + s->yellow_roi->width/2 - pos.x;
+  int dy = s->yellow_roi->start.y + s->yellow_roi->width/2 - pos.y;
   return (float)sqrt(dx*dx + dy*dy);
 }
 
 
 fawkes::RobotinoLightInterface::LightState
-SignalState::eval_history(light_history_t_ &history)
+SignalState::eval_history(light_history_t_ &history, std::string &debug_string)
 {
   int count = 0;
-  //std::string bfr_debug("");
+  debug_string = "";
   for (boost::circular_buffer<bool>::const_iterator it = history.frames.begin();
       it != history.frames.end(); it++) {
-    //bfr_debug += *it ? "." : "O";
+    debug_string += *it ? "#" : ".";
     count += *it ? 1 : -1;
   }
-  //logger_->log_info("SignalState", "frames: %s", bfr_debug.c_str());
 
   if (count < 0) {
     history.state.push_front(false);
@@ -69,28 +79,27 @@ SignalState::eval_history(light_history_t_ &history)
   else if (count > 0) {
     history.state.push_front(true);
   }
-  /*
   else {
     history.state.push_front(history.state.front());
-  }*/
+  }
+
+  debug_string += " -> ";
 
   unsigned int num_changes = 0;
-  //bfr_debug = "";
   if (!history.state.empty()) {
     boost::circular_buffer<bool>::const_iterator it = history.state.begin();
     bool last_state = *it;
     while (it != history.state.end()) {
-      //bfr_debug += *it ? "." : "O";
+      debug_string += *it ? "#" : ".";
       if (*it != last_state) {
         num_changes++;
       }
       last_state = *it;
       ++it;
     }
-    //logger_->log_info("SignalState", "states: %s", bfr_debug.c_str());
   }
 
-  if (history.state.size() < state_buflen_/2) {
+  if (history.state.size() < state_buflen_) {
     return fawkes::RobotinoLightInterface::UNKNOWN;
   }
   if (num_changes >= 2) return fawkes::RobotinoLightInterface::BLINKING;
@@ -107,15 +116,15 @@ void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::ite
   history_R_.frames.push_front(s.red);
   history_Y_.frames.push_front(s.yellow);
   history_G_.frames.push_front(s.green);
-  pos = s.pos;
+  pos.x = rois->yellow_roi->start.x + rois->yellow_roi->width/2;
+  pos.y = rois->yellow_roi->start.y + rois->yellow_roi->width/2;
 
   unseen = 0;
 
   fawkes::RobotinoLightInterface::LightState new_red, new_yellow, new_green;
-  new_red = eval_history(history_R_);
-  new_yellow = eval_history(history_Y_);
-  new_green = eval_history(history_G_);
-  //logger_->log_info("SignalState", "========");
+  new_red = eval_history(history_R_, debug_R_);
+  new_yellow = eval_history(history_Y_, debug_Y_);
+  new_green = eval_history(history_G_, debug_G_);
 
   // decrease visibility history if:
   // - All lights are off or
@@ -144,6 +153,6 @@ void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::ite
   yellow = new_yellow;
   green = new_green;
 
-  ready = (visibility >= (long int) buflen_);
+  ready = (visibility >= (long int) state_buflen_);
 }
 
