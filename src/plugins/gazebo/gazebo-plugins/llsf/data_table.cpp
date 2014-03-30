@@ -101,10 +101,10 @@ Machine LlsfDataTable::get_machine(MachineName name)
  */
 Machine LlsfDataTable::get_machine(std::string machine)
 {
-  for(int i = M1; i <= T; i++)
+  for(int i = M1; i <= R2; i++)
   {
     //is it the right machine?
-    if(machines_[i].name_link.find(machine) != std::string::npos)
+    if(machines_[i].name_string.compare(machine) == 0)
     {
       return machines_[i];
     }
@@ -154,10 +154,10 @@ void LlsfDataTable::set_light_state(MachineName machine, LightState red,
 void LlsfDataTable::set_light_state(std::string machine, LightState red,
 		     LightState yellow, LightState green)
 {
-  for(int i = M1; i <= T; i++)
+  for(int i = M1; i <= R2; i++)
   {
     //is it the right machine?
-    if(machines_[i].name_link.find(machine) != std::string::npos)
+    if(machines_[i].name_string.find(machine) == 0)
     {
       set_light_state(machines_[i].name, red, yellow, green);
       return;
@@ -229,12 +229,28 @@ void LlsfDataTable::init_table()
   init_machine(M8, "llsf_field::M8::machine_link", "M8");
   init_machine(M9, "llsf_field::M9::machine_link", "M9");
   init_machine(M10, "llsf_field::M10::machine_link", "M10");
+  init_machine(M11, "llsf_field::M11::machine_link", "M11");
+  init_machine(M12, "llsf_field::M12::machine_link", "M12");
+  init_machine(M13, "llsf_field::M13::machine_link", "M13");
+  init_machine(M14, "llsf_field::M14::machine_link", "M14");
+  init_machine(M15, "llsf_field::M15::machine_link", "M15");
+  init_machine(M16, "llsf_field::M16::machine_link", "M16");
+  init_machine(M17, "llsf_field::M17::machine_link", "M17");
+  init_machine(M18, "llsf_field::M18::machine_link", "M18");
+  init_machine(M19, "llsf_field::M19::machine_link", "M19");
+  init_machine(M20, "llsf_field::M20::machine_link", "M20");
+  init_machine(M21, "llsf_field::M21::machine_link", "M21");
+  init_machine(M22, "llsf_field::M22::machine_link", "M22");
+  init_machine(M23, "llsf_field::M23::machine_link", "M23");
+  init_machine(M24, "llsf_field::M24::machine_link", "M24");
   init_machine(D1, "llsf_field::D1::machine_link", "D1");
   init_machine(D2, "llsf_field::D2::machine_link", "D2");
   init_machine(D3, "llsf_field::D3::machine_link", "D3");
+  init_machine(D4, "llsf_field::D4::machine_link", "D4");
+  init_machine(D5, "llsf_field::D5::machine_link", "D5");
+  init_machine(D6, "llsf_field::D6::machine_link", "D6");
   init_machine(R1, "llsf_field::R1::machine_link", "R1");
   init_machine(R2, "llsf_field::R2::machine_link", "R2");
-  init_machine(T, "llsf_field::TST::machine_link", "TST");
 
   for(int i = 0; i < NUMBER_PUCKS; i++)
   {
@@ -246,6 +262,7 @@ void LlsfDataTable::init_table()
 
 void LlsfDataTable::init_machine(MachineName number, std::string name_link, std::string name_string)
 {
+  printf("INIT!!!\n");
   machines_[number].name = number;
   machines_[number].name_link = name_link;
   machines_[number].name_string = name_string;

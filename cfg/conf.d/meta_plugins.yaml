@@ -17,4 +17,4 @@ fawkes/meta_plugins:
   gazsim-meta-vision: fvbase,gazsim-webcam,light_front,gazsim-puck-detection
   gazsim-meta-robotino-default-high-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-puck-detection,gazsim-light-front
   gazsim-meta-robotino-default-low-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-meta-vision
-  gazsim-organization: gazebo,gazsim-llsfrbcomm,gazsim-comm
+  gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm

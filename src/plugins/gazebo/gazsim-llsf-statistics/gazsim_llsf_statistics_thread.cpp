@@ -71,8 +71,10 @@ void LlsfStatisticsSimThread::init()
   run_ = config->get_uint("/gazsim/llsf-statistics/run");
 
   //init statistics
-  exp_points_ = 0;
-  prod_points_ = 0;
+  exp_points_cyan_ = 0;
+  prod_points_cyan_ = 0;
+  exp_points_magenta_ = 0;
+  prod_points_magenta_ = 0;
   written_ = false;
   
   mongodb_ = mongodb_client;
@@ -93,11 +95,13 @@ void LlsfStatisticsSimThread::on_game_state_msg(ConstGameStatePtr &msg)
   //logger->log_info(name(), "Got GameState message");
   if(msg->phase() == llsf_msgs::GameState::EXPLORATION)
   {
-    exp_points_ = msg->points();
+    exp_points_magenta_ = msg->points_cyan();
+    exp_points_cyan_ = msg->points_magenta();
   }
   else if(msg->phase() == llsf_msgs::GameState::PRODUCTION)
   {
-    prod_points_ = msg->points() - exp_points_;
+    prod_points_magenta_ = msg->points_magenta() - exp_points_magenta_;
+    prod_points_cyan_ = msg->points_cyan() - exp_points_cyan_;
   }
   else if(msg->phase() == llsf_msgs::GameState::POST_GAME)
   {
@@ -136,9 +140,12 @@ void LlsfStatisticsSimThread::write_statistics()
     BSONObjBuilder builder;
     builder.append("configuration", configuration_.c_str());
     builder.append("run", run_);
-    builder.append("exp-points", exp_points_);
-    builder.append("prod-points", prod_points_);
-    builder.append("total-points", exp_points_ + prod_points_);
+    builder.append("exp-points-cyan", exp_points_cyan_);
+    builder.append("prod-points-cyan", prod_points_cyan_);
+    builder.append("total-points-cyan", exp_points_cyan_ + prod_points_cyan_);
+    builder.append("exp-points-magenta", exp_points_magenta_);
+    builder.append("prod-points-magenta", prod_points_magenta_);
+    builder.append("total-points-magenta", exp_points_magenta_ + prod_points_magenta_);
     builder.append("logs_and_replay", replay_.c_str());
     builder.append("refbox_game_summery", refbox_score_log.c_str());
     BSONObj entry = builder.obj();

@@ -62,7 +62,7 @@ void LightControl::update()
 
   double time = world_->GetSimTime().Double();
   //wait until the world is completly loaded, otherwise the lights will spawn at (0,0)
-  if(time < 12)
+  if(time < 20)
   {
     return;
   }  

@@ -29,8 +29,8 @@
 #include <llsf_msgs/PuckInfo.pb.h>
 
 
-#define NUMBER_MACHINES 16
-#define NUMBER_PUCKS 20
+#define NUMBER_MACHINES 32
+#define NUMBER_PUCKS 44
 
 namespace gazebo
 {
@@ -51,12 +51,28 @@ namespace gazebo
     M8,
     M9,
     M10,
+    M11,
+    M12,
+    M13,
+    M14,
+    M15,
+    M16,
+    M17,
+    M18,
+    M19,
+    M20,
+    M21,
+    M22,
+    M23,
+    M24,
     D1,
     D2,
     D3,
+    D4,
+    D5,
+    D6,
     R1,
     R2,
-    T,
     NONE
   } MachineName;
 
@@ -165,8 +181,8 @@ namespace gazebo
 
 
     //data
-    Machine machines_[17]; //[MX] gets machine X, except for [0]
-    Puck pucks_[20];
+    Machine machines_[33]; //[MX] gets machine X, except for [0]
+    Puck pucks_[44];
 
     void init_table();
     void init_machine(MachineName number, std::string name_, std::string name_string);

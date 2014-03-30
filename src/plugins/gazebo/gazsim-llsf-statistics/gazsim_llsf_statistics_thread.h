@@ -82,7 +82,8 @@ class LlsfStatisticsSimThread
   //statistics
   std::string configuration_, replay_, namespace_, db_name_, collection_;
   int run_;
-  int exp_points_, prod_points_;
+  int exp_points_cyan_, prod_points_cyan_;
+  int exp_points_magenta_, prod_points_magenta_;
   bool written_;
 
   void write_statistics();
