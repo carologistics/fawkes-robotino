@@ -207,7 +207,7 @@ class MachineSignalPipelineThread :
     inline bool rois_x_aligned(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
     inline bool roi_aspect_ok(std::list<firevision::ROI>::iterator);
     inline bool rois_vspace_ok(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
-
+    inline bool roi1_oversize(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
 
 
     struct {

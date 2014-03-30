@@ -604,6 +604,14 @@ bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
   return false;
 }
 
+bool MachineSignalPipelineThread::roi1_oversize(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
+  return !rois_similar_width(r1, r2)
+      && roi_aspect_ok(r2)
+      && (r2->start.x + r2->width/10) - r1->start.x > 0
+      && (r1->start.x + r1->width*1.1) - (r2->start.x + r2->width) > 0;
+}
+
+
 /**
  * Look for red and green ROIs that are likely to be part of a single signal. A red and a green ROI are considered
  * a match if the red one is above the green one and there's space for a yellow one to fit in between. Unmatched ROIs
@@ -625,20 +633,24 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
     it_R->height = it_R->width;
 
     for (std::list<ROI>::iterator it_G = rois_G->begin(); it_G != rois_G->end(); ++it_G) {
-      unsigned int vspace = it_G->start.y - (it_R->start.y + it_R->height);
+      int vspace = it_G->start.y - (it_R->start.y + it_R->height);
 
       if (roi_width_ok(it_G) && rois_x_aligned(it_R, it_G) &&
           it_G->start.y > cfg_roi_green_horizon) {
 
-        if ((it_G->start.x + it_G->width/10) - it_R->start.x > 0
-            && (it_R->start.x + it_R->width*1.1) - (it_G->start.x + it_G->width) > 0
-            && roi_aspect_ok(it_G)
-            && !rois_similar_width(it_R, it_G)
+        if (roi1_oversize(it_R, it_G)
             && vspace > 0 && vspace < it_R->height * 1.5) {
           it_R->start.x = it_G->start.x;
           it_R->width = it_G->width;
           int r_end = it_G->start.y - it_G->height;
           it_R->height = r_end - it_R->start.y;
+        }
+
+        if (roi1_oversize(it_G, it_R)
+            && vspace > 0 && vspace < it_R->height * 1.5) {
+          it_G->start.x = it_R->start.x;
+          it_G->width = it_R->width;
+          it_G->height = it_R->height;
         }
 
         if (!rois_vspace_ok(it_R, it_G)) continue;
