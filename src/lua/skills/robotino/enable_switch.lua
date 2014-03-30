@@ -39,7 +39,7 @@ function SWITCH:init()
       ampel = ampelSwitch,
       laser = laserSwitch,
       motor = motorSwitch,
-      lightFront = lightFrontSwitch
+      lightFront = lightFrontSwitch,
       delivery = deliverySwitch
    }
    iface = ifmap[self.fsm.vars.iface]
