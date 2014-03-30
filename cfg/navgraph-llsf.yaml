@@ -146,15 +146,15 @@ nodes:
   - name: M15
     pos: [-2.13, 1.68]
     properties:
-      - orientation: 3.14
+      - orientation: 0
   - name: M16
     pos: [-1.23, 2.8]
     properties:
-      - orientation: 0
+      - orientation: 3.14
   - name: M17
     pos: [-1.23, 3.92]
     properties:
-      - orientation: 0
+      - orientation: 3.14
   - name: M18
     pos: [-2.8, 2.13]
     properties:
@@ -166,11 +166,11 @@ nodes:
   - name: M20
     pos: [-2.35, 5.04]
     properties:
-      - orientation: 0
+      - orientation: 3.14
   - name: M21
     pos: [-4.35, 1.68]
     properties:
-      - orientation: 3.14
+      - orientation: 0
   - name: M22
     pos: [-3.92, 3.25]
     properties:
