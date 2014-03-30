@@ -53,7 +53,6 @@ end
 local PLUGIN_LIGHT_TIMEOUT = 4 -- seconds
 local SETTLE_VISION_TIME = 1 --seconds
 local MAX_NUM_TRIES = 3
-fsm.vars.num_tries = 1
 
 local tfm = require("tf_module")
 
@@ -145,6 +144,7 @@ function INIT:init()
    delivery_mode:msgq_enqueue_copy(delivery_mode.EnableSwitchMessage:new())
    laser:msgq_enqueue_copy(laser.EnableSwitchMessage:new())
    light_switch:msgq_enqueue_copy(light_switch.EnableSwitchMessage:new())
+   self.fsm.vars.num_tries = 1
 end
 
 function CHECK_POSE:init()
