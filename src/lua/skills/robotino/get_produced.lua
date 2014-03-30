@@ -104,7 +104,7 @@ fsm:add_transitions{
 }
 
 function GOTO_MACHINE:init()
-   self.skills[1].place = self.fsm.vars.place
+   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
 end
 
 function ADJUST_POS:init()

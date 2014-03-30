@@ -35,6 +35,9 @@ documentation      = [==[Drive to Maschine and ged a consumed puck]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+--fawkes.load_yaml_navgraph already searches in the cfg directory
+graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
+
 function have_puck()
     local curDistance = sensor:distance(8)
     if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
@@ -55,7 +58,7 @@ fsm:define_states{ export_to=_M,
 }
 
 function GOTO_MASCHINE:init()
-   self.skills[1].place = self.fsm.vars.place
+   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
 end
 
 function ADJUST_POS:init()

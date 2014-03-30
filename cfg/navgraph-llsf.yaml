@@ -190,59 +190,111 @@ nodes:
 
 # Highway exits:
         
-  - name: M1W
+  - name: M1H
     pos: [0.56, 1.12]
-  - name: M2E
+    properties:
+      - highway_exit
+  - name: M2H
     pos: [0.56, 3.36]
-  - name: M3S
+    properties:
+      - highway_exit
+  - name: M3H
     pos: [2.24, 1.68]
-  - name: M4N
+    properties:
+      - highway_exit
+  - name: M4H
     pos: [1.12, 2.8]
-  - name: M5N
+    properties:
+      - highway_exit
+  - name: M5H
     pos: [1.12, 3.92]
-  - name: M6E
+    properties:
+      - highway_exit
+  - name: M6H
     pos: [2.8, 2.24]
-  - name: M7W
+    properties:
+      - highway_exit
+  - name: M7H
     pos: [2.8, 3.36]
-  - name: M8N
+    properties:
+      - highway_exit
+  - name: M8H
     pos: [2.24, 5.04]
-  - name: M9S
+    properties:
+      - highway_exit
+  - name: M9H
     pos: [4.48, 1.68]
-  - name: M10E
+    properties:
+      - highway_exit
+  - name: M10H
     pos: [3.92, 3.36]
-  - name: M11W
+    properties:
+      - highway_exit
+  - name: M11H
     pos: [3.92, 4.48]
-  - name: M12W
+    properties:
+      - highway_exit
+  - name: M12H
     pos: [5.04, 4.48]
-  - name: R1S
+    properties:
+      - highway_exit
+  - name: R1H
     pos: [1.12, 5.04]
+    properties:
+      - highway_exit
   
-  - name: M13W
+  - name: M13H
     pos: [-0.56, 1.12]
-  - name: M14E
+    properties:
+      - highway_exit
+  - name: M14H
     pos: [-0.56, 3.36]
-  - name: M15N
+    properties:
+      - highway_exit
+  - name: M15H
     pos: [-2.24, 1.68]
-  - name: M16S
+    properties:
+      - highway_exit
+  - name: M16H
     pos: [-1.12, 2.8]
-  - name: M17S
+    properties:
+      - highway_exit
+  - name: M17H
     pos: [-1.12, 3.92]
-  - name: M18E
+    properties:
+      - highway_exit
+  - name: M18H
     pos: [-2.8, 2.24]
-  - name: M19W
+    properties:
+      - highway_exit
+  - name: M19H
     pos: [-2.8, 3.36]
-  - name: M20S
+    properties:
+      - highway_exit
+  - name: M20H
     pos: [-2.24, 5.04]
-  - name: M21N
+    properties:
+      - highway_exit
+  - name: M21H
     pos: [-4.48, 1.68]
-  - name: M22E
+    properties:
+      - highway_exit
+  - name: M22H
     pos: [-3.92, 3.36]
-  - name: M23W
+    properties:
+      - highway_exit
+  - name: M23H
     pos: [-3.92, 4.48]
-  - name: M24W
+    properties:
+      - highway_exit
+  - name: M24H
     pos: [-5.04, 4.48]
-  - name: R2N
+    properties:
+      - highway_exit
+  - name: R2H
     pos: [-1.12, 5.04]
+    properties:
+      - highway_exit
 
 # special points:
         
@@ -250,23 +302,31 @@ nodes:
     pos: [4.8, 3.1]
     properties:
       - orientation: 0.0
-  - name: DZ1N
+  - name: DZ1H
     pos: [4.7, 3.1]
+    properties:
+      - highway_exit
   - name: deliver2
     pos: [-4.8, 3.1]
     properties:
       - orientation: 3.14
-  - name: DZ2S
+  - name: DZ2H
     pos: [-4.7, 3.1]
+    properties:
+      - highway_exit
         
-  - name: IA1
+  - name: IA1H
     pos: [1.68, 1.0]
+    properties:
+      - highway_exit
   - name: Ins1
     pos: [1.68, 0.80]
     properties:
       - orientation: -1.57
-  - name: IA2
+  - name: IA2H
     pos: [-1.68, 1.0]
+    properties:
+      - highway_exit
   - name: Ins2
     pos: [-1.68, 0.80]
     properties:
@@ -398,97 +458,97 @@ connections:
 
 # Highway connections:
 # horizontal
-  - [P11, M21N]
-  - [M21N, P12]
+  - [P11, M21H]
+  - [M21H, P12]
   - [P12, P13]
   - [P13, P14]
   - [P21, P22]
   - [P22, P23]
   - [P23, P24]
-  - [P31, M15N]
-  - [M15N, P32]
+  - [P31, M15H]
+  - [M15H, P32]
   - [P32, P33]
   - [P33, P34]
-  - [P34, M20S]
+  - [P34, M20H]
   - [P41, P42]
-  - [P42, M16S]
-  - [M16S, P43]
-  - [P43, M17S]
-  - [M17S, P44]
-  - [P44, R2N]
+  - [P42, M16H]
+  - [M16H, P43]
+  - [P43, M17H]
+  - [M17H, P44]
+  - [P44, R2H]
   - [P43, P44]
   - [P51, P52]
   - [P52, P53]
   - [P53, P54]
   - [P61, P62]
-  - [P62, M4N]
-  - [M4N, P63]
-  - [P63, M5N]
-  - [M5N, P64]
+  - [P62, M4H]
+  - [M4H, P63]
+  - [P63, M5H]
+  - [M5H, P64]
   - [P63, P64]
-  - [P64, R1S]
-  - [P71, M3S]
-  - [M3S, P72]
+  - [P64, R1H]
+  - [P71, M3H]
+  - [M3H, P72]
   - [P72, P73]
   - [P73, P74]
-  - [P74, M8N]
+  - [P74, M8H]
   - [P81, P82]
   - [P82, P83]
   - [P83, P84]
-  - [P91, M9S]
-  - [M9S, P92]
+  - [P91, M9H]
+  - [M9H, P92]
   - [P92, P93]
   - [P93, P94]
 #vertical
   - [P11, P21]
   - [P21, P31]
   - [P31, P41]
-  - [P41, M13W]
-  - [M13W, P51]
-  - [P51, M1W]
-  - [M1W, P61]
+  - [P41, M13H]
+  - [M13H, P51]
+  - [P51, M1H]
+  - [M1H, P61]
   - [P61, P71]
   - [P71, P81]
   - [P81, P91]
   
   - [P12, P22]
-  - [P22, M18E]
-  - [M18E, P32]
+  - [P22, M18H]
+  - [M18H, P32]
   - [P32, P42]
   - [P42, P52]
   - [P52, P62]
   - [P62, P72]
-  - [P72, M6E]
-  - [M6E, P82]
+  - [P72, M6H]
+  - [M6H, P82]
   - [P82, P92]
   
-  - [P13, M22E]
-  - [M22E, P23]
-  - [P23, M19W]
-  - [M19W, P33]
+  - [P13, M22H]
+  - [M22H, P23]
+  - [P23, M19H]
+  - [M19H, P33]
   - [P33, P43]
-  - [P43, M14E]
-  - [M14E, P53]
-  - [P53, M2E]
-  - [M2E, P63]
+  - [P43, M14H]
+  - [M14H, P53]
+  - [P53, M2H]
+  - [M2H, P63]
   - [P63, P73]
-  - [P73, M7W]
-  - [M7W, P83]
-  - [P83, M10E]
-  - [M10E, P93]
+  - [P73, M7H]
+  - [M7H, P83]
+  - [P83, M10H]
+  - [M10H, P93]
   
-  - [M24W, P14]
-  - [P14, M23W]
-  - [M23W, P24]
+  - [M24H, P14]
+  - [P14, M23H]
+  - [M23H, P24]
   - [P24, P34]
   - [P34, P44]
   - [P44, P54]
   - [P54, P64]
   - [P64, P74]
   - [P74, P84]
-  - [P84, M11W]
-  - [M11W, P94]
-  - [P94, M12W]
+  - [P84, M11H]
+  - [M11H, P94]
+  - [P94, M12H]
 
 # diagonal links
 
@@ -507,48 +567,48 @@ connections:
 
 # connection of machines
 
-  - [M1, M1W]
-  - [M2, M2E]
-  - [M3, M3S]
-  - [M4, M4N]
-  - [M5, M5N]
-  - [M6, M6E]
-  - [M7, M7W]
-  - [M8, M8N]
-  - [M9, M9S]
-  - [M10, M10E]
-  - [M11, M11W]
-  - [M12, M12W]
-  - [M13, M13W]
-  - [M14, M14E]
-  - [M15, M15N]
-  - [M16, M16S]
-  - [M17, M17S]
-  - [M18, M18E]
-  - [M19, M19W]
-  - [M20, M20S]
-  - [M21, M21N]
-  - [M22, M22E]
-  - [M23, M23W]
-  - [M24, M24W]
-  - [R1, R1S]
-  - [R2, R2N]
+  - [M1, M1H]
+  - [M2, M2H]
+  - [M3, M3H]
+  - [M4, M4H]
+  - [M5, M5H]
+  - [M6, M6H]
+  - [M7, M7H]
+  - [M8, M8H]
+  - [M9, M9H]
+  - [M10, M10H]
+  - [M11, M11H]
+  - [M12, M12H]
+  - [M13, M13H]
+  - [M14, M14H]
+  - [M15, M15H]
+  - [M16, M16H]
+  - [M17, M17H]
+  - [M18, M18H]
+  - [M19, M19H]
+  - [M20, M20H]
+  - [M21, M21H]
+  - [M22, M22H]
+  - [M23, M23H]
+  - [M24, M24H]
+  - [R1, R1H]
+  - [R2, R2H]
 
 # connection of special points
 
-  - [IA1, P61]
-  - [IA1, P71]
-  - [IA1, Ins1]
-  - [IA2, P31]
-  - [IA2, P41]
-  - [IA2, Ins2]
+  - [IA1H, P61]
+  - [IA1H, P71]
+  - [IA1H, Ins1]
+  - [IA2H, P31]
+  - [IA2H, P41]
+  - [IA2H, Ins2]
 
-  - [DZ1N, P92]
-  - [DZ1N, P93]
-  - [DZ1N, deliver1]
-  - [DZ2S, P12]
-  - [DZ2S, P13]
-  - [DZ2S, deliver2]
+  - [DZ1H, P92]
+  - [DZ1H, P93]
+  - [DZ1H, deliver1]
+  - [DZ2H, P12]
+  - [DZ2H, P13]
+  - [DZ2H, deliver2]
 
   - !dir [P51, WAIT_FOR_INS_1]
   - !dir [WAIT_FOR_INS_1, P61]
@@ -561,27 +621,27 @@ connections:
 
 # connection of Exploration points
 
-  - [ExpM1, M1W]
-  - [ExpM2, M2E]
-  - [ExpM3, M3S]
-  - [ExpM4, M4N]
-  - [ExpM5, M5N]
-  - [ExpM6, M6E]
-  - [ExpM7, M7W]
-  - [ExpM8, M8N]
-  - [ExpM9, M9S]
-  - [ExpM10, M10E]
-  - [ExpM11, M11W]
-  - [ExpM12, M12W]
-  - [ExpM13, M13W]
-  - [ExpM14, M14E]
-  - [ExpM15, M15N]
-  - [ExpM16, M16S]
-  - [ExpM17, M17S]
-  - [ExpM18, M18E]
-  - [ExpM19, M19W]
-  - [ExpM20, M20S]
-  - [ExpM21, M21N]
-  - [ExpM22, M22E]
-  - [ExpM23, M23W]
-  - [ExpM24, M24W]
+  - [ExpM1, M1H]
+  - [ExpM2, M2H]
+  - [ExpM3, M3H]
+  - [ExpM4, M4H]
+  - [ExpM5, M5H]
+  - [ExpM6, M6H]
+  - [ExpM7, M7H]
+  - [ExpM8, M8H]
+  - [ExpM9, M9H]
+  - [ExpM10, M10H]
+  - [ExpM11, M11H]
+  - [ExpM12, M12H]
+  - [ExpM13, M13H]
+  - [ExpM14, M14H]
+  - [ExpM15, M15H]
+  - [ExpM16, M16H]
+  - [ExpM17, M17H]
+  - [ExpM18, M18H]
+  - [ExpM19, M19H]
+  - [ExpM20, M20H]
+  - [ExpM21, M21H]
+  - [ExpM22, M22H]
+  - [ExpM23, M23H]
+  - [ExpM24, M24H]
