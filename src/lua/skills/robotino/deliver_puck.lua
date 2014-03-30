@@ -34,7 +34,8 @@ depends_interfaces = {
    { v = "light_switch", type="SwitchInterface", id="light_front_switch"},
    { v = "left_gate", type="RobotinoLightInterface", id="machine_signal_0"},
    { v = "middle_gate", type="RobotinoLightInterface", id="machine_signal_1"},
-   { v = "right_gate", type="RobotinoLightInterface", id="machine_signal_2"}
+   { v = "right_gate", type="RobotinoLightInterface", id="machine_signal_2"},
+   { v = "delivery_mode", type="SwitchInterface", id="machine_signal_delivery_mode"}
 }
 
 documentation     = [==[delivers already fetched puck to specified location]==]
@@ -140,16 +141,14 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+   --turn machine_signal on and into delivery mode
+   delivery_mode:msgq_enqueue_copy(delivery_mode.EnableSwitchMessage:new())
    laser:msgq_enqueue_copy(laser.EnableSwitchMessage:new())
+   light_switch:msgq_enqueue_copy(light_switch.EnableSwitchMessage:new())
 end
 
 function CHECK_POSE:init()
    self.skills[1].ori = 0
-end
-
-function DECIDE_GATE:init()
-   --TODO turn machine_signal on and into delivery mode
-   --light_switch:msgq_enqueue_copy(light_switch.EnableSwitchMessage:new())
 end
 
 function DRIVE_LEFT:init()
@@ -172,10 +171,6 @@ function RESTART:init()
    self.skills[1].place = self.fsm.vars.place
 end
 
-function CHECK_RESULT:init()
-   light_switch:msgq_enqueue_copy(light_switch.EnableSwitchMessage:new())
-end
-
 function SKILL_DEPOSIT:init()
    self.skills[1].mtype = "deliver"
 end
@@ -187,12 +182,16 @@ function GET_RID_OF_PUCK:init()
 end
 
 function FINAL:init()
-   --TODO turn machine_signal off and into normal mode
+   --turn machine_signal off and into normal mode
+   delivery_mode:msgq_enqueue_copy(delivery_mode.DisableSwitchMessage:new())
    laser:msgq_enqueue_copy(laser.DisableSwitchMessage:new())
+   light_switch:msgq_enqueue_copy(light_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
-   --TODO turn machine_signal off and into normal mode
+   --turn machine_signal off and into normal mode
+   delivery_mode:msgq_enqueue_copy(delivery_mode.DisableSwitchMessage:new())
    laser:msgq_enqueue_copy(laser.DisableSwitchMessage:new())
+   light_switch:msgq_enqueue_copy(light_switch.DisableSwitchMessage:new())
 end
 
