@@ -33,7 +33,8 @@ depends_interfaces = {
    {v = "pose", type="Position3DInterface", id="Pose"},
    {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
    {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" },
-   { v="light", type ="RobotinoLightInterface", id = "Light_State" },
+   {v = "light", type ="RobotinoLightInterface", id = "Light_State" },
+   {v = "lightswitch", type ="SwitchInterface", id = "light_front_switch" }
 }
 
 documentation      = [==[Move under the RFID Reader/Writer]==]
