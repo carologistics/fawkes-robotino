@@ -81,9 +81,12 @@ function producing()
       and light:red() == light.OFF
 end
 
+function sensors_fired()
+   return sensor:analog_in(4) > 9 or sensor:analog_in(5) > 9
+end
+
 fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
    {"SEE_AMPEL", JumpState},
-   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL", fail_to="FAILED"},
    {"APPROACH_AMPEL", SkillJumpState, skills={{motor_move}},
       final_to="CHECK_POSITION", fail_to="FAILED"},
    {"CHECK_POSITION", JumpState},
@@ -93,7 +96,7 @@ fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
 
 fsm:add_transitions{
    {"SEE_AMPEL", "FAILED", timeout=10, desc="No Ampel seen with laser"},
-   {"SEE_AMPEL", "TURN", cond=ampel, desc="Ampel seen with laser"},
+   {"SEE_AMPEL", "APPROACH_AMPEL", cond=ampel, desc="Ampel seen with laser"},
    {"CHECK_POSITION", "FINAL", cond="vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond="vars.correct_dir ~= 0"},
    {"CORRECT_POSITION", "FINAL", cond=rough_correct_done},
@@ -122,11 +125,6 @@ end
 function SEE_AMPEL:init()
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
    laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
-end
-
-function TURN:init()
-   local ampel = get_ampel()
-   self.skills[1].ori = math.atan2(ampel.y, ampel.x)
 end
 
 function APPROACH_AMPEL:init()
