@@ -60,7 +60,7 @@
 (defrule exp-determine-first-machine
   (phase EXPLORATION)
   (exp-row (row $?row))
-  (team-color ?team-color)
+  (team-color ?team-color&~nil)
   =>
   ;find first machine in row
   (bind ?first NONE)
