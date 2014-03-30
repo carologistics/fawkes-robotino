@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
 ---
 
 plugins/machine_signal:
-  camera: v4l2:front:device=/dev/light_front:size=640x480:awb=0:contrast=33:saturation=50:gain=70:white_balance_temperature=4000:exposure_auto_priority=0:exposure_auto=1:exposure_absolute=600
+  camera: v4l2:front:device=/dev/light_front:size=640x480:awb=0:contrast=33:saturation=30:gain=70:white_balance_temperature=4000:exposure_auto_priority=0:exposure_auto=1:exposure_absolute=600:sharpness=0
   
   #
   # Start running when the plugin is loaded.
@@ -44,7 +44,7 @@ plugins/machine_signal:
  
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
-  roi_max_r2g_width_ratio: 1.8
+  roi_max_r2g_width_ratio: 1.2
 
   roi_xalign_by_width: 1.0
 
@@ -61,7 +61,7 @@ plugins/machine_signal:
   red:
     reference_color: [0xff, 0, 0x20]
     chroma_thresh: 20
-    saturation_thresh: 38
+    saturation_thresh: 20
     min_points: 40
     basic_roi_size: 10
     neighborhood_min_match: 11
@@ -81,7 +81,7 @@ plugins/machine_signal:
   green:
     reference_color: [0x30, 0xff, 0x20]
     chroma_thresh: 6
-    saturation_thresh: 5
+    saturation_thresh: 10
     min_points: 50
     basic_roi_size: 10
     neighborhood_min_match: 6
@@ -96,7 +96,7 @@ plugins/machine_signal:
   bright_light:
     min_brightness: 170
     min_points: 20
-    neighborhood_min_match: 7
-    min_area_cover: 0.2
+    neighborhood_min_match: 2
+    min_area_cover: 0.1
 
 
