@@ -241,11 +241,10 @@
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
   ?tf <- (goto-target deliver1|deliver2)
-  ?gtdw <- (goto-dont-wait ?dont-wait)
   ?hf <- (holding ?was-holding)
   ;?lf <- (lights $?)
   =>
-  (retract ?hf ?tf ?gtdw)
+  (retract ?hf ?tf)
   (assert (holding NONE)
 	  (delivered ?was-holding)
   )

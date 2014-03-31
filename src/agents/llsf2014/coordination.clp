@@ -39,7 +39,7 @@
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
 				(resource (sym-cat PICK_PROD (nth$ 1 ?a))))
 	      (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
-				(resource (sym-cat BRING_ (nth$ 2 ?a) (nth$ 3 ?a))))
+				(resource (sym-cat BRING_ (nth$ 2 ?a) _ (nth$ 3 ?a))))
       )
     )
     (case recycle then
