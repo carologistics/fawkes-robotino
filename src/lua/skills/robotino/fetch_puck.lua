@@ -197,7 +197,7 @@ function DRIVE_SIDEWAYS_TO_PUCK:init()
 end
 
 function GRAB:init()
-   self.skills[1].x = math.sqrt(self.fsm.vars.target.x^2 + self.fsm.vars.target.y^2) - 0.3
+   self.skills[1].x = math.sqrt(self.fsm.vars.target.x^2 + self.fsm.vars.target.y^2) - 0.15
    self.skills[1].vel_trans = 0.25
    self.skills[1].tolerance = { x=0.01, y=0.01, ori=0.05 }
 end
