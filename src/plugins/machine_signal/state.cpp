@@ -57,7 +57,7 @@ char const *SignalState::get_debug_G() {
 
 float SignalState::distance(std::list<signal_rois_t_>::iterator const &s) {
   int dx = s->yellow_roi->start.x + s->yellow_roi->width/2 - pos.x;
-  int dy = s->yellow_roi->start.y + s->yellow_roi->width/2 - pos.y;
+  int dy = s->yellow_roi->start.y + s->yellow_roi->height/2 - pos.y;
   return (float)sqrt(dx*dx + dy*dy);
 }
 
@@ -117,7 +117,7 @@ void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::ite
   history_Y_.frames.push_front(s.yellow);
   history_G_.frames.push_front(s.green);
   pos.x = rois->yellow_roi->start.x + rois->yellow_roi->width/2;
-  pos.y = rois->yellow_roi->start.y + rois->yellow_roi->width/2;
+  pos.y = rois->yellow_roi->start.y + rois->yellow_roi->height/2;
 
   unseen = 0;
 
