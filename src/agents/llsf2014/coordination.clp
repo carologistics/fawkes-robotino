@@ -38,6 +38,8 @@
     (case pick-and-deliver then
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
 				(resource (sym-cat PICK_PROD (nth$ 1 ?a))))
+	      (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
+				(resource (sym-cat BRING_ (nth$ 2 ?a) (nth$ 3 ?a))))
       )
     )
     (case recycle then
@@ -81,7 +83,15 @@
   ;update worldmodel
   (do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
-    (assert (worldmodel-change (machine ?ntl:place) (change ADD_INCOMING) (value ?ntl:action)))
+    (if (eq ?ntl:place DELIVER)
+      then
+      (assert (worldmodel-change (order (nth$ 4 ?args)) (change ADD_IN_DELIVERY)
+				 (value (nth$ 2 ?args))
+				 (amount (nth$ 3 ?args))))
+      else
+      (assert (worldmodel-change (machine ?ntl:place) (change ADD_INCOMING)
+				 (value ?ntl:action)))
+    )
   )
   ;remove proposal
   (retract  ?pt)

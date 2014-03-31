@@ -39,6 +39,15 @@
     ;add sub-msg to worldmodel msg
     (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
   )
+
+  ;add worldmodel about orders
+  (delayed-do-for-all-facts ((?order order)) TRUE
+    ;construct submsg for each order
+    (bind ?o-msg (pb-create "llsf_msgs.WorldmodelOrder"))
+    (pb-set-field ?o-msg "id" (str-cat ?order:id))
+    (pb-set-field ?o-msg "in_delivery" (str-cat ?order:in-delivery))
+    (pb-add-list ?worldmodel "orders" ?o-msg) ; destroys ?o-msg
+  )
   (pb-broadcast ?worldmodel)
   (pb-destroy ?worldmodel)
 )
@@ -49,6 +58,7 @@
   (not (lock-role MASTER))
   =>
   ; (printout t "***** Received Worldmodel *****" crlf)
+  ;update worldmodel about machines
   (foreach ?m-msg (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
       (eq ?machine:name (sym-cat (pb-field-value ?m-msg "name")))
@@ -81,12 +91,22 @@
       )
     )
   )
+  ;update worldmodel about orders
+  (foreach ?o-msg (pb-field-list ?p "orders")
+    (do-for-fact ((?order order))
+        (eq ?order:id (pb-field-value ?o-msg "id"))
+
+      (modify ?order (in_delivery (pb-field-value ?o-msg "in_delivery")))
+    )
+  )
 )
 
 ;send worldmodel change
 (defrule worldmodel-sync-send-change
   (time $?now)
-  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value) (amount ?amount) (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)) (id ?id))
+  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value)
+			     (amount ?amount) (id ?id) (order ?order)
+			     (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)))
   (not (lock-role MASTER))
   =>
   ;(printout t "sending worldmodel change" crlf)
@@ -95,7 +115,12 @@
     (bind ?id (random 1 99999999))
   )
   (bind ?change-msg (pb-create "llsf_msgs.WorldmodelChange"))
-  (pb-set-field ?change-msg "machine" (str-cat ?m))
+  (if (neq ?m NONE) then 
+    (pb-set-field ?change-msg "machine" (str-cat ?m))
+  )
+  (if (neq ?order 0) then 
+    (pb-set-field ?change-msg "order" ?order)
+  )
   (pb-set-field ?change-msg "change" ?change)
   (pb-set-field ?change-msg "id" ?id)
   (if (member$ ?change (create$ ADD_LOADED_WITH REMOVE_LOADED_WITH)) then
@@ -109,6 +134,9 @@
   )
   (if (eq ?change SET_PROD_FINISHED_TIME) then
     (pb-set-field ?change-msg "prod_finished_time" ?amount)
+  )
+  (if (eq ?change ADD_IN_DELIVERY) then
+    (pb-set-field ?change-msg "in_delivery" ?amount)
   )
   (pb-broadcast ?change-msg)
   (pb-destroy ?change-msg)
@@ -138,48 +166,61 @@
     (retract ?arf)
     (assert (already-received-wm-changes (append$ ?arc ?id)))
     ;apply change
-    (do-for-fact ((?machine machine))
-        (eq ?machine:name (sym-cat (pb-field-value ?p "machine")))
+    (if (pb-has-field ?p "machine") then
+      (do-for-fact ((?machine machine))
+          (eq ?machine:name (sym-cat (pb-field-value ?p "machine")))
 
-      (switch (pb-field-value ?p "change")
-        (case ADD_LOADED_WITH then 
-          (modify ?machine (loaded-with (append$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+        (switch (pb-field-value ?p "change")
+          (case ADD_LOADED_WITH then 
+	    (modify ?machine (loaded-with (append$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+          )
+          (case REMOVE_LOADED_WITH then
+            (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+          )
+          (case ADD_INCOMING then 
+            (modify ?machine (incoming (append$ ?machine:incoming (pb-field-value ?p "incoming"))))
+          )
+          (case REMOVE_INCOMING then 
+            (modify ?machine (incoming (delete-member$ ?machine:incoming (pb-field-value ?p "incoming"))))
+          )
+          (case SET_NUM_CO then 
+            (modify ?machine (junk (pb-field-value ?p "num_CO")))
+          )
+          (case SET_PROD_FINISHED_TIME then 
+            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time")) 0))
+          )
+          (case REMOVE_PRODUCED then 
+            (modify ?machine (produced-puck NONE))
+          )
+          (case SET_PRODUCE_BLOCKED then 
+            (modify ?machine (produce-blocked TRUE))
+          )
+          (case SET_RECYCLE_BLOCKED then 
+            (modify ?machine (recycle-blocked TRUE))
+          )
+          (case SET_DOUBTFUL_WORLDMODEL then 
+	    (if ?machine:doubtful-worldmodel
+	      then
+	      ;second problem -> block this machine
+	      (modify ?machine (recycle-blocked TRUE))
+	      (modify ?machine (produce-blocked TRUE))
+	      else
+	      ;one time is ok, set warning
+	      (modify ?machine (doubtful-worldmodel TRUE))
+	    )
+          )
         )
-        (case REMOVE_LOADED_WITH then
-          (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
-        )
-        (case ADD_INCOMING then 
-          (modify ?machine (incoming (append$ ?machine:incoming (pb-field-value ?p "incoming"))))
-        )
-        (case REMOVE_INCOMING then 
-          (modify ?machine (incoming (delete-member$ ?machine:incoming (pb-field-value ?p "incoming"))))
-        )
-        (case SET_NUM_CO then 
-          (modify ?machine (junk (pb-field-value ?p "num_CO")))
-        )
-        (case SET_PROD_FINISHED_TIME then 
-          (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time")) 0))
-        )
-        (case REMOVE_PRODUCED then 
-          (modify ?machine (produced-puck NONE))
-        )
-        (case SET_PRODUCE_BLOCKED then 
-          (modify ?machine (produce-blocked TRUE))
-        )
-        (case SET_RECYCLE_BLOCKED then 
-          (modify ?machine (recycle-blocked TRUE))
-        )
-        (case SET_DOUBTFUL_WORLDMODEL then 
-	  (if ?machine:doubtful-worldmodel
-	    then
-	    ;second problem -> block this machine
-	    (modify ?machine (recycle-blocked TRUE))
-	    (modify ?machine (produce-blocked TRUE))
-	    else
-	    ;one time is ok, set warning
-	    (modify ?machine (doubtful-worldmodel TRUE))
-	  )
-        )
+      )
+    )
+    (if (pb-has-field ?p "order") then
+      (do-for-fact ((?order order))
+          (eq ?order:id (pb-field-value ?p "order"))
+
+        (switch (pb-field-value ?p "change")
+          (case ADD_IN_DELIVERY then 
+	    (modify ?order (in-delivery (pb-field-value ?p "in_delivery")))
+          )
+	)
       )
     )
   )

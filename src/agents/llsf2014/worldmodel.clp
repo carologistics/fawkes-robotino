@@ -370,6 +370,15 @@
   )
   (modify ?wmc (already-applied TRUE))
 )
+(defrule wm-process-wm-change-at-order-before-sending
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (order ?id) (change ADD_IN_DELIVERY)
+			     (value ?puck) (amount ?amount) (already-applied FALSE))
+  ?order <- (order (id ?id))
+  =>
+  (modify ?order (in-delivery ?amount))
+  (modify ?wmc (already-applied TRUE))
+)
 
 (defrule wm-update-pose
   (declare (salience ?*PRIORITY-CLEANUP*))

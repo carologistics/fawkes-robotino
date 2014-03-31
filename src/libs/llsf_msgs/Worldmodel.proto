@@ -28,6 +28,7 @@ enum WorldmodelChangeType {
   SET_PRODUCE_BLOCKED = 7;
   SET_RECYCLE_BLOCKED = 8;
   SET_DOUBTFUL_WORLDMODEL = 9;
+  ADD_IN_DELIVERY = 10;
 }
 
 message MachineState {
@@ -36,13 +37,25 @@ message MachineState {
     MSG_TYPE = 1339;
   }
 
-  required string    name     = 1;
+  optional string    name     = 1;
   repeated PuckState loaded_with  = 2;
   repeated IncomingAction incoming  = 3;
   required uint32 prod_finished_time = 4;
   optional PuckState puck_under_rfid = 5;
   required bool produce_blocked = 6;
   required bool recycle_blocked = 7;
+  optional uint32 order = 8;
+  optional uint32 in_delivery = 9;
+}
+
+message WorldmodelOrder {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 1345;
+  }
+
+  optional uint32 id = 1;
+  optional uint32 in_delivery = 2;
 }
 
 message Worldmodel {
@@ -55,6 +68,7 @@ message Worldmodel {
 
   // List of machines states
   repeated MachineState machines = 1;
+  repeated WorldmodelOrder orders = 2;
 }
 
 message WorldmodelChange {
