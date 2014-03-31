@@ -132,6 +132,9 @@ void RefboxComm::on_puck_info_msg(ConstPuckInfoPtr &msg)
   {
     llsf_msgs::Puck puck = msg->pucks(i);
     int id = puck.id() - 1;//-1 because the refbox starts with 1
-    table_->set_puck_state(id, puck.state());
+    if(id < NUMBER_PUCKS)
+    {
+      table_->set_puck_state(id, puck.state());
+    }
   }
 }

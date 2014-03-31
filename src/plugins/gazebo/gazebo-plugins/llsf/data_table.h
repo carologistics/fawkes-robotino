@@ -30,7 +30,7 @@
 
 
 #define NUMBER_MACHINES 32
-#define NUMBER_PUCKS 44
+#define NUMBER_PUCKS 22
 
 namespace gazebo
 {
@@ -194,7 +194,7 @@ namespace gazebo
 
     //data
     Machine machines_[33]; //[MX] gets machine X, except for [0]
-    Puck pucks_[44];
+    Puck pucks_[NUMBER_PUCKS];
 
     void init_table();
     void init_machine(MachineName number, std::string name_, std::string name_string);
