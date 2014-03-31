@@ -114,6 +114,14 @@ void RefboxComm::on_machine_info_msg(ConstMachineInfoPtr &msg)
       }
     }
     table_->set_light_state(machine.name(), red, yellow, green);
+    if(machine.team_color() == llsf_msgs::CYAN)
+    {
+      table_->set_machine_team(machine.name(), CYAN);
+    }
+    if(machine.team_color() == llsf_msgs::MAGENTA)
+    {
+      table_->set_machine_team(machine.name(), MAGENTA);
+    }
   }
 }
 

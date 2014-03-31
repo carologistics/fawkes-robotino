@@ -85,6 +85,15 @@ namespace gazebo
     BLINK
   } LightState;
 
+  /** Enum for team names
+   */
+  typedef enum Team
+  {
+    CYAN,
+    MAGENTA,
+    NIL
+  } Team;
+
   /** Struct for machine data
    */
   typedef struct Machine
@@ -95,6 +104,8 @@ namespace gazebo
     std::string name_link;
     ///name of the machine (string)
     std::string name_string;
+    ///which team the machine belongs to
+    Team team;
     ///x coordinate
     double x;
     ///y coordinate
@@ -167,6 +178,7 @@ namespace gazebo
 			 LightState yellow, LightState green);
     void set_light_state(std::string machine, LightState red,
 			 LightState yellow, LightState green);
+    void set_machine_team(std::string machine, Team team);
     void set_puck_pos(int puck, double x, double y);
     void set_puck_under_rfid(int puck, MachineName machine);
     void remove_puck_under_rfid(int puck, MachineName machine);

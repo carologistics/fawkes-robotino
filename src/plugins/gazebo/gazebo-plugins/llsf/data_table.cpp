@@ -165,6 +165,23 @@ void LlsfDataTable::set_light_state(std::string machine, LightState red,
   }
 }
 
+/** Setter for machine team
+ * @param machine Name of the machine (string)
+ * @param team name of the team
+ */
+void LlsfDataTable::set_machine_team(std::string machine, Team team)
+{
+  for(int i = M1; i <= R2; i++)
+  {
+    //is it the right machine?
+    if(machines_[i].name_string.find(machine) == 0)
+    {
+      machines_[i].team = team;
+      return;
+    }
+  }
+}
+
 /** Setter for puck position
  * @param puck Number of the puck
  * @param x x coordinate of position
@@ -272,6 +289,7 @@ void LlsfDataTable::init_machine(MachineName number, std::string name_link, std:
   machines_[number].red = BLINK;//OFF;
   machines_[number].yellow = BLINK;//OFF;
   machines_[number].green = BLINK;//OFF;
+  machines_[number].team = NIL;//OFF;
 }
 
 void LlsfDataTable::init_puck(int number, std::string name)
