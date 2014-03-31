@@ -1,4 +1,3 @@
-
 ;---------------------------------------------------------------------------
 ;  priorities.clp - Robotino agent decision testing -- priorities
 ;
@@ -26,7 +25,8 @@
   ?*PRIORITY-RECYCLE* = 90
   ?*PRIORITY-LOAD-T5-WITH-S0* = 80
   ?*PRIORITY-LOAD-T3_T4-WITH-S2* = 73
-  ?*PRIORITY-LOAD-T3_T4-WITH-S1* = 60
+  ?*PRIORITY-CONTINUE-T3_T4-WITH-S1* = 70
+  ?*PRIORITY-LOAD-T3_T4-WITH-S1* = 55
   ?*PRIORITY-LOAD-T3_T4-WITH-S0* = 50
   ?*PRIORITY-START-T3_T4-WITH-S0* = 75
   ?*PRIORITY-LOAD-T2-WITH-S1* = 70

@@ -207,6 +207,22 @@
   )
 )
 
+(defrule prod-load-continue-T3_T4-with-S1
+  (declare (salience ?*PRIORITY-CONTINUE-T3_T4-WITH-S1*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (machine (mtype T3|T4) (loaded-with $?l&:(and (member$ S2 ?l) (not (member$ S1 ?l)))) 
+	   (incoming $?i&~:(member$ BRING_S1 ?i)) (name ?name-T3_T4) (produced-puck NONE) (team ?team-color))
+  (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
+  (holding NONE|S0|S1)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S1*))))
+  =>
+  (printout t "PROD: Continue Loading T3/T4 " ?name-T3_T4 " with S1 after producing at T1" crlf)
+  (assert (proposed-task (name load-with-S1) (args (create$ ?name-T3_T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
+  )
+)
+
 (defrule prod-load-T3_T4-with-S2
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
   (phase PRODUCTION)
