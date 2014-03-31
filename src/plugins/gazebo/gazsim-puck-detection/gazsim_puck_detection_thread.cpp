@@ -62,6 +62,7 @@ void PuckDetectionSimThread::init()
   success_visibility_history_ = config->get_int("/gazsim/puck-detection/success-visibility-history");
   fail_visibility_history_ = config->get_int("/gazsim/puck-detection/fail-visibility-history");
   number_pucks_ = config->get_float("/gazsim/puck-detection/number-pucks");
+  use_switch_interface_ = config->get_bool("/gazsim/puck-detection/use-switch-interface");
   
   //open interfaces (puck enumeration starts with 1)
   for(int i = 0; i < number_pucks_; i++)
@@ -112,15 +113,15 @@ void PuckDetectionSimThread::loop()
   {
     new_data_ = false;
     //Only write the interface if the switch is enabled
-    if(!switch_if_->is_enabled())
+    if(!switch_if_->is_enabled() && use_switch_interface_)
       {
-	std::list<fawkes::Position3DInterface*>::iterator puck;
-	for(std::map<int, Position3DInterface*>::iterator it = map_pos_if_.begin(); it != map_pos_if_.end(); it++)
-	  {
-	    it->second->set_visibility_history(0);
-	    it->second->write();
-	  }
-	return;
+    	std::list<fawkes::Position3DInterface*>::iterator puck;
+    	for(std::map<int, Position3DInterface*>::iterator it = map_pos_if_.begin(); it != map_pos_if_.end(); it++)
+    	  {
+    	    it->second->set_visibility_history(0);
+    	    it->second->write();
+    	  }
+    	return;
       }
 
     for(int i = 0; i < last_msg_.positions_size(); i++)

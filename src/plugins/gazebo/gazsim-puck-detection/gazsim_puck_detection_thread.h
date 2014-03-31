@@ -80,6 +80,7 @@ class PuckDetectionSimThread
   int success_visibility_history_;
   int fail_visibility_history_;
   int number_pucks_;
+  bool use_switch_interface_;
 
   //copy of last msg to write the interface in the next loop
   llsf_msgs::PuckDetectionResult last_msg_;

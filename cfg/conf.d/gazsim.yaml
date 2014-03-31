@@ -51,10 +51,11 @@ gazsim:
     fail-visibility-history: -300
 
   puck-detection:
-    number-pucks: 20
+    number-pucks: 22
     max-distance: 1.5
     success-visibility-history: 300
-    fail-visibility-history: -300 
+    fail-visibility-history: -300
+    use-switch-interface: false
 
   robotino:
     gripper-laser-threshold: 0.18
