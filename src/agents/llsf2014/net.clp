@@ -115,3 +115,21 @@
   (retract ?pf) 
 )
 
+(defrule net-recv-order
+   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?p) (rcvd-via BROADCAST))
+   (team-color ?team)
+   =>
+   (foreach ?o (pb-field-list ?p "orders")
+     ;check if this order is for our team and if the order is new
+     (if (and (eq ?team (pb-field-value ?o "team_color"))
+	      (not (any-factp ((?order order)) (eq ?order:id (pb-field-value ?o "id")))))
+       then
+       (assert (order (id (pb-field-value ?o "id"))
+		      (product (sym-cat (pb-field-value ?o "product")))
+		      (quantity-requested (pb-field-value ?o "quantity_requested"))
+		      (begin (pb-field-value ?o "delivery_period_begin"))
+		      (end (pb-field-value ?o "delivery_period_end"))))
+     )
+   )
+   (retract ?pf)
+)

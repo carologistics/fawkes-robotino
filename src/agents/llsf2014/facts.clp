@@ -107,6 +107,14 @@
   (slot doubtful-worldmodel (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
 )
 
+(deftemplate order
+  (slot id (type INTEGER))
+  (slot product (type SYMBOL) (allowed-symbols P1 P2 P3))
+  (slot quantity-requested (type INTEGER))
+  (slot begin (type INTEGER))
+  (slot end (type INTEGER))
+)
+
 ;common template for a task
 (deftemplate task
   (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle))

@@ -53,10 +53,11 @@
   (declare (salience ?*PRIORITY-WM-LOW*))
   (state GOTO-FAILED)
   ?tf <- (goto-target ?name)
+  ?gtdw <- (goto-dont-wait ?dont-wait)
   ?hf <- (holding ?)
   (puck-in-gripper ?puck)
   =>
-  (retract ?tf)
+  (retract ?tf ?gtdw)
   (if (not ?puck) then
     (retract ?hf)
     (assert (holding NONE))
