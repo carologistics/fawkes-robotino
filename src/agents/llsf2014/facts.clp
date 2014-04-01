@@ -208,4 +208,6 @@
   ; Input storage per team color
   (input-storage CYAN Ins1)
   (input-storage MAGENTA Ins2)
+  (deliver CYAN deliver1)
+  (deliver MAGENTA deliver2)
 )
