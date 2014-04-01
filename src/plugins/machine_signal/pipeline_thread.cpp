@@ -808,13 +808,13 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       ROI check_black_bottom(*roi_Y);
       start_x = (long int)roi_Y->start.x - (long int)roi_Y->width/4;
       if (start_x < 0) start_x = 0;
-      width = roi_Y->width * 1.5;
+      width = roi_Y->width * 1.2;
       if (start_x + width > cam_width_) width = cam_width_ - start_x;
       start_y = roi_Y->start.y + roi_Y->height/2;
       height = roi_Y->height * 2.5;
       if (start_y + height > cam_height_) height = cam_height_ - start_y;
       check_black_bottom.set_start(start_x, start_y);
-      //check_black_bottom.set_width(width);
+      check_black_bottom.set_width(width);
       check_black_bottom.set_height(height);
       check_black_bottom.color = C_BACKGROUND;
 
@@ -826,13 +826,14 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
 
       if (!black_rois_bottom->empty()) {
         found_some_black = true;
+        black_rois_bottom->sort(sort_rois_by_y_);
         ROI black_bottom = *(black_rois_bottom->begin());
         if (unlikely(cfg_tuning_mode_)) {
           if (cfg_draw_processed_rois_) {
             drawn_rois_.push_back(black_bottom);
             delete black_rois_bottom;
           }
-          else drawn_rois_.insert(drawn_rois_.end(), black_rois_top->begin(), black_rois_top->end());
+          else drawn_rois_.insert(drawn_rois_.end(), black_rois_bottom->begin(), black_rois_bottom->end());
         }
 
         unsigned int height_adj = (black_bottom.start.y - roi_R->start.y) / 3;

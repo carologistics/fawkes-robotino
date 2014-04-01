@@ -143,8 +143,10 @@ class MachineSignalPipelineThread :
     std::atomic_bool cfg_tuning_mode_;
     std::atomic_bool cfg_draw_processed_rois_;
     std::atomic<float> cfg_max_jitter_;
-    std::atomic_bool cfg_debug_checks_;
+    std::atomic_bool cfg_debug_processing_;
     std::atomic_bool cfg_debug_blink_;
+
+    std::string debug_proc_string_;
 
     fawkes::Mutex cfg_mutex_;
     std::atomic_bool cfg_changed_;
@@ -189,6 +191,12 @@ class MachineSignalPipelineThread :
           return r1.start.x <= r2.start.x;
         }
     } sort_rois_by_x_;
+
+    struct {
+        bool operator() (firevision::ROI r1, firevision::ROI r2) {
+          return r1.start.y <= r2.start.y;
+        }
+    } sort_rois_by_y_;
 
     struct {
         bool operator() (SignalState::signal_rois_t_ &signal1, SignalState::signal_rois_t_ &signal2) {
