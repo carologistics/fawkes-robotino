@@ -6,7 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
 
 plugins/machine_signal:
   #camera: file:file:file=/home/ich/robotino/sampleImages/color.raw
-  camera: v4l2:front:device=/dev/light_front:size=640x480:awb=0:contrast=33:saturation=30:gain=90:white_balance_temperature=4000:exposure_auto_priority=0:exposure_auto=1:exposure_absolute=500:sharpness=0
+  camera: v4l2:front:device=/dev/light_front:size=640x480:awb=0:contrast=33:saturation=30:gain=80:white_balance_temperature=4000:exposure_auto_priority=0:exposure_auto=1:exposure_absolute=500:sharpness=0
   
   #
   # Start running when the plugin is loaded.
@@ -41,13 +41,13 @@ plugins/machine_signal:
   # Disable this to see the raw ROIs as they come out of the classifier
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
-  draw_processed_rois: true
+  draw_processed_rois: false
  
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
-  roi_max_r2g_width_ratio: 1.2
+  roi_max_r2g_width_ratio: 1.5
 
-  roi_xalign_by_width: 0.5
+  roi_xalign_by_width: 0.7
 
   # ROIs that exceed this aspect ratio are ignored.
   roi_max_aspect_ratio: 1.7
@@ -59,49 +59,59 @@ plugins/machine_signal:
   # Increase this if you want to try and detect signals while moving.
   max_jitter: 30.0
 
+  # Print frame state buffers to debug blinking detection
+  # Careful: VERY verbose, i.e. 4 lines per frame.
+  debug_blink: false
+
   red:
-    reference_color:   [0xff, 0, 0x0]
-    chroma_thresh:     [20]
-    saturation_thresh: [10]
-    luma_thresh:       [0]
+    reference_color:   [0xff, 0, 0x0,
+                        0xe0, 0, 0x40,
+                        0x40, 0, 0]
+    chroma_thresh:     [50, 40, 70]
+    saturation_thresh: [30, 40, 40]
+    luma_thresh:       [120, 100, 200]
     min_points: 40
     basic_roi_size: 10
-    neighborhood_min_match: 9
+    neighborhood_min_match: 7
     scangrid_x_offset: 2
     scangrid_y_offset: 2
 
   red_delivery:
-    reference_color:   [0xff, 0, 0x20]
-    chroma_thresh:     [8]
-    saturation_thresh: [50]
-    luma_thresh:       [0]
+    reference_color:   [0xff, 0, 0x20,
+                        0xd8, 0x05, 0x0b,
+                        0x43, 0x10, 0]
+    chroma_thresh:     [10, 20, 20]
+    saturation_thresh: [20, 30, 40]
+    luma_thresh:       [100, 200, 200]
     min_points: 40
     basic_roi_size: 10
-    neighborhood_min_match: 10
+    neighborhood_min_match: 8
     scangrid_x_offset: 2
     scangrid_y_offset: 2
 
   green:
     reference_color:   [0x00, 0xff, 0x0,
                         0x20, 0x35, 0x0,
-                        0x0,  0x70, 0x25]
-    chroma_thresh:     [20, 15, 15]
-    saturation_thresh: [20, 15, 15]
-    luma_thresh:       [150, 230, 200]
+                        0x1a, 0x55, 0x0,
+                        0x0,  0x70, 0x25,
+                        0x0a, 0x1b, 0]
+    chroma_thresh:     [20, 15, 15, 15, 30]
+    saturation_thresh: [20, 15, 15, 15, 7]
+    luma_thresh:       [150, 200, 200, 100, 200]
     min_points: 40
     basic_roi_size: 10
     neighborhood_min_match: 10
-    scangrid_x_offset: 2
+    scangrid_x_offset: 4
     scangrid_y_offset: 2
 
   black:
-    max_luminance: 25
+    max_luminance: 30
     min_points: 10
     neighborhood_min_match: 5
 
   bright_light:
-    min_brightness: 170
-    min_points: 20
+    min_brightness: 150
+    min_points: 10
     neighborhood_min_match: 2
     min_area_cover: 0.1
 
