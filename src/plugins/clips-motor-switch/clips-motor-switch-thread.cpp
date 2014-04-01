@@ -22,7 +22,7 @@
 #include "clips-motor-switch-thread.h"
 
 #include <core/threading/mutex_locker.h>
-#include <interfaces/SwitchInterface.h>
+#include <interfaces/MotorInterface.h>
 
 #include <clipsmm.h>
 
@@ -34,7 +34,7 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-ClipsMotorSwitchThread::ClipsMotorSwitchThread(std::string &env_name)
+ClipsMotorSwitchThread::ClipsMotorSwitchThread()
   : Thread("ClipsMotorSwitchThread", Thread::OPMODE_WAITFORWAKEUP),
     CLIPSFeature("motor-switch"), CLIPSFeatureAspect(this)
 {
@@ -52,15 +52,15 @@ void
 ClipsMotorSwitchThread::init()
 {
   cfg_iface_id_ = config->get_string("/clips-motor-switch/interface-id");
-  switch_if_ =
-    blackboard->open_for_reading<SwitchInterface>(cfg_iface_id_.c_str());
+  motor_if_ =
+    blackboard->open_for_reading<MotorInterface>(cfg_iface_id_.c_str());
 }
 
 
 void
 ClipsMotorSwitchThread::finalize()
 {
-  blackboard->close(switch_if_);
+  blackboard->close(motor_if_);
 }
 
 void
@@ -89,9 +89,9 @@ void
 ClipsMotorSwitchThread::clips_motor_enable(std::string env_name)
 {
   try {
-    SwitchInterface::EnableSwitchMessage *msg =
-      new SwitchInterface::EnableSwitchMessage();
-    switch_if_->msgq_enqueue(msg);
+    MotorInterface::SetMotorStateMessage *msg =
+      new MotorInterface::SetMotorStateMessage(MotorInterface::MOTOR_ENABLED);
+    motor_if_->msgq_enqueue(msg);
   } catch (Exception &e) {
     logger->log_warn(name(), "Cannot enable motor");
   }
@@ -101,9 +101,9 @@ void
 ClipsMotorSwitchThread::clips_motor_disable(std::string env_name)
 {
   try {
-    SwitchInterface::DisableSwitchMessage *msg =
-      new SwitchInterface::DisableSwitchMessage();
-    switch_if_->msgq_enqueue(msg);
+    MotorInterface::SetMotorStateMessage *msg =
+      new MotorInterface::SetMotorStateMessage(MotorInterface::MOTOR_DISABLED);
+    motor_if_->msgq_enqueue(msg);
   } catch (Exception &e) {
     logger->log_warn(name(), "Cannot disable motor");
   }

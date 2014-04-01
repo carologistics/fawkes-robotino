@@ -19,7 +19,7 @@ include $(BUILDSYSDIR)/clips.mk
 
 LIBS_clips_motor_switch = \
 	fawkescore fawkesutils fawkesaspects fawkesclipsaspect \
-	fawkesblackboard fawkesinterface SwitchInterface
+	fawkesblackboard fawkesinterface MotorInterface
 OBJS_clips_motor_switch = clips-motor-switch-plugin.o clips-motor-switch-thread.o
 
 OBJS_all = $(OBJS_clips_motor_switch)

@@ -36,8 +36,7 @@ class ClipsMotorSwitchPlugin : public fawkes::Plugin
    */
   ClipsMotorSwitchPlugin(Configuration *config) : Plugin(config)
   {
-    std::string cfg_clips_env = config->get_string("/clips-motor-switch/env-name");
-    thread_list.push_back(new ClipsMotorSwitchThread(cfg_clips_env));
+    thread_list.push_back(new ClipsMotorSwitchThread());
   }
 };
 
