@@ -9,6 +9,83 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; prioritize machines (which T2,T3/T4 to load first)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defrule prod-prioritize-T3-T4
+  (declare (salience ?*PRIORITY-WM*))
+  (team-color ?team&~nil)
+  (received-machine-info)
+  (machine (team ?team) (priority 0) (mtype T3|T4))
+  =>
+  ;if we are cyan sort machines from right to left, else the other way
+  (bind $?prios (create$))
+  (if (eq ?team CYAN)
+    then
+    (bind ?prios (create$ 4 3 2 1))
+    else
+    (bind ?prios (create$ 1 2 3 4))
+  )
+  ;find rightmost T3 or T4
+  (bind $?prioritized (create$))
+  (bind ?first-type NONE)
+  (do-for-fact ((?m machine))
+	         (and (eq ?m:team ?team)
+		      (or (eq ?m:mtype T3) (eq ?m:mtype T4))
+		      (not (any-factp ((?m2 machine))
+				        (and (eq ?m2:team ?team)
+					     (or (eq ?m2:mtype T3) (eq ?m2:mtype T4))
+					     (> ?m2:x ?m:x)))))
+    (modify ?m (priority (nth$ 1 ?prios)))
+    (bind ?prioritized (append$ ?prioritized ?m:name))
+    (bind ?first-type ?m:mtype)
+  )
+  ;find rightmost of other type
+  (if (eq ?first-type T3)
+      then (bind ?second-type T4)
+      else (bind ?second-type T3)
+  )
+  (do-for-fact ((?m machine))
+	         (and (eq ?m:team ?team)
+		      (eq ?m:mtype ?second-type)
+		      (not (any-factp ((?m2 machine))
+				        (and (eq ?m2:team ?team)
+					     (eq ?m2:mtype ?second-type)
+					     (> ?m2:x ?m:x)))))
+    (modify ?m (priority (nth$ 2 ?prios)))
+    (bind ?prioritized (append$ ?prioritized ?m:name))
+  )
+  ;add two left machines from right to left
+  (do-for-fact ((?m machine))
+	         (and (eq ?m:team ?team)
+		      (not (member$ ?m:name ?prioritized))
+		      (or (eq ?m:mtype T3) (eq ?m:mtype T4))
+		      (not (any-factp ((?m2 machine))
+				        (and (eq ?m2:team ?team)
+					     (not (member$ ?m2:name ?prioritized))
+					     (or (eq ?m2:mtype T3) (eq ?m2:mtype T4))
+					     (> ?m2:x ?m:x)))))
+    (modify ?m (priority (nth$ 3 ?prios)))
+    (bind ?prioritized (append$ ?prioritized ?m:name))
+  )
+  (do-for-fact ((?m machine))
+	         (and (eq ?m:team ?team)
+		      (not (member$ ?m:name ?prioritized))
+		      (or (eq ?m:mtype T3) (eq ?m:mtype T4)))
+    (modify ?m (priority (nth$ 4 ?prios)))
+    (bind ?prioritized (append$ ?prioritized ?m:name))
+  )
+)
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; decision rules for the next most important task to propose
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defrule prod-propose-task-idle
   (declare (salience ?*PRIORITY-LOW*))
   (phase PRODUCTION)

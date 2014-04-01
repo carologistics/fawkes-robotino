@@ -104,6 +104,7 @@
   (slot produce-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot recycle-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot doubtful-worldmodel (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot priority (type INTEGER) (default 0))
 )
 
 (deftemplate order

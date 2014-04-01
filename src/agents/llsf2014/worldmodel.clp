@@ -24,6 +24,7 @@
 	      (output (sym-cat (pb-field-value ?m "output"))))
     )
   )
+  (assert (received-machine-info))
 )
 
 (defrule wm-get-s0-final
