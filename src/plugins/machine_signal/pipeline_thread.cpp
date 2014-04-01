@@ -312,6 +312,9 @@ void MachineSignalPipelineThread::finalize()
     delete *it;
   }
 
+  blackboard->close(bb_enable_switch_);
+  blackboard->close(bb_delivery_switch_);
+
   vision_master->unregister_thread(this);
 
   delete shmbuf_;
