@@ -304,13 +304,21 @@
   )
 )
 
+;this rule decides which T3/T4 to load first
 (defrule prod-load-T3_T4-with-S2
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
+  ;T3/T4 to load
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
-	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4) (produced-puck NONE) (team ?team-color))
+	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4)
+	   (produced-puck NONE) (team ?team-color) (priority ?prio))
+  ;no T3/T4 with higher priority
+  (not (machine (mtype T3|T4) (loaded-with $?l2&~:(member$ S2 ?l2)) (team ?team-color)
+		(incoming $?i2&~:(member$ BRING_S2 ?i2)) (produced-puck NONE)
+		(priority ?p2&:(> ?p2 ?prio))))
+   ;T2 to get the S2 from
   (machine (mtype T2) (produced-puck S2) 
 	   (incoming $?i-T2&~:(member$ PICK_PROD ?i-T2)) (name ?name_T2) (team ?team-color))
   (not (proposed-task (name pick-and-load) (args $?args&:(subsetp ?args (create$ ?name_T2 ?name_T3T4))) (state rejected)))
@@ -364,7 +372,11 @@
   (state IDLE)
   (team-color ?team-color&~nil)
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
-	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4) (produced-puck NONE) (team ?team-color))
+	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4)
+	   (produced-puck NONE) (team ?team-color) (priority ?prio))
+  (not (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) (team ?team-color)
+		(incoming $?i&~:(member$ BRING_S2 ?i)) (produced-puck NONE)
+		(priority ?p2&:(> ?p2 ?prio))))
   (not (proposed-task (name load-with-S2) (args $?args&:(subsetp ?args (create$ ?name_T3T4))) (state rejected)))
   (holding S2)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-HOLDING-S2*))))
