@@ -18,9 +18,9 @@ BASEDIR = .
 SUBDIRS = fawkes src
 
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDSYSDIR)/root/linkscripts.mk
 include $(BUILDSYSDIR)/rules.mk
 include $(BUILDSYSDIR)/root/root.mk
+include $(BUILDSYSDIR)/root/linkscripts.mk
 
 src: fawkes
 
