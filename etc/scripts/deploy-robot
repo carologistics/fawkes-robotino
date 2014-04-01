@@ -1,0 +1,88 @@
+#!/bin/bash
+
+function find_basedir
+{
+  dir=$PWD
+  while [ "$dir" != "/" ]; do
+    if [ -e "$dir/etc/buildsys/base.mk" ]; then
+      echo -n $dir
+      break
+    fi
+    if [ -e "$dir/fawkes/etc/buildsys/base.mk" ]; then
+      echo -n $dir
+      break
+    fi
+    dir=$(readlink -e $dir/../)
+  done
+  echo -n ""
+}
+
+function print_usage
+{
+  echo "$1 [-b basedir] [-f fawkesdir] [-h] [-v] <robot-host>"
+  echo
+  echo "-b basedir	Use basedir as local Fawkes basedir"
+  echo "-f fawkesdir	Use fawkesdir as remote Fawkes dir"
+  echo "-v              Verbose output"
+  echo "-h		These usage instructions"
+}
+
+BASEDIR=$(find_basedir)
+FAWKES_PATH=fawkes-robotino
+
+RSYNC=rsync
+EXCLUDES=/cfg/host.yaml
+
+VERBOSE=
+while getopts "hvf:b:" OPTION
+do
+  case $OPTION in
+    h)
+      print_usage $0
+      exit 0
+      ;;
+    v)
+      VERBOSE=1
+      ;;
+    f)
+      FAWKES_PATH=$OPTARG
+      ;;
+    b)
+      BASEDIR=$OPTARG
+      ;;
+    ?)
+      ;;
+  esac
+done
+shift $((OPTIND-1))
+
+ROBOT=$1
+
+if [ -z "$ROBOT" ]; then
+	echo "Usage: $0 <robot-host>"
+	exit 1
+fi
+
+if [ -z "$BASEDIR" ]; then
+	echo "Could not determine basedir. Try -b parameter."
+	exit 2
+fi
+echo "[SYNC] $BASEDIR -> $ROBOT:$FAWKES_PATH"
+
+RSYNC_EXCLUDES=
+for e in $EXCLUDES; do
+	RSYNC_EXCLUDES="$RSYNC_EXCLUDES --exclude=$e"
+done
+RSYNC_PROGRESS=
+if [ -n "$VERBOSE" ]; then
+  RSYNC_PROGRESS="--progress"
+fi
+
+DO="$RSYNC -avz --delete $RSYNC_PROGRESS $RSYNC_EXCLUDES $BASEDIR/ $ROBOT:$FAWKES_PATH"
+
+if [ -n "$VERBOSE" ]; then
+  echo $DO
+fi
+
+$DO
+
