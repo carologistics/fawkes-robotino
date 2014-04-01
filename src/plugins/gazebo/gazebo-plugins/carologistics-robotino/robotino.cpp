@@ -137,12 +137,12 @@ void Robotino::OnUpdate(const common::UpdateInfo & /*_info*/)
     (*it)->update();
   }
 
-  double time = model_->GetWorld()->GetSimTime().Double();  
-  if(time - label_last_sent_ > 5.0)
-  {
-    spawn_label();
-    label_last_sent_ = time;
-  }
+  // double time = model_->GetWorld()->GetSimTime().Double();  
+  // if(time - label_last_sent_ > 5.0)
+  // {
+  //   spawn_label();
+  //   label_last_sent_ = time;
+  // }
 }
 
 /** What to do on resetting of the plugin

@@ -279,7 +279,6 @@ void LlsfDataTable::init_table()
 
 void LlsfDataTable::init_machine(MachineName number, std::string name_link, std::string name_string)
 {
-  printf("INIT!!!\n");
   machines_[number].name = number;
   machines_[number].name_link = name_link;
   machines_[number].name_string = name_string;
