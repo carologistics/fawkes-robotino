@@ -44,8 +44,8 @@
   (delayed-do-for-all-facts ((?order order)) TRUE
     ;construct submsg for each order
     (bind ?o-msg (pb-create "llsf_msgs.WorldmodelOrder"))
-    (pb-set-field ?o-msg "id" (str-cat ?order:id))
-    (pb-set-field ?o-msg "in_delivery" (str-cat ?order:in-delivery))
+    (pb-set-field ?o-msg "id" ?order:id)
+    (pb-set-field ?o-msg "in_delivery" ?order:in-delivery)
     (pb-add-list ?worldmodel "orders" ?o-msg) ; destroys ?o-msg
   )
   (pb-broadcast ?worldmodel)
@@ -96,7 +96,8 @@
     (do-for-fact ((?order order))
         (eq ?order:id (pb-field-value ?o-msg "id"))
 
-      (modify ?order (in_delivery (pb-field-value ?o-msg "in_delivery")))
+      (bind ?in-del (pb-field-value ?o-msg "in_delivery"))
+      (modify ?order (in-delivery ?in-del))
     )
   )
 )
