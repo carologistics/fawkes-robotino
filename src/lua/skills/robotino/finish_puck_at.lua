@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
-depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck","global_motor_move", "leave_area_recycle" }
+depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck","global_motor_move" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
    { v="light", type="RobotinoLightInterface", id="Light determined" },
 }
@@ -68,8 +68,10 @@ function orange_blinking()
       and light:red() == light.OFF
 end
 
-function at_recycle_machine()
-   return mtype == "RECYCLE"
+function prod_in_progress()
+   return light:green() == light.ON
+      and light:yellow() == light.ON
+      and light:red() == light.OFF
 end
 
 fsm:define_states{ export_to=_M,
@@ -86,11 +88,12 @@ fsm:define_states{ export_to=_M,
    {"PRODUCE_FAILED", JumpState},
    {"DECIDE_DEPOSIT", JumpState},
    {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
-   {"LEAVE_RECYCLE_AREA", SkillJumpState, skills={{leave_area_recycle}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="FINAL",
       fail_to="FAILED"},
    {"DEPOSIT_THEN_FAIL", SkillJumpState, skills={{deposit_puck}}, final_to="FAILED", fail_to="FAILED"},
-   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED" }
+   {"SKILL_DELIVER", SkillJumpState, skills={{deliver_puck}}, final_to="FINAL", fail_to="FAILED" },
+   {"LEAVE_PRODUCING_MACHINE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   -- TODO: Introdude safety check if machine is still producing after leaving it
 }
 
 fsm:add_transitions{
@@ -100,11 +103,12 @@ fsm:add_transitions{
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="vars.final_product and not orange_blinking()" },
-   { "DECIDE_DEPOSIT", "LEAVE_RECYCLE_AREA", cond=at_recycle_machine },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
+   { "DECIDE_DEPOSIT", "LEAVE_PRODUCING_MACHINE", cond=prod_in_progress, desc="leave machine to come back and pick up the produced puck later"},
    { "PRODUCE_FAILED", "SKILL_DRIVE_LEFT", cond="vars.final_product"},
-   { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true}
+   { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true},
+
 }
 
 function SKILL_TAKE_PUCK:init()
@@ -139,5 +143,9 @@ function SKILL_RFID:init()
 end
 function SKILL_WAIT_PRODUCE:init()
    self.skills[1].mtype = self.fsm.vars.mtype
+   self.skills[1].dont_wait = self.fsm.vars.dont_wait
 end
 
+function LEAVE_PRODUCING_MACHINE:init()
+   self.skills[1].x = -0.2
+end
