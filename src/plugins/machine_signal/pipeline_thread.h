@@ -112,11 +112,12 @@ class MachineSignalPipelineThread :
     typedef struct {
         firevision::ColorModelSimilarity *colormodel;
         firevision::SimpleColorClassifier *classifier;
-        firevision::ColorModelSimilarity::color_class_t *color_class;
+        std::vector<firevision::ColorModelSimilarity::color_class_t *> color_class;
         firevision::ScanlineGrid *scanline_grid;
         std::vector<unsigned int> cfg_ref_col;
-        int cfg_chroma_thresh;
-        int cfg_sat_thresh;
+        std::vector<int> cfg_chroma_thresh;
+        std::vector<int> cfg_sat_thresh;
+        std::vector<int> cfg_luma_thresh;
         firevision::color_t color_expect;
         unsigned int cfg_roi_min_points;
         unsigned int cfg_roi_basic_size;
@@ -145,6 +146,8 @@ class MachineSignalPipelineThread :
 
     fawkes::Mutex cfg_mutex_;
     std::atomic_bool cfg_changed_;
+    std::atomic_bool cfg_ref_col_changed, cfg_chroma_thresh_changed_,
+      cfg_sat_thresh_changed_, cfg_luma_thresh_changed_;
     std::atomic_bool cam_changed_;
 
     fawkes::Time *last_second_;
@@ -177,6 +180,7 @@ class MachineSignalPipelineThread :
 
     void setup_color_classifier(color_classifier_context_t_ *classifier);
     void setup_camera();
+    bool color_data_consistent(color_classifier_context_t_ *);
 
     struct {
         bool operator() (firevision::ROI r1, firevision::ROI r2) {
@@ -206,7 +210,7 @@ class MachineSignalPipelineThread :
     inline bool rois_similar_width(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
     inline bool rois_x_aligned(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
     inline bool roi_aspect_ok(std::list<firevision::ROI>::iterator);
-    inline bool rois_vspace_ok(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
+    inline bool rois_vspace_ok(firevision::ROI *r1, firevision::ROI *r2);
     inline bool roi1_oversize(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
 
 
