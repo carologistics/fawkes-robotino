@@ -29,7 +29,7 @@
   ?lock-get <- (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   ?lock-ref <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   ?wfl <- (wait-for-lock (res ?res) (state get))
-  ?exes <- (execute-skill ? ?)
+  ?exec <- (execute-skill ? ?)
   =>
   (retract ?sf1 ?sf2 ?wfl ?lock-get ?exec ?lock-ref)
   (modify ?t (state finished))
@@ -258,5 +258,41 @@
   =>
   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T5-WITH-S0*))
+  )
+)
+
+(defrule prod-deliver-unintentionally-holding-produced-puck
+  (declare (salience ?*PRIORITY-DELIVER-HOLDING*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (holding ?puck&P1|P2|P3)
+  (team-color ?team-color&~nil)
+  ; (game-time $?time)
+  ; (order (product P3) (quantity-requested ?qr) (id  ?order-id)
+  ; 	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+  ; 	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+  ; 	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
+  (not (proposed-task (name deliver) (args $?args&:(subsetp ?args (create$ ?puck))) (state rejected)))
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-HOLDING*))))
+  =>
+  (printout error "PROD: Deliver unintentionally holding produced puck" crlf)
+  (assert (proposed-task (name deliver) (priority ?*PRIORITY-DELIVER-HOLDING*)
+			 (args (create$ ?puck)))
+  )
+)
+
+(defrule prod-load-unintentionally-holding-S2
+  (declare (salience ?*PRIORITY-LOAD-HOLDING-S2*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (team-color ?team-color&~nil)
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
+	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4) (produced-puck NONE) (team ?team-color))
+  (not (proposed-task (name load-with-S2) (args $?args&:(subsetp ?args (create$ ?name_T3T4))) (state rejected)))
+  (holding S2)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-HOLDING-S2*))))
+  =>
+  (printout t "PROD: Loading T3/T4 " ?name_T3T4 " with S2" crlf)
+  (assert (proposed-task (name load-with-S2) (args (create$ ?name_T3T4)) (priority ?*PRIORITY-LOAD-HOLDING-S2*))
   )
 )

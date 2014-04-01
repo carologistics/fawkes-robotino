@@ -35,6 +35,10 @@
       (assert (needed-task-lock (action BRING_S1) (place (nth$ 1 ?a)) 
 				(resource (sym-cat BRING_S1 (nth$ 1 ?a)))))
     )
+    (case load-with-S2 then
+      (assert (needed-task-lock (action BRING_S2) (place (nth$ 1 ?a)) 
+				(resource (sym-cat BRING_S2 (nth$ 1 ?a)))))
+    )
     (case pick-and-deliver then
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
 				(resource (sym-cat PICK_PROD (nth$ 1 ?a))))
@@ -57,6 +61,9 @@
 	      (needed-task-lock (action (sym-cat BRING_ ?puck)) (place (nth$ 2 ?a))
 				(resource (sym-cat (sym-cat BRING_ ?puck) (nth$ 2 ?a))))
       )
+    )
+    (case deliver then
+      ;nothing has to be locked here because we want to get rid of an unintentionally holding puck
     )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )

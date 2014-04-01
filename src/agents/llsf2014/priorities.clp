@@ -32,18 +32,9 @@
   ?*PRIORITY-LOAD-T2-WITH-S1* = 70
   ?*PRIORITY-START-T2-WITH-S0* = 70
   ?*PRIORITY-LOAD-T2-WITH-S0* = 65
+  ?*PRIORITY-DELIVER-HOLDING* = 5
+  ?*PRIORITY-LOAD-HOLDING-S2* = 5
   
-
-  ; old production order priorities
-  ?*PRIORITY-DELIVER* =   100
-  ?*PRIORITY-P*       =   90
-  ?*PRIORITY-S2*      =   80
-  ?*PRIORITY-S1*      =   70
-  ?*PRIORITY-T5*      =    0
-  ?*PRIORITY-T4*      =    0
-  ?*PRIORITY-T3*      =   20
-  ?*PRIORITY-T2*      =   10
-  ?*PRIORITY-T1*      =    5
 
   ; tast execution order priorities
   ; (if the first subtasks are already complete, don't do them again)

@@ -279,6 +279,67 @@
   (assert (state TASK-FAILED))
 )
 
+;;;;;;;;;;;;;;
+;load-with-S2: (this happens only if we are unintentionally holding a S2, normally we use pick-and-load to load a S2)
+;;;;;;;;;;;;;;
+(defrule task-load-with-S2--start
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name load-with-S2) (args $?a) (state ~finished) (priority ?p))
+  (holding S2)
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
+  ?s <- (state TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill finish_puck_at ?m ?mtype true)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?m))
+  )
+  (modify ?t (state running))
+)
+(defrule task-load-with-S2--finish
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name load-with-S2) (args $?a) (state ~finished))
+  (holding NONE)
+  ;is the machine loaded with S2?
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (loaded-with $?lw&:(member$ S2 ?lw)))
+  ?s <- (state GOTO-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
+;;;;;;;;;;;;;;
+;deliver: (this happens only if we are unintentionally holding a produced puck, normally we use pick-and-deliver for delivery)
+;;;;;;;;;;;;;;
+(defrule task-deliver--start
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name deliver) (args $?a) (state ~finished) (priority ?p))
+  (holding P1|P2|P3)
+  ?s <- (state TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill deliver deliver1)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res deliver1))
+  )
+  (modify ?t (state running))
+)
+(defrule task-deliver--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name deliver) (args $?a) (state ~finished))
+  (holding NONE)
+  ?s <- (state GOTO-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fallback for unhandled situation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
