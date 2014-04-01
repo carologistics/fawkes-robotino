@@ -1,0 +1,245 @@
+;---------------------------------------------------------------------------
+;  worldmodel-synchronization.clp - Synchronize the worldmodel with the other robots
+;
+;  Created: Mon Mar 10 15:03:07 2014
+;  Copyright  2014  Frederik Zwilling
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+;publish worldmodel
+(defrule worldmodel-sync-publish-worldmodel
+  (time $?now)
+  ?s <- (timer (name send-worldmodel-sync) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
+  (lock-role MASTER)
+  =>
+  ; (printout t "sending worldmodel" crlf)
+  ;construct worldmodel msg
+  (bind ?worldmodel (pb-create "llsf_msgs.Worldmodel"))
+  (delayed-do-for-all-facts ((?machine machine)) TRUE
+    ;construct submsg for each machine
+    (bind ?m-msg (pb-create "llsf_msgs.MachineState"))
+    ;set name
+    (pb-set-field ?m-msg "name" (str-cat ?machine:name))
+    ;set loaded_with
+    (foreach ?puck-type (fact-slot-value ?machine loaded-with)
+      (pb-add-list ?m-msg "loaded_with" ?puck-type)
+    )
+    ;set incoming
+    (foreach ?incoming-action (fact-slot-value ?machine incoming)
+      (pb-add-list ?m-msg "incoming" ?incoming-action)
+    )
+    ;set production finished time
+    (pb-set-field ?m-msg "prod_finished_time" ?machine:final-prod-time)
+    ;set puck under rfid
+    (if (neq ?machine:produced-puck NONE) then
+      (pb-set-field ?m-msg "puck_under_rfid" ?machine:produced-puck)
+    )
+    (pb-set-field ?m-msg "produce_blocked" ?machine:produce-blocked)
+    (pb-set-field ?m-msg "recycle_blocked" ?machine:recycle-blocked)
+    ;add sub-msg to worldmodel msg
+    (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
+  )
+
+  ;add worldmodel about orders
+  (delayed-do-for-all-facts ((?order order)) TRUE
+    ;construct submsg for each order
+    (bind ?o-msg (pb-create "llsf_msgs.WorldmodelOrder"))
+    (pb-set-field ?o-msg "id" ?order:id)
+    (pb-set-field ?o-msg "in_delivery" ?order:in-delivery)
+    (pb-add-list ?worldmodel "orders" ?o-msg) ; destroys ?o-msg
+  )
+  (pb-broadcast ?worldmodel)
+  (pb-destroy ?worldmodel)
+)
+
+;receive worldmodel
+(defrule worldmodel-sync-receive-worldmodel
+  (protobuf-msg (type "llsf_msgs.Worldmodel") (ptr ?p) (rcvd-via BROADCAST))
+  (not (lock-role MASTER))
+  =>
+  ; (printout t "***** Received Worldmodel *****" crlf)
+  ;update worldmodel about machines
+  (foreach ?m-msg (pb-field-list ?p "machines")
+    (do-for-fact ((?machine machine))
+      (eq ?machine:name (sym-cat (pb-field-value ?m-msg "name")))
+      ;update loaded-with
+      (bind $?loaded-with (create$))
+      (progn$ (?puck-type (pb-field-list ?m-msg "loaded_with"))
+	(bind ?loaded-with (append$ ?loaded-with (sym-cat ?puck-type)))
+      )
+      ;update incoming
+      (bind $?incoming (create$))
+      (progn$ (?incoming-action (pb-field-list ?m-msg "incoming"))
+	(bind ?incoming (append$ ?incoming (sym-cat ?incoming-action)))
+      )
+      ;update production finished time
+      (bind ?prod-finished-time (pb-field-value ?m-msg "prod_finished_time"))
+      (if (pb-has-field ?m-msg "puck_under_rfid")
+	then (bind ?puck-under-rfid (pb-field-value ?m-msg "puck_under_rfid"))
+	else (bind ?puck-under-rfid NONE)
+      )
+      (bind ?produce-blocked (if (eq 0 (pb-field-value ?m-msg "produce_blocked"))
+				 then FALSE
+				 else TRUE))
+      (bind ?recycle-blocked (if (eq 0 (pb-field-value ?m-msg "recycle_blocked"))
+				 then FALSE
+				 else TRUE))
+      (modify ?machine (incoming ?incoming) (loaded-with ?loaded-with)
+	               (final-prod-time (create$ ?prod-finished-time 0))
+		       (produced-puck ?puck-under-rfid) (produce-blocked ?produce-blocked)
+		       (recycle-blocked ?recycle-blocked)
+      )
+    )
+  )
+  ;update worldmodel about orders
+  (foreach ?o-msg (pb-field-list ?p "orders")
+    (do-for-fact ((?order order))
+        (eq ?order:id (pb-field-value ?o-msg "id"))
+
+      (bind ?in-del (pb-field-value ?o-msg "in_delivery"))
+      (modify ?order (in-delivery ?in-del))
+    )
+  )
+)
+
+;send worldmodel change
+(defrule worldmodel-sync-send-change
+  (time $?now)
+  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value)
+			     (amount ?amount) (id ?id) (order ?order)
+			     (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)))
+  (not (lock-role MASTER))
+  =>
+  ;(printout t "sending worldmodel change" crlf)
+  ;set random id (needed by the master to determine if a change was already appied)
+  (if (eq ?id 0) then
+    (bind ?id (random 1 99999999))
+  )
+  (bind ?change-msg (pb-create "llsf_msgs.WorldmodelChange"))
+  (if (neq ?m NONE) then 
+    (pb-set-field ?change-msg "machine" (str-cat ?m))
+  )
+  (if (neq ?order 0) then 
+    (pb-set-field ?change-msg "order" ?order)
+  )
+  (pb-set-field ?change-msg "change" ?change)
+  (pb-set-field ?change-msg "id" ?id)
+  (if (member$ ?change (create$ ADD_LOADED_WITH REMOVE_LOADED_WITH)) then
+    (pb-set-field ?change-msg "loaded_with" ?value)
+  )
+  (if (member$ ?change (create$ ADD_INCOMING REMOVE_INCOMING)) then
+    (pb-set-field ?change-msg "incoming" ?value)
+  )
+  (if (eq ?change SET_NUM_CO) then
+    (pb-set-field ?change-msg "num_CO" ?amount)
+  )
+  (if (eq ?change SET_PROD_FINISHED_TIME) then
+    (pb-set-field ?change-msg "prod_finished_time" ?amount)
+  )
+  (if (eq ?change ADD_IN_DELIVERY) then
+    (pb-set-field ?change-msg "in_delivery" ?amount)
+  )
+  (pb-broadcast ?change-msg)
+  (pb-destroy ?change-msg)
+  (modify ?wmc (last-sent ?now) (id ?id))
+)
+
+;the master does not have to send the change, because it sends the whole worldmodel
+(defrule worldmodel-sync-retract-as-master
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value))
+  (lock-role MASTER)
+  =>
+  (printout warn "retract wmc" crlf)
+  (retract ?wmc)
+)
+
+;receive worldmodel change
+(defrule worldmodel-sync-receive-change
+  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChange") (ptr ?p) (rcvd-via BROADCAST))
+  (lock-role MASTER)
+  ?arf <- (already-received-wm-changes $?arc)
+  =>
+  (printout t "receiving worldmodel change" crlf)
+  ;ensure that this change was not already applied
+  (bind ?id (pb-field-value ?p "id"))
+  (if (not (member$ ?id ?arc)) then
+    (retract ?arf)
+    (assert (already-received-wm-changes (append$ ?arc ?id)))
+    ;apply change
+    (if (pb-has-field ?p "machine") then
+      (do-for-fact ((?machine machine))
+          (eq ?machine:name (sym-cat (pb-field-value ?p "machine")))
+
+        (switch (pb-field-value ?p "change")
+          (case ADD_LOADED_WITH then 
+	    (modify ?machine (loaded-with (append$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+          )
+          (case REMOVE_LOADED_WITH then
+            (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+          )
+          (case ADD_INCOMING then 
+            (modify ?machine (incoming (append$ ?machine:incoming (pb-field-value ?p "incoming"))))
+          )
+          (case REMOVE_INCOMING then 
+            (modify ?machine (incoming (delete-member$ ?machine:incoming (pb-field-value ?p "incoming"))))
+          )
+          (case SET_NUM_CO then 
+            (modify ?machine (junk (pb-field-value ?p "num_CO")))
+          )
+          (case SET_PROD_FINISHED_TIME then 
+            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time")) 0))
+          )
+          (case REMOVE_PRODUCED then 
+            (modify ?machine (produced-puck NONE))
+          )
+          (case SET_PRODUCE_BLOCKED then 
+            (modify ?machine (produce-blocked TRUE))
+          )
+          (case SET_RECYCLE_BLOCKED then 
+            (modify ?machine (recycle-blocked TRUE))
+          )
+          (case SET_DOUBTFUL_WORLDMODEL then 
+	    (if ?machine:doubtful-worldmodel
+	      then
+	      ;second problem -> block this machine
+	      (modify ?machine (recycle-blocked TRUE))
+	      (modify ?machine (produce-blocked TRUE))
+	      else
+	      ;one time is ok, set warning
+	      (modify ?machine (doubtful-worldmodel TRUE))
+	    )
+          )
+        )
+      )
+    )
+    (if (pb-has-field ?p "order") then
+      (do-for-fact ((?order order))
+          (eq ?order:id (pb-field-value ?p "order"))
+
+        (switch (pb-field-value ?p "change")
+          (case ADD_IN_DELIVERY then 
+	    (modify ?order (in-delivery (pb-field-value ?p "in_delivery")))
+          )
+	)
+      )
+    )
+  )
+  (retract ?pmsg)
+  ;send acknowledgment
+  (bind ?msg-ack (pb-create "llsf_msgs.WorldmodelChangeAck"))
+  (pb-set-field ?msg-ack "id" ?id)  
+  (pb-broadcast ?msg-ack)
+  (pb-destroy ?msg-ack)
+)
+
+(defrule worldmodel-sync-receive-change-ack
+  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChangeAck") (ptr ?p) (rcvd-via BROADCAST))
+  (not (lock-role MASTER))
+  =>
+  (do-for-fact ((?wmc worldmodel-change))
+	       (eq ?wmc:id (pb-field-value ?p "id"))
+    (retract ?wmc)
+  )
+  (retract ?pmsg)
+)

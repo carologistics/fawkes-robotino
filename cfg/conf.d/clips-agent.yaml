@@ -4,6 +4,9 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 clips-agent:
+  # If true, will enable watching of facts and rules
+  clips-debug: true
+
   # Directory where to look for CLIPS files
   clips-dirs: ["@BASEDIR@/src/agents/"]
 
@@ -13,40 +16,38 @@ clips-agent:
   unwatch-facts: ["time"]
   unwatch-rules: ["time-retract", "blackboard-read"]
 
-  clips-debug: true
+  # If true, simulate skills (assuming they always succeed) instead of
+  # actually executing the skills. The time indicates how long it should
+  # take to declare success on skill execution. Note that this cannot
+  # simulate side effects, like a called component writing to an interface
   skill-sim: false
-  skill-sim-time: 0.5
-  
-  # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
-  debug-level: 3
+  skill-sim-time: 2.0
 
-  # Automatically assert the (start) fact after successful initialization,
-  # otherwise wait until the an enalble message has been received
-  auto-start: false
+  # automatically pre-require redefine-warning feature? Enabling
+  # this in the plugin instead of in the initial code (init.clp) is
+  # beneficial because it already catches errors in said file.
+  request-redefine-warning-feature: true
 
   # If set to true, will trigger the assertion of a (time (now)) fact in
   # each loop. This can be used to trigger loop events in CLIPS.
   assert-time-each-loop: true
 
-  
+  # If set to true will force the acquisition of the skiller control.
+  # This is particularly useful to kick an SkillGUI which is holding
+  # the lock just due to an oversight.
+  steal-skiller-control: true
+ 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  agent: llsf2013/llsf2013
-  #agent: whack-a-mole/whack-a-mole-main
-  
-  llsf2013:
+  agent: llsf2014/llsf2014
+
+ 
+  llsf2014:
+    #agent-role defined in host.yaml (this is only the default!)
+    agent-role: nothing
+        
     enable-sim: false
 
-    #agent-role defined in host.yaml (this is only the default!)
-    agent-role: P3
-    #start-machine-exploration defined in host.yaml (this is only the default!)
-    start-machine-exploration: M8
-    
-    waiting-for-p1p2-prouction-point: WAIT_FOR_INS
-    waiting-for-p3-production-point: Ins
-    wait-for-ins-point: WAIT_FOR_INS
-    wait-for-deliver-point: WAIT_FOR_DELIVER
-    
     peer-address: 172.26.255.255
     #use this for talking to the refbox on the same laptop:
     #peer-recv-port: 4444
@@ -58,25 +59,43 @@ clips-agent:
 
     #Timeouts used in the locking:
     #Timeout a new started robot waits for a master before it gets the master itself
-    initial-master-timeout: 10.0
+    initial-master-timeout: 20.0
     #If a robot has not been seen this time it is assumed that he is lost
-    robot-timeout: 30.0
+    robot-timeout: 20.0
 
     #distance needed before a robot releases a lock
     release-distance: 0.5
 
-    dynamic-role-change:
-      enabled: true
-      # the p1p2 agent gets a p3 agent if he has finished the first p1/p2
-      p1p2-to-p3-after-delivery: false
-      # the p1p2 agent gets a p3 agent if there is not enough time left for an other p1/p2
-      p1p2-to-p3-time: true
-      # the p1p2, p1 and p2 agent gets a p3 agent if something in the production went wrong (yellow blinking for unknown reason)
-      p1p2-p1-p2-to-p3-after-fail: true
-      #estimated production durations from start in sec
-      production-durations:
-        p1p2: 420
+    waiting-points:
+      ins1: WAIT_FOR_INS_1
+      ins2: WAIT_FOR_INS_2
+      deliver1: WAIT_FOR_DELIVER_1
+      deliver2: WAIT_FOR_DELIVER_2
 
-    #recycle pucks to get s0
-    #possible values: no,ifpossible,afterdeliver
-    recycle: ifpossible
+    production-times:
+      t1-min: 3
+      t1-max: 8
+      t2-min: 15
+      t2-max: 25
+      t3-min: 40
+      t3-max: 60
+      t4-min: 40
+      t4-max: 60
+      t5-min: 20
+      t5-max: 40
+      recycle-min: 2
+      recycle-max: 2
+
+    exploration:      
+      #row defined in host.yaml (this is only the default!)
+      row: MID
+      
+      row-high: ["M12", "M11", "M8", "M5", "M17", "M20", "M23", "M24"]
+      row-mid: ["M10", "M7", "M4", "M2", "M14", "M16", "M19", "M22"]
+      row-low: ["M9", "M6", "M3", "M1", "M13", "M15", "M18", "M21"]
+
+      #the time in seconds to report all machines even if we are not prepared for production
+      latest-send-last-report-time: 225 # =3:45
+
+      needed-visibility-history: 15
+
