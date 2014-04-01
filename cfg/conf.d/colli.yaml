@@ -4,10 +4,10 @@
 plugins/colli:
 
   # Frequency in Hz of how often calli is called (deprecated; this is defined by fawkes main loop)
-  FREQUENCY: 10
+  frequency: 10
 
   # The maximum robot increasement of laser readings
-  MAX_ROBO_INCREASE: 0.04
+  max_robo_increase: 0.04
 
   # If you want to visualize the data continuously and not just when colli receives a new target, set this to true
   visualize_idle: true
@@ -18,11 +18,11 @@ plugins/colli:
   # Default security distance to keep to obstacles
   security_distance: 0.0
 
-  # Default maximum rotation velocity (in rad/s)
-  max_rotation: 0.8
+  # Default maximum translation velocity (in m/s)
+  max_velocity: 1.0 #0.8
 
-  # Default maximum velocity
-  max_velocity: 0.8
+  # Default maximum rotation velocity (in rad/s)
+  max_rotation: 1.8 #1.3
 
   # Default escaping behaviour (just enabled/disabled)
   escaping_enabled: true
@@ -33,28 +33,28 @@ plugins/colli:
   # Default behaviour, deciding if colli should adjust orientation when target is reached
   orient_at_target: true
 
-  # Default drive mode. It's an enum, see NavigatorInterface for details.
-  drive_mode: "SlowForward" #2
-
   # The minimum rotation speed (in rad/s). Used for rotating at target
   min_rot: 0.1
 
-  # The minimum distance to target, such that colli decides to drive straight to target
-  min_drive_distance: 0.08
+  # The minimum distance to target, such that colli decides to drive straight to target.
+  # This is the lowest threshold, anything below this and the colli won't move. This will also
+  # be used to check whether the colli has reached its target position.
+  min_drive_distance: 0.08 #0.1
 
   # The minimum distance to target in long distance, such that colli decides to drive straight to target.
   min_long_dist_drive: 0.15
 
   # The minimum distance to target in long distance, such that colli drives to a pre-position AND orients
   # towards the target, so that the robot can approach the target with the front.
-  min_long_dist_prepos: 1.5
+  min_long_dist_prepos: 5.0 #1.5 #2.1
 
-  # The minimum orientation difference, such that colli rotates (in rad)
+  # The minimum orientation difference, such that colli rotates when robot is at target position(in rad)
+  # No translation is executed at this point anymore.
   min_rot_distance: 0.1
 
   # If the target is "far" away (>= min_drive_rot_distance), we approach a pre-position to
   #  already adjust the orientation a little. This defines the distance to that pre-position.
-  pre_position_distance: 0.5
+  pre_position_distance: 0.5 #0.8
 
   interface:
     # ID of main navigator interface (this handles the incoming messages)
@@ -63,6 +63,11 @@ plugins/colli:
     motor: Robotino
     # ID of laser interface
     laser: Laser colli
+    # ID of colli target interface
+    colli: Colli target
+    # Maximum age (in seconds) of data for reading interfaces. If data is older than this, the colli_thread
+    #  assumes that there main_loop is delayed => abort movement
+    read_timeout: 1.0 #0.5
 
   frame:
     # base_link frame
@@ -76,98 +81,105 @@ plugins/colli:
     # subscribe to this topic to be able to set the target via rviz
     target_topic: /move_base_simple/goal
 
-  OccGrid:
-    # Occgrid height in m
-    HEIGHT: 5
-    # Occgrid width in m
-    WIDTH: 5
-    # Occgrid cell height in cm
-    CELL_HEIGHT: 5
-    # Occgrid cell width in cm
-    CELL_WIDTH: 5
+  occ_grid:
+    # Grid Dimensions (in m)
+    width: 6.5
+    height: 6.5
+    # Cell dimensions (in cm)
+    cell_width: 5
+    cell_height: 5
 
-  QuadraticMotorInstruct:
-    # Basic translation acceleration
-    BASIC_TRANS_ACC: 0.1 #0.23
-    # Basic translation deceleration
-    BASIC_TRANS_DEC: 0.1 #0.42
-    # Basic rotation acceleration
-    BASIC_ROT_ACC: 0.1 #0.23
-    # Basic rotation deceleration
-    BASIC_ROT_DEC: 0.1 #0.42
+  quadratic_motor_instruct:
+    # Translation acceleration/deceleration
+    trans_acc: 0.1
+    trans_dec: 0.1
+    # Rotation acceleration/deceleration
+    rot_acc: 0.2
+    rot_dec: 0.2
 
-  SlowDriveModule:
-    # Max translation velocity
-    MAX_TRANS: 1.0
-    # Max rotation velocity
-    MAX_ROT: 1.5
+  drive_mode:
+    # Default drive mode. It's an enum, see NavigatorInterface for details.
+    default: "SlowForward"
 
-  MediumDriveModule:
-    # Max translation velocity
-    MAX_TRANS: 2.0
-    # Max rotation velocity
-    MAX_ROT: 6.0
+    slow:
+      # Max translation/rotation velocities
+      max_trans: 1.0
+      max_rot: 2.0
 
-  FastDriveModule:
-    # Max translation velocity
-    MAX_TRANS: 3.0
-    # Max rotation velocity
-    MAX_ROT: 9.0
+    medium:
+      # Max translation/rotation velocities
+      max_trans: 2.0
+      max_rot: 6.0
 
-  EscapeDriveModule:
-    # Max translation velocity
-    MAX_TRANS: 0.3
-    # Max rotation velocity
-    MAX_ROT: 0.8
+    fast:
+      # Max translation/rotation velocities
+      max_trans: 2.99
+      max_rot: 7.0
 
-  Roboshape:
+    escape:
+      # Max translation/rotation velocities for escape-mode
+      max_trans: 0.3
+      max_rot: 0.8
+
+
+  roboshape:
     # Define the roboshape: 1 is angular (default), 2 is round
-    ROBOSHAPE: 1
-    # Width_x for angular robot
-    WIDTH_X: 0.48
-    # Width_y for angular robot
-    WIDTH_Y: 0.40
-    # The Lasers offset from back, seen from behind left. For angular robot
-    LASER_OFFSET_X_FROM_BACK: 0.30
-    # The Lasers offset from left, seen from behind left. For angular robot
-    LASER_OFFSET_Y_FROM_LEFT: 0.20
-    # For round roboter
-#    RADIUS: 0.20 #0.18
-#    LASER_OFFSET_X_FROM_MIDDLE: 0.09
-#    LASER_OFFSET_Y_FROM_MIDDLE: 0.0
+    shape: 1
 
-    # Extra extension to front
-    WIDTH_ADD_FRONT: 0.0 #0.11
-    # Extra extension to right
-    WIDTH_ADD_RIGHT: 0.0
-    # Extra extension to back
-    WIDTH_ADD_BACK: 0.0
-    # Extra extension to left
-    WIDTH_ADD_LEFT: 0.0
+    angular:
+      # Dimensions of angular robot
+      width_x: 0.48 #0.37
+      width_y: 0.4
+      # The Lasers offset from back/left, seen from behind left
+      laser_offset_x_from_back: 0.3
+      laser_offset_y_from_left: 0.2
 
-  LaserOccupancyGrid:
-    # the max size of the laser reading history for the search
-    # Note: This has to be divided by 10 to get seconds
-    MAX_HISTORY_LENGTH: 120 #90
-    # the min size of the laser reading history for the search
-    # Note: This has to be divided by 10 to get seconds
-    MIN_HISTORY_LENGTH: 15 #60
-    # the history vector size with number of saved elements
-    # Note: This is the initial size. If the history grows bigger, elements have to be appended
-    #  and this costs time. But to many elements result in page faults ;-)
-    INITIAL_HISTORY_SIZE: 500
-    # This is the distance in which laser readings are ignored for putting a new ellipse into the grid
-    DISTANCE_ACCOUNT: 0.03
+    round:
+      # For round roboter
+      radius: 0.2
+      # The Lasers offset from center
+      laser_offset_x_from_middle: 0.09
+      laser_offset_y_from_middle: 0.0
 
-  TrigTable:
-    # Trigonometry Resolution in number of steps per degree
-    RESOLUTION: 2
+    extension:
+      # Extension of the shape
+      front: 0.2 #0.05 #0.11
+      right: 0.1 #0.05
+      back: 0.05
+      left: 0.1 #0.05
 
-  Laser:
+
+  laser:
     # Minimum laser reading length for that the reading is taken as valid
-    MINIMUM_READING_LENGTH: 0.1
+    min_reading_length: 0.03
 
-  AStar:
+
+  laser_occupancy_grid:
+    # This is the distance in which laser readings are ignored for putting a new ellipse into the grid
+    distance_account: 0.1
+
+    history:
+      # the history vector size with number of saved elements
+      # Note: This is the initial size. If the history grows bigger, elements have to be appended
+      #  and this costs time. But to many elements result in page faults ;-)
+      initial_size: 500
+
+      # the max size of the laser reading history for the search
+      # Note: This has to be divided by 10 to get seconds
+      max_length: 9.0 #120
+
+      # the min size of the laser reading history for the search
+      # Note: This has to be divided by 10 to get seconds
+      min_length: 1.5
+
+
+  trig_table:
+    # Trigonometry Resolution in number of steps per degree
+    resolution: 2
+
+
+  a_star:
     # maximum number of states the colli uses to search for a path.
     # The more states the better the search, but the slower the algorithm
-    MAX_STATES: 15000
+    max_states: 15000
+

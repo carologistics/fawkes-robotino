@@ -41,4 +41,5 @@ plugins/laser-filter:
 
       1-mix:
         type: min_merge
+        timestamp_selection: first
 
