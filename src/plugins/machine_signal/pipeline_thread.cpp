@@ -218,6 +218,7 @@ void MachineSignalPipelineThread::init()
   cfg_draw_processed_rois_ = config->get_bool(CFG_PREFIX "/draw_processed_rois");
   cfg_enable_switch_ = config->get_bool(CFG_PREFIX "/start_enabled");
   cfg_fps_ = config->get_uint(CFG_PREFIX "/fps");
+  cfg_debug_blink_ = config->get_bool(CFG_PREFIX "/debug_blink");
 
   std::string delivery_mode = config->get_string(CFG_PREFIX "/delivery_mode");
   if (delivery_mode == "on") cfg_delivery_mode_ = delivery_switch_t_::ON;
@@ -598,11 +599,13 @@ void MachineSignalPipelineThread::loop()
       known_signals_.sort(sort_signal_states_by_area_);
       best_signal_ = known_signals_.begin();
     }
-    /*
-    logger->log_info(name(), best_signal_->get_debug_R());
-    logger->log_info(name(), best_signal_->get_debug_Y());
-    logger->log_info(name(), best_signal_->get_debug_G());
-    logger->log_info(name(), "=================");//*/
+    ///*
+    if (unlikely(cfg_debug_blink_)) {
+      logger->log_info(name(), best_signal_->get_debug_R());
+      logger->log_info(name(), best_signal_->get_debug_Y());
+      logger->log_info(name(), best_signal_->get_debug_G());
+      logger->log_info(name(), "=================");//*/
+    }
     new_data_ = true;
     data_mutex_.unlock();
 
@@ -989,6 +992,8 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         cfg_draw_processed_rois_ = v->get_bool();
       else if (opt == "/roi_green_horizon")
         cfg_roi_green_horizon = v->get_uint();
+      else if (opt == "/debug_blink")
+        cfg_debug_blink_ = v->get_bool();
     }
     cfg_changed_ = cfg_changed_ || chg;
   }

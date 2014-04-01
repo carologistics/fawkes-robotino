@@ -143,6 +143,8 @@ class MachineSignalPipelineThread :
     std::atomic_bool cfg_tuning_mode_;
     std::atomic_bool cfg_draw_processed_rois_;
     std::atomic<float> cfg_max_jitter_;
+    std::atomic_bool cfg_debug_checks_;
+    std::atomic_bool cfg_debug_blink_;
 
     fawkes::Mutex cfg_mutex_;
     std::atomic_bool cfg_changed_;
