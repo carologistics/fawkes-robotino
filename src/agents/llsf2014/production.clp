@@ -27,9 +27,11 @@
   ?sf1 <- (state WAIT_AND_LOOK_FOR_ALTERATIVE)
   ?sf2 <- (state WAIT-FOR-LOCK)
   ?lock-get <- (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
+  ?lock-ref <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   ?wfl <- (wait-for-lock (res ?res) (state get))
+  ?exes <- (execute-skill ? ?)
   =>
-  (retract ?sf1 ?sf2 ?wfl ?lock-get)
+  (retract ?sf1 ?sf2 ?wfl ?lock-get ?exec ?lock-ref)
   (modify ?t (state finished))
   (assert (state TASK-PROPOSED)
 	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
