@@ -340,6 +340,36 @@
   (assert (state TASK-FINISHED))
 )
 
+;;;;;;;;;;;;;;
+;recycle-holding: (this happens only if we are unintentionally holding a CO, normally we use recycle)
+;;;;;;;;;;;;;;
+(defrule task-recycle-holding--start
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name recycle-holding) (args $?a) (state ~finished) (priority ?p))
+  (holding CO)
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype RECYCLE))
+  ?s <- (state TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill finish_puck_at ?m RECYCLE false)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?m))
+  )
+  (modify ?t (state running))
+)
+(defrule task-recycle-holding--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name recycle-holding) (args $?a) (state ~finished))
+  (holding S0)
+  ?s <- (state GOTO-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fallback for unhandled situation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

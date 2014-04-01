@@ -296,3 +296,18 @@
   (assert (proposed-task (name load-with-S2) (args (create$ ?name_T3T4)) (priority ?*PRIORITY-LOAD-HOLDING-S2*))
   )
 )
+
+(defrule prod-recycle-unintentionally-holding-CO
+  (declare (salience ?*PRIORITY-RECYCLE*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (holding CO)
+  (team-color ?team-color&~nil)
+  (machine (name ?name) (mtype RECYCLE) (team ?team-color))
+  (not (proposed-task (name recycle-holding) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-RECYCLE*))))
+  =>
+  (printout t "PROD: Recycle hilding CO at " ?name crlf)
+  (assert (proposed-task (name recycle-holding) (args (create$ ?name)) (priority ?*PRIORITY-RECYCLE*))
+  )
+)

@@ -65,6 +65,9 @@
     (case deliver then
       ;nothing has to be locked here because we want to get rid of an unintentionally holding puck
     )
+    (case recycle-holding then
+      ;nothing has to be locked here because we want to get rid of an unintentionally holding puck
+    )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )
 )
