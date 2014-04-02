@@ -149,6 +149,16 @@
   (modify ?wfl (state finished))
 )
 
+(defrule skill-deliver-failed-retry-if-holding-puck
+  (state GOTO)
+  ?df <- (skill-done (name "finish_puck_at") (status FAILED))
+  (goto-target ?place&deliver1|deliver2)
+  (puck-in-gripper TRUE)
+  =>
+  (retract ?df)
+  (skill-call finish_puck_at place ?place mtype DE dont_wait false)
+)
+
 (defrule skill-goto-done
   ?sf <- (state GOTO)
   ?df <- (skill-done (name "finish_puck_at") (status ?s))

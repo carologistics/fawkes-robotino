@@ -50,6 +50,21 @@
   (printout t "***** Lights 5 " ?lights crlf)
 )
 
+(defrule wm-goto-deliver-failed
+  (declare (salience ?*PRIORITY-WM*))
+  (state GOTO-FAILED)
+  ?tf <- (goto-target deliver1|deliver2)
+  ?hf <- (holding ?)
+  (puck-in-gripper ?puck)
+  =>
+  (retract ?tf)
+  (if (not ?puck) then
+    (retract ?hf)
+    (assert (holding NONE))
+  )
+  (printout error "Delivery failed. Try again if I have a puck." crlf) 
+)
+
 (defrule wm-goto-failed
   (declare (salience ?*PRIORITY-WM-LOW*))
   (state GOTO-FAILED)

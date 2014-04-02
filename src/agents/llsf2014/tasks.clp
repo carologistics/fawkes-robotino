@@ -147,7 +147,7 @@
   (holding ?output)
   ?s <- (state GET-PRODUCED-FINAL)
   (team-color ?team)
-  (deliver ?team ?deliver)
+  (deliver ?team ?deliver ? ?)
   =>
   (retract ?s)
   (assert (execute-skill deliver ?deliver)
@@ -373,6 +373,7 @@
   (retract ?s)
   (assert (state TASK-FINISHED))
 )
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fallback for unhandled situation
