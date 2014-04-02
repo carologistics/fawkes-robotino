@@ -81,6 +81,7 @@ function orange_blinking()
 end
 
 function is_green()
+   printf("IS GREEN FUNKTION")
    return light:green() == light.ON and light:visibility_history() > 5 --TODO and light:is_ready()
 end
 
@@ -109,7 +110,9 @@ fsm:define_states{ export_to=_M,
       fail_to="FAILED"},
    {"CHECK_GATE_AGAIN", JumpState},
    {"SETTLE_VISION", JumpState},
-   {"RESTART", SkillJumpState, skills={{take_puck_to}}, final_to="INIT",
+   {"RESTART", SkillJumpState, skills={{take_puck_to}}, final_to="GLOBAL_MOTOR_MOVE",
+      fail_to="FAILED"},
+   {"GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_GATE",
       fail_to="FAILED"},
    {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="WAIT_FOR_SIGNAL",
       fail_to="WAIT_FOR_SIGNAL"},
@@ -134,7 +137,7 @@ fsm:add_transitions{
    {"RESTART", "GET_RID_OF_PUCK", cond=max_tries_reached, desc="lose the puck before failing"},
    {"WAIT_FOR_SIGNAL", "CHECK_RESULT", timeout=2, desc="wait for the deliver registry"},
    {"CHECK_RESULT", "MOVE_UNDER_RFID", timeout=PLUGIN_LIGHT_TIMEOUT},
-   {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok},
+   {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok, desc="all lights on"},
    {"CHECK_RESULT", "SKILL_DEPOSIT", cond=orange_blinking},
 }
 
@@ -144,13 +147,14 @@ function INIT:init()
    laser:msgq_enqueue_copy(laser.EnableSwitchMessage:new())
    light_switch:msgq_enqueue_copy(light_switch.EnableSwitchMessage:new())
    self.fsm.vars.num_tries = 1
+   printf("INIT: VISION ENABLED")
 end
 
 function DRIVE_LEFT:init()
    if self.fsm.vars.place == "deliver1" then
       self.skills[1].place = "D13"
    else
-      self.skills[1].place = "D23"
+      self.skills[1].place = "D21"
    end
 end
 
@@ -166,12 +170,23 @@ function DRIVE_RIGHT:init()
    if self.fsm.vars.place == "deliver1" then
       self.skills[1].place = "D11"
    else
-      self.skills[1].place = "D21"
+      self.skills[1].place = "D23"
    end
+end
+
+function CHECK_GATE_AGAIN:init()
+   --turn machine_signal on and into delivery mode
+   delivery_mode:msgq_enqueue_copy(delivery_mode.EnableSwitchMessage:new())
+   light_switch:msgq_enqueue_copy(light_switch.EnableSwitchMessage:new())
+   printf("CHECK_GATE_AGAIN: VISION ENABLED")
 end
 
 function RESTART:init()
    self.fsm.vars.num_tries = self.fsm.vars.num_tries + 1
+   self.skills[1].place = self.fsm.vars.place
+end
+
+function GLOBAL_MOTOR_MOVE:init()
    self.skills[1].place = self.fsm.vars.place
 end
 
@@ -190,6 +205,7 @@ function FINAL:init()
    delivery_mode:msgq_enqueue_copy(delivery_mode.DisableSwitchMessage:new())
    laser:msgq_enqueue_copy(laser.DisableSwitchMessage:new())
    light_switch:msgq_enqueue_copy(light_switch.DisableSwitchMessage:new())
+   printf("FINAL: VISION DISABLED")
 end
 
 function FAILED:init()
@@ -197,5 +213,6 @@ function FAILED:init()
    delivery_mode:msgq_enqueue_copy(delivery_mode.DisableSwitchMessage:new())
    laser:msgq_enqueue_copy(laser.DisableSwitchMessage:new())
    light_switch:msgq_enqueue_copy(light_switch.DisableSwitchMessage:new())
+   printf("FAILED: VISION DISABLED")
 end
 
