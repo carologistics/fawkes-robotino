@@ -3,7 +3,7 @@
  *  RobotinoLightInterface.h - Fawkes BlackBoard Interface - RobotinoLightInterface
  *
  *  Templated created:   Thu Oct 12 10:49:19 2006
- *  Copyright  2013  Florian Nolden, Viktor Mataré, Tobias Neumann
+ *  Copyright  2013  Florian Nolden, Victor Mataré, Tobias Neumann
  *
  ****************************************************************************/
 

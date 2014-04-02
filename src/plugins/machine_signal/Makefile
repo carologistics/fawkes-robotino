@@ -1,9 +1,9 @@
 
 #*****************************************************************************
-#         Makefile Build System for Fawkes: Puck Vision
+#         Makefile Build System for Fawkes: Robotino Template Plugin
 #                            -------------------
-#   Created on Wed Jun 03 18:31:45 2013
-#   Copyright (C) 2013 by Florian Nolden Carologistics RoboCup Team
+#   Created on Wed May 23 18:31:45 2012
+#   Copyright (C) 2012 by Daniel Ewert, Carologistics RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,48 +13,39 @@
 #   (at your option) any later version.
 #
 #*****************************************************************************
+# JUST REPLACE ALL OCCURENCES OF plugin-template AND REPLACE THEM ACCORDING TO YOUR NEEDS
+#
 #
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/fvconf.mk
-include $(BUILDSYSDIR)/boost.mk
-
-ifeq ($(HAVE_TF),1)
-  CFLAGS  += $(CFLAGS_TF)
-  LDFLAGS += $(LDFLAGS_TF)
   
-CFLAGS   += $(VISION_CFLAGS)
+CFLAGS   += $(VISION_CFLAGS) $(CFLAGS_CPP11)
 LDFLAGS  += $(VISION_LDFLAGS)
 INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
 #The necessary libraries your plugin needs.
-LIBS_puck_vision = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
-		fvclassifiers fawkesconfig fvfilters TransformInterface \
-		fawkestf RobotinoLightInterface PuckVisionInterface Position3DInterface 
+		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_puck_vision = puck_vision.o puck_vision_thread.o
+OBJS_machine_signal = machine_signal_plugin.o machine_signal_thread.o
 
 #names of the plugins you want to build
-PLUGINS_all = $(PLUGINDIR)/puck_vision.$(SOEXT)
+PLUGINS_all = $(PLUGINDIR)/machine-signal.$(SOEXT)
 
-OBJS_all = $(OBJS_puck_vision)
+OBJS_all = $(OBJS_plugin_template)
 
-else
-  WARN_TARGETS += warning_tf
-endif
-
-ifeq ($(OBJSSUBMAKE),1)
-  ifneq ($(WARN_TARGETS),)
-all: $(WARN_TARGETS)
-  endif
-.PHONY: warning_somewarning
-warning_somewarning:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting Robotino Navigator plugin$(TNORMAL) (reason)"
-endif
+#ifeq ($(OBJSSUBMAKE),1)
+#  ifneq ($(WARN_TARGETS),)
+#all: $(WARN_TARGETS)
+#  endif
+#.PHONY: warning_somewarning
+#warning_somewarning:
+#	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting Robotino Navigator plugin$(TNORMAL) (reason)"
+#endif
 
 include $(BUILDSYSDIR)/base.mk
