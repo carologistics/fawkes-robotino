@@ -4,6 +4,7 @@
 --
 --  Created: Mar 11 2014 
 --  Copyright  2014 Johannes Rothe
+--             2014 Tobias Neumann
 --
 ----------------------------------------------------------------------------
 
@@ -25,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_produced"
 fsm                = SkillHSM:new{name=name, start="GOTO_MACHINE", debug=true}
-depends_skills     = {"motor_move", "ppgoto", "global_motor_move"}
+depends_skills     = {"motor_move", "ppgoto", "global_motor_move", "wait_produce"}
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
   {v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
@@ -39,6 +40,13 @@ documentation      = [==[Get a produced puck from under the RFID]==]
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+-- Constants
+local LOSTPUCK_DIST = 0.08
+if config:exists("/skills/take_puck_to/front_sensor_dist") then
+   -- you can find the config value in /cfg/host.yaml
+   LOSTPUCK_DIST = config:get_float("/skills/take_puck_to/front_sensor_dist")
+end
+
 --fawkes.load_yaml_navgraph already searches in the cfg directory
 graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 
@@ -62,63 +70,34 @@ function ampel()
       and (euclidean_cluster:visibility_history() > MIN_VIS_HIST)
 end
 
-function rough_correct_done()
-   if fsm.vars.correct_dir == -1 then
-      return sensor:analog_in(4) < 1
-   else
-       return sensor:analog_in(0) < 1
-   end
-end
-
-function producing()
-   return light:green() == light.ON
-      and light:yellow() == light.ON
-      and light:red() == light.OFF
-end
-
-fsm:define_states{ export_to=_M, closure={producing = producing},
+fsm:define_states{ export_to=_M, closure={producing_done = producing_done, sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST},
    {"GOTO_MACHINE", SkillJumpState, skills={{ppgoto}}, final_to="ADJUST_POS", fail_to="FAILED"},
-   {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="SEE_AMPEL", fail_to="FAILED"},
+   {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="WAIT_PRODUCE", fail_to="FAILED"},
+   {"WAIT_PRODUCE", SkillJumpState, skills={{wait_produce}}, final_to="SEE_AMPEL", fail_to="FAILED"},
    {"SEE_AMPEL", JumpState},
-   {"CHECK_PRODUCE", JumpState},
-   {"WAIT_PRODUCE", JumpState},
    {"TURN", SkillJumpState, skills = {{motor_move}}, final_to = "APPROACH_AMPEL", fail_to = "FAILED"},
-   {"APPROACH_AMPEL", SkillJumpState, skills = {{motor_move}}, final_to = "CHECK_POSITION", fail_to = "FAILED"},
-   {"CHECK_POSITION", JumpState},
-   {"CORRECT_POSITION", SkillJumpState, skills = {{motor_move}}, final_to = "CORRECT_SENSOR_DELAY", fail_to = "FAILED"},
-   {"CORRECT_SENSOR_DELAY", SkillJumpState, skills = {{motor_move}}, final_to = "SKILL_DRIVE_LEFT", fail_to = "FAILED"},
-   {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   {"APPROACH_AMPEL", SkillJumpState, skills = {{motor_move}}, final_to = "LEAVE_AMPEL", fail_to = "FAILED"},
+   {"LEAVE_AMPEL", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
+   {"CHECK_PUCK", JumpState}
 }
 
 fsm:add_transitions{
    {"SEE_AMPEL", "FAILED", timeout = 5, desc = "No Ampel seen with laser"},
-   {"SEE_AMPEL", "CHECK_PRODUCE", cond = ampel, desc = "Ampel seen with laser"},
-   {"CHECK_PRODUCE", "FAILED", timeout = 5, desc = "No Light detected"},
-   {"CHECK_PRODUCE", "TURN", cond = "not producing()", desc = "The product is finished"},
-   {"CHECK_PRODUCE", "WAIT_PRODUCE", cond = producing, desc = "Wait until the Product is finished"},
-   {"WAIT_PRODUCE", "TURN", cond = "not producing()", desc = "The product is finished"},
-   {"WAIT_PRODUCE", "FAILED", timeout = 62, desc = "Can't read the light properly"},
-   {"CHECK_POSITION", "SKILL_DRIVE_LEFT", cond = "vars.correct_dir == 0"},
-   {"CHECK_POSITION", "CORRECT_POSITION", cond = "vars.correct_dir ~= 0"},
-   {"CORRECT_POSITION", "CORRECT_SENSOR_DELAY", cond = rough_correct_done},
+   {"SEE_AMPEL", "TURN", cond = ampel, desc = "Ampel seen with laser"},
+   {"CHECK_PUCK", "FINAL", cond = "sensor:distance(8) <= LOSTPUCK_DIST", desc = "Final with puck"},
+   {"CHECK_PUCK", "FAILED", cond = "sensor:distance(8) > LOSTPUCK_DIST", desc = "Failed without puck"},
 }
 
 function GOTO_MACHINE:init()
-   self.skills[1].place = self.fsm.vars.place
+   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
 end
 
 function ADJUST_POS:init()
    self.skills[1].place = self.fsm.vars.place
 end
 
-function CHECK_POSITION:init()
-   if sensor:analog_in(0) < 1 then
-      self.fsm.vars.correct_dir = -1
-   elseif sensor:analog_in(4) < 1 then
-      self.fsm.vars.correct_dir = 1
-   else
-      self.fsm.vars.correct_dir = 0
-   end
+function WAIT_PRODUCE:init()
+   self.skills[1].mtype = self.fsm.vars.place
 end
 
 function SEE_AMPEL:init()
@@ -140,17 +119,8 @@ function APPROACH_AMPEL:init()
    self.skills[1].vel_trans = 0.1
 end
 
-function CORRECT_POSITION:init()
-   self.skills[1].y = self.fsm.vars.correct_dir * 0.3
-   self.skills[1].vel_trans = 0.03
-end
-
-function CORRECT_SENSOR_DELAY:init()
-   self.skills[1].y = self.fsm.vars.correct_dir * -1 * LIGHT_SENSOR_DELAY_CORRECTION 
-end
-
-function SKILL_DRIVE_LEFT:init()
-   if graph:node(self.fsm.vars.goto_name):has_property("leave_right") then
+function LEAVE_AMPEL:init()
+   if graph:node(self.fsm.vars.place):has_property("leave_right") then
       self.skills[1].y = -0.4
       self.skills[1].vel_rot = 1
    else
