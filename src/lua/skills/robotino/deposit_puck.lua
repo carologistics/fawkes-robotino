@@ -34,6 +34,7 @@ documentation      = [==[deposits the used puck at the side of the traffic light
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 
 function no_puck()
    --return worldModel:numberOfPucks=0
@@ -71,11 +72,15 @@ function SKILL_DRIVE_LEFT:init()
 end
 
 function SKILL_DRIVE_RIGHT:init()
-   if self.fsm.vars.mtype == nil then
-      self.skills[1].y = -0.23 
+   if graph:node(self.fsm.vars.place):has_property("leave_right") then
+      printf("Deposit on the right side")
+      self.skills[1].y = -0.23
    elseif self.fsm.vars.mtype == "deliver" then
       print("drive right at delivery")
       self.skills[1].y = -0.21
+   elseif self.fsm.vars.mtype == nil then
+      printf("Deposit on the left side")
+      self.skills[1].y = 0.23
    end 
 end
 
