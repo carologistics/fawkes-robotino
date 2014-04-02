@@ -307,7 +307,7 @@ nodes:
     properties:
       - highway_exit
   - name: deliver2
-    pos: [-4.7, 2.8]
+    pos: [-4.55, 2.75]
     properties:
       - orientation: 3.14
   - name: DZ2H
