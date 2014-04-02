@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "take_puck_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "relgoto", "fetch_puck", "ppgoto" }
+depends_skills     = { "relgoto", "fetch_puck", "ppgoto", "search_lost_puck" }
 depends_interfaces = {
    { v = "sensor", type = "RobotinoSensorInterface", id = "Robotino" },
 }
@@ -87,18 +87,18 @@ fsm:define_states{ export_to=_M,
       sensor=sensor, LOSTPUCK_DIST=LOSTPUCK_DIST, PUCK_SENSOR_INDEX=PUCK_SENSOR_INDEX },
    {"INIT", JumpState},
    {"SKILL_GOTO", SkillJumpState, skills={{ppgoto}}, final_to="FINAL", fail_to="RETRY_GOTO"},
-   {"STOP", SkillJumpState, skills={{ppgoto}}, final_to="WAIT",
-      fail_to="WAIT"},
-   {"WAIT", JumpState},
+   {"STOP", SkillJumpState, skills={{ppgoto}}, final_to="SKILL_SEARCH_PUCK",
+      fail_to="FAILED"},
+   {"SKILL_SEARCH_PUCK" SkillJumpState, skills={{search_lost_puck}}, final_to="SKILL_FETCH_PUCK",
+      fail_to="FAILED"},
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="RETRY_GOTO",
       fail_to="FAILED"},
    {"RETRY_GOTO", JumpState}
 }
 
 fsm:add_transitions{
-   { "INIT", "SKILL_GOTO", cond=true, desc="OK" },
+   { "INIT", "SKILL_GOTO", cond=true, desc="true" },
    { "SKILL_GOTO", "STOP", cond="sensor:distance(PUCK_SENSOR_INDEX) > LOSTPUCK_DIST", desc="Lost puck" },
-   { "WAIT", "SKILL_FETCH_PUCK", timeout=1 },
    { "RETRY_GOTO", "SKILL_GOTO", cond="vars.goto_retries <= MAX_RETRIES", desc="Retry goto" },
    { "RETRY_GOTO", "FAILED", cond="vars.goto_retries > MAX_RETRIES", desc="giveup goto" }
 }
