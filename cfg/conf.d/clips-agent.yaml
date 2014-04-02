@@ -64,7 +64,7 @@ clips-agent:
     robot-timeout: 50.0
 
     #distance needed before a robot releases a lock
-    release-distance: 0.5
+    release-distance: 0.75
 
     waiting-points:
       ins1: WAIT_FOR_INS_1
