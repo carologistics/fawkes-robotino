@@ -45,19 +45,21 @@ fsm:define_states{ export_to=_M, closure={visible=visible, MAX_TRIES=MAX_TRIES},
    {"WAIT_L", JumpState},
    {"TURN_LEFT", SkillJumpState, skills={{motor_move}}, final_to="WAIT_R", fail_to="FAILED"},
    {"WAIT_R", JumpState},
-   {"TURN_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="WAIT_L", fail_to="FAILED"}
+   {"TURN_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="WAIT_L", fail_to="FAILED"},
+   {"WAIT_END", JumpState}
 }
 
 fsm:add_transitions{
    {"INIT", "WAIT_L", cond=true},
    {"WAIT_L", "TURN_LEFT", timeout=1},
-   {"WAIT_L", "FINAL", cond=visible},
+   {"WAIT_L", "WAIT_END", cond=visible},
    {"WAIT_L", "FAILED", cond="vars.tries >= vars.max_tries"},
-   {"TURN_LEFT", "FINAL", cond=visible},
+   {"TURN_LEFT", "WAIT_END", cond=visible},
    {"WAIT_R", "TURN_RIGHT", timeout=1},
-   {"WAIT_R", "FINAL", cond=visible},
+   {"WAIT_R", "WAIT_END", cond=visible},
    {"WAIT_R", "FAILED", cond="vars.tries >= vars.max_tries"},
-   {"TURN_RIGHT", "FINAL", cond=visible}
+   {"TURN_RIGHT", "WAIT_END", cond=visible},
+   {"WAIT_END", "FINAL", timeout=1.5}
 }
 
 function INIT:init()
@@ -68,11 +70,11 @@ end
 function TURN_LEFT:init()
    self.fsm.vars.tries = self.fsm.vars.tries + 1
    self.skills[1].ori = 0.2 * self.fsm.vars.tries * math.pi
-   self.skills[1].vel_rot = 1
+   self.skills[1].vel_rot = 0.4
 end
 
 function TURN_RIGHT:init()
    self.fsm.vars.tries = self.fsm.vars.tries + 1
    self.skills[1].ori = -0.2 * self.fsm.vars.tries * math.pi
-   self.skills[1].vel_rot = 1
+   self.skills[1].vel_rot = 0.4
 end
