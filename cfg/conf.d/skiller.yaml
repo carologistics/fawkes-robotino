@@ -58,6 +58,10 @@ skiller:
         puck_0: Position3DInterface::puck_0
         puck_1: Position3DInterface::puck_1
         puck_2: Position3DInterface::puck_2
+        left_gate: RobotinoLightInterface::machine_signal_0
+        middle_gate: RobotinoLightInterface::machine_signal_1
+        right_gate: RobotinoLightInterface::machine_signal_2
+        delivery_mode: SwitchInterface::machine_signal_delivery_mode
       writing:
         light: RobotinoLightInterface::Light determined
 
