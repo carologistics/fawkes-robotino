@@ -27,14 +27,14 @@ name               = "move_under_rfid"
 fsm                = SkillHSM:new{name=name, start="SEE_AMPEL", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = {
-	{v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
-	{v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
-	{v = "motor", type = "MotorInterface", id="Robotino" },	
+   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
+   {v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
+   {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "pose", type="Position3DInterface", id="Pose"},
    {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
-   { v="lightswitch", type="SwitchInterface", id="light_front_switch" },
    {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" },
-   { v="light", type ="RobotinoLightInterface", id = "Light_State" },
+   {v = "light", type ="RobotinoLightInterface", id = "Light_State" },
+   {v = "lightswitch", type ="SwitchInterface", id = "light_front_switch" }
 }
 
 documentation      = [==[Move under the RFID Reader/Writer]==]
@@ -48,6 +48,8 @@ local tfm = require('tf_module')
 local LASER_FORWARD_CORRECTION = 0.17
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
 local MIN_VIS_HIST = 15
+local LEFT_IR_ID = config:get_float("hardware/robotino/sensors/left_ir_id")
+local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
 
 function get_ampel()
    local ampel_loc = {}
@@ -66,10 +68,12 @@ function ampel()
 end
 
 function rough_correct_done()
+   --analog_in(4) links
+   --analog_in(5) rechts
    if fsm.vars.correct_dir == -1 then
-      return sensor:analog_in(4) < 1
+      return sensor:analog_in(LEFT_IR_ID) > 9
    else
-       return sensor:analog_in(0) < 1
+       return sensor:analog_in(RIGHT_IR_ID) > 9
    end
 end
 
@@ -79,23 +83,25 @@ function producing()
       and light:red() == light.OFF
 end
 
+function sensors_fired()
+   return sensor:analog_in(4) > 9 or sensor:analog_in(5) > 9
+end
+
 fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
    {"SEE_AMPEL", JumpState},
-   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_AMPEL", fail_to="FAILED"},
    {"APPROACH_AMPEL", SkillJumpState, skills={{motor_move}},
       final_to="CHECK_POSITION", fail_to="FAILED"},
    {"CHECK_POSITION", JumpState},
    {"CORRECT_POSITION", SkillJumpState, skills={{motor_move}},
-      final_to="CORRECT_SENSOR_DELAY", fail_to="FAILED"},
-   {"CORRECT_SENSOR_DELAY", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+      final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"SEE_AMPEL", "FAILED", timeout=10, desc="No Ampel seen with laser"},
-   {"SEE_AMPEL", "TURN", cond=ampel, desc="Ampel seen with laser"},
+   {"SEE_AMPEL", "APPROACH_AMPEL", cond=ampel, desc="Ampel seen with laser"},
    {"CHECK_POSITION", "FINAL", cond="vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond="vars.correct_dir ~= 0"},
-   {"CORRECT_POSITION", "CORRECT_SENSOR_DELAY", cond=rough_correct_done},
+   {"CORRECT_POSITION", "FINAL", cond=rough_correct_done},
    {"APPROACH_AMPEL", "FINAL", cond=producing, desc="already there"},
    {"CORRECT_POSITION", "FINAL", precond=producing, desc="already there"} 
 }
@@ -109,10 +115,10 @@ function send_transrot(vx, vy, omega)
 end
 
 function CHECK_POSITION:init()
-   if sensor:analog_in(0) < 1 then
-      self.fsm.vars.correct_dir = -1
-   elseif sensor:analog_in(4) < 1 then
+   if sensor:analog_in(4) > 9 then
       self.fsm.vars.correct_dir = 1
+   elseif sensor:analog_in(5) > 9 then
+      self.fsm.vars.correct_dir = -1
    else
       self.fsm.vars.correct_dir = 0
    end
@@ -121,11 +127,6 @@ end
 function SEE_AMPEL:init()
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
    laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
-end
-
-function TURN:init()
-   local ampel = get_ampel()
-   self.skills[1].ori = math.atan2(ampel.y, ampel.x)
 end
 
 function APPROACH_AMPEL:init()
@@ -142,10 +143,6 @@ end
 function CORRECT_POSITION:init()
    self.skills[1].y = self.fsm.vars.correct_dir * 0.3
    self.skills[1].vel_trans = 0.03
-end
-
-function CORRECT_SENSOR_DELAY:init()
-   self.skills[1].y = self.fsm.vars.correct_dir * -1 * LIGHT_SENSOR_DELAY_CORRECTION 
 end
 
 function FINAL:init()

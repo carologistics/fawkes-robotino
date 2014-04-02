@@ -55,6 +55,9 @@ skiller:
         laser_cluster: LaserClusterInterface::laser-cluster
         motor_switch: SwitchInterface::Robotino Motor
         lightFrontSwitch: SwitchInterface::light_front_switch
+        puck_0: Position3DInterface::puck_0
+        puck_1: Position3DInterface::puck_1
+        puck_2: Position3DInterface::puck_2
       writing:
         light: RobotinoLightInterface::Light determined
 

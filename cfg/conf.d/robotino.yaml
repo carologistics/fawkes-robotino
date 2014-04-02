@@ -21,6 +21,12 @@ hardware/robotino:
     # ID of the Gripper Interface
     gripper_id: Robotino 
 
+  sensors:
+    # ID of analog_in port for IR sensor on the left side of puck guidance device
+    left_ir_id: 4
+    # ID of analog_in port for IR sensor on the right side of puck guidance device
+    right_ir_id: 5
+
   joystick:
     # Axis index for forward/backward movement
     axis_forward: 1
@@ -40,3 +46,8 @@ hardware/robotino:
     # Maximum rotation; rad/s
     max_omega: 1.57
 
+  puck_sensor:
+    #index of the puck sensor in the Distances field of the interface
+    index: 8
+    #max distance when there is a puck in the gripper
+    trigger_dist: 0.07

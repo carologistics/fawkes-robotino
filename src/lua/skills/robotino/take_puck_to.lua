@@ -28,8 +28,6 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = { "relgoto", "fetch_puck", "ppgoto" }
 depends_interfaces = {
    { v = "sensor", type = "RobotinoSensorInterface", id = "Robotino" },
-   { v = "omnivisionSwitch", type = "SwitchInterface", id = "omnivisionSwitch" },
-   { v = "omnipuck", type = "Position3DInterface", id = "OmniPuck1" },
 }
 
 documentation      = [==[Go to target without losing teh puck]==]
@@ -40,10 +38,18 @@ skillenv.skill_module(_M)
 -- Constants
 local AVG_LEN = 10
 local MAX_RETRIES = 3
-local LOSTPUCK_DIST = 0.08
-if config:exists("/skills/take_puck_to/front_sensor_dist") then
+local LOSTPUCK_DIST = 0.07
+local PUCK_SENSOR_INDEX = 8
+if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
+   LOSTPUCK_DIST = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
+end
+if config:exists("/hardware/robotino/puck_sensor/index") then
    -- you can find the config value in /cfg/host.yaml
-   LOSTPUCK_DIST = config:get_float("/skills/take_puck_to/front_sensor_dist")
+   PUCK_SENSOR_INDEX = config:get_uint("/hardware/robotino/puck_sensor/index")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
 end
 
 -- Imports
@@ -55,7 +61,7 @@ function lost_puck()
    local val = fsm.vars.avg_val
    local idx = fsm.vars.avg_idx
 
-   val[idx] = sensor:distance(8)
+   val[idx] = sensor:distance(PUCK_SENSOR_INDEX)
    idx = idx + 1
    if idx > AVG_LEN then idx = 1 end
 
@@ -78,15 +84,12 @@ end
 
 fsm:define_states{ export_to=_M,
    closure = { MAX_RETRIES=MAX_RETRIES,
-      omnivisionSwitch = omnivisionSwitch, sensor=sensor, LOSTPUCK_DIST=LOSTPUCK_DIST },
+      sensor=sensor, LOSTPUCK_DIST=LOSTPUCK_DIST, PUCK_SENSOR_INDEX=PUCK_SENSOR_INDEX },
    {"INIT", JumpState},
    {"SKILL_GOTO", SkillJumpState, skills={{ppgoto}}, final_to="FINAL", fail_to="RETRY_GOTO"},
    {"STOP", SkillJumpState, skills={{ppgoto}}, final_to="WAIT",
       fail_to="WAIT"},
    {"WAIT", JumpState},
---   {"RELSTOP", SkillJumpState, skills={{relgoto}}, final_to="WAIT2",
---      fail_to="WAIT2"},
---   {"WAIT2", JumpState},
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="RETRY_GOTO",
       fail_to="FAILED"},
    {"RETRY_GOTO", JumpState}
@@ -94,11 +97,8 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "INIT", "SKILL_GOTO", cond=true, desc="OK" },
-   { "SKILL_GOTO", "FAILED", precond="not omnivisionSwitch:has_writer()",
-      desc="No omnivision writer" },
-   { "SKILL_GOTO", "STOP", cond="sensor:distance(8) > LOSTPUCK_DIST", desc="Lost puck" },
-   { "WAIT", "SKILL_FETCH_PUCK", timeout=3 },
---   { "WAIT2", "SKILL_FETCH_PUCK", timeout=2 },
+   { "SKILL_GOTO", "STOP", cond="sensor:distance(PUCK_SENSOR_INDEX) > LOSTPUCK_DIST", desc="Lost puck" },
+   { "WAIT", "SKILL_FETCH_PUCK", timeout=1 },
    { "RETRY_GOTO", "SKILL_GOTO", cond="vars.goto_retries <= MAX_RETRIES", desc="Retry goto" },
    { "RETRY_GOTO", "FAILED", cond="vars.goto_retries > MAX_RETRIES", desc="giveup goto" }
 }
@@ -122,10 +122,4 @@ end
 function STOP:init()
    self.skills[1].stop = true
 end
-
---function RELSTOP:init()
---   self.skills[1].x = 0
---   self.skills[1].y = 0
---   self.skills[1].ori = 0
---end
 
