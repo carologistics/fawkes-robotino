@@ -68,10 +68,11 @@ plugins/machine_signal:
   red:
     reference_color:   [0xff, 0, 0x0,
                         0xe0, 0, 0x40,
-                        0x40, 0, 0]
-    chroma_thresh:     [50, 40, 70]
-    saturation_thresh: [30, 40, 40]
-    luma_thresh:       [220, 100, 230]
+                        0x40, 0, 0,
+                        0x30, 0xa, 0xa]
+    chroma_thresh:     [50, 40, 70, 50]
+    saturation_thresh: [30, 40, 40, 10]
+    luma_thresh:       [220, 100, 230, 70]
     min_points: 40
     basic_roi_size: 10
     neighborhood_min_match: 7
@@ -99,7 +100,7 @@ plugins/machine_signal:
                         0x0a, 0x1b, 0,
                         0,    0x33, 0]
     chroma_thresh:     [20, 15, 15, 15, 30, 30]
-    saturation_thresh: [20, 15, 15, 15, 7, 10]
+    saturation_thresh: [20, 15, 20, 15, 7, 10]
     luma_thresh:       [150, 200, 200, 100, 200, 200]
     min_points: 40
     basic_roi_size: 10
