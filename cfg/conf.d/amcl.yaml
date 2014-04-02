@@ -48,9 +48,9 @@ plugins/amcl:
 
   # Motion model parameters, alph5 is only used for omni-drive model
   # Expected noise in rotation estimate from rotational component
-  alpha1: 2
+  alpha1: 1.5
   # Expected noise in rotation estimate from translational component
-  alpha2: 2
+  alpha2: 1.5
   # Expected noise in translation estimate from translational component
   alpha3: 0.6
   # Expected noise in translation estimate from rotational component
@@ -71,7 +71,7 @@ plugins/amcl:
   lambda_short: 0.1
 
   # Maximum discovery distance for likelihood field model
-  laser_likelihood_max_dist: 2.5
+  laser_likelihood_max_dist: 4.0
 
   # Laser model type, must be beam or likelihood_field
   laser_model_type: likelihood_field
