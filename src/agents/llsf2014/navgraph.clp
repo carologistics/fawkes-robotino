@@ -36,7 +36,7 @@
   =>
   (retract ?i1f ?i2f ?d1f ?d2f)
   (assert (input-storage CYAN Ins1 (nth$ 1 ?ins1) (nth$ 2 ?ins1))
-	  (input-storage MAGeNTA Ins2 (nth$ 1 ?ins2) (nth$ 2 ?ins2))
+	  (input-storage MAGENTA Ins2 (nth$ 1 ?ins2) (nth$ 2 ?ins2))
 	  (deliver CYAN deliver1 (nth$ 1 ?deliver1) (nth$ 2 ?deliver1))
 	  (deliver MAGENTA deliver2 (nth$ 1 ?deliver2) (nth$ 2 ?deliver2)))
 )
