@@ -30,14 +30,14 @@ LIBS     += $(VISION_LIBS)
 #The necessary libraries your plugin needs.
 LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
-		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface
+		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface SwitchInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_machine_signal = machine_signal_plugin.o machine_signal_thread.o
+OBJS_machine_signal = plugin.o state.o pipeline_thread.o sensor_thread.o
 
 #names of the plugins you want to build
 PLUGINS_all = $(PLUGINDIR)/machine-signal.$(SOEXT)
 
-OBJS_all = $(OBJS_plugin_template)
+OBJS_all = $(OBJS_machine_signal)
 
 #ifeq ($(OBJSSUBMAKE),1)
 #  ifneq ($(WARN_TARGETS),)
