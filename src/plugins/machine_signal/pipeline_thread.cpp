@@ -387,6 +387,7 @@ void MachineSignalPipelineThread::loop()
     if (SwitchInterface::EnableSwitchMessage *msg = bb_delivery_switch_->msgq_first_safe(msg)) {
       cfg_delivery_mode_ = delivery_switch_t_::ON;
     }
+    bb_delivery_switch_->msgq_pop();
   }
   if (cfg_delivery_mode_ == delivery_switch_t_::OFF) {
     bb_delivery_switch_->set_enabled(false);
