@@ -18,7 +18,8 @@ include $(BASEDIR)/etc/buildsys/config.mk
 
 CFLAGS += $(CFLAGS_CPP11)
 
-LIBS_navgraph_broker = fawkescore fawkesutils fawkesaspects fawkesnavgraphaspect fawkesconstraintrepo
+LIBS_navgraph_broker = fawkescore fawkesutils fawkesaspects fawkesinterface fawkesnavgraphaspect \
+						fawkesblackboard fawkesconstraintrepo NavPathInterface
 OBJS_navgraph_broker = navgraph_broker_plugin.o navgraph_broker_thread.o
 
 OBJS_all = $(OBJS_navgraph_broker)
