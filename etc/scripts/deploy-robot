@@ -31,7 +31,7 @@ BASEDIR=$(find_basedir)
 FAWKES_PATH=fawkes-robotino
 
 RSYNC=rsync
-EXCLUDES=/cfg/host.yaml
+EXCLUDES="/cfg/host.yaml /bin/core.* /bin/debug.log"
 
 VERBOSE=
 while getopts "hvf:b:" OPTION
