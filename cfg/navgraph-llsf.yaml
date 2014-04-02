@@ -333,7 +333,7 @@ nodes:
   - name: deliver2
     pos: [-4.55, 3.36]
     properties:
-      - orientation: 2.62 #150°
+      - orientation: 3.67 #210°
   - name: IA1H
     pos: [1.98, 1.0]
     properties:
