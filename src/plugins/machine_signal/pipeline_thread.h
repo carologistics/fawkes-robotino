@@ -215,13 +215,13 @@ class MachineSignalPipelineThread :
 
 
     // Checks to weed out implausible ROIs
-    inline bool rois_delivery_zone(std::list<firevision::ROI>::iterator red, std::list<firevision::ROI>::iterator green);
-    inline bool roi_width_ok(std::list<firevision::ROI>::iterator);
-    inline bool rois_similar_width(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
-    inline bool rois_x_aligned(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
-    inline bool roi_aspect_ok(std::list<firevision::ROI>::iterator);
-    inline bool rois_vspace_ok(firevision::ROI *r1, firevision::ROI *r2);
-    inline bool roi1_oversize(std::list<firevision::ROI>::iterator r1, std::list<firevision::ROI>::iterator r2);
+    inline bool rois_delivery_zone(firevision::ROI &red, firevision::ROI &green);
+    inline bool roi_width_ok(firevision::ROI &r);
+    inline bool rois_similar_width(firevision::ROI &r1, firevision::ROI &r2);
+    inline bool rois_x_aligned(firevision::ROI &r1, firevision::ROI &r2);
+    inline bool roi_aspect_ok(firevision::ROI &r);
+    inline bool rois_vspace_ok(firevision::ROI &r1, firevision::ROI &r2);
+    inline bool roi1_oversize(firevision::ROI &r1, firevision::ROI &r2);
 
 
     struct {

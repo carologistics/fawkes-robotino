@@ -219,6 +219,7 @@ void MachineSignalPipelineThread::init()
   cfg_enable_switch_ = config->get_bool(CFG_PREFIX "/start_enabled");
   cfg_fps_ = config->get_uint(CFG_PREFIX "/fps");
   cfg_debug_blink_ = config->get_bool(CFG_PREFIX "/debug_blink");
+  cfg_debug_processing_ = config->get_bool(CFG_PREFIX "/debug_processing");
 
   std::string delivery_mode = config->get_string(CFG_PREFIX "/delivery_mode");
   if (delivery_mode == "on") cfg_delivery_mode_ = delivery_switch_t_::ON;
@@ -631,7 +632,7 @@ bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
 
   for (std::list<ROI>::iterator roi_it = bright_rois->begin(); roi_it != bright_rois->end(); ++roi_it) {
     float area_ratio = (float)(roi_it->width * roi_it->height) / (float)(light->width * light->height);
-    if (roi_aspect_ok(roi_it) && area_ratio > cfg_light_on_min_area_cover_) {
+    if (roi_aspect_ok(*roi_it) && area_ratio > cfg_light_on_min_area_cover_) {
       if (unlikely(cfg_tuning_mode_))
         drawn_rois_.push_back(*roi_it);
       delete bright_rois;
@@ -642,11 +643,11 @@ bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
   return false;
 }
 
-bool MachineSignalPipelineThread::roi1_oversize(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
+bool MachineSignalPipelineThread::roi1_oversize(ROI &r1, ROI &r2) {
   return !rois_similar_width(r1, r2)
       && roi_aspect_ok(r2)
-      && (r2->start.x + r2->width/10) - r1->start.x > 0
-      && (r1->start.x + r1->width*1.1) - (r2->start.x + r2->width) > 0;
+      && (r2.start.x + r2.width/10) - r1.start.x > 0
+      && (r1.start.x + r1.width*1.1) - (r2.start.x + r2.width) > 0;
 }
 
 
@@ -664,9 +665,11 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
 {
   std::list<SignalState::signal_rois_t_> *rv = new std::list<SignalState::signal_rois_t_>();
 
+  if (cfg_debug_processing_) debug_proc_string_ = "";
+
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
 
-    if (!(roi_width_ok(it_R))) continue;
+    if (!(roi_width_ok(*it_R))) continue;
 
     if (it_R->height > it_R->width) {
       it_R->height = it_R->width;
@@ -677,52 +680,61 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
       bool ok = false;
       int vspace = it_G->start.y - (it_R->start.y + it_R->height);
 
-      if (roi_width_ok(it_G) && rois_x_aligned(it_R, it_G) &&
+      if (roi_width_ok(*it_G) && rois_x_aligned(*it_R, *it_G) &&
           it_G->start.y > cfg_roi_green_horizon) {
+
+        if (cfg_debug_processing_) debug_proc_string_ += "g:W rg:A";
 
         ROI *roi_R = new ROI(*it_R);
         ROI *roi_G = new ROI(*it_G);
 
-        if (roi1_oversize(it_R, it_G)
-            && vspace > 0 && vspace < it_R->height * 1.5) {
-          roi_R->start.x = it_G->start.x;
-          roi_R->width = it_G->width;
+        if (roi1_oversize(*roi_R, *roi_G)
+            && vspace > 0 && vspace < roi_G->height * 1.5) {
+          roi_R->start.x = roi_G->start.x;
+          roi_R->width = roi_G->width;
           if (roi_R->width > cam_width_) roi_R->width = cam_width_ - roi_R->start.x;
-          int r_end = it_G->start.y - it_G->height;
+          int r_end = roi_G->start.y - roi_G->height;
           roi_R->height = r_end - roi_R->start.y;
           if (roi_R->start.y + roi_R->height > cam_height_) roi_R->height = cam_height_ - roi_R->start.y;
+
+          if (cfg_debug_processing_) debug_proc_string_ += " r:O";
         }
 
-        if (roi1_oversize(it_G, it_R)
+        if (roi1_oversize(*roi_G, *it_R)
             && vspace > 0 && vspace < it_R->height * 1.5) {
           roi_G->start.x = it_R->start.x;
           roi_G->width = it_R->width;
           if (roi_G->width > cam_width_) roi_G->width = cam_width_ - roi_G->start.x;
           roi_G->height = it_R->height;
           if (roi_G->start.y + roi_G->height > cam_height_) roi_G->height = cam_height_ - roi_G->start.y;
+
+          if (cfg_debug_processing_) debug_proc_string_ += " g:O";
         }
 
-        if (rois_vspace_ok(roi_R, roi_G)) {
-          if (!rois_similar_width(it_R, it_G)) {
-            int wdiff = it_G->width - it_R->width;
-            int start_x = it_G->start.x + wdiff/2;
+        if (rois_vspace_ok(*roi_R, *roi_G)) {
+          if (cfg_debug_processing_) debug_proc_string_ += "rg:V";
+
+          if (!rois_similar_width(*roi_R, *roi_G)) {
+            int wdiff = roi_G->width - it_R->width;
+            int start_x = roi_G->start.x + wdiff/2;
             if (start_x < 0) start_x = 0;
             it_G->start.x = start_x;
-            int width = it_G->width - wdiff/2;
+            int width = roi_G->width - wdiff/2;
             if ((unsigned int)(start_x + width) > cam_width_) width = cam_width_ - start_x;
-            it_G->width = width;
+            roi_G->width = width;
+            if (cfg_debug_processing_) debug_proc_string_ += "rg:!W";
           }
 
           // Once we got through here it_G should have a pretty sensible green ROI.
-          it_G->height = it_G->width;
-          uint start_x = (it_R->start.x + it_G->start.x) / 2;
-          uint height = (it_R->height + it_G->height) / 2;
-          uint width = (it_R->width + it_G->width) / 2;
-          uint r_end_y = it_R->start.y + it_R->height;
-          uint start_y = r_end_y + (int)(it_G->start.y - r_end_y - height)/2;
+          roi_G->height = roi_G->width;
+          uint start_x = (roi_R->start.x + roi_G->start.x) / 2;
+          uint height = (roi_R->height + roi_G->height) / 2;
+          uint width = (roi_R->width + roi_G->width) / 2;
+          uint r_end_y = roi_R->start.y + roi_G->height;
+          uint start_y = r_end_y + (int)(roi_G->start.y - r_end_y - height)/2;
           ROI *roi_Y = new ROI(start_x, start_y,
             width, height,
-            it_R->image_width, it_R->image_height);
+            roi_R->image_width, roi_R->image_height);
           roi_Y->color = C_YELLOW;
 
           rv->push_back({roi_R, roi_Y, roi_G});
@@ -738,6 +750,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
         ++it_G;
       }
     }
+    if (cfg_debug_processing_) logger->log_info(name(), "field proc: %s", debug_proc_string_.c_str());
   }
   return rv;
 }
@@ -880,36 +893,36 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
   return rv;
 }
 
-bool MachineSignalPipelineThread::rois_delivery_zone(std::list<ROI>::iterator red, std::list<ROI>::iterator green) {
-  return (green->contains(red->start.x, red->start.y)
-            && green->contains(red->start.x + red->get_width(),
-                red->start.y + red->get_height()))
-            || green->width > cam_width_/4;
+bool MachineSignalPipelineThread::rois_delivery_zone(ROI &red, ROI &green) {
+  return (green.contains(red.start.x, red.start.y)
+            && green.contains(red.start.x + red.get_width(),
+                red.start.y + red.get_height()))
+            || green.width > cam_width_/4;
 }
 
-bool MachineSignalPipelineThread::roi_width_ok(std::list<ROI>::iterator r)
-{ return r->width < cam_width_/4; }
+bool MachineSignalPipelineThread::roi_width_ok(ROI &r)
+{ return r.width < cam_width_/4; }
 
-bool MachineSignalPipelineThread::rois_similar_width(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
-  float width_ratio = (float)r1->width / (float)r2->width;
+bool MachineSignalPipelineThread::rois_similar_width(ROI &r1, ROI &r2) {
+  float width_ratio = (float)r1.width / (float)r2.width;
   return width_ratio >= 1/cfg_roi_max_width_ratio_ && width_ratio <= cfg_roi_max_width_ratio_;
 }
 
-bool MachineSignalPipelineThread::rois_x_aligned(std::list<ROI>::iterator r1, std::list<ROI>::iterator r2) {
-  float avg_width = (r1->width + r2->width) / 2.0f;
-  int mid1 = r1->start.x + r1->width/2;
-  int mid2 = r2->start.x + r2->width/2;
+bool MachineSignalPipelineThread::rois_x_aligned(ROI &r1,ROI &r2) {
+  float avg_width = (r1.width + r2.width) / 2.0f;
+  int mid1 = r1.start.x + r1.width/2;
+  int mid2 = r2.start.x + r2.width/2;
   return abs(mid1 - mid2) / avg_width < cfg_roi_xalign_;
 }
 
-bool MachineSignalPipelineThread::roi_aspect_ok(std::list<ROI>::iterator r) {
-  float aspect_ratio = (float)r->width / (float)r->height;
+bool MachineSignalPipelineThread::roi_aspect_ok(ROI &r) {
+  float aspect_ratio = (float)r.width / (float)r.height;
   return aspect_ratio > 1/cfg_roi_max_aspect_ratio_ && aspect_ratio < cfg_roi_max_aspect_ratio_;
 }
 
-bool MachineSignalPipelineThread::rois_vspace_ok(ROI *r1, ROI *r2) {
-  float avg_height = (r1->height + r2->height) / 2.0f;
-  int dist = r2->start.y - (r1->start.y + r1->height);
+bool MachineSignalPipelineThread::rois_vspace_ok(ROI &r1, ROI &r2) {
+  float avg_height = (r1.height + r2.height) / 2.0f;
+  int dist = r2.start.y - (r1.start.y + r1.height);
   return dist > 0.6 * avg_height && dist < 1.7 * avg_height;
 }
 
@@ -995,6 +1008,8 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         cfg_roi_green_horizon = v->get_uint();
       else if (opt == "/debug_blink")
         cfg_debug_blink_ = v->get_bool();
+      else if (opt == "/debug_processing")
+        cfg_debug_processing_ = v->get_bool();
     }
     cfg_changed_ = cfg_changed_ || chg;
   }
