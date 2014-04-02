@@ -100,13 +100,12 @@ fsm:define_states{ export_to=_M,
               is_green=is_green, PLUGIN_LIGHT_TIMEOUT=PLUGIN_LIGHT_TIMEOUT,
               SETTLE_VISION_TIME=SETTLE_VISION_TIME, max_tries_reached=max_tries_reached},
    {"INIT", JumpState},
-   {"CHECK_POSE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_GATE", fail_to="DECIDE_GATE" },
    {"DECIDE_GATE", JumpState},
-   {"DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="SETTLE_VISION",
+   {"DRIVE_LEFT", SkillJumpState, skills={{global_motor_move}}, final_to="SETTLE_VISION",
       fail_to="FAILED"},
-   {"DRIVE_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="SETTLE_VISION",
+   {"DRIVE_RIGHT", SkillJumpState, skills={{global_motor_move}}, final_to="SETTLE_VISION",
       fail_to="FAILED"},
-   {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}}, final_to="SETTLE_VISION",
+   {"DRIVE_MIDDLE", SkillJumpState, skills={{global_motor_move}}, final_to="SETTLE_VISION",
       fail_to="FAILED"},
    {"CHECK_GATE_AGAIN", JumpState},
    {"SETTLE_VISION", JumpState},
@@ -124,11 +123,11 @@ fsm:define_states{ export_to=_M,
 
 
 fsm:add_transitions{
-   {"INIT", "CHECK_POSE", cond="have_puck and not max_tries_reached()"},
+   {"INIT", "DECIDE_GATE", cond="have_puck and not max_tries_reached()"},
    {"INIT", "FAILED", cond="not have_puck()"},
    {"DECIDE_GATE", "DRIVE_LEFT", cond=left_gate_open, desc="left gate open"},
    {"DECIDE_GATE", "DRIVE_RIGHT", cond=right_gate_open, desc="right gate open"},
-   {"DECIDE_GATE", "DRIVE_FORWARD", cond=middle_gate_open, desc="middle gate open"},
+   {"DECIDE_GATE", "DRIVE_MIDDLE", cond=middle_gate_open, desc="middle gate open"},
    {"SETTLE_VISION", "CHECK_GATE_AGAIN", timeout=SETTLE_VISION_TIME, desc="Let the vision settle"},
    {"CHECK_GATE_AGAIN", "MOVE_UNDER_RFID", cond=is_green, desc="gate is still open"},
    {"CHECK_GATE_AGAIN", "RESTART", cond="not is_green()", desc="gate just got closed, restarting"},
@@ -147,23 +146,28 @@ function INIT:init()
    self.fsm.vars.num_tries = 1
 end
 
-function CHECK_POSE:init()
-   self.skills[1].ori = 0
+function DRIVE_LEFT:init()
+   if self.fsm.vars.place == "deliver1" then
+      self.skills[1].place = "D13"
+   else
+      self.skills[1].place = "D23"
+   end
 end
 
-function DRIVE_LEFT:init()
-   self.skills[1].x = 0.4
-   self.skills[1].y = 0.4
+function DRIVE_MIDDLE:init()
+   if self.fsm.vars.place == "deliver1" then
+      self.skills[1].place = "D12"
+   else
+      self.skills[1].place = "D22"
+   end
 end
 
 function DRIVE_RIGHT:init()
-   self.skills[1].x = 0.4
-   self.skills[1].y = -0.4
-end
-
-function DRIVE_FORWARD:init()
-   self.skills[1].x = 0.4
-   self.skills[1].y = 0
+   if self.fsm.vars.place == "deliver1" then
+      self.skills[1].place = "D11"
+   else
+      self.skills[1].place = "D21"
+   end
 end
 
 function RESTART:init()

@@ -13,6 +13,8 @@ nodes:
     pos: [-4.48, 2.24]
   - name: P13
     pos: [-4.48, 3.36]
+    properties:
+      - highway_exit
   - name: P14
     pos: [-4.48, 4.48]
   - name: P21
@@ -77,6 +79,8 @@ nodes:
     pos: [4.48, 2.24]
   - name: P93
     pos: [4.48, 3.36]
+    properties:
+       - highway_exit
   - name: P94
     pos: [4.48, 4.48]
 
@@ -298,23 +302,38 @@ nodes:
 
 # special points:
         
-  - name: deliver1
-    pos: [4.55, 2.75]
+  - name: D13
+    pos: [4.8, 3.17]
     properties:
       - orientation: 0.0
-  - name: DZ1H
-    pos: [4.6, 2.8]
+  - name: D12
+    pos: [4.8, 2.8]
     properties:
-      - highway_exit
-  - name: deliver2
-    pos: [-4.55, 2.75]
+      - orientation: 0.0
+  - name: D11
+    pos: [4.8, 2.46]
+    properties:
+      - orientation: 0.0
+  - name: D23
+    pos: [-4.8, 3.17]
     properties:
       - orientation: 3.14
-  - name: DZ2H
-    pos: [-4.6, 2.8]
+  - name: D22
+    pos: [-4.8, 2.8]
     properties:
-      - highway_exit
-        
+      - orientation: 3.14
+  - name: D21
+    pos: [-4.8, 2.46]
+    properties:
+      - orientation: 3.14
+  - name: deliver1
+    pos: [4.55, 3.36]
+    properties:
+      - orientation: -0.52 #30°
+  - name: deliver2
+    pos: [-4.55, 3.36]
+    properties:
+      - orientation: 2.62 #150°
   - name: IA1H
     pos: [1.98, 1.0]
     properties:
@@ -603,12 +622,14 @@ connections:
   - [IA2H, P41]
   - [IA2H, Ins2]
 
-  - [DZ1H, P92]
-  - [DZ1H, P93]
-  - [DZ1H, deliver1]
-  - [DZ2H, P12]
-  - [DZ2H, P13]
-  - [DZ2H, deliver2]
+  - [D11,  deliver1]
+  - [D12,  deliver1]
+  - [D13,  deliver1]
+  - [D21,  deliver2]
+  - [D22,  deliver2]
+  - [D23,  deliver2]
+  - [P13,  deliver2]
+  - [P93,  deliver1]
 
   - !dir [P51, WAIT_FOR_INS_1]
   - !dir [WAIT_FOR_INS_1, P61]
