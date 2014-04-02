@@ -30,8 +30,17 @@
 (defrule lock-init
   ?i <- (init-locking)
   (time $?now)
+  (team-color ~nil)
+  (phase ?phase)
   =>
-  (bind ?*CURRENT-MASTER-TIMEOUT* ?*INITIAL-MASTER-TIMEOUT*)
+  (if (or (eq ?phase PRE_GAME)
+	  (eq ?phase SETUP))
+    then
+    (bind ?*CURRENT-MASTER-TIMEOUT* ?*INITIAL-MASTER-TIMEOUT*)
+    else
+    (bind ?*CURRENT-MASTER-TIMEOUT* ?*ROBOT-TIMEOUT*)
+  )
+  
   (printout t "Initial lock-role is SLAVE" crlf)
   ;seed for random numbers (needed for problem solving if there are two masters)
   (seed (nth$ 2 ?now))
