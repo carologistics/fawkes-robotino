@@ -27,7 +27,6 @@
 #include <interfaces/Position3DInterface.h>
 
 #include <fvcams/camera.h>
-//#include <fvcams/fileloader.h>
 #include <fvclassifiers/simple.h>
 #include <fvutils/base/roi.h>
 #include <fvutils/ipc/shm_image.h>
@@ -36,7 +35,10 @@
 #include <fvmodels/color/lookuptable.h>
 #include <fvmodels/scanlines/grid.h>
 #include <fvfilters/roidraw.h>
-
+#include <tf/transformer.h>
+#include <tf/exceptions.h>
+#include <tf/types.h>
+#include <tf/utils.h>
 #include <config/change_handler.h>
 
 #include <string>
@@ -64,16 +66,19 @@ namespace fawkes {
 	}
 }
 
+typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
+
 struct camera_info{
-	std::string cfg_camera_;
-	float opening_angle_horizontal_;
-	float opening_angle_vertical_;
-	unsigned int img_width_;
-	unsigned int img_height_;
-	float position_x_;
-	float position_y_;
-	float position_z_;
-	float position_pitch_;
+	std::string connection;
+	std::string frame;
+	float opening_angle_horizontal;
+	float opening_angle_vertical;
+	unsigned int img_width;
+	unsigned int img_height;
+	float position_x;
+	float position_y;
+	float position_z;
+	float position_pitch;
 	float offset_cam_x_to_groundplane_;
 	float angle_horizontal_to_opening_;
 	float visible_lenght_x_in_m_;
@@ -107,7 +112,7 @@ struct puck_features{
 };
 
 struct puck{
-	fawkes::cart_coord_3d_t cart;
+	Point3d cart;
 	fawkes::polar_coord_2d_t pol;
 	double radius;
 	int visibiity_history;
@@ -132,10 +137,14 @@ public:
 	virtual void finalize();
 
 private:
+	Point3d apply_tf( const char* target_frame,
+			Point3d src_point);
+
 	fawkes::Mutex cfg_mutex_;
 
 	std::string cfg_prefix_;
 	std::string cfg_prefix_static_transforms_;
+	std::string cfg_frame_target;
 	std::string cfg_colormodel_mode_;
 
 	//Camera

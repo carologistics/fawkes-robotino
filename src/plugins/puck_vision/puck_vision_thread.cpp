@@ -22,13 +22,12 @@ PuckVisionThread::PuckVisionThread()
 //,   ConfigurationChangeHandler(CFG_TRANSFORM_PREFIX)
 {
 	cfg_prefix_ = CFG_PREFIX;
-	cfg_frame_ = "";
 
-	camera_info_.cfg_camera_ = "";
-	camera_info_.img_width_ = 0;
-	camera_info_.img_height_ = 0;
-	camera_info_.opening_angle_horizontal_ = 0;
-	camera_info_.opening_angle_vertical_ = 0;
+	camera_info_.connection = "";
+	camera_info_.img_width = 0;
+	camera_info_.img_height = 0;
+	camera_info_.opening_angle_horizontal = 0;
+	camera_info_.opening_angle_vertical = 0;
 
 	buffer_ = NULL;
 	shm_buffer_ = NULL;
@@ -68,7 +67,7 @@ PuckVisionThread::createPuckInterface(){
 	try {
 		puck_if_ = blackboard->open_for_writing<fawkes::Position3DInterface>(interface_name.c_str());
 		puck_if_->set_visibility_history(-9999);
-		puck_if_->set_frame(cfg_frame_.c_str());
+		puck_if_->set_frame(camera_info_.frame.c_str());
 		puck_if_->write();
 		puck_interfaces_.push_back(puck_if_);
 	}catch (std::exception &e) {
@@ -82,23 +81,23 @@ void PuckVisionThread::loadConfig(){
 	cfg_prefix_ = CFG_PREFIX;
 	cfg_prefix_static_transforms_ = config->get_string((cfg_prefix_ + "transform").c_str());
 
-	cfg_frame_ = "/base_link"; //config->get_string((cfg_prefix_static_transforms_ + "child_frame").c_str());
+	cfg_frame_target = "/base_link";
 
 	//load camera informations
-	camera_info_.cfg_camera_ = config->get_string((cfg_prefix_ + "camera").c_str());
-	camera_info_.position_x_ = config->get_float(( cfg_prefix_static_transforms_ + "trans_x").c_str());
-	camera_info_.position_y_ =  config->get_float(( cfg_prefix_static_transforms_ + "trans_y").c_str());
-	camera_info_.position_z_ =  config->get_float(( cfg_prefix_static_transforms_ + "trans_z").c_str());
-	camera_info_.position_pitch_ =  config->get_float(( cfg_prefix_static_transforms_ + "rot_pitch").c_str());
-	camera_info_.opening_angle_horizontal_ = config->get_float((cfg_prefix_ + "camera_opening_angle_horizontal").c_str());
-	camera_info_.opening_angle_vertical_ = config->get_float((cfg_prefix_ + "camera_opening_angle_vertical").c_str());
+	camera_info_.connection = config->get_string((cfg_prefix_ + "camera").c_str());
+	camera_info_.position_x = config->get_float(( cfg_prefix_static_transforms_ + "trans_x").c_str());
+	camera_info_.position_y =  config->get_float(( cfg_prefix_static_transforms_ + "trans_y").c_str());
+	camera_info_.position_z =  config->get_float(( cfg_prefix_static_transforms_ + "trans_z").c_str());
+	camera_info_.position_pitch =  config->get_float(( cfg_prefix_static_transforms_ + "rot_pitch").c_str());
+	camera_info_.opening_angle_horizontal = config->get_float((cfg_prefix_ + "camera_opening_angle_horizontal").c_str());
+	camera_info_.opening_angle_vertical = config->get_float((cfg_prefix_ + "camera_opening_angle_vertical").c_str());
 	// Calculate visible Area
-	camera_info_.angle_horizontal_to_opening_ = (1.57 - camera_info_.position_pitch_) - (camera_info_.opening_angle_vertical_ / 2) ;
-	camera_info_.visible_lenght_x_in_m_ = camera_info_.position_z_ * (tan( camera_info_.opening_angle_vertical_ + camera_info_.angle_horizontal_to_opening_) - tan(camera_info_.angle_horizontal_to_opening_));
-	camera_info_.offset_cam_x_to_groundplane_ = camera_info_.position_z_ * tan(camera_info_.angle_horizontal_to_opening_);
-	camera_info_.visible_lenght_y_in_m_ = camera_info_.position_z_ * tan (camera_info_.opening_angle_horizontal_ /2 );
-
-	logger->log_debug(name(),"Camera opening angles Horizontal: %f Vertical: %f", camera_info_.opening_angle_horizontal_, camera_info_.opening_angle_vertical_);
+	camera_info_.angle_horizontal_to_opening_ = (1.57 - camera_info_.position_pitch) - (camera_info_.opening_angle_vertical / 2) ;
+	camera_info_.visible_lenght_x_in_m_ = camera_info_.position_z * (tan( camera_info_.opening_angle_vertical + camera_info_.angle_horizontal_to_opening_) - tan(camera_info_.angle_horizontal_to_opening_));
+	camera_info_.offset_cam_x_to_groundplane_ = camera_info_.position_z * tan(camera_info_.angle_horizontal_to_opening_);
+	camera_info_.visible_lenght_y_in_m_ = camera_info_.position_z * tan (camera_info_.opening_angle_horizontal /2 );
+	camera_info_.frame = config->get_string((cfg_prefix_static_transforms_ + "child_frame").c_str());
+	logger->log_debug(name(),"Camera opening angles Horizontal: %f Vertical: %f", camera_info_.opening_angle_horizontal, camera_info_.opening_angle_vertical);
 
 	cfg_debugMessagesActivated_ = config->get_bool((cfg_prefix_ + "show_debug_messages").c_str());
 	cfg_paintROIsActivated_ = config->get_bool((cfg_prefix_ + "draw_rois").c_str());
@@ -126,14 +125,14 @@ void PuckVisionThread::init_with_config()
 		cam_ = NULL;
 	}
 	if(cam_ == NULL){
-		cam_ = vision_master->register_for_camera(camera_info_.cfg_camera_.c_str(), this);
+		cam_ = vision_master->register_for_camera(camera_info_.connection.c_str(), this);
 		cam_->start();
 		cam_->open();
-		camera_info_.img_width_ = cam_->pixel_width();
-		camera_info_.img_height_ = cam_->pixel_height();
+		camera_info_.img_width = cam_->pixel_width();
+		camera_info_.img_height = cam_->pixel_height();
 
-		search_area.image_height = camera_info_.img_height_;
-		search_area.image_width = camera_info_.img_width_;
+		search_area.image_height = camera_info_.img_height;
+		search_area.image_width = camera_info_.img_width;
 		printRoi(search_area);
 
 		cspaceFrom_ = cam_->colorspace();
@@ -148,8 +147,8 @@ void PuckVisionThread::init_with_config()
 		shm_buffer_ = new firevision::SharedMemoryImageBuffer(
 				shmID.c_str(),
 				cspaceTo_,
-				camera_info_.img_width_,
-				camera_info_.img_height_
+				camera_info_.img_width,
+				camera_info_.img_height
 				);
 
 		if (!shm_buffer_->is_valid()) {
@@ -159,10 +158,10 @@ void PuckVisionThread::init_with_config()
 			cam_ = NULL;
 			throw fawkes::Exception("Shared memory segment not valid");
 		}
-		shm_buffer_->set_frame_id(cfg_frame_.c_str());
+		shm_buffer_->set_frame_id(camera_info_.frame.c_str());
 
 		buffer_ = shm_buffer_->buffer();
-		camera_info_.fullimage = firevision::ROI::full_image(camera_info_.img_width_, camera_info_.img_height_);
+		camera_info_.fullimage = firevision::ROI::full_image(camera_info_.img_width, camera_info_.img_height);
 	}
 
 //	//load puck infos;
@@ -176,7 +175,7 @@ void PuckVisionThread::init_with_config()
 	setup_color_classifier(&puck_info_.top_dots, "puck/topdots", firevision::C_YELLOW);
 
 	logger->log_debug(name(), "Visible X: %f y: %f Offset cam groundplane: %f angle (horizontal/opening): %f ",camera_info_.visible_lenght_x_in_m_, camera_info_.visible_lenght_y_in_m_ , camera_info_.offset_cam_x_to_groundplane_, camera_info_.angle_horizontal_to_opening_);
-	logger->log_debug(name(), "cam transform X: %f y: %f z: %f pitch: %f",camera_info_.position_x_, camera_info_.position_y_, camera_info_.position_z_, camera_info_.position_pitch_);
+	logger->log_debug(name(), "cam transform X: %f y: %f z: %f pitch: %f",camera_info_.position_x, camera_info_.position_y, camera_info_.position_z, camera_info_.position_pitch);
 }
 
 void
@@ -189,9 +188,10 @@ PuckVisionThread::init()
 	no_pucK_ = new puck();
 	int val_empty = -9999;
 	no_pucK_->visibiity_history = val_empty;
-	no_pucK_->cart.x = val_empty;
-	no_pucK_->cart.y = val_empty;
-	no_pucK_->cart.z = val_empty;
+	no_pucK_->cart[0] = val_empty;
+	no_pucK_->cart[1] = val_empty;
+	no_pucK_->cart[2] = val_empty;
+	no_pucK_->cart.frame_id = "/base_link";
 	drawer_ = new firevision::FilterROIDraw();
 	loadConfig();
 	init_with_config();
@@ -238,8 +238,8 @@ void PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color
 	color_data->cfg_scangrid_y_offset = config->get_int((cfg_prefix_ + prefix +"/scangrid_y_offset").c_str());
 
 	color_data->scanline_grid = new firevision::ScanlineGrid(
-	camera_info_.img_width_,
-	camera_info_.img_height_,
+	camera_info_.img_width,
+	camera_info_.img_height,
 	color_data->cfg_scangrid_x_offset,
 	color_data->cfg_scangrid_y_offset);
 
@@ -335,8 +335,8 @@ PuckVisionThread::loop()
 					cspaceTo_,
 					cam_->buffer(),
 					buffer_,
-					camera_info_.img_width_,
-					camera_info_.img_height_);
+					camera_info_.img_width,
+					camera_info_.img_height);
 		cam_->dispose_buffer();
 
 		std::list<firevision::ROI> pucks_in_view = detectPucks();
@@ -560,7 +560,7 @@ PuckVisionThread::drawROIIntoBuffer(firevision::ROI roi, firevision::FilterROIDr
 {
 	try{
 		if(cfg_paintROIsActivated_){
-			drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(camera_info_.img_width_, camera_info_.img_height_), 0);
+			drawer_->set_src_buffer(buffer_, firevision::ROI::full_image(camera_info_.img_width, camera_info_.img_height), 0);
 			drawer_->set_dst_buffer(buffer_, &roi);
 			drawer_->set_style(borderStyle);
 			drawer_->apply();
@@ -580,7 +580,7 @@ PuckVisionThread::classifyInRoi(firevision::ROI searchArea, color_classifier_con
 	try{
 		color_data->scanline_grid->reset();
 		color_data->scanline_grid->set_roi(&searchArea);
-		color_data->classifier->set_src_buffer(buffer_, camera_info_.img_width_, camera_info_.img_height_);
+		color_data->classifier->set_src_buffer(buffer_, camera_info_.img_width, camera_info_.img_height);
 
 		std::list<firevision::ROI> *ROIs = color_data->classifier->classify();
 
@@ -594,20 +594,20 @@ PuckVisionThread::classifyInRoi(firevision::ROI searchArea, color_classifier_con
 float
 PuckVisionThread::getX(firevision::ROI* roi){
 	// Distance X
-	int roiPositionY = camera_info_.img_height_ - ( roi->start.y +roi->height/2 );
-	float angle = ( (float)roiPositionY * camera_info_.opening_angle_vertical_ ) / (float)camera_info_.img_height_;
-	float distance_x = camera_info_.position_z_ * (tan( angle + camera_info_.angle_horizontal_to_opening_) - tan(camera_info_.angle_horizontal_to_opening_));
+	int roiPositionY = camera_info_.img_height - ( roi->start.y +roi->height/2 );
+	float angle = ( (float)roiPositionY * camera_info_.opening_angle_vertical ) / (float)camera_info_.img_height;
+	float distance_x = camera_info_.position_z * (tan( angle + camera_info_.angle_horizontal_to_opening_) - tan(camera_info_.angle_horizontal_to_opening_));
 
 	//logger->log_debug(name(),"angle: %f, image_size x: %i y: %i,roi x: %i y: %i", (angle*180) / M_PI, img_width_, img_height_, roi->start.x, roi->start.y);
 
-	return distance_x + camera_info_.offset_cam_x_to_groundplane_ + camera_info_.position_x_;
+	return distance_x + camera_info_.offset_cam_x_to_groundplane_;;
 }
 
 float
 PuckVisionThread::getY(firevision::ROI* roi){
 	// Left-Right
 	int roiPositionX = ( roi->start.x + roi->width/2 );
-	float alpha = ((((float)camera_info_.img_width_/2) - (float)roiPositionX) / ((float)camera_info_.img_width_ /2 )) * (camera_info_.opening_angle_horizontal_/2);
+	float alpha = ((((float)camera_info_.img_width/2) - (float)roiPositionX) / ((float)camera_info_.img_width /2 )) * (camera_info_.opening_angle_horizontal/2);
 	float x = getX(roi);
 	float position_y_in_m = sin(alpha * x);
 
@@ -621,17 +621,22 @@ PuckVisionThread::getPuckPosition(puck *p, firevision::ROI roi){
 	// Left-Right
 	int roiPositionX_L = ( roi.start.x);
 	int roiPositionX_R = ( roi.start.x + roi.width );
-	float alpha_L = ((((float)camera_info_.img_width_/2) - (float)roiPositionX_L) / ((float)camera_info_.img_width_ /2 )) * (camera_info_.opening_angle_horizontal_/2);
-	float alpha_R = ((((float)camera_info_.img_width_/2) - (float)roiPositionX_R) / ((float)camera_info_.img_width_ /2 )) * (camera_info_.opening_angle_horizontal_/2);
+	float alpha_L = ((((float)camera_info_.img_width/2) - (float)roiPositionX_L) / ((float)camera_info_.img_width /2 )) * (camera_info_.opening_angle_horizontal/2);
+	float alpha_R = ((((float)camera_info_.img_width/2) - (float)roiPositionX_R) / ((float)camera_info_.img_width /2 )) * (camera_info_.opening_angle_horizontal/2);
 	float x = getX(&roi);
 	float position_y_in_m_L = sin(alpha_L * x);
 	float position_y_in_m_R = sin(alpha_R * x);
 
 	p->roi = roi;
-	p->cart.x = getX(&roi);
-	p->cart.y = getY(&roi);
-	p->cart.z = 0;
-	cartToPol(p->pol, p->cart.x, p->cart.y );
+
+	p->cart[0] = getX(&roi);
+	p->cart[1] = getY(&roi);
+	p->cart[2] = 0;
+	p->cart.stamp = fawkes::Time();
+	p->cart.frame_id = camera_info_.frame;
+	p->cart = apply_tf(cfg_frame_target.c_str(), p->cart);
+
+	cartToPol(p->pol, p->cart[0], p->cart[1] );
 	p->visibiity_history = 1;
 	p->radius = position_y_in_m_L -position_y_in_m_R ;
 
@@ -642,11 +647,13 @@ PuckVisionThread::getPuckPosition(puck *p, firevision::ROI roi){
 
 void
 PuckVisionThread::updatePos3dInferface(fawkes::Position3DInterface* interface, puck* p){
-	interface->set_translation(0, p->cart.x);
-	interface->set_translation(1, p->cart.y);
-	interface->set_translation(2, p->cart.z);
+	interface->set_translation(0, p->cart[0]);
+	interface->set_translation(1, p->cart[1]);
+	interface->set_translation(2, p->cart[2]);
 	interface->set_rotation(0, p->pol.phi);
 	interface->set_rotation(1, p->pol.r);
+	//interface->set_timestamp(&p->cart.stamp);
+	interface->set_frame(p->cart.frame_id.c_str());
 	interface->set_visibility_history(p->visibiity_history);
 }
 
@@ -724,9 +731,38 @@ void PuckVisionThread::config_value_changed(const fawkes::Configuration::ValueIt
 	cfg_mutex_.unlock();
 }
 
+Point3d PuckVisionThread::apply_tf( const char* target_frame,
+		Point3d src) {
 
+  Point3d targetPoint;
+  targetPoint.frame_id = target_frame;
+  const char* source_frame = src.frame_id.c_str();
 
+  bool link_frame_exists = tf_listener->frame_exists(target_frame);
+  bool laser_frame_exists = tf_listener->frame_exists(source_frame);
 
-
-
+  if (!link_frame_exists || !laser_frame_exists) {
+    logger->log_warn(name(), "Frame missing: %s %s   %s %s", source_frame,
+		     link_frame_exists ? "exists" : "missing", target_frame,
+		     laser_frame_exists ? "exists" : "missing");
+  } else {
+    try {
+      tf_listener->transform_point(target_frame, src, targetPoint);
+    } catch (fawkes::tf::ExtrapolationException &e) {
+      logger->log_debug(name(), "Extrapolation error: %s", e.what());
+      return src;
+    } catch (fawkes::tf::ConnectivityException &e) {
+      logger->log_debug(name(), "Connectivity exception: %s", e.what());
+      return src;
+    } catch (fawkes::Exception &e) {
+      logger->log_debug(name(), "Fawkes exception: %s", e.what());
+      return src;
+    } catch (std::exception &e) {
+      logger->log_debug(name(), "Generic exception: %s", e.what());
+      return src;
+    }
+    return targetPoint;
+  }
+  return src;
+}
 
