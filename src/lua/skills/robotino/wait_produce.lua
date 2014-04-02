@@ -89,7 +89,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", precond=plugin_missing},
-   {"INIT", "WAIT", timeout=1}, -- let vision settle
+   {"INIT", "WAIT", timeout=5}, -- let vision settle
    {"WAIT", "OUT_OF_ORDER", cond="out_of_order() and plugin:is_ready()"},
    {"OUT_OF_ORDER", "WAIT", cond="not out_of_order() and plugin:is_ready()"},
    {"OUT_OF_ORDER", "WAIT", timeout=120},
