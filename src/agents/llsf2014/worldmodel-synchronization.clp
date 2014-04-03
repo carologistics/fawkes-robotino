@@ -196,6 +196,9 @@
           (case SET_PRODUCE_BLOCKED then 
             (modify ?machine (produce-blocked TRUE))
           )
+          (case RESET_PRODUCE_BLOCKED then 
+            (modify ?machine (produce-blocked FALSE))
+          )
           (case SET_RECYCLE_BLOCKED then 
             (modify ?machine (recycle-blocked TRUE))
           )

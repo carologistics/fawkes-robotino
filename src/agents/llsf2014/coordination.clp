@@ -181,3 +181,14 @@
   ;reject task because it failed
   (assert (proposed-task (name ?task) (args ?args) (state rejected)))
 )
+
+(defrule coordination-unblock-T1-GAU
+  "If all T1 are blocked because they failed unlock them, we can as well just try again"
+  (machine (mtype T1)) ; There is at least one known T1
+  (not (machine (mtype T1) (produce-blocked FALSE))) ; but none which is not blocked
+  =>
+  (printout warn "No more T1 available for production, unlocking all" crlf)
+  (do-for-all-facts ((?m machine)) (eq ?m:mtype T1)
+    (assert (worldmodel-change (machine ?m:name) (change RESET_PRODUCE_BLOCKED)))
+  )
+)
