@@ -903,7 +903,7 @@ bool MachineSignalPipelineThread::rois_delivery_zone(ROI &red, ROI &green) {
 }
 
 bool MachineSignalPipelineThread::roi_width_ok(ROI &r)
-{ return r.width < cam_width_/4; }
+{ return r.width < cam_width_/3; }
 
 bool MachineSignalPipelineThread::rois_similar_width(ROI &r1, ROI &r2) {
   float width_ratio = (float)r1.width / (float)r2.width;
