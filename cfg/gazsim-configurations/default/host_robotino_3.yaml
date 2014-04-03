@@ -26,7 +26,7 @@ plugins/light_front:
   shm_image_id: "robotino3/light_front"
 
 clips-agent:
-  llsf2013:
+  llsf2014:
     # Possible roles for the agent:
     # P1P2
     # P3
