@@ -20,10 +20,12 @@
  */
 
 #include "navgraph_broker_thread.h"
-#include <string>
-#include <vector>
+
 #include <boost/algorithm/string.hpp>
-#include <interfaces/NavPathInterface.h>
+
+#include <plugins/gossip/gossip/gossip_group.h>
+#include "TestMessage.pb.h"
+
 
 using namespace fawkes;
 
@@ -35,7 +37,7 @@ using namespace fawkes;
 /** Constructor. */
 NavgraphBrokerThread::NavgraphBrokerThread()
   : Thread("NavgraphBrokerThread", Thread::OPMODE_WAITFORWAKEUP),
-    BlackBoardInterfaceListener("NavPathInterface")
+    BlackBoardInterfaceListener("NavPathInterface"),GossipAspect("example")
 {
 }
 
@@ -63,6 +65,9 @@ NavgraphBrokerThread::init()
 	reserve_nodes("Robotino1" , nodes);
 	constraint_repo.unlock();
 
+	last_sent_ = new Time(clock);
+	counter_   = 0;
+
 }
 
 void
@@ -80,7 +85,12 @@ NavgraphBrokerThread::finalize()
 void
 NavgraphBrokerThread::loop(){
 
-	// listen for changes and add reservations to the ConstraintRepo
+	  fawkes::Time now(clock);
+	  if (now - last_sent_ >= 2.0) {
+		  *last_sent_ = now;
+
+		  send_data();
+	  }
 }
 
 
@@ -161,6 +171,22 @@ NavgraphBrokerThread::reserve_nodes(std::string robot_name, std::vector<fawkes::
 		constraint_repo->register_constraint( (AbstractNodeConstraint *) new ReservedNodeConstraint(logger, constraint_name) );
 		constraint_repo->add_nodes(constraint_name, path);
 	}
+}
+
+void
+NavgraphBrokerThread::send_data(){
+
+	fawkes::Time now(clock);
+
+	navgraph_broker::TestMessage m;
+	m.set_counter(++counter_);
+	m.set_sec(now.get_sec());
+	m.set_nsec(now.get_nsec());
+	gossip_group->broadcast(m);
+
+	logger->log_debug(name(), "Sending");
+
+
 }
 
 void

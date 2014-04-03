@@ -27,13 +27,18 @@
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
-#include <blackboard/interface_listener.h>
+#include <aspect/clock.h>
+
+#include <plugins/gossip/aspect/gossip.h>
 #include <plugins/navgraph/aspect/navgraph.h>
 #include <plugins/navgraph/constraints/constraint_repo.h>
 #include <utils/graph/topological_map_graph.h>
-#include <string>
 
 #include <interfaces/NavPathInterface.h>
+#include <blackboard/interface_listener.h>
+
+#include <string>
+#include <vector>
 
 namespace fawkes{
 	class Time;
@@ -44,11 +49,13 @@ namespace fawkes{
 
 class NavgraphBrokerThread
 : public fawkes::Thread,
+  public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
   public fawkes::NavGraphAspect,
   public fawkes::BlackBoardAspect,
   public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardInterfaceListener
+  public fawkes::BlackBoardInterfaceListener,
+  public fawkes::GossipAspect
 {
  public:
   NavgraphBrokerThread();
@@ -61,14 +68,6 @@ class NavgraphBrokerThread
   // For BlackBoardInterfaceListener
   virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
 
-  //
-  void reserve_nodes(std::string robot_name, std::vector<fawkes::TopologicalMapNode> path);
-
- private:
-  std::vector<fawkes::TopologicalMapNode> get_nodes_from_string(std::string path);
-  std::string get_string_from_nodes(std::vector<fawkes::TopologicalMapNode> path);
-  std::string get_path_from_interface_as_string();
-
  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
  protected: virtual void run() { Thread::run(); }
 
@@ -76,8 +75,15 @@ class NavgraphBrokerThread
  	 std::string robot_name_;
      fawkes::NavPathInterface *path_if_;
 
- private: // methods
+     fawkes::Time *last_sent_;
+     unsigned int  counter_;
 
+ private: // methods
+     void reserve_nodes(std::string robot_name, std::vector<fawkes::TopologicalMapNode> path);
+     std::vector<fawkes::TopologicalMapNode> get_nodes_from_string(std::string path);
+     std::string get_string_from_nodes(std::vector<fawkes::TopologicalMapNode> path);
+     std::string get_path_from_interface_as_string();
+     void send_data();
 
 };
 
