@@ -245,7 +245,7 @@ nodes:
     properties:
       - highway_exit
   - name: M12H
-    pos: [5.04, 4.48]
+    pos: [4.84, 4.48]
     properties:
       - highway_exit
   - name: R1H
@@ -298,7 +298,7 @@ nodes:
     properties:
       - highway_exit
   - name: M24H
-    pos: [-5.04, 4.48]
+    pos: [-4.84, 4.48]
     properties:
       - highway_exit
   - name: R2H
