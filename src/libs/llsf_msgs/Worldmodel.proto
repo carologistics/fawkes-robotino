@@ -29,6 +29,7 @@ enum WorldmodelChangeType {
   SET_RECYCLE_BLOCKED = 8;
   SET_DOUBTFUL_WORLDMODEL = 9;
   ADD_IN_DELIVERY = 10;
+  RESET_PRODUCE_BLOCKED = 11;
 }
 
 message MachineState {
