@@ -9,7 +9,7 @@ plugins/puck_vision:
   #camera: "file:file:file=/home/fnolden/Bilder/Webcam/11.jpg"
   #camera: v4l2:front:device=/dev/video0 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
   #camera: v4l2:light:device=/dev/video1:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
-  camera: v4l2:puck:device=/dev/puck_front
+  camera: v4l2:light:device=/dev/puck_front
 
   #Shared Memory Imagebuffer name
   shm_image_id: "puck_front"
@@ -36,26 +36,30 @@ plugins/puck_vision:
     radius: 0.03
     height: 0.02
 
-  #puck main color (RED)
+ #puck main color (RED)
     red:
-      reference_color: [189, 28, 34]
+      reference_color: [189, 28, 34,
+      77, 24, 16,
+      106, 29, 21]
       chroma_thresh: 10
       saturation_thresh: 20
       min_points: 10
       basic_roi_size: 0
       neighborhood_min_match: 10
-      scangrid_x_offset: 8
-      scangrid_y_offset: 8
+      scangrid_x_offset: 4
+      scangrid_y_offset: 4
       lut: /bulb-colormap/red.colormap
 
   #puck topdots color (Yellow) 
-			#R  #G   #B
+      #R  #G   #B
     topdots:
-      reference_color: [172, 142, 32,  
-			155, 157, 86,  
-			255, 255, 0,  
-			255, 194, 49,
-			177, 138, 79]
+      reference_color: [172, 142, 32,
+      155, 157, 86,
+      255, 255, 0,
+      255, 194, 49,
+      177, 138, 79,
+      174, 141, 36,
+      155, 112, 18]
       chroma_thresh: 10
       saturation_thresh: 40
       min_points: 4
