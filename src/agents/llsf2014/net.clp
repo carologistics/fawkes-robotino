@@ -127,8 +127,13 @@
        (assert (order (id (pb-field-value ?o "id"))
 		      (product (sym-cat (pb-field-value ?o "product")))
 		      (quantity-requested (pb-field-value ?o "quantity_requested"))
+		      (quantity-delivered (pb-field-value ?o "quantity_delivered"))
 		      (begin (pb-field-value ?o "delivery_period_begin"))
 		      (end (pb-field-value ?o "delivery_period_end"))))
+       else
+       (do-for-fact ((?order order)) (eq ?order:id (pb-field-value ?o "id"))
+	 (modify ?order (quantity-delivered (pb-field-value ?o "quantity_delivered")))
+       )
      )
    )
    (retract ?pf)

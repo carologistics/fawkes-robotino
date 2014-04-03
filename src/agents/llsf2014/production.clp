@@ -131,16 +131,19 @@
   (machine (mtype T5) (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name) (produced-puck P3) (team ?team-color))
   (game-time $?time)
   (order (product P3) (quantity-requested ?qr) (id  ?order-id)
-	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	 ;(in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	 (quantity-delivered ?qd&:(< ?qd ?qr))
 	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
 	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
-  (not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name P3 (+ ?in-delivery 1) ?order-id))) (state rejected)))
+  ;(not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name P3 (+ ?in-delivery 1) ?order-id))) (state rejected)))
   (holding NONE)
-  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P3*))))
+  ;(not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P3*))))
+  (role P3-ONLY)
   =>
   (printout t "PROD: Deliver P3 from " ?name crlf)
   (assert (proposed-task (name pick-and-deliver) (priority ?*PRIORITY-DELIVER-P3*)
-			 (args (create$ ?name P3 (+ ?in-delivery 1) ?order-id)))
+			 ;(args (create$ ?name P3 (+ ?in-delivery 1) ?order-id)))
+			 (args (create$ ?name P3 1 ?order-id)))
   )
 )
 
@@ -158,6 +161,7 @@
   (not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name ?puck  (+ ?in-delivery 1) ?order-id))) (state rejected)))
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P1P2*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Deliver " ?puck " from " ?name crlf)
   (assert (proposed-task (name pick-and-deliver) (priority ?*PRIORITY-DELIVER-P1P2*)
@@ -176,6 +180,7 @@
   (not (proposed-task (name recycle) (args $?args&:(subsetp ?args (create$ ?name ?recycle))) (state rejected)))
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-RECYCLE*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Recycling from " ?name crlf)
   (assert (proposed-task (name recycle) (args (create$ ?name ?recycle)) (priority ?*PRIORITY-RECYCLE*))
@@ -193,6 +198,7 @@
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-START-T2-WITH-S0*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Starting T2 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-START-T2-WITH-S0*))
@@ -209,6 +215,7 @@
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T2-WITH-S0*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Loading T2 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T2-WITH-S0*))
@@ -225,6 +232,7 @@
   (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T2))) (state rejected)))
   (holding NONE|S0|S1)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T2-WITH-S1*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Loading T2 " ?name-T2 " with S1 after producing at a T1" crlf)
   (assert (proposed-task (name load-with-S1) (args (create$ ?name-T2)) (priority ?*PRIORITY-LOAD-T2-WITH-S1*))
@@ -248,6 +256,7 @@
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-START-T3_T4-WITH-S0*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-START-T3_T4-WITH-S0*))
@@ -264,6 +273,7 @@
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S0*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S0*))
@@ -280,6 +290,7 @@
   (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
   (holding NONE|S0|S1)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S1*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing at T1" crlf)
   (assert (proposed-task (name load-with-S1) (args (create$ ?name-T3_T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
@@ -298,6 +309,7 @@
   (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
   (holding NONE|S0|S1)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S1*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Continue Loading T3/T4 " ?name-T3_T4 " with S1 after producing at T1" crlf)
   (assert (proposed-task (name load-with-S1) (args (create$ ?name-T3_T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
@@ -324,6 +336,7 @@
   (not (proposed-task (name pick-and-load) (args $?args&:(subsetp ?args (create$ ?name_T2 ?name_T3T4))) (state rejected)))
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S2*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Loading T3/T4 " ?name_T3T4 " with S2 from " ?name_T2 crlf)
   (assert (proposed-task (name pick-and-load) (args (create$ ?name_T2 ?name_T3T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
@@ -333,18 +346,33 @@
 (defrule prod-load-T5-with-S0
   (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))
   (phase PRODUCTION)
-  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (state IDLE);|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
   (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
     (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE) (team ?team-color))
-  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  ;(not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
-  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T5-WITH-S0*))))
+  ;(not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T5-WITH-S0*))))
+  (role P3-ONLY)
   =>
   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T5-WITH-S0*))
   )
 )
+
+; (defrule prod-wait-in-front-of-T5-with-S0
+;   (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))
+;   (phase PRODUCTION)
+;   (state IDLE)
+;   (team-color ?team-color&~nil)
+;   (machine (mtype T5) (name ?name) (team ?team-color))
+;   (holding NONE)
+;   (role P3-ONLY)
+;   =>
+;   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
+;   (assert (proposed-task (name wait-at-T5) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T5-WITH-S0*))
+;   )
+; )
 
 (defrule prod-deliver-unintentionally-holding-produced-puck
   (declare (salience ?*PRIORITY-DELIVER-HOLDING*))
@@ -380,6 +408,7 @@
   (not (proposed-task (name load-with-S2) (args $?args&:(subsetp ?args (create$ ?name_T3T4))) (state rejected)))
   (holding S2)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-HOLDING-S2*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Loading T3/T4 " ?name_T3T4 " with S2" crlf)
   (assert (proposed-task (name load-with-S2) (args (create$ ?name_T3T4)) (priority ?*PRIORITY-LOAD-HOLDING-S2*))
@@ -395,6 +424,7 @@
   (machine (name ?name) (mtype RECYCLE) (team ?team-color))
   (not (proposed-task (name recycle-holding) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-RECYCLE*))))
+  (not (role P3-ONLY))
   =>
   (printout t "PROD: Recycle hilding CO at " ?name crlf)
   (assert (proposed-task (name recycle-holding) (args (create$ ?name)) (priority ?*PRIORITY-RECYCLE*))

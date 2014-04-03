@@ -112,6 +112,7 @@
   (slot id (type INTEGER))
   (slot product (type SYMBOL) (allowed-symbols P1 P2 P3))
   (slot quantity-requested (type INTEGER))
+  (slot quantity-delivered (type INTEGER))
   (slot begin (type INTEGER))
   (slot end (type INTEGER))
   (slot in-production (type INTEGER) (default 0))
@@ -120,7 +121,7 @@
 
 ;common template for a task
 (deftemplate task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding))
+  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding wait-at-T5))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values ordered running finished failed) (default ordered))
   (slot priority (type INTEGER) (default 0))
@@ -128,7 +129,7 @@
 
 ;common template for a proposed task
 (deftemplate proposed-task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding))
+  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding wait-at-T5))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values proposed asked rejected) (default proposed))
   (slot priority (type INTEGER) (default 0))
