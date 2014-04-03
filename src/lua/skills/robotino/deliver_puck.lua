@@ -85,6 +85,9 @@ function is_green()
    return light:green() == light.ON and light:visibility_history() > 5 --TODO and light:is_ready()
 end
 
+function is_red()
+   return light:red() == light.ON and light:visibility_history() > 5 --TODO and light:is_ready()
+end
 function feedback_ok()
    return light:is_ready()
       and light:green() == light.ON
@@ -97,23 +100,23 @@ function max_tries_reached()
 end
 
 fsm:define_states{ export_to=_M,
-   closure = {have_puck=have_puck, orange_blinking=orange_blinking,
+   closure = {have_puck=have_puck, orange_blinking=orange_blinking,is_red=is_red,
               is_green=is_green, PLUGIN_LIGHT_TIMEOUT=PLUGIN_LIGHT_TIMEOUT,
               SETTLE_VISION_TIME=SETTLE_VISION_TIME, max_tries_reached=max_tries_reached},
    {"INIT", JumpState},
    {"DECIDE_GATE", JumpState},
    {"DRIVE_LEFT", SkillJumpState, skills={{global_motor_move}}, final_to="SETTLE_VISION",
-      fail_to="FAILED"},
+      fail_to="DECIDE_GATE"},
    {"DRIVE_RIGHT", SkillJumpState, skills={{global_motor_move}}, final_to="SETTLE_VISION",
-      fail_to="FAILED"},
+      fail_to="DECIDE_GATE"},
    {"DRIVE_MIDDLE", SkillJumpState, skills={{global_motor_move}}, final_to="SETTLE_VISION",
-      fail_to="FAILED"},
+      fail_to="DECIDE_GATE"},
    {"CHECK_GATE_AGAIN", JumpState},
    {"SETTLE_VISION", JumpState},
    {"RESTART", SkillJumpState, skills={{take_puck_to}}, final_to="GLOBAL_MOTOR_MOVE",
       fail_to="FAILED"},
    {"GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_GATE",
-      fail_to="FAILED"},
+      fail_to="DECIDE_GATE"},
    {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="WAIT_FOR_SIGNAL",
       fail_to="WAIT_FOR_SIGNAL"},
    {"WAIT_FOR_SIGNAL", JumpState},
@@ -132,9 +135,9 @@ fsm:add_transitions{
    {"DECIDE_GATE", "DRIVE_RIGHT", cond=right_gate_open, desc="right gate open"},
    {"DECIDE_GATE", "DRIVE_MIDDLE", cond=middle_gate_open, desc="middle gate open"},
    {"SETTLE_VISION", "CHECK_GATE_AGAIN", timeout=SETTLE_VISION_TIME, desc="Let the vision settle"},
-   {"CHECK_GATE_AGAIN", "MOVE_UNDER_RFID", cond=is_green, desc="gate is still open"},
-   {"CHECK_GATE_AGAIN", "RESTART", cond="not is_green()", desc="gate just got closed, restarting"},
-   {"RESTART", "GET_RID_OF_PUCK", cond=max_tries_reached, desc="lose the puck before failing"},
+   {"CHECK_GATE_AGAIN", "MOVE_UNDER_RFID", cond="not is_red()", desc="gate is still open"},
+   {"CHECK_GATE_AGAIN", "RESTART", cond=is_red, desc="gate just got closed, restarting"},
+   {"RESTART", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
    {"WAIT_FOR_SIGNAL", "CHECK_RESULT", timeout=2, desc="wait for the deliver registry"},
    {"CHECK_RESULT", "MOVE_UNDER_RFID", timeout=PLUGIN_LIGHT_TIMEOUT},
    {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok, desc="all lights on"},
