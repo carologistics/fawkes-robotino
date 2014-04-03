@@ -467,7 +467,7 @@
   (state EXP_PREPARE_FOR_PRODUCTION)
   ?et <- (exp-tactic NEAREST)
   (team-color ?team-color)
-  (input-storage ?team-color ?ins)
+  (input-storage ?team-color ?ins ? ?)
   =>
   (printout t "Finished Exploration :-)" crlf)
   (retract ?et)
@@ -480,7 +480,7 @@
   (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
-  (input-storage ?team-color ?ins)
+  (input-storage ?team-color ?ins ? ?)
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   =>
   (printout t "Waiting for production at " ?ins crlf)
@@ -492,7 +492,7 @@
   (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
-  (input-storage ?team-color ?ins)
+  (input-storage ?team-color ?ins ? ?)
   (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   ?lock <- (lock (type GET) (agent ?a) (resource ?ins))
   (wait-point ?ins ?wait-point)
@@ -532,7 +532,7 @@
   ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
   ?pf <- (protobuf-msg (type "llsf_msgs.PreparedForProduction") (ptr ?p) (rcvd-via BROADCAST))
   (team-color ?team-color)
-  (input-storage ?team-color ?ins)
+  (input-storage ?team-color ?ins ? ?)
   =>
   ;the preperation is finished when someone stands at ins
   (if (eq ?ins (sym-cat (pb-field-value ?p "waiting_point")))
