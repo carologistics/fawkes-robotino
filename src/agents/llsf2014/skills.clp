@@ -171,8 +171,8 @@
 )
 
 (defrule ignore-driving-to-waiting-point
-  ?s <- (skill (name "ppgoto") (status RUNNING))
-  (state WAIT_AND_LOOK_FOR_ALTERATIVE)
+  ?s <- (driving-ro-wait-point)
+  (not (state WAIT_AND_LOOK_FOR_ALTERATIVE))
   =>
   (retract ?s)
 )

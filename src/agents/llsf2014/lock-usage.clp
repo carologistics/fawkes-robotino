@@ -57,10 +57,18 @@
   ?lae <- (wait-for-lock (res ?res) (state get))
   ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   (wait-point ?res ?wait-point)
-  (not (skill (name "ppgoto") (status RUNNING)))
+  (not (driving-ro-wait-point))
   =>
   (printout t "Waiting for lock of " ?res " at " ?wait-point crlf)
   (skill-call ppgoto place (str-cat ?wait-point))
+  (assert (driving-ro-wait-point))
+)
+
+(defrule retract-driving-to-wait-point
+  ?s <- (driving-ro-wait-point)
+  (not (state WAIT_AND_LOOK_FOR_ALTERATIVE))
+  =>
+  (retract ?s)
 )
 
 (defrule lock-start-waiting-and-searching-for-alternative
