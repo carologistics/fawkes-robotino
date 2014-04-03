@@ -58,13 +58,13 @@ clips-agent:
     team-name: Carologistics
 
     #Timeouts used in the locking:
-    #Timeout a new started robot waits for a master before it gets the master itself
-    initial-master-timeout: 20.0
+    #Timeout a in pre-game started robot waits for a master before it gets the master itself
+    initial-master-timeout: 5.0
     #If a robot has not been seen this time it is assumed that he is lost
-    robot-timeout: 20.0
+    robot-timeout: 50.0
 
     #distance needed before a robot releases a lock
-    release-distance: 0.5
+    release-distance: 0.75
 
     waiting-points:
       ins1: WAIT_FOR_INS_1

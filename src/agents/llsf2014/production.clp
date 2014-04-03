@@ -9,6 +9,83 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; prioritize machines (which T2,T3/T4 to load first)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defrule prod-prioritize-T3-T4
+  (declare (salience ?*PRIORITY-WM*))
+  (team-color ?team&~nil)
+  (received-machine-info)
+  (machine (team ?team) (priority 0) (mtype T3|T4))
+  =>
+  ;if we are cyan sort machines from right to left, else the other way
+  (bind $?prios (create$))
+  (if (eq ?team CYAN)
+    then
+    (bind ?prios (create$ 4 3 2 1))
+    else
+    (bind ?prios (create$ 1 2 3 4))
+  )
+  ;find rightmost T3 or T4
+  (bind $?prioritized (create$))
+  (bind ?first-type NONE)
+  (do-for-fact ((?m machine))
+	         (and (eq ?m:team ?team)
+		      (or (eq ?m:mtype T3) (eq ?m:mtype T4))
+		      (not (any-factp ((?m2 machine))
+				        (and (eq ?m2:team ?team)
+					     (or (eq ?m2:mtype T3) (eq ?m2:mtype T4))
+					     (> ?m2:x ?m:x)))))
+    (modify ?m (priority (nth$ 1 ?prios)))
+    (bind ?prioritized (append$ ?prioritized ?m:name))
+    (bind ?first-type ?m:mtype)
+  )
+  ;find rightmost of other type
+  (if (eq ?first-type T3)
+      then (bind ?second-type T4)
+      else (bind ?second-type T3)
+  )
+  (do-for-fact ((?m machine))
+	         (and (eq ?m:team ?team)
+		      (eq ?m:mtype ?second-type)
+		      (not (any-factp ((?m2 machine))
+				        (and (eq ?m2:team ?team)
+					     (eq ?m2:mtype ?second-type)
+					     (> ?m2:x ?m:x)))))
+    (modify ?m (priority (nth$ 2 ?prios)))
+    (bind ?prioritized (append$ ?prioritized ?m:name))
+  )
+  ;add two left machines from right to left
+  (do-for-fact ((?m machine))
+	         (and (eq ?m:team ?team)
+		      (not (member$ ?m:name ?prioritized))
+		      (or (eq ?m:mtype T3) (eq ?m:mtype T4))
+		      (not (any-factp ((?m2 machine))
+				        (and (eq ?m2:team ?team)
+					     (not (member$ ?m2:name ?prioritized))
+					     (or (eq ?m2:mtype T3) (eq ?m2:mtype T4))
+					     (> ?m2:x ?m:x)))))
+    (modify ?m (priority (nth$ 3 ?prios)))
+    (bind ?prioritized (append$ ?prioritized ?m:name))
+  )
+  (do-for-fact ((?m machine))
+	         (and (eq ?m:team ?team)
+		      (not (member$ ?m:name ?prioritized))
+		      (or (eq ?m:mtype T3) (eq ?m:mtype T4)))
+    (modify ?m (priority (nth$ 4 ?prios)))
+    (bind ?prioritized (append$ ?prioritized ?m:name))
+  )
+)
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; decision rules for the next most important task to propose
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defrule prod-propose-task-idle
   (declare (salience ?*PRIORITY-LOW*))
   (phase PRODUCTION)
@@ -29,7 +106,7 @@
   ?lock-get <- (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   ?lock-ref <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   ?wfl <- (wait-for-lock (res ?res) (state get))
-  ?exes <- (execute-skill ? ?)
+  ?exec <- (execute-skill ? ?)
   =>
   (retract ?sf1 ?sf2 ?wfl ?lock-get ?exec ?lock-ref)
   (modify ?t (state finished))
@@ -227,13 +304,21 @@
   )
 )
 
+;this rule decides which T3/T4 to load first
 (defrule prod-load-T3_T4-with-S2
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
+  ;T3/T4 to load
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
-	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4) (produced-puck NONE) (team ?team-color))
+	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4)
+	   (produced-puck NONE) (team ?team-color) (priority ?prio))
+  ;no T3/T4 with higher priority
+  (not (machine (mtype T3|T4) (loaded-with $?l2&~:(member$ S2 ?l2)) (team ?team-color)
+		(incoming $?i2&~:(member$ BRING_S2 ?i2)) (produced-puck NONE)
+		(priority ?p2&:(> ?p2 ?prio))))
+   ;T2 to get the S2 from
   (machine (mtype T2) (produced-puck S2) 
 	   (incoming $?i-T2&~:(member$ PICK_PROD ?i-T2)) (name ?name_T2) (team ?team-color))
   (not (proposed-task (name pick-and-load) (args $?args&:(subsetp ?args (create$ ?name_T2 ?name_T3T4))) (state rejected)))
@@ -258,5 +343,60 @@
   =>
   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T5-WITH-S0*))
+  )
+)
+
+(defrule prod-deliver-unintentionally-holding-produced-puck
+  (declare (salience ?*PRIORITY-DELIVER-HOLDING*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (holding ?puck&P1|P2|P3)
+  (team-color ?team-color&~nil)
+  ; (game-time $?time)
+  ; (order (product P3) (quantity-requested ?qr) (id  ?order-id)
+  ; 	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+  ; 	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+  ; 	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
+  (not (proposed-task (name deliver) (args $?args&:(subsetp ?args (create$ ?puck))) (state rejected)))
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-HOLDING*))))
+  =>
+  (printout error "PROD: Deliver unintentionally holding produced puck" crlf)
+  (assert (proposed-task (name deliver) (priority ?*PRIORITY-DELIVER-HOLDING*)
+			 (args (create$ ?puck)))
+  )
+)
+
+(defrule prod-load-unintentionally-holding-S2
+  (declare (salience ?*PRIORITY-LOAD-HOLDING-S2*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (team-color ?team-color&~nil)
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) 
+	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4)
+	   (produced-puck NONE) (team ?team-color) (priority ?prio))
+  (not (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) (team ?team-color)
+		(incoming $?i&~:(member$ BRING_S2 ?i)) (produced-puck NONE)
+		(priority ?p2&:(> ?p2 ?prio))))
+  (not (proposed-task (name load-with-S2) (args $?args&:(subsetp ?args (create$ ?name_T3T4))) (state rejected)))
+  (holding S2)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-HOLDING-S2*))))
+  =>
+  (printout t "PROD: Loading T3/T4 " ?name_T3T4 " with S2" crlf)
+  (assert (proposed-task (name load-with-S2) (args (create$ ?name_T3T4)) (priority ?*PRIORITY-LOAD-HOLDING-S2*))
+  )
+)
+
+(defrule prod-recycle-unintentionally-holding-CO
+  (declare (salience ?*PRIORITY-RECYCLE*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (holding CO)
+  (team-color ?team-color&~nil)
+  (machine (name ?name) (mtype RECYCLE) (team ?team-color))
+  (not (proposed-task (name recycle-holding) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-RECYCLE*))))
+  =>
+  (printout t "PROD: Recycle hilding CO at " ?name crlf)
+  (assert (proposed-task (name recycle-holding) (args (create$ ?name)) (priority ?*PRIORITY-RECYCLE*))
   )
 )

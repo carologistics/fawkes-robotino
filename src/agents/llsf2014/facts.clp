@@ -104,6 +104,7 @@
   (slot produce-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot recycle-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot doubtful-worldmodel (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot priority (type INTEGER) (default 0))
 )
 
 (deftemplate order
@@ -118,7 +119,7 @@
 
 ;common template for a task
 (deftemplate task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle))
+  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values ordered running finished failed) (default ordered))
   (slot priority (type INTEGER) (default 0))
@@ -126,7 +127,7 @@
 
 ;common template for a proposed task
 (deftemplate proposed-task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 pick-and-load pick-and-deliver recycle))
+  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values proposed asked rejected) (default proposed))
   (slot priority (type INTEGER) (default 0))
@@ -206,6 +207,8 @@
   (puck-in-gripper FALSE)
   
   ; Input storage per team color
-  (input-storage CYAN Ins1)
-  (input-storage MAGENTA Ins2)
+  (input-storage CYAN Ins1 0 0)
+  (input-storage MAGENTA Ins2 0 0)
+  (deliver CYAN deliver1 0 0)
+  (deliver MAGENTA deliver2 0 0)
 )
