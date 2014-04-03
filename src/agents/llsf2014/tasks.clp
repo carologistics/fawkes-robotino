@@ -87,9 +87,10 @@
   (holding S0)
   (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (x ?goal-x) (y ?goal-y))
   (pose (x ?pos-x) (y ?pos-y))
+  (team-color ?team&~nil)
   ?s <- (state GET-S0-FINAL|TASK-ORDERED)
   =>
-  (bind ?m-T1 (tac-find-best-T1 (nth$ 1 ?a) ?goal-x ?goal-y ?pos-x ?pos-y))
+  (bind ?m-T1 (tac-find-best-T1 (nth$ 1 ?a) ?goal-x ?goal-y ?pos-x ?pos-y ?team))
   (retract ?s)
   (assert (execute-skill finish_puck_at ?m-T1 T1 false)
           (state WAIT-FOR-LOCK)
