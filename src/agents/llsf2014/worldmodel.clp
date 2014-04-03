@@ -429,3 +429,43 @@
     )
   )
 )
+
+(defrule wm-dirty-fix-for-junk-T2
+  (declare (salience ?*PRIORITY-WM*))
+  ?m <- (machine (junk ?n&:(> ?n 1)) (mtype T2) (name ?name))
+  (not (junk-failed T2))
+  (time $?now)
+  =>
+  (printout error "Amount of CO pucks at " ?name " wrong." crlf)
+  (printout error "Saving fact-list to  agent-snapshot-" (nth$ 1 ?now) ".clp" crlf)
+  (save-facts (str-cat "agent-snapshot-junk-wrong-" (nth$ 1 ?now) ".clp") visible)
+  
+  (modify ?m (junk 1))
+  (assert (junk-failed T2))
+)
+(defrule wm-dirty-fix-for-junk-T1-T5
+  (declare (salience ?*PRIORITY-WM*))
+  ?m <- (machine (junk ?n&:(neq ?n 0)) (mtype T1|T5) (name ?name))
+  (not (junk-failed T1-T5))
+  (time $?now)
+  =>
+  (printout error "Amount of CO pucks at " ?name " wrong." crlf)
+  (printout error "Saving fact-list to  agent-snapshot-" (nth$ 1 ?now) ".clp" crlf)
+  (save-facts (str-cat "agent-snapshot-junk-wrong-" (nth$ 1 ?now) ".clp") visible)
+  
+  (modify ?m (junk 0))
+  (assert (junk-failed T1-T5))
+)
+(defrule wm-dirty-fix-for-junk-T3-T4
+  (declare (salience ?*PRIORITY-WM*))
+  ?m <- (machine (junk ?n&:(> ?n 2)) (mtype T3|T4) (name ?name))
+  (not (junk-failed T3-T4))
+  (time $?now)
+  =>
+  (printout error "Amount of CO pucks at " ?name " wrong." crlf)
+  (printout error "Saving fact-list to  agent-snapshot-" (nth$ 1 ?now) ".clp" crlf)
+  (save-facts (str-cat "agent-snapshot-junk-wrong-" (nth$ 1 ?now) ".clp") visible)
+  
+  (modify ?m (junk 2))
+  (assert (junk-failed T3-T4))
+)
