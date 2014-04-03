@@ -74,15 +74,22 @@ function DRIVE_TO_SIDE:init()
       self.skills[1].ori=0.35
    else
       self.skills[1].x=0.1
-      self.skills[1].y=-0.4
+      self.skills[1].y=0.4
       self.skills[1].ori=-0.35
    end
 end
 
 function LEAVE_TURN:init()
-   self.skills[1].x=0
-   self.skills[1].y=-0.2
-   self.skills[1].ori=-1
-   self.skills[1].vel_rot=1
+   if graph:node(self.fsm.vars.place):has_property("leave_right") then
+      self.skills[1].x=0
+      self.skills[1].y=-0.2
+      self.skills[1].ori=-1
+      self.skills[1].vel_rot=1
+   else
+      self.skills[1].x=0
+      self.skills[1].y=0.2
+      self.skills[1].ori=1
+      self.skills[1].vel_rot=1
+   end
 end
 
