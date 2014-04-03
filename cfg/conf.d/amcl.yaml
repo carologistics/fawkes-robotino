@@ -131,7 +131,7 @@ plugins/amcl:
 
   # Period (in sec) in which to save the current position as initial
   # position to the host config. Set to 0.0 to disable.
-  save_pose_period: 5.0
+  save_pose_period: 0
 
   # Parameters for fake laser generation
   map-lasergen:
