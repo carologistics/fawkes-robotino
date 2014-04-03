@@ -669,6 +669,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
   if (cfg_debug_processing_) debug_proc_string_ = "";
 
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
+    bool ok = false;
 
     if (!(roi_width_ok(*it_R))) continue;
 
@@ -678,7 +679,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
 
     std::list<ROI>::iterator it_G = rois_G->begin();
     while(it_G != rois_G->end()) {
-      bool ok = false;
+      ok = false;
       int vspace = it_G->start.y - (it_R->start.y + it_R->height);
 
       if (roi_width_ok(*it_G) && rois_x_aligned(*it_R, *it_G) &&
@@ -713,7 +714,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
         }
 
         if (rois_vspace_ok(*roi_R, *roi_G)) {
-          if (cfg_debug_processing_) debug_proc_string_ += "rg:V";
+          if (cfg_debug_processing_) debug_proc_string_ += " V";
 
           if (!rois_similar_width(*roi_R, *roi_G)) {
             int wdiff = roi_G->width - it_R->width;
@@ -723,7 +724,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
             int width = roi_G->width - wdiff/2;
             if ((unsigned int)(start_x + width) > cam_width_) width = cam_width_ - start_x;
             roi_G->width = width;
-            if (cfg_debug_processing_) debug_proc_string_ += "rg:!W";
+            if (cfg_debug_processing_) debug_proc_string_ += " !W";
           }
 
           // Once we got through here it_G should have a pretty sensible green ROI.
@@ -751,7 +752,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
         ++it_G;
       }
     }
-    if (cfg_debug_processing_) logger->log_info(name(), "field proc: %s", debug_proc_string_.c_str());
+    if (unlikely(!ok && cfg_debug_processing_)) logger->log_debug(name(), "field proc: %s", debug_proc_string_.c_str());
   }
   return rv;
 }
