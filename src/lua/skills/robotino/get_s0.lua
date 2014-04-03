@@ -76,10 +76,13 @@ function SKILL_GLOBAL_MOTOR_MOVE:init()
 end
 
 function MOVE_SIDEWAYS:init()
-   self.skills[1].y = -1 --TODO Ausmessen und richtige Richtung
-   self.skills[1].vel_trans = 0.05 -- TODO Ausprobieren der richtigen Geschwindigkeit
+   self.skills[1].y = -1
+   self.skills[1].vel_trans = 0.05
 end
 
+function SKILL_LEAVE_AREA:init()
+   self.skills[1].place = self.fsm.vars.place
+end
 function SKILL_FETCH_PUCK:init()
    self.skills[1].move_sideways = "true"
 end

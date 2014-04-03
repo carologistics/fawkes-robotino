@@ -89,9 +89,15 @@ function TURN:init()
 	 self.skills[1].ori = -ori
       end
    else
-      -- dieser Fall tritt bei der neuen IS immer auf
-      -- dann drehen wir auf 0° plus 20° drüber
-      self.skills[1].ori = math.abs(ori) + 0.35
+      -- TODO this should not be hardcoded, just a hotfix at GO2014!!!!
+      -- dieser Fall tritt bei der neuen IS Orientation immer auf
+      if self.fsm.vars.place == "Ins1" then
+        -- dann drehen wir auf 0° plus 20° drüber
+        self.skills[1].ori = math.abs(ori) + 0.35
+      else
+        -- dann drehen wir auf 160 °
+        self.skills[1].ori = 2.79
+      end
    end
    self.skills[1].vel_rot = 1.1
 
