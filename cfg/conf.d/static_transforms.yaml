@@ -29,9 +29,9 @@ plugins/static-transforms:
     cam_puck:
       frame: !frame /base_link
       child_frame: /cam_front_puck
-      trans_x: 0.15
+      trans_x: 0.10
       trans_y: 0
       trans_z: 0.12
       rot_pitch: 0.35 # 37.87° 
       rot_yaw: 0
-      rot_roll: 0
+      rot_roll: 0.0
