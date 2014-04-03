@@ -75,7 +75,7 @@
       ;update production finished time
       (bind ?prod-finished-time (pb-field-value ?m-msg "prod_finished_time"))
       (if (pb-has-field ?m-msg "puck_under_rfid")
-	then (bind ?puck-under-rfid (pb-field-value ?m-msg "puck_under_rfid"))
+	then (bind ?puck-under-rfid (sym-cat (pb-field-value ?m-msg "puck_under_rfid")))
 	else (bind ?puck-under-rfid NONE)
       )
       (bind ?produce-blocked (if (eq 0 (pb-field-value ?m-msg "produce_blocked"))
@@ -116,7 +116,7 @@
     (bind ?id (random 1 99999999))
   )
   (bind ?change-msg (pb-create "llsf_msgs.WorldmodelChange"))
-  (if (neq ?m NONE) then 
+  (if (neq ?m NONE) then
     (pb-set-field ?change-msg "machine" (str-cat ?m))
   )
   (if (neq ?order 0) then 
@@ -217,7 +217,7 @@
       (do-for-fact ((?order order))
           (eq ?order:id (pb-field-value ?p "order"))
 
-        (switch (pb-field-value ?p "change")
+        (switch (sym-cat (pb-field-value ?p "change"))
           (case ADD_IN_DELIVERY then 
 	    (modify ?order (in-delivery (pb-field-value ?p "in_delivery")))
           )
