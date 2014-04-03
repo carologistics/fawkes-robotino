@@ -124,7 +124,8 @@
   (declare (salience ?*PRIORITY-WM*))
   (time $?now)
   ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn)
-          (final-prod-time $?fpt&:(and (timeout ?now ?fpt 0.5) (neq (nth$ 1 ?fpt) 0)))
+           (final-prod-time $?fpt&:(and (timeout ?now ?fpt 0.5) (neq (nth$ 1 ?fpt) 0)))
+	   (produced-puck NONE)
          )
   =>
   (printout t "Production completed at " ?name "|" ?mtype crlf)
