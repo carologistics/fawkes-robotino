@@ -96,7 +96,7 @@ function TURN:init()
         self.skills[1].ori = math.abs(ori) + 0.35
       else
         -- dann drehen wir auf 160 °
-        self.skills[1].ori = 2.79
+        self.skills[1].ori = math.abs(ori) + 2.79
       end
    end
    self.skills[1].vel_rot = 1.1
