@@ -80,12 +80,13 @@ message WorldmodelChange {
   }
 
   required uint32 id = 1;
-  required string machine = 2;
+  optional string machine = 2;
   required WorldmodelChangeType change = 3;
   optional IncomingAction incoming = 4;
   optional PuckState loaded_with = 5;
   optional uint32 num_CO = 6;
   optional uint32 prod_finished_time = 7;
+  optional uint32 order = 8;
 }
 
 message WorldmodelChangeAck {
