@@ -517,7 +517,7 @@
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION_FINISHED)
   (time $?now)
-  ?timer <- (timer (name beacon) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
+  ?timer <- (timer (name exploration-finished) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
   (prepare-for-production-goal ?wait-point)
   =>
   (modify ?timer (time ?now) (seq (+ ?seq 1)))

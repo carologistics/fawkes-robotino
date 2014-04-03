@@ -199,6 +199,7 @@
   (game-duration (* 15 60))
   
   (timer (name beacon) (time (create$ 0 0)) (seq 1))
+  (timer (name exploration-finished) (time (create$ 0 0)) (seq 1))
   (timer (name send-worldmodel-sync) (time (create$ 0 0)) (seq 1))
 
   (already-received-wm-changes (create$))
