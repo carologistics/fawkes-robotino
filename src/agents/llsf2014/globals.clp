@@ -26,6 +26,8 @@
   ?*INITIAL-MASTER-TIMEOUT* = 2.0
   ?*ROBOT-TIMEOUT* = 6.0
   ?*RELEASE-DISTANCE* = 0.5
+
+  ?*FAILS-TO-BLOCK* = 2
 )
 
 (defrule globals-config-team-name

@@ -160,7 +160,14 @@
   ?s <- (state TASK-FAILED)
   =>
   ;release all locks for subtask goals
-  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
+  (delayed-do-for-all-facts ((?ntl needed-task-lock) (?m machine)) (eq ?m:name ?ntl:place)
+    (bind ?fails (+ ?m:fails 1))
+    (if (and (eq ?m:mtype T1) (>= ?fails ?*FAILS-TO-BLOCK*))
+     then
+      (printout warn "Machine " ?m:name " failed " ?fails " times, blocking" crlf)
+      (modify ?m (fails ?fails))
+      (assert (worldmodel-change (machine ?m:name) (change SET_PRODUCE_BLOCKED)))
+    )
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
     (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
     (retract ?ntl)

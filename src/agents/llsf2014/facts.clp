@@ -95,6 +95,7 @@
   (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
   (multislot incoming (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
   (slot produced-puck (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3) (default NONE))
+  (slot fails (type INTEGER) (default 0))
   (slot junk (type INTEGER) (default 0))
   (slot productions (type INTEGER) (default 0))
   (slot output (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3))
