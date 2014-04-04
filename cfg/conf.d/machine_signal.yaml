@@ -83,8 +83,8 @@ plugins/machine_signal:
     reference_color:   [0xff, 0, 0x20,
                         0xd8, 0x05, 0x0b,
                         0x43, 0x10, 0]
-    chroma_thresh:     [50, 40, 50]
-    saturation_thresh: [30, 40, 40]
+    chroma_thresh:     [50, 40, 30]
+    saturation_thresh: [30, 40, 25]
     luma_thresh:       [120, 200, 200]
     min_points: 40
     basic_roi_size: 10
