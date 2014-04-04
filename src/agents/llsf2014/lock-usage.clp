@@ -18,6 +18,12 @@
   (if (debug 3) then (printout t "Acquiring Lock for " ?res crlf))
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res) (priority ?p)))
   (modify ?lae (state get))
+  ; Retract all lock releases for ?res that gets the lock
+  (do-for-all-facts ((?release lock)) (and (eq ?release:agent ?*ROBOT-NAME*)
+                                           (eq ?release:resource ?res)
+                                           (eq ?release:type RELEASE))
+    (retract ?release)
+  )
 )
 
 (defrule lock-use-execute

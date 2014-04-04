@@ -76,6 +76,12 @@
   (needed-task-lock (resource ?res))
   =>
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
+  ; Retract all lock releases for ?res that gets the lock
+  (do-for-all-facts ((?release lock)) (and (eq ?release:agent ?*ROBOT-NAME*)
+                                           (eq ?release:resource ?res)
+                                           (eq ?release:type RELEASE))
+    (retract ?release)
+  )
 )
 
 (defrule coordination-accept-proposed-task
