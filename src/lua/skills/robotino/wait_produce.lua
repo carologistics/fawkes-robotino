@@ -29,9 +29,7 @@ depends_skills     = nil
 depends_interfaces = {
    { v="plugin", type ="RobotinoLightInterface", id = "Light_State" },
    { v="output", type ="RobotinoLightInterface", id = "Light determined" },
-   { v="laserswitch", type="SwitchInterface", id="laser-cluster" },
    { v="lightswitch", type="SwitchInterface", id="light_front_switch" },
-   { v="laser_cluster", type="LaserClusterInterface", id="laser-cluster" }
 }
 
 
@@ -52,7 +50,7 @@ local TIMEOUTS = {
 skillenv.skill_module(_M)
 
 function plugin_missing()
-   return not (laserswitch:has_writer() and plugin:has_writer())
+   return not  plugin:has_writer()
 end
 
 function done()
@@ -81,7 +79,7 @@ function out_of_order()  -- careful!!! no check if plugin light is ready
 end
 
 fsm:define_states{ export_to=_M,
-   closure={laserswitch=laserwitch, plugin=plugin, out_of_order=out_of_order},
+   closure={plugin=plugin, out_of_order=out_of_order},
    {"INIT", JumpState},
    {"OUT_OF_ORDER", JumpState},
    {"WAIT", JumpState},
@@ -89,7 +87,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", precond=plugin_missing},
-   {"INIT", "WAIT", timeout=5}, -- let vision settle
+   {"INIT", "WAIT", timeout=2}, -- let vision settle
    {"WAIT", "OUT_OF_ORDER", cond="out_of_order() and plugin:is_ready()"},
    {"OUT_OF_ORDER", "WAIT", cond="not out_of_order() and plugin:is_ready()"},
    {"OUT_OF_ORDER", "WAIT", timeout=120},
@@ -98,17 +96,13 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
    lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
-   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.15))   
 end
 
 function WAIT:exit()
-   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))   
 end
 
 function cleanup()
-   laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
    output:set_red(plugin:red())
    output:set_yellow(plugin:yellow())
    output:set_green(plugin:green())
