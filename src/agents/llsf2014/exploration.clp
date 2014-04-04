@@ -500,7 +500,7 @@
   (input-storage ?team-color ?ins ? ?)
   (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   ?lock <- (lock (type GET) (agent ?a) (resource ?ins))
-  (wait-point ?ins ?wait-point)
+  (wait-point ?ins ?a ?wait-point)
   =>
   (printout t "Waiting for production at " ?wait-point crlf)
   (skill-call ppgoto place (str-cat ?wait-point))

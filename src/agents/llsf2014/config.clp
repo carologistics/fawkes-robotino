@@ -16,13 +16,24 @@
 
 (defrule conf-figure-out-waiting-points
   "Reads waiting-point names (identical to navgraph names) from cfg/conf.d/clips-agent.yaml"
-  (confval (path "/clips-agent/llsf2014/waiting-points/ins1") (value ?ins1-wait-point))
-  (confval (path "/clips-agent/llsf2014/waiting-points/ins2") (value ?ins2-wait-point))
-  (confval (path "/clips-agent/llsf2014/waiting-points/deliver1") (value ?deliver1-wait-point))
-  (confval (path "/clips-agent/llsf2014/waiting-points/deliver2") (value ?deliver2-wait-point))
-  =>
-  (assert (wait-point Ins1 ?ins1-wait-point) (wait-point deliver1 ?deliver1-wait-point)
-          (wait-point Ins2 ?ins2-wait-point) (wait-point deliver2 ?deliver2-wait-point)
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-robotino1") (value ?ins-wait-point-robotino1))
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-robotino2") (value ?ins-wait-point-robotino2))
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-robotino3") (value ?ins-wait-point-robotino3))
+   (confval (path "/clips-agent/llsf2014/waiting-points/deliver1") (value ?deliver1-wait-point))
+   (confval (path "/clips-agent/llsf2014/waiting-points/deliver2") (value ?deliver2-wait-point))
+   =>
+  (assert (wait-point Ins1 "R-1" ?ins-wait-point-robotino1) 
+          (wait-point Ins1 "R-2" ?ins-wait-point-robotino2)
+          (wait-point Ins1 "R-3" ?ins-wait-point-robotino3)
+          (wait-point Ins2 "R-1" ?ins-wait-point-robotino1)
+          (wait-point Ins2 "R-2" ?ins-wait-point-robotino2)
+          (wait-point Ins2 "R-3" ?ins-wait-point-robotino3)
+          (wait-point deliver1 "R-1" ?deliver1-wait-point) 
+          (wait-point deliver1 "R-2" ?deliver1-wait-point) 
+          (wait-point deliver1 "R-3" ?deliver1-wait-point) 
+          (wait-point deliver2 "R-1" ?deliver2-wait-point)
+          (wait-point deliver2 "R-2" ?deliver2-wait-point)
+          (wait-point deliver2 "R-3" ?deliver2-wait-point)
   )
 )
 
