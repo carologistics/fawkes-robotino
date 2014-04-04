@@ -308,6 +308,8 @@
   (printout error "Got Produced Puck failed." crlf)
   ;allow one problem. when the second occurs the machine gets blocked
   (assert (worldmodel-change (machine ?name) (change SET_DOUBTFUL_WORLDMODEL)))
+  (assert (worldmodel-change (machine ?name) (change REMOVE_PRODUCED)))
+  (printout error "remove produced puck in wm!" crlf)
 )
 
 (defrule wm-get-consumed-final
