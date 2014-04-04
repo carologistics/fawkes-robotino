@@ -368,7 +368,7 @@ void MachineSignalPipelineThread::loop()
   double frametime = now - last_second_;
   last_second_ = &(last_second_->stamp());
   if (frametime >= desired_frametime_ * 1.02) {
-    logger->log_error(name(), "Running too slow (%f sec/frame). Data will be bad!", frametime);
+    logger->log_warn(name(), "Running too slow (%f sec/frame). Blink detection will be unreliable!", frametime);
   }
 
   while (!bb_enable_switch_->msgq_empty()) {
