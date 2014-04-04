@@ -212,9 +212,9 @@
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
-  (machine (mtype T2) (loaded-with $?l&~:(member$ S0 ?l))
-	   (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE) (team ?team-color))
-  (machine (name ?name) (loaded-with $?l) (incoming $?i&:(or (member$ S1 ?l) (member$ BRING_S1 ?i))) (team ?team-color))
+  (machine (name ?name) (mtype T2) (loaded-with $?l&~:(member$ S0 ?l))
+	   (incoming $?i&~:(member$ BRING_S0 ?i)&:(or (member$ S1 ?l) (member$ BRING_S1 ?i)))
+	   (produced-puck NONE) (team ?team-color))
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-START-T2-WITH-S0*))))
@@ -225,6 +225,7 @@
   )
 )
 
+; Investigate if this can actually trigger
 (defrule prod-load-T2-with-S0
   (declare (salience ?*PRIORITY-LOAD-T2-WITH-S0*))
   (phase PRODUCTION)
