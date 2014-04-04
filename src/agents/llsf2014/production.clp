@@ -9,6 +9,26 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;role change P3->nothing
+;;;;;;;;;;;;;;;;;;;;;;;;;
+(defrule prod-role-P3-change-after-all-p3-orders
+  (phase PRODUCTION)
+  ?r <- (role P3-ONLY)
+  (game-time $?time)
+  (order (id ?id1) (product P3)
+	 (end ?end&:(> (nth$ 1 ?time) ?end)))
+  (order (id ?id2&~?id1) (product P3)
+	 (end ?end&:(> (nth$ 1 ?time) ?end)))
+  (order (id ?id3&:(and (neq ?id3 ?id2) (neq ?id3 ?id1))) (product P3)
+	 (end ?end&:(> (nth$ 1 ?time) ?end)))  
+  =>
+  (printout warn "changing role from P3-ONLY to nothing because there are no more orders" crlf)
+  (retract ?r)
+  (assert (role nothing))
+)
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; prioritize machines (which T2,T3/T4 to load first)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
