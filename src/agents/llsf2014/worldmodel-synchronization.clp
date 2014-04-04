@@ -56,12 +56,16 @@
 (defrule worldmodel-sync-receive-worldmodel
   (protobuf-msg (type "llsf_msgs.Worldmodel") (ptr ?p) (rcvd-via BROADCAST))
   (not (lock-role MASTER))
+  (state ?state)
   =>
   ; (printout t "***** Received Worldmodel *****" crlf)
   ;update worldmodel about machines
   (foreach ?m-msg (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
-      (eq ?machine:name (sym-cat (pb-field-value ?m-msg "name")))
+		   (and (eq ?machine:name (sym-cat (pb-field-value ?m-msg "name")))
+			;prevent idle P3 robot from using an old world model the master sends before the master gets the change at the T5
+			(or (neq ?state IDLE) (neq ?machine:mtype T5)))
+			
       ;update loaded-with
       (bind $?loaded-with (create$))
       (progn$ (?puck-type (pb-field-list ?m-msg "loaded_with"))
