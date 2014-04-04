@@ -41,17 +41,34 @@
   ?sf <- (state WAIT_START)
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state ?)
+  (time $?now)
   =>
   (retract ?sf ?cf ?rf)
   (assert (state MOVING_INTO_FIELD))
   (skill-call motor_move x 0.25 y 0)
+  ;wait with P3-ONLY to avoid collision in the beginning
+  (assert (timer (name wait-before-start) (time ?now)))
 )
 
 (defrule start-playing
   ?sf <- (state MOVING_INTO_FIELD)
-  ?skf <- (skill (name "motor_move") (status FINAL|FAILED)) 
+  ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED)) 
+  (not (role P3-ONLY))
   =>
   (retract ?sf ?skf)
+  (assert (state IDLE))
+  (assert (refbox-state RUNNING))
+  (assert (exploration-start))
+)
+
+(defrule start-playing-as-P3_ONLY
+  ?sf <- (state MOVING_INTO_FIELD)
+  ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED)) 
+  (role P3-ONLY)
+  (time $?now)
+  ?timer <- (timer (name wait-before-start) (time $?t&:(timeout ?now ?t 10.0)))
+  =>
+  (retract ?sf ?skf ?timer)
   (assert (state IDLE))
   (assert (refbox-state RUNNING))
   (assert (exploration-start))
