@@ -94,3 +94,20 @@
   )
   (printout t "PLAYING EXPLORATION WITHOUT REFBOX!" crlf)
 )
+
+(defrule game-remove-exploration-states
+  (phase PRODUCTION)
+  ?s <- (state EXP_START|
+	       EXP_IDLE|
+	       EXP_LOCK_REQUIRED|
+	       EXP_DRIVING_TO_MACHINE|
+	       EXP_DRIVING_TO_MACHINE_GLOBAL|
+	       EXP_WAITING_AT_MACHINE|
+	       EXP_FOUND_NEXT_MACHINE|
+	       EXP_PREPARE_FOR_PRODUCTION|
+	       EXP_LOCK_ACCEPTED|
+	       EXP_PREPARE_FOR_PRODUCTION_FINISHED)
+  =>
+  (printout warn "removing exp-state because we are in production" crlf)
+  (retract ?s)
+)
