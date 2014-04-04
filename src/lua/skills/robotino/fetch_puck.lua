@@ -85,6 +85,16 @@ function visible()
    return false
 end
 
+function cant_see_puck()
+   local cant_see_puck=true
+   for _,o in ipairs(pucks) do
+      if o:visibility_history() >= MIN_VIS_HIST then
+         cant_see_puck=false
+      end
+   end
+   return cant_see_puck
+end
+
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
    {"START", JumpState},
    {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="TURN_TO_PUCK",
@@ -103,6 +113,7 @@ fsm:add_transitions{
    {"START", "TURN_TO_PUCK", cond="visible() and not  vars.move_sideways" },
    {"START", "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and vars.move_sideways" },
    {"START", "FAILED", timeout=TIMEOUT},
+   {"TURN_TO_PUCK", "FAILED", precond=cant_see_puck, desc="can't see any puck"},
    {"GRAB", "MOVE_MORE", cond=have_puck},
    {"GRAB_DONE", "START", cond="not have_puck()"},
    {"GRAB_DONE", "MOVE_MORE", cond=have_puck},
