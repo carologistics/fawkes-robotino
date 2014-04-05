@@ -22,7 +22,7 @@ plugins/colli:
   max_velocity: 1.0 #0.8
 
   # Default maximum rotation velocity (in rad/s)
-  max_rotation: 1.8 #1.3
+  max_rotation: 1.5 #1.3
 
   # Default escaping behaviour (just enabled/disabled)
   escaping_enabled: true
