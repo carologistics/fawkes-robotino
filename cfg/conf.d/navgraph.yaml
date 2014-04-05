@@ -46,7 +46,7 @@ plugins/navgraph:
   resend_interval: 1.0
 
   # Time to keep moving after the target tolerance has been reached; sec
-  target_time: 10.0
+  target_time: 6.0
 
   # Monitor graph file and automatically reload on changes?
   monitor_file: true
