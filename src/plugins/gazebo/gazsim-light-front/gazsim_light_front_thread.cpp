@@ -67,6 +67,12 @@ void LightFrontSimThread::init()
   fail_visibility_history_ = config->get_int("/gazsim/light-front/fail-visibility-history");
   light_state_if_name_ = config->get_string("/plugins/light_front/light_state_if");
   light_pos_if_name_ = config->get_string("/plugins/light_front/light_position_if");
+  see_all_delivery_gates_ = config->get_bool("/gazsim/light-front/see-all-delivery-gates");
+  interface_id_multiple_ = config->get_string("/gazsim/light-front/interface-id-multiple");
+  deliver_x_min_ = config->get_float("/gazsim/light-front/deliver-pos-x-min");
+  deliver_y_min_ = config->get_float("/gazsim/light-front/deliver-pos-y-min");
+  deliver_y_max_ = config->get_float("/gazsim/light-front/deliver-pos-y-max");
+  deliver_ori_max_diff_ = config->get_float("/gazsim/light-front/deliver-ori-max-diff");
 
   //open interfaces
   light_if_ = blackboard->open_for_writing<RobotinoLightInterface>
@@ -74,6 +80,15 @@ void LightFrontSimThread::init()
   pose_if_ = blackboard->open_for_reading<fawkes::Position3DInterface>
     (light_pos_if_name_.c_str());
   switch_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>("light_front_switch");
+  if(see_all_delivery_gates_)
+  {
+    light_if_0_ = blackboard->open_for_writing<RobotinoLightInterface>
+      ((interface_id_multiple_ + "0").c_str());
+    light_if_1_ = blackboard->open_for_writing<RobotinoLightInterface>
+      ((interface_id_multiple_ + "1").c_str());
+    light_if_2_ = blackboard->open_for_writing<RobotinoLightInterface>
+      ((interface_id_multiple_ + "2").c_str());
+  }
 
   //enable plugin by default
   switch_if_->set_enabled(true);
@@ -94,6 +109,12 @@ void LightFrontSimThread::finalize()
   blackboard->close(light_if_);
   blackboard->close(pose_if_);
   blackboard->close(switch_if_);
+  if(see_all_delivery_gates_)
+  {
+    blackboard->close(light_if_0_);
+    blackboard->close(light_if_1_);
+    blackboard->close(light_if_2_);
+  }
 }
 
 void LightFrontSimThread::loop()
@@ -119,25 +140,52 @@ void LightFrontSimThread::loop()
   if(new_data_)
   {
     new_data_ = false;
-    light_if_->set_red(red_);
-    light_if_->set_yellow(yellow_);
-    light_if_->set_green(green_);
-    light_if_->set_ready(ready_);
-    light_if_->set_visibility_history(visibility_history_);
-    light_if_->write();
+
+    //stop if the switch is dibabled
+    if (!switch_if_->is_enabled())
+    {
+      return;
+    }
+    
+    //set light interface of the machine the robot is looking at
+    set_interface_of_nearest();
+    
+    //if we stand in front of the delivery we have to set the three interfaces to the signals of the deliverygates
+    if(see_all_delivery_gates_ && standing_in_front_of_deliver())
+    {
+      set_interfaces_of_gates();
+    }
+    else
+    {
+      set_interface_unready(light_if_0_);
+      set_interface_unready(light_if_1_);
+      set_interface_unready(light_if_2_);
+    }
   }
 }
 
 void LightFrontSimThread::on_light_signals_msg(ConstAllMachineSignalsPtr &msg)
 {
   //logger->log_info(name(), "Got new Machine Light signals.\n");
+  last_msg_.CopyFrom(*msg);
+  new_data_ = true;
+}
 
-  //stop if the switch is dibabled
-  if (!switch_if_->is_enabled())
-  {
-    return;
-  }
+void LightFrontSimThread::on_localization_msg(ConstPosePtr &msg)
+{
+  //logger->log_info(name(), "Got new Localization data.\n");
 
+  //read data from message
+  robot_x_ = msg->position().x();
+  robot_y_ = msg->position().y();
+  //calculate ori from quaternion
+  robot_ori_ = tf::get_yaw(tf::Quaternion(msg->orientation().x(), msg->orientation().y()
+					  , msg->orientation().z(), msg->orientation().w()));
+}
+
+
+void LightFrontSimThread::set_interface_of_nearest()
+{
   //read cluster position to determine 
   //on which machine the robotino is looking at
   //(the cluster returns the position relative to the robots pos and ori)
@@ -156,9 +204,9 @@ void LightFrontSimThread::on_light_signals_msg(ConstAllMachineSignalsPtr &msg)
   //find machine nearest to the look_pos
   double min_distance = 1000.0;
   int index_min = 0;
-  for(int i = 0; i < msg->machines_size(); i++)
+  for(int i = 0; i < last_msg_.machines_size(); i++)
   {
-    llsf_msgs::MachineSignal machine = msg->machines(i);
+    llsf_msgs::MachineSignal machine = last_msg_.machines(i);
     llsf_msgs::Pose2D pose = machine.pose();
     double x = pose.x();
     double y = pose.y();
@@ -176,45 +224,104 @@ void LightFrontSimThread::on_light_signals_msg(ConstAllMachineSignalsPtr &msg)
   {
     //logger->log_info(name(), "Distance between light pos and machine (%f) is too big.\n", min_distance);
     //set ready and visibility history
-    ready_ = false;
-    visibility_history_ = fail_visibility_history_;
+    set_interface_unready(light_if_);
   }
   else{
-    //read out lights
-    llsf_msgs::MachineSignal machine = msg->machines(index_min);
-    //printf("looking at machine :%s\n", machine.name().c_str());
-    for(int i = 0; i < machine.lights_size(); i++)
-    {
-      llsf_msgs::LightSpec light_spec = machine.lights(i);
-      RobotinoLightInterface::LightState state = RobotinoLightInterface::OFF;
-      switch(light_spec.state())
-      {
-      case llsf_msgs::OFF: state = RobotinoLightInterface::OFF; break;
-      case llsf_msgs::ON: state = RobotinoLightInterface::ON; break;
-      case llsf_msgs::BLINK: state = RobotinoLightInterface::BLINKING; break;
-      }
-      switch(light_spec.color())
-      {
-      case llsf_msgs::RED: red_ = state; break;
-      case llsf_msgs::YELLOW: yellow_ = state; break;
-      case llsf_msgs::GREEN: green_ = state; break;
-      }
-    }
-    //set ready and visibility history
-    ready_ = true;
-    visibility_history_ = success_visibility_history_;
+    //printf("looking at machine :%s\n", last_msg_.machines(index_min).name().c_str());
+    set_interface_to_signal(light_if_, last_msg_.machines(index_min));
   }
-  new_data_ = true;
 }
 
-void LightFrontSimThread::on_localization_msg(ConstPosePtr &msg)
+void LightFrontSimThread::set_interfaces_of_gates()
 {
-  //logger->log_info(name(), "Got new Localization data.\n");
+  if(robot_x_ > 0)
+  {
+    //standing in front of the cyan gates
+    set_interface_to_signal(light_if_0_, get_machine("D3"));
+    set_interface_to_signal(light_if_1_, get_machine("D2"));
+    set_interface_to_signal(light_if_2_, get_machine("D1"));
+  }
+  else
+  {
+    //standing in front of the magenta gates
+    set_interface_to_signal(light_if_0_, get_machine("D4"));
+    set_interface_to_signal(light_if_1_, get_machine("D5"));
+    set_interface_to_signal(light_if_2_, get_machine("D6"));
+  }
+}
 
-  //read data from message
-  robot_x_ = msg->position().x();
-  robot_y_ = msg->position().y();
-  //calculate ori from quaternion
-  robot_ori_ = tf::get_yaw(tf::Quaternion(msg->orientation().x(), msg->orientation().y()
-					  , msg->orientation().z(), msg->orientation().w()));
+bool LightFrontSimThread::standing_in_front_of_deliver()
+{
+  //we have to stand in the area in front of the deliver
+  //with respect to both sides
+  if(fabs(robot_x_) < deliver_x_min_
+     || robot_y_ < deliver_y_min_
+     || robot_y_ > deliver_y_max_)
+  {
+    return false;
+  }
+  //and look in the right direction
+  if(robot_x_ > 0)
+  {
+    return fabs(robot_ori_) < deliver_ori_max_diff_;
+  }
+  else
+  {
+    return fabs(robot_ori_) > (M_PI - deliver_ori_max_diff_);
+  }
+}
+
+llsf_msgs::MachineSignal LightFrontSimThread::get_machine(std::string machine_name)
+{
+  std::string search_string = machine_name + "::"; //because in name stands the name of the link
+  for(int i = 0; i < last_msg_.machines_size(); i++)
+  {
+    llsf_msgs::MachineSignal machine = last_msg_.machines(i);
+    if(machine.name().find(search_string) != std::string::npos)
+    {
+      return machine;
+    }
+  }
+  logger->log_error(name(), "Could not find Machine %s in msg.", machine_name.c_str());
+  return last_msg_.machines(0);
+}
+
+void LightFrontSimThread::set_interface_to_signal(fawkes::RobotinoLightInterface *interface, llsf_msgs::MachineSignal signal)
+{
+  //read out lights
+  fawkes::RobotinoLightInterface::LightState red = RobotinoLightInterface::OFF;
+  fawkes::RobotinoLightInterface::LightState yellow = RobotinoLightInterface::OFF;
+  fawkes::RobotinoLightInterface::LightState green = RobotinoLightInterface::OFF;
+  for(int i = 0; i < signal.lights_size(); i++)
+  {
+    llsf_msgs::LightSpec light_spec = signal.lights(i);
+    RobotinoLightInterface::LightState state = RobotinoLightInterface::OFF;
+    switch(light_spec.state())
+    {
+    case llsf_msgs::OFF: state = RobotinoLightInterface::OFF; break;
+    case llsf_msgs::ON: state = RobotinoLightInterface::ON; break;
+    case llsf_msgs::BLINK: state = RobotinoLightInterface::BLINKING; break;
+    }
+    switch(light_spec.color())
+    {
+    case llsf_msgs::RED: red = state; break;
+    case llsf_msgs::YELLOW: yellow = state; break;
+    case llsf_msgs::GREEN: green = state; break;
+    }
+  }
+
+  //write interface
+  interface->set_red(red);
+  interface->set_yellow(yellow);
+  interface->set_green(green);
+  interface->set_ready(true);
+  interface->set_visibility_history(success_visibility_history_);
+  interface->write();
+}
+
+void LightFrontSimThread::set_interface_unready(fawkes::RobotinoLightInterface *interface)
+{
+  interface->set_ready(false);
+  interface->set_visibility_history(fail_visibility_history_);
+  interface->write();
 }

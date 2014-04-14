@@ -75,17 +75,50 @@ class LightFrontSimThread
 
   //provided interface
   fawkes::RobotinoLightInterface *light_if_;
+  fawkes::RobotinoLightInterface *light_if_0_;
+  fawkes::RobotinoLightInterface *light_if_1_;
+  fawkes::RobotinoLightInterface *light_if_2_;
   fawkes::SwitchInterface *switch_if_;
 
   //handler function for incoming messages about the machine light signals
   void on_light_signals_msg(ConstAllMachineSignalsPtr &msg);
 
+  //copy of last msg to write the interface in the next loop
+  llsf_msgs::AllMachineSignals last_msg_;
+
   //handler function for incoming localization data messages
   void on_localization_msg(ConstPosePtr &msg);
+
+  ///set the light interface to the signal state nearest to the cluster position
+  void set_interface_of_nearest();
+
+  ///set the light interfaces of the three delivery gates
+  void set_interfaces_of_gates();
 
   //config value for maximal distance before the plugin says 
   //it can not detect any light
   double max_distance_;
+
+  ///does the robot stand in front of the delivery gate?
+  bool standing_in_front_of_deliver();
+
+  ///get machine signal of specific machine
+  llsf_msgs::MachineSignal get_machine(std::string name);
+
+  ///set interface according to signal
+  void set_interface_to_signal(fawkes::RobotinoLightInterface* interface, llsf_msgs::MachineSignal signal);
+
+  ///set interface unready and with low visibility history
+  void set_interface_unready(fawkes::RobotinoLightInterface* interface);
+
+  //config value for perception at the delivery-gates
+  bool see_all_delivery_gates_;
+  std::string interface_id_multiple_;
+  //area and ori where we assume the robot looks at the delivery gates (also mirrored for other half)
+  float deliver_x_min_;
+  float deliver_y_min_;
+  float deliver_y_max_;
+  float deliver_ori_max_diff_;
 
   int success_visibility_history_;
   int fail_visibility_history_;
@@ -100,11 +133,6 @@ class LightFrontSimThread
 
   //interface values to write in the next loop
   bool new_data_;
-  fawkes::RobotinoLightInterface::LightState red_;
-  fawkes::RobotinoLightInterface::LightState yellow_;
-  fawkes::RobotinoLightInterface::LightState green_;
-  bool ready_;
-  int visibility_history_;
 };
 
 #endif

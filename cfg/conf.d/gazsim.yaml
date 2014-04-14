@@ -49,6 +49,12 @@ gazsim:
     max-distance: 0.1
     success-visibility-history: 300
     fail-visibility-history: -300
+    see-all-delivery-gates: true
+    interface-id-multiple: "machine_signal_"
+    deliver-pos-x-min: 4.0
+    deliver-pos-y-min: 1.5
+    deliver-pos-y-max: 4.0
+    deliver-ori-max-diff: 1.18
 
   puck-detection:
     number-pucks: 22
