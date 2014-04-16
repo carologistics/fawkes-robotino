@@ -63,9 +63,12 @@ void PuckDetectionSimThread::init()
   fail_visibility_history_ = config->get_int("/gazsim/puck-detection/fail-visibility-history");
   number_pucks_ = config->get_float("/gazsim/puck-detection/number-pucks");
   use_switch_interface_ = config->get_bool("/gazsim/puck-detection/use-switch-interface");
+  is_omni_directional_ = config->get_bool("/gazsim/puck-detection/is-omni-directional");
+  max_fov_angle_ = config->get_float("/gazsim/puck-detection/max-fov-angle");
+  number_interfaces_ = config->get_int("/gazsim/puck-detection/number-interfaces");
   
   //open interfaces (puck enumeration starts with 1)
-  for(int i = 0; i < number_pucks_; i++)
+  for(int i = 0; i < number_interfaces_; i++)
   {
     printf("Opening interface puck_%d\n", i);
 std::ostringstream ss;
@@ -94,8 +97,6 @@ void PuckDetectionSimThread::finalize()
 
 void PuckDetectionSimThread::loop()
 {
-  //the acual work takes place in on_light_signals_msg
-
   //check messages of the switch interface
   while (!switch_if_->msgq_empty()) {
     if (SwitchInterface::DisableSwitchMessage *msg =
@@ -114,37 +115,40 @@ void PuckDetectionSimThread::loop()
     new_data_ = false;
     //Only write the interface if the switch is enabled
     if(!switch_if_->is_enabled() && use_switch_interface_)
+    {
+      std::list<fawkes::Position3DInterface*>::iterator puck;
+      for(std::map<int, Position3DInterface*>::iterator it = map_pos_if_.begin(); it != map_pos_if_.end(); it++)
       {
-    	std::list<fawkes::Position3DInterface*>::iterator puck;
-    	for(std::map<int, Position3DInterface*>::iterator it = map_pos_if_.begin(); it != map_pos_if_.end(); it++)
-    	  {
-    	    it->second->set_visibility_history(0);
-    	    it->second->write();
-    	  }
-    	return;
+	it->second->set_visibility_history(0);
+	it->second->write();
       }
-
-    for(int i = 0; i < last_msg_.positions_size(); i++)
+      return;
+    }
+    int num_interface = 0;
+    //find all pucks in perception range
+    for(int i = 0; i < last_msg_.positions_size() && num_interface < number_interfaces_; i++)
+    {
+      llsf_msgs::Pose2D pose = last_msg_.positions(i);
+      //check if the puck is in detection range
+      if(is_in_perception_area(pose.x(), pose.y()))
       {
-	llsf_msgs::Pose2D pose = last_msg_.positions(i);
-	//check if the puck is in detection range
-	double distance = sqrt(pose.x() * pose.x() + pose.y() * pose.y());
-	if(distance < max_distance_)
-	  {
-	    map_pos_if_[i]->set_translation(0, pose.x());
-	    map_pos_if_[i]->set_translation(1, pose.y());
-	    map_pos_if_[i]->set_translation(2, 0);
-	    map_pos_if_[i]->set_visibility_history(success_visibility_history_);
-
-	  }
-	else
-	  {
-	    map_pos_if_[i]->set_visibility_history(fail_visibility_history_);
-	  }
-	map_pos_if_[i]->set_frame("/base_link");
-	map_pos_if_[i]->write();
+	map_pos_if_[num_interface]->set_translation(0, pose.x());
+	map_pos_if_[num_interface]->set_translation(1, pose.y());
+	map_pos_if_[num_interface]->set_translation(2, 0);
+	map_pos_if_[num_interface]->set_visibility_history(success_visibility_history_);
+	map_pos_if_[num_interface]->set_frame("/base_link");
+	map_pos_if_[num_interface]->write();
+	num_interface++;
       }
-  }
+    }
+    //clear remaining interfaces
+    for(;num_interface < number_interfaces_; num_interface++)
+    {
+      map_pos_if_[num_interface]->set_visibility_history(fail_visibility_history_);
+      map_pos_if_[num_interface]->set_frame("/base_link");
+      map_pos_if_[num_interface]->write();
+    }
+ }
 }
 
 void PuckDetectionSimThread::on_puck_positions_msg(ConstPuckDetectionResultPtr &msg)
@@ -152,4 +156,19 @@ void PuckDetectionSimThread::on_puck_positions_msg(ConstPuckDetectionResultPtr &
   //logger->log_info(name(), "Got new Puck Positions.\n");
   last_msg_.CopyFrom(*msg);
   new_data_ = true;
+}
+
+bool PuckDetectionSimThread::is_in_perception_area(float x, float y)
+{
+  double distance = sqrt(x * x + y * y);
+  if(is_omni_directional_)
+  {
+    return distance < max_distance_;
+  }
+  else
+  {
+    return distance < max_distance_
+      && x > 0
+      && fabs(atan(y / x)) < max_fov_angle_;
+  }
 }

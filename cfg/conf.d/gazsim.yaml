@@ -58,10 +58,14 @@ gazsim:
 
   puck-detection:
     number-pucks: 22
-    max-distance: 1.5
+    number-interfaces: 3
+    max-distance: 1.0
     success-visibility-history: 300
     fail-visibility-history: -300
     use-switch-interface: false
+    is-omni-directional: false
+    # if the puck vision is not omni-directional, what is the field of view?
+    max-fov-angle: 0.6
 
   robotino:
     gripper-laser-threshold: 0.18

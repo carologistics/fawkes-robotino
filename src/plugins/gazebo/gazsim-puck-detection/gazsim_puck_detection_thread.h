@@ -74,13 +74,19 @@ class PuckDetectionSimThread
   //handler function for incoming messages about the machine light signals
   void on_puck_positions_msg(ConstPuckDetectionResultPtr &msg);
 
+  //can the position of the puck be recognized by the sensor?
+  bool is_in_perception_area(float x, float y);
+
   //config values:
   //maximal distance before the plugin says it can not detect the puck
   double max_distance_;
   int success_visibility_history_;
   int fail_visibility_history_;
   int number_pucks_;
+  int number_interfaces_;
   bool use_switch_interface_;
+  bool is_omni_directional_;
+  float max_fov_angle_;
 
   //copy of last msg to write the interface in the next loop
   llsf_msgs::PuckDetectionResult last_msg_;
