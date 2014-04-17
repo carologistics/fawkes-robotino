@@ -46,7 +46,7 @@ gazsim:
     frame: "/cam_front" #without "" in light_front.yaml?
     
   light-front:
-    max-distance: 0.1
+    max-distance: 0.3
     success-visibility-history: 300
     fail-visibility-history: -300
     see-all-delivery-gates: true

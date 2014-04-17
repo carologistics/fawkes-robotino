@@ -27,16 +27,12 @@ plugins/light_front:
   
 clips-agent:
   llsf2014:
-    # Possible roles for the agent:
-    # P1P2
-    # P3
-    # P1
-    # P2
-    agent-role: P3
-    start-machine-exploration: M2
+    agent-role: P3-ONLY
+    
+    exploration:      
+      row: MID
 
     dynamic-role-change/enabled: true
-    recycle: ifpossible
     
     play-exploration-without-refbox: false
     # uncomment following line ONLY if you are playing without refbox
