@@ -88,6 +88,7 @@ void LightFrontSimThread::init()
       ((interface_id_multiple_ + "1").c_str());
     light_if_2_ = blackboard->open_for_writing<RobotinoLightInterface>
       ((interface_id_multiple_ + "2").c_str());
+    deliver_mode_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>("machine_signal_delivery_mode");
   }
 
   //enable plugin by default
@@ -114,6 +115,7 @@ void LightFrontSimThread::finalize()
     blackboard->close(light_if_0_);
     blackboard->close(light_if_1_);
     blackboard->close(light_if_2_);
+    blackboard->close(deliver_mode_if_);
   }
 }
 
