@@ -1,3 +1,19 @@
+;---------------------------------------------------------------------------
+;  config.clp - Read config values and add them to the factbase
+;
+;  Created: Mon May 05 16:26:42 2014
+;  Copyright  2014  Frederik Zwilling
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+;Determine the role of the agent
+(defrule general-determine-role
+  (confval (path "/clips-agent/llsf2014/agent-role") (value ?role))
+  =>
+  (assert (role (sym-cat ?role)))
+  (printout t "I have the role " (str-cat ?role) crlf)
+)
+
 (defrule conf-figure-out-waiting-points
    (confval (path "/clips-agent/llsf2014/waiting-points/ins1") (value ?ins1-wait-point))
    (confval (path "/clips-agent/llsf2014/waiting-points/ins2") (value ?ins2-wait-point))
