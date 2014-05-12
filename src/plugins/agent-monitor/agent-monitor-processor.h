@@ -25,12 +25,15 @@
 
 #include <core/utils/lockptr.h>
 #include <webview/request_processor.h>
+#include <logging/logger.h>
 
 #include <string>
 #include <list>
+#include <map>
+
+#include <clipsmm.h>
 
 namespace fawkes {
-  class Logger;
   class CLIPSEnvManager;
 }
 
@@ -59,6 +62,9 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
   size_t                baseurl_len_;
 
   std::list<std::string> errors_;
+  
+  CLIPS::Fact::pointer get_fact(std::string env_name, std::string tmpl_name,
+				std::map <std::string, std::string> constraints = {});
 };
 
 #endif

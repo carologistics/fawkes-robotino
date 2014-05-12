@@ -53,7 +53,7 @@ AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr
 {
   clips_env_mgr_  = clips_env_mgr;
   logger_         = logger;
-
+  logger->log_info("test", "logged");
   baseurl_        = baseurl;
   baseurl_len_    = strlen(baseurl);
 
@@ -137,44 +137,53 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
 
     *r += "<h2>CLIPS Facts</h2>\n";
 
-    *r += "<table>";
-    *r += "<tr><th>Index</th><th>Fact</th><th>Action</th></tr>\n";
-
-    CLIPS::Fact::pointer fact = clips->get_facts();
-    while (fact) {
-      CLIPS::Template::pointer tmpl = fact->get_template();
-
-      char tmp[16384];
-      OpenStringDestination(clips->cobj(), (char *)"ProcPPForm", tmp, 16383);
-      PrintFact(clips->cobj(), (char *)"ProcPPForm",
-		(struct fact *)fact->cobj(), FALSE, FALSE);
-      CloseStringDestination(clips->cobj(), (char *)"ProcPPForm");
-
-      r->append_body("<tr><td>f-%li</td><td>%s</td>"
-		     "<td><a href=\"%s/%s/retract/%li\">Retract</a></td>"
-		     "</tr>\n",
-		     fact->index(), tmp, baseurl_, env_name.c_str(), fact->index());
-
-      std::string escaped = tmp;
-      size_t pos = 0;
-      while ((pos = escaped.find("\"", pos)) != std::string::npos) {
-	escaped.replace(pos, 1, "&quot;");
-      }
-
-      fact = fact->next();
-    }
+    CLIPS::Fact::pointer fact = get_fact(env_name, "machine", {{"mtype","RECYCLE"}});
+    *r += "<h3>";
+    *r += fact->slot_value("name")[0].as_string();
+    *r += "</h3>\n";
     
-
-    *r += "</table>";
-
-    r->append_body("<p><form action=\"%s/%s/assert\" method=\"post\">"
-		   "<input type=\"hidden\" name=\"index\" value=\"\">"
-		   "New fact: <input type=\"text\" name=\"fact\" />"
-		   "<input type=\"submit\" value=\"Assert\" /></form></p>",
-		   baseurl_, env_name.c_str());
-
     return r;
   } else {
     return NULL;
   }
+}
+
+CLIPS::Fact::pointer
+AgentMonitorWebRequestProcessor::get_fact(std::string env_name, std::string tmpl_name, std::map<std::string,std::string> constraints)
+{
+  std::map<std::string, LockPtr<CLIPS::Environment>> envs =
+    clips_env_mgr_->environments();
+  LockPtr<CLIPS::Environment> &clips = envs[env_name];
+  MutexLocker lock(clips.objmutex_ptr());
+  CLIPS::Fact::pointer fact = clips->get_facts();
+
+  while (fact)
+  {
+    CLIPS::Template::pointer tmpl = fact->get_template();
+    if(tmpl->name().compare(tmpl_name) == 0)
+    {
+      bool fits_to_constraints = true;
+      for(std::map<std::string,std::string>::iterator it = constraints.begin(); it != constraints.end() && fits_to_constraints; it++)
+      {
+	if(!fact->get_template()->slot_exists(it->first))
+	{
+	  logger_->log_error("agent-webview", "template %s has no slot %s", tmpl_name.c_str(), it->first.c_str());
+	}
+	else if(fact->slot_value(it->first)[0].as_string().compare(it->second) != 0)
+	{
+	  fits_to_constraints = false;
+	}
+      }
+      if(fits_to_constraints)
+      {
+	return fact;
+      }
+    }
+    
+    fact = fact->next();
+  }
+
+  logger_->log_info("Agent-Monitor", "couldn't find fact with template name %s and constraints", tmpl_name.c_str());
+
+  return NULL;
 }
