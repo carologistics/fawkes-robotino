@@ -49,53 +49,53 @@ TagVisionThread::init()
     loadConfig();
     // init firevision camera
     // CAM swapping not working (??)
-    if(fvCam != NULL){
+    if(fv_cam != NULL){
         // free the camera
-        fvCam->stop();
-        fvCam->flush();
-        fvCam->dispose_buffer();
-        fvCam->close();
-        delete fvCam;
-        fvCam = NULL;
+        fv_cam->stop();
+        fv_cam->flush();
+        fv_cam->dispose_buffer();
+        fv_cam->close();
+        delete fv_cam;
+        fv_cam = NULL;
     }
-    if(fvCam == NULL){
-        fvCam = vision_master->register_for_camera(fvCamInfo.connection.c_str(), this);
-        fvCam->start();
-        fvCam->open();
-        fvCamInfo.img_width = fvCam->pixel_width();
-        fvCamInfo.img_height = fvCam->pixel_height();
+    if(fv_cam == NULL){
+        fv_cam = vision_master->register_for_camera(fv_cam_info.connection.c_str(), this);
+        fv_cam->start();
+        fv_cam->open();
+        fv_cam_info.img_width = fv_cam->pixel_width();
+        fv_cam_info.img_height = fv_cam->pixel_height();
     }
 
     // SHM image buffer
     if(shm_buffer != NULL) {
         delete shm_buffer;
         shm_buffer = NULL;
-        imageBuffer = NULL;
+        image_buffer = NULL;
     }
 
     shm_buffer = new firevision::SharedMemoryImageBuffer(
-                shmID.c_str(),
+                shm_id.c_str(),
                 firevision::YUV422_PLANAR,
-                fvCamInfo.img_width,
-                fvCamInfo.img_height
+                fv_cam_info.img_width,
+                fv_cam_info.img_height
                 );
     if(!shm_buffer->is_valid()){
         delete shm_buffer;
-        delete fvCam;
+        delete fv_cam;
         shm_buffer = NULL;
-        fvCam = NULL;
+        fv_cam = NULL;
         throw fawkes::Exception("Shared memory segment not valid");
     }
-    shm_buffer->set_frame_id(fvCamInfo.frame.c_str());
+    shm_buffer->set_frame_id(fv_cam_info.frame.c_str());
 
-    imageBuffer = shm_buffer->buffer();
+    image_buffer = shm_buffer->buffer();
     ipl =  cvCreateImage(
-                cvSize(fvCamInfo.img_width,fvCamInfo.img_height),
+                cvSize(fv_cam_info.img_width,fv_cam_info.img_height),
                 IPL_DEPTH_8U,1);
 
     // set up poses
-    maxPoses = 16;
-    poses = new Pose[maxPoses];
+    max_poses = 16;
+    poses = new Pose[max_poses];
 }
 
 void
@@ -113,25 +113,25 @@ TagVisionThread::loop()
         //logger->log_info(name(),"Skipping loop");
         return;
     }
-    if(fvCam == NULL || !fvCam->ready()){
+    if(fv_cam == NULL || !fv_cam->ready()){
         logger->log_info(name(),"Camera not ready");
         init();
         return;
     }
     //logger->log_info(name(),"entering loop");
     //get img form fv
-    fvCam->capture();
-    firevision::convert(fvCam->colorspace(),
+    fv_cam->capture();
+    firevision::convert(fv_cam->colorspace(),
                         firevision::YUV422_PLANAR,
-                        fvCam->buffer(),
-                        imageBuffer,
-                        fvCamInfo.img_width,
-                        fvCamInfo.img_height);
-    fvCam->dispose_buffer();
+                        fv_cam->buffer(),
+                        image_buffer,
+                        fv_cam_info.img_width,
+                        fv_cam_info.img_height);
+    fv_cam->dispose_buffer();
     //convert img
-    firevision::IplImageAdapter::convert_image_bgr(imageBuffer, ipl);
+    firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
     //get poses from img
-    size_t got = getMarkerPoses(ipl);
+    size_t got = get_marker_poses(ipl);
     for(size_t i = 0;i < got; i++){
         //logger->log_info(name(),"Tag %i: %f,%f,%f",poses[0].translation[0],poses[0].translation[1],poses[0].translation[2]);
     }
@@ -150,14 +150,14 @@ TagVisionThread::loop()
 }
 
 size_t
-TagVisionThread::getMarkerPoses(IplImage *img)
+TagVisionThread::get_marker_poses(IplImage *img)
 {
     // detect makres on image
-    detector.Detect(img,&alvarCam);
+    detector.Detect(img,&alvar_cam);
     // marker count
     size_t filled = 0;
     // fill output array
-    for(size_t i=0;(i < detector.markers->size() && i < maxPoses);i++){
+    for(size_t i=0;(i < detector.markers->size() && i < max_poses);i++){
         poses[i]=(*(detector.markers))[i].pose;
         MarkerData data = detector.markers->at(i);
         logger->log_info(name(),"Tag id: %lu, %f,%f,%f",data.GetId(),data.pose.translation[0],data.pose.translation[1],data.pose.translation[2]);
@@ -175,28 +175,28 @@ TagVisionThread::loadConfig(){
     // log, that we open load the config
     logger->log_info(name(),"loading config");
     // load alvar camera calibration
-    alvarCam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
+    alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
     // load marker size and apply it
-    markerSize = config->get_uint((prefix + "marker_size").c_str());
-    detector.SetMarkerSize(markerSize);
+    marker_size = config->get_uint((prefix + "marker_size").c_str());
+    detector.SetMarkerSize(marker_size);
 
     //load camera informations
-    fvCamInfo.connection = config->get_string((prefix + "camera").c_str());
-    fvCamInfo.position_x = config->get_float(( prefix_static_transforms_ + "trans_x").c_str());
-    fvCamInfo.position_y = config->get_float(( prefix_static_transforms_ + "trans_y").c_str());
-    fvCamInfo.position_z = config->get_float(( prefix_static_transforms_ + "trans_z").c_str());
-    fvCamInfo.position_pitch = config->get_float((prefix_static_transforms_ + "rot_pitch").c_str());
-    fvCamInfo.opening_angle_horizontal = config->get_float((prefix + "camera_opening_angle_horizontal").c_str());
-    fvCamInfo.opening_angle_vertical   = config->get_float((prefix + "camera_opening_angle_vertical").c_str());
+    fv_cam_info.connection = config->get_string((prefix + "camera").c_str());
+    fv_cam_info.position_x = config->get_float(( prefix_static_transforms_ + "trans_x").c_str());
+    fv_cam_info.position_y = config->get_float(( prefix_static_transforms_ + "trans_y").c_str());
+    fv_cam_info.position_z = config->get_float(( prefix_static_transforms_ + "trans_z").c_str());
+    fv_cam_info.position_pitch = config->get_float((prefix_static_transforms_ + "rot_pitch").c_str());
+    fv_cam_info.opening_angle_horizontal = config->get_float((prefix + "camera_opening_angle_horizontal").c_str());
+    fv_cam_info.opening_angle_vertical   = config->get_float((prefix + "camera_opening_angle_vertical").c_str());
     // Calculate visible Area
-    fvCamInfo.angle_horizontal_to_opening_ = (1.57 - fvCamInfo.position_pitch) - (fvCamInfo.opening_angle_vertical / 2) ;
-    fvCamInfo.visible_lenght_x_in_m_       = fvCamInfo.position_z * (tan(fvCamInfo.opening_angle_vertical + fvCamInfo.angle_horizontal_to_opening_) - tan(fvCamInfo.angle_horizontal_to_opening_));
-    fvCamInfo.offset_cam_x_to_groundplane_ = fvCamInfo.position_z * tan(fvCamInfo.angle_horizontal_to_opening_);
-    fvCamInfo.visible_lenght_y_in_m_       = fvCamInfo.position_z * tan (fvCamInfo.opening_angle_horizontal /2 );
-    fvCamInfo.frame = config->get_string((prefix_static_transforms_ + "child_frame").c_str());
+    fv_cam_info.angle_horizontal_to_opening_ = (1.57 - fv_cam_info.position_pitch) - (fv_cam_info.opening_angle_vertical / 2) ;
+    fv_cam_info.visible_lenght_x_in_m_       = fv_cam_info.position_z * (tan(fv_cam_info.opening_angle_vertical + fv_cam_info.angle_horizontal_to_opening_) - tan(fv_cam_info.angle_horizontal_to_opening_));
+    fv_cam_info.offset_cam_x_to_groundplane_ = fv_cam_info.position_z * tan(fv_cam_info.angle_horizontal_to_opening_);
+    fv_cam_info.visible_lenght_y_in_m_       = fv_cam_info.position_z * tan (fv_cam_info.opening_angle_horizontal /2 );
+    fv_cam_info.frame = config->get_string((prefix_static_transforms_ + "child_frame").c_str());
 
     //Image Buffer ID
-    shmID = config->get_string((prefix + "shm_image_id").c_str());
+    shm_id = config->get_string((prefix + "shm_image_id").c_str());
 }
 
 // config handling

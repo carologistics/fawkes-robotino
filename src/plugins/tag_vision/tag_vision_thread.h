@@ -99,28 +99,28 @@ class TagVisionThread
   // the marker detector in alvar
   alvar::MarkerDetector<alvar::MarkerData> detector;
   // the camera the detector uses
-  alvar::Camera alvarCam;
+  alvar::Camera alvar_cam;
   // the size of a marker in millimeter
-  uint markerSize;
+  uint marker_size;
   // function to get the poses from an image
-  size_t getMarkerPoses(IplImage *img);
+  size_t get_marker_poses(IplImage *img);
   // store the alvar poses
   alvar::Pose *poses;
   // maximum poses to detect, size for the poses array
-  size_t maxPoses;
+  size_t max_poses;
 
   // mutex for config access
   fawkes::Mutex cfg_mutex;
 
   // firevision camera
-  firevision::Camera *fvCam;
+  firevision::Camera *fv_cam;
   // info about the firevision camera, needed to connect
-  firevision::camera_info fvCamInfo;
+  firevision::camera_info fv_cam_info;
   // firevision image buffer
   firevision::SharedMemoryImageBuffer *shm_buffer;
-  unsigned char *imageBuffer;
+  unsigned char *image_buffer;
   // Image Buffer Id
-  std::string shmID;
+  std::string shm_id;
 
   // config handling
   virtual void config_value_erased(const char *path);
