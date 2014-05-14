@@ -11,7 +11,7 @@ plugins/static-transforms:
     base_laser:
       frame: !frame /base_link
       child_frame: /base_laser
-      trans_x: 0.13 # 0.1 for hackathon setup
+      trans_x: 0.085 # 0.1 for hackathon setup
       trans_y: 0.0
       trans_z: 0.15
 

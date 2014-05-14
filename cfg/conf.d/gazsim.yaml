@@ -1,0 +1,117 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
+---
+gazsim:
+  proto-dirs: ["@BASEDIR@/src/libs/llsf_msgs"]
+  world-name: "LLSF"
+  #default robot name
+  robot-name: "carologistics-robotino"
+
+  topics:
+    gps: "~/gazsim/gps/"
+    laser: "~/hokuyo_carologistics/link/laser/scan"
+    gyro: "~/RobotinoSim/Gyro/"
+    infrared-puck-sensor: "~/RobotinoSim/InfraredPuckSensor/"
+    gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
+    gripper-laser-right: "~/RobotinoSim/GripperLaserSensor/Right/"
+    motor-move: "~/RobotinoSim/MotorMove/"
+    puck-detection: "~/RobotinoSim/PuckDetectionResult/"
+    time: "~/gazsim/time-sync/"
+    machine-lights: "~/RobotinoSim/MachineVision/"
+    machine-info: "~/LLSFRbSim/MachineInfo/"
+    puck-info: "~/LLSFRbSim/PuckInfo/"
+    game-state: "~/LLSFRbSim/GameState/"
+    set-game-state: "~/LLSFRbSim/SetGameState/"
+    place-puck-under-machine: "~/LLSFRbSim/PlacePuckUnderMachine/"
+    remove-puck-under-machine: "~/LLSFRbSim/RemovePuckFromMachine/"
+    message: "~/RobotinoSim/String/"
+  
+  llsf-rb-comm:
+    refbox-host: "127.0.0.1"
+    refbox-port: 4444
+
+  laser:
+    max_range: 5.5 
+    interface-id: "Laser urg"
+    frame-id: "/base_laser"
+ 
+  webcam:
+    topic-suffix: "/webcam/link/webcam_sensor/image"
+    width: 320
+    height: 240
+    #Shared Memory Imagebuffer name
+    shm-image-id: "gazsim_light_front"
+    frame: "/cam_front" #without "" in light_front.yaml?
+    
+  light-front:
+    max-distance: 0.3
+    success-visibility-history: 300
+    fail-visibility-history: -300
+    see-all-delivery-gates: true
+    interface-id-multiple: "machine_signal_"
+    deliver-pos-x-min: 4.0
+    deliver-pos-y-min: 1.5
+    deliver-pos-y-max: 4.0
+    deliver-ori-max-diff: 1.18
+
+  puck-detection:
+    number-pucks: 22
+    number-interfaces: 3
+    max-distance: 1.0
+    success-visibility-history: 300
+    fail-visibility-history: -300
+    use-switch-interface: false
+    is-omni-directional: false
+    # if the puck vision is not omni-directional, what is the field of view?
+    max-fov-angle: 0.6
+
+  robotino:
+    gripper-laser-threshold: 0.18
+    gripper-laser-value-far: 0.17
+    gripper-laser-value-near: 9.99
+
+    motor:    
+      # does the odometry change if the robotino drives against an obstacle?
+      slippery-wheels-enabled: true
+      slippery-wheels-threshold: 0.5
+      moving-speed-factor: 1.2
+      rotation-speed-factor: 1.2
+      
+  comm:
+    package-loss: 0.1
+    #all peers which need the comm plugin
+    # write down as follows:
+    # adrresses:  ["address_1", "address_2", ...]
+    # send-ports: [send_port_1, send_port_2, ...]
+    # revc-ports: [recv_port_1, recv_port_2, ...]
+    # refbox, robotino1, robotino2, robotino3
+    addresses:  ["127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1"]
+    send-ports: [4445,         4411,       4412,        4413]
+    recv-ports: [4444,         4421,       4422,        4423]
+
+  visualization:
+    location-scripts: "model://label/materials/scripts"
+    location-textures: "model://label/materials/textures"
+    label-arrow-name: "label/arrowredup"
+    localization:
+      #parent model::link to attach visuals on
+      parent-name: "ground_plane::link"
+      update-rate: 2.0 #in Hz
+
+  llsf-control:
+    start-game-automatically: true
+    time-to-wait-before-start: 5.0
+    simulation-shutdown-after-game: true
+    time-to-wait-before-shutdown: 5.0
+    fawkes-path: "~/fawkes-robotino/" #TODO: find it in cpp source
+    simulation-shutdown-script: "bin/gazsim.bash -x kill"
+
+  llsf-statistics:
+    #these fields can be overridden by the gazsim-schedule script
+    db-name: "gazsim-runs"
+    collection: "test_13_10_14_15_26"
+    configuration-name: "default"
+    log: "~/fawkes-robotino/gazsim-logs/13_10_14_15_26/default_1"
+    run: 1

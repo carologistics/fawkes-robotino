@@ -22,7 +22,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "motor_move"
-fsm                = SkillHSM:new{name=name, start="DRIVE"}
+fsm                = SkillHSM:new{name=name, start="DRIVE", debug=true}
 depends_skills     = nil
 depends_interfaces = {
     {v = "motor", type = "MotorInterface", id="Robotino" }
@@ -45,7 +45,7 @@ local D_DECEL =   { x=0.07, y=0.07, ori=0.2 }    -- deceleration distance
 local ACCEL =     { x=0.05, y=0.05, ori=0.10 }   -- accelerate by this factor every loop
 
 -- Initialize as skill module
-skillenv.skill_module(_M)
+skillenv.skill_module(_M )
 
 local tfm = require("tf_module")
 

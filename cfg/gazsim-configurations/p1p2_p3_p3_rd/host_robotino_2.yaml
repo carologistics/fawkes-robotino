@@ -1,0 +1,89 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+# to start fawkes, use robotino2.yaml in cfg/
+
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
+---
+
+webview:
+  # TCP port for Webview HTTP requests; TCP port
+  port: !tcp-port 8082
+
+#seperate the shared memory images for the webcam:
+firevision:
+  fountain:
+    tcp_port: !tcp-port 2212
+
+gazsim:
+  robot-name: "robotino2"
+  visualization:
+    label-script-name: "label/robotino2"
+
+plugins/light_front:
+  #Camera for gazebo simulation:
+  camera: shmem:gazsim_cam:image_id=robotino2/gazsim_light_front:deep_copy=true
+  
+fawkes:
+  bblogreplay:
+    qatest-2013-05-29-15-28-50:
+      logs:
+        test:
+          file: /home/robotino/fawkes-robotino/log/qatest-TestInterface-BBLoggerTest-2013-05-29-15-28-50.log
+    qatest-2013-05-29-15-31-27:
+      logs:
+        test:
+          file: /home/robotino/fawkes-robotino/log/qatest-TestInterface-BBLoggerTest-2013-05-29-15-31-27.log
+
+clips-agent:
+  clips-debug: true
+  skill-sim: false
+  skill-sim-time: 0.5
+  
+  # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+  debug-level: 3
+
+  # Automatically assert the (start) fact after successful initialization,
+  # otherwise wait until the an enalble message has been received
+  auto-start: false
+
+  # If set to true, will trigger the assertion of a (time (now)) fact in
+  # each loop. This can be used to trigger loop events in CLIPS.
+  assert-time-each-loop: true
+
+  llsf2013:
+    enable-sim: false
+
+    # Possible roles for the agent:
+    # P1P2
+    # P3
+    # P1
+    # P2
+    agent-role: P3
+    start-machine-exploration: M2
+
+    play-exploration-without-refbox: false
+    # uncomment following line ONLY if you are playing without refbox
+    # unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
+
+    team-name: Carologistics
+    robot-name: R-2
+    robot-number: 2
+
+    peer-address: 127.0.0.1
+    peer-recv-port: 4412
+    peer-send-port: 4422
+
+
+
+skills/take_puck_to:
+   #front sensor distance when the puck is lost
+   front_sensor_dist: 0.072
+
+skills/fetch_puck:
+   #front sensor distance when fetching the puck
+   front_sensor_dist: 0.045
+
+skills/deliver_puck:
+   #front sensor distance when checking if we still have the puck at the delivery gates
+   front_sensor_dist: 0.05

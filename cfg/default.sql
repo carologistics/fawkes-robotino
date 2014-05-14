@@ -379,4 +379,8 @@ INSERT INTO "config" VALUES('/plugins/robotino-agent/clips-debug','bool',1,'Enab
 INSERT INTO "config" VALUES('/plugins/robotino-agent/use-sim','bool',1,'Enable simulation mode (do not actually invoke skills)?');
 INSERT INTO "config" VALUES('/plugins/robotino-agent/sim-randomize-machines','bool',1,'Enable randomization of machine assignments in simulation?');
 INSERT INTO "config" VALUES('/plugins/robotino-agent/skill-sim-time','float',0.1,'Time to wait until reporting skill success in simulation; sec');
+INSERT INTO "config" VALUES('/plugins/mongodb/enable_logger','bool',1,'Create thread to log messages to MongoDB?');
+INSERT INTO "config" VALUES('/plugins/mongodb/clients/default/active','bool',1,'Activate this client configuration?');
+INSERT INTO "config" VALUES('/plugins/mongodb/clients/default/mode','string','connection','Client mode: connection, replica_set, or sync_cluster');
+INSERT INTO "config" VALUES('/plugins/mongodb/clients/default/hostport','string','localhost','Host and optionally port (as :1234 suffix) for connection mode client');
 COMMIT;

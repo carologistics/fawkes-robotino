@@ -16,3 +16,6 @@ observation_sources: laser_scan_sensor
 # marking/clearing = true -> sensor used to add/clear obstacles from costmap 
 laser_scan_sensor: {sensor_frame: base_laser, data_type: LaserScan, topic: /fawkes_scans/Laser_urg_filtered_360, marking: true, clearing: true}
 
+#gazsim-only!!!:
+#tolerance is set so high to avoid timing problems 
+transform_tolerance: 1000000000.0
