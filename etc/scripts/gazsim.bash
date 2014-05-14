@@ -129,11 +129,6 @@ if [  $COMMAND  == start ]; then
 	echo "FAWKES_DIR is not set"
 	exit 1
     fi
-    if ! [[ $GAZEBO_MODEL_PATH == *$FAWKES_DIR/res/gazebo-models* ]]
-    then
-	echo "Missing path to Gazebo Models in GAZEBO_MODEL_PATH";
-	exit 1
-    fi
     if ! [[ $GAZEBO_PLUGIN_PATH == *$FAWKES_DIR/lib/gazebo* ]]
     then
 	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
