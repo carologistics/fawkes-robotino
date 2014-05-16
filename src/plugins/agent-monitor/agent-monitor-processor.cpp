@@ -116,7 +116,8 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
 		       "  <script type=\"text/javascript\" src=\"/static/js/"
 		       "jquery.min.js\"></script>\n"
 		       "  <script type=\"text/javascript\" src=\"/static/js/"
-		       "jquery-ui.custom.min.js\"></script>\n");
+		       "jquery-ui.custom.min.js\"></script>\n"
+                       "<meta http-equiv=\"refresh\" content=\"3\" />\n");
 
     *r +=
       "<style type=\"text/css\">\n"
