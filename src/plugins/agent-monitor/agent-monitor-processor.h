@@ -30,6 +30,7 @@
 #include <string>
 #include <list>
 #include <map>
+#include <set>
 
 #include <clipsmm.h>
 
@@ -63,7 +64,12 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
 
   std::list<std::string> errors_;
   
+  CLIPS::Fact::pointer get_first_fact(std::string env_name);
   CLIPS::Fact::pointer get_fact(std::string env_name, std::string tmpl_name,
+				std::map <std::string, std::string> constraints = {});
+  CLIPS::Fact::pointer get_next_fact(CLIPS::Fact::pointer start, std::string tmpl_name,
+				std::map <std::string, std::string> constraints = {});
+  std::set<CLIPS::Fact::pointer> get_all_facts(std::string env_name, std::string tmpl_name,
 				std::map <std::string, std::string> constraints = {});
 };
 

@@ -135,12 +135,18 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       *r += "</ul>\n";
     }
 
-    *r += "<h2>CLIPS Facts</h2>\n";
+    *r += "<h2>State:</h2>\n";
+    CLIPS::Fact::pointer state = get_fact(env_name, "state");
+    *r += state->slot_value("")[0].as_string();
+    
+    *r += "<h2>Worldmodel:</h2>\n";
+    *r += "<h3>Machines:</h3>\n";
+    std::set<CLIPS::Fact::pointer> machines = get_all_facts(env_name, "machine");
+    for(std::set<CLIPS::Fact::pointer>::iterator it = machines.begin(); it != machines.end(); it++)
+    {
+      *r += (*it)->slot_value("name")[0].as_string() + " ";
+    }
 
-    CLIPS::Fact::pointer fact = get_fact(env_name, "machine", {{"mtype","RECYCLE"}});
-    *r += "<h3>";
-    *r += fact->slot_value("name")[0].as_string();
-    *r += "</h3>\n";
     
     return r;
   } else {
@@ -148,15 +154,19 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
   }
 }
 
-CLIPS::Fact::pointer
-AgentMonitorWebRequestProcessor::get_fact(std::string env_name, std::string tmpl_name, std::map<std::string,std::string> constraints)
+CLIPS::Fact::pointer AgentMonitorWebRequestProcessor::get_first_fact(std::string env_name)
 {
   std::map<std::string, LockPtr<CLIPS::Environment>> envs =
     clips_env_mgr_->environments();
   LockPtr<CLIPS::Environment> &clips = envs[env_name];
   MutexLocker lock(clips.objmutex_ptr());
-  CLIPS::Fact::pointer fact = clips->get_facts();
+  return clips->get_facts();
+}
 
+CLIPS::Fact::pointer
+AgentMonitorWebRequestProcessor::get_next_fact(CLIPS::Fact::pointer start, std::string tmpl_name, std::map<std::string,std::string> constraints)
+{
+  CLIPS::Fact::pointer fact = start;
   while (fact)
   {
     CLIPS::Template::pointer tmpl = fact->get_template();
@@ -190,4 +200,24 @@ AgentMonitorWebRequestProcessor::get_fact(std::string env_name, std::string tmpl
   logger_->log_info("Agent-Monitor", "couldn't find fact with template name %s and constraints", tmpl_name.c_str());
 
   return NULL;
+}
+
+CLIPS::Fact::pointer
+AgentMonitorWebRequestProcessor::get_fact(std::string env_name, std::string tmpl_name, std::map<std::string,std::string> constraints)
+{
+  CLIPS::Fact::pointer first = get_first_fact(env_name);
+  return get_next_fact(first, tmpl_name, constraints);
+}
+
+std::set<CLIPS::Fact::pointer>
+AgentMonitorWebRequestProcessor::get_all_facts(std::string env_name, std::string tmpl_name, std::map<std::string,std::string> constraints)
+{
+  std::set<CLIPS::Fact::pointer> res;
+  CLIPS::Fact::pointer fact = get_first_fact(env_name);
+  while(fact = get_next_fact(fact, tmpl_name, constraints))
+  {
+    res.insert(fact);
+    fact = fact->next();
+  }
+  return res;
 }
