@@ -79,7 +79,6 @@
     (path-load  llsf2014/sim.clp)
   )
   (path-load  llsf2014/game.clp)
-  (path-load  llsf2014/general.clp)
   (path-load  llsf2014/worldmodel.clp)
   (path-load  llsf2014/worldmodel-synchronization.clp)
   (path-load  llsf2014/tactical-help.clp)
