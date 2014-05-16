@@ -162,6 +162,10 @@ AgentMonitorWebRequestProcessor::get_fact(std::string env_name, std::string tmpl
     CLIPS::Template::pointer tmpl = fact->get_template();
     if(tmpl->name().compare(tmpl_name) == 0)
     {
+      if(constraints.size() == 0)
+      {
+	return fact;
+      }
       bool fits_to_constraints = true;
       for(std::map<std::string,std::string>::iterator it = constraints.begin(); it != constraints.end() && fits_to_constraints; it++)
       {
