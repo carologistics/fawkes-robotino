@@ -87,7 +87,7 @@ void PuckHolder::update()
 	  closest = puck;
 	}
       }
-      if(min_dist < 0.06)
+      if(min_dist < 0.04)
       {
 	puck_model_ = model->GetWorld()->GetEntity(closest.name_link.c_str())->GetParentModel();
 	puck_attached_ = true;
@@ -95,11 +95,11 @@ void PuckHolder::update()
     }
     else
     {
-      puck_model_->SetWorldPose(math::Pose(center_x, center_y, 0, 0, 0, 0));
+      puck_model_->SetWorldPose(math::Pose(center_x, center_y, 0.02, 0, 0, 0));
     }
   }
   else
-    {
+  {
     puck_attached_ = false;
   }
 }
