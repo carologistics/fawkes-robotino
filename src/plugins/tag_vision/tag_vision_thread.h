@@ -103,7 +103,7 @@ class TagVisionThread
   // the size of a marker in millimeter
   uint marker_size;
   // function to get the poses from an image
-  size_t get_marker_poses(IplImage *img);
+  size_t get_marker_poses();
   // store the alvar poses
   alvar::Pose *poses;
   // maximum poses to detect, size for the poses array

@@ -164,10 +164,10 @@ TagVisionThread::loop()
 }
 
 size_t
-TagVisionThread::get_marker_poses(IplImage *img)
+TagVisionThread::get_marker_poses()
 {
     // detect makres on image
-    detector.Detect(img,&alvar_cam);
+    detector.Detect(ipl,&alvar_cam);
     // marker count
     size_t filled = 0;
     // fill output array
