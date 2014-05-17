@@ -99,16 +99,17 @@ TagVisionThread::init()
                 cvSize(fv_cam_info.img_width,fv_cam_info.img_height),
                 IPL_DEPTH_8U,IMAGE_CAHNNELS);
 
-    // set up poses
-    max_poses = 16;
-    poses = new Pose[max_poses];
+
+    // set up marker
+    max_marker = 16;
+    markers = new MarkerData[max_marker];
 }
 
 void
 TagVisionThread::finalize()
 {
   blackboard->close(pose_if_);
-  delete [] poses;
+  delete [] markers;
   markers = NULL;
   delete fv_cam;
   fv_cam = NULL;
@@ -144,10 +145,10 @@ TagVisionThread::loop()
     fv_cam->dispose_buffer();
     //convert img
     firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
-    //get poses from img
-    size_t got = get_marker_poses(ipl);
+    //get marker from img
+    size_t got = get_marker();
     for(size_t i = 0;i < got; i++){
-        //logger->log_info(name(),"Tag %i: %f,%f,%f",poses[0].translation[0],poses[0].translation[1],poses[0].translation[2]);
+        logger->log_info(name(),"Tag %i: %f,%f,%f",markers[i].GetId(),markers[i].pose.translation[0],markers[i].pose.translation[1],markers[i].pose.translation[2]);
     }
 
 /*
@@ -164,17 +165,15 @@ TagVisionThread::loop()
 }
 
 size_t
-TagVisionThread::get_marker_poses()
+TagVisionThread::get_marker()
 {
     // detect makres on image
     detector.Detect(ipl,&alvar_cam);
     // marker count
     size_t filled = 0;
     // fill output array
-    for(size_t i=0;(i < detector.markers->size() && i < max_poses);i++){
-        poses[i]=(*(detector.markers))[i].pose;
-        MarkerData data = detector.markers->at(i);
-        logger->log_info(name(),"Tag id: %lu, %f,%f,%f",data.GetId(),data.pose.translation[0],data.pose.translation[1],data.pose.translation[2]);
+    for(size_t i=0;(i < detector.markers->size() && i < max_marker);i++){
+        markers[i] = detector.markers->at(i);
         // add up to markers
         filled++;
     }

@@ -102,12 +102,12 @@ class TagVisionThread
   alvar::Camera alvar_cam;
   // the size of a marker in millimeter
   uint marker_size;
-  // function to get the poses from an image
-  size_t get_marker_poses();
-  // store the alvar poses
-  alvar::Pose *poses;
-  // maximum poses to detect, size for the poses array
-  size_t max_poses;
+  // function to get the markers from an image
+  size_t get_marker();
+  // store the alvar markers, containing the poses
+  alvar::MarkerData *markers;
+  // maximum markers to detect, size for the markers array
+  size_t max_marker;
 
   // mutex for config access
   fawkes::Mutex cfg_mutex;
