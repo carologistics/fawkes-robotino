@@ -24,6 +24,7 @@
 #include <interfaces/Position3DInterface.h>
 
 #define CFG_PREFIX "/plugins/tag_vision/"
+#define IMAGE_CAHNNELS 3
 
 using namespace fawkes;
 using namespace alvar;
@@ -96,7 +97,7 @@ TagVisionThread::init()
     image_buffer = shm_buffer->buffer();
     ipl =  cvCreateImage(
                 cvSize(fv_cam_info.img_width,fv_cam_info.img_height),
-                IPL_DEPTH_8U,1);
+                IPL_DEPTH_8U,IMAGE_CAHNNELS);
 
     // set up poses
     max_poses = 16;
