@@ -124,7 +124,7 @@ TagVisionThread::finalize()
 void
 TagVisionThread::loop()
 {
-    if(cfg_mutex.try_lock()){
+    if(!cfg_mutex.try_lock()){
         //logger->log_info(name(),"Skipping loop");
         return;
     }
