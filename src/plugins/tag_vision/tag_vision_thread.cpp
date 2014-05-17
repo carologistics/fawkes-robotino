@@ -39,6 +39,11 @@ TagVisionThread::TagVisionThread()
     VisionAspect(VisionAspect::CYCLIC),
     ConfigurationChangeHandler(CFG_PREFIX)
 {
+    markers = NULL;
+    fv_cam = NULL;
+    shm_buffer = NULL;
+    image_buffer = NULL;
+    ipl = NULL;
 }
 
 void
@@ -102,8 +107,16 @@ void
 TagVisionThread::finalize()
 {
   blackboard->close(pose_if_);
-  delete ipl;
-  delete poses;
+  delete [] poses;
+  markers = NULL;
+  delete fv_cam;
+  fv_cam = NULL;
+  delete shm_buffer;
+  shm_buffer= NULL;
+  delete image_buffer;
+  image_buffer = NULL;
+  free(ipl);
+  ipl = NULL;
 }
 
 void
