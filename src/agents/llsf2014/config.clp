@@ -15,17 +15,19 @@
 )
 
 (defrule conf-figure-out-waiting-points
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins1") (value ?ins1-wait-point))
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins2") (value ?ins2-wait-point))
-   (confval (path "/clips-agent/llsf2014/waiting-points/deliver1") (value ?deliver1-wait-point))
-   (confval (path "/clips-agent/llsf2014/waiting-points/deliver2") (value ?deliver2-wait-point))
-   =>
+  "Reads waiting-point names (identical to navgraph names) from cfg/conf.d/clips-agent.yaml"
+  (confval (path "/clips-agent/llsf2014/waiting-points/ins1") (value ?ins1-wait-point))
+  (confval (path "/clips-agent/llsf2014/waiting-points/ins2") (value ?ins2-wait-point))
+  (confval (path "/clips-agent/llsf2014/waiting-points/deliver1") (value ?deliver1-wait-point))
+  (confval (path "/clips-agent/llsf2014/waiting-points/deliver2") (value ?deliver2-wait-point))
+  =>
   (assert (wait-point Ins1 ?ins1-wait-point) (wait-point deliver1 ?deliver1-wait-point)
           (wait-point Ins2 ?ins2-wait-point) (wait-point deliver2 ?deliver2-wait-point)
   )
 )
 
 (defrule conf-machine-proc-times
+  "Reads production times from cfg/conf.d/clips-agent.yaml"
   (phase PRODUCTION)
   (confval (path "/clips-agent/llsf2014/production-times/t1-min") (value ?proc-min-time-t1))
   (confval (path "/clips-agent/llsf2014/production-times/t1-max") (value ?proc-max-time-t1))
