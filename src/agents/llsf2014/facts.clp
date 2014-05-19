@@ -8,7 +8,7 @@
 
 ; GENERIC
 (deftemplate active-robot
-  (slot name (type SYMBOL) (allowed-values R-1 R-2))
+  (slot name (type SYMBOL) (allowed-values R-1 R-2 R-3))
   (multislot last-seen (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
