@@ -130,6 +130,11 @@ class TagVisionThread
 
   //cv image
   IplImage *ipl;
+
+  //blackboard communication
+  void create_tag_interface(size_t position);
+  std::vector<fawkes::Position3DInterface *> tag_interfaces;
+  void update_blackboard(size_t marker_count);
 };
 
 #endif

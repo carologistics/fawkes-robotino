@@ -28,6 +28,7 @@
 
 using namespace fawkes;
 using namespace alvar;
+using namespace std;
 
 /** @class TagVisionThread "tag_vision_thread.h"
  * Thread to identify AR Tags and provid e their position
@@ -103,6 +104,7 @@ TagVisionThread::init()
     // set up marker
     max_marker = 16;
     markers = new MarkerData[max_marker];
+    tag_interfaces.resize(max_marker,NULL);
 }
 
 void
@@ -119,6 +121,11 @@ TagVisionThread::finalize()
   image_buffer = NULL;
   free(ipl);
   ipl = NULL;
+  for(size_t i =0; i < tag_interfaces.size(); i++){
+      if(tag_interfaces[i] != NULL){
+          blackboard->close(tag_interfaces[i]);
+      }
+  }
 }
 
 void
@@ -147,9 +154,11 @@ TagVisionThread::loop()
     firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
     //get marker from img
     size_t got = get_marker();
-    for(size_t i = 0;i < got; i++){
-        logger->log_info(name(),"Tag %i: %f,%f,%f",markers[i].GetId(),markers[i].pose.translation[0],markers[i].pose.translation[1],markers[i].pose.translation[2]);
-    }
+    //for(size_t i = 0;i < got; i++){
+    //    logger->log_info(name(),"Tag %i: %f,%f,%f",markers[i].GetId(),markers[i].pose.translation[0],markers[i].pose.translation[1],markers[i].pose.translation[2]);
+    //}
+
+    update_blackboard(got);
 
 /*
     if (pose_if_->has_writer()) {
@@ -229,4 +238,38 @@ void TagVisionThread::config_value_changed(const fawkes::Configuration::ValueIte
     }
      // gets called for every changed entry... so init is called once per change.
     cfg_mutex.unlock();
+}
+
+void TagVisionThread::create_tag_interface(size_t position){
+    Position3DInterface *new_interface = NULL;
+    string interface_name = "tag_" + to_string(position);
+    try{
+        new_interface = blackboard->open_for_writing<Position3DInterface>(interface_name.c_str());
+        new_interface->set_visibility_history(-9999);
+        new_interface->set_frame(fv_cam_info.frame.c_str());
+        new_interface->write();
+        tag_interfaces[position] = new_interface;
+    }
+    catch (std::exception &e){
+        finalize();
+        throw;
+    }
+}
+
+void TagVisionThread::update_blackboard(size_t marker_count){
+    for(size_t i = 0; i < marker_count; i++){
+        //unsigned long id = markers[i].GetId();
+
+        if(tag_interfaces[i]==NULL){
+            create_tag_interface(i);
+        }
+        tag_interfaces[i]->set_translation(0,markers[i].pose.translation[0]);
+        tag_interfaces[i]->set_translation(1,markers[i].pose.translation[1]);
+        tag_interfaces[i]->set_translation(2,markers[i].pose.translation[2]);
+
+        tag_interfaces[i]->set_frame(fv_cam_info.frame.c_str());
+        tag_interfaces[i]->set_visibility_history(1);
+
+        tag_interfaces[i]->write();
+    }
 }
