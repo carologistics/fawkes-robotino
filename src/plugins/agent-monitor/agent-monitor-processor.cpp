@@ -48,15 +48,21 @@ using namespace fawkes;
  * @param logger logger to report problems
  * @param baseurl base URL of the Clips webrequest processor
  */
-AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr,
-						   fawkes::Logger *logger, const char *baseurl)
+AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr, fawkes::Logger *logger, const char *baseurl, fawkes::Configuration *config)
 {
   clips_env_mgr_  = clips_env_mgr;
   logger_         = logger;
+  config_         = config;
   logger->log_info("test", "logged");
   baseurl_        = baseurl;
   baseurl_len_    = strlen(baseurl);
 
+  //read config values:
+  robotino1_ = config_->get_string("/agent-monitor/robotino1");
+  robotino2_ = config_->get_string("/agent-monitor/robotino2");
+  robotino3_ = config_->get_string("/agent-monitor/robotino3");
+  env_name_ = config_->get_string("/agent-monitor/clips-environment");
+  own_name_ = config_->get_string("/clips-agent/llsf2014/robot-name");
 }
 
 
@@ -115,8 +121,6 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
 		       "jquery-ui.custom.css\" rel=\"stylesheet\" />\n"
 		       "  <script type=\"text/javascript\" src=\"/static/js/"
 		       "jquery.min.js\"></script>\n"
-		       "  <script type=\"text/javascript\" src=\"/static/js/"
-		       "jquery-ui.custom.min.js\"></script>\n"
                        "<meta http-equiv=\"refresh\" content=\"3\" />\n");
 
     *r +=
@@ -136,20 +140,111 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       *r += "</ul>\n";
     }
 
-    *r += "<h2>State:</h2>\n";
-    CLIPS::Fact::pointer state = get_fact(env_name, "state");
-    *r += state->slot_value("")[0].as_string();
-    
-    *r += "<h2>Worldmodel:</h2>\n";
-    *r += "<h3>Machines:</h3>\n";
-    std::set<CLIPS::Fact::pointer> machines = get_all_facts(env_name, "machine");
-    for(std::set<CLIPS::Fact::pointer>::iterator it = machines.begin(); it != machines.end(); it++)
+    r->set_navbar_enabled(false);
+    r->set_footer_enabled(false);
+
+
+    if(subpath == "/state")
     {
-      *r += (*it)->slot_value("name")[0].as_string() + " ";
+      //state and current task
+      r->append_body("<h2>%s:</h2>\n", own_name_.c_str());
+      CLIPS::Fact::pointer state = get_fact(env_name, "state");
+      r->append_body("<b>State:</b> %s<br>\n", get_slot(state, ""));
+      CLIPS::Fact::pointer task = get_fact(env_name, "task");
+      *r += "<b>Task: </b>";
+      if(std::strcmp(get_slot(task, "name"), "load-with-S0") == 0)
+	r->append_body("load %s with S0", get_slot(task, "args", 0));
+      else if(std::strcmp(get_slot(task, "name"), "load-with-S1") == 0)
+	r->append_body("load %s with S1", get_slot(task, "args", 0));
+      else if(std::strcmp(get_slot(task, "name"), "pick-and-load") == 0)
+	r->append_body("bring produced puck from %s to %s", get_slot(task, "args", 0), get_slot(task, "args", 1));
+      else if(std::strcmp(get_slot(task, "name"), "pick-and-deliver") == 0)
+	r->append_body("deliver puck from %s", get_slot(task, "args", 0));
+      else if(std::strcmp(get_slot(task, "name"), "recycle") == 0)
+	r->append_body("recycle puck from %s", get_slot(task, "args", 0));
+      else
+	*r += "unknown task";
+      *r += "<br>\n";
+
+      //locks
+      *r += "<h3>Locks:</h3>\n";
+      r->append_body("<b>Role: </b> %s<br>\n", get_slot(get_fact(env_name, "lock-role"), ""));
+      *r += "<b>Holding:</b> ";
+      std::set<CLIPS::Fact::pointer> holding_locks = get_all_facts(env_name, "lock", {{"type", "ACCEPT"}, {"agent", own_name_}});
+      for(std::set<CLIPS::Fact::pointer>::iterator it = holding_locks.begin(); holding_locks.size() > 0 && it != holding_locks.end(); it++)
+      {
+	r->append_body("%s ", get_slot(*it, "resource"));
+      }
+
+      *r += "<br>\n<b>Waiting for:</b> <font color=\"#FF0000\">";
+      std::set<CLIPS::Fact::pointer> requested_locks = get_all_facts(env_name, "lock", {{"type", "GET"}, {"agent", own_name_}});
+      for(std::set<CLIPS::Fact::pointer>::iterator it = requested_locks.begin(); requested_locks.size() > 0 && it != requested_locks.end(); it++)
+      {
+	r->append_body("%s ", get_slot(*it, "resource"));
+      }
+      *r += "</font><br>\n";
+      
+
+      return r;
     }
 
+    if(subpath == "/worldmodel")
+    {
+      *r += "<h2>Worldmodel:</h2>\n";
+      //table for machines
+      *r += "<table>\n";
+      *r += "<tr> <th>Machine</th> <th>Type</th> <th>Loaded With</th> <th>Incoming</th> <th>Produced</th> <th>Junk</th>  </tr>\n";
+      for(int i = 1; i <= 24; i++)
+      {
+	r->append_body(machine_table_row(env_name, i).c_str());
+      }
+      *r += "</table>\n";
+      
+      return r;
+    }
+
+    if(subpath == "/refbox")
+    {
+      *r += "<h2>Refbox:</h2>\n";
+      r->append_body("<b>Time:</b> %s<br>\n", get_slot(get_fact(env_name, "game-time"), "", 0));
+      //table for orders
+      *r += "<table>\n";
+      *r += "<tr> <th>Order</th> <th>Type</th> <th>Amount</th> <th>Start</th> <th>End</th>  </tr>\n";
+      for(int i = 1; i <= 5; i++)
+      {
+	r->append_body(order_table_row(env_name, i).c_str());
+      }
+      *r += "</table>\n";
+      
+      return r;
+    }
+
+    //no subpath => show composed overview    
+    r->set_navbar_enabled(true);
+    r->set_footer_enabled(true);
+    r->set_html_header("  <link type=\"text/css\" href=\"/static/css/jqtheme/"
+		       "jquery-ui.custom.css\" rel=\"stylesheet\" />\n"
+		       "  <script type=\"text/javascript\" src=\"/static/js/"
+		       "jquery.min.js\"></script>\n"
+		       "  <script type=\"text/javascript\" src=\"/static/js/"
+		       "jquery-ui.custom.min.js\"></script>\n");
+
+    //*r += "<h2>Composed Overview:</h2>\n";
+
+    //Worldmodel
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/worldmodel\" width=\"35%\" height=\"50%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
+    //refbox infos
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/refbox\" width=\"35%\" height=\"50%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
+    *r += "<br>\n";
     
+    //Robot states
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"45%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"45%\" frameborder=\"0\"></iframe>\n", robotino2_.c_str());
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"45%\" frameborder=\"0\"></iframe>\n", robotino3_.c_str());
+    *r += "<br>\n";
+
     return r;
+
   } else {
     return NULL;
   }
@@ -184,7 +279,7 @@ AgentMonitorWebRequestProcessor::get_next_fact(CLIPS::Fact::pointer start, std::
 	{
 	  logger_->log_error("agent-webview", "template %s has no slot %s", tmpl_name.c_str(), it->first.c_str());
 	}
-	else if(fact->slot_value(it->first)[0].as_string().compare(it->second) != 0)
+	else if(it->second.compare(get_slot(fact, it->first)) != 0)
 	{
 	  fits_to_constraints = false;
 	}
@@ -220,5 +315,99 @@ AgentMonitorWebRequestProcessor::get_all_facts(std::string env_name, std::string
     res.insert(fact);
     fact = fact->next();
   }
+  return res;
+}
+
+
+std::string
+AgentMonitorWebRequestProcessor::machine_table_row(std::string env_name, int n)
+{
+  std::string name = "M" + std::to_string(n);
+  CLIPS::Fact::pointer m = get_fact(env_name, "machine", {{"name",name.c_str()}});
+  std::string res = "";
+
+  //ommit machines of the other team
+  std::string team_color = get_slot(get_fact(env_name, "team-color"), "");
+  if(team_color.compare(get_slot(m, "team")) != 0)
+  {
+    return res;
+  }
+  
+  res += "<tr> <td>" + name + "</td> ";
+  res += "<td>" + get_slot_string(m, "mtype") + "</td> ";
+
+  CLIPS::Values loaded_with = m->slot_value("loaded-with");
+  res += "<td>";
+  for(CLIPS::Values::iterator it = loaded_with.begin(); loaded_with.size() > 0 && it != loaded_with.end(); it++)
+  {
+    res += it->as_string() + " ";
+  }
+  res += "</td> ";
+
+  CLIPS::Values incoming = m->slot_value("incoming");
+  res += "<td>";
+  for(CLIPS::Values::iterator it2 = incoming.begin(); incoming.size() > 0 && it2 != incoming.end(); it2++)
+  {
+    res += it2->as_string() + " ";
+  }
+  res += "</td> ";
+
+  res += "<td>" + get_slot_string(m, "produced-puck") + "</td> ";
+  res += "<td>" + get_slot_string(m, "junk") + "</td> ";
+  
+  res += "</tr>\n";
+  return res;
+}
+
+std::string
+AgentMonitorWebRequestProcessor::order_table_row(std::string env_name, int n)
+{
+  std::string id = std::to_string(n);
+  CLIPS::Fact::pointer order = get_fact(env_name, "order", {{"id",id.c_str()}});
+  std::string res = "";
+
+  //is the order already there?
+  if(!order)
+  {
+    return "<tr> <td>" + id + "</td></tr>";
+  }
+  
+  res += "<tr> <td>" + id + "</td> ";
+  res += "<td>" + get_slot_string(order, "product") + "</td> ";
+  res += "<td>" + get_slot_string(order, "quantity-requested") + "</td> ";
+  res += "<td>" + get_slot_string(order, "begin") + "</td> ";
+  res += "<td>" + get_slot_string(order, "end") + "</td> ";
+  res += "</tr>\n";
+  return res;
+}
+
+const char*
+AgentMonitorWebRequestProcessor::get_slot(CLIPS::Fact::pointer fact, std::string slot, int entry)
+{
+  std::string res = "";
+  //make sure the fact exists
+  if(!fact)
+  {
+    res = "could not get slot (no fact?)";
+    return res.c_str();
+  }
+  CLIPS::Values values = fact->slot_value(slot);
+  //TODO: check if slot exists
+  
+  switch(values[entry].type())
+  {
+  case CLIPS::TYPE_INTEGER :
+    return std::to_string(values[entry].as_integer()).c_str();
+  case CLIPS::TYPE_FLOAT :
+    return std::to_string(values[entry].as_float()).c_str();
+  default :
+    return values[entry].as_string().c_str();
+  }
+}
+
+std::string
+AgentMonitorWebRequestProcessor::get_slot_string(CLIPS::Fact::pointer fact, std::string slot, int entry)
+{
+  std::string res = get_slot(fact, slot, entry);
   return res;
 }

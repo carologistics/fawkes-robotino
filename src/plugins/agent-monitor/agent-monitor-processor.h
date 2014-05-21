@@ -26,6 +26,7 @@
 #include <core/utils/lockptr.h>
 #include <webview/request_processor.h>
 #include <logging/logger.h>
+#include <config/config.h>
 
 #include <string>
 #include <list>
@@ -46,8 +47,8 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
 {
  public:
   AgentMonitorWebRequestProcessor(fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips,
-			   fawkes::Logger *logger,
-			   const char *baseurl);
+				  fawkes::Logger *logger, const char *baseurl,
+				  fawkes::Configuration *config);
 
   virtual ~AgentMonitorWebRequestProcessor();
 
@@ -58,6 +59,7 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
  private:
   fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
   fawkes::Logger       *logger_;
+  fawkes::Configuration       *config_;
 
   const char           *baseurl_;
   size_t                baseurl_len_;
@@ -71,6 +73,16 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
 				std::map <std::string, std::string> constraints = {});
   std::set<CLIPS::Fact::pointer> get_all_facts(std::string env_name, std::string tmpl_name,
 				std::map <std::string, std::string> constraints = {});
+
+  std::string machine_table_row(std::string env_name, int n);
+  std::string order_table_row(std::string env_name, int n);
+  const char* get_slot(CLIPS::Fact::pointer fact, std::string slot, int entry = 0);
+  std::string get_slot_string(CLIPS::Fact::pointer fact, std::string slot, int entry = 0);
+
+  //config values
+  std::string robotino1_, robotino2_, robotino3_;
+  std::string env_name_;
+  std::string own_name_;
 };
 
 #endif
