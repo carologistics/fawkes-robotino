@@ -27,6 +27,7 @@
 #include <webview/request_processor.h>
 #include <logging/logger.h>
 #include <config/config.h>
+#include <blackboard/blackboard.h>
 
 #include <string>
 #include <list>
@@ -34,9 +35,11 @@
 #include <set>
 
 #include <clipsmm.h>
+#include <interfaces/RobotinoLightInterface.h>
 
 namespace fawkes {
   class CLIPSEnvManager;
+  class RobotinoLightInterface;
 }
 
 namespace CLIPS {
@@ -48,7 +51,7 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
  public:
   AgentMonitorWebRequestProcessor(fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips,
 				  fawkes::Logger *logger, const char *baseurl,
-				  fawkes::Configuration *config);
+				  fawkes::Configuration *config, fawkes::BlackBoard *blackboard);
 
   virtual ~AgentMonitorWebRequestProcessor();
 
@@ -59,7 +62,10 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
  private:
   fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
   fawkes::Logger       *logger_;
-  fawkes::Configuration       *config_;
+  fawkes::Configuration *config_;
+  fawkes::BlackBoard *blackboard_;
+
+  fawkes::RobotinoLightInterface *light_if_;
 
   const char           *baseurl_;
   size_t                baseurl_len_;

@@ -48,12 +48,12 @@ using namespace fawkes;
  * @param logger logger to report problems
  * @param baseurl base URL of the Clips webrequest processor
  */
-AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr, fawkes::Logger *logger, const char *baseurl, fawkes::Configuration *config)
+AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr, fawkes::Logger *logger, const char *baseurl, fawkes::Configuration *config, fawkes::BlackBoard *blackboard)
 {
   clips_env_mgr_  = clips_env_mgr;
   logger_         = logger;
   config_         = config;
-  logger->log_info("test", "logged");
+  blackboard_     = blackboard;
   baseurl_        = baseurl;
   baseurl_len_    = strlen(baseurl);
 
@@ -63,12 +63,17 @@ AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr
   robotino3_ = config_->get_string("/agent-monitor/robotino3");
   env_name_ = config_->get_string("/agent-monitor/clips-environment");
   own_name_ = config_->get_string("/clips-agent/llsf2014/robot-name");
+
+  //open interfaces
+  light_if_ = blackboard_->open_for_reading<RobotinoLightInterface>
+    (config->get_string("/plugins/light_front/light_state_if").c_str());
 }
 
 
 /** Destructor. */
 AgentMonitorWebRequestProcessor::~AgentMonitorWebRequestProcessor()
 {
+  blackboard_->close(light_if_);
 }
 
 WebReply *
@@ -121,7 +126,7 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
 		       "jquery-ui.custom.css\" rel=\"stylesheet\" />\n"
 		       "  <script type=\"text/javascript\" src=\"/static/js/"
 		       "jquery.min.js\"></script>\n"
-                       "<meta http-equiv=\"refresh\" content=\"3\" />\n");
+                       "<meta http-equiv=\"refresh\" content=\"2\" />\n");
 
     *r +=
       "<style type=\"text/css\">\n"
@@ -146,6 +151,13 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
 
     if(subpath == "/state")
     {
+
+    }
+    
+    if(subpath == "/state")
+    {
+      *r += "<table>\n";
+      *r += "<tr><td>";
       //state and current task
       r->append_body("<h2>%s:</h2>\n", own_name_.c_str());
       CLIPS::Fact::pointer state = get_fact(env_name, "state");
@@ -165,11 +177,13 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       else
 	*r += "unknown task";
       *r += "<br>\n";
+      CLIPS::Fact::pointer puck = get_fact(env_name, "holding");
+      r->append_body("<b>Holding:</b> %s<br>\n", get_slot(puck, ""));
 
       //locks
       *r += "<h3>Locks:</h3>\n";
       r->append_body("<b>Role: </b> %s<br>\n", get_slot(get_fact(env_name, "lock-role"), ""));
-      *r += "<b>Holding:</b> ";
+      *r += "<b>Owns:</b> ";
       std::set<CLIPS::Fact::pointer> holding_locks = get_all_facts(env_name, "lock", {{"type", "ACCEPT"}, {"agent", own_name_}});
       for(std::set<CLIPS::Fact::pointer>::iterator it = holding_locks.begin(); holding_locks.size() > 0 && it != holding_locks.end(); it++)
       {
@@ -183,7 +197,45 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
 	r->append_body("%s ", get_slot(*it, "resource"));
       }
       *r += "</font><br>\n";
+      *r += "</td>\n<td>";
       
+      //Current Vision:
+      *r += "<h3>Vision:</h3>\n";
+      light_if_->read();
+
+      if(std::strcmp(light_if_->tostring_LightState(light_if_->red()), "ON") == 0)
+      {
+	r->append_body("<img src=\"/static/red-on.png\" /><br>");
+	r->append_body("red-on<br>");
+      }
+      else if(std::strcmp(light_if_->tostring_LightState(light_if_->red()), "OFF") == 0)
+	r->append_body("<img src=\"/static/red-off.png\" /><br>");
+      else
+	r->append_body("<img src=\"/static/red-blink.png\" /><br>");
+
+      if(std::strcmp(light_if_->tostring_LightState(light_if_->yellow()), "ON") == 0)
+      {
+	r->append_body("<img src=\"/static/yellow-on.png\" /><br>");
+	r->append_body("yellow-on<br>");
+      }
+      else if(std::strcmp(light_if_->tostring_LightState(light_if_->yellow()), "OFF") == 0)
+	r->append_body("<img src=\"/static/yellow-off.png\" /><br>");
+      else
+	r->append_body("<img src=\"/static/yellow-blink.png\" /><br>");
+
+      if(std::strcmp(light_if_->tostring_LightState(light_if_->green()), "ON") == 0)
+      {
+	r->append_body("<img src=\"/static/green-on.png\" /><br>");
+	r->append_body("green-on<br>");
+      }
+      else if(std::strcmp(light_if_->tostring_LightState(light_if_->green()), "OFF") == 0)
+	r->append_body("<img src=\"/static/green-off.png\" /><br>");
+      else
+	r->append_body("<img src=\"/static/green-blink.png\" /><br>");
+      
+      r->append_body("History:  %d<br>\n", light_if_->visibility_history());
+      *r += "</td></tr>";
+      *r += "</table>\n";
 
       return r;
     }

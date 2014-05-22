@@ -27,6 +27,7 @@
 #include <aspect/logging.h>
 #include <aspect/webview.h>
 #include <aspect/configurable.h>
+#include <aspect/blackboard.h>
 #include <plugins/clips/aspect/clips_manager.h>
 
 #include <vector>
@@ -39,6 +40,7 @@ class AgentMonitorThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::WebviewAspect,
+  public fawkes::BlackBoardAspect,
   public fawkes::CLIPSManagerAspect
 {
  public:

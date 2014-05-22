@@ -51,7 +51,7 @@ AgentMonitorThread::~AgentMonitorThread()
 void
 AgentMonitorThread::init()
 {
-  web_proc_  = new AgentMonitorWebRequestProcessor(clips_env_mgr, logger, URL_PREFIX, config);
+  web_proc_  = new AgentMonitorWebRequestProcessor(clips_env_mgr, logger, URL_PREFIX, config, blackboard);
   webview_url_manager->register_baseurl(URL_PREFIX, web_proc_);
   webview_nav_manager->add_nav_entry(URL_PREFIX, "Agent-Monitor");
 }
