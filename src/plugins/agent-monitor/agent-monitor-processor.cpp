@@ -148,11 +148,6 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
     r->set_navbar_enabled(false);
     r->set_footer_enabled(false);
 
-
-    if(subpath == "/state")
-    {
-
-    }
     
     if(subpath == "/state")
     {
@@ -206,7 +201,6 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       if(std::strcmp(light_if_->tostring_LightState(light_if_->red()), "ON") == 0)
       {
 	r->append_body("<img src=\"/static/red-on.png\" /><br>");
-	r->append_body("red-on<br>");
       }
       else if(std::strcmp(light_if_->tostring_LightState(light_if_->red()), "OFF") == 0)
 	r->append_body("<img src=\"/static/red-off.png\" /><br>");
@@ -216,7 +210,6 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       if(std::strcmp(light_if_->tostring_LightState(light_if_->yellow()), "ON") == 0)
       {
 	r->append_body("<img src=\"/static/yellow-on.png\" /><br>");
-	r->append_body("yellow-on<br>");
       }
       else if(std::strcmp(light_if_->tostring_LightState(light_if_->yellow()), "OFF") == 0)
 	r->append_body("<img src=\"/static/yellow-off.png\" /><br>");
@@ -226,7 +219,6 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       if(std::strcmp(light_if_->tostring_LightState(light_if_->green()), "ON") == 0)
       {
 	r->append_body("<img src=\"/static/green-on.png\" /><br>");
-	r->append_body("green-on<br>");
       }
       else if(std::strcmp(light_if_->tostring_LightState(light_if_->green()), "OFF") == 0)
 	r->append_body("<img src=\"/static/green-off.png\" /><br>");
@@ -271,6 +263,34 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       return r;
     }
 
+    if (subpath == "/saveButton") {
+      // Button for saving facts
+      //do not reload page
+      r->set_html_header("  <link type=\"text/css\" href=\"/static/css/jqtheme/"
+			 "jquery-ui.custom.css\" rel=\"stylesheet\" />\n"
+			 "  <script type=\"text/javascript\" src=\"/static/js/"
+			 "jquery.min.js\"></script>\n"
+			 "  <script type=\"text/javascript\" src=\"/static/js/"
+			 "jquery-ui.custom.min.js\"></script>\n");
+      r->append_body("<p><form action=\"%s/%s/save\" method=\"post\">"
+		     "<input type=\"hidden\" name=\"index\" value=\"\">"
+		     "<input type=\"text\" name=\"comment\" />"
+		     "<input type=\"submit\" value=\"save facts with comment\" /></form></p>",
+		     baseurl_, env_name.c_str());
+      return r;
+    }
+
+    if (subpath == "/save") {
+      MutexLocker lock(clips.objmutex_ptr());
+      std::string save_command = "(save-facts (str-cat \""
+	+ request->post_value("comment") + "\" "
+	+ get_slot(get_fact(env_name, "game-time"), "", 0)
+	+ " \".clp\") visible)";
+      clips->evaluate(save_command);
+      logger_->log_info("save debug", get_slot(get_fact(env_name, "game-time"), "", 0));
+      return new WebRedirectReply(std::string(baseurl_) + "/" + env_name + "/saveButton");
+    }
+
     //no subpath => show composed overview    
     r->set_navbar_enabled(true);
     r->set_footer_enabled(true);
@@ -290,9 +310,15 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
     *r += "<br>\n";
     
     //Robot states
-    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"45%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
-    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"45%\" frameborder=\"0\"></iframe>\n", robotino2_.c_str());
-    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"45%\" frameborder=\"0\"></iframe>\n", robotino3_.c_str());
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"35%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"35%\" frameborder=\"0\"></iframe>\n", robotino2_.c_str());
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/state\" width=\"33%\" height=\"35%\" frameborder=\"0\"></iframe>\n", robotino3_.c_str());
+    *r += "<br>\n";
+
+    //Save facts buttons
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/saveButton\" width=\"33%\" height=\"10%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/saveButton\" width=\"33%\" height=\"10%\" frameborder=\"0\"></iframe>\n", robotino2_.c_str());
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/saveButton\" width=\"33%\" height=\"10%\" frameborder=\"0\"></iframe>\n", robotino3_.c_str());
     *r += "<br>\n";
 
     return r;
@@ -345,7 +371,7 @@ AgentMonitorWebRequestProcessor::get_next_fact(CLIPS::Fact::pointer start, std::
     fact = fact->next();
   }
 
-  logger_->log_info("Agent-Monitor", "couldn't find fact with template name %s and constraints", tmpl_name.c_str());
+  //logger_->log_info("Agent-Monitor", "couldn't find fact with template name %s and constraints", tmpl_name.c_str());
 
   return NULL;
 }
