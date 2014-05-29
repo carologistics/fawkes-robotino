@@ -135,6 +135,13 @@ class TagVisionThread
   void create_tag_interface(size_t position);
   std::vector<fawkes::Position3DInterface *> tag_interfaces;
   void update_blackboard(size_t marker_count);
+
+  enum ROT{
+      X=0,
+      Y=1,
+      Z=2,
+      W=3
+  };
 };
 
 #endif
