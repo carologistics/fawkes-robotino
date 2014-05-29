@@ -187,7 +187,9 @@ TagVisionThread::get_marker()
         markers[i] = detector.markers->at(i);
         // add up to markers
         filled++;
+        markers[i].Visualize(ipl,&alvar_cam);
     }
+    firevision::IplImageAdapter::convert_image_yuv422_planar(ipl,image_buffer);
     return filled;
 }
 
