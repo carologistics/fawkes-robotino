@@ -33,7 +33,7 @@ CFLAGS	 += $(CFLAGS_OPENCV)
 LDFLAGS  += $(LDFLAGS_OPENCV)
 
 # link against alvar
-LDFLAGS  += "-lalvar200"
+LDFLAGS  += "-lalvar"
 
 #The necessary libraries your plugin needs.
 LIBS_tag_vision = fawkescore fawkesutils fawkesaspects fvutils \
@@ -46,7 +46,7 @@ OBJS_tag_vision = tag_vision_plugin.o tag_vision_thread.o
 
 OBJS_all = $(OBJS_tag_vision)
 
-ifneq ($(wildcard $(SYSROOT)/usr/lib64/libalvar200.so $(SYSROOT)/usr/include/alvar),)
+ifneq ($(wildcard $(SYSROOT)/usr/lib64/libalvar.so $(SYSROOT)/usr/include/alvar),)
   HAVE_ALVAR = 1
 endif
 
