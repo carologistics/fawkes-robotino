@@ -184,6 +184,12 @@ TagVisionThread::get_marker()
     size_t filled = 0;
     // fill output array
     for(size_t i=0;(i < detector.markers->size() && i < max_marker);i++){
+        Marker tmp_marker = detector.markers->at(i);
+        Pose tmp_pose = tmp_marker.pose;
+        //skip the marker, if the pose is directly on the camera (error)
+        if(tmp_pose.translation[0]<1 && tmp_pose.translation[1]<1 && tmp_pose.translation[2]<1){
+            continue;
+        }
         markers[i] = detector.markers->at(i);
         // add up to markers
         filled++;
