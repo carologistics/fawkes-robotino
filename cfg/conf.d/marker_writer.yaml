@@ -10,4 +10,7 @@ plugins/markerwriter:
 
   # time that objects are displayed without update
   display_duration: 60
+
+  # display also Position3DInterfaces with negative visibility history
+  ignore_visibility_history: false
   
