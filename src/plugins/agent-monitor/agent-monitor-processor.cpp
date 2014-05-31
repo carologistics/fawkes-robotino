@@ -237,7 +237,7 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       *r += "<h2>Worldmodel:</h2>\n";
       //table for machines
       *r += "<table>\n";
-      *r += "<tr> <th>Machine</th> <th>Type</th> <th>Loaded With</th> <th>Incoming</th> <th>Produced</th> <th>Junk</th>  </tr>\n";
+      *r += "<tr> <th>Machine</th> <th>Type</th> <th>Loaded With</th> <th>Incoming</th> <th>By</th> <th>Produced</th> <th>Junk</th>  </tr>\n";
       for(int i = 1; i <= 24; i++)
       {
 	r->append_body(machine_table_row(env_name, i).c_str());
@@ -430,6 +430,14 @@ AgentMonitorWebRequestProcessor::machine_table_row(std::string env_name, int n)
   for(CLIPS::Values::iterator it2 = incoming.begin(); incoming.size() > 0 && it2 != incoming.end(); it2++)
   {
     res += it2->as_string() + " ";
+  }
+  res += "</td> ";
+
+  CLIPS::Values incoming_by_agent = m->slot_value("incoming-agent");
+  res += "<td>";
+  for(CLIPS::Values::iterator it3 = incoming_by_agent.begin(); incoming_by_agent.size() > 0 && it3 != incoming_by_agent.end(); it3++)
+  {
+    res += it3->as_string() + " ";
   }
   res += "</td> ";
 
