@@ -44,7 +44,8 @@
   (time $?now)
   =>
   (retract ?sf ?cf ?rf)
-  (assert (state MOVING_INTO_FIELD))
+  (assert (state MOVING_INTO_FIELD)
+	  (lock-announce-restart))
   (skill-call motor_move x 0.25 y 0)
   ;wait with P3-ONLY to avoid collision in the beginning
   (assert (timer (name wait-before-start) (time ?now)))
@@ -60,6 +61,7 @@
 (defrule start-playing
   ?sf <- (state MOVING_INTO_FIELD)
   ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED)) 
+  (lock-announce-restart-finished)
   (not (role P3-ONLY))
   =>
   (retract ?sf ?skf)

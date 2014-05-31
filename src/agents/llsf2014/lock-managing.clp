@@ -350,9 +350,64 @@
   (retract ?ar)
 )
 
-(defrule debug-check-inconsistency
+(defrule lock-check-inconsistency
   (lock (type REFUSE) (agent ?a) (resource ?res))
   (lock (type ACCEPT) (agent ?a) (resource ?res))
   =>
   (printout warn "Found inconsistency in locks (accept + refuse)!!!!!!!" crlf)
+)
+
+;;;;;; Handling a restart of a robot ;;;;;;;;
+
+(defrule lock-announce-restart-start
+  "Start timer to Announce a restart to all other robots to delete all old locks and remove old incoming fields of the machines"
+  ?state <- (lock-announce-restart)
+  (time $?now)
+  =>
+  (assert (timer (name announce-restart) (time ?now)))
+  (retract ?state)
+)
+
+(defrule lock-announce-restart-send
+  "Send announce restart multiple times"
+  (time $?now)
+  ?timer <- (timer (name announce-restart) (time $?t&:(timeout ?now ?t ?*LOCK-ANNOUNCE-RESTART-PERIOD*)) (seq ?seq))
+  =>
+  (if (< ?seq ?*LOCK-ANNOUNCE-RESTART-REPETITIONS*)
+    then
+    (bind ?lock-msg (pb-create "llsf_msgs.LockAnnounceRestart"))
+    (pb-set-field ?lock-msg "agent" (str-cat ?*ROBOT-NAME*))
+    (pb-broadcast ?lock-msg)
+    (pb-destroy ?lock-msg)
+    (modify ?timer (time ?now) (seq (+ ?seq 1)))
+    
+    else
+    (retract ?timer)
+    (assert (timer (name announce-restart-wait) (time ?now)))
+  )
+)
+
+(defrule lock-announce-restart-finish
+  "Wait before continuing to make sure that all restart msgs were processed pefore we request new lock"
+  (time $?now)
+  ?timer <- (timer (name announce-restart-wait) (time $?t&:(timeout ?now ?t ?*LOCK-ANNOUNCE-RESTART-WAIT-BEFORE-FINISH*)))
+  =>
+  (assert (lock-announce-restart-finished))
+  (retract ?timer)
+)
+
+(defrule lock-receive-restart-delete-old-locks
+  "when receiving a restart announce, delete old locks of the agent"
+  ?msg <- (protobuf-msg (type "llsf_msgs.LockAnnounceRestart") (ptr ?p))
+  =>
+  (bind ?agent (pb-field-value ?p "agent"))
+  (printout t "deleting locks of restarted agent " ?agent crlf)
+  (delayed-do-for-all-facts ((?lock lock)) (eq (str-cat ?lock:agent) (str-cat ?agent))
+    (retract ?lock)
+  )
+  (delayed-do-for-all-facts ((?resource locked-resource)) (eq (str-cat ?resource:agent) (str-cat ?agent))
+    (retract ?resource)
+  )
+  
+  (retract ?msg)
 )
