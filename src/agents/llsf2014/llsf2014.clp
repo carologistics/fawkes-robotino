@@ -67,8 +67,6 @@
   (path-load  llsf2014/utils.clp)
   (path-load  llsf2014/net.clp)
   (path-load  llsf2014/skills.clp)
-  (path-load  llsf2014/lock-managing.clp)
-  (path-load  llsf2014/lock-usage.clp)
 
   (if
     (any-factp ((?conf confval))
@@ -81,6 +79,8 @@
   (path-load  llsf2014/game.clp)
   (path-load  llsf2014/worldmodel.clp)
   (path-load  llsf2014/worldmodel-synchronization.clp)
+  (path-load  llsf2014/lock-managing.clp)
+  (path-load  llsf2014/lock-usage.clp)
   (path-load  llsf2014/tactical-help.clp)
   (path-load  llsf2014/tasks.clp)
   (path-load  llsf2014/coordination.clp)

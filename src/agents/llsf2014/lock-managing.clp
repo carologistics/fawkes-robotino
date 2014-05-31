@@ -202,6 +202,7 @@
     (bind ?r (sym-cat (pb-field-value ?lock "resource")))
     (assert (locked-resource (agent ?a) (resource ?r)))
   )
+  (retract ?msg)
 )
 
 ;;;;;; accepting, releasing and refusing locks ;;;;;;;
@@ -351,6 +352,9 @@
   (delayed-do-for-all-facts ((?resource locked-resource)) (eq (str-cat ?resource:agent) (str-cat ?name))
     (retract ?resource)
   )
+
+  ; revome old incoming fields of machines caused by the resetted agent
+  (wm-remove-incoming-by-agent (sym-cat ?name))
   (retract ?ar)
 )
 
@@ -401,7 +405,7 @@
 )
 
 (defrule lock-receive-restart-delete-old-locks
-  "When receiving a restart announce, delete old locks of the agent.
+  "When receiving a restart announce, delete old locks and incoming fields of the agent.
    If the master was reset, do not wait so long for a master."
   ?msg <- (protobuf-msg (type "llsf_msgs.LockAnnounceRestart") (ptr ?p))
   (master-name ?master)
@@ -422,5 +426,9 @@
     (assert (master-last-seen ?now))
     (bind ?*CURRENT-MASTER-TIMEOUT* (float (random 0 3)))
   )
+  
+  ; revome old incoming fields of machines caused by the resetted agent
+  (wm-remove-incoming-by-agent (sym-cat ?agent))
+
   (retract ?msg)
 )
