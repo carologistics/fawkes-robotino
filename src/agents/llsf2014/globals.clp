@@ -9,12 +9,12 @@
 
 (defglobal
   ; network sending periods; seconds
-  ?*BEACON-PERIOD* = 0.4
-  ?*MASTER-ANNOUNCE-PERIOD* = 0.1
-  ?*LOCK-PERIOD* = 0.2
-  ?*LOCK-STATUS-SEND-PERIOD* = 0.6
-  ?*WORLDMODEL-SYNC-PERIOD* = 0.1
-  ?*WORLDMODEL-CHANGE-SEND-PERIOD* = 0.1
+  ?*BEACON-PERIOD* = 1.0
+  ?*MASTER-ANNOUNCE-PERIOD* = 0.5
+  ?*LOCK-PERIOD* = 0.5
+  ?*LOCK-STATUS-SEND-PERIOD* = 1.0
+  ?*WORLDMODEL-SYNC-PERIOD* = 1.0
+  ?*WORLDMODEL-CHANGE-SEND-PERIOD* = 0.5
 
   ?*TEAM-NAME*    = "?"
   ?*ROBOT-NAME*   = "?"
@@ -24,7 +24,7 @@
   ;(if there is a master the timeout gets larger)
   ?*CURRENT-MASTER-TIMEOUT* = 2.0
   ?*INITIAL-MASTER-TIMEOUT* = 2.0
-  ?*ROBOT-TIMEOUT* = 6.0
+  ?*ROBOT-TIMEOUT* = 10.0
   ?*RELEASE-DISTANCE* = 0.5
 
   ?*FAILS-TO-BLOCK* = 2
