@@ -47,6 +47,7 @@ message MachineState {
   required bool recycle_blocked = 7;
   optional uint32 order = 8;
   optional uint32 in_delivery = 9;
+  required uint32 junk = 10;
 }
 
 message WorldmodelOrder {

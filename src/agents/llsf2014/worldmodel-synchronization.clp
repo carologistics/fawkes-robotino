@@ -11,6 +11,7 @@
   (time $?now)
   ?s <- (timer (name send-worldmodel-sync) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
   (lock-role MASTER)
+  
   =>
   ; (printout t "sending worldmodel" crlf)
   ;construct worldmodel msg
@@ -36,6 +37,8 @@
     )
     (pb-set-field ?m-msg "produce_blocked" ?machine:produce-blocked)
     (pb-set-field ?m-msg "recycle_blocked" ?machine:recycle-blocked)
+    ;set amount of junk
+    (pb-set-field ?m-msg "junk" ?machine:junk)
     ;add sub-msg to worldmodel msg
     (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
   )
@@ -88,10 +91,12 @@
       (bind ?recycle-blocked (if (eq 0 (pb-field-value ?m-msg "recycle_blocked"))
 				 then FALSE
 				 else TRUE))
+      ;update junk
+      (bind ?junk (pb-field-value ?m-msg "junk"))
       (modify ?machine (incoming ?incoming) (loaded-with ?loaded-with)
 	               (final-prod-time (create$ ?prod-finished-time 0))
 		       (produced-puck ?puck-under-rfid) (produce-blocked ?produce-blocked)
-		       (recycle-blocked ?recycle-blocked)
+		       (recycle-blocked ?recycle-blocked) (junk ?junk)
       )
     )
   )
@@ -164,10 +169,10 @@
   (lock-role MASTER)
   ?arf <- (already-received-wm-changes $?arc)
   =>
-  (printout t "receiving worldmodel change" crlf)
   ;ensure that this change was not already applied
   (bind ?id (pb-field-value ?p "id"))
   (if (not (member$ ?id ?arc)) then
+    ;(printout t "receiving new worldmodel change (" (pb-field-value ?p "change") ")" crlf)
     (retract ?arf)
     (assert (already-received-wm-changes (append$ ?arc ?id)))
     ;apply change

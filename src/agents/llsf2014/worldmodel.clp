@@ -113,7 +113,6 @@
   )
   (assert (holding ?output))
   (printout t "Production completed at " ?name "|" ?mtype crlf)
-  ;TODO worldmodel change sync
   (foreach ?puck ?lw
     (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
   )
@@ -129,12 +128,7 @@
          )
   =>
   (printout t "Production completed at " ?name "|" ?mtype crlf)
-  ;TODO worldmodel change sync
-  (foreach ?puck ?lw
-    (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
-  )
-  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (- (+ ?jn (length$ ?lw)) 1))))
-  (modify ?mf (final-prod-time (create$ 0 0)) (produced-puck ?output))
+  (modify ?mf (final-prod-time (create$ 0 0)) (produced-puck ?output) (loaded-with (create$)) (junk (- (+ ?jn (length$ ?lw)) 1)))
 )
 
 (defrule wm-proc-need-more-ressources
@@ -433,6 +427,7 @@
       (assert (puck-in-gripper FALSE))
     )
   )
+  (retract ?rif)
 )
 
 (defrule wm-dirty-fix-for-junk-T2
