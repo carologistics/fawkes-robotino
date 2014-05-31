@@ -22,8 +22,8 @@
 
   ; Time before the slave becomes the master
   ;(if there is a master the timeout gets larger)
-  ?*CURRENT-MASTER-TIMEOUT* = 2.0
-  ?*INITIAL-MASTER-TIMEOUT* = 2.0
+  ?*CURRENT-MASTER-TIMEOUT* = 5.0
+  ?*INITIAL-MASTER-TIMEOUT* = 5.0
   ?*ROBOT-TIMEOUT* = 10.0
   ?*RELEASE-DISTANCE* = 0.5
 

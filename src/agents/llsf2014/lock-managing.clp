@@ -46,6 +46,7 @@
   (seed (nth$ 2 ?now))
   (retract ?i)
   (assert (master-last-seen ?now)
+	  (master-name "")
 	  (lock-role SLAVE)
   )  
 )
@@ -71,17 +72,18 @@
   ?r <- (lock-role ?role)
   ?mls <- (master-last-seen $?)
   (time $?now)
+  ?mn <- (master-name ?)
   =>
   (bind ?a (sym-cat (pb-field-value ?p "agent")))
-  (retract ?mls ?msg)
-  (assert (master-last-seen ?now))
+  (retract ?mls ?msg ?mn)
+  (assert (master-last-seen ?now)
+	  (master-name (str-cat (pb-field-value ?p "agent"))))
   (bind ?*CURRENT-MASTER-TIMEOUT* ?*ROBOT-TIMEOUT*)
   (if (and (eq ?role MASTER) (not (eq ?a ?*ROBOT-NAME*)))
       then
       (printout warn "TWO MASTERS DETECTED, WAITING RANDOM TIME AS SLAVE!!!" crlf)
       (retract ?r)
       (assert (lock-role SLAVE))
-      ;TODO: are there consequences of the change?
       (bind ?*CURRENT-MASTER-TIMEOUT* (float (random 0 10)))
   )
 )
@@ -90,10 +92,12 @@
   ?r <- (lock-role SLAVE)
   (time $?now)
   ?mls <- (master-last-seen $?last&:(timeout ?now ?last ?*CURRENT-MASTER-TIMEOUT*))
+  ?mn <- (master-name ?)
   =>
   (printout t "MASTER timed out -> Getting MASTER" crlf)
-  (retract ?r)
-  (assert (lock-role MASTER))
+  (retract ?r ?mn)
+  (assert (lock-role MASTER)
+	  (master-name (str-cat ?*ROBOT-NAME*)))
 )
 
 ;;;;SENDING and RECEIVING;;;;
@@ -397,8 +401,12 @@
 )
 
 (defrule lock-receive-restart-delete-old-locks
-  "when receiving a restart announce, delete old locks of the agent"
+  "When receiving a restart announce, delete old locks of the agent.
+   If the master was reset, do not wait so long for a master."
   ?msg <- (protobuf-msg (type "llsf_msgs.LockAnnounceRestart") (ptr ?p))
+  (master-name ?master)
+  ?mls <- (master-last-seen $?)
+  (time $?now)
   =>
   (bind ?agent (pb-field-value ?p "agent"))
   (printout t "deleting locks of restarted agent " ?agent crlf)
@@ -408,6 +416,11 @@
   (delayed-do-for-all-facts ((?resource locked-resource)) (eq (str-cat ?resource:agent) (str-cat ?agent))
     (retract ?resource)
   )
-  
+
+  (if (eq (sym-cat ?master) (sym-cat ?agent)) then
+    (retract ?mls)
+    (assert (master-last-seen ?now))
+    (bind ?*CURRENT-MASTER-TIMEOUT* (float (random 0 3)))
+  )
   (retract ?msg)
 )
