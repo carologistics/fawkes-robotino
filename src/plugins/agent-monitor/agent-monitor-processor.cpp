@@ -251,6 +251,9 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
     {
       *r += "<h2>Refbox:</h2>\n";
       r->append_body("<b>Time:</b> %s<br>\n", get_slot(get_fact(env_name, "game-time"), "", 0));
+      *r += "<b>Points:</b> \n";
+      r->append_body("<span style=\"background-color:cyan\">%s</span>\n", get_slot(get_fact(env_name, "points-cyan"), ""));
+      r->append_body("<span style=\"background-color:magenta\">%s</span>\n", get_slot(get_fact(env_name, "points-magenta"), ""));
       //table for orders
       *r += "<table>\n";
       *r += "<tr> <th>Order</th> <th>Type</th> <th>Amount</th> <th>Start</th> <th>End</th>  </tr>\n";
