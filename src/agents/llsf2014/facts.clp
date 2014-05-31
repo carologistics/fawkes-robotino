@@ -162,6 +162,8 @@
 
 (deffacts startup-production
   (team-color nil)
+  (points-magenta 0)
+  (points-cyan 0)
   (last-lights)
   (holding NONE)
   (machine (name D1) (mtype DELIVER) (team CYAN))
