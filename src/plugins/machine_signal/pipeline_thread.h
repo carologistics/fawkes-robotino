@@ -92,13 +92,8 @@ class MachineSignalPipelineThread :
     std::list<SignalState>::iterator get_best_signal();
 
   private:
-    typedef enum {
-      AUTO,
-      ON,
-      OFF
-    } delivery_switch_t_;
 
-    delivery_switch_t_ cfg_delivery_mode_;
+    bool cfg_delivery_mode_;
     bool cfg_enable_switch_;
 
     fawkes::Mutex data_mutex_;

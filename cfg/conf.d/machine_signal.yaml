@@ -15,14 +15,10 @@ plugins/machine_signal:
   start_enabled: true
 
   #
-  # Which delivery mode to use initially.
-  # auto: Try to auto-detect by the width of the largest green ROI
-  # on: Assume we're looking at the delivery gates.
-  # off: Assume we're looking at the playing field
-  # After switching delivery mode on or off with the switch interface
-  # "machine_signal_delivery_mode", this config value has no effect anymore.
+  # Whether to start in delivery mode.
+  # This is overridden by the switch interface machine_signal_delivery_mode
   #
-  delivery_mode: "auto"
+  delivery_mode: false
 
   fps: 30
 

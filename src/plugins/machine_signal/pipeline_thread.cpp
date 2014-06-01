@@ -86,7 +86,7 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   bb_delivery_switch_ = NULL;
   bb_enable_switch_ = NULL;
   cfg_enable_switch_ = false;
-  cfg_delivery_mode_ = delivery_switch_t_::AUTO;
+  cfg_delivery_mode_ = false;
 }
 
 MachineSignalPipelineThread::~MachineSignalPipelineThread() {}
@@ -221,11 +221,7 @@ void MachineSignalPipelineThread::init()
   cfg_debug_blink_ = config->get_bool(CFG_PREFIX "/debug_blink");
   cfg_debug_processing_ = config->get_bool(CFG_PREFIX "/debug_processing");
 
-  std::string delivery_mode = config->get_string(CFG_PREFIX "/delivery_mode");
-  if (delivery_mode == "on") cfg_delivery_mode_ = delivery_switch_t_::ON;
-  else if (delivery_mode == "off") cfg_delivery_mode_ = delivery_switch_t_::OFF;
-  else if (delivery_mode == "auto") cfg_delivery_mode_ = delivery_switch_t_::AUTO;
-  else throw Exception("delivery_mode: invalid config value: %s", delivery_mode.c_str());
+  cfg_delivery_mode_ = config->get_bool(CFG_PREFIX "/delivery_mode");
 
   // Setup combined ColorModel for tuning filter
   combined_colormodel_ = new ColorModelSimilarity();
@@ -382,21 +378,15 @@ void MachineSignalPipelineThread::loop()
   }
   while (!bb_delivery_switch_->msgq_empty()) {
     if (SwitchInterface::DisableSwitchMessage *msg = bb_delivery_switch_->msgq_first_safe(msg)) {
-      cfg_delivery_mode_ = delivery_switch_t_::OFF;
+      cfg_delivery_mode_ = false;
     }
     if (SwitchInterface::EnableSwitchMessage *msg = bb_delivery_switch_->msgq_first_safe(msg)) {
-      cfg_delivery_mode_ = delivery_switch_t_::ON;
+      cfg_delivery_mode_ = true;
     }
     bb_delivery_switch_->msgq_pop();
   }
-  if (cfg_delivery_mode_ == delivery_switch_t_::OFF) {
-    bb_delivery_switch_->set_enabled(false);
-    bb_delivery_switch_->write();
-  }
-  if (cfg_delivery_mode_ == delivery_switch_t_::ON) {
-    bb_delivery_switch_->set_enabled(true);
-    bb_delivery_switch_->write();
-  }
+  bb_delivery_switch_->set_enabled(cfg_delivery_mode_);
+  bb_delivery_switch_->write();
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
 
@@ -458,22 +448,11 @@ void MachineSignalPipelineThread::loop()
     light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     black_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
-    // First classify green to detect if we're looking at the delivery zone
     cfy_ctxt_green_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     rois_G = cfy_ctxt_green_.classifier->classify();
 
-    bool at_delivery;
-    if (cfg_delivery_mode_ == delivery_switch_t_::AUTO) {
-      at_delivery = rois_G->begin()->width > cam_width_/3;
-      bb_delivery_switch_->set_enabled(at_delivery);
-      bb_delivery_switch_->write();
-    }
-    else {
-      at_delivery = bb_delivery_switch_->is_enabled();
-    }
-
     // Then use the appropriate classifier for red
-    if (at_delivery) {
+    if (cfg_delivery_mode_) {
       cfy_ctxt_red_delivery_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
       rois_R = cfy_ctxt_red_delivery_.classifier->classify();
     }
@@ -498,7 +477,7 @@ void MachineSignalPipelineThread::loop()
 
     // Create and group ROIs that make up the red, yellow and green lights of a signal
     std::list<SignalState::signal_rois_t_> *signal_rois;
-    if (at_delivery) {
+    if (cfg_delivery_mode_) {
       signal_rois = create_delivery_rois(rois_R);
     }
     else {
@@ -591,7 +570,7 @@ void MachineSignalPipelineThread::loop()
       known_signals_.pop_back();
 
     // Then sort geometrically
-    if (at_delivery) {
+    if (cfg_delivery_mode_) {
       // Ordering is critical here
       best_signal_ = known_signals_.begin();
       known_signals_.sort(sort_signal_states_by_x_);
