@@ -27,6 +27,7 @@
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/vision.h>
+#include <aspect/tf.h>
 #include <config/change_handler.h>
 #include <aspect/clock.h>
 
@@ -45,6 +46,8 @@
 #include <core/threading/mutex.h>
 #include <atomic>
 #include <interfaces/SwitchInterface.h>
+#include <interfaces/Position3DInterface.h>
+#include <fvmodels/pixel_from_position/pixelFromPosition.h>
 #include <utils/time/wait.h>
 
 #include "state.h"
@@ -75,7 +78,8 @@ class MachineSignalPipelineThread :
   public fawkes::BlackBoardAspect,
   public fawkes::VisionAspect,
   public fawkes::ConfigurationChangeHandler,
-  public fawkes::ClockAspect
+  public fawkes::ClockAspect,
+  public fawkes::TransformAspect
 {
   public:
     MachineSignalPipelineThread();
@@ -94,6 +98,9 @@ class MachineSignalPipelineThread :
   private:
 
     bool cfg_delivery_mode_;
+    
+    bool bb_switch_is_enabled(fawkes::SwitchInterface *sw);
+
     bool cfg_enable_switch_;
 
     fawkes::Mutex data_mutex_;
@@ -130,6 +137,26 @@ class MachineSignalPipelineThread :
     unsigned int cam_width_, cam_height_;
 
     unsigned int cfg_fps_;
+
+    class WorldROI : public firevision::ROI {
+      public:
+        fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
+        WorldROI() : ROI() { world_pos = NULL; }
+    };
+
+    std::vector<WorldROI> *bb_get_laser_rois();
+    fawkes::Position3DInterface *bb_laser_clusters_[3];
+    std::atomic<unsigned int> cfg_lasercluster_min_vis_hist_;
+    std::string cfg_lasercluster_frame_;
+    std::atomic<float> cfg_lasercluster_signal_radius_;
+    std::atomic<float> cfg_lasercluster_signal_top_;
+    std::atomic<float> cfg_lasercluster_signal_bottom_;
+
+    float cfg_cam_aperture_x_;
+    float cfg_cam_aperture_y_;
+    float cfg_cam_angle_y_;
+    std::string cfg_cam_frame_;
+    firevision::PixelFromPosition *point2pixel_;
 
     std::atomic<float> cfg_roi_max_aspect_ratio_;
     std::atomic<float> cfg_roi_max_width_ratio_;

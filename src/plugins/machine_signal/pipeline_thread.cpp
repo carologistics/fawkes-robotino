@@ -27,6 +27,8 @@
 #include <cfloat>
 
 using namespace fawkes;
+using namespace fawkes::tf;
+using namespace std;
 using namespace firevision;
 
 MachineSignalPipelineThread::MachineSignalPipelineThread()
@@ -87,6 +89,15 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   bb_enable_switch_ = NULL;
   cfg_enable_switch_ = false;
   cfg_delivery_mode_ = false;
+
+  point2pixel_ = NULL;
+  cfg_cam_angle_y_ = 0;
+  cfg_cam_aperture_x_ = 0;
+  cfg_cam_aperture_y_ = 0;
+
+  bb_laser_clusters_[0] = NULL;
+  bb_laser_clusters_[1] = NULL;
+  bb_laser_clusters_[2] = NULL;
 }
 
 MachineSignalPipelineThread::~MachineSignalPipelineThread() {}
@@ -208,7 +219,7 @@ void MachineSignalPipelineThread::init()
   cfg_black_min_neighborhood_ = config->get_uint(CFG_PREFIX "/black/neighborhood_min_match");
   cfg_black_min_points_ = config->get_uint(CFG_PREFIX "/black/min_points");
 
-  // Other config
+  // General config
   cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
   cfg_roi_max_width_ratio_ = config->get_float(CFG_PREFIX "/roi_max_r2g_width_ratio");
   cfg_roi_xalign_ = config->get_float(CFG_PREFIX "/roi_xalign_by_width");
@@ -222,6 +233,25 @@ void MachineSignalPipelineThread::init()
   cfg_debug_processing_ = config->get_bool(CFG_PREFIX "/debug_processing");
 
   cfg_delivery_mode_ = config->get_bool(CFG_PREFIX "/delivery_mode");
+  
+  // Laser Cluster config
+  cfg_lasercluster_min_vis_hist_ = config->get_uint(CFG_PREFIX "/lasercluster/min_visibility_history");
+  cfg_lasercluster_frame_ = config->get_string(CFG_PREFIX "/lasercluster/laser_frame");
+  cfg_lasercluster_signal_radius_ = 0.5 * config->get_float(CFG_PREFIX "/lasercluster/signal_width");
+  cfg_lasercluster_signal_top_ = config->get_float(CFG_PREFIX "/lasercluster/signal_top");
+  cfg_lasercluster_signal_bottom_ = config->get_float(CFG_PREFIX "/lasercluster/signal_bottom");
+  cfg_cam_aperture_x_ = config->get_float(CFG_PREFIX "/lasercluster/cam_aperture_x");
+  cfg_cam_aperture_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_aperture_y");
+  cfg_cam_angle_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_angle");
+  cfg_cam_frame_ = config->get_float(CFG_PREFIX "/lasercluster/cam_frame");
+
+  point2pixel_ = new PixelFromPosition(
+    tf_listener,
+    cfg_cam_frame_,
+    cfg_cam_aperture_x_,
+    cfg_cam_aperture_y_,
+    cam_width_,
+    cam_height_);
 
   // Setup combined ColorModel for tuning filter
   combined_colormodel_ = new ColorModelSimilarity();
@@ -244,7 +274,7 @@ void MachineSignalPipelineThread::init()
       C_WHITE);
   light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
-  // Setup black classifier
+  // Setup black classifier for top/bottom recognition
   black_scangrid_ = new ScanlineGrid(cam_width_, cam_height_, 1, 1);
   black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
   black_classifier_ = new SimpleColorClassifier(
@@ -269,6 +299,10 @@ void MachineSignalPipelineThread::init()
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("light_front_switch");
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_delivery_switch_ = blackboard->open_for_writing<SwitchInterface>("machine_signal_delivery_mode");
+
+  bb_laser_clusters_[0] = blackboard->open_for_reading<Position3DInterface>("Laser Cluster 1");
+  bb_laser_clusters_[1] = blackboard->open_for_reading<Position3DInterface>("Laser Cluster 2");
+  bb_laser_clusters_[2] = blackboard->open_for_reading<Position3DInterface>("Laser Cluster 3");
 
   config->add_change_handler(this);
 }
@@ -330,6 +364,7 @@ void MachineSignalPipelineThread::finalize()
   delete color_filter_;
 }
 
+
 bool MachineSignalPipelineThread::lock_if_new_data()
 {
   data_mutex_.lock();
@@ -340,6 +375,7 @@ bool MachineSignalPipelineThread::lock_if_new_data()
     return false;
   }
 }
+
 
 void MachineSignalPipelineThread::unlock()
 {
@@ -356,6 +392,82 @@ std::list<SignalState>::iterator MachineSignalPipelineThread::get_best_signal()
   return best_signal_;
 }
 
+
+bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
+{
+  bool rv = cfg_enable_switch_;
+  while (!bb_enable_switch_->msgq_empty()) {
+    if (SwitchInterface::DisableSwitchMessage *msg = sw->msgq_first_safe(msg)) {
+      rv = false;
+    }
+    if (SwitchInterface::EnableSwitchMessage *msg = sw->msgq_first_safe(msg)) {
+      rv = true;
+    }
+    bb_enable_switch_->msgq_pop();
+  }
+  bb_enable_switch_->set_enabled(rv);
+  bb_enable_switch_->write();
+  return rv;
+}
+
+
+vector<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get_laser_rois()
+{
+  vector<WorldROI> *rv = new vector<WorldROI>(3);
+  for (Position3DInterface *bb_pos : bb_laser_clusters_) {
+    try {
+      if (bb_pos && bb_pos->has_writer() && bb_pos->visibility_history() >= (long int) cfg_lasercluster_min_vis_hist_) {
+
+        // Transform laser cluster into camera frame
+        Stamped<Point> cluster_laser, cluster_cam;
+        cluster_laser.setX(bb_pos->translation(0));
+        cluster_laser.setY(bb_pos->translation(1));
+        cluster_laser.setZ(bb_pos->translation(2));
+        cluster_laser.frame_id = cfg_lasercluster_frame_;
+        cluster_laser.stamp = clock;
+        tf_listener->transform_point(cfg_cam_frame_, cluster_laser, cluster_cam);
+
+        // Then compute the upper left and bottom right corner we expect to see
+        // (Account for cam parallax when adding the signal radius)
+        cart_coord_3d_t top_left, bottom_right;
+        float x = cluster_cam.getX();
+        float y = cluster_cam.getY();
+        float phi = atan2f(y, x);
+        float edge_x = cosf(phi) * cfg_lasercluster_signal_radius_;
+        float edge_y = sinf(phi) * cfg_lasercluster_signal_radius_;
+
+        top_left.x = cluster_cam.x() - edge_x;
+        top_left.y = cluster_cam.y() + edge_y;
+        top_left.z = cfg_lasercluster_signal_top_;
+
+        bottom_right.x = cluster_cam.x() + edge_x;
+        bottom_right.y = cluster_cam.y() - edge_y;
+        bottom_right.z = cfg_lasercluster_signal_bottom_;
+
+        // And finally compute a ROI that (hopefully) contains the real signal
+        upoint_t top_left_px = point2pixel_->get_pixel_position(top_left, cfg_cam_frame_, clock);
+        upoint_t bottom_right_px = point2pixel_->get_pixel_position(bottom_right, cfg_cam_frame_, clock);
+
+        WorldROI cluster_roi;
+        cluster_roi.set_start(top_left_px);
+        cluster_roi.set_width(bottom_right_px.x - top_left_px.x);
+        cluster_roi.set_height(bottom_right_px.y - top_left_px.y);
+        cluster_roi.set_image_width(cam_width_);
+        cluster_roi.set_image_height(cam_height_);
+        cluster_roi.color = C_MAGENTA;
+        if (tf_listener->can_transform("/map", cluster_laser.frame_id, clock->now())) {
+          cluster_roi.world_pos = new Stamped<Point>();
+          tf_listener->transform_point("/map", cluster_laser, *(cluster_roi.world_pos));
+        }
+        rv->push_back(cluster_roi);
+      }
+    }
+    catch (OutOfBoundsException &e) { }
+  }
+  return rv;
+}
+
+
 void MachineSignalPipelineThread::loop()
 {
   time_wait_->mark_start();
@@ -367,39 +479,21 @@ void MachineSignalPipelineThread::loop()
     logger->log_warn(name(), "Running too slow (%f sec/frame). Blink detection will be unreliable!", frametime);
   }
 
-  while (!bb_enable_switch_->msgq_empty()) {
-    if (SwitchInterface::DisableSwitchMessage *msg = bb_enable_switch_->msgq_first_safe(msg)) {
-      cfg_enable_switch_ = false;
-    }
-    if (SwitchInterface::EnableSwitchMessage *msg = bb_enable_switch_->msgq_first_safe(msg)) {
-      cfg_enable_switch_ = true;
-    }
-    bb_enable_switch_->msgq_pop();
-  }
-  while (!bb_delivery_switch_->msgq_empty()) {
-    if (SwitchInterface::DisableSwitchMessage *msg = bb_delivery_switch_->msgq_first_safe(msg)) {
-      cfg_delivery_mode_ = false;
-    }
-    if (SwitchInterface::EnableSwitchMessage *msg = bb_delivery_switch_->msgq_first_safe(msg)) {
-      cfg_delivery_mode_ = true;
-    }
-    bb_delivery_switch_->msgq_pop();
-  }
-  bb_delivery_switch_->set_enabled(cfg_delivery_mode_);
-  bb_delivery_switch_->write();
-  bb_enable_switch_->set_enabled(cfg_enable_switch_);
-  bb_enable_switch_->write();
+  cfg_enable_switch_ = bb_switch_is_enabled(bb_enable_switch_);
+  cfg_delivery_mode_ = bb_switch_is_enabled(bb_delivery_switch_);
 
-  if (bb_enable_switch_->is_enabled()) {
+  if (cfg_enable_switch_) {
 
     std::list<ROI> *rois_R, *rois_G;
     MutexLocker lock(&cfg_mutex_);
 
+    vector<WorldROI> *cluster_rois = bb_get_laser_rois();
+
     // Reallocate classifiers if their config changed
     if (unlikely(cfg_changed_
-      && color_data_consistent(&cfy_ctxt_red_)
-    && color_data_consistent(&cfy_ctxt_red_delivery_)
-    && color_data_consistent(&cfy_ctxt_green_) )) {
+        && color_data_consistent(&cfy_ctxt_red_)
+        && color_data_consistent(&cfy_ctxt_red_delivery_)
+        && color_data_consistent(&cfy_ctxt_green_) )) {
 
       combined_colormodel_->delete_colors();
 
@@ -435,21 +529,26 @@ void MachineSignalPipelineThread::loop()
         0,
         C_BLACK);
 
+      delete point2pixel_;
+      point2pixel_ = new PixelFromPosition(
+        tf_listener,
+        cfg_cam_frame_,
+        cfg_cam_aperture_x_,
+        cfg_cam_aperture_y_,
+        cam_width_,
+        cam_height_);
+
       cfg_changed_ = false;
     }
 
     camera_->capture();
 
-    if (unlikely(cfg_tuning_mode_)) {
-      // Untreated copy of the cam image
-      memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
-    }
-
     light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     black_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
     cfy_ctxt_green_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
-    rois_G = cfy_ctxt_green_.classifier->classify();
+    cfy_ctxt_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
+    cfy_ctxt_red_delivery_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
     // Then use the appropriate classifier for red
     if (cfg_delivery_mode_) {
@@ -457,18 +556,24 @@ void MachineSignalPipelineThread::loop()
       rois_R = cfy_ctxt_red_delivery_.classifier->classify();
     }
     else {
-      cfy_ctxt_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
       rois_R = cfy_ctxt_red_.classifier->classify();
     }
 
+    rois_G = cfy_ctxt_green_.classifier->classify();
+
     if (unlikely(cfg_tuning_mode_)) {
-      drawn_rois_.clear();
+      // Untreated copy of the cam image
+      memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
 
       // Visualize color similarities in tuning buffer
       color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
       color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
       color_filter_->apply();
 
+      drawn_rois_.clear();
+      if (cluster_rois) {
+        drawn_rois_.insert(drawn_rois_.end(), cluster_rois->begin(), cluster_rois->end());
+      }
       if (!cfg_draw_processed_rois_) {
         drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
         drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
@@ -576,7 +681,6 @@ void MachineSignalPipelineThread::loop()
       known_signals_.sort(sort_signal_states_by_x_);
     }
     else {
-      // Ordering is critical here
       known_signals_.sort(sort_signal_states_by_area_);
       best_signal_ = known_signals_.begin();
     }
@@ -598,6 +702,7 @@ void MachineSignalPipelineThread::loop()
   }
   time_wait_->wait();
 }
+
 
 /**
  * Determine if a given color ROI can be considered lit according to the luminance model.
@@ -622,6 +727,7 @@ bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
   delete bright_rois;
   return false;
 }
+
 
 bool MachineSignalPipelineThread::roi1_oversize(ROI &r1, ROI &r2) {
   return !rois_similar_width(r1, r2)
@@ -735,6 +841,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
   }
   return rv;
 }
+
 
 std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_delivery_rois(
   std::list<ROI> *rois_R)
@@ -874,6 +981,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
   return rv;
 }
 
+
 bool MachineSignalPipelineThread::rois_delivery_zone(ROI &red, ROI &green) {
   return (green.contains(red.start.x, red.start.y)
             && green.contains(red.start.x + red.get_width(),
@@ -881,13 +989,16 @@ bool MachineSignalPipelineThread::rois_delivery_zone(ROI &red, ROI &green) {
             || green.width > cam_width_/4;
 }
 
+
 bool MachineSignalPipelineThread::roi_width_ok(ROI &r)
 { return r.width < cam_width_/3; }
+
 
 bool MachineSignalPipelineThread::rois_similar_width(ROI &r1, ROI &r2) {
   float width_ratio = (float)r1.width / (float)r2.width;
   return width_ratio >= 1/cfg_roi_max_width_ratio_ && width_ratio <= cfg_roi_max_width_ratio_;
 }
+
 
 bool MachineSignalPipelineThread::rois_x_aligned(ROI &r1,ROI &r2) {
   float avg_width = (r1.width + r2.width) / 2.0f;
@@ -896,10 +1007,12 @@ bool MachineSignalPipelineThread::rois_x_aligned(ROI &r1,ROI &r2) {
   return abs(mid1 - mid2) / avg_width < cfg_roi_xalign_;
 }
 
+
 bool MachineSignalPipelineThread::roi_aspect_ok(ROI &r) {
   float aspect_ratio = (float)r.width / (float)r.height;
   return aspect_ratio > 1/cfg_roi_max_aspect_ratio_ && aspect_ratio < cfg_roi_max_aspect_ratio_;
 }
+
 
 bool MachineSignalPipelineThread::rois_vspace_ok(ROI &r1, ROI &r2) {
   float avg_height = (r1.height + r2.height) / 2.0f;
@@ -917,20 +1030,20 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
   if (v->valid()) {
     std::string path = v->path();
     std::string sufx = path.substr(strlen(CFG_PREFIX));
-    std::string color_pfx = sufx.substr(0, sufx.substr(1).find("/")+1);
-    std::string full_pfx = CFG_PREFIX + color_pfx;
+    std::string sub_prefix = sufx.substr(0, sufx.substr(1).find("/")+1);
+    std::string full_pfx = CFG_PREFIX + sub_prefix;
     std::string opt = path.substr(full_pfx.length());
 
     MutexLocker lock(&cfg_mutex_);
     bool chg = false;
 
-    if (color_pfx == "/red" || color_pfx == "/green" || color_pfx == "/red_delivery") {
+    if (sub_prefix == "/red" || sub_prefix == "/green" || sub_prefix == "/red_delivery") {
       color_classifier_context_t_ *classifier = NULL;
-      if (color_pfx == "/red")
+      if (sub_prefix == "/red")
         classifier = &cfy_ctxt_red_;
-      else if (color_pfx == "/green")
+      else if (sub_prefix == "/green")
         classifier = &cfy_ctxt_green_;
-      else if (color_pfx == "/red_delivery")
+      else if (sub_prefix == "/red_delivery")
         classifier = &cfy_ctxt_red_delivery_;
 
       std::string opt = path.substr(full_pfx.length());
@@ -954,7 +1067,7 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
       else if (opt == "/scangrid_y_offset")
         chg = test_set_cfg_value(&(classifier->cfg_scangrid_y_offset), v->get_uint());
     }
-    else if (color_pfx == "/bright_light") {
+    else if (sub_prefix == "/bright_light") {
       if (opt == "/min_brightness")
         chg = test_set_cfg_value(&(cfg_light_on_threshold_), v->get_uint());
       else if (opt == "/min_points")
@@ -964,7 +1077,7 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
       else if (opt == "/min_area_cover")
         cfg_light_on_min_area_cover_ = v->get_float();
     }
-    else if (color_pfx == "/black") {
+    else if (sub_prefix == "/black") {
       if (opt == "/max_luminance")
         chg = test_set_cfg_value(&(cfg_black_threshold_), v->get_uint());
       else if (opt == "/min_points")
@@ -972,7 +1085,27 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
       else if (opt == "/neighborhood_min_match")
         chg = test_set_cfg_value(&(cfg_black_min_neighborhood_), v->get_uint());
     }
-    else if (color_pfx == "") {
+    else if (sub_prefix == "/laser_cluster") {
+      if (opt == "/min_visibility_history")
+        cfg_lasercluster_min_vis_hist_ = v->get_uint();
+      else if (opt == "/laser_frame")
+        chg = test_set_cfg_value(&(cfg_lasercluster_frame_), v->get_string());
+      else if (opt == "/cam_frame")
+        chg = test_set_cfg_value(&(cfg_cam_frame_), v->get_string());
+      else if (opt == "/cam_aperture_x")
+        chg = test_set_cfg_value(&(cfg_cam_aperture_x_), v->get_float());
+      else if (opt == "/cam_aperture_y")
+        chg = test_set_cfg_value(&(cfg_cam_aperture_y_), v->get_float());
+      else if (opt == "/cam_angle_y")
+        chg = test_set_cfg_value(&(cfg_cam_angle_y_), v->get_float());
+      else if (opt == "/signal_width")
+        cfg_lasercluster_signal_radius_ = 0.5 * v->get_float();
+      else if (opt == "/signal_top")
+        cfg_lasercluster_signal_top_ = v->get_float();
+      else if (opt == "/signal_bottom")
+        cfg_lasercluster_signal_bottom_ = v->get_float();
+    }
+    else if (sub_prefix == "") {
       if (opt == "/roi_max_aspect_ratio")
         cfg_roi_max_aspect_ratio_ = v->get_float();
       else if (opt == "/roi_max_r2g_width_ratio")

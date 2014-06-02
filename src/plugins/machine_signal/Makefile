@@ -20,9 +20,10 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/fvconf.mk
-  
-CFLAGS   += $(VISION_CFLAGS) $(CFLAGS_CPP11)
-LDFLAGS  += $(VISION_LDFLAGS)
+include $(BUILDCONFDIR)/tf/tf.mk
+
+CFLAGS   += $(VISION_CFLAGS) $(CFLAGS_CPP11) $(CFLAGS_TF)
+LDFLAGS  += $(VISION_LDFLAGS) $(LDFLAGS_TF)
 INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
@@ -36,7 +37,8 @@ endif
 #The necessary libraries your plugin needs.
 LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
-		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface SwitchInterface
+		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface SwitchInterface \
+		Position3DInterface fawkestf fvmodels
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_machine_signal = plugin.o state.o pipeline_thread.o sensor_thread.o
 
