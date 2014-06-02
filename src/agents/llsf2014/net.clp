@@ -7,31 +7,66 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-(defrule net-enable-local
+(defrule net-enable-local-public
+  "Enable local peer connection to the unencrypted refbox channel"
   (confval (path "/clips-agent/llsf2014/peer-address") (value ?peer-address))
   (confval (path "/clips-agent/llsf2014/peer-send-port") (value ?peer-send-port))
   (confval (path "/clips-agent/llsf2014/peer-recv-port") (value ?peer-recv-port))
   (not (peer-enabled))
   =>
-  (printout t "Enabling local peer" crlf)
-  (pb-peer-enable ?peer-address ?peer-send-port ?peer-recv-port)
-  (assert (peer-enabled))
+  (printout t "Enabling local peer (public)" crlf)
+  (bind ?peer-id (pb-peer-create-local ?peer-address ?peer-send-port ?peer-recv-port))
+  (assert (peer-enabled)
+	  (peer-id public ?peer-id))
 )
 
-(defrule net-enable
+(defrule net-enable-public
+  "Enable peer connection to the unencrypted refbox channel"
   (confval (path "/clips-agent/llsf2014/peer-address") (value ?peer-address))
   (confval (path "/clips-agent/llsf2014/peer-port") (value ?peer-port))
   (not (peer-enabled))
   =>
-  (printout t "Enabling remote peer" crlf)
-  (pb-peer-enable ?peer-address ?peer-port ?peer-port)
-  (assert (peer-enabled))
+  (printout t "Enabling remote peer (public)" crlf)
+  (bind ?peer-id (pb-peer-create ?peer-address ?peer-port))
+  (assert (peer-enabled)
+	  (peer-id public ?peer-id))
+)
+
+(defrule net-enable-local-team-private
+  "Enable local peer connection to the encrypted team channel"
+  (peer-enabled)
+  (not (private-peer-enabled))
+  (team-color ?team-color&CYAN|MAGENTA)
+  (private-peer-address ?address)
+  (private-peer-ports ?team-color ?send-port ?recv-port)
+  (private-peer-key ?key ?cipher)
+  =>
+  (printout t "Enabling local peer (cyan only)" crlf)
+  (bind ?peer-id (pb-peer-create-local-crypto ?address ?send-port ?recv-port ?key ?cipher))
+  (assert (private-peer-enabled)
+	  (peer-id private ?peer-id))
+)
+
+(defrule net-enable-team-private
+  "Enable peer connection to the encrypted team channel"
+  (peer-enabled)
+  (not (private-peer-enabled))
+  (team-color ?team-color&CYAN|MAGENTA)
+  (private-peer-address ?address)
+  (private-peer-port ?team-color ?port)
+  (private-peer-key ?key ?cipher)
+  =>
+  (printout t "Enabling remote peer (cyan only)" crlf)
+  (bind ?peer-id (pb-peer-create-crypto ?address ?port ?key ?cipher))
+  (assert (private-peer-enabled)
+	  (peer-id private ?peer-id))
 )
 
 (defrule net-send-BeaconSignal
   (time $?now)
   ?f <- (timer (name beacon) (time $?t&:(timeout ?now ?t ?*BEACON-PERIOD*)) (seq ?seq))
   (team-color ?team-color&CYAN|MAGENTA)
+  (peer-id private ?peer)
   =>
   (modify ?f (time ?now) (seq (+ ?seq 1)))
   (if (debug 3) then (printout t "Sending beacon" crlf))
@@ -58,7 +93,7 @@
     (pb-set-field ?beacon "pose" ?beacon-pose)
   )
 
-  (pb-broadcast ?beacon)
+  (pb-broadcast ?peer ?beacon)
   (pb-destroy ?beacon)
 )
 
@@ -66,7 +101,7 @@
   (phase ?phase)
   ?gt <- (game-time $?)
   (refbox-state ?state)
-  ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-via BROADCAST) (rcvd-from ?host ?port))
+  ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-from ?host ?port))
   ?tc <- (team-color ?team-color)
   =>
   (retract ?pf ?gt)
@@ -80,8 +115,8 @@
     (retract ?tc)
     (assert (team-color ?new-team-color))
   )
-  ;(printout t "GameState received from " ?host ":" ?port ": "
-  ;	    ?state " <> " ?new-state "  " ?phase " <> " ?new-phase crlf)
+  ; (printout t "GameState received from " ?host ":" ?port ": "
+  ; 	    ?state " <> " ?new-state "  " ?phase " <> " ?new-phase crlf)
   (if (neq ?phase ?new-phase) then
     (assert (change-phase ?new-phase))
   )
@@ -95,7 +130,7 @@
 )
 
 (defrule net-recv-BeaconSignal
-  ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p) (rcvd-via BROADCAST))
+  ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
   (time $?now)
   =>
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
@@ -116,7 +151,7 @@
 )
 
 (defrule net-recv-order
-   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?p) (rcvd-via BROADCAST))
+   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?p))
    (team-color ?team)
    =>
    (foreach ?o (pb-field-list ?p "orders")

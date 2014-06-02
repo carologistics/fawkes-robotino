@@ -11,6 +11,7 @@
   (time $?now)
   ?s <- (timer (name send-worldmodel-sync) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
   (lock-role MASTER)
+  (peer-id private ?peer)  
   =>
   ; (printout t "sending worldmodel" crlf)
   ;construct worldmodel msg
@@ -48,13 +49,13 @@
     (pb-set-field ?o-msg "in_delivery" ?order:in-delivery)
     (pb-add-list ?worldmodel "orders" ?o-msg) ; destroys ?o-msg
   )
-  (pb-broadcast ?worldmodel)
+  (pb-broadcast ?peer ?worldmodel)
   (pb-destroy ?worldmodel)
 )
 
 ;receive worldmodel
 (defrule worldmodel-sync-receive-worldmodel
-  (protobuf-msg (type "llsf_msgs.Worldmodel") (ptr ?p) (rcvd-via BROADCAST))
+  ?msg <- (protobuf-msg (type "llsf_msgs.Worldmodel") (ptr ?p))
   (not (lock-role MASTER))
   (state ?state)
   =>
@@ -113,6 +114,7 @@
 			     (amount ?amount) (id ?id) (order ?order)
 			     (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)))
   (not (lock-role MASTER))
+  (peer-id private ?peer)
   =>
   ;(printout t "sending worldmodel change" crlf)
   ;set random id (needed by the master to determine if a change was already appied)
@@ -143,7 +145,7 @@
   (if (eq ?change ADD_IN_DELIVERY) then
     (pb-set-field ?change-msg "in_delivery" ?amount)
   )
-  (pb-broadcast ?change-msg)
+  (pb-broadcast ?peer ?change-msg)
   (pb-destroy ?change-msg)
   (modify ?wmc (last-sent ?now) (id ?id))
 )
@@ -160,9 +162,10 @@
 
 ;receive worldmodel change
 (defrule worldmodel-sync-receive-change
-  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChange") (ptr ?p) (rcvd-via BROADCAST))
+  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChange") (ptr ?p))
   (lock-role MASTER)
   ?arf <- (already-received-wm-changes $?arc)
+  (peer-id private ?peer)
   =>
   (printout t "receiving worldmodel change" crlf)
   ;ensure that this change was not already applied
@@ -236,12 +239,12 @@
   ;send acknowledgment
   (bind ?msg-ack (pb-create "llsf_msgs.WorldmodelChangeAck"))
   (pb-set-field ?msg-ack "id" ?id)  
-  (pb-broadcast ?msg-ack)
+  (pb-broadcast ?peer ?msg-ack)
   (pb-destroy ?msg-ack)
 )
 
 (defrule worldmodel-sync-receive-change-ack
-  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChangeAck") (ptr ?p) (rcvd-via BROADCAST))
+  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChangeAck") (ptr ?p))
   (not (lock-role MASTER))
   =>
   (do-for-fact ((?wmc worldmodel-change))

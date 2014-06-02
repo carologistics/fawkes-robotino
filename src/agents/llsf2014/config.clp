@@ -32,3 +32,37 @@
     (production-time RECYCLE ?proc-min-time-recycle ?proc-max-time-recycle)
   )
 )
+
+(defrule conf-read-comm-config
+  "Reads general values needed for communication from cfg/conf.d/clips-agent.yaml"
+  (confval (path "/clips-agent/llsf2014/peer-address") (value ?address))
+  (confval (path "/clips-agent/llsf2014/crypto-key") (value ?key))
+  (confval (path "/clips-agent/llsf2014/cipher") (value ?cipher))
+  =>
+  (assert (peer-address ?address)
+	  (private-peer-key ?key ?cipher))
+)
+
+(defrule conf-team-specific-ports-remote
+  "Reads team specific ports for encrypted communication from cfg/conf.d/clips-agent.yaml"
+  (confval (path "/clips-agent/llsf2014/peer-address") (value ?address))
+  (confval (path "/clips-agent/llsf2014/cyan-port") (value ?cyan-port))
+  (confval (path "/clips-agent/llsf2014/magenta-port") (value ?magenta-port))
+  =>
+  (assert (private-peer-address ?address)
+	  (private-peer-port CYAN ?cyan-port)
+	  (private-peer-port MAGENTA ?magenta-port))
+)
+
+(defrule conf-team-specific-ports-local
+  "Reads team specific ports for encrypted communication in the simulation from cfg/conf.d/clips-agent.yaml"
+  (confval (path "/clips-agent/llsf2014/peer-address") (value ?address))
+  (confval (path "/clips-agent/llsf2014/cyan-send-port") (value ?cyan-send-port))
+  (confval (path "/clips-agent/llsf2014/cyan-recv-port") (value ?cyan-recv-port))
+  (confval (path "/clips-agent/llsf2014/magenta-send-port") (value ?magenta-send-port))
+  (confval (path "/clips-agent/llsf2014/magenta-recv-port") (value ?magenta-recv-port))
+  =>
+  (assert (private-peer-address ?address)
+	  (private-peer-ports CYAN ?cyan-send-port ?cyan-recv-port)
+	  (private-peer-ports MAGENTA ?magenta-send-port ?magenta-recv-port))
+)

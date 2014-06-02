@@ -57,12 +57,13 @@
   (lock-role MASTER)
   (time $?now)
   ?s <- (timer (name send-master-announce) (time $?t&:(timeout ?now ?t ?*MASTER-ANNOUNCE-PERIOD*)) (seq ?seq))
+  (peer-id private ?peer)
   =>
   ;(printout t "Announcing MASTER role" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
   (bind ?lock-msg (pb-create "llsf_msgs.LockMasterAnnounce"))
   (pb-set-field ?lock-msg "agent" (str-cat ?*ROBOT-NAME*))
-  (pb-broadcast ?lock-msg)
+  (pb-broadcast ?peer ?lock-msg)
   (pb-destroy ?lock-msg)
 )
 
@@ -103,6 +104,7 @@
   (time $?now)
   ?s <- (timer (name send-lock-msg) (time $?t&:(timeout ?now ?t ?*LOCK-PERIOD*)) (seq ?seq))
   (lock-role ?role)
+  (peer-id private ?peer)
   =>
   ;(printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
@@ -116,7 +118,7 @@
       (pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
       (pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
       (pb-set-field ?lock-msg "priority" (str-cat ?lock:priority))
-      (pb-broadcast ?lock-msg)
+      (pb-broadcast ?peer ?lock-msg)
       (pb-destroy ?lock-msg)
 
       ;send RELEASE_RCVD only once
@@ -167,6 +169,7 @@
   (time $?now)
   ?s <- (timer (name send-status-of-all-locks) (time $?t&:(timeout ?now ?t ?*LOCK-STATUS-SEND-PERIOD*)) (seq ?seq))
   (lock-role MASTER)
+  (peer-id private ?peer)
   =>
   ;(printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
@@ -178,7 +181,7 @@
     (pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
     (pb-add-list ?complete-lock-msg "locks" ?lock-msg)
   )
-  (pb-broadcast ?complete-lock-msg)
+  (pb-broadcast ?peer ?complete-lock-msg)
   (pb-destroy ?complete-lock-msg)
 )
 

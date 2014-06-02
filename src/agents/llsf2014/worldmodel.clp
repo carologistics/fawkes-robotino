@@ -8,7 +8,7 @@
 
 ; knowledge evaluation request
 (defrule wm-recv-MachineInfo
-  (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p) (rcvd-via BROADCAST))
+  (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   =>
   ;(printout t "***** Received MachineInfo *****" crlf)
   (foreach ?m (pb-field-list ?p "machines")
