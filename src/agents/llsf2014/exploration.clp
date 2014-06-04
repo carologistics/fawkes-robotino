@@ -11,6 +11,7 @@
 
 ;Read exploration rows from config
 (defrule exp-cfg-get-row
+  "Read configuration for exploration row order of machines"
   (declare (salience ?*PRIORITY-WM*))
   (phase EXPLORATION)
   (confval (path "/clips-agent/llsf2014/exploration/row-high") (list-value $?row-high))
@@ -40,8 +41,8 @@
   (printout t "At first, I am exploring the " ?row " row" crlf)
 )
 
-;turn over line if we start on the left field
 (defrule exp-turn-line-over
+  "Turn over line if we start on the left field"
   (declare (salience ?*PRIORITY-WM*))
   (phase EXPLORATION)
   (team-color MAGENTA)
@@ -56,8 +57,8 @@
   (assert (exp-line-already-turned))
 )
 
-;Determine the first machine in dependency of the role
 (defrule exp-determine-first-machine
+  "Determine the first machine in dependency of the role"
   (phase EXPLORATION)
   (exp-row (row $?row))
   (team-color ?team-color&~nil)
@@ -78,6 +79,7 @@
 )
 
 (defrule exp-handle-no-own-machine-in-row
+  "If exploration row is empty(explored) change exploration tactic from LINE to NEAREST"
   (declare (salience ?*PRIORITY-WM*))
   (first-exploration-machine NONE)
   ?s <- (state EXP_START)
@@ -92,9 +94,8 @@
   )
 )
 
-;Set up the state
-;There are two rounds. In the first the robotino drives to each machine in a defined cycle. After the first round the robotino drives to unrecognized machines again.
 (defrule exp-start
+  "Set up the state. There are two rounds. In the first the robotino drives to each machine in a defined cycle. After the first round the robotino drives to unrecognized machines again."
   (phase EXPLORATION)
   ?st <- (exploration-start)
   (team-color ?team-color)
@@ -111,8 +112,8 @@
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
 )
 
-;Robotino drives to the first machine to start the first round
 (defrule exp-goto-first
+  "Robotino drives to the first machine to start the first round."
   (phase EXPLORATION)
   ?s <- (state EXP_START)
   (exp-tactic LINE)
@@ -128,8 +129,8 @@
   )
 )
 
-;arriving at a machine in first or second round. Preparing recognition of the light signals
 (defrule exp-ppgoto-arrived-at-machine
+  "Redo movement with global motor move after arriving with ppgoto."
   (phase EXPLORATION)
   ?final <- (skill (name "ppgoto") (status FINAL)) 
   ?s <- (state EXP_DRIVING_TO_MACHINE)
@@ -143,8 +144,8 @@
   (skill-call global_motor_move place (str-cat ?goal))
 )
 
-;redo movement with global motor move
 (defrule exp-global-motor-move-finished
+  "Arriving at a machine in first or second round. Preparing recognition of the light signals."
   (phase EXPLORATION)
   ?final <- (skill (name "global_motor_move") (status FINAL|FAILED)) 
   ?s <- (state EXP_DRIVING_TO_MACHINE_GLOBAL)
@@ -158,8 +159,8 @@
   )
 )
 
-;Recognizing succeeded => memorize light-signals for further rules and prepare to drive to the next machine
 (defrule exp-read-light-at-machine
+  "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (timer (name waiting-since))
@@ -179,8 +180,8 @@
   )
 )
 
-;Recognizing of lights failed => ty again with a slightly other position
 (defrule exp-recognized-machine-failed-once
+  "First recognition of lights failed => try again with a slightly other position"
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
@@ -197,8 +198,8 @@
   (skill-call motor_move x 0 y 0.15 vel_trans 0.1)
 )
 
-;Recognizing of lights failed => drive to next mashine or retry (depending on the round)
 (defrule exp-recognized-machine-failed-twice
+  "Second try of recognition of lights failed => drive to next mashine or retry (depending on the round)"
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
@@ -215,16 +216,16 @@
   )
 )
 
-;delete second-recognize-try fact
 (defrule exp-second-retry-fact-retract
+  "If driving again remove second-recognize-try fact."
   (state EXP_DRIVING_TO_MACHINE)
   ?srt <- (second-recognize-try)
   =>
   (retract ?srt)
 )
 
-;Find next machine when driving along the line
 (defrule exp-find-next-machine-line
+  "Find next machine in exploration line."
   (phase EXPLORATION)
   ?t <- (exp-tactic LINE)
   ?s <- (state EXP_IDLE)
@@ -265,8 +266,8 @@
   )
 )
 
-;Find next machine when driving along the line
 (defrule exp-find-next-machine-nearest
+  "Find nearest machine close to last machine."
   (phase EXPLORATION)
   (exp-tactic NEAREST)
   ?s <- (state EXP_IDLE)
@@ -313,8 +314,8 @@
   )
 )
 
-;Require resource-locking
 (defrule exp-require-resource-locking
+  "Request lock for next machine."
   (phase EXPLORATION)
   ?s <- (state EXP_FOUND_NEXT_MACHINE)
   (exp-next-machine ?nextMachine)
@@ -325,8 +326,8 @@
 	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?nextMachine)))
 )
 
-;Wait for answer from MASTER
 (defrule exp-check-resource-locking
+  "Handle a lock that was accepted by the master"
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_REQUIRED)
   (exp-next-machine ?nextMachine)
@@ -337,8 +338,8 @@
   (assert (state EXP_LOCK_ACCEPTED))
 )
 
-;Drive to next machine
 (defrule exp-go-to-next-machine
+  "When lock was accepted move to the locked machine with ppgoto"
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (exp-next-machine ?nextMachine)
@@ -352,8 +353,8 @@
   (skill-call ppgoto place (str-cat ?lp))
 )
 
-;Receive light-pattern-to-type matchig and save it in a fact
 (defrule exp-receive-type-light-pattern-matching
+  "Receive light-pattern-to-type matching and save it in a fact."
   (phase EXPLORATION)
   ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p) (rcvd-via BROADCAST))
   (not (have-all-matchings))
@@ -382,8 +383,8 @@
   (assert (exp-machines-initialized))
 )
 
-;Compose information sent by the refbox as one
 (defrule exp-compose-type-light-pattern-matching
+  "Compose information sent by the refbox as one"
   (declare (salience 0));this rule has to fire after convert-blink-to-blinking
   (phase EXPLORATION)
   ?r <- (type-spec-pre ?type RED ?red-state)
@@ -395,6 +396,7 @@
 )
 
 (defrule exp-all-matchings-are-there
+  "Assert fact that all matchings have beed received."
   (phase EXPLORATION)
   (matching-type-light (type T1) (red ?) (yellow ?) (green ?)) 
   (matching-type-light (type T2) (red ?) (yellow ?) (green ?))
@@ -405,8 +407,8 @@
   (assert (have-all-matchings))
 )
 
-;Sending all results to the refbox every second
 (defrule exp-send-recognized-machines
+  "Sending all results of machine recognition to the refbox every second"
   (phase EXPLORATION)
   (state ?s&:(neq ?s IDLE))
   (time $?now)
@@ -451,8 +453,8 @@
   )
 )
 
-;the refbox sends BLINK but in the interface BLINKING is used. This rule converts BLINK to BLINKING
 (defrule exp-convert-blink-to-blinking
+  "The refbox sends BLINK but in the interface BLINKING is used. This rule converts BLINK to BLINKING."
   (declare (salience 10)) ; this rule has to fire before compose-type-light-pattern-matching
   (phase EXPLORATION)
   (type-spec-pre ?type ?light-color BLINK)
@@ -460,9 +462,8 @@
   (assert (type-spec-pre ?type ?light-color BLINKING))
 )
 
-
-;Finish exploration phase if all machines are recognized
 (defrule exp-prepare-for-production-get-lock-for-ins
+  "Finish exploration phase if all machines are recognized and request locks for pre-game positions."
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION)
   ?et <- (exp-tactic NEAREST)
@@ -475,7 +476,9 @@
 	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?ins))
   )
 )
+
 (defrule exp-prepare-for-production-drive-to-ins
+  "When locks for pre-game positions are acquired, drive there with ppgoto."
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
@@ -487,7 +490,9 @@
   (skill-call ppgoto place (str-cat ?ins))
   (assert (prepare-for-production-goal ?ins))
 )
+
 (defrule exp-prepare-for-production-drive-to-wait-for-ins
+  "If insertion area lock was refused drive to wait-point"
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
@@ -503,7 +508,9 @@
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ins))
 	  (prepare-for-production-goal ?wait-point))
 )
+
 (defrule exp-prepare-for-production-finished
+  "When arrived at insertion area or waiting point finish preparation for production."
   (phase EXPLORATION)
   ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
@@ -513,7 +520,9 @@
   (assert (timer (name annound-prepare-for-production-finished))
 	  (state EXP_PREPARE_FOR_PRODUCTION_FINISHED))
 )
+
 (defrule exp-prepare-for-production-announce-finished
+  "Announce the finishing of preparation."
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION_FINISHED)
   (time $?now)
@@ -527,7 +536,9 @@
   (pb-broadcast ?msg)
   (pb-destroy ?msg)
 )
+
 (defrule exp-receive-prepare-for-production-announce-finished
+ "Receive finishing of preparation. Retract preparation facts."
   (phase EXPLORATION)
   ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
   ?pf <- (protobuf-msg (type "llsf_msgs.PreparedForProduction") (ptr ?p) (rcvd-via BROADCAST))
