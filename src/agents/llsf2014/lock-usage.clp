@@ -12,6 +12,7 @@
 ; general rules
 ;;;;;;;;;;;;;;;;
 (defrule lock-use-get-lock
+  "Request a lock for a resource we want to use."
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
   ?lae <- (wait-for-lock (res ?res) (state new) (priority ?p))
   =>
@@ -27,6 +28,7 @@
 )
 
 (defrule lock-use-execute
+  "Process accepted locks and state for the resource that it is in use."
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
   ?lae <- (wait-for-lock (res ?res) (state get))
   ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
@@ -37,6 +39,8 @@
 )
  
 (defrule lock-use-finished
+  "When the locked resource we used is no longer used, prepare for lock-release.
+  Lock is released after ?*RELEASE-DISTANCE* m from the current position."
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
   ?lae <- (wait-for-lock (res ?res) (state finished))
   (Position3DInterface (id "Pose") (translation $?pos))
@@ -46,8 +50,8 @@
   (assert (release-after-left ?res $?pos))
 )
 
-;release a lock after driven ?*RELEASE-DISTANCE* m away from the position
 (defrule lock-use-release-after-left
+  "Release a lock after driven ?*RELEASE-DISTANCE* m away from the position."
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
   ?ral <- (release-after-left ?res $?oldPos)
   (Position3DInterface (id "Pose") (translation $?pos&:(> (distance (nth$ 1 ?pos) (nth$ 2 ?pos) (nth$ 1 ?oldPos) (nth$ 2 ?oldPos)) ?*RELEASE-DISTANCE*)))
@@ -58,6 +62,7 @@
 )
 
 (defrule lock-drive-to-waiting-point
+  "If our lock for a resource was refused and there exists a wait-point for the resource go to the wait-point."
   (declare (salience ?*PRIORITY-LOW*))
   (phase PRODUCTION)
   ?lae <- (wait-for-lock (res ?res) (state get))
@@ -71,6 +76,7 @@
 )
 
 (defrule retract-driving-to-wait-point
+  "Retracts the driving to wait point fact when we are not looking for an alternative."
   ?s <- (driving-ro-wait-point)
   (not (state WAIT_AND_LOOK_FOR_ALTERATIVE))
   =>
@@ -78,6 +84,7 @@
 )
 
 (defrule lock-start-waiting-and-searching-for-alternative
+  "IF we are in production and our lock was refused keep waiting and look for alternative tasks."
   (phase PRODUCTION)
   (wait-for-lock (res ?res) (state get))
   (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
@@ -86,6 +93,7 @@
 )
 
 (defrule lock-end-waiting-and-searching-for-alternative
+  "Stop waiting when a lock is in use while we are in production."
   (declare (salience ?*PRIORITY-LOCK_USAGE*))
   (phase PRODUCTION)
   ?sf <- (state WAIT_AND_LOOK_FOR_ALTERATIVE)

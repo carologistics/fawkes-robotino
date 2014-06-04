@@ -28,6 +28,7 @@
 )
 
 (defrule lock-init
+  "Initialize locking and assert required facts"
   ?i <- (init-locking)
   (time $?now)
   (team-color ~nil)
@@ -54,6 +55,7 @@
 ;;;;MASTER/SLAVE selection;;;;
 
 (defrule lock-master-announce
+  "Announce own master role."
   (declare (salience ?*PRIORITY-LOCK-SEND*))
   (lock-role MASTER)
   (time $?now)
@@ -68,6 +70,7 @@
 )
 
 (defrule lock-recognize-master
+  "Recognize new master."
   ?msg <- (protobuf-msg (type "llsf_msgs.LockMasterAnnounce") (ptr ?p))
   ?r <- (lock-role ?role)
   ?mls <- (master-last-seen $?)
@@ -89,6 +92,7 @@
 )
 
 (defrule lock-getting-master
+  "If master was not announced within the timeout limit announce self as master."
   ?r <- (lock-role SLAVE)
   (time $?now)
   ?mls <- (master-last-seen $?last&:(timeout ?now ?last ?*CURRENT-MASTER-TIMEOUT*))
@@ -103,6 +107,7 @@
 ;;;;SENDING and RECEIVING;;;;
 
 (defrule lock-send-message
+  "If lock is required send lock to master"
   (declare (salience ?*PRIORITY-LOCK-SEND*))
   (time $?now)
   ?s <- (timer (name send-lock-msg) (time $?t&:(timeout ?now ?t ?*LOCK-PERIOD*)) (seq ?seq))
@@ -133,6 +138,7 @@
 )
 
 (defrule lock-receive-message
+  "Receive lock from another bot and assert the corresponding locks. If we are no master discard the message."
   ?msg <- (protobuf-msg (type "llsf_msgs.LockMessage") (ptr ?p))
   (lock-role ?role)
   =>
@@ -145,22 +151,24 @@
     then
     (if (or (eq ?type GET) (eq ?type RELEASE)) then
       (do-for-all-facts ((?old lock)) (and (eq ?old:type GET)
-					   (eq ?old:agent ?a)
-					   (eq ?old:resource ?r))
-	(retract ?old)
-	)
+                                           (eq ?old:agent ?a)
+                                           (eq ?old:resource ?r))
+        (retract ?old)
+	    )
       (if (pb-has-field ?p "priority")
-	then
-	(assert (lock (type ?type) (agent ?a) (resource ?r) (priority (pb-field-value ?p "priority"))))
-	else
-	(assert (lock (type ?type) (agent ?a) (resource ?r) (priority 0)))
+     	then
+    	  (assert (lock (type ?type) (agent ?a) (resource ?r) (priority (pb-field-value ?p "priority"))))
+    	else
+	      (assert (lock (type ?type) (agent ?a) (resource ?r) (priority 0)))
       )
     )
     else
-    (if (or (eq ?type ACCEPT) (eq ?type REFUSE) (eq ?type RELEASE_RVCD))
-      then
+    (if (or (eq ?type ACCEPT)
+            (eq ?type REFUSE)
+            (eq ?type RELEASE_RVCD))
+    then
       (if (eq ?a ?*ROBOT-NAME*)
-        then
+      then
         (assert (lock (type ?type) (agent ?a) (resource ?r)))
       )
     )
@@ -168,6 +176,7 @@
 )
 
 (defrule lock-send-status-of-all-locks-to-slaves
+  "If we are master and the timeout period to send all locks has elapsed, send locks to the slaves."
   (time $?now)
   ?s <- (timer (name send-status-of-all-locks) (time $?t&:(timeout ?now ?t ?*LOCK-STATUS-SEND-PERIOD*)) (seq ?seq))
   (lock-role MASTER)
@@ -186,8 +195,8 @@
   (pb-destroy ?complete-lock-msg)
 )
 
-
 (defrule lock-receive-status-of-all-locks-from-master
+  "If we are slave receive the final lock status from master."
   ?msg <- (protobuf-msg (type "llsf_msgs.CompleteLockStatus") (ptr ?p))
   (lock-role SLAVE)
   =>
@@ -207,8 +216,8 @@
 
 ;;;;;; accepting, releasing and refusing locks ;;;;;;;
 
-
 (defrule lock-accept-get
+  "If resource is not yet locked accept the lock-request."
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r) (priority ?p))
@@ -223,6 +232,7 @@
 )
 
 (defrule lock-retract-already-accepted-get
+  "If resource is already locked for the bot discard the request and re-accept the lock."
   (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
@@ -234,6 +244,7 @@
 )
 
 (defrule lock-refuse-get
+  "If resource is already locked ba another agent, refuse the lock request."
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
@@ -243,6 +254,7 @@
 )
 
 (defrule lock-release
+  "Release the lock for a resource from an agent. Also remove all accepted locks for this agent on this resource."
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
@@ -259,6 +271,7 @@
 )
 
 (defrule lock-received-old-release
+  "If we receive a release for an already cleaned request, retract the release and acknowledge for the client."
   (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   (lock-role MASTER)
   ?l <- (lock (type RELEASE) (agent ?a) (resource ?r))
@@ -272,6 +285,7 @@
 )
 
 (defrule lock-retract-not-accepted-get-after-release
+  "If we receive a release for a not yet accepted lock, retract the lock-request."
   (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   ?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
   ?lg <- (lock (type GET) (agent ?a) (resource ?r))
@@ -285,6 +299,7 @@
 )
 
 (defrule lock-retract-accept-after-release
+  "If we receive a release for an accepted lock, retract the lock."
   (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   (lock (type RELEASE) (agent ?a) (resource ?r))
   ?l <- (lock (type ACCEPT) (agent ?a) (resource ?r))
@@ -293,6 +308,7 @@
 )
 
 (defrule lock-retract-refuse-after-accept
+  "If we accept a lock for an agent and the lock was refused before, retract the lock-refusal."
   (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   (lock (type ACCEPT) (agent ?a) (resource ?r))
   ?lr <- (lock (type REFUSE) (agent ?a) (resource ?r))
@@ -301,6 +317,7 @@
 )
 
 (defrule lock-retract-accepted-get
+  "If a lock was accepted, remove the lock-request."
   (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
   ?la <- (lock (type ACCEPT) (agent ?a) (resource ?r))
@@ -310,6 +327,7 @@
 )
 
 (defrule lock-retract-release
+  "If our release was received, retract the lock-release fact."
   (declare (salience ?*PRIORITY-HIGH*))
   ?lrcvd <- (lock (type RELEASE_RVCD) (agent ?a) (resource ?r))
   ?lr <- (lock (type RELEASE) (agent ?a) (resource ?r))
@@ -319,6 +337,7 @@
 )
 
 (defrule lock-retract-old-release-received
+  "If we receive a release-receive-confirmation without having the lock-release retract the confirmation."
   (declare (salience ?*PRIORITY-LOCK-CLEAN*))
   ?l <- (lock (type RELEASE_RVCD) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?r))
   (not (lock (type RELEASE) (agent ?a) (resource ?r)))
@@ -327,6 +346,7 @@
 )
 
 (defrule lock-delete-all-locks-when-changing-the-phase
+  "On phase change retract all existing locks."
   (declare (salience ?*PRIORITY-HIGH*))
   (change-phase ?new-phase) 
   =>
@@ -342,6 +362,7 @@
 )
 
 (defrule lock-delete-locks-of-lost-robot
+  "When a robot is lost, delete all locks we have for this robot."
   (time $?now)
   ?ar <- (active-robot (name ?name) (last-seen $?last-seen&:(timeout ?now ?last-seen ?*ROBOT-TIMEOUT*)))
   =>
