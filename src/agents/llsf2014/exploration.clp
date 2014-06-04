@@ -538,7 +538,7 @@
 )
 
 (defrule exp-receive-prepare-for-production-announce-finished
- "Receive finishing of preparation. Retract preparation facts."
+  "Receive finishing of preparation. Retract preparation facts."
   (phase EXPLORATION)
   ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
   ?pf <- (protobuf-msg (type "llsf_msgs.PreparedForProduction") (ptr ?p) (rcvd-via BROADCAST))
