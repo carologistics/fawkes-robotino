@@ -41,12 +41,14 @@ message MachineState {
   optional string    name     = 1;
   repeated PuckState loaded_with  = 2;
   repeated IncomingAction incoming  = 3;
-  required uint32 prod_finished_time = 4;
-  optional PuckState puck_under_rfid = 5;
-  required bool produce_blocked = 6;
-  required bool recycle_blocked = 7;
-  optional uint32 order = 8;
-  optional uint32 in_delivery = 9;
+  repeated string incoming_agent  = 4;
+  required uint32 prod_finished_time = 5;
+  optional PuckState puck_under_rfid = 6;
+  required bool produce_blocked = 7;
+  required bool recycle_blocked = 8;
+  optional uint32 order = 9;
+  optional uint32 in_delivery = 10;
+  required uint32 junk = 11;
 }
 
 message WorldmodelOrder {
@@ -84,10 +86,11 @@ message WorldmodelChange {
   optional string machine = 2;
   required WorldmodelChangeType change = 3;
   optional IncomingAction incoming = 4;
-  optional PuckState loaded_with = 5;
-  optional uint32 num_CO = 6;
-  optional uint32 prod_finished_time = 7;
-  optional uint32 order = 8;
+  required string agent = 5;
+  optional PuckState loaded_with = 6;
+  optional uint32 num_CO = 7;
+  optional uint32 prod_finished_time = 8;
+  optional uint32 order = 9;
 }
 
 message WorldmodelChangeAck {

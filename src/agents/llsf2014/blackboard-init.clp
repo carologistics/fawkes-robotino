@@ -11,6 +11,14 @@
   (blackboard-open "RobotinoLightInterface" "Light_State")
   (blackboard-open "RobotinoSensorInterface" "Robotino")
 
+  ;unwatch to avoid debug spam
+  (unwatch rules blackboard-read)
+  (unwatch rules RobotinoSensorInterface-cleanup)
+  (unwatch rules Position3DInterface-cleanup)
+  (unwatch rules RobotinoLightInterface-cleanup)
+  (unwatch facts RobotinoSensorInterface)
+  (unwatch facts Position3DInterface)
+  (unwatch facts RobotinoLightInterface)
 
   (assert (loaded interfaces))
 )

@@ -113,7 +113,6 @@
   )
   (assert (holding ?output))
   (printout t "Production completed at " ?name "|" ?mtype crlf)
-  ;TODO worldmodel change sync
   (foreach ?puck ?lw
     (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
   )
@@ -129,12 +128,7 @@
          )
   =>
   (printout t "Production completed at " ?name "|" ?mtype crlf)
-  ;TODO worldmodel change sync
-  (foreach ?puck ?lw
-    (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
-  )
-  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (- (+ ?jn (length$ ?lw)) 1))))
-  (modify ?mf (final-prod-time (create$ 0 0)) (produced-puck ?output))
+  (modify ?mf (final-prod-time (create$ 0 0)) (produced-puck ?output) (loaded-with (create$)) (junk (- (+ ?jn (length$ ?lw)) 1)))
 )
 
 (defrule wm-proc-need-more-ressources
@@ -341,10 +335,18 @@
   (assert (worldmodel-change (machine ?name) (change SET_PRODUCE_BLOCKED)))
 )
 
+(defrule wm-worldmodel-change-set-agent
+  "Set the agent field in a new worldmodel change. We know that the change is from this agent because otherwise the field would be set."
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (agent DEFAULT))
+  =>
+  (modify ?wmc (agent (sym-cat ?*ROBOT-NAME*)))
+)
+
 (defrule wm-process-wm-change-before-sending
   (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE))
-  ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (junk ?junk) (produced-puck ?produced) (doubtful-worldmodel ?doubtful-wm))
+  ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent))
+  ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (incoming-agent $?incoming-agent)(junk ?junk) (produced-puck ?produced) (doubtful-worldmodel ?doubtful-wm))
   =>
   (switch ?change
     (case ADD_LOADED_WITH then 
@@ -354,10 +356,13 @@
       (modify ?m (loaded-with (delete-member$ ?loaded-with ?value)))
     )
     (case ADD_INCOMING then 
-      (modify ?m (incoming (append$ ?incoming ?value)))
+      (modify ?m (incoming (append$ ?incoming ?value))
+	         (incoming-agent (append$ ?incoming-agent ?agent)))
     )
     (case REMOVE_INCOMING then 
-      (modify ?m (incoming (delete-member$ ?incoming ?value)))
+      (modify ?m (incoming (delete-member$ ?incoming ?value))
+	         ;every agent should do only one thing at a machine
+	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
     )
     (case SET_NUM_CO then 
       (modify ?m (junk ?amount))
@@ -433,6 +438,7 @@
       (assert (puck-in-gripper FALSE))
     )
   )
+  (retract ?rif)
 )
 
 (defrule wm-dirty-fix-for-junk-T2
@@ -461,6 +467,7 @@
   (modify ?m (junk 0))
   (assert (junk-failed T1-T5))
 )
+
 (defrule wm-dirty-fix-for-junk-T3-T4
   (declare (salience ?*PRIORITY-WM*))
   ?m <- (machine (junk ?n&:(> ?n 2)) (mtype T3|T4) (name ?name))
@@ -473,4 +480,18 @@
   
   (modify ?m (junk 2))
   (assert (junk-failed T3-T4))
+)
+
+(deffunction wm-remove-incoming-by-agent (?agent)
+  "remove all entries of machine-incoming fields of a specific agent (e.g. after a lost connection)"
+  (delayed-do-for-all-facts ((?m machine)) (member$ (sym-cat ?agent) ?m:incoming-agent)
+    (bind ?new-incoming ?m:incoming)
+    (bind ?new-incoming-agent ?m:incoming-agent)
+    (while (member$ (sym-cat ?agent) ?new-incoming-agent)
+      (bind ?index (member$ (sym-cat ?agent) ?new-incoming-agent))
+      (bind ?new-incoming (delete$ ?new-incoming ?index ?index))
+      (bind ?new-incoming-agent (delete$ ?new-incoming-agent ?index ?index))
+    )
+    (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
+  ) 
 )

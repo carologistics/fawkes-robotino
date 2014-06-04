@@ -30,26 +30,24 @@
   (switch ?task
     (case load-with-S0 then
       (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
-				(resource (sym-cat BRING_S0 (nth$ 1 ?a)))))
+				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a)))))
     )
     (case load-with-S1 then
       (assert (needed-task-lock (action BRING_S1) (place (nth$ 1 ?a)) 
-				(resource (sym-cat BRING_S1 (nth$ 1 ?a)))))
+				(resource (sym-cat BRING_S1 "~" (nth$ 1 ?a)))))
     )
     (case load-with-S2 then
       (assert (needed-task-lock (action BRING_S2) (place (nth$ 1 ?a)) 
-				(resource (sym-cat BRING_S2 (nth$ 1 ?a)))))
+				(resource (sym-cat BRING_S2 "~" (nth$ 1 ?a)))))
     )
     (case pick-and-deliver then
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
-				(resource (sym-cat PICK_PROD (nth$ 1 ?a))))
-	      ; (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
-	      ; 			(resource (sym-cat BRING_ (nth$ 2 ?a) _ (nth$ 3 ?a))))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
       )
     )
     (case recycle then
       (assert (needed-task-lock (action PICK_CO) (place (nth$ 1 ?a)) 
-				(resource (sym-cat PICK_CO (nth$ 1 ?a))))
+				(resource (sym-cat PICK_CO "-" (nth$ 1 ?a))))
       )
     )
     (case pick-and-load then
@@ -58,9 +56,9 @@
 	(bind ?puck ?machine:produced-puck)
       )
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
-				(resource (sym-cat PICK_PROD (nth$ 1 ?a))))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
 	      (needed-task-lock (action (sym-cat BRING_ ?puck)) (place (nth$ 2 ?a))
-				(resource (sym-cat (sym-cat BRING_ ?puck) (nth$ 2 ?a))))
+				(resource (sym-cat (sym-cat BRING_ ?puck) "~" (nth$ 2 ?a))))
       )
     )
     (case deliver then

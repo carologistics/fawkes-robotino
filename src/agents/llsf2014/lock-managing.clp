@@ -46,6 +46,7 @@
   (seed (nth$ 2 ?now))
   (retract ?i)
   (assert (master-last-seen ?now)
+	  (master-name "")
 	  (lock-role SLAVE)
   )  
 )
@@ -71,17 +72,18 @@
   ?r <- (lock-role ?role)
   ?mls <- (master-last-seen $?)
   (time $?now)
+  ?mn <- (master-name ?)
   =>
   (bind ?a (sym-cat (pb-field-value ?p "agent")))
-  (retract ?mls ?msg)
-  (assert (master-last-seen ?now))
+  (retract ?mls ?msg ?mn)
+  (assert (master-last-seen ?now)
+	  (master-name (str-cat (pb-field-value ?p "agent"))))
   (bind ?*CURRENT-MASTER-TIMEOUT* ?*ROBOT-TIMEOUT*)
   (if (and (eq ?role MASTER) (not (eq ?a ?*ROBOT-NAME*)))
       then
       (printout warn "TWO MASTERS DETECTED, WAITING RANDOM TIME AS SLAVE!!!" crlf)
       (retract ?r)
       (assert (lock-role SLAVE))
-      ;TODO: are there consequences of the change?
       (bind ?*CURRENT-MASTER-TIMEOUT* (float (random 0 10)))
   )
 )
@@ -90,10 +92,12 @@
   ?r <- (lock-role SLAVE)
   (time $?now)
   ?mls <- (master-last-seen $?last&:(timeout ?now ?last ?*CURRENT-MASTER-TIMEOUT*))
+  ?mn <- (master-name ?)
   =>
   (printout t "MASTER timed out -> Getting MASTER" crlf)
-  (retract ?r)
-  (assert (lock-role MASTER))
+  (retract ?r ?mn)
+  (assert (lock-role MASTER)
+	  (master-name (str-cat ?*ROBOT-NAME*)))
 )
 
 ;;;;SENDING and RECEIVING;;;;
@@ -198,6 +202,7 @@
     (bind ?r (sym-cat (pb-field-value ?lock "resource")))
     (assert (locked-resource (agent ?a) (resource ?r)))
   )
+  (retract ?msg)
 )
 
 ;;;;;; accepting, releasing and refusing locks ;;;;;;;
@@ -347,12 +352,83 @@
   (delayed-do-for-all-facts ((?resource locked-resource)) (eq (str-cat ?resource:agent) (str-cat ?name))
     (retract ?resource)
   )
+
+  ; revome old incoming fields of machines caused by the resetted agent
+  (wm-remove-incoming-by-agent (sym-cat ?name))
   (retract ?ar)
 )
 
-(defrule debug-check-inconsistency
+(defrule lock-check-inconsistency
   (lock (type REFUSE) (agent ?a) (resource ?res))
   (lock (type ACCEPT) (agent ?a) (resource ?res))
   =>
   (printout warn "Found inconsistency in locks (accept + refuse)!!!!!!!" crlf)
+)
+
+;;;;;; Handling a restart of a robot ;;;;;;;;
+
+(defrule lock-announce-restart-start
+  "Start timer to Announce a restart to all other robots to delete all old locks and remove old incoming fields of the machines"
+  ?state <- (lock-announce-restart)
+  (time $?now)
+  =>
+  (assert (timer (name announce-restart) (time ?now)))
+  (retract ?state)
+)
+
+(defrule lock-announce-restart-send
+  "Send announce restart multiple times"
+  (time $?now)
+  ?timer <- (timer (name announce-restart) (time $?t&:(timeout ?now ?t ?*LOCK-ANNOUNCE-RESTART-PERIOD*)) (seq ?seq))
+  =>
+  (if (< ?seq ?*LOCK-ANNOUNCE-RESTART-REPETITIONS*)
+    then
+    (bind ?lock-msg (pb-create "llsf_msgs.LockAnnounceRestart"))
+    (pb-set-field ?lock-msg "agent" (str-cat ?*ROBOT-NAME*))
+    (pb-broadcast ?lock-msg)
+    (pb-destroy ?lock-msg)
+    (modify ?timer (time ?now) (seq (+ ?seq 1)))
+    
+    else
+    (retract ?timer)
+    (assert (timer (name announce-restart-wait) (time ?now)))
+  )
+)
+
+(defrule lock-announce-restart-finish
+  "Wait before continuing to make sure that all restart msgs were processed pefore we request new lock"
+  (time $?now)
+  ?timer <- (timer (name announce-restart-wait) (time $?t&:(timeout ?now ?t ?*LOCK-ANNOUNCE-RESTART-WAIT-BEFORE-FINISH*)))
+  =>
+  (assert (lock-announce-restart-finished))
+  (retract ?timer)
+)
+
+(defrule lock-receive-restart-delete-old-locks
+  "When receiving a restart announce, delete old locks and incoming fields of the agent.
+   If the master was reset, do not wait so long for a master."
+  ?msg <- (protobuf-msg (type "llsf_msgs.LockAnnounceRestart") (ptr ?p))
+  (master-name ?master)
+  ?mls <- (master-last-seen $?)
+  (time $?now)
+  =>
+  (bind ?agent (pb-field-value ?p "agent"))
+  (printout t "deleting locks of restarted agent " ?agent crlf)
+  (delayed-do-for-all-facts ((?lock lock)) (eq (str-cat ?lock:agent) (str-cat ?agent))
+    (retract ?lock)
+  )
+  (delayed-do-for-all-facts ((?resource locked-resource)) (eq (str-cat ?resource:agent) (str-cat ?agent))
+    (retract ?resource)
+  )
+
+  (if (eq (sym-cat ?master) (sym-cat ?agent)) then
+    (retract ?mls)
+    (assert (master-last-seen ?now))
+    (bind ?*CURRENT-MASTER-TIMEOUT* (float (random 0 3)))
+  )
+  
+  ; revome old incoming fields of machines caused by the resetted agent
+  (wm-remove-incoming-by-agent (sym-cat ?agent))
+
+  (retract ?msg)
 )
