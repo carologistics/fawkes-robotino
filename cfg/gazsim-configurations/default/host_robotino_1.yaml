@@ -45,3 +45,7 @@ clips-agent:
     peer-address: 127.0.0.1
     peer-recv-port: 4411
     peer-send-port: 4421
+    cyan-recv-port: 4451
+    magenta-recv-port: 4461
+    cyan-send-port: 4471
+    magenta-send-port: 4481
