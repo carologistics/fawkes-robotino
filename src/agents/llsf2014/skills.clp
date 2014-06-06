@@ -167,10 +167,3 @@
   (assert (state (sym-cat GOTO- ?s)))
   (modify ?wfl (state finished))
 )
-
-(defrule ignore-driving-to-waiting-point
-  ?s <- (driving-ro-wait-point)
-  (not (state WAIT_AND_LOOK_FOR_ALTERATIVE))
-  =>
-  (retract ?s)
-)
