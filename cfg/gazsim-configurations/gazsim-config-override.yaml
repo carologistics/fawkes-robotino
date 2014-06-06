@@ -64,4 +64,5 @@ fawkes:
 # debug=0, info=1, warn=2, error=4, none=8
 ballposlog/log_level: 0
 
-
+#colli og-laser buffer:
+plugins/colli/laser_occupancy_grid/buffer_size: 6
