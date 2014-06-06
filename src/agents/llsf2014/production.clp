@@ -13,6 +13,7 @@
 ;role change P3->nothing
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 (defrule prod-role-P3-change-after-all-p3-orders
+  "Drop the P3 role when there are no more P3 orders."
   (phase PRODUCTION)
   ?r <- (role P3-ONLY)
   (game-time $?time)
@@ -32,9 +33,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; prioritize machines (which T2,T3/T4 to load first)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 (defrule prod-prioritize-T3-T4
+  "Prioritize machines, T3 and T4 should be loaded first."
   (declare (salience ?*PRIORITY-WM*))
   (team-color ?team&~nil)
   (received-machine-info)
@@ -100,13 +100,11 @@
 )
 
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; decision rules for the next most important task to propose
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defrule prod-propose-task-idle
+  "If we are idle change state to the proposed task."
   (declare (salience ?*PRIORITY-LOW*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
@@ -117,6 +115,7 @@
 )
 
 (defrule prod-change-to-more-important-task-when-waiting-for-lock
+  "If we run a low-priority task and look for an alternative AND a task with a higher priority is proposed, drop the current work and change to the priorized task."
   (declare (salience ?*PRIORITY-LOW*))
   (phase PRODUCTION)
   ?t <- (task (state running) (priority ?old-p))
@@ -130,11 +129,14 @@
   =>
   (retract ?sf1 ?sf2 ?wfl ?lock-get ?exec ?lock-ref)
   (modify ?t (state finished))
-  (assert (state TASK-PROPOSED)
-	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
+  (assert
+    (state TASK-PROPOSED)
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res))
+  )
 )
 
 (defrule prod-remove-proposed-tasks
+  "Remove all proposed tasks, when you are neither idle nor looking for an alternative."
   (declare (salience ?*PRIORITY-LOW*))
   (phase PRODUCTION)
   (not (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE))
@@ -144,6 +146,7 @@
 )
 
 (defrule prod-deliver-P3
+  "Role P3-ONLY: If we don't have anything to do, pick and deliver a P3."
   (declare (salience ?*PRIORITY-DELIVER-P3*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -168,6 +171,7 @@
 )
 
 (defrule prod-deliver-P1-P2
+  "Pick and deliver a P1 or P2."
   (declare (salience ?*PRIORITY-DELIVER-P1P2*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -190,6 +194,7 @@
 )
 
 (defrule prod-recycle
+  "Recycle used pucks."
   (declare (salience ?*PRIORITY-RECYCLE*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -208,6 +213,7 @@
 )
 
 (defrule prod-start-T2-with-S0
+  "Starts production at a T2 with S0."
   (declare (salience ?*PRIORITY-START-T2-WITH-S0*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -227,6 +233,7 @@
 
 ; Investigate if this can actually trigger
 (defrule prod-load-T2-with-S0
+  "Load T2 with S0."
   (declare (salience ?*PRIORITY-LOAD-T2-WITH-S0*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -244,6 +251,7 @@
 )
 
 (defrule prod-load-T2-with-S1
+  "Load T2 with S1."
   (declare (salience ?*PRIORITY-LOAD-T2-WITH-S1*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -261,6 +269,7 @@
 )
 
 (defrule prod-start-T3_T4-with-S0
+  "Starts production at a T3/T4 with S0."
   (declare (salience ?*PRIORITY-START-T3_T4-WITH-S0*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -285,6 +294,7 @@
 )
 
 (defrule prod-load-T3_T4-with-S0
+  "Loads T3/T4 with an S0."
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S0*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -302,6 +312,7 @@
 )
 
 (defrule prod-load-T3_T4-with-S1
+  "Loads T3/T4 with an S1."
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -319,6 +330,7 @@
 )
 
 (defrule prod-load-continue-T3_T4-with-S1
+  "Continue to load T3/T4 with S1 after S1 was produced at T1."
   (declare (salience ?*PRIORITY-CONTINUE-T3_T4-WITH-S1*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -339,6 +351,7 @@
 
 ;this rule decides which T3/T4 to load first
 (defrule prod-load-T3_T4-with-S2
+  "Load T3/T4 with S2. Prefer machines with higher priority."
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -365,6 +378,7 @@
 )
 
 (defrule prod-load-T5-with-S0
+  "Load T5 with S0 if you are in P3-ONLY role."
   (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))
   (phase PRODUCTION)
   (state IDLE);|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -396,6 +410,7 @@
 ; )
 
 (defrule prod-deliver-unintentionally-holding-produced-puck
+  "If holding a puck that should not be held (e.g. picked it up while driving) deliver it."
   (declare (salience ?*PRIORITY-DELIVER-HOLDING*))
   (phase PRODUCTION)
   (state IDLE)
@@ -416,6 +431,7 @@
 )
 
 (defrule prod-load-unintentionally-holding-S2
+  "If we hold an S2 unintentionally load the next free T3/T4 with the highest priority that doesn't hold an S2 yet with it."
   (declare (salience ?*PRIORITY-LOAD-HOLDING-S2*))
   (phase PRODUCTION)
   (state IDLE)
@@ -437,6 +453,7 @@
 )
 
 (defrule prod-recycle-unintentionally-holding-CO
+  "If we hold a C0 unintentionally, recycle it."
   (declare (salience ?*PRIORITY-RECYCLE*))
   (phase PRODUCTION)
   (state IDLE)

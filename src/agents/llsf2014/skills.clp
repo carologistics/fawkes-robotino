@@ -17,7 +17,6 @@
 ;;;;;;;;;;;;;;;;;;
 ; calling skills
 ;;;;;;;;;;;;;;;;;;
-
 (defrule skill-call-finish_puck_at
   ?es <- (execute-skill finish_puck_at ?name ?mtype ?dont-wait)
   (wait-for-lock (res ?name) (state use))
@@ -96,7 +95,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; handle skill final/failed
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defrule skill-done
   (skill (name ?name) (status ?s&FINAL|FAILED))
   =>
