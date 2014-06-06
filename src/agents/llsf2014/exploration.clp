@@ -239,8 +239,8 @@
   (while (<= ?ind (length$ ?row)) do
     ; can I go to this machine next?
     (if (and (any-factp ((?me machine-exploration)) (and (eq ?me:name (nth$ ?ind ?row))
-							 (eq ?me:team ?team-color)
-							 (not ?me:recognized)))
+							                                           (eq ?me:team ?team-color)
+							                                           (not ?me:recognized)))
 	     (not (any-factp ((?lock locked-resource)) (eq ?lock:resource (nth$ ?ind ?row)))))
       then
       (break)

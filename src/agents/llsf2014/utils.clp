@@ -1,4 +1,3 @@
-
 ;---------------------------------------------------------------------------
 ;  utils.clp - Robotino agent decision testing -- utility functions
 ;
@@ -9,6 +8,7 @@
 ;---------------------------------------------------------------------------
 
 (deffunction distance (?x ?y ?x2 ?y2)
+  "Returns the distance of two points in the x,y-plane."
   (return (float (sqrt (float(+ (* (- ?x ?x2) (- ?x ?x2)) (* (- ?y ?y2) (- ?y ?y2)))))))
 )
 
