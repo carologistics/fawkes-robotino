@@ -80,16 +80,22 @@ gazsim:
       rotation-speed-factor: 1.2
       
   comm:
-    package-loss: 0.1
+    package-loss: 0.0
     #all peers which need the comm plugin
     # write down as follows:
     # adrresses:  ["address_1", "address_2", ...]
     # send-ports: [send_port_1, send_port_2, ...]
     # revc-ports: [recv_port_1, recv_port_2, ...]
     # refbox, robotino1, robotino2, robotino3
-    addresses:  ["127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1"]
-    send-ports: [4445,         4411,       4412,        4413,        4446,        4447,        4451,        4452,        4453,        4461,        4462,        4463]
-    recv-ports: [4444,         4421,       4422,        4423,        4441,        4442,        4471,        4472,        4473,        4481,        4482,        4483]
+    addresses:  ["127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1"]
+    send-ports: [4445, 4411, 4412, 4413]
+    recv-ports: [4444, 4421, 4422, 4423]
+    use-crypto1: true
+    send-ports-crypto1: [4446, 4451, 4452, 4453]
+    recv-ports-crypto1: [4441, 4471, 4472, 4473]
+    use-crypto2: true
+    send-ports-crypto2: [4447, 4461, 4462, 4463]
+    recv-ports-crypto2: [4442, 4481, 4482, 4483]
 
   visualization:
     location-scripts: "model://label/materials/scripts"
