@@ -274,6 +274,14 @@ void TagVisionThread::update_blackboard(size_t marker_count){
             }
             else{
                 tag_interfaces[i]->set_visibility_history(0);
+                tag_interfaces[i]->set_rotation(0,0);
+                tag_interfaces[i]->set_rotation(1,0);
+                tag_interfaces[i]->set_rotation(2,0);
+                tag_interfaces[i]->set_rotation(3,0);
+                tag_interfaces[i]->set_translation(1,0);
+                tag_interfaces[i]->set_translation(2,0);
+                tag_interfaces[i]->set_translation(3,0);
+
             }
         }
         else{
