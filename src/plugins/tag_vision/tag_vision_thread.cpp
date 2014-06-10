@@ -274,18 +274,29 @@ void TagVisionThread::update_blackboard(size_t marker_count){
             create_tag_interface(i);
         }
 
-        double rot[4];
+        //temporary the rotation quaternion in wxyz
+        double quat[4];
+        //temp mat to get cv data
         CvMat mat;
-        cvInitMatHeader(&mat, 4, 1, CV_64F, rot);
+        //angles in heading attitude bank
+        double rot[3];
+        //create the mat
+        cvInitMatHeader(&mat, 4, 1, CV_64F, quat);
+        //get the quaternion of this pose in the mat
         markers[i].pose.GetQuaternion(&mat);
-        rot[ROT::X] = CV_MAT_ELEM(mat, double, 1, 0);
-        rot[ROT::Y] = CV_MAT_ELEM(mat, double, 2, 0);
-        rot[ROT::Z] = CV_MAT_ELEM(mat, double, 3, 0);
-        rot[ROT::W] = CV_MAT_ELEM(mat, double, 0, 0);
+        //get the temporary quaternion in wxyz order to calculate angles
+        quat[1] = CV_MAT_ELEM(mat, double, 1, 0);
+        quat[2] = CV_MAT_ELEM(mat, double, 2, 0);
+        quat[3] = CV_MAT_ELEM(mat, double, 3, 0);
+        quat[0] = CV_MAT_ELEM(mat, double, 0, 0);
+        //calculate the angles from the quaternion
+        markers[i].pose.QuatToEul(quat,rot);
+        //publish the angles
         tag_interfaces[i]->set_rotation(ROT::X,rot[ROT::X]);
         tag_interfaces[i]->set_rotation(ROT::Y,rot[ROT::Y]);
         tag_interfaces[i]->set_rotation(ROT::Z,rot[ROT::Z]);
-        tag_interfaces[i]->set_rotation(ROT::W,rot[ROT::W]);
+        tag_interfaces[i]->set_rotation(ROT::W,0);
+        //publish the translation
         tag_interfaces[i]->set_translation(0,markers[i].pose.translation[0]);
         tag_interfaces[i]->set_translation(1,markers[i].pose.translation[1]);
         tag_interfaces[i]->set_translation(2,markers[i].pose.translation[2]);
