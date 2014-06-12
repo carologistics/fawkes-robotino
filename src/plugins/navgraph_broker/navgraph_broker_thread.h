@@ -30,6 +30,8 @@
 #include <aspect/clock.h>
 
 #include <plugins/gossip/aspect/gossip.h>
+#include <plugins/gossip/gossip/gossip_group.h>
+
 #include <plugins/navgraph/aspect/navgraph.h>
 #include <plugins/navgraph/constraints/constraint_repo.h>
 #include <utils/graph/topological_map_graph.h>
@@ -84,6 +86,23 @@ class NavgraphBrokerThread
      std::string get_string_from_nodes(std::vector<fawkes::TopologicalMapNode> path);
      std::string get_path_from_interface_as_string();
      void send_data();
+
+
+ private:
+   void handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
+ 		       uint16_t component_id, uint16_t msg_type,
+ 		       std::shared_ptr<google::protobuf::Message> msg);
+   void handle_peer_recv_error(boost::asio::ip::udp::endpoint &endpoint, std::string msg);
+   void handle_peer_send_error(std::string msg);
+
+  private:
+   boost::signals2::connection sig_rcvd_conn_;
+   boost::signals2::connection sig_recv_error_conn_;
+   boost::signals2::connection sig_send_error_conn_;
+
+  private:
+   std::vector<std::string> path_;
+   std::string robotname_;
 
 };
 

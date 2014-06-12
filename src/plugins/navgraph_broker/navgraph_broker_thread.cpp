@@ -24,8 +24,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <plugins/gossip/gossip/gossip_group.h>
-#include "TestMessage.pb.h"
-
+#include "NavigationMessage.pb.h"
 
 using namespace fawkes;
 
@@ -61,12 +60,39 @@ NavgraphBrokerThread::init()
 	std::vector<fawkes::TopologicalMapNode> nodes = get_nodes_from_string(snodes);
 
 
+	// reserve nodes within constraint repo for testing
 	constraint_repo.lock();
-	reserve_nodes("Robotino1" , nodes);
+	reserve_nodes( robotname_.c_str() , nodes);
 	constraint_repo.unlock();
 
+	// init params for gossip sender
 	last_sent_ = new Time(clock);
 	counter_   = 0;
+
+	// get robot-name
+	try{
+		robotname_ = config->get_string("/robot-name");
+	}catch (Exception &e)
+	{
+		logger->log_error( name() , "Can't read the robot name. Is 'robot-name' specified in cfg/host.yaml ?" );
+	}
+
+	// init gossip receiver
+	  try {
+	    gossip_group->message_register().add_message_type<navgraph_broker::NavigationMessage>();
+	  } catch (std::runtime_error &e) {} // ignore, probably already added
+
+	  sig_rcvd_conn_ =
+	    gossip_group->signal_received()
+	    .connect(boost::bind(&NavgraphBrokerThread::handle_peer_msg, this, _1, _2, _3, _4));
+
+	  sig_recv_error_conn_ =
+	    gossip_group->signal_recv_error()
+	    .connect(boost::bind(&NavgraphBrokerThread::handle_peer_recv_error, this, _1, _2));
+
+	  sig_send_error_conn_ =
+	    gossip_group->signal_send_error()
+	    .connect(boost::bind(&NavgraphBrokerThread::handle_peer_send_error, this, _1));
 
 }
 
@@ -79,6 +105,10 @@ NavgraphBrokerThread::finalize()
 
 	blackboard->unregister_listener(this);
 	blackboard->close(path_if_);
+
+	sig_rcvd_conn_.disconnect();
+	sig_recv_error_conn_.disconnect();
+	sig_send_error_conn_.disconnect();
 }
 
 
@@ -146,9 +176,11 @@ NavgraphBrokerThread::get_path_from_interface_as_string(){
 	vpath[36] = path_if_->path_node_37();	vpath[37] = path_if_->path_node_38();
 	vpath[38] = path_if_->path_node_39();	vpath[39] = path_if_->path_node_40();
 
+	path_.clear();
 
 	for( unsigned int i=0; i<path_length && i<39; i++){
 		s_path += vpath[i];
+		path_.push_back(vpath[i]);
 	}
 
 	std::string txt = "Preparing nodes for sending: {" +s_path +"}";
@@ -178,13 +210,21 @@ NavgraphBrokerThread::send_data(){
 
 	fawkes::Time now(clock);
 
-	navgraph_broker::TestMessage m;
-	m.set_counter(++counter_);
+	navgraph_broker::NavigationMessage m;
+	//m.set_counter(++counter_);
 	m.set_sec(now.get_sec());
 	m.set_nsec(now.get_nsec());
+
+	m.set_robotname( robotname_.c_str() );
+
+	for(unsigned i=0; i<path_.size(); i++){
+		m.add_nodelist( path_[i].c_str() );
+	}
+
 	gossip_group->broadcast(m);
 
-	logger->log_debug(name(), "Sending");
+
+	logger->log_info(name(), "Sending");
 
 
 }
@@ -196,6 +236,57 @@ NavgraphBrokerThread::bb_interface_data_changed(fawkes::Interface *interface) th
 
 	std::string path = get_path_from_interface_as_string() ;
 
-	logger->log_info(name(), "Interface Changed: %s", path_if_->path_node_1());
+	logger->log_info(name(), "Interface Changed - new path: %s", path.c_str() );
+	send_data();
 
+}
+
+void
+NavgraphBrokerThread::handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
+					     uint16_t component_id, uint16_t msg_type,
+					     std::shared_ptr<google::protobuf::Message> msg)
+{
+  if (component_id == navgraph_broker::NavigationMessage::COMP_ID &&
+      msg_type == navgraph_broker::NavigationMessage::MSG_TYPE)
+  {
+    std::shared_ptr<navgraph_broker::NavigationMessage> tm =
+      std::dynamic_pointer_cast<navgraph_broker::NavigationMessage>(msg);
+
+    if (tm) {
+    	std::string txt ="{ ";
+    	std::vector<std::string> reservation_request;
+
+    	for(int i=0; i < tm->nodelist_size(); i++ ){
+    		reservation_request.push_back( tm->nodelist(i) );
+    		txt += tm->nodelist(i) + " "
+      }
+      logger->log_info(name(), "Received message with Path: %s}.",txt.c_str());
+    } else {
+      logger->log_warn(name(), "Message with proper component_id and msg_type, but no conversion. "
+		       " Wrong component ID/message type to C++ type mapping?");
+    }
+  } else {
+    logger->log_warn(name(), "Unknown message received: %u:%u", component_id, msg_type);
+  }
+}
+
+/** Handle error during peer message processing.
+ * @param endpoint endpoint of incoming message
+ * @param msg error message
+ */
+void
+NavgraphBrokerThread::handle_peer_recv_error(boost::asio::ip::udp::endpoint &endpoint,
+						    std::string msg)
+{
+  logger->log_warn(name(), "Failed to receive peer message from %s:%u: %s",
+		   endpoint.address().to_string().c_str(), endpoint.port(), msg.c_str());
+}
+
+/** Handle error during peer message processing.
+ * @param msg error message
+ */
+void
+NavgraphBrokerThread::handle_peer_send_error(std::string msg)
+{
+  logger->log_warn(name(), "Failed to send peer message: %s", msg.c_str());
 }
