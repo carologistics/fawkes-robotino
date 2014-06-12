@@ -27,6 +27,8 @@
 #include <gazebo/physics/physics.hh>
 #include "data_table.h"
 
+#define WAIT_TIME_BEFORE_REMOVE 3.0
+
 namespace gazebo
 {
   /**
@@ -51,6 +53,9 @@ namespace gazebo
     physics::WorldPtr world_;
 
     int finished_pucks_;
+    
+    bool waiting_before_removing_;
+    double start_waiting_time_;
   };
 }
 #endif

@@ -34,6 +34,7 @@ FieldReferee::FieldReferee(physics::WorldPtr world)
   world_ = world;
   
   finished_pucks_ = 0;
+  waiting_before_removing_ = false;
   //this->sit_next_to_the_field_and_take_a_nap();
 }
 
@@ -47,13 +48,26 @@ void FieldReferee::update()
   //check if the referee app says that there is a puck which has to be removed
   for(int p = 0; p < NUMBER_PUCKS; p++)
   {
+    
     Puck puck = table_->get_puck(p);
     if(puck.state == llsf_msgs::FINISHED && puck.x < 5.6 && puck.y < 5.6)
     {
-      //build a tower
-      math::Pose pose(6.0, 2.8, (0.1 + finished_pucks_ * 0.05), 0, 0, 0);
-      world_->GetEntity(puck.name_link.c_str())->SetWorldPose(pose, true, true);
-      finished_pucks_++;
+      if(waiting_before_removing_)
+      {
+	if(world_->GetSimTime().Double() > start_waiting_time_ + WAIT_TIME_BEFORE_REMOVE)
+	{
+	  //build a tower
+	  math::Pose pose(6.0, 2.8, (0.1 + finished_pucks_ * 0.05), 0, 0, 0);
+	  world_->GetEntity(puck.name_link.c_str())->SetWorldPose(pose, true, true);
+	  finished_pucks_++;
+	  waiting_before_removing_ = false;
+	}
+      }
+      else
+      {
+	waiting_before_removing_ = true;
+        start_waiting_time_ = world_->GetSimTime().Double();
+      }
     }
   }
 }
