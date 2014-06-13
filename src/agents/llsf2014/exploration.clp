@@ -392,7 +392,7 @@
   ?g <- (type-spec-pre ?type GREEN ?green-state)
   =>
   (retract ?r ?y ?g)
-  (assert (matching-type-light (type ?type) (red ?red-state) (yellow ?yellow-state) (green ?green-state)))
+  (assert (matching-type-light (type (sym-cat ?type)) (red ?red-state) (yellow ?yellow-state) (green ?green-state)))
 )
 
 (defrule exp-all-matchings-are-there
