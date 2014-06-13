@@ -65,6 +65,26 @@
   (path-load  llsf2014/navgraph.clp)
 )
 
+(deffunction unwatch-rules-facts ()
+  ;unwatch some rules to reduce debug output
+  ;this is not possible in the config, because the defrules and deffacts are loaded later
+  (unwatch rules worldmodel-sync-receive-worldmodel)
+  (unwatch rules worldmodel-sync-publish-worldmodel)
+  (unwatch rules wm-update-puck-in-gripper)
+  (unwatch rules wm-update-pose)
+  (unwatch rules wm-update-pose)
+  (unwatch rules net-send-BeaconSignal)
+  (unwatch rules net-recv-BeaconSignal)
+  (unwatch rules net-recv-GameState)
+  (unwatch rules lock-send-message)
+  (unwatch rules lock-receive-message)
+  (unwatch rules worldmodel-sync-receive-worldmodel)
+  (unwatch facts protobuf-msg)
+  (unwatch facts active-robot)
+  (unwatch facts pose)
+  (unwatch facts timer)
+)
+
 (defrule initialize
   "Actual initialization rule. Loads the need rule-files for skills and inter-robot communication."
   ;when all clips features are available and the init file is loaded
@@ -79,6 +99,7 @@
   (path-load  llsf2014/utils.clp)
   (path-load  llsf2014/net.clp)
   (path-load  llsf2014/skills.clp)
+  (path-load  llsf2014/worldmodel.clp)
   (path-load  llsf2014/lock-managing.clp)
   (path-load  llsf2014/lock-usage.clp)
   (if
@@ -90,10 +111,7 @@
     (path-load  llsf2014/sim.clp)
   )
   (path-load  llsf2014/game.clp)
-  (path-load  llsf2014/worldmodel.clp)
   (path-load  llsf2014/worldmodel-synchronization.clp)
-  (path-load  llsf2014/lock-managing.clp)
-  (path-load  llsf2014/lock-usage.clp)
   (path-load  llsf2014/tactical-help.clp)
   (path-load  llsf2014/tasks.clp)
   (path-load  llsf2014/coordination.clp)
@@ -102,6 +120,8 @@
   (path-load  llsf2014/config.clp)
   (reset)
   ;(facts)
+
+  (unwatch-rules-facts)
 )
 
 (defrule late-silence-debug-facts

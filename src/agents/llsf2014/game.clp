@@ -53,13 +53,6 @@
   (skill-call motor_move x 0.25 y 0)
   ;wait with P3-ONLY to avoid collision in the beginning
   (assert (timer (name wait-before-start) (time ?now)))
-  
-  ;unwatch some rules to reduce debug output
-  (unwatch rules worldmodel-sync-receive-worldmodel)
-  (unwatch rules worldmodel-sync-publish-worldmodel)
-  (unwatch rules wm-update-puck-in-gripper)
-  (unwatch rules wm-update-pose)
-  (unwatch rules wm-update-pose)
 )
 
 (defrule start-playing

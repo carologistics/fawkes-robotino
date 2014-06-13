@@ -66,6 +66,7 @@
   (state ?state)
   =>
   ; (printout t "***** Received Worldmodel *****" crlf)
+  (unwatch facts machine)
   ;update worldmodel about machines
   (foreach ?m-msg (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
@@ -120,6 +121,7 @@
       (modify ?order (in-delivery ?in-del))
     )
   )
+  (watch facts machine)
 )
 
 ;send worldmodel change
