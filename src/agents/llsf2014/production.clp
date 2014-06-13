@@ -162,6 +162,7 @@
   (holding NONE)
   ;(not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P3*))))
   (role P3-ONLY)
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-DELIVER-P3*))))
   =>
   (printout t "PROD: Deliver P3 from " ?name crlf)
   (assert (proposed-task (name pick-and-deliver) (priority ?*PRIORITY-DELIVER-P3*)
@@ -186,6 +187,7 @@
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P1P2*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-DELIVER-P1P2*))))
   =>
   (printout t "PROD: Deliver " ?puck " from " ?name crlf)
   (assert (proposed-task (name pick-and-deliver) (priority ?*PRIORITY-DELIVER-P1P2*)
@@ -206,6 +208,7 @@
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-RECYCLE*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-RECYCLE*))))
   =>
   (printout t "PROD: Recycling from " ?name crlf)
   (assert (proposed-task (name recycle) (args (create$ ?name ?recycle)) (priority ?*PRIORITY-RECYCLE*))
@@ -225,28 +228,10 @@
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-START-T2-WITH-S0*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-START-T2-WITH-S0*))))
   =>
   (printout t "PROD: Starting T2 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-START-T2-WITH-S0*))
-  )
-)
-
-; Investigate if this can actually trigger
-(defrule prod-load-T2-with-S0
-  "Load T2 with S0."
-  (declare (salience ?*PRIORITY-LOAD-T2-WITH-S0*))
-  (phase PRODUCTION)
-  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
-  (team-color ?team-color&~nil)
-  (machine (mtype T2) (loaded-with $?l&~:(member$ S0 ?l))
-	   (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE) (team ?team-color))
-  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
-  (holding NONE|S0)
-  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T2-WITH-S0*))))
-  (not (role P3-ONLY))
-  =>
-  (printout t "PROD: Loading T2 " ?name " with S0" crlf)
-  (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T2-WITH-S0*))
   )
 )
 
@@ -262,6 +247,7 @@
   (holding NONE|S0|S1)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T2-WITH-S1*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-LOAD-T2-WITH-S1*))))
   =>
   (printout t "PROD: Loading T2 " ?name-T2 " with S1 after producing at a T1" crlf)
   (assert (proposed-task (name load-with-S1) (args (create$ ?name-T2)) (priority ?*PRIORITY-LOAD-T2-WITH-S1*))
@@ -287,6 +273,7 @@
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-START-T3_T4-WITH-S0*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-START-T3_T4-WITH-S0*))))
   =>
   (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-START-T3_T4-WITH-S0*))
@@ -305,6 +292,7 @@
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S0*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-LOAD-T3_T4-WITH-S0*))))
   =>
   (printout t "PROD: Loading T3/T4 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S0*))
@@ -323,6 +311,7 @@
   (holding NONE|S0|S1)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S1*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-LOAD-T3_T4-WITH-S1*))))
   =>
   (printout t "PROD: Loading T3/T4 " ?name-T3_T4 " with S1 after producing at T1" crlf)
   (assert (proposed-task (name load-with-S1) (args (create$ ?name-T3_T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
@@ -343,13 +332,13 @@
   (holding NONE|S0|S1)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S1*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-LOAD-T3_T4-WITH-S1*))))
   =>
   (printout t "PROD: Continue Loading T3/T4 " ?name-T3_T4 " with S1 after producing at T1" crlf)
   (assert (proposed-task (name load-with-S1) (args (create$ ?name-T3_T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S1*))
   )
 )
 
-;this rule decides which T3/T4 to load first
 (defrule prod-load-T3_T4-with-S2
   "Load T3/T4 with S2. Prefer machines with higher priority."
   (declare (salience ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
@@ -371,6 +360,7 @@
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T3_T4-WITH-S2*))))
   (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-LOAD-T3_T4-WITH-S2*))))
   =>
   (printout t "PROD: Loading T3/T4 " ?name_T3T4 " with S2 from " ?name_T2 crlf)
   (assert (proposed-task (name pick-and-load) (args (create$ ?name_T2 ?name_T3T4)) (priority ?*PRIORITY-LOAD-T3_T4-WITH-S2*))
