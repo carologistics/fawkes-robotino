@@ -445,12 +445,14 @@
   ?pbm <- (protobuf-msg (type "llsf_msgs.MachineReportInfo") (ptr ?p))
   =>
   (retract ?pbm)
+  (unwatch facts machine-exploration)
   (foreach ?machine (pb-field-list ?p "reported_machines")
     (do-for-fact ((?m machine-exploration)) (eq ?m:name (sym-cat ?machine))
       (modify ?m (recognized TRUE))
       ;(printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
     )
   )
+  (watch facts machine-exploration)
 )
 
 (defrule exp-convert-blink-to-blinking

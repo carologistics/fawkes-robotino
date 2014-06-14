@@ -79,10 +79,12 @@
   (unwatch rules lock-send-message)
   (unwatch rules lock-receive-message)
   (unwatch rules worldmodel-sync-receive-worldmodel)
+  (unwatch rules skill-update-nochange)
   (unwatch facts protobuf-msg)
   (unwatch facts active-robot)
   (unwatch facts pose)
   (unwatch facts timer)
+  (unwatch facts skill-update)
 )
 
 (defrule initialize
