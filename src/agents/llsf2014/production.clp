@@ -223,7 +223,8 @@
   (team-color ?team-color&~nil)
   (machine (name ?name) (mtype T2) (loaded-with $?l&~:(member$ S0 ?l))
 	   (incoming $?i&~:(member$ BRING_S0 ?i)&:(or (member$ S1 ?l) (member$ BRING_S1 ?i)))
-	   (produced-puck NONE) (team ?team-color))
+	   (produced-puck NONE) (team ?team-color)
+	   (incoming-agent $?ia&~:(member ?*ROBOT-NAME* ?ia)))
   (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-START-T2-WITH-S0*))))
@@ -251,6 +252,66 @@
   =>
   (printout t "PROD: Loading T2 " ?name-T2 " with S1 after producing at a T1" crlf)
   (assert (proposed-task (name load-with-S1) (args (create$ ?name-T2)) (priority ?*PRIORITY-LOAD-T2-WITH-S1*))
+  )
+)
+
+(defrule prod-prepare-T3_T4-with-S1
+  "Load T3/T4 with S1 if a S2 is already in production."
+  (declare (salience ?*PRIORITY-PREPARE-T3_T4-WITH-S1*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  ;T3/T4 to load
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l)) 
+	   (incoming $?i&~:(member$ BRING_S1 ?i)) (name ?name-T3_T4)
+	   (produced-puck NONE) (team ?team-color) (priority ?prio))
+  ;no T3/T4 with higher priority
+  (not (machine (mtype T3|T4) (loaded-with $?l2&~:(member$ S1 ?l2)) (team ?team-color)
+		(incoming $?i2&~:(member$ BRING_S1 ?i2)) (produced-puck NONE)
+		(priority ?p2&:(> ?p2 ?prio))))
+  ;there is a S2 in production
+  (machine (mtype T2) (name ?name_T2) (produced-puck NONE) (team ?team-color)
+	   (incoming $?i-t2) (loaded-with $?l-t2&:(and (or (member$ S1 ?l-t2) (member$ BRING_S1 ?i-t2))
+						       (or (member$ S0 ?l-t2) (member$ BRING_S0 ?i-t2))))
+	   (incoming-agent $?ia&~:(member ?*ROBOT-NAME* ?ia)))
+  (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
+  (holding NONE|S0|S1)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PREPARE-T3_T4-WITH-S1*))))
+  (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-PREPARE-T3_T4-WITH-S1*))))
+  =>
+  (printout t "PROD: Preparing T3/T4 " ?name-T3_T4 " with S1" crlf)
+  (assert (proposed-task (name load-with-S1) (args (create$ ?name-T3_T4)) (priority ?*PRIORITY-PREPARE-T3_T4-WITH-S1*))
+  )
+)
+
+(defrule prod-prepare-T3_T4-with-S0
+  "Load T3/T4 with S0 if a S2 is already in production."
+  (declare (salience ?*PRIORITY-PREPARE-T3_T4-WITH-S0*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  ;T3/T4 to load
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S0 ?l)) 
+	   (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name-T3_T4)
+	   (produced-puck NONE) (team ?team-color) (priority ?prio))
+  ;no T3/T4 with higher priority
+  (not (machine (mtype T3|T4) (loaded-with $?l2&~:(member$ S0 ?l2)) (team ?team-color)
+		(incoming $?i2&~:(member$ BRING_S0 ?i2)) (produced-puck NONE)
+		(priority ?p2&:(> ?p2 ?prio))))
+  ;there is a S2 in production
+  (machine (mtype T2) (name ?name_T2) (produced-puck NONE) (team ?team-color)
+	   (incoming $?i-t2) (loaded-with $?l-t2&:(and (or (member$ S1 ?l-t2) (member$ BRING_S1 ?i-t2))
+						       (or (member$ S0 ?l-t2) (member$ BRING_S0 ?i-t2))))
+	   (incoming-agent $?ia&~:(member ?*ROBOT-NAME* ?ia)))
+  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
+  (holding NONE|S0)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PREPARE-T3_T4-WITH-S0*))))
+  (not (role P3-ONLY))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-PREPARE-T3_T4-WITH-S0*))))
+  =>
+  (printout t "PROD: Preparing T3/T4 " ?name-T3_T4 " with S0" crlf)
+  (assert (proposed-task (name load-with-S0) (args (create$ ?name-T3_T4)) (priority ?*PRIORITY-PREPARE-T3_T4-WITH-S0*))
   )
 )
 
