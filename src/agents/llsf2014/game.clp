@@ -39,17 +39,32 @@
   (motor-enable)
 )
 
+(defrule started-in-which-phase
+  "determine in which phase the agent was started to determine if it has to announce a restart"
+  (state WAIT_START)
+  (phase ?phase&~PRE_GAME)
+  (not (started-in ?))
+  =>
+  (assert (started-in ?phase))
+)
+
 (defrule start
   "If bots are waiting for game start and the state RUNNING is requested move the bots into the field. Additional fact for P-3 bot with waiting time to delay its start."
   (phase EXPLORATION|PRODUCTION|WHACK_A_MOLE_CHALLENGE)
   ?sf <- (state WAIT_START)
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state ?)
+  (started-in ?phase)
   (time $?now)
   =>
   (retract ?sf ?cf ?rf)
-  (assert (state MOVING_INTO_FIELD)
-	  (lock-announce-restart))
+  (assert (state MOVING_INTO_FIELD))
+  (if (eq ?phase SETUP)
+    then
+    (assert (lock-announce-restart-finished))
+    else
+    (assert (lock-announce-restart))
+  )
   (skill-call motor_move x 0.25 y 0)
   ;wait with P3-ONLY to avoid collision in the beginning
   (assert (timer (name wait-before-start) (time ?now)))
