@@ -106,6 +106,8 @@ GazsimLLSFRbCommThread::init()
   remove_puck_under_machine_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/remove-puck-under-machine"), &GazsimLLSFRbCommThread::on_puck_remove_msg, this);
   time_sync_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/time"), &GazsimLLSFRbCommThread::on_time_sync_msg, this);
   set_game_state_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/set-game-state"), &GazsimLLSFRbCommThread::on_set_game_state_msg, this);
+  set_game_phase_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/set-game-phase"), &GazsimLLSFRbCommThread::on_set_game_phase_msg, this);
+  set_team_name_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/set-team-name"), &GazsimLLSFRbCommThread::on_set_team_name_msg, this);
 }
 
 
@@ -254,5 +256,27 @@ void GazsimLLSFRbCommThread::on_set_game_state_msg(ConstSetGameStatePtr &msg)
     return;
   }
   llsf_msgs::SetGameState to_rb = *msg;
+  client_->send(to_rb);
+}
+
+void GazsimLLSFRbCommThread::on_set_game_phase_msg(ConstSetGamePhasePtr &msg)
+{
+  //logger->log_info(name(), "Sending SetGamePhase to refbox");
+  if(!client_->connected())
+  {
+    return;
+  }
+  llsf_msgs::SetGamePhase to_rb = *msg;
+  client_->send(to_rb);
+}
+
+void GazsimLLSFRbCommThread::on_set_team_name_msg(ConstSetTeamNamePtr &msg)
+{
+  //logger->log_info(name(), "Sending SetTeamName to refbox");
+  if(!client_->connected())
+  {
+    return;
+  }
+  llsf_msgs::SetTeamName to_rb = *msg;
   client_->send(to_rb);
 }

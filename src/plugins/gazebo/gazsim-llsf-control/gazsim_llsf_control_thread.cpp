@@ -59,9 +59,13 @@ void LlsfControlSimThread::init()
 
   //Create Publisher
   set_game_state_pub_ = gazebo_world_node->Advertise<llsf_msgs::SetGameState>(config->get_string("/gazsim/topics/set-game-state"));
+  set_game_phase_pub_ = gazebo_world_node->Advertise<llsf_msgs::SetGamePhase>(config->get_string("/gazsim/topics/set-game-phase"));
+  set_team_name_pub_ = gazebo_world_node->Advertise<llsf_msgs::SetTeamName>(config->get_string("/gazsim/topics/set-team-name"));
 
   //read config values
   post_game_simulation_shutdown_ = config->get_bool("/gazsim/llsf-control/simulation-shutdown-after-game");
+  team_name_ = config->get_string("/gazsim/llsf-control/team-name");
+  team_color_ = config->get_string("/gazsim/llsf-control/team-color");
   fawkes_path_ = config->get_string("/gazsim/llsf-control/fawkes-path");
   simulation_shutdown_script_ = config->get_string("/gazsim/llsf-control/simulation-shutdown-script");
   start_game_automatically_ = config->get_bool("/gazsim/llsf-control/start-game-automatically");
@@ -81,10 +85,24 @@ void LlsfControlSimThread::loop()
 {
   if(!start_sent_ && (clock->now().in_sec() - start_time_) > time_to_wait_before_start_)
   {
+    //set team name
+    llsf_msgs::SetTeamName msg_team;
+    msg_team.set_team_name(team_name_);
+    if(team_color_.compare("CYAN") == 0)
+      msg_team.set_team_color(llsf_msgs::Team::CYAN);
+    else if(team_color_.compare("MAGENTA") == 0)
+      msg_team.set_team_color(llsf_msgs::Team::MAGENTA);
+    else
+      logger->log_error(name(), "Unknown Team Name!");
+    set_team_name_pub_->Publish(msg_team);
+
     //let the refbox start the game
-    llsf_msgs::SetGameState msg;
-    msg.set_state(llsf_msgs::GameState::RUNNING);
-    set_game_state_pub_->Publish(msg);
+    llsf_msgs::SetGameState msg_state;
+    msg_state.set_state(llsf_msgs::GameState::RUNNING);
+    set_game_state_pub_->Publish(msg_state);
+    llsf_msgs::SetGamePhase msg_phase;
+    msg_phase.set_phase(llsf_msgs::GameState::EXPLORATION);
+    set_game_phase_pub_->Publish(msg_phase);
 
     start_sent_ = true;
   }
