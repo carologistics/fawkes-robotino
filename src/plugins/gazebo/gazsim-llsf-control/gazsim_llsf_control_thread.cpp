@@ -70,9 +70,11 @@ void LlsfControlSimThread::init()
   simulation_shutdown_script_ = config->get_string("/gazsim/llsf-control/simulation-shutdown-script");
   start_game_automatically_ = config->get_bool("/gazsim/llsf-control/start-game-automatically");
   time_to_wait_before_start_ = config->get_float("/gazsim/llsf-control/time-to-wait-before-start");
+  time_to_wait_before_set_team_ = config->get_float("/gazsim/llsf-control/time-to-wait-before-set-team");
   time_to_wait_before_shutdown_ = config->get_float("/gazsim/llsf-control/time-to-wait-before-shutdown");
 
   start_sent_ = false;
+  team_sent_ = false;
   start_time_ = clock->now().in_sec();
   shutdown_initiated_ = false;
 }
@@ -83,7 +85,7 @@ void LlsfControlSimThread::finalize()
 
 void LlsfControlSimThread::loop()
 {
-  if(!start_sent_ && (clock->now().in_sec() - start_time_) > time_to_wait_before_start_)
+  if(!team_sent_ && (clock->now().in_sec() - start_time_) > time_to_wait_before_set_team_)
   {
     //set team name
     llsf_msgs::SetTeamName msg_team;
@@ -96,6 +98,10 @@ void LlsfControlSimThread::loop()
       logger->log_error(name(), "Unknown Team Name!");
     set_team_name_pub_->Publish(msg_team);
 
+    team_sent_ = true;
+  }
+  if(!start_sent_ && (clock->now().in_sec() - start_time_) > time_to_wait_before_start_)
+  {
     //let the refbox start the game
     llsf_msgs::SetGameState msg_state;
     msg_state.set_state(llsf_msgs::GameState::RUNNING);

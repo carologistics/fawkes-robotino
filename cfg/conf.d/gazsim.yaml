@@ -106,7 +106,8 @@ gazsim:
     team-name: "Carologistics"
     team-color: "CYAN"
     start-game-automatically: true
-    time-to-wait-before-start: 5.0
+    time-to-wait-before-set-team: 5.0
+    time-to-wait-before-start: 10.0
     simulation-shutdown-after-game: true
     time-to-wait-before-shutdown: 5.0
     fawkes-path: "~/fawkes-robotino/" #TODO: find it in cpp source
