@@ -114,6 +114,7 @@ gazsim:
     simulation-shutdown-script: "bin/gazsim.bash -x kill"
 
   llsf-statistics:
+    get-refbox-summary-script: "@BASEDIR@/etc/scripts/gazsim-get-refbox-summary.bash"
     #these fields can be overridden by the gazsim-schedule script
     db-name: "gazsim-runs"
     collection: "test_14_06_16_22_00"

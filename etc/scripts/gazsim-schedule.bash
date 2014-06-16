@@ -20,6 +20,7 @@ EOF
 
 replace_config() #args: 1:config-name 2:new value
 {
+    echo "sed -i s/$1:.*/$1: $2/"
     sed -i "s/$1:.*/$1: $2/" $FAWKES_DIR/cfg/conf.d/gazsim.yaml
 }
 
@@ -86,6 +87,7 @@ do
     do
 	#create and go to log folder
 	cd $FAWKES_DIR
+	export FAWKES_DIR_FOR_SED=$(echo $FAWKES_DIR | sed "s/\//\\\\\//g")
 	mkdir -p "gazsim-logs/$TIME/${CONF}_$RUN"
 	cd "gazsim-logs/$TIME/${CONF}_$RUN"
 
@@ -95,7 +97,7 @@ do
 	replace_config run $RUN
 	replace_config configuration-name "\"$CONF\""
 	replace_config collection "\"test_$TIME\""
-	replace_config log "\"$FAWKES_DIR\/gazsim-logs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
+	replace_config log "\"$FAWKES_DIR_FOR_SED\/gazsim-logs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
         
 
 	#start simulation
@@ -106,7 +108,7 @@ do
 	echo Waiting for shutdown of the simulation
 	for (( ; ; ))
 	do
-	    sleep 20s
+	    sleep 30s
 	    #check if simulation is still running
 	    GAZEBO=$(ps -a | grep -i 'gzserver\|fawkes\|roscore\|llsf-refbox' | wc -l)
             if [ $GAZEBO -eq 0 ]
