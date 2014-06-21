@@ -1,0 +1,11 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/agent-monitor
+---
+agent-monitor:
+  clips-environment: "agent"
+  #ip and port of the different robotinos
+  robotino1: "127.0.0.1:8081"
+  robotino2: "127.0.0.1:8082"
+  robotino3: "127.0.0.1:8083"

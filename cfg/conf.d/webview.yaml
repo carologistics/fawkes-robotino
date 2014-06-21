@@ -29,3 +29,6 @@ webview:
   # Example user, delete or change password!
   users:
     fawkes: fawkes
+
+  # directories with static files
+  static-dirs: ["@BASEDIR@/res/webview","@BASEDIR@/res/agent-monitor"]
