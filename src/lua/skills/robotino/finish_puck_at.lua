@@ -30,7 +30,13 @@ depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
    { v="light", type="RobotinoLightInterface", id="Light determined" },
 }
 
-documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.]==]
+documentation      = [==[Take puck to nearest target in goto_names and take appropriate action at target.
+
+Parameters:
+      place: Where to bring the puck to
+      out_of_order: behavior when machine is out of order (can be "leave_puck" or "abort" or "ignore")
+      mtype: type of machine (needed for production timeouts)
+]==]
 
 local mpos = require 'machine_pos_module'
 local mtype = ""
@@ -74,8 +80,24 @@ function prod_in_progress()
       and light:red() == light.OFF
 end
 
+function out_of_order()
+   return light:green() == light.OFF
+      and light:yellow() == light.OFF
+      and light:red() == light.ON
+end
+
+function out_of_order_abort()
+   return out_of_order()
+      and fsm.vars.out_of_order == "abort"
+end
+
+function out_of_order_leave()
+   return out_of_order()
+      and fsm.vars.out_of_order == "leave"
+end
+
 fsm:define_states{ export_to=_M,
-   closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light, orange_blinking=orange_blinking},
+   closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light, orange_blinking=orange_blinking, out_of_order=out_of_order, out_of_order_abort=out_of_order_abort, out_of_order_leave=out_of_order_leave, prod_finished=prod_finished, prod_in_progress=prod_in_progress},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
@@ -104,8 +126,8 @@ fsm:add_transitions{
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
    { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="vars.final_product and not orange_blinking()" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
-   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond=prod_finished},
-   { "DECIDE_DEPOSIT", "LEAVE_PRODUCING_MACHINE", cond=prod_in_progress, desc="leave machine to come back and pick up the produced puck later"},
+   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="prod_finished() or out_of_order_abort()"},
+   { "DECIDE_DEPOSIT", "LEAVE_PRODUCING_MACHINE", cond="prod_in_progress() or out_of_order_leave()", desc="leave machine to come back and pick up the produced puck later"},
    { "PRODUCE_FAILED", "SKILL_DRIVE_LEFT", cond="vars.final_product"},
    { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true},
 
@@ -119,6 +141,12 @@ function SKILL_TAKE_PUCK:init()
    end
    self.fsm.vars.tries = self.fsm.vars.tries + 1
    mtype = self.fsm.vars.mtype
+   
+   --check out_of_order behavior
+   if self.fsm.vars.out_of_order~="ignore" and self.fsm.vars.out_of_order~="leave" and self.fsm.vars.out_of_order~="abort" then
+      printf("No/Unknown out_of_order behavior given\n")
+      self.fsm.vars.out_of_order = "ignore"
+   end
 end
 
 function SKILL_GLOBAL_MOTOR_MOVE:init()
@@ -149,6 +177,11 @@ end
 function SKILL_WAIT_PRODUCE:init()
    self.skills[1].mtype = self.fsm.vars.mtype
    self.skills[1].dont_wait = self.fsm.vars.dont_wait
+   if self.fsm.vars.out_of_order == "ignore" then
+      self.skills[1].out_of_order = "ignore"
+   else
+      self.skills[1].out_of_order = "final"
+   end
 end
 
 function LEAVE_PRODUCING_MACHINE:init()

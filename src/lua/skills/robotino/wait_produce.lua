@@ -37,6 +37,10 @@ depends_interfaces = {
 
 documentation      = [==[
 writes ampel data into the light interface 
+
+Parameters:
+      out_of_order: behavior when machine is out of order (can be "ignore" or "final")
+      mtype: type of machine (needed for production timeouts)
 ]==]
 -- Constants
 local TIMEOUTS = {
@@ -80,8 +84,12 @@ function out_of_order()  -- careful!!! no check if plugin light is ready
       and plugin:red()    == plugin.ON
 end
 
+function final_when_out_of_order()
+   return fsm.vars.out_of_order == "final"
+end
+
 fsm:define_states{ export_to=_M,
-   closure={laserswitch=laserwitch, plugin=plugin, out_of_order=out_of_order},
+   closure={laserswitch=laserwitch, plugin=plugin, out_of_order=out_of_order, final_when_out_of_order=final_when_out_of_order},
    {"INIT", JumpState},
    {"OUT_OF_ORDER", JumpState},
    {"WAIT", JumpState},
@@ -93,6 +101,7 @@ fsm:add_transitions{
    {"WAIT", "OUT_OF_ORDER", cond="out_of_order() and plugin:is_ready()"},
    {"OUT_OF_ORDER", "WAIT", cond="not out_of_order() and plugin:is_ready()"},
    {"OUT_OF_ORDER", "WAIT", timeout=120},
+   {"OUT_OF_ORDER", "FINAL", cond="final_when_out_of_order()"},
    {"WAIT", "FAILED", timeout=fsm.vars.mtype and TIMEOUTS[fsm.vars.mtype] or 70},
    {"WAIT", "FINAL", cond=done},
 }
@@ -100,7 +109,13 @@ fsm:add_transitions{
 function INIT:init()
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
    lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
-   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.15))   
+   laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.15))
+
+   --check behavior when machine is out of order
+   if self.fsm.vars.out_of_order~="ignore" and self.fsm.vars.out_of_order~="final" then
+      printf("No/Unknown out_of_order behavior given\n")
+      self.fsm.vars.out_of_order = "ignore"
+   end
 end
 
 function WAIT:exit()
