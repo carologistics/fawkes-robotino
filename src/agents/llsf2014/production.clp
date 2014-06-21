@@ -174,7 +174,12 @@
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
   (machine (mtype T2) (loaded-with $?l&~:(member$ S1 ?l))
-	   (incoming $?i&~:(member$ BRING_S1 ?i)) (name ?name-T2) (produced-puck NONE) (team ?team-color))
+	   (incoming $?i&~:(member$ BRING_S1 ?i)) (name ?name-T2)
+	   (produced-puck NONE) (team ?team-color) (priority ?prio))
+  ;no T2 with higher priority
+  (not (machine (mtype T2) (loaded-with $?l2&~:(member$ S1 ?l2)) (team ?team-color)
+		(incoming $?i2&~:(member$ BRING_S1 ?i2)) (produced-puck NONE)
+		(priority ?p2&:(> ?p2 ?prio))))
   (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T2))) (state rejected)))
   (holding NONE|S0|S1)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T2-WITH-S1*))))
