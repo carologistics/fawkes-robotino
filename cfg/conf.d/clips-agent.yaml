@@ -67,8 +67,12 @@ clips-agent:
     release-distance: 0.75
 
     waiting-points:
-      ins1: WAIT_FOR_INS_1
-      ins2: WAIT_FOR_INS_2
+      ins-1-robotino1: WAIT_FOR_INS_1_ROBOTINO_1
+      ins-2-robotino1: WAIT_FOR_INS_2_ROBOTINO_1
+      ins-1-robotino2: WAIT_FOR_INS_1_ROBOTINO_2
+      ins-2-robotino2: WAIT_FOR_INS_2_ROBOTINO_2
+      ins-1-robotino3: WAIT_FOR_INS_1_ROBOTINO_3
+      ins-2-robotino3: WAIT_FOR_INS_2_ROBOTINO_3
       deliver1: WAIT_FOR_DELIVER_1
       deliver2: WAIT_FOR_DELIVER_2
 

@@ -65,3 +65,12 @@ message CompleteLockStatus {
   
   repeated LockMessage locks = 1;
 }
+
+message LockAnnounceRestart {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 1346;
+  }
+  
+  required string agent = 1;
+}

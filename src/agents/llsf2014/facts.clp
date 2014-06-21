@@ -8,7 +8,7 @@
 
 ; GENERIC
 (deftemplate active-robot
-  (slot name (type SYMBOL) (allowed-values R-1 R-2))
+  (slot name (type SYMBOL) (allowed-values R-1 R-2 R-3))
   (multislot last-seen (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
@@ -94,6 +94,7 @@
         (allowed-values UNKNOWN T1 T2 T3 T4 T5 DELIVER RECYCLE IGNORED))
   (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
   (multislot incoming (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
+  (multislot incoming-agent (type SYMBOL)) ;the agent bringing/getting the thing specified in incoming
   (slot produced-puck (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3) (default NONE))
   (slot fails (type INTEGER) (default 0))
   (slot junk (type INTEGER) (default 0))
@@ -150,6 +151,7 @@
   (slot already-applied (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (multislot last-sent (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot id (type INTEGER) (default 0)) ;random id
+  (slot agent (type SYMBOL) (default DEFAULT))
 )
 
 (deftemplate wait-for-lock
@@ -160,6 +162,8 @@
 
 (deffacts startup-production
   (team-color nil)
+  (points-magenta 0)
+  (points-cyan 0)
   (last-lights)
   (holding NONE)
   (machine (name D1) (mtype DELIVER) (team CYAN))

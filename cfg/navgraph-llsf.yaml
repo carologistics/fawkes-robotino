@@ -357,16 +357,32 @@ nodes:
     properties:
       - orientation: -1.57
 
-  - name: WAIT_FOR_INS_1
-    pos: [0.56, 0.56]
+  - name: WAIT_FOR_INS_1_ROBOTINO_1
+    pos: [3.36, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_2_ROBOTINO_1
+    pos: [-3.36, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_1_ROBOTINO_2
+    pos: [0, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_2_ROBOTINO_2
+    pos: [0, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_1_ROBOTINO_3
+    pos: [4.48, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_2_ROBOTINO_3
+    pos: [-4.48, 0.56]
     properties:
       - orientation: 1.57
   - name: WAIT_FOR_DELIVER_1
     pos: [5.04, 1.68]
-    properties:
-      - orientation: 1.57
-  - name: WAIT_FOR_INS_2
-    pos: [-0.56, 0.56]
     properties:
       - orientation: 1.57
   - name: WAIT_FOR_DELIVER_2
@@ -637,10 +653,12 @@ connections:
   - [P13,  deliver2]
   - [P93,  deliver1]
 
-  - !dir [P51, WAIT_FOR_INS_1]
-  - !dir [WAIT_FOR_INS_1, P61]
-  - !dir [P51, WAIT_FOR_INS_2]
-  - !dir [WAIT_FOR_INS_2, P41]
+  - [P81, WAIT_FOR_INS_1_ROBOTINO_1]
+  - [P21, WAIT_FOR_INS_2_ROBOTINO_1]
+  - [P51, WAIT_FOR_INS_1_ROBOTINO_2]
+  - [P51, WAIT_FOR_INS_2_ROBOTINO_2]
+  - [P91, WAIT_FOR_INS_1_ROBOTINO_3]
+  - [P11, WAIT_FOR_INS_2_ROBOTINO_3]
   - !dir [P91, WAIT_FOR_DELIVER_1]
   - !dir [WAIT_FOR_DELIVER_1, P92]
   - !dir [P11, WAIT_FOR_DELIVER_2]

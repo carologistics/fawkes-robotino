@@ -1,15 +1,47 @@
+;---------------------------------------------------------------------------
+;  config.clp - Read config values and add them to the factbase
+;
+;  Created: Mon May 05 16:26:42 2014
+;  Copyright  2014  Frederik Zwilling
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+;Determine the role of the agent
+(defrule general-determine-role
+  (confval (path "/clips-agent/llsf2014/agent-role") (value ?role))
+  =>
+  (assert (role (sym-cat ?role)))
+  (printout t "I have the role " (str-cat ?role) crlf)
+)
+
 (defrule conf-figure-out-waiting-points
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins1") (value ?ins1-wait-point))
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins2") (value ?ins2-wait-point))
+  "Reads waiting-point names (identical to navgraph names) from cfg/conf.d/clips-agent.yaml"
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-1-robotino1") (value ?ins-wait-point-ins1-robotino1))
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-1-robotino2") (value ?ins-wait-point-ins1-robotino2))
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-1-robotino3") (value ?ins-wait-point-ins1-robotino3))
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-2-robotino1") (value ?ins-wait-point-ins2-robotino1))
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-2-robotino2") (value ?ins-wait-point-ins2-robotino2))
+   (confval (path "/clips-agent/llsf2014/waiting-points/ins-2-robotino3") (value ?ins-wait-point-ins2-robotino3))
    (confval (path "/clips-agent/llsf2014/waiting-points/deliver1") (value ?deliver1-wait-point))
    (confval (path "/clips-agent/llsf2014/waiting-points/deliver2") (value ?deliver2-wait-point))
    =>
-  (assert (wait-point Ins1 ?ins1-wait-point) (wait-point deliver1 ?deliver1-wait-point)
-          (wait-point Ins2 ?ins2-wait-point) (wait-point deliver2 ?deliver2-wait-point)
+  (assert (wait-point Ins1 "R-1" ?ins-wait-point-ins1-robotino1) 
+          (wait-point Ins1 "R-2" ?ins-wait-point-ins1-robotino2)
+          (wait-point Ins1 "R-3" ?ins-wait-point-ins1-robotino3)
+          (wait-point Ins2 "R-1" ?ins-wait-point-ins2-robotino1)
+          (wait-point Ins2 "R-2" ?ins-wait-point-ins2-robotino2)
+          (wait-point Ins2 "R-3" ?ins-wait-point-ins2-robotino3)
+          (wait-point deliver1 "R-1" ?deliver1-wait-point) 
+          (wait-point deliver1 "R-2" ?deliver1-wait-point) 
+          (wait-point deliver1 "R-3" ?deliver1-wait-point) 
+          (wait-point deliver2 "R-1" ?deliver2-wait-point)
+          (wait-point deliver2 "R-2" ?deliver2-wait-point)
+          (wait-point deliver2 "R-3" ?deliver2-wait-point)
   )
 )
 
 (defrule conf-machine-proc-times
+  "Reads production times from cfg/conf.d/clips-agent.yaml"
   (phase PRODUCTION)
   (confval (path "/clips-agent/llsf2014/production-times/t1-min") (value ?proc-min-time-t1))
   (confval (path "/clips-agent/llsf2014/production-times/t1-max") (value ?proc-max-time-t1))

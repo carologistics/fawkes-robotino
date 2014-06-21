@@ -5,13 +5,16 @@
 ;  Copyright  2014 Frederik Zwilling
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
-
+; All tasks are proposed first in production.clp
+; Task execution is decided in cooperation.clp
+;
 ; Overview over all tasks:
 ; - load-with-S0              get S0, bring it to T2/T3/T4/T5
 ; - load-with-T1              get S0, produce at T1 and bring to T2/T3/T4
 ; - pick-and-load             get S2 from T2 and bring it to T3/T4
 ; - pick-and-deliver          get P1/P2/P3 from T3/T4/T5 and deliver it
 ; - recycle                   get CO and recycle
+;---------------------------------------------------------------------------
 
 ;;;;;;;;;;;;;;
 ;load-with-S0:
@@ -32,6 +35,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-load-with-S0--bring-to-machine
   (declare (salience ?*PRIORITY-SUBTASK-2*))
   (phase PRODUCTION)
@@ -47,6 +51,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-load-with-S0--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
@@ -80,6 +85,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-load-with-S1--produce-S0-at-T1
   (declare (salience ?*PRIORITY-SUBTASK-2*))
   (phase PRODUCTION)
@@ -98,6 +104,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-load-with-S1--bring-S1-to-machine
   (declare (salience ?*PRIORITY-SUBTASK-2*))
   (phase PRODUCTION)
@@ -113,6 +120,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-load-with-S1--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
@@ -144,6 +152,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-pick-and-deliver--deliver
   (declare (salience ?*PRIORITY-SUBTASK-2*))
   (phase PRODUCTION)
@@ -161,6 +170,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-pick-and-deliver--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
@@ -190,6 +200,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-pick-and-load--load-machine
   (declare (salience ?*PRIORITY-SUBTASK-2*))
   (phase PRODUCTION)
@@ -206,6 +217,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-pick-and-load--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
@@ -235,6 +247,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-recycle--recycle
   (declare (salience ?*PRIORITY-SUBTASK-2*))
   (phase PRODUCTION)
@@ -250,6 +263,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-recycle--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
@@ -261,6 +275,7 @@
   (retract ?s)
   (assert (state TASK-FINISHED))
 )
+
 (defrule task-recycle--handle-fail
   (phase PRODUCTION)
   ?t <- (task (name recycle) (args $?a) (state ~finished))
@@ -275,7 +290,6 @@
 ;;;;;;;;;;;;;;;;;;;;
 ;goto-error-handling
 ;;;;;;;;;;;;;;;;;;;;
-
 (defrule task-common--goto-failed
   (phase PRODUCTION)
   ?t <- (task (name ?name) (args $?a) (state ~finished))
@@ -304,6 +318,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-load-with-S2--finish
   (declare (salience ?*PRIORITY-SUBTASK-2*))
   (phase PRODUCTION)
@@ -337,6 +352,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-deliver--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
@@ -367,6 +383,7 @@
   )
   (modify ?t (state running))
 )
+
 (defrule task-recycle-holding--finish
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
