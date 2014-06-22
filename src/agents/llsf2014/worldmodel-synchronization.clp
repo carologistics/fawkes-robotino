@@ -34,7 +34,9 @@
       (pb-add-list ?m-msg "incoming_agent" (str-cat ?incoming-agent))
     )
     ;set production finished time
-    (pb-set-field ?m-msg "prod_finished_time" ?machine:final-prod-time)
+    (pb-set-field ?m-msg "prod_finished_time" (nth$ 1 ?machine:final-prod-time))
+    ;set out-of-order-until
+    (pb-set-field ?m-msg "out_of_order_until" (nth$ 1 ?machine:out-of-order-until))
     ;set puck under rfid
     (if (neq ?machine:produced-puck NONE) then
       (pb-set-field ?m-msg "puck_under_rfid" ?machine:produced-puck)
@@ -91,6 +93,8 @@
       )
       ;update production finished time
       (bind ?prod-finished-time (pb-field-value ?m-msg "prod_finished_time"))
+      ;update out-of-order-until
+      (bind ?out-of-order-until (pb-field-value ?m-msg "out_of_order_until"))
       (if (pb-has-field ?m-msg "puck_under_rfid")
 	then (bind ?puck-under-rfid (sym-cat (pb-field-value ?m-msg "puck_under_rfid")))
 	else (bind ?puck-under-rfid NONE)
@@ -108,6 +112,7 @@
 		       (produced-puck ?puck-under-rfid) (produce-blocked ?produce-blocked)
 		       (recycle-blocked ?recycle-blocked) (junk ?junk)
 		       (incoming-agent ?incoming-agent)
+		       (out-of-order-until (create$ ?out-of-order-until 0))
       )
     )
     (retract ?msg)
@@ -158,6 +163,9 @@
   )
   (if (eq ?change SET_PROD_FINISHED_TIME) then
     (pb-set-field ?change-msg "prod_finished_time" ?amount)
+  )
+  (if (eq ?change SET_OUT_OF_ORDER_UNTIL) then
+    (pb-set-field ?change-msg "out_of_order_until" ?amount)
   )
   (if (eq ?change ADD_IN_DELIVERY) then
     (pb-set-field ?change-msg "in_delivery" ?amount)
@@ -218,8 +226,11 @@
             (modify ?machine (junk (pb-field-value ?p "num_CO")))
           )
           (case SET_PROD_FINISHED_TIME then 
-            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time")) 0))
+            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time") 0)))
           )
+	  (case SET_OUT_OF_ORDER_UNTIL then
+	    (modify ?machine (out-of-order-until (create$ (pb-field-value ?p "out_of_order_until") 0)))
+	  )
           (case REMOVE_PRODUCED then 
             (modify ?machine (produced-puck NONE))
           )

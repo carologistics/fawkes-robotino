@@ -94,7 +94,7 @@
   (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (x ?goal-x) (y ?goal-y))
   (pose (x ?pos-x) (y ?pos-y))
   (team-color ?team&~nil)
-  ?s <- (state GET-S0-FINAL|TASK-ORDERED)
+  ?s <- (state GET-S0-FINAL|TASK-ORDERED|GOTO-FINAL-OUT-OF-ORDER)
   =>
   (bind ?m-T1 (tac-find-best-T1 (nth$ 1 ?a) ?goal-x ?goal-y ?pos-x ?pos-y ?team))
   (retract ?s)
@@ -294,6 +294,20 @@
   (phase PRODUCTION)
   ?t <- (task (name ?name) (args $?a) (state ~finished))
   ?s <- (state GOTO-FAILED)
+  =>
+  (modify ?t (state failed))
+  (retract ?s)
+  (assert (state TASK-FAILED))
+)
+
+;;;;;;;;;;;;;;;;;;;;
+;goto-handle-out-of-order-abort
+;;;;;;;;;;;;;;;;;;;;
+(defrule task-common--goto-out-of-order-aborted
+  "let task fail after we aborted at a out of order machine"
+  (phase PRODUCTION)
+  ?t <- (task (name ?name) (args $?a) (state ~finished))
+  ?s <- (state GOTO-FINAL-OUT-OF-ORDER)
   =>
   (modify ?t (state failed))
   (retract ?s)

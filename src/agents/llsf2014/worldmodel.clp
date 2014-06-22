@@ -171,6 +171,59 @@
   )
 )
 
+(defrule wm-out-of-order-proc-started
+  "machine out of order and we left the last puck there, so the machine starts producing when getting active again"
+  (declare (salience ?*PRIORITY-WM*))
+  (state GOTO-FINAL)
+  ?tf <- (goto-target ?name)
+  ?gtdw <- (goto-dont-wait true)
+  ?hf <- (holding ?was-holding)
+  ?lf <- (lights GREEN-OFF YELLOW-OFF RED-ON)
+  ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
+  (time $?now)
+  (production-time ?mtype ?min-prod-time ?)
+  (out-of-order-time max ?ooo-max)
+  (out-of-order-time recycle-max ?ooo-recycle-max)
+  =>
+  (retract ?hf ?lf ?tf ?gtdw)
+  (assert (holding NONE))
+  (printout t "Machine Out Of Order; Production starts afterwards at " ?name "|" ?mtype crlf)
+  (if (eq ?mtype RECYCLE)
+    then
+    (bind ?ooo-time ?ooo-recycle-max)
+    else
+    (bind ?ooo-time ?ooo-max)
+  )
+  (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding))
+	  (worldmodel-change (machine ?name) (change SET_PROD_FINISHED_TIME) (amount (+ (nth$ 1 ?now) ?min-prod-time ?ooo-time)))
+  )
+  (modify ?mf (out-of-order-until (create$ (+ (nth$ 1 ?now) ?ooo-time) 0)))
+)
+
+(defrule wm-out-of-order-goto-aborted
+  "machine out of order and we aborted loading the machine"
+  (declare (salience ?*PRIORITY-WM*))
+  ?s <- (state GOTO-FINAL)
+  ?tf <- (goto-target ?name)
+  ?gtdw <- (goto-dont-wait false)
+  ?lf <- (lights GREEN-OFF YELLOW-OFF RED-ON)
+  ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
+  (time $?now)
+  (out-of-order-time max ?ooo-max)
+  (out-of-order-time recycle-max ?ooo-recycle-max)
+  =>
+  (retract ?lf ?tf ?gtdw ?s)
+  (printout t "Machine Out Of Order; Loading/Producing this machine aborted at " ?name "|" ?mtype crlf)
+  (assert (state GOTO-FINAL-OUT-OF-ORDER))
+  (if (eq ?mtype RECYCLE)
+    then
+    (bind ?ooo-time ?ooo-recycle-max)
+    else
+    (bind ?ooo-time ?ooo-max)
+  )
+  (modify ?mf (out-of-order-until (create$ (+ (nth$ 1 ?now) ?ooo-time) 0)))
+)
+
 (defrule wm-proc-invalid
   (declare (salience ?*PRIORITY-WM*))
   ?s <- (state GOTO-FINAL)
@@ -369,6 +422,9 @@
     )
     (case SET_PROD_FINISHED_TIME then 
       (modify ?m (final-prod-time (create$ ?amount 0)))
+    )
+    (case SET_OUT_OF_ORDER_UNTIL then
+      (modify ?m (out-of-order-until (create$ ?amount 0)))
     )
     (case REMOVE_PRODUCED then 
       (modify ?m (produced-puck NONE))

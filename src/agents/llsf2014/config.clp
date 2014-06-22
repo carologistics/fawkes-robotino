@@ -64,3 +64,16 @@
     (production-time RECYCLE ?proc-min-time-recycle ?proc-max-time-recycle)
   )
 )
+
+(defrule conf-read-out-of-order-times
+  "Reads team specific ports for encrypted communication in the simulation from cfg/conf.d/clips-agent.yaml"
+  (confval (path "/clips-agent/llsf2014/out-of-order-times/min") (value ?min))
+  (confval (path "/clips-agent/llsf2014/out-of-order-times/max") (value ?max))
+  (confval (path "/clips-agent/llsf2014/out-of-order-times/recycle-min") (value ?recycle-min))
+  (confval (path "/clips-agent/llsf2014/out-of-order-times/recycle-max") (value ?recycle-max))
+  =>
+  (assert (out-of-order-time min ?min)
+	  (out-of-order-time max ?max)
+	  (out-of-order-time recycle-min ?recycle-min)
+	  (out-of-order-time recycle-max ?recycle-max))
+)

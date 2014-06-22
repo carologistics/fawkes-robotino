@@ -26,8 +26,8 @@
   (retract ?es ?s)
   (assert (goto-target ?name)
 	  (state GOTO)
-	  (goto-dont-wait ?dont-wait)
   )
+  (bind ?out-of-order "abort")
   (if (eq ?dont-wait true) then
     ;we have to wait if we bring a puck without starting the production
     ;becaule loading needs some time
@@ -36,12 +36,14 @@
 	    (and (eq ?mtype T2) (eq (length$ ?lw) 1)))
       then
       (bind ?dont-wait true)   
+      (bind ?out-of-order "leave")
 
       else
       (bind ?dont-wait false)
     )
   )
-  (skill-call finish_puck_at place ?name mtype ?mtype dont_wait ?dont-wait)
+  (assert (goto-dont-wait ?dont-wait))
+  (skill-call finish_puck_at place ?name mtype ?mtype dont_wait ?dont-wait out_of_order ?out-of-order)
 )
 
 (defrule skill-call-finish_puck_at_deliver
@@ -53,7 +55,7 @@
   (assert (goto-target ?place)
 	  (state GOTO)
   )
-  (skill-call finish_puck_at place ?place mtype DE dont_wait false)
+  (skill-call finish_puck_at place ?place mtype DE dont_wait false out_of_order ignore)
 )
 
 (defrule skill-call-get-s0
