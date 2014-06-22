@@ -7,7 +7,8 @@ plugins/laser-filter:
   urg:
 
     # URG input interface
-    in/urg: Laser360Interface::Laser urg
+    #in/urg: Laser360Interface::Laser urg
+    in/sick-tim55x: Laser360Interface::Laser tim55x
 
     # URG filtered output interface
     out/filtered: Laser360Interface::Laser urg filtered
