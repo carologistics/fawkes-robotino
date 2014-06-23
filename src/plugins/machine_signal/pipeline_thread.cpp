@@ -418,6 +418,8 @@ list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get
     try {
       if (bb_pos && bb_pos->has_writer() && bb_pos->visibility_history() >= (long int) cfg_lasercluster_min_vis_hist_) {
 
+        bb_pos->read();
+
         // Transform laser cluster into camera frame
         Stamped<Point> cluster_laser, cluster_cam;
         cluster_laser.setX(bb_pos->translation(0));
