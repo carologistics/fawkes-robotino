@@ -243,7 +243,7 @@ void MachineSignalPipelineThread::init()
   cfg_cam_aperture_x_ = config->get_float(CFG_PREFIX "/lasercluster/cam_aperture_x");
   cfg_cam_aperture_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_aperture_y");
   cfg_cam_angle_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_angle");
-  cfg_cam_frame_ = config->get_float(CFG_PREFIX "/lasercluster/cam_frame");
+  cfg_cam_frame_ = config->get_string(CFG_PREFIX "/lasercluster/cam_frame");
 
   point2pixel_ = new PixelFromPosition(
     tf_listener,
