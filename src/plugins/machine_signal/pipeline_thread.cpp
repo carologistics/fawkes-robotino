@@ -415,11 +415,11 @@ list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get
 {
   list<WorldROI> *rv = new list<WorldROI>(3);
   for (Position3DInterface *bb_pos : bb_laser_clusters_) {
+
+    bb_pos->read();
+
     try {
       if (bb_pos && bb_pos->has_writer() && bb_pos->visibility_history() >= (long int) cfg_lasercluster_min_vis_hist_) {
-
-        bb_pos->read();
-
         // Transform laser cluster into camera frame
         Stamped<Point> cluster_laser, cluster_cam;
         cluster_laser.setX(bb_pos->translation(0));
@@ -524,7 +524,7 @@ void MachineSignalPipelineThread::loop()
   Time now(clock);
   double frametime = now - last_second_;
   last_second_ = &(last_second_->stamp());
-  if (frametime >= desired_frametime_ * 1.02) {
+  if (frametime >= desired_frametime_ * 1.05) {
     logger->log_warn(name(), "Running too slow (%f sec/frame). Blink detection will be unreliable!", frametime);
   }
 
