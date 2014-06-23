@@ -115,3 +115,14 @@ plugins/machine_signal:
     neighborhood_min_match: 2
     min_area_cover: 0.1
 
+  lasercluster:
+    min_visibility_history: 10
+    laser_frame: /base_laser
+    signal_width: 0.037
+    signal_bottom: 0.15
+    signal_top: 0.27
+    cam_aperture_x: 1.32
+    cam_aperture_y: 0.85
+    cam_angle: 0.081
+    cam_frame: /cam_front
+
