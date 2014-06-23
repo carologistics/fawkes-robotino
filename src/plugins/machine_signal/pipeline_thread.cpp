@@ -411,9 +411,9 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
 }
 
 
-vector<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get_laser_rois()
+list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get_laser_rois()
 {
-  vector<WorldROI> *rv = new vector<WorldROI>(3);
+  list<WorldROI> *rv = new list<WorldROI>(3);
   for (Position3DInterface *bb_pos : bb_laser_clusters_) {
     try {
       if (bb_pos && bb_pos->has_writer() && bb_pos->visibility_history() >= (long int) cfg_lasercluster_min_vis_hist_) {
@@ -464,6 +464,7 @@ vector<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_g
     }
     catch (OutOfBoundsException &e) { }
   }
+  rv->sort(sort_rois_by_area_);
   return rv;
 }
 
@@ -487,7 +488,7 @@ void MachineSignalPipelineThread::loop()
     std::list<ROI> *rois_R, *rois_G;
     MutexLocker lock(&cfg_mutex_);
 
-    vector<WorldROI> *cluster_rois = bb_get_laser_rois();
+    cluster_rois_ = bb_get_laser_rois();
 
     // Reallocate classifiers if their config changed
     if (unlikely(cfg_changed_
@@ -571,8 +572,8 @@ void MachineSignalPipelineThread::loop()
       color_filter_->apply();
 
       drawn_rois_.clear();
-      if (cluster_rois) {
-        drawn_rois_.insert(drawn_rois_.end(), cluster_rois->begin(), cluster_rois->end());
+      if (cluster_rois_) {
+        drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
       }
       if (!cfg_draw_processed_rois_) {
         drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());

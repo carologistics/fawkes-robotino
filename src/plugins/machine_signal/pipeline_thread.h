@@ -144,7 +144,8 @@ class MachineSignalPipelineThread :
         WorldROI() : ROI() { world_pos = NULL; }
     };
 
-    std::vector<WorldROI> *bb_get_laser_rois();
+    std::list<WorldROI> *bb_get_laser_rois();
+    std::list<WorldROI> *cluster_rois_;
     fawkes::Position3DInterface *bb_laser_clusters_[3];
     std::atomic<unsigned int> cfg_lasercluster_min_vis_hist_;
     std::string cfg_lasercluster_frame_;
