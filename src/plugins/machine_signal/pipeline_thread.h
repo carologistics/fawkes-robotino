@@ -208,6 +208,7 @@ class MachineSignalPipelineThread :
     void setup_color_classifier(color_classifier_context_t_ *classifier);
     void setup_camera();
     bool color_data_consistent(color_classifier_context_t_ *);
+    void reinit_color_config();
 
     struct {
         bool operator() (firevision::ROI r1, firevision::ROI r2) {

@@ -469,6 +469,52 @@ list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get
 }
 
 
+inline void MachineSignalPipelineThread::reinit_color_config()
+{
+  combined_colormodel_->delete_colors();
+
+  setup_color_classifier(&cfy_ctxt_red_);
+  setup_color_classifier(&cfy_ctxt_green_);
+  setup_color_classifier(&cfy_ctxt_red_delivery_);
+
+  combined_colormodel_->add_colors(cfy_ctxt_red_.color_class);
+  combined_colormodel_->add_colors(cfy_ctxt_red_delivery_.color_class);
+  combined_colormodel_->add_colors(cfy_ctxt_green_.color_class);
+
+  delete light_classifier_;
+  light_classifier_ = new SimpleColorClassifier(
+    light_scangrid_,
+    new ColorModelLuminance(cfg_light_on_threshold_),
+    cfg_light_on_min_points_,
+    8,
+    false,
+    cfg_light_on_min_neighborhood_,
+    0,
+    C_WHITE);
+
+  delete black_classifier_;
+  delete black_colormodel_;
+  black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
+  black_classifier_ = new SimpleColorClassifier(
+    black_scangrid_,
+    black_colormodel_,
+    cfg_black_min_points_,
+    6,
+    false,
+    cfg_black_min_neighborhood_,
+    0,
+    C_BLACK);
+
+  delete point2pixel_;
+  point2pixel_ = new PixelFromPosition(
+    tf_listener,
+    cfg_cam_frame_,
+    cfg_cam_aperture_x_,
+    cfg_cam_aperture_y_,
+    cam_width_,
+    cam_height_);
+}
+
 void MachineSignalPipelineThread::loop()
 {
   time_wait_->mark_start();
@@ -495,50 +541,7 @@ void MachineSignalPipelineThread::loop()
         && color_data_consistent(&cfy_ctxt_red_)
         && color_data_consistent(&cfy_ctxt_red_delivery_)
         && color_data_consistent(&cfy_ctxt_green_) )) {
-
-      combined_colormodel_->delete_colors();
-
-      setup_color_classifier(&cfy_ctxt_red_);
-      setup_color_classifier(&cfy_ctxt_green_);
-      setup_color_classifier(&cfy_ctxt_red_delivery_);
-
-      combined_colormodel_->add_colors(cfy_ctxt_red_.color_class);
-      combined_colormodel_->add_colors(cfy_ctxt_red_delivery_.color_class);
-      combined_colormodel_->add_colors(cfy_ctxt_green_.color_class);
-
-      delete light_classifier_;
-      light_classifier_ = new SimpleColorClassifier(
-        light_scangrid_,
-        new ColorModelLuminance(cfg_light_on_threshold_),
-        cfg_light_on_min_points_,
-        8,
-        false,
-        cfg_light_on_min_neighborhood_,
-        0,
-        C_WHITE);
-
-      delete black_classifier_;
-      delete black_colormodel_;
-      black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
-      black_classifier_ = new SimpleColorClassifier(
-        black_scangrid_,
-        black_colormodel_,
-        cfg_black_min_points_,
-        6,
-        false,
-        cfg_black_min_neighborhood_,
-        0,
-        C_BLACK);
-
-      delete point2pixel_;
-      point2pixel_ = new PixelFromPosition(
-        tf_listener,
-        cfg_cam_frame_,
-        cfg_cam_aperture_x_,
-        cfg_cam_aperture_y_,
-        cam_width_,
-        cam_height_);
-
+      reinit_color_config();
       cfg_changed_ = false;
     }
 
