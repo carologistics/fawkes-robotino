@@ -35,6 +35,7 @@ plugins/puck_vision:
   puck:
     radius: 0.03
     height: 0.02
+    dots_required: true
 
  #puck main color (RED)
     red:

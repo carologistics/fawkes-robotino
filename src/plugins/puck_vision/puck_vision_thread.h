@@ -154,6 +154,7 @@ private:
 	bool cfg_debugMessagesActivated_;
 	bool cfg_paintROIsActivated_;
 	bool cfg_changed_;
+	bool cfg_check_yellow_dots_;
 
 	std::string cfg_frame_;
 
