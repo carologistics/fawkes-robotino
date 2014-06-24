@@ -269,7 +269,7 @@ void TagVisionThread::create_tag_interface(size_t position){
 
 void TagVisionThread::update_blackboard(size_t marker_count){
     for(size_t i = 0; i < max_marker; i++){
-        if(i>marker_count){
+        if(i>=marker_count){
             if(tag_interfaces[i]==NULL){
                 continue;
             }
