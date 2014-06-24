@@ -389,6 +389,23 @@ nodes:
     pos: [-5.04, 1.68]
     properties:
       - orientation: 1.57
+# Wait points for machines in a row (free position of the four possible machine positions and WAIT_FOR_DELIVER for M12 and M24)
+  - name: WAIT_FOR_ROW_1
+    pos: [-3.92, 3.92]
+  - name: WAIT_FOR_ROW_2
+    pos: [-2.8, 2.8]
+  - name: WAIT_FOR_ROW_3
+    pos: [-1.68, 5.04]
+  - name: WAIT_FOR_ROW_4
+    pos: [-0.56, 3.92]
+  - name: WAIT_FOR_ROW_5
+    pos: [0.56, 3.92]
+  - name: WAIT_FOR_ROW_6
+    pos: [1.68, 5.04]
+  - name: WAIT_FOR_ROW_7
+    pos: [2.8, 2.8]
+  - name: WAIT_FOR_ROW_8
+    pos: [3.92, 3.92]
 
 # Exploration Points
 # TODO: optimize
@@ -592,19 +609,19 @@ connections:
   - [P94, M12H]
 
 # diagonal links
-
-  - [P22, P33]
-  - [P23, P32]
-  - [P13, P24]
-  - [P23, P14]
-  - [P43, P54]
-  - [P53, P44]
-  - [P53, P64]
-  - [P63, P54]
-  - [P72, P83]
-  - [P82, P73]
-  - [P83, P94]
-  - [P93, P84]
+# (unnecessary because of wait points at the diagonals)
+  # - [P22, P33]
+  # - [P23, P32]
+  # - [P13, P24]
+  # - [P23, P14]
+  # - [P43, P54]
+  # - [P53, P44]
+  # - [P53, P64]
+  # - [P63, P54]
+  # - [P72, P83]
+  # - [P82, P73]
+  # - [P83, P94]
+  # - [P93, P84]
 
 # connection of machines
 
@@ -690,3 +707,33 @@ connections:
   - [ExpM22, M22H]
   - [ExpM23, M23H]
   - [ExpM24, M24H]
+
+  # connection of wait points for rows
+  - [WAIT_FOR_ROW_1, P13]
+  - [WAIT_FOR_ROW_1, P14]
+  - [WAIT_FOR_ROW_1, P23]
+  - [WAIT_FOR_ROW_1, P24]
+  - [WAIT_FOR_ROW_2, P22]
+  - [WAIT_FOR_ROW_2, P23]
+  - [WAIT_FOR_ROW_2, P32]
+  - [WAIT_FOR_ROW_2, P33]
+  - [WAIT_FOR_ROW_3, P34]
+  - [WAIT_FOR_ROW_3, P44]
+  - [WAIT_FOR_ROW_4, P43]
+  - [WAIT_FOR_ROW_4, P44]
+  - [WAIT_FOR_ROW_4, P53]
+  - [WAIT_FOR_ROW_4, P54]
+  - [WAIT_FOR_ROW_5, P53]
+  - [WAIT_FOR_ROW_5, P54]
+  - [WAIT_FOR_ROW_5, P63]
+  - [WAIT_FOR_ROW_5, P64]
+  - [WAIT_FOR_ROW_6, P64]
+  - [WAIT_FOR_ROW_6, P74]
+  - [WAIT_FOR_ROW_7, P72]
+  - [WAIT_FOR_ROW_7, P73]
+  - [WAIT_FOR_ROW_7, P82]
+  - [WAIT_FOR_ROW_7, P83]
+  - [WAIT_FOR_ROW_8, P83]
+  - [WAIT_FOR_ROW_8, P84]
+  - [WAIT_FOR_ROW_8, P93]
+  - [WAIT_FOR_ROW_8, P94]
