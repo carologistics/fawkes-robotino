@@ -19,7 +19,7 @@
   ;find best T1
   (bind ?best-T1 NONE)
   (bind ?best-dist 1000.0)
-  (do-for-all-facts ((?m machine)) (and (eq T1 ?m:mtype) (eq ?m:team ?team) (not (any-factp ((?lock locked-resource)) (eq ?lock:resource ?m:name))))
+  (do-for-all-facts ((?m machine)) (and (eq T1 ?m:mtype) (eq ?m:team ?team) (not (any-factp ((?lock locked-resource)) (eq ?lock:resource ?m:name))) (eq (nth$ 1 ?m:out-of-order-until) 0))
     (bind ?dist (distance ?mid-x ?mid-y ?m:x ?m:y))
     (if (< ?dist ?best-dist) then
       (bind ?best-T1 ?m:name)
