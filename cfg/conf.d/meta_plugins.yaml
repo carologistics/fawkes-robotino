@@ -22,7 +22,7 @@ fawkes/meta_plugins:
   colli-log: robotino-nocam-colli,mongodb,mongodb-log
 
   # Robotino base meta plugin
-  robotino-base: robotino,laser,webview
+  robotino-base: robotino,webview
 
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,skiller
   gazsim-meta-ros: ros,robotino-ros-joints,ros-cmdvel,ros-odometry,ros-tf,ros-laserscan,ros-navigator,amcl,navgraph,gazsim-vis-localization
