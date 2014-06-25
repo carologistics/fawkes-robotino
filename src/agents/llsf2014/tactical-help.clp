@@ -152,3 +152,28 @@
     (modify ?m (priority 1))
   )
 )
+
+(deffacts tac-wait-positions
+  "facts to generate wait positions for each machine (Did not include this in the config because I would need a List of Lists)"
+  (common-wait-point WAIT_FOR_DELIVER_1 M12)
+  (common-wait-point WAIT_FOR_DELIVER_2 M24)
+  (common-wait-point WAIT_FOR_ROW_1 M21 M22 M23)
+  (common-wait-point WAIT_FOR_ROW_2 M18 M19 M20)
+  (common-wait-point WAIT_FOR_ROW_3 M15 M16 M17)
+  (common-wait-point WAIT_FOR_ROW_4 M13 M14 R2)
+  (common-wait-point WAIT_FOR_ROW_5 M1 M2 R1)
+  (common-wait-point WAIT_FOR_ROW_6 M3 M4 M5)
+  (common-wait-point WAIT_FOR_ROW_7 M6 M7 M8)
+  (common-wait-point WAIT_FOR_ROW_8 M9 M10 M11)
+)
+
+(defrule tac-create-wait-point-facts
+  "Convert the previously defined wait-point-lists to get a wait-point fact as for Ins and deliver"
+  ?cwp <- (common-wait-point ?wait-point $?reses)
+  (team-color CYAN|MAGENTA) ;to ensure the robot name is already set
+  =>
+  (foreach ?res ?reses
+    (assert (wait-point ?res ?*ROBOT-NAME* ?wait-point))
+  )
+  (retract ?cwp)
+)

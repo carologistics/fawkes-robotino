@@ -69,9 +69,15 @@
   ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   (wait-point ?res ?a ?wait-point)
   (not (driving-ro-wait-point))
+  (holding ?puck)
   =>
   (printout t "Waiting for lock of " ?res " at " ?wait-point crlf)
-  (skill-call ppgoto place (str-cat ?wait-point))
+  (if (eq ?puck NONE)
+    then
+    (skill-call ppgoto place (str-cat ?wait-point))
+    else
+    (skill-call take_puck_to place (str-cat ?wait-point))
+  )
   (assert (driving-to-wait-point))
 )
 
