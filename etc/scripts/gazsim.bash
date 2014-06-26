@@ -115,7 +115,6 @@ if [  $COMMAND  == kill ]; then
     killall gzserver
     killall gzclient
     killall fawkes
-    killall move_base
     killall roscore
     killall llsf-refbox
     killall llsf-refbox-shell
@@ -156,19 +155,6 @@ if [  $COMMAND  == start ]; then
 	    then
 		sleep 1s
 		gnome-terminal --tab -t Roscore3 -x bash -c "$startup_script_location -x roscore -p 11313 $KEEP"
-	    fi
-	fi
-	
-	sleep 2s #move_base quits if there is no roscore
-
-        #start move_bases
-	gnome-terminal --tab -t Move_base1 -x bash -c "$startup_script_location -x move_base -p 11311 $KEEP"
-	if [ $NUM_ROBOTINOS -ge 2 ]
-	then
-	    gnome-terminal --tab -t Move_base2 -x bash -c "$startup_script_location -x move_base -p 11312 $KEEP"
-	    if [ $NUM_ROBOTINOS -ge 3 ]
-	    then
-		gnome-terminal --tab -t Move_base3 -x bash -c "$startup_script_location -x move_base -p 11313 $KEEP"
 	    fi
 	fi
     fi
