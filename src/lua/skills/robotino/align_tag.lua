@@ -84,8 +84,8 @@ function DRIVE:init()
 	local found_y = tag_0:translation(1)
 	local found_ori = -tag_0:rotation(0)
 	-- calculate transition -> to approach the tag
-	local delta_x = found_x - (self.fsm.vars.x * math.cos(found_ori))
-	local delta_y = found_y - (self.fsm.vars.x * math.sin(found_ori))
+	local delta_x = found_x - (self.fsm.vars.x * math.cos(found_ori) + self.fsm.vars.y * (-1 * math.sin(found_ori)))
+	local delta_y = found_y - (self.fsm.vars.x * math.sin(found_ori) + self.fsm.vars.y * math.cos(found_ori))
 	-- enlarge found values to activate the motor
 	if math.abs(delta_x) < 0.04 and math.abs(delta_y) < 0.04 then
 		delta_x = delta_x * 2 
