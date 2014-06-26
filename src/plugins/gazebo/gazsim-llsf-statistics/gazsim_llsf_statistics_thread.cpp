@@ -38,6 +38,8 @@
 #include <mongo/client/dbclient.h>
 #include <mongo/client/gridfs.h>
 
+#include <utils/misc/string_conversions.h>
+
 using namespace fawkes;
 using namespace gazebo;
 using namespace mongo;
@@ -117,7 +119,7 @@ void LlsfStatisticsSimThread::write_statistics()
 
     //get refbox game summery from ninja bash script
     std::string refbox_log_file = replay_ + "/refbox.log";
-    std::string command = std::string("~/fawkes-robotino/etc/scripts/gazsim-get-refbox-summery.bash ") + refbox_log_file;
+    std::string command = StringConversions::resolve_path(config->get_string("/gazsim/llsf-statistics/get-refbox-summary-script")) + " " + refbox_log_file;
     logger->log_info(name(), "command %s\n", command.c_str());
     FILE *bash_output = popen(command.c_str(), "r");
     std::string refbox_score_log = "";

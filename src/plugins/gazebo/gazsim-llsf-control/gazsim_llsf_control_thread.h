@@ -31,6 +31,8 @@
 #include <plugins/gazebo/aspect/gazebo.h>
 #include <interfaces/Position3DInterface.h>
 #include <llsf_msgs/GameState.pb.h>
+#include <llsf_msgs/GameInfo.pb.h>
+#include <llsf_msgs/Team.pb.h>
 #include <string.h>
 
 //from Gazebo
@@ -45,6 +47,8 @@ namespace fawkes {
 
 typedef const boost::shared_ptr<llsf_msgs::GameState const> ConstGameStatePtr;
 typedef const boost::shared_ptr<llsf_msgs::SetGameState const> ConstSetGameStatePtr;
+typedef const boost::shared_ptr<llsf_msgs::SetGamePhase const> ConstSetGamePhasePtr;
+typedef const boost::shared_ptr<llsf_msgs::SetTeamName const> ConstSetTeamNamePtr;
 
 class LlsfControlSimThread
 : public fawkes::Thread,
@@ -67,20 +71,26 @@ class LlsfControlSimThread
   gazebo::transport::SubscriberPtr game_state_sub_;
   //Publisher to start the refbox
   gazebo::transport::PublisherPtr set_game_state_pub_;
+  gazebo::transport::PublisherPtr set_game_phase_pub_;
+  gazebo::transport::PublisherPtr set_team_name_pub_;
 
   //config values
   bool start_game_automatically_;
   float time_to_wait_before_start_;
+  float time_to_wait_before_set_team_;
   bool post_game_simulation_shutdown_;
   float time_to_wait_before_shutdown_;
   std::string fawkes_path_;
   std::string simulation_shutdown_script_;
+  std::string team_name_;
+  std::string team_color_;
   
   //handler functions
   void on_game_state_msg(ConstGameStatePtr &msg);
 
   //helper variables
   float start_time_;
+  bool team_sent_;
   bool start_sent_;
   bool shutdown_initiated_;
   float shutdown_initiated_time_;
