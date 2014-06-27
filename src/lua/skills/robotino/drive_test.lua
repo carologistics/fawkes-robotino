@@ -4,6 +4,7 @@
 --
 --  Created: Sat Jun 14 15:13:19 2014
 --  Copyright  2014  Frederik Zwilling
+--             2014  Tobias Neumann
 --
 ----------------------------------------------------------------------------
 
@@ -24,43 +25,42 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "drive_test"
-fsm                = SkillHSM:new{name=name, start="GOTO_1", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"ppgoto"}
 depends_interfaces = {
    {v = "ppnavi", type = "NavigatorInterface"},
    {v = "motor", type = "MotorInterface", id="Robotino"}
 }
 
-documentation      = [==[Drives between two navgraph-points there and back
+documentation      = [==[Drives between the given list of navgraph-points
 
 Parameters:
-      z1: Point to drive to first
-      z2: Point to drive to second
+      pps: List of points to drive to e.g. drive_test{pps={"P64", "P92", "P73", "P62", "P93"}}
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-
 fsm:define_states{ export_to=_M,
-   {"GOTO_1", SkillJumpState, skills={{ppgoto}}, final_to="GOTO_2", fail_to="FAILED"},
-   {"GOTO_2", SkillJumpState, skills={{ppgoto}}, final_to="GOTO_1", fail_to="FAILED"}
+   {"INIT", JumpState},
+   {"GOTO", SkillJumpState, skills={{ppgoto}}, final_to="GOTO", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
+   {"INIT", "GOTO", timeout=1}
 }
 
-function GOTO_1:init()
-   if self.fsm.vars.z1 == nil then
-      printf("No place for z1 given!")
-   end
-
-   self.skills[1].place = self.fsm.vars.z1
+function INIT:init() 
+   fsm.vars.table_size = table.getn( self.fsm.vars.pps )             -- get list of targets
+   fsm.vars.table_pos  = 1
 end
 
-function GOTO_2:init()
-   if self.fsm.vars.z2 == nil then
-      printf("No place for z2 given!")
+function GOTO:init()
+   if fsm.vars.table_pos > fsm.vars.table_size then                  -- if at end, start restart
+      fsm.vars.table_pos = 1
    end
+   fsm.vars.next_target = self.fsm.vars.pps[fsm.vars.table_pos]      -- get next target
+   
+   fsm.vars.table_pos = fsm.vars.table_pos + 1                       -- increment list position
 
-   self.skills[1].place = self.fsm.vars.z2
+   self.skills[1].place = fsm.vars.next_target
 end
