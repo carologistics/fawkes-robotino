@@ -89,6 +89,11 @@ clips-agent:
       t5-max: 40
       recycle-min: 2
       recycle-max: 2
+    out-of-order-times:
+      max: 120
+      min: 30
+      recycle-max: 40
+      recycle-min: 20
 
     exploration:      
       #row defined in host.yaml (this is only the default!)
