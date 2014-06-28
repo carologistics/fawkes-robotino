@@ -344,19 +344,34 @@ nodes:
     pos: [1.98, 1.0]
     properties:
       - highway_exit
+  - name: IA1H2
+    pos: [1.38, 1.0]
+    properties:
+      - highway_exit
   - name: Ins1
     pos: [1.98, 0.80]
+    properties:
+      - orientation: -1.57
+  - name: Ins1Sec
+    pos: [1.38, 0.80]
     properties:
       - orientation: -1.57
   - name: IA2H
     pos: [-1.38, 1.0]
     properties:
       - highway_exit
+  - name: IA2H2
+    pos: [-1.98, 1.0]
+    properties:
+      - highway_exit
   - name: Ins2
     pos: [-1.38, 0.80]
     properties:
       - orientation: -1.57
-
+  - name: Ins2Sec
+    pos: [-1.98, 0.80]
+    properties:
+      - orientation: -1.57
   - name: WAIT_FOR_INS_1_ROBOTINO_1
     pos: [3.36, 0.56]
     properties:
@@ -657,9 +672,15 @@ connections:
   - [IA1H, P61]
   - [IA1H, P71]
   - [IA1H, Ins1]
+  - [IA1H2, P61]
+  - [IA1H2, P71]
+  - [IA1H2, Ins1Sec]
   - [IA2H, P31]
   - [IA2H, P41]
   - [IA2H, Ins2]
+  - [IA2H2, P31]
+  - [IA2H2, P41]
+  - [IA2H2, Ins2Sec]
 
   - [D11,  deliver1]
   - [D12,  deliver1]

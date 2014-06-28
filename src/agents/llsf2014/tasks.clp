@@ -26,14 +26,29 @@
   (holding NONE)
   ?s <- (state TASK-ORDERED)
   (team-color ?team)
-  (input-storage ?team ?ins ? ?)
+  (input-storage ?team ?ins ? ? )
+  (secondary-storage ?team ?inssec ? ?)
+  ?svis <- (secondary-visited ?vis)
   =>
   (retract ?s)
-  (assert (execute-skill get_s0 ?ins)
-          (state WAIT-FOR-LOCK)
-	  (wait-for-lock (priority ?p) (res ?ins))
+  (if (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (not ?vis))
+
+    then
+    (assert (execute-skill get_s0 ?inssec)
+      (state WAIT-FOR-LOCK)
+	    (wait-for-lock (priority ?p) (res ?inssec))
+    )
+    (modify ?t (state running))
+    (retract ?svis)
+    (assert (secondary-visited TRUE))
+
+    else
+    (assert (execute-skill get_s0 ?ins)
+      (state WAIT-FOR-LOCK)
+  	  (wait-for-lock (priority ?p) (res ?ins))
+    )
+    (modify ?t (state running))
   )
-  (modify ?t (state running))
 )
 
 (defrule task-load-with-S0--bring-to-machine
