@@ -107,6 +107,7 @@
   (slot recycle-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot doubtful-worldmodel (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot priority (type INTEGER) (default 0))
+  (multislot out-of-order-until (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
 )
 
 (deftemplate order
@@ -145,7 +146,7 @@
 (deftemplate worldmodel-change
   (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24 D1 D2 D3 R1 R2 NONE) (default NONE))
   (slot order (type INTEGER) (default 0))
-  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME REMOVE_PRODUCED SET_PRODUCE_BLOCKED RESET_PRODUCE_BLOCKED SET_RECYCLE_BLOCKED SET_DOUBTFUL_WORLDMODEL ADD_IN_DELIVERY))
+  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME REMOVE_PRODUCED SET_PRODUCE_BLOCKED RESET_PRODUCE_BLOCKED SET_RECYCLE_BLOCKED SET_DOUBTFUL_WORLDMODEL ADD_IN_DELIVERY SET_OUT_OF_ORDER_UNTIL))
   (slot value (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO NOTHING S0 S1 S2 P1 P2 P3) (default NOTHING))
   (slot amount (type INTEGER) (default 0))
   (slot already-applied (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))

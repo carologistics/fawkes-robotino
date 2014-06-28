@@ -30,6 +30,7 @@ enum WorldmodelChangeType {
   SET_DOUBTFUL_WORLDMODEL = 9;
   ADD_IN_DELIVERY = 10;
   RESET_PRODUCE_BLOCKED = 11;
+  SET_OUT_OF_ORDER_UNTIL = 12;
 }
 
 message MachineState {
@@ -49,6 +50,7 @@ message MachineState {
   optional uint32 order = 9;
   optional uint32 in_delivery = 10;
   required uint32 junk = 11;
+  required uint32 out_of_order_until = 12;
 }
 
 message WorldmodelOrder {
@@ -91,6 +93,7 @@ message WorldmodelChange {
   optional uint32 num_CO = 7;
   optional uint32 prod_finished_time = 8;
   optional uint32 order = 9;
+  optional uint32 out_of_order_until = 10;
 }
 
 message WorldmodelChangeAck {
