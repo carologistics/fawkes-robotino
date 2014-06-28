@@ -251,7 +251,8 @@ void MachineSignalPipelineThread::init()
     cfg_cam_aperture_x_,
     cfg_cam_aperture_y_,
     cam_width_,
-    cam_height_);
+    cam_height_,
+    cfg_cam_angle_y_);
 
   // Setup combined ColorModel for tuning filter
   combined_colormodel_ = new ColorModelSimilarity();
@@ -413,7 +414,7 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
 
 list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get_laser_rois()
 {
-  list<WorldROI> *rv = new list<WorldROI>(3);
+  list<WorldROI> *rv = new list<WorldROI>();
   for (Position3DInterface *bb_pos : bb_laser_clusters_) {
 
     bb_pos->read();
@@ -426,7 +427,8 @@ list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get
         cluster_laser.setY(bb_pos->translation(1));
         cluster_laser.setZ(bb_pos->translation(2));
         cluster_laser.frame_id = cfg_lasercluster_frame_;
-        cluster_laser.stamp = clock;
+        cluster_laser.stamp = Time(0,0);
+
         tf_listener->transform_point(cfg_cam_frame_, cluster_laser, cluster_cam);
 
         // Then compute the upper left and bottom right corner we expect to see
@@ -435,12 +437,12 @@ list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get
         float x = cluster_cam.getX();
         float y = cluster_cam.getY();
         float phi = atan2f(y, x);
-        float edge_x = cosf(phi) * cfg_lasercluster_signal_radius_;
-        float edge_y = sinf(phi) * cfg_lasercluster_signal_radius_;
+        float edge_x = sinf(phi) * cfg_lasercluster_signal_radius_;
+        float edge_y = cosf(phi) * cfg_lasercluster_signal_radius_;
 
         top_left.x = cluster_cam.x() - edge_x;
         top_left.y = cluster_cam.y() + edge_y;
-        top_left.z = cfg_lasercluster_signal_top_;
+        top_left.z = cfg_lasercluster_signal_top_; // Fehler: top_left == /cam_front, signal_top == /base_link
 
         bottom_right.x = cluster_cam.x() + edge_x;
         bottom_right.y = cluster_cam.y() - edge_y;
@@ -464,7 +466,12 @@ list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get
         rv->push_back(cluster_roi);
       }
     }
-    catch (OutOfBoundsException &e) { }
+    catch (OutOfBoundsException &e) {
+      logger->log_debug(name(), e);
+    }
+    catch (Exception &e) {
+      logger->log_error(name(), e);
+    }
   }
   rv->sort(sort_rois_by_area_);
   return rv;
@@ -524,7 +531,7 @@ void MachineSignalPipelineThread::loop()
   Time now(clock);
   double frametime = now - last_second_;
   last_second_ = &(last_second_->stamp());
-  if (frametime >= desired_frametime_ * 1.05) {
+  if (frametime >= desired_frametime_ * 1.03) {
     logger->log_warn(name(), "Running too slow (%f sec/frame). Blink detection will be unreliable!", frametime);
   }
 
