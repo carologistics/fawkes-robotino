@@ -20,6 +20,7 @@
   ?*PRIORITY-LAST*    = -500
 
   ; production order priorities
+  ?*PRIORITY-JUST-IN-TIME-P3* = 105
   ?*PRIORITY-DELIVER-P3* = 100
   ?*PRIORITY-DELIVER-P1P2* = 100
   ?*PRIORITY-RECYCLE* = 90

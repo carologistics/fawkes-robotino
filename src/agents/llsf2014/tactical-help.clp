@@ -99,6 +99,18 @@
   )
 )
 
+(defrule tac-switch-T3-T4-prioritization
+  "When the first P1 or P2 was produced the next highest priority is to produce the other product type to satisfy both orders"
+  (declare (salience ?*PRIORITY-WM*))
+  (team-color ?team&~nil)
+  ?m-finished <- (machine (name ?name-finished) (mtype T3|T4) (team ?team) (priority 4) (produced-puck P1|P2))
+  ?m-unfinished <- (machine (name ?name-unfinished) (mtype T3|T4) (team ?team) (priority 3) (produced-puck NONE))
+  =>
+  (printout t "Changing Priorities of " ?name-finished " and " ?name-unfinished crlf)
+  (modify ?m-finished (priority 3))
+  (modify ?m-unfinished (priority 4))
+)
+
 (defrule tac-prioritize-T2
   "Prioritize T2 machines to determine which should be loaded first."
   (declare (salience ?*PRIORITY-WM*))
@@ -176,4 +188,18 @@
     (assert (wait-point ?res ?*ROBOT-NAME* ?wait-point))
   )
   (retract ?cwp)
+)
+
+(defrule tac-no-more-P3-needed
+  "Decide when we need no more P3 (there are only three orders for it)"
+  (phase PRODUCTION)
+  (game-time $?time)
+  (order (id ?id1) (product P3)
+	 (end ?end1&:(> (nth$ 1 ?time) ?end1)))
+  (order (id ?id2&:(neq ?id1 ?id2)) (product P3)
+	 (end ?end2&:(> (nth$ 1 ?time) ?end2)))
+  (order (id ?id3&:(and (neq ?id3 ?id2) (neq ?id3 ?id1))) (product P3)
+	 (end ?end3&:(> (nth$ 1 ?time) ?end3)))  
+  =>
+  (assert (no-more-needed P3))
 )

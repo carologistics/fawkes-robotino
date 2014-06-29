@@ -9,28 +9,6 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-;;;;;;;;;;;;;;;;;;;;;;;;;
-;role change P3->nothing
-;;;;;;;;;;;;;;;;;;;;;;;;;
-(defrule prod-role-P3-change-after-all-p3-orders
-  "Drop the P3 role when there are no more P3 orders."
-  (phase PRODUCTION)
-  ?r <- (role P3-ONLY)
-  (game-time $?time)
-  (order (id ?id1) (product P3)
-	 (end ?end1&:(> (nth$ 1 ?time) ?end1)))
-  (order (id ?id2&:(neq ?id1 ?id2)) (product P3)
-	 (end ?end2&:(> (nth$ 1 ?time) ?end2)))
-  (order (id ?id3&:(and (neq ?id3 ?id2) (neq ?id3 ?id1))) (product P3)
-	 (end ?end3&:(> (nth$ 1 ?time) ?end3)))  
-  =>
-  (printout warn "changing role from P3-ONLY to nothing because there are no more orders" crlf)
-  (retract ?r)
-  (assert (role nothing))
-)
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; decision rules for the next most important task to propose
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -93,6 +71,9 @@
   (holding NONE)
   ;(not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P3*))))
   (role P3-ONLY)
+  (not (locked-resource (agent ?a&:(neq (sym-cat ?a) (sym-cat ?*ROBOT-NAME*)))
+			(resource P3-ONLY))) ;only if there is no other P3 agent
+  (not (no-more-needed P3))
   (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-DELIVER-P3*))))
   =>
   (printout t "PROD: Deliver P3 from " ?name crlf)
@@ -397,26 +378,32 @@
   ;(not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
   ;(not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T5-WITH-S0*))))
-  (role P3-ONLY)
+  (not (locked-resource (resource P3-ONLY))) ;load only if there is no P3 agent
+  (not (no-more-needed P3))
   =>
   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
   (assert (proposed-task (name load-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T5-WITH-S0*))
   )
 )
 
-; (defrule prod-wait-in-front-of-T5-with-S0
-;   (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))
-;   (phase PRODUCTION)
-;   (state IDLE)
-;   (team-color ?team-color&~nil)
-;   (machine (mtype T5) (name ?name) (team ?team-color))
-;   (holding NONE)
-;   (role P3-ONLY)
-;   =>
-;   (printout t "PROD: Loading T5 " ?name " with S0" crlf)
-;   (assert (proposed-task (name wait-at-T5) (args (create$ ?name)) (priority ?*PRIORITY-LOAD-T5-WITH-S0*))
-;   )
-; )
+(defrule prod-just-in-time-P3-production
+  "Only for P3-Only agent. Drive to T5 start producing when an order is there and deliver it."
+  (declare (salience ?*PRIORITY-JUST-IN-TIME-P3*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (team-color ?team-color&~nil)
+  (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
+    (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name)
+    (produced-puck NONE) (team ?team-color)
+  )
+  (holding NONE|S0)
+  (role P3-ONLY)
+  (not (no-more-needed P3))
+  =>
+  (printout t "PROD: Doing just-in-time production at T5 " ?name crlf)
+  (assert (proposed-task (name just-in-time-P3) (args (create$ ?name)) (priority ?*PRIORITY-JUST-IN-TIME-P3*))
+  )
+)
 
 (defrule prod-deliver-unintentionally-holding-produced-puck
   "If holding a puck that should not be held (e.g. picked it up while driving) deliver it."

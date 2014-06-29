@@ -14,6 +14,7 @@
 ; - pick-and-load             get S2 from T2 and bring it to T3/T4
 ; - pick-and-deliver          get P1/P2/P3 from T3/T4/T5 and deliver it
 ; - recycle                   get CO and recycle
+; - just-in-time-P3           get S0, wait at T5, start production shortly before order, deliver, again until no more P3's are needed
 ;---------------------------------------------------------------------------
 
 ;;;;;;;;;;;;;;
@@ -419,6 +420,106 @@
   ?t <- (task (name recycle-holding) (args $?a) (state ~finished))
   (holding S0)
   ?s <- (state GOTO-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
+
+;;;;;;;;;;;;;;
+; just-in-time-P3
+;;;;;;;;;;;;;;
+(defrule task-just-in-time-P3--start-get-S0
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name just-in-time-P3) (args $?a) (state ~finished) (priority ?p))
+  (holding NONE)
+  ?s <- (state TASK-ORDERED|TAKE-PUCK-TO-FAILED|GOTO-FINAL)
+  (team-color ?team)
+  (input-storage ?team ?ins ? ?)
+  =>
+  (retract ?s)
+  (assert (execute-skill get_s0 ?ins)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?ins))
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-just-in-time-P3--drive-to-machine
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name just-in-time-P3) (args $?a) (state ~finished) (priority ?p))
+  (holding S0)
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
+  ?s <- (state GET-S0-FINAL|TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill take_puck_to ?m)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?m) (state use));so the locking is ommited
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-just-in-time-P3--wait-for-order
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  (task (name just-in-time-P3) (args $?a) (state ~finished) (priority ?p))
+  (holding S0)
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
+  ?s <- (state TAKE-PUCK-TO-FINAL)
+  =>
+  (retract ?s)
+  (assert (state WAITING-FOR-P3-ORDER))
+)
+
+(defrule task-just-in-time-P3--produce
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name just-in-time-P3) (args $?a) (state ~finished) (priority ?p))
+  (holding S0)
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype T5))
+  ?s <- (state WAITING-FOR-P3-ORDER)
+  (game-time $?time)
+  (production-time T5 ?proc-min-time-t5 ?proc-max-time-t5)
+  (order (product P3) (quantity-requested ?qr) (quantity-delivered ?qd&:(< ?qd ?qr))
+	 (begin ?begin&:(<= (- ?begin ?proc-min-time-t5) (nth$ 1 ?time)))
+	 (end ?end&:(>= (- ?end ?proc-max-time-t5) (nth$ 1 ?time))))
+  =>
+  (retract ?s)
+  (assert (execute-skill finish_puck_at ?m T5 false)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?m) (state use));so the locking is ommited
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-just-in-time-P3--deliver
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name just-in-time-P3) (args $?a) (state ~finished) (priority ?p))
+  (holding P3)
+  ?s <- (state GOTO-FINAL|TASK-ORDERED)
+  (team-color ?team)
+  (deliver ?team ?deliver ? ?)
+  =>
+  (retract ?s)
+  (assert (execute-skill deliver ?deliver)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?deliver))
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-just-in-time-P3--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name just-in-time-P3) (args $?a) (state ~finished))
+  (holding NONE|S0)
+  ?s <- (state TASK-ORDERED|GOTO-FINAL|GET-S0-FINAL|TAKE-PUCK-TO-FINAL|WAITING-FOR-P3-ORDER)
+  (no-more-needed P3)
   =>
   (modify ?t (state finished))
   (retract ?s)
