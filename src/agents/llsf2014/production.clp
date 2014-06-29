@@ -55,7 +55,7 @@
 )
 
 (defrule prod-deliver-P3
-  "Role P3-ONLY: If we don't have anything to do, pick and deliver a P3."
+  "If we don't have anything to do, pick and deliver a P3."
   (declare (salience ?*PRIORITY-DELIVER-P3*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -63,14 +63,13 @@
   (machine (mtype T5) (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name) (produced-puck P3) (team ?team-color))
   (game-time $?time)
   (order (product P3) (quantity-requested ?qr) (id  ?order-id)
-	 ;(in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
 	 (quantity-delivered ?qd&:(< ?qd ?qr))
 	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
 	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
-  ;(not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name P3 (+ ?in-delivery 1) ?order-id))) (state rejected)))
+  (not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name P3 (+ ?in-delivery 1) ?order-id))) (state rejected)))
   (holding NONE)
-  ;(not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P3*))))
-  (role P3-ONLY)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P3*))))
   (not (locked-resource (agent ?a&:(neq (sym-cat ?a) (sym-cat ?*ROBOT-NAME*)))
 			(resource P3-ONLY))) ;only if there is no other P3 agent
   (not (no-more-needed P3))
@@ -78,8 +77,7 @@
   =>
   (printout t "PROD: Deliver P3 from " ?name crlf)
   (assert (proposed-task (name pick-and-deliver) (priority ?*PRIORITY-DELIVER-P3*)
-			 ;(args (create$ ?name P3 (+ ?in-delivery 1) ?order-id)))
-			 (args (create$ ?name P3 1 ?order-id)))
+			 (args (create$ ?name P3 (+ ?in-delivery 1) ?order-id)))
   )
 )
 
@@ -98,7 +96,6 @@
   (not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name ?puck  (+ ?in-delivery 1) ?order-id))) (state rejected)))
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P1P2*))))
-  (not (role P3-ONLY))
   (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-DELIVER-P1P2*))))
   =>
   (printout t "PROD: Deliver " ?puck " from " ?name crlf)
@@ -369,15 +366,15 @@
   "Load T5 with S0 if you are in P3-ONLY role."
   (declare (salience ?*PRIORITY-LOAD-T5-WITH-S0*))
   (phase PRODUCTION)
-  (state IDLE);|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
   (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
     (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE) (team ?team-color)
-    ;(out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0))
+    (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0))
   )
-  ;(not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  (not (proposed-task (name load-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
-  ;(not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T5-WITH-S0*))))
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-T5-WITH-S0*))))
   (not (locked-resource (resource P3-ONLY))) ;load only if there is no P3 agent
   (not (no-more-needed P3))
   =>
