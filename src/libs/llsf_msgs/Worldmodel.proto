@@ -15,6 +15,8 @@ enum IncomingAction {
   BRING_S2 = 2;
   PICK_PROD = 3;
   PICK_CO = 4;
+  STORE_PUCK = 5;
+  GET_STORED_PUCK = 6;
 }
 
 enum WorldmodelChangeType {
@@ -53,6 +55,18 @@ message MachineState {
   required uint32 out_of_order_until = 12;
 }
 
+message PuckStorageState {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 1347;
+  }
+
+  required string    name     = 1;
+  optional PuckState puck  = 2;
+  repeated IncomingAction incoming  = 3;
+  repeated string incoming_agent  = 4;
+}
+
 message WorldmodelOrder {
   enum CompType {
     COMP_ID  = 2000;
@@ -74,6 +88,7 @@ message Worldmodel {
   // List of machines states
   repeated MachineState machines = 1;
   repeated WorldmodelOrder orders = 2;
+  repeated PuckStorageState storage = 3;
 }
 
 message WorldmodelChange {

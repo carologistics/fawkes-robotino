@@ -73,6 +73,12 @@
 	      (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
     )
+    (case pick-and-store then
+      (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
+	      (needed-task-lock (action STORE_PUCK) (place (nth$ 3 ?a))
+				(resource (sym-cat STORE_PUCK "~" (nth$ 3 ?a)))))
+    )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )
 )
@@ -105,7 +111,7 @@
   (assert (state TASK-ORDERED))
   ;update worldmodel
   (do-for-all-facts ((?ntl needed-task-lock)) TRUE
-    (printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
+    ;(printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
     (if (eq ?ntl:place DELIVER)
       then
       (assert (worldmodel-change (order (nth$ 4 ?args)) (change ADD_IN_DELIVERY)

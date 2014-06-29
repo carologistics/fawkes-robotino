@@ -15,6 +15,7 @@
 ; - pick-and-deliver          get P1/P2/P3 from T3/T4/T5 and deliver it
 ; - recycle                   get CO and recycle
 ; - just-in-time-P3           get S0, wait at T5, start production shortly before order, deliver, again until no more P3's are needed
+; - pick-and-store            get produced puck and store it at some place
 ;---------------------------------------------------------------------------
 
 ;;;;;;;;;;;;;;
@@ -520,6 +521,54 @@
   (holding NONE|S0)
   ?s <- (state TASK-ORDERED|GOTO-FINAL|GET-S0-FINAL|TAKE-PUCK-TO-FINAL|WAITING-FOR-P3-ORDER)
   (no-more-needed P3)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
+;;;;;;;;;;;;;;;;;;
+; pick and store:
+;;;;;;;;;;;;;;;;;;
+(defrule task-pick-and-store--start-get-produced-puck
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-store) (args $?a) (state ~finished) (priority ?p))
+  (holding NONE)
+  ?s <- (state TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill get_produced (nth$ 1 ?a))
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res (nth$ 1 ?a)))
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-pick-and-store--store
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-store) (args $?a) (state ~finished) (priority ?p))
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (output ?output))
+  (holding ?output)
+  ?s <- (state GET-PRODUCED-FINAL)
+  (team-color ?team)
+  (puck-storage (name ?storage&:(eq ?storage (nth$ 3 ?a))))
+  =>
+  (retract ?s)
+  (assert (execute-skill store_puck ?storage)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?storage))
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-pick-and-store--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-store) (args $?a) (state ~finished))
+  (holding NONE)
+  ?s <- (state STORE-PUCK-FINAL)
   =>
   (modify ?t (state finished))
   (retract ?s)

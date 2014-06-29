@@ -461,3 +461,24 @@
   (assert (proposed-task (name recycle-holding) (args (create$ ?name)) (priority ?*PRIORITY-RECYCLE*))
   )
 )
+
+(defrule prod-store-product
+  "If there is a produced puck, we want to store it next to the delivery-gates to fulfill orders quicker and clear the machine."
+  (declare (salience ?*PRIORITY-STORE-PRODUCED*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (machine (mtype T3|T4|T5) (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name) (produced-puck ?puck&P1|P2|P3) (team ?team-color))
+  (puck-storage (name ?storage) (puck NONE) (team ?team-color)
+		(incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
+  (not (proposed-task (name pick-and-store) (args $?args&:(subsetp ?args (create$ ?name ?puck ?storage))) (state rejected)))
+  (holding NONE)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-STORE-PRODUCED*))))
+  (not (no-more-needed ?puck&:(eq ?puck P3))) ;store everything but unneded P3s
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-STORE-PRODUCED*))))
+  =>
+  (printout t "PROD: Store " ?puck " from " ?name " at " ?storage crlf)
+  (assert (proposed-task (name pick-and-store) (priority ?*PRIORITY-STORE-PRODUCED*)
+			 (args (create$ ?name ?puck ?storage)))
+  )
+)

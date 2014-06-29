@@ -388,6 +388,36 @@
   (assert (worldmodel-change (machine ?name) (change SET_PRODUCE_BLOCKED)))
 )
 
+(defrule wm-store-puck-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state STORE-PUCK-FINAL)
+  ?tf <- (store-puck-target ?name)
+  ?hf <- (holding ?puck)
+  ?mf <- (puck-storage (name ?name))
+  =>
+  (retract ?hf ?tf)
+  (assert (holding NONE))
+  (printout t "Successfully stored puck." crlf)
+  (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?puck)))
+)
+
+; (defrule wm-store-puck-failed
+; TODO
+;   (declare (salience ?*PRIORITY-WM*))
+;   (state STORE-PUCK-FAILED)
+;   ?tf <- (store-puck-target ?name)
+;   ?hf <- (holding ?puck)
+;   ?mf <- (puck-storage (name ?name))
+;   =>
+;   (retract ?hf ?tf)
+;   (assert (holding NONE))
+;   (printout error "" crlf)
+;   ;block this machine to avoid more accidents
+;   (assert (worldmodel-change (machine ?name) (change SET_RECYCLE_BLOCKED)))
+;   ;also block recycling because we want recycling points
+;   (assert (worldmodel-change (machine ?name) (change SET_PRODUCE_BLOCKED)))
+; )
+
 (defrule wm-worldmodel-change-set-agent
   "Set the agent field in a new worldmodel change. We know that the change is from this agent because otherwise the field would be set."
   (declare (salience ?*PRIORITY-WM*))
@@ -396,7 +426,7 @@
   (modify ?wmc (agent (sym-cat ?*ROBOT-NAME*)))
 )
 
-(defrule wm-process-wm-change-before-sending
+(defrule wm-process-wm-change-before-sending-machine
   (declare (salience ?*PRIORITY-WM*))
   ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent))
   ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (incoming-agent $?incoming-agent)(junk ?junk) (produced-puck ?produced) (doubtful-worldmodel ?doubtful-wm))
@@ -459,6 +489,30 @@
   ?order <- (order (id ?id))
   =>
   (modify ?order (in-delivery ?amount))
+  (modify ?wmc (already-applied TRUE))
+)
+(defrule wm-process-wm-change-before-sending-puck-storage
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (machine ?storage) (change ?change) (value ?value) (already-applied FALSE) (agent ?agent))
+  ?ps <- (puck-storage (name ?storage) (incoming $?incoming) (incoming-agent $?incoming-agent))
+  =>
+  (switch ?change
+    (case ADD_LOADED_WITH then 
+      (modify ?ps (puck ?value))
+    )
+    (case REMOVE_LOADED_WITH then
+      (modify ?ps (puck NONE))
+    )
+    (case ADD_INCOMING then 
+      (modify ?ps (incoming (append$ ?incoming ?value))
+	          (incoming-agent (append$ ?incoming-agent ?agent)))
+    )
+    (case REMOVE_INCOMING then 
+      (modify ?ps (incoming (delete-member$ ?incoming ?value))
+	         ;every agent should do only one thing at a machine
+	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
+    )
+  )
   (modify ?wmc (already-applied TRUE))
 )
 
