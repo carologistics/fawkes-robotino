@@ -210,20 +210,20 @@ class MachineSignalPipelineThread :
     bool color_data_consistent(color_classifier_context_t_ *);
     void reinit_color_config();
 
-    struct {
-        bool operator() (firevision::ROI r1, firevision::ROI r2) {
+    struct compare_rois_by_x_ {
+        bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
           return r1.start.x <= r2.start.x;
         }
     } sort_rois_by_x_;
 
-    struct {
-        bool operator() (firevision::ROI r1, firevision::ROI r2) {
+    struct compare_rois_by_y_ {
+        bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
           return r1.start.y <= r2.start.y;
         }
     } sort_rois_by_y_;
 
-    struct {
-        bool operator() (SignalState::signal_rois_t_ &signal1, SignalState::signal_rois_t_ &signal2) {
+    struct compare_signal_rois_by_x_ {
+        bool operator() (SignalState::signal_rois_t_ const &signal1, SignalState::signal_rois_t_ const &signal2) {
           return signal1.red_roi->start.x <= signal2.red_roi->start.x;
         }
     } sort_signal_rois_by_x_;
@@ -248,28 +248,28 @@ class MachineSignalPipelineThread :
     inline bool roi1_oversize(firevision::ROI &r1, firevision::ROI &r2);
 
 
-    struct {
-        bool operator() (firevision::ROI &r1, firevision::ROI &r2) {
+    struct compare_rois_by_area_ {
+        bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
           unsigned int a1 = r1.width * r1.height;
           unsigned int a2 = r2.width * r2.height;
           return a1 >= a2;
         }
     } sort_rois_by_area_;
 
-    struct {
-        bool operator() (SignalState &s1, SignalState &s2) {
+    struct compare_signal_states_by_visibility_ {
+        bool operator() (SignalState const &s1, SignalState const &s2) {
           return s1.visibility > s2.visibility;
         }
     } sort_signal_states_by_visibility_;
 
-    struct {
-        bool operator() (SignalState &s1, SignalState &s2) {
+    struct compare_signal_states_by_x_ {
+        bool operator() (SignalState const &s1, SignalState const &s2) {
           return s1.pos.x <= s2.pos.x;
         }
     } sort_signal_states_by_x_;
 
-    struct {
-        bool operator() (SignalState &s1, SignalState &s2) {
+    struct compare_signal_states_by_area_ {
+        bool operator() (SignalState const &s1, SignalState const &s2) {
           if ((s1.visibility < 0) == (s2.visibility < 0)) {
             float size_ratio = (float)s1.area / (float)s2.area;
             if (size_ratio < 1.5 && size_ratio > 0.67)
