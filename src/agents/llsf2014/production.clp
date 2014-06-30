@@ -482,3 +482,28 @@
 			 (args (create$ ?name ?puck ?storage)))
   )
 )
+
+(defrule prod-deliver-stored-product
+  "Deliver a product we stored before."
+  (declare (salience ?*PRIORITY-DELIVER-STORED*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (puck-storage (name ?storage) (puck ?puck) (team ?team-color)
+		(incoming $?i-st&~:(member$ GET_STORED_PUCK ?i-st)))
+  (game-time $?time)
+  (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+	 (end ?end&:(<= (nth$ 1 ?time) ?end)))  
+  (not (proposed-task (name get-stored-and-deliver) (args $?args&:(subsetp ?args (create$ ?storage ?puck (+ ?in-delivery 1) ?order-id))) (state rejected)))
+  (holding NONE)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-STORED*))))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-DELIVER-STORED*))))
+  =>
+  (printout t "PROD: Deliver stored " ?puck " from " ?storage crlf)
+  (assert (proposed-task (name get-stored-and-deliver)
+			 (priority ?*PRIORITY-DELIVER-STORED*)
+			 (args (create$ ?storage ?puck (+ ?in-delivery 1) ?order-id))))
+  )
+)

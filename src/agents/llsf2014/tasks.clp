@@ -374,7 +374,7 @@
   (holding P1|P2|P3)
   ?s <- (state TASK-ORDERED)
   (team-color ?team)
-  (deliver ?team ?deliver)
+  (deliver ?team ?deliver ? ?)
   =>
   (retract ?s)
   (assert (execute-skill deliver ?deliver)
@@ -569,6 +569,53 @@
   ?t <- (task (name pick-and-store) (args $?a) (state ~finished))
   (holding NONE)
   ?s <- (state STORE-PUCK-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; get stored and deliver:
+;;;;;;;;;;;;;;;;;;;;;;;;;
+(defrule task-get-stored-and-deliver--start-get-stored-puck
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name get-stored-and-deliver) (args $?a) (state ~finished) (priority ?p))
+  (holding NONE)
+  ?s <- (state TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill get_stored_puck (nth$ 1 ?a))
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res (nth$ 1 ?a)))
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-get-stored-and-deliver--deliver
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name get-stored-and-deliver) (args $?a) (state ~finished) (priority ?p))
+  (holding ?puck&:(eq ?puck (nth$ 2 ?a)))
+  ?s <- (state GET-STORED-PUCK-FINAL)
+  (team-color ?team)
+  (deliver ?team ?deliver ? ?)
+  =>
+  (retract ?s)
+  (assert (execute-skill deliver ?deliver)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?deliver))
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-get-stored-and-deliver--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name get-stored-and-deliver) (args $?a) (state ~finished))
+  (holding NONE)
+  ?s <- (state GOTO-FINAL)
   =>
   (modify ?t (state finished))
   (retract ?s)

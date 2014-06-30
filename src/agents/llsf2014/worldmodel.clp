@@ -418,6 +418,21 @@
 ;   (assert (worldmodel-change (machine ?name) (change SET_PRODUCE_BLOCKED)))
 ; )
 
+(defrule wm-get-stored-puck-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state GET-STORED-PUCK-FINAL)
+  ?tf <- (get-stored-puck-target ?name)
+  ?hf <- (holding NONE)
+  ?mf <- (puck-storage (name ?name) (puck ?puck))
+  =>
+  (retract ?hf ?tf)
+  (assert (holding ?puck))
+  (printout t "Successfully got stored puck." crlf)
+  (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
+)
+
+;TODO handle get-stored-puck-fail
+
 (defrule wm-worldmodel-change-set-agent
   "Set the agent field in a new worldmodel change. We know that the change is from this agent because otherwise the field would be set."
   (declare (salience ?*PRIORITY-WM*))
