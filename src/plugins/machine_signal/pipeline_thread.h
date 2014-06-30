@@ -45,6 +45,7 @@
 #include <string>
 #include <core/threading/mutex.h>
 #include <atomic>
+#include <set>
 #include <interfaces/SwitchInterface.h>
 #include <interfaces/Position3DInterface.h>
 #include <fvmodels/pixel_from_position/pixelFromPosition.h>
@@ -144,8 +145,6 @@ class MachineSignalPipelineThread :
         WorldROI() : ROI() { world_pos = NULL; }
     };
 
-    std::list<WorldROI> *bb_get_laser_rois();
-    std::list<WorldROI> *cluster_rois_;
     fawkes::Position3DInterface *bb_laser_clusters_[3];
     std::atomic<unsigned int> cfg_lasercluster_min_vis_hist_;
     std::string cfg_lasercluster_frame_;
@@ -231,11 +230,12 @@ class MachineSignalPipelineThread :
     // All ROIs we want to see painted in the tuning buffer
     std::list<firevision::ROI> drawn_rois_;
 
-    std::list<SignalState::signal_rois_t_> *create_signal_rois(
+    std::list<SignalState::signal_rois_t_> *create_field_signals(
         std::list<firevision::ROI> *rois_R,
         std::list<firevision::ROI> *rois_G);
 
-    std::list<SignalState::signal_rois_t_> *create_delivery_rois(std::list<firevision::ROI> *rois_R);
+    std::list<SignalState::signal_rois_t_> *create_delivery_signals(std::list<firevision::ROI> *rois_R);
+    std::list<SignalState::signal_rois_t_> *create_laser_signals(std::list<firevision::ROI> *rois_R);
 
 
     // Checks to weed out implausible ROIs
@@ -284,6 +284,10 @@ class MachineSignalPipelineThread :
 
     std::list<SignalState> known_signals_;
     std::list<SignalState>::iterator best_signal_;
+
+    std::set<firevision::ROI, compare_rois_by_area_> *bb_get_laser_rois();
+    std::set<firevision::ROI, compare_rois_by_area_> *cluster_rois_;
+
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);

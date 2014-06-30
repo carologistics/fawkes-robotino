@@ -412,9 +412,9 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
 }
 
 
-list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get_laser_rois()
+set<ROI, MachineSignalPipelineThread::compare_rois_by_area_> *MachineSignalPipelineThread::bb_get_laser_rois()
 {
-  list<WorldROI> *rv = new list<WorldROI>();
+  set<ROI, compare_rois_by_area_> *rv = new set<ROI, compare_rois_by_area_>();
   for (Position3DInterface *bb_pos : bb_laser_clusters_) {
 
     bb_pos->read();
@@ -463,7 +463,7 @@ list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get
           cluster_roi.world_pos = new Stamped<Point>();
           tf_listener->transform_point("/map", cluster_laser, *(cluster_roi.world_pos));
         }
-        rv->push_back(cluster_roi);
+        rv->insert(cluster_roi);
       }
     }
     catch (OutOfBoundsException &e) {
@@ -473,7 +473,6 @@ list<MachineSignalPipelineThread::WorldROI> *MachineSignalPipelineThread::bb_get
       logger->log_error(name(), e);
     }
   }
-  rv->sort(sort_rois_by_area_);
   return rv;
 }
 
@@ -521,8 +520,10 @@ inline void MachineSignalPipelineThread::reinit_color_config()
     cfg_cam_aperture_x_,
     cfg_cam_aperture_y_,
     cam_width_,
-    cam_height_);
+    cam_height_,
+    cfg_cam_angle_y_);
 }
+
 
 void MachineSignalPipelineThread::loop()
 {
@@ -565,14 +566,14 @@ void MachineSignalPipelineThread::loop()
 
     // Then use the appropriate classifier for red
     if (cfg_delivery_mode_) {
-      cfy_ctxt_red_delivery_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
       rois_R = cfy_ctxt_red_delivery_.classifier->classify();
+      rois_G = NULL;
     }
     else {
       rois_R = cfy_ctxt_red_.classifier->classify();
+      rois_G = cfy_ctxt_green_.classifier->classify();
     }
 
-    rois_G = cfy_ctxt_green_.classifier->classify();
 
     if (unlikely(cfg_tuning_mode_)) {
       // Untreated copy of the cam image
@@ -589,17 +590,17 @@ void MachineSignalPipelineThread::loop()
       }
       if (!cfg_draw_processed_rois_) {
         drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
-        drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
+        if (rois_G) drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
       }
     }
 
     // Create and group ROIs that make up the red, yellow and green lights of a signal
     std::list<SignalState::signal_rois_t_> *signal_rois;
     if (cfg_delivery_mode_) {
-      signal_rois = create_delivery_rois(rois_R);
+      signal_rois = create_delivery_signals(rois_R);
     }
     else {
-      signal_rois = create_signal_rois(rois_R, rois_G);
+      signal_rois = create_field_signals(rois_R, rois_G);
     }
 
     data_mutex_.lock();
@@ -758,7 +759,7 @@ bool MachineSignalPipelineThread::roi1_oversize(ROI &r1, ROI &r2) {
  * @param rois_G A list of green ROIs
  * @return A list of ROIs in a struct that contains matching red, yellow and green ROIs
  */
-std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_signal_rois(
+std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_field_signals(
     std::list<ROI> *rois_R,
     std::list<ROI> *rois_G)
 {
@@ -856,24 +857,102 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_sign
 }
 
 
-std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_delivery_rois(
+std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_laser_signals(
   std::list<ROI> *rois_R)
 {
   std::list<SignalState::signal_rois_t_> *rv = new std::list<SignalState::signal_rois_t_>();
-
   std::list<ROI>::iterator it_R = rois_R->begin();
+  map<ROI, SignalState::signal_rois_t_> laser_signals;
 
+  // Match red ROIs to laser clusters
   while(it_R != rois_R->end()) {
+
     if (it_R->start.y > cam_height_/2) {
       it_R = rois_R->erase(it_R);
     }
+
+    else if (cluster_rois_ && cluster_rois_->size()) {
+      for (ROI const &cluster_roi : *cluster_rois_) {
+        ROI *intersection = cluster_roi.intersect(*it_R);
+        unsigned int area_R = it_R->width * it_R->height;
+        if (intersection && area_R / ((intersection->width+1) * (intersection->height+1)) >= 0.3) {
+          map<ROI, SignalState::signal_rois_t_>::iterator signal_it;
+          if ((signal_it = laser_signals.find(cluster_roi)) != laser_signals.end()) {
+            signal_it->second.red_roi->extend(intersection->start.x, intersection->start.y);
+            signal_it->second.red_roi->extend(intersection->start.x + intersection->width,
+              intersection->start.y + intersection->height);
+          }
+          else {
+            SignalState::signal_rois_t_ new_signal = { new ROI(*it_R), NULL, NULL };
+            laser_signals.insert(make_pair(cluster_roi, new_signal));
+          }
+
+          // Erase red ROIs that have been processed here since they can't be part of
+          // any other signal.
+          it_R = rois_R->erase(it_R);
+          delete intersection;
+        }
+        else {
+          ++it_R;
+        }
+      }
+    }
+
     else ++it_R;
   }
 
-  rois_R->sort(sort_rois_by_area_);
+  for (map<ROI, SignalState::signal_rois_t_>::value_type &cluster_signal : laser_signals) {
+    ROI *cluster_copy = new ROI(cluster_signal.first);
+    SignalState::signal_rois_t_ &signal = cluster_signal.second;
+    black_scangrid_->set_roi(cluster_copy);
+    list<ROI> *black_stuff = black_classifier_->classify();
+    black_stuff->sort(sort_rois_by_y_);
+    for (ROI black : *black_stuff) { // cf. http://www.youtube.com/watch?v=XJBx0AekOXY
+      unsigned int black_end_y = black.start.y + black.height;
+      if (black_end_y > signal.red_roi->start.y
+          && black_end_y < signal.red_roi->start.y + signal.red_roi->height) {
+        signal.red_roi->start.y = black_end_y;
+      }
+      else if (black.start.y > signal.red_roi->start.y + signal.red_roi->height * 3
+          && black.start.y < signal.red_roi->start.y + signal.red_roi->height * 4) {
+        signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 4;
+      }
+    }
+    if (signal.red_roi->height * 4 > cluster_copy->height) {
+      signal.red_roi->height = cluster_copy->height / 4;
+    }
+    signal.yellow_roi = new ROI();
+    signal.yellow_roi->color = C_YELLOW;
+    signal.yellow_roi->start.x = signal.red_roi->start.x;
+    signal.yellow_roi->start.y = signal.red_roi->start.y + signal.red_roi->height;
+    signal.yellow_roi->width = signal.red_roi->width;
+    signal.yellow_roi->height = signal.red_roi->height;
 
+    signal.green_roi = new ROI();
+    signal.green_roi->color = C_GREEN;
+    signal.green_roi->start.x = signal.yellow_roi->start.x;
+    signal.green_roi->start.y = signal.yellow_roi->start.y + signal.yellow_roi->height;
+    signal.green_roi->width = signal.yellow_roi->width;
+    signal.green_roi->height = signal.yellow_roi->height;
+
+    rv->push_back(signal);
+  }
+  return rv;
+}
+
+std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_delivery_signals(
+  std::list<ROI> *rois_R)
+{
+  // First try to build signal ROIs based on laser clusters.
+  std::list<SignalState::signal_rois_t_> *rv = create_laser_signals(rois_R);
+
+  std::list<ROI>::iterator it_R = rois_R->begin();
+
+  // If
   unsigned int i = 0;
   for (it_R = rois_R->begin(); it_R != rois_R->end() && i++ < TRACKED_SIGNALS; ++it_R) {
+
+
     bool found_some_black = false;
     try {
 
@@ -888,6 +967,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       ROI check_black_top(*it_R);
       check_black_top.set_start(it_R->start.x, start_y);
       check_black_top.set_height(height);
+      check_black_top.color = C_BACKGROUND;
 
       if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
         drawn_rois_.push_back(check_black_top);
