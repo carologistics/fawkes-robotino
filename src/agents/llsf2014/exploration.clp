@@ -496,7 +496,7 @@
 (defrule exp-prepare-for-production-drive-to-wait-for-ins
   "If insertion area lock was refused drive to wait-point"
   (phase EXPLORATION)
-  (state EXP_PREPARE_FOR_PRODUCTION)
+  (state EXP_PREPARE_FOR_PRODUCTION|EXP_PREPARE_FOR_PRODUCTION_FINISHED)
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
   (input-storage ?team-color ?ins ? ?)
