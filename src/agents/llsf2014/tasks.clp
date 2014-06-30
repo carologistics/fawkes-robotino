@@ -551,7 +551,7 @@
   ?t <- (task (name pick-and-store) (args $?a) (state ~finished) (priority ?p))
   (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (output ?output))
   (holding ?output)
-  ?s <- (state GET-PRODUCED-FINAL)
+  ?s <- (state GET-PRODUCED-FINAL|STORE-PUCK-FAILED)
   (team-color ?team)
   (puck-storage (name ?storage&:(eq ?storage (nth$ 3 ?a))))
   =>
@@ -615,7 +615,7 @@
   (phase PRODUCTION)
   ?t <- (task (name get-stored-and-deliver) (args $?a) (state ~finished))
   (holding NONE)
-  ?s <- (state GOTO-FINAL)
+  ?s <- (state GOTO-FINAL|GET-STORED-PUCK-FAILED)
   =>
   (modify ?t (state finished))
   (retract ?s)
@@ -630,7 +630,7 @@
   (declare (salience ?*PRIORITY-CLEANUP*))
   (phase PRODUCTION)
   ?t <- (task (name ?name) (args $?a) (state ~finished))
-  ?s <- (state GOTO-FINAL|GOTO-FAILED|GET-CONSUMED-FINAL|GET-CONSUMED-FAILED|GET-PRODUCED-FINAL|GET-PRODUCED-FAILED|GET-S0-FINAL|GET-S0-FAILED)
+  ?s <- (state GOTO-FINAL|GOTO-FAILED|GET-CONSUMED-FINAL|GET-CONSUMED-FAILED|GET-PRODUCED-FINAL|GET-PRODUCED-FAILED|GET-S0-FINAL|GET-S0-FAILED|STORE-PUCK-FAILED|GET-STORED-PUCK-FAILED)
   (time $?now)
   =>
   (printout error "Unhandled situation in agent!!!" crlf)

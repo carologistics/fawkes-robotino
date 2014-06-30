@@ -401,22 +401,21 @@
   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?puck)))
 )
 
-; (defrule wm-store-puck-failed
-; TODO
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state STORE-PUCK-FAILED)
-;   ?tf <- (store-puck-target ?name)
-;   ?hf <- (holding ?puck)
-;   ?mf <- (puck-storage (name ?name))
-;   =>
-;   (retract ?hf ?tf)
-;   (assert (holding NONE))
-;   (printout error "" crlf)
-;   ;block this machine to avoid more accidents
-;   (assert (worldmodel-change (machine ?name) (change SET_RECYCLE_BLOCKED)))
-;   ;also block recycling because we want recycling points
-;   (assert (worldmodel-change (machine ?name) (change SET_PRODUCE_BLOCKED)))
-; )
+(defrule wm-store-puck-failed
+  (declare (salience ?*PRIORITY-WM*))
+  (state STORE-PUCK-FAILED)
+  ?tf <- (store-puck-target ?name)
+  ?hf <- (holding ?puck)
+  ?mf <- (puck-storage (name ?name))
+  (puck-in-gripper ?puck-in-gripper)
+  =>
+  (retract ?tf)
+  (if (not ?puck-in-gripper) then
+    (retract ?hf)
+    (assert (holding NONE))
+  )
+  (printout error "Store puck failed" crlf)
+)
 
 (defrule wm-get-stored-puck-final
   (declare (salience ?*PRIORITY-WM*))
@@ -431,7 +430,17 @@
   (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
 )
 
-;TODO handle get-stored-puck-fail
+(defrule wm-get-stored-puck-failed
+  (declare (salience ?*PRIORITY-WM*))
+  (state GET-STORED-PUCK-FAILED)
+  ?tf <- (get-stored-puck-target ?name)
+  ?hf <- (holding NONE)
+  ?mf <- (puck-storage (name ?name) (puck ?puck))
+  =>
+  (retract ?tf)
+  (printout error "Failed to get stored puck." crlf)
+  (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
+)
 
 (defrule wm-worldmodel-change-set-agent
   "Set the agent field in a new worldmodel change. We know that the change is from this agent because otherwise the field would be set."
