@@ -94,6 +94,18 @@
   (skill-call get_consumed place ?machine)
 )
 
+(defrule skill-call-take-puck-to
+  ?es <- (execute-skill take_puck_to ?place)
+  (wait-for-lock (res ?machine) (state use))
+  ?s <- (state WAIT-FOR-LOCK)
+  =>
+  (retract ?es ?s)
+  (assert (take-puck-to-target ?place)
+	  (state TAKE-PUCK-TO)
+  )
+  (skill-call take_puck_to place ?place)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; handle skill final/failed
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -146,6 +158,18 @@
   (printout t "skill-get-consumed-done" crlf)
   (retract ?sf ?df)
   (assert (state (sym-cat GET-CONSUMED- ?s)))
+  (modify ?wfl (state finished))
+)
+
+(defrule skill-take-puck-to-done
+  ?sf <- (state TAKE-PUCK-TO)
+  ?df <- (skill-done (name "take_puck_to") (status ?s))
+  (take-puck-to-target ?goal)
+  ?wfl <- (wait-for-lock (res ?goal) (state use))
+  =>
+  (printout t "skill-take-puck-to-done" crlf)
+  (retract ?sf ?df)
+  (assert (state (sym-cat TAKE-PUCK-TO- ?s)))
   (modify ?wfl (state finished))
 )
 

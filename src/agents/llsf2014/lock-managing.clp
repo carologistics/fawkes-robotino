@@ -352,11 +352,13 @@
   =>
   ;except for Ins1/2 to allow better transition from exploration to production
   (delayed-do-for-all-facts ((?lock lock)) (and (neq ?lock:resource Ins1)
-						(neq ?lock:resource Ins2))
+						(neq ?lock:resource Ins2)
+						(neq ?lock:resource P3-ONLY))
     (retract ?lock)
   )
   (delayed-do-for-all-facts ((?lock locked-resource)) (and (neq ?lock:resource Ins1)
-							   (neq ?lock:resource Ins2))
+							   (neq ?lock:resource Ins2)
+							   (neq ?lock:resource P3-ONLY))
     (retract ?lock)
   ) 
 )

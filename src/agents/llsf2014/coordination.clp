@@ -67,6 +67,12 @@
     (case recycle-holding then
       ;nothing has to be locked here because we want to get rid of an unintentionally holding puck
     )
+    (case just-in-time-P3 then
+      (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
+				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a))))
+	      (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
+    )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )
 )
@@ -202,4 +208,36 @@
   (do-for-all-facts ((?m machine)) (eq ?m:mtype T1)
     (assert (worldmodel-change (machine ?m:name) (change RESET_PRODUCE_BLOCKED)))
   )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; coordination regarding roles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrule get-lock-for-p3-role
+  "The P3 agent should prevent other robots from using the P3."
+  (role P3-ONLY)
+  (not (lock (resource P3-ONLY)))
+  =>
+  (printout t "I am the P3 Agent, locking the role and T5")
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource P3-ONLY)))
+)
+
+(defrule drop-P3-role-if-redundant
+  "There should be only one P3 agent"
+  ?r <- (role P3-ONLY)
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource P3-ONLY))
+  =>
+  (retract ?r)
+  (assert (role NOTHING))
+)
+
+(defrule prod-role-P3-change-after-all-p3-orders
+  "Drop the P3 role when there are no more P3 orders."
+  ?r <- (role P3-ONLY)
+  (no-more-needed P3)
+  =>
+  (printout warn "changing role from P3-ONLY to nothing because there are no more orders" crlf)
+  (retract ?r)
+  (assert (role nothing))
 )
