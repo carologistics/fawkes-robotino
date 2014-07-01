@@ -575,6 +575,38 @@
   (assert (state TASK-FINISHED))
 )
 
+;;;;;;;;;;;;;;;;;;
+; store:
+;;;;;;;;;;;;;;;;;;
+
+(defrule task-store--store
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name store) (args $?a) (state ~finished) (priority ?p))
+  ?s <- (state TASK-ORDERED)
+  (team-color ?team)
+  (puck-storage (name ?storage&:(eq ?storage (nth$ 1 ?a))))
+  =>
+  (retract ?s)
+  (assert (execute-skill store_puck ?storage)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?storage))
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-store--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name store) (args $?a) (state ~finished))
+  (holding NONE)
+  ?s <- (state STORE-PUCK-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ; get stored and deliver:
 ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -641,4 +673,92 @@
   (modify ?t (state failed))
   (retract ?s)
   (assert (state TASK-FAILED))
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Canceling tasks in specific situations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrule task-cancle-deliver--store-after-order-over
+  "If a new order pops up for a puck we are currently storing, deliver it instead (cancle task first)"
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-deliver|deliver|get-stored-and-deliver) (args $?a) (state ~finished))
+  (holding ?puck)
+  ?s <- (state GOTO)
+  ?gt <- (goto-target deliver1|deliver2)
+  (game-time $?time)
+  (not (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+	      (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	      (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+	      (end ?end&:(<= (nth$ 1 ?time) ?end))))
+  ?wfl <- (wait-for-lock (res ?goal) (state use))
+  =>
+  (printout warn "Stopping delivering puck because the order is over." crlf)
+  (modify ?t (state finished))
+  (modify ?wfl (state finished))
+  (retract ?s ?gt)
+  (assert (state TASK-FINISHED))
+)
+
+(defrule task-cancle-before-deliver--store-after-order-over
+  "If the order is over and there is a free storage point, store the puck instead (cancle taks first)."
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-deliver|get-stored-and-deliver) (args $?a) (state ~finished))
+  (holding ?puck)
+  ?s <- (state GET-PRODUCED-FINAL|GET-STORED-PUCK-FINAL)
+  (game-time $?time)
+  (not (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+	      (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	      (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+	      (end ?end&:(<= (nth$ 1 ?time) ?end))))
+  (team-color ?team-color&~nil)
+  (puck-storage (puck NONE) (team ?team-color) (incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
+  =>
+  (printout warn "Stopping delivering puck because the order is over" crlf)
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
+(defrule task-cancle-store--deliver-for-new-order
+  "If a new order pops up for a puck we are currently storing, deliver it instead (cancle task first)"
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-store|store) (args $?a) (state ~finished))
+  (holding ?puck)
+  ?s <- (state STORE-PUCK)
+  (game-time $?time)
+  (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+	 (end ?end&:(<= (nth$ 1 ?time) ?end)))  
+  ?st <- (store-puck-target ?goal)
+  ?wfl <- (wait-for-lock (res ?goal) (state use))
+  =>
+  (printout warn "Stopping storing puck because there is a new order" crlf)
+  (modify ?t (state finished))
+  (modify ?wfl (state finished))
+  (retract ?s ?st)
+  (assert (state TASK-FINISHED))
+)
+
+(defrule task-pick-and-store--deliver-after-get-produced
+  "If a new order pops up for a puck we have got, deliver it instead. (rule task-pick-and-store--deliver does not work here because then two skills get called together and the last one gets dropped)"
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name pick-and-store) (args $?a) (state ~finished))
+  (holding ?puck)
+  ?s <- (state GET-PRODUCED-FINAL)
+  (game-time $?time)
+  (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
+  =>
+  (printout warn "Stopping storing puck because there is a new order" crlf)
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
 )

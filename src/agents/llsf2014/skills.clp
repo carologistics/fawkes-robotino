@@ -242,3 +242,7 @@
   (assert (state (sym-cat GET-STORED-PUCK- ?s)))
   (modify ?wfl (state finished))
 )
+
+(deffunction skill-call-stop ()
+  (skill-call motor_move x 0.0 y 0.0)
+)

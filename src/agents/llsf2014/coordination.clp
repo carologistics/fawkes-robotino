@@ -79,6 +79,10 @@
 	      (needed-task-lock (action STORE_PUCK) (place (nth$ 3 ?a))
 				(resource (sym-cat STORE_PUCK "~" (nth$ 3 ?a)))))
     )
+    (case store then
+      (assert (needed-task-lock (action STORE_PUCK) (place (nth$ 1 ?a))
+				(resource (sym-cat STORE_PUCK "~" (nth$ 1 ?a)))))
+    )
     (case get-stored-and-deliver then
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))

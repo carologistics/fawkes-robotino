@@ -402,24 +402,46 @@
   )
 )
 
-(defrule prod-deliver-unintentionally-holding-produced-puck
-  "If holding a puck that should not be held (e.g. picked it up while driving) deliver it."
+(defrule prod-deliver-holding-produced-puck
+  "If we hold a puck and there is an order for it, deliver it."
   (declare (salience ?*PRIORITY-DELIVER-HOLDING*))
   (phase PRODUCTION)
   (state IDLE)
   (holding ?puck&P1|P2|P3)
   (team-color ?team-color&~nil)
-  ; (game-time $?time)
-  ; (order (product P3) (quantity-requested ?qr) (id  ?order-id)
-  ; 	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
-  ; 	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
-  ; 	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
+  (game-time $?time)
+  (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+  	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+  	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+  	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
   (not (proposed-task (name deliver) (args $?args&:(subsetp ?args (create$ ?puck))) (state rejected)))
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-HOLDING*))))
   =>
-  (printout error "PROD: Deliver unintentionally holding produced puck" crlf)
+  (printout t "PROD: Deliver holding produced puck" crlf)
   (assert (proposed-task (name deliver) (priority ?*PRIORITY-DELIVER-HOLDING*)
 			 (args (create$ ?puck)))
+  )
+)
+
+(defrule prod-store-holding-produced-puck
+  "If we hold a puck and there is no order for it, store it."
+  (declare (salience ?*PRIORITY-DELIVER-HOLDING*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (holding ?puck&P1|P2|P3)
+  (team-color ?team-color&~nil)
+  (game-time $?time)
+  (not (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+	      (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
+	      (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+	      (end ?end&:(<= (nth$ 1 ?time) ?end))))
+  (puck-storage (name ?storage) (puck NONE) (team ?team-color) (incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
+  (not (proposed-task (name deliver) (args $?args&:(subsetp ?args (create$ ?puck))) (state rejected)))
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-HOLDING*))))
+  =>
+  (printout t "PROD: Store holding produced puck" crlf)
+  (assert (proposed-task (name store) (priority ?*PRIORITY-DELIVER-HOLDING*)
+			 (args (create$ ?storage ?puck)))
   )
 )
 
