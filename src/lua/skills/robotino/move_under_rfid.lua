@@ -83,7 +83,7 @@ function producing()
 end
 
 function sensors_fired()
-   return sensor:analog_in(4) > 9 or sensor:analog_in(5) > 9
+   return sensor:analog_in(LEFT_IR_ID) > 9 or sensor:analog_in(RIGHT_IR_ID) > 9
 end
 
 fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
