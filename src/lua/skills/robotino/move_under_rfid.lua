@@ -34,7 +34,6 @@ depends_interfaces = {
    {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
    {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" },
    {v = "light", type ="RobotinoLightInterface", id = "Light_State" },
-   {v = "lightswitch", type ="SwitchInterface", id = "light_front_switch" }
 }
 
 documentation      = [==[Move under the RFID Reader/Writer]==]
@@ -132,7 +131,6 @@ end
 function APPROACH_AMPEL:init()
    -- enable vision to see if we already have placed the puck under the rfid
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
-   lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
 
    local ampel = get_ampel()
    self.skills[1].x = ampel.x - LASER_FORWARD_CORRECTION
