@@ -29,10 +29,11 @@
   (team-color ?team)
   (input-storage ?team ?ins ? ? )
   (secondary-storage ?team ?inssec ? ?)
-  ?svis <- (secondary-visited ?vis)
+  (game-time $?game-time)
   =>
   (retract ?s)
-  (if (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (not ?vis))
+  ;(if (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (not ?vis))
+  (if (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (>= 60 (nth$ 1 ?game-time)))
 
     then
     (assert (execute-skill get_s0 ?inssec)
@@ -40,8 +41,6 @@
 	    (wait-for-lock (priority ?p) (res ?inssec))
     )
     (modify ?t (state running))
-    (retract ?svis)
-    (assert (secondary-visited TRUE))
 
     else
     (assert (execute-skill get_s0 ?ins)
