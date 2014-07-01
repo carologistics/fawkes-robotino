@@ -115,9 +115,9 @@ function send_transrot(vx, vy, omega)
 end
 
 function CHECK_POSITION:init()
-   if sensor:analog_in(4) > 9 then
+   if sensor:analog_in(LEFT_IR_ID) > 9 then
       self.fsm.vars.correct_dir = 1
-   elseif sensor:analog_in(5) > 9 then
+   elseif sensor:analog_in(RIGHT_IR_ID) > 9 then
       self.fsm.vars.correct_dir = -1
    else
       self.fsm.vars.correct_dir = 0
