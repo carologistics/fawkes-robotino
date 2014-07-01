@@ -4,6 +4,7 @@
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
+--             2014  Tobias Neumann
 --
 ----------------------------------------------------------------------------
 
@@ -79,10 +80,15 @@ fsm:add_transitions{
 function CHECK_INPUT:init()
       self.fsm.vars.x   = self.fsm.vars.x   or self.fsm.vars.rel_x or 0
       self.fsm.vars.y   = self.fsm.vars.y   or self.fsm.vars.rel_y or 0
-      self.fsm.vars.ori = self.fsm.vars.ori or self.fsm.vars.rel_ori or 0
+      self.fsm.vars.ori = self.fsm.vars.ori or self.fsm.vars.rel_ori or math.nan
 end
 
 function MOVING:init()
+   if not math.isnan( self.fsm.vars.ori ) then
+      local msg_ori = navigator.SetOrientationModeMessage:new( navigator.OrientAtTarget )
+      fsm.vars.ori_msgid = navigator:msgq_enqueue_copy(msg_ori)
+   end
+
    local msg = navigator.CartesianGotoMessage:new(
       self.fsm.vars.x,
       self.fsm.vars.y,
