@@ -30,10 +30,10 @@ plugins/amcl:
   free_threshold: 0.2
   
   # Laser Minimum Range, beams shorter than this are ignored
-  laser_min_range: 0.04
+  laser_min_range: 0.05
 
   # Laser Maximum Range, beams longer than this are ignored
-  laser_max_range: 4.0
+  laser_max_range: 9.5
 
   # Maximum number of beams to consider
   max_beams: 120
@@ -71,7 +71,7 @@ plugins/amcl:
   lambda_short: 0.1
 
   # Maximum discovery distance for likelihood field model
-  laser_likelihood_max_dist: 4.0
+  laser_likelihood_max_dist: 8.5
 
   # Laser model type, must be beam or likelihood_field
   laser_model_type: likelihood_field
