@@ -4,25 +4,28 @@
 fawkes/meta_plugins:
   
   # Meta plugin with useful functionality for the robotino-laptop
-  robotino-bare: bbsync,static-transforms,webview
-  robotino-cam: fvbase,fvfountain,machine-signal,puck_vision,fvretriever
-  agent: clips,clips-agent,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,agent-monitor
+  m-bare: bbsync,static-transforms,webview
+  
+  m-fv: fvbase,fvfountain,fvretriever
+  m-fv-vision: m-bare,m-fv,machine-signal,puck_vision
+  
+  m-laser: m-bare,laser,map-lasergen,laser-filter
+  m-laser-cluster: m-laser,laser-pointclouds,laser-cluster
+  
+  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph
+  m-clips-agent: m-clips,m-fv-vision,clips-agent
 
-  robotino-nocam: robotino-bare,ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,laser-filter,amcl,clips,navgraph,skiller,laser-pointclouds,laser-cluster
+  m-nocam: m-bare,m-laser-cluster,m-clips,ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,skiller
 
-  robotino-nocam-move-base: robotino-nocam,ros-cmdvel,ros-navigator
-  robotino-move-base: robotino-nocam-move-base,robotino-cam
+  m-colli: m-nocam,colli
+  m-colli-log: m-colli,mongodb,mongodb-log
+  m-colli-vision: m-colli,m-fv-vision
 
-  robotino-nocam-colli: robotino-nocam,map-lasergen,colli
-  robotino-colli: robotino-nocam-colli,robotino-cam
+  m-full: m-colli-vision,m-clips-agent
 
-  robotino-agent-move-base: robotino-move-base,agent
-  robotino-agent-colli: robotino-colli,agent
-
-  colli-log: robotino-nocam-colli,mongodb,mongodb-log
 
   # Robotino base meta plugin
-  robotino-base: robotino,laser,webview
+  robotino-base: robotino,webview
 
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,skiller
   gazsim-meta-ros: ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,map-lasergen,colli,gazsim-vis-localization
