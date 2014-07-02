@@ -48,14 +48,23 @@ clips-agent:
         
     enable-sim: false
 
-    peer-address: 172.26.255.255
-    #use this for talking to the refbox on the same laptop:
-    #peer-recv-port: 4444
-    #peer-send-port: 4445
-    #use this for talking to the real refbox:
-    peer-port: 4444
+    #real-world-setup:
+    # peer-address: 172.26.255.255
+    # peer-port: 4444
+    # cyan-port: 4441
+    # magenta-port: 4442
+    #simulation-setup:
+    peer-address: 127.0.0.1
+    peer-recv-port: 4444
+    peer-send-port: 4445
+    cyan-recv-port: 4441
+    magenta-recv-port: 4442
+    cyan-send-port: 4446
+    magenta-send-port: 4447
 
     team-name: Carologistics
+    crypto-key: randomkey
+    cipher: "aes-128-cbc"
 
     #Timeouts used in the locking:
     #Timeout a in pre-game started robot waits for a master before it gets the master itself

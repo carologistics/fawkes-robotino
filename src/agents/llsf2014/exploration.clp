@@ -356,7 +356,7 @@
 (defrule exp-receive-type-light-pattern-matching
   "Receive light-pattern-to-type matching and save it in a fact."
   (phase EXPLORATION)
-  ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p) (rcvd-via BROADCAST))
+  ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p))
   (not (have-all-matchings))
   =>
   (retract ?pbm)
@@ -417,6 +417,7 @@
   (confval (path "/clips-agent/llsf2014/exploration/latest-send-last-report-time")
 	   (value ?latest-report-time))
   (team-color ?team-color&~nil)
+  (peer-id private ?peer)
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (pb-set-field ?mr "team_color" ?team-color)
@@ -436,7 +437,7 @@
       (pb-add-list ?mr "machines" ?mre)
     )
   )
-  (pb-broadcast ?mr)
+  (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
 )
 
@@ -530,12 +531,13 @@
   (time $?now)
   ?timer <- (timer (name exploration-finished) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
   (prepare-for-production-goal ?wait-point)
+  (peer-id private ?peer)
   =>
   (modify ?timer (time ?now) (seq (+ ?seq 1)))
   (bind ?msg (pb-create "llsf_msgs.PreparedForProduction"))
   (pb-set-field ?msg "peer_name" ?*ROBOT-NAME*)
   (pb-set-field ?msg "waiting_point" ?wait-point)
-  (pb-broadcast ?msg)
+  (pb-broadcast ?peer ?msg)
   (pb-destroy ?msg)
 )
 
@@ -543,7 +545,7 @@
   "Receive finishing of preparation. Retract preparation facts."
   (phase EXPLORATION)
   ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
-  ?pf <- (protobuf-msg (type "llsf_msgs.PreparedForProduction") (ptr ?p) (rcvd-via BROADCAST))
+  ?pf <- (protobuf-msg (type "llsf_msgs.PreparedForProduction") (ptr ?p))
   (team-color ?team-color)
   (input-storage ?team-color ?ins ? ?)
   =>
