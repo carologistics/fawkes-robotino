@@ -33,15 +33,23 @@ plugins/puck_vision:
 
   #Puck details
   puck:
-    radius: 0.03
-    height: 0.02
+    radius: 0.04
+    height: 0.03
     dots_required: true
 
  #puck main color (RED)
     red:
-      reference_color: [189, 28, 34,
-      77, 24, 16,
-      106, 29, 21]
+      ##################################
+      # This is for the standard pucks #
+      ##################################
+      #reference_color: [189, 28, 34,
+      #77, 24, 16,
+      #106, 29, 21]
+      ################################################
+      # This is for the new pucks with black topdots #
+      ################################################
+      reference_color: [220, 14, 6]            
+
       chroma_thresh: 10
       saturation_thresh: 20
       min_points: 10
@@ -54,18 +62,34 @@ plugins/puck_vision:
   #puck topdots color (Yellow) 
       #R  #G   #B
     topdots:
-      reference_color: [172, 142, 32,
-      155, 157, 86,
-      255, 255, 0,
-      255, 194, 49,
-      177, 138, 79,
-      174, 141, 36,
-      155, 112, 18]
+      ##################################
+      # This is for the standard pucks #
+      ##################################            
+      #reference_color: [172, 142, 32,
+      #155, 157, 86,
+      #255, 255, 0,
+      #255, 194, 49,
+      #177, 138, 79,
+      #174, 141, 36,
+      #155, 112, 18]
+      ################################################
+      # This is for the new pucks with black topdots #
+      ################################################
+      reference_color: [42, 36, 30,
+      31, 22, 18,
+      40, 18, 15,
+      84, 79, 68,
+      134, 133, 129,
+      0, 0, 0,
+      40, 29, 40,
+      41, 34, 36,
+      58, 46, 41]
+
       chroma_thresh: 10
       saturation_thresh: 40
-      min_points: 4
-      basic_roi_size: 4
-      neighborhood_min_match: 3
+      min_points: 1
+      basic_roi_size: 0
+      neighborhood_min_match: 2
       scangrid_x_offset: 1
       scangrid_y_offset: 1
       lut: /bulb-colormap/yellow.colormap
