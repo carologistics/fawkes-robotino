@@ -8,7 +8,7 @@ hardware/laser:
   # URG using vendor library
   urg:
     # Enable this configuration?
-    active: true
+    active: false
 
     # Configuration is for Hokuyo URG laser range finder using URG library
     type: urg
@@ -17,4 +17,21 @@ hardware/laser:
     device: /dev/ttyACM0
 
     frame: !frame /base_laser
+
+  tim55x:
+    # Enable this configuration?
+    active: true
+
+    # Configuration is for Sick TiM55x over USB
+    type: TiM55x-USB
+
+    # Device file
+    #serial: 14200190
+
+    # Frame ID
+    frame: !frame /base_laser
+
+    # Offset added to measurement timestamp in interface. Can be used to
+    # account for latencies.
+    # time_offset: -0.001
 
