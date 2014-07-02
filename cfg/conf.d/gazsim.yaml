@@ -36,7 +36,7 @@ gazsim:
 
   laser:
     max_range: 9.5
-    interface-id: "Laser urg"
+    interface-id: "Laser tim55x"
     frame-id: "/base_laser"
  
   webcam:
