@@ -406,12 +406,13 @@
   "Send announce restart multiple times"
   (time $?now)
   ?timer <- (timer (name announce-restart) (time $?t&:(timeout ?now ?t ?*LOCK-ANNOUNCE-RESTART-PERIOD*)) (seq ?seq))
+  (peer-id private ?peer)
   =>
   (if (< ?seq ?*LOCK-ANNOUNCE-RESTART-REPETITIONS*)
     then
     (bind ?lock-msg (pb-create "llsf_msgs.LockAnnounceRestart"))
     (pb-set-field ?lock-msg "agent" (str-cat ?*ROBOT-NAME*))
-    (pb-broadcast ?lock-msg)
+    (pb-broadcast ?peer ?lock-msg)
     (pb-destroy ?lock-msg)
     (modify ?timer (time ?now) (seq (+ ?seq 1)))
     
