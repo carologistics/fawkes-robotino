@@ -66,7 +66,3 @@ ballposlog/log_level: 0
 
 #colli og-laser buffer:
 plugins/colli/laser_occupancy_grid/buffer_size: 6
-
-plugins/amcl:
-  angle_min_idx: 0
-  angle_max_idx: 360
