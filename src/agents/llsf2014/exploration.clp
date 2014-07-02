@@ -471,11 +471,19 @@
   ?et <- (exp-tactic NEAREST)
   (team-color ?team-color)
   (input-storage ?team-color ?ins ? ?)
+  (secondary-storage ?team-color ?inssec ? ?)
   =>
   (printout t "Finished Exploration :-)" crlf)
   (retract ?et)
-  (assert (exp-tactic GOTO-INS)
-	  (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?ins))
+  (if (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))))
+    then
+    (assert (exp-tactic GOTO-INS)
+      (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?inssec))
+    )
+    else
+    (assert (exp-tactic GOTO-INS)
+	    (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?ins))
+    )
   )
 )
 
@@ -491,6 +499,20 @@
   (printout t "Waiting for production at " ?ins crlf)
   (skill-call ppgoto place (str-cat ?ins))
   (assert (prepare-for-production-goal ?ins))
+)
+
+(defrule exp-prepare-for-production-drive-to-secondary-ins
+  "When locks for pre-game positions are acquired, drive there with ppgoto."
+  (phase EXPLORATION)
+  (state EXP_PREPARE_FOR_PRODUCTION)
+  (exp-tactic GOTO-INS)
+  (team-color ?team-color)
+  (secondary-storage ?team-color ?secins ? ?)
+  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?secins))
+  =>
+  (printout t "Waiting for production at " ?secins crlf)
+  (skill-call ppgoto place (str-cat ?secins))
+  (assert (prepare-for-production-goal ?secins))
 )
 
 (defrule exp-prepare-for-production-drive-to-wait-for-ins
