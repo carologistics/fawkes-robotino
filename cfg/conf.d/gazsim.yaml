@@ -11,7 +11,7 @@ gazsim:
 
   topics:
     gps: "~/gazsim/gps/"
-    laser: "~/hokuyo_carologistics/link/laser/scan"
+    laser: "~/sick_laser/link/laser/scan"
     gyro: "~/RobotinoSim/Gyro/"
     infrared-puck-sensor: "~/RobotinoSim/InfraredPuckSensor/"
     gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
@@ -35,7 +35,7 @@ gazsim:
     refbox-port: 4444
 
   laser:
-    max_range: 5.5 
+    max_range: 9.5
     interface-id: "Laser urg"
     frame-id: "/base_laser"
  
