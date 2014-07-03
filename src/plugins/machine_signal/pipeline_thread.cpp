@@ -825,41 +825,48 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
   std::list<ROI>::iterator it_R = rois_R->begin();
   map<ROI, SignalState::signal_rois_t_> laser_signals;
 
+  if (!cluster_rois_) return rv;
+
   // Match red ROIs to laser clusters
   while(it_R != rois_R->end()) {
 
+    bool erased = false;
+
     if (it_R->start.y > cam_height_/2) {
       it_R = rois_R->erase(it_R);
+      erased = true;
     }
-
-    else if (cluster_rois_ && cluster_rois_->size()) {
+    else if (cluster_rois_->size()) {
       for (ROI const &cluster_roi : *cluster_rois_) {
         ROI *intersection = cluster_roi.intersect(*it_R);
         unsigned int area_R = it_R->width * it_R->height;
-        if (intersection && area_R / ((intersection->width+1) * (intersection->height+1)) >= 0.3) {
-          map<ROI, SignalState::signal_rois_t_>::iterator signal_it;
-          if ((signal_it = laser_signals.find(cluster_roi)) != laser_signals.end()) {
-            signal_it->second.red_roi->extend(intersection->start.x, intersection->start.y);
-            signal_it->second.red_roi->extend(intersection->start.x + intersection->width,
-              intersection->start.y + intersection->height);
-          }
-          else {
-            SignalState::signal_rois_t_ new_signal = { new ROI(*it_R), NULL, NULL };
-            laser_signals.insert(make_pair(cluster_roi, new_signal));
+        if (intersection) {
+          if ((float(intersection->width+1) * float(intersection->height+1)) / float(area_R) >= 0.3) {
+            map<ROI, SignalState::signal_rois_t_>::iterator signal_it;
+            if ((signal_it = laser_signals.find(cluster_roi)) != laser_signals.end()) {
+              signal_it->second.red_roi->extend(intersection->start.x, intersection->start.y);
+              signal_it->second.red_roi->extend(intersection->start.x + intersection->width,
+                intersection->start.y + intersection->height);
+            }
+            else {
+              SignalState::signal_rois_t_ new_signal = { new ROI(*it_R), NULL, NULL };
+              laser_signals.insert(make_pair(cluster_roi, new_signal));
+            }
+
+            // Erase red ROIs that have been processed here since they can't be part of
+            // any other signal.
+            it_R = rois_R->erase(it_R);
+
+            erased = true;
+            break;
           }
 
-          // Erase red ROIs that have been processed here since they can't be part of
-          // any other signal.
-          it_R = rois_R->erase(it_R);
           delete intersection;
-        }
-        else {
-          ++it_R;
         }
       }
     }
 
-    else ++it_R;
+    if (!erased) ++it_R;
   }
 
   for (map<ROI, SignalState::signal_rois_t_>::value_type &cluster_signal : laser_signals) {
@@ -909,7 +916,6 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
 
   std::list<ROI>::iterator it_R = rois_R->begin();
 
-  // If
   unsigned int i = 0;
   for (it_R = rois_R->begin(); it_R != rois_R->end() && i++ < TRACKED_SIGNALS; ++it_R) {
 
