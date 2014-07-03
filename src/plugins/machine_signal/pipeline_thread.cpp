@@ -324,6 +324,9 @@ void MachineSignalPipelineThread::finalize()
 
   blackboard->close(bb_enable_switch_);
   blackboard->close(bb_delivery_switch_);
+  for (Position3DInterface *iface : bb_laser_clusters_) {
+    blackboard->close(iface);
+  }
 
   vision_master->unregister_thread(this);
 
