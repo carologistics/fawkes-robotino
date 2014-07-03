@@ -1142,7 +1142,7 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
       else if (opt == "/min_area_cover")
         cfg_light_on_min_area_cover_ = v->get_float();
     }
-    else if (sub_prefix == "/laser_cluster") {
+    else if (sub_prefix == "/lasercluster") {
       if (opt == "/min_visibility_history")
         cfg_lasercluster_min_vis_hist_ = v->get_uint();
       else if (opt == "/laser_frame")
