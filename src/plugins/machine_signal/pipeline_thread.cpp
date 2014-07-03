@@ -874,6 +874,9 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
     SignalState::signal_rois_t_ &signal = cluster_signal.second;
     cfy_ctxt_black_.scanline_grid->set_roi(cluster_copy);
     list<ROI> *black_stuff = cfy_ctxt_black_.classifier->classify();
+    if (unlikely(cfg_tuning_mode_)) {
+      drawn_rois_.insert(drawn_rois_.end(), black_stuff->begin(), black_stuff->end());
+    }
     black_stuff->sort(sort_rois_by_y_);
     for (ROI black : *black_stuff) { // cf. http://www.youtube.com/watch?v=XJBx0AekOXY
       unsigned int black_end_y = black.start.y + black.height;
