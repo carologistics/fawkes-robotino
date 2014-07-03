@@ -64,6 +64,10 @@ skiller:
         delivery_mode: SwitchInterface::machine_signal_delivery_mode
         # Uncomment to use gripper skills for technical challenge
         # gripper_if: GripperInterface::Robotino
+        line1: LaserLineInterface::/laser-lines/1
+        line2: LaserLineInterface::/laser-lines/2
+        line3: LaserLineInterface::/laser-lines/3
+        line4: LaserLineInterface::/laser-lines/4
       writing:
         light: RobotinoLightInterface::Light determined
 
