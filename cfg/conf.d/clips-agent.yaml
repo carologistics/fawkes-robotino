@@ -95,6 +95,10 @@ clips-agent:
       recycle-max: 40
       recycle-min: 20
 
+    puck-storage-points:
+      cyan: [D1_PUCK_STORAGE_1, D1_PUCK_STORAGE_2]
+      magenta: [D2_PUCK_STORAGE_1, D2_PUCK_STORAGE_2]
+
     exploration:      
       #row defined in host.yaml (this is only the default!)
       row: MID
