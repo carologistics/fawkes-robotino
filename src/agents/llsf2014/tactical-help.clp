@@ -30,6 +30,21 @@
 )
 
 
+(deffunction tac-check-for-secondary-ins (?ins ?inssec ?game-time)
+  (if
+    (or 
+        (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (>= 60 (nth$ 1 ?game-time)))
+        (any-factp ((?secowned locked-resource)) (and (eq ?secowned:resource ?inssec) (eq ?secowned:agent ?*ROBOT-NAME*)))
+    )
+    then
+    (return TRUE)
+
+    else
+    (return FALSE)
+  )
+)
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; prioritize machines (which T2,T3/T4 to load first)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

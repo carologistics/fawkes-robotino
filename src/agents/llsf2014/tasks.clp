@@ -32,14 +32,9 @@
   (game-time $?game-time)
   =>
   (retract ?s)
-  ;(if (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (not ?vis))
-  (if (or
-        (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (>= 60 (nth$ 1 ?game-time)))
-        (any-factp ((?sec1lock locked-resource)) (and (eq ?sec1lock:resource ?inssec) (eq ?sec1lock:agent ?*ROBOT-NAME*)))
-      )
+  (if (tac-check-for-secondary-ins ?ins ?inssec ?game-time)
 
     then
-    (printout t "Drive to Secondary Ins:" ?*ROBOT-NAME* crlf)
     (assert (execute-skill get_s0 ?inssec)
       (state WAIT-FOR-LOCK)
 	    (wait-for-lock (priority ?p) (res ?inssec))
@@ -47,7 +42,6 @@
     (modify ?t (state running))
 
     else
-    (printout t "Drive to Primary Ins:" ?*ROBOT-NAME* crlf)
     (assert (execute-skill get_s0 ?ins)
       (state WAIT-FOR-LOCK)
   	  (wait-for-lock (priority ?p) (res ?ins))
@@ -101,13 +95,9 @@
   (game-time $?game-time)
   =>
   (retract ?s)
-  (if (or
-        (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (>= 60 (nth$ 1 ?game-time)))
-        (any-factp ((?sec1lock locked-resource)) (and (eq ?sec1lock:resource ?inssec) (eq ?sec1lock:agent ?*ROBOT-NAME*)))
-      )
+  (if (tac-check-for-secondary-ins ?ins ?inssec ?game-time)
 
     then
-    (printout t "Drive to Secondary Ins:" ?*ROBOT-NAME* crlf)
     (assert (execute-skill get_s0 ?inssec)
       (state WAIT-FOR-LOCK)
 	    (wait-for-lock (priority ?p) (res ?inssec))
@@ -115,7 +105,6 @@
     (modify ?t (state running))
 
     else
-    (printout t "Drive to Primary Ins:" ?*ROBOT-NAME* crlf)
     (assert (execute-skill get_s0 ?ins)
       (state WAIT-FOR-LOCK)
   	  (wait-for-lock (priority ?p) (res ?ins))
@@ -460,13 +449,26 @@
   ?s <- (state TASK-ORDERED|TAKE-PUCK-TO-FAILED|GOTO-FINAL)
   (team-color ?team)
   (input-storage ?team ?ins ? ?)
+  (secondary-storage ?team ?inssec ? ?)
+  (game-time $?game-time)
   =>
   (retract ?s)
-  (assert (execute-skill get_s0 ?ins)
-          (state WAIT-FOR-LOCK)
-	  (wait-for-lock (priority ?p) (res ?ins))
+  (if (tac-check-for-secondary-ins ?ins ?inssec ?game-time)
+
+    then
+    (assert (execute-skill get_s0 ?inssec)
+      (state WAIT-FOR-LOCK)
+	    (wait-for-lock (priority ?p) (res ?inssec))
+    )
+    (modify ?t (state running))
+
+    else
+    (assert (execute-skill get_s0 ?ins)
+      (state WAIT-FOR-LOCK)
+  	  (wait-for-lock (priority ?p) (res ?ins))
+    )
+    (modify ?t (state running))
   )
-  (modify ?t (state running))
 )
 
 (defrule task-just-in-time-P3--drive-to-machine
