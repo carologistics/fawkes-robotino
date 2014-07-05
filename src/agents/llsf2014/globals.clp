@@ -32,6 +32,11 @@
   ?*LOCK-ANNOUNCE-RESTART-PERIOD* = 0.25
   ?*LOCK-ANNOUNCE-RESTART-REPETITIONS* = 8
   ?*LOCK-ANNOUNCE-RESTART-WAIT-BEFORE-FINISH* = 3.0
+
+  ;initial values for skill-durations:
+  ?*SKILL-DURATION-GET-PRODUCED* = 10
+  ?*SKILL-DURATION-GET-STORED-PUCK* = 10
+  ?*SKILL-DURATION-DELIVER* = 10
 )
 
 (defrule globals-config-team-name
@@ -64,4 +69,14 @@
   (confval (path "/clips-agent/llsf2014/release-distance") (type FLOAT) (value ?d))
   =>
   (bind ?*RELEASE-DISTANCE* ?d)
+)
+
+(defrule globals-config-estimated-skill-durations
+  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/get-produced") (type UINT) (value ?d-get-produced))
+  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/get-stored-puck") (type UINT) (value ?d-get-stored-puck))
+  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/deliver") (type UINT) (value ?d-deliver))
+  =>
+  (bind ?*SKILL-DURATION-GET-PRODUCED* ?d-get-produced)
+  (bind ?*SKILL-DURATION-GET-STORED-PUCK* ?d-get-stored-puck)
+  (bind ?*SKILL-DURATION-DELIVER* ?d-deliver)
 )

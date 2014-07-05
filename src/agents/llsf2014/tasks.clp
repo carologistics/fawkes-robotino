@@ -511,7 +511,7 @@
   (production-time T5 ?proc-min-time-t5 ?proc-max-time-t5)
   (order (product P3) (quantity-requested ?qr) (quantity-delivered ?qd&:(< ?qd ?qr))
 	 (begin ?begin&:(<= (- ?begin ?proc-min-time-t5) (nth$ 1 ?time)))
-	 (end ?end&:(>= (- ?end ?proc-max-time-t5) (nth$ 1 ?time))))
+	 (end ?end&:(>= (- ?end (+ ?proc-max-time-t5 ?*SKILL-DURATION-DELIVER*)) (nth$ 1 ?time))))
   =>
   (retract ?s)
   (assert (execute-skill finish_puck_at ?m T5 false)
@@ -704,7 +704,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule task-cancle-deliver--store-after-order-over
-  "If a new order pops up for a puck we are currently storing, deliver it instead (cancle task first)"
+  "If the order is over, we are delivering a puck and there is a free storage point, store the puck instead (cancle taks first)."
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
   ?t <- (task (name pick-and-deliver|deliver|get-stored-and-deliver) (args $?a) (state ~finished))
@@ -714,7 +714,7 @@
   (game-time $?time)
   (not (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
 	      (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
-	      (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+	      (begin ?begin&:(<= (- ?begin (+ ?*SKILL-DURATION-DELIVER* ?*SKILL-DURATION-GET-PRODUCED*)) (nth$ 1 ?time)))
 	      (end ?end&:(<= (nth$ 1 ?time) ?end))))
   ?wfl <- (wait-for-lock (res ?goal) (state use))
   =>
@@ -726,7 +726,7 @@
 )
 
 (defrule task-cancle-before-deliver--store-after-order-over
-  "If the order is over and there is a free storage point, store the puck instead (cancle taks first)."
+  "If the order is over, we were about to deliver a puck and there is a free storage point, store the puck instead (cancle taks first). Additional rule before delivering to avoid calling two skills immediately."
   (declare (salience ?*PRIORITY-SUBTASK-3*))
   (phase PRODUCTION)
   ?t <- (task (name pick-and-deliver|get-stored-and-deliver) (args $?a) (state ~finished))
@@ -735,7 +735,7 @@
   (game-time $?time)
   (not (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
 	      (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
-	      (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
+	      (begin ?begin&:(<= (- ?begin (+ ?*SKILL-DURATION-DELIVER* ?*SKILL-DURATION-GET-PRODUCED*)) (nth$ 1 ?time)))
 	      (end ?end&:(<= (nth$ 1 ?time) ?end))))
   (team-color ?team-color&~nil)
   (puck-storage (puck NONE) (team ?team-color) (incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
@@ -755,9 +755,8 @@
   ?s <- (state STORE-PUCK)
   (game-time $?time)
   (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
-	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
-	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
-	 (end ?end&:(<= (nth$ 1 ?time) ?end)))  
+	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr)) (begin ?begin)
+	 (end ?end&:(tac-can-use-timeslot (nth$ 1 ?time) ?begin ?end ?*SKILL-DURATION-DELIVER*)))
   ?st <- (store-puck-target ?goal)
   ?wfl <- (wait-for-lock (res ?goal) (state use))
   =>
@@ -777,9 +776,8 @@
   ?s <- (state GET-PRODUCED-FINAL)
   (game-time $?time)
   (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
-	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
-	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
-	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
+	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr)) (begin ?begin)
+	 (end ?end&:(tac-can-use-timeslot (nth$ 1 ?time) ?begin ?end ?*SKILL-DURATION-DELIVER*)))
   =>
   (printout warn "Stopping storing puck because there is a new order" crlf)
   (modify ?t (state finished))
