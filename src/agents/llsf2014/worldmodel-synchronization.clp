@@ -92,6 +92,8 @@
   =>
   ; (printout t "***** Received Worldmodel *****" crlf)
   (unwatch facts machine)
+  (unwatch facts order)
+  (unwatch facts puck-storage)
   ;update worldmodel about machines
   (foreach ?m-msg (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
@@ -149,7 +151,6 @@
       (modify ?order (in-delivery ?in-del))
     )
   )
-  (unwatch facts machine)
   ;update worldmodel about puck-storage
   (foreach ?ps-msg (pb-field-list ?p "storage")
     (do-for-fact ((?storage puck-storage))
@@ -178,6 +179,8 @@
     (retract ?msg)
   )
   (watch facts machine)
+  (watch facts order)
+  (watch facts puck-storage)
 )
 
 ;send worldmodel change
