@@ -20,11 +20,8 @@
  */
 
 #include "navgraph_broker_thread.h"
-
 #include <boost/algorithm/string.hpp>
-
-#include <plugins/gossip/gossip/gossip_group.h>
-#include "NavigationMessage.pb.h"
+#include <core/threading/mutex_locker.h>
 
 using namespace fawkes;
 
@@ -36,6 +33,7 @@ using namespace fawkes;
 /** Constructor. */
 NavgraphBrokerThread::NavgraphBrokerThread()
   : Thread("NavgraphBrokerThread", Thread::OPMODE_WAITFORWAKEUP),
+    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT),
     BlackBoardInterfaceListener("NavPathInterface"),GossipAspect("example")
 {
 }
@@ -49,59 +47,49 @@ void
 NavgraphBrokerThread::init()
 {
 
-    path_if_ = blackboard->open_for_reading<NavPathInterface>("NavPath");
-    bbil_add_data_interface(path_if_);
-    blackboard->register_listener(this);
+    // initialize interfaces
+    	path_if_ = blackboard->open_for_reading<NavPathInterface>("NavPath");
+    	bbil_add_data_interface(path_if_);
+    	blackboard->register_listener(this);
 
-	robot_name_ = config->get_string("/plugins/navgraph-broker/robot_name");
-
-	// load reserved_nodes from config for testing issues
-	std::string snodes = config->get_string("/plugins/navgraph-broker/reserved_nodes");
-	std::vector<fawkes::TopologicalMapNode> nodes = get_nodes_from_string(snodes);
-
-
-	// reserve nodes within constraint repo for testing
-	constraint_repo.lock();
-	reserve_nodes( robotname_.c_str() , nodes);
-	constraint_repo.unlock();
-
-	// init params for gossip sender
-	last_sent_ = new Time(clock);
-	counter_   = 0;
-
+	robotname_ = config->get_string("/plugins/navgraph-broker/robotname");
 	// get robot-name
-	try{
-		robotname_ = config->get_string("/robot-name");
-	}catch (Exception &e)
-	{
-		logger->log_error( name() , "Can't read the robot name. Is 'robot-name' specified in cfg/host.yaml ?" );
-	}
-
+		try{
+			robotname_ = config->get_string("/robotname");
+		}catch (Exception &e)
+		{
+			logger->log_error( name() , "Can't read the robot name. Is 'robot-name' specified in cfg/host.yaml ?" );
+		}
+	
 	// init gossip receiver
-	  try {
-	    gossip_group->message_register().add_message_type<navgraph_broker::NavigationMessage>();
-	  } catch (std::runtime_error &e) {} // ignore, probably already added
+		try {
+			gossip_group->message_register().add_message_type<navgraph_broker::NavigationMessage>();
+		} catch (std::runtime_error &e) {} // ignore, probably already added
 
-	  sig_rcvd_conn_ =
-	    gossip_group->signal_received()
-	    .connect(boost::bind(&NavgraphBrokerThread::handle_peer_msg, this, _1, _2, _3, _4));
+		sig_rcvd_conn_ =
+				gossip_group->signal_received()
+				.connect(boost::bind(&NavgraphBrokerThread::handle_peer_msg, this, _1, _2, _3, _4));
 
-	  sig_recv_error_conn_ =
-	    gossip_group->signal_recv_error()
-	    .connect(boost::bind(&NavgraphBrokerThread::handle_peer_recv_error, this, _1, _2));
+		sig_recv_error_conn_ =
+				gossip_group->signal_recv_error()
+				.connect(boost::bind(&NavgraphBrokerThread::handle_peer_recv_error, this, _1, _2));
 
-	  sig_send_error_conn_ =
-	    gossip_group->signal_send_error()
-	    .connect(boost::bind(&NavgraphBrokerThread::handle_peer_send_error, this, _1));
+		sig_send_error_conn_ =
+				gossip_group->signal_send_error()
+				.connect(boost::bind(&NavgraphBrokerThread::handle_peer_send_error, this, _1));
 
 }
 
 void
 NavgraphBrokerThread::finalize()
 {
-	constraint_repo.lock();
-	constraint_repo->unregister_constraint("ReservedNodes");
-	constraint_repo.unlock();
+
+	/*
+	 * ToDo: Keep registered constraints in mind and unregister them on finalize
+	 */
+	//constraint_repo.lock();
+	//constraint_repo->unregister_constraint(robotname_.c_str());
+	//constraint_repo.unlock();
 
 	blackboard->unregister_listener(this);
 	blackboard->close(path_if_);
@@ -109,18 +97,54 @@ NavgraphBrokerThread::finalize()
 	sig_rcvd_conn_.disconnect();
 	sig_recv_error_conn_.disconnect();
 	sig_send_error_conn_.disconnect();
+
 }
 
 
 void
 NavgraphBrokerThread::loop(){
 
-	  fawkes::Time now(clock);
-	  if (now - last_sent_ >= 2.0) {
-		  *last_sent_ = now;
+	/*
+	 * Wenn eine Reservierung in der Queue liegt
+	 */
+	if( ! reservation_messages_.empty() ){
 
-		  send_data();
-	  }
+		std::shared_ptr<navgraph_broker::NavigationMessage> msg = reservation_messages_.front();
+		reservation_messages_.pop();
+
+		std::vector<std::string> reservation_request;
+		logger->log_info(name(), "Loop - received %s", msg->robotname().c_str() );
+
+		logger->log_info(name(), "Loop - msg->robotname() is  %s", msg->robotname().c_str() );
+
+		/*
+		 * Wenn die Message nicht von mir selber kommt
+		 */
+		if ( msg->robotname() != robotname_) {
+
+			std::vector<fawkes::TopologicalMapNode> nodes;
+
+			/*
+			 * Hole die nodes aus der message
+			 */
+			for(int i=0; i < (msg->nodelist_size()); i++ ){
+				nodes.push_back( navgraph->node( msg->nodelist(i) ));
+				std::string node = msg->nodelist(i);
+				logger->log_info(name(), "Loop - reserving node  %s", msg->nodelist(i).c_str() );
+			}
+
+			/*
+			 * Reserviere die nodes
+			 */
+			constraint_repo.lock();
+			reserve_nodes( msg->robotname() , nodes);
+			constraint_repo.unlock();
+		}
+		else {
+				logger->log_warn(name(), "Message with proper component_id and msg_type, but no conversion. "
+						" Wrong component ID/message type to C++ type mapping?");
+		}
+	}
 }
 
 
@@ -146,6 +170,43 @@ std::string NavgraphBrokerThread::get_string_from_nodes(std::vector<fawkes::Topo
 	return s_path;
 }
 
+std::vector<std::string>
+NavgraphBrokerThread::get_path_from_interface_as_vector(){
+
+	std::vector<std::string> path;
+	std::string vpath[40];
+
+	unsigned int path_length = path_if_->path_length();
+
+	vpath[0] = path_if_->path_node_1(); 	vpath[1] = path_if_->path_node_2();
+	vpath[2] = path_if_->path_node_3();		vpath[3] = path_if_->path_node_4();
+	vpath[4] = path_if_->path_node_5();		vpath[5] = path_if_->path_node_6();
+	vpath[6] = path_if_->path_node_7();		vpath[7] = path_if_->path_node_8();
+	vpath[8] = path_if_->path_node_9();		vpath[9] = path_if_->path_node_10();
+	vpath[10] = path_if_->path_node_11();	vpath[11] = path_if_->path_node_12();
+	vpath[12] = path_if_->path_node_13();	vpath[13] = path_if_->path_node_14();
+	vpath[14] = path_if_->path_node_15();	vpath[15] = path_if_->path_node_16();
+	vpath[16] = path_if_->path_node_17();	vpath[17] = path_if_->path_node_18();
+	vpath[18] = path_if_->path_node_19();	vpath[29] = path_if_->path_node_20();
+	vpath[20] = path_if_->path_node_21();	vpath[21] = path_if_->path_node_22();
+	vpath[22] = path_if_->path_node_23();	vpath[23] = path_if_->path_node_24();
+	vpath[24] = path_if_->path_node_25();	vpath[25] = path_if_->path_node_26();
+	vpath[26] = path_if_->path_node_27();	vpath[27] = path_if_->path_node_28();
+	vpath[28] = path_if_->path_node_29();	vpath[29] = path_if_->path_node_30();
+	vpath[30] = path_if_->path_node_31();	vpath[31] = path_if_->path_node_32();
+	vpath[32] = path_if_->path_node_33();	vpath[33] = path_if_->path_node_34();
+	vpath[34] = path_if_->path_node_35();	vpath[35] = path_if_->path_node_36();
+	vpath[36] = path_if_->path_node_37();	vpath[37] = path_if_->path_node_38();
+	vpath[38] = path_if_->path_node_39();	vpath[39] = path_if_->path_node_40();
+
+	path_.clear();
+
+	for( unsigned int i=0; i<path_length && i<39; i++){
+		path.push_back( vpath[i] );
+	}
+
+	return path;
+}
 
 std::string
 NavgraphBrokerThread::get_path_from_interface_as_string(){
@@ -191,11 +252,11 @@ NavgraphBrokerThread::get_path_from_interface_as_string(){
 }
 
 void
-NavgraphBrokerThread::reserve_nodes(std::string robot_name, std::vector<fawkes::TopologicalMapNode> path){
+NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<fawkes::TopologicalMapNode> path){
 
-	std::string constraint_name = robot_name + "_Reserved_Nodes";
+	std::string constraint_name = robotname + "_Reserved_Nodes";
 
-	if( constraint_repo->has_constraint(robot_name) ){
+	if( constraint_repo->has_constraint(robotname) ){
 
 		constraint_repo->override_nodes( constraint_name, path);
 	}
@@ -206,25 +267,25 @@ NavgraphBrokerThread::reserve_nodes(std::string robot_name, std::vector<fawkes::
 }
 
 void
-NavgraphBrokerThread::send_data(){
+NavgraphBrokerThread::send_data(std::vector<std::string>  nodes, std::string robotname){
 
 	fawkes::Time now(clock);
 
 	navgraph_broker::NavigationMessage m;
-	//m.set_counter(++counter_);
 	m.set_sec(now.get_sec());
 	m.set_nsec(now.get_nsec());
+	m.set_robotname( robotname.c_str() );
 
-	m.set_robotname( robotname_.c_str() );
-
-	for(unsigned i=0; i<path_.size(); i++){
-		m.add_nodelist( path_[i].c_str() );
+	std::string txt ="{";
+	for(unsigned i=0; i<nodes.size(); i++){
+		m.add_nodelist( nodes[i].c_str() );
+		txt += nodes[i].c_str();
+		txt += ",";
 	}
+	txt += "}";
+	logger->log_info(name(), "Send - Sending %s", txt.c_str());
 
 	gossip_group->broadcast(m);
-
-
-	logger->log_info(name(), "Sending");
 
 
 }
@@ -234,10 +295,14 @@ NavgraphBrokerThread::bb_interface_data_changed(fawkes::Interface *interface) th
 
 	path_if_->read();
 
-	std::string path = get_path_from_interface_as_string() ;
+	std::vector<std::string> path = get_path_from_interface_as_vector() ;
 
-	logger->log_info(name(), "Interface Changed - new path: %s", path.c_str() );
-	send_data();
+	std::string txt = "{";
+	for(uint i=0; i<path.size(); i++) txt += path[i];
+	txt += "}";
+
+	logger->log_info(name(), "Interface Changed - new path: %s", txt.c_str() );
+	send_data(path, this->robotname_);
 
 }
 
@@ -246,29 +311,26 @@ NavgraphBrokerThread::handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
 					     uint16_t component_id, uint16_t msg_type,
 					     std::shared_ptr<google::protobuf::Message> msg)
 {
-  if (component_id == navgraph_broker::NavigationMessage::COMP_ID &&
-      msg_type == navgraph_broker::NavigationMessage::MSG_TYPE)
-  {
-    std::shared_ptr<navgraph_broker::NavigationMessage> tm =
-      std::dynamic_pointer_cast<navgraph_broker::NavigationMessage>(msg);
 
-    if (tm) {
-    	std::string txt ="{ ";
-    	std::vector<std::string> reservation_request;
+	MutexLocker lock(loop_mutex);
 
-    	for(int i=0; i < tm->nodelist_size(); i++ ){
-    		reservation_request.push_back( tm->nodelist(i) );
-    		txt += tm->nodelist(i) + " "
-      }
-      logger->log_info(name(), "Received message with Path: %s}.",txt.c_str());
-    } else {
-      logger->log_warn(name(), "Message with proper component_id and msg_type, but no conversion. "
-		       " Wrong component ID/message type to C++ type mapping?");
-    }
-  } else {
-    logger->log_warn(name(), "Unknown message received: %u:%u", component_id, msg_type);
-  }
+	if (component_id == navgraph_broker::NavigationMessage::COMP_ID &&
+			msg_type == navgraph_broker::NavigationMessage::MSG_TYPE)
+	{
+		std::shared_ptr<navgraph_broker::NavigationMessage> tm =
+		std::dynamic_pointer_cast<navgraph_broker::NavigationMessage>(msg);
+
+		reservation_messages_.push(tm);
+
+		logger->log_info(name(), "Signal - received msg" );
+
+	}
+
+	else {
+		logger->log_warn(name(), "Unknown message received: %u:%u", component_id, msg_type);
+	}
 }
+
 
 /** Handle error during peer message processing.
  * @param endpoint endpoint of incoming message

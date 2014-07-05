@@ -28,6 +28,7 @@
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/clock.h>
+#include <aspect/blocked_timing.h>
 
 #include <plugins/gossip/aspect/gossip.h>
 #include <plugins/gossip/gossip/gossip_group.h>
@@ -39,6 +40,9 @@
 #include <interfaces/NavPathInterface.h>
 #include <blackboard/interface_listener.h>
 
+#include "NavigationMessage.pb.h"
+
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -56,6 +60,7 @@ class NavgraphBrokerThread
   public fawkes::NavGraphAspect,
   public fawkes::BlackBoardAspect,
   public fawkes::ConfigurableAspect,
+  public fawkes::BlockedTimingAspect,
   public fawkes::BlackBoardInterfaceListener,
   public fawkes::GossipAspect
 {
@@ -73,37 +78,30 @@ class NavgraphBrokerThread
  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
  protected: virtual void run() { Thread::run(); }
 
- private: // members
- 	 std::string robot_name_;
-     fawkes::NavPathInterface *path_if_;
-
-     fawkes::Time *last_sent_;
-     unsigned int  counter_;
-
  private: // methods
      void reserve_nodes(std::string robot_name, std::vector<fawkes::TopologicalMapNode> path);
      std::vector<fawkes::TopologicalMapNode> get_nodes_from_string(std::string path);
      std::string get_string_from_nodes(std::vector<fawkes::TopologicalMapNode> path);
      std::string get_path_from_interface_as_string();
-     void send_data();
+     std::vector<std::string> get_path_from_interface_as_vector();
+     void send_data(std::vector<std::string>  nodes, std::string robotname);
 
-
- private:
-   void handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
+     void handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
  		       uint16_t component_id, uint16_t msg_type,
  		       std::shared_ptr<google::protobuf::Message> msg);
-   void handle_peer_recv_error(boost::asio::ip::udp::endpoint &endpoint, std::string msg);
-   void handle_peer_send_error(std::string msg);
+     void handle_peer_recv_error(boost::asio::ip::udp::endpoint &endpoint, std::string msg);
+     void handle_peer_send_error(std::string msg);
 
   private:
-   boost::signals2::connection sig_rcvd_conn_;
-   boost::signals2::connection sig_recv_error_conn_;
-   boost::signals2::connection sig_send_error_conn_;
+     boost::signals2::connection sig_rcvd_conn_;
+     boost::signals2::connection sig_recv_error_conn_;
+     boost::signals2::connection sig_send_error_conn_;
 
   private:
-   std::vector<std::string> path_;
-   std::string robotname_;
-
+     fawkes::NavPathInterface *path_if_;
+     std::vector<std::string> path_;
+     std::queue<std::shared_ptr<navgraph_broker::NavigationMessage>> reservation_messages_;
+     std::string robotname_;
 };
 
 #endif
