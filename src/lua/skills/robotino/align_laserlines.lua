@@ -96,5 +96,6 @@ function INIT:init()
 end
 
 function ALIGN:init()
-   self.args["motor_move"] = {x=0, y=0, ori=closest_line:bearing()}
+   self.skills[1].ori = closest_line:bearing()
+   self.skills[1].tolerance = {x=0.05, y=0.05, ori=0.02}
 end
