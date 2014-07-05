@@ -142,9 +142,10 @@
   =>
   (retract ?hf ?lf ?tf ?gtdw)
   (assert (holding NONE))
-  (if (or (eq ?mtype T1) (eq ?mtype T5))
+  (if (or (eq ?mtype T1) (eq ?mtype T5) (eq (length$ ?lw) 2)
+	  (and (eq (length$ ?lw) 1) (eq ?mtype T2)))
     then
-    (printout error "ERROR: READ YELLOW-ON AT " ?name "|" ?mtype crlf)
+    (printout error "ERROR: READ YELLOW-ON AT " ?name "|" ?mtype "|lw: " ?lw crlf)
     (printout error "This should not happen!" crlf)
     (return)
   )
@@ -232,7 +233,6 @@
   ?lf <- (lights GREEN-OFF YELLOW-BLINKING RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
   ?hf <- (holding ?puck)
-  (role ?role)
   =>
   (printout error "Production invalid at " ?name "|" ?mtype crlf)
   ;keep problem in mind to block machine when if another problem occurs
@@ -323,7 +323,6 @@
   ?lf <- (lights $?)
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype ?mtype))
-  (role ?role)
   =>
   (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
   (retract ?lf ?tf ?hf ?gtdw)
