@@ -10,7 +10,9 @@ plugins/light_front:
   camera: v4l2:front:device=/dev/light_front 
 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
   #camera: v4l2:light:device=/dev/video1:size=640x480:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
-
+  
+  #Camera for gazebo simulation is written in cfg/gazsim-configurations/gazsim-config-override.yaml and overrides the camera value from above
+  
   # Size of the light (Ampel) in m, without the sockel to determine the light search areas
   light_size_height: 0.10	#0.10
   light_size_width: 0.02	#0.035
@@ -26,10 +28,16 @@ plugins/light_front:
   # camera_angle_vertical_rad: 0.01
 
   #move under rfid center position -> host.yaml
-  #center_x: 300
-  #center_y: 120
-  #center_width: 60
-  #center_height: 180
+  center_x: 300
+  center_y: 120
+  center_width: 60
+  center_height: 180
+
+  # camare offset of the front cam -> host.yaml
+  camera_offset_horizontal_rad: -0.013
+  camera_offset_vertical: 45
+  camera_angle_horizontal_rad: .00
+  camera_angle_vertical_rad: .00
   
   #Shared Memory Imagebuffer name
   shm_image_id: "light_front"

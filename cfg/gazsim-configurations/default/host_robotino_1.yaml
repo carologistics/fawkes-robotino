@@ -1,0 +1,51 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+# to start fawkes, use robotino2.yaml in cfg/
+
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
+---
+
+webview:
+  # TCP port for Webview HTTP requests; TCP port
+  port: !tcp-port 8081
+
+#seperate the shared memory images for the webcam:
+firevision:
+  fountain:
+    tcp_port: !tcp-port 2211
+
+gazsim:
+  robot-name: "robotino1"
+  visualization:
+    label-script-name: "label/robotino1"
+
+plugins/light_front:
+  #Camera for gazebo simulation:
+  camera: shmem:gazsim_cam:image_id=robotino1/gazsim_light_front:deep_copy=true
+  shm_image_id: "robotino1/light_front"
+  
+clips-agent:
+  llsf2014:
+    #agent-role:
+    
+    exploration:      
+      row: HIGH
+
+    dynamic-role-change/enabled: true
+    
+    play-exploration-without-refbox: false
+    # uncomment following line ONLY if you are playing without refbox
+    # unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
+
+    team-name: Carologistics
+    robot-name: R-1
+    robot-number: 1
+
+    peer-address: 127.0.0.1
+    peer-recv-port: 4411
+    peer-send-port: 4421
+    cyan-recv-port: 4451
+    magenta-recv-port: 4461
+    cyan-send-port: 4471
+    magenta-send-port: 4481

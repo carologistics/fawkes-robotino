@@ -1,0 +1,38 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+#start fawkes with this configuration file if you want to control robotino 3 in the simulation
+
+#include main config file
+include:
+  - !ignore-missing conf.d/
+  #concrete configuration in an other file because I could not override config values when using a single file
+  - !host-specific gazsim-configurations/p1p2_p3_p3_rd/host_robotino_3.yaml
+---
+
+fawkes:
+
+  # Main app relevant settings
+  mainapp:
+    # Size of BlackBoard memory segment; bytes
+    blackboard_size: 2097152
+    # Desired loop time of main thread, 0 to disable; microseconds
+    desired_loop_time: 66333
+
+    # Maximum time a thread may run per loop, 0 to disable; microseconds
+    max_thread_time: 133333
+
+    loggers: console;file/debug:debug.log
+
+    net:
+      tcp_port: !tcp-port 1923
+      service_name: "Fawkes on Gazsim Robotino 3"
+
+# Log level for ballposlog example plugin; sum of any of
+# debug=0, info=1, warn=2, error=4, none=8
+ballposlog/log_level: 0
+
+
+gazsim:
+  #channel for gazebo communication to differ topics of different robots
+  gazebo-communication-channel: "robotino3"
