@@ -101,9 +101,7 @@ fsm:add_transitions{
    {"SEE_AMPEL", "APPROACH_AMPEL", cond=ampel, desc="Ampel seen with laser"},
    {"CHECK_POSITION", "FINAL", cond="vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond="vars.correct_dir ~= 0"},
-   {"CORRECT_POSITION", "FINAL", cond=rough_correct_done},
-   {"APPROACH_AMPEL", "FINAL", cond=producing, desc="already there"},
-   {"CORRECT_POSITION", "FINAL", precond=producing, desc="already there"} 
+   {"CORRECT_POSITION", "FINAL", cond=rough_correct_done}
 }
 
 function send_transrot(vx, vy, omega)
