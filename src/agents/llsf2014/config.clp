@@ -111,3 +111,23 @@
 	  (private-peer-ports CYAN ?cyan-send-port ?cyan-recv-port)
 	  (private-peer-ports MAGENTA ?magenta-send-port ?magenta-recv-port))
 )
+
+(defrule conf-get-puck-storage-points
+  "Read configuration for puck-storage-points"
+  (declare (salience ?*PRIORITY-WM*))
+  (team-color ?team-color&CYAN|MAGENTA)
+  (confval (path "/clips-agent/llsf2014/puck-storage-points/cyan") (list-value $?psp-cyan))
+  (confval (path "/clips-agent/llsf2014/puck-storage-points/magenta") (list-value $?psp-magenta))
+  =>
+  (bind $?storage-points (create$))
+  (if (eq ?team-color CYAN)
+    then
+    (bind $?storage-points $?psp-cyan)
+    else
+    (bind $?storage-points $?psp-magenta)
+  )
+
+  (progn$ (?p ?storage-points)
+    (assert (puck-storage (name (sym-cat ?p)) (team ?team-color)))
+  )
+)

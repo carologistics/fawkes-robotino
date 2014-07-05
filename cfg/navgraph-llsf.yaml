@@ -397,13 +397,13 @@ nodes:
     properties:
       - orientation: 1.57
   - name: WAIT_FOR_DELIVER_1
-    pos: [5.04, 1.68]
+    pos: [5.04, 3.92]
     properties:
-      - orientation: 1.57
+      - orientation: -1.57
   - name: WAIT_FOR_DELIVER_2
-    pos: [-5.04, 1.68]
+    pos: [-5.04, 3.92]
     properties:
-      - orientation: 1.57
+      - orientation: -1.57
 # Wait points for machines in a row (free position of the four possible machine positions and WAIT_FOR_DELIVER for M12 and M24)
   - name: WAIT_FOR_ROW_1
     pos: [-3.92, 3.92]
@@ -524,6 +524,23 @@ nodes:
     properties:
       - orientation: 1.57
 
+# Puck Storage Points:
+  - name: D1_PUCK_STORAGE_1
+    pos: [5.05, 1.68]
+    properties:
+      - orientation: 0.0
+  - name: D1_PUCK_STORAGE_2
+    pos: [5.05, 1.12]
+    properties:
+      - orientation: 0.0
+  - name: D2_PUCK_STORAGE_1
+    pos: [-5.05, 1.68]
+    properties:
+      - orientation: 3.14
+  - name: D2_PUCK_STORAGE_2
+    pos: [-5.05, 1.12]
+    properties:
+      - orientation: 3.14
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
@@ -697,10 +714,10 @@ connections:
   - [P51, WAIT_FOR_INS_2_ROBOTINO_2]
   - [P91, WAIT_FOR_INS_1_ROBOTINO_3]
   - [P11, WAIT_FOR_INS_2_ROBOTINO_3]
-  - !dir [P91, WAIT_FOR_DELIVER_1]
-  - !dir [WAIT_FOR_DELIVER_1, P92]
-  - !dir [P11, WAIT_FOR_DELIVER_2]
-  - !dir [WAIT_FOR_DELIVER_2, P12]
+  - !dir [P94, WAIT_FOR_DELIVER_1]
+  - !dir [WAIT_FOR_DELIVER_1, P93]
+  - !dir [P14, WAIT_FOR_DELIVER_2]
+  - !dir [WAIT_FOR_DELIVER_2, P13]
 
 # connection of Exploration points
 
@@ -758,3 +775,9 @@ connections:
   - [WAIT_FOR_ROW_8, P84]
   - [WAIT_FOR_ROW_8, P93]
   - [WAIT_FOR_ROW_8, P94]
+
+  # Puck storage connections
+  - [M9H, D1_PUCK_STORAGE_1]
+  - [P91, D1_PUCK_STORAGE_2]
+  - [M21H, D2_PUCK_STORAGE_1]
+  - [P11, D2_PUCK_STORAGE_2]
