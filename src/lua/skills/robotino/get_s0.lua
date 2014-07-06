@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "get_s0"
-fsm                = SkillHSM:new{name=name, start="GOTO_IS", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"ppgoto", "fetch_puck", "leave_IS", "motor_move", "global_motor_move"}
 depends_interfaces = {
    {v = "ppnavi", type = "NavigatorInterface"},
@@ -45,7 +45,15 @@ function puck_visible()
    return puck_0:visibility_history() >= 1
 end
 
+function have_place(self)
+   if self.fsm.vars.place ~= nil then
+      return true
+   end
+end
+
 fsm:define_states{ export_to=_M,
+   closure={have_place=have_place},
+   {"INIT", JumpState},
    {"GOTO_IS", SkillJumpState, skills={{ppgoto}}, final_to="SKILL_GLOBAL_MOTOR_MOVE", fail_to="FAILED"},
    {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="MOVE_SIDEWAYS", fail_to="FAILED"},
    {"MOVE_SIDEWAYS", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},--when this is final we reached the end of the insertion area, so we fail
@@ -54,13 +62,15 @@ fsm:define_states{ export_to=_M,
    {"SKILL_LEAVE_AREA", SkillJumpState, skills={{leave_IS}}, final_to="FINAL", fail_to="FAILED"}
 }
 
+fsm:add_transitions{
+   {"INIT", "FAILED", cond="not have_place(self)", desc="Called get_s0 without parameter place!"},
+   {"INIT", "GOTO_IS", cond=have_place},
+   {"MOVE_SIDEWAYS", "SKILL_FETCH_PUCK", cond=puck_visible},
+}
+
 function SKILL_FETCH_PUCK:init()
    ppnavi:msgq_enqueue_copy(ppnavi.StopMessage:new())
 end
-
-fsm:add_transitions{
-   {"MOVE_SIDEWAYS", "SKILL_FETCH_PUCK", cond=puck_visible},
-}
 
 function GOTO_IS:init()
    if self.fsm.vars.place == nil then
