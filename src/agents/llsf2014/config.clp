@@ -77,6 +77,7 @@
 	  (out-of-order-time recycle-min ?recycle-min)
 	  (out-of-order-time recycle-max ?recycle-max))
 )
+
 (defrule conf-read-comm-config
   "Reads general values needed for communication from cfg/conf.d/clips-agent.yaml"
   (confval (path "/clips-agent/llsf2014/peer-address") (value ?address))
@@ -110,3 +111,26 @@
 	  (private-peer-ports CYAN ?cyan-send-port ?cyan-recv-port)
 	  (private-peer-ports MAGENTA ?magenta-send-port ?magenta-recv-port))
 )
+<<<<<<< HEAD
+=======
+
+(defrule conf-get-puck-storage-points
+  "Read configuration for puck-storage-points"
+  (declare (salience ?*PRIORITY-WM*))
+  (team-color ?team-color&CYAN|MAGENTA)
+  (confval (path "/clips-agent/llsf2014/puck-storage-points/cyan") (list-value $?psp-cyan))
+  (confval (path "/clips-agent/llsf2014/puck-storage-points/magenta") (list-value $?psp-magenta))
+  =>
+  (bind $?storage-points (create$))
+  (if (eq ?team-color CYAN)
+    then
+    (bind $?storage-points $?psp-cyan)
+    else
+    (bind $?storage-points $?psp-magenta)
+  )
+
+  (progn$ (?p ?storage-points)
+    (assert (puck-storage (name (sym-cat ?p)) (team ?team-color)))
+  )
+)
+>>>>>>> origin/common/agent-improvements

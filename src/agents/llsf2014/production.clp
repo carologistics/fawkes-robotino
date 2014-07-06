@@ -64,9 +64,8 @@
   (game-time $?time)
   (order (product P3) (quantity-requested ?qr) (id  ?order-id)
 	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
-	 (quantity-delivered ?qd&:(< ?qd ?qr))
-	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
-	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
+	 (quantity-delivered ?qd&:(< ?qd ?qr)) (begin ?begin)
+	 (end ?end&:(tac-can-use-timeslot (nth$ 1 ?time) ?begin ?end (+ ?*SKILL-DURATION-GET-PRODUCED* ?*SKILL-DURATION-DELIVER*))))
   (not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name P3 (+ ?in-delivery 1) ?order-id))) (state rejected)))
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P3*))))
@@ -90,9 +89,8 @@
   (machine (mtype T3|T4) (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name) (produced-puck ?puck&P1|P2)  (team ?team-color))
   (game-time $?time)
   (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
-	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
-	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
-	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
+	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr)) (begin ?begin)
+	 (end ?end&:(tac-can-use-timeslot (nth$ 1 ?time) ?begin ?end (+ ?*SKILL-DURATION-GET-PRODUCED* ?*SKILL-DURATION-DELIVER*))))
   (not (proposed-task (name pick-and-deliver) (args $?args&:(subsetp ?args (create$ ?name ?puck  (+ ?in-delivery 1) ?order-id))) (state rejected)))
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-P1P2*))))
@@ -402,24 +400,44 @@
   )
 )
 
-(defrule prod-deliver-unintentionally-holding-produced-puck
-  "If holding a puck that should not be held (e.g. picked it up while driving) deliver it."
+(defrule prod-deliver-holding-produced-puck
+  "If we hold a puck and there is an order for it, deliver it."
   (declare (salience ?*PRIORITY-DELIVER-HOLDING*))
   (phase PRODUCTION)
   (state IDLE)
   (holding ?puck&P1|P2|P3)
   (team-color ?team-color&~nil)
-  ; (game-time $?time)
-  ; (order (product P3) (quantity-requested ?qr) (id  ?order-id)
-  ; 	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr))
-  ; 	 (begin ?begin&:(<= ?begin (nth$ 1 ?time)))
-  ; 	 (end ?end&:(<= (nth$ 1 ?time) ?end)))
+  (game-time $?time)
+  (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+  	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr)) (begin ?begin)
+	 (end ?end&:(tac-can-use-timeslot (nth$ 1 ?time) ?begin ?end ?*SKILL-DURATION-DELIVER*)))
   (not (proposed-task (name deliver) (args $?args&:(subsetp ?args (create$ ?puck))) (state rejected)))
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-HOLDING*))))
   =>
-  (printout error "PROD: Deliver unintentionally holding produced puck" crlf)
+  (printout t "PROD: Deliver holding produced puck" crlf)
   (assert (proposed-task (name deliver) (priority ?*PRIORITY-DELIVER-HOLDING*)
 			 (args (create$ ?puck)))
+  )
+)
+
+(defrule prod-store-holding-produced-puck
+  "If we hold a puck and there is no order for it, store it."
+  (declare (salience ?*PRIORITY-DELIVER-HOLDING*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (holding ?puck&P1|P2|P3)
+  (team-color ?team-color&~nil)
+  (game-time $?time)
+  (not (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+	      (in-delivery ?in-delivery&:(< ?in-delivery ?qr)) (begin ?begin)
+	      (end ?end&:(tac-can-use-timeslot (nth$ 1 ?time) ?begin ?end ?*SKILL-DURATION-DELIVER*))))
+  (puck-storage (name ?storage) (puck NONE) (team ?team-color) (incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
+  (not (proposed-task (name deliver) (args $?args&:(subsetp ?args (create$ ?puck))) (state rejected)))
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-HOLDING*))))
+  =>
+  (printout t "PROD: Store holding produced puck" crlf)
+  (assert (proposed-task (name store) (priority ?*PRIORITY-DELIVER-HOLDING*)
+			 (args (create$ ?storage ?puck)))
   )
 )
 
@@ -459,5 +477,50 @@
   =>
   (printout t "PROD: Recycle hilding CO at " ?name crlf)
   (assert (proposed-task (name recycle-holding) (args (create$ ?name)) (priority ?*PRIORITY-RECYCLE*))
+  )
+)
+
+(defrule prod-store-product
+  "If there is a produced puck, we want to store it next to the delivery-gates to fulfill orders quicker and clear the machine."
+  (declare (salience ?*PRIORITY-STORE-PRODUCED*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (machine (mtype T3|T4|T5) (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name) (produced-puck ?puck&P1|P2|P3) (team ?team-color))
+  (puck-storage (name ?storage) (puck NONE) (team ?team-color)
+		(incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
+  (not (proposed-task (name pick-and-store) (args $?args&:(subsetp ?args (create$ ?name ?puck ?storage))) (state rejected)))
+  (holding NONE)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-STORE-PRODUCED*))))
+  (not (no-more-needed ?puck&:(eq ?puck P3))) ;store everything but unneded P3s
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-STORE-PRODUCED*))))
+  =>
+  (printout t "PROD: Store " ?puck " from " ?name " at " ?storage crlf)
+  (assert (proposed-task (name pick-and-store) (priority ?*PRIORITY-STORE-PRODUCED*)
+			 (args (create$ ?name ?puck ?storage)))
+  )
+)
+
+(defrule prod-deliver-stored-product
+  "Deliver a product we stored before."
+  (declare (salience ?*PRIORITY-DELIVER-STORED*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (puck-storage (name ?storage) (puck ?puck) (team ?team-color)
+		(incoming $?i-st&~:(member$ GET_STORED_PUCK ?i-st)))
+  (game-time $?time)
+  (order (product ?puck) (quantity-requested ?qr) (id  ?order-id)
+	 (in-delivery ?in-delivery&:(< ?in-delivery ?qr)) (begin ?begin)
+	 (end ?end&:(tac-can-use-timeslot (nth$ 1 ?time) ?begin ?end (+ ?*SKILL-DURATION-GET-STORED-PUCK* ?*SKILL-DURATION-DELIVER*))))
+  (not (proposed-task (name get-stored-and-deliver) (args $?args&:(subsetp ?args (create$ ?storage ?puck (+ ?in-delivery 1) ?order-id))) (state rejected)))
+  (holding NONE)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-STORED*))))
+  (not (task (state running) (priority ?old-p&:(>= ?old-p ?*PRIORITY-DELIVER-STORED*))))
+  =>
+  (printout t "PROD: Deliver stored " ?puck " from " ?storage crlf)
+  (assert (proposed-task (name get-stored-and-deliver)
+			 (priority ?*PRIORITY-DELIVER-STORED*)
+			 (args (create$ ?storage ?puck (+ ?in-delivery 1) ?order-id)))
   )
 )

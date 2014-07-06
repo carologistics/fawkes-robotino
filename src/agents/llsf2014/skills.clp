@@ -106,6 +106,31 @@
   (skill-call take_puck_to place ?place)
 )
 
+(defrule skill-store-puck
+  ?es <- (execute-skill store_puck ?place)
+  (wait-for-lock (res ?place) (state use))
+  ?s <- (state WAIT-FOR-LOCK)
+  =>
+  (retract ?es ?s)
+  (assert (store-puck-target ?place)
+	  (state STORE-PUCK)
+  )
+  (skill-call store_puck place ?place)
+)
+
+(defrule skill-get-stored-puck
+  ?es <- (execute-skill get_stored_puck ?place)
+  (wait-for-lock (res ?place) (state use))
+  ?s <- (state WAIT-FOR-LOCK)
+  =>
+  (retract ?es ?s)
+  (assert (get-stored-puck-target ?place)
+	  (state GET-STORED-PUCK)
+  )
+  (skill-call get_stored_puck place ?place)
+)
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; handle skill final/failed
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -192,4 +217,32 @@
   (retract ?sf ?df)
   (assert (state (sym-cat GOTO- ?s)))
   (modify ?wfl (state finished))
+)
+
+(defrule skill-store-puck-done
+  ?sf <- (state STORE-PUCK)
+  ?df <- (skill-done (name "store_puck") (status ?s))
+  (store-puck-target ?goal)
+  ?wfl <- (wait-for-lock (res ?goal) (state use))
+  =>
+  (printout t "skill store_puck done" crlf)
+  (retract ?sf ?df)
+  (assert (state (sym-cat STORE-PUCK- ?s)))
+  (modify ?wfl (state finished))
+)
+
+(defrule skill-get-stored-puck-done
+  ?sf <- (state GET-STORED-PUCK)
+  ?df <- (skill-done (name "get_stored_puck") (status ?s))
+  (get-stored-puck-target ?goal)
+  ?wfl <- (wait-for-lock (res ?goal) (state use))
+  =>
+  (printout t "skill get_stored_puck done" crlf)
+  (retract ?sf ?df)
+  (assert (state (sym-cat GET-STORED-PUCK- ?s)))
+  (modify ?wfl (state finished))
+)
+
+(deffunction skill-call-stop ()
+  (skill-call motor_move x 0.0 y 0.0)
 )

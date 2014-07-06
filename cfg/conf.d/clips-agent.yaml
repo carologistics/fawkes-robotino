@@ -103,6 +103,14 @@ clips-agent:
       min: 30
       recycle-max: 40
       recycle-min: 20
+    estimated-skill-duration:
+      get-produced: 23
+      get-stored-puck: 20
+      deliver: 40
+
+    puck-storage-points:
+      cyan: [D1_PUCK_STORAGE_1, D1_PUCK_STORAGE_2]
+      magenta: [D2_PUCK_STORAGE_1, D2_PUCK_STORAGE_2]
 
     exploration:      
       #row defined in host.yaml (this is only the default!)

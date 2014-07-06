@@ -57,6 +57,29 @@
     (pb-set-field ?o-msg "in_delivery" ?order:in-delivery)
     (pb-add-list ?worldmodel "orders" ?o-msg) ; destroys ?o-msg
   )
+  
+  ;add worldmodel about puck-storage
+  (delayed-do-for-all-facts ((?ps puck-storage)) TRUE
+    ;construct submsg for each machine
+    (bind ?ps-msg (pb-create "llsf_msgs.PuckStorageState"))
+    ;set name
+    (pb-set-field ?ps-msg "name" (str-cat ?ps:name))
+    (if (neq ?ps:puck NONE)
+      then
+      ;set puck
+      (pb-set-field ?ps-msg "puck" ?ps:puck)
+    )
+    ;set incoming
+    (foreach ?incoming-action (fact-slot-value ?ps incoming)
+      (pb-add-list ?ps-msg "incoming" ?incoming-action)
+    )
+    ;set agents responsible for incoming fields
+    (foreach ?incoming-agent (fact-slot-value ?ps incoming-agent)
+      (pb-add-list ?ps-msg "incoming_agent" (str-cat ?incoming-agent))
+    )
+    (pb-add-list ?worldmodel "storage" ?ps-msg)
+  )
+
   (pb-broadcast ?peer ?worldmodel)
   (pb-destroy ?worldmodel)
 )
@@ -69,6 +92,8 @@
   =>
   ; (printout t "***** Received Worldmodel *****" crlf)
   (unwatch facts machine)
+  (unwatch facts order)
+  (unwatch facts puck-storage)
   ;update worldmodel about machines
   (foreach ?m-msg (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
@@ -126,7 +151,36 @@
       (modify ?order (in-delivery ?in-del))
     )
   )
+  ;update worldmodel about puck-storage
+  (foreach ?ps-msg (pb-field-list ?p "storage")
+    (do-for-fact ((?storage puck-storage))
+		   (eq ?storage:name (sym-cat (pb-field-value ?ps-msg "name")))	
+      ;update incoming
+      (bind $?incoming (create$))
+      (progn$ (?incoming-action (pb-field-list ?ps-msg "incoming"))
+	(bind ?incoming (append$ ?incoming (sym-cat ?incoming-action)))
+      )
+      ;update agents responsible for incoming-fields
+      (bind $?incoming-agent (create$))
+      (progn$ (?agent (pb-field-list ?ps-msg "incoming_agent"))
+	(bind ?incoming-agent (append$ ?incoming-agent (sym-cat ?agent)))
+      )
+      ;update loaded-with
+      (if (pb-has-field ?ps-msg "puck")
+	then
+	(modify ?storage (incoming ?incoming) (incoming-agent ?incoming-agent)
+		         (puck (pb-field-value ?ps-msg "puck")))
+	else
+	(modify ?storage (incoming ?incoming) (incoming-agent ?incoming-agent)
+		         (puck NONE))
+      )
+	
+    )
+    (retract ?msg)
+  )
   (watch facts machine)
+  (watch facts order)
+  (watch facts puck-storage)
 )
 
 ;send worldmodel change
@@ -201,6 +255,7 @@
     (assert (already-received-wm-changes (append$ ?arc ?id)))
     ;apply change
     (if (pb-has-field ?p "machine") then
+      ;change machine if change is about a machine
       (do-for-fact ((?machine machine))
           (eq ?machine:name (sym-cat (pb-field-value ?p "machine")))
 
@@ -255,6 +310,32 @@
 	      ;one time is ok, set warning
 	      (modify ?machine (doubtful-worldmodel TRUE))
 	    )
+          )
+        )
+      )
+      ;change puck-storage if change is about a puck-storage
+      (do-for-fact ((?storage puck-storage))
+          (eq ?storage:name (sym-cat (pb-field-value ?p "machine")))
+
+        (switch (pb-field-value ?p "change")
+          (case ADD_LOADED_WITH then 
+	    (modify ?storage (puck (pb-field-value ?p "loaded_with")))
+          )
+          (case REMOVE_LOADED_WITH then
+            (modify ?storage (puck NONE))
+          )
+          (case ADD_INCOMING then 
+            (modify ?storage (incoming (append$ ?storage:incoming
+                                         (pb-field-value ?p "incoming")))
+                             (incoming-agent (append$ ?storage:incoming-agent
+                                               (sym-cat (pb-field-value ?p "agent")))))
+          )
+          (case REMOVE_INCOMING then 
+            (modify ?storage (incoming (delete-member$ ?storage:incoming
+                                         (pb-field-value ?p "incoming")))
+	                     ;every agent should do only one thing at a machine
+		             (incoming-agent (delete-member$ ?storage:incoming-agent
+                                               (sym-cat (pb-field-value ?p "agent")))))
           )
         )
       )

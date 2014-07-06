@@ -218,3 +218,9 @@
   =>
   (assert (no-more-needed P3))
 )
+
+(deffunction tac-can-use-timeslot (?current-time ?begin ?end ?estimated-time-needed)
+  "Can the agent finish a task in a certain time slot with estimated execution time"
+  (return (and (>= ?current-time (- ?begin ?estimated-time-needed))
+	       (<= ?current-time (- ?end ?estimated-time-needed))))
+)
