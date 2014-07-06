@@ -26,7 +26,7 @@ laser-cluster:
   cluster_min_size: 2
 
   # Minimum number of points in cluster to consider
-  cluster_max_size: 15
+  cluster_max_size: 10
 
   # not that these values are in the sensor frame!
   cluster_min_x:  0.02
