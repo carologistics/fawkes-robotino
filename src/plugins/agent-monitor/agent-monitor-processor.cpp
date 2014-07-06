@@ -237,7 +237,7 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       *r += "<h2>Worldmodel:</h2>\n";
       //table for machines
       *r += "<table>\n";
-      *r += "<tr> <th>Machine</th> <th>Type</th> <th>Loaded With</th> <th>Incoming</th> <th>By</th> <th>Produced</th> <th>Junk</th>  </tr>\n";
+      *r += "<tr> <th>Machine</th> <th>Type</th> <th>Loaded With</th> <th>Incoming</th> <th>By</th> <th>Produced</th> <th>Junk</th>  <th>Out-Of-Order</th></tr>\n";
       for(int i = 1; i <= 24; i++)
       {
 	r->append_body(machine_table_row(env_name, i).c_str());
@@ -307,7 +307,7 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
     //*r += "<h2>Composed Overview:</h2>\n";
 
     //Worldmodel
-    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/worldmodel\" width=\"35%\" height=\"50%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
+    r->append_body("<iframe src=\"http://%s/agent-monitor/agent/worldmodel\" width=\"50%\" height=\"50%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
     //refbox infos
     r->append_body("<iframe src=\"http://%s/agent-monitor/agent/refbox\" width=\"35%\" height=\"50%\" frameborder=\"0\"></iframe>\n", robotino1_.c_str());
     *r += "<br>\n";
@@ -444,6 +444,13 @@ AgentMonitorWebRequestProcessor::machine_table_row(std::string env_name, int n)
   res += "<td>" + get_slot_string(m, "produced-puck") + "</td> ";
   res += "<td>" + get_slot_string(m, "junk") + "</td> ";
   
+  res += "<td>";
+  if(get_slot_string(m, "out-of-order-until", 0) != "0")
+    res += "down";
+  else
+    res += "active";
+  res += "</td> ";
+
   res += "</tr>\n";
   return res;
 }

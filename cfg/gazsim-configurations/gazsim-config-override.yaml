@@ -70,3 +70,7 @@ plugins/colli/laser_occupancy_grid/buffer_size: 6
 plugins/amcl:
   angle_min_idx: 0
   angle_max_idx: 360
+agent-monitor:
+  robotino1: "127.0.0.1:8081"
+  robotino2: "127.0.0.1:8082"
+  robotino3: "127.0.0.1:8083"
