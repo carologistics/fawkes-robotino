@@ -32,8 +32,7 @@
     ;we have to wait if we bring a puck without starting the production
     ;becaule loading needs some time
     (if (or (eq ?mtype T5)
-  	    (and (or (eq ?mtype T3) (eq ?mtype T4)) (eq (length$ ?lw) 2))
-	    (and (eq ?mtype T2) (eq (length$ ?lw) 1)))
+  	    (and (or (eq ?mtype T3) (eq ?mtype T4)) (eq (length$ ?lw) 2)))
       then
       (bind ?dont-wait true)   
       (bind ?out-of-order "leave")
