@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "store_puck"
 fsm                = SkillHSM:new{name=name, start="GOTO", debug=false}
-depends_skills     = {"ppgoto", "motor_move", "global_motor_move"}
+depends_skills     = {"take_puck_to", "motor_move", "global_motor_move"}
 depends_interfaces = {
    {v = "ppnavi", type = "NavigatorInterface"},
    {v = "motor", type = "MotorInterface", id="Robotino"},
@@ -45,7 +45,7 @@ function puck_visible()
 end
 
 fsm:define_states{ export_to=_M,
-   {"GOTO", SkillJumpState, skills={{ppgoto}}, final_to="ADJUST_POS", fail_to="FAILED"},
+   {"GOTO", SkillJumpState, skills={{take_puck_to}}, final_to="ADJUST_POS", fail_to="FAILED"},
    {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="LAY_DOWN", fail_to="FAILED"},
    {"LAY_DOWN", SkillJumpState, skills={{motor_move}}, final_to="BACK_UP", fail_to="FAILED"},
    {"BACK_UP", SkillJumpState, skills={{motor_move}}, final_to="LEAVE", fail_to="FAILED"},
