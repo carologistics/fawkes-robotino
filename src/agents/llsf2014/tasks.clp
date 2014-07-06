@@ -678,6 +678,68 @@
   (assert (state TASK-FINISHED))
 )
 
+;;;;;;;;;;;;;;;;;
+;produce-with-S0:
+;;;;;;;;;;;;;;;;;
+(defrule task-produce-with-S0--start-get-S0
+  (declare (salience ?*PRIORITY-SUBTASK-1*))
+  (phase PRODUCTION)
+  ?t <- (task (name produce-with-S0) (args $?a) (state ~finished) (priority ?p))
+  (holding NONE)
+  ?s <- (state TASK-ORDERED)
+  (team-color ?team)
+  (input-storage ?team ?ins ? ? )
+  (secondary-storage ?team ?inssec ? ?)
+  (game-time $?game-time)
+  =>
+  (retract ?s)
+  (if (tac-check-for-secondary-ins ?ins ?inssec ?game-time)
+
+    then
+    (assert (execute-skill get_s0 ?inssec)
+      (state WAIT-FOR-LOCK)
+	    (wait-for-lock (priority ?p) (res ?inssec))
+    )
+    (modify ?t (state running))
+
+    else
+    (assert (execute-skill get_s0 ?ins)
+      (state WAIT-FOR-LOCK)
+  	  (wait-for-lock (priority ?p) (res ?ins))
+    )
+    (modify ?t (state running))
+  )
+)
+
+(defrule task-produce-with-S0--produce-at-machine
+  (declare (salience ?*PRIORITY-SUBTASK-2*))
+  (phase PRODUCTION)
+  ?t <- (task (name produce-with-S0) (args $?a) (state ~finished) (priority ?p))
+  (holding S0)
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
+  ?s <- (state GET-S0-FINAL|TASK-ORDERED)
+  =>
+  (retract ?s)
+  (assert (execute-skill finish_puck_at ?m ?mtype false)
+          (state WAIT-FOR-LOCK)
+	  (wait-for-lock (priority ?p) (res ?m))
+  )
+  (modify ?t (state running))
+)
+
+(defrule task-produce-with-S0--finish
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name produce-with-S0) (args $?a) (state ~finished))
+  (holding ?output)
+  (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (output ?output))
+  ?s <- (state GOTO-FINAL)
+  =>
+  (modify ?t (state finished))
+  (retract ?s)
+  (assert (state TASK-FINISHED))
+)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fallback for unhandled situation

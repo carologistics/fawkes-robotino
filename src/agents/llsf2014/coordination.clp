@@ -87,6 +87,12 @@
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
     )
+    (case produce-with-S0 then
+      (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
+				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a))))
+	      (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
+    )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )
 )

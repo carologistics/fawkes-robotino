@@ -381,6 +381,28 @@
   )
 )
 
+(defrule prod-produce-P3-at-begin
+  "Fast production of a P3 at the beginning without leaving the T5 machine while producing."
+  (declare (salience ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
+    (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE) (team ?team-color)
+    (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0))
+  )
+  (not (proposed-task (name produce-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
+  (holding NONE|S0)
+  (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))))
+  (not (locked-resource (resource P3-ONLY))) ;load only if there is no P3 agent
+  (not (no-more-needed P3))
+  (game-time $?time&:(< (nth$ 1 ?time) ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING*))
+  =>
+  (printout t "PROD: PRODUCE P3 at T5 " ?name " without waiting" crlf)
+  (assert (proposed-task (name produce-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))
+  )
+)
+
 (defrule prod-just-in-time-P3-production
   "Only for P3-Only agent. Drive to T5 start producing when an order is there and deliver it."
   (declare (salience ?*PRIORITY-JUST-IN-TIME-P3*))

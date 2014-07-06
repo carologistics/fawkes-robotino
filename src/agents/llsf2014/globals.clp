@@ -37,6 +37,9 @@
   ?*SKILL-DURATION-GET-PRODUCED* = 10
   ?*SKILL-DURATION-GET-STORED-PUCK* = 10
   ?*SKILL-DURATION-DELIVER* = 10
+
+  ;how long do we want to produce P3 without leaving the machine
+  ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING* = 120
 )
 
 (defrule globals-config-team-name
