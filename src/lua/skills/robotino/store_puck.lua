@@ -64,6 +64,7 @@ end
 
 function ADJUST_POS:init()
    self.skills[1].place = self.fsm.vars.place
+   self.skills[1].puck = true
 end
 
 function LAY_DOWN:init()
