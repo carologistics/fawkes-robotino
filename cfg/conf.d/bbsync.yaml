@@ -26,8 +26,8 @@ fawkes/bbsync:
       # Interface to synchronize, reading instance on remote,
       # mapped to remote instance locally
       reading:
-        laser: Laser360Interface::Laser urg
-#        laser-filter: Laser360Interface::Laser urg filtered
+        # laser: Laser360Interface::Laser urg
+        # laser-filter: Laser360Interface::Laser urg filtered
         battery: BatteryInterface::Robotino
         motor: MotorInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino
