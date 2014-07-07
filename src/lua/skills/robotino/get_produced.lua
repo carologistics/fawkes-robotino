@@ -114,7 +114,7 @@ end
 
 function GET_RID_OF_PUCK:init()
    self.skills[1].x = -0.2
-   self.skills[1].ori = 0.45 -- 20°
+   self.skills[1].ori = 0.5
    self.skills[1].vel_trans = 0.8 
 end
 
