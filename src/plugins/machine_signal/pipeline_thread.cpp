@@ -284,7 +284,11 @@ void MachineSignalPipelineThread::init()
 
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("light_front_switch");
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
+  bb_enable_switch_->write();
+
   bb_delivery_switch_ = blackboard->open_for_writing<SwitchInterface>("machine_signal_delivery_mode");
+  bb_delivery_switch_->set_enabled(cfg_delivery_mode_);
+  bb_delivery_switch_->write();
 
   bb_laser_clusters_[0] = blackboard->open_for_reading<Position3DInterface>("Laser Cluster 1");
   bb_laser_clusters_[1] = blackboard->open_for_reading<Position3DInterface>("Laser Cluster 2");
@@ -372,8 +376,8 @@ std::list<SignalState>::iterator MachineSignalPipelineThread::get_best_signal()
 
 bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
 {
-  bool rv = cfg_enable_switch_;
-  while (!bb_enable_switch_->msgq_empty()) {
+  bool rv = sw->is_enabled();
+  while (!sw->msgq_empty()) {
     if (SwitchInterface::DisableSwitchMessage *msg = sw->msgq_first_safe(msg)) {
       rv = false;
     }
