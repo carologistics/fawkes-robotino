@@ -42,9 +42,17 @@ documentation      = [==[Get a produced puck from under the RFID]==]
 skillenv.skill_module(_M)
 -- Constants
 local LOSTPUCK_DIST = 0.08
-if config:exists("/skills/take_puck_to/front_sensor_dist") then
+local PUCK_SENSOR_INDEX = 8
+if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
+   LOSTPUCK_DIST = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
+end
+if config:exists("/hardware/robotino/puck_sensor/index") then
    -- you can find the config value in /cfg/host.yaml
-   LOSTPUCK_DIST = config:get_float("/skills/take_puck_to/front_sensor_dist")
+   PUCK_SENSOR_INDEX = config:get_uint("/hardware/robotino/puck_sensor/index")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
 end
 
 --fawkes.load_yaml_navgraph already searches in the cfg directory
@@ -70,7 +78,7 @@ function ampel()
       and (euclidean_cluster:visibility_history() > MIN_VIS_HIST)
 end
 
-fsm:define_states{ export_to=_M, closure={producing_done = producing_done, sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST},
+fsm:define_states{ export_to=_M, closure={producing_done = producing_done, sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST, PUCK_SENSOR_INDEX = PUCK_SENSOR_INDEX},
    {"GOTO_MACHINE", SkillJumpState, skills={{ppgoto}}, final_to="ADJUST_POS", fail_to="FAILED"},
    {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="WAIT_PRODUCE", fail_to="FAILED"},
    {"WAIT_PRODUCE", SkillJumpState, skills={{wait_produce}}, final_to="SEE_AMPEL", fail_to="FAILED"},
@@ -85,9 +93,9 @@ fsm:define_states{ export_to=_M, closure={producing_done = producing_done, senso
 fsm:add_transitions{
    {"SEE_AMPEL", "FAILED", timeout = 5, desc = "No Ampel seen with laser"},
    {"SEE_AMPEL", "TURN", cond = ampel, desc = "Ampel seen with laser"},
-   {"CHECK_PUCK", "FINAL", cond = "sensor:distance(8) <= LOSTPUCK_DIST", desc = "Final with puck"},
-   {"CHECK_PUCK", "FAILED", cond = "sensor:distance(8) > LOSTPUCK_DIST", desc = "Failed without puck"},
-   {"GOTO_MACHINE", "GET_RID_OF_PUCK", cond = "sensor:distance(8) <= LOSTPUCK_DIST", desc = "Picked up another puck while driving to fetch the correct one"}
+   {"CHECK_PUCK", "FINAL", cond = "sensor:distance(PUCK_SENSOR_INDEX) <= LOSTPUCK_DIST", desc = "Final with puck"},
+   {"CHECK_PUCK", "FAILED", cond = "sensor:distance(PUCK_SENSOR_INDEX) > LOSTPUCK_DIST", desc = "Failed without puck"},
+   {"GOTO_MACHINE", "GET_RID_OF_PUCK", cond = "sensor:distance(PUCK_SENSOR_INDEX) <= LOSTPUCK_DIST and sensor:distance(PUCK_SENSOR_INDEX) > 0", desc = "Picked up another puck while driving, escape"}
 }
 
 function GOTO_MACHINE:init()
@@ -115,7 +123,7 @@ end
 function GET_RID_OF_PUCK:init()
    self.skills[1].x = -0.2
    self.skills[1].ori = 0.5
-   self.skills[1].vel_trans = 0.8 
+   self.skills[1].vel_trans = 0.8
 end
 
 function APPROACH_AMPEL:init()
