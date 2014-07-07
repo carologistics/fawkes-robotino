@@ -134,16 +134,16 @@ void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::ite
   // - One is unknown or
   // - A light changes from something other than unknown
   if (
-    (new_red == fawkes::RobotinoLightInterface::OFF
-        && new_yellow == fawkes::RobotinoLightInterface::OFF
-        && new_green == fawkes::RobotinoLightInterface::OFF
-    )
-    || new_red == fawkes::RobotinoLightInterface::UNKNOWN
-    || new_yellow == fawkes::RobotinoLightInterface::UNKNOWN
-    || new_green == fawkes::RobotinoLightInterface::UNKNOWN
-    || (red != fawkes::RobotinoLightInterface::UNKNOWN && new_red != red)
-    || (yellow != fawkes::RobotinoLightInterface::UNKNOWN && new_yellow != yellow)
-    || (green != fawkes::RobotinoLightInterface::UNKNOWN && new_green != green)
+      (new_red == fawkes::RobotinoLightInterface::OFF
+          && new_yellow == fawkes::RobotinoLightInterface::OFF
+          && new_green == fawkes::RobotinoLightInterface::OFF
+      )
+      || new_red == fawkes::RobotinoLightInterface::UNKNOWN
+      || new_yellow == fawkes::RobotinoLightInterface::UNKNOWN
+      || new_green == fawkes::RobotinoLightInterface::UNKNOWN
+      || (red != fawkes::RobotinoLightInterface::UNKNOWN && new_red != red)
+      || (yellow != fawkes::RobotinoLightInterface::UNKNOWN && new_yellow != yellow)
+      || (green != fawkes::RobotinoLightInterface::UNKNOWN && new_green != green)
   ) {
     if (visibility >= 0) visibility = -1;
     else visibility--;
