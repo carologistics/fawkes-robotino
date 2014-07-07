@@ -91,6 +91,8 @@ class MachineSignalPipelineThread :
     virtual void finalize();
 
     bool lock_if_new_data();
+    bool get_delivery_mode();
+
     void unlock();
 
     std::list<SignalState> &get_known_signals();
@@ -281,8 +283,9 @@ class MachineSignalPipelineThread :
     std::list<SignalState> known_signals_;
     std::list<SignalState>::iterator best_signal_;
 
-    std::set<firevision::ROI, compare_rois_by_area_> *bb_get_laser_rois();
-    std::set<firevision::ROI, compare_rois_by_area_> *cluster_rois_;
+
+    std::set<WorldROI, compare_rois_by_area_> *bb_get_laser_rois();
+    std::set<WorldROI, compare_rois_by_area_> *cluster_rois_;
 
 
     // Implemented abstracts inherited from ConfigurationChangeHandler

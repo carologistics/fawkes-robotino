@@ -358,6 +358,12 @@ bool MachineSignalPipelineThread::lock_if_new_data()
 }
 
 
+bool MachineSignalPipelineThread::get_delivery_mode()
+{
+  return cfg_delivery_mode_;
+}
+
+
 void MachineSignalPipelineThread::unlock()
 {
   data_mutex_.unlock();
@@ -392,9 +398,10 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
 }
 
 
-set<ROI, MachineSignalPipelineThread::compare_rois_by_area_> *MachineSignalPipelineThread::bb_get_laser_rois()
+set<MachineSignalPipelineThread::WorldROI, MachineSignalPipelineThread::compare_rois_by_area_> *
+MachineSignalPipelineThread::bb_get_laser_rois()
 {
-  set<ROI, compare_rois_by_area_> *rv = new set<ROI, compare_rois_by_area_>();
+  set<WorldROI, compare_rois_by_area_> *rv = new set<WorldROI, compare_rois_by_area_>();
   for (Position3DInterface *bb_pos : bb_laser_clusters_) {
 
     bb_pos->read();
@@ -439,10 +446,11 @@ set<ROI, MachineSignalPipelineThread::compare_rois_by_area_> *MachineSignalPipel
         cluster_roi.set_image_width(cam_width_);
         cluster_roi.set_image_height(cam_height_);
         cluster_roi.color = C_MAGENTA;
-        if (tf_listener->can_transform("/map", cluster_laser.frame_id, clock->now())) {
+        cluster_roi.world_pos = new Stamped<Point>(cluster_laser, cluster_laser.stamp, cluster_laser.frame_id);
+        /* if (tf_listener->can_transform("/map", cluster_laser.frame_id, clock->now())) {
           cluster_roi.world_pos = new Stamped<Point>();
           tf_listener->transform_point("/map", cluster_laser, *(cluster_roi.world_pos));
-        }
+        } */
         rv->insert(cluster_roi);
       }
     }
@@ -505,7 +513,11 @@ void MachineSignalPipelineThread::loop()
   }
 
   cfg_enable_switch_ = bb_switch_is_enabled(bb_enable_switch_);
-  cfg_delivery_mode_ = bb_switch_is_enabled(bb_delivery_switch_);
+  bool delivery_mode_new = bb_switch_is_enabled(bb_delivery_switch_);
+  if (delivery_mode_new != cfg_delivery_mode_) {
+    new_data_ = true;
+    cfg_delivery_mode_ = delivery_mode_new;
+  }
 
   if (cfg_enable_switch_) {
 
@@ -844,7 +856,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
       erased = true;
     }
     else if (cluster_rois_->size()) {
-      for (ROI const &cluster_roi : *cluster_rois_) {
+      for (WorldROI const &cluster_roi : *cluster_rois_) {
         ROI *intersection = cluster_roi.intersect(*it_R);
         unsigned int area_R = it_R->width * it_R->height;
         if (intersection) {
@@ -857,6 +869,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
             }
             else {
               SignalState::signal_rois_t_ new_signal = { new ROI(*it_R), NULL, NULL };
+              new_signal.world_pos = cluster_roi.world_pos;
               laser_signals.insert(make_pair(cluster_roi, new_signal));
             }
 
