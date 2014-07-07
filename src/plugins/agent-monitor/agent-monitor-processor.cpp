@@ -160,15 +160,31 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       CLIPS::Fact::pointer task = get_fact(env_name, "task");
       *r += "<b>Task: </b>";
       if(std::strcmp(get_slot(task, "name"), "load-with-S0") == 0)
-	r->append_body("load %s with S0", get_slot(task, "args", 0));
+	r->append_body("Load %s with S0", get_slot(task, "args", 0));
       else if(std::strcmp(get_slot(task, "name"), "load-with-S1") == 0)
-	r->append_body("load %s with S1", get_slot(task, "args", 0));
+	r->append_body("Load %s with S1", get_slot(task, "args", 0));
+      else if(std::strcmp(get_slot(task, "name"), "load-with-S2") == 0)
+	r->append_body("Load %s with S1", get_slot(task, "args", 0));
       else if(std::strcmp(get_slot(task, "name"), "pick-and-load") == 0)
-	r->append_body("bring produced puck from %s to %s", get_slot(task, "args", 0), get_slot(task, "args", 1));
+	r->append_body("Bring produced puck from %s to %s", get_slot(task, "args", 0), get_slot(task, "args", 1));
       else if(std::strcmp(get_slot(task, "name"), "pick-and-deliver") == 0)
-	r->append_body("deliver puck from %s", get_slot(task, "args", 0));
+	r->append_body("Deliver puck from %s", get_slot(task, "args", 0));
       else if(std::strcmp(get_slot(task, "name"), "recycle") == 0)
-	r->append_body("recycle puck from %s", get_slot(task, "args", 0));
+	r->append_body("Recycle puck from %s", get_slot(task, "args", 0));
+      else if(std::strcmp(get_slot(task, "name"), "deliver") == 0)
+	r->append_body("Deliver holding puck");
+      else if(std::strcmp(get_slot(task, "name"), "recycle-holding") == 0)
+	r->append_body("Recycle holding puck");
+      else if(std::strcmp(get_slot(task, "name"), "just-in-time-P3") == 0)
+	r->append_body("Just in time production of P3");
+      else if(std::strcmp(get_slot(task, "name"), "pick-and-store") == 0)
+	r->append_body("Store produced puck from %s at %s", get_slot(task, "args", 0), get_slot(task, "args", 2));
+      else if(std::strcmp(get_slot(task, "name"), "get-stored-and-deliver") == 0)
+	r->append_body("Get stored %s from %s and deliver", get_slot(task, "args", 1), get_slot(task, "args", 0));
+      else if(std::strcmp(get_slot(task, "name"), "store") == 0)
+	r->append_body("Store holding puck at %s", get_slot(task, "args", 0));
+      else if(std::strcmp(get_slot(task, "name"), "produce-with-S0") == 0)
+	r->append_body("Produce without leaving at %s", get_slot(task, "args", 0));
       else
 	*r += "unknown task";
       *r += "<br>\n";
