@@ -99,7 +99,7 @@
   ?hf <- (holding ?holding-old)
   ?lf <- (lights GREEN-ON YELLOW-OFF RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (junk ?jn)
-		  (loaded-with $?lw&:(or (eq ?mtype T1) (eq ?mtype T5)
+		  (loaded-with $?lw&:(or (eq ?mtype T1) (eq ?mtype T5) (eq ?mtype RECYCLE)
 					 (and (eq ?mtype T2) (eq (length$ ?lw) 1))
 					 (eq (length$ ?lw) 2))))
   =>
