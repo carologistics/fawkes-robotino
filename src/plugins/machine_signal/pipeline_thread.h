@@ -134,9 +134,6 @@ class MachineSignalPipelineThread :
     color_classifier_context_t_ cfy_ctxt_red_;
     color_classifier_context_t_ cfy_ctxt_red_delivery_;
     color_classifier_context_t_ cfy_ctxt_green_;
-    color_classifier_context_t_ cfy_ctxt_black_;
-
-    void delete_classifier_context(color_classifier_context_t_ *);
 
     std::string cfg_camera_;
     firevision::Camera *camera_;
@@ -195,6 +192,13 @@ class MachineSignalPipelineThread :
     firevision::SimpleColorClassifier *light_classifier_;
     firevision::ColorModelLuminance *light_colormodel_;
     firevision::ScanlineGrid *light_scangrid_;
+
+    unsigned int cfg_black_threshold_;
+    unsigned int cfg_black_min_points_;
+    unsigned int cfg_black_min_neighborhood_;
+    firevision::SimpleColorClassifier *black_classifier_;
+    firevision::ColorModelBlack *black_colormodel_;
+    firevision::ScanlineGrid *black_scangrid_;
 
     firevision::FilterROIDraw *roi_drawer_;
     firevision::SharedMemoryImageBuffer *shmbuf_;

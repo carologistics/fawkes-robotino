@@ -51,21 +51,14 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   cfy_ctxt_red_.classifier = NULL;
   cfy_ctxt_red_.scanline_grid = NULL;
   cfy_ctxt_red_.color_expect = C_RED;
-
   cfy_ctxt_red_delivery_.colormodel = NULL;
   cfy_ctxt_red_delivery_.classifier = NULL;
   cfy_ctxt_red_delivery_.scanline_grid = NULL;
   cfy_ctxt_red_delivery_.color_expect = C_RED;
-
   cfy_ctxt_green_.colormodel = NULL;
   cfy_ctxt_green_.classifier = NULL;
   cfy_ctxt_green_.scanline_grid = NULL;
   cfy_ctxt_green_.color_expect = C_GREEN;
-
-  cfy_ctxt_black_.colormodel = NULL;
-  cfy_ctxt_black_.classifier = NULL;
-  cfy_ctxt_black_.scanline_grid = NULL;
-  cfy_ctxt_black_.color_expect = C_BLACK;
 
   cfg_changed_ = false;
   cam_changed_ = false;
@@ -78,6 +71,13 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   light_scangrid_ = NULL;
   cfg_light_on_min_neighborhood_ = 0;
   cfg_light_on_min_points_ = 0;
+
+  black_classifier_ = NULL;
+  black_colormodel_ = NULL;
+  black_scangrid_ = NULL;
+  cfg_black_min_neighborhood_ = 0;
+  cfg_black_min_points_ = 0;
+  cfg_black_threshold_ = 0;
 
   roi_drawer_ = NULL;
   color_filter_ = NULL;
@@ -98,8 +98,6 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   bb_laser_clusters_[0] = NULL;
   bb_laser_clusters_[1] = NULL;
   bb_laser_clusters_[2] = NULL;
-
-  cluster_rois_ = NULL;
 }
 
 MachineSignalPipelineThread::~MachineSignalPipelineThread() {}
@@ -114,7 +112,14 @@ bool MachineSignalPipelineThread::color_data_consistent(
 
 void MachineSignalPipelineThread::setup_color_classifier(color_classifier_context_t_ *color_data)
 {
-  delete_classifier_context(color_data);
+  delete color_data->classifier;
+  delete color_data->colormodel;
+  delete color_data->scanline_grid;
+
+  for (std::vector<ColorModelSimilarity::color_class_t *>::iterator it = color_data->color_class.begin();
+      it != color_data->color_class.end(); it++) {
+    delete *it;
+  }
   color_data->color_class.clear();
 
   // Update the color class used by the combined color model for the tuning filter
@@ -174,6 +179,7 @@ void MachineSignalPipelineThread::init()
   cfy_ctxt_red_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/red/neighborhood_min_match");
   cfy_ctxt_red_.cfg_scangrid_x_offset = config->get_int(CFG_PREFIX "/red/scangrid_x_offset");
   cfy_ctxt_red_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/red/scangrid_y_offset");
+
   setup_color_classifier(&cfy_ctxt_red_);
 
   // Configure RED classifier for delivery zone
@@ -186,6 +192,7 @@ void MachineSignalPipelineThread::init()
   cfy_ctxt_red_delivery_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/red_delivery/neighborhood_min_match");
   cfy_ctxt_red_delivery_.cfg_scangrid_x_offset = config->get_int(CFG_PREFIX "/red_delivery/scangrid_x_offset");
   cfy_ctxt_red_delivery_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/red_delivery/scangrid_y_offset");
+
   setup_color_classifier(&cfy_ctxt_red_delivery_);
 
   // Configure GREEN classifier
@@ -198,25 +205,19 @@ void MachineSignalPipelineThread::init()
   cfy_ctxt_green_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/green/neighborhood_min_match");
   cfy_ctxt_green_.cfg_scangrid_x_offset = config->get_int(CFG_PREFIX "/green/scangrid_x_offset");
   cfy_ctxt_green_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/green/scangrid_y_offset");
-  setup_color_classifier(&cfy_ctxt_green_);
 
-  // Configure BLACK classifier
-  cfy_ctxt_black_.cfg_ref_col = config->get_uints(CFG_PREFIX "/black/reference_color");
-  cfy_ctxt_black_.cfg_chroma_thresh = config->get_ints(CFG_PREFIX "/black/chroma_thresh");
-  cfy_ctxt_black_.cfg_sat_thresh = config->get_ints(CFG_PREFIX "/black/saturation_thresh");
-  cfy_ctxt_black_.cfg_luma_thresh = config->get_ints(CFG_PREFIX "/black/luma_thresh");
-  cfy_ctxt_black_.cfg_roi_min_points = config->get_int(CFG_PREFIX "/black/min_points");
-  cfy_ctxt_black_.cfg_roi_basic_size = config->get_int(CFG_PREFIX "/black/basic_roi_size");
-  cfy_ctxt_black_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/black/neighborhood_min_match");
-  cfy_ctxt_black_.cfg_scangrid_x_offset = config->get_int(CFG_PREFIX "/black/scangrid_x_offset");
-  cfy_ctxt_black_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/black/scangrid_y_offset");
-  setup_color_classifier(&cfy_ctxt_black_);
+  setup_color_classifier(&cfy_ctxt_green_);
 
   // Configure brightness classifier
   cfg_light_on_threshold_ = config->get_uint(CFG_PREFIX "/bright_light/min_brightness");
   cfg_light_on_min_points_ = config->get_uint(CFG_PREFIX "/bright_light/min_points");
   cfg_light_on_min_neighborhood_ = config->get_uint(CFG_PREFIX "/bright_light/neighborhood_min_match");
   cfg_light_on_min_area_cover_ = config->get_float(CFG_PREFIX "/bright_light/min_area_cover");
+
+  // Configure black classifier
+  cfg_black_threshold_ = config->get_uint(CFG_PREFIX "/black/max_luminance");
+  cfg_black_min_neighborhood_ = config->get_uint(CFG_PREFIX "/black/neighborhood_min_match");
+  cfg_black_min_points_ = config->get_uint(CFG_PREFIX "/black/min_points");
 
   // General config
   cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
@@ -274,6 +275,20 @@ void MachineSignalPipelineThread::init()
       C_WHITE);
   light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
+  // Setup black classifier for top/bottom recognition
+  black_scangrid_ = new ScanlineGrid(cam_width_, cam_height_, 1, 1);
+  black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
+  black_classifier_ = new SimpleColorClassifier(
+    black_scangrid_,
+    black_colormodel_,
+    cfg_black_min_points_,
+    6,
+    false,
+    cfg_black_min_neighborhood_,
+    0,
+    C_BLACK);
+  black_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
+
   // Initialize frame rate detection & buffer lengths for blinking detection
   buflen_ = (unsigned int) ceil(cfg_fps_/4) + 1;
   desired_frametime_ = 1/(double)cfg_fps_;
@@ -305,15 +320,6 @@ void MachineSignalPipelineThread::setup_camera()
   cam_height_ = camera_->pixel_height();
 }
 
-void MachineSignalPipelineThread::delete_classifier_context(MachineSignalPipelineThread::color_classifier_context_t_ *ctxt)
-{
-  delete ctxt->colormodel;
-  delete ctxt->classifier;
-  delete ctxt->scanline_grid;
-  for (ColorModelSimilarity::color_class_t *color : ctxt->color_class) {
-    delete color;
-  }
-}
 
 void MachineSignalPipelineThread::finalize()
 {
@@ -321,10 +327,27 @@ void MachineSignalPipelineThread::finalize()
   delete roi_drawer_;
   delete last_second_;
 
-  delete_classifier_context(&cfy_ctxt_red_delivery_);
-  delete_classifier_context(&cfy_ctxt_red_);
-  delete_classifier_context(&cfy_ctxt_green_);
-  delete_classifier_context(&cfy_ctxt_black_);
+  delete cfy_ctxt_red_.colormodel;
+  delete cfy_ctxt_red_.classifier;
+  delete cfy_ctxt_red_.scanline_grid;
+  for (std::vector<ColorModelSimilarity::color_class_t *>::iterator it = cfy_ctxt_red_.color_class.begin();
+      it != cfy_ctxt_red_.color_class.end(); it++) {
+    delete *it;
+  }
+  delete cfy_ctxt_red_delivery_.colormodel;
+  delete cfy_ctxt_red_delivery_.classifier;
+  delete cfy_ctxt_red_delivery_.scanline_grid;
+  for (std::vector<ColorModelSimilarity::color_class_t *>::iterator it = cfy_ctxt_red_delivery_.color_class.begin();
+      it != cfy_ctxt_red_delivery_.color_class.end(); it++) {
+    delete *it;
+  }
+  delete cfy_ctxt_green_.colormodel;
+  delete cfy_ctxt_green_.classifier;
+  delete cfy_ctxt_green_.scanline_grid;
+  for (std::vector<ColorModelSimilarity::color_class_t *>::iterator it = cfy_ctxt_green_.color_class.begin();
+      it != cfy_ctxt_green_.color_class.end(); it++) {
+    delete *it;
+  }
 
   blackboard->close(bb_enable_switch_);
   blackboard->close(bb_delivery_switch_);
@@ -340,6 +363,10 @@ void MachineSignalPipelineThread::finalize()
   delete light_scangrid_;
   delete light_colormodel_;
   delete light_classifier_;
+
+  delete black_scangrid_;
+  delete black_colormodel_;
+  delete black_classifier_;
 
   delete combined_colormodel_;
   delete color_filter_;
@@ -472,7 +499,6 @@ inline void MachineSignalPipelineThread::reinit_color_config()
   setup_color_classifier(&cfy_ctxt_red_);
   setup_color_classifier(&cfy_ctxt_green_);
   setup_color_classifier(&cfy_ctxt_red_delivery_);
-  setup_color_classifier(&cfy_ctxt_black_);
 
   combined_colormodel_->add_colors(cfy_ctxt_red_.color_class);
   combined_colormodel_->add_colors(cfy_ctxt_red_delivery_.color_class);
@@ -488,6 +514,19 @@ inline void MachineSignalPipelineThread::reinit_color_config()
     cfg_light_on_min_neighborhood_,
     0,
     C_WHITE);
+
+  delete black_classifier_;
+  delete black_colormodel_;
+  black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
+  black_classifier_ = new SimpleColorClassifier(
+    black_scangrid_,
+    black_colormodel_,
+    cfg_black_min_points_,
+    6,
+    false,
+    cfg_black_min_neighborhood_,
+    0,
+    C_BLACK);
 
   delete point2pixel_;
   point2pixel_ = new PixelFromPosition(
@@ -538,8 +577,8 @@ void MachineSignalPipelineThread::loop()
     camera_->capture();
 
     light_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
+    black_classifier_->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
-    cfy_ctxt_black_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     cfy_ctxt_green_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     cfy_ctxt_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     cfy_ctxt_red_delivery_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
@@ -892,8 +931,8 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
   for (map<ROI, SignalState::signal_rois_t_>::value_type &cluster_signal : laser_signals) {
     ROI *cluster_copy = new ROI(cluster_signal.first);
     SignalState::signal_rois_t_ &signal = cluster_signal.second;
-    cfy_ctxt_black_.scanline_grid->set_roi(cluster_copy);
-    list<ROI> *black_stuff = cfy_ctxt_black_.classifier->classify();
+    black_scangrid_->set_roi(cluster_copy);
+    list<ROI> *black_stuff = black_classifier_->classify();
     if (unlikely(cfg_tuning_mode_)) {
       drawn_rois_.insert(drawn_rois_.end(), black_stuff->begin(), black_stuff->end());
     }
@@ -962,8 +1001,8 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
         drawn_rois_.push_back(check_black_top);
 
-      cfy_ctxt_black_.scanline_grid->set_roi(&check_black_top);
-      std::list<ROI> *black_rois_top = cfy_ctxt_black_.classifier->classify();
+      black_scangrid_->set_roi(&check_black_top);
+      std::list<ROI> *black_rois_top = black_classifier_->classify();
 
       if (!black_rois_top->empty()) {
         found_some_black = true;
@@ -1005,8 +1044,8 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
         drawn_rois_.push_back(check_black_bottom);
 
-      cfy_ctxt_black_.scanline_grid->set_roi(&check_black_bottom);
-      std::list<ROI> *black_rois_bottom = cfy_ctxt_black_.classifier->classify();
+      black_scangrid_->set_roi(&check_black_bottom);
+      std::list<ROI> *black_rois_bottom = black_classifier_->classify();
 
       if (!black_rois_bottom->empty()) {
         found_some_black = true;
@@ -1120,7 +1159,7 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
     MutexLocker lock(&cfg_mutex_);
     bool chg = false;
 
-    if (sub_prefix == "/red" || sub_prefix == "/green" || sub_prefix == "/red_delivery" || sub_prefix == "/black") {
+    if (sub_prefix == "/red" || sub_prefix == "/green" || sub_prefix == "/red_delivery") {
       color_classifier_context_t_ *classifier = NULL;
       if (sub_prefix == "/red")
         classifier = &cfy_ctxt_red_;
@@ -1128,8 +1167,6 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         classifier = &cfy_ctxt_green_;
       else if (sub_prefix == "/red_delivery")
         classifier = &cfy_ctxt_red_delivery_;
-      else if (sub_prefix == "/black")
-        classifier = &cfy_ctxt_black_;
 
       std::string opt = path.substr(full_pfx.length());
 
@@ -1161,6 +1198,14 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         chg = test_set_cfg_value(&(cfg_light_on_min_neighborhood_), v->get_uint());
       else if (opt == "/min_area_cover")
         cfg_light_on_min_area_cover_ = v->get_float();
+    }
+    else if (sub_prefix == "/black") {
+      if (opt == "/max_luminance")
+        chg = test_set_cfg_value(&(cfg_black_threshold_), v->get_uint());
+      else if (opt == "/min_points")
+        chg = test_set_cfg_value(&(cfg_black_min_points_), v->get_uint());
+      else if (opt == "/neighborhood_min_match")
+        chg = test_set_cfg_value(&(cfg_black_min_neighborhood_), v->get_uint());
     }
     else if (sub_prefix == "/lasercluster") {
       if (opt == "/min_visibility_history")
