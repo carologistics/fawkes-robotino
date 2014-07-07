@@ -78,7 +78,8 @@ fsm:define_states{ export_to=_M, closure={producing_done = producing_done, senso
    {"TURN", SkillJumpState, skills = {{motor_move}}, final_to = "APPROACH_AMPEL", fail_to = "FAILED"},
    {"APPROACH_AMPEL", SkillJumpState, skills = {{motor_move}}, final_to = "LEAVE_AMPEL", fail_to = "FAILED"},
    {"LEAVE_AMPEL", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
-   {"CHECK_PUCK", JumpState}
+   {"CHECK_PUCK", JumpState},
+   {"GET_RID_OF_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GOTO_MACHINE", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -86,6 +87,7 @@ fsm:add_transitions{
    {"SEE_AMPEL", "TURN", cond = ampel, desc = "Ampel seen with laser"},
    {"CHECK_PUCK", "FINAL", cond = "sensor:distance(8) <= LOSTPUCK_DIST", desc = "Final with puck"},
    {"CHECK_PUCK", "FAILED", cond = "sensor:distance(8) > LOSTPUCK_DIST", desc = "Failed without puck"},
+   {"GOTO_MACHINE", "GET_RID_OF_PUCK", cond = "sensor:distance(8) <= LOSTPUCK_DIST", desc = "Picked up another puck while driving to fetch the correct one"}
 }
 
 function GOTO_MACHINE:init()
@@ -108,6 +110,12 @@ end
 function TURN:init()
    local ampel = get_ampel()
    self.skills[1].ori = math.atan2(ampel.y, ampel.x)
+end
+
+function GET_RID_OF_PUCK:init()
+   self.skills[1].x = -0.2
+   self.skills[1].ori = 0.45 -- 20°
+   self.skills[1].vel_trans = 0.8 
 end
 
 function APPROACH_AMPEL:init()
