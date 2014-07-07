@@ -18,7 +18,7 @@ plugins/machine_signal:
   # Whether to start in delivery mode.
   # This is overridden by the switch interface machine_signal_delivery_mode
   #
-  delivery_mode: false
+  delivery_mode: true
 
   fps: 30
 
@@ -105,9 +105,17 @@ plugins/machine_signal:
     scangrid_y_offset: 2
 
   black:
-    max_luminance: 30
+    reference_color:    [0xf, 0, 1,
+                         0x20, 0x10, 0x10,
+                         0x10, 0x20, 0x10]
+    chroma_thresh:      [5, 30, 100]
+    saturation_thresh:  [0, 0, 0]
+    luma_thresh:        [215, 230, 250]
     min_points: 10
+    basic_roi_size: 6
     neighborhood_min_match: 5
+    scangrid_x_offset: 1
+    scangrid_y_offset: 1
 
   bright_light:
     min_brightness: 150
@@ -118,11 +126,11 @@ plugins/machine_signal:
   lasercluster:
     min_visibility_history: 10
     laser_frame: /base_laser
-    signal_width: 0.037
-    signal_bottom: 0.15
-    signal_top: 0.27
-    cam_aperture_x: 1.32
-    cam_aperture_y: 0.85
-    cam_angle: 0.081
+    signal_width: 0.05
+    signal_bottom: -0.15 
+    signal_top: 0.04
+    cam_aperture_x: 0.95
+    cam_aperture_y: 0.8
+    cam_angle: 0.081 # 4.64°
+    cam_angle: 0.25 # 12.2°
     cam_frame: /cam_front
-
