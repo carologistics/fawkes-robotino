@@ -6,8 +6,8 @@ fawkes/meta_plugins:
   # Meta plugin with useful functionality for the robotino-laptop
   m-bare: bbsync,static-transforms,webview
   
-  m-fv: fvbase,fvfountain,fvretriever
-  m-fv-vision: m-bare,m-fv,machine-signal,puck_vision
+  m-fv: fvbase,fvfountain
+  m-fv-vision: m-bare,m-fv,machine-signal,puck_vision,fvretriever
   
   m-laser: m-bare,laser,map-lasergen,laser-filter
   m-laser-cluster: m-laser,laser-pointclouds,laser-cluster
