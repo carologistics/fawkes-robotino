@@ -98,7 +98,10 @@
   ?gtdw <- (goto-dont-wait ?dont-wait)
   ?hf <- (holding ?holding-old)
   ?lf <- (lights GREEN-ON YELLOW-OFF RED-OFF)
-  ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn))
+  ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (junk ?jn)
+		  (loaded-with $?lw&:(or (eq ?mtype T1) (eq ?mtype T5)
+					 (and (eq ?mtype T2) (eq (length$ ?lw) 1))
+					 (eq (length$ ?lw) 2))))
   =>
   (retract ?tf ?hf ?lf ?gtdw)
   (if (and (eq ?dont-wait true)
