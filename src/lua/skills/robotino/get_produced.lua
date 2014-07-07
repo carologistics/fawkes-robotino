@@ -30,10 +30,10 @@ depends_skills     = {"motor_move", "ppgoto", "global_motor_move", "wait_produce
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
   {v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
-  {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
-  { v="lightswitch", type="SwitchInterface", id="light_front_switch" },
-  { v="light", type ="RobotinoLightInterface", id = "Light_State" },
-  {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" },
+  {v = "laserswitch", type="SwitchInterface", id="laser-cluster"},
+  {v = "lightswitch", type="SwitchInterface", id="light_front_switch"},
+  {v = "light", type ="RobotinoLightInterface", id = "Light_State"},
+  {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster"},
 }
 
 documentation      = [==[Get a produced puck from under the RFID]==]
@@ -95,6 +95,7 @@ fsm:add_transitions{
    {"SEE_AMPEL", "TURN", cond = ampel, desc = "Ampel seen with laser"},
    {"CHECK_PUCK", "FINAL", cond = "sensor:distance(PUCK_SENSOR_INDEX) <= LOSTPUCK_DIST", desc = "Final with puck"},
    {"CHECK_PUCK", "FAILED", cond = "sensor:distance(PUCK_SENSOR_INDEX) > LOSTPUCK_DIST", desc = "Failed without puck"},
+   -- sensor:distance has to be > 0 due to jitter in the sensor. The sensor either shows 0.00 as distance or the correct value.
    {"GOTO_MACHINE", "GET_RID_OF_PUCK", cond = "sensor:distance(PUCK_SENSOR_INDEX) <= LOSTPUCK_DIST and sensor:distance(PUCK_SENSOR_INDEX) > 0", desc = "Picked up another puck while driving, escape"}
 }
 
