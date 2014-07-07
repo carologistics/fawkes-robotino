@@ -12,6 +12,7 @@
 #include <interfaces/RobotinoLightInterface.h>
 #include <fvutils/base/roi.h>
 #include <logging/logger.h>
+#include <tf/transformer.h>
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -30,6 +31,7 @@ class SignalState {
         firevision::ROI *red_roi;
         firevision::ROI *yellow_roi;
         firevision::ROI *green_roi;
+        fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
     } signal_rois_t_;
 
   private:
@@ -60,6 +62,7 @@ class SignalState {
     bool ready;
     int unseen;
     unsigned int area;
+    fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
 
     char const *get_debug_R();
     char const *get_debug_Y();
