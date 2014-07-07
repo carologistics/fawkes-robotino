@@ -105,17 +105,9 @@ plugins/machine_signal:
     scangrid_y_offset: 2
 
   black:
-    reference_color:    [0xf, 0, 1,
-                         0x20, 0x10, 0x10,
-                         0x10, 0x20, 0x10]
-    chroma_thresh:      [5, 30, 100]
-    saturation_thresh:  [0, 0, 0]
-    luma_thresh:        [215, 230, 250]
+    max_luminance: 30
     min_points: 10
-    basic_roi_size: 6
     neighborhood_min_match: 5
-    scangrid_x_offset: 1
-    scangrid_y_offset: 1
 
   bright_light:
     min_brightness: 150
