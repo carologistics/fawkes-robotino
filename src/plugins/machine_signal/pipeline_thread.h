@@ -193,7 +193,11 @@ class MachineSignalPipelineThread :
     firevision::ColorModelLuminance *light_colormodel_;
     firevision::ScanlineGrid *light_scangrid_;
 
-    unsigned int cfg_black_threshold_;
+    unsigned int cfg_black_y_thresh_;
+    unsigned int cfg_black_u_thresh_;
+    unsigned int cfg_black_v_thresh_;
+    unsigned int cfg_black_u_ref_;
+    unsigned int cfg_black_v_ref_;
     unsigned int cfg_black_min_points_;
     unsigned int cfg_black_min_neighborhood_;
     firevision::SimpleColorClassifier *black_classifier_;

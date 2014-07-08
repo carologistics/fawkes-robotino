@@ -77,7 +77,11 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   black_scangrid_ = NULL;
   cfg_black_min_neighborhood_ = 0;
   cfg_black_min_points_ = 0;
-  cfg_black_threshold_ = 0;
+  cfg_black_y_thresh_ = 30;
+  cfg_black_u_thresh_ = 30;
+  cfg_black_v_thresh_ = 30;
+  cfg_black_u_ref_ = 128;
+  cfg_black_v_ref_ = 128;
 
   roi_drawer_ = NULL;
   color_filter_ = NULL;
@@ -215,7 +219,11 @@ void MachineSignalPipelineThread::init()
   cfg_light_on_min_area_cover_ = config->get_float(CFG_PREFIX "/bright_light/min_area_cover");
 
   // Configure black classifier
-  cfg_black_threshold_ = config->get_uint(CFG_PREFIX "/black/max_luminance");
+  cfg_black_y_thresh_ = config->get_uint(CFG_PREFIX "/black/y_threshold");
+  cfg_black_u_thresh_ = config->get_uint(CFG_PREFIX "/black/u_threshold");
+  cfg_black_v_thresh_ = config->get_uint(CFG_PREFIX "/black/v_threshold");
+  cfg_black_u_ref_ = config->get_uint(CFG_PREFIX "/black/u_reference");
+  cfg_black_v_ref_ = config->get_uint(CFG_PREFIX "/black/v_reference");
   cfg_black_min_neighborhood_ = config->get_uint(CFG_PREFIX "/black/neighborhood_min_match");
   cfg_black_min_points_ = config->get_uint(CFG_PREFIX "/black/min_points");
 
@@ -277,7 +285,13 @@ void MachineSignalPipelineThread::init()
 
   // Setup black classifier for top/bottom recognition
   black_scangrid_ = new ScanlineGrid(cam_width_, cam_height_, 1, 1);
-  black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
+  black_colormodel_ = new ColorModelBlack(
+    cfg_black_y_thresh_,
+    cfg_black_u_thresh_,
+    cfg_black_v_thresh_,
+    cfg_black_u_ref_,
+    cfg_black_v_ref_
+  );
   black_classifier_ = new SimpleColorClassifier(
     black_scangrid_,
     black_colormodel_,
@@ -517,7 +531,13 @@ inline void MachineSignalPipelineThread::reinit_color_config()
 
   delete black_classifier_;
   delete black_colormodel_;
-  black_colormodel_ = new ColorModelBlack(cfg_black_threshold_);
+  black_colormodel_ = new ColorModelBlack(
+    cfg_black_y_thresh_,
+    cfg_black_u_thresh_,
+    cfg_black_v_thresh_,
+    cfg_black_u_ref_,
+    cfg_black_v_ref_
+  );
   black_classifier_ = new SimpleColorClassifier(
     black_scangrid_,
     black_colormodel_,
@@ -1200,8 +1220,16 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         cfg_light_on_min_area_cover_ = v->get_float();
     }
     else if (sub_prefix == "/black") {
-      if (opt == "/max_luminance")
-        chg = test_set_cfg_value(&(cfg_black_threshold_), v->get_uint());
+      if      (opt == "/y_threshold")
+        chg = test_set_cfg_value(&(cfg_black_y_thresh_), v->get_uint());
+      else if (opt == "/u_threshold")
+        chg = test_set_cfg_value(&(cfg_black_u_thresh_), v->get_uint());
+      else if (opt == "/v_threshold")
+        chg = test_set_cfg_value(&(cfg_black_v_thresh_), v->get_uint());
+      else if (opt == "/u_reference")
+        chg = test_set_cfg_value(&(cfg_black_u_ref_), v->get_uint());
+      else if (opt == "/v_reference")
+        chg = test_set_cfg_value(&(cfg_black_v_ref_), v->get_uint());
       else if (opt == "/min_points")
         chg = test_set_cfg_value(&(cfg_black_min_points_), v->get_uint());
       else if (opt == "/neighborhood_min_match")
