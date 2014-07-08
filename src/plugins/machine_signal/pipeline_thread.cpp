@@ -1113,7 +1113,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       //}
     }
     catch (OutOfBoundsException &e) {
-      logger->log_error(name(), "%s", e.what());
+      logger->log_error(name(), e);
     }
   }
 
@@ -1246,7 +1246,7 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         chg = test_set_cfg_value(&(cfg_cam_aperture_x_), v->get_float());
       else if (opt == "/cam_aperture_y")
         chg = test_set_cfg_value(&(cfg_cam_aperture_y_), v->get_float());
-      else if (opt == "/cam_angle_y")
+      else if (opt == "/cam_angle")
         chg = test_set_cfg_value(&(cfg_cam_angle_y_), v->get_float());
       else if (opt == "/signal_width")
         cfg_lasercluster_signal_radius_ = 0.5 * v->get_float();
