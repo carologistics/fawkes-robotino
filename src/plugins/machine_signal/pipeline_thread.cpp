@@ -94,7 +94,7 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   cfg_enable_switch_ = false;
   cfg_delivery_mode_ = false;
 
-  point2pixel_ = NULL;
+  pos2pixel_ = NULL;
   cfg_cam_angle_y_ = 0;
   cfg_cam_aperture_x_ = 0;
   cfg_cam_aperture_y_ = 0;
@@ -102,6 +102,9 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   bb_laser_clusters_[0] = NULL;
   bb_laser_clusters_[1] = NULL;
   bb_laser_clusters_[2] = NULL;
+
+  cluster_rois_ = NULL;
+
 }
 
 MachineSignalPipelineThread::~MachineSignalPipelineThread() {}
@@ -253,7 +256,7 @@ void MachineSignalPipelineThread::init()
   cfg_cam_angle_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_angle");
   cfg_cam_frame_ = config->get_string(CFG_PREFIX "/lasercluster/cam_frame");
 
-  point2pixel_ = new PixelFromPosition(
+  pos2pixel_ = new PositionToPixel(
     tf_listener,
     cfg_cam_frame_,
     cfg_cam_aperture_x_,
@@ -477,8 +480,8 @@ MachineSignalPipelineThread::bb_get_laser_rois()
         bottom_right.z = cfg_lasercluster_signal_bottom_;
 
         // And finally compute a ROI that (hopefully) contains the real signal
-        upoint_t top_left_px = point2pixel_->get_pixel_position(top_left, cfg_cam_frame_, clock);
-        upoint_t bottom_right_px = point2pixel_->get_pixel_position(bottom_right, cfg_cam_frame_, clock);
+        upoint_t top_left_px = pos2pixel_->get_pixel_position(top_left, cfg_cam_frame_, clock);
+        upoint_t bottom_right_px = pos2pixel_->get_pixel_position(bottom_right, cfg_cam_frame_, clock);
 
         WorldROI cluster_roi;
         cluster_roi.set_start(top_left_px);
@@ -548,8 +551,8 @@ inline void MachineSignalPipelineThread::reinit_color_config()
     0,
     C_BLACK);
 
-  delete point2pixel_;
-  point2pixel_ = new PixelFromPosition(
+  delete pos2pixel_;
+  pos2pixel_ = new PositionToPixel(
     tf_listener,
     cfg_cam_frame_,
     cfg_cam_aperture_x_,

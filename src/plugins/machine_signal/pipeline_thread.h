@@ -48,7 +48,7 @@
 #include <set>
 #include <interfaces/SwitchInterface.h>
 #include <interfaces/Position3DInterface.h>
-#include <fvmodels/pixel_from_position/pixelFromPosition.h>
+#include <fvmodels/relative_position/position_to_pixel.h>
 #include <utils/time/wait.h>
 
 #include "state.h"
@@ -158,7 +158,7 @@ class MachineSignalPipelineThread :
     float cfg_cam_aperture_y_;
     float cfg_cam_angle_y_;
     std::string cfg_cam_frame_;
-    firevision::PixelFromPosition *point2pixel_;
+    firevision::PositionToPixel *pos2pixel_;
 
     std::atomic<float> cfg_roi_max_aspect_ratio_;
     std::atomic<float> cfg_roi_max_width_ratio_;
