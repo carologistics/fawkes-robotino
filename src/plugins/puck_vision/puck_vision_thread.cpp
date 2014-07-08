@@ -110,6 +110,7 @@ void PuckVisionThread::loadConfig(){
 
 	//Config Value for the classifier mode
 	cfg_colormodel_mode_ = config->get_string((cfg_prefix_ + "colormodel_mode").c_str());
+	cfg_check_yellow_dots_ = config->get_bool((cfg_prefix_ + "puck/dots_required").c_str());
 
 }
 
@@ -476,7 +477,7 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 		for (std::list<firevision::ROI>::iterator possible_puck_it = possible_pucks_bottem->begin();
 				possible_puck_it != possible_pucks_bottem->end(); ++possible_puck_it) {
 			//Enlarge ROI for yellow dots
-			{
+			if( cfg_check_yellow_dots_){
 				//unsigned int shift = possible_puck_it->height/10; //shift roi up a bit (yellow dots can be over the red area)
 				(*possible_puck_it).color = firevision::C_BLUE;
 				drawROIIntoBuffer((*possible_puck_it));
@@ -496,6 +497,11 @@ std::list<firevision::ROI> PuckVisionThread::detectPucks(){
 					pucks.push_back(mypuck);
 				}
 				delete yellow_rois;
+			}
+			else{ /* Dont check for yellow dots, all elements with proper color are pucks */
+				firevision::ROI mypuck((*possible_puck_it));
+				mypuck.color = firevision::C_WHITE;
+				pucks.push_back(mypuck);
 			}
 		}
 
