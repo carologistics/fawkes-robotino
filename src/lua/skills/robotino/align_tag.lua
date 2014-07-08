@@ -37,6 +37,24 @@ documentation      = [==[Moves the robot that the tag 0 is seen at the given poi
 -- Constants
 local min_distance = 0.1
 local desired_position_margin = 0.02
+local max_velocity = { x = 0.4, y = 0.4, ori = 1.8 } -- maximum motor can do
+local min_velocity = { x = 0.035, y = 0.035, ori = 0.15 } --minimum to start motor
+local acceleration = { x = 0.05, y = 0.05, ori = o.10 } --accelleration per loop
+local deceleration_distance = { x = 0.07, y = 0.07, ori = 0.2 } --decelerate when distance is closer
+local cycle = 0
+
+-- Variables
+local target = { x = 0 , y = 0 , ori = 0}
+
+--moving funtions
+function send_transrot(vx, vy, omega)
+   local oc  = motor:controller()
+   local ocn = motor:controller_thread_name()
+   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
+   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
+   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
+end
+
 
 -- Condition Functions
 -- Check, weather the final position is reached
@@ -55,54 +73,70 @@ function input_invalid(self)
 	return self.fsm.vars.x < min_distance
 end
 
+-- check for motor writer
+function no_motor_writer(self)
+	return not motor:has_writer()
+end
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-	{"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
-	{"ORIENTATE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+	{"DRIVE", JumpState},
+	{"ORIENTATE", SkillJumpState, skills={{motor_move}}, final_to="FINISHED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
+	{"DRIVE", "FAILED", cond=no_motor_writer, desc="No writer for the motor"},
 	{"DRIVE", "FAILED", cond=tag_not_visible, desc="No tag visible"},
 	{"DRIVE", "FAILED", cond=input_invalid, desc="Distance to tag is garbage, sould be > than " .. min_distance},
-	{"DRIVE", "ORIENTATE", cond=tag_reached, desc="Tag Reached orientate"}
+	{"DRIVE", "ORIENTATE", cond=tag_reached, desc="Tag Reached orientate"},
 }
 
 -- Drive to tag
 function DRIVE:init()
-   --handle nil values
-   if(self.fsm.vars.x == nil) then
-      slef.fsm.vars.x = 0.1
-   end
-   if(self.fsm.vars.y == nil) then
-      self.fsm.vars.y = 0
-   end
+	--handle nil values
+	local x = self.fsm.vars.x or 0.1
+	local y = self.fsm.vars.y or 0
 
 	-- get distance and rotation from tag vision
 	local found_x = tag_0:translation(0)
 	local found_y = tag_0:translation(1)
 	local found_ori = -tag_0:rotation(0)
 	-- calculate transition -> to approach the tag
-	local delta_x = found_x - (self.fsm.vars.x * math.cos(found_ori) + self.fsm.vars.y * (-1 * math.sin(found_ori)))
-	local delta_y = found_y - (self.fsm.vars.x * math.sin(found_ori) + self.fsm.vars.y * math.cos(found_ori))
-	-- enlarge found values to activate the motor
-	if math.abs(delta_x) < 0.04 and math.abs(delta_y) < 0.04 then
-		delta_x = delta_x * 2 
-		delta_y = delta_y * 2 
-		--print("enlarging")
-	end 
-	-- debug printing
-	--print("found_x = " .. found_x)
-	--print("delta_x = " .. delta_x)
-	--print("found_y = " .. found_y)
-	--print("delta_y = " .. delta_y)
-	--print("ori  = " .. found_ori)
-	
+	local delta_x = found_x - (x * math.cos(found_ori) + y * (-1 * math.sin(found_ori)))
+	local delta_y = found_y - (x * math.sin(found_ori) + y * math.cos(found_ori))
 	-- move to tag alignment -> call motor_move
-	self.skills[1].x = delta_x
-	self.skills[1].y = delta_y
-	self.skills[1].ori = found_ori
+	target.x = delta_x
+	target.y = delta_y
+	target.ori = found_ori
+	cycle = 0
+end
+
+
+function DRIVE:loop()
+	--get the distance to drive
+	distance ={ x = tag_0:translation(0) - (self.fsm.vars.x or 0.1),
+				y = tag_0:translation(1) - (self.fsm.vars.y or 0.0),
+				ori = tag_0:rotations(0)}
+	--get a good velocity
+	velocity = { x = 1, y = 1, ori = 1}
+	accelleration = { x = 0, y = 0, ori = 0}
+	-- for x y ori in distance to target
+	for key,value in pairs(distance) do
+		if deceleration_distance[k] > 0 then accelleration[k] = max_velocity[k] / deceleration_distance[k] end
+		--get acceleration for current cycle
+		accel_veloc = cycle * accelleration[k]
+		--get how much to deceletate
+		decel_veloc = a[k]/5 * math.abs(distance[k])
+		--decide what to send, max acceleration or deceleration
+		velocity[k] = math.min( max_velocity[k],
+			math.max(min_velocity[k], math.min(max_velocity[k], accel_veloc, decel,velocity))
+		)
+	end
+	cycle = cycle + 1
+	send_transrot(velocity.x, velocity.y, velocity.ori)
+	--send motor message
 end
 
 function ORIENTATE:init()
