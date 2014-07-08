@@ -919,31 +919,28 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
     }
     else if (cluster_rois_->size()) {
       for (WorldROI const &cluster_roi : *cluster_rois_) {
-        ROI *intersection = cluster_roi.intersect(*it_R);
+        ROI intersection = cluster_roi.intersect(*it_R);
         unsigned int area_R = it_R->width * it_R->height;
-        if (intersection) {
-          if ((float(intersection->width+1) * float(intersection->height+1)) / float(area_R) >= 0.3) {
-            map<ROI, SignalState::signal_rois_t_>::iterator signal_it;
-            if ((signal_it = laser_signals.find(cluster_roi)) != laser_signals.end()) {
-              signal_it->second.red_roi->extend(intersection->start.x, intersection->start.y);
-              signal_it->second.red_roi->extend(intersection->start.x + intersection->width,
-                intersection->start.y + intersection->height);
-            }
-            else {
-              SignalState::signal_rois_t_ new_signal = { new ROI(*it_R), NULL, NULL };
-              new_signal.world_pos = cluster_roi.world_pos;
-              laser_signals.insert(make_pair(cluster_roi, new_signal));
-            }
-
-            // Erase red ROIs that have been processed here since they can't be part of
-            // any other signal.
-            it_R = rois_R->erase(it_R);
-
-            erased = true;
-            break;
+        unsigned int area_intrsct = intersection.width * intersection.height;
+        if (area_R && float(area_intrsct) / float(area_R) >= 0.3) {
+          map<ROI, SignalState::signal_rois_t_>::iterator signal_it;
+          if ((signal_it = laser_signals.find(cluster_roi)) != laser_signals.end()) {
+            signal_it->second.red_roi->extend(intersection.start.x, intersection.start.y);
+            signal_it->second.red_roi->extend(intersection.start.x + intersection.width,
+              intersection.start.y + intersection.height);
+          }
+          else {
+            SignalState::signal_rois_t_ new_signal = { new ROI(*it_R), NULL, NULL };
+            new_signal.world_pos = cluster_roi.world_pos;
+            laser_signals.insert(make_pair(cluster_roi, new_signal));
           }
 
-          delete intersection;
+          // Erase red ROIs that have been processed here since they can't be part of
+          // any other signal.
+          it_R = rois_R->erase(it_R);
+
+          erased = true;
+          break;
         }
       }
     }
