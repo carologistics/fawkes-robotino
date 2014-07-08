@@ -2,7 +2,7 @@
  *  plugin_template_thread.h - empty example
  *
  *  Created: Mi 23. Mai 17:44:14 CEST 2012
- *  Copyright  2012 Daniel Ewert 
+ *  Copyright  2012 Daniel Ewert, 2014 Florian Nolden
  *
  ****************************************************************************/
 
@@ -66,6 +66,7 @@ private:
 
 	ros::Publisher* pub_;
 	float cfg_duration_;
+	bool cfg_ignore_visibillity_;
 };
 
 #endif
