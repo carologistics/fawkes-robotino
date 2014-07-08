@@ -115,8 +115,8 @@ plugins/colli:
 
     normal:
       # Max translation/rotation velocities
-      max_trans: 1.0
-      max_rot: 1.8
+      max_trans: 0.8
+      max_rot: 1.4
 
     escape:
       # Max translation/rotation velocities for escape-mode
@@ -127,7 +127,7 @@ plugins/colli:
     stopping_adjustment:
       # Add this distance to the calculated distance required for stopping stop, given the current speed.
       # Higher values mean "stop earlier". Might cause bocking if too high.
-      distance_addition: 0.2
+      distance_addition: 0.15
       # This value is multiplied with the expected deceleration per loop. Should relate to how
       #  much the speed actually drops compared to what is desired. So use a value in [0..1], anything
       #  higher will be cropped to 1.
