@@ -61,8 +61,18 @@ local lines = {
    line1,
    line2,
    line3,
-   line4,
+   line4
 }
+
+local lines_sector_0 = {}
+local lines_sector_p90 = {}
+local lines_sector_n90 = {}
+local lines_sector_180 = {}
+
+local best_line_sector_0
+local best_line_sector_p90
+local best_line_sector_n90
+local best_line_sector_180
 
 local candidates = {}
 local closest_line
@@ -114,8 +124,8 @@ fsm:define_states{
 -- Transitions
 fsm:add_transitions {
    {"INIT", "FAILED", precond="not visible()", desc="no writer or vis_hist too low"},
-   {"INIT", "ALIGN", cond=true, desc="initialized"},
-   {"SETTLE_TIME", "FINAL", timeout=1, desc="Let the visibility history increase"},
+   {"INIT", "FINAL", cond=true, desc="initialized"},
+   {"SETTLE_TIME", "CHECK_POSE", timeout=1, desc="Let the visibility history increase"},
    {"CHECK_POSE", "ALIGN", cond="not pose_ok(self) and vars.tries < MAX_TRIES", desc="Align again"},
    {"CHECK_POSE", "FAILED", cond="vars.tries >= MAX_TRIES", desc="MAX_TRIES reached!"},
    {"CHECK_POSE", "FINAL", cond="pose_ok(self)", desc="We are now aligned to the walls"}
@@ -124,6 +134,15 @@ fsm:add_transitions {
 function INIT:init()
    self.fsm.vars.tries = 0
    candidates = {}
+   lines_sector_0 = {}
+   lines_sector_p90 = {}
+   lines_sector_n90 = {}
+   lines_sector_180 = {}
+
+   best_line_sector_0 = nil
+   best_line_sector_p90 = nil
+   best_line_sector_n90 = nil
+   best_line_sector_180 = nil
 
    -- if there's just an ori given
    self.fsm.vars.target_ori = self.fsm.vars.ori
@@ -142,22 +161,117 @@ function INIT:init()
       end
    end
 
-   -- get the closest line to the given angle
-   local min_ori_diff = 10
+   -- sort the lines into the four different sectors
    for _,o in ipairs(candidates) do
       -- transform the line ori to map frame
-      local global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, line_frame, map_frame) 
-      -- get the ori difference of the line and the wanted ori (in map coordinates)
-      local ori_diff = math.abs(get_ori_diff(self.fsm.vars.target_ori,global_line_pos.ori))
-      printf("target_ori: %f, line_ori in /map: %f (Interface: %s), ori_diff: %f", self.fsm.vars.target_ori, global_line_pos.ori, o:id(),ori_diff)
-      -- get the line with the minimum difference to the wanted orientation
-      if ori_diff < min_ori_diff then
-         min_ori_diff = ori_diff
-         closest_line = o
+      local global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, line_frame, map_frame)
+      -- sector 0° (between -45° and +45°)
+      if global_line_pos.ori < math.pi/4 and global_line_pos.ori > -math.pi/4 then
+         table.insert(lines_sector_0, o)
+      -- sector positive 90° (between +45° and +135°)
+      elseif global_line_pos.ori >= math.pi/4 and global_line_pos.ori < (3*math.pi)/4 then
+         table.insert(lines_sector_p90, o)
+      -- sector negative 90° (between -45° and -135°)
+      elseif global_line_pos.ori <= -math.pi/4 and global_line_pos.ori > -(3*math.pi)/4 then
+         table.insert(lines_sector_n90, o)
+      -- sector 180° (between +135° and -135°)
+      -- TODO or richtig?
+      elseif global_line_pos.ori >= (3*math.pi)/4 or global_line_pos.ori <= -(3*math.pi)/4 then
+         table.insert(lines_sector_180, o)
       end
    end
-   self.fsm.vars.ori_to_drive = closest_line:bearing()
-   printf("-----> turning to the line %s, ori_to_drive: %f", closest_line:id(), self.fsm.vars.ori_to_drive)
+
+   -- get the best line from sector 0°
+   for _,o in ipairs(lines_sector_0) do
+      local min_ori_diff = 10
+      local sector_main_ori = 0
+      -- transform the line ori to map frame
+      local global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, line_frame, map_frame)
+      -- get the ori difference of the line and the sector main ori to get the line with the best tolerance
+      local ori_diff = math.abs(get_ori_diff(sector_main_ori,global_line_pos.ori))
+      printf("sector 0, line_ori in /map: %f (Interface: %s), ori_diff: %f", global_line_pos.ori, o:id(), ori_diff)
+      -- get the closest line to the given angle
+      if ori_diff < min_ori_diff then
+         min_ori_diff = ori_diff
+         best_line_sector_0 = o
+      end
+   end
+   if best_line_sector_0 ~= nil then
+      local global_0 = tfm.transform({x=0, y=0, ori=best_line_sector_0:bearing()}, line_frame, map_frame)
+      printf("Sector 0 Winner: %s, it has the global angle: %f", best_line_sector_0:id(), global_0.ori)
+   else
+      printf("No Line in the Sector 0")
+   end
+
+   -- get the best line from sector positive 90°
+   for _,o in ipairs(lines_sector_p90) do
+      local min_ori_diff = 10
+      local sector_main_ori = math.pi/2
+      -- transform the line ori to map frame
+      local global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, line_frame, map_frame)
+      -- get the ori difference of the line and the sector main ori to get the line with the best tolerance
+      local ori_diff = math.abs(get_ori_diff(sector_main_ori,global_line_pos.ori))
+      printf("sector +90, line_ori in /map: %f (Interface: %s), ori_diff: %f", global_line_pos.ori, o:id(), ori_diff)
+      -- get the closest line to the given angle
+      if ori_diff < min_ori_diff then
+         min_ori_diff = ori_diff
+         best_line_sector_p90 = o
+      end
+   end
+   if best_line_sector_p90 ~= nil then
+      local global_p90 = tfm.transform({x=0, y=0, ori=best_line_sector_p90:bearing()}, line_frame, map_frame)
+      printf("Sector +90 Winner: %s, it has the global angle: %f", best_line_sector_p90:id(),global_p90.ori)
+   else
+      printf("No Line in the Sector +90")
+   end
+
+   -- get the best line from sector negative 90°
+   for _,o in ipairs(lines_sector_n90) do
+      local min_ori_diff = 10
+      local sector_main_ori = -math.pi/2
+      -- transform the line ori to map frame
+      local global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, line_frame, map_frame)
+      -- get the ori difference of the line and the sector main ori to get the line with the best tolerance
+      local ori_diff = math.abs(get_ori_diff(sector_main_ori,global_line_pos.ori))
+      printf("sector -90, line_ori in /map: %f (Interface: %s), ori_diff: %f", global_line_pos.ori, o:id(), ori_diff)
+      -- get the closest line to the given angle
+      if ori_diff < min_ori_diff then
+         min_ori_diff = ori_diff
+         best_line_sector_n90 = o
+      end
+   end
+   if best_line_sector_n90 ~= nil then
+      local global_n90 = tfm.transform({x=0, y=0, ori=best_line_sector_n90:bearing()}, line_frame, map_frame)
+      printf("Sector -90 Winner: %s, it has the global angle: %f", best_line_sector_n90:id(), global_n90.ori)
+   else
+      printf("No Line in the Sector -90")
+   end
+
+   -- get the best line from sector 180°
+   for _,o in ipairs(lines_sector_180) do
+      local min_ori_diff = 10
+      local sector_main_ori = math.pi
+      -- transform the line ori to map frame
+      local global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, line_frame, map_frame)
+      -- get the ori difference of the line and the sector main ori to get the line with the best tolerance
+      local ori_diff = math.abs(get_ori_diff(sector_main_ori,global_line_pos.ori))
+      printf("sector 180, line_ori in /map: %f (Interface: %s), ori_diff: %f", global_line_pos.ori, o:id(), ori_diff)
+      -- get the closest line to the given angle
+      if ori_diff < min_ori_diff then
+         min_ori_diff = ori_diff
+         best_line_sector_180 = o
+      end
+   end
+
+   if best_line_sector_180 ~= nil then
+      local global_180 = tfm.transform({x=0, y=0, ori=best_line_sector_180:bearing()}, line_frame, map_frame)
+      printf("Sector 180 Winner: %s, it has the global angle: %f", best_line_sector_180:id(), global_180.ori)
+   else
+      printf("No Line in the Sector 180")
+   end
+
+   --self.fsm.vars.ori_to_drive = closest_line:bearing()
+   --printf("-----> turning to the line %s, ori_to_drive: %f", closest_line:id(), self.fsm.vars.ori_to_drive)
 end
 
 function ALIGN:init()
