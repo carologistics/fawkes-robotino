@@ -105,7 +105,11 @@ plugins/machine_signal:
     scangrid_y_offset: 2
 
   black:
-    max_luminance: 30
+    u_reference: 128
+    v_reference: 128
+    y_threshold: 30
+    u_threshold: 20
+    v_threshold: 30
     min_points: 10
     neighborhood_min_match: 5
 
