@@ -949,43 +949,72 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
   }
 
   for (map<ROI, SignalState::signal_rois_t_>::value_type &cluster_signal : laser_signals) {
-    ROI *cluster_copy = new ROI(cluster_signal.first);
-    SignalState::signal_rois_t_ &signal = cluster_signal.second;
-    black_scangrid_->set_roi(cluster_copy);
-    list<ROI> *black_stuff = black_classifier_->classify();
-    if (unlikely(cfg_tuning_mode_)) {
-      drawn_rois_.insert(drawn_rois_.end(), black_stuff->begin(), black_stuff->end());
-    }
-    black_stuff->sort(sort_rois_by_y_);
-    for (ROI black : *black_stuff) { // cf. http://www.youtube.com/watch?v=XJBx0AekOXY
-      unsigned int black_end_y = black.start.y + black.height;
-      if (black_end_y > signal.red_roi->start.y
-          && black_end_y < signal.red_roi->start.y + signal.red_roi->height) {
+    try {
+      SignalState::signal_rois_t_ &signal = cluster_signal.second;
+
+      ROI roi_black_top(cluster_signal.first);
+      roi_black_top.start.x = std::max(roi_black_top.start.x, signal.red_roi->start.x);
+      roi_black_top.start.y = std::min(roi_black_top.start.y, signal.red_roi->start.y);
+      roi_black_top.width = std::min(roi_black_top.width, signal.red_roi->width);
+      roi_black_top.height = signal.red_roi->height / 2;
+
+      black_scangrid_->set_roi(&roi_black_top);
+      list<ROI> *black_stuff_top = black_classifier_->classify();
+
+      if (unlikely(cfg_tuning_mode_)) {
+        drawn_rois_.insert(drawn_rois_.end(), black_stuff_top->begin(), black_stuff_top->end());
+      }
+
+      if (!black_stuff_top->empty()) {
+        ROI &black = black_stuff_top->front();
+        unsigned int black_end_y = black.start.y + black.height;
+        int hdiff = signal.red_roi->start.y - black_end_y;
         signal.red_roi->start.y = black_end_y;
+        signal.red_roi->height += hdiff;
       }
-      else if (black.start.y > signal.red_roi->start.y + signal.red_roi->height * 3
-          && black.start.y < signal.red_roi->start.y + signal.red_roi->height * 4) {
-        signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 4;
+
+      ROI roi_black_bottom(roi_black_top);
+      roi_black_bottom.image_width = cam_width_;
+      roi_black_bottom.image_height = cam_height_;
+      roi_black_bottom.start.y = signal.red_roi->start.y + signal.red_roi->height;
+      roi_black_bottom.height = std::min(
+        cam_height_,
+        std::max(
+          cluster_signal.first.start.y + cluster_signal.first.width,
+          signal.red_roi->start.y + signal.red_roi->height * 3)
+      );
+
+      black_scangrid_->set_roi(&roi_black_bottom);
+      list<ROI> *black_stuff_bottom = black_classifier_->classify();
+
+      if (!black_stuff_bottom->empty()) {
+        ROI &black = black_stuff_bottom->front();
+        if (signal.red_roi->start.x + signal.red_roi->height * 3 > black.start.y) {
+          signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 3;
+        }
       }
-    }
-    if (signal.red_roi->height * 4 > cluster_copy->height) {
-      signal.red_roi->height = cluster_copy->height / 4;
-    }
-    signal.yellow_roi = new ROI();
-    signal.yellow_roi->color = C_YELLOW;
-    signal.yellow_roi->start.x = signal.red_roi->start.x;
-    signal.yellow_roi->start.y = signal.red_roi->start.y + signal.red_roi->height;
-    signal.yellow_roi->width = signal.red_roi->width;
-    signal.yellow_roi->height = signal.red_roi->height;
 
-    signal.green_roi = new ROI();
-    signal.green_roi->color = C_GREEN;
-    signal.green_roi->start.x = signal.yellow_roi->start.x;
-    signal.green_roi->start.y = signal.yellow_roi->start.y + signal.yellow_roi->height;
-    signal.green_roi->width = signal.yellow_roi->width;
-    signal.green_roi->height = signal.yellow_roi->height;
+      signal.yellow_roi = new ROI();
+      signal.yellow_roi->color = C_YELLOW;
+      signal.yellow_roi->start.x = signal.red_roi->start.x;
+      signal.yellow_roi->start.y = signal.red_roi->start.y + signal.red_roi->height;
+      signal.yellow_roi->width = signal.red_roi->width;
+      signal.yellow_roi->height = signal.red_roi->height;
 
-    rv->push_back(signal);
+      signal.green_roi = new ROI();
+      signal.green_roi->color = C_GREEN;
+      signal.green_roi->start.x = signal.yellow_roi->start.x;
+      signal.green_roi->start.y = signal.yellow_roi->start.y + signal.yellow_roi->height;
+      signal.green_roi->width = signal.yellow_roi->width;
+      signal.green_roi->height = signal.yellow_roi->height;
+
+      delete black_stuff_top;
+      delete black_stuff_bottom;
+      rv->push_back(signal);
+    }
+    catch (OutOfBoundsException &e) {
+      logger->log_error(name(), e);
+    }
   }
   return rv;
 }
