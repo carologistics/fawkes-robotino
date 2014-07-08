@@ -136,9 +136,7 @@ NavgraphBrokerThread::loop(){
 			/*
 			 * Reserviere die nodes
 			 */
-			constraint_repo.lock();
 			reserve_nodes( msg->robotname() , nodes);
-			constraint_repo.unlock();
 		}
 		else {
 				logger->log_warn(name(), "Message with proper component_id and msg_type, but no conversion. "
@@ -254,16 +252,24 @@ NavgraphBrokerThread::get_path_from_interface_as_string(){
 void
 NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<fawkes::TopologicalMapNode> path){
 
+	constraint_repo.lock();
+
 	std::string constraint_name = robotname + "_Reserved_Nodes";
 
-	if( constraint_repo->has_constraint(robotname) ){
+	if( constraint_repo->has_constraint(constraint_name) ){
 
+		logger->log_info( name(), "Overriding constraint='%s'", constraint_name.c_str() );
 		constraint_repo->override_nodes( constraint_name, path);
 	}
 	else {
+		logger->log_info( name(), "Register constraint='%s'", constraint_name.c_str() );
 		constraint_repo->register_constraint( (AbstractNodeConstraint *) new ReservedNodeConstraint(logger, constraint_name) );
+		logger->log_info( name(), "Add nodes to constraint='%s'", constraint_name.c_str() );
 		constraint_repo->add_nodes(constraint_name, path);
 	}
+
+	constraint_repo.unlock();
+
 }
 
 void
