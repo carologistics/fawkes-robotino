@@ -24,13 +24,11 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "move_under_rfid"
-fsm                = SkillHSM:new{name=name, start="SEE_AMPEL", debug=true}
-depends_skills     = {"motor_move"}
+fsm                = SkillHSM:new{name=name, start="ALIGN", debug=true}
+depends_skills     = {"motor_move", "align_laserlines"}
 depends_interfaces = {
    {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
    {v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
-   {v = "motor", type = "MotorInterface", id="Robotino" },
-   {v = "pose", type="Position3DInterface", id="Pose"},
    {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
    {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" },
    {v = "light", type ="RobotinoLightInterface", id = "Light_State" },
@@ -45,7 +43,7 @@ local tfm = require("tf_module")
 skillenv.skill_module(_M)
 
 local tfm = require('tf_module')
-local LASER_FORWARD_CORRECTION = 0.17
+local LASER_FORWARD_CORRECTION = 0.22
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
 local MIN_VIS_HIST = 15
 local LEFT_IR_ID = config:get_float("hardware/robotino/sensors/left_ir_id")
@@ -68,9 +66,8 @@ function ampel()
 end
 
 function rough_correct_done()
-   --analog_in(4) links
-   --analog_in(5) rechts
    if fsm.vars.correct_dir == -1 then
+      --gleicht nach rechts aus -> linker sensor muss auslösen
       return sensor:analog_in(LEFT_IR_ID) > 9
    else
        return sensor:analog_in(RIGHT_IR_ID) > 9
@@ -88,6 +85,8 @@ function sensors_fired()
 end
 
 fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
+   {"ALIGN", SkillJumpState, skills={{align_laserlines}},
+      final_to="SEE_AMPEL", fail_to="FAILED"},
    {"SEE_AMPEL", JumpState},
    {"APPROACH_AMPEL", SkillJumpState, skills={{motor_move}},
       final_to="CHECK_POSITION", fail_to="FAILED"},
@@ -105,14 +104,6 @@ fsm:add_transitions{
    {"APPROACH_AMPEL", "FINAL", cond=producing, desc="already there"},
    {"CORRECT_POSITION", "FINAL", precond=producing, desc="already there"} 
 }
-
-function send_transrot(vx, vy, omega)
-   local oc  = motor:controller()
-   local ocn = motor:controller_thread_name()
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
-   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
-end
 
 function CHECK_POSITION:init()
    if sensor:analog_in(4) > 9 then
