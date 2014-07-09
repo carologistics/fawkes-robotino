@@ -140,12 +140,12 @@ plugins/amcl:
     # transformed. In that case we use the previous data with proper
     # transforms available (in particular odometry). This problem arises
     # in particular if laser data is newer than odometry data.
-    enable: false
+    enable: true
 
     # Enable to get log messages about buffering of data, can sometimes
     # be helpful to debug buffering issues or to check if data is used
     # at all
-    debug: true
+    debug: false
 
   # Parameters for fake laser generation
   map-lasergen:
