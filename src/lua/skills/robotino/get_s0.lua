@@ -86,8 +86,13 @@ function SKILL_GLOBAL_MOTOR_MOVE:init()
 end
 
 function MOVE_SIDEWAYS:init()
-   self.skills[1].y = -1
-   self.skills[1].vel_trans = 0.05
+   if self.fsm.vars.place == "Ins1" or self.fsm.vars.place == "Ins2" then
+      self.skills[1].y = -1
+      self.skills[1].vel_trans = 0.05
+   elseif self.fsm.vars.place == "Ins1Sec" or self.fsm.vars.place == "Ins2Sec" then
+      self.skills[1].y = 1
+      self.skills[1].vel_trans = 0.05
+   end
 end
 
 function SKILL_LEAVE_AREA:init()
