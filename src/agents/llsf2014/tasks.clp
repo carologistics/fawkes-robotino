@@ -848,3 +848,22 @@
   (retract ?s)
   (assert (state TASK-FINISHED))
 )
+
+(defrule task-abort-loading-machine-if-out-of-order
+  "If a new order pops up for a puck we are currently storing, deliver it instead (cancle task first)"
+  (declare (salience ?*PRIORITY-SUBTASK-3*))
+  (phase PRODUCTION)
+  ?t <- (task (name load-with-S0|load-with-S1|load-with-S2|pick-and-load|produce-with-S0) (args $?a) (state ~finished))
+  ?s <- (state GOTO)
+  ?st <- (goto-target ?target)
+  (machine (name ?target) (out-of-order-until $?ooo&~:(eq (nth$ 1 ?ooo) 0)))
+  ?wfl <- (wait-for-lock (res ?target) (state use))
+  ?gtdw <- (goto-dont-wait ?dont-wait)
+  (skill (name "finish_puck_at") (status RUNNING))
+  =>
+  (printout warn "Stopping loading machine " ?target ", because it is out of order." crlf)
+  (modify ?t (state finished))
+  (modify ?wfl (state finished))
+  (retract ?s ?st ?gtdw)
+  (assert (state TASK-FINISHED))
+)
