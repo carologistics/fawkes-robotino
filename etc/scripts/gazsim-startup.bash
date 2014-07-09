@@ -76,7 +76,7 @@ do
 	     VISION=,gazsim-meta-vision
 	     ;;
 	 a)
-	     AGENT=,clips,clips-agent,clips-protobuf,clips-motor-switch,clips-webview,clips-navgraph
+	     AGENT=,clips,clips-agent,clips-protobuf,clips-motor-switch,clips-webview,clips-navgraph,agent-monitor
 	     ;;
          k)
              KEEP=yes

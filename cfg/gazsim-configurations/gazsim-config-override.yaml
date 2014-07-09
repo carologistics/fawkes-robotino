@@ -66,3 +66,8 @@ ballposlog/log_level: 0
 
 #colli og-laser buffer:
 plugins/colli/laser_occupancy_grid/buffer_size: 6
+
+agent-monitor:
+  robotino1: "127.0.0.1:8081"
+  robotino2: "127.0.0.1:8082"
+  robotino3: "127.0.0.1:8083"
