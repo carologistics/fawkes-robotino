@@ -49,18 +49,18 @@ clips-agent:
     enable-sim: false
 
     #real-world-setup:
-    # peer-address: 172.26.255.255
-    # peer-port: 4444
-    # cyan-port: 4441
-    # magenta-port: 4442
+    peer-address: 172.26.255.255
+    peer-port: 4444
+    cyan-port: 4441
+    magenta-port: 4442
     #simulation-setup:
-    peer-address: 127.0.0.1
-    peer-recv-port: 4444
-    peer-send-port: 4445
-    cyan-recv-port: 4441
-    magenta-recv-port: 4442
-    cyan-send-port: 4446
-    magenta-send-port: 4447
+    # peer-address: 127.0.0.1
+    # peer-recv-port: 4444
+    # peer-send-port: 4445
+    # cyan-recv-port: 4441
+    # magenta-recv-port: 4442
+    # cyan-send-port: 4446
+    # magenta-send-port: 4447
 
     team-name: Carologistics
     crypto-key: randomkey
