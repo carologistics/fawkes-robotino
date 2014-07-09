@@ -82,9 +82,10 @@ void MachineSignalSensorThread::loop() {
     std::list<SignalState>::iterator open_gate = known_signals.end();
     int open_gate_visibility = INT_MIN;
 
-    // Update blackboard with the current information
+    // Go through all known signals...
     std::list<SignalState>::iterator known_signal = known_signals.begin();
     for (int i = 0; i < MAX_SIGNALS && known_signal != known_signals.end(); i++) {
+      // Put their states into the blackboard interfaces
       bb_signal_states_[i]->set_red(known_signal->red);
       bb_signal_states_[i]->set_yellow(known_signal->yellow);
       bb_signal_states_[i]->set_green(known_signal->green);
@@ -93,6 +94,7 @@ void MachineSignalSensorThread::loop() {
       bb_signal_states_[i]->set_ready(known_signal->ready);
       bb_signal_states_[i]->write();
 
+      // And possibly select an open delivery gate
       if (pipeline_thread_->get_delivery_mode()
           && (known_signal->green == RobotinoLightInterface::LightState::ON)
           && (known_signal->visibility > open_gate_visibility)
@@ -112,6 +114,8 @@ void MachineSignalSensorThread::loop() {
           (double) open_gate->world_pos->m_floats[2]
       };
       bb_open_delivery_gate_->set_translation(trans);
+      bb_open_delivery_gate_->set_visibility_history(open_gate_visibility);
+      bb_open_delivery_gate_->write();
     }
 
     bb_signal_compat_->set_red(best_signal->red);
