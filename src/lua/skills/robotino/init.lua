@@ -57,4 +57,3 @@ skillenv.use_skill("skills.robotino.get_stored_puck")
 -- Uncomment to use gripper for technical challenge
 --skillenv.use_skill("skills.robotino.gripper")
 --skillenv.use_skill("skills.robotino.grip_cylinder")
-skillenv.use_skill("skills.robotino.align_laserlines")
