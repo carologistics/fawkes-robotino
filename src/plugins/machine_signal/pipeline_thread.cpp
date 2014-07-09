@@ -880,7 +880,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
             roi_R->image_width, roi_R->image_height);
           roi_Y->color = C_YELLOW;
 
-          rv->push_back({roi_R, roi_Y, roi_G});
+          rv->push_back({roi_R, roi_Y, roi_G, NULL});
           ok = true;
           it_G = rois_G->erase(it_G);
         }
@@ -1117,30 +1117,14 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
         roi_G->start.y = roi_Y->start.y + roi_Y->height;
       }
 
-      /*
-      ROI check_black_green(*roi_G);
-      check_black_green.color = C_BACKGROUND;
-      if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
-        drawn_rois_.push_back(check_black_green);
-      black_scangrid_->set_roi(&check_black_green);
-      std::list<ROI> *black_in_green = black_classifier_->classify();
-
-      unsigned int black_in_green_area = 0;
-      unsigned int green_area = roi_G->width * roi_G->height;
-
-      if (!black_in_green->empty()) {
-        black_in_green_area = black_in_green->begin()->width * black_in_green->begin()->height;
-        if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
-          drawn_rois_.insert(drawn_rois_.end(), black_in_green->begin(), black_in_green->end());
+      if (found_some_black) {
+        SignalState::signal_rois_t_ signal_rois;
+        signal_rois.red_roi = roi_R;
+        signal_rois.yellow_roi = roi_Y;
+        signal_rois.green_roi = roi_G;
+        signal_rois.world_pos = NULL;
+        rv->push_back(signal_rois);
       }
-
-      roi_G->set_image_width(cam_width_);
-      roi_G->set_image_height(cam_height_);
-
-      if (((float)black_in_green_area / (float)green_area) < 0.4) { //*/
-      if (found_some_black)
-        rv->push_back({roi_R, roi_Y, roi_G});
-      //}
     }
     catch (OutOfBoundsException &e) {
       logger->log_error(name(), e);

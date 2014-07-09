@@ -127,7 +127,9 @@ void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::ite
   new_yellow = eval_history(history_Y_, debug_Y_);
   new_green = eval_history(history_G_, debug_G_);
 
-  world_pos = rois->world_pos;
+  if (rois->world_pos) {
+    world_pos = rois->world_pos;
+  }
 
   // decrease visibility history if:
   // - All lights are off or
