@@ -779,6 +779,8 @@
 	      (begin ?begin&:(<= (- ?begin (+ ?*SKILL-DURATION-DELIVER* ?*SKILL-DURATION-GET-PRODUCED*)) (nth$ 1 ?time)))
 	      (end ?end&:(<= (nth$ 1 ?time) ?end))))
   ?wfl <- (wait-for-lock (res ?goal) (state use))
+  (team-color ?team-color&~nil)
+  (puck-storage (puck NONE) (team ?team-color) (incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
   =>
   (printout warn "Stopping delivering puck because the order is over." crlf)
   (modify ?t (state finished))
