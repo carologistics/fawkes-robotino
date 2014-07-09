@@ -250,7 +250,7 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
 
     if(subpath == "/worldmodel")
     {
-      *r += "<h2>Worldmodel:</h2>\n";
+      //*r += "<h2>Worldmodel:</h2>\n"; save space
       //table for machines
       *r += "<table>\n";
       *r += "<tr> <th>Machine</th> <th>Type</th> <th>Loaded With</th> <th>Incoming</th> <th>By</th> <th>Produced</th> <th>Junk</th>  <th>Out-Of-Order</th></tr>\n";
@@ -260,6 +260,14 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       }
       *r += "</table>\n";
       
+      *r += "<b>Puck-Storage Points:</b><br>\n";    
+      std::set<CLIPS::Fact::pointer> puck_storages = get_all_facts(env_name, "puck-storage");
+      for(std::set<CLIPS::Fact::pointer>::iterator it = puck_storages.begin(); puck_storages.size() > 0 && it != puck_storages.end(); it++)
+      {
+	const char* storage_puck = get_slot(*it, "puck");
+	const char* storage_name = get_slot(*it, "name");
+	r->append_body("<b>%s:</b> %s   ", storage_name, storage_puck);
+      }      
       return r;
     }
 
