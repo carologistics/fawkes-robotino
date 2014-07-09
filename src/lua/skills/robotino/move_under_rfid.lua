@@ -115,6 +115,11 @@ function CHECK_POSITION:init()
    end
 end
 
+function ALIGN:init()
+   self.skills[1].place = self.fsm.vars.place
+end
+
+
 function SEE_AMPEL:init()
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
    laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
