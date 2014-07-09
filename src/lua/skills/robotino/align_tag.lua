@@ -21,7 +21,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "align_tag"
-fsm                = SkillHSM:new{name=name, start="DRIVE"}
+fsm                = SkillHSM:new{name=name, start="INIT"}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
@@ -36,15 +36,13 @@ documentation      = [==[Moves the robot that the tag 0 is seen at the given poi
 
 -- Constants
 local min_distance = 0.1
-local desired_position_margin = 0.02
-local max_velocity = { x = 0.4, y = 0.4, ori = 1.8 } -- maximum motor can do
-local min_velocity = { x = 0.035, y = 0.035, ori = 0.15 } --minimum to start motor
-local acceleration = { x = 0.05, y = 0.05, ori = o.10 } --accelleration per loop
-local deceleration_distance = { x = 0.07, y = 0.07, ori = 0.2 } --decelerate when distance is closer
-local cycle = 0
+local desired_position_margin = {x=0.005, y=0.005, ori=0.01}
+local min_velocity = { x = 0.015, y = 0.015, ori = 0.05 } --minimum to start motor
+local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
 
 -- Variables
 local target = { x = 0 , y = 0 , ori = 0}
+local tries
 
 --moving funtions
 function send_transrot(vx, vy, omega)
@@ -59,8 +57,8 @@ end
 -- Condition Functions
 -- Check, weather the final position is reached
 function tag_reached(self)
-	return (math.abs(tag_0:translation(0)-self.fsm.vars.x) < desired_position_margin)
-	   and (math.abs(tag_0:translation(1)-self.fsm.vars.y) < desired_position_margin)
+	return (math.abs(tag_0:translation(0)-self.fsm.vars.x) < desired_position_margin.x)
+	   and (math.abs(tag_0:translation(1)-self.fsm.vars.y) < desired_position_margin.y)
 end
 
 -- Check if one tag is visible
@@ -78,26 +76,42 @@ function no_motor_writer(self)
 	return not motor:has_writer()
 end
 
+function too_many_tries()
+   return tries > 9
+end
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
+   {"INIT", JumpState},
 	{"DRIVE", JumpState},
-	{"ORIENTATE", SkillJumpState, skills={{motor_move}}, final_to="FINISHED", fail_to="FAILED"},
+   {"NO_TAG", JumpState},
+	{"ORIENTATE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-	{"DRIVE", "FAILED", cond=no_motor_writer, desc="No writer for the motor"},
-	{"DRIVE", "FAILED", cond=tag_not_visible, desc="No tag visible"},
-	{"DRIVE", "FAILED", cond=input_invalid, desc="Distance to tag is garbage, sould be > than " .. min_distance},
+	{"INIT", "FAILED", cond=no_motor_writer, desc="No writer for the motor"},
+	{"DRIVE", "NO_TAG", cond=tag_not_visible, desc="No tag visible"},
+   {"NO_TAG", "DRIVE", timeout=0.5, desc="try again"},
+   {"DRIVE", "FAILED", cond=too_many_tries, desc="tag really not seen"},
+	{"INIT", "FAILED", cond=input_invalid, desc="Distance to tag is garbage, sould be > than " .. min_distance},
+   {"INIT", "DRIVE", cond=true, desc="start"},
 	{"DRIVE", "ORIENTATE", cond=tag_reached, desc="Tag Reached orientate"},
 }
+
+function INIT:init()
+   self.fsm.vars.x = self.fsm.vars.x or 0.1
+   self.fsm.vars.y = self.fsm.vars.y or 0.0
+   self.fsm.vars.ori = self.fsm.vars.ori or 0.0
+   tries = 0
+end
 
 -- Drive to tag
 function DRIVE:init()
 	--handle nil values
-	local x = self.fsm.vars.x or 0.1
-	local y = self.fsm.vars.y or 0
+	local x = self.fsm.vars.x
+	local y = self.fsm.vars.y
 
 	-- get distance and rotation from tag vision
 	local found_x = tag_0:translation(0)
@@ -113,30 +127,45 @@ function DRIVE:init()
 	cycle = 0
 end
 
+function NO_TAG:init()
+   tires = tries + 1
+end
+
+function printtable(table)
+   for k,v in pairs(table) do
+      print(k .. " = " .. v)
+   end
+end
+
+local old_speed={x=0,y=0,ori=0}
 
 function DRIVE:loop()
+   --skip on empty values
+   if(tag_0:translation(0) == 0 and tag_0:translation(1) == 0 and tag_0:rotation(0) == 0) then
+--      send_transrot(0,0,0)
+      return
+   end
 	--get the distance to drive
-	distance ={ x = tag_0:translation(0) - (self.fsm.vars.x or 0.1),
-				y = tag_0:translation(1) - (self.fsm.vars.y or 0.0),
-				ori = tag_0:rotations(0)}
+	distance = { x = tag_0:translation(0) ,--- self.fsm.vars.x,
+				y = tag_0:translation(1) ,--- self.fsm.vars.y,
+				ori = -tag_0:rotation(0)}
+   distance.x = distance.x - (self.fsm.vars.x * math.cos(distance.ori) + self.fsm.vars.y * (-1 * math.sin(distance.ori)))
+   distance.y = distance.y - (self.fsm.vars.x * math.sin(distance.ori) + self.fsm.vars.y * math.cos(distance.ori))
+   --print("current distance")
+   --printtable(distance)
 	--get a good velocity
-	velocity = { x = 1, y = 1, ori = 1}
-	accelleration = { x = 0, y = 0, ori = 0}
-	-- for x y ori in distance to target
+	local velocity = {x = 0, y = 0, ori = 0}
 	for key,value in pairs(distance) do
-		if deceleration_distance[k] > 0 then accelleration[k] = max_velocity[k] / deceleration_distance[k] end
-		--get acceleration for current cycle
-		accel_veloc = cycle * accelleration[k]
-		--get how much to deceletate
-		decel_veloc = a[k]/5 * math.abs(distance[k])
-		--decide what to send, max acceleration or deceleration
-		velocity[k] = math.min( max_velocity[k],
-			math.max(min_velocity[k], math.min(max_velocity[k], accel_veloc, decel,velocity))
-		)
-	end
-	cycle = cycle + 1
-	send_transrot(velocity.x, velocity.y, velocity.ori)
+      velocity[key] = math.sqrt(math.abs(distance[key]/2))*max_velocity[key]  --+min_velocity[key]
+      if distance[key] < 0 then velocity[key] = velocity[key] *-1 end
+      --average
+      velocity[key] = (velocity[key]+old_speed[key])/2
+      old_speed[key] = velocity[key]
+  	end
+   --print("velocity:")
+   --printtable(velocity)
 	--send motor message
+	send_transrot(velocity.x, velocity.y, velocity.ori)
 end
 
 function ORIENTATE:init()
