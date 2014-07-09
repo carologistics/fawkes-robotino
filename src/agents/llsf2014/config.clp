@@ -111,6 +111,8 @@
 	  (private-peer-ports CYAN ?cyan-send-port ?cyan-recv-port)
 	  (private-peer-ports MAGENTA ?magenta-send-port ?magenta-recv-port))
 )
+<<<<<<< HEAD
+=======
 
 (defrule conf-get-puck-storage-points
   "Read configuration for puck-storage-points"
@@ -131,3 +133,4 @@
     (assert (puck-storage (name (sym-cat ?p)) (team ?team-color)))
   )
 )
+>>>>>>> origin/common/agent-improvements
