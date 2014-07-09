@@ -21,40 +21,53 @@ include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/fvconf.mk
 include $(BUILDSYSDIR)/boost.mk
 
-ifeq ($(HAVE_TF),1)
+ifeq ($(CC),gcc)
+  ifeq ($(call gcc_atleast_version,4,6),1)
+    GCC_OK=1
+  endif
+endif
+
+ifeq ($(HAVE_TF)$(GCC_OK),11)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
   
-CFLAGS   += $(VISION_CFLAGS)
-LDFLAGS  += $(VISION_LDFLAGS)
-INCDIRS  += $(VISION_INCDIRS)
-LIBDIRS  += $(VISION_LIBDIRS)
-LIBS     += $(VISION_LIBS)
+  CFLAGS   += $(VISION_CFLAGS)
+  LDFLAGS  += $(VISION_LDFLAGS)
+  INCDIRS  += $(VISION_INCDIRS)
+  LIBDIRS  += $(VISION_LIBDIRS)
+  LIBS     += $(VISION_LIBS)
 
-#The necessary libraries your plugin needs.
-LIBS_puck_vision = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+  #The necessary libraries your plugin needs.
+  LIBS_puck_vision = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
 		fvclassifiers fawkesconfig fvfilters TransformInterface \
 		fawkestf RobotinoLightInterface PuckVisionInterface Position3DInterface 
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_puck_vision = puck_vision.o puck_vision_thread.o
+  #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
+  OBJS_puck_vision = puck_vision.o puck_vision_thread.o
 
-#names of the plugins you want to build
-PLUGINS_all = $(PLUGINDIR)/puck_vision.$(SOEXT)
+  PLUGINS_all = $(PLUGINDIR)/puck_vision.$(SOEXT)
 
-OBJS_all = $(OBJS_puck_vision)
+  OBJS_all = $(OBJS_puck_vision)
 
 else
-  WARN_TARGETS += warning_tf
+  ifneq ($(HAVE_TF),1)
+    WARN_TARGETS += warning_tf
+  endif
+  ifneq ($(GCC_OK),1)
+    WARN_TARGETS += warning_old_gcc
+  endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
 all: $(WARN_TARGETS)
   endif
-.PHONY: warning_somewarning
+.PHONY: warning_somewarning warning_old_gcc
 warning_somewarning:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting Robotino Navigator plugin$(TNORMAL) (reason)"
+warning_old_gcc:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting CLIPS Plugins$(TNORMAL) (GCC too old, have $(GCC_VERSION), required 4.6)"
+
 endif
 
 include $(BUILDSYSDIR)/base.mk
