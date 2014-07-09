@@ -40,7 +40,6 @@
 #include <fvmodels/color/thresholds_black.h>
 #include <fvmodels/scanlines/grid.h>
 #include <fvclassifiers/simple.h>
-//#include <fvcams/fileloader.h>
 #include <fvcams/v4l2.h>
 #include <string>
 #include <core/threading/mutex.h>

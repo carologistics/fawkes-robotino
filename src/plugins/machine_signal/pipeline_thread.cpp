@@ -919,7 +919,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
     }
     else if (cluster_rois_->size()) {
       for (WorldROI const &cluster_roi : *cluster_rois_) {
-        ROI intersection = cluster_roi.intersect(*it_R);
+        ROI intersection = it_R->intersect(cluster_roi);
         unsigned int area_R = it_R->width * it_R->height;
         unsigned int area_intrsct = intersection.width * intersection.height;
         if (area_R && float(area_intrsct) / float(area_R) >= 0.3) {
@@ -930,7 +930,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
               intersection.start.y + intersection.height);
           }
           else {
-            SignalState::signal_rois_t_ new_signal = { new ROI(*it_R), NULL, NULL };
+            SignalState::signal_rois_t_ new_signal = { new ROI(intersection), NULL, NULL };
             new_signal.world_pos = cluster_roi.world_pos;
             laser_signals.insert(make_pair(cluster_roi, new_signal));
           }
@@ -961,10 +961,6 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
       black_scangrid_->set_roi(&roi_black_top);
       list<ROI> *black_stuff_top = black_classifier_->classify();
 
-      if (unlikely(cfg_tuning_mode_)) {
-        drawn_rois_.insert(drawn_rois_.end(), black_stuff_top->begin(), black_stuff_top->end());
-      }
-
       if (!black_stuff_top->empty()) {
         ROI &black = black_stuff_top->front();
         unsigned int black_end_y = black.start.y + black.height;
@@ -978,7 +974,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
       roi_black_bottom.image_height = cam_height_;
       roi_black_bottom.start.y = signal.red_roi->start.y + signal.red_roi->height;
       roi_black_bottom.height = std::min(
-        cam_height_,
+        cam_height_ - roi_black_bottom.start.y,
         std::max(
           cluster_signal.first.start.y + cluster_signal.first.width,
           signal.red_roi->start.y + signal.red_roi->height * 3)
@@ -992,6 +988,11 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
         if (signal.red_roi->start.x + signal.red_roi->height * 3 > black.start.y) {
           signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 3;
         }
+      }
+
+      if (unlikely(cfg_tuning_mode_)) {
+        drawn_rois_.insert(drawn_rois_.end(), black_stuff_top->begin(), black_stuff_top->end());
+        drawn_rois_.insert(drawn_rois_.end(), black_stuff_bottom->begin(), black_stuff_bottom->end());
       }
 
       signal.yellow_roi = new ROI();
