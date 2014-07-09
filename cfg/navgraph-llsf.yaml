@@ -308,28 +308,20 @@ nodes:
 
 # special points:
         
-  - name: D13
-    pos: [4.8, 3.17]
+  - name: deliver1
+    pos: [4.8, 2.99]
     properties:
       - orientation: 0.0
-  - name: D12
-    pos: [4.8, 2.8]
+  - name: deliver1a
+    pos: [4.8, 2.62]
     properties:
       - orientation: 0.0
-  - name: D11
-    pos: [4.8, 2.46]
-    properties:
-      - orientation: 0.0
-  - name: D23
-    pos: [-4.8, 3.17]
+  - name: deliver2a
+    pos: [-4.8, 2.99]
     properties:
       - orientation: 3.14
-  - name: D22
-    pos: [-4.8, 2.8]
-    properties:
-      - orientation: 3.14
-  - name: D21
-    pos: [-4.8, 2.46]
+  - name: deliver2
+    pos: [-4.8, 2.62]
     properties:
       - orientation: 3.14
   - name: deliver1
@@ -699,14 +691,15 @@ connections:
   - [IA2H2, P41]
   - [IA2H2, Ins2Sec]
 
-  - [D11,  deliver1]
-  - [D12,  deliver1]
-  - [D13,  deliver1]
-  - [D21,  deliver2]
-  - [D22,  deliver2]
-  - [D23,  deliver2]
-  - [P13,  deliver2]
+  - [P92,  deliver1]
+  - [P92,  deliver1a]
   - [P93,  deliver1]
+  - [P93,  deliver1a]
+
+  - [P12,  deliver2]
+  - [P12,  deliver2a]
+  - [P13,  deliver2]
+  - [P13,  deliver2a]
 
   - [P81, WAIT_FOR_INS_1_ROBOTINO_1]
   - [P21, WAIT_FOR_INS_2_ROBOTINO_1]
