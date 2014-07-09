@@ -27,6 +27,12 @@ INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
+ifeq ($(CC),gcc)
+  ifneq ($(call gcc_atleast_version,4,6),1)
+    GCC_TOO_OLD=1
+  endif
+endif
+
 #The necessary libraries your plugin needs.
 LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
@@ -34,18 +40,21 @@ LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_machine_signal = plugin.o state.o pipeline_thread.o sensor_thread.o
 
-#names of the plugins you want to build
-PLUGINS_all = $(PLUGINDIR)/machine-signal.$(SOEXT)
+ifneq ($(GCC_TOO_OLD),1)
+  PLUGINS_all = $(PLUGINDIR)/machine-signal.$(SOEXT)
+else
+  WARN_TARGETS += warning_old_gcc
+endif
 
 OBJS_all = $(OBJS_machine_signal)
 
-#ifeq ($(OBJSSUBMAKE),1)
-#  ifneq ($(WARN_TARGETS),)
-#all: $(WARN_TARGETS)
-#  endif
-#.PHONY: warning_somewarning
-#warning_somewarning:
-#	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting Robotino Navigator plugin$(TNORMAL) (reason)"
-#endif
+ifeq ($(OBJSSUBMAKE),1)
+  ifneq ($(WARN_TARGETS),)
+all: $(WARN_TARGETS)
+  endif
+.PHONY: warning_old_gcc
+warning_old_gcc:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting CLIPS Plugins$(TNORMAL) (GCC too old, have $(GCC_VERSION), required 4.6)"
+endif
 
 include $(BUILDSYSDIR)/base.mk
