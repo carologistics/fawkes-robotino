@@ -5,6 +5,9 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/puck_vision
 ---
 
 plugins/puck_vision:
+  # this is to be set if the new pucks are used ( red with black dots )
+  use_new_pucks: true # During competition this needs to be FALSE!!!!!!!!!
+
   # camera being used
   #camera: "file:file:file=/home/fnolden/Bilder/Webcam/11.jpg"
   #camera: v4l2:front:device=/dev/video0 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
@@ -13,9 +16,6 @@ plugins/puck_vision:
 
   #Shared Memory Imagebuffer name
   shm_image_id: "puck_front"
-
-  #colormodel mode (At the moment it can be either "similarity" or "colormap"
-  colormodel_mode: "similarity"
 
   # coordinate and interface frame
   transform: /plugins/static-transforms/transforms/cam_puck/
@@ -39,16 +39,15 @@ plugins/puck_vision:
 
  #puck main color (RED)
     red:
+      #colormodel mode (At the moment it can be either "similarity" or "colormap" or "thresholds"
+      colormodel_mode: "similarity"
+
       ##################################
       # This is for the standard pucks #
       ##################################
-      #reference_color: [189, 28, 34,
-      #77, 24, 16,
-      #106, 29, 21]
-      ################################################
-      # This is for the new pucks with black topdots #
-      ################################################
-      reference_color: [220, 14, 6]            
+      reference_color: [189, 28, 34,
+      77, 24, 16,
+      106, 29, 21]
 
       chroma_thresh: 10
       saturation_thresh: 20
@@ -59,31 +58,40 @@ plugins/puck_vision:
       scangrid_y_offset: 4
       lut: /bulb-colormap/red.colormap
 
+      ################################################
+      # This is for the new pucks with black topdots #
+      ################################################
+      new_pucks:
+        #colormodel mode (At the moment it can be either "similarity" or "colormap" or "thresholds"
+        colormodel_mode: "similarity"
+
+        reference_color: [220, 14, 6]
+
+        chroma_thresh: 10
+        saturation_thresh: 20
+        min_points: 10
+        basic_roi_size: 0
+        neighborhood_min_match: 10
+        scangrid_x_offset: 4
+        scangrid_y_offset: 4
+        lut: /bulb-colormap/red.colormap
+
   #puck topdots color (Yellow) 
       #R  #G   #B
     topdots:
       ##################################
       # This is for the standard pucks #
       ##################################            
-      #reference_color: [172, 142, 32,
-      #155, 157, 86,
-      #255, 255, 0,
-      #255, 194, 49,
-      #177, 138, 79,
-      #174, 141, 36,
-      #155, 112, 18]
-      ################################################
-      # This is for the new pucks with black topdots #
-      ################################################
-      reference_color: [42, 36, 30,
-      31, 22, 18,
-      40, 18, 15,
-      84, 79, 68,
-      134, 133, 129,
-      0, 0, 0,
-      40, 29, 40,
-      41, 34, 36,
-      58, 46, 41]
+      #colormodel mode (At the moment it can be either "similarity" or "colormap" or "thresholds"
+      colormodel_mode: "similarity"
+
+      reference_color: [172, 142, 32,
+      155, 157, 86,
+      255, 255, 0,
+      255, 194, 49,
+      177, 138, 79,
+      174, 141, 36,
+      155, 112, 18]
 
       chroma_thresh: 10
       saturation_thresh: 40
@@ -93,6 +101,23 @@ plugins/puck_vision:
       scangrid_x_offset: 1
       scangrid_y_offset: 1
       lut: /bulb-colormap/yellow.colormap
+
+      ################################################
+      # This is for the new pucks with black topdots #
+      ################################################
+      new_pucks:
+        #colormodel mode (At the moment it can be either "similarity" or "colormap" or "thresholds_black"
+        colormodel_mode: "thresholds_black"
+        reference_color: []
+
+        chroma_thresh: 10
+        saturation_thresh: 40
+        min_points: 1
+        basic_roi_size: 0
+        neighborhood_min_match: 2
+        scangrid_x_offset: 1
+        scangrid_y_offset: 1
+        lut: /bulb-colormap/yellow.colormap
 
   #colormap_file_blue: /bulb-colormap/blue.colormap 
 
