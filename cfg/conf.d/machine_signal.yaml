@@ -37,7 +37,7 @@ plugins/machine_signal:
   # Disable this to see the raw ROIs as they come out of the classifier
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
-  draw_processed_rois: true
+  draw_processed_rois: false
  
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
@@ -107,9 +107,9 @@ plugins/machine_signal:
   black:
     u_reference: 128
     v_reference: 128
-    y_threshold: 30
+    y_threshold: 25
     u_threshold: 20
-    v_threshold: 30
+    v_threshold: 15
     min_points: 10
     neighborhood_min_match: 5
 
