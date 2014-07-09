@@ -19,6 +19,7 @@
 
 
 (defrule coordination-compute-resources-to-lock
+  "Decides which resources need locking for the proposed task and asserts a needed-task-lock for them. Asserts state TASK-PROPOSED-ASKED."
   ?pt <- (proposed-task (name ?task) (args $?a) (state proposed))
   (not (proposed-task (state asked)))
   ?s <- (state TASK-PROPOSED)
@@ -29,26 +30,24 @@
   (switch ?task
     (case load-with-S0 then
       (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
-				(resource (sym-cat BRING_S0 (nth$ 1 ?a)))))
+				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a)))))
     )
     (case load-with-S1 then
       (assert (needed-task-lock (action BRING_S1) (place (nth$ 1 ?a)) 
-				(resource (sym-cat BRING_S1 (nth$ 1 ?a)))))
+				(resource (sym-cat BRING_S1 "~" (nth$ 1 ?a)))))
     )
     (case load-with-S2 then
       (assert (needed-task-lock (action BRING_S2) (place (nth$ 1 ?a)) 
-				(resource (sym-cat BRING_S2 (nth$ 1 ?a)))))
+				(resource (sym-cat BRING_S2 "~" (nth$ 1 ?a)))))
     )
     (case pick-and-deliver then
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
-				(resource (sym-cat PICK_PROD (nth$ 1 ?a))))
-	      ; (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
-	      ; 			(resource (sym-cat BRING_ (nth$ 2 ?a) _ (nth$ 3 ?a))))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
       )
     )
     (case recycle then
       (assert (needed-task-lock (action PICK_CO) (place (nth$ 1 ?a)) 
-				(resource (sym-cat PICK_CO (nth$ 1 ?a))))
+				(resource (sym-cat PICK_CO "-" (nth$ 1 ?a))))
       )
     )
     (case pick-and-load then
@@ -57,9 +56,9 @@
 	(bind ?puck ?machine:produced-puck)
       )
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
-				(resource (sym-cat PICK_PROD (nth$ 1 ?a))))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
 	      (needed-task-lock (action (sym-cat BRING_ ?puck)) (place (nth$ 2 ?a))
-				(resource (sym-cat (sym-cat BRING_ ?puck) (nth$ 2 ?a))))
+				(resource (sym-cat (sym-cat BRING_ ?puck) "~" (nth$ 2 ?a))))
       )
     )
     (case deliver then
@@ -68,11 +67,38 @@
     (case recycle-holding then
       ;nothing has to be locked here because we want to get rid of an unintentionally holding puck
     )
+    (case just-in-time-P3 then
+      (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
+				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a))))
+	      (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
+    )
+    (case pick-and-store then
+      (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
+	      (needed-task-lock (action STORE_PUCK) (place (nth$ 3 ?a))
+				(resource (sym-cat STORE_PUCK "~" (nth$ 3 ?a)))))
+    )
+    (case store then
+      (assert (needed-task-lock (action STORE_PUCK) (place (nth$ 1 ?a))
+				(resource (sym-cat STORE_PUCK "~" (nth$ 1 ?a)))))
+    )
+    (case get-stored-and-deliver then
+      (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
+    )
+    (case produce-with-S0 then
+      (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
+				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a))))
+	      (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
+    )
     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
   )
 )
 
 (defrule coordination-ask-for-lock
+  "Asks for a lock (type GET) that was computed in coordination-compute-resources-to-lock. Lock acceptance is handled in lock-managing.clp."
   (needed-task-lock (resource ?res))
   =>
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
@@ -85,6 +111,7 @@
 )
 
 (defrule coordination-accept-proposed-task
+  "Processes accepted lock. Proposed-task and corresponding state are retracted. Asserts the accepted task and sends incoming/delivery facts for machines/orders to the wordmodel."
   (forall (needed-task-lock (resource ?res))
 	  (lock (type ACCEPT) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
   )
@@ -98,7 +125,7 @@
   (assert (state TASK-ORDERED))
   ;update worldmodel
   (do-for-all-facts ((?ntl needed-task-lock)) TRUE
-    (printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
+    ;(printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
     (if (eq ?ntl:place DELIVER)
       then
       (assert (worldmodel-change (order (nth$ 4 ?args)) (change ADD_IN_DELIVERY)
@@ -114,6 +141,7 @@
 )
 
 (defrule coordination-reject-proposed-task
+  "Processes refused lock. Changes proposed-task to rejected and robotino state back to IDLE. Releases the refused lock."
   (needed-task-lock (resource ?res))
   (lock (type REFUSE) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
   ?pt <- (proposed-task (state asked))
@@ -130,6 +158,7 @@
 )
 
 (defrule coordination-release-after-task-finished
+  "If a task is finished the lock for the task is released and incoming facts are removed from the worldmodel. State is changed from TASK-FINISHED to IDLE."
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
   ?t <- (task (name ?task) (args $?args) (state finished)) 
   ?s <- (state TASK-FINISHED)
@@ -149,6 +178,7 @@
 )
 
 (defrule coordination-release-after-task-aborted
+  "If a task is finished, the task state is set to finished, although the TASK-FINISHED state in the robot is missing. Release the task and remove incoming facts in worldmodel. State is changed in production.clp."
   (declare (salience ?*PRIORITY-LOCK-LOW*))
   ?t <- (task (name ?task) (args $?args) (state finished))
   =>
@@ -162,6 +192,7 @@
 )
 
 (defrule coordination-release-and-reject-task-after-failed
+  "If a task has failed the task lock is released and incoming facts are removed. If needed a warning is printed and the state is changed from TASK-FAILED to IDLE. All rejected proposals are removed and failed task is rejected."
   ?t <- (task (name ?task) (args $?args) (state failed)) 
   ?s <- (state TASK-FAILED)
   =>
@@ -197,4 +228,36 @@
   (do-for-all-facts ((?m machine)) (eq ?m:mtype T1)
     (assert (worldmodel-change (machine ?m:name) (change RESET_PRODUCE_BLOCKED)))
   )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; coordination regarding roles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrule get-lock-for-p3-role
+  "The P3 agent should prevent other robots from using the P3."
+  (role P3-ONLY)
+  (not (lock (resource P3-ONLY)))
+  =>
+  (printout t "I am the P3 Agent, locking the role and T5")
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource P3-ONLY)))
+)
+
+(defrule drop-P3-role-if-redundant
+  "There should be only one P3 agent"
+  ?r <- (role P3-ONLY)
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource P3-ONLY))
+  =>
+  (retract ?r)
+  (assert (role NOTHING))
+)
+
+(defrule prod-role-P3-change-after-all-p3-orders
+  "Drop the P3 role when there are no more P3 orders."
+  ?r <- (role P3-ONLY)
+  (no-more-needed P3)
+  =>
+  (printout warn "changing role from P3-ONLY to nothing because there are no more orders" crlf)
+  (retract ?r)
+  (assert (role nothing))
 )

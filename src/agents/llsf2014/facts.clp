@@ -8,7 +8,7 @@
 
 ; GENERIC
 (deftemplate active-robot
-  (slot name (type SYMBOL) (allowed-values R-1 R-2))
+  (slot name (type SYMBOL) (allowed-values R-1 R-2 R-3))
   (multislot last-seen (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
@@ -94,6 +94,7 @@
         (allowed-values UNKNOWN T1 T2 T3 T4 T5 DELIVER RECYCLE IGNORED))
   (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
   (multislot incoming (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
+  (multislot incoming-agent (type SYMBOL)) ;the agent bringing/getting the thing specified in incoming
   (slot produced-puck (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3) (default NONE))
   (slot fails (type INTEGER) (default 0))
   (slot junk (type INTEGER) (default 0))
@@ -106,6 +107,7 @@
   (slot recycle-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot doubtful-worldmodel (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot priority (type INTEGER) (default 0))
+  (multislot out-of-order-until (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
 )
 
 (deftemplate order
@@ -121,7 +123,7 @@
 
 ;common template for a task
 (deftemplate task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding wait-at-T5))
+  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding just-in-time-P3 pick-and-store get-stored-and-deliver store produce-with-S0))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values ordered running finished failed) (default ordered))
   (slot priority (type INTEGER) (default 0))
@@ -129,27 +131,28 @@
 
 ;common template for a proposed task
 (deftemplate proposed-task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding wait-at-T5))
+  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding just-in-time-P3 pick-and-store get-stored-and-deliver store produce-with-S0))
   (multislot args (type SYMBOL)) ;in chronological order
   (slot state (type SYMBOL) (allowed-values proposed asked rejected) (default proposed))
   (slot priority (type INTEGER) (default 0))
 )
 
 (deftemplate needed-task-lock
-  (slot action (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO BRING_P1 BRING_P2 BRING_P3))
+  (slot action (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO BRING_P1 BRING_P2 BRING_P3 STORE_PUCK GET_STORED_PUCK))
   (slot place (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24 R1 R2 DELIVER))
   (slot resource (type SYMBOL))
 )
 
 (deftemplate worldmodel-change
-  (slot machine (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24 D1 D2 D3 R1 R2 NONE) (default NONE))
+  (slot machine (type SYMBOL) (default NONE)); or puck-storage
   (slot order (type INTEGER) (default 0))
-  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME REMOVE_PRODUCED SET_PRODUCE_BLOCKED RESET_PRODUCE_BLOCKED SET_RECYCLE_BLOCKED SET_DOUBTFUL_WORLDMODEL ADD_IN_DELIVERY))
+  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME REMOVE_PRODUCED SET_PRODUCE_BLOCKED RESET_PRODUCE_BLOCKED SET_RECYCLE_BLOCKED SET_DOUBTFUL_WORLDMODEL ADD_IN_DELIVERY SET_OUT_OF_ORDER_UNTIL STORE_PUCK GET_STORED_PUCK))
   (slot value (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO NOTHING S0 S1 S2 P1 P2 P3) (default NOTHING))
   (slot amount (type INTEGER) (default 0))
   (slot already-applied (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (multislot last-sent (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot id (type INTEGER) (default 0)) ;random id
+  (slot agent (type SYMBOL) (default DEFAULT))
 )
 
 (deftemplate wait-for-lock
@@ -158,8 +161,18 @@
   (slot priority (type INTEGER))
 )
 
+(deftemplate puck-storage
+  (slot name (type SYMBOL))
+  (slot puck (type SYMBOL) (allowed-symbols NONE P1 P2 P3) (default NONE))
+  (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
+  (multislot incoming (type SYMBOL) (allowed-symbols STORE_PUCK GET_STORED_PUCK))
+  (multislot incoming-agent (type SYMBOL))
+)
+
 (deffacts startup-production
   (team-color nil)
+  (points-magenta 0)
+  (points-cyan 0)
   (last-lights)
   (holding NONE)
   (machine (name D1) (mtype DELIVER) (team CYAN))
@@ -212,6 +225,8 @@
   ; Input storage per team color
   (input-storage CYAN Ins1 0 0)
   (input-storage MAGENTA Ins2 0 0)
+  (secondary-storage CYAN Ins1Sec 0 0)
+  (secondary-storage MAGENTA Ins2Sec 0 0)
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 )

@@ -11,6 +11,7 @@
   (time $?now)
   ?s <- (timer (name send-worldmodel-sync) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
   (lock-role MASTER)
+  (peer-id private ?peer)  
   =>
   ; (printout t "sending worldmodel" crlf)
   ;construct worldmodel msg
@@ -28,14 +29,22 @@
     (foreach ?incoming-action (fact-slot-value ?machine incoming)
       (pb-add-list ?m-msg "incoming" ?incoming-action)
     )
+    ;set agents responsible for incoming fields
+    (foreach ?incoming-agent (fact-slot-value ?machine incoming-agent)
+      (pb-add-list ?m-msg "incoming_agent" (str-cat ?incoming-agent))
+    )
     ;set production finished time
-    (pb-set-field ?m-msg "prod_finished_time" ?machine:final-prod-time)
+    (pb-set-field ?m-msg "prod_finished_time" (nth$ 1 ?machine:final-prod-time))
+    ;set out-of-order-until
+    (pb-set-field ?m-msg "out_of_order_until" (nth$ 1 ?machine:out-of-order-until))
     ;set puck under rfid
     (if (neq ?machine:produced-puck NONE) then
       (pb-set-field ?m-msg "puck_under_rfid" ?machine:produced-puck)
     )
     (pb-set-field ?m-msg "produce_blocked" ?machine:produce-blocked)
     (pb-set-field ?m-msg "recycle_blocked" ?machine:recycle-blocked)
+    ;set amount of junk
+    (pb-set-field ?m-msg "junk" ?machine:junk)
     ;add sub-msg to worldmodel msg
     (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
   )
@@ -48,17 +57,43 @@
     (pb-set-field ?o-msg "in_delivery" ?order:in-delivery)
     (pb-add-list ?worldmodel "orders" ?o-msg) ; destroys ?o-msg
   )
-  (pb-broadcast ?worldmodel)
+  
+  ;add worldmodel about puck-storage
+  (delayed-do-for-all-facts ((?ps puck-storage)) TRUE
+    ;construct submsg for each machine
+    (bind ?ps-msg (pb-create "llsf_msgs.PuckStorageState"))
+    ;set name
+    (pb-set-field ?ps-msg "name" (str-cat ?ps:name))
+    (if (neq ?ps:puck NONE)
+      then
+      ;set puck
+      (pb-set-field ?ps-msg "puck" ?ps:puck)
+    )
+    ;set incoming
+    (foreach ?incoming-action (fact-slot-value ?ps incoming)
+      (pb-add-list ?ps-msg "incoming" ?incoming-action)
+    )
+    ;set agents responsible for incoming fields
+    (foreach ?incoming-agent (fact-slot-value ?ps incoming-agent)
+      (pb-add-list ?ps-msg "incoming_agent" (str-cat ?incoming-agent))
+    )
+    (pb-add-list ?worldmodel "storage" ?ps-msg)
+  )
+
+  (pb-broadcast ?peer ?worldmodel)
   (pb-destroy ?worldmodel)
 )
 
 ;receive worldmodel
 (defrule worldmodel-sync-receive-worldmodel
-  (protobuf-msg (type "llsf_msgs.Worldmodel") (ptr ?p) (rcvd-via BROADCAST))
+  ?msg <- (protobuf-msg (type "llsf_msgs.Worldmodel") (ptr ?p))
   (not (lock-role MASTER))
   (state ?state)
   =>
   ; (printout t "***** Received Worldmodel *****" crlf)
+  (unwatch facts machine)
+  (unwatch facts order)
+  (unwatch facts puck-storage)
   ;update worldmodel about machines
   (foreach ?m-msg (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
@@ -76,8 +111,15 @@
       (progn$ (?incoming-action (pb-field-list ?m-msg "incoming"))
 	(bind ?incoming (append$ ?incoming (sym-cat ?incoming-action)))
       )
+      ;update agents responsible for incoming-fields
+      (bind $?incoming-agent (create$))
+      (progn$ (?agent (pb-field-list ?m-msg "incoming_agent"))
+	(bind ?incoming-agent (append$ ?incoming-agent (sym-cat ?agent)))
+      )
       ;update production finished time
       (bind ?prod-finished-time (pb-field-value ?m-msg "prod_finished_time"))
+      ;update out-of-order-until
+      (bind ?out-of-order-until (pb-field-value ?m-msg "out_of_order_until"))
       (if (pb-has-field ?m-msg "puck_under_rfid")
 	then (bind ?puck-under-rfid (sym-cat (pb-field-value ?m-msg "puck_under_rfid")))
 	else (bind ?puck-under-rfid NONE)
@@ -88,12 +130,17 @@
       (bind ?recycle-blocked (if (eq 0 (pb-field-value ?m-msg "recycle_blocked"))
 				 then FALSE
 				 else TRUE))
+      ;update junk
+      (bind ?junk (pb-field-value ?m-msg "junk"))
       (modify ?machine (incoming ?incoming) (loaded-with ?loaded-with)
 	               (final-prod-time (create$ ?prod-finished-time 0))
 		       (produced-puck ?puck-under-rfid) (produce-blocked ?produce-blocked)
-		       (recycle-blocked ?recycle-blocked)
+		       (recycle-blocked ?recycle-blocked) (junk ?junk)
+		       (incoming-agent ?incoming-agent)
+		       (out-of-order-until (create$ ?out-of-order-until 0))
       )
     )
+    (retract ?msg)
   )
   ;update worldmodel about orders
   (foreach ?o-msg (pb-field-list ?p "orders")
@@ -104,15 +151,46 @@
       (modify ?order (in-delivery ?in-del))
     )
   )
+  ;update worldmodel about puck-storage
+  (foreach ?ps-msg (pb-field-list ?p "storage")
+    (do-for-fact ((?storage puck-storage))
+		   (eq ?storage:name (sym-cat (pb-field-value ?ps-msg "name")))	
+      ;update incoming
+      (bind $?incoming (create$))
+      (progn$ (?incoming-action (pb-field-list ?ps-msg "incoming"))
+	(bind ?incoming (append$ ?incoming (sym-cat ?incoming-action)))
+      )
+      ;update agents responsible for incoming-fields
+      (bind $?incoming-agent (create$))
+      (progn$ (?agent (pb-field-list ?ps-msg "incoming_agent"))
+	(bind ?incoming-agent (append$ ?incoming-agent (sym-cat ?agent)))
+      )
+      ;update loaded-with
+      (if (pb-has-field ?ps-msg "puck")
+	then
+	(modify ?storage (incoming ?incoming) (incoming-agent ?incoming-agent)
+		         (puck (pb-field-value ?ps-msg "puck")))
+	else
+	(modify ?storage (incoming ?incoming) (incoming-agent ?incoming-agent)
+		         (puck NONE))
+      )
+	
+    )
+    (retract ?msg)
+  )
+  (watch facts machine)
+  (watch facts order)
+  (watch facts puck-storage)
 )
 
 ;send worldmodel change
 (defrule worldmodel-sync-send-change
   (time $?now)
   ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value)
-			     (amount ?amount) (id ?id) (order ?order)
+			     (amount ?amount) (id ?id) (order ?order) (agent ?agent)
 			     (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)))
   (not (lock-role MASTER))
+  (peer-id private ?peer)
   =>
   ;(printout t "sending worldmodel change" crlf)
   ;set random id (needed by the master to determine if a change was already appied)
@@ -127,6 +205,7 @@
     (pb-set-field ?change-msg "order" ?order)
   )
   (pb-set-field ?change-msg "change" ?change)
+  (pb-set-field ?change-msg "agent" (str-cat ?agent))
   (pb-set-field ?change-msg "id" ?id)
   (if (member$ ?change (create$ ADD_LOADED_WITH REMOVE_LOADED_WITH)) then
     (pb-set-field ?change-msg "loaded_with" ?value)
@@ -140,10 +219,13 @@
   (if (eq ?change SET_PROD_FINISHED_TIME) then
     (pb-set-field ?change-msg "prod_finished_time" ?amount)
   )
+  (if (eq ?change SET_OUT_OF_ORDER_UNTIL) then
+    (pb-set-field ?change-msg "out_of_order_until" ?amount)
+  )
   (if (eq ?change ADD_IN_DELIVERY) then
     (pb-set-field ?change-msg "in_delivery" ?amount)
   )
-  (pb-broadcast ?change-msg)
+  (pb-broadcast ?peer ?change-msg)
   (pb-destroy ?change-msg)
   (modify ?wmc (last-sent ?now) (id ?id))
 )
@@ -160,18 +242,20 @@
 
 ;receive worldmodel change
 (defrule worldmodel-sync-receive-change
-  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChange") (ptr ?p) (rcvd-via BROADCAST))
+  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChange") (ptr ?p))
   (lock-role MASTER)
   ?arf <- (already-received-wm-changes $?arc)
+  (peer-id private ?peer)
   =>
-  (printout t "receiving worldmodel change" crlf)
   ;ensure that this change was not already applied
   (bind ?id (pb-field-value ?p "id"))
   (if (not (member$ ?id ?arc)) then
+    ;(printout t "receiving new worldmodel change (" (pb-field-value ?p "change") ")" crlf)
     (retract ?arf)
     (assert (already-received-wm-changes (append$ ?arc ?id)))
     ;apply change
     (if (pb-has-field ?p "machine") then
+      ;change machine if change is about a machine
       (do-for-fact ((?machine machine))
           (eq ?machine:name (sym-cat (pb-field-value ?p "machine")))
 
@@ -183,17 +267,27 @@
             (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
           )
           (case ADD_INCOMING then 
-            (modify ?machine (incoming (append$ ?machine:incoming (pb-field-value ?p "incoming"))))
+            (modify ?machine (incoming (append$ ?machine:incoming
+                                         (pb-field-value ?p "incoming")))
+                             (incoming-agent (append$ ?machine:incoming-agent
+                                               (sym-cat (pb-field-value ?p "agent")))))
           )
           (case REMOVE_INCOMING then 
-            (modify ?machine (incoming (delete-member$ ?machine:incoming (pb-field-value ?p "incoming"))))
+            (modify ?machine (incoming (delete-member$ ?machine:incoming
+                                         (pb-field-value ?p "incoming")))
+	                     ;every agent should do only one thing at a machine
+		             (incoming-agent (delete-member$ ?machine:incoming-agent
+                                               (sym-cat (pb-field-value ?p "agent")))))
           )
           (case SET_NUM_CO then 
             (modify ?machine (junk (pb-field-value ?p "num_CO")))
           )
           (case SET_PROD_FINISHED_TIME then 
-            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time")) 0))
+            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time") 0)))
           )
+	  (case SET_OUT_OF_ORDER_UNTIL then
+	    (modify ?machine (out-of-order-until (create$ (pb-field-value ?p "out_of_order_until") 0)))
+	  )
           (case REMOVE_PRODUCED then 
             (modify ?machine (produced-puck NONE))
           )
@@ -219,6 +313,32 @@
           )
         )
       )
+      ;change puck-storage if change is about a puck-storage
+      (do-for-fact ((?storage puck-storage))
+          (eq ?storage:name (sym-cat (pb-field-value ?p "machine")))
+
+        (switch (pb-field-value ?p "change")
+          (case ADD_LOADED_WITH then 
+	    (modify ?storage (puck (pb-field-value ?p "loaded_with")))
+          )
+          (case REMOVE_LOADED_WITH then
+            (modify ?storage (puck NONE))
+          )
+          (case ADD_INCOMING then 
+            (modify ?storage (incoming (append$ ?storage:incoming
+                                         (pb-field-value ?p "incoming")))
+                             (incoming-agent (append$ ?storage:incoming-agent
+                                               (sym-cat (pb-field-value ?p "agent")))))
+          )
+          (case REMOVE_INCOMING then 
+            (modify ?storage (incoming (delete-member$ ?storage:incoming
+                                         (pb-field-value ?p "incoming")))
+	                     ;every agent should do only one thing at a machine
+		             (incoming-agent (delete-member$ ?storage:incoming-agent
+                                               (sym-cat (pb-field-value ?p "agent")))))
+          )
+        )
+      )
     )
     (if (pb-has-field ?p "order") then
       (do-for-fact ((?order order))
@@ -236,12 +356,12 @@
   ;send acknowledgment
   (bind ?msg-ack (pb-create "llsf_msgs.WorldmodelChangeAck"))
   (pb-set-field ?msg-ack "id" ?id)  
-  (pb-broadcast ?msg-ack)
+  (pb-broadcast ?peer ?msg-ack)
   (pb-destroy ?msg-ack)
 )
 
 (defrule worldmodel-sync-receive-change-ack
-  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChangeAck") (ptr ?p) (rcvd-via BROADCAST))
+  ?pmsg <- (protobuf-msg (type "llsf_msgs.WorldmodelChangeAck") (ptr ?p))
   (not (lock-role MASTER))
   =>
   (do-for-fact ((?wmc worldmodel-change))

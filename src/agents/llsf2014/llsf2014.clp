@@ -13,16 +13,21 @@
 (path-load  llsf2014/facts.clp)
 
 (defrule load-config
+  "Load configration for initialization."
   (init)
   =>
   (config-load "/clips-agent")
   (config-load "/hardware/robotino")
 )
 
-(deffacts init (init))
-
+(deffacts init 
+  "Initializes clips agent."
+  (init)
+)
+ 
 ; Request clips-features
 (defrule enable-blackboard
+  "If blackboard feature is set load the blackboard, if it is not yet loaded."
   (ff-feature blackboard)
   (not (ff-feature-loaded blackboard))
   =>
@@ -30,21 +35,27 @@
   (ff-feature-request "blackboard")
   (path-load "llsf2014/blackboard-init.clp")
 )
+
 (defrule enable-motor-switch
+  "If motor-switch feature is set load the motor-switch, if it is not yet loaded."
   (ff-feature motor-switch)
   (not (ff-feature-loaded motor-switch))
   =>
   (printout t "Requesting motor-switch feature" crlf)
   (ff-feature-request "motor-switch")
 )
+
 (defrule enable-protobuf
+  "If protobuf feature is set load the protobuf, if it is not yet loaded."
   (ff-feature protobuf)
   (not (ff-feature-loaded protobuf))
   =>
   (printout t "Requesting protobuf feature" crlf)
   (ff-feature-request "protobuf")
 )
+
 (defrule enable-navgraph
+  "If navgraph feature is set load the navgraph, if it is not yet loaded and init fact is set."
   (init) ;because we want to load the navgraph after the (reset), which would delete all navgraph facts
   (ff-feature navgraph)
   (not (ff-feature-loaded navgraph))
@@ -54,7 +65,30 @@
   (path-load  llsf2014/navgraph.clp)
 )
 
+(deffunction unwatch-rules-facts ()
+  ;unwatch some rules to reduce debug output
+  ;this is not possible in the config, because the defrules and deffacts are loaded later
+  (unwatch rules worldmodel-sync-receive-worldmodel)
+  (unwatch rules worldmodel-sync-publish-worldmodel)
+  (unwatch rules wm-update-puck-in-gripper)
+  (unwatch rules wm-update-pose)
+  (unwatch rules wm-update-pose)
+  (unwatch rules net-send-BeaconSignal)
+  (unwatch rules net-recv-BeaconSignal)
+  (unwatch rules net-recv-GameState)
+  (unwatch rules lock-send-message)
+  (unwatch rules lock-receive-message)
+  (unwatch rules worldmodel-sync-receive-worldmodel)
+  (unwatch rules skill-update-nochange)
+  (unwatch facts protobuf-msg)
+  (unwatch facts active-robot)
+  (unwatch facts pose)
+  (unwatch facts timer)
+  (unwatch facts skill-update)
+)
+
 (defrule initialize
+  "Actual initialization rule. Loads the need rule-files for skills and inter-robot communication."
   ;when all clips features are available and the init file is loaded
   (declare (salience ?*PRIORITY-HIGH*))
   (agent-init)
@@ -67,9 +101,9 @@
   (path-load  llsf2014/utils.clp)
   (path-load  llsf2014/net.clp)
   (path-load  llsf2014/skills.clp)
+  (path-load  llsf2014/worldmodel.clp)
   (path-load  llsf2014/lock-managing.clp)
   (path-load  llsf2014/lock-usage.clp)
-
   (if
     (any-factp ((?conf confval))
       (and (eq ?conf:path "/clips-agent/llsf2014/enable-sim")
@@ -79,8 +113,6 @@
     (path-load  llsf2014/sim.clp)
   )
   (path-load  llsf2014/game.clp)
-  (path-load  llsf2014/general.clp)
-  (path-load  llsf2014/worldmodel.clp)
   (path-load  llsf2014/worldmodel-synchronization.clp)
   (path-load  llsf2014/tactical-help.clp)
   (path-load  llsf2014/tasks.clp)
@@ -90,10 +122,12 @@
   (path-load  llsf2014/config.clp)
   (reset)
   ;(facts)
+
+  (unwatch-rules-facts)
 )
 
-
 (defrule late-silence-debug-facts
+  "Disables watching of facts configured in clips-agent/llsf2014/unwatch-facts for debug mode."
   (declare (salience -1000))
   (init)
   (protobuf-available)
@@ -105,6 +139,7 @@
 )
 
 (defrule late-silence-debug-rules
+  "Disables watching of rules configured in clips-agent/llsf2014/unwatch-rules for debug mode."
   (declare (salience -1000))
   (init)
   (protobuf-available)

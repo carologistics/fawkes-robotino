@@ -9,12 +9,12 @@
 
 (defglobal
   ; network sending periods; seconds
-  ?*BEACON-PERIOD* = 0.4
-  ?*MASTER-ANNOUNCE-PERIOD* = 0.1
-  ?*LOCK-PERIOD* = 0.2
-  ?*LOCK-STATUS-SEND-PERIOD* = 0.6
-  ?*WORLDMODEL-SYNC-PERIOD* = 0.1
-  ?*WORLDMODEL-CHANGE-SEND-PERIOD* = 0.1
+  ?*BEACON-PERIOD* = 1.0
+  ?*MASTER-ANNOUNCE-PERIOD* = 0.5
+  ?*LOCK-PERIOD* = 0.5
+  ?*LOCK-STATUS-SEND-PERIOD* = 1.0
+  ?*WORLDMODEL-SYNC-PERIOD* = 1.0
+  ?*WORLDMODEL-CHANGE-SEND-PERIOD* = 0.5
 
   ?*TEAM-NAME*    = "?"
   ?*ROBOT-NAME*   = "?"
@@ -22,12 +22,24 @@
 
   ; Time before the slave becomes the master
   ;(if there is a master the timeout gets larger)
-  ?*CURRENT-MASTER-TIMEOUT* = 2.0
-  ?*INITIAL-MASTER-TIMEOUT* = 2.0
-  ?*ROBOT-TIMEOUT* = 6.0
+  ?*CURRENT-MASTER-TIMEOUT* = 5.0
+  ?*INITIAL-MASTER-TIMEOUT* = 5.0
+  ?*ROBOT-TIMEOUT* = 10.0
   ?*RELEASE-DISTANCE* = 0.5
 
   ?*FAILS-TO-BLOCK* = 2
+
+  ?*LOCK-ANNOUNCE-RESTART-PERIOD* = 0.25
+  ?*LOCK-ANNOUNCE-RESTART-REPETITIONS* = 8
+  ?*LOCK-ANNOUNCE-RESTART-WAIT-BEFORE-FINISH* = 3.0
+
+  ;initial values for skill-durations:
+  ?*SKILL-DURATION-GET-PRODUCED* = 10
+  ?*SKILL-DURATION-GET-STORED-PUCK* = 10
+  ?*SKILL-DURATION-DELIVER* = 10
+
+  ;how long do we want to produce P3 without leaving the machine
+  ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING* = 120
 )
 
 (defrule globals-config-team-name
@@ -60,4 +72,14 @@
   (confval (path "/clips-agent/llsf2014/release-distance") (type FLOAT) (value ?d))
   =>
   (bind ?*RELEASE-DISTANCE* ?d)
+)
+
+(defrule globals-config-estimated-skill-durations
+  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/get-produced") (type UINT) (value ?d-get-produced))
+  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/get-stored-puck") (type UINT) (value ?d-get-stored-puck))
+  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/deliver") (type UINT) (value ?d-deliver))
+  =>
+  (bind ?*SKILL-DURATION-GET-PRODUCED* ?d-get-produced)
+  (bind ?*SKILL-DURATION-GET-STORED-PUCK* ?d-get-stored-puck)
+  (bind ?*SKILL-DURATION-DELIVER* ?d-deliver)
 )

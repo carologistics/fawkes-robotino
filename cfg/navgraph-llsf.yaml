@@ -344,35 +344,83 @@ nodes:
     pos: [1.98, 1.0]
     properties:
       - highway_exit
+  - name: IA1H2
+    pos: [1.38, 1.0]
+    properties:
+      - highway_exit
   - name: Ins1
     pos: [1.98, 0.80]
+    properties:
+      - orientation: -1.57
+  - name: Ins1Sec
+    pos: [1.38, 0.80]
     properties:
       - orientation: -1.57
   - name: IA2H
     pos: [-1.38, 1.0]
     properties:
       - highway_exit
+  - name: IA2H2
+    pos: [-1.98, 1.0]
+    properties:
+      - highway_exit
   - name: Ins2
     pos: [-1.38, 0.80]
     properties:
       - orientation: -1.57
-
-  - name: WAIT_FOR_INS_1
-    pos: [0.56, 0.56]
+  - name: Ins2Sec
+    pos: [-1.98, 0.80]
+    properties:
+      - orientation: -1.57
+  - name: WAIT_FOR_INS_1_ROBOTINO_1
+    pos: [3.36, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_2_ROBOTINO_1
+    pos: [-3.36, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_1_ROBOTINO_2
+    pos: [0, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_2_ROBOTINO_2
+    pos: [0, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_1_ROBOTINO_3
+    pos: [4.48, 0.56]
+    properties:
+      - orientation: 1.57
+  - name: WAIT_FOR_INS_2_ROBOTINO_3
+    pos: [-4.48, 0.56]
     properties:
       - orientation: 1.57
   - name: WAIT_FOR_DELIVER_1
-    pos: [5.04, 1.68]
+    pos: [5.04, 3.92]
     properties:
-      - orientation: 1.57
-  - name: WAIT_FOR_INS_2
-    pos: [-0.56, 0.56]
-    properties:
-      - orientation: 1.57
+      - orientation: -1.57
   - name: WAIT_FOR_DELIVER_2
-    pos: [-5.04, 1.68]
+    pos: [-5.04, 3.92]
     properties:
-      - orientation: 1.57
+      - orientation: -1.57
+# Wait points for machines in a row (free position of the four possible machine positions and WAIT_FOR_DELIVER for M12 and M24)
+  - name: WAIT_FOR_ROW_1
+    pos: [-3.92, 3.92]
+  - name: WAIT_FOR_ROW_2
+    pos: [-2.8, 2.8]
+  - name: WAIT_FOR_ROW_3
+    pos: [-1.68, 5.04]
+  - name: WAIT_FOR_ROW_4
+    pos: [-0.56, 3.92]
+  - name: WAIT_FOR_ROW_5
+    pos: [0.56, 3.92]
+  - name: WAIT_FOR_ROW_6
+    pos: [1.68, 5.04]
+  - name: WAIT_FOR_ROW_7
+    pos: [2.8, 2.8]
+  - name: WAIT_FOR_ROW_8
+    pos: [3.92, 3.92]
 
 # Exploration Points
 # TODO: optimize
@@ -476,6 +524,23 @@ nodes:
     properties:
       - orientation: 1.57
 
+# Puck Storage Points:
+  - name: D1_PUCK_STORAGE_1
+    pos: [5.05, 1.68]
+    properties:
+      - orientation: 0.0
+  - name: D1_PUCK_STORAGE_2
+    pos: [5.05, 1.12]
+    properties:
+      - orientation: 0.0
+  - name: D2_PUCK_STORAGE_1
+    pos: [-5.05, 1.68]
+    properties:
+      - orientation: 3.14
+  - name: D2_PUCK_STORAGE_2
+    pos: [-5.05, 1.12]
+    properties:
+      - orientation: 3.14
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
@@ -576,19 +641,19 @@ connections:
   - [P94, M12H]
 
 # diagonal links
-
-  - [P22, P33]
-  - [P23, P32]
-  - [P13, P24]
-  - [P23, P14]
-  - [P43, P54]
-  - [P53, P44]
-  - [P53, P64]
-  - [P63, P54]
-  - [P72, P83]
-  - [P82, P73]
-  - [P83, P94]
-  - [P93, P84]
+# (unnecessary because of wait points at the diagonals)
+  # - [P22, P33]
+  # - [P23, P32]
+  # - [P13, P24]
+  # - [P23, P14]
+  # - [P43, P54]
+  # - [P53, P44]
+  # - [P53, P64]
+  # - [P63, P54]
+  # - [P72, P83]
+  # - [P82, P73]
+  # - [P83, P94]
+  # - [P93, P84]
 
 # connection of machines
 
@@ -624,9 +689,15 @@ connections:
   - [IA1H, P61]
   - [IA1H, P71]
   - [IA1H, Ins1]
+  - [IA1H2, P61]
+  - [IA1H2, P71]
+  - [IA1H2, Ins1Sec]
   - [IA2H, P31]
   - [IA2H, P41]
   - [IA2H, Ins2]
+  - [IA2H2, P31]
+  - [IA2H2, P41]
+  - [IA2H2, Ins2Sec]
 
   - [D11,  deliver1]
   - [D12,  deliver1]
@@ -637,14 +708,16 @@ connections:
   - [P13,  deliver2]
   - [P93,  deliver1]
 
-  - !dir [P51, WAIT_FOR_INS_1]
-  - !dir [WAIT_FOR_INS_1, P61]
-  - !dir [P51, WAIT_FOR_INS_2]
-  - !dir [WAIT_FOR_INS_2, P41]
-  - !dir [P91, WAIT_FOR_DELIVER_1]
-  - !dir [WAIT_FOR_DELIVER_1, P92]
-  - !dir [P11, WAIT_FOR_DELIVER_2]
-  - !dir [WAIT_FOR_DELIVER_2, P12]
+  - [P81, WAIT_FOR_INS_1_ROBOTINO_1]
+  - [P21, WAIT_FOR_INS_2_ROBOTINO_1]
+  - [P51, WAIT_FOR_INS_1_ROBOTINO_2]
+  - [P51, WAIT_FOR_INS_2_ROBOTINO_2]
+  - [P91, WAIT_FOR_INS_1_ROBOTINO_3]
+  - [P11, WAIT_FOR_INS_2_ROBOTINO_3]
+  - !dir [P94, WAIT_FOR_DELIVER_1]
+  - !dir [WAIT_FOR_DELIVER_1, P93]
+  - !dir [P14, WAIT_FOR_DELIVER_2]
+  - !dir [WAIT_FOR_DELIVER_2, P13]
 
 # connection of Exploration points
 
@@ -672,3 +745,39 @@ connections:
   - [ExpM22, M22H]
   - [ExpM23, M23H]
   - [ExpM24, M24H]
+
+  # connection of wait points for rows
+  - [WAIT_FOR_ROW_1, P13]
+  - [WAIT_FOR_ROW_1, P14]
+  - [WAIT_FOR_ROW_1, P23]
+  - [WAIT_FOR_ROW_1, P24]
+  - [WAIT_FOR_ROW_2, P22]
+  - [WAIT_FOR_ROW_2, P23]
+  - [WAIT_FOR_ROW_2, P32]
+  - [WAIT_FOR_ROW_2, P33]
+  - [WAIT_FOR_ROW_3, P34]
+  - [WAIT_FOR_ROW_3, P44]
+  - [WAIT_FOR_ROW_4, P43]
+  - [WAIT_FOR_ROW_4, P44]
+  - [WAIT_FOR_ROW_4, P53]
+  - [WAIT_FOR_ROW_4, P54]
+  - [WAIT_FOR_ROW_5, P53]
+  - [WAIT_FOR_ROW_5, P54]
+  - [WAIT_FOR_ROW_5, P63]
+  - [WAIT_FOR_ROW_5, P64]
+  - [WAIT_FOR_ROW_6, P64]
+  - [WAIT_FOR_ROW_6, P74]
+  - [WAIT_FOR_ROW_7, P72]
+  - [WAIT_FOR_ROW_7, P73]
+  - [WAIT_FOR_ROW_7, P82]
+  - [WAIT_FOR_ROW_7, P83]
+  - [WAIT_FOR_ROW_8, P83]
+  - [WAIT_FOR_ROW_8, P84]
+  - [WAIT_FOR_ROW_8, P93]
+  - [WAIT_FOR_ROW_8, P94]
+
+  # Puck storage connections
+  - [M9H, D1_PUCK_STORAGE_1]
+  - [P91, D1_PUCK_STORAGE_2]
+  - [M21H, D2_PUCK_STORAGE_1]
+  - [P11, D2_PUCK_STORAGE_2]
