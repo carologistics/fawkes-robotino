@@ -904,7 +904,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
 {
   std::list<SignalState::signal_rois_t_> *rv = new std::list<SignalState::signal_rois_t_>();
   std::list<ROI>::iterator it_R = rois_R->begin();
-  map<ROI, SignalState::signal_rois_t_> laser_signals;
+  map<ROI, SignalState::signal_rois_t_, compare_rois_by_x_> laser_signals;
 
   if (!cluster_rois_) return rv;
 
@@ -922,8 +922,8 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
         ROI intersection = it_R->intersect(cluster_roi);
         unsigned int area_R = it_R->width * it_R->height;
         unsigned int area_intrsct = intersection.width * intersection.height;
-        if (area_R && float(area_intrsct) / float(area_R) >= 0.3) {
-          map<ROI, SignalState::signal_rois_t_>::iterator signal_it;
+        if (area_R && (float(area_intrsct) / float(area_R) >= 0.3)) {
+          map<ROI, SignalState::signal_rois_t_, compare_rois_by_x_>::iterator signal_it;
           if ((signal_it = laser_signals.find(cluster_roi)) != laser_signals.end()) {
             signal_it->second.red_roi->extend(intersection.start.x, intersection.start.y);
             signal_it->second.red_roi->extend(intersection.start.x + intersection.width,
