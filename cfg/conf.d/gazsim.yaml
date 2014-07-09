@@ -11,7 +11,7 @@ gazsim:
 
   topics:
     gps: "~/gazsim/gps/"
-    laser: "~/hokuyo_carologistics/link/laser/scan"
+    laser: "~/sick_laser/link/laser/scan"
     gyro: "~/RobotinoSim/Gyro/"
     infrared-puck-sensor: "~/RobotinoSim/InfraredPuckSensor/"
     gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
@@ -24,6 +24,8 @@ gazsim:
     puck-info: "~/LLSFRbSim/PuckInfo/"
     game-state: "~/LLSFRbSim/GameState/"
     set-game-state: "~/LLSFRbSim/SetGameState/"
+    set-game-phase: "~/LLSFRbSim/SetGamePhase/"
+    set-team-name: "~/LLSFRbSim/SetTeamName/"
     place-puck-under-machine: "~/LLSFRbSim/PlacePuckUnderMachine/"
     remove-puck-under-machine: "~/LLSFRbSim/RemovePuckFromMachine/"
     message: "~/RobotinoSim/String/"
@@ -33,8 +35,8 @@ gazsim:
     refbox-port: 4444
 
   laser:
-    max_range: 5.5 
-    interface-id: "Laser urg"
+    max_range: 9.5
+    interface-id: "Laser tim55x"
     frame-id: "/base_laser"
  
   webcam:
@@ -71,6 +73,9 @@ gazsim:
     gripper-laser-threshold: 0.18
     gripper-laser-value-far: 0.17
     gripper-laser-value-near: 9.99
+    # buffer for delaying sensor values
+    # gyro-buffer-size: 500
+    # gyro-delay: 0.1
 
     motor:    
       # does the odometry change if the robotino drives against an obstacle?
@@ -107,17 +112,21 @@ gazsim:
       update-rate: 2.0 #in Hz
 
   llsf-control:
+    team-name: "Carologistics"
+    team-color: "CYAN"
     start-game-automatically: true
-    time-to-wait-before-start: 5.0
+    time-to-wait-before-set-team: 5.0
+    time-to-wait-before-start: 10.0
     simulation-shutdown-after-game: true
     time-to-wait-before-shutdown: 5.0
     fawkes-path: "~/fawkes-robotino/" #TODO: find it in cpp source
     simulation-shutdown-script: "bin/gazsim.bash -x kill"
 
   llsf-statistics:
+    get-refbox-summary-script: "@BASEDIR@/etc/scripts/gazsim-get-refbox-summary.bash"
     #these fields can be overridden by the gazsim-schedule script
     db-name: "gazsim-runs"
-    collection: "test_13_10_14_15_26"
+    collection: "test_14_06_16_22_00"
     configuration-name: "default"
     log: "~/fawkes-robotino/gazsim-logs/13_10_14_15_26/default_1"
     run: 1
