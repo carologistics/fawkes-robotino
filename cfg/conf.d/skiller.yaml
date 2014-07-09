@@ -62,6 +62,8 @@ skiller:
         middle_gate: RobotinoLightInterface::machine_signal_1
         right_gate: RobotinoLightInterface::machine_signal_2
         delivery_mode: SwitchInterface::machine_signal_delivery_mode
+        # Uncomment to use gripper skills for technical challenge
+        # gripper_if: GripperInterface::Robotino
       writing:
         light: RobotinoLightInterface::Light determined
 

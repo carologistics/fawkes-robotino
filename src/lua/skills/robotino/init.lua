@@ -51,3 +51,7 @@ skillenv.use_skill("skills.robotino.get_produced")
 skillenv.use_skill("skills.robotino.drive_test")
 skillenv.use_skill("skills.robotino.store_puck")
 skillenv.use_skill("skills.robotino.get_stored_puck")
+
+-- Uncomment to use gripper for technical challenge
+--skillenv.use_skill("skills.robotino.gripper")
+--skillenv.use_skill("skills.robotino.grip_cylinder")
