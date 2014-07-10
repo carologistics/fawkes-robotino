@@ -87,11 +87,6 @@ function visible()
    return false
 end
 
-function pose_ok(self)
-   printf("Richtiger Winkel: %f, Winkel aus dem Interface: %f",self.fsm.vars.ori_to_Drive, closest_line:bearing())
-   return math.abs(self.fsm.vars.ori_to_drive) <= ORI_TOLERANCE
-end
-
 function get_ori_diff(ori, is_ori)
    local diff = 0
    if ori > is_ori then
@@ -140,21 +135,15 @@ end
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={visible=visible, pose_ok=pose_ok, MAX_TRIES=MAX_TRIES},
+   closure={visible=visible},
    {"INIT", JumpState},
-   {"ALIGN", SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"},
-   {"SETTLE_TIME", JumpState},
-   {"CHECK_POSE", JumpState}
+   {"ALIGN", SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 -- Transitions
 fsm:add_transitions {
    {"INIT", "FAILED", precond="not visible()", desc="no writer or vis_hist too low"},
-   {"INIT", "ALIGN", cond=true, desc="initialized"},
-   {"SETTLE_TIME", "CHECK_POSE", timeout=1, desc="Let the visibility history increase"},
-   {"CHECK_POSE", "ALIGN", cond="not pose_ok(self) and vars.tries < MAX_TRIES", desc="Align again"},
-   {"CHECK_POSE", "FAILED", cond="vars.tries >= MAX_TRIES", desc="MAX_TRIES reached!"},
-   {"CHECK_POSE", "FINAL", cond="pose_ok(self)", desc="We are now aligned to the walls"}
+   {"INIT", "ALIGN", cond=true, desc="initialized"}
 }
 
 function INIT:init()
@@ -268,24 +257,4 @@ function ALIGN:init()
    self.skills[1].ori = self.fsm.vars.ori_to_drive
    self.skills[1].tolerance = {x=0.05, y=0.05, ori=0.02}
    self.fsm.vars.tries = self.fsm.vars.tries + 1
-end
-
-function CHECK_POSE:init()
-   -- nochmal alle minimieren da es sein kann, dass in das interface inzwischen eine andere linie geschrieben wurde
-   candidates = {}
-   for _,o in ipairs(lines) do
-      if o:visibility_history() >= MIN_VIS_HIST then
-         table.insert(candidates, o)
-      end
-   end
-
-   local min_ori = 10
-   for _,o in ipairs(candidates) do
-      local ori = math.abs(o:bearing())
-      if ori < min_ori then
-         min_ori = ori
-         closest_line = o
-      end
-   end
-   self.fsm.vars.ori_to_drive = closest_line:bearing()
 end
