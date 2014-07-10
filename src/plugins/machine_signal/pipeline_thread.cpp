@@ -959,6 +959,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
   for (map<ROI, SignalState::signal_rois_t_>::value_type &cluster_signal : laser_signals) {
     try {
       SignalState::signal_rois_t_ &signal = cluster_signal.second;
+      ROI roi_cluster(cluster_signal.first);
 
       ROI roi_black_top(cluster_signal.first);
       roi_black_top.start.x = std::max(roi_black_top.start.x, signal.red_roi->start.x);
@@ -995,6 +996,12 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
         ROI &black = black_stuff_bottom->front();
         if (signal.red_roi->start.x + signal.red_roi->height * 3 > black.start.y) {
           signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 3;
+        }
+      }
+      else {
+        unsigned int cluster_end_y = roi_cluster.start.y + roi_cluster.height;
+        if (signal.red_roi->start.x + signal.red_roi->height * 4 > cluster_end_y) {
+          signal.red_roi->height = (cluster_end_y - signal.red_roi->start.y) / 4;
         }
       }
 
