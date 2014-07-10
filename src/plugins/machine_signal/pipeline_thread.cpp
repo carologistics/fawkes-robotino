@@ -575,11 +575,12 @@ void MachineSignalPipelineThread::loop()
   }
 
   cfg_enable_switch_ = bb_switch_is_enabled(bb_enable_switch_);
-  bool delivery_mode_new = bb_switch_is_enabled(bb_delivery_switch_);
+
+  { bool delivery_mode_new = bb_switch_is_enabled(bb_delivery_switch_);
   if (delivery_mode_new != cfg_delivery_mode_) {
     new_data_ = true;
     cfg_delivery_mode_ = delivery_mode_new;
-  }
+  } }
 
   if (cfg_enable_switch_) {
 
@@ -755,6 +756,9 @@ void MachineSignalPipelineThread::loop()
     delete rois_G;
 
     camera_->dispose_buffer();
+  } /* if (cfg_enable_switch_) */
+  else {
+    known_signals_.clear();
   }
   time_wait_->wait();
 }
