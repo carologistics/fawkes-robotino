@@ -50,7 +50,7 @@ fsm:define_states{ export_to=_M,
    {"GRAB", SkillJumpState, skills={{fetch_puck}}, final_to="BACK_UP", fail_to="FAILED"},
    {"BACK_UP", SkillJumpState, skills={{motor_move}}, final_to="LEAVE", fail_to="FAILED"},
    {"LEAVE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
-   {"GET_RID_OF_PUCK", SkillJumpState, skills{{get_rid_of_puck}}, final_to="GOTO", fail_to="FAILED"}
+   {"GET_RID_OF_PUCK", SkillJumpState, skills={{get_rid_of_puck}}, final_to="GOTO", fail_to="FAILED"}
 }
 
 fsm:add_transitions{

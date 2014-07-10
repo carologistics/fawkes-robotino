@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_rid_of_puck"
 fsm                = SkillHSM:new{name=name, start="GET_RID_OF_PUCK", debug=false}
-depends_skills     = {""}
+depends_skills     = {"motor_move"}
 depends_interfaces = nil
 
 
