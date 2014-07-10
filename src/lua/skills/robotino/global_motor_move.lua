@@ -23,7 +23,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "global_motor_move"
 fsm                = SkillHSM:new{name=name, start="INIT"}
-depends_skills     = { "motor_move" }
+depends_skills     = { "motor_move","align_laserlines" }
 depends_interfaces = {
     {v = "motor", type = "MotorInterface", id="Robotino" }
 }
@@ -32,7 +32,7 @@ documentation      = [==[
 ]==]
 
 -- Tunables
-TOLERANCE = { x=0.08, y=0.06, ori=0.02 }
+TOLERANCE = { x=0.08, y=0.08, ori=0.06 }
 MAXTRIES = 3
 
 -- Initialize as skill module
@@ -72,8 +72,9 @@ fsm:define_states{ export_to=_M,
    closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, mm_tolerance=mm_tolerance, TOLERANCE=TOLERANCE},
    {"INIT", JumpState},
    {"STARTPOSE", JumpState},
+   {"ALIGN_LASERLINES", SkillJumpState, skills={{align_laserlines}}, final_to="WAIT", fail_to="TURN_BACK"},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
-   {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="TURN_BACK", fail_to="FAILED"},
+   {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="ALIGN_LASERLINES", fail_to="FAILED"},
    {"TURN_BACK", SkillJumpState, skills={{motor_move}}, final_to="WAIT", fail_to="FAILED"},
    {"WAIT", JumpState},
    {"CHECK_POSE", JumpState},
@@ -83,9 +84,9 @@ fsm:add_transitions{
    {"INIT", "STARTPOSE", cond=true},
    {"STARTPOSE", "TURN", cond="vars.puck and vars.bl_target.x < -TOLERANCE.x"},
    {"STARTPOSE", "DRIVE", cond=trans_error},
-   {"STARTPOSE", "TURN_BACK", cond="math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
+   {"STARTPOSE", "ALIGN_LASERLINES", cond="math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
    {"STARTPOSE", "FINAL", cond=true},
-   {"WAIT", "CHECK_POSE", timeout=1.5},
+   {"WAIT", "CHECK_POSE", timeout=0.5},
    {"CHECK_POSE", "STARTPOSE", cond="not pose_ok() and vars.tries < MAXTRIES"},
    {"CHECK_POSE", "FINAL", cond=pose_ok},
    {"CHECK_POSE", "FAILED", cond="vars.tries >= MAXTRIES"}
@@ -108,6 +109,10 @@ function INIT:init()
       end
    end
    self.fsm.vars.target = { x=x, y=y, ori=ori }
+end
+
+function ALIGN_LASERLINES:init()
+   self.skills[1].place = self.fsm.vars.place
 end
 
 function STARTPOSE:init()
