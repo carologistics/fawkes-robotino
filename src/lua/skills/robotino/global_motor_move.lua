@@ -23,7 +23,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "global_motor_move"
 fsm                = SkillHSM:new{name=name, start="INIT"}
-depends_skills     = { "motor_move","align_laserlines" }
+depends_skills     = { "motor_move" }
 depends_interfaces = {
     {v = "motor", type = "MotorInterface", id="Robotino" }
 }
@@ -32,7 +32,7 @@ documentation      = [==[
 ]==]
 
 -- Tunables
-TOLERANCE = { x=0.08, y=0.08, ori=0.06 }
+TOLERANCE = { x=0.08, y=0.06, ori=0.02 }
 MAXTRIES = 3
 
 -- Initialize as skill module
@@ -52,9 +52,13 @@ end
 function pose_ok()
    local dist = tfm.transform(fsm.vars.target, "/map", "/base_link")
    printf("dist: %f, %f, %f", dist.x, dist.y, dist.ori)
-   return math.abs(dist.x) <= TOLERANCE.x
-      and math.abs(dist.y) <= TOLERANCE.y
-      and math.abs(dist.ori) <= TOLERANCE.ori
+   local pose_ok = math.abs(dist.x) <= TOLERANCE.x
+               and math.abs(dist.y) <= TOLERANCE.y
+   if fsm.vars.turn == true then
+      return pose_ok and math.abs(dist.ori) <= TOLERANCE.ori
+   else
+      return pose_ok
+   end
 end
 
 local mm_tolerance = {
@@ -72,9 +76,9 @@ fsm:define_states{ export_to=_M,
    closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, mm_tolerance=mm_tolerance, TOLERANCE=TOLERANCE},
    {"INIT", JumpState},
    {"STARTPOSE", JumpState},
-   {"ALIGN_LASERLINES", SkillJumpState, skills={{align_laserlines}}, final_to="WAIT", fail_to="TURN_BACK"},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
-   {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="ALIGN_LASERLINES", fail_to="FAILED"},
+   {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="DECIDE_TURN", fail_to="FAILED"},
+   {"DECIDE_TURN", JumpState},
    {"TURN_BACK", SkillJumpState, skills={{motor_move}}, final_to="WAIT", fail_to="FAILED"},
    {"WAIT", JumpState},
    {"CHECK_POSE", JumpState},
@@ -84,9 +88,11 @@ fsm:add_transitions{
    {"INIT", "STARTPOSE", cond=true},
    {"STARTPOSE", "TURN", cond="vars.puck and vars.bl_target.x < -TOLERANCE.x"},
    {"STARTPOSE", "DRIVE", cond=trans_error},
-   {"STARTPOSE", "ALIGN_LASERLINES", cond="math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
+   {"STARTPOSE", "TURN_BACK", cond="vars.turn == false and math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
    {"STARTPOSE", "FINAL", cond=true},
-   {"WAIT", "CHECK_POSE", timeout=0.5},
+   {"DECIDE_TURN", "TURN_BACK", cond="vars.turn == true"},
+   {"DECIDE_TURN", "CHECK_POSE", cond="vars.turn == false"},
+   {"WAIT", "CHECK_POSE", timeout=1.5},
    {"CHECK_POSE", "STARTPOSE", cond="not pose_ok() and vars.tries < MAXTRIES"},
    {"CHECK_POSE", "FINAL", cond=pose_ok},
    {"CHECK_POSE", "FAILED", cond="vars.tries >= MAXTRIES"}
@@ -95,6 +101,9 @@ fsm:add_transitions{
 function INIT:init()
    self.fsm.vars.startpos = tfm.transform({x=0, y=0, ori=0}, "/base_link", "/map")
    self.fsm.vars.tries = 0
+   if self.fsm.vars.turn == nil then
+      self.fsm.vars.turn = true
+   end
    local x = self.fsm.vars.x or self.fsm.vars.startpos.x
    local y = self.fsm.vars.y or self.fsm.vars.startpos.y
    local ori = self.fsm.vars.ori or self.fsm.vars.startpos.ori
@@ -109,10 +118,6 @@ function INIT:init()
       end
    end
    self.fsm.vars.target = { x=x, y=y, ori=ori }
-end
-
-function ALIGN_LASERLINES:init()
-   self.skills[1].place = self.fsm.vars.place
 end
 
 function STARTPOSE:init()
