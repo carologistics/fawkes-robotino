@@ -125,7 +125,7 @@ plugins/machine_signal:
     signal_width: 0.05
     signal_bottom: -0.15 
     signal_top: 0.04
-    cam_aperture_x: 0.95
+    cam_aperture_x: 1.0
     cam_aperture_y: 0.8
     cam_angle: 0.081 # 4.64°
     cam_angle: 0.25 # 12.2°
