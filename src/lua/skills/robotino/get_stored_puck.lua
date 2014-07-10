@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_stored_puck"
 fsm                = SkillHSM:new{name=name, start="GOTO", debug=false}
-depends_skills     = {"ppgoto", "motor_move", "global_motor_move", "fetch_puck"}
+depends_skills     = {"ppgoto", "motor_move", "global_motor_move", "fetch_puck", "get_rid_of_puck"}
 depends_interfaces = {
    {v = "ppnavi", type = "NavigatorInterface"},
    {v = "motor", type = "MotorInterface", id="Robotino"},
@@ -49,10 +49,12 @@ fsm:define_states{ export_to=_M,
    {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="GRAB", fail_to="FAILED"},
    {"GRAB", SkillJumpState, skills={{fetch_puck}}, final_to="BACK_UP", fail_to="FAILED"},
    {"BACK_UP", SkillJumpState, skills={{motor_move}}, final_to="LEAVE", fail_to="FAILED"},
-   {"LEAVE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   {"LEAVE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"GET_RID_OF_PUCK", SkillJumpState, skills{{get_rid_of_puck}}, final_to="GOTO", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
+   {"GOTO", "GET_RID_OF_PUCK", cond = "sensor:distance(PUCK_SENSOR_INDEX) <= LOSTPUCK_DIST and sensor:distance(PUCK_SENSOR_INDEX) > 0", desc = "Picked up another puck while driving, escape"}
 }
 
 function GOTO:init()

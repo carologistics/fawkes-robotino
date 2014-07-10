@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_produced"
 fsm                = SkillHSM:new{name=name, start="GOTO_MACHINE", debug=true}
-depends_skills     = {"motor_move", "ppgoto", "global_motor_move", "wait_produce"}
+depends_skills     = {"motor_move", "ppgoto", "global_motor_move", "wait_produce", "get_rid_of_puck"}
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
   {v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
@@ -87,7 +87,7 @@ fsm:define_states{ export_to=_M, closure={producing_done = producing_done, senso
    {"APPROACH_AMPEL", SkillJumpState, skills = {{motor_move}}, final_to = "LEAVE_AMPEL", fail_to = "FAILED"},
    {"LEAVE_AMPEL", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
    {"CHECK_PUCK", JumpState},
-   {"GET_RID_OF_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GOTO_MACHINE", fail_to="FAILED"}
+   {"GET_RID_OF_PUCK", SkillJumpState, skills={{get_rid_of_puck}}, final_to="GOTO_MACHINE", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -119,12 +119,6 @@ end
 function TURN:init()
    local ampel = get_ampel()
    self.skills[1].ori = math.atan2(ampel.y, ampel.x)
-end
-
-function GET_RID_OF_PUCK:init()
-   self.skills[1].x = -0.2
-   self.skills[1].ori = 0.5
-   self.skills[1].vel_trans = 0.8
 end
 
 function APPROACH_AMPEL:init()
