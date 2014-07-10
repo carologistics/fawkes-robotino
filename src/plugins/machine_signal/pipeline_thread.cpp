@@ -434,10 +434,14 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
     if (SwitchInterface::EnableSwitchMessage *msg = sw->msgq_first_safe(msg)) {
       rv = true;
     }
-    bb_enable_switch_->msgq_pop();
+    sw->msgq_pop();
   }
-  bb_enable_switch_->set_enabled(rv);
-  bb_enable_switch_->write();
+  if (rv != sw->is_enabled()) {
+    if (rv) logger->log_info(name(), "Enabling.");
+    else logger->log_info(name(), "Disabling.");
+    sw->set_enabled(rv);
+    sw->write();
+  }
   return rv;
 }
 
