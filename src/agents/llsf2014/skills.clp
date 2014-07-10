@@ -190,11 +190,20 @@
   ?df <- (skill-done (name "take_puck_to") (status ?s))
   (take-puck-to-target ?goal)
   ?wfl <- (wait-for-lock (res ?goal) (state use))
+  (puck-in-gripper ?puck)
   =>
-  (printout t "skill-take-puck-to-done" crlf)
-  (retract ?sf ?df)
-  (assert (state (sym-cat TAKE-PUCK-TO- ?s)))
-  (modify ?wfl (state finished))
+  (printout t "skill-take-puck-to " ?s crlf)
+  (if (or (eq ?s FINAL) (not ?puck))
+    then
+    (retract ?sf ?df)
+    (assert (state (sym-cat TAKE-PUCK-TO- ?s)))
+    (modify ?wfl (state finished))
+    
+    else
+    (printout t "recalling skill because I still hava a puck" crlf)
+    (retract ?df)
+    (skill-call take_puck_to place ?goal)
+  )
 )
 
 (defrule skill-deliver-failed-retry-if-holding-puck

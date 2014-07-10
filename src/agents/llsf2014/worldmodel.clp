@@ -81,6 +81,21 @@
   (printout error "Production failed at " ?name crlf) 
 )
 
+(defrule wm-take-puck-to-failed
+  (declare (salience ?*PRIORITY-WM-LOW*))
+  (state TAKE-PUCK-TO-FAILED)
+  ?tf <- (take-puck-to-target ?)
+  ?hf <- (holding ?)
+  (puck-in-gripper ?puck)
+  =>
+  (retract ?tf)
+  (if (not ?puck) then
+    (retract ?hf)
+    (assert (holding NONE))
+    (printout error "Lost puck during take_puck_to" crlf)
+  )
+)
+
 (defrule wm-goto-light
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
