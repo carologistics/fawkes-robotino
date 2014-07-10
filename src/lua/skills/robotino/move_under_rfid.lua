@@ -67,8 +67,6 @@ function ampel()
 end
 
 function rough_correct_done()
-   --analog_in(4) links
-   --analog_in(5) rechts
    if fsm.vars.correct_dir == -1 then
       return sensor:analog_in(LEFT_IR_ID) > 9
    else
@@ -80,10 +78,6 @@ function producing()
    return light:green() == light.ON
       and light:yellow() == light.ON
       and light:red() == light.OFF
-end
-
-function sensors_fired()
-   return sensor:analog_in(LEFT_IR_ID) > 9 or sensor:analog_in(RIGHT_IR_ID) > 9
 end
 
 fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
