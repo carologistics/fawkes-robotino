@@ -123,6 +123,8 @@ function cleanup()
    output:set_green(plugin:green())
    output:set_visibility_history(plugin:visibility_history())
    output:set_ready(plugin:is_ready())
+
+   lightswitch:msgq_enqueue_copy(lightswitch.DisableSwitchMessage:new())
 end
 
 function FINAL:init()
