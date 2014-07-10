@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"take_puck_to", "move_under_rfid", "leave_area", "motor_move", "deposit_puck", "global_motor_move" }
+depends_skills     = {"take_puck_to", "move_under_rfid", "motor_move", "global_motor_move", "motor_move_waypoints" }
 depends_interfaces = {
    { v="bb_open_gate", type="Position3DInterface", id="open_delivery_gate" },
    { v="light", type="RobotinoLightInterface", id="Light_State" },
@@ -46,7 +46,7 @@ documentation     = [==[delivers already fetched puck to specified location]==]
 skillenv.skill_module(_M)
 
 -- Constants
-local THRESHOLD_DISTANCE = 0.07
+local THRESHOLD_DISTANCE = 0.08
 if config:exists("/skills/deliver_puck/front_sensor_dist") then
    -- you can find the config value in /cfg/host.yaml
    THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
@@ -54,6 +54,7 @@ end
 
 local SIGNAL_TIMEOUT = 4 -- seconds
 local MAX_NUM_TRIES = 3
+local MAX_RFID_TRIES = 2
 local MIN_VIS_HIST = 10
 
 local tfm = require("tf_module")
@@ -79,6 +80,13 @@ end
 
 function is_red()
    return light:red() == light.ON and light:is_ready()
+end
+
+function only_green()
+   return light:is_ready()
+      and light:red() == light.OFF
+      and light:yellow() == light.OFF
+      and light:green() == light.ON
 end
 
 
@@ -127,7 +135,8 @@ end
 fsm:define_states{ export_to=_M,
    closure = {have_puck=have_puck, orange_blinking=orange_blinking,is_red=is_red,
               is_green=is_green, PLUGIN_LIGHT_TIMEOUT=PLUGIN_LIGHT_TIMEOUT,
-              SETTLE_VISION_TIME=SETTLE_VISION_TIME, max_tries_reached=max_tries_reached},
+              SETTLE_VISION_TIME=SETTLE_VISION_TIME, max_tries_reached=max_tries_reached,
+              MAX_NUM_TRIES=MAX_NUM_TRIES, MAX_RFID_TRIES=MAX_RFID_TRIES },
    {"INIT", JumpState},
 
    {"TRY_LEFT", JumpState},
@@ -141,9 +150,10 @@ fsm:define_states{ export_to=_M,
       fail_to="CHECK_RESULT"},
    
    {"CHECK_RESULT", JumpState},
+   {"DECIDE_RFID_RETRY", JumpState},
    
-   {"SKILL_DEPOSIT", SkillJumpState, skills={{deposit_puck}}, final_to="LEAVE_AREA", fail_to="FAILED"},
-   {"LEAVE_AREA", SkillJumpState, skills={{leave_area}}, final_to="FINAL", fail_to="FAILED"},
+   {"LEAVE_AREA", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FINAL"},
+   {"REMOVE_KEBAB", SkillJumpState, skills={{motor_move_waypoints}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 
@@ -159,10 +169,12 @@ fsm:add_transitions{
    {"TRY_RIGHT", "MOVE_UNDER_RFID", cond=open_gate},
    {"TRY_RIGHT", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
    
-   {"CHECK_RESULT", "MOVE_UNDER_RFID", timeout=SIGNAL_TIMEOUT},
-   {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok, desc="all lights on"},
-   {"CHECK_RESULT", "SKILL_DEPOSIT", cond=orange_blinking},
-   {"CHECK_RESULT", "SKILL_DEPOSIT", timeout=SIGNAL_TIMEOUT},
+   {"CHECK_RESULT", "DECIDE_RFID_RETRY", timeout=SIGNAL_TIMEOUT, desc="?"},
+   {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok, desc="RYG"},
+   {"CHECK_RESULT", "REMOVE_KEBAB", cond=orange_blinking, desc="Y blink"},
+   {"CHECK_RESULT", "DECIDE_RFID_RETRY", cond=only_green, desc="G"},
+   {"DECIDE_RFID_RETRY", "MOVE_UNDER_RFID", cond="vars.num_rfid_tries < MAX_RFID_TRIES" },
+   {"DECIDE_RFID_RETRY", "REMOVE_KEBAB", cond="vars.num_rfid_tries >= MAX_RFID_TRIES" },
 }
 
 function INIT:init()
@@ -174,6 +186,7 @@ function INIT:init()
    msg:set_selection_mode(bb_laser_ctl.SELMODE_MIN_ANGLE)
    bb_laser_ctl:msgq_enqueue_copy(msg)
    self.fsm.vars.num_tries = 1
+   self.fsm.vars.num_rfid_tries = 0
 end
 
 function DRIVE_LEFT:init()
@@ -182,6 +195,7 @@ function DRIVE_LEFT:init()
 end
 
 function MOVE_UNDER_RFID:init()
+   self.fsm.vars.num_rfid_tries = self.fsm.vars.num_rfid_tries + 1
    if self.fsm.vars.open_gate then
       self.skills[1].x = self.fsm.vars.open_gate.x
       self.skills[1].y = self.fsm.vars.open_gate.y
@@ -189,44 +203,54 @@ function MOVE_UNDER_RFID:init()
 end
 
 function DRIVE_RIGHT:init()
-   if self.fsm.vars.place == "deliver1" then
+   if self.fsm.vars.place == "deliver1" or self.fsm.vars.place == "deliver1a" then
       self.skills[1].place = "deliver1a"
    else
       self.skills[1].place = "deliver2a"
    end
 end
 
-function SKILL_DEPOSIT:init()
-   self.skills[1].mtype = "deliver"
+function REMOVE_KEBAB:init()
+   if self.fsm.vars.place == "deliver1" or self.fsm.vars.place == "deliver2" then
+      self.skills[1].waypoints = {
+         { ori = 0.2 },
+         { y = 0.6, ori = -0.1 },
+         { x = 0.15 },
+         { x = -0.15 },
+      }
+   else
+      self.skills[1].waypoints = {
+         { ori = -0.2 },
+         { y = -0.6, ori = 0.1 },
+         { x = 0.15 },
+         { x = -0.15 },
+      }
+   end
 end
 
---[[
-function GET_RID_OF_PUCK:init()
-   self.skills[1].x = -0.2
-   self.skills[1].ori = 0.45 -- 20°
-   self.skills[1].vel_trans = 0.8
-end
-]]--
-
-function FINAL:init()
-   --turn machine_signal off and into normal mode
+function cleanup()
+   -- turn machine_signal off and into normal mode
    delivery_mode:msgq_enqueue_copy(delivery_mode.DisableSwitchMessage:new())
-   bb_laser_switch:msgq_enqueue_copy(bb_laser_switch.DisableSwitchMessage:new())
    light_switch:msgq_enqueue_copy(light_switch.DisableSwitchMessage:new())
+   
+   -- set laser-cluster selection mode to distance
    msg = bb_laser_ctl.SetSelectionModeMessage:new()
    msg:set_selection_mode(bb_laser_ctl.SELMODE_MIN_DIST)
    bb_laser_ctl:msgq_enqueue_copy(msg)
+   
+   -- switch off laser-cluster
+   bb_laser_switch:msgq_enqueue_copy(bb_laser_switch.DisableSwitchMessage:new())
+   
+end
+
+
+function FINAL:init()
+   cleanup()
    printf("FINAL: VISION DISABLED")
 end
 
 function FAILED:init()
-   --turn machine_signal off and into normal mode
-   delivery_mode:msgq_enqueue_copy(delivery_mode.DisableSwitchMessage:new())
-   bb_laser_switch:msgq_enqueue_copy(bb_laser_switch.DisableSwitchMessage:new())
-   light_switch:msgq_enqueue_copy(light_switch.DisableSwitchMessage:new())
-   msg = bb_laser_ctl.SetSelectionModeMessage:new()
-   msg:set_selection_mode(bb_laser_ctl.SELMODE_MIN_DIST)
-   bb_laser_ctl:msgq_enqueue_copy(msg)
+   cleanup()
    printf("FAILED: VISION DISABLED")
 end
 
