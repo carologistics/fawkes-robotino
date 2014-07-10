@@ -746,7 +746,7 @@ void MachineSignalPipelineThread::loop()
       best_signal_ = known_signals_.begin();
     }
     ///*
-    if (unlikely(cfg_debug_blink_)) {
+    if (unlikely(best_signal_ != known_signals_.end() && cfg_debug_blink_)) {
       logger->log_info(name(), best_signal_->get_debug_R());
       logger->log_info(name(), best_signal_->get_debug_Y());
       logger->log_info(name(), best_signal_->get_debug_G());
