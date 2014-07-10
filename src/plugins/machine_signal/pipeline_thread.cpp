@@ -1051,6 +1051,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       if (start_y < 0) start_y = 0;
       height = it_R->width/2;
       if (start_y + height > cam_height_) height = cam_height_ - start_y;
+      if (start_y > cam_height_) start_y = cam_height_;
       ROI check_black_top(*it_R);
       check_black_top.set_start(it_R->start.x, start_y);
       check_black_top.set_height(height);
@@ -1089,9 +1090,12 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       ROI check_black_bottom(*roi_Y);
       start_x = (long int)roi_Y->start.x - (long int)roi_Y->width/4;
       if (start_x < 0) start_x = 0;
+      if (start_x > cam_width_) start_x = cam_width_;
       width = roi_Y->width * 1.2;
       if (start_x + width > cam_width_) width = cam_width_ - start_x;
       start_y = roi_Y->start.y + roi_Y->height/2;
+      if (start_y < 0) start_y = 0;
+      if (start_y > cam_height_) start_y = cam_height_;
       height = roi_Y->height * 2.5;
       if (start_y + height > cam_height_) height = cam_height_ - start_y;
       check_black_bottom.set_start(start_x, start_y);
