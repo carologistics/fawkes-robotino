@@ -309,19 +309,19 @@ nodes:
 # special points:
         
   - name: deliver1
-    pos: [4.8, 2.99]
+    pos: [4.7, 2.99]
     properties:
       - orientation: 0.0
   - name: deliver1a
-    pos: [4.8, 2.62]
+    pos: [4.7, 2.6]
     properties:
       - orientation: 0.0
   - name: deliver2a
-    pos: [-4.8, 2.99]
+    pos: [-4.7, 2.99]
     properties:
       - orientation: 3.14
   - name: deliver2
-    pos: [-4.8, 2.62]
+    pos: [-4.7, 2.6]
     properties:
       - orientation: 3.14
   - name: IA1H
