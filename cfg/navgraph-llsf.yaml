@@ -324,14 +324,6 @@ nodes:
     pos: [-4.8, 2.62]
     properties:
       - orientation: 3.14
-  - name: deliver1
-    pos: [4.55, 3.36]
-    properties:
-      - orientation: -0.52 #30°
-  - name: deliver2
-    pos: [-4.55, 3.36]
-    properties:
-      - orientation: 3.67 #210°
   - name: IA1H
     pos: [1.98, 1.0]
     properties:
