@@ -44,9 +44,8 @@ local tfm = require("tf_module")
 skillenv.skill_module(_M)
 
 local tfm = require('tf_module')
-local LASER_FORWARD_CORRECTION = 0.17
-local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
-local MIN_VIS_HIST = 15
+local LASER_FORWARD_CORRECTION = 0.23
+local MIN_VIS_HIST = 10
 local LEFT_IR_ID = config:get_float("hardware/robotino/sensors/left_ir_id")
 local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
 
@@ -129,12 +128,12 @@ function APPROACH_AMPEL:init()
    local ampel = get_ampel()
    self.skills[1].x = ampel.x - LASER_FORWARD_CORRECTION
    self.skills[1].y = ampel.y
-   self.skills[1].vel_trans = 0.1
+   self.skills[1].vel_trans = 0.25
 end
 
 function CORRECT_POSITION:init()
    self.skills[1].y = self.fsm.vars.correct_dir * 0.3
-   self.skills[1].vel_trans = 0.03
+   self.skills[1].vel_trans = 0.07
 end
 
 function FINAL:init()
