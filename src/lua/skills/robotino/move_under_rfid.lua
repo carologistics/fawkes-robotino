@@ -34,6 +34,7 @@ depends_interfaces = {
    {v = "laserswitch", type="SwitchInterface", id="laser-cluster" },
    {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster" },
    {v = "light", type ="RobotinoLightInterface", id = "Light_State" },
+   {v = "lightswitch", type ="SwitchInterface", id = "light_front_switch" },
 }
 
 documentation      = [==[Move under the RFID Reader/Writer]==]
@@ -50,19 +51,23 @@ local LEFT_IR_ID = config:get_float("hardware/robotino/sensors/left_ir_id")
 local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
 
 function get_ampel()
-   local ampel_loc = {}
-   ampel_loc.x = euclidean_cluster:translation(0)
-   ampel_loc.y = euclidean_cluster:translation(1)
-   ampel_loc.distance = math.sqrt(ampel_loc.x^2, ampel_loc.y^2)
-   ampel_loc.angle = math.atan(ampel_loc.x, ampel_loc.y)
-   return ampel_loc
-end
+   local ampel_loc = false
+   if fsm.vars.x and fsm.vars.y then
+      ampel_loc = {}
+      ampel_loc.x = fsm.vars.x
+      ampel_loc.y = fsm.vars.y
+   elseif euclidean_cluster:visibility_history() > MIN_VIS_HIST then
+      ampel_loc = {}
+      ampel_loc.x = euclidean_cluster:translation(0)
+      ampel_loc.y = euclidean_cluster:translation(1)
+   end
 
-function ampel()
-   local ampel = get_ampel()
-   return (ampel.distance > 0)
-      and (ampel.distance < 1)
-      and (euclidean_cluster:visibility_history() > MIN_VIS_HIST)
+   if ampel_loc then
+      ampel_loc.distance = math.sqrt(ampel_loc.x^2, ampel_loc.y^2)
+      ampel_loc.angle = math.atan(ampel_loc.x, ampel_loc.y)
+   end
+   fsm.vars.ampel = ampel_loc
+   return ampel_loc
 end
 
 function rough_correct_done()
@@ -90,21 +95,13 @@ fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
 
 fsm:add_transitions{
    {"SEE_AMPEL", "FAILED", timeout=10, desc="No Ampel seen with laser"},
-   {"SEE_AMPEL", "APPROACH_AMPEL", cond=ampel, desc="Ampel seen with laser"},
+   {"SEE_AMPEL", "APPROACH_AMPEL", cond=get_ampel, desc="Ampel seen with laser"},
    {"CHECK_POSITION", "FINAL", cond="vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond="vars.correct_dir ~= 0"},
    {"CORRECT_POSITION", "FINAL", cond=rough_correct_done},
    {"APPROACH_AMPEL", "FINAL", cond=producing, desc="already there"},
    {"CORRECT_POSITION", "FINAL", precond=producing, desc="already there"} 
 }
-
-function send_transrot(vx, vy, omega)
-   local oc  = motor:controller()
-   local ocn = motor:controller_thread_name()
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
-   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
-end
 
 function CHECK_POSITION:init()
    if sensor:analog_in(LEFT_IR_ID) > 9 then
@@ -118,6 +115,7 @@ end
 
 function SEE_AMPEL:init()
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
+   lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
    laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
 end
 
@@ -125,9 +123,8 @@ function APPROACH_AMPEL:init()
    -- enable vision to see if we already have placed the puck under the rfid
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
 
-   local ampel = get_ampel()
-   self.skills[1].x = ampel.x - LASER_FORWARD_CORRECTION
-   self.skills[1].y = ampel.y
+   self.skills[1].x = self.fsm.vars.ampel.x - LASER_FORWARD_CORRECTION
+   self.skills[1].y = self.fsm.vars.ampel.y
    self.skills[1].vel_trans = 0.25
 end
 
@@ -138,4 +135,10 @@ end
 
 function FINAL:init()
    laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
+   lightswitch:msgq_enqueue_copy(lightswitch.DisableSwitchMessage:new())
+end
+
+function FAILED:init()
+   laserswitch:msgq_enqueue_copy(laserswitch.DisableSwitchMessage:new())
+   lightswitch:msgq_enqueue_copy(lightswitch.DisableSwitchMessage:new())
 end
