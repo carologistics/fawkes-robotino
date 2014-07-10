@@ -25,7 +25,11 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"take_puck_to", "move_under_rfid", "motor_move", "global_motor_move", "motor_move_waypoints" }
+depends_skills     = {
+   "take_puck_to", "move_under_rfid", "motor_move", "global_motor_move",
+   "motor_move_waypoints", "deposit_puck"
+}
+
 depends_interfaces = {
    { v="bb_open_gate", type="Position3DInterface", id="open_delivery_gate" },
    { v="light", type="RobotinoLightInterface", id="Light_State" },
@@ -52,7 +56,7 @@ if config:exists("/skills/deliver_puck/front_sensor_dist") then
    THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
 end
 
-local SIGNAL_TIMEOUT = 4 -- seconds
+local SIGNAL_TIMEOUT = 5 -- seconds
 local MAX_NUM_TRIES = 3
 local MAX_RFID_TRIES = 2
 local MIN_VIS_HIST = 10
@@ -153,7 +157,7 @@ fsm:define_states{ export_to=_M,
    {"DECIDE_RFID_RETRY", JumpState},
    
    {"LEAVE_AREA", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FINAL"},
-   {"REMOVE_KEBAB", SkillJumpState, skills={{motor_move_waypoints}}, final_to="FAILED", fail_to="FAILED"},
+   {"REMOVE_KEBAB", SkillJumpState, skills={{deposit_puck}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 
@@ -211,21 +215,7 @@ function DRIVE_RIGHT:init()
 end
 
 function REMOVE_KEBAB:init()
-   if self.fsm.vars.place == "deliver1" or self.fsm.vars.place == "deliver2" then
-      self.skills[1].waypoints = {
-         { ori = 0.2 },
-         { y = 0.6, ori = -0.1 },
-         { x = 0.15 },
-         { x = -0.15 },
-      }
-   else
-      self.skills[1].waypoints = {
-         { ori = -0.2 },
-         { y = -0.6, ori = 0.1 },
-         { x = 0.15 },
-         { x = -0.15 },
-      }
-   end
+   self.skills[1].delivery = true
 end
 
 function cleanup()
