@@ -84,26 +84,35 @@ void MachineSignalSensorThread::loop() {
 
     // Go through all known signals...
     std::list<SignalState>::iterator known_signal = known_signals.begin();
-    for (int i = 0; i < MAX_SIGNALS && known_signal != known_signals.end(); i++) {
-      // Put their states into the blackboard interfaces
-      bb_signal_states_[i]->set_red(known_signal->red);
-      bb_signal_states_[i]->set_yellow(known_signal->yellow);
-      bb_signal_states_[i]->set_green(known_signal->green);
-      bb_signal_states_[i]->set_visibility_history(
-        known_signal->unseen > 1 ? -1 : known_signal->visibility);
-      bb_signal_states_[i]->set_ready(known_signal->ready);
-      bb_signal_states_[i]->write();
+    for (int i = 0; i < MAX_SIGNALS; i++) {
 
-      // And possibly select an open delivery gate
-      if (pipeline_thread_->get_delivery_mode()
-          && (known_signal->green == RobotinoLightInterface::LightState::ON)
-          && (known_signal->visibility > open_gate_visibility)
-          && (known_signal->world_pos)) {
-        open_gate_visibility = known_signal->visibility;
-        open_gate = known_signal;
+      if (known_signal != known_signals.end()) {
+        // Put their states into the blackboard interfaces
+        bb_signal_states_[i]->set_red(known_signal->red);
+        bb_signal_states_[i]->set_yellow(known_signal->yellow);
+        bb_signal_states_[i]->set_green(known_signal->green);
+        bb_signal_states_[i]->set_visibility_history(
+          known_signal->unseen > 1 ? -1 : known_signal->visibility);
+        bb_signal_states_[i]->set_ready(known_signal->ready);
+        bb_signal_states_[i]->write();
+
+        // And possibly select an open delivery gate
+        if (pipeline_thread_->get_delivery_mode()
+            && (known_signal->green == RobotinoLightInterface::LightState::ON)
+            && (known_signal->visibility > open_gate_visibility)
+            && (known_signal->world_pos)) {
+          open_gate_visibility = known_signal->visibility;
+          open_gate = known_signal;
+        }
+        known_signal++;
       }
-
-      known_signal++;
+      else {
+        bb_signal_states_[i]->set_red(RobotinoLightInterface::LightState::UNKNOWN);
+        bb_signal_states_[i]->set_yellow(RobotinoLightInterface::LightState::UNKNOWN);
+        bb_signal_states_[i]->set_green(RobotinoLightInterface::LightState::UNKNOWN);
+        bb_signal_states_[i]->set_visibility_history(-1);
+        bb_signal_states_[i]->set_ready(false);
+      }
     }
 
     if (pipeline_thread_->get_delivery_mode() && open_gate != known_signals.end()) {
@@ -115,6 +124,13 @@ void MachineSignalSensorThread::loop() {
       };
       bb_open_delivery_gate_->set_translation(trans);
       bb_open_delivery_gate_->set_visibility_history(open_gate_visibility);
+      bb_open_delivery_gate_->write();
+    }
+    else {
+      bb_open_delivery_gate_->set_frame("");
+      double trans[3] = { 0.0, 0.0, 0.0 };
+      bb_open_delivery_gate_->set_translation(trans);
+      bb_open_delivery_gate_->set_visibility_history(-1);
       bb_open_delivery_gate_->write();
     }
 
