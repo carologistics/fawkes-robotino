@@ -21,7 +21,7 @@ laser-lines:
 
   # The maximum number of clusters to publish on the blackboard
   # The interfaces will be named "Laser Cluster N" for N=1..max_num_clusters
-  max_num_lines: 4
+  max_num_lines: 8
   
   # The frame in which the result should be published; frame
   result_frame: /base_link
