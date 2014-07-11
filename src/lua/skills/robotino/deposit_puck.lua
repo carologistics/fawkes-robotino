@@ -33,12 +33,11 @@ depends_interfaces = {
 
 documentation      = [==[deposits the used puck at the side of the traffic light]==]
 
---local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
-local RIGHT_IR_ID = 5
-
 -- Initialize as skill module
 skillenv.skill_module(_M)
 graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
+
+local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
 
 function no_puck()
    --return worldModel:numberOfPucks=0
