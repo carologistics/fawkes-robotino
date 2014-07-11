@@ -25,6 +25,7 @@
 #include <core/threading/mutex_locker.h>
 #include <cmath>
 #include <cfloat>
+#include <limits.h>
 
 using namespace fawkes;
 using namespace fawkes::tf;
@@ -445,6 +446,8 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
   return rv;
 }
 
+#define LIMIT_VALUE(min, value, max) \
+  std::min(std::max((long int)min, (long int)value), (long int)max)
 
 set<MachineSignalPipelineThread::WorldROI, MachineSignalPipelineThread::compare_rois_by_area_> *
 MachineSignalPipelineThread::bb_get_laser_rois()
@@ -484,13 +487,19 @@ MachineSignalPipelineThread::bb_get_laser_rois()
         bottom_right.z = cfg_lasercluster_signal_bottom_;
 
         // And finally compute a ROI that (hopefully) contains the real signal
-        upoint_t top_left_px = pos2pixel_->get_pixel_position(top_left, cfg_cam_frame_, clock);
-        upoint_t bottom_right_px = pos2pixel_->get_pixel_position(bottom_right, cfg_cam_frame_, clock);
+        point_t top_left_px_tmp = pos2pixel_->get_pixel_position_unchecked(top_left, cfg_cam_frame_, clock);
+        point_t bot_right_px_tmp = pos2pixel_->get_pixel_position_unchecked(bottom_right, cfg_cam_frame_, clock);
+        upoint_t top_left_px, bot_right_px;
+
+        top_left_px.x = min((long int)max(0, top_left_px_tmp.x), (long int)cam_width_);
+        top_left_px.y = min((long int)max(0, top_left_px_tmp.y), (long int)cam_height_);
+        bot_right_px.x = min((long int)max(0, bot_right_px_tmp.x), (long int)cam_width_);
+        bot_right_px.y = min((long int)max(0, bot_right_px_tmp.y), (long int)cam_height_);
 
         WorldROI cluster_roi;
         cluster_roi.set_start(top_left_px);
-        cluster_roi.set_width(bottom_right_px.x - top_left_px.x);
-        cluster_roi.set_height(bottom_right_px.y - top_left_px.y);
+        cluster_roi.set_width(bot_right_px.x - top_left_px.x);
+        cluster_roi.set_height(bot_right_px.y - top_left_px.y);
         cluster_roi.set_image_width(cam_width_);
         cluster_roi.set_image_height(cam_height_);
         cluster_roi.color = C_MAGENTA;
@@ -976,6 +985,10 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
         int hdiff = signal.red_roi->start.y - black_end_y;
         signal.red_roi->start.y = black_end_y;
         signal.red_roi->height += hdiff;
+      }
+
+      if (!roi_aspect_ok(*(signal.red_roi))) {
+        signal.red_roi->height = signal.red_roi->width;
       }
 
       ROI roi_black_bottom(roi_black_top);
