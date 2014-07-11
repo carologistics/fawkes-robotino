@@ -28,6 +28,7 @@ depends_skills     = {"ppgoto", "motor_move", "global_motor_move", "fetch_puck"}
 depends_interfaces = {
    {v = "ppnavi", type = "NavigatorInterface"},
    {v = "motor", type = "MotorInterface", id="Robotino"},
+   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
    {v = "puck_0", type="Position3DInterface", id="puck_0"}
 }
 
@@ -39,12 +40,26 @@ documentation      = [==[
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
+-- Constants
+local LOSTPUCK_DIST = 0.08
+local PUCK_SENSOR_INDEX = 8
+if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
+   LOSTPUCK_DIST = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
+end
+if config:exists("/hardware/robotino/puck_sensor/index") then
+   -- you can find the config value in /cfg/host.yaml
+   PUCK_SENSOR_INDEX = config:get_uint("/hardware/robotino/puck_sensor/index")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
+end
 
 function puck_visible()
    return puck_0:visibility_history() >= 1
 end
 
-fsm:define_states{ export_to=_M,
+fsm:define_states{ export_to=_M, closure={sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST, PUCK_SENSOR_INDEX = PUCK_SENSOR_INDEX},
    {"GOTO", SkillJumpState, skills={{ppgoto}}, final_to="ADJUST_POS", fail_to="FAILED"},
    {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="GRAB", fail_to="FAILED"},
    {"GRAB", SkillJumpState, skills={{fetch_puck}}, final_to="BACK_UP", fail_to="FAILED"},
@@ -53,6 +68,8 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
+   -- sensor:distance has to be > 0 due to jitter in the sensor. The sensor either shows 0.00 as distance or the correct value.
+   {"GOTO", "GET_RID_OF_PUCK", cond = "sensor:distance(PUCK_SENSOR_INDEX) <= LOSTPUCK_DIST and sensor:distance(PUCK_SENSOR_INDEX) > 0", desc = "Picked up another puck while driving, escape"}
 }
 
 function GOTO:init()
