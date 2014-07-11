@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "align_laserlines"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="CHECK_INTERFACE", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
@@ -76,9 +76,9 @@ local candidates = {}
 local closest_line
 
 -- Functions
-function visible()
+function visible_and_writer()
    for _,o in ipairs(lines) do
-      if o:visibility_history() >= MIN_VIS_HIST then
+      if o:visibility_history() >= MIN_VIS_HIST and o:has_writer() then
          return true
       end
    end
@@ -133,15 +133,18 @@ end
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={visible=visible},
+   closure={visible_and_writer=visible_and_writer},
+   {"CHECK_INTERFACE", JumpState},
    {"INIT", JumpState},
    {"ALIGN", SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 -- Transitions
 fsm:add_transitions {
-   {"INIT", "FAILED", timeout = 3, desc="no writer or vis_hist too low"},
-   {"INIT", "ALIGN", cond=visible, desc="initialized"}
+   {"CHECK_INTERFACE", "FAILED", timeout = 1, desc="no writer or vis_hist too low"},
+   {"CHECK_INTERFACE", "FAILED", cond ="not visible_and_writer()", desc="no writer or vis_hist too low"},
+   {"CHECK_INTERFACE", "INIT", cond=visible_and_writer},
+   {"INIT", "ALIGN", cond=visible_and_writer, desc="initialized"}
 }
 
 function INIT:init()
