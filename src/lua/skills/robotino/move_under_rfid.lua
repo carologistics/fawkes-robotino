@@ -79,7 +79,8 @@ function rough_correct_done()
 end
 
 function producing()
-   return light:green() == light.ON
+   return light:is_ready() == true
+      and light:green() == light.ON
       and light:yellow() == light.ON
       and light:red() == light.OFF
 end
