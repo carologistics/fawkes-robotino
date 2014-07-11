@@ -46,7 +46,7 @@ documentation      = [==[Align to straight line in laser data.
 skillenv.skill_module(_M)
 
 -- Constants
-MIN_VIS_HIST = 5
+MIN_VIS_HIST = 3
 
 -- Variables
 local navgraph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
@@ -145,6 +145,7 @@ fsm:add_transitions {
 }
 
 function INIT:init()
+   local global_line_pos = {}
    self.fsm.vars.tries = 0
    candidates = {}
    lines_sector_0 = {}
@@ -174,7 +175,6 @@ function INIT:init()
       end
    end
 
-   local global_line_pos = {}
    -- sort the lines into the four different sectors
    for _,o in ipairs(candidates) do
       -- transform the line ori to map frame
@@ -209,7 +209,7 @@ function INIT:init()
          closest_line = best_line_sector_0
          local base_link_line_pos = {}
          base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, line_frame, "/base_link")
-         self.fsm.vars.ori_to_drive = base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori)
+         self.fsm.vars.ori_to_drive = math.normalize_mirror_rad(base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori))
       end
    end
 -- get the best line from sector +90°
@@ -220,7 +220,7 @@ function INIT:init()
          closest_line = best_line_sector_p90
          local base_link_line_pos = {}
          base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, line_frame, "/base_link")
-         self.fsm.vars.ori_to_drive = base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori)
+         self.fsm.vars.ori_to_drive = math.normalize_mirror_rad(base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori))
       end
    end
 -- get the best line from sector -90°
@@ -231,7 +231,7 @@ function INIT:init()
          closest_line = best_line_sector_n90
          local base_link_line_pos = {}
          base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, line_frame, "/base_link")
-         self.fsm.vars.ori_to_drive = base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori)
+         self.fsm.vars.ori_to_drive = math.normalize_mirror_rad(base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori))
       end
    end
 -- get the best line from sector 180°
@@ -242,7 +242,7 @@ function INIT:init()
          closest_line = best_line_sector_180
          local base_link_line_pos = {}
          base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, line_frame, "/base_link")
-         self.fsm.vars.ori_to_drive = base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori)
+         self.fsm.vars.ori_to_drive = math.normalize_mirror_rad(base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori))
       end
    end
 
