@@ -39,7 +39,8 @@ escape puck we don't want to have
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   {"GET_RID_OF_PUCK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   {"GET_RID_OF_PUCK", SkillJumpState, skills={{motor_move}}, final_to="MOVE_FORWARD", fail_to="FAILED"},
+   {"MOVE_FORWARD", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 function GET_RID_OF_PUCK:init()
@@ -48,4 +49,7 @@ function GET_RID_OF_PUCK:init()
    self.skills[1].vel_trans = 0.8
 end
 
-
+function MOVE_FORWARD:init()
+   self.skills[1].x = 0.2
+   self.skills[1].vel_trans = 0.8
+end
