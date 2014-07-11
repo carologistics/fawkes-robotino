@@ -112,7 +112,7 @@ function get_best_line(sector_main_ori, lines_in_sector)
       global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, o:frame_id(), map_frame)
       -- get the ori difference of the line and the sector main ori to get the line with the best tolerance
       ori_diff = math.abs(get_ori_diff(sector_main_ori,global_line_pos.ori))
-      printf("sector %f, line_ori in /map: %f (Interface: %s), ori_diff: %f", sector_main_ori,  global_line_pos.ori, o:frame_id(), ori_diff)
+      printf("sector %f, line_ori in /map: %f (Interface: %s), ori_diff: %f", sector_main_ori,  global_line_pos.ori, o:id(), ori_diff)
       -- get the closest line to the given angle
       if ori_diff < min_ori_diff then
          min_ori_diff = ori_diff
@@ -121,7 +121,7 @@ function get_best_line(sector_main_ori, lines_in_sector)
    end
    if best_line ~= nil then
       local global_0 = tfm.transform({x=0, y=0, ori=best_line:bearing()}, best_line:frame_id(), map_frame)
-      printf("Sector %f Winner: %s, it has the global angle: %f", sector_main_ori, best_line:frame_id(), global_0.ori)
+      printf("Sector %f Winner: %s, it has the global angle: %f", sector_main_ori, best_line:id(), global_0.ori)
       return best_line, ori_diff
    else
       printf("No Line in the Sector %f", sector_main_ori)
@@ -249,7 +249,7 @@ function INIT:init()
    end
 
    --self.fsm.vars.ori_to_drive = closest_line:bearing()
-   printf("-----> And the WINNER is %s", closest_line:frame_id())
+   printf("-----> And the WINNER is %s", closest_line:id())
    printf("ori_to_drive: %f", self.fsm.vars.ori_to_drive)
 end
 
