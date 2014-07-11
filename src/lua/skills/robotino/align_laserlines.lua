@@ -53,7 +53,6 @@ local navgraph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 local tfm = require("tf_module")
 
 local map_frame = "/map"
-local line_frame = line1:frame_id()
 
 local lines = {
    line1,
@@ -110,10 +109,10 @@ function get_best_line(sector_main_ori, lines_in_sector)
       local min_ori_diff = 10
       -- transform the line ori to map frame
       local global_line_pos = {}
-      global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, line_frame, map_frame)
+      global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, o:frame_id(), map_frame)
       -- get the ori difference of the line and the sector main ori to get the line with the best tolerance
       ori_diff = math.abs(get_ori_diff(sector_main_ori,global_line_pos.ori))
-      printf("sector %f, line_ori in /map: %f (Interface: %s), ori_diff: %f", sector_main_ori,  global_line_pos.ori, o:id(), ori_diff)
+      printf("sector %f, line_ori in /map: %f (Interface: %s), ori_diff: %f", sector_main_ori,  global_line_pos.ori, o:frame_id(), ori_diff)
       -- get the closest line to the given angle
       if ori_diff < min_ori_diff then
          min_ori_diff = ori_diff
@@ -121,8 +120,8 @@ function get_best_line(sector_main_ori, lines_in_sector)
       end
    end
    if best_line ~= nil then
-      local global_0 = tfm.transform({x=0, y=0, ori=best_line:bearing()}, line_frame, map_frame)
-      printf("Sector %f Winner: %s, it has the global angle: %f", sector_main_ori, best_line:id(), global_0.ori)
+      local global_0 = tfm.transform({x=0, y=0, ori=best_line:bearing()}, best_line:frame_id(), map_frame)
+      printf("Sector %f Winner: %s, it has the global angle: %f", sector_main_ori, best_line:frame_id(), global_0.ori)
       return best_line, ori_diff
    else
       printf("No Line in the Sector %f", sector_main_ori)
@@ -181,7 +180,7 @@ function INIT:init()
    -- sort the lines into the four different sectors
    for _,o in ipairs(candidates) do
       -- transform the line ori to map frame
-      global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, line_frame, map_frame)
+      global_line_pos = tfm.transform({x=0, y=0, ori=o:bearing()}, o:frame_id(), map_frame)
       -- sector 0° (between -45° and +45°)
       if global_line_pos.ori < math.pi/4 and global_line_pos.ori > -math.pi/4 then
          table.insert(lines_sector_0, o)
@@ -211,7 +210,7 @@ function INIT:init()
          min_ori_diff = ori_diff_0
          closest_line = best_line_sector_0
          local base_link_line_pos = {}
-         base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, line_frame, "/base_link")
+         base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, closest_line:frame_id(), "/base_link")
          self.fsm.vars.ori_to_drive = math.normalize_mirror_rad(base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori))
       end
    end
@@ -222,7 +221,7 @@ function INIT:init()
          min_ori_diff = ori_diff_p90
          closest_line = best_line_sector_p90
          local base_link_line_pos = {}
-         base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, line_frame, "/base_link")
+         base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, closest_line:frame_id(), "/base_link")
          self.fsm.vars.ori_to_drive = math.normalize_mirror_rad(base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori))
       end
    end
@@ -233,7 +232,7 @@ function INIT:init()
          min_ori_diff = ori_diff_n90
          closest_line = best_line_sector_n90
          local base_link_line_pos = {}
-         base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, line_frame, "/base_link")
+         base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, closest_line:frame_id(), "/base_link")
          self.fsm.vars.ori_to_drive = math.normalize_mirror_rad(base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori))
       end
    end
@@ -244,13 +243,13 @@ function INIT:init()
          min_ori_diff = ori_diff_180
          closest_line = best_line_sector_180
          local base_link_line_pos = {}
-         base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, line_frame, "/base_link")
+         base_link_line_pos = tfm.transform({x=0, y=0, ori=closest_line:bearing()}, closest_line:frame_id(), "/base_link")
          self.fsm.vars.ori_to_drive = math.normalize_mirror_rad(base_link_line_pos.ori + get_ori_diff(wanted_base_link_pos.ori, base_link_line_pos.ori))
       end
    end
 
    --self.fsm.vars.ori_to_drive = closest_line:bearing()
-   printf("-----> And the WINNER is %s", closest_line:id())
+   printf("-----> And the WINNER is %s", closest_line:frame_id())
    printf("ori_to_drive: %f", self.fsm.vars.ori_to_drive)
 end
 
