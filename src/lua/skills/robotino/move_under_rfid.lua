@@ -44,7 +44,7 @@ local tfm = require("tf_module")
 skillenv.skill_module(_M)
 
 local tfm = require('tf_module')
-local LASER_FORWARD_CORRECTION = 0.23
+local LASER_FORWARD_CORRECTION = 0.2
 local MIN_VIS_HIST = 10
 local LEFT_IR_ID = config:get_float("hardware/robotino/sensors/left_ir_id")
 local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
