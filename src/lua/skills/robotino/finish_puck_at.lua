@@ -99,7 +99,7 @@ end
 fsm:define_states{ export_to=_M,
    closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light, orange_blinking=orange_blinking, out_of_order=out_of_order, out_of_order_abort=out_of_order_abort, out_of_order_leave=out_of_order_leave, prod_finished=prod_finished, prod_in_progress=prod_in_progress},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
-      fail_to="FAILED", timeout=0.5},
+      fail_to="FAILED"},
    {"TIMEOUT", JumpState},
    {"SKILL_GLOBAL_MOVE_LASERLINES", SkillJumpState, skills={{global_move_laserlines}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},
    {"DECIDE_ENDSKILL", JumpState},
@@ -120,7 +120,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "TIMEOUT", "FAILED", cond="vars.tries > 3" },
-   { "TIMEOUT", "SKILL_GLOBAL_MOVE_LASERLINES", timeout=1, desc="test purpose" },
+   { "TIMEOUT", "SKILL_GLOBAL_MOVE_LASERLINES", timeout=0.5, desc="test purpose" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
