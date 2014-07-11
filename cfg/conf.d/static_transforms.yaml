@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/static-transforms
 ---
 plugins/static-transforms:
   # Interval in which to post static transform updates; sec
-  update_interval: 1.0
+  update-interval: 1.0
 
   transforms:
     base_laser:
