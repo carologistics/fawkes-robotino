@@ -51,9 +51,10 @@ plugins/machine_signal:
   # Green ROIs that start above this line are ignored
   roi_green_horizon: 100
 
-  # Maximum distance in pixels a signal is allowed to jump between frames
+  # Maximum distance a signal is allowed to jump between frames.
   # Increase this if you want to try and detect signals while moving.
-  max_jitter: 30.0
+  # The value specifies a fraction of the signal width.
+  max_jitter: 0.8
 
   # Print frame state buffers to debug blinking detection
   # Careful: VERY verbose, i.e. 4 lines per frame.

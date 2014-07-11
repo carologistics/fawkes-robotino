@@ -679,7 +679,7 @@ void MachineSignalPipelineThread::loop()
 
         // ... and match them to known signals based on the max_jitter tunable
         float dist_min = FLT_MAX;
-        std::list<SignalState>::iterator best_match;
+        std::list<SignalState>::iterator best_match = known_signals_.end();
         for (std::list<SignalState>::iterator known_signal = known_signals_.begin();
             known_signal != known_signals_.end(); ++known_signal) {
           float dist = known_signal->distance(signal_it);
@@ -688,12 +688,13 @@ void MachineSignalPipelineThread::loop()
             dist_min = dist;
           }
         }
-        if (dist_min < cfg_max_jitter_) {
+        if (best_match != known_signals_.end() &&
+            dist_min < best_match->rois.yellow_roi->width * cfg_max_jitter_) {
           best_match->update(frame_state, signal_it);
         }
         else {
           // No historic match was found for the current signal
-          SignalState *cur_state = new SignalState(buflen_, logger);
+          SignalState *cur_state = new SignalState(buflen_, logger, *signal_it);
           cur_state->update(frame_state, signal_it);
           known_signals_.push_front(*cur_state);
           delete cur_state;
@@ -942,11 +943,13 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
         if (area_R && (float(area_intrsct) / float(area_R) >= 0.3)) {
           map<ROI, SignalState::signal_rois_t_, compare_rois_by_x_>::iterator signal_it;
           if ((signal_it = laser_signals.find(cluster_roi)) != laser_signals.end()) {
+            // Merge intersection into existing red ROI
             signal_it->second.red_roi->extend(intersection.start.x, intersection.start.y);
             signal_it->second.red_roi->extend(intersection.start.x + intersection.width,
               intersection.start.y + intersection.height);
           }
           else {
+            // Create new signal rois from intersection
             SignalState::signal_rois_t_ new_signal = { new ROI(intersection), NULL, NULL };
             new_signal.world_pos = cluster_roi.world_pos;
             laser_signals.insert(make_pair(cluster_roi, new_signal));
