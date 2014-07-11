@@ -40,7 +40,8 @@ skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"GLOBAL", SkillJumpState, skills={{global_motor_move}}, final_to="ALIGN", fail_to="FAILED"},
-   {"ALIGN", SkillJumpState, skills={{align_laserlines}}, final_to="FINAL", fiail_to="FAILED"} 
+   {"ALIGN", SkillJumpState, skills={{align_laserlines}}, final_to="FINAL", fail_to="GLOBAL_BACKUP"},
+   {"GLOBAL_BACKUP", SkillJumpState, skills={{global_motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -54,4 +55,10 @@ end
 
 function ALIGN:init()
    self.skills[1].place = fsm.vars.place
+end
+
+function GLOBAL_BACKUP:init()
+   self.skills[1].place   = fsm.vars.place
+   self.skills[1].puck    = fsm.vars.puck
+   self.skills[1].turn    = true
 end
