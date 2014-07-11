@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "finish_puck_at"
 fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
-depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck","global_motor_move" }
+depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck","global_move_laserlines" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
    { v="light", type="RobotinoLightInterface", id="Light determined" },
 }
@@ -101,7 +101,7 @@ fsm:define_states{ export_to=_M,
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
       fail_to="FAILED", timeout=1},
    {"TIMEOUT", JumpState},
-   {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},
+   {"SKILL_GLOBAL_MOVE_LASERLINES", SkillJumpState, skills={{global_move_laserlines}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
       fail_to="SKILL_TAKE_PUCK"},
@@ -120,7 +120,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "TIMEOUT", "FAILED", cond="vars.tries > 3" },
-   { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE", timeout=1, desc="test purpose" },
+   { "TIMEOUT", "SKILL_GLOBAL_MOVE_LASERLINES", timeout=1, desc="test purpose" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
@@ -149,7 +149,7 @@ function SKILL_TAKE_PUCK:init()
    end
 end
 
-function SKILL_GLOBAL_MOTOR_MOVE:init()
+function SKILL_GLOBAL_MOVE_LASERLINES:init()
    self.skills[1].place = self.fsm.vars.place
    self.skills[1].puck = true
 end
