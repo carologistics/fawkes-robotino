@@ -46,9 +46,7 @@ documentation      = [==[Align to straight line in laser data.
 skillenv.skill_module(_M)
 
 -- Constants
-MIN_VIS_HIST = 10
-MAX_TRIES = 3
-ORI_TOLERANCE = 0.05
+MIN_VIS_HIST = 5
 
 -- Variables
 local navgraph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
@@ -142,8 +140,8 @@ fsm:define_states{
 
 -- Transitions
 fsm:add_transitions {
-   {"INIT", "FAILED", precond="not visible()", desc="no writer or vis_hist too low"},
-   {"INIT", "ALIGN", cond=true, desc="initialized"}
+   {"INIT", "FAILED", timeout = 3, desc="no writer or vis_hist too low"},
+   {"INIT", "ALIGN", cond=visible, desc="initialized"}
 }
 
 function INIT:init()
