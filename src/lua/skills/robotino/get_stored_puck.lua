@@ -90,7 +90,8 @@ function GRAB:init()
 end
 
 function BACK_UP:init()
-   self.skills[1].ori = 3.14
+   self.skills[1].ori = 2.5
+   self.skills[1].vel_rot = 1.1
 end
 
 function LEAVE:init()
