@@ -65,6 +65,10 @@ skiller:
         # Uncomment to use gripper skills for technical challenge
         # gripper_if: GripperInterface::Robotino
         open_delivery_gate: Position3DInterface::open_delivery_gate
+        line1: LaserLineInterface::/laser-lines/1
+        line2: LaserLineInterface::/laser-lines/2
+        line3: LaserLineInterface::/laser-lines/3
+        line4: LaserLineInterface::/laser-lines/4
       writing:
         light: RobotinoLightInterface::Light determined
 
