@@ -4,9 +4,6 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gossip
 ---
 gossip:
-  # Name of the local peer, e.g. robot identifier
-  name: R2
-
   groups:
     example:
       active: true
