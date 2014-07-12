@@ -37,7 +37,7 @@
 #include <plugins/navgraph/constraints/constraint_repo.h>
 
 //include to make eclipse happy
-#include <plugins/navgraph/constraints/tmp_reservation_list_node_constraint.h>
+#include <plugins/navgraph/constraints/timed_reservation_list_node_constraint.h>
 #include <utils/graph/topological_map_graph.h>
 
 #include <interfaces/NavPathInterface.h>
@@ -88,7 +88,7 @@ class NavgraphBrokerThread
      std::string get_string_from_nodes(std::vector<fawkes::TopologicalMapNode> path);
      std::string get_path_from_interface_as_string();
      std::vector<std::string> get_path_from_interface_as_vector();
-     void send_data(std::vector<std::string>  nodes, std::string robotname);
+     void send_msg();
 
      void handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
  		       uint16_t component_id, uint16_t msg_type,
@@ -107,6 +107,10 @@ class NavgraphBrokerThread
      std::queue<std::shared_ptr<navgraph_broker::NavigationMessage>> reservation_messages_;
      std::string robotname_;
      fawkes::NavGraphTimedReservationListNodeConstraint *constraint_;
+
+     navgraph_broker::NavigationMessage* m_;
+     fawkes::Time time_of_plan_chg;
+     double repeat_send_duration_;
 };
 
 #endif

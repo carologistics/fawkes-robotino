@@ -62,7 +62,14 @@ NavgraphBrokerThread::init()
 		{
 			logger->log_error( name() , "Can't read the robot name. Is 'robot-name' specified in cfg/host.yaml ?" );
 		}
-	
+
+	repeat_send_duration_ = (double) config->get_float("/plugins/navgraph-broker/repeat-send-duration");
+
+	m_ = new navgraph_broker::NavigationMessage();
+	m_->set_robotname( robotname_.c_str() );
+
+
+
 /******************************************************************************************
  * ***************************************************************************************
  * ***************************************************************************************
@@ -122,15 +129,14 @@ NavgraphBrokerThread::finalize()
 	sig_recv_error_conn_.disconnect();
 	sig_send_error_conn_.disconnect();
 
+	delete m_;
+
 }
 
 
 void
 NavgraphBrokerThread::loop(){
 
-	/*
-	 * Wenn eine Reservierung in der Queue liegt
-	 */
 	if( ! reservation_messages_.empty() ){
 
 		std::shared_ptr<navgraph_broker::NavigationMessage> msg = reservation_messages_.front();
@@ -141,25 +147,16 @@ NavgraphBrokerThread::loop(){
 
 		logger->log_info(name(), "Loop - msg->robotname() is  %s", msg->robotname().c_str() );
 
-		/*
-		 * Wenn die Message nicht von mir selber kommt
-		 */
 		if ( msg->robotname() != robotname_) {
 
 			std::vector<fawkes::TopologicalMapNode> nodes;
 
-			/*
-			 * Hole die nodes aus der message
-			 */
 			for(int i=0; i < (msg->nodelist_size()); i++ ){
 				nodes.push_back( navgraph->node( msg->nodelist(i) ));
 				std::string node = msg->nodelist(i);
 				logger->log_info(name(), "Loop - reserving node  %s", msg->nodelist(i).c_str() );
 			}
 
-			/*
-			 * Reserviere die nodes
-			 */
 			reserve_nodes( msg->robotname() , nodes);
 		}
 		else {
@@ -167,6 +164,12 @@ NavgraphBrokerThread::loop(){
 						" Wrong component ID/message type to C++ type mapping?");
 		}
 	}
+
+	fawkes::Time now(clock);
+	if( ( now.in_sec() - time_of_plan_chg.in_sec() ) <= repeat_send_duration_ ){
+		send_msg();
+	}
+
 }
 
 
@@ -301,26 +304,16 @@ NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<fawkes::T
 }
 
 void
-NavgraphBrokerThread::send_data(std::vector<std::string>  nodes, std::string robotname){
-
-	fawkes::Time now(clock);
-
-	navgraph_broker::NavigationMessage m;
-	m.set_sec(now.get_sec());
-	m.set_nsec(now.get_nsec());
-	m.set_robotname( robotname.c_str() );
+NavgraphBrokerThread::send_msg(){
 
 	std::string txt ="{";
-	for(unsigned i=0; i<nodes.size(); i++){
-		m.add_nodelist( nodes[i].c_str() );
-		txt += nodes[i].c_str();
+	for(int i=0; i < (m_->nodelist_size()); i++ ){
+		txt += m_->nodelist(i);
 		txt += ",";
 	}
-	txt += "}";
 	logger->log_info(name(), "Send - Sending %s", txt.c_str());
 
-	gossip_group->broadcast(m);
-
+	gossip_group->broadcast(*m_);
 
 }
 
@@ -328,15 +321,24 @@ void
 NavgraphBrokerThread::bb_interface_data_changed(fawkes::Interface *interface) throw(){
 
 	path_if_->read();
-
 	std::vector<std::string> path = get_path_from_interface_as_vector() ;
 
-	std::string txt = "{";
-	for(uint i=0; i<path.size(); i++) txt += path[i];
+	fawkes::Time time_of_plan_chg(clock);
+
+	fawkes::Time now(clock);
+	m_->set_sec(now.get_sec());
+	m_->set_nsec(now.get_nsec());
+	m_->clear_nodelist();
+
+	std::string txt ="{";
+	for(unsigned i=0; i<path.size(); i++){
+		m_->add_nodelist( path[i].c_str() );
+		txt += path[i].c_str();
+		txt += ",";
+	}
 	txt += "}";
 
 	logger->log_info(name(), "Interface Changed - new path: %s", txt.c_str() );
-	send_data(path, this->robotname_);
 
 }
 
