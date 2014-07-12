@@ -26,8 +26,8 @@ module(..., skillenv.module_init)
 name               = "deliver_puck"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {
-   "take_puck_to", "move_under_rfid", "motor_move", "global_motor_move",
-   "motor_move_waypoints", "deposit_puck"
+   "take_puck_to", "move_under_rfid", "motor_move",
+   "motor_move_waypoints", "deposit_puck", "global_move_laserlines"
 }
 
 depends_interfaces = {
@@ -50,11 +50,20 @@ documentation     = [==[delivers already fetched puck to specified location]==]
 skillenv.skill_module(_M)
 
 -- Constants
-local THRESHOLD_DISTANCE = 0.08
-if config:exists("/skills/deliver_puck/front_sensor_dist") then
-   -- you can find the config value in /cfg/host.yaml
-   THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
+local LOSTPUCK_DIST = 0.07
+local PUCK_SENSOR_INDEX = 8
+if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
+   LOSTPUCK_DIST = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
 end
+if config:exists("/hardware/robotino/puck_sensor/index") then
+   -- you can find the config value in /cfg/host.yaml
+   PUCK_SENSOR_INDEX = config:get_uint("/hardware/robotino/puck_sensor/index")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
+end
+
 
 local SIGNAL_TIMEOUT = 5 -- seconds
 local MAX_NUM_TRIES = 3
@@ -66,8 +75,8 @@ local tfm = require("tf_module")
 local gates = { left_gate, middle_gate, right_gate }
 
 function have_puck()
-   local curDistance = sensor:distance(8)
-   if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
+   local curDistance = sensor:distance(PUCK_SENSOR_INDEX)
+   if (curDistance > 0) and (curDistance <= LOSTPUCK_DIST) then
       return true
    end
    return false
@@ -143,12 +152,15 @@ fsm:define_states{ export_to=_M,
               MAX_NUM_TRIES=MAX_NUM_TRIES, MAX_RFID_TRIES=MAX_RFID_TRIES },
    {"INIT", JumpState},
 
-   {"TRY_LEFT", JumpState},
-   {"DRIVE_RIGHT", SkillJumpState, skills={{global_motor_move}}, final_to="TRY_RIGHT",
-      fail_to="TRY_RIGHT"},
-   {"TRY_RIGHT", JumpState},
-   {"DRIVE_LEFT", SkillJumpState, skills={{global_motor_move}}, final_to="TRY_LEFT",
-      fail_to="TRY_LEFT"},
+   {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="POSITION_FIRST",
+      fail_to="FAILED" },
+   {"POSITION_FIRST", SkillJumpState, skills={{global_move_laserlines}}, final_to="TRY_FIRST",
+      fail_to="SKILL_TAKE_PUCK"},
+   {"TRY_FIRST", JumpState},
+
+   {"DRIVE_SECOND", SkillJumpState, skills={{global_move_laserlines}}, final_to="TRY_SECOND",
+      fail_to="TRY_SECOND"},
+   {"TRY_SECOND", JumpState},
 
    {"MOVE_UNDER_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="CHECK_RESULT",
       fail_to="CHECK_RESULT"},
@@ -163,15 +175,14 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not have_puck()"},
-   {"INIT", "TRY_LEFT", cond="vars.place == \"deliver1\" or vars.place == \"deliver2\""},
-   {"INIT", "TRY_RIGHT", cond="vars.place == \"deliver1a\" or vars.place == \"deliver2a\""},
-   
-   {"TRY_LEFT", "DRIVE_RIGHT", cond=no_open_gate, timeout=SIGNAL_TIMEOUT},
-   {"TRY_LEFT", "MOVE_UNDER_RFID", cond=open_gate},
-   {"TRY_LEFT", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
-   {"TRY_RIGHT", "DRIVE_LEFT", cond=no_open_gate, timeout=SIGNAL_TIMEOUT},
-   {"TRY_RIGHT", "MOVE_UNDER_RFID", cond=open_gate},
-   {"TRY_RIGHT", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
+   {"INIT", "SKILL_TAKE_PUCK", cond=have_puck},
+
+   {"TRY_FIRST", "DRIVE_SECOND", cond=no_open_gate, timeout=SIGNAL_TIMEOUT},
+   {"TRY_FIRST", "MOVE_UNDER_RFID", cond=open_gate},
+   {"TRY_FIRST", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
+   {"TRY_SECOND", "SKILL_TAKE_PUCK", cond=no_open_gate, timeout=SIGNAL_TIMEOUT},
+   {"TRY_SECOND", "MOVE_UNDER_RFID", cond=open_gate},
+   {"TRY_SECOND", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
    
    {"CHECK_RESULT", "DECIDE_RFID_RETRY", timeout=SIGNAL_TIMEOUT, desc="?"},
    {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok, desc="RYG"},
@@ -181,7 +192,7 @@ fsm:add_transitions{
    {"DECIDE_RFID_RETRY", "REMOVE_KEBAB", cond="vars.num_rfid_tries >= MAX_RFID_TRIES" },
 }
 
-function INIT:init()
+function enable_vision()
    --turn machine_signal on and into delivery mode
    delivery_mode:msgq_enqueue_copy(delivery_mode.EnableSwitchMessage:new())
    bb_laser_switch:msgq_enqueue_copy(bb_laser_switch.EnableSwitchMessage:new())
@@ -189,11 +200,19 @@ function INIT:init()
    msg = bb_laser_ctl.SetSelectionModeMessage:new()
    msg:set_selection_mode(bb_laser_ctl.SELMODE_MIN_ANGLE)
    bb_laser_ctl:msgq_enqueue_copy(msg)
+end
+
+function INIT:init()
    self.fsm.vars.num_tries = 1
    self.fsm.vars.num_rfid_tries = 0
 end
 
-function DRIVE_LEFT:init()
+function SKILL_TAKE_PUCK:init()
+   self.skills[1].place = self.fsm.vars.place
+end
+
+function POSITION_FIRST:init()
+   enable_vision()
    self.skills[1].place = self.fsm.vars.place
    self.fsm.vars.num_tries = self.fsm.vars.num_tries + 1
 end
@@ -206,11 +225,15 @@ function MOVE_UNDER_RFID:init()
    end
 end
 
-function DRIVE_RIGHT:init()
-   if self.fsm.vars.place == "deliver1" or self.fsm.vars.place == "deliver1a" then
+function DRIVE_SECOND:init()
+   if self.fsm.vars.place == "deliver1" then
       self.skills[1].place = "deliver1a"
-   else
+   elseif self.fsm.vars.place == "deliver1a" then
+      self.skills[1].place = "deliver1"
+   elseif self.fsm.vars.place == "deliver2" then
       self.skills[1].place = "deliver2a"
+   else
+      self.skills[1].place = "deliver2"
    end
 end
 
@@ -236,11 +259,9 @@ end
 
 function FINAL:init()
    cleanup()
-   printf("FINAL: VISION DISABLED")
 end
 
 function FAILED:init()
    cleanup()
-   printf("FAILED: VISION DISABLED")
 end
 
