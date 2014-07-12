@@ -16,12 +16,14 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/protobuf.mk
+include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/boost.mk
+include $(BUILDSYSDIR)/ros.mk
 
 CFLAGS += $(CFLAGS_CPP11)
 
 LIBS_navgraph_broker = fawkescore fawkesutils fawkesaspects fawkesinterface fawkesnavgraphaspect \
-						fawkesblackboard fawkesconstraintrepo NavPathInterface  \
+						fawkesnavgraphconstraints fawkesblackboard NavPathInterface  \
 						fawkes_protobuf_comm fawkesgossip fawkesgossipaspect navgrap_broker_msgs
 OBJS_navgraph_broker = navgraph_broker_plugin.o navgraph_broker_thread.o
 

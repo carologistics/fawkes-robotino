@@ -22,6 +22,8 @@
 #include "navgraph_broker_thread.h"
 #include <boost/algorithm/string.hpp>
 #include <core/threading/mutex_locker.h>
+#include <plugins/navgraph/constraints/constraint_repo.h>
+
 
 using namespace fawkes;
 
@@ -76,7 +78,6 @@ NavgraphBrokerThread::init()
 	 logger->log_info( name() , "Added %s", nodes[i].name().c_str());
   }
 
- reserve_nodes( "test" , nodes);
  /******************************************************************************************
   * ***************************************************************************************
   * ***************************************************************************************
@@ -279,17 +280,21 @@ NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<fawkes::T
 
 	std::string constraint_name = robotname + "_Reserved_Nodes";
 
-	if( constraint_repo->has_constraint(constraint_name) ){
+	if( constraint_repo->has_constraint( constraint_name ) ){
 
-		logger->log_info( name(), "Overriding constraint='%s'", constraint_name.c_str() );
-		constraint_repo->override_nodes( constraint_name, path);
+		constraint_ = (NavGraphReservationListNodeConstraint *) constraint_repo->get_constraint(constraint_name);
+		constraint_->clear_nodes();
+
+		logger->log_info( name(), "Cleared nodes of constraint='%s'", constraint_name.c_str() );
+
 	}
-	else {
-		logger->log_info( name(), "Register constraint='%s'", constraint_name.c_str() );
-		constraint_repo->register_constraint( (AbstractNodeConstraint *) new ReservedNodeConstraint(logger, constraint_name) );
-		logger->log_info( name(), "Add nodes to constraint='%s'", constraint_name.c_str() );
-		constraint_repo->add_nodes(constraint_name, path);
+	else{
+		constraint_ = new NavGraphReservationListNodeConstraint(logger,  constraint_name );
 	}
+	constraint_->add_nodes( path );
+
+	logger->log_info( name(), "Register constraint='%s'", constraint_name.c_str() );
+	constraint_repo->register_constraint( (NavGraphNodeConstraint *) constraint_ );
 
 	constraint_repo.unlock();
 
