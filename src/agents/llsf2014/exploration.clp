@@ -110,12 +110,15 @@
     (printout error "Ouch, starting exploration but I don't know my team color" crlf)
   )
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
+  ;disable delivery mode of the machine_signal plugin (for safety)
+  (skill-call enable_switch iface "delivery" enable false)
 )
 
 (defrule exp-goto-first
   "Robotino drives to the first machine to start the first round."
   (phase EXPLORATION)
   ?s <- (state EXP_START)
+  ?df <- (skill-done (name "enable_switch"))
   (exp-tactic LINE)
   (first-exploration-machine ?v)
   (machine-exploration (name ?v) (x ?) (y ?) (look-pos ?lp))
