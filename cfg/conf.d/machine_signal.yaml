@@ -18,7 +18,7 @@ plugins/machine_signal:
   # Whether to start in delivery mode.
   # This is overridden by the switch interface machine_signal_delivery_mode
   #
-  delivery_mode: true
+  delivery_mode: false
 
   fps: 30
 
