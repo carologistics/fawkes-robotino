@@ -171,7 +171,7 @@
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?))
   (confval (path "/clips-agent/llsf2014/exploration/needed-visibility-history") (value ?needed-vh))
-  ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
+  ?rli <- (RobotinoLightInterface (id "/machine-signal/best") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
   (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
   (printout t "Identified machine" crlf)

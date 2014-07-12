@@ -162,7 +162,7 @@
   (sim-machine (name ?m) (lights $?lights))
   (goalmachine ?m)
   =>
-  (assert (RobotinoLightInterface (id "Light_State") (time (create$ 5 5)) (red OFF) (yellow OFF) (green OFF) (visibility_history 100) (ready FALSE)));gess at all
+  (assert (RobotinoLightInterface (id "/machine-signal/best") (time (create$ 5 5)) (red OFF) (yellow OFF) (green OFF) (visibility_history 100) (ready FALSE)));gess at all
   ;assert facts for modification
   (foreach ?l ?lights
     (assert (sim-machine-light ?m ?l))
@@ -180,49 +180,49 @@
 
 (defrule sim-exp-match-light-on-interface-redon
   ?f <- (sim-machine-light ? RED-ON)
-  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  ?i <- (RobotinoLightInterface (id "/machine-signal/best") (red ?) (yellow ?) (green ?) (ready FALSE))
   =>
   (retract ?f)
   (modify ?i (red ON))
 )
 (defrule sim-exp-match-light-on-interface-redblink
   ?f <- (sim-machine-light ? RED-BLINK)
-  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  ?i <- (RobotinoLightInterface (id "/machine-signal/best") (red ?) (yellow ?) (green ?) (ready FALSE))
   =>
   (retract ?f)
   (modify ?i (red BLINKING))
 )
 (defrule sim-exp-match-light-on-interface-yellowon
   ?f <- (sim-machine-light ? YELLOW-ON)
-  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  ?i <- (RobotinoLightInterface (id "/machine-signal/best") (red ?) (yellow ?) (green ?) (ready FALSE))
   =>
   (retract ?f)
   (modify ?i (yellow ON))
 )
 (defrule sim-exp-match-light-on-interface-yellowblink
   ?f <- (sim-machine-light ? YELLOW-BLINK)
-  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  ?i <- (RobotinoLightInterface (id "/machine-signal/best") (red ?) (yellow ?) (green ?) (ready FALSE))
   =>
   (retract ?f)
   (modify ?i (yellow BLINKING))
 )
 (defrule sim-exp-match-light-on-interface-greenon
   ?f <- (sim-machine-light ? GREEN-ON)
-  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  ?i <- (RobotinoLightInterface (id "/machine-signal/best") (red ?) (yellow ?) (green ?) (ready FALSE))
   =>
   (retract ?f)
   (modify ?i (green ON))
 )
 (defrule sim-exp-match-light-on-interface-greenblink
   ?f <- (sim-machine-light ? GREEN-BLINK)
-  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  ?i <- (RobotinoLightInterface (id "/machine-signal/best") (red ?) (yellow ?) (green ?) (ready FALSE))
   =>
   (retract ?f)
   (modify ?i (green BLINKING))
 )
 
 (defrule sim-exp-match-light-on-interface-finished
-  ?i <- (RobotinoLightInterface (id "Light_State") (red ?) (yellow ?) (green ?) (ready FALSE))
+  ?i <- (RobotinoLightInterface (id "/machine-signal/best") (red ?) (yellow ?) (green ?) (ready FALSE))
   (not (sim-machine-light ? ?))
   =>
   (modify ?i (ready TRUE))

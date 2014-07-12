@@ -8,7 +8,7 @@
 
   (blackboard-open "RobotinoLightInterface" "Light determined")
   (blackboard-open "Position3DInterface" "Pose")
-  (blackboard-open "RobotinoLightInterface" "Light_State")
+  (blackboard-open "RobotinoLightInterface" "/machine-signal/best")
   (blackboard-open "RobotinoSensorInterface" "Robotino")
 
   ;unwatch to avoid debug spam
