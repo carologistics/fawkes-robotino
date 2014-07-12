@@ -38,7 +38,7 @@ skillenv.skill_module(_M)
 -- Constants
 local AVG_LEN = 10
 local MAX_RETRIES = 3
-local LOSTPUCK_DIST = 0.07
+local LOSTPUCK_DIST = 0.08
 local PUCK_SENSOR_INDEX = 8
 if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
    LOSTPUCK_DIST = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
