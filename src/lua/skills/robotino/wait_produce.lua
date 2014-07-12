@@ -27,9 +27,9 @@ name               = "wait_produce"
 fsm                = SkillHSM:new{name=name,  start="INIT",  debug=true}
 depends_skills     = nil
 depends_interfaces = {
-   { v="plugin", type ="RobotinoLightInterface", id = "Light_State" },
+   { v="plugin", type ="RobotinoLightInterface", id = "/machine-signal/best" },
    { v="output", type ="RobotinoLightInterface", id = "Light determined" },
-   { v="lightswitch", type="SwitchInterface", id="light_front_switch" },
+   { v="lightswitch", type="SwitchInterface", id="/machine-signal" },
 }
 
 

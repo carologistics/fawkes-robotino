@@ -31,17 +31,17 @@ depends_skills     = {
 }
 
 depends_interfaces = {
-   { v="bb_open_gate", type="Position3DInterface", id="open_delivery_gate" },
-   { v="light", type="RobotinoLightInterface", id="Light_State" },
+   { v="bb_open_gate", type="Position3DInterface", id="/machine-signal/open-delivery-gate" },
+   { v="light", type="RobotinoLightInterface", id="/machine-signal/best" },
    { v="sensor", type="RobotinoSensorInterface", id="Robotino" },
-   { v="bb_laser_switch", type="SwitchInterface", id="laser-cluster" },
-   { v="bb_laser_ctl", type="LaserClusterInterface", id="laser-cluster" },
+   { v="bb_laser_switch", type="SwitchInterface", id="/laser-cluster/ampel" },
+   { v="bb_laser_ctl", type="LaserClusterInterface", id="/laser-cluster/ampel" },
    { v="pose", type="Position3DInterface", id="Pose" },
-   { v = "light_switch", type="SwitchInterface", id="light_front_switch"},
-   { v = "left_gate", type="RobotinoLightInterface", id="machine_signal_0"},
-   { v = "middle_gate", type="RobotinoLightInterface", id="machine_signal_1"},
-   { v = "right_gate", type="RobotinoLightInterface", id="machine_signal_2"},
-   { v = "delivery_mode", type="SwitchInterface", id="machine_signal_delivery_mode"}
+   { v = "light_switch", type="SwitchInterface", id="/machine-signal"},
+   { v = "left_gate", type="RobotinoLightInterface", id="/machine-signal/0"},
+   { v = "middle_gate", type="RobotinoLightInterface", id="/machine-signal/1"},
+   { v = "right_gate", type="RobotinoLightInterface", id="/machine-signal/2"},
+   { v = "delivery_mode", type="SwitchInterface", id="/machine-signal/delivery-mode"}
 }
 
 documentation     = [==[delivers already fetched puck to specified location]==]

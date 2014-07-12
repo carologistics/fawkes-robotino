@@ -14,12 +14,10 @@ name               = "enable_switch"
 fsm                = SkillHSM:new{name=name, start="SWITCH", debug=true}
 depends_skills     = {}
 depends_interfaces = {
-   {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
-   {v = "ampelSwitch", type="SwitchInterface", id="ampelswitch"},
-   {v = "laserSwitch", type="SwitchInterface", id="laser-cluster"},
+   {v = "laserSwitch", type="SwitchInterface", id="/laser-cluster/ampel"},
    {v = "motorSwitch", type="SwitchInterface", id="Robotino Motor"},
-   {v = "lightFrontSwitch", type="SwitchInterface", id="light_front_switch"},
-   {v = "deliverySwitch", type="SwitchInterface", id="machine_signal_delivery_mode"}
+   {v = "lightFrontSwitch", type="SwitchInterface", id="/machine-signal"},
+   {v = "deliverySwitch", type="SwitchInterface", id="/machine-signal/delivery-mode"}
 }
 
 -- Initialize as skill module
@@ -35,8 +33,6 @@ fsm:add_transitions{
 
 function SWITCH:init()
    ifmap = {
-      omnivision = omnivisionSwitch,
-      ampel = ampelSwitch,
       laser = laserSwitch,
       motor = motorSwitch,
       lightFront = lightFrontSwitch,

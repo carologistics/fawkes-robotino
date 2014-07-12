@@ -58,12 +58,12 @@ MachineSignalSensorThread::MachineSignalSensorThread(MachineSignalPipelineThread
 void MachineSignalSensorThread::init() {
   // Open required blackboard interfaces
   for (int i = 0; i < MAX_SIGNALS; i++) {
-    std::string iface_name = "machine_signal_";
+    std::string iface_name = "/machine-signal/";
     iface_name += std::to_string(i);
     bb_signal_states_.push_back(blackboard->open_for_writing<RobotinoLightInterface>(iface_name.c_str()));
   }
-  bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>("Light_State");
-  bb_open_delivery_gate_ = blackboard->open_for_writing<Position3DInterface>("open_delivery_gate");
+  bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>("/machine-signal/best");
+  bb_open_delivery_gate_ = blackboard->open_for_writing<Position3DInterface>("/machine-signal/open-delivery-gate");
 }
 
 void MachineSignalSensorThread::finalize() {

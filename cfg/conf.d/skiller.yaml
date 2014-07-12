@@ -36,35 +36,28 @@ skiller:
         Omnipuck18: Position3DInterface::OmniPuck18
         Omnipuck19: Position3DInterface::OmniPuck19
         Omnipuck20: Position3DInterface::OmniPuck20
-        Closest_Machine: Position3DInterface::Closest_Machine
         pose: Position3DInterface::Pose
-        Closest_Machine: Position3DInterface::Closest_Machine
         navigator: NavigatorInterface::Navigator
         ppnavi: NavigatorInterface::Pathplan
         omnivisionSwitch: SwitchInterface::omnivisionSwitch
         ampelswitch: SwitchInterface::ampelswitch
-        ampel_green: SwitchInterface::ampel_green
-        ampel_red: SwitchInterface::ampel_red
-        ampel_orange: SwitchInterface::ampel_orange
-        laserswitch: SwitchInterface::laser-cluster
+        laserswitch: SwitchInterface::/laser-cluster/ampel
         sensor: RobotinoSensorInterface::Robotino
-        light_plugin: RobotinoLightInterface::Light_State
-        closest_machine: Position3DInterface::Closest_Machine
-        euclidean_cluster: Position3DInterface::Euclidean Laser Cluster
-        ampel_fallback: RobotinoAmpelInterface::light
-        laser_cluster: LaserClusterInterface::laser-cluster
+        laser_cluster: LaserClusterInterface::/laser-cluster/ampel
+        laser-cluster-ampel: Position3DInterface::/laser-cluster/ampel/1
         motor_switch: SwitchInterface::Robotino Motor
-        lightFrontSwitch: SwitchInterface::light_front_switch
+        lightFrontSwitch: SwitchInterface::/machine-signal
         puck_0: Position3DInterface::puck_0
         puck_1: Position3DInterface::puck_1
         puck_2: Position3DInterface::puck_2
-        left_gate: RobotinoLightInterface::machine_signal_0
-        middle_gate: RobotinoLightInterface::machine_signal_1
-        right_gate: RobotinoLightInterface::machine_signal_2
-        delivery_mode: SwitchInterface::machine_signal_delivery_mode
+        light_plugin: RobotinoLightInterface::/machine-signal/best
+        left_gate: RobotinoLightInterface::/machine-signal/0
+        middle_gate: RobotinoLightInterface::/machine-signal/1
+        right_gate: RobotinoLightInterface::/machine-signal/2
+        delivery_mode: SwitchInterface::/machine-signal/delivery_mode
         # Uncomment to use gripper skills for technical challenge
         # gripper_if: GripperInterface::Robotino
-        open_delivery_gate: Position3DInterface::open_delivery_gate
+        open_delivery_gate: Position3DInterface::/machine-signal/open-delivery-gate
         line1: LaserLineInterface::/laser-lines/1
         line2: LaserLineInterface::/laser-lines/2
         line3: LaserLineInterface::/laser-lines/3

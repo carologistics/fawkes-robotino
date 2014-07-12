@@ -173,8 +173,8 @@ void MachineSignalPipelineThread::init()
   cfg_camera_ = config->get_string(CFG_PREFIX "/camera");
   setup_camera();
 
-  shmbuf_ = new SharedMemoryImageBuffer("machine_signal", YUV422_PLANAR, cam_width_, cam_height_);
-  shmbuf_cam_ = new SharedMemoryImageBuffer("machine_cam", YUV422_PLANAR, cam_width_, cam_height_);
+  shmbuf_ = new SharedMemoryImageBuffer("machine-signal", YUV422_PLANAR, cam_width_, cam_height_);
+  shmbuf_cam_ = new SharedMemoryImageBuffer("machine-cam", YUV422_PLANAR, cam_width_, cam_height_);
   roi_drawer_ = new FilterROIDraw(&drawn_rois_, FilterROIDraw::DASHED_HINT);
 
   // Configure RED classifier
@@ -315,17 +315,17 @@ void MachineSignalPipelineThread::init()
   logger->log_info(name(), "Buffer length: %d", buflen_);
   last_second_ = new Time(clock);
 
-  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("light_front_switch");
+  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("/machine-signal");
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
 
-  bb_delivery_switch_ = blackboard->open_for_writing<SwitchInterface>("machine_signal_delivery_mode");
+  bb_delivery_switch_ = blackboard->open_for_writing<SwitchInterface>("/machine-signal/delivery-mode");
   bb_delivery_switch_->set_enabled(cfg_delivery_mode_);
   bb_delivery_switch_->write();
 
-  bb_laser_clusters_[0] = blackboard->open_for_reading<Position3DInterface>("Laser Cluster 1");
-  bb_laser_clusters_[1] = blackboard->open_for_reading<Position3DInterface>("Laser Cluster 2");
-  bb_laser_clusters_[2] = blackboard->open_for_reading<Position3DInterface>("Laser Cluster 3");
+  bb_laser_clusters_[0] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/1");
+  bb_laser_clusters_[1] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/2");
+  bb_laser_clusters_[2] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/3");
 
   config->add_change_handler(this);
 }

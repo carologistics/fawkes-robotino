@@ -29,11 +29,11 @@ fsm                = SkillHSM:new{name=name, start="GOTO_MACHINE", debug=true}
 depends_skills     = {"motor_move", "ppgoto", "global_motor_move", "wait_produce", "get_rid_of_puck"}
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
-  {v = "euclidean_cluster", type="Position3DInterface", id = "Euclidean Laser Cluster"},
-  {v = "laserswitch", type="SwitchInterface", id="laser-cluster"},
-  {v = "lightswitch", type="SwitchInterface", id="light_front_switch"},
-  {v = "light", type ="RobotinoLightInterface", id = "Light_State"},
-  {v = "laser_cluster", type="LaserClusterInterface", id="laser-cluster"},
+  {v = "euclidean_cluster", type="Position3DInterface", id = "/laser-cluster/ampel/1"},
+  {v = "laserswitch", type="SwitchInterface", id="/laser-cluster/ampel"},
+  {v = "lightswitch", type="SwitchInterface", id="/machine-signal"},
+  {v = "light", type ="RobotinoLightInterface", id = "/machine-signal/best"},
+  {v = "laser_cluster", type="LaserClusterInterface", id="/laser-cluster/ampel"},
 }
 
 documentation      = [==[Get a produced puck from under the RFID]==]
