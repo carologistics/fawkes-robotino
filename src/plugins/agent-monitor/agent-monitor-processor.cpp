@@ -65,8 +65,7 @@ AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr
   own_name_ = config_->get_string("/clips-agent/llsf2014/robot-name");
 
   //open interfaces
-  light_if_ = blackboard_->open_for_reading<RobotinoLightInterface>
-    (config->get_string("/plugins/light_front/light_state_if").c_str());
+  light_if_ = blackboard_->open_for_reading<RobotinoLightInterface>("/machine-signal/best");
   skiller_if_ = blackboard_->open_for_reading<SkillerInterface>("Skiller");
 }
 
