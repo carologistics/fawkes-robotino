@@ -79,11 +79,17 @@ NavgraphBrokerThread::init()
  // load reserved_nodes from config for testing issues
  std::string snodes = config->get_string("/plugins/navgraph-broker/reserved_nodes");
  std::vector<fawkes::TopologicalMapNode> nodes = get_nodes_from_string(snodes);
- reserve_nodes( "test" , nodes);
 
- for(uint i=0; i<nodes.size(); i++){
-	 logger->log_info( name() , "Added %s", nodes[i].name().c_str());
-  }
+ std::string txt = "{";
+ for(uint16_t i=0; i < nodes.size(); i++ ){
+	txt += nodes[i].name();
+	txt += ",";
+ }
+ txt.erase(txt.length()-1,1);
+ txt += "}";
+ logger->log_info(name(), "Reserving test nodes  %s", txt.c_str() );
+
+ reserve_nodes( "test" , nodes);
 
  /******************************************************************************************
   * ***************************************************************************************
@@ -151,13 +157,18 @@ NavgraphBrokerThread::loop(){
 
 			std::vector<fawkes::TopologicalMapNode> nodes;
 
+			std::string txt = "{";
 			for(int i=0; i < (msg->nodelist_size()); i++ ){
 				nodes.push_back( navgraph->node( msg->nodelist(i) ));
-				std::string node = msg->nodelist(i);
-				logger->log_info(name(), "Loop - reserving node  %s", msg->nodelist(i).c_str() );
+				txt += msg->nodelist(i);
+				txt += ",";
 			}
+	   	    txt.erase(txt.length()-1,1);
+			txt += "}";
+			logger->log_info(name(), "Loop - reserving node  %s", txt.c_str() );
 
 			reserve_nodes( msg->robotname() , nodes);
+
 		}
 		else {
 				logger->log_warn(name(), "Message with proper component_id and msg_type, but no conversion. "
@@ -282,21 +293,16 @@ NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<fawkes::T
 	constraint_repo.lock();
 
 	std::string constraint_name = robotname + "_Reserved_Nodes";
-
 	if( constraint_repo->has_constraint( constraint_name ) ){
-
+		logger->log_info( name(), "Updating nodes of constraint='%s'", constraint_name.c_str() );
 		constraint_ = (NavGraphTimedReservationListNodeConstraint *) constraint_repo->get_constraint(constraint_name);
 		constraint_->clear_nodes();
-
-		logger->log_info( name(), "Cleared nodes of constraint='%s'", constraint_name.c_str() );
-
 	}
 	else{
+		logger->log_info( name(), "Register constraint='%s'", constraint_name.c_str() );
 		constraint_ = new NavGraphTimedReservationListNodeConstraint(logger,  constraint_name );
 	}
 	constraint_->add_nodes( path );
-
-	logger->log_info( name(), "Register constraint='%s'", constraint_name.c_str() );
 	constraint_repo->register_constraint( (NavGraphNodeConstraint *) constraint_ );
 
 	constraint_repo.unlock();
@@ -311,7 +317,6 @@ NavgraphBrokerThread::send_msg(){
 		txt += m_->nodelist(i);
 		txt += ",";
 	}
-	logger->log_info(name(), "Send - Sending %s", txt.c_str());
 
 	gossip_group->broadcast(*m_);
 
@@ -323,9 +328,9 @@ NavgraphBrokerThread::bb_interface_data_changed(fawkes::Interface *interface) th
 	path_if_->read();
 	std::vector<std::string> path = get_path_from_interface_as_vector() ;
 
-	fawkes::Time time_of_plan_chg(clock);
-
 	fawkes::Time now(clock);
+	time_of_plan_chg = now;
+
 	m_->set_sec(now.get_sec());
 	m_->set_nsec(now.get_nsec());
 	m_->clear_nodelist();
