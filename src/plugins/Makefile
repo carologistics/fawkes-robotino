@@ -18,6 +18,6 @@ include $(BASEDIR)/etc/buildsys/config.mk
 
 SUBDIRS	= omnivision_pucks clips-motor-switch omnivision_activator \
 	  light_front robotino_worldmodel voltagelogger machine_signal puck_vision \
-	  gazebo agent-monitor
+	  gazebo agent-monitor marker_writer
 
 include $(BUILDSYSDIR)/rules.mk
