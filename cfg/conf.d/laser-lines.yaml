@@ -12,10 +12,17 @@ laser-lines:
   line_segmentation_max_iterations: 250
 
   # Segmentation distance threshold; m
-  line_segmentation_distance_threshold: 0.1
+  line_segmentation_distance_threshold: 0.05
 
   # Minimum size of fraction of points that must be inliers to consider a table; 0.0..1.0
-  line_segmentation_min_inliers: 20
+  line_segmentation_min_inliers: 30
+
+  # Maximum distance between samples drawn from the cloud
+  # This distance is important for the separation of lines if they are close.
+  line_segmentation_sample_max_dist: 0.15
+
+  # Minimum length of line to consider it
+  line_min_length: 0.8
 
   line_min_size: 20
 
