@@ -67,6 +67,7 @@ AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr
   //open interfaces
   light_if_ = blackboard_->open_for_reading<RobotinoLightInterface>
     (config->get_string("/plugins/light_front/light_state_if").c_str());
+  skiller_if_ = blackboard_->open_for_reading<SkillerInterface>("Skiller");
 }
 
 
@@ -74,6 +75,7 @@ AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr
 AgentMonitorWebRequestProcessor::~AgentMonitorWebRequestProcessor()
 {
   blackboard_->close(light_if_);
+  blackboard_->close(skiller_if_);
 }
 
 WebReply *
@@ -244,6 +246,9 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
       r->append_body("History:  %d<br>\n", light_if_->visibility_history());
       *r += "</td></tr>";
       *r += "</table>\n";
+
+      skiller_if_->read();
+      r->append_body("<b>Skill:</b> %s<br>\n", skiller_if_->skill_string());
 
       return r;
     }

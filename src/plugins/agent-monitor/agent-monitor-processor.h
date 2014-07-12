@@ -36,6 +36,7 @@
 
 #include <clipsmm.h>
 #include <interfaces/RobotinoLightInterface.h>
+#include <interfaces/SkillerInterface.h>
 
 namespace fawkes {
   class CLIPSEnvManager;
@@ -66,6 +67,7 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
   fawkes::BlackBoard *blackboard_;
 
   fawkes::RobotinoLightInterface *light_if_;
+  fawkes::SkillerInterface *skiller_if_;
 
   const char           *baseurl_;
   size_t                baseurl_len_;

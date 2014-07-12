@@ -21,7 +21,7 @@ include $(BUILDCONFDIR)/webview/webview.mk
 LIBS_agent_monitor = \
 	fawkescore fawkesutils fawkesaspects fawkesclipsaspect \
 	fawkeswebview fawkesblackboard fawkesinterface \
-	RobotinoLightInterface
+	RobotinoLightInterface SkillerInterface
 OBJS_agent_monitor = agent-monitor-plugin.o agent-monitor-thread.o \
 		     agent-monitor-processor.o
 
