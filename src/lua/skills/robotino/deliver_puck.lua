@@ -50,11 +50,20 @@ documentation     = [==[delivers already fetched puck to specified location]==]
 skillenv.skill_module(_M)
 
 -- Constants
-local THRESHOLD_DISTANCE = 0.08
-if config:exists("/skills/deliver_puck/front_sensor_dist") then
-   -- you can find the config value in /cfg/host.yaml
-   THRESHOLD_DISTANCE = config:get_float("/skills/deliver_puck/front_sensor_dist")
+local LOSTPUCK_DIST = 0.07
+local PUCK_SENSOR_INDEX = 8
+if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
+   LOSTPUCK_DIST = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
 end
+if config:exists("/hardware/robotino/puck_sensor/index") then
+   -- you can find the config value in /cfg/host.yaml
+   PUCK_SENSOR_INDEX = config:get_uint("/hardware/robotino/puck_sensor/index")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
+end
+
 
 local SIGNAL_TIMEOUT = 5 -- seconds
 local MAX_NUM_TRIES = 3
@@ -66,8 +75,8 @@ local tfm = require("tf_module")
 local gates = { left_gate, middle_gate, right_gate }
 
 function have_puck()
-   local curDistance = sensor:distance(8)
-   if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
+   local curDistance = sensor:distance(PUCK_SENSOR_INDEX)
+   if (curDistance > 0) and (curDistance <= LOSTPUCK_DIST) then
       return true
    end
    return false
