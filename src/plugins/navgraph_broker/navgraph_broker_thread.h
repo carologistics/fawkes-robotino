@@ -37,7 +37,7 @@
 #include <plugins/navgraph/constraints/constraint_repo.h>
 
 //include to make eclipse happy
-#include <plugins/navgraph/constraints/reservation_list_node_constraint.h>
+#include <plugins/navgraph/constraints/tmp_reservation_list_node_constraint.h>
 #include <utils/graph/topological_map_graph.h>
 
 #include <interfaces/NavPathInterface.h>
@@ -54,7 +54,7 @@ namespace fawkes{
 	class TopologicalMapGraph;
 	class ConstraintRepo;
 	class NavPathInterface;
-	class NavGraphReservationListNodeConstraint;
+	class NavGraphTmpReservationListNodeConstraint;
 }
 
 class NavgraphBrokerThread
@@ -106,7 +106,7 @@ class NavgraphBrokerThread
      std::vector<std::string> path_;
      std::queue<std::shared_ptr<navgraph_broker::NavigationMessage>> reservation_messages_;
      std::string robotname_;
-     fawkes::NavGraphReservationListNodeConstraint *constraint_;
+     fawkes::NavGraphTmpReservationListNodeConstraint *constraint_;
 };
 
 #endif
