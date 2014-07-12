@@ -27,6 +27,7 @@
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/vision.h>
+#include <aspect/tf.h>
 #include <config/change_handler.h>
 #include <aspect/clock.h>
 
@@ -39,12 +40,14 @@
 #include <fvmodels/color/thresholds_black.h>
 #include <fvmodels/scanlines/grid.h>
 #include <fvclassifiers/simple.h>
-//#include <fvcams/fileloader.h>
 #include <fvcams/v4l2.h>
 #include <string>
 #include <core/threading/mutex.h>
 #include <atomic>
+#include <set>
 #include <interfaces/SwitchInterface.h>
+#include <interfaces/Position3DInterface.h>
+#include <fvmodels/relative_position/position_to_pixel.h>
 #include <utils/time/wait.h>
 
 #include "state.h"
@@ -75,7 +78,8 @@ class MachineSignalPipelineThread :
   public fawkes::BlackBoardAspect,
   public fawkes::VisionAspect,
   public fawkes::ConfigurationChangeHandler,
-  public fawkes::ClockAspect
+  public fawkes::ClockAspect,
+  public fawkes::TransformAspect
 {
   public:
     MachineSignalPipelineThread();
@@ -86,19 +90,19 @@ class MachineSignalPipelineThread :
     virtual void finalize();
 
     bool lock_if_new_data();
+    bool get_delivery_mode();
+
     void unlock();
 
     std::list<SignalState> &get_known_signals();
     std::list<SignalState>::iterator get_best_signal();
 
   private:
-    typedef enum {
-      AUTO,
-      ON,
-      OFF
-    } delivery_switch_t_;
 
-    delivery_switch_t_ cfg_delivery_mode_;
+    bool cfg_delivery_mode_;
+    
+    bool bb_switch_is_enabled(fawkes::SwitchInterface *sw);
+
     bool cfg_enable_switch_;
 
     fawkes::Mutex data_mutex_;
@@ -136,6 +140,25 @@ class MachineSignalPipelineThread :
 
     unsigned int cfg_fps_;
 
+    class WorldROI : public firevision::ROI {
+      public:
+        fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
+        WorldROI() : ROI() { world_pos = NULL; }
+    };
+
+    fawkes::Position3DInterface *bb_laser_clusters_[3];
+    std::atomic<unsigned int> cfg_lasercluster_min_vis_hist_;
+    std::string cfg_lasercluster_frame_;
+    std::atomic<float> cfg_lasercluster_signal_radius_;
+    std::atomic<float> cfg_lasercluster_signal_top_;
+    std::atomic<float> cfg_lasercluster_signal_bottom_;
+
+    float cfg_cam_aperture_x_;
+    float cfg_cam_aperture_y_;
+    float cfg_cam_angle_y_;
+    std::string cfg_cam_frame_;
+    firevision::PositionToPixel *pos2pixel_;
+
     std::atomic<float> cfg_roi_max_aspect_ratio_;
     std::atomic<float> cfg_roi_max_width_ratio_;
     std::atomic<float> cfg_roi_xalign_;
@@ -169,7 +192,11 @@ class MachineSignalPipelineThread :
     firevision::ColorModelLuminance *light_colormodel_;
     firevision::ScanlineGrid *light_scangrid_;
 
-    unsigned int cfg_black_threshold_;
+    unsigned int cfg_black_y_thresh_;
+    unsigned int cfg_black_u_thresh_;
+    unsigned int cfg_black_v_thresh_;
+    unsigned int cfg_black_u_ref_;
+    unsigned int cfg_black_v_ref_;
     unsigned int cfg_black_min_points_;
     unsigned int cfg_black_min_neighborhood_;
     firevision::SimpleColorClassifier *black_classifier_;
@@ -185,21 +212,22 @@ class MachineSignalPipelineThread :
     void setup_color_classifier(color_classifier_context_t_ *classifier);
     void setup_camera();
     bool color_data_consistent(color_classifier_context_t_ *);
+    void reinit_color_config();
 
-    struct {
-        bool operator() (firevision::ROI r1, firevision::ROI r2) {
+    struct compare_rois_by_x_ {
+        bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
           return r1.start.x <= r2.start.x;
         }
     } sort_rois_by_x_;
 
-    struct {
-        bool operator() (firevision::ROI r1, firevision::ROI r2) {
+    struct compare_rois_by_y_ {
+        bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
           return r1.start.y <= r2.start.y;
         }
     } sort_rois_by_y_;
 
-    struct {
-        bool operator() (SignalState::signal_rois_t_ &signal1, SignalState::signal_rois_t_ &signal2) {
+    struct compare_signal_rois_by_x_ {
+        bool operator() (SignalState::signal_rois_t_ const &signal1, SignalState::signal_rois_t_ const &signal2) {
           return signal1.red_roi->start.x <= signal2.red_roi->start.x;
         }
     } sort_signal_rois_by_x_;
@@ -207,11 +235,12 @@ class MachineSignalPipelineThread :
     // All ROIs we want to see painted in the tuning buffer
     std::list<firevision::ROI> drawn_rois_;
 
-    std::list<SignalState::signal_rois_t_> *create_signal_rois(
+    std::list<SignalState::signal_rois_t_> *create_field_signals(
         std::list<firevision::ROI> *rois_R,
         std::list<firevision::ROI> *rois_G);
 
-    std::list<SignalState::signal_rois_t_> *create_delivery_rois(std::list<firevision::ROI> *rois_R);
+    std::list<SignalState::signal_rois_t_> *create_delivery_signals(std::list<firevision::ROI> *rois_R);
+    std::list<SignalState::signal_rois_t_> *create_laser_signals(std::list<firevision::ROI> *rois_R);
 
 
     // Checks to weed out implausible ROIs
@@ -224,28 +253,28 @@ class MachineSignalPipelineThread :
     inline bool roi1_oversize(firevision::ROI &r1, firevision::ROI &r2);
 
 
-    struct {
-        bool operator() (firevision::ROI &r1, firevision::ROI &r2) {
+    struct compare_rois_by_area_ {
+        bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
           unsigned int a1 = r1.width * r1.height;
           unsigned int a2 = r2.width * r2.height;
           return a1 >= a2;
         }
     } sort_rois_by_area_;
 
-    struct {
-        bool operator() (SignalState &s1, SignalState &s2) {
+    struct compare_signal_states_by_visibility_ {
+        bool operator() (SignalState const &s1, SignalState const &s2) {
           return s1.visibility > s2.visibility;
         }
     } sort_signal_states_by_visibility_;
 
-    struct {
-        bool operator() (SignalState &s1, SignalState &s2) {
+    struct compare_signal_states_by_x_ {
+        bool operator() (SignalState const &s1, SignalState const &s2) {
           return s1.pos.x <= s2.pos.x;
         }
     } sort_signal_states_by_x_;
 
-    struct {
-        bool operator() (SignalState &s1, SignalState &s2) {
+    struct compare_signal_states_by_area_ {
+        bool operator() (SignalState const &s1, SignalState const &s2) {
           if ((s1.visibility < 0) == (s2.visibility < 0)) {
             float size_ratio = (float)s1.area / (float)s2.area;
             if (size_ratio < 1.5 && size_ratio > 0.67)
@@ -260,6 +289,11 @@ class MachineSignalPipelineThread :
 
     std::list<SignalState> known_signals_;
     std::list<SignalState>::iterator best_signal_;
+
+
+    std::set<WorldROI, compare_rois_by_area_> *bb_get_laser_rois();
+    std::set<WorldROI, compare_rois_by_area_> *cluster_rois_;
+
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);

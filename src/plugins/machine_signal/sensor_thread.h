@@ -61,6 +61,7 @@ class MachineSignalSensorThread :
   private:
     std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
     fawkes::RobotinoLightInterface * bb_signal_compat_;
+    fawkes::Position3DInterface *bb_open_delivery_gate_;
     MachineSignalPipelineThread *pipeline_thread_;
 };
 

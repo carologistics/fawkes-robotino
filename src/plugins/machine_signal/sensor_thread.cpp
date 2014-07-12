@@ -29,6 +29,7 @@
 #include <cmath>
 
 #include <string>
+#include <limits.h>
 #include <core/threading/mutex_locker.h>
 
 using namespace fawkes;
@@ -51,6 +52,7 @@ MachineSignalSensorThread::MachineSignalSensorThread(MachineSignalPipelineThread
 {
   pipeline_thread_ = pipeline_thread;
   bb_signal_compat_ = NULL;
+  bb_open_delivery_gate_ = NULL;
 }
 
 void MachineSignalSensorThread::init() {
@@ -61,6 +63,7 @@ void MachineSignalSensorThread::init() {
     bb_signal_states_.push_back(blackboard->open_for_writing<RobotinoLightInterface>(iface_name.c_str()));
   }
   bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>("Light_State");
+  bb_open_delivery_gate_ = blackboard->open_for_writing<Position3DInterface>("open_delivery_gate");
 }
 
 void MachineSignalSensorThread::finalize() {
@@ -69,25 +72,66 @@ void MachineSignalSensorThread::finalize() {
     blackboard->close(*bb_it);
   }
   blackboard->close(bb_signal_compat_);
+  blackboard->close(bb_open_delivery_gate_);
 }
 
 void MachineSignalSensorThread::loop() {
   if (pipeline_thread_->lock_if_new_data()) {
     std::list<SignalState> known_signals = pipeline_thread_->get_known_signals();
     std::list<SignalState>::iterator best_signal = pipeline_thread_->get_best_signal();
+    std::list<SignalState>::iterator open_gate = known_signals.end();
+    int open_gate_visibility = INT_MIN;
 
-    // Update blackboard with the current information
+    // Go through all known signals...
     std::list<SignalState>::iterator known_signal = known_signals.begin();
-    for (int i = 0; i < MAX_SIGNALS && known_signal != known_signals.end(); i++) {
-      bb_signal_states_[i]->set_red(known_signal->red);
-      bb_signal_states_[i]->set_yellow(known_signal->yellow);
-      bb_signal_states_[i]->set_green(known_signal->green);
-      bb_signal_states_[i]->set_visibility_history(
-        known_signal->unseen > 1 ? -1 : known_signal->visibility);
-      bb_signal_states_[i]->set_ready(known_signal->ready);
-      bb_signal_states_[i]->write();
+    for (int i = 0; i < MAX_SIGNALS; i++) {
 
-      known_signal++;
+      if (known_signal != known_signals.end()) {
+        // Put their states into the blackboard interfaces
+        bb_signal_states_[i]->set_red(known_signal->red);
+        bb_signal_states_[i]->set_yellow(known_signal->yellow);
+        bb_signal_states_[i]->set_green(known_signal->green);
+        bb_signal_states_[i]->set_visibility_history(
+          known_signal->unseen > 1 ? -1 : known_signal->visibility);
+        bb_signal_states_[i]->set_ready(known_signal->ready);
+        bb_signal_states_[i]->write();
+
+        // And possibly select an open delivery gate
+        if (pipeline_thread_->get_delivery_mode()
+            && (known_signal->green == RobotinoLightInterface::LightState::ON)
+            && (known_signal->visibility > open_gate_visibility)
+            && (known_signal->world_pos)) {
+          open_gate_visibility = known_signal->visibility;
+          open_gate = known_signal;
+        }
+        known_signal++;
+      }
+      else {
+        bb_signal_states_[i]->set_red(RobotinoLightInterface::LightState::UNKNOWN);
+        bb_signal_states_[i]->set_yellow(RobotinoLightInterface::LightState::UNKNOWN);
+        bb_signal_states_[i]->set_green(RobotinoLightInterface::LightState::UNKNOWN);
+        bb_signal_states_[i]->set_visibility_history(-1);
+        bb_signal_states_[i]->set_ready(false);
+      }
+    }
+
+    if (pipeline_thread_->get_delivery_mode() && open_gate != known_signals.end()) {
+      bb_open_delivery_gate_->set_frame(open_gate->world_pos->frame_id.c_str());
+      double trans[3] = {
+          (double) open_gate->world_pos->m_floats[0],
+          (double) open_gate->world_pos->m_floats[1],
+          (double) open_gate->world_pos->m_floats[2]
+      };
+      bb_open_delivery_gate_->set_translation(trans);
+      bb_open_delivery_gate_->set_visibility_history(open_gate_visibility);
+      bb_open_delivery_gate_->write();
+    }
+    else {
+      bb_open_delivery_gate_->set_frame("");
+      double trans[3] = { 0.0, 0.0, 0.0 };
+      bb_open_delivery_gate_->set_translation(trans);
+      bb_open_delivery_gate_->set_visibility_history(-1);
+      bb_open_delivery_gate_->write();
     }
 
     bb_signal_compat_->set_red(best_signal->red);

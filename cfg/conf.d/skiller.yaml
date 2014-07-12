@@ -64,6 +64,7 @@ skiller:
         delivery_mode: SwitchInterface::machine_signal_delivery_mode
         # Uncomment to use gripper skills for technical challenge
         # gripper_if: GripperInterface::Robotino
+        open_delivery_gate: Position3DInterface::open_delivery_gate
       writing:
         light: RobotinoLightInterface::Light determined
 

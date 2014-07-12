@@ -12,25 +12,27 @@
 #include <interfaces/RobotinoLightInterface.h>
 #include <fvutils/base/roi.h>
 #include <logging/logger.h>
+#include <tf/transformer.h>
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
 class SignalState {
   public:
-    SignalState(unsigned int buflen, fawkes::Logger *logger);
+    typedef struct {
+        firevision::ROI *red_roi;
+        firevision::ROI *yellow_roi;
+        firevision::ROI *green_roi;
+        fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
+    } signal_rois_t_;
+
+    SignalState(unsigned int buflen, fawkes::Logger *logger, signal_rois_t_ &rois);
 
     typedef struct {
         bool red;
         bool yellow;
         bool green;
     } frame_state_t_;
-
-    typedef struct {
-        firevision::ROI *red_roi;
-        firevision::ROI *yellow_roi;
-        firevision::ROI *green_roi;
-    } signal_rois_t_;
 
   private:
     typedef struct {
@@ -56,10 +58,12 @@ class SignalState {
     fawkes::RobotinoLightInterface::LightState yellow;
     fawkes::RobotinoLightInterface::LightState green;
     fawkes::upoint_t pos;
+    signal_rois_t_ rois;
     int visibility;
     bool ready;
     int unseen;
     unsigned int area;
+    fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
 
     char const *get_debug_R();
     char const *get_debug_Y();

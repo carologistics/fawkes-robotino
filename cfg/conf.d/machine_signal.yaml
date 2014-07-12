@@ -15,14 +15,10 @@ plugins/machine_signal:
   start_enabled: true
 
   #
-  # Which delivery mode to use initially.
-  # auto: Try to auto-detect by the width of the largest green ROI
-  # on: Assume we're looking at the delivery gates.
-  # off: Assume we're looking at the playing field
-  # After switching delivery mode on or off with the switch interface
-  # "machine_signal_delivery_mode", this config value has no effect anymore.
+  # Whether to start in delivery mode.
+  # This is overridden by the switch interface machine_signal_delivery_mode
   #
-  delivery_mode: "auto"
+  delivery_mode: true
 
   fps: 30
 
@@ -41,7 +37,7 @@ plugins/machine_signal:
   # Disable this to see the raw ROIs as they come out of the classifier
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
-  draw_processed_rois: true
+  draw_processed_rois: false
  
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
@@ -55,9 +51,10 @@ plugins/machine_signal:
   # Green ROIs that start above this line are ignored
   roi_green_horizon: 100
 
-  # Maximum distance in pixels a signal is allowed to jump between frames
+  # Maximum distance a signal is allowed to jump between frames.
   # Increase this if you want to try and detect signals while moving.
-  max_jitter: 30.0
+  # The value specifies a fraction of the signal width.
+  max_jitter: 0.8
 
   # Print frame state buffers to debug blinking detection
   # Careful: VERY verbose, i.e. 4 lines per frame.
@@ -109,7 +106,11 @@ plugins/machine_signal:
     scangrid_y_offset: 2
 
   black:
-    max_luminance: 30
+    u_reference: 128
+    v_reference: 128
+    y_threshold: 25
+    u_threshold: 20
+    v_threshold: 15
     min_points: 10
     neighborhood_min_match: 5
 
@@ -119,3 +120,14 @@ plugins/machine_signal:
     neighborhood_min_match: 2
     min_area_cover: 0.1
 
+  lasercluster:
+    min_visibility_history: 10
+    laser_frame: /base_laser
+    signal_width: 0.05
+    signal_bottom: -0.15 
+    signal_top: 0.04
+    cam_aperture_x: 1.0
+    cam_aperture_y: 0.8
+    cam_angle: 0.081 # 4.64°
+    cam_angle: 0.25 # 12.2°
+    cam_frame: /cam_front
