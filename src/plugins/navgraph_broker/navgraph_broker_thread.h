@@ -54,7 +54,7 @@ namespace fawkes{
 	class TopologicalMapGraph;
 	class ConstraintRepo;
 	class NavPathInterface;
-	class NavGraphTmpReservationListNodeConstraint;
+	class NavGraphTimedReservationListNodeConstraint;
 }
 
 class NavgraphBrokerThread
@@ -106,7 +106,7 @@ class NavgraphBrokerThread
      std::vector<std::string> path_;
      std::queue<std::shared_ptr<navgraph_broker::NavigationMessage>> reservation_messages_;
      std::string robotname_;
-     fawkes::NavGraphTmpReservationListNodeConstraint *constraint_;
+     fawkes::NavGraphTimedReservationListNodeConstraint *constraint_;
 };
 
 #endif
