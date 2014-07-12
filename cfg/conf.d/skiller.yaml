@@ -54,7 +54,7 @@ skiller:
         left_gate: RobotinoLightInterface::/machine-signal/0
         middle_gate: RobotinoLightInterface::/machine-signal/1
         right_gate: RobotinoLightInterface::/machine-signal/2
-        delivery_mode: SwitchInterface::/machine-signal/delivery_mode
+        delivery_mode: SwitchInterface::/machine-signal/delivery-mode
         # Uncomment to use gripper skills for technical challenge
         # gripper_if: GripperInterface::Robotino
         open_delivery_gate: Position3DInterface::/machine-signal/open-delivery-gate
