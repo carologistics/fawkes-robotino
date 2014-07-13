@@ -43,7 +43,11 @@ plugins/navgraph:
   visualization: true
 
   # Interval in which the resend the goto command; sec
-  resend_interval: 1.0
+  resend_interval: 0.1
+
+  # Interval in which to replan if constraints have been modified
+  # since the last path planning.
+  replan_interval: 4.0
 
   # Time to keep moving after the target tolerance has been reached; sec
   target_time: 6.0
@@ -52,3 +56,11 @@ plugins/navgraph:
   monitor_file: true
 
   log_graph: false
+
+  # If set to true, aborts traveling on error, e.g. if no writer exists for
+  # the NavigatorInterface. If false, keeps trying and re-sending.
+  # Setting this to false is risky, because skills then cannot react to an
+  # error because none is reported. It is recommended to set this to false
+  # only if you really know what you are doing.
+  abort_on_error: true
+
