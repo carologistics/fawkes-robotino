@@ -46,7 +46,7 @@ documentation      = [==[Align to straight line in laser data.
 skillenv.skill_module(_M)
 
 -- Constants
-MIN_VIS_HIST = 3
+MIN_VIS_HIST = 10
 
 -- Variables
 local navgraph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
