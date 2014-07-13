@@ -337,7 +337,7 @@ nodes:
     properties:
       - orientation: -1.57
   - name: Ins1Sec
-    pos: [1.38, 0.80]
+    pos: [1.15, 0.80]
     properties:
       - orientation: -1.57
   - name: IA2H
