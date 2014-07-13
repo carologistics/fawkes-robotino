@@ -17,13 +17,20 @@
   (bind ?mid-x (/ (+ ?pos-x ?goal-x) 2))
   (bind ?mid-y (/ (+ ?pos-y ?goal-y) 2))
   ;find best T1
-  (bind ?best-T1 NONE)
+  (bind ?best-T1 NO_T1_FOUND)
   (bind ?best-dist 1000.0)
   (do-for-all-facts ((?m machine)) (and (eq T1 ?m:mtype) (eq ?m:team ?team) (not (any-factp ((?lock locked-resource)) (eq ?lock:resource ?m:name))) (eq (nth$ 1 ?m:out-of-order-until) 0))
     (bind ?dist (distance ?mid-x ?mid-y ?m:x ?m:y))
     (if (< ?dist ?best-dist) then
       (bind ?best-T1 ?m:name)
       (bind ?best-dist ?dist)
+    )
+  )
+  (if (eq ?best-T1 NO_T1_FOUND)
+    then
+    ;return any T1
+    (do-for-fact ((?m machine)) (and (eq T1 ?m:mtype) (eq ?m:team ?team))
+      (bind ?best-T1 ?m:name)
     )
   )
   (return ?best-T1)
@@ -209,6 +216,7 @@
   "Decide when we need no more P3 (there are only three orders for it)"
   (phase PRODUCTION)
   (game-time $?time)
+  (not (no-more-needed P3))
   (order (id ?id1) (product P3)
 	 (end ?end1&:(> (nth$ 1 ?time) ?end1)))
   (order (id ?id2&:(neq ?id1 ?id2)) (product P3)
