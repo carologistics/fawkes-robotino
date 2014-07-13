@@ -295,7 +295,7 @@ NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<fawkes::T
 	std::string constraint_name = robotname + "_Reserved_Nodes";
 	if( constraint_repo->has_constraint( constraint_name ) ){
 		logger->log_info( name(), "Updating nodes of constraint='%s'", constraint_name.c_str() );
-		constraint_ = (NavGraphTimedReservationListNodeConstraint *) constraint_repo->get_constraint(constraint_name);
+		constraint_ = (NavGraphTimedReservationListNodeConstraint *) constraint_repo->get_node_constraint(constraint_name);
 		constraint_->clear_nodes();
 	}
 	else{
