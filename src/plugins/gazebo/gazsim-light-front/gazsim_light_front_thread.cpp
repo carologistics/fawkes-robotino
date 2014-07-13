@@ -65,7 +65,7 @@ void LightFrontSimThread::init()
   max_distance_ = config->get_float("/gazsim/light-front/max-distance");
   success_visibility_history_ = config->get_int("/gazsim/light-front/success-visibility-history");
   fail_visibility_history_ = config->get_int("/gazsim/light-front/fail-visibility-history");
-  light_state_if_name_ = config->get_string("/plugins/light_front/light_state_if");
+  light_state_if_name_ = config->get_string("/gazsim/light-front/interface-id-single");
   light_pos_if_name_ = config->get_string("/plugins/light_front/light_position_if");
   see_all_delivery_gates_ = config->get_bool("/gazsim/light-front/see-all-delivery-gates");
   interface_id_multiple_ = config->get_string("/gazsim/light-front/interface-id-multiple");
@@ -73,6 +73,7 @@ void LightFrontSimThread::init()
   deliver_y_min_ = config->get_float("/gazsim/light-front/deliver-pos-y-min");
   deliver_y_max_ = config->get_float("/gazsim/light-front/deliver-pos-y-max");
   deliver_ori_max_diff_ = config->get_float("/gazsim/light-front/deliver-ori-max-diff");
+  delivery_pose_if_name_ = config->get_string("/gazsim/light-front/interface-id-delivery-pose");
 
   //open interfaces
   light_if_ = blackboard->open_for_writing<RobotinoLightInterface>
@@ -89,6 +90,8 @@ void LightFrontSimThread::init()
     light_if_2_ = blackboard->open_for_writing<RobotinoLightInterface>
       ((interface_id_multiple_ + "2").c_str());
     deliver_mode_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>("machine_signal_delivery_mode");
+    deliver_pose_if_ = blackboard->open_for_writing<Position3DInterface>
+      (delivery_pose_if_name_.c_str());
   }
 
   //enable plugin by default
@@ -116,6 +119,7 @@ void LightFrontSimThread::finalize()
     blackboard->close(light_if_1_);
     blackboard->close(light_if_2_);
     blackboard->close(deliver_mode_if_);
+    blackboard->close(deliver_pose_if_);
   }
 }
 
@@ -158,10 +162,12 @@ void LightFrontSimThread::loop()
       set_interfaces_of_gates();
     }
     else
-    {
+    {      
       set_interface_unready(light_if_0_);
       set_interface_unready(light_if_1_);
       set_interface_unready(light_if_2_);
+      deliver_pose_if_->set_visibility_history(fail_visibility_history_);
+      deliver_pose_if_->write();
     }
   }
 }
@@ -236,12 +242,19 @@ void LightFrontSimThread::set_interface_of_nearest()
 
 void LightFrontSimThread::set_interfaces_of_gates()
 {
+  std::string green_machine_name;
   if(robot_x_ > 0)
   {
     //standing in front of the cyan gates
     set_interface_to_signal(light_if_0_, get_machine("D3"));
     set_interface_to_signal(light_if_1_, get_machine("D2"));
     set_interface_to_signal(light_if_2_, get_machine("D1"));
+    if(light_if_0_->green() == RobotinoLightInterface::ON)
+      green_machine_name = "D3";
+    else if(light_if_1_->green() == RobotinoLightInterface::ON)
+      green_machine_name = "D2";
+    else
+      green_machine_name = "D1";
   }
   else
   {
@@ -249,7 +262,23 @@ void LightFrontSimThread::set_interfaces_of_gates()
     set_interface_to_signal(light_if_0_, get_machine("D4"));
     set_interface_to_signal(light_if_1_, get_machine("D5"));
     set_interface_to_signal(light_if_2_, get_machine("D6"));
+    if(light_if_0_->green() == RobotinoLightInterface::ON)
+      green_machine_name = "D4";
+    else if(light_if_1_->green() == RobotinoLightInterface::ON)
+      green_machine_name = "D5";
+    else
+      green_machine_name = "D6";
   }
+  //set green light position when looking at a green delivery gate
+  llsf_msgs::MachineSignal green_machine = get_machine(green_machine_name.c_str());
+  deliver_pose_if_->set_frame("/base_laser");
+  deliver_pose_if_->set_visibility_history(success_visibility_history_);
+  double rel_x = green_machine.pose().x() - robot_x_;
+  double rel_y = green_machine.pose().y() - robot_y_;
+  deliver_pose_if_->set_translation(0, cos(-robot_ori_) * rel_x - sin(-robot_ori_) * rel_y);
+  deliver_pose_if_->set_translation(1, sin(-robot_ori_) * rel_x + cos(-robot_ori_) * rel_y);
+  deliver_pose_if_->set_translation(2, 0.15);
+  deliver_pose_if_->write();
 }
 
 bool LightFrontSimThread::standing_in_front_of_deliver()

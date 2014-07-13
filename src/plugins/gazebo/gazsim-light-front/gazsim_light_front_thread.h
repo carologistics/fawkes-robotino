@@ -73,13 +73,14 @@ class LightFrontSimThread
   //interface needed to determine position of the light
   fawkes::Position3DInterface *pose_if_;
 
-  //provided interface
+  //provided interfaces
   fawkes::RobotinoLightInterface *light_if_;
   fawkes::RobotinoLightInterface *light_if_0_;
   fawkes::RobotinoLightInterface *light_if_1_;
   fawkes::RobotinoLightInterface *light_if_2_;
   fawkes::SwitchInterface *switch_if_;
   fawkes::SwitchInterface *deliver_mode_if_;
+  fawkes::Position3DInterface *deliver_pose_if_;
 
   //handler function for incoming messages about the machine light signals
   void on_light_signals_msg(ConstAllMachineSignalsPtr &msg);
@@ -126,6 +127,7 @@ class LightFrontSimThread
 
   std::string light_pos_if_name_;
   std::string light_state_if_name_;
+  std::string delivery_pose_if_name_;
 
   //the robots position in the simulation
   double robot_x_;
