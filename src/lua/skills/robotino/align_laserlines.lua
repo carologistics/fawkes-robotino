@@ -141,7 +141,6 @@ fsm:define_states{
 -- Transitions
 fsm:add_transitions {
    {"CHECK_INTERFACE", "FAILED", timeout = 1, desc="no writer or vis_hist too low"},
-   {"CHECK_INTERFACE", "FAILED", cond ="not visible_and_writer()", desc="no writer or vis_hist too low"},
    {"CHECK_INTERFACE", "INIT", cond=visible_and_writer},
    {"INIT", "ALIGN", cond=visible_and_writer, desc="initialized"}
 }
