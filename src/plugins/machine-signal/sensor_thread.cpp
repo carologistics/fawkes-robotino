@@ -98,6 +98,7 @@ void MachineSignalSensorThread::loop() {
 
         // And possibly select an open delivery gate
         if (pipeline_thread_->get_delivery_mode()
+            && known_signal->ready
             && (known_signal->green == RobotinoLightInterface::LightState::ON)
             && (known_signal->visibility > open_gate_visibility)
             && (known_signal->world_pos)) {
