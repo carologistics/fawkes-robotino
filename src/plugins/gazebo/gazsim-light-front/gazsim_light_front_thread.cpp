@@ -67,6 +67,8 @@ void LightFrontSimThread::init()
   fail_visibility_history_ = config->get_int("/gazsim/light-front/fail-visibility-history");
   light_state_if_name_ = config->get_string("/gazsim/light-front/interface-id-single");
   light_pos_if_name_ = config->get_string("/plugins/light_front/light_position_if");
+  switch_if_name_ = config->get_string("/gazsim/light-front/interface-id-switch");
+  delivery_switch_if_name_ = config->get_string("/gazsim/light-front/interface-id-delivery-switch");
   see_all_delivery_gates_ = config->get_bool("/gazsim/light-front/see-all-delivery-gates");
   interface_id_multiple_ = config->get_string("/gazsim/light-front/interface-id-multiple");
   deliver_x_min_ = config->get_float("/gazsim/light-front/deliver-pos-x-min");
@@ -80,7 +82,8 @@ void LightFrontSimThread::init()
     (light_state_if_name_.c_str());
   pose_if_ = blackboard->open_for_reading<fawkes::Position3DInterface>
     (light_pos_if_name_.c_str());
-  switch_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>("light_front_switch");
+  switch_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>
+    (switch_if_name_.c_str());
   if(see_all_delivery_gates_)
   {
     light_if_0_ = blackboard->open_for_writing<RobotinoLightInterface>
@@ -89,7 +92,8 @@ void LightFrontSimThread::init()
       ((interface_id_multiple_ + "1").c_str());
     light_if_2_ = blackboard->open_for_writing<RobotinoLightInterface>
       ((interface_id_multiple_ + "2").c_str());
-    deliver_mode_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>("machine_signal_delivery_mode");
+    deliver_mode_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>
+      (delivery_switch_if_name_.c_str());
     deliver_pose_if_ = blackboard->open_for_writing<Position3DInterface>
       (delivery_pose_if_name_.c_str());
   }

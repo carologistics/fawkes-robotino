@@ -127,6 +127,8 @@ class LightFrontSimThread
 
   std::string light_pos_if_name_;
   std::string light_state_if_name_;
+  std::string switch_if_name_;
+  std::string delivery_switch_if_name_;
   std::string delivery_pose_if_name_;
 
   //the robots position in the simulation
