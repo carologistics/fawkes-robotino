@@ -14,8 +14,7 @@
 
 #include "state.h"
 
-SignalState::SignalState(unsigned int buflen, fawkes::Logger *logger, signal_rois_t_ &rois) :
-  rois(rois)
+SignalState::SignalState(unsigned int buflen, fawkes::Logger *logger)
 {
   logger_ = logger;
   buflen_ = buflen;
@@ -111,16 +110,15 @@ SignalState::eval_history(light_history_t_ &history, std::string &debug_string)
 }
 
 
-void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::iterator const &new_rois) {
-  area = new_rois->red_roi->width * new_rois->red_roi->height
-      + new_rois->yellow_roi->width * new_rois->yellow_roi->height
-      + new_rois->green_roi->width * new_rois->green_roi->height;
+void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::iterator const &rois) {
+  area = rois->red_roi->width * rois->red_roi->height
+      + rois->yellow_roi->width * rois->yellow_roi->height
+      + rois->green_roi->width * rois->green_roi->height;
   history_R_.frames.push_front(s.red);
   history_Y_.frames.push_front(s.yellow);
   history_G_.frames.push_front(s.green);
-  pos.x = new_rois->yellow_roi->start.x + new_rois->yellow_roi->width/2;
-  pos.y = new_rois->yellow_roi->start.y + new_rois->yellow_roi->height/2;
-  rois = *new_rois;
+  pos.x = rois->yellow_roi->start.x + rois->yellow_roi->width/2;
+  pos.y = rois->yellow_roi->start.y + rois->yellow_roi->height/2;
 
   unseen = 0;
 
@@ -129,8 +127,8 @@ void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::ite
   new_yellow = eval_history(history_Y_, debug_Y_);
   new_green = eval_history(history_G_, debug_G_);
 
-  if (new_rois->world_pos) {
-    world_pos = new_rois->world_pos;
+  if (rois->world_pos) {
+    world_pos = rois->world_pos;
   }
 
   // decrease visibility history if:

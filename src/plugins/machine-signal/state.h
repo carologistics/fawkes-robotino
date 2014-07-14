@@ -19,20 +19,20 @@
 
 class SignalState {
   public:
-    typedef struct {
-        firevision::ROI *red_roi;
-        firevision::ROI *yellow_roi;
-        firevision::ROI *green_roi;
-        fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
-    } signal_rois_t_;
-
-    SignalState(unsigned int buflen, fawkes::Logger *logger, signal_rois_t_ &rois);
+    SignalState(unsigned int buflen, fawkes::Logger *logger);
 
     typedef struct {
         bool red;
         bool yellow;
         bool green;
     } frame_state_t_;
+
+    typedef struct {
+        firevision::ROI *red_roi;
+        firevision::ROI *yellow_roi;
+        firevision::ROI *green_roi;
+        fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
+    } signal_rois_t_;
 
   private:
     typedef struct {
@@ -58,7 +58,6 @@ class SignalState {
     fawkes::RobotinoLightInterface::LightState yellow;
     fawkes::RobotinoLightInterface::LightState green;
     fawkes::upoint_t pos;
-    signal_rois_t_ rois;
     int visibility;
     bool ready;
     int unseen;
