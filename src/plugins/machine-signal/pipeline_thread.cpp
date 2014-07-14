@@ -693,6 +693,7 @@ void MachineSignalPipelineThread::loop()
         }
         else {
           // No historic match was found for the current signal
+          logger->log_debug(name(), "new signal dist: %f", dist_min);
           SignalState *cur_state = new SignalState(buflen_, logger);
           cur_state->update(frame_state, signal_it);
           known_signals_.push_front(*cur_state);
