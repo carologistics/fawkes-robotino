@@ -215,8 +215,8 @@
   )
   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding))
 	  (worldmodel-change (machine ?name) (change SET_PROD_FINISHED_TIME) (amount (+ (nth$ 1 ?now) ?min-prod-time ?ooo-time)))
+	  (worldmodel-change (machine ?name) (change SET_OUT_OF_ORDER_UNTIL) (amount (+ (nth$ 1 ?now) ?ooo-time)))
   )
-  (modify ?mf (out-of-order-until (create$ (+ (nth$ 1 ?now) ?ooo-time) 0)))
 )
 
 (defrule wm-out-of-order-goto-aborted
@@ -240,7 +240,7 @@
     else
     (bind ?ooo-time ?ooo-max)
   )
-  (modify ?mf (out-of-order-until (create$ (+ (nth$ 1 ?now) ?ooo-time) 0)))
+  (assert (worldmodel-change (machine ?name) (change SET_OUT_OF_ORDER_UNTIL) (amount (+ (nth$ 1 ?now) ?ooo-time))))
 )
 
 (defrule wm-proc-invalid
@@ -469,7 +469,7 @@
 
 (defrule wm-process-wm-change-before-sending-machine
   (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent))
+  ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent&~DEFAULT))
   ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (incoming-agent $?incoming-agent)(junk ?junk) (produced-puck ?produced) (doubtful-worldmodel ?doubtful-wm))
   =>
   (switch ?change
@@ -525,7 +525,7 @@
 )
 (defrule wm-process-wm-change-at-order-before-sending
   (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (order ?id) (change ADD_IN_DELIVERY)
+  ?wmc <- (worldmodel-change (order ?id) (change SET_IN_DELIVERY)
 			     (value ?puck) (amount ?amount) (already-applied FALSE))
   ?order <- (order (id ?id))
   =>

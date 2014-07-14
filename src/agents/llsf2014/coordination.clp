@@ -128,7 +128,7 @@
     ;(printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
     (if (eq ?ntl:place DELIVER)
       then
-      (assert (worldmodel-change (order (nth$ 4 ?args)) (change ADD_IN_DELIVERY)
+      (assert (worldmodel-change (order (nth$ 4 ?args)) (change SET_IN_DELIVERY)
 				 (value (nth$ 2 ?args))
 				 (amount (nth$ 3 ?args))))
       else
