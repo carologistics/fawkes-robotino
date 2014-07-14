@@ -222,4 +222,4 @@ plugins/colli:
     # the line search is executed after a-star and searches for a obstacle free line
     line:
       # this are the maximum allowed costs on this line
-      cost_max: 9
+      cost_max: 5
