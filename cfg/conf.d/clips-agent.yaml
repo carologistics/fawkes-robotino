@@ -104,9 +104,9 @@ clips-agent:
       recycle-max: 40
       recycle-min: 20
     estimated-skill-duration:
-      get-produced: 23
-      get-stored-puck: 20
-      deliver: 40
+      get-produced: 20
+      get-stored-puck: 18
+      deliver: 15
 
     puck-storage-points:
       cyan: [D1_PUCK_STORAGE_1, D1_PUCK_STORAGE_2]
