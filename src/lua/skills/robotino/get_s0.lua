@@ -25,11 +25,12 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_s0"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"ppgoto", "fetch_puck", "leave_IS", "motor_move", "global_motor_move"}
+depends_skills     = {"ppgoto", "fetch_puck", "leave_IS", "motor_move", "global_motor_move", "get_rid_of_puck"}
 depends_interfaces = {
-   {v = "ppnavi", type = "NavigatorInterface"},
-   {v = "motor", type = "MotorInterface", id="Robotino"},
-   {v = "puck_0", type="Position3DInterface", id="puck_0"}
+  {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
+  {v = "ppnavi", type = "NavigatorInterface"},
+  {v = "motor", type = "MotorInterface", id="Robotino"},
+  {v = "puck_0", type="Position3DInterface", id="puck_0"}
 }
 
 documentation      = [==[Get a new S0 resource puck
@@ -40,6 +41,20 @@ Parameters:
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
+-- Constants
+local LOSTPUCK_DIST = 0.08
+local PUCK_SENSOR_INDEX = 8
+if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
+   LOSTPUCK_DIST = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/trigger_dist FOUND! Using default value\n");
+end
+if config:exists("/hardware/robotino/puck_sensor/index") then
+   -- you can find the config value in /cfg/host.yaml
+   PUCK_SENSOR_INDEX = config:get_uint("/hardware/robotino/puck_sensor/index")
+else
+   printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
+end
 
 function puck_visible()
    return puck_0:visibility_history() >= 1
@@ -52,20 +67,22 @@ function have_place(self)
 end
 
 fsm:define_states{ export_to=_M,
-   closure={have_place=have_place},
+   closure={have_place=have_place, sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST, PUCK_SENSOR_INDEX = PUCK_SENSOR_INDEX},
    {"INIT", JumpState},
    {"GOTO_IS", SkillJumpState, skills={{ppgoto}}, final_to="SKILL_GLOBAL_MOTOR_MOVE", fail_to="FAILED"},
    {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="MOVE_SIDEWAYS", fail_to="FAILED"},
    {"MOVE_SIDEWAYS", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},--when this is final we reached the end of the insertion area, so we fail
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="SKILL_LEAVE_AREA",
       fail_to="MOVE_SIDEWAYS"},
-   {"SKILL_LEAVE_AREA", SkillJumpState, skills={{leave_IS}}, final_to="FINAL", fail_to="FAILED"}
+   {"SKILL_LEAVE_AREA", SkillJumpState, skills={{leave_IS}}, final_to="FINAL", fail_to="FAILED"},
+   {"GET_RID_OF_PUCK", SkillJumpState, skills={{get_rid_of_puck}}, final_to="GOTO_IS", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not have_place(self)", desc="Called get_s0 without parameter place!"},
    {"INIT", "GOTO_IS", cond=have_place},
    {"MOVE_SIDEWAYS", "SKILL_FETCH_PUCK", cond=puck_visible},
+   {"GOTO_IS", "GET_RID_OF_PUCK", cond = "sensor:distance(PUCK_SENSOR_INDEX) <= LOSTPUCK_DIST and sensor:distance(PUCK_SENSOR_INDEX) > 0", desc = "Picked up another puck while driving, escape"}
 }
 
 function SKILL_FETCH_PUCK:init()
