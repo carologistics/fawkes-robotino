@@ -132,26 +132,11 @@
   )
 )
 
-(defrule exp-ppgoto-arrived-at-machine
-  "Redo movement with global motor move after arriving with ppgoto."
-  (phase EXPLORATION)
-  ?final <- (skill (name "ppgoto") (status FINAL)) 
-  ?s <- (state EXP_DRIVING_TO_MACHINE)
-  (goalmachine ?name)
-  (machine-exploration (name ?name) (look-pos ?goal))
-  (not (driven-to-waiting-point))
-  =>
-  (printout t "PPGoto Arrived. Calling global_motor_move." crlf)
-  (retract ?s ?final)
-  (assert (state EXP_DRIVING_TO_MACHINE_GLOBAL))
-  (skill-call global_motor_move place (str-cat ?goal))
-)
-
-(defrule exp-global-motor-move-finished
+(defrule exp-drive-to-finished
   "Arriving at a machine in first or second round. Preparing recognition of the light signals."
   (phase EXPLORATION)
-  ?final <- (skill (name "global_motor_move") (status FINAL|FAILED)) 
-  ?s <- (state EXP_DRIVING_TO_MACHINE_GLOBAL)
+  ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
+  ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
   (printout t "Arrived." crlf)
@@ -353,7 +338,7 @@
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine))
-  (skill-call ppgoto place (str-cat ?lp))
+  (skill-call drive_to place (str-cat ?lp) puck false)
 )
 
 (defrule exp-receive-type-light-pattern-matching
