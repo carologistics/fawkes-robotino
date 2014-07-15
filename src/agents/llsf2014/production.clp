@@ -438,7 +438,7 @@
   =>
   (printout t "PROD: Deliver holding produced puck" crlf)
   (assert (proposed-task (name deliver) (priority ?*PRIORITY-DELIVER-HOLDING*)
-			 (args (create$ ?puck)))
+			 (args (create$ holding ?puck (+ ?in-delivery 1)  ?order-id)))
   )
 )
 
