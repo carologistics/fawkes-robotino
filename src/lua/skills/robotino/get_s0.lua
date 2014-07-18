@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_s0"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"ppgoto", "fetch_puck", "leave_IS", "motor_move", "global_motor_move", "get_rid_of_puck"}
+depends_skills     = {"drive_to", "fetch_puck", "leave_IS", "motor_move", "global_motor_move", "get_rid_of_puck"}
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
   {v = "ppnavi", type = "NavigatorInterface"},
@@ -69,8 +69,7 @@ end
 fsm:define_states{ export_to=_M,
    closure={have_place=have_place, sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST, PUCK_SENSOR_INDEX = PUCK_SENSOR_INDEX},
    {"INIT", JumpState},
-   {"GOTO_IS", SkillJumpState, skills={{ppgoto}}, final_to="SKILL_GLOBAL_MOTOR_MOVE", fail_to="FAILED"},
-   {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="MOVE_SIDEWAYS", fail_to="FAILED"},
+   {"GOTO_IS", SkillJumpState, skills={{drive_to}}, final_to="MOVE_SIDEWAYS", fail_to="FAILED"},
    {"MOVE_SIDEWAYS", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},--when this is final we reached the end of the insertion area, so we fail
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="SKILL_LEAVE_AREA",
       fail_to="MOVE_SIDEWAYS"},
@@ -95,10 +94,6 @@ function GOTO_IS:init()
    end
 
    self.fsm.vars.move_right_count = 0
-   self.skills[1].place = self.fsm.vars.place
-end
-
-function SKILL_GLOBAL_MOTOR_MOVE:init()
    self.skills[1].place = self.fsm.vars.place
 end
 
