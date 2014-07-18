@@ -36,8 +36,8 @@
 #include <plugins/navgraph/aspect/navgraph.h>
 #include <plugins/navgraph/constraints/constraint_repo.h>
 
-//include to make eclipse happy
 #include <plugins/navgraph/constraints/timed_reservation_list_node_constraint.h>
+#include <plugins/navgraph/constraints/timed_reservation_list_edge_constraint.h>
 #include <utils/graph/topological_map_graph.h>
 
 #include <interfaces/NavPathInterface.h>
@@ -55,6 +55,7 @@ namespace fawkes{
 	class ConstraintRepo;
 	class NavPathInterface;
 	class NavGraphTimedReservationListNodeConstraint;
+	class NavGraphTimedReservationListEdgeConstraint;
 }
 
 class NavgraphBrokerThread
@@ -84,9 +85,9 @@ class NavgraphBrokerThread
 
  private: // methods
      void reserve_nodes(std::string robot_name, std::vector<fawkes::TopologicalMapNode> path);
+     void reserve_edges(std::string robot_name, std::vector<fawkes::TopologicalMapNode> path);
+     void add_edges_to_edge_constraint(std::vector<fawkes::TopologicalMapNode> path);
      std::vector<fawkes::TopologicalMapNode> get_nodes_from_string(std::string path);
-     std::string get_string_from_nodes(std::vector<fawkes::TopologicalMapNode> path);
-     std::string get_path_from_interface_as_string();
      std::vector<std::string> get_path_from_interface_as_vector();
      void send_msg();
 
@@ -106,11 +107,13 @@ class NavgraphBrokerThread
      std::vector<std::string> path_;
      std::queue<std::shared_ptr<navgraph_broker::NavigationMessage>> reservation_messages_;
      std::string robotname_;
-     fawkes::NavGraphTimedReservationListNodeConstraint *constraint_;
+     fawkes::NavGraphTimedReservationListNodeConstraint *node_constraint_;
+     fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint_;
 
      navgraph_broker::NavigationMessage* m_;
      fawkes::Time time_of_plan_chg;
      double repeat_send_duration_;
+     bool use_node_constraints_;
 };
 
 #endif
