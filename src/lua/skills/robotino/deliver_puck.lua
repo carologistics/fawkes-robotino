@@ -67,7 +67,6 @@ end
 
 local SIGNAL_TIMEOUT = 5 -- seconds
 local MAX_NUM_TRIES = 3
-local MAX_RFID_TRIES = 2
 local MIN_VIS_HIST = 10
 
 local tfm = require("tf_module")
@@ -149,7 +148,7 @@ fsm:define_states{ export_to=_M,
    closure = {have_puck=have_puck, orange_blinking=orange_blinking,is_red=is_red,
               is_green=is_green, PLUGIN_LIGHT_TIMEOUT=PLUGIN_LIGHT_TIMEOUT,
               SETTLE_VISION_TIME=SETTLE_VISION_TIME, max_tries_reached=max_tries_reached,
-              MAX_NUM_TRIES=MAX_NUM_TRIES, MAX_RFID_TRIES=MAX_RFID_TRIES },
+              MAX_NUM_TRIES=MAX_NUM_TRIES },
    {"INIT", JumpState},
 
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="POSITION_FIRST",
@@ -166,7 +165,6 @@ fsm:define_states{ export_to=_M,
       fail_to="CHECK_RESULT"},
    
    {"CHECK_RESULT", JumpState},
-   {"DECIDE_RFID_RETRY", JumpState},
    
    {"LEAVE_AREA", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FINAL"},
    {"REMOVE_KEBAB", SkillJumpState, skills={{deposit_puck}}, final_to="FAILED", fail_to="FAILED"},
@@ -184,12 +182,8 @@ fsm:add_transitions{
    {"TRY_SECOND", "MOVE_UNDER_RFID", cond=open_gate},
    {"TRY_SECOND", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
    
-   {"CHECK_RESULT", "DECIDE_RFID_RETRY", timeout=SIGNAL_TIMEOUT, desc="?"},
    {"CHECK_RESULT", "LEAVE_AREA", cond=feedback_ok, desc="RYG"},
-   {"CHECK_RESULT", "REMOVE_KEBAB", cond=orange_blinking, desc="Y blink"},
-   {"CHECK_RESULT", "DECIDE_RFID_RETRY", cond=only_green, desc="G"},
-   {"DECIDE_RFID_RETRY", "MOVE_UNDER_RFID", cond="vars.num_rfid_tries < MAX_RFID_TRIES" },
-   {"DECIDE_RFID_RETRY", "REMOVE_KEBAB", cond="vars.num_rfid_tries >= MAX_RFID_TRIES" },
+   {"CHECK_RESULT", "REMOVE_KEBAB", cond=orange_blinking, timeout=6, desc="Y blink"},
 }
 
 function enable_vision()
