@@ -85,8 +85,9 @@ function producing()
       and light:red() == light.OFF
 end
 
-fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
+fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor, get_ampel=get_ampel},
    {"SEE_AMPEL", JumpState},
+   {"STRAFE_TO_AMPEL", SkillJumpState, skills={{motor_move_waypoints}}, final_to="SEE_AMPEL", fail_to="SEE_AMPEL" },
    {"APPROACH_AMPEL", SkillJumpState, skills={{motor_move}},
       final_to="CHECK_POSITION", fail_to="FAILED"},
    {"CHECK_POSITION", JumpState},
@@ -96,6 +97,7 @@ fsm:define_states{ export_to=_M, closure={ampel=ampel, sensor=sensor},
 
 fsm:add_transitions{
    {"SEE_AMPEL", "FAILED", timeout=10, desc="No Ampel seen with laser"},
+   {"SEE_AMPEL", "STRAFE_TO_AMPEL", cond="get_ampel() and math.abs(vars.ampel.y) > 0.35" },
    {"SEE_AMPEL", "APPROACH_AMPEL", cond=get_ampel, desc="Ampel seen with laser"},
    {"CHECK_POSITION", "FINAL", cond="vars.correct_dir == 0"},
    {"CHECK_POSITION", "CORRECT_POSITION", cond="vars.correct_dir ~= 0"},
@@ -118,6 +120,21 @@ function SEE_AMPEL:init()
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
    lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
    laser_cluster:msgq_enqueue_copy(laser_cluster.SetMaxXMessage:new(0.0))
+end
+
+function STRAFE_TO_AMPEL:init()
+   local turn_dir = 1
+   if self.fsm.vars.ampel.y < 0 then
+      turn_dir = -1
+   end
+   local goto_x = 0.3 * self.fsm.vars.ampel.x
+   local goto_y = 0.8 * self.fsm.vars.ampel.y
+   self.skills[1].waypoints = {
+      {  x = goto_x,
+         y = goto_y,
+         ori = turn_dir * math.atan2(goto_y, goto_x) },
+      {  ori = - turn_dir * math.atan2(goto_y, goto_x) }
+   }
 end
 
 function APPROACH_AMPEL:init()
