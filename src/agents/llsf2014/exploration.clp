@@ -493,7 +493,7 @@
 (defrule exp-prepare-for-production-drive-to-secondary-ins
   "When locks for pre-game positions are acquired, drive there with ppgoto."
   (phase EXPLORATION)
-  (state EXP_PREPARE_FOR_PRODUCTION)
+  (state EXP_PREPARE_FOR_PRODUCTION|EXP_PREPARE_FOR_PRODUCTION_FINISHED)
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
   (secondary-storage ?team-color ?secins ? ?)
