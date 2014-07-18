@@ -1,12 +1,9 @@
 -- toggle_switch.lua
 module(..., skillenv.module_init)
 documentation = [==[Toggle the switch interface passed as parameter.
-parameters:
-
-iface: Interface to toggle.
-
-Switchable interfaces:
-omnivision, ampel, laser]==]
+@param iface: Interface to switch (one of laser, motor, lightFront, machine-signal, delivery)
+@param enable: true/false, i.e. on/off
+]==]
 
 
 -- Crucial skill information
@@ -16,7 +13,7 @@ depends_skills     = {}
 depends_interfaces = {
    {v = "laserSwitch", type="SwitchInterface", id="/laser-cluster/ampel"},
    {v = "motorSwitch", type="SwitchInterface", id="Robotino Motor"},
-   {v = "lightFrontSwitch", type="SwitchInterface", id="/machine-signal"},
+   {v = "machine-signal", type="SwitchInterface", id="/machine-signal"},
    {v = "deliverySwitch", type="SwitchInterface", id="/machine-signal/delivery-mode"}
 }
 
@@ -33,10 +30,11 @@ fsm:add_transitions{
 
 function SWITCH:init()
    ifmap = {
-      laser = laserSwitch,
-      motor = motorSwitch,
-      lightFront = lightFrontSwitch,
-      delivery = deliverySwitch
+      laser          = laserSwitch,
+      motor          = motorSwitch,
+      lightFront     = machine-signal,
+      machine-signal = machine-signal,
+      delivery       = deliverySwitch
    }
    iface = ifmap[self.fsm.vars.iface]
    if self.fsm.vars.enable then
