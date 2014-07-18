@@ -38,11 +38,9 @@ Parameters:
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
---fawkes.load_yaml_navgraph already searches in the cfg directory
-graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 
 fsm:define_states{ export_to=_M,
-   closure={},
+   closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT", fail_to="FAILED"},
    {"SKILL_PPGOTO",    SkillJumpState, skills={{ppgoto}},       final_to="TIMEOUT", fail_to="FAILED"},
@@ -51,6 +49,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
+   { "INIT",    "FAILED", cond="not navgraph" },
    { "INIT",    "SKILL_TAKE_PUCK", cond="self.fsm.vars.puck" },
    { "INIT",    "SKILL_PPGOTO",    cond=true },
    { "TIMEOUT", "SKILL_GLOBAL_MOVE_LASERLINES", timeout=0.5 },
@@ -58,14 +57,15 @@ fsm:add_transitions{
 
 function INIT:init()
    -- do gerneral stuff here
+   self.fsm.vars.closest_node = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
 end
 
 function SKILL_TAKE_PUCK:init()
-   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+   self.skills[1].place = self.fsm.vars.closest_node
 end
 
 function SKILL_PPGOTO:init()
-   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+   self.skills[1].place = self.fsm.vars.closest_node
 end
 
 function SKILL_GLOBAL_MOVE_LASERLINES:init()
