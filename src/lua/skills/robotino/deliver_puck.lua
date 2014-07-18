@@ -145,10 +145,9 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure = {have_puck=have_puck, orange_blinking=orange_blinking,is_red=is_red,
-              is_green=is_green, PLUGIN_LIGHT_TIMEOUT=PLUGIN_LIGHT_TIMEOUT,
-              SETTLE_VISION_TIME=SETTLE_VISION_TIME, max_tries_reached=max_tries_reached,
-              MAX_NUM_TRIES=MAX_NUM_TRIES },
+   closure = {have_puck=have_puck, orange_blinking=orange_blinking, is_red=is_red,
+              is_green=is_green, max_tries_reached=max_tries_reached,
+              MAX_NUM_TRIES=MAX_NUM_TRIES, open_gate=open_gate },
    {"INIT", JumpState},
 
    {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="POSITION_FIRST",
@@ -176,9 +175,11 @@ fsm:add_transitions{
    {"INIT", "SKILL_TAKE_PUCK", cond=have_puck},
 
    {"TRY_FIRST", "DRIVE_SECOND", cond=no_open_gate, timeout=SIGNAL_TIMEOUT},
+   {"TRY_FIRST", "DRIVE_SECOND", cond="open_gate() and math.abs(vars.open_gate.y) >= 0.35" },
    {"TRY_FIRST", "MOVE_UNDER_RFID", cond=open_gate},
    {"TRY_FIRST", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
    {"TRY_SECOND", "SKILL_TAKE_PUCK", cond=no_open_gate, timeout=SIGNAL_TIMEOUT},
+   {"TRY_SECOND", "SKILL_TAKE_PUCK", cond="open_gate() and math.abs(vars.open_gate.y) >= 0.35" },
    {"TRY_SECOND", "MOVE_UNDER_RFID", cond=open_gate},
    {"TRY_SECOND", "MOVE_UNDER_RFID", cond=max_tries_reached, desc="lose the puck before failing"},
    
