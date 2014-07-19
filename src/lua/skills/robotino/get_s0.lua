@@ -4,6 +4,7 @@
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
+--             2014  Tobias Neumann
 --
 ----------------------------------------------------------------------------
 
@@ -66,6 +67,16 @@ function have_place(self)
    end
 end
 
+function drive_direction()
+   if     fsm.vars.place == "Ins1" or fsm.vars.place == "Ins2" then
+      return "right"
+   elseif fsm.vars.place == "Ins1Sec" or fsm.vars.place == "Ins2Sec" then
+      return "left"
+   else
+      return "turn"
+   end
+end
+
 fsm:define_states{ export_to=_M,
    closure={have_place=have_place, sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST, PUCK_SENSOR_INDEX = PUCK_SENSOR_INDEX},
    {"INIT", JumpState},
@@ -98,18 +109,28 @@ function GOTO_IS:init()
 end
 
 function MOVE_SIDEWAYS:init()
-   if self.fsm.vars.place == "Ins1" or self.fsm.vars.place == "Ins2" then
+   dir = drive_direction()
+   if     dir == "right" then
       self.skills[1].y = -1
-      self.skills[1].vel_trans = 0.05
-   elseif self.fsm.vars.place == "Ins1Sec" or self.fsm.vars.place == "Ins2Sec" then
+   elseif dir == "left" then
       self.skills[1].y = 1
-      self.skills[1].vel_trans = 0.05
    end
+   self.skills[1].vel_trans = 0.05
 end
 
 function SKILL_LEAVE_AREA:init()
-   self.skills[1].place = self.fsm.vars.place
+   dir = drive_direction()
+   if     dir == "left" then
+      self.skills[1].turn_direction = "right"
+   else
+      self.skills[1].turn_direction = "left"
+   end
 end
 function SKILL_FETCH_PUCK:init()
-   self.skills[1].move_sideways = "true"
+   dir = drive_direction()
+   if     dir == "left" then
+      self.skills[1].move_sideways = "right"
+   else
+      self.skills[1].move_sideways = "left"
+   end
 end
