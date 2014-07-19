@@ -486,7 +486,7 @@
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   =>
   (printout t "Waiting for production at " ?ins crlf)
-  (skill-call ppgoto place (str-cat ?ins))
+  (skill-call drive_to place (str-cat ?ins))
   (assert (prepare-for-production-goal ?ins))
 )
 
@@ -500,7 +500,7 @@
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?secins))
   =>
   (printout t "Waiting for production at " ?secins crlf)
-  (skill-call ppgoto place (str-cat ?secins))
+  (skill-call drive_to place (str-cat ?secins))
   (assert (prepare-for-production-goal ?secins))
 )
 
