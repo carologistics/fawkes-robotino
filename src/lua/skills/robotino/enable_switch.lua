@@ -13,7 +13,7 @@ depends_skills     = {}
 depends_interfaces = {
    {v = "laserSwitch", type="SwitchInterface", id="/laser-cluster/ampel"},
    {v = "motorSwitch", type="SwitchInterface", id="Robotino Motor"},
-   {v = "machine-signal", type="SwitchInterface", id="/machine-signal"},
+   {v = "machineSignalSwitch", type="SwitchInterface", id="/machine-signal"},
    {v = "deliverySwitch", type="SwitchInterface", id="/machine-signal/delivery-mode"}
 }
 
@@ -32,7 +32,8 @@ function SWITCH:init()
    ifmap = {
       laser          = laserSwitch,
       motor          = motorSwitch,
-      lightFront     = machine-signal,
+      lightFront     = machineSignalSwitch,
+      machineSignal  = machineSignalSwitch,
       delivery       = deliverySwitch
    }
    iface = ifmap[self.fsm.vars.iface]
