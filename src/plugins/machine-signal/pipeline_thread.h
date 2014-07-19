@@ -163,6 +163,7 @@ class MachineSignalPipelineThread :
     std::string cfg_cam_frame_;
     firevision::PositionToPixel *pos2pixel_;
 
+    std::atomic<unsigned int> cfg_roi_max_height_;
     std::atomic<float> cfg_roi_max_aspect_ratio_;
     std::atomic<float> cfg_roi_max_width_ratio_;
     std::atomic<float> cfg_roi_xalign_;
@@ -254,6 +255,7 @@ class MachineSignalPipelineThread :
     inline bool roi_aspect_ok(firevision::ROI &r);
     inline bool rois_vspace_ok(firevision::ROI &r1, firevision::ROI &r2);
     inline bool roi1_oversize(firevision::ROI &r1, firevision::ROI &r2);
+    inline bool roi1_x_overlaps_below(firevision::ROI &r1, firevision::ROI &r2);
 
 
     //*/
