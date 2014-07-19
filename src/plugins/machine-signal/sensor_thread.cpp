@@ -144,5 +144,18 @@ void MachineSignalSensorThread::loop() {
     bb_signal_compat_->write();
   }
 
+  if (! pipeline_thread_->is_enabled()) {
+    for (int i = 0; i < MAX_SIGNALS; i++) {
+      bb_signal_states_[i]->set_visibility_history(0);
+      bb_signal_states_[i]->set_ready(true);
+      bb_signal_states_[i]->write();
+    }
+    bb_signal_compat_->set_visibility_history(0);
+    bb_signal_compat_->set_ready(true);
+    bb_signal_compat_->write();
+    bb_open_delivery_gate_->set_visibility_history(0);
+    bb_open_delivery_gate_->write();
+  }
+
   pipeline_thread_->unlock();
 }

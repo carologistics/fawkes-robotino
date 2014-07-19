@@ -97,6 +97,10 @@ class MachineSignalPipelineThread :
     std::list<SignalState> &get_known_signals();
     std::list<SignalState>::iterator get_best_signal();
 
+    /** Check if pipeline thread is enabled.
+     * @return true if pipeline thread is enabled, false otherwise. */
+    bool is_enabled() const { return cfg_enable_switch_; }
+
   private:
 
     bool cfg_delivery_mode_;
