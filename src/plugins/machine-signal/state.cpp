@@ -14,7 +14,10 @@
 
 #include "state.h"
 
-SignalState::SignalState(unsigned int buflen, fawkes::Logger *logger)
+SignalState::SignalState(unsigned int buflen, fawkes::Logger *logger,
+  historic_signal_rois_t_ &signal)
+: signal_rois_history_(signal),
+  world_pos(nullptr)
 {
   logger_ = logger;
   buflen_ = buflen;
@@ -32,7 +35,6 @@ SignalState::SignalState(unsigned int buflen, fawkes::Logger *logger)
   red = fawkes::RobotinoLightInterface::UNKNOWN;
   yellow = fawkes::RobotinoLightInterface::UNKNOWN;
   green = fawkes::RobotinoLightInterface::UNKNOWN;
-  world_pos = NULL;
 }
 
 
@@ -110,15 +112,29 @@ SignalState::eval_history(light_history_t_ &history, std::string &debug_string)
 }
 
 
-void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::iterator const &rois) {
-  area = rois->red_roi->width * rois->red_roi->height
-      + rois->yellow_roi->width * rois->yellow_roi->height
-      + rois->green_roi->width * rois->green_roi->height;
-  history_R_.frames.push_front(s.red);
-  history_Y_.frames.push_front(s.yellow);
-  history_G_.frames.push_front(s.green);
-  pos.x = rois->yellow_roi->start.x + rois->yellow_roi->width/2;
-  pos.y = rois->yellow_roi->start.y + rois->yellow_roi->height/2;
+void SignalState::update_geometry(std::list<signal_rois_t_>::iterator const &new_signal_rois)
+{
+  signal_rois_history_.red_roi->update(*(new_signal_rois->red_roi));
+  signal_rois_history_.yellow_roi->update(*(new_signal_rois->yellow_roi));
+  signal_rois_history_.green_roi->update(*(new_signal_rois->green_roi));
+
+  area = signal_rois_history_.red_roi->width * signal_rois_history_.red_roi->height
+      + signal_rois_history_.yellow_roi->width * signal_rois_history_.yellow_roi->height
+      + signal_rois_history_.green_roi->width * signal_rois_history_.green_roi->height;
+
+  pos.x = signal_rois_history_.yellow_roi->start.x + signal_rois_history_.yellow_roi->width/2;
+  pos.y = signal_rois_history_.yellow_roi->start.y + signal_rois_history_.yellow_roi->height/2;
+
+  if (new_signal_rois->world_pos) {
+    world_pos = std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>>(new_signal_rois->world_pos);
+  }
+}
+
+void SignalState::update_state(frame_state_t_ const &cur_state)
+{
+  history_R_.frames.push_front(cur_state.red);
+  history_Y_.frames.push_front(cur_state.yellow);
+  history_G_.frames.push_front(cur_state.green);
 
   unseen = 0;
 
@@ -127,9 +143,6 @@ void SignalState::update(frame_state_t_ const &s, std::list<signal_rois_t_>::ite
   new_yellow = eval_history(history_Y_, debug_Y_);
   new_green = eval_history(history_G_, debug_G_);
 
-  if (rois->world_pos) {
-    world_pos = rois->world_pos;
-  }
 
   // decrease visibility history if:
   // - All lights are off or

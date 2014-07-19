@@ -26,6 +26,7 @@
 #include <cmath>
 #include <cfloat>
 #include <limits.h>
+#include "historic_smooth_roi.h"
 
 using namespace fawkes;
 using namespace fawkes::tf;
@@ -503,7 +504,8 @@ MachineSignalPipelineThread::bb_get_laser_rois()
         cluster_roi.set_image_width(cam_width_);
         cluster_roi.set_image_height(cam_height_);
         cluster_roi.color = C_MAGENTA;
-        cluster_roi.world_pos = new Stamped<Point>(cluster_laser, cluster_laser.stamp, cluster_laser.frame_id);
+        cluster_roi.world_pos = shared_ptr<Stamped<Point>>(new Stamped<Point>(
+          cluster_laser, cluster_laser.stamp, cluster_laser.frame_id));
         /* if (tf_listener->can_transform("/map", cluster_laser.frame_id, clock->now())) {
           cluster_roi.world_pos = new Stamped<Point>();
           tf_listener->transform_point("/map", cluster_laser, *(cluster_roi.world_pos));
@@ -671,12 +673,6 @@ void MachineSignalPipelineThread::loop()
     { std::list<SignalState::signal_rois_t_>::iterator signal_it = signal_rois->begin();
     for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); ++i) {
       try {
-        SignalState::frame_state_t_ frame_state({
-          get_light_state(signal_it->red_roi),
-              get_light_state(signal_it->yellow_roi),
-              get_light_state(signal_it->green_roi),
-        });
-
         // ... and match them to known signals based on the max_jitter tunable
         float dist_min = FLT_MAX;
         std::list<SignalState>::iterator best_match;
@@ -689,16 +685,30 @@ void MachineSignalPipelineThread::loop()
           }
         }
         if (dist_min < cfg_max_jitter_) {
-          best_match->update(frame_state, signal_it);
+          best_match->update_geometry(signal_it);
         }
-        else {
-          // No historic match was found for the current signal
+        else { // No historic match was found for the current signal
           logger->log_debug(name(), "new signal dist: %f", dist_min);
-          SignalState *cur_state = new SignalState(buflen_, logger);
-          cur_state->update(frame_state, signal_it);
+
+          unsigned int history_len = cfg_delivery_mode_ ? buflen_ / 2 : 0;
+          SignalState::historic_signal_rois_t_ signal;
+          signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), history_len));
+          signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), history_len));
+          signal.green_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->green_roi), history_len));
+          SignalState *cur_state = new SignalState(buflen_, logger, signal);
+
           known_signals_.push_front(*cur_state);
+          best_match = known_signals_.begin();
           delete cur_state;
         }
+
+        SignalState::frame_state_t_ frame_state({
+          get_light_state(signal_it->red_roi.get()),
+              get_light_state(signal_it->yellow_roi.get()),
+              get_light_state(signal_it->green_roi.get()),
+        });
+
+        best_match->update_state(frame_state);
 
         // Classifiers sometimes do strange things to the image width/height, so reset them here...
         signal_it->red_roi->set_image_width(cam_width_);
@@ -709,17 +719,10 @@ void MachineSignalPipelineThread::loop()
         signal_it->green_roi->set_image_height(cam_height_);
 
         if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          drawn_rois_.push_back(signal_it->red_roi);
-          drawn_rois_.push_back(signal_it->yellow_roi);
-          drawn_rois_.push_back(signal_it->green_roi);
+          drawn_rois_.push_back(*(signal_it->red_roi));
+          drawn_rois_.push_back(*(signal_it->yellow_roi));
+          drawn_rois_.push_back(*(signal_it->green_roi));
         }
-
-        delete signal_it->red_roi;
-        signal_it->red_roi = NULL;
-        delete signal_it->yellow_roi;
-        signal_it->yellow_roi = NULL;
-        delete signal_it->green_roi;
-        signal_it->green_roi = NULL;
       }
       catch (OutOfBoundsException &e){
         logger->log_error(name(), "Signal at %d,%d: Invalid ROI: %s",
@@ -846,8 +849,8 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
 
         if (cfg_debug_processing_) debug_proc_string_ += "g:W rg:A";
 
-        ROI *roi_R = new ROI(*it_R);
-        ROI *roi_G = new ROI(*it_G);
+        shared_ptr<ROI> roi_R = shared_ptr<ROI>(new ROI(*it_R));
+        auto roi_G = shared_ptr<ROI>(new ROI(*it_G));
 
         if (roi1_oversize(*roi_R, *roi_G)
             && vspace > 0 && vspace < roi_G->height * 1.5) {
@@ -893,19 +896,15 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
           uint width = (roi_R->width + roi_G->width) / 2;
           uint r_end_y = roi_R->start.y + roi_G->height;
           uint start_y = r_end_y + (int)(roi_G->start.y - r_end_y - height)/2;
-          ROI *roi_Y = new ROI(start_x, start_y,
+          shared_ptr<ROI> roi_Y = shared_ptr<ROI>(new ROI(start_x, start_y,
             width, height,
-            roi_R->image_width, roi_R->image_height);
+            roi_R->image_width, roi_R->image_height));
           roi_Y->color = C_YELLOW;
 
           rv->push_back({roi_R, roi_Y, roi_G, NULL});
           it_G = rois_G->erase(it_G);
           it_R = rois_R->erase(it_R);
           ok = true;
-        }
-        else {
-          delete roi_G;
-          delete roi_R;
         }
       }
       if (!ok) {
@@ -949,7 +948,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
               intersection.start.y + intersection.height);
           }
           else {
-            SignalState::signal_rois_t_ new_signal = { new ROI(intersection), NULL, NULL };
+            SignalState::signal_rois_t_ new_signal = { shared_ptr<ROI>(new ROI(intersection)), nullptr, nullptr};
             new_signal.world_pos = cluster_roi.world_pos;
             laser_signals.insert(make_pair(cluster_roi, new_signal));
           }
@@ -1025,14 +1024,14 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
         drawn_rois_.insert(drawn_rois_.end(), black_stuff_bottom->begin(), black_stuff_bottom->end());
       }
 
-      signal.yellow_roi = new ROI();
+      signal.yellow_roi = shared_ptr<ROI>(new ROI());
       signal.yellow_roi->color = C_YELLOW;
       signal.yellow_roi->start.x = signal.red_roi->start.x;
       signal.yellow_roi->start.y = signal.red_roi->start.y + signal.red_roi->height;
       signal.yellow_roi->width = signal.red_roi->width;
       signal.yellow_roi->height = signal.red_roi->height;
 
-      signal.green_roi = new ROI();
+      signal.green_roi = shared_ptr<ROI>(new ROI());
       signal.green_roi->color = C_GREEN;
       signal.green_roi->start.x = signal.yellow_roi->start.x;
       signal.green_roi->start.y = signal.yellow_roi->start.y + signal.yellow_roi->height;
@@ -1065,7 +1064,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
     bool found_some_black = false;
     try {
 
-      ROI *roi_R = new ROI(*it_R);
+      shared_ptr<ROI> roi_R = shared_ptr<ROI>(new ROI(*it_R));
 
       long int start_x, start_y, width, height;
 
@@ -1103,10 +1102,11 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       roi_R->height = roi_R->width;
 
       start_y = (long int)roi_R->start.y + (long int)roi_R->width; // add width since it's more reliable than height
-      ROI *roi_Y = new ROI(roi_R->start.x, start_y, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height);
+      shared_ptr<ROI> roi_Y = shared_ptr<ROI>(new ROI(
+        roi_R->start.x, start_y, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height));
       roi_Y->color = C_YELLOW;
-      ROI *roi_G = new ROI(roi_R->start.x, start_y + roi_R->height, roi_R->width, roi_R->height, roi_R->image_width,
-        roi_R->image_height);
+      shared_ptr<ROI> roi_G = shared_ptr<ROI>(new ROI(
+        roi_R->start.x, start_y + roi_R->height, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height));
       roi_G->color = C_GREEN;
 
       ROI check_black_bottom(*roi_Y);

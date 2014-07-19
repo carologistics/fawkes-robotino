@@ -146,8 +146,8 @@ class MachineSignalPipelineThread :
 
     class WorldROI : public firevision::ROI {
       public:
-        fawkes::tf::Stamped<fawkes::tf::Point> *world_pos;
-        WorldROI() : ROI() { world_pos = NULL; }
+        std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>> world_pos;
+        WorldROI() : ROI() {}
     };
 
     fawkes::Position3DInterface *bb_laser_clusters_[3];
@@ -176,10 +176,8 @@ class MachineSignalPipelineThread :
     std::string debug_proc_string_;
 
     fawkes::Mutex cfg_mutex_;
-    std::atomic_bool cfg_changed_;
-    std::atomic_bool cfg_ref_col_changed, cfg_chroma_thresh_changed_,
-      cfg_sat_thresh_changed_, cfg_luma_thresh_changed_;
-    std::atomic_bool cam_changed_;
+    std::atomic_bool cfg_changed_,
+                     cam_changed_;
 
     fawkes::Time *last_second_;
     unsigned int buflen_;
@@ -218,11 +216,12 @@ class MachineSignalPipelineThread :
     bool color_data_consistent(color_classifier_context_t_ *);
     void reinit_color_config();
 
+    //*/
     struct compare_rois_by_x_ {
         bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
           return r1.start.x <= r2.start.x;
         }
-    } sort_rois_by_x_;
+    }; // sort_rois_by_x_; //*/
 
     struct compare_rois_by_y_ {
         bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
@@ -230,11 +229,11 @@ class MachineSignalPipelineThread :
         }
     } sort_rois_by_y_;
 
-    struct compare_signal_rois_by_x_ {
+    /*struct compare_signal_rois_by_x_ {
         bool operator() (SignalState::signal_rois_t_ const &signal1, SignalState::signal_rois_t_ const &signal2) {
           return signal1.red_roi->start.x <= signal2.red_roi->start.x;
         }
-    } sort_signal_rois_by_x_;
+    } sort_signal_rois_by_x_; //*/
 
     // All ROIs we want to see painted in the tuning buffer
     std::list<firevision::ROI> drawn_rois_;
@@ -257,13 +256,14 @@ class MachineSignalPipelineThread :
     inline bool roi1_oversize(firevision::ROI &r1, firevision::ROI &r2);
 
 
+    //*/
     struct compare_rois_by_area_ {
         bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
           unsigned int a1 = r1.width * r1.height;
           unsigned int a2 = r2.width * r2.height;
           return a1 >= a2;
         }
-    } sort_rois_by_area_;
+    }; //sort_rois_by_area_;
 
     struct compare_signal_states_by_visibility_ {
         bool operator() (SignalState const &s1, SignalState const &s2) {
