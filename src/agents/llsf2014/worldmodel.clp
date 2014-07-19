@@ -96,6 +96,21 @@
   )
 )
 
+(defrule wm-drive-to-failed
+  (declare (salience ?*PRIORITY-WM-LOW*))
+  (state DRIVE-TO-FAILED)
+  ?tf <- (drive-to-target ?)
+  ?hf <- (holding ?)
+  (puck-in-gripper ?puck)
+  =>
+  (retract ?tf)
+  (if (not ?puck) then
+    (retract ?hf)
+    (assert (holding NONE))
+    (printout error "Lost puck during drive_to" crlf)
+  )
+)
+
 (defrule wm-goto-light
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)

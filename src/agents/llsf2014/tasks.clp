@@ -481,7 +481,7 @@
   ?s <- (state GET-S0-FINAL|TASK-ORDERED)
   =>
   (retract ?s)
-  (assert (execute-skill take_puck_to ?m)
+  (assert (execute-skill drive_to ?m true)
           (state WAIT-FOR-LOCK)
 	  (wait-for-lock (priority ?p) (res ?m) (state use));so the locking is ommited
   )
@@ -494,7 +494,7 @@
   (task (name just-in-time-P3) (args $?a) (state ~finished) (priority ?p))
   (holding S0)
   (machine (name ?m&:(eq ?m (nth$ 1 ?a))) (mtype ?mtype))
-  ?s <- (state TAKE-PUCK-TO-FINAL)
+  ?s <- (state DRIVE-TO-FINAL)
   =>
   (retract ?s)
   (assert (state WAITING-FOR-P3-ORDER))

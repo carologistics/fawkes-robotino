@@ -95,7 +95,7 @@
 
 (defrule skill-call-take-puck-to
   ?es <- (execute-skill take_puck_to ?place)
-  (wait-for-lock (res ?machine) (state use))
+  (wait-for-lock (res ?place) (state use))
   ?s <- (state WAIT-FOR-LOCK)
   =>
   (retract ?es ?s)
@@ -103,6 +103,18 @@
 	  (state TAKE-PUCK-TO)
   )
   (skill-call take_puck_to place ?place)
+)
+
+(defrule skill-call-drive-to
+  ?es <- (execute-skill drive_to ?place ?puck)
+  (wait-for-lock (res ?place) (state use))
+  ?s <- (state WAIT-FOR-LOCK)
+  =>
+  (retract ?es ?s)
+  (assert (drive-to-target ?place)
+	  (state DRIVE-TO)
+  )
+  (skill-call drive_to place ?place puck ?puck)
 )
 
 (defrule skill-store-puck
@@ -203,6 +215,27 @@
     (printout t "recalling skill because I still hava a puck" crlf)
     (retract ?df)
     (skill-call take_puck_to place ?goal)
+  )
+)
+
+(defrule skill-take-puck-to-done
+  ?sf <- (state DRIVE-TO)
+  ?df <- (skill-done (name "drive_to") (status ?s))
+  (drive-to-target ?goal)
+  ?wfl <- (wait-for-lock (res ?goal) (state use))
+  (puck-in-gripper ?puck)
+  =>
+  (printout t "skill-drive-to " ?s crlf)
+  (if (or (eq ?s FINAL) (not ?puck))
+    then
+    (retract ?sf ?df)
+    (assert (state (sym-cat DRIVE-TO- ?s)))
+    (modify ?wfl (state finished))
+    
+    else
+    (printout t "recalling skill because I still hava a puck" crlf)
+    (retract ?df)
+    (skill-call drive_to place ?goal puck true)
   )
 )
 
