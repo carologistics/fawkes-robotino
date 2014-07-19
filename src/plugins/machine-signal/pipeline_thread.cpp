@@ -688,7 +688,7 @@ void MachineSignalPipelineThread::loop()
           best_match->update_geometry(signal_it);
         }
         else { // No historic match was found for the current signal
-          unsigned int history_len = cfg_delivery_mode_ ? buflen_ / 2 : 0;
+          unsigned int history_len = cfg_delivery_mode_ ? buflen_ : 0;
           SignalState::historic_signal_rois_t_ new_signal;
           new_signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), history_len));
           new_signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), history_len));
