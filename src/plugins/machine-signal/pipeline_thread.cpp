@@ -899,8 +899,9 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
           roi_Y->color = C_YELLOW;
 
           rv->push_back({roi_R, roi_Y, roi_G, NULL});
-          ok = true;
           it_G = rois_G->erase(it_G);
+          it_R = rois_R->erase(it_R);
+          ok = true;
         }
         else {
           delete roi_G;
