@@ -35,6 +35,8 @@ SignalState::SignalState(unsigned int buflen, fawkes::Logger *logger,
   red = fawkes::RobotinoLightInterface::UNKNOWN;
   yellow = fawkes::RobotinoLightInterface::UNKNOWN;
   green = fawkes::RobotinoLightInterface::UNKNOWN;
+  pos.x = signal.yellow_roi->start.x + signal.yellow_roi->width/2;
+  pos.y = signal.yellow_roi->start.y + signal.yellow_roi->height/2;
 }
 
 
