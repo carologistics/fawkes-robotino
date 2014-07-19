@@ -124,11 +124,11 @@ fsm:add_transitions{
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
-   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="vars.final_product and not orange_blinking()" },
+   { "DECIDE_DEPOSIT", "FINAL", cond="vars.final_product and not orange_blinking()" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=orange_blinking, desc="just deposit the puck and try with a fresh S0" },
-   { "DECIDE_DEPOSIT", "SKILL_DRIVE_LEFT", cond="prod_finished() or out_of_order_abort()"},
+   { "DECIDE_DEPOSIT", "FINAL", cond="prod_finished() or out_of_order_abort()"},
    { "DECIDE_DEPOSIT", "LEAVE_PRODUCING_MACHINE", cond="prod_in_progress() or out_of_order_leave()", desc="leave machine to come back and pick up the produced puck later"},
-   { "PRODUCE_FAILED", "SKILL_DRIVE_LEFT", cond="vars.final_product"},
+   { "PRODUCE_FAILED", "FINAL", cond="vars.final_product"},
    { "PRODUCE_FAILED", "DEPOSIT_THEN_FAIL", cond=true},
 
 }
