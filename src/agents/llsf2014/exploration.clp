@@ -511,7 +511,8 @@
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
   (input-storage ?team-color ?ins ? ?)
-  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
+  (secondary-storage ?team-color ?secins ? ?)
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins | ?secins))
   ?lock <- (lock (type GET) (agent ?a) (resource ?ins))
   (wait-point ?ins ?a ?wait-point)
   =>
