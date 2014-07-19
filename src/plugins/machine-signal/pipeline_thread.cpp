@@ -688,14 +688,12 @@ void MachineSignalPipelineThread::loop()
           best_match->update_geometry(signal_it);
         }
         else { // No historic match was found for the current signal
-          logger->log_debug(name(), "new signal dist: %f", dist_min);
-
           unsigned int history_len = cfg_delivery_mode_ ? buflen_ / 2 : 0;
-          SignalState::historic_signal_rois_t_ signal;
-          signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), history_len));
-          signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), history_len));
-          signal.green_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->green_roi), history_len));
-          SignalState *cur_state = new SignalState(buflen_, logger, signal);
+          SignalState::historic_signal_rois_t_ new_signal;
+          new_signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), history_len));
+          new_signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), history_len));
+          new_signal.green_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->green_roi), history_len));
+          SignalState *cur_state = new SignalState(buflen_, logger, new_signal);
 
           known_signals_.push_front(*cur_state);
           best_match = known_signals_.begin();
@@ -897,8 +895,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
           uint r_end_y = roi_R->start.y + roi_G->height;
           uint start_y = r_end_y + (int)(roi_G->start.y - r_end_y - height)/2;
           shared_ptr<ROI> roi_Y = shared_ptr<ROI>(new ROI(start_x, start_y,
-            width, height,
-            roi_R->image_width, roi_R->image_height));
+            width, height, roi_R->image_width, roi_R->image_height));
           roi_Y->color = C_YELLOW;
 
           rv->push_back({roi_R, roi_Y, roi_G, NULL});
