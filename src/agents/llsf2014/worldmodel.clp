@@ -401,6 +401,8 @@
   (printout error "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf)
   ;block this machine to avoid more accidents
   (assert (worldmodel-change (machine ?name) (change SET_RECYCLE_BLOCKED)))
+  ;reset junk to 0 to restart production after failure
+  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount 0)))
   ;also block recycling because we want recycling points
   (assert (worldmodel-change (machine ?name) (change SET_PRODUCE_BLOCKED)))
 )
