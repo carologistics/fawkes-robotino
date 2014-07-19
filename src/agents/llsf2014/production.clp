@@ -394,7 +394,8 @@
   (not (proposed-task (name produce-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))))
-  (not (locked-resource (resource P3-ONLY))) ;load only if there is no P3 agent
+  (not (locked-resource (agent ?a&:(neq (sym-cat ?a) (sym-cat ?*ROBOT-NAME*)))
+			(resource P3-ONLY))) ;only if there is no other P3 agent
   (not (no-more-needed P3))
   (game-time $?time&:(< (nth$ 1 ?time) ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING*))
   =>
