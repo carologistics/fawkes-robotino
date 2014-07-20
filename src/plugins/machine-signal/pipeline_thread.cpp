@@ -1027,7 +1027,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
       roi_black_bottom.start.y = signal.red_roi->start.y + signal.red_roi->height;
       roi_black_bottom.height = std::min(
         cam_height_ - roi_black_bottom.start.y,
-        std::max(
+        std::min(
           cluster_signal.first.start.y + cluster_signal.first.width,
           signal.red_roi->start.y + signal.red_roi->height * 3)
       );
