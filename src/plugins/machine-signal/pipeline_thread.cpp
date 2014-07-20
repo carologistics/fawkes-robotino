@@ -668,7 +668,7 @@ void MachineSignalPipelineThread::loop()
       try {
         // ... and match them to known signals based on the max_jitter tunable
         float dist_min = FLT_MAX;
-        std::list<SignalState>::iterator best_match;
+        std::list<SignalState>::iterator best_match = known_signals_.begin();
         for (std::list<SignalState>::iterator known_signal = known_signals_.begin();
             known_signal != known_signals_.end(); ++known_signal) {
           float dist = known_signal->distance(signal_it);
@@ -677,12 +677,14 @@ void MachineSignalPipelineThread::loop()
             dist_min = dist;
           }
         }
+
         if (dist_min < cfg_max_jitter_) {
           best_match->update_geometry(signal_it);
         }
         else { // No historic match was found for the current signal
           unsigned int history_len = cfg_delivery_mode_ ? buflen_ : 0;
           SignalState::historic_signal_rois_t_ new_signal;
+          logger->log_debug(name(), "new signal: dist=%f, history_len=%d", dist_min, history_len);
           new_signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), history_len));
           new_signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), history_len));
           new_signal.green_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->green_roi), history_len));
@@ -694,25 +696,25 @@ void MachineSignalPipelineThread::loop()
         }
 
         SignalState::frame_state_t_ frame_state({
-          get_light_state(signal_it->red_roi.get()),
-              get_light_state(signal_it->yellow_roi.get()),
-              get_light_state(signal_it->green_roi.get()),
+          get_light_state(best_match->signal_rois_history_.red_roi.get()),
+              get_light_state(best_match->signal_rois_history_.yellow_roi.get()),
+              get_light_state(best_match->signal_rois_history_.green_roi.get()),
         });
 
         best_match->update_state(frame_state);
 
         // Classifiers sometimes do strange things to the image width/height, so reset them here...
-        signal_it->red_roi->set_image_width(cam_width_);
-        signal_it->red_roi->set_image_height(cam_height_);
-        signal_it->yellow_roi->set_image_width(cam_width_);
-        signal_it->yellow_roi->set_image_height(cam_height_);
-        signal_it->green_roi->set_image_width(cam_width_);
-        signal_it->green_roi->set_image_height(cam_height_);
+        best_match->signal_rois_history_.red_roi->set_image_width(cam_width_);
+        best_match->signal_rois_history_.red_roi->set_image_height(cam_height_);
+        best_match->signal_rois_history_.yellow_roi->set_image_width(cam_width_);
+        best_match->signal_rois_history_.yellow_roi->set_image_height(cam_height_);
+        best_match->signal_rois_history_.green_roi->set_image_width(cam_width_);
+        best_match->signal_rois_history_.green_roi->set_image_height(cam_height_);
 
         if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          drawn_rois_.push_back(*(signal_it->red_roi));
-          drawn_rois_.push_back(*(signal_it->yellow_roi));
-          drawn_rois_.push_back(*(signal_it->green_roi));
+          drawn_rois_.push_back(*(best_match->signal_rois_history_.red_roi));
+          drawn_rois_.push_back(*(best_match->signal_rois_history_.yellow_roi));
+          drawn_rois_.push_back(*(best_match->signal_rois_history_.green_roi));
         }
       }
       catch (OutOfBoundsException &e){

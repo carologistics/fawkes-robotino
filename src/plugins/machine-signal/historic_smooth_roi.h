@@ -23,6 +23,7 @@ class HistoricSmoothROI :
     HistoricSmoothROI(unsigned int history_length);
     HistoricSmoothROI(ROI const &other, unsigned int history_length = 0);
     HistoricSmoothROI(HistoricSmoothROI const &other);
+    HistoricSmoothROI &operator=(HistoricSmoothROI const &other);
     void update(ROI const &next_roi);
 };
 

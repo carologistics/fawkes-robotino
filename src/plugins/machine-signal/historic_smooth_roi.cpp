@@ -49,5 +49,23 @@ void HistoricSmoothROI::update(ROI const &next_roi) {
   height = height_sum / (history_.size() + 1);
 }
 
+HistoricSmoothROI &HistoricSmoothROI::operator=(HistoricSmoothROI const &roi)
+{
+  this->start.x         = roi.start.x;
+  this->start.y         = roi.start.y;
+  this->width           = roi.width;
+  this->height          = roi.height;
+  this->image_width     = roi.image_width;
+  this->image_height    = roi.image_height;
+  this->line_step       = roi.line_step;
+  this->pixel_step      = roi.pixel_step;
+  this->hint            = roi.hint;
+  this->color           = roi.color;
+  this->num_hint_points = roi.num_hint_points;
+
+  this->history_ = boost::circular_buffer<ROI>(roi.history_);
+
+  return *this;
+}
 
 } /* namespace firevision */
