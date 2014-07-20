@@ -218,7 +218,7 @@
   )
 )
 
-(defrule skill-take-puck-to-done
+(defrule skill-drive-to-done
   ?sf <- (state DRIVE-TO)
   ?df <- (skill-done (name "drive_to") (status ?s))
   (drive-to-target ?goal)

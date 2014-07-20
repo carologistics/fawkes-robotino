@@ -781,6 +781,9 @@
   (team-color ?team-color&~nil)
   (puck-storage (puck NONE) (team ?team-color) (incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
   (skill (name "finish_puck_at") (status RUNNING))
+  ;we are not moving under the rfid right now
+  (not (pose (x ?x&:(or (> ?x 4.75) (< ?x -4.75)))
+	     (y ?y&:(and (< ?y 3.5) (> ?y 2.2)))))
   =>
   (printout warn "Stopping delivering puck because the order is over." crlf)
   (modify ?t (state finished))
