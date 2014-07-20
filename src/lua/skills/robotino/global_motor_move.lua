@@ -55,10 +55,8 @@ function pose_ok()
    local pose_ok = math.abs(dist.x) <= TOLERANCE.x
                and math.abs(dist.y) <= TOLERANCE.y
    if fsm.vars.turn == true then
-      printf("is_true")
       return pose_ok and math.abs(dist.ori) <= TOLERANCE.ori
    else
-      print("is_false")
       return pose_ok
    end
 end
@@ -76,9 +74,9 @@ end
 
 function target_dist_ok()
    local target = tfm.transform(
-      {  x = self.fsm.vars.target.x
-         y = self.fsm.vars.target.y
-         ori = self.fsm.vars.target.ori },
+      {  x = fsm.vars.target.x,
+         y = fsm.vars.target.y,
+         ori = fsm.vars.target.ori },
       "/map", "/base_link")
    local dist = math.sqrt(target.x * target.x + target.y * target.y)
    return dist < MAX_DIST
