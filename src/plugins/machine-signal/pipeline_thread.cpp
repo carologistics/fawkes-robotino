@@ -635,14 +635,6 @@ void MachineSignalPipelineThread::loop()
 
 
     if (unlikely(cfg_tuning_mode_)) {
-      // Untreated copy of the cam image
-      memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
-
-      // Visualize color similarities in tuning buffer
-      color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
-      color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
-      color_filter_->apply();
-
       drawn_rois_.clear();
       if (cluster_rois_) {
         drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
@@ -734,12 +726,26 @@ void MachineSignalPipelineThread::loop()
     delete signal_rois;
     signal_rois = NULL;
 
-    if (unlikely(cfg_tuning_mode_)) {
+    if (unlikely(cfg_tuning_mode_)) { // Draw a representation of what we see into SHM buffer(s)
+      shmbuf_cam_->lock_for_write();
+      shmbuf_->lock_for_write();
+
+      // Untreated copy of the cam image
+      memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
+
+      // Visualize color similarities in tuning buffer
+      color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
+      color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
+      color_filter_->apply();
+
       // Visualize the signals and bright spots we found
       roi_drawer_->set_rois(&drawn_rois_);
       roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
       roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
       roi_drawer_->apply();
+
+      shmbuf_cam_->unlock();
+      shmbuf_->unlock();
     }
 
     // Throw out the signals with the worst visibility histories
