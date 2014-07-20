@@ -46,7 +46,7 @@ plugins/navgraph:
   visualization_interval: 0.5      
   
   # Time to keep moving after the target tolerance has been reached; sec
-  target_time: 3.0
+  target_time: 2.0 #0.6
 
   # Monitor graph file and automatically reload on changes?
   monitor_file: true
