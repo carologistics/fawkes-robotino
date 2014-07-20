@@ -47,7 +47,7 @@ function left_sensor_free()
 end
 
 function deposit_right()
-   return navgraph:node(self.fsm.vars.place):has_property("leave_right")
+   return navgraph:node(fsm.vars.place):has_property("leave_right")
 end
 
 fsm:define_states{export_to=_M, closure={ no_puck=no_puck, navgraph=navgraph},
