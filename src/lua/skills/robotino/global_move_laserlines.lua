@@ -4,6 +4,7 @@
 --
 --  Created: Sat Jul 10 20:57:19 2014
 --  Copyright  2014  Tobias Neumann
+--             2014  Nicolas Limpert
 --
 ----------------------------------------------------------------------------
 
@@ -34,6 +35,9 @@ documentation      = [==[Drives to the given place with global_motor_move and lo
 Parameters:
    place (string) : Navgraph point to got to
    puck: (bool)   : true for puck false or empty otherwise
+   x, y           : global world cartesian coordinates of target point
+   ori            : orientation of robot at destination, radian offset from forward
+                    clock-wise positive
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -50,14 +54,21 @@ fsm:add_transitions{
 function GLOBAL:init()
    self.skills[1].place   = fsm.vars.place
    self.skills[1].puck    = fsm.vars.puck
+   self.skills[1].x       = fsm.vars.x
+   self.skills[1].y       = fsm.vars.y
+   self.skills[1].ori     = fsm.vars.ori
    self.skills[1].turn    = false
 end
 
 function ALIGN:init()
    self.skills[1].place = fsm.vars.place
+   self.skills[1].ori     = fsm.vars.ori
 end
 
 function GLOBAL_BACKUP:init()
+   self.skills[1].x       = fsm.vars.x
+   self.skills[1].y       = fsm.vars.y
+   self.skills[1].ori     = fsm.vars.ori
    self.skills[1].place   = fsm.vars.place
    self.skills[1].puck    = fsm.vars.puck
    self.skills[1].turn    = true
