@@ -1036,9 +1036,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
 
       if (!black_stuff_bottom->empty()) {
         ROI &black = black_stuff_bottom->front();
-        if (signal.red_roi->start.x + signal.red_roi->height * 3 > black.start.y) {
-          signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 3;
-        }
+        signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 3;
       }
       else {
         unsigned int cluster_end_y = roi_cluster.start.y + roi_cluster.height;
