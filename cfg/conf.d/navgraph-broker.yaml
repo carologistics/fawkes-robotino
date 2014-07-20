@@ -11,4 +11,4 @@ plugins/navgraph-broker:
   robotname: robotino
   repeat-send-duration: 2.0
   use-node-constraint: false
-
+  max-reservation-duration: 10.0
