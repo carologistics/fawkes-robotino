@@ -25,7 +25,11 @@ fsm                = SkillHSM:new{name=name, start="INIT"}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
-   {v = "tag_0", type = "Position3DInterface"}
+   {v = "tag_0", type = "Position3DInterface"},
+   {v = "tag_1", type = "Position3DInterface"},
+   {v = "tag_2", type = "Position3DInterface"},
+   {v = "tag_3", type = "Position3DInterface"},
+   {v = "tag_4", type = "Position3DInterface"},
 }
 
 documentation      = [==[Moves the robot that the tag 0 is seen at the given point.
@@ -53,17 +57,62 @@ function send_transrot(vx, vy, omega)
    motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
 end
 
+function get_tag_distance(tag)
+   return math.sqrt((tag:translation(0)*tag:translation(0)) + (tag:translation(1)*tag:translation(1)))
+end
+
+function get_tag_visible(tag)
+   return tag:visibility_history() > 0
+end
+
+
+function get_closest_tag()
+   -- begin with tag 0
+   local retval = tag_0
+   local closest_distance = get_tag_distance(tag_0)
+   --print("tag_0 at distance " .. tostring(closest_distance))
+   -- tag 1
+   if(get_tag_visible(tag_1) and get_tag_distance(tag_1) < closest_distance) then
+      retval = tag_1
+	  closest_distance = get_tag_distance(tag_1)
+      --print("tag_1 visible and closer at " .. tostring(closest_distance))
+   end
+   -- tag 2
+   if(get_tag_visible(tag_2) and get_tag_distance(tag_2) < closest_distance) then
+      retval = tag_2
+	  closest_distance = get_tag_distance(tag_2)
+      -print("tag_2 visible and closer at " .. tostring(closest_distance))
+   end
+   -- tag 3
+   if(get_tag_visible(tag_3) and get_tag_distance(tag_3) < closest_distance) then
+      retval = tag_3
+	  closest_distance = get_tag_distance(tag_3)
+      --print("tag_3 visible and closer at " .. tostring(closest_distance))
+   end
+   -- tag 4
+   if(get_tag_visible(tag_4) and get_tag_distance(tag_4) < closest_distance) then
+      retval = tag_4
+	  closest_distance = get_tag_distance(tag_4)
+     -- print("tag_4 visible and closer at " .. tostring(closest_distance))
+   end
+
+   --print("closest distance is " .. tostring(closest_distance))
+
+   return retval
+end
 
 -- Condition Functions
 -- Check, weather the final position is reached
 function tag_reached(self)
-	return (math.abs(tag_0:translation(0)-self.fsm.vars.x) < desired_position_margin.x)
-	   and (math.abs(tag_0:translation(1)-self.fsm.vars.y) < desired_position_margin.y)
+	local tag = get_closest_tag()
+	return (math.abs(tag:translation(0)-self.fsm.vars.x) < desired_position_margin.x)
+	   and (math.abs(tag:translation(1)-self.fsm.vars.y) < desired_position_margin.y)
 end
 
 -- Check if one tag is visible
 function tag_not_visible(self)
-	return (tag_0:visibility_history() == 0)
+	local tag = get_closest_tag()
+	return (tag:visibility_history() == 0)
 end
 
 -- Check if input is not valid
@@ -140,15 +189,16 @@ end
 local old_speed={x=0,y=0,ori=0}
 
 function DRIVE:loop()
+   local tag = get_closest_tag()
    --skip on empty values
-   if(tag_0:translation(0) == 0 and tag_0:translation(1) == 0 and tag_0:rotation(0) == 0) then
+   if(tag:translation(0) == 0 and tag:translation(1) == 0 and tag:rotation(0) == 0) then
 --      send_transrot(0,0,0)
       return
    end
 	--get the distance to drive
-	distance = { x = tag_0:translation(0) ,--- self.fsm.vars.x,
-				y = tag_0:translation(1) ,--- self.fsm.vars.y,
-				ori = -tag_0:rotation(0)}
+	distance = { x = tag:translation(0) ,--- self.fsm.vars.x,
+				y = tag:translation(1) ,--- self.fsm.vars.y,
+				ori = -tag:rotation(0)}
    distance.x = distance.x - (self.fsm.vars.x * math.cos(distance.ori) + self.fsm.vars.y * (-1 * math.sin(distance.ori)))
    distance.y = distance.y - (self.fsm.vars.x * math.sin(distance.ori) + self.fsm.vars.y * math.cos(distance.ori))
    --print("current distance")
