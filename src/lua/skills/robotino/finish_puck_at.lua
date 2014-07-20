@@ -24,8 +24,8 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "finish_puck_at"
-fsm                = SkillHSM:new{name=name, start="SKILL_TAKE_PUCK", debug=true}
-depends_skills     = { "take_puck_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck","global_move_laserlines" }
+fsm                = SkillHSM:new{name=name, start="SKILL_DRIVE_TO", debug=true}
+depends_skills     = { "drive_to", "wait_produce", "deposit_puck", "move_under_rfid", "motor_move", "deliver_puck" }
 depends_interfaces = {{ v="Pose", type="Position3DInterface", id="Pose" },
    { v="light", type="RobotinoLightInterface", id="Light determined" },
 }
@@ -98,13 +98,11 @@ end
 
 fsm:define_states{ export_to=_M,
    closure={end_rfid=end_rfid, end_deliver=end_deliver, light=light, orange_blinking=orange_blinking, out_of_order=out_of_order, out_of_order_abort=out_of_order_abort, out_of_order_leave=out_of_order_leave, prod_finished=prod_finished, prod_in_progress=prod_in_progress},
-   {"SKILL_TAKE_PUCK", SkillJumpState, skills={{take_puck_to}}, final_to="TIMEOUT",
+   {"SKILL_DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="DECIDE_ENDSKILL",
       fail_to="FAILED"},
-   {"TIMEOUT", JumpState},
-   {"SKILL_GLOBAL_MOVE_LASERLINES", SkillJumpState, skills={{global_move_laserlines}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_RFID", SkillJumpState, skills={{move_under_rfid}}, final_to="SKILL_WAIT_PRODUCE",
-      fail_to="SKILL_TAKE_PUCK"},
+      fail_to="SKILL_DRIVE_TO"},
    {"SKILL_WAIT_PRODUCE", SkillJumpState, skills={{wait_produce}}, final_to="DECIDE_DEPOSIT",
       fail_to="PRODUCE_FAILED"},
    {"PRODUCE_FAILED", JumpState},
@@ -119,8 +117,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   { "TIMEOUT", "FAILED", cond="vars.tries > 3" },
-   { "TIMEOUT", "SKILL_GLOBAL_MOVE_LASERLINES", timeout=0.5, desc="test purpose" },
+   { "DECIDE_ENDSKILL", "SKILL_RFID", cond="vars.tries > 3" },
    { "DECIDE_ENDSKILL", "SKILL_RFID", cond=end_rfid, desc="move under rfid" },
    { "DECIDE_ENDSKILL", "SKILL_DELIVER", cond=end_deliver, desc="deliver" },
    { "DECIDE_DEPOSIT", "SKILL_DEPOSIT", cond=prod_unfinished },
@@ -133,9 +130,11 @@ fsm:add_transitions{
 
 }
 
-function SKILL_TAKE_PUCK:init()
+function SKILL_DRIVE_TO:init()
    self.fsm.vars.goto_name = self.fsm.vars.place or self.fsm.vars.goto_name
-   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+   self.skills[1].place = self.fsm.vars.goto_name
+   self.skills[1].puck  = true
+
    if not self.fsm.vars.tries then
       self.fsm.vars.tries = 0
    end
@@ -147,11 +146,6 @@ function SKILL_TAKE_PUCK:init()
       printf("No/Unknown out_of_order behavior given\n")
       self.fsm.vars.out_of_order = "ignore"
    end
-end
-
-function SKILL_GLOBAL_MOVE_LASERLINES:init()
-   self.skills[1].place = self.fsm.vars.place
-   self.skills[1].puck = true
 end
 
 function SKILL_DRIVE_LEFT:init()

@@ -39,8 +39,6 @@ MAXTRIES = 3
 skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
---fawkes.load_yaml_navgraph already searches in the cfg directory
-local navgraph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 
 function invalid_input()
    if fsm.vars.ori and math.abs(fsm.vars.ori) > math.pi then
