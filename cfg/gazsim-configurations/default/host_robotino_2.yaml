@@ -27,7 +27,7 @@ plugins/light_front:
   
 clips-agent:
   llsf2014:
-    agent-role: P3-ONLY
+    #agent-role: P3-ONLY
     
     exploration:      
       row: MID
