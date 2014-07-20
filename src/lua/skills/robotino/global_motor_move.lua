@@ -34,6 +34,8 @@ documentation      = [==[
 -- Tunables
 TOLERANCE = { x=0.08, y=0.06, ori=0.02 }
 MAXTRIES = 3
+MAX_DIST = 1.5
+MAX_POSE_TRIES = 30
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -72,9 +74,20 @@ function trans_error()
       or math.abs(fsm.vars.bl_target.y) > mm_tolerance.y
 end
 
+function target_dist_ok()
+   local target = tfm.transform(
+      {  x = self.fsm.vars.target.x
+         y = self.fsm.vars.target.y
+         ori = self.fsm.vars.target.ori },
+      "/map", "/base_link")
+   local dist = math.sqrt(target.x * target.x + target.y * target.y)
+   return dist < MAX_DIST
+end
+
 fsm:define_states{ export_to=_M,
-   closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, mm_tolerance=mm_tolerance, TOLERANCE=TOLERANCE},
+   closure={pose_ok=pose_ok, MAXTRIES=MAXTRIES, mm_tolerance=mm_tolerance, TOLERANCE=TOLERANCE, MAX_POSE_TRIES=MAX_POSE_TRIES},
    {"INIT", JumpState},
+   {"WAIT_PLAUSIBLE_POSE", JumpState},
    {"STARTPOSE", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
    {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="DECIDE_TURN", fail_to="FAILED"},
@@ -85,7 +98,9 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "STARTPOSE", cond=true},
+   {"INIT", "WAIT_PLAUSIBLE_POSE", cond=true},
+   {"WAIT_PLAUSIBLE_POSE", "STARTPOSE", cond=target_dist_ok, desc="dist ok"},
+   {"WAIT_PLAUSIBLE_POSE", "FAILED", cond="vars.pose_tries >= MAX_POSE_TRIES", desc="dist exceeded"},
    {"STARTPOSE", "TURN", cond="vars.puck and vars.bl_target.x < -TOLERANCE.x"},
    {"STARTPOSE", "DRIVE", cond=trans_error},
    {"STARTPOSE", "TURN_BACK", cond="vars.turn == true and math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
@@ -101,6 +116,7 @@ fsm:add_transitions{
 function INIT:init()
    self.fsm.vars.startpos = tfm.transform({x=0, y=0, ori=0}, "/base_link", "/map")
    self.fsm.vars.tries = 0
+   self.fsm.vars.pose_tries = 0
    if self.fsm.vars.turn == nil then
       self.fsm.vars.turn = true
    end
@@ -118,6 +134,10 @@ function INIT:init()
       end
    end
    self.fsm.vars.target = { x=x, y=y, ori=ori }
+end
+
+function WAIT_PLAUSIBLE_POSE:loop()
+   self.fsm.vars.pose_tries = self.fsm.vars.pose_tries + 1
 end
 
 function STARTPOSE:init()
