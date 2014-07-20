@@ -26,6 +26,7 @@
 #include <cmath>
 #include <cfloat>
 #include <limits.h>
+#include "historic_smooth_roi.h"
 
 using namespace fawkes;
 using namespace fawkes::tf;
@@ -234,6 +235,7 @@ void MachineSignalPipelineThread::init()
   // General config
   cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
   cfg_roi_max_width_ratio_ = config->get_float(CFG_PREFIX "/roi_max_r2g_width_ratio");
+  cfg_roi_max_height_ = config->get_uint(CFG_PREFIX "/roi_max_height");
   cfg_roi_xalign_ = config->get_float(CFG_PREFIX "/roi_xalign_by_width");
   cfg_roi_green_horizon = config->get_uint(CFG_PREFIX "/roi_green_horizon");
   cfg_tuning_mode_ = config->get_bool(CFG_PREFIX "/tuning_mode");
@@ -503,7 +505,8 @@ MachineSignalPipelineThread::bb_get_laser_rois()
         cluster_roi.set_image_width(cam_width_);
         cluster_roi.set_image_height(cam_height_);
         cluster_roi.color = C_MAGENTA;
-        cluster_roi.world_pos = new Stamped<Point>(cluster_laser, cluster_laser.stamp, cluster_laser.frame_id);
+        cluster_roi.world_pos = shared_ptr<Stamped<Point>>(new Stamped<Point>(
+          cluster_laser, cluster_laser.stamp, cluster_laser.frame_id));
         /* if (tf_listener->can_transform("/map", cluster_laser.frame_id, clock->now())) {
           cluster_roi.world_pos = new Stamped<Point>();
           tf_listener->transform_point("/map", cluster_laser, *(cluster_roi.world_pos));
@@ -632,14 +635,6 @@ void MachineSignalPipelineThread::loop()
 
 
     if (unlikely(cfg_tuning_mode_)) {
-      // Untreated copy of the cam image
-      memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
-
-      // Visualize color similarities in tuning buffer
-      color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
-      color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
-      color_filter_->apply();
-
       drawn_rois_.clear();
       if (cluster_rois_) {
         drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
@@ -671,12 +666,6 @@ void MachineSignalPipelineThread::loop()
     { std::list<SignalState::signal_rois_t_>::iterator signal_it = signal_rois->begin();
     for (uint i=0; i < MAX_SIGNALS && signal_it != signal_rois->end(); ++i) {
       try {
-        SignalState::frame_state_t_ frame_state({
-          get_light_state(signal_it->red_roi),
-              get_light_state(signal_it->yellow_roi),
-              get_light_state(signal_it->green_roi),
-        });
-
         // ... and match them to known signals based on the max_jitter tunable
         float dist_min = FLT_MAX;
         std::list<SignalState>::iterator best_match;
@@ -689,16 +678,28 @@ void MachineSignalPipelineThread::loop()
           }
         }
         if (dist_min < cfg_max_jitter_) {
-          best_match->update(frame_state, signal_it);
+          best_match->update_geometry(signal_it);
         }
-        else {
-          // No historic match was found for the current signal
-          logger->log_debug(name(), "new signal dist: %f", dist_min);
-          SignalState *cur_state = new SignalState(buflen_, logger);
-          cur_state->update(frame_state, signal_it);
+        else { // No historic match was found for the current signal
+          unsigned int history_len = cfg_delivery_mode_ ? buflen_ : 0;
+          SignalState::historic_signal_rois_t_ new_signal;
+          new_signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), history_len));
+          new_signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), history_len));
+          new_signal.green_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->green_roi), history_len));
+          SignalState *cur_state = new SignalState(buflen_, logger, new_signal);
+
           known_signals_.push_front(*cur_state);
+          best_match = known_signals_.begin();
           delete cur_state;
         }
+
+        SignalState::frame_state_t_ frame_state({
+          get_light_state(signal_it->red_roi.get()),
+              get_light_state(signal_it->yellow_roi.get()),
+              get_light_state(signal_it->green_roi.get()),
+        });
+
+        best_match->update_state(frame_state);
 
         // Classifiers sometimes do strange things to the image width/height, so reset them here...
         signal_it->red_roi->set_image_width(cam_width_);
@@ -709,17 +710,10 @@ void MachineSignalPipelineThread::loop()
         signal_it->green_roi->set_image_height(cam_height_);
 
         if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          drawn_rois_.push_back(signal_it->red_roi);
-          drawn_rois_.push_back(signal_it->yellow_roi);
-          drawn_rois_.push_back(signal_it->green_roi);
+          drawn_rois_.push_back(*(signal_it->red_roi));
+          drawn_rois_.push_back(*(signal_it->yellow_roi));
+          drawn_rois_.push_back(*(signal_it->green_roi));
         }
-
-        delete signal_it->red_roi;
-        signal_it->red_roi = NULL;
-        delete signal_it->yellow_roi;
-        signal_it->yellow_roi = NULL;
-        delete signal_it->green_roi;
-        signal_it->green_roi = NULL;
       }
       catch (OutOfBoundsException &e){
         logger->log_error(name(), "Signal at %d,%d: Invalid ROI: %s",
@@ -732,12 +726,26 @@ void MachineSignalPipelineThread::loop()
     delete signal_rois;
     signal_rois = NULL;
 
-    if (unlikely(cfg_tuning_mode_)) {
+    if (unlikely(cfg_tuning_mode_)) { // Draw a representation of what we see into SHM buffer(s)
+      shmbuf_cam_->lock_for_write();
+      shmbuf_->lock_for_write();
+
+      // Untreated copy of the cam image
+      memcpy(shmbuf_cam_->buffer(), camera_->buffer(), shmbuf_cam_->data_size());
+
+      // Visualize color similarities in tuning buffer
+      color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
+      color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
+      color_filter_->apply();
+
       // Visualize the signals and bright spots we found
       roi_drawer_->set_rois(&drawn_rois_);
       roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
       roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
       roi_drawer_->apply();
+
+      shmbuf_cam_->unlock();
+      shmbuf_->unlock();
     }
 
     // Throw out the signals with the worst visibility histories
@@ -803,6 +811,13 @@ bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
 }
 
 
+bool MachineSignalPipelineThread::roi1_x_overlaps_below(ROI &r1, ROI &r2) {
+  return (r1.start.y > r2.start.y + r2.height)
+      && (   (r1.start.x <= r2.start.x && r1.start.x + r1.width > r2.start.x)
+          || (r1.start.x > r2.start.x && r1.start.x < r2.start.x + r2.width && r1.start.x + r1.width > r2.start.x + r2.width));
+}
+
+
 bool MachineSignalPipelineThread::roi1_oversize(ROI &r1, ROI &r2) {
   return !rois_similar_width(r1, r2)
       && roi_aspect_ok(r2)
@@ -841,13 +856,28 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
       ok = false;
       int vspace = it_G->start.y - (it_R->start.y + it_R->height);
 
+      if (it_G->height > cfg_roi_max_height_ && roi1_x_overlaps_below(*it_G, *it_R)) {
+        ROI *recheck_G = new ROI(*it_G);
+        recheck_G->height = cfg_roi_max_height_;
+        cfy_ctxt_green_.scanline_grid->set_roi(recheck_G);
+        list<ROI> *rechecked_G = cfy_ctxt_green_.classifier->classify();
+        ROI &new_G = rechecked_G->front();
+        if (roi_width_ok(new_G) && rois_x_aligned(*it_R, new_G) && !roi1_oversize(new_G, *it_R)
+            && rois_vspace_ok(*it_R, new_G) && rois_similar_width(*it_R, new_G)) {
+          *it_G = new_G;
+        }
+        cfy_ctxt_green_.scanline_grid->set_roi(recheck_G->full_image(cam_width_, cam_height_));
+        delete recheck_G;
+        delete rechecked_G;
+      }
+
       if (roi_width_ok(*it_G) && rois_x_aligned(*it_R, *it_G) &&
           it_G->start.y > cfg_roi_green_horizon) {
 
         if (cfg_debug_processing_) debug_proc_string_ += "g:W rg:A";
 
-        ROI *roi_R = new ROI(*it_R);
-        ROI *roi_G = new ROI(*it_G);
+        shared_ptr<ROI> roi_R = shared_ptr<ROI>(new ROI(*it_R));
+        auto roi_G = shared_ptr<ROI>(new ROI(*it_G));
 
         if (roi1_oversize(*roi_R, *roi_G)
             && vspace > 0 && vspace < roi_G->height * 1.5) {
@@ -893,19 +923,14 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
           uint width = (roi_R->width + roi_G->width) / 2;
           uint r_end_y = roi_R->start.y + roi_G->height;
           uint start_y = r_end_y + (int)(roi_G->start.y - r_end_y - height)/2;
-          ROI *roi_Y = new ROI(start_x, start_y,
-            width, height,
-            roi_R->image_width, roi_R->image_height);
+          shared_ptr<ROI> roi_Y = shared_ptr<ROI>(new ROI(start_x, start_y,
+            width, height, roi_R->image_width, roi_R->image_height));
           roi_Y->color = C_YELLOW;
 
           rv->push_back({roi_R, roi_Y, roi_G, NULL});
           it_G = rois_G->erase(it_G);
           it_R = rois_R->erase(it_R);
           ok = true;
-        }
-        else {
-          delete roi_G;
-          delete roi_R;
         }
       }
       if (!ok) {
@@ -949,7 +974,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
               intersection.start.y + intersection.height);
           }
           else {
-            SignalState::signal_rois_t_ new_signal = { new ROI(intersection), NULL, NULL };
+            SignalState::signal_rois_t_ new_signal = { shared_ptr<ROI>(new ROI(intersection)), nullptr, nullptr};
             new_signal.world_pos = cluster_roi.world_pos;
             laser_signals.insert(make_pair(cluster_roi, new_signal));
           }
@@ -972,16 +997,17 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
       SignalState::signal_rois_t_ &signal = cluster_signal.second;
       ROI roi_cluster(cluster_signal.first);
 
+      // Look for the black cap on top
       ROI roi_black_top(cluster_signal.first);
       roi_black_top.start.x = std::max(roi_black_top.start.x, signal.red_roi->start.x);
       roi_black_top.start.y = std::min(roi_black_top.start.y, signal.red_roi->start.y);
       roi_black_top.width = std::min(roi_black_top.width, signal.red_roi->width);
       roi_black_top.height = signal.red_roi->height / 2;
-
       black_scangrid_->set_roi(&roi_black_top);
       list<ROI> *black_stuff_top = black_classifier_->classify();
 
       if (!black_stuff_top->empty()) {
+        // Extend red ROI up to the black cap
         ROI &black = black_stuff_top->front();
         unsigned int black_end_y = black.start.y + black.height;
         int hdiff = signal.red_roi->start.y - black_end_y;
@@ -989,29 +1015,28 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
         signal.red_roi->height += hdiff;
       }
 
+
       if (!roi_aspect_ok(*(signal.red_roi))) {
         signal.red_roi->height = signal.red_roi->width;
       }
 
+      // Look for the black socket
       ROI roi_black_bottom(roi_black_top);
       roi_black_bottom.image_width = cam_width_;
       roi_black_bottom.image_height = cam_height_;
       roi_black_bottom.start.y = signal.red_roi->start.y + signal.red_roi->height;
       roi_black_bottom.height = std::min(
         cam_height_ - roi_black_bottom.start.y,
-        std::max(
+        std::min(
           cluster_signal.first.start.y + cluster_signal.first.width,
           signal.red_roi->start.y + signal.red_roi->height * 3)
       );
-
       black_scangrid_->set_roi(&roi_black_bottom);
       list<ROI> *black_stuff_bottom = black_classifier_->classify();
 
       if (!black_stuff_bottom->empty()) {
         ROI &black = black_stuff_bottom->front();
-        if (signal.red_roi->start.x + signal.red_roi->height * 3 > black.start.y) {
-          signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 3;
-        }
+        signal.red_roi->height = (black.start.y - signal.red_roi->start.y) / 3;
       }
       else {
         unsigned int cluster_end_y = roi_cluster.start.y + roi_cluster.height;
@@ -1025,14 +1050,15 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
         drawn_rois_.insert(drawn_rois_.end(), black_stuff_bottom->begin(), black_stuff_bottom->end());
       }
 
-      signal.yellow_roi = new ROI();
+      // Put equally sized yellow & green ROIs below the red one
+      signal.yellow_roi = shared_ptr<ROI>(new ROI());
       signal.yellow_roi->color = C_YELLOW;
       signal.yellow_roi->start.x = signal.red_roi->start.x;
       signal.yellow_roi->start.y = signal.red_roi->start.y + signal.red_roi->height;
       signal.yellow_roi->width = signal.red_roi->width;
       signal.yellow_roi->height = signal.red_roi->height;
 
-      signal.green_roi = new ROI();
+      signal.green_roi = shared_ptr<ROI>(new ROI());
       signal.green_roi->color = C_GREEN;
       signal.green_roi->start.x = signal.yellow_roi->start.x;
       signal.green_roi->start.y = signal.yellow_roi->start.y + signal.yellow_roi->height;
@@ -1065,7 +1091,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
     bool found_some_black = false;
     try {
 
-      ROI *roi_R = new ROI(*it_R);
+      shared_ptr<ROI> roi_R = shared_ptr<ROI>(new ROI(*it_R));
 
       long int start_x, start_y, width, height;
 
@@ -1103,10 +1129,11 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
       roi_R->height = roi_R->width;
 
       start_y = (long int)roi_R->start.y + (long int)roi_R->width; // add width since it's more reliable than height
-      ROI *roi_Y = new ROI(roi_R->start.x, start_y, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height);
+      shared_ptr<ROI> roi_Y = shared_ptr<ROI>(new ROI(
+        roi_R->start.x, start_y, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height));
       roi_Y->color = C_YELLOW;
-      ROI *roi_G = new ROI(roi_R->start.x, start_y + roi_R->height, roi_R->width, roi_R->height, roi_R->image_width,
-        roi_R->image_height);
+      shared_ptr<ROI> roi_G = shared_ptr<ROI>(new ROI(
+        roi_R->start.x, start_y + roi_R->height, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height));
       roi_G->color = C_GREEN;
 
       ROI check_black_bottom(*roi_Y);
@@ -1306,6 +1333,8 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
     else if (sub_prefix == "") {
       if (opt == "/roi_max_aspect_ratio")
         cfg_roi_max_aspect_ratio_ = v->get_float();
+      else if (opt == "/roi_max_height")
+        cfg_roi_max_height_ = v->get_uint();
       else if (opt == "/roi_max_r2g_width_ratio")
         cfg_roi_max_width_ratio_ = v->get_float();
       else if (opt == "/roi_xalign_by_width")

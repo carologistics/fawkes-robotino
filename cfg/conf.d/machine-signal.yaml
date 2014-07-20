@@ -51,6 +51,11 @@ plugins/machine_signal:
   # Green ROIs that start above this line are ignored
   roi_green_horizon: 100
 
+  # ROIs higher than this will have their height truncated and will be
+  # re-classified. Currently used only for green ROIs when NOT in delivery
+  # mode. Fixes disturbances from the green tape around the recycling machines.
+  roi_max_height: 108
+
   # Maximum distance in pixels a signal is allowed to jump between frames
   # Increase this if you want to try and detect signals while moving.
   max_jitter: 60.0
