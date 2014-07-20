@@ -84,7 +84,7 @@ class NavgraphBrokerThread
  protected: virtual void run() { Thread::run(); }
 
  private: // methods
-     void reserve_nodes(std::string robot_name, std::vector<fawkes::TopologicalMapNode> path);
+     void reserve_nodes(std::string robot_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path);
      void reserve_edges(std::string robot_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path);
      void add_edges_to_edge_constraint(fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint,
     		 	 	 	 	 	 	 	 std::vector<fawkes::TopologicalMapNode> path);

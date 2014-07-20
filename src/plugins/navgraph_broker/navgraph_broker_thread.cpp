@@ -95,7 +95,15 @@ if( use_node_constraints_ ){
 		txt += "}";
 		logger->log_info(name(), "Reserving test nodes  %s", txt.c_str() );
 
-		reserve_nodes( "test" , nodes);
+		fawkes::Time now(clock);
+		std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_nodes;
+		double max_reservation_duration = (double) max_reservation_duration_;
+		fawkes::Time valid_duration = now+max_reservation_duration;
+		for( fawkes::TopologicalMapNode &node : nodes ){
+			timed_nodes.push_back(std::pair<fawkes::TopologicalMapNode,fawkes::Time>(node,valid_duration));
+		}
+
+		reserve_nodes( "test" , timed_nodes);
 
 	}catch (Exception &e){
 		logger->log_error( name() , "No static nodes reserved. Did you miss to specify 'reserved_nodes' in navgraph.broker.yaml ?" );
@@ -170,21 +178,19 @@ NavgraphBrokerThread::loop(){
 				nodes.push_back( navgraph->node( msg->nodelist(i) ));
 			}
 
+
+			fawkes::Time now(clock);
+			double max_reservation_duration = (double) max_reservation_duration_;
+			fawkes::Time valid_duration = now+max_reservation_duration;
+			std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_nodes;
+			for( fawkes::TopologicalMapNode &node : nodes ){
+			  timed_nodes.push_back(std::pair<fawkes::TopologicalMapNode,fawkes::Time>(node,valid_duration));
+			}
+
 			if( use_node_constraints_ ){
-				reserve_nodes( msg->robotname() , nodes);
+				reserve_nodes( msg->robotname() , timed_nodes);
 			}
 			else{
-				std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_nodes;
-				for(uint16_t i=0; i<nodes.size(); i++){
-					fawkes::Time now(clock);
-					double max_reservation_duration = (double) max_reservation_duration_;
-					fawkes::Time dummy = now+max_reservation_duration;
-
-					std::pair<fawkes::TopologicalMapNode, fawkes::Time> timed_node(nodes[i], dummy );
-					timed_nodes.push_back( timed_node );
-
-					logger->log_info(name(), "Register Node '%s' until '%f'.", nodes[i].name().c_str(), dummy.in_sec() );
-				}
 				reserve_edges( msg->robotname() , timed_nodes);
 			}
 
@@ -206,11 +212,11 @@ NavgraphBrokerThread::loop(){
 std::vector<fawkes::TopologicalMapNode> NavgraphBrokerThread::get_nodes_from_string(std::string path){
 
 	std::vector<fawkes::TopologicalMapNode> nodes;
-	std::vector<std::string> string_node_list;
-	boost::split(string_node_list, path, boost::is_any_of(","));
+	std::vector<std::string> string_node_time_list;
+	boost::split(string_node_time_list, path, boost::is_any_of(","));
 
-	for(unsigned int i=0; i<string_node_list.size(); i++){
-		nodes.push_back( navgraph->node( string_node_list[i]) );
+	for(unsigned int i=0; i<string_node_time_list.size(); i++){
+		nodes.push_back( navgraph->node( string_node_time_list[i]) );
 	}
 	return nodes;
 }
@@ -256,35 +262,35 @@ NavgraphBrokerThread::get_path_from_interface_as_vector(){
 
 
 void
-NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<fawkes::TopologicalMapNode> path){
+NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path){
 
 	constraint_repo.lock();
 
-	fawkes::NavGraphTimedReservationListNodeConstraint *node_constraint;
+	fawkes::NavGraphTimedReservationListNodeConstraint *timed_node_constraint;
 
 	std::string constraint_name = robotname + "_Reserved_Nodes";
 	if( constraint_repo->has_constraint( constraint_name ) ){
 		logger->log_info( name(), "Updating nodes of constraint='%s'", constraint_name.c_str() );
-		node_constraint = (NavGraphTimedReservationListNodeConstraint *) constraint_repo->get_node_constraint(constraint_name);
-		node_constraint->clear_nodes();
-		node_constraint->add_nodes( path );
+		timed_node_constraint = (NavGraphTimedReservationListNodeConstraint *) constraint_repo->get_node_constraint(constraint_name);
+		timed_node_constraint->clear_nodes();
+		timed_node_constraint->add_nodes( timed_path );
 	}
 	else{
 		logger->log_info( name(), "Register constraint='%s'", constraint_name.c_str() );
-		node_constraint = new NavGraphTimedReservationListNodeConstraint(logger,  constraint_name );
-		node_constraint->add_nodes( path );
-		constraint_repo->register_constraint( (NavGraphNodeConstraint *) node_constraint );
+		timed_node_constraint = new NavGraphTimedReservationListNodeConstraint(logger,  constraint_name, clock);
+		timed_node_constraint->add_nodes( timed_path );
+		constraint_repo->register_constraint( (NavGraphNodeConstraint *) timed_node_constraint );
 	}
 
 	{  // print
 		std::string txt = "{";
-		const std::vector<fawkes::TopologicalMapNode> &nodelist = node_constraint-> node_list();
-		for(const fawkes::TopologicalMapNode &n : nodelist){
-			txt += n.name();
+		const std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> &timed_nodelist = timed_node_constraint->node_time_list();
+		for(const std::pair<fawkes::TopologicalMapNode, fawkes::Time> &n : timed_nodelist){
+			txt += n.first.name();
 			txt += ",";
 		}
 		txt.erase(txt.length()-1,1); txt += "}";
-		logger->log_info(name(), "Reserving nodes %s for constraint '%s'", txt.c_str(), node_constraint->name().c_str() );
+		logger->log_info(name(), "Reserving nodes %s for constraint '%s'", txt.c_str(), timed_node_constraint->name().c_str() );
 	}
 
 	constraint_repo.unlock();
