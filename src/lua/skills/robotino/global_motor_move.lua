@@ -55,8 +55,10 @@ function pose_ok()
    local pose_ok = math.abs(dist.x) <= TOLERANCE.x
                and math.abs(dist.y) <= TOLERANCE.y
    if fsm.vars.turn == true then
+      printf("is_true")
       return pose_ok and math.abs(dist.ori) <= TOLERANCE.ori
    else
+      print("is_false")
       return pose_ok
    end
 end
@@ -88,7 +90,7 @@ fsm:add_transitions{
    {"INIT", "STARTPOSE", cond=true},
    {"STARTPOSE", "TURN", cond="vars.puck and vars.bl_target.x < -TOLERANCE.x"},
    {"STARTPOSE", "DRIVE", cond=trans_error},
-   {"STARTPOSE", "TURN_BACK", cond="vars.turn == false and math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
+   {"STARTPOSE", "TURN_BACK", cond="vars.turn == true and math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
    {"STARTPOSE", "FINAL", cond=true},
    {"DECIDE_TURN", "TURN_BACK", cond="vars.turn == true"},
    {"DECIDE_TURN", "CHECK_POSE", cond="vars.turn == false"},

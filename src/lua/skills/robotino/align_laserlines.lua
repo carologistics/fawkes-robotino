@@ -31,7 +31,11 @@ depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
    {v = "line3", type="LaserLineInterface", id="/laser-lines/3"},
-   {v = "line4", type="LaserLineInterface", id="/laser-lines/4"}
+   {v = "line4", type="LaserLineInterface", id="/laser-lines/4"},
+   {v = "line5", type="LaserLineInterface", id="/laser-lines/5"},
+   {v = "line6", type="LaserLineInterface", id="/laser-lines/6"},
+   {v = "line7", type="LaserLineInterface", id="/laser-lines/7"},
+   {v = "line8", type="LaserLineInterface", id="/laser-lines/8"}
 }
 
 documentation      = [==[Align to straight line in laser data.
@@ -46,7 +50,7 @@ documentation      = [==[Align to straight line in laser data.
 skillenv.skill_module(_M)
 
 -- Constants
-MIN_VIS_HIST = 3
+MIN_VIS_HIST = 10
 
 -- Variables
 local navgraph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
@@ -58,7 +62,11 @@ local lines = {
    line1,
    line2,
    line3,
-   line4
+   line4,
+   line5,
+   line6,
+   line7,
+   line8
 }
 
 local lines_sector_0 = {}
@@ -141,7 +149,6 @@ fsm:define_states{
 -- Transitions
 fsm:add_transitions {
    {"CHECK_INTERFACE", "FAILED", timeout = 1, desc="no writer or vis_hist too low"},
-   {"CHECK_INTERFACE", "FAILED", cond ="not visible_and_writer()", desc="no writer or vis_hist too low"},
    {"CHECK_INTERFACE", "INIT", cond=visible_and_writer},
    {"INIT", "ALIGN", cond=visible_and_writer, desc="initialized"}
 }
