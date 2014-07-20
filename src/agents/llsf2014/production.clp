@@ -389,7 +389,7 @@
   (team-color ?team-color&~nil)
   (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
     (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE) (team ?team-color)
-    (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0))
+    (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0)) (x ?t5-x) (y ?t5-y)
   )
   (not (proposed-task (name produce-with-S0) (args $?args&:(subsetp ?args (create$ ?name))) (state rejected)))
   (holding NONE|S0)
@@ -397,7 +397,8 @@
   (not (locked-resource (agent ?a&:(neq (sym-cat ?a) (sym-cat ?*ROBOT-NAME*)))
 			(resource P3-ONLY))) ;only if there is no other P3 agent
   (not (no-more-needed P3))
-  (game-time $?time&:(< (nth$ 1 ?time) ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING*))
+  (or (game-time $?time&:(< (nth$ 1 ?time) ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING*))
+      (deliver ?team-color ? ?del-x ?del-y&:(> (distance ?del-x ?del-y ?t5-x ?t5-y) ?*MAX-T5-LEAVE-DISTANCE*)))
   =>
   (printout t "PROD: PRODUCE P3 at T5 " ?name " without waiting" crlf)
   (assert (proposed-task (name produce-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))
