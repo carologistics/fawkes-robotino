@@ -84,8 +84,8 @@ class NavgraphBrokerThread
  protected: virtual void run() { Thread::run(); }
 
  private: // methods
-     void reserve_nodes(std::string robot_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path);
-     void reserve_edges(std::string robot_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path);
+     void reserve_nodes(std::string constraint_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path);
+     void reserve_edges(std::string constraint_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path);
      void add_edges_to_edge_constraint(fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint,
     		 	 	 	 	 	 	 	 std::vector<fawkes::TopologicalMapNode> path);
      std::vector<fawkes::TopologicalMapNode> get_nodes_from_string(std::string path);
@@ -113,6 +113,9 @@ class NavgraphBrokerThread
      std::string robotname_;
 
      navgraph_broker::NavigationMessage* m_;
+     int last_message_time_sec_;
+     int last_message_time_nsec_;
+
      fawkes::Time time_of_plan_chg;
      fawkes::Time *time_;
      double repeat_send_duration_;
