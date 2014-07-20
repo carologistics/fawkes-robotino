@@ -533,19 +533,19 @@ nodes:
 
 # Puck Storage Points:
   - name: D1_PUCK_STORAGE_1
-    pos: [5.05, 1.68]
+    pos: [5.00, 1.68]
     properties:
       - orientation: 0.0
   - name: D1_PUCK_STORAGE_2
-    pos: [5.05, 1.12]
+    pos: [5.00, 1.12]
     properties:
       - orientation: 0.0
   - name: D2_PUCK_STORAGE_1
-    pos: [-5.05, 1.68]
+    pos: [-5.00, 1.68]
     properties:
       - orientation: 3.14
   - name: D2_PUCK_STORAGE_2
-    pos: [-5.05, 1.12]
+    pos: [-5.00, 1.12]
     properties:
       - orientation: 3.14
 
