@@ -43,6 +43,8 @@
     (case pick-and-deliver then
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
+	      (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
+				(resource (sym-cat BRING_ (nth$ 2 ?a) "~" (nth$ 3 ?a) "~Order" (nth$ 4 ?a))))
       )
     )
     (case recycle then
@@ -62,7 +64,8 @@
       )
     )
     (case deliver then
-      ;nothing has to be locked here because we want to get rid of an unintentionally holding puck
+      (assert (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
+				(resource (sym-cat BRING_ (nth$ 2 ?a) "~" (nth$ 3 ?a) "~Order" (nth$ 4 ?a)))))
     )
     (case recycle-holding then
       ;nothing has to be locked here because we want to get rid of an unintentionally holding puck
@@ -85,7 +88,9 @@
     )
     (case get-stored-and-deliver then
       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
-				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
+				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
+	      (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER)
+					(resource (sym-cat BRING_ (nth$ 2 ?a) "~" (nth$ 3 ?a) "~Order" (nth$ 4 ?a)))))
     )
     (case produce-with-S0 then
       (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
@@ -128,7 +133,7 @@
     ;(printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
     (if (eq ?ntl:place DELIVER)
       then
-      (assert (worldmodel-change (order (nth$ 4 ?args)) (change ADD_IN_DELIVERY)
+      (assert (worldmodel-change (order (nth$ 4 ?args)) (change SET_IN_DELIVERY)
 				 (value (nth$ 2 ?args))
 				 (amount (nth$ 3 ?args))))
       else

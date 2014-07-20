@@ -17,13 +17,20 @@
   (bind ?mid-x (/ (+ ?pos-x ?goal-x) 2))
   (bind ?mid-y (/ (+ ?pos-y ?goal-y) 2))
   ;find best T1
-  (bind ?best-T1 NONE)
+  (bind ?best-T1 NO_T1_FOUND)
   (bind ?best-dist 1000.0)
   (do-for-all-facts ((?m machine)) (and (eq T1 ?m:mtype) (eq ?m:team ?team) (not (any-factp ((?lock locked-resource)) (eq ?lock:resource ?m:name))) (eq (nth$ 1 ?m:out-of-order-until) 0))
     (bind ?dist (distance ?mid-x ?mid-y ?m:x ?m:y))
     (if (< ?dist ?best-dist) then
       (bind ?best-T1 ?m:name)
       (bind ?best-dist ?dist)
+    )
+  )
+  (if (eq ?best-T1 NO_T1_FOUND)
+    then
+    ;return any T1
+    (do-for-fact ((?m machine)) (and (eq T1 ?m:mtype) (eq ?m:team ?team))
+      (bind ?best-T1 ?m:name)
     )
   )
   (return ?best-T1)
@@ -184,14 +191,18 @@
   "facts to generate wait positions for each machine (Did not include this in the config because I would need a List of Lists)"
   (common-wait-point WAIT_FOR_DELIVER_1 M12)
   (common-wait-point WAIT_FOR_DELIVER_2 M24)
-  (common-wait-point WAIT_FOR_ROW_1 M21 M22 M23)
-  (common-wait-point WAIT_FOR_ROW_2 M18 M19 M20)
-  (common-wait-point WAIT_FOR_ROW_3 M15 M16 M17)
-  (common-wait-point WAIT_FOR_ROW_4 M13 M14 R2)
-  (common-wait-point WAIT_FOR_ROW_5 M1 M2 R1)
-  (common-wait-point WAIT_FOR_ROW_6 M3 M4 M5)
-  (common-wait-point WAIT_FOR_ROW_7 M6 M7 M8)
-  (common-wait-point WAIT_FOR_ROW_8 M9 M10 M11)
+  (common-wait-point WAIT_FOR_ROW_1 M22 M23)
+  (common-wait-point WAIT_FOR_ROW_2 M15 M18 M19)
+  (common-wait-point WAIT_FOR_ROW_3 M20 R2)
+  (common-wait-point WAIT_FOR_ROW_4 M14 M16 M17) 
+  (common-wait-point WAIT_FOR_ROW_5 M2 M4 M5)
+  (common-wait-point WAIT_FOR_ROW_6 M8 R1)
+  (common-wait-point WAIT_FOR_ROW_7 M3 M6 M7)
+  (common-wait-point WAIT_FOR_ROW_8 M10 M11)
+  (common-wait-point WAIT_FOR_INS_1_ROBOTINO_3 M9)
+  (common-wait-point WAIT_FOR_INS_2_ROBOTINO_3 M21)
+  (common-wait-point WAIT_FOR_INS_1_ROBOTINO_3 M1 M13)
+  
 )
 
 (defrule tac-create-wait-point-facts
@@ -209,6 +220,7 @@
   "Decide when we need no more P3 (there are only three orders for it)"
   (phase PRODUCTION)
   (game-time $?time)
+  (not (no-more-needed P3))
   (order (id ?id1) (product P3)
 	 (end ?end1&:(> (nth$ 1 ?time) ?end1)))
   (order (id ?id2&:(neq ?id1 ?id2)) (product P3)

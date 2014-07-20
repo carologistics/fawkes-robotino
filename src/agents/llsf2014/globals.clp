@@ -39,7 +39,10 @@
   ?*SKILL-DURATION-DELIVER* = 10
 
   ;how long do we want to produce P3 without leaving the machine
-  ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING* = 120
+  ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING* = 150
+
+  ;maximum distance from the delivery gates to allow leaving a T5 machine while producing
+  ?*MAX-T5-LEAVE-DISTANCE* = 6.0
 )
 
 (defrule globals-config-team-name

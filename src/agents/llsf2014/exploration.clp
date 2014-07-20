@@ -110,12 +110,15 @@
     (printout error "Ouch, starting exploration but I don't know my team color" crlf)
   )
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
+  ;disable delivery mode of the machine_signal plugin (for safety)
+  (skill-call enable_switch iface "delivery" enable false)
 )
 
 (defrule exp-goto-first
   "Robotino drives to the first machine to start the first round."
   (phase EXPLORATION)
   ?s <- (state EXP_START)
+  ?df <- (skill-done (name "enable_switch"))
   (exp-tactic LINE)
   (first-exploration-machine ?v)
   (machine-exploration (name ?v) (x ?) (y ?) (look-pos ?lp))
@@ -129,26 +132,11 @@
   )
 )
 
-(defrule exp-ppgoto-arrived-at-machine
-  "Redo movement with global motor move after arriving with ppgoto."
-  (phase EXPLORATION)
-  ?final <- (skill (name "ppgoto") (status FINAL)) 
-  ?s <- (state EXP_DRIVING_TO_MACHINE)
-  (goalmachine ?name)
-  (machine-exploration (name ?name) (look-pos ?goal))
-  (not (driven-to-waiting-point))
-  =>
-  (printout t "PPGoto Arrived. Calling global_motor_move." crlf)
-  (retract ?s ?final)
-  (assert (state EXP_DRIVING_TO_MACHINE_GLOBAL))
-  (skill-call global_motor_move place (str-cat ?goal))
-)
-
-(defrule exp-global-motor-move-finished
+(defrule exp-drive-to-finished
   "Arriving at a machine in first or second round. Preparing recognition of the light signals."
   (phase EXPLORATION)
-  ?final <- (skill (name "global_motor_move") (status FINAL|FAILED)) 
-  ?s <- (state EXP_DRIVING_TO_MACHINE_GLOBAL)
+  ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
+  ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
   (printout t "Arrived." crlf)
@@ -168,7 +156,7 @@
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?))
   (confval (path "/clips-agent/llsf2014/exploration/needed-visibility-history") (value ?needed-vh))
-  ?rli <- (RobotinoLightInterface (id "Light_State") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
+  ?rli <- (RobotinoLightInterface (id "/machine-signal/best") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
   (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
   (printout t "Identified machine" crlf)
@@ -350,7 +338,7 @@
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine))
-  (skill-call ppgoto place (str-cat ?lp))
+  (skill-call drive_to place (str-cat ?lp) puck false)
 )
 
 (defrule exp-receive-type-light-pattern-matching
@@ -498,21 +486,21 @@
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   =>
   (printout t "Waiting for production at " ?ins crlf)
-  (skill-call ppgoto place (str-cat ?ins))
+  (skill-call drive_to place (str-cat ?ins))
   (assert (prepare-for-production-goal ?ins))
 )
 
 (defrule exp-prepare-for-production-drive-to-secondary-ins
   "When locks for pre-game positions are acquired, drive there with ppgoto."
   (phase EXPLORATION)
-  (state EXP_PREPARE_FOR_PRODUCTION)
+  (state EXP_PREPARE_FOR_PRODUCTION|EXP_PREPARE_FOR_PRODUCTION_FINISHED)
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
   (secondary-storage ?team-color ?secins ? ?)
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?secins))
   =>
   (printout t "Waiting for production at " ?secins crlf)
-  (skill-call ppgoto place (str-cat ?secins))
+  (skill-call drive_to place (str-cat ?secins))
   (assert (prepare-for-production-goal ?secins))
 )
 
@@ -523,7 +511,8 @@
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
   (input-storage ?team-color ?ins ? ?)
-  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
+  (secondary-storage ?team-color ?secins ? ?)
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins | ?secins))
   ?lock <- (lock (type GET) (agent ?a) (resource ?ins))
   (wait-point ?ins ?a ?wait-point)
   =>

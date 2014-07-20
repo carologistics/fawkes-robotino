@@ -222,7 +222,7 @@
   (if (eq ?change SET_OUT_OF_ORDER_UNTIL) then
     (pb-set-field ?change-msg "out_of_order_until" ?amount)
   )
-  (if (eq ?change ADD_IN_DELIVERY) then
+  (if (eq ?change SET_IN_DELIVERY) then
     (pb-set-field ?change-msg "in_delivery" ?amount)
   )
   (pb-broadcast ?peer ?change-msg)
@@ -345,7 +345,7 @@
           (eq ?order:id (pb-field-value ?p "order"))
 
         (switch (sym-cat (pb-field-value ?p "change"))
-          (case ADD_IN_DELIVERY then 
+          (case _IN_DELIVERY then 
 	    (modify ?order (in-delivery (pb-field-value ?p "in_delivery")))
           )
 	)

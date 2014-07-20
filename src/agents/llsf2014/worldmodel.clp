@@ -81,6 +81,36 @@
   (printout error "Production failed at " ?name crlf) 
 )
 
+(defrule wm-take-puck-to-failed
+  (declare (salience ?*PRIORITY-WM-LOW*))
+  (state TAKE-PUCK-TO-FAILED)
+  ?tf <- (take-puck-to-target ?)
+  ?hf <- (holding ?)
+  (puck-in-gripper ?puck)
+  =>
+  (retract ?tf)
+  (if (not ?puck) then
+    (retract ?hf)
+    (assert (holding NONE))
+    (printout error "Lost puck during take_puck_to" crlf)
+  )
+)
+
+(defrule wm-drive-to-failed
+  (declare (salience ?*PRIORITY-WM-LOW*))
+  (state DRIVE-TO-FAILED)
+  ?tf <- (drive-to-target ?)
+  ?hf <- (holding ?)
+  (puck-in-gripper ?puck)
+  =>
+  (retract ?tf)
+  (if (not ?puck) then
+    (retract ?hf)
+    (assert (holding NONE))
+    (printout error "Lost puck during drive_to" crlf)
+  )
+)
+
 (defrule wm-goto-light
   (declare (salience ?*PRIORITY-WM*))
   (state GOTO-FINAL)
@@ -200,8 +230,8 @@
   )
   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding))
 	  (worldmodel-change (machine ?name) (change SET_PROD_FINISHED_TIME) (amount (+ (nth$ 1 ?now) ?min-prod-time ?ooo-time)))
+	  (worldmodel-change (machine ?name) (change SET_OUT_OF_ORDER_UNTIL) (amount (+ (nth$ 1 ?now) ?ooo-time)))
   )
-  (modify ?mf (out-of-order-until (create$ (+ (nth$ 1 ?now) ?ooo-time) 0)))
 )
 
 (defrule wm-out-of-order-goto-aborted
@@ -225,7 +255,7 @@
     else
     (bind ?ooo-time ?ooo-max)
   )
-  (modify ?mf (out-of-order-until (create$ (+ (nth$ 1 ?now) ?ooo-time) 0)))
+  (assert (worldmodel-change (machine ?name) (change SET_OUT_OF_ORDER_UNTIL) (amount (+ (nth$ 1 ?now) ?ooo-time))))
 )
 
 (defrule wm-proc-invalid
@@ -386,6 +416,8 @@
   (printout error "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf)
   ;block this machine to avoid more accidents
   (assert (worldmodel-change (machine ?name) (change SET_RECYCLE_BLOCKED)))
+  ;reset junk to 0 to restart production after failure
+  (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount 0)))
   ;also block recycling because we want recycling points
   (assert (worldmodel-change (machine ?name) (change SET_PRODUCE_BLOCKED)))
 )
@@ -454,7 +486,7 @@
 
 (defrule wm-process-wm-change-before-sending-machine
   (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent))
+  ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent&~DEFAULT))
   ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (incoming-agent $?incoming-agent)(junk ?junk) (produced-puck ?produced) (doubtful-worldmodel ?doubtful-wm))
   =>
   (switch ?change
@@ -510,7 +542,7 @@
 )
 (defrule wm-process-wm-change-at-order-before-sending
   (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (order ?id) (change ADD_IN_DELIVERY)
+  ?wmc <- (worldmodel-change (order ?id) (change SET_IN_DELIVERY)
 			     (value ?puck) (amount ?amount) (already-applied FALSE))
   ?order <- (order (id ?id))
   =>
