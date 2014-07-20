@@ -98,8 +98,8 @@
 )
 
 (defrule pause
-  "If game state is not PAUSED and the requested change state is not RUNNING change states to PAUSED. The motor is disabled. Rule is not applied in clips-simulation."
-  ?sf <- (state ?state&~PAUSED)
+  "If game state is something in the middle of the game (not PAUSED or WAIT_START) and the requested change state is not RUNNING change states to PAUSED. The motor is disabled. Rule is not applied in clips-simulation."
+  ?sf <- (state ?state&~PAUSED&~WAIT_START)
   ?cf <- (change-state ?cs&~RUNNING)
   ?rf <- (refbox-state ~?cs)
   (not (simulation-is-running))
