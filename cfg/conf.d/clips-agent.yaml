@@ -121,7 +121,7 @@ clips-agent:
       row-low: ["M9", "M6", "M3", "M1", "M13", "M15", "M18", "M21"]
 
       #the time in seconds to report all machines even if we are not prepared for production
-      latest-send-last-report-time: 225 # =3:45
+      latest-send-last-report-time: 210 # =3:30
 
       needed-visibility-history: 15
 
