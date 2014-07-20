@@ -131,7 +131,7 @@ end
 
 function CORRECT_POSITION:init()
    self.skills[1].y = self.fsm.vars.correct_dir * 0.3
-   self.skills[1].vel_trans = 0.02
+   self.skills[1].vel_trans = 0.07
 end
 
 function FINAL:init()
