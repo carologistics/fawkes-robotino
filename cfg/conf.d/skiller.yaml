@@ -62,6 +62,10 @@ skiller:
         line2: LaserLineInterface::/laser-lines/2
         line3: LaserLineInterface::/laser-lines/3
         line4: LaserLineInterface::/laser-lines/4
+        line5: LaserLineInterface::/laser-lines/5
+        line6: LaserLineInterface::/laser-lines/6
+        line7: LaserLineInterface::/laser-lines/7
+        line8: LaserLineInterface::/laser-lines/8
       writing:
         light: RobotinoLightInterface::Light determined
 
