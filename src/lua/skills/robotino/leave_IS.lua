@@ -46,10 +46,10 @@ fsm:define_states{ export_to=_M,
 function TURN:init()
    local q = fawkes.tf.Quaternion:new(pose:rotation(0),pose:rotation(1),pose:rotation(2),pose:rotation(3))
    local ori = fawkes.tf.get_yaw(q)
-   if self.fsm.vars.place == "Ins1" or self.fsm.vars.place == "Ins2" then
+   if     self.fsm.vars.turn_direction == "left" then
       -- dann drehen wir auf 0° plus 20° drüber (nach links)
       self.skills[1].ori = math.abs(ori) + 0.35
-   elseif self.fsm.vars.place == "Ins1Sec" or self.fsm.vars.place == "Ins2Sec" then
+   elseif self.fsm.vars.turn_direction == "right" then
       -- dann drehen wir auf 160° (nach rechts)
       self.skills[1].ori = math.abs(ori) - 3.49
    end

@@ -4,6 +4,7 @@
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
+--             2014  Tobias Neumann
 --
 ----------------------------------------------------------------------------
 
@@ -55,9 +56,9 @@ if config:exists("/hardware/robotino/puck_sensor/index") then
 else
    printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
 end
-local EPSILON_X = 0.07
-local EPSILON_PHI = 0.2
-local OFFSET_X_SIDE_SEARCH = 0.30
+local EPSILON_X = 0.07                                                         -- allowed distance for pucks to be considered in first row
+local EPSILON_PHI = 0.2                                                        -- allowed offset in angle to be considert in front
+local OFFSET_X_SIDE_SEARCH = 0.30                                              -- offset to ignore pucks to close to the robot/grabber (baser_link -> grabber-top ~ 0.3m)
 local pucks = {
    puck_0,
    puck_1,
@@ -97,21 +98,17 @@ end
 
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
    {"START", JumpState},
-   {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="TURN_TO_PUCK",
-      fail_to="START"},
-   {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB",
-      fail_to="START"},
-   {"GRAB", SkillJumpState, skills={{motor_move}}, final_to="GRAB_DONE",
-      fail_to="FAILED"},
+   {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="TURN_TO_PUCK", fail_to="START"},
+   {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB", fail_to="START"},
+   {"GRAB", SkillJumpState, skills={{motor_move}}, final_to="GRAB_DONE", fail_to="FAILED"},
    {"GRAB_DONE", JumpState},
-   {"MOVE_MORE", SkillJumpState, skills={{motor_move}}, final_to="FINAL",
-      fail_to="FAILED"}
+   {"MOVE_MORE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 
 }
 
 fsm:add_transitions{
-   {"START", "TURN_TO_PUCK", cond="visible() and not  vars.move_sideways" },
-   {"START", "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and vars.move_sideways" },
+   {"START", "TURN_TO_PUCK", cond="visible() and vars.search_cycle" },
+   {"START", "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and ( vars.search_right or vars.search_left )" },
    {"START", "FAILED", timeout=TIMEOUT},
    {"TURN_TO_PUCK", "FAILED", precond=cant_see_puck, desc="can't see any puck"},
    {"GRAB", "MOVE_MORE", cond=have_puck},
@@ -119,11 +116,25 @@ fsm:add_transitions{
    {"GRAB_DONE", "MOVE_MORE", cond=have_puck},
 }
 
+function START:init()
+   self.fsm.vars.search_right = false                                          -- decide mode; how to search for the puck
+   self.fsm.vars.search_left  = false
+   self.fsm.vars.search_cycle = false
+   if     self.fsm.vars.move_sideways == "right" then
+      self.fsm.vars.search_right = true
+   elseif self.fsm.vars.move_sideways == "left" then
+      self.fsm.vars.search_left  = true
+   else
+      self.fsm.vars.search_cycle = true
+   end
+end
+
 function TURN_TO_PUCK:init()
    local min_d = 10
    local target
    local candidates = {}
 
+   -- search for candidates ( pucks that are in the given angle EPSILON_PHI )
    for _,o in ipairs(pucks) do
       if o:visibility_history() >= MIN_VIS_HIST then
          local x = o:translation(0)
@@ -135,22 +146,17 @@ function TURN_TO_PUCK:init()
       end
    end
 
-   if #candidates == 0 then
-      local min_dist = 1000000
-      for _,o in ipairs(pucks) do
+   if #candidates == 0 then                                                    -- if there are no canidates in the area
+      for _,o in ipairs(pucks) do                                              -- add all pucks with an high vis_hist
          if o:visibility_history() >= MIN_VIS_HIST then
             local x = o:translation(0)
             local y = o:translation(1)
-            local dist = x*x + y*y
-
-            if dist < min_dist then
-               min_dist = dist
-               table.insert(candidates, {x = x, y = y})
-            end
+            table.insert(candidates, {x = x, y = y})
          end
       end
    end
 
+   -- choose closest candidate (distance)
    for _,o in ipairs(candidates) do
       local d = math.sqrt(o.y * o.y + o.x * o.x)
       if d < min_d then
@@ -167,36 +173,43 @@ end
 function DRIVE_SIDEWAYS_TO_PUCK:init()
    local min_x =  1000
    local max_y = -1000
-   local candidates = {}
+   local min_y =  1000
+   local candidates = {}                                                       -- pucks that are been considert to be in the first row
+
+   -- search for pucks that are be considert to be in the first row
    for _,o in ipairs(pucks) do
       if o:visibility_history() >= MIN_VIS_HIST then
          local x = o:translation(0)
          local y = o:translation(1)
-         if x > OFFSET_X_SIDE_SEARCH and x < min_x then
-            printf("Case 1: %f %f", x, y)
+         if x > OFFSET_X_SIDE_SEARCH and x < min_x then                        -- if the new puck is not too close AND closer than pucks before
+            printf("Case 1: %f %f", x, y)                                         -- then recheck pucks and create new candidates list
             local new_candidates = {{x = x, y = y}}
-            for _,c in ipairs(candidates) do
+            for _,c in ipairs(candidates) do                                      -- just check for the candidates ( pucks that weren't candidates before are eaven more far away now ) if they still be considert as candidates
                if c.x < x + EPSILON_X then
                   table.insert(new_candidates, c)
                end
             end
             candidates = new_candidates
             min_x = x
-         elseif x > OFFSET_X_SIDE_SEARCH and x < min_x + EPSILON_X then
+         elseif x > OFFSET_X_SIDE_SEARCH and x < min_x + EPSILON_X then        -- if the puck is not too close AND close enough to be considert as to be in first row
             printf("Case 2: %f %f", x, y)
             table.insert(candidates, {x = x, y = y})
          end
       end
    end
 
+   -- search for the puck that is most far in (x or y direction, given by the parameter)
    local chosen_candidate
    for _,c in ipairs(candidates) do
-      if c.y > max_y then
+      if self.fsm.vars.search_left  == true and c.y > max_y
+      or self.fsm.vars.search_right == true and c.y < min_y then
          chosen_candidate = c
          max_y = c.y
+         min_y = c.y
       end
    end
 
+   -- decide where to drive to
    if chosen_candidate ~= nil then
       printf("GRAB local: %f,%f", chosen_candidate.x, chosen_candidate.y)
       self.skills[1].y = chosen_candidate.y

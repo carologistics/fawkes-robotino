@@ -4,6 +4,7 @@
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
+--             2014  Tobias Neumann
 --
 ----------------------------------------------------------------------------
 
@@ -25,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_s0"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"ppgoto", "fetch_puck", "leave_IS", "motor_move", "global_motor_move", "get_rid_of_puck"}
+depends_skills     = {"drive_to", "fetch_puck", "leave_IS", "motor_move", "global_motor_move", "get_rid_of_puck"}
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
   {v = "ppnavi", type = "NavigatorInterface"},
@@ -66,11 +67,20 @@ function have_place(self)
    end
 end
 
+function drive_direction()
+   if     fsm.vars.place == "Ins1" or fsm.vars.place == "Ins2" then
+      return "right"
+   elseif fsm.vars.place == "Ins1Sec" or fsm.vars.place == "Ins2Sec" then
+      return "left"
+   else
+      return "turn"
+   end
+end
+
 fsm:define_states{ export_to=_M,
    closure={have_place=have_place, sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST, PUCK_SENSOR_INDEX = PUCK_SENSOR_INDEX},
    {"INIT", JumpState},
-   {"GOTO_IS", SkillJumpState, skills={{ppgoto}}, final_to="SKILL_GLOBAL_MOTOR_MOVE", fail_to="FAILED"},
-   {"SKILL_GLOBAL_MOTOR_MOVE", SkillJumpState, skills={{global_motor_move}}, final_to="MOVE_SIDEWAYS", fail_to="FAILED"},
+   {"GOTO_IS", SkillJumpState, skills={{drive_to}}, final_to="MOVE_SIDEWAYS", fail_to="FAILED"},
    {"MOVE_SIDEWAYS", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},--when this is final we reached the end of the insertion area, so we fail
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="SKILL_LEAVE_AREA",
       fail_to="MOVE_SIDEWAYS"},
@@ -98,23 +108,29 @@ function GOTO_IS:init()
    self.skills[1].place = self.fsm.vars.place
 end
 
-function SKILL_GLOBAL_MOTOR_MOVE:init()
-   self.skills[1].place = self.fsm.vars.place
-end
-
 function MOVE_SIDEWAYS:init()
-   if self.fsm.vars.place == "Ins1" or self.fsm.vars.place == "Ins2" then
+   dir = drive_direction()
+   if     dir == "right" then
       self.skills[1].y = -1
-      self.skills[1].vel_trans = 0.05
-   elseif self.fsm.vars.place == "Ins1Sec" or self.fsm.vars.place == "Ins2Sec" then
+   elseif dir == "left" then
       self.skills[1].y = 1
-      self.skills[1].vel_trans = 0.05
    end
+   self.skills[1].vel_trans = 0.05
 end
 
 function SKILL_LEAVE_AREA:init()
-   self.skills[1].place = self.fsm.vars.place
+   dir = drive_direction()
+   if     dir == "left" then
+      self.skills[1].turn_direction = "right"
+   else
+      self.skills[1].turn_direction = "left"
+   end
 end
 function SKILL_FETCH_PUCK:init()
-   self.skills[1].move_sideways = "true"
+   dir = drive_direction()
+   if     dir == "left" then
+      self.skills[1].move_sideways = "right"
+   else
+      self.skills[1].move_sideways = "left"
+   end
 end
