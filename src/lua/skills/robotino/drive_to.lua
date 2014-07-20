@@ -57,7 +57,11 @@ fsm:add_transitions{
 
 function INIT:init()
    -- do gerneral stuff here
-   self.fsm.vars.closest_node = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+   if self.fsm.vars.same_place then
+      self.fsm.vars.closest_node = self.fsm.vars.place
+   else
+      self.fsm.vars.closest_node = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+   end
 end
 
 function SKILL_TAKE_PUCK:init()
