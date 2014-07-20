@@ -47,8 +47,8 @@ plugins/puck_vision:
       min_points: 10
       basic_roi_size: 0
       neighborhood_min_match: 10
-      scangrid_x_offset: 4
-      scangrid_y_offset: 4
+      scangrid_x_offset: 2
+      scangrid_y_offset: 2
       lut: /bulb-colormap/red.colormap
 
   #puck topdots color (Yellow) 
@@ -60,12 +60,22 @@ plugins/puck_vision:
       255, 194, 49,
       177, 138, 79,
       174, 141, 36,
-      155, 112, 18]
-      chroma_thresh: 10
-      saturation_thresh: 40
+      155, 112, 18,
+      226, 175, 118,
+      238, 181, 136,
+      241, 179, 122,
+      228, 176, 136,
+      219, 161, 124,
+      189, 150, 119,
+      194, 158, 46,
+      196, 159, 68,
+      194, 150, 61,
+      178, 140, 55]
+      chroma_thresh: 15
+      saturation_thresh: 45
       min_points: 4
       basic_roi_size: 4
-      neighborhood_min_match: 3
+      neighborhood_min_match: 2
       scangrid_x_offset: 1
       scangrid_y_offset: 1
       lut: /bulb-colormap/yellow.colormap
