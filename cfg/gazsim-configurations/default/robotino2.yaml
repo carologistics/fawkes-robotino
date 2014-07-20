@@ -15,7 +15,7 @@ fawkes:
 
   # Main app relevant settings
   mainapp:
-    loggers: console;file/debug:debug.log
+    loggers: console;file/debug:debug2.log
 
     net:
       tcp_port: !tcp-port 1922
