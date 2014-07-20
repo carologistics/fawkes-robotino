@@ -86,14 +86,16 @@ if( use_node_constraints_ ){
 
 		std::vector<fawkes::TopologicalMapNode> nodes = get_nodes_from_string(snodes);
 
-		std::string txt = "{";
-		for(uint16_t i=0; i < nodes.size(); i++ ){
-			txt += nodes[i].name();
-			txt += ",";
+		if(nodes.size()>0){
+			std::string txt = "{";
+			for(uint16_t i=0; i < nodes.size(); i++ ){
+				txt += nodes[i].name();
+				txt += ",";
+			}
+			txt.erase(txt.length()-1,1);
+			txt += "}";
+			logger->log_info(name(), "Reserving test nodes  %s", txt.c_str() );
 		}
-		txt.erase(txt.length()-1,1);
-		txt += "}";
-		logger->log_info(name(), "Reserving test nodes  %s", txt.c_str() );
 
 		fawkes::Time now(clock);
 		std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_nodes;
@@ -285,12 +287,14 @@ NavgraphBrokerThread::reserve_nodes(std::string robotname, std::vector<std::pair
 	{  // print
 		std::string txt = "{";
 		const std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> &timed_nodelist = timed_node_constraint->node_time_list();
-		for(const std::pair<fawkes::TopologicalMapNode, fawkes::Time> &n : timed_nodelist){
-			txt += n.first.name();
-			txt += ",";
+		if(timed_nodelist.size()>0){
+			for(const std::pair<fawkes::TopologicalMapNode, fawkes::Time> &n : timed_nodelist){
+				txt += n.first.name();
+				txt += ",";
+			}
+			txt.erase(txt.length()-1,1); txt += "}";
+			logger->log_info(name(), "Reserving nodes %s for constraint '%s'", txt.c_str(), timed_node_constraint->name().c_str() );
 		}
-		txt.erase(txt.length()-1,1); txt += "}";
-		logger->log_info(name(), "Reserving nodes %s for constraint '%s'", txt.c_str(), timed_node_constraint->name().c_str() );
 	}
 
 	constraint_repo.unlock();
@@ -349,12 +353,14 @@ NavgraphBrokerThread::reserve_edges(std::string robotname, std::vector<std::pair
 	  {  //print
 		  std::string txt = "{";
 		  const std::vector<std::pair<fawkes::TopologicalMapEdge, fawkes::Time>> &timededgelist = timed_edge_constraint->edge_time_list();
-		  for(const std::pair<fawkes::TopologicalMapEdge, fawkes::Time> &n : timededgelist){
-			txt += n.first.from(); txt += "_"; txt += n.first.to();
-			txt += ",";
+		  if(timededgelist.size()>0){
+			  for(const std::pair<fawkes::TopologicalMapEdge, fawkes::Time> &n : timededgelist){
+				txt += n.first.from(); txt += "_"; txt += n.first.to();
+				txt += ",";
+			  }
+			  txt.erase(txt.length()-1,1); txt += "}";
+			  logger->log_info(name(), "Reserving nodes '%s' for constraint '%s'", txt.c_str(), timed_edge_constraint->name().c_str() );
 		  }
-		  txt.erase(txt.length()-1,1); txt += "}";
-		  logger->log_info(name(), "Reserving nodes '%s' for constraint '%s'", txt.c_str(), timed_edge_constraint->name().c_str() );
 	  }
 
 	constraint_repo.unlock();
@@ -396,8 +402,9 @@ NavgraphBrokerThread::bb_interface_data_changed(fawkes::Interface *interface) th
 	}
 	txt += "}";
 
-	logger->log_info(name(), "Interface Changed - new path: %s", txt.c_str() );
-
+	if(path.size()>0){
+		logger->log_info(name(), "Interface Changed - new path: %s", txt.c_str() );
+	}
 }
 
 
