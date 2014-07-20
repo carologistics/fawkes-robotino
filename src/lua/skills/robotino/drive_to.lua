@@ -59,20 +59,32 @@ function INIT:init()
    -- do gerneral stuff here
    if self.fsm.vars.same_place then
       self.fsm.vars.closest_node = self.fsm.vars.place
+      self.fsm.vars.closest_x = self.fsm.vars.x
+      self.fsm.vars.closest_y = self.fsm.vars.y
    else
-      self.fsm.vars.closest_node = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+      if self.fsm.vars.place then
+         self.fsm.vars.closest_node = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+      else
+         self.fsm.vars.closest_node = navgraph:closest_node(self.fsm.vars.x, self.fsm.vars.y, "highway_exit"):name()
+      end
    end
 end
 
 function SKILL_TAKE_PUCK:init()
    self.skills[1].place = self.fsm.vars.closest_node
+   self.skills[1].x = self.fsm.vars.closest_x
+   self.skills[1].y = self.fsm.vars.closest_y
 end
 
 function SKILL_PPGOTO:init()
    self.skills[1].place = self.fsm.vars.closest_node
+   self.skills[1].x = self.fsm.vars.closest_x
+   self.skills[1].y = self.fsm.vars.closest_y
 end
 
 function SKILL_GLOBAL_MOVE_LASERLINES:init()
    self.skills[1].place = self.fsm.vars.place
+   self.skills[1].x = self.fsm.vars.x
+   self.skills[1].y = self.fsm.vars.y
    self.skills[1].puck  = self.fsm.vars.puck
 end
