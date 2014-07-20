@@ -482,26 +482,13 @@
   (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
-  (input-storage ?team-color ?ins ? ?)
+  (or (input-storage ?team-color ?ins ? ?)
+      (secondary-storage ?team-color ?ins ? ?))
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   =>
   (printout t "Waiting for production at " ?ins crlf)
   (skill-call drive_to place (str-cat ?ins))
   (assert (prepare-for-production-goal ?ins))
-)
-
-(defrule exp-prepare-for-production-drive-to-secondary-ins
-  "When locks for pre-game positions are acquired, drive there with ppgoto."
-  (phase EXPLORATION)
-  (state EXP_PREPARE_FOR_PRODUCTION|EXP_PREPARE_FOR_PRODUCTION_FINISHED)
-  (exp-tactic GOTO-INS)
-  (team-color ?team-color)
-  (secondary-storage ?team-color ?secins ? ?)
-  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?secins))
-  =>
-  (printout t "Waiting for production at " ?secins crlf)
-  (skill-call drive_to place (str-cat ?secins))
-  (assert (prepare-for-production-goal ?secins))
 )
 
 (defrule exp-prepare-for-production-drive-to-wait-for-ins
@@ -510,9 +497,9 @@
   (state EXP_PREPARE_FOR_PRODUCTION|EXP_PREPARE_FOR_PRODUCTION_FINISHED)
   (exp-tactic GOTO-INS)
   (team-color ?team-color)
-  (input-storage ?team-color ?ins ? ?)
-  (secondary-storage ?team-color ?secins ? ?)
-  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins | ?secins))
+  (or (input-storage ?team-color ?ins ? ?)
+      (secondary-storage ?team-color ?ins ? ?))
+  (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?ins))
   ?lock <- (lock (type GET) (agent ?a) (resource ?ins))
   (wait-point ?ins ?a ?wait-point)
   =>
