@@ -70,7 +70,8 @@ NavgraphBrokerThread::init()
 
 	m_ = new navgraph_broker::NavigationMessage();
 	m_->set_robotname( robotname_.c_str() );
-
+	last_message_time_sec_ = 0;
+	last_message_time_nsec_ = 0;
 
 /******************************************************************************************
  * ***************************************************************************************
@@ -170,8 +171,6 @@ NavgraphBrokerThread::loop(){
 		std::shared_ptr<navgraph_broker::NavigationMessage> msg = reservation_messages_.front();
 		reservation_messages_.pop();
 
-		std::vector<std::string> reservation_request;
-
 		if ( true /*msg->robotname() != robotname_*/) {
 
 			std::vector<fawkes::TopologicalMapNode> nodes;
@@ -190,33 +189,17 @@ NavgraphBrokerThread::loop(){
 			  timed_nodes.push_back(std::pair<fawkes::TopologicalMapNode,fawkes::Time>(node,valid_duration));
 			}
 
-			// new message arrived
-			if( msg->sec() != last_message_time_sec_ && msg->nsec() != last_message_time_nsec_){
+			std::string constraint_name;
 
-				std::string constraint_name;
-
-				// reserve node / edge
-				if( use_node_constraints_ ){
-					constraint_name = msg->robotname() + "_Reserved_Nodes";
-					reserve_nodes( constraint_name , timed_nodes);
-				}
-				else{
-					constraint_name = msg->robotname() + "_Reserved_Edges";
-					reserve_edges( constraint_name , timed_nodes);
-				}
-
-				// print
-				std::string txt = "{";
-				if(timed_nodes.size()>0){
-					for(const std::pair<fawkes::TopologicalMapNode, fawkes::Time> &n : timed_nodes){
-				  	  txt += n.first.name();
-					  txt += ",";
-					}
-					txt.erase(txt.length()-1,1); txt += "}";
-					logger->log_debug(name(), "Reserving nodes %s for constraint '%s'", txt.c_str(), constraint_name.c_str() );
-				}
+			// reserve node / edge
+			if( use_node_constraints_ ){
+				constraint_name = msg->robotname() + "_Reserved_Nodes";
+				reserve_nodes( constraint_name , timed_nodes);
 			}
-
+			else{
+				constraint_name = msg->robotname() + "_Reserved_Edges";
+				reserve_edges( constraint_name , timed_nodes);
+			}
 		}
 		else {
 				logger->log_warn(name(), "Message with proper component_id and msg_type, but no conversion. "
@@ -292,13 +275,11 @@ NavgraphBrokerThread::reserve_nodes(std::string constraint_name, std::vector<std
 	fawkes::NavGraphTimedReservationListNodeConstraint *timed_node_constraint;
 
 	if( constraint_repo->has_constraint( constraint_name ) ){
-		logger->log_info( name(), "Updating nodes of constraint='%s'", constraint_name.c_str() );
 		timed_node_constraint = (NavGraphTimedReservationListNodeConstraint *) constraint_repo->get_node_constraint(constraint_name);
 		timed_node_constraint->clear_nodes();
 		timed_node_constraint->add_nodes( timed_path );
 	}
 	else{
-		logger->log_info( name(), "Register constraint='%s'", constraint_name.c_str() );
 		timed_node_constraint = new NavGraphTimedReservationListNodeConstraint(logger,  constraint_name, clock);
 		timed_node_constraint->add_nodes( timed_path );
 		constraint_repo->register_constraint( (NavGraphNodeConstraint *) timed_node_constraint );
@@ -319,7 +300,6 @@ NavgraphBrokerThread::reserve_edges(std::string constraint_name, std::vector<std
 
 	  if( constraint_repo->has_constraint( constraint_name ) )
 	  {
-		  logger->log_info( name(), "Updating edges of constraint='%s'", constraint_name.c_str() );
 		  timed_edge_constraint = (NavGraphTimedReservationListEdgeConstraint *) constraint_repo->get_edge_constraint(constraint_name);
 		  timed_edge_constraint->clear_edges();
 
@@ -328,7 +308,6 @@ NavgraphBrokerThread::reserve_edges(std::string constraint_name, std::vector<std
 		  	  if ((timed_path[i-1].first.name() == gedge.from() && timed_path[i].first.name() == gedge.to()) ||
 		  	      (timed_path[i-1].first.name() == gedge.to() && timed_path[i].first.name() == gedge.from()))
 		  	  {
-		  	    logger->log_info( name(), "Found edge from '%s' to '%s'", gedge.from().c_str(), gedge.to().c_str() );
 		  	    timed_edge_constraint->add_edge(gedge,timed_path[i].second);
 		  		break;
 		  	  }
@@ -337,7 +316,6 @@ NavgraphBrokerThread::reserve_edges(std::string constraint_name, std::vector<std
 	  }
 	  else
 	  {
-		  logger->log_info( name(), "Register constraint='%s'", constraint_name.c_str() );
 		  timed_edge_constraint = new NavGraphTimedReservationListEdgeConstraint(logger,  constraint_name, clock);
 
 		  for (uint16_t i = 1; i<timed_path.size(); i++) {
@@ -345,7 +323,6 @@ NavgraphBrokerThread::reserve_edges(std::string constraint_name, std::vector<std
 		      if ((timed_path[i-1].first.name() == gedge.from() && timed_path[i].first.name() == gedge.to()) ||
 		          (timed_path[i-1].first.name() == gedge.to() && timed_path[i].first.name() == gedge.from()))
 		      {
-		  	    logger->log_info( name(), "Found edge from '%s' to '%s'", gedge.from().c_str(), gedge.to().c_str() );
 		  	    timed_edge_constraint->add_edge(gedge,timed_path[i].second);
 		  		break;
 		  	  }
@@ -408,14 +385,21 @@ NavgraphBrokerThread::handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
 		std::shared_ptr<navgraph_broker::NavigationMessage> tm =
 		std::dynamic_pointer_cast<navgraph_broker::NavigationMessage>(msg);
 
-		reservation_messages_.push(tm);
+		int msg_sec = tm->sec(); int msg_nsec = tm->nsec();
+		if( ( msg_sec!=last_message_time_sec_ ) || ( msg_nsec!=last_message_time_nsec_ ) ){
 
-		//logger->log_info(name(), "Signal - received msg" );
+			reservation_messages_.push(tm);
+			last_message_time_sec_ = tm->sec();
+			last_message_time_nsec_ = tm->nsec();
 
-	}
-
-	else {
-		logger->log_warn(name(), "Unknown message received: %u:%u", component_id, msg_type);
+			// print
+			std::string txt = "{";
+			for(int i=0; i < (tm->nodelist_size()); i++ ){
+				txt += tm->nodelist(i); txt += ",";
+			}
+			txt.erase(txt.length()-1,1); txt += "}";
+			logger->log_info( name(), "Received reservation msg from '%s'time: { sec=%d nsec=%d }", tm->robotname().c_str(), tm->sec(), tm->nsec() );
+		}
 	}
 }
 
