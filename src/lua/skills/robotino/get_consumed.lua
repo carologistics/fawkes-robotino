@@ -65,7 +65,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST, PUCK_SENSOR_INDEX = PUCK_SENSOR_INDEX},
    {"GOTO_MACHINE", SkillJumpState, skills={{ppgoto}}, final_to="ADJUST_POS", fail_to="FAILED"},
-   {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="DRIVE_TO_SIDE", fail_to="FAILED"},
+   {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="DRIVE_TO_SIDE", fail_to="DRIVE_TO_SIDE"},
    {"DRIVE_TO_SIDE", SkillJumpState, skills={{motor_move}}, final_to="GRAP_CONSUMED", fail_to="FAILED"},
    {"GRAP_CONSUMED", SkillJumpState, skills={{fetch_puck}}, final_to="LEAVE_TURN", fail_to="FAILED"},
    {"LEAVE_TURN", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
