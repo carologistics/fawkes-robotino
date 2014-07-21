@@ -586,7 +586,7 @@ void MachineSignalPipelineThread::loop()
   Time now(clock);
   double frametime = now - last_second_;
   last_second_ = &(last_second_->stamp());
-  if (frametime >= desired_frametime_ * 1.03) {
+  if (frametime >= desired_frametime_ * 1.1) {
     logger->log_warn(name(), "Running too slow (%f sec/frame). Blink detection will be unreliable!", frametime);
   }
 
