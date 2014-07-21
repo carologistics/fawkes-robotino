@@ -356,10 +356,15 @@
   ?lf <- (lights $?)
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype ?mtype))
+  (puck-in-gripper ?have-puck)
   =>
   (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
-  (retract ?lf ?tf ?hf ?gtdw)
-  (assert (holding NONE))
+  (retract ?lf ?tf ?gtdw)
+  (if (not ?have-puck)
+    then
+    (retract ?hf)
+    (assert (holding NONE))
+  )
 )
 
 (defrule wm-get-produced-final
