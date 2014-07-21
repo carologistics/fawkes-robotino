@@ -83,7 +83,7 @@ fsm:define_states{ export_to=_M,
    {"GOTO_IS", SkillJumpState, skills={{drive_to}}, final_to="MOVE_SIDEWAYS", fail_to="FAILED"},
    {"MOVE_SIDEWAYS", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},--when this is final we reached the end of the insertion area, so we fail
    {"SKILL_FETCH_PUCK", SkillJumpState, skills={{fetch_puck}}, final_to="SKILL_LEAVE_AREA",
-      fail_to="MOVE_SIDEWAYS"},
+      fail_to="INIT"},
    {"SKILL_LEAVE_AREA", SkillJumpState, skills={{leave_IS}}, final_to="FINAL", fail_to="FAILED"},
    {"GET_RID_OF_PUCK", SkillJumpState, skills={{get_rid_of_puck}}, final_to="GOTO_IS", fail_to="FAILED"}
 }
