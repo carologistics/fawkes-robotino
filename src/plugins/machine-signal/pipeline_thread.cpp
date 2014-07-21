@@ -624,6 +624,8 @@ void MachineSignalPipelineThread::loop()
     cfy_ctxt_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     cfy_ctxt_red_delivery_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
+    drawn_rois_.clear();
+
     // Then use the appropriate classifier for red
     if (cfg_delivery_mode_) {
       rois_R = cfy_ctxt_red_delivery_.classifier->classify();
@@ -634,17 +636,6 @@ void MachineSignalPipelineThread::loop()
       rois_G = cfy_ctxt_green_.classifier->classify();
     }
 
-
-    if (unlikely(cfg_tuning_mode_)) {
-      drawn_rois_.clear();
-      if (cluster_rois_) {
-        drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
-      }
-      if (!cfg_draw_processed_rois_) {
-        drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
-        if (rois_G) drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
-      }
-    }
 
     // Create and group ROIs that make up the red, yellow and green lights of a signal
     std::list<SignalState::signal_rois_t_> *signal_rois;
@@ -740,6 +731,10 @@ void MachineSignalPipelineThread::loop()
       color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
       color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
       color_filter_->apply();
+
+      if (cluster_rois_) {
+        drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
+      }
 
       // Visualize the signals and bright spots we found
       roi_drawer_->set_rois(&drawn_rois_);
@@ -852,6 +847,11 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
 
   merge_rois_in_laser(cluster_rois_, rois_R);
   merge_rois_in_laser(cluster_rois_, rois_G);
+
+  if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
+    drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
+    drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
+  }
 
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
     bool ok = false;
@@ -976,18 +976,17 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
 
 
 void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois_by_area_> *laser_rois, list<ROI> *rois) {
-  list<ROI>::iterator it_roi = rois->begin();
   list<ROI> merged_rois;
 
   // Match red ROIs to laser clusters
   for (WorldROI const &cluster_roi : *cluster_rois_) {
     ROI *merged_roi = nullptr;
+    list<ROI>::iterator it_roi = rois->begin();
     while(it_roi != rois->end()) {
       ROI intersection = it_roi->intersect(cluster_roi);
       unsigned int area_R = it_roi->width * it_roi->height;
       unsigned int area_intrsct = intersection.width * intersection.height;
-      if (area_R && (float(area_intrsct) / float(area_R) >= 0.2)) {
-        map<ROI, ROI, compare_rois_by_x_>::iterator signal_it;
+      if (area_R && (float(area_intrsct) / float(area_R) >= 0.3)) {
         if (merged_roi != nullptr) {
           merged_roi->extend(intersection.start.x, intersection.start.y);
           merged_roi->extend(intersection.start.x + intersection.width,
@@ -996,6 +995,7 @@ void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois
         else {
           merged_roi = new ROI(intersection);
         }
+        drawn_rois_.push_back(merged_roi);
 
         // Erase red ROIs that have been processed here since they can't be part of
         // any other signal.
@@ -1005,10 +1005,11 @@ void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois
         ++it_roi;
       }
     }
-    merged_rois.push_back(*merged_roi);
+    if (merged_roi) {
+      merged_rois.push_back(*merged_roi);
+    }
     delete merged_roi;
   }
-
   rois->insert(rois->begin(), merged_rois.begin(), merged_rois.end());
 }
 
@@ -1151,6 +1152,10 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
 {
   // First try to build signal ROIs based on laser clusters.
   std::list<SignalState::signal_rois_t_> *rv = create_laser_signals(rois_R);
+
+  if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
+    drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
+  }
 
   std::list<ROI>::iterator it_R = rois_R->begin();
 
