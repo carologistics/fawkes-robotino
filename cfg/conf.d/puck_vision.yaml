@@ -71,7 +71,7 @@ plugins/puck_vision:
       196, 159, 68,
       194, 150, 61,
       178, 140, 55]
-      chroma_thresh: 15
+      chroma_thresh: 25
       saturation_thresh: 45
       min_points: 4
       basic_roi_size: 4
