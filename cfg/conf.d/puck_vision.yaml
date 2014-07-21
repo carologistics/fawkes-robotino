@@ -67,9 +67,9 @@ plugins/puck_vision:
       194, 150, 61,
       178, 140, 55,
       193, 153, 42]
-      chroma_thresh: 25
-      saturation_thresh: 45
-      min_points: 4
+      chroma_thresh: 10
+      saturation_thresh: 15
+      min_points: 1
       basic_roi_size: 4
       neighborhood_min_match: 2
       scangrid_x_offset: 1
