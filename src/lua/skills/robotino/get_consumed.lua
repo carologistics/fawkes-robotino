@@ -28,7 +28,8 @@ depends_skills     = {"drive_to", "motor_move", "fetch_puck", "get_rid_of_puck"}
 depends_interfaces = {
    {v = "ppnavi", type = "NavigatorInterface"},
    {v = "sensor", type="RobotinoSensorInterface"},
-   {v = "motor", type = "MotorInterface", id="Robotino" }
+   {v = "motor",  type = "MotorInterface", id="Robotino" },
+   {v = "puck",   type="Position3DInterface", id="puck_0"},
 }
 
 documentation      = [==[Drive to Maschine and ged a consumed puck]==]
@@ -52,6 +53,10 @@ else
    printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
 end
 
+function puck_visible()
+   return puck:visibility_history() >= 1
+end
+
 function have_puck()
     local curDistance = sensor:distance(PUCK_SENSOR_INDEX)
     if (curDistance > 0) and (curDistance <= THRESHOLD_DISTANCE) then
@@ -62,17 +67,54 @@ end
 
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck},
    {"INIT", JumpState},
-   {"GOTO_MACHINE_RECYCLE", SkillJumpState, skills={{drive_to}}, final_to="GRAP_CONSUMEND", fail_to="GOTO_MACHINE_RECYCLE"},
-   {"GRAP_CONSUMEND", SkillJumpState, skills={{fetch_puck}}, final_to="FINAL", fail_to="FAILED"},
-   {"GET_RID_OF_PUCK", SkillJumpState, skills={{get_rid_of_puck}}, final_to="GOTO_MACHINE_RECYCLE", fail_to="GOTO_MACHINE_RECYCLE"},
+   {"GOTO_MACHINE_RECYCLE", SkillJumpState, skills={{drive_to}},        final_to="MOVE_SIDEWAYS",        fail_to="GOTO_MACHINE_RECYCLE"},
+   {"MOVE_SIDEWAYS",        SkillJumpState, skills={{motor_move}},      final_to="FAILED",               fail_to="MOVE_SIDEWAYS"},
+   {"GRAP_CONSUMEND",       SkillJumpState, skills={{fetch_puck}},      final_to="FINAL",                fail_to="FAILED"},
+   {"GET_RID_OF_PUCK",      SkillJumpState, skills={{get_rid_of_puck}}, final_to="GOTO_MACHINE_RECYCLE", fail_to="GOTO_MACHINE_RECYCLE"},
 }
 
 fsm:add_transitions{
+   {"MOVE_SIDEWAYS", "GRAP_CONSUMEND",         cond = puck_visible,  desc = "see puck => grap"},
    {"GOTO_MACHINE_RECYCLE", "GET_RID_OF_PUCK", cond = "have_puck()", desc = "Picked up another puck while driving => escape"},
    {"INIT", "GOTO_MACHINE_RECYCLE", cond=true},
 }
 
 function GOTO_MACHINE_RECYCLE:init()
-   -- self.skills[1].same_place = true
-   self.skills[1].place = navgraph:closest_node_to(self.fsm.vars.place, tostring(self.fsm.vars.place) .. "_recycle"):name()
+   self.skills[1].same_place = true
+   local node = navgraph:node(self.fsm.vars.place)
+   local ori  = node:property_as_float("orientation")
+   local off_x      = 0.7
+   local off_y      = 0.6
+   local off_direct = math.sqrt( off_x*off_x + off_y*off_y )
+   local off_ori    = math.atan2(off_y, off_x)
+   local end_ori
+   if node:has_property("leave_right") then
+      self.skills[1].x   = node:x() + math.cos(ori - off_ori) * off_direct
+      self.skills[1].y   = node:y() + math.sin(ori - off_ori) * off_direct
+      end_ori = ori + math.pi / 2
+   else
+      self.skills[1].x   = node:x() + math.cos(ori + off_ori) * off_direct
+      self.skills[1].y   = node:y() + math.sin(ori + off_ori) * off_direct
+      end_ori = ori - math.pi / 2
+   end
+
+   self.skills[1].ori = end_ori
+
+   printf(ori .. "   " .. end_ori)
+end
+
+function MOVE_SIDEWAYS:init()
+   self.skills[1].y = -0.5
+   if navgraph:node(self.fsm.vars.place):has_property("leave_right") then
+      self.skills[1].y = self.skills[1].y * (-1)
+   end
+   self.skills[1].vel_trans = 0.05
+end
+
+function GRAP_CONSUMEND:init()
+   if navgraph:node(self.fsm.vars.place):has_property("leave_right") then
+      self.skills[1].move_sideways = "right"
+   else
+      self.skills[1].move_sideways = "left"
+   end
 end
