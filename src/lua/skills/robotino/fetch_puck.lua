@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "fetch_puck"
-fsm                = SkillHSM:new{name=name, start="START", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = { "motor_move" }
 depends_interfaces = {
 --    {v = "omnivisionSwitch", type="SwitchInterface", id="omnivisionSwitch"},
@@ -97,6 +97,7 @@ function cant_see_puck()
 end
 
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
+   {"INIT",  JumpState},
    {"START", JumpState},
    {"DRIVE_SIDEWAYS_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="TURN_TO_PUCK", fail_to="START"},
    {"TURN_TO_PUCK", SkillJumpState, skills={{motor_move}}, final_to="GRAB", fail_to="START"},
@@ -107,16 +108,17 @@ fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
 }
 
 fsm:add_transitions{
-   {"START", "TURN_TO_PUCK", cond="visible() and vars.search_cycle" },
-   {"START", "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and ( vars.search_right or vars.search_left )" },
-   {"START", "FAILED", timeout=TIMEOUT},
-   {"TURN_TO_PUCK", "FAILED", precond=cant_see_puck, desc="can't see any puck"},
-   {"GRAB", "MOVE_MORE", cond=have_puck},
-   {"GRAB_DONE", "START", cond="not have_puck()"},
-   {"GRAB_DONE", "MOVE_MORE", cond=have_puck},
+   {"INIT",         "START",                  cond=true },
+   {"START",        "TURN_TO_PUCK",           cond="visible() and vars.search_cycle" },
+   {"START",        "DRIVE_SIDEWAYS_TO_PUCK", cond="visible() and ( vars.search_right or vars.search_left )" },
+   {"START",        "FAILED",                 timeout=TIMEOUT,        desc="can't see puck in front" },
+   {"TURN_TO_PUCK", "FAILED",                 precond=cant_see_puck,  desc="can't see any puck" },
+   {"GRAB",         "MOVE_MORE",              cond=have_puck },
+   {"GRAB_DONE",    "START",                  cond="not have_puck()", desc="retry grab, now just turn" },
+   {"GRAB_DONE",    "MOVE_MORE",              cond=have_puck },
 }
 
-function START:init()
+function INIT:init()
    self.fsm.vars.search_right = false                                          -- decide mode; how to search for the puck
    self.fsm.vars.search_left  = false
    self.fsm.vars.search_cycle = false
@@ -224,6 +226,14 @@ function GRAB:init()
    self.skills[1].x = math.sqrt(self.fsm.vars.target.x^2 + self.fsm.vars.target.y^2) - 0.15
    self.skills[1].vel_trans = 0.25
    self.skills[1].tolerance = { x=0.01, y=0.01, ori=0.05 }
+end
+
+function GRAB_DONE:exit()
+   -- in case we didn't got a puck and restart, we just want to turn (not drive sideways again)
+   -- if we got a puck, this variables are not used anymore
+   self.fsm.vars.search_right = false
+   self.fsm.vars.search_left  = false
+   self.fsm.vars.search_cycle = true
 end
 
 function MOVE_MORE:init()
