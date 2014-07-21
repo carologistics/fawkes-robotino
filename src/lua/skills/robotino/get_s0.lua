@@ -111,9 +111,9 @@ end
 function MOVE_SIDEWAYS:init()
    dir = drive_direction()
    if     dir == "right" then
-      self.skills[1].y = -1
+      self.skills[1].y = -1.2
    elseif dir == "left" then
-      self.skills[1].y = 1
+      self.skills[1].y = 1.2
    end
    self.skills[1].vel_trans = 0.05
 end
