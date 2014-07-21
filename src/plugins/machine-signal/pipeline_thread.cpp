@@ -815,11 +815,16 @@ bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
 
 
 bool MachineSignalPipelineThread::roi1_x_overlaps_below(ROI &r1, ROI &r2) {
-  return (r1.start.y > r2.start.y + r2.height)
+  return (r1.start.y > r2.start.y)
       && (   (r1.start.x <= r2.start.x && r1.start.x + r1.width > r2.start.x)
           || (r1.start.x > r2.start.x && r1.start.x < r2.start.x + r2.width && r1.start.x + r1.width > r2.start.x + r2.width));
 }
 
+
+bool MachineSignalPipelineThread::roi1_x_intersects(ROI &r1, ROI &r2) {
+  return !(r1.start.x + r1.width <= r2.start.x
+       || r2.start.x + r2.width <= r1.start.x);
+}
 
 bool MachineSignalPipelineThread::roi1_oversize(ROI &r1, ROI &r2) {
   return !rois_similar_width(r1, r2)
@@ -877,7 +882,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
       }
 
       if (it_R->width > cfg_roi_max_width_ && it_R->height > cfg_roi_max_height_
-          && roi1_x_overlaps_below(*it_G, *it_R)) {
+          && it_G->start.y > it_R->start.y && roi1_x_intersects(*it_G, *it_R)) {
         ROI *recheck_R = new ROI(*it_R);
         recheck_R->start.y += it_R->height - cfg_roi_max_height_;
         recheck_R->height  -= it_R->height - cfg_roi_max_height_;

@@ -257,6 +257,7 @@ class MachineSignalPipelineThread :
     inline bool rois_vspace_ok(firevision::ROI &r1, firevision::ROI &r2);
     inline bool roi1_oversize(firevision::ROI &r1, firevision::ROI &r2);
     inline bool roi1_x_overlaps_below(firevision::ROI &r1, firevision::ROI &r2);
+    inline bool roi1_x_intersects(firevision::ROI &r1, firevision::ROI &r2);
 
 
     //*/
