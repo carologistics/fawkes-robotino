@@ -33,10 +33,11 @@ HistoricSmoothROI::HistoricSmoothROI(ROI const &other, unsigned int history_len)
 
 void HistoricSmoothROI::update(ROI const &next_roi) {
   history_.push_front(next_roi);
-  unsigned long int start_x_sum = start.x;
+/*  unsigned long int start_x_sum = start.x;
   unsigned long int start_y_sum = start.y;
   unsigned long int width_sum = width;
   unsigned long int height_sum = height;
+
   for (ROI const &roi : history_) {
     start_x_sum += roi.start.x;
     start_y_sum += roi.start.y;
@@ -47,6 +48,12 @@ void HistoricSmoothROI::update(ROI const &next_roi) {
   start.y = start_y_sum / (history_.size() + 1);
   width = width_sum / (history_.size() + 1);
   height = height_sum / (history_.size() + 1);
+*/
+
+  start.x = next_roi.start.x;
+  start.y = next_roi.start.y;
+  width = next_roi.width;
+  height = next_roi.height;
 }
 
 HistoricSmoothROI &HistoricSmoothROI::operator=(HistoricSmoothROI const &roi)
