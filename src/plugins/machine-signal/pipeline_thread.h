@@ -244,6 +244,7 @@ class MachineSignalPipelineThread :
         std::list<firevision::ROI> *rois_R,
         std::list<firevision::ROI> *rois_G);
 
+
     std::list<SignalState::signal_rois_t_> *create_delivery_signals(std::list<firevision::ROI> *rois_R);
     std::list<SignalState::signal_rois_t_> *create_laser_signals(std::list<firevision::ROI> *rois_R);
 
@@ -302,6 +303,7 @@ class MachineSignalPipelineThread :
     std::set<WorldROI, compare_rois_by_area_> *bb_get_laser_rois();
     std::set<WorldROI, compare_rois_by_area_> *cluster_rois_;
 
+    void merge_rois_in_laser(std::set<WorldROI, compare_rois_by_area_> *laser_rois, std::list<firevision::ROI> *rois);
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);

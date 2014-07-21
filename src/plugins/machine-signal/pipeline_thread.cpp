@@ -850,6 +850,9 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
 
   if (cfg_debug_processing_) debug_proc_string_ = "";
 
+  merge_rois_in_laser(cluster_rois_, rois_R);
+  merge_rois_in_laser(cluster_rois_, rois_G);
+
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
     bool ok = false;
 
@@ -969,6 +972,44 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
     if (unlikely(!ok && cfg_debug_processing_)) logger->log_debug(name(), "field proc: %s", debug_proc_string_.c_str());
   }
   return rv;
+}
+
+
+void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois_by_area_> *laser_rois, list<ROI> *rois) {
+  list<ROI>::iterator it_roi = rois->begin();
+  list<ROI> merged_rois;
+
+  // Match red ROIs to laser clusters
+  for (WorldROI const &cluster_roi : *cluster_rois_) {
+    ROI *merged_roi = nullptr;
+    while(it_roi != rois->end()) {
+      ROI intersection = it_roi->intersect(cluster_roi);
+      unsigned int area_R = it_roi->width * it_roi->height;
+      unsigned int area_intrsct = intersection.width * intersection.height;
+      if (area_R && (float(area_intrsct) / float(area_R) >= 0.2)) {
+        map<ROI, ROI, compare_rois_by_x_>::iterator signal_it;
+        if (merged_roi != nullptr) {
+          merged_roi->extend(intersection.start.x, intersection.start.y);
+          merged_roi->extend(intersection.start.x + intersection.width,
+            intersection.start.y + intersection.height);
+        }
+        else {
+          merged_roi = new ROI(intersection);
+        }
+
+        // Erase red ROIs that have been processed here since they can't be part of
+        // any other signal.
+        it_roi = rois->erase(it_roi);
+      }
+      else {
+        ++it_roi;
+      }
+    }
+    merged_rois.push_back(*merged_roi);
+    delete merged_roi;
+  }
+
+  rois->insert(rois->begin(), merged_rois.begin(), merged_rois.end());
 }
 
 
