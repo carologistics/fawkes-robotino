@@ -18,6 +18,7 @@ class HistoricSmoothROI :
   public ROI
 {
   private:
+    HistoricSmoothROI();
     boost::circular_buffer<ROI> history_;
   public:
     HistoricSmoothROI(unsigned int history_length);
