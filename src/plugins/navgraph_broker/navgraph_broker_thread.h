@@ -56,6 +56,7 @@ namespace fawkes{
 	class NavPathInterface;
 	class NavGraphTimedReservationListNodeConstraint;
 	class NavGraphTimedReservationListEdgeConstraint;
+	class Mutex;
 }
 
 class NavgraphBrokerThread
@@ -113,6 +114,7 @@ class NavgraphBrokerThread
      std::string robotname_;
 
      navgraph_broker::NavigationMessage* m_;
+     fawkes::Mutex *m_mutex_;
      int last_message_time_sec_;
      int last_message_time_nsec_;
 

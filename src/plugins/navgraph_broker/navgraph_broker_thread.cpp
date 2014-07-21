@@ -68,6 +68,7 @@ NavgraphBrokerThread::init()
 	max_reservation_duration_ = (double) config->get_float("/plugins/navgraph-broker/max-reservation-duration");
 	use_node_constraints_ = config->get_bool("/plugins/navgraph-broker/use-node-constraint");
 
+	m_mutex_ = new Mutex();
 	m_ = new navgraph_broker::NavigationMessage();
 	m_->set_robotname( robotname_.c_str() );
 	last_message_time_sec_ = 0;
@@ -158,6 +159,7 @@ NavgraphBrokerThread::finalize()
 	sig_recv_error_conn_.disconnect();
 	sig_send_error_conn_.disconnect();
 
+	delete m_mutex_;
 	delete m_;
 
 }
@@ -347,6 +349,7 @@ NavgraphBrokerThread::send_msg(){
 	}
 	*/
 
+	MutexLocker lock(m_mutex_);
 	gossip_group->broadcast(*m_);
 
 }
@@ -361,6 +364,7 @@ NavgraphBrokerThread::bb_interface_data_changed(fawkes::Interface *interface) th
 	fawkes::Time now(clock);
 	time_of_plan_chg = now;
 
+	MutexLocker lock(m_mutex_);
 	m_->set_sec(now.get_sec());
 	m_->set_nsec(now.get_nsec());
 	m_->clear_nodelist();
