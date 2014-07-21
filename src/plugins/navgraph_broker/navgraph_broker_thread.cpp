@@ -350,7 +350,11 @@ NavgraphBrokerThread::send_msg(){
 	*/
 
 	MutexLocker lock(m_mutex_);
-	gossip_group->broadcast(*m_);
+	try {
+	  gossip_group->broadcast(*m_);
+	} catch (std::exception &e) {
+	  logger->log_warn(name(), "Failed to send message: %s", e.what());
+	}
 
 }
 
