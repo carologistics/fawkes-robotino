@@ -16,7 +16,9 @@
 BASEDIR = ../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= omnivision_pucks clips-motor-switch laser-cluster omnivision_activator light_front robotino_worldmodel voltagelogger
+SUBDIRS	= omnivision_pucks clips-motor-switch laser-cluster \
+	  omnivision_activator light_front robotino_worldmodel voltagelogger \
+	  navgraph_broker
 
 include $(BUILDSYSDIR)/rules.mk
 
