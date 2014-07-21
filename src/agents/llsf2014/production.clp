@@ -317,7 +317,7 @@
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l)) (junk 0)
 	   (name ?name-T3_T4) (produced-puck NONE) (team ?team-color)
 	   (incoming $?i&:(and (not (member$ BRING_S1 ?i))
-			       (or (member$ S2 ?l) (member$ BRING_S1 ?i))))
+			       (or (member$ S2 ?l) (member$ BRING_S2 ?i))))
 	   (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0)))
   (not (proposed-task (name load-with-S1) (args $?args&:(subsetp ?args (create$ ?name-T3_T4))) (state rejected)))
   (holding NONE|S0|S1)
