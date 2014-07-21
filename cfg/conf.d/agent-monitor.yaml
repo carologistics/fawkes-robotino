@@ -6,6 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/agent-monitor
 agent-monitor:
   clips-environment: "agent"
   #ip and port of the different robotinos
-  robotino1: "172.26.102.91:8088"
-  robotino2: "172.26.102.92:8088"
-  robotino3: "172.26.102.93:8088"
+  robotino1: "172.26.108.91:8088"
+  robotino2: "172.26.108.92:8088"
+  robotino3: "172.26.108.93:8088"
+  refresh-interval: 5
