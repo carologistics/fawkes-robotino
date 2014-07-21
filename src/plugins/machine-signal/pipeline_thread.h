@@ -164,6 +164,7 @@ class MachineSignalPipelineThread :
     firevision::PositionToPixel *pos2pixel_;
 
     std::atomic<unsigned int> cfg_roi_max_height_;
+    std::atomic<unsigned int> cfg_roi_max_width_;
     std::atomic<float> cfg_roi_max_aspect_ratio_;
     std::atomic<float> cfg_roi_max_width_ratio_;
     std::atomic<float> cfg_roi_xalign_;

@@ -236,6 +236,7 @@ void MachineSignalPipelineThread::init()
   cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
   cfg_roi_max_width_ratio_ = config->get_float(CFG_PREFIX "/roi_max_r2g_width_ratio");
   cfg_roi_max_height_ = config->get_uint(CFG_PREFIX "/roi_max_height");
+  cfg_roi_max_width_ = config->get_uint(CFG_PREFIX "/roi_max_width");
   cfg_roi_xalign_ = config->get_float(CFG_PREFIX "/roi_xalign_by_width");
   cfg_roi_green_horizon = config->get_uint(CFG_PREFIX "/roi_green_horizon");
   cfg_tuning_mode_ = config->get_bool(CFG_PREFIX "/tuning_mode");
@@ -863,14 +864,35 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
         recheck_G->height = cfg_roi_max_height_;
         cfy_ctxt_green_.scanline_grid->set_roi(recheck_G);
         list<ROI> *rechecked_G = cfy_ctxt_green_.classifier->classify();
-        ROI &new_G = rechecked_G->front();
-        if (roi_width_ok(new_G) && rois_x_aligned(*it_R, new_G) && !roi1_oversize(new_G, *it_R)
-            && rois_vspace_ok(*it_R, new_G) && rois_similar_width(*it_R, new_G)) {
-          *it_G = new_G;
+        if (!rechecked_G->empty()) {
+          ROI &new_G = rechecked_G->front();
+          if (roi_width_ok(new_G) && rois_x_aligned(*it_R, new_G) && !roi1_oversize(new_G, *it_R)
+              && rois_vspace_ok(*it_R, new_G) && rois_similar_width(*it_R, new_G)) {
+            *it_G = new_G;
+          }
         }
         cfy_ctxt_green_.scanline_grid->set_roi(recheck_G->full_image(cam_width_, cam_height_));
         delete recheck_G;
         delete rechecked_G;
+      }
+
+      if (it_R->width > cfg_roi_max_width_ && it_R->height > cfg_roi_max_height_
+          && roi1_x_overlaps_below(*it_G, *it_R)) {
+        ROI *recheck_R = new ROI(*it_R);
+        recheck_R->start.y += it_R->height - cfg_roi_max_height_;
+        recheck_R->height  -= it_R->height - cfg_roi_max_height_;
+        cfy_ctxt_red_.scanline_grid->set_roi(recheck_R);
+        list<ROI> *rechecked_R = cfy_ctxt_red_.classifier->classify();
+        if (!rechecked_R->empty()) {
+          ROI &new_R = rechecked_R->front();
+          if (roi_width_ok(new_R) && rois_x_aligned(new_R, *it_G) && !roi1_oversize(new_R, *it_G)
+              && rois_vspace_ok(new_R, *it_G) && rois_similar_width(new_R, *it_G)) {
+            *it_R = new_R;
+          }
+        }
+        cfy_ctxt_red_.scanline_grid->set_roi(recheck_R->full_image(cam_width_, cam_height_));
+        delete recheck_R;
+        delete rechecked_R;
       }
 
       if (roi_width_ok(*it_G) && rois_x_aligned(*it_R, *it_G) &&
@@ -1335,6 +1357,8 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
     else if (sub_prefix == "") {
       if (opt == "/roi_max_aspect_ratio")
         cfg_roi_max_aspect_ratio_ = v->get_float();
+      else if (opt == "/roi_max_width")
+        cfg_roi_max_width_ = v->get_uint();
       else if (opt == "/roi_max_height")
         cfg_roi_max_height_ = v->get_uint();
       else if (opt == "/roi_max_r2g_width_ratio")
