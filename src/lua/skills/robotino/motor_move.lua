@@ -25,7 +25,8 @@ name               = "motor_move"
 fsm                = SkillHSM:new{name=name, start="DRIVE", debug=true}
 depends_skills     = nil
 depends_interfaces = {
-    {v = "motor", type = "MotorInterface", id="Robotino" }
+    {v = "motor", type = "MotorInterface", id="Robotino" },
+    {v = "navigator", type="NavigatorInterface", id="Navigator"},
 }
 
 documentation      = [==[Move on a (kind of) straight line relative to /base_link.
@@ -124,13 +125,16 @@ function drive_done()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={motor=motor},
+   closure={motor=motor, navigator=navigator},
    {"DRIVE", JumpState},
+   {"STOP_NAVIGATOR", JumpState},
 }
 
 fsm:add_transitions{
    {"DRIVE", "FAILED", cond=invalid_params, desc="|ori| >= 2*PI"},
    {"DRIVE", "FAILED", precond="not motor:has_writer()"},
+   {"DRIVE", "STOP_NAVIGATOR", cond="navigator:has_writer() and not navigator:is_final()"},
+   {"STOP_NAVIGATOR", "DRIVE", timeout=1},
    {"DRIVE", "FINAL", cond=drive_done},
    {"DRIVE", "FINAL", cond=drive_done},
 }
@@ -172,3 +176,7 @@ function DRIVE:exit()
    send_transrot(0, 0, 0)
 end
 
+function STOP_NAVIGATOR:init()
+   local msg = navigator.StopMessage:new( )
+   navigator:msgq_enqueue_copy(msg)
+end
