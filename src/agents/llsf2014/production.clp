@@ -519,6 +519,8 @@
   (machine (mtype T3|T4|T5) (incoming $?i&~:(member$ PICK_PROD ?i)) (name ?name) (produced-puck ?puck&P1|P2|P3) (team ?team-color))
   (puck-storage (name ?storage) (puck NONE) (team ?team-color)
 		(incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
+  ;do not store a second P3
+  (not (puck-storage (puck P3&:(eq ?puck P3)) (team ?team-color)))
   (not (proposed-task (name pick-and-store) (args $?args&:(subsetp ?args (create$ ?name ?puck ?storage))) (state rejected)))
   (holding NONE)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-STORE-PRODUCED*))))
