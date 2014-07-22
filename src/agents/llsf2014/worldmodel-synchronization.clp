@@ -246,6 +246,7 @@
   (lock-role MASTER)
   ?arf <- (already-received-wm-changes $?arc)
   (peer-id private ?peer)
+  (time $?now)
   =>
   ;ensure that this change was not already applied
   (bind ?id (pb-field-value ?p "id"))
@@ -273,11 +274,20 @@
                                                (sym-cat (pb-field-value ?p "agent")))))
           )
           (case REMOVE_INCOMING then 
-            (modify ?machine (incoming (delete-member$ ?machine:incoming
-                                         (pb-field-value ?p "incoming")))
+	    (if (member$ (pb-field-value ?p "incoming") ?machine:incoming)
+	      then
+	      (modify ?machine (incoming (delete-member$ ?machine:incoming
+							 (pb-field-value ?p "incoming")))
 	                     ;every agent should do only one thing at a machine
 		             (incoming-agent (delete-member$ ?machine:incoming-agent
                                                (sym-cat (pb-field-value ?p "agent")))))
+	      else
+	      ;After the change of a decision based on a new worldmodel the remove msg might have arrived before the add message. Wait until there is a field to remove or a timer has passed
+	      ;this is a workaround and could be solved properly with sequence numbers for the change msgs
+	      (assert (delayed-worldmodel-change REMOVE_INCOMING
+				?machine:name (pb-field-value ?p "incoming")
+				(sym-cat (pb-field-value ?p "agent")) ?now))
+	    )
           )
           (case SET_NUM_CO then 
             (modify ?machine (junk (pb-field-value ?p "num_CO")))
@@ -369,4 +379,21 @@
     (retract ?wmc)
   )
   (retract ?pmsg)
+)
+
+(defrule worldmodel-sync-apply-delayed-worldmodel-change
+  ?dwf <- (delayed-worldmodel-change REMOVE_INCOMING ?machine-name ?field-to-remove ?agent-removing $?)
+  ?machine <- (machine (name ?machine-name)
+		       (incoming $?incoming&:(member$ ?field-to-remove ?incoming))
+		       (incoming-agent $?incoming-agent&:(member$ ?agent-removing ?incoming-agent)))
+  =>
+  (modify ?machine (incoming (delete-member$ ?incoming ?field-to-remove))
+	  (incoming-agent (delete-member$ ?incoming-agent ?agent-removing)))
+)
+
+(defrule worldmodel-sync-delete-delayed-worldmodel-change-after-timeout
+  (time $?now)
+  ?dwf <- (delayed-worldmodel-change ? ? ? ? $?time-asserted&:(timeout ?now ?time-asserted ?*DELAYED-WORLDMODEL-CHANGE-TIMEOUT*))
+  =>
+  (retract ?dwf)
 )
