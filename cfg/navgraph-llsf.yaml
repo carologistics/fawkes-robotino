@@ -17,7 +17,7 @@ default-properties:
 
     # Max. distance between actual and target orientation to deem the target
     # reached. This value is for the last node on a path; rad
-    - orientation_tolerance: 0.3
+    - orientation_tolerance: 0.6
 
     # When following a plan the robot will check all upcoming nodes if they
     # are close to the robot within this tolerance. If so, they take a shortcut
