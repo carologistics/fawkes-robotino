@@ -249,7 +249,7 @@ function TURN_TO_PUCK:init()
 
    self.skills[1].ori = math.atan2(target.y, target.x)
    self.skills[1].tolerance = { x=0.05, y=0.05, ori=0.04 }
-   self.fsm.vars.target = target
+   self.fsm.vars.target = { x = target.x + 0.2, y = target.y}
 end
 
 function DRIVE_SIDEWAYS_TO_PUCK:init()
@@ -284,7 +284,7 @@ end
 
 function MOVE_MORE:init()
    self.skills[1].tolerance = { x=0.01, y=0.01, ori=0.05 }
-   self.skills[1].x = 0.05
+   self.skills[1].x = 0.03
 end
 
 function cleanup()
