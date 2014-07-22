@@ -66,7 +66,7 @@ end
 
 
 local SIGNAL_TIMEOUT = 5 -- seconds
-local MAX_NUM_TRIES = 3
+local MAX_NUM_TRIES = 4
 local MIN_VIS_HIST = 10
 
 local tfm = require("tf_module")
