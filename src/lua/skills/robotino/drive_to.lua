@@ -57,14 +57,17 @@ fsm:add_transitions{
 
 function INIT:init()
    if self.fsm.vars.same_place then
+      printf("Drive to: use same place")
       self.fsm.vars.closest_node = self.fsm.vars.place
       self.fsm.vars.closest_x = self.fsm.vars.x
       self.fsm.vars.closest_y = self.fsm.vars.y
       self.fsm.vars.closest_ori = self.fsm.vars.ori
    else
       if self.fsm.vars.place then
+         printf("Drive to: use next node from place")
          self.fsm.vars.closest_node = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
       else
+         printf("Drive to: use next node from x and y")
          self.fsm.vars.closest_node = navgraph:closest_node(self.fsm.vars.x, self.fsm.vars.y, "highway_exit"):name()
       end
    end
@@ -88,6 +91,7 @@ function SKILL_GLOBAL_MOVE_LASERLINES:init()
    self.skills[1].place = self.fsm.vars.place
    self.skills[1].x = self.fsm.vars.x
    self.skills[1].y = self.fsm.vars.y
-   self.skills[1].ori = self.fsm.vars.closest_ori
+   self.skills[1].ori = self.fsm.vars.ori
    self.skills[1].puck  = self.fsm.vars.puck
+   printf("Drive to: call global_move_laserlines with: place(" .. tostring(self.skills[1].place) .. ") x(" .. tostring(self.skills[1].x) .. ") y(" .. tostring(self.skills[1].y)  ..") ori(" .. tostring(self.skills[1].ori) .. ") puck(" .. tostring(self.skills[1].puck) .. ")")
 end
