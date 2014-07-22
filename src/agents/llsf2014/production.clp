@@ -462,7 +462,7 @@
 	      (in-delivery ?in-delivery&:(< ?in-delivery ?qr)) (begin ?begin)
 	      (end ?end&:(tac-can-use-timeslot (nth$ 1 ?time) ?begin ?end ?*SKILL-DURATION-DELIVER*))))
   (puck-storage (name ?storage) (puck NONE) (team ?team-color) (incoming $?i-st&~:(member$ STORE_PUCK ?i-st)))
-  (not (proposed-task (name deliver) (args $?args&:(subsetp ?args (create$ ?storage ?puck))) (state rejected)))
+  (not (proposed-task (name store) (args $?args&:(subsetp ?args (create$ ?storage ?puck))) (state rejected)))
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-HOLDING*))))
   =>
   (printout t "PROD: Store holding produced puck" crlf)
