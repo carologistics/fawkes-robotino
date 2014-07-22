@@ -24,10 +24,9 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "deposit_puck"
-fsm                = SkillHSM:new{name=name, start="DESC_DIRECTION", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move"}
 depends_interfaces = {
-   -- TODO {v = "worldModel", type="WorldModel"},
    {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
 }
 
@@ -35,31 +34,25 @@ documentation      = [==[deposits the used puck at the side of the traffic light
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 
 local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
-
-function no_puck()
-   --return worldModel:numberOfPucks=0
-   return false
-end
-
-
-function one_left()
-   --pucksLeft = worldModel:getNumberOfPucks(right,machine)
-   --return (pucksLeft == 1)
-   return true
-end
+local LEFT_IR_ID  = config:get_float("hardware/robotino/sensors/left_ir_id")
 
 function right_sensor_free()
    return sensor:analog_in(RIGHT_IR_ID) < 9
 end
 
-fsm:define_states{export_to=_M, closure={ no_puck=no_puck },
-   {"DESC_DIRECTION", JumpState},
+function left_sensor_free()
+   return sensor:analog_in(LEFT_IR_ID) < 9
+end
+
+function deposit_right()
+   return navgraph:node(fsm.vars.place):has_property("leave_right")
+end
+
+fsm:define_states{export_to=_M, closure={ no_puck=no_puck, navgraph=navgraph},
+   {"INIT", JumpState},
    {"SKILL_DRIVE_LEFT", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DRIVE_FORWARD",
-      fail_to="FAILED"},
-   {"SKILL_DRIVE_LEFT_DELIVERY", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DRIVE_FORWARD",
       fail_to="FAILED"},
    {"SKILL_DRIVE_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="SKILL_DRIVE_FORWARD",
       fail_to="FAILED"},
@@ -70,31 +63,20 @@ fsm:define_states{export_to=_M, closure={ no_puck=no_puck },
 }
 
 fsm:add_transitions{
-   {"DESC_DIRECTION", "SKILL_DRIVE_LEFT_DELIVERY", cond="vars.delivery", desc="No Puck in storage"},
-   {"DESC_DIRECTION", "SKILL_DRIVE_RIGHT", cond=one_left},
-   {"SKILL_DRIVE_LEFT_DELIVERY", "SKILL_DRIVE_FORWARD", cond=right_sensor_free},
+   {"INIT", "SKILL_DRIVE_RIGHT", cond=deposit_right},
+   {"INIT", "SKILL_DRIVE_LEFT", cond=true, desc="delivery"},
+   {"SKILL_DRIVE_LEFT", "SKILL_DRIVE_FORWARD", cond=right_sensor_free},
+   {"SKILL_DRIVE_RIGHT", "SKILL_DRIVE_FORWARD", cond=left_sensor_free},
 }
 
-function SKILL_DRIVE_LEFT:init() 
-   self.skills[1].y=0.23 
-end
-
-function SKILL_DRIVE_LEFT_DELIVERY:init()
-   self.skills[1].y=0.25
-   self.skills[1].vel_trans=0.2
+function SKILL_DRIVE_LEFT:init()
+   self.skills[1].y = 0.5
+   self.skills[1].vel_trans = 0.2
 end
 
 function SKILL_DRIVE_RIGHT:init()
-   if graph:node(self.fsm.vars.place):has_property("leave_right") then
-      printf("Deposit on the right side")
-      self.skills[1].y = -0.23
-   elseif self.fsm.vars.mtype == "deliver" then
-      print("drive right at delivery")
-      self.skills[1].y = -0.21
-   elseif self.fsm.vars.mtype == nil then
-      printf("Deposit on the left side")
-      self.skills[1].y = 0.23
-   end 
+   self.skills[1].y = -0.5
+   self.skills[1].vel_trans = 0.2
 end
 
 function SKILL_DRIVE_FORWARD:init()
@@ -108,6 +90,5 @@ end
 
 function SKILL_DRIVE_BACKWARD:init()
    self.skills[1].x=-0.25 
- --TODO UPDATE WORLD MODEL WENN FINAL
 end
 
