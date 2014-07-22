@@ -31,7 +31,9 @@ depends_interfaces = {
    { v="output", type ="RobotinoLightInterface", id = "Light determined" },
    { v="lightswitch", type="SwitchInterface", id="/machine-signal" },
    { v="laserswitch", type="SwitchInterface", id="/laser-cluster/ampel" },
+   { v="bb_laser_ctl", type="LaserClusterInterface", id="/laser-cluster/ampel" },
 }
+
 
 
 documentation      = [==[
@@ -108,6 +110,11 @@ fsm:add_transitions{
 function INIT:init()
    lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
    laserswitch:msgq_enqueue_copy(laserswitch.EnableSwitchMessage:new())
+
+   -- set laser-cluster selection mode to distance
+   msg = bb_laser_ctl.SetSelectionModeMessage:new()
+   msg:set_selection_mode(bb_laser_ctl.SELMODE_MIN_DIST)
+   bb_laser_ctl:msgq_enqueue_copy(msg)
 
    --check behavior when machine is out of order
    if self.fsm.vars.out_of_order~="ignore" and self.fsm.vars.out_of_order~="final" then

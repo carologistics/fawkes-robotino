@@ -164,6 +164,10 @@ function SKILL_DEPOSIT:init()
    self.skills[1].place = self.fsm.vars.place
 end
 
+function DEPOSIT_THEN_FAIL:init()
+   self.skills[1].place = self.fsm.vars.place
+end
+
 function SKILL_RFID:init()
    self.skills[1].place = self.fsm.vars.place
 end

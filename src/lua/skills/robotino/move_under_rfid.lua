@@ -46,7 +46,7 @@ skillenv.skill_module(_M)
 
 local tfm = require('tf_module')
 local LASER_FORWARD_CORRECTION = 0.2
-local MIN_VIS_HIST = 10
+local MIN_VIS_HIST = 30
 local LEFT_IR_ID = config:get_float("hardware/robotino/sensors/left_ir_id")
 local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
 
@@ -80,6 +80,7 @@ end
 
 function producing()
    return light:is_ready() == true
+      and light:visibility_history() >= MIN_VIS_HIST
       and light:green() == light.ON
       and light:yellow() == light.ON
       and light:red() == light.OFF

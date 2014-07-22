@@ -80,7 +80,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={producing_done = producing_done, sensor = sensor, LOSTPUCK_DIST = LOSTPUCK_DIST, PUCK_SENSOR_INDEX = PUCK_SENSOR_INDEX},
    {"GOTO_MACHINE", SkillJumpState, skills={{ppgoto}}, final_to="ADJUST_POS", fail_to="FAILED"},
-   {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="WAIT_PRODUCE", fail_to="FAILED"},
+   {"ADJUST_POS", SkillJumpState, skills={{global_motor_move}}, final_to="WAIT_PRODUCE", fail_to="WAIT_PRODUCE"},
    {"WAIT_PRODUCE", SkillJumpState, skills={{wait_produce}}, final_to="SEE_AMPEL", fail_to="FAILED"},
    {"SEE_AMPEL", JumpState},
    {"TURN", SkillJumpState, skills = {{motor_move}}, final_to = "APPROACH_AMPEL", fail_to = "FAILED"},

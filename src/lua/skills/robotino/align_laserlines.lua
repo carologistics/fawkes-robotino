@@ -137,6 +137,11 @@ function get_best_line(sector_main_ori, lines_in_sector)
    end
 end
 
+function no_ori()
+   local node = navgraph:node(fsm.vars.place)
+   return not node:has_property("orientation")
+end
+
 -- States
 fsm:define_states{
    export_to=_M,
@@ -150,6 +155,7 @@ fsm:define_states{
 fsm:add_transitions {
    {"CHECK_INTERFACE", "FAILED", timeout = 1, desc="no writer or vis_hist too low"},
    {"CHECK_INTERFACE", "INIT", cond=visible_and_writer},
+   {"INIT", "FAILED", cond=no_ori},
    {"INIT", "ALIGN", cond=visible_and_writer, desc="initialized"}
 }
 

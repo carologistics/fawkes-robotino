@@ -43,7 +43,7 @@ Parameters:
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   {"GLOBAL", SkillJumpState, skills={{global_motor_move}}, final_to="ALIGN", fail_to="FAILED"},
+   {"GLOBAL", SkillJumpState, skills={{global_motor_move}}, final_to="ALIGN", fail_to="GLOBAL_BACKUP"},
    {"ALIGN", SkillJumpState, skills={{align_laserlines}}, final_to="FINAL", fail_to="GLOBAL_BACKUP"},
    {"GLOBAL_BACKUP", SkillJumpState, skills={{global_motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
