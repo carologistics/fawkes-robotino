@@ -1,0 +1,14 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/robotino
+---
+plugins/navgraph-broker:
+
+  # Reservation Nodes for testing
+  # reserved_nodes: P51,P52,P53,P54
+
+  robotname: robotino
+  repeat-send-duration: 2.0
+  use-node-constraint: false
+  max-reservation-duration: 10.0
