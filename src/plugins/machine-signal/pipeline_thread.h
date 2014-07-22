@@ -164,6 +164,7 @@ class MachineSignalPipelineThread :
     firevision::PositionToPixel *pos2pixel_;
 
     std::atomic<unsigned int> cfg_roi_max_height_;
+    std::atomic<unsigned int> cfg_roi_max_width_;
     std::atomic<float> cfg_roi_max_aspect_ratio_;
     std::atomic<float> cfg_roi_max_width_ratio_;
     std::atomic<float> cfg_roi_xalign_;
@@ -243,6 +244,7 @@ class MachineSignalPipelineThread :
         std::list<firevision::ROI> *rois_R,
         std::list<firevision::ROI> *rois_G);
 
+
     std::list<SignalState::signal_rois_t_> *create_delivery_signals(std::list<firevision::ROI> *rois_R);
     std::list<SignalState::signal_rois_t_> *create_laser_signals(std::list<firevision::ROI> *rois_R);
 
@@ -256,6 +258,7 @@ class MachineSignalPipelineThread :
     inline bool rois_vspace_ok(firevision::ROI &r1, firevision::ROI &r2);
     inline bool roi1_oversize(firevision::ROI &r1, firevision::ROI &r2);
     inline bool roi1_x_overlaps_below(firevision::ROI &r1, firevision::ROI &r2);
+    inline bool roi1_x_intersects(firevision::ROI &r1, firevision::ROI &r2);
 
 
     //*/
@@ -300,6 +303,7 @@ class MachineSignalPipelineThread :
     std::set<WorldROI, compare_rois_by_area_> *bb_get_laser_rois();
     std::set<WorldROI, compare_rois_by_area_> *cluster_rois_;
 
+    void merge_rois_in_laser(std::set<WorldROI, compare_rois_by_area_> *laser_rois, std::list<firevision::ROI> *rois);
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);

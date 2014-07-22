@@ -236,6 +236,7 @@ void MachineSignalPipelineThread::init()
   cfg_roi_max_aspect_ratio_ = config->get_float(CFG_PREFIX "/roi_max_aspect_ratio");
   cfg_roi_max_width_ratio_ = config->get_float(CFG_PREFIX "/roi_max_r2g_width_ratio");
   cfg_roi_max_height_ = config->get_uint(CFG_PREFIX "/roi_max_height");
+  cfg_roi_max_width_ = config->get_uint(CFG_PREFIX "/roi_max_width");
   cfg_roi_xalign_ = config->get_float(CFG_PREFIX "/roi_xalign_by_width");
   cfg_roi_green_horizon = config->get_uint(CFG_PREFIX "/roi_green_horizon");
   cfg_tuning_mode_ = config->get_bool(CFG_PREFIX "/tuning_mode");
@@ -586,7 +587,7 @@ void MachineSignalPipelineThread::loop()
   Time now(clock);
   double frametime = now - last_second_;
   last_second_ = &(last_second_->stamp());
-  if (frametime >= desired_frametime_ * 1.03) {
+  if (frametime >= desired_frametime_ * 1.1) {
     logger->log_warn(name(), "Running too slow (%f sec/frame). Blink detection will be unreliable!", frametime);
   }
 
@@ -623,6 +624,8 @@ void MachineSignalPipelineThread::loop()
     cfy_ctxt_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     cfy_ctxt_red_delivery_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
+    drawn_rois_.clear();
+
     // Then use the appropriate classifier for red
     if (cfg_delivery_mode_) {
       rois_R = cfy_ctxt_red_delivery_.classifier->classify();
@@ -633,17 +636,6 @@ void MachineSignalPipelineThread::loop()
       rois_G = cfy_ctxt_green_.classifier->classify();
     }
 
-
-    if (unlikely(cfg_tuning_mode_)) {
-      drawn_rois_.clear();
-      if (cluster_rois_) {
-        drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
-      }
-      if (!cfg_draw_processed_rois_) {
-        drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
-        if (rois_G) drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
-      }
-    }
 
     // Create and group ROIs that make up the red, yellow and green lights of a signal
     std::list<SignalState::signal_rois_t_> *signal_rois;
@@ -668,7 +660,7 @@ void MachineSignalPipelineThread::loop()
       try {
         // ... and match them to known signals based on the max_jitter tunable
         float dist_min = FLT_MAX;
-        std::list<SignalState>::iterator best_match;
+        std::list<SignalState>::iterator best_match = known_signals_.begin();
         for (std::list<SignalState>::iterator known_signal = known_signals_.begin();
             known_signal != known_signals_.end(); ++known_signal) {
           float dist = known_signal->distance(signal_it);
@@ -677,12 +669,14 @@ void MachineSignalPipelineThread::loop()
             dist_min = dist;
           }
         }
+
         if (dist_min < cfg_max_jitter_) {
           best_match->update_geometry(signal_it);
         }
         else { // No historic match was found for the current signal
           unsigned int history_len = cfg_delivery_mode_ ? buflen_ : 0;
           SignalState::historic_signal_rois_t_ new_signal;
+          logger->log_debug(name(), "new signal: dist=%f, history_len=%d", dist_min, history_len);
           new_signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), history_len));
           new_signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), history_len));
           new_signal.green_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->green_roi), history_len));
@@ -694,25 +688,25 @@ void MachineSignalPipelineThread::loop()
         }
 
         SignalState::frame_state_t_ frame_state({
-          get_light_state(signal_it->red_roi.get()),
-              get_light_state(signal_it->yellow_roi.get()),
-              get_light_state(signal_it->green_roi.get()),
+          get_light_state(best_match->signal_rois_history_.red_roi.get()),
+              get_light_state(best_match->signal_rois_history_.yellow_roi.get()),
+              get_light_state(best_match->signal_rois_history_.green_roi.get()),
         });
 
         best_match->update_state(frame_state);
 
         // Classifiers sometimes do strange things to the image width/height, so reset them here...
-        signal_it->red_roi->set_image_width(cam_width_);
-        signal_it->red_roi->set_image_height(cam_height_);
-        signal_it->yellow_roi->set_image_width(cam_width_);
-        signal_it->yellow_roi->set_image_height(cam_height_);
-        signal_it->green_roi->set_image_width(cam_width_);
-        signal_it->green_roi->set_image_height(cam_height_);
+        best_match->signal_rois_history_.red_roi->set_image_width(cam_width_);
+        best_match->signal_rois_history_.red_roi->set_image_height(cam_height_);
+        best_match->signal_rois_history_.yellow_roi->set_image_width(cam_width_);
+        best_match->signal_rois_history_.yellow_roi->set_image_height(cam_height_);
+        best_match->signal_rois_history_.green_roi->set_image_width(cam_width_);
+        best_match->signal_rois_history_.green_roi->set_image_height(cam_height_);
 
         if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          drawn_rois_.push_back(*(signal_it->red_roi));
-          drawn_rois_.push_back(*(signal_it->yellow_roi));
-          drawn_rois_.push_back(*(signal_it->green_roi));
+          drawn_rois_.push_back(*(best_match->signal_rois_history_.red_roi));
+          drawn_rois_.push_back(*(best_match->signal_rois_history_.yellow_roi));
+          drawn_rois_.push_back(*(best_match->signal_rois_history_.green_roi));
         }
       }
       catch (OutOfBoundsException &e){
@@ -737,6 +731,10 @@ void MachineSignalPipelineThread::loop()
       color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
       color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
       color_filter_->apply();
+
+      if (cluster_rois_) {
+        drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
+      }
 
       // Visualize the signals and bright spots we found
       roi_drawer_->set_rois(&drawn_rois_);
@@ -812,11 +810,16 @@ bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
 
 
 bool MachineSignalPipelineThread::roi1_x_overlaps_below(ROI &r1, ROI &r2) {
-  return (r1.start.y > r2.start.y + r2.height)
+  return (r1.start.y > r2.start.y)
       && (   (r1.start.x <= r2.start.x && r1.start.x + r1.width > r2.start.x)
           || (r1.start.x > r2.start.x && r1.start.x < r2.start.x + r2.width && r1.start.x + r1.width > r2.start.x + r2.width));
 }
 
+
+bool MachineSignalPipelineThread::roi1_x_intersects(ROI &r1, ROI &r2) {
+  return !(r1.start.x + r1.width <= r2.start.x
+       || r2.start.x + r2.width <= r1.start.x);
+}
 
 bool MachineSignalPipelineThread::roi1_oversize(ROI &r1, ROI &r2) {
   return !rois_similar_width(r1, r2)
@@ -842,6 +845,14 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
 
   if (cfg_debug_processing_) debug_proc_string_ = "";
 
+  merge_rois_in_laser(cluster_rois_, rois_R);
+  merge_rois_in_laser(cluster_rois_, rois_G);
+
+  if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
+    drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
+    drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
+  }
+
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
     bool ok = false;
 
@@ -861,14 +872,35 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
         recheck_G->height = cfg_roi_max_height_;
         cfy_ctxt_green_.scanline_grid->set_roi(recheck_G);
         list<ROI> *rechecked_G = cfy_ctxt_green_.classifier->classify();
-        ROI &new_G = rechecked_G->front();
-        if (roi_width_ok(new_G) && rois_x_aligned(*it_R, new_G) && !roi1_oversize(new_G, *it_R)
-            && rois_vspace_ok(*it_R, new_G) && rois_similar_width(*it_R, new_G)) {
-          *it_G = new_G;
+        if (!rechecked_G->empty()) {
+          ROI &new_G = rechecked_G->front();
+          if (roi_width_ok(new_G) && rois_x_aligned(*it_R, new_G) && !roi1_oversize(new_G, *it_R)
+              && rois_vspace_ok(*it_R, new_G) && rois_similar_width(*it_R, new_G)) {
+            *it_G = new_G;
+          }
         }
         cfy_ctxt_green_.scanline_grid->set_roi(recheck_G->full_image(cam_width_, cam_height_));
         delete recheck_G;
         delete rechecked_G;
+      }
+
+      if (it_R->width > cfg_roi_max_width_ && it_R->height > cfg_roi_max_height_
+          && it_G->start.y > it_R->start.y && roi1_x_intersects(*it_G, *it_R)) {
+        ROI *recheck_R = new ROI(*it_R);
+        recheck_R->start.y += it_R->height - cfg_roi_max_height_;
+        recheck_R->height  -= it_R->height - cfg_roi_max_height_;
+        cfy_ctxt_red_.scanline_grid->set_roi(recheck_R);
+        list<ROI> *rechecked_R = cfy_ctxt_red_.classifier->classify();
+        if (!rechecked_R->empty()) {
+          ROI &new_R = rechecked_R->front();
+          if (roi_width_ok(new_R) && rois_x_aligned(new_R, *it_G) && !roi1_oversize(new_R, *it_G)
+              && rois_vspace_ok(new_R, *it_G) && rois_similar_width(new_R, *it_G)) {
+            *it_R = new_R;
+          }
+        }
+        cfy_ctxt_red_.scanline_grid->set_roi(recheck_R->full_image(cam_width_, cam_height_));
+        delete recheck_R;
+        delete rechecked_R;
       }
 
       if (roi_width_ok(*it_G) && rois_x_aligned(*it_R, *it_G) &&
@@ -940,6 +972,45 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
     if (unlikely(!ok && cfg_debug_processing_)) logger->log_debug(name(), "field proc: %s", debug_proc_string_.c_str());
   }
   return rv;
+}
+
+
+void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois_by_area_> *laser_rois, list<ROI> *rois) {
+  list<ROI> merged_rois;
+
+  // Match red ROIs to laser clusters
+  for (WorldROI const &cluster_roi : *cluster_rois_) {
+    ROI *merged_roi = nullptr;
+    list<ROI>::iterator it_roi = rois->begin();
+    while(it_roi != rois->end()) {
+      ROI intersection = it_roi->intersect(cluster_roi);
+      unsigned int area_R = it_roi->width * it_roi->height;
+      unsigned int area_intrsct = intersection.width * intersection.height;
+      if (area_R && (float(area_intrsct) / float(area_R) >= 0.3)) {
+        if (merged_roi != nullptr) {
+          merged_roi->extend(intersection.start.x, intersection.start.y);
+          merged_roi->extend(intersection.start.x + intersection.width,
+            intersection.start.y + intersection.height);
+        }
+        else {
+          merged_roi = new ROI(intersection);
+        }
+        drawn_rois_.push_back(merged_roi);
+
+        // Erase red ROIs that have been processed here since they can't be part of
+        // any other signal.
+        it_roi = rois->erase(it_roi);
+      }
+      else {
+        ++it_roi;
+      }
+    }
+    if (merged_roi) {
+      merged_rois.push_back(*merged_roi);
+    }
+    delete merged_roi;
+  }
+  rois->insert(rois->begin(), merged_rois.begin(), merged_rois.end());
 }
 
 
@@ -1081,6 +1152,10 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
 {
   // First try to build signal ROIs based on laser clusters.
   std::list<SignalState::signal_rois_t_> *rv = create_laser_signals(rois_R);
+
+  if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
+    drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
+  }
 
   std::list<ROI>::iterator it_R = rois_R->begin();
 
@@ -1333,6 +1408,8 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
     else if (sub_prefix == "") {
       if (opt == "/roi_max_aspect_ratio")
         cfg_roi_max_aspect_ratio_ = v->get_float();
+      else if (opt == "/roi_max_width")
+        cfg_roi_max_width_ = v->get_uint();
       else if (opt == "/roi_max_height")
         cfg_roi_max_height_ = v->get_uint();
       else if (opt == "/roi_max_r2g_width_ratio")

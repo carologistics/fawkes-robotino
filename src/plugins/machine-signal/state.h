@@ -60,7 +60,6 @@ class SignalState {
 
     fawkes::RobotinoLightInterface::LightState
     eval_history(light_history_t_ &history, std::string &debug_str);
-    historic_signal_rois_t_ signal_rois_history_;
 
   public:
     fawkes::RobotinoLightInterface::LightState red;
@@ -72,6 +71,7 @@ class SignalState {
     int unseen;
     unsigned int area;
     std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>> world_pos;
+    historic_signal_rois_t_ signal_rois_history_;
 
     char const *get_debug_R();
     char const *get_debug_Y();

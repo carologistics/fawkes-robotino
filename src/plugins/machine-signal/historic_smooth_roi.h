@@ -18,11 +18,13 @@ class HistoricSmoothROI :
   public ROI
 {
   private:
+    HistoricSmoothROI();
     boost::circular_buffer<ROI> history_;
   public:
     HistoricSmoothROI(unsigned int history_length);
     HistoricSmoothROI(ROI const &other, unsigned int history_length = 0);
     HistoricSmoothROI(HistoricSmoothROI const &other);
+    HistoricSmoothROI &operator=(HistoricSmoothROI const &other);
     void update(ROI const &next_roi);
 };
 
