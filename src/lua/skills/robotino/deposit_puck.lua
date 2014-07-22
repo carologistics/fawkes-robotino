@@ -70,12 +70,12 @@ fsm:add_transitions{
 }
 
 function SKILL_DRIVE_LEFT:init()
-   self.skills[1].y = 0.25
+   self.skills[1].y = 0.5
    self.skills[1].vel_trans = 0.2
 end
 
 function SKILL_DRIVE_RIGHT:init()
-   self.skills[1].y = -0.25
+   self.skills[1].y = -0.5
    self.skills[1].vel_trans = 0.2
 end
 
