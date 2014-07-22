@@ -209,6 +209,7 @@ end
 function POSITION_FIRST:init()
    enable_vision()
    self.skills[1].place = self.fsm.vars.place
+   self.skills[1].puck  = true
    self.fsm.vars.num_tries = self.fsm.vars.num_tries + 1
 end
 
@@ -230,6 +231,7 @@ function DRIVE_SECOND:init()
    else
       self.skills[1].place = "deliver2"
    end
+   self.skills[1].puck  = true
 end
 
 function REMOVE_KEBAB:init()
