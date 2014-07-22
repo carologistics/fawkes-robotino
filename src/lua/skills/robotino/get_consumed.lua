@@ -83,7 +83,7 @@ function GOTO_MACHINE_RECYCLE:init()
    self.skills[1].same_place = true
    local node = navgraph:node(self.fsm.vars.place)
    local ori  = node:property_as_float("orientation")
-   local off_x      = 0.7
+   local off_x      = 0.6
    local off_y      = 0.6
    local off_direct = math.sqrt( off_x*off_x + off_y*off_y )
    local off_ori    = math.atan2(off_y, off_x)
