@@ -44,6 +44,7 @@ local TIMEOUT = 3
 local ORI_OFFSET = 0.03
 local MIN_VIS_HIST = 1
 local THRESHOLD_DISTANCE = 0.07
+
 if config:exists("/hardware/robotino/puck_sensor/trigger_dist") then
    THRESHOLD_DISTANCE = config:get_float("/hardware/robotino/puck_sensor/trigger_dist")
 else
@@ -79,7 +80,7 @@ end
 
 function visible()
    for _,o in ipairs(pucks) do
-      if o:visibility_history() >= MIN_VIS_HIST then
+      if o:visibility_history() >= MIN_VIS_HIST && math.sqrt( o:x()*o:x() + o:y()*o:y() ) <= fsm.vars.max_puck_distance then
          return true
       end
    end
@@ -87,13 +88,14 @@ function visible()
 end
 
 function cant_see_puck()
-   local cant_see_puck=true
-   for _,o in ipairs(pucks) do
-      if o:visibility_history() >= MIN_VIS_HIST then
-         cant_see_puck=false
-      end
-   end
-   return cant_see_puck
+--   local cant_see_puck=true
+--   for _,o in ipairs(pucks) do
+--      if o:visibility_history() >= MIN_VIS_HIST then
+--         cant_see_puck=false
+--      end
+--   end
+--   return cant_see_puck
+   return not visible()
 end
 
 fsm:define_states{ export_to=_M, closure={have_puck=have_puck, visible=visible},
@@ -129,6 +131,8 @@ function INIT:init()
    else
       self.fsm.vars.search_cycle = true
    end
+
+   self.fsm.vars.max_puck_distance = self.fsm.vars.max_puck_distance or 100
 end
 
 function TURN_TO_PUCK:init()
@@ -138,7 +142,7 @@ function TURN_TO_PUCK:init()
 
    -- search for candidates ( pucks that are in the given angle EPSILON_PHI )
    for _,o in ipairs(pucks) do
-      if o:visibility_history() >= MIN_VIS_HIST then
+      if o:visibility_history() >= MIN_VIS_HIST && math.sqrt( o:x()*o:x() + o:y()*o:y() ) <= fsm.vars.max_puck_distance then
          local x = o:translation(0)
          local y = o:translation(1)
          local ori = math.atan2(y, x)
@@ -150,7 +154,7 @@ function TURN_TO_PUCK:init()
 
    if #candidates == 0 then                                                    -- if there are no canidates in the area
       for _,o in ipairs(pucks) do                                              -- add all pucks with an high vis_hist
-         if o:visibility_history() >= MIN_VIS_HIST then
+         if o:visibility_history() >= MIN_VIS_HIST && math.sqrt( o:x()*o:x() + o:y()*o:y() ) <= fsm.vars.max_puck_distance then
             local x = o:translation(0)
             local y = o:translation(1)
             table.insert(candidates, {x = x, y = y})
@@ -180,7 +184,7 @@ function DRIVE_SIDEWAYS_TO_PUCK:init()
 
    -- search for pucks that are be considert to be in the first row
    for _,o in ipairs(pucks) do
-      if o:visibility_history() >= MIN_VIS_HIST then
+      if o:visibility_history() >= MIN_VIS_HIST && math.sqrt( o:x()*o:x() + o:y()*o:y() ) <= fsm.vars.max_puck_distance then
          local x = o:translation(0)
          local y = o:translation(1)
          if x > OFFSET_X_SIDE_SEARCH and x < min_x then                        -- if the new puck is not too close AND closer than pucks before
