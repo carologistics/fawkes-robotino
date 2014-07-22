@@ -91,6 +91,7 @@ class AgentMonitorWebRequestProcessor : public fawkes::WebRequestProcessor
   std::string robotino1_, robotino2_, robotino3_;
   std::string env_name_;
   std::string own_name_;
+  std::string refresh_interval_;
 };
 
 #endif

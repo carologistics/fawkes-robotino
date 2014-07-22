@@ -106,7 +106,7 @@ clips-agent:
     estimated-skill-duration:
       get-produced: 20
       get-stored-puck: 18
-      deliver: 15
+      deliver: 10
 
     puck-storage-points:
       cyan: [D1_PUCK_STORAGE_1, D1_PUCK_STORAGE_2]

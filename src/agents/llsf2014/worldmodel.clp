@@ -350,16 +350,22 @@
 
 (defrule wm-proc-wtf
   (declare (salience ?*PRIORITY-WM-LOW*))
-  (state GOTO-FINAL)
+  ?s <- (state GOTO-FINAL)
   ?tf <- (goto-target ?name)
   ?gtdw <- (goto-dont-wait ?dont-wait)
   ?lf <- (lights $?)
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype ?mtype))
+  (puck-in-gripper ?have-puck)
   =>
   (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
-  (retract ?lf ?tf ?hf ?gtdw)
-  (assert (holding NONE))
+  (retract ?lf ?tf ?gtdw ?s)
+  (if (not ?have-puck)
+    then
+    (retract ?hf)
+    (assert (holding NONE))
+  )
+  (assert (state GOTO-FAILED))
 )
 
 (defrule wm-get-produced-final

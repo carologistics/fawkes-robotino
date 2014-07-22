@@ -201,7 +201,8 @@
   (common-wait-point WAIT_FOR_ROW_8 M10 M11)
   (common-wait-point WAIT_FOR_INS_1_ROBOTINO_3 M9)
   (common-wait-point WAIT_FOR_INS_2_ROBOTINO_3 M21)
-  (common-wait-point WAIT_FOR_INS_1_ROBOTINO_3 M1 M13)
+  (common-wait-point WAIT_FOR_INS_1_ROBOTINO_3 M13)
+  (common-wait-point WAIT_FOR_INS_1_ROBOTINO_2 M1)
   
 )
 

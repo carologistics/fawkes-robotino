@@ -348,24 +348,15 @@
   (retract ?l)
 )
 
-(defrule lock-delete-all-locks-when-changing-the-phase
-  "On phase change retract all existing locks."
+(defrule lock-delete-exploration-locks-when-switching-to-production
+  "On phase change to Prouciton we want to get rid of old exploration-locks."
   (declare (salience ?*PRIORITY-HIGH*))
-  (change-phase ?new-phase) 
+  (change-phase PRODUCTION) 
   =>
-  ;except for Ins1/2 to allow better transition from exploration to production
-  (delayed-do-for-all-facts ((?lock lock)) (and (neq ?lock:resource Ins1)
-                                                (neq ?lock:resource Ins1Sec)
-                                    						(neq ?lock:resource Ins2)
-                                                (neq ?lock:resource Ins2Sec)
-                                    						(neq ?lock:resource P3-ONLY))
+  (delayed-do-for-all-facts ((?lock lock) (?me machine-exploration)) (eq ?lock:resource ?me:name)
     (retract ?lock)
   )
-  (delayed-do-for-all-facts ((?lock locked-resource)) (and (neq ?lock:resource Ins1)
-                                                           (neq ?lock:resource Ins1Sec)
-                                                           (neq ?lock:resource Ins2)
-                                                           (neq ?lock:resource Ins2Sec)
-                                                           (neq ?lock:resource P3-ONLY))
+  (delayed-do-for-all-facts ((?lock locked-resource) (?me machine-exploration)) (eq ?lock:resource ?me:name)
     (retract ?lock)
   ) 
 )

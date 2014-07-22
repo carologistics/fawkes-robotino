@@ -43,6 +43,9 @@
 
   ;maximum distance from the delivery gates to allow leaving a T5 machine while producing
   ?*MAX-T5-LEAVE-DISTANCE* = 6.0
+
+  ;After the change of a decision based on a new worldmodel the remove msg might have arrived before the add message. Timeout to wait until there is a field to remove:
+  ?*DELAYED-WORLDMODEL-CHANGE-TIMEOUT* = 10
 )
 
 (defrule globals-config-team-name

@@ -826,6 +826,7 @@
   ?st <- (store-puck-target ?goal)
   ?wfl <- (wait-for-lock (res ?goal) (state use))
   (skill (name "store_puck") (status RUNNING))
+  (puck-in-gripper TRUE)
   =>
   (printout warn "Stopping storing puck because there is a new order" crlf)
   (modify ?t (state finished))

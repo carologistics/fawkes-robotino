@@ -9,3 +9,4 @@ agent-monitor:
   robotino1: "172.26.108.91:8088"
   robotino2: "172.26.108.92:8088"
   robotino3: "172.26.108.93:8088"
+  refresh-interval: 5

@@ -63,6 +63,7 @@ AgentMonitorWebRequestProcessor::AgentMonitorWebRequestProcessor(fawkes::LockPtr
   robotino3_ = config_->get_string("/agent-monitor/robotino3");
   env_name_ = config_->get_string("/agent-monitor/clips-environment");
   own_name_ = config_->get_string("/clips-agent/llsf2014/robot-name");
+  refresh_interval_ = std::to_string(config_->get_int("/agent-monitor/refresh-interval"));
 
   //open interfaces
   light_if_ = blackboard_->open_for_reading<RobotinoLightInterface>("/machine-signal/best");
@@ -123,11 +124,15 @@ AgentMonitorWebRequestProcessor::process_request(const fawkes::WebRequest *reque
     MutexLocker lock(clips.objmutex_ptr());
 
     WebPageReply *r = new WebPageReply("Agent-Monitor");
-    r->set_html_header("  <link type=\"text/css\" href=\"/static/css/jqtheme/"
-		       "jquery-ui.custom.css\" rel=\"stylesheet\" />\n"
-		       "  <script type=\"text/javascript\" src=\"/static/js/"
-		       "jquery.min.js\"></script>\n"
-                       "<meta http-equiv=\"refresh\" content=\"2\" />\n");
+    std::string html_header = 
+      "  <link type=\"text/css\" href=\"/static/css/jqtheme/"
+      "jquery-ui.custom.css\" rel=\"stylesheet\" />\n"
+      "  <script type=\"text/javascript\" src=\"/static/js/"
+      "jquery.min.js\"></script>\n"
+      "<meta http-equiv=\"refresh\" content=\""
+      + refresh_interval_
+      + "\" />\n";
+      r->set_html_header(html_header.c_str());
 
     *r +=
       "<style type=\"text/css\">\n"
