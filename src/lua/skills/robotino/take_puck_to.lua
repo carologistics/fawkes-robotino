@@ -36,7 +36,7 @@ documentation      = [==[Go to target without losing teh puck]==]
 skillenv.skill_module(_M)
 
 -- Constants
-local AVG_LEN = 10
+local AVG_LEN = 5
 local MAX_RETRIES = 3
 local LOSTPUCK_DIST = 0.08
 local PUCK_SENSOR_INDEX = 8
@@ -72,7 +72,7 @@ function lost_puck()
       count = count + 1
    end
    local avg = sum / count
---   printf("moving avg: %f", avg)
+   printf("moving avg: %f", avg)
 
    fsm.vars.avg_val = val
    fsm.vars.avg_idx = idx
@@ -98,7 +98,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    { "INIT", "SKILL_GOTO", cond=true, desc="true" },
-   { "SKILL_GOTO", "STOP", cond="sensor:distance(PUCK_SENSOR_INDEX) > LOSTPUCK_DIST", desc="Lost puck" },
+   { "SKILL_GOTO", "STOP", cond=lost_puck, desc="Lost puck" },
    { "RETRY_GOTO", "SKILL_GOTO", cond="vars.goto_retries <= MAX_RETRIES", desc="Retry goto" },
    { "RETRY_GOTO", "FAILED", cond="vars.goto_retries > MAX_RETRIES", desc="giveup goto" }
 }
