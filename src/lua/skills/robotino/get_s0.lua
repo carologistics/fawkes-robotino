@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "get_s0"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"drive_to", "fetch_puck", "leave_IS", "motor_move", "global_motor_move", "get_rid_of_puck"}
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
