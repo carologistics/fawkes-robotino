@@ -254,9 +254,11 @@ function cleanup()
    
    -- switch off laser-cluster
    bb_laser_switch:msgq_enqueue_copy(bb_laser_switch.DisableSwitchMessage:new())
-   
 end
 
+function LEAVE_AREA:init()
+   self.skills[1].x = -0.25
+end
 
 function FINAL:init()
    cleanup()
