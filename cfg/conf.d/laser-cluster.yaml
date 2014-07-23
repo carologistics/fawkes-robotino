@@ -25,22 +25,29 @@ laser-cluster:
 
     # The maximum number of clusters to publish on the blackboard
     # The interfaces will be named "Laser Cluster N" for N=1..max_num_clusters
-    max_num_clusters: 3
+    max_num_clusters: 5
   
     # The frame in which the result should be published; frame
     result_frame: /base_link
 
     line_removal:
-      enable: false
+      enable: true
   
       # Maximum number of iterations to perform for line segmentation
-      segmentation_max_iterations: 250
+      segmentation_max_iterations: 200
 
       # Segmentation distance threshold; m
-      segmentation_distance_threshold: 0.1
+      segmentation_distance_threshold: 0.15
 
       # Minimum size of fraction of points that must be inliers to consider a table; 0.0..1.0
       segmentation_min_inliers: 30
+
+      # Maximum distance between samples drawn from the cloud
+      # This distance is important for the separation of lines if they are close.
+      segmentation_sample_max_dist: 0.08
+
+      # Minimum length of line to remove it
+      min_length: 0.8
 
     clustering:
       # Clustering inter-point distance tolerance; m
@@ -50,7 +57,7 @@ laser-cluster:
       min_size: 2
 
       # Minimum number of points in cluster to consider
-      max_size: 15
+      max_size: 20
 
     bounding-box:
       # note that these values are in the sensor frame!
