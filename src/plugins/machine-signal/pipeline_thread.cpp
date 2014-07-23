@@ -952,7 +952,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
     while(it_G != rois_G->end()) {
       ok = false;
       int vspace = it_G->start.y - (it_R->start.y + it_R->height);
-
+      try {
       if (it_G->height > cfg_roi_max_height_ && roi1_x_overlaps_below(*it_G, *it_R)) {
         ROI *recheck_G = new ROI(*it_G);
         recheck_G->height = cfg_roi_max_height_;
@@ -1050,6 +1050,10 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
           it_R = rois_R->erase(it_R);
           ok = true;
         }
+      }
+      }
+      catch (Exception &e) {
+        logger->log_error(name(), e);
       }
       if (!ok) {
         ++it_G;
