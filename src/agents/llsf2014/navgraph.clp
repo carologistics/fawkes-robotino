@@ -53,3 +53,27 @@
   =>
   (navgraph-cleanup)
 )
+
+(defrule navgraph-block-ins-edges-for-exploration
+  ;block edges at ins to avoid drivig through the pucks with the colli
+  (phase EXPLORATION)
+  =>
+  (navgraph-block-edge "P31" "P41")
+  (navgraph-block-edge "IA2H" "P31")
+  (navgraph-block-edge "IA2H2" "P41")
+  (navgraph-block-edge "P61" "P71")
+  (navgraph-block-edge "IA1H" "P61")
+  (navgraph-block-edge "IA1H2" "P71")
+)
+
+(defrule navgraph-unblock-ins-edges-for-production
+  ;block edges at ins to avoid drivig through the pucks with the colli
+  (phase PRODUCTION)
+  =>
+  (navgraph-unblock-edge "P31" "P41")
+  (navgraph-unblock-edge "IA2H" "P31")
+  (navgraph-unblock-edge "IA2H2" "P41")
+  (navgraph-unblock-edge "P61" "P71")
+  (navgraph-unblock-edge "IA1H" "P61")
+  (navgraph-unblock-edge "IA1H2" "P71")
+)
