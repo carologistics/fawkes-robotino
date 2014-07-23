@@ -61,26 +61,27 @@ function plugin_missing()
 end
 
 function done()
-   if plugin:is_ready() then
-      return (plugin:green()      == plugin.ON
-              and plugin:yellow() == plugin.OFF
-              and plugin:red()    == plugin.OFF)
-          or (plugin:green()      == plugin.OFF
-              and plugin:yellow() == plugin.ON
-              and plugin:red()    == plugin.OFF)
-          or (plugin:green()      == plugin.OFF
-              and plugin:yellow() == plugin.BLINKING
-              and plugin:red()    == plugin.OFF)
-          or (plugin:green()      == plugin.ON
-              and plugin:yellow() == plugin.ON
-              and plugin:red()    == plugin.OFF)
-              and fsm.vars.dont_wait
+   if plugin:is_ready() and plugin:visibility_history() > 25 then
+      return (     plugin:yellow() == plugin.BLINKING
+               and plugin:green()  == plugin.OFF
+               and plugin:red()    == plugin.OFF )
+          or (     plugin:green()  == plugin.ON
+               and plugin:yellow() == plugin.OFF
+               and plugin:red()    == plugin.OFF )
+          or (     plugin:green()  == plugin.OFF
+               and plugin:yellow() == plugin.ON
+               and plugin:red()    == plugin.OFF )
+          or (     plugin:green()  == plugin.ON
+               and plugin:yellow() == plugin.ON
+               and plugin:red()    == plugin.OFF
+               and fsm.vars.dont_wait )
    end
    return false
 end
 
-function out_of_order()  -- careful!!! no check if plugin light is ready
-   return plugin:green()  == plugin.OFF
+function out_of_order()
+   return plugin:is_ready()
+      and plugin:green()  == plugin.OFF
       and plugin:yellow() == plugin.OFF
       and plugin:red()    == plugin.ON
 end
