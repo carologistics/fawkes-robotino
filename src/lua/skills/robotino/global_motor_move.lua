@@ -87,7 +87,8 @@ fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"WAIT_PLAUSIBLE_POSE", JumpState},
    {"STARTPOSE", JumpState},
-   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="DRIVE", fail_to="FAILED"},
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="WAIT_PLAUSIBLE_TARGET", fail_to="FAILED"},
+   {"WAIT_PLAUSIBLE_TARGET", JumpState},
    {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="DECIDE_TURN", fail_to="FAILED"},
    {"DECIDE_TURN", JumpState},
    {"TURN_BACK", SkillJumpState, skills={{motor_move}}, final_to="WAIT", fail_to="FAILED"},
@@ -103,6 +104,8 @@ fsm:add_transitions{
    {"STARTPOSE", "DRIVE", cond=trans_error},
    {"STARTPOSE", "TURN_BACK", cond="vars.turn == true and math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
    {"STARTPOSE", "FINAL", cond=true},
+   {"WAIT_PLAUSIBLE_TARGET", "DRIVE", cond=target_dist_ok, desc="target dist OK"},
+   {"WAIT_PLAUSIBLE_TARGET", "FAILED", cond="vars.target_tries >= MAX_POSE_TRIES", desc="no plausible target!"},
    {"DECIDE_TURN", "TURN_BACK", cond="vars.turn == true"},
    {"DECIDE_TURN", "CHECK_POSE", cond="vars.turn == false"},
    {"WAIT", "CHECK_POSE", timeout=1.5},
@@ -160,6 +163,14 @@ function TURN:init()
    self.skills[1].puck = true
    self.skills[1].tolerance = mm_tolerance
    self.skills[1].frame = "/odom"
+end
+
+function WAIT_PLAUSIBLE_TARGET:init()
+   self.fsm.vars.target_tries = 0
+end
+
+function WAIT_PLAUSIBLE_TARGET:loop()
+   self.fsm.vars.target_tries = self.fsm.vars.target_tries + 1
 end
 
 function DRIVE:init()
