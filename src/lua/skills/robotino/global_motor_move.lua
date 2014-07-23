@@ -35,7 +35,7 @@ documentation      = [==[
 TOLERANCE = { x=0.08, y=0.06, ori=0.02 }
 MAXTRIES = 3
 MAX_DIST = 1.5
-MAX_POSE_TRIES = 30
+MAX_POSE_TRIES = 60
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -97,8 +97,8 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "WAIT_PLAUSIBLE_POSE", cond=true},
-   {"WAIT_PLAUSIBLE_POSE", "STARTPOSE", cond=target_dist_ok, desc="dist ok"},
-   {"WAIT_PLAUSIBLE_POSE", "FAILED", cond="vars.pose_tries >= MAX_POSE_TRIES", desc="dist exceeded"},
+   {"WAIT_PLAUSIBLE_POSE", "STARTPOSE", cond=target_dist_ok, desc="target dist OK"},
+   {"WAIT_PLAUSIBLE_POSE", "FAILED", cond="vars.pose_tries >= MAX_POSE_TRIES", desc="no plausible pose!"},
    {"STARTPOSE", "TURN", cond="vars.puck and vars.bl_target.x < -TOLERANCE.x"},
    {"STARTPOSE", "DRIVE", cond=trans_error},
    {"STARTPOSE", "TURN_BACK", cond="vars.turn == true and math.abs(vars.bl_target.ori) > TOLERANCE.ori"},
@@ -106,7 +106,7 @@ fsm:add_transitions{
    {"DECIDE_TURN", "TURN_BACK", cond="vars.turn == true"},
    {"DECIDE_TURN", "CHECK_POSE", cond="vars.turn == false"},
    {"WAIT", "CHECK_POSE", timeout=1.5},
-   {"CHECK_POSE", "STARTPOSE", cond="not pose_ok() and vars.tries < MAXTRIES"},
+   {"CHECK_POSE", "WAIT_PLAUSIBLE_POSE", cond="not pose_ok() and vars.tries < MAXTRIES"},
    {"CHECK_POSE", "FINAL", cond=pose_ok},
    {"CHECK_POSE", "FAILED", cond="vars.tries >= MAXTRIES"}
 }
