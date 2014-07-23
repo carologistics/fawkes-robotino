@@ -109,7 +109,7 @@
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
   (machine (name ?name) (mtype T2|T3|T4) (junk ?j&:(> ?j 0))
-     (incoming $?i&~:(member$ PICK_CO ?i)) (team ?team-color))
+     (incoming $?i&~:(member$ PICK_CO ?i)) (produced-puck NONE) (team ?team-color))
   (machine (name ?recycle) (mtype RECYCLE) (team ?team-color)
      (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0)))
   (not (proposed-task (name recycle) (args $?args&:(subsetp ?args (create$ ?name ?recycle))) (state rejected)))
