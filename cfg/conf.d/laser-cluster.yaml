@@ -31,7 +31,7 @@ laser-cluster:
     result_frame: /base_link
 
     line_removal:
-      enable: true
+      enable: false
   
       # Maximum number of iterations to perform for line segmentation
       segmentation_max_iterations: 200
