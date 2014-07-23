@@ -112,12 +112,6 @@
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
   ;disable delivery mode of the machine_signal plugin (for safety)
   (skill-call enable_switch iface "delivery" enable false)
-  (navgraph-block-edge "P31" "P41")
-  (navgraph-block-edge "IA2H" "P31")
-  (navgraph-block-edge "IA2H2" "P41")
-  (navgraph-block-edge "P61" "P71")
-  (navgraph-block-edge "IA1H" "P61")
-  (navgraph-block-edge "IA1H2" "P71")
 )
 
 (defrule exp-goto-first

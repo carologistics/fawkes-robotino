@@ -154,11 +154,4 @@
   =>
   (printout warn "removing exp-state because we are in production" crlf)
   (retract ?s)
-  ;unblock edges at ins to avoid drivig through the pucks with the colli
-  (navgraph-unblock-edge "P31" "P41")
-  (navgraph-unblock-edge "IA2H" "P31")
-  (navgraph-unblock-edge "IA2H2" "P41")
-  (navgraph-unblock-edge "P61" "P71")
-  (navgraph-unblock-edge "IA1H" "P61")
-  (navgraph-unblock-edge "IA1H2" "P71")
 )
