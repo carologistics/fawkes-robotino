@@ -213,6 +213,10 @@ function POSITION_FIRST:init()
    self.fsm.vars.num_tries = self.fsm.vars.num_tries + 1
 end
 
+function CHECK_RESULT:init()
+   enable_vision()
+end
+
 function MOVE_UNDER_RFID:init()
    self.fsm.vars.num_rfid_tries = self.fsm.vars.num_rfid_tries + 1
    if self.fsm.vars.open_gate then
