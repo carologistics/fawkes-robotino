@@ -134,3 +134,7 @@ function SKILL_FETCH_PUCK:init()
       self.skills[1].move_sideways = "left"
    end
 end
+
+function GET_RID_OF_PUCK:init()
+   printf("Puck Trigger Dist: %f", sensor:distance(PUCK_SENSOR_INDEX))
+end
