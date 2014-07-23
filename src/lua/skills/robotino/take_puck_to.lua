@@ -72,7 +72,7 @@ function lost_puck()
       count = count + 1
    end
    local avg = sum / count
-   printf("moving avg: %f", avg)
+   --printf("moving avg: %f", avg)
 
    fsm.vars.avg_val = val
    fsm.vars.avg_idx = idx
