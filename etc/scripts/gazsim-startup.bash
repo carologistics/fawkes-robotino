@@ -101,7 +101,7 @@ case $COMMAND in
     gzserver ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LANG="en_US"
-	gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world_2014/llsf.world
+	gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world_two_teams/llsf.world
 	;;
     gzclient ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
@@ -111,6 +111,7 @@ case $COMMAND in
 	$opti gzclient
 	;;
     fawkes ) 
+	ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
 	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT
 	$FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins

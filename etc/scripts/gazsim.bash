@@ -94,7 +94,7 @@ then
      exit 1
 fi
 
-if [ $NUM_ROBOTINOS -lt 1 ] || [ $NUM_ROBOTINOS -gt 3 ]
+if [ $NUM_ROBOTINOS -lt 1 ] || [ $NUM_ROBOTINOS -gt 6 ]
 then
      echo Number Robotinos wrong
      exit 1
@@ -143,20 +143,13 @@ if [  $COMMAND  == start ]; then
 	gnome-terminal -t Gzclient -x bash -c "$startup_script_location -x gzclient $KEEP"
     fi
     sleep 25s
-
+    
     if [  $ROS  == "-r" ]; then
-        #start roscores
-	gnome-terminal --tab -t Roscore1 -x bash -c "$startup_script_location -x roscore -p 11311 $KEEP"
-	if [ $NUM_ROBOTINOS -ge 2 ]
-	then
-	    sleep 1s
-	    gnome-terminal --tab -t Roscore2 -x bash -c "$startup_script_location -x roscore -p 11312 $KEEP"
-	    if [ $NUM_ROBOTINOS -ge 3 ]
-	    then
-		sleep 1s
-		gnome-terminal --tab -t Roscore3 -x bash -c "$startup_script_location -x roscore -p 11313 $KEEP"
-	    fi
-	fi
+	#start roscores
+	for ((ROBO=1 ; ROBO<=$NUM_ROBOTINOS ;ROBO++))
+	do
+            gnome-terminal --tab -t Roscore$ROBO -x bash -c "$startup_script_location -x roscore -p 1131$ROBO $KEEP"
+	done
     fi
 
     #start refbox
@@ -169,15 +162,10 @@ if [  $COMMAND  == start ]; then
     sleep 2s
 
     #start fawkes for robotinos
-    gnome-terminal -t Fawkes_Robotino_1 -x bash -c "$startup_script_location -x fawkes -p 11311 -i robotino1 $KEEP $CONF $ROS $AGENT $DETAILED"
-    if [ $NUM_ROBOTINOS -ge 2 ]
-    then
-	gnome-terminal --tab -t Fawkes_Robotino_2 -x bash -c "$startup_script_location -x fawkes -p 11312 -i robotino2 $KEEP $CONF $ROS $AGENT $DETAILED"
-	if [ $NUM_ROBOTINOS -ge 3 ]
-	then
-	    gnome-terminal --tab -t Fawkes_Robotino_3 -x bash -c "$startup_script_location -x fawkes -p 11313 -i robotino3 $KEEP $CONF $ROS $AGENT $DETAILED"
-	fi
-    fi
+    for ((ROBO=1 ; ROBO<=$NUM_ROBOTINOS ;ROBO++))
+    do
+        gnome-terminal -t Fawkes_Robotino_$ROBO -x bash -c "$startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $AGENT $DETAILED"
+    done
 
     sleep 5s
 

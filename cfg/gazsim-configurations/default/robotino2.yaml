@@ -19,4 +19,4 @@ fawkes:
 
     net:
       tcp_port: !tcp-port 1922
-      service_name: "Fawkes on Gazsim Robotino 2"
+      service_name: "Fawkes on Gazsim Robotino 2 (Cyan)"
