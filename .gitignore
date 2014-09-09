@@ -8,7 +8,9 @@
 # Specific paths, _ variants for cross compilation environments
 /bin/
 /bin_*/
+/bin/debug.log
 /cfg/*.db
+/debug.log
 /lib/
 /lib_*/
 /log/
