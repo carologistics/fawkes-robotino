@@ -1,0 +1,83 @@
+
+;---------------------------------------------------------------------------
+;  net.opf - Network OPs for LLSF2014 agent
+;
+;  Created: Tue Sep 09 11:47:58 2014
+;  Copyright  2014  Tim Niemueller [www.niemueller.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+(
+
+(defop net-enable-team-private
+  :invocation (protobuf-msg "llsf_msgs.GameState" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
+                              $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
+  :setting (& (setting "peer-private-key" $crypto-key) (setting "peer-private-cipher" $crypto-cipher)
+	      (setting "peer-address" $peer-addr)
+  	      (setting "peer-cyan-send-port" $cyan-sendp) (setting "peer-cyan-recv-port" $cyan-recvp)
+  	      (setting "peer-magenta-send-port" $magenta-sendp) (setting "peer-magenta-recv-port" $magenta-recvp))
+  :context (& (~ (peer-id private $private-id))
+ 	      (setting "team-name" $team-name)
+              (|| (equal $team-name (pb-field-value $msg "team_cyan"))
+	          (equal $team-name (pb-field-value $msg "team_magenta"))))
+  :body (
+    (if (? (equal $team-name (pb-field-value $msg "team_cyan")))
+      (! (print "Setting up private channel as team CYAN"))
+      (! (pb-peer-create-local-crypto $peer-addr $cyan-sendp $cyan-recvp $crypto-key $crypto-cipher @peer-id))
+      (! (= @team-color CYAN))
+     else
+      (! (print "Setting up private channel as team MAGENTA"))
+      (! (pb-peer-create-local-crypto $peer-addr $magenta-sendp $magenta-recvp $crypto-key $crypto-cipher @peer-id))
+      (! (= @team-color MAGENTA))
+    )
+  )
+  :effects ((=> (peer-id private @peer-id)) (=> (team-color @team-color)))
+  :documentation "Setup private team channel.
+    Once the (configured) team name has been set in the refbox and is announced
+    we know which team color we have. Note this and setup the appropriate (encrypted)
+    team channel. Afterwards message can be sent privately among robots and to the
+    refbox."
+)
+
+(defop net-send-BeaconSignal
+  :invocation (time $sec $usec)
+  :context (? (& (peer-id private $peer-id)
+ 	         (team-color $team-color)
+	         (timer "beacon" $last-sec $last-usec $seq)
+	         (setting "beacon-interval" $beacon-interval)
+	         (timeout $sec $usec $last-sec $last-usec $beacon-interval)))
+  :setting (& (setting "team-name" $team-name)
+  	      (setting "robot-name" $robot-name) (setting "robot-number" $robot-number))
+  :body (
+    (! (start-critical-section))
+    (! (= @next-seq (+ $seq 1)))
+    (=> (timer "beacon" $sec $usec @next-seq))
+    (! (end-critical-section))
+    (! (= @beacon (pb-create "llsf_msgs.BeaconSignal")))
+    (! (= @beacon-time (pb-field-value @beacon "time")))
+    (! (pb-set-field @beacon-time "sec" $sec))
+    (! (pb-set-field @beacon-time "nsec" (* $usec 1000)))
+    (! (pb-set-field @beacon "time" @beacon-time)) ; destroys @beacon-time!
+    (! (pb-set-field @beacon "seq" @next-seq))
+    (! (pb-set-field @beacon "team_name" $team-name))
+    (! (pb-set-field @beacon "peer_name" $robot-name))
+    (! (pb-set-field @beacon "team_color" $team-color))
+    (! (pb-set-field @beacon "number" $robot-number))
+    (! (pb-set-field @beacon "number" $robot-number))
+    (! (pb-broadcast $peer-id @beacon))
+    (! (pb-destroy @beacon))
+  )
+  :documentation "Periodically send beacon signals.
+    Beacon signals are required for the refbox to recognize a robot. After
+    the private team channel has been setup periodically send the message."
+)
+
+; Example how to process a GameState message
+; (defop net-enable-got-some
+;   :invocation (protobuf-msg "llsf_msgs.GameState" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
+;                               $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
+;   :context ()
+;   :body ((! (print "Got gamestate")))
+; )
+
+)

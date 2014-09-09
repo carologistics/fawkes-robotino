@@ -1,0 +1,12 @@
+
+;---------------------------------------------------------------------------
+;  llsf2014.db - OpenPRS OP initial database
+;
+;  Created: Tue Sep 09 01:13:10 2014
+;  Copyright  2014  Tim Niemueller [www.niemueller.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+(
+(timer "beacon" 0ll 0ll 0)
+)
