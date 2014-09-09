@@ -74,6 +74,7 @@ skiller:
         line6: LaserLineInterface::/laser-lines/6
         line7: LaserLineInterface::/laser-lines/7
         line8: LaserLineInterface::/laser-lines/8
+        speechsynth: SpeechSynthInterface::Flite
       writing:
         light: RobotinoLightInterface::Light determined
 
