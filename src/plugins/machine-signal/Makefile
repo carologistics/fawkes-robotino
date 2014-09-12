@@ -29,7 +29,7 @@ LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
 ifeq ($(CC),gcc)
-  ifneq ($(call gcc_atleast_version,4,6),1)
+  ifneq ($(call gcc_atleast_version,4,7),1)
     GCC_TOO_OLD=1
   endif
 endif
@@ -56,7 +56,7 @@ all: $(WARN_TARGETS)
   endif
 .PHONY: warning_old_gcc
 warning_old_gcc:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting CLIPS Plugins$(TNORMAL) (GCC too old, have $(GCC_VERSION), required 4.6)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting CLIPS Plugins$(TNORMAL) (GCC too old, have $(GCC_VERSION), required 4.7)"
 endif
 
 include $(BUILDSYSDIR)/base.mk
