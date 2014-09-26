@@ -159,7 +159,6 @@ private:
 	std::string cfg_frame_;
 
 	firevision::Camera *cam_;
-	puck* no_pucK_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
 	//interfaces
