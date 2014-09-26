@@ -115,7 +115,7 @@ struct puck{
 	Point3d cart;
 	fawkes::polar_coord_2d_t pol;
 	double radius;
-	int visibiity_history;
+	int visibility_history;
 	firevision::ROI roi;
 };
 

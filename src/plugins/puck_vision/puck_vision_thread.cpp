@@ -188,7 +188,7 @@ PuckVisionThread::init()
 
 	no_pucK_ = new puck();
 	int val_empty = -9999;
-	no_pucK_->visibiity_history = val_empty;
+	no_pucK_->visibility_history = val_empty;
 	no_pucK_->cart[0] = val_empty;
 	no_pucK_->cart[1] = val_empty;
 	no_pucK_->cart[2] = val_empty;
@@ -643,7 +643,7 @@ PuckVisionThread::getPuckPosition(puck *p, firevision::ROI roi){
 	p->cart = apply_tf(cfg_frame_target.c_str(), p->cart);
 
 	cartToPol(p->pol, p->cart[0], p->cart[1] );
-	p->visibiity_history = 1;
+	p->visibility_history = 1;
 	p->radius = position_y_in_m_L -position_y_in_m_R ;
 
 	if(cfg_debugMessagesActivated_){
@@ -660,7 +660,7 @@ PuckVisionThread::updatePos3dInferface(fawkes::Position3DInterface* interface, p
 	interface->set_rotation(1, p->pol.r);
 	//interface->set_timestamp(&p->cart.stamp);
 	interface->set_frame(p->cart.frame_id.c_str());
-	interface->set_visibility_history(p->visibiity_history);
+	interface->set_visibility_history(p->visibility_history);
 }
 
 void
