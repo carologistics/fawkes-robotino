@@ -68,8 +68,11 @@ function INIT:init()
          self.fsm.vars.closest_node = navgraph:closest_node(self.fsm.vars.x, self.fsm.vars.y, "highway_exit"):name()
       end
       self.fsm.vars.place       = self.fsm.vars.closest_node
+      self.fsm.vars.x           = nil
       self.fsm.vars.closest_x   = nil
+      self.fsm.vars.y           = nil
       self.fsm.vars.closest_y   = nil
+      self.fsm.vars.ori         = nil
       self.fsm.vars.closest_ori = nil
    else
       if self.fsm.vars.same_place then
