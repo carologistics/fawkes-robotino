@@ -33,6 +33,7 @@
 #include <fvutils/color/conversions.h>
 #include <fvmodels/color/similarity.h>
 #include <fvmodels/color/lookuptable.h>
+#include <fvmodels/color/thresholds_black.h>
 #include <fvmodels/scanlines/grid.h>
 #include <fvfilters/roidraw.h>
 #include <tf/transformer.h>
@@ -145,7 +146,7 @@ private:
 	std::string cfg_prefix_;
 	std::string cfg_prefix_static_transforms_;
 	std::string cfg_frame_target;
-	std::string cfg_colormodel_mode_;
+	bool        cfg_use_new_pucks_;
 
 	//Camera
 	camera_info camera_info_;
@@ -189,7 +190,7 @@ private:
 			std::list<firevision::ROI>* rois_all);
 
 	void setup_color_classifier(color_classifier_context_t_ *color_data,
-			const char* prefix, firevision::color_t expected);
+	    const char* prefix, firevision::color_t expected);
 
 	std::list<firevision::ROI>*
 	classifyInRoi(firevision::ROI searchArea, color_classifier_context_t_* color_data);
