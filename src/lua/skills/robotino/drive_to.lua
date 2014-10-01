@@ -32,8 +32,10 @@ depends_interfaces = { }
 documentation      = [==[Drive to close point (property = highway_exit) with colisoin avoidance and last part with global_move_laserlines
 
 Parameters:
-      place: Where to drive to
-      puck:  If we need to drive with a puck
+      place:         Where to drive to
+      puck:          If we need to drive with a puck
+      same_place:    Don't use a pre pose
+      just_pre_pose: Don't use the final (given) place, just drive to the pre-pose (higher priority as same_place)
 ]==]
 
 -- Initialize as skill module
@@ -56,19 +58,37 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   if self.fsm.vars.same_place then
-      printf("Drive to: use same place")
-      self.fsm.vars.closest_node = self.fsm.vars.place
-      self.fsm.vars.closest_x = self.fsm.vars.x
-      self.fsm.vars.closest_y = self.fsm.vars.y
-      self.fsm.vars.closest_ori = self.fsm.vars.ori
-   else
+   if self.fsm.vars.just_pre_pose then
+     printf("Drive to: just use pre-pose")
       if self.fsm.vars.place then
          printf("Drive to: use next node from place")
          self.fsm.vars.closest_node = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
       else
          printf("Drive to: use next node from x and y")
          self.fsm.vars.closest_node = navgraph:closest_node(self.fsm.vars.x, self.fsm.vars.y, "highway_exit"):name()
+      end
+      self.fsm.vars.place       = self.fsm.vars.closest_node
+      self.fsm.vars.x           = nil
+      self.fsm.vars.closest_x   = nil
+      self.fsm.vars.y           = nil
+      self.fsm.vars.closest_y   = nil
+      self.fsm.vars.ori         = nil
+      self.fsm.vars.closest_ori = nil
+   else
+      if self.fsm.vars.same_place then
+         printf("Drive to: use same place")
+         self.fsm.vars.closest_node = self.fsm.vars.place
+         self.fsm.vars.closest_x = self.fsm.vars.x
+         self.fsm.vars.closest_y = self.fsm.vars.y
+         self.fsm.vars.closest_ori = self.fsm.vars.ori
+      else
+         if self.fsm.vars.place then
+            printf("Drive to: use next node from place")
+            self.fsm.vars.closest_node = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+         else
+            printf("Drive to: use next node from x and y")
+            self.fsm.vars.closest_node = navgraph:closest_node(self.fsm.vars.x, self.fsm.vars.y, "highway_exit"):name()
+         end
       end
    end
 end
