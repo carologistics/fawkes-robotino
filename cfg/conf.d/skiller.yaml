@@ -58,6 +58,11 @@ skiller:
         puck_0: Position3DInterface::puck_0
         puck_1: Position3DInterface::puck_1
         puck_2: Position3DInterface::puck_2
+        puck_3: Position3DInterface::puck_3
+        puck_4: Position3DInterface::puck_4
+        puck_5: Position3DInterface::puck_5
+        puck_6: Position3DInterface::puck_6
+        puck_7: Position3DInterface::puck_7
         light_plugin: RobotinoLightInterface::/machine-signal/best
         left_gate: RobotinoLightInterface::/machine-signal/0
         middle_gate: RobotinoLightInterface::/machine-signal/1
