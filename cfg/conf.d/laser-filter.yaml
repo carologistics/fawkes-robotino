@@ -29,18 +29,18 @@ plugins/laser-filter:
         from: 260
         to: 100
 
-  colli:
-
-    # URG input interface
-    in/map: Laser360Interface::Map Laser
-    in/urg: Laser360Interface::Laser urg filtered
-
-    # URG filtered output interface
-    out/filtered: Laser360Interface::Laser colli
-
-    filters:
-
-      1-mix:
-        type: min_merge
-        timestamp_selection: first
-
+#  colli:
+#
+#    # URG input interface
+#    in/map: Laser360Interface::Map Laser
+#    in/urg: Laser360Interface::Laser urg filtered
+#
+#    # URG filtered output interface
+#    out/filtered: Laser360Interface::Laser colli
+#
+#    filters:
+#
+#      1-mix:
+#        type: min_merge
+#        timestamp_selection: first
+#
