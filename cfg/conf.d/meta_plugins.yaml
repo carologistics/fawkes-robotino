@@ -25,7 +25,8 @@ fawkes/meta_plugins:
 
 
   # Robotino base meta plugin
-  robotino-base: imu,robotino,webview
+  m-base-bare: imu,robotino,webview
+  m-base-joy: m-base-bare,joystick,joystick-teleop
 
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview
   gazsim-meta-ros: ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
