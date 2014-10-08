@@ -31,7 +31,8 @@
     ;(! (bb-open "SkillerInterface" "Skiller" BB-READ))
     (! (time-set-idle-looptime $ilt_sec $ilt_usec))
     (! (navgraph-load))
-    (! (say "Agent loaded and ready to run"))
+    ;(! (say "Agent loaded and ready to run"))
+    (! (ppgoto "M1"))
     (! (print "LLSF2014 agent successfully initialized"))
   )
   :effects ((~> (agent-init)) (=> (peer-id public @peer-id)))
@@ -43,6 +44,13 @@
   :context ()
   :action (skill-call "say" "text" $text "wait" true)
   :documentation "Invoke skiller to synthesize given text as speech."
+)
+
+(defop ppgoto
+  :invocation (! (ppgoto $place))
+  :call (ppgoto $place)
+  :action (skill-call "ppgoto" "place" $place)
+  :documentation "go to a place"
 )
 
 (defop agent-print-skiller-iface

@@ -9,6 +9,7 @@
 
 ; declare and load agent-specific elements
 declare op_predicate  say
+declare op_predicate  ppgoto
 declare cwp           peer-id
 declare predicate     team-color
 
