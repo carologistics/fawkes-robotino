@@ -11,7 +11,7 @@ openprs:
     # run mp-oprs on your own. Note that if it is run neither by
     # Fawkes nor by yourself it will be started automatically by
     # openprs-server and not be stopped on exit.
-    run: false
+    run: true
 
     # the command to execute for the message passer,
     # can be in PATH or an absolute path
@@ -42,7 +42,7 @@ openprs:
     # Run oprs-server explicitly? If enabled (true) Fawkes will
     # run oprs-server when the openprs plugin is loaded and
     # terminate it when the plugin is unloaded.
-    run: false
+    run: true
 
     # the command to execute for the oprs-server
     # can be in PATH or an absolute path
