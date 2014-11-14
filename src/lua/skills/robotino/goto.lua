@@ -53,9 +53,9 @@ local tf_mod = require 'tf_module'
 
 
 function pose_ok(self)
-   return (math.abs(self.fsm.vars.goto_x - pose:translation(0)) <= MAX_TRANSERR
-    and math.abs(self.fsm.vars.goto_y - pose:translation(1)) <= MAX_TRANSERR
-    and math.abs(self.fsm.vars.goto_ori - 2*math.acos(pose:rotation(3))) <= MAX_ROTERR)
+   return (math.abs(self.fsm.vars.x - pose:translation(0)) <= MAX_TRANSERR
+    and math.abs(self.fsm.vars.y - pose:translation(1)) <= MAX_TRANSERR
+    and math.abs(self.fsm.vars.ori - get_yaw(pose:rotation)) <= MAX_ROTERR)
 end
 
 function missed_too_often(self)
@@ -80,8 +80,8 @@ fsm:add_transitions{
    {"CHECK_PARAMS", "FAILED", cond="fsm.vars.goto_name", desc="goto_name param is deprecated!"},
    {"WAIT_POSE", "CHECK_POSE", timeout=0.5},
    {"CHECK_POSE", "FINAL", cond=pose_ok, desc="Pose reached" },
-   {"CHECK_POSE", "MISSED", cond="not pose_ok()"},
-   {"MISSED", "DO_RELGOTO", cond="not missed_too_often()"},
+   {"CHECK_POSE", "MISSED", cond="not pose_ok(self)"},
+   {"MISSED", "DO_RELGOTO", cond="not missed_too_often(self)"},
    {"MISSED", "FAILED", cond=missed_too_often, desc="Posed missed"}
 }
 
