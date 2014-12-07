@@ -45,6 +45,11 @@ void PuckLocalization::update()
     Puck puck = table_->get_puck(p);
 
     //get position from world position of the Puck model
+    if(!world_->GetEntity(puck.name_link.c_str()))
+    {
+      printf("Can not find puck with index %d\n", p);
+      return;
+    }
     double x = world_->GetEntity(puck.name_link.c_str())->GetWorldPose().pos.x;
     double y = world_->GetEntity(puck.name_link.c_str())->GetWorldPose().pos.y;
 
