@@ -21,6 +21,12 @@ OPTIONS:
    -e arg         Record replay
    -a             Start with agent
    -d             Detailed simulation (e.g. simulated webcam)
+   -o             Omitt starting gazebo (necessary when starting
+                  different teams)
+   -f arg         First Robotino Number (default 1, choose 4 when
+                  starting as magenta)
+   -p arg         Path to the fawkes folder
+                  ($FAWKES_DIR/bin by default)
 EOF
 }
  
@@ -35,9 +41,11 @@ DETAILED=
 KEEP=
 SHUTDOWN=
 NUM_ROBOTINOS=3
+FIRST_ROBOTINO_NUMBER=1
 REPLAY=
 FAWKES_BIN=$FAWKES_DIR/bin
-while getopts “hx:c:lrksn:e:da” OPTION
+START_GAZEBO=true
+while getopts “hx:c:lrksn:e:daof:p:” OPTION
 do
      case $OPTION in
          h)
@@ -81,6 +89,15 @@ do
 	 a)
 	     AGENT="-a"
 	     ;;
+	 o)
+	     START_GAZEBO=false
+	     ;;
+	 f)
+	     FIRST_ROBOTINO_NUMBER=$OPTARG
+	     ;;
+	 p)
+	     FAWKES_BIN=$OPTARG/bin
+	     ;;
          ?)
              usage
              exit
@@ -94,7 +111,7 @@ then
      exit 1
 fi
 
-if [ $NUM_ROBOTINOS -lt 1 ] || [ $NUM_ROBOTINOS -gt 6 ]
+if [ $NUM_ROBOTINOS -lt 0 ] || [ $NUM_ROBOTINOS -gt 6 ]
 then
      echo Number Robotinos wrong
      exit 1
@@ -134,43 +151,51 @@ if [  $COMMAND  == start ]; then
 	exit 1
     fi
 
-    #start gazebo
-    #server
-    gnome-terminal -t Gzserver -x bash -c "$startup_script_location -x gzserver $REPLAY $KEEP" $CLIENT
-    #client if not headless
-    if [[ -z $VISUALIZATION ]]
+    if $START_GAZEBO
     then
-	gnome-terminal -t Gzclient -x bash -c "$startup_script_location -x gzclient $KEEP"
+	#start gazebo
+	#server
+	gnome-terminal -t Gzserver -x bash -c "$startup_script_location -x gzserver $REPLAY $KEEP" $CLIENT
+	#client if not headless
+	if [[ -z $VISUALIZATION ]]
+	then
+	    gnome-terminal -t Gzclient -x bash -c "$startup_script_location -x gzclient $KEEP"
+	fi
+	sleep 25s
     fi
-    sleep 25s
     
     if [  $ROS  == "-r" ]; then
 	#start roscores
-	for ((ROBO=1 ; ROBO<=$NUM_ROBOTINOS ;ROBO++))
+	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
 	do
             gnome-terminal --tab -t Roscore$ROBO -x bash -c "$startup_script_location -x roscore -p 1131$ROBO $KEEP"
 	done
     fi
 
-    #start refbox
-    gnome-terminal -t Refbox -x bash -c "$startup_script_location -x refbox $KEEP"
-    sleep 2s
-    #start refbox shell
-    gnome-terminal --geometry=87x82 -t Refbox_Shell -x bash -c "$startup_script_location -x refbox-shell $KEEP"
-
-
-    sleep 2s
+    if $START_GAZEBO
+    then
+	#start refbox
+	gnome-terminal -t Refbox -x bash -c "$startup_script_location -x refbox $KEEP"
+	sleep 2s
+	#start refbox shell
+	gnome-terminal --geometry=87x82 -t Refbox_Shell -x bash -c "$startup_script_location -x refbox-shell $KEEP"
+	sleep 2s
+    fi
 
     #start fawkes for robotinos
-    for ((ROBO=1 ; ROBO<=$NUM_ROBOTINOS ;ROBO++))
+    for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-        gnome-terminal -t Fawkes_Robotino_$ROBO -x bash -c "$startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $AGENT $DETAILED"
+        gnome-terminal -t Fawkes_Robotino_$ROBO -x bash -c "$startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $AGENT $DETAILED -f $FAWKES_BIN"
     done
 
     sleep 5s
 
-    #start fawkes for communication, llsfrbcomm and eventually statistics
-    gnome-terminal --tab -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN"
+
+    if $START_GAZEBO
+    then
+	#start fawkes for communication, llsfrbcomm and eventually statistics
+	gnome-terminal --tab -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN"
+    fi
 
     sleep 1s
 

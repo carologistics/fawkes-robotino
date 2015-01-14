@@ -24,7 +24,8 @@ OPTIONS:
                   Robotino instance
    -d             Detailed simulation (e.g. simulated webcam)
    -a             Start with agent
-
+   -f arg         Path to the fawkes bin folder to use
+                  ($FAWKES_DIR/bin by default)
   GAZEBO:
    -e arg         Record Replay
 EOF
@@ -44,7 +45,7 @@ VISION=,gazsim-light-front,gazsim-puck-detection
 AGENT=
 FAWKES_BIN=$FAWKES_DIR/bin
 KEEP=
-while getopts “hx:c:lrsp:i:e:da4k” OPTION
+while getopts “hx:c:lrsp:i:f:e:da4k” OPTION
 do
      case $OPTION in
          h)
@@ -81,6 +82,9 @@ do
          k)
              KEEP=yes
              ;;
+	 f)
+	     FAWKES_BIN=$OPTARG
+	     ;;
          ?)
              usage
              exit
@@ -111,7 +115,7 @@ case $COMMAND in
 	$opti gzclient
 	;;
     fawkes ) 
-	ulimit -c unlimited
+	# ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
 	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT
 	$FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins

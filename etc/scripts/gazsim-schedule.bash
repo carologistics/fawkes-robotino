@@ -10,15 +10,6 @@ This script automates the execution of multiple Gazebo-simulations with differen
 
 OPTIONS:
    -h      Show this message
-   -c arg  A configuration-folder in cfg/gazsim-configurations/ to test 
-           (you can define multiple by "-c c1 -c c2 ...") 
-   -b arg  A branch to test
-           (you can define multiple by "-b b1 -b b2 ..."
-            branch bn will be used with configuration cn)
-           default: master
-   -l      Run Gazebo headless
-   -n arg  The amount of test-runs
-   -d      Run a detailed simulation (e.g. with simulated vision)
 EOF
 }
 
@@ -37,13 +28,22 @@ restore_record() #args 1: file
     fi
 }
 
+#function to add a team from the configuration file
+addTeam() #args 1:teamname 2:fawkes-robotino-branch 3:fawkes-branch 4:configuration 5:number-robots
+{
+    TEAMS[$NUM_TEAMS]=$1
+    FAWKES_ROBOTINO_BRANCHES[$NUM_TEAMS]=$2
+    FAWKES_BRANCHES[$NUM_TEAMS]=$3
+    CONFIGURATIONS[$NUM_TEAMS]=$4
+    NUMBER_ROBOTS[$NUM_TEAMS]=$5
+
+    echo Adding Team ${TEAMS[$NUM_TEAMS]} with branches ${FAWKES_ROBOTINO_BRANCHES[$NUM_TEAMS]} and ${FAWKES_BRANCHES[$NUM_TEAMS]}, configuration ${CONFIGURATIONS[$NUM_TEAMS]} and ${NUMBER_ROBOTS[$NUM_TEAMS]} robots.
+
+    let "NUM_TEAMS++"
+}
+
 #check options
-NUM_CONF=0
-NUM_BRANCHES=0
-HEADLESS=
-DETAILED=
-NUM_RUNS=1
-BRANCHES[0]=origin/master
+NUM_TEAMS=0
 PREVIOUS_BRANCH=
 while getopts “hc:b:ln:d” OPTION
 do
@@ -52,27 +52,6 @@ do
             usage
             exit 1
             ;;
-        c)
-	    CONFIGURATIONS[$NUM_CONF]=$OPTARG
-	    let "NUM_CONF++"
-
-	    echo Configuration $NUM_CONF is $OPTARG
-	    ;;
-        b)
-	    BRANCHES[$NUM_BRANCHES]=$OPTARG
-	    let "NUM_BRANCHES++"
-
-	    echo Branch $NUM_BRANCHES is $OPTARG
-	    ;;
-        l)
-	    HEADLESS=-l
-            ;;
-        n)
-	    NUM_RUNS=$OPTARG
-            ;;
-        d)
-	    DETAILED=-d
-            ;;
         ?)
             usage
             exit
@@ -80,106 +59,148 @@ do
     esac
 done
 
-if [[ -z $CONFIGURATIONS ]]
+#read out configuration file
+source $FAWKES_DIR/cfg/gazsim-configurations/automated-competition-conf.bash
+
+if $HEADLESS
 then
-    echo Please specify at least one configuration
+    HEADLESS=-l
+else
+    HEADLESS=
+fi
+
+if [ $NUM_TEAMS -lt 2 ]
+then
+    echo Please specify at least two teams
     exit 1
 fi
 
-#run simulations
-
-STARTUP_SCRIPT_LOCATION=$FAWKES_DIR/bin/gazsim.bash
-
+#setup log folder
 TIME=$(date +'%y_%m_%d_%H_%M')
+START_PATH=$COMPETITION_LOG_PATH/$COMPETITION_NAME$TIME
+echo $START_PATH
+mkdir -p "$START_PATH"
 
-echo Stashing changes
-git stash
+# #checkout and compile team code
+# mkdir -p "$COMPETITION_LOG_PATH/teams"
+# for ((TEAM=0 ; TEAM<$NUM_TEAMS ;TEAM++))
+# do
+#     cd "$COMPETITION_LOG_PATH/teams"
+#     echo Preparing the code of team ${TEAMS[$TEAM]}
+#     # Does the code of the ream already exist?
+#     if [ -d "${TEAMS[$TEAM]}" ]; then
+# 	echo Directory with team code already exists, updating it
+#     else
+# 	echo Directory with team code missing, cloning it
+# 	git clone --recursive git@git.fawkesrobotics.org:fawkes-robotino.git ${TEAMS[$TEAM]}
+#     fi
+#     cd "${TEAMS[$TEAM]}"
+#     git fetch
+#     git reset --hard HEAD
+#     git checkout -b $COMPETITION_NAME$TIME ${FAWKES_ROBOTINO_BRANCHES[$TEAM]}
+#     cd fawkes
+#     git fetch
+#     git reset --hard HEAD
+#     git checkout -b $COMPETITION_NAME$TIME ${FAWKES_BRANCHES[$TEAM]}
+#     cd ..
+
+#     #Compile code
+#     echo Compiling...
+#     COMPILE_OUTPUT="$(make all -j8)"
+#     if [ "$COMPILE_OUTPUT" == *"Error"* ]
+#     then
+# 	echo "${TEAMS[$TEAM]}" has a compile error
+# 	echo You can find the compile errors here:
+# 	pwd
+# 	touch compile_errors.txt
+# 	echo "$COMPILE_OUTPUT" > compile_errors.txt
+# 	exit 1
+#     else
+# 	echo Compiling successful
+# 	#####DEBUG
+# 	touch compile_errors.txt
+# 	echo "$COMPILE_OUTPUT" > compile_errors.txt
+#     fi
+
+# done
+
+#run simulations
+cd "$START_PATH"
+STARTUP_SCRIPT_LOCATION=$FAWKES_DIR/bin/gazsim.bash
 
 for ((RUN=1 ; RUN<=$NUM_RUNS ;RUN++))
 do
-    for ((C=0 ; C<$NUM_CONF ;C++))
+    for ((TEAM1=0 ; TEAM1<$NUM_TEAMS ;TEAM1++))
     do
-	#get config and branch
-	CONF=${CONFIGURATIONS[${C}]}
-	if [ $C -lt $NUM_BRANCHES ]
-	then
-	    BRANCH=${BRANCHES[${C}]}
-	else
-	    BRANCH=${BRANCHES[0]}
-	fi
-
-	cd $FAWKES_BIN/..
-
-	echo Executing simulation-run $RUN with configuration $CONF in branch $BRANCH
-
-	if [ "$BRANCH" != "$PREVIOUS_BRANCH" ]
-	then
-	    #checkout branch
-	    echo Checking out branch...
-	    git reset --hard HEAD
-	    git co origin/master
-	    git branch -D current-scripted-sim
-	    git co -b current-scripted-sim $BRANCH
-	    echo Compiling...
-	    COMPILE_OUTPUT="$(make all -j8)"
-	fi
-
-	#create and go to log folder
-	cd $FAWKES_DIR
-	export FAWKES_DIR_FOR_SED=$(echo $FAWKES_DIR | sed "s/\//\\\\\//g")
-	mkdir -p "gazsim-logs/$TIME/${CONF}_$RUN"
-	cd "gazsim-logs/$TIME/${CONF}_$RUN"
-
-	if [ "$COMPILE_OUTPUT" != *Error* ]
-	then
-	    echo Skipping branch $BRANCH
-	    echo You can find the compile errors here:
-	    pwd
-	    touch compile_errors.txt
-	    echo "$COMPILE_OUTPUT" > compile_errors.txt
-	    exit 1
-	fi
-
-	PREVIOUS_BRANCH=$BRANCH
-
-	#set config values
-	replace_config run $RUN
-	replace_config configuration-name "\"$CONF\""
-	replace_config collection "\"test_$TIME\""
-	replace_config log "\"$FAWKES_DIR_FOR_SED\/gazsim-logs\/$TIME\/$CONF\_$RUN\"" #creepy string because of sed
-        
-
-	#start simulation
-	REPLAY_PATH="$FAWKES_DIR/gazsim-logs/$TIME/${CONF}_$RUN"
-	$STARTUP_SCRIPT_LOCATION -x start -r -a -s $HEADLESS -c $CONF -e $REPLAY_PATH $DETAILED
-        
-	#wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
-	echo Waiting for shutdown of the simulation
-	for (( ; ; ))
+	for ((TEAM2=$((1+$TEAM1)); TEAM2<$NUM_TEAMS ;TEAM2++))
 	do
-	    sleep 30s
-	    #check if simulation is still running
-	    GAZEBO=$(ps -a | grep -i 'gzserver\|fawkes\|roscore\|llsf-refbox' | wc -l)
-            if [ $GAZEBO -eq 0 ]
-	    then
-		echo Simulation-run $RUN with configuration $CONF finished
-		break
-	    fi
+	    echo Executing simulation-run $RUN with ${TEAMS[$TEAM1]} vs. ${TEAMS[$TEAM2]}
 
-	    #check if something went wrong (workaround for unsolved crashs)
-	    GZSERVER=$(ps -a | grep -i 'gzserver' | wc -l)
-	    FAWKES=$(ps -a | grep -i 'fawkes' | wc -l)
-	    REFBOX=$(ps -a | grep -i 'llsf-refbox' | wc -l)
-	    ROS=$(ps -a | grep -i 'roscore' | wc -l)
-	    if [ $GZSERVER -lt 1 ] || [ $FAWKES -lt 4 ] || [ $REFBOX -lt 1 ] || [ $ROS -lt 1 ]
+	    #create and go to log folder
+	    cd "$START_PATH"
+	    MATCH_NAME=${TEAMS[$TEAM1]}-vs-${TEAMS[$TEAM2]}
+	    mkdir -p "$MATCH_NAME/run_$RUN"
+	    cd "$MATCH_NAME/run_$RUN"
+
+	    #set config values for automated control
+	    replace_config run $RUN
+	    replace_config configuration-name "\"$MATCH_NAME\_run_$RUN\""
+	    replace_config collection "\"$COMPETITION_NAME\_$TIME\""
+	    export DIR_FOR_SED=$(echo $START_PATH/$MATCH_NAME/run_$RUN | sed "s/\//\\\\\//g") #creepy string because of sed
+	    replace_config log "\"$DIR_FOR_SED\""
+
+	    if $REPLAY
 	    then
-		echo something went wrong
-		echo restarting run
-		$STARTUP_SCRIPT_LOCATION -x kill
-		$STARTUP_SCRIPT_LOCATION -x start -r -a -s $HEADLESS -c $CONF -e $REPLAY_PATH
-		sleep 30
+		REPLAY_PATH="$START_PATH/$MATCH_NAME/run_$RUN"
+	        REPLAY=-e $REPLAY_PATH
+	    else
+	        REPLAY=
 	    fi
+	    echo $REPLAY
 	    
+	    # start simulation
+	    echo Starting gazbeo
+	    $STARTUP_SCRIPT_LOCATION -x start -n 0 -s $HEADLESS -c default $REPLAY
+	    echo "Starting Team CYAN: ${TEAMS[$TEAM1]}"
+	    $STARTUP_SCRIPT_LOCATION -x start -r -a -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default $REPLAY
+	    echo "Starting Team MAGENTA: ${TEAMS[$TEAM2]}"
+	    $STARTUP_SCRIPT_LOCATION -x start -r -a -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY
+
+	    ######DEBUG
+	    exit 0                        
+
+	    #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
+	    echo Waiting for shutdown of the simulation
+	    for (( ; ; ))
+	    do
+		sleep 30s
+		#check if simulation is still running
+		GAZEBO=$(ps -a | grep -i 'gzserver\|fawkes\|roscore\|llsf-refbox' | wc -l)
+		if [ $GAZEBO -eq 0 ]
+		then
+		    echo Simulation-run $RUN with configuration $CONF finished
+		    break
+		fi
+
+		#check if something went wrong (workaround for unsolved crashs)
+		GZSERVER=$(ps -a | grep -i 'gzserver' | wc -l)
+		FAWKES=$(ps -a | grep -i 'fawkes' | wc -l)
+		REFBOX=$(ps -a | grep -i 'llsf-refbox' | wc -l)
+		ROS=$(ps -a | grep -i 'roscore' | wc -l)
+		if [ $GZSERVER -lt 1 ] || [ $FAWKES -lt 4 ] || [ $REFBOX -lt 1 ] || [ $ROS -lt 1 ]
+		then
+		    echo Something went wrong
+		    echo Restarting run
+		    echo Starting gazbeo
+		    $STARTUP_SCRIPT_LOCATION -x start -n 0 -s $HEADLESS -c default $REPLAY
+		    echo "Starting Team CYAN: ${TEAMS[$TEAM1]}"
+		    $STARTUP_SCRIPT_LOCATION -x start -r -a -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default -o
+		    echo "Starting Team MAGENTA ${TEAMS[$TEAM2]}"
+		    $STARTUP_SCRIPT_LOCATION -x start -r -a -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 -o
+		    sleep 30
+		fi
+		
+	    done
 	done
 	#wait until the record is stored
 	sleep 10s
