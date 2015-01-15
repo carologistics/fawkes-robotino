@@ -22,7 +22,6 @@
 #include "navgraph_broker_thread.h"
 #include <boost/algorithm/string.hpp>
 #include <core/threading/mutex_locker.h>
-#include <plugins/navgraph/constraints/constraint_repo.h>
 
 
 using namespace fawkes;
@@ -86,7 +85,7 @@ if( use_node_constraints_ ){
 	try{
 		std::string snodes = config->get_string("/plugins/navgraph-broker/reserved_nodes");
 
-		std::vector<fawkes::TopologicalMapNode> nodes = get_nodes_from_string(snodes);
+		std::vector<fawkes::NavGraphNode> nodes = get_nodes_from_string(snodes);
 
 		if(nodes.size()>0){
 			std::string txt = "{";
@@ -100,11 +99,11 @@ if( use_node_constraints_ ){
 		}
 
 		fawkes::Time now(clock);
-		std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_nodes;
+		std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_nodes;
 		double max_reservation_duration = (double) max_reservation_duration_;
 		fawkes::Time valid_duration = now+max_reservation_duration;
-		for( fawkes::TopologicalMapNode &node : nodes ){
-			timed_nodes.push_back(std::pair<fawkes::TopologicalMapNode,fawkes::Time>(node,valid_duration));
+		for( fawkes::NavGraphNode &node : nodes ){
+			timed_nodes.push_back(std::pair<fawkes::NavGraphNode,fawkes::Time>(node,valid_duration));
 		}
 
 		reserve_nodes( "test" , timed_nodes);
@@ -175,7 +174,7 @@ NavgraphBrokerThread::loop(){
 
 		if ( true /*msg->robotname() != robotname_*/) {
 
-			std::vector<fawkes::TopologicalMapNode> nodes;
+			std::vector<fawkes::NavGraphNode> nodes;
 
 			// get nodes out of message
 			for(int i=0; i < (msg->nodelist_size()); i++ ){
@@ -186,9 +185,9 @@ NavgraphBrokerThread::loop(){
 			fawkes::Time now(clock);
 			double max_reservation_duration = (double) max_reservation_duration_;
 			fawkes::Time valid_duration = now+max_reservation_duration;
-			std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_nodes;
-			for( fawkes::TopologicalMapNode &node : nodes ){
-			  timed_nodes.push_back(std::pair<fawkes::TopologicalMapNode,fawkes::Time>(node,valid_duration));
+			std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_nodes;
+			for( fawkes::NavGraphNode &node : nodes ){
+			  timed_nodes.push_back(std::pair<fawkes::NavGraphNode,fawkes::Time>(node,valid_duration));
 			}
 
 			std::string constraint_name;
@@ -217,9 +216,9 @@ NavgraphBrokerThread::loop(){
 }
 
 
-std::vector<fawkes::TopologicalMapNode> NavgraphBrokerThread::get_nodes_from_string(std::string path){
+std::vector<fawkes::NavGraphNode> NavgraphBrokerThread::get_nodes_from_string(std::string path){
 
-	std::vector<fawkes::TopologicalMapNode> nodes;
+	std::vector<fawkes::NavGraphNode> nodes;
 	std::vector<std::string> string_node_time_list;
 	boost::split(string_node_time_list, path, boost::is_any_of(","));
 
@@ -270,7 +269,12 @@ NavgraphBrokerThread::get_path_from_interface_as_vector(){
 
 
 void
-NavgraphBrokerThread::reserve_nodes(std::string constraint_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path){
+NavgraphBrokerThread::reserve_nodes
+  (std::string constraint_name,
+   std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path)
+{
+	LockPtr<NavGraphConstraintRepo> constraint_repo = navgraph->constraint_repo();
+
 
 	constraint_repo.lock();
 
@@ -288,17 +292,20 @@ NavgraphBrokerThread::reserve_nodes(std::string constraint_name, std::vector<std
 	}
 
 	constraint_repo.unlock();
-
 }
 
 
 void
-NavgraphBrokerThread::reserve_edges(std::string constraint_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path){
+NavgraphBrokerThread::reserve_edges
+ (std::string constraint_name,
+  std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path)
+{
+	LockPtr<NavGraphConstraintRepo> constraint_repo = navgraph->constraint_repo();
 
 	constraint_repo.lock();
 
 	  fawkes::NavGraphTimedReservationListEdgeConstraint *timed_edge_constraint;
-	  const std::vector<fawkes::TopologicalMapEdge>  &graph_edges = navgraph->edges();
+	  const std::vector<fawkes::NavGraphEdge>  &graph_edges = navgraph->edges();
 
 	  if( constraint_repo->has_constraint( constraint_name ) )
 	  {
@@ -306,7 +313,7 @@ NavgraphBrokerThread::reserve_edges(std::string constraint_name, std::vector<std
 		  timed_edge_constraint->clear_edges();
 
 		  for (uint16_t i = 1; i<timed_path.size(); i++) {
-		    for (const TopologicalMapEdge &gedge : graph_edges) {
+		    for (const NavGraphEdge &gedge : graph_edges) {
 		  	  if ((timed_path[i-1].first.name() == gedge.from() && timed_path[i].first.name() == gedge.to()) ||
 		  	      (timed_path[i-1].first.name() == gedge.to() && timed_path[i].first.name() == gedge.from()))
 		  	  {
@@ -321,7 +328,7 @@ NavgraphBrokerThread::reserve_edges(std::string constraint_name, std::vector<std
 		  timed_edge_constraint = new NavGraphTimedReservationListEdgeConstraint(logger,  constraint_name, clock);
 
 		  for (uint16_t i = 1; i<timed_path.size(); i++) {
-		    for (const TopologicalMapEdge &gedge : graph_edges) {
+		    for (const NavGraphEdge &gedge : graph_edges) {
 		      if ((timed_path[i-1].first.name() == gedge.from() && timed_path[i].first.name() == gedge.to()) ||
 		          (timed_path[i-1].first.name() == gedge.to() && timed_path[i].first.name() == gedge.from()))
 		      {

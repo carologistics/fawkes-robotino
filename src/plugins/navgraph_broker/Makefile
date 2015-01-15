@@ -23,8 +23,8 @@ include $(BUILDSYSDIR)/ros.mk
 CFLAGS += $(CFLAGS_CPP11)
 
 LIBS_navgraph_broker = fawkescore fawkesutils fawkesaspects fawkesinterface fawkesnavgraphaspect \
-						fawkesnavgraphconstraints fawkesblackboard NavPathInterface  \
-						fawkes_protobuf_comm fawkesgossip fawkesgossipaspect navgrap_broker_msgs
+			fawkesnavgraph fawkesblackboard NavPathInterface  \
+			fawkes_protobuf_comm fawkesgossip fawkesgossipaspect navgraph_broker_msgs
 OBJS_navgraph_broker = navgraph_broker_plugin.o navgraph_broker_thread.o
 
 OBJS_all = $(OBJS_navgraph_broker)
@@ -51,10 +51,11 @@ else
   endif
 endif
 
+$(PLUGINDIR)/navgraph-broker.$(SOEXT): | $(PROTOBUF_LIBDIR)/libnavgraph_broker_msgs.$(SOEXT)
 
 # Protobuf messages
-PROTOBUF_all = navgrap_broker_msgs
-MSGS_navgrap_broker_msgs = $(notdir $(patsubst %.proto,%,$(wildcard $(SRCDIR)/*.proto)))
+PROTOBUF_all = navgraph_broker_msgs
+MSGS_navgraph_broker_msgs = $(notdir $(patsubst %.proto,%,$(wildcard $(SRCDIR)/*.proto)))
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)

@@ -33,12 +33,12 @@
 #include <plugins/gossip/aspect/gossip.h>
 #include <plugins/gossip/gossip/gossip_group.h>
 
-#include <plugins/navgraph/aspect/navgraph.h>
-#include <plugins/navgraph/constraints/constraint_repo.h>
+#include <navgraph/aspect/navgraph.h>
+#include <navgraph/constraints/constraint_repo.h>
 
-#include <plugins/navgraph/constraints/timed_reservation_list_node_constraint.h>
-#include <plugins/navgraph/constraints/timed_reservation_list_edge_constraint.h>
-#include <utils/graph/topological_map_graph.h>
+#include <navgraph/constraints/timed_reservation_list_node_constraint.h>
+#include <navgraph/constraints/timed_reservation_list_edge_constraint.h>
+#include <navgraph/navgraph.h>
 
 #include <interfaces/NavPathInterface.h>
 #include <blackboard/interface_listener.h>
@@ -51,8 +51,8 @@
 
 namespace fawkes{
 	class Time;
-	class TopologicalMapGraph;
-	class ConstraintRepo;
+	class NavGraph;
+	class NavGraphConstraintRepo;
 	class NavPathInterface;
 	class NavGraphTimedReservationListNodeConstraint;
 	class NavGraphTimedReservationListEdgeConstraint;
@@ -85,11 +85,13 @@ class NavgraphBrokerThread
  protected: virtual void run() { Thread::run(); }
 
  private: // methods
-     void reserve_nodes(std::string constraint_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path);
-     void reserve_edges(std::string constraint_name, std::vector<std::pair<fawkes::TopologicalMapNode, fawkes::Time>> timed_path);
+     void reserve_nodes(std::string constraint_name,
+			std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path);
+     void reserve_edges(std::string constraint_name,
+			std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path);
      void add_edges_to_edge_constraint(fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint,
-    		 	 	 	 	 	 	 	 std::vector<fawkes::TopologicalMapNode> path);
-     std::vector<fawkes::TopologicalMapNode> get_nodes_from_string(std::string path);
+				       std::vector<fawkes::NavGraphNode> path);
+     std::vector<fawkes::NavGraphNode> get_nodes_from_string(std::string path);
      std::vector<std::string> get_path_from_interface_as_vector();
      void send_msg();
 
