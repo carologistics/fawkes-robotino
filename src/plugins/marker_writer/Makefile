@@ -19,18 +19,18 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/ros.mk
 
-CFLAGS += $(CFLAGS_CPP11)
-
-LIBS_marker_writer = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface Position3DInterface fawkesrosaspect
-OBJS_marker_writer = marker_writer_plugin.o marker_writer_thread.o
-
-PLUGINS_all = $(PLUGINDIR)/marker-writer.$(SOEXT)
-
-OBJS_all = $(OBJS_marker_writer)
-
 ifeq ($(HAVE_ROS),1)
   ifeq ($(call ros-have-pkg,visualization_msgs),1)
+    CFLAGS += $(CFLAGS_CPP11)
+
+    LIBS_marker_writer = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+		fawkesblackboard fawkesinterface Position3DInterface fawkesrosaspect
+    OBJS_marker_writer = marker_writer_plugin.o marker_writer_thread.o
+
+    PLUGINS_all = $(PLUGINDIR)/marker-writer.$(SOEXT)
+
+    OBJS_all = $(OBJS_marker_writer)
+
     CFLAGS += $(CFLAGS_ROS) $(call ros-pkg-cflags,visualization_msgs)
     LDFLAGS += $(LDFLAGS_ROS) $(call ros-pkg-lflags,visualization_msgs)
   else 
