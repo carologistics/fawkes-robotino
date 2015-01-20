@@ -66,7 +66,7 @@ end
 
 
 local SIGNAL_TIMEOUT = 5 -- seconds
-local MAX_NUM_TRIES = 4
+local MAX_NUM_TRIES = 6
 local MIN_VIS_HIST = 10
 
 local tfm = require("tf_module")
@@ -213,6 +213,10 @@ function POSITION_FIRST:init()
    self.fsm.vars.num_tries = self.fsm.vars.num_tries + 1
 end
 
+function CHECK_RESULT:init()
+   enable_vision()
+end
+
 function MOVE_UNDER_RFID:init()
    self.fsm.vars.num_rfid_tries = self.fsm.vars.num_rfid_tries + 1
    if self.fsm.vars.open_gate then
@@ -250,9 +254,11 @@ function cleanup()
    
    -- switch off laser-cluster
    bb_laser_switch:msgq_enqueue_copy(bb_laser_switch.DisableSwitchMessage:new())
-   
 end
 
+function LEAVE_AREA:init()
+   self.skills[1].x = -0.25
+end
 
 function FINAL:init()
    cleanup()

@@ -97,14 +97,14 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", precond=plugin_missing},
+   {"INIT", "FAILED", precond=plugin_missing, desc="plugin missing"},
    {"INIT", "WAIT", timeout=2}, -- let vision settle
-   {"WAIT", "OUT_OF_ORDER", cond="out_of_order() and plugin:is_ready()"},
-   {"OUT_OF_ORDER", "WAIT", cond="not out_of_order() and plugin:is_ready()"},
-   {"OUT_OF_ORDER", "WAIT", timeout=120},
-   {"OUT_OF_ORDER", "FINAL", cond="final_when_out_of_order()"},
-   {"WAIT", "FAILED", timeout=fsm.vars.mtype and TIMEOUTS[fsm.vars.mtype] or 70},
-   {"WAIT", "FINAL", cond=done},
+   {"WAIT", "OUT_OF_ORDER", cond="out_of_order() and plugin:is_ready()", desc="out of order"},
+   {"OUT_OF_ORDER", "WAIT", cond="not out_of_order() and plugin:is_ready()", desc="back online"},
+   {"OUT_OF_ORDER", "WAIT", timeout=120, desc="out of order timeout"},
+   {"OUT_OF_ORDER", "FINAL", cond="final_when_out_of_order()", desc="final when out of order"},
+   {"WAIT", "FAILED", timeout=fsm.vars.mtype and TIMEOUTS[fsm.vars.mtype] or 70, desc="produce timeout"},
+   {"WAIT", "FINAL", cond=done, desc="done"},
 }
 
 function INIT:init()

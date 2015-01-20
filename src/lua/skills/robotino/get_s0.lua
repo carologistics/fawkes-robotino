@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "get_s0"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"drive_to", "fetch_puck", "leave_IS", "motor_move", "global_motor_move", "get_rid_of_puck"}
 depends_interfaces = {
   {v = "sensor", type="RobotinoSensorInterface", id = "Robotino"},
@@ -133,4 +133,8 @@ function SKILL_FETCH_PUCK:init()
    else
       self.skills[1].move_sideways = "left"
    end
+end
+
+function GET_RID_OF_PUCK:init()
+   printf("Puck Trigger Dist: %f", sensor:distance(PUCK_SENSOR_INDEX))
 end

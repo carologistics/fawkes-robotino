@@ -38,12 +38,9 @@ skillenv.skill_module(_M)
 local RIGHT_IR_ID = config:get_float("hardware/robotino/sensors/right_ir_id")
 local LEFT_IR_ID  = config:get_float("hardware/robotino/sensors/left_ir_id")
 
-function right_sensor_free()
+function both_sensors_free()
    return sensor:analog_in(RIGHT_IR_ID) < 9
-end
-
-function left_sensor_free()
-   return sensor:analog_in(LEFT_IR_ID) < 9
+      and sensor:analog_in(LEFT_IR_ID) < 9
 end
 
 function deposit_right()
@@ -65,8 +62,8 @@ fsm:define_states{export_to=_M, closure={ no_puck=no_puck, navgraph=navgraph},
 fsm:add_transitions{
    {"INIT", "SKILL_DRIVE_RIGHT", cond=deposit_right},
    {"INIT", "SKILL_DRIVE_LEFT", cond=true, desc="delivery"},
-   {"SKILL_DRIVE_LEFT", "SKILL_DRIVE_FORWARD", cond=right_sensor_free},
-   {"SKILL_DRIVE_RIGHT", "SKILL_DRIVE_FORWARD", cond=left_sensor_free},
+   {"SKILL_DRIVE_LEFT", "SKILL_DRIVE_FORWARD", cond=both_sensors_free},
+   {"SKILL_DRIVE_RIGHT", "SKILL_DRIVE_FORWARD", cond=both_sensors_free},
 }
 
 function SKILL_DRIVE_LEFT:init()
@@ -83,7 +80,6 @@ function SKILL_DRIVE_FORWARD:init()
    if self.fsm.vars.mtype == nil then
       self.skills[1].x = 0.15
    elseif self.fsm.vars.mtype == "deliver" then
-      print("drive forward at delivery")
       self.skills[1].x = 0.08
    end 
 end
