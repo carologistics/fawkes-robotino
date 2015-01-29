@@ -162,12 +162,10 @@ do
 	    echo Starting gazbeo
 	    $STARTUP_SCRIPT_LOCATION -x start -n 0 -s $HEADLESS -c default $REPLAY
 	    echo "Starting Team CYAN: ${TEAMS[$TEAM1]}"
-	    $STARTUP_SCRIPT_LOCATION -x start -r -a -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default $REPLAY
+	    $STARTUP_SCRIPT_LOCATION -x start -o -r -a -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default $REPLAY
 	    echo "Starting Team MAGENTA: ${TEAMS[$TEAM2]}"
-	    $STARTUP_SCRIPT_LOCATION -x start -r -a -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY
+	    $STARTUP_SCRIPT_LOCATION -x start -o -r -a -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY
 
-	    ######DEBUG
-	    exit 0                        
 
 	    #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	    echo Waiting for shutdown of the simulation
@@ -181,25 +179,6 @@ do
 		    echo Simulation-run $RUN with configuration $CONF finished
 		    break
 		fi
-
-		#check if something went wrong (workaround for unsolved crashs)
-		GZSERVER=$(ps -a | grep -i 'gzserver' | wc -l)
-		FAWKES=$(ps -a | grep -i 'fawkes' | wc -l)
-		REFBOX=$(ps -a | grep -i 'llsf-refbox' | wc -l)
-		ROS=$(ps -a | grep -i 'roscore' | wc -l)
-		if [ $GZSERVER -lt 1 ] || [ $FAWKES -lt 4 ] || [ $REFBOX -lt 1 ] || [ $ROS -lt 1 ]
-		then
-		    echo Something went wrong
-		    echo Restarting run
-		    echo Starting gazbeo
-		    $STARTUP_SCRIPT_LOCATION -x start -n 0 -s $HEADLESS -c default $REPLAY
-		    echo "Starting Team CYAN: ${TEAMS[$TEAM1]}"
-		    $STARTUP_SCRIPT_LOCATION -x start -r -a -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default -o
-		    echo "Starting Team MAGENTA ${TEAMS[$TEAM2]}"
-		    $STARTUP_SCRIPT_LOCATION -x start -r -a -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 -o
-		    sleep 30
-		fi
-		
 	    done
 	done
 	#wait until the record is stored
