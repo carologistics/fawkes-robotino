@@ -117,11 +117,11 @@ gazsim:
       label-size: 0.3
 
   llsf-control:
-    team-name: "Carologistics"
-    team-color: "CYAN"
+    team-cyan-name: "Carologistics"
+    team-magenta-name: "Carologistics-2"
     start-game-automatically: true
     time-to-wait-before-set-team: 5.0
-    time-to-wait-before-start: 10.0
+    time-to-wait-before-start: 40.0
     simulation-shutdown-after-game: true
     time-to-wait-before-shutdown: 5.0
     fawkes-path: "~/fawkes-robotino/" #TODO: find it in cpp source

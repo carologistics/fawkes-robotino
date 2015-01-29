@@ -82,8 +82,8 @@ class LlsfControlSimThread
   float time_to_wait_before_shutdown_;
   std::string fawkes_path_;
   std::string simulation_shutdown_script_;
-  std::string team_name_;
-  std::string team_color_;
+  std::string team_cyan_name_;
+  std::string team_magenta_name_;
   
   //handler functions
   void on_game_state_msg(ConstGameStatePtr &msg);
