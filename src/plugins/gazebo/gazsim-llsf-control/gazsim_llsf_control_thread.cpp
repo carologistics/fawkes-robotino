@@ -98,6 +98,14 @@ void LlsfControlSimThread::loop()
     msg_team_magenta.set_team_color(llsf_msgs::Team::MAGENTA);
     set_team_name_pub_->Publish(msg_team_magenta);
 
+    //start setup phase
+    llsf_msgs::SetGameState msg_state;
+    msg_state.set_state(llsf_msgs::GameState::RUNNING);
+    set_game_state_pub_->Publish(msg_state);
+    llsf_msgs::SetGamePhase msg_phase;
+    msg_phase.set_phase(llsf_msgs::GameState::SETUP);
+    set_game_phase_pub_->Publish(msg_phase);
+
     team_sent_ = true;
   }
   if(!start_sent_ && (clock->now().in_sec() - start_time_) > time_to_wait_before_start_)
