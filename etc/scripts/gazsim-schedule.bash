@@ -152,12 +152,11 @@ do
 	    if $REPLAY
 	    then
 		REPLAY_PATH="$START_PATH/$MATCH_NAME/run_$RUN"
-	        REPLAY=-e $REPLAY_PATH
+	        REPLAY="-e $REPLAY_PATH"
 	    else
 	        REPLAY=
 	    fi
-	    echo $REPLAY
-	    
+
 	    # start simulation
 	    echo Starting gazbeo
 	    $STARTUP_SCRIPT_LOCATION -x start -n 0 -s $HEADLESS -c default $REPLAY
