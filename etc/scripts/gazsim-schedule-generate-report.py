@@ -87,10 +87,12 @@ for team in teamVictory:
 
 printAppend("\n\n#################\n#################\nGame Reports:\n#################\n#################\n")
 printAppend("Number of recoreded games: %d\n" % numGames)
-# #f = open(OUTPUTFILE, 'w')
 for game in col.find():
     printAppend("#################\nGame: %s\n#################\n" % game["configuration"])
     printAppend("Refbox Summery:\n %s\n" % game["refbox_game_summery"])
-    #f.write("%f %f\n" % (pose["translation"][0], pose["translation"][1]))
+
+# write to file
+f = open(OUTPUTFILE, 'w')
+f.write("%s " % res)
 
 print(res)

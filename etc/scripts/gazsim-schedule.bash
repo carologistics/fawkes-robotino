@@ -77,7 +77,7 @@ fi
 
 #setup log folder
 TIME=$(date +'%y_%m_%d_%H_%M')
-START_PATH=$COMPETITION_LOG_PATH/$COMPETITION_NAME$TIME
+START_PATH=$COMPETITION_LOG_PATH/$COMPETITION_NAME\_$TIME
 echo $START_PATH
 mkdir -p "$START_PATH"
 
@@ -185,3 +185,8 @@ do
 	restore_record "$REPLAY_PATH/state.log"
     done
 done
+
+# write result file:
+python $FAWKES_DIR/etc/scripts/gazsim-schedule-generate-report.py $START_PATH/results.txt $COMPETITION_NAME\_$TIME
+
+echo "Done"
