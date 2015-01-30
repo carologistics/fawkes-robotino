@@ -81,48 +81,47 @@ START_PATH=$COMPETITION_LOG_PATH/$COMPETITION_NAME\_$TIME
 echo $START_PATH
 mkdir -p "$START_PATH"
 
-# #checkout and compile team code
-# mkdir -p "$COMPETITION_LOG_PATH/teams"
-# for ((TEAM=0 ; TEAM<$NUM_TEAMS ;TEAM++))
-# do
-#     cd "$COMPETITION_LOG_PATH/teams"
-#     echo Preparing the code of team ${TEAMS[$TEAM]}
-#     # Does the code of the ream already exist?
-#     if [ -d "${TEAMS[$TEAM]}" ]; then
-# 	echo Directory with team code already exists, updating it
-#     else
-# 	echo Directory with team code missing, cloning it
-# 	git clone --recursive git@git.fawkesrobotics.org:fawkes-robotino.git ${TEAMS[$TEAM]}
-#     fi
-#     cd "${TEAMS[$TEAM]}"
-#     git fetch
-#     git reset --hard HEAD
-#     git checkout -b $COMPETITION_NAME$TIME ${FAWKES_ROBOTINO_BRANCHES[$TEAM]}
-#     cd fawkes
-#     git fetch
-#     git reset --hard HEAD
-#     git checkout -b $COMPETITION_NAME$TIME ${FAWKES_BRANCHES[$TEAM]}
-#     cd ..
+#checkout and compile team code
+mkdir -p "$COMPETITION_LOG_PATH/teams"
+for ((TEAM=0 ; TEAM<$NUM_TEAMS ;TEAM++))
+do
+    cd "$COMPETITION_LOG_PATH/teams"
+    echo Preparing the code of team ${TEAMS[$TEAM]}
+    # Does the code of the ream already exist?
+    if [ -d "${TEAMS[$TEAM]}" ]; then
+	echo Directory with team code already exists, updating it
+    else
+	echo Directory with team code missing, cloning it
+	git clone --recursive git@git.fawkesrobotics.org:fawkes-robotino.git ${TEAMS[$TEAM]}
+    fi
+    cd "${TEAMS[$TEAM]}"
+    git fetch
+    git reset --hard HEAD
+    git checkout -b $COMPETITION_NAME$TIME ${FAWKES_ROBOTINO_BRANCHES[$TEAM]}
+    cd fawkes
+    git fetch
+    git reset --hard HEAD
+    git checkout -b $COMPETITION_NAME$TIME ${FAWKES_BRANCHES[$TEAM]}
+    cd ..
 
-#     #Compile code
-#     echo Compiling...
-#     COMPILE_OUTPUT="$(make all -j8)"
-#     if [ "$COMPILE_OUTPUT" == *"Error"* ]
-#     then
-# 	echo "${TEAMS[$TEAM]}" has a compile error
-# 	echo You can find the compile errors here:
-# 	pwd
-# 	touch compile_errors.txt
-# 	echo "$COMPILE_OUTPUT" > compile_errors.txt
-# 	exit 1
-#     else
-# 	echo Compiling successful
-# 	#####DEBUG
-# 	touch compile_errors.txt
-# 	echo "$COMPILE_OUTPUT" > compile_errors.txt
-#     fi
-
-# done
+    #Compile code
+    echo Compiling...
+    COMPILE_OUTPUT="$(make all -j8)"
+    if [ "$COMPILE_OUTPUT" == *"Error"* ]
+    then
+	echo "${TEAMS[$TEAM]}" has a compile error
+	echo You can find the compile errors here:
+	pwd
+	touch compile_errors.txt
+	echo "$COMPILE_OUTPUT" > compile_errors.txt
+	exit 1
+    else
+	echo Compiling successful
+	#####DEBUG
+	touch compile_errors.txt
+	echo "$COMPILE_OUTPUT" > compile_errors.txt
+    fi
+done
 
 #run simulations
 cd "$START_PATH"
