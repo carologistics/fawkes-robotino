@@ -121,26 +121,51 @@
   (slot in-delivery (type INTEGER) (default 0))
 )
 
-;common template for a task
+; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding just-in-time-P3 pick-and-store get-stored-and-deliver store produce-with-S0))
-  (multislot args (type SYMBOL)) ;in chronological order
-  (slot state (type SYMBOL) (allowed-values ordered running finished failed) (default ordered))
+  (slot id (type INTEGER))
+  (slot name (type SYMBOL) (allowed-values produce-p3-and-deliver load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding just-in-time-P3 pick-and-store get-stored-and-deliver store produce-with-S0))
+  (slot state (type SYMBOL) (allowed-values proposed asked rejected ordered running finished failed) (default proposed))
   (slot priority (type INTEGER) (default 0))
+  ;a task consists of multiple steps
+  (slot current-step (type INTEGER) (default 0))
+  (multislot steps (type INTEGER)) ;in chronological order refers to the ids of the steps
 )
 
-;common template for a proposed task
-(deftemplate proposed-task
-  (slot name (type SYMBOL) (allowed-values load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding just-in-time-P3 pick-and-store get-stored-and-deliver store produce-with-S0))
-  (multislot args (type SYMBOL)) ;in chronological order
-  (slot state (type SYMBOL) (allowed-values proposed asked rejected) (default proposed))
-  (slot priority (type INTEGER) (default 0))
+; Template for a step
+; A step is the building block of a task and usually corresponds to an elementary action
+; that has to be performed (skill-call)
+; The id has to be in the step sequence of the task
+; The arguments of a specific step are given in a step-args-stepname fact (so all args have fixed names)
+(deftemplate step
+  (slot id (type INTEGER))
+  (slot name (type SYMBOL) (allowed-values get-s0 produce-at-some-t1 load-machine produce-at deliver recycle get-consumed store get-from-storage))
+  (slot state (type SYMBOL) (allowed-values inactive wait-for-activation running finished failed) (default inactive))
 )
 
+; Templates for arguments of specific steps:
+; The id has to correspont to the step fact of the task
+(deftemplate step-args-get-s0
+  (slot id (type INTEGER))
+  (slot task-priority (type INTEGER))
+)
+(deftemplate step-args-produce-at
+  (slot id (type INTEGER))
+  (slot machine (type SYMBOL))
+)
+(deftemplate step-args-deliver
+  (slot id (type INTEGER))
+  (slot product-type (type SYMBOL))
+)
+
+; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
+; e.g. bring-intermediate-product to machine-x so no other robot also brings such a intermediate-product to the machine
+; task-id has to correspont to the task
 (deftemplate needed-task-lock
+  (slot task-id (type INTEGER))
   (slot action (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO BRING_P1 BRING_P2 BRING_P3 STORE_PUCK GET_STORED_PUCK))
   (slot place (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24 R1 R2 DELIVER))
-  (slot resource (type SYMBOL))
+  (slot resource (type SYMBOL) (default NONE))
 )
 
 (deftemplate worldmodel-change
