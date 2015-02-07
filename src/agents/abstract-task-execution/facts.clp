@@ -172,7 +172,7 @@
 (deftemplate wait-for-lock
   (slot res (type SYMBOL))
   (slot state (type SYMBOL) (allowed-values new get use finished) (default new))
-  (slot priority (type INTEGER))
+  (slot priority (type INTEGER) (default 0))
 )
 
 (deftemplate puck-storage

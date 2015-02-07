@@ -44,12 +44,9 @@
 
   ; tast execution order priorities
   ; (if the first subtasks are already complete, don't do them again)
-  ?*PRIORITY-SUBTASK-1* = 10
-  ?*PRIORITY-SUBTASK-2* = 20
-  ?*PRIORITY-SUBTASK-3* = 30
-  ?*PRIORITY-SUBTASK-4* = 40
-  ?*PRIORITY-SUBTASK-5* = 50
-  ?*PRIORITY-SUBTASK-6* = 60
+  ?*PRIORITY-STEP-START* = 10
+  ?*PRIORITY-STEP-FAILED* = 20
+  ?*PRIORITY-STEP-FINISH* = 30
 
   ; get s0 from insertion or recycling
   ?*PRIORITY-GET-S0-INS*     =    0

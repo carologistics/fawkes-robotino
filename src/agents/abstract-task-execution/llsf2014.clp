@@ -115,7 +115,7 @@
   (path-load  abstract-task-execution/game.clp)
   (path-load  abstract-task-execution/worldmodel-synchronization.clp)
   (path-load  abstract-task-execution/tactical-help.clp)
-  (path-load  abstract-task-execution/tasks.clp)
+  (path-load  abstract-task-execution/task.clp)
   (path-load  abstract-task-execution/steps.clp)
   (path-load  abstract-task-execution/coordination.clp)
   (path-load  abstract-task-execution/production.clp)
