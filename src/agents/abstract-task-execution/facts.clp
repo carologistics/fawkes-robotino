@@ -136,25 +136,14 @@
 ; A step is the building block of a task and usually corresponds to an elementary action
 ; that has to be performed (skill-call)
 ; The id has to be in the step sequence of the task
-; The arguments of a specific step are given in a step-args-stepname fact (so all args have fixed names)
+; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
   (slot name (type SYMBOL) (allowed-values get-s0 produce-at-some-t1 load-machine produce-at deliver recycle get-consumed store get-from-storage))
   (slot state (type SYMBOL) (allowed-values inactive wait-for-activation running finished failed) (default inactive))
-)
-
-; Templates for arguments of specific steps:
-; The id has to correspont to the step fact of the task
-(deftemplate step-args-get-s0
-  (slot id (type INTEGER))
+  ;optional arguments of a step
   (slot task-priority (type INTEGER))
-)
-(deftemplate step-args-produce-at
-  (slot id (type INTEGER))
   (slot machine (type SYMBOL))
-)
-(deftemplate step-args-deliver
-  (slot id (type INTEGER))
   (slot product-type (type SYMBOL))
 )
 
