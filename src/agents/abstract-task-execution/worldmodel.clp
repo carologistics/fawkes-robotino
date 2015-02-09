@@ -29,7 +29,8 @@
 
 (defrule wm-get-s0-final
   (declare (salience ?*PRIORITY-WM*))
-  (state GET-S0-FINAL)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill get_s0) (state final))
   ?hf <- (holding NONE)
   =>
   (retract ?hf)
@@ -52,12 +53,11 @@
 
 (defrule wm-goto-deliver-failed
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FAILED)
-  ?tf <- (goto-target deliver1|deliver2)
-  ?hf <- (holding ?)
+  (state SKILL-FAILED)
+  (skill-to-execute (skill deliver) (state failed))
+  ?hf <- (holding ~NONE)
   (puck-in-gripper ?puck)
   =>
-  (retract ?tf)
   (if (not ?puck) then
     (retract ?hf)
     (assert (holding NONE))
@@ -67,13 +67,13 @@
 
 (defrule wm-goto-failed
   (declare (salience ?*PRIORITY-WM-LOW*))
-  (state GOTO-FAILED)
-  ?tf <- (goto-target ?name)
-  ?gtdw <- (goto-dont-wait ?dont-wait)
+  (state SKILL-FAILED)
+  (skill-to-execute (skill finish_puck_at) (state failed) (target ?name))
+  ?gtdw <- (dont-wait ?dont-wait)
   ?hf <- (holding ?)
   (puck-in-gripper ?puck)
   =>
-  (retract ?tf ?gtdw)
+  (retract ?gtdw)
   (if (not ?puck) then
     (retract ?hf)
     (assert (holding NONE))
@@ -83,12 +83,11 @@
 
 (defrule wm-take-puck-to-failed
   (declare (salience ?*PRIORITY-WM-LOW*))
-  (state TAKE-PUCK-TO-FAILED)
-  ?tf <- (take-puck-to-target ?)
+  (state SKILL-FAILED)
+  (skill-to-execute (skill take_puck_to) (state failed) (target ?name))
   ?hf <- (holding ?)
   (puck-in-gripper ?puck)
   =>
-  (retract ?tf)
   (if (not ?puck) then
     (retract ?hf)
     (assert (holding NONE))
@@ -98,12 +97,11 @@
 
 (defrule wm-drive-to-failed
   (declare (salience ?*PRIORITY-WM-LOW*))
-  (state DRIVE-TO-FAILED)
-  ?tf <- (drive-to-target ?)
+  (state SKILL-FAILED)
+  (skill-to-execute (skill drive_to) (state failed) (target ?name))
   ?hf <- (holding ?)
   (puck-in-gripper ?puck)
   =>
-  (retract ?tf)
   (if (not ?puck) then
     (retract ?hf)
     (assert (holding NONE))
@@ -113,7 +111,8 @@
 
 (defrule wm-goto-light
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FINAL)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill finish_puck_at) (state final))
   (not (lights))
   ?lf <- (last-lights $?lights&:(> (length$ ?lights) 0))
   =>
@@ -123,9 +122,9 @@
 
 (defrule wm-goto-proc-complete
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?gtdw <- (goto-dont-wait ?dont-wait)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
+  ?gtdw <- (dont-wait ?dont-wait)
   ?hf <- (holding ?holding-old)
   ?lf <- (lights GREEN-ON YELLOW-OFF RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (junk ?jn)
@@ -133,7 +132,7 @@
 					 (and (eq ?mtype T2) (eq (length$ ?lw) 1))
 					 (eq (length$ ?lw) 2))))
   =>
-  (retract ?tf ?hf ?lf ?gtdw)
+  (retract ?hf ?lf ?gtdw)
   (if (and (eq ?dont-wait true)
 	   (or (eq ?mtype T2)
 	       (eq ?mtype T3)
@@ -166,14 +165,14 @@
 
 (defrule wm-proc-need-more-ressources
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?gtdw <- (goto-dont-wait ?dont-wait)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
+  ?gtdw <- (dont-wait ?dont-wait)
   ?hf <- (holding ?was-holding)
   ?lf <- (lights GREEN-OFF YELLOW-ON RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
   =>
-  (retract ?hf ?lf ?tf ?gtdw)
+  (retract ?hf ?lf ?gtdw)
   (assert (holding NONE))
   (if (or (eq ?mtype T1) (eq ?mtype T5) (eq (length$ ?lw) 2)
 	  (and (eq (length$ ?lw) 1) (eq ?mtype T2)))
@@ -188,16 +187,16 @@
 
 (defrule wm-proc-inprogress
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?gtdw <- (goto-dont-wait ?dont-wait)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
+  ?gtdw <- (dont-wait ?dont-wait)
   ?hf <- (holding ?was-holding)
   ?lf <- (lights GREEN-ON YELLOW-ON RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
   (time $?now)
   (production-time ?mtype ?min-prod-time ?)
   =>
-  (retract ?hf ?lf ?tf ?gtdw)
+  (retract ?hf ?lf ?gtdw)
   (assert (holding NONE))
   (printout t "Production in progress at " ?name "|" ?mtype crlf)
   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding))
@@ -208,9 +207,9 @@
 (defrule wm-out-of-order-proc-started
   "machine out of order and we left the last puck there, so the machine starts producing when getting active again"
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?gtdw <- (goto-dont-wait true)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
+  ?gtdw <- (dont-wait true)
   ?hf <- (holding ?was-holding)
   ?lf <- (lights GREEN-OFF YELLOW-OFF RED-ON)
   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
@@ -219,7 +218,7 @@
   (out-of-order-time max ?ooo-max)
   (out-of-order-time recycle-max ?ooo-recycle-max)
   =>
-  (retract ?hf ?lf ?tf ?gtdw)
+  (retract ?hf ?lf ?gtdw)
   (assert (holding NONE))
   (printout t "Machine Out Of Order; Production starts afterwards at " ?name "|" ?mtype crlf)
   (if (eq ?mtype RECYCLE)
@@ -237,18 +236,17 @@
 (defrule wm-out-of-order-goto-aborted
   "machine out of order and we aborted loading the machine"
   (declare (salience ?*PRIORITY-WM*))
-  ?s <- (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?gtdw <- (goto-dont-wait false)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
+  ?gtdw <- (dont-wait false)
   ?lf <- (lights GREEN-OFF YELLOW-OFF RED-ON)
   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
   (time $?now)
   (out-of-order-time max ?ooo-max)
   (out-of-order-time recycle-max ?ooo-recycle-max)
   =>
-  (retract ?lf ?tf ?gtdw ?s)
+  (retract ?lf ?gtdw)
   (printout t "Machine Out Of Order; Loading/Producing this machine aborted at " ?name "|" ?mtype crlf)
-  (assert (state GOTO-FINAL-OUT-OF-ORDER))
   (if (eq ?mtype RECYCLE)
     then
     (bind ?ooo-time ?ooo-recycle-max)
@@ -260,9 +258,9 @@
 
 (defrule wm-proc-invalid
   (declare (salience ?*PRIORITY-WM*))
-  ?s <- (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?gtdw <- (goto-dont-wait ?dont-wait)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
+  ?gtdw <- (dont-wait ?dont-wait)
   ?lf <- (lights GREEN-OFF YELLOW-BLINKING RED-OFF)
   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
   ?hf <- (holding ?puck)
@@ -277,7 +275,7 @@
 	  (eq ?mtype T5)) 
     then
     ;simply ignore and go on
-    (retract ?lf ?tf ?hf)
+    (retract ?lf ?hf)
     (assert (holding NONE))
     (return)
   )
@@ -296,7 +294,7 @@
       )
     )
     (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value S0)))
-    (retract ?lf ?tf ?hf)
+    (retract ?lf ?hf)
     (assert (holding NONE))
     (return)
   )
@@ -307,7 +305,7 @@
       then
       (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value S0)))
     )
-    (retract ?lf ?tf ?hf)
+    (retract ?lf ?hf)
     (assert (holding NONE))
     (return)
   )
@@ -316,32 +314,32 @@
     (if (subsetp ?lw (create$ S0))
       then
       ;we brought a second S0
-      (retract ?lf ?tf ?hf)
+      (retract ?lf ?hf)
       (assert (holding NONE))
       (return)
     )
     ;there is a S0 and S2
     ;it is more likely that the S2 is a S1 than that the S1 is a S0
-    (retract ?lf ?tf ?hf)
+    (retract ?lf ?hf)
     (assert (holding NONE))
     (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value S2)))
     (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value S1)))
     (return)
   )
   ;we tried to bring a S2, it is likely that we instead brought a second S0 or S1
-  (retract ?lf ?tf ?hf)
+  (retract ?lf ?hf)
   (assert (holding NONE))
   (return)
 )
 
 (defrule wm-proc-delivered
   (declare (salience ?*PRIORITY-WM*))
-  (state GOTO-FINAL)
-  ?tf <- (goto-target deliver1|deliver2)
-  ?hf <- (holding ?was-holding)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill deliver) (state final))
+  ?hf <- (holding ?was-holding&~NONE)
   ;?lf <- (lights $?)
   =>
-  (retract ?hf ?tf)
+  (retract ?hf)
   (assert (holding NONE)
 	  (delivered ?was-holding)
   )
@@ -350,32 +348,32 @@
 
 (defrule wm-proc-wtf
   (declare (salience ?*PRIORITY-WM-LOW*))
-  ?s <- (state GOTO-FINAL)
-  ?tf <- (goto-target ?name)
-  ?gtdw <- (goto-dont-wait ?dont-wait)
+  ?s <- (state SKILL-FINAL)
+  (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
+  ?gtdw <- (dont-wait ?dont-wait)
   ?lf <- (lights $?)
   ?hf <- (holding ?)
   ?mf <- (machine (name ?name) (mtype ?mtype))
   (puck-in-gripper ?have-puck)
   =>
   (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
-  (retract ?lf ?tf ?gtdw ?s)
+  (retract ?lf ?gtdw)
   (if (not ?have-puck)
     then
-    (retract ?hf)
+    (retract ?hf ?s)
     (assert (holding NONE))
   )
-  (assert (state GOTO-FAILED))
+  (assert (state SKILL-FAILED))
 )
 
 (defrule wm-get-produced-final
   (declare (salience ?*PRIORITY-WM*))
-  (state GET-PRODUCED-FINAL)
-  ?tf <- (get-produced-target ?name)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill get_produced) (state final) (target ?name))
   ?hf <- (holding NONE)
   ?mf <- (machine (name ?name) (output ?output))
   =>
-  (retract ?hf ?tf)
+  (retract ?hf)
   (assert (holding ?output))
   (printout t "Got Produced Puck." crlf)
   (assert (worldmodel-change (machine ?name) (change REMOVE_PRODUCED)))
@@ -383,12 +381,12 @@
 
 (defrule wm-get-produced-failed
   (declare (salience ?*PRIORITY-WM*))
-  (state GET-PRODUCED-FAILED)
-  ?tf <- (get-produced-target ?name)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill get_produced) (state failed) (target ?name))
   ?hf <- (holding NONE)
   ;?mf <- (machine (name ?name) (output ?output))
   =>
-  (retract ?hf ?tf)
+  (retract ?hf)
   (assert (holding NONE))
   (printout error "Got Produced Puck failed." crlf)
   ;allow one problem. when the second occurs the machine gets blocked
@@ -399,12 +397,12 @@
 
 (defrule wm-get-consumed-final
   (declare (salience ?*PRIORITY-WM*))
-  (state GET-CONSUMED-FINAL)
-  ?tf <- (get-consumed-target ?name)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill get_consumed) (state final) (target ?name))
   ?hf <- (holding NONE)
   ?mf <- (machine (name ?name) (junk ?num-junk))
   =>
-  (retract ?hf ?tf)
+  (retract ?hf)
   (assert (holding CO))
   (printout t "Got Consumed Puck." crlf)
   (assert (worldmodel-change (machine ?name) (change SET_NUM_CO) (amount (- ?num-junk 1))))
@@ -412,12 +410,12 @@
 
 (defrule wm-get-consumed-failed
   (declare (salience ?*PRIORITY-WM*))
-  (state GET-CONSUMED-FAILED)
-  ?tf <- (get-consumed-target ?name)
+  (state SKILL-FAILED)
+  (skill-to-execute (skill get_consumed) (state failed) (target ?name))
   ?hf <- (holding NONE)
   ?mf <- (machine (name ?name) (junk ?))
   =>
-  (retract ?hf ?tf)
+  (retract ?hf)
   (assert (holding NONE))
   (printout error "Got Consumed Puck failed. Assuming holding no puck and junk vanished." crlf)
   ;block this machine to avoid more accidents
@@ -430,12 +428,12 @@
 
 (defrule wm-store-puck-final
   (declare (salience ?*PRIORITY-WM*))
-  (state STORE-PUCK-FINAL)
-  ?tf <- (store-puck-target ?name)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill store_puck) (state final) (target ?name))
   ?hf <- (holding ?puck)
   ?mf <- (puck-storage (name ?name))
   =>
-  (retract ?hf ?tf)
+  (retract ?hf)
   (assert (holding NONE))
   (printout t "Successfully stored puck." crlf)
   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?puck)))
@@ -443,13 +441,12 @@
 
 (defrule wm-store-puck-failed
   (declare (salience ?*PRIORITY-WM*))
-  (state STORE-PUCK-FAILED)
-  ?tf <- (store-puck-target ?name)
+  (state SKILL-FAILED)
+  (skill-to-execute (skill store_puck) (state failed) (target ?name))
   ?hf <- (holding ?puck)
   ?mf <- (puck-storage (name ?name))
   (puck-in-gripper ?puck-in-gripper)
   =>
-  (retract ?tf)
   (if (not ?puck-in-gripper) then
     (retract ?hf)
     (assert (holding NONE))
@@ -459,12 +456,12 @@
 
 (defrule wm-get-stored-puck-final
   (declare (salience ?*PRIORITY-WM*))
-  (state GET-STORED-PUCK-FINAL)
-  ?tf <- (get-stored-puck-target ?name)
+  (state SKILL-FINAL)
+  (skill-to-execute (skill get_stored_puck) (state final) (target ?name))
   ?hf <- (holding NONE)
   ?mf <- (puck-storage (name ?name) (puck ?puck))
   =>
-  (retract ?hf ?tf)
+  (retract ?hf)
   (assert (holding ?puck))
   (printout t "Successfully got stored puck." crlf)
   (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
@@ -472,12 +469,11 @@
 
 (defrule wm-get-stored-puck-failed
   (declare (salience ?*PRIORITY-WM*))
-  (state GET-STORED-PUCK-FAILED)
-  ?tf <- (get-stored-puck-target ?name)
+  (state SKILL-FAILED)
+  (skill-to-execute (skill get_stored_puck) (state failed) (target ?name))
   ?hf <- (holding NONE)
   ?mf <- (puck-storage (name ?name) (puck ?puck))
   =>
-  (retract ?tf)
   (printout error "Failed to get stored puck." crlf)
   (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
 )

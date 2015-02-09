@@ -175,6 +175,13 @@
   (slot priority (type INTEGER) (default 0))
 )
 
+(deftemplate skill-to-execute
+  (slot skill (type SYMBOL))
+  (multislot args (type SYMBOL) (default (create$)))
+  (slot state (type SYMBOL) (allowed-symbols wait-for-lock running final failed) (default wait-for-lock))
+  (slot target (type SYMBOL))
+)
+
 (deftemplate puck-storage
   (slot name (type SYMBOL))
   (slot puck (type SYMBOL) (allowed-symbols NONE P1 P2 P3) (default NONE))

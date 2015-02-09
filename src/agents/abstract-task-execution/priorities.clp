@@ -62,4 +62,8 @@
   ?*PRIORITY-LOCK-LOW* = 230
   ?*PRIORITY-LOCK-SEND* = -5
   ?*PRIORITY-LOCK_USAGE* = 110
+
+  ; priorities for skill execution
+  ?*PRIORITY-SKILL-DEFAULT* = 0
+  ?*PRIORITY-SKILL-SPECIAL-CASE* = 5
 )

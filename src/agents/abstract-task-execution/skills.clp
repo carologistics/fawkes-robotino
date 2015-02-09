@@ -14,19 +14,69 @@
   (slot status (allowed-values FINAL FAILED))
 )
 
+(deffunction skill-call-stop ()
+  (skill-call motor_move x 0.0 y 0.0)
+)
+
+(defrule skill-done
+  (skill (name ?name) (status ?s&FINAL|FAILED))
+  =>
+  (assert (skill-done (name ?name) (status ?s)))
+)
+
 ;;;;;;;;;;;;;;;;;;
-; calling skills
+; common skill calls/final-/failed-handling
+; special cases done by rules with higher priority
+;;;;;;;;;;;;;;;;;;
+(defrule skill-common-call
+  "call an arbitory skill with a set of args (alternating parameter-name and value)"
+  (declare (salience ?*PRIORITY-SKILL-DEFAULT*))
+  ?ste <- (skill-to-execute (skill ?skill&~finish_puck_at&~deliver)
+			    (args $?args) (state wait-for-lock) (target ?target))
+  (wait-for-lock (res ?target) (state use))
+  ?s <- (state WAIT-FOR-LOCK)
+  =>
+  (retract ?s)
+  (assert (state SKILL-EXECUTION))
+  (modify ?ste (state running))
+  (skill-call ?skill ?args)
+)
+
+(defrule skill-common-done
+  (declare (salience ?*PRIORITY-SKILL-DEFAULT*))
+  ?sf <- (state SKILL-EXECUTION)
+  ?df <- (skill-done (name ?skill-str) (status ?s))
+  ?wfl <- (wait-for-lock (res ?place) (state use))
+  ?ste <- (skill-to-execute (skill ?skill&:(eq ?skill (sym-cat ?skill-str)))
+			    (state running))
+  =>
+  (printout t "skill " ?skill-str " is " ?s crlf)
+  (retract ?sf ?df)
+  (modify ?wfl (state finished))
+  (if (eq ?s FINAL)
+    then
+    (modify ?ste (state final))
+    else
+    (modify ?ste (state failed))
+  )
+  (assert (state (sym-cat SKILL- ?s)))
+)
+;;;;;;;;;;;;;;;;;;
+; special cases for skill calls/final-/failed-handling
 ;;;;;;;;;;;;;;;;;;
 (defrule skill-call-finish_puck_at
-  ?es <- (execute-skill finish_puck_at ?name ?mtype ?dont-wait)
-  (wait-for-lock (res ?name) (state use))
+  "Call skill finish_puck_at. You need to specify if you want to wait at the machine in (dont-wait ?). The rule calculates if dont-wait has to be set nevertheless and the mtype and out-of-order parameters for the skill."
+  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
+  ?ste <- (skill-to-execute (skill finish_puck_at) (args $?args) (state wait-for-lock) (target ?machine))
+  (wait-for-lock (res ?machine) (state use))
+  (machine (name ?machine) (mtype ?mtype))
   ?s <- (state WAIT-FOR-LOCK)
   (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
+  (dont-wait ?dont-wait)
   =>
-  (retract ?es ?s)
-  (assert (goto-target ?name)
-	  (state GOTO)
-  )
+  (retract ?s)
+  (assert (state SKILL-EXECUTION))
+  (modify ?ste (state running))
   (bind ?out-of-order "abort")
   (if (eq ?dont-wait true) then
     ;we have to wait if we bring a puck without starting the production
@@ -41,249 +91,74 @@
       (bind ?dont-wait false)
     )
   )
-  (assert (goto-dont-wait ?dont-wait))
-  (skill-call finish_puck_at place ?name mtype ?mtype dont_wait ?dont-wait out_of_order ?out-of-order)
+  (skill-call finish_puck_at (insert$ ?args 1 (create$ mtype ?mtype dont_wait ?dont-wait out_of_order ?out-of-order)))
 )
 
-(defrule skill-call-finish_puck_at_deliver
-  ?es <- (execute-skill deliver ?place)
-  (wait-for-lock (res ?place) (state use))
+(defrule skill-call-deliver
+  "Call deliver skill which also uses the finish_puck_at_skill"
+  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
+  ?ste <- (skill-to-execute (skill deliver) (args $?args) (state wait-for-lock) (target ?deliver))
+  (wait-for-lock (res ?deliver) (state use))
   ?s <- (state WAIT-FOR-LOCK)
   =>
-  (retract ?es ?s)
-  (assert (goto-target ?place)
-	  (state GOTO)
-  )
-  (skill-call finish_puck_at place ?place mtype DE dont_wait false out_of_order ignore)
+  (retract ?s)
+  (assert (state SKILL-EXECUTION))
+  (modify ?ste (state running))
+  (skill-call finish_puck_at (insert$ ?args 1 (create$ mtype DE dont_wait false out_of_order ignore)))
 )
 
-(defrule skill-call-get-s0
-  ?es <- (execute-skill get_s0 ?place)
-  (wait-for-lock (res ?place) (state use))
-  ?s <- (state WAIT-FOR-LOCK)
-  =>
-  (retract ?es ?s)
-  (assert (get-s0-target ?place)
-          (state GET-S0)
-  )
-  (skill-call get_s0 place ?place)
-)
-
-(defrule skill-call-get-produced
-  ?es <- (execute-skill get_produced ?machine)
-  (wait-for-lock (res ?machine) (state use))
-  ?s <- (state WAIT-FOR-LOCK)
-  =>
-  (retract ?es ?s)
-  (assert (get-produced-target ?machine)
-	  (state GET-PRODUCED)
-  )
-  (skill-call get_produced place ?machine)
-)
-
-(defrule skill-call-get-consumed
-  ?es <- (execute-skill get_consumed ?machine)
-  (wait-for-lock (res ?machine) (state use))
-  ?s <- (state WAIT-FOR-LOCK)
-  =>
-  (retract ?es ?s)
-  (assert (get-consumed-target ?machine)
-	  (state GET-CONSUMED)
-  )
-  (skill-call get_consumed place ?machine)
-)
-
-(defrule skill-call-take-puck-to
-  ?es <- (execute-skill take_puck_to ?place)
-  (wait-for-lock (res ?place) (state use))
-  ?s <- (state WAIT-FOR-LOCK)
-  =>
-  (retract ?es ?s)
-  (assert (take-puck-to-target ?place)
-	  (state TAKE-PUCK-TO)
-  )
-  (skill-call take_puck_to place ?place)
-)
-
-(defrule skill-call-drive-to
-  ?es <- (execute-skill drive_to ?place ?puck)
-  (wait-for-lock (res ?place) (state use))
-  ?s <- (state WAIT-FOR-LOCK)
-  =>
-  (retract ?es ?s)
-  (assert (drive-to-target ?place)
-	  (state DRIVE-TO)
-  )
-  (skill-call drive_to place ?place puck ?puck)
-)
-
-(defrule skill-store-puck
-  ?es <- (execute-skill store_puck ?place)
-  (wait-for-lock (res ?place) (state use))
-  ?s <- (state WAIT-FOR-LOCK)
-  =>
-  (retract ?es ?s)
-  (assert (store-puck-target ?place)
-	  (state STORE-PUCK)
-  )
-  (skill-call store_puck place ?place)
-)
-
-(defrule skill-get-stored-puck
-  ?es <- (execute-skill get_stored_puck ?place)
-  (wait-for-lock (res ?place) (state use))
-  ?s <- (state WAIT-FOR-LOCK)
-  =>
-  (retract ?es ?s)
-  (assert (get-stored-puck-target ?place)
-	  (state GET-STORED-PUCK)
-  )
-  (skill-call get_stored_puck place ?place)
-)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; handle skill final/failed
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defrule skill-done
-  (skill (name ?name) (status ?s&FINAL|FAILED))
-  =>
-  (assert (skill-done (name ?name) (status ?s)))
-)
-
-(defrule skill-get-s0-done
-  ?sf <- (state GET-S0)
-  ?df <- (skill-done (name "get_s0") (status ?s))
+(defrule skill-deliver-done
+  (declare (salience ?*PRIORITY-SKILL-DEFAULT*))
+  ?sf <- (state SKILL-EXECUTION)
+  ?df <- (skill-done (name "finish_puck_at") (status ?s))
   ?wfl <- (wait-for-lock (res ?place) (state use))
-  ?gst <- (get-s0-target ?place)
+  ?ste <- (skill-to-execute (skill deliver) (state running))
   =>
-  (if (debug 1) then (printout (if (eq ?s FAILED) then warn else t) "get-s0 done: " ?s crlf))
+  (printout t "skill deliver is " ?s crlf)
+  (retract ?sf ?df)
+  (modify ?wfl (state finished))
   (if (eq ?s FINAL)
     then
-    (retract ?sf ?df ?gst)
-    (assert (state (sym-cat GET-S0- ?s)))
-    (modify ?wfl (state finished))
-    
+    (modify ?ste (state final))
     else
-    ;recall skill
-    (retract ?df)
-    (skill-call get_s0 place ?place)
+    (modify ?ste (state failed))
   )
+  (assert (state (sym-cat SKILL- ?s)))
 )
 
-(defrule skill-get-produced-done
-  ?sf <- (state GET-PRODUCED)
-  ?df <- (skill-done (name "get_produced") (status ?s))
-  (get-produced-target ?goal)
-  ?wfl <- (wait-for-lock (res ?goal) (state use))
+(defrule skill-get_s0-failed
+  "different to the common skill handling we restart get_s0 directly if it fails"
+  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
+  ?sf <- (state SKILL-EXECUTION)
+  ?df <- (skill-done (name "get_s0") (status FAILED))
+  ?ste <- (skill-to-execute (skill get_s0) (args $?args) (state running))
   =>
-  (if (debug 1) then (printout (if (eq ?s FAILED) then warn else t) "get-produced done: " ?s crlf))
-  (printout t "skill-get-consumed-done" crlf)
-  (retract ?sf ?df)
-  (assert (state (sym-cat GET-PRODUCED- ?s)))
-  (modify ?wfl (state finished))
+  (printout t "get_s0 failed, restarting it" crlf)
+  (retract ?df)
+  (skill-call get_s0 ?args)
 )
 
-(defrule skill-get-consumed-done
-  ?sf <- (state GET-CONSUMED)
-  ?df <- (skill-done (name "get_consumed") (status ?s))
-  (get-consumed-target ?goal)
-  ?wfl <- (wait-for-lock (res ?goal) (state use))
+(defrule skill-take-puck-to-failed
+  "different to the common skill handling we want to restart if we still have a puck"
+  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
+  ?sf <- (state SKILL-EXECUTION)
+  ?df <- (skill-done (name "take_puck_to") (status FAILED))
+  ?ste <- (skill-to-execute (skill take_puck_to) (args $?args) (state running))
+  (puck-in-gripper TRUE)
   =>
-  (if (debug 1) then (printout (if (eq ?s FAILED) then warn else t) "get-consumed done: " ?s crlf))
-  (printout t "skill-get-consumed-done" crlf)
-  (retract ?sf ?df)
-  (assert (state (sym-cat GET-CONSUMED- ?s)))
-  (modify ?wfl (state finished))
-)
-
-(defrule skill-take-puck-to-done
-  ?sf <- (state TAKE-PUCK-TO)
-  ?df <- (skill-done (name "take_puck_to") (status ?s))
-  (take-puck-to-target ?goal)
-  ?wfl <- (wait-for-lock (res ?goal) (state use))
-  (puck-in-gripper ?puck)
-  =>
-  (printout t "skill-take-puck-to " ?s crlf)
-  (if (or (eq ?s FINAL) (not ?puck))
-    then
-    (retract ?sf ?df)
-    (assert (state (sym-cat TAKE-PUCK-TO- ?s)))
-    (modify ?wfl (state finished))
-    
-    else
-    (printout t "recalling skill because I still hava a puck" crlf)
-    (retract ?df)
-    (skill-call take_puck_to place ?goal)
-  )
-)
-
-(defrule skill-drive-to-done
-  ?sf <- (state DRIVE-TO)
-  ?df <- (skill-done (name "drive_to") (status ?s))
-  (drive-to-target ?goal)
-  ?wfl <- (wait-for-lock (res ?goal) (state use))
-  (puck-in-gripper ?puck)
-  =>
-  (printout t "skill-drive-to " ?s crlf)
-  (if (or (eq ?s FINAL) (not ?puck))
-    then
-    (retract ?sf ?df)
-    (assert (state (sym-cat DRIVE-TO- ?s)))
-    (modify ?wfl (state finished))
-    
-    else
-    (printout t "recalling skill because I still hava a puck" crlf)
-    (retract ?df)
-    (skill-call drive_to place ?goal puck true)
-  )
+  (printout t "take_puck_to failed, restarting it because I still have a puck" crlf)
+  (retract ?df)
+  (skill-call take_puck_to ?args)
 )
 
 (defrule skill-deliver-failed-retry-if-holding-puck
-  (state GOTO)
+  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
+  ?sf <- (state SKILL-EXECUTION)
   ?df <- (skill-done (name "finish_puck_at") (status FAILED))
-  (goto-target ?place&deliver1|deliver2)
+  ?ste <- (skill-to-execute (skill deliver) (args $?args) (state running))
   (puck-in-gripper TRUE)
   =>
+  (printout t "take_puck_to failed, restarting it because I still have a puck" crlf)
   (retract ?df)
-  (skill-call finish_puck_at place ?place mtype DE dont_wait false)
-)
-
-(defrule skill-goto-done
-  ?sf <- (state GOTO)
-  ?df <- (skill-done (name "finish_puck_at") (status ?s))
-  (goto-target ?place)
-  ?wfl <- (wait-for-lock (res ?place) (state use))
-  =>
-  (retract ?sf ?df)
-  (assert (state (sym-cat GOTO- ?s)))
-  (modify ?wfl (state finished))
-)
-
-(defrule skill-store-puck-done
-  ?sf <- (state STORE-PUCK)
-  ?df <- (skill-done (name "store_puck") (status ?s))
-  (store-puck-target ?goal)
-  ?wfl <- (wait-for-lock (res ?goal) (state use))
-  =>
-  (printout t "skill store_puck done" crlf)
-  (retract ?sf ?df)
-  (assert (state (sym-cat STORE-PUCK- ?s)))
-  (modify ?wfl (state finished))
-)
-
-(defrule skill-get-stored-puck-done
-  ?sf <- (state GET-STORED-PUCK)
-  ?df <- (skill-done (name "get_stored_puck") (status ?s))
-  (get-stored-puck-target ?goal)
-  ?wfl <- (wait-for-lock (res ?goal) (state use))
-  =>
-  (printout t "skill get_stored_puck done" crlf)
-  (retract ?sf ?df)
-  (assert (state (sym-cat GET-STORED-PUCK- ?s)))
-  (modify ?wfl (state finished))
-)
-
-(deffunction skill-call-stop ()
-  (skill-call motor_move x 0.0 y 0.0)
+  (skill-call finish_puck_at (insert$ ?args 1 (create$ mtype DE dont_wait false out_of_order ignore)))
 )
