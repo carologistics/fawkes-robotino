@@ -21,6 +21,6 @@
 .project
 .buildpath
 
-#Generated Protobuf C++ Files for llsf
-/src/libs/llsf_msgs/*.pb.h
-/src/libs/llsf_msgs/*.pb.cpp
+#Generated Protobuf C++ Files
+*.pb.h
+*.pb.cpp
