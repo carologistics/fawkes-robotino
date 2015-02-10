@@ -84,6 +84,7 @@ class PuckVisionInterface : public Interface
 
   PuckVisionInterface_data_t *data;
 
+  interface_enum_map_t enum_map_PuckColor;
  public:
   /* messages */
   virtual bool message_valid(const Message *message) const;

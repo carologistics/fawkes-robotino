@@ -63,6 +63,7 @@ class RobotinoAmpelInterface : public Interface
 
   RobotinoAmpelInterface_data_t *data;
 
+  interface_enum_map_t enum_map_AmpelState;
  public:
   /* messages */
   virtual bool message_valid(const Message *message) const;

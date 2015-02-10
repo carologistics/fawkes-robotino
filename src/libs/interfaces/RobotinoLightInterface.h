@@ -65,6 +65,7 @@ class RobotinoLightInterface : public Interface
 
   RobotinoLightInterface_data_t *data;
 
+  interface_enum_map_t enum_map_LightState;
  public:
   /* messages */
   virtual bool message_valid(const Message *message) const;

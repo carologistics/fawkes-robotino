@@ -106,6 +106,8 @@ class RobotinoWorldModelInterface : public Interface
 
   RobotinoWorldModelInterface_data_t *data;
 
+  interface_enum_map_t enum_map_machine_type_t;
+  interface_enum_map_t enum_map_machine_state_t;
  public:
   /* messages */
   virtual bool message_valid(const Message *message) const;

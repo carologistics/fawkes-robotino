@@ -25,6 +25,8 @@
 
 #include <core/exceptions/software.h>
 
+#include <map>
+#include <string>
 #include <cstring>
 #include <cstdlib>
 
@@ -76,8 +78,29 @@ RobotinoWorldModelInterface::RobotinoWorldModelInterface() : Interface()
   data      = (RobotinoWorldModelInterface_data_t *)data_ptr;
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
-  add_fieldinfo(IFT_ENUM, "machine_types", 13, &data->machine_types, "machine_type_t");
-  add_fieldinfo(IFT_ENUM, "machine_states", 13, &data->machine_states, "machine_state_t");
+  enum_map_machine_type_t[(int)TYPE_UNKNOWN] = "TYPE_UNKNOWN";
+  enum_map_machine_type_t[(int)M1_EXPRESS] = "M1_EXPRESS";
+  enum_map_machine_type_t[(int)M1] = "M1";
+  enum_map_machine_type_t[(int)M2] = "M2";
+  enum_map_machine_type_t[(int)M3] = "M3";
+  enum_map_machine_type_t[(int)M1_2] = "M1_2";
+  enum_map_machine_type_t[(int)M2_3] = "M2_3";
+  enum_map_machine_type_t[(int)RECYCLING] = "RECYCLING";
+  enum_map_machine_type_t[(int)TEST] = "TEST";
+  enum_map_machine_type_t[(int)IGNORED] = "IGNORED";
+  enum_map_machine_state_t[(int)STATE_UNKNOWN] = "STATE_UNKNOWN";
+  enum_map_machine_state_t[(int)EMPTY] = "EMPTY";
+  enum_map_machine_state_t[(int)CONSUMED_1] = "CONSUMED_1";
+  enum_map_machine_state_t[(int)CONSUMED_2] = "CONSUMED_2";
+  enum_map_machine_state_t[(int)S0_ONLY] = "S0_ONLY";
+  enum_map_machine_state_t[(int)S1_ONLY] = "S1_ONLY";
+  enum_map_machine_state_t[(int)S2_ONLY] = "S2_ONLY";
+  enum_map_machine_state_t[(int)P] = "P";
+  enum_map_machine_state_t[(int)S1_S2] = "S1_S2";
+  enum_map_machine_state_t[(int)S0_S1] = "S0_S1";
+  enum_map_machine_state_t[(int)S0_S2] = "S0_S2";
+  add_fieldinfo(IFT_ENUM, "machine_types", 13, &data->machine_types, "machine_type_t", &enum_map_machine_type_t);
+  add_fieldinfo(IFT_ENUM, "machine_states", 13, &data->machine_states, "machine_state_t", &enum_map_machine_state_t);
   add_fieldinfo(IFT_UINT32, "express_machine", 1, &data->express_machine);
   unsigned char tmp_hash[] = {0x6a, 0xfe, 0xe1, 0xa, 0x28, 0xe, 0x19, 0xcd, 0x9f, 0x6, 0x5b, 0xc, 0x7f, 0x42, 0x47, 0x6f};
   set_hash(tmp_hash);

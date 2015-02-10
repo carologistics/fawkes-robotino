@@ -25,6 +25,8 @@
 
 #include <core/exceptions/software.h>
 
+#include <map>
+#include <string>
 #include <cstring>
 #include <cstdlib>
 
@@ -48,9 +50,13 @@ RobotinoLightInterface::RobotinoLightInterface() : Interface()
   data      = (RobotinoLightInterface_data_t *)data_ptr;
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
-  add_fieldinfo(IFT_ENUM, "red", 1, &data->red, "LightState");
-  add_fieldinfo(IFT_ENUM, "yellow", 1, &data->yellow, "LightState");
-  add_fieldinfo(IFT_ENUM, "green", 1, &data->green, "LightState");
+  enum_map_LightState[(int)ON] = "ON";
+  enum_map_LightState[(int)OFF] = "OFF";
+  enum_map_LightState[(int)BLINKING] = "BLINKING";
+  enum_map_LightState[(int)UNKNOWN] = "UNKNOWN";
+  add_fieldinfo(IFT_ENUM, "red", 1, &data->red, "LightState", &enum_map_LightState);
+  add_fieldinfo(IFT_ENUM, "yellow", 1, &data->yellow, "LightState", &enum_map_LightState);
+  add_fieldinfo(IFT_ENUM, "green", 1, &data->green, "LightState", &enum_map_LightState);
   add_fieldinfo(IFT_INT32, "visibility_history", 1, &data->visibility_history);
   add_fieldinfo(IFT_BOOL, "ready", 1, &data->ready);
   unsigned char tmp_hash[] = {0x1, 0xa2, 0x4f, 0xd2, 0x45, 0xc0, 0xe3, 0xd2, 0xba, 0xf3, 0xa9, 0x52, 0xad, 0xf7, 0xb9, 0xb0};

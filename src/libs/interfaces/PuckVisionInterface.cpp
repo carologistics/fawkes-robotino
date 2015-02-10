@@ -25,6 +25,8 @@
 
 #include <core/exceptions/software.h>
 
+#include <map>
+#include <string>
 #include <cstring>
 #include <cstdlib>
 
@@ -48,10 +50,17 @@ PuckVisionInterface::PuckVisionInterface() : Interface()
   data      = (PuckVisionInterface_data_t *)data_ptr;
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
+  enum_map_PuckColor[(int)C_RED] = "C_RED";
+  enum_map_PuckColor[(int)C_GREEN] = "C_GREEN";
+  enum_map_PuckColor[(int)C_BLUE] = "C_BLUE";
+  enum_map_PuckColor[(int)C_BLACK] = "C_BLACK";
+  enum_map_PuckColor[(int)C_YELLOW] = "C_YELLOW";
+  enum_map_PuckColor[(int)C_WHITE] = "C_WHITE";
+  enum_map_PuckColor[(int)C_UNKNOWN] = "C_UNKNOWN";
   add_fieldinfo(IFT_STRING, "frame", 32, data->frame);
-  add_fieldinfo(IFT_ENUM, "puck1_color", 1, &data->puck1_color, "PuckColor");
-  add_fieldinfo(IFT_ENUM, "puck2_color", 1, &data->puck2_color, "PuckColor");
-  add_fieldinfo(IFT_ENUM, "puck3_color", 1, &data->puck3_color, "PuckColor");
+  add_fieldinfo(IFT_ENUM, "puck1_color", 1, &data->puck1_color, "PuckColor", &enum_map_PuckColor);
+  add_fieldinfo(IFT_ENUM, "puck2_color", 1, &data->puck2_color, "PuckColor", &enum_map_PuckColor);
+  add_fieldinfo(IFT_ENUM, "puck3_color", 1, &data->puck3_color, "PuckColor", &enum_map_PuckColor);
   add_fieldinfo(IFT_INT32, "puck1_visibility_history", 1, &data->puck1_visibility_history);
   add_fieldinfo(IFT_INT32, "puck2_visibility_history", 1, &data->puck2_visibility_history);
   add_fieldinfo(IFT_INT32, "puck3_visibility_history", 1, &data->puck3_visibility_history);

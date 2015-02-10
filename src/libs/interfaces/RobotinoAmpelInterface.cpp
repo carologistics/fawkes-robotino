@@ -25,6 +25,8 @@
 
 #include <core/exceptions/software.h>
 
+#include <map>
+#include <string>
 #include <cstring>
 #include <cstdlib>
 
@@ -48,7 +50,12 @@ RobotinoAmpelInterface::RobotinoAmpelInterface() : Interface()
   data      = (RobotinoAmpelInterface_data_t *)data_ptr;
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
-  add_fieldinfo(IFT_ENUM, "state", 1, &data->state, "AmpelState");
+  enum_map_AmpelState[(int)YELLOW] = "YELLOW";
+  enum_map_AmpelState[(int)GREEN] = "GREEN";
+  enum_map_AmpelState[(int)RED] = "RED";
+  enum_map_AmpelState[(int)YELLOW_FLASHING] = "YELLOW_FLASHING";
+  enum_map_AmpelState[(int)NO_CHANGE] = "NO_CHANGE";
+  add_fieldinfo(IFT_ENUM, "state", 1, &data->state, "AmpelState", &enum_map_AmpelState);
   unsigned char tmp_hash[] = {0xd9, 0x87, 0x6d, 0xe2, 0x91, 0x55, 0xc2, 0x11, 0x8, 0x94, 0xf5, 0xd6, 0x83, 0xdd, 0xb5, 0x3c};
   set_hash(tmp_hash);
 }
