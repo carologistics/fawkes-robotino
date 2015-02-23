@@ -21,9 +21,10 @@
 
 #include "navgraph_generator_llsf2014_thread.h"
 
-#include <navgraph/generators/voronoi.h>
 #include <navgraph/yaml_navgraph.h>
 #include <core/threading/mutex_locker.h>
+#include <navgraph/navgraph.h>
+#include <interfaces/NavGraphGeneratorInterface.h>
 #include <limits>
 #include <memory>
 
@@ -48,96 +49,96 @@ NavGraphGenerator2014Thread::~NavGraphGenerator2014Thread()
 void
 NavGraphGenerator2014Thread::init()
 {
-  NavGraphGeneratorVoronoi nggv(-5.6, 0, 5.6, 5.6);
+  last_id_ = 0;
 
-  nggv.add_obstacle(0.56, 1.68);
-  nggv.add_obstacle(0.56, 2.80);
-  nggv.add_obstacle(1.68, 1.68);
-  nggv.add_obstacle(1.68, 2.80);
-  nggv.add_obstacle(1.68, 3.92);
-  nggv.add_obstacle(2.80, 1.68);
-  nggv.add_obstacle(2.80, 3.92);
-  nggv.add_obstacle(2.80, 5.04);
-  nggv.add_obstacle(3.92, 1.68);
-  nggv.add_obstacle(3.92, 2.80);
-  nggv.add_obstacle(3.92, 5.04);
-  nggv.add_obstacle(5.04, 5.04);
-  nggv.add_obstacle(0.56, 5.04);
-  nggv.add_obstacle(5.34, 2.45);
-  nggv.add_obstacle(5.34, 2.80);
-  nggv.add_obstacle(5.34, 3.15);
+  navgen_if_ =
+    blackboard->open_for_reading<NavGraphGeneratorInterface>("/navgraph-generator");
 
-  nggv.add_obstacle(-0.56, 1.68);
-  nggv.add_obstacle(-0.56, 2.80);
-  nggv.add_obstacle(-1.68, 1.68);
-  nggv.add_obstacle(-1.68, 2.80);
-  nggv.add_obstacle(-1.68, 3.92);
-  nggv.add_obstacle(-2.80, 1.68);
-  nggv.add_obstacle(-2.80, 3.92);
-  nggv.add_obstacle(-2.80, 5.04);
-  nggv.add_obstacle(-3.92, 1.68);
-  nggv.add_obstacle(-3.92, 2.80);
-  nggv.add_obstacle(-3.92, 5.04);
-  nggv.add_obstacle(-5.04, 5.04);
-  nggv.add_obstacle(-0.56, 5.04);
-  nggv.add_obstacle(-5.34, 2.45);
-  nggv.add_obstacle(-5.34, 2.80);
-  nggv.add_obstacle(-5.34, 3.15);
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ClearMessage());
+  navgen_if_->msgq_enqueue(
+    new NavGraphGeneratorInterface::SetBoundingBoxMessage(-5.6, 0, 5.6, 5.6));
+
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 0.56, 1.68));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 0.56, 2.80));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 1.68, 1.68));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 1.68, 2.80));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 1.68, 3.92));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 2.80, 1.68));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 2.80, 3.92));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 2.80, 5.04));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 3.92, 1.68));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 3.92, 2.80));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 3.92, 5.04));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.04, 5.04));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 0.56, 5.04));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.34, 2.45));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.34, 2.80));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.34, 3.15));
+
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -0.56, 1.68));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -0.56, 2.80));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -1.68, 1.68));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -1.68, 2.80));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -1.68, 3.92));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -2.80, 1.68));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -2.80, 3.92));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -2.80, 5.04));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -3.92, 1.68));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -3.92, 2.80));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -3.92, 5.04));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.04, 5.04));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -0.56, 5.04));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.34, 2.45));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.34, 2.80));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.34, 3.15));
 
   // outer boundaries
-  nggv.add_obstacle(0, 0);
-  nggv.add_obstacle(0, 5.6);
-  nggv.add_obstacle(-5.6, 0.0);
-  nggv.add_obstacle(-5.6, 5.6);
-  nggv.add_obstacle(5.6, 0.0);
-  nggv.add_obstacle(5.6, 5.6);
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 0, 0));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 0, 5.6));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.6, 0.0));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.6, 5.6));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.6, 0.0));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.6, 5.6));
 
   // along machine positions on edges
   // along bottom edge, cyan
-  nggv.add_obstacle(0.56, 0.56);
-  nggv.add_obstacle(1.68, 0.56);
-  nggv.add_obstacle(2.80, 0.56);
-  nggv.add_obstacle(3.92, 0.56);
-  nggv.add_obstacle(5.04, 0.56);
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 0.56, 0.56));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 1.68, 0.56));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 2.80, 0.56));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 3.92, 0.56));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.04, 0.56));
   // along bottom edge, magenta
-  nggv.add_obstacle(-0.56, 0.56);
-  nggv.add_obstacle(-1.68, 0.56);
-  nggv.add_obstacle(-2.80, 0.56);
-  nggv.add_obstacle(-3.92, 0.56);
-  nggv.add_obstacle(-5.04, 0.56);
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -0.56, 0.56));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -1.68, 0.56));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -2.80, 0.56));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -3.92, 0.56));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.04, 0.56));
 
   // along top edge, cyan
-  nggv.add_obstacle(0.56, 5.6);
-  //nggv.add_obstacle(1.68, 5.6);
-  nggv.add_obstacle(2.80, 5.6);
-  nggv.add_obstacle(3.92, 5.6);
-  nggv.add_obstacle(5.04, 5.6);
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 0.56, 5.6));
+  //navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 1.68, 5.6));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 2.80, 5.6));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 3.92, 5.6));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.04, 5.6));
 
   // along top edge, magenta
-  nggv.add_obstacle(-0.56, 5.6);
-  //nggv.add_obstacle(-1.68, 5.6);
-  nggv.add_obstacle(-2.80, 5.6);
-  nggv.add_obstacle(-3.92, 5.6);
-  nggv.add_obstacle(-5.04, 5.6);
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -0.56, 5.6));
+  //navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -1.68, 5.6));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -2.80, 5.6));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -3.92, 5.6));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.04, 5.6));
 
   // along right edge, only where there is machine
-  //nggv.add_obstacle(5.6, 1.68);
-  //nggv.add_obstacle(5.6, 2.80);
-  //nggv.add_obstacle(5.6, 3.92);
-  nggv.add_obstacle(5.6, 5.04);
+  //navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.6, 1.68));
+  //navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.6, 2.80));
+  //navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.6, 3.92));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), 5.6, 5.04));
 
   // along left edge, only where there is machine
-  //nggv.add_obstacle(-5.6, 1.68);
-  //nggv.add_obstacle(-5.6, 2.80);
-  //nggv.add_obstacle(-5.6, 3.92);
-  nggv.add_obstacle(-5.6, 5.04);
-
-  MutexLocker lock(navgraph.objmutex_ptr());
-
-  logger->log_info(name(), "Clearing");
-  navgraph->clear();
-  logger->log_info(name(), "Computing");
-  nggv.compute(navgraph);
+  //navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.6, 1.68));
+  //navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.6, 2.80));
+  //navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.6, 3.92));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddObstacleMessage(gen_id().c_str(), -5.6, 5.04));
 
   logger->log_info(name(), "Copying");
   std::string cfg_graph_file = config->get_string("/navgraph/graph_file");
@@ -148,55 +149,100 @@ NavGraphGenerator2014Thread::init()
 
   for (unsigned int i = 1; i <= 24; ++i) {
     NavGraphNode n = file_graph->node(NavGraph::format_name("M%u", i));
-    if (n) add_node_edge(n);
+    if (n) {
+      navgen_if_->msgq_enqueue
+	(new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	 (n.name().c_str(),
+	  n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+    }
   }
 
   for (unsigned int i = 1; i <= 24; ++i) {
     NavGraphNode n = file_graph->node(NavGraph::format_name("ExpM%u", i));
-    if (n) add_node_edge(n);
+    if (n) {
+      navgen_if_->msgq_enqueue
+	(new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	 (n.name().c_str(),
+	  n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+    }
   }
 
   for (unsigned int i = 1; i <= 2; ++i) {
     for (unsigned int j = 1; i <= 2; ++i) {
       NavGraphNode n = file_graph->node(NavGraph::format_name("D%u_PUCK_STORAGE_%u", i, j));
-      if (n) add_node_edge(n);
+      if (n) {
+	navgen_if_->msgq_enqueue
+	  (new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	   (n.name().c_str(),
+	    n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+      }
     }
   }
 
   for (unsigned int i = 1; i <= 2; ++i) {
     for (unsigned int j = 1; i <= 3; ++i) {
       NavGraphNode n = file_graph->node(NavGraph::format_name("WAIT_FOR_INS_%u_ROBOTINO_%u", i, j));
-      if (n) add_node_edge(n);
+      if (n) {
+	navgen_if_->msgq_enqueue
+	  (new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	   (n.name().c_str(),
+	    n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+      }
     }
   }
 
   for (unsigned int i = 1; i <= 2; ++i) {
     NavGraphNode n = file_graph->node(NavGraph::format_name("deliver%u", i));
-    if (n) add_node_node(n);
     NavGraphNode n2 = file_graph->node(NavGraph::format_name("deliver%ua", i));
-    if (n2) add_node_node(n2);
     NavGraphNode n3 = file_graph->node(NavGraph::format_name("WAIT_FOR_DELIVER_%u", i));
-    if (n3) add_node_edge(n3);
+    if (n) {
+      navgen_if_->msgq_enqueue
+	(new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	 (n.name().c_str(),
+	  n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_NODE));
+    }
+    if (n2) {
+      navgen_if_->msgq_enqueue
+	(new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	 (n2.name().c_str(),
+	  n2.x(), n2.y(), NavGraphGeneratorInterface::CLOSEST_NODE));
+    }
+    if (n3) {
+      navgen_if_->msgq_enqueue
+	(new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	 (n3.name().c_str(),
+	  n3.x(), n3.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+    }
   }
   for (unsigned int i = 1; i <= 2; ++i) {
     NavGraphNode n = file_graph->node(NavGraph::format_name("Ins%u", i));
-    if (n) add_node_edge(n);
     NavGraphNode n2 = file_graph->node(NavGraph::format_name("Ins%uSec", i));
-    if (n2) add_node_edge(n2);
+    if (n) {
+      navgen_if_->msgq_enqueue
+	(new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	 (n.name().c_str(),
+	  n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+    }
+    if (n2) {
+      navgen_if_->msgq_enqueue
+	(new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	 (n2.name().c_str(),
+	  n2.x(), n2.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+    }
   }
 
-  navgraph->set_default_properties(file_graph->default_properties());
-
-  try {
-    logger->log_info(name(), "Calc Reachability");
-    navgraph->calc_reachability();
-  } catch (Exception &e) {
-    logger->log_error(name(), "Graph failed");
-    logger->log_error(name(), e);
+  /* We rely on navgraph-generator to copy the properties
+  const std::map<std::string, std::string> &graph_props = file_graph->default_properties();
+  for (auto &p : graph_props) {
+    navgen_if_->msgq_enqueue
+      (new NavGraphGeneratorInterface::SetGraphDefaultPropertyMessage
+       (p.first.c_str(), p.second.c_str()));
   }
-  lock.unlock();
-  logger->log_info(name(), "Done");
-  navgraph->notify_of_change();
+  */
+  navgen_if_->msgq_enqueue
+    (new NavGraphGeneratorInterface::SetCopyGraphDefaultPropertiesMessage(true));
+
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ComputeMessage());
 }
 
 
@@ -206,6 +252,7 @@ NavGraphGenerator2014Thread::init()
 void
 NavGraphGenerator2014Thread::add_node_edge(const NavGraphNode &n)
 {
+  /*
   NavGraphEdge closest = navgraph->closest_edge(n.x(), n.y());
   cart_coord_2d_t p = closest.closest_point_on_edge(n.x(), n.y());
 
@@ -252,7 +299,7 @@ NavGraphGenerator2014Thread::add_node_edge(const NavGraphNode &n)
     navgraph->add_edge(new_edge_2);
     navgraph->add_edge(new_edge_3);
   }
-
+  */
 }
 
 /** Add node, connect to closest node.
@@ -261,16 +308,26 @@ NavGraphGenerator2014Thread::add_node_edge(const NavGraphNode &n)
 void
 NavGraphGenerator2014Thread::add_node_node(const NavGraphNode &n)
 {
+  /*
   NavGraphNode closest = navgraph->closest_node(n.x(), n.y());
   closest.set_property("highway_exit", true);
   navgraph->update_node(closest);
   navgraph->add_node(n);
   navgraph->add_edge(NavGraphEdge(n.name(), closest.name()));
+  */
 }
+
+std::string
+NavGraphGenerator2014Thread::gen_id()
+{
+  return "O" + std::to_string(++last_id_);
+}
+
 
 void
 NavGraphGenerator2014Thread::finalize()
 {
+  blackboard->close(navgen_if_);
 }
 
 void

@@ -27,7 +27,6 @@
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <aspect/blackboard.h>
-#include <navgraph/aspect/navgraph.h>
 #include <blackboard/interface_listener.h>
 #include <blackboard/interface_observer.h>
 
@@ -42,6 +41,7 @@ namespace fawkes {
   class Time;
   class NavGraphEdgeConstraint;
   class NavGraphEdgeCostConstraint;
+  class NavGraphGeneratorInterface;
 }
 
 class NavGraphGenerator2014Thread
@@ -49,8 +49,7 @@ class NavGraphGenerator2014Thread
   public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::NavGraphAspect
+  public fawkes::BlackBoardAspect
 {
  public:
   NavGraphGenerator2014Thread();
@@ -66,7 +65,11 @@ class NavGraphGenerator2014Thread
  private:
   void add_node_edge(const fawkes::NavGraphNode &n);
   void add_node_node(const fawkes::NavGraphNode &n);
+  std::string gen_id();
 
+ private:
+  unsigned int                        last_id_;
+  fawkes::NavGraphGeneratorInterface *navgen_if_;
 };
 
 #endif
