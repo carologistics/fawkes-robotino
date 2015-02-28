@@ -438,6 +438,7 @@ GripperAX12AThread::loop()
       __wt->set_margins(msg->left_margin(), msg->right_margin());
       __gripper_if->set_left_margin(msg->left_margin());
       __gripper_if->set_right_margin(msg->right_margin());
+    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetServoMessage>()) {
 
     } else {
       logger->log_warn(name(), "Unknown message received");
@@ -643,15 +644,6 @@ GripperAX12AThread::WorkerThread::stop_motion()
   get_gripper(left, right);
   goto_gripper(left, right);
 }
-
-/** Set move load pending. */
-void
-GripperAX12AThread::WorkerThread::set_move_load_pending(bool value)
-{
-  __move_load_pending = value;
-}
-
-
 
 /** Goto desired left/right values.
  * @param left left in radians
@@ -885,7 +877,7 @@ GripperAX12AThread::WorkerThread::loop()
     __disable = false;
     __value_rwlock->unlock();
     ScopedRWLock lock(__ax12a_rwlock);
-    if (__led_enable || __led_disable || __velo_pending || __move_pending || __move_load_pending) usleep(3000);
+    if (__led_enable || __led_disable || __velo_pending || __move_pending) usleep(3000);
   }
 
   if (__led_enable) {
@@ -901,7 +893,7 @@ GripperAX12AThread::WorkerThread::loop()
     __value_rwlock->unlock();    
     ScopedRWLock lock(__ax12a_rwlock);
     __ax12a->set_led_enabled(__left_servo_id, false);    
-    if (__velo_pending || __move_pending || __move_load_pending) usleep(3000);
+    if (__velo_pending || __move_pending) usleep(3000);
   }
 
   if (__velo_pending) {
@@ -913,7 +905,7 @@ GripperAX12AThread::WorkerThread::loop()
     ScopedRWLock lock(__ax12a_rwlock);
     printf("__velo_pending! %d, %d\n", left_vel, right_vel);
     __ax12a->set_goal_speeds(2, __left_servo_id, left_vel, __right_servo_id, right_vel);
-    if (__move_pending || __move_load_pending) usleep(3000);
+    if (__move_pending) usleep(3000);
   }
 
   if (__move_pending) {
@@ -924,14 +916,8 @@ GripperAX12AThread::WorkerThread::loop()
     __value_rwlock->unlock();
     // printf("trying to set: target_left: %f, target_right: %f\n", target_left, target_right);
     exec_goto_gripper(target_left, target_right);
-    if (__move_load_pending) usleep(3000);
   }
   
-  if (__move_load_pending) {
-    stop_if_needed();
-    // __move_load_pending();
-  }
-
   try {
     ScopedRWLock lock(__ax12a_rwlock, ScopedRWLock::LOCK_READ);
     __ax12a->read_table_values(__left_servo_id);
@@ -1006,60 +992,6 @@ GripperAX12AThread::WorkerThread::exec_goto_gripper(float left_rad, float right_
   ScopedRWLock lock(__ax12a_rwlock);
   __ax12a->goto_positions(2, __left_servo_id, left_pos, __right_servo_id, right_pos);
 }
-
-/** Execute closing gripper motion by not overriding the given load.
- * @param left_rad left in rad to move to
- * @param right_rad right in rad to move to
- * @param load max load from 0 to 1
- */
-void
-GripperAX12AThread::WorkerThread::goto_gripper_load(float left_rad, float right_rad)
-{
-  // __ax12a->goto_positions(2, __left_servo_id, left_rad, __right_servo_id, right_rad);
-  __target_left  = left_rad;
-  __target_right = right_rad;
-  __move_load_pending = true;
-  __left_servo_load_full = false;
-  __right_servo_load_full = false;
-  printf("goto_gripper_load: %f, %f\n", __target_left, __target_right);
-  wakeup();
-}
-
-
-/** Stops movement of AX12 if necessary
- */
-void
-GripperAX12AThread::WorkerThread::stop_if_needed()
-{
-  printf("stop_if_needed");
-  printf("load left: %d", __ax12a->get_load(__left_servo_id) & 0x1FF);
-  printf(" load right: %d", __ax12a->get_load(__right_servo_id) & 0x1FF);
-  printf(" desired max load: %f - %d", __max_load, ((unsigned int)__max_load * 1023));
-  
-  if (!__left_servo_load_full && (__ax12a->get_load(__left_servo_id) & 0x1FF) > __max_load * 1023)
-    {
-      printf("stop_left\n");
-      __left_servo_load_full = true;
-      stop_left();
-    }
-  if (!__right_servo_load_full && (__ax12a->get_load(__right_servo_id) & 0x1FF) > __max_load * 1023)
-    {
-      printf("stop_right\n");
-      __right_servo_load_full = true;
-      stop_right();
-    }
-  
-  __move_load_pending = !(__left_servo_load_full && __right_servo_load_full);
-  printf(" move load pending: %d\n", __move_load_pending);
-}
-
-// /** Is move until load pending?
-//  */
-// bool
-// GripperAX12AThread::WorkerThread::is_move_load_pending()
-// {
-//   return move_load_pending;
-// }
 
 /** Wait for fresh data to be received.
  * Blocks the calling thread.

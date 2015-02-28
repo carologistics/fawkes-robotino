@@ -125,7 +125,7 @@ class GripperAX12AThread
   fawkes::tf::Vector3  __translation_left;
   fawkes::tf::Vector3  __translation_right;
 
-  bool         __cfg_publish_transforms;
+  bool          __cfg_publish_transforms;
 #endif
 
   float         __last_left;
@@ -157,11 +157,8 @@ class GripperAX12AThread
     void stop_motion();
     bool has_fresh_data();
     void wait_for_fresh_data();
-    void goto_gripper_load(float left_rad, float right_rad);
-    void stop_if_needed();
     void stop_left();
     void stop_right();
-    void set_move_load_pending(bool move_load_pending);
 
     virtual void loop();
 
@@ -191,8 +188,6 @@ class GripperAX12AThread
     float         __max_right_speed;
     float         __left_margin;
     float         __right_margin;
-    bool          __left_servo_load_full;
-    bool          __right_servo_load_full;
     float         __max_load;
     
     fawkes::ReadWriteLock *__value_rwlock;
@@ -202,7 +197,6 @@ class GripperAX12AThread
     bool  __enable;
     bool  __disable;
     bool  __velo_pending;
-    bool  __move_load_pending;
     unsigned int __left_vel;
     unsigned int __right_vel;
     bool  __led_enable;
