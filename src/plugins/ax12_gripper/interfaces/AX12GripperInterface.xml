@@ -114,6 +114,11 @@
     <ref>left</ref>
     <ref>right</ref>
   </message>
+  <message name="SetServo">
+    <comment>Enable or disable motors/servos.</comment>
+    <field type="uint32" name="servoID">Servo ID.</field>
+    <field type="float" name="angle">Target Servo angle.</field>
+  </message>
   <message name="SetEnabled">
     <comment>Enable or disable motors/servos.</comment>
     <ref>enabled</ref>
