@@ -175,9 +175,9 @@ GripperAX12AThread::init()
 
   // Test of tilt and pitch unit
   __ax12a->set_goal_speed(1,50);
-  __ax12a->goto_position(1,512);
+  __ax12a->goto_position(1,RobotisAX12A::CENTER_POSITION);
   __ax12a->set_goal_speed(2,50);
-  __ax12a->goto_position(2,350);
+  __ax12a->goto_position(2,RobotisAX12A::CENTER_POSITION);
 
   if (! (left_servo_found && right_servo_found)) {
     throw Exception("Left and/or right servo not found: left: %i  right: %i",
