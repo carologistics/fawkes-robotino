@@ -94,6 +94,12 @@ then
      exit 1
 fi
 
+if [[ -z $GAZEBO_WORLD_PATH ]]
+then
+     echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
+     exit 1
+fi
+
 
 #ulimit -c unlimited
 
@@ -101,7 +107,7 @@ case $COMMAND in
     gzserver ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LANG="en_US"
-	gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world_2014/llsf.world
+	gzserver $REPLAY $GAZEBO_WORLD_PATH
 	;;
     gzclient ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
