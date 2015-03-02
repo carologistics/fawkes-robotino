@@ -157,6 +157,7 @@ class GripperAX12AThread
     void wait_for_fresh_data();
     void stop_left();
     void stop_right();
+    void set_servo_angle(unsigned int servo_id, float servo_angle);
 
     virtual void loop();
 
@@ -186,10 +187,12 @@ class GripperAX12AThread
     float         __max_right_speed;
     float         __left_margin;
     float         __right_margin;
-    float         __max_load;
     
     fawkes::ReadWriteLock *__value_rwlock;
     bool  __move_pending;
+    bool  __set_servo_angle_pending;
+    int   __set_servo_angle_id;
+    unsigned int __set_servo_angle_position;
     float __target_left;
     float __target_right;
     bool  __enable;

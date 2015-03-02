@@ -437,6 +437,8 @@ GripperAX12AThread::loop()
       __gripper_if->set_left_margin(msg->left_margin());
       __gripper_if->set_right_margin(msg->right_margin());
     } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetServoMessage>()) {
+      AX12GripperInterface::SetServoMessage *msg = __gripper_if->msgq_first(msg);
+      __wt->set_servo_angle(msg->servoID(), msg->angle());
 
     } else {
       logger->log_warn(name(), "Unknown message received");
@@ -760,6 +762,18 @@ GripperAX12AThread::WorkerThread::get_velocities(float &left_vel, float &right_v
 }
 
 
+/** Set desired angle to desired servo ID.
+ * @param servo_id the desired servo id
+ * @param servo_angle the desired servo angle
+ */
+void
+GripperAX12AThread::WorkerThread::set_servo_angle(unsigned int servo_id, float servo_angle)
+{
+  __set_servo_angle_pending = true;
+  __set_servo_angle_id = servo_id;
+  __set_servo_angle_position = servo_angle *  RobotisAX12A::POS_TICKS_PER_RAD + RobotisAX12A::CENTER_POSITION;
+}
+
 /** Set desired velocities.
  * @param left_margin left margin
  * @param right_margin right margin
@@ -873,7 +887,7 @@ GripperAX12AThread::WorkerThread::loop()
     __disable = false;
     __value_rwlock->unlock();
     ScopedRWLock lock(__ax12a_rwlock);
-    if (__led_enable || __led_disable || __velo_pending || __move_pending) usleep(3000);
+    if (__led_enable || __led_disable || __velo_pending || __move_pending || __set_servo_angle_pending) usleep(3000);
   }
 
   if (__led_enable) {
@@ -889,7 +903,7 @@ GripperAX12AThread::WorkerThread::loop()
     __value_rwlock->unlock();    
     ScopedRWLock lock(__ax12a_rwlock);
     __ax12a->set_led_enabled(__left_servo_id, false);    
-    if (__velo_pending || __move_pending) usleep(3000);
+    if (__velo_pending || __move_pending || __set_servo_angle_pending) usleep(3000);
   }
 
   if (__velo_pending) {
@@ -901,7 +915,7 @@ GripperAX12AThread::WorkerThread::loop()
     ScopedRWLock lock(__ax12a_rwlock);
     printf("__velo_pending! %d, %d\n", left_vel, right_vel);
     __ax12a->set_goal_speeds(2, __left_servo_id, left_vel, __right_servo_id, right_vel);
-    if (__move_pending) usleep(3000);
+    if (__move_pending || __set_servo_angle_pending) usleep(3000);
   }
 
   if (__move_pending) {
@@ -912,8 +926,14 @@ GripperAX12AThread::WorkerThread::loop()
     __value_rwlock->unlock();
     // printf("trying to set: target_left: %f, target_right: %f\n", target_left, target_right);
     exec_goto_gripper(target_left, target_right);
+    if (__set_servo_angle_pending) usleep(3000);
   }
-  
+
+  if (__set_servo_angle_pending) {
+    printf("set servo %d pending: %d\n", __set_servo_angle_id, __set_servo_angle_position);
+    __ax12a->goto_position(__set_servo_angle_id, __set_servo_angle_position);
+    __set_servo_angle_pending = false;
+  }
   try {
     ScopedRWLock lock(__ax12a_rwlock, ScopedRWLock::LOCK_READ);
     __ax12a->read_table_values(__left_servo_id);
