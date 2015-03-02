@@ -1,0 +1,117 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+#doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/pantilt
+---
+/hardware/ax12_gripper:
+    # Type of PTU; one of RX27 EviD100P and DirectedPerceptionASCII
+#    type: RX28
+
+    # Is this PTU active?
+    active: true
+
+    # Device file for RX28 PTU
+    device: /dev/ttyUSB0
+
+    # Read timeout for RX28 PTU
+    read_timeout_ms: 300
+
+    # Discover timeout for RX28 PTU
+    discover_timeout_ms: 300
+
+    # Left servo ID for AX12 gripper
+    left_servo_id: 3
+    # Tilt servo ID for AX12 gripper
+    right_servo_id: 4
+
+    # Pan offset for RX28 PTU; deg
+#    pan_offset: 24.05
+    # Tilt zero offset for RX28 PTU; deg
+#    tilt_offset: 3.56
+
+    # Turn off AX12 Gripper when unloading the plugin?
+    turn_off: true
+    # Move AX12 gripper to given position on start?
+    goto_zero_start: true
+    
+    # Left open angle in rad
+    left_open: 0.10  # -45 degrees
+    # Right open angle in rad
+    right_open: -0.10  # 45 degrees
+    # Left close angle in rad
+    left_close: 0.8  # 10 degrees
+    # Right close angle in rad
+    right_close: -0.8 # -10 degrees
+
+    # Left close angle with max load in rad
+    left_close_load: 1.0  # 10 degrees
+    # Right close angle with max load in rad
+    right_close_load: -1.0 # -10 degrees
+
+    # Left minimum angle in rad
+    left_min: -2.1  # 50 degrees
+    # Right minimum angle in rad
+    right_min: -1.1  # 120 degrees
+    # Left maximum angle in rad
+    left_max: 1.1  # 180 degrees
+    # Right maximum angle in rad
+    right_max: 2.1 # 250 degrees
+
+    # Left servo default start; rad
+    left_start: 0.2
+    # Right servo default start; rad
+    right_start: -0.2
+
+    # Left torque: 0 - 1 (0% - 100%)
+    left_torque: 1.0
+    # Right torque: 0 - 1 (0% - 100%)
+    right_torque: 1.0
+
+    # Max speed 0 - 1 (0% - 100%)
+    max_speed: 1.0
+
+    # Max load 0 - 1 (0% - 100%)
+    max_load: 0.18
+
+    # Clockwise compliance margin for RX28 PTU
+#    cw_compl_margin: 0
+    # Counter-clockwise compliance margin for RX28 PTU
+#    ccw_compl_margin: 0
+    # Clockwise compliance slope for RX28 PTU
+#    cw_compl_slope: 96
+    # Counter-clockwise compliance slope for RX28 PTU
+#    ccw_compl_slope: 96
+
+    # Minimum pan for RX28 PTU
+#    pan_min: -2.2
+    # Maximum pan for RX28 PTU
+#    pan_max: 2.2
+
+    # Minimum tilt for RX28 PTU
+#    tilt_min: -1.6
+    # Maximum tilt for RX28 PTU
+#    tilt_max: 1.6
+
+    # Tolerance between desired and actual pan value to consider RX28 PTU motion finished; rad
+    left_margin: 0.1
+    # Tolerance between desired and actual tilt value to consider RX28 PTU motion finished; rad
+    right_margin: 0.1
+
+    # Frame ID base string; will be prefixed by / if missing;
+    # and suffixed with .base, .pan, and .tilt repsectively
+    frame_id_prefix: !frame /ax12_gripper
+
+    # PAN servo base to joint translation X; m
+#    pan_trans_x: -0.002
+    # PAN servo base to joint translation Y; m
+#    pan_trans_y: 0.0
+    # PAN servo base to joint translation Z; m
+#    pan_trans_z: 0.042
+    # TILT servo base to joint translation X; m
+#    tilt_trans_x: 0.0
+    # TILT servo base to joint translation Y; m
+#    tilt_trans_y: 0.0
+    # TILT servo base to joint translation Z; m
+#    tilt_trans_z: 0.039
+    # whether transforms should be published
+    publish_transforms: true
