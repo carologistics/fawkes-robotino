@@ -108,6 +108,15 @@ function COMMAND:init()
       gripper_if:msgq_enqueue_copy(theCloseMessage)
    elseif self.fsm.vars.close_load then
       print("close load")
+-- Set servo position by ID and desired angle
+   elseif self.fsm.vars.id and self.fsm.vars.angle then
+      local id = self.fsm.vars.id
+      local angle = self.fsm.vars.angle
+      print("Set servo " .. id .. " to " .. angle)
+      theSetServoMessage = gripper_if.SetServoMessage:new()
+      theSetServoMessage:set_servoID(id)
+      theSetServoMessage:set_angle(angle)
+      gripper_if:msgq_enqueue_copy(theSetServoMessage)
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
@@ -130,7 +139,7 @@ function STOP_GRIPPER_RIGHT:init()
 end
 
 function STOP_GRIPPER_RIGHT:exit()
-   print("------- STOP RIGHT -> RIGHT --------")
+   print("------- STOP RIGHT -> LEFT --------")
    gripper_if:msgq_enqueue_copy(gripper_if.StopLeftMessage:new())
 end
 
