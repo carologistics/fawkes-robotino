@@ -103,7 +103,6 @@ GripperAX12AThread::init()
   __cfg_right_close_angle = config->get_float((__ptu_cfg_prefix + "right_close").c_str());
   __cfg_right_close_load_angle = config->get_float((__ptu_cfg_prefix + "right_close_load").c_str());
   __cfg_max_speed         = config->get_float((__ptu_cfg_prefix + "max_speed").c_str());
-  __cfg_max_load          = config->get_float((__ptu_cfg_prefix + "max_load").c_str());
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__ptu_cfg_prefix + "publish_transforms").c_str());
@@ -218,8 +217,7 @@ GripperAX12AThread::init()
   __wt = new WorkerThread(__ptu_name, logger, __ax12a,
   			  __cfg_left_servo_id, __cfg_right_servo_id,
   			  __cfg_left_min, __cfg_left_max, __cfg_right_min, __cfg_right_max,
-  			  __cfg_left_offset, __cfg_right_offset,
-			  __cfg_max_load);
+  			  __cfg_left_offset, __cfg_right_offset);
   __wt->set_margins(__cfg_left_margin, __cfg_right_margin);
   __wt->start();
   __wt->set_enabled(true);
@@ -528,8 +526,7 @@ GripperAX12AThread::WorkerThread::WorkerThread(std::string ptu_name,
 					      unsigned char right_servo_id,
 					      float &left_min, float &left_max,
 					      float &right_min, float &right_max,
-					      float &left_offset, float &right_offset,
-					      float &max_load)
+					      float &left_offset, float &right_offset)
   : Thread("", Thread::OPMODE_WAITFORWAKEUP)
 {
   set_name("AX12WorkerThread(%s)", ptu_name.c_str());
@@ -563,7 +560,6 @@ GripperAX12AThread::WorkerThread::WorkerThread(std::string ptu_name,
 
   __max_left_speed    = __ax12a->get_max_supported_speed(__left_servo_id);
   __max_right_speed   = __ax12a->get_max_supported_speed(__right_servo_id);
-  __max_load          = max_load;
 }
 
 

@@ -115,7 +115,6 @@ class GripperAX12AThread
   float        __cfg_right_close_angle;
   float        __cfg_right_close_load_angle;
   float        __cfg_max_speed;
-  float        __cfg_max_load;
 
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
@@ -138,8 +137,7 @@ class GripperAX12AThread
 		 fawkes::RefPtr<RobotisAX12A> rx28,
 		 unsigned char left_servo_id, unsigned char right_servo_id,
 		 float &left_min, float &left_max, float &right_min, float &right_max,
-		 float &left_offset, float &right_offset,
-		 float &max_load);
+		 float &left_offset, float &right_offset);
 
     ~WorkerThread();
     void goto_gripper(float left, float right);
