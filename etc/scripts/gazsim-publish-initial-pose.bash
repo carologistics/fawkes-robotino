@@ -62,12 +62,12 @@ do
 	 d)
 	     script_path=$FAWKES_DIR/bin
 	     set_pose=$script_path/ffset_pose
-	     $set_pose -r localhost:1921 -t 2.0 --  4.4  0.3 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1922 -t 2.0 --  3.45 0.3 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1923 -t 2.0 --  2.5  0.3 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1924 -t 2.0 -- -4.4  0.3 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1925 -t 2.0 -- -3.45 0.3 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1926 -t 2.0 -- -2.5  0.3 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1921 -t 2.0 --  3.5  -0.5 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1922 -t 2.0 --  4.5 -0.5 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1923 -t 2.0 --  5.5  -0.5 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1924 -t 2.0 -- -3.5  -0.5 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1925 -t 2.0 -- -4.5 -0.5 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1926 -t 2.0 -- -5.5  -0.5 0.0  0.0 0.0 0.7 0.7
 	     exit 1
 	     ;;
          ?)

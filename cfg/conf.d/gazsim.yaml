@@ -11,7 +11,7 @@ gazsim:
 
   topics:
     gps: "~/gazsim/gps/"
-    laser: "~/sick_laser/link/laser/scan"
+    laser: "~/carologistics-robotino-3/sick_laser/link/laser/scan"
     gyro: "~/RobotinoSim/Gyro/"
     infrared-puck-sensor: "~/RobotinoSim/InfraredPuckSensor/"
     gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
@@ -40,7 +40,7 @@ gazsim:
     frame-id: "/base_laser"
  
   webcam:
-    topic-suffix: "/webcam/link/webcam_sensor/image"
+    topic-suffix: "/carologistics-robotino-3/webcam/link/webcam_sensor/image"
     width: 320
     height: 240
     #Shared Memory Imagebuffer name
