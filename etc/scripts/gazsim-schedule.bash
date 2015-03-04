@@ -30,15 +30,16 @@ restore_record() #args 1: file
 }
 
 #function to add a team from the configuration file
-addTeam() #args 1:teamname 2:fawkes-robotino-branch 3:fawkes-branch 4:configuration 5:number-robots
+addTeam() #args 1:teamname 2:fawkes-robotino-branch 3:fawkes-branch 4:configuration 5:number-robots 6:additional-plugins-to-start-with
 {
     TEAMS[$NUM_TEAMS]=$1
     FAWKES_ROBOTINO_BRANCHES[$NUM_TEAMS]=$2
     FAWKES_BRANCHES[$NUM_TEAMS]=$3
     CONFIGURATIONS[$NUM_TEAMS]=$4
     NUMBER_ROBOTS[$NUM_TEAMS]=$5
+    ADDITIONAL_PLUGINS[$NUM_TEAMS]=$6
 
-    echo Adding Team ${TEAMS[$NUM_TEAMS]} with branches ${FAWKES_ROBOTINO_BRANCHES[$NUM_TEAMS]} and ${FAWKES_BRANCHES[$NUM_TEAMS]}, configuration ${CONFIGURATIONS[$NUM_TEAMS]} and ${NUMBER_ROBOTS[$NUM_TEAMS]} robots.
+    echo Adding Team ${TEAMS[$NUM_TEAMS]} with branches ${FAWKES_ROBOTINO_BRANCHES[$NUM_TEAMS]} and ${FAWKES_BRANCHES[$NUM_TEAMS]}, configuration ${CONFIGURATIONS[$NUM_TEAMS]}, ${NUMBER_ROBOTS[$NUM_TEAMS]} robots and the following additional plugins: ${ADDITIONAL_PLUGINS[$NUM_TEAMS]}.
 
     let "NUM_TEAMS++"
 }
@@ -174,7 +175,6 @@ do
 	    echo "Starting Team MAGENTA: ${TEAMS[$TEAM2]}"
 	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM2]}"
 	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM2]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM2]}
-
 
 	    #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	    echo Waiting for shutdown of the simulation
