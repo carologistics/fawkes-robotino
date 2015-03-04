@@ -14,12 +14,11 @@ OPTIONS:
    -c arg         Use a specific configuration-folder
                   in cfg/gazsim-configurations/
    -n arg         Specify number Robotinos
+   -m arg         load fawkes with the specified (meta-)plugin
    -l             Run Gazebo headless
-   -r             Start ros
    -k             Keep started shells open after finish
    -s             Keep statistics and shutdown after game
    -e arg         Record replay
-   -a             Start with agent
    -d             Detailed simulation (e.g. simulated webcam)
    -o             Omitt starting gazebo (necessary when starting
                   different teams)
@@ -35,7 +34,7 @@ EOF
 COMMAND=
 CONF=
 VISUALIZATION=
-ROS=false
+ROS=-r
 AGENT=
 DETAILED=
 KEEP=
@@ -44,8 +43,9 @@ NUM_ROBOTINOS=3
 FIRST_ROBOTINO_NUMBER=1
 REPLAY=
 FAWKES_BIN=$FAWKES_DIR/bin
+META_PLUGIN=
 START_GAZEBO=true
-while getopts “hx:c:lrksn:e:daof:p:” OPTION
+while getopts “hx:c:lrksn:e:dm:aof:p:” OPTION
 do
      case $OPTION in
          h)
@@ -64,9 +64,6 @@ do
          k)
 	     KEEP=-k
              ;;
-	 r)
-	     ROS=-r
-	     ;;
 	 s)
 	     SHUTDOWN=-s
 	     #done in two steps because otherwise ps would find grep serching for the pattern
@@ -86,11 +83,14 @@ do
 	 d)
 	     DETAILED="-d"
 	     ;;
-	 a)
-	     AGENT="-a"
+	 m)
+	     META_PLUGIN="-m $OPTARG"
 	     ;;
 	 o)
 	     START_GAZEBO=false
+	     ;;
+	 r)
+	     ROS=-r
 	     ;;
 	 f)
 	     FIRST_ROBOTINO_NUMBER=$OPTARG
@@ -122,7 +122,7 @@ fi
 
 echo 'Automated Simulation control'
 
-script_path=$FAWKES_BIN
+script_path=$FAWKES_DIR/bin
 startup_script_location=$script_path/gazsim-startup.bash 
 initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash 
 
@@ -145,7 +145,7 @@ if [  $COMMAND  == start ]; then
 	echo "FAWKES_DIR is not set"
 	exit 1
     fi
-    if ! [[ $GAZEBO_PLUGIN_PATH == *$FAWKES_DIR/lib/gazebo* ]]
+    if ! [[ $GAZEBO_PLUGIN_PATH == *lib/gazebo* ]]
     then
 	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
 	exit 1
@@ -185,7 +185,7 @@ if [  $COMMAND  == start ]; then
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-        gnome-terminal -t Fawkes_Robotino_$ROBO -x bash -c "$startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $AGENT $DETAILED -f $FAWKES_BIN"
+        gnome-terminal -t Fawkes_Robotino_$ROBO -x bash -c "$startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN"
     done
 
     sleep 5s
