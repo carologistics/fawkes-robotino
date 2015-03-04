@@ -10,6 +10,7 @@ This script automates the execution of multiple Gazebo-simulations with differen
 
 OPTIONS:
    -h      Show this message
+   -d      Don't compile/check for updates in git
 EOF
 }
 
@@ -45,12 +46,16 @@ addTeam() #args 1:teamname 2:fawkes-robotino-branch 3:fawkes-branch 4:configurat
 #check options
 NUM_TEAMS=0
 PREVIOUS_BRANCH=
-while getopts “hc:b:ln:d” OPTION
+CHECK_FOR_UPDATES=true
+while getopts “hd” OPTION
 do
     case $OPTION in
         h)
             usage
             exit 1
+            ;;
+        d)
+	    CHECK_FOR_UPDATES=false
             ;;
         ?)
             usage
@@ -82,51 +87,53 @@ echo $START_PATH
 mkdir -p "$START_PATH"
 
 #checkout and compile team code
-mkdir -p "$COMPETITION_LOG_PATH/teams"
-for ((TEAM=0 ; TEAM<$NUM_TEAMS ;TEAM++))
-do
-    cd "$COMPETITION_LOG_PATH/teams"
-    echo Preparing the code of team ${TEAMS[$TEAM]}
-    # Does the code of the ream already exist?
-    if [ -d "${TEAMS[$TEAM]}" ]; then
-	echo Directory with team code already exists, updating it
-    else
-	echo Directory with team code missing, cloning it
-	git clone --recursive git@git.fawkesrobotics.org:fawkes-robotino.git ${TEAMS[$TEAM]}
-    fi
-    cd "${TEAMS[$TEAM]}"
-    git fetch
-    git reset --hard HEAD
-    git checkout -b $COMPETITION_NAME$TIME ${FAWKES_ROBOTINO_BRANCHES[$TEAM]}
-    cd fawkes
-    git fetch
-    git reset --hard HEAD
-    git checkout -b $COMPETITION_NAME$TIME ${FAWKES_BRANCHES[$TEAM]}
-    cd ..
+if $CHECK_FOR_UPDATES
+then
+    mkdir -p "$COMPETITION_LOG_PATH/teams"
+    for ((TEAM=0 ; TEAM<$NUM_TEAMS ;TEAM++))
+    do
+	cd "$COMPETITION_LOG_PATH/teams"
+	echo Preparing the code of team ${TEAMS[$TEAM]}
+	# Does the code of the ream already exist?
+	if [ -d "${TEAMS[$TEAM]}" ]; then
+	    echo Directory with team code already exists, updating it
+	else
+	    echo Directory with team code missing, cloning it
+	    git clone --recursive git@git.fawkesrobotics.org:fawkes-robotino.git ${TEAMS[$TEAM]}
+	fi
+	cd "${TEAMS[$TEAM]}"
+	git fetch
+	git reset --hard HEAD
+	git checkout -b $COMPETITION_NAME$TIME ${FAWKES_ROBOTINO_BRANCHES[$TEAM]}
+	cd fawkes
+	git fetch
+	git reset --hard HEAD
+	git checkout -b $COMPETITION_NAME$TIME ${FAWKES_BRANCHES[$TEAM]}
+	cd ..
 
-    #Compile code
-    echo Compiling...
-    COMPILE_OUTPUT="$(make all -j8)"
-    if [ "$COMPILE_OUTPUT" == *"Error"* ]
-    then
-	echo "${TEAMS[$TEAM]}" has a compile error
-	echo You can find the compile errors here:
-	pwd
-	touch compile_errors.txt
-	echo "$COMPILE_OUTPUT" > compile_errors.txt
-	exit 1
-    else
-	echo Compiling successful
-	#####DEBUG
-	touch compile_errors.txt
-	echo "$COMPILE_OUTPUT" > compile_errors.txt
-    fi
-done
+	#Compile code
+	echo Compiling...
+	COMPILE_OUTPUT="$(make all -j8)"
+	if [ "$COMPILE_OUTPUT" == *"Error"* ]
+	then
+	    echo "${TEAMS[$TEAM]}" has a compile error
+	    echo You can find the compile errors here:
+	    pwd
+	    touch compile_errors.txt
+	    echo "$COMPILE_OUTPUT" > compile_errors.txt
+	    exit 1
+	else
+	    echo Compiling successful
+	    #####DEBUG
+	    touch compile_errors.txt
+	    echo "$COMPILE_OUTPUT" > compile_errors.txt
+	fi
+    done
+fi
 
 #run simulations
 cd "$START_PATH"
 STARTUP_SCRIPT_LOCATION=$FAWKES_DIR/bin/gazsim.bash
-
 for ((RUN=1 ; RUN<=$NUM_RUNS ;RUN++))
 do
     for ((TEAM1=0 ; TEAM1<$NUM_TEAMS ;TEAM1++))
