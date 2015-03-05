@@ -155,6 +155,8 @@ do
 	    replace_config collection "\"$COMPETITION_NAME\_$TIME\""
 	    export DIR_FOR_SED=$(echo $START_PATH/$MATCH_NAME/run_$RUN | sed "s/\//\\\\\//g") #creepy string because of sed
 	    replace_config log "\"$DIR_FOR_SED\""
+	    replace_config team-cyan-name "\"${TEAMS[$TEAM1]}\""
+	    replace_config team-magenta-name "\"${TEAMS[$TEAM2]}\""
 
 	    if $REPLAY
 	    then
