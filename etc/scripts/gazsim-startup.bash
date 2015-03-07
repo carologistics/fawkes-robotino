@@ -111,6 +111,11 @@ fi
 #ulimit -c unlimited
 
 case $COMMAND in
+    gazebo )
+	# change Language (in german there is an error that gazebo can not use a number with comma)
+	export LANG="en_US"
+	gazebo $REPLAY $GAZEBO_WORLD_PATH
+	;;
     gzserver ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LANG="en_US"

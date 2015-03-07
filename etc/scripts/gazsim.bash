@@ -151,55 +151,56 @@ if [  $COMMAND  == start ]; then
 	exit 1
     fi
 
+    #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
+    OPEN_COMMAND="gnome-terminal"
+
     if $START_GAZEBO
     then
 	#start gazebo
-	#server
-	gnome-terminal -t Gzserver -x bash -c "$startup_script_location -x gzserver $REPLAY $KEEP" $CLIENT
-	#client if not headless
 	if [[ -z $VISUALIZATION ]]
 	then
-	    gnome-terminal -t Gzclient -x bash -c "$startup_script_location -x gzclient $KEEP"
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Gazebo -e 'bash -c \"$startup_script_location -x gazebo $REPLAY $KEEP\"'"
+	else
+	    #run headless
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Gzserver -e 'bash -c \"$startup_script_location -x gzserver $REPLAY $KEEP\"'"
 	fi
-	sleep 25s
     fi
-    
+
     if [  $ROS  == "-r" ]; then
-	#start roscores
-	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
-	do
-            gnome-terminal --tab -t Roscore$ROBO -x bash -c "$startup_script_location -x roscore -p 1131$ROBO $KEEP"
-	done
+    	#start roscores
+    	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
+    	do
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Roscore$ROBO -e 'bash -c \"$startup_script_location -x roscore -p 1131$ROBO $KEEP\"'"
+    	done
     fi
 
     if $START_GAZEBO
     then
 	#start refbox
-	gnome-terminal -t Refbox -x bash -c "$startup_script_location -x refbox $KEEP"
-	sleep 2s
-	#start refbox shell
-	gnome-terminal --geometry=87x82 -t Refbox_Shell -x bash -c "$startup_script_location -x refbox-shell $KEEP"
-	sleep 2s
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Refbox -e 'bash -c \"$startup_script_location -x refbox $KEEP\"'"
+    	#start refbox shell
+    	OPEN_COMMAND="$OPEN_COMMAND --tab --geometry=87x82 -t Refbox_Shell -e 'bash -c \"$startup_script_location -x refbox-shell $KEEP\"'"
     fi
 
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-        gnome-terminal -t Fawkes_Robotino_$ROBO -x bash -c "$startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Robotino_$ROBO -e 'bash -c \"sleep 10s; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
     done
-
-    sleep 5s
-
 
     if $START_GAZEBO
     then
-	#start fawkes for communication, llsfrbcomm and eventually statistics
-	gnome-terminal --tab -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN"
+    	#start fawkes for communication, llsfrbcomm and eventually statistics
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Comm -e 'bash -c \"sleep 5s ; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
     fi
 
-    sleep 1s
+    # open windows
+    #echo $OPEN_COMMAND
+    eval $OPEN_COMMAND
 
     # publish initial poses
+    sleep 15s
+    echo "publish initial poses"
     $initial_pose_script_location -d
 
     else
