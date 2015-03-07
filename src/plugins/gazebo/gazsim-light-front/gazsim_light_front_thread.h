@@ -113,6 +113,12 @@ class LightFrontSimThread
   ///set interface unready and with low visibility history
   void set_interface_unready(fawkes::RobotinoLightInterface* interface);
 
+  ///get light signals of a machine from msg (returns values by reference)
+  void get_signals_from_msg(llsf_msgs::MachineSignal signal_msg,
+			    fawkes::RobotinoLightInterface::LightState* red,
+			    fawkes::RobotinoLightInterface::LightState* yellow,
+			    fawkes::RobotinoLightInterface::LightState* green);
+
   //config value for perception at the delivery-gates
   bool see_all_delivery_gates_;
   std::string interface_id_multiple_;
@@ -123,7 +129,16 @@ class LightFrontSimThread
   float deliver_ori_max_diff_;
 
   int success_visibility_history_;
+  int current_vis_history_;
   int fail_visibility_history_;
+
+  int visibility_history_increase_per_update_;
+
+  //variables needed to reset visibility history
+  int current_machine_;
+  fawkes::RobotinoLightInterface::LightState current_signal_red_;
+  fawkes::RobotinoLightInterface::LightState current_signal_yellow_;
+  fawkes::RobotinoLightInterface::LightState current_signal_green_;
 
   std::string light_pos_if_name_;
   std::string light_state_if_name_;

@@ -51,6 +51,7 @@ gazsim:
     max-distance: 0.3
     success-visibility-history: 300
     fail-visibility-history: -300
+    visibility-history-increase-per-update: 30
     see-all-delivery-gates: true
     interface-id-multiple: "/machine-signal/"
     interface-id-single: "/machine-signal/best"
