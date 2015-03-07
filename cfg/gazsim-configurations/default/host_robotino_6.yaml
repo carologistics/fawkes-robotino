@@ -42,7 +42,7 @@ clips-agent:
     robot-name: R-6
     robot-number: 6
 
-    peer-address: 127.0.0.6
+    peer-address: 127.0.0.1
     peer-recv-port: 4416
     peer-send-port: 4426
     cyan-recv-port: 4456
