@@ -1,8 +1,8 @@
 /*
- * SignalState1.h
+ * SignalState.h
  *
  *  Created on: 29.03.2014
- *      Author: ich
+ *      Author: Victor Mataré
  */
 
 #ifndef __PLUGINS_MACHINE_SIGNAL_STATE_H_

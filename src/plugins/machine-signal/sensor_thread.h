@@ -4,6 +4,7 @@
  *
  *  Created: Wed Oct 08 13:32:34 2008
  *  Copyright  2006-2008  Tim Niemueller [www.niemueller.de]
+ *                  2014  Victor Mataré
  *
  ****************************************************************************/
 

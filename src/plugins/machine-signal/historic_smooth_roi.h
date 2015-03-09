@@ -2,7 +2,7 @@
  * HistoricSmoothROI.h
  *
  *  Created on: 16.07.2014
- *      Author: ich
+ *      Author: Victor Mataré
  */
 
 #ifndef __FIREVISION_HISTORICSMOOTHROI_H_

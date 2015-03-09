@@ -2,7 +2,7 @@
  * HistoricSmoothROI.cpp
  *
  *  Created on: 16.07.2014
- *      Author: ich
+ *      Author: Victor Mataré
  */
 
 #include "historic_smooth_roi.h"

@@ -1,3 +1,9 @@
+/*
+ * SignalState.h
+ *
+ *  Created on: 29.03.2014
+ *      Author: Victor Mataré
+ */
 
 /*  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
