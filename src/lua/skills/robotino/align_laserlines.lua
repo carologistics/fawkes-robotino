@@ -53,7 +53,6 @@ skillenv.skill_module(_M)
 MIN_VIS_HIST = 10
 
 -- Variables
-local navgraph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 local tfm = require("tf_module")
 
 local map_frame = "/map"

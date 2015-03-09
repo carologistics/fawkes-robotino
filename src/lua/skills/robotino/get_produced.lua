@@ -55,9 +55,6 @@ else
    printf("NO CONFIG FOR /hardware/robotino/puck_sensor/index FOUND! Using default value\n");
 end
 
---fawkes.load_yaml_navgraph already searches in the cfg directory
-graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
-
 local LASER_FORWARD_CORRECTION = 0.17
 local LIGHT_SENSOR_DELAY_CORRECTION = 0.045
 local MIN_VIS_HIST = 15
@@ -100,7 +97,7 @@ fsm:add_transitions{
 }
 
 function GOTO_MACHINE:init()
-   self.skills[1].place = graph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
+   self.skills[1].place = navgraph:closest_node_to(self.fsm.vars.place, "highway_exit"):name()
 end
 
 function ADJUST_POS:init()
@@ -131,7 +128,7 @@ function APPROACH_AMPEL:init()
 end
 
 function LEAVE_AMPEL:init()
-   if graph:node(self.fsm.vars.place):has_property("leave_right") then
+   if navgraph:node(self.fsm.vars.place):has_property("leave_right") then
       self.skills[1].y = -0.4
       self.skills[1].vel_rot = 1
    else
