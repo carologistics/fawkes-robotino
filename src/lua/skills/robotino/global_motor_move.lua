@@ -1,8 +1,9 @@
 
 ----------------------------------------------------------------------------
---  motor_move.lua - stupidly move to some odometry position
+--  global_motor_move.lua - motor_move with global coordinates. For short
+--  distances only (no collision avoidance)!
 --
---  Copyright  2013 The Carologistics Team
+--  Copyright  2014 Victor Mataré
 ----------------------------------------------------------------------------
 
 --  This program is free software; you can redistribute it and/or modify

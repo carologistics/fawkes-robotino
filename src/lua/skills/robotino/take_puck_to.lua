@@ -2,9 +2,8 @@
 ----------------------------------------------------------------------------
 --  take_puck_to.lua
 --
---  Created: Thu Aug 14 14:32:47 2008
---  Copyright  2008  Tim Niemueller [www.niemueller.de]
---
+--  Copyright       2012  Victor Mataré
+--             2013-2015  The Carologistics Team
 ----------------------------------------------------------------------------
 
 --  This program is free software; you can redistribute it and/or modify

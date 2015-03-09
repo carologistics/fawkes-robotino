@@ -2,7 +2,7 @@
 ----------------------------------------------------------------------------
 --  motor_move.lua - stupidly move to some odometry position
 --
---  Copyright  2013 The Carologistics Team
+--  Copyright  2014 Victor Mataré
 ----------------------------------------------------------------------------
 
 --  This program is free software; you can redistribute it and/or modify

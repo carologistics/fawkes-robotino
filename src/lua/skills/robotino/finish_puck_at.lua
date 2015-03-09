@@ -2,8 +2,8 @@
 ----------------------------------------------------------------------------
 --  finish_puck_at.lua
 --
---  Created: Thu Aug 14 14:32:47 2008
---  Copyright  2008  Tim Niemueller [www.niemueller.de]
+--  Copyright  2012-2013  Victor Mataré
+--             2014-2015  The Carologistics Team
 --
 ----------------------------------------------------------------------------
 
