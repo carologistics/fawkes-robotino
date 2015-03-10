@@ -73,6 +73,9 @@
     # Max load 0 - 1 (0% - 100%)
     max_load: 0.18
 
+    # Max torque 0 - 1 (0% - 100%)
+    max_torque: 0.3
+
     # Clockwise compliance margin for RX28 PTU
 #    cw_compl_margin: 0
     # Counter-clockwise compliance margin for RX28 PTU
