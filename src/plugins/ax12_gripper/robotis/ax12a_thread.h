@@ -115,6 +115,7 @@ class GripperAX12AThread
   float        __cfg_right_close_angle;
   float        __cfg_right_close_load_angle;
   float        __cfg_max_speed;
+  float        __cfg_max_torque;
 
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;

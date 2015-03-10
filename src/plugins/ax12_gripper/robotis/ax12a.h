@@ -139,6 +139,7 @@ class RobotisAX12A
 
   static const unsigned char BROADCAST_ID;
   static const unsigned int  MAX_POSITION;
+  static const unsigned int  MAX_TORQUE;
   static const unsigned int  CENTER_POSITION;
   static const float         MAX_ANGLE_DEG;
   static const float         MAX_ANGLE_RAD;

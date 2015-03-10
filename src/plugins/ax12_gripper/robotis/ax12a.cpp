@@ -42,6 +42,7 @@
 
 const unsigned char RobotisAX12A::BROADCAST_ID             = 0xfe; /**< BROADCAST_ID */
 const unsigned int  RobotisAX12A::MAX_POSITION             = 0x3ff; /**< MAX_POSITION */
+const unsigned int  RobotisAX12A::MAX_TORQUE               = 0x3ff; /**< MAX_POSITION */
 const unsigned int  RobotisAX12A::CENTER_POSITION          = 0x1ff; /**< CENTER_POSITION */
 const unsigned int  RobotisAX12A::MAX_SPEED                = 0x3ff; /**< MAX_SPEED */
 const float         RobotisAX12A::MAX_ANGLE_DEG            = 300; /**< MAX_ANGLE_DEG */

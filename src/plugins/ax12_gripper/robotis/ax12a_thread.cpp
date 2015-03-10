@@ -103,6 +103,7 @@ GripperAX12AThread::init()
   __cfg_right_close_angle = config->get_float((__ptu_cfg_prefix + "right_close").c_str());
   __cfg_right_close_load_angle = config->get_float((__ptu_cfg_prefix + "right_close_load").c_str());
   __cfg_max_speed         = config->get_float((__ptu_cfg_prefix + "max_speed").c_str());
+  __cfg_max_torque        = config->get_float((__ptu_cfg_prefix + "max_torque").c_str());
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__ptu_cfg_prefix + "publish_transforms").c_str());
@@ -153,13 +154,20 @@ GripperAX12AThread::init()
 		       "configured as left nor as right servo", *i);
     }
   }
-  __ax12a->set_max_torque(__cfg_right_servo_id, __cfg_right_torque * 1023);
-  __ax12a->set_max_torque(__cfg_left_servo_id, __cfg_left_torque * 1023);
+  // __ax12a->set_max_torque(__cfg_right_servo_id, __cfg_max_torque * RobotisAX12A::MAX_TORQUE);
+  // __ax12a->set_max_torque(__cfg_left_servo_id, __cfg_max_torque * RobotisAX12A::MAX_TORQUE);
+  __ax12a->set_torque_limit(__cfg_right_servo_id, __cfg_max_torque * RobotisAX12A::MAX_TORQUE);
+  __ax12a->set_torque_limit(__cfg_left_servo_id, __cfg_max_torque * RobotisAX12A::MAX_TORQUE);
+  __ax12a->set_torque_enabled(__cfg_right_servo_id, true);
+  __ax12a->set_torque_enabled(__cfg_left_servo_id, true);
+  // logger->log_info(name(), "Set max torque: %f", __cfg_max_torque * RobotisAX12A::MAX_TORQUE);
   // __ax12a->set_goal_speeds(2, __cfg_left_servo_id, __cfg_max_speed * 1023, __cfg_right_servo_id, __cfg_max_speed * 1023);
   // __ax12a->set_torque_enabled(__cfg_left_servo_id, true);
   // __ax12a->set_torque_enabled(__cfg_right_servo_id, true);
   printf("left torque: %d\n", __ax12a->get_max_torque(__cfg_left_servo_id, true));
   printf("right torque: %d\n", __ax12a->get_max_torque(__cfg_right_servo_id, true));
+  printf("left torque limit: %d\n", __ax12a->get_torque_limit(__cfg_left_servo_id, true));
+  printf("right torque limit: %d\n", __ax12a->get_torque_limit(__cfg_right_servo_id, true));
   printf("left torque enabled: %d\n", __ax12a->is_torque_enabled(__cfg_left_servo_id, true));
   printf("right torque enaled: %d\n", __ax12a->is_torque_enabled(__cfg_right_servo_id, true));
   printf("left moving speed: %d\n", __ax12a->get_goal_speed(__cfg_left_servo_id, true));
@@ -457,7 +465,7 @@ GripperAX12AThread::loop()
       __wt->set_led_enabled((msg->intensity() >= 0.5));
       __led_if->set_intensity((msg->intensity() >= 0.5) ? LedInterface::ON : LedInterface::OFF);
     } else if (__led_if->msgq_first_is<LedInterface::TurnOnMessage>()) {
-      __wt->set_led_enabled(true);
+      __wt->set_led_enabled(false);
       __led_if->set_intensity(LedInterface::ON);
     } else if (__led_if->msgq_first_is<LedInterface::TurnOffMessage>()) {
       __wt->set_led_enabled(false);
@@ -986,6 +994,10 @@ GripperAX12AThread::WorkerThread::exec_goto_gripper(float left_rad, float right_
 
   __ax12a->get_angle_limits(__left_servo_id, left_min, left_max);
   __ax12a->get_angle_limits(__right_servo_id, right_min, right_max);
+
+  // recover from overload caused by last grip
+  __ax12a->set_torque_enabled(__left_servo_id, true);
+  __ax12a->set_torque_enabled(__right_servo_id, true);
 
 
   int left_pos  = (int)roundf(RobotisAX12A::POS_TICKS_PER_RAD * (left_rad - __left_offset))
