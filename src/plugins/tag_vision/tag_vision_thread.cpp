@@ -108,6 +108,18 @@ TagVisionThread::init()
     max_marker = 16;
     markers = new MarkerData[max_marker];
     tag_interfaces.resize(max_marker,NULL);
+
+    // create tag vision information interface
+    try{
+        this->tag_vision_interface_ = blackboard->open_for_writing<fawkes::TagVisionInterface>("tag_information");
+        this->tag_vision_interface_->set_frame(fv_cam_info.frame.c_str());
+    }
+    catch (std::exception &e){
+        logger->log_error(this->name(),"Could not open TagVisionInterface");
+        finalize();
+        throw;
+    }
+
 }
 
 void
@@ -128,6 +140,11 @@ TagVisionThread::finalize()
       if(tag_interfaces[i] != NULL){
           blackboard->close(tag_interfaces[i]);
       }
+  }
+  if(this->tag_vision_interface_ != NULL)
+  {
+    blackboard->close(this->tag_vision_interface_);
+    this->tag_vision_interface_ = NULL;
   }
 }
 
@@ -268,7 +285,11 @@ void TagVisionThread::create_tag_interface(size_t position){
 }
 
 void TagVisionThread::update_blackboard(size_t marker_count){
+    // update the information interface with the number of markers seen
+    this->tag_vision_interface_->set_tags_visible((int32_t)marker_count);
     for(size_t i = 0; i < max_marker; i++){
+        //update information about ids
+        this->marker_ids_[i] = markers[i].GetId();
         if(i>=marker_count){
             if(tag_interfaces[i]==NULL){
                 continue;
@@ -318,5 +339,8 @@ void TagVisionThread::update_blackboard(size_t marker_count){
 
             tag_interfaces[i]->write();
         }
+        // update the information interface with the marker information
+        this->tag_vision_interface_->set_tag_id(this->marker_ids_);
+        this->tag_vision_interface_->write();
     }
 }

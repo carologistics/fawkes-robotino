@@ -47,6 +47,11 @@
 
 #include <fvutils/adapters/iplimage.h>
 
+//interface
+#include <interfaces/TagVisionInterface.h>
+
+#define MAX_MARKERS 16
+
 namespace fawkes {
   class Position3DInterface;
 }
@@ -134,6 +139,8 @@ class TagVisionThread
   //blackboard communication
   void create_tag_interface(size_t position);
   std::vector<fawkes::Position3DInterface *> tag_interfaces;
+  fawkes::TagVisionInterface *tag_vision_interface_;
+  int32_t marker_ids_[MAX_MARKERS];
   void update_blackboard(size_t marker_count);
 
   enum ROT{

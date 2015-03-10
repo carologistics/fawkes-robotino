@@ -39,7 +39,7 @@ LDFLAGS  += "-lalvar200"
 LIBS_tag_vision = fawkescore fawkesutils fawkesaspects fvutils \
 	        fawkestf fawkesinterface fawkesblackboard \
 		   	Position3DInterface fvcams fvmodels fvclassifiers fvfilters \
-			fawkesconfig
+            fawkesconfig TagVisionInterface
 			#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_tag_vision = tag_vision_plugin.o tag_vision_thread.o
 
