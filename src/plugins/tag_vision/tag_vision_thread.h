@@ -97,34 +97,36 @@ class TagVisionThread
 
 
  private:
-  // load config from file
+  /// load config from file
   void loadConfig();
-  // fawkes 3d pose for publishing on blackboard
+  /// fawkes 3d pose for publishing on blackboard
   fawkes::Position3DInterface *pose_if_;
-  // the marker detector in alvar
+  /// the marker detector in alvar
   alvar::MarkerDetector<alvar::MarkerData> detector;
-  // the camera the detector uses
+  /// the camera the detector uses
   alvar::Camera alvar_cam;
-  // the size of a marker in millimeter
+  /// the size of a marker in millimeter
   uint marker_size;
-  // function to get the markers from an image
-  size_t get_marker();
-  // store the alvar markers, containing the poses
-  alvar::MarkerData *markers;
-  // maximum markers to detect, size for the markers array
+  /// function to get the markers from an image
+  void get_marker();
+  /// The number of detected markers
+  size_t marker_count_;
+  /// store the alvar markers, containing the poses
+  std::vector<alvar::MarkerData> *markers_;
+  /// maximum markers to detect, size for the markers array
   size_t max_marker;
 
-  // mutex for config access
+  /// mutex for config access
   fawkes::Mutex cfg_mutex;
 
-  // firevision camera
+  /// firevision camera
   firevision::Camera *fv_cam;
-  // info about the firevision camera, needed to connect
+  /// info about the firevision camera, needed to connect
   firevision::camera_info fv_cam_info;
-  // firevision image buffer
+  /// firevision image buffer
   firevision::SharedMemoryImageBuffer *shm_buffer;
   unsigned char *image_buffer;
-  // Image Buffer Id
+  /// Image Buffer Id
   std::string shm_id;
 
   // config handling
@@ -133,15 +135,14 @@ class TagVisionThread
   virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
   virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
 
-  //cv image
+  /// cv image
   IplImage *ipl;
 
   //blackboard communication
   void create_tag_interface(size_t position);
   std::vector<fawkes::Position3DInterface *> tag_interfaces;
   fawkes::TagVisionInterface *tag_vision_interface_;
-  int32_t marker_ids_[MAX_MARKERS];
-  void update_blackboard(size_t marker_count);
+  void update_blackboard();
 
   enum ROT{
       X=0,

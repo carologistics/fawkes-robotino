@@ -44,11 +44,11 @@ TagVisionThread::TagVisionThread()
     VisionAspect(VisionAspect::CYCLIC),
     ConfigurationChangeHandler(CFG_PREFIX)
 {
-    markers = NULL;
     fv_cam = NULL;
     shm_buffer = NULL;
     image_buffer = NULL;
     ipl = NULL;
+    this->markers_ = NULL;
 }
 
 void
@@ -106,7 +106,7 @@ TagVisionThread::init()
 
     // set up marker
     max_marker = 16;
-    markers = new MarkerData[max_marker];
+    this->markers_ = new std::vector<alvar::MarkerData>();
     tag_interfaces.resize(max_marker,NULL);
 
     // create tag vision information interface
@@ -126,13 +126,13 @@ void
 TagVisionThread::finalize()
 {
   blackboard->close(pose_if_);
-  delete [] markers;
-  markers = NULL;
+  // free the markers
+  this->markers_->clear();
+  delete this->markers_;
   delete fv_cam;
   fv_cam = NULL;
   delete shm_buffer;
   shm_buffer= NULL;
-  delete image_buffer;
   image_buffer = NULL;
   free(ipl);
   ipl = NULL;
@@ -173,48 +173,36 @@ TagVisionThread::loop()
     //convert img
     firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
     //get marker from img
-    size_t got = get_marker();
-    //for(size_t i = 0;i < got; i++){
-    //    logger->log_info(name(),"Tag %i: %f,%f,%f",markers[i].GetId(),markers[i].pose.translation[0],markers[i].pose.translation[1],markers[i].pose.translation[2]);
-    //}
+    get_marker();
 
-    update_blackboard(got);
+    update_blackboard();
 
-/*
-    if (pose_if_->has_writer()) {
-        pose_if_->read();
-        double *r = pose_if_->rotation();
-        tf::Quaternion pose_q(r[0], r[1], r[2], r[3]);
-        logger->log_info(name(), "Pose: (%f,%f,%f)", pose_if_->translation(0),
-                     pose_if_->translation(1), tf::get_yaw(pose_q));
-    } else {
-        logger->log_warn(name(), "No writer for pose interface");
-    }*/
     cfg_mutex.unlock();
 }
 
-size_t
+void
 TagVisionThread::get_marker()
 {
     // detect makres on image
     detector.Detect(ipl,&alvar_cam);
-    // marker count
-    size_t filled = 0;
+    // reset currently saved markers
+    this->markers_->clear();
+    this->marker_count_ = 0;
     // fill output array
-    for(size_t i=0;(i < detector.markers->size() && i < max_marker);i++){
-        Marker tmp_marker = detector.markers->at(i);
+    for(auto iterator = this->detector.markers->begin(); iterator != this->detector.markers->end(); iterator++)
+    {
+        MarkerData tmp_marker = *iterator;
         Pose tmp_pose = tmp_marker.pose;
         //skip the marker, if the pose is directly on the camera (error)
         if(tmp_pose.translation[0]<1 && tmp_pose.translation[1]<1 && tmp_pose.translation[2]<1){
             continue;
         }
-        markers[i] = detector.markers->at(i);
+        this->markers_->push_back(tmp_marker);
+        this->marker_count_++;
         // add up to markers
-        filled++;
-        markers[i].Visualize(ipl,&alvar_cam);
+        tmp_marker.Visualize(ipl,&alvar_cam);
     }
     firevision::IplImageAdapter::convert_image_yuv422_planar(ipl,image_buffer);
-    return filled;
 }
 
 void
@@ -284,32 +272,23 @@ void TagVisionThread::create_tag_interface(size_t position){
     }
 }
 
-void TagVisionThread::update_blackboard(size_t marker_count){
+void TagVisionThread::update_blackboard(){
     // update the information interface with the number of markers seen
-    this->tag_vision_interface_->set_tags_visible((int32_t)marker_count);
+    this->tag_vision_interface_->set_tags_visible((int32_t)this->marker_count_);
+    //store the marker ids
+    int32_t marker_ids[this->max_marker];
+    // loop over every possible marker
     for(size_t i = 0; i < max_marker; i++){
-        //update information about ids
-        this->marker_ids_[i] = markers[i].GetId();
-        if(i>=marker_count){
-            if(tag_interfaces[i]==NULL){
-                continue;
-            }
-            else{
-                tag_interfaces[i]->set_visibility_history(0);
-                tag_interfaces[i]->set_rotation(0,0);
-                tag_interfaces[i]->set_rotation(1,0);
-                tag_interfaces[i]->set_rotation(2,0);
-                tag_interfaces[i]->set_rotation(3,0);
-                tag_interfaces[i]->set_translation(1,0);
-                tag_interfaces[i]->set_translation(2,0);
-                tag_interfaces[i]->set_translation(3,0);
-				tag_interfaces[i]->write();
-            }
-        }
-        else{
-            //unsigned long id = markers[i].GetId();
-
-            if(tag_interfaces[i]==NULL){
+        // marker found
+        if(i < this->marker_count_)
+        {
+            //get the marker
+            MarkerData marker = this->markers_->at(i);
+            // set id info
+            marker_ids[i]=marker.GetId();
+            //no interface was declared till now
+            if(tag_interfaces[i]==NULL)
+            {
                 create_tag_interface(i);
             }
             //temp mat to get cv data
@@ -319,7 +298,7 @@ void TagVisionThread::update_blackboard(size_t marker_count){
             //create the mat
             cvInitMatHeader(&mat, 3, 1, CV_64F, rot);
             //get the quaternion of this pose in the mat
-            markers[i].pose.GetEuler(&mat);
+            marker.pose.GetEuler(&mat);
             //get the temporary quaternion in wxyz order to calculate angles
             rot[0] = CV_MAT_ELEM(mat, double, 0, 0);
             rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
@@ -330,17 +309,29 @@ void TagVisionThread::update_blackboard(size_t marker_count){
             tag_interfaces[i]->set_rotation(ROT::Z,rot[ROT::Z]*M_PI/180);
             tag_interfaces[i]->set_rotation(ROT::W,0);
             //publish the translation
-            tag_interfaces[i]->set_translation(1,markers[i].pose.translation[0]/1000);
-            tag_interfaces[i]->set_translation(2,markers[i].pose.translation[1]/1000);
-            tag_interfaces[i]->set_translation(0,markers[i].pose.translation[2]/1000);
+            tag_interfaces[i]->set_translation(1,marker.pose.translation[0]/1000);
+            tag_interfaces[i]->set_translation(2,marker.pose.translation[1]/1000);
+            tag_interfaces[i]->set_translation(0,marker.pose.translation[2]/1000);
 
             tag_interfaces[i]->set_frame(fv_cam_info.frame.c_str());
             tag_interfaces[i]->set_visibility_history(1);
 
             tag_interfaces[i]->write();
         }
-        // update the information interface with the marker information
-        this->tag_vision_interface_->set_tag_id(this->marker_ids_);
-        this->tag_vision_interface_->write();
+        // no marker found
+        else
+        {
+            //close the according interface
+            if(this->tag_interfaces[i]!=NULL)
+            {
+                this->blackboard->close(this->tag_interfaces[i]);
+                this->tag_interfaces[i]=NULL;
+            }
+            // set id info
+            marker_ids[i]=0;
+        }
     }
+    // update the information interface with the marker information
+    this->tag_vision_interface_->set_tag_id(marker_ids);
+    this->tag_vision_interface_->write();
 }
