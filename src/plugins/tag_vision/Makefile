@@ -50,27 +50,33 @@ ifneq ($(wildcard $(SYSROOT)/usr/lib64/libalvar200.so $(SYSROOT)/usr/include/alv
   HAVE_ALVAR = 1
 endif
 
-ifeq ($(HAVE_TF),1)
+ifeq ($(HAVE_TF)$(HAVE_ALVAR)$(HAVE_CPP11),111)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
-  ifeq ($(HAVE_ALVAR),1)
-    #names of the plugins you want to build
-    PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
-  else
+  #names of the plugins you want to build
+  PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
+else
+  ifneq ($(HAVE_ALVAR),1)
     WARN_TARGETS += warning_alvar
   endif
-else
-  WARN_TARGETS += warning_tf
+  ifneq ($(HAVE_TF),1)
+    WARN_TARGETS += warning_tf
+  endif
+  ifneq ($(HAVE_CPP11),1)
+    WARN_TARGETS += warning_cpp11
+  endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
 all: $(WARN_TARGETS)
   endif
-.PHONY: warning_alvar warning_tf
+.PHONY: warning_alvar warning_tf warning_cpp11
 warning_alvar:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tag-vision plugin$(TNORMAL) (ALVAR not available)"
 warning_tf:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tag-vision plugin$(TNORMAL) (tf not available)"
+warning_cpp11:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tag-vision plugin$(TNORMAL) (tf not available)"
 endif
 
