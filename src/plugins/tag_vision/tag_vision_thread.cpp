@@ -189,9 +189,8 @@ TagVisionThread::get_marker()
     this->markers_->clear();
     this->marker_count_ = 0;
     // fill output array
-    for(auto iterator = this->detector.markers->begin(); iterator != this->detector.markers->end(); iterator++)
+    for(alvar::MarkerData &tmp_marker: *(this->detector.markers))
     {
-        MarkerData tmp_marker = *iterator;
         Pose tmp_pose = tmp_marker.pose;
         //skip the marker, if the pose is directly on the camera (error)
         if(tmp_pose.translation[0]<1 && tmp_pose.translation[1]<1 && tmp_pose.translation[2]<1){
