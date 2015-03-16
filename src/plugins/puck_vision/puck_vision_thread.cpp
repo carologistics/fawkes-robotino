@@ -38,7 +38,6 @@ PuckVisionThread::PuckVisionThread()
 	cam_ = NULL;
 
 	switchInterface_ = NULL;
-	no_pucK_ = NULL;
 
 	puck_info_.main.classifier = NULL;
 	puck_info_.main.colormodel = NULL;
@@ -66,7 +65,6 @@ PuckVisionThread::createPuckInterface(){
 
 	try {
 		puck_if_ = blackboard->open_for_writing<fawkes::Position3DInterface>(interface_name.c_str());
-		puck_if_->set_visibility_history(-9999);
 		puck_if_->set_frame(camera_info_.frame.c_str());
 		puck_if_->write();
 		puck_interfaces_.push_back(puck_if_);
@@ -193,13 +191,6 @@ PuckVisionThread::init()
 
 	config->add_change_handler(this);
 
-	no_pucK_ = new puck();
-	int val_empty = -9999;
-	no_pucK_->visibiity_history = val_empty;
-	no_pucK_->cart[0] = val_empty;
-	no_pucK_->cart[1] = val_empty;
-	no_pucK_->cart[2] = val_empty;
-	no_pucK_->cart.frame_id = "/base_link";
 	drawer_ = new firevision::FilterROIDraw();
 	loadConfig();
 	init_with_config();
@@ -666,7 +657,7 @@ PuckVisionThread::getPuckPosition(puck *p, firevision::ROI roi){
 	p->cart = apply_tf(cfg_frame_target.c_str(), p->cart);
 
 	cartToPol(p->pol, p->cart[0], p->cart[1] );
-	p->visibiity_history = 1;
+	p->visibility_history = 1;
 	p->radius = position_y_in_m_L -position_y_in_m_R ;
 
 	if(cfg_debugMessagesActivated_){
@@ -675,15 +666,31 @@ PuckVisionThread::getPuckPosition(puck *p, firevision::ROI roi){
 }
 
 void
-PuckVisionThread::updatePos3dInferface(fawkes::Position3DInterface* interface, puck* p){
-	interface->set_translation(0, p->cart[0]);
-	interface->set_translation(1, p->cart[1]);
-	interface->set_translation(2, p->cart[2]);
-	interface->set_rotation(0, p->pol.phi);
-	interface->set_rotation(1, p->pol.r);
-	//interface->set_timestamp(&p->cart.stamp);
-	interface->set_frame(p->cart.frame_id.c_str());
-	interface->set_visibility_history(p->visibiity_history);
+PuckVisionThread::updatePos3dInferface(fawkes::Position3DInterface* interface, puck* p)
+{
+	int visibility_history = interface->visibility_history();
+	if (p) {
+		interface->set_translation(0, p->cart[0]);
+		interface->set_translation(1, p->cart[1]);
+		interface->set_translation(2, p->cart[2]);
+		interface->set_rotation(0, p->pol.phi);
+		interface->set_rotation(1, p->pol.r);
+		//interface->set_timestamp(&p->cart.stamp);
+		interface->set_frame(p->cart.frame_id.c_str());
+		interface->set_visibility_history(p->visibility_history);
+		if (visibility_history >= 0) {
+			interface->set_visibility_history(visibility_history + 1);
+		} else {
+			interface->set_visibility_history(1);
+		}
+	} else {
+		// puck not visible
+		if (visibility_history <= 0) {
+			interface->set_visibility_history(visibility_history - 1);
+		} else {
+			interface->set_visibility_history(-1);
+		}
+	}
 }
 
 void
@@ -700,19 +707,19 @@ PuckVisionThread::updateInterface(std::vector<puck>* pucks){
 		logger->log_info(name(),"Detected pucks in view:  %i", pucks->size());
 	}
 
-	std::vector<fawkes::Position3DInterface*>::iterator interface_it = puck_interfaces_.begin();
+	std::vector<fawkes::Position3DInterface*>::iterator interface_it =
+	  puck_interfaces_.begin();
 	std::vector<puck>::iterator puck_it = pucks->begin();
 	for (; interface_it != puck_interfaces_.end(); ++interface_it) {
 		fawkes::Position3DInterface* interface = (*interface_it);
 		if(puck_it != pucks->end()){
 			updatePos3dInferface(interface, &(*puck_it));
-			interface->write();
 			++puck_it;
 		}
 		else{
-			updatePos3dInferface(interface, no_pucK_);
-			interface->write();
+			updatePos3dInferface(interface, NULL);
 		}
+		interface->write();
 	}
 }
 

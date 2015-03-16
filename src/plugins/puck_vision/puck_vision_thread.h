@@ -116,7 +116,7 @@ struct puck{
 	Point3d cart;
 	fawkes::polar_coord_2d_t pol;
 	double radius;
-	int visibiity_history;
+	int visibility_history;
 	firevision::ROI roi;
 };
 
@@ -160,7 +160,6 @@ private:
 	std::string cfg_frame_;
 
 	firevision::Camera *cam_;
-	puck* no_pucK_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
 	//interfaces
