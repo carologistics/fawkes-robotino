@@ -40,11 +40,11 @@ gazsim:
     frame-id: "/base_laser"
  
   webcam:
-    topic-suffix: "/carologistics-robotino-3/webcam/link/webcam_sensor/image"
+    topic-suffix: "/carologistics-robotino-3/webcam_tag/link/webcam_sensor/image"
     width: 320
     height: 240
     #Shared Memory Imagebuffer name
-    shm-image-id: "gazsim_light_front"
+    shm-image-id: "gazsim_tag"
     frame: "/cam_front" #without "" in light_front.yaml?
     
   light-front:
