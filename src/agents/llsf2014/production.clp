@@ -472,18 +472,20 @@
   )
 )
 
-(defrule prod-load-unintentionally-holding-S2
-  "If we hold an S2 unintentionally load the next free T3/T4 with the highest priority that doesn't hold an S2 yet with it."
+(defrule prod-load-holding-S2
+  "If we hold an S2 load the next free T3/T4 with the highest priority that doesn't hold an S2 yet with it."
   (declare (salience ?*PRIORITY-LOAD-HOLDING-S2*))
   (phase PRODUCTION)
   (state IDLE)
   (team-color ?team-color&~nil)
   (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S2 ?l)) (junk 0)
 	   (incoming $?i&~:(member$ BRING_S2 ?i)) (name ?name_T3T4)
-	   (produced-puck NONE) (team ?team-color) (priority ?prio))
+	   (produced-puck NONE) (team ?team-color) (priority ?prio)
+	   (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0)))
   (not (machine (mtype T3|T4) (loaded-with $?l2&~:(member$ S2 ?l2)) (team ?team-color)
 		(incoming $?i2&~:(member$ BRING_S2 ?i2)) (produced-puck NONE) (junk 0)
-		(priority ?p2&:(> ?p2 ?prio))))
+		(priority ?p2&:(> ?p2 ?prio))
+		(out-of-order-until $?ooo2&:(eq (nth$ 1 ?ooo2) 0))))
   (not (proposed-task (name load-with-S2) (args $?args&:(subsetp ?args (create$ ?name_T3T4))) (state rejected)))
   (holding S2)
   (not (proposed-task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-LOAD-HOLDING-S2*))))
