@@ -65,6 +65,7 @@ void LightFrontSimThread::init()
   max_distance_ = config->get_float("/gazsim/light-front/max-distance");
   success_visibility_history_ = config->get_int("/gazsim/light-front/success-visibility-history");
   fail_visibility_history_ = config->get_int("/gazsim/light-front/fail-visibility-history");
+  visibility_history_increase_per_update_ = config->get_int("/gazsim/light-front/visibility-history-increase-per-update");
   light_state_if_name_ = config->get_string("/gazsim/light-front/interface-id-single");
   light_pos_if_name_ = config->get_string("/plugins/light_front/light_position_if");
   switch_if_name_ = config->get_string("/gazsim/light-front/interface-id-switch");
@@ -110,6 +111,7 @@ void LightFrontSimThread::init()
   localization_sub_ = gazebonode->Subscribe(config->get_string("/gazsim/topics/gps"), &LightFrontSimThread::on_localization_msg, this);
 
   new_data_ = false;
+  current_vis_history_ = 0;
 }
 
 void LightFrontSimThread::finalize()
@@ -237,10 +239,34 @@ void LightFrontSimThread::set_interface_of_nearest()
     //logger->log_info(name(), "Distance between light pos and machine (%f) is too big.\n", min_distance);
     //set ready and visibility history
     set_interface_unready(light_if_);
+    //reset visibility history
+    current_vis_history_ = 0;
   }
   else{
+    //reset visibility history if we look at another machine
+    if(index_min != current_machine_)
+    {
+      current_vis_history_ = 0;
+      current_machine_ = index_min;
+    }
+    //reset visibility history if the signal changed
+    fawkes::RobotinoLightInterface::LightState red = RobotinoLightInterface::OFF;
+    fawkes::RobotinoLightInterface::LightState yellow = RobotinoLightInterface::OFF;
+    fawkes::RobotinoLightInterface::LightState green = RobotinoLightInterface::OFF;
+    get_signals_from_msg(last_msg_.machines(index_min), &red, &yellow, &green);
+    if(red != current_signal_red_
+       || yellow != current_signal_yellow_
+       || green != current_signal_green_)
+    {
+      current_vis_history_ = 0;
+      current_signal_red_ = red;
+      current_signal_yellow_ = yellow;
+      current_signal_green_ = green;
+    }
     //printf("looking at machine :%s\n", last_msg_.machines(index_min).name().c_str());
     set_interface_to_signal(light_if_, last_msg_.machines(index_min));
+    //increase visibility history for next iteration
+    current_vis_history_ += visibility_history_increase_per_update_;
   }
 }
 
@@ -327,9 +353,35 @@ void LightFrontSimThread::set_interface_to_signal(fawkes::RobotinoLightInterface
   fawkes::RobotinoLightInterface::LightState red = RobotinoLightInterface::OFF;
   fawkes::RobotinoLightInterface::LightState yellow = RobotinoLightInterface::OFF;
   fawkes::RobotinoLightInterface::LightState green = RobotinoLightInterface::OFF;
-  for(int i = 0; i < signal.lights_size(); i++)
+  get_signals_from_msg(signal, &red, &yellow, &green);
+
+  //write interface
+  interface->set_red(red);
+  interface->set_yellow(yellow);
+  interface->set_green(green);
+  interface->set_ready(true);
+  interface->set_visibility_history(current_vis_history_);
+  interface->write();
+}
+
+void LightFrontSimThread::set_interface_unready(fawkes::RobotinoLightInterface *interface)
+{
+  interface->set_ready(false);
+  interface->set_visibility_history(fail_visibility_history_);
+  interface->write();
+}
+
+
+void LightFrontSimThread::
+get_signals_from_msg(llsf_msgs::MachineSignal signal_msg,
+		     fawkes::RobotinoLightInterface::LightState* red,
+		     fawkes::RobotinoLightInterface::LightState* yellow,
+		     fawkes::RobotinoLightInterface::LightState* green)
+{
+  //read out lights
+  for(int i = 0; i < signal_msg.lights_size(); i++)
   {
-    llsf_msgs::LightSpec light_spec = signal.lights(i);
+    llsf_msgs::LightSpec light_spec = signal_msg.lights(i);
     RobotinoLightInterface::LightState state = RobotinoLightInterface::OFF;
     switch(light_spec.state())
     {
@@ -339,24 +391,9 @@ void LightFrontSimThread::set_interface_to_signal(fawkes::RobotinoLightInterface
     }
     switch(light_spec.color())
     {
-    case llsf_msgs::RED: red = state; break;
-    case llsf_msgs::YELLOW: yellow = state; break;
-    case llsf_msgs::GREEN: green = state; break;
+    case llsf_msgs::RED: *red = state; break;
+    case llsf_msgs::YELLOW: *yellow = state; break;
+    case llsf_msgs::GREEN: *green = state; break;
     }
   }
-
-  //write interface
-  interface->set_red(red);
-  interface->set_yellow(yellow);
-  interface->set_green(green);
-  interface->set_ready(true);
-  interface->set_visibility_history(success_visibility_history_);
-  interface->write();
-}
-
-void LightFrontSimThread::set_interface_unready(fawkes::RobotinoLightInterface *interface)
-{
-  interface->set_ready(false);
-  interface->set_visibility_history(fail_visibility_history_);
-  interface->write();
 }

@@ -82,7 +82,7 @@ void MachineVision::send_lights()
   
   //build Protobuf Message
   llsf_msgs::AllMachineSignals all_machines;
-  for(int i = M1; i != R2; i++)
+  for(int i = M1; i <= R2; i++)
   {
     llsf_msgs::MachineSignal *machine_signal = all_machines.add_machines();
     //get mchine data

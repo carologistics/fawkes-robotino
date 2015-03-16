@@ -89,12 +89,9 @@ void LightControl::update()
     // printf("Red: %d\n", machine.red);
     // printf("Yellow: %d\n", machine.yellow);
     // printf("Green: %d\n", machine.green);
-    if(machine.team != MAGENTA)
-    {
-      visPub_->Publish(create_vis_msg(machine.name_link, RED, machine.red));
-      visPub_->Publish(create_vis_msg(machine.name_link, YELLOW, machine.yellow));
-      visPub_->Publish(create_vis_msg(machine.name_link, GREEN, machine.green));
-    }
+    visPub_->Publish(create_vis_msg(machine.name_link, RED, machine.red));
+    visPub_->Publish(create_vis_msg(machine.name_link, YELLOW, machine.yellow));
+    visPub_->Publish(create_vis_msg(machine.name_link, GREEN, machine.green));
   }
 }
 

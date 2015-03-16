@@ -65,6 +65,9 @@ do
 	     $initial_pose_script_location -p 11311 -x 4.4 -y 0.3 -o 0 0 0.7 0.7
 	     $initial_pose_script_location -p 11312 -x 3.45 -y 0.3 -o 0 0 0.7 0.7
 	     $initial_pose_script_location -p 11313 -x 2.5 -y 0.3 -o 0 0 0.7 0.7
+	     $initial_pose_script_location -p 11314 -x -4.4 -y 0.3 -o 0 0 0.7 0.7
+	     $initial_pose_script_location -p 11315 -x -3.45 -y 0.3 -o 0 0 0.7 0.7
+	     $initial_pose_script_location -p 11316 -x -2.5 -y 0.3 -o 0 0 0.7 0.7
 	     exit 1
 	     ;;
          ?)

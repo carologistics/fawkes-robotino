@@ -282,6 +282,11 @@ void LlsfDataTable::init_machine(MachineName number, std::string name_link, std:
   machines_[number].name = number;
   machines_[number].name_link = name_link;
   machines_[number].name_string = name_string;
+  if(!world_->GetEntity(name_link))
+  {
+    printf("Can not find machine %s\n", name_link.c_str());
+    return;
+  }
   machines_[number].x = world_->GetEntity(name_link)->GetWorldPose().pos.x;
   machines_[number].y = world_->GetEntity(name_link)->GetWorldPose().pos.y;
   machines_[number].ori = world_->GetEntity(name_link)->GetWorldPose().rot.GetAsEuler().z;

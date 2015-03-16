@@ -14,13 +14,18 @@ OPTIONS:
    -c arg         Use a specific configuration-folder
                   in cfg/gazsim-configurations/
    -n arg         Specify number Robotinos
+   -m arg         load fawkes with the specified (meta-)plugin
    -l             Run Gazebo headless
-   -r             Start ros
    -k             Keep started shells open after finish
    -s             Keep statistics and shutdown after game
    -e arg         Record replay
-   -a             Start with agent
    -d             Detailed simulation (e.g. simulated webcam)
+   -o             Omitt starting gazebo (necessary when starting
+                  different teams)
+   -f arg         First Robotino Number (default 1, choose 4 when
+                  starting as magenta)
+   -p arg         Path to the fawkes folder
+                  ($FAWKES_DIR/bin by default)
 EOF
 }
  
@@ -29,15 +34,18 @@ EOF
 COMMAND=
 CONF=
 VISUALIZATION=
-ROS=false
+ROS=-r
 AGENT=
 DETAILED=
 KEEP=
 SHUTDOWN=
 NUM_ROBOTINOS=3
+FIRST_ROBOTINO_NUMBER=1
 REPLAY=
 FAWKES_BIN=$FAWKES_DIR/bin
-while getopts “hx:c:lrksn:e:da” OPTION
+META_PLUGIN=
+START_GAZEBO=true
+while getopts “hx:c:lrksn:e:dm:aof:p:” OPTION
 do
      case $OPTION in
          h)
@@ -56,9 +64,6 @@ do
          k)
 	     KEEP=-k
              ;;
-	 r)
-	     ROS=-r
-	     ;;
 	 s)
 	     SHUTDOWN=-s
 	     #done in two steps because otherwise ps would find grep serching for the pattern
@@ -78,8 +83,20 @@ do
 	 d)
 	     DETAILED="-d"
 	     ;;
-	 a)
-	     AGENT="-a"
+	 m)
+	     META_PLUGIN="-m $OPTARG"
+	     ;;
+	 o)
+	     START_GAZEBO=false
+	     ;;
+	 r)
+	     ROS=-r
+	     ;;
+	 f)
+	     FIRST_ROBOTINO_NUMBER=$OPTARG
+	     ;;
+	 p)
+	     FAWKES_BIN=$OPTARG/bin
 	     ;;
          ?)
              usage
@@ -94,7 +111,7 @@ then
      exit 1
 fi
 
-if [ $NUM_ROBOTINOS -lt 1 ] || [ $NUM_ROBOTINOS -gt 3 ]
+if [ $NUM_ROBOTINOS -lt 0 ] || [ $NUM_ROBOTINOS -gt 6 ]
 then
      echo Number Robotinos wrong
      exit 1
@@ -105,7 +122,7 @@ fi
 
 echo 'Automated Simulation control'
 
-script_path=$FAWKES_BIN
+script_path=$FAWKES_DIR/bin
 startup_script_location=$script_path/gazsim-startup.bash 
 initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash 
 
@@ -128,65 +145,62 @@ if [  $COMMAND  == start ]; then
 	echo "FAWKES_DIR is not set"
 	exit 1
     fi
-    if ! [[ $GAZEBO_PLUGIN_PATH == *$FAWKES_DIR/lib/gazebo* ]]
+    if ! [[ $GAZEBO_PLUGIN_PATH == *lib/gazebo* ]]
     then
 	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
 	exit 1
     fi
 
-    #start gazebo
-    #server
-    gnome-terminal -t Gzserver -x bash -c "$startup_script_location -x gzserver $REPLAY $KEEP" $CLIENT
-    #client if not headless
-    if [[ -z $VISUALIZATION ]]
+    #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
+    OPEN_COMMAND="gnome-terminal"
+
+    if $START_GAZEBO
     then
-	gnome-terminal -t Gzclient -x bash -c "$startup_script_location -x gzclient $KEEP"
+	#start gazebo
+	if [[ -z $VISUALIZATION ]]
+	then
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Gazebo -e 'bash -c \"$startup_script_location -x gazebo $REPLAY $KEEP\"'"
+	else
+	    #run headless
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Gzserver -e 'bash -c \"$startup_script_location -x gzserver $REPLAY $KEEP\"'"
+	fi
     fi
-    sleep 25s
 
     if [  $ROS  == "-r" ]; then
-        #start roscores
-	gnome-terminal --tab -t Roscore1 -x bash -c "$startup_script_location -x roscore -p 11311 $KEEP"
-	if [ $NUM_ROBOTINOS -ge 2 ]
-	then
-	    sleep 1s
-	    gnome-terminal --tab -t Roscore2 -x bash -c "$startup_script_location -x roscore -p 11312 $KEEP"
-	    if [ $NUM_ROBOTINOS -ge 3 ]
-	    then
-		sleep 1s
-		gnome-terminal --tab -t Roscore3 -x bash -c "$startup_script_location -x roscore -p 11313 $KEEP"
-	    fi
-	fi
+    	#start roscores
+    	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
+    	do
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Roscore$ROBO -e 'bash -c \"$startup_script_location -x roscore -p 1131$ROBO $KEEP\"'"
+    	done
     fi
 
-    #start refbox
-    gnome-terminal -t Refbox -x bash -c "$startup_script_location -x refbox $KEEP"
-    sleep 2s
-    #start refbox shell
-    gnome-terminal --geometry=87x82 -t Refbox_Shell -x bash -c "$startup_script_location -x refbox-shell $KEEP"
-
-
-    sleep 2s
+    if $START_GAZEBO
+    then
+	#start refbox
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Refbox -e 'bash -c \"$startup_script_location -x refbox $KEEP\"'"
+    	#start refbox shell
+    	OPEN_COMMAND="$OPEN_COMMAND --tab --geometry=87x82 -t Refbox_Shell -e 'bash -c \"$startup_script_location -x refbox-shell $KEEP\"'"
+    fi
 
     #start fawkes for robotinos
-    gnome-terminal -t Fawkes_Robotino_1 -x bash -c "$startup_script_location -x fawkes -p 11311 -i robotino1 $KEEP $CONF $ROS $AGENT $DETAILED"
-    if [ $NUM_ROBOTINOS -ge 2 ]
+    for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
+    do
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Robotino_$ROBO -e 'bash -c \"sleep 10s; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
+    done
+
+    if $START_GAZEBO
     then
-	gnome-terminal --tab -t Fawkes_Robotino_2 -x bash -c "$startup_script_location -x fawkes -p 11312 -i robotino2 $KEEP $CONF $ROS $AGENT $DETAILED"
-	if [ $NUM_ROBOTINOS -ge 3 ]
-	then
-	    gnome-terminal --tab -t Fawkes_Robotino_3 -x bash -c "$startup_script_location -x fawkes -p 11313 -i robotino3 $KEEP $CONF $ROS $AGENT $DETAILED"
-	fi
+    	#start fawkes for communication, llsfrbcomm and eventually statistics
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Comm -e 'bash -c \"sleep 5s ; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
     fi
 
-    sleep 5s
-
-    #start fawkes for communication, llsfrbcomm and eventually statistics
-    gnome-terminal --tab -t Fawkes_Comm -x bash -c "$startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN"
-
-    sleep 1s
+    # open windows
+    #echo $OPEN_COMMAND
+    eval $OPEN_COMMAND
 
     # publish initial poses
+    sleep 15s
+    echo "publish initial poses"
     $initial_pose_script_location -d
 
     else

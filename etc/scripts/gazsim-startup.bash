@@ -24,7 +24,8 @@ OPTIONS:
                   Robotino instance
    -d             Detailed simulation (e.g. simulated webcam)
    -a             Start with agent
-
+   -f arg         Path to the fawkes bin folder to use
+                  ($FAWKES_DIR/bin by default)
   GAZEBO:
    -e arg         Record Replay
 EOF
@@ -44,7 +45,7 @@ VISION=,gazsim-light-front,gazsim-puck-detection
 AGENT=
 FAWKES_BIN=$FAWKES_DIR/bin
 KEEP=
-while getopts “hx:c:lrsp:i:e:da4k” OPTION
+while getopts “hx:c:lrm:sp:i:f:e:da4k” OPTION
 do
      case $OPTION in
          h)
@@ -81,6 +82,12 @@ do
          k)
              KEEP=yes
              ;;
+         m)
+             META_PLUGIN=,$OPTARG
+             ;;
+	 f)
+	     FAWKES_BIN=$OPTARG
+	     ;;
          ?)
              usage
              exit
@@ -94,14 +101,25 @@ then
      exit 1
 fi
 
+if [[ -z $GAZEBO_WORLD_PATH ]]
+then
+     echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
+     exit 1
+fi
+
 
 #ulimit -c unlimited
 
 case $COMMAND in
+    gazebo )
+	# change Language (in german there is an error that gazebo can not use a number with comma)
+	export LANG="en_US"
+	gazebo $REPLAY $GAZEBO_WORLD_PATH
+	;;
     gzserver ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LANG="en_US"
-	gzserver $REPLAY $GAZEBO_MODEL_PATH/llsf_world_2014/llsf.world
+	gzserver $REPLAY $GAZEBO_WORLD_PATH
 	;;
     gzclient ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
@@ -110,9 +128,10 @@ case $COMMAND in
 	#opti=$(command -v optirun)
 	$opti gzclient
 	;;
-    fawkes ) 
+    fawkes )
+	# ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
-	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT
+	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$META_PLUGIN
 	$FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
 	;;
     comm )

@@ -1,22 +1,23 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-#start fawkes with this configuration file if you want to control robotino 3 in the simulation
+#start fawkes with this configuration file if you want to control robotino 1 in the simulation
 
 #include main config file
 include:
   - !ignore-missing conf.d/
   #concrete configuration in an other file because I could not override config values when using a single file
   - gazsim-configurations/gazsim-config-override.yaml
-  - !host-specific gazsim-configurations/default/host_robotino_3.yaml
+  - !host-specific gazsim-configurations/default/host_robotino_5.yaml
 ---
 
 fawkes:
 
   # Main app relevant settings
   mainapp:
-    loggers: console;file/debug:debug3.log
+    loggers: console;file/debug:debug5.log
 
     net:
-      tcp_port: !tcp-port 1923
-      service_name: "Fawkes on Gazsim Robotino 3 (Cyan)"
+      tcp_port: !tcp-port 1925
+      service_name: "Fawkes on Gazsim Robotino 5 (Magenta)"
+

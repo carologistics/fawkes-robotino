@@ -64,8 +64,8 @@ void LlsfControlSimThread::init()
 
   //read config values
   post_game_simulation_shutdown_ = config->get_bool("/gazsim/llsf-control/simulation-shutdown-after-game");
-  team_name_ = config->get_string("/gazsim/llsf-control/team-name");
-  team_color_ = config->get_string("/gazsim/llsf-control/team-color");
+  team_cyan_name_ = config->get_string("/gazsim/llsf-control/team-cyan-name");
+  team_magenta_name_ = config->get_string("/gazsim/llsf-control/team-magenta-name");
   fawkes_path_ = config->get_string("/gazsim/llsf-control/fawkes-path");
   simulation_shutdown_script_ = config->get_string("/gazsim/llsf-control/simulation-shutdown-script");
   start_game_automatically_ = config->get_bool("/gazsim/llsf-control/start-game-automatically");
@@ -87,16 +87,24 @@ void LlsfControlSimThread::loop()
 {
   if(!team_sent_ && (clock->now().in_sec() - start_time_) > time_to_wait_before_set_team_)
   {
-    //set team name
-    llsf_msgs::SetTeamName msg_team;
-    msg_team.set_team_name(team_name_);
-    if(team_color_.compare("CYAN") == 0)
-      msg_team.set_team_color(llsf_msgs::Team::CYAN);
-    else if(team_color_.compare("MAGENTA") == 0)
-      msg_team.set_team_color(llsf_msgs::Team::MAGENTA);
-    else
-      logger->log_error(name(), "Unknown Team Name!");
-    set_team_name_pub_->Publish(msg_team);
+    //set team names
+    llsf_msgs::SetTeamName msg_team_cyan;
+    msg_team_cyan.set_team_name(team_cyan_name_);
+    msg_team_cyan.set_team_color(llsf_msgs::Team::CYAN);
+    set_team_name_pub_->Publish(msg_team_cyan);
+
+    llsf_msgs::SetTeamName msg_team_magenta;
+    msg_team_magenta.set_team_name(team_magenta_name_);
+    msg_team_magenta.set_team_color(llsf_msgs::Team::MAGENTA);
+    set_team_name_pub_->Publish(msg_team_magenta);
+
+    //start setup phase
+    llsf_msgs::SetGameState msg_state;
+    msg_state.set_state(llsf_msgs::GameState::RUNNING);
+    set_game_state_pub_->Publish(msg_state);
+    llsf_msgs::SetGamePhase msg_phase;
+    msg_phase.set_phase(llsf_msgs::GameState::SETUP);
+    set_game_phase_pub_->Publish(msg_phase);
 
     team_sent_ = true;
   }
