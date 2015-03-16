@@ -40,12 +40,21 @@ gazsim:
     frame-id: "/base_laser"
  
   webcam:
-    topic-suffix: "/carologistics-robotino-3/webcam_tag/link/webcam_sensor/image"
-    width: 320
-    height: 240
-    #Shared Memory Imagebuffer name
-    shm-image-id: "gazsim_tag"
-    frame: "/cam_front" #without "" in light_front.yaml?
+    # list of ids for all cameras to simulate
+    # for each id you need to add entries to the following fields 
+    shm-image-ids: ["gazsim_tag", "gazsim_puck"]
+    topic-suffixes:
+      gazsim_tag: "/carologistics-robotino-3/webcam_tag/link/webcam_sensor/image"
+      gazsim_puck: "/carologistics-robotino-3/webcam_puck/link/webcam_sensor/image"
+    widths:
+      gazsim_tag: 320
+      gazsim_puck: 320
+    heights:
+      gazsim_tag: 240
+      gazsim_puck: 240
+    frames:
+      gazsim_tag: "/cam_front"
+      gazsim_puck: "/cam_front"
     
   light-front:
     max-distance: 0.3
