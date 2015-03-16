@@ -50,6 +50,8 @@
 //interface
 #include <interfaces/TagVisionInterface.h>
 
+#include "tag_position_list.h"
+
 #define MAX_MARKERS 16
 
 namespace fawkes {
@@ -95,7 +97,6 @@ class TagVisionThread
   virtual void loop();
   virtual void finalize();
 
-
  private:
   /// load config from file
   void loadConfig();
@@ -140,9 +141,8 @@ class TagVisionThread
 
   //blackboard communication
   void create_tag_interface(size_t position);
-  std::vector<fawkes::Position3DInterface *> tag_interfaces;
-  fawkes::TagVisionInterface *tag_vision_interface_;
-  void update_blackboard();
+  TagPositionList *tag_interfaces;
+
 
   enum ROT{
       X=0,
@@ -150,6 +150,7 @@ class TagVisionThread
       Z=2,
       W=3
   };
+
 };
 
 #endif

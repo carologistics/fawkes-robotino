@@ -107,25 +107,13 @@ TagVisionThread::init()
     // set up marker
     max_marker = 16;
     this->markers_ = new std::vector<alvar::MarkerData>();
-    tag_interfaces.resize(max_marker,NULL);
-
-    // create tag vision information interface
-    try{
-        this->tag_vision_interface_ = blackboard->open_for_writing<fawkes::TagVisionInterface>("tag_information");
-        this->tag_vision_interface_->set_frame(fv_cam_info.frame.c_str());
-    }
-    catch (std::exception &e){
-        logger->log_error(this->name(),"Could not open TagVisionInterface");
-        finalize();
-        throw;
-    }
+    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,fv_cam_info.frame,this->name(),this->logger);
 
 }
 
 void
 TagVisionThread::finalize()
 {
-  blackboard->close(pose_if_);
   // free the markers
   this->markers_->clear();
   delete this->markers_;
@@ -136,16 +124,7 @@ TagVisionThread::finalize()
   image_buffer = NULL;
   free(ipl);
   ipl = NULL;
-  for(size_t i =0; i < tag_interfaces.size(); i++){
-      if(tag_interfaces[i] != NULL){
-          blackboard->close(tag_interfaces[i]);
-      }
-  }
-  if(this->tag_vision_interface_ != NULL)
-  {
-    blackboard->close(this->tag_vision_interface_);
-    this->tag_vision_interface_ = NULL;
-  }
+  delete this->tag_interfaces;
 }
 
 void
@@ -175,7 +154,7 @@ TagVisionThread::loop()
     //get marker from img
     get_marker();
 
-    update_blackboard();
+    this->tag_interfaces->update_blackboard(*(this->markers_));
 
     cfg_mutex.unlock();
 }
@@ -253,84 +232,4 @@ void TagVisionThread::config_value_changed(const fawkes::Configuration::ValueIte
     }
      // gets called for every changed entry... so init is called once per change.
     cfg_mutex.unlock();
-}
-
-void TagVisionThread::create_tag_interface(size_t position){
-    Position3DInterface *new_interface = NULL;
-    string interface_name = "tag_" + to_string(position);
-    try{
-        new_interface = blackboard->open_for_writing<Position3DInterface>(interface_name.c_str());
-        new_interface->set_visibility_history(-9999);
-        new_interface->set_frame(fv_cam_info.frame.c_str());
-        new_interface->write();
-        tag_interfaces[position] = new_interface;
-    }
-    catch (std::exception &e){
-        finalize();
-        throw;
-    }
-}
-
-void TagVisionThread::update_blackboard(){
-    // update the information interface with the number of markers seen
-    this->tag_vision_interface_->set_tags_visible((int32_t)this->marker_count_);
-    //store the marker ids
-    int32_t marker_ids[this->max_marker];
-    // loop over every possible marker
-    for(size_t i = 0; i < max_marker; i++){
-        // marker found
-        if(i < this->marker_count_)
-        {
-            //get the marker
-            MarkerData marker = this->markers_->at(i);
-            // set id info
-            marker_ids[i]=marker.GetId();
-            //no interface was declared till now
-            if(tag_interfaces[i]==NULL)
-            {
-                create_tag_interface(i);
-            }
-            //temp mat to get cv data
-            CvMat mat;
-            //angles in heading attitude bank
-            double rot[3];
-            //create the mat
-            cvInitMatHeader(&mat, 3, 1, CV_64F, rot);
-            //get the quaternion of this pose in the mat
-            marker.pose.GetEuler(&mat);
-            //get the temporary quaternion in wxyz order to calculate angles
-            rot[0] = CV_MAT_ELEM(mat, double, 0, 0);
-            rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
-            rot[2] = CV_MAT_ELEM(mat, double, 2, 0);
-            //publish the angles
-            tag_interfaces[i]->set_rotation(ROT::X,rot[ROT::X]*M_PI/180);
-            tag_interfaces[i]->set_rotation(ROT::Y,rot[ROT::Y]*M_PI/180);
-            tag_interfaces[i]->set_rotation(ROT::Z,rot[ROT::Z]*M_PI/180);
-            tag_interfaces[i]->set_rotation(ROT::W,0);
-            //publish the translation
-            tag_interfaces[i]->set_translation(1,marker.pose.translation[0]/1000);
-            tag_interfaces[i]->set_translation(2,marker.pose.translation[1]/1000);
-            tag_interfaces[i]->set_translation(0,marker.pose.translation[2]/1000);
-
-            tag_interfaces[i]->set_frame(fv_cam_info.frame.c_str());
-            tag_interfaces[i]->set_visibility_history(1);
-
-            tag_interfaces[i]->write();
-        }
-        // no marker found
-        else
-        {
-            //close the according interface
-            if(this->tag_interfaces[i]!=NULL)
-            {
-                this->blackboard->close(this->tag_interfaces[i]);
-                this->tag_interfaces[i]=NULL;
-            }
-            // set id info
-            marker_ids[i]=0;
-        }
-    }
-    // update the information interface with the marker information
-    this->tag_vision_interface_->set_tag_id(marker_ids);
-    this->tag_vision_interface_->write();
 }
