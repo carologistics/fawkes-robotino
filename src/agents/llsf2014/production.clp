@@ -404,7 +404,8 @@
 			(resource P3-ONLY))) ;only if there is no other P3 agent
   (not (no-more-needed P3))
   (or (game-time $?time&:(< (nth$ 1 ?time) ?*TIME-P3-PRODUCTION-WITHOUT-LEAVING*))
-      (deliver ?team-color ? ?del-x ?del-y&:(> (distance ?del-x ?del-y ?t5-x ?t5-y) ?*MAX-T5-LEAVE-DISTANCE*)))
+      (and (deliver ?team-color ? ?del-x ?del-y&:(> (distance ?del-x ?del-y ?t5-x ?t5-y) ?*MAX-T5-LEAVE-DISTANCE*))
+	   (not (puck-storage (puck ?loaded) (incoming $?storage-incoming&:(or (eq ?loaded P3) (member$ P3 ?storage-incoming)))))))
   =>
   (printout t "PROD: PRODUCE P3 at T5 " ?name " without waiting" crlf)
   (assert (proposed-task (name produce-with-S0) (args (create$ ?name)) (priority ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))
