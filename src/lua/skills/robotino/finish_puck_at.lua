@@ -43,8 +43,6 @@ local mtype = ""
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
---fawkes.load_yaml_navgraph already searches in the cfg directory
-graph = fawkes.load_yaml_navgraph("navgraph-llsf.yaml")
 
 function end_rfid()
    printf(mpos.delivery_goto[fsm.vars.goto_name].d_skill)
@@ -149,7 +147,7 @@ function SKILL_DRIVE_TO:init()
 end
 
 function SKILL_DRIVE_LEFT:init()
-   if graph:node(self.fsm.vars.goto_name):has_property("leave_right") then
+   if navgraph:node(self.fsm.vars.goto_name):has_property("leave_right") then
       self.skills[1].y = -0.48
       self.skills[1].vel_rot = 1
       self.skills[1].ori = -1.3
