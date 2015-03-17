@@ -97,8 +97,8 @@ void LlsfStatisticsSimThread::on_game_state_msg(ConstGameStatePtr &msg)
   //logger->log_info(name(), "Got GameState message");
   if(msg->phase() == llsf_msgs::GameState::EXPLORATION)
   {
-    exp_points_magenta_ = msg->points_cyan();
-    exp_points_cyan_ = msg->points_magenta();
+    exp_points_magenta_ = msg->points_magenta();
+    exp_points_cyan_ = msg->points_cyan();
   }
   else if(msg->phase() == llsf_msgs::GameState::PRODUCTION)
   {
