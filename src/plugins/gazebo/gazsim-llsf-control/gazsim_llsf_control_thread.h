@@ -91,10 +91,10 @@ class LlsfControlSimThread
 
   //helper variables
   fawkes::Time start_time_;
+  fawkes::Time shutdown_initiated_time_;
   bool team_sent_;
   bool start_sent_;
   bool shutdown_initiated_;
-  float shutdown_initiated_time_;
 };
 
 #endif
