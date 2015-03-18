@@ -21,7 +21,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
       // set the frame of the interface
       interface->set_frame(frame.c_str());
       // generate a helper class and push it into this vector
-      this->push_back(new TagPositionIntreface(interface));
+      this->push_back(new TagPositionIntreface(interface, i));
     }
     catch (std::exception &e)
     {
@@ -99,10 +99,9 @@ void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> marker_li
   }
   // update blackboard with interfaces
   u_int32_t visible_markers = 0;
-  for(size_t i=0; i < this->size(); i++)
+  for(TagPositionIntreface *interface: *this)
   {
-    TagPositionIntreface *interface = this->at(i);
-    this->tag_vision_interface_->set_tag_id(i, interface->marker_id());
+    this->tag_vision_interface_->set_tag_id(interface->vector_position(), interface->marker_id());
     if(interface->marker_id() != EMPTY_INTERFACE_MARKER_ID)
     {
       visible_markers++;
