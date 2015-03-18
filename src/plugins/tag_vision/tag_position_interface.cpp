@@ -1,8 +1,9 @@
 #include "tag_position_interface.h"
 
-TagPositionIntreface::TagPositionIntreface(fawkes::Position3DInterface *position_interface)
+TagPositionIntreface::TagPositionIntreface(fawkes::Position3DInterface *position_interface, u_int32_t vector_position)
 {
   this->interface_ = position_interface;
+  this->vector_position_ = vector_position;
   this->visibility_history_ = 0;
   this->marker_id_ = 0;
   this->touched_ = false;

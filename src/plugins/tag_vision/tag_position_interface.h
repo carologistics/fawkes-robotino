@@ -20,7 +20,7 @@ class TagPositionIntreface
 
 public:
   // constructor
-  TagPositionIntreface(fawkes::Position3DInterface *position_interface);
+  TagPositionIntreface(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_);
   // destructor
   ~TagPositionIntreface();
 
@@ -39,6 +39,9 @@ public:
   // get the interface
   fawkes::Position3DInterface *interface() { return this->interface_; }
 
+  // get the vector position
+  u_int32_t vector_position(){ return this->vector_position_; }
+
 private:
   // the interface to handle
   fawkes::Position3DInterface *interface_;
@@ -51,6 +54,9 @@ private:
 
   // the id of the marker the interface represents
   u_int32_t marker_id_;
+
+  // the position of the interface in the vector
+  u_int32_t vector_position_;
 };
 
 #endif // TAG_POSITION_INTREFACE_H
