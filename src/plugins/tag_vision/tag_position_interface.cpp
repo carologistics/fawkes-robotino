@@ -58,6 +58,11 @@ void TagPositionIntreface::write()
   {
     this->visibility_history_--;
   }
+  // empty marker id if the tag is no longer visible
+  if(this->marker_id_ != EMPTY_INTERFACE_MARKER_ID && this->visibility_history_ < 0)
+  {
+    this->marker_id_ = EMPTY_INTERFACE_MARKER_ID;
+  }
   // set the new visibility history
   this->interface_->set_visibility_history(this->visibility_history_);
   // write out the interface
