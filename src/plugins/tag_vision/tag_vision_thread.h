@@ -110,8 +110,6 @@ class TagVisionThread
   uint marker_size;
   /// function to get the markers from an image
   void get_marker();
-  /// The number of detected markers
-  size_t marker_count_;
   /// store the alvar markers, containing the poses
   std::vector<alvar::MarkerData> *markers_;
   /// maximum markers to detect, size for the markers array

@@ -166,7 +166,6 @@ TagVisionThread::get_marker()
     detector.Detect(ipl,&alvar_cam);
     // reset currently saved markers
     this->markers_->clear();
-    this->marker_count_ = 0;
     // fill output array
     for(alvar::MarkerData &tmp_marker: *(this->detector.markers))
     {
@@ -176,7 +175,6 @@ TagVisionThread::get_marker()
             continue;
         }
         this->markers_->push_back(tmp_marker);
-        this->marker_count_++;
         // add up to markers
         tmp_marker.Visualize(ipl,&alvar_cam);
     }
