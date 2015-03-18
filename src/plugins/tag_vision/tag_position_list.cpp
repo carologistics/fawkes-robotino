@@ -83,7 +83,7 @@ void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> marker_li
         marker_interface = interface;
       }
       // assign empty interface
-      if(interface->marker_id() == EMPTY_INTERFACE_MARKER_ID)
+      if(empty_interface == NULL && interface->marker_id() == EMPTY_INTERFACE_MARKER_ID)
       {
         empty_interface = interface;
       }
