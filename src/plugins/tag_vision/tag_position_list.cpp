@@ -16,10 +16,12 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
     // create the interface and store
     try
     {
+      // get an interface from the blackboard
       auto interface = this->blackboard_->open_for_writing<fawkes::Position3DInterface>(interface_name.c_str());
+      // set the frame of the interface
       interface->set_frame(frame.c_str());
-      interface->set_visibility_history(0);
-      this->push_back(interface);
+      // generate a helper class and push it into this vector
+      this->push_back(new TagPositionIntreface(interface));
     }
     catch (std::exception &e)
     {
@@ -27,12 +29,6 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
       throw(e);
     }
   }
-
-  // initilize touched marker
-  this->touched_.assign(this->max_markers_, false);
-
-  // initialize the id positions
-  this->ids_ = new int32_t[max_markers];
 
   // initialize tag info interface
   try
@@ -51,14 +47,18 @@ TagPositionList::~TagPositionList()
   // close all blackboards
   for(size_t i=0; i < this->max_markers_; i++)
   {
-    this->blackboard_->close(this->at(i));
+    this->blackboard_->close(this->at(i)->interface());
   }
 
-  // free the ids
-  delete [] this->ids_;
 
   // close tag vision interface
   this->blackboard_->close(this->tag_vision_interface_);
+
+  // delete this interfaces
+  for(auto &&interface: *this)
+  {
+    delete interface;
+  }
 }
 
 void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> marker_list)
@@ -71,73 +71,44 @@ void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> marker_li
         continue;
     }
     // get the id of the marker
-    int32_t marker_id=marker.GetId();
-    // if the marker was not seen recently add it
-    if(this->mapping_.find(marker_id) == this->mapping_.end())
+    u_int32_t marker_id=marker.GetId();
+
+    // find an interface with this marker assigned or an empty interface
+    TagPositionIntreface *marker_interface = NULL;
+    TagPositionIntreface *empty_interface = NULL;
+    for(TagPositionIntreface *interface: *this)
     {
-      // find free interface
-      int position;
-      for(position = 0; position < (int)this->size() ;position++)
+      // assign marker_interface
+      if(interface->marker_id() == marker_id){
+        marker_interface = interface;
+      }
+      // assign empty interface
+      if(interface->marker_id() == EMPTY_INTERFACE_MARKER_ID)
       {
-        fawkes::Position3DInterface *interface = this->at(position);
-        if(interface->visibility_history() < 0)
-        {
-          // reinit the interface by setting the visibillity history to 0
-          interface->set_visibility_history(0);
-          break;
-        }
+        empty_interface = interface;
       }
-      this->mapping_[marker_id]=position;
-      // get new position
     }
-    // a position for the marker exists here, so set the interface information
-    fawkes::Position3DInterface *interface_to_set = this->at((this->mapping_)[marker_id]);
-    //temp mat to get cv data
-    CvMat mat;
-    //angles in heading attitude bank
-    double rot[3];
-    //create the mat
-    cvInitMatHeader(&mat, 3, 1, CV_64F, rot);
-    //get the quaternion of this pose into the mat
-    marker.pose.GetEuler(&mat);
-    //get the temporary quaternion in wxyz order to calculate angles
-    rot[0] = CV_MAT_ELEM(mat, double, 0, 0);
-    rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
-    rot[2] = CV_MAT_ELEM(mat, double, 2, 0);
-    //publish the angles
-    interface_to_set->set_rotation(ROT::X,rot[ROT::X]*M_PI/180);
-    interface_to_set->set_rotation(ROT::Y,rot[ROT::Y]*M_PI/180);
-    interface_to_set->set_rotation(ROT::Z,rot[ROT::Z]*M_PI/180);
-    interface_to_set->set_rotation(ROT::W,0);
-    //publish the translation
-    interface_to_set->set_translation(1,marker.pose.translation[0]/1000);
-    interface_to_set->set_translation(2,marker.pose.translation[1]/1000);
-    interface_to_set->set_translation(0,marker.pose.translation[2]/1000);
-
-    //interface_to_set->set_frame(fv_cam_info.frame.c_str());
-    interface_to_set->set_visibility_history(interface_to_set->visibility_history() + 1);
-
-    // write interface
-    interface_to_set->write();
-    // update position
-    this->touched_[this->mapping_[marker_id]]=true;
-
-    this->tag_vision_interface_->set_tag_id(this->mapping_[marker_id],marker_id);
-  }
-  // update remaining interfaces
-  for (size_t i=0; i < this->size(); i++)
-  {
-    if(!this->touched_[i])
+    // if no marker interface is found, assign the empty interface and assign the marker id
+    if(marker_interface == NULL)
     {
-      fawkes::Position3DInterface *interface=this->at(i);
-      int32_t new_history = interface->visibility_history() - 1;
-      interface->set_visibility_history(new_history);
-      if(new_history < 0){
-        this->tag_vision_interface_->set_tag_id(i,0);
-      }
+      marker_interface = empty_interface;
+      marker_interface->set_marker_id(marker_id);
     }
+    // continue with the marker interface
+    marker_interface->set_pose(tmp_pose);
   }
+  // update blackboard with interfaces
+  u_int32_t visible_markers = 0;
+  for(size_t i=0; i < this->size(); i++)
+  {
+    TagPositionIntreface *interface = this->at(i);
+    this->tag_vision_interface_->set_tag_id(i, interface->marker_id());
+    if(interface->marker_id() != EMPTY_INTERFACE_MARKER_ID)
+    {
+      visible_markers++;
+    }
+    interface->write();
+  }
+  this->tag_vision_interface_->set_tags_visible(visible_markers);
   this->tag_vision_interface_->write();
-  // reset touched
-  this->touched_.assign(this->max_markers_, false);
 }

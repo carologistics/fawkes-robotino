@@ -36,6 +36,9 @@ public:
   // set the marker id
   void set_marker_id(u_int32_t new_id);
 
+  // get the interface
+  fawkes::Position3DInterface *interface() { return this->interface_; }
+
 private:
   // the interface to handle
   fawkes::Position3DInterface *interface_;
