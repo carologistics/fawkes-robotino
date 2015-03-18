@@ -61,9 +61,9 @@ TagPositionList::~TagPositionList()
   }
 }
 
-void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> marker_list)
+void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_list)
 {
-  for(alvar::MarkerData& marker: marker_list)
+  for(alvar::MarkerData& marker: *marker_list)
   {
     // skip the marker, if the pose is directly on the camera (error)
     alvar::Pose tmp_pose = marker.pose;

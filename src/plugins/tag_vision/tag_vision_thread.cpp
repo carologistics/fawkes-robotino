@@ -154,7 +154,7 @@ TagVisionThread::loop()
     //get marker from img
     get_marker();
 
-    this->tag_interfaces->update_blackboard(*(this->markers_));
+    this->tag_interfaces->update_blackboard(this->markers_);
 
     cfg_mutex.unlock();
 }

@@ -27,7 +27,7 @@ public:
   /// Destructor
   ~TagPositionList();
   /// Update the blackboard with the stored data
-  void update_blackboard(std::vector<alvar::MarkerData> marker_list);
+  void update_blackboard(std::vector<alvar::MarkerData> *marker_list);
 
 private:
   /// how many markers can be detected at the same time
