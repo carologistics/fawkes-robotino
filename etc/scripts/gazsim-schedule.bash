@@ -172,11 +172,14 @@ do
 	    #start team cyan
 	    echo "Starting Team CYAN: ${TEAMS[$TEAM1]}"
 	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM1]}"
-	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM1]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM1]}
+	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM1]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM1]} &
+
+	    sleep 3s
+
 	    #start team magenta
 	    echo "Starting Team MAGENTA: ${TEAMS[$TEAM2]}"
 	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM2]}"
-	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM2]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM2]}
+	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM2]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM2]} &
 
 	    #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	    echo Waiting for shutdown of the simulation
