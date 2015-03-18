@@ -230,7 +230,7 @@ GripperAX12AThread::init()
   __wt->start();
   __wt->set_enabled(true);
   if ( __cfg_goto_zero_start ) {
-    __wt->goto_gripper_timed(__cfg_left_start, __cfg_right_start, 3.0);
+    __wt->goto_gripper(__cfg_left_start, __cfg_right_start);
   }
 
   // printf("speeds from init to: %f, %f\n", __cfg_max_speed, __cfg_max_speed);
