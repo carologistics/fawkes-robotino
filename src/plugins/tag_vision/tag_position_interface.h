@@ -7,6 +7,8 @@
 
 #include <alvar/Pose.h>
 
+#define EMPTY_INTERFACE_MARKER_ID 0
+
 class TagPositionIntreface
 {
   enum ROT{
