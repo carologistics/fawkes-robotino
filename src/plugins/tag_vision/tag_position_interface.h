@@ -9,6 +9,13 @@
 
 class TagPositionIntreface
 {
+  enum ROT{
+      X=0,
+      Y=1,
+      Z=2,
+      W=3
+  };
+
 public:
   // constructor
   TagPositionIntreface(fawkes::Position3DInterface *position_interface);
@@ -16,7 +23,7 @@ public:
   ~TagPositionIntreface();
 
   // update the position of the interface
-  void set_position(alvar::Pose);
+  void set_pose(alvar::Pose new_pose);
 
   // write the interface on the blackboard
   void write();
