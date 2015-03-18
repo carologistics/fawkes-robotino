@@ -100,8 +100,6 @@ class TagVisionThread
  private:
   /// load config from file
   void loadConfig();
-  /// fawkes 3d pose for publishing on blackboard
-  fawkes::Position3DInterface *pose_if_;
   /// the marker detector in alvar
   alvar::MarkerDetector<alvar::MarkerData> detector;
   /// the camera the detector uses
@@ -138,7 +136,6 @@ class TagVisionThread
   IplImage *ipl;
 
   //blackboard communication
-  void create_tag_interface(size_t position);
   TagPositionList *tag_interfaces;
 
 
