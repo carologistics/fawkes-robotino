@@ -146,6 +146,7 @@ class GripperAX12AThread
     void get_gripper(float &left, float &right);
     void get_gripper(float &left, float &right, fawkes::Time &time);
     void set_velocities(float left_vel, float right_vel);
+    void set_velocities_normalized(float left_vel, float right_vel);
     void get_velocities(float &left_vel, float &right_vel);
     void get_loads(unsigned int &left, unsigned int &right);
     void set_margins(float left_margin, float right_margin);

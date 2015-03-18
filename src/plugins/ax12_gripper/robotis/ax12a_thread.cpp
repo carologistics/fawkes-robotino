@@ -234,7 +234,8 @@ GripperAX12AThread::init()
   }
 
   // printf("speeds from init to: %f, %f\n", __cfg_max_speed, __cfg_max_speed);
-  __wt->set_velocities(__cfg_max_speed, __cfg_max_speed);
+  // __wt->set_velocities(__cfg_max_speed, __cfg_max_speed);
+  __wt->set_velocities_normalized(__cfg_max_speed, __cfg_max_speed);
 
   bbil_add_message_interface(__gripper_if);
   bbil_add_message_interface(__leftjoint_if);
@@ -743,6 +744,16 @@ GripperAX12AThread::WorkerThread::set_velocities(float left_vel, float right_vel
     __logger->log_warn(name(), "Calculated right value out of bounds, min: 0  max: %u  des: %u",
 		       RobotisAX12A::MAX_SPEED, (unsigned int)right_tmp);
   }
+}
+
+/** Set desired velocities normalized.
+ * @param left_vel left velocity ( 0 - 1 )
+ * @param right_vel right velocity ( 0 - 1 )
+ */
+void
+GripperAX12AThread::WorkerThread::set_velocities_normalized(float left_vel, float right_vel)
+{
+  return set_velocities(left_vel * __max_left_speed, right_vel * __max_right_speed);
 }
 
 
