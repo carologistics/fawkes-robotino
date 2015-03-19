@@ -189,16 +189,27 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
 
       *r += "</tr>\n";
 
-      r->append_body("<tr id=\"game-%s-desc\"><td valign=\"top\">Events</td><td colspan=\"6\">",
+      r->append_body("<tr id=\"game-%s-time\">"
+		     "<td valign=\"top\">Game Time</td>"
+		     "<td colspan=\"6\">"
+		     "%s to %s</td></tr>\n",
+		     doc["_id"].OID().str().c_str(),
+		     doc["start-time"].Date().toString().c_str(),
+		     doc["end-time"].Date().toString().c_str());
+
+      r->append_body("<tr id=\"game-%s-desc\">"
+		     "<td valign=\"top\"><div style=\"margin-top: 12px\">Events</div></td>"
+		     "<td colspan=\"6\"><table>"
+		     "<tr><th>Team</th><th>Points</th><th>Game Time</th><th>Reason</th></tr>\n",
 		     doc["_id"].OID().str().c_str());
       std::vector<BSONElement> pointinfo = doc["points"].Array();
       for (const BSONElement &pd : pointinfo) {
-	r->append_body("<span style=\"background-color: #%s\">%s</span> scored %lu points at %.2f: %s<br/>\n",
+	r->append_body("<tr><td style=\"background-color: #%s\">%s</td><td>%lu</td><td>%.2f</td><td>%s</td></tr>\n",
 		       pd["team"].String() == "CYAN" ? "88ffff" : "ff88ff",
 		       pd["team"].String().c_str(), pd["points"].Long(),
 		       pd["game-time"].Double(), pd["reason"].String().c_str());
       }
-      *r += "</td></tr>\n";
+      *r += "</table></td></tr>\n";
 
       if (doc.hasField("orders")) {
 	r->append_body("<tr id=\"game-%s-orders\">"
@@ -246,23 +257,26 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
       r->append_body
 	("    $(\"#game-%s\").click(function(){\n"
 	 "      if ( $(\"#game-%s-desc\").is(\":visible\") ) {\n"
+	 "        $(\"#game-%s-time\").hide();\n"
 	 "        $(\"#game-%s-desc\").hide();\n"
 	 "        $(\"#game-%s-orders\").hide();\n"
 	 "        $(\"#game-%s-machines\").hide();\n"
 	 "        $(\"#game-%s-icon\").attr(\"src\", \"/static/images/icon-triangle-e.png\");\n"
 	 "      } else {\n"
+	 "        $(\"#game-%s-time\").show();\n"
 	 "        $(\"#game-%s-desc\").show();\n"
 	 "        $(\"#game-%s-orders\").show();\n"
 	 "        $(\"#game-%s-machines\").show();\n"
 	 "        $(\"#game-%s-icon\").attr(\"src\", \"/static/images/icon-triangle-s.png\");\n"
 	 "      }\n"
 	 "    });\n"
+	 "    $(\"#game-%s-time\").hide();\n"
 	 "    $(\"#game-%s-desc\").hide();\n"
 	 "    $(\"#game-%s-orders\").hide();\n"
 	 "    $(\"#game-%s-machines\").hide();\n",
 	 gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(),
 	 gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(),
-	 gr.c_str(), gr.c_str(), gr.c_str());
+	 gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str());
 	}
     *r +=
       "  });\n"
