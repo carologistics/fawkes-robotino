@@ -149,15 +149,6 @@ do
 	    mkdir -p "$MATCH_NAME/run_$RUN"
 	    cd "$MATCH_NAME/run_$RUN"
 
-	    #set config values for automated control
-	    replace_config run $RUN
-	    replace_config configuration-name "\"$MATCH_NAME\_run_$RUN\""
-	    replace_config collection "\"$COMPETITION_NAME\_$TIME\""
-	    export DIR_FOR_SED=$(echo $START_PATH/$MATCH_NAME/run_$RUN | sed "s/\//\\\\\//g") #creepy string because of sed
-	    replace_config log "\"$DIR_FOR_SED\""
-	    replace_config team-cyan-name "\"${TEAMS[$TEAM1]}\""
-	    replace_config team-magenta-name "\"${TEAMS[$TEAM2]}\""
-
 	    if $REPLAY
 	    then
 		REPLAY_PATH="$START_PATH/$MATCH_NAME/run_$RUN"
@@ -178,6 +169,15 @@ do
 		TEAM_CYAN=$TEAM2
 		TEAM_MAGENTA=$TEAM1
 	    fi
+
+	    #set config values for automated control
+	    replace_config run $RUN
+	    replace_config configuration-name "\"$MATCH_NAME\_run_$RUN\""
+	    replace_config collection "\"$COMPETITION_NAME\_$TIME\""
+	    export DIR_FOR_SED=$(echo $START_PATH/$MATCH_NAME/run_$RUN | sed "s/\//\\\\\//g") #creepy string because of sed
+	    replace_config log "\"$DIR_FOR_SED\""
+	    replace_config team-cyan-name "\"${TEAMS[$TEAM_CYAN]}\""
+	    replace_config team-magenta-name "\"${TEAMS[$TEAM_MAGENTA]}\""
 
 	    # start simulation
 	    echo Starting gazbeo
