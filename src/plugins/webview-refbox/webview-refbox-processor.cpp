@@ -77,6 +77,16 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
     std::string subpath = request->url().substr(baseurl_.length());
 
     WebPageReply *r = new WebPageReply("RCLL RefBox");
+    r->set_html_header("  <link type=\"text/css\" href=\"/static/css/jqtheme/"
+		       "jquery-ui.custom.css\" rel=\"stylesheet\" />\n"
+		       "  <script type=\"text/javascript\" src=\"/static/js/"
+		       "jquery.min.js\"></script>\n"
+		       "  <script type=\"text/javascript\" src=\"/static/js/"
+		       "jquery-ui.custom.min.js\"></script>\n");
+    *r +=
+      "<style type=\"text/css\">\n"
+      "  .game-link { color: black; font-weight: bold; }\n"
+      "</style>";
 
     *r += "<h2>RCLL RefBox Database Report</h2>\n";
 
@@ -100,8 +110,8 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
       r->append_body("<tr><td><b>Started at:</b></td>\n"
 		     "<td>%s</td></tr>\n", doc["start-time"].Date().toString().c_str());
       r->append_body("<tr><td><b>Points:</b></td>\n"
-		     "<td style=\"background-color: #aaaaaa\"><span style=\"color: #00ffff\">%u</span> "
-		     ": <span style=\"color: #ff00ff\">%u</span></td></tr>\n",
+		     "<td><span style=\"background-color: #88ffff\">%u</span> "
+		     ": <span style=\"background-color: #ff88ff\">%u</span></td></tr>\n",
 		     points[0].Long(), points[1].Long());
 
       r->append_body("<tr><td><b>Points Cyan:</b></td>\n"
@@ -129,10 +139,11 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
 
     *r +=
       "<table>\n"
-      "<tr><th>Teams</th><th>Points</th><th colspan=\"2\">Points Cyan</th>"
+      "<tr><th>Teams</th><th colspan=\"2\">Points</th><th colspan=\"2\">Points Cyan</th>"
       "<th colspan=\"2\">Points Magenta</th></tr>\n";
 
     std::map<std::string, unsigned int> games_won;
+    std::list<std::string> reports;
 
     while (cursor->more()) {
       BSONObj doc = cursor->next();
@@ -154,11 +165,16 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
 	}
       }
 
-      r->append_body("<tr><td><b>%s vs. %s</b></td>\n",
+      reports.push_back(doc["_id"].OID().str());
+
+      r->append_body("<tr><td><a id=\"game-%s\" href=\"#\" class=\"game-link\">"
+		     "<img id=\"game-%s-icon\" class=\"game-icon\" src=\"/static/images/icon-triangle-e.png\" />"
+		     " %s vs. %s</a></td>\n",
+		     doc["_id"].OID().str().c_str(), doc["_id"].OID().str().c_str(),
 		     teams[0].String().c_str(), teams[1].String().c_str());
 
-      r->append_body("<td style=\"background-color: #aaaaaa\"><span style=\"color: #00ffff\">%u</span> "
-		     ": <span style=\"color: #ff00ff\">%u</span></td>\n",
+      r->append_body("<td style=\"background-color: #88ffff; text-align: center;\">%u</td>"
+		     "<td style=\"background-color: #ff88ff; text-align: center;\">%u</td>\n",
 		     points[0].Long(), points[1].Long());
 
       r->append_body("<td><i>Exploration:</i> %ld</td>\n",
@@ -173,9 +189,85 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
 
       *r += "</tr>\n";
 
-    }
+      r->append_body("<tr id=\"game-%s-desc\"><td valign=\"top\">Events</td><td colspan=\"6\">",
+		     doc["_id"].OID().str().c_str());
+      std::vector<BSONElement> pointinfo = doc["points"].Array();
+      for (const BSONElement &pd : pointinfo) {
+	r->append_body("<span style=\"background-color: #%s\">%s</span> scored %lu points at %.2f: %s<br/>\n",
+		       pd["team"].String() == "CYAN" ? "88ffff" : "ff88ff",
+		       pd["team"].String().c_str(), pd["points"].Long(),
+		       pd["game-time"].Double(), pd["reason"].String().c_str());
+      }
+      *r += "</td></tr>\n";
 
+      if (doc.hasField("orders")) {
+	r->append_body("<tr id=\"game-%s-orders\">"
+		       "<td valign=\"top\"><div style=\"margin-top: 12px\">Orders</div></td>"
+		       "<td colspan=\"6\"><table>"
+		       "<tr><th>ID</th><th>Team</th><th>Product</th>"
+		       "<th>Requested</th><th>Delivered</th><th>Period</th></tr>\n",
+		       doc["_id"].OID().str().c_str());
+	std::vector<BSONElement> orders = doc["orders"].Array();
+	for (const BSONElement &o : orders) {
+	  std::vector<BSONElement> del_period = o["delivery-period"].Array();
+	  r->append_body("<tr><td>%lu</td><td>%s</td><td>%s</td>"
+			 "<td>%lu</td><td>%lu</td><td>%lu-%lu (Act. %lu)</td></tr>",
+			 o["id"].Long(), o["team"].String().c_str(), o["product"].String().c_str(),
+			 o["quantity-requested"].Long(), o["quantity-delivered"].Long(),
+			 del_period[0].Long(), del_period[1].Long(), o["activate-at"].Long());
+	}
+	*r += "</table></td></tr>\n";
+      }
+
+      if (doc.hasField("machines")) {
+	r->append_body("<tr id=\"game-%s-machines\">"
+		       "<td valign=\"top\"><div style=\"margin-top: 12px\">Machines</div></td>"
+		       "<td colspan=\"6\"><table>"
+		       "<tr><th>Name</th><th>Type</th><th>Team</th>"
+		       "<th>Productions</th><th>Proc. Time</th></tr>\n",
+		       doc["_id"].OID().str().c_str());
+	std::vector<BSONElement> machines = doc["machines"].Array();
+	for (const BSONElement &m : machines) {
+	  r->append_body("<tr><td>%s</td><td>%s</td><td>%s</td>"
+			 "<td>%lu</td><td>%lu</td></tr>",
+			 m["name"].String().c_str(), m["type"].String().c_str(), m["team"].String().c_str(),
+			 m["productions"].Long(), m.Obj().hasField("proc-time") ? m["proc-time"].Long() : 0);
+	}
+	*r += "</table></td></tr>\n";
+      }
+
+    }
     *r += "</table>\n";
+
+    *r +=
+      "<script type=\"text/javascript\">\n"
+      "  $(function(){\n";
+    for (const std::string &gr : reports) {
+      r->append_body
+	("    $(\"#game-%s\").click(function(){\n"
+	 "      if ( $(\"#game-%s-desc\").is(\":visible\") ) {\n"
+	 "        $(\"#game-%s-desc\").hide();\n"
+	 "        $(\"#game-%s-orders\").hide();\n"
+	 "        $(\"#game-%s-machines\").hide();\n"
+	 "        $(\"#game-%s-icon\").attr(\"src\", \"/static/images/icon-triangle-e.png\");\n"
+	 "      } else {\n"
+	 "        $(\"#game-%s-desc\").show();\n"
+	 "        $(\"#game-%s-orders\").show();\n"
+	 "        $(\"#game-%s-machines\").show();\n"
+	 "        $(\"#game-%s-icon\").attr(\"src\", \"/static/images/icon-triangle-s.png\");\n"
+	 "      }\n"
+	 "    });\n"
+	 "    $(\"#game-%s-desc\").hide();\n"
+	 "    $(\"#game-%s-orders\").hide();\n"
+	 "    $(\"#game-%s-machines\").hide();\n",
+	 gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(),
+	 gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(), gr.c_str(),
+	 gr.c_str(), gr.c_str(), gr.c_str());
+	}
+    *r +=
+      "  });\n"
+      "</script>\n";
+
 
     *r +=
       "<h4>Tournament Statistics</h4>\n"
