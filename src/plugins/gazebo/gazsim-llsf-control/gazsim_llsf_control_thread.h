@@ -33,6 +33,7 @@
 #include <llsf_msgs/GameState.pb.h>
 #include <llsf_msgs/GameInfo.pb.h>
 #include <llsf_msgs/Team.pb.h>
+#include <utils/time/time.h>
 #include <string.h>
 
 //from Gazebo
@@ -89,7 +90,7 @@ class LlsfControlSimThread
   void on_game_state_msg(ConstGameStatePtr &msg);
 
   //helper variables
-  float start_time_;
+  fawkes::Time start_time_;
   bool team_sent_;
   bool start_sent_;
   bool shutdown_initiated_;

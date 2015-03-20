@@ -75,7 +75,9 @@ void LlsfControlSimThread::init()
 
   start_sent_ = false;
   team_sent_ = false;
-  start_time_ = clock->now().in_sec();
+  start_time_.set_clock(clock);
+  start_time_.stamp();
+  logger->log_info(name(), "Startup");
   shutdown_initiated_ = false;
 }
 
@@ -85,8 +87,10 @@ void LlsfControlSimThread::finalize()
 
 void LlsfControlSimThread::loop()
 {
-  if(!team_sent_ && (clock->now().in_sec() - start_time_) > time_to_wait_before_set_team_)
+  fawkes::Time now(clock);
+  if (!team_sent_ && (now - &start_time_) > time_to_wait_before_set_team_)
   {
+    logger->log_info(name(), "Setting teams");
     //set team names
     llsf_msgs::SetTeamName msg_team_cyan;
     msg_team_cyan.set_team_name(team_cyan_name_);
@@ -108,8 +112,9 @@ void LlsfControlSimThread::loop()
 
     team_sent_ = true;
   }
-  if(!start_sent_ && (clock->now().in_sec() - start_time_) > time_to_wait_before_start_)
+  if (!start_sent_ && (now - &start_time_) > time_to_wait_before_start_)
   {
+    logger->log_info(name(), "Starting game");
     //let the refbox start the game
     llsf_msgs::SetGameState msg_state;
     msg_state.set_state(llsf_msgs::GameState::RUNNING);
