@@ -85,7 +85,7 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
 		       "jquery-ui.custom.min.js\"></script>\n");
     *r +=
       "<style type=\"text/css\">\n"
-      "  .game-link { color: black; font-weight: bold; }\n"
+      "  .game-link { color: black; }\n"
       "</style>";
 
     *r += "<h2>RCLL RefBox Database Report</h2>\n";
@@ -142,7 +142,6 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
       "<tr><th>Teams</th><th colspan=\"2\">Points</th><th colspan=\"2\">Points Cyan</th>"
       "<th colspan=\"2\">Points Magenta</th></tr>\n";
 
-    std::map<std::string, unsigned int> games_won;
     std::list<std::string> reports;
 
     while (cursor->more()) {
@@ -157,21 +156,14 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
 	winner_team = 1;
       } // else draw
 
-      if (winner_team >= 0) {
-	if (games_won.find(teams[winner_team].String()) != games_won.end()) {
-	  games_won[teams[winner_team].String()] += 1;
-	} else {
-	  games_won[teams[winner_team].String()]  = 1;
-	}
-      }
-
       reports.push_back(doc["_id"].OID().str());
 
       r->append_body("<tr><td><a id=\"game-%s\" href=\"#\" class=\"game-link\">"
 		     "<img id=\"game-%s-icon\" class=\"game-icon\" src=\"/static/images/icon-triangle-e.png\" />"
-		     " %s vs. %s</a></td>\n",
+		     " %s%s%s vs. %s%s%s</a></td>\n",
 		     doc["_id"].OID().str().c_str(), doc["_id"].OID().str().c_str(),
-		     teams[0].String().c_str(), teams[1].String().c_str());
+		     winner_team == 0 ? "<b>" : "", teams[0].String().c_str(), winner_team == 0 ? "</b>" : "",
+		     winner_team == 1 ? "<b>" : "", teams[1].String().c_str(), winner_team == 1 ? "</b>" : "");
 
       r->append_body("<td style=\"background-color: #88ffff; text-align: center;\">%u</td>"
 		     "<td style=\"background-color: #ff88ff; text-align: center;\">%u</td>\n",
@@ -282,14 +274,94 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
       "  });\n"
       "</script>\n";
 
+    // This set of function reduces to a collection with
+    // a separate document per team
+    const char *map_func =
+      "function () {\n"
+      "  if (this.teams[0] != \"\") {\n"
+      "    emit(this.teams[0], {points: this[\"total-points\"][0],\n"
+      "			        opp_points: this[\"total-points\"][1]});\n"
+      "  }\n"
+      "  if (this.teams[1] != \"\") {\n"
+      "    emit(this.teams[1], {points: this[\"total-points\"][1],\n"
+      "			 	opp_points: this[\"total-points\"][0]});\n"
+      "	 }\n"
+      "}";
+    const char *red_func =
+      "function(key, values) {\n"
+      "	 rv = { games: 0, wins: 0, points: 0, opp_points: 0 };\n"
+      "	 for (var i = 0; i < values.length; ++i) {\n"
+      "	   rv.games += (\"games\" in values[i]) ? values[i] : 1;\n"
+      "	   if (\"wins\" in values[i]) {\n"
+      "	     rv.wins += values[i].wins;\n"
+      "	   } else if (values[i].points > values[i].opp_points) {\n"
+      "	     rv.wins += 1;\n"
+      "	   }\n"
+      "	   rv.points += values[i].points;\n"
+      "	   rv.opp_points += values[i].opp_points;\n"
+      "	 }\n"
+      "	 return rv;\n"
+      "}\n";
+
+    /*
+    // these functions reduce into a single document for all teams
+    const char *map_func =
+      "function () {\n"
+      "  if (this.teams[0] != \"\") {\n"
+      "	   value = {teams: [this.teams[0]]}\n"
+      "	   value[this.teams[0]] = {points: this[\"total-points\"][0],\n"
+      "	 		           opp_points: this[\"total-points\"][1]}\n"
+      "    emit(\"stats\", value);\n"
+      "	 }\n"
+      "  if (this.teams[1] != \"\") {\n"
+      "	   value = {teams: [this.teams[1]]}\n"
+      "	   value[this.teams[1]] = {points: this[\"total-points\"][1],\n"
+      "	                           opp_points: this[\"total-points\"][0]}\n"
+      "    emit(\"stats\", value);\n"
+      "	 }\n"
+      "}\n";
+
+    const char *red_func =
+      "function(key, values) {\n"
+      "  rv = { teams: [] };\n"
+      "  for (var i = 0; i < values.length; ++i) {\n"
+      "	   for (var t = 0; t < values[i].teams.length; ++t) {\n"
+      "	     if (rv.teams.indexOf(values[i].teams[t]) == -1) {\n"
+      "	       rv.teams.push(values[i].teams[t])\n"
+      "	     }\n"
+      "	     if (! (values[i].teams[t] in rv)) {\n"
+      "	       rv[values[i].teams[t]] = { games: 0, wins: 0, points: 0, opp_points: 0 };\n"
+      "	     }\n"
+      "	     rv[values[i].teams[t]].games +=\n"
+      "	       (\"games\" in values[i][values[i].teams[t]]) ? values[i][values[i].teams[t]] : 1;\n"
+      "	     if (\"wins\" in values[i][values[i].teams[t]]) {\n"
+      "	       rv[values[i].teams[t]].wins += values[i][values[i].teams[t]].wins;\n"
+      "	     } else if (values[i].points > values[i][values[i].teams[t]].opp_points) {\n"
+      "	       rv[values[i].teams[t]].wins += 1;\n"
+      "	     }\n"
+      "	     rv[values[i].teams[t]].points += values[i][values[i].teams[t]].points;\n"
+      "	     rv[values[i].teams[t]].opp_points += values[i][values[i].teams[t]].opp_points;\n"
+      "	    }\n"
+      "	 }\n"
+      "	 return rv;\n"
+      "}\n";
+    */
+
+    BSONObj out = mongodb_->mapreduce("llsfrb.game_report", map_func, red_func,
+				      BSON("end-time" << BSON("$exists" << true)));
 
     *r +=
       "<h4>Tournament Statistics</h4>\n"
       "<table>\n"
-      "<tr><th>Team</th><th>Wins</th></tr>\n";
-    for (const auto &g : games_won) {
-      r->append_body("<tr><td><i>%s</i></td><td>%u</td></tr>\n",
-		     g.first.c_str(), g.second);
+      "<tr><th>Team</th><th>Games</th><th>Wins</th><th>Points</th></tr>\n";
+    std::vector<BSONElement> teams = out["results"].Array();
+    for (const BSONElement &t : teams) {
+      BSONObj tdoc = t["value"].Obj();
+      r->append_body("<tr><td><i>%s</i></td><td>%u</td><td>%u</td><td>%d:%d (%d)</td></tr>\n",
+		     t["_id"].String().c_str(), tdoc["games"].numberInt(), tdoc["wins"].numberInt(),
+		     tdoc["points"].numberInt(), tdoc["opp_points"].numberInt(),
+		     tdoc["points"].numberInt() - tdoc["opp_points"].numberInt());
+      
     }
     *r += "</table>\n";
 
