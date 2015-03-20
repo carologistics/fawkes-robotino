@@ -8,7 +8,7 @@
 
 ;Determine the role of the agent
 (defrule general-determine-role
-  (confval (path "/clips-agent/llsf2014/agent-role") (value ?role))
+  (confval (path "/clips-agent/llsf2015/agent-role") (value ?role))
   =>
   (assert (role (sym-cat ?role)))
   (printout t "I have the role " (str-cat ?role) crlf)
@@ -16,14 +16,14 @@
 
 (defrule conf-figure-out-waiting-points
   "Reads waiting-point names (identical to navgraph names) from cfg/conf.d/clips-agent.yaml"
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins-1-robotino1") (value ?ins-wait-point-ins1-robotino1))
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins-1-robotino2") (value ?ins-wait-point-ins1-robotino2))
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins-1-robotino3") (value ?ins-wait-point-ins1-robotino3))
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins-2-robotino1") (value ?ins-wait-point-ins2-robotino1))
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins-2-robotino2") (value ?ins-wait-point-ins2-robotino2))
-   (confval (path "/clips-agent/llsf2014/waiting-points/ins-2-robotino3") (value ?ins-wait-point-ins2-robotino3))
-   (confval (path "/clips-agent/llsf2014/waiting-points/deliver1") (value ?deliver1-wait-point))
-   (confval (path "/clips-agent/llsf2014/waiting-points/deliver2") (value ?deliver2-wait-point))
+   (confval (path "/clips-agent/llsf2015/waiting-points/ins-1-robotino1") (value ?ins-wait-point-ins1-robotino1))
+   (confval (path "/clips-agent/llsf2015/waiting-points/ins-1-robotino2") (value ?ins-wait-point-ins1-robotino2))
+   (confval (path "/clips-agent/llsf2015/waiting-points/ins-1-robotino3") (value ?ins-wait-point-ins1-robotino3))
+   (confval (path "/clips-agent/llsf2015/waiting-points/ins-2-robotino1") (value ?ins-wait-point-ins2-robotino1))
+   (confval (path "/clips-agent/llsf2015/waiting-points/ins-2-robotino2") (value ?ins-wait-point-ins2-robotino2))
+   (confval (path "/clips-agent/llsf2015/waiting-points/ins-2-robotino3") (value ?ins-wait-point-ins2-robotino3))
+   (confval (path "/clips-agent/llsf2015/waiting-points/deliver1") (value ?deliver1-wait-point))
+   (confval (path "/clips-agent/llsf2015/waiting-points/deliver2") (value ?deliver2-wait-point))
    =>
   (assert (wait-point Ins1 "R-1" ?ins-wait-point-ins1-robotino1) 
           (wait-point Ins1Sec "R-1" ?ins-wait-point-ins1-robotino1) 
@@ -49,18 +49,18 @@
 (defrule conf-machine-proc-times
   "Reads production times from cfg/conf.d/clips-agent.yaml"
   (phase PRODUCTION)
-  (confval (path "/clips-agent/llsf2014/production-times/t1-min") (value ?proc-min-time-t1))
-  (confval (path "/clips-agent/llsf2014/production-times/t1-max") (value ?proc-max-time-t1))
-  (confval (path "/clips-agent/llsf2014/production-times/t2-min") (value ?proc-min-time-t2))
-  (confval (path "/clips-agent/llsf2014/production-times/t2-max") (value ?proc-max-time-t2))
-  (confval (path "/clips-agent/llsf2014/production-times/t3-min") (value ?proc-min-time-t3))
-  (confval (path "/clips-agent/llsf2014/production-times/t3-max") (value ?proc-max-time-t3))
-  (confval (path "/clips-agent/llsf2014/production-times/t4-min") (value ?proc-min-time-t4))
-  (confval (path "/clips-agent/llsf2014/production-times/t4-max") (value ?proc-max-time-t4))
-  (confval (path "/clips-agent/llsf2014/production-times/t5-min") (value ?proc-min-time-t5))
-  (confval (path "/clips-agent/llsf2014/production-times/t5-max") (value ?proc-max-time-t5))
-  (confval (path "/clips-agent/llsf2014/production-times/recycle-min") (value ?proc-min-time-recycle))
-  (confval (path "/clips-agent/llsf2014/production-times/recycle-max") (value ?proc-max-time-recycle))
+  (confval (path "/clips-agent/llsf2015/production-times/t1-min") (value ?proc-min-time-t1))
+  (confval (path "/clips-agent/llsf2015/production-times/t1-max") (value ?proc-max-time-t1))
+  (confval (path "/clips-agent/llsf2015/production-times/t2-min") (value ?proc-min-time-t2))
+  (confval (path "/clips-agent/llsf2015/production-times/t2-max") (value ?proc-max-time-t2))
+  (confval (path "/clips-agent/llsf2015/production-times/t3-min") (value ?proc-min-time-t3))
+  (confval (path "/clips-agent/llsf2015/production-times/t3-max") (value ?proc-max-time-t3))
+  (confval (path "/clips-agent/llsf2015/production-times/t4-min") (value ?proc-min-time-t4))
+  (confval (path "/clips-agent/llsf2015/production-times/t4-max") (value ?proc-max-time-t4))
+  (confval (path "/clips-agent/llsf2015/production-times/t5-min") (value ?proc-min-time-t5))
+  (confval (path "/clips-agent/llsf2015/production-times/t5-max") (value ?proc-max-time-t5))
+  (confval (path "/clips-agent/llsf2015/production-times/recycle-min") (value ?proc-min-time-recycle))
+  (confval (path "/clips-agent/llsf2015/production-times/recycle-max") (value ?proc-max-time-recycle))
   =>
   (assert (production-time T1 ?proc-min-time-t1 ?proc-max-time-t1)
     (production-time T2 ?proc-min-time-t2 ?proc-max-time-t2)
@@ -73,10 +73,10 @@
 
 (defrule conf-read-out-of-order-times
   "Reads team specific ports for encrypted communication in the simulation from cfg/conf.d/clips-agent.yaml"
-  (confval (path "/clips-agent/llsf2014/out-of-order-times/min") (value ?min))
-  (confval (path "/clips-agent/llsf2014/out-of-order-times/max") (value ?max))
-  (confval (path "/clips-agent/llsf2014/out-of-order-times/recycle-min") (value ?recycle-min))
-  (confval (path "/clips-agent/llsf2014/out-of-order-times/recycle-max") (value ?recycle-max))
+  (confval (path "/clips-agent/llsf2015/out-of-order-times/min") (value ?min))
+  (confval (path "/clips-agent/llsf2015/out-of-order-times/max") (value ?max))
+  (confval (path "/clips-agent/llsf2015/out-of-order-times/recycle-min") (value ?recycle-min))
+  (confval (path "/clips-agent/llsf2015/out-of-order-times/recycle-max") (value ?recycle-max))
   =>
   (assert (out-of-order-time min ?min)
 	  (out-of-order-time max ?max)
@@ -86,9 +86,9 @@
 
 (defrule conf-read-comm-config
   "Reads general values needed for communication from cfg/conf.d/clips-agent.yaml"
-  (confval (path "/clips-agent/llsf2014/peer-address") (value ?address))
-  (confval (path "/clips-agent/llsf2014/crypto-key") (value ?key))
-  (confval (path "/clips-agent/llsf2014/cipher") (value ?cipher))
+  (confval (path "/clips-agent/llsf2015/peer-address") (value ?address))
+  (confval (path "/clips-agent/llsf2015/crypto-key") (value ?key))
+  (confval (path "/clips-agent/llsf2015/cipher") (value ?cipher))
   =>
   (assert (peer-address ?address)
 	  (private-peer-key ?key ?cipher))
@@ -96,9 +96,9 @@
 
 (defrule conf-team-specific-ports-remote
   "Reads team specific ports for encrypted communication from cfg/conf.d/clips-agent.yaml"
-  (confval (path "/clips-agent/llsf2014/peer-address") (value ?address))
-  (confval (path "/clips-agent/llsf2014/cyan-port") (value ?cyan-port))
-  (confval (path "/clips-agent/llsf2014/magenta-port") (value ?magenta-port))
+  (confval (path "/clips-agent/llsf2015/peer-address") (value ?address))
+  (confval (path "/clips-agent/llsf2015/cyan-port") (value ?cyan-port))
+  (confval (path "/clips-agent/llsf2015/magenta-port") (value ?magenta-port))
   =>
   (assert (private-peer-address ?address)
 	  (private-peer-port CYAN ?cyan-port)
@@ -107,11 +107,11 @@
 
 (defrule conf-team-specific-ports-local
   "Reads team specific ports for encrypted communication in the simulation from cfg/conf.d/clips-agent.yaml"
-  (confval (path "/clips-agent/llsf2014/peer-address") (value ?address))
-  (confval (path "/clips-agent/llsf2014/cyan-send-port") (value ?cyan-send-port))
-  (confval (path "/clips-agent/llsf2014/cyan-recv-port") (value ?cyan-recv-port))
-  (confval (path "/clips-agent/llsf2014/magenta-send-port") (value ?magenta-send-port))
-  (confval (path "/clips-agent/llsf2014/magenta-recv-port") (value ?magenta-recv-port))
+  (confval (path "/clips-agent/llsf2015/peer-address") (value ?address))
+  (confval (path "/clips-agent/llsf2015/cyan-send-port") (value ?cyan-send-port))
+  (confval (path "/clips-agent/llsf2015/cyan-recv-port") (value ?cyan-recv-port))
+  (confval (path "/clips-agent/llsf2015/magenta-send-port") (value ?magenta-send-port))
+  (confval (path "/clips-agent/llsf2015/magenta-recv-port") (value ?magenta-recv-port))
   =>
   (assert (private-peer-address ?address)
 	  (private-peer-ports CYAN ?cyan-send-port ?cyan-recv-port)
@@ -122,8 +122,8 @@
   "Read configuration for puck-storage-points"
   (declare (salience ?*PRIORITY-WM*))
   (team-color ?team-color&CYAN|MAGENTA)
-  (confval (path "/clips-agent/llsf2014/puck-storage-points/cyan") (list-value $?psp-cyan))
-  (confval (path "/clips-agent/llsf2014/puck-storage-points/magenta") (list-value $?psp-magenta))
+  (confval (path "/clips-agent/llsf2015/puck-storage-points/cyan") (list-value $?psp-cyan))
+  (confval (path "/clips-agent/llsf2015/puck-storage-points/magenta") (list-value $?psp-magenta))
   =>
   (bind $?storage-points (create$))
   (if (eq ?team-color CYAN)

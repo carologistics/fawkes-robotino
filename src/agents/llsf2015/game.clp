@@ -127,7 +127,7 @@
 
 (defrule play-exploration-without-refbox
   "If config value play-exploration-without-refbox is true, immediately start EXPLORATION."
-  (confval (path "/clips-agent/llsf2014/play-exploration-without-refbox") (value true))
+  (confval (path "/clips-agent/llsf2015/play-exploration-without-refbox") (value true))
   =>
   (assert 
     (exploration-start)

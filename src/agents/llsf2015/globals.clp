@@ -1,6 +1,6 @@
 
 ;---------------------------------------------------------------------------
-;  globals.clp - LLSF2014 CLIPS Agent global CLIPS variables
+;  globals.clp - LLSF2015 CLIPS Agent global CLIPS variables
 ;
 ;  Created: Thu Apr 25 10:37:43 2013 (GO2013 Magdeburg)
 ;  Copyright  2013  Tim Niemueller [www.niemueller.de]
@@ -49,41 +49,41 @@
 )
 
 (defrule globals-config-team-name
-  (confval (path "/clips-agent/llsf2014/team-name") (type STRING) (value ?team-name))
+  (confval (path "/clips-agent/llsf2015/team-name") (type STRING) (value ?team-name))
   =>
   (bind ?*TEAM-NAME* ?team-name)
 )
 
 (defrule globals-config-robot-name
-  (confval (path "/clips-agent/llsf2014/robot-name") (type STRING) (value ?robot-name))
+  (confval (path "/clips-agent/llsf2015/robot-name") (type STRING) (value ?robot-name))
   =>
   (bind ?*ROBOT-NAME* ?robot-name)
 )
 
 (defrule globals-config-robot-number
-  (confval (path "/clips-agent/llsf2014/robot-number") (type UINT) (value ?robot-number))
+  (confval (path "/clips-agent/llsf2015/robot-number") (type UINT) (value ?robot-number))
   =>
   (bind ?*ROBOT-NUMBER* ?robot-number)
 )
 
 (defrule globals-config-timeouts
-  (confval (path "/clips-agent/llsf2014/initial-master-timeout") (type FLOAT) (value ?initial))
-  (confval (path "/clips-agent/llsf2014/robot-timeout") (type FLOAT) (value ?robot-timeout))
+  (confval (path "/clips-agent/llsf2015/initial-master-timeout") (type FLOAT) (value ?initial))
+  (confval (path "/clips-agent/llsf2015/robot-timeout") (type FLOAT) (value ?robot-timeout))
   =>
   (bind ?*ROBOT-TIMEOUT* ?robot-timeout)
   (bind ?*INITIAL-MASTER-TIMEOUT* ?initial)
 )
 
 (defrule globals-config-release-distance
-  (confval (path "/clips-agent/llsf2014/release-distance") (type FLOAT) (value ?d))
+  (confval (path "/clips-agent/llsf2015/release-distance") (type FLOAT) (value ?d))
   =>
   (bind ?*RELEASE-DISTANCE* ?d)
 )
 
 (defrule globals-config-estimated-skill-durations
-  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/get-produced") (type UINT) (value ?d-get-produced))
-  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/get-stored-puck") (type UINT) (value ?d-get-stored-puck))
-  (confval (path "/clips-agent/llsf2014/estimated-skill-duration/deliver") (type UINT) (value ?d-deliver))
+  (confval (path "/clips-agent/llsf2015/estimated-skill-duration/get-produced") (type UINT) (value ?d-get-produced))
+  (confval (path "/clips-agent/llsf2015/estimated-skill-duration/get-stored-puck") (type UINT) (value ?d-get-stored-puck))
+  (confval (path "/clips-agent/llsf2015/estimated-skill-duration/deliver") (type UINT) (value ?d-deliver))
   =>
   (bind ?*SKILL-DURATION-GET-PRODUCED* ?d-get-produced)
   (bind ?*SKILL-DURATION-GET-STORED-PUCK* ?d-get-stored-puck)

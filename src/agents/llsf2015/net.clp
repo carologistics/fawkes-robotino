@@ -9,9 +9,9 @@
 
 (defrule net-enable-local-public
   "Enable local peer connection to the unencrypted refbox channel"
-  (confval (path "/clips-agent/llsf2014/peer-address") (value ?peer-address))
-  (confval (path "/clips-agent/llsf2014/peer-send-port") (value ?peer-send-port))
-  (confval (path "/clips-agent/llsf2014/peer-recv-port") (value ?peer-recv-port))
+  (confval (path "/clips-agent/llsf2015/peer-address") (value ?peer-address))
+  (confval (path "/clips-agent/llsf2015/peer-send-port") (value ?peer-send-port))
+  (confval (path "/clips-agent/llsf2015/peer-recv-port") (value ?peer-recv-port))
   (not (peer-enabled))
   =>
   (printout t "Enabling local peer (public)" crlf)
@@ -22,8 +22,8 @@
 
 (defrule net-enable-public
   "Enable peer connection to the unencrypted refbox channel"
-  (confval (path "/clips-agent/llsf2014/peer-address") (value ?peer-address))
-  (confval (path "/clips-agent/llsf2014/peer-port") (value ?peer-port))
+  (confval (path "/clips-agent/llsf2015/peer-address") (value ?peer-address))
+  (confval (path "/clips-agent/llsf2015/peer-port") (value ?peer-port))
   (not (peer-enabled))
   =>
   (printout t "Enabling remote peer (public)" crlf)

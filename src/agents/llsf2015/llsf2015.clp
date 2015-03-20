@@ -1,5 +1,5 @@
 ;---------------------------------------------------------------------------
-;  llsf2014.clp - Main file for the llsf2014 agent
+;  llsf2015.clp - Main file for the llsf2015 agent
 ;
 ;  Created: Mon Feb 10 16:09:26 2014
 ;  Copyright  2012  Tim Niemueller [www.niemueller.de]
@@ -128,24 +128,24 @@
 )
 
 (defrule late-silence-debug-facts
-  "Disables watching of facts configured in clips-agent/llsf2014/unwatch-facts for debug mode."
+  "Disables watching of facts configured in clips-agent/llsf2015/unwatch-facts for debug mode."
   (declare (salience -1000))
   (init)
   (protobuf-available)
   (confval (path "/clips-agent/clips-debug") (type BOOL) (value true))
-  (confval (path "/clips-agent/llsf2014/unwatch-facts") (type STRING) (is-list TRUE) (list-value $?lv))
+  (confval (path "/clips-agent/llsf2015/unwatch-facts") (type STRING) (is-list TRUE) (list-value $?lv))
   =>
   (printout t "Disabling watching of the following facts: " ?lv crlf)
   (foreach ?v ?lv (unwatch facts (sym-cat ?v)))
 )
 
 (defrule late-silence-debug-rules
-  "Disables watching of rules configured in clips-agent/llsf2014/unwatch-rules for debug mode."
+  "Disables watching of rules configured in clips-agent/llsf2015/unwatch-rules for debug mode."
   (declare (salience -1000))
   (init)
   (protobuf-available)
   (confval (path "/clips-agent/clips-debug") (type BOOL) (value true))
-  (confval (path "/clips-agent/llsf2014/unwatch-rules") (type STRING) (is-list TRUE) (list-value $?lv))
+  (confval (path "/clips-agent/llsf2015/unwatch-rules") (type STRING) (is-list TRUE) (list-value $?lv))
   =>
   (printout t "Disabling watching of the following rules: " ?lv crlf)
   (foreach ?v ?lv (unwatch rules (sym-cat ?v)))

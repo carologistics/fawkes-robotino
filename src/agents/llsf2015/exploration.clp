@@ -14,10 +14,10 @@
   "Read configuration for exploration row order of machines"
   (declare (salience ?*PRIORITY-WM*))
   (phase EXPLORATION)
-  (confval (path "/clips-agent/llsf2014/exploration/row-high") (list-value $?row-high))
-  (confval (path "/clips-agent/llsf2014/exploration/row-mid") (list-value $?row-mid))
-  (confval (path "/clips-agent/llsf2014/exploration/row-low") (list-value $?row-low))
-  (confval (path "/clips-agent/llsf2014/exploration/row") (value ?agent-row))
+  (confval (path "/clips-agent/llsf2015/exploration/row-high") (list-value $?row-high))
+  (confval (path "/clips-agent/llsf2015/exploration/row-mid") (list-value $?row-mid))
+  (confval (path "/clips-agent/llsf2015/exploration/row-low") (list-value $?row-low))
+  (confval (path "/clips-agent/llsf2015/exploration/row") (value ?agent-row))
   =>
   (bind $?row-high-sym (create$))
   (progn$ (?m ?row-high)
@@ -155,7 +155,7 @@
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
   (machine-exploration (name ?old) (x ?) (y ?))
-  (confval (path "/clips-agent/llsf2014/exploration/needed-visibility-history") (value ?needed-vh))
+  (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
   ?rli <- (RobotinoLightInterface (id "/machine-signal/best") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
   (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
@@ -402,7 +402,7 @@
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
   (game-time $?game-time)
-  (confval (path "/clips-agent/llsf2014/exploration/latest-send-last-report-time")
+  (confval (path "/clips-agent/llsf2015/exploration/latest-send-last-report-time")
 	   (value ?latest-report-time))
   (team-color ?team-color&~nil)
   (peer-id private ?peer)
