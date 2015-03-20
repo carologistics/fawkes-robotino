@@ -149,15 +149,6 @@ do
 	    mkdir -p "$MATCH_NAME/run_$RUN"
 	    cd "$MATCH_NAME/run_$RUN"
 
-	    #set config values for automated control
-	    replace_config run $RUN
-	    replace_config configuration-name "\"$MATCH_NAME\_run_$RUN\""
-	    replace_config collection "\"$COMPETITION_NAME\_$TIME\""
-	    export DIR_FOR_SED=$(echo $START_PATH/$MATCH_NAME/run_$RUN | sed "s/\//\\\\\//g") #creepy string because of sed
-	    replace_config log "\"$DIR_FOR_SED\""
-	    replace_config team-cyan-name "\"${TEAMS[$TEAM1]}\""
-	    replace_config team-magenta-name "\"${TEAMS[$TEAM2]}\""
-
 	    if $REPLAY
 	    then
 		REPLAY_PATH="$START_PATH/$MATCH_NAME/run_$RUN"
@@ -166,17 +157,42 @@ do
 	        REPLAY=
 	    fi
 
+	    # randomize colors
+	    COIN=$(( RANDOM % 2 ))
+	    if [ $COIN -eq 1 ]
+	    then
+		echo kopf
+		TEAM_CYAN=$TEAM1
+		TEAM_MAGENTA=$TEAM2
+	    else
+		echo zahl
+		TEAM_CYAN=$TEAM2
+		TEAM_MAGENTA=$TEAM1
+	    fi
+
+	    #set config values for automated control
+	    replace_config run $RUN
+	    replace_config configuration-name "\"$MATCH_NAME\_run_$RUN\""
+	    replace_config collection "\"$COMPETITION_NAME\_$TIME\""
+	    export DIR_FOR_SED=$(echo $START_PATH/$MATCH_NAME/run_$RUN | sed "s/\//\\\\\//g") #creepy string because of sed
+	    replace_config log "\"$DIR_FOR_SED\""
+	    replace_config team-cyan-name "\"${TEAMS[$TEAM_CYAN]}\""
+	    replace_config team-magenta-name "\"${TEAMS[$TEAM_MAGENTA]}\""
+
 	    # start simulation
 	    echo Starting gazbeo
 	    $STARTUP_SCRIPT_LOCATION -x start -n 0 -s $HEADLESS -c default $REPLAY
 	    #start team cyan
-	    echo "Starting Team CYAN: ${TEAMS[$TEAM1]}"
-	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM1]}"
-	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM1]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM1]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM1]}
+	    echo "Starting Team CYAN: ${TEAMS[$TEAM_CYAN]}"
+	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM_CYAN]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_CYAN]}"
+	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM_CYAN]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_CYAN]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM_CYAN]} &
+
+	    sleep 3s
+
 	    #start team magenta
-	    echo "Starting Team MAGENTA: ${TEAMS[$TEAM2]}"
-	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM2]}"
-	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM2]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM2]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM2]}
+	    echo "Starting Team MAGENTA: ${TEAMS[$TEAM_MAGENTA]}"
+	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM_MAGENTA]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_MAGENTA]}"
+	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM_MAGENTA]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_MAGENTA]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM_MAGENTA]} &
 
 	    #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	    echo Waiting for shutdown of the simulation

@@ -106,19 +106,12 @@ void LlsfControlSimThread::loop()
     llsf_msgs::SetGameState msg_state;
     msg_state.set_state(llsf_msgs::GameState::RUNNING);
     set_game_state_pub_->Publish(msg_state);
-    llsf_msgs::SetGamePhase msg_phase;
-    msg_phase.set_phase(llsf_msgs::GameState::SETUP);
-    set_game_phase_pub_->Publish(msg_phase);
-
     team_sent_ = true;
   }
   if (!start_sent_ && (now - &start_time_) > time_to_wait_before_start_)
   {
     logger->log_info(name(), "Starting game");
     //let the refbox start the game
-    llsf_msgs::SetGameState msg_state;
-    msg_state.set_state(llsf_msgs::GameState::RUNNING);
-    set_game_state_pub_->Publish(msg_state);
     llsf_msgs::SetGamePhase msg_phase;
     msg_phase.set_phase(llsf_msgs::GameState::EXPLORATION);
     set_game_phase_pub_->Publish(msg_phase);
@@ -126,9 +119,9 @@ void LlsfControlSimThread::loop()
     start_sent_ = true;
   }
 
-  if(shutdown_initiated_ && (clock->now().in_sec() - shutdown_initiated_time_) > time_to_wait_before_shutdown_)
+  if(shutdown_initiated_ && (now - &shutdown_initiated_time_) > time_to_wait_before_shutdown_)
   {
-    logger->log_info(name(), "shutting down, ttwbs: %f, now: %f, sit: %f", time_to_wait_before_shutdown_, clock->now().in_sec(), shutdown_initiated_time_);
+    logger->log_info(name(), "shutting down");
     std::string command = fawkes_path_ + simulation_shutdown_script_;
     int schnurz = system(command.c_str());
     //just avoid warning that the return value of system() is ignored
@@ -141,10 +134,12 @@ void LlsfControlSimThread::on_game_state_msg(ConstGameStatePtr &msg)
   //logger->log_info(name(), "Got GameState message");
   if(msg->phase() == llsf_msgs::GameState::POST_GAME)
   {
-    if(post_game_simulation_shutdown_)
+    if(post_game_simulation_shutdown_ && !shutdown_initiated_)
     {
+      logger->log_info(name(), "set shutdown timer %f", time_to_wait_before_shutdown_);
       //countdown for simulation shutdown
-      shutdown_initiated_time_ = clock->now().in_sec();
+      shutdown_initiated_time_.set_clock(clock);
+      shutdown_initiated_time_.stamp();
       shutdown_initiated_ = true;
     }
   }
