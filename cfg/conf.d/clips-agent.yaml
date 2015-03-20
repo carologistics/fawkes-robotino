@@ -116,9 +116,9 @@ clips-agent:
       #row defined in host.yaml (this is only the default!)
       row: MID
       
-      row-high: ["M12", "M11", "M8", "M5", "M17", "M20", "M23", "M24"]
-      row-mid: ["M10", "M7", "M4", "M2", "M14", "M16", "M19", "M22"]
-      row-low: ["M9", "M6", "M3", "M1", "M13", "M15", "M18", "M21"]
+      row-high: ["Z11", "Z12", "Z8", "Z4", "Z16", "Z20", "Z24", "Z23"]
+      row-mid: ["Z9", "Z10", "Z6", "Z2", "Z14", "Z18", "Z22", "Z21"]
+      row-low: ["Z5", "Z6", "Z2", "Z1", "Z13", "Z14", "Z18", "Z17"]
 
       #the time in seconds to report all machines even if we are not prepared for production
       latest-send-last-report-time: 210 # =3:30
