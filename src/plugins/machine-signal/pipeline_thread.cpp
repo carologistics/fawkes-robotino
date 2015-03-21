@@ -340,7 +340,7 @@ void MachineSignalPipelineThread::init()
   bb_laser_clusters_[1] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/2");
   bb_laser_clusters_[2] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/3");
 
-  bb_signal_position_estimate_ = blackboard->open_for_writing<SignalHintInterface>("/machine-signal/current-machine");
+  bb_signal_position_estimate_ = blackboard->open_for_writing<SignalHintInterface>("/machine-signal/position-hint");
 
   bb_laser_lines_[0] = blackboard->open_for_reading<LaserLineInterface>("/laser-lines/1");
   bb_laser_lines_[1] = blackboard->open_for_reading<LaserLineInterface>("/laser-lines/2");
