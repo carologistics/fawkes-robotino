@@ -18,6 +18,13 @@ __robotino_config_mk_ := 1
 
 TOP_BASEDIR ?= $(BASEDIR)
 
+# Due to a limitation in GNU Make,
+# cf. http://savannah.gnu.org/bugs/?712
+ifneq ($(words $(abspath $(TOP_BASEDIR))),1)
+  $(error Path to Fawkes may not contain spaces. \
+          Move Fawkes to another location and call make again)
+endif
+
 BUILDSYSDIR            = $(abspath $(TOP_BASEDIR)/fawkes/etc/buildsys)
 SECONDARY_BUILDSYSDIR  = $(abspath $(TOP_BASEDIR)/etc/buildsys)
 
