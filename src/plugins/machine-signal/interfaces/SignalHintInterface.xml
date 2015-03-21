@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="SignalHintInterface" author="Victor Mataré" year="2015">
+	<data>
+		<comment>
+			This field is only here to satisfy ffifacegen. This interface is
+			only used to send messages to the machine-signal plugin
+		</comment>
+		<field type="double" length="3" name="translation">
+			Last set position estimate, i.e. the one currently used (data fields
+			are mandatory?).
+		</field>
+	</data>
+	<message name="SignalPosition">
+		<comment>
+			This interface is used so the skiller can tell the machine-signal plugin
+			where we expect to see the signal, given that we're standing in front of
+			a certain type of MPS.
+		</comment>
+		<field type="double" length="3" name="translation">
+			Expected position of the signal, relative to left endpoint of the
+			laser-line we see when standing in front of the MPS table
+		</field>
+	</message>
+</interface>
+

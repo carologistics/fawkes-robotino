@@ -34,11 +34,13 @@ ifeq ($(CC),gcc)
   endif
 endif
 
+PRESUBDIRS = interfaces
+
 #The necessary libraries your plugin needs.
 LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
 		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface SwitchInterface \
-		Position3DInterface fawkestf fvmodels
+		Position3DInterface SignalHintInterface LaserLineInterface fawkestf fvmodels
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_machine_signal = historic_smooth_roi.o plugin.o state.o pipeline_thread.o sensor_thread.o
 
