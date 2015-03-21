@@ -24,8 +24,8 @@
 #include <cstring>
 #include <core/threading/mutex_locker.h>
 #include <cmath>
-#include <cfloat>
-#include <limits.h>
+#include <limits>
+#include <algorithm>
 #include "historic_smooth_roi.h"
 
 using namespace fawkes;
@@ -107,6 +107,11 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
 
   cluster_rois_ = NULL;
 
+  bb_signal_position_estimate_ = NULL;
+
+  bb_laser_lines_[0] = NULL;
+  bb_laser_lines_[1] = NULL;
+  bb_laser_lines_[2] = NULL;
 }
 
 MachineSignalPipelineThread::~MachineSignalPipelineThread() {}
@@ -246,10 +251,14 @@ void MachineSignalPipelineThread::init()
   cfg_fps_ = config->get_uint(CFG_PREFIX "/fps");
   cfg_debug_blink_ = config->get_bool(CFG_PREFIX "/debug_blink");
   cfg_debug_processing_ = config->get_bool(CFG_PREFIX "/debug_processing");
-
   cfg_delivery_mode_ = config->get_bool(CFG_PREFIX "/delivery_mode");
   
+  // Laser-lines config
+  cfg_laser_lines_enabled_ = config->get_bool(CFG_PREFIX "/laser-lines/enable");
+  cfg_laser_lines_min_vis_hist_ = config->get_uint(CFG_PREFIX "/laser-lines/min_visibility_history");
+
   // Laser Cluster config
+  cfg_lasercluster_enabled_ = config->get_bool(CFG_PREFIX "/lasercluster/enable");
   cfg_lasercluster_min_vis_hist_ = config->get_uint(CFG_PREFIX "/lasercluster/min_visibility_history");
   cfg_lasercluster_frame_ = config->get_string(CFG_PREFIX "/lasercluster/laser_frame");
   cfg_lasercluster_signal_radius_ = 0.5 * config->get_float(CFG_PREFIX "/lasercluster/signal_width");
@@ -259,6 +268,7 @@ void MachineSignalPipelineThread::init()
   cfg_cam_aperture_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_aperture_y");
   cfg_cam_angle_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_angle");
   cfg_cam_frame_ = config->get_string(CFG_PREFIX "/lasercluster/cam_frame");
+
 
   pos2pixel_ = new PositionToPixel(
     tf_listener,
@@ -330,6 +340,12 @@ void MachineSignalPipelineThread::init()
   bb_laser_clusters_[1] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/2");
   bb_laser_clusters_[2] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/3");
 
+  bb_signal_position_estimate_ = blackboard->open_for_writing<SignalHintInterface>("/machine-signal/current-machine");
+
+  bb_laser_lines_[0] = blackboard->open_for_reading<LaserLineInterface>("/laser-lines/1");
+  bb_laser_lines_[1] = blackboard->open_for_reading<LaserLineInterface>("/laser-lines/2");
+  bb_laser_lines_[2] = blackboard->open_for_reading<LaserLineInterface>("/laser-lines/3");
+
   config->add_change_handler(this);
 }
 
@@ -375,6 +391,7 @@ void MachineSignalPipelineThread::finalize()
   for (Position3DInterface *iface : bb_laser_clusters_) {
     blackboard->close(iface);
   }
+  blackboard->close(bb_signal_position_estimate_);
 
   vision_master->unregister_thread(this);
 
@@ -452,74 +469,132 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
 #define LIMIT_VALUE(min, value, max) \
   std::min(std::max((long int)min, (long int)value), (long int)max)
 
+
+MachineSignalPipelineThread::WorldROI MachineSignalPipelineThread::pos3d_to_roi(const Stamped<Point> &cluster_laser)
+{
+  // Transform laser cluster into camera frame
+  Stamped<Point> cluster_cam;
+  tf_listener->transform_point(cfg_cam_frame_, cluster_laser, cluster_cam);
+
+  // Then compute the upper left and bottom right corner we expect to see
+  // (Account for cam parallax when adding the signal radius)
+  cart_coord_3d_t top_left, bottom_right;
+  float x = cluster_cam.getX();
+  float y = cluster_cam.getY();
+  float phi = atan2f(y, x);
+  float edge_x = sinf(phi) * cfg_lasercluster_signal_radius_;
+  float edge_y = cosf(phi) * cfg_lasercluster_signal_radius_;
+
+  top_left.x = cluster_cam.x() - edge_x;
+  top_left.y = cluster_cam.y() + edge_y;
+  top_left.z = cfg_lasercluster_signal_top_; // Fehler: top_left == /cam_front, signal_top == /base_link
+
+  bottom_right.x = cluster_cam.x() + edge_x;
+  bottom_right.y = cluster_cam.y() - edge_y;
+  bottom_right.z = cfg_lasercluster_signal_bottom_;
+
+  // And finally compute a ROI that (hopefully) contains the real signal
+  point_t top_left_px_tmp = pos2pixel_->get_pixel_position_unchecked(top_left, cfg_cam_frame_, clock);
+  point_t bot_right_px_tmp = pos2pixel_->get_pixel_position_unchecked(bottom_right, cfg_cam_frame_, clock);
+  upoint_t top_left_px, bot_right_px;
+
+  top_left_px.x = min((long int)max(0, top_left_px_tmp.x), (long int)cam_width_);
+  top_left_px.y = min((long int)max(0, top_left_px_tmp.y), (long int)cam_height_);
+  bot_right_px.x = min((long int)max(0, bot_right_px_tmp.x), (long int)cam_width_);
+  bot_right_px.y = min((long int)max(0, bot_right_px_tmp.y), (long int)cam_height_);
+
+  WorldROI cluster_roi;
+  cluster_roi.set_start(top_left_px);
+  cluster_roi.set_width(bot_right_px.x - top_left_px.x);
+  cluster_roi.set_height(bot_right_px.y - top_left_px.y);
+  cluster_roi.set_image_width(cam_width_);
+  cluster_roi.set_image_height(cam_height_);
+  cluster_roi.color = C_MAGENTA;
+  cluster_roi.world_pos = shared_ptr<Stamped<Point>>(new Stamped<Point>(
+    cluster_laser, cluster_laser.stamp, cluster_laser.frame_id));
+  /* if (tf_listener->can_transform("/map", cluster_laser.frame_id, clock->now())) {
+    cluster_roi.world_pos = new Stamped<Point>();
+    tf_listener->transform_point("/map", cluster_laser, *(cluster_roi.world_pos));
+  } */
+  return cluster_roi;
+}
+
+
 set<MachineSignalPipelineThread::WorldROI, MachineSignalPipelineThread::compare_rois_by_area_> *
 MachineSignalPipelineThread::bb_get_laser_rois()
 {
   set<WorldROI, compare_rois_by_area_> *rv = new set<WorldROI, compare_rois_by_area_>();
-  for (Position3DInterface *bb_pos : bb_laser_clusters_) {
-
-    bb_pos->read();
-
-    try {
+  if (unlikely(cfg_lasercluster_enabled_)) {
+    for (Position3DInterface *bb_pos : bb_laser_clusters_) {
+      bb_pos->read();
       if (bb_pos && bb_pos->has_writer() && bb_pos->visibility_history() >= (long int) cfg_lasercluster_min_vis_hist_) {
-        // Transform laser cluster into camera frame
-        Stamped<Point> cluster_laser, cluster_cam;
-        cluster_laser.setX(bb_pos->translation(0));
-        cluster_laser.setY(bb_pos->translation(1));
-        cluster_laser.setZ(bb_pos->translation(2));
-        cluster_laser.frame_id = cfg_lasercluster_frame_;
-        cluster_laser.stamp = Time(0,0);
-
-        tf_listener->transform_point(cfg_cam_frame_, cluster_laser, cluster_cam);
-
-        // Then compute the upper left and bottom right corner we expect to see
-        // (Account for cam parallax when adding the signal radius)
-        cart_coord_3d_t top_left, bottom_right;
-        float x = cluster_cam.getX();
-        float y = cluster_cam.getY();
-        float phi = atan2f(y, x);
-        float edge_x = sinf(phi) * cfg_lasercluster_signal_radius_;
-        float edge_y = cosf(phi) * cfg_lasercluster_signal_radius_;
-
-        top_left.x = cluster_cam.x() - edge_x;
-        top_left.y = cluster_cam.y() + edge_y;
-        top_left.z = cfg_lasercluster_signal_top_; // Fehler: top_left == /cam_front, signal_top == /base_link
-
-        bottom_right.x = cluster_cam.x() + edge_x;
-        bottom_right.y = cluster_cam.y() - edge_y;
-        bottom_right.z = cfg_lasercluster_signal_bottom_;
-
-        // And finally compute a ROI that (hopefully) contains the real signal
-        point_t top_left_px_tmp = pos2pixel_->get_pixel_position_unchecked(top_left, cfg_cam_frame_, clock);
-        point_t bot_right_px_tmp = pos2pixel_->get_pixel_position_unchecked(bottom_right, cfg_cam_frame_, clock);
-        upoint_t top_left_px, bot_right_px;
-
-        top_left_px.x = min((long int)max(0, top_left_px_tmp.x), (long int)cam_width_);
-        top_left_px.y = min((long int)max(0, top_left_px_tmp.y), (long int)cam_height_);
-        bot_right_px.x = min((long int)max(0, bot_right_px_tmp.x), (long int)cam_width_);
-        bot_right_px.y = min((long int)max(0, bot_right_px_tmp.y), (long int)cam_height_);
-
-        WorldROI cluster_roi;
-        cluster_roi.set_start(top_left_px);
-        cluster_roi.set_width(bot_right_px.x - top_left_px.x);
-        cluster_roi.set_height(bot_right_px.y - top_left_px.y);
-        cluster_roi.set_image_width(cam_width_);
-        cluster_roi.set_image_height(cam_height_);
-        cluster_roi.color = C_MAGENTA;
-        cluster_roi.world_pos = shared_ptr<Stamped<Point>>(new Stamped<Point>(
-          cluster_laser, cluster_laser.stamp, cluster_laser.frame_id));
-        /* if (tf_listener->can_transform("/map", cluster_laser.frame_id, clock->now())) {
-          cluster_roi.world_pos = new Stamped<Point>();
-          tf_listener->transform_point("/map", cluster_laser, *(cluster_roi.world_pos));
-        } */
-        rv->insert(cluster_roi);
+        try {
+          rv->insert(pos3d_to_roi(Stamped<Point>(
+            Point(bb_pos->translation(0), bb_pos->translation(1), bb_pos->translation(2)),
+            Time(0,0),
+            bb_pos->frame()
+          )));
+        }
+        catch (OutOfBoundsException &e) {
+          logger->log_debug(name(), e);
+        }
+        catch (Exception &e) {
+          logger->log_error(name(), e);
+        }
       }
     }
-    catch (OutOfBoundsException &e) {
-      logger->log_debug(name(), e);
+  }
+
+  unique_ptr<Point> signal_hint_msg;
+  while (!bb_signal_position_estimate_->msgq_empty()) {
+    // Process new signal hint messages
+    SignalHintInterface::SignalPositionMessage *msg = nullptr;
+    if ((msg = bb_signal_position_estimate_->msgq_first_safe(msg))) {
+      *signal_hint_msg = Point(msg->translation(0), msg->translation(1), msg->translation(2));
     }
-    catch (Exception &e) {
-      logger->log_error(name(), e);
+    else {
+      logger->log_error(name(), "EEEK! Invalid message in SignalHintInterface! This is a Bug!");
+    }
+    bb_signal_position_estimate_->msgq_pop();
+  }
+
+
+  if (likely(cfg_laser_lines_enabled_)) {
+    if (signal_hint_msg) {
+      // Only update BB with sent MSGs if we're actually using them
+      bb_signal_position_estimate_->set_translation(0, signal_hint_msg->getX());
+      bb_signal_position_estimate_->set_translation(1, signal_hint_msg->getY());
+      bb_signal_position_estimate_->set_translation(2, signal_hint_msg->getZ());
+      bb_signal_position_estimate_->set_timestamp();
+      bb_signal_position_estimate_->write();
+    }
+
+    bb_signal_position_estimate_->read();
+    Point current_signal_hint(
+      bb_signal_position_estimate_->translation(0),
+      bb_signal_position_estimate_->translation(1),
+      bb_signal_position_estimate_->translation(2)
+    );
+
+    LaserLineInterface *best_line = bb_laser_lines_[0];
+    for (LaserLineInterface *bb_line : bb_laser_lines_) {
+      bb_line->read();
+      if (M_PI_2 - bb_line->bearing() < M_PI_2 - best_line->bearing()) {
+        best_line = bb_line;
+      }
+    }
+
+    bb_signal_position_estimate_->write();
+
+    float *left_end = best_line->end_point_1();
+    Point signal_hint_laser = Point(left_end[0], left_end[1], left_end[2]) + current_signal_hint;
+
+    Stamped<Point> signal_hint_now(signal_hint_laser, Time(0,0), best_line->frame_id());
+    if (best_line->visibility_history() >= (long int) cfg_laser_lines_min_vis_hist_ ||
+        (best_line->visibility_history() > 0 && signal_hint_now.distance(signal_hint_) < 0.01)) {
+      // Either visibility history is good, or it is bad but the line has moved by less than a centimeter.
+      signal_hint_ = signal_hint_now;
+      rv->insert(pos3d_to_roi(signal_hint_now));
     }
   }
   return rv;
@@ -1404,6 +1479,14 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         cfg_lasercluster_signal_top_ = v->get_float();
       else if (opt == "/signal_bottom")
         cfg_lasercluster_signal_bottom_ = v->get_float();
+      else if (opt == "/enable")
+        cfg_lasercluster_enabled_ = v->get_bool();
+    }
+    else if (sub_prefix == "/laser-lines") {
+      if (opt == "/min_visibility_history")
+        cfg_laser_lines_min_vis_hist_ = v->get_uint();
+      else if (opt == "/enable")
+        cfg_laser_lines_enabled_ = v->get_bool();
     }
     else if (sub_prefix == "") {
       if (opt == "/roi_max_aspect_ratio")

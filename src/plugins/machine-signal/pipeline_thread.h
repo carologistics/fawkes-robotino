@@ -47,6 +47,8 @@
 #include <set>
 #include <interfaces/SwitchInterface.h>
 #include <interfaces/Position3DInterface.h>
+#include <interfaces/LaserLineInterface.h>
+#include <interfaces/SignalHintInterface.h>
 #include <fvmodels/relative_position/position_to_pixel.h>
 #include <utils/time/wait.h>
 
@@ -156,6 +158,11 @@ class MachineSignalPipelineThread :
     std::atomic<float> cfg_lasercluster_signal_radius_;
     std::atomic<float> cfg_lasercluster_signal_top_;
     std::atomic<float> cfg_lasercluster_signal_bottom_;
+    std::atomic_bool cfg_lasercluster_enabled_;
+
+    fawkes::LaserLineInterface *bb_laser_lines_[3];
+    std::atomic<unsigned int> cfg_laser_lines_min_vis_hist_;
+    std::atomic_bool cfg_laser_lines_enabled_;
 
     float cfg_cam_aperture_x_;
     float cfg_cam_aperture_y_;
@@ -301,7 +308,11 @@ class MachineSignalPipelineThread :
 
 
     std::set<WorldROI, compare_rois_by_area_> *bb_get_laser_rois();
+    WorldROI pos3d_to_roi(const fawkes::tf::Stamped<fawkes::tf::Point> &pos3d);
     std::set<WorldROI, compare_rois_by_area_> *cluster_rois_;
+
+    fawkes::SignalHintInterface *bb_signal_position_estimate_;
+    fawkes::tf::Stamped<fawkes::tf::Point> signal_hint_;
 
     void merge_rois_in_laser(std::set<WorldROI, compare_rois_by_area_> *laser_rois, std::list<firevision::ROI> *rois);
 
