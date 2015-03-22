@@ -8,9 +8,9 @@
 ;---------------------------------------------------------------------------
 
 ; LLSF2014 agent includes
-(path-load  abstract-task-execution/priorities.clp)
-(path-load  abstract-task-execution/globals.clp)
-(path-load  abstract-task-execution/facts.clp)
+(path-load  llsf2015/priorities.clp)
+(path-load  llsf2015/globals.clp)
+(path-load  llsf2015/facts.clp)
 
 (defrule load-config
   "Load configration for initialization."
@@ -33,7 +33,7 @@
   =>
   (printout t "Requesting blackboard feature" crlf)
   (ff-feature-request "blackboard")
-  (path-load "abstract-task-execution/blackboard-init.clp")
+  (path-load "llsf2015/blackboard-init.clp")
 )
 
 (defrule enable-motor-switch
@@ -62,7 +62,7 @@
   =>
   (printout t "Requesting navgraph feature" crlf)
   (ff-feature-request "navgraph")
-  (path-load  abstract-task-execution/navgraph.clp)
+  (path-load  llsf2015/navgraph.clp)
 )
 
 (deffunction unwatch-rules-facts ()
@@ -98,29 +98,29 @@
   (ff-feature-loaded protobuf)
   (ff-feature navgraph)
   =>
-  (path-load  abstract-task-execution/utils.clp)
-  (path-load  abstract-task-execution/net.clp)
-  (path-load  abstract-task-execution/skills.clp)
-  (path-load  abstract-task-execution/worldmodel.clp)
-  (path-load  abstract-task-execution/lock-managing.clp)
-  (path-load  abstract-task-execution/lock-usage.clp)
+  (path-load  llsf2015/utils.clp)
+  (path-load  llsf2015/net.clp)
+  (path-load  llsf2015/skills.clp)
+  (path-load  llsf2015/worldmodel.clp)
+  (path-load  llsf2015/lock-managing.clp)
+  (path-load  llsf2015/lock-usage.clp)
   (if
     (any-factp ((?conf confval))
-      (and (eq ?conf:path "/clips-agent/abstract-task-execution/enable-sim")
+      (and (eq ?conf:path "/clips-agent/llsf2015/enable-sim")
 	   (eq ?conf:type BOOL) (eq ?conf:value true)))
   then
     (printout t "Loading simulation" crlf)
-    (path-load  abstract-task-execution/sim.clp)
+    (path-load  llsf2015/sim.clp)
   )
-  (path-load  abstract-task-execution/game.clp)
-  (path-load  abstract-task-execution/worldmodel-synchronization.clp)
-  (path-load  abstract-task-execution/tactical-help.clp)
-  (path-load  abstract-task-execution/task.clp)
-  (path-load  abstract-task-execution/steps.clp)
-  (path-load  abstract-task-execution/coordination.clp)
-  (path-load  abstract-task-execution/production.clp)
-  (path-load  abstract-task-execution/exploration.clp)
-  (path-load  abstract-task-execution/config.clp)
+  (path-load  llsf2015/game.clp)
+  (path-load  llsf2015/worldmodel-synchronization.clp)
+  (path-load  llsf2015/tactical-help.clp)
+  (path-load  llsf2015/task.clp)
+  (path-load  llsf2015/steps.clp)
+  (path-load  llsf2015/coordination.clp)
+  (path-load  llsf2015/production.clp)
+  (path-load  llsf2015/exploration.clp)
+  (path-load  llsf2015/config.clp)
   (reset)
   ;(facts)
 
