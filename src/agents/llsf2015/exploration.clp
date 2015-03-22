@@ -121,7 +121,7 @@
   ?df <- (skill-done (name "enable_switch"))
   (exp-tactic LINE)
   (first-exploration-machine ?v)
-  (zone-exploration (name ?v) (x ?) (y ?) (look-pos ?lp))
+  (zone-exploration (name ?v) (x ?) (y ?) (look-pos $?lp))
   (not (driven-to-waiting-point))
   =>
   (printout t "First machine: " ?v crlf)
@@ -133,16 +133,57 @@
 )
 
 (defrule exp-drive-to-finished
-  "Arriving at a machine in first or second round. Preparing recognition of the light signals."
+  "Arriving at a machine in first or second round. Wait for tag vision."
   (phase EXPLORATION)
   ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
-  (printout t "Arrived." crlf)
-  (printout t "Read light now." crlf)
+  (printout t "Arrived. Looking for a tag." crlf)
   (retract ?s ?final)
-  (assert (state EXP_WAITING_AT_MACHINE)
+  (assert (state EXP_LOOKING_FOR_TAG)
+          (timer (name waiting-for-tag-since) (time ?now) (seq 1))
+  )
+)
+
+(defrule exp-no-tag-found
+  "We couldn't see a tag => try next look-pos or skip zone"
+  (phase EXPLORATION)
+  (time $?now)
+  ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
+  ?s <- (state EXP_LOOKING_FOR_TAG)
+  ?g <- (goalmachine ?old)
+  ?ze <- (zone-exploration (name ?old) (look-pos $?lp) (current-look-pos ?lp-index))
+  =>
+  (printout t "Found no tag from " (nth$ ?lp-index ?lp) crlf)
+  (if (< ?lp-index (length$ ?lp))
+    then
+    (printout t "Try to find tag from the next position." crlf)
+    (modify ?ze (current-look-pos (+ 1 ?lp-index)))
+    (assert (state EXP_LOCK_ACCEPTED)
+	    (exp-next-machine ?old))
+    (retract ?g)
+
+    else
+    (printout t "Couldn't find a tag in this zone!" crlf)
+    (modify ?ze (current-look-pos 1))
+    (assert (state EXP_IDLE)
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old)))
+    )
+  (retract ?ws ?s)
+)
+
+(defrule exp-align-in-front-of-light-signal
+  "Preparing recognition of the light signals after we aligned in front of it."
+  (phase EXPLORATION)
+  ?final <- (skill (name "align_tag") (status FINAL|FAILED)) 
+  ?s <- (state EXP_DRIVING_TO_MACHINE)
+  (time $?now)
+  =>
+  (printout t "Aligned in front of light signal." crlf)
+  (printout t "Reading light now." crlf)
+  (retract ?s ?final)
+  (assert (state EXP_WAITING_FOR_LIGHT_VISION)
           (timer (name waiting-since) (time ?now) (seq 1))
   )
 )
@@ -152,7 +193,7 @@
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (timer (name waiting-since))
-  ?s <- (state EXP_WAITING_AT_MACHINE)
+  ?s <- (state EXP_WAITING_FOR_LIGHT_VISION)
   ?g <- (goalmachine ?old)
   (zone-exploration (name ?old) (x ?) (y ?))
   (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
@@ -173,7 +214,7 @@
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
-  ?s <- (state EXP_WAITING_AT_MACHINE)
+  ?s <- (state EXP_WAITING_FOR_LIGHT_VISION)
   ?g <- (goalmachine ?old)
   (zone-exploration (name ?old) (x ?) (y ?))
   (not (second-recognize-try))
@@ -191,7 +232,7 @@
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
-  ?s <- (state EXP_WAITING_AT_MACHINE)
+  ?s <- (state EXP_WAITING_FOR_LIGHT_VISION)
   ?g <- (goalmachine ?old)
   (zone-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   ?srt <- (second-recognize-try)
@@ -331,14 +372,16 @@
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (exp-next-machine ?nextMachine)
-  (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
+  (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?)
+		    (look-pos $?lp) (current-look-pos ?lp-index))
   (not (driven-to-waiting-point))
   =>
   (printout t "Going to next machine." crlf)
+  (printout t "Try to see tag from " (nth$ ?lp-index ?lp) "." crlf)
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine))
-  (skill-call drive_to place (str-cat ?lp) puck false)
+  (skill-call drive_to place (str-cat (nth$ ?lp-index ?lp)) puck false)
 )
 
 (defrule exp-receive-type-light-pattern-matching
@@ -360,7 +403,7 @@
   (foreach ?m (pb-field-list ?p "machines")
     (bind ?name (sym-cat (pb-field-value ?m "name")))
     ; TODO remove M12 -> Z12 for new refbox version
-    (bind ?zone-name (str-cat "Z" (sub-string 2 (str-length (str-cat ?name)) (str-cat ?name))))
+    (bind ?zone-name (sym-cat (str-cat "Z" (sub-string 2 (str-length (str-cat ?name)) (str-cat ?name)))))
     (printout t "Machine " ?name " converted to zone " ?zone-name crlf)    
     (bind ?team (sym-cat (pb-field-value ?m "team_color")))
     (do-for-fact ((?machine machine) (?me zone-exploration))

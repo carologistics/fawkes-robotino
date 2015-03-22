@@ -28,7 +28,10 @@
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
   (slot light (type SYMBOL) (allowed-values GREEN ORANGE RED OFF) (default OFF))
+  ; list of positions where to search for tags
   (multislot look-pos (type SYMBOL) (default (create$)))
+  ; index of the next lookpos to use
+  (slot current-look-pos (type INTEGER) (default 1))
   (slot recognized (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot next (type SYMBOL)) ;TODO delete next
 )
