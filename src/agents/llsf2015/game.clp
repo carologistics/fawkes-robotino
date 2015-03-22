@@ -49,7 +49,7 @@
 )
 
 (defrule start
-  "If bots are waiting for game start and the state RUNNING is requested move the bots into the field. Additional fact for P-3 bot with waiting time to delay its start."
+  "If bots are waiting for game start and the state RUNNING is requested, check if the robot has to announce that it was restarted during the game = not in the setup phase."
   (phase EXPLORATION|PRODUCTION|WHACK_A_MOLE_CHALLENGE)
   ?sf <- (state WAIT_START)
   ?cf <- (change-state RUNNING)
@@ -58,40 +58,21 @@
   (time $?now)
   =>
   (retract ?sf ?cf ?rf)
-  (assert (state MOVING_INTO_FIELD))
+  (assert (state RESTART))
   (if (eq ?phase SETUP)
     then
     (assert (lock-announce-restart-finished))
     else
     (assert (lock-announce-restart))
   )
-  (skill-call motor_move x 0.25 y 0)
-  ;wait with P3-ONLY to avoid collision in the beginning
-  (assert (timer (name wait-before-start) (time ?now)))
 )
 
 (defrule start-playing
-  "When a bot (exluding P-3) has moved into the field, start the exploration."
-  ?sf <- (state MOVING_INTO_FIELD)
-  ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED)) 
+  "Start the exploration, after the start / restart with restart announce"
+  ?sf <- (state RESTART)
   (lock-announce-restart-finished)
-  (not (role P3-ONLY))
   =>
-  (retract ?sf ?skf)
-  (assert (state IDLE))
-  (assert (refbox-state RUNNING))
-  (assert (exploration-start))
-)
-
-(defrule start-playing-as-P3_ONLY
-  "When 10 seconds of game time have elapsed, move P-3 bot into the field."
-  ?sf <- (state MOVING_INTO_FIELD)
-  ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED)) 
-  (role P3-ONLY)
-  (time $?now)
-  ?timer <- (timer (name wait-before-start) (time $?t&:(timeout ?now ?t 10.0)))
-  =>
-  (retract ?sf ?skf ?timer)
+  (retract ?sf)
   (assert (state IDLE))
   (assert (refbox-state RUNNING))
   (assert (exploration-start))
