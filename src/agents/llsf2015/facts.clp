@@ -21,19 +21,14 @@
 
 ; EXPLORATION
 
-(deftemplate machine-exploration
-  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12
-					   M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24))
+(deftemplate zone-exploration
+  (slot name (type SYMBOL) (allowed-values Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12
+					   Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
   (slot light (type SYMBOL) (allowed-values GREEN ORANGE RED OFF) (default OFF))
-  (slot look-pos (type SYMBOL)
-	(allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16
-			M17 M18 M19 M20 M21 M22 M23 M24 ExpM1 ExpM2 ExpM3 ExpM4 ExpM5 ExpM6
-			ExpM7 ExpM8 ExpM9 ExpM10 ExpM11 ExpM12 ExpM13 ExpM14 ExpM15 ExpM16
-			ExpM17 ExpM18 ExpM19 ExpM20 ExpM21 ExpM22 ExpM23 ExpM24
-			D1 D2 D3 D4 D5 D6 R1 R2) (default M1))
+  (multislot look-pos (type SYMBOL) (default (create$)))
   (slot recognized (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot next (type SYMBOL)) ;TODO delete next
 )
@@ -56,30 +51,30 @@
 )
 
 (deffacts startup-exploration
-  (machine-exploration (name Z24) (look-pos ExpZ24_1))
-  (machine-exploration (name Z23) (look-pos ExpZ23_1))
-  (machine-exploration (name Z22) (look-pos ExpZ22_1))
-  (machine-exploration (name Z21) (look-pos ExpZ21_1))
-  (machine-exploration (name Z20) (look-pos ExpZ20_1))
-  (machine-exploration (name Z19) (look-pos ExpZ19_1))
-  (machine-exploration (name Z18) (look-pos ExpZ18_1))
-  (machine-exploration (name Z17) (look-pos ExpZ17_1))
-  (machine-exploration (name Z16) (look-pos ExpZ16_1))
-  (machine-exploration (name Z15) (look-pos ExpZ15_1))
-  (machine-exploration (name Z14) (look-pos ExpZ14_1))
-  (machine-exploration (name Z13) (look-pos ExpZ13_1))
-  (machine-exploration (name Z12) (look-pos ExpZ12_1))
-  (machine-exploration (name Z11) (look-pos ExpZ11_1))
-  (machine-exploration (name Z10) (look-pos ExpZ10_1))
-  (machine-exploration (name Z9) (look-pos ExpZ9_1))
-  (machine-exploration (name Z8) (look-pos ExpZ8_1))
-  (machine-exploration (name Z7) (look-pos ExpZ7_1))
-  (machine-exploration (name Z6) (look-pos ExpZ6_1))
-  (machine-exploration (name Z5) (look-pos ExpZ5_1))
-  (machine-exploration (name Z4) (look-pos ExpZ4_1))
-  (machine-exploration (name Z3) (look-pos ExpZ3_1))
-  (machine-exploration (name Z2) (look-pos ExpZ2_1))
-  (machine-exploration (name Z1) (look-pos ExpZ1_1))
+  (zone-exploration (name Z24) (look-pos (create$ ExpZ24_1 ExpZ24_2)))
+  (zone-exploration (name Z23) (look-pos (create$ ExpZ23_1 ExpZ23_2)))
+  (zone-exploration (name Z22) (look-pos (create$ ExpZ22_1 ExpZ22_2)))
+  (zone-exploration (name Z21) (look-pos (create$ ExpZ21_1 ExpZ21_2)))
+  (zone-exploration (name Z20) (look-pos (create$ ExpZ20_1 ExpZ20_2)))
+  (zone-exploration (name Z19) (look-pos (create$ ExpZ19_1 ExpZ19_2)))
+  (zone-exploration (name Z18) (look-pos (create$ ExpZ18_1 ExpZ18_2)))
+  (zone-exploration (name Z17) (look-pos (create$ ExpZ17_1 ExpZ17_2)))
+  (zone-exploration (name Z16) (look-pos (create$ ExpZ16_1 ExpZ16_2)))
+  (zone-exploration (name Z15) (look-pos (create$ ExpZ15_1 ExpZ15_2)))
+  (zone-exploration (name Z14) (look-pos (create$ ExpZ14_1 ExpZ14_2)))
+  (zone-exploration (name Z13) (look-pos (create$ ExpZ13_1 ExpZ13_2)))
+  (zone-exploration (name Z12) (look-pos (create$ ExpZ12_1 ExpZ12_2)))
+  (zone-exploration (name Z11) (look-pos (create$ ExpZ11_1 ExpZ11_2)))
+  (zone-exploration (name Z10) (look-pos (create$ ExpZ10_1 ExpZ10_2)))
+  (zone-exploration (name Z9) (look-pos (create$ ExpZ9_1 ExpZ9_2)))
+  (zone-exploration (name Z8) (look-pos (create$ ExpZ8_1 ExpZ8_2)))
+  (zone-exploration (name Z7) (look-pos (create$ ExpZ7_1 ExpZ7_2)))
+  (zone-exploration (name Z6) (look-pos (create$ ExpZ6_1 ExpZ6_2)))
+  (zone-exploration (name Z5) (look-pos (create$ ExpZ5_1 ExpZ5_2)))
+  (zone-exploration (name Z4) (look-pos (create$ ExpZ4_1 ExpZ4_2)))
+  (zone-exploration (name Z3) (look-pos (create$ ExpZ3_1 ExpZ3_2)))
+  (zone-exploration (name Z2) (look-pos (create$ ExpZ2_1 ExpZ2_2)))
+  (zone-exploration (name Z1) (look-pos (create$ ExpZ1_1 ExpZ1_2)))
 )
 
 

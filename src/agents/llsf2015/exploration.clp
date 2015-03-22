@@ -67,7 +67,7 @@
   ;find first machine in row
   (bind ?first NONE)
   (progn$ (?m ?row)
-    (do-for-fact ((?me machine-exploration)) (and (eq ?m ?me:name) (eq ?me:team ?team-color))
+    (do-for-fact ((?me zone-exploration)) (and (eq ?m ?me:name) (eq ?me:team ?team-color))
       (bind ?first ?me:name)
     )
     (if (neq ?first NONE)
@@ -121,7 +121,7 @@
   ?df <- (skill-done (name "enable_switch"))
   (exp-tactic LINE)
   (first-exploration-machine ?v)
-  (machine-exploration (name ?v) (x ?) (y ?) (look-pos ?lp))
+  (zone-exploration (name ?v) (x ?) (y ?) (look-pos ?lp))
   (not (driven-to-waiting-point))
   =>
   (printout t "First machine: " ?v crlf)
@@ -154,7 +154,7 @@
   ?ws <- (timer (name waiting-since))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
-  (machine-exploration (name ?old) (x ?) (y ?))
+  (zone-exploration (name ?old) (x ?) (y ?))
   (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
   ?rli <- (RobotinoLightInterface (id "/machine-signal/best") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
   (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
@@ -175,7 +175,7 @@
   ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
-  (machine-exploration (name ?old) (x ?) (y ?))
+  (zone-exploration (name ?old) (x ?) (y ?))
   (not (second-recognize-try))
   =>
   (printout t "Reading light at " ?old " failed first time." crlf)
@@ -193,7 +193,7 @@
   ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
   ?s <- (state EXP_WAITING_AT_MACHINE)
   ?g <- (goalmachine ?old)
-  (machine-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
+  (zone-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
   ?srt <- (second-recognize-try)
   =>
   (printout t "Reading light at " ?old " failed." crlf)
@@ -226,7 +226,7 @@
   (bind ?ind (+ ?ind 1))
   (while (<= ?ind (length$ ?row)) do
     ; can I go to this machine next?
-    (if (and (any-factp ((?me machine-exploration)) (and (eq ?me:name (nth$ ?ind ?row))
+    (if (and (any-factp ((?me zone-exploration)) (and (eq ?me:name (nth$ ?ind ?row))
 							                                           (eq ?me:team ?team-color)
 							                                           (not ?me:recognized)))
 	     (not (any-factp ((?lock locked-resource)) (eq ?lock:resource (nth$ ?ind ?row)))))
@@ -261,12 +261,12 @@
   ?s <- (state EXP_IDLE)
   ?g <- (goalmachine ?old)
   (team-color ?team-color)
-  (machine-exploration (name ?old) (x ?x) (y ?y) (team ?team))
+  (zone-exploration (name ?old) (x ?x) (y ?y) (team ?team))
   =>
   ;find next machine nearest to last machine
   (bind ?nearest NONE)
   (bind ?min-dist 1000.0)
-  (do-for-all-facts ((?me machine-exploration))
+  (do-for-all-facts ((?me zone-exploration))
     (and (eq ?me:team ?team-color) (not ?me:recognized)
 	 (not (any-factp ((?mt machine-type)) (eq ?mt:name ?me:name))))
 
@@ -331,7 +331,7 @@
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (exp-next-machine ?nextMachine)
-  (machine-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
+  (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?) (look-pos ?lp))
   (not (driven-to-waiting-point))
   =>
   (printout t "Going to next machine." crlf)
@@ -359,9 +359,12 @@
   )
   (foreach ?m (pb-field-list ?p "machines")
     (bind ?name (sym-cat (pb-field-value ?m "name")))
+    ; TODO remove M12 -> Z12 for new refbox version
+    (bind ?zone-name (str-cat "Z" (sub-string 2 (str-length (str-cat ?name)) (str-cat ?name))))
+    (printout t "Machine " ?name " converted to zone " ?zone-name crlf)    
     (bind ?team (sym-cat (pb-field-value ?m "team_color")))
-    (do-for-fact ((?machine machine) (?me machine-exploration))
-      (and (eq ?machine:name ?name) (eq ?me:name ?name) (neq ?machine:team ?team))
+    (do-for-fact ((?machine machine) (?me zone-exploration))
+      (and (eq ?machine:name ?name) (eq ?me:name ?zone-name) (neq ?machine:team ?team))
 
       (printout t "Machine " ?name " is from team " ?team crlf)
       (modify ?machine (team ?team))
@@ -413,9 +416,9 @@
     ;send report for last machine only if the exploration phase is going to end
     ;or we are prepared for production
     (if (or
-	 (< (length (find-all-facts ((?f machine-exploration))
+	 (< (length (find-all-facts ((?f zone-exploration))
 				    (and (eq ?f:team ?team-color) ?f:recognized)))
-	    (- (length (find-all-facts ((?f machine-exploration)) (eq ?f:team ?team-color))) 1))
+	    (- (length (find-all-facts ((?f zone-exploration)) (eq ?f:team ?team-color))) 1))
 	 (>= (nth$ 1 ?game-time) ?latest-report-time)
 	 (eq ?s EXP_PREPARE_FOR_PRODUCTION_FINISHED))
      then
@@ -434,14 +437,14 @@
   ?pbm <- (protobuf-msg (type "llsf_msgs.MachineReportInfo") (ptr ?p))
   =>
   (retract ?pbm)
-  (unwatch facts machine-exploration)
+  (unwatch facts zone-exploration)
   (foreach ?machine (pb-field-list ?p "reported_machines")
-    (do-for-fact ((?m machine-exploration)) (eq ?m:name (sym-cat ?machine))
+    (do-for-fact ((?m zone-exploration)) (eq ?m:name (sym-cat ?machine))
       (modify ?m (recognized TRUE))
       ;(printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
     )
   )
-  (watch facts machine-exploration)
+  (watch facts zone-exploration)
 )
 
 (defrule exp-convert-blink-to-blinking

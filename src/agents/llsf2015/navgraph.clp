@@ -15,9 +15,9 @@
   (modify ?mf (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)))
 )
 
-(defrule navgraph-set-machine-exp-coordinates
+(defrule navgraph-set-zone-exp-coordinates
   (declare (salience ?*PRIORITY-WM*))
-  ?mf <- (machine-exploration (look-pos ?name) (x 0.0) (y 0.0))
+  ?mf <- (zone-exploration (look-pos ?name) (x 0.0) (y 0.0))
   (navgraph-node (name ?sname&:(eq ?sname (str-cat ?name))) (pos $?pos))
   =>
   (modify ?mf (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)))

@@ -353,10 +353,10 @@
   (declare (salience ?*PRIORITY-HIGH*))
   (change-phase PRODUCTION) 
   =>
-  (delayed-do-for-all-facts ((?lock lock) (?me machine-exploration)) (eq ?lock:resource ?me:name)
+  (delayed-do-for-all-facts ((?lock lock) (?me zone-exploration)) (eq ?lock:resource ?me:name)
     (retract ?lock)
   )
-  (delayed-do-for-all-facts ((?lock locked-resource) (?me machine-exploration)) (eq ?lock:resource ?me:name)
+  (delayed-do-for-all-facts ((?lock locked-resource) (?me zone-exploration)) (eq ?lock:resource ?me:name)
     (retract ?lock)
   ) 
 )
