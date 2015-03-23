@@ -18,6 +18,7 @@ OPTIONS:
    -l             Run Gazebo headless
    -k             Keep started shells open after finish
    -s             Keep statistics and shutdown after game
+   -r             Start with ROS
    -e arg         Record replay
    -d             Detailed simulation (e.g. simulated webcam)
    -o             Omitt starting gazebo (necessary when starting
@@ -34,7 +35,7 @@ EOF
 COMMAND=
 CONF=
 VISUALIZATION=
-ROS=-r
+ROS=
 AGENT=
 DETAILED=
 KEEP=
@@ -63,6 +64,9 @@ do
              ;;
          k)
 	     KEEP=-k
+             ;;
+         r)
+	     ROS=-r
              ;;
 	 s)
 	     SHUTDOWN=-s

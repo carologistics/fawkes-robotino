@@ -11,6 +11,7 @@ This script automates the execution of multiple Gazebo-simulations with differen
 OPTIONS:
    -h      Show this message
    -d      Don't compile/check for updates in git
+   -r      Start with ROS
 EOF
 }
 
@@ -48,7 +49,8 @@ addTeam() #args 1:teamname 2:fawkes-robotino-branch 3:fawkes-branch 4:configurat
 NUM_TEAMS=0
 PREVIOUS_BRANCH=
 CHECK_FOR_UPDATES=true
-while getopts “hd” OPTION
+ROS=
+while getopts “hdr” OPTION
 do
     case $OPTION in
         h)
@@ -57,6 +59,9 @@ do
             ;;
         d)
 	    CHECK_FOR_UPDATES=false
+            ;;
+        r)
+	    ROS=-r
             ;;
         ?)
             usage
@@ -185,14 +190,14 @@ do
 	    #start team cyan
 	    echo "Starting Team CYAN: ${TEAMS[$TEAM_CYAN]}"
 	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM_CYAN]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_CYAN]}"
-	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM_CYAN]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_CYAN]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM_CYAN]} &
+	    $STARTUP_SCRIPT_LOCATION -x start -o $ROS -n ${NUMBER_ROBOTS[$TEAM_CYAN]} -s $HEADLESS -c default $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_CYAN]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM_CYAN]} &
 
 	    sleep 3s
 
 	    #start team magenta
 	    echo "Starting Team MAGENTA: ${TEAMS[$TEAM_MAGENTA]}"
 	    echo "$STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM_MAGENTA]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_MAGENTA]}"
-	    $STARTUP_SCRIPT_LOCATION -x start -o -r -n ${NUMBER_ROBOTS[$TEAM_MAGENTA]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_MAGENTA]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM_MAGENTA]} &
+	    $STARTUP_SCRIPT_LOCATION -x start -o  $ROS -r -n ${NUMBER_ROBOTS[$TEAM_MAGENTA]} -s $HEADLESS -c default -f 4 $REPLAY -m ${ADDITIONAL_PLUGINS[$TEAM_MAGENTA]} -p $COMPETITION_LOG_PATH/teams/${TEAMS[$TEAM_MAGENTA]} &
 
 	    #wait for shutdown of simulation (caused by gazsim-llsf-statistics if the game is over)
 	    echo Waiting for shutdown of the simulation
