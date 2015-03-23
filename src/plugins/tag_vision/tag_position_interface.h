@@ -47,6 +47,18 @@ class TagPositionInterface
     A_Z=3,
   };
 
+  enum TRANS{
+    T_X=0,
+    T_Y=1,
+    T_Z=2,
+  };
+
+  enum ALVAR_TRANS{
+    A_T_X=2,
+    A_T_Y=0,
+    A_T_Z=1,
+  };
+
 public:
   /// Constructor
   TagPositionInterface(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_);

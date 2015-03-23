@@ -79,9 +79,9 @@ void TagPositionInterface::set_pose(alvar::Pose new_pose)
   this->interface_->set_rotation(ROT::Z,rot[ALVAR_ROT::A_Z]);
   this->interface_->set_rotation(ROT::W,rot[ALVAR_ROT::A_W]);
   //publish the translation
-  this->interface_->set_translation(1,new_pose.translation[0]/1000);
-  this->interface_->set_translation(2,new_pose.translation[1]/1000);
-  this->interface_->set_translation(0,new_pose.translation[2]/1000);
+  this->interface_->set_translation(TRANS::T_X/*1*/,new_pose.translation[ALVAR_TRANS::A_T_X/*0*/]/1000);
+  this->interface_->set_translation(TRANS::T_Y/*2*/,-new_pose.translation[ALVAR_TRANS::A_T_Y/*1*/]/1000);
+  this->interface_->set_translation(TRANS::T_Z/*0*/,-new_pose.translation[ALVAR_TRANS::A_T_Z/*2*/]/1000);
 
   this->touched_=true;
 }
