@@ -189,16 +189,17 @@ end
 local old_speed={x=0,y=0,ori=0}
 
 function DRIVE:loop()
+local q = fawkes.tf.Quaternion:new(tag:rotation(0), tag:roatation(1), tag,rotation(2), tag:rotation(3))
    local tag = get_closest_tag()
    --skip on empty values
-   if(tag:translation(0) == 0 and tag:translation(1) == 0 and tag:rotation(0) == 0) then
+   if(tag:translation(0) == 0 and tag:translation(1) == 0 and fawkes.tf.get_yaw(q) == 0) then
 --      send_transrot(0,0,0)
       return
    end
 	--get the distance to drive
 	distance = { x = tag:translation(0) ,--- self.fsm.vars.x,
 				y = tag:translation(1) ,--- self.fsm.vars.y,
-				ori = -tag:rotation(0)}
+                ori = -fawkes.tf.get_yaw(q)}
    distance.x = distance.x - (self.fsm.vars.x * math.cos(distance.ori) + self.fsm.vars.y * (-1 * math.sin(distance.ori)))
    distance.y = distance.y - (self.fsm.vars.x * math.sin(distance.ori) + self.fsm.vars.y * math.cos(distance.ori))
    --print("current distance")
