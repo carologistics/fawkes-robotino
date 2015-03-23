@@ -57,6 +57,7 @@ TagPositionList::~TagPositionList()
   // delete this interfaces
   for(auto &&interface: *this)
   {
+    this->blackboard_->close(interface->interface());
     delete interface;
   }
 }
