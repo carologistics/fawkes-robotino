@@ -34,10 +34,17 @@
 class TagPositionInterface
 {
   enum ROT{
-      X=0,
-      Y=1,
-      Z=2,
-      W=3
+    X=0,
+    Y=1,
+    Z=2,
+    W=3
+  };
+
+  enum ALVAR_ROT{
+    A_W=0,
+    A_X=1,
+    A_Y=2,
+    A_Z=3,
   };
 
 public:

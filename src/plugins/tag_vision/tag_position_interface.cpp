@@ -62,21 +62,22 @@ void TagPositionInterface::set_pose(alvar::Pose new_pose)
 {
   //temp mat to get cv data
   CvMat mat;
-  //angles in heading attitude bank
-  double rot[3];
+  //angles in quaternion
+  double rot[4];
   //create the mat
-  cvInitMatHeader(&mat, 3, 1, CV_64F, rot);
-  //get the quaternion of this pose into the mat
-  new_pose.GetEuler(&mat);
-  //get the temporary quaternion in wxyz order to calculate angles
+  cvInitMatHeader(&mat, 4, 1, CV_64F, rot);
+
+  new_pose.GetQuaternion(&mat);
+  //get the temporary quaternion in wxyz
   rot[0] = CV_MAT_ELEM(mat, double, 0, 0);
   rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
   rot[2] = CV_MAT_ELEM(mat, double, 2, 0);
-  //publish the angles
-  this->interface_->set_rotation(ROT::X,rot[ROT::X]*M_PI/180);
-  this->interface_->set_rotation(ROT::Y,rot[ROT::Y]*M_PI/180);
-  this->interface_->set_rotation(ROT::Z,rot[ROT::Z]*M_PI/180);
-  this->interface_->set_rotation(ROT::W,0);
+  rot[3] = CV_MAT_ELEM(mat, double, 3, 0);
+  //publish the quaternion
+  this->interface_->set_rotation(ROT::X,rot[ALVAR_ROT::A_X]);
+  this->interface_->set_rotation(ROT::Y,rot[ALVAR_ROT::A_Y]);
+  this->interface_->set_rotation(ROT::Z,rot[ALVAR_ROT::A_Z]);
+  this->interface_->set_rotation(ROT::W,rot[ALVAR_ROT::A_W]);
   //publish the translation
   this->interface_->set_translation(1,new_pose.translation[0]/1000);
   this->interface_->set_translation(2,new_pose.translation[1]/1000);
