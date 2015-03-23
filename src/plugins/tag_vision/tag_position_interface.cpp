@@ -1,6 +1,6 @@
 #include "tag_position_interface.h"
 
-TagPositionIntreface::TagPositionIntreface(fawkes::Position3DInterface *position_interface, u_int32_t vector_position)
+TagPositionInterface::TagPositionInterface(fawkes::Position3DInterface *position_interface, u_int32_t vector_position)
 {
   this->interface_ = position_interface;
   this->vector_position_ = vector_position;
@@ -9,12 +9,12 @@ TagPositionIntreface::TagPositionIntreface(fawkes::Position3DInterface *position
   this->touched_ = false;
 }
 
-TagPositionIntreface::~TagPositionIntreface()
+TagPositionInterface::~TagPositionInterface()
 {
 
 }
 
-void TagPositionIntreface::set_pose(alvar::Pose new_pose)
+void TagPositionInterface::set_pose(alvar::Pose new_pose)
 {
   //temp mat to get cv data
   CvMat mat;
@@ -41,7 +41,7 @@ void TagPositionIntreface::set_pose(alvar::Pose new_pose)
   this->touched_=true;
 }
 
-void TagPositionIntreface::set_marker_id(u_int32_t new_id)
+void TagPositionInterface::set_marker_id(u_int32_t new_id)
 {
   // apply the new id
   this->marker_id_ = new_id;
@@ -49,7 +49,7 @@ void TagPositionIntreface::set_marker_id(u_int32_t new_id)
   this->visibility_history_ = 0;
 }
 
-void TagPositionIntreface::write()
+void TagPositionInterface::write()
 {
   // update the visibility history according to the marker, weather this interface got a new pose
   if(this->touched_){

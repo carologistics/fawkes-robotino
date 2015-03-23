@@ -21,7 +21,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
       // set the frame of the interface
       interface->set_frame(frame.c_str());
       // generate a helper class and push it into this vector
-      this->push_back(new TagPositionIntreface(interface, i));
+      this->push_back(new TagPositionInterface(interface, i));
     }
     catch (std::exception &e)
     {
@@ -74,9 +74,9 @@ void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_l
     u_int32_t marker_id=marker.GetId();
 
     // find an interface with this marker assigned or an empty interface
-    TagPositionIntreface *marker_interface = NULL;
-    TagPositionIntreface *empty_interface = NULL;
-    for(TagPositionIntreface *interface: *this)
+    TagPositionInterface *marker_interface = NULL;
+    TagPositionInterface *empty_interface = NULL;
+    for(TagPositionInterface *interface: *this)
     {
       // assign marker_interface
       if(interface->marker_id() == marker_id){
@@ -99,7 +99,7 @@ void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_l
   }
   // update blackboard with interfaces
   u_int32_t visible_markers = 0;
-  for(TagPositionIntreface *interface: *this)
+  for(TagPositionInterface *interface: *this)
   {
     this->tag_vision_interface_->set_tag_id(interface->vector_position(), interface->marker_id());
     if(interface->marker_id() != EMPTY_INTERFACE_MARKER_ID)

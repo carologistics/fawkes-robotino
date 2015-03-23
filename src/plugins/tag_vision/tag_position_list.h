@@ -19,7 +19,7 @@ enum ROT{
     W=3
 };
 
-class TagPositionList : public std::vector<TagPositionIntreface*>
+class TagPositionList : public std::vector<TagPositionInterface*>
 {
 public:
   /// Constructor
