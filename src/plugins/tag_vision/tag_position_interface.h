@@ -1,3 +1,25 @@
+/***************************************************************************
+ *  tag_position_interface.h - Interface handler for tag position
+ *
+ *  Generated: Mon Mar 23 12:01:15 2015
+ *  Copyright  2012  Randolph Maaßen
+ *
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version. A runtime exception applies to
+ *  this software (see LICENSE.GPL_WRE file mentioned below for details).
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL_WRE file in the doc directory.
+ */
+
 #ifndef TAG_POSITION_INTREFACE_H
 #define TAG_POSITION_INTREFACE_H
 
@@ -19,43 +41,43 @@ class TagPositionInterface
   };
 
 public:
-  // constructor
+  /// Constructor
   TagPositionInterface(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_);
-  // destructor
+  /// Destructor
   ~TagPositionInterface();
 
-  // update the position of the interface
+  /// Update the position of the interface
   void set_pose(alvar::Pose new_pose);
 
-  // write the interface on the blackboard
+  /// Write the interface on the blackboard
   void write();
 
-  // get the marker id
+  /// Get the marker id
   u_int32_t marker_id() {return this->marker_id_;}
 
-  // set the marker id
+  /// Set the marker id
   void set_marker_id(u_int32_t new_id);
 
-  // get the interface
+  /// Get the interface
   fawkes::Position3DInterface *interface() { return this->interface_; }
 
-  // get the vector position
+  /// Get the vector position
   u_int32_t vector_position(){ return this->vector_position_; }
 
 private:
-  // the interface to handle
+  /// The interface to handle
   fawkes::Position3DInterface *interface_;
 
-  // the visibility history for the interface to handle
+  /// The visibility history for the interface to handle
   int32_t visibility_history_;
 
-  // marker weather the interface was updated since last write
+  /// Marker, whether the interface was updated since last write
   bool touched_;
 
-  // the id of the marker the interface represents
+  /// The id of the marker the interface represents
   u_int32_t marker_id_;
 
-  // the position of the interface in the vector
+  /// The position of the interface in the vector
   u_int32_t vector_position_;
 };
 

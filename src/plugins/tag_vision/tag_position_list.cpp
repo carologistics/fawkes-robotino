@@ -1,5 +1,42 @@
+/***************************************************************************
+ *  tag_position_list.cpp - List for storing tag positions and their interfaces
+ *
+ *  Generated: Mon Mar 23 12:01:15 2015
+ *  Copyright  2012  Randolph Maaßen
+ *
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version. A runtime exception applies to
+ *  this software (see LICENSE.GPL_WRE file mentioned below for details).
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL_WRE file in the doc directory.
+ */
+
 #include "tag_position_list.h"
 
+/** @class TagPositionList "tag_position_list.h"
+ * This class handles the Tag Positions and the Blackboard communication for the TagVision
+ *
+ * @author Randolph Maaßen
+ */
+
+/**
+ * Creates an std::vector for handling TagVisionInterfaces for the TagVision. The Interfaces are stored here and updated on the update_blackboard() method
+ *
+ * @param blackboard The blackboard used to publish on and to create / handle the interfaces
+ * @param max_markers Maximum number of markers to detect at the same time
+ * @param frame
+ * @param thread_name Thread name for log information
+ * @param logger The loger used for logging
+ */
 TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_markers, std::string frame, std::string thread_name, fawkes::Logger *logger)
 {
   // store parameters
@@ -42,6 +79,9 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
   }
 }
 
+/**
+ * The destructor closes all interfaces and frees allocated memory
+ */
 TagPositionList::~TagPositionList()
 {
   // close all blackboards
@@ -62,6 +102,13 @@ TagPositionList::~TagPositionList()
   }
 }
 
+/**
+ * Assignes every marker found to an interface. The interface will stay the same for
+ * a marker as long as the marker is considered seen (visibility history > 0). It
+ * also updates the Marker IDs on the TagVision interface.
+ *
+ * @param marker_list The detected markers.
+ */
 void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_list)
 {
   for(alvar::MarkerData& marker: *marker_list)
