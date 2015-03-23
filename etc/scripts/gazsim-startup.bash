@@ -59,7 +59,7 @@ do
 	     COMMAND=$OPTARG
              ;;
 	 r)
-	     ROS=,gazsim-meta-ros
+	     ROS=-ros
 	     ;;
 	 s)
 	     SHUTDOWN=,mongodb,gazsim-llsf-statistics,gazsim-llsf-control

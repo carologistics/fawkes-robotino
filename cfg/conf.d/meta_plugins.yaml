@@ -27,8 +27,9 @@ fawkes/meta_plugins:
   # Robotino base meta plugin
   robotino-base: imu,robotino,webview
 
-  gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview
+  gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-ros: ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
+  gazsim-meta-robotino-ros: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,gazsim-meta-ros
   gazsim-meta-vision: fvbase,gazsim-webcam,light_front,gazsim-puck-detection
   gazsim-meta-robotino-default-high-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-puck-detection,gazsim-light-front
   gazsim-meta-robotino-default-low-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-meta-vision
