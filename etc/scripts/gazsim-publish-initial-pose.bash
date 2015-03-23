@@ -12,7 +12,7 @@ OPTIONS:
    -h                  Show this message
    -x arg              Initial x coordinate
    -y arg              Initial y coordinate
-   -p arg              Ros port 
+   -p arg              Fawkes remote as port 
    -o arg arg arg arg  Initial orientation (quaternion)
    -d                  Publish default initial localization for all three robots
 EOF
@@ -20,7 +20,7 @@ EOF
  
 #check options
 
-PORT=11311
+PORT=1910
 X=
 Y=
 O0=0.0
@@ -61,13 +61,13 @@ do
 	     ;;
 	 d)
 	     script_path=$FAWKES_DIR/bin
-	     initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
-	     $initial_pose_script_location -p 11311 -x 4.4 -y 0.3 -o 0 0 0.7 0.7
-	     $initial_pose_script_location -p 11312 -x 3.45 -y 0.3 -o 0 0 0.7 0.7
-	     $initial_pose_script_location -p 11313 -x 2.5 -y 0.3 -o 0 0 0.7 0.7
-	     $initial_pose_script_location -p 11314 -x -4.4 -y 0.3 -o 0 0 0.7 0.7
-	     $initial_pose_script_location -p 11315 -x -3.45 -y 0.3 -o 0 0 0.7 0.7
-	     $initial_pose_script_location -p 11316 -x -2.5 -y 0.3 -o 0 0 0.7 0.7
+	     set_pose=$script_path/ffset_pose
+	     $set_pose -r localhost:1921 -t 2.0 --  4.4  0.3 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1922 -t 2.0 --  3.45 0.3 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1923 -t 2.0 --  2.5  0.3 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1924 -t 2.0 -- -4.4  0.3 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1925 -t 2.0 -- -3.45 0.3 0.0  0.0 0.0 0.7 0.7
+	     $set_pose -r localhost:1926 -t 2.0 -- -2.5  0.3 0.0  0.0 0.0 0.7 0.7
 	     exit 1
 	     ;;
          ?)
@@ -88,28 +88,5 @@ then
      exit 1
 fi
 
-# Result of rostopic echo initialpose :
-# header: 
-#   seq: 0
-#   stamp: 
-#     secs: 0
-#     nsecs: 0
-#   frame_id: /map
-# pose: 
-#   pose: 
-#     position: 
-#       x: 0.463881731033
-#       y: 0.602762699127
-#       z: 0.0
-#     orientation: 
-#       x: 0.0
-#       y: 0.0
-#       z: -0.124706299333
-#       w: 0.992193700296
-#   covariance: [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891945200942]
-# ---
-#choose ros master uri
-export ROS_MASTER_URI=http://localhost:$PORT
-#Publish msg
-rostopic pub -1 initialpose geometry_msgs/PoseWithCovarianceStamped  "{header:  {seq: 1, stamp: {secs: 0, nsecs: 0}, frame_id: /map}, pose: {pose: {position: {x: $X, y: $Y, z: 0.0}, orientation: {x: $O0, y: $O1, z: $O2, w: $O3}}, covariance: [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891945200942]}}"
+$FAWKES_DIR/bin/ffset_pose $X $Y 0.0 $O0 $O1 $O2 $O3
 
