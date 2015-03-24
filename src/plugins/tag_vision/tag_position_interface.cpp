@@ -73,7 +73,7 @@ void TagPositionInterface::set_pose(alvar::Pose new_pose)
   rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
   rot[2] = CV_MAT_ELEM(mat, double, 2, 0);
   // create a quaternion on the angles. The coordinate system is shifted here
-  fawkes::tf::Quaternion tag_rot(rot[0]*M_PI/180,rot[1]*M_PI/180,rot[2]*M_PI/180);
+  fawkes::tf::Quaternion tag_rot(fawkes::deg2rad(rot[0]), fawkes::deg2rad(rot[1]), fawkes::deg2rad(rot[2]));
 
   //publish the quaternion
   this->interface_->set_rotation(ROT::X,tag_rot.getX());

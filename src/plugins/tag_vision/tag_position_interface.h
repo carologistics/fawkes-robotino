@@ -27,6 +27,7 @@
 
 #include <interfaces/Position3DInterface.h>
 #include <tf/types.h>
+#include <utils/math/angle.h>
 
 #include <alvar/Pose.h>
 
