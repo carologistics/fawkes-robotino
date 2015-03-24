@@ -63,21 +63,23 @@ void TagPositionInterface::set_pose(alvar::Pose new_pose)
   //temp mat to get cv data
   CvMat mat;
   //angles in quaternion
-  double rot[4];
+  double rot[3];
   //create the mat
-  cvInitMatHeader(&mat, 4, 1, CV_64F, rot);
-
-  new_pose.GetQuaternion(&mat);
+  cvInitMatHeader(&mat, 3, 1, CV_64F, rot);
+  // get the angles in euler
+  new_pose.GetEuler(&mat);
   //get the temporary quaternion in wxyz
   rot[0] = CV_MAT_ELEM(mat, double, 0, 0);
   rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
   rot[2] = CV_MAT_ELEM(mat, double, 2, 0);
-  rot[3] = CV_MAT_ELEM(mat, double, 3, 0);
+  // create a quaternion on the angles. The coordinate system is shifted here
+  fawkes::tf::Quaternion tag_rot(rot[2]*M_PI/180,rot[0]*M_PI/180,rot[1]*M_PI/180);
+
   //publish the quaternion
-  this->interface_->set_rotation(ROT::X,rot[ALVAR_ROT::A_X]);
-  this->interface_->set_rotation(ROT::Y,rot[ALVAR_ROT::A_Y]);
-  this->interface_->set_rotation(ROT::Z,rot[ALVAR_ROT::A_Z]);
-  this->interface_->set_rotation(ROT::W,rot[ALVAR_ROT::A_W]);
+  this->interface_->set_rotation(ROT::X,tag_rot.getX());
+  this->interface_->set_rotation(ROT::Y,tag_rot.getY());
+  this->interface_->set_rotation(ROT::Z,tag_rot.getZ());
+  this->interface_->set_rotation(ROT::W,tag_rot.getW());
   //publish the translation
   this->interface_->set_translation(TRANS::T_X/*1*/,new_pose.translation[ALVAR_TRANS::A_T_X/*0*/]/1000);
   this->interface_->set_translation(TRANS::T_Y/*2*/,-new_pose.translation[ALVAR_TRANS::A_T_Y/*1*/]/1000);

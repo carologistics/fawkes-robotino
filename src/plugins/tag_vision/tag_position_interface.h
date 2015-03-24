@@ -26,6 +26,7 @@
 #include <string>
 
 #include <interfaces/Position3DInterface.h>
+#include <tf/types.h>
 
 #include <alvar/Pose.h>
 
