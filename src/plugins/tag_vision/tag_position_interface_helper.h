@@ -33,7 +33,7 @@
 
 #define EMPTY_INTERFACE_MARKER_ID 0
 
-class TagPositionInterface
+class TagPositionInterfaceHelper
 {
   enum ROT{
     X=0,
@@ -63,9 +63,9 @@ class TagPositionInterface
 
 public:
   /// Constructor
-  TagPositionInterface(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_);
+  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_);
   /// Destructor
-  ~TagPositionInterface();
+  ~TagPositionInterfaceHelper();
 
   /// Update the position of the interface
   void set_pose(alvar::Pose new_pose);

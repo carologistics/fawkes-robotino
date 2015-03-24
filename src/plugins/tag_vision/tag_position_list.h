@@ -31,7 +31,7 @@
 #include <alvar/Marker.h>
 #include <logging/logger.h>
 
-#include "tag_position_interface.h"
+#include "tag_position_interface_helper.h"
 
 enum ROT{
     X=0,
@@ -40,7 +40,7 @@ enum ROT{
     W=3
 };
 
-class TagPositionList : public std::vector<TagPositionInterface*>
+class TagPositionList : public std::vector<TagPositionInterfaceHelper*>
 {
 public:
   /// Constructor
