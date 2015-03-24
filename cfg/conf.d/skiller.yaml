@@ -79,7 +79,11 @@ skiller:
         line6: LaserLineInterface::/laser-lines/6
         line7: LaserLineInterface::/laser-lines/7
         line8: LaserLineInterface::/laser-lines/8
-        tag_0: Position3DInterface::tag_0
+        tag_0: Position3DInterface::/tag-vision/0
+        tag_0: Position3DInterface::/tag-vision/1
+        tag_0: Position3DInterface::/tag-vision/2
+        tag_0: Position3DInterface::/tag-vision/3
+        tag_0: Position3DInterface::/tag-vision/4
       writing:
         light: RobotinoLightInterface::Light determined
 
