@@ -189,8 +189,8 @@ end
 local old_speed={x=0,y=0,ori=0}
 
 function DRIVE:loop()
-local q = fawkes.tf.Quaternion:new(tag:rotation(0), tag:roatation(1), tag,rotation(2), tag:rotation(3))
    local tag = get_closest_tag()
+   local q = fawkes.tf.Quaternion:new(tag:rotation(0), tag:roatation(1), tag,rotation(2), tag:rotation(3))
    --skip on empty values
    if(tag:translation(0) == 0 and tag:translation(1) == 0 and fawkes.tf.get_yaw(q) == 0) then
 --      send_transrot(0,0,0)
