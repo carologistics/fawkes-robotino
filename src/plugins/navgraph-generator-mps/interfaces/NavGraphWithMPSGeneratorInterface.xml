@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="NavGraphWithMPSGeneratorInterface" author="Tim Niemueller" year="2015">
+  <constants>
+   <enum name="Side">
+     <comment>Which side is being added.</comment>
+     <item name="INPUT">Input of station.</item>
+     <item name="OUTPUT">Output of station.</item>
+  </enum> 
+  </constants>
+  <data>
+    <comment>
+      This interface allows to announce MPS stations to navgraph-generator-mps.
+    </comment>
+    <field type="string" name="last_id" length="64">
+      Name of last added station.
+    </field>
+  </data>
+  <message name="Clear">
+    <comment>
+      Remove all currently known stations.
+    </comment>
+  </message>
+  <message name="UpdateStationByTag">
+    <comment>
+      Add an obstacle to be avoided by the graph. The obstacle is
+      given as a centroid in X-Y ground-support plane of global frame,
+      typical /map frame.
+    </comment>
+    <field type="string" name="id" length="64">
+      ID of the obstacle. Can later be used to remove it again.
+    </field>
+    <field type="Side" name="side">Which side are we reporting.</field>
+    <field type="string" length="32" name="frame">
+      Coordinate reference frame of tag.
+    </field>
+    <field type="double" length="3" name="tag_translation">
+      Translation vector from the reference frame's origin, ordered as (x, y, z).
+    </field>
+    <field type="double" length="4" name="tag_rotation">
+      Rotation quaternion relative to reference frame, ordered as (x, y, z, w).
+    </field>
+  </message>
+</interface>

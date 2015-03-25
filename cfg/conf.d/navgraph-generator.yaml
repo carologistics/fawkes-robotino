@@ -30,3 +30,10 @@ navgraph-generator:
     # Minimum and maximum length of line to consider it. Ignored if less
     # than zero.
     line_min_length: 0.8
+
+navgraph-generator-mps:
+  # The width (length of narrow edge) of MPS stations; m
+  mps-width: 0.3
+
+  # The distance in which to place approach points from the machine; m
+  approach-distance: 0.4
