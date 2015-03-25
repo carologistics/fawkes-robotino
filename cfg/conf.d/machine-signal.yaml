@@ -126,6 +126,7 @@ plugins/machine_signal:
     min_area_cover: 0.1
 
   lasercluster:
+    enable: false
     min_visibility_history: 10
     laser_frame: /base_laser
     signal_width: 0.052
@@ -135,3 +136,8 @@ plugins/machine_signal:
     cam_aperture_y: 0.8
     cam_angle: 0.25 # 12.2°
     cam_frame: /cam_front
+
+  laser-lines:
+    enable: true
+    min_visibility_history: 10
+
