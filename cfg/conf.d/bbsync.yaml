@@ -28,6 +28,7 @@ fawkes/bbsync:
       reading:
         # laser: Laser360Interface::Laser urg
         # laser-filter: Laser360Interface::Laser urg filtered
+        laser: Laser360Interface::Laser tim55x
         battery: BatteryInterface::Robotino
         motor: MotorInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino

@@ -11,7 +11,7 @@ plugins/laser-filter:
     in/sick-tim55x: Laser360Interface::Laser tim55x
 
     # URG filtered output interface
-    out/filtered: Laser360Interface::Laser urg filtered
+    out/filtered: Laser360Interface::Laser urg-filtered
 
     filters:
 
