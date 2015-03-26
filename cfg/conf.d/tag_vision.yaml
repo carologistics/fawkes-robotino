@@ -15,7 +15,7 @@ plugins/tag_vision:
   shm_image_id: "tag_vision"
 
   # coordinate and interface frame
-  transform: /plugins/static-transforms/transforms/cam_puck/
+  transform: /plugins/static-transforms/transforms/cam_tag/
 
   #Camare viewport factor logitech webcam
   camera_opening_angle_horizontal: 1.32 
