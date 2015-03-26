@@ -536,7 +536,8 @@ MachineSignalPipelineThread::bb_get_laser_rois()
           )));
         }
         catch (OutOfBoundsException &e) {
-          logger->log_debug(name(), e);
+          // This is a pretty normal case, getting a 3D position that is outside the cam viewport
+          //logger->log_debug(name(), e);
         }
         catch (Exception &e) {
           logger->log_error(name(), e);
@@ -545,12 +546,12 @@ MachineSignalPipelineThread::bb_get_laser_rois()
     }
   }
 
-  unique_ptr<Point> signal_hint_msg;
+  Point *signal_hint_msg = nullptr;
   while (!bb_signal_position_estimate_->msgq_empty()) {
     // Process new signal hint messages
     SignalHintInterface::SignalPositionMessage *msg = nullptr;
     if ((msg = bb_signal_position_estimate_->msgq_first_safe(msg))) {
-      *signal_hint_msg = Point(msg->translation(0), msg->translation(1), msg->translation(2));
+      signal_hint_msg = new btVector3(msg->translation(0), msg->translation(1), msg->translation(2));
     }
     else {
       logger->log_error(name(), "EEEK! Invalid message in SignalHintInterface! This is a Bug!");
@@ -565,7 +566,6 @@ MachineSignalPipelineThread::bb_get_laser_rois()
       bb_signal_position_estimate_->set_translation(0, signal_hint_msg->getX());
       bb_signal_position_estimate_->set_translation(1, signal_hint_msg->getY());
       bb_signal_position_estimate_->set_translation(2, signal_hint_msg->getZ());
-      bb_signal_position_estimate_->set_timestamp();
       bb_signal_position_estimate_->write();
     }
 
@@ -594,9 +594,17 @@ MachineSignalPipelineThread::bb_get_laser_rois()
         (best_line->visibility_history() > 0 && signal_hint_now.distance(signal_hint_) < 0.01)) {
       // Either visibility history is good, or it is bad but the line has moved by less than a centimeter.
       signal_hint_ = signal_hint_now;
-      rv->insert(pos3d_to_roi(signal_hint_now));
+      try {
+        rv->insert(pos3d_to_roi(signal_hint_now));
+      }
+      catch (OutOfBoundsException &e) {
+      }
+      catch (Exception &e) {
+        logger->log_error(name(), e.what());
+      }
     }
   }
+  delete signal_hint_msg;
   return rv;
 }
 
