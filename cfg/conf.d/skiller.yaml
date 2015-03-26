@@ -62,7 +62,7 @@ skiller:
         tag_14: Position3DInterface::/tag-vision/14
         tag_15: Position3DInterface::/tag-vision/15
         tag_info: TagVisionInterface::/tag-vision/info
+        signal_hint: SignalHintInterface::/machine-signal/position-hint
       writing:
         light: RobotinoLightInterface::Light determined
-        signal_hint: SignalHintInterface::/machine-signal/position-hint
 
