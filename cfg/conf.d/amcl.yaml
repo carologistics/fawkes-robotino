@@ -89,7 +89,7 @@ plugins/amcl:
   t_thresh: 10.0
 
   # Laser blackboard interface ID
-  laser_interface_id: Laser urg filtered
+  laser_interface_id: Laser urg-filtered
   # Pose blackboard interface ID
   pose_interface_id: Pose
 
