@@ -25,6 +25,8 @@
 
 #include <string>
 
+#include <aspect/clock.h>
+#include <aspect/tf.h>
 #include <interfaces/Position3DInterface.h>
 #include <tf/types.h>
 #include <utils/math/angle.h>
@@ -32,8 +34,12 @@
 #include <alvar/Pose.h>
 
 #define EMPTY_INTERFACE_MARKER_ID 0
+#define FRAME "cam_front_tag"
+#define CHILD_FRAME "tag_"
 
-class TagPositionInterfaceHelper
+class TagPositionInterfaceHelper:
+  public fawkes::TransformAspect,
+  public fawkes::ClockAspect
 {
   enum ROT{
     X=0,
@@ -63,7 +69,7 @@ class TagPositionInterfaceHelper
 
 public:
   /// Constructor
-  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_);
+  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::BlackBoard *blackboard);
   /// Destructor
   ~TagPositionInterfaceHelper();
 
@@ -100,6 +106,9 @@ private:
 
   /// The position of the interface in the vector
   u_int32_t vector_position_;
+
+  /// The child frame / name of the transform
+  std::string child_frame_;
 };
 
 #endif // TAG_POSITION_INTREFACE_H

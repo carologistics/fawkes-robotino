@@ -58,7 +58,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
       // set the frame of the interface
       interface->set_frame(frame.c_str());
       // generate a helper class and push it into this vector
-      this->push_back(new TagPositionInterfaceHelper(interface, i));
+      this->push_back(new TagPositionInterfaceHelper(interface, i, this->blackboard_));
     }
     catch (std::exception &e)
     {
