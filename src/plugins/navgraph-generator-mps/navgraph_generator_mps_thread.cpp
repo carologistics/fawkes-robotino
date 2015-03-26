@@ -128,7 +128,7 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   }
   tf::Vector3     tf_pose_pos(pose.getOrigin());
   tf::Quaternion  tf_pose_ori(pose.getRotation());
-  Eigen::Vector3f pose_pos(tf_pose_pos.x(), tf_pose_pos.y(), tf_pose_pos.z());
+  Eigen::Vector3f tag_pose_pos(tf_pose_pos.x(), tf_pose_pos.y(), tf_pose_pos.z());
 
   // **** 2. project to ground plane
   Eigen::Vector3f proj_pos;
@@ -136,9 +136,9 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   {
     Eigen::Vector3f plane_normal = Eigen::Vector3f::UnitZ();
     Eigen::Vector3f plane_origin(0,0,0);
-    Eigen::Vector3f po = pose_pos - plane_origin;
+    Eigen::Vector3f po = tag_pose_pos - plane_origin;
     float lambda = plane_normal.dot(po);
-    proj_pos = pose_pos - (lambda * plane_normal);
+    proj_pos = tag_pose_pos - (lambda * plane_normal);
   }
 
   Eigen::Quaternionf proj_ori(Eigen::AngleAxisf(tf::get_yaw(tf_pose_ori), Eigen::Vector3f::UnitZ()));
@@ -147,18 +147,22 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   Eigen::Vector3f dir_vec = proj_ori * Eigen::Vector3f::UnitX();
   Eigen::ParametrizedLine<float,3> mline(proj_pos, dir_vec);
 
-  Eigen::Vector3f     input_pos, output_pos;
-  Eigen::Quaternionf  input_ori, output_ori;
+  Eigen::Vector3f     input_pos, output_pos, pose_pos;
+  Eigen::Quaternionf  input_ori, output_ori, pose_ori;
   if (input) {
     input_pos  = mline.pointAt(cfg_mps_approach_dist_);
     input_ori  = proj_ori * Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitZ());
     output_pos = mline.pointAt(-(cfg_mps_approach_dist_ + cfg_mps_width_));
     output_ori = proj_ori;
+    pose_pos   = mline.pointAt(-(.5 * cfg_mps_width_));
+    pose_ori   = output_ori;
   } else {
     output_pos = mline.pointAt(cfg_mps_approach_dist_);
     output_ori = proj_ori * Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitZ());
     input_pos  = mline.pointAt(-(cfg_mps_approach_dist_ + cfg_mps_width_));
     input_ori  = proj_ori;
+    pose_pos   = mline.pointAt(-(.5 * cfg_mps_width_));
+    pose_ori   = input_ori;
   }
   
   // Problem: range of first value is only [0..pi], which might result
@@ -179,16 +183,18 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
 
   // **** 4. add to stations
   MPSStation s;
-  s.frame      = frame;
-  s.pose_pos   = pose_pos;
-  s.pose_ori   = proj_ori;
-  s.input_pos  = input_pos;
-  s.input_ori  = input_ori;
-  s.input_yaw  = quat_yaw(input_ori);
-  s.output_pos = output_pos;
-  s.output_ori = output_ori;
-  s.output_yaw = quat_yaw(output_ori);
-  stations_[id] = s;
+  s.tag_frame    = frame;
+  s.tag_pose_pos = pose_pos;
+  s.tag_pose_ori = proj_ori;
+  s.pose_pos     = pose_pos;
+  s.pose_ori     = pose_ori;
+  s.input_pos    = input_pos;
+  s.input_ori    = input_ori;
+  s.input_yaw    = quat_yaw(input_ori);
+  s.output_pos   = output_pos;
+  s.output_ori   = output_ori;
+  s.output_yaw   = quat_yaw(output_ori);
+  stations_[id]  = s;
 }
 
 
@@ -207,15 +213,19 @@ NavGraphGeneratorMPSThread::generate_navgraph()
   for (const auto &s : stations_) {
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
-       ((s.first + " I").c_str(),
+       ((s.first + "-I").c_str(),
 	s.second.input_pos[0], s.second.input_pos[1], s.second.input_yaw,
 	NavGraphGeneratorInterface::CLOSEST_EDGE));
 
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
-       ((s.first + " O").c_str(),
+       ((s.first + "-O").c_str(),
 	s.second.output_pos[0], s.second.output_pos[1], s.second.output_yaw,
 	NavGraphGeneratorInterface::CLOSEST_EDGE));
+
+    navgen_if_->msgq_enqueue
+      (new NavGraphGeneratorInterface::AddObstacleMessage
+       ((s.first + "-C").c_str(), s.second.pose_pos[0], s.second.pose_pos[1]));
   }
 
   navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ComputeMessage());

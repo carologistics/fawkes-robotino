@@ -78,7 +78,11 @@ class NavGraphGeneratorMPSThread
   typedef struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    std::string        frame;
+    std::string        tag_frame;
+    Eigen::Vector3f    tag_pose_pos;
+    Eigen::Quaternionf tag_pose_ori;
+    bool               tag_is_input;
+
     Eigen::Vector3f    pose_pos;
     Eigen::Quaternionf pose_ori;
 
