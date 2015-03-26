@@ -107,7 +107,7 @@ TagVisionThread::init()
     // set up marker
     max_marker = 16;
     this->markers_ = new std::vector<alvar::MarkerData>();
-    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,fv_cam_info.frame,this->name(),this->logger);
+    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,fv_cam_info.frame,this->name(),this->logger, this->clock);
 
 }
 

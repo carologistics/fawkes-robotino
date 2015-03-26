@@ -87,7 +87,8 @@ class TagVisionThread
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
   public fawkes::VisionAspect,
-  public fawkes::ConfigurationChangeHandler
+  public fawkes::ConfigurationChangeHandler,
+  public fawkes::ClockAspect
 {
  public:
   TagVisionThread();

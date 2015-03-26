@@ -25,7 +25,6 @@
 
 #include <string>
 
-#include <aspect/clock.h>
 #include <aspect/tf.h>
 #include <interfaces/Position3DInterface.h>
 #include <tf/types.h>
@@ -38,8 +37,7 @@
 #define CHILD_FRAME "tag_"
 
 class TagPositionInterfaceHelper:
-  public fawkes::TransformAspect,
-  public fawkes::ClockAspect
+  public fawkes::TransformAspect
 {
   enum ROT{
     X=0,
@@ -69,7 +67,7 @@ class TagPositionInterfaceHelper:
 
 public:
   /// Constructor
-  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::BlackBoard *blackboard);
+  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::BlackBoard *blackboard, fawkes::Clock *clock);
   /// Destructor
   ~TagPositionInterfaceHelper();
 
@@ -109,6 +107,9 @@ private:
 
   /// The child frame / name of the transform
   std::string child_frame_;
+
+  /// The clock to get the time stamps for StampedTransform nad Transform publishing
+  fawkes::Clock *clock_;
 };
 
 #endif // TAG_POSITION_INTREFACE_H
