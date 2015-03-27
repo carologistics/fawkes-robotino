@@ -203,7 +203,23 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 {
   navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ClearMessage());
   navgen_if_->msgq_enqueue(
-    new NavGraphGeneratorInterface::SetBoundingBoxMessage(-6, 0, 6, 6));
+    new NavGraphGeneratorInterface::SetBoundingBoxMessage(-7, -1, 7, 7));
+
+  navgen_if_->msgq_enqueue
+    (new NavGraphGeneratorInterface::SetFilterMessage
+     (NavGraphGeneratorInterface::FILTER_EDGES_BY_MAP, true));
+
+  navgen_if_->msgq_enqueue
+    (new NavGraphGeneratorInterface::SetFilterMessage
+     (NavGraphGeneratorInterface::FILTER_ORPHAN_NODES, true));
+
+  navgen_if_->msgq_enqueue
+    (new NavGraphGeneratorInterface::SetFilterMessage
+     (NavGraphGeneratorInterface::FILTER_MULTI_GRAPH, true));
+
+  navgen_if_->msgq_enqueue
+    (new NavGraphGeneratorInterface::SetFilterParamFloatMessage
+     (NavGraphGeneratorInterface::FILTER_EDGES_BY_MAP, "distance", 0.4));
 
   navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddMapObstaclesMessage(0.5));
 
