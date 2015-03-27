@@ -42,7 +42,8 @@ using namespace std;
 TagVisionThread::TagVisionThread()
   : Thread("TagVisionThread", Thread::OPMODE_WAITFORWAKEUP),
     VisionAspect(VisionAspect::CYCLIC),
-    ConfigurationChangeHandler(CFG_PREFIX)
+    ConfigurationChangeHandler(CFG_PREFIX),
+    fawkes::TransformAspect(fawkes::TransformAspect::ONLY_PUBLISHER,"tags")
 {
     fv_cam = NULL;
     shm_buffer = NULL;
@@ -107,7 +108,7 @@ TagVisionThread::init()
     // set up marker
     max_marker = 16;
     this->markers_ = new std::vector<alvar::MarkerData>();
-    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,fv_cam_info.frame,this->name(),this->logger, this->clock);
+    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,fv_cam_info.frame,this->name(),this->logger, this->clock, this->tf_publisher);
 
 }
 

@@ -37,7 +37,7 @@
  * @param thread_name Thread name for log information
  * @param logger The loger used for logging
  */
-TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_markers, std::string frame, std::string thread_name, fawkes::Logger *logger, fawkes::Clock *clock)
+TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_markers, std::string frame, std::string thread_name, fawkes::Logger *logger, fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher)
 {
   // store parameters
   this->blackboard_ = blackboard;
@@ -45,6 +45,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
   this->thread_name_ = thread_name;
   this->logger_ = logger;
   this->clock_ = clock;
+  this->tf_publisher_ = tf_publisher;
 
   // create blackboard interfaces
   for(size_t i=0; i < this->max_markers_; i++)
@@ -59,7 +60,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
       // set the frame of the interface
       interface->set_frame(frame.c_str());
       // generate a helper class and push it into this vector
-      this->push_back(new TagPositionInterfaceHelper(interface, i, this->blackboard_, this->clock_));
+      this->push_back(new TagPositionInterfaceHelper(interface, i, this->blackboard_, this->clock_, this->tf_publisher_));
     }
     catch (std::exception &e)
     {

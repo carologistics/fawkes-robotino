@@ -44,7 +44,7 @@ class TagPositionList : public std::vector<TagPositionInterfaceHelper*>
 {
 public:
   /// Constructor
-  TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_markers, std::string frame, std::string thread_name, fawkes::Logger *logger_, fawkes::Clock *clock);
+  TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_markers, std::string frame, std::string thread_name, fawkes::Logger *logger_, fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher);
   /// Destructor
   ~TagPositionList();
   /// Update the blackboard with the stored data
@@ -63,6 +63,8 @@ private:
   fawkes::Logger *logger_;
   /// The clock for the StampedTransforms
   fawkes::Clock *clock_;
+  /// Publisher for the transforms
+  fawkes::tf::TransformPublisher *tf_publisher_;
 };
 
 #endif // TAG_POSITION_LIST_H

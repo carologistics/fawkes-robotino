@@ -29,6 +29,7 @@
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
 #include <aspect/vision.h>
+#include <aspect/tf.h>
 
 // config handling
 #include <config/change_handler.h>
@@ -88,7 +89,8 @@ class TagVisionThread
   public fawkes::BlackBoardAspect,
   public fawkes::VisionAspect,
   public fawkes::ConfigurationChangeHandler,
-  public fawkes::ClockAspect
+  public fawkes::ClockAspect,
+  public fawkes::TransformAspect
 {
  public:
   TagVisionThread();

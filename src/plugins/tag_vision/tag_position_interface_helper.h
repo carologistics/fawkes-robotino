@@ -25,10 +25,10 @@
 
 #include <string>
 
-#include <aspect/tf.h>
 #include <interfaces/Position3DInterface.h>
 #include <tf/types.h>
 #include <utils/math/angle.h>
+#include <tf/transform_publisher.h>
 
 #include <alvar/Pose.h>
 
@@ -36,8 +36,7 @@
 #define FRAME "cam_front_tag"
 #define CHILD_FRAME "tag_"
 
-class TagPositionInterfaceHelper:
-  public fawkes::TransformAspect
+class TagPositionInterfaceHelper
 {
   enum ROT{
     X=0,
@@ -67,7 +66,7 @@ class TagPositionInterfaceHelper:
 
 public:
   /// Constructor
-  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::BlackBoard *blackboard, fawkes::Clock *clock);
+  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::BlackBoard *blackboard, fawkes::Clock *clock, fawkes::tf::TransformPublisher * tf_publisher);
   /// Destructor
   ~TagPositionInterfaceHelper();
 
@@ -110,6 +109,9 @@ private:
 
   /// The clock to get the time stamps for StampedTransform nad Transform publishing
   fawkes::Clock *clock_;
+
+  /// The transform publisher
+  fawkes::tf::TransformPublisher *tf_publisher_;
 };
 
 #endif // TAG_POSITION_INTREFACE_H
