@@ -6,18 +6,18 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-cluster
 navgraph-generator:
 
   map:
+    # Line segmentation uses 2 * map-resolution for max inter-sample
+    # distance as well as max support distance.
+    
     # Maximum number of iterations to perform for line segmentation
     line_segmentation_max_iterations: 250
 
-    # Segmentation distance threshold; m
-    line_segmentation_distance_threshold: 0.1
-
-    # Minimum size of fraction of points that must be inliers to consider a table
-    # This is an absolute number and depends on sensor resolution and min and max
-    # length of considered lines and acceptable occlusions.
-    line_segmentation_min_inliers: 20
-    # Maximum inter-sample distance for line segmentation
-    line_segmentation_sample_max_dist: 0.25
+    # Minimum number of points that must be inliers to consider a line.
+    # Note that this depends on the resolution of the map and the minimum
+    # length for lines you want to detect. For example, with a resolution
+    # of 0.05 (5cm per cell) and 10 min inliers, the minimum length you
+    # can detect is 0.5 m (10 * 0.05).
+    line_segmentation_min_inliers: 10
 
     # To have contiguous lines without large holes, a clustering is
     # applied after the initial line segmentation. The following
@@ -29,7 +29,25 @@ navgraph-generator:
   
     # Minimum and maximum length of line to consider it. Ignored if less
     # than zero.
-    line_min_length: 0.8
+    # Note: we use the cell centers for line detection. That means
+    # that lines are always one cell size (resolution step) shorter
+    # than what you see on the map. For instance, with a resolution of
+    # 0.05 (5cm per cell) and a wall that is 1.0 m long, it would be
+    # detected as a 0.95 m long line (the outer two cells each inset
+    # by half the cell size, in our example that's 2 * 0.025 = 0.05,
+    # then actual length 1.0 - 0.05 = 0.95.  Additionally, if you have
+    # walls that meet, e.g. in perpendicular, the some points of one
+    # of the lines will be accounted to the other.  For example,
+    # consider a corner with two walls A and B. Let's assume the line
+    # for A is found first. Now when gathering support points, we
+    # consider the line segmentation distance threshold which is 2 x
+    # cell size. Due to this we will sample two cells of wall B for
+    # the detection of wall A.
+    # Therefore carefully choose the minimum length.
+    line_min_length: 0.6
+
+  visualization:
+    enable: true
 
 navgraph-generator-mps:
   # The width (length of narrow edge) of MPS stations; m
