@@ -39,6 +39,7 @@
     (default (printout warn "NO EXPLORATION ROW DEFINED! UNABLE TO DO EXPLORATION!" crlf))
   )
   (printout t "At first, I am exploring the " ?row " row" crlf)
+  
 )
 
 (defrule exp-turn-line-over
@@ -599,4 +600,24 @@
       (retract ?s)
       (assert (state EXP_PREPARE_FOR_PRODUCTION_FINISHED))
   )
+)
+
+(defrule exp-nav-gen-test
+  ?n <- (nav-gen-test)
+  =>
+  (retract ?n)
+  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
+  (blackboard-set-msg-field ?msg "id" "CCS")
+  (blackboard-set-msg-field ?msg "side" INPUT)
+  (blackboard-set-msg-field ?msg "frame" "/map")
+  (blackboard-set-msg-multifield ?msg "tag_translation" (create$ 0 0 0))
+  (blackboard-set-msg-multifield ?msg "tag_rotation" (create$ 0 0 0 1))
+  (blackboard-send-msg ?msg)
+  (bind ?msg-2 (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
+  (blackboard-set-msg-field ?msg-2 "id" "MCS")
+  (blackboard-set-msg-field ?msg-2 "side" INPUT)
+  (blackboard-set-msg-field ?msg-2 "frame" "/map")
+  (blackboard-set-msg-multifield ?msg-2 "tag_translation" (create$ 3 3 0))
+  (blackboard-set-msg-multifield ?msg-2 "tag_rotation" (create$ 0 0 0.7 0.7))
+  (blackboard-send-msg ?msg-2)
 )

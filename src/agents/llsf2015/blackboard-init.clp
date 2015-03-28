@@ -10,6 +10,7 @@
   (blackboard-open "Position3DInterface" "Pose")
   (blackboard-open "RobotinoLightInterface" "/machine-signal/best")
   (blackboard-open "RobotinoSensorInterface" "Robotino")
+  (blackboard-open "NavGraphWithMPSGeneratorInterface" "/navgraph-generator-mps")
 
   ;unwatch to avoid debug spam
   (unwatch rules blackboard-read)
@@ -19,6 +20,8 @@
   (unwatch facts RobotinoSensorInterface)
   (unwatch facts Position3DInterface)
   (unwatch facts RobotinoLightInterface)
+  (unwatch rules NavGraphWithMPSGeneratorInterface-cleanup)
+  (unwatch facts NavGraphWithMPSGeneratorInterface)
 
   (assert (loaded interfaces))
 )
