@@ -149,13 +149,13 @@
 )
 
 (defrule exp-read-tag-from-exp-point
-  "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
+  "Read found tag in front of robot to recognize it and send a navgraph generator message."
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (timer (name waiting-for-tag-since))
   ?s <- (state EXP_LOOKING_FOR_TAG)
   ?g <- (goalmachine ?old)
-  (zone-exploration (name ?old) (x ?) (y ?))
+  ?ze <- (zone-exploration (name ?old))
   (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
   (team-color ?team-color)
   (tag-matching (tag-id ?tag) (team ?team-color) (machine ?machine) (side ?side))
@@ -181,9 +181,9 @@
  
   (retract ?s ?tvi ?tagpos ?ws)
   ; TODO align at output tag and scan light
-  (assert (state EXP_IDLE)
-    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
-  )
+  (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
+          (timer (name waiting-for-navgraph-generation) (time ?now) (seq 1)))
+  (modify ?ze (machine ?machine))
 )
 
 (defrule exp-no-tag-found
@@ -213,11 +213,38 @@
   (retract ?ws ?s)
 )
 
+(defrule exp-drive-to-output-tag
+  "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards"
+  (phase EXPLORATION)
+  ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
+  (time $?now)
+  ?timer <- (timer (name waiting-for-navgraph-generation) (time $?t&:(timeout ?now ?t 2.0)))
+  (goalmachine ?zone)
+  (zone-exploration (name ?zone) (machine ?machine))
+  =>
+  (printout t "Driving to MPS output." crlf)
+  (retract ?s ?timer)
+  (assert (state EXP_DRIVE_TO_OUTPUT))
+  (skill-call ppgoto place (str-cat ?machine " O"))
+)
+
 (defrule exp-align-in-front-of-light-signal
+  "Preparing recognition of the light signals after we arrived at the output side."
+  (phase EXPLORATION)
+  ?final <- (skill (name "ppgoto") (status FINAL|FAILED)) 
+  ?s <- (state EXP_DRIVE_TO_OUTPUT)
+  =>
+  (printout t "Aligning in front of light signal." crlf)
+  (retract ?s ?final)
+  (assert (state EXP_ALIGN_AT_OUTPUT))
+  (skill-call align_tag x 0.2 y 0.1)
+)
+
+(defrule exp-align-in-front-of-light-signal-finished
   "Preparing recognition of the light signals after we aligned in front of it."
   (phase EXPLORATION)
   ?final <- (skill (name "align_tag") (status FINAL|FAILED)) 
-  ?s <- (state EXP_DRIVING_TO_MACHINE)
+  ?s <- (state EXP_ALIGN_AT_OUTPUT)
   (time $?now)
   =>
   (printout t "Aligned in front of light signal." crlf)
@@ -308,8 +335,8 @@
   (while (<= ?ind (length$ ?row)) do
     ; can I go to this machine next?
     (if (and (any-factp ((?me zone-exploration)) (and (eq ?me:name (nth$ ?ind ?row))
-							                                           (eq ?me:team ?team-color)
-							                                           (not ?me:recognized)))
+						      (eq ?me:team ?team-color)
+						      (not ?me:recognized)))
 	     (not (any-factp ((?lock locked-resource)) (eq ?lock:resource (nth$ ?ind ?row)))))
       then
       (break)

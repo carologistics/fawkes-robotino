@@ -34,6 +34,7 @@
   (slot current-look-pos (type INTEGER) (default 1))
   (slot recognized (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot next (type SYMBOL)) ;TODO delete next
+  (slot machine (type SYMBOL) (allowed-values CBS CCS1 CCS2 CRS1 CRS2 CDS MBS MCS1 MCS2 MRS1 MRS2 MDS))
 )
 
 (deftemplate machine-type
