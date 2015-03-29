@@ -121,3 +121,6 @@
 #    tilt_trans_z: 0.039
     # whether transforms should be published
     publish_transforms: true
+
+    # Name used for tf
+    name: AX12Gripper
