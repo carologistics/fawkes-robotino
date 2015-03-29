@@ -13,6 +13,9 @@
     # Device file for RX28 PTU
     device: /dev/ttyUSB0
 
+    # Driver prefix used by dynamixel-plugin
+    driver_prefix: /dynamixel/ax12gripper
+   
     # Read timeout for RX28 PTU
     read_timeout_ms: 300
 
