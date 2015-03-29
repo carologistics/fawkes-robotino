@@ -24,8 +24,7 @@
 #include <core/plugin.h>
 
 //#include "gripper_thread.h"
-#include "robotis/ax12a_thread.h"
-#include "sensor_thread.h"
+#include "ax12_gripper_thread.h"
 
 using namespace fawkes;
 
@@ -49,11 +48,11 @@ class AX12GripperPlugin : public fawkes::Plugin
 
     if (active)
       {
-	GripperAX12AThread * act_thread = new GripperAX12AThread(prefix);
-	GripperSensorThread * sensor_thread = new GripperSensorThread();
-	sensor_thread->add_act_thread(act_thread);
-	thread_list.push_back(act_thread);
-	thread_list.push_back(sensor_thread);	
+	// GripperAX12AThread * act_thread = new GripperAX12AThread(prefix);
+	// GripperSensorThread * sensor_thread = new GripperSensorThread();
+	// sensor_thread->add_act_thread(act_thread);
+	thread_list.push_back(new GripperAX12AThread(prefix));
+	// thread_list.push_back(sensor_thread);	
       }
   }
 };
