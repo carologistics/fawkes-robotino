@@ -92,8 +92,8 @@ class GripperAX12AThread
   std::string   __gripper_cfg_prefix;
   std::string   __cfg_gripper_name;
   std::string   __cfg_driver_prefix;
-  unsigned char __cfg_left_servo_id;
-  unsigned char __cfg_right_servo_id;
+  std::string   __cfg_left_servo_id;
+  std::string   __cfg_right_servo_id;
   /* unsigned char __cfg_left_servo_id; */
   /* unsigned char __cfg_right_servo_id; */
   /* unsigned int __cfg_cw_compl_margin; */

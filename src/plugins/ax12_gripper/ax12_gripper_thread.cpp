@@ -79,8 +79,8 @@ GripperAX12AThread::init()
   // freed on destruction, therefore no special handling is necessary in init()
   // itself!
   __cfg_driver_prefix    = config->get_string((__gripper_cfg_prefix + "driver_prefix").c_str());
-  __cfg_left_servo_id    = config->get_uint((__gripper_cfg_prefix + "left_servo_id").c_str());
-  __cfg_right_servo_id   = config->get_uint((__gripper_cfg_prefix + "right_servo_id").c_str());
+  __cfg_left_servo_id    = config->get_string((__gripper_cfg_prefix + "left_servo_id").c_str());
+  __cfg_right_servo_id   = config->get_string((__gripper_cfg_prefix + "right_servo_id").c_str());
   // __cfg_cw_compl_margin  = config->get_uint((__gripper_cfg_prefix + "cw_compl_margin").c_str());
   // __cfg_ccw_compl_margin = config->get_uint((__gripper_cfg_prefix + "ccw_compl_margin").c_str());
   // __cfg_cw_compl_slope   = config->get_uint((__gripper_cfg_prefix + "cw_compl_slope").c_str());
@@ -145,8 +145,8 @@ GripperAX12AThread::init()
   
   bool left_servo_found = false, right_servo_found = false;
 
-  __servo_if_right = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + boost::lexical_cast<std::string>((int)__cfg_right_servo_id)).c_str());
-  __servo_if_left  = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + boost::lexical_cast<std::string>((int)__cfg_left_servo_id)).c_str());
+  __servo_if_right = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_right_servo_id).c_str());
+  __servo_if_left  = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_left_servo_id).c_str());
 
   right_servo_found = __servo_if_right->has_writer();
   left_servo_found  = __servo_if_left->has_writer();
