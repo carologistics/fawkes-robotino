@@ -28,10 +28,11 @@ ifeq ($(HAVE_TF),1)
 endif
 
 # Sub directory name that contain Robotis drivers
-DRIVERS = robotis
+#DRIVERS = robotis
 
 LIBS_ax12_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
-	       fawkesinterface AX12GripperInterface LedInterface JointInterface
+	       fawkesinterface AX12GripperInterface LedInterface JointInterface \
+               DynamixelServoInterface
 OBJS_ax12_gripper = $(patsubst %.cpp,%.o,$(patsubst qa/%,,$(subst $(SRCDIR)/,,$(wildcard $(SRCDIR)/*.cpp $(foreach d,$(DRIVERS),$(SRCDIR)/$d/*.cpp )))))
 
 PLUGINS_all = $(PLUGINDIR)/ax12_gripper.so
