@@ -122,11 +122,14 @@ class GripperAX12AThread
   float        __cfg_right_close_load_angle;
   float        __cfg_max_speed;
   float        __cfg_max_torque;
+  float        __cfg_max_load;
   float        __target_left;
   float        __target_right;
   float        __left_margin;
   float        __right_margin;
 
+  bool         load_left_pending;
+  bool         load_right_pending;
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
   std::string  __cfg_left_link;
@@ -141,6 +144,7 @@ class GripperAX12AThread
   float         __last_left;
   float         __last_right;
   void goto_gripper(float left, float right);
+  void goto_gripper_load(float left, float right);
   void goto_gripper_timed(float left, float right, float time_sec);
   void get_gripper(float &left, float &right);
   void get_gripper(float &left, float &right, fawkes::Time &time);

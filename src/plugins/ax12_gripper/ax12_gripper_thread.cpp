@@ -105,6 +105,7 @@ GripperAX12AThread::init()
   __cfg_right_close_angle = config->get_float((__gripper_cfg_prefix + "right_close").c_str());
   __cfg_right_close_load_angle = config->get_float((__gripper_cfg_prefix + "right_close_load").c_str());
   __cfg_max_speed         = config->get_float((__gripper_cfg_prefix + "max_speed").c_str());
+  __cfg_max_load          = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
   __cfg_max_torque        = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
 
 #ifdef HAVE_TF
@@ -142,6 +143,9 @@ GripperAX12AThread::init()
     // __translation_right.setValue(right_trans_x, right_trans_y, right_trans_z);
   }
 #endif
+
+  load_left_pending = false;
+  load_right_pending = false;
   
   bool left_servo_found = false, right_servo_found = false;
 
@@ -223,6 +227,19 @@ GripperAX12AThread::loop()
   __servo_if_left->read();
   __servo_if_right->read();
   
+    // load is given in values from 0 - 1023 is ccw load, 1024 - 2047 is cw load but we are only interested in overall load
+  if (load_left_pending && (__servo_if_left->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
+    DynamixelServoInterface::StopMessage *stop_message = new DynamixelServoInterface::StopMessage();
+    __servo_if_left->msgq_enqueue(stop_message);
+    load_left_pending = false;
+  }
+  if (load_right_pending && (__servo_if_right->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
+    DynamixelServoInterface::StopMessage *stop_message = new DynamixelServoInterface::StopMessage();
+    __servo_if_right->msgq_enqueue(stop_message);
+    load_right_pending = false;
+  }
+
+  
   while (! __gripper_if->msgq_empty() ) {
     if (__gripper_if->msgq_first_is<AX12GripperInterface::CalibrateMessage>()) {
       // ignored
@@ -285,7 +302,7 @@ GripperAX12AThread::loop()
       AX12GripperInterface::CloseLoadMessage *msg = __gripper_if->msgq_first(msg);
 
       printf("performing close with load\n");
-      goto_gripper(__cfg_left_close_load_angle, __cfg_right_close_load_angle);
+      goto_gripper_load(__cfg_left_close_load_angle, __cfg_right_close_load_angle);
       // set_move_load_pending(true);
 
    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::Open_AngleMessage>()) {
@@ -387,6 +404,18 @@ GripperAX12AThread::goto_gripper(float left, float right)
 
   __servo_if_left->msgq_enqueue(goto_left);
   __servo_if_right->msgq_enqueue(goto_right);
+}
+
+/** Goto desired left/right values until given max_load (by config).
+ * @param left left in radians
+ * @param right right in radians
+ */
+void
+GripperAX12AThread::goto_gripper_load(float left, float right)
+{
+  goto_gripper(left, right);
+  load_left_pending = true;
+  load_right_pending = true;
 }
 
 
