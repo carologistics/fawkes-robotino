@@ -88,6 +88,7 @@
   (exp-row (row $?row))
   =>
   ;go directly in the nearest-mode
+  (printout t "No zone of my team is in my line" crlf)
   (retract ?s ?et)
   (assert (state EXP_IDLE)
 	  (exp-tactic NEAREST)
@@ -144,6 +145,44 @@
   (retract ?s ?final)
   (assert (state EXP_LOOKING_FOR_TAG)
           (timer (name waiting-for-tag-since) (time ?now) (seq 1))
+  )
+)
+
+(defrule exp-read-tag-from-exp-point
+  "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
+  (phase EXPLORATION)
+  (time $?now)
+  ?ws <- (timer (name waiting-for-tag-since))
+  ?s <- (state EXP_LOOKING_FOR_TAG)
+  ?g <- (goalmachine ?old)
+  (zone-exploration (name ?old) (x ?) (y ?))
+  (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
+  (team-color ?team-color)
+  (tag-matching (tag-id ?tag) (team ?team-color) (machine ?machine) (side ?side))
+  ; TODO: not already explored/beeing explored
+  ?tvi <- (TagVisionInterface (id "/tag-vision/info") (tags_visible ?num-tags&:(> ?num-tags 0)) (tag_id $?tag-ids&:(member$ ?tag ?tag-ids)))
+  ?tagpos <- (Position3DInterface (id ?tag-if-id&:(eq ?tag-if-id 
+						      (str-cat "/tag-vision/" 
+							       (- (member$ ?tag ?tag-ids) 1)))) 
+				  (visibility_history ?vh&:(> ?vh ?needed-vh)) 
+				  (translation $?trans) 
+				  (rotation $?rot)
+				  (frame ?frame))
+  =>
+  (printout t "Found Tag Nr." ?tag " (" ?machine " " ?side ")"  crlf)
+  ; report tag position to navgraph generator
+  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
+  (blackboard-set-msg-field ?msg "id" (str-cat ?machine))
+  (blackboard-set-msg-field ?msg "side" ?side)
+  (blackboard-set-msg-field ?msg "frame" ?frame)
+  (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
+  (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
+  (blackboard-send-msg ?msg)
+ 
+  (retract ?s ?tvi ?tagpos ?ws)
+  ; TODO align at output tag and scan light
+  (assert (state EXP_IDLE)
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
   )
 )
 
@@ -280,14 +319,14 @@
   (if (<= ?ind (length$ ?row))
     then
     ;we found the next machine on the line
-    ;(printout t "Found next: " (nth$ ?ind ?row) crlf)
+    ; (printout t "Found next machine on line: " (nth$ ?ind ?row) crlf)
     (retract ?s ?g)
     (assert (state EXP_FOUND_NEXT_MACHINE)
 	    (exp-next-machine (nth$ ?ind ?row)))
     
     else
     ;there is not machine on the line left
-    ;(printout warn "No next machine on the line" crlf)
+    (printout t "No next machine on the line" crlf)
     ;change strategy
     (printout t "Changing exploration strategy: driving to nearest machine starting at end of line" crlf)
     (retract ?t ?g)
@@ -407,11 +446,8 @@
     (bind ?zone-name (sym-cat (str-cat "Z" (sub-string 2 (str-length (str-cat ?name)) (str-cat ?name)))))
     (printout t "Machine " ?name " converted to zone " ?zone-name crlf)    
     (bind ?team (sym-cat (pb-field-value ?m "team_color")))
-    (do-for-fact ((?machine machine) (?me zone-exploration))
-      (and (eq ?machine:name ?name) (eq ?me:name ?zone-name) (neq ?machine:team ?team))
-
-      (printout t "Machine " ?name " is from team " ?team crlf)
-      (modify ?machine (team ?team))
+    (do-for-fact ((?me zone-exploration)) (eq ?me:name ?zone-name)
+      (printout t "Zone " ?zone-name " is from team " ?team crlf)
       (modify ?me (team ?team))
     )
   )
