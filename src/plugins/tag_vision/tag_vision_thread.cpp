@@ -77,6 +77,9 @@ TagVisionThread::init()
         fv_cam_info.img_height = fv_cam->pixel_height();
     }
 
+    //set camera resolution
+    alvar_cam.SetRes(fv_cam_info.img_width, fv_cam_info.img_height);
+
     // SHM image buffer
     if(shm_buffer != NULL) {
         delete shm_buffer;
