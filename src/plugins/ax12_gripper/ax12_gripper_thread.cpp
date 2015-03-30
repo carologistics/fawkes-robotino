@@ -152,6 +152,9 @@ GripperAX12AThread::init()
   __servo_if_right = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_right_servo_id).c_str());
   __servo_if_left  = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_left_servo_id).c_str());
 
+  __servo_if_left->read();
+  __servo_if_right->read();
+  
   right_servo_found = __servo_if_right->has_writer();
   left_servo_found  = __servo_if_left->has_writer();
   if (! (left_servo_found && right_servo_found)) {
@@ -159,6 +162,17 @@ GripperAX12AThread::init()
 		    left_servo_found, right_servo_found);
   }
 
+  // set servo values from config
+  float minimum_of_max_supported_speed = __servo_if_left->max_velocity();
+  if (minimum_of_max_supported_speed > __servo_if_right->max_velocity()){
+    minimum_of_max_supported_speed = __servo_if_right->max_velocity();
+  }
+  
+  DynamixelServoInterface::SetVelocityMessage *vel_left = new DynamixelServoInterface::SetVelocityMessage(__cfg_max_speed * minimum_of_max_supported_speed);
+  DynamixelServoInterface::SetVelocityMessage *vel_right = new DynamixelServoInterface::SetVelocityMessage(__cfg_max_speed * minimum_of_max_supported_speed);
+  __servo_if_left->msgq_enqueue(vel_left);
+  __servo_if_right->msgq_enqueue(vel_right);
+  
   // If you have more than one interface: catch exception and close them!
   std::string bbid = "Gripper AX12";
   __gripper_if = blackboard->open_for_writing<AX12GripperInterface>(bbid.c_str());
