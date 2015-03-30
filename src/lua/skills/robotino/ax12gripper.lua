@@ -69,7 +69,7 @@ end
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true},
-   -- {"COMMAND", "FINAL", cond="not vars.error"},
+   {"COMMAND", "FINAL", cond="not vars.error"},
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "CLOSE_GRIPPER_WAIT", cond="vars.close_load"},
    {"CLOSE_GRIPPER_WAIT", "STOP_GRIPPER_MOVEMENT", timeout=0.15},
@@ -117,6 +117,13 @@ function COMMAND:init()
       theSetServoMessage:set_servoID(id)
       theSetServoMessage:set_angle(angle)
       gripper_if:msgq_enqueue_copy(theSetServoMessage)
+   elseif self.fsm.vars.enable then
+      local enable = self.fsm.vars.enable
+      local value = self.fsm.vars.value
+      theSetEnabledMessage = gripper_if.SetEnabledMessage:new()
+      theSetEnabledMessage:set_enabled(value)
+      print("set enabled to " .. tostring(value))
+      gripper_if:msgq_enqueue_copy(theSetEnabledMessage)
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
