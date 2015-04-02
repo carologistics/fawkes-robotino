@@ -21,6 +21,7 @@ gazsim:
     time: "~/gazsim/time-sync/"
     machine-lights: "~/RobotinoSim/MachineVision/"
     machine-info: "~/LLSFRbSim/MachineInfo/"
+    mps-machine-signal: "~/gazsim/light-signal/"
     puck-info: "~/LLSFRbSim/PuckInfo/"
     game-state: "~/LLSFRbSim/GameState/"
     set-game-state: "~/LLSFRbSim/SetGameState/"
