@@ -164,8 +164,9 @@
      (if (and (eq ?team (pb-field-value ?o "team_color"))
 	      (not (any-factp ((?order order)) (eq ?order:id (pb-field-value ?o "id")))))
        then
+       (printout warn "TODO: get ordered product and link it in order fact!" crlf)
        (assert (order (id (pb-field-value ?o "id"))
-		      (product (sym-cat (pb-field-value ?o "product")))
+		      ;(product (sym-cat (pb-field-value ?o "product")))
 		      (quantity-requested (pb-field-value ?o "quantity_requested"))
 		      (quantity-delivered (pb-field-value ?o "quantity_delivered"))
 		      (begin (pb-field-value ?o "delivery_period_begin"))

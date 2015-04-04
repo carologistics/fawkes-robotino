@@ -265,14 +265,15 @@
   (zone-exploration (name ?old) (x ?) (y ?))
   (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
   ?rli <- (RobotinoLightInterface (id "/machine-signal/best") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
-  (matching-type-light (type ?type) (red ?red) (yellow ?yellow) (green ?green))
   =>
   (printout t "Identified machine" crlf)
   (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
+  (printout warn "TODO: ensure that tag is in the explored zone" crlf)
   (retract ?s ?rli ?ws)
   (assert (state EXP_IDLE)
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
-    (machine-type (name ?old) (type ?type))
+    (exploration-result (machine ?old) (red ?red) (yellow ?yellow) (green ?green)
+			(zone ?old))
   )
 )
 
@@ -376,7 +377,7 @@
   (bind ?min-dist 1000.0)
   (do-for-all-facts ((?me zone-exploration))
     (and (eq ?me:team ?team-color) (not ?me:recognized)
-	 (not (any-factp ((?mt machine-type)) (eq ?mt:name ?me:name))))
+	 (not (any-factp ((?mt exploration-result)) (eq ?mt:machine ?me:name))))
 
     ;check if the machine is nearer and unlocked
     (bind ?dist (distance ?x ?y ?me:x ?me:y))
@@ -395,7 +396,7 @@
     (assert (state EXP_FOUND_NEXT_MACHINE)
 	    (exp-next-machine ?nearest))
     else
-    (if (and (not (any-factp ((?recognized machine-type)) (eq ?recognized:name ?old)))
+    (if (and (not (any-factp ((?recognized exploration-result)) (eq ?recognized:machine ?old)))
 	     (eq ?team ?team-color))
       then
       (printout t "Retrying last machine" crlf)
@@ -455,18 +456,9 @@
   "Receive light-pattern-to-type matching and save it in a fact."
   (phase EXPLORATION)
   ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p))
-  (not (have-all-matchings))
+  (not (have-exp-info))
   =>
   (retract ?pbm)
-  (foreach ?sig (pb-field-list ?p "signals")
-    (bind ?type (pb-field-value ?sig "type"))
-    (progn$ (?light (pb-field-list ?sig "lights"))
-      (bind ?light-color (pb-field-value ?light "color"))
-      (bind ?light-state (pb-field-value ?light "state"))
-      ;assert the read type color and state to compose it together in compose-type-light-pattern-matching 
-      (assert (type-spec-pre ?type ?light-color ?light-state))
-    )
-  )
   (foreach ?m (pb-field-list ?p "machines")
     (bind ?name (sym-cat (pb-field-value ?m "name")))
     ; TODO remove M12 -> Z12 for new refbox version
@@ -478,31 +470,8 @@
       (modify ?me (team ?team))
     )
   )
-  (assert (exp-machines-initialized))
-)
-
-(defrule exp-compose-type-light-pattern-matching
-  "Compose information sent by the refbox as one"
-  (declare (salience 0));this rule has to fire after convert-blink-to-blinking
-  (phase EXPLORATION)
-  ?r <- (type-spec-pre ?type RED ?red-state)
-  ?y <- (type-spec-pre ?type YELLOW ?yellow-state)
-  ?g <- (type-spec-pre ?type GREEN ?green-state)
-  =>
-  (retract ?r ?y ?g)
-  (assert (matching-type-light (type (sym-cat ?type)) (red ?red-state) (yellow ?yellow-state) (green ?green-state)))
-)
-
-(defrule exp-all-matchings-are-there
-  "Assert fact that all matchings have beed received."
-  (phase EXPLORATION)
-  (matching-type-light (type T1) (red ?) (yellow ?) (green ?)) 
-  (matching-type-light (type T2) (red ?) (yellow ?) (green ?))
-  (matching-type-light (type T3) (red ?) (yellow ?) (green ?))
-  (matching-type-light (type T4) (red ?) (yellow ?) (green ?))
-  (matching-type-light (type T5) (red ?) (yellow ?) (green ?))
-  =>
-  (assert (have-all-matchings))
+  (assert (exp-machines-initialized) 
+	  (have-exp-info))
 )
 
 (defrule exp-send-recognized-machines
@@ -519,9 +488,10 @@
   =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (pb-set-field ?mr "team_color" ?team-color)
-  (do-for-all-facts ((?machine machine-type)) TRUE
+  (do-for-all-facts ((?machine exploration-result)) TRUE
     ;send report for last machine only if the exploration phase is going to end
     ;or we are prepared for production
+    (printout warn "TODO: correctly fill exploration report!" crlf)
     (if (or
 	 (< (length (find-all-facts ((?f zone-exploration))
 				    (and (eq ?f:team ?team-color) ?f:recognized)))
@@ -530,7 +500,7 @@
 	 (eq ?s EXP_PREPARE_FOR_PRODUCTION_FINISHED))
      then
       (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
-      (pb-set-field ?mre "name" (str-cat ?machine:name))
+      (pb-set-field ?mre "name" (str-cat ?machine:machine))
       (pb-set-field ?mre "type" (str-cat ?machine:type))
       (pb-add-list ?mr "machines" ?mre)
     )

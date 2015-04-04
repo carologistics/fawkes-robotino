@@ -37,21 +37,18 @@
   (slot machine (type SYMBOL) (allowed-values CBS CCS1 CCS2 CRS1 CRS2 CDS MBS MCS1 MCS2 MRS1 MRS2 MDS))
 )
 
-(deftemplate machine-type
-  (slot name (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24) (default M1))
-  (slot type (type SYMBOL) (allowed-values T1 T2 T3 T4 T5) (default T1))
-)
-
-(deftemplate matching-type-light
-  (slot type (type SYMBOL) (allowed-values T1 T2 T3 T4 T5 DELIVER TEST RECYCLE) (default TEST))
-  (slot red (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
-  (slot yellow (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
-  (slot green (type SYMBOL) (allowed-values ON OFF BLINKING) (default OFF))
+(deftemplate exploration-result
+  (slot machine (type SYMBOL) (allowed-symbols CBS CCS1 CCS2 CRS1 CRS2 CDS MBS MCS1 MCS2 MRS1 MRS2 MDS))
+  (slot zone (type SYMBOL) (allowed-symbols Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12
+					   Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
+  (slot red (type SYMBOL) (allowed-symbols ON OFF BLINKING))
+  (slot yellow (type SYMBOL) (allowed-symbols ON OFF BLINKING))
+  (slot green (type SYMBOL) (allowed-symbols ON OFF BLINKING))
 )
 
 (deftemplate exp-row
   (slot name (type SYMBOL) (allowed-values HIGH MID LOW))
-  (multislot row (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24))
+  (multislot row (type SYMBOL) (allowed-symbols Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12 Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
 )
 
 (deffacts startup-exploration
@@ -87,25 +84,41 @@
 (deftemplate machine
   (slot name (type SYMBOL) (allowed-values CBS CCS1 CCS2 CRS1 CRS2 CDS MBS MCS1 MCS2 MRS1 MRS2 MDS))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
-  (slot mtype (type SYMBOL) (default UNKNOWN)
-        (allowed-values UNKNOWN T1 T2 T3 T4 T5 DELIVER RECYCLE IGNORED))
-  (multislot loaded-with (type SYMBOL) (allowed-symbols S0 S1 S2))
+  (slot mtype (type SYMBOL) (allowed-values BS DS RS CS))
   (multislot incoming (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
   (multislot incoming-agent (type SYMBOL)) ;the agent bringing/getting the thing specified in incoming
-  (slot produced-puck (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3) (default NONE))
-  (slot fails (type INTEGER) (default 0))
-  (slot junk (type INTEGER) (default 0))
-  (slot productions (type INTEGER) (default 0))
-  (slot output (type SYMBOL) (allowed-symbols NONE S0 S1 S2 P1 P2 P3))
+  ;id of the loaded-puck
+  (slot loaded-id (type INTEGER) (default 0))
+  ;id of the produced-puck
+  (slot produced-id (type INTEGER) (default 0))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
   (multislot final-prod-time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
-  (slot produce-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
-  (slot recycle-blocked (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
-  (slot doubtful-worldmodel (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
-  (slot priority (type INTEGER) (default 0))
+  ; (slot priority (type INTEGER) (default 0))
   (multislot out-of-order-until (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
 )
+
+; (deftemplate base-station 
+;   (slot name (type SYMBOL) (allowed-symbols CBS MBS))
+; )
+
+; (deftemplate delivery-station 
+;   (slot name (type SYMBOL) (allowed-symbols CDS MDS))
+; )
+
+(deftemplate cap-station 
+  (slot name (type SYMBOL) (allowed-symbols CCS1 CCS2 MCS1 MCS2))
+  (slot cap-loaded (SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
+)
+
+(deftemplate ring-station
+  (slot name (type SYMBOL) (allowed-symbols CRS1 CRS2 MRS1 MRS2))
+  (multislot available-colors (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
+  (slot selected-color (type SYMBOL) (allowed-symbols NONE BLUE GREEN YELLOW ORANGE)
+	(default NONE))
+  (slot bases-needed (type INTEGER) (allowed-values 0 1 2))
+)
+
 
 (deftemplate tag-matching
   (slot machine (type SYMBOL) (allowed-values CBS CCS1 CCS2 CRS1 CRS2 CDS MBS MCS1 MCS2 MRS1 MRS2 MDS))
@@ -114,9 +127,18 @@
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
+(deftemplate product
+  ;id to link it in other facts
+  (slot id (type INTEGER))
+  (multislot rings (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE)
+	     (default (create$ )))
+  (slot cap (SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
+)
+
 (deftemplate order
   (slot id (type INTEGER))
-  (slot product (type SYMBOL) (allowed-symbols P1 P2 P3))
+  ;id of product fact how the product should look like
+  (slot product-id (type INTEGER))
   (slot quantity-requested (type INTEGER))
   (slot quantity-delivered (type INTEGER))
   (slot begin (type INTEGER))

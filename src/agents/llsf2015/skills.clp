@@ -64,36 +64,6 @@
 ;;;;;;;;;;;;;;;;;;
 ; special cases for skill calls/final-/failed-handling
 ;;;;;;;;;;;;;;;;;;
-(defrule skill-call-finish_puck_at
-  "Call skill finish_puck_at. You need to specify if you want to wait at the machine in (dont-wait ?). The rule calculates if dont-wait has to be set nevertheless and the mtype and out-of-order parameters for the skill."
-  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
-  ?ste <- (skill-to-execute (skill finish_puck_at) (args $?args) (state wait-for-lock) (target ?machine))
-  (wait-for-lock (res ?machine) (state use))
-  (machine (name ?machine) (mtype ?mtype))
-  ?s <- (state WAIT-FOR-LOCK)
-  (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
-  (dont-wait ?dont-wait)
-  =>
-  (retract ?s)
-  (assert (state SKILL-EXECUTION))
-  (modify ?ste (state running))
-  (bind ?out-of-order "abort")
-  (if (eq ?dont-wait true) then
-    ;we have to wait if we bring a puck without starting the production
-    ;becaule loading needs some time
-    (if (or (eq ?mtype T5)
-  	    (and (or (eq ?mtype T3) (eq ?mtype T4)) (eq (length$ ?lw) 2)))
-      then
-      (bind ?dont-wait true)   
-      (bind ?out-of-order "leave")
-
-      else
-      (bind ?dont-wait false)
-    )
-  )
-  (skill-call finish_puck_at (insert$ ?args 1 (create$ mtype ?mtype dont_wait ?dont-wait out_of_order ?out-of-order)))
-)
-
 (defrule skill-call-deliver
   "Call deliver skill which also uses the finish_puck_at_skill"
   (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
