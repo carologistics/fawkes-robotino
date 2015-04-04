@@ -17,3 +17,9 @@
 (deffunction yaw-from-quaternion (?q)
   (return (* 2 (acos (nth$ 4 ?q)) (if (> (nth$ 3 ?q) 0) then 1 else -1)))
 )
+
+(deffunction quaternion-from-yaw (?yaw)
+  (return (create$ 0 0
+		   (sin (/ ?yaw 2))
+		   (cos (/ ?yaw 2))))
+)

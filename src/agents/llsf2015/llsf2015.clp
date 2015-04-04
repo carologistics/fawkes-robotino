@@ -107,7 +107,7 @@
   (if
     (any-factp ((?conf confval))
       (and (eq ?conf:path "/clips-agent/llsf2015/enable-sim")
-	   (eq ?conf:type BOOL) (eq ?conf:value true)))
+	   (eq ?conf:type BOOL) (eq ?conf:value TRUE)))
   then
     (printout t "Loading simulation" crlf)
     (path-load  llsf2015/sim.clp)
