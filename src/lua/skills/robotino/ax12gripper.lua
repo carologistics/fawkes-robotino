@@ -83,12 +83,12 @@ function COMMAND:init()
    if self.fsm.vars.open then
 --      gripper_if:msgq_enqueue_copy(gripper_if.OpenMessage:new())
       theOpenMessage = gripper_if.OpenMessage:new()
-      theOpenMessage:set_offset(self.fsm.vars.offset)
+      theOpenMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theOpenMessage)
    elseif self.fsm.vars.close then
       print("close")
       theCloseMessage = gripper_if.CloseMessage:new()
-      theCloseMessage:set_offset(self.fsm.vars.offset)
+      theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)
    elseif self.fsm.vars.close_load then
       print("close load")
