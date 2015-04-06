@@ -158,22 +158,6 @@ end
 
 -- Drive to tag
 function DRIVE:init()
-	--handle nil values
-	local x = self.fsm.vars.x
-	local y = self.fsm.vars.y
-
-	-- get distance and rotation from tag vision
-	local found_x = tag_0:translation(0)
-	local found_y = tag_0:translation(1)
-	local found_ori = -tag_0:rotation(0)
-	-- calculate transition -> to approach the tag
-	local delta_x = found_x - (x * math.cos(found_ori) + y * (-1 * math.sin(found_ori)))
-	local delta_y = found_y - (x * math.sin(found_ori) + y * math.cos(found_ori))
-	-- move to tag alignment -> call motor_move
-	target.x = delta_x
-	target.y = delta_y
-	target.ori = found_ori
-	cycle = 0
 end
 
 function NO_TAG:init()
