@@ -34,9 +34,6 @@ depends_interfaces = {
 documentation      = [==[Skill to open and close AX12 - gripper.
 ]==]
 
-fsm.vars.right_fully_loaded = false
-fsm.vars.left_fully_loaded  = false
-
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
@@ -47,10 +44,6 @@ fsm:define_states{
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"CLOSE_GRIPPER_WAIT", JumpState},
-   -- {"CLOSE_GRIPPER", JumpState},
-   {"STOP_GRIPPER_MOVEMENT", JumpState},
-   {"STOP_GRIPPER_LEFT", JumpState},
-   {"STOP_GRIPPER_RIGHT", JumpState},
 }
 
 function is_right_full_loaded()
@@ -72,15 +65,6 @@ fsm:add_transitions{
    {"COMMAND", "FINAL", cond="not vars.error"},
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "CLOSE_GRIPPER_WAIT", cond="vars.close_load"},
-   {"CLOSE_GRIPPER_WAIT", "STOP_GRIPPER_MOVEMENT", timeout=0.15},
-   {"STOP_GRIPPER_MOVEMENT", "STOP_GRIPPER_RIGHT", cond=is_right_full_loaded},
-   {"STOP_GRIPPER_MOVEMENT", "STOP_GRIPPER_LEFT", cond=is_left_full_loaded},
-   
-   {"STOP_GRIPPER_RIGHT", "FINAL", cond=is_left_full_loaded},
-   {"STOP_GRIPPER_LEFT", "FINAL", cond=is_right_full_loaded},
-   
-   -- {"STOP_GRIPPER_MOVEMENT", "FINAL", cond="vars.left_fully_loaded and vars.right_fully_loaded"},
-   {"STOP_GRIPPER_MOVEMENT", "FAILED", cond="vars.error"},
 }
 
 function CLOSE_GRIPPER_WAIT:init()
@@ -108,6 +92,8 @@ function COMMAND:init()
       gripper_if:msgq_enqueue_copy(theCloseMessage)
    elseif self.fsm.vars.close_load then
       print("close load")
+      theCloseLoadMessage = gripper_if.CloseLoadMessage:new()
+      gripper_if:msgq_enqueue_copy(theCloseLoadMessage)
 -- Set servo position by ID and desired angle
    elseif self.fsm.vars.id and self.fsm.vars.angle then
       local id = self.fsm.vars.id
@@ -129,28 +115,3 @@ function COMMAND:init()
       self.fsm.vars.error = true
    end
 end
-
-function STOP_GRIPPER_LEFT:init()
-   print("------- STOP LEFT --------")
-   gripper_if:msgq_enqueue_copy(gripper_if.StopLeftMessage:new())
-end
-
-function STOP_GRIPPER_LEFT:exit()
-   print("------- STOP LEFT -> RIGHT --------")
-   gripper_if:msgq_enqueue_copy(gripper_if.StopRightMessage:new())
-end
-
-function STOP_GRIPPER_RIGHT:init()
-   print("------- STOP RIGHT --------")
-   gripper_if:msgq_enqueue_copy(gripper_if.StopRightMessage:new())
-end
-
-function STOP_GRIPPER_RIGHT:exit()
-   print("------- STOP RIGHT -> LEFT --------")
-   gripper_if:msgq_enqueue_copy(gripper_if.StopLeftMessage:new())
-end
-
--- function STOP_GRIPPER_MOVEMENT:init()
---    print("------- STOP --------")
---    gripper_if:msgq_enqueue_copy(gripper_if.StopMessage:new())
--- end
