@@ -149,11 +149,14 @@ fsm:add_transitions{
 	{"DRIVE", "ORIENTATE", cond=tag_reached, desc="Tag Reached orientate"},
 }
 
+local old_speed={x=0,y=0,ori=0}
+
 function INIT:init()
    self.fsm.vars.x = self.fsm.vars.x or 0.1
    self.fsm.vars.y = self.fsm.vars.y or 0.0
    self.fsm.vars.ori = self.fsm.vars.ori or 0.0
    tries = 0
+   old_speed={x=0,y=0,ori=0}
 end
 
 -- Drive to tag
@@ -173,7 +176,6 @@ function printtable(table)
    end
 end
 
-local old_speed={x=0,y=0,ori=0}
 
 function DRIVE:loop()
    local tag = get_closest_tag()
