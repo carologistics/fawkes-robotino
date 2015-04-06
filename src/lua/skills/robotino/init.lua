@@ -25,6 +25,7 @@ print("Initializing Lua skill space for Robotino")
 
 -- Robotino specific skills
 skillenv.use_skill("skills.generic.ppgoto")
+skillenv.use_skill("skills.robotino.ppgoto_waypoints")
 skillenv.use_skill("skills.robotino.grab_puck")
 skillenv.use_skill("skills.robotino.motor_move")
 skillenv.use_skill("skills.robotino.align_laserlines")
