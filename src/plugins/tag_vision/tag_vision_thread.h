@@ -138,16 +138,9 @@ class TagVisionThread
   /// cv image
   IplImage *ipl;
 
-  //blackboard communication
+  /// blackboard communication
   TagPositionList *tag_interfaces;
 
-
-  enum ROT{
-      X=0,
-      Y=1,
-      Z=2,
-      W=3
-  };
 
 };
 

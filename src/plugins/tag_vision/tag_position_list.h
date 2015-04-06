@@ -33,12 +33,6 @@
 
 #include "tag_position_interface_helper.h"
 
-enum ROT{
-    X=0,
-    Y=1,
-    Z=2,
-    W=3
-};
 
 class TagPositionList : public std::vector<TagPositionInterfaceHelper*>
 {
