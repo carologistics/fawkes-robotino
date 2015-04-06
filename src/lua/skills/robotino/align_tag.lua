@@ -182,33 +182,39 @@ end
 
 function DRIVE:loop()
    local tag = get_closest_tag()
-   local q = fawkes.tf.Quaternion:new(tag:rotation(0), tag:roatation(1), tag,rotation(2), tag:rotation(3))
+
+   local yaw = get_yaw(tag:rotation(0), tag:rotation(1), tag:rotation(2), tag:rotation(3))
+   -- correct rotation
+   yaw = yaw - (math.pi/2)
+
    --skip on empty values
-   if(tag:translation(0) == 0 and tag:translation(1) == 0 and fawkes.tf.get_yaw(q) == 0) then
+   if(tag:translation(0) == 0 and tag:translation(1) == 0 and yaw == 0) then
 --      send_transrot(0,0,0)
       return
    end
 	--get the distance to drive
 	distance = { x = tag:translation(0) ,--- self.fsm.vars.x,
 				y = tag:translation(1) ,--- self.fsm.vars.y,
-                ori = -fawkes.tf.get_yaw(q)}
+                ori = -yaw}
+   --print("original distance")
+   --printtable(distance)
    distance.x = distance.x - (self.fsm.vars.x * math.cos(distance.ori) + self.fsm.vars.y * (-1 * math.sin(distance.ori)))
    distance.y = distance.y - (self.fsm.vars.x * math.sin(distance.ori) + self.fsm.vars.y * math.cos(distance.ori))
    --print("current distance")
    --printtable(distance)
-	--get a good velocity
-	local velocity = {x = 0, y = 0, ori = 0}
-	for key,value in pairs(distance) do
+   --get a good velocity
+   local velocity = {x = 0, y = 0, ori = 0}
+   for key,value in pairs(distance) do
       velocity[key] = math.sqrt(math.abs(distance[key]/2))*max_velocity[key]  --+min_velocity[key]
       if distance[key] < 0 then velocity[key] = velocity[key] *-1 end
       --average
       velocity[key] = (velocity[key]+old_speed[key])/2
       old_speed[key] = velocity[key]
-  	end
+   end
    --print("velocity:")
    --printtable(velocity)
-	--send motor message
-	send_transrot(velocity.x, velocity.y, velocity.ori)
+   --send motor message
+   send_transrot(velocity.x, velocity.y, velocity.ori)
 end
 
 function ORIENTATE:init()
