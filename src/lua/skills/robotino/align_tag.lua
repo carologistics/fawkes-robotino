@@ -176,6 +176,9 @@ function printtable(table)
    end
 end
 
+function get_yaw(qx, qy, qz, qw)
+   return math.atan2(2*qy*qw-2*qx*qz , 1 - 2*qy*qy - 2*qz*qz)
+end
 
 function DRIVE:loop()
    local tag = get_closest_tag()
