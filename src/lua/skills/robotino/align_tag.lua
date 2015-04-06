@@ -182,7 +182,10 @@ end
 
 function printtable(table)
    for k,v in pairs(table) do
-      print(k .. " = " .. v)
+      print(k .. "\t\t= " .. v)
+      if(k == "ori") then
+         print("degree\t= " .. v*180/math.pi)
+      end
    end
 end
 
