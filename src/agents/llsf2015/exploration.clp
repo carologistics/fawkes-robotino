@@ -225,7 +225,7 @@
   (printout t "Driving to MPS output." crlf)
   (retract ?s ?timer)
   (assert (state EXP_DRIVE_TO_OUTPUT))
-  (skill-call ppgoto place (str-cat ?machine " O"))
+  (skill-call ppgoto place (get-output ?machine))
 )
 
 (defrule exp-align-in-front-of-light-signal

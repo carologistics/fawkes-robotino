@@ -86,7 +86,7 @@
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
   (slot mtype (type SYMBOL) (allowed-values BS DS RS CS))
   (multislot incoming (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
-  (multislot incoming-agent (type SYMBOL)) ;the agent bringing/getting the thing specified in incoming
+  (multislot incoming-agent (type SYMBOL) (default (create$))) ;the agent bringing/getting the thing specified in incoming
   ;id of the loaded-puck
   (slot loaded-id (type INTEGER) (default 0))
   ;id of the produced-puck
@@ -108,7 +108,9 @@
 
 (deftemplate cap-station 
   (slot name (type SYMBOL) (allowed-symbols CCS1 CCS2 MCS1 MCS2))
-  (slot cap-loaded (SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
+  (slot cap-loaded (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
+  ;the team has to fill one CS with black and the other with grey caps (config)
+  (slot assigned-cap-color (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
 )
 
 (deftemplate ring-station
@@ -116,7 +118,7 @@
   (multislot available-colors (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot selected-color (type SYMBOL) (allowed-symbols NONE BLUE GREEN YELLOW ORANGE)
 	(default NONE))
-  (slot bases-needed (type INTEGER) (allowed-values 0 1 2))
+  (slot bases-needed (type INTEGER) (allowed-values 0 1 2) (default 0))
 )
 
 
@@ -132,7 +134,9 @@
   (slot id (type INTEGER))
   (multislot rings (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE)
 	     (default (create$ )))
-  (slot cap (SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
+  (slot cap (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
+  ; is the base from a cap-station and therefore unusable
+  (slot base-usable (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
 )
 
 (deftemplate order
@@ -150,8 +154,8 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-values produce-p3-and-deliver load-with-S0 load-with-S1 load-with-S2 pick-and-load pick-and-deliver recycle deliver recycle-holding just-in-time-P3 pick-and-store get-stored-and-deliver store produce-with-S0))
-  (slot state (type SYMBOL) (allowed-values proposed asked rejected ordered running finished failed) (default proposed))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap))
+  (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed) (default proposed))
   (slot priority (type INTEGER) (default 0))
   ;a task consists of multiple steps
   (slot current-step (type INTEGER) (default 0))
@@ -165,12 +169,13 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-values get-s0 produce-at-some-t1 load-machine produce-at deliver recycle get-consumed store get-from-storage))
-  (slot state (type SYMBOL) (allowed-values inactive wait-for-activation running finished failed) (default inactive))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output))
+  (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
   (slot machine (type SYMBOL))
   (slot product-type (type SYMBOL))
+  (slot shelf-slot (type SYMBOL) (allowed-symbols LEFT MIDDLE RIGHT))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
@@ -178,7 +183,7 @@
 ; task-id has to correspont to the task
 (deftemplate needed-task-lock
   (slot task-id (type INTEGER))
-  (slot action (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO BRING_P1 BRING_P2 BRING_P3 STORE_PUCK GET_STORED_PUCK))
+  (slot action (type SYMBOL) (allowed-symbols FILL_CAP))
   (slot place (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24 R1 R2 DELIVER))
   (slot resource (type SYMBOL) (default NONE))
 )
@@ -223,18 +228,27 @@
   (last-lights)
   (holding NONE)
 
-  (machine (name CBS) (team CYAN))
-  (machine (name CCS1) (team CYAN))
-  (machine (name CCS2) (team CYAN))
-  (machine (name CRS1) (team CYAN))
-  (machine (name CRS2) (team CYAN))
-  (machine (name CDS) (team CYAN))
-  (machine (name MBS) (team MAGENTA))
-  (machine (name MCS1) (team MAGENTA))
-  (machine (name MCS2) (team MAGENTA))
-  (machine (name MRS1) (team MAGENTA))
-  (machine (name MRS2) (team MAGENTA))
-  (machine (name MDS) (team MAGENTA))
+  (machine (name CBS) (team CYAN) (mtype BS))
+  (machine (name CCS1) (team CYAN) (mtype CS))
+  (cap-station (name CCS1) (assigned-cap-color BLACK))
+  (machine (name CCS2) (team CYAN) (mtype CS))
+  (cap-station (name CCS2) (assigned-cap-color GREY))
+  (machine (name CRS1) (team CYAN) (mtype RS))
+  (ring-station (name CRS1))
+  (machine (name CRS2) (team CYAN) (mtype RS))
+  (ring-station (name CRS2))
+  (machine (name CDS) (team CYAN) (mtype DS))
+
+  (machine (name MBS) (team MAGENTA) (mtype BS))
+  (machine (name MCS1) (team MAGENTA) (mtype CS))
+  (cap-station (name MCS1) (assigned-cap-color BLACK))
+  (machine (name MCS2) (team MAGENTA) (mtype CS))
+  (cap-station (name MCS2) (assigned-cap-color GREY))
+  (machine (name MRS1) (team MAGENTA) (mtype RS))
+  (ring-station (name MRS1))
+  (machine (name MRS2) (team MAGENTA) (mtype RS))
+  (ring-station (name MRS2))
+  (machine (name MDS) (team MAGENTA) (mtype DS))
 
   (tag-matching (machine CBS) (side INPUT) (team CYAN) (tag-id 65))
   (tag-matching (machine CCS1) (side INPUT) (team CYAN) (tag-id 1))

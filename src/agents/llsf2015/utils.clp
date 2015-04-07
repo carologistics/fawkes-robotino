@@ -23,3 +23,24 @@
 		   (sin (/ ?yaw 2))
 		   (cos (/ ?yaw 2))))
 )
+
+(deffunction is-working ($?out-of-order)
+  "Check if a machine is not out of order"
+  (return (eq (nth$ 1 ?out-of-order) 0))
+)
+
+(deffunction random-id ()
+  "Return a random task id"
+  (return (random 0 1000000000))
+)
+
+(deffunction get-input (?mps)
+  "Return the navgraph point of the input side of the given mps"
+  (return (str-cat ?mps "-I"))
+)
+
+(deffunction get-output (?mps)
+  "Return the navgraph point of the output side of the given mps"
+  (return (str-cat ?mps "-O"))
+)
+

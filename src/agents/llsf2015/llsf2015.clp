@@ -70,8 +70,7 @@
   ;this is not possible in the config, because the defrules and deffacts are loaded later
   (unwatch rules worldmodel-sync-receive-worldmodel)
   (unwatch rules worldmodel-sync-publish-worldmodel)
-  (unwatch rules wm-update-puck-in-gripper)
-  (unwatch rules wm-update-pose)
+  ; (unwatch rules wm-update-puck-in-gripper)
   (unwatch rules wm-update-pose)
   (unwatch rules net-send-BeaconSignal)
   (unwatch rules net-recv-BeaconSignal)
