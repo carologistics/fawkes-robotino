@@ -36,6 +36,7 @@
 #include <blackboard/interface_listener.h>
 #include <interfaces/DynamixelServoInterface.h>
 #include <utils/time/time.h>
+#include <config/change_handler.h>
 
 #ifdef USE_TIMETRACKER
 #  include <utils/time/tracker.h>
@@ -62,7 +63,8 @@ class GripperAX12AThread
   public fawkes::BlackBoardInterfaceListener,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect
+  public fawkes::BlackBoardAspect,
+  public fawkes::ConfigurationChangeHandler
 
 {
  public:
@@ -137,6 +139,8 @@ class GripperAX12AThread
 
   fawkes::tf::Vector3  __translation_left;
   fawkes::tf::Vector3  __translation_right;
+  
+  fawkes::Mutex cfg_mutex_;
 
   bool          __cfg_publish_transforms;
 #endif
@@ -163,6 +167,11 @@ class GripperAX12AThread
   void stop_left();
   void stop_right();
   /* void set_servo_angle(unsigned int servo_id, float servo_angle); */
+  void load_config();
+  void config_value_erased(const char *path);
+  void config_tag_changed(const char *new_tag);
+  void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
+  void config_value_changed(const fawkes::Configuration::ValueIterator *v);
 };
 
 #endif

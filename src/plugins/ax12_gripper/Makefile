@@ -31,7 +31,7 @@ endif
 #DRIVERS = robotis
 
 LIBS_ax12_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
-	       fawkesinterface AX12GripperInterface LedInterface JointInterface \
+	       fawkesinterface fawkesconfig AX12GripperInterface LedInterface JointInterface \
                DynamixelServoInterface
 OBJS_ax12_gripper = $(patsubst %.cpp,%.o,$(patsubst qa/%,,$(subst $(SRCDIR)/,,$(wildcard $(SRCDIR)/*.cpp $(foreach d,$(DRIVERS),$(SRCDIR)/$d/*.cpp )))))
 

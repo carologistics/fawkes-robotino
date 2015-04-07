@@ -32,6 +32,7 @@
 #include <interfaces/LedInterface.h>
 #include <interfaces/JointInterface.h>
 #include <boost/lexical_cast.hpp>
+#include <config/change_handler.h>
 
 #include <cstdarg>
 #include <cmath>
@@ -50,14 +51,16 @@ using namespace fawkes;
  * @param ptu_cfg_prefix configuration prefix specific for the Gripper
  * @param ptu_name name of the Gripper configuration
  */
+
 GripperAX12AThread::GripperAX12AThread(std::string &gripper_cfg_prefix)
-  : Thread(gripper_cfg_prefix.c_str(), Thread::OPMODE_WAITFORWAKEUP),
+  : Thread("GripperAX12AThread", Thread::OPMODE_WAITFORWAKEUP),
     BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC),
 #ifdef HAVE_TF
     TransformAspect(TransformAspect::ONLY_PUBLISHER,
                      std::string("GRIPPER AX12A").c_str()),
 #endif
-    BlackBoardInterfaceListener("GripperAX12AThread(%s)", gripper_cfg_prefix.c_str())
+    BlackBoardInterfaceListener("GripperAX12AThread(%s)", gripper_cfg_prefix.c_str()),
+    ConfigurationChangeHandler(gripper_cfg_prefix.c_str())
 {
   set_name("GripperAX12AThread()");
 
@@ -74,76 +77,11 @@ GripperAX12AThread::init()
   // __last_left = __last_right = 0.f;
   float init_left_velocity = 0.f;
   float init_right_velocity = 0.f;
-
-  // Note: due to the use of auto_ptr and RefPtr resources are automatically
-  // freed on destruction, therefore no special handling is necessary in init()
-  // itself!
-  __cfg_driver_prefix    = config->get_string((__gripper_cfg_prefix + "driver_prefix").c_str());
-  __cfg_left_servo_id    = config->get_string((__gripper_cfg_prefix + "left_servo_id").c_str());
-  __cfg_right_servo_id   = config->get_string((__gripper_cfg_prefix + "right_servo_id").c_str());
-  // __cfg_cw_compl_margin  = config->get_uint((__gripper_cfg_prefix + "cw_compl_margin").c_str());
-  // __cfg_ccw_compl_margin = config->get_uint((__gripper_cfg_prefix + "ccw_compl_margin").c_str());
-  // __cfg_cw_compl_slope   = config->get_uint((__gripper_cfg_prefix + "cw_compl_slope").c_str());
-  // __cfg_ccw_compl_slope  = config->get_uint((__gripper_cfg_prefix + "ccw_compl_slope").c_str());
-  __cfg_left_min         = config->get_float((__gripper_cfg_prefix + "left_min").c_str());
-  __cfg_left_max         = config->get_float((__gripper_cfg_prefix + "left_max").c_str());
-  __cfg_right_min        = config->get_float((__gripper_cfg_prefix + "right_min").c_str());
-  __cfg_right_max        = config->get_float((__gripper_cfg_prefix + "right_max").c_str());
-  __cfg_left_torque      = config->get_float((__gripper_cfg_prefix + "left_torque").c_str());
-  __cfg_right_torque     = config->get_float((__gripper_cfg_prefix + "right_torque").c_str());
-  __cfg_goto_zero_start  = config->get_bool((__gripper_cfg_prefix + "goto_zero_start").c_str());
-  __cfg_turn_off         = config->get_bool((__gripper_cfg_prefix + "turn_off").c_str());
-    
-  __cfg_left_margin       = config->get_float((__gripper_cfg_prefix + "left_margin").c_str());
-  __cfg_right_margin      = config->get_float((__gripper_cfg_prefix + "right_margin").c_str());
-  __cfg_left_start        = config->get_float((__gripper_cfg_prefix + "left_start").c_str());
-  __cfg_right_start       = config->get_float((__gripper_cfg_prefix + "right_start").c_str());
-  __cfg_left_open_angle   = config->get_float((__gripper_cfg_prefix + "left_open").c_str());
-  __cfg_left_close_angle  = config->get_float((__gripper_cfg_prefix + "left_close").c_str());
-  __cfg_left_close_load_angle  = config->get_float((__gripper_cfg_prefix + "left_close_load").c_str());
-  __cfg_right_open_angle  = config->get_float((__gripper_cfg_prefix + "right_open").c_str());
-  __cfg_right_close_angle = config->get_float((__gripper_cfg_prefix + "right_close").c_str());
-  __cfg_right_close_load_angle = config->get_float((__gripper_cfg_prefix + "right_close_load").c_str());
-  __cfg_max_speed         = config->get_float((__gripper_cfg_prefix + "max_speed").c_str());
-  __cfg_max_load          = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
-  __cfg_max_torque        = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
-
-#ifdef HAVE_TF
-  __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());
-#endif
-
-#ifdef HAVE_TF
-  if (__cfg_publish_transforms) {
-    // float left_trans_x  =
-    //     config->get_float((__gripper_cfg_prefix + "left_trans_x").c_str());
-    // float left_trans_y  =
-    //     config->get_float((__gripper_cfg_prefix + "left_trans_y").c_str());
-    // float left_trans_z  =
-    //     config->get_float((__gripper_cfg_prefix + "left_trans_z").c_str());
-    // float right_trans_x =
-    //     config->get_float((__gripper_cfg_prefix + "right_trans_x").c_str());
-    // float right_trans_y =
-    //     config->get_float((__gripper_cfg_prefix + "right_trans_y").c_str());
-    // float right_trans_z =
-    //     config->get_float((__gripper_cfg_prefix + "right_trans_z").c_str());
-
-    __cfg_gripper_name     = config->get_string((__gripper_cfg_prefix + "name").c_str());
-
-    std::string frame_id_prefix = std::string("/") + __cfg_gripper_name;
-    try {
-      frame_id_prefix =
-          config->get_string((__gripper_cfg_prefix + "frame_id_prefix").c_str());
-    } catch (Exception &e) {} // ignore, use default
-
-    __cfg_base_frame = frame_id_prefix + "/base";
-    __cfg_left_link   = frame_id_prefix + "/left";
-    __cfg_right_link  = frame_id_prefix + "/right";
-
-    // __translation_left.setValue(left_trans_x, left_trans_y, left_trans_z);
-    // __translation_right.setValue(right_trans_x, right_trans_y, right_trans_z);
-  }
-#endif
-
+  
+  config->add_change_handler(this);
+  
+  load_config();
+  
   load_left_pending = false;
   load_right_pending = false;
   
@@ -230,6 +168,7 @@ GripperAX12AThread::finalize()
   blackboard->close(__rightjoint_if);
   blackboard->close(__servo_if_right);
   blackboard->close(__servo_if_left);
+  config->rem_change_handler(this);
 }
 
 void
@@ -237,107 +176,117 @@ GripperAX12AThread::loop()
 {
    // __gripper_if->set_final(__wt->is_final());
 
-  // read data from interfaces
-  __servo_if_left->read();
-  __servo_if_right->read();
-  
-    // load is given in values from 0 - 1023 is ccw load, 1024 - 2047 is cw load but we are only interested in overall load
-  if (load_left_pending && (__servo_if_left->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
-    DynamixelServoInterface::StopMessage *stop_message = new DynamixelServoInterface::StopMessage();
-    __servo_if_left->msgq_enqueue(stop_message);
-    load_left_pending = false;
+  if(!cfg_mutex_.try_lock()){
+    logger->log_info(name(), "Skipping loop(), mutex locked");
+    return; //If I cant lock it its locked already (config is changing/reinit in progress)
   }
-  if (load_right_pending && (__servo_if_right->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
-    DynamixelServoInterface::StopMessage *stop_message = new DynamixelServoInterface::StopMessage();
-    __servo_if_right->msgq_enqueue(stop_message);
-    load_right_pending = false;
-  }
+  else
+  {
+     // read data from interfaces
+    __servo_if_left->read();
+    __servo_if_right->read();
 
-  
-  while (! __gripper_if->msgq_empty() ) {
-    if (__gripper_if->msgq_first_is<AX12GripperInterface::CalibrateMessage>()) {
-      // ignored
-
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::GotoMessage>()) {
-      AX12GripperInterface::GotoMessage *msg = __gripper_if->msgq_first(msg);
-
-      goto_gripper(msg->left(), msg->right());
-      __gripper_if->set_msgid(msg->id());
-      __gripper_if->set_final(false);
-
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::TimedGotoMessage>()) {
-      AX12GripperInterface::TimedGotoMessage *msg = __gripper_if->msgq_first(msg);
-
-      printf("timedgotomessage\n");
-      goto_gripper_timed(msg->left(), msg->right(), msg->time_sec());
-      __gripper_if->set_msgid(msg->id());
-      __gripper_if->set_final(false);
-
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::ParkMessage>()) {
-      AX12GripperInterface::ParkMessage *msg = __gripper_if->msgq_first(msg);
-
-      goto_gripper(0, 0);
-      __gripper_if->set_msgid(msg->id());
-      __gripper_if->set_final(false);
-
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetEnabledMessage>()) {
-      AX12GripperInterface::SetEnabledMessage *msg = __gripper_if->msgq_first(msg);
-
-      set_enabled(msg->is_enabled());
-
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetVelocityMessage>()) {
-      AX12GripperInterface::SetVelocityMessage *msg = __gripper_if->msgq_first(msg);
-
-      printf("set velocity message\n");
-
-      if (msg->left_velocity() > __gripper_if->max_left_velocity()) {
-  	logger->log_warn(name(), "Desired left velocity %f too high, max is %f",
-  			 msg->left_velocity(), __gripper_if->max_left_velocity());
-      } else if (msg->right_velocity() > __gripper_if->max_right_velocity()) {
-  	logger->log_warn(name(), "Desired right velocity %f too high, max is %f",
-  			 msg->right_velocity(), __gripper_if->max_right_velocity());
-      } else {
-  	set_velocities(msg->left_velocity(), msg->right_velocity());
-      }
-
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::OpenMessage>()) {
-      AX12GripperInterface::OpenMessage *msg = __gripper_if->msgq_first(msg);
-      printf("open left: %f, right: %f\n", __cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
-      goto_gripper(__cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
-      
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
-      AX12GripperInterface::CloseMessage *msg = __gripper_if->msgq_first(msg);
-
-      printf("performing close\n");
-      goto_gripper(__cfg_left_close_angle, __cfg_right_close_angle);
-      // set_move_load_pending(true);
-
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseLoadMessage>()) {
-      AX12GripperInterface::CloseLoadMessage *msg = __gripper_if->msgq_first(msg);
-
-      printf("performing close with load\n");
-      goto_gripper_load(__cfg_left_close_load_angle, __cfg_right_close_load_angle);
-      // set_move_load_pending(true);
-
-   } else if (__gripper_if->msgq_first_is<AX12GripperInterface::Open_AngleMessage>()) {
-      AX12GripperInterface::Open_AngleMessage *msg = __gripper_if->msgq_first(msg);
-      float angle_part = msg->angle() / 2.;
-      goto_gripper(-angle_part, angle_part);
-      
-    } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetMarginMessage>()) {
-      AX12GripperInterface::SetMarginMessage *msg = __gripper_if->msgq_first(msg);
-
-      set_margins(msg->left_margin(), msg->right_margin());
-      __gripper_if->set_left_margin(msg->left_margin());
-      __gripper_if->set_right_margin(msg->right_margin());
-    } else {
-      logger->log_warn(name(), "Unknown message received");
+      // load is given in values from 0 - 1023 is ccw load, 1024 - 2047 is cw load but we are only interested in overall load
+    if (load_left_pending && (__servo_if_left->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
+      DynamixelServoInterface::StopMessage *stop_message = new DynamixelServoInterface::StopMessage();
+      __servo_if_left->msgq_enqueue(stop_message);
+      load_left_pending = false;
+    }
+    if (load_right_pending && (__servo_if_right->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
+      DynamixelServoInterface::StopMessage *stop_message = new DynamixelServoInterface::StopMessage();
+      __servo_if_right->msgq_enqueue(stop_message);
+      load_right_pending = false;
     }
 
-    __gripper_if->msgq_pop();
-  }
+    if (!load_left_pending && !load_right_pending)
+        __gripper_if->set_final(true);
 
-  __gripper_if->write();
+
+    while (! __gripper_if->msgq_empty() ) {
+      if (__gripper_if->msgq_first_is<AX12GripperInterface::CalibrateMessage>()) {
+        // ignored
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::GotoMessage>()) {
+        AX12GripperInterface::GotoMessage *msg = __gripper_if->msgq_first(msg);
+
+        goto_gripper(msg->left(), msg->right());
+        __gripper_if->set_msgid(msg->id());
+        __gripper_if->set_final(false);
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::TimedGotoMessage>()) {
+        AX12GripperInterface::TimedGotoMessage *msg = __gripper_if->msgq_first(msg);
+
+        printf("timedgotomessage\n");
+        goto_gripper_timed(msg->left(), msg->right(), msg->time_sec());
+        __gripper_if->set_msgid(msg->id());
+        __gripper_if->set_final(false);
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::ParkMessage>()) {
+        AX12GripperInterface::ParkMessage *msg = __gripper_if->msgq_first(msg);
+
+        goto_gripper(0, 0);
+        __gripper_if->set_msgid(msg->id());
+        __gripper_if->set_final(false);
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetEnabledMessage>()) {
+        AX12GripperInterface::SetEnabledMessage *msg = __gripper_if->msgq_first(msg);
+
+        set_enabled(msg->is_enabled());
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetVelocityMessage>()) {
+        AX12GripperInterface::SetVelocityMessage *msg = __gripper_if->msgq_first(msg);
+
+        printf("set velocity message\n");
+
+        if (msg->left_velocity() > __gripper_if->max_left_velocity()) {
+          logger->log_warn(name(), "Desired left velocity %f too high, max is %f",
+                           msg->left_velocity(), __gripper_if->max_left_velocity());
+        } else if (msg->right_velocity() > __gripper_if->max_right_velocity()) {
+          logger->log_warn(name(), "Desired right velocity %f too high, max is %f",
+                           msg->right_velocity(), __gripper_if->max_right_velocity());
+        } else {
+          set_velocities(msg->left_velocity(), msg->right_velocity());
+        }
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::OpenMessage>()) {
+        AX12GripperInterface::OpenMessage *msg = __gripper_if->msgq_first(msg);
+        printf("open left: %f, right: %f\n", __cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
+        goto_gripper(__cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
+        AX12GripperInterface::CloseMessage *msg = __gripper_if->msgq_first(msg);
+
+        printf("performing close\n");
+        goto_gripper(__cfg_left_close_angle, __cfg_right_close_angle);
+        // set_move_load_pending(true);
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseLoadMessage>()) {
+        AX12GripperInterface::CloseLoadMessage *msg = __gripper_if->msgq_first(msg);
+
+        printf("performing close with load\n");
+        goto_gripper_load(__cfg_left_close_load_angle, __cfg_right_close_load_angle);
+        // set_move_load_pending(true);
+
+     } else if (__gripper_if->msgq_first_is<AX12GripperInterface::Open_AngleMessage>()) {
+        AX12GripperInterface::Open_AngleMessage *msg = __gripper_if->msgq_first(msg);
+        float angle_part = msg->angle() / 2.;
+        goto_gripper(-angle_part, angle_part);
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetMarginMessage>()) {
+        AX12GripperInterface::SetMarginMessage *msg = __gripper_if->msgq_first(msg);
+
+        set_margins(msg->left_margin(), msg->right_margin());
+        __gripper_if->set_left_margin(msg->left_margin());
+        __gripper_if->set_right_margin(msg->right_margin());
+      } else {
+        logger->log_warn(name(), "Unknown message received");
+      }
+
+      __gripper_if->msgq_pop();
+    }
+    __gripper_if->write();   
+  }
+  cfg_mutex_.unlock();
 
 }
 
@@ -547,4 +496,95 @@ bool
 GripperAX12AThread::is_enabled()
 {
   return __servo_if_left->is_enabled() && __servo_if_right->is_enabled();
+}
+
+/** Handle config changes
+ */
+void GripperAX12AThread::config_value_erased(const char *path) {};
+void GripperAX12AThread::config_tag_changed(const char *new_tag) {};
+void GripperAX12AThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
+void GripperAX12AThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
+{
+    if (cfg_mutex_.try_lock()) {
+        try {
+            load_config();
+        }
+        catch(fawkes::Exception &e){
+                logger->log_error(name(), e);
+        }
+    }
+    cfg_mutex_.unlock();
+}
+
+void GripperAX12AThread::load_config()
+{
+    logger->log_info(name(), "load config");
+  // Note: due to the use of auto_ptr and RefPtr resources are automatically
+  // freed on destruction, therefore no special handling is necessary in init()
+  // itself!
+  __cfg_driver_prefix    = config->get_string((__gripper_cfg_prefix + "driver_prefix").c_str());
+  __cfg_left_servo_id    = config->get_string((__gripper_cfg_prefix + "left_servo_id").c_str());
+  __cfg_right_servo_id   = config->get_string((__gripper_cfg_prefix + "right_servo_id").c_str());
+  // __cfg_cw_compl_margin  = config->get_uint((__gripper_cfg_prefix + "cw_compl_margin").c_str());
+  // __cfg_ccw_compl_margin = config->get_uint((__gripper_cfg_prefix + "ccw_compl_margin").c_str());
+  // __cfg_cw_compl_slope   = config->get_uint((__gripper_cfg_prefix + "cw_compl_slope").c_str());
+  // __cfg_ccw_compl_slope  = config->get_uint((__gripper_cfg_prefix + "ccw_compl_slope").c_str());
+  __cfg_left_min         = config->get_float((__gripper_cfg_prefix + "left_min").c_str());
+  __cfg_left_max         = config->get_float((__gripper_cfg_prefix + "left_max").c_str());
+  __cfg_right_min        = config->get_float((__gripper_cfg_prefix + "right_min").c_str());
+  __cfg_right_max        = config->get_float((__gripper_cfg_prefix + "right_max").c_str());
+  __cfg_left_torque      = config->get_float((__gripper_cfg_prefix + "left_torque").c_str());
+  __cfg_right_torque     = config->get_float((__gripper_cfg_prefix + "right_torque").c_str());
+  __cfg_goto_zero_start  = config->get_bool((__gripper_cfg_prefix + "goto_zero_start").c_str());
+  __cfg_turn_off         = config->get_bool((__gripper_cfg_prefix + "turn_off").c_str());
+    
+  __cfg_left_margin       = config->get_float((__gripper_cfg_prefix + "left_margin").c_str());
+  __cfg_right_margin      = config->get_float((__gripper_cfg_prefix + "right_margin").c_str());
+  __cfg_left_start        = config->get_float((__gripper_cfg_prefix + "left_start").c_str());
+  __cfg_right_start       = config->get_float((__gripper_cfg_prefix + "right_start").c_str());
+  __cfg_left_open_angle   = config->get_float((__gripper_cfg_prefix + "left_open").c_str());
+  __cfg_left_close_angle  = config->get_float((__gripper_cfg_prefix + "left_close").c_str());
+  __cfg_left_close_load_angle  = config->get_float((__gripper_cfg_prefix + "left_close_load").c_str());
+  __cfg_right_open_angle  = config->get_float((__gripper_cfg_prefix + "right_open").c_str());
+  __cfg_right_close_angle = config->get_float((__gripper_cfg_prefix + "right_close").c_str());
+  __cfg_right_close_load_angle = config->get_float((__gripper_cfg_prefix + "right_close_load").c_str());
+  __cfg_max_speed         = config->get_float((__gripper_cfg_prefix + "max_speed").c_str());
+  __cfg_max_load          = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
+  __cfg_max_torque        = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
+
+#ifdef HAVE_TF
+  __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());
+#endif
+
+#ifdef HAVE_TF
+  if (__cfg_publish_transforms) {
+    // float left_trans_x  =
+    //     config->get_float((__gripper_cfg_prefix + "left_trans_x").c_str());
+    // float left_trans_y  =
+    //     config->get_float((__gripper_cfg_prefix + "left_trans_y").c_str());
+    // float left_trans_z  =
+    //     config->get_float((__gripper_cfg_prefix + "left_trans_z").c_str());
+    // float right_trans_x =
+    //     config->get_float((__gripper_cfg_prefix + "right_trans_x").c_str());
+    // float right_trans_y =
+    //     config->get_float((__gripper_cfg_prefix + "right_trans_y").c_str());
+    // float right_trans_z =
+    //     config->get_float((__gripper_cfg_prefix + "right_trans_z").c_str());
+
+    __cfg_gripper_name     = config->get_string((__gripper_cfg_prefix + "name").c_str());
+
+    std::string frame_id_prefix = std::string("/") + __cfg_gripper_name;
+    try {
+      frame_id_prefix =
+          config->get_string((__gripper_cfg_prefix + "frame_id_prefix").c_str());
+    } catch (Exception &e) {} // ignore, use default
+
+    __cfg_base_frame = frame_id_prefix + "/base";
+    __cfg_left_link   = frame_id_prefix + "/left";
+    __cfg_right_link  = frame_id_prefix + "/right";
+
+    // __translation_left.setValue(left_trans_x, left_trans_y, left_trans_z);
+    // __translation_right.setValue(right_trans_x, right_trans_y, right_trans_z);
+  }
+#endif
 }
