@@ -25,12 +25,15 @@
 )
 
 (defrule sim-gen-default-navgraph-for-skipped-production
-  "If the exploration was skipped generate a default navgraph for production"
+  "If the exploration was skipped generate a default navgraph for production before switching to production"
+  (declare (salience ?*PRIORITY-SIM*))
   (not (sim-was-in-exploration))
-  (phase PRODUCTION)
+  (change-phase PRODUCTION)
   ?sdt <- (sim-default-tag ?machine ?side ?frame $?trans $?rot)
+  (not (default-navgraph-generated))
   =>
   (retract ?sdt)
+  (printout t "Using default position of " ?machine crlf)
   (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
   (blackboard-set-msg-field ?msg "id" ?machine)
   (blackboard-set-msg-field ?msg "side" ?side)
@@ -38,4 +41,45 @@
   (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
   (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
   (blackboard-send-msg ?msg)
+)
+
+(defrule sim-gen-default-navgraph-wait-for-generation
+  "If the exploration was skipped generate a default navgraph for production before switching to production"
+  (declare (salience ?*PRIORITY-SIM*))
+  (not (sim-was-in-exploration))
+  ?ch-ph <- (change-phase PRODUCTION)
+  (not (sim-default-tag ? ? ? $? $?))
+  (not (default-navgraph-generated))
+  (not (timer (name waiting-for-navgraph-generation)))
+  (time $?now)
+  =>
+  (retract ?ch-ph)
+  (printout t "Waiting until navgraph-generation finished" crlf)
+  (assert (timer (name waiting-for-navgraph-generation) (time ?now) (seq 1)))
+)
+
+(defrule sim-gen-default-navgraph-pause
+  "pause the agent until the navgraph generation finished by removing the change-phase facts"
+  (declare (salience ?*PRIORITY-SIM*))
+  (not (sim-was-in-exploration))
+  ?ch-ph <- (change-phase PRODUCTION)
+  (timer (name waiting-for-navgraph-generation))
+  =>
+  (retract ?ch-ph)
+)
+
+(defrule sim-gen-default-navgraph-continue-after-generation
+  "If the exploration was skipped generate a default navgraph for production before switching to production"
+  (declare (salience ?*PRIORITY-SIM*))
+  (not (sim-was-in-exploration))
+  (not (sim-default-tag ? ? ? $? $?))
+  (time $?now)
+  ?ws <- (timer (name waiting-for-navgraph-generation) (time $?t&:(timeout ?now ?t 30.0)))
+  ; TODO use ready flag in interface to determine if generation finisched
+  (not (default-navgraph-generated))
+  =>
+  (retract ?ws)
+  (printout t "navgraph-generation should be finished now" crlf)
+  (assert (change-phase PRODUCTION)
+	  (default-navgraph-generated))
 )
