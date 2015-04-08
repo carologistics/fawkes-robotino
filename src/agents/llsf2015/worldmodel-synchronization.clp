@@ -27,7 +27,7 @@
     )
     ;set incoming
     (foreach ?incoming-action (fact-slot-value ?machine incoming)
-      (pb-add-list ?m-msg "incoming" ?incoming-action)
+      (pb-add-list ?m-msg "incoming" (str-cat ?incoming-action))
     )
     ;set agents responsible for incoming fields
     (foreach ?incoming-agent (fact-slot-value ?machine incoming-agent)
@@ -71,7 +71,7 @@
     )
     ;set incoming
     (foreach ?incoming-action (fact-slot-value ?ps incoming)
-      (pb-add-list ?ps-msg "incoming" ?incoming-action)
+      (pb-add-list ?ps-msg "incoming" (str-cat ?incoming-action))
     )
     ;set agents responsible for incoming fields
     (foreach ?incoming-agent (fact-slot-value ?ps incoming-agent)
@@ -199,31 +199,23 @@
   )
   (bind ?change-msg (pb-create "llsf_msgs.WorldmodelChange"))
   (if (neq ?m NONE) then
-    (pb-set-field ?change-msg "machine" (str-cat ?m))
+    (pb-set-field ?change-msg "place" (str-cat ?m))
   )
   (if (neq ?order 0) then 
-    (pb-set-field ?change-msg "order" ?order)
+    (pb-set-field ?change-msg "place" (str-cat "Order-" ?order))
   )
-  (pb-set-field ?change-msg "change" ?change)
+  (pb-set-field ?change-msg "change" (str-cat ?change))
   (pb-set-field ?change-msg "agent" (str-cat ?agent))
   (pb-set-field ?change-msg "id" ?id)
   (if (member$ ?change (create$ ADD_LOADED_WITH REMOVE_LOADED_WITH)) then
-    (pb-set-field ?change-msg "loaded_with" ?value)
+    (pb-set-field ?change-msg "value_puckstate" ?value)
   )
   (if (member$ ?change (create$ ADD_INCOMING REMOVE_INCOMING)) then
-    (pb-set-field ?change-msg "incoming" ?value)
+    (pb-set-field ?change-msg "value_string" (str-cat ?value))
   )
-  (if (eq ?change SET_NUM_CO) then
-    (pb-set-field ?change-msg "num_CO" ?amount)
-  )
-  (if (eq ?change SET_PROD_FINISHED_TIME) then
-    (pb-set-field ?change-msg "prod_finished_time" ?amount)
-  )
-  (if (eq ?change SET_OUT_OF_ORDER_UNTIL) then
-    (pb-set-field ?change-msg "out_of_order_until" ?amount)
-  )
-  (if (eq ?change SET_IN_DELIVERY) then
-    (pb-set-field ?change-msg "in_delivery" ?amount)
+  (if (member$ ?change (create$ SET_NUM_CO SET_PROD_FINISHED_TIME
+				SET_OUT_OF_ORDER_UNTIL SET_IN_DELIVERY)) then
+    (pb-set-field ?change-msg "value_uint32" ?amount)
   )
   (pb-broadcast ?peer ?change-msg)
   (pb-destroy ?change-msg)
@@ -255,29 +247,29 @@
     (retract ?arf)
     (assert (already-received-wm-changes (append$ ?arc ?id)))
     ;apply change
-    (if (pb-has-field ?p "machine") then
+    (if (pb-has-field ?p "place") then
       ;change machine if change is about a machine
       (do-for-fact ((?machine machine))
-          (eq ?machine:name (sym-cat (pb-field-value ?p "machine")))
+          (eq ?machine:name (sym-cat (pb-field-value ?p "place")))
 
-        (switch (pb-field-value ?p "change")
+        (switch (sym-cat (pb-field-value ?p "change"))
           (case ADD_LOADED_WITH then 
-	    (modify ?machine (loaded-with (append$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+	    (modify ?machine (loaded-with (append$ ?machine:loaded-with (pb-field-value ?p "value_puckstate"))))
           )
           (case REMOVE_LOADED_WITH then
-            (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "loaded_with"))))
+            (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "value_puckstate"))))
           )
           (case ADD_INCOMING then 
             (modify ?machine (incoming (append$ ?machine:incoming
-                                         (pb-field-value ?p "incoming")))
-                             (incoming-agent (append$ ?machine:incoming-agent
-                                               (sym-cat (pb-field-value ?p "agent")))))
+						(sym-cat (pb-field-value ?p "value_string"))))
+		             (incoming-agent (append$ ?machine:incoming-agent
+						      (sym-cat (pb-field-value ?p "agent")))))
           )
           (case REMOVE_INCOMING then 
-	    (if (member$ (pb-field-value ?p "incoming") ?machine:incoming)
+	    (if (member$ (pb-field-value ?p "value_string") ?machine:incoming)
 	      then
 	      (modify ?machine (incoming (delete-member$ ?machine:incoming
-							 (pb-field-value ?p "incoming")))
+							 (pb-field-value ?p "value_string")))
 	                     ;every agent should do only one thing at a machine
 		             (incoming-agent (delete-member$ ?machine:incoming-agent
                                                (sym-cat (pb-field-value ?p "agent")))))
@@ -285,78 +277,64 @@
 	      ;After the change of a decision based on a new worldmodel the remove msg might have arrived before the add message. Wait until there is a field to remove or a timer has passed
 	      ;this is a workaround and could be solved properly with sequence numbers for the change msgs
 	      (assert (delayed-worldmodel-change REMOVE_INCOMING
-				?machine:name (pb-field-value ?p "incoming")
+				?machine:name (pb-field-value ?p "value_string")
 				(sym-cat (pb-field-value ?p "agent")) ?now))
 	    )
           )
           (case SET_NUM_CO then 
-            (modify ?machine (junk (pb-field-value ?p "num_CO")))
+            (modify ?machine (junk (pb-field-value ?p "value_uint32")))
           )
           (case SET_PROD_FINISHED_TIME then 
-            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "prod_finished_time") 0)))
+            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "value_uint32") 0)))
           )
 	  (case SET_OUT_OF_ORDER_UNTIL then
-	    (modify ?machine (out-of-order-until (create$ (pb-field-value ?p "out_of_order_until") 0)))
+	    (modify ?machine (out-of-order-until (create$ (pb-field-value ?p "value_uint32") 0)))
 	  )
           (case REMOVE_PRODUCED then 
             (modify ?machine (produced-puck NONE))
           )
-          (case SET_PRODUCE_BLOCKED then 
-            (modify ?machine (produce-blocked TRUE))
-          )
-          (case RESET_PRODUCE_BLOCKED then 
-            (modify ?machine (produce-blocked FALSE))
-          )
-          (case SET_RECYCLE_BLOCKED then 
-            (modify ?machine (recycle-blocked TRUE))
-          )
-          (case SET_DOUBTFUL_WORLDMODEL then 
-	    (if ?machine:doubtful-worldmodel
-	      then
-	      ;second problem -> block this machine
-	      (modify ?machine (recycle-blocked TRUE))
-	      (modify ?machine (produce-blocked TRUE))
-	      else
-	      ;one time is ok, set warning
-	      (modify ?machine (doubtful-worldmodel TRUE))
-	    )
-          )
+	  (default
+	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
+		      " is not handled. Worlmodel is probably wrong." crlf)
+	  )
         )
       )
       ;change puck-storage if change is about a puck-storage
       (do-for-fact ((?storage puck-storage))
-          (eq ?storage:name (sym-cat (pb-field-value ?p "machine")))
+          (eq ?storage:name (sym-cat (pb-field-value ?p "place")))
 
-        (switch (pb-field-value ?p "change")
+        (switch (sym-cat (pb-field-value ?p "change"))
           (case ADD_LOADED_WITH then 
-	    (modify ?storage (puck (pb-field-value ?p "loaded_with")))
+	    (modify ?storage (puck (pb-field-value ?p "value_puckstate")))
           )
           (case REMOVE_LOADED_WITH then
             (modify ?storage (puck NONE))
           )
           (case ADD_INCOMING then 
             (modify ?storage (incoming (append$ ?storage:incoming
-                                         (pb-field-value ?p "incoming")))
+                                         (pb-field-value ?p "value_string")))
                              (incoming-agent (append$ ?storage:incoming-agent
                                                (sym-cat (pb-field-value ?p "agent")))))
           )
           (case REMOVE_INCOMING then 
             (modify ?storage (incoming (delete-member$ ?storage:incoming
-                                         (pb-field-value ?p "incoming")))
+                                         (pb-field-value ?p "value_string")))
 	                     ;every agent should do only one thing at a machine
 		             (incoming-agent (delete-member$ ?storage:incoming-agent
                                                (sym-cat (pb-field-value ?p "agent")))))
           )
+	  (default
+	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
+		      " is not handled. Worlmodel is probably wrong." crlf)
+	  )
         )
       )
-    )
-    (if (pb-has-field ?p "order") then
+      ;change puck-storage if change is about an order
       (do-for-fact ((?order order))
-          (eq ?order:id (pb-field-value ?p "order"))
-
+          (eq (str-cat "Order-" ?order:id) (pb-field-value ?p "place"))
         (switch (sym-cat (pb-field-value ?p "change"))
           (case _IN_DELIVERY then 
-	    (modify ?order (in-delivery (pb-field-value ?p "in_delivery")))
+	    (modify ?order (in-delivery (pb-field-value ?p "value_uint32")))
           )
 	)
       )

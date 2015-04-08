@@ -183,16 +183,16 @@
 ; task-id has to correspont to the task
 (deftemplate needed-task-lock
   (slot task-id (type INTEGER))
-  (slot action (type SYMBOL) (allowed-symbols FILL_CAP))
-  (slot place (type SYMBOL) (allowed-values M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17 M18 M19 M20 M21 M22 M23 M24 R1 R2 DELIVER))
+  (slot action (type SYMBOL))
+  (slot place (type SYMBOL))
   (slot resource (type SYMBOL) (default NONE))
 )
 
 (deftemplate worldmodel-change
   (slot machine (type SYMBOL) (default NONE)); or puck-storage
   (slot order (type INTEGER) (default 0))
-  (slot change (type SYMBOL) (allowed-values ADD_LOADED_WITH REMOVE_LOADED_WITH ADD_INCOMING REMOVE_INCOMING SET_NUM_CO SET_PROD_FINISHED_TIME REMOVE_PRODUCED SET_PRODUCE_BLOCKED RESET_PRODUCE_BLOCKED SET_RECYCLE_BLOCKED SET_DOUBTFUL_WORLDMODEL SET_IN_DELIVERY SET_OUT_OF_ORDER_UNTIL STORE_PUCK GET_STORED_PUCK))
-  (slot value (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO NOTHING S0 S1 S2 P1 P2 P3) (default NOTHING))
+  (slot change (type SYMBOL))
+  (slot value (type SYMBOL) (default NOTHING))
   (slot amount (type INTEGER) (default 0))
   (slot already-applied (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (multislot last-sent (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))

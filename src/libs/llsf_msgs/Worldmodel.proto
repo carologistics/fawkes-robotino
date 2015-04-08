@@ -9,32 +9,6 @@ package llsf_msgs;
 
 import "PuckInfo.proto";
 
-enum IncomingAction {
-  BRING_S0 = 0;
-  BRING_S1 = 1;
-  BRING_S2 = 2;
-  PICK_PROD = 3;
-  PICK_CO = 4;
-  STORE_PUCK = 5;
-  GET_STORED_PUCK = 6;
-}
-
-enum WorldmodelChangeType {
-  ADD_LOADED_WITH = 0;
-  REMOVE_LOADED_WITH = 1;
-  ADD_INCOMING = 2;
-  REMOVE_INCOMING = 3;
-  SET_NUM_CO = 4;
-  SET_PROD_FINISHED_TIME = 5;
-  REMOVE_PRODUCED = 6;
-  SET_PRODUCE_BLOCKED = 7;
-  SET_RECYCLE_BLOCKED = 8;
-  SET_DOUBTFUL_WORLDMODEL = 9;
-  SET_IN_DELIVERY = 10;
-  RESET_PRODUCE_BLOCKED = 11;
-  SET_OUT_OF_ORDER_UNTIL = 12;
-}
-
 message MachineState {
   enum CompType {
     COMP_ID  = 2000;
@@ -43,7 +17,7 @@ message MachineState {
 
   optional string    name     = 1;
   repeated PuckState loaded_with  = 2;
-  repeated IncomingAction incoming  = 3;
+  repeated string incoming  = 3;
   repeated string incoming_agent  = 4;
   required uint32 prod_finished_time = 5;
   optional PuckState puck_under_rfid = 6;
@@ -63,7 +37,7 @@ message PuckStorageState {
 
   required string    name     = 1;
   optional PuckState puck  = 2;
-  repeated IncomingAction incoming  = 3;
+  repeated string incoming  = 3;
   repeated string incoming_agent  = 4;
 }
 
@@ -100,15 +74,17 @@ message WorldmodelChange {
   }
 
   required uint32 id = 1;
-  optional string machine = 2;
-  required WorldmodelChangeType change = 3;
-  optional IncomingAction incoming = 4;
-  required string agent = 5;
-  optional PuckState loaded_with = 6;
-  optional uint32 num_CO = 7;
-  optional uint32 prod_finished_time = 8;
-  optional uint32 order = 9;
-  optional uint32 out_of_order_until = 10;
+  optional string place = 2;
+  // what should be changed by this message (indicates which optional field is used)
+  required string change = 3;
+  // which agent sent this message?
+  required string agent = 4;
+
+  // the value something is changed to is in one of the following fields
+  // depending on the type of the value
+  optional string value_string = 5;
+  optional uint32 value_uint32 = 6;
+  optional PuckState value_puckstate = 7;
 }
 
 message WorldmodelChangeAck {
