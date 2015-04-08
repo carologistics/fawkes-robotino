@@ -137,3 +137,23 @@
     (assert (puck-storage (name (sym-cat ?p)) (team ?team-color)))
   )
 )
+
+(defrule conf-assign-cap-colors-to-machines
+  "Read configuration for which cap station provides which cap-color"
+  (declare (salience ?*PRIORITY-WM*))
+  ?c0 <- (confval (path "/clips-agent/llsf2015/cap-station-color/CCS1") (value ?cap-color-ccs1))
+  ?c1 <- (confval (path "/clips-agent/llsf2015/cap-station-color/CCS2") (value ?cap-color-ccs2))
+  ?c2 <- (confval (path "/clips-agent/llsf2015/cap-station-color/MCS1") (value ?cap-color-mcs1))
+  ?c3 <- (confval (path "/clips-agent/llsf2015/cap-station-color/MCS2") (value ?cap-color-mcs2))
+  ?ccs1 <- (cap-station (name CCS1))
+  ?ccs2 <- (cap-station (name CCS2))
+  ?mcs1 <- (cap-station (name MCS1))
+  ?mcs2 <- (cap-station (name MCS2))
+  =>
+  (modify ?ccs1 (assigned-cap-color (sym-cat ?cap-color-ccs1)))
+  (modify ?ccs2 (assigned-cap-color (sym-cat ?cap-color-ccs2)))
+  (modify ?mcs1 (assigned-cap-color (sym-cat ?cap-color-mcs1)))
+  (modify ?mcs2 (assigned-cap-color (sym-cat ?cap-color-mcs2)))
+  ; retract the confvals so the rule does not fire again after modifying the cap-station facts
+  (retract ?c0 ?c1 ?c2 ?c3)
+)

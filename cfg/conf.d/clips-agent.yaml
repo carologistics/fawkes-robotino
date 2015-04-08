@@ -53,14 +53,6 @@ clips-agent:
     peer-port: 4444
     cyan-port: 4441
     magenta-port: 4442
-    #simulation-setup:
-    # peer-address: 127.0.0.1
-    # peer-recv-port: 4444
-    # peer-send-port: 4445
-    # cyan-recv-port: 4441
-    # magenta-recv-port: 4442
-    # cyan-send-port: 4446
-    # magenta-send-port: 4447
 
     team-name: Carologistics
     crypto-key: randomkey
@@ -75,6 +67,13 @@ clips-agent:
     #distance needed before a robot releases a lock
     release-distance: 0.75
 
+    #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
+    cap-station-color:
+      CCS1: GREY
+      CCS2: BLACK
+      MCS1: GREY
+      MCS2: BLACK
+    
     waiting-points:
       ins-1-robotino1: WAIT_FOR_INS_1_ROBOTINO_1
       ins-2-robotino1: WAIT_FOR_INS_2_ROBOTINO_1

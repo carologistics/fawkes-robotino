@@ -230,9 +230,9 @@
 
   (machine (name CBS) (team CYAN) (mtype BS))
   (machine (name CCS1) (team CYAN) (mtype CS))
-  (cap-station (name CCS1) (assigned-cap-color BLACK))
+  (cap-station (name CCS1))
   (machine (name CCS2) (team CYAN) (mtype CS))
-  (cap-station (name CCS2) (assigned-cap-color GREY))
+  (cap-station (name CCS2))
   (machine (name CRS1) (team CYAN) (mtype RS))
   (ring-station (name CRS1))
   (machine (name CRS2) (team CYAN) (mtype RS))
@@ -241,9 +241,9 @@
 
   (machine (name MBS) (team MAGENTA) (mtype BS))
   (machine (name MCS1) (team MAGENTA) (mtype CS))
-  (cap-station (name MCS1) (assigned-cap-color BLACK))
+  (cap-station (name MCS1))
   (machine (name MCS2) (team MAGENTA) (mtype CS))
-  (cap-station (name MCS2) (assigned-cap-color GREY))
+  (cap-station (name MCS2))
   (machine (name MRS1) (team MAGENTA) (mtype RS))
   (ring-station (name MRS1))
   (machine (name MRS2) (team MAGENTA) (mtype RS))
