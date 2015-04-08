@@ -71,6 +71,7 @@
   (not (and (task (name fill-cap) (state rejected) (id ?rej-id))
 	    (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?machine))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PREFILL-CS*))))
+  ?c3 <- (confval (path "/clips-agent/llsf2015/cap-station/shelf-slot-new-caps") (value ?shelf-slot))
   =>
   (printout t "PROD: FILL " ?machine " with " ?cap-color " cap from shelf" crlf)
   (bind ?task-id (random-id))
@@ -79,7 +80,7 @@
 		(priority ?*PRIORITY-PREFILL-CS*))
 	  (step (name get-from-shelf) (id (+ ?task-id 1))
 		(task-priority ?*PRIORITY-PREFILL-CS*)
-		(machine ?machine) (shelf-slot LEFT))
+		(machine ?machine) (shelf-slot (sym-cat ?shelf-slot)))
 	  (step (name insert) (id (+ ?task-id 2))
 		(task-priority ?*PRIORITY-PREFILL-CS*)
 		(machine ?machine))
