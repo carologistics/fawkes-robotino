@@ -18,6 +18,13 @@ class NavGraphWithMPSGeneratorInterface : public Interface
 
   };
 
+  class ComputeMessage : public Message
+  {
+    ComputeMessage();
+    ~ComputeMessage();
+
+  };
+
   class UpdateStationByTagMessage : public Message
   {
     UpdateStationByTagMessage(char * ini_id, Side ini_side, char * ini_frame, double * ini_tag_translation, double * ini_tag_rotation);

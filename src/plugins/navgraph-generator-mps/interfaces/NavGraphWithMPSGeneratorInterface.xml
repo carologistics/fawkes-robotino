@@ -21,6 +21,9 @@
       Remove all currently known stations.
     </comment>
   </message>
+  <message name="Compute">
+    <comment>Trigger graph generation.</comment>
+  </message>
   <message name="UpdateStationByTag">
     <comment>
       Add an obstacle to be avoided by the graph. The obstacle is

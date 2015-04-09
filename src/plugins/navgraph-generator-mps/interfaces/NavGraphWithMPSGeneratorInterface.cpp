@@ -54,8 +54,9 @@ NavGraphWithMPSGeneratorInterface::NavGraphWithMPSGeneratorInterface() : Interfa
   enum_map_Side[(int)OUTPUT] = "OUTPUT";
   add_fieldinfo(IFT_STRING, "last_id", 64, data->last_id);
   add_messageinfo("ClearMessage");
+  add_messageinfo("ComputeMessage");
   add_messageinfo("UpdateStationByTagMessage");
-  unsigned char tmp_hash[] = {0x81, 0x1c, 0x70, 0x41, 0xc2, 0xf, 0x73, 0x18, 0xb8, 0xb, 0x98, 0x45, 0x32, 0x1d, 0xbc, 0x3a};
+  unsigned char tmp_hash[] = {0xc6, 0x9c, 0xa9, 0xf1, 0x44, 0x8a, 0xae, 0x36, 0x80, 0x4c, 0xb6, 0x7, 0x48, 0xac, 0x20, 0xe8};
   set_hash(tmp_hash);
 }
 
@@ -119,6 +120,8 @@ NavGraphWithMPSGeneratorInterface::create_message(const char *type) const
 {
   if ( strncmp("ClearMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new ClearMessage();
+  } else if ( strncmp("ComputeMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new ComputeMessage();
   } else if ( strncmp("UpdateStationByTagMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new UpdateStationByTagMessage();
   } else {
@@ -199,6 +202,54 @@ Message *
 NavGraphWithMPSGeneratorInterface::ClearMessage::clone() const
 {
   return new NavGraphWithMPSGeneratorInterface::ClearMessage(this);
+}
+/** @class NavGraphWithMPSGeneratorInterface::ComputeMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
+ * ComputeMessage Fawkes BlackBoard Interface Message.
+ * 
+    
+ */
+
+
+/** Constructor */
+NavGraphWithMPSGeneratorInterface::ComputeMessage::ComputeMessage() : Message("ComputeMessage")
+{
+  data_size = sizeof(ComputeMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (ComputeMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_Side[(int)INPUT] = "INPUT";
+  enum_map_Side[(int)OUTPUT] = "OUTPUT";
+}
+
+/** Destructor */
+NavGraphWithMPSGeneratorInterface::ComputeMessage::~ComputeMessage()
+{
+  free(data_ptr);
+}
+
+/** Copy constructor.
+ * @param m message to copy from
+ */
+NavGraphWithMPSGeneratorInterface::ComputeMessage::ComputeMessage(const ComputeMessage *m) : Message("ComputeMessage")
+{
+  data_size = m->data_size;
+  data_ptr  = malloc(data_size);
+  memcpy(data_ptr, m->data_ptr, data_size);
+  data      = (ComputeMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+}
+
+/* Methods */
+/** Clone this message.
+ * Produces a message of the same type as this message and copies the
+ * data to the new message.
+ * @return clone of this message
+ */
+Message *
+NavGraphWithMPSGeneratorInterface::ComputeMessage::clone() const
+{
+  return new NavGraphWithMPSGeneratorInterface::ComputeMessage(this);
 }
 /** @class NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
  * UpdateStationByTagMessage Fawkes BlackBoard Interface Message.
@@ -521,8 +572,12 @@ NavGraphWithMPSGeneratorInterface::message_valid(const Message *message) const
   if ( m0 != NULL ) {
     return true;
   }
-  const UpdateStationByTagMessage *m1 = dynamic_cast<const UpdateStationByTagMessage *>(message);
+  const ComputeMessage *m1 = dynamic_cast<const ComputeMessage *>(message);
   if ( m1 != NULL ) {
+    return true;
+  }
+  const UpdateStationByTagMessage *m2 = dynamic_cast<const UpdateStationByTagMessage *>(message);
+  if ( m2 != NULL ) {
     return true;
   }
   return false;
