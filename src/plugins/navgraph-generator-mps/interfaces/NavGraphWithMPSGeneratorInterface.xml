@@ -24,6 +24,14 @@
   <message name="Compute">
     <comment>Trigger graph generation.</comment>
   </message>
+  <message name="SetExplorationZones">
+    <comment>Set for which zones the exploration points should still
+    be copied.</comment>
+    <field type="bool" name="zones" length="24">
+      For each zone whether it should be explored or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    </field>
+  </message>
   <message name="UpdateStationByTag">
     <comment>
       Add an obstacle to be avoided by the graph. The obstacle is

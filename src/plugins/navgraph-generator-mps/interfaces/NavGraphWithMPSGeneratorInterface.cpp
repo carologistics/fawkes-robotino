@@ -55,8 +55,9 @@ NavGraphWithMPSGeneratorInterface::NavGraphWithMPSGeneratorInterface() : Interfa
   add_fieldinfo(IFT_STRING, "last_id", 64, data->last_id);
   add_messageinfo("ClearMessage");
   add_messageinfo("ComputeMessage");
+  add_messageinfo("SetExplorationZonesMessage");
   add_messageinfo("UpdateStationByTagMessage");
-  unsigned char tmp_hash[] = {0xc6, 0x9c, 0xa9, 0xf1, 0x44, 0x8a, 0xae, 0x36, 0x80, 0x4c, 0xb6, 0x7, 0x48, 0xac, 0x20, 0xe8};
+  unsigned char tmp_hash[] = {0x90, 0x28, 0xda, 0x8b, 0x3c, 0x54, 0x5e, 0xc5, 0xa2, 0x74, 0xb1, 0x74, 0x8d, 0x77, 0x6f, 0xa};
   set_hash(tmp_hash);
 }
 
@@ -122,6 +123,8 @@ NavGraphWithMPSGeneratorInterface::create_message(const char *type) const
     return new ClearMessage();
   } else if ( strncmp("ComputeMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new ComputeMessage();
+  } else if ( strncmp("SetExplorationZonesMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new SetExplorationZonesMessage();
   } else if ( strncmp("UpdateStationByTagMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new UpdateStationByTagMessage();
   } else {
@@ -250,6 +253,140 @@ Message *
 NavGraphWithMPSGeneratorInterface::ComputeMessage::clone() const
 {
   return new NavGraphWithMPSGeneratorInterface::ComputeMessage(this);
+}
+/** @class NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
+ * SetExplorationZonesMessage Fawkes BlackBoard Interface Message.
+ * 
+    
+ */
+
+
+/** Constructor with initial values.
+ * @param ini_zones initial value for zones
+ */
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::SetExplorationZonesMessage(const bool * ini_zones) : Message("SetExplorationZonesMessage")
+{
+  data_size = sizeof(SetExplorationZonesMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (SetExplorationZonesMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  memcpy(data->zones, ini_zones, sizeof(bool) * 24);
+  enum_map_Side[(int)INPUT] = "INPUT";
+  enum_map_Side[(int)OUTPUT] = "OUTPUT";
+  add_fieldinfo(IFT_BOOL, "zones", 24, &data->zones);
+}
+/** Constructor */
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::SetExplorationZonesMessage() : Message("SetExplorationZonesMessage")
+{
+  data_size = sizeof(SetExplorationZonesMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (SetExplorationZonesMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_Side[(int)INPUT] = "INPUT";
+  enum_map_Side[(int)OUTPUT] = "OUTPUT";
+  add_fieldinfo(IFT_BOOL, "zones", 24, &data->zones);
+}
+
+/** Destructor */
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::~SetExplorationZonesMessage()
+{
+  free(data_ptr);
+}
+
+/** Copy constructor.
+ * @param m message to copy from
+ */
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::SetExplorationZonesMessage(const SetExplorationZonesMessage *m) : Message("SetExplorationZonesMessage")
+{
+  data_size = m->data_size;
+  data_ptr  = malloc(data_size);
+  memcpy(data_ptr, m->data_ptr, data_size);
+  data      = (SetExplorationZonesMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+}
+
+/* Methods */
+/** Get zones value.
+ * 
+      For each zone whether it should be explored or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    
+ * @return zones value
+ */
+bool *
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::is_zones() const
+{
+  return data->zones;
+}
+
+/** Get zones value at given index.
+ * 
+      For each zone whether it should be explored or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    
+ * @param index index of value
+ * @return zones value
+ * @exception Exception thrown if index is out of bounds
+ */
+bool
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::is_zones(unsigned int index) const
+{
+  if (index > 24) {
+    throw Exception("Index value %u out of bounds (0..24)", index);
+  }
+  return data->zones[index];
+}
+
+/** Get maximum length of zones value.
+ * @return length of zones value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::maxlenof_zones() const
+{
+  return 24;
+}
+
+/** Set zones value.
+ * 
+      For each zone whether it should be explored or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    
+ * @param new_zones new zones value
+ */
+void
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::set_zones(const bool * new_zones)
+{
+  memcpy(data->zones, new_zones, sizeof(bool) * 24);
+}
+
+/** Set zones value at given index.
+ * 
+      For each zone whether it should be explored or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    
+ * @param new_zones new zones value
+ * @param index index for of the value
+ */
+void
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::set_zones(unsigned int index, const bool new_zones)
+{
+  if (index > 24) {
+    throw Exception("Index value %u out of bounds (0..24)", index);
+  }
+  data->zones[index] = new_zones;
+}
+/** Clone this message.
+ * Produces a message of the same type as this message and copies the
+ * data to the new message.
+ * @return clone of this message
+ */
+Message *
+NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::clone() const
+{
+  return new NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage(this);
 }
 /** @class NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
  * UpdateStationByTagMessage Fawkes BlackBoard Interface Message.
@@ -576,8 +713,12 @@ NavGraphWithMPSGeneratorInterface::message_valid(const Message *message) const
   if ( m1 != NULL ) {
     return true;
   }
-  const UpdateStationByTagMessage *m2 = dynamic_cast<const UpdateStationByTagMessage *>(message);
+  const SetExplorationZonesMessage *m2 = dynamic_cast<const SetExplorationZonesMessage *>(message);
   if ( m2 != NULL ) {
+    return true;
+  }
+  const UpdateStationByTagMessage *m3 = dynamic_cast<const UpdateStationByTagMessage *>(message);
+  if ( m3 != NULL ) {
     return true;
   }
   return false;
