@@ -336,6 +336,8 @@ NavGraphGeneratorMPSThread::generate_navgraph()
       }
     }
     for (const NavGraphEdge &e : edges) {
+      if (e.has_property("generated")) continue;
+
       std::list<std::string> en = {e.from(), e.to()};     
       if (std::all_of(en.begin(), en.end(),
 		      [&cn](const std::string &enn)
