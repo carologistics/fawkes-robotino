@@ -38,6 +38,7 @@ namespace fawkes {
   class NavGraphGeneratorInterface;
   class NavGraphWithMPSGeneratorInterface;
   class BlackBoardOnMessageWaker;
+  class NavGraph;
 }
 
 class NavGraphGeneratorMPSThread
@@ -74,6 +75,10 @@ class NavGraphGeneratorMPSThread
   fawkes::NavGraphWithMPSGeneratorInterface *navgen_mps_if_;
 
   fawkes::BlackBoardOnMessageWaker          *msg_waker_;
+
+  fawkes::NavGraph                          *base_graph_;
+
+  std::vector<unsigned int>                  exp_zones_;
 
   typedef struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

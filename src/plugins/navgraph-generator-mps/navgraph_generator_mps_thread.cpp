@@ -57,6 +57,23 @@ NavGraphGeneratorMPSThread::init()
   cfg_mps_width_         = config->get_float("/navgraph-generator-mps/mps-width");
   cfg_mps_approach_dist_ = config->get_float("/navgraph-generator-mps/approach-distance");
 
+  std::string base_graph_file;
+  try {
+    base_graph_file  = config->get_string("/navgraph-generator-mps/base-graph");
+  } catch (Exception &e) {} // ignored, no base graph
+
+  base_graph_ = NULL;
+  if (! base_graph_file.empty()) {
+    if (base_graph_file[0] != '/') {
+      base_graph_file = std::string(CONFDIR) + "/" + base_graph_file;
+    }
+    base_graph_ = load_yaml_navgraph(base_graph_file);
+  } else {
+    logger->log_warn(name(), "No base graph configured");
+  }
+
+  exp_zones_.resize(24, true);
+
   navgen_if_ =
     blackboard->open_for_reading<NavGraphGeneratorInterface>("/navgraph-generator");
 
@@ -81,6 +98,8 @@ NavGraphGeneratorMPSThread::finalize()
 
   blackboard->close(navgen_mps_if_);
   blackboard->close(navgen_if_);
+
+  delete base_graph_;
 }
 
 void
@@ -97,6 +116,13 @@ NavGraphGeneratorMPSThread::loop()
 
       update_station(m->id(), (m->side() == NavGraphWithMPSGeneratorInterface::INPUT),
 		     m->frame(), m->tag_translation(), m->tag_rotation());
+
+    } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage>() ) {
+      NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage *m =
+	navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage>();
+      for (size_t i = 0; i < std::min(m->maxlenof_zones(), exp_zones_.size()); ++i) {
+	exp_zones_[i] = m->is_zones(i);
+      }
 
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::ComputeMessage>() ) {
       generate_navgraph();
@@ -248,6 +274,84 @@ NavGraphGeneratorMPSThread::generate_navgraph()
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddObstacleMessage
        ((s.first + "-C").c_str(), s.second.pose_pos[0], s.second.pose_pos[1]));
+  }
+
+  if (base_graph_) {
+    // add base graph nodes and edges
+    std::list<std::string> cn; // copied nodes
+    const std::vector<NavGraphNode> &nodes = base_graph_->nodes();
+    const std::vector<NavGraphEdge> &edges = base_graph_->edges();
+    for (const NavGraphNode &n : nodes) {
+      bool do_copy = n.has_property("always-copy") && n.property_as_bool("always-copy");
+      if (! do_copy) {
+	// check for other reasons
+	for (size_t i = 0; i < exp_zones_.size(); ++i) {
+	  if (exp_zones_[i]) {
+	    std::string prop_name = "orientation_Z" + std::to_string(i+1);
+	    if (n.has_property(prop_name)) {
+	      do_copy = true;
+	      break;
+	    }
+	  }
+	}
+      }
+      if (do_copy) {
+	cn.push_back(n.name());
+
+	NavGraphGeneratorInterface::ConnectionMode conn_mode =
+	  NavGraphGeneratorInterface::NOT_CONNECTED;
+
+	if (n.unconnected()) {
+	  conn_mode = NavGraphGeneratorInterface::UNCONNECTED;
+	}
+
+	// insert-mode may still override unconnected status, which it
+	// may only have to satisfy initial loading criteria
+	if (n.has_property("insert-mode")) {
+	  std::string ins_mode = n.property("insert-mode");
+	  if (ins_mode == "closest-node" || ins_mode == "CLOSEST_NODE") {
+	    conn_mode = NavGraphGeneratorInterface::CLOSEST_NODE;
+	  } else if (ins_mode == "closest-edge" || ins_mode == "CLOSEST_EDGE") {
+	  conn_mode = NavGraphGeneratorInterface::CLOSEST_EDGE;
+	  } else if (ins_mode == "closest-edge-or-node" || ins_mode == "CLOSEST_EDGE_OR_NODE") {
+	    conn_mode = NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE;
+	  } else if (ins_mode == "unconnected" || ins_mode == "UNCONNECTED") {
+	    conn_mode = NavGraphGeneratorInterface::UNCONNECTED;
+	  } else if (ins_mode == "not-connected" || ins_mode == "NOT_CONNECTED") {
+	    conn_mode = NavGraphGeneratorInterface::NOT_CONNECTED;
+	  } else {
+	    ins_mode = "NOT_CONNECTED";
+	    logger->log_warn(name(), "Unknown insertion mode '%s' for node '%s', "
+			     "defaulting to NOT_CONNECTED", ins_mode.c_str(), n.name().c_str());
+	  }
+	}
+
+	logger->log_debug(name(), "Copying node %s (insertion mode %s)", n.name().c_str(),
+			  navgen_if_->tostring_ConnectionMode(conn_mode));
+	navgen_if_->msgq_enqueue
+	  (new NavGraphGeneratorInterface::AddPointOfInterestMessage
+	   (n.name().c_str(), n.x(), n.y(), conn_mode));
+      } else {
+	logger->log_debug(name(), "Ignoring irrelevant node %s", n.name().c_str());
+      }
+    }
+    for (const NavGraphEdge &e : edges) {
+      std::list<std::string> en = {e.from(), e.to()};     
+      if (std::all_of(en.begin(), en.end(),
+		      [&cn](const std::string &enn)
+		      { return std::find(cn.begin(), cn.end(), enn) != cn.end(); }))
+      {
+	logger->log_debug(name(), "Copying edge %s-%s%s",
+			  e.from().c_str(), e.is_directed() ? ">" : "-", e.to().c_str());
+	navgen_if_->msgq_enqueue
+	  (new NavGraphGeneratorInterface::AddEdgeMessage
+	   (e.from().c_str(), e.to().c_str(), e.is_directed(),
+	    NavGraphGeneratorInterface::SPLIT_INTERSECTION));
+      } else {
+	logger->log_debug(name(), "Ignoring irrelevant edge %s-%s%s",
+			  e.from().c_str(), e.is_directed() ? ">" : "-", e.to().c_str());
+      }
+    }
   }
 
   navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ComputeMessage());
