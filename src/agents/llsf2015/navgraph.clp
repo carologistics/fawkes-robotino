@@ -7,44 +7,33 @@
 ;---------------------------------------------------------------------------
 
 
-(defrule navgraph-set-machine-coordinates
+(defrule navgraph-get-exp-coordinates
+  "Extract position and orientation of the explorations points from the navgraph"
   (declare (salience ?*PRIORITY-WM*))
-  ?mf <- (machine (name ?name) (x 0.0) (y 0.0))
-  (navgraph-node (name ?sname&:(eq ?sname (str-cat ?name))) (pos $?pos))
+  ?nn <- (navgraph-node (name ?name&:(str-index "Exp" (str-cat ?name)))
+			(pos $?pos) (properties $?props))
   =>
-  (modify ?mf (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)))
+  ;check if the node has the orientation property for any zone
+  (delayed-do-for-all-facts ((?ze zone-exploration)) (navgraph-has-property ?props (str-cat "orientation_" ?ze:name))
+    ; add pose to the zone
+    (bind ?pose-id (random-id))
+    (assert (pose (id ?pose-id) (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos))
+		  (ori (navgraph-property-as-float ?props (str-cat "orientation_" ?ze:name)))))
+    (modify ?ze (look-pos (insert$ ?ze:look-pos 1 ?pose-id)))
+  )
+  ; we don't need this fact again
+  (retract ?nn)
 )
 
-(defrule navgraph-set-zone-exp-coordinates
+(defrule navgraph-set-exploration-zone-coordinates
+  "Set the coordinates of the exploration zones according to the assigned exploration points"
   (declare (salience ?*PRIORITY-WM*))
-  ?mf <- (zone-exploration (look-pos ?name) (x 0.0) (y 0.0))
-  (navgraph-node (name ?sname&:(eq ?sname (str-cat ?name))) (pos $?pos))
+  ?ze <- (zone-exploration (x 0.0) (y 0.0) (look-pos $?lp&:(> (length$ ?lp) 0)))
   =>
-  (modify ?mf (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)))
-)
-
-(defrule navgraph-get-ins-delivery-coordinates
-  (declare (salience ?*PRIORITY-WM*))
-  (navgraph-node (name "Ins1") (pos $?ins1))
-  (navgraph-node (name "Ins1Sec") (pos $?ins1sec))
-  (navgraph-node (name "Ins2") (pos $?ins2))
-  (navgraph-node (name "Ins2Sec") (pos $?ins2sec))
-  (navgraph-node (name "deliver1") (pos $?deliver1))
-  (navgraph-node (name "deliver2") (pos $?deliver2))
-  ?i1f <- (input-storage CYAN Ins1 0 0)
-  ?i2f <- (input-storage MAGENTA Ins2 0 0)
-  ?s1f <- (secondary-storage CYAN Ins1Sec 0 0)
-  ?s2f <- (secondary-storage MAGENTA Ins2Sec 0 0)
-  ?d1f <- (deliver CYAN deliver1 0 0)
-  ?d2f <- (deliver MAGENTA deliver2 0 0)
-  =>
-  (retract ?i1f ?i2f ?s1f ?s2f ?d1f ?d2f)
-  (assert (input-storage CYAN Ins1 (nth$ 1 ?ins1) (nth$ 2 ?ins1))
-    (secondary-storage CYAN Ins1Sec (nth$ 1 ?ins1sec) (nth$ 2 ?ins1sec))
-	  (input-storage MAGENTA Ins2 (nth$ 1 ?ins2) (nth$ 2 ?ins2))
-    (secondary-storage MAGENTA Ins2Sec (nth$ 1 ?ins2sec) (nth$ 2 ?ins2sec))
-	  (deliver CYAN deliver1 (nth$ 1 ?deliver1) (nth$ 2 ?deliver1))
-	  (deliver MAGENTA deliver2 (nth$ 1 ?deliver2) (nth$ 2 ?deliver2)))
+  ;find the corresponding position fact
+  (do-for-fact ((?pose pose)) (eq ?pose:id (nth$ 1 ?lp))
+    (modify ?ze (x ?pose:x) (y ?pose:y))
+  )
 )
 
 (defrule navgraph-remove-navgraph-facts ;to reduce amount of facts in clips-webview

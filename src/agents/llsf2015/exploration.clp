@@ -123,7 +123,7 @@
   ?df <- (skill-done (name "enable_switch"))
   (exp-tactic LINE)
   (first-exploration-machine ?v)
-  (zone-exploration (name ?v) (x ?) (y ?) (look-pos $?lp))
+  (zone-exploration (name ?v) (x ?) (y ?))
   (not (driven-to-waiting-point))
   =>
   (printout t "First machine: " ?v crlf)
@@ -443,13 +443,15 @@
   (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?)
 		    (look-pos $?lp) (current-look-pos ?lp-index))
   (not (driven-to-waiting-point))
+  (pose (id ?pose-id&:(eq ?pose-id (nth$ ?lp-index ?lp)))
+	(x ?pose-x) (y ?pose-y) (ori ?pose-ori))
   =>
   (printout t "Going to next machine." crlf)
   (printout t "Try to see tag from " (nth$ ?lp-index ?lp) "." crlf)
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine))
-  (skill-call drive_to place (str-cat (nth$ ?lp-index ?lp)) puck false)
+  (skill-call drive_to x ?pose-x y ?pose-y ori ?pose-ori puck false)
 )
 
 (defrule exp-receive-type-light-pattern-matching
