@@ -87,15 +87,21 @@ void
 NavGraphGeneratorMPSThread::loop()
 {
   while ( ! navgen_mps_if_->msgq_empty() ) {
-    if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage>() ) {
+    if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::ClearMessage>() ) {
+      stations_.clear();
+
+    } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage>() ) {
       NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage *m =
 	navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage>();
       logger->log_warn(name(), "Updating station %s from tag", m->id());
 
       update_station(m->id(), (m->side() == NavGraphWithMPSGeneratorInterface::INPUT),
 		     m->frame(), m->tag_translation(), m->tag_rotation());
-      generate_navgraph();
 
+    } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::ComputeMessage>() ) {
+      generate_navgraph();
+    } else {
+      logger->log_warn(name(), "Unknown message received");
     }
 
     navgen_mps_if_->msgq_pop();
