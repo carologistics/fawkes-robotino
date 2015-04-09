@@ -178,12 +178,37 @@
   (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
   (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
   (blackboard-send-msg ?msg)
+
+  ; send message which zones are still to explore
+  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetExplorationZonesMessage"))
+  (bind ?zones-still-to-explore-multifield (create$ T h i s A r e R a n d o m 2 4 E n t r i e s x x))
+  (do-for-all-facts ((?zone-to-explore zone-exploration)) TRUE
+    ;get index of zone (e.g. Z15 -> 15)
+    (bind ?zone-name (str-cat ?zone-to-explore:name))
+    (bind ?zone-index (eval (sub-string 2 (str-length ?zone-name) ?zone-name)))
+    (if (eq ?zone-to-explore:name ?old)
+      then
+      ; we don't have to explore this machine again
+      (bind ?zones-still-to-explore-multifield
+	    (replace$ ?zones-still-to-explore-multifield ?zone-index ?zone-index (sym-cat FALSE)))
+      else
+      (bind ?zones-still-to-explore-multifield
+	    (replace$ ?zones-still-to-explore-multifield ?zone-index ?zone-index (sym-cat ?zone-to-explore:still-to-explore)))
+    )
+  )
+  (blackboard-set-msg-multifield ?msg "zones" ?zones-still-to-explore-multifield)
+  (blackboard-send-msg ?msg)
+
+  ; send compute message so we can drive to the output
+  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
+  (bind ?compute-msg-id (blackboard-send-msg ?msg))
+
+  (printout t "TODO Wait until ComputeMessage id " ?compute-msg-id " is processed" crlf)
  
   (retract ?s ?tvi ?tagpos ?ws)
-  ; TODO align at output tag and scan light
   (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
           (timer (name waiting-for-navgraph-generation) (time ?now) (seq 1)))
-  (modify ?ze (machine ?machine))
+  (modify ?ze (machine ?machine) (still-to-explore FALSE))
 )
 
 (defrule exp-no-tag-found
@@ -225,7 +250,7 @@
   (printout t "Driving to MPS output." crlf)
   (retract ?s ?timer)
   (assert (state EXP_DRIVE_TO_OUTPUT))
-  (skill-call ppgoto place (get-output ?machine))
+  ;(skill-call ppgoto place (get-output ?machine))
 )
 
 (defrule exp-align-in-front-of-light-signal
