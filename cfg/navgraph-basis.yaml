@@ -31,15 +31,6 @@ nodes:
 # Exploration Points
 # two points for each cell, so for each mps rotation at least one point can see the tag
 # cyan half:
-  - !unconnected
-    name: Test
-    pos: [0.0, 0.5]
-    properties:
-      - always-copy: true
-      - insert-mode: closest-node
-  - !unconnected
-    name: Test2
-    pos: [0.0, -0.5]
   - name: Exp-CM1
     pos: [0.0, 1.5]
     properties:
