@@ -15,7 +15,7 @@ navgraph:
   navigator_interface_id: Navigator
 
   # Graph file to use for path planning
-  graph_file: navgraph-llsf.yaml
+  graph_file: navgraph-basis.yaml
 
   # These values are now specified in the graph file (navgraph-llsf.yaml)
   travel_tolerance: 0.0

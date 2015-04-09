@@ -55,3 +55,9 @@ navgraph-generator-mps:
 
   # The distance in which to place approach points from the machine; m
   approach-distance: 0.4
+
+  # A file which contains a base graph that will be (partially)
+  # overlayed with the generated graph. The main purpose is to
+  # provide an exploration graph for when there are no recognized
+  # machines, yet.
+  base-graph: navgraph-basis.yaml
