@@ -132,6 +132,8 @@ TagVisionThread::init()
 void
 TagVisionThread::finalize()
 {
+  vision_master->unregister_thread(this);
+  config->rem_change_handler(this);
   // free the markers
   this->markers_->clear();
   delete this->markers_;
