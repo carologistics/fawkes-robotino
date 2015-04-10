@@ -7,14 +7,23 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(deftemplate sim-default-tag
+  (slot name (type STRING))
+  (slot side (type SYMBOL) (allowed-values INPUT OUTPUT))
+  (slot frame (type STRING))
+  (multislot trans (type FLOAT) (cardinality 3 3))
+  (multislot rot (type FLOAT) (cardinality 4 4))
+)
+
+
 (deffacts sim-startup-deffacts
   "Startup Facts for testing in the simulation"
-  (sim-default-tag "CBS" OUTPUT "/map" (create$ -4.9 4.9 0) (quaternion-from-yaw -1.14))
-  (sim-default-tag "CDS" INPUT "/map" (create$ 4.5 1.2 0) (quaternion-from-yaw 2.32))
-  (sim-default-tag "CCS1" OUTPUT "/map" (create$ -0.8 5.0 0) (quaternion-from-yaw -0.17))
-  (sim-default-tag "CCS2" OUTPUT "/map" (create$ -3.1 2.6 0) (quaternion-from-yaw 0.0))
-  (sim-default-tag "CRS1" INPUT "/map" (create$ 1.1 2.4 0) (quaternion-from-yaw -1.67))
-  (sim-default-tag "CRS2" INPUT "/map" (create$ 4.7 3.7 0) (quaternion-from-yaw 2.37))
+  (sim-default-tag (name "CBS") (side OUTPUT)(frame "/map") (trans  (create$ -4.9 4.9 0)) (rot (quaternion-from-yaw -1.14)))
+  (sim-default-tag (name "CDS") (side INPUT)(frame "/map") (trans  (create$ 4.5 1.2 0)) (rot (quaternion-from-yaw 2.32)))
+  (sim-default-tag (name "CCS1") (side OUTPUT)(frame "/map") (trans  (create$ -0.8 5.0 0)) (rot (quaternion-from-yaw -0.17)))
+  (sim-default-tag (name "CCS2") (side OUTPUT)(frame "/map") (trans  (create$ -3.1 2.6 0)) (rot (quaternion-from-yaw 0.0)))
+  (sim-default-tag (name "CRS1") (side INPUT)(frame "/map") (trans  (create$ 1.1 2.4 0)) (rot (quaternion-from-yaw -1.67)))
+  (sim-default-tag (name "CRS2") (side INPUT)(frame "/map") (trans  (create$ 4.7 3.7 0)) (rot (quaternion-from-yaw 2.37)))
 )
 
 (defrule sim-remember-exploration
@@ -29,7 +38,7 @@
   (declare (salience ?*PRIORITY-SIM*))
   (not (sim-was-in-exploration))
   (change-phase PRODUCTION)
-  ?sdt <- (sim-default-tag ?machine ?side ?frame $?trans $?rot)
+  ?sdt <- (sim-default-tag (name ?machine) (side ?side) (frame ?frame) (trans $?trans) (rot $?rot))
   (not (default-navgraph-generated))
   =>
   (retract ?sdt)
@@ -48,7 +57,7 @@
   (declare (salience ?*PRIORITY-SIM*))
   (not (sim-was-in-exploration))
   ?ch-ph <- (change-phase PRODUCTION)
-  (not (sim-default-tag ? ? ? $? $?))
+  (not (sim-default-tag))
   (not (default-navgraph-generated))
   (not (timer (name waiting-for-navgraph-generation)))
   (time $?now)
