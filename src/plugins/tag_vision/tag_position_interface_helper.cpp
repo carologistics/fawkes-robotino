@@ -34,7 +34,7 @@
  * @param vector_position The position in the TagPositionList, or any other enumeration.
  * @param frame The frame of reference for the transforms published
  */
-TagPositionInterfaceHelper::TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position, fawkes::BlackBoard *blackboard, fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher, std::string frame)
+TagPositionInterfaceHelper::TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position, fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher, std::string frame)
 {
   this->interface_ = position_interface;
   this->vector_position_ = vector_position;

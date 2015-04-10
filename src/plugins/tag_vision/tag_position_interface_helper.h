@@ -66,7 +66,7 @@ class TagPositionInterfaceHelper
 
 public:
   /// Constructor
-  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::BlackBoard *blackboard, fawkes::Clock *clock, fawkes::tf::TransformPublisher * tf_publisher, std::string frame);
+  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::Clock *clock, fawkes::tf::TransformPublisher * tf_publisher, std::string frame);
   /// Destructor
   ~TagPositionInterfaceHelper();
 
