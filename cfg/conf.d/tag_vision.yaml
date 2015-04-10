@@ -22,6 +22,8 @@ plugins/tag_vision:
   camera_opening_angle_vertical: 0.85 
 
   # Debugging
+  # frame of reference
+  frame: "cam_tag"
 
   # alvar calibration file
   alvar_camera_calib_file: /not/found
