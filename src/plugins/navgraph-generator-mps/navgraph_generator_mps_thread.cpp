@@ -41,7 +41,8 @@ using namespace fawkes;
 
 /** Constructor. */
 NavGraphGeneratorMPSThread::NavGraphGeneratorMPSThread()
-  : Thread("NavGraphGeneratorMPSThread", Thread::OPMODE_WAITFORWAKEUP)
+  : Thread("NavGraphGeneratorMPSThread", Thread::OPMODE_WAITFORWAKEUP),
+    BlackBoardInterfaceListener("NavGraphGeneratorMPSThread")
 {
 }
 
@@ -80,6 +81,11 @@ NavGraphGeneratorMPSThread::init()
   navgen_mps_if_ =
     blackboard->open_for_writing<NavGraphWithMPSGeneratorInterface>("/navgraph-generator-mps");
 
+  compute_msgid_ = 0;
+
+  bbil_add_data_interface(navgen_if_);
+  blackboard->register_listener(this, BlackBoard::BBIL_FLAG_DATA);
+
   /* For testing
   tf::Quaternion q = tf::create_quaternion_from_yaw(deg2rad(45));
   double tag_pos[3] = {1.0,0.,0.};
@@ -95,6 +101,9 @@ void
 NavGraphGeneratorMPSThread::finalize()
 {
   delete msg_waker_;
+
+  blackboard->unregister_listener(this);
+  bbil_remove_data_interface(navgen_if_);
 
   blackboard->close(navgen_mps_if_);
   blackboard->close(navgen_if_);
@@ -125,6 +134,12 @@ NavGraphGeneratorMPSThread::loop()
       }
 
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::ComputeMessage>() ) {
+      NavGraphWithMPSGeneratorInterface::ComputeMessage *m =
+	navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::ComputeMessage>();
+      logger->log_info(name(), "Computation started");
+      navgen_mps_if_->set_final(false);
+      navgen_mps_if_->set_msgid(m->id());
+      navgen_mps_if_->write();
       generate_navgraph();
     } else {
       logger->log_warn(name(), "Unknown message received");
@@ -312,7 +327,7 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 	  if (ins_mode == "closest-node" || ins_mode == "CLOSEST_NODE") {
 	    conn_mode = NavGraphGeneratorInterface::CLOSEST_NODE;
 	  } else if (ins_mode == "closest-edge" || ins_mode == "CLOSEST_EDGE") {
-	  conn_mode = NavGraphGeneratorInterface::CLOSEST_EDGE;
+	    conn_mode = NavGraphGeneratorInterface::CLOSEST_EDGE;
 	  } else if (ins_mode == "closest-edge-or-node" || ins_mode == "CLOSEST_EDGE_OR_NODE") {
 	    conn_mode = NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE;
 	  } else if (ins_mode == "unconnected" || ins_mode == "UNCONNECTED") {
@@ -356,5 +371,22 @@ NavGraphGeneratorMPSThread::generate_navgraph()
     }
   }
 
-  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ComputeMessage());
+  NavGraphGeneratorInterface::ComputeMessage *compute_msg =
+    new NavGraphGeneratorInterface::ComputeMessage();
+  compute_msg->ref();
+  navgen_if_->msgq_enqueue(compute_msg);
+  compute_msgid_ = compute_msg->id();
+  compute_msg->unref();
+}
+
+
+void
+NavGraphGeneratorMPSThread::bb_interface_data_changed(Interface *interface) throw()
+{
+  navgen_if_->read();
+  if (navgen_if_->msgid() == compute_msgid_ && navgen_if_->is_final()) {
+    logger->log_info(name(), "Computation finished");
+    navgen_mps_if_->set_final(true);
+    navgen_mps_if_->write();
+  }
 }

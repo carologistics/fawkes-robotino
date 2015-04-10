@@ -28,6 +28,7 @@
 #include <aspect/logging.h>
 #include <aspect/blackboard.h>
 #include <aspect/tf.h>
+#include <blackboard/interface_listener.h>
 
 #include <Eigen/Geometry>
 
@@ -47,7 +48,8 @@ class NavGraphGeneratorMPSThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
-  public fawkes::TransformAspect
+  public fawkes::TransformAspect,
+  public fawkes::BlackBoardInterfaceListener
 {
  public:
   NavGraphGeneratorMPSThread();
@@ -65,6 +67,8 @@ class NavGraphGeneratorMPSThread
   void update_station(std::string id, bool input, std::string frame,
 		      double tag_pos[3], double tag_ori[4]);
 
+  virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
+
  private:
   std::string  cfg_global_frame_;
   float        cfg_mps_width_;
@@ -79,6 +83,8 @@ class NavGraphGeneratorMPSThread
   fawkes::NavGraph                          *base_graph_;
 
   std::vector<unsigned int>                  exp_zones_;
+
+  unsigned int                               compute_msgid_;
 
   typedef struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
