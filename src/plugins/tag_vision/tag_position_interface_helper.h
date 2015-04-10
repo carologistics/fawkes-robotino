@@ -35,6 +35,7 @@
 #define EMPTY_INTERFACE_MARKER_ID 0
 #define FRAME "/cam_tag"
 #define CHILD_FRAME "/tag_"
+#define INTERFACE_UNSEEN_BOUND -1000
 
 class TagPositionInterfaceHelper
 {

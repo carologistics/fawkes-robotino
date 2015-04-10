@@ -124,6 +124,12 @@ void TagPositionInterfaceHelper::set_marker_id(u_int32_t new_id)
  */
 void TagPositionInterfaceHelper::write()
 {
+  // when the tag becomes visible or invisible reset the visibility history
+  if( (this->touched_ && this->visibility_history_ < 0) ||
+      (!this->touched_ && this->visibility_history_ > 0))
+  {
+    this->visibility_history_ = 0;
+  }
   // update the visibility history according to the marker, weather this interface got a new pose
   if(this->touched_){
     this->visibility_history_++;
@@ -132,8 +138,8 @@ void TagPositionInterfaceHelper::write()
   {
     this->visibility_history_--;
   }
-  // empty marker id if the tag is no longer visible
-  if(this->marker_id_ != EMPTY_INTERFACE_MARKER_ID && this->visibility_history_ < 0)
+  // empty marker id if the tag is to long not visible
+  if(this->marker_id_ != EMPTY_INTERFACE_MARKER_ID && this->visibility_history_ < INTERFACE_UNSEEN_BOUND)
   {
     this->marker_id_ = EMPTY_INTERFACE_MARKER_ID;
   }
