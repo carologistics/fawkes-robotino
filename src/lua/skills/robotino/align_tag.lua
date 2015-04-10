@@ -58,7 +58,8 @@ function send_transrot(vx, vy, omega)
 end
 
 function get_tag_distance(tag)
-   return math.sqrt((tag:translation(0)*tag:translation(0)) + (tag:translation(1)*tag:translation(1)))
+   -- in the camera frame of reference the forward distance is z(2) and the lateral distance is x(0)
+   return math.sqrt((tag:translation(2)*tag:translation(2)) + (tag:translation(0)*tag:translation(0)))
 end
 
 function get_tag_visible(tag)
@@ -104,9 +105,14 @@ end
 -- Condition Functions
 -- Check, weather the final position is reached
 function tag_reached(self)
-	local tag = get_closest_tag()
-	return (math.abs(tag:translation(0)-self.fsm.vars.x) < desired_position_margin.x)
-	   and (math.abs(tag:translation(1)-self.fsm.vars.y) < desired_position_margin.y)
+   local tag = get_closest_tag()
+   -- the forward distance is the z trnaslation in the camera frame of reference
+   forward_distance = tag:translation(2)
+   -- the lateral distance is the x translation in the camera frame of reference
+   lateral_distance = -tag:translation(0)
+
+   return (math.abs(forward_distance-self.fsm.vars.x) < desired_position_margin.x)
+      and (math.abs(lateral_distance-self.fsm.vars.y) < desired_position_margin.y)
 end
 
 -- Check if one tag is visible
@@ -186,15 +192,19 @@ function DRIVE:loop()
    local yaw = get_yaw(tag:rotation(0), tag:rotation(1), tag:rotation(2), tag:rotation(3))
    -- correct rotation
    yaw = yaw - (math.pi/2)
+   -- the forward distance is the z trnaslation in the camera frame of reference
+   forward_distance = tag:translation(2)
+   -- the lateral distance is the x translation in the camera frame of reference
+   lateral_distance = -tag:translation(0)
 
    --skip on empty values
-   if(tag:translation(0) == 0 and tag:translation(1) == 0 and yaw == 0) then
+   if(forward_distance) == 0 and lateral_distance == 0 and yaw == 0) then
 --      send_transrot(0,0,0)
       return
    end
 	--get the distance to drive
-	distance = { x = tag:translation(0) ,--- self.fsm.vars.x,
-				y = tag:translation(1) ,--- self.fsm.vars.y,
+    distance = { x = forward_distance ,--- self.fsm.vars.x,
+                y = lateral_distance ,--- self.fsm.vars.y,
                 ori = -yaw}
    --print("original distance")
    --printtable(distance)
