@@ -142,6 +142,7 @@ TagVisionThread::finalize()
   delete shm_buffer;
   shm_buffer= NULL;
   image_buffer = NULL;
+  cvReleaseImage(&ipl);
   ipl = NULL;
   delete this->tag_interfaces;
 }
