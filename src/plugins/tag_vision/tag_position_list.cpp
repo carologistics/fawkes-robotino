@@ -88,13 +88,6 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_m
  */
 TagPositionList::~TagPositionList()
 {
-  // close all blackboards
-  for(size_t i=0; i < this->max_markers_; i++)
-  {
-    this->blackboard_->close(this->at(i)->interface());
-  }
-
-
   // close tag vision interface
   this->blackboard_->close(this->tag_vision_interface_);
 
