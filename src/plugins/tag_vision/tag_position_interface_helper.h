@@ -33,7 +33,7 @@
 #include <alvar/Pose.h>
 
 #define EMPTY_INTERFACE_MARKER_ID 0
-#define FRAME "/cam_front_tag"
+#define FRAME "/cam_tag"
 #define CHILD_FRAME "/tag_"
 
 class TagPositionInterfaceHelper
