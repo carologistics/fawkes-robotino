@@ -15,7 +15,7 @@ plugins/tag_vision:
   shm_image_id: "tag_vision"
 
   # frame of reference
-  frame: "cam_tag"
+  frame: "/cam_tag"
 
   # alvar calibration file
   alvar_camera_calib_file: /not/found
