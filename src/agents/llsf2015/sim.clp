@@ -49,22 +49,31 @@
   (blackboard-set-msg-field ?msg "frame" ?frame)
   (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
   (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
+  (printout t "Setting tag: trans: " ?trans " rot: " ?rot crlf)
   (blackboard-send-msg ?msg)
 )
 
-(defrule sim-gen-default-navgraph-wait-for-generation
+(defrule sim-gen-default-navgraph-compute-and-wait-for-generation
   "If the exploration was skipped generate a default navgraph for production before switching to production"
   (declare (salience ?*PRIORITY-SIM*))
   (not (sim-was-in-exploration))
   ?ch-ph <- (change-phase PRODUCTION)
   (not (sim-default-tag))
   (not (default-navgraph-generated))
-  (not (timer (name waiting-for-navgraph-generation)))
-  (time $?now)
+  (not (last-navgraph-compute-msg ?))
   =>
   (retract ?ch-ph)
+  
+  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetExplorationZonesMessage"))
+  (blackboard-set-msg-multifield ?msg "zones" (create-multifield-with-length-and-entry 24 FALSE))
+  (blackboard-send-msg ?msg)
+
+  ; send compute message so we can drive to the output
+  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
+  (bind ?compute-msg-id (blackboard-send-msg ?msg))
+
   (printout t "Waiting until navgraph-generation finished" crlf)
-  (assert (timer (name waiting-for-navgraph-generation) (time ?now) (seq 1)))
+  (assert (last-navgraph-compute-msg ?compute-msg-id))
 )
 
 (defrule sim-gen-default-navgraph-pause
@@ -72,7 +81,7 @@
   (declare (salience ?*PRIORITY-SIM*))
   (not (sim-was-in-exploration))
   ?ch-ph <- (change-phase PRODUCTION)
-  (timer (name waiting-for-navgraph-generation))
+  (last-navgraph-compute-msg ?compute-msg-id)
   =>
   (retract ?ch-ph)
 )
@@ -81,13 +90,13 @@
   "If the exploration was skipped generate a default navgraph for production before switching to production"
   (declare (salience ?*PRIORITY-SIM*))
   (not (sim-was-in-exploration))
-  (not (sim-default-tag ? ? ? $? $?))
-  (time $?now)
-  ?ws <- (timer (name waiting-for-navgraph-generation) (time $?t&:(timeout ?now ?t 30.0)))
-  ; TODO use ready flag in interface to determine if generation finisched
+  (not (sim-default-tag))
+  ; wait until the navgraph-generator has added the path to the output
+  ?lncm <- (last-navgraph-compute-msg ?compute-msg-id)
+  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (last_id ?compute-msg-id))
   (not (default-navgraph-generated))
   =>
-  (retract ?ws)
+  (retract ?lncm ?ngg-if)
   (printout t "navgraph-generation should be finished now" crlf)
   (assert (change-phase PRODUCTION)
 	  (default-navgraph-generated))

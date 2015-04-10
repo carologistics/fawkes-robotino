@@ -44,3 +44,16 @@
   (return (str-cat ?mps "-O"))
 )
 
+(deffunction create-multifield-with-length-and-entry (?length ?entry)
+  "Creates a Multifield with ?length times the entry ?entry"
+  (bind $?res (create$ ))
+  (loop-for-count (?i 1 24) do
+    (bind $?res (insert$ ?res 1 ?entry))
+  )
+  (return ?res)
+)
+
+(deffunction create-multifield-with-length (?length)
+  "Creates a Multifield with length ?length"
+  (return (create-multifield-with-length-and-entry ?length RANDOM-SYMBOL))
+)

@@ -181,7 +181,7 @@
 
   ; send message which zones are still to explore
   (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetExplorationZonesMessage"))
-  (bind ?zones-still-to-explore-multifield (create$ T h i s A r e R a n d o m 2 4 E n t r i e s x x))
+  (bind $?zones-still-to-explore-multifield (create-multifield-with-length 24))
   (do-for-all-facts ((?zone-to-explore zone-exploration)) TRUE
     ;get index of zone (e.g. Z15 -> 15)
     (bind ?zone-name (str-cat ?zone-to-explore:name))
@@ -207,7 +207,7 @@
  
   (retract ?s ?tvi ?tagpos ?ws)
   (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
-          (timer (name waiting-for-navgraph-generation) (time ?now) (seq 1)))
+	  (last-navgraph-compute-msg ?compute-msg-id))
   (modify ?ze (machine ?machine) (still-to-explore FALSE))
 )
 
@@ -242,15 +242,16 @@
   "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards"
   (phase EXPLORATION)
   ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
-  (time $?now)
-  ?timer <- (timer (name waiting-for-navgraph-generation) (time $?t&:(timeout ?now ?t 2.0)))
+  ; wait until the navgraph-generator has added the path to the output
+  ?lncm <- (last-navgraph-compute-msg ?compute-msg-id)
+  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (last_id ?compute-msg-id))
   (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
   =>
   (printout t "Driving to MPS output." crlf)
-  (retract ?s ?timer)
+  (retract ?s ?ngg-if ?lncm)
   (assert (state EXP_DRIVE_TO_OUTPUT))
-  ;(skill-call ppgoto place (get-output ?machine))
+  (skill-call ppgoto place (get-output ?machine))
 )
 
 (defrule exp-align-in-front-of-light-signal
