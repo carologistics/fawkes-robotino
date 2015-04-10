@@ -198,7 +198,7 @@ function DRIVE:loop()
    lateral_distance = -tag:translation(0)
 
    --skip on empty values
-   if(forward_distance) == 0 and lateral_distance == 0 and yaw == 0) then
+   if(forward_distance == 0 and lateral_distance == 0 and yaw == 0) then
 --      send_transrot(0,0,0)
       return
    end
