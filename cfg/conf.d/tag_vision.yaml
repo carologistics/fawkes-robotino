@@ -14,14 +14,6 @@ plugins/tag_vision:
   #Shared Memory Imagebuffer name
   shm_image_id: "tag_vision"
 
-  # coordinate and interface frame
-  transform: /plugins/static-transforms/transforms/cam_tag/
-
-  #Camare viewport factor logitech webcam
-  camera_opening_angle_horizontal: 1.32 
-  camera_opening_angle_vertical: 0.85 
-
-  # Debugging
   # frame of reference
   frame: "cam_tag"
 
