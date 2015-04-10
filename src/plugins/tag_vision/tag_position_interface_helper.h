@@ -33,7 +33,6 @@
 #include <alvar/Pose.h>
 
 #define EMPTY_INTERFACE_MARKER_ID 0
-#define FRAME "/cam_tag"
 #define CHILD_FRAME "/tag_"
 #define INTERFACE_UNSEEN_BOUND -1000
 
@@ -67,7 +66,7 @@ class TagPositionInterfaceHelper
 
 public:
   /// Constructor
-  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::BlackBoard *blackboard, fawkes::Clock *clock, fawkes::tf::TransformPublisher * tf_publisher);
+  TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface, u_int32_t vector_position_, fawkes::BlackBoard *blackboard, fawkes::Clock *clock, fawkes::tf::TransformPublisher * tf_publisher, std::string frame);
   /// Destructor
   ~TagPositionInterfaceHelper();
 
@@ -104,6 +103,9 @@ private:
 
   /// The position of the interface in the vector
   u_int32_t vector_position_;
+
+  /// The frame of reference for this tag
+  std::string frame_;
 
   /// The child frame / name of the transform
   std::string child_frame_;
