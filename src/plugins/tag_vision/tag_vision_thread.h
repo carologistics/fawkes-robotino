@@ -62,24 +62,6 @@ namespace fawkes {
 namespace firevision {
     class Camera;
     class SharedMemoryImageBuffer;
-    struct camera_info{
-        std::string connection;
-        std::string frame;
-        float opening_angle_horizontal;
-        float opening_angle_vertical;
-        unsigned int img_width;
-        unsigned int img_height;
-        float position_x;
-        float position_y;
-        float position_z;
-        float position_pitch;
-        float offset_cam_x_to_groundplane_;
-        float angle_horizontal_to_opening_;
-        float visible_lenght_x_in_m_;
-        float visible_lenght_y_in_m_;
-        firevision::ROI fullimage;
-};
-
 }
 
 class TagVisionThread
@@ -121,8 +103,6 @@ class TagVisionThread
 
   /// firevision camera
   firevision::Camera *fv_cam;
-  /// info about the firevision camera, needed to connect
-  firevision::camera_info fv_cam_info;
   /// firevision image buffer
   firevision::SharedMemoryImageBuffer *shm_buffer;
   unsigned char *image_buffer;
@@ -141,6 +121,10 @@ class TagVisionThread
   /// blackboard communication
   TagPositionList *tag_interfaces;
 
+  /// Width of the image
+  unsigned int img_width;
+  /// Height of the image
+  unsigned int img_height;
 
 };
 

@@ -57,7 +57,19 @@ TagVisionThread::init()
 {
     config->add_change_handler(this);
     // load config
-    loadConfig();
+    // config prefix in string for concatinating
+    std::string prefix = CFG_PREFIX;
+    // log, that we open load the config
+    logger->log_info(name(),"loading config");
+    // load alvar camera calibration
+    alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
+    // load marker size and apply it
+    marker_size = config->get_uint((prefix + "marker_size").c_str());
+    detector.SetMarkerSize(marker_size);
+
+    //Image Buffer ID
+    shm_id = config->get_string((prefix + "shm_image_id").c_str());
+
     // init firevision camera
     // CAM swapping not working (??)
     if(fv_cam != NULL){
@@ -70,15 +82,16 @@ TagVisionThread::init()
         fv_cam = NULL;
     }
     if(fv_cam == NULL){
-        fv_cam = vision_master->register_for_camera(fv_cam_info.connection.c_str(), this);
+      std::string connection = this->config->get_string((prefix + "camera").c_str());
+        fv_cam = vision_master->register_for_camera(connection.c_str(), this);
         fv_cam->start();
         fv_cam->open();
-        fv_cam_info.img_width = fv_cam->pixel_width();
-        fv_cam_info.img_height = fv_cam->pixel_height();
+        this->img_width = fv_cam->pixel_width();
+        this->img_height = fv_cam->pixel_height();
     }
 
     //set camera resolution
-    alvar_cam.SetRes(fv_cam_info.img_width, fv_cam_info.img_height);
+    alvar_cam.SetRes(this->img_width, this->img_height);
 
     // SHM image buffer
     if(shm_buffer != NULL) {
@@ -90,8 +103,8 @@ TagVisionThread::init()
     shm_buffer = new firevision::SharedMemoryImageBuffer(
                 shm_id.c_str(),
                 firevision::YUV422_PLANAR,
-                fv_cam_info.img_width,
-                fv_cam_info.img_height
+                this->img_width,
+                this->img_height
                 );
     if(!shm_buffer->is_valid()){
         delete shm_buffer;
@@ -100,18 +113,19 @@ TagVisionThread::init()
         fv_cam = NULL;
         throw fawkes::Exception("Shared memory segment not valid");
     }
-    shm_buffer->set_frame_id(fv_cam_info.frame.c_str());
+    std::string frame = this->config->get_string((prefix + "frame").c_str());
+    shm_buffer->set_frame_id(frame.c_str());
 
     image_buffer = shm_buffer->buffer();
     ipl =  cvCreateImage(
-                cvSize(fv_cam_info.img_width,fv_cam_info.img_height),
+                cvSize(this->img_width,this->img_height),
                 IPL_DEPTH_8U,IMAGE_CAHNNELS);
 
 
     // set up marker
     max_marker = 16;
     this->markers_ = new std::vector<alvar::MarkerData>();
-    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,fv_cam_info.frame,this->name(),this->logger, this->clock, this->tf_publisher);
+    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,frame,this->name(),this->logger, this->clock, this->tf_publisher);
 
 }
 
@@ -149,8 +163,8 @@ TagVisionThread::loop()
                         firevision::YUV422_PLANAR,
                         fv_cam->buffer(),
                         image_buffer,
-                        fv_cam_info.img_width,
-                        fv_cam_info.img_height);
+                        this->img_width,
+                        this->img_height);
     fv_cam->dispose_buffer();
     //convert img
     firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
@@ -184,53 +198,27 @@ TagVisionThread::get_marker()
     firevision::IplImageAdapter::convert_image_yuv422_planar(ipl,image_buffer);
 }
 
-void
-TagVisionThread::loadConfig(){
-    // save prefix in string for concatinating
-    std::string prefix = CFG_PREFIX;
-    std::string prefix_static_transforms_ = config->get_string((prefix + "transform").c_str());
-    // log, that we open load the config
-    logger->log_info(name(),"loading config");
-    // load alvar camera calibration
-    alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
-    // load marker size and apply it
-    marker_size = config->get_uint((prefix + "marker_size").c_str());
-    detector.SetMarkerSize(marker_size);
-
-    //load camera informations
-    fv_cam_info.connection = config->get_string((prefix + "camera").c_str());
-    fv_cam_info.position_x = config->get_float(( prefix_static_transforms_ + "trans_x").c_str());
-    fv_cam_info.position_y = config->get_float(( prefix_static_transforms_ + "trans_y").c_str());
-    fv_cam_info.position_z = config->get_float(( prefix_static_transforms_ + "trans_z").c_str());
-    fv_cam_info.position_pitch = config->get_float((prefix_static_transforms_ + "rot_pitch").c_str());
-    fv_cam_info.opening_angle_horizontal = config->get_float((prefix + "camera_opening_angle_horizontal").c_str());
-    fv_cam_info.opening_angle_vertical   = config->get_float((prefix + "camera_opening_angle_vertical").c_str());
-    // Calculate visible Area
-    fv_cam_info.angle_horizontal_to_opening_ = (1.57 - fv_cam_info.position_pitch) - (fv_cam_info.opening_angle_vertical / 2) ;
-    fv_cam_info.visible_lenght_x_in_m_       = fv_cam_info.position_z * (tan(fv_cam_info.opening_angle_vertical + fv_cam_info.angle_horizontal_to_opening_) - tan(fv_cam_info.angle_horizontal_to_opening_));
-    fv_cam_info.offset_cam_x_to_groundplane_ = fv_cam_info.position_z * tan(fv_cam_info.angle_horizontal_to_opening_);
-    fv_cam_info.visible_lenght_y_in_m_       = fv_cam_info.position_z * tan (fv_cam_info.opening_angle_horizontal /2 );
-    fv_cam_info.frame = config->get_string((prefix_static_transforms_ + "child_frame").c_str());
-
-    //Image Buffer ID
-    shm_id = config->get_string((prefix + "shm_image_id").c_str());
-}
-
 // config handling
 void TagVisionThread::config_value_erased(const char *path) {};
 void TagVisionThread::config_tag_changed(const char *new_tag) {};
 void TagVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
 void TagVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
 {
-
-    if(cfg_mutex.try_lock()){
-        try{
-            loadConfig();
-        }
-        catch(fawkes::Exception &e){
-            logger->log_error(name(), e);
-        }
+  if(cfg_mutex.try_lock()){
+    try{
+      std::string prefix = CFG_PREFIX;
+      // log, that we open load the config
+      logger->log_info(name(),"loading config");
+      // load alvar camera calibration
+      alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
+      // load marker size and apply it
+      marker_size = config->get_uint((prefix + "marker_size").c_str());
+      detector.SetMarkerSize(marker_size);
     }
-     // gets called for every changed entry... so init is called once per change.
-    cfg_mutex.unlock();
+    catch(fawkes::Exception &e){
+      logger->log_error(name(), e);
+    }
+  }
+  // gets called for every changed entry... so init is called once per change.
+  cfg_mutex.unlock();
 }
