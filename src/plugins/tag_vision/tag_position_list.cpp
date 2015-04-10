@@ -33,9 +33,11 @@
  *
  * @param blackboard The blackboard used to publish on and to create / handle the interfaces
  * @param max_markers Maximum number of markers to detect at the same time
- * @param frame
+ * @param frame The frame of reference for the tag positions
  * @param thread_name Thread name for log information
  * @param logger The loger used for logging
+ * @param clock The fawkes clock, used to stamp the transforms
+ * @param tf_publisher The fawes transform publisher, used to publish the transforms of the tags
  */
 TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard, u_int32_t max_markers, std::string frame, std::string thread_name, fawkes::Logger *logger, fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher)
 {
