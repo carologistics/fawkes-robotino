@@ -141,6 +141,11 @@ void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_l
     // if no marker interface is found, assign the empty interface and assign the marker id
     if(marker_interface == NULL)
     {
+      // no empty interface found, cannot find any suitable interface, 
+      if(empty_interface == NULL)
+      {
+        continue;
+      }
       marker_interface = empty_interface;
       marker_interface->set_marker_id(marker_id);
     }
