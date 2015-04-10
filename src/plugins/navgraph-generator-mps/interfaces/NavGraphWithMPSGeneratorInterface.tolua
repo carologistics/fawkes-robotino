@@ -59,9 +59,12 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     int maxlenof_tag_rotation() const;
   };
 
-  char * last_id();
-  void set_last_id(const char * new_last_id);
-  int maxlenof_last_id() const;
+  unsigned int msgid();
+  void set_msgid(const unsigned int new_msgid);
+  int maxlenof_msgid() const;
+  bool is_final();
+  void set_final(const bool new_final);
+  int maxlenof_final() const;
   bool                    oftype(const char *interface_type) const;
   const void *            datachunk() const;
   unsigned int            datasize() const;

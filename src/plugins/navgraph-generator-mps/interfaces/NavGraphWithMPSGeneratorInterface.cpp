@@ -52,12 +52,13 @@ NavGraphWithMPSGeneratorInterface::NavGraphWithMPSGeneratorInterface() : Interfa
   memset(data_ptr, 0, data_size);
   enum_map_Side[(int)INPUT] = "INPUT";
   enum_map_Side[(int)OUTPUT] = "OUTPUT";
-  add_fieldinfo(IFT_STRING, "last_id", 64, data->last_id);
+  add_fieldinfo(IFT_UINT32, "msgid", 1, &data->msgid);
+  add_fieldinfo(IFT_BOOL, "final", 1, &data->final);
   add_messageinfo("ClearMessage");
   add_messageinfo("ComputeMessage");
   add_messageinfo("SetExplorationZonesMessage");
   add_messageinfo("UpdateStationByTagMessage");
-  unsigned char tmp_hash[] = {0x90, 0x28, 0xda, 0x8b, 0x3c, 0x54, 0x5e, 0xc5, 0xa2, 0x74, 0xb1, 0x74, 0x8d, 0x77, 0x6f, 0xa};
+  unsigned char tmp_hash[] = {0xc6, 0x58, 0xcc, 0x8, 0x7e, 0x12, 0x41, 0xb7, 0x17, 0xc4, 0x55, 0x96, 0xd5, 0x78, 0xf9, 0x6d};
   set_hash(tmp_hash);
 }
 
@@ -80,38 +81,79 @@ NavGraphWithMPSGeneratorInterface::tostring_Side(Side value) const
   }
 }
 /* Methods */
-/** Get last_id value.
+/** Get msgid value.
  * 
-      Name of last added station.
+      The ID of the message that is currently being processed or
+      was processed last.
     
- * @return last_id value
+ * @return msgid value
  */
-char *
-NavGraphWithMPSGeneratorInterface::last_id() const
+uint32_t
+NavGraphWithMPSGeneratorInterface::msgid() const
 {
-  return data->last_id;
+  return data->msgid;
 }
 
-/** Get maximum length of last_id value.
- * @return length of last_id value, can be length of the array or number of 
+/** Get maximum length of msgid value.
+ * @return length of msgid value, can be length of the array or number of 
  * maximum number of characters for a string
  */
 size_t
-NavGraphWithMPSGeneratorInterface::maxlenof_last_id() const
+NavGraphWithMPSGeneratorInterface::maxlenof_msgid() const
 {
-  return 64;
+  return 1;
 }
 
-/** Set last_id value.
+/** Set msgid value.
  * 
-      Name of last added station.
+      The ID of the message that is currently being processed or
+      was processed last.
     
- * @param new_last_id new last_id value
+ * @param new_msgid new msgid value
  */
 void
-NavGraphWithMPSGeneratorInterface::set_last_id(const char * new_last_id)
+NavGraphWithMPSGeneratorInterface::set_msgid(const uint32_t new_msgid)
 {
-  strncpy(data->last_id, new_last_id, sizeof(data->last_id));
+  data->msgid = new_msgid;
+  data_changed = true;
+}
+
+/** Get final value.
+ * 
+      True, if the last generation triggered by a ComputeMessage has
+      been completed, false if it is still running. Also check the
+      msgid field if this field applies to the correct message.
+    
+ * @return final value
+ */
+bool
+NavGraphWithMPSGeneratorInterface::is_final() const
+{
+  return data->final;
+}
+
+/** Get maximum length of final value.
+ * @return length of final value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+NavGraphWithMPSGeneratorInterface::maxlenof_final() const
+{
+  return 1;
+}
+
+/** Set final value.
+ * 
+      True, if the last generation triggered by a ComputeMessage has
+      been completed, false if it is still running. Also check the
+      msgid field if this field applies to the correct message.
+    
+ * @param new_final new final value
+ */
+void
+NavGraphWithMPSGeneratorInterface::set_final(const bool new_final)
+{
+  data->final = new_final;
   data_changed = true;
 }
 
