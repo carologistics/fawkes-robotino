@@ -62,7 +62,10 @@ TagVisionThread::init()
     // log, that we open load the config
     logger->log_info(name(),"loading config");
     // load alvar camera calibration
-    alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
+    if(!alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT))
+    {
+      this->logger->log_error(this->name(),"Faild to load calibration file");
+    }
     // load marker size and apply it
     marker_size = config->get_uint((prefix + "marker_size").c_str());
     detector.SetMarkerSize(marker_size);
