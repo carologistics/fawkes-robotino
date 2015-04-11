@@ -26,7 +26,7 @@ plugins/light_front:
   shm_image_id: "robotino4/light_front"
   
 clips-agent:
-  llsf2014:
+  llsf2015:
     #agent-role:
     
     exploration:      
@@ -49,3 +49,7 @@ clips-agent:
     magenta-recv-port: 4464
     cyan-send-port: 4474
     magenta-send-port: 4484
+
+        
+plugins/tag_vision:
+  shm_image_id: "tag_vision_robotino_4"

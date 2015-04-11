@@ -49,3 +49,7 @@ clips-agent:
     magenta-recv-port: 4462
     cyan-send-port: 4472
     magenta-send-port: 4482
+
+    
+plugins/tag_vision:
+  shm_image_id: "tag_vision_robotino_2"
