@@ -63,6 +63,7 @@
     target left value to consider the motion as final.</field>
     <field type="float" name="right_margin">Margin in radians around a
     target right value to consider the motion as final.</field>
+    <field type="bool" name="holds_puck">True if the gripper holds a puck</field>
   </data>
   <message name="Open_Angle">
     <comment>Open with specified angle.</comment>
