@@ -125,6 +125,7 @@ GripperAX12AThread::init()
   __gripper_if->set_max_right_velocity(0);//__ax12a->get_max_supported_speed(__cfg_right_servo_id));
   __gripper_if->set_left_velocity(init_left_velocity);
   __gripper_if->set_right_velocity(init_right_velocity);
+  __gripper_if->set_holds_puck(holds_puck());
   __gripper_if->write();
 
   __led_if = blackboard->open_for_writing<LedInterface>(bbid.c_str());
@@ -506,6 +507,19 @@ float
 GripperAX12AThread::get_opening_angle()
 {
   return -__servo_if_left->angle() + __servo_if_right->angle();
+}
+
+/** Check if gripper holds a puck.
+ * @return true if load and opening angle indicate that 
+ * the gripper probably holds a puck
+ */
+bool
+GripperAX12AThread::holds_puck()
+{
+  return 
+          (__servo_if_left->load()  & 0x3ff) >= __cfg_load_for_holds_puck * 0x3ff && 
+          (__servo_if_right->load() & 0x3ff) >= __cfg_load_for_holds_puck * 0x3ff && 
+          get_opening_angle() <= __cfg_angle_for_holds_puck;
 }
 
 /** Handle config changes

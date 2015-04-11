@@ -164,6 +164,7 @@ class GripperAX12AThread
   void set_enabled(bool enabled);
   void set_led_enabled(bool enabled);
   float get_opening_angle();
+  bool holds_puck();
   void stop_motion();
   /* bool has_fresh_data(); */
   /* void wait_for_fresh_data(); */
