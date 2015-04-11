@@ -149,7 +149,7 @@
 )
 
 (defrule exp-read-tag-from-exp-point
-  "Read found tag in front of robot to recognize it and send a navgraph generator message."
+  "Read found tag in front of robot and drive nearer to the tag to get a better reading or prepare adding the tag to the navgraph when already driven to the tag."
   (phase EXPLORATION)
   (time $?now)
   ?ws <- (timer (name waiting-for-tag-since))
@@ -168,8 +168,53 @@
 				  (translation $?trans) 
 				  (rotation $?rot)
 				  (frame ?frame))
+  ?ent <- (exp-nearing-tag ?already-near)
   =>
   (printout t "Found Tag Nr." ?tag " (" ?machine " " ?side ")"  crlf)
+  ; Do I have to 
+  (if ?already-near
+    then
+    (printout t "Recognized Tag" crlf)
+    (assert (state EXP_ADD_TAG)
+	    (exp-nearing-tag FALSE)
+	    (found-tag (name ?machine) (side ?side)(frame ?frame)
+		       (trans ?trans) (rot ?rot)))
+    else
+    (printout t "Driving nearer to get a more precise position" crlf)
+    ; (skill-call drive_tag id ?tag)
+    (skill-call motor_move x 0.05)
+    (printout warn "Use right skill to drive nearer to tag!" crlf)
+    (assert (state EXP_DRIVING_NEARER_TO_TAG)
+	    (exp-nearing-tag TRUE))
+  )
+  (retract ?s ?tvi ?tagpos ?ws ?ent)
+)
+
+(defrule exp-nearing-tag-finished
+  "Arriving at a machine in first or second round. Wait for tag vision."
+  (phase EXPLORATION)
+  ?final <- (skill (name "motor_move") (status FINAL|FAILED)) 
+  ?s <- (state EXP_DRIVING_NEARER_TO_TAG)
+  (time $?now)
+  =>
+  (printout t "Arrived. Looking for a tag." crlf)
+  (retract ?s ?final)
+  (assert (state EXP_LOOKING_FOR_TAG)
+          (timer (name waiting-for-tag-since) (time ?now) (seq 1))
+  )
+)
+
+(defrule exp-report-found-tag
+  (phase EXPLORATION)
+  ?s <- (state EXP_ADD_TAG)
+  ?g <- (goalmachine ?old)
+  ?ze <- (zone-exploration (name ?old))
+  (team-color ?team-color)
+  (tag-matching (tag-id ?tag) (team ?team-color) (machine ?machine) (side ?side))
+  ; TODO: not already explored/beeing explored
+  ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame) (trans $?trans) (rot $?rot))
+  =>
+  (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side ") to Navgraph-generation"  crlf)
   ; report tag position to navgraph generator
   (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
   (blackboard-set-msg-field ?msg "id" (str-cat ?machine))
@@ -203,9 +248,8 @@
   (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
   (bind ?compute-msg-id (blackboard-send-msg ?msg))
 
-  (printout t "TODO Wait until ComputeMessage id " ?compute-msg-id " is processed" crlf)
- 
-  (retract ?s ?tvi ?tagpos ?ws)
+  (printout t "Wait until ComputeMessage id " ?compute-msg-id " is processed" crlf)
+  (retract ?s ?ft)
   (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
 	  (last-navgraph-compute-msg ?compute-msg-id))
   (modify ?ze (machine ?machine) (still-to-explore FALSE))
@@ -219,8 +263,15 @@
   ?s <- (state EXP_LOOKING_FOR_TAG)
   ?g <- (goalmachine ?old)
   ?ze <- (zone-exploration (name ?old) (look-pos $?lp) (current-look-pos ?lp-index))
+  ?ent <- (exp-nearing-tag ?nearing)
   =>
   (printout t "Found no tag from " (nth$ ?lp-index ?lp) crlf)
+  (if ?nearing
+    then
+    (printout t "Lost tag after driving to it." crlf)
+    (retract ?ent)
+    (assert (exp-nearing-tag FALSE))
+  )
   (if (< ?lp-index (length$ ?lp))
     then
     (printout t "Try to find tag from the next position." crlf)

@@ -56,6 +56,15 @@
   (multislot row (type SYMBOL) (allowed-symbols Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12 Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
 )
 
+(deftemplate found-tag
+  (slot name (type SYMBOL))
+  (slot side (type SYMBOL) (allowed-values INPUT OUTPUT))
+  (slot frame (type STRING))
+  (multislot trans (type FLOAT) (cardinality 3 3))
+  (multislot rot (type FLOAT) (cardinality 4 4))
+)
+
+
 (deffacts startup-exploration
   (zone-exploration (name Z24))
   (zone-exploration (name Z23))
@@ -81,6 +90,7 @@
   (zone-exploration (name Z3))
   (zone-exploration (name Z2))
   (zone-exploration (name Z1))
+  (exp-nearing-tag FALSE)
 )
 
 
