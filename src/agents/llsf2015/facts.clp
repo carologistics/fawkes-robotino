@@ -62,8 +62,12 @@
   (slot frame (type STRING))
   (multislot trans (type FLOAT) (cardinality 3 3))
   (multislot rot (type FLOAT) (cardinality 4 4))
+  (slot already-added (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
 )
 
+(deftemplate last-navgraph-compute-msg 
+  (slot id (type INTEGER))
+)
 
 (deffacts startup-exploration
   (zone-exploration (name Z24))

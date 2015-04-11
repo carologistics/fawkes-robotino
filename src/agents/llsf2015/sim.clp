@@ -43,14 +43,8 @@
   =>
   (retract ?sdt)
   (printout t "Using default position of " ?machine crlf)
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
-  (blackboard-set-msg-field ?msg "id" ?machine)
-  (blackboard-set-msg-field ?msg "side" ?side)
-  (blackboard-set-msg-field ?msg "frame" ?frame)
-  (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
-  (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
-  (printout t "Setting tag: trans: " ?trans " rot: " ?rot crlf)
-  (blackboard-send-msg ?msg)
+  (assert (found-tag (name ?machine) (side ?side) (frame ?frame)
+		     (trans ?trans) (rot ?rot)))
 )
 
 (defrule sim-gen-default-navgraph-compute-and-wait-for-generation
@@ -60,20 +54,10 @@
   ?ch-ph <- (change-phase PRODUCTION)
   (not (sim-default-tag))
   (not (default-navgraph-generated))
-  (not (last-navgraph-compute-msg ?))
+  (not (last-navgraph-compute-msg (id ?)))
   =>
   (retract ?ch-ph)
-  
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetExplorationZonesMessage"))
-  (blackboard-set-msg-multifield ?msg "zones" (create-multifield-with-length-and-entry 24 FALSE))
-  (blackboard-send-msg ?msg)
-
-  ; send compute message so we can drive to the output
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
-  (bind ?compute-msg-id (blackboard-send-msg ?msg))
-
-  (printout t "Waiting until navgraph-generation finished" crlf)
-  (assert (last-navgraph-compute-msg ?compute-msg-id))
+  (navgraph-add-all-new-tags)
 )
 
 (defrule sim-gen-default-navgraph-pause
@@ -81,7 +65,7 @@
   (declare (salience ?*PRIORITY-SIM*))
   (not (sim-was-in-exploration))
   ?ch-ph <- (change-phase PRODUCTION)
-  (last-navgraph-compute-msg ?compute-msg-id)
+  (last-navgraph-compute-msg (id ?))
   =>
   (retract ?ch-ph)
 )
@@ -92,7 +76,7 @@
   (not (sim-was-in-exploration))
   (not (sim-default-tag))
   ; wait until the navgraph-generator has added the path to the output
-  ?lncm <- (last-navgraph-compute-msg ?compute-msg-id)
+  ?lncm <- (last-navgraph-compute-msg (id ?compute-msg-id))
   ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
   (not (default-navgraph-generated))
   =>

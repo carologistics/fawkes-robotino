@@ -178,7 +178,8 @@
     (assert (state EXP_ADD_TAG)
 	    (exp-nearing-tag FALSE)
 	    (found-tag (name ?machine) (side ?side)(frame ?frame)
-		       (trans ?trans) (rot ?rot)))
+		       (trans ?trans) (rot ?rot))
+	    (worldmodel-change (machine ?machine) (change ADD_TAG)))
     else
     (printout t "Driving nearer to get a more precise position" crlf)
     ; (skill-call drive_tag id ?tag)
@@ -212,47 +213,18 @@
   (team-color ?team-color)
   (tag-matching (tag-id ?tag) (team ?team-color) (machine ?machine) (side ?side))
   ; TODO: not already explored/beeing explored
-  ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame) (trans $?trans) (rot $?rot))
+  ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame)
+		    (trans $?trans) (rot $?rot) (already-added FALSE))
   =>
   (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side ") to Navgraph-generation"  crlf)
-  ; report tag position to navgraph generator
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
-  (blackboard-set-msg-field ?msg "id" (str-cat ?machine))
-  (blackboard-set-msg-field ?msg "side" ?side)
-  (blackboard-set-msg-field ?msg "frame" ?frame)
-  (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
-  (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
-  (blackboard-send-msg ?msg)
-
-  ; send message which zones are still to explore
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetExplorationZonesMessage"))
-  (bind $?zones-still-to-explore-multifield (create-multifield-with-length 24))
-  (do-for-all-facts ((?zone-to-explore zone-exploration)) TRUE
-    ;get index of zone (e.g. Z15 -> 15)
-    (bind ?zone-name (str-cat ?zone-to-explore:name))
-    (bind ?zone-index (eval (sub-string 2 (str-length ?zone-name) ?zone-name)))
-    (if (eq ?zone-to-explore:name ?old)
-      then
-      ; we don't have to explore this machine again
-      (bind ?zones-still-to-explore-multifield
-	    (replace$ ?zones-still-to-explore-multifield ?zone-index ?zone-index (sym-cat FALSE)))
-      else
-      (bind ?zones-still-to-explore-multifield
-	    (replace$ ?zones-still-to-explore-multifield ?zone-index ?zone-index (sym-cat ?zone-to-explore:still-to-explore)))
-    )
-  )
-  (blackboard-set-msg-multifield ?msg "zones" ?zones-still-to-explore-multifield)
-  (blackboard-send-msg ?msg)
-
-  ; send compute message so we can drive to the output
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
-  (bind ?compute-msg-id (blackboard-send-msg ?msg))
-
-  (printout t "Wait until ComputeMessage id " ?compute-msg-id " is processed" crlf)
-  (retract ?s ?ft)
-  (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
-	  (last-navgraph-compute-msg ?compute-msg-id))
+  
   (modify ?ze (machine ?machine) (still-to-explore FALSE))
+
+  (navgraph-add-all-new-tags)
+
+  (printout t "Wait until ComputeMessage is processed" crlf)
+  (retract ?s)
+  (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT))
 )
 
 (defrule exp-no-tag-found
@@ -294,7 +266,7 @@
   (phase EXPLORATION)
   ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
   ; wait until the navgraph-generator has added the path to the output
-  ?lncm <- (last-navgraph-compute-msg ?compute-msg-id)
+  ?lncm <- (last-navgraph-compute-msg (id ?compute-msg-id))
   ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
   (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))

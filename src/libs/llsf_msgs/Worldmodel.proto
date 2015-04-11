@@ -41,6 +41,20 @@ message PuckStorageState {
   repeated string incoming_agent  = 4;
 }
 
+message TagPosition {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 1348;
+  }
+
+  required string machine = 1;
+  required string side    = 2;
+  required string frame   = 3;
+  repeated float  trans   = 4;
+  // Rotation as quaternion
+  repeated float  rot     = 5;
+}
+
 message WorldmodelOrder {
   enum CompType {
     COMP_ID  = 2000;
@@ -63,6 +77,7 @@ message Worldmodel {
   repeated MachineState machines = 1;
   repeated WorldmodelOrder orders = 2;
   repeated PuckStorageState storage = 3;
+  repeated TagPosition tag_positions = 4;
 }
 
 message WorldmodelChange {
@@ -85,6 +100,7 @@ message WorldmodelChange {
   optional string value_string = 5;
   optional uint32 value_uint32 = 6;
   optional PuckState value_puckstate = 7;
+  optional TagPosition tag_position = 8;
 }
 
 message WorldmodelChangeAck {

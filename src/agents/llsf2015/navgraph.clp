@@ -43,3 +43,18 @@
   =>
   (navgraph-cleanup)
 )
+
+(defrule navgraph-add-new-tag-exploration
+  "We got a tag from another bot (all tags from us are processed in exploration.clp with higher priority). Add the tag directly. I hope this doesn't break anything when the robot is driving"
+  (declare (salience ?*PRIORITY-LOW*))
+  ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame)
+		    (trans $?trans) (rot $?rot) (already-added FALSE))
+  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
+  ; TODO: check in which zone the machine is located to mark that the tag in this zone was found
+  =>
+  (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side 
+	    ") we got from another bot to Navgraph-generation"  crlf)
+  (printout warn "TODO: check which zone contains the machine, so we don't try to find a tag there again"  crlf)
+  
+  (navgraph-add-all-new-tags)
+)

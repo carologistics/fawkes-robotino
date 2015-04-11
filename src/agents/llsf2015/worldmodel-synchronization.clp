@@ -217,6 +217,28 @@
 				SET_OUT_OF_ORDER_UNTIL SET_IN_DELIVERY)) then
     (pb-set-field ?change-msg "value_uint32" ?amount)
   )
+  (if (eq ?change ADD_TAG)
+    then
+    ; Find corresponding tag-fact
+    (do-for-fact ((?tag found-tag)) (eq ?tag:name ?m)
+      (bind ?tag-msg (pb-create "llsf_msgs.TagPosition"))
+      (pb-set-field ?tag-msg "machine" (str-cat ?tag:name))
+      (pb-set-field ?tag-msg "side" (str-cat ?tag:side))
+      (pb-set-field ?tag-msg "frame" (str-cat ?tag:frame))
+      (pb-add-list ?tag-msg "trans" (nth$ 1 ?tag:trans))
+      (pb-add-list ?tag-msg "trans" (nth$ 2 ?tag:trans))
+      (pb-add-list ?tag-msg "trans" (nth$ 3 ?tag:trans))
+      (pb-add-list ?tag-msg "rot" (nth$ 1 ?tag:rot))
+      (pb-add-list ?tag-msg "rot" (nth$ 2 ?tag:rot))
+      (pb-add-list ?tag-msg "rot" (nth$ 3 ?tag:rot))
+      (pb-add-list ?tag-msg "rot" (nth$ 4 ?tag:rot))
+      
+      (printout t "Sending Tag Pos: " ?tag:name ", " ?tag:frame 
+		", (" ?tag:trans "), " ?tag:rot ")" crlf)
+
+      (pb-set-field ?change-msg "tag_position" ?tag-msg)
+    )
+  )
   (pb-broadcast ?peer ?change-msg)
   (pb-destroy ?change-msg)
   (modify ?wmc (last-sent ?now) (id ?id))
@@ -281,9 +303,6 @@
 				(sym-cat (pb-field-value ?p "agent")) ?now))
 	    )
           )
-          (case SET_NUM_CO then 
-            (modify ?machine (junk (pb-field-value ?p "value_uint32")))
-          )
           (case SET_PROD_FINISHED_TIME then 
             (modify ?machine (final-prod-time (create$ (pb-field-value ?p "value_uint32") 0)))
           )
@@ -292,6 +311,28 @@
 	  )
           (case REMOVE_PRODUCED then 
             (modify ?machine (produced-puck NONE))
+          )
+          (case ADD_TAG then
+	    ; create tag fact if not already known
+	    (if (not (any-factp ((?ft found-tag)) 
+				(eq ?ft:name (pb-field-value ?p "place"))))
+	      then
+	      (bind ?tag-pose-msg (pb-field-value ?p "tag_position"))
+	      (assert (found-tag (name (sym-cat (pb-field-value ?tag-pose-msg "machine")))
+				 (side (sym-cat (pb-field-value ?tag-pose-msg "side")))
+				 (frame (pb-field-value ?tag-pose-msg "frame"))
+				 (trans (pb-field-list ?tag-pose-msg "trans"))
+				 (rot (pb-field-list ?tag-pose-msg "rot")))
+	      )
+	      (printout t "Received Tag: " (sym-cat (pb-field-value ?tag-pose-msg "machine"))
+			(sym-cat (pb-field-value ?tag-pose-msg "side"))
+			(pb-field-value ?tag-pose-msg "frame")
+			" trans: " (pb-field-list ?tag-pose-msg "trans")
+			" rot: " (pb-field-list ?tag-pose-msg "rot")
+			crlf)
+	    )
+	    ; set machine stuff
+	    ; set explration stuff
           )
 	  (default
 	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
