@@ -118,7 +118,7 @@ end
 -- Check if one tag is visible
 function tag_not_visible(self)
 	local tag = get_closest_tag()
-	return (tag:visibility_history() == 0)
+    return (tag:visibility_history() <= 0)
 end
 
 -- Check if input is not valid
