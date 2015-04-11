@@ -17,6 +17,7 @@
 (deftemplate pose
   ; id to refer it in other facts
   (slot id (type INTEGER) (default 0))
+  (slot name (type STRING) (default ""))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
   (slot ori (type FLOAT) (default 0.0))

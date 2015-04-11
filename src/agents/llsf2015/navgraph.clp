@@ -17,7 +17,8 @@
   (delayed-do-for-all-facts ((?ze zone-exploration)) (navgraph-has-property ?props (str-cat "orientation_" ?ze:name))
     ; add pose to the zone
     (bind ?pose-id (random-id))
-    (assert (pose (id ?pose-id) (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos))
+    (assert (pose (id ?pose-id) (name ?name)
+		  (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos))
 		  (ori (navgraph-property-as-float ?props (str-cat "orientation_" ?ze:name)))))
     (modify ?ze (look-pos (insert$ ?ze:look-pos 1 ?pose-id)))
   )

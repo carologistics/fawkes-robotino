@@ -137,7 +137,7 @@
 (defrule exp-drive-to-finished
   "Arriving at a machine in first or second round. Wait for tag vision."
   (phase EXPLORATION)
-  ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
+  ?final <- (skill (name "ppgoto") (status FINAL|FAILED)) 
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
@@ -470,14 +470,15 @@
 		    (look-pos $?lp) (current-look-pos ?lp-index))
   (not (driven-to-waiting-point))
   (pose (id ?pose-id&:(eq ?pose-id (nth$ ?lp-index ?lp)))
-	(x ?pose-x) (y ?pose-y) (ori ?pose-ori))
+	(name ?pose-name) (ori ?pose-ori))
   =>
   (printout t "Going to next machine." crlf)
-  (printout t "Try to see tag from " (nth$ ?lp-index ?lp) "." crlf)
+  (printout t "Try to see tag from " (nth$ ?lp-index ?lp)
+	    " (" ?pose-name ")." crlf)
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine))
-  (skill-call drive_to x ?pose-x y ?pose-y ori ?pose-ori puck false)
+  (skill-call ppgoto place ?pose-name ori ?pose-ori)
 )
 
 (defrule exp-receive-type-light-pattern-matching
