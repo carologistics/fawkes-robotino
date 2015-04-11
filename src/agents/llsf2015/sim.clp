@@ -93,7 +93,7 @@
   (not (sim-default-tag))
   ; wait until the navgraph-generator has added the path to the output
   ?lncm <- (last-navgraph-compute-msg ?compute-msg-id)
-  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (last_id ?compute-msg-id))
+  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
   (not (default-navgraph-generated))
   =>
   (retract ?lncm ?ngg-if)

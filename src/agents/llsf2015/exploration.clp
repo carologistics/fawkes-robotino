@@ -295,7 +295,7 @@
   ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
   ; wait until the navgraph-generator has added the path to the output
   ?lncm <- (last-navgraph-compute-msg ?compute-msg-id)
-  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (last_id ?compute-msg-id))
+  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
   (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
   =>
