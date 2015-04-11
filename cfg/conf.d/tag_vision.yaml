@@ -21,4 +21,4 @@ plugins/tag_vision:
   alvar_camera_calib_file: /not/found
 
   #ar tag marker size in millimeter
-  marker_size: 120
+  marker_size: 135
