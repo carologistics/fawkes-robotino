@@ -79,6 +79,15 @@
     # Max torque 0 - 1 (0% - 100%)
     max_torque: 0.3
 
+    # Load for holds_puck is a threshold to tell whether the load is probably
+    # enough for a puck to be held
+    # 0 - 1 (0% - 100%)
+    load_for_holds_puck_threshold: 0.1
+
+    # Angle for holds_puck is a threshold to tell whether the load is probably
+    # enough for a puck to be held
+    angle_for_holds_puck_threshold: -0.9
+
     # Clockwise compliance margin for RX28 PTU
 #    cw_compl_margin: 0
     # Counter-clockwise compliance margin for RX28 PTU
