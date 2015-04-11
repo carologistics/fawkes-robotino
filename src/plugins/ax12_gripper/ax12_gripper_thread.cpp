@@ -551,6 +551,8 @@ void GripperAX12AThread::load_config()
   __cfg_max_speed         = config->get_float((__gripper_cfg_prefix + "max_speed").c_str());
   __cfg_max_load          = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
   __cfg_max_torque        = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
+  __cfg_load_for_holds_puck = config->get_float((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
+  __cfg_angle_for_holds_puck = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());
