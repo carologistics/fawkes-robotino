@@ -162,6 +162,31 @@ nodes:
     properties:
       - orientation_Z23: -2.4
 
+# drive into field points
+# Cyan
+  - !unconnected
+    name: C-ins-out
+    pos: [3.5, -0.5]
+    properties:
+      - orientation: 1.57
+      - always-copy: true
+  - !unconnected
+    name: C-ins-in
+    pos: [3.0, 0.75]
+    properties:
+      - always-copy: true
+# Magenta
+  - !unconnected
+    name: M-ins-out
+    pos: [-3.5, -0.5]
+    properties:
+      - orientation: 1.57
+      - always-copy: true
+  - !unconnected
+    name: M-ins-in
+    pos: [-3.0, 0.75]
+    properties:
+      - always-copy: true
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
