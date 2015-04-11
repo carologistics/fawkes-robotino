@@ -498,6 +498,16 @@ GripperAX12AThread::is_enabled()
   return __servo_if_left->is_enabled() && __servo_if_right->is_enabled();
 }
 
+
+/** Get opening angle of gripper
+ * @return angle as float
+ */
+float
+GripperAX12AThread::get_opening_angle()
+{
+  return -__servo_if_left->angle() + __servo_if_right->angle();
+}
+
 /** Handle config changes
  */
 void GripperAX12AThread::config_value_erased(const char *path) {};
