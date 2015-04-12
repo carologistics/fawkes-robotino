@@ -57,6 +57,12 @@
   (not (last-navgraph-compute-msg (id ?)))
   =>
   (retract ?ch-ph)
+
+  ;mark all zones as explored
+  (delayed-do-for-all-facts ((?ze zone-exploration)) (eq ?ze:still-to-explore TRUE)
+    (modify ?ze (still-to-explore FALSE))
+  )
+
   (navgraph-add-all-new-tags)
 )
 
