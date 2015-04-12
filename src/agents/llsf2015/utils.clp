@@ -47,7 +47,7 @@
 (deffunction get-light-signal-side (?mps)
   "Return the navgraph point of the side where the light-signal is mounted"
   (if (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)
-					   (eq ?machine:mtype DS))
+					   (eq ?machine:mtype DS)))
     then
     ; for DS
     (return (get-input ?mps))

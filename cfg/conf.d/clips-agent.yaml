@@ -70,10 +70,10 @@ clips-agent:
     #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
     cap-station:
       assigned-color:
-        CCS1: GREY
-        CCS2: BLACK
-        MCS1: GREY
-        MCS2: BLACK
+        C-CS1: GREY
+        C-CS2: BLACK
+        M-CS1: GREY
+        M-CS2: BLACK
       #on which shelf slot are new caps to fill into the station? (LEFT, RIGHT, MIDDLE)
       shelf-slot-new-caps: LEFT
     

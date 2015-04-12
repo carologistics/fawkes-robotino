@@ -18,12 +18,12 @@
 
 (deffacts sim-startup-deffacts
   "Startup Facts for testing in the simulation"
-  (sim-default-tag (name "CBS") (side OUTPUT)(frame "/map") (trans  (create$ -4.9 4.9 0)) (rot (quaternion-from-yaw -1.14)))
-  (sim-default-tag (name "CDS") (side INPUT)(frame "/map") (trans  (create$ 4.5 1.2 0)) (rot (quaternion-from-yaw 2.32)))
-  (sim-default-tag (name "CCS1") (side OUTPUT)(frame "/map") (trans  (create$ -0.8 5.0 0)) (rot (quaternion-from-yaw -0.17)))
-  (sim-default-tag (name "CCS2") (side OUTPUT)(frame "/map") (trans  (create$ -3.1 2.6 0)) (rot (quaternion-from-yaw 0.0)))
-  (sim-default-tag (name "CRS1") (side INPUT)(frame "/map") (trans  (create$ 1.1 2.4 0)) (rot (quaternion-from-yaw -1.67)))
-  (sim-default-tag (name "CRS2") (side INPUT)(frame "/map") (trans  (create$ 4.7 3.7 0)) (rot (quaternion-from-yaw 2.37)))
+  (sim-default-tag (name "C-BS") (side OUTPUT)(frame "/map") (trans  (create$ -4.9 4.9 0)) (rot (quaternion-from-yaw -1.14)))
+  (sim-default-tag (name "C-DS") (side INPUT)(frame "/map") (trans  (create$ 4.5 1.2 0)) (rot (quaternion-from-yaw 2.32)))
+  (sim-default-tag (name "C-CS1") (side OUTPUT)(frame "/map") (trans  (create$ -0.8 5.0 0)) (rot (quaternion-from-yaw -0.17)))
+  (sim-default-tag (name "C-CS2") (side OUTPUT)(frame "/map") (trans  (create$ -3.1 2.6 0)) (rot (quaternion-from-yaw 0.0)))
+  (sim-default-tag (name "C-RS1") (side INPUT)(frame "/map") (trans  (create$ 1.1 2.4 0)) (rot (quaternion-from-yaw -1.67)))
+  (sim-default-tag (name "C-RS2") (side INPUT)(frame "/map") (trans  (create$ 4.7 3.7 0)) (rot (quaternion-from-yaw 2.37)))
 )
 
 (defrule sim-remember-exploration

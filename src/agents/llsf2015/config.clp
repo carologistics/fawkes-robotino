@@ -141,14 +141,14 @@
 (defrule conf-assign-cap-colors-to-machines
   "Read configuration for which cap station provides which cap-color"
   (declare (salience ?*PRIORITY-WM*))
-  ?c0 <- (confval (path "/clips-agent/llsf2015/cap-station/assigned-color/CCS1") (value ?cap-color-ccs1))
-  ?c1 <- (confval (path "/clips-agent/llsf2015/cap-station/assigned-color/CCS2") (value ?cap-color-ccs2))
-  ?c2 <- (confval (path "/clips-agent/llsf2015/cap-station/assigned-color/MCS1") (value ?cap-color-mcs1))
-  ?c3 <- (confval (path "/clips-agent/llsf2015/cap-station/assigned-color/MCS2") (value ?cap-color-mcs2))
-  ?ccs1 <- (cap-station (name CCS1))
-  ?ccs2 <- (cap-station (name CCS2))
-  ?mcs1 <- (cap-station (name MCS1))
-  ?mcs2 <- (cap-station (name MCS2))
+  ?c0 <- (confval (path "/clips-agent/llsf2015/cap-station/assigned-color/C-CS1") (value ?cap-color-ccs1))
+  ?c1 <- (confval (path "/clips-agent/llsf2015/cap-station/assigned-color/C-CS2") (value ?cap-color-ccs2))
+  ?c2 <- (confval (path "/clips-agent/llsf2015/cap-station/assigned-color/M-CS1") (value ?cap-color-mcs1))
+  ?c3 <- (confval (path "/clips-agent/llsf2015/cap-station/assigned-color/M-CS2") (value ?cap-color-mcs2))
+  ?ccs1 <- (cap-station (name C-CS1))
+  ?ccs2 <- (cap-station (name C-CS2))
+  ?mcs1 <- (cap-station (name M-CS1))
+  ?mcs2 <- (cap-station (name M-CS2))
   =>
   (modify ?ccs1 (assigned-cap-color (sym-cat ?cap-color-ccs1)))
   (modify ?ccs2 (assigned-cap-color (sym-cat ?cap-color-ccs2)))
