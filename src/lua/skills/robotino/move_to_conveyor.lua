@@ -44,9 +44,15 @@ local tfm = require("tf_module")
 local TAG_OFFSET_Y = 0.01 --TODO if the tags are misaligned you there should be an parametric offset or another solution
 local ALIGN_DISTANCE = 0.4
 
-fsm:define_states{ export_to=_M, closure={},
+function see_line()
+   printf("vis_hist: %f", line1:visibility_history())
+   return line1:visibility_history() > 5
+end
+
+fsm:define_states{ export_to=_M, closure={see_line = see_line},
    {"SKILL_ALIGN_TAG", SkillJumpState, skills={{align_tag}},
-      final_to="ALIGN_WITH_LASERLINES", fail_to="FAILED"},
+      final_to="SEE_LINE", fail_to="FAILED"},
+   {"SEE_LINE", JumpState},
    {"ALIGN_WITH_LASERLINES", SkillJumpState, skills={{motor_move}},
       final_to="DECIDE_OPEN", fail_to="FAILED"},
    {"DECIDE_OPEN", JumpState},
@@ -64,6 +70,8 @@ fsm:define_states{ export_to=_M, closure={},
 fsm:add_transitions{
    {"DECIDE_OPEN", "DRIVE_FORWARD", cond="fsm.vars.put_puck", desc="Has a puck in front"},
    {"DECIDE_OPEN", "OPEN_GRIPPER", cond="fsm.vars.pick_puck", desc="Open gripper before driving"},
+   {"SEE_LINE", "ALIGN_WITH_LASERLINES", cond=see_line, desc="Seeing a line"},
+   {"SEE_LINE", "DECIDE_OPEN", timeout=1, desc="Not seeing a line, continue just aligned by tag"}
 }
 
 function SKILL_ALIGN_TAG:init()
