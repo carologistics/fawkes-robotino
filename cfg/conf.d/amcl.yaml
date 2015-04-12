@@ -116,9 +116,9 @@ plugins/amcl:
   alpha_fast: 0.0
 
   # Initial pose (x, y, yaw)
-  init_pose_x: 0.0
-  init_pose_y: 0.0
-  init_pose_a: 0.0
+  init_pose_x: 4.5
+  init_pose_y: -0.5
+  init_pose_a: 1.57
 
 #  # Initial Covariance (xx, yy, aa)
 #  init_cov_xx: 0.25
