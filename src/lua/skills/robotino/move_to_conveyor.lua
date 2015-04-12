@@ -26,7 +26,9 @@ module(..., skillenv.module_init)
 name               = "move_to_conveyor"
 fsm                = SkillHSM:new{name=name, start="SKILL_ALIGN_TAG", debug=true}
 depends_skills     = {"motor_move", "align_tag", "ax12gripper"}
-depends_interfaces = {}
+depends_interfaces = {
+ {v = "line1", type="LaserLineInterface", id="/laser-lines/1"}
+}
 
 documentation      = [==[Align the robot and then moves to the conveyor
 @param pick_puck True if you want to pick a puck from the conveyor
@@ -37,11 +39,15 @@ documentation      = [==[Align the robot and then moves to the conveyor
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+local tfm = require("tf_module")
+
 local TAG_OFFSET_Y = 0.025 --TODO if the tags are misaligned you there should be an parametric offset or another solution
 local ALIGN_DISTANCE = 0.35
 
 fsm:define_states{ export_to=_M, closure={},
    {"SKILL_ALIGN_TAG", SkillJumpState, skills={{align_tag}},
+      final_to="ALIGN_WITH_LASERLINES", fail_to="FAILED"},
+   {"ALIGN_WITH_LASERLINES", SkillJumpState, skills={{motor_move}},
       final_to="DECIDE_OPEN", fail_to="FAILED"},
    {"DECIDE_OPEN", JumpState},
    --TODO align by laserlines and (if implemented) the conveyor detection
@@ -64,6 +70,12 @@ function SKILL_ALIGN_TAG:init()
    self.skills[1].x = ALIGN_DISTANCE
    self.skills[1].y = TAG_OFFSET_Y
    self.skills[1].ori = 0
+end
+
+function ALIGN_WITH_LASERLINES:init()
+   self.skills[1].x = line1:point_on_line(0)
+   self.skills[1].y = 0
+   self.skills[1].ori = line1:bearing()
 end
 
 function DRIVE_FORWARD:init()
