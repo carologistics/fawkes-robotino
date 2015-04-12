@@ -41,8 +41,8 @@ skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
 
-local TAG_OFFSET_Y = 0.025 --TODO if the tags are misaligned you there should be an parametric offset or another solution
-local ALIGN_DISTANCE = 0.35
+local TAG_OFFSET_Y = 0.01 --TODO if the tags are misaligned you there should be an parametric offset or another solution
+local ALIGN_DISTANCE = 0.4
 
 fsm:define_states{ export_to=_M, closure={},
    {"SKILL_ALIGN_TAG", SkillJumpState, skills={{align_tag}},
@@ -67,19 +67,29 @@ fsm:add_transitions{
 }
 
 function SKILL_ALIGN_TAG:init()
-   self.skills[1].x = ALIGN_DISTANCE
-   self.skills[1].y = TAG_OFFSET_Y
+   -- align by ALIGN_DISTANCE from tag to base_link with align_tag
+   local tag_transformed = tfm.transform({x=ALIGN_DISTANCE, y=0, ori=0}, "/base_link", "/cam_tag")
+   self.skills[1].x = tag_transformed.x
+   self.skills[1].y = tag_transformed.y + TAG_OFFSET_Y
    self.skills[1].ori = 0
 end
 
 function ALIGN_WITH_LASERLINES:init()
-   self.skills[1].x = line1:point_on_line(0)
+   -- align by ALIGN_DISTANCE from tag to base_link with the lase_line
+   local line_transformed = tfm.transform({x=line1:point_on_line(0), y=0, ori=line1:bearing()}, line1:frame_id(), "/base_link")
+   printf("line transformed x: %f", line_transformed.x)
+   printf("line transformed ori: %f", line_transformed.ori)
+   self.skills[1].x = line_transformed.x - ALIGN_DISTANCE
    self.skills[1].y = 0
-   self.skills[1].ori = line1:bearing()
+   self.skills[1].ori = line_transformed.ori
+   self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
 end
 
 function DRIVE_FORWARD:init()
-   self.skills[1].x = 0.16
+   local gripper_transformed = tfm.transform({x=ALIGN_DISTANCE, y=0, ori=0}, "/base_link", "/gripper")
+   self.skills[1].x = gripper_transformed.x + 0.01 --TODO fix this hardcode in transforms
+   self.skills[1].y = gripper_transformed.y
+   self.skills[1].ori = 0
 end
 
 function OPEN_GRIPPER:init()
@@ -100,5 +110,5 @@ function GRIPPER:init()
 end
 
 function MOVE_BACK:init()
-   self.skills[1].x = -0.16
+   self.skills[1].x = -0.2
 end
