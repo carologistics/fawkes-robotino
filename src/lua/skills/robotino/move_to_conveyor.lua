@@ -50,8 +50,7 @@ fsm:define_states{ export_to=_M, closure={},
    {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}},
       final_to="GRIPPER", fail_to="FAILED"},
    {"GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="TIMEOUT", fail_to="FAILED"},
-   {"TIMEOUT", JumpState},
+      final_to="MOVE_BACK", fail_to="FAILED"},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
       final_to="FINAL", fail_to="FAILED"},
 }
@@ -59,7 +58,6 @@ fsm:define_states{ export_to=_M, closure={},
 fsm:add_transitions{
    {"DECIDE_OPEN", "DRIVE_FORWARD", cond="fsm.vars.put_puck", desc="Has a puck in front"},
    {"DECIDE_OPEN", "OPEN_GRIPPER", cond="fsm.vars.pick_puck", desc="Open gripper before driving"},
-   {"TIMEOUT", "MOVE_BACK", timeout=1}
 }
 
 function SKILL_ALIGN_TAG:init()
@@ -69,21 +67,26 @@ function SKILL_ALIGN_TAG:init()
 end
 
 function DRIVE_FORWARD:init()
-   self.skills[1].x = 0.15
+   self.skills[1].x = 0.16
 end
 
 function OPEN_GRIPPER:init()
    self.skills[1].open = true
+   printf("open gripper")
 end
 
 function GRIPPER:init()
    if self.fsm.vars.pick_puck then
+      self.skills[1].open = false
       self.skills[1].close = true
+      printf("pick the puck")
    elseif self.fsm.vars.put_puck then
       self.skills[1].open = true
+      self.skills[1].close = false
+      printf("put the puck")
    end
 end
 
 function MOVE_BACK:init()
-   self.skills[1].x = -0.15
+   self.skills[1].x = -0.16
 end
