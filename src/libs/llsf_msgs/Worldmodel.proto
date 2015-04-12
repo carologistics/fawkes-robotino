@@ -16,17 +16,12 @@ message MachineState {
   }
 
   optional string    name     = 1;
-  repeated PuckState loaded_with  = 2;
+  required uint32 loaded_id  = 2;
   repeated string incoming  = 3;
   repeated string incoming_agent  = 4;
   required uint32 prod_finished_time = 5;
-  optional PuckState puck_under_rfid = 6;
-  required bool produce_blocked = 7;
-  required bool recycle_blocked = 8;
-  optional uint32 order = 9;
-  optional uint32 in_delivery = 10;
-  required uint32 junk = 11;
-  required uint32 out_of_order_until = 12;
+  required uint32 produced_id  = 6;
+  required uint32 out_of_order_until = 7;
 }
 
 message PuckStorageState {

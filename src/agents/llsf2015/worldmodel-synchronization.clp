@@ -21,10 +21,8 @@
     (bind ?m-msg (pb-create "llsf_msgs.MachineState"))
     ;set name
     (pb-set-field ?m-msg "name" (str-cat ?machine:name))
-    ;set loaded_with
-    (foreach ?puck-type (fact-slot-value ?machine loaded-with)
-      (pb-add-list ?m-msg "loaded_with" ?puck-type)
-    )
+    ;set loaded_with)
+    (pb-set-field ?m-msg "loaded_id" ?machine:loaded-id)
     ;set incoming
     (foreach ?incoming-action (fact-slot-value ?machine incoming)
       (pb-add-list ?m-msg "incoming" (str-cat ?incoming-action))
@@ -37,14 +35,9 @@
     (pb-set-field ?m-msg "prod_finished_time" (nth$ 1 ?machine:final-prod-time))
     ;set out-of-order-until
     (pb-set-field ?m-msg "out_of_order_until" (nth$ 1 ?machine:out-of-order-until))
-    ;set puck under rfid
-    (if (neq ?machine:produced-puck NONE) then
-      (pb-set-field ?m-msg "puck_under_rfid" ?machine:produced-puck)
-    )
-    (pb-set-field ?m-msg "produce_blocked" ?machine:produce-blocked)
-    (pb-set-field ?m-msg "recycle_blocked" ?machine:recycle-blocked)
-    ;set amount of junk
-    (pb-set-field ?m-msg "junk" ?machine:junk)
+    ;set produced
+    (pb-set-field ?m-msg "produced_id" ?machine:produced-id)
+
     ;add sub-msg to worldmodel msg
     (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
   )
@@ -79,9 +72,31 @@
     )
     (pb-add-list ?worldmodel "storage" ?ps-msg)
   )
+  (printout t "wms Tag Pos" crlf)
+
+  ;add worldmodel about tag-positions
+  (delayed-do-for-all-facts ((?tag found-tag)) TRUE
+    ;construct submsg for each machine
+
+    (bind ?tag-msg (pb-create "llsf_msgs.TagPosition"))
+    (pb-set-field ?tag-msg "machine" (str-cat ?tag:name))
+    (pb-set-field ?tag-msg "side" (str-cat ?tag:side))
+    (pb-set-field ?tag-msg "frame" (str-cat ?tag:frame))
+    (pb-add-list ?tag-msg "trans" (nth$ 1 ?tag:trans))
+    (pb-add-list ?tag-msg "trans" (nth$ 2 ?tag:trans))
+    (pb-add-list ?tag-msg "trans" (nth$ 3 ?tag:trans))
+    (pb-add-list ?tag-msg "rot" (nth$ 1 ?tag:rot))
+    (pb-add-list ?tag-msg "rot" (nth$ 2 ?tag:rot))
+    (pb-add-list ?tag-msg "rot" (nth$ 3 ?tag:rot))
+    (pb-add-list ?tag-msg "rot" (nth$ 4 ?tag:rot))
+
+    (pb-add-list ?worldmodel "tag_positions" ?tag-msg)
+  )
 
   (pb-broadcast ?peer ?worldmodel)
   (pb-destroy ?worldmodel)
+
+  (modify ?s (time ?now) (seq (+ ?seq 1)))
 )
 
 ;receive worldmodel
@@ -97,15 +112,10 @@
   ;update worldmodel about machines
   (foreach ?m-msg (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
-		   (and (eq ?machine:name (sym-cat (pb-field-value ?m-msg "name")))
-			;prevent idle P3 robot from using an old world model the master sends before the master gets the change at the T5
-			(or (neq ?state IDLE) (neq ?machine:mtype T5)))
+		   (eq ?machine:name (sym-cat (pb-field-value ?m-msg "name")))
 			
       ;update loaded-with
-      (bind $?loaded-with (create$))
-      (progn$ (?puck-type (pb-field-list ?m-msg "loaded_with"))
-	(bind ?loaded-with (append$ ?loaded-with (sym-cat ?puck-type)))
-      )
+      (bind ?loaded-id (pb-field-value ?m-msg "loaded_id"))
       ;update incoming
       (bind $?incoming (create$))
       (progn$ (?incoming-action (pb-field-list ?m-msg "incoming"))
@@ -120,27 +130,16 @@
       (bind ?prod-finished-time (pb-field-value ?m-msg "prod_finished_time"))
       ;update out-of-order-until
       (bind ?out-of-order-until (pb-field-value ?m-msg "out_of_order_until"))
-      (if (pb-has-field ?m-msg "puck_under_rfid")
-	then (bind ?puck-under-rfid (sym-cat (pb-field-value ?m-msg "puck_under_rfid")))
-	else (bind ?puck-under-rfid NONE)
-      )
-      (bind ?produce-blocked (if (eq 0 (pb-field-value ?m-msg "produce_blocked"))
-				 then FALSE
-				 else TRUE))
-      (bind ?recycle-blocked (if (eq 0 (pb-field-value ?m-msg "recycle_blocked"))
-				 then FALSE
-				 else TRUE))
-      ;update junk
-      (bind ?junk (pb-field-value ?m-msg "junk"))
-      (modify ?machine (incoming ?incoming) (loaded-with ?loaded-with)
+      ;update produced-id
+      (bind ?produced-id (sym-cat (pb-field-value ?m-msg "produced_id")))
+      
+      (modify ?machine (incoming ?incoming) (loaded-id ?loaded-id)
 	               (final-prod-time (create$ ?prod-finished-time 0))
-		       (produced-puck ?puck-under-rfid) (produce-blocked ?produce-blocked)
-		       (recycle-blocked ?recycle-blocked) (junk ?junk)
+		       (produced-id ?produced-id)
 		       (incoming-agent ?incoming-agent)
 		       (out-of-order-until (create$ ?out-of-order-until 0))
       )
     )
-    (retract ?msg)
   )
   ;update worldmodel about orders
   (foreach ?o-msg (pb-field-list ?p "orders")
@@ -176,8 +175,24 @@
       )
 	
     )
-    (retract ?msg)
   )
+  ;update worldmodel about tag-positions
+  (foreach ?tag-pose-msg (pb-field-list ?p "tag_positions")
+    ; create tag fact if not already known
+    (if (not (any-factp ((?ft found-tag)) 
+			(eq ?ft:name (sym-cat (pb-field-value ?tag-pose-msg "machine")))))
+      then
+      (assert (found-tag (name (sym-cat (pb-field-value ?tag-pose-msg "machine")))
+			 (side (sym-cat (pb-field-value ?tag-pose-msg "side")))
+			 (frame (pb-field-value ?tag-pose-msg "frame"))
+			 (trans (pb-field-list ?tag-pose-msg "trans"))
+			 (rot (pb-field-list ?tag-pose-msg "rot")))
+	      )
+      )
+      ; set machine stuff
+      ; set explration stuff  
+  )
+  (retract ?msg)
   (watch facts machine)
   (watch facts order)
   (watch facts puck-storage)
