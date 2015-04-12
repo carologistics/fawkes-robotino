@@ -12,18 +12,6 @@
   (return (float (sqrt (float(+ (* (- ?x ?x2) (- ?x ?x2)) (* (- ?y ?y2) (- ?y ?y2)))))))
 )
 
-; Note that this function only works if the roll and pitch are zero, i.e.
-; that a pointing vector is in the x-y plane.
-(deffunction yaw-from-quaternion (?q)
-  (return (* 2 (acos (nth$ 4 ?q)) (if (> (nth$ 3 ?q) 0) then 1 else -1)))
-)
-
-(deffunction quaternion-from-yaw (?yaw)
-  (return (create$ 0 0
-		   (sin (/ ?yaw 2))
-		   (cos (/ ?yaw 2))))
-)
-
 (deffunction is-working ($?out-of-order)
   "Check if a machine is not out of order"
   (return (eq (nth$ 1 ?out-of-order) 0))

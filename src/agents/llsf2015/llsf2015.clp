@@ -65,6 +65,15 @@
   (path-load  llsf2015/navgraph.clp)
 )
 
+(defrule enable-tf
+  "If transform feature is set load it, if it is not yet loaded."
+  (ff-feature tf)
+  (not (ff-feature-loaded tf))
+  =>
+  (printout t "Requesting transform feature" crlf)
+  (ff-feature-request "tf")
+)
+
 (deffunction unwatch-rules-facts ()
   ;unwatch some rules to reduce debug output
   ;this is not possible in the config, because the defrules and deffacts are loaded later
@@ -95,6 +104,7 @@
   (loaded interfaces)
   (ff-feature-loaded motor-switch)
   (ff-feature-loaded protobuf)
+  (ff-feature-loaded tf)
   (ff-feature navgraph)
   =>
   (path-load  llsf2015/utils.clp)

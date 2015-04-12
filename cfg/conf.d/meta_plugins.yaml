@@ -12,7 +12,7 @@ fawkes/meta_plugins:
   m-laser: m-bare,laser,map-lasergen,laser-filter
   m-laser-cluster: m-laser,laser-pointclouds,laser-cluster,ros,ros-pcl
   
-  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph
+  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf
   m-clips-agent: m-clips,m-fv-vision,clips-agent
 
   m-nocam: m-bare,m-laser-cluster,ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,laser-lines,skiller

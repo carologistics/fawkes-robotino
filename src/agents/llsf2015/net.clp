@@ -85,7 +85,7 @@
     (bind ?beacon-pose (pb-field-value ?beacon "pose"))
     (pb-set-field ?beacon-pose "x" (nth$ 1 ?pose:translation))
     (pb-set-field ?beacon-pose "y" (nth$ 2 ?pose:translation))
-    (pb-set-field ?beacon-pose "ori" (yaw-from-quaternion ?pose:rotation))
+    (pb-set-field ?beacon-pose "ori" (tf-yaw-from-quat ?pose:rotation))
     (bind ?beacon-pose-time (pb-field-value ?beacon-pose "timestamp"))
     (pb-set-field ?beacon-pose-time "sec" (nth$ 1 ?pose:time))
     (pb-set-field ?beacon-pose-time "nsec" (* (nth$ 2 ?pose:time) 1000))
