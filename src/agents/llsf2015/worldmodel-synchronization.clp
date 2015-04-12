@@ -13,7 +13,6 @@
   (lock-role MASTER)
   (peer-id private ?peer)  
   =>
-  ; (printout t "sending worldmodel" crlf)
   ;construct worldmodel msg
   (bind ?worldmodel (pb-create "llsf_msgs.Worldmodel"))
   (delayed-do-for-all-facts ((?machine machine)) TRUE
@@ -72,7 +71,6 @@
     )
     (pb-add-list ?worldmodel "storage" ?ps-msg)
   )
-  (printout t "wms Tag Pos" crlf)
 
   ;add worldmodel about tag-positions
   (delayed-do-for-all-facts ((?tag found-tag)) TRUE

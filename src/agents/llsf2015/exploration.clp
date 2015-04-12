@@ -271,10 +271,10 @@
   (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
   =>
-  (printout t "Driving to MPS output." crlf)
+  (printout t "Driving to MPS light-signal." crlf)
   (retract ?s ?ngg-if ?lncm)
   (assert (state EXP_DRIVE_TO_OUTPUT))
-  (skill-call ppgoto place (get-output ?machine))
+  (skill-call ppgoto place (get-light-signal-side ?machine))
 )
 
 (defrule exp-align-in-front-of-light-signal

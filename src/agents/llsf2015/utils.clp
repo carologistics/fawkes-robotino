@@ -44,6 +44,19 @@
   (return (str-cat ?mps "-O"))
 )
 
+(deffunction get-light-signal-side (?mps)
+  "Return the navgraph point of the side where the light-signal is mounted"
+  (if (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)
+					   (eq ?machine:mtype DS))
+    then
+    ; for DS
+    (return (get-input ?mps))
+    else
+    ; for all other mps
+    (return (get-output ?mps))
+  )
+)
+
 (deffunction create-multifield-with-length-and-entry (?length ?entry)
   "Creates a Multifield with ?length times the entry ?entry"
   (bind $?res (create$ ))
