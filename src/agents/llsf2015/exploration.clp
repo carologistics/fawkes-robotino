@@ -159,7 +159,7 @@
   (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
   (team-color ?team-color)
   (tag-matching (tag-id ?tag) (team ?team-color) (machine ?machine) (side ?side))
-  ; TODO: not already explored/beeing explored
+  (not (found-tag (name ?machine)))
   ?tvi <- (TagVisionInterface (id "/tag-vision/info") (tags_visible ?num-tags&:(> ?num-tags 0)) (tag_id $?tag-ids&:(member$ ?tag ?tag-ids)))
   ?tagpos <- (Position3DInterface (id ?tag-if-id&:(eq ?tag-if-id 
 						      (str-cat "/tag-vision/" 
@@ -212,13 +212,14 @@
   ?ze <- (zone-exploration (name ?old))
   (team-color ?team-color)
   (tag-matching (tag-id ?tag) (team ?team-color) (machine ?machine) (side ?side))
-  ; TODO: not already explored/beeing explored
   ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame)
 		    (trans $?trans) (rot $?rot) (already-added FALSE))
   =>
   (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side ") to Navgraph-generation"  crlf)
   
+  ;TODO: this might be the wrong zone
   (modify ?ze (machine ?machine) (still-to-explore FALSE))
+  (assert (worldmodel-change (machine ?old) (change ZONE_STILL_TO_EXPLORE) (value FALSE)))
 
   (navgraph-add-all-new-tags)
 
@@ -568,7 +569,7 @@
   (retract ?pbm)
   (unwatch facts zone-exploration)
   (foreach ?machine (pb-field-list ?p "reported_machines")
-    (do-for-fact ((?m zone-exploration)) (eq ?m:name (sym-cat ?machine))
+    (do-for-fact ((?m zone-exploration)) (eq ?m:machine (sym-cat ?machine))
       (modify ?m (recognized TRUE))
       ;(printout t "Ich habe folgende Maschine bereits erkannt: " ?machine crlf)
     )

@@ -28,10 +28,10 @@
 (deftemplate zone-exploration
   (slot name (type SYMBOL) (allowed-values Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12
 					   Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS UNKNOWN) (default UNKNOWN))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
-  (slot light (type SYMBOL) (allowed-values GREEN ORANGE RED OFF) (default OFF))
   ; list of positions where to search for tags (ids to pose facts)
   (multislot look-pos (type INTEGER) (default (create$)))
   ; index of the next lookpos to use
@@ -39,7 +39,6 @@
   (slot recognized (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot still-to-explore (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
   (slot next (type SYMBOL)) ;TODO delete next
-  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
 )
 
 (deftemplate exploration-result
@@ -304,6 +303,7 @@
   (timer (name beacon) (time (create$ 0 0)) (seq 1))
   (timer (name exploration-finished) (time (create$ 0 0)) (seq 1))
   (timer (name send-worldmodel-sync) (time (create$ 0 0)) (seq 1))
+  (timer (name send-tag-poses-sync) (time (create$ 0 0)) (seq 1))
 
   (already-received-wm-changes (create$))
 

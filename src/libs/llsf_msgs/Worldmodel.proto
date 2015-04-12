@@ -36,6 +36,11 @@ message PuckStorageState {
   repeated string incoming_agent  = 4;
 }
 
+enum Side {
+  INPUT = 0;
+  OUTPUT = 1;
+}
+
 message TagPosition {
   enum CompType {
     COMP_ID  = 2000;
@@ -43,11 +48,23 @@ message TagPosition {
   }
 
   required string machine = 1;
-  required string side    = 2;
+  required Side side    = 2;
   required string frame   = 3;
   repeated float  trans   = 4;
   // Rotation as quaternion
   repeated float  rot     = 5;
+}
+
+message Zone {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 1349;
+  }
+
+  required string name = 1;
+  required string machine = 2;
+  required bool recognized = 3;
+  required bool still_to_explore = 4;
 }
 
 message WorldmodelOrder {
@@ -72,7 +89,17 @@ message Worldmodel {
   repeated MachineState machines = 1;
   repeated WorldmodelOrder orders = 2;
   repeated PuckStorageState storage = 3;
-  repeated TagPosition tag_positions = 4;
+  repeated Zone zones = 4;
+}
+
+message TagPositions {
+  //With this message the master publishes all tag positions
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 1350;
+  }
+
+  repeated TagPosition tag_positions = 1;
 }
 
 message WorldmodelChange {

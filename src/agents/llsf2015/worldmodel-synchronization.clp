@@ -72,23 +72,16 @@
     (pb-add-list ?worldmodel "storage" ?ps-msg)
   )
 
-  ;add worldmodel about tag-positions
-  (delayed-do-for-all-facts ((?tag found-tag)) TRUE
+  ;add worldmodel about exploration-zones
+  (delayed-do-for-all-facts ((?zone zone-exploration)) TRUE
     ;construct submsg for each machine
+    (bind ?zone-msg (pb-create "llsf_msgs.Zone"))
+    (pb-set-field ?zone-msg "name" (str-cat ?zone:name))
+    (pb-set-field ?zone-msg "machine" (str-cat ?zone:machine))
+    (pb-set-field ?zone-msg "recognized" ?zone:recognized)
+    (pb-set-field ?zone-msg "still_to_explore" ?zone:still-to-explore)
 
-    (bind ?tag-msg (pb-create "llsf_msgs.TagPosition"))
-    (pb-set-field ?tag-msg "machine" (str-cat ?tag:name))
-    (pb-set-field ?tag-msg "side" (str-cat ?tag:side))
-    (pb-set-field ?tag-msg "frame" (str-cat ?tag:frame))
-    (pb-add-list ?tag-msg "trans" (nth$ 1 ?tag:trans))
-    (pb-add-list ?tag-msg "trans" (nth$ 2 ?tag:trans))
-    (pb-add-list ?tag-msg "trans" (nth$ 3 ?tag:trans))
-    (pb-add-list ?tag-msg "rot" (nth$ 1 ?tag:rot))
-    (pb-add-list ?tag-msg "rot" (nth$ 2 ?tag:rot))
-    (pb-add-list ?tag-msg "rot" (nth$ 3 ?tag:rot))
-    (pb-add-list ?tag-msg "rot" (nth$ 4 ?tag:rot))
-
-    (pb-add-list ?worldmodel "tag_positions" ?tag-msg)
+    (pb-add-list ?worldmodel "zones" ?zone-msg)
   )
 
   (pb-broadcast ?peer ?worldmodel)
@@ -107,6 +100,7 @@
   (unwatch facts machine)
   (unwatch facts order)
   (unwatch facts puck-storage)
+  (unwatch facts zone-exploration)
   ;update worldmodel about machines
   (foreach ?m-msg (pb-field-list ?p "machines")
     (do-for-fact ((?machine machine))
@@ -170,10 +164,67 @@
 	else
 	(modify ?storage (incoming ?incoming) (incoming-agent ?incoming-agent)
 		         (puck NONE))
-      )
-	
+      )	
     )
   )
+
+  ;update worldmodel about zones
+  (foreach ?zone-msg (pb-field-list ?p "zones")
+    (do-for-fact ((?zone zone-exploration))
+		 (eq ?zone:name (sym-cat (pb-field-value ?zone-msg "name")))
+      (modify ?zone (machine (sym-cat (pb-field-value ?zone-msg "machine")))
+	      (recognized (pb-field-value ?zone-msg "recognized"))
+	      (still-to-explore (pb-field-value ?zone-msg "still_to_explore")))
+    )
+  )
+  (retract ?msg)
+  (watch facts machine)
+  (watch facts order)
+  (watch facts puck-storage)
+  (watch facts zone-exploration)
+)
+
+(defrule worldmodel-sync-publish-tag-poses
+  (time $?now)
+  ?s <- (timer (name send-tag-poses-sync) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
+  (lock-role MASTER)
+  (peer-id private ?peer)  
+  =>
+  ;construct worldmodel msg
+  (bind ?all-tags-msgs (pb-create "llsf_msgs.TagPositions"))
+
+  ;add all tag-positions
+  (delayed-do-for-all-facts ((?tag found-tag)) TRUE
+    ;construct submsg for each machine
+
+    (bind ?tag-msg (pb-create "llsf_msgs.TagPosition"))
+    (pb-set-field ?tag-msg "machine" (str-cat ?tag:name))
+    (pb-set-field ?tag-msg "side" ?tag:side)
+    (pb-set-field ?tag-msg "frame" (str-cat ?tag:frame))
+    (pb-add-list ?tag-msg "trans" (nth$ 1 ?tag:trans))
+    (pb-add-list ?tag-msg "trans" (nth$ 2 ?tag:trans))
+    (pb-add-list ?tag-msg "trans" (nth$ 3 ?tag:trans))
+    (pb-add-list ?tag-msg "rot" (nth$ 1 ?tag:rot))
+    (pb-add-list ?tag-msg "rot" (nth$ 2 ?tag:rot))
+    (pb-add-list ?tag-msg "rot" (nth$ 3 ?tag:rot))
+    (pb-add-list ?tag-msg "rot" (nth$ 4 ?tag:rot))
+
+    (pb-add-list ?all-tags-msgs "tag_positions" ?tag-msg)
+  )
+
+  (pb-broadcast ?peer ?all-tags-msgs)
+  (pb-destroy ?all-tags-msgs)
+
+  (modify ?s (time ?now) (seq (+ ?seq 1)))
+)
+
+
+(defrule worldmodel-sync-receive-tag-poses
+  ?msg <- (protobuf-msg (type "llsf_msgs.TagPositions") (ptr ?p))
+  (not (lock-role MASTER))
+  =>
+  (printout t "***** Received Tag Poses *****" crlf)
+
   ;update worldmodel about tag-positions
   (foreach ?tag-pose-msg (pb-field-list ?p "tag_positions")
     ; create tag fact if not already known
@@ -187,13 +238,9 @@
 			 (rot (pb-field-list ?tag-pose-msg "rot")))
 	      )
       )
-      ; set machine stuff
-      ; set explration stuff  
+    (printout t "Adding tag with side: " (sym-cat (pb-field-value ?tag-pose-msg "side"))
+	      crlf)
   )
-  (retract ?msg)
-  (watch facts machine)
-  (watch facts order)
-  (watch facts puck-storage)
 )
 
 ;send worldmodel change
@@ -223,7 +270,8 @@
   (if (member$ ?change (create$ ADD_LOADED_WITH REMOVE_LOADED_WITH)) then
     (pb-set-field ?change-msg "value_puckstate" ?value)
   )
-  (if (member$ ?change (create$ ADD_INCOMING REMOVE_INCOMING)) then
+  (if (member$ ?change (create$ ADD_INCOMING REMOVE_INCOMING ZONE_STILL_TO_EXPLORE
+				ZONE_MACHINE_IDENTIFIED)) then
     (pb-set-field ?change-msg "value_string" (str-cat ?value))
   )
   (if (member$ ?change (create$ SET_NUM_CO SET_PROD_FINISHED_TIME
@@ -236,7 +284,7 @@
     (do-for-fact ((?tag found-tag)) (eq ?tag:name ?m)
       (bind ?tag-msg (pb-create "llsf_msgs.TagPosition"))
       (pb-set-field ?tag-msg "machine" (str-cat ?tag:name))
-      (pb-set-field ?tag-msg "side" (str-cat ?tag:side))
+      (pb-set-field ?tag-msg "side" ?tag:side)
       (pb-set-field ?tag-msg "frame" (str-cat ?tag:frame))
       (pb-add-list ?tag-msg "trans" (nth$ 1 ?tag:trans))
       (pb-add-list ?tag-msg "trans" (nth$ 2 ?tag:trans))
@@ -392,6 +440,23 @@
           )
 	)
       )
+      ;change zone-exploration if change is about a zone
+      (do-for-fact ((?zone zone-exploration))
+          (eq ?zone:name (sym-cat (pb-field-value ?p "place")))
+
+        (switch (sym-cat (pb-field-value ?p "change"))
+          (case ZONE_STILL_TO_EXPLORE then 
+	    (modify ?zone (still-to-explore (sym-cat (pb-field-value ?p "value_string"))))
+          )
+          (case ZONE_MACHINE_IDENTIFIED then 
+	    (modify ?zone (machine (sym-cat (pb-field-value ?p "value_string"))))
+          )
+	  (default
+	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
+		      " is not handled. Worlmodel is probably wrong." crlf)
+	  )
+        )
+      )
     )
   )
   (retract ?pmsg)
@@ -429,3 +494,19 @@
   =>
   (retract ?dwf)
 )
+
+; (defrule worldmodel-sync-debug
+;   (lock-role SLAVE)
+;   =>
+;   (assert (found-tag (name C-BS) (side OUTPUT)(frame "/map")
+; 		       (trans (create$ -4.9 4.9 0)) (rot (tf-quat-from-yaw -1.14)))
+; 	    (worldmodel-change (machine C-BS) (change ADD_TAG)))
+; )
+
+; (defrule worldmodel-sync-debug
+;   (lock-role SLAVE)
+;   =>
+;   (assert (found-tag (name C-DS) (side OUTPUT)(frame "/map")
+; 		       (trans (create$ 4.9 4.9 0)) (rot (tf-quat-from-yaw -1.14)))
+; 	    (worldmodel-change (machine C-DS) (change ADD_TAG)))
+; )
