@@ -17,9 +17,6 @@ plugins/light_front:
   camera_angle_vertical_rad: .00
   threashold_brightness: 120
   threashold_black: 80
-
-plugins/tag_vision:
-  camera: shmem:gazsim_cam:image_id=robotino1/gazsim_tag:deep_copy=true
   
 clips-agent:
   clips-debug: true
