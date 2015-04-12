@@ -199,8 +199,7 @@ GripperAX12AThread::loop()
       load_right_pending = false;
     }
 
-    if (!load_left_pending && !load_right_pending)
-        __gripper_if->set_final(true);
+    __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final());
 
 
     while (! __gripper_if->msgq_empty() ) {
