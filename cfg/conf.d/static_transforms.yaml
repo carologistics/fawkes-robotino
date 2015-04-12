@@ -34,8 +34,16 @@ plugins/static-transforms:
 
     #from top plate middle to the mount_profile front at the bottom
     mount_profile:
-      frame: !frame /base_link
-      child_frame: /plate_top
+      frame: !frame /plate_top
+      child_frame: /mount_profile
       trans_x: 0.145
       trans_y: 0
       trans_z: 0.03
+
+    #in the gripper where the puck should be holded
+    gripper:
+      frame: !frame /mount_profile
+      child_frame: /gripper
+      trans_x: 0.15
+      trans_y: 0.02
+      trans_z: 0.1
