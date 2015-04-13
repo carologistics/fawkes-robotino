@@ -27,32 +27,45 @@ OBJS_agent_monitor = agent-monitor-plugin.o agent-monitor-thread.o \
 
 OBJS_all = $(OBJS_agent_monitor)
 
-ifeq ($(HAVE_CPP11)$(HAVE_WEBVIEW)$(HAVE_CLIPS),111)
-  CFLAGS  += $(CFLAGS_WEBVIEW)  $(CFLAGS_CLIPS) $(CFLAGS_CPP11)
-  LDFLAGS += $(LDFLAGS_WEBVIEW) $(LDFLAGS_CLIPS)
+ifeq ($(CC),gcc)
+  ifneq ($(call gcc_atleast_version,4,7),1)
+    GCC_TOO_OLD=1
+  endif
+endif
 
-  PLUGINS_all = $(PLUGINDIR)/agent-monitor.$(SOEXT)
+
+ifneq ($(GCC_TOO_OLD),1)
+  ifeq ($(HAVE_CPP11)$(HAVE_WEBVIEW)$(HAVE_CLIPS),111)
+    CFLAGS  += $(CFLAGS_WEBVIEW)  $(CFLAGS_CLIPS) $(CFLAGS_CPP11)
+    LDFLAGS += $(LDFLAGS_WEBVIEW) $(LDFLAGS_CLIPS)
+
+    PLUGINS_all = $(PLUGINDIR)/agent-monitor.$(SOEXT)
+  else
+    ifneq ($(HAVE_CPP11),1)
+      WARN_TARGETS += warning_cpp11
+    endif
+    ifneq ($(HAVE_WEBVIEW),1)
+      WARN_TARGETS += warning_webview
+    endif
+    ifneq ($(HAVE_CLIPS),1)
+      WARN_TARGETS += warning_clips
+    endif
+  endif
 else
-  ifneq ($(HAVE_CPP11),1)
-    WARN_TARGETS += warning_cpp11
-  endif
-  ifneq ($(HAVE_WEBVIEW),1)
-    WARN_TARGETS += warning_webview
-  endif
-  ifneq ($(HAVE_CLIPS),1)
-    WARN_TARGETS = warning_clips
-  endif
+  WARN_TARGETS += warning_old_gcc
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_clips warning_webview warning_cpp11
+.PHONY: warning_clips warning_webview warning_cpp11 warning_old_gcc
 warning_webview:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build agent-monitor plugin$(TNORMAL) (webview not available)"
 warning_cpp11:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build agent-monitor plugin$(TNORMAL) (C++11 not supported)"
 warning_clips:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build agent-monitor plugin$(TNORMAL) ($(CLIPS_ERROR))"
+warning_old_gcc:
+	 $(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting CLIPS Plugins$(TNORMAL) (GCC too old, have $(GCC_VERSION), required 4.7)"
 endif
 
 include $(BUILDSYSDIR)/base.mk
