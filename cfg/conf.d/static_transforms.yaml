@@ -11,26 +11,39 @@ plugins/static-transforms:
     base_laser:
       frame: !frame /base_link
       child_frame: /base_laser
-      trans_x: 0.085 # 0.1 for hackathon setup
+      trans_x: 0.17 # 0.1 for hackathon setup
       trans_y: 0.0
-      trans_z: 0.15
+      trans_z: 0.26
 
-    cam_front:
-      frame: !frame /base_laser
-      child_frame: /cam_front
-      trans_x: -0.085
+    cam_tag:
+      frame: !frame /base_link
+      child_frame: /cam_tag
+      trans_x: 0.1
       trans_y: 0.0
-      trans_z: 0.09
-      rot_pitch: 0.45 # 37.87° 
+      trans_z: 0.54
+      rot_pitch: 0 
       rot_yaw: 0
       rot_roll: 0
 
-    cam_puck:
+    plate_top:
       frame: !frame /base_link
-      child_frame: /cam_front_puck
-      trans_x: 0.195
-      trans_y: 0.0
-      trans_z: 0.12
-      rot_pitch: 0.37
-      rot_yaw:  0.0
-      rot_roll: 0
+      child_frame: /plate_top
+      trans_x: 0
+      trans_y: 0
+      trans_z: 0.78
+
+    #from top plate middle to the mount_profile front at the bottom
+    mount_profile:
+      frame: !frame /plate_top
+      child_frame: /mount_profile
+      trans_x: 0.145
+      trans_y: 0
+      trans_z: 0.03
+
+    #in the gripper where the puck should be holded
+    gripper:
+      frame: !frame /mount_profile
+      child_frame: /gripper
+      trans_x: 0.15
+      trans_y: 0.02
+      trans_z: 0.1
