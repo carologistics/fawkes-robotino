@@ -223,7 +223,7 @@
   ?msg <- (protobuf-msg (type "llsf_msgs.TagPositions") (ptr ?p))
   (not (lock-role MASTER))
   =>
-  (printout t "***** Received Tag Poses *****" crlf)
+  ; (printout t "***** Received Tag Poses *****" crlf)
 
   ;update worldmodel about tag-positions
   (foreach ?tag-pose-msg (pb-field-list ?p "tag_positions")
@@ -237,9 +237,9 @@
 			 (trans (pb-field-list ?tag-pose-msg "trans"))
 			 (rot (pb-field-list ?tag-pose-msg "rot")))
 	      )
-      )
-    (printout t "Adding tag with side: " (sym-cat (pb-field-value ?tag-pose-msg "side"))
-	      crlf)
+      (printout t "Adding tag with side: " (sym-cat (pb-field-value ?tag-pose-msg "side"))
+		crlf)
+    )
   )
 )
 

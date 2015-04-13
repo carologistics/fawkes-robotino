@@ -151,7 +151,6 @@
 (defrule exp-read-tag-from-exp-point
   "Read found tag in front of robot and drive nearer to the tag to get a better reading or prepare adding the tag to the navgraph when already driven to the tag."
   (phase EXPLORATION)
-  (time $?now)
   ?ws <- (timer (name waiting-for-tag-since))
   ?s <- (state EXP_LOOKING_FOR_TAG)
   ?g <- (goalmachine ?old)
@@ -165,21 +164,39 @@
 						      (str-cat "/tag-vision/" 
 							       (- (member$ ?tag ?tag-ids) 1)))) 
 				  (visibility_history ?vh&:(> ?vh ?needed-vh)) 
-				  (translation $?trans) 
-				  (rotation $?rot)
-				  (frame ?frame))
+				  (translation $?trans) (rotation $?rot)
+				  (frame ?frame) (time $?timestamp))
   ?ent <- (exp-nearing-tag ?already-near)
+  (time $?now)
   =>
   (printout t "Found Tag Nr." ?tag " (" ?machine " " ?side ")"  crlf)
   ; Do I have to 
   (if ?already-near
     then
     (printout t "Recognized Tag" crlf)
+    ; transform to map-frame
+    (if (tf-can-transform "/map" ?frame ?timestamp) then
+      (bind ?tf-transrot (tf-transform-pose "/map" ?frame ?timestamp ?trans ?rot))
+      (printout t "Transformed to " ?tf-transrot crlf)
+      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+			 (trans (subseq$ ?tf-transrot 1 3))
+			 (rot (subseq$ ?tf-transrot 4 7))))
+      else
+      (printout warn "Can not transform " ?frame " to /map. Trying most current time" crlf)
+      (if (tf-can-transform "/map" ?frame (create$ 0 0)) then
+	(bind ?tf-transrot (tf-transform-pose "/map" ?frame ?timestamp ?trans ?rot))
+	(assert (found-tag (name ?machine) (side ?side) (frame "/map")
+			   (trans (subseq$ ?tf-transrot 1 3))
+			   (rot (subseq$ ?tf-transrot 4 7))))
+	else
+	(printout error "Can not transform " ?frame " to /map. Tags positions are broken after synchronization" crlf)
+	(assert (found-tag (name ?machine) (side ?side) (frame "/map")
+			   (trans ?trans) (rot ?rot)))
+      )
+    )
     (assert (state EXP_ADD_TAG)
-	    (exp-nearing-tag FALSE)
-	    (found-tag (name ?machine) (side ?side)(frame ?frame)
-		       (trans ?trans) (rot ?rot))
-	    (worldmodel-change (machine ?machine) (change ADD_TAG)))
+    	    (exp-nearing-tag FALSE)
+    	    (worldmodel-change (machine ?machine) (change ADD_TAG)))
     else
     (printout t "Driving nearer to get a more precise position" crlf)
     ; (skill-call drive_tag id ?tag)
