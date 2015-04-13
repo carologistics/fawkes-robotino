@@ -27,7 +27,7 @@ fawkes/bbsync:
       # mapped to remote instance locally
       reading:
         # laser: Laser360Interface::Laser urg
-        # laser-filter: Laser360Interface::Laser urg-filtered
+        laser-filter: Laser360Interface::Laser urg-filtered
         laser: Laser360Interface::Laser tim55x
         battery: BatteryInterface::Robotino
         motor: MotorInterface::Robotino
