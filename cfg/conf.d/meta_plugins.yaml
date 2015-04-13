@@ -17,12 +17,13 @@ fawkes/meta_plugins:
   # Robotino base meta plugin
   m-base-bare: imu,robotino,webview,static-transforms
   m-base-joy: m-base-bare,joystick,joystick-teleop
-  #m-base-colli: m-base-bare,m-laser-cluster,m-ros,colli,static-transforms,laser-lines
+  m-base-laser: laser,laser-filter
+  m-base: m-base-joy,m-base-laser
+  #m-base-colli: m-base-bare,m-laser,m-ros,colli,static-transforms,laser-lines
   m-base-colli: m-base-bare,m-laser,m-ros,colli,skiller
   m-base-nav: m-base-colli,amcl,navgraph
 
-  m-laser: laser,laser-filter
-  m-laser-cluster: m-laser,laser-pointclouds,laser-cluster,laser-lines
+  m-laser: laser-pointclouds,laser-cluster,laser-lines
 
   m-ros: ros,ros-pcl,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan
 
