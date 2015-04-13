@@ -3,7 +3,9 @@
 ---
 fawkes/meta_plugins:
   
+  #
   # Meta plugin with useful functionality for the robotino-laptop
+  #
   m-bare: bbsync,static-transforms,webview
   
   m-fv: fvbase,fvfountain
@@ -14,18 +16,8 @@ fawkes/meta_plugins:
 
   m-full: m-fv-vision,m-clips-agent
 
-  # Robotino base meta plugin
-  m-base-bare: imu,robotino,webview,static-transforms
-  m-base-joy: m-base-bare,joystick,joystick-teleop
-  m-base-laser: laser,laser-filter
-  m-base: m-base-joy,m-base-laser
-  #m-base-colli: m-base-bare,m-laser,m-ros,colli,static-transforms,laser-lines
-  m-base-colli: m-base-bare,m-laser,m-ros,colli,skiller
-  m-base-nav: m-base-colli,amcl,navgraph
-
-  m-laser: laser-pointclouds,laser-cluster,laser-lines
-
   m-ros: ros,ros-pcl,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan
+  m-laser: m-base,m-ros,laser-pointclouds,laser-cluster,laser-lines
 
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-ros: ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
@@ -35,3 +27,15 @@ fawkes/meta_plugins:
   gazsim-meta-robotino-default-low-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-meta-vision
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
   gazsim-meta-clips: m-clips,clips-agent,agent-monitor
+
+
+  #
+  # Robotino base meta plugin
+  #
+  m-base-bare: imu,robotino,webview,static-transforms
+  m-base-joy: m-base-bare,joystick,joystick-teleop
+  m-base-laser: laser,laser-filter
+  m-base: m-base-joy,m-base-laser
+  #m-base-colli: m-base-bare,m-laser,m-ros,colli,static-transforms,laser-lines
+  m-base-colli: m-base-bare,m-laser,m-ros,colli,skiller
+  m-base-nav: m-base-colli,amcl,navgraph
