@@ -9,23 +9,22 @@ fawkes/meta_plugins:
   m-fv: fvbase,fvfountain
   m-fv-vision: m-bare,m-fv,machine-signal,puck_vision,fvretriever
   
-  m-laser: m-bare,laser,map-lasergen,laser-filter
-  m-laser-cluster: m-laser,laser-pointclouds,laser-cluster,ros,ros-pcl
-  
   m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph
   m-clips-agent: m-clips,m-fv-vision,clips-agent,agent-monitor
 
-  m-nocam: m-bare,m-laser-cluster,ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,laser-lines,skiller
-
-  m-colli: m-nocam,colli
-  m-colli-log: m-colli,mongodb,mongodb-log
-  m-colli-vision: m-colli,m-fv-vision
-
-  m-full: m-colli-vision,m-clips-agent
-
+  m-full: m-fv-vision,m-clips-agent
 
   # Robotino base meta plugin
-  robotino-base: imu,robotino,webview
+  m-base-bare: imu,robotino,webview,static-transforms
+  m-base-joy: m-base-bare,joystick,joystick-teleop
+  #m-base-colli: m-base-bare,m-laser-cluster,m-ros,colli,static-transforms,laser-lines
+  m-base-colli: m-base-bare,m-laser,m-ros,colli,skiller
+  m-base-nav: m-base-colli,amcl,navgraph
+
+  m-laser: laser,laser-filter
+  m-laser-cluster: m-laser,laser-pointclouds,laser-cluster,laser-lines
+
+  m-ros: ros,ros-pcl,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan
 
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-ros: ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
