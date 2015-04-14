@@ -724,3 +724,37 @@
   (blackboard-set-msg-multifield ?msg-2 "tag_rotation" (create$ 0 0 0.7 0.7))
   (blackboard-send-msg ?msg-2)
 )
+
+(defrule exp-add-missing-tag-from-other-team
+  "If the exploration finished and found only the mps of our team and not the mirrowed mps of the other team, we just add it as if the mps would stand there perfectly mirrowed."
+  (phase PRODUCTION)
+  (found-tag (name ?mps) (frame "/map") (trans $?trans) (rot $?rot) (side ?side))
+  (machine (name ?mps) (team ?team&~nil))
+  ;check that
+  (not (found-tag (name ?mps-mirrow&:(and (neq ?mps ?mps-mirrow)
+					  (eq (sub-string 2 (str-length (str-cat ?mps)) (str-cat ?mps))
+					      (sub-string 2 (str-length (str-cat ?mps-mirrow)) (str-cat ?mps-mirrow)))))))
+  =>
+  (printout warn "Could not explore the machines of the other team, adding them as they would be perfectly mirrowed" crlf)
+  ; mirrowing the position is easy
+  (bind ?trans-mirrow (create$ (- 0 (nth$ 1 ?trans)) (nth$ 2 ?trans) 0))
+  ; mirrowing the orientation can be done easily in the euler-space
+  (bind ?yaw (tf-yaw-from-quat ?rot))
+  (bind ?yaw-mirrow (+ (- 0 (- ?yaw ?*PI-HALF*)) ?*PI-HALF*))
+  (if (> ?yaw-mirrow ?*PI*) then
+    (bind ?yaw-mirrow (- ?yaw-mirrow ?*2PI*)))
+  (if (< ?yaw-mirrow (- 0 ?*PI*)) then
+    (bind ?yaw-mirrow (+ ?yaw-mirrow ?*2PI*)))
+  (bind ?rot-mirrow (tf-quat-from-yaw ?yaw-mirrow))
+  ; get name of the mirrowed mps
+  (bind ?mps-mirrow (sym-cat (sub-string 2 (str-length ?mps) ?mps)))
+  (if (eq ?team CYAN) then
+    (bind ?mps-mirrow (sym-cat "M" ?mps-mirrow))
+    else
+    (bind ?mps-mirrow (sym-cat "C" ?mps-mirrow))
+  )
+
+  ;assert mirrowed tag
+  (assert (found-tag (name ?mps-mirrow) (side ?side) (frame "/map")
+		     (trans ?trans-mirrow) (rot ?rot-mirrow)))
+)

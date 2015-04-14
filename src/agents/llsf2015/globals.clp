@@ -46,6 +46,10 @@
 
   ;After the change of a decision based on a new worldmodel the remove msg might have arrived before the add message. Timeout to wait until there is a field to remove:
   ?*DELAYED-WORLDMODEL-CHANGE-TIMEOUT* = 10
+
+  ?*PI* = 3.141592653589
+  ?*2PI* = 6.2831853
+  ?*PI-HALF* = 1.5707963
 )
 
 (defrule globals-config-team-name
