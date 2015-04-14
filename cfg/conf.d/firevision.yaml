@@ -10,11 +10,11 @@ firevision:
 
   retriever:
     camera:
-      cam0:
+      tag:
         # Camera used for firevision plugin
-        string: v4l2:puck:device=/dev/puck_front
+        string: v4l2:tag:device=/dev/video_tag
         frame: !frame /base_link
-      cam1:
-        string: v4l2:front:device=/dev/light_front
+      signal:
+        string: v4l2:signal:device=/dev/video_signal
         frame: !frame /base_link
 

@@ -6,7 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/machine_signal
 
 plugins/machine_signal:
   #camera: file:file:file=/home/ich/robotino/sampleImages/color.raw
-  camera: v4l2:front:device=/dev/light_front:size=640x480:awb=0:contrast=33:saturation=30:gain=80:white_balance_temperature=4000:exposure_auto_priority=0:exposure_auto=1:exposure_absolute=500:sharpness=0
+  camera: v4l2:signal:device=/dev/video_signal:size=640x480:awb=0:contrast=33:saturation=30:gain=80:white_balance_temperature=4000:exposure_auto_priority=0:exposure_auto=1:exposure_absolute=500:sharpness=0
   
   #
   # Start running when the plugin is loaded.
