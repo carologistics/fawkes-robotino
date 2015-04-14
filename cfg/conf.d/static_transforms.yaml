@@ -40,6 +40,13 @@ plugins/static-transforms:
       trans_y: 0
       trans_z: 0.03
 
+    cam_signal:
+      frame: !frame /mount_profile
+      child_frame: /cam_signal
+      trans_x: 0.055
+      trans_y: 0.11
+      trans_z: 0.17
+
     #in the gripper where the puck should be holded
     gripper:
       frame: !frame /mount_profile
