@@ -209,6 +209,7 @@
 (deftemplate worldmodel-change
   (slot machine (type SYMBOL) (default NONE)); or puck-storage
   (slot order (type INTEGER) (default 0))
+  (slot puck-id (type INTEGER) (default 0))
   (slot change (type SYMBOL))
   (slot value (type SYMBOL) (default NOTHING))
   (slot amount (type INTEGER) (default 0))

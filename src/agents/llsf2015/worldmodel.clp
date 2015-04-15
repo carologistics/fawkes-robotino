@@ -20,8 +20,8 @@
 	   (or (neq ?machine:mtype ?m-type) (neq ?machine:team ?m-team)))
 
       (printout t "Machine " ?m-name " (" ?m-team ") is of type " ?m-type crlf)
-      (modify ?machine (mtype ?m-type) (team ?m-team)
-	      (output (sym-cat (pb-field-value ?m "output"))))
+      (printout warn "TODO: set available-colors for ring stations " ?m-type crlf)
+      (modify ?machine (mtype ?m-type) (team ?m-team))
     )
   )
   (assert (received-machine-info))
@@ -31,26 +31,27 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill ppgoto) (state final) (target ?mps))
+  (step (name get-from-shelf) (state running))
   (cap-station (name ?mps) (assigned-cap-color ?color))
   ?hf <- (holding NONE)
   =>
   (retract ?hf)
   (printout warn "TODO: use right skill in worldmodel for get-from-shelf" crlf)
-  (printout warn "TODO: use worldmodel change messages" crlf)
   (printout t "Got a Puck from an CS shelf with a " ?color " cap to fill the CS" crlf)
   (bind ?puck-id (random-id))
   (assert (holding ?puck-id)
+	  (worldmodel-change (puck-id ?puck-id) (change NEW_PUCK))
 	  (product (id ?puck-id) (cap ?color) (base-usable FALSE)))
 )
 
 (defrule wm-get-from-shelf-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
+  (step (name get-from-shelf) (state running))
   (skill-to-execute (skill ppgoto) (state failed) (target ?mps))
   (holding NONE)
   =>
   (printout warn "TODO: use right skill in worldmodel for get-from-shelf" crlf)
-  (printout warn "TODO: use worldmodel change messages" crlf)
   (printout warn "Could not get puck from shelf" crlf)
 )
 
@@ -58,6 +59,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill ppgoto) (state final) (target ?mps))
+  (step (name insert) (state running))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps))
   ?hf <- (holding ?puck-id)
@@ -69,24 +71,24 @@
   (printout t "Inserted a Puck from an CS shelf with a " ?cap " cap to fill the CS" crlf)
   (assert (holding NONE))
   ; there is no relevant waiting time until the cs has finished the loading step right?
-  (modify ?mf (produced-id ?puck-id))
-  (modify ?csf (cap-loaded ?cap))
-  (modify ?pf (cap NONE))
+  (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount ?puck-id))
+	  (worldmodel-change (machine ?mps) (change SET_CAP_LOADED) (value ?cap))
+	  (worldmodel-change (puck-id ?puck-id) (change SET_CAP) (value NONE))
+  )
 )
 
 (defrule wm-insert-cap-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (skill-to-execute (skill ppgoto) (state failed) (target ?mps))
+  (step (name insert) (state running))
   ?hf <- (holding ?puck-id)
   ?pf <- (product (id ?puck-id))
   =>
   (retract ?hf ?pf)
   (printout warn "TODO: use right skill in worldmodel for insert-cap" crlf)
-  (printout warn "TODO: use worldmodel change messages" crlf)
   (printout t "Inserted a Puck into the MPS " ?mps " failed" crlf)
   (printout error "TODO: check if we still have apuck or not" crlf)
-  (bind ?puck-id (random-id))
   (assert (holding NONE))
 )
 
@@ -94,28 +96,28 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill ppgoto) (state final) (target ?mps))
+  (step (name get-output) (state running))
   ?mf <- (machine (name ?mps) (produced-id ?puck-id))
   ?hf <- (holding NONE)
   =>
   (retract ?hf)
   (printout warn "TODO: use right skill in worldmodel for get-output" crlf)
-  (printout warn "TODO: use worldmodel change messages" crlf)
   (printout t "Fetched a Puck from the output of " ?mps crlf)
-  (assert (holding ?puck-id))
-  (modify ?mf (produced-id 0))
+  (assert (holding ?puck-id)
+	  (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
 )
 
 (defrule wm-get-output-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (skill-to-execute (skill ppgoto) (state failed) (target ?mps))
+  (step (name get-output) (state running))
   ?mf <- (machine (name ?mps) (produced-id ?puck-id))
   =>
   (printout warn "TODO: use right skill in worldmodel for get-output" crlf)
-  (printout warn "TODO: use worldmodel change messages" crlf)
   (printout t "Failed to fetch a Puck from the output of " ?mps crlf)
   (printout t "I assume there is no more output puck at " ?mps crlf)
-  (modify ?mf (produced-id 0))
+  (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
 )
 
 (defrule wm-store-lights
@@ -393,13 +395,14 @@
   ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent&~DEFAULT))
   ?m <- (machine (name ?machine) (loaded-id ?loaded-with) (incoming $?incoming) (incoming-agent $?incoming-agent) (produced-id ?produced))
   =>
+  (bind ?could-apply-change TRUE)
   (switch ?change
-    ; (case ADD_LOADED_WITH then 
-    ;   (modify ?m (loaded-with (append$ ?loaded-with ?value)))
-    ; )
-    ; (case REMOVE_LOADED_WITH then
-    ;   (modify ?m (loaded-with (delete-member$ ?loaded-with ?value)))
-    ; )
+    (case SET_LOADED then 
+      (modify ?m (loaded-id ?amount))
+    )
+    (case REMOVE_LOADED then 
+      (modify ?m (loaded-id 0))
+    )
     (case ADD_INCOMING then 
       (modify ?m (incoming (append$ ?incoming ?value))
 	         (incoming-agent (append$ ?incoming-agent ?agent)))
@@ -415,12 +418,88 @@
     (case SET_OUT_OF_ORDER_UNTIL then
       (modify ?m (out-of-order-until (create$ ?amount 0)))
     )
+    (case SET_PRODUCED then 
+      (modify ?m (produced-id ?amount))
+    )
     (case REMOVE_PRODUCED then 
       (modify ?m (produced-id 0))
     )
+    (default  
+      (bind ?could-apply-change FALSE)
+    )
   )
-  (modify ?wmc (already-applied TRUE))
+  (if ?could-apply-change then
+    (modify ?wmc (already-applied TRUE))
+  )
 )
+
+(defrule wm-process-wm-change-before-sending-product
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (puck-id ?puck-id) (change ?change) (value ?value) (already-applied FALSE))
+  ?p <- (product (id ?puck-id) (rings $?rings))
+  =>
+  (bind ?could-apply-change TRUE)
+  (switch ?change
+    (case ADD_RING then 
+      (modify ?p (rings (append$ ?rings ?value)))
+    )
+    (case SET_CAP then 
+      (modify ?p (cap ?value))
+    )
+    (case REMOVE_PUCK then 
+      (retract ?p)
+    )
+    (default  
+      (bind ?could-apply-change FALSE)
+    )
+  )
+  (if ?could-apply-change then
+    (modify ?wmc (already-applied TRUE))
+  )
+)
+
+(defrule wm-process-wm-change-before-sending-cap-station
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (machine ?mps) (change ?change) (value ?value) (already-applied FALSE))
+  ?cs <- (cap-station (name ?mps))
+  =>
+  (bind ?could-apply-change TRUE)
+  (switch ?change
+    (case SET_CAP_LOADED then 
+      (modify ?cs (cap-loaded ?value))
+    )
+    (default  
+      (bind ?could-apply-change FALSE)
+    )
+  )
+  (if ?could-apply-change then
+    (modify ?wmc (already-applied TRUE))
+  )
+)
+
+(defrule wm-process-wm-change-before-sending-ring-station
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (machine ?mps) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE))
+  ?rs <- (ring-station (name ?mps))
+  =>
+  (bind ?could-apply-change TRUE)
+  (switch ?change
+    (case SET_SELECTED_COLOR then 
+      (modify ?rs (selected-color ?value))
+    )
+    (case SET_BASES_NEEDED then 
+      (modify ?rs (bases-needed ?amount))
+    )
+    (default  
+      (bind ?could-apply-change FALSE)
+    )
+  )
+  (if ?could-apply-change then
+    (modify ?wmc (already-applied TRUE))
+  )
+)
+
+
 (defrule wm-process-wm-change-at-order-before-sending
   (declare (salience ?*PRIORITY-WM*))
   ?wmc <- (worldmodel-change (order ?id) (change SET_IN_DELIVERY)
@@ -435,13 +514,14 @@
   ?wmc <- (worldmodel-change (machine ?storage) (change ?change) (value ?value) (already-applied FALSE) (agent ?agent))
   ?ps <- (puck-storage (name ?storage) (incoming $?incoming) (incoming-agent $?incoming-agent))
   =>
+  (bind ?could-apply-change TRUE)
   (switch ?change
-    (case ADD_LOADED_WITH then 
-      (modify ?ps (puck ?value))
-    )
-    (case REMOVE_LOADED_WITH then
-      (modify ?ps (puck NONE))
-    )
+    ; (case ADD_LOADED_WITH then 
+    ;   (modify ?ps (puck ?value))
+    ; )
+    ; (case REMOVE_LOADED_WITH then
+    ;   (modify ?ps (puck NONE))
+    ; )
     (case ADD_INCOMING then 
       (modify ?ps (incoming (append$ ?incoming ?value))
 	          (incoming-agent (append$ ?incoming-agent ?agent)))
@@ -451,8 +531,13 @@
 	         ;every agent should do only one thing at a machine
 	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
     )
+    (default  
+      (bind ?could-apply-change FALSE)
+    )
   )
-  (modify ?wmc (already-applied TRUE))
+  (if ?could-apply-change then
+    (modify ?wmc (already-applied TRUE))
+  )
 )
 
 (defrule wm-update-pose

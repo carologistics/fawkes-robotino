@@ -108,3 +108,15 @@
     (printout t "There are no tags to add" crlf)
   )
 )
+
+(deffunction utils-remove-prefix (?string ?prefix)
+  "Removes a prefix from a string or symbol by its length"
+  (bind ?res (sub-string (+ 1 (str-length (str-cat ?prefix))) 
+			 (str-length (str-cat ?string))
+			 (str-cat ?string)))
+  (if (eq (type ?string) SYMBOL) then
+    (return (sym-cat ?res))
+    else
+    (return ?res)
+  )
+)

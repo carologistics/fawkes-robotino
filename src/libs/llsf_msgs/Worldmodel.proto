@@ -9,19 +9,58 @@ package llsf_msgs;
 
 import "PuckInfo.proto";
 
+enum Side {
+  INPUT = 0;
+  OUTPUT = 1;
+}
+
+enum CapColor {
+  NONE = 0;
+  BLACK = 1;
+  GREY = 2;
+}
+
+enum RingColor {
+  //need the ring prefix to avoid conflict with LightColor
+  RING_NONE = 0;
+  RING_BLUE = 1;
+  RING_GREEN = 2;
+  RING_YELLOW = 3;
+  RING_ORANGE = 4;
+}
+
 message MachineState {
   enum CompType {
     COMP_ID  = 2000;
     MSG_TYPE = 1339;
   }
 
-  optional string    name     = 1;
+  optional string name     = 1;
   required uint32 loaded_id  = 2;
   repeated string incoming  = 3;
   repeated string incoming_agent  = 4;
   required uint32 prod_finished_time = 5;
   required uint32 produced_id  = 6;
   required uint32 out_of_order_until = 7;
+
+  //optional fields for cap-stations
+  optional CapColor cap_loaded = 8;
+
+  //optional fields for ring-stations
+  optional RingColor ring_color_selected = 9;
+  optional uint32 ring_bases_needed = 10;
+}
+
+message ProductState {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 1351;
+  }
+
+  required uint32 id  = 1;
+  //mounted rings from bottom to top
+  repeated RingColor rings  = 2;
+  required CapColor cap  = 3;
 }
 
 message PuckStorageState {
@@ -34,11 +73,6 @@ message PuckStorageState {
   optional PuckState puck  = 2;
   repeated string incoming  = 3;
   repeated string incoming_agent  = 4;
-}
-
-enum Side {
-  INPUT = 0;
-  OUTPUT = 1;
 }
 
 message TagPosition {
@@ -90,6 +124,7 @@ message Worldmodel {
   repeated WorldmodelOrder orders = 2;
   repeated PuckStorageState storage = 3;
   repeated Zone zones = 4;
+  repeated ProductState products = 5;
 }
 
 message TagPositions {
@@ -121,7 +156,7 @@ message WorldmodelChange {
   // depending on the type of the value
   optional string value_string = 5;
   optional uint32 value_uint32 = 6;
-  optional PuckState value_puckstate = 7;
+  optional ProductState value_puckstate = 7;
   optional TagPosition tag_position = 8;
 }
 

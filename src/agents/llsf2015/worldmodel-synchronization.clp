@@ -37,6 +37,21 @@
     ;set produced
     (pb-set-field ?m-msg "produced_id" ?machine:produced-id)
 
+    ;add additional fields for cap-stations:
+    (if (eq ?machine:mtype CS) then
+      (do-for-fact ((?cs cap-station)) (eq ?cs:name ?machine:name)
+	(pb-set-field ?m-msg "cap_loaded" ?cs:cap-loaded)
+      )
+    )
+
+    ;add additional fields for ring-stations:
+    (if (eq ?machine:mtype RS) then
+      (do-for-fact ((?rs ring-station)) (eq ?rs:name ?machine:name)
+	(pb-set-field ?m-msg "ring_color_selected" (sym-cat RING_ ?rs:selected-color))
+	(pb-set-field ?m-msg "ring_bases_needed" ?rs:bases-needed)
+      )
+    )
+    
     ;add sub-msg to worldmodel msg
     (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
   )
@@ -84,6 +99,19 @@
     (pb-add-list ?worldmodel "zones" ?zone-msg)
   )
 
+  ;add worldmodel about all (intermediate-) products
+  (delayed-do-for-all-facts ((?prod product)) TRUE
+    ;construct submsg for each product
+    (bind ?prod-msg (pb-create "llsf_msgs.ProductState"))
+    (pb-set-field ?prod-msg "id" ?prod:id)
+    (pb-set-field ?prod-msg "cap" ?prod:cap)
+    (progn$ (?ring ?prod:rings)
+      (pb-add-list ?prod-msg "rings" (sym-cat RING_ ?ring))
+    )
+
+    (pb-add-list ?worldmodel "products" ?prod-msg)
+  )
+
   (pb-broadcast ?peer ?worldmodel)
   (pb-destroy ?worldmodel)
 
@@ -98,6 +126,8 @@
   =>
   ; (printout t "***** Received Worldmodel *****" crlf)
   (unwatch facts machine)
+  (unwatch facts cap-station)
+  (unwatch facts ring-station)
   (unwatch facts order)
   (unwatch facts puck-storage)
   (unwatch facts zone-exploration)
@@ -123,13 +153,28 @@
       ;update out-of-order-until
       (bind ?out-of-order-until (pb-field-value ?m-msg "out_of_order_until"))
       ;update produced-id
-      (bind ?produced-id (sym-cat (pb-field-value ?m-msg "produced_id")))
+      (bind ?produced-id (pb-field-value ?m-msg "produced_id"))
       
       (modify ?machine (incoming ?incoming) (loaded-id ?loaded-id)
 	               (final-prod-time (create$ ?prod-finished-time 0))
 		       (produced-id ?produced-id)
 		       (incoming-agent ?incoming-agent)
 		       (out-of-order-until (create$ ?out-of-order-until 0))
+      )
+
+      ; update additional fields of cap-stations
+      (if (eq ?machine:mtype CS) then
+	(do-for-fact ((?cs cap-station))  (eq ?machine:name ?cs:name)
+	  (modify ?cs (cap-loaded (pb-field-value ?m-msg "cap_loaded")))
+	)
+      )
+
+      ; update additional fields of ring-stations
+      (if (eq ?machine:mtype RS) then
+	(do-for-fact ((?rs ring-station))  (eq ?machine:name ?rs:name)
+	  (modify ?rs (selected-color (sym-cat (utils-remove-prefix (pb-field-value ?m-msg "ring_color_selected") RING_)))
+		  (bases-needed (pb-field-value ?m-msg "ring_bases_needed")))
+	)
       )
     )
   )
@@ -177,8 +222,30 @@
 	      (still-to-explore (pb-field-value ?zone-msg "still_to_explore")))
     )
   )
+
+  ;update worldmodel about (intermediate-)products
+  (foreach ?prod-msg (pb-field-list ?p "products")
+    (bind ?product-exists FALSE)
+    (bind ?prod-id (pb-field-value ?prod-msg "id"))
+    (bind ?prod-cap (pb-field-value ?prod-msg "cap"))
+    (bind ?prod-rings (create$ ))
+    (progn$ (?ring (pb-field-list ?prod-msg "rings"))
+      (bind ?prod-rings (append$ ?prod-rings (utils-remove-prefix ?ring RING_)))
+    )
+    ;modify if product already exists
+    (do-for-fact ((?prod product)) (eq ?prod:id ?prod-id)
+      (bind ?product-exists TRUE)
+      (modify ?prod (rings ?prod-rings) (cap ?prod-cap))
+    )
+    ;assert if it is new
+    (if (not ?product-exists) then
+      (assert (product (id ?prod-id) (rings ?prod-rings) (cap ?prod-cap)))
+    )
+  )
   (retract ?msg)
   (watch facts machine)
+  (watch facts cap-station)
+  (watch facts ring-station)
   (watch facts order)
   (watch facts puck-storage)
   (watch facts zone-exploration)
@@ -247,6 +314,7 @@
 (defrule worldmodel-sync-send-change
   (time $?now)
   ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value)
+			     (puck-id ?puck-id)
 			     (amount ?amount) (id ?id) (order ?order) (agent ?agent)
 			     (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)))
   (not (lock-role MASTER))
@@ -264,18 +332,21 @@
   (if (neq ?order 0) then 
     (pb-set-field ?change-msg "place" (str-cat "Order-" ?order))
   )
+  (if (neq ?puck-id 0) then 
+    (pb-set-field ?change-msg "place" (str-cat ?puck-id))
+  )
   (pb-set-field ?change-msg "change" (str-cat ?change))
   (pb-set-field ?change-msg "agent" (str-cat ?agent))
   (pb-set-field ?change-msg "id" ?id)
-  (if (member$ ?change (create$ ADD_LOADED_WITH REMOVE_LOADED_WITH)) then
-    (pb-set-field ?change-msg "value_puckstate" ?value)
-  )
   (if (member$ ?change (create$ ADD_INCOMING REMOVE_INCOMING ZONE_STILL_TO_EXPLORE
-				ZONE_MACHINE_IDENTIFIED)) then
+				ZONE_MACHINE_IDENTIFIED ADD_RING SET_CAP
+				SET_CAP_LOADED SET_SELECTED_COLOR)) then
     (pb-set-field ?change-msg "value_string" (str-cat ?value))
   )
   (if (member$ ?change (create$ SET_NUM_CO SET_PROD_FINISHED_TIME
-				SET_OUT_OF_ORDER_UNTIL SET_IN_DELIVERY)) then
+				SET_OUT_OF_ORDER_UNTIL SET_IN_DELIVERY
+				SET_LOADED SET_PRODUCED REMOVE_PRODUCED
+				REMOVE_LOADED REMOVE_PUCK SET_BASES_NEEDED)) then
     (pb-set-field ?change-msg "value_uint32" ?amount)
   )
   (if (eq ?change ADD_TAG)
@@ -298,6 +369,20 @@
 		", (" ?tag:trans "), " ?tag:rot ")" crlf)
 
       (pb-set-field ?change-msg "tag_position" ?tag-msg)
+    )
+  )
+  (if (eq ?change NEW_PUCK)
+    then
+    ; Find corresponding product-fact
+    (do-for-fact ((?prod product)) (eq ?prod:id ?puck-id)
+      (bind ?prod-msg (pb-create "llsf_msgs.ProductState"))
+      (pb-set-field ?prod-msg "id" ?prod:id)
+      (pb-set-field ?prod-msg "cap" ?prod:cap)
+      (progn$ (?ring ?prod:rings)
+        (pb-add-list ?prod-msg "rings" (sym-cat RING_ ?ring))
+      )
+
+      (pb-set-field ?change-msg "value_puckstate" ?prod-msg)
     )
   )
   (pb-broadcast ?peer ?change-msg)
@@ -336,11 +421,11 @@
           (eq ?machine:name (sym-cat (pb-field-value ?p "place")))
 
         (switch (sym-cat (pb-field-value ?p "change"))
-          (case ADD_LOADED_WITH then 
-	    (modify ?machine (loaded-with (append$ ?machine:loaded-with (pb-field-value ?p "value_puckstate"))))
+          (case SET_LOADED then 
+	    (modify ?machine (loaded-id (pb-field-value ?p "value_uint32")))
           )
-          (case REMOVE_LOADED_WITH then
-            (modify ?machine (loaded-with (delete-member$ ?machine:loaded-with (pb-field-value ?p "value_puckstate"))))
+          (case REMOVE_LOADED then
+	    (modify ?machine (loaded-id 0))
           )
           (case ADD_INCOMING then 
             (modify ?machine (incoming (append$ ?machine:incoming
@@ -370,8 +455,11 @@
 	  (case SET_OUT_OF_ORDER_UNTIL then
 	    (modify ?machine (out-of-order-until (create$ (pb-field-value ?p "value_uint32") 0)))
 	  )
-          (case REMOVE_PRODUCED then 
-            (modify ?machine (produced-puck NONE))
+          (case SET_PRODUCED then 
+	    (modify ?machine (produced-id (pb-field-value ?p "value_uint32")))
+          )
+          (case REMOVE_PRODUCED then
+	    (modify ?machine (produced-id 0))
           )
           (case ADD_TAG then
 	    ; create tag fact if not already known
@@ -395,6 +483,23 @@
 	    ; set machine stuff
 	    ; set explration stuff
           )
+	  ;for cap-stations:
+	  (case SET_CAP_LOADED then
+	    (do-for-fact ((?cs cap-station)) (eq ?cs:name ?machine:name)
+	      (modify ?cs (cap-loaded (sym-cat (pb-field-value ?p "value_string"))))
+	    )
+	  )
+	  ;for ring-stations:
+	  (case SET_SELECTED_COLOR then
+	    (do-for-fact ((?rs ring-station)) (eq ?rs:name ?machine:name)
+	      (modify ?rs (selected-color (sym-cat (pb-field-value ?p "value_string"))))
+	    )
+	  )
+	  (case SET_BASES_NEEDED then
+	    (do-for-fact ((?rs ring-station)) (eq ?rs:name ?machine:name)
+	      (modify ?rs (bases-needed (pb-field-value ?p "value_uint32")))
+	    )
+	  )
 	  (default
 	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
 		      " is not handled. Worlmodel is probably wrong." crlf)
@@ -454,6 +559,40 @@
 	  (default
 	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
 		      " is not handled. Worlmodel is probably wrong." crlf)
+	  )
+        )
+      )
+      ;change product if change is about a product
+      (if (eq (sym-cat (pb-field-value ?p "change")) NEW_PUCK) then
+	(bind ?prod-msg (pb-field-value ?p "value_puckstate"))
+	(bind ?prod-id (pb-field-value ?prod-msg "id"))
+	(bind ?prod-cap (pb-field-value ?prod-msg "cap"))
+	(bind ?prod-rings (create$ ))
+	(progn$ (?ring (pb-field-list ?prod-msg "rings"))
+	  (bind ?prod-rings (append$ ?prod-rings 
+				     (utils-remove-prefix ?ring RING_)))
+	)
+	(assert (product (id ?prod-id) (cap ?prod-cap) (rings ?prod-rings)))
+	
+	else
+	;modify existing puck fact if there is one
+	(do-for-fact ((?prod product)) (eq ?prod:id (eval (pb-field-value ?p "place")))
+          (switch (sym-cat (pb-field-value ?p "change"))
+	    (case SET_CAP then 
+	      (modify ?prod (cap (sym-cat (pb-field-value ?p "value_string"))))
+	    )
+	    (case REMOVE_PUCK then 
+	      (retract ?prod)
+	    )
+	    (case ADD_RING then 
+	      (modify ?prod (rings (append$ ?prod:rings 
+					    (sym-cat (pb-field-value ?p "value_string")))))
+	    )
+	    (default
+	      (printout error "Worldmodel-Change Type "
+			(sym-cat (pb-field-value ?p "change"))
+			" is not handled. Worlmodel is probably wrong." crlf)
+	    )
 	  )
         )
       )
