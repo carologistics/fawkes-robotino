@@ -63,6 +63,8 @@ skillenv.use_skill("skills.robotino.get_stored_puck")
 skillenv.use_skill("skills.robotino.align_mps")
 skillenv.use_skill("skills.robotino.shelf_pick")
 skillenv.use_skill("skills.robotino.shelf_put")
+skillenv.use_skill("skills.robotino.product_pick")
+skillenv.use_skill("skills.robotino.product_put")
 
 -- Uncomment to use gripper for technical challenge
 --skillenv.use_skill("skills.robotino.gripper")
