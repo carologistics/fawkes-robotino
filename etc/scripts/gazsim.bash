@@ -15,6 +15,7 @@ OPTIONS:
                   in cfg/gazsim-configurations/
    -n arg         Specify number Robotinos
    -m arg         load fawkes with the specified (meta-)plugin
+   -a             Run with default CLIPS-agent (don't mix with -m)
    -l             Run Gazebo headless
    -k             Keep started shells open after finish
    -s             Keep statistics and shutdown after game
@@ -89,6 +90,9 @@ do
 	     ;;
 	 m)
 	     META_PLUGIN="-m $OPTARG"
+	     ;;
+	 a)
+	     META_PLUGIN="-m gazsim-meta-agent"
 	     ;;
 	 o)
 	     START_GAZEBO=false

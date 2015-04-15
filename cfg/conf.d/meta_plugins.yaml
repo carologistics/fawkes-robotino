@@ -26,7 +26,8 @@ fawkes/meta_plugins:
   gazsim-meta-robotino-default-high-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-puck-detection,gazsim-light-front
   gazsim-meta-robotino-default-low-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-meta-vision
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
-  gazsim-meta-clips: m-clips,clips-agent,agent-monitor
+  gazsim-meta-clips: m-clips,clips-agent
+  gazsim-meta-agent: gazsim-meta-vision,gazsim-meta-clips
 
 
   #
@@ -39,3 +40,5 @@ fawkes/meta_plugins:
   #m-base-colli: m-base-bare,m-laser,m-ros,colli,static-transforms,laser-lines
   m-base-colli: m-base-bare,m-laser,m-ros,colli,skiller
   m-base-nav: m-base-colli,amcl,navgraph
+ 
+  tech-challenge: robotino-bare,fvbase,tag_vision,skiller,fvfountain
