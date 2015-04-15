@@ -31,7 +31,7 @@ documentation      = [==[Drives into field after given offset
 
 Parameters:
    wait: time to wait before start to drive into field
-   team: cyan or magenta
+   team: CYAN or MAGENTA
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -51,7 +51,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   if self.fsm.vars.team == "cyan" then
+   if self.fsm.vars.team == "CYAN" then
       self.fsm.vars.waypoints = {"C-ins-out", "C-ins-in"}
    else
       self.fsm.vars.waypoints = {"M-ins-out", "M-ins-in"}
