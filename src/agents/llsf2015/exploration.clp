@@ -529,14 +529,11 @@
   (not (have-exp-info))
   =>
   (retract ?pbm)
-  (foreach ?m (pb-field-list ?p "machines")
-    (bind ?name (sym-cat (pb-field-value ?m "name")))
-    ; TODO remove M12 -> Z12 for new refbox version
-    (bind ?zone-name (sym-cat (str-cat "Z" (sub-string 2 (str-length (str-cat ?name)) (str-cat ?name)))))
-    (printout t "Machine " ?name " converted to zone " ?zone-name crlf)    
+  (foreach ?m (pb-field-list ?p "zones")
+    (bind ?name (sym-cat (pb-field-value ?m "zone")))
     (bind ?team (sym-cat (pb-field-value ?m "team_color")))
-    (do-for-fact ((?me zone-exploration)) (eq ?me:name ?zone-name)
-      (printout t "Zone " ?zone-name " is from team " ?team crlf)
+    (do-for-fact ((?me zone-exploration)) (eq ?me:name ?name)
+      (printout t "Zone " ?name " is from team " ?team crlf)
       (modify ?me (team ?team))
     )
   )
