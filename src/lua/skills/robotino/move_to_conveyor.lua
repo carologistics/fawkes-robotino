@@ -25,10 +25,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "move_to_conveyor"
 fsm                = SkillHSM:new{name=name, start="SKILL_ALIGN_TAG", debug=true}
-depends_skills     = {"motor_move", "align_tag", "ax12gripper"}
-depends_interfaces = {
- {v = "line1", type="LaserLineInterface", id="/laser-lines/1"}
-}
+depends_skills     = {"motor_move", "ax12gripper", "align_mps"}
+depends_interfaces = { }
 
 documentation      = [==[Align the robot and then moves to the conveyor
 @param pick_puck True if you want to pick a puck from the conveyor
@@ -41,20 +39,12 @@ skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
 
-local TAG_OFFSET_Y = 0.01 --TODO if the tags are misaligned you there should be an parametric offset or another solution
+local TAG_OFFSET_Y = 0.01 --TODO if the tags are misaligned you there should be a config offset or another solution
 local ALIGN_DISTANCE = 0.4
 
-function see_line()
-   printf("vis_hist: %f", line1:visibility_history())
-   return line1:visibility_history() > 5
-end
-
-fsm:define_states{ export_to=_M, closure={see_line = see_line},
-   {"SKILL_ALIGN_TAG", SkillJumpState, skills={{align_tag}},
-      final_to="SEE_LINE", fail_to="FAILED"},
-   {"SEE_LINE", JumpState},
-   {"ALIGN_WITH_LASERLINES", SkillJumpState, skills={{motor_move}},
-      final_to="DECIDE_OPEN", fail_to="FAILED"},
+fsm:define_states{ export_to=_M,
+   {"SKILL_ALIGN_MPS", SkillJumpState, skills={{align_mps}},
+      final_to="DECIDE_OPEN", fail_to="DECIDE_OPEN"},
    {"DECIDE_OPEN", JumpState},
    --TODO align by laserlines and (if implemented) the conveyor detection
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
@@ -70,27 +60,12 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line},
 fsm:add_transitions{
    {"DECIDE_OPEN", "DRIVE_FORWARD", cond="fsm.vars.put_puck", desc="Has a puck in front"},
    {"DECIDE_OPEN", "OPEN_GRIPPER", cond="fsm.vars.pick_puck", desc="Open gripper before driving"},
-   {"SEE_LINE", "ALIGN_WITH_LASERLINES", cond=see_line, desc="Seeing a line"},
-   {"SEE_LINE", "DECIDE_OPEN", timeout=1, desc="Not seeing a line, continue just aligned by tag"}
 }
 
-function SKILL_ALIGN_TAG:init()
-   -- align by ALIGN_DISTANCE from tag to base_link with align_tag
-   local tag_transformed = tfm.transform({x=ALIGN_DISTANCE, y=0, ori=0}, "/base_link", "/cam_tag")
-   self.skills[1].x = tag_transformed.x
-   self.skills[1].y = tag_transformed.y + TAG_OFFSET_Y
+function SKILL_ALIGN_MPS:init()
+   self.skills[1].x = ALIGN_DISTANCE
+   self.skills[1].y = TAG_OFFSET_Y
    self.skills[1].ori = 0
-end
-
-function ALIGN_WITH_LASERLINES:init()
-   -- align by ALIGN_DISTANCE from tag to base_link with the lase_line
-   local line_transformed = tfm.transform({x=line1:point_on_line(0), y=0, ori=line1:bearing()}, line1:frame_id(), "/base_link")
-   printf("line transformed x: %f", line_transformed.x)
-   printf("line transformed ori: %f", line_transformed.ori)
-   self.skills[1].x = line_transformed.x - ALIGN_DISTANCE
-   self.skills[1].y = 0
-   self.skills[1].ori = line_transformed.ori
-   self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
 end
 
 function DRIVE_FORWARD:init()
