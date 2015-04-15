@@ -157,3 +157,24 @@
   ; retract the confvals so the rule does not fire again after modifying the cap-station facts
   (retract ?c0 ?c1 ?c2 ?c3)
 )
+
+(defrule conf-get-move-into-field-waittime
+  ?cr1 <- (confval (path "/clips-agent/llsf2015/move-into-field-waittime/R-1") (type UINT) (value ?wait-r-1))
+  ?cr2 <- (confval (path "/clips-agent/llsf2015/move-into-field-waittime/R-2") (type UINT) (value ?wait-r-2))
+  ?cr3 <- (confval (path "/clips-agent/llsf2015/move-into-field-waittime/R-3") (type UINT) (value ?wait-r-3))
+  =>
+  (if (eq ?*ROBOT-NAME* "R-1")
+    then
+    (assert (move-into-field-waittime ?wait-r-1))
+  )
+  (if (eq ?*ROBOT-NAME* "R-2")
+    then
+    (assert (move-into-field-waittime ?wait-r-2))
+  )
+  (if (eq ?*ROBOT-NAME* "R-3")
+    then
+    (assert (move-into-field-waittime ?wait-r-3))
+  )
+  (retract ?cr1 ?cr2 ?cr3)
+)
+

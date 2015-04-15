@@ -55,16 +55,30 @@
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state ?)
   (started-in ?phase)
+  (team-color ?team-color)
+  (move-into-field-waittime ?wait-cfg)
   (time $?now)
   =>
   (retract ?sf ?cf ?rf)
-  (assert (state RESTART))
+  (assert (state MOVE_INTO_FIELD))
   (if (eq ?phase SETUP)
     then
+    (bind ?wait ?wait-cfg)
     (assert (lock-announce-restart-finished))
     else
+    (bind ?wait 0)
     (assert (lock-announce-restart))
   )
+  (skill-call drive_into_field team ?team-color wait ?wait)
+)
+
+(defrule move-into-field-done
+  "If the bot finished to move into the field, start the game."
+  ?sf     <- (state MOVE_INTO_FIELD)
+  ?final  <- (skill (name "drive_into_field") (status FINAL|FAILED))
+  =>
+  (retract ?sf ?final)
+  (assert (state RESTART))
 )
 
 (defrule start-playing
