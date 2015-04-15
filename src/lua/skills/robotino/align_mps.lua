@@ -26,8 +26,8 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "align_mps"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "align_tag" }
+fsm                = SkillHSM:new{name=name, start="SKILL_ALIGN_TAG", debug=true}
+depends_skills     = { "align_tag", "motor_move" }
 depends_interfaces = {
 {v = "line1", type="LaserLineInterface", id="/laser-lines/1"}
 }
@@ -48,6 +48,8 @@ documentation      = [==[ align_mps
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+
+local tfm = require("tf_module")
 
 function see_line()
    printf("vis_hist: %f", line1:visibility_history())
@@ -71,7 +73,7 @@ function SKILL_ALIGN_TAG:init()
    -- align by ALIGN_DISTANCE from tag to base_link with align_tag
    local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
    self.skills[1].x = tag_transformed.x
-   self.skills[1].y = tag_transformed.y
+   self.skills[1].y = -tag_transformed.y
    self.skills[1].ori = tag_transformed.ori
 end
 
@@ -82,6 +84,6 @@ function ALIGN_WITH_LASERLINES:init()
    printf("line transformed ori: %f", line_transformed.ori)
    self.skills[1].x = line_transformed.x - self.fsm.vars.x
    self.skills[1].y = 0 -- can't improve y coordinate with laserlines so leave it
-   self.skills[1].ori = line_transformed.ori - self.fsm.vars.ori
+   self.skills[1].ori = line_transformed.ori + self.fsm.vars.ori
    self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
 end
