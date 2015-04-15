@@ -125,7 +125,6 @@ GripperAX12AThread::init()
   __gripper_if->set_max_right_velocity(0);//__ax12a->get_max_supported_speed(__cfg_right_servo_id));
   __gripper_if->set_left_velocity(init_left_velocity);
   __gripper_if->set_right_velocity(init_right_velocity);
-  __gripper_if->set_holds_puck(holds_puck());
   __gripper_if->write();
 
   __led_if = blackboard->open_for_writing<LedInterface>(bbid.c_str());
@@ -284,7 +283,8 @@ GripperAX12AThread::loop()
 
       __gripper_if->msgq_pop();
     }
-    __gripper_if->write();   
+    __gripper_if->set_angle(get_opening_angle());
+    __gripper_if->write();
   }
   cfg_mutex_.unlock();
 
