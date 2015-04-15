@@ -953,107 +953,107 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
       ok = false;
       int vspace = it_G->start.y - (it_R->start.y + it_R->height);
       try {
-      if (it_G->height > cfg_roi_max_height_ && roi1_x_overlaps_below(*it_G, *it_R)) {
-        ROI *recheck_G = new ROI(*it_G);
-        recheck_G->height = cfg_roi_max_height_;
-        cfy_ctxt_green_.scanline_grid->set_roi(recheck_G);
-        list<ROI> *rechecked_G = cfy_ctxt_green_.classifier->classify();
-        if (!rechecked_G->empty()) {
-          ROI &new_G = rechecked_G->front();
-          if (roi_width_ok(new_G) && rois_x_aligned(*it_R, new_G) && !roi1_oversize(new_G, *it_R)
-              && rois_vspace_ok(*it_R, new_G) && rois_similar_width(*it_R, new_G)) {
-            *it_G = new_G;
+        if (it_G->height > cfg_roi_max_height_ && roi1_x_overlaps_below(*it_G, *it_R)) {
+          ROI *recheck_G = new ROI(*it_G);
+          recheck_G->height = cfg_roi_max_height_;
+          cfy_ctxt_green_.scanline_grid->set_roi(recheck_G);
+          list<ROI> *rechecked_G = cfy_ctxt_green_.classifier->classify();
+          if (!rechecked_G->empty()) {
+            ROI &new_G = rechecked_G->front();
+            if (roi_width_ok(new_G) && rois_x_aligned(*it_R, new_G) && !roi1_oversize(new_G, *it_R)
+                && rois_vspace_ok(*it_R, new_G) && rois_similar_width(*it_R, new_G)) {
+              *it_G = new_G;
+            }
           }
+          cfy_ctxt_green_.scanline_grid->set_roi(recheck_G->full_image(cam_width_, cam_height_));
+          delete recheck_G;
+          delete rechecked_G;
         }
-        cfy_ctxt_green_.scanline_grid->set_roi(recheck_G->full_image(cam_width_, cam_height_));
-        delete recheck_G;
-        delete rechecked_G;
-      }
 
-      if (it_R->width > cfg_roi_max_width_ && it_R->height > cfg_roi_max_height_
-          && it_G->start.y > it_R->start.y && roi1_x_intersects(*it_G, *it_R)) {
-        ROI *recheck_R = new ROI(*it_R);
-        recheck_R->start.y += it_R->height - cfg_roi_max_height_;
-        recheck_R->height  -= it_R->height - cfg_roi_max_height_;
-        cfy_ctxt_red_.scanline_grid->set_roi(recheck_R);
-        list<ROI> *rechecked_R = cfy_ctxt_red_.classifier->classify();
-        if (!rechecked_R->empty()) {
-          ROI &new_R = rechecked_R->front();
-          if (roi_width_ok(new_R) && rois_x_aligned(new_R, *it_G) && !roi1_oversize(new_R, *it_G)
-              && rois_vspace_ok(new_R, *it_G) && rois_similar_width(new_R, *it_G)) {
-            *it_R = new_R;
+        if (it_R->width > cfg_roi_max_width_ && it_R->height > cfg_roi_max_height_
+            && it_G->start.y > it_R->start.y && roi1_x_intersects(*it_G, *it_R)) {
+          ROI *recheck_R = new ROI(*it_R);
+          recheck_R->start.y += it_R->height - cfg_roi_max_height_;
+          recheck_R->height  -= it_R->height - cfg_roi_max_height_;
+          cfy_ctxt_red_.scanline_grid->set_roi(recheck_R);
+          list<ROI> *rechecked_R = cfy_ctxt_red_.classifier->classify();
+          if (!rechecked_R->empty()) {
+            ROI &new_R = rechecked_R->front();
+            if (roi_width_ok(new_R) && rois_x_aligned(new_R, *it_G) && !roi1_oversize(new_R, *it_G)
+                && rois_vspace_ok(new_R, *it_G) && rois_similar_width(new_R, *it_G)) {
+              *it_R = new_R;
+            }
           }
-        }
-        cfy_ctxt_red_.scanline_grid->set_roi(recheck_R->full_image(cam_width_, cam_height_));
-        delete recheck_R;
-        delete rechecked_R;
-      }
-
-      if (roi_width_ok(*it_G) && rois_x_aligned(*it_R, *it_G) &&
-          it_G->start.y > cfg_roi_green_horizon) {
-
-        if (cfg_debug_processing_) debug_proc_string_ += "g:W rg:A";
-
-        shared_ptr<ROI> roi_R = shared_ptr<ROI>(new ROI(*it_R));
-        auto roi_G = shared_ptr<ROI>(new ROI(*it_G));
-
-        if (roi1_oversize(*roi_R, *roi_G)
-            && vspace > 0 && vspace < roi_G->height * 1.5) {
-          roi_R->start.x = roi_G->start.x;
-          roi_R->width = roi_G->width;
-          if (roi_R->width > cam_width_) roi_R->width = cam_width_ - roi_R->start.x;
-          int r_end = roi_G->start.y - roi_G->height;
-          roi_R->height = r_end - roi_R->start.y;
-          if (roi_R->start.y + roi_R->height > cam_height_) roi_R->height = cam_height_ - roi_R->start.y;
-
-          if (cfg_debug_processing_) debug_proc_string_ += " r:O";
+          cfy_ctxt_red_.scanline_grid->set_roi(recheck_R->full_image(cam_width_, cam_height_));
+          delete recheck_R;
+          delete rechecked_R;
         }
 
-        if (roi1_oversize(*roi_G, *it_R)
-            && vspace > 0 && vspace < it_R->height * 1.5) {
-          roi_G->start.x = it_R->start.x;
-          roi_G->width = it_R->width;
-          if (roi_G->width > cam_width_) roi_G->width = cam_width_ - roi_G->start.x;
-          roi_G->height = it_R->height;
-          if (roi_G->start.y + roi_G->height > cam_height_) roi_G->height = cam_height_ - roi_G->start.y;
+        if (roi_width_ok(*it_G) && rois_x_aligned(*it_R, *it_G) &&
+            it_G->start.y > cfg_roi_green_horizon) {
 
-          if (cfg_debug_processing_) debug_proc_string_ += " g:O";
-        }
+          if (cfg_debug_processing_) debug_proc_string_ += "g:W rg:A";
 
-        if (rois_vspace_ok(*roi_R, *roi_G)) {
-          if (cfg_debug_processing_) debug_proc_string_ += " V";
+          shared_ptr<ROI> roi_R = shared_ptr<ROI>(new ROI(*it_R));
+          auto roi_G = shared_ptr<ROI>(new ROI(*it_G));
 
-          if (!rois_similar_width(*roi_R, *roi_G)) {
-            int wdiff = roi_G->width - it_R->width;
-            int start_x = roi_G->start.x + wdiff/2;
-            if (start_x < 0) start_x = 0;
-            it_G->start.x = start_x;
-            int width = roi_G->width - wdiff/2;
-            if ((unsigned int)(start_x + width) > cam_width_) width = cam_width_ - start_x;
-            roi_G->width = width;
-            if (cfg_debug_processing_) debug_proc_string_ += " !W";
+          if (roi1_oversize(*roi_R, *roi_G)
+              && vspace > 0 && vspace < roi_G->height * 1.5) {
+            roi_R->start.x = roi_G->start.x;
+            roi_R->width = roi_G->width;
+            if (roi_R->width > cam_width_) roi_R->width = cam_width_ - roi_R->start.x;
+            int r_end = roi_G->start.y - roi_G->height;
+            roi_R->height = r_end - roi_R->start.y;
+            if (roi_R->start.y + roi_R->height > cam_height_) roi_R->height = cam_height_ - roi_R->start.y;
+
+            if (cfg_debug_processing_) debug_proc_string_ += " r:O";
           }
 
-          // Once we got through here it_G should have a pretty sensible green ROI.
-          roi_G->height = roi_G->width;
-          uint start_x = (roi_R->start.x + roi_G->start.x) / 2;
-          uint height = (roi_R->height + roi_G->height) / 2;
-          uint width = (roi_R->width + roi_G->width) / 2;
-          uint r_end_y = roi_R->start.y + roi_G->height;
-          uint start_y = r_end_y + (int)(roi_G->start.y - r_end_y - height)/2;
-          shared_ptr<ROI> roi_Y = shared_ptr<ROI>(new ROI(start_x, start_y,
-            width, height, roi_R->image_width, roi_R->image_height));
-          roi_Y->color = C_YELLOW;
+          if (roi1_oversize(*roi_G, *it_R)
+              && vspace > 0 && vspace < it_R->height * 1.5) {
+            roi_G->start.x = it_R->start.x;
+            roi_G->width = it_R->width;
+            if (roi_G->width > cam_width_) roi_G->width = cam_width_ - roi_G->start.x;
+            roi_G->height = it_R->height;
+            if (roi_G->start.y + roi_G->height > cam_height_) roi_G->height = cam_height_ - roi_G->start.y;
 
-          rv->push_back({roi_R, roi_Y, roi_G, NULL});
-          it_G = rois_G->erase(it_G);
-          it_R = rois_R->erase(it_R);
-          ok = true;
+            if (cfg_debug_processing_) debug_proc_string_ += " g:O";
+          }
+
+          if (rois_vspace_ok(*roi_R, *roi_G)) {
+            if (cfg_debug_processing_) debug_proc_string_ += " V";
+
+            if (!rois_similar_width(*roi_R, *roi_G)) {
+              int wdiff = roi_G->width - it_R->width;
+              int start_x = roi_G->start.x + wdiff/2;
+              if (start_x < 0) start_x = 0;
+              it_G->start.x = start_x;
+              int width = roi_G->width - wdiff/2;
+              if ((unsigned int)(start_x + width) > cam_width_) width = cam_width_ - start_x;
+              roi_G->width = width;
+              if (cfg_debug_processing_) debug_proc_string_ += " !W";
+            }
+
+            // Once we got through here it_G should have a pretty sensible green ROI.
+            roi_G->height = roi_G->width;
+            uint start_x = (roi_R->start.x + roi_G->start.x) / 2;
+            uint height = (roi_R->height + roi_G->height) / 2;
+            uint width = (roi_R->width + roi_G->width) / 2;
+            uint r_end_y = roi_R->start.y + roi_G->height;
+            uint start_y = r_end_y + (int)(roi_G->start.y - r_end_y - height)/2;
+            shared_ptr<ROI> roi_Y = shared_ptr<ROI>(new ROI(start_x, start_y,
+              width, height, roi_R->image_width, roi_R->image_height));
+            roi_Y->color = C_YELLOW;
+
+            rv->push_back({roi_R, roi_Y, roi_G, NULL});
+            it_G = rois_G->erase(it_G);
+            it_R = rois_R->erase(it_R);
+            ok = true;
+          }
         }
-      }
       }
       catch (Exception &e) {
-        logger->log_error(name(), e);
+        logger->log_error(name(), e.what());
       }
       if (!ok) {
         ++it_G;
