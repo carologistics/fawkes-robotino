@@ -91,6 +91,48 @@
   )
 )
 
+(defrule prod-produce-c0-and-deliver
+  "Produce a C0 and deliver it to the delivery station"
+  (declare (salience ?*PRIORITY-PRODUCE-C0*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (holding NONE)
+  (time $?now)
+  (game-time $?game-time)
+  (machine (mtype CS) (incoming $?i&~:(member$ FILL_CAP ?i))
+	   (name ?machine) (team ?team-color)
+	   (out-of-order-until $?ooo&:(is-working ?ooo)))
+  (cap-station (name ?machine) (cap-loaded ?cap-color) (assigned-cap-color ?cap-color))
+  ;check that the task was not rejected before
+  (not (and (task (name fill-cap) (state rejected) (id ?rej-id))
+            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?machine))))
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PRODUCE-C0*))))
+  ;check for open C0 order
+  (product (id ?product-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color))
+  (printout warn "TODO: production durations not yet implemented")
+  (order (product-id ?product-id)
+    (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
+    (begin ?begin) 
+    (end ?end&:(tac-can-use-timeslot (nth$ 1 ?game-time) ?begin ?end (+ ?*SKILL-DURATION-GET-PRODUCED* ?*SKILL-DURATION-DELIVER*)))
+    (in-production 0))
+  =>
+  (printout t "PROD: PRODUCE C0 with " ?cap-color " at " ?machine crlf)
+  (bind ?task-id (random-id))
+  (assert (task (name produce-c0) (id ?task-id) (state proposed)
+    (steps (create$ (+ ?task-id 1) (+ ?task-id 2)))
+    (priority ?*PRIORITY-PRODUCE-C0*))
+    (step (name get-base) (id (+ ?task-id 1))
+      (task-priority ?*PRIORITY-PRODUCE-C0*)
+      (machine ?machine))
+    (step (name insert) (id (+ ?task-id 2))
+      (task-priority ?*PRIORITY-PRODUCE-C0*)
+      (machine ?machine)
+      (machine-feature CONVEYOR))
+    (needed-task-lock (task-id ?task-id) (action PROD-C0) (place ?machine))
+  )
+)
+
 
 ; (defrule prod-produce-P3-and-deliver
 ;   "Complete production of a P3 at the beginning without leaving the T5 machine while producing."

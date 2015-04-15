@@ -154,7 +154,7 @@
 	     (default (create$ )))
   (slot cap (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
   ; is the base from a cap-station and therefore unusable
-  (slot base-usable (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
+  ; (slot base-usable (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
 )
 
 (deftemplate order
@@ -172,7 +172,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed) (default proposed))
   (slot priority (type INTEGER) (default 0))
   ;a task consists of multiple steps
@@ -187,12 +187,13 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
   (slot machine (type SYMBOL))
   (slot product-type (type SYMBOL))
+  (slot machine-feature (type SYMBOL) (allowed-symbols CONVEYOR SHELF SLIDE))
   (slot shelf-slot (type SYMBOL) (allowed-symbols LEFT MIDDLE RIGHT))
 )
 
