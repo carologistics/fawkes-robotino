@@ -284,6 +284,7 @@ GripperAX12AThread::loop()
       __gripper_if->msgq_pop();
     }
     __gripper_if->set_angle(get_opening_angle());
+    __gripper_if->set_holds_puck(holds_puck());
     __gripper_if->write();
   }
   cfg_mutex_.unlock();
