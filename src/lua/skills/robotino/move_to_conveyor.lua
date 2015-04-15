@@ -77,6 +77,7 @@ end
 
 function OPEN_GRIPPER:init()
    self.skills[1].open = true
+   self.skills[1].close = false
    printf("open gripper")
 end
 
