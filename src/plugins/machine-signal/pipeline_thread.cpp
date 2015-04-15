@@ -458,8 +458,6 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
     sw->msgq_pop();
   }
   if (rv != sw->is_enabled()) {
-    if (rv) logger->log_info(name(), "Enabling.");
-    else logger->log_info(name(), "Disabling.");
     sw->set_enabled(rv);
     sw->write();
   }
@@ -487,7 +485,7 @@ MachineSignalPipelineThread::WorldROI MachineSignalPipelineThread::pos3d_to_roi(
 
   top_left.x = cluster_cam.x() - edge_x;
   top_left.y = cluster_cam.y() + edge_y;
-  top_left.z = cfg_lasercluster_signal_top_; // Fehler: top_left == /cam_front, signal_top == /base_link
+  top_left.z = cfg_lasercluster_signal_top_;
 
   bottom_right.x = cluster_cam.x() + edge_x;
   bottom_right.y = cluster_cam.y() - edge_y;
@@ -567,6 +565,11 @@ MachineSignalPipelineThread::bb_get_laser_rois()
       bb_signal_position_estimate_->set_translation(1, signal_hint_msg->getY());
       bb_signal_position_estimate_->set_translation(2, signal_hint_msg->getZ());
       bb_signal_position_estimate_->write();
+      logger->log_info(name(), "Signal hint: %f, %f, %f",
+        signal_hint_msg->getX(),
+        signal_hint_msg->getY(),
+        signal_hint_msg->getZ()
+      );
     }
 
     bb_signal_position_estimate_->read();
@@ -579,14 +582,14 @@ MachineSignalPipelineThread::bb_get_laser_rois()
     LaserLineInterface *best_line = bb_laser_lines_[0];
     for (LaserLineInterface *bb_line : bb_laser_lines_) {
       bb_line->read();
-      if (M_PI_2 - bb_line->bearing() < M_PI_2 - best_line->bearing()) {
+      if (bb_line->visibility_history() > 0 && std::abs(bb_line->bearing()) < std::abs(best_line->bearing())) {
         best_line = bb_line;
       }
     }
 
     bb_signal_position_estimate_->write();
 
-    float *left_end = best_line->end_point_1();
+    float *left_end = best_line->end_point_2();
     Point signal_hint_laser = Point(left_end[0], left_end[1], left_end[2]) + current_signal_hint;
 
     Stamped<Point> signal_hint_now(signal_hint_laser, Time(0,0), best_line->frame_id());
@@ -1078,7 +1081,6 @@ void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois
         else {
           merged_roi = new ROI(intersection);
         }
-        drawn_rois_.push_back(merged_roi);
 
         // Erase red ROIs that have been processed here since they can't be part of
         // any other signal.
@@ -1089,6 +1091,7 @@ void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois
       }
     }
     if (merged_roi) {
+      drawn_rois_.push_back(merged_roi);
       merged_rois.push_back(*merged_roi);
     }
     delete merged_roi;
@@ -1233,6 +1236,8 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
 std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_delivery_signals(
   std::list<ROI> *rois_R)
 {
+  merge_rois_in_laser(this->cluster_rois_, rois_R);
+
   // First try to build signal ROIs based on laser clusters.
   std::list<SignalState::signal_rois_t_> *rv = create_laser_signals(rois_R);
 
