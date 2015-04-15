@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "move_to_conveyor"
-fsm                = SkillHSM:new{name=name, start="SKILL_ALIGN_TAG", debug=true}
+fsm                = SkillHSM:new{name=name, start="SKILL_ALIGN_MPS", debug=true}
 depends_skills     = {"motor_move", "ax12gripper", "align_mps"}
 depends_interfaces = { }
 
