@@ -184,7 +184,7 @@
       else
       (printout warn "Can not transform " ?frame " to /map. Trying most current time" crlf)
       (if (tf-can-transform "/map" ?frame (create$ 0 0)) then
-	(bind ?tf-transrot (tf-transform-pose "/map" ?frame ?timestamp ?trans ?rot))
+	(bind ?tf-transrot (tf-transform-pose "/map" ?frame (create$ 0 0) ?trans ?rot))
 	(assert (found-tag (name ?machine) (side ?side) (frame "/map")
 			   (trans (subseq$ ?tf-transrot 1 3))
 			   (rot (subseq$ ?tf-transrot 4 7))))
