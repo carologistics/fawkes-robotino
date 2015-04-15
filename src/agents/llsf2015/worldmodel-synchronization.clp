@@ -47,7 +47,10 @@
     ;add additional fields for ring-stations:
     (if (eq ?machine:mtype RS) then
       (do-for-fact ((?rs ring-station)) (eq ?rs:name ?machine:name)
-	(pb-set-field ?m-msg "ring_color_selected" (sym-cat RING_ ?rs:selected-color))
+	(if (neq ?rs:selected-color NONE) then
+	  (pb-set-field ?m-msg "ring_color_selected" (sym-cat RING_ ?rs:selected-color))
+	  ; empty field means NONE
+	)
 	(pb-set-field ?m-msg "ring_bases_needed" ?rs:bases-needed)
       )
     )
@@ -90,7 +93,7 @@
   ;add worldmodel about exploration-zones
   (delayed-do-for-all-facts ((?zone zone-exploration)) TRUE
     ;construct submsg for each machine
-    (bind ?zone-msg (pb-create "llsf_msgs.Zone"))
+    (bind ?zone-msg (pb-create "llsf_msgs.ZoneState"))
     (pb-set-field ?zone-msg "name" (str-cat ?zone:name))
     (pb-set-field ?zone-msg "machine" (str-cat ?zone:machine))
     (pb-set-field ?zone-msg "recognized" ?zone:recognized)
@@ -172,7 +175,11 @@
       ; update additional fields of ring-stations
       (if (eq ?machine:mtype RS) then
 	(do-for-fact ((?rs ring-station))  (eq ?machine:name ?rs:name)
-	  (modify ?rs (selected-color (sym-cat (utils-remove-prefix (pb-field-value ?m-msg "ring_color_selected") RING_)))
+	  (bind ?ring-color-selected NONE)
+	  (if (pb-has-field ?m-msg "ring_color_selected") then
+	    (bind ?ring-color-selected (sym-cat (utils-remove-prefix (pb-field-value ?m-msg "ring_color_selected") RING_))) 
+	  )
+	  (modify ?rs (selected-color ?ring-color-selected)
 		  (bases-needed (pb-field-value ?m-msg "ring_bases_needed")))
 	)
       )

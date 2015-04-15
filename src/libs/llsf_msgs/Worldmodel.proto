@@ -20,15 +20,6 @@ enum CapColor {
   GREY = 2;
 }
 
-enum RingColor {
-  //need the ring prefix to avoid conflict with LightColor
-  RING_NONE = 0;
-  RING_BLUE = 1;
-  RING_GREEN = 2;
-  RING_YELLOW = 3;
-  RING_ORANGE = 4;
-}
-
 message MachineState {
   enum CompType {
     COMP_ID  = 2000;
@@ -89,7 +80,7 @@ message TagPosition {
   repeated float  rot     = 5;
 }
 
-message Zone {
+message ZoneState {
   enum CompType {
     COMP_ID  = 2000;
     MSG_TYPE = 1349;
@@ -123,7 +114,7 @@ message Worldmodel {
   repeated MachineState machines = 1;
   repeated WorldmodelOrder orders = 2;
   repeated PuckStorageState storage = 3;
-  repeated Zone zones = 4;
+  repeated ZoneState zones = 4;
   repeated ProductState products = 5;
 }
 
