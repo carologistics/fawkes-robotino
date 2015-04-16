@@ -96,6 +96,7 @@ class NavGraphGeneratorMPSThread
 
     Eigen::Vector3f    pose_pos;
     Eigen::Quaternionf pose_ori;
+    float              pose_yaw;
 
     bool               transformed;
 

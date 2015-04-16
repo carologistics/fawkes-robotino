@@ -235,6 +235,7 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   s.tag_pose_ori = proj_ori;
   s.pose_pos     = pose_pos;
   s.pose_ori     = pose_ori;
+  s.pose_yaw     = quat_yaw(pose_ori);
   s.input_pos    = input_pos;
   s.input_ori    = input_ori;
   s.input_yaw    = quat_yaw(input_ori);
@@ -285,6 +286,12 @@ NavGraphGeneratorMPSThread::generate_navgraph()
        ((s.first + "-O").c_str(),
 	s.second.output_pos[0], s.second.output_pos[1], s.second.output_yaw,
 	NavGraphGeneratorInterface::CLOSEST_EDGE));
+
+    navgen_if_->msgq_enqueue
+      (new NavGraphGeneratorInterface::AddPointOfInterestMessage
+       (s.first.c_str(),
+	s.second.pose_pos[0], s.second.pose_pos[1],
+	NavGraphGeneratorInterface::UNCONNECTED));
 
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddObstacleMessage
