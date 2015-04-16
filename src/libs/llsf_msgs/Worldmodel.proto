@@ -14,6 +14,13 @@ enum Side {
   OUTPUT = 1;
 }
 
+enum BaseColor {
+  BASE_UNKNOWN = 0;
+  BASE_BLACK = 1;
+  BASE_SILVER = 2;
+  BASE_RED = 3;
+}
+
 enum CapColor {
   NONE = 0;
   BLACK = 1;
@@ -49,9 +56,10 @@ message ProductState {
   }
 
   required uint32 id  = 1;
+  required BaseColor base = 2;
   //mounted rings from bottom to top
-  repeated RingColor rings  = 2;
-  required CapColor cap  = 3;
+  repeated RingColor rings  = 3;
+  required CapColor cap  = 4;
 }
 
 message PuckStorageState {

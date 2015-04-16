@@ -107,10 +107,11 @@
     ;construct submsg for each product
     (bind ?prod-msg (pb-create "llsf_msgs.ProductState"))
     (pb-set-field ?prod-msg "id" ?prod:id)
-    (pb-set-field ?prod-msg "cap" ?prod:cap)
+    (pb-set-field ?prod-msg "base" (sym-cat BASE_ ?prod:base))
     (progn$ (?ring ?prod:rings)
       (pb-add-list ?prod-msg "rings" (sym-cat RING_ ?ring))
     )
+    (pb-set-field ?prod-msg "cap" ?prod:cap)
 
     (pb-add-list ?worldmodel "products" ?prod-msg)
   )
@@ -235,6 +236,7 @@
     (bind ?product-exists FALSE)
     (bind ?prod-id (pb-field-value ?prod-msg "id"))
     (bind ?prod-cap (pb-field-value ?prod-msg "cap"))
+    (bind ?prod-base (utils-remove-prefix (pb-field-value ?prod-msg "base") BASE_))
     (bind ?prod-rings (create$ ))
     (progn$ (?ring (pb-field-list ?prod-msg "rings"))
       (bind ?prod-rings (append$ ?prod-rings (utils-remove-prefix ?ring RING_)))
@@ -242,11 +244,11 @@
     ;modify if product already exists
     (do-for-fact ((?prod product)) (eq ?prod:id ?prod-id)
       (bind ?product-exists TRUE)
-      (modify ?prod (rings ?prod-rings) (cap ?prod-cap))
+      (modify ?prod (base ?prod-base) (rings ?prod-rings) (cap ?prod-cap))
     )
     ;assert if it is new
     (if (not ?product-exists) then
-      (assert (product (id ?prod-id) (rings ?prod-rings) (cap ?prod-cap)))
+      (assert (product (id ?prod-id) (base ?prod-base) (rings ?prod-rings) (cap ?prod-cap)))
     )
   )
   (retract ?msg)
@@ -347,7 +349,7 @@
   (pb-set-field ?change-msg "id" ?id)
   (if (member$ ?change (create$ ADD_INCOMING REMOVE_INCOMING ZONE_STILL_TO_EXPLORE
 				ZONE_MACHINE_IDENTIFIED ADD_RING SET_CAP
-				SET_CAP_LOADED SET_SELECTED_COLOR)) then
+				SET_CAP_LOADED SET_SELECTED_COLOR SET_BASE)) then
     (pb-set-field ?change-msg "value_string" (str-cat ?value))
   )
   (if (member$ ?change (create$ SET_NUM_CO SET_PROD_FINISHED_TIME
@@ -384,10 +386,11 @@
     (do-for-fact ((?prod product)) (eq ?prod:id ?puck-id)
       (bind ?prod-msg (pb-create "llsf_msgs.ProductState"))
       (pb-set-field ?prod-msg "id" ?prod:id)
-      (pb-set-field ?prod-msg "cap" ?prod:cap)
+      (pb-set-field ?prod-msg "base" (sym-cat BASE_ ?prod:base))
       (progn$ (?ring ?prod:rings)
         (pb-add-list ?prod-msg "rings" (sym-cat RING_ ?ring))
       )
+      (pb-set-field ?prod-msg "cap" ?prod:cap)
 
       (pb-set-field ?change-msg "value_puckstate" ?prod-msg)
     )
@@ -573,18 +576,22 @@
       (if (eq (sym-cat (pb-field-value ?p "change")) NEW_PUCK) then
 	(bind ?prod-msg (pb-field-value ?p "value_puckstate"))
 	(bind ?prod-id (pb-field-value ?prod-msg "id"))
-	(bind ?prod-cap (pb-field-value ?prod-msg "cap"))
+	(bind ?prod-base (utils-remove-prefix (pb-field-value ?prod-msg "base") BASE_))
 	(bind ?prod-rings (create$ ))
 	(progn$ (?ring (pb-field-list ?prod-msg "rings"))
 	  (bind ?prod-rings (append$ ?prod-rings 
 				     (utils-remove-prefix ?ring RING_)))
 	)
-	(assert (product (id ?prod-id) (cap ?prod-cap) (rings ?prod-rings)))
+	(bind ?prod-cap (pb-field-value ?prod-msg "cap"))
+	(assert (product (id ?prod-id) (base ?prod-base) (cap ?prod-cap) (rings ?prod-rings)))
 	
 	else
 	;modify existing puck fact if there is one
 	(do-for-fact ((?prod product)) (eq ?prod:id (eval (pb-field-value ?p "place")))
           (switch (sym-cat (pb-field-value ?p "change"))
+	    (case SET_BASE then 
+	      (modify ?prod (base (sym-cat (pb-field-value ?p "value_string"))))
+	    )
 	    (case SET_CAP then 
 	      (modify ?prod (cap (sym-cat (pb-field-value ?p "value_string"))))
 	    )

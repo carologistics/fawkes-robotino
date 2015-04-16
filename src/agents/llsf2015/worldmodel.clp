@@ -449,6 +449,9 @@
     (case REMOVE_PUCK then 
       (retract ?p)
     )
+    (case SET_BASE then
+      (modify ?p (base ?value))
+    )
     (default  
       (bind ?could-apply-change FALSE)
     )
