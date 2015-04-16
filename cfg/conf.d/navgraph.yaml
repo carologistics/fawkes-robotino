@@ -16,12 +16,6 @@ navgraph:
 
   # Graph file to use for path planning
   graph_file: navgraph-basis.yaml
-
-  # These values are now specified in the graph file (navgraph-llsf.yaml)
-  travel_tolerance: 0.0
-  target_tolerance: 0.0
-  orientation_tolerance: 0.0
-  shortcut_tolerance: 0.0
  
   # Interval in which the resend the goto command; sec
   resend_interval: 0.1
@@ -72,4 +66,7 @@ navgraph:
     # cost factor of 1.0 will be drawn as red, 1.5 as orange, and
     # anything greater or equal to 2.0 as yellow.
     cost_scale_max: 4.0
-                                    
+
+  interactive:
+    out-file: navgraph-interactive-saved.yaml
+
