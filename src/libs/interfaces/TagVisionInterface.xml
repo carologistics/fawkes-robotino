@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="TagVisionInterface" author="Randolph Maaßen" year="2015">
+  <data>
+    <comment>
+      Storage for information about the TagVision
+    </comment>
+    <field type="string" length="32" name="frame">
+      Reference coordinate frame for the data.
+    </field>
+    <field type="int32" name="tags_visible">
+      The number of currently visible tags.
+    </field>
+    <field type="int32" length="16" name="tag_id">
+      The IDs of the tags. The IDs are in the same order the Tag_nr interfaces are in
+    </field>
+  </data>
+</interface>

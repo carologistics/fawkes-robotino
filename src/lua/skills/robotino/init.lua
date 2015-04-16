@@ -55,6 +55,7 @@ skillenv.use_skill("skills.robotino.drive_test")
 skillenv.use_skill("skills.robotino.store_puck")
 skillenv.use_skill("skills.robotino.get_stored_puck")
 skillenv.use_skill("skills.robotino.ax12gripper")
+skillenv.use_skill("skills.robotino.align_tag")
 
 -- Uncomment to use gripper for technical challenge
 --skillenv.use_skill("skills.robotino.gripper")
