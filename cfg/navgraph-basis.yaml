@@ -27,6 +27,9 @@ default-properties:
     # connections. The value can be overidden with a node property of the same name; m
     - shortcut_tolerance: 0.7
 
+    # Distance from base_link to the MPS to align
+    - align_distance: 0.5
+
 nodes:
 # Exploration Points
 # two points for each cell, so for each mps rotation at least one point can see the tag
