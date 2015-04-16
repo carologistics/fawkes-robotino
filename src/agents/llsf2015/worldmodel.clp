@@ -41,7 +41,7 @@
   (bind ?puck-id (random-id))
   (assert (holding ?puck-id)
 	  (worldmodel-change (puck-id ?puck-id) (change NEW_PUCK))
-	  (product (id ?puck-id) (cap ?color) (base-usable FALSE)))
+  )
 )
 
 (defrule wm-get-from-shelf-failed
