@@ -42,3 +42,6 @@ dynamixel:
 
     # normalized value of torque limit to measure an overload condition
     prevent_alarm_shutdown_threshold: 0.4
+   
+    # temperature limit in celsius
+    temperature_limit: 70
