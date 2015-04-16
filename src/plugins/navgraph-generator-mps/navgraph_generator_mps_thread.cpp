@@ -356,6 +356,23 @@ NavGraphGeneratorMPSThread::generate_navgraph()
       } else {
 	logger->log_debug(name(), "Ignoring irrelevant node %s", n.name().c_str());
       }
+
+      if (do_copy ||
+	  (n.has_property("only-copy-properties") &&
+	   n.property_as_bool("only-copy-properties")))
+      {
+	// copy node properties
+	for (const auto &p : n.properties()) {
+	  if (p.first != "only-copy-properties") {
+	    logger->log_debug(name(), "    Copying property %s=%s",
+			      p.first.c_str(), p.second.c_str());
+	    navgen_if_->msgq_enqueue
+	      (new NavGraphGeneratorInterface::SetPointOfInterestPropertyMessage
+	       (n.name().c_str(), p.first.c_str(), p.second.c_str()));
+	  }
+	}
+      }
+
     }
     for (const NavGraphEdge &e : edges) {
       if (e.has_property("generated")) continue;
