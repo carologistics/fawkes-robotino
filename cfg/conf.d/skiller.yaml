@@ -80,10 +80,22 @@ skiller:
         line7: LaserLineInterface::/laser-lines/7
         line8: LaserLineInterface::/laser-lines/8
         tag_0: Position3DInterface::/tag-vision/0
-        tag_0: Position3DInterface::/tag-vision/1
-        tag_0: Position3DInterface::/tag-vision/2
-        tag_0: Position3DInterface::/tag-vision/3
-        tag_0: Position3DInterface::/tag-vision/4
+        tag_1: Position3DInterface::/tag-vision/1
+        tag_2: Position3DInterface::/tag-vision/2
+        tag_3: Position3DInterface::/tag-vision/3
+        tag_4: Position3DInterface::/tag-vision/4
+        tag_5: Position3DInterface::/tag-vision/5
+        tag_6: Position3DInterface::/tag-vision/6
+        tag_7: Position3DInterface::/tag-vision/7
+        tag_8: Position3DInterface::/tag-vision/8
+        tag_9: Position3DInterface::/tag-vision/9
+        tag_10: Position3DInterface::/tag-vision/10
+        tag_11: Position3DInterface::/tag-vision/11
+        tag_12: Position3DInterface::/tag-vision/12
+        tag_13: Position3DInterface::/tag-vision/13
+        tag_14: Position3DInterface::/tag-vision/14
+        tag_15: Position3DInterface::/tag-vision/15
+        tag_info: TagVisionInterface::/tag-vision/info
       writing:
         light: RobotinoLightInterface::Light determined
 
