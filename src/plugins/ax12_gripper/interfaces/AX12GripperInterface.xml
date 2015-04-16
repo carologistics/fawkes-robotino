@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="AX12GripperInterface" author="Tim Niemueller, Nicolas Limpert" year="2015">
+  <constants>
+    <constant type="uint32" name="FLAG_SUPPORTS_LEFT" value="1">
+      The
+    </constant>
+    <constant type="uint32" name="FLAG_SUPPORTS_RIGHT" value="2">
+      IR reflex sensor, right finger, inner front.
+    </constant>
+
+    <!-- Note that since these flags are bit-wise OR'ed the values must be chosen such that
+         	 the equation f = 2^n holds, for f being the flag value and n a natural number. -->
+    <constant type="uint32" value="0" name="ERROR_NONE">No error.</constant>
+    <constant type="uint32" value="1" name="ERROR_UNSPECIFIC">
+      Some unspecified error occured.
+    </constant>
+    <constant type="uint32" value="2" name="ERROR_COMMUNICATION">
+      Communication with device failed.
+    </constant>
+    <constant type="uint32" value="4" name="ERROR_LEFT_OUTOFRANGE">
+      Desired left is out of range.
+    </constant>
+    <constant type="uint32" value="8" name="ERROR_RIGHT_OUTOFRANGE">
+      Desired right is out of range.
+    </constant>
+  </constants>
+  <data>
+    <comment>
+      Interface to access left/right units.
+    </comment>
+
+    <field type="uint32" name="flags">Flags.</field>
+
+    <field type="float" name="left">Current left.</field>
+    <field type="float" name="right">Current right.</field>
+    <field type="uint32" name="left_load">Current left load.</field>
+    <field type="uint32" name="right_load">Current right load.</field>
+    <field type="float" name="angle">Current angle.</field>
+    <field type="float" name="offset">Current offset.</field>
+
+    <field type="uint32" name="msgid">The ID of the message that is currently being
+      processed, or 0 if no message is being processed.</field>
+    <field type="bool" name="final">True, if the last goto command has been finished,
+      false if it is still running</field>
+    <field type="uint32" name="error_code">Failure code set if
+    final is true. 0 if no error occured, an error code from ERROR_*
+    constants otherwise (or a bit-wise combination).</field>
+
+    <field type="bool" name="enabled">Is the left/right unit enabled?</field>
+    <field type="bool" name="calibrated">Is the left/right unit calibrated?</field>
+    <field type="float" name="min_left">Minimum left possible.</field>
+    <field type="float" name="max_left">Maximum left possible.</field>
+    <field type="float" name="min_right">Minimum right possible.</field>
+    <field type="float" name="max_right">Maximum right possible.</field>
+
+    <field type="float" name="max_left_velocity">Maximum supported left velocity.</field>
+    <field type="float" name="max_right_velocity">Maximum supported right velocity.</field>
+    <field type="float" name="left_velocity">Maximum left velocity currently reached.</field>
+    <field type="float" name="right_velocity">Maximum right velocity currently reached.</field>
+
+    <field type="float" name="left_margin">Margin in radians around a
+    target left value to consider the motion as final.</field>
+    <field type="float" name="right_margin">Margin in radians around a
+    target right value to consider the motion as final.</field>
+    <field type="bool" name="holds_puck">True if the gripper holds a puck</field>
+  </data>
+  <message name="Open_Angle">
+    <comment>Open with specified angle.</comment>
+    <ref>angle</ref>
+  </message>
+  <message name="CloseLoad">
+    <comment>Close gripper with max load specified.</comment>
+    <ref>offset</ref>
+  </message>
+   <message name="Close">
+   <comment>Close gripper.</comment>
+    <ref>offset</ref>
+  </message>
+  <message name="Open">
+    <comment>Open gripper.</comment>
+    <ref>offset</ref>
+  </message>
+  <message name="StopLeft">
+    <comment>Stop motion of left servo immediately.</comment>
+  </message>
+   <message name="StopRight">
+    <comment>Stop motion of right immediately.</comment>
+  </message>
+   <message name="Stop">
+    <comment>Stop motion immediately.</comment>
+  </message>
+  <message name="Flush">
+    <comment>Flush the message queue. This implicitly stops running motions.</comment>
+  </message>
+  <message name="Calibrate">
+    <comment>Calibrate left/right unit.</comment>
+  </message>
+  <message name="Park">
+    <comment>Move arm into save parking position.</comment>
+  </message>
+  <message name="Goto">
+    <comment>Goto desired left/right values.</comment>
+    <ref>left</ref>
+    <ref>right</ref>
+  </message>
+  <message name="TimedGoto">
+    <comment>
+      Goto desired left/right values in a specified time. The PTU may
+      adapt the velocities such that two positions are reached at the
+      same time.
+    </comment>
+    <field type="float" name="time_sec">Time in seconds when to reach
+    the final position.</field>
+    <ref>left</ref>
+    <ref>right</ref>
+  </message>
+  <message name="SetServo">
+    <comment>Enable or disable motors/servos.</comment>
+    <field type="uint32" name="servoID">Servo ID.</field>
+    <field type="float" name="angle">Target Servo angle.</field>
+  </message>
+  <message name="SetEnabled">
+    <comment>Enable or disable motors/servos.</comment>
+    <ref>enabled</ref>
+  </message>
+  <message name="SetVelocity">
+    <comment>Set maximum velocity for left/right unit.</comment>
+    <ref>left_velocity</ref>
+    <ref>right_velocity</ref>
+  </message>
+  <message name="SetMargin">
+    <comment>Set margins left/right unit motions.</comment>
+    <ref>left_margin</ref>
+    <ref>right_margin</ref>
+  </message>
+</interface>
