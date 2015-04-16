@@ -332,6 +332,7 @@
   (zone-exploration (name ?old) (x ?) (y ?))
   (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
   ?rli <- (RobotinoLightInterface (id "/machine-signal/best") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
+  (exp-matching (red ?red) (yellow ?yellow) (green ?green) (mtype ?mtype))
   =>
   (printout t "Identified machine" crlf)
   (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
@@ -339,8 +340,7 @@
   (retract ?s ?rli ?ws)
   (assert (state EXP_IDLE)
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
-    (exploration-result (machine ?old) (red ?red) (yellow ?yellow) (green ?green)
-			(zone ?old))
+    (exploration-result (machine ?old) (mtype ?mtype) (zone ?old))
   )
 )
 
@@ -537,6 +537,21 @@
       (modify ?me (team ?team))
     )
   )
+  (foreach ?sig (pb-field-list ?p "signals")
+    (bind ?mtype (pb-field-value ?sig "type"))
+    (bind ?red BLINKING)
+    (bind ?yellow BLINKING)
+    (bind ?green BLINKING)
+    (progn$ (?light (pb-field-list ?sig "lights"))
+      (bind ?light-state (pb-field-value ?light "state"))
+      (switch (sym-cat (pb-field-value ?light "color"))
+	(case RED then (bind ?red ?light-state))
+	(case YELLOW then (bind ?yellow ?light-state))
+	(case GREEN then (bind ?green ?light-state))
+      )
+    )
+    (assert (exp-matching (mtype ?mtype) (red ?red) (yellow ?yellow) (green ?green)))
+  )
   (assert (exp-machines-initialized) 
 	  (have-exp-info))
 )
@@ -558,7 +573,6 @@
   (do-for-all-facts ((?machine exploration-result)) TRUE
     ;send report for last machine only if the exploration phase is going to end
     ;or we are prepared for production
-    (printout warn "TODO: correctly fill exploration report!" crlf)
     (if (or
 	 (< (length (find-all-facts ((?f zone-exploration))
 				    (and (eq ?f:team ?team-color) ?f:recognized)))
@@ -568,7 +582,8 @@
      then
       (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
       (pb-set-field ?mre "name" (str-cat ?machine:machine))
-      (pb-set-field ?mre "type" (str-cat ?machine:type))
+      (pb-set-field ?mre "type" (str-cat ?machine:mtype))
+      (pb-set-field ?mre "zone" (str-cat ?machine:zone))
       (pb-add-list ?mr "machines" ?mre)
     )
   )
@@ -589,15 +604,6 @@
     )
   )
   (watch facts zone-exploration)
-)
-
-(defrule exp-convert-blink-to-blinking
-  "The refbox sends BLINK but in the interface BLINKING is used. This rule converts BLINK to BLINKING."
-  (declare (salience 10)) ; this rule has to fire before compose-type-light-pattern-matching
-  (phase EXPLORATION)
-  (type-spec-pre ?type ?light-color BLINK)
-  =>
-  (assert (type-spec-pre ?type ?light-color BLINKING))
 )
 
 (defrule exp-prepare-for-production-get-lock-for-ins

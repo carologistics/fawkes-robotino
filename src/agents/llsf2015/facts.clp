@@ -41,13 +41,18 @@
   (slot next (type SYMBOL)) ;TODO delete next
 )
 
+(deftemplate exp-matching
+  (slot red (type SYMBOL) (allowed-symbols ON OFF))
+  (slot yellow (type SYMBOL) (allowed-symbols ON OFF))
+  (slot green (type SYMBOL) (allowed-symbols ON OFF))
+  (slot mtype (type STRING))
+)
+
 (deftemplate exploration-result
   (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
   (slot zone (type SYMBOL) (allowed-symbols Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12
 					   Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
-  (slot red (type SYMBOL) (allowed-symbols ON OFF BLINKING))
-  (slot yellow (type SYMBOL) (allowed-symbols ON OFF BLINKING))
-  (slot green (type SYMBOL) (allowed-symbols ON OFF BLINKING))
+  (slot mtype (type STRING) (default ""))
 )
 
 (deftemplate exp-row
