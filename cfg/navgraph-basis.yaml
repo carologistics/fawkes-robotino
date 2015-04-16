@@ -201,7 +201,8 @@ nodes:
       - only_copy_properties
       - tag_input: 1
       - tag_output: 2
-     #- offset_y: 0
+      - input_offset_y: 0
+      - output_offset_y: 0
   - !unconnected
     name: C-CS2
     pos: [0, 0]
