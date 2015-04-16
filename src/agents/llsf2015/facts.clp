@@ -158,7 +158,7 @@
   (multislot rings (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE)
 	     (default (create$ )))
   (slot cap (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
-  (slot base (type SYMBOL) (allowed-symbols BLACK, SILVER, RED, UNKNOWN) (default UNKNOWN))
+  (slot base (type SYMBOL) (allowed-symbols BLACK SILVER RED UNKNOWN) (default UNKNOWN))
   ; is the base from a cap-station and therefore unusable
   ; (slot base-usable (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
 )
