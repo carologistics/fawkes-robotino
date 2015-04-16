@@ -32,3 +32,13 @@ dynamixel:
     # Echo fix used for faulty firmwares on RX28 which 
     # echo the given command even though ECHO is switched off
     enable_echo_fix: false
+    
+    # torque limit
+    torque_limit: 1.0
+
+    # prevent alarm shutdown to turn into the direction of the torque
+    # when the particular servo is in overload condition
+    prevent_alarm_shutdown: true
+
+    # normalized value of torque limit to measure an overload condition
+    prevent_alarm_shutdown_threshold: 0.4
