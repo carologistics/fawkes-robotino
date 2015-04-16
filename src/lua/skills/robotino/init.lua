@@ -60,7 +60,7 @@ skillenv.use_skill("skills.robotino.store_puck")
 skillenv.use_skill("skills.robotino.get_stored_puck")
 
 -- Skills for MPS interaction
-skillenv.use_skill("skills.robotino.align_mps")
+skillenv.use_skill("skills.robotino.mps_align")
 skillenv.use_skill("skills.robotino.shelf_pick")
 skillenv.use_skill("skills.robotino.shelf_put")
 skillenv.use_skill("skills.robotino.product_pick")
