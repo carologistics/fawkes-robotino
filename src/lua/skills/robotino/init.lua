@@ -47,6 +47,7 @@ skillenv.use_skill("skills.robotino.product_pick")
 skillenv.use_skill("skills.robotino.product_put")
 skillenv.use_skill("skills.robotino.bring_product_to")
 skillenv.use_skill("skills.robotino.get_base")
+skillenv.use_skill("skills.robotino.get_product_from")
 
 -- Uncomment to use gripper for technical challenge
 --skillenv.use_skill("skills.robotino.gripper")
