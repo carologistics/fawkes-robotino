@@ -12,6 +12,7 @@
   (declare (salience ?*PRIORITY-WM*))
   ?nn <- (navgraph-node (name ?name&:(str-index "Exp" (str-cat ?name)))
 			(pos $?pos) (properties $?props))
+  (not (pose (name ?name)))
   =>
   ;check if the node has the orientation property for any zone
   (delayed-do-for-all-facts ((?ze zone-exploration)) (navgraph-has-property ?props (str-cat "orientation_" ?ze:name))
