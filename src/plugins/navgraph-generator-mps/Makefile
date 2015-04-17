@@ -16,6 +16,7 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/eigen3.mk
+include $(BUILDSYSDIR)/cgal.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDCONFDIR)/navgraph/navgraph.mk
 
@@ -28,7 +29,7 @@ LIBS_navgraph_generator_mps = fawkescore fawkesutils fawkesaspects fawkesinterfa
 OBJS_navgraph_generator_mps = navgraph_generator_mps_plugin.o navgraph_generator_mps_thread.o
 OBJS_all    = $(OBJS_navgraph_generator_mps)
 
-ifeq ($(HAVE_NAVGRAPH)$(HAVE_EIGEN3)$(HAVE_TF),111)
+ifeq ($(HAVE_NAVGRAPH)$(HAVE_EIGEN3)$(HAVE_TF)$(HAVE_CGAL),1111)
   CFLAGS  += $(CFLAGS_NAVGRAPH)  $(CFLAGS_EIGEN3)  $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_NAVGRAPH) $(LDFLAGS_EIGEN3) $(LDFLAGS_TF)
 
@@ -41,16 +42,21 @@ else
   ifneq ($(HAVE_TF),1)
     WARN_TARGETS += warning_tf
   endif
+  ifneq ($(HAVE_CGAL),1)
+    WARN_TARGETS += warning_cgal
+  endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 
-.PHONY: warning_tf warning_eigen
+.PHONY: warning_tf warning_eigen warning_cgal
 warning_tf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph-generator-mps plugin$(TNORMAL) (fawkestf not available)"
 warning_eigen:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph-generator-mps plugin$(TNORMAL) (Eigen3 not available)"
+warning_cgal:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph-generator-mps plugin$(TNORMAL) ($(CGAL_ERRORS))"
 endif
 
 
