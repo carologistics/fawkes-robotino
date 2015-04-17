@@ -29,6 +29,8 @@ fawkes/bbsync:
         motor: MotorInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino
         odometry: TransformInterface::TF Robotino Odometry
+        tfPose: TransformInterface::TF Pose
+        tfROS: TransformInterface::TF ROS
         motor-switch: SwitchInterface::Robotino Motor
         line1: LaserLineInterface::/laser-lines/1
         line2: LaserLineInterface::/laser-lines/2
@@ -40,4 +42,5 @@ fawkes/bbsync:
         line8: LaserLineInterface::/laser-lines/8
         pose: Position3DInterface::Pose
         laserswitch: SwitchInterface::/laser-cluster/ampel
+        navigator: NavigatorInterface::Navigator
 
