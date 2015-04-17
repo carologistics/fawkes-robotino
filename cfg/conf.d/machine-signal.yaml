@@ -135,7 +135,7 @@ plugins/machine_signal:
     cam_aperture_x: 0.95
     cam_aperture_y: 0.8
     cam_angle: 0.25 # 12.2°
-    cam_frame: /cam_front
+    cam_frame: /cam_signal
 
   laser-lines:
     enable: true
