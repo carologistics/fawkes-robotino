@@ -9,7 +9,7 @@ dynamixel:
   # top element, e.g. ptu or example.
   ax12gripper:
     active: true
-    device: /dev/ttyUSB0
+    device: /dev/usb2ax
 
     read_timeout_ms: 30
     discover_timeout_ms: 30
