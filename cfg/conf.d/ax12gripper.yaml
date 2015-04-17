@@ -1,7 +1,7 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-#doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/pantilt
+doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
 ---
 /hardware/ax12_gripper:
     # Type of PTU; one of RX27 EviD100P and DirectedPerceptionASCII
