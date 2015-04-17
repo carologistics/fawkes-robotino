@@ -38,11 +38,19 @@
   )
 )
 
-(defrule navgraph-remove-navgraph-facts ;to reduce amount of facts in clips-webview
+(defrule navgraph-remove-navgraph-nodes ;to reduce amount of facts in clips-webview
   (declare (salience ?*PRIORITY-WM-LOW*))
-  (navgraph-node)
+  ?nn <- (navgraph-node (name ?name&~:(or (eq "C-" (sub-string 1 2 (str-cat ?name)))
+                                   (eq "M-" (sub-string 1 2 (str-cat ?name))))))
   =>
-  (navgraph-cleanup)
+  (retract ?nn)
+)
+
+(defrule navgraph-remove-navgraph-edges ;to reduce amount of facts in clips-webview
+  (declare (salience ?*PRIORITY-WM-LOW*))
+  ?ne <- (navgraph-edge)
+  =>
+  (retract ?ne)
 )
 
 (defrule navgraph-add-new-tag-exploration
@@ -58,4 +66,55 @@
   (printout warn "TODO: check which zone contains the machine, so we don't try to find a tag there again"  crlf)
   
   (navgraph-add-all-new-tags)
+)
+
+(defrule navgraph-get-zone-of-found-tag
+  "For new found tags that were added to the navgraph, we want to check the zone where the machine is standing for the exploration report"
+  (declare (salience ?*PRIORITY-WM*))
+  (machine-to-find-zone-of ?mps)
+  (found-tag (name ?mps) (side ?side) (frame ?frame)
+             (trans $?trans) (rot $?rot))
+  ?lncm <- (last-navgraph-compute-msg (id ?compute-msg-id))
+  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
+  (navgraph-node (name ?input&:(eq ?input (str-cat ?mps "-I")))
+                 (pos $?pos-i))
+  (navgraph-node (name ?output&:(eq ?output (str-cat ?mps "-O")))
+                 (pos $?pos-o))
+  (team-color ?team-color)
+  (goalmachine ?zone-intended)
+  =>
+  ; Find zone by center of the mps
+  (bind ?center (utils-get-2d-center (nth$ 1 ?pos-i) (nth$ 2 ?pos-i) 
+                                     (nth$ 1 ?pos-o) (nth$ 2 ?pos-o)))
+  (bind ?zone-y (round-down (/ (nth$ 2 ?center) ?*ZONE-HEIGHT*)))
+  (bind ?cyan-x (nth$ 1 ?center))
+  (if (< ?cyan-x 0) then
+    (bind ?cyan-x (- 0 ?cyan-x))
+  )
+  (bind ?zone-cyan-x (round-down (/ ?cyan-x ?*ZONE-WIDTH*)))
+  (bind ?zone (+ 1 ?zone-y (* 4 ?zone-cyan-x)))
+  (if (< (nth$ 1 ?center) 0) then
+    (bind ?zone (+ ?zone 12))
+  )
+  
+  (printout t "mps " ?mps " is in zone " ?zone crlf)
+
+  (do-for-fact ((?ze zone-exploration)) (eq ?ze:name (sym-cat Z ?zone))
+    (if (eq ?ze:team ?team-color) then
+      (assert (worldmodel-change (machine ?ze:name) (change ZONE_STILL_TO_EXPLORE)
+                                 (value FALSE))
+              (worldmodel-change (machine ?ze:name) (change ZONE_MACHINE_IDENTIFIED)
+                                 (value ?mps))
+      )
+      else
+      (printout error "mps " ?mps " in wrong zone detected. Setting it to intended zone " ?zone-intended crlf)
+      
+      (assert (worldmodel-change (machine ?zone-intended) (change ZONE_STILL_TO_EXPLORE)
+                                 (value FALSE))
+              (worldmodel-change (machine ?zone-intended) (change ZONE_MACHINE_IDENTIFIED)
+                                 (value ?mps))
+      )
+    )
+  )
+  (retract ?ngg-if ?lncm)
 )

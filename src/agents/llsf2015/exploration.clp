@@ -137,7 +137,7 @@
 (defrule exp-drive-to-finished
   "Arriving at a machine in first or second round. Wait for tag vision."
   (phase EXPLORATION)
-  ?final <- (skill (name "ppgoto") (status FINAL|FAILED)) 
+  ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
@@ -233,16 +233,13 @@
 		    (trans $?trans) (rot $?rot) (already-added FALSE))
   =>
   (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side ") to Navgraph-generation"  crlf)
-  
-  ;TODO: this might be the wrong zone
-  (modify ?ze (machine ?machine) (still-to-explore FALSE))
-  (assert (worldmodel-change (machine ?old) (change ZONE_STILL_TO_EXPLORE) (value FALSE)))
 
   (navgraph-add-all-new-tags)
 
   (printout t "Wait until ComputeMessage is processed" crlf)
   (retract ?s)
-  (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT))
+  (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
+          (machine-to-find-zone-of ?machine))
 )
 
 (defrule exp-no-tag-found
@@ -279,38 +276,50 @@
   (retract ?ws ?s)
 )
 
-(defrule exp-drive-to-output-tag
-  "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards"
+(defrule exp-drive-to-output-tag-zone-correct
+  "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards. Case if the detected tag is in the zone we are currently exploring."
   (phase EXPLORATION)
   ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
-  ; wait until the navgraph-generator has added the path to the output
-  ?lncm <- (last-navgraph-compute-msg (id ?compute-msg-id))
-  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
+  ?mtfz <- (machine-to-find-zone-of ?machine)
   (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
   =>
   (printout t "Driving to MPS light-signal." crlf)
-  (retract ?s ?ngg-if ?lncm)
+  (retract ?s ?mtfz)
   (assert (state EXP_DRIVE_TO_OUTPUT))
-  (skill-call ppgoto place (get-light-signal-side ?machine))
+  (skill-call drive_to place (get-light-signal-side ?machine))
+)
+
+(defrule exp-drive-to-output-tag-zone-different
+  "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards. Case if the detected tag is in a different zone than we are currently exploring."
+  (phase EXPLORATION)
+  ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
+  ?mtfz <- (machine-to-find-zone-of ?machine)
+  (goalmachine ?zone)
+  (zone-exploration (name ~?zone) (machine ?machine))
+  =>
+  (printout error "Detected MPS is in a different zone than we are currently exploring. Skipping exploring the light now." crlf)
+  (retract ?s ?mtfz)
+  (assert (state EXP_IDLE))
+  (skill-call drive_to place (get-light-signal-side ?machine))
 )
 
 (defrule exp-align-in-front-of-light-signal
   "Preparing recognition of the light signals after we arrived at the output side."
   (phase EXPLORATION)
-  ?final <- (skill (name "ppgoto") (status FINAL|FAILED)) 
+  ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
   ?s <- (state EXP_DRIVE_TO_OUTPUT)
   =>
   (printout t "Aligning in front of light signal." crlf)
   (retract ?s ?final)
   (assert (state EXP_ALIGN_AT_OUTPUT))
-  (skill-call align_tag x 0.2 y 0.1)
+  (skill-call motor_move x 0.1 y 0.0)
 )
 
 (defrule exp-align-in-front-of-light-signal-finished
   "Preparing recognition of the light signals after we aligned in front of it."
   (phase EXPLORATION)
-  ?final <- (skill (name "align_tag") (status FINAL|FAILED)) 
+  ?final <- (skill (name "motor_move") (status FINAL|FAILED)) 
   ?s <- (state EXP_ALIGN_AT_OUTPUT)
   (time $?now)
   =>
@@ -328,8 +337,8 @@
   (time $?now)
   ?ws <- (timer (name waiting-since))
   ?s <- (state EXP_WAITING_FOR_LIGHT_VISION)
-  ?g <- (goalmachine ?old)
-  (zone-exploration (name ?old) (x ?) (y ?))
+  ?g <- (goalmachine ?zone)
+  (zone-exploration (name ?zone) (machine ?machine))
   (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
   ?rli <- (RobotinoLightInterface (id "/machine-signal/best") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
   (exp-matching (red ?red) (yellow ?yellow) (green ?green) (mtype ?mtype))
@@ -339,8 +348,8 @@
   (printout warn "TODO: ensure that tag is in the explored zone" crlf)
   (retract ?s ?rli ?ws)
   (assert (state EXP_IDLE)
-    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
-    (exploration-result (machine ?old) (mtype ?mtype) (zone ?old))
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone))
+    (exploration-result (machine ?machine) (mtype ?mtype) (zone ?zone))
   )
 )
 
@@ -503,7 +512,7 @@
 )
 
 (defrule exp-go-to-next-machine
-  "When lock was accepted move to the locked machine with ppgoto"
+  "When lock was accepted move to the locked machine with drive_to"
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (exp-next-machine ?nextMachine)
@@ -519,7 +528,33 @@
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine))
-  (skill-call ppgoto place ?pose-name ori ?pose-ori)
+  (skill-call drive_to place ?pose-name ori ?pose-ori)
+)
+
+(defrule exp-tag-found-by-other-robot
+  "When we are driving to find a tag and another bot finds an mps in the zone we are driving to, drive directly to look for the light"
+  (phase EXPLORATION)
+  ?s <- (state EXP_DRIVING_TO_MACHINE)
+  (goalmachine ?zone)
+  (zone-exploration (name ?zone) (machine ?machine&~UNKNOWN))
+  =>
+  (printout t "Skip finding tag in " ?zone crlf)
+  (retract ?s)
+  (assert (state EXP_SKIP_FIND_TAG))
+)
+
+(defrule exp-drive-directly-to-detect-the-light
+  "The machine in the zone was already found. Drive direcly to the machine to detect the light."
+  (phase EXPLORATION)
+  ?s <- (state EXP_SKIP_FIND_TAG)
+  (goalmachine ?zone)
+  (zone-exploration (name ?zone) (machine ?machine&~UNKNOWN))
+  =>
+  (printout t "Directly explore light-signal" crlf)
+  (retract ?s)
+  (assert (state EXP_DRIVE_TO_OUTPUT))
+  (skill-call drive_to place (get-light-signal-side ?machine))
+
 )
 
 (defrule exp-receive-type-light-pattern-matching
@@ -630,7 +665,7 @@
 )
 
 (defrule exp-prepare-for-production-drive-to-ins
-  "When locks for pre-game positions are acquired, drive there with ppgoto."
+  "When locks for pre-game positions are acquired, drive there with drive_to."
   (phase EXPLORATION)
   (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)

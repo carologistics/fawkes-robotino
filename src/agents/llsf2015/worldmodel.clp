@@ -513,6 +513,29 @@
   (modify ?order (in-delivery ?amount))
   (modify ?wmc (already-applied TRUE))
 )
+
+(defrule wm-process-wm-change-exploration-zone
+  "apply wm change to local worldmodel before sending"
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (machine ?zone) (value ?value)
+                             (change ?change) (already-applied FALSE))
+  ?zone-fact <- (zone-exploration (name ?zone))
+  =>  
+  (switch ?change
+    (case ZONE_STILL_TO_EXPLORE then 
+      (modify ?zone-fact (still-to-explore ?value))
+    )
+    (case ZONE_MACHINE_IDENTIFIED then 
+      (modify ?zone-fact (machine ?value))
+    )
+    (default
+      (printout error "Worldmodel-Change Type " ?change
+                " is not handled. Worlmodel is probably wrong." crlf)
+    )
+  )
+  (modify ?wmc (already-applied TRUE))
+)
+
 (defrule wm-process-wm-change-before-sending-puck-storage
   (declare (salience ?*PRIORITY-WM*))
   ?wmc <- (worldmodel-change (machine ?storage) (change ?change) (value ?value) (already-applied FALSE) (agent ?agent))

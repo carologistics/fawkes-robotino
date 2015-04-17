@@ -120,3 +120,15 @@
     (return ?res)
   )
 )
+
+(deffunction utils-get-2d-center (?x1 ?y1 ?x2 ?y2)
+  (return (create$ (/ (+ ?x1 ?x2) 2) (/ (+ ?y1 ?y2) 2)))
+)
+
+(deffunction round-down (?x)
+  (bind ?round (round ?x))
+  (if (< ?x ?round) then
+    (return (- ?round 1))
+  )
+  (return ?round)
+)

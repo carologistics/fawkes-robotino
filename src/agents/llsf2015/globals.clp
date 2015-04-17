@@ -50,6 +50,10 @@
   ?*PI* = 3.141592653589
   ?*2PI* = 6.2831853
   ?*PI-HALF* = 1.5707963
+
+  ; some measures of the game
+  ?*ZONE-HEIGHT* = 1.5
+  ?*ZONE-WIDTH* = 2.0
 )
 
 (defrule globals-config-team-name
