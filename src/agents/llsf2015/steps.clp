@@ -29,7 +29,7 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name insert) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps))
+		 (machine ?mps) (machine-feature ?feature))
   (tag-matching (machine ?mps) (tag-id ?tag) (side INPUT) (team ?team))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
@@ -53,6 +53,24 @@
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (game-time $?game-time)
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (printout warn "TODO: use skill to get a puck from an MPS" crlf)
+  (assert (state WAIT-FOR-LOCK)
+	  (skill-to-execute (skill ppgoto) (args place (get-output ?mps)) (target ?mps))
+	  (wait-for-lock (priority ?p) (res ?mps))
+  )
+)
+
+(defrule step-get-base
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name get-base) (state wait-for-activation) (task-priority ?p)
+		 (machine ?mps) (machine-feature ?feature))
+  (tag-matching (machine ?mps) (tag-id ?tag) (side OUTPUT) (team ?team))
+  ?state <- (state STEP-STARTED)
+  (team-color ?team)
   =>
   (retract ?state)
   (modify ?step (state running))
@@ -129,7 +147,7 @@
 (defrule step-common-finish
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|get-base) (state running))
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill ppgoto)
 			    (args $?args) (state final))
