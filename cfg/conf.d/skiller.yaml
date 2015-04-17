@@ -24,54 +24,19 @@ skiller:
       reading:
         motor: MotorInterface::Robotino
         Machine_0: Position3DInterface::Machine_0
-        Omnipuck1: Position3DInterface::OmniPuck1
-        Omnipuck2: Position3DInterface::OmniPuck2
-        Omnipuck3: Position3DInterface::OmniPuck3
-        Omnipuck4: Position3DInterface::OmniPuck4
-        Omnipuck5: Position3DInterface::OmniPuck5
-        Omnipuck6: Position3DInterface::OmniPuck6
-        Omnipuck7: Position3DInterface::OmniPuck7
-        Omnipuck8: Position3DInterface::OmniPuck8
-        Omnipuck9: Position3DInterface::OmniPuck9
-        Omnipuck10: Position3DInterface::OmniPuck10
-        Omnipuck11: Position3DInterface::OmniPuck11
-        Omnipuck12: Position3DInterface::OmniPuck12
-        Omnipuck13: Position3DInterface::OmniPuck13
-        Omnipuck14: Position3DInterface::OmniPuck14
-        Omnipuck15: Position3DInterface::OmniPuck15
-        Omnipuck16: Position3DInterface::OmniPuck16
-        Omnipuck17: Position3DInterface::OmniPuck17
-        Omnipuck18: Position3DInterface::OmniPuck18
-        Omnipuck19: Position3DInterface::OmniPuck19
-        Omnipuck20: Position3DInterface::OmniPuck20
         pose: Position3DInterface::Pose
         navigator: NavigatorInterface::Navigator
         ppnavi: NavigatorInterface::Pathplan
-        omnivisionSwitch: SwitchInterface::omnivisionSwitch
-        ampelswitch: SwitchInterface::ampelswitch
         laserswitch: SwitchInterface::/laser-cluster/ampel
         sensor: RobotinoSensorInterface::Robotino
-        laser_cluster: LaserClusterInterface::/laser-cluster/ampel
-        laser-cluster-ampel: Position3DInterface::/laser-cluster/ampel/1
         motor_switch: SwitchInterface::Robotino Motor
-        lightFrontSwitch: SwitchInterface::/machine-signal
-        puck_0: Position3DInterface::puck_0
-        puck_1: Position3DInterface::puck_1
-        puck_2: Position3DInterface::puck_2
-        puck_3: Position3DInterface::puck_3
-        puck_4: Position3DInterface::puck_4
-        puck_5: Position3DInterface::puck_5
-        puck_6: Position3DInterface::puck_6
-        puck_7: Position3DInterface::puck_7
-        light_plugin: RobotinoLightInterface::/machine-signal/best
-        left_gate: RobotinoLightInterface::/machine-signal/0
-        middle_gate: RobotinoLightInterface::/machine-signal/1
-        right_gate: RobotinoLightInterface::/machine-signal/2
+        machine_signal_switch: SwitchInterface::/machine-signal
+        machine_signal_best: RobotinoLightInterface::/machine-signal/best
+        machine_signal_1: RobotinoLightInterface::/machine-signal/0
+        machine_signal_2: RobotinoLightInterface::/machine-signal/1
+        machine_signal_3: RobotinoLightInterface::/machine-signal/2
         delivery_mode: SwitchInterface::/machine-signal/delivery-mode
-        # Uncomment to use gripper skills for technical challenge
-        # gripper_if: GripperInterface::Robotino
         gripper_if: AX12GripperInterface::Gripper AX12
-        open_delivery_gate: Position3DInterface::/machine-signal/open-delivery-gate
         line1: LaserLineInterface::/laser-lines/1
         line2: LaserLineInterface::/laser-lines/2
         line3: LaserLineInterface::/laser-lines/3

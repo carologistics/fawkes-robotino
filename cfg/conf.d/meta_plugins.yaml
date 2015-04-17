@@ -7,18 +7,17 @@ fawkes/meta_plugins:
   # Meta plugin with useful functionality for the robotino-laptop
   #
   m-bare: bbsync,static-transforms,webview
-  
   m-fv: fvbase,fvfountain
-  m-fv-vision: m-bare,m-fv,machine-signal,puck_vision,fvretriever
-  
-  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph
+  m-fv-vision: m-bare,m-fv,machine-signal,tag_vision,fvretriever
+  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,navgraph,clips-navgraph
   m-clips-agent: m-clips,m-fv-vision,clips-agent,agent-monitor
+  m-skiller: m-fv-vision,ros,navgraph,skiller
+  m-full: m-skiller,m-clips-agent
 
-  m-full: m-fv-vision,m-clips-agent
 
-  m-ros: ros,ros-pcl,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan
-  m-laser: m-bare,m-ros,laser-pointclouds,laser-cluster,laser-lines
-
+  #
+  # Gazebo stuff
+  #
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-ros: ros,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-robotino-ros: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,webview,gazsim-meta-ros
@@ -34,8 +33,7 @@ fawkes/meta_plugins:
   #
   m-base-bare: imu,robotino,webview,static-transforms
   m-base-joy: m-base-bare,joystick,joystick-teleop
-  m-base-laser: laser,laser-filter
-  m-base: m-base-joy,m-base-laser
-  #m-base-colli: m-base-bare,m-laser,m-ros,colli,static-transforms,laser-lines
-  m-base-colli: m-base-bare,m-laser,m-ros,colli
-  m-base-nav: m-base-colli,amcl,navgraph
+  m-base-gripper: dynamixel,ax12gripper
+  m-base-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan
+  m-base-laser: laser,laser-filter,m-base-ros,laser-pointclouds,laser-cluster,laser-lines
+  m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,colli,amcl,m-base-joy

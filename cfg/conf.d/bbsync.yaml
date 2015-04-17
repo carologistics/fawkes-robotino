@@ -26,11 +26,18 @@ fawkes/bbsync:
       # Interface to synchronize, reading instance on remote,
       # mapped to remote instance locally
       reading:
-        # laser: Laser360Interface::Laser urg
-        laser-filter: Laser360Interface::Laser urg-filtered
-        laser: Laser360Interface::Laser tim55x
-        battery: BatteryInterface::Robotino
         motor: MotorInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino
         odometry: TransformInterface::TF Robotino Odometry
         motor-switch: SwitchInterface::Robotino Motor
+        line1: LaserLineInterface::/laser-lines/1
+        line2: LaserLineInterface::/laser-lines/2
+        line3: LaserLineInterface::/laser-lines/3
+        line4: LaserLineInterface::/laser-lines/4
+        line5: LaserLineInterface::/laser-lines/5
+        line6: LaserLineInterface::/laser-lines/6
+        line7: LaserLineInterface::/laser-lines/7
+        line8: LaserLineInterface::/laser-lines/8
+        pose: Position3DInterface::Pose
+        laserswitch: SwitchInterface::/laser-cluster/ampel
+
