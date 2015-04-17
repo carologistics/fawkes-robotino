@@ -124,7 +124,7 @@ bool MachineSignalPipelineThread::color_data_consistent(
   return rv;
 }
 
-void MachineSignalPipelineThread::setup_color_classifier(color_classifier_context_t_ *color_data)
+void MachineSignalPipelineThread::setup_color_classifier(color_classifier_context_t_ *color_data, ROI *roi)
 {
   delete color_data->classifier;
   delete color_data->colormodel;
@@ -158,7 +158,7 @@ void MachineSignalPipelineThread::setup_color_classifier(color_classifier_contex
   color_data->colormodel->add_colors(color_data->color_class);
   color_data->scanline_grid = new ScanlineGrid(
     cam_width_, cam_height_,
-    color_data->cfg_scangrid_x_offset, color_data->cfg_scangrid_y_offset);
+    color_data->cfg_scangrid_x_offset, color_data->cfg_scangrid_y_offset, roi);
 
   color_data->classifier = new SimpleColorClassifier(
       color_data->scanline_grid,
@@ -712,26 +712,28 @@ void MachineSignalPipelineThread::loop()
 
     drawn_rois_.clear();
 
-    // Then use the appropriate classifier for red
-    if (cfg_delivery_mode_) {
-      rois_R = cfy_ctxt_red_delivery_.classifier->classify();
-      rois_G = NULL;
-    }
-    else {
-      rois_R = cfy_ctxt_red_.classifier->classify();
-      rois_G = cfy_ctxt_green_.classifier->classify();
-    }
+    cluster_rois_ = bb_get_laser_rois();
 
+    if (cluster_rois_->size() == 1) {
+      ROI r(*(cluster_rois_->begin()));
+      cfy_ctxt_red_.scanline_grid->set_roi(&r);
+      cfy_ctxt_green_.scanline_grid->set_roi(&r);
+    }
+    rois_R = cfy_ctxt_red_.classifier->classify();
+    rois_G = cfy_ctxt_green_.classifier->classify();
+    merge_rois_in_laser(cluster_rois_, rois_R);
+    merge_rois_in_laser(cluster_rois_, rois_G);
 
     // Create and group ROIs that make up the red, yellow and green lights of a signal
     std::list<SignalState::signal_rois_t_> *signal_rois;
-    if (cfg_delivery_mode_) {
+    signal_rois = create_field_signals(rois_R, rois_G);
+    if (signal_rois->size() == 0) {
+      delete signal_rois;
       signal_rois = create_delivery_signals(rois_R);
     }
-    else {
-      signal_rois = create_field_signals(rois_R, rois_G);
-    }
 
+    // Lock mutex since now we start updating the data that is synced
+    // to the blackboard by the MachineSignalSensorThread.
     data_mutex_.lock();
 
     // Reset all known signals to not-seen
@@ -930,9 +932,6 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
   std::list<SignalState::signal_rois_t_> *rv = new std::list<SignalState::signal_rois_t_>();
 
   if (cfg_debug_processing_) debug_proc_string_ = "";
-
-  merge_rois_in_laser(cluster_rois_, rois_R);
-  merge_rois_in_laser(cluster_rois_, rois_G);
 
   if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
     drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
@@ -1240,8 +1239,6 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
 std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_delivery_signals(
   std::list<ROI> *rois_R)
 {
-  merge_rois_in_laser(this->cluster_rois_, rois_R);
-
   // First try to build signal ROIs based on laser clusters.
   std::list<SignalState::signal_rois_t_> *rv = create_laser_signals(rois_R);
 

@@ -220,7 +220,7 @@ class MachineSignalPipelineThread :
     firevision::FilterColorThreshold *color_filter_;
     firevision::ColorModelSimilarity *combined_colormodel_;
 
-    void setup_color_classifier(color_classifier_context_t_ *classifier);
+    void setup_color_classifier(color_classifier_context_t_ *classifier, firevision::ROI *roi = nullptr);
     void setup_camera();
     bool color_data_consistent(color_classifier_context_t_ *);
     void reinit_color_config();
