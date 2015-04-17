@@ -45,3 +45,9 @@ dynamixel:
    
     # temperature limit in celsius
     temperature_limit: 70
+
+    # minimum allowed voltage
+    min_voltage: 10.0
+
+    # maximum allowed voltage
+    max_voltage: 12.0
