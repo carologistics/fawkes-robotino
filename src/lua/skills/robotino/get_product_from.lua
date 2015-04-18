@@ -69,3 +69,7 @@ function MPS_ALIGN:init()
    end
    self.skills[1].ori = 0
 end
+
+function PRODUCT_PICK:init()
+   self.skills[1].place = self.fsm.vars.place
+end

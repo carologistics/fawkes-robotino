@@ -30,13 +30,13 @@ depends_interfaces = { }
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
 and opens the gripper
+@param place Navgraph place to get the align_distance
 ]==]
 
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
-local ALIGN_DISTANCE = 0.4 --TODO config value because it depends on the align_tag distance
 
 fsm:define_states{ export_to=_M,
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
@@ -52,6 +52,8 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{}
 
 function DRIVE_FORWARD:init()
+   --TODO handle invalid point
+   local ALIGN_DISTANCE = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
    local gripper_transformed = tfm.transform({x=ALIGN_DISTANCE, y=0, ori=0}, "/base_link", "/gripper")
    self.skills[1].x = gripper_transformed.x
    self.skills[1].y = gripper_transformed.y --if the gripper has an y offset
