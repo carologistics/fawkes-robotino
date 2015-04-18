@@ -73,6 +73,9 @@
     <comment>Close gripper with max load specified.</comment>
     <ref>offset</ref>
   </message>
+  <message name="Center">
+   <comment>Center both servos given the current opening angle</comment>
+  </message>
    <message name="Close">
    <comment>Close gripper.</comment>
     <ref>offset</ref>
