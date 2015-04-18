@@ -7,7 +7,8 @@ local TABLE_HEIGHT = 0.53
 -- Signal positions relative to the top-left-front edge of the MPS table
 local SIGNAL_POS = {
    RS = { x=0.045, y=-0.1, z=0.185 },
-   DS = { x=0.05,  y=-0.1, z=0.185 }
+   DS = { x=0.05,  y=-0.1, z=0.185 },
+   BS = { x=0.04,  y=-0.1, z=0.185 }
 }
 
 function send_hint(bb_signal_hint, machine)
