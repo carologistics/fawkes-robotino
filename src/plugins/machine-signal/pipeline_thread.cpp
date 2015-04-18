@@ -599,7 +599,14 @@ MachineSignalPipelineThread::bb_get_laser_rois()
 
     bb_signal_position_estimate_->write();
 
-    float *left_end = best_line->end_point_2();
+    // Find the leftmost endpoint, as seen from base_link
+    float *ep1 = best_line->end_point_1();
+    float *ep2 = best_line->end_point_2();
+    float *left_end;
+    if (atan2f(ep2[1], ep2[0]) > atan2f(ep1[1], ep1[0]))
+      left_end = ep2;
+    else left_end = ep1;
+
     Point signal_hint_laser = Point(left_end[0], left_end[1], left_end[2]) + current_signal_hint;
 
     Stamped<Point> signal_hint_now(signal_hint_laser, Time(0,0), best_line->frame_id());
