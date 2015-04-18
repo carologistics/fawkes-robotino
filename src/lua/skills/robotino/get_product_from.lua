@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="DRIVE_TO", debug=true}
-depends_skills     = {"mps_align", "product_put", "drive_to"}
+depends_skills     = {"mps_align", "product_pick", "drive_to"}
 depends_interfaces = {
 }
 
@@ -44,8 +44,8 @@ skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
-   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
+   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{}
