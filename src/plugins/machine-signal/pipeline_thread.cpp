@@ -960,7 +960,11 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
   for (std::list<ROI>::iterator it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
     bool ok = false;
 
-    if (!(roi_width_ok(*it_R))) continue;
+    if (!(roi_width_ok(*it_R)) ||
+        (it_R->start.y > cam_height_/2)) {
+      it_R = rois_R->erase(it_R);
+      continue;
+    }
 
     if (it_R->height > it_R->width) {
       it_R->height = it_R->width;
