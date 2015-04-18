@@ -35,15 +35,12 @@ depends_interfaces = {
 documentation      = [==[ align_mps
 
                           This skill does:
-                          - aligns to the machine via sensor information AND a optional offset that is given as config values by the tag_id
-                          - executes an additional offset by the given x, y, ori params
+                          - aligns to the machine via sensor information AND a optional offsets which are given as parameters 
 
-                          @param tag_id     int     the tag_id to variafy the alignmend to the correct machine
+                          @param tag_id     int     optional the tag_id for align_tag
                           @param x          float   optional the x offset after the alignmend
                           @param y          float   optional the y offset after the alignmend
                           @param ori        float   optional the ori offset after the alignmend
-
-                          TODO this skill
 ]==]
 
 -- Initialize as skill module
@@ -72,6 +69,10 @@ fsm:add_transitions{
 function SKILL_ALIGN_TAG:init()
    -- align by ALIGN_DISTANCE from tag to base_link with align_tag
    local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
+   -- give align_tag the id if we have one
+   if self.fsm.vars.tag_id then
+      self.skills[1].tag_id = self.fsm.vars.tag_id
+   end
    self.skills[1].x = tag_transformed.x
    self.skills[1].y = -tag_transformed.y
    self.skills[1].ori = tag_transformed.ori

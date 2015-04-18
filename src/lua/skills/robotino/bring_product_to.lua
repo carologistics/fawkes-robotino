@@ -77,12 +77,14 @@ function MPS_ALIGN:init()
       else
          self.skills[1].y = 0
       end
+      self.skills[1].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    elseif self.fsm.vars.side = "output" then
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_y") then
          self.skills[1].y = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_y")
       else
          self.skills[1].y = 0
       end
+      self.skills[1].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
    end
    self.skills[1].ori = 0
 end
