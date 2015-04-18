@@ -44,3 +44,5 @@ fawkes/bbsync:
         laserswitch: SwitchInterface::/laser-cluster/ampel
         navigator: NavigatorInterface::Navigator
         gripper: AX12GripperInterface::Gripper AX12
+        laser-lines: SwitchInterface::/laser-lines
+
