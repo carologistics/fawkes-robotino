@@ -71,10 +71,18 @@ end
 function MPS_ALIGN:init()
    -- align in front of the conveyor belt
    self.skills[1].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
-   if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
-      self.skills[1].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
-   else
-      self.skills[1].y = 0
+   if self.fsm.vars.side = "input" then
+      if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
+         self.skills[1].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
+      else
+         self.skills[1].y = 0
+      end
+   elseif self.fsm.vars.side = "output" then
+      if navgraph:node(self.fsm.vars.place):has_property("output_offset_y") then
+         self.skills[1].y = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_y")
+      else
+         self.skills[1].y = 0
+      end
    end
    self.skills[1].ori = 0
 end
