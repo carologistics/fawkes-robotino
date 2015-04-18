@@ -134,6 +134,7 @@ class GripperAX12AThread
 
   bool         load_left_pending;
   bool         load_right_pending;
+  bool         center_pending;
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
   std::string  __cfg_left_link;

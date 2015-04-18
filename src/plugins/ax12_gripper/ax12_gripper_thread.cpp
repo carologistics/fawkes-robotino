@@ -197,6 +197,16 @@ GripperAX12AThread::loop()
       __servo_if_right->msgq_enqueue(stop_message);
       load_right_pending = false;
     }
+    if (center_pending && __servo_if_left->is_final() && __servo_if_right->is_final()) {
+      //Enable PreventAlarmShutdown on both servos
+      DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+      DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+      prevent_left_msg->set_enable_prevent_alarm_shutdown(true);
+      prevent_right_msg->set_enable_prevent_alarm_shutdown(true);
+      __servo_if_left ->msgq_enqueue(prevent_left_msg);
+      __servo_if_right->msgq_enqueue(prevent_right_msg);
+      center_pending = false;
+    }
 
     __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final());
 
@@ -273,10 +283,26 @@ GripperAX12AThread::loop()
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetMarginMessage>()) {
         AX12GripperInterface::SetMarginMessage *msg = __gripper_if->msgq_first(msg);
-
+        
         set_margins(msg->left_margin(), msg->right_margin());
         __gripper_if->set_left_margin(msg->left_margin());
         __gripper_if->set_right_margin(msg->right_margin());
+        
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CenterMessage>()) {
+        
+        //Disable PreventAlarmShutdown on both servos
+        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+        prevent_left_msg->set_enable_prevent_alarm_shutdown(false);
+        prevent_right_msg->set_enable_prevent_alarm_shutdown(false);
+        __servo_if_left ->msgq_enqueue(prevent_left_msg);
+        __servo_if_right->msgq_enqueue(prevent_right_msg);
+        
+        goto_gripper(__servo_if_left->angle() - (__servo_if_left->angle() + get_opening_angle() / 2),
+                     __servo_if_right->angle() - (__servo_if_right->angle() - get_opening_angle() / 2));
+        center_pending = true;
+        
+        __gripper_if->set_final(false);
       } else {
         logger->log_warn(name(), "Unknown message received");
       }
