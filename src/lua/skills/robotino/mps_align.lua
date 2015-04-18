@@ -53,7 +53,7 @@ local tfm = require("tf_module")
 
 function see_line()
    printf("vis_hist: %f", line1:visibility_history())
-   return line1:visibility_history() > 5
+   return line1:visibility_history() > 30
 end
 
 fsm:define_states{ export_to=_M, closure={see_line = see_line},
@@ -66,7 +66,7 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line},
 
 fsm:add_transitions{
    {"SEE_LINE", "ALIGN_WITH_LASERLINES", cond=see_line, desc="Seeing a line"},
-   {"SEE_LINE", "FAILED", timeout=1, desc="Not seeing a line, continue just aligned by tag"}
+   {"SEE_LINE", "FAILED", timeout=3, desc="Not seeing a line, continue just aligned by tag"}
 }
 
 function SKILL_ALIGN_TAG:init()
