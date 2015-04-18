@@ -1,10 +1,9 @@
 
 ----------------------------------------------------------------------------
---  drive_test.lua
+--  goto.lua - 
 --
---  Created: Sat Jun 14 15:13:19 2014
---  Copyright  2014       Frederik Zwilling
---             2014-2015  Tobias Neumann
+--  Created: Thu Aug 14 14:32:47 2008
+--  modified by Victor Mataré
 --
 ----------------------------------------------------------------------------
 
@@ -24,32 +23,26 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "drive_test"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"ppgoto_waypoints"}
-depends_interfaces = { }
+name               = "test"
+fsm                = SkillHSM:new{name=name, start="GO"}
+depends_skills     = { "goto" }
 
-documentation      = [==[Drives between the given list of navgraph-points
+documentation      = [==[MWE timeout bug]==]
 
-Parameters:
-      pps: List of points to drive to e.g. drive_test{pps={"P64", "P92", "P73", "P62", "P93"}}
-]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   {"INIT", JumpState},
-   {"GOTO", SkillJumpState, skills={{ppgoto_waypoints}}, final_to="GOTO", fail_to="FAILED"},
+   {"GO", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="FAILED"},
 }
+
 
 fsm:add_transitions{
-   {"INIT", "GOTO", cond=true}
+   {"GO", "FINAL", timeout=0.5}
 }
 
-function INIT:init() 
-
+function GO:init()
+   self.skills[1].x = 4
+   self.skills[1].y = 4
 end
 
-function GOTO:init()
-   self.skills[1].wp = self.fsm.vars.pps
-end

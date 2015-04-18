@@ -1,10 +1,8 @@
-
 ----------------------------------------------------------------------------
---  drive_test.lua
+--  goto_place.lua
 --
 --  Created: Sat Jun 14 15:13:19 2014
---  Copyright  2014       Frederik Zwilling
---             2014-2015  Tobias Neumann
+--  Copyright  2015 Tobias Neumann
 --
 ----------------------------------------------------------------------------
 
@@ -24,32 +22,39 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "drive_test"
+name               = "goto_place"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"ppgoto_waypoints"}
+depends_skills     = {"goto"}
 depends_interfaces = { }
 
-documentation      = [==[Drives between the given list of navgraph-points
+documentation      = [==[Drives into field after given offset
 
 Parameters:
-      pps: List of points to drive to e.g. drive_test{pps={"P64", "P92", "P73", "P62", "P93"}}
+   place: navgraph point to drive to (without pathplaner)
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
+   closure={navgraph=navgraph},
    {"INIT", JumpState},
-   {"GOTO", SkillJumpState, skills={{ppgoto_waypoints}}, final_to="GOTO", fail_to="FAILED"},
+   {"GOTO", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"INIT", "GOTO", cond=true}
+   {"INIT",   "FAILED", cond="not navgraph", desc="no navgraph"},
+   {"INIT",   "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
+   {"INIT",   "GOTO",   cond=true},
 }
 
-function INIT:init() 
-
+function INIT:init()
+   self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
 end
 
 function GOTO:init()
-   self.skills[1].wp = self.fsm.vars.pps
+   self.skills[1].x     = self.fsm.vars.node:x()
+   self.skills[1].y     = self.fsm.vars.node:y()
+   if self.fsm.vars.node:has_property("orientation") then
+      self.skills[1].ori   = self.fsm.vars.node:property_as_float("orientation");
+   end
 end
