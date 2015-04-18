@@ -46,7 +46,6 @@ local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
 
 -- Variables
 local target = { x = 0 , y = 0 , ori = 0}
-local tries
 
 --moving funtions
 function send_transrot(vx, vy, omega)
@@ -131,25 +130,18 @@ function no_motor_writer(self)
 	return not motor:has_writer()
 end
 
-function too_many_tries()
-   return tries > 9
-end
-
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-	{"DRIVE", JumpState},
-   {"NO_TAG", JumpState},
+   {"DRIVE", JumpState},
 	{"ORIENTATE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
 	{"INIT", "FAILED", cond=no_motor_writer, desc="No writer for the motor"},
-	{"DRIVE", "NO_TAG", cond=tag_not_visible, desc="No tag visible"},
-   {"NO_TAG", "DRIVE", timeout=0.5, desc="try again"},
-   {"DRIVE", "FAILED", cond=too_many_tries, desc="tag really not seen"},
+   {"DRIVE", "FAILED", cond=tag_not_visible, desc="No tag visible"},
 	{"INIT", "FAILED", cond=input_invalid, desc="Distance to tag is garbage, sould be > than " .. min_distance},
    {"INIT", "DRIVE", cond=true, desc="start"},
 	{"DRIVE", "ORIENTATE", cond=tag_reached, desc="Tag Reached orientate"},
@@ -167,10 +159,6 @@ end
 
 -- Drive to tag
 function DRIVE:init()
-end
-
-function NO_TAG:init()
-   tires = tries + 1
 end
 
 function printtable(table)
