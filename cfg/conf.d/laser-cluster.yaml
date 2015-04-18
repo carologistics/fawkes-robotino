@@ -6,10 +6,10 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-cluster
 laser-cluster:
 
   ampel:
-    active: true
+    active: false
 
     # Automatically start, i.e. set enabled to true?
-    auto-start: true
+    auto-start: false
 
     # input laser cloud
     input_cloud: urg-filtered
