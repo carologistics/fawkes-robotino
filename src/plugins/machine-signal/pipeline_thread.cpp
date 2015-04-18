@@ -1271,8 +1271,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_deli
 
   std::list<ROI>::iterator it_R = rois_R->begin();
 
-  unsigned int i = 0;
-  for (it_R = rois_R->begin(); it_R != rois_R->end() && i++ < TRACKED_SIGNALS; ++it_R) {
+  for (it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
 
 
     bool found_some_black = false;
