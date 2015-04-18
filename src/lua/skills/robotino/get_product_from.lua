@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "get_product_from"
-fsm                = SkillHSM:new{name=name, start="DRIVE_TO", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"mps_align", "product_pick", "drive_to"}
 depends_interfaces = {
 }
@@ -42,16 +42,25 @@ Parameters:
 skillenv.skill_module(_M)
 -- Constants
 
-fsm:define_states{ export_to=_M,
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
+   {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
    {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
 }
 
-fsm:add_transitions{}
+fsm:add_transitions{
+   {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
+   {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
+   {"INIT", "FAILED", cond="not self.fsm.vars.side", desc="no side given"},
+   {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
+}
+
+function INIT:init()
+   self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
+end
 
 function DRIVE_TO:init()
-   -- TODO handle wrong input
    if self.fsm.vars.side == "input" then
       self.skills[1].place = self.fsm.vars.place .. "-I"
    elseif self.fsm.vars.side == "output" then
