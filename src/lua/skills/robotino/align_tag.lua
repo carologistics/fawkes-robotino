@@ -30,9 +30,22 @@ depends_interfaces = {
    {v = "tag_2", type = "Position3DInterface"},
    {v = "tag_3", type = "Position3DInterface"},
    {v = "tag_4", type = "Position3DInterface"},
+   {v = "tag_5", type = "Position3DInterface"},
+   {v = "tag_6", type = "Position3DInterface"},
+   {v = "tag_7", type = "Position3DInterface"},
+   {v = "tag_8", type = "Position3DInterface"},
+   {v = "tag_9", type = "Position3DInterface"},
+   {v = "tag_10", type = "Position3DInterface"},
+   {v = "tag_11", type = "Position3DInterface"},
+   {v = "tag_12", type = "Position3DInterface"},
+   {v = "tag_13", type = "Position3DInterface"},
+   {v = "tag_14", type = "Position3DInterface"},
+   {v = "tag_15", type = "Position3DInterface"},
+   {v = "tag_info", type = "TagVisionInterface"},
 }
 
 documentation      = [==[Moves the robot that the tag 0 is seen at the given point.
+@param tag_id REQUIRED the id of the tag to align to
 @param x The X distance to the tag
 @param y The Y distance to the tag
 @param ori The orientation to the tag
@@ -65,46 +78,28 @@ function get_tag_visible(tag)
    return tag:visibility_history() > 0
 end
 
-
-function get_closest_tag()
-   -- begin with tag 0
-   local retval = tag_0
-   local closest_distance = get_tag_distance(tag_0)
-   --print("tag_0 at distance " .. tostring(closest_distance))
-   -- tag 1
-   if(get_tag_visible(tag_1) and get_tag_distance(tag_1) < closest_distance) then
-      retval = tag_1
-	  closest_distance = get_tag_distance(tag_1)
-      --print("tag_1 visible and closer at " .. tostring(closest_distance))
+function get_tag_with_id(wanted_id)
+   print("wanted_id: " .. tostring(wanted_id))
+   local i=1
+   -- get the correct id
+   for j=0,15 do
+      id = tag_info:tag_id(j)
+      print("j: " .. tostring(j) .. " id: " .. tostring(id))
+      -- stop when id is found
+      if id == wanted_id then
+         break
+      end
+      i = i+1
    end
-   -- tag 2
-   if(get_tag_visible(tag_2) and get_tag_distance(tag_2) < closest_distance) then
-      retval = tag_2
-	  closest_distance = get_tag_distance(tag_2)
-      --print("tag_2 visible and closer at " .. tostring(closest_distance))
-   end
-   -- tag 3
-   if(get_tag_visible(tag_3) and get_tag_distance(tag_3) < closest_distance) then
-      retval = tag_3
-	  closest_distance = get_tag_distance(tag_3)
-      --print("tag_3 visible and closer at " .. tostring(closest_distance))
-   end
-   -- tag 4
-   if(get_tag_visible(tag_4) and get_tag_distance(tag_4) < closest_distance) then
-      retval = tag_4
-	  closest_distance = get_tag_distance(tag_4)
-     -- print("tag_4 visible and closer at " .. tostring(closest_distance))
-   end
-
-   --print("closest distance is " .. tostring(closest_distance))
-
-   return retval
+   local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
+   print("i: " .. tostring(i) .. " tag_" .. tostring(i-1))
+   return tags[i]
 end
 
 -- Condition Functions
 -- Check, weather the final position is reached
 function tag_reached(self)
-   local tag = get_closest_tag()
+   local tag = get_tag_with_id(self.fsm.vars.tag_id)
    -- the forward distance is the z trnaslation in the camera frame of reference
    forward_distance = tag:translation(2)
    -- the lateral distance is the x translation in the camera frame of reference
@@ -116,7 +111,7 @@ end
 
 -- Check if one tag is visible
 function tag_not_visible(self)
-	local tag = get_closest_tag()
+    local tag = get_tag_with_id(self.fsm.vars.tag_id)
     return (tag:visibility_history() <= 0)
 end
 
@@ -130,21 +125,38 @@ function no_motor_writer(self)
 	return not motor:has_writer()
 end
 
+-- check weather the wanted tag is availabel
+function id_not_found(self)
+   local found = false
+   local wanted_id = self.fsm.vars.tag_id
+   for i=0,15 do
+      id=tag_info:tag_id(i)
+      print("tag nr: " .. i .. " id: " .. id .. " wanted id: " .. wanted_id)
+      if id == wanted_id then
+         found = true
+         break
+      end
+   end
+   print("found: " ..tostring(found))
+   return not found
+end
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"DRIVE", JumpState},
-	{"ORIENTATE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"ORIENTATE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-	{"INIT", "FAILED", cond=no_motor_writer, desc="No writer for the motor"},
-   {"DRIVE", "FAILED", cond=tag_not_visible, desc="No tag visible"},
-	{"INIT", "FAILED", cond=input_invalid, desc="Distance to tag is garbage, sould be > than " .. min_distance},
+   {"INIT", "FAILED", cond=id_not_found, desc="Tag with the wanted id is not visible"},
+   {"INIT", "FAILED", cond=no_motor_writer, desc="No writer for the motor"},
+   {"DRIVE", "FAILED", cond=tag_not_visible, desc="Tag not visible"},
+   {"INIT", "FAILED", cond=input_invalid, desc="Distance to tag is garbage, sould be > than " .. min_distance},
    {"INIT", "DRIVE", cond=true, desc="start"},
-	{"DRIVE", "ORIENTATE", cond=tag_reached, desc="Tag Reached orientate"},
+   {"DRIVE", "ORIENTATE", cond=tag_reached, desc="Tag Reached orientate"},
 }
 
 local old_speed={x=0,y=0,ori=0}
@@ -153,7 +165,7 @@ function INIT:init()
    self.fsm.vars.x = self.fsm.vars.x or 0.1
    self.fsm.vars.y = self.fsm.vars.y or 0.0
    self.fsm.vars.ori = self.fsm.vars.ori or 0.0
-   tries = 0
+   self.fsm.vars.tag_id = self.fsm.vars.tag_id or -1
    old_speed={x=0,y=0,ori=0}
 end
 
@@ -175,7 +187,7 @@ function get_yaw(qx, qy, qz, qw)
 end
 
 function DRIVE:loop()
-   local tag = get_closest_tag()
+   local tag = get_tag_with_id(self.fsm.vars.tag_id)
 
    local yaw = get_yaw(tag:rotation(0), tag:rotation(1), tag:rotation(2), tag:rotation(3))
    -- correct rotation
