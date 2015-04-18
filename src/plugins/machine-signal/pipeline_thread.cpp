@@ -534,11 +534,14 @@ MachineSignalPipelineThread::bb_get_laser_rois()
       bb_pos->read();
       if (bb_pos && bb_pos->has_writer() && bb_pos->visibility_history() >= (long int) cfg_lasercluster_min_vis_hist_) {
         try {
-          rv->insert(pos3d_to_roi(Stamped<Point>(
+          WorldROI laser_in_cam = pos3d_to_roi(Stamped<Point>(
             Point(bb_pos->translation(0), bb_pos->translation(1), bb_pos->translation(2)),
             Time(0,0),
             bb_pos->frame()
-          )));
+          ));
+          if (laser_in_cam.get_width() > 20 && laser_in_cam.get_height() > 40) {
+            rv->insert(laser_in_cam);
+          }
         }
         catch (OutOfBoundsException &e) {
           // This is a pretty normal case, getting a 3D position that is outside the cam viewport
@@ -605,7 +608,10 @@ MachineSignalPipelineThread::bb_get_laser_rois()
       // Either visibility history is good, or it is bad but the line has moved by less than a centimeter.
       signal_hint_ = signal_hint_now;
       try {
-        rv->insert(pos3d_to_roi(signal_hint_now));
+        WorldROI signal_in_cam = pos3d_to_roi(signal_hint_now);
+        if (signal_in_cam.get_width() > 20 && signal_in_cam.get_height() > 40) {
+          rv->insert(signal_in_cam);
+        }
       }
       catch (OutOfBoundsException &e) {
       }
@@ -697,7 +703,6 @@ void MachineSignalPipelineThread::loop()
     std::list<ROI> *rois_R, *rois_G;
     MutexLocker lock(&cfg_mutex_);
 
-    cluster_rois_ = bb_get_laser_rois();
 
     // Reallocate classifiers if their config changed
     if (unlikely(cfg_changed_
