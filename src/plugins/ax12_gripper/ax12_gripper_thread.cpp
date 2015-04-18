@@ -111,6 +111,14 @@ GripperAX12AThread::init()
   __servo_if_left->msgq_enqueue(vel_left);
   __servo_if_right->msgq_enqueue(vel_right);
   
+    //Enable PreventAlarmShutdown on both servos
+  DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+  DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+  prevent_left_msg->set_enable_prevent_alarm_shutdown(true);
+  prevent_right_msg->set_enable_prevent_alarm_shutdown(true);
+  __servo_if_left ->msgq_enqueue(prevent_left_msg);
+  __servo_if_right->msgq_enqueue(prevent_right_msg);
+  
   // If you have more than one interface: catch exception and close them!
   std::string bbid = "Gripper AX12";
   __gripper_if = blackboard->open_for_writing<AX12GripperInterface>(bbid.c_str());
