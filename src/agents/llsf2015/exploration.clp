@@ -511,13 +511,14 @@
   (assert (state EXP_LOCK_ACCEPTED))
 )
 
-(defrule exp-go-to-next-machine
-  "When lock was accepted move to the locked machine with drive_to"
+(defrule exp-go-to-next-machine-to-find-tag
+  "When lock was accepted move to the exploration position to find a tag"
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (exp-next-machine ?nextMachine)
   (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?)
-		    (look-pos $?lp) (current-look-pos ?lp-index))
+		    (look-pos $?lp) (current-look-pos ?lp-index)
+                    (still-to-explore TRUE))
   (not (driven-to-waiting-point))
   (pose (id ?pose-id&:(eq ?pose-id (nth$ ?lp-index ?lp)))
 	(name ?pose-name) (ori ?pose-ori))
@@ -529,6 +530,23 @@
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine))
   (skill-call drive_to place ?pose-name ori ?pose-ori)
+)
+
+(defrule exp-go-to-next-machine-with-a-found-tag
+  "When lock was accepted and we already know the tag position
+   skip finding the tag to directly explore the light signal"
+  (phase EXPLORATION)
+  ?s <- (state EXP_LOCK_ACCEPTED)
+  ?n <- (exp-next-machine ?nextMachine)
+  (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?)
+		    (look-pos $?lp) (current-look-pos ?lp-index)
+                    (still-to-explore FALSE))
+  (not (driven-to-waiting-point))
+  =>
+  (printout t "Going to next machine, skip finding tag." crlf)
+  (retract ?s ?n)
+  (assert (state EXP_SKIP_FIND_TAG)
+          (goalmachine ?nextMachine))
 )
 
 (defrule exp-tag-found-by-other-robot

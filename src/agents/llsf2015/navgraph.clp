@@ -74,8 +74,8 @@
   (machine-to-find-zone-of ?mps)
   (found-tag (name ?mps) (side ?side) (frame ?frame)
              (trans $?trans) (rot $?rot))
-  ?lncm <- (last-navgraph-compute-msg (id ?compute-msg-id))
-  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
+  ; ?lncm <- (last-navgraph-compute-msg (id ?compute-msg-id))
+  ; ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
   (navgraph-node (name ?input&:(eq ?input (str-cat ?mps "-I")))
                  (pos $?pos-i))
   (navgraph-node (name ?output&:(eq ?output (str-cat ?mps "-O")))
@@ -101,6 +101,10 @@
 
   (do-for-fact ((?ze zone-exploration)) (eq ?ze:name (sym-cat Z ?zone))
     (if (eq ?ze:team ?team-color) then
+      (if (neq ?zone ?zone-intended) then
+        (printout t "That is behind the zone I currently explore (" 
+                  ?zone-intended ")" crlf)
+      )
       (assert (worldmodel-change (machine ?ze:name) (change ZONE_STILL_TO_EXPLORE)
                                  (value FALSE))
               (worldmodel-change (machine ?ze:name) (change ZONE_MACHINE_IDENTIFIED)
@@ -116,5 +120,4 @@
       )
     )
   )
-  (retract ?ngg-if ?lncm)
 )
