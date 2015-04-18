@@ -85,6 +85,10 @@ function COMMAND:init()
       theOpenMessage = gripper_if.OpenMessage:new()
       theOpenMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theOpenMessage)
+   elseif self.fsm.vars.center then
+      print("center")
+      theCenterMessage = gripper_if.CenterMessage:new()
+      gripper_if:msgq_enqueue_copy(theCenterMessage)
    elseif self.fsm.vars.close then
       print("close")
       theCloseMessage = gripper_if.CloseMessage:new()
