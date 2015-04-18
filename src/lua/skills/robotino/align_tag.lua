@@ -82,7 +82,7 @@ function get_closest_tag()
    if(get_tag_visible(tag_2) and get_tag_distance(tag_2) < closest_distance) then
       retval = tag_2
 	  closest_distance = get_tag_distance(tag_2)
-      -print("tag_2 visible and closer at " .. tostring(closest_distance))
+      --print("tag_2 visible and closer at " .. tostring(closest_distance))
    end
    -- tag 3
    if(get_tag_visible(tag_3) and get_tag_distance(tag_3) < closest_distance) then
