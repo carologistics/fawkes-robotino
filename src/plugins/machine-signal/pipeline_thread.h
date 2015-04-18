@@ -181,6 +181,7 @@ class MachineSignalPipelineThread :
     std::atomic<float> cfg_max_jitter_;
     std::atomic_bool cfg_debug_processing_;
     std::atomic_bool cfg_debug_blink_;
+    std::atomic_bool cfg_debug_tf_;
 
     std::string debug_proc_string_;
 

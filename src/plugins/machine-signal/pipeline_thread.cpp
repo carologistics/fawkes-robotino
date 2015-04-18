@@ -252,7 +252,17 @@ void MachineSignalPipelineThread::init()
   cfg_debug_blink_ = config->get_bool(CFG_PREFIX "/debug_blink");
   cfg_debug_processing_ = config->get_bool(CFG_PREFIX "/debug_processing");
   cfg_delivery_mode_ = config->get_bool(CFG_PREFIX "/delivery_mode");
+  cfg_debug_tf_ = config->get_bool(CFG_PREFIX "/debug_tf");
   
+  cfg_lasercluster_frame_ = config->get_string(CFG_PREFIX "/laser_frame");
+  cfg_lasercluster_signal_radius_ = 0.5 * config->get_float(CFG_PREFIX "/signal_width");
+  cfg_lasercluster_signal_top_ = config->get_float(CFG_PREFIX "/signal_top");
+  cfg_lasercluster_signal_bottom_ = config->get_float(CFG_PREFIX "/signal_bottom");
+  cfg_cam_aperture_x_ = config->get_float(CFG_PREFIX "/cam_aperture_x");
+  cfg_cam_aperture_y_ = config->get_float(CFG_PREFIX "/cam_aperture_y");
+  cfg_cam_angle_y_ = config->get_float(CFG_PREFIX "/cam_angle");
+  cfg_cam_frame_ = config->get_string(CFG_PREFIX "/cam_frame");
+
   // Laser-lines config
   cfg_laser_lines_enabled_ = config->get_bool(CFG_PREFIX "/laser-lines/enable");
   cfg_laser_lines_min_vis_hist_ = config->get_uint(CFG_PREFIX "/laser-lines/min_visibility_history");
@@ -260,14 +270,6 @@ void MachineSignalPipelineThread::init()
   // Laser Cluster config
   cfg_lasercluster_enabled_ = config->get_bool(CFG_PREFIX "/lasercluster/enable");
   cfg_lasercluster_min_vis_hist_ = config->get_uint(CFG_PREFIX "/lasercluster/min_visibility_history");
-  cfg_lasercluster_frame_ = config->get_string(CFG_PREFIX "/lasercluster/laser_frame");
-  cfg_lasercluster_signal_radius_ = 0.5 * config->get_float(CFG_PREFIX "/lasercluster/signal_width");
-  cfg_lasercluster_signal_top_ = config->get_float(CFG_PREFIX "/lasercluster/signal_top");
-  cfg_lasercluster_signal_bottom_ = config->get_float(CFG_PREFIX "/lasercluster/signal_bottom");
-  cfg_cam_aperture_x_ = config->get_float(CFG_PREFIX "/lasercluster/cam_aperture_x");
-  cfg_cam_aperture_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_aperture_y");
-  cfg_cam_angle_y_ = config->get_float(CFG_PREFIX "/lasercluster/cam_angle");
-  cfg_cam_frame_ = config->get_string(CFG_PREFIX "/lasercluster/cam_frame");
 
 
   pos2pixel_ = new PositionToPixel(
@@ -490,6 +492,11 @@ MachineSignalPipelineThread::WorldROI MachineSignalPipelineThread::pos3d_to_roi(
   bottom_right.x = cluster_cam.x() + edge_x;
   bottom_right.y = cluster_cam.y() - edge_y;
   bottom_right.z = cfg_lasercluster_signal_bottom_;
+
+  if (unlikely(cfg_debug_tf_)) {
+    logger->log_debug(name(), "Signal top_left: %f, %f, %f; bottom_right: %f, %f, %f.",
+      top_left.x, top_left.y, top_left.z, bottom_right.x, bottom_right.y, bottom_right.z);
+  }
 
   // And finally compute a ROI that (hopefully) contains the real signal
   point_t top_left_px_tmp = pos2pixel_->get_pixel_position_unchecked(top_left, cfg_cam_frame_, clock);
@@ -1477,22 +1484,6 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
     else if (sub_prefix == "/lasercluster") {
       if (opt == "/min_visibility_history")
         cfg_lasercluster_min_vis_hist_ = v->get_uint();
-      else if (opt == "/laser_frame")
-        chg = test_set_cfg_value(&(cfg_lasercluster_frame_), v->get_string());
-      else if (opt == "/cam_frame")
-        chg = test_set_cfg_value(&(cfg_cam_frame_), v->get_string());
-      else if (opt == "/cam_aperture_x")
-        chg = test_set_cfg_value(&(cfg_cam_aperture_x_), v->get_float());
-      else if (opt == "/cam_aperture_y")
-        chg = test_set_cfg_value(&(cfg_cam_aperture_y_), v->get_float());
-      else if (opt == "/cam_angle")
-        chg = test_set_cfg_value(&(cfg_cam_angle_y_), v->get_float());
-      else if (opt == "/signal_width")
-        cfg_lasercluster_signal_radius_ = 0.5 * v->get_float();
-      else if (opt == "/signal_top")
-        cfg_lasercluster_signal_top_ = v->get_float();
-      else if (opt == "/signal_bottom")
-        cfg_lasercluster_signal_bottom_ = v->get_float();
       else if (opt == "/enable")
         cfg_lasercluster_enabled_ = v->get_bool();
     }
@@ -1525,6 +1516,24 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         cfg_debug_blink_ = v->get_bool();
       else if (opt == "/debug_processing")
         cfg_debug_processing_ = v->get_bool();
+      else if (opt == "/laser_frame")
+        chg = test_set_cfg_value(&(cfg_lasercluster_frame_), v->get_string());
+      else if (opt == "/cam_frame")
+        chg = test_set_cfg_value(&(cfg_cam_frame_), v->get_string());
+      else if (opt == "/cam_aperture_x")
+        chg = test_set_cfg_value(&(cfg_cam_aperture_x_), v->get_float());
+      else if (opt == "/cam_aperture_y")
+        chg = test_set_cfg_value(&(cfg_cam_aperture_y_), v->get_float());
+      else if (opt == "/cam_angle")
+        chg = test_set_cfg_value(&(cfg_cam_angle_y_), v->get_float());
+      else if (opt == "/signal_width")
+        cfg_lasercluster_signal_radius_ = 0.5 * v->get_float();
+      else if (opt == "/signal_top")
+        cfg_lasercluster_signal_top_ = v->get_float();
+      else if (opt == "/signal_bottom")
+        cfg_lasercluster_signal_bottom_ = v->get_float();
+      else if (opt == "/debug_tf")
+        cfg_debug_tf_ = v->get_bool();
     }
     cfg_changed_ = cfg_changed_ || chg;
   }
