@@ -44,12 +44,15 @@ fsm:define_states{ export_to=_M,
    {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}},
       final_to="CLOSE_GRIPPER", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="MOVE_BACK", fail_to="FAILED"},
+      final_to="WAIT", fail_to="FAILED"},
+   {"WAIT", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
       final_to="FINAL", fail_to="FAILED"},
 }
 
-fsm:add_transitions{}
+fsm:add_transitions{
+   {"WAIT", "MOVE_BACK", timeout=0.5}
+}
 
 function DRIVE_FORWARD:init()
    --TODO handle invalid point
