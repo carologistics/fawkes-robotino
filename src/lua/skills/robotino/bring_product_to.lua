@@ -2,7 +2,7 @@
 ----------------------------------------------------------------------------
 --  bring_product_to.lua
 --
---  Created: Thu Apr 16
+--  Created: Sat Apr 18
 --  Copyright  2015  Johannes Rothe
 --
 ----------------------------------------------------------------------------
@@ -24,29 +24,40 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "bring_product_to"
-fsm                = SkillHSM:new{name=name, start="MPS_ALIGN", debug=true}
-depends_skills     = {"mps_align", "product_put"}
+fsm                = SkillHSM:new{name=name, start="DRIVE_TO", debug=true}
+depends_skills     = {"mps_align", "product_put", "drive_to"}
 depends_interfaces = {
 }
 
 documentation      = [==[ 
-aligns to a machine a puts a product on the conveyor.
+aligns to a machine and picks a product from the conveyor.
 It will get the offsets and the align distance for the machine 
 from the navgraph
 
 Parameters:
       @param place   the name of the MPS (see navgraph)
+      @param side    the side of the mps (either "input" or "output")
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 -- Constants
 
 fsm:define_states{ export_to=_M,
+   {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
    {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{}
+
+function DRIVE_TO:init()
+   -- TODO handle wrong input
+   if self.fsm.vars.side == "input" then
+      self.skills[1].place = self.fsm.vars.place .. "-I"
+   elseif self.fsm.vars.side == "output" then
+      self.skills[1].place = self.fsm.vars.place .. "-O"
+   end
+end
 
 function MPS_ALIGN:init()
    -- align in front of the conveyor belt
@@ -57,4 +68,8 @@ function MPS_ALIGN:init()
       self.skills[1].y = 0
    end
    self.skills[1].ori = 0
+end
+
+function PRODUCT_PUT:init()
+   self.skills[1].place = self.fsm.vars.place
 end
