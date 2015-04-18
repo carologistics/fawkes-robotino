@@ -43,4 +43,4 @@ fawkes/bbsync:
         pose: Position3DInterface::Pose
         laserswitch: SwitchInterface::/laser-cluster/ampel
         navigator: NavigatorInterface::Navigator
-
+        gripper: AX12GripperInterface::Gripper AX12
