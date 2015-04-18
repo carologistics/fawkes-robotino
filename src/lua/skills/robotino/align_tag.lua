@@ -56,6 +56,7 @@ local min_distance = 0.1
 local desired_position_margin = {x=0.005, y=0.005, ori=0.01}
 local min_velocity = { x = 0.015, y = 0.015, ori = 0.05 } --minimum to start motor
 local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
+local id_not_given_id = -1
 
 -- Variables
 local target = { x = 0 , y = 0 , ori = 0}
@@ -81,6 +82,20 @@ end
 function get_tag_with_id(wanted_id)
    --print("wanted_id: " .. tostring(wanted_id))
    local i=1
+   local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
+   -- get closest tag for testing reasons
+   if wanted_id == -1 then
+      closest_distance=get_tag_distance(tag_0)
+      closest_tag=tag_0
+      for iter=2,16 do
+         my_tag = tags[iter]
+         if (get_tag_distance(my_tag) < closest_distance) and (my_tag:visibility_history() > 0 )then
+            closest_distance = get_tag_distance(my_tag)
+            closest_tag = my_tag
+         end
+      end
+      return closest_tag
+   end
    -- get the correct id
    for j=0,15 do
       id = tag_info:tag_id(j)
@@ -91,7 +106,6 @@ function get_tag_with_id(wanted_id)
       end
       i = i+1
    end
-   local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
    --print("i: " .. tostring(i) .. " tag_" .. tostring(i-1))
    return tags[i]
 end
@@ -129,6 +143,10 @@ end
 function id_not_found(self)
    local found = false
    local wanted_id = self.fsm.vars.tag_id
+   if wanted_id == id_not_given_id then
+      print ("no tag id given, getting closest tag")
+      return false
+   end
    for i=0,15 do
       id=tag_info:tag_id(i)
       --print("tag nr: " .. i .. " id: " .. id .. " wanted id: " .. wanted_id)
@@ -165,7 +183,7 @@ function INIT:init()
    self.fsm.vars.x = self.fsm.vars.x or 0.1
    self.fsm.vars.y = self.fsm.vars.y or 0.0
    self.fsm.vars.ori = self.fsm.vars.ori or 0.0
-   self.fsm.vars.tag_id = self.fsm.vars.tag_id or -1
+   self.fsm.vars.tag_id = self.fsm.vars.tag_id or id_not_given_id
    old_speed={x=0,y=0,ori=0}
 end
 
