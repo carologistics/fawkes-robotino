@@ -79,12 +79,12 @@ function get_tag_visible(tag)
 end
 
 function get_tag_with_id(wanted_id)
-   print("wanted_id: " .. tostring(wanted_id))
+   --print("wanted_id: " .. tostring(wanted_id))
    local i=1
    -- get the correct id
    for j=0,15 do
       id = tag_info:tag_id(j)
-      print("j: " .. tostring(j) .. " id: " .. tostring(id))
+      --print("j: " .. tostring(j) .. " id: " .. tostring(id))
       -- stop when id is found
       if id == wanted_id then
          break
@@ -92,7 +92,7 @@ function get_tag_with_id(wanted_id)
       i = i+1
    end
    local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
-   print("i: " .. tostring(i) .. " tag_" .. tostring(i-1))
+   --print("i: " .. tostring(i) .. " tag_" .. tostring(i-1))
    return tags[i]
 end
 
@@ -131,13 +131,13 @@ function id_not_found(self)
    local wanted_id = self.fsm.vars.tag_id
    for i=0,15 do
       id=tag_info:tag_id(i)
-      print("tag nr: " .. i .. " id: " .. id .. " wanted id: " .. wanted_id)
+      --print("tag nr: " .. i .. " id: " .. id .. " wanted id: " .. wanted_id)
       if id == wanted_id then
          found = true
          break
       end
    end
-   print("found: " ..tostring(found))
+   --print("found: " ..tostring(found))
    return not found
 end
 
