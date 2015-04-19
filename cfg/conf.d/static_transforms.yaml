@@ -43,11 +43,11 @@ plugins/static-transforms:
     cam_signal:
       frame: !frame /mount_profile
       child_frame: /cam_signal
-      trans_x: 0.055
-      trans_y: 0.11
-      trans_z: 0.17
+      trans_x: -0.055
+      trans_y: 0.1
+      trans_z: 0.195
       rot_pitch: 0
-      rot_yaw: 0
+      rot_yaw: 0.42
       rot_roll: 0
 
     #in the gripper where the puck should be holded
