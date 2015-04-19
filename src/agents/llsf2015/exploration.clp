@@ -517,7 +517,7 @@
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (exp-next-machine ?nextMachine)
   (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?)
-		    (look-pos $?lp) (current-look-pos ?lp-index)
+                    (look-pos $?lp) (current-look-pos ?lp-index)
                     (still-to-explore TRUE))
   (not (driven-to-waiting-point))
   (pose (id ?pose-id&:(eq ?pose-id (nth$ ?lp-index ?lp)))
@@ -528,7 +528,9 @@
 	    " (" ?pose-name ")." crlf)
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?nextMachine))
+          (goalmachine ?nextMachine)
+          (worldmodel-change (machine ?nextMachine)
+                             (change ZONE_TIMES_SEARCHED_INCREMENT)))
   (skill-call drive_to place ?pose-name ori ?pose-ori just_ori true)
 )
 
@@ -546,7 +548,9 @@
   (printout t "Going to next machine, skip finding tag." crlf)
   (retract ?s ?n)
   (assert (state EXP_SKIP_FIND_TAG)
-          (goalmachine ?nextMachine))
+          (goalmachine ?nextMachine)
+          (worldmodel-change (machine ?nextMachine)
+                             (change ZONE_TIMES_SEARCHED_INCREMENT)))
 )
 
 (defrule exp-tag-found-by-other-robot
@@ -572,7 +576,6 @@
   (retract ?s)
   (assert (state EXP_DRIVE_TO_OUTPUT))
   (skill-call drive_to place (get-light-signal-side ?machine))
-
 )
 
 (defrule exp-receive-type-light-pattern-matching

@@ -98,6 +98,7 @@
     (pb-set-field ?zone-msg "machine" (str-cat ?zone:machine))
     (pb-set-field ?zone-msg "recognized" ?zone:recognized)
     (pb-set-field ?zone-msg "still_to_explore" ?zone:still-to-explore)
+    (pb-set-field ?zone-msg "times_searched" ?zone:times-searched)
 
     (pb-add-list ?worldmodel "zones" ?zone-msg)
   )
@@ -227,7 +228,8 @@
 		 (eq ?zone:name (sym-cat (pb-field-value ?zone-msg "name")))
       (modify ?zone (machine (sym-cat (pb-field-value ?zone-msg "machine")))
 	      (recognized (pb-field-value ?zone-msg "recognized"))
-	      (still-to-explore (pb-field-value ?zone-msg "still_to_explore")))
+	      (still-to-explore (pb-field-value ?zone-msg "still_to_explore"))
+              (times-searched (pb-field-value ?zone-msg "times_searched")))
     )
   )
 
@@ -565,6 +567,9 @@
           )
           (case ZONE_MACHINE_IDENTIFIED then 
 	    (modify ?zone (machine (sym-cat (pb-field-value ?p "value_string"))))
+          )
+          (case ZONE_TIMES_SEARCHED_INCREMENT then 
+	    (modify ?zone (times-searched (+ 1 ?zone:times-searched)))
           )
 	  (default
 	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))

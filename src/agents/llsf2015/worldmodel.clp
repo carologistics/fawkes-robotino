@@ -519,7 +519,7 @@
   (declare (salience ?*PRIORITY-WM*))
   ?wmc <- (worldmodel-change (machine ?zone) (value ?value)
                              (change ?change) (already-applied FALSE))
-  ?zone-fact <- (zone-exploration (name ?zone))
+  ?zone-fact <- (zone-exploration (name ?zone) (times-searched ?times-searched))
   =>  
   (switch ?change
     (case ZONE_STILL_TO_EXPLORE then 
@@ -527,6 +527,9 @@
     )
     (case ZONE_MACHINE_IDENTIFIED then 
       (modify ?zone-fact (machine ?value))
+    )
+    (case ZONE_SEARCHED_INCREMENT then 
+      (modify ?zone-fact (times-searched (+ 1 ?times-searched)))
     )
     (default
       (printout error "Worldmodel-Change Type " ?change

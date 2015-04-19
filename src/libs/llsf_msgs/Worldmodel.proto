@@ -98,6 +98,7 @@ message ZoneState {
   required string machine = 2;
   required bool recognized = 3;
   required bool still_to_explore = 4;
+  required uint32 times_searched = 5;
 }
 
 message WorldmodelOrder {

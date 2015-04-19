@@ -91,6 +91,7 @@
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill drive_to) (args place ?zone) (target ?zone))
 	  (wait-for-lock (priority ?p) (res ?zone))
+          (worldmodel-change (machine ?zone) (change ZONE_TIMES_SEARCHED_INCREMENT))
   )
 )
 

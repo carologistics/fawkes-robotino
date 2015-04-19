@@ -43,6 +43,7 @@
   ; for exploration-catch-up in produciton
   (multislot incoming (type SYMBOL) (default (create$)))  
   (multislot incoming-agent (type SYMBOL) (default (create$)))
+  (slot times-searched (type INTEGER) (default 0))
 )
 
 (deftemplate exp-matching
