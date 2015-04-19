@@ -56,9 +56,7 @@ local min_distance = 0.1
 local desired_position_margin = {x=0.01, y=0.01, ori=0.01}
 local min_velocity = { x = 0.015, y = 0.015, ori = 0.05 } --minimum to start motor
 local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
-local id_not_given_id = -1
 local tfm = require("tf_module")
-local transform_name = ""
 
 -- Variables
 local target = { x = 0 , y = 0 , ori = 0}
@@ -81,21 +79,19 @@ function get_tag_visible(tag)
    return tag:visibility_history() > 0
 end
 
-function get_tag_with_id(wanted_id)
-   --print("wanted_id: " .. tostring(wanted_id))
+function get_tag_with_id()
+   --print("tag_id: " .. tostring(fsm.vars.tag_id))
    local i=1
    local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
-   transform_name = "/tag_"
    -- get closest tag for testing reasons
-   if wanted_id == -1 then
-      closest_distance=get_tag_distance(tag_0)
-      closest_tag=tag_0
-      for iter=2,16 do
-         my_tag = tags[iter]
+   if not fsm.vars.tag_id then
+      local closest_distance=9999
+      for iter=1,16 do
+         local my_tag = tags[iter]
          if (get_tag_distance(my_tag) < closest_distance) and (my_tag:visibility_history() > 0 )then
             closest_distance = get_tag_distance(my_tag)
             closest_tag = my_tag
-            transform_name = transform_name .. tostring(iter-1)
+            fsm.vars.transform_name = "/tag_" .. tostring(iter-1)
          end
       end
       return closest_tag
@@ -105,8 +101,8 @@ function get_tag_with_id(wanted_id)
       id = tag_info:tag_id(j)
       --print("j: " .. tostring(j) .. " id: " .. tostring(id))
       -- stop when id is found
-      if id == wanted_id then
-         transform_name = transform_name .. tostring(j)
+      if id == fsm.vars.tag_id then
+         fsm.vars.transform_name = "/tag_" .. tostring(j)
          break
       end
       i = i+1
@@ -118,8 +114,8 @@ end
 -- Condition Functions
 -- Check, weather the final position is reached
 function tag_reached(self)
-   local tag = get_tag_with_id(self.fsm.vars.tag_id)
-   local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, transform_name, "/base_link")
+   local tag = get_tag_with_id()
+   local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, fsm.vars.transform_name, "/base_link")
 
    return (math.abs(distance.x) < desired_position_margin.x)
       and (math.abs(distance.y) < desired_position_margin.y)
@@ -127,7 +123,7 @@ end
 
 -- Check if one tag is visible
 function tag_not_visible(self)
-    local tag = get_tag_with_id(self.fsm.vars.tag_id)
+    local tag = get_tag_with_id()
     return (tag:visibility_history() <= 0)
 end
 
@@ -144,15 +140,14 @@ end
 -- check weather the wanted tag is availabel
 function id_not_found(self)
    local found = false
-   local wanted_id = self.fsm.vars.tag_id
-   if wanted_id == id_not_given_id then
+   if not fsm.vars.tag_id then
       print ("no tag id given, getting closest tag")
       return false
    end
    for i=0,15 do
       id=tag_info:tag_id(i)
-      --print("tag nr: " .. i .. " id: " .. id .. " wanted id: " .. wanted_id)
-      if id == wanted_id then
+      --print("tag nr: " .. i .. " id: " .. id .. " wanted id: " .. fsm.vars.tag_id)
+      if id == fsm.vars.tag_id then
          found = true
          break
       end
@@ -185,7 +180,6 @@ function INIT:init()
    self.fsm.vars.x = self.fsm.vars.x or 0.1
    self.fsm.vars.y = self.fsm.vars.y or 0.0
    self.fsm.vars.ori = self.fsm.vars.ori or 0.0
-   self.fsm.vars.tag_id = self.fsm.vars.tag_id or id_not_given_id
    old_speed={x=0,y=0,ori=0}
 end
 
@@ -205,10 +199,10 @@ end
 
 function DRIVE:loop()
 
-   local tag = get_tag_with_id(self.fsm.vars.tag_id)
+   local tag = get_tag_with_id()
 
-   local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, transform_name, "/base_link")
-   --print("transform_name: " .. transform_name)
+   local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, self.fsm.vars.transform_name, "/base_link")
+   --print("self.fsm.vars.transform_name: " .. self.fsm.vars.transform_name)
 
    --print("current distance")
    --printtable(distance)
