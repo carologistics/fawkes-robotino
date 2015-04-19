@@ -88,6 +88,10 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     # enough for a puck to be held
     angle_for_holds_puck_threshold: -0.9
 
+    # A value to be substracted from the destination opening angle on center command
+    # This is needed because the gripper tends to open a little on each center command otherwise
+    center_angle_correction_amount: 0.1
+
     # Clockwise compliance margin for RX28 PTU
 #    cw_compl_margin: 0
     # Counter-clockwise compliance margin for RX28 PTU
