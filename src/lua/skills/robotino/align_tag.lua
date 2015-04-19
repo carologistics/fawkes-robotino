@@ -53,7 +53,7 @@ documentation      = [==[Moves the robot that the tag 0 is seen at the given poi
 
 -- Constants
 local min_distance = 0.1
-local desired_position_margin = {x=0.005, y=0.005, ori=0.01}
+local desired_position_margin = {x=0.01, y=0.01, ori=0.01}
 local min_velocity = { x = 0.015, y = 0.015, ori = 0.05 } --minimum to start motor
 local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
 local id_not_given_id = -1
@@ -119,13 +119,10 @@ end
 -- Check, weather the final position is reached
 function tag_reached(self)
    local tag = get_tag_with_id(self.fsm.vars.tag_id)
-   -- the forward distance is the z trnaslation in the camera frame of reference
-   forward_distance = tag:translation(2)
-   -- the lateral distance is the x translation in the camera frame of reference
-   lateral_distance = -tag:translation(0)
+   local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, transform_name, "/base_link")
 
-   return (math.abs(forward_distance-self.fsm.vars.x) < desired_position_margin.x)
-      and (math.abs(lateral_distance-self.fsm.vars.y) < desired_position_margin.y)
+   return (math.abs(distance.x) < desired_position_margin.x)
+      and (math.abs(distance.y) < desired_position_margin.y)
 end
 
 -- Check if one tag is visible
@@ -211,7 +208,7 @@ function DRIVE:loop()
    local tag = get_tag_with_id(self.fsm.vars.tag_id)
 
    local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, transform_name, "/base_link")
-   print("transform_name: " .. transform_name)
+   --print("transform_name: " .. transform_name)
 
    --print("current distance")
    --printtable(distance)
