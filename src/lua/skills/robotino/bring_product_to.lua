@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"mps_align", "product_put", "drive_to"}
+depends_skills     = {"mps_align", "product_put", "drive_to","shelf_put","slide_put"}
 depends_interfaces = {
 }
 
@@ -36,7 +36,9 @@ from the navgraph
 
 Parameters:
       @param place   the name of the MPS (see navgraph)
-      @param side    the side of the mps, default is input (give "output" to bring to output)
+      @param side    optional the side of the mps, default is input (give "output" to bring to output)
+      @param shelf   Position on shelf: ( LEFT | MIDDLE | RIGHT )
+      @param slide   True if you want to put it on shelf
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -45,14 +47,20 @@ skillenv.skill_module(_M)
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
-   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"DECIDE_ENDSKILL", JumpState},
+   {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"}
+   {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
+   {"DECIDE_ENDSKILL", "SKILL_SHELF_PUT", cond="vars.shelf", desc="Put on shelf"},
+   {"DECIDE_ENDSKILL", "SKILL_SLIDE_PUT", cond="vars.slide", desc="Put on slide"},
+   {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PUT", cond=true, desc="Put on conveyor"}
 }
 
 function INIT:init()
@@ -88,6 +96,11 @@ function MPS_ALIGN:init()
    self.skills[1].ori = 0
 end
 
-function PRODUCT_PUT:init()
+function SKILL_PRODUCT_PUT:init()
    self.skills[1].place = self.fsm.vars.place
+end
+
+function SKILL_SHELF_PUT:init()
+   -- Just hand through the Shelf position
+   self.skills[1].slot = self.fsm.vars.shelf
 end
