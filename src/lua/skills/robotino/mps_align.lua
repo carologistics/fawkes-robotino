@@ -57,13 +57,15 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line},
    {"SKILL_ALIGN_TAG", SkillJumpState, skills={{align_tag}},
       final_to="SEE_LINE", fail_to="FAILED"},
    {"SEE_LINE", JumpState},
+   {"LINE_SETTLE", JumpState},
    {"ALIGN_WITH_LASERLINES", SkillJumpState, skills={{motor_move}},
       final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
-   {"SEE_LINE", "ALIGN_WITH_LASERLINES", cond=see_line, desc="Seeing a line"},
-   {"SEE_LINE", "FAILED", timeout=3, desc="Not seeing a line, continue just aligned by tag"}
+   {"SEE_LINE", "LINE_SETTLE", cond=see_line, desc="Seeing a line"},
+   {"SEE_LINE", "FAILED", timeout=3, desc="Not seeing a line, continue just aligned by tag"},
+   {"LINE_SETTLE", "ALIGN_WITH_LASERLINES", timeout=0.5, desc="let the line distance settle"}
 }
 
 function SKILL_ALIGN_TAG:init()
