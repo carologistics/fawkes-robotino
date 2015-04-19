@@ -306,8 +306,12 @@ GripperAX12AThread::loop()
         __servo_if_left ->msgq_enqueue(prevent_left_msg);
         __servo_if_right->msgq_enqueue(prevent_right_msg);
         
-        goto_gripper(__servo_if_left->angle() - (__servo_if_left->angle() + get_opening_angle() / 2),
-                     __servo_if_right->angle() - (__servo_if_right->angle() - get_opening_angle() / 2));
+        // The target_opening_angle has to be smaller than the opening_angle because
+        // the servos tend to open a little when only the opening_angle is used.
+        float target_opening_angle_per_servo = (get_opening_angle() - __cfg_center_angle_correction_amount) / 2.;
+        
+        goto_gripper(__servo_if_left->angle() - (__servo_if_left->angle() + target_opening_angle_per_servo),
+                     __servo_if_right->angle() - (__servo_if_right->angle() - target_opening_angle_per_servo));
         center_pending = true;
         
         __gripper_if->set_final(false);
@@ -611,6 +615,7 @@ void GripperAX12AThread::load_config()
   __cfg_max_torque        = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
   __cfg_load_for_holds_puck = config->get_float((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
   __cfg_angle_for_holds_puck = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
+  __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());
