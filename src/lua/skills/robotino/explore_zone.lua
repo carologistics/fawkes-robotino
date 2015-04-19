@@ -71,7 +71,7 @@ Searches for mps with the laser and tag vision
 @param max_x  maximal x coordinate to explore
 @param max_y  maximal y coordinate to explore
 
-@param tags_searched   list of tags to search fore (all others will be ignored), if nil all will be used
+@param search_tags   list of tags to search fore (all others will be ignored), if nil all will be used
 
 ]==]
 
@@ -92,14 +92,14 @@ function mps_in_zone(self, x, y)
 end
 
 function tag_searched(self, if_ID)
-  if self.fsm.vars.tags_searched == nil then
+  if self.fsm.vars.search_tags == nil then
     return true
   end
 
   if_ID = string.sub(if_ID, 13)
   printf("TAG ID: " .. tag_info:tag_id(if_ID))
 
-  for k,v in pairs(self.fsm.vars.tags_searched) do
+  for k,v in pairs(self.fsm.vars.search_tags) do
     if v == tag_info:tag_id(if_ID) then
       return true
     end
