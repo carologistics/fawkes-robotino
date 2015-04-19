@@ -16,7 +16,7 @@
 module(...,  skillenv.module_init)
 
 -- Crucial skill information
-name               = "detect_signal_mps"
+name               = "mps_detect_signal"
 fsm                = SkillHSM:new{name=name,  start="INIT",  debug=true}
 depends_skills     = nil
 depends_interfaces = {
