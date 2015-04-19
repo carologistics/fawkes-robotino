@@ -58,8 +58,20 @@ local min_velocity = { x = 0.015, y = 0.015, ori = 0.05 } --minimum to start mot
 local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
 local tfm = require("tf_module")
 
+local TIMEOUT=2
+
 -- Variables
 local target = { x = 0 , y = 0 , ori = 0}
+
+
+function printtable(table)
+   for k,v in pairs(table) do
+      print(k .. "\t\t= " .. v)
+      if(k == "ori") then
+         print("degree\t= " .. v*180/math.pi)
+      end
+   end
+end
 
 --moving funtions
 function send_transrot(vx, vy, omega)
@@ -79,57 +91,25 @@ function get_tag_visible(tag)
    return tag:visibility_history() > 0
 end
 
-function get_tag_with_id()
-   --print("tag_id: " .. tostring(fsm.vars.tag_id))
-   local i=1
-   local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
-   -- get closest tag for testing reasons
-   if not fsm.vars.tag_id then
-      local closest_distance=9999
-      for iter=1,16 do
-         local my_tag = tags[iter]
-         if (get_tag_distance(my_tag) < closest_distance) and (my_tag:visibility_history() > 0 )then
-            closest_distance = get_tag_distance(my_tag)
-            closest_tag = my_tag
-            fsm.vars.transform_name = "/tag_" .. tostring(iter-1)
-         end
-      end
-      return closest_tag
-   end
-   -- get the correct id
-   for j=0,15 do
-      id = tag_info:tag_id(j)
-      --print("j: " .. tostring(j) .. " id: " .. tostring(id))
-      -- stop when id is found
-      if id == fsm.vars.tag_id then
-         fsm.vars.transform_name = "/tag_" .. tostring(j)
-         break
-      end
-      i = i+1
-   end
-   --print("i: " .. tostring(i) .. " tag_" .. tostring(i-1))
-   return tags[i]
-end
-
 -- Condition Functions
 -- Check, weather the final position is reached
 function tag_reached(self)
-   local tag = get_tag_with_id()
    local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, fsm.vars.transform_name, "/base_link")
+   print(fsm.vars.transform_name)
 
    return (math.abs(distance.x) < desired_position_margin.x)
       and (math.abs(distance.y) < desired_position_margin.y)
 end
 
 -- Check if one tag is visible
-function tag_not_visible(self)
-    local tag = get_tag_with_id()
-    return (tag:visibility_history() <= 0)
+function tag_not_visible()
+    local tag = fsm.vars.iface_name
+    return (tag and tag:visibility_history() <= 0)
 end
 
 -- Check if input is not valid
-function input_invalid(self)
-	return self.fsm.vars.x < min_distance
+function input_ok()
+	return fsm.vars.x >= min_distance
 end
 
 -- check for motor writer
@@ -137,40 +117,25 @@ function no_motor_writer(self)
 	return not motor:has_writer()
 end
 
--- check weather the wanted tag is availabel
-function id_not_found(self)
-   local found = false
-   if not fsm.vars.tag_id then
-      print ("no tag id given, getting closest tag")
-      return false
-   end
-   for i=0,15 do
-      id=tag_info:tag_id(i)
-      --print("tag nr: " .. i .. " id: " .. id .. " wanted id: " .. fsm.vars.tag_id)
-      if id == fsm.vars.tag_id then
-         found = true
-         break
-      end
-   end
-   --print("found: " ..tostring(found))
-   return not found
-end
-
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
+   {"FIND_TAG", JumpState},
    {"DRIVE", JumpState},
    {"ORIENTATE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond=id_not_found, desc="Tag with the wanted id is not visible"},
+   closure={input_ok=input_ok},
+   {"INIT", "FIND_TAG", cond=input_ok},
+   {"FIND_TAG", "DRIVE", cond="vars.iface_name"},
+   {"FIND_TAG", "FAILED", timeout=TIMEOUT},
+   {"INIT", "FAILED", cond="not input_ok()"},
+   {"INIT", "FAILED", cond=tag_not_visible, desc="Tag not visible"},
    {"INIT", "FAILED", cond=no_motor_writer, desc="No writer for the motor"},
    {"DRIVE", "FAILED", cond=tag_not_visible, desc="Tag not visible"},
-   {"INIT", "FAILED", cond=input_invalid, desc="Distance to tag is garbage, sould be > than " .. min_distance},
-   {"INIT", "DRIVE", cond=true, desc="start"},
    {"DRIVE", "ORIENTATE", cond=tag_reached, desc="Tag Reached orientate"},
 }
 
@@ -183,23 +148,41 @@ function INIT:init()
    old_speed={x=0,y=0,ori=0}
 end
 
--- Drive to tag
-function DRIVE:init()
-end
-
-function printtable(table)
-   for k,v in pairs(table) do
-      print(k .. "\t\t= " .. v)
-      if(k == "ori") then
-         print("degree\t= " .. v*180/math.pi)
+function FIND_TAG:loop()
+   local i=1
+   local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
+   if not self.fsm.vars.tag_id then
+      -- no tag ID argument given
+      local closest_distance=9999
+      for iter=1,16 do
+         local my_tag = tags[iter]
+         if (get_tag_distance(my_tag) < closest_distance) and (my_tag:visibility_history() > 0 )then
+            closest_distance = get_tag_distance(my_tag)
+            self.fsm.vars.transform_name = "/tag_" .. tostring(iter-1)
+            self.fsm.vars.iface_name = my_tag
+         end
       end
+   else
+      -- find the blackboard interface that has the ID given by the tag_id arg
+      for j=0,15 do
+         id = tag_info:tag_id(j)
+         --print("j: " .. tostring(j) .. " id: " .. tostring(id))
+         -- stop when id is found
+         if id == fsm.vars.tag_id then
+            self.fsm.vars.transform_name = "/tag_" .. tostring(j)
+            self.fsm.vars.iface_name = tags[i]
+            break
+         end
+         i = i+1
+      end
+      --print("i: " .. tostring(i) .. " tag_" .. tostring(i-1))
    end
 end
 
 
 function DRIVE:loop()
 
-   local tag = get_tag_with_id()
+   local tag = self.fsm.vars.iface_name
 
    local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, self.fsm.vars.transform_name, "/base_link")
    --print("self.fsm.vars.transform_name: " .. self.fsm.vars.transform_name)
