@@ -201,6 +201,7 @@ connections:
   # connecting edges in Y direction
   - [Exp-C1,  Exp-C2]
   - [Exp-C2,  Exp-C3]
+  - [Exp-C4,  Exp-C5]
   - [Exp-C5,  Exp-C6]
   - [Exp-C6,  Exp-C7]
   - [Exp-C7, Exp-C8]
@@ -225,6 +226,7 @@ connections:
   # connecting edges in Y direction
   - [Exp-M1,  Exp-M2]
   - [Exp-M2,  Exp-M3]
+  - [Exp-M4,  Exp-M5]
   - [Exp-M5,  Exp-M6]
   - [Exp-M6,  Exp-M7]
   - [Exp-M7, Exp-M8]
