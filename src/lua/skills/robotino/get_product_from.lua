@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"mps_align", "product_pick", "drive_to"}
+depends_skills     = {"mps_align", "product_pick", "drive_to","shelf_pick"}
 depends_interfaces = {
 }
 
@@ -37,6 +37,7 @@ from the navgraph
 Parameters:
       @param place   the name of the MPS (see navgraph)
       @param side    the side of the mps (default is output give "input" to get from input)
+      @param shelf   Position on shelf: ( LEFT | MIDDLE | RIGHT )
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -45,14 +46,18 @@ skillenv.skill_module(_M)
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
-   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"DECIDE_ENDSKILL", JumpState},
+   {"SKILL_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
+   {"DECIDE_ENDSKILL", "SKILL_SHELF_PICK", cond="vars.shelf", desc="Pick from shelf"},
+   {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PICK", cond=true, desc="Pick from conveyor"},
 }
 
 function INIT:init()
@@ -60,7 +65,7 @@ function INIT:init()
 end
 
 function DRIVE_TO:init()
-   if self.fsm.vars.side == "input" then
+   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       self.skills[1].place = self.fsm.vars.place .. "-I"
    else --if no side is given drive to output
       self.skills[1].place = self.fsm.vars.place .. "-O"
@@ -70,7 +75,7 @@ end
 function MPS_ALIGN:init()
    -- align in front of the conveyor belt
    self.skills[1].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
-   if self.fsm.vars.side == "input" then
+   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
          self.skills[1].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
       else
@@ -88,6 +93,10 @@ function MPS_ALIGN:init()
    self.skills[1].ori = 0
 end
 
-function PRODUCT_PICK:init()
+function SKILL_PRODUCT_PICK:init()
    self.skills[1].place = self.fsm.vars.place
+end
+
+function SKILL_SHELF_PICK:init()
+   self.skills[1].slot = self.fsm.vars.shelf
 end
