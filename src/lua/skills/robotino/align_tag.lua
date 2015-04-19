@@ -233,3 +233,7 @@ end
 function ORIENTATE:init()
 	self.skills[1].ori = self.fsm.vars.ori
 end
+
+function FAILED:init()
+   send_transrot(0,0,0)
+end
