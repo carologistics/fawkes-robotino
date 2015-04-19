@@ -170,7 +170,7 @@
   (time $?now)
   =>
   (printout t "Found Tag Nr." ?tag " (" ?machine " " ?side ")"  crlf)
-  ; Do I have to 
+  ; Do I have to drive nearer for better accuracy?
   (if ?already-near
     then
     (printout t "Recognized Tag" crlf)
@@ -368,7 +368,7 @@
   (assert (second-recognize-try)
   )
   (modify ?ws (time ?now))
-  (skill-call motor_move x 0 y 0.15 vel_trans 0.1)
+  (skill-call motor_move x 0 y 0.1 vel_trans 0.1)
 )
 
 (defrule exp-recognized-machine-failed-twice
@@ -529,7 +529,7 @@
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?nextMachine))
-  (skill-call drive_to place ?pose-name ori ?pose-ori)
+  (skill-call drive_to place ?pose-name ori ?pose-ori just_ori true)
 )
 
 (defrule exp-go-to-next-machine-with-a-found-tag
@@ -759,26 +759,6 @@
       (retract ?s)
       (assert (state EXP_PREPARE_FOR_PRODUCTION_FINISHED))
   )
-)
-
-(defrule exp-nav-gen-test
-  ?n <- (nav-gen-test)
-  =>
-  (retract ?n)
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
-  (blackboard-set-msg-field ?msg "id" "CCS")
-  (blackboard-set-msg-field ?msg "side" INPUT)
-  (blackboard-set-msg-field ?msg "frame" "/map")
-  (blackboard-set-msg-multifield ?msg "tag_translation" (create$ 0 0 0))
-  (blackboard-set-msg-multifield ?msg "tag_rotation" (create$ 0 0 0 1))
-  (blackboard-send-msg ?msg)
-  (bind ?msg-2 (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
-  (blackboard-set-msg-field ?msg-2 "id" "MCS")
-  (blackboard-set-msg-field ?msg-2 "side" INPUT)
-  (blackboard-set-msg-field ?msg-2 "frame" "/map")
-  (blackboard-set-msg-multifield ?msg-2 "tag_translation" (create$ 3 3 0))
-  (blackboard-set-msg-multifield ?msg-2 "tag_rotation" (create$ 0 0 0.7 0.7))
-  (blackboard-send-msg ?msg-2)
 )
 
 (defrule exp-add-missing-tag-from-other-team

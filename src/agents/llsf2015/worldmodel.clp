@@ -169,7 +169,7 @@
   (declare (salience ?*PRIORITY-WM-LOW*))
   (state SKILL-FAILED)
   (skill-to-execute (skill take_puck_to) (state failed) (target ?name))
-  ?hf <- (holding ?)
+  ?hf <- (holding ~NONE)
   (puck-in-gripper ?puck)
   =>
   (if (not ?puck) then
@@ -183,7 +183,7 @@
   (declare (salience ?*PRIORITY-WM-LOW*))
   (state SKILL-FAILED)
   (skill-to-execute (skill drive_to) (state failed) (target ?name))
-  ?hf <- (holding ?)
+  ?hf <- (holding ~NONE)
   (puck-in-gripper ?puck)
   =>
   (if (not ?puck) then
@@ -557,6 +557,31 @@
       (modify ?ps (incoming (delete-member$ ?incoming ?value))
 	         ;every agent should do only one thing at a machine
 	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
+    )
+    (default  
+      (bind ?could-apply-change FALSE)
+    )
+  )
+  (if ?could-apply-change then
+    (modify ?wmc (already-applied TRUE))
+  )
+)
+
+(defrule wm-process-wm-change-before-sending-zone
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (machine ?zone) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent&~DEFAULT))
+  ?zone-fact <- (zone-exploration (name ?zone) (incoming $?incoming) (incoming-agent $?incoming-agent))
+  =>
+  (bind ?could-apply-change TRUE)
+  (switch ?change
+    (case ADD_INCOMING then 
+      (modify ?zone-fact (incoming (append$ ?incoming ?value))
+              (incoming-agent (append$ ?incoming-agent ?agent)))
+    )
+    (case REMOVE_INCOMING then 
+      (modify ?zone-fact (incoming (delete-member$ ?incoming ?value))
+	      ;every agent should do only one thing at a machine
+              (incoming-agent (delete-member$ ?incoming-agent ?agent)))
     )
     (default  
       (bind ?could-apply-change FALSE)

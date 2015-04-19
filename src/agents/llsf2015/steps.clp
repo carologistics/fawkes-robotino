@@ -60,7 +60,7 @@
   )
 )
 
-(defrule step-get-base
+(defrule step-get-base-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name get-base) (state wait-for-activation) (task-priority ?p)
@@ -75,6 +75,98 @@
 	  (skill-to-execute (skill ppgoto) (args place (get-output ?mps)) (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
   )
+)
+
+(defrule step-find-tag-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name find-tag) (state wait-for-activation) (task-priority ?p)
+		 (zone ?zone) (machine ?missing-mps))
+  ?state <- (state STEP-STARTED)
+  (game-time $?game-time)
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (printout warn "TODO: use skill to find a tag!" crlf)
+  (assert (state WAIT-FOR-LOCK)
+	  (skill-to-execute (skill drive_to) (args place ?zone) (target ?zone))
+	  (wait-for-lock (priority ?p) (res ?zone))
+  )
+)
+
+
+(defrule step-find-tag-finish
+  "tag-find skill finished, try to find tag"
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  (step (name find-tag) (state running))
+  ?state <- (state SKILL-FINAL|SKILL-FAILED)
+  ?ste <- (skill-to-execute (skill drive_to)
+			    (args $?args) (state final|failed))
+  (time $?now)
+  =>
+  (retract ?state ?ste)
+  (assert (state PROD_LOOKING_FOR_TAG)
+   (timer (name waiting-for-tag-since) (time ?now) (seq 1)))
+)
+(defrule step-find-tag-report-tag
+  "Add found tag to navgraph and finish step."
+  (phase PRODUCTION)
+  ?step <- (step (name find-tag) (state running) (zone ?zone) (machine ?machine))
+  ?ws <- (timer (name waiting-for-tag-since))
+  ?s <- (state PROD_LOOKING_FOR_TAG)
+  ?zone-fact <- (zone-exploration (name ?zone))
+  (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
+  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
+  (not (found-tag (name ?machine)))
+  (TagVisionInterface (id "/tag-vision/info") (tags_visible ?num-tags&:(> ?num-tags 0))
+                      (tag_id $?tag-ids&:(member$ ?tag ?tag-ids)))
+  (Position3DInterface (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1)))) 
+                       (visibility_history ?vh&:(> ?vh ?needed-vh)) 
+                       (translation $?trans) (rotation $?rot)
+                       (frame ?frame) (time $?timestamp))
+  =>
+  (printout t "Found Tag Nr." ?tag " (" ?machine " " ?side ")"  crlf)
+  ; transform to map-frame
+  (if (tf-can-transform "/map" ?frame ?timestamp) then
+    (bind ?tf-transrot (tf-transform-pose "/map" ?frame ?timestamp ?trans ?rot))
+    (printout t "Transformed to " ?tf-transrot crlf)
+    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+                       (trans (subseq$ ?tf-transrot 1 3))
+                       (rot (subseq$ ?tf-transrot 4 7))))
+    else
+    (printout warn "Can not transform " ?frame " to /map. Trying most current time" crlf)
+    (if (tf-can-transform "/map" ?frame (create$ 0 0)) then
+      (bind ?tf-transrot (tf-transform-pose "/map" ?frame (create$ 0 0) ?trans ?rot))
+      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+                         (trans (subseq$ ?tf-transrot 1 3))
+			   (rot (subseq$ ?tf-transrot 4 7))))
+      else
+      (printout error "Can not transform " ?frame " to /map. Tags positions are broken after synchronization" crlf)
+      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+			   (trans ?trans) (rot ?rot)))
+      )
+    )
+  (retract ?s ?ws)
+  (assert (worldmodel-change (machine ?machine) (change ADD_TAG))
+          (state STEP-FINISHED))
+  (modify ?step (state finished))
+
+  (navgraph-add-all-new-tags)
+)
+(defrule step-find-tag-fail
+  "Finish step if there is no tag in this zone."
+  (phase PRODUCTION)
+  ?step <- (step (name find-tag) (state running) (zone ?zone) (machine ?machine))
+  (time $?now)
+  ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
+  ?s <- (state PROD_LOOKING_FOR_TAG)
+  ?zone-fact <- (zone-exploration (name ?zone))
+  =>
+  (printout t "No tag found in " ?zone crlf)
+  (retract ?s ?ws)
+  (assert (state STEP-FAILED))
+  (modify ?step (state failed))
 )
 
 

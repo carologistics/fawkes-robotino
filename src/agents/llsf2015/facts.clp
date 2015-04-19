@@ -39,6 +39,10 @@
   (slot recognized (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot still-to-explore (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
   (slot next (type SYMBOL)) ;TODO delete next
+
+  ; for exploration-catch-up in produciton
+  (multislot incoming (type SYMBOL) (default (create$)))  
+  (multislot incoming-agent (type SYMBOL) (default (create$)))
 )
 
 (deftemplate exp-matching
@@ -108,7 +112,7 @@
   (slot name (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
   (slot mtype (type SYMBOL) (allowed-values BS DS RS CS))
-  (multislot incoming (type SYMBOL) (allowed-symbols BRING_S0 BRING_S1 BRING_S2 PICK_PROD PICK_CO))
+  (multislot incoming (type SYMBOL))
   (multislot incoming-agent (type SYMBOL) (default (create$))) ;the agent bringing/getting the thing specified in incoming
   ;id of the loaded-puck
   (slot loaded-id (type INTEGER) (default 0))
@@ -178,8 +182,10 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0))
-  (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed) (default proposed))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 exploration-catch-up))
+  (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running
+                                             finished failed)
+        (default proposed))
   (slot priority (type INTEGER) (default 0))
   ;a task consists of multiple steps
   (slot current-step (type INTEGER) (default 0))
@@ -193,11 +199,13 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base
+                                            find-tag))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
   (slot machine (type SYMBOL))
+  (slot zone (type SYMBOL))
   (slot product-type (type SYMBOL))
   (slot machine-feature (type SYMBOL) (allowed-symbols CONVEYOR SHELF SLIDE))
   (slot shelf-slot (type SYMBOL) (allowed-symbols LEFT MIDDLE RIGHT))
