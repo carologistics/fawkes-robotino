@@ -48,6 +48,8 @@ skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
 
+local TAG_X_ERR=0.02
+
 function see_line()
    printf("vis_hist: %f", line1:visibility_history())
    return line1:visibility_history() > 30
@@ -77,7 +79,7 @@ function SKILL_ALIGN_TAG:init()
    local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
    -- give align_tag the id if we have one
    self.skills[1].tag_id = self.fsm.vars.tag_id
-   self.skills[1].x = self.fsm.vars.x
+   self.skills[1].x = self.fsm.vars.x + TAG_X_ERR
    self.skills[1].y = -self.fsm.vars.y
    self.skills[1].ori = self.fsm.vars.ori
 end
