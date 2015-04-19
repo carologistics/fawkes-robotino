@@ -555,9 +555,8 @@ bool
 GripperAX12AThread::holds_puck()
 {
   return 
-          (__servo_if_left->load()  & 0x3ff) >= __cfg_load_for_holds_puck * 0x3ff && 
-          (__servo_if_right->load() & 0x3ff) >= __cfg_load_for_holds_puck * 0x3ff && 
-          get_opening_angle() <= __cfg_angle_for_holds_puck;
+          (__servo_if_left->load()  & 0x3ff) + (__servo_if_right->load() & 0x3ff) >= __cfg_load_for_holds_puck && 
+          get_opening_angle() >= __cfg_angle_for_holds_puck;
 }
 
 /** Handle config changes
