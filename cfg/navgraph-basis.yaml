@@ -288,8 +288,8 @@ nodes:
     pos: [3.15, 2.5]
     properties:
       - only_copy_properties
-      - tag_input: 1
-      - tag_output: 2
+      - tag_input: 33
+      - tag_output: 34
       - input_offset_y: 0
       - output_offset_y: 0
   - name: T-CS1-I
