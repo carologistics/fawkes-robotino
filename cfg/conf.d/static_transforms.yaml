@@ -20,7 +20,7 @@ plugins/static-transforms:
       child_frame: /cam_tag
       trans_x: 0.1
       trans_y: 0.0
-      trans_z: 0.54
+      trans_z: 0.44
       rot_pitch: 0 
       rot_yaw: -1.57079632679 # -90°
       rot_roll: -1.57079632679 # -90°
