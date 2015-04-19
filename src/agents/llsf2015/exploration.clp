@@ -134,17 +134,18 @@
   )
 )
 
-(defrule exp-drive-to-finished
+(defrule exp-explore-zone-skill-finished
   "Arriving at a machine in first or second round. Wait for tag vision."
   (phase EXPLORATION)
-  ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
+  ?final <- (skill (name "explore_zone") (status ?explore-zone-state&FINAL|FAILED))
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
-  (printout t "Arrived. Looking for a tag." crlf)
+  (printout t "Arrived. explore_zone was " ?explore-zone-state " Looking for a tag." crlf)
   (retract ?s ?final)
   (assert (state EXP_LOOKING_FOR_TAG)
           (timer (name waiting-for-tag-since) (time ?now) (seq 1))
+          (explore-zone-state ?explore-zone-state)
   )
 )
 
@@ -167,59 +168,36 @@
 				  (translation $?trans) (rotation $?rot)
 				  (frame ?frame) (time $?timestamp))
   ?ent <- (exp-nearing-tag ?already-near)
+  ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   (time $?now)
   =>
   (printout t "Found Tag Nr." ?tag " (" ?machine " " ?side ")"  crlf)
-  ; Do I have to drive nearer for better accuracy?
-  (if ?already-near
-    then
-    (printout t "Recognized Tag" crlf)
-    ; transform to map-frame
-    (if (tf-can-transform "/map" ?frame ?timestamp) then
-      (bind ?tf-transrot (tf-transform-pose "/map" ?frame ?timestamp ?trans ?rot))
-      (printout t "Transformed to " ?tf-transrot crlf)
-      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-			 (trans (subseq$ ?tf-transrot 1 3))
-			 (rot (subseq$ ?tf-transrot 4 7))))
-      else
-      (printout warn "Can not transform " ?frame " to /map. Trying most current time" crlf)
-      (if (tf-can-transform "/map" ?frame (create$ 0 0)) then
-	(bind ?tf-transrot (tf-transform-pose "/map" ?frame (create$ 0 0) ?trans ?rot))
-	(assert (found-tag (name ?machine) (side ?side) (frame "/map")
-			   (trans (subseq$ ?tf-transrot 1 3))
-			   (rot (subseq$ ?tf-transrot 4 7))))
-	else
-	(printout error "Can not transform " ?frame " to /map. Tags positions are broken after synchronization" crlf)
-	(assert (found-tag (name ?machine) (side ?side) (frame "/map")
-			   (trans ?trans) (rot ?rot)))
-      )
-    )
-    (assert (state EXP_ADD_TAG)
-    	    (exp-nearing-tag FALSE)
-    	    (worldmodel-change (machine ?machine) (change ADD_TAG)))
+  (printout t "Recognized Tag" crlf)
+  ; transform to map-frame
+  (if (tf-can-transform "/map" ?frame ?timestamp) then
+    (bind ?tf-transrot (tf-transform-pose "/map" ?frame ?timestamp ?trans ?rot))
+    (printout t "Transformed to " ?tf-transrot crlf)
+    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+                       (trans (subseq$ ?tf-transrot 1 3))
+                       (rot (subseq$ ?tf-transrot 4 7))))
     else
-    (printout t "Driving nearer to get a more precise position" crlf)
-    ; (skill-call drive_tag id ?tag)
-    (skill-call motor_move x 0.05)
-    (printout warn "Use right skill to drive nearer to tag!" crlf)
-    (assert (state EXP_DRIVING_NEARER_TO_TAG)
-	    (exp-nearing-tag TRUE))
+    (printout warn "Can not transform " ?frame " to /map. Trying most current time" crlf)
+    (if (tf-can-transform "/map" ?frame (create$ 0 0)) then
+      (bind ?tf-transrot (tf-transform-pose "/map" ?frame (create$ 0 0) ?trans ?rot))
+      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+                         (trans (subseq$ ?tf-transrot 1 3))
+                         (rot (subseq$ ?tf-transrot 4 7))))
+      else
+      (printout error "Can not transform " ?frame " to /map. Tags positions are broken after synchronization" crlf)
+      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+                         (trans ?trans) (rot ?rot)))
+    )
   )
-  (retract ?s ?tvi ?tagpos ?ws ?ent)
-)
-
-(defrule exp-nearing-tag-finished
-  "Arriving at a machine in first or second round. Wait for tag vision."
-  (phase EXPLORATION)
-  ?final <- (skill (name "motor_move") (status FINAL|FAILED)) 
-  ?s <- (state EXP_DRIVING_NEARER_TO_TAG)
-  (time $?now)
-  =>
-  (printout t "Arrived. Looking for a tag." crlf)
-  (retract ?s ?final)
-  (assert (state EXP_LOOKING_FOR_TAG)
-          (timer (name waiting-for-tag-since) (time ?now) (seq 1))
+  (assert (state EXP_ADD_TAG)
+          (exp-nearing-tag FALSE)
+          (worldmodel-change (machine ?machine) (change ADD_TAG))
   )
+  (retract ?s ?tvi ?tagpos ?ws ?ent ?skill-finish-state)
 )
 
 (defrule exp-report-found-tag
@@ -249,31 +227,24 @@
   ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
   ?s <- (state EXP_LOOKING_FOR_TAG)
   ?g <- (goalmachine ?old)
-  ?ze <- (zone-exploration (name ?old) (look-pos $?lp) (current-look-pos ?lp-index))
+  ?ze <- (zone-exploration (name ?old) (look-pos $?lp))
   ?ent <- (exp-nearing-tag ?nearing)
+  ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   =>
-  (printout t "Found no tag from " (nth$ ?lp-index ?lp) crlf)
-  (if ?nearing
-    then
-    (printout t "Lost tag after driving to it." crlf)
-    (retract ?ent)
-    (assert (exp-nearing-tag FALSE))
-  )
-  (if (< ?lp-index (length$ ?lp))
-    then
-    (printout t "Try to find tag from the next position." crlf)
-    (modify ?ze (current-look-pos (+ 1 ?lp-index)))
-    (assert (state EXP_LOCK_ACCEPTED)
-	    (exp-next-machine ?old))
-    (retract ?g)
+  (printout t "Found no tag in zone " ?old crlf)
 
-    else
-    (printout t "Couldn't find a tag in this zone!" crlf)
-    (modify ?ze (current-look-pos 1))
-    (assert (state EXP_IDLE)
-	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old)))
-    )
-  (retract ?ws ?s)
+  ; if explore_zone was final there probably is no mps in this zone
+  (if (eq ?explore-zone-state FINAL) then
+    (printout t "There probably is no mps in this zone!" crlf)
+    (assert (worldmodel-change (machine ?old) (change ZONE_STILL_TO_EXPLORE)
+                               (value FALSE)))
+  )
+
+
+  (assert (state EXP_IDLE)
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
+  )  
+  (retract ?ws ?s ?skill-finish-state)
 )
 
 (defrule exp-drive-to-output-tag-zone-correct
@@ -522,27 +493,35 @@
   (assert (state EXP_LOCK_ACCEPTED))
 )
 
-(defrule exp-go-to-next-machine-to-find-tag
+(defrule exp-go-to-next-zone-to-find-tag
   "When lock was accepted move to the exploration position to find a tag"
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_ACCEPTED)
-  ?n <- (exp-next-machine ?nextMachine)
-  (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?)
+  ?n <- (exp-next-machine ?next-zone)
+  (zone-exploration (name ?next-zone) (x ?) (y ?) (next ?)
                     (look-pos $?lp) (current-look-pos ?lp-index)
                     (still-to-explore TRUE))
   (not (driven-to-waiting-point))
-  (pose (id ?pose-id&:(eq ?pose-id (nth$ ?lp-index ?lp)))
-	(name ?pose-name) (ori ?pose-ori))
+  (team-color ?team)
   =>
-  (printout t "Going to next machine." crlf)
-  (printout t "Try to see tag from " (nth$ ?lp-index ?lp)
-	    " (" ?pose-name ")." crlf)
+  (printout t "Going to next zone: " ?next-zone crlf)
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?nextMachine)
-          (worldmodel-change (machine ?nextMachine)
+          (goalmachine ?next-zone)
+          (worldmodel-change (machine ?next-zone)
                              (change ZONE_TIMES_SEARCHED_INCREMENT)))
-  (skill-call drive_to place ?pose-name ori ?pose-ori just_ori true)
+  (bind ?zone-boarders (utils-get-zone-edges ?next-zone))
+  ; collect tags to find
+  (bind ?search-tags "{")
+  (delayed-do-for-all-facts ((?tag tag-matching)) (and (eq ?tag:team ?team)
+                                                       (not (any-factp ((?found found-tag)) (eq ?found:name ?tag:machine))))
+    (bind ?search-tags (str-cat ?search-tags ?tag:tag-id ","))
+  )
+  (bind ?search-tags (str-cat ?search-tags "}"))
+  (printout t "Call exp_zone with " ?search-tags crlf)
+  (skill-call explore_zone min_x (nth$ 1 ?zone-boarders) max_x (nth$ 2 ?zone-boarders)
+              min_y (nth$ 3 ?zone-boarders) max_y (nth$ 4 ?zone-boarders)
+              search_tags ?search-tags)
 )
 
 (defrule exp-go-to-next-machine-with-a-found-tag
