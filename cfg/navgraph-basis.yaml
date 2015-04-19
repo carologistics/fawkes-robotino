@@ -288,8 +288,8 @@ nodes:
     pos: [3.15, 2.5]
     properties:
       - only_copy_properties
-      - tag_input: 33
-      - tag_output: 34
+      - tag_input: 1
+      - tag_output: 2
       - input_offset_y: 0
       - output_offset_y: 0
   - name: T-CS1-I
@@ -301,6 +301,24 @@ nodes:
     properties:
       - orientation: 0
 
+  - !unconnected
+    name: T-RS1
+    pos: [3.15, 1]
+    properties:
+      - only_copy_properties
+      - tag_input: 33
+      - tag_output: 34
+      - input_offset_y: 0
+      - output_offset_y: 0
+  - name: T-RS1-I
+    pos: [3.15, 0.5]
+    properties:
+      - orientation: 1.57
+  - name: T-RS1-O
+    pos: [3.15, 1.5]
+    properties:
+      - orientation: 4.71
+
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
@@ -308,6 +326,8 @@ connections:
 # testing
   - [Exp-C2, T-CS1-O]
   - [Exp-C6, T-CS1-I]
+  - [Exp-C5, T-RS1-O]
+  - [Exp-C4, T-RS1-I]
 
 # common
 # connecting edges in Y direction
