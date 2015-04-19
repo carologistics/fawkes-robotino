@@ -36,9 +36,11 @@ skillenv.use_skill("skills.robotino.align_laserlines")
 skillenv.use_skill("skills.robotino.global_motor_move")
 skillenv.use_skill("skills.robotino.global_move_laserlines")
 skillenv.use_skill("skills.robotino.drive_to")
+skillenv.use_skill("skills.robotino.drive_to_local")
 skillenv.use_skill("skills.robotino.enable_switch")
 skillenv.use_skill("skills.robotino.ax12gripper")
 skillenv.use_skill("skills.robotino.align_tag")
+skillenv.use_skill("skills.robotino.explore_zone")
 
 -- Skills for MPS interaction
 skillenv.use_skill("skills.robotino.detect_signal_mps")
