@@ -132,3 +132,27 @@
   )
   (return ?round)
 )
+
+(deffunction utils-get-zone-edges (?zone)
+  "returns the edges of a zone"
+  ; compute cyan edges first and mirrow them later if neccessary
+  (bind ?zone (eval (sub-string 2 (str-length (str-cat ?zone)) (str-cat ?zone))))
+  (bind ?zone-cyan ?zone)
+  (if (> ?zone-cyan 12) then
+    (bind ?zone-cyan (- ?zone 12))
+  )
+  (bind ?zone-x (round-down (/ (- ?zone-cyan 1) 4)))
+  (bind ?zone-y (mod (- ?zone-cyan 1) 4))
+  
+  (bind ?y-min (* ?zone-y ?*ZONE-HEIGHT*))
+  (bind ?y-max (* (+ ?zone-y 1) ?*ZONE-HEIGHT*))
+
+  (bind ?x-min (* ?zone-x ?*ZONE-WIDTH*))
+  (bind ?x-max (* (+ ?zone-x 1) ?*ZONE-WIDTH*))
+  
+  (if (> ?zone 12) then
+    (bind ?x-min (- 0 ?x-min))
+    (bind ?x-max (- 0 ?x-max))
+  )
+  (return (create$ ?x-min ?x-max ?y-min ?y-max))
+)
