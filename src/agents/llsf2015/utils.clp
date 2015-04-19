@@ -156,3 +156,14 @@
   )
   (return (create$ ?x-min ?x-max ?y-min ?y-max))
 )
+
+(deffunction utils-get-tags-str-still-to-explore (?team)
+  ; get string with all tags we still need to explore
+  (bind ?search-tags "{")
+  (delayed-do-for-all-facts ((?tag tag-matching)) (and (eq ?tag:team ?team)
+                                                       (not (any-factp ((?found found-tag)) (eq ?found:name ?tag:machine))))
+    (bind ?search-tags (str-cat ?search-tags ?tag:tag-id ","))
+  )
+  (bind ?search-tags (str-cat ?search-tags "}"))
+  (return ?search-tags)
+)

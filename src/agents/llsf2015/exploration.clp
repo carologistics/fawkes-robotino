@@ -167,7 +167,6 @@
 				  (visibility_history ?vh&:(> ?vh ?needed-vh)) 
 				  (translation $?trans) (rotation $?rot)
 				  (frame ?frame) (time $?timestamp))
-  ?ent <- (exp-nearing-tag ?already-near)
   ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   (time $?now)
   =>
@@ -176,28 +175,38 @@
   ; transform to map-frame
   (if (tf-can-transform "/map" ?frame ?timestamp) then
     (bind ?tf-transrot (tf-transform-pose "/map" ?frame ?timestamp ?trans ?rot))
-    (printout t "Transformed to " ?tf-transrot crlf)
-    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-                       (trans (subseq$ ?tf-transrot 1 3))
-                       (rot (subseq$ ?tf-transrot 4 7))))
     else
     (printout warn "Can not transform " ?frame " to /map. Trying most current time" crlf)
     (if (tf-can-transform "/map" ?frame (create$ 0 0)) then
       (bind ?tf-transrot (tf-transform-pose "/map" ?frame (create$ 0 0) ?trans ?rot))
-      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-                         (trans (subseq$ ?tf-transrot 1 3))
-                         (rot (subseq$ ?tf-transrot 4 7))))
       else
-      (printout error "Can not transform " ?frame " to /map. Tags positions are broken after synchronization" crlf)
-      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-                         (trans ?trans) (rot ?rot)))
+      (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
+      (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
+      (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
+      (printout error "Check time diff between base and laptop" crlf)
+      (assert (state EXP_IDLE)
+              (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old)))
+      (retract ?s ?tvi ?tagpos ?ws ?skill-finish-state)
+      (return)
     )
   )
+  (if (eq 7 (length$ ?tf-transrot)) then
+    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+                       (trans (subseq$ ?tf-transrot 1 3))
+                       (rot (subseq$ ?tf-transrot 4 7))))
+    else
+    (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
+    (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
+    (printout error "Check time diff between base and laptop" crlf)
+    (assert (state EXP_IDLE)
+            (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old)))
+    (retract ?s ?tvi ?tagpos ?ws ?skill-finish-state)
+    (return)
+  )
   (assert (state EXP_ADD_TAG)
-          (exp-nearing-tag FALSE)
           (worldmodel-change (machine ?machine) (change ADD_TAG))
   )
-  (retract ?s ?tvi ?tagpos ?ws ?ent ?skill-finish-state)
+  (retract ?s ?tvi ?tagpos ?ws ?skill-finish-state)
 )
 
 (defrule exp-report-found-tag
@@ -228,7 +237,6 @@
   ?s <- (state EXP_LOOKING_FOR_TAG)
   ?g <- (goalmachine ?old)
   ?ze <- (zone-exploration (name ?old) (look-pos $?lp))
-  ?ent <- (exp-nearing-tag ?nearing)
   ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   =>
   (printout t "Found no tag in zone " ?old crlf)
@@ -239,7 +247,6 @@
     (assert (worldmodel-change (machine ?old) (change ZONE_STILL_TO_EXPLORE)
                                (value FALSE)))
   )
-
 
   (assert (state EXP_IDLE)
 	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
@@ -271,7 +278,8 @@
   =>
   (printout error "Detected MPS is in a different zone than we are currently exploring. Skipping exploring the light now." crlf)
   (retract ?s ?mtfz)
-  (assert (state EXP_IDLE))
+  (assert (state EXP_IDLE)
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone)))
 )
 
 (defrule exp-align-in-front-of-light-signal
@@ -511,14 +519,7 @@
           (worldmodel-change (machine ?next-zone)
                              (change ZONE_TIMES_SEARCHED_INCREMENT)))
   (bind ?zone-boarders (utils-get-zone-edges ?next-zone))
-  ; collect tags to find
-  (bind ?search-tags "{")
-  (delayed-do-for-all-facts ((?tag tag-matching)) (and (eq ?tag:team ?team)
-                                                       (not (any-factp ((?found found-tag)) (eq ?found:name ?tag:machine))))
-    (bind ?search-tags (str-cat ?search-tags ?tag:tag-id ","))
-  )
-  (bind ?search-tags (str-cat ?search-tags "}"))
-  (printout t "Call exp_zone with " ?search-tags crlf)
+  (bind ?search-tags (utils-get-tags-str-still-to-explore ?team))
   (skill-call explore_zone min_x (nth$ 1 ?zone-boarders) max_x (nth$ 2 ?zone-boarders)
               min_y (nth$ 3 ?zone-boarders) max_y (nth$ 4 ?zone-boarders)
               search_tags ?search-tags)
