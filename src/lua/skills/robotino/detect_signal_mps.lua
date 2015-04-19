@@ -20,10 +20,11 @@ name               = "detect_signal_mps"
 fsm                = SkillHSM:new{name=name,  start="INIT",  debug=true}
 depends_skills     = nil
 depends_interfaces = {
-   { v="plugin", type ="RobotinoLightInterface", id = "/machine-signal/best" },
-   { v="output", type ="RobotinoLightInterface", id = "Light determined" },
-   { v="lightswitch", type="SwitchInterface", id="/machine-signal" },
-   { v="bb_signal_hint", type="SignalHintInterface", id="/machine-signal/position-hint" }
+   { v="bb_signal", type ="RobotinoLightInterface", id = "/machine-signal/best" },
+   { v="bb_output", type ="RobotinoLightInterface", id = "Light determined" },
+   { v="bb_sw_machine_signal", type="SwitchInterface", id="/machine-signal" },
+   { v="bb_signal_hint", type="SignalHintInterface", id="/machine-signal/position-hint" },
+   { v="bb_sw_laser", type="SwitchInterface", id="laser-lines" }
 }
 
 
@@ -50,53 +51,40 @@ local hint = require("signal_hint_module")
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-function plugin_missing()
-   return not  plugin:has_writer()
+function bb_signal_missing()
+   return not bb_signal:has_writer()
 end
 
 function done()
-   if plugin:is_ready() then
-      return (plugin:green()      == plugin.ON
-              and plugin:yellow() == plugin.OFF
-              and plugin:red()    == plugin.OFF)
-          or (plugin:green()      == plugin.OFF
-              and plugin:yellow() == plugin.ON
-              and plugin:red()    == plugin.OFF)
-          or (plugin:green()      == plugin.OFF
-              and plugin:yellow() == plugin.BLINKING
-              and plugin:red()    == plugin.OFF)
-          or (plugin:green()      == plugin.ON
-              and plugin:yellow() == plugin.ON
-              and plugin:red()    == plugin.OFF)
-              and fsm.vars.dont_wait
-   end
-   return false
+   return bb_signal:is_ready() and bb_signal:visibility_history() > 25
 end
 
 fsm:define_states{ export_to=_M,
-   closure={plugin=plugin},
+   closure={bb_signal=bb_signal},
    {"INIT", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", precond=plugin_missing, desc="plugin missing"},
+   {"INIT", "FAILED", precond=bb_signal_missing, desc="bb_signal missing"},
    {"INIT", "FINAL", cond=done},
    {"INIT", "FAILED", timeout=10}
 }
 
 function INIT:init()
-   lightswitch:msgq_enqueue_copy(lightswitch.EnableSwitchMessage:new())
+   bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.EnableSwitchMessage:new())
    hint.send_hint(bb_signal_hint, self.fsm.vars.mtype)
+   bb_sw_laser:msgq_enqueue_copy(bb_sw_laser.EnableSwitchMessage:new())
 end
 
 function cleanup()
-   output:set_red(plugin:red())
-   output:set_yellow(plugin:yellow())
-   output:set_green(plugin:green())
-   output:set_visibility_history(plugin:visibility_history())
-   output:set_ready(plugin:is_ready())
+   bb_output:set_red(bb_signal:red())
+   bb_output:set_yellow(bb_signal:yellow())
+   bb_output:set_green(bb_signal:green())
+   bb_output:set_visibility_history(bb_signal:visibility_history())
+   bb_output:set_ready(bb_signal:is_ready())
 
---   lightswitch:msgq_enqueue_copy(lightswitch.DisableSwitchMessage:new())
+   --bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.DisableSwitchMessage:new())
+   --bb_sw_laser:msgq_enqueue_copy(bb_sw_laser.DisableSwitchMessage:new())
 end
 
 function FINAL:init()
