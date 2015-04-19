@@ -36,7 +36,7 @@ from the navgraph
 
 Parameters:
       @param place   the name of the MPS (see navgraph)
-      @param side    the side of the mps (either "input" or "output")
+      @param side    the side of the mps, default is input (give "output" to bring to output)
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -52,7 +52,6 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "FAILED", cond="not self.fsm.vars.side", desc="no side given"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"}
 }
 
@@ -61,30 +60,30 @@ function INIT:init()
 end
 
 function DRIVE_TO:init()
-   if self.fsm.vars.side == "input" then
-      self.skills[1].place = self.fsm.vars.place .. "-I"
-   elseif self.fsm.vars.side == "output" then
+   if self.fsm.vars.side == "output" then
       self.skills[1].place = self.fsm.vars.place .. "-O"
+   else
+      self.skills[1].place = self.fsm.vars.place .. "-I"
    end
 end
 
 function MPS_ALIGN:init()
    -- align in front of the conveyor belt
    self.skills[1].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
-   if self.fsm.vars.side = "input" then
-      if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
-         self.skills[1].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
-      else
-         self.skills[1].y = 0
-      end
-      self.skills[1].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
-   elseif self.fsm.vars.side = "output" then
+   if self.fsm.vars.side == "output" then
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_y") then
          self.skills[1].y = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_y")
       else
          self.skills[1].y = 0
       end
       self.skills[1].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
+   else
+      if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
+         self.skills[1].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
+      else
+         self.skills[1].y = 0
+      end
+      self.skills[1].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    end
    self.skills[1].ori = 0
 end
