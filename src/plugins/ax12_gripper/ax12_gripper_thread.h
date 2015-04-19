@@ -127,6 +127,7 @@ class GripperAX12AThread
   float        __cfg_max_load;
   float        __cfg_load_for_holds_puck;
   float        __cfg_angle_for_holds_puck;
+  float        __cfg_center_angle_correction_amount;
   float        __target_left;
   float        __target_right;
   float        __left_margin;
