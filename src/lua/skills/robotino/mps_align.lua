@@ -38,7 +38,7 @@ documentation      = [==[ align_mps
                           - aligns to the machine via sensor information AND a optional offsets which are given as parameters 
 
                           @param tag_id     int     optional the tag_id for align_tag
-                          @param x          float   optional the x offset after the alignmend
+                          @param x          float   the x offset after the alignmend
                           @param y          float   optional the y offset after the alignmend
                           @param ori        float   optional the ori offset after the alignmend
 ]==]
@@ -63,17 +63,20 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line},
 }
 
 fsm:add_transitions{
+   {"SKILL_ALIGN_TAG", "FAILED", precond="not vars.x", desc="x argument missing"},
    {"SEE_LINE", "LINE_SETTLE", cond=see_line, desc="Seeing a line"},
    {"SEE_LINE", "FAILED", timeout=3, desc="Not seeing a line, continue just aligned by tag"},
    {"LINE_SETTLE", "ALIGN_WITH_LASERLINES", timeout=0.5, desc="let the line distance settle"}
 }
 
 function SKILL_ALIGN_TAG:init()
+   -- use defaults for optional args
+   self.fsm.vars.y = self.fsm.vars.y or 0
+   self.fsm.vars.ori = self.fsm.vars.ori or 0
    -- align by ALIGN_DISTANCE from tag to base_link with align_tag
+   local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
    -- give align_tag the id if we have one
-   if self.fsm.vars.tag_id then
-      self.skills[1].tag_id = self.fsm.vars.tag_id
-   end
+   self.skills[1].tag_id = self.fsm.vars.tag_id
    self.skills[1].x = self.fsm.vars.x
    self.skills[1].y = -self.fsm.vars.y
    self.skills[1].ori = self.fsm.vars.ori
