@@ -37,7 +37,7 @@ plugins/machine_signal:
   # Disable this to see the raw ROIs as they come out of the classifier
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
-  draw_processed_rois: false
+  draw_processed_rois: true
  
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
@@ -70,11 +70,12 @@ plugins/machine_signal:
 
   laser_frame: /base_laser
   signal_width: 0.04
-  signal_bottom: -0.1 
-  signal_top: 0.04
-  cam_aperture_x: 1.1
+  signal_bottom: -0.12
+  signal_top: 0.03
+  cam_aperture_x: 0.98
   cam_aperture_y: 0.8
-  cam_angle: 0.25 # 12.2°
+  cam_angle: 0.25
+  #cam_angle: 0.25 # 12.2°
   cam_frame: /cam_signal
 
   red:
@@ -82,9 +83,9 @@ plugins/machine_signal:
                         0xe0, 0, 0x40,
                         0x40, 0, 0,
                         0x30, 0xa, 0xa]
-    chroma_thresh:     [50, 40, 70, 50]
+    chroma_thresh:     [50, 60, 70, 40]
     saturation_thresh: [30, 40, 40, 10]
-    luma_thresh:       [220, 100, 230, 70]
+    luma_thresh:       [220, 200, 230, 220]
     min_points: 40
     basic_roi_size: 10
     neighborhood_min_match: 10
