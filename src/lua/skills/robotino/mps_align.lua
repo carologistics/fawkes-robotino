@@ -74,9 +74,9 @@ function SKILL_ALIGN_TAG:init()
    if self.fsm.vars.tag_id then
       self.skills[1].tag_id = self.fsm.vars.tag_id
    end
-   self.skills[1].x = tag_transformed.x
-   self.skills[1].y = -tag_transformed.y
-   self.skills[1].ori = tag_transformed.ori
+   self.skills[1].x = self.fsm.vars.x
+   self.skills[1].y = -self.fsm.vars.y
+   self.skills[1].ori = self.fsm.vars.ori
 end
 
 function ALIGN_WITH_LASERLINES:init()
