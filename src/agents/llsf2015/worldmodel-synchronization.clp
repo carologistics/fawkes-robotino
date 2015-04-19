@@ -514,7 +514,7 @@
 	  )
 	  (default
 	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
-		      " is not handled. Worlmodel is probably wrong." crlf)
+		      " is not handled for machine. Worlmodel is probably wrong." crlf)
 	  )
         )
       )
@@ -544,7 +544,7 @@
           )
 	  (default
 	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
-		      " is not handled. Worlmodel is probably wrong." crlf)
+		      " is not handled for puck-storage. Worlmodel is probably wrong." crlf)
 	  )
         )
       )
@@ -573,7 +573,7 @@
           )
 	  (default
 	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
-		      " is not handled. Worlmodel is probably wrong." crlf)
+		      " is not handled for zone. Worlmodel is probably wrong." crlf)
 	  )
         )
       )
@@ -610,7 +610,7 @@
 	    (default
 	      (printout error "Worldmodel-Change Type "
 			(sym-cat (pb-field-value ?p "change"))
-			" is not handled. Worlmodel is probably wrong." crlf)
+			" is not handled for puck. Worlmodel is probably wrong." crlf)
 	    )
 	  )
         )

@@ -517,9 +517,10 @@
 (defrule wm-process-wm-change-exploration-zone
   "apply wm change to local worldmodel before sending"
   (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?zone) (value ?value)
+  ?wmc <- (worldmodel-change (machine ?zone) (value ?value) (agent ?agent)
                              (change ?change) (already-applied FALSE))
-  ?zone-fact <- (zone-exploration (name ?zone) (times-searched ?times-searched))
+  ?zone-fact <- (zone-exploration (name ?zone) (times-searched ?times-searched)
+                                  (incoming $?incoming) (incoming-agent $?incoming-agent))
   =>  
   (switch ?change
     (case ZONE_STILL_TO_EXPLORE then 
@@ -528,12 +529,21 @@
     (case ZONE_MACHINE_IDENTIFIED then 
       (modify ?zone-fact (machine ?value))
     )
-    (case ZONE_SEARCHED_INCREMENT then 
+    (case ZONE_TIMES_SEARCHED_INCREMENT then 
       (modify ?zone-fact (times-searched (+ 1 ?times-searched)))
+    )
+    (case ADD_INCOMING then 
+      (modify ?zone-fact (incoming (append$ ?incoming ?value))
+              (incoming-agent (append$ ?incoming-agent ?agent)))
+    )
+    (case REMOVE_INCOMING then 
+      (modify ?zone-fact (incoming (delete-member$ ?incoming ?value))
+	         ;every agent should do only one thing at a machine
+	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
     )
     (default
       (printout error "Worldmodel-Change Type " ?change
-                " is not handled. Worlmodel is probably wrong." crlf)
+                " is not handled for zonex. Worlmodel is probably wrong." crlf)
     )
   )
   (modify ?wmc (already-applied TRUE))

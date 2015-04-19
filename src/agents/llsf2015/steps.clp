@@ -181,7 +181,7 @@
   (time $?now)
   =>
   (retract ?state ?ste)
-  (assert (state FINISHED))
+  (assert (state STEP-FINISHED))
   (modify ?step (state finished))
   ; skill is not properly stopped, but it should work anyway
   ; because the next skill call overrides it

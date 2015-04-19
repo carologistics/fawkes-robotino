@@ -301,7 +301,6 @@
   (printout error "Detected MPS is in a different zone than we are currently exploring. Skipping exploring the light now." crlf)
   (retract ?s ?mtfz)
   (assert (state EXP_IDLE))
-  (skill-call drive_to place (get-light-signal-side ?machine))
 )
 
 (defrule exp-align-in-front-of-light-signal
@@ -448,11 +447,23 @@
   (team-color ?team-color)
   (zone-exploration (name ?old) (x ?x) (y ?y) (team ?team))
   =>
-  ;find next machine nearest to last machine
+  ; what is the fewest times a zone was searched 
+  (bind ?min-times-searched 1000)
+  (delayed-do-for-all-facts ((?me zone-exploration))
+    (and (eq ?me:team ?team-color) (not ?me:recognized)
+	 (not (any-factp ((?mt exploration-result)) (eq ?mt:machine ?me:name))))
+    (if (and (not (any-factp ((?lock locked-resource)) (eq ?lock:resource ?me:name)))
+             (< ?me:times-searched ?min-times-searched))
+      then
+      (bind ?min-times-searched ?me:times-searched)
+    )
+  )
+  ; find next machine nearest to last machine with min times searched
   (bind ?nearest NONE)
   (bind ?min-dist 1000.0)
   (do-for-all-facts ((?me zone-exploration))
     (and (eq ?me:team ?team-color) (not ?me:recognized)
+         (eq ?me:times-searched ?min-times-searched)
 	 (not (any-factp ((?mt exploration-result)) (eq ?mt:machine ?me:name))))
 
     ;check if the machine is nearer and unlocked

@@ -187,7 +187,12 @@
   (not (found-tag (name ?missing-mps)))
   ; zone-to-explore
   (zone-exploration (name ?zone) (still-to-explore TRUE) (team ?team-color)
-                    (incoming $?i&~:(member$ FIND_TAG ?i)))
+                    (incoming $?i&~:(member$ FIND_TAG ?i))
+                    (times-searched ?times-searched))
+  ; no-zone searched less times
+  (not (zone-exploration (name ?zone) (still-to-explore TRUE) (team ?team-color)
+                         (incoming $?i&~:(member$ FIND_TAG ?i))
+                         (times-searched ?more-times-searched&:(> ?more-times-searched ?times-searched))))
   ;check that the task was not rejected before
   (not (and (task (name exploration-catch-up) (state rejected) (id ?rej-id))
 	    (step (name find-tag) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (zone ?zone))))
