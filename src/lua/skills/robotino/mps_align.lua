@@ -70,7 +70,6 @@ fsm:add_transitions{
 
 function SKILL_ALIGN_TAG:init()
    -- align by ALIGN_DISTANCE from tag to base_link with align_tag
-   local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
    -- give align_tag the id if we have one
    if self.fsm.vars.tag_id then
       self.skills[1].tag_id = self.fsm.vars.tag_id
