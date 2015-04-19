@@ -45,10 +45,10 @@ depends_interfaces = {
 }
 
 documentation      = [==[Moves the robot that the tag 0 is seen at the given point.
-@param tag_id REQUIRED the id of the tag to align to
-@param x The X distance to the tag
-@param y The Y distance to the tag
-@param ori The orientation to the tag
+@param tag_id the id of the tag to align to, if empty the closest tag is used to align to
+@param x The X distance to the tag in the tag frame
+@param y The Y distance to the tag in the tag frame, (negative in base_link frame)
+@param ori The orientation to the tag in the base link frame
 ]==]
 
 -- Constants
@@ -57,6 +57,8 @@ local desired_position_margin = {x=0.005, y=0.005, ori=0.01}
 local min_velocity = { x = 0.015, y = 0.015, ori = 0.05 } --minimum to start motor
 local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
 local id_not_given_id = -1
+local tfm = require("tf_module")
+local transform_name = ""
 
 -- Variables
 local target = { x = 0 , y = 0 , ori = 0}
@@ -83,6 +85,7 @@ function get_tag_with_id(wanted_id)
    --print("wanted_id: " .. tostring(wanted_id))
    local i=1
    local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
+   transform_name = "/tag_"
    -- get closest tag for testing reasons
    if wanted_id == -1 then
       closest_distance=get_tag_distance(tag_0)
@@ -92,6 +95,7 @@ function get_tag_with_id(wanted_id)
          if (get_tag_distance(my_tag) < closest_distance) and (my_tag:visibility_history() > 0 )then
             closest_distance = get_tag_distance(my_tag)
             closest_tag = my_tag
+            transform_name = transform_name .. tostring(iter-1)
          end
       end
       return closest_tag
@@ -102,6 +106,7 @@ function get_tag_with_id(wanted_id)
       --print("j: " .. tostring(j) .. " id: " .. tostring(id))
       -- stop when id is found
       if id == wanted_id then
+         transform_name = transform_name .. tostring(j)
          break
       end
       i = i+1
@@ -200,34 +205,14 @@ function printtable(table)
    end
 end
 
-function get_yaw(qx, qy, qz, qw)
-   return math.atan2(2*qy*qw-2*qx*qz , 1 - 2*qy*qy - 2*qz*qz)
-end
 
 function DRIVE:loop()
+
    local tag = get_tag_with_id(self.fsm.vars.tag_id)
 
-   local yaw = get_yaw(tag:rotation(0), tag:rotation(1), tag:rotation(2), tag:rotation(3))
-   -- correct rotation
-   yaw = yaw - (math.pi/2)
-   -- the forward distance is the z trnaslation in the camera frame of reference
-   forward_distance = tag:translation(2)
-   -- the lateral distance is the x translation in the camera frame of reference
-   lateral_distance = -tag:translation(0)
+   local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, transform_name, "/base_link")
+   print("transform_name: " .. transform_name)
 
-   --skip on empty values
-   if(forward_distance == 0 and lateral_distance == 0 and yaw == 0) then
---      send_transrot(0,0,0)
-      return
-   end
-	--get the distance to drive
-    distance = { x = forward_distance ,--- self.fsm.vars.x,
-                y = lateral_distance ,--- self.fsm.vars.y,
-                ori = -yaw}
-   --print("original distance")
-   --printtable(distance)
-   distance.x = distance.x - (self.fsm.vars.x * math.cos(distance.ori) + self.fsm.vars.y * (-1 * math.sin(distance.ori)))
-   distance.y = distance.y - (self.fsm.vars.x * math.sin(distance.ori) + self.fsm.vars.y * math.cos(distance.ori))
    --print("current distance")
    --printtable(distance)
    --get a good velocity
