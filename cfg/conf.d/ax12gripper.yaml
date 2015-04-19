@@ -71,7 +71,7 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     right_torque: 1.0
 
     # Max speed 0 - 1 (0% - 100%)
-    max_speed: 1.0
+    max_speed: 0.3
 
     # Max load 0 - 1 (0% - 100%)
     max_load: 0.18
