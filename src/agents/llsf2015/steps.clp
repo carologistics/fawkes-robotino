@@ -169,6 +169,23 @@
   (modify ?step (state failed))
 )
 
+(defrule step-find-tag-stop-when-other-bot-found-the-machine
+  "tag-find skill finished, try to find tag"
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  ?step <- (step (name find-tag) (state running))
+  ?state <- (state SKILL-EXECUTION)
+  ?ste <- (skill-to-execute (skill drive_to)
+			    (args $?args) (state running))
+  (time $?now)
+  =>
+  (retract ?state ?ste)
+  (assert (state FINISHED))
+  (modify ?step (state finished))
+  ; skill is not properly stopped, but it should work anyway
+  ; because the next skill call overrides it
+)
+
 
 ; (defrule step-get-S0-start
 ;   (declare (salience ?*PRIORITY-STEP-START*))
