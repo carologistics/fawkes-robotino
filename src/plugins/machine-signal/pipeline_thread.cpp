@@ -26,7 +26,8 @@
 #include <cmath>
 #include <limits>
 #include <algorithm>
-#include "historic_smooth_roi.h"
+
+#include "custom_rois.h"
 
 using namespace fawkes;
 using namespace fawkes::tf;
@@ -470,7 +471,7 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
   std::min(std::max((long int)min, (long int)value), (long int)max)
 
 
-MachineSignalPipelineThread::WorldROI MachineSignalPipelineThread::pos3d_to_roi(const Stamped<Point> &cluster_laser)
+firevision::WorldROI MachineSignalPipelineThread::pos3d_to_roi(const Stamped<Point> &cluster_laser)
 {
   // Transform laser cluster into camera frame
   Stamped<Point> cluster_cam;
@@ -525,10 +526,10 @@ MachineSignalPipelineThread::WorldROI MachineSignalPipelineThread::pos3d_to_roi(
 }
 
 
-set<MachineSignalPipelineThread::WorldROI, MachineSignalPipelineThread::compare_rois_by_area_> *
+set<firevision::WorldROI, SignalState::compare_rois_by_area> *
 MachineSignalPipelineThread::bb_get_laser_rois()
 {
-  set<WorldROI, compare_rois_by_area_> *rv = new set<WorldROI, compare_rois_by_area_>();
+  set<WorldROI, SignalState::compare_rois_by_area> *rv = new set<WorldROI, SignalState::compare_rois_by_area>();
   if (unlikely(cfg_lasercluster_enabled_)) {
     for (Position3DInterface *bb_pos : bb_laser_clusters_) {
       bb_pos->read();
@@ -745,20 +746,20 @@ void MachineSignalPipelineThread::loop()
 
     // Create and group ROIs that make up the red, yellow and green lights of a signal
     std::list<SignalState::signal_rois_t_> *signal_rois;
-    signal_rois = create_field_signals(rois_R, rois_G);
+    signal_rois = create_laser_signals(rois_R, rois_G);
     if (signal_rois->size() == 0) {
       delete signal_rois;
-      signal_rois = create_delivery_signals(rois_R);
+      signal_rois = create_field_signals(rois_R, rois_G);
     }
 
     // Lock mutex since now we start updating the data that is synced
     // to the blackboard by the MachineSignalSensorThread.
     data_mutex_.lock();
 
-    // Reset all known signals to not-seen
-    for (std::list<SignalState>::iterator known_signal = known_signals_.begin();
-        known_signal != known_signals_.end(); ++known_signal) {
-      known_signal->inc_unseen();
+    for (SignalState &known_signal : known_signals_) {
+      // Decrease visibility history if signal hasn't been seen for
+      // a while or it's not inside a laser ROI anymore
+      known_signal.inc_unseen(*cluster_rois_);
     }
 
     // Go through all signals from this frame...
@@ -854,7 +855,7 @@ void MachineSignalPipelineThread::loop()
     }
 
     // Throw out the signals with the worst visibility histories
-    known_signals_.sort(sort_signal_states_by_visibility_);
+    known_signals_.sort(SignalState::compare_signal_states_by_visibility());
     while (known_signals_.size() > MAX_SIGNALS)
       known_signals_.pop_back();
 
@@ -862,10 +863,10 @@ void MachineSignalPipelineThread::loop()
     if (cfg_delivery_mode_) {
       // Ordering is critical here
       best_signal_ = known_signals_.begin();
-      known_signals_.sort(sort_signal_states_by_x_);
+      known_signals_.sort(SignalState::compare_signal_states_by_x());
     }
     else {
-      known_signals_.sort(sort_signal_states_by_area_);
+      known_signals_.sort(SignalState::compare_signal_states_by_area());
       best_signal_ = known_signals_.begin();
     }
     ///*
@@ -1087,7 +1088,10 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
 }
 
 
-void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois_by_area_> *laser_rois, list<ROI> *rois) {
+void MachineSignalPipelineThread::merge_rois_in_laser(
+  set<WorldROI, SignalState::compare_rois_by_area> *laser_rois,
+  list<ROI> *rois)
+{
   list<ROI> merged_rois;
 
   // Match red ROIs to laser clusters
@@ -1127,7 +1131,7 @@ void MachineSignalPipelineThread::merge_rois_in_laser(set<WorldROI, compare_rois
 
 
 std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_laser_signals(
-  std::list<ROI> *rois_R)
+  std::list<ROI> *rois_R, std::list<ROI> *rois_G)
 {
   std::list<SignalState::signal_rois_t_> *rv = new std::list<SignalState::signal_rois_t_>();
   std::list<ROI>::iterator it_R = rois_R->begin();
@@ -1260,10 +1264,10 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
 }
 
 std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_delivery_signals(
-  std::list<ROI> *rois_R)
+  std::list<ROI> *rois_R, std::list<ROI> *rois_G)
 {
   // First try to build signal ROIs based on laser clusters.
-  std::list<SignalState::signal_rois_t_> *rv = create_laser_signals(rois_R);
+  std::list<SignalState::signal_rois_t_> *rv = create_laser_signals(rois_R, rois_G);
 
   if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
     drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
