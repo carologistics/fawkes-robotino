@@ -181,8 +181,6 @@
       (bind ?tf-transrot (tf-transform-pose "/map" ?frame (create$ 0 0) ?trans ?rot))
       else
       (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
-      (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
-      (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
       (printout error "Check time diff between base and laptop" crlf)
       (assert (state EXP_IDLE)
               (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old)))
@@ -195,8 +193,7 @@
                        (trans (subseq$ ?tf-transrot 1 3))
                        (rot (subseq$ ?tf-transrot 4 7))))
     else
-    (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
-    (printout error "Can not transform " ?frame " to /map. Tags positions are broken!!!" crlf)
+    (printout error "Can not transform " ?frame " to /map. Transform is empty. Tags positions are broken!!!" crlf)
     (printout error "Check time diff between base and laptop" crlf)
     (assert (state EXP_IDLE)
             (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old)))

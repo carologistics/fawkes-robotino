@@ -84,31 +84,37 @@
 		 (zone ?zone) (machine ?missing-mps))
   ?state <- (state STEP-STARTED)
   (game-time $?game-time)
+  (team-color ?team)
   =>
   (retract ?state)
   (modify ?step (state running))
-  (printout warn "TODO: use skill to find a tag!" crlf)
+  (bind ?zone-boarders (utils-get-zone-edges ?zone))
+  (bind ?search-tags (utils-get-tags-str-still-to-explore ?team))
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill drive_to) (args place ?zone) (target ?zone))
+	  (skill-to-execute (skill explore_zone) (args min_x (nth$ 1 ?zone-boarders)
+                                                       max_x (nth$ 2 ?zone-boarders)
+                                                       min_y (nth$ 3 ?zone-boarders)
+                                                       max_y (nth$ 4 ?zone-boarders)
+                                                       search_tags ?search-tags)
+                            (target ?zone))
 	  (wait-for-lock (priority ?p) (res ?zone))
           (worldmodel-change (machine ?zone) (change ZONE_TIMES_SEARCHED_INCREMENT))
   )
 )
-
-
 (defrule step-find-tag-finish
   "tag-find skill finished, try to find tag"
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
   (step (name find-tag) (state running))
   ?state <- (state SKILL-FINAL|SKILL-FAILED)
-  ?ste <- (skill-to-execute (skill drive_to)
-			    (args $?args) (state final|failed))
+  ?ste <- (skill-to-execute (skill explore_zone)
+			    (args $?args) (state ?skill-finish-state&final|failed))
   (time $?now)
   =>
   (retract ?state ?ste)
   (assert (state PROD_LOOKING_FOR_TAG)
-   (timer (name waiting-for-tag-since) (time ?now) (seq 1)))
+   (timer (name waiting-for-tag-since) (time ?now) (seq 1))
+   (explore-zone-state ?skill-finish-state))
 )
 (defrule step-find-tag-report-tag
   "Add found tag to navgraph and finish step."
@@ -126,29 +132,41 @@
                        (visibility_history ?vh&:(> ?vh ?needed-vh)) 
                        (translation $?trans) (rotation $?rot)
                        (frame ?frame) (time $?timestamp))
+  ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   =>
   (printout t "Found Tag Nr." ?tag " (" ?machine " " ?side ")"  crlf)
   ; transform to map-frame
   (if (tf-can-transform "/map" ?frame ?timestamp) then
     (bind ?tf-transrot (tf-transform-pose "/map" ?frame ?timestamp ?trans ?rot))
     (printout t "Transformed to " ?tf-transrot crlf)
-    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-                       (trans (subseq$ ?tf-transrot 1 3))
-                       (rot (subseq$ ?tf-transrot 4 7))))
     else
     (printout warn "Can not transform " ?frame " to /map. Trying most current time" crlf)
     (if (tf-can-transform "/map" ?frame (create$ 0 0)) then
       (bind ?tf-transrot (tf-transform-pose "/map" ?frame (create$ 0 0) ?trans ?rot))
-      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-                         (trans (subseq$ ?tf-transrot 1 3))
-			   (rot (subseq$ ?tf-transrot 4 7))))
       else
-      (printout error "Can not transform " ?frame " to /map. Tags positions are broken after synchronization" crlf)
-      (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-			   (trans ?trans) (rot ?rot)))
-      )
+      (printout error "Can not transform " ?frame
+                " to /map. Tags positions are broken." crlf)
+      (printout error "Check time diff between base and laptop" crlf)
+      (retract ?s ?ws ?skill-finish-state)
+      (assert (state STEP-FAILED))
+      (modify ?step (state failed))
+      (return)
     )
-  (retract ?s ?ws)
+  )
+  (if (eq 7 (length$ ?tf-transrot)) then
+ 
+    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
+                       (trans (subseq$ ?tf-transrot 1 3))
+                       (rot (subseq$ ?tf-transrot 4 7))))
+    else
+    (printout error "Can not transform " ?frame " to /map. Transform is empty. Tags positions are broken!!!" crlf)
+    (printout error "Check time diff between base and laptop" crlf)
+    (retract ?s ?ws ?skill-finish-state)
+    (assert (state STEP-FAILED))
+    (modify ?step (state failed))
+    (return)
+  )
+  (retract ?s ?ws ?skill-finish-state)
   (assert (worldmodel-change (machine ?machine) (change ADD_TAG))
           (state STEP-FINISHED))
   (modify ?step (state finished))
@@ -163,22 +181,29 @@
   ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
   ?s <- (state PROD_LOOKING_FOR_TAG)
   ?zone-fact <- (zone-exploration (name ?zone))
+  ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   =>
   (printout t "No tag found in " ?zone crlf)
-  (retract ?s ?ws)
+  (if (eq ?explore-zone-state final) then
+    (printout t "There probably is no mps in this zone!" crlf)
+    (assert (worldmodel-change (machine ?zone) (change ZONE_STILL_TO_EXPLORE)
+                               (value FALSE)))
+  )
+  (retract ?s ?ws ?skill-finish-state)
   (assert (state STEP-FAILED))
   (modify ?step (state failed))
 )
-
 (defrule step-find-tag-stop-when-other-bot-found-the-machine
-  "tag-find skill finished, try to find tag"
+  "tag-find can be stopped, because the machine we want to find
+   was already found by another bot"
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name find-tag) (state running))
+  ?step <- (step (name find-tag) (state running) (machine ?machine))
   ?state <- (state SKILL-EXECUTION)
   ?ste <- (skill-to-execute (skill drive_to)
 			    (args $?args) (state running))
   (time $?now)
+  (found-tag (name ?machine))
   =>
   (retract ?state ?ste)
   (assert (state STEP-FINISHED))
