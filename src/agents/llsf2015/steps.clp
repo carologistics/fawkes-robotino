@@ -111,6 +111,7 @@
 			    (args $?args) (state ?skill-finish-state&final|failed))
   (time $?now)
   =>
+  (printout t "explore_zone was " ?skill-finish-state " Searching for a tag now"  crlf)
   (retract ?state ?ste)
   (assert (state PROD_LOOKING_FOR_TAG)
    (timer (name waiting-for-tag-since) (time ?now) (seq 1))
@@ -119,7 +120,7 @@
 (defrule step-find-tag-report-tag
   "Add found tag to navgraph and finish step."
   (phase PRODUCTION)
-  ?step <- (step (name find-tag) (state running) (zone ?zone) (machine ?machine))
+  ?step <- (step (name find-tag) (state running) (zone ?zone))
   ?ws <- (timer (name waiting-for-tag-since))
   ?s <- (state PROD_LOOKING_FOR_TAG)
   ?zone-fact <- (zone-exploration (name ?zone))
@@ -132,7 +133,7 @@
                        (visibility_history ?vh&:(> ?vh ?needed-vh)) 
                        (translation $?trans) (rotation $?rot)
                        (frame ?frame) (time $?timestamp))
-  ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
+  ?skill-finish-state <- (explore-zone-state ?)
   =>
   (printout t "Found Tag Nr." ?tag " (" ?machine " " ?side ")"  crlf)
   ; transform to map-frame
