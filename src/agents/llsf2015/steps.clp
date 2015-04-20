@@ -64,7 +64,7 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name get-base) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps) (machine-feature ?feature))
+		 (machine ?mps) (machine-feature ?feature) (base ?color))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   =>
@@ -187,6 +187,22 @@
   ; because the next skill call overrides it
 )
 
+(defrule step-get-product-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name get-product) (state wait-for-activation) (task-priority ?p)
+		 (machine ?mps))
+  ?state <- (state STEP-STARTED)
+  (team-color ?team)
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (printout warn "TODO: use skill to get a puck from an MPS" crlf)
+  (assert (state WAIT-FOR-LOCK)
+	  (skill-to-execute (skill ppgoto) (args place (get-output ?mps)) (target ?mps))
+	  (wait-for-lock (priority ?p) (res ?mps))
+  )
+)
 
 ; (defrule step-get-S0-start
 ;   (declare (salience ?*PRIORITY-STEP-START*))

@@ -21,8 +21,10 @@
 
   ; production order priorities
   ?*PRIORITY-PREFILL-CS* = 50
-  ?*PRIORITY-PRODUCE-C0* = 100
+  ?*PRIORITY-PREFILL-RS* = 80
+  ?*PRIORITY-PRODUCE-C0* = 90
   ?*PRIORITY-FIND-MISSING-MPS* = 110
+  ?*PRIORITY-DELIVER* = 100
   
 
   ; tast execution order priorities

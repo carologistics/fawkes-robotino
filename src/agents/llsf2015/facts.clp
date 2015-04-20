@@ -183,9 +183,8 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 exploration-catch-up))
-  (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running
-                                             finished failed)
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 deliver-c0 fill-rs exploration-catch-up))
+  (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
   ;a task consists of multiple steps
@@ -200,8 +199,7 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base
-                                            find-tag))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-product get-base find-tag))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
@@ -210,6 +208,7 @@
   (slot product-type (type SYMBOL))
   (slot machine-feature (type SYMBOL) (allowed-symbols CONVEYOR SHELF SLIDE))
   (slot shelf-slot (type SYMBOL) (allowed-symbols LEFT MIDDLE RIGHT))
+  (slot base (type SYMBOL) (allowed-symbols BLACK SILVER RED))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
