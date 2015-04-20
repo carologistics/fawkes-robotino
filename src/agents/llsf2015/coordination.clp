@@ -199,7 +199,7 @@
 (defrule coordination-release-after-task-finished
   "If a task is finished the lock for the task is released and incoming facts are removed from the worldmodel. State is changed from TASK-FINISHED to IDLE."
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
-  ?t <- (task (name ?task) (state finished)) 
+  ?t <- (task (name ?task) (state finished) (steps $?steps)) 
   ?s <- (state TASK-FINISHED)
   =>
   ;release all locks for subtask goals
@@ -207,6 +207,10 @@
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
     (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
     (retract ?ntl)
+  )
+  ;remove all steps of the task
+  (do-for-all-facts ((?step step)) (member$ ?step:id ?steps)
+    (retract ?step)
   )
   (retract ?s ?t)
   (assert (state IDLE))
