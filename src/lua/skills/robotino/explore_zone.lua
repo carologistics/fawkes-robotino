@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "explore_zone"
 fsm                = SkillHSM:new{name=name, start="INIT"}
-depends_skills     = { "drive_to_local" }
+depends_skills     = { "drive_to_global", "drive_to_local" }
 depends_interfaces = {
   {v = "pose",      type="Position3DInterface", id="Pose"},
   {v = "tag_0",     type = "Position3DInterface"},
@@ -53,6 +53,16 @@ depends_interfaces = {
   {v = "line6",     type = "LaserLineInterface", id="/laser-lines/6"},
   {v = "line7",     type = "LaserLineInterface", id="/laser-lines/7"},
   {v = "line8",     type = "LaserLineInterface", id="/laser-lines/8"},
+  {v = "cluster_mps_1",   type = "Position3DInterface"},
+  {v = "cluster_mps_2",   type = "Position3DInterface"},
+  {v = "cluster_mps_3",   type = "Position3DInterface"},
+  {v = "cluster_mps_4",   type = "Position3DInterface"},
+  {v = "cluster_mps_5",   type = "Position3DInterface"},
+  {v = "cluster_mps_6",   type = "Position3DInterface"},
+  {v = "cluster_mps_7",   type = "Position3DInterface"},
+  {v = "cluster_mps_8",   type = "Position3DInterface"},
+  {v = "cluster_mps_9",   type = "Position3DInterface"},
+  {v = "cluster_mps_10",  type = "Position3DInterface"},
 }
 
 local TIMEOUT = 1
@@ -70,6 +80,9 @@ Searches for mps with the laser and tag vision
 @param min_y  minimal y coordinate to explore
 @param max_x  maximal x coordinate to explore
 @param max_y  maximal y coordinate to explore
+
+@param change_order if set to true, the points of a zone will be in different order (in case we are unable to find machines)
+@param disable_cluster if set to true, the laser-cluster for fast decision will be disabled (in case we are unable to find machines
 
 @param search_tags   list of tags to search fore (all others will be ignored), if nil all will be used
 
@@ -195,9 +208,22 @@ function mps_visible_laser(self)
   return true
 end
 
+function cluster_visible(self)
+  for k,v in pairs(self.fsm.vars.cluster) do
+    local obj_map = tfm.transform({x=v:translation(0), y=v:translation(1), ori=0}, v:frame(), "/map")
+    if mps_in_zone(self, obj_map.x, obj_map.y) then
+      return true
+    end
+  end
+  return false
+end
+
 fsm:define_states{ export_to=_M,
-  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,},
+  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,},
   {"INIT",                        JumpState},
+  {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_global}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
+  {"DECIDE_CLUSTER",              JumpState},
+  {"TIMEOUT_CLUSTER",             JumpState},
   {"DECIDE_NEXT_POINT",           JumpState},
   {"DRIVE_TO_NEXT_EXPLORE_POINT", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
   {"WAIT_FOR_SENSORS",            JumpState},
@@ -206,7 +232,11 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
   {"INIT",                "FAILED",                       cond="vars.parameter_nil",                            desc="one ore more parameter are nil"},
-  {"INIT",                "DECIDE_NEXT_POINT",            cond=true},
+  {"INIT",                "DRIVE_TO_ZONE",                cond=true},
+  {"DECIDE_CLUSTER",      "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil"},
+  {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
+  {"TIMEOUT_CLUSTER",     "DECIDE_NEXT_POINT",            cond=cluster_visible,                                 desc="cluster in zone, start checking"},
+  {"TIMEOUT_CLUSTER",     "FINAL",                        timeout=TIMEOUT,                                      desc="saw no cluster so stop checking zone"},
   {"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond="table.getn(self.fsm.vars.poses_to_check) ~= 0"},
   {"DECIDE_NEXT_POINT",   "FINAL",                        cond=true},
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_tag,                                 desc="saw tag, drive to"},
@@ -216,6 +246,10 @@ fsm:add_transitions{
 
 function INIT:init()
   self.fsm.vars.parameter_nil = false
+  local wall_min_x = false
+  local wall_min_y = false
+  local wall_max_x = false
+  local wall_max_y = false
 
   if self.fsm.vars.min_x == nil or
      self.fsm.vars.min_y == nil or
@@ -236,10 +270,6 @@ function INIT:init()
     self.fsm.vars.mid_y = self.fsm.vars.min_y + ((self.fsm.vars.max_y - self.fsm.vars.min_y) / 2)
     printf("Explore zone (" .. self.fsm.vars.min_x .. ", " .. self.fsm.vars.min_y .. ") (" .. self.fsm.vars.max_x .. ", " .. self.fsm.vars.max_y .. ")")
 
-    local wall_min_x = false
-    local wall_min_y = false
-    local wall_max_x = false
-    local wall_max_y = false
     -- check for zone at walls
     if self.fsm.vars.min_x <= -5.9 then
       wall_min_x = true
@@ -286,14 +316,59 @@ function INIT:init()
                                                 x     = self.fsm.vars.mid_x,
                                                 y     = self.fsm.vars.mid_y,
                                                 ori   = 3.14})
- 
+
+    if self.fsm.vars.change_order then
+      local poses_to_check_dir = {}
+      local size = table.getn(self.fsm.vars.poses_to_check)
+      for i = 1,size do
+        table.insert(poses_to_check_dir, self.fsm.vars.poses_to_check[size+1-i])
+      end
+      self.fsm.vars.poses_to_check = poses_to_check_dir
+    end
+    
     local output = "Explore: \n"
-    for key,value in pairs(self.fsm.vars.poses_to_check) do
+    for i,value in ipairs(self.fsm.vars.poses_to_check) do
       output = output .. value.name .. ": (" .. value.x .. ", " ..value.y .. ", " .. value.ori .. ")\n"
     end
     printf(output)
   end
 
+  -- point to check for clusters and to drive to with drive_to_global
+  printf("Walls: x (" .. tostring(wall_min_x) .. tostring(wall_max_x) .. ") y (" .. tostring(wall_min_y) .. tostring(wall_max_y) .. ")")
+
+  self.fsm.vars.point_cluster = {}
+  if wall_max_x then
+    if wall_max_y then
+      self.fsm.vars.point_cluster.x = self.fsm.vars.min_x
+      self.fsm.vars.point_cluster.y = self.fsm.vars.min_y
+    else
+      self.fsm.vars.point_cluster.x = self.fsm.vars.min_x
+      self.fsm.vars.point_cluster.y = self.fsm.vars.max_y
+    end
+  else
+    if wall_max_y then
+      self.fsm.vars.point_cluster.x = self.fsm.vars.max_x
+      self.fsm.vars.point_cluster.y = self.fsm.vars.min_y
+    else
+      self.fsm.vars.point_cluster.x = self.fsm.vars.max_x
+      self.fsm.vars.point_cluster.y = self.fsm.vars.max_y
+    end
+  end
+  -- ori will be from my point towards the center
+  local dir_x = self.fsm.vars.mid_x - self.fsm.vars.point_cluster.x
+  local dir_y = self.fsm.vars.mid_y - self.fsm.vars.point_cluster.y
+  local ori = 0
+  if dir_x >= 0 then
+    ori = 0.785
+  else
+    ori = 2.355
+  end
+  if dir_y <= 0 then
+    ori = ori * (-1)
+  end
+  self.fsm.vars.point_cluster.ori = ori
+
+  -- interfaces in lists
   self.fsm.vars.tags = {}
   self.fsm.vars.tags[1]   = tag_0
   self.fsm.vars.tags[2]   = tag_1
@@ -320,6 +395,25 @@ function INIT:init()
   self.fsm.vars.lines[6]  = line6
   self.fsm.vars.lines[7]  = line7
   self.fsm.vars.lines[8]  = line8
+  self.fsm.vars.cluster = {}
+  self.fsm.vars.cluster[1]  = cluster_mps_1
+  self.fsm.vars.cluster[2]  = cluster_mps_2
+  self.fsm.vars.cluster[3]  = cluster_mps_3
+  self.fsm.vars.cluster[4]  = cluster_mps_4
+  self.fsm.vars.cluster[5]  = cluster_mps_5
+  self.fsm.vars.cluster[6]  = cluster_mps_6
+  self.fsm.vars.cluster[7]  = cluster_mps_7
+  self.fsm.vars.cluster[8]  = cluster_mps_8
+  self.fsm.vars.cluster[9]  = cluster_mps_9
+  self.fsm.vars.cluster[10] = cluster_mps_10
+end
+
+function DRIVE_TO_ZONE:init()
+  self.skills[1].x        = self.fsm.vars.point_cluster.x
+  self.skills[1].y        = self.fsm.vars.point_cluster.y
+  self.skills[1].ori      = self.fsm.vars.point_cluster.ori
+  self.skills[1].just_ori = true
+  printf("Pre Point Zone: (" .. self.skills[1].x .. ", " .. self.skills[1].y .. ", " .. self.skills[1].ori .. ")")
 end
 
 function DRIVE_TO_NEXT_EXPLORE_POINT:init()

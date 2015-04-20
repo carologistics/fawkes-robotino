@@ -133,3 +133,47 @@ laser-cluster:
       y: 0.0
       z: 0.0
 
+  mps:
+    active: true
+
+    # Automatically start, i.e. set enabled to true?
+    auto-start: true
+
+    # input laser cloud
+    input_cloud: urg-filtered
+
+    # How much must a cluster detection deviate from the previous to consider
+    # this to be a different cluster (and thus restart the visibility history)
+    switch_tolerance: 0.2
+
+    # How to select the best cluster?
+    # min-angle: minimum angle between forward direction and direction to cluster
+    # min-dist: minimum distance from sensor to cluster centroid
+    cluster_selection_mode: min-dist
+
+    # The maximum number of clusters to publish on the blackboard
+    # The interfaces will be named "Laser Cluster N" for N=1..max_num_clusters
+    max_num_clusters: 10
+  
+    # The frame in which the result should be published; frame
+    result_frame: /base_link
+
+    line_removal:
+      enable: false
+  
+    clustering:
+      # Clustering inter-point distance tolerance; m
+      tolerance: 0.1
+
+      # Minimum number of points in cluster to consider
+      min_size: 4  # 30cm with 1 deg angle at 3m distance => 5
+
+      # Minimum number of points in cluster to consider
+      max_size: 400
+
+    # transpose the x-position of the detected cluster by the given offset
+    offsets:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+

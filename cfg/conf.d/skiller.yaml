@@ -45,6 +45,16 @@ skiller:
         line6: LaserLineInterface::/laser-lines/6
         line7: LaserLineInterface::/laser-lines/7
         line8: LaserLineInterface::/laser-lines/8
+        cluster_mps_1: Position3DInterface::/laser-cluster/mps/1
+        cluster_mps_2: Position3DInterface::/laser-cluster/mps/2
+        cluster_mps_3: Position3DInterface::/laser-cluster/mps/3
+        cluster_mps_4: Position3DInterface::/laser-cluster/mps/4
+        cluster_mps_5: Position3DInterface::/laser-cluster/mps/5
+        cluster_mps_6: Position3DInterface::/laser-cluster/mps/6
+        cluster_mps_7: Position3DInterface::/laser-cluster/mps/7
+        cluster_mps_8: Position3DInterface::/laser-cluster/mps/8
+        cluster_mps_9: Position3DInterface::/laser-cluster/mps/9
+        cluster_mps_10: Position3DInterface::/laser-cluster/mps/10
         tag_0: Position3DInterface::/tag-vision/0
         tag_1: Position3DInterface::/tag-vision/1
         tag_2: Position3DInterface::/tag-vision/2
