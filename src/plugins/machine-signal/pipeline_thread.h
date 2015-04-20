@@ -138,7 +138,6 @@ class MachineSignalPipelineThread :
     } color_classifier_context_t_;
 
     color_classifier_context_t_ cfy_ctxt_red_;
-    color_classifier_context_t_ cfy_ctxt_red_delivery_;
     color_classifier_context_t_ cfy_ctxt_green_;
 
     std::string cfg_camera_;

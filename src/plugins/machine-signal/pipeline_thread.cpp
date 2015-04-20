@@ -54,10 +54,6 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   cfy_ctxt_red_.classifier = NULL;
   cfy_ctxt_red_.scanline_grid = NULL;
   cfy_ctxt_red_.color_expect = C_RED;
-  cfy_ctxt_red_delivery_.colormodel = NULL;
-  cfy_ctxt_red_delivery_.classifier = NULL;
-  cfy_ctxt_red_delivery_.scanline_grid = NULL;
-  cfy_ctxt_red_delivery_.color_expect = C_RED;
   cfy_ctxt_green_.colormodel = NULL;
   cfy_ctxt_green_.classifier = NULL;
   cfy_ctxt_green_.scanline_grid = NULL;
@@ -197,19 +193,6 @@ void MachineSignalPipelineThread::init()
 
   setup_color_classifier(&cfy_ctxt_red_);
 
-  // Configure RED classifier for delivery zone
-  cfy_ctxt_red_delivery_.cfg_ref_col = config->get_uints(CFG_PREFIX "/red_delivery/reference_color");
-  cfy_ctxt_red_delivery_.cfg_chroma_thresh = config->get_ints(CFG_PREFIX "/red_delivery/chroma_thresh");
-  cfy_ctxt_red_delivery_.cfg_sat_thresh = config->get_ints(CFG_PREFIX "/red_delivery/saturation_thresh");
-  cfy_ctxt_red_delivery_.cfg_luma_thresh = config->get_ints(CFG_PREFIX "/red_delivery/luma_thresh");
-  cfy_ctxt_red_delivery_.cfg_roi_min_points = config->get_int(CFG_PREFIX "/red_delivery/min_points");
-  cfy_ctxt_red_delivery_.cfg_roi_basic_size = config->get_int(CFG_PREFIX "/red_delivery/basic_roi_size");
-  cfy_ctxt_red_delivery_.cfg_roi_neighborhood_min_match = config->get_int(CFG_PREFIX "/red_delivery/neighborhood_min_match");
-  cfy_ctxt_red_delivery_.cfg_scangrid_x_offset = config->get_int(CFG_PREFIX "/red_delivery/scangrid_x_offset");
-  cfy_ctxt_red_delivery_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/red_delivery/scangrid_y_offset");
-
-  setup_color_classifier(&cfy_ctxt_red_delivery_);
-
   // Configure GREEN classifier
   cfy_ctxt_green_.cfg_ref_col = config->get_uints(CFG_PREFIX "/green/reference_color");
   cfy_ctxt_green_.cfg_chroma_thresh = config->get_ints(CFG_PREFIX "/green/chroma_thresh");
@@ -286,7 +269,6 @@ void MachineSignalPipelineThread::init()
   combined_colormodel_ = new ColorModelSimilarity();
   combined_colormodel_->add_colors(cfy_ctxt_red_.color_class);
   combined_colormodel_->add_colors(cfy_ctxt_green_.color_class);
-  combined_colormodel_->add_colors(cfy_ctxt_red_delivery_.color_class);
   color_filter_ = new FilterColorThreshold(combined_colormodel_);
 
   // Setup luminance classifier for light on/off detection
@@ -372,13 +354,6 @@ void MachineSignalPipelineThread::finalize()
   delete cfy_ctxt_red_.scanline_grid;
   for (std::vector<ColorModelSimilarity::color_class_t *>::iterator it = cfy_ctxt_red_.color_class.begin();
       it != cfy_ctxt_red_.color_class.end(); it++) {
-    delete *it;
-  }
-  delete cfy_ctxt_red_delivery_.colormodel;
-  delete cfy_ctxt_red_delivery_.classifier;
-  delete cfy_ctxt_red_delivery_.scanline_grid;
-  for (std::vector<ColorModelSimilarity::color_class_t *>::iterator it = cfy_ctxt_red_delivery_.color_class.begin();
-      it != cfy_ctxt_red_delivery_.color_class.end(); it++) {
     delete *it;
   }
   delete cfy_ctxt_green_.colormodel;
@@ -639,10 +614,8 @@ inline void MachineSignalPipelineThread::reinit_color_config()
 
   setup_color_classifier(&cfy_ctxt_red_);
   setup_color_classifier(&cfy_ctxt_green_);
-  setup_color_classifier(&cfy_ctxt_red_delivery_);
 
   combined_colormodel_->add_colors(cfy_ctxt_red_.color_class);
-  combined_colormodel_->add_colors(cfy_ctxt_red_delivery_.color_class);
   combined_colormodel_->add_colors(cfy_ctxt_green_.color_class);
 
   delete light_classifier_;
@@ -715,7 +688,6 @@ void MachineSignalPipelineThread::loop()
     // Reallocate classifiers if their config changed
     if (unlikely(cfg_changed_
         && color_data_consistent(&cfy_ctxt_red_)
-        && color_data_consistent(&cfy_ctxt_red_delivery_)
         && color_data_consistent(&cfy_ctxt_green_) )) {
       reinit_color_config();
       cfg_changed_ = false;
@@ -728,7 +700,6 @@ void MachineSignalPipelineThread::loop()
 
     cfy_ctxt_green_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
     cfy_ctxt_red_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
-    cfy_ctxt_red_delivery_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
     drawn_rois_.clear();
 
@@ -1450,8 +1421,6 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         classifier = &cfy_ctxt_red_;
       else if (sub_prefix == "/green")
         classifier = &cfy_ctxt_green_;
-      else if (sub_prefix == "/red_delivery")
-        classifier = &cfy_ctxt_red_delivery_;
 
       std::string opt = path.substr(full_pfx.length());
 
