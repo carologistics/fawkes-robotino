@@ -709,9 +709,9 @@ void MachineSignalPipelineThread::loop()
       cfy_ctxt_green_.scanline_grid->set_roi(&r);
     }
     else {
-      ROI top_half(0, 0, cam_width_, cam_height_/2, cam_width_, cam_height_);
+      ROI top_half(0, 0, cam_width_, cam_height_*0.7, cam_width_, cam_height_);
       cfy_ctxt_red_.scanline_grid->set_roi(&top_half);
-      ROI bot_half(0, cam_height_/2, cam_width_, cam_height_/2, cam_width_, cam_height_);
+      ROI bot_half(0, cam_height_*0.25, cam_width_, cam_height_*0.75, cam_width_, cam_height_);
       cfy_ctxt_green_.scanline_grid->set_roi(&bot_half);
     }
     rois_R = cfy_ctxt_red_.classifier->classify();
