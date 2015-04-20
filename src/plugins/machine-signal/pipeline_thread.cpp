@@ -1180,17 +1180,14 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
           roi_R->height = roi_R->width;
         }
       }
-      /*
+      ///*
       if (roi_G) {
-        // Improve green ROI with black socket (TODO)
+        // Improve green ROI with black socket
         if (!black_stuff_bottom->empty()) {
           ROI &black = black_stuff_bottom->front();
-          roi_R->height = (black.start.y - roi_R->start.y) / 3;
-        }
-        else {
-          unsigned int cluster_end_y = roi_cluster.start.y + roi_cluster.height;
-          if (roi_R->start.x + roi_R->height * 4 > cluster_end_y) {
-            roi_R->height = (cluster_end_y - roi_R->start.y) / 4;
+          int hdiff = black.start.y - (roi_G->start.y + roi_G->height);
+          if (hdiff > 0) {
+            roi_G->height += hdiff;
           }
         }
       } //*/
@@ -1202,7 +1199,12 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
       }
       else {
         SignalState::signal_rois_t_ signal;
+
         if (roi_R && !roi_G) {
+          if (black_stuff_bottom->size() > 0) {
+            roi_R->height = (black_stuff_bottom->front().start.y - roi_R->start.y) / 3;
+          }
+
           signal.red_roi = roi_R;
 
           // Put equally sized yellow & green ROIs below the red one
@@ -1222,6 +1224,11 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
           rv->push_back(signal);
         }
         else if (!roi_R && roi_G) {
+          if (black_stuff_top->size() > 0) {
+            ROI &black = black_stuff_top->front();
+            roi_G->height = (roi_G->start.y + roi_G->height - (black.start.y + black.height)) / 3;
+          }
+
           signal.green_roi = roi_G;
 
           signal.yellow_roi = shared_ptr<ROI>(new ROI());
