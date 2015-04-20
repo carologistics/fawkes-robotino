@@ -63,7 +63,11 @@ fsm:add_transitions{
 
 function GOTO_SLIDE:init()
    self.skills[1].x = 0.2
-   self.skills[1].y = line1:end_point_1(1) + 0.1
+   if line1:end_point_1(1) < 0 then
+     self.skills[1].y = line1:end_point_1(1) + 0.1
+   else
+     self.skills[1].y = line1:end_point_2(1) + 0.1
+   end
 --   self.skills[1].y = -0.02 -(self.fsm.vars.slot * 0.094)
 end
 
