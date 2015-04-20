@@ -34,36 +34,34 @@ depends_interfaces = {
 documentation      = [==[ shelf_pick
 
                           This skill does:
-                          - drives to the given Navgraphpunkt (ppgoto)
-                          - aligns to the machine             (align_mps)
-                          - Picks of Shelf                    (SKILL-TODO)
+                          - Picks of Shelf                    
 
-                          @param nav_point  string  the name of the navgraph point to drive to
                           @param slot       string  the slot to pick the puck of; options ( LEFT | MIDDLE | RIGHT )
-                          @param tag_id     int     the tag_id to variafy the alignmend to the correct machine
-
-                          TODO this skill
 ]==]
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
-   {"INIT",       JumpState,  },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="WAIT_FOR_LASERLINE", fail_to="FAILED"},
+   {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_LASERLINE", fail_to="FAILED"},
    {"APPROACH_SHELF", SkillJumpState, skills={{motor_move}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
-   {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
+   {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAILED"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="CENTER_PUCK", fail_to="FAILED"},
    {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
-   {"WAIT_FOR_LASERLINE", JumpState,  },
+   {"WAIT_AFTER_GRAB", JumpState},
+   {"WAIT_FOR_LASERLINE", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT",       "GOTO_SHELF", cond=true},
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
-   {"WAIT_FOR_LASERLINE", "APPROACH_SHELF", cond=true}
+   {"WAIT_AFTER_GRAB", "LEAVE_SHELF", timeout=0.5},
+   {"WAIT_FOR_LASERLINE", "APPROACH_SHELF", timeout=0.5}
 }
 
+function INIT:init()
+   self.skills[1].open = true
+end
 
 function GOTO_SHELF:init()
    local dest_x = 0.2
@@ -94,7 +92,6 @@ end
 
 function APPROACH_SHELF:init()
    self.skills[1].x = line1:point_on_line(0) - 0.08
-   self.skills[2].open = true
 end
 
 function GRAB_PRODUCT:init()
