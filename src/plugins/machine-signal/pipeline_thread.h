@@ -242,11 +242,11 @@ class MachineSignalPipelineThread :
     // All ROIs we want to see painted in the tuning buffer
     std::list<firevision::ROI> drawn_rois_;
 
+
+    firevision::ROI *red_green_match(firevision::ROI *roi_R, firevision::ROI *roi_G);
     std::list<SignalState::signal_rois_t_> *create_field_signals(
         std::list<firevision::ROI> *rois_R,
         std::list<firevision::ROI> *rois_G);
-
-
     std::list<SignalState::signal_rois_t_> *create_delivery_signals(
       std::list<firevision::ROI> *rois_R, std::list<firevision::ROI> *rois_G);
     std::list<SignalState::signal_rois_t_> *create_laser_signals(std::list<firevision::ROI> *rois_R,
@@ -279,7 +279,11 @@ class MachineSignalPipelineThread :
     fawkes::SignalHintInterface *bb_signal_position_estimate_;
     fawkes::tf::Stamped<fawkes::tf::Point> signal_hint_;
 
-    void merge_rois_in_laser(std::set<firevision::WorldROI, SignalState::compare_rois_by_area> *laser_rois, std::list<firevision::ROI> *rois);
+    /*std::map<firevision::ROI, SignalState::signal_rois_t_, compare_rois_by_x_> *merge_rois_in_laser(
+      std::set<firevision::WorldROI, SignalState::compare_rois_by_area> *laser_rois,
+      std::list<firevision::ROI> *rois_R, std::list<firevision::ROI> *rois_G); //*/
+
+    firevision::ROI *merge_rois_in_roi(const firevision::ROI &outer_roi, std::list<firevision::ROI> *rois);
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);
