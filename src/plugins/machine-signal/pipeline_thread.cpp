@@ -1438,7 +1438,7 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
     MutexLocker lock(&cfg_mutex_);
     bool chg = false;
 
-    if (sub_prefix == "/red" || sub_prefix == "/green" || sub_prefix == "/red_delivery") {
+    if (sub_prefix == "/red" || sub_prefix == "/green") {
       color_classifier_context_t_ *classifier = NULL;
       if (sub_prefix == "/red")
         classifier = &cfy_ctxt_red_;
