@@ -717,6 +717,11 @@ void MachineSignalPipelineThread::loop()
     rois_R = cfy_ctxt_red_.classifier->classify();
     rois_G = cfy_ctxt_green_.classifier->classify();
 
+    if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
+      drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
+      drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
+    }
+
     // Create and group ROIs that make up the red, yellow and green lights of a signal
     std::list<SignalState::signal_rois_t_> *signal_rois;
     signal_rois = create_laser_signals(rois_R, rois_G);
@@ -1142,11 +1147,13 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
       // Look for the black cap on top
       ROI roi_black_top(laser_roi);
       roi_black_top.height = laser_roi.height / 4;
+      roi_black_top.color = C_BACKGROUND;
       black_scangrid_->set_roi(&roi_black_top);
       list<ROI> *black_stuff_top = black_classifier_->classify();
 
       // Look for the black socket
       ROI roi_black_bottom(laser_roi);
+      roi_black_bottom.color = C_BACKGROUND;
       roi_black_bottom.start.y = laser_roi.start.y + laser_roi.height * 0.75;
       roi_black_bottom.height = laser_roi.height / 4;
       roi_black_bottom.set_image_height(cam_width_);
@@ -1160,7 +1167,6 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
       }
 
       if (roi_R) {
-        // Improve red ROI with black cap
         if (!black_stuff_top->empty()) {
           // Extend red ROI up to the black cap
           ROI &black = black_stuff_top->front();
