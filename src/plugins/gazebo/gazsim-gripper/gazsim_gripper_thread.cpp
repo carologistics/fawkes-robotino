@@ -25,7 +25,6 @@
 #include <utils/math/angle.h>
 #include <core/threading/mutex_locker.h>
 #include <core/threading/read_write_lock.h>
-#include <core/threading/scoped_rwlock.h>
 #include <core/threading/wait_condition.h>
 #include <interfaces/AX12GripperInterface.h>
 #include <interfaces/LedInterface.h>
@@ -38,6 +37,7 @@
 #include <unistd.h>
 
 using namespace fawkes;
+using namespace gazebo;
 
 /** @class GazsimGripperThread "gazsim_gripper_thread.h"
  * Thread simulates the Gripper in Gazebo
@@ -63,6 +63,8 @@ GazsimGripperThread::init()
   
   gripper_if_name_ = config->get_string("/gazsim/gripper/if-name");
   cfg_prefix_ = config->get_string("/gazsim/gripper/cfg-prefix");
+
+  set_gripper_pub_ = gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/gripper"));
 
   //setup gripper if with default values
   gripper_if_ = blackboard->open_for_writing<AX12GripperInterface>(gripper_if_name_.c_str());
@@ -112,11 +114,9 @@ GazsimGripperThread::loop()
       logger->log_warn(name(), "%s is not implemented in the simulation.",
                        gripper_if_->msgq_first()->type());
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::OpenMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
+      send_gripper_msg(1);
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
+      send_gripper_msg(0);
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::CloseLoadMessage>()) {
       logger->log_warn(name(), "%s is not implemented in the simulation.",
                        gripper_if_->msgq_first()->type());
@@ -127,8 +127,7 @@ GazsimGripperThread::loop()
       logger->log_warn(name(), "%s is not implemented in the simulation.",
                        gripper_if_->msgq_first()->type());
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::CenterMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
+      //nothing to do here, the puck is always centered in the simulation
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::StopLeftMessage>()) {
       logger->log_warn(name(), "%s is not implemented in the simulation.",
                        gripper_if_->msgq_first()->type());
@@ -148,4 +147,14 @@ GazsimGripperThread::loop()
     gripper_if_->msgq_pop();
     gripper_if_->write();
   }
+}
+
+void GazsimGripperThread::send_gripper_msg(int value)
+{
+  // send message to gazebo
+  // 0 means close and 1 open
+  msgs::Int msg;
+  msg.set_data(value);
+  set_gripper_pub_->Publish(msg);
+
 }

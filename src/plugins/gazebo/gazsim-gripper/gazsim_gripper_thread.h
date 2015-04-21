@@ -32,11 +32,12 @@
 #include <blackboard/interface_listener.h>
 #include <interfaces/DynamixelServoInterface.h>
 #include <utils/time/time.h>
+#include <plugins/gazebo/aspect/gazebo.h>
 
-#ifdef USE_TIMETRACKER
-#  include <utils/time/tracker.h>
-#endif
-#include <string>
+//from Gazebo
+#include <gazebo/transport/TransportTypes.hh>
+#include <gazebo/msgs/MessageTypes.hh>
+#include <gazebo/transport/transport.hh>
 
 namespace fawkes {
   class AX12GripperInterface;
@@ -49,8 +50,8 @@ class GazsimGripperThread
   public fawkes::BlockedTimingAspect,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect
-
+  public fawkes::BlackBoardAspect,
+  public fawkes::GazeboAspect
 {
  public:
   GazsimGripperThread();
@@ -67,6 +68,11 @@ class GazsimGripperThread
 
   std::string  gripper_if_name_;
   std::string  cfg_prefix_;
+
+  //Publisher to sent msgs to gazebo
+  gazebo::transport::PublisherPtr set_gripper_pub_;
+
+  void send_gripper_msg(int value);
 };
 
 #endif
