@@ -135,10 +135,13 @@ class MachineSignalPipelineThread :
         unsigned int cfg_roi_neighborhood_min_match;
         unsigned int cfg_scangrid_x_offset;
         unsigned int cfg_scangrid_y_offset;
+        bool visualize;
     } color_classifier_context_t_;
 
-    color_classifier_context_t_ cfy_ctxt_red_;
-    color_classifier_context_t_ cfy_ctxt_green_;
+    color_classifier_context_t_ cfy_ctxt_red_1_;
+    color_classifier_context_t_ cfy_ctxt_red_0_;
+    color_classifier_context_t_ cfy_ctxt_green_1_;
+    color_classifier_context_t_ cfy_ctxt_green_0_;
 
     std::string cfg_camera_;
     firevision::Camera *camera_;
