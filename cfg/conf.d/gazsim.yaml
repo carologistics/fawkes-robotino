@@ -31,6 +31,7 @@ gazsim:
     remove-puck-under-machine: "~/LLSFRbSim/RemovePuckFromMachine/"
     message: "~/RobotinoSim/String/"
     gripper: "~/RobotinoSim/SetGripper/"
+    gripper-has-puck: "~/RobotinoSim/GripperHasPuck/"
   
   llsf-rb-comm:
     refbox-host: "127.0.0.1"

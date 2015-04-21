@@ -65,6 +65,9 @@ GazsimGripperThread::init()
   cfg_prefix_ = config->get_string("/gazsim/gripper/cfg-prefix");
 
   set_gripper_pub_ = gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/gripper"));
+  gripper_has_puck_sub_ = gazebonode->Subscribe(
+    config->get_string("/gazsim/topics/gripper-has-puck"), 
+    &GazsimGripperThread::on_has_puck_msg, this);
 
   //setup gripper if with default values
   gripper_if_ = blackboard->open_for_writing<AX12GripperInterface>(gripper_if_name_.c_str());
@@ -79,6 +82,7 @@ GazsimGripperThread::init()
   gripper_if_->set_max_right_velocity(0);
   gripper_if_->set_left_velocity(0);
   gripper_if_->set_right_velocity(0);
+  gripper_if_->set_final(true);
   gripper_if_->write();
 }
 
@@ -117,6 +121,7 @@ GazsimGripperThread::loop()
       send_gripper_msg(1);
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
       send_gripper_msg(0);
+      gripper_if_->set_holds_puck(false);
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::CloseLoadMessage>()) {
       logger->log_warn(name(), "%s is not implemented in the simulation.",
                        gripper_if_->msgq_first()->type());
@@ -157,4 +162,12 @@ void GazsimGripperThread::send_gripper_msg(int value)
   msg.set_data(value);
   set_gripper_pub_->Publish(msg);
 
+}
+
+
+void GazsimGripperThread::on_has_puck_msg(ConstIntPtr &msg)
+{
+  // 1 means the gripper has a puck 0 not
+  gripper_if_->set_holds_puck(msg->data() > 0);
+  gripper_if_->write();
 }
