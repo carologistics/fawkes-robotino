@@ -91,6 +91,53 @@
  )
 )
 
+(defrule insert-unknown-base-to-rs
+  "Insert a base with unknown color in a RS for preparation"
+  (declare (salience ?*PRIORITY-PREFILL-RS*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (team-color ?team-color&~nil)
+  (holding ?product-id&~NONE)
+  (machine (mtype RS)
+    (name ?rs) (team ?team-color)
+    (out-of-order-until $?ooo&:(is-working ?ooo)))
+  (ring-station (name ?rs) (bases-needed ?bases&:(> ?bases 0)))
+  ;check that the task was not rejected before
+  (not (and 
+    (task (name fill-rs) (state rejected) (id ?rej-id))
+    (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
+  ))
+  (task (name fill-cap) (state finished))
+  =>
+  (printout t "PROD: INSERT unknown base " ?product-id " into " ?rs crlf)
+  (bind ?task-id (random-id))
+  (assert 
+    (task (name fill-rs) (id ?task-id) (state proposed)
+      (steps (create$ (+ ?task-id 1)))
+      (priority ?*PRIORITY-PREFILL-RS*))
+    (step (name insert) (id (+ ?task-id 1))
+      (task-priority ?*PRIORITY-PREFILL-RS*)
+      (machine ?rs)
+      (machine-feature SLIDE))
+    (needed-task-lock (task-id ?task-id) (action PREFILL-RS) (place ?rs))
+  )
+)
+
+(defrule discard-unknown-base
+  "Discard a base with unknown color if no RS has to be pre-filled"
+  (phase PRODUCTION)
+  (state IDLE)
+  (team-color ?team-color&~nil)
+  (holding ?product-id&~NONE)
+  (not (ring-station (bases-needed ?bases&:(> ?bases 0))))
+  (task (name fill-cap) (state finished))
+  =>
+  (printout t "PROD: Discard unneeded unknown base " ?product-id crlf)
+  (assert
+    (skill-to-execute (skill gripper) (args open true))
+  )
+)
+  
 (defrule prod-produce-c0
   "Produce a C0"
   (declare (salience ?*PRIORITY-PRODUCE-C0*))
