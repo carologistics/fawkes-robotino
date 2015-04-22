@@ -39,10 +39,10 @@ clips-agent:
  
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  agent: llsf2014/llsf2014
+  agent: llsf2015/llsf2015
 
  
-  llsf2014:
+  llsf2015:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: nothing
         
@@ -53,14 +53,6 @@ clips-agent:
     peer-port: 4444
     cyan-port: 4441
     magenta-port: 4442
-    #simulation-setup:
-    # peer-address: 127.0.0.1
-    # peer-recv-port: 4444
-    # peer-send-port: 4445
-    # cyan-recv-port: 4441
-    # magenta-recv-port: 4442
-    # cyan-send-port: 4446
-    # magenta-send-port: 4447
 
     team-name: Carologistics
     crypto-key: randomkey
@@ -75,6 +67,21 @@ clips-agent:
     #distance needed before a robot releases a lock
     release-distance: 0.75
 
+    #Timeouts before the robot starts to drive into the field
+    move-into-field-waittime:
+      R-1: 0
+      R-2: 15
+      R-3: 30
+    #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
+    cap-station:
+      assigned-color:
+        C-CS1: GREY
+        C-CS2: BLACK
+        M-CS1: GREY
+        M-CS2: BLACK
+      #on which shelf slot are new caps to fill into the station? (LEFT, RIGHT, MIDDLE)
+      shelf-slot-new-caps: LEFT
+    
     waiting-points:
       ins-1-robotino1: WAIT_FOR_INS_1_ROBOTINO_1
       ins-2-robotino1: WAIT_FOR_INS_2_ROBOTINO_1
@@ -116,9 +123,9 @@ clips-agent:
       #row defined in host.yaml (this is only the default!)
       row: MID
       
-      row-high: ["M12", "M11", "M8", "M5", "M17", "M20", "M23", "M24"]
-      row-mid: ["M10", "M7", "M4", "M2", "M14", "M16", "M19", "M22"]
-      row-low: ["M9", "M6", "M3", "M1", "M13", "M15", "M18", "M21"]
+      row-high: ["Z11", "Z12", "Z8", "Z4", "Z16", "Z20", "Z24", "Z23"]
+      row-mid: ["Z9", "Z10", "Z6", "Z2", "Z14", "Z18", "Z22", "Z21"]
+      row-low: ["Z5", "Z6", "Z2", "Z1", "Z13", "Z14", "Z18", "Z17"]
 
       #the time in seconds to report all machines even if we are not prepared for production
       latest-send-last-report-time: 210 # =3:30
