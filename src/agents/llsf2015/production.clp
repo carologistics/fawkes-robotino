@@ -98,6 +98,7 @@
   (state IDLE)
   (team-color ?team-color&~nil)
   (holding ?product-id&~NONE)
+  (product (id ?product-id) (base UNKNOWN))
   (machine (mtype RS)
     (name ?rs) (team ?team-color)
     (out-of-order-until $?ooo&:(is-working ?ooo)))
@@ -107,7 +108,7 @@
     (task (name fill-rs) (state rejected) (id ?rej-id))
     (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
   ))
-  (task (name fill-cap) (state finished))
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PREFILL-RS*))))
   =>
   (printout t "PROD: INSERT unknown base " ?product-id " into " ?rs crlf)
   (bind ?task-id (random-id))
@@ -125,6 +126,7 @@
 
 (defrule discard-unknown-base
   "Discard a base with unknown color if no RS has to be pre-filled"
+  (declare (salience ?*PRIORITY-DISCARD-UNKNOWN*))
   (phase PRODUCTION)
   (state IDLE)
   (team-color ?team-color&~nil)
@@ -133,8 +135,13 @@
   (task (name fill-cap) (state finished))
   =>
   (printout t "PROD: Discard unneeded unknown base " ?product-id crlf)
+  (bind ?task-id (random-id))
   (assert
-    (skill-to-execute (skill gripper) (args open true))
+    (task (name discard-unknown) (id ?task-id) (state proposed)
+      (steps (create$ (+ ?task-id 1)))
+      (priority ?*PRIORITY-DISCARD-UNKNOWN*))
+    (step (name discard) (id (+ ?task-id 1))
+      (task-priority ?*PRIORITY-DISCARD-UNKNOWN*))
   )
 )
   
