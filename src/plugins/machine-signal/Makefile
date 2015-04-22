@@ -42,7 +42,7 @@ LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface SwitchInterface \
 		Position3DInterface SignalHintInterface LaserLineInterface fawkestf fvmodels
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_machine_signal = historic_smooth_roi.o plugin.o state.o pipeline_thread.o sensor_thread.o
+OBJS_machine_signal = custom_rois.o plugin.o state.o pipeline_thread.o sensor_thread.o
 
 ifneq ($(GCC_TOO_OLD),1)
   PLUGINS_all = $(PLUGINDIR)/machine-signal.$(SOEXT)

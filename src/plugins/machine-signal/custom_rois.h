@@ -10,6 +10,7 @@
 
 #include <boost/circular_buffer.hpp>
 #include <fvutils/base/roi.h>
+#include <tf/types.h>
 
 namespace firevision
 {
@@ -27,6 +28,13 @@ class HistoricSmoothROI :
     HistoricSmoothROI &operator=(HistoricSmoothROI const &other);
     void update(ROI const &next_roi);
 };
+
+class WorldROI : public firevision::ROI {
+  public:
+    std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>> world_pos;
+    WorldROI() : ROI() {}
+};
+
 
 } /* namespace firevision */
 

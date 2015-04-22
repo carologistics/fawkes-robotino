@@ -5,8 +5,8 @@
  *      Author: Victor Mataré
  */
 
-#include "historic_smooth_roi.h"
 #include <climits>
+#include "custom_rois.h"
 
 namespace firevision
 {

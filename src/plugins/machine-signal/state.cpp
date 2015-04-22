@@ -45,8 +45,21 @@ SignalState::SignalState(unsigned int buflen, fawkes::Logger *logger, historic_s
 }
 
 
-void SignalState::inc_unseen() {
-  if (++unseen > 2) {
+void SignalState::inc_unseen(std::set<firevision::WorldROI, compare_rois_by_area> &laser_rois) {
+  bool in_laser = false;
+  firevision::ROI full(*(signal_rois_history_.red_roi));
+  full += *(signal_rois_history_.yellow_roi);
+  full += *(signal_rois_history_.green_roi);
+  for (firevision::WorldROI cluster : laser_rois) {
+    firevision::ROI intersection = cluster.intersect(full);
+    unsigned int laser_area = cluster.get_width() * cluster.get_height();
+    if (laser_area && float(intersection.get_width() * intersection.get_height()) / float(laser_area) > 0.3) {
+      in_laser = true;
+    }
+  }
+
+  ++unseen;
+  if (unseen > 17 || (!in_laser && unseen > 2)) {
     if (visibility >= 0) visibility = -1;
     else visibility--;
     ready = false;

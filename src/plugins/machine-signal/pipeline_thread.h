@@ -53,6 +53,7 @@
 #include <utils/time/wait.h>
 
 #include "state.h"
+#include "custom_rois.h"
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -134,23 +135,19 @@ class MachineSignalPipelineThread :
         unsigned int cfg_roi_neighborhood_min_match;
         unsigned int cfg_scangrid_x_offset;
         unsigned int cfg_scangrid_y_offset;
+        bool visualize;
     } color_classifier_context_t_;
 
-    color_classifier_context_t_ cfy_ctxt_red_;
-    color_classifier_context_t_ cfy_ctxt_red_delivery_;
-    color_classifier_context_t_ cfy_ctxt_green_;
+    color_classifier_context_t_ cfy_ctxt_red_1_;
+    color_classifier_context_t_ cfy_ctxt_red_0_;
+    color_classifier_context_t_ cfy_ctxt_green_1_;
+    color_classifier_context_t_ cfy_ctxt_green_0_;
 
     std::string cfg_camera_;
     firevision::Camera *camera_;
     unsigned int cam_width_, cam_height_;
 
     unsigned int cfg_fps_;
-
-    class WorldROI : public firevision::ROI {
-      public:
-        std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>> world_pos;
-        WorldROI() : ROI() {}
-    };
 
     fawkes::Position3DInterface *bb_laser_clusters_[3];
     std::atomic<unsigned int> cfg_lasercluster_min_vis_hist_;
@@ -248,13 +245,15 @@ class MachineSignalPipelineThread :
     // All ROIs we want to see painted in the tuning buffer
     std::list<firevision::ROI> drawn_rois_;
 
+
+    firevision::ROI *red_green_match(firevision::ROI *roi_R, firevision::ROI *roi_G);
     std::list<SignalState::signal_rois_t_> *create_field_signals(
         std::list<firevision::ROI> *rois_R,
         std::list<firevision::ROI> *rois_G);
-
-
-    std::list<SignalState::signal_rois_t_> *create_delivery_signals(std::list<firevision::ROI> *rois_R);
-    std::list<SignalState::signal_rois_t_> *create_laser_signals(std::list<firevision::ROI> *rois_R);
+    std::list<SignalState::signal_rois_t_> *create_delivery_signals(
+      std::list<firevision::ROI> *rois_R, std::list<firevision::ROI> *rois_G);
+    std::list<SignalState::signal_rois_t_> *create_laser_signals(std::list<firevision::ROI> *rois_R,
+      std::list<firevision::ROI> *rois_G);
 
 
     // Checks to weed out implausible ROIs
@@ -269,38 +268,6 @@ class MachineSignalPipelineThread :
     inline bool roi1_x_intersects(firevision::ROI &r1, firevision::ROI &r2);
 
 
-    //*/
-    struct compare_rois_by_area_ {
-        bool operator() (firevision::ROI const &r1, firevision::ROI const &r2) {
-          unsigned int a1 = r1.width * r1.height;
-          unsigned int a2 = r2.width * r2.height;
-          return a1 >= a2;
-        }
-    }; //sort_rois_by_area_;
-
-    struct compare_signal_states_by_visibility_ {
-        bool operator() (SignalState const &s1, SignalState const &s2) {
-          return s1.visibility > s2.visibility;
-        }
-    } sort_signal_states_by_visibility_;
-
-    struct compare_signal_states_by_x_ {
-        bool operator() (SignalState const &s1, SignalState const &s2) {
-          return s1.pos.x <= s2.pos.x;
-        }
-    } sort_signal_states_by_x_;
-
-    struct compare_signal_states_by_area_ {
-        bool operator() (SignalState const &s1, SignalState const &s2) {
-          if ((s1.visibility < 0) == (s2.visibility < 0)) {
-            float size_ratio = (float)s1.area / (float)s2.area;
-            if (size_ratio < 1.5 && size_ratio > 0.67)
-              return s1.pos.x <= s2.pos.x;
-            else return s1.area > s2.area;
-          }
-          else return s1.visibility > 0;
-        }
-    } sort_signal_states_by_area_;
 
     bool get_light_state(firevision::ROI *light);
 
@@ -308,14 +275,18 @@ class MachineSignalPipelineThread :
     std::list<SignalState>::iterator best_signal_;
 
 
-    std::set<WorldROI, compare_rois_by_area_> *bb_get_laser_rois();
-    WorldROI pos3d_to_roi(const fawkes::tf::Stamped<fawkes::tf::Point> &pos3d);
-    std::set<WorldROI, compare_rois_by_area_> *cluster_rois_;
+    std::set<firevision::WorldROI, SignalState::compare_rois_by_area> *bb_get_laser_rois();
+    firevision::WorldROI pos3d_to_roi(const fawkes::tf::Stamped<fawkes::tf::Point> &pos3d);
+    std::set<firevision::WorldROI, SignalState::compare_rois_by_area> *cluster_rois_;
 
     fawkes::SignalHintInterface *bb_signal_position_estimate_;
     fawkes::tf::Stamped<fawkes::tf::Point> signal_hint_;
 
-    void merge_rois_in_laser(std::set<WorldROI, compare_rois_by_area_> *laser_rois, std::list<firevision::ROI> *rois);
+    /*std::map<firevision::ROI, SignalState::signal_rois_t_, compare_rois_by_x_> *merge_rois_in_laser(
+      std::set<firevision::WorldROI, SignalState::compare_rois_by_area> *laser_rois,
+      std::list<firevision::ROI> *rois_R, std::list<firevision::ROI> *rois_G); //*/
+
+    firevision::ROI *merge_rois_in_roi(const firevision::ROI &outer_roi, std::list<firevision::ROI> *rois);
 
     // Implemented abstracts inherited from ConfigurationChangeHandler
     virtual void config_tag_changed(const char *new_tag);
