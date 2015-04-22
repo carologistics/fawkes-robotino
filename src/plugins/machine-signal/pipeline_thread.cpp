@@ -671,7 +671,6 @@ inline void MachineSignalPipelineThread::reinit_color_config()
   if (cfy_ctxt_red_0_.visualize) combined_colormodel_->add_colors(cfy_ctxt_red_0_.color_class);
   if (cfy_ctxt_green_1_.visualize) combined_colormodel_->add_colors(cfy_ctxt_green_1_.color_class);
   if (cfy_ctxt_green_0_.visualize) combined_colormodel_->add_colors(cfy_ctxt_green_0_.color_class);
-  combined_colormodel_->add_colors(cfy_ctxt_green_1_.color_class);
 
   delete light_classifier_;
   light_classifier_ = new SimpleColorClassifier(
