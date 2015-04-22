@@ -28,6 +28,7 @@ skiller:
         navigator: NavigatorInterface::Navigator
         ppnavi: NavigatorInterface::Pathplan
         laserswitch: SwitchInterface::/laser-cluster/ampel
+        laser-linesswitch: SwitchInterface::laser-lines
         sensor: RobotinoSensorInterface::Robotino
         motor_switch: SwitchInterface::Robotino Motor
         machine_signal_switch: SwitchInterface::/machine-signal
