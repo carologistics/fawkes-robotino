@@ -174,13 +174,13 @@ nodes:
 # Cyan
   - !unconnected
     name: C-ins-out
-    pos: [6.5, 1.4]
+    pos: [3.5, -0.5]
     properties:
-      - orientation: 3.14
+      - orientation: 1.57
       - always-copy: true
   - !unconnected
     name: C-ins-in
-    pos: [5.5, 1.4]
+    pos: [3.0, 0.75]
     properties:
       - always-copy: true
 # Magenta
