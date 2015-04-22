@@ -75,7 +75,29 @@
   )
 )
 
-(defrule wm-insert-cap-failed
+(defrule wm-insert-product-into-cs-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-FINAL)
+  (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
+  (step (name insert) (state running))
+  ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
+  ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
+  ?hf <- (holding ?product-id)
+  ;an inserted puck without cap will be the final product
+  ?pf <- (product (id ?product-id) (cap NONE))
+  =>
+  (retract ?hf)
+  (printout warn "TODO: use worldmodel change messages" crlf)
+  (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
+  (assert (holding NONE))
+  ; there is no relevant waiting time until the cs has finished the loading step right?
+  (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount ?product-id))
+	  (worldmodel-change (machine ?mps) (change SET_CAP_LOADED) (value NONE))
+	  (worldmodel-change (puck-id ?product-id) (change SET_CAP) (value ?cap))
+  )
+)
+
+(defrule wm-insert-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (skill-to-execute (skill bring_product_to) (state failed) (target ?mps))
@@ -84,7 +106,7 @@
   ?pf <- (product (id ?puck-id))
   =>
   (retract ?hf ?pf)
-  (printout t "Inserted a Puck into the MPS " ?mps " failed" crlf)
+  (printout t "Insertion of " ?puck-id " into " ?mps " failed" crlf)
   (printout error "TODO: check if we still have apuck or not" crlf)
   (assert (holding NONE))
 )
@@ -98,7 +120,7 @@
   ?hf <- (holding NONE)
   =>
   (retract ?hf)
-  (printout t "Fetched a Puck from the output of " ?mps crlf)
+  (printout t "Fetched Puck " ?puck-id " from the output of " ?mps crlf)
   (assert (holding ?puck-id)
 	  (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
 )
@@ -142,35 +164,35 @@
   (printout error "Delivery failed. Try again if I have a puck." crlf) 
 )
 
-(defrule wm-goto-failed
-  (declare (salience ?*PRIORITY-WM-LOW*))
-  (state SKILL-FAILED)
-  (skill-to-execute (skill finish_puck_at) (state failed) (target ?name))
-  ?gtdw <- (dont-wait ?dont-wait)
-  ?hf <- (holding ?)
-  (puck-in-gripper ?puck)
-  =>
-  (retract ?gtdw)
-  (if (not ?puck) then
-    (retract ?hf)
-    (assert (holding NONE))
-  )
-  (printout error "Production failed at " ?name crlf) 
-)
+;(defrule wm-goto-failed
+;  (declare (salience ?*PRIORITY-WM-LOW*))
+;  (state SKILL-FAILED)
+;  (skill-to-execute (skill finish_puck_at) (state failed) (target ?name))
+;  ?gtdw <- (dont-wait ?dont-wait)
+;  ?hf <- (holding ?)
+;  (puck-in-gripper ?puck)
+;  =>
+;  (retract ?gtdw)
+;  (if (not ?puck) then
+;    (retract ?hf)
+;    (assert (holding NONE))
+;  )
+;  (printout error "Production failed at " ?name crlf) 
+;)
 
-(defrule wm-take-puck-to-failed
-  (declare (salience ?*PRIORITY-WM-LOW*))
-  (state SKILL-FAILED)
-  (skill-to-execute (skill take_puck_to) (state failed) (target ?name))
-  ?hf <- (holding ~NONE)
-  (puck-in-gripper ?puck)
-  =>
-  (if (not ?puck) then
-    (retract ?hf)
-    (assert (holding NONE))
-    (printout error "Lost puck during take_puck_to" crlf)
-  )
-)
+;(defrule wm-take-puck-to-failed
+;  (declare (salience ?*PRIORITY-WM-LOW*))
+;  (state SKILL-FAILED)
+;  (skill-to-execute (skill take_puck_to) (state failed) (target ?name))
+;  ?hf <- (holding ~NONE)
+;  (puck-in-gripper ?puck)
+;  =>
+;  (if (not ?puck) then
+;    (retract ?hf)
+;    (assert (holding NONE))
+;    (printout error "Lost puck during take_puck_to" crlf)
+;  )
+;)
 
 (defrule wm-drive-to-failed
   (declare (salience ?*PRIORITY-WM-LOW*))
@@ -185,6 +207,17 @@
     (printout error "Lost puck during drive_to" crlf)
   )
 )
+
+;(defrule wm-goto-light
+;  (declare (salience ?*PRIORITY-WM*))
+;  (state SKILL-FINAL)
+;  (skill-to-execute (skill finish_puck_at) (state final))
+;  (not (lights))
+;  ?lf <- (last-lights $?lights&:(> (length$ ?lights) 0))
+;  =>
+;  (retract ?lf)
+;  (assert (lights ?lights))
+;)
 
 ; (defrule wm-proc-complete-without-robot
 ;   (declare (salience ?*PRIORITY-WM*))
