@@ -613,42 +613,44 @@ MachineSignalPipelineThread::bb_get_laser_rois()
       }
     }
 
-    // Find the leftmost endpoint, as seen from base_link
-    float *ep1 = best_line->end_point_1();
-    float *ep2 = best_line->end_point_2();
-    float *left_end;
-    if (atan2f(ep2[1], ep2[0]) > atan2f(ep1[1], ep1[0]))
-      left_end = ep2;
-    else left_end = ep1;
+    if (string(best_line->frame_id()) != "") {
+      // Find the leftmost endpoint, as seen from base_link
+      float *ep1 = best_line->end_point_1();
+      float *ep2 = best_line->end_point_2();
+      float *left_end;
+      if (atan2f(ep2[1], ep2[0]) > atan2f(ep1[1], ep1[0]))
+        left_end = ep2;
+      else left_end = ep1;
 
-    Stamped<Point> ep_laser = Stamped<Point>(Point(left_end[0], left_end[1], left_end[2]), Time(0,0), best_line->frame_id());
+      Stamped<Point> ep_laser = Stamped<Point>(Point(left_end[0], left_end[1], left_end[2]), Time(0,0), best_line->frame_id());
 
-    if (tf_listener->can_transform("/base_link", ep_laser.frame_id, ep_laser.stamp)) {
-      Stamped<Point> ep_bl;
-      tf_listener->transform_point("/base_link", ep_laser, ep_bl);
-      // Table height is measured from the floor, i.e. in /base_link z=0.
-      ep_bl.setZ(0);
+      if (tf_listener->can_transform("/base_link", ep_laser.frame_id, ep_laser.stamp)) {
+        Stamped<Point> ep_bl;
+        tf_listener->transform_point("/base_link", ep_laser, ep_bl);
+        // Table height is measured from the floor, i.e. in /base_link z=0.
+        ep_bl.setZ(0);
 
-      Stamped<Point> signal_hint_now(ep_bl + current_signal_hint, Time(0,0), ep_bl.frame_id);
-      if (best_line->visibility_history() >= (long int) cfg_laser_lines_min_vis_hist_ ||
-          (best_line->visibility_history() > 0 && signal_hint_now.distance(signal_hint_) < 0.01)) {
-        // Either visibility history is good, or it is bad but the line has moved by less than a centimeter.
-        signal_hint_ = signal_hint_now;
-        try {
-          WorldROI signal_in_cam = pos3d_to_roi(signal_hint_now);
-          if (signal_in_cam.get_width() > 20 && signal_in_cam.get_height() > 40) {
-            rv->insert(signal_in_cam);
+        Stamped<Point> signal_hint_now(ep_bl + current_signal_hint, Time(0,0), ep_bl.frame_id);
+        if (best_line->visibility_history() >= (long int) cfg_laser_lines_min_vis_hist_ ||
+            (best_line->visibility_history() > 0 && signal_hint_now.distance(signal_hint_) < 0.01)) {
+          // Either visibility history is good, or it is bad but the line has moved by less than a centimeter.
+          signal_hint_ = signal_hint_now;
+          try {
+            WorldROI signal_in_cam = pos3d_to_roi(signal_hint_now);
+            if (signal_in_cam.get_width() > 20 && signal_in_cam.get_height() > 40) {
+              rv->insert(signal_in_cam);
+            }
+          }
+          catch (OutOfBoundsException &e) {
+          }
+          catch (Exception &e) {
+            logger->log_error(name(), e.what());
           }
         }
-        catch (OutOfBoundsException &e) {
-        }
-        catch (Exception &e) {
-          logger->log_error(name(), e.what());
-        }
       }
-    }
-    else {
-      logger->log_error(name(), "Missing transform from %s to /base_link!", best_line->frame_id());
+      else {
+        logger->log_error(name(), "Missing transform from %s to /base_link!", best_line->frame_id());
+      }
     }
   }
   delete signal_hint_msg;
