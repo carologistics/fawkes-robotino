@@ -174,13 +174,13 @@ nodes:
 # Cyan
   - !unconnected
     name: C-ins-out
-    pos: [3.5, -0.5]
+    pos: [6.5, 1.4]
     properties:
-      - orientation: 1.57
+      - orientation: 3.14
       - always-copy: true
   - !unconnected
     name: C-ins-in
-    pos: [3.0, 0.75]
+    pos: [5.5, 1.4]
     properties:
       - always-copy: true
 # Magenta
@@ -287,11 +287,53 @@ nodes:
       - tag_input: 49
       - tag_output: 50
 
+# Machine points for testing
+  - !unconnected
+    name: T-CS1
+    pos: [3.15, 2.5]
+    properties:
+      - only_copy_properties
+      - tag_input: 113
+      - tag_output: 114
+      - input_offset_y: 0
+      - output_offset_y: 0
+  - name: T-CS1-I
+    pos: [3.85, 2.5]
+    properties:
+      - orientation: 3.14
+  - name: T-CS1-O
+    pos: [2.35, 2.5]
+    properties:
+      - orientation: 0
+
+  - !unconnected
+    name: T-RS1
+    pos: [3.15, 1]
+    properties:
+      - only_copy_properties
+      - tag_input: 33
+      - tag_output: 34
+      - input_offset_y: 0
+      - output_offset_y: 0
+  - name: T-RS1-I
+    pos: [3.15, 0.5]
+    properties:
+      - orientation: 1.57
+  - name: T-RS1-O
+    pos: [3.15, 1.5]
+    properties:
+      - orientation: 4.71
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
-  
+
+# testing
+  - [Exp-C2, T-CS1-O]
+  - [Exp-C6, T-CS1-I]
+  - [Exp-C5, T-RS1-O]
+  - [Exp-C4, T-RS1-I]
+
 # common
 # connecting edges in Y direction
   - [Exp-CM1,  Exp-CM2]
