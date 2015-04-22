@@ -287,24 +287,6 @@ nodes:
       - tag_input: 49
       - tag_output: 50
 
-  - !unconnected
-    name: T-RS1
-    pos: [3.15, 1]
-    properties:
-      - only_copy_properties
-      - tag_input: 33
-      - tag_output: 34
-      - input_offset_y: 0
-      - output_offset_y: 0
-  - name: T-RS1-I
-    pos: [3.15, 0.5]
-    properties:
-      - orientation: 1.57
-  - name: T-RS1-O
-    pos: [3.15, 1.5]
-    properties:
-      - orientation: 4.71
-
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
