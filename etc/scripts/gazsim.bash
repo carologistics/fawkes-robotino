@@ -15,6 +15,7 @@ OPTIONS:
                   in cfg/gazsim-configurations/
    -n arg         Specify number Robotinos
    -m arg         load fawkes with the specified (meta-)plugin
+   -a             Run with default CLIPS-agent (don't mix with -m)
    -l             Run Gazebo headless
    -k             Keep started shells open after finish
    -s             Keep statistics and shutdown after game
@@ -29,6 +30,7 @@ OPTIONS:
                   ($FAWKES_DIR/bin by default)
 EOF
 }
+
  
 #check options
 
@@ -89,6 +91,9 @@ do
 	     ;;
 	 m)
 	     META_PLUGIN="-m $OPTARG"
+	     ;;
+	 a)
+	     META_PLUGIN="-m gazsim-meta-agent"
 	     ;;
 	 o)
 	     START_GAZEBO=false
@@ -156,6 +161,7 @@ if [  $COMMAND  == start ]; then
     fi
 
     #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
+
     OPEN_COMMAND="gnome-terminal"
 
     if $START_GAZEBO
@@ -189,13 +195,13 @@ if [  $COMMAND  == start ]; then
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Robotino_$ROBO -e 'bash -c \"sleep 10s; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Robotino_$ROBO -e 'bash -c \"export TAB_START_TIME=$(date +%d%H%M%S); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
     done
 
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
-	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Comm -e 'bash -c \"sleep 5s ; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Comm -e 'bash -c \"export TAB_START_TIME=$(date +%d%H%M%S); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
     fi
 
     # open windows

@@ -11,7 +11,7 @@ gazsim:
 
   topics:
     gps: "~/gazsim/gps/"
-    laser: "~/sick_laser/link/laser/scan"
+    laser: "~/carologistics-robotino-3/sick_laser/link/laser/scan"
     gyro: "~/RobotinoSim/Gyro/"
     infrared-puck-sensor: "~/RobotinoSim/InfraredPuckSensor/"
     gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
@@ -21,6 +21,7 @@ gazsim:
     time: "~/gazsim/time-sync/"
     machine-lights: "~/RobotinoSim/MachineVision/"
     machine-info: "~/LLSFRbSim/MachineInfo/"
+    mps-machine-signal: "~/gazsim/light-signal/"
     puck-info: "~/LLSFRbSim/PuckInfo/"
     game-state: "~/LLSFRbSim/GameState/"
     set-game-state: "~/LLSFRbSim/SetGameState/"
@@ -29,6 +30,8 @@ gazsim:
     place-puck-under-machine: "~/LLSFRbSim/PlacePuckUnderMachine/"
     remove-puck-under-machine: "~/LLSFRbSim/RemovePuckFromMachine/"
     message: "~/RobotinoSim/String/"
+    gripper: "~/RobotinoSim/SetGripper/"
+    gripper-has-puck: "~/RobotinoSim/GripperHasPuck/"
   
   llsf-rb-comm:
     refbox-host: "127.0.0.1"
@@ -40,12 +43,21 @@ gazsim:
     frame-id: "/base_laser"
  
   webcam:
-    topic-suffix: "/webcam/link/webcam_sensor/image"
-    width: 320
-    height: 240
-    #Shared Memory Imagebuffer name
-    shm-image-id: "gazsim_light_front"
-    frame: "/cam_front" #without "" in light_front.yaml?
+    # list of ids for all cameras to simulate
+    # for each id you need to add entries to the following fields 
+    shm-image-ids: ["gazsim_tag", "gazsim_puck"]
+    topic-suffixes:
+      gazsim_tag: "/carologistics-robotino-3/webcam_tag/link/webcam_sensor/image"
+      gazsim_puck: "/carologistics-robotino-3/webcam_puck/link/webcam_sensor/image"
+    widths:
+      gazsim_tag: 320
+      gazsim_puck: 320
+    heights:
+      gazsim_tag: 240
+      gazsim_puck: 240
+    frames:
+      gazsim_tag: "/cam_front"
+      gazsim_puck: "/cam_front"
     
   light-front:
     max-distance: 0.3
@@ -137,3 +149,7 @@ gazsim:
     configuration-name: "default"
     log: "~/fawkes-robotino/gazsim-logs/13_10_14_15_26/default_1"
     run: 1
+
+  gripper:
+    if-name: "Gripper AX12"
+    cfg-prefix: "/hardware/ax12_gripper/"

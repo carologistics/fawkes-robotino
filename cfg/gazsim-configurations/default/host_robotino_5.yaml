@@ -26,7 +26,7 @@ plugins/light_front:
   shm_image_id: "robotino5/light_front"
   
 clips-agent:
-  llsf2014:
+  llsf2015:
     #agent-role:
     
     exploration:      
@@ -49,3 +49,8 @@ clips-agent:
     magenta-recv-port: 4465
     cyan-send-port: 4475
     magenta-send-port: 4485
+
+        
+plugins/tag_vision:
+  shm_image_id: "tag_vision_robotino_5"
+  camera: shmem:gazsim_cam:image_id=robotino5/gazsim_tag:deep_copy=true

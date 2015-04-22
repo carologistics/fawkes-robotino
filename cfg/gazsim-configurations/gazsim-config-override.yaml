@@ -17,7 +17,7 @@ plugins/light_front:
   camera_angle_vertical_rad: .00
   threashold_brightness: 120
   threashold_black: 80
-
+  
 clips-agent:
   clips-debug: true
   skill-sim: false

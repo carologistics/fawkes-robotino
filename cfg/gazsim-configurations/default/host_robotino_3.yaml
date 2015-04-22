@@ -49,3 +49,8 @@ clips-agent:
     magenta-recv-port: 4463
     cyan-send-port: 4473
     magenta-send-port: 4483
+
+    
+plugins/tag_vision:
+  shm_image_id: "tag_vision_robotino_3"
+  camera: shmem:gazsim_cam:image_id=robotino3/gazsim_tag:deep_copy=true

@@ -25,3 +25,5 @@ SUBDIRS	= omnivision_pucks clips-motor-switch omnivision_activator \
 # navgraph_broker
 
 include $(BUILDSYSDIR)/rules.mk
+
+gazebo: ax12_gripper tag_vision
