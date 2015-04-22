@@ -37,7 +37,7 @@ plugins/machine_signal:
   # Disable this to see the raw ROIs as they come out of the classifier
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
-  draw_processed_rois: true
+  draw_processed_rois: false
  
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
@@ -70,37 +70,39 @@ plugins/machine_signal:
 
   laser_frame: /base_laser
   signal_width: 0.04
-  signal_bottom: -0.12
-  signal_top: 0.03
+  signal_bottom: -0.06
+  signal_top: 0.08
   cam_aperture_x: 0.98
   cam_aperture_y: 0.8
-  cam_angle: 0.25
+  cam_angle: 0
   #cam_angle: 0.25 # 12.2°
   cam_frame: /cam_signal
 
   red_on:
     visualize: true
     reference_color:   [0xff, 0, 0x0,
-                        0xe0, 0, 0x40]
-    chroma_thresh:     [50, 60]
-    saturation_thresh: [30, 40]
-    luma_thresh:       [220, 200]
+                        0xe0, 0, 0x40,
+                        0xff, 0x7c, 0xb0]
+    chroma_thresh:     [50, 30, 20]
+    saturation_thresh: [30, 40, 35]
+    luma_thresh:       [220, 200, 200]
     min_points: 40
     basic_roi_size: 10
-    neighborhood_min_match: 10
+    neighborhood_min_match: 9
     scangrid_x_offset: 2
     scangrid_y_offset: 2
 
   red_off:
-    visualize: true
-    reference_color:   [0x43, 0x10, 0,
-                        0x30, 0xa, 0xa]
-    chroma_thresh:     [40, 30]
-    saturation_thresh: [40, 25]
-    luma_thresh:       [200, 200]
+    visualize: false
+    reference_color:   [0x30, 0x0, 0,
+                        0x24, 0x2, 0x2,
+                        0x30, 0x14, 0x19]
+    chroma_thresh:     [20, 20, 30]
+    saturation_thresh: [20, 15, 15]
+    luma_thresh:       [220, 220, 220]
     min_points: 40
     basic_roi_size: 10
-    neighborhood_min_match: 8
+    neighborhood_min_match: 6
     scangrid_x_offset: 2
     scangrid_y_offset: 2
 
@@ -124,7 +126,7 @@ plugins/machine_signal:
                         0x20, 0x35, 0x0,
                         0x1a, 0x55, 0x0,
                         0x0a, 0x1b, 0,
-                        0,    0x33, 0]
+                        0,    0x16, 6]
     chroma_thresh:     [15, 15, 30, 30]
     saturation_thresh: [15, 20, 7, 10]
     luma_thresh:       [200, 200, 200, 200]
