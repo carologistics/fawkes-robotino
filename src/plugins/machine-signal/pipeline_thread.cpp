@@ -1244,6 +1244,8 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
           unsigned int black_end_y = black.start.y + black.height;
           int hdiff = roi_R->start.y - black_end_y;
           roi_R->start.y = black_end_y;
+          if (-hdiff > long(roi_R->height)) hdiff = -roi_R->height;
+          if (roi_R->height + hdiff > cam_height_) hdiff = cam_height_ - roi_R->height;
           roi_R->height += hdiff;
         }
 
@@ -1302,20 +1304,28 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
             ROI &black = black_stuff_top->front();
             roi_G->height = (roi_G->start.y + roi_G->height - (black.start.y + black.height)) / 3;
           }
+          else if (long(roi_G->start.y) - long(roi_G->height)*2 < 0) {
+            unsigned int hnew = (roi_G->start.y + roi_G->height) / 3;
+            roi_G->start.y += roi_G->height - hnew;
+            roi_G->height = hnew;
+          }
 
           signal.green_roi = roi_G;
 
           signal.yellow_roi = shared_ptr<ROI>(new ROI());
           signal.yellow_roi->color = C_YELLOW;
           signal.yellow_roi->start.x = roi_G->start.x;
-          signal.yellow_roi->start.y = roi_G->start.y - roi_G->height;
+          unsigned int start_y = roi_G->start.y - roi_G->height;
+          signal.yellow_roi->start.y = start_y;
           signal.yellow_roi->width = roi_G->width;
           signal.yellow_roi->height = roi_G->height;
 
           signal.red_roi = shared_ptr<ROI>(new ROI());
           signal.red_roi->color = C_RED;
           signal.red_roi->start.x = signal.yellow_roi->start.x;
-          signal.red_roi->start.y = signal.yellow_roi->start.y - signal.yellow_roi->height;
+          start_y = signal.yellow_roi->start.y - signal.yellow_roi->height;
+          if (start_y < 0) start_y = 0;
+          signal.red_roi->start.y = start_y;
           signal.red_roi->width = signal.yellow_roi->width;
           signal.red_roi->height = signal.yellow_roi->height;
           rv->push_back(signal);
