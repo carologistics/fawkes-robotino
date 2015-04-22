@@ -54,10 +54,18 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   cfy_ctxt_red_1_.classifier = NULL;
   cfy_ctxt_red_1_.scanline_grid = NULL;
   cfy_ctxt_red_1_.color_expect = C_RED;
+  cfy_ctxt_red_0_.colormodel = NULL;
+  cfy_ctxt_red_0_.classifier = NULL;
+  cfy_ctxt_red_0_.scanline_grid = NULL;
+  cfy_ctxt_red_0_.color_expect = C_RED;
   cfy_ctxt_green_1_.colormodel = NULL;
   cfy_ctxt_green_1_.classifier = NULL;
   cfy_ctxt_green_1_.scanline_grid = NULL;
   cfy_ctxt_green_1_.color_expect = C_GREEN;
+  cfy_ctxt_green_0_.colormodel = NULL;
+  cfy_ctxt_green_0_.classifier = NULL;
+  cfy_ctxt_green_0_.scanline_grid = NULL;
+  cfy_ctxt_green_0_.color_expect = C_GREEN;
 
   cfg_changed_ = false;
   cam_changed_ = false;
@@ -206,7 +214,7 @@ void MachineSignalPipelineThread::init()
   cfy_ctxt_red_0_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/red_off/scangrid_y_offset");
   cfy_ctxt_red_0_.visualize = config->get_bool(CFG_PREFIX "/red_off/visualize");
 
-  setup_color_classifier(&cfy_ctxt_red_1_);
+  setup_color_classifier(&cfy_ctxt_red_0_);
 
   // Configure GREEN ON classifier
   cfy_ctxt_green_1_.cfg_ref_col = config->get_uints(CFG_PREFIX "/green_on/reference_color");
@@ -234,7 +242,7 @@ void MachineSignalPipelineThread::init()
   cfy_ctxt_green_0_.cfg_scangrid_y_offset = config->get_int(CFG_PREFIX "/green_off/scangrid_y_offset");
   cfy_ctxt_green_0_.visualize = config->get_bool(CFG_PREFIX "/green_off/visualize");
 
-  setup_color_classifier(&cfy_ctxt_green_1_);
+  setup_color_classifier(&cfy_ctxt_green_0_);
 
   // Configure brightness classifier
   cfg_light_on_threshold_ = config->get_uint(CFG_PREFIX "/bright_light/min_brightness");
@@ -643,7 +651,9 @@ inline void MachineSignalPipelineThread::reinit_color_config()
   combined_colormodel_->delete_colors();
 
   setup_color_classifier(&cfy_ctxt_red_1_);
+  setup_color_classifier(&cfy_ctxt_red_0_);
   setup_color_classifier(&cfy_ctxt_green_1_);
+  setup_color_classifier(&cfy_ctxt_green_0_);
 
   if (cfy_ctxt_red_1_.visualize) combined_colormodel_->add_colors(cfy_ctxt_red_1_.color_class);
   if (cfy_ctxt_red_0_.visualize) combined_colormodel_->add_colors(cfy_ctxt_red_0_.color_class);
