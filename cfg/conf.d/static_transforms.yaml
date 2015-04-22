@@ -47,7 +47,7 @@ plugins/static-transforms:
       trans_y: 0.036
       trans_z: 0.18
       rot_pitch: 0
-      rot_yaw: 0.2
+      rot_yaw: 0.39
       rot_roll: 0
 
     cam_joint_2:
@@ -64,7 +64,7 @@ plugins/static-transforms:
       frame: !frame /cam_joint_2
       child_frame: /cam_signal
       trans_x: 0.02
-      trans_y: 0.027
+      trans_y: 0.028
       trans_z: 0.013
 
     #in the gripper where the puck should be holded

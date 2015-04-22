@@ -70,9 +70,9 @@ plugins/machine_signal:
 
   laser_frame: /base_laser
   signal_width: 0.04
-  signal_bottom: -0.06
-  signal_top: 0.08
-  cam_aperture_x: 0.98
+  signal_bottom: 0.12
+  signal_top: 0.29
+  cam_aperture_x: 1
   cam_aperture_y: 0.8
   cam_angle: 0
   #cam_angle: 0.25 # 12.2°
