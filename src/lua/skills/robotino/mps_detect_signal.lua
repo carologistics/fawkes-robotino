@@ -45,8 +45,8 @@ function done()
    return bb_signal:is_ready() and bb_signal:visibility_history() > 25
 end
 
-function invalid_node()
-   return navgraph:node(fsm.vars.place)
+function invalid_node(self)
+   return navgraph:node(self.fsm.vars.place)
 end
 
 
@@ -57,7 +57,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", precond="not navgraph", desc="navgraph not available"},
-   {"INIT", "FAILED", precond=invalid_node, desc="invalid node"},
+   {"INIT", "FAILED", precond="invalid_node(self):is_valid()", desc="invalid node"},
    {"INIT", "FAILED", precond="not bb_signal:has_writer()", desc="bb_signal missing"},
    {"INIT", "FINAL", cond=done},
    {"INIT", "FAILED", timeout=10}
