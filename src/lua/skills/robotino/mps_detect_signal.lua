@@ -33,46 +33,47 @@ documentation      = [==[
 writes ampel data into the light interface 
 
 Parameters:
-      out_of_order: behavior when machine is out of order (can be "ignore" or "final")
-      mtype: type of machine (needed for production timeouts)
+      place: navgraph name of the machine node, e.g. C-CS1.
 ]==]
--- Constants
-local TIMEOUTS = {
-   T1 = 12,
-   T2 = 30,
-   T3 = 70,
-   T4 = 70,
-   T5 = 50,
-   RECYCLE = 10
-}
 
-local hint = require("signal_hint_module")
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-function bb_signal_missing()
-   return not bb_signal:has_writer()
-end
 
 function done()
    return bb_signal:is_ready() and bb_signal:visibility_history() > 25
 end
 
+function invalid_node()
+   return navgraph:node(fsm.vars.place)
+end
+
+
 fsm:define_states{ export_to=_M,
-   closure={bb_signal=bb_signal},
+   closure={bb_signal=bb_signal, navgraph=navgraph},
    {"INIT", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", precond=bb_signal_missing, desc="bb_signal missing"},
+   {"INIT", "FAILED", precond="not navgraph", desc="navgraph not available"},
+   {"INIT", "FAILED", precond=invalid_node, desc="invalid node"},
+   {"INIT", "FAILED", precond="not bb_signal:has_writer()", desc="bb_signal missing"},
    {"INIT", "FINAL", cond=done},
    {"INIT", "FAILED", timeout=10}
 }
 
+
 function INIT:init()
    bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.EnableSwitchMessage:new())
-   hint.send_hint(bb_signal_hint, self.fsm.vars.mtype)
+
+   local node = navgraph:node(self.fsm.vars.place)
+   local msg = bb_signal_hint.SignalPositionMessage:new()
+   msg:set_translation(0, node:property_as_float("signal_hint_x"))
+   msg:set_translation(1, node:property_as_float("signal_hint_y"))
+   msg:set_translation(2, node:property_as_float("signal_hint_z"))
+   bb_signal_hint:msgq_enqueue_copy(msg)
+
    bb_sw_laser:msgq_enqueue_copy(bb_sw_laser.EnableSwitchMessage:new())
 end
 
