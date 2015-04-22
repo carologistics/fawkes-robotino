@@ -1083,6 +1083,7 @@ ROI *MachineSignalPipelineThread::red_green_match(ROI *r, ROI *g) {
         uint width = (roi_R->width + roi_G->width) / 2;
         uint r_end_y = roi_R->start.y + roi_G->height;
         uint start_y = r_end_y + (int)(roi_G->start.y - r_end_y - height)/2;
+        if (start_y < 0) start_y = 0;
         ROI *roi_Y = new ROI(start_x, start_y,
           width, height, roi_R->image_width, roi_R->image_height);
         roi_Y->color = C_YELLOW;
@@ -1315,7 +1316,8 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
           signal.yellow_roi = shared_ptr<ROI>(new ROI());
           signal.yellow_roi->color = C_YELLOW;
           signal.yellow_roi->start.x = roi_G->start.x;
-          unsigned int start_y = roi_G->start.y - roi_G->height;
+          int start_y = roi_G->start.y - roi_G->height;
+          if (start_y < 0) start_y = 0;
           signal.yellow_roi->start.y = start_y;
           signal.yellow_roi->width = roi_G->width;
           signal.yellow_roi->height = roi_G->height;
