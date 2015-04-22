@@ -16,13 +16,17 @@
 BASEDIR = ../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= omnivision_pucks clips-motor-switch omnivision_activator \
-	  light_front robotino_worldmodel voltagelogger machine-signal puck_vision \
-	  gazebo agent-monitor marker_writer ax12_gripper tag_vision \
-      navgraph_broker navgraph-generator-mps \
-	  gazebo agent-monitor marker_writer \
+SUBDIRS	= clips-motor-switch \
+	  voltagelogger \
+	  machine-signal \
+	  ax12_gripper \
+	  tag_vision \
+      navgraph_broker \
+	  navgraph-generator-mps \
+	  gazebo \
+	  agent-monitor \
+	  marker_writer \
 
-# navgraph_broker
 
 include $(BUILDSYSDIR)/rules.mk
 
