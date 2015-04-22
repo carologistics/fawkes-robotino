@@ -29,7 +29,7 @@ default-properties:
 
 nodes:
 # Highway points:
-  
+
   - name: P11
     pos: [-4.48, 1.12]
     properties:
@@ -594,7 +594,7 @@ connections:
   - [P43, M17H]
   - [M17H, P44]
   - [P44, R2H]
-  - [P43, P44]
+  - !split-intersection [P43, P44]
   - [P51, P52]
   - [P52, P53]
   - [P53, P54]
@@ -603,7 +603,7 @@ connections:
   - [M4H, P63]
   - [P63, M5H]
   - [M5H, P64]
-  - [P63, P64]
+  - !split-intersection [P63, P64]
   - [P64, R1H]
   - [P71, M3H]
   - [M3H, P72]
@@ -689,7 +689,7 @@ connections:
   - [M2, M2H]
   - [M3, M3H]
   - [M4, M4H]
-  - [M5, M5H]
+  - !split-intersection [M5, M5H]
   - [M6, M6H]
   - [M7, M7H]
   - [M8, M8H]
@@ -701,7 +701,7 @@ connections:
   - [M14, M14H]
   - [M15, M15H]
   - [M16, M16H]
-  - [M17, M17H]
+  - !split-intersection [M17, M17H]
   - [M18, M18H]
   - [M19, M19H]
   - [M20, M20H]
@@ -714,28 +714,28 @@ connections:
 
 # connection of special points
 
-  - [IA1H, P61]
-  - [IA1H, P71]
+  - !split-intersection [IA1H, P61]
+  - !split-intersection [IA1H, P71]
   - [IA1H, Ins1]
   - [IA1H2, P61]
-  - [IA1H2, P71]
+  - !split-intersection [IA1H2, P71]
   - [IA1H2, Ins1Sec]
-  - [IA2H, P31]
-  - [IA2H, P41]
+  - !split-intersection [IA2H, P31]
+  - !split-intersection [IA2H, P41]
   - [IA2H, Ins2]
-  - [IA2H2, P31]
-  - [IA2H2, P41]
+  - !split-intersection [IA2H2, P31]
+  - !split-intersection [IA2H2, P41]
   - [IA2H2, Ins2Sec]
 
-  - [P92,  deliver1]
-  - [P92,  deliver1a]
+  - !split-intersection [P92,  deliver1]
+  - !split-intersection [P92,  deliver1a]
   - [P93,  deliver1]
-  - [P93,  deliver1a]
+  - !split-intersection [P93,  deliver1a]
 
-  - [P12,  deliver2]
-  - [P12,  deliver2a]
-  - [P13,  deliver2]
-  - [P13,  deliver2a]
+  - !split-intersection [P12,  deliver2]
+  - !split-intersection [P12,  deliver2a]
+  - !split-intersection [P13,  deliver2]
+  - !split-intersection [P13,  deliver2a]
 
   - [P81, WAIT_FOR_INS_1_ROBOTINO_1]
   - [P21, WAIT_FOR_INS_2_ROBOTINO_1]
@@ -754,7 +754,7 @@ connections:
   - [ExpM2, M2H]
   - [ExpM3, M3H]
   - [ExpM4, M4H]
-  - [ExpM5, M5H]
+  - !split-intersection [ExpM5, M5H]
   - [ExpM6, M6H]
   - [ExpM7, M7H]
   - [ExpM8, M8H]
@@ -766,7 +766,7 @@ connections:
   - [ExpM14, M14H]
   - [ExpM15, M15H]
   - [ExpM16, M16H]
-  - [ExpM17, M17H]
+  - !split-intersection [ExpM17, M17H]
   - [ExpM18, M18H]
   - [ExpM19, M19H]
   - [ExpM20, M20H]

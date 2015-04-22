@@ -1,2 +1,3 @@
 LaserClusterInterface.h
+NavGraphWithMPSGeneratorInterface.h
 RobotinoWorldModelInterface.h

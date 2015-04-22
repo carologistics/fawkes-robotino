@@ -1,8 +1,8 @@
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Plugins
+#      Makefile Build System for Fawkes: navgraph-generator-mps interfaces
 #                            -------------------
-#   Created on Mon May 14 11:37:00 2012
-#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
+#   Created on Fri May 23 18:19:56 2014
+#   Copyright (C) 2006-2014 by Tim Niemueller, AllemaniACs RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,15 +13,12 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../../..
+
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= omnivision_pucks clips-motor-switch omnivision_activator \
-	  light_front robotino_worldmodel voltagelogger machine-signal puck_vision \
-	  gazebo agent-monitor marker_writer ax12_gripper tag_vision \
-      navgraph_broker navgraph-generator-mps \
-	  gazebo agent-monitor marker_writer \
+INTERFACES_all = $(notdir $(patsubst %.xml,%,$(wildcard $(SRCDIR)/*.xml)))
+include $(BUILDSYSDIR)/interface.mk
 
-# navgraph_broker
+include $(BUILDSYSDIR)/base.mk
 
-include $(BUILDSYSDIR)/rules.mk

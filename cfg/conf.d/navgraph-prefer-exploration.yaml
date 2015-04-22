@@ -1,0 +1,11 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/navgraph-prefer-exploration
+---
+navgraph-prefer-exploration:
+
+  # This cost factor to apply for all non-exploration related nodes
+  # for as long as there are still exploration nodes
+  cost-factor: 2.0
+
