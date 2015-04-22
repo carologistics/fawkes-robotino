@@ -8,7 +8,7 @@
 
 ; knowledge evaluation request
 (defrule wm-recv-MachineInfo
-  (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
+  ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   =>
   ;(printout t "***** Received MachineInfo *****" crlf)
   (foreach ?m (pb-field-list ?p "machines")
@@ -16,15 +16,23 @@
     (bind ?m-type (sym-cat (pb-field-value ?m "type")))
     (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
     (do-for-fact ((?machine machine))
-      (and (eq ?machine:name ?m-name)
-	   (or (neq ?machine:mtype ?m-type) (neq ?machine:team ?m-team)))
-
-      (printout t "Machine " ?m-name " (" ?m-team ") is of type " ?m-type crlf)
-      (printout warn "TODO: set available-colors for ring stations " ?m-type crlf)
-      (modify ?machine (mtype ?m-type) (team ?m-team))
+      (eq ?machine:name ?m-name)
+      
+      (if (or (neq ?machine:mtype ?m-type) (neq ?machine:team ?m-team)) then
+        (printout t "Machine " ?m-name " (" ?m-team ") is of type " ?m-type crlf)
+        (printout warn "TODO: set available-colors for ring stations " ?m-type crlf)
+        (modify ?machine (mtype ?m-type) (team ?m-team))
+        
+        else
+        (bind ?m-prepared (sym-cat (pb-field-value ?m "prepared")))
+        (if (neq ?m-prepared ?machine:prepared) then
+          (modify ?machine (prepared ?m-prepared))
+        )
+      )
     )
   )
   (assert (received-machine-info))
+  (retract ?pb-msg)
 )
 
 (defrule wm-get-cap-from-shelf-final

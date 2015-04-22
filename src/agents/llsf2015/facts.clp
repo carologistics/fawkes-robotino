@@ -124,6 +124,7 @@
   (multislot final-prod-time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   ; (slot priority (type INTEGER) (default 0))
   (multislot out-of-order-until (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+  (slot prepared (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
 )
 
 ; (deftemplate base-station 
@@ -259,6 +260,18 @@
   (slot green (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
   (slot yellow (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
   (slot red (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
+)
+
+(deftemplate mps-instruction
+  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (multislot timer (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+  ;times sent
+  (slot seq (type INTEGER) (default 0))
+  ;optional fields for different instruction-types:
+  (slot base-color (type SYMBOL) (allowed-symbols BLACK SILVER RED))
+  (slot ring-color (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
+  (slot gate (type INTEGER) (allowed-values 1 2 3))
+  (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
 )
 
 (deffacts startup-facts
