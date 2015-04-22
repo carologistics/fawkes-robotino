@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  drive_to.lua
+--  drive_to_local.lua
 --
 --  Created: Sat Jul 12 13:25:47 2014
 --  Copyright  2008       Tim Niemueller [www.niemueller.de]
@@ -24,12 +24,12 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "drive_to"
+name               = "drive_to_local"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "ppgoto","global_motor_move" }
+depends_skills     = { "goto","global_motor_move" }
 depends_interfaces = { }
 
-documentation      = [==[Drive to point with colisoin avoidance and last part with global_motor_move
+documentation      = [==[Drive to point with colisoin avoidance (local planer) and last part with global_motor_move
 
 Parameters:
       place:        Where to drive to
@@ -52,7 +52,7 @@ end
 fsm:define_states{ export_to=_M,
   closure={navgraph=navgraph, node_is_valid=node_is_valid},
   {"INIT",                     JumpState},
-  {"SKILL_PPGOTO",             SkillJumpState, skills={{ppgoto}},            final_to="TIMEOUT", fail_to="FAILED"},
+  {"SKILL_PPGOTO",             SkillJumpState, skills={{goto}},            final_to="TIMEOUT", fail_to="FAILED"},
   {"TIMEOUT",                  JumpState},
   {"SKILL_GLOBAL_MOTOR_MOVE",  SkillJumpState, skills={{global_motor_move}}, final_to="FINAL",   fail_to="FINAL"},
 }

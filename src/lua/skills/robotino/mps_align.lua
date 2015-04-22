@@ -35,15 +35,12 @@ depends_interfaces = {
 documentation      = [==[ align_mps
 
                           This skill does:
-                          - aligns to the machine via sensor information AND a optional offset that is given as config values by the tag_id
-                          - executes an additional offset by the given x, y, ori params
+                          - aligns to the machine via sensor information AND a optional offsets which are given as parameters 
 
-                          @param tag_id     int     the tag_id to variafy the alignmend to the correct machine
-                          @param x          float   optional the x offset after the alignmend
+                          @param tag_id     int     optional the tag_id for align_tag
+                          @param x          float   the x offset after the alignmend
                           @param y          float   optional the y offset after the alignmend
                           @param ori        float   optional the ori offset after the alignmend
-
-                          TODO this skill
 ]==]
 
 -- Initialize as skill module
@@ -51,30 +48,40 @@ skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
 
+local TAG_X_ERR=0.02
+
 function see_line()
    printf("vis_hist: %f", line1:visibility_history())
-   return line1:visibility_history() > 5
+   return line1:visibility_history() > 30
 end
 
 fsm:define_states{ export_to=_M, closure={see_line = see_line},
    {"SKILL_ALIGN_TAG", SkillJumpState, skills={{align_tag}},
       final_to="SEE_LINE", fail_to="FAILED"},
    {"SEE_LINE", JumpState},
+   {"LINE_SETTLE", JumpState},
    {"ALIGN_WITH_LASERLINES", SkillJumpState, skills={{motor_move}},
       final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
-   {"SEE_LINE", "ALIGN_WITH_LASERLINES", cond=see_line, desc="Seeing a line"},
-   {"SEE_LINE", "FAILED", timeout=1, desc="Not seeing a line, continue just aligned by tag"}
+   {"SKILL_ALIGN_TAG", "FAILED", precond="not vars.x", desc="x argument missing"},
+   {"SEE_LINE", "LINE_SETTLE", cond=see_line, desc="Seeing a line"},
+   {"SEE_LINE", "FAILED", timeout=3, desc="Not seeing a line, continue just aligned by tag"},
+   {"LINE_SETTLE", "ALIGN_WITH_LASERLINES", timeout=0.5, desc="let the line distance settle"}
 }
 
 function SKILL_ALIGN_TAG:init()
+   -- use defaults for optional args
+   self.fsm.vars.y = self.fsm.vars.y or 0
+   self.fsm.vars.ori = self.fsm.vars.ori or 0
    -- align by ALIGN_DISTANCE from tag to base_link with align_tag
    local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
-   self.skills[1].x = tag_transformed.x
-   self.skills[1].y = -tag_transformed.y
-   self.skills[1].ori = tag_transformed.ori
+   -- give align_tag the id if we have one
+   self.skills[1].tag_id = self.fsm.vars.tag_id
+   self.skills[1].x = self.fsm.vars.x + TAG_X_ERR
+   self.skills[1].y = -self.fsm.vars.y
+   self.skills[1].ori = self.fsm.vars.ori
 end
 
 function ALIGN_WITH_LASERLINES:init()

@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "goto_waypoints"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"goto_place"}
+depends_skills     = {"goto"}
 depends_interfaces = { }
 
 documentation      = [==[Drives the given list of navgraph-points without using the pathplaner
@@ -42,7 +42,7 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"GOTO", SkillJumpState, skills={{goto_place}}, final_to="GOTO", fail_to="FAILED"},
+   {"GOTO", SkillJumpState, skills={{goto}}, final_to="GOTO", fail_to="FAILED"},
 }
 
 fsm:add_transitions{

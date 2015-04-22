@@ -24,14 +24,14 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "shelf_put"
+name               = "slide_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"motor_move", "ax12gripper"}
 depends_interfaces = {
    {v = "line1", type = "LaserLineInterface"},
 }
 
-documentation      = [==[ shelf_put
+documentation      = [==[ slide_put
 
                           This skill does:
                           - drives to the given Navgraphpunkt (ppgoto)
@@ -50,33 +50,35 @@ skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"INIT",       JumpState,  },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
-   {"APPROACH_SHELF", SkillJumpState, skills={{motor_move}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
-   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
-   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
-   {"DUMMY_WAIT", JumpState,  },
+   {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
+   {"APPROACH_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
+   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SLIDE", fail_to="FAILED"},
+   {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"INIT",       "GOTO_SHELF", cond=true},
-   {"DUMMY_WAIT", "FINAL",      timeout=10},
+   {"INIT",       "GOTO_SLIDE", cond=true},
 }
 
 
-function GOTO_SHELF:init()
+function GOTO_SLIDE:init()
    self.skills[1].x = 0.2
-   self.skills[1].y = line1:end_point_1()[1] + self.fsm.vars.slot * 0.1
+   if line1:end_point_1(1) < 0 then
+     self.skills[1].y = line1:end_point_1(1) + 0.1
+   else
+     self.skills[1].y = line1:end_point_2(1) + 0.1
+   end
 --   self.skills[1].y = -0.02 -(self.fsm.vars.slot * 0.094)
 end
 
-function APPROACH_SHELF:init()
-   self.skills[1].x = 0.14
+function APPROACH_SLIDE:init()
+   self.skills[1].x = 0.12
 end
 
 function STORE_PRODUCT:init()
    self.skills[1].open = true
 end
 
-function LEAVE_SHELF:init()
+function LEAVE_SLIDE:init()
    self.skills[1].x = -0.1
 end

@@ -44,6 +44,7 @@ fsm:define_states{
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"CLOSE_GRIPPER_WAIT", JumpState},
+   {"FINAL_AFTER_IF_FINAL", JumpState},
 }
 
 function is_right_full_loaded()
@@ -62,17 +63,20 @@ end
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true},
-   {"COMMAND", "FINAL", cond="not vars.error"},
+--   {"COMMAND", "FINAL", cond="not vars.error and gripper_if:is_final()"},
+   {"COMMAND", "FINAL", cond="vars.open or vars.center"},
    {"COMMAND", "FAILED", cond="vars.error"},
-   {"COMMAND", "CLOSE_GRIPPER_WAIT", cond="vars.close_load"},
+   {"COMMAND", "CLOSE_GRIPPER_WAIT", cond="vars.close"},
+   {"CLOSE_GRIPPER_WAIT", "FINAL_AFTER_IF_FINAL", timeout=0.5},
+   {"FINAL_AFTER_IF_FINAL", "FINAL", cond="gripper_if:is_final()"},
 }
 
-function CLOSE_GRIPPER_WAIT:init()
-   self.fsm.vars.right_fully_loaded = false
-   self.fsm.vars.left_fully_loaded = false
-   gripper_if:msgq_enqueue_copy(gripper_if.CloseLoadMessage:new())
-   -- print("right: " .. self.fsm.vars.right_fully_loaded .. " left: " .. self.fsm.vars.left_fully_loaded)
-end
+--function CLOSE_GRIPPER_WAIT:init()
+--   self.fsm.vars.right_fully_loaded = false
+--   self.fsm.vars.left_fully_loaded = false
+--   gripper_if:msgq_enqueue_copy(gripper_if.CloseLoadMessage:new())
+--   -- print("right: " .. self.fsm.vars.right_fully_loaded .. " left: " .. self.fsm.vars.left_fully_loaded)
+--end
 
 function COMMAND:init()
    -- if self.fsm.vars.close then
