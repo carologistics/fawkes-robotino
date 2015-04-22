@@ -66,5 +66,5 @@ function SKILL_ALIGN:init()
 end
 
 function SKILL_DETECT:init()
-   self.skills[1].mtype = self.fsm.vars.mtype
+   self.skills[1].place = self.fsm.vars.place
 end
