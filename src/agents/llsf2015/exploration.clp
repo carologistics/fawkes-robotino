@@ -279,97 +279,43 @@
 	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone)))
 )
 
-(defrule exp-align-in-front-of-light-signal
+(defrule exp-explore-light-signal
   "Preparing recognition of the light signals after we arrived at the output side."
   (phase EXPLORATION)
-  ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
+  ?final <- (skill-done (name "drive_to") (status FINAL|FAILED)) 
   ?s <- (state EXP_DRIVE_TO_OUTPUT)
+  (goalmachine ?zone)
+  (zone-exploration (name ?zone) (machine ?machine))
   =>
-  (printout t "Aligning in front of light signal." crlf)
+  (printout t "Explore light signal." crlf)
   (retract ?s ?final)
-  (assert (state EXP_ALIGN_AT_OUTPUT))
-  (skill-call motor_move x 0.1 y 0.0)
+  (assert (state EXP_DETECT_LIGHT))
+  (skill-call explore_signal place ?machine)
 )
 
-(defrule exp-align-in-front-of-light-signal-finished
-  "Preparing recognition of the light signals after we aligned in front of it."
-  (phase EXPLORATION)
-  ?final <- (skill (name "motor_move") (status FINAL|FAILED)) 
-  ?s <- (state EXP_ALIGN_AT_OUTPUT)
-  (time $?now)
-  =>
-  (printout t "Aligned in front of light signal." crlf)
-  (printout t "Reading light now." crlf)
-  (retract ?s ?final)
-  (assert (state EXP_WAITING_FOR_LIGHT_VISION)
-          (timer (name waiting-since) (time ?now) (seq 1))
-  )
-)
-
-(defrule exp-read-light-at-machine
+(defrule exp-explore-light-signal-finished
   "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
   (phase EXPLORATION)
-  (time $?now)
-  ?ws <- (timer (name waiting-since))
-  ?s <- (state EXP_WAITING_FOR_LIGHT_VISION)
+  ?final <- (skill-done (name "explore_signal") (status ?skill-status&FINAL|FAILED)) 
+  (last-lights (red ?red) (yellow ?yellow) (green ?green))
+  ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
-  (confval (path "/clips-agent/llsf2015/exploration/needed-visibility-history") (value ?needed-vh))
-  ?rli <- (RobotinoLightInterface (id "/machine-signal/best") (red ?red) (yellow ?yellow) (green ?green) (visibility_history ?vh&:(> ?vh ?needed-vh)) (ready TRUE))
   (exp-matching (red ?red) (yellow ?yellow) (green ?green) (mtype ?mtype))
   =>
-  (printout t "Identified machine" crlf)
-  (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
+  (printout t "Explored light done." crlf)
   (printout warn "TODO: ensure that tag is in the explored zone" crlf)
-  (retract ?s ?rli ?ws)
+  (printout warn "TODO: if failed, check again later" crlf)
+  (retract ?s ?final)
   (assert (state EXP_IDLE)
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone))
-    (exploration-result (machine ?machine) (mtype ?mtype) (zone ?zone))
   )
-)
-
-(defrule exp-recognized-machine-failed-once
-  "First recognition of lights failed => try again with a slightly other position"
-  (phase EXPLORATION)
-  (time $?now)
-  ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
-  ?s <- (state EXP_WAITING_FOR_LIGHT_VISION)
-  ?g <- (goalmachine ?old)
-  (zone-exploration (name ?old) (x ?) (y ?))
-  (not (second-recognize-try))
-  =>
-  (printout t "Reading light at " ?old " failed first time." crlf)
-  (printout t "Try again in from an other position." crlf)
-  (assert (second-recognize-try)
+  (if (eq ?skill-status FINAL) then
+    (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
+    (assert (exploration-result (machine ?machine) (mtype ?mtype) (zone ?zone)))
+   else
+    (printout warn "Couldn't read light. TODO" crlf)
   )
-  (modify ?ws (time ?now))
-  (skill-call motor_move x 0 y 0.1 vel_trans 0.1)
-)
-
-(defrule exp-recognized-machine-failed-twice
-  "Second try of recognition of lights failed => drive to next mashine or retry (depending on the round)"
-  (phase EXPLORATION)
-  (time $?now)
-  ?ws <- (timer (name waiting-since) (time $?t&:(timeout ?now ?t 5.0)))
-  ?s <- (state EXP_WAITING_FOR_LIGHT_VISION)
-  ?g <- (goalmachine ?old)
-  (zone-exploration (name ?old) (x ?) (y ?) (next ?nextMachine))
-  ?srt <- (second-recognize-try)
-  =>
-  (printout t "Reading light at " ?old " failed." crlf)
-  (printout t "Waited 5 seconds on RobotinoLightInterface with ready = TRUE." crlf)
-  (retract ?s ?ws ?srt)
-  (assert (state EXP_IDLE)
-	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
-  )
-)
-
-(defrule exp-second-retry-fact-retract
-  "If driving again remove second-recognize-try fact."
-  (state EXP_DRIVING_TO_MACHINE)
-  ?srt <- (second-recognize-try)
-  =>
-  (retract ?srt)
 )
 
 (defrule exp-find-next-machine-line

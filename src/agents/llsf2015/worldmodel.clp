@@ -124,10 +124,8 @@
   (retract ?rf)
   ; remove all possibly existing last-lights facts
   (delayed-do-for-all-facts ((?ll last-lights)) TRUE (retract ?ll))
-  (bind ?lights (create$ (sym-cat GREEN- ?green) (sym-cat YELLOW- ?yellow) (sym-cat RED- ?red) )
-  )
-  (assert (last-lights ?lights))
-  (printout t "***** Lights 5 " ?lights crlf)
+  (assert (last-lights (green ?green) (yellow ?yellow) (red ?red)))
+  (printout t "***** Lights 5 (green " ?green ") (yellow " ?yellow ") (red " ?red ")" crlf)
 )
 
 (defrule wm-goto-deliver-failed
@@ -186,17 +184,6 @@
     (assert (holding NONE))
     (printout error "Lost puck during drive_to" crlf)
   )
-)
-
-(defrule wm-goto-light
-  (declare (salience ?*PRIORITY-WM*))
-  (state SKILL-FINAL)
-  (skill-to-execute (skill finish_puck_at) (state final))
-  (not (lights))
-  ?lf <- (last-lights $?lights&:(> (length$ ?lights) 0))
-  =>
-  (retract ?lf)
-  (assert (lights ?lights))
 )
 
 ; (defrule wm-proc-complete-without-robot

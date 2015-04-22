@@ -255,6 +255,12 @@
   (multislot incoming-agent (type SYMBOL))
 )
 
+(deftemplate last-lights
+  (slot green (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
+  (slot yellow (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
+  (slot red (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
+)
+
 (deffacts startup-facts
   (team-color nil)
   (points-magenta 0)
