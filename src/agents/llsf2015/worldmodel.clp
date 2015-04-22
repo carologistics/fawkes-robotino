@@ -30,13 +30,12 @@
 (defrule wm-get-cap-from-shelf-final
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
-  (skill-to-execute (skill ppgoto) (state final) (target ?mps))
+  (skill-to-execute (skill get_product_from) (state final) (target ?mps))
   (step (name get-from-shelf) (state running))
   (cap-station (name ?mps) (assigned-cap-color ?color))
   ?hf <- (holding NONE)
   =>
   (retract ?hf)
-  (printout warn "TODO: use right skill in worldmodel for get-from-shelf" crlf)
   (printout t "Got a Puck from an CS shelf with a " ?color " cap to fill the CS" crlf)
   (bind ?puck-id (random-id))
   (assert (holding ?puck-id)
@@ -49,17 +48,16 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (step (name get-from-shelf) (state running))
-  (skill-to-execute (skill ppgoto) (state failed) (target ?mps))
+  (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
   (holding NONE)
   =>
-  (printout warn "TODO: use right skill in worldmodel for get-from-shelf" crlf)
   (printout warn "Could not get puck from shelf" crlf)
 )
 
 (defrule wm-insert-cap-into-cs-final
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
-  (skill-to-execute (skill ppgoto) (state final) (target ?mps))
+  (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps))
@@ -67,7 +65,6 @@
   ?pf <- (product (id ?puck-id) (cap ?cap))
   =>
   (retract ?hf)
-  (printout warn "TODO: use right skill in worldmodel for insert-cap" crlf)
   (printout warn "TODO: use worldmodel change messages" crlf)
   (printout t "Inserted a Puck from an CS shelf with a " ?cap " cap to fill the CS" crlf)
   (assert (holding NONE))
@@ -81,13 +78,12 @@
 (defrule wm-insert-cap-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
-  (skill-to-execute (skill ppgoto) (state failed) (target ?mps))
+  (skill-to-execute (skill bring_product_to) (state failed) (target ?mps))
   (step (name insert) (state running))
   ?hf <- (holding ?puck-id)
   ?pf <- (product (id ?puck-id))
   =>
   (retract ?hf ?pf)
-  (printout warn "TODO: use right skill in worldmodel for insert-cap" crlf)
   (printout t "Inserted a Puck into the MPS " ?mps " failed" crlf)
   (printout error "TODO: check if we still have apuck or not" crlf)
   (assert (holding NONE))
@@ -96,13 +92,12 @@
 (defrule wm-get-output-final
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
-  (skill-to-execute (skill ppgoto) (state final) (target ?mps))
+  (skill-to-execute (skill get_product_from) (state final) (target ?mps))
   (step (name get-output) (state running))
   ?mf <- (machine (name ?mps) (produced-id ?puck-id))
   ?hf <- (holding NONE)
   =>
   (retract ?hf)
-  (printout warn "TODO: use right skill in worldmodel for get-output" crlf)
   (printout t "Fetched a Puck from the output of " ?mps crlf)
   (assert (holding ?puck-id)
 	  (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
