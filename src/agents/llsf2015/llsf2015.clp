@@ -122,6 +122,7 @@
     (path-load  llsf2015/sim.clp)
   )
   (path-load  llsf2015/game.clp)
+  (path-load  llsf2015/mps-instructions.clp)
   (path-load  llsf2015/worldmodel-synchronization.clp)
   (path-load  llsf2015/tactical-help.clp)
   (path-load  llsf2015/task.clp)
