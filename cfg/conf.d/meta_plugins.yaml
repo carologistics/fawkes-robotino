@@ -9,9 +9,9 @@ fawkes/meta_plugins:
   m-bare: bbsync,static-transforms,webview
   m-fv: fvbase,fvfountain
   m-fv-vision: m-bare,m-fv,machine-signal,tag_vision,fvretriever
-  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,navgraph,clips-navgraph
-  m-clips-agent: m-clips,m-fv-vision,clips-agent,agent-monitor
-  m-skiller: m-fv-vision,ros,navgraph,skiller
+  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf
+  m-clips-agent: m-clips,m-fv-vision,clips-agent
+  m-skiller: m-fv-vision,ros,navgraph,navgraph-generator,skiller
   m-full: m-skiller,m-clips-agent
 
 
