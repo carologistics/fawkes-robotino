@@ -1180,6 +1180,7 @@ ROI *MachineSignalPipelineThread::merge_rois_in_roi(const ROI &outer_roi, list<R
       ++it_roi;
     }
   }
+  if (rv) rois->push_front(rv);
   return rv;
 }
 
@@ -1274,6 +1275,9 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
           if (black_stuff_bottom->size() > 0) {
             roi_R->height = (black_stuff_bottom->front().start.y - roi_R->start.y) / 3;
           }
+          else if (roi_R->start.y + roi_R->height * 3 > cam_height_) {
+            roi_R->height = (cam_height_ - roi_R->start.y) / 3;
+          }
 
           signal.red_roi = roi_R;
 
@@ -1311,7 +1315,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
           signal.red_roi = shared_ptr<ROI>(new ROI());
           signal.red_roi->color = C_RED;
           signal.red_roi->start.x = signal.yellow_roi->start.x;
-          signal.red_roi->start.x = signal.yellow_roi->start.y - signal.yellow_roi->height;
+          signal.red_roi->start.y = signal.yellow_roi->start.y - signal.yellow_roi->height;
           signal.red_roi->width = signal.yellow_roi->width;
           signal.red_roi->height = signal.yellow_roi->height;
           rv->push_back(signal);
