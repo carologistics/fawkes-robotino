@@ -21,11 +21,11 @@
 
   ; production order priorities
   ?*PRIORITY-PREFILL-CS* = 50
-  ?*PRIORITY-PREFILL-RS* = 80
+  ?*PRIORITY-PREFILL-RS* = 60
   ?*PRIORITY-PRODUCE-C0* = 90
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
-  
+  ?*PRIORITY-DISCARD-UNKNOWN* = 55
 
   ; tast execution order priorities
   ; (if the first subtasks are already complete, don't do them again)

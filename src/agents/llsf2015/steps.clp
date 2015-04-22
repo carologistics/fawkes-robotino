@@ -75,6 +75,39 @@
   )
 )
 
+(defrule step-discard-unknown-start
+  "Oepn gripper to discard unknown base"
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name discard) (state wait-for-activation) (task-priority ?p))
+  ?state <- (state STEP-STARTED)
+  (team-color ?team)
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (assert (state WAIT-FOR-LOCK)
+    (skill-to-execute (skill gripper) (args open true) (target NONE))
+  )
+)
+
+(defrule step-discard-unknown-finish
+  "Unknown base discarded, release locks."
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  (step (name discard) (state running))
+  ?state <- (state SKILL-FINAL)
+  ?ste <- (skill-to-execute (skill gripper)
+			    (args $?args) (state ?skill-finish-state&final))
+  ?h <- (holding ?product-id)
+  =>
+  (printout t "Base discarded"  crlf)
+  (retract ?state ?ste ?h)
+  (assert
+    (state STEP-FINISHED)
+    (holding NONE)
+  )
+)
+
 (defrule step-find-tag-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
@@ -99,6 +132,7 @@
           (worldmodel-change (machine ?zone) (change ZONE_TIMES_SEARCHED_INCREMENT))
   )
 )
+
 (defrule step-find-tag-finish
   "tag-find skill finished, try to find tag"
   (declare (salience ?*PRIORITY-STEP-FINISH*))
@@ -115,6 +149,7 @@
    (timer (name waiting-for-tag-since) (time ?now) (seq 1))
    (explore-zone-state ?skill-finish-state))
 )
+
 (defrule step-find-tag-report-tag
   "Add found tag to navgraph and finish step."
   (phase PRODUCTION)
@@ -310,7 +345,7 @@
 (defrule step-common-fail
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|discard) (state running))
   ?state <- (state SKILL-FAILED)
   ?ste <- (skill-to-execute (skill ppgoto)
 			    (args $?args) (state failed))

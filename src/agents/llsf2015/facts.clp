@@ -184,7 +184,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 deliver-c0 fill-rs exploration-catch-up))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 deliver-c0 fill-rs discard-unknown exploration-catch-up))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
@@ -200,7 +200,7 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-product get-base find-tag))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-product get-base discard find-tag))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
