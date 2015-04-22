@@ -17,7 +17,7 @@
   (bind ?worldmodel (pb-create "llsf_msgs.Worldmodel"))
   (delayed-do-for-all-facts ((?machine machine)) TRUE
     ;construct submsg for each machine
-    (bind ?m-msg (pb-create "llsf_msgs.MachineState"))
+    (bind ?m-msg (pb-create "llsf_msgs.MachineWMState"))
     ;set name
     (pb-set-field ?m-msg "name" (str-cat ?machine:name))
     ;set loaded_with)
@@ -108,7 +108,9 @@
     ;construct submsg for each product
     (bind ?prod-msg (pb-create "llsf_msgs.ProductState"))
     (pb-set-field ?prod-msg "id" ?prod:id)
-    (pb-set-field ?prod-msg "base" (sym-cat BASE_ ?prod:base))
+    (if (neq ?prod:base UNKNOWN) then
+      (pb-set-field ?prod-msg "base" (sym-cat BASE_ ?prod:base))
+    )
     (progn$ (?ring ?prod:rings)
       (pb-add-list ?prod-msg "rings" (sym-cat RING_ ?ring))
     )
@@ -238,7 +240,11 @@
     (bind ?product-exists FALSE)
     (bind ?prod-id (pb-field-value ?prod-msg "id"))
     (bind ?prod-cap (pb-field-value ?prod-msg "cap"))
-    (bind ?prod-base (utils-remove-prefix (pb-field-value ?prod-msg "base") BASE_))
+    (if (pb-has-field ?prod-msg "base") then
+      (bind ?prod-base (utils-remove-prefix (pb-field-value ?prod-msg "base") BASE_))
+      else
+      (bind ?prod-base UNKNOWN)
+    )
     (bind ?prod-rings (create$ ))
     (progn$ (?ring (pb-field-list ?prod-msg "rings"))
       (bind ?prod-rings (append$ ?prod-rings (utils-remove-prefix ?ring RING_)))
@@ -388,7 +394,9 @@
     (do-for-fact ((?prod product)) (eq ?prod:id ?puck-id)
       (bind ?prod-msg (pb-create "llsf_msgs.ProductState"))
       (pb-set-field ?prod-msg "id" ?prod:id)
-      (pb-set-field ?prod-msg "base" (sym-cat BASE_ ?prod:base))
+      (if (neq ?prod:base UNKNOWN) then
+        (pb-set-field ?prod-msg "base" (sym-cat BASE_ ?prod:base))
+      )
       (progn$ (?ring ?prod:rings)
         (pb-add-list ?prod-msg "rings" (sym-cat RING_ ?ring))
       )
@@ -581,7 +589,11 @@
       (if (eq (sym-cat (pb-field-value ?p "change")) NEW_PUCK) then
 	(bind ?prod-msg (pb-field-value ?p "value_puckstate"))
 	(bind ?prod-id (pb-field-value ?prod-msg "id"))
-	(bind ?prod-base (utils-remove-prefix (pb-field-value ?prod-msg "base") BASE_))
+        (if (pb-has-field ?prod-msg "base") then
+          (bind ?prod-base (utils-remove-prefix (pb-field-value ?prod-msg "base") BASE_))
+          else
+          (bind ?prod-base UNKNOWN)
+        )
 	(bind ?prod-rings (create$ ))
 	(progn$ (?ring (pb-field-list ?prod-msg "rings"))
 	  (bind ?prod-rings (append$ ?prod-rings 

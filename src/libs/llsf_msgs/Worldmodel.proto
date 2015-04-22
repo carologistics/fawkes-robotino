@@ -8,26 +8,15 @@
 package llsf_msgs;
 
 import "PuckInfo.proto";
+import "MachineInstructions.proto";
 
-enum Side {
-  INPUT = 0;
-  OUTPUT = 1;
-}
-
-enum BaseColor {
-  BASE_UNKNOWN = 0;
-  BASE_BLACK = 1;
-  BASE_SILVER = 2;
-  BASE_RED = 3;
-}
-
-enum CapColor {
+enum WmCapColor {
   NONE = 0;
   BLACK = 1;
   GREY = 2;
 }
 
-message MachineState {
+message MachineWMState {
   enum CompType {
     COMP_ID  = 2000;
     MSG_TYPE = 1339;
@@ -42,7 +31,7 @@ message MachineState {
   required uint32 out_of_order_until = 7;
 
   //optional fields for cap-stations
-  optional CapColor cap_loaded = 8;
+  optional WmCapColor cap_loaded = 8;
 
   //optional fields for ring-stations
   optional RingColor ring_color_selected = 9;
@@ -56,10 +45,10 @@ message ProductState {
   }
 
   required uint32 id  = 1;
-  required BaseColor base = 2;
+  optional BaseColor base = 2; //leave empty for unknown
   //mounted rings from bottom to top
   repeated RingColor rings  = 3;
-  required CapColor cap  = 4;
+  required WmCapColor cap  = 4;
 }
 
 message PuckStorageState {
@@ -81,7 +70,7 @@ message TagPosition {
   }
 
   required string machine = 1;
-  required Side side    = 2;
+  required MachineSide side    = 2;
   required string frame   = 3;
   repeated float  trans   = 4;
   // Rotation as quaternion
@@ -120,7 +109,7 @@ message Worldmodel {
   }
 
   // List of machines states
-  repeated MachineState machines = 1;
+  repeated MachineWMState machines = 1;
   repeated WorldmodelOrder orders = 2;
   repeated PuckStorageState storage = 3;
   repeated ZoneState zones = 4;

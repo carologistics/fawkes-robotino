@@ -1,8 +1,8 @@
 
 /***************************************************************************
- *  OrderInstruction.proto - LLSF Protocol - Order Instruction message
+ *  MachineInstructions.proto - LLSF Protocol - Machine instruction messages
  *
- *  Created: Mon Feb 25 11:37:09 2013
+ *  Created: Thu Apr 16 14:19:07 2015
  *  Copyright  2013  Tim Niemueller [www.niemueller.de]
  ****************************************************************************/
 
@@ -36,67 +36,51 @@
 
 package llsf_msgs;
 
-import "Team.proto";
 import "PuckInfo.proto";
+import "Team.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "OrderInfoProtos";
+option java_outer_classname = "MachineInstructionProtos";
 
-message Order {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 42;
-  }
-
-  // Ordered product type
-  enum Complexity {
-    C0 = 0;
-    C1 = 1;
-    C2 = 2;
-    C3 = 3;
-  }
-
-  // ID and requested product of this order
-  required uint32       id = 1;
-  required Complexity   complexity = 2;
-
-  required BaseColor    base_color = 3;
-  repeated RingColor    ring_colors = 4;
-  required CapColor     cap_color = 5;
-
-  // Quantity requested and delivered
-  required uint32 quantity_requested = 6;
-  required uint32 quantity_delivered_cyan = 7;
-  required uint32 quantity_delivered_magenta = 8;
-
-  // Start and end time of the delivery
-  // period in seconds of game time
-  required uint32 delivery_period_begin = 9;
-  required uint32 delivery_period_end   = 10;
-
-  // The gate to deliver to, defaults to any
-  // (non-defunct, i.e. non-red light) gate
-  required uint32 delivery_gate = 11;
-
+enum MachineSide {
+  INPUT  = 1;
+  OUTPUT = 2;
 }
 
-message OrderInfo {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 41;
-  }
-
-  // The current orders
-  repeated Order orders = 1;
+enum CsOp {
+  RETRIEVE_CAP = 1;
+  MOUNT_CAP    = 2;
 }
 
+message PrepareInstructionBS {
+  required MachineSide side  = 1;
+  required BaseColor   color = 2;
+}
 
-message SetOrderDelivered {
+message PrepareInstructionDS {
+  required uint32 gate = 1;
+}
+
+message PrepareInstructionRS {
+  required RingColor ring_color = 1;
+}
+
+message PrepareInstructionCS {
+  required CsOp operation = 1;
+}
+
+message PrepareMachine {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 43;
+    MSG_TYPE = 101;
   }
 
-  required Team team_color = 1;
-  required uint32 order_id = 2;
+  required Team   team_color = 1;
+  // Machine name which to instruct
+  required string machine = 2;
+
+  optional PrepareInstructionBS instruction_bs = 4;
+  optional PrepareInstructionDS instruction_ds = 5;
+  optional PrepareInstructionRS instruction_rs = 6;
+  optional PrepareInstructionCS instruction_cs = 7;
 }
