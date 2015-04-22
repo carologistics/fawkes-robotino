@@ -47,7 +47,7 @@ plugins/static-transforms:
       trans_y: 0.036
       trans_z: 0.18
       rot_pitch: 0
-      rot_yaw: 0.42
+      rot_yaw: 0.39
       rot_roll: 0
 
     cam_joint_2:
