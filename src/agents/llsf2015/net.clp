@@ -156,26 +156,59 @@
 )
 
 (defrule net-recv-order
-   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?p))
-   (team-color ?team)
-   =>
-   (foreach ?o (pb-field-list ?p "orders")
-     ;check if this order is for our team and if the order is new
-     (if (and (eq ?team (pb-field-value ?o "team_color"))
-	      (not (any-factp ((?order order)) (eq ?order:id (pb-field-value ?o "id")))))
-       then
-       (printout warn "TODO: get ordered product and link it in order fact!" crlf)
-       (assert (order (id (pb-field-value ?o "id"))
-		      ;(product (sym-cat (pb-field-value ?o "product")))
-		      (quantity-requested (pb-field-value ?o "quantity_requested"))
-		      (quantity-delivered (pb-field-value ?o "quantity_delivered"))
-		      (begin (pb-field-value ?o "delivery_period_begin"))
-		      (end (pb-field-value ?o "delivery_period_end"))))
-       else
-       (do-for-fact ((?order order)) (eq ?order:id (pb-field-value ?o "id"))
-	 (modify ?order (quantity-delivered (pb-field-value ?o "quantity_delivered")))
-       )
-     )
-   )
-   (retract ?pf)
+  ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?p))
+  (team-color ?team)
+  =>
+  (foreach ?o (pb-field-list ?p "orders")
+    ;check if this order is for our team and if the order is new
+    (if (not (any-factp ((?order order)) (eq ?order:id (pb-field-value ?o "id"))))
+        then
+          (bind ?product-id (random-id))
+          (bind ?id (pb-field-value ?o "id"))
+          (bind ?complexity (pb-field-value ?o "complexity"))
+          (bind ?delivery-gate (pb-field-value ?o "delivery_gate"))
+          (bind ?quantity-requested (pb-field-value ?o "quantity_requested"))
+          (bind ?begin (pb-field-value ?o "delivery_period_begin"))
+          (bind ?end (pb-field-value ?o "delivery_period_end"))
+          (if (pb-has-field ?o "base_color") then
+            (bind ?base (utils-remove-prefix (pb-field-value ?o "base_color") BASE_))
+          else
+            (bind ?base UNKNOWN)
+          )
+          (bind ?rings (create$ ))
+          (progn$ (?ring (pb-field-list ?o "ring_colors"))
+            (bind ?rings (append$ ?rings 
+            (utils-remove-prefix ?ring RING_)))
+          )
+          (bind ?cap (utils-remove-prefix (pb-field-value ?o "cap_color") CAP_))
+          (assert
+            (order
+              (id ?id)
+              (product-id ?product-id)
+              (complexity ?complexity)
+              (delivery-gate ?delivery-gate)
+              (quantity-requested ?quantity-requested)
+              (begin ?begin)
+              (end ?end)
+            )
+            (product
+              (id ?product-id)
+              (base ?base)
+              (rings ?rings)
+              (cap ?cap)
+            )
+          )
+          (printout t "Added order " ?id " with " (pb-field-value ?o "cap") crlf)
+      else
+      (do-for-fact ((?order order)) (eq ?order:id (pb-field-value ?o "id"))
+          (if (eq ?team CYAN) then
+            (bind ?quantity-delivered (pb-field-value ?o "quantity_delivered_cyan"))
+          else
+            (bind ?quantity-delivered (pb-field-value ?o "quantity_delivered_magenta"))
+          )
+          (modify ?order (quantity-delivered ?quantity-delivered))
+      )
+    )
+  )
+  (retract ?pf)
 )
