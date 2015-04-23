@@ -88,8 +88,22 @@ function INIT:init()
                       ori = self.fsm.vars.ori or 0},
                       "/map", "/base_link")
 
-    self.fsm.vars.rel_x   = rel_pos.x
-    self.fsm.vars.rel_y   = rel_pos.y
+    -- sanity check *this is an error*, but where is it comming from???
+    if rel_pos.x <= 20 or rel_pos.y <= 20 then
+      self.fsm.vars.rel_x   = rel_pos.x
+      self.fsm.vars.rel_y   = rel_pos.y
+    else
+      self.fsm.vars.rel_x   = 0
+      self.fsm.vars.rel_y   = 0
+      print_error("GOTO ERROR!!!!!!!!!! place: " .. self.fsm.vars.place ..
+                                        " f_x: " .. self.fsm.vars.x ..
+                                        " f_y: " .. self.fsm.vars.y ..
+                                        " f_ori: " .. self.fsm.vars.ori ..
+                                        " t_x: " .. rel_pos.x ..
+                                        " t_y: " .. rel_pos.y ..
+                                        " t_ori: " .. rel_pos.ori)
+    end
+
     if self.fsm.vars.ori == nil then
       self.fsm.vars.rel_ori = nil
     else
