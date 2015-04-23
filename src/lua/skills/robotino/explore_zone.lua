@@ -235,7 +235,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
   {"INIT",                "FAILED",                       cond="vars.parameter_nil",                            desc="one ore more parameter are nil"},
   {"INIT",                "DRIVE_TO_ZONE",                cond=true},
-  {"DRIVE_TO_ZONE",       "DRIVE_TO_POSSIBLE_MPS_PRE",    cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
+  --{"DRIVE_TO_ZONE",       "DRIVE_TO_POSSIBLE_MPS_PRE",    cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
   {"DECIDE_CLUSTER",      "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil"},
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
   {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
