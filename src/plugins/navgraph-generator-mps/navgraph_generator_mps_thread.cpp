@@ -270,7 +270,7 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 {
   navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ClearMessage());
   navgen_if_->msgq_enqueue(
-    new NavGraphGeneratorInterface::SetBoundingBoxMessage(-7, -1, 7, 7));
+    new NavGraphGeneratorInterface::SetBoundingBoxMessage(-6, 0, 6, 6));
 
   navgen_if_->msgq_enqueue
     (new NavGraphGeneratorInterface::SetFilterMessage
