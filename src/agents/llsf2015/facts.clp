@@ -173,8 +173,10 @@
   (slot id (type INTEGER))
   ;id of product fact how the product should look like
   (slot product-id (type INTEGER))
+  (slot complexity (type INTEGER))
+  (slot delivery-gate (type INTEGER))
   (slot quantity-requested (type INTEGER))
-  (slot quantity-delivered (type INTEGER))
+  (slot quantity-delivered (type INTEGER) (default 0))
   (slot begin (type INTEGER))
   (slot end (type INTEGER))
   (slot in-production (type INTEGER) (default 0))
