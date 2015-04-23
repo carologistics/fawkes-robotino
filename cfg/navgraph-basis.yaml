@@ -203,7 +203,7 @@ nodes:
     name: C-CS1
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 1
       - tag_output: 2
       - input_offset_y: 0
@@ -212,35 +212,35 @@ nodes:
     name: C-CS2
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 17
       - tag_output: 18
   - !unconnected
     name: C-RS1
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 33
       - tag_output: 34
   - !unconnected
     name: C-RS2
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 177
       - tag_output: 178
   - !unconnected
     name: C-BS
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 65
       - tag_output: 66
   - !unconnected
     name: C-DS
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 81
       - tag_output: 82
 #Magenta
@@ -248,42 +248,42 @@ nodes:
     name: M-CS1
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 97
       - tag_output: 98
   - !unconnected
     name: M-CS2
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 113
       - tag_output: 114
   - !unconnected
     name: M-RS1
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 129
       - tag_output: 130
   - !unconnected
     name: M-RS2
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 145
       - tag_output: 146
   - !unconnected
     name: M-BS
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 161
       - tag_output: 162
   - !unconnected
     name: M-DS
     pos: [0, 0]
     properties:
-      - only_copy_properties
+      - only-copy-properties
       - tag_input: 49
       - tag_output: 50
 
