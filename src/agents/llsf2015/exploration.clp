@@ -127,7 +127,7 @@
   (not (driven-to-waiting-point))
   =>
   (printout t "First machine: " ?v crlf)
-  (retract ?s)
+  (retract ?s ?df)
   (assert (state EXP_LOCK_REQUIRED)
     (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?v))
     (exp-next-machine ?v)
@@ -137,7 +137,7 @@
 (defrule exp-explore-zone-skill-finished
   "Arriving at a machine in first or second round. Wait for tag vision."
   (phase EXPLORATION)
-  ?final <- (skill (name "explore_zone") (status ?explore-zone-state&FINAL|FAILED))
+  ?final <- (skill-done (name "explore_zone") (status ?explore-zone-state&FINAL|FAILED))
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
@@ -715,7 +715,7 @@
   (phase EXPLORATION)
   ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
-  ?skill-f <- (skill (name "ppgoto") (status FINAL))
+  ?skill-f <- (skill-done (name "ppgoto") (status FINAL))
   =>
   (retract ?skill-f ?s)
   (assert (timer (name annound-prepare-for-production-finished))
