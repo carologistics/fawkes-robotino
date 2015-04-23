@@ -29,6 +29,8 @@
   (phase PRODUCTION)
   ?step <- (step (name insert) (state wait-for-activation) (task-priority ?p)
 		 (machine ?mps) (machine-feature ?feature))
+  (machine (name ?mps) (mtype ?mtype))
+  (task (name ?task-name))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (game-time $?game-time)
@@ -38,6 +40,15 @@
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill bring_product_to) (args place ?mps)  (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
+  )
+  ; check if we have to instruct an mps:
+  (if (and (eq ?mtype CS)
+           (eq ?task-name fill-cap)) then
+    (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock ?mps)))
+  )
+  (if (and (eq ?mtype CS)
+           (member$ ?task-name (create$ produce-c0 deliver-c0))) then
+    (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock ?mps)))
   )
 )
 
@@ -72,6 +83,7 @@
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
+          (mps-instruction (machine C-BS) (base-color RED) (lock ?mps))
   )
 )
 
@@ -258,9 +270,38 @@
   (modify ?step (state running))
   (printout warn "TODO: use skill to get a puck from an MPS" crlf)
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill ppgoto) (args place (get-output ?mps)) (target ?mps))
+	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
   )
+)
+
+(defrule step-instruct-mps
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name instruct-mps) (state wait-for-activation)
+		 (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
+                 (cs-operation ?cs-op))
+  (machine (name ?mps) (mtype ?mtype))
+  ?state <- (state STEP-STARTED)
+  (team-color ?team)
+  =>
+  (retract ?state)
+  (switch ?mtype
+    (case BS
+      then
+      (assert (mps-instruction (machine ?mps) (base-color ?base))))
+    (case CS
+      then
+      (assert (mps-instruction (machine ?mps) (cs-operation ?cs-op))))
+    (case DS
+      then
+      (assert (mps-instruction (machine ?mps) (gate ?gate))))
+    (case RS
+      then
+      (assert (mps-instruction (machine ?mps) (ring-color ?ring))))
+  )
+  (modify ?step (state finished))
+  (assert (state STEP-FINISHED))
 )
 
 ; (defrule step-get-S0-start
@@ -330,7 +371,7 @@
   (phase PRODUCTION)
   ?step <- (step (name get-from-shelf|insert|get-output|get-base) (state running))
   ?state <- (state SKILL-FINAL)
-  ?ste <- (skill-to-execute (skill ppgoto)
+  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|gripper)
 			    (args $?args) (state final))
   ; TODO add new skills with |skill
   =>
@@ -347,7 +388,7 @@
   (phase PRODUCTION)
   ?step <- (step (name get-from-shelf|insert|get-output|discard) (state running))
   ?state <- (state SKILL-FAILED)
-  ?ste <- (skill-to-execute (skill ppgoto)
+  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|gripper)
 			    (args $?args) (state failed))
   ; TODO add new skills with |skill
   =>

@@ -38,6 +38,7 @@ package llsf_msgs;
 
 import "Pose2D.proto";
 import "Team.proto";
+import "ProductColor.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "PuckInfoProtos";
@@ -52,24 +53,6 @@ enum PuckState {
   P3 = 6;
   CONSUMED = 7;
   FINISHED = 8;
-}
-
-enum RingColor {
-  RING_BLUE   = 1;
-  RING_GREEN  = 2;
-  RING_ORANGE = 3;
-  RING_YELLOW = 4;
-}
-
-enum BaseColor {
-  BASE_RED = 1;
-  BASE_BLACK = 2;
-  BASE_SILVER = 3;
-}
-
-enum CapColor {
-  CAP_BLACK = 1;
-  CAP_GREY  = 2;
 }
 
 message Puck {
