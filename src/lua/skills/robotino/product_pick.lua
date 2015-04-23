@@ -26,9 +26,7 @@ module(..., skillenv.module_init)
 name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="OPEN_GRIPPER", debug=true}
 depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
-depends_interfaces = { 
-   {v = "sensor", type="RobotinoSensorInterface"}
-}
+depends_interfaces = { }
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
 and opens the gripper
@@ -40,7 +38,7 @@ and opens the gripper
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
 
-fsm:define_states{ export_to=_M, closure={sensor=sensor},
+fsm:define_states{ export_to=_M,
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="APPROACH_MPS", fail_to="FAILED"},
    {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}},
