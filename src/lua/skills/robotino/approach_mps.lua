@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  product_put.lua
+--  approach_mps.lua
 --
 --  Created Wed Apr 15
 --  Copyright  2015  Johannes Rothe
@@ -23,41 +23,34 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "product_put"
-fsm                = SkillHSM:new{name=name, start="APPROACH_MPS", debug=true}
-depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
-depends_interfaces = { }
+name               = "approach_mps"
+fsm                = SkillHSM:new{name=name, start="APPROACH", debug=true}
+depends_skills     = {"motor_move"}
+depends_interfaces = { 
+   {v = "sensor", type="RobotinoSensorInterface"}
+}
 
-documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
-and opens the gripper
-@param place Navgraph place to get the align_distance
-]==]
+documentation      = [==[
+                        The robot just drives forward until a sensor threshold is reached
+                     ]==]
 
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local tfm = require("tf_module")
 
-fsm:define_states{ export_to=_M,
-   {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}},
-      final_to="OPEN_GRIPPER", fail_to="FAILED"},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT", fail_to="FAILED"},
-   {"WAIT", JumpState},
-   {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
+local sensor_index = 0
+local sensor_threshold = 0.085
+
+fsm:define_states{ export_to=_M, closure={sensor=sensor, sensor_index=sensor_index, sensor_threshold=sensor_threshold},
+   {"APPROACH", SkillJumpState, skills={{motor_move}},
       final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"WAIT", "MOVE_BACK", timeout=0.5, desc="wait for gripper to open"}
+   {"APPROACH", "FINAL", cond="sensor:distance(sensor_index) <= sensor_threshold and sensor:distance(sensor_index) > 0"}
 }
 
-function OPEN_GRIPPER:init()
-   self.skills[1].open = true
-   self.skills[1].close = false
-   printf("open gripper")
-end
-
-function MOVE_BACK:init()
-   self.skills[1].x = -0.2
+function APPROACH:init()
+   self.skills[1].x = 1
+   self.skills[1].vel_trans = 0.1
 end
