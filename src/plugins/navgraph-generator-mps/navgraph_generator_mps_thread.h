@@ -30,13 +30,14 @@
 #include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
 
+#include <interfaces/NavGraphGeneratorInterface.h>
+
 #include <Eigen/Geometry>
 
 #include <string>
 #include <map>
 
 namespace fawkes {
-  class NavGraphGeneratorInterface;
   class NavGraphWithMPSGeneratorInterface;
   class BlackBoardOnMessageWaker;
   class NavGraph;
@@ -66,6 +67,7 @@ class NavGraphGeneratorMPSThread
   void generate_navgraph();
   void update_station(std::string id, bool input, std::string frame,
 		      double tag_pos[3], double tag_ori[4]);
+  fawkes::NavGraphGeneratorInterface::ConnectionMode mps_node_insmode(std::string name);
 
   virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
 

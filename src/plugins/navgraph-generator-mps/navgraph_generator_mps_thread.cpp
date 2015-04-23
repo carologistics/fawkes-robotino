@@ -24,7 +24,6 @@
 #include <navgraph/yaml_navgraph.h>
 #include <core/threading/mutex_locker.h>
 #include <navgraph/navgraph.h>
-#include <interfaces/NavGraphGeneratorInterface.h>
 #include <interfaces/NavGraphWithMPSGeneratorInterface.h>
 #include <blackboard/utils/on_message_waker.h>
 #include <utils/math/angle.h>
@@ -246,6 +245,26 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
 }
 
 
+fawkes::NavGraphGeneratorInterface::ConnectionMode
+NavGraphGeneratorMPSThread::mps_node_insmode(std::string name)
+{
+  if (base_graph_ && base_graph_->node_exists(name)) {
+    NavGraphNode n(base_graph_->node(name));
+    if (n.has_property("generator-insert-mode")) {
+      std::string prop = n.property("generator-insert-mode");
+      if (prop == "closest-node") {
+	return NavGraphGeneratorInterface::CLOSEST_NODE;
+      } else if (prop == "closest-edge") {
+	return NavGraphGeneratorInterface::CLOSEST_EDGE;
+      } else if (prop == "closest-edge-or-node") {
+	return NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE;
+      }
+    }
+  }
+
+  return NavGraphGeneratorInterface::CLOSEST_EDGE;
+}
+
 void
 NavGraphGeneratorMPSThread::generate_navgraph()
 {
@@ -279,13 +298,13 @@ NavGraphGeneratorMPSThread::generate_navgraph()
       (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
        ((s.first + "-I").c_str(),
 	s.second.input_pos[0], s.second.input_pos[1], s.second.input_yaw,
-	NavGraphGeneratorInterface::CLOSEST_EDGE));
+	mps_node_insmode(s.first + "-I")));
 
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
        ((s.first + "-O").c_str(),
 	s.second.output_pos[0], s.second.output_pos[1], s.second.output_yaw,
-	NavGraphGeneratorInterface::CLOSEST_EDGE));
+	mps_node_insmode(s.first + "-O")));
 
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddPointOfInterestMessage
