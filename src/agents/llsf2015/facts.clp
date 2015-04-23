@@ -250,7 +250,7 @@
 
 (deftemplate puck-storage
   (slot name (type SYMBOL))
-  (slot puck (type SYMBOL) (allowed-symbols NONE P1 P2 P3) (default NONE))
+  (slot puck (type INTEGER) (default 0))
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
   (multislot incoming (type SYMBOL) (allowed-symbols STORE_PUCK GET_STORED_PUCK))
   (multislot incoming-agent (type SYMBOL))

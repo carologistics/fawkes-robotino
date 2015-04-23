@@ -7,7 +7,7 @@
 
 package llsf_msgs;
 
-import "PuckInfo.proto";
+import "ProductColor.proto";
 import "MachineInstructions.proto";
 
 enum WmCapColor {
@@ -58,7 +58,7 @@ message PuckStorageState {
   }
 
   required string    name     = 1;
-  optional PuckState puck  = 2;
+  optional uint32 puck  = 2;
   repeated string incoming  = 3;
   repeated string incoming_agent  = 4;
 }
