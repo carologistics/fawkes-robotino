@@ -24,8 +24,8 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "product_put"
-fsm                = SkillHSM:new{name=name, start="DRIVE_FORWARD", debug=true}
-depends_skills     = {"motor_move", "ax12gripper"}
+fsm                = SkillHSM:new{name=name, start="APPROACH_MPS", debug=true}
+depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
 depends_interfaces = { }
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
@@ -39,7 +39,7 @@ skillenv.skill_module(_M)
 local tfm = require("tf_module")
 
 fsm:define_states{ export_to=_M,
-   {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}},
+   {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}},
       final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="WAIT", fail_to="FAILED"},
@@ -51,15 +51,6 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"WAIT", "MOVE_BACK", timeout=0.5, desc="wait for gripper to open"}
 }
-
-function DRIVE_FORWARD:init()
-   --TODO handle invalid point
-   local ALIGN_DISTANCE = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
-   local gripper_transformed = tfm.transform({x=ALIGN_DISTANCE, y=0, ori=0}, "/base_link", "/gripper")
-   self.skills[1].x = gripper_transformed.x
-   self.skills[1].y = gripper_transformed.y --if the gripper has an y offset
-   self.skills[1].ori = 0
-end
 
 function OPEN_GRIPPER:init()
    self.skills[1].open = true
