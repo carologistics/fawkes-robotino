@@ -258,7 +258,7 @@
   (modify ?step (state running))
   (printout warn "TODO: use skill to get a puck from an MPS" crlf)
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill ppgoto) (args place (get-output ?mps)) (target ?mps))
+	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
   )
 )
@@ -330,7 +330,7 @@
   (phase PRODUCTION)
   ?step <- (step (name get-from-shelf|insert|get-output|get-base) (state running))
   ?state <- (state SKILL-FINAL)
-  ?ste <- (skill-to-execute (skill ppgoto)
+  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|gripper)
 			    (args $?args) (state final))
   ; TODO add new skills with |skill
   =>
@@ -347,7 +347,7 @@
   (phase PRODUCTION)
   ?step <- (step (name get-from-shelf|insert|get-output|discard) (state running))
   ?state <- (state SKILL-FAILED)
-  ?ste <- (skill-to-execute (skill ppgoto)
+  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|gripper)
 			    (args $?args) (state failed))
   ; TODO add new skills with |skill
   =>

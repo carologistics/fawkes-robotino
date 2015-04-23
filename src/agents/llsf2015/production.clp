@@ -154,7 +154,7 @@
   (team-color ?team-color&~nil)
   (holding NONE)
   (game-time $?game-time)
-  (machine (mtype CS) (incoming $?i&~:(member$ FILL_CAP ?i))
+  (machine (mtype CS) (incoming $?i&~:(member$ PROD_CAP ?i))
     (name ?cs) (team ?team-color)
     (out-of-order-until $?ooo&:(is-working ?ooo)))
   (cap-station (name ?cs) (cap-loaded ?cap-color) (assigned-cap-color ?cap-color))
