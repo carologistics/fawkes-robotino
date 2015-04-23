@@ -54,7 +54,7 @@ navgraph-generator-mps:
   mps-width: 0.3
 
   # The distance in which to place approach points from the machine; m
-  approach-distance: 0.4
+  approach-distance: 0.7
 
   # A file which contains a base graph that will be (partially)
   # overlayed with the generated graph. The main purpose is to
