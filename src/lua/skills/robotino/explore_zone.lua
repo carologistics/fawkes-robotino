@@ -69,7 +69,7 @@ local TIMEOUT = 1
 local HIST_MIN_LINE = 5
 local HIST_MIN_TAG  = 5
 local ROBOT_WALL_DIST = 0.3
-local TAG_DIST = 0.5
+local TAG_DIST = 0.8
 local MPS_OFFSET_TO_ZONE = 0.2
 
 documentation      = [==[
@@ -121,18 +121,19 @@ function tag_searched(self, if_ID)
   return false
 end
 
-function mps_visible_tag(self)
+function mps_visible_tag(self, hist_min)
+  hist_min = hist_min or HIST_MIN_TAG
   self.fsm.vars.tag_chosen = nil
   local tags_vis = {}
   for k,v in pairs( self.fsm.vars.tags ) do
 
-    if v:visibility_history() >= HIST_MIN_LINE then
+    if v:visibility_history() >= hist_min then
       if tag_searched(self, v:id()) then
         local point_on_obj = {}
 
         local obj_map_6D = tfutils.transform6D({ x=v:translation(0), y=v:translation(1), z=v:translation(2),
                                                  ori={x=v:rotation(0), y=v:rotation(1), z=v:rotation(2), w=v:rotation(3)}
-                                               }, v:frame(), "/base_link")
+                                               }, v:frame(), "/base_link", v:timestamp())
       
         point_on_obj["frame_id"] = "/base_link"
         point_on_obj["x"]   = obj_map_6D.x
@@ -140,7 +141,7 @@ function mps_visible_tag(self)
         local q = fawkes.tf.Quaternion:new(obj_map_6D.ori.x, obj_map_6D.ori.y, obj_map_6D.ori.z, obj_map_6D.ori.w)
         point_on_obj["ori"] = math.normalize_mirror_rad( fawkes.tf.get_yaw(q) )
 
-        local obj_map = tfm.transform({x=point_on_obj["x"], y=point_on_obj["y"], ori=point_on_obj["ori"]}, point_on_obj["frame_id"], "/map")
+        local obj_map = tfm.transform({x=point_on_obj["x"], y=point_on_obj["y"], ori=point_on_obj["ori"]}, point_on_obj["frame_id"], "/map", v:timestamp())
         point_on_obj["x_map"]   = obj_map.x
         point_on_obj["y_map"]   = obj_map.y
         point_on_obj["ori_map"] = obj_map.ori
@@ -233,6 +234,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
   {"INIT",                "FAILED",                       cond="vars.parameter_nil",                            desc="one ore more parameter are nil"},
   {"INIT",                "DRIVE_TO_ZONE",                cond=true},
+  {"DRIVE_TO_ZONE",       "DRIVE_TO_POSSIBLE_MPS",        cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
   {"DECIDE_CLUSTER",      "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil"},
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
   {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
