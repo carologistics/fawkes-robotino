@@ -345,8 +345,7 @@
   (assert (state EXP_IDLE)
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone))
   )
-  (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
-  (printout err "Light signal combination unknown: machine: " ?machine " red: " ?red " yellow: " ?yellow " green: " ?green crlf)
+  (printout error "Light signal combination unknown: machine: " ?machine " red: " ?red " yellow: " ?yellow " green: " ?green crlf)
 )
 
 (defrule exp-find-next-machine-line
