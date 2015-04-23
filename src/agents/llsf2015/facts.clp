@@ -200,7 +200,7 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-product get-base discard find-tag))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-product get-base find-tag instruct-mps discard))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
@@ -210,6 +210,9 @@
   (slot machine-feature (type SYMBOL) (allowed-symbols CONVEYOR SHELF SLIDE))
   (slot shelf-slot (type SYMBOL) (allowed-symbols LEFT MIDDLE RIGHT))
   (slot base (type SYMBOL) (allowed-symbols BLACK SILVER RED))
+  (slot ring (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
+  (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
+  (slot gate (type INTEGER) (allowed-values 1 2 3))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
@@ -263,8 +266,11 @@
 )
 
 (deftemplate mps-instruction
-  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
   (multislot timer (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+  ; lock that the robot needs before sending the instruction
+  ; (NONE for no needed lock)
+  (slot lock (type SYMBOL) (default NONE))
   ;times sent
   (slot seq (type INTEGER) (default 0))
   ;optional fields for different instruction-types:
@@ -272,6 +278,7 @@
   (slot ring-color (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
+
 )
 
 (deffacts startup-facts

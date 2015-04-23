@@ -57,7 +57,11 @@
   ?mps-inst <- (mps-instruction (machine ?machine) (seq ?seq)
                                 (timer $?t&:(timeout ?now ?t ?*MPS_INSTRUCTION-PERIOD*))
                                 (base-color ?base-color) (gate ?gate)
-                                (ring-color ?ring-color) (cs-operation ?cs-op))
+                                (ring-color ?ring-color) (cs-operation ?cs-op)
+                                (lock ?lock))
+  ;eigther no lock needed or already aquired
+  (or (machine (name ?unused&:(eq ?lock NONE)))
+      (wait-for-lock (res ?lock) (state use)))
   (machine (name ?machine) (mtype ?mtype))
   (team-color ?team-color)
   (peer-id private ?peer)
