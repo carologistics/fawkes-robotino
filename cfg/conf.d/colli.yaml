@@ -173,7 +173,7 @@ plugins/colli:
 
     extension:
       # Extension of the shape
-      front: 0.05
+      front: 0.1
       right: 0.05
       back: 0.05
       left: 0.05
