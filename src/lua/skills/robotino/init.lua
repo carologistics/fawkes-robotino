@@ -24,7 +24,7 @@ module(..., fawkes.modinit.register_all);
 print("Initializing Lua skill space for Robotino")
 
 -- Robotino specific skills
-skillenv.use_skill("skills.generic.ppgoto")
+skillenv.use_skill("skills.robotino.ppgoto")
 skillenv.use_skill("skills.robotino.ppgoto_waypoints")
 skillenv.use_skill("skills.robotino.relgoto")
 skillenv.use_skill("skills.robotino.goto")
