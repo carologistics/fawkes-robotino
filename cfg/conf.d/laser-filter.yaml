@@ -26,8 +26,8 @@ plugins/laser-filter:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
         type: circle_sector
 
-        from: 305
-        to: 55
+        from: 235
+        to: 125
 
   colli:
 
