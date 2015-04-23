@@ -82,7 +82,7 @@ fsm:define_states{
    export_to=_M,
    closure={ppnavi=ppnavi},
 
-   {"PPGOTO", JumpState}
+   {"PPGOTO", JumpState},
    {"SKILL_GOTO", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="FAILED"},
 }
 
