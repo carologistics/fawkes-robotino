@@ -235,7 +235,7 @@ fsm:add_transitions{
   {"INIT",                "DRIVE_TO_ZONE",                cond=true},
   {"DECIDE_CLUSTER",      "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil"},
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
-  {"TIMEOUT_CLUSTER",     "DECIDE_NEXT_POINT",            cond=cluster_visible,                                 desc="cluster in zone, start checking"},
+  {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
   {"TIMEOUT_CLUSTER",     "FINAL",                        timeout=TIMEOUT,                                      desc="saw no cluster so stop checking zone"},
   {"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond="table.getn(self.fsm.vars.poses_to_check) ~= 0"},
   {"DECIDE_NEXT_POINT",   "FINAL",                        cond=true},
