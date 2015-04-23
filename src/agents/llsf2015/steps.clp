@@ -98,7 +98,8 @@
   (retract ?state)
   (modify ?step (state running))
   (assert (state WAIT-FOR-LOCK)
-    (skill-to-execute (skill gripper) (args open true) (target NONE))
+    (skill-to-execute (skill ax12gripper) (args open true) (target NONE))
+    (wait-for-lock (priority ?p) (res NONE))
   )
 )
 
@@ -106,9 +107,9 @@
   "Unknown base discarded, release locks."
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  (step (name discard) (state running))
+  ?step <- (step (name discard) (state running))
   ?state <- (state SKILL-FINAL)
-  ?ste <- (skill-to-execute (skill gripper)
+  ?ste <- (skill-to-execute (skill ax12gripper)
 			    (args $?args) (state ?skill-finish-state&final))
   ?h <- (holding ?product-id)
   =>
@@ -118,6 +119,7 @@
     (state STEP-FINISHED)
     (holding NONE)
   )
+  (modify ?step (state finished))
 )
 
 (defrule step-find-tag-start
@@ -371,7 +373,7 @@
   (phase PRODUCTION)
   ?step <- (step (name get-from-shelf|insert|get-output|get-base) (state running))
   ?state <- (state SKILL-FINAL)
-  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|gripper)
+  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
 			    (args $?args) (state final))
   ; TODO add new skills with |skill
   =>
@@ -388,7 +390,7 @@
   (phase PRODUCTION)
   ?step <- (step (name get-from-shelf|insert|get-output|discard) (state running))
   ?state <- (state SKILL-FAILED)
-  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|gripper)
+  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
 			    (args $?args) (state failed))
   ; TODO add new skills with |skill
   =>

@@ -132,8 +132,8 @@
   (state IDLE)
   (team-color ?team-color&~nil)
   (holding ?product-id&~NONE)
+  (product (id ?product-id) (base UNKNOWN))
   (not (ring-station (bases-needed ?bases&:(> ?bases 0))))
-  (task (name fill-cap) (state finished))
   =>
   (printout t "PROD: Discard unneeded unknown base " ?product-id crlf)
   (bind ?task-id (random-id))
