@@ -296,8 +296,8 @@
 (defrule exp-explore-light-signal-finished
   "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "explore_signal") (status ?skill-status&FINAL|FAILED)) 
-  (last-lights (red ?red) (yellow ?yellow) (green ?green))
+  ?final <- (skill-done (name "explore_signal") (status FINAL)) 
+  ?l-signal <- (last-lights (red ?red) (yellow ?yellow) (green ?green))
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
@@ -306,16 +306,47 @@
   (printout t "Explored light done." crlf)
   (printout warn "TODO: ensure that tag is in the explored zone" crlf)
   (printout warn "TODO: if failed, check again later" crlf)
+  (retract ?s ?final ?l-signal)
+  (assert (state EXP_IDLE)
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone))
+  )
+  (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
+  (assert (exploration-result (machine ?machine) (mtype ?mtype) (zone ?zone)))
+)
+
+(defrule exp-explore-light-signal-failed
+  "RobotinoLightInterface has *not* recognized the light-signals."
+  (phase EXPLORATION)
+  ?final <- (skill-done (name "explore_signal") (status FAILED)) 
+  ?s <- (state EXP_DETECT_LIGHT)
+  ?g <- (goalmachine ?zone)
+  (zone-exploration (name ?zone) (machine ?machine))
+  =>
+  (printout t "Explored light done." crlf)
   (retract ?s ?final)
   (assert (state EXP_IDLE)
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone))
   )
-  (if (eq ?skill-status FINAL) then
-    (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
-    (assert (exploration-result (machine ?machine) (mtype ?mtype) (zone ?zone)))
-   else
-    (printout warn "Couldn't read light. TODO" crlf)
+  (printout warn "Couldn't read light." crlf)
+)
+
+(defrule exp-explore-light-signal-wrong-signal
+  "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
+  (phase EXPLORATION)
+  ?final <- (skill-done (name "explore_signal") (status FINAL)) 
+  ?l-signal <- (last-lights (red ?red) (yellow ?yellow) (green ?green))
+  ?s <- (state EXP_DETECT_LIGHT)
+  ?g <- (goalmachine ?zone)
+  (zone-exploration (name ?zone) (machine ?machine))
+  (not (exp-matching (red ?red) (yellow ?yellow) (green ?green) (mtype ?mtype)))
+  =>
+  (printout t "Explored light done." crlf)
+  (retract ?s ?final ?l-signal)
+  (assert (state EXP_IDLE)
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone))
   )
+  (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
+  (printout err "Light signal combination unknown: machine: " ?machine " red: " ?red " yellow: " ?yellow " green: " ?green crlf)
 )
 
 (defrule exp-find-next-machine-line
