@@ -47,4 +47,8 @@
   ; priorities for skill execution
   ?*PRIORITY-SKILL-DEFAULT* = 0
   ?*PRIORITY-SKILL-SPECIAL-CASE* = 5
+
+  ; exploration
+  ?*PRIORITY-EXP-PARTLY-EXPLORED* = 5
+  ?*PRIORITY-EXP-NEAREST* = 0
 )

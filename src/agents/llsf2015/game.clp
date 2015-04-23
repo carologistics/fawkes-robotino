@@ -75,7 +75,7 @@
 (defrule move-into-field-done
   "If the bot finished to move into the field, start the game."
   ?sf     <- (state MOVE_INTO_FIELD)
-  ?final  <- (skill (name "drive_into_field") (status FINAL|FAILED))
+  ?final  <- (skill-done (name "drive_into_field") (status FINAL|FAILED))
   =>
   (retract ?sf ?final)
   (assert (state RESTART))

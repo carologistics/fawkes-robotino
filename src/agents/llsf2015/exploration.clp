@@ -127,7 +127,7 @@
   (not (driven-to-waiting-point))
   =>
   (printout t "First machine: " ?v crlf)
-  (retract ?s)
+  (retract ?s ?df)
   (assert (state EXP_LOCK_REQUIRED)
     (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?v))
     (exp-next-machine ?v)
@@ -137,7 +137,7 @@
 (defrule exp-explore-zone-skill-finished
   "Arriving at a machine in first or second round. Wait for tag vision."
   (phase EXPLORATION)
-  ?final <- (skill (name "explore_zone") (status ?explore-zone-state&FINAL|FAILED))
+  ?final <- (skill-done (name "explore_zone") (status ?explore-zone-state&FINAL|FAILED))
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
@@ -266,17 +266,19 @@
 )
 
 (defrule exp-drive-to-output-tag-zone-different
-  "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards. Case if the detected tag is in a different zone than we are currently exploring."
+  "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards. Case if the detected tag is in a different zone than we are currently exploring. We switch to the nearest tactic so the find-nearest rule can select this mps or another mps with found tag."
   (phase EXPLORATION)
   ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
   ?mtfz <- (machine-to-find-zone-of ?machine)
   (goalmachine ?zone)
   (zone-exploration (name ~?zone) (machine ?machine))
+  ?tactic <- (exp-tactic ?)
   =>
   (printout error "Detected MPS is in a different zone than we are currently exploring. Skipping exploring the light now." crlf)
-  (retract ?s ?mtfz)
+  (retract ?s ?mtfz ?tactic)
   (assert (state EXP_IDLE)
-	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone)))
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone))
+          (exp-tactic NEAREST))
 )
 
 (defrule exp-explore-light-signal
@@ -390,8 +392,33 @@
   )
 )
 
+(defrule exp-find-next-machine-with-already-found-tag
+  "When there is a mps with found tag that is not recognized, explore it first."
+  (declare (salience ?*PRIORITY-EXP-PARTLY-EXPLORED*)) 
+  (phase EXPLORATION)
+  (exp-tactic NEAREST)
+  ?s <- (state EXP_IDLE)
+  ?g <- (goalmachine ?old)
+  (team-color ?team-color)
+  (zone-exploration (name ?zone) (team ?team) (still-to-explore FALSE)
+                    (recognized FALSE) (machine ?mps&~UNKNOWN)
+                    ; dont keep searching this machine forever
+                    (times-searched ?times-searched&:(< ?times-searched 3)))
+  (found-tag (name ?mps))
+  (not (exploration-result (machine ?mps)))
+  (not (locked-resource (resource ?zone)))
+  =>
+  ;we found the next machine
+  (printout warn "Found next (Tag already found): " ?zone crlf)
+  (retract ?s ?g)
+  (assert (state EXP_FOUND_NEXT_MACHINE)
+          (exp-next-machine ?zone)
+  )
+)
+
 (defrule exp-find-next-machine-nearest
-  "Find nearest machine close to last machine."
+  "Find nearest machine close to last machine. When there is a mps with found tag that is not recognized, explore it first."
+  (declare (salience ?*PRIORITY-EXP-NEAREST*)) 
   (phase EXPLORATION)
   (exp-tactic NEAREST)
   ?s <- (state EXP_IDLE)
@@ -688,7 +715,7 @@
   (phase EXPLORATION)
   ?s <- (state EXP_PREPARE_FOR_PRODUCTION)
   (exp-tactic GOTO-INS)
-  ?skill-f <- (skill (name "ppgoto") (status FINAL))
+  ?skill-f <- (skill-done (name "ppgoto") (status FINAL))
   =>
   (retract ?skill-f ?s)
   (assert (timer (name annound-prepare-for-production-finished))

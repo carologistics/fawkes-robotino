@@ -19,8 +19,9 @@
 )
 
 (defrule skill-done
-  (skill (name ?name) (status ?s&FINAL|FAILED))
+  ?skill <- (skill (name ?name) (status ?s&FINAL|FAILED))
   =>
+  (retract ?skill)
   (assert (skill-done (name ?name) (status ?s)))
 )
 
