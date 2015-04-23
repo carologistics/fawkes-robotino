@@ -121,12 +121,13 @@ function tag_searched(self, if_ID)
   return false
 end
 
-function mps_visible_tag(self)
+function mps_visible_tag(self, hist_min)
+  hist_min = hist_min or HIST_MIN_TAG
   self.fsm.vars.tag_chosen = nil
   local tags_vis = {}
   for k,v in pairs( self.fsm.vars.tags ) do
 
-    if v:visibility_history() >= HIST_MIN_LINE then
+    if v:visibility_history() >= hist_min then
       if tag_searched(self, v:id()) then
         local point_on_obj = {}
 
@@ -233,6 +234,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
   {"INIT",                "FAILED",                       cond="vars.parameter_nil",                            desc="one ore more parameter are nil"},
   {"INIT",                "DRIVE_TO_ZONE",                cond=true},
+  {"DRIVE_TO_ZONE",       "DRIVE_TO_POSSIBLE_MPS",        cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
   {"DECIDE_CLUSTER",      "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil"},
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
   {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
