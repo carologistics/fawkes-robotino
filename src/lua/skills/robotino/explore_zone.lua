@@ -69,7 +69,7 @@ local TIMEOUT = 1
 local HIST_MIN_LINE = 5
 local HIST_MIN_TAG  = 5
 local ROBOT_WALL_DIST = 0.3
-local TAG_DIST = 0.8
+local TAG_DIST = 0.5
 local MPS_OFFSET_TO_ZONE = 0.2
 
 documentation      = [==[
@@ -228,13 +228,14 @@ fsm:define_states{ export_to=_M,
   {"DECIDE_NEXT_POINT",           JumpState},
   {"DRIVE_TO_NEXT_EXPLORE_POINT", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
   {"WAIT_FOR_SENSORS",            JumpState},
+  {"DRIVE_TO_POSSIBLE_MPS_PRE",   SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
   {"DRIVE_TO_POSSIBLE_MPS",       SkillJumpState, skills={{drive_to_local}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
   {"INIT",                "FAILED",                       cond="vars.parameter_nil",                            desc="one ore more parameter are nil"},
   {"INIT",                "DRIVE_TO_ZONE",                cond=true},
-  {"DRIVE_TO_ZONE",       "DRIVE_TO_POSSIBLE_MPS",        cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
+  {"DRIVE_TO_ZONE",       "DRIVE_TO_POSSIBLE_MPS_PRE",    cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
   {"DECIDE_CLUSTER",      "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil"},
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
   {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
@@ -427,6 +428,32 @@ function DRIVE_TO_NEXT_EXPLORE_POINT:init()
   self.skills[1].just_ori = true
 end
 
+function pose_in_front_of_mps_calculator(self, chosen, factor)
+  factor = factor or 1
+
+  x   = chosen["x_map"] + math.cos( chosen["ori_map"] ) * ( factor * TAG_DIST + ROBOT_WALL_DIST )
+  y   = chosen["y_map"] + math.sin( chosen["ori_map"] ) * ( factor * TAG_DIST + ROBOT_WALL_DIST )
+  ori = math.normalize_mirror_rad( chosen["ori_map"] + math.pi )
+  return x, y, ori
+end
+
+function DRIVE_TO_POSSIBLE_MPS_PRE:init()
+  local x   = nil
+  local y   = nil
+  local ori = nil
+  local point_on_obj = {}
+ 
+  local chosen = self.fsm.vars.tag_chosen
+
+  x, y, ori = pose_in_front_of_mps_calculator(self, chosen, 2)
+  printf("PrePoint drive: ( " .. x .. " , " .. y .. " , " .. ori .. " )")
+  
+  self.skills[1].x        = x
+  self.skills[1].y        = y
+  self.skills[1].ori      = ori
+  self.skills[1].just_ori = true
+end
+
 function DRIVE_TO_POSSIBLE_MPS:init()
   local x   = nil
   local y   = nil
@@ -449,11 +476,8 @@ function DRIVE_TO_POSSIBLE_MPS:init()
   else
     printf("Error, I have no tag and no line to drive to")
   end
- 
-  x   = chosen["x_map"] + math.cos( chosen["ori_map"] ) * ( TAG_DIST + ROBOT_WALL_DIST )
-  y   = chosen["y_map"] + math.sin( chosen["ori_map"] ) * ( TAG_DIST + ROBOT_WALL_DIST )
-  ori = math.normalize_mirror_rad( chosen["ori_map"] + math.pi )
 
+  x, y, ori = pose_in_front_of_mps_calculator(self, chosen)
   printf("Point drive:  ( " .. x .. " , " .. y .. " , " .. ori .. " )")
   
   self.skills[1].x        = x
