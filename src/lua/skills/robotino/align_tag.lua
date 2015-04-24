@@ -21,7 +21,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "align_tag"
-fsm                = SkillHSM:new{name=name, start="INIT"}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
