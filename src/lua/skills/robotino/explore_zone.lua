@@ -181,7 +181,7 @@ function mps_visible_laser(self, hist_min)
 
     if v:visibility_history() >= hist_min then
       local point_on_obj = {}
-      local center = line_utils.laser_lines_center({x=v:end_point_1(0), y=v:end_point_1(1)},{x=v:end_point_2(0), y=v:end_point_2(1)} v:bearing())
+      local center = line_utils.laser_lines_center({x=v:end_point_1(0), y=v:end_point_1(1)},{x=v:end_point_2(0), y=v:end_point_2(1)}, v:bearing())
       point_on_obj["frame_id"] = v:frame_id()
       point_on_obj["x"]   = center.x
       point_on_obj["y"]   = center.y
