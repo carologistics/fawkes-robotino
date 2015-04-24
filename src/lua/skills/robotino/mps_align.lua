@@ -76,6 +76,7 @@ local TIMEOUT=4
 local AREA_LINE_ERR_X=0.05
 local AREA_LINE_ERR_Y=0.1
 local AREA_LINE_ERR_ORI=0.17
+local LINE_TRYS=3
 
 function see_line(self)
   self.fsm.vars.line_chosen = nil
@@ -116,8 +117,9 @@ function see_line(self)
   end
 end
 
-fsm:define_states{ export_to=_M, closure={see_line = see_line},
+fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRYS=LINE_TRYS},
    {"INIT",                   JumpState},
+   {"DECIDE_RETRY",           JumpState},
    {"SKILL_ALIGN_TAG",        SkillJumpState, skills={{align_tag}},  final_to="SEARCH_LINE", fail_to="FAILED"},
    {"SEARCH_LINE",            JumpState},
    {"LINE_SETTLE",            JumpState},
@@ -126,9 +128,11 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line},
 
 fsm:add_transitions{
    {"INIT",             "SKILL_ALIGN_TAG",        cond=true },
+   {"DECIDE_RETRY",     "SKILL_ALIGN_TAG",        cond="vars.try <= LINE_TRYS", desc="try again to find a line" },
+   {"DECIDE_RETRY",     "FINAL",                  cond=true,                    desc="tryed often enough, going final now :(" },
    {"SKILL_ALIGN_TAG",  "FAILED",                 precond="not vars.x", desc="x argument missing"},
    {"SEARCH_LINE",      "LINE_SETTLE",            cond=see_line,        desc="see line"},
-   {"SEARCH_LINE",      "FAILED",                 timeout=TIMEOUT,      desc="timeout"},
+   {"SEARCH_LINE",      "DECIDE_RETRY",           timeout=TIMEOUT,      desc="timeout"},
    {"LINE_SETTLE",      "ALIGN_WITH_LASERLINES",  timeout=0.5,          desc="wait 0.5s"}
 }
 
@@ -156,6 +160,12 @@ function INIT:init()
   self.fsm.vars.lines[7]  = line7avg
   self.fsm.vars.lines[8]  = line8avg
   --]]
+  
+  self.fsm.vars.try = 0
+end
+
+function DECIDE_RETRY:init()
+  self.fsm.vars.try = self.fsm.vars.try + 1
 end
 
 function SKILL_ALIGN_TAG:init()
