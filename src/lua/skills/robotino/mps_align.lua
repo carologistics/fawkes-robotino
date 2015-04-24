@@ -118,8 +118,8 @@ end
 
 fsm:define_states{ export_to=_M, closure={see_line = see_line},
    {"INIT",                   JumpState},
-   {"SKILL_ALIGN_TAG",        SkillJumpState, skills={{align_tag}},  final_to="SEE_LINE", fail_to="FAILED"},
-   {"SEE_LINE",               JumpState},
+   {"SKILL_ALIGN_TAG",        SkillJumpState, skills={{align_tag}},  final_to="SEARCH_LINE", fail_to="FAILED"},
+   {"SEARCH_LINE",            JumpState},
    {"LINE_SETTLE",            JumpState},
    {"ALIGN_WITH_LASERLINES",  SkillJumpState, skills={{motor_move}}, final_to="FINAL",    fail_to="FAILED"}
 }
@@ -127,8 +127,8 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line},
 fsm:add_transitions{
    {"INIT",             "SKILL_ALIGN_TAG",        cond=true },
    {"SKILL_ALIGN_TAG",  "FAILED",                 precond="not vars.x", desc="x argument missing"},
-   {"SEE_LINE",         "LINE_SETTLE",            cond=see_line,        desc="see line"},
-   {"SEE_LINE",         "FAILED",                 timeout=TIMEOUT,      desc="timeout"},
+   {"SEARCH_LINE",      "LINE_SETTLE",            cond=see_line,        desc="see line"},
+   {"SEARCH_LINE",      "FAILED",                 timeout=TIMEOUT,      desc="timeout"},
    {"LINE_SETTLE",      "ALIGN_WITH_LASERLINES",  timeout=0.5,          desc="wait 0.5s"}
 }
 
