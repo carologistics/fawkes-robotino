@@ -72,6 +72,7 @@
             (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?machine))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PREFILL-CS*))))
   ?c3 <- (confval (path "/clips-agent/llsf2015/cap-station/shelf-slot-new-caps") (value ?shelf-slot))
+  (found-tag (name ?machine))
   =>
   (printout t "PROD: FILL " ?machine " with " ?cap-color " cap from shelf" crlf)
   (bind ?task-id (random-id))
@@ -110,6 +111,7 @@
     (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
   ))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PREFILL-RS*))))
+  (found-tag (name ?rs))
   =>
   (printout t "PROD: INSERT unknown base " ?product-id " into " ?rs crlf)
   (bind ?task-id (random-id))
@@ -158,9 +160,11 @@
     (name ?cs) (team ?team-color)
     (out-of-order-until $?ooo&:(is-working ?ooo)))
   (cap-station (name ?cs) (cap-loaded ?cap-color) (assigned-cap-color ?cap-color))
+  (found-tag (name ?cs))
   (machine (mtype BS) 
     (name ?bs) (team ?team-color)
     (out-of-order-until $?ooo&:(is-working ?ooo)))
+  (found-tag (name ?bs))
   ;check that the task was not rejected before
   (not (and (task (name produce-c0) (state rejected) (id ?rej-id))
             (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cap-station))))

@@ -198,7 +198,7 @@
               (cap ?cap)
             )
           )
-          (printout t "Added order " ?id " with " (pb-field-value ?o "cap") crlf)
+          (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
       (do-for-fact ((?order order)) (eq ?order:id (pb-field-value ?o "id"))
           (if (eq ?team CYAN) then
