@@ -665,8 +665,9 @@
 
 (defrule wm-set-bs-output-color
   "Set the correct loaded-id after color is ordered at BS"
-  ?bs <- (machine (mtype BS) (loaded-id 0) (prepared TRUE))
-  (step (name get-base) (base ?base-color))
+  (declare (salience ?*PRIORITY-WM*))
+  ?bs <- (machine (mtype BS) (produced-id 0) (prepared TRUE))
+  (step (name get-base) (state running) (base ?base-color))
   =>
   (bind ?product-id (random-id))
   (assert 
@@ -676,7 +677,7 @@
       (cap NONE)
     )
   )
-  (modify ?bs (loaded-id ?product-id))
+  (modify ?bs (produced-id ?product-id))
 )
 
 (deffunction wm-remove-incoming-by-agent (?agent)

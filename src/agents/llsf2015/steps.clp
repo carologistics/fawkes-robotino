@@ -83,7 +83,7 @@
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
-          (mps-instruction (machine ?mps) (base-color ?color) (lock ?mps))
+    (mps-instruction (machine ?mps) (base-color ?color) (lock ?mps))
   )
 )
 
@@ -95,7 +95,7 @@
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill get_product_from)
 			    (args place ?bs) (state ?skill-finish-state&final))
-  (machine (name ?bs) (loaded-id ?product-id))
+  (machine (name ?bs) (produced-id ?product-id))
   ?h <- (holding NONE)
   =>
   (printout t ?base-color " base retrieved"  crlf)
