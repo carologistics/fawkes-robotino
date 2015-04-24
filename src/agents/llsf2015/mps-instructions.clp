@@ -19,6 +19,7 @@
   (pb-set-field ?bs-inst "side" OUTPUT)
   (pb-set-field ?bs-inst "color" (sym-cat BASE_ ?base-color))
   (pb-set-field ?instruction "instruction_bs" ?bs-inst)
+  (printout t ?base-color crlf)
   (return ?instruction)
 )
 
