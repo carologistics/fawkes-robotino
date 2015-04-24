@@ -131,11 +131,12 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"DRIVE", "FAILED", cond=invalid_params, desc="|ori| >= 2*PI"},
-   {"DRIVE", "FAILED", precond="not motor:has_writer()"},
+   {"DRIVE", "FAILED", cond=invalid_params, desc="|ori| >= 2*PI", desc="invalid params"},
+   {"DRIVE", "FAILED", precond="not motor:has_writer()", desc="No writer for motor"},
+   {"DRIVE", "FAILED", cond="not vars.target", desc="TF failed"},
+   {"DRIVE", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
    {"DRIVE", "STOP_NAVIGATOR", cond="navigator:has_writer() and not navigator:is_final()"},
    {"STOP_NAVIGATOR", "DRIVE", timeout=1},
-   {"DRIVE", "FINAL", cond=drive_done},
    {"DRIVE", "FINAL", cond=drive_done},
 }
 
