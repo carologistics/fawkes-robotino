@@ -95,7 +95,7 @@ fsm:add_transitions{
    {"INIT", "SKILL_ALIGN", cond=true},
 
    {"LOOK", "FINAL", cond="(not vars.wait_for) and done()"},
-   {"LOOK", "FINAL", cond="wait_for and desired_signal()"},
+   {"LOOK", "FINAL", cond="vars.wait_for and desired_signal()"},
    {"LOOK", "FAILED", cond="os.time() > vars.giveup_time"},
    {"LOOK", "SKILL_ALIGN", cond="(os.time() > vars.look_until) and (vars.best_vis_hist < MIN_VIS_HIST)", desc="move"}
 }
