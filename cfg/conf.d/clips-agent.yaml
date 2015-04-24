@@ -123,7 +123,7 @@ clips-agent:
       #row defined in host.yaml (this is only the default!)
       row: MID
       
-      row-high: ["Z11", "Z12", "Z8", "Z4", "Z16", "Z20", "Z24", "Z23"]
+      row-high: ["Z4", "Z11", "Z12", "Z8", "Z20", "Z24", "Z23", "Z16"]
       row-mid: ["Z9", "Z10", "Z6", "Z2", "Z14", "Z18", "Z22", "Z21"]
       row-low: ["Z5", "Z6", "Z2", "Z1", "Z13", "Z14", "Z18", "Z17"]
 
