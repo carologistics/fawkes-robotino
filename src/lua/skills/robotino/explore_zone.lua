@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "explore_zone"
 fsm                = SkillHSM:new{name=name, start="INIT"}
-depends_skills     = { "drive_to_global", "drive_to_local" }
+depends_skills     = { "drive_to_global", "drive_to_local", "motor_move" }
 depends_interfaces = {
   {v = "pose",      type="Position3DInterface", id="Pose"},
   {v = "tag_0",     type = "Position3DInterface"},
@@ -145,8 +145,10 @@ function mps_visible_tag(self, hist_min)
         point_on_obj["x_map"]   = obj_map.x
         point_on_obj["y_map"]   = obj_map.y
         point_on_obj["ori_map"] = obj_map.ori
-      
-        table.insert( tags_vis, point_on_obj )
+
+        if mps_in_zone(self, obj_map.x, obj_map.y) then
+          table.insert( tags_vis, point_on_obj )
+        end
       end
     end
   end
@@ -169,13 +171,14 @@ function mps_visible_tag(self, hist_min)
   return true
 end
 
-function mps_visible_laser(self)
+function mps_visible_laser(self, hist_min)
+  hist_min = hist_min or HIST_MIN_LINE
   self.fsm.vars.line_chosen = nil
   -- visible
   local lines_vis = {}
   for k,v in pairs( self.fsm.vars.lines ) do
 
-    if v:visibility_history() >= HIST_MIN_LINE then
+    if v:visibility_history() >= hist_min then
       local point_on_obj = {}
       point_on_obj["frame_id"] = v:frame_id()
       point_on_obj["x"]   = v:end_point_1(0) + ( v:end_point_2(0) - v:end_point_1(0) ) / 2
@@ -219,14 +222,23 @@ function cluster_visible(self)
   return false
 end
 
+function poses_to_check(self)
+  if table.getn(self.fsm.vars.poses_to_check) > self.fsm.vars.poses_to_check_iterator then
+    return true
+  else
+    return false
+  end
+end
+
 fsm:define_states{ export_to=_M,
-  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,},
+  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,poses_to_check=poses_to_check},
   {"INIT",                        JumpState},
   {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_global}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
   {"DECIDE_CLUSTER",              JumpState},
   {"TIMEOUT_CLUSTER",             JumpState},
   {"DECIDE_NEXT_POINT",           JumpState},
   {"DRIVE_TO_NEXT_EXPLORE_POINT", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
+  {"TURN_TO_POSSIBLE_MPS",        SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
   {"WAIT_FOR_SENSORS",            JumpState},
   {"DRIVE_TO_POSSIBLE_MPS_PRE",   SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
   {"DRIVE_TO_POSSIBLE_MPS",       SkillJumpState, skills={{drive_to_local}}, final_to="FINAL", fail_to="FAILED"},
@@ -240,8 +252,11 @@ fsm:add_transitions{
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
   {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
   {"TIMEOUT_CLUSTER",     "FINAL",                        timeout=TIMEOUT,                                      desc="saw no cluster so stop checking zone"},
-  {"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond="table.getn(self.fsm.vars.poses_to_check) ~= 0"},
+  --{"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond="table.getn(self.fsm.vars.poses_to_check) ~= 0"},
+  {"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond=poses_to_check},
   {"DECIDE_NEXT_POINT",   "FINAL",                        cond=true},
+  --{"DRIVE_TO_NEXT_EXPLORE_POINT", "TURN_TO_POSSIBLE_MPS", cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
+  {"DRIVE_TO_NEXT_EXPLORE_POINT", "TURN_TO_POSSIBLE_MPS", cond="mps_visible_laser(self, 1)",                    desc="saw line on route, drive to there"},
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_tag,                                 desc="saw tag, drive to"},
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_laser,                               desc="saw laser, drive to"},
   {"WAIT_FOR_SENSORS",    "DECIDE_NEXT_POINT",            timeout=TIMEOUT,                                      desc="saw nothing, trying next point"},
@@ -334,6 +349,7 @@ function INIT:init()
       output = output .. value.name .. ": (" .. value.x .. ", " ..value.y .. ", " .. value.ori .. ")\n"
     end
     printf(output)
+    self.fsm.vars.poses_to_check_iterator = 1
   end
 
   -- point to check for clusters and to drive to with drive_to_global
@@ -420,7 +436,9 @@ function DRIVE_TO_ZONE:init()
 end
 
 function DRIVE_TO_NEXT_EXPLORE_POINT:init()
-  local point = table.remove(self.fsm.vars.poses_to_check, 1)
+  --local point = table.remove(self.fsm.vars.poses_to_check, 1)
+  local point = self.fsm.vars.poses_to_check[self.fsm.vars.poses_to_check_iterator]
+  self.fsm.vars.poses_to_check_iterator = self.fsm.vars.poses_to_check_iterator + 1
   printf("Explore from " .. point.name .. " (" .. point.x .. ", " .. point.y .. ", " .. point.ori .. ")")
   self.skills[1].x        = point.x
   self.skills[1].y        = point.y
@@ -435,6 +453,24 @@ function pose_in_front_of_mps_calculator(self, chosen, factor)
   y   = chosen["y_map"] + math.sin( chosen["ori_map"] ) * ( factor * TAG_DIST + ROBOT_WALL_DIST )
   ori = math.normalize_mirror_rad( chosen["ori_map"] + math.pi )
   return x, y, ori
+end
+
+function TURN_TO_POSSIBLE_MPS:init()
+  self.fsm.vars.poses_to_check_iterator = self.fsm.vars.poses_to_check_iterator - 1
+  local ori = nil
+  if self.fsm.vars.line_chosen ~=nil then
+    printf("Turn to possible line")
+    ori = math.normalize_mirror_rad( math.pi + self.fsm.vars.line_chosen["ori"] )
+  elseif self.fsm.vars.tag_chosen ~= nil then
+    printf("Turn to possible to tag")
+    ori = self.fsm.vars.tag_chosen["ori"]
+  else
+    printf("Error, I have no tag and no line to turn to, continue as normal")
+    ori = 0
+  end
+  self.skills[1].ori      = ori
+  self.skills[1].ori      = nil
+  self.skills[1].just_ori = true
 end
 
 function DRIVE_TO_POSSIBLE_MPS_PRE:init()
