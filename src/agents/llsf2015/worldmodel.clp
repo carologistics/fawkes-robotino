@@ -140,9 +140,8 @@
   (state SKILL-FAILED)
   (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
   (step (name get-output) (state running))
-  ?mf <- (machine (name ?mps) (produced-id ?puck-id))
+  ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0))
   =>
-  (printout warn "TODO: use right skill in worldmodel for get-output" crlf)
   (printout t "Failed to fetch a Puck from the output of " ?mps crlf)
   (printout t "I assume there is no more output puck at " ?mps crlf)
   (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
