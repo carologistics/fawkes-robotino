@@ -13,7 +13,7 @@ default-properties:
     # Max. distance between actual and target positions to deem the target
     # reached. This value is for the last node on a path; m
     # The value can be overwritten per node in the graph file.
-    - target_tolerance: 0.3
+    - target_tolerance: 0.7
 
     # Max. distance between actual and target orientation to deem the target
     # reached. This value is for the last node on a path; rad
@@ -25,7 +25,7 @@ default-properties:
     # This is potentially dangerous depending on the graph and navigator as it
     # might violate the typical graph constraint of only having direct-line-of-tavel
     # connections. The value can be overidden with a node property of the same name; m
-    - shortcut_tolerance: 0.7
+    - shortcut_tolerance: 1.2
 
     # Distance from base_link to the MPS to align
     - align_distance: 0.5
