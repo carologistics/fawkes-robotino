@@ -44,6 +44,8 @@ fsm:define_states{
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"CLOSE_GRIPPER_WAIT", JumpState},
+   {"WAIT_FOR_GRAB", JumpState},
+   {"CHECK_GRAB_SUCCESS", JumpState},
    {"FINAL_AFTER_IF_FINAL", JumpState},
 }
 
@@ -66,6 +68,11 @@ fsm:add_transitions{
 --   {"COMMAND", "FINAL", cond="not vars.error and gripper_if:is_final()"},
    {"COMMAND", "FINAL", cond="vars.open or vars.center"},
    {"COMMAND", "FAILED", cond="vars.error"},
+   {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
+   {"WAIT_FOR_GRAB", "CHECK_GRAB_SUCCESS", timeout=1.5},
+   {"CHECK_GRAB_SUCCESS", "FINAL", cond="gripper_if:is_holds_puck()"},
+   {"CHECK_GRAB_SUCCESS", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Gripper doesn't hold a puck"},
+   {"CHECK_GRAB_SUCCESS", "FAILED", timeout=5, desc="Gripper timeout"},
    {"COMMAND", "CLOSE_GRIPPER_WAIT", cond="vars.close"},
    {"CLOSE_GRIPPER_WAIT", "FINAL_AFTER_IF_FINAL", timeout=0.5},
    {"FINAL_AFTER_IF_FINAL", "FINAL", cond="gripper_if:is_final()"},
@@ -95,6 +102,11 @@ function COMMAND:init()
       gripper_if:msgq_enqueue_copy(theCenterMessage)
    elseif self.fsm.vars.close then
       print("close")
+      theCloseMessage = gripper_if.CloseMessage:new()
+      theCloseMessage:set_offset(self.fsm.vars.offset or 0)
+      gripper_if:msgq_enqueue_copy(theCloseMessage)
+   elseif self.fsm.vars.grab then
+      print("grab")
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)
