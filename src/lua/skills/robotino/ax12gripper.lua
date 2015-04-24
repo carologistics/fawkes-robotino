@@ -47,18 +47,6 @@ fsm:define_states{
    {"FINAL_AFTER_IF_FINAL", JumpState},
 }
 
-function is_right_full_loaded()
-   fsm.vars.right_fully_loaded = gripper_if:right_load() > 150
-   print("load_right: " .. gripper_if:right_load())
-   return fsm.vars.right_fully_loaded
-end
-
-function is_left_full_loaded()
-   fsm.vars.left_fully_loaded = gripper_if:left_load() > 150
-   print("load_left: " .. gripper_if:left_load())
-   return fsm.vars.left_fully_loaded
-end
-
 -- Transitions
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
@@ -70,13 +58,6 @@ fsm:add_transitions{
    {"CLOSE_GRIPPER_WAIT", "FINAL_AFTER_IF_FINAL", timeout=0.5},
    {"FINAL_AFTER_IF_FINAL", "FINAL", cond="gripper_if:is_final()"},
 }
-
---function CLOSE_GRIPPER_WAIT:init()
---   self.fsm.vars.right_fully_loaded = false
---   self.fsm.vars.left_fully_loaded = false
---   gripper_if:msgq_enqueue_copy(gripper_if.CloseLoadMessage:new())
---   -- print("right: " .. self.fsm.vars.right_fully_loaded .. " left: " .. self.fsm.vars.left_fully_loaded)
---end
 
 function COMMAND:init()
    -- if self.fsm.vars.close then
@@ -107,26 +88,6 @@ function COMMAND:init()
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)
-   elseif self.fsm.vars.close_load then
-      print("close load")
-      theCloseLoadMessage = gripper_if.CloseLoadMessage:new()
-      gripper_if:msgq_enqueue_copy(theCloseLoadMessage)
--- Set servo position by ID and desired angle
-   elseif self.fsm.vars.id and self.fsm.vars.angle then
-      local id = self.fsm.vars.id
-      local angle = self.fsm.vars.angle
-      print("Set servo " .. id .. " to " .. angle)
-      theSetServoMessage = gripper_if.SetServoMessage:new()
-      theSetServoMessage:set_servoID(id)
-      theSetServoMessage:set_angle(angle)
-      gripper_if:msgq_enqueue_copy(theSetServoMessage)
-   elseif self.fsm.vars.enable then
-      local enable = self.fsm.vars.enable
-      local value = self.fsm.vars.value
-      theSetEnabledMessage = gripper_if.SetEnabledMessage:new()
-      theSetEnabledMessage:set_enabled(value)
-      print("set enabled to " .. tostring(value))
-      gripper_if:msgq_enqueue_copy(theSetEnabledMessage)
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
