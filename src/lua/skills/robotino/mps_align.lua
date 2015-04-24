@@ -65,6 +65,7 @@ documentation      = [==[ align_mps
 skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
+local llutils = require("fawkes.laser-lines_utils")
 
 -- Tunables
 local TAG_X_ERR=0.02
@@ -80,14 +81,15 @@ function see_line(self)
   local lines_vis = {}
   for k,v in pairs( self.fsm.vars.lines ) do
     if v:visibility_history() >= MIN_VIS_HIST then
-      local x   = v:end_point_1(0) + ( v:end_point_2(0) - v:end_point_1(0) ) / 2
-      local y   = v:end_point_1(1) + ( v:end_point_2(1) - v:end_point_1(1) ) / 2
-      local ori = math.normalize_mirror_rad( v:bearing() )
+      local center = llutils.laser_lines_center({ x=v:end_point_1(0),
+                                                  y=v:end_point_1(1)},
+                                                { x=v:end_point_2(0),
+                                                  y=v:end_point_2(1)}, v:bearing())
 
-      local trans = tfm.transform({x=x, y=y, ori=ori}, v:frame_id(), "/base_link")
-      x   = trans.x
-      y   = trans.y
-      ori = trans.ori
+      local trans = tfm.transform({x=center.x, y=center.y, ori=center.ori}, v:frame_id(), "/base_link")
+      local x   = trans.x
+      local y   = trans.y
+      local ori = trans.ori
       printf("Got line: (%f, %f, %f)", x, y, ori)
 
       if math.abs(x - self.fsm.vars.x)                <= AREA_LINE_ERR_X and
