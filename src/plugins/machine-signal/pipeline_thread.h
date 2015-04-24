@@ -61,6 +61,7 @@
 
 #define MAX_SIGNALS 3
 #define TRACKED_SIGNALS MAX_SIGNALS + 2
+#define NUM_LASER_LINES 5
 #define CFG_PREFIX "/plugins/machine_signal"
 
 
@@ -157,9 +158,12 @@ class MachineSignalPipelineThread :
     std::atomic<float> cfg_lasercluster_signal_bottom_;
     std::atomic_bool cfg_lasercluster_enabled_;
 
-    fawkes::LaserLineInterface *bb_laser_lines_[3];
+    fawkes::LaserLineInterface *bb_laser_lines_[5];
     std::atomic<unsigned int> cfg_laser_lines_min_vis_hist_;
     std::atomic_bool cfg_laser_lines_enabled_;
+    std::atomic_bool cfg_laser_lines_moving_avg_;
+    void bb_open_laser_lines();
+    void bb_close_laser_lines();
 
     float cfg_cam_aperture_x_;
     float cfg_cam_aperture_y_;
