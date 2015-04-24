@@ -19,7 +19,7 @@
   (modify ?step (state running))
   (printout warn "TODO: Pick dynamically from different shelf positions." crlf)
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill get_product_from) (args place ?mps shelf LEFT) (target ?mps))
+	  (skill-to-execute (skill get_product_from) (args place ?mps shelf RIGHT) (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
   )
 )
