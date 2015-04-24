@@ -13,7 +13,7 @@ gazsim:
     gps: "~/gazsim/gps/"
     laser: "~/carologistics-robotino-3/sick_laser/link/laser/scan"
     gyro: "~/RobotinoSim/Gyro/"
-    infrared-puck-sensor: "~/RobotinoSim/InfraredPuckSensor/"
+    infrared-puck-sensor: "~/carologistics-robotino-3/infrared_sensor/link/infrared_puck_sensor/scan"
     gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
     gripper-laser-right: "~/RobotinoSim/GripperLaserSensor/Right/"
     motor-move: "~/RobotinoSim/MotorMove/"
@@ -93,6 +93,7 @@ gazsim:
     # buffer for delaying sensor values
     gyro-buffer-size: 500
     gyro-delay: 0.1
+    infrared-sensor-index: 0
 
     motor:    
       # does the odometry change if the robotino drives against an obstacle?
