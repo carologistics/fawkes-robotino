@@ -30,7 +30,7 @@ name               = "mps_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = { "align_tag", "motor_move" }
 depends_interfaces = {
-  --[[
+  ---[[
   {v = "line1avg", type="LaserLineInterface", id="/laser-lines/1/moving_avg"},
   {v = "line2avg", type="LaserLineInterface", id="/laser-lines/2/moving_avg"},
   {v = "line3avg", type="LaserLineInterface", id="/laser-lines/3/moving_avg"},
@@ -40,6 +40,7 @@ depends_interfaces = {
   {v = "line7avg", type="LaserLineInterface", id="/laser-lines/7/moving_avg"},
   {v = "line8avg", type="LaserLineInterface", id="/laser-lines/8/moving_avg"},
   --]]
+  --[[
   {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
   {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
   {v = "line3", type="LaserLineInterface", id="/laser-lines/3"},
@@ -48,6 +49,7 @@ depends_interfaces = {
   {v = "line6", type="LaserLineInterface", id="/laser-lines/6"},
   {v = "line7", type="LaserLineInterface", id="/laser-lines/7"},
   {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
+  --]]
 }
 
 documentation      = [==[ align_mps
@@ -134,7 +136,7 @@ function INIT:init()
   self.fsm.vars.y   = self.fsm.vars.y   or 0
   self.fsm.vars.ori = self.fsm.vars.ori or 0
   self.fsm.vars.lines = {}
-  ---[[
+  --[[
   self.fsm.vars.lines[1]  = line1
   self.fsm.vars.lines[2]  = line2
   self.fsm.vars.lines[3]  = line3
@@ -144,7 +146,7 @@ function INIT:init()
   self.fsm.vars.lines[7]  = line7
   self.fsm.vars.lines[8]  = line8
   --]]
-  --[[
+  ---[[
   self.fsm.vars.lines[1]  = line1avg
   self.fsm.vars.lines[2]  = line2avg
   self.fsm.vars.lines[3]  = line3avg
@@ -172,8 +174,9 @@ end
 function ALIGN_WITH_LASERLINES:init()
    -- align by ALIGN_DISTANCE from tag to base_link with the lase_line
    printf("line choosen: (%f, %f, %f)", self.fsm.vars.line_best.x, self.fsm.vars.line_best.y, self.fsm.vars.line_best.ori)
-   self.skills[1].x         = self.fsm.vars.line_best.x - self.fsm.vars.x
+   local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
+   self.skills[1].x         = pp.x
    self.skills[1].y         = 0 -- can't improve y coordinate with laserlines so leave it
-   self.skills[1].ori       = self.fsm.vars.line_best.ori + self.fsm.vars.ori
+   self.skills[1].ori       = pp.ori --self.fsm.vars.line_best.ori + self.fsm.vars.ori
    self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
 end

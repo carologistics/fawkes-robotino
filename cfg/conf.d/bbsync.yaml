@@ -40,6 +40,14 @@ fawkes/bbsync:
         line6: LaserLineInterface::/laser-lines/6
         line7: LaserLineInterface::/laser-lines/7
         line8: LaserLineInterface::/laser-lines/8
+        line1avg: LaserLineInterface::/laser-lines/1/moving_avg
+        line2avg: LaserLineInterface::/laser-lines/2/moving_avg
+        line3avg: LaserLineInterface::/laser-lines/3/moving_avg
+        line4avg: LaserLineInterface::/laser-lines/4/moving_avg
+        line5avg: LaserLineInterface::/laser-lines/5/moving_avg
+        line6avg: LaserLineInterface::/laser-lines/6/moving_avg
+        line7avg: LaserLineInterface::/laser-lines/7/moving_avg
+        line8avg: LaserLineInterface::/laser-lines/8/moving_avg
         pose: Position3DInterface::Pose
         laserswitch: SwitchInterface::/laser-cluster/ampel
         navigator: NavigatorInterface::Navigator
