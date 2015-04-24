@@ -23,7 +23,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "mps_detect_signal"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"mps_align", "mps_detect_signal" }
+depends_skills     = {"mps_align"}
 depends_interfaces = {
    { v="bb_signal", type ="RobotinoLightInterface", id = "/machine-signal/best" },
    { v="bb_output", type ="RobotinoLightInterface", id = "Light determined" },
