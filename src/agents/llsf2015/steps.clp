@@ -83,7 +83,7 @@
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
-          (mps-instruction (machine C-BS) (base-color RED) (lock ?mps))
+          (mps-instruction (machine ?mps) (base-color ?color) (lock ?mps))
   )
 )
 
