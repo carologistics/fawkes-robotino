@@ -80,7 +80,7 @@ end
 fsm:define_states{
    export_to=_M,
    closure={ALIGN_POS=ALIGN_POS, bb_signal=bb_signal, navgraph=navgraph, done=done,
-      TIMEOUT=TIMEOUT, os=os, MIN_VIS_HIST=MIN_VIS_HIST},
+      TIMEOUT=TIMEOUT, os=os, MIN_VIS_HIST=MIN_VIS_HIST, desired_signal=desired_signal},
    {"INIT", JumpState},
    {"SKILL_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="LOOK", fail_to="FAILED"},
    {"LOOK", JumpState},
