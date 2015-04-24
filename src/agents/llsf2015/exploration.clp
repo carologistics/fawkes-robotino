@@ -292,13 +292,13 @@
   (printout t "Explore light signal." crlf)
   (retract ?s ?final)
   (assert (state EXP_DETECT_LIGHT))
-  (skill-call explore_signal place ?machine)
+  (skill-call mps_detect_signal place ?machine)
 )
 
 (defrule exp-explore-light-signal-finished
   "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "explore_signal") (status FINAL)) 
+  ?final <- (skill-done (name "mps_detect_signal") (status FINAL)) 
   ?l-signal <- (last-lights (red ?red) (yellow ?yellow) (green ?green))
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
@@ -319,7 +319,7 @@
 (defrule exp-explore-light-signal-failed
   "RobotinoLightInterface has *not* recognized the light-signals."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "explore_signal") (status FAILED)) 
+  ?final <- (skill-done (name "mps_detect_signal") (status FAILED)) 
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
@@ -335,7 +335,7 @@
 (defrule exp-explore-light-signal-wrong-signal
   "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "explore_signal") (status FINAL)) 
+  ?final <- (skill-done (name "mps_detect_signal") (status FINAL)) 
   ?l-signal <- (last-lights (red ?red) (yellow ?yellow) (green ?green))
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
