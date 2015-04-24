@@ -140,9 +140,8 @@
   (state SKILL-FAILED)
   (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
   (step (name get-output) (state running))
-  ?mf <- (machine (name ?mps) (produced-id ?puck-id))
+  ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0))
   =>
-  (printout warn "TODO: use right skill in worldmodel for get-output" crlf)
   (printout t "Failed to fetch a Puck from the output of " ?mps crlf)
   (printout t "I assume there is no more output puck at " ?mps crlf)
   (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
@@ -666,8 +665,9 @@
 
 (defrule wm-set-bs-output-color
   "Set the correct loaded-id after color is ordered at BS"
-  ?bs <- (machine (mtype BS) (loaded-id 0) (prepared TRUE))
-  (step (name get-base) (base ?base-color))
+  (declare (salience ?*PRIORITY-WM*))
+  ?bs <- (machine (mtype BS) (produced-id 0) (prepared TRUE))
+  (step (name get-base) (state running) (base ?base-color))
   =>
   (bind ?product-id (random-id))
   (assert 
@@ -677,7 +677,7 @@
       (cap NONE)
     )
   )
-  (modify ?bs (loaded-id ?product-id))
+  (modify ?bs (produced-id ?product-id))
 )
 
 (deffunction wm-remove-incoming-by-agent (?agent)
