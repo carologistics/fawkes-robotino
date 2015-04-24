@@ -96,7 +96,7 @@ function MPS_ALIGN:init()
 end
 
 function MPS_DETECT_SIGNAL:init()
-   self.skills[1].wait_for = "GREEN"
+   self.skills[1].wait_for = "YELLOW"
    self.skills[1].place = self.fsm.vars.place
 end
 
