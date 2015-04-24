@@ -84,17 +84,26 @@ function COMMAND:init()
    --    theCloseMessage:set_offset(self.fsm.vars.offset)
    --    gripper_if:msgq_enqueue_copy(theCloseMessage)
    -- elseif self.fsm.vars.open then
-   if self.fsm.vars.open then
---      gripper_if:msgq_enqueue_copy(gripper_if.OpenMessage:new())
+   if self.fsm.vars.command == "OPEN" then
+      print("open")
+      self.fsm.vars.open = true
       theOpenMessage = gripper_if.OpenMessage:new()
       theOpenMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theOpenMessage)
-   elseif self.fsm.vars.center then
+   elseif self.fsm.vars.command == "CENTER" then
       print("center")
+      self.fsm.vars.center = true
       theCenterMessage = gripper_if.CenterMessage:new()
       gripper_if:msgq_enqueue_copy(theCenterMessage)
-   elseif self.fsm.vars.close then
+   elseif self.fsm.vars.command == "CLOSE" then
       print("close")
+      self.fsm.vars.close = true
+      theCloseMessage = gripper_if.CloseMessage:new()
+      theCloseMessage:set_offset(self.fsm.vars.offset or 0)
+      gripper_if:msgq_enqueue_copy(theCloseMessage)
+   elseif self.fsm.vars.command == "GRAB" then
+      print("grab")
+      self.fsm.vars.grab = true
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)
