@@ -30,7 +30,7 @@ name               = "mps_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = { "align_tag", "motor_move" }
 depends_interfaces = {
-  --[[
+  ---[[
   {v = "line1avg", type="LaserLineInterface", id="/laser-lines/1/moving_avg"},
   {v = "line2avg", type="LaserLineInterface", id="/laser-lines/2/moving_avg"},
   {v = "line3avg", type="LaserLineInterface", id="/laser-lines/3/moving_avg"},
@@ -40,6 +40,7 @@ depends_interfaces = {
   {v = "line7avg", type="LaserLineInterface", id="/laser-lines/7/moving_avg"},
   {v = "line8avg", type="LaserLineInterface", id="/laser-lines/8/moving_avg"},
   --]]
+  --[[
   {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
   {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
   {v = "line3", type="LaserLineInterface", id="/laser-lines/3"},
@@ -48,6 +49,7 @@ depends_interfaces = {
   {v = "line6", type="LaserLineInterface", id="/laser-lines/6"},
   {v = "line7", type="LaserLineInterface", id="/laser-lines/7"},
   {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
+  --]]
 }
 
 documentation      = [==[ align_mps
@@ -65,6 +67,7 @@ documentation      = [==[ align_mps
 skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
+local llutils = require("fawkes.laser-lines_utils")
 
 -- Tunables
 local TAG_X_ERR=0.02
@@ -73,6 +76,7 @@ local TIMEOUT=4
 local AREA_LINE_ERR_X=0.05
 local AREA_LINE_ERR_Y=0.1
 local AREA_LINE_ERR_ORI=0.17
+local LINE_TRYS=3
 
 function see_line(self)
   self.fsm.vars.line_chosen = nil
@@ -80,14 +84,15 @@ function see_line(self)
   local lines_vis = {}
   for k,v in pairs( self.fsm.vars.lines ) do
     if v:visibility_history() >= MIN_VIS_HIST then
-      local x   = v:end_point_1(0) + ( v:end_point_2(0) - v:end_point_1(0) ) / 2
-      local y   = v:end_point_1(1) + ( v:end_point_2(1) - v:end_point_1(1) ) / 2
-      local ori = math.normalize_mirror_rad( v:bearing() )
+      local center = llutils.laser_lines_center({ x=v:end_point_1(0),
+                                                  y=v:end_point_1(1)},
+                                                { x=v:end_point_2(0),
+                                                  y=v:end_point_2(1)}, v:bearing())
 
-      local trans = tfm.transform({x=x, y=y, ori=ori}, v:frame_id(), "/base_link")
-      x   = trans.x
-      y   = trans.y
-      ori = trans.ori
+      local trans = tfm.transform({x=center.x, y=center.y, ori=center.ori}, v:frame_id(), "/base_link")
+      local x   = trans.x
+      local y   = trans.y
+      local ori = trans.ori
       printf("Got line: (%f, %f, %f)", x, y, ori)
 
       if math.abs(x - self.fsm.vars.x)                <= AREA_LINE_ERR_X and
@@ -112,19 +117,22 @@ function see_line(self)
   end
 end
 
-fsm:define_states{ export_to=_M, closure={see_line = see_line},
+fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRYS=LINE_TRYS},
    {"INIT",                   JumpState},
-   {"SKILL_ALIGN_TAG",        SkillJumpState, skills={{align_tag}},  final_to="SEE_LINE", fail_to="FAILED"},
-   {"SEE_LINE",               JumpState},
+   {"DECIDE_RETRY",           JumpState},
+   {"SKILL_ALIGN_TAG",        SkillJumpState, skills={{align_tag}},  final_to="SEARCH_LINE", fail_to="FAILED"},
+   {"SEARCH_LINE",            JumpState},
    {"LINE_SETTLE",            JumpState},
    {"ALIGN_WITH_LASERLINES",  SkillJumpState, skills={{motor_move}}, final_to="FINAL",    fail_to="FAILED"}
 }
 
 fsm:add_transitions{
    {"INIT",             "SKILL_ALIGN_TAG",        cond=true },
+   {"DECIDE_RETRY",     "SKILL_ALIGN_TAG",        cond="vars.try <= LINE_TRYS", desc="try again to find a line" },
+   {"DECIDE_RETRY",     "FINAL",                  cond=true,                    desc="tryed often enough, going final now :(" },
    {"SKILL_ALIGN_TAG",  "FAILED",                 precond="not vars.x", desc="x argument missing"},
-   {"SEE_LINE",         "LINE_SETTLE",            cond=see_line,        desc="see line"},
-   {"SEE_LINE",         "FAILED",                 timeout=TIMEOUT,      desc="timeout"},
+   {"SEARCH_LINE",      "LINE_SETTLE",            cond=see_line,        desc="see line"},
+   {"SEARCH_LINE",      "DECIDE_RETRY",           timeout=TIMEOUT,      desc="timeout"},
    {"LINE_SETTLE",      "ALIGN_WITH_LASERLINES",  timeout=0.5,          desc="wait 0.5s"}
 }
 
@@ -132,7 +140,7 @@ function INIT:init()
   self.fsm.vars.y   = self.fsm.vars.y   or 0
   self.fsm.vars.ori = self.fsm.vars.ori or 0
   self.fsm.vars.lines = {}
-  ---[[
+  --[[
   self.fsm.vars.lines[1]  = line1
   self.fsm.vars.lines[2]  = line2
   self.fsm.vars.lines[3]  = line3
@@ -142,7 +150,7 @@ function INIT:init()
   self.fsm.vars.lines[7]  = line7
   self.fsm.vars.lines[8]  = line8
   --]]
-  --[[
+  ---[[
   self.fsm.vars.lines[1]  = line1avg
   self.fsm.vars.lines[2]  = line2avg
   self.fsm.vars.lines[3]  = line3avg
@@ -152,6 +160,12 @@ function INIT:init()
   self.fsm.vars.lines[7]  = line7avg
   self.fsm.vars.lines[8]  = line8avg
   --]]
+  
+  self.fsm.vars.try = 0
+end
+
+function DECIDE_RETRY:init()
+  self.fsm.vars.try = self.fsm.vars.try + 1
 end
 
 function SKILL_ALIGN_TAG:init()
@@ -170,8 +184,9 @@ end
 function ALIGN_WITH_LASERLINES:init()
    -- align by ALIGN_DISTANCE from tag to base_link with the lase_line
    printf("line choosen: (%f, %f, %f)", self.fsm.vars.line_best.x, self.fsm.vars.line_best.y, self.fsm.vars.line_best.ori)
-   self.skills[1].x         = self.fsm.vars.line_best.x - self.fsm.vars.x
+   local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
+   self.skills[1].x         = pp.x
    self.skills[1].y         = 0 -- can't improve y coordinate with laserlines so leave it
-   self.skills[1].ori       = self.fsm.vars.line_best.ori + self.fsm.vars.ori
+   self.skills[1].ori       = pp.ori --self.fsm.vars.line_best.ori + self.fsm.vars.ori
    self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
 end
