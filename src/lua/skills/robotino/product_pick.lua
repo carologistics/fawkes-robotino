@@ -66,8 +66,7 @@ function DRIVE_FORWARD:init()
 end
 
 function OPEN_GRIPPER:init()
-   self.skills[1].open = true
-   self.skills[1].close = false
+   self.skills[1].command = "OPEN"
    printf("open gripper")
 end
 
@@ -76,14 +75,11 @@ function MOVE_BACK:init()
 end
 
 function CLOSE_GRIPPER:init()
-   self.skills[1].open = false
-   self.skills[1].close = true
+   self.skills[1].command = "CLOSE"
    printf("close gripper")
 end
 
 function CENTER_GRIPPER:init()
-   self.skills[1].center = true
-   self.skills[1].open = false
-   self.skills[1].close = false
+   self.skills[1].command = "CENTER"
    printf("center gripper")
 end
