@@ -39,7 +39,7 @@ documentation      = [==[
 skillenv.skill_module(_M)
 
 local sensor_index = 0
-local sensor_threshold = 0.085
+local sensor_threshold = 0.07
 
 fsm:define_states{ export_to=_M, closure={sensor=sensor, sensor_index=sensor_index, sensor_threshold=sensor_threshold},
    {"APPROACH", SkillJumpState, skills={{motor_move}},
