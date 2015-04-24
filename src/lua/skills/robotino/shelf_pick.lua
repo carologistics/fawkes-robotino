@@ -103,5 +103,5 @@ function LEAVE_SHELF:init()
 end
 
 function CENTER_PUCK:init()
-   self.skills[1].center = true
+   self.skills[1].command = "CENTER"
 end
