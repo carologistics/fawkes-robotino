@@ -130,13 +130,15 @@
   (retract ?hf)
   (printout t "Fetched Puck " ?puck-id " from the output of " ?mps crlf)
   (assert (holding ?puck-id)
-	  (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
+	  (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0))
+	  (worldmodel-change (machine ?mps) (change CAP_LOADED) (value NONE))
+  )
 )
 
 (defrule wm-get-output-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
-  (skill-to-execute (skill ppgoto) (state failed) (target ?mps))
+  (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
   (step (name get-output) (state running))
   ?mf <- (machine (name ?mps) (produced-id ?puck-id))
   =>
@@ -526,7 +528,6 @@
   )
 )
 
-
 (defrule wm-process-wm-change-at-order-before-sending
   (declare (salience ?*PRIORITY-WM*))
   ?wmc <- (worldmodel-change (order ?id) (change SET_IN_DELIVERY)
@@ -662,6 +663,22 @@
 ;   )
 ;   (retract ?rif)
 ; )
+
+(defrule wm-set-bs-output-color
+  "Set the correct loaded-id after color is ordered at BS"
+  ?bs <- (machine (mtype BS) (loaded-id 0) (prepared TRUE))
+  (step (name get-base) (base ?base-color))
+  =>
+  (bind ?product-id (random-id))
+  (assert 
+    (product
+      (id ?product-id)
+      (base ?base-color)
+      (cap NONE)
+    )
+  )
+  (modify ?bs (loaded-id ?product-id))
+)
 
 (deffunction wm-remove-incoming-by-agent (?agent)
   "remove all entries of machine-incoming fields of a specific agent (e.g. after a lost connection)"

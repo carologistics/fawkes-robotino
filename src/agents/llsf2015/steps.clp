@@ -87,6 +87,26 @@
   )
 )
 
+(defrule step-get-base-finish
+  "Base retrieved from BS"
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  ?step <- (step (name get-base) (state running) (base ?base-color))
+  ?state <- (state SKILL-FINAL)
+  ?ste <- (skill-to-execute (skill get_product_from)
+			    (args place ?bs) (state ?skill-finish-state&final))
+  (machine (name ?bs) (loaded-id ?product-id))
+  ?h <- (holding NONE)
+  =>
+  (printout t ?base-color " base retrieved"  crlf)
+  (retract ?state ?ste ?h)
+  (assert
+    (state STEP-FINISHED)
+    (holding ?product-id)
+  )
+  (modify ?step (state finished))
+)
+
 (defrule step-discard-unknown-start
   "Oepn gripper to discard unknown base"
   (declare (salience ?*PRIORITY-STEP-START*))
@@ -371,7 +391,7 @@
 (defrule step-common-finish
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|get-base) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output) (state running))
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
 			    (args $?args) (state final))
