@@ -274,33 +274,24 @@
   )
 )
 
-; (defrule prod-produce-P3-and-deliver
-;   "Complete production of a P3 at the beginning without leaving the T5 machine while producing."
-;   (declare (salience ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))
-;   (phase PRODUCTION)
-;   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
-;   (team-color ?team-color&~nil)
-;   (machine (mtype T5) (loaded-with $?l&~:(member$ S0 ?l))
-;     (incoming $?i&~:(member$ BRING_S0 ?i)) (name ?name) (produced-puck NONE) (team ?team-color)
-;     (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0))
-;   )
-;   (not (and (task (name produce-with-S0) (state rejected) (id ?rej-id))
-; 	    (step (name produce-at) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?name))))
-;   (holding NONE|S0)
-;   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))))
-;   (not (no-more-needed P3))
-;   =>
-;   (printout t "PROD: PRODUCE P3 at T5 " ?name " waiting and deliver afterweards" crlf)
-;   ;generate random task id
-;   (bind ?task-id (random 0 1000000000))
-;   (assert (task (name produce-p3-and-deliver) (id ?task-id) (state proposed)
-; 		(steps (create$ (+ ?task-id 1) (+ ?task-id 2) (+ ?task-id 3)))
-; 		(priority ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))
-; 	  (step (name get-s0) (id (+ ?task-id 1))
-; 		(task-priority ?*PRIORITY-PRODUCE-T5-AT-BEGIN*))
-; 	  (step (name produce-at) (id (+ ?task-id 2)) (machine ?name))
-; 	  (step (name deliver) (id (+ ?task-id 3)) (product-type P3)
-; 		(task-priority ?*PRIORITY-DELIVER-P3*))
-; 	  (needed-task-lock (task-id ?task-id) (action BRING_S0) (place ?name))
-;   )
-; )
+(defrule prod-nothing-to-do-save-factbase
+  "If the agent can't find any task, save the factbase to find problems"
+  (declare (salience ?*PRIORITY-NOTHING-TO-DO*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (time $?now)
+  (not (no-task-found))
+  (not (task (state proposed|asked|rejected|ordered|running)))
+  =>
+  (printout error "Can't find any task!." crlf)
+  (printout error " Waiting..." crlf)
+  (save-facts (str-cat "agent-snapshot-no-task" (nth$ 1 ?now) ".clp") visible)
+  (assert (no-task-found))
+)
+
+(defrule prod-remove-nothing-to-do-fact
+  ?no-task <- (no-task-found)
+  (state ~IDLE)
+  =>
+  (retract ?no-task)
+)
