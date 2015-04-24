@@ -61,7 +61,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   self.skills[1].open = true
+   self.skills[1].command = "OPEN"
 end
 
 function GOTO_SHELF:init()
@@ -96,8 +96,7 @@ function APPROACH_SHELF:init()
 end
 
 function GRAB_PRODUCT:init()
-   self.skills[1].close = true
-   self.skills[1].grab = true
+   self.skills[1].command = "CLOSE"
 end
 
 function LEAVE_SHELF:init()

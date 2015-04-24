@@ -49,18 +49,6 @@ fsm:define_states{
    {"FINAL_AFTER_IF_FINAL", JumpState},
 }
 
-function is_right_full_loaded()
-   fsm.vars.right_fully_loaded = gripper_if:right_load() > 150
-   print("load_right: " .. gripper_if:right_load())
-   return fsm.vars.right_fully_loaded
-end
-
-function is_left_full_loaded()
-   fsm.vars.left_fully_loaded = gripper_if:left_load() > 150
-   print("load_left: " .. gripper_if:left_load())
-   return fsm.vars.left_fully_loaded
-end
-
 -- Transitions
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
@@ -78,30 +66,32 @@ fsm:add_transitions{
    {"FINAL_AFTER_IF_FINAL", "FINAL", cond="gripper_if:is_final()"},
 }
 
---function CLOSE_GRIPPER_WAIT:init()
---   self.fsm.vars.right_fully_loaded = false
---   self.fsm.vars.left_fully_loaded = false
---   gripper_if:msgq_enqueue_copy(gripper_if.CloseLoadMessage:new())
---   -- print("right: " .. self.fsm.vars.right_fully_loaded .. " left: " .. self.fsm.vars.left_fully_loaded)
---end
-
 function COMMAND:init()
    -- if self.fsm.vars.close then
    --    theCloseMessage = gripper_if.CloseMessage:new()
    --    theCloseMessage:set_offset(self.fsm.vars.offset)
    --    gripper_if:msgq_enqueue_copy(theCloseMessage)
    -- elseif self.fsm.vars.open then
-   if self.fsm.vars.open then
---      gripper_if:msgq_enqueue_copy(gripper_if.OpenMessage:new())
+   if self.fsm.vars.command == "OPEN" then
+      print("open")
+      self.fsm.vars.open = true
       theOpenMessage = gripper_if.OpenMessage:new()
       theOpenMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theOpenMessage)
-   elseif self.fsm.vars.center then
+   elseif self.fsm.vars.command == "CENTER" then
       print("center")
+      self.fsm.vars.center = true
       theCenterMessage = gripper_if.CenterMessage:new()
       gripper_if:msgq_enqueue_copy(theCenterMessage)
-   elseif self.fsm.vars.close then
+   elseif self.fsm.vars.command == "CLOSE" then
       print("close")
+      self.fsm.vars.close = true
+      theCloseMessage = gripper_if.CloseMessage:new()
+      theCloseMessage:set_offset(self.fsm.vars.offset or 0)
+      gripper_if:msgq_enqueue_copy(theCloseMessage)
+   elseif self.fsm.vars.command == "GRAB" then
+      print("grab")
+      self.fsm.vars.grab = true
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)

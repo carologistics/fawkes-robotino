@@ -76,7 +76,7 @@ function APPROACH_SLIDE:init()
 end
 
 function STORE_PRODUCT:init()
-   self.skills[1].open = true
+   self.skills[1].command = "OPEN"
 end
 
 function LEAVE_SLIDE:init()
