@@ -93,6 +93,7 @@ skillenv.skill_module(_M)
 
 local tfm = require 'tf_module'
 local tfutils = require("fawkes.tfutils")
+local line_utils = require("fawkes.laser-lines_utils")
 
 function mps_in_zone(self, x, y)
   if x > self.fsm.vars.max_x - MPS_OFFSET_TO_ZONE or
@@ -180,10 +181,14 @@ function mps_visible_laser(self, hist_min)
 
     if v:visibility_history() >= hist_min then
       local point_on_obj = {}
+      local center = line_utils.laser_lines_center({x=v:end_point_1(0), y=v:end_point_1(1)},{x=v:end_point_2(0), y=v:end_point_2(1)} v:bearing())
       point_on_obj["frame_id"] = v:frame_id()
-      point_on_obj["x"]   = v:end_point_1(0) + ( v:end_point_2(0) - v:end_point_1(0) ) / 2
-      point_on_obj["y"]   = v:end_point_1(1) + ( v:end_point_2(1) - v:end_point_1(1) ) / 2
-      point_on_obj["ori"] = math.normalize_mirror_rad( math.pi + v:bearing() )
+      point_on_obj["x"]   = center.x
+      point_on_obj["y"]   = center.y
+      point_on_obj["ori"] = math.normalize_mirror_rad( math.pi + center.ori )
+      --point_on_obj["x"]   = v:end_point_1(0) + ( v:end_point_2(0) - v:end_point_1(0) ) / 2
+      --point_on_obj["y"]   = v:end_point_1(1) + ( v:end_point_2(1) - v:end_point_1(1) ) / 2
+      --point_on_obj["ori"] = math.normalize_mirror_rad( math.pi + v:bearing() )
       local obj_map = tfm.transform({x=point_on_obj["x"], y=point_on_obj["y"], ori=point_on_obj["ori"]}, point_on_obj["frame_id"], "/map")
       point_on_obj["x_map"]   = obj_map.x
       point_on_obj["y_map"]   = obj_map.y
@@ -449,10 +454,11 @@ end
 function pose_in_front_of_mps_calculator(self, chosen, factor)
   factor = factor or 1
 
-  x   = chosen["x_map"] + math.cos( chosen["ori_map"] ) * ( factor * TAG_DIST + ROBOT_WALL_DIST )
-  y   = chosen["y_map"] + math.sin( chosen["ori_map"] ) * ( factor * TAG_DIST + ROBOT_WALL_DIST )
-  ori = math.normalize_mirror_rad( chosen["ori_map"] + math.pi )
-  return x, y, ori
+  local pif = line_utils.point_in_front({ x=chosen["x_map"],
+                                          y=chosen["x_map"],
+                                          ori=math.normalize_mirror_rad( chosen["ori_map"] + math.pi )},
+                                          ( factor * TAG_DIST + ROBOT_WALL_DIST ))
+  return pif.x, pif.y, math.normalize_mirror_rad( pif.ori + math.pi )
 end
 
 function TURN_TO_POSSIBLE_MPS:init()
