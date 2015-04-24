@@ -44,12 +44,14 @@ fsm:define_states{ export_to=_M,
    {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}},
       final_to="CLOSE_GRIPPER", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT", fail_to="FAILED"},
+      final_to="WAIT", fail_to="FAIL_SAFE"},
    {"WAIT", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
       final_to="CENTER_GRIPPER", fail_to="FAILED"},
    {"CENTER_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="FINAL", fail_to="FAILED"},
+   {"FAIL_SAFE", SkillJumpState, skills={{motor_move}},
+      final_to="FAILED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -78,6 +80,7 @@ end
 function CLOSE_GRIPPER:init()
    self.skills[1].open = false
    self.skills[1].close = true
+   self.skills[1].grab = true
    printf("close gripper")
 end
 
@@ -86,4 +89,8 @@ function CENTER_GRIPPER:init()
    self.skills[1].open = false
    self.skills[1].close = false
    printf("center gripper")
+end
+
+function FAIL_SAFE:init()
+   self.skills[1].x = -0.1
 end

@@ -46,9 +46,10 @@ fsm:define_states{ export_to=_M,
    {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_LASERLINE", fail_to="FAILED"},
    {"APPROACH_SHELF", SkillJumpState, skills={{motor_move}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
-   {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAILED"},
+   {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="CENTER_PUCK", fail_to="FAILED"},
    {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
+   {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
    {"WAIT_AFTER_GRAB", JumpState},
    {"WAIT_FOR_LASERLINE", JumpState},
 }
@@ -96,6 +97,7 @@ end
 
 function GRAB_PRODUCT:init()
    self.skills[1].close = true
+   self.skills[1].grab = true
 end
 
 function LEAVE_SHELF:init()
@@ -104,4 +106,8 @@ end
 
 function CENTER_PUCK:init()
    self.skills[1].center = true
+end
+
+function FAIL_SAFE:init()
+   self.skills[1].x = -0.1
 end
