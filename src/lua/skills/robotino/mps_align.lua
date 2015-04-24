@@ -48,11 +48,14 @@ skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
 
+-- Tunables
 local TAG_X_ERR=0.02
+local MIN_VIS_HIST=20
+local TIMEOUT=4
 
 function see_line()
    printf("vis_hist: %f", line1:visibility_history())
-   return line1:visibility_history() > 30
+   return line1:visibility_history() > MIN_VIS_HIST
 end
 
 fsm:define_states{ export_to=_M, closure={see_line = see_line},
@@ -66,9 +69,9 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line},
 
 fsm:add_transitions{
    {"SKILL_ALIGN_TAG", "FAILED", precond="not vars.x", desc="x argument missing"},
-   {"SEE_LINE", "LINE_SETTLE", cond=see_line, desc="Seeing a line"},
-   {"SEE_LINE", "FAILED", timeout=3, desc="Not seeing a line, continue just aligned by tag"},
-   {"LINE_SETTLE", "ALIGN_WITH_LASERLINES", timeout=0.5, desc="let the line distance settle"}
+   {"SEE_LINE", "LINE_SETTLE", cond=see_line, desc="see line"},
+   {"SEE_LINE", "FAILED", timeout=TIMEOUT, desc="timeout"},
+   {"LINE_SETTLE", "ALIGN_WITH_LASERLINES", timeout=0.5, desc="wait 0.5s"}
 }
 
 function SKILL_ALIGN_TAG:init()
