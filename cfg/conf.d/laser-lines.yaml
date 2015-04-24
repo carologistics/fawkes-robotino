@@ -48,3 +48,7 @@ laser-lines:
   line_cluster_tolerance: 0.2
   line_cluster_quota: 0.1
 
+  # average the laser lines
+  moving_avg_enabled: true
+  # The size (number of elements) of the moving average window
+  moving_avg_window_size: 10 
