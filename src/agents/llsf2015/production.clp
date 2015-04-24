@@ -246,7 +246,7 @@
   (team-color ?team-color&~nil)
   (holding NONE)
   ; there is a mps not found jet
-  (machine (name ?missing-mps) (team ?team-color))
+  (machine (name ?missing-mps) (team ?team-color) (mtype ~RS))
   (not (found-tag (name ?missing-mps)))
   ; zone-to-explore
   (zone-exploration (name ?zone) (still-to-explore TRUE) (team ?team-color)
