@@ -103,6 +103,7 @@
   (assert
     (state STEP-FINISHED)
     (holding ?product-id)
+    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
   )
   (modify ?step (state finished))
 )
