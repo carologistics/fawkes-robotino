@@ -26,6 +26,7 @@
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-DISCARD-UNKNOWN* = 55
+  ?*PRIORITY-NOTHING-TO-DO* = -1
 
   ; tast execution order priorities
   ; (if the first subtasks are already complete, don't do them again)
