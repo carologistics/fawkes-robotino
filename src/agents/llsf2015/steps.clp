@@ -288,7 +288,7 @@
 (defrule step-get-product-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name get-product) (state wait-for-activation) (task-priority ?p)
+  ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p)
 		 (machine ?mps))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
