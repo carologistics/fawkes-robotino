@@ -68,12 +68,11 @@ function jumpcond_navifail(state)
    return (state.fsm.vars.msgid == 0
      or (state.fsm.vars.msgid ~= ppnavi:msgid() and state.wait_start > 20)
      or not ppnavi:has_writer()
-     or state.failed
      or (ppnavi:is_final() and ppnavi:error_code() ~= ppnavi.ERROR_NONE))
 end
 
 function jumpcond_navifinal(state)
-   --printf("msgid: %d/%d  final: %s", state.fsm.vars.msgid, ppnavi:msgid(), tostring(ppnavi:is_final()))
+   printf("msgid: %d/%d  final: %s", state.fsm.vars.msgid, ppnavi:msgid(), tostring(ppnavi:is_final()))
    return state.fsm.vars.msgid == ppnavi:msgid() and
           ppnavi:is_final() and
           ( ppnavi:error_code() ~= ppnavi.ERROR_NONE or
@@ -87,6 +86,7 @@ fsm:define_states{
    closure={ppnavi=ppnavi},
 
    {"PPGOTO", JumpState},
+   {"TIMEOUT", JumpState},
    {"SKILL_GOTO", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="FAILED"},
 }
 
@@ -95,7 +95,8 @@ fsm:add_transitions{
    {"PPGOTO", "FAILED", cond_and_precond="not ppnavi:has_writer()", desc="No writer for interface"},
    {"PPGOTO", "FAILED", cond=jumpcond_paramfail, desc="Invalid/insufficient parameters"},
    {"PPGOTO", "FINAL", cond=jumpcond_navifinal, desc="Position reached"},
-   {"PPGOTO", "SKILL_GOTO", cond=jumpcond_navifail, desc="Navigator failure with err: " .. ppnavi:error_code() .. " try goto"},
+   {"PPGOTO", "TIMEOUT", cond=jumpcond_navifail, desc="Navigator failure with err: " .. ppnavi:error_code() .. " try goto"},
+   {"TIMEOUT", "SKILL_GOTO", timeout=1},
 
 }
 
@@ -116,6 +117,7 @@ function PPGOTO:init()
 	 local m = ppnavi.PlaceWithOriGotoMessage:new(place, ori)
 	 printf("Sending PlaceWithOriGotoMessage(%s, %f)", place, ori)
 	 self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
+   printf("msgid: %d/%d  final: %s", state.fsm.vars.msgid)
       else
 	 local m = ppnavi.PlaceGotoMessage:new(place)
 	 printf("Sending PlaceGotoMessage(%s)", place)
