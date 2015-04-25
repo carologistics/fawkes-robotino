@@ -44,13 +44,13 @@ Parameters:
 local MIN_VIS_HIST=25
 local TIMEOUT=120
 local ALIGN_POS = {
-   {x=0.5, y=0, ori=0},
-   {x=0.6, y=0, ori=0.3},
-   {x=0.6, y=0, ori=-0.3},
-   {x=0.4, y=0, ori=0.2},
-   {x=0.4, y=0, ori=-0.2},
-   {x=0.5, y=0, ori=0.25},
-   {x=0.5, y=0, ori=-0.25}
+   {x=0.5, y=  0},
+   {x=0.6, y=  0.1},
+   {x=0.6, y= -0.1},
+   {x=0.4, y=  0.05},
+   {x=0.4, y= -0.05},
+   {x=0.5, y=  0.075},
+   {x=0.5, y= -0.075}
 }
 
 -- Initialize as skill module
