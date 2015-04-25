@@ -359,6 +359,7 @@
   (input-storage MAGENTA Ins2 0 0)
   (secondary-storage CYAN Ins1Sec 0 0)
   (secondary-storage MAGENTA Ins2Sec 0 0)
+  (wait-point WAIT1)
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 )

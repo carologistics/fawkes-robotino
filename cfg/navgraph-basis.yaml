@@ -196,6 +196,14 @@ nodes:
     properties:
       - always-copy: true
 
+# wait points
+  - !unconnected
+    name: WAIT1
+    pos : [0,1]
+    properties:
+      - orientation: 1.57
+      - always-copy: true
+
 # Machine points for property generation
 # Positions will be written by the generator
 # Cyan

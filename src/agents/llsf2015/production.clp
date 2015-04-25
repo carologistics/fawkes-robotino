@@ -292,12 +292,14 @@
   (phase PRODUCTION)
   (state IDLE)
   (time $?now)
+  (wait-point ?wait-point)
   (not (no-task-found))
   (not (task (state proposed|asked|rejected|ordered|running)))
   =>
   (printout error "Can't find any task!." crlf)
   (printout error " Waiting..." crlf)
   (save-facts (str-cat "agent-snapshot-no-task" (nth$ 1 ?now) ".clp") visible)
+  (skill-call goto place (str-cat ?wait-point))
   (assert (no-task-found))
 )
 
