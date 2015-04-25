@@ -106,7 +106,7 @@ function INIT:init()
    bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.EnableSwitchMessage:new())
  
    if not(self.fsm.vars.place and navgraph:node(self.fsm.vars.place):is_valid()) then
-      self.fsm.vars.place = "default_place"
+      self.fsm.vars.place = "place-default"
    end
    local node = navgraph:node(self.fsm.vars.place)
    local msg = bb_signal_hint.SignalPositionMessage:new()
