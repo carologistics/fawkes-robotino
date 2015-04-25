@@ -67,16 +67,16 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
+  (task (name fill-cap))
+  ;an inserted puck without cap will be the final product
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps))
   ?hf <- (holding ?puck-id)
   ?pf <- (product (id ?puck-id) (cap ?cap))
   =>
   (retract ?hf)
-  (printout warn "TODO: use worldmodel change messages" crlf)
   (printout t "Inserted a Puck from an CS shelf with a " ?cap " cap to fill the CS" crlf)
   (assert (holding NONE))
-  ; there is no relevant waiting time until the cs has finished the loading step right?
   (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount ?puck-id))
 	  (worldmodel-change (machine ?mps) (change SET_CAP_LOADED) (value ?cap))
 	  (worldmodel-change (puck-id ?puck-id) (change SET_CAP) (value NONE))
@@ -88,14 +88,13 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
+  (task (name produce-c0|deliver-c0))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
   ?hf <- (holding ?product-id)
-  ;an inserted puck without cap will be the final product
   ?pf <- (product (id ?product-id) (cap NONE))
   =>
   (retract ?hf)
-  (printout warn "TODO: use worldmodel change messages" crlf)
   (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
   (assert (holding NONE))
   ; there is no relevant waiting time until the cs has finished the loading step right?
@@ -103,6 +102,20 @@
 	  (worldmodel-change (machine ?mps) (change SET_CAP_LOADED) (value NONE))
 	  (worldmodel-change (puck-id ?product-id) (change SET_CAP) (value ?cap))
   )
+)
+
+(defrule wm-insert-product-into-ds-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-FINAL)
+  (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
+  (step (name insert) (state running))
+  (task (name produce-c0|deliver-c0))
+  ?mf <- (machine (name ?mps) (mtype DS))
+  ?hf <- (holding ?product-id&~NONE)
+  =>
+  (retract ?hf)
+  (printout t "Delivered product " ?product-id " to " ?mps crlf)
+  (assert (holding NONE))
 )
 
 (defrule wm-insert-failed
@@ -131,7 +144,6 @@
   (printout t "Fetched Puck " ?puck-id " from the output of " ?mps crlf)
   (assert (holding ?puck-id)
 	  (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0))
-	  (worldmodel-change (machine ?mps) (change CAP_LOADED) (value NONE))
   )
 )
 
