@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "shelf_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"motor_move", "ax12gripper"}
+depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
 depends_interfaces = {
    {v = "line1", type = "LaserLineInterface"},
 }
@@ -45,7 +45,7 @@ skillenv.skill_module(_M)
 fsm:define_states{ export_to=_M,
    {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_LASERLINE", fail_to="FAILED"},
-   {"APPROACH_SHELF", SkillJumpState, skills={{motor_move}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
+   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="CENTER_PUCK", fail_to="FAILED"},
    {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
@@ -65,7 +65,7 @@ function INIT:init()
 end
 
 function GOTO_SHELF:init()
-   local dest_x = 0.2
+   local dest_x = 0
    local dest_y = line1:end_point_1(1) + 0.075
    local line_offset
    if line1:end_point_1(1) < line1:end_point_2(1) then
@@ -91,9 +91,9 @@ function GOTO_SHELF:init()
 --   self.skills[1].y = -0.02 -(self.fsm.vars.slot * 0.094)
 end
 
-function APPROACH_SHELF:init()
-   self.skills[1].x = line1:point_on_line(0) - 0.08
-end
+--function APPROACH_SHELF:init()
+--   self.skills[1].x = line1:point_on_line(0) - 0.08
+--end
 
 function GRAB_PRODUCT:init()
    self.skills[1].command = "CLOSE"
