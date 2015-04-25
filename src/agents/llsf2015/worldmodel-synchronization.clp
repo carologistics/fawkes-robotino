@@ -189,6 +189,8 @@
 	)
       )
     )
+
+    (pb-destroy ?m-msg)
   )
   ;update worldmodel about orders
   (foreach ?o-msg (pb-field-list ?p "orders")

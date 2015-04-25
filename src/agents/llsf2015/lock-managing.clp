@@ -126,7 +126,7 @@
       (pb-set-field ?lock-msg "type" ?lock:type)
       (pb-set-field ?lock-msg "agent" (str-cat ?lock:agent))
       (pb-set-field ?lock-msg "resource" (str-cat ?lock:resource))
-      (pb-set-field ?lock-msg "priority" (str-cat ?lock:priority))
+      (pb-set-field ?lock-msg "priority" ?lock:priority)
       (pb-broadcast ?peer ?lock-msg)
       (pb-destroy ?lock-msg)
 
