@@ -71,12 +71,45 @@ local llutils = require("fawkes.laser-lines_utils")
 
 -- Tunables
 local TAG_X_ERR=0.02
-local MIN_VIS_HIST=20
+local MIN_VIS_HIST=10
 local TIMEOUT=4
 local AREA_LINE_ERR_X=0.05
 local AREA_LINE_ERR_Y=0.1
 local AREA_LINE_ERR_ORI=0.17
 local LINE_TRYS=3
+local LINE_FOR_TAG_TRYS=2
+
+function see_line_for_tag(self)
+  self.fsm.vars.line_chosen = nil
+  -- visible
+  local lines_vis = {}
+  for k,v in pairs( self.fsm.vars.lines ) do
+    if v:visibility_history() >= MIN_VIS_HIST then
+      local center = llutils.laser_lines_center({ x=v:end_point_1(0),
+                                                  y=v:end_point_1(1)},
+                                                { x=v:end_point_2(0),
+                                                  y=v:end_point_2(1)}, v:bearing())
+
+      local trans = tfm.transform({x=center.x, y=center.y, ori=center.ori}, v:frame_id(), "/base_link")
+      local x   = trans.x
+      local y   = trans.y
+      local ori = trans.ori
+      
+      table.insert( lines_vis, {x=x, y=y, ori=ori, bearing_err = math.abs(math.angle_distance(ori, self.fsm.vars.ori)), frame_id="/base_link"} )
+    end
+  end
+  if table.getn( lines_vis ) <= 0 then
+    return false
+  else
+    self.fsm.vars.line_best = lines_vis[1]
+    for k,v in pairs( lines_vis ) do
+      if self.fsm.vars.line_best.bearing_err > v.bearing_err then
+        self.fsm.vars.line_best = v
+      end
+    end
+    return true
+  end
+end
 
 function see_line(self)
   self.fsm.vars.line_chosen = nil
@@ -117,13 +150,15 @@ function see_line(self)
   end
 end
 
-fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRYS=LINE_TRYS},
+fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRYS=LINE_TRYS, LINE_FOR_TAG_TRYS=LINE_FOR_TAG_TRYS},
    {"INIT",                   JumpState},
    {"DECIDE_RETRY",           JumpState},
-   {"SKILL_ALIGN_TAG",        SkillJumpState, skills={{align_tag}},  final_to="SEARCH_LINE", fail_to="FAILED"},
+   {"SKILL_ALIGN_TAG",        SkillJumpState, skills={{align_tag}},  final_to="SEARCH_LINE", fail_to="SEARCH_LINE_FOR_TAG"},
+   {"SEARCH_LINE_FOR_TAG",    JumpState},
+   {"ALIGN_TO_SEE_TAG",       SkillJumpState, skills={{motor_move}}, final_to="SKILL_ALIGN_TAG", fail_to="SKILL_ALIGN_TAG"},  -- failed to skill becase just recover (can't be worst)
    {"SEARCH_LINE",            JumpState},
    {"LINE_SETTLE",            JumpState},
-   {"ALIGN_WITH_LASERLINES",  SkillJumpState, skills={{motor_move}}, final_to="FINAL",    fail_to="FAILED"}
+   {"ALIGN_WITH_LASERLINES",  SkillJumpState, skills={{motor_move}}, final_to="FINAL",    fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -131,9 +166,12 @@ fsm:add_transitions{
    {"DECIDE_RETRY",     "SKILL_ALIGN_TAG",        cond="vars.try <= LINE_TRYS", desc="try again to find a line" },
    {"DECIDE_RETRY",     "FINAL",                  cond=true,                    desc="tryed often enough, going final now :(" },
    {"SKILL_ALIGN_TAG",  "FAILED",                 precond="not vars.x", desc="x argument missing"},
+   {"SEARCH_LINE_FOR_TAG", "FAILED",              cond="vars.retry_to_recover_by_line_times >= LINE_FOR_TAG_TRYS", desc="retry to see tag too often => fail" },
+   {"SEARCH_LINE_FOR_TAG", "ALIGN_TO_SEE_TAG",    cond=see_line_for_tag,desc="see line, try to align to see tag afterwards" },
+   {"SEARCH_LINE_FOR_TAG", "FAILED",              timeout=TIMEOUT,      desc="can't align by tag and can't recover with line => fail" },
    {"SEARCH_LINE",      "LINE_SETTLE",            cond=see_line,        desc="see line"},
    {"SEARCH_LINE",      "DECIDE_RETRY",           timeout=TIMEOUT,      desc="timeout"},
-   {"LINE_SETTLE",      "ALIGN_WITH_LASERLINES",  timeout=0.5,          desc="wait 0.5s"}
+   {"LINE_SETTLE",      "ALIGN_WITH_LASERLINES",  timeout=1.5,          desc="wait 0.5s"}
 }
 
 function INIT:init()
@@ -162,6 +200,7 @@ function INIT:init()
   --]]
   
   self.fsm.vars.try = 0
+  self.fsm.vars.retry_to_recover_by_line_times = 0
 end
 
 function DECIDE_RETRY:init()
@@ -179,6 +218,18 @@ function SKILL_ALIGN_TAG:init()
    self.skills[1].x = self.fsm.vars.x + TAG_X_ERR
    self.skills[1].y = -self.fsm.vars.y
    self.skills[1].ori = self.fsm.vars.ori
+end
+
+function SEARCH_LINE_FOR_TAG:init()
+  self.fsm.vars.retry_to_recover_by_line_times = self.fsm.vars.retry_to_recover_by_line_times + 1
+end
+
+function ALIGN_TO_SEE_TAG:init()
+   local pp = llutils.point_in_front(self.fsm.vars.line_best, 0.5)
+   self.skills[1].x         = pp.x
+   self.skills[1].y         = pp.y
+   self.skills[1].ori       = pp.ori
+   self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
 end
 
 function ALIGN_WITH_LASERLINES:init()
