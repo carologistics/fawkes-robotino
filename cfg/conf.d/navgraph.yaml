@@ -18,7 +18,7 @@ navgraph:
   graph_file: navgraph-basis.yaml
  
   # Interval in which the resend the goto command; sec
-  resend_interval: 0.1
+  resend_interval: 1
 
   # Interval in which to replan if constraints have been modified
   # since the last path planning.
