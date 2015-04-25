@@ -259,8 +259,11 @@
   (printout t "No tag found in " ?zone crlf)
   (if (eq ?explore-zone-state final) then
     (printout t "There probably is no mps in this zone!" crlf)
-    (assert (worldmodel-change (machine ?zone) (change ZONE_STILL_TO_EXPLORE)
-                               (value FALSE)))
+    (printout t "Try this zone again later ROBOCUP FIX!" crlf)
+    (assert (worldmodel-change (machine ?zone)
+                               (change ZONE_TIMES_SEARCHED_INCREMENT)))
+    ; (assert (worldmodel-change (machine ?zone) (change ZONE_STILL_TO_EXPLORE)
+    ;                            (value FALSE)))
   )
   (retract ?s ?ws ?skill-finish-state)
   (assert (state STEP-FAILED))

@@ -241,8 +241,11 @@
   ; if explore_zone was final there probably is no mps in this zone
   (if (eq ?explore-zone-state FINAL) then
     (printout t "There probably is no mps in this zone!" crlf)
-    (assert (worldmodel-change (machine ?old) (change ZONE_STILL_TO_EXPLORE)
-                               (value FALSE)))
+    (printout t "Try this zone again later ROBOCUP FIX!" crlf)
+    (assert (worldmodel-change (machine ?old)
+                               (change ZONE_TIMES_SEARCHED_INCREMENT)))
+    ; (assert (worldmodel-change (machine ?old) (change ZONE_STILL_TO_EXPLORE)
+    ;                            (value FALSE)))
   )
 
   (assert (state EXP_IDLE)
