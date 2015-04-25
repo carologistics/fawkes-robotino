@@ -173,7 +173,7 @@
   (slot id (type INTEGER))
   ;id of product fact how the product should look like
   (slot product-id (type INTEGER))
-  (slot complexity (type INTEGER))
+  (slot complexity (type SYMBOL) (allowed-symbols C0 C1 C2 C3))
   (slot delivery-gate (type INTEGER))
   (slot quantity-requested (type INTEGER))
   (slot quantity-delivered (type INTEGER) (default 0))
