@@ -92,6 +92,9 @@ function SKILL_GLOBAL_MOTOR_MOVE:init()
   if not self.fsm.vars.just_ori then
     self.skills[1].x   = self.fsm.vars.x
     self.skills[1].y   = self.fsm.vars.y
+  else
+    self.skills[1].x   = nil
+    self.skills[1].y   = nil
   end
   self.skills[1].ori = self.fsm.vars.ori
   
