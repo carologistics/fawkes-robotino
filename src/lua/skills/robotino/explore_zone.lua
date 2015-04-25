@@ -94,7 +94,8 @@ skillenv.skill_module(_M)
 local tfm = require 'tf_module'
 local tfutils = require("fawkes.tfutils")
 
-function mps_in_zone(self, x, y)
+function mps_in_zone(self, x, y, use_offset)
+  use_offset = use_offset or true
   if x > self.fsm.vars.max_x - MPS_OFFSET_TO_ZONE or
      x < self.fsm.vars.min_x + MPS_OFFSET_TO_ZONE or
      y > self.fsm.vars.max_y - MPS_OFFSET_TO_ZONE or
@@ -121,7 +122,7 @@ function tag_searched(self, if_ID)
   return false
 end
 
-function mps_visible_tag(self, hist_min)
+function mps_visible_tag(self, hist_min, use_offset_to_boarder)
   hist_min = hist_min or HIST_MIN_TAG
   self.fsm.vars.tag_chosen = nil
   local tags_vis = {}
@@ -146,7 +147,7 @@ function mps_visible_tag(self, hist_min)
         point_on_obj["y_map"]   = obj_map.y
         point_on_obj["ori_map"] = obj_map.ori
 
-        if mps_in_zone(self, obj_map.x, obj_map.y) then
+        if mps_in_zone(self, obj_map.x, obj_map.y, use_offset_to_boarder) then
           table.insert( tags_vis, point_on_obj )
           printf("Found MPS by tag at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
         end
@@ -233,7 +234,7 @@ function poses_to_check(self)
 end
 
 fsm:define_states{ export_to=_M,
-  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,poses_to_check=poses_to_check},
+  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,poses_to_check=poses_to_check, HIST_MIN_TAG=HIST_MIN_TAG},
   {"INIT",                        JumpState},
   {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_global}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
   {"DECIDE_CLUSTER",              JumpState},
@@ -243,7 +244,8 @@ fsm:define_states{ export_to=_M,
   {"TURN_TO_POSSIBLE_MPS",        SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
   {"WAIT_FOR_SENSORS",            JumpState},
   {"DRIVE_TO_POSSIBLE_MPS_PRE",   SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
-  {"DRIVE_TO_POSSIBLE_MPS",       SkillJumpState, skills={{drive_to_local}}, final_to="FINAL", fail_to="FAILED"},
+  {"DRIVE_TO_POSSIBLE_MPS",       SkillJumpState, skills={{drive_to_local}}, final_to="CHECK_SEE_TAG", fail_to="FAILED"},
+  {"CHECK_SEE_TAG",               JumpState},
 }
 
 fsm:add_transitions{
@@ -262,6 +264,8 @@ fsm:add_transitions{
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_tag,                                 desc="saw tag, drive to"},
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_laser,                               desc="saw laser, drive to"},
   {"WAIT_FOR_SENSORS",    "DECIDE_NEXT_POINT",            timeout=TIMEOUT,                                      desc="saw nothing, trying next point"},
+  {"CHECK_SEE_TAG",       "FINAL",                        cond="mps_visible_tag(self, HIST_MIN_TAG, false)",    desc="see tag after alignmend"},
+  {"CHECK_SEE_TAG",       "FAILED",                       timeout=TIMEOUT,                                      desc="can't see tag after position in front, wtf happend?"},
 }
 
 function INIT:init()
