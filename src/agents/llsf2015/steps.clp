@@ -113,7 +113,7 @@
 )
 
 (defrule step-discard-unknown-start
-  "Oepn gripper to discard unknown base"
+  "Open gripper to discard unknown base"
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name discard) (state wait-for-activation) (task-priority ?p))
@@ -123,7 +123,7 @@
   (retract ?state)
   (modify ?step (state running))
   (assert (state WAIT-FOR-LOCK)
-    (skill-to-execute (skill ax12gripper) (args open true) (target NONE))
+    (skill-to-execute (skill ax12gripper) (args command OPEN) (target NONE))
     (wait-for-lock (priority ?p) (res NONE))
   )
 )
