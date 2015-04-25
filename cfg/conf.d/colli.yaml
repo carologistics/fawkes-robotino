@@ -166,7 +166,7 @@ plugins/colli:
 
     round:
       # For round roboter
-      radius: 0.27
+      radius: 0.3
       # The Lasers offset from center
       laser_offset_x_from_middle: 0.19
       laser_offset_y_from_middle: 0.0
