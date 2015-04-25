@@ -114,9 +114,7 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
 
   bb_signal_position_estimate_ = NULL;
 
-  bb_laser_lines_[0] = NULL;
-  bb_laser_lines_[1] = NULL;
-  bb_laser_lines_[2] = NULL;
+  memset(bb_laser_lines_, NUM_LASER_LINES, sizeof(LaserLineInterface *));
 }
 
 MachineSignalPipelineThread::~MachineSignalPipelineThread() {}
@@ -288,6 +286,7 @@ void MachineSignalPipelineThread::init()
   // Laser-lines config
   cfg_laser_lines_enabled_ = config->get_bool(CFG_PREFIX "/laser-lines/enable");
   cfg_laser_lines_min_vis_hist_ = config->get_uint(CFG_PREFIX "/laser-lines/min_visibility_history");
+  cfg_laser_lines_moving_avg_ = config->get_bool(CFG_PREFIX "/laser-lines/moving_avg");
 
   // Laser Cluster config
   cfg_lasercluster_enabled_ = config->get_bool(CFG_PREFIX "/lasercluster/enable");
@@ -367,11 +366,29 @@ void MachineSignalPipelineThread::init()
 
   bb_signal_position_estimate_ = blackboard->open_for_writing<SignalHintInterface>("/machine-signal/position-hint");
 
-  bb_laser_lines_[0] = blackboard->open_for_reading<LaserLineInterface>("/laser-lines/1");
-  bb_laser_lines_[1] = blackboard->open_for_reading<LaserLineInterface>("/laser-lines/2");
-  bb_laser_lines_[2] = blackboard->open_for_reading<LaserLineInterface>("/laser-lines/3");
+  bb_open_laser_lines();
 
   config->add_change_handler(this);
+}
+
+
+void MachineSignalPipelineThread::bb_open_laser_lines()
+{
+  string avg_suffix = "";
+  if (cfg_laser_lines_moving_avg_) avg_suffix = "/moving_avg";
+  for (uint i=0; i < NUM_LASER_LINES; ++i) {
+    bb_laser_lines_[i] = blackboard->open_for_reading_f<LaserLineInterface>("/laser-lines/%d%s", i+1, avg_suffix.c_str());
+  }
+}
+
+
+void MachineSignalPipelineThread::bb_close_laser_lines()
+{
+  string avg_suffix = "";
+  if (cfg_laser_lines_moving_avg_) avg_suffix = "/moving_avg";
+  for (LaserLineInterface *bb_laser_line : bb_laser_lines_) {
+    blackboard->close(bb_laser_line);
+  }
 }
 
 
@@ -410,6 +427,7 @@ void MachineSignalPipelineThread::finalize()
     blackboard->close(iface);
   }
   blackboard->close(bb_signal_position_estimate_);
+  bb_close_laser_lines();
 
   vision_master->unregister_thread(this);
 
@@ -746,6 +764,15 @@ void MachineSignalPipelineThread::loop()
         && color_data_consistent(&cfy_ctxt_green_1_)
         && color_data_consistent(&cfy_ctxt_green_0_))) {
       reinit_color_config();
+      bb_close_laser_lines();
+      try {
+        bb_open_laser_lines();
+      } catch (Exception &e) {
+        logger->log_error(name(), e.what());
+        logger->log_error(name(), "Error opening smoothed LaserLineInterface. Retrying with moving_avg = false");
+        cfg_laser_lines_moving_avg_ = false;
+        bb_open_laser_lines();
+      }
       cfg_changed_ = false;
     }
 
@@ -1595,6 +1622,8 @@ void MachineSignalPipelineThread::config_value_changed(const Configuration::Valu
         cfg_laser_lines_min_vis_hist_ = v->get_uint();
       else if (opt == "/enable")
         cfg_laser_lines_enabled_ = v->get_bool();
+      else if (opt == "/moving_avg")
+        cfg_laser_lines_moving_avg_ = v->get_bool();
     }
     else if (sub_prefix == "") {
       if (opt == "/roi_max_aspect_ratio")
