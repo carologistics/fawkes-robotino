@@ -58,6 +58,7 @@ function target_reached()
 end
 
 function navi_failure()
+   printf("RELGOTO msgid: %f / %f", navigator:msgid(), fsm.vars.goto_msgid)
    if navigator:msgid() == fsm.vars.goto_msgid then
       return navigator:is_final() and navigator:error_code() ~= 0
    end
