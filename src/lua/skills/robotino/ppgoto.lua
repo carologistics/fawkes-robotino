@@ -74,7 +74,11 @@ end
 
 function jumpcond_navifinal(state)
    --printf("msgid: %d/%d  final: %s", state.fsm.vars.msgid, ppnavi:msgid(), tostring(ppnavi:is_final()))
-   return state.fsm.vars.msgid == ppnavi:msgid() and ppnavi:is_final()
+   return state.fsm.vars.msgid == ppnavi:msgid() and
+          ppnavi:is_final() and
+          ( ppnavi:error_code() ~= ppnavi.ERROR_NONE or
+            ppnavi:error_code() ~= ppnavi.ERROR_OBSTRUCTION
+          )
 end
 
 -- States
@@ -90,8 +94,8 @@ fsm:define_states{
 fsm:add_transitions{
    {"PPGOTO", "FAILED", cond_and_precond="not ppnavi:has_writer()", desc="No writer for interface"},
    {"PPGOTO", "FAILED", cond=jumpcond_paramfail, desc="Invalid/insufficient parameters"},
+   {"PPGOTO", "FINAL", cond=jumpcond_navifinal, desc="Position reached"},
    {"PPGOTO", "SKILL_GOTO", cond=jumpcond_navifail, desc="Navigator failure with err: " .. ppnavi:error_code() .. " try goto"},
-   {"PPGOTO", "FINAL", cond=jumpcond_navifinal, desc="Position reached"}
 
 }
 
