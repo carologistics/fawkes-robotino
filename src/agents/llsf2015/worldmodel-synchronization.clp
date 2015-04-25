@@ -69,26 +69,27 @@
   )
   
   ;add worldmodel about puck-storage
-  (delayed-do-for-all-facts ((?ps puck-storage)) TRUE
-    ;construct submsg for each machine
-    (bind ?ps-msg (pb-create "llsf_msgs.PuckStorageState"))
-    ;set name
-    (pb-set-field ?ps-msg "name" (str-cat ?ps:name))
-    (if (neq ?ps:puck NONE)
-      then
-      ;set puck
-      (pb-set-field ?ps-msg "puck" ?ps:puck)
-    )
-    ;set incoming
-    (foreach ?incoming-action (fact-slot-value ?ps incoming)
-      (pb-add-list ?ps-msg "incoming" (str-cat ?incoming-action))
-    )
-    ;set agents responsible for incoming fields
-    (foreach ?incoming-agent (fact-slot-value ?ps incoming-agent)
-      (pb-add-list ?ps-msg "incoming_agent" (str-cat ?incoming-agent))
-    )
-    (pb-add-list ?worldmodel "storage" ?ps-msg)
-  )
+  ; TODO re-enable puck storage in wm sync
+  ;(delayed-do-for-all-facts ((?ps puck-storage)) TRUE
+  ;  ;construct submsg for each machine
+  ;  (bind ?ps-msg (pb-create "llsf_msgs.PuckStorageState"))
+  ;  ;set name
+  ;  (pb-set-field ?ps-msg "name" (str-cat ?ps:name))
+  ;  (if (neq ?ps:puck NONE)
+  ;    then
+  ;    ;set puck
+  ;    (pb-set-field ?ps-msg "puck" ?ps:puck)
+  ;  )
+  ;  ;set incoming
+  ;  (foreach ?incoming-action (fact-slot-value ?ps incoming)
+  ;    (pb-add-list ?ps-msg "incoming" (str-cat ?incoming-action))
+  ;  )
+  ;  ;set agents responsible for incoming fields
+  ;  (foreach ?incoming-agent (fact-slot-value ?ps incoming-agent)
+  ;    (pb-add-list ?ps-msg "incoming_agent" (str-cat ?incoming-agent))
+  ;  )
+  ;  (pb-add-list ?worldmodel "storage" ?ps-msg)
+  ;)
 
   ;add worldmodel about exploration-zones
   (delayed-do-for-all-facts ((?zone zone-exploration)) TRUE
