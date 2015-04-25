@@ -149,6 +149,7 @@ function mps_visible_tag(self, hist_min)
 
         if mps_in_zone(self, obj_map.x, obj_map.y) then
           table.insert( tags_vis, point_on_obj )
+          printf("Found MPS by tag at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
         end
       end
     end
@@ -196,6 +197,7 @@ function mps_visible_laser(self, hist_min)
       
       if mps_in_zone( self, obj_map.x, obj_map.y ) then
         table.insert( lines_vis, point_on_obj )
+          printf("Found MPS by laser-lines at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
       end
     end
   end
