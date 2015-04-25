@@ -52,7 +52,7 @@
 )
 
 
-(defrule mps-instruciton-send-instructions-periodically
+(defrule mps-instruction-send-instructions-periodically
   "Periodically send instructions to mps, so they know what to produce."
   (time $?now)
   ?mps-inst <- (mps-instruction (machine ?machine) (seq ?seq)

@@ -27,8 +27,8 @@
 (defrule step-insert-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name insert) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps) (machine-feature ?feature))
+  ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
+		 (machine ?mps) (machine-feature ?feature) (gate ?gate))
   (machine (name ?mps) (mtype ?mtype))
   (task (name ?task-name))
   ?state <- (state STEP-STARTED)
@@ -49,6 +49,10 @@
   (if (and (eq ?mtype CS)
            (member$ ?task-name (create$ produce-c0 deliver-c0))) then
     (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock ?mps)))
+  )
+  (if (and (eq ?mtype DS)
+           (eq ?task-name deliver-c0)) then
+    (assert (mps-instruction (machine ?mps) (gate ?gate)))
   )
 )
 
