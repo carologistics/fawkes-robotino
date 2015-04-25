@@ -136,16 +136,7 @@
 (defrule game-remove-exploration-states
   "When entering PRODUCTION phase, remove all states that are only needed in EXPLORATION."
   (phase PRODUCTION)
-  ?s <- (state EXP_START|
-	       EXP_IDLE|
-	       EXP_LOCK_REQUIRED|
-	       EXP_DRIVING_TO_MACHINE|
-	       EXP_DRIVING_TO_MACHINE_GLOBAL|
-	       EXP_WAITING_AT_MACHINE|
-	       EXP_FOUND_NEXT_MACHINE|
-	       EXP_PREPARE_FOR_PRODUCTION|
-	       EXP_LOCK_ACCEPTED|
-	       EXP_PREPARE_FOR_PRODUCTION_FINISHED)
+  ?s <- (state ?exp-state&:(eq "EXP_" (sub-string 1 4 (str-cat ?exp-state))))
   =>
   (printout warn "removing exp-state because we are in production" crlf)
   (retract ?s)
