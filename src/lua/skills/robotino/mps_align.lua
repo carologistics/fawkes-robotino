@@ -171,7 +171,7 @@ fsm:add_transitions{
    {"SEARCH_LINE_FOR_TAG", "FAILED",              timeout=TIMEOUT,      desc="can't align by tag and can't recover with line => fail" },
    {"SEARCH_LINE",      "LINE_SETTLE",            cond=see_line,        desc="see line"},
    {"SEARCH_LINE",      "DECIDE_RETRY",           timeout=TIMEOUT,      desc="timeout"},
-   {"LINE_SETTLE",      "ALIGN_WITH_LASERLINES",  timeout=0.5,          desc="wait 0.5s"}
+   {"LINE_SETTLE",      "ALIGN_WITH_LASERLINES",  timeout=1.5,          desc="wait 0.5s"}
 }
 
 function INIT:init()
