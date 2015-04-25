@@ -44,13 +44,13 @@ Parameters:
 local MIN_VIS_HIST=25
 local TIMEOUT=120
 local ALIGN_POS = {
-   {x=0.5, y=0, ori=0},
-   {x=0.6, y=0, ori=0.3},
-   {x=0.6, y=0, ori=-0.3},
-   {x=0.4, y=0, ori=0.2},
-   {x=0.4, y=0, ori=-0.2},
-   {x=0.5, y=0, ori=0.25},
-   {x=0.5, y=0, ori=-0.25}
+   {x=0.5, y=  0},
+   {x=0.6, y=  0.1},
+   {x=0.6, y= -0.1},
+   {x=0.4, y=  0.05},
+   {x=0.4, y= -0.05},
+   {x=0.5, y=  0.075},
+   {x=0.5, y= -0.075}
 }
 
 -- Initialize as skill module
@@ -89,7 +89,7 @@ fsm:define_states{
 -- Transitions
 fsm:add_transitions{
    {"INIT", "FAILED", precond="not navgraph", desc="navgraph not available"},
-   {"INIT", "FAILED", precond=invalid_node, desc="invalid node"},
+   --{"INIT", "FAILED", precond=invalid_node, desc="invalid node"}, -- Agent may send invalid places. Undo when agent is fixed.
    {"INIT", "FAILED", precond="not bb_signal:has_writer()", desc="bb_signal missing"},
    
    {"INIT", "SKILL_ALIGN", cond=true},
@@ -104,7 +104,10 @@ function INIT:init()
    self.fsm.vars.tries = 0
    self.fsm.vars.giveup_time = os.time() + ((self.fsm.vars.wait_for and TIMEOUT) or 20)
    bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.EnableSwitchMessage:new())
-
+ 
+   if not(self.fsm.vars.place and navgraph:node(self.fsm.vars.place):is_valid()) then
+      self.fsm.vars.place = "place-default"
+   end
    local node = navgraph:node(self.fsm.vars.place)
    local msg = bb_signal_hint.SignalPositionMessage:new()
    msg:set_translation(0, node:property_as_float("signal_hint_x"))

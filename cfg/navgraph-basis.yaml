@@ -36,9 +36,19 @@ default-properties:
     - signal_hint_z: 0.78
 
 nodes:
+
+# Default point, used only for mps_detect_signal when no or an invalid place= is given
+  - !unconnected
+    name: place-default
+    pos: [1, 1]
+    properties:
+      - only-copy-properties
+
+
 # Exploration Points
 # two points for each cell, so for each mps rotation at least one point can see the tag
 # cyan half:
+
   - name: Exp-CM1
     pos: [0.0, 1.5]
     properties:
