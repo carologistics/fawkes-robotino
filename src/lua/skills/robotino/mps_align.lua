@@ -74,8 +74,8 @@ local TAG_X_ERR=0.02
 local MIN_VIS_HIST=10
 local TIMEOUT=4
 local AREA_LINE_ERR_X=0.05
-local AREA_LINE_ERR_Y=0.1
-local AREA_LINE_ERR_ORI=0.17
+local AREA_LINE_ERR_Y=0.15
+local AREA_LINE_ERR_ORI=0.2 --0.17
 local LINE_TRYS=3
 local LINE_FOR_TAG_TRYS=2
 
@@ -239,5 +239,6 @@ function ALIGN_WITH_LASERLINES:init()
    self.skills[1].x         = pp.x
    self.skills[1].y         = 0 -- can't improve y coordinate with laserlines so leave it
    self.skills[1].ori       = pp.ori --self.fsm.vars.line_best.ori + self.fsm.vars.ori
+   self.skills[1].vel_trans = 0.1
    self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
 end
