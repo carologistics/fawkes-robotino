@@ -27,9 +27,7 @@ module(..., skillenv.module_init)
 name               = "shelf_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
-depends_interfaces = {
-   {v = "line1", type = "LaserLineInterface"},
-}
+depends_interfaces = {}
 
 documentation      = [==[ shelf_pick
 
@@ -65,20 +63,14 @@ function INIT:init()
 end
 
 function GOTO_SHELF:init()
-   local dest_x = 0
-   local dest_y = line1:end_point_1(1) + 0.075
-   local line_offset
-   if line1:end_point_1(1) < line1:end_point_2(1) then
-      line_offset = line1:end_point_1(1) + 0.075
-   else
-      line_offset = line1:end_point_2(1) + 0.075
-   end
+   local shelf_to_conveyor = 0.075
+   local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
-      dest_y = line_offset + 0.17
+      dest_y = shelf_to_conveyor
    elseif self.fsm.vars.slot == "MIDDLE" then
-      dest_y = line_offset + 0.1
+      dest_y = shelf_to_conveyor + shelf_distance
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = line_offset
+      dest_y = 0.3
    else
       dest_x = 0
       dest_y = 0
@@ -87,13 +79,10 @@ function GOTO_SHELF:init()
    end
    
    self.skills[1].x = dest_x
-   self.skills[1].y = dest_y
---   self.skills[1].y = -0.02 -(self.fsm.vars.slot * 0.094)
+   self.skills[1].y = -dest_y --shelf is on the right side of the conveyor
+   self.skills[1].vel_trans = 0.2
+   self.skills[1].tolerance = {x=0.02,y=0.02,ori=0.02}
 end
-
---function APPROACH_SHELF:init()
---   self.skills[1].x = line1:point_on_line(0) - 0.08
---end
 
 function GRAB_PRODUCT:init()
    self.skills[1].command = "CLOSE"
