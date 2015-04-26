@@ -90,7 +90,7 @@ function CHECK_INPUT:init()
 end
 
 function MOVING:init()
-   self.fsm.vars.msgid_timeout = os.time() + 3
+   self.fsm.vars.msgid_timeout = os.time() + 1
    if not math.isnan( self.fsm.vars.ori ) then
       local msg_ori = navigator.SetOrientationModeMessage:new( navigator.OrientAtTarget )
       fsm.vars.ori_msgid = navigator:msgq_enqueue_copy(msg_ori)
