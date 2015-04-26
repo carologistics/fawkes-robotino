@@ -224,8 +224,8 @@ nodes:
       - only-copy-properties
       - tag_input: 1
       - tag_output: 2
-      - input_offset_y: 0
-      - output_offset_y: 0
+      - input_offset_y: -0.02
+      - output_offset_y: -0.01
   - !unconnected
     name: C-CS2
     pos: [0, 0]
@@ -254,6 +254,8 @@ nodes:
       - only-copy-properties
       - tag_input: 65
       - tag_output: 66
+      - input_offset_y: 0
+      - output_offset_y: -0.01
   - !unconnected
     name: C-DS
     pos: [0, 0]
@@ -261,6 +263,8 @@ nodes:
       - only-copy-properties
       - tag_input: 81
       - tag_output: 82
+      - input_offset_y: -0.02
+      - output_offset_y: 0
 #Magenta
   - !unconnected
     name: M-CS1
