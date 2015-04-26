@@ -65,6 +65,10 @@ function navi_failure()
    return false
 end
 
+function not_our_msgid()
+   return navigator:msgid() ~= fsm.vars.goto_msgid and os.time() > fsm.vars.msgid_timeout
+end
+
 fsm:define_states{ export_to=_M,
    closure={can_navigate=can_navigate},
    {"CHECK_INPUT", JumpState},
@@ -74,6 +78,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    { "CHECK_INPUT", "FAILED", cond="not can_navigate()", desc="Navigator not running" },
    { "MOVING", "FAILED", cond=navi_failure, desc="Navigator returned error" },
+   { "MOVING", "MOVING", cond=not_our_msgid, desc="msgid workaround" },
    { "CHECK_INPUT", "MOVING", cond=can_navigate },
    { "MOVING", "FINAL", cond=target_reached },
 }
@@ -85,6 +90,7 @@ function CHECK_INPUT:init()
 end
 
 function MOVING:init()
+   self.fsm.vars.msgid_timeout = os.time() + 3
    if not math.isnan( self.fsm.vars.ori ) then
       local msg_ori = navigator.SetOrientationModeMessage:new( navigator.OrientAtTarget )
       fsm.vars.ori_msgid = navigator:msgq_enqueue_copy(msg_ori)
