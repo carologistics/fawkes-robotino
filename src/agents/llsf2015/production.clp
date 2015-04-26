@@ -173,8 +173,8 @@
   (product (id ?product-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color) (base ?base-color))
   (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
-    (begin ?begin) 
-    (end ?end&:(tac-can-use-timeslot (nth$ 1 ?game-time) ?begin ?end (+ ?*SKILL-DURATION-GET-PRODUCED* ?*SKILL-DURATION-DELIVER*)))
+    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) 40)))
+    (end ?end)
     (in-production 0)
   )
   =>
@@ -228,8 +228,8 @@
   )
   (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
-    (begin ?begin) 
-    (end ?end&:(tac-can-use-timeslot (nth$ 1 ?game-time) ?begin ?end ?*SKILL-DURATION-DELIVER*))
+    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) 40)))
+    (end ?end)
     (delivery-gate ?gate)
   )
   =>
