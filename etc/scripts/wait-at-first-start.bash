@@ -4,7 +4,7 @@
 
 #args 1: sleep time
 
-NOW=$(date +%d%H%M%S)
+NOW=$(date +%s)
 
 TIME_DIFF=$(($NOW-$TAB_START_TIME))
 

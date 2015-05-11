@@ -195,13 +195,13 @@ if [  $COMMAND  == start ]; then
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Robotino_$ROBO -e 'bash -c \"export TAB_START_TIME=$(date +%d%H%M%S); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Robotino_$ROBO -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
     done
 
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
-	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Comm -e 'bash -c \"export TAB_START_TIME=$(date +%d%H%M%S); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Comm -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
     fi
 
     # open windows
