@@ -649,31 +649,24 @@
   (retract ?pif)
 )
 
-; (defrule wm-update-puck-in-gripper
-;   (declare (salience ?*PRIORITY-CLEANUP*))
-;   ?rif <- (RobotinoSensorInterface (id "Robotino") (distance $?distances))
-;   ?pig <- (puck-in-gripper ?puck)
-;   (confval (path "/hardware/robotino/puck_sensor/index") (value ?index))
-;   (confval (path "/hardware/robotino/puck_sensor/trigger_dist") (value ?trigger))
-;   =>
-;   (bind ?dist (nth$ (+ ?index 1) ?distances))
-;   (if (and (< ?dist ?trigger) (not ?puck))
-;     then
-;     ;(printout t "Have puck in gripper" crlf)
-;     (retract ?pig)
-;     (assert (puck-in-gripper TRUE))
-    
-;     else
-    
-;     (if (and (> ?dist ?trigger) ?puck)
-; 	then
-;       ;(printout t "Have no puck in gripper" crlf)
-;       (retract ?pig)
-;       (assert (puck-in-gripper FALSE))
-;     )
-;   )
-;   (retract ?rif)
-; )
+(defrule wm-update-puck-in-gripper
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  ?grip <- (AX12GripperInterface (id "Gripper AX12") (holds_puck ?holds-puck))
+  ?pig <- (puck-in-gripper ?puck)
+  =>
+  (if (eq ?holds-puck TRUE)
+    then
+    (printout t "Have puck in gripper" crlf)
+    (retract ?pig)
+    (assert (puck-in-gripper TRUE))
+  
+    else
+    (printout t "Have no puck in gripper" crlf)
+    (retract ?pig)
+    (assert (puck-in-gripper FALSE))
+  )
+  (retract ?grip)
+)
 
 (defrule wm-set-bs-output-color
   "Set the correct loaded-id after color is ordered at BS"
