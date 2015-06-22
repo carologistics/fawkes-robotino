@@ -260,28 +260,58 @@ void ConveyorVisionThread::detect()
   mps_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
   int visibility_history = mps_conveyor_if_->visibility_history();
   
+  logger->log_info(name(), "got %d faces", faces.size());
   // ignore images that probably contain more than one conveyor
   if (faces.size() == 1) {
     // width of object at one meters distance
-    float focal_length_mm = 50;
-    float obj_height_mm = 50;
-    float im_height_px = frame.rows;
-    float obj_height_px = faces[0].height;
-    float sensor_height_mm = 2; // 1/4" in mm
-    float height_width_sqrt = sqrt(frame.rows * frame.rows + frame.cols * frame.cols);
-    float opening_angle = 0.86325;
-    float pixels_per_rad = opening_angle / height_width_sqrt;
-//    float norm_width = 0.47 / 78;
-//    float norm_height = 0.4 / 85;
-    Point center( faces[0].x + faces[0].width*0.5, faces[0].y + faces[0].height*0.5 );
-    float dist_from_center_px = frame.cols / 2 - center.x;
-    float obj_deg = -(dist_from_center_px * pixels_per_rad);
-    float distance = (focal_length_mm * obj_height_mm * im_height_px) / (obj_height_px * sensor_height_mm);
-    printf("found face: x: %d, y: %d, width: %d, height: %d distance:%f, obj_deg: %f\n", faces[0].x, faces[0].y, faces[0].width, faces[0].height, distance, obj_deg);
-    mps_conveyor_if_->set_translation(0, 0);
-    mps_conveyor_if_->set_translation(1, 0);
-    mps_conveyor_if_->set_translation(2, 0);
-    mps_conveyor_if_->set_rotation(0, obj_deg);
+    
+    float P = 180; // pixel
+    float D = 21;  // cm
+    float W = 6.5; // cm
+    float focal_length = (P * D) / W;
+    float d_dash = (focal_length * W) / faces[0].width;
+
+//    float beta = (asin(W/d_dash) * 180) / M_PI;
+    float beta = asin(W / d_dash);
+
+    float multiplier = frame.cols / faces[0].width;
+    float overall_open_angle = beta * multiplier;
+
+    // center position of predRect relative to the middle of the image.
+    float center_x = faces[0].x + faces[0].width / 2 - frame.cols / 2;
+    float pixels_x_per_degree = frame.cols / overall_open_angle;
+    float center_x_angle = center_x / pixels_x_per_degree;
+    float world_pos_x = sin(center_x_angle) * d_dash;
+
+    // center position of predRect relative to the middle of the image.
+    float center_y = faces[0].y + faces[0].height / 2 - frame.rows / 2;
+    float pixels_y_per_degree = frame.rows / overall_open_angle;
+    float center_y_angle = center_y / pixels_y_per_degree;
+    float world_pos_y = -(sin(center_y_angle) * d_dash);
+    
+    float world_pos_z = sqrt(d_dash*d_dash + world_pos_x*world_pos_x);
+    
+//    float focal_length_mm = 50;
+//    float obj_height_mm = 50;
+//    float im_height_px = frame.rows;
+//    float obj_height_px = faces[0].height;
+//    float sensor_height_mm = 2; // 1/4" in mm
+//    float height_width_sqrt = sqrt(frame.rows * frame.rows + frame.cols * frame.cols);
+//    float opening_angle = 0.86325;
+//    float pixels_per_rad = opening_angle / height_width_sqrt;
+////    float norm_width = 0.47 / 78;
+////    float norm_height = 0.4 / 85;
+//    Point center( faces[0].x + faces[0].width*0.5, faces[0].y + faces[0].height*0.5 );
+//    float dist_from_center_px = frame.cols / 2 - center.x;
+//    float obj_deg = -(dist_from_center_px * pixels_per_rad);
+//    float distance = (focal_length_mm * obj_height_mm * im_height_px) / (obj_height_px * sensor_height_mm);
+    
+//    printf("found face: x: %d, y: %d, width: %d, height: %d distance:%f, obj_deg: %f\n", faces[0].x, faces[0].y, faces[0].width, faces[0].height, distance, obj_deg);
+    logger->log_info(name(), "Found conveyor: x= %f, y= %f, z= %f", world_pos_x, world_pos_y, world_pos_z);
+    mps_conveyor_if_->set_translation(0, world_pos_y);
+    mps_conveyor_if_->set_translation(1, world_pos_x);
+    mps_conveyor_if_->set_translation(2, world_pos_z);
+    mps_conveyor_if_->set_rotation(0, 0);
     mps_conveyor_if_->set_rotation(1, 0);
     //interface->set_timestamp(&p->cart.stamp);
     mps_conveyor_if_->set_frame("base_conveyor");
