@@ -17,4 +17,4 @@ plugins/conveyor_vision:
   # frame of reference
   frame: "/cam_tag"
 
-  classifier_file: /home/nicolas/fawkes-robotino/cfg/conveyor_classifier.xml
+  classifier_file: conveyor_classifier.xml
