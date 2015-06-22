@@ -8,7 +8,7 @@ plugins/laser-filter:
 
     # URG input interface
     #in/urg: Laser360Interface::Laser urg
-    in/sick-tim55x: Laser360Interface::Laser tim55x
+    in/sick-tim55x: Laser360Interface::Laser tim55x 360
 
     # URG filtered output interface
     out/filtered: Laser360Interface::Laser urg-filtered
@@ -28,6 +28,20 @@ plugins/laser-filter:
 
         from: 235
         to: 125
+
+  sick-downsample:
+
+    # URG input interface
+    #in/urg: Laser360Interface::Laser urg
+    in/sick-tim55x: Laser1080Interface::Laser tim55x
+
+    # URG filtered output interface
+    out/filtered: Laser360Interface::Laser tim55x 360
+
+    filters:
+      1-min:
+        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        type: 1080to360
 
   colli:
 
