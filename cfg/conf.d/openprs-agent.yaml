@@ -1,0 +1,56 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/openprs
+---
+openprs-agent:
+
+  # In which mode should the agent kernel run? One of:
+  # - OPRS:  run in console mode
+  # - XOPRS: run in graphical mode
+  oprs-mode: OPRS
+
+  # Whether to wait for a GDB connection for a short time at startup
+  # or not. Use this to debug problems in OpenPRS modules. It will
+  # instruct mod_utils to wait 10 seconds on startup to allow for a
+  # gdb connection being made in that time.
+  gdb-delay: false
+
+  # The agent include file to load. This file should contain everything
+  # to setup the agent. Some standard modules are already loaded by the
+  # agent itself. In particular should the file load the agent's OPs.
+  # Make sure that the include file is in the OpenPRS data path.
+  agent: llsf2014
+
+  # Settings specific to the LLSF 2014 OpenPRS agent
+  llsf2014:
+    # How long to wait inbetween loops (when no intention is active)
+    idle-looptime-sec: 0
+    idle-looptime-usec: 25000
+
+    # Automatically read all interfaces opened for reading in each loop?
+    bb-auto-read: true
+    # Automatically clean all blackboard interface facts?
+    bb-auto-cleanup: true
+
+    # Where to look for protobuf messages
+    protobuf-paths: [ "@BASEDIR@/src/libs/llsf_msgs" ]
+    # Automatically call protobuf processing?
+    protobuf-auto-process: true
+
+    # Game data, team name, robot name, and robot number
+    team-name: Carologistics
+    robot-name: R-1
+    robot-number: 1
+
+    # Communication settings
+    peer-address: 137.226.233.255
+    peer-public-send-port: 4445
+    peer-public-recv-port: 4444
+    peer-cyan-send-port: 4446
+    peer-cyan-recv-port: 4441
+    peer-magenta-send-port: 4447
+    peer-magenta-recv-port: 4442
+    peer-private-key: randomkey
+    peer-private-cipher: aes-128-cbc
+    beacon-interval: 2.0

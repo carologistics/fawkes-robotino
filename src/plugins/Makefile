@@ -27,7 +27,6 @@ SUBDIRS	= clips-motor-switch \
 	  agent-monitor \
 	  marker_writer \
 
-
 include $(BUILDSYSDIR)/rules.mk
 
 gazebo: ax12_gripper tag_vision
