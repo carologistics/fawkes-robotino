@@ -22,7 +22,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "conveyor_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"motor_move"}
+depends_skills     = {"motor_move","approach_mps"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "conveyor_0", type = "Position3DInterface"},

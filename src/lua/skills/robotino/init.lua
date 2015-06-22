@@ -45,9 +45,9 @@ skillenv.use_skill("skills.robotino.explore_zone")
 
 -- Skills for MPS interaction
 skillenv.use_skill("skills.robotino.mps_align")
-skillenv.use_skill("skills.robotino.conveyor_align")
 skillenv.use_skill("skills.robotino.mps_detect_signal")
 skillenv.use_skill("skills.robotino.approach_mps")
+skillenv.use_skill("skills.robotino.conveyor_align")
 skillenv.use_skill("skills.robotino.shelf_pick")
 skillenv.use_skill("skills.robotino.slide_put")
 skillenv.use_skill("skills.robotino.shelf_put")
