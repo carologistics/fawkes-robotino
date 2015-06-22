@@ -42,7 +42,7 @@ local sensor_index = 0
 if config:exists("/hardware/robotino/distance_front/index") then
    sensor_index = config:get_uint("/hardware/robotino/distance_front/index")
 end
-local sensor_threshold = self.fsm.vars.x or 0.15
+local sensor_threshold
 
 fsm:define_states{ export_to=_M, closure={sensor=sensor, sensor_index=sensor_index, sensor_threshold=sensor_threshold},
    {"APPROACH", SkillJumpState, skills={{motor_move}},
@@ -54,6 +54,7 @@ fsm:add_transitions{
 }
 
 function APPROACH:init()
+   sensor_threshold = self.fsm.vars.x or 0.15
    self.skills[1].x = 1
    self.skills[1].vel_trans = 0.1
 end
