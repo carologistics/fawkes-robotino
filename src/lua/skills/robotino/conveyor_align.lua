@@ -48,7 +48,8 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}}, final_to="DRIVE_Y", fail_to="FAILED"},
+   {"DRIVE_Y", SkillJumpState, skills={{motor_move}}, final_to="SETTLE", fail_to="FAILED"},
    {"SETTLE", JumpState},
    {"CHECK", JumpState},
 }
@@ -56,11 +57,10 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    closure={tolerance_ok=tolerance_ok, MAX_TRIES=MAX_TRIES},
    {"INIT", "FAILED", cond=no_writer},
-   {"INIT", "DRIVE", cond=true},
-   {"DRIVE", "SETTLE", cond=true},
+   {"INIT", "APPROACH_MPS", cond=true},
    {"SETTLE", "CHECK", timeout=1},
    {"CHECK", "FAILED", cond="vars.tries > MAX_TRIES - 1"},
-   {"CHECK", "DRIVE", cond=tolerance_not_ok},
+   {"CHECK", "DRIVE_Y", cond=tolerance_not_ok},
    {"CHECK", "FINAL", cond=true},
 }
 
@@ -68,7 +68,11 @@ function INIT:init()
    self.fsm.vars.counter = 0
 end
 
-function DRIVE:init()
+function APPROACH_MPS:init()
+   self.skills[1].x = 0.3
+end
+
+function DRIVE_Y:init()
    self.skills[1].y = conveyor_0:translation(1)
 end
 
