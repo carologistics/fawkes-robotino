@@ -59,7 +59,13 @@ MSGS_navgraph_broker_msgs = $(notdir $(patsubst %.proto,%,$(wildcard $(SRCDIR)/*
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-#.PHONY: warning_ros warning_clips warning_xmlrpcpp $(WARN_TARGETS_BOOST)
+.PHONY: warning_cpp11 warning_protobuf $(WARN_TARGETS_BOOST)
+warning_cpp11:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph-broker plugin$(TNORMAL) (C++11 support required)"
+warning_protobuf:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph-broker plugin$(TNORMAL) (protobuf not found)"
+$(WARN_TARGETS_BOOST): warning_boost_%:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build navgraph-broker plugin$(TNORMAL) (Boost library $* not found)"
 endif
 
 include $(BUILDSYSDIR)/protobuf_msgs.mk
