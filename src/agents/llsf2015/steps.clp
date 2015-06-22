@@ -91,27 +91,50 @@
   )
 )
 
-(defrule step-get-base-finish
-  "Base retrieved from BS"
-  (declare (salience ?*PRIORITY-STEP-FINISH*))
-  (phase PRODUCTION)
-  ?step <- (step (name get-base) (state running) (base ?base-color))
-  ?state <- (state SKILL-FINAL)
-  ?ste <- (skill-to-execute (skill get_product_from)
-			    (args place ?bs) (state ?skill-finish-state&final))
-  (machine (name ?bs) (produced-id ?product-id))
-  ?h <- (holding NONE)
-  =>
-  (printout t ?base-color " base retrieved"  crlf)
-  (retract ?state ?ste ?h)
-  (assert
-    (state STEP-FINISHED)
-    (holding ?product-id)
-    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
-  )
-  (modify ?step (state finished))
-)
-
+;(defrule step-get-base-finish
+;  "Base retrieved from BS"
+;  (declare (salience ?*PRIORITY-STEP-FINISH*))
+;  (phase PRODUCTION)
+;  ?step <- (step (name get-base) (state running) (base ?base-color))
+;  ?state <- (state SKILL-FINAL)
+;  ?ste <- (skill-to-execute (skill get_product_from)
+;			    (args place ?bs) (state ?skill-finish-state&final))
+;  (machine (name ?bs) (produced-id ?product-id))
+;  ?h <- (holding NONE)
+;  (puck-in-gripper TRUE)
+;  =>
+;  (printout t ?base-color " base retrieved"  crlf)
+;  (retract ?state ?ste ?h)
+;  (assert
+;    (state STEP-FINISHED)
+;    (holding ?product-id)
+;    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
+;  )
+;  (modify ?step (state finished))
+;)
+;
+;(defrule step-get-base-failed
+;  "Base retrieved from BS"
+;  (declare (salience ?*PRIORITY-STEP-FINISH*))
+;  (phase PRODUCTION)
+;  ?step <- (step (name get-base) (state running) (base ?base-color))
+;  ?state <- (state SKILL-FINAL)
+;  ?ste <- (skill-to-execute (skill get_product_from)
+;			    (args place ?bs) (state ?skill-finish-state&final))
+;  (machine (name ?bs) (produced-id ?product-id))
+;  (holding NONE)
+;  (puck-in-gripper FALSE)
+;  =>
+;  (printout t "Failed to retrieve base with color " ?base-color crlf)
+;  (retract ?state ?ste)
+;  (assert
+;    (state STEP-FAILED)
+;    ;we don't know what happened with the base, set machine as empty
+;    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
+;  )
+;  (modify ?step (state failed))
+;)
+  
 (defrule step-discard-unknown-start
   "Open gripper to discard unknown base"
   (declare (salience ?*PRIORITY-STEP-START*))
@@ -399,7 +422,7 @@
 (defrule step-common-finish
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|get-base) (state running))
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
 			    (args $?args) (state final))
@@ -416,7 +439,7 @@
 (defrule step-common-fail
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|discard) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|discard|get-base) (state running))
   ?state <- (state SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
 			    (args $?args) (state failed))
