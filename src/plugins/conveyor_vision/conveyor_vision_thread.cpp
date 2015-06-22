@@ -57,7 +57,7 @@ ConveyorVisionThread::init()
 {
    std::string prefix = CFG_PREFIX;
    std::string mps_cascade_name = (string)config->get_string((prefix + "classifier_file"));
-   if( !mps_cascade.load( mps_cascade_name ) ){ printf("--(!)Error loading\n"); return; };
+   if( !mps_cascade.load( std::string(CONFDIR) + "/" + mps_cascade_name ) ){ printf("--(!)Error loading\n"); return; };
 
 //   fawkes::Position3DInterface* puck_if_ = NULL;
     try {
