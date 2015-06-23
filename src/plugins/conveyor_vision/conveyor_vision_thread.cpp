@@ -281,15 +281,15 @@ void ConveyorVisionThread::detect()
     float center_x = faces[0].x + faces[0].width / 2 - frame.cols / 2;
     float pixels_x_per_degree = frame.cols / overall_open_angle;
     float center_x_angle = center_x / pixels_x_per_degree;
-    float world_pos_x = sin(center_x_angle) * d_dash;
+    float world_pos_x = (sin(center_x_angle) * d_dash) / 100;
 
     // center position of predRect relative to the middle of the image.
     float center_y = faces[0].y + faces[0].height / 2 - frame.rows / 2;
     float pixels_y_per_degree = frame.rows / overall_open_angle;
     float center_y_angle = center_y / pixels_y_per_degree;
-    float world_pos_y = -(sin(center_y_angle) * d_dash);
+    float world_pos_y = -(sin(center_y_angle) * d_dash) / 100;
     
-    float world_pos_z = sqrt(d_dash*d_dash + world_pos_x*world_pos_x);
+    float world_pos_z = sqrt(d_dash*d_dash + world_pos_x*world_pos_x) / 100;
     
 //    float focal_length_mm = 50;
 //    float obj_height_mm = 50;
