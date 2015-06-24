@@ -43,10 +43,11 @@ function no_writer()
 end
 
 function tolerance_not_ok()
-   return not math.abs(conveyor_0:translation(1)) <= TOLERANCE  
+   return not (math.abs(conveyor_0:translation(1)) <= TOLERANCE)
 end
 
 fsm:define_states{ export_to=_M,
+   closure={MAX_TRIES=MAX_TRIES},
    {"INIT", JumpState},
    {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}}, final_to="DRIVE_Y", fail_to="FAILED"},
    {"DRIVE_Y", SkillJumpState, skills={{motor_move}}, final_to="SETTLE", fail_to="FAILED"},
@@ -55,17 +56,16 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   closure={tolerance_ok=tolerance_ok, MAX_TRIES=MAX_TRIES},
    {"INIT", "FAILED", cond=no_writer},
    {"INIT", "APPROACH_MPS", cond=true},
    {"SETTLE", "CHECK", timeout=1},
-   {"CHECK", "FAILED", cond="vars.tries > MAX_TRIES - 1"},
+   {"CHECK", "FAILED", cond="vars.counter > MAX_TRIES"},
    {"CHECK", "DRIVE_Y", cond=tolerance_not_ok},
    {"CHECK", "FINAL", cond=true},
 }
 
 function INIT:init()
-   self.fsm.vars.counter = 0
+   self.fsm.vars.counter = 1
 end
 
 function APPROACH_MPS:init()
@@ -73,7 +73,7 @@ function APPROACH_MPS:init()
 end
 
 function DRIVE_Y:init()
-   self.skills[1].y = conveyor_0:translation(1)
+   self.skills[1].y = -conveyor_0:translation(1)
 end
 
 function CHECK:init()
