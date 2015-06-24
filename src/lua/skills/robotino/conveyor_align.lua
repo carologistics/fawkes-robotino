@@ -39,7 +39,7 @@ local TOLERANCE = 0.02
 local MAX_TRIES = 3
 
 function no_writer()
-   return not conveyor:has_writer()
+   return not conveyor_0:has_writer()
 end
 
 function tolerance_not_ok()
