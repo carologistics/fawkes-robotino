@@ -69,7 +69,7 @@ function INIT:init()
 end
 
 function APPROACH_MPS:init()
-   self.skills[1].x = 0.3
+   self.skills[1].x = 0.2
 end
 
 function DRIVE_Y:init()
