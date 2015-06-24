@@ -58,5 +58,3 @@ skillenv.use_skill("skills.robotino.get_product_from")
 -- Uncomment to use gripper for technical challenge
 --skillenv.use_skill("skills.robotino.gripper")
 --skillenv.use_skill("skills.robotino.grip_cylinder")
-
-skillenv.use_skill("skills.generic.say")
