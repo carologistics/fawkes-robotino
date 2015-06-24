@@ -53,7 +53,7 @@ fsm:add_transitions{
 }
 
 function APPROACH:init()
-   self.fsm.vars.sensor_threshold = self.fsm.vars.x or 0.08
+   self.fsm.vars.sensor_threshold = self.fsm.vars.x or 0.07
    self.skills[1].x = 1
-   self.skills[1].vel_trans = 0.1
+   self.skills[1].vel_trans = 0.05
 end
