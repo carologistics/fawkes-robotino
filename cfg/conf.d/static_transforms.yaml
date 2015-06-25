@@ -78,6 +78,6 @@ plugins/static-transforms:
     cam_conveyor:
       frame: !frame /mount_profile
       child_frame: /cam_conveyor
-      trans_x: 0.1
+      trans_x: 0.08
       trans_y: 0.0
-      trans_z: 0.02
+      trans_z: 0.03
