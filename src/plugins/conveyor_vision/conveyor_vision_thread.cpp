@@ -141,6 +141,7 @@ ConveyorVisionThread::init()
 
 
     // set up marker
+    world_pos_z_average = 0.;
     max_marker = 16;
 //    this->markers_ = new std::vector<alvar::MarkerData>();
 //    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,frame,this->name(),this->logger, this->clock, this->tf_publisher);
@@ -282,7 +283,7 @@ void ConveyorVisionThread::detect()
     float pixels_x_per_degree = frame.cols / overall_open_angle;
     float center_x_angle = center_x / pixels_x_per_degree;
     float world_pos_x = (sin(center_x_angle) * d_dash) / 100;
-
+    
     // center position of predRect relative to the middle of the image.
     float center_y = faces[0].y + faces[0].height / 2 - frame.rows / 2;
     float pixels_y_per_degree = frame.rows / overall_open_angle;
@@ -290,6 +291,18 @@ void ConveyorVisionThread::detect()
     float world_pos_y = -(sin(center_y_angle) * d_dash) / 100;
     
     float world_pos_z = sqrt(d_dash*d_dash + world_pos_x*world_pos_x) / 100;
+    
+    world_pos_z_measurements.push_front(world_pos_z);
+    if (world_pos_z_measurements.size() > 10)
+    {
+      world_pos_z_measurements.pop_back();
+    }
+    
+    for (size_t i = 0; i < world_pos_z_measurements.size(); i++)
+    {
+      world_pos_z_average += world_pos_z_measurements[i];
+    }
+    world_pos_z_average /= world_pos_z_measurements.size();
     
 //    float focal_length_mm = 50;
 //    float obj_height_mm = 50;
@@ -308,7 +321,7 @@ void ConveyorVisionThread::detect()
     
 //    printf("found face: x: %d, y: %d, width: %d, height: %d distance:%f, obj_deg: %f\n", faces[0].x, faces[0].y, faces[0].width, faces[0].height, distance, obj_deg);
     logger->log_info(name(), "Found conveyor: x= %f, y= %f, z= %f", world_pos_x, world_pos_y, world_pos_z);
-    mps_conveyor_if_->set_translation(0, world_pos_z);
+    mps_conveyor_if_->set_translation(0, world_pos_z_average);
     mps_conveyor_if_->set_translation(1, world_pos_x);
     mps_conveyor_if_->set_translation(2, world_pos_y);
     mps_conveyor_if_->set_rotation(0, 0);
@@ -327,6 +340,7 @@ void ConveyorVisionThread::detect()
             mps_conveyor_if_->set_visibility_history(visibility_history - 1);
     } else {
             mps_conveyor_if_->set_visibility_history(-1);
+            world_pos_z_measurements.clear();
     }
 
   }
