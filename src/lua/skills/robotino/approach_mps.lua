@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "approach_mps"
-fsm                = SkillHSM:new{name=name, start="APPROACH", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "sensor", type="RobotinoSensorInterface"},
@@ -67,6 +67,6 @@ function APPROACH_WITH_INFRARED:init()
 end
 
 function APPROACH_WITH_CAM:init()
-   self.skills[1].x = tfm.transform({x=conveyor_0:translation(0),y=0,ori=0}, "/cam_conveyor", "/gripper")
+   self.skills[1].x = tfm.transform({x=conveyor_0:translation(0),y=0,ori=0}, "/cam_conveyor", "/gripper").x
    self.skills[1].vel_trans = 0.05
 end
