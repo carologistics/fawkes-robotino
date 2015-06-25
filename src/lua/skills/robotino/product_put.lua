@@ -52,6 +52,10 @@ fsm:add_transitions{
    {"WAIT", "MOVE_BACK", timeout=0.5, desc="wait for gripper to open"}
 }
 
+function APPROACH_MPS:init()
+   self.skills[1].vision = true
+end
+
 function OPEN_GRIPPER:init()
    self.skills[1].command = "OPEN"
    printf("open gripper")
