@@ -27,16 +27,21 @@ name               = "approach_mps"
 fsm                = SkillHSM:new{name=name, start="APPROACH", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
-   {v = "sensor", type="RobotinoSensorInterface"}
+   {v = "sensor", type="RobotinoSensorInterface"},
+   {v = "conveyor_0", type="Position3DInterface"}
 }
 
 documentation      = [==[
                         The robot just drives forward until a sensor threshold is reached
+                        @param "x" int The x distance to the MPS when finished
+                        @param "vision" boolean if true use the conveyor vision
+                                                instead of the infrared sensor
                      ]==]
 
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+local tfm = require("tf_module")
 
 local sensor_index = 0
 if config:exists("/hardware/robotino/distance_front/index") then
@@ -44,16 +49,24 @@ if config:exists("/hardware/robotino/distance_front/index") then
 end
 
 fsm:define_states{ export_to=_M, closure={sensor=sensor, sensor_index=sensor_index},
-   {"APPROACH", SkillJumpState, skills={{motor_move}},
-      final_to="FINAL", fail_to="FAILED"},
+   {"INIT", JumpState},
+   {"APPROACH_WITH_INFRARED", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"APPROACH_WITH_CAM", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"APPROACH", "FINAL", cond="sensor:distance(sensor_index) <= vars.sensor_threshold and sensor:distance(sensor_index) > 0"}
+   {"INIT", "APPROACH_WITH_CAM", cond="vars.vision == true"},
+   {"INIT", "APPROACH_WITH_INFRARED", cond=true},
+   {"APPROACH_WITH_INFRARED", "FINAL", cond="sensor:distance(sensor_index) <= vars.sensor_threshold and sensor:distance(sensor_index) > 0"}
 }
 
-function APPROACH:init()
+function APPROACH_WITH_INFRARED:init()
    self.fsm.vars.sensor_threshold = self.fsm.vars.x or 0.07
    self.skills[1].x = 1
+   self.skills[1].vel_trans = 0.05
+end
+
+function APPROACH_WITH_CAM:init()
+   self.skills[1].x = tfm.transform({x=conveyor_0:translation(0),y=0,ori=0}, "/cam_conveyor", "/gripper")
    self.skills[1].vel_trans = 0.05
 end
