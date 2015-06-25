@@ -320,7 +320,7 @@ void ConveyorVisionThread::detect()
 //    float distance = (focal_length_mm * obj_height_mm * im_height_px) / (obj_height_px * sensor_height_mm);
     
 //    printf("found face: x: %d, y: %d, width: %d, height: %d distance:%f, obj_deg: %f\n", faces[0].x, faces[0].y, faces[0].width, faces[0].height, distance, obj_deg);
-    logger->log_info(name(), "Found conveyor: x= %f, y= %f, z= %f", world_pos_x, world_pos_y, world_pos_z);
+    logger->log_info(name(), "Found conveyor: x= %f, y= %f, z= %f", world_pos_z_average, world_pos_z, world_pos_y);
     mps_conveyor_if_->set_translation(0, world_pos_z_average);
     mps_conveyor_if_->set_translation(1, world_pos_x);
     mps_conveyor_if_->set_translation(2, world_pos_y);
