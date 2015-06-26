@@ -51,12 +51,14 @@ end
 fsm:define_states{ export_to=_M, closure={sensor=sensor, sensor_index=sensor_index},
    {"INIT", JumpState},
    {"APPROACH_WITH_INFRARED", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"SETTLE", JumpState},
    {"APPROACH_WITH_CAM", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"INIT", "APPROACH_WITH_CAM", cond="vars.vision == true"},
-   {"INIT", "APPROACH_WITH_INFRARED", cond=true},
+   {"INIT", "SETTLE", cond=true},
+   {"SETTLE", "APPROACH_WITH_INFRARED", timeout=1},
    {"APPROACH_WITH_INFRARED", "FINAL", cond="sensor:distance(sensor_index) <= vars.sensor_threshold and sensor:distance(sensor_index) > 0"}
 }
 
