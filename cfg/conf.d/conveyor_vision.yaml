@@ -32,3 +32,8 @@ plugins/conveyor_vision:
 
   # num_frames_for_average determines the number of images to calculate the x-average
   num_frames_for_average: 10
+
+  # conveyor_distance_threshold determines a maximum 
+  # allowed distance in meters from the camera to the conveyor.
+  # Measurements in x above this value are ignored.
+  conveyor_distance_threshold: 1
