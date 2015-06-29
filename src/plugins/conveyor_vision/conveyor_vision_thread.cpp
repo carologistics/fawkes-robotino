@@ -244,6 +244,7 @@ void ConveyorVisionThread::load_config()
       obj_realworld_pixels = config->get_float((prefix + "obj_realworld_pixels").c_str());
       obj_realworld_width = config->get_float((prefix + "obj_realworld_width").c_str());
       num_frames_for_average = config->get_int((prefix + "num_frames_for_average").c_str());
+      conveyor_distance_threshold = config->get_float((prefix + "conveyor_distance_threshold").c_str());
       
       // load alvar camera calibration
 //      alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
@@ -299,6 +300,8 @@ void ConveyorVisionThread::detect()
     float world_pos_y = -(sin(center_y_angle) * d_dash) / 100;
     
     float world_pos_z = sqrt(d_dash*d_dash + world_pos_x*world_pos_x) / 100;
+    if (world_pos_z > conveyor_distance_threshold)
+      return;
     
     world_pos_z_measurements.push_front(world_pos_z);
     if (world_pos_z_measurements.size() > num_frames_for_average)
