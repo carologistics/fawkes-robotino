@@ -76,6 +76,7 @@ ConveyorVisionThread::init()
 //    std::string prefix = CFG_PREFIX;
     // log, that we open load the config
     logger->log_info(name(),"loading config");
+    load_config();
     // load alvar camera calibration
 //    if(!alvar_cam.SetCalib(config->get_string((prefix + "classifier_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT))
 //    {
@@ -86,7 +87,6 @@ ConveyorVisionThread::init()
 //    detector.SetMarkerSize(marker_size);
 
     //Image Buffer ID
-    shm_id = config->get_string((prefix + "shm_image_id").c_str());
 
     // init firevision camera
     // CAM swapping not working (??)
@@ -229,11 +229,22 @@ void ConveyorVisionThread::config_tag_changed(const char *new_tag) {};
 void ConveyorVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
 void ConveyorVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
 {
+  load_config();
+}
+
+void ConveyorVisionThread::load_config()
+{
   if(cfg_mutex.try_lock()){
     try{
       std::string prefix = CFG_PREFIX;
       // log, that we open load the config
       logger->log_info(name(),"loading config");
+      shm_id = config->get_string((prefix + "shm_image_id").c_str());
+      obj_realworld_distance = config->get_float((prefix + "obj_realworld_distance").c_str());
+      obj_realworld_pixels = config->get_float((prefix + "obj_realworld_pixels").c_str());
+      obj_realworld_width = config->get_float((prefix + "obj_realworld_width").c_str());
+      num_frames_for_average = config->get_int((prefix + "num_frames_for_average").c_str());
+      
       // load alvar camera calibration
 //      alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
       // load marker size and apply it

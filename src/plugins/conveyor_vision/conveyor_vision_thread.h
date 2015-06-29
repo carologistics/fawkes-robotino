@@ -87,7 +87,7 @@ class ConveyorVisionThread
 
  private:
   /// load config from file
-  void loadConfig();
+  void load_config();
   /// function to get the markers from an image
   void get_marker();
   /// store the alvar markers, containing the poses
