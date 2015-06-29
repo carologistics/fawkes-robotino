@@ -245,6 +245,7 @@ void ConveyorVisionThread::load_config()
       obj_realworld_width = config->get_float((prefix + "obj_realworld_width").c_str());
       num_frames_for_average = config->get_int((prefix + "num_frames_for_average").c_str());
       conveyor_distance_threshold = config->get_float((prefix + "conveyor_distance_threshold").c_str());
+      visualization_enabled = config->get_bool((prefix + "visualization_enabled").c_str());
       
       // load alvar camera calibration
 //      alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
@@ -344,6 +345,14 @@ void ConveyorVisionThread::detect()
       mps_conveyor_if_->set_visibility_history(visibility_history + 1);
     } else {
       mps_conveyor_if_->set_visibility_history(1);
+    }
+    if (visualization_enabled)
+    {
+      cv::rectangle(frame, Point(faces[0].x, faces[0].y), Point(faces[0].x + faces[0].width, faces[0].y + faces[0].height), Scalar(255,0,0), 1);
+      ipl = cvCreateImage(cvSize(frame.cols,frame.rows),8,3);
+      IplImage ipltemp=frame;
+      cvCopy(&ipltemp,ipl);
+      firevision::IplImageAdapter::convert_image_yuv422_planar(ipl,image_buffer);      
     }
   } else {
     // puck not visible

@@ -117,6 +117,7 @@ class ConveyorVisionThread
   float obj_realworld_pixels;
   unsigned int num_frames_for_average;
   float conveyor_distance_threshold;
+  bool visualization_enabled;
 
   // config handling
   virtual void config_value_erased(const char *path);
