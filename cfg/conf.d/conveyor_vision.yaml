@@ -18,3 +18,17 @@ plugins/conveyor_vision:
   frame: "/cam_tag"
 
   classifier_file: conveyor_classifier.xml
+  
+  # obj_distance is the measured distance in cm from the camera to the object 
+  # that occupies the number of pixels in width determined in obj_pixels
+  obj_realworld_distance: 21
+ 
+  # obj_pixels determines the number of pixels in width 
+  # that the object occupies in the camera's image given obj_distance 
+  obj_realworld_pixels: 180
+
+  # obj_realworld_width determines the width of the object in the real world in cm
+  obj_realworld_width: 6.5
+
+  # num_frames_for_average determines the number of images to calculate the x-average
+  num_frames_for_average: 10
