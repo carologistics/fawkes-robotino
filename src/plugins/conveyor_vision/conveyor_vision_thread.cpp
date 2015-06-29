@@ -277,14 +277,11 @@ void ConveyorVisionThread::detect()
   if (faces.size() == 1) {
     // width of object at one meters distance
     
-    float P = 180; // pixel
-    float D = 21;  // cm
-    float W = 6.5; // cm
-    float focal_length = (P * D) / W;
-    float d_dash = (focal_length * W) / faces[0].width;
+    float focal_length = (obj_realworld_pixels * obj_realworld_distance) / obj_realworld_width;
+    float d_dash = (focal_length * obj_realworld_width) / faces[0].width;
 
 //    float beta = (asin(W/d_dash) * 180) / M_PI;
-    float beta = asin(W / d_dash);
+    float beta = asin(obj_realworld_width / d_dash);
 
     float multiplier = frame.cols / faces[0].width;
     float overall_open_angle = beta * multiplier;
@@ -304,7 +301,7 @@ void ConveyorVisionThread::detect()
     float world_pos_z = sqrt(d_dash*d_dash + world_pos_x*world_pos_x) / 100;
     
     world_pos_z_measurements.push_front(world_pos_z);
-    if (world_pos_z_measurements.size() > 10)
+    if (world_pos_z_measurements.size() > num_frames_for_average)
     {
       world_pos_z_measurements.pop_back();
     }

@@ -112,6 +112,10 @@ class ConveyorVisionThread
   float world_pos_z_average;
   /// Image Buffer Id
   std::string shm_id;
+  float obj_realworld_distance;
+  float obj_realworld_width;
+  float obj_realworld_pixels;
+  unsigned int num_frames_for_average;
 
   // config handling
   virtual void config_value_erased(const char *path);
