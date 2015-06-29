@@ -37,3 +37,6 @@ plugins/conveyor_vision:
   # allowed distance in meters from the camera to the conveyor.
   # Measurements in x above this value are ignored.
   conveyor_distance_threshold: 1
+
+  # enable visualization of detected conveyor
+  visualization_enabled: true
