@@ -74,6 +74,7 @@ end
 
 function DRIVE_Y:init()
    self.skills[1].y = -conveyor_0:translation(1)
+   self.skills[1].TOLERANCE = { x=0.002, y=0.002, ori=0.01 }
 end
 
 function CHECK:init()

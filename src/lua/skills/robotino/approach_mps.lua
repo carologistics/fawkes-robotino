@@ -74,4 +74,5 @@ end
 function APPROACH_WITH_CAM:init()
    self.skills[1].x = tfm.transform({x=conveyor_0:translation(0),y=0,ori=0}, "/cam_conveyor", "/gripper").x
    self.skills[1].vel_trans = 0.05
+   self.skills[1].TOLERANCE = { x=0.002, y=0.002, ori=0.01 }
 end

@@ -41,7 +41,7 @@ documentation      = [==[Move on a (kind of) straight line relative to /base_lin
 -- Tunables
 local V_MAX =     { x=0.3,  y=0.3,  ori=1.0 }    -- ultimate limit
 local V_MIN =     { x=0.005, y=0.005, ori=0.04 }   -- below the motor won't even start
-local TOLERANCE = { x=0.002, y=0.002, ori=0.01 } -- accuracy
+local TOLERANCE = { x=0.02, y=0.02, ori=0.025 } -- accuracy
 local D_DECEL =   { x=0.07, y=0.07, ori=0.2 }    -- deceleration distance
 local ACCEL =     { x=0.03, y=0.03, ori=0.07 }   -- accelerate by this factor every loop
 
