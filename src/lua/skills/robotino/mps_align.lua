@@ -28,7 +28,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "mps_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "align_tag", "motor_move" }
+depends_skills     = { "align_tag", "motor_move", "check_tag" }
 depends_interfaces = {
   --[[
   {v = "line1avg", type="LaserLineInterface", id="/laser-lines/1/moving_avg"},
@@ -121,9 +121,10 @@ end
 fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRIES=LINE_TRIES},
    {"INIT",                   JumpState},
    {"DECIDE_RETRY",           JumpState},
-   {"ALIGN",       SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},  --TODO check if tag is right if given
+   {"ALIGN",       SkillJumpState, skills={{motor_move}}, final_to="CHECK_TAG", fail_to="FAILED"},  --TODO check if tag is right if given
    {"SEARCH_LINE",            JumpState}, --TODO check visibility_history
    {"LINE_SETTLE",            JumpState},
+   {"CHECK_TAG",              SkillJumpState, skills={{check_tag}}, final_to="FINAL", fail_to="FAILED"},  --TODO check if tag is right if given
 }
 
 fsm:add_transitions{
@@ -175,4 +176,8 @@ function ALIGN:init()
    self.skills[1].y         = pp.y
    self.skills[1].ori       = pp.ori
    self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
+end
+
+function CHECK_TAG:init()
+  self.skills[1].tag_id = self.fsm.vars.tag_id
 end
