@@ -43,7 +43,7 @@ ConveyorVisionThread::ConveyorVisionThread()
   : Thread("ConveyorVisionThread", Thread::OPMODE_WAITFORWAKEUP),
     VisionAspect(VisionAspect::CYCLIC),
     ConfigurationChangeHandler(CFG_PREFIX),
-    fawkes::TransformAspect(fawkes::TransformAspect::ONLY_PUBLISHER,"tags")
+    fawkes::TransformAspect(fawkes::TransformAspect::ONLY_PUBLISHER,"conveyor")
 {
     fv_cam = NULL;
     shm_buffer = NULL;
