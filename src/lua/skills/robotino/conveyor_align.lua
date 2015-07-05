@@ -35,8 +35,8 @@ conveyor vision
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local TOLERANCE = 0.02
-local MAX_TRIES = 3
+local TOLERANCE = 0.005
+local MAX_TRIES = 4
 
 function no_writer()
    return not conveyor_0:has_writer()
@@ -56,11 +56,11 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond=no_writer},
+   {"INIT", "FAILED", cond=no_writer, desc="no conveyor vision"},
    {"INIT", "APPROACH_MPS", cond=true},
-   {"SETTLE", "CHECK", timeout=1},
-   {"CHECK", "FAILED", cond="vars.counter > MAX_TRIES"},
-   {"CHECK", "DRIVE_Y", cond=tolerance_not_ok},
+   {"SETTLE", "CHECK", timeout=0.5},
+   {"CHECK", "FAILED", cond="vars.counter > MAX_TRIES", desc="max tries reached"},
+   {"CHECK", "DRIVE_Y", cond=tolerance_not_ok, desc="tolerance not ok, align y distance"},
    {"CHECK", "FINAL", cond=true},
 }
 
@@ -74,7 +74,7 @@ end
 
 function DRIVE_Y:init()
    self.skills[1].y = -conveyor_0:translation(1)
-   self.skills[1].TOLERANCE = { x=0.002, y=0.002, ori=0.01 }
+   self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
 end
 
 function CHECK:init()
