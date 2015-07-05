@@ -247,6 +247,25 @@ void ConveyorVisionThread::load_config()
       conveyor_distance_threshold = config->get_float((prefix + "conveyor_distance_threshold").c_str());
       visualization_enabled = config->get_bool((prefix + "visualization_enabled").c_str());
       
+      use_hough_lines_ = config->get_bool((prefix + "/houghlines/use_hough_lines").c_str());
+      if (use_hough_lines_) {
+        hough_lines_averaging_count_ = config->get_bool((prefix + "houghlines/hough_lines_averagin_count").c_str());
+
+        binary_threshold_min_ = config->get_int((prefix + "houghlines/binary_threshold_min").c_str());
+        binary_threshold_max_ = config->get_int((prefix + "houghlines/binary_threshold_max").c_str());
+        binary_threshold_average_min_ = config->get_int((prefix + "houghlines/binary_threshold_average_min").c_str());
+        binary_threshold_average_max_ = config->get_int((prefix + "houghlines/binary_threshold_average_max").c_str());
+        max_binary_value_ = config->get_int((prefix + "houghlines/max_binary_value").c_str());
+        threshold_type_ = config->get_int((prefix + "houghlines/threshold_type").c_str());
+        morph_element_ = config->get_int((prefix + "houghlines/morph_element").c_str());
+        morph_size_ = config->get_int((prefix + "houghlines/morph_size").c_str());
+        morph_operator_ = config->get_int((prefix + "houghlines/morph_operator").c_str());
+        canny_threshold_ = config->get_int((prefix + "houghlines/canny_threshold").c_str());
+        line_mean_ = config->get_uint((prefix + "houghlines/line_mean").c_str());
+        conveyor_realworld_distance = config->get_float((prefix + "houghlines/conveyor_realworld_distance").c_str());
+        conveyor_realworld_pixels = config->get_float((prefix + "houghlines/conveyor_realworld_pixels").c_str());
+        conveyor_realworld_width = config->get_float((prefix + "houghlines/conveyor_realworld_width").c_str());
+      }
       // load alvar camera calibration
 //      alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
       // load marker size and apply it
