@@ -99,7 +99,7 @@
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill get_product_from)
 			    (args place ?bs) (state ?skill-finish-state&final))
-  (machine (name ?bs) (produced-id ?product-id))
+  ?mf <- (machine (name ?bs) (produced-id ?product-id))
   ?h <- (holding NONE)
   =>
   (printout t ?base-color " base retrieved"  crlf)
@@ -107,8 +107,8 @@
   (assert
     (state STEP-FINISHED)
     (holding ?product-id)
-    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
   )
+  (synced-modify ?mf produced-id 0)
   (modify ?step (state finished))
 )
 
@@ -155,6 +155,7 @@
   ?state <- (state STEP-STARTED)
   (game-time $?game-time)
   (team-color ?team)
+  ?ze <- (zone-exploration (name ?zone) (times-searched ?times-searched))
   =>
   (retract ?state)
   (modify ?step (state running))
@@ -168,8 +169,8 @@
                                                        search_tags ?search-tags)
                             (target ?zone))
 	  (wait-for-lock (priority ?p) (res ?zone))
-          (worldmodel-change (machine ?zone) (change ZONE_TIMES_SEARCHED_INCREMENT))
   )
+  (synced-modify ?ze times-searched (+ 1 ?times-searched))
 )
 
 (defrule step-find-tag-finish
@@ -240,7 +241,8 @@
     (return)
   )
   (retract ?s ?ws ?skill-finish-state)
-  (assert (worldmodel-change (machine ?machine) (change ADD_TAG))
+  ; TODO: synced-modify
+  (assert ;(worldmodel-change (machine ?machine) (change ADD_TAG))
           (state STEP-FINISHED))
   (modify ?step (state finished))
 
@@ -253,17 +255,14 @@
   (time $?now)
   ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
   ?s <- (state PROD_LOOKING_FOR_TAG)
-  ?zone-fact <- (zone-exploration (name ?zone))
+  ?zone-fact <- (zone-exploration (name ?zone) (times-searched ?times-searched))
   ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   =>
   (printout t "No tag found in " ?zone crlf)
   (if (eq ?explore-zone-state final) then
     (printout t "There probably is no mps in this zone!" crlf)
     (printout t "Try this zone again later ROBOCUP FIX!" crlf)
-    (assert (worldmodel-change (machine ?zone)
-                               (change ZONE_TIMES_SEARCHED_INCREMENT)))
-    ; (assert (worldmodel-change (machine ?zone) (change ZONE_STILL_TO_EXPLORE)
-    ;                            (value FALSE)))
+    (synced-modify ?zone-fact times-searched (+ 1 ?times-searched))
   )
   (retract ?s ?ws ?skill-finish-state)
   (assert (state STEP-FAILED))

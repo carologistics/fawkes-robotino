@@ -148,20 +148,11 @@
   (retract ?s)
   (assert (state TASK-ORDERED))
   ;update worldmodel
-  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
-    ;(printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
-    (if (eq ?ntl:place DELIVER)
-      then
-      (printout t "delivery not in worldmodel-changes atm" crlf)
-      ; (assert (worldmodel-change (order (nth$ 4 ?args)) (change SET_IN_DELIVERY)
-      ; 				 (value (nth$ 2 ?args))
-      ; 				 (amount (nth$ 3 ?args))))
-      else
-      (assert (worldmodel-change (machine ?ntl:place) (change ADD_INCOMING)
-				 (value ?ntl:action)))
-    )
+  (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
+    (bind ?new-fact-ptr (synced-add-to-multifield ?ntl:place incoming ?ntl:action))
+    (bind ?new-fact-ptr (synced-add-to-multifield ?new-fact-ptr incoming-agent ?*ROBOT-NAME*))
+    (modify ?ntl (place ?new-fact-ptr))
   )
-  
 )
 
 (defrule coordination-reject-proposed-task
@@ -203,9 +194,10 @@
   ?s <- (state TASK-FINISHED)
   =>
   ;release all locks for subtask goals
-  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
+  (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
-    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
+    (bind ?new-fact-ptr (synced-remove-from-multifield ?ntl:place incoming ?ntl:action))
+    (synced-remove-from-multifield ?new-fact-ptr incoming-agent ?*ROBOT-NAME*)
     (retract ?ntl)
   )
   ;remove all steps of the task
@@ -223,9 +215,10 @@
   ?t <- (task (name ?task) (state finished))
   =>
   ;release all locks for subtask goals
-  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
+  (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
-    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
+    (bind ?new-fact-ptr (synced-remove-from-multifield ?ntl:place incoming ?ntl:action))
+    (synced-remove-from-multifield ?new-fact-ptr incoming-agent ?*ROBOT-NAME*)
     (retract ?ntl)
   )
   (retract ?t)
@@ -239,7 +232,8 @@
   ;release all locks for subtask goals
   (delayed-do-for-all-facts ((?ntl needed-task-lock) (?m machine)) (eq ?m:name ?ntl:place)
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
-    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
+    (bind ?new-fact-ptr (synced-remove-from-multifield ?ntl:place incoming ?ntl:action))
+    (synced-remove-from-multifield ?new-fact-ptr incoming-agent ?*ROBOT-NAME*)
     (retract ?ntl)
   )
   (retract ?s )

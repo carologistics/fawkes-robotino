@@ -189,9 +189,10 @@
     )
   )
   (if (eq 7 (length$ ?tf-transrot)) then
-    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-                       (trans (subseq$ ?tf-transrot 1 3))
-                       (rot (subseq$ ?tf-transrot 4 7))))
+    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side 
+                            ") (frame \"/map\") (trans (create$ (implode$ " 
+                            (subseq$ ?tf-transrot 1 3)" ))) "
+                            " (rot (create$ (implode$ " (subseq$ ?tf-transrot 4 7) " ))))"))
     else
     (printout error "Can not transform " ?frame " to /map. Transform is empty. Tags positions are broken!!!" crlf)
     (printout error "Check time diff between base and laptop" crlf)
@@ -200,9 +201,7 @@
     (retract ?s ?tvi ?tagpos ?ws ?skill-finish-state)
     (return)
   )
-  (assert (state EXP_ADD_TAG)
-          (worldmodel-change (machine ?machine) (change ADD_TAG))
-  )
+  (assert (state EXP_ADD_TAG))
   (retract ?s ?tvi ?tagpos ?ws ?skill-finish-state)
 )
 
@@ -233,7 +232,8 @@
   ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
   ?s <- (state EXP_LOOKING_FOR_TAG)
   ?g <- (goalmachine ?old)
-  ?ze <- (zone-exploration (name ?old) (look-pos $?lp))
+  ?ze <- (zone-exploration (name ?old) (look-pos $?lp)
+                           (times-searched ?times-searched))
   ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   =>
   (printout t "Found no tag in zone " ?old crlf)
@@ -242,10 +242,7 @@
   (if (eq ?explore-zone-state FINAL) then
     (printout t "There probably is no mps in this zone!" crlf)
     (printout t "Try this zone again later ROBOCUP FIX!" crlf)
-    (assert (worldmodel-change (machine ?old)
-                               (change ZONE_TIMES_SEARCHED_INCREMENT)))
-    ; (assert (worldmodel-change (machine ?old) (change ZONE_STILL_TO_EXPLORE)
-    ;                            (value FALSE)))
+    (synced-modify ?ze times-searched (+ 1 ?times-searched))
   )
 
   (assert (state EXP_IDLE)
@@ -509,18 +506,17 @@
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (exp-next-machine ?next-zone)
-  (zone-exploration (name ?next-zone) (x ?) (y ?) (next ?)
-                    (look-pos $?lp) (current-look-pos ?lp-index)
-                    (still-to-explore TRUE))
+  ?ze <- (zone-exploration (name ?next-zone) (x ?) (y ?) (next ?)
+                           (look-pos $?lp) (current-look-pos ?lp-index)
+                           (still-to-explore TRUE) (times-searched ?times-searched))
   (not (driven-to-waiting-point))
   (team-color ?team)
   =>
   (printout t "Going to next zone: " ?next-zone crlf)
   (retract ?s ?n)
   (assert (state EXP_DRIVING_TO_MACHINE)
-          (goalmachine ?next-zone)
-          (worldmodel-change (machine ?next-zone)
-                             (change ZONE_TIMES_SEARCHED_INCREMENT)))
+          (goalmachine ?next-zone))
+  (synced-modify ?ze times-searched (+ 1 ?times-searched))
   (bind ?zone-boarders (utils-get-zone-edges ?next-zone))
   (bind ?search-tags (utils-get-tags-str-still-to-explore ?team))
   (skill-call explore_zone min_x (nth$ 1 ?zone-boarders) max_x (nth$ 2 ?zone-boarders)
@@ -534,17 +530,16 @@
   (phase EXPLORATION)
   ?s <- (state EXP_LOCK_ACCEPTED)
   ?n <- (exp-next-machine ?nextMachine)
-  (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?)
-		    (look-pos $?lp) (current-look-pos ?lp-index)
-                    (still-to-explore FALSE))
+  ?ze <- (zone-exploration (name ?nextMachine) (x ?) (y ?) (next ?)
+                           (look-pos $?lp) (current-look-pos ?lp-index)
+                           (still-to-explore FALSE) (times-searched ?times-searched))
   (not (driven-to-waiting-point))
   =>
   (printout t "Going to next machine, skip finding tag." crlf)
   (retract ?s ?n)
   (assert (state EXP_SKIP_FIND_TAG)
-          (goalmachine ?nextMachine)
-          (worldmodel-change (machine ?nextMachine)
-                             (change ZONE_TIMES_SEARCHED_INCREMENT)))
+          (goalmachine ?nextMachine))
+  (synced-modify ?ze times-searched (+ 1 ?times-searched))
 )
 
 (defrule exp-tag-found-by-other-robot
