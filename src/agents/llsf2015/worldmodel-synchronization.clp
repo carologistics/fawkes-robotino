@@ -6,123 +6,366 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-;publish worldmodel
+(deffunction wm-check-synchronizability (?fact ?slot ?value)
+  ; check if an attempted synchronization is valid
+  (if (not (fact-existp ?fact))
+    then
+    (printout error "Fact " ?fact " does not exist anymore. Sync failed." crlf)
+    (return FALSE)
+  )
+  (if (not (member$ ?slot (fact-slot-names ?fact)))
+    then
+    (printout error "Slot " ?slot " does not exist for fact " ?fact ". Sync failed." crlf)
+    (return FALSE)
+  )
+  (if (not (member$ sync-id (fact-slot-names ?fact)))
+    then
+    (printout error "Fact " ?fact " does not have a sync-id. Sync failed." crlf)
+    (return FALSE)
+  )
+  (return TRUE)
+)
+
+(deffunction wm-sync-get-index-of-slot (?fact ?slot)
+  ; returns the index of a slot for a deftemplate.
+  ; The index is later used as key in the key-value messages
+  ; A multifield has multiple indices depending on if we want to add or
+  ; remove the value from the multifield
+  ; (+0: whole multifield as string, +1 add value, +2 remove value)
+  (bind ?template (fact-relation ?fact))
+  (bind ?index 1)
+  (progn$ (?cur-slot (deftemplate-slot-names ?template))
+    (if (eq ?cur-slot ?slot)
+      then
+      (return ?index)
+      else
+      (if (deftemplate-slot-multip ?template ?cur-slot)
+        then
+        ; increase more than one slot because it is a multifield
+        (bind ?index (+ 3 ?index))
+        else
+        (bind ?index (+ 1 ?index))
+      )
+    )
+  )
+  (printout error "Fact " ?fact " of template " ?template
+            " has no slot " ?slot "." crlf)
+  (return 0)
+)
+
+
+(deffunction wm-sync-get-slot-of-index (?fact ?index)
+  ; returns the slot corresponding to a key and deftemplate
+  ; if the slot is a multifield it is returned as a tuple with slotname and relative index
+  (bind ?template (fact-relation ?fact))
+  (bind ?cur-index 1)
+  (progn$ (?cur-slot (deftemplate-slot-names ?template))
+    (if (eq ?cur-index ?index)
+      then
+      (if (deftemplate-slot-multip ?template ?cur-slot)
+        then
+        (return (create$ ?cur-slot 0))
+        else
+        (return ?cur-slot)
+      )
+      else
+      (if (deftemplate-slot-multip ?template ?cur-slot)
+        then
+        (if (< ?index (+ 3 ?cur-index))
+          then
+          (return (create$ ?cur-slot (- ?index ?cur-index)))
+          else
+          (bind ?cur-index (+ 3 ?cur-index))
+        )
+        else
+        (bind ?cur-index (+ 1 ?cur-index))
+      )
+    )
+  )
+  (printout error "Fact " ?fact " of template " ?template
+            " has no index " ?index "." crlf)
+  (return FALSE)
+)
+
+(deffunction worldmodel-sync-get-sync-id ()
+  ; return determimistic sync-ids for initial facts
+  ; and random ones for non-initial facts
+  (if ?*USING-INITIAL-SYNC-IDS*
+    then
+    (bind ?*LAST-INITIAL-SYNC-ID* (+ 1 ?*LAST-INITIAL-SYNC-ID*))
+    (return ?*LAST-INITIAL-SYNC-ID*)
+    else
+    (return (random (+ 1 ?*LAST-INITIAL-SYNC-ID*) 999999))
+  )
+)
+
+(deffunction synced-modify (?fact $?args)
+  ; modify a fact and synchronize the change
+  ; returns the adress of the modified fact, ?fact is no longer usable
+  (bind ?slots-to-change (create$))
+  (bind ?values-to-set (create$))
+  (progn$ (?field ?args)
+    (if (eq (mod ?field-index 2) 1)
+      then
+      (bind ?slots-to-change (insert$ ?slots-to-change 1 ?field))
+      else
+      (bind ?values-to-set (insert$ ?values-to-set 1 ?field))
+    )
+  )
+  (progn$ (?slot ?slots-to-change)
+    (bind ?value (nth$ ?slot-index ?values-to-set))
+    (if (not (wm-check-synchronizability ?fact ?slot ?value))
+      then
+      (return)
+    )
+    ; create worldmodel-change-fact for synchronization
+    (assert (worldmodel-change (key (+ (* 100
+                                          (fact-slot-value ?fact sync-id))
+                                       (wm-sync-get-index-of-slot ?fact ?slot)))
+                               (value ?value))
+    )
+  )
+  ; modify the fact locally
+  (return (dyn-mod ?fact ?args))
+)
+
+(deffunction synced-add-to-multifield (?fact ?slot ?value)
+  ; modify a fact and synchronize the change
+  ; returns the adress of the modified fact, ?fact is no longer usable
+  (if (not (wm-check-synchronizability ?fact ?slot ?value))
+    then
+    (return)
+  )
+  ; create worldmodel-change-fact for synchronization
+  (assert (worldmodel-change (key (+ (* 100
+                                        (fact-slot-value ?fact sync-id))
+                                     (+ 1 (wm-sync-get-index-of-slot ?fact ?slot))))
+                             (value ?value))
+  )
+  ; modify the fact locally
+  (return (dyn-add-to-multifield ?fact ?slot ?value))
+)
+
+(deffunction synced-remove-from-multifield (?fact ?slot ?value)
+  ; modify a fact and synchronize the change
+  ; returns the adress of the modified fact, ?fact is no longer usable
+  (if (not (wm-check-synchronizability ?fact ?slot ?value))
+    then
+    (return)
+  )
+  ; create worldmodel-change-fact for synchronization
+  (assert (worldmodel-change (key (+ (* 100
+                                        (fact-slot-value ?fact sync-id))
+                                     (+ 2 (wm-sync-get-index-of-slot ?fact ?slot))))
+                             (value ?value))
+  )
+  ; modify the fact locally
+  (return (dyn-remove-from-multifield ?fact ?slot ?value))
+)
+
+(deffunction synced-assert (?fact)
+  ; asserts a fact locally and for the synchronized bots
+  ; the given fact needs to be a string normally used in (assert)
+  ; e.g. ?fact = "(pose (x 3) (y 2))"
+  (bind ?fact (str-cat ?fact))
+  (if (not (str-index "(sync-id" ?fact))
+    then
+    ;add random sync-id
+    (bind ?fact (str-cat (sub-string 1 (- (str-length ?fact) 1) ?fact)
+                         "(sync-id " (worldmodel-sync-get-sync-id)
+                         "))"))
+  )
+  ; create worldmodel-change-fact for synchronization
+  (assert (worldmodel-change (key ?*SYNC-ID-ASSERT*)
+                             (value ?fact))
+  )
+  ; assert the fact locally
+  (dyn-assert ?fact)
+)
+
+(deffunction synced-retract (?fact)
+  ; retract a fact locally and also for synchronized bots
+  ; create worldmodel-change-fact for synchronization
+  (assert (worldmodel-change (key ?*SYNC-ID-RETRACT*)
+                             (value (fact-slot-value ?fact sync-id)))
+  )
+  ; retract the fact locally
+  (retract ?fact)
+)
+
+(defrule worldmodel-sync-set-agent-in-change
+  "Set the agent field in a new worldmodel change. We know that the change is from this agent because otherwise the field would be set."
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (agent DEFAULT))
+  =>
+  (modify ?wmc (agent (sym-cat ?*ROBOT-NAME*)))
+)
+
+(deffunction worldmodel-sync-apply-key-value-msg (?pair)
+  ; This function applies the modification of the worldmodel
+  ; sent with a single key-value message
+  
+  (bind ?synced-templates (create$))
+  ;get list of all templates that are synced
+  (do-for-fact ((?wm-sync-info wm-sync-info)) TRUE
+    (bind ?synced-templates ?wm-sync-info:synced-templates)
+  )
+  (bind ?key (pb-field-value ?pair "key"))
+  ; get value
+  (bind ?value nil)
+  (if (pb-has-field ?pair "value_string")
+    then
+    (bind ?value (pb-field-value ?pair "value_string"))
+    else
+    (if (pb-has-field ?pair "value_symbol")
+      then
+      (bind ?value (sym-cat (pb-field-value ?pair "value_symbol")))
+      else
+      (if (pb-has-field ?pair "value_uint32")
+        then
+        (bind ?value (pb-field-value ?pair "value_uint32"))
+        else
+        (if (pb-has-field ?pair "value_float")
+          then
+          (bind ?value (pb-field-value ?pair "value_float"))
+          else
+          (printout error "No value set for sync-pair!" crlf)
+        )
+      )
+    )
+  )
+  ; is it a change, assert, or retract
+  (if (eq ?key ?*SYNC-ID-ASSERT*)
+    then
+    (dyn-assert ?value)
+    else
+    (if (eq ?key ?*SYNC-ID-RETRACT*)
+      then
+      ; assert fact that is used by dnyamically generated rule to retract the fact
+      (assert (synced-fact-to-retract ?value))
+      else
+      ; it is a change to an existing fact
+      (bind ?sync-id (integer (/ ?key 100)))
+      ; find corresponding fact
+      (bind ?applied FALSE)
+      (progn$ (?template ?synced-templates)
+        (do-for-fact ((?fact ?template)) (eq ?sync-id ?fact:sync-id)
+          (if ?applied then
+            (printout error "sync-id " ?sync-id " occurs twice!" crlf)
+          )
+          (bind ?applied TRUE)
+          ; find corresponding slot
+          (bind ?slot-id (- ?key (* 100 ?sync-id)))
+          (bind ?slot (wm-sync-get-slot-of-index ?fact ?slot-id))
+          (if (not ?slot) then
+            (printout error "Can't find slot for key " ?key 
+                      " of template " ?template "." crlf)
+          )
+          ; actually modify
+          ;check if slot is a single- od multifield
+          (if (eq MULTIFIELD (type ?slot))
+            then
+            ; is it an override, add or remove key?
+            (bind ?slot-index-diff (nth$ 2 ?slot))
+            (bind ?slot (nth$ 1 ?slot))
+            (if (eq ?slot-index-diff 0)
+              then
+              ;override
+              (dyn-mod ?fact ?slot (str-cat "(create$ " ?value ")"))
+              else
+              (if (eq ?slot-index-diff 1)
+                then
+                (dyn-add-to-multifield ?fact ?slot ?value)
+                else
+                (dyn-remove-from-multifield ?fact ?slot ?value)
+              )
+            )
+            else
+            (dyn-mod ?fact ?slot ?value)
+            ; TODO only change if there really is a change
+          )
+        )
+      )
+      (if (not ?applied) then
+        (printout error "sync-id " ?sync-id " could not be found!" crlf)
+      )
+    )
+  )
+)
+
 (defrule worldmodel-sync-publish-worldmodel
+  ;the master publishes the worldmodel repeatedly
+  ; the worldmodel is represented as set of key-value pairs
+  ; these pairs are sent together in messages with up to ?*MAX-MESSAGE-SIZE* bytes
   (time $?now)
   ?s <- (timer (name send-worldmodel-sync) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
   (lock-role MASTER)
-  (peer-id private ?peer)  
+  (peer-id private ?peer)
+  (wm-sync-info (synced-templates $?templates))
   =>
   ;construct worldmodel msg
   (bind ?worldmodel (pb-create "llsf_msgs.Worldmodel"))
-  (delayed-do-for-all-facts ((?machine machine)) TRUE
-    ;construct submsg for each machine
-    (bind ?m-msg (pb-create "llsf_msgs.MachineWMState"))
-    ;set name
-    (pb-set-field ?m-msg "name" (str-cat ?machine:name))
-    ;set loaded_with)
-    (pb-set-field ?m-msg "loaded_id" ?machine:loaded-id)
-    ;set incoming
-    (foreach ?incoming-action (fact-slot-value ?machine incoming)
-      (pb-add-list ?m-msg "incoming" (str-cat ?incoming-action))
-    )
-    ;set agents responsible for incoming fields
-    (foreach ?incoming-agent (fact-slot-value ?machine incoming-agent)
-      (pb-add-list ?m-msg "incoming_agent" (str-cat ?incoming-agent))
-    )
-    ;set production finished time
-    (pb-set-field ?m-msg "prod_finished_time" (nth$ 1 ?machine:final-prod-time))
-    ;set out-of-order-until
-    (pb-set-field ?m-msg "out_of_order_until" (nth$ 1 ?machine:out-of-order-until))
-    ;set produced
-    (pb-set-field ?m-msg "produced_id" ?machine:produced-id)
-
-    ;add additional fields for cap-stations:
-    (if (eq ?machine:mtype CS) then
-      (do-for-fact ((?cs cap-station)) (eq ?cs:name ?machine:name)
-	(pb-set-field ?m-msg "cap_loaded" ?cs:cap-loaded)
+  (bind ?msg-size ?*MESSAGE-OVERHEAD-SIZE*)
+  (progn$ (?templ ?templates)
+    (delayed-do-for-all-facts ((?fact ?templ)) TRUE
+      (bind ?fact-msg (pb-create "llsf_msgs.WorldmodelFact"))
+      (pb-set-field ?fact-msg "template" (str-cat ?templ))
+      (pb-set-field ?fact-msg "sync_id" (fact-slot-value ?fact sync-id))
+      (bind ?fact-msg-size (+ ?*MESSAGE-OVERHEAD-SIZE* 4 (str-length ?templ)))
+      ;construct submsg for each field
+      (progn$ (?slot (fact-slot-names ?fact))
+        (if (neq ?slot sync-id) then
+          (bind ?kv-pair (pb-create "llsf_msgs.KeyValuePair"))
+          (bind ?key (+ (* 100 (fact-slot-value ?fact sync-id))
+                        (wm-sync-get-index-of-slot ?fact ?slot)))
+          (pb-set-field ?kv-pair "key" ?key)
+          (bind ?kv-msg-size (+ ?*MESSAGE-OVERHEAD-SIZE* 4))
+          (if (deftemplate-slot-multip ?templ ?slot)
+            then
+            ; use string to represent the multifield
+            (bind ?multifield-as-string (implode$ (fact-slot-value ?fact ?slot)))
+            (pb-set-field ?kv-pair "value_string" ?multifield-as-string)
+            (bind ?kv-msg-size (+ ?kv-msg-size (str-length ?multifield-as-string)))
+            else
+            ; use value directly for singlefields
+            (bind ?value (fact-slot-value ?fact ?slot))
+            (switch (type ?value)
+              (case INTEGER then
+                    (pb-set-field ?kv-pair "value_uint32" ?value)
+                    (bind ?kv-msg-size (+ ?kv-msg-size 4)))
+              (case STRING then
+                    (pb-set-field ?kv-pair "value_string" ?value)
+                    (bind ?kv-msg-size (+ ?kv-msg-size (str-length ?value))))
+              (case SYMBOL then
+                    (pb-set-field ?kv-pair "value_symbol" ?value)
+                    (bind ?kv-msg-size (+ ?kv-msg-size (str-length ?value))))
+              (case FLOAT then
+                    (pb-set-field ?kv-pair "value_float" ?value)
+                    (bind ?kv-msg-size (+ ?kv-msg-size 4)))
+              (default (printout error "WM-publish with key " ?key " has invalid type "
+                                 (type ?value) "." crlf))
+            )
+          )
+          (pb-add-list ?fact-msg "pairs" ?kv-pair)
+          (bind ?fact-msg-size (+ ?fact-msg-size ?kv-msg-size))
+        )
       )
-    )
-
-    ;add additional fields for ring-stations:
-    (if (eq ?machine:mtype RS) then
-      (do-for-fact ((?rs ring-station)) (eq ?rs:name ?machine:name)
-	(if (neq ?rs:selected-color NONE) then
-	  (pb-set-field ?m-msg "ring_color_selected" (sym-cat RING_ ?rs:selected-color))
-	  ; empty field means NONE
-	)
-	(pb-set-field ?m-msg "ring_bases_needed" ?rs:bases-needed)
+      ; split worldmodel into multiple peaces if the msg size gets too big
+      (if (> (+ ?msg-size ?fact-msg-size) ?*MAX-MESSAGE-SIZE*)
+        then
+        ; send full msg
+        (pb-broadcast ?peer ?worldmodel)
+        (pb-destroy ?worldmodel)
+        ;create new msg
+        (bind ?worldmodel (pb-create "llsf_msgs.Worldmodel"))
+        (bind ?msg-size ?*MESSAGE-OVERHEAD-SIZE*)
       )
+      (pb-add-list ?worldmodel "facts" ?fact-msg)
+      (bind ?msg-size (+ ?msg-size ?fact-msg-size))
     )
-    
-    ;add sub-msg to worldmodel msg
-    (pb-add-list ?worldmodel "machines" ?m-msg) ; destroys ?m
   )
-
-  ;add worldmodel about orders
-  (delayed-do-for-all-facts ((?order order)) TRUE
-    ;construct submsg for each order
-    (bind ?o-msg (pb-create "llsf_msgs.WorldmodelOrder"))
-    (pb-set-field ?o-msg "id" ?order:id)
-    (pb-set-field ?o-msg "in_delivery" ?order:in-delivery)
-    (pb-add-list ?worldmodel "orders" ?o-msg) ; destroys ?o-msg
-  )
-  
-  ;add worldmodel about puck-storage
-  ; TODO re-enable puck storage in wm sync
-  ;(delayed-do-for-all-facts ((?ps puck-storage)) TRUE
-  ;  ;construct submsg for each machine
-  ;  (bind ?ps-msg (pb-create "llsf_msgs.PuckStorageState"))
-  ;  ;set name
-  ;  (pb-set-field ?ps-msg "name" (str-cat ?ps:name))
-  ;  (if (neq ?ps:puck NONE)
-  ;    then
-  ;    ;set puck
-  ;    (pb-set-field ?ps-msg "puck" ?ps:puck)
-  ;  )
-  ;  ;set incoming
-  ;  (foreach ?incoming-action (fact-slot-value ?ps incoming)
-  ;    (pb-add-list ?ps-msg "incoming" (str-cat ?incoming-action))
-  ;  )
-  ;  ;set agents responsible for incoming fields
-  ;  (foreach ?incoming-agent (fact-slot-value ?ps incoming-agent)
-  ;    (pb-add-list ?ps-msg "incoming_agent" (str-cat ?incoming-agent))
-  ;  )
-  ;  (pb-add-list ?worldmodel "storage" ?ps-msg)
-  ;)
-
-  ;add worldmodel about exploration-zones
-  (delayed-do-for-all-facts ((?zone zone-exploration)) TRUE
-    ;construct submsg for each machine
-    (bind ?zone-msg (pb-create "llsf_msgs.ZoneState"))
-    (pb-set-field ?zone-msg "name" (str-cat ?zone:name))
-    (pb-set-field ?zone-msg "machine" (str-cat ?zone:machine))
-    (pb-set-field ?zone-msg "recognized" ?zone:recognized)
-    (pb-set-field ?zone-msg "still_to_explore" ?zone:still-to-explore)
-    (pb-set-field ?zone-msg "times_searched" ?zone:times-searched)
-
-    (pb-add-list ?worldmodel "zones" ?zone-msg)
-  )
-
-  ;add worldmodel about all (intermediate-) products
-  (delayed-do-for-all-facts ((?prod product)) TRUE
-    ;construct submsg for each product
-    (bind ?prod-msg (pb-create "llsf_msgs.ProductState"))
-    (pb-set-field ?prod-msg "id" ?prod:id)
-    (if (neq ?prod:base UNKNOWN) then
-      (pb-set-field ?prod-msg "base" (sym-cat BASE_ ?prod:base))
-    )
-    (progn$ (?ring ?prod:rings)
-      (pb-add-list ?prod-msg "rings" (sym-cat RING_ ?ring))
-    )
-    (pb-set-field ?prod-msg "cap" ?prod:cap)
-
-    (pb-add-list ?worldmodel "products" ?prod-msg)
-  )
-
   (pb-broadcast ?peer ?worldmodel)
   (pb-destroy ?worldmodel)
-
   (modify ?s (time ?now) (seq (+ ?seq 1)))
 )
 
@@ -131,283 +374,70 @@
   ?msg <- (protobuf-msg (type "llsf_msgs.Worldmodel") (ptr ?p))
   (not (lock-role MASTER))
   (state ?state)
+  (wm-sync-info (synced-templates $?templs))
   =>
   ; (printout t "***** Received Worldmodel *****" crlf)
-  (unwatch facts machine)
-  (unwatch facts cap-station)
-  (unwatch facts ring-station)
-  (unwatch facts order)
-  (unwatch facts puck-storage)
-  (unwatch facts zone-exploration)
-  ;update worldmodel about machines
-  (foreach ?m-msg (pb-field-list ?p "machines")
-    (do-for-fact ((?machine machine))
-		   (eq ?machine:name (sym-cat (pb-field-value ?m-msg "name")))
-			
-      ;update loaded-with
-      (bind ?loaded-id (pb-field-value ?m-msg "loaded_id"))
-      ;update incoming
-      (bind $?incoming (create$))
-      (progn$ (?incoming-action (pb-field-list ?m-msg "incoming"))
-	(bind ?incoming (append$ ?incoming (sym-cat ?incoming-action)))
-      )
-      ;update agents responsible for incoming-fields
-      (bind $?incoming-agent (create$))
-      (progn$ (?agent (pb-field-list ?m-msg "incoming_agent"))
-	(bind ?incoming-agent (append$ ?incoming-agent (sym-cat ?agent)))
-      )
-      ;update production finished time
-      (bind ?prod-finished-time (pb-field-value ?m-msg "prod_finished_time"))
-      ;update out-of-order-until
-      (bind ?out-of-order-until (pb-field-value ?m-msg "out_of_order_until"))
-      ;update produced-id
-      (bind ?produced-id (pb-field-value ?m-msg "produced_id"))
-      
-      (modify ?machine (incoming ?incoming) (loaded-id ?loaded-id)
-	               (final-prod-time (create$ ?prod-finished-time 0))
-		       (produced-id ?produced-id)
-		       (incoming-agent ?incoming-agent)
-		       (out-of-order-until (create$ ?out-of-order-until 0))
-      )
-
-      ; update additional fields of cap-stations
-      (if (eq ?machine:mtype CS) then
-	(do-for-fact ((?cs cap-station))  (eq ?machine:name ?cs:name)
-	  (modify ?cs (cap-loaded (pb-field-value ?m-msg "cap_loaded")))
-	)
-      )
-
-      ; update additional fields of ring-stations
-      (if (eq ?machine:mtype RS) then
-	(do-for-fact ((?rs ring-station))  (eq ?machine:name ?rs:name)
-	  (bind ?ring-color-selected NONE)
-	  (if (pb-has-field ?m-msg "ring_color_selected") then
-	    (bind ?ring-color-selected (sym-cat (utils-remove-prefix (pb-field-value ?m-msg "ring_color_selected") RING_))) 
-	  )
-	  (modify ?rs (selected-color ?ring-color-selected)
-		  (bases-needed (pb-field-value ?m-msg "ring_bases_needed")))
-	)
-      )
-    )
-
-    (pb-destroy ?m-msg)
+  ; unwatch synced templates to have less sync stuff in the debug log
+  (progn$ (?templ ?templs)
+    (unwatch facts ?templ)
   )
-  ;update worldmodel about orders
-  (foreach ?o-msg (pb-field-list ?p "orders")
-    (do-for-fact ((?order order))
-        (eq ?order:id (pb-field-value ?o-msg "id"))
-
-      (bind ?in-del (pb-field-value ?o-msg "in_delivery"))
-      (modify ?order (in-delivery ?in-del))
-    )
-  )
-  ;update worldmodel about puck-storage
-  (foreach ?ps-msg (pb-field-list ?p "storage")
-    (do-for-fact ((?storage puck-storage))
-		   (eq ?storage:name (sym-cat (pb-field-value ?ps-msg "name")))	
-      ;update incoming
-      (bind $?incoming (create$))
-      (progn$ (?incoming-action (pb-field-list ?ps-msg "incoming"))
-	(bind ?incoming (append$ ?incoming (sym-cat ?incoming-action)))
+  ;update worldmodel for each received fact
+  (foreach ?fact-msg (pb-field-list ?p "facts")
+    (bind ?sync-id (pb-field-value ?fact-msg "sync_id"))
+    (bind ?fact-exists FALSE)
+    (progn$ (?template ?templs)
+      (do-for-fact ((?fact ?template)) (eq ?sync-id ?fact:sync-id)
+        (bind ?fact-exists TRUE)
       )
-      ;update agents responsible for incoming-fields
-      (bind $?incoming-agent (create$))
-      (progn$ (?agent (pb-field-list ?ps-msg "incoming_agent"))
-	(bind ?incoming-agent (append$ ?incoming-agent (sym-cat ?agent)))
-      )
-      ;update loaded-with
-      (if (pb-has-field ?ps-msg "puck")
-	then
-	(modify ?storage (incoming ?incoming) (incoming-agent ?incoming-agent)
-		         (puck (pb-field-value ?ps-msg "puck")))
-	else
-	(modify ?storage (incoming ?incoming) (incoming-agent ?incoming-agent)
-		         (puck NONE))
-      )	
     )
-  )
-
-  ;update worldmodel about zones
-  (foreach ?zone-msg (pb-field-list ?p "zones")
-    (do-for-fact ((?zone zone-exploration))
-		 (eq ?zone:name (sym-cat (pb-field-value ?zone-msg "name")))
-      (modify ?zone (machine (sym-cat (pb-field-value ?zone-msg "machine")))
-	      (recognized (pb-field-value ?zone-msg "recognized"))
-	      (still-to-explore (pb-field-value ?zone-msg "still_to_explore"))
-              (times-searched (pb-field-value ?zone-msg "times_searched")))
+    ; create fact if it does not exist jet
+    (if (not ?fact-exists) then
+      (dyn-assert (str-cat "(" (pb-field-value ?fact-msg "template")
+                           " (sync-id " ?sync-id
+                           "))"))
     )
-  )
-
-  ;update worldmodel about (intermediate-)products
-  (foreach ?prod-msg (pb-field-list ?p "products")
-    (bind ?product-exists FALSE)
-    (bind ?prod-id (pb-field-value ?prod-msg "id"))
-    (bind ?prod-cap (pb-field-value ?prod-msg "cap"))
-    (if (pb-has-field ?prod-msg "base") then
-      (bind ?prod-base (utils-remove-prefix (pb-field-value ?prod-msg "base") BASE_))
-      else
-      (bind ?prod-base UNKNOWN)
-    )
-    (bind ?prod-rings (create$ ))
-    (progn$ (?ring (pb-field-list ?prod-msg "rings"))
-      (bind ?prod-rings (append$ ?prod-rings (utils-remove-prefix ?ring RING_)))
-    )
-    ;modify if product already exists
-    (do-for-fact ((?prod product)) (eq ?prod:id ?prod-id)
-      (bind ?product-exists TRUE)
-      (modify ?prod (base ?prod-base) (rings ?prod-rings) (cap ?prod-cap))
-    )
-    ;assert if it is new
-    (if (not ?product-exists) then
-      (assert (product (id ?prod-id) (base ?prod-base) (rings ?prod-rings) (cap ?prod-cap)))
+    ;update worldmodel for each key-value pair
+    (bind ?pairs (pb-field-list ?fact-msg "pairs"))
+    (progn$ (?kv-pair ?pairs)
+      (worldmodel-sync-apply-key-value-msg ?kv-pair)
     )
   )
   (retract ?msg)
-  (watch facts machine)
-  (watch facts cap-station)
-  (watch facts ring-station)
-  (watch facts order)
-  (watch facts puck-storage)
-  (watch facts zone-exploration)
-)
-
-(defrule worldmodel-sync-publish-tag-poses
-  (time $?now)
-  ?s <- (timer (name send-tag-poses-sync) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
-  (lock-role MASTER)
-  (peer-id private ?peer)  
-  =>
-  ;construct worldmodel msg
-  (bind ?all-tags-msgs (pb-create "llsf_msgs.TagPositions"))
-
-  ;add all tag-positions
-  (delayed-do-for-all-facts ((?tag found-tag)) TRUE
-    ;construct submsg for each machine
-
-    (bind ?tag-msg (pb-create "llsf_msgs.TagPosition"))
-    (pb-set-field ?tag-msg "machine" (str-cat ?tag:name))
-    (pb-set-field ?tag-msg "side" ?tag:side)
-    (pb-set-field ?tag-msg "frame" (str-cat ?tag:frame))
-    (pb-add-list ?tag-msg "trans" (nth$ 1 ?tag:trans))
-    (pb-add-list ?tag-msg "trans" (nth$ 2 ?tag:trans))
-    (pb-add-list ?tag-msg "trans" (nth$ 3 ?tag:trans))
-    (pb-add-list ?tag-msg "rot" (nth$ 1 ?tag:rot))
-    (pb-add-list ?tag-msg "rot" (nth$ 2 ?tag:rot))
-    (pb-add-list ?tag-msg "rot" (nth$ 3 ?tag:rot))
-    (pb-add-list ?tag-msg "rot" (nth$ 4 ?tag:rot))
-
-    (pb-add-list ?all-tags-msgs "tag_positions" ?tag-msg)
-  )
-
-  (pb-broadcast ?peer ?all-tags-msgs)
-  (pb-destroy ?all-tags-msgs)
-
-  (modify ?s (time ?now) (seq (+ ?seq 1)))
-)
-
-
-(defrule worldmodel-sync-receive-tag-poses
-  ?msg <- (protobuf-msg (type "llsf_msgs.TagPositions") (ptr ?p))
-  (not (lock-role MASTER))
-  =>
-  ; (printout t "***** Received Tag Poses *****" crlf)
-
-  ;update worldmodel about tag-positions
-  (foreach ?tag-pose-msg (pb-field-list ?p "tag_positions")
-    ; create tag fact if not already known
-    (if (not (any-factp ((?ft found-tag)) 
-			(eq ?ft:name (sym-cat (pb-field-value ?tag-pose-msg "machine")))))
-      then
-      (assert (found-tag (name (sym-cat (pb-field-value ?tag-pose-msg "machine")))
-			 (side (sym-cat (pb-field-value ?tag-pose-msg "side")))
-			 (frame (pb-field-value ?tag-pose-msg "frame"))
-			 (trans (pb-field-list ?tag-pose-msg "trans"))
-			 (rot (pb-field-list ?tag-pose-msg "rot")))
-	      )
-      (printout t "Adding tag with side: " (sym-cat (pb-field-value ?tag-pose-msg "side"))
-		crlf)
-    )
+  ;reenable watching
+  (progn$ (?templ ?templs)
+    (watch facts ?templ)
   )
 )
 
 ;send worldmodel change
 (defrule worldmodel-sync-send-change
   (time $?now)
-  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value)
-			     (puck-id ?puck-id)
-			     (amount ?amount) (id ?id) (order ?order) (agent ?agent)
+  ?wmc <- (worldmodel-change (key ?key) (value ?value)
+			     (id ?id) (agent ?agent)
 			     (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)))
   (not (lock-role MASTER))
   (peer-id private ?peer)
   =>
-  ;(printout t "sending worldmodel change" crlf)
   ;set random id (needed by the master to determine if a change was already appied)
   (if (eq ?id 0) then
     (bind ?id (random 1 99999999))
   )
   (bind ?change-msg (pb-create "llsf_msgs.WorldmodelChange"))
-  (if (neq ?m NONE) then
-    (pb-set-field ?change-msg "place" (str-cat ?m))
+  (bind ?pair-msg (pb-create "llsf_msgs.KeyValuePair"))
+  (pb-set-field ?pair-msg "key" ?key)
+  (switch (type ?value)
+    (case INTEGER then (pb-set-field ?pair-msg "value_uint32" ?value))
+    (case STRING then (pb-set-field ?pair-msg "value_string" ?value))
+    (case SYMBOL then (pb-set-field ?pair-msg "value_symbol" ?value))
+    (case FLOAT then (pb-set-field ?pair-msg "value_float" ?value))
+    (default (printout error "WM-change with key " ?key " has invalid type "
+                       (type ?value) "." crlf))
   )
-  (if (neq ?order 0) then 
-    (pb-set-field ?change-msg "place" (str-cat "Order-" ?order))
-  )
-  (if (neq ?puck-id 0) then 
-    (pb-set-field ?change-msg "place" (str-cat ?puck-id))
-  )
-  (pb-set-field ?change-msg "change" (str-cat ?change))
+  (pb-set-field ?change-msg "pair" ?pair-msg)
+  
   (pb-set-field ?change-msg "agent" (str-cat ?agent))
   (pb-set-field ?change-msg "id" ?id)
-  (if (member$ ?change (create$ ADD_INCOMING REMOVE_INCOMING ZONE_STILL_TO_EXPLORE
-				ZONE_MACHINE_IDENTIFIED ADD_RING SET_CAP
-				SET_CAP_LOADED SET_SELECTED_COLOR SET_BASE)) then
-    (pb-set-field ?change-msg "value_string" (str-cat ?value))
-  )
-  (if (member$ ?change (create$ SET_NUM_CO SET_PROD_FINISHED_TIME
-				SET_OUT_OF_ORDER_UNTIL SET_IN_DELIVERY
-				SET_LOADED SET_PRODUCED REMOVE_PRODUCED
-				REMOVE_LOADED REMOVE_PUCK SET_BASES_NEEDED)) then
-    (pb-set-field ?change-msg "value_uint32" ?amount)
-  )
-  (if (eq ?change ADD_TAG)
-    then
-    ; Find corresponding tag-fact
-    (do-for-fact ((?tag found-tag)) (eq ?tag:name ?m)
-      (bind ?tag-msg (pb-create "llsf_msgs.TagPosition"))
-      (pb-set-field ?tag-msg "machine" (str-cat ?tag:name))
-      (pb-set-field ?tag-msg "side" ?tag:side)
-      (pb-set-field ?tag-msg "frame" (str-cat ?tag:frame))
-      (pb-add-list ?tag-msg "trans" (nth$ 1 ?tag:trans))
-      (pb-add-list ?tag-msg "trans" (nth$ 2 ?tag:trans))
-      (pb-add-list ?tag-msg "trans" (nth$ 3 ?tag:trans))
-      (pb-add-list ?tag-msg "rot" (nth$ 1 ?tag:rot))
-      (pb-add-list ?tag-msg "rot" (nth$ 2 ?tag:rot))
-      (pb-add-list ?tag-msg "rot" (nth$ 3 ?tag:rot))
-      (pb-add-list ?tag-msg "rot" (nth$ 4 ?tag:rot))
-      
-      (printout t "Sending Tag Pos: " ?tag:name ", " ?tag:frame 
-		", (" ?tag:trans "), " ?tag:rot ")" crlf)
-
-      (pb-set-field ?change-msg "tag_position" ?tag-msg)
-    )
-  )
-  (if (eq ?change NEW_PUCK)
-    then
-    ; Find corresponding product-fact
-    (do-for-fact ((?prod product)) (eq ?prod:id ?puck-id)
-      (bind ?prod-msg (pb-create "llsf_msgs.ProductState"))
-      (pb-set-field ?prod-msg "id" ?prod:id)
-      (if (neq ?prod:base UNKNOWN) then
-        (pb-set-field ?prod-msg "base" (sym-cat BASE_ ?prod:base))
-      )
-      (progn$ (?ring ?prod:rings)
-        (pb-add-list ?prod-msg "rings" (sym-cat RING_ ?ring))
-      )
-      (pb-set-field ?prod-msg "cap" ?prod:cap)
-
-      (pb-set-field ?change-msg "value_puckstate" ?prod-msg)
-    )
-  )
+  
   (pb-broadcast ?peer ?change-msg)
   (pb-destroy ?change-msg)
   (modify ?wmc (last-sent ?now) (id ?id))
@@ -416,10 +446,9 @@
 ;the master does not have to send the change, because it sends the whole worldmodel
 (defrule worldmodel-sync-retract-as-master
   (declare (salience ?*PRIORITY-CLEANUP*))
-  ?wmc <- (worldmodel-change (machine ?m) (change ?change) (value ?value))
+  ?wmc <- (worldmodel-change)
   (lock-role MASTER)
   =>
-  (printout warn "retract wmc" crlf)
   (retract ?wmc)
 )
 
@@ -430,207 +459,16 @@
   ?arf <- (already-received-wm-changes $?arc)
   (peer-id private ?peer)
   (time $?now)
+  (wm-sync-info (synced-templates $?synced-templates))
   =>
   ;ensure that this change was not already applied
   (bind ?id (pb-field-value ?p "id"))
   (if (not (member$ ?id ?arc)) then
-    ;(printout t "receiving new worldmodel change (" (pb-field-value ?p "change") ")" crlf)
     (retract ?arf)
     (assert (already-received-wm-changes (append$ ?arc ?id)))
-    ;apply change
-    (if (pb-has-field ?p "place") then
-      ;change machine if change is about a machine
-      (do-for-fact ((?machine machine))
-          (eq ?machine:name (sym-cat (pb-field-value ?p "place")))
-
-        (switch (sym-cat (pb-field-value ?p "change"))
-          (case SET_LOADED then 
-	    (modify ?machine (loaded-id (pb-field-value ?p "value_uint32")))
-          )
-          (case REMOVE_LOADED then
-	    (modify ?machine (loaded-id 0))
-          )
-          (case ADD_INCOMING then 
-            (modify ?machine (incoming (append$ ?machine:incoming
-						(sym-cat (pb-field-value ?p "value_string"))))
-		             (incoming-agent (append$ ?machine:incoming-agent
-						      (sym-cat (pb-field-value ?p "agent")))))
-          )
-          (case REMOVE_INCOMING then 
-	    (if (member$ (pb-field-value ?p "value_string") ?machine:incoming)
-	      then
-	      (modify ?machine (incoming (delete-member$ ?machine:incoming
-							 (pb-field-value ?p "value_string")))
-	                     ;every agent should do only one thing at a machine
-		             (incoming-agent (delete-member$ ?machine:incoming-agent
-                                               (sym-cat (pb-field-value ?p "agent")))))
-	      else
-	      ;After the change of a decision based on a new worldmodel the remove msg might have arrived before the add message. Wait until there is a field to remove or a timer has passed
-	      ;this is a workaround and could be solved properly with sequence numbers for the change msgs
-	      (assert (delayed-worldmodel-change REMOVE_INCOMING
-				?machine:name (pb-field-value ?p "value_string")
-				(sym-cat (pb-field-value ?p "agent")) ?now))
-	    )
-          )
-          (case SET_PROD_FINISHED_TIME then 
-            (modify ?machine (final-prod-time (create$ (pb-field-value ?p "value_uint32") 0)))
-          )
-	  (case SET_OUT_OF_ORDER_UNTIL then
-	    (modify ?machine (out-of-order-until (create$ (pb-field-value ?p "value_uint32") 0)))
-	  )
-          (case SET_PRODUCED then 
-	    (modify ?machine (produced-id (pb-field-value ?p "value_uint32")))
-          )
-          (case REMOVE_PRODUCED then
-	    (modify ?machine (produced-id 0))
-          )
-          (case ADD_TAG then
-	    ; create tag fact if not already known
-	    (if (not (any-factp ((?ft found-tag)) 
-				(eq ?ft:name (pb-field-value ?p "place"))))
-	      then
-	      (bind ?tag-pose-msg (pb-field-value ?p "tag_position"))
-	      (assert (found-tag (name (sym-cat (pb-field-value ?tag-pose-msg "machine")))
-				 (side (sym-cat (pb-field-value ?tag-pose-msg "side")))
-				 (frame (pb-field-value ?tag-pose-msg "frame"))
-				 (trans (pb-field-list ?tag-pose-msg "trans"))
-				 (rot (pb-field-list ?tag-pose-msg "rot")))
-	      )
-	      (printout t "Received Tag: " (sym-cat (pb-field-value ?tag-pose-msg "machine"))
-			(sym-cat (pb-field-value ?tag-pose-msg "side"))
-			(pb-field-value ?tag-pose-msg "frame")
-			" trans: " (pb-field-list ?tag-pose-msg "trans")
-			" rot: " (pb-field-list ?tag-pose-msg "rot")
-			crlf)
-	    )
-	    ; set machine stuff
-	    ; set explration stuff
-          )
-	  ;for cap-stations:
-	  (case SET_CAP_LOADED then
-	    (do-for-fact ((?cs cap-station)) (eq ?cs:name ?machine:name)
-	      (modify ?cs (cap-loaded (sym-cat (pb-field-value ?p "value_string"))))
-	    )
-	  )
-	  ;for ring-stations:
-	  (case SET_SELECTED_COLOR then
-	    (do-for-fact ((?rs ring-station)) (eq ?rs:name ?machine:name)
-	      (modify ?rs (selected-color (sym-cat (pb-field-value ?p "value_string"))))
-	    )
-	  )
-	  (case SET_BASES_NEEDED then
-	    (do-for-fact ((?rs ring-station)) (eq ?rs:name ?machine:name)
-	      (modify ?rs (bases-needed (pb-field-value ?p "value_uint32")))
-	    )
-	  )
-	  (default
-	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
-		      " is not handled for machine. Worlmodel is probably wrong." crlf)
-	  )
-        )
-      )
-      ;change puck-storage if change is about a puck-storage
-      (do-for-fact ((?storage puck-storage))
-          (eq ?storage:name (sym-cat (pb-field-value ?p "place")))
-
-        (switch (sym-cat (pb-field-value ?p "change"))
-          (case ADD_LOADED_WITH then 
-	    (modify ?storage (puck (pb-field-value ?p "value_puckstate")))
-          )
-          (case REMOVE_LOADED_WITH then
-            (modify ?storage (puck NONE))
-          )
-          (case ADD_INCOMING then 
-            (modify ?storage (incoming (append$ ?storage:incoming
-                                         (pb-field-value ?p "value_string")))
-                             (incoming-agent (append$ ?storage:incoming-agent
-                                               (sym-cat (pb-field-value ?p "agent")))))
-          )
-          (case REMOVE_INCOMING then 
-            (modify ?storage (incoming (delete-member$ ?storage:incoming
-                                         (pb-field-value ?p "value_string")))
-	                     ;every agent should do only one thing at a machine
-		             (incoming-agent (delete-member$ ?storage:incoming-agent
-                                               (sym-cat (pb-field-value ?p "agent")))))
-          )
-	  (default
-	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
-		      " is not handled for puck-storage. Worlmodel is probably wrong." crlf)
-	  )
-        )
-      )
-      ;change puck-storage if change is about an order
-      (do-for-fact ((?order order))
-          (eq (str-cat "Order-" ?order:id) (pb-field-value ?p "place"))
-        (switch (sym-cat (pb-field-value ?p "change"))
-          (case _IN_DELIVERY then 
-	    (modify ?order (in-delivery (pb-field-value ?p "value_uint32")))
-          )
-	)
-      )
-      ;change zone-exploration if change is about a zone
-      (do-for-fact ((?zone zone-exploration))
-          (eq ?zone:name (sym-cat (pb-field-value ?p "place")))
-
-        (switch (sym-cat (pb-field-value ?p "change"))
-          (case ZONE_STILL_TO_EXPLORE then 
-	    (modify ?zone (still-to-explore (sym-cat (pb-field-value ?p "value_string"))))
-          )
-          (case ZONE_MACHINE_IDENTIFIED then 
-	    (modify ?zone (machine (sym-cat (pb-field-value ?p "value_string"))))
-          )
-          (case ZONE_TIMES_SEARCHED_INCREMENT then 
-	    (modify ?zone (times-searched (+ 1 ?zone:times-searched)))
-          )
-	  (default
-	    (printout error "Worldmodel-Change Type " (sym-cat (pb-field-value ?p "change"))
-		      " is not handled for zone. Worlmodel is probably wrong." crlf)
-	  )
-        )
-      )
-      ;change product if change is about a product
-      (if (eq (sym-cat (pb-field-value ?p "change")) NEW_PUCK) then
-	(bind ?prod-msg (pb-field-value ?p "value_puckstate"))
-	(bind ?prod-id (pb-field-value ?prod-msg "id"))
-        (if (pb-has-field ?prod-msg "base") then
-          (bind ?prod-base (utils-remove-prefix (pb-field-value ?prod-msg "base") BASE_))
-          else
-          (bind ?prod-base UNKNOWN)
-        )
-	(bind ?prod-rings (create$ ))
-	(progn$ (?ring (pb-field-list ?prod-msg "rings"))
-	  (bind ?prod-rings (append$ ?prod-rings 
-				     (utils-remove-prefix ?ring RING_)))
-	)
-	(bind ?prod-cap (pb-field-value ?prod-msg "cap"))
-	(assert (product (id ?prod-id) (base ?prod-base) (cap ?prod-cap) (rings ?prod-rings)))
-	
-	else
-	;modify existing puck fact if there is one
-	(do-for-fact ((?prod product)) (eq ?prod:id (eval (pb-field-value ?p "place")))
-          (switch (sym-cat (pb-field-value ?p "change"))
-	    (case SET_BASE then 
-	      (modify ?prod (base (sym-cat (pb-field-value ?p "value_string"))))
-	    )
-	    (case SET_CAP then 
-	      (modify ?prod (cap (sym-cat (pb-field-value ?p "value_string"))))
-	    )
-	    (case REMOVE_PUCK then 
-	      (retract ?prod)
-	    )
-	    (case ADD_RING then 
-	      (modify ?prod (rings (append$ ?prod:rings 
-					    (sym-cat (pb-field-value ?p "value_string")))))
-	    )
-	    (default
-	      (printout error "Worldmodel-Change Type "
-			(sym-cat (pb-field-value ?p "change"))
-			" is not handled for puck. Worlmodel is probably wrong." crlf)
-	    )
-	  )
-        )
-      )
-    )
+    (bind ?pair (pb-field-value ?p "pair"))
+    ; apply
+    (worldmodel-sync-apply-key-value-msg ?pair)
   )
   (retract ?pmsg)
   ;send acknowledgment
@@ -668,18 +506,33 @@
   (retract ?dwf)
 )
 
-; (defrule worldmodel-sync-debug
-;   (lock-role SLAVE)
-;   =>
-;   (assert (found-tag (name C-BS) (side OUTPUT)(frame "/map")
-; 		       (trans (create$ -4.9 4.9 0)) (rot (tf-quat-from-yaw -1.14)))
-; 	    (worldmodel-change (machine C-BS) (change ADD_TAG)))
-; )
+(defrule worldmodel-sync-stop-using-initial-sync-ids
+  ; from now on use random sync-ids
+  (phase EXPLORATION|PRODUCTION)
+  =>
+  (printout t "Stop using initial ids" crlf)
+  (bind ?*USING-INITIAL-SYNC-IDS* FALSE)
+)
 
-; (defrule worldmodel-sync-debug
-;   (lock-role SLAVE)
-;   =>
-;   (assert (found-tag (name C-DS) (side OUTPUT)(frame "/map")
-; 		       (trans (create$ 4.9 4.9 0)) (rot (tf-quat-from-yaw -1.14)))
-; 	    (worldmodel-change (machine C-DS) (change ADD_TAG)))
-; )
+(defrule worldmodel-sync-set-sync-ids
+  ; this rule adds a rule for each template that have to be synced.
+  ; the added rule sets the sync id for the template
+  (wm-sync-info (synced-templates $?templates))
+  =>
+  (progn$ (?temp ?templates)
+    (printout t "Synchronizing template " ?temp crlf)
+    (bind ?new-rule (format nil "(defrule worldmodel-sync-set-sync-id-for-%s %n ?f <- (%s (sync-id 0)) %n => %n (modify ?f (sync-id (worldmodel-sync-get-sync-id))))" ?temp ?temp))
+    (build ?new-rule)
+  )
+)
+
+(defrule worldmodel-sync-retract-with-sync-id
+  ; this rule adds a rule for each template that have to be synced.
+  ; the added rule retracts a fact with given sync-id if requested
+  (wm-sync-info (synced-templates $?templates))
+  =>
+  (progn$ (?temp ?templates)
+    (bind ?new-rule (format nil "(defrule worldmodel-sync-retract-with-sync-id-%s %n ?r <- (synced-fact-to-retract ?sid) %n ?f <- (%s (sync-id ?sid)) %n => %n (retract ?r) %n (retract ?f))" ?temp ?temp))
+    (build ?new-rule)
+  )
+)

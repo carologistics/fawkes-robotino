@@ -77,8 +77,8 @@
 (deffunction unwatch-rules-facts ()
   ;unwatch some rules to reduce debug output
   ;this is not possible in the config, because the defrules and deffacts are loaded later
-  (unwatch rules worldmodel-sync-receive-worldmodel)
-  (unwatch rules worldmodel-sync-publish-worldmodel)
+  ; (unwatch rules worldmodel-sync-receive-worldmodel)
+  ; (unwatch rules worldmodel-sync-publish-worldmodel)
   ; (unwatch rules wm-update-puck-in-gripper)
   (unwatch rules wm-update-pose)
   (unwatch rules net-send-BeaconSignal)
@@ -110,6 +110,7 @@
   (path-load  llsf2015/utils.clp)
   (path-load  llsf2015/net.clp)
   (path-load  llsf2015/skills.clp)
+  (path-load  llsf2015/worldmodel-synchronization.clp)
   (path-load  llsf2015/worldmodel.clp)
   (path-load  llsf2015/lock-managing.clp)
   (path-load  llsf2015/lock-usage.clp)
@@ -123,7 +124,6 @@
   )
   (path-load  llsf2015/game.clp)
   (path-load  llsf2015/mps-instructions.clp)
-  (path-load  llsf2015/worldmodel-synchronization.clp)
   (path-load  llsf2015/tactical-help.clp)
   (path-load  llsf2015/task.clp)
   (path-load  llsf2015/steps.clp)

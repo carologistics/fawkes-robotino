@@ -7,123 +7,45 @@
 
 package llsf_msgs;
 
-import "ProductColor.proto";
-import "MachineInstructions.proto";
+message KeyValuePair {
+  //With this message the master publishes his worldmodel
 
-enum WmCapColor {
-  NONE = 0;
-  BLACK = 1;
-  GREY = 2;
-}
-
-message MachineWMState {
   enum CompType {
     COMP_ID  = 2000;
     MSG_TYPE = 1339;
   }
 
-  optional string name     = 1;
-  required uint32 loaded_id  = 2;
-  repeated string incoming  = 3;
-  repeated string incoming_agent  = 4;
-  required uint32 prod_finished_time = 5;
-  required uint32 produced_id  = 6;
-  required uint32 out_of_order_until = 7;
-
-  //optional fields for cap-stations
-  optional WmCapColor cap_loaded = 8;
-
-  //optional fields for ring-stations
-  optional RingColor ring_color_selected = 9;
-  optional uint32 ring_bases_needed = 10;
-}
-
-message ProductState {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 1351;
-  }
-
-  required uint32 id  = 1;
-  optional BaseColor base = 2; //leave empty for unknown
-  //mounted rings from bottom to top
-  repeated RingColor rings  = 3;
-  required WmCapColor cap  = 4;
-}
-
-message PuckStorageState {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 1347;
-  }
-
-  required string    name     = 1;
-  optional uint32 puck  = 2;
-  repeated string incoming  = 3;
-  repeated string incoming_agent  = 4;
-}
-
-message TagPosition {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 1348;
-  }
-
-  required string machine = 1;
-  required MachineSide side    = 2;
-  required string frame   = 3;
-  repeated float  trans   = 4;
-  // Rotation as quaternion
-  repeated float  rot     = 5;
-}
-
-message ZoneState {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 1349;
-  }
-
-  required string name = 1;
-  required string machine = 2;
-  required bool recognized = 3;
-  required bool still_to_explore = 4;
-  required uint32 times_searched = 5;
-}
-
-message WorldmodelOrder {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 1345;
-  }
-
-  optional uint32 id = 1;
-  optional uint32 in_delivery = 2;
+  //key composed of the sync-id of the fact to synchronize and the slot number
+  required uint32 key = 1;
+  //value as the specific type
+  optional string value_string = 2;
+  optional string value_symbol = 3;
+  optional uint32 value_uint32 = 4;
+  optional float value_float = 5;
 }
 
 message Worldmodel {
-  //With this message the master publishes his worldmodel
+  //With this message the master publishes worldmodel parts repeatingly
 
   enum CompType {
     COMP_ID  = 2000;
     MSG_TYPE = 1340;
   }
 
-  // List of machines states
-  repeated MachineWMState machines = 1;
-  repeated WorldmodelOrder orders = 2;
-  repeated PuckStorageState storage = 3;
-  repeated ZoneState zones = 4;
-  repeated ProductState products = 5;
+  repeated WorldmodelFact facts = 1;
 }
 
-message TagPositions {
-  //With this message the master publishes all tag positions
+message WorldmodelFact {
+  //Collection of Key-value pairs that describe a fact
+
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 1350;
+    MSG_TYPE = 1345;
   }
 
-  repeated TagPosition tag_positions = 1;
+  required string template = 1;
+  required uint32 sync_id = 2;
+  repeated KeyValuePair pairs = 3;
 }
 
 message WorldmodelChange {
@@ -135,18 +57,8 @@ message WorldmodelChange {
   }
 
   required uint32 id = 1;
-  optional string place = 2;
-  // what should be changed by this message (indicates which optional field is used)
-  required string change = 3;
-  // which agent sent this message?
-  required string agent = 4;
-
-  // the value something is changed to is in one of the following fields
-  // depending on the type of the value
-  optional string value_string = 5;
-  optional uint32 value_uint32 = 6;
-  optional ProductState value_puckstate = 7;
-  optional TagPosition tag_position = 8;
+  required string agent = 2;
+  required KeyValuePair pair = 3;
 }
 
 message WorldmodelChangeAck {

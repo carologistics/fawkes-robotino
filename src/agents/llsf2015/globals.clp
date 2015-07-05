@@ -57,6 +57,15 @@
   ; some measures of the game
   ?*ZONE-HEIGHT* = 1.5
   ?*ZONE-WIDTH* = 2.0
+
+  ; synchronization ids
+  ?*LAST-INITIAL-SYNC-ID* = 5
+  ?*USING-INITIAL-SYNC-IDS* = TRUE
+  ?*SYNC-ID-ASSERT* = 1
+  ?*SYNC-ID-RETRACT* = 2
+
+  ?*MESSAGE-OVERHEAD-SIZE* = 4
+  ?*MAX-MESSAGE-SIZE* = 900 ; bytes
 )
 
 (defrule globals-config-team-name
