@@ -9,7 +9,7 @@ plugins/conveyor_vision:
   #camera: "file:file:file=/home/fnolden/Bilder/Webcam/11.jpg"
   #camera: v4l2:front:device=/dev/video0 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
   #camera: v4l2:light:device=/dev/video1:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
-  camera: v4l2:tag:device=/dev/video1
+  camera: v4l2:conveyor:device=/dev/video_conveyor
 
   #Shared Memory Imagebuffer name
   shm_image_id: "conveyor_vision"
