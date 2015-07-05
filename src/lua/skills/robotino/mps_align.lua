@@ -124,7 +124,7 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRIES=LINE_T
    {"ALIGN",       SkillJumpState, skills={{motor_move}}, final_to="CHECK_TAG", fail_to="FAILED"},  --TODO check if tag is right if given
    {"SEARCH_LINE",            JumpState}, --TODO check visibility_history
    {"LINE_SETTLE",            JumpState},
-   {"CHECK_TAG",              SkillJumpState, skills={{check_tag}}, final_to="FINAL", fail_to="FAILED"},  --TODO check if tag is right if given
+   {"CHECK_TAG",              SkillJumpState, skills={{check_tag}}, final_to="FINAL", fail_to="FINAL"},  --TODO go final even when failed because we have no solution right now
 }
 
 fsm:add_transitions{
