@@ -186,12 +186,27 @@
       (bind ?values-to-set (insert$ ?values-to-set 1 ?field))
     )
   )
+  ; dont modify if set to current value
+  (bind ?different-slots (create$))
+  (bind ?different-values (create$))
+  (progn$ (?slot ?slots-to-change)
+    (if (neq (fact-slot-value ?f ?slot) (nth$ ?slot-index ?values-to-set)) then
+      (bind ?different-slots (insert$ ?different-slots 1 ?slot))
+      (bind ?different-values (insert$ ?different-values 1 (nth$ ?slot-index ?values-to-set)))
+    )
+  )
+  (bind ?slots-to-change ?different-slots)
+  (bind ?values-to-set ?different-values)
   (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
+  ; return if there is nothing to modify
+  (if (eq 0 (length$ ?slots-to-change)) then
+    (return ?f)
+  )
   (progn$ (?slot (fact-slot-names ?f))
     (if (not (member$ ?slot ?slots-to-change))
       then
       (if (deftemplate-slot-multip (fact-relation ?f) ?slot)
-        then ;coply multifield
+        then ;copy multifield
         (bind ?acom (str-cat ?acom "(" ?slot " (create$ " 
                              (implode$ (fact-slot-value ?f ?slot))
                              "))"))
