@@ -17,6 +17,8 @@ plugins/conveyor_vision:
   # frame of reference
   frame: "/cam_conveyor"
 
+  transform: /plugins/static-transforms/transforms/cam_conveyor/
+
   classifier_file: conveyor_classifier.xml
   
   # obj_distance is the measured distance in cm from the camera to the object 
@@ -40,3 +42,35 @@ plugins/conveyor_vision:
 
   # enable visualization of detected conveyor
   visualization_enabled: true
+
+
+  # an attempt to optimize the measured distance to the conveyor belt by using a hough line transformation
+  houghlines:
+    use_hough_line_optimization: true
+  
+    # the number of frames used to calculate the mean distance from camera to conveyor while using hough lines
+    hough_lines_averaging_count: 10
+  
+    # config settings used for binarization
+    binary_threshold_min: 10
+    binary_threshold_max: 25
+    binary_threshold_average_min: 69
+    binary_threshold_average_max: 85
+    max_binary_value: 255
+    threshold_type: 1 # binary, inverted
+
+    # config settings for closing
+    morph_element: 1
+    morph_size: 2
+    morph_operator: 1
+    
+    # canny threshold for edge detection
+    canny_threshold: 200
+
+    # number of frames to average over lines
+    line_mean: 30
+
+    # conveyor real world properties, see above
+    conveyor_realworld_distance: 14.6
+    conveyor_realworld_pixels: 91
+    conveyor_realworld_width: 3
