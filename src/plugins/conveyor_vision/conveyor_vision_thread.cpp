@@ -352,6 +352,170 @@ void ConveyorVisionThread::detect()
     
 //    printf("found face: x: %d, y: %d, width: %d, height: %d distance:%f, obj_deg: %f\n", faces[0].x, faces[0].y, faces[0].width, faces[0].height, distance, obj_deg);
 //    logger->log_info(name(), "Found conveyor: x= %f, y= %f, z= %f", world_pos_z_average, world_pos_z, world_pos_y);
+    
+    if (use_hough_lines_)
+      {
+
+
+      Rect myROI(faces[0].x, faces[0].y, faces[0].width, faces[0].height);
+      Mat croppedImage = frame(myROI);
+      cvtColor( croppedImage, croppedImage, CV_BGR2GRAY );
+
+      // calculate binarization threshold depending on average gray-value in the image
+      Scalar the_mean = mean(croppedImage);
+      float float_mean = the_mean.val[0];
+
+      int calculated_threshold = binary_threshold_min_;
+      if (float_mean >= binary_threshold_average_min_ && float_mean <= binary_threshold_average_max_)
+      {
+        calculated_threshold += (float_mean - binary_threshold_average_min_);
+      }
+      else if (float_mean > binary_threshold_average_max_)
+      {
+        calculated_threshold = binary_threshold_max_;
+      }
+
+      cvtColor( croppedImage, croppedImage, CV_BGR2GRAY );
+
+      int thresh = 200;
+      /// Detect edges using canny
+      Mat dst, cdst;
+      threshold( croppedImage, dst, calculated_threshold, max_binary_value_, threshold_type_);
+      Canny( dst, dst, thresh, thresh*2, 7 );
+
+      int operation = morph_operator_ + 2;
+
+      Mat element = getStructuringElement( morph_element_, Size( 2*morph_size_ + 1, 2*morph_size_+1 ), Point( morph_size_, morph_size_ ) );
+
+      // Apply the specified morphology operation
+      morphologyEx( dst, dst, operation, element );
+      int roi_width_limiter = dst.cols / 4.2; // 10 percent of width of image
+      int roi_height_limiter = dst.rows / 4.8; // 10 percent of width of image
+
+      // fill left side
+      rectangle(dst, Point(0, 0), Point(roi_width_limiter, dst.rows), Scalar(0,0,0), CV_FILLED);
+      // fill right side
+      rectangle(dst, Point(dst.cols - roi_width_limiter, 0), Point(dst.cols, dst.rows), Scalar(0,0,0), CV_FILLED);
+      // fill top
+      rectangle(dst, Point(0, 0), Point(dst.cols, roi_height_limiter), Scalar(0,0,0), CV_FILLED);
+      // fill middle
+      rectangle(dst, Point(dst.cols / 2 - 1.5 * (dst.cols / 8), 0), Point(dst.cols / 2 + 1.5 * (dst.cols / 8), dst.rows), Scalar(0,0,0), CV_FILLED);
+
+      vector<Vec4i> lines;
+      cvtColor(dst, cdst, CV_GRAY2BGR);
+
+      double rho = 1;
+      double theta = CV_PI / 180;
+      double minLineLength = 10;
+      double maxLineGap = 25;
+      int hough_threshold = 20;
+
+      HoughLinesP(dst, lines, rho, theta, hough_threshold, minLineLength, maxLineGap );
+
+      int nearest_line_left_offset = 0;
+      int nearest_line_right_offset = dst.cols;
+      int nearest_line_left_index = 0;
+      int nearest_line_right_index = 0;
+
+      vector<Vec4i> vertical_lines;
+
+      for( size_t j = 0; j < lines.size(); j++ )
+      {
+        Vec4i l = lines[j];
+
+        // is vertically oriented line?
+        if (abs(l[1] - l[3]) > 20)
+        {
+          if (l[0] > l[2])
+          {
+            int diff = (l[0] - l[2]) / 2;
+            l[0] -= diff;
+            l[2] += diff;
+          }
+          else
+          {
+            int diff = (l[2] - l[0]) / 2;
+            l[0] += diff;
+            l[2] -= diff;
+          }
+          vertical_lines.push_back(l);
+        }
+      }
+      for (size_t iV = 0; iV < vertical_lines.size(); iV++)
+      {
+        Vec4i l = vertical_lines[iV];
+          if (l[0] > nearest_line_left_offset && !(l[0] > dst.cols / 2))
+          {
+            nearest_line_left_offset = l[0];
+            nearest_line_left_index = iV;
+          }
+          if (l[0] < nearest_line_right_offset && !(l[0] < dst.cols / 2))
+          {
+            nearest_line_right_offset = l[0];
+            nearest_line_right_index = iV;
+          }
+      }
+
+      // fail if no vertical lines detected or if horizontal distance between lines is too low
+      if(vertical_lines.size() > 0
+              && 
+              abs(vertical_lines[nearest_line_left_index][0] - vertical_lines[nearest_line_right_index][0]) > 20)
+      {
+        int horizontal_diff = abs(vertical_lines[nearest_line_left_index][0] - vertical_lines[nearest_line_right_index][0]);
+        int horizontal_start = vertical_lines[nearest_line_left_index][0];
+        int vertical_start = abs(vertical_lines[nearest_line_left_index][1] - vertical_lines[nearest_line_left_index][3]);
+        conveyor_average_horizontal_diff.push_front(horizontal_diff);
+        conveyor_average_horizontal_start.push_front(horizontal_start);
+        conveyor_average_vertical_start.push_front(vertical_start);
+      }
+      if (conveyor_average_horizontal_diff.size() > line_mean_)
+      {
+        conveyor_average_horizontal_diff.pop_back();
+      }
+      if (conveyor_average_horizontal_start.size() > line_mean_)
+      {
+        conveyor_average_horizontal_start.pop_back();
+      }
+      if (conveyor_average_vertical_start.size() > line_mean_)
+      {
+        conveyor_average_vertical_start.pop_back();
+      }
+
+      int vert_start = 0;
+      int hor_start = 0;
+      int hor_diff = 0;
+
+      for (size_t i = 0; i < conveyor_average_horizontal_diff.size(); i++)
+      {
+        vert_start += conveyor_average_vertical_start[i];
+        hor_start += conveyor_average_horizontal_start[i];
+        hor_diff += conveyor_average_horizontal_diff[i];
+      }
+
+      if (conveyor_average_vertical_start.size() > 0)
+      {
+        vert_start = vert_start / conveyor_average_vertical_start.size();
+        hor_start = hor_start / conveyor_average_horizontal_start.size();
+        hor_diff = hor_diff / conveyor_average_horizontal_diff.size();
+
+        line( frame, Point(faces[0].x + hor_start, faces[0].y + vert_start), Point(faces[0].x + hor_start + hor_diff, faces[0].y + vert_start), Scalar(255,255,0), 3, CV_AA); 
+      }
+
+      float focal_length = (conveyor_realworld_pixels * conveyor_realworld_distance) / conveyor_realworld_width;
+      float d_dash = (focal_length * conveyor_realworld_width) / hor_diff;
+
+      float beta = asin(conveyor_realworld_width / d_dash);
+
+      float multiplier = frame.cols / faces[0].width;
+      float overall_open_angle = beta * multiplier;
+      // center position of predRect relative to the middle of the image.
+      float center_x = faces[0].x + hor_start + hor_diff/2;
+      float pixels_x_per_degree = frame.cols / overall_open_angle;
+      float center_x_angle = center_x / pixels_x_per_degree;
+      world_pos_x = sin(center_x_angle) * d_dash;
+
+      world_pos_z_average = sqrt(d_dash*d_dash + world_pos_x*world_pos_x);
+      }
     mps_conveyor_if_->set_translation(0, world_pos_z_average);
     mps_conveyor_if_->set_translation(1, world_pos_x);
     mps_conveyor_if_->set_translation(2, world_pos_y);
