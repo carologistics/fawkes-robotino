@@ -15,7 +15,7 @@ plugins/conveyor_vision:
   shm_image_id: "conveyor_vision"
 
   # frame of reference
-  frame: "/cam_tag"
+  frame: "/cam_conveyor"
 
   classifier_file: conveyor_classifier.xml
   
