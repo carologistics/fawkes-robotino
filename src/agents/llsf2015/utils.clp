@@ -167,3 +167,141 @@
   (bind ?search-tags (str-cat ?search-tags "}"))
   (return ?search-tags)
 )
+
+(deffunction dyn-mod (?f $?arg) ;arg contains slot and value pairs
+  ; dynamic modify function that takes the fact-adress, the slot name and the new value
+  ; the modificytion is done by creating a new assert string and removing the old fact
+  ; returns the adress of the modified fact, ?f is no longer usable
+  (if (neq (mod (length$ ?arg) 2) 0) then
+    (printout error "dyn-mod needs to be called with slot-value pairs" crlf)
+    (return)
+  )
+  (bind ?slots-to-change (create$))
+  (bind ?values-to-set (create$))
+  (progn$ (?field ?arg)
+    (if (eq (mod ?field-index 2) 1)
+      then
+      (bind ?slots-to-change (insert$ ?slots-to-change 1 ?field))
+      else
+      (bind ?values-to-set (insert$ ?values-to-set 1 ?field))
+    )
+  )
+  (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
+  (progn$ (?slot (fact-slot-names ?f))
+    (if (not (member$ ?slot ?slots-to-change))
+      then
+      (if (deftemplate-slot-multip (fact-relation ?f) ?slot)
+        then ;coply multifield
+        (bind ?acom (str-cat ?acom "(" ?slot " (create$ " 
+                             (implode$ (fact-slot-value ?f ?slot))
+                             "))"))
+        else ;copy singlefield
+        (bind ?acom (str-cat ?acom "(" ?slot " " (fact-slot-value ?f ?slot) ")"))
+      )
+      else
+      (bind ?acom (str-cat ?acom "(" ?slot " "
+                           (nth$ (member$ ?slot ?slots-to-change) ?values-to-set)
+                           ")"))
+    )
+  )
+  (bind ?acom (str-cat ?acom "))"))
+  ;(printout t ?acom crlf)
+  (retract ?f)
+  (bind ?res (eval ?acom))
+  (if (not ?res) then
+    (printout error "Assert failed : " ?acom crlf)
+  )
+  (return ?res)
+)
+
+(deffunction dyn-add-to-multifield (?f ?slot ?value)
+  ; dynamic modify function that takes the fact-adress, the slot name and
+  ; the new value that should be added to the multifield in the slot
+  ; the modificytion is done by creating a new assert string and removing the old fact
+  ; returns the adress of the modified fact, ?f is no longer usable
+  (if (not (deftemplate-slot-multip (fact-relation ?f) ?slot))
+    then
+    (printout error "Slot " ?slot " is no multifield!" crlf)
+  )
+
+  (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
+  (progn$ (?cur-slot (fact-slot-names ?f))
+    (if (neq ?slot ?cur-slot)
+      then
+      (if (deftemplate-slot-multip (fact-relation ?f) ?cur-slot)
+        then ;coply multifield
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ " 
+                             (implode$ (fact-slot-value ?f ?cur-slot))
+                             "))"))
+        else ;copy singlefield
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " " (fact-slot-value ?f ?cur-slot) ")"))
+      )
+      else
+      (bind ?acom (str-cat ?acom "(" ?slot " "
+                           "(create$ "
+                           (implode$ (fact-slot-value ?f ?cur-slot))
+                           " " ?value ")"
+                           ")"))
+    )
+  )
+  (bind ?acom (str-cat ?acom "))"))
+  ;(printout t ?acom crlf)
+  (retract ?f)
+  (bind ?res (eval ?acom))
+  (if (not ?res) then
+    (printout error "Assert failed : " ?acom crlf)
+  )
+  (return ?res)
+)
+
+(deffunction dyn-remove-from-multifield (?f ?slot ?value)
+  ; dynamic modify function that takes the fact-adress, the slot name and
+  ; the value that should be removed from the multifield in the slot
+  ; the modificytion is done by creating a new assert string and removing the old fact
+  ; returns the adress of the modified fact, ?f is no longer usable
+  (if (not (deftemplate-slot-multip (fact-relation ?f) ?slot))
+    then
+    (printout error "Slot " ?slot " is no multifield!" crlf)
+  )
+  (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
+  (progn$ (?cur-slot (fact-slot-names ?f))
+    (if (neq ?slot ?cur-slot)
+      then
+      (if (deftemplate-slot-multip (fact-relation ?f) ?cur-slot)
+        then ;coply multifield
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ " 
+                             (implode$ (fact-slot-value ?f ?cur-slot))
+                             "))"))
+        else ;copy singlefield
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " " (fact-slot-value ?f ?cur-slot) ")"))
+      )
+      else
+      (printout warn "before: " (fact-slot-value ?f ?cur-slot) " " (type (nth$ 1 (fact-slot-value ?f ?cur-slot))) crlf)
+      (printout warn "to delete: " ?value (type ?value) crlf)
+      (printout warn "after: " (delete-member$ (fact-slot-value ?f ?cur-slot) ?value) crlf)
+      (bind ?acom (str-cat ?acom "(" ?slot " "
+                           "(create$ "
+                           (implode$ (delete-member$ (fact-slot-value ?f ?cur-slot) ?value))
+                           ")"
+                           ")"))
+    )
+  )
+  (bind ?acom (str-cat ?acom "))"))
+  ;(printout t ?acom crlf)
+  (retract ?f)
+  (bind ?res (eval ?acom))
+  (if (not ?res) then
+    (printout error "Assert failed : " ?acom crlf)
+  )
+  (return ?res)
+)
+
+(deffunction dyn-assert (?fact)
+  ; assert a fact from a string
+  (bind ?assertstr (str-cat "(assert " ?fact ")"))
+  (bind ?res (eval ?assertstr))
+  (if (not ?res) then
+    (printout error "Assert failed : " ?fact crlf)
+  )
+  (return ?res)
+)
