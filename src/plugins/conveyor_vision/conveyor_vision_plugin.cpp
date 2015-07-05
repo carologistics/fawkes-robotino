@@ -42,5 +42,5 @@ class ConveyorVision : public fawkes::Plugin
   }
 };
 
-PLUGIN_DESCRIPTION("AR Tracking plugin")
+PLUGIN_DESCRIPTION("Conveyor Vision plugin")
 EXPORT_PLUGIN(ConveyorVision)
