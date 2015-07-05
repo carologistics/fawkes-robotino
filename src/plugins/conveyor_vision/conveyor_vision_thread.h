@@ -109,6 +109,9 @@ class ConveyorVisionThread
   firevision::SharedMemoryImageBuffer *shm_buffer;
   unsigned char *image_buffer;
   std::deque<float> world_pos_z_measurements;
+  std::deque<int> conveyor_average_horizontal_diff;
+  std::deque<int> conveyor_average_horizontal_start;
+  std::deque<int> conveyor_average_vertical_start;
   float world_pos_z_average;
   /// Image Buffer Id
   std::string shm_id;
@@ -118,6 +121,23 @@ class ConveyorVisionThread
   unsigned int num_frames_for_average;
   float conveyor_distance_threshold;
   bool visualization_enabled;
+  bool use_hough_lines_ = false;
+  int hough_lines_averaging_count_;
+  int binary_threshold_min_;
+  int binary_threshold_max_;
+  int binary_threshold_average_min_;
+  int binary_threshold_average_max_;
+  int max_binary_value_;
+  int threshold_type_;
+  int morph_element_;
+  int morph_size_;
+  int morph_operator_;
+  int canny_threshold_;
+  unsigned int line_mean_;
+  float conveyor_realworld_distance;
+  float conveyor_realworld_pixels;
+  float conveyor_realworld_width;
+  
 
   // config handling
   virtual void config_value_erased(const char *path);
