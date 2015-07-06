@@ -247,9 +247,9 @@ void ConveyorVisionThread::load_config()
       conveyor_distance_threshold = config->get_float((prefix + "conveyor_distance_threshold").c_str());
       visualization_enabled = config->get_bool((prefix + "visualization_enabled").c_str());
       
-      use_hough_lines_ = config->get_bool((prefix + "/houghlines/use_hough_lines").c_str());
+      use_hough_lines_ = config->get_bool((prefix + "/houghlines/use_hough_line_optimization").c_str());
       if (use_hough_lines_) {
-        hough_lines_averaging_count_ = config->get_bool((prefix + "houghlines/hough_lines_averagin_count").c_str());
+        hough_lines_averaging_count_ = config->get_uint((prefix + "houghlines/hough_lines_averaging_count").c_str());
 
         binary_threshold_min_ = config->get_int((prefix + "houghlines/binary_threshold_min").c_str());
         binary_threshold_max_ = config->get_int((prefix + "houghlines/binary_threshold_max").c_str());
