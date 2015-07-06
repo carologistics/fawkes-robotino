@@ -532,9 +532,10 @@ void ConveyorVisionThread::detect()
     if (visualization_enabled)
     {
       cv::rectangle(frame, Point(faces[0].x, faces[0].y), Point(faces[0].x + faces[0].width, faces[0].y + faces[0].height), Scalar(255,0,0), 1);
+      cvReleaseImage(&ipl);
       ipl = cvCreateImage(cvSize(frame.cols,frame.rows),8,3);
-      IplImage ipltemp=frame;
-      cvCopy(&ipltemp,ipl);
+      Mat newC = cvarrToMat(ipl);
+      *ipl = newC;
       firevision::IplImageAdapter::convert_image_yuv422_planar(ipl,image_buffer);      
     }
   } else {
