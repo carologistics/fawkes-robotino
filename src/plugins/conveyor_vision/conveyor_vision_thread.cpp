@@ -375,8 +375,6 @@ void ConveyorVisionThread::detect()
         calculated_threshold = binary_threshold_max_;
       }
 
-      cvtColor( croppedImage, croppedImage, CV_BGR2GRAY );
-
       int thresh = 200;
       /// Detect edges using canny
       Mat dst, cdst;
