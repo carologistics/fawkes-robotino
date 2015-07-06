@@ -36,8 +36,8 @@ from the navgraph
 
 Parameters:
       @param place   the name of the MPS (see navgraph)
-      @param side    the side of the mps (default is output give "input" to get from input)
-      @param shelf   Position on shelf: ( LEFT | MIDDLE | RIGHT )
+      @param side    optional the side of the mps (default is output give "input" to get from input)
+      @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
