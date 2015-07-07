@@ -38,9 +38,18 @@
   (retract ?state)
   (modify ?step (state running))
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill bring_product_to) (args place ?mps)  (target ?mps))
+    ; default side of machine is input, thus we don't need it here
 	  (wait-for-lock (priority ?p) (res ?mps))
   )
+  (if (eq ?feature SLIDE) then
+    (assert 
+      (skill-to-execute (skill bring_product_to) (args place ?mps slide TRUE)  (target ?mps))
+    )
+  else
+    (assert
+      (skill-to-execute (skill bring_product_to) (args place ?mps)  (target ?mps))
+    )
+  ) 
   ; check if we have to instruct an mps:
   (if (and (eq ?mtype CS)
            (eq ?task-name fill-cap)) then

@@ -104,7 +104,7 @@
   (machine (mtype RS)
     (name ?rs) (team ?team-color)
     (out-of-order-until $?ooo&:(is-working ?ooo)))
-  (ring-station (name ?rs) (bases-needed ?bases&:(> ?bases 0)))
+  (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
   ;check that the task was not rejected before
   (not (and 
     (task (name fill-rs) (state rejected) (id ?rej-id))
@@ -135,7 +135,7 @@
   (team-color ?team-color&~nil)
   (holding ?product-id&~NONE)
   (product (id ?product-id) (base UNKNOWN))
-  (not (ring-station (bases-needed ?bases&:(> ?bases 0))))
+  (not (ring-station (bases-loaded ?bases&:(< ?bases 3))))
   =>
   (printout t "PROD: Discard unneeded unknown base " ?product-id crlf)
   (bind ?task-id (random-id))
