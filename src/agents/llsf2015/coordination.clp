@@ -188,7 +188,7 @@
   (do-for-all-facts ((?prp task)) (eq ?prp:state rejected)
     (retract ?prp)
     ;remember ids to remove the steps of this task
-    (bind ?step-ids-to-remove (insert$ ?step-ids-to-remove 0 ?prp:steps))
+    (bind ?step-ids-to-remove (insert$ ?step-ids-to-remove 1 ?prp:steps))
   )
   ;remove steps
   (do-for-all-facts ((?step task)) (member$ ?step:id ?step-ids-to-remove)
