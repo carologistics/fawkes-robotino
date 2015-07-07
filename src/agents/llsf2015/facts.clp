@@ -230,7 +230,7 @@
 (deftemplate needed-task-lock
   (slot task-id (type INTEGER))
   (slot action (type SYMBOL))
-  (slot place (type FACT-ADDRESS))
+  (slot place (type SYMBOL))
   (slot resource (type SYMBOL) (default NONE))
 )
 

@@ -291,9 +291,6 @@
         (bind ?acom (str-cat ?acom "(" ?cur-slot " " (fact-slot-value ?f ?cur-slot) ")"))
       )
       else
-      (printout warn "before: " (fact-slot-value ?f ?cur-slot) " " (type (nth$ 1 (fact-slot-value ?f ?cur-slot))) crlf)
-      (printout warn "to delete: " ?value (type ?value) crlf)
-      (printout warn "after: " (delete-member$ (fact-slot-value ?f ?cur-slot) ?value) crlf)
       (bind ?acom (str-cat ?acom "(" ?slot " "
                            "(create$ "
                            (implode$ (delete-member$ (fact-slot-value ?f ?cur-slot) ?value))

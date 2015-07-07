@@ -140,8 +140,7 @@
   =>
   (retract ?hf)
   (printout t "Fetched Puck " ?puck-id " from the output of " ?mps crlf)
-  (assert (holding ?puck-id)
-  )
+  (assert (holding ?puck-id))
   (synced-modify ?mf produced-id 0)
 )
 

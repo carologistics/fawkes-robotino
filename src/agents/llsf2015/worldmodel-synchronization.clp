@@ -10,7 +10,8 @@
   ; check if an attempted synchronization is valid
   (if (not (fact-existp ?fact))
     then
-    (printout error "Fact " ?fact " does not exist anymore. Sync failed." crlf)
+    (printout error "Fact " ?fact " does not exist anymore. Sync failed. Slot: "
+              ?slot " Value: " ?value crlf)
     (return FALSE)
   )
   (if (not (member$ ?slot (fact-slot-names ?fact)))
@@ -20,7 +21,8 @@
   )
   (if (not (member$ sync-id (fact-slot-names ?fact)))
     then
-    (printout error "Fact " ?fact " does not have a sync-id. Sync failed." crlf)
+    (printout error "Fact " ?fact " does not have a sync-id. Sync failed. Slot: "
+              ?slot " Value: " ?value crlf)
     (return FALSE)
   )
   (return TRUE)

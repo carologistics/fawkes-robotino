@@ -89,7 +89,7 @@
 	  (step (name get-output) (id (+ ?task-id 3))
 		  (task-priority ?*PRIORITY-PREFILL-CS*)
 		  (machine ?machine))
-	  (needed-task-lock (task-id ?task-id) (action FILL_CAP) (place ?m-f))
+	  (needed-task-lock (task-id ?task-id) (action FILL_CAP) (place ?machine))
   )
 )
 
@@ -123,7 +123,7 @@
       (task-priority ?*PRIORITY-PREFILL-RS*)
       (machine ?rs)
       (machine-feature SLIDE))
-    (needed-task-lock (task-id ?task-id) (action PREFILL-RS) (place ?m-f))
+    (needed-task-lock (task-id ?task-id) (action PREFILL-RS) (place ?rs))
   )
 )
 
@@ -192,7 +192,7 @@
       (task-priority ?*PRIORITY-PRODUCE-C0*)
       (machine ?cs)
       (machine-feature CONVEYOR))
-    (needed-task-lock (task-id ?task-id) (action PROD-CAP) (place ?m-f))
+    (needed-task-lock (task-id ?task-id) (action PROD-CAP) (place ?cs))
   )
 )
 
@@ -245,8 +245,8 @@
       (task-priority ?*PRIORITY-DELIVER*)
       (machine ?ds)
       (machine-feature CONVEYOR))
-    (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?cs-f))
-    (needed-task-lock (task-id ?task-id) (action DELIVER) (place ?ds-f))
+    (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?cs))
+    (needed-task-lock (task-id ?task-id) (action DELIVER) (place ?ds))
   )
 )
   
@@ -282,7 +282,7 @@
 	  (step (name find-tag) (id (+ ?task-id 1))
 		(task-priority ?*PRIORITY-FIND-MISSING-MPS*)
 		(zone ?zone) (machine ?missing-mps))
-	  (needed-task-lock (task-id ?task-id) (action FIND_TAG) (place ?z-f))
+	  (needed-task-lock (task-id ?task-id) (action FIND_TAG) (place ?zone))
   )
 )
 
