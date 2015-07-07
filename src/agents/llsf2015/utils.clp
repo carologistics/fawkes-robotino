@@ -320,6 +320,44 @@
   (return ?res)
 )
 
+(deffunction dyn-override-multifield (?f ?slot ?multifield)
+  ; dynamic modify function that takes the fact-adress, the slot name and
+  ; the new list
+  ; the modificytion is done by creating a new assert string and removing the old fact
+  ; returns the adress of the modified fact, ?f is no longer usable
+  (if (not (deftemplate-slot-multip (fact-relation ?f) ?slot))
+    then
+    (printout error "Slot " ?slot " is no multifield!" crlf)
+  )
+  (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
+  (progn$ (?cur-slot (fact-slot-names ?f))
+    (if (neq ?slot ?cur-slot)
+      then
+      (if (deftemplate-slot-multip (fact-relation ?f) ?cur-slot)
+        then ;coply multifield
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ " 
+                             (implode$ (fact-slot-value ?f ?cur-slot))
+                             "))"))
+        else ;copy singlefield
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " "
+                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
+      )
+      else
+      (bind ?acom (str-cat ?acom "(" ?slot " "
+                           "(create$ " (implode$ ?multifield) ")"
+                           ")"))
+    )
+  )
+  (bind ?acom (str-cat ?acom "))"))
+  ;(printout t ?acom crlf)
+  (retract ?f)
+  (bind ?res (eval ?acom))
+  (if (not ?res) then
+    (printout error "Assert failed : " ?acom crlf)
+  )
+  (return ?res)
+)
+
 (deffunction dyn-assert (?fact)
   ; assert a fact from a string
   (bind ?assertstr (str-cat "(assert " ?fact ")"))
