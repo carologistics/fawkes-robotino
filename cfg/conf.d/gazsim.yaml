@@ -70,6 +70,7 @@ gazsim:
     interface-id-switch: "/machine-signal"
     interface-id-delivery-switch: "/machine-signal/delivery-mode"
     interface-id-delivery-pose: "/machine-signal/open-delivery-gate"
+    interface-id-hint: "/machine-signal/position-hint"
     deliver-pos-x-min: 4.0
     deliver-pos-y-min: 1.5
     deliver-pos-y-max: 4.0

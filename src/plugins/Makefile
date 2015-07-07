@@ -24,4 +24,4 @@ SUBDIRS	= omnivision_pucks clips-motor-switch omnivision_activator \
 
 include $(BUILDSYSDIR)/rules.mk
 
-gazebo: ax12_gripper tag_vision
+gazebo: ax12_gripper tag_vision machine-signal
