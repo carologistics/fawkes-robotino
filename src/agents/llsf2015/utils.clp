@@ -168,6 +168,15 @@
   (return ?search-tags)
 )
 
+(deffunction escape-if-string (?value)
+  ; this function ads \" \" around a string to prevent transforming the string value
+  ; into a Symbol when using the eval function
+  (if (eq STRING (type ?value)) then
+    (return (str-cat "\"" ?value "\""))
+  )
+  (return ?value)
+)
+
 (deffunction dyn-mod (?f $?arg) ;arg contains slot and value pairs
   ; dynamic modify function that takes the fact-adress, the slot name and the new value
   ; the modificytion is done by creating a new assert string and removing the old fact
@@ -197,11 +206,11 @@
   )
   (bind ?slots-to-change ?different-slots)
   (bind ?values-to-set ?different-values)
-  (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
   ; return if there is nothing to modify
   (if (eq 0 (length$ ?slots-to-change)) then
     (return ?f)
   )
+  (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
   (progn$ (?slot (fact-slot-names ?f))
     (if (not (member$ ?slot ?slots-to-change))
       then
@@ -211,11 +220,12 @@
                              (implode$ (fact-slot-value ?f ?slot))
                              "))"))
         else ;copy singlefield
-        (bind ?acom (str-cat ?acom "(" ?slot " " (fact-slot-value ?f ?slot) ")"))
+        (bind ?acom (str-cat ?acom "(" ?slot " " 
+                             (escape-if-string (fact-slot-value ?f ?slot)) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
-                           (nth$ (member$ ?slot ?slots-to-change) ?values-to-set)
+                           (escape-if-string (nth$ (member$ ?slot ?slots-to-change) ?values-to-set))
                            ")"))
     )
   )
@@ -238,7 +248,7 @@
     then
     (printout error "Slot " ?slot " is no multifield!" crlf)
   )
-
+  
   (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
   (progn$ (?cur-slot (fact-slot-names ?f))
     (if (neq ?slot ?cur-slot)
@@ -249,13 +259,14 @@
                              (implode$ (fact-slot-value ?f ?cur-slot))
                              "))"))
         else ;copy singlefield
-        (bind ?acom (str-cat ?acom "(" ?cur-slot " " (fact-slot-value ?f ?cur-slot) ")"))
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " "
+                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
                            "(create$ "
                            (implode$ (fact-slot-value ?f ?cur-slot))
-                           " " ?value ")"
+                           " " (escape-if-string ?value) ")"
                            ")"))
     )
   )
@@ -284,11 +295,12 @@
       then
       (if (deftemplate-slot-multip (fact-relation ?f) ?cur-slot)
         then ;coply multifield
-        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ " 
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ "
                              (implode$ (fact-slot-value ?f ?cur-slot))
                              "))"))
         else ;copy singlefield
-        (bind ?acom (str-cat ?acom "(" ?cur-slot " " (fact-slot-value ?f ?cur-slot) ")"))
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " "
+                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
