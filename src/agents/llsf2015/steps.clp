@@ -228,10 +228,11 @@
     )
   )
   (if (eq 7 (length$ ?tf-transrot)) then
- 
-    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-                       (trans (subseq$ ?tf-transrot 1 3))
-                       (rot (subseq$ ?tf-transrot 4 7))))
+    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side 
+                            ") (frame \"/map\") (trans (create$ "
+                            (implode$ (subseq$ ?tf-transrot 1 3)) ")) "
+                            " (rot (create$ " (implode$ (subseq$ ?tf-transrot 4 7))
+                            ")))"))
     else
     (printout error "Can not transform " ?frame " to /map. Transform is empty. Tags positions are broken!!!" crlf)
     (printout error "Check time diff between base and laptop" crlf)
@@ -241,9 +242,7 @@
     (return)
   )
   (retract ?s ?ws ?skill-finish-state)
-  ; TODO: synced-modify
-  (assert ;(worldmodel-change (machine ?machine) (change ADD_TAG))
-          (state STEP-FINISHED))
+  (assert (state STEP-FINISHED))
   (modify ?step (state finished))
 
   (navgraph-add-all-new-tags)

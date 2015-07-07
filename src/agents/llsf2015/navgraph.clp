@@ -103,12 +103,13 @@
   (bind ?zone-color-right FALSE)
   (do-for-fact ((?ze zone-exploration)) (eq ?ze:name (sym-cat Z ?zone))
     (if (eq ?ze:team ?team-color) then
-      (if (neq ?zone ?zone-intended) then
+      (if (neq (sym-cat Z ?zone) ?zone-intended) then
         (printout t "That is behind the zone I currently explore (" 
                   ?zone-intended ")" crlf)
       )
       (synced-modify ?ze still-to-explore FALSE
-                     recognized TRUE)
+                     recognized TRUE
+                     machine ?mps)
       (bind ?zone-color-right TRUE)
     )
   )
@@ -117,7 +118,8 @@
     (printout error "mps " ?mps " in wrong zone detected. Setting it to intended zone " ?zone-intended crlf)
     (do-for-fact ((?ze zone-exploration)) (eq ?ze:name ?zone-intended)
       (synced-modify ?ze still-to-explore FALSE
-                     recognized TRUE)
+                     recognized TRUE
+                     machine ?mps)
     )
   )
 )
