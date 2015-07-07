@@ -320,7 +320,7 @@
   (return ?res)
 )
 
-(deffunction dyn-override-multifield (?f ?slot ?multifield)
+(deffunction dyn-override-multifield (?f ?slot $?multifield)
   ; dynamic modify function that takes the fact-adress, the slot name and
   ; the new list
   ; the modificytion is done by creating a new assert string and removing the old fact

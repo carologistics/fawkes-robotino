@@ -273,7 +273,7 @@
             (if (eq ?slot-index-diff 0)
               then
               ;override
-              (dyn-override-multifield ?fact (explode$ ?value))
+              (dyn-override-multifield ?fact ?slot (explode$ ?value))
               else
               (if (eq ?slot-index-diff 1)
                 then
