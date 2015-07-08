@@ -118,6 +118,27 @@
   (assert (holding NONE))
 )
 
+(defrule wm-insert-base-into-rs-slide-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-FINAL)
+  (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
+  (step (name insert) (state running) (machine-feature SLIDE))
+  (task (name fill-rs))
+  ?rsf <- (ring-station (name ?mps) (bases-needed ?bn) (bases-loaded ?bl))
+  ?hf <- (holding ?product-id)
+  ?pf <- (product (id ?product-id))
+  =>
+  (retract ?hf ?pf)
+  (printout t "Inserted base " ?product-id " into slide of " ?mps crlf)
+  (assert (holding NONE))
+  (if (> ?bn 0) then
+    (bind ?rsf (synced-modify ?rsf bases-needed (- ?bn 1)))
+  )
+  (if (< ?bl 3) then
+    (synced-modify ?rsf bases-loaded (+ ?bl 1))
+  )
+)
+
 (defrule wm-insert-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
