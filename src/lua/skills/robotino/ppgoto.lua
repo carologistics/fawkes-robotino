@@ -68,7 +68,7 @@ function jumpcond_navifail(state)
    return (state.fsm.vars.msgid == 0
      or (state.fsm.vars.msgid ~= ppnavi:msgid() and state.wait_start > 20)
      or not ppnavi:has_writer()
-     or (ppnavi:is_final() and ppnavi:error_code() ~= ppnavi.ERROR_NONE))
+     or (state.fsm.vars.msgid == ppnavi:msgid() and ppnavi:is_final() and ppnavi:error_code() ~= ppnavi.ERROR_NONE))
 end
 
 function jumpcond_navifinal(state)
