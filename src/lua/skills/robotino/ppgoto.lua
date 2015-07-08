@@ -65,6 +65,17 @@ function jumpcond_paramfail(state)
 end
 
 function jumpcond_navifail(state)
+   if (state.fsm.vars.msgid == 0
+     or (state.fsm.vars.msgid ~= ppnavi:msgid() and state.wait_start > 20)
+     or not ppnavi:has_writer()
+     or (state.fsm.vars.msgid == ppnavi:msgid() and ppnavi:is_final() and ppnavi:error_code() ~= ppnavi.ERROR_NONE))
+   then
+     printf("PPGOTO FAIL: vars.msgid %u  ppnav msgid: %u  wait_start: %u  writer: %s final %s error %u",
+            state.fsm.vars.msgid, ppnavi:msgid(), state.wait_start,
+            tostring(ppnavi:has_writer()), tostring(ppnavi:is_final()),
+            ppnavi:error_code())
+   end
+
    return (state.fsm.vars.msgid == 0
      or (state.fsm.vars.msgid ~= ppnavi:msgid() and state.wait_start > 20)
      or not ppnavi:has_writer()
@@ -72,7 +83,6 @@ function jumpcond_navifail(state)
 end
 
 function jumpcond_navifinal(state)
-   printf("msgid: %d/%d  final: %s", state.fsm.vars.msgid, ppnavi:msgid(), tostring(ppnavi:is_final()))
    return state.fsm.vars.msgid == ppnavi:msgid() and
           ppnavi:is_final() and
           ( ppnavi:error_code() ~= ppnavi.ERROR_NONE or
