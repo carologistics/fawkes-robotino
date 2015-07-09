@@ -39,9 +39,6 @@ documentation      = [==[
 skillenv.skill_module(_M)
 
 local sensor_index = 0
-if config:exists("/hardware/robotino/distance_front/index") then
-   sensor_index = config:get_uint("/hardware/robotino/distance_front/index")
-end
 local sensor_threshold = 0.07
 
 fsm:define_states{ export_to=_M, closure={sensor=sensor, sensor_index=sensor_index, sensor_threshold=sensor_threshold},
