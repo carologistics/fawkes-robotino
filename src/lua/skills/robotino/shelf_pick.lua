@@ -81,7 +81,7 @@ function GOTO_SHELF:init()
 end
 
 function APPROACH_SHELF:init()
-   self.skills[1].x = 0.05
+   self.skills[1].x = 0.05 --TODO measure this value
 end
 
 function GRAB_PRODUCT:init()
