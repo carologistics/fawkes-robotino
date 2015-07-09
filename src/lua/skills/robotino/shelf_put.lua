@@ -28,10 +28,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "shelf_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"motor_move", "ax12gripper"}
-depends_interfaces = {
-   {v = "line1", type = "LaserLineInterface"},
-}
+depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
+depends_interfaces = {}
 
 documentation      = [==[ shelf_put
 
@@ -45,7 +43,7 @@ skillenv.skill_module(_M)
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
-   {"APPROACH_SHELF", SkillJumpState, skills={{motor_move}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
+   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
    {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAILED"},
    {"WAIT_AFTER_GRAB", JumpState},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
@@ -58,33 +56,27 @@ fsm:add_transitions{
 
 
 function GOTO_SHELF:init()
-   local dest_x = 0.2
-   local dest_y = line1:end_point_1(1) + 0.075
-   local line_offset
-   if line1:end_point_1(1) < line1:end_point_2(1) then
-      line_offset = line1:end_point_1(1) + 0.075
-   else
-      line_offset = line1:end_point_2(1) + 0.075
-   end
+   local shelf_to_conveyor = 0.075 --TODO measure both values
+   local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
-      dest_y = line_offset + 0.17
+      dest_y = shelf_to_conveyor
    elseif self.fsm.vars.slot == "MIDDLE" then
-      dest_y = line_offset + 0.1
+      dest_y = shelf_to_conveyor + shelf_distance
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = line_offset
+      dest_y = 0.3
    else
-      dest_x = 0
       dest_y = 0
       self.fsm:set_error("no shelf side set")
       self.fsm.vars.error = true
    end
    
-   self.skills[1].x = dest_x
-   self.skills[1].y = dest_y
+   self.skills[1].y = -dest_y --shelf is on the right side of the conveyor
+   self.skills[1].vel_trans = 0.2
+   self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
 end
 
 function APPROACH_SHELF:init()
-   self.skills[1].x = 0.14
+   self.skills[1].x = 0.05 --TODO measure this value
 end
 
 function STORE_PRODUCT:init()
