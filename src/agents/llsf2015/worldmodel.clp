@@ -22,12 +22,6 @@
         (printout t "Machine " ?m-name " (" ?m-team ") is of type " ?m-type crlf)
         (printout warn "TODO: set available-colors for ring stations " ?m-type crlf)
         (modify ?machine (mtype ?m-type) (team ?m-team))
-        
-        else
-        (bind ?m-prepared (sym-cat (pb-field-value ?m "prepared")))
-        (if (neq ?m-prepared ?machine:prepared) then
-          (modify ?machine (prepared ?m-prepared))
-        )
       )
     )
   )
