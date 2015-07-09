@@ -10,7 +10,7 @@
 (defrule wm-recv-MachineInfo
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   =>
-  ;(printout t "***** Received MachineInfo *****" crlf)
+  ; (printout t "***** Received MachineInfo *****" crlf)
   (foreach ?m (pb-field-list ?p "machines")
     (bind ?m-name (sym-cat (pb-field-value ?m "name")))
     (bind ?m-type (sym-cat (pb-field-value ?m "type")))
@@ -18,10 +18,20 @@
     (do-for-fact ((?machine machine))
       (eq ?machine:name ?m-name)
       
-      (if (or (neq ?machine:mtype ?m-type) (neq ?machine:team ?m-team)) then
-        (printout t "Machine " ?m-name " (" ?m-team ") is of type " ?m-type crlf)
-        (printout warn "TODO: set available-colors for ring stations " ?m-type crlf)
+      (if (neq ?machine:team ?m-team) then
         (modify ?machine (mtype ?m-type) (team ?m-team))
+      )
+    )
+    ; set available rings for ring-stations
+    (if (eq ?m-type RS) then
+      (do-for-fact ((?rs ring-station)) (eq ?rs:name ?m-name)
+        (if (eq 0 (length$ ?rs:available-colors)) then
+          (bind ?colors (create$))
+          (progn$ (?rc (pb-field-list ?m "ring_colors"))
+            (bind ?colors (insert$ ?colors 1 (utils-remove-prefix ?rc "RING_")))
+          )
+          (modify ?rs (available-colors ?colors))
+        )
       )
     )
   )
