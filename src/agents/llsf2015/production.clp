@@ -81,7 +81,9 @@
 		        (priority ?*PRIORITY-PREFILL-CS*))
 	  (step (name get-from-shelf) (id (+ ?task-id 1))
 		  (task-priority ?*PRIORITY-PREFILL-CS*)
-		  (machine ?machine) (shelf-slot (sym-cat ?shelf-slot)))
+		  (machine ?machine)
+      (machine-feature SHELF)
+      (shelf-slot (sym-cat ?shelf-slot)))
 	  (step (name insert) (id (+ ?task-id 2))
 		  (task-priority ?*PRIORITY-PREFILL-CS*)
 		  (machine ?machine)
@@ -139,7 +141,7 @@
   (team-color ?team-color&~nil)
   (holding ?product-id&~NONE)
   (product (id ?product-id) (base UNKNOWN))
-  (machine (mtype RS)
+  (machine (mtype RS) (incoming $?i&~:(member$ PREFILL_RS ?i))
     (name ?rs) (team ?team-color)
     (out-of-order-until $?ooo&:(is-working ?ooo)))
   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
@@ -209,11 +211,11 @@
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PRODUCE-C0*))))
   ;check for open C0 order
   (product (id ?product-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color) (base ?base-color))
-  (order (product-id ?product-id)
+  ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin) 
-    (end ?end&:(tac-can-use-timeslot (nth$ 1 ?game-time) ?begin ?end (+ ?*SKILL-DURATION-GET-PRODUCED* ?*SKILL-DURATION-DELIVER*)))
-    (in-production 0)
+    (end ?end)
+    (in-production 0) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
   =>
   (printout warn "TODO: production durations not yet implemented")
@@ -232,6 +234,7 @@
       (machine-feature CONVEYOR))
     (needed-task-lock (task-id ?task-id) (action PROD-CAP) (place ?cs))
   )
+  (synced-modify ?of in-production 1)
 )
 
 (defrule prod-deliver-c0
@@ -260,15 +263,15 @@
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER*))))
   (product
     (id ?product-id)
-    (rings $?r)
+    (rings $?r&:(eq 0 (length$ ?r)))
     (cap ?cap-color)
     (base ?base-color)
   )
-  (order (product-id ?product-id)
+  ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin) 
-    (end ?end&:(tac-can-use-timeslot (nth$ 1 ?game-time) ?begin ?end ?*SKILL-DURATION-DELIVER*))
-    (delivery-gate ?gate)
+    (end ?end)
+    (delivery-gate ?gate) (in-production ?ip&:(> ?ip 0)) (in-delivery ?id)
   )
   =>
   (printout t "PROD: DELIVER C0 with " ?cap-color crlf)
@@ -286,6 +289,7 @@
     (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?cs))
     (needed-task-lock (task-id ?task-id) (action DELIVER) (place ?ds))
   )
+  (synced-modify ?of in-production (- ?ip 1) in-delivery (+ ?id 1))
 )
   
 (defrule prod-find-missing-mps-exploration-catch-up
