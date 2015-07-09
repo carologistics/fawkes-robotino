@@ -60,6 +60,7 @@ fsm:add_transitions{
   {"INIT",  "FAILED",         precond=check_navgraph, desc="no navgraph"},
   {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
   {"INIT",  "SKILL_RELGOTO",  cond=true},
+  {"SKILL_RELGOTO", "INIT", timeout=1, desc="Recalculate target"}
 }
 
 function INIT:init()
