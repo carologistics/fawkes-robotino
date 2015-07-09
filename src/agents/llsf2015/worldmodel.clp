@@ -15,11 +15,12 @@
     (bind ?m-name (sym-cat (pb-field-value ?m "name")))
     (bind ?m-type (sym-cat (pb-field-value ?m "type")))
     (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
+    (bind ?m-state (sym-cat (pb-field-value ?m "state")))
     (do-for-fact ((?machine machine))
       (eq ?machine:name ?m-name)
       
-      (if (neq ?machine:team ?m-team) then
-        (modify ?machine (mtype ?m-type) (team ?m-team))
+      (if (or (neq ?machine:team ?m-team) (neq ?machine:state ?m-state)) then
+        (modify ?machine (state ?m-state) (team ?m-team))
       )
     )
     ; set available rings for ring-stations

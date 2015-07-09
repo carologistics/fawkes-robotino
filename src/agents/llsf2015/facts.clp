@@ -125,6 +125,8 @@
   ; (slot priority (type INTEGER) (default 0))
   (multislot out-of-order-until (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot prepared (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot state (type SYMBOL) (allowed-values IDLE BROKEN PREPARED PROCESSING
+					    PROCESSED READY-AT-OUTPUT WAIT-IDLE DOWN))
 )
 
 ; (deftemplate base-station 
