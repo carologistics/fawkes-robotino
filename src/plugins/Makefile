@@ -29,4 +29,4 @@ SUBDIRS	= clips-motor-switch \
 
 include $(BUILDSYSDIR)/rules.mk
 
-gazebo: ax12_gripper tag_vision
+gazebo: ax12_gripper tag_vision machine-signal

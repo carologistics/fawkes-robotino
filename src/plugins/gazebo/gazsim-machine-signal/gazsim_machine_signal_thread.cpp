@@ -60,12 +60,18 @@ void MachineSignalSimThread::init()
   //read config values
   light_state_if_name_ = config->get_string("/gazsim/light-front/interface-id-single");
   switch_if_name_ = config->get_string("/gazsim/light-front/interface-id-switch");
+  hint_if_name_ = config->get_string("/gazsim/light-front/interface-id-hint");
+  delivery_mode_if_name_ = config->get_string("/gazsim/light-front/interface-id-delivery-switch");
 
   //open interfaces
   light_if_ = blackboard->open_for_writing<RobotinoLightInterface>
     (light_state_if_name_.c_str());
   switch_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>
     (switch_if_name_.c_str());
+  hint_if_ = blackboard->open_for_writing<SignalHintInterface>
+    (hint_if_name_.c_str());
+  delivery_if_ = blackboard->open_for_writing<fawkes::SwitchInterface>
+    (delivery_mode_if_name_.c_str());
 
   //enable plugin by default
   switch_if_->set_enabled(true);
@@ -102,6 +108,20 @@ void MachineSignalSimThread::loop()
     switch_if_->msgq_pop();
     switch_if_->write();
   }
+
+  //consume messages to the hint interface (they are not used in the simulation)
+  while (!hint_if_->msgq_empty()) 
+  {
+    hint_if_->msgq_pop();
+    hint_if_->write();
+  }
+  //consume messages to the delivery-mode interface (they are not used in the simulation)
+  while (!delivery_if_->msgq_empty()) 
+  {
+    delivery_if_->msgq_pop();
+    delivery_if_->write();
+  }
+  
   
   //write light interface
   if(new_data_)
