@@ -715,7 +715,7 @@
 (defrule wm-set-bs-output-color
   "Set the correct loaded-id after color is ordered at BS"
   (declare (salience ?*PRIORITY-WM*))
-  ?bs <- (machine (mtype BS) (produced-id 0) (prepared TRUE))
+  ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT))
   (step (name get-base) (state running) (base ?base-color))
   =>
   (bind ?product-id (random-id))
@@ -741,12 +741,4 @@
     )
     (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
   ) 
-)
-
-(defrule wm-remove-out-of-order
-  (time $?now)
-  ?m <- (machine (out-of-order-until $?ooo&:(and (neq (nth$ 1 ?ooo) 0)
-						 (timeout ?now ?ooo 0.0))))
-  =>
-  (modify ?m (out-of-order-until (create$ 0 0)))
 )

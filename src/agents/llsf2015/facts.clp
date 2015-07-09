@@ -122,9 +122,6 @@
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
   (multislot final-prod-time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
-  ; (slot priority (type INTEGER) (default 0))
-  (multislot out-of-order-until (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
-  (slot prepared (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot state (type SYMBOL) (allowed-values IDLE BROKEN PREPARED PROCESSING
 					    PROCESSED READY-AT-OUTPUT WAIT-IDLE DOWN))
 )
