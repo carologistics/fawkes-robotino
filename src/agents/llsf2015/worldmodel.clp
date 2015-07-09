@@ -111,11 +111,29 @@
   (step (name insert) (state running))
   (task (name produce-c0|deliver-c0))
   ?mf <- (machine (name ?mps) (mtype DS))
-  ?hf <- (holding ?product-id&~NONE)
+  ?hf <- (holding ?hold-id&~NONE)
+  (product
+    (id ?hold-id)
+    (rings $?r&:(eq 0 (length$ ?r)))
+    (cap ?cap-color)
+    (base ?base-color)
+  )
+  (product
+    (id ?product-id)
+    (rings $?r&:(eq 0 (length$ ?r)))
+    (cap ?cap-color)
+    (base ?base-color)
+  )
+  ?of <- (order (product-id ?product-id)
+    (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
+    (begin ?begin) 
+    (delivery-gate ?gate) (in-production ?ip&:(> ?ip 0)) (in-delivery ?id)
+  )
   =>
   (retract ?hf)
   (printout t "Delivered product " ?product-id " to " ?mps crlf)
   (assert (holding NONE))
+  (synced-modify ?of in-delivery (- ?id 0) quantity-delivered (- ?qd 1))
 )
 
 (defrule wm-insert-base-into-rs-slide-final
