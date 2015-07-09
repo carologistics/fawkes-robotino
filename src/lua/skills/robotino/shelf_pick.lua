@@ -42,20 +42,18 @@ skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_LASERLINE", fail_to="FAILED"},
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="CENTER_PUCK", fail_to="FAILED"},
    {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
    {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
    {"WAIT_AFTER_GRAB", JumpState},
-   {"WAIT_FOR_LASERLINE", JumpState},
 }
 
 fsm:add_transitions{
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
    {"WAIT_AFTER_GRAB", "LEAVE_SHELF", timeout=0.5},
-   {"WAIT_FOR_LASERLINE", "APPROACH_SHELF", timeout=0.5}
 }
 
 function INIT:init()
@@ -63,7 +61,7 @@ function INIT:init()
 end
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.075
+   local shelf_to_conveyor = 0.075 --TODO measure both values
    local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
       dest_y = shelf_to_conveyor
@@ -72,16 +70,18 @@ function GOTO_SHELF:init()
    elseif self.fsm.vars.slot == "RIGHT" then
       dest_y = 0.3
    else
-      dest_x = 0
       dest_y = 0
       self.fsm:set_error("no shelf side set")
       self.fsm.vars.error = true
    end
    
-   self.skills[1].x = dest_x
    self.skills[1].y = -dest_y --shelf is on the right side of the conveyor
    self.skills[1].vel_trans = 0.2
-   self.skills[1].tolerance = {x=0.02,y=0.02,ori=0.02}
+   self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
+end
+
+function APPROACH_SHELF:init()
+   self.skills[1].x = 0.05
 end
 
 function GRAB_PRODUCT:init()
