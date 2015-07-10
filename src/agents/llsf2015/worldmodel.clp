@@ -132,13 +132,13 @@
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin) 
-    (delivery-gate ?gate) (in-production ?ip&:(> ?ip 0)) (in-delivery ?id)
+    (delivery-gate ?gate) (in-delivery ?id)
   )
   =>
   (retract ?hf)
   (printout t "Delivered product " ?product-id " to " ?mps crlf)
   (assert (holding NONE))
-  (synced-modify ?of in-delivery (- ?id 0) quantity-delivered (- ?qd 1))
+  (synced-modify ?of in-delivery (- ?id 0) quantity-delivered (+ ?qd 1))
 )
 
 (defrule wm-insert-base-into-rs-slide-final
