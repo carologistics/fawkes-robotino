@@ -227,7 +227,7 @@
     (step (name get-base) (id (+ ?task-id 1))
       (task-priority ?*PRIORITY-PRODUCE-C0*)
       (machine ?bs) (machine-feature CONVEYOR)
-      (base ?base-color))
+      (base ?base-color) (product-id ?product-id))
     (step (name insert) (id (+ ?task-id 2))
       (task-priority ?*PRIORITY-PRODUCE-C0*)
       (machine ?cs)

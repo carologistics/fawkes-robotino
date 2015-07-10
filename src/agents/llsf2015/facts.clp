@@ -161,6 +161,7 @@
 (deftemplate product
   ;id to link it in other facts
   (slot id (type INTEGER))
+  (slot product-id (type INTEGER) (default 0))
   (multislot rings (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE)
 	     (default (create$ )))
   (slot cap (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
@@ -215,6 +216,7 @@
   (slot ring (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
   (slot gate (type INTEGER) (allowed-values 1 2 3))
+  (slot product-id (type INTEGER))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task

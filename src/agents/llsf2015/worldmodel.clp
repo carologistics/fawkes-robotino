@@ -717,16 +717,12 @@
   (declare (salience ?*PRIORITY-WM*))
   ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT))
   (step (name get-base) (state running) (base ?base-color))
+  (step (name get-base) (state running) (base ?base-color) (product-id ?product-id))
   =>
   (bind ?product-id (random-id))
-  (assert 
-    (product
-      (id ?product-id)
-      (base ?base-color)
-      (cap NONE)
-    )
-  )
-  (modify ?bs (produced-id ?product-id))
+  (synced-assert (str-cat "(product (id " ?produced-id ") (product-id " ?product-id
+                          ") (base " ?base-color ") (cap NONE))"))
+  (synced-modify ?bs produced-id ?produced-id)
 )
 
 (deffunction wm-remove-incoming-by-agent (?agent)
