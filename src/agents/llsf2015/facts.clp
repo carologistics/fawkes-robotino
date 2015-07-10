@@ -187,7 +187,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 deliver-c0 fill-rs discard-unknown exploration-catch-up))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 deliver fill-rs discard-unknown exploration-catch-up))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))

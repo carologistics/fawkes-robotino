@@ -56,11 +56,11 @@
     (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock ?mps)))
   )
   (if (and (eq ?mtype CS)
-           (member$ ?task-name (create$ produce-c0 deliver-c0))) then
+           (member$ ?task-name (create$ produce-c0 deliver))) then
     (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock ?mps)))
   )
   (if (and (eq ?mtype DS)
-           (eq ?task-name deliver-c0)) then
+           (eq ?task-name deliver)) then
     (assert (mps-instruction (machine ?mps) (gate ?gate)))
   )
 )

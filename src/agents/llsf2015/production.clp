@@ -237,8 +237,8 @@
   (synced-modify ?of in-production 1)
 )
 
-(defrule prod-deliver-c0
-  "Deliver C0"
+(defrule prod-deliver
+  "Deliver product"
   (declare (salience ?*PRIORITY-DELIVER*))
   (phase PRODUCTION)
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
@@ -250,23 +250,16 @@
            (state ~DOWN&~BROKEN))
   (product
     (id ?produced-id)
-    (rings $?r&:(eq 0 (length$ ?r)))
+    (product-id ?product-id)
     (cap ?cap-color)
-    (base ?base-color)
   )
   ?ds-f <- (machine (mtype DS)
                     (name ?ds) (team ?team-color)
                     (state ~DOWN&~BROKEN))
   ;check that the task was not rejected before
-  (not (and (task (name deliver-c0) (state rejected) (id ?rej-id))
+  (not (and (task (name deliver) (state rejected) (id ?rej-id))
             (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER*))))
-  (product
-    (id ?product-id)
-    (rings $?r&:(eq 0 (length$ ?r)))
-    (cap ?cap-color)
-    (base ?base-color)
-  )
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin) 
@@ -276,7 +269,7 @@
   =>
   (printout t "PROD: DELIVER C0 with " ?cap-color crlf)
   (bind ?task-id (random-id))
-  (assert (task (name deliver-c0) (id ?task-id) (state proposed)
+  (assert (task (name deliver) (id ?task-id) (state proposed)
     (steps (create$ (+ ?task-id 1) (+ ?task-id 2)))
     (priority ?*PRIORITY-DELIVER*))
     (step (name get-output) (id (+ ?task-id 1))
