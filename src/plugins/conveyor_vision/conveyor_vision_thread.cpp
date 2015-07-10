@@ -513,6 +513,7 @@ void ConveyorVisionThread::detect()
       world_pos_x = sin(center_x_angle) * d_dash;
       
       world_pos_z_average = sqrt(d_dash*d_dash + world_pos_x*world_pos_x) / 100.;
+      world_pos_x /= 100.;
       }
     mps_conveyor_if_->set_translation(0, world_pos_z_average);
     mps_conveyor_if_->set_translation(1, world_pos_x);
