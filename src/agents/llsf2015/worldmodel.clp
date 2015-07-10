@@ -180,27 +180,26 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill get_product_from) (state final) (target ?mps))
-  (step (name get-output) (state running))
-  ?mf <- (machine (name ?mps) (produced-id ?puck-id))
+  (step (name get-output|get-base) (state running))
+  ?mf <- (machine (name ?mps) (produced-id ?produced-id))
   ?hf <- (holding NONE)
   =>
   (retract ?hf)
-  (printout t "Fetched Puck " ?puck-id " from the output of " ?mps crlf)
-  (assert (holding ?puck-id)
-	  (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0))
-  )
+  (printout t "Fetched product " ?produced-id " from the output of " ?mps crlf)
+  (assert (holding ?produced-id))
+  (synced-modify ?mf produced-id 0)
 )
 
 (defrule wm-get-output-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
-  (step (name get-output) (state running))
+  (step (name get-output|get-base) (state running))
   ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0))
   =>
-  (printout t "Failed to fetch a Puck from the output of " ?mps crlf)
-  (printout t "I assume there is no more output puck at " ?mps crlf)
-  (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
+  (printout t "Failed to fetch a product from the output of " ?mps crlf)
+  (printout t "I assume there is no more output product at " ?mps crlf)
+  (synced-modify ?mf produced-id 0)
 )
 
 (defrule wm-store-lights
@@ -719,7 +718,7 @@
   (step (name get-base) (state running) (base ?base-color))
   (step (name get-base) (state running) (base ?base-color) (product-id ?product-id))
   =>
-  (bind ?product-id (random-id))
+  (bind ?produced-id (random-id))
   (synced-assert (str-cat "(product (id " ?produced-id ") (product-id " ?product-id
                           ") (base " ?base-color ") (cap NONE))"))
   (synced-modify ?bs produced-id ?produced-id)
