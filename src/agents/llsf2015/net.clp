@@ -97,6 +97,19 @@
   (pb-destroy ?beacon)
 )
 
+(defrule net-recv-RingInfo
+  ?pf <- (protobuf-msg (type "llsf_msgs.RingInfo") (ptr ?p))
+  =>
+  (foreach ?r (pb-field-list ?p "rings")
+    (bind ?color (utils-remove-prefix (pb-field-value ?r "ring_color") RING_))
+    (if (not (any-factp ((?ring ring)) (eq ?ring:color ?color)))
+      then
+        (bind ?req-bases (pb-field-value ?r "raw_material"))
+        (assert (ring (color ?color) (req-bases ?req-bases)))
+    )
+  )
+)
+
 (defrule net-recv-GameState
   (phase ?phase)
   ?gt <- (game-time $?)

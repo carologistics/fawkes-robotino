@@ -170,6 +170,11 @@
   ; (slot base-usable (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
 )
 
+(deftemplate ring
+  (slot color (type SYMBOL) (allowed-values BLUE GREEN ORANGE YELLOW))
+  (slot req-bases (type INTEGER) (default 0))
+)
+
 (deftemplate order
   (slot id (type INTEGER))
   ;id of product fact how the product should look like
