@@ -28,7 +28,7 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps) (machine-feature ?feature) (gate ?gate))
+		 (machine ?mps) (machine-feature ?feature) (gate ?gate) (ring ?ring))
   (machine (name ?mps) (mtype ?mtype))
   (task (name ?task-name))
   ?state <- (state STEP-STARTED)
@@ -62,6 +62,10 @@
   (if (and (eq ?mtype DS)
            (eq ?task-name deliver)) then
     (assert (mps-instruction (machine ?mps) (gate ?gate)))
+  )
+  (if (and (eq ?mtype RS)
+           (eq ?task-name add-first-ring)) then
+    (assert (mps-instruction (machine ?mps) (ring-color ?ring) (lock ?mps)))
   )
 )
 

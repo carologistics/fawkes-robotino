@@ -88,6 +88,27 @@
   )
 )
 
+(defrule wm-insert-product-into-rs-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-FINAL)
+  (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
+  (step (name insert) (state running) (ring ?ring-color))
+  (ring (color ?ring-color) (req-bases ?rb))
+  (task (name add-first-ring))
+  ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
+  ?rsf <- (ring-station (name ?mps) (bases-loaded ?bl))
+  ?hf <- (holding ?product-id)
+  ?pf <- (product (id ?product-id) (rings $?r))
+  =>
+  (retract ?hf)
+  (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
+  (assert (holding NONE))
+  ; there is no relevant waiting time until the cs has finished the loading step right?
+  (synced-modify ?mf produced-id ?product-id)
+  (synced-modify ?rsf bases-loaded (- ?bl ?rb))
+  (synced-modify ?pf rings (append$ ?r ?ring-color))
+)
+
 (defrule wm-insert-product-into-cs-final
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
