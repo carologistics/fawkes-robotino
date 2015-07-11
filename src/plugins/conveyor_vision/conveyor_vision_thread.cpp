@@ -516,7 +516,7 @@ void ConveyorVisionThread::detect()
       world_pos_x /= 100.;
       }
     mps_conveyor_if_->set_translation(0, world_pos_z_average);
-    mps_conveyor_if_->set_translation(1, world_pos_x);
+    mps_conveyor_if_->set_translation(1, -world_pos_x);
     mps_conveyor_if_->set_translation(2, world_pos_y);
     mps_conveyor_if_->set_rotation(0, 0);
     mps_conveyor_if_->set_rotation(1, 0);
