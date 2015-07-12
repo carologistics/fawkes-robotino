@@ -89,6 +89,7 @@ class GripperAX12AThread
   fawkes::JointInterface       *__rightjoint_if;
   fawkes::DynamixelServoInterface *__servo_if_left;
   fawkes::DynamixelServoInterface *__servo_if_right;
+  fawkes::DynamixelServoInterface *__servo_if_z_align;
 
   /* fawkes::RefPtr<RobotisAX12A> __ax12a; */
   std::string   __gripper_cfg_prefix;

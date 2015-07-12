@@ -85,19 +85,22 @@ GripperAX12AThread::init()
   load_left_pending = false;
   load_right_pending = false;
   
-  bool left_servo_found = false, right_servo_found = false;
+  bool left_servo_found = false, right_servo_found = false, z_servo_found = false;
 
   __servo_if_right = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_right_servo_id).c_str());
   __servo_if_left  = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_left_servo_id).c_str());
+  __servo_if_z_align  = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_z_alignment_servo_id).c_str());
 
   __servo_if_left->read();
   __servo_if_right->read();
-  
+  __servo_if_z_align->read();
+
   right_servo_found = __servo_if_right->has_writer();
   left_servo_found  = __servo_if_left->has_writer();
-  if (! (left_servo_found && right_servo_found)) {
-    throw Exception("Left and/or right servo not found: left: %i  right: %i",
-		    left_servo_found, right_servo_found);
+  z_servo_found     = __servo_if_left->has_writer();
+  if (! (left_servo_found && right_servo_found && z_servo_found)) {
+    throw Exception("Left and/or right and/or z-servo not found: left: %i  right: %i, z: %i",
+		    left_servo_found, right_servo_found, z_servo_found);
   }
 
   // set servo values from config
@@ -176,6 +179,7 @@ GripperAX12AThread::finalize()
   blackboard->close(__rightjoint_if);
   blackboard->close(__servo_if_right);
   blackboard->close(__servo_if_left);
+  blackboard->close(__servo_if_z_align);
   config->rem_change_handler(this);
 }
 
@@ -193,6 +197,7 @@ GripperAX12AThread::loop()
      // read data from interfaces
     __servo_if_left->read();
     __servo_if_right->read();
+    __servo_if_z_align->read();
 
       // load is given in values from 0 - 1023 is ccw load, 1024 - 2047 is cw load but we are only interested in overall load
     if (load_left_pending && (__servo_if_left->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
