@@ -96,6 +96,7 @@ class GripperAX12AThread
   std::string   __cfg_driver_prefix;
   std::string   __cfg_left_servo_id;
   std::string   __cfg_right_servo_id;
+  std::string   __cfg_z_alignment_servo_id;
   /* unsigned char __cfg_left_servo_id; */
   /* unsigned char __cfg_right_servo_id; */
   /* unsigned int __cfg_cw_compl_margin; */
@@ -132,6 +133,9 @@ class GripperAX12AThread
   float        __target_right;
   float        __left_margin;
   float        __right_margin;
+  float        __cfg_z_speed_as_percent;
+  float        __cfg_z_downwards_real_velocity;
+  float        __cfg_z_upwards_real_velocity;
 
   bool         load_left_pending;
   bool         load_right_pending;

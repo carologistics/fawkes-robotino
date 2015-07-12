@@ -583,38 +583,42 @@ void GripperAX12AThread::load_config()
   // Note: due to the use of auto_ptr and RefPtr resources are automatically
   // freed on destruction, therefore no special handling is necessary in init()
   // itself!
-  __cfg_driver_prefix    = config->get_string((__gripper_cfg_prefix + "driver_prefix").c_str());
-  __cfg_left_servo_id    = config->get_string((__gripper_cfg_prefix + "left_servo_id").c_str());
-  __cfg_right_servo_id   = config->get_string((__gripper_cfg_prefix + "right_servo_id").c_str());
+  __cfg_driver_prefix        = config->get_string((__gripper_cfg_prefix + "driver_prefix").c_str());
+  __cfg_left_servo_id        = config->get_string((__gripper_cfg_prefix + "left_servo_id").c_str());
+  __cfg_right_servo_id       = config->get_string((__gripper_cfg_prefix + "right_servo_id").c_str());
+  __cfg_z_alignment_servo_id = config->get_string((__gripper_cfg_prefix + "z_alignment_servo_id").c_str());
   // __cfg_cw_compl_margin  = config->get_uint((__gripper_cfg_prefix + "cw_compl_margin").c_str());
   // __cfg_ccw_compl_margin = config->get_uint((__gripper_cfg_prefix + "ccw_compl_margin").c_str());
   // __cfg_cw_compl_slope   = config->get_uint((__gripper_cfg_prefix + "cw_compl_slope").c_str());
   // __cfg_ccw_compl_slope  = config->get_uint((__gripper_cfg_prefix + "ccw_compl_slope").c_str());
-  __cfg_left_min         = config->get_float((__gripper_cfg_prefix + "left_min").c_str());
-  __cfg_left_max         = config->get_float((__gripper_cfg_prefix + "left_max").c_str());
-  __cfg_right_min        = config->get_float((__gripper_cfg_prefix + "right_min").c_str());
-  __cfg_right_max        = config->get_float((__gripper_cfg_prefix + "right_max").c_str());
-  __cfg_left_torque      = config->get_float((__gripper_cfg_prefix + "left_torque").c_str());
-  __cfg_right_torque     = config->get_float((__gripper_cfg_prefix + "right_torque").c_str());
-  __cfg_goto_zero_start  = config->get_bool((__gripper_cfg_prefix + "goto_zero_start").c_str());
-  __cfg_turn_off         = config->get_bool((__gripper_cfg_prefix + "turn_off").c_str());
+  __cfg_left_min             = config->get_float((__gripper_cfg_prefix + "left_min").c_str());
+  __cfg_left_max             = config->get_float((__gripper_cfg_prefix + "left_max").c_str());
+  __cfg_right_min            = config->get_float((__gripper_cfg_prefix + "right_min").c_str());
+  __cfg_right_max            = config->get_float((__gripper_cfg_prefix + "right_max").c_str());
+  __cfg_left_torque          = config->get_float((__gripper_cfg_prefix + "left_torque").c_str());
+  __cfg_right_torque         = config->get_float((__gripper_cfg_prefix + "right_torque").c_str());
+  __cfg_goto_zero_start      = config->get_bool((__gripper_cfg_prefix + "goto_zero_start").c_str());
+  __cfg_turn_off             = config->get_bool((__gripper_cfg_prefix + "turn_off").c_str());
     
-  __cfg_left_margin       = config->get_float((__gripper_cfg_prefix + "left_margin").c_str());
-  __cfg_right_margin      = config->get_float((__gripper_cfg_prefix + "right_margin").c_str());
-  __cfg_left_start        = config->get_float((__gripper_cfg_prefix + "left_start").c_str());
-  __cfg_right_start       = config->get_float((__gripper_cfg_prefix + "right_start").c_str());
-  __cfg_left_open_angle   = config->get_float((__gripper_cfg_prefix + "left_open").c_str());
-  __cfg_left_close_angle  = config->get_float((__gripper_cfg_prefix + "left_close").c_str());
-  __cfg_left_close_load_angle  = config->get_float((__gripper_cfg_prefix + "left_close_load").c_str());
-  __cfg_right_open_angle  = config->get_float((__gripper_cfg_prefix + "right_open").c_str());
-  __cfg_right_close_angle = config->get_float((__gripper_cfg_prefix + "right_close").c_str());
+  __cfg_left_margin          = config->get_float((__gripper_cfg_prefix + "left_margin").c_str());
+  __cfg_right_margin         = config->get_float((__gripper_cfg_prefix + "right_margin").c_str());
+  __cfg_left_start           = config->get_float((__gripper_cfg_prefix + "left_start").c_str());
+  __cfg_right_start          = config->get_float((__gripper_cfg_prefix + "right_start").c_str());
+  __cfg_left_open_angle      = config->get_float((__gripper_cfg_prefix + "left_open").c_str());
+  __cfg_left_close_angle     = config->get_float((__gripper_cfg_prefix + "left_close").c_str());
+  __cfg_left_close_load_angle= config->get_float((__gripper_cfg_prefix + "left_close_load").c_str());
+  __cfg_right_open_angle      = config->get_float((__gripper_cfg_prefix + "right_open").c_str());
+  __cfg_right_close_angle     = config->get_float((__gripper_cfg_prefix + "right_close").c_str());
   __cfg_right_close_load_angle = config->get_float((__gripper_cfg_prefix + "right_close_load").c_str());
-  __cfg_max_speed         = config->get_float((__gripper_cfg_prefix + "max_speed").c_str());
-  __cfg_max_load          = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
-  __cfg_max_torque        = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
-  __cfg_load_for_holds_puck = config->get_float((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
-  __cfg_angle_for_holds_puck = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
+  __cfg_max_speed              = config->get_float((__gripper_cfg_prefix + "max_speed").c_str());
+  __cfg_max_load               = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
+  __cfg_max_torque             = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
+  __cfg_load_for_holds_puck    = config->get_float((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
+  __cfg_angle_for_holds_puck   = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
   __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
+  __cfg_z_speed_as_percent        = config->get_float((__gripper_cfg_prefix + "z_speed").c_str());
+  __cfg_z_downwards_real_velocity = config->get_float("/gripper_z_downwards_real_vel");
+  __cfg_z_upwards_real_velocity   = config->get_float("/gripper_z_upwards_real_vel");
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());
