@@ -166,7 +166,26 @@ GripperAX12AThread::init()
   __tt_count = 0;
   __ttc_read_sensor = __tt->add_class("Read Sensor");
 #endif  
+  init_z_align();
+}
 
+void 
+GripperAX12AThread::init_z_align()
+{
+  DynamixelServoInterface::SetModeMessage *mode_msg = new DynamixelServoInterface::SetModeMessage();
+  DynamixelServoInterface::SetSpeedMessage *speed_msg = new DynamixelServoInterface::SetSpeedMessage();
+  DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_z_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+
+  mode_msg->set_mode(DynamixelServoInterface::WHEEL);
+  prevent_z_msg->set_enable_prevent_alarm_shutdown(false);
+  speed_msg->set_speed(0);
+  
+  __servo_if_z_align->msgq_enqueue(prevent_z_msg);
+  __servo_if_z_align->msgq_enqueue(mode_msg);
+  __servo_if_z_align->msgq_enqueue(speed_msg);
+
+  z_alignment_pending = false;
+  return;
 }
 
 void

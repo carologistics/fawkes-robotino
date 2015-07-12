@@ -156,6 +156,7 @@ class GripperAX12AThread
 
   float         __last_left;
   float         __last_right;
+  void init_z_align();
   void goto_gripper(float left, float right);
   void goto_gripper_load(float left, float right);
   void goto_gripper_timed(float left, float right, float time_sec);
