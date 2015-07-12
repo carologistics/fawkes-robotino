@@ -28,6 +28,8 @@ fsm                = SkillHSM:new{name=name, start="INIT"}
 depends_skills     = { "drive_to_global", "drive_to_local", "motor_move" }
 depends_interfaces = {
   {v = "pose",      type="Position3DInterface", id="Pose"},
+  {v = "zone_info", type="ZoneInterface",       id="/explore-zone/info"},
+  {v = "zone_pose", type="Position3DInterface", id="/explore-zone/pose"},
   {v = "tag_0",     type = "Position3DInterface"},
   {v = "tag_1",     type = "Position3DInterface"},
   {v = "tag_2",     type = "Position3DInterface"},
@@ -68,9 +70,13 @@ depends_interfaces = {
 local TIMEOUT = 1
 local HIST_MIN_LINE = 5
 local HIST_MIN_TAG  = 5
-local ROBOT_WALL_DIST = 0.3
+local ROBOT_WALL_DIST = 0.35
 local TAG_DIST = 0.5
 local MPS_OFFSET_TO_ZONE = 0.2
+local WALL_MIN_X = -5.9
+local WALL_MAX_X =  5.9
+local WALL_MIN_Y =  0.1
+local WALL_MAX_Y =  5.9
 
 documentation      = [==[
 Explores a zone defined by (x_min, y_min) and (x_max, y_max)
@@ -105,16 +111,21 @@ function mps_in_zone(self, x, y, use_offset)
   return true
 end
 
+function get_tag_id(self, if_ID)
+  if_ID = string.sub(if_ID, 13)
+  
+  return tag_info:tag_id(if_ID)
+end
+
 function tag_searched(self, if_ID)
   if self.fsm.vars.search_tags == nil then
     return true
   end
 
-  if_ID = string.sub(if_ID, 13)
-  printf("TAG ID: " .. tag_info:tag_id(if_ID))
+  printf("TAG ID: " .. get_tag_id(self, if_ID))
 
   for k,v in pairs(self.fsm.vars.search_tags) do
-    if v == tag_info:tag_id(if_ID) then
+    if v == get_tag_id(self, if_ID) then
       return true
     end
   end
@@ -146,6 +157,7 @@ function mps_visible_tag(self, hist_min, use_offset_to_boarder)
         point_on_obj["x_map"]   = obj_map.x
         point_on_obj["y_map"]   = obj_map.y
         point_on_obj["ori_map"] = obj_map.ori
+        point_on_obj["tag_id"]  = get_tag_id(self, v:id())
 
         if mps_in_zone(self, obj_map.x, obj_map.y, use_offset_to_boarder) then
           table.insert( tags_vis, point_on_obj )
@@ -190,6 +202,7 @@ function mps_visible_laser(self, hist_min)
       point_on_obj["x_map"]   = obj_map.x
       point_on_obj["y_map"]   = obj_map.y
       point_on_obj["ori_map"] = obj_map.ori
+      point_on_obj["tag_id"]  = -1
       
       if mps_in_zone( self, obj_map.x, obj_map.y ) then
         table.insert( lines_vis, point_on_obj )
@@ -241,9 +254,9 @@ fsm:define_states{ export_to=_M,
   {"TIMEOUT_CLUSTER",             JumpState},
   {"DECIDE_NEXT_POINT",           JumpState},
   {"DRIVE_TO_NEXT_EXPLORE_POINT", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
-  {"TURN_TO_POSSIBLE_MPS",        SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
+  {"FIX_INTERNAL_VARS",        SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
   {"WAIT_FOR_SENSORS",            JumpState},
-  {"DRIVE_TO_POSSIBLE_MPS_PRE",   SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
+--  {"DRIVE_TO_POSSIBLE_MPS_PRE",   SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
   {"DRIVE_TO_POSSIBLE_MPS",       SkillJumpState, skills={{drive_to_local}}, final_to="CHECK_SEE_TAG", fail_to="FAILED"},
   {"CHECK_SEE_TAG",               JumpState},
 }
@@ -259,8 +272,8 @@ fsm:add_transitions{
   --{"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond="table.getn(self.fsm.vars.poses_to_check) ~= 0"},
   {"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond=poses_to_check},
   {"DECIDE_NEXT_POINT",   "FINAL",                        cond=true},
-  --{"DRIVE_TO_NEXT_EXPLORE_POINT", "TURN_TO_POSSIBLE_MPS", cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
-  {"DRIVE_TO_NEXT_EXPLORE_POINT", "TURN_TO_POSSIBLE_MPS", cond="mps_visible_laser(self, 1)",                    desc="saw line on route, drive to there"},
+  --{"DRIVE_TO_NEXT_EXPLORE_POINT", "FIX_INTERNAL_VARS", cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
+  {"DRIVE_TO_NEXT_EXPLORE_POINT", "FIX_INTERNAL_VARS", cond="mps_visible_laser(self, 1)",                    desc="saw line on route, drive to there"},
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_tag,                                 desc="saw tag, drive to"},
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_laser,                               desc="saw laser, drive to"},
   {"WAIT_FOR_SENSORS",    "DECIDE_NEXT_POINT",            timeout=TIMEOUT,                                      desc="saw nothing, trying next point"},
@@ -275,6 +288,13 @@ function INIT:init()
   local wall_max_x = false
   local wall_max_y = false
 
+  -- clear interfaces
+  zone_info:set_search_state(zone_info.UNKNOWN)
+  zone_info:set_tag_id(-1)
+
+  zone_pose:set_visibility_history(-1)
+
+  -- check params
   if self.fsm.vars.min_x == nil or
      self.fsm.vars.min_y == nil or
      self.fsm.vars.max_x == nil or
@@ -295,16 +315,16 @@ function INIT:init()
     printf("Explore zone (" .. self.fsm.vars.min_x .. ", " .. self.fsm.vars.min_y .. ") (" .. self.fsm.vars.max_x .. ", " .. self.fsm.vars.max_y .. ")")
 
     -- check for zone at walls
-    if self.fsm.vars.min_x <= -5.9 then
+    if self.fsm.vars.min_x <= WALL_MIN_X then
       wall_min_x = true
     end
-    if self.fsm.vars.min_y <= 0.1 then
+    if self.fsm.vars.min_y <= WALL_MIN_Y then
       wall_min_y = true
     end
-    if self.fsm.vars.max_x >= 5.9 then
+    if self.fsm.vars.max_x >= WALL_MAX_X then
       wall_max_x = true
     end
-    if self.fsm.vars.max_y >= 5.9 then
+    if self.fsm.vars.max_y >= WALL_MAX_Y then
       wall_max_y = true
     end
 
@@ -461,8 +481,9 @@ function pose_in_front_of_mps_calculator(self, chosen, factor)
   return x, y, ori
 end
 
-function TURN_TO_POSSIBLE_MPS:init()
+function FIX_INTERNAL_VARS:init()
   self.fsm.vars.poses_to_check_iterator = self.fsm.vars.poses_to_check_iterator - 1
+--[[ this is code to turn to the possivle MPS
   local ori = nil
   if self.fsm.vars.line_chosen ~=nil then
     printf("Turn to possible line")
@@ -477,8 +498,10 @@ function TURN_TO_POSSIBLE_MPS:init()
   self.skills[1].ori      = ori
   self.skills[1].ori      = nil
   self.skills[1].just_ori = true
+--]]
 end
 
+--[[
 function DRIVE_TO_POSSIBLE_MPS_PRE:init()
   local x   = nil
   local y   = nil
@@ -495,6 +518,7 @@ function DRIVE_TO_POSSIBLE_MPS_PRE:init()
   self.skills[1].ori      = ori
   self.skills[1].just_ori = true
 end
+--]]
 
 function DRIVE_TO_POSSIBLE_MPS:init()
   local x   = nil
@@ -519,6 +543,21 @@ function DRIVE_TO_POSSIBLE_MPS:init()
     printf("Error, I have no tag and no line to drive to")
   end
 
+  -- update interfaces
+  zone_info:set_search_state(zone_info.MAYBE)
+  zone_info:set_tag_id(chosen["tag_id"])
+  zone_pose:set_visibility_history(1)
+  zone_pose:set_translation(0, chosen["x_map"])
+  zone_pose:set_translation(1, chosen["y_map"])
+  printf("Found maybe ( " .. chosen["tag_id"] .. " ) (at far pose) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. " )")
+  local q = fawkes.tf.create_quaternion_from_yaw( chosen["ori_map"] )
+  zone_pose:set_rotation( 0, q:x() )
+  zone_pose:set_rotation( 1, q:y() )
+  zone_pose:set_rotation( 2, q:z() )
+  zone_pose:set_rotation( 3, q:w() )
+  printf("Found maybe (at far pose) yaw: " .. chosen["ori_map"] .. "q = ( " .. q:x() .. ", " .. q:y() .. ", " .. q:z() .. ", " .. q:w() .. ")")
+
+  -- get point to drive to (in front of MPS)
   x, y, ori = pose_in_front_of_mps_calculator(self, chosen)
   printf("Point drive:  ( " .. x .. " , " .. y .. " , " .. ori .. " )")
   
@@ -526,4 +565,27 @@ function DRIVE_TO_POSSIBLE_MPS:init()
   self.skills[1].y        = y
   self.skills[1].ori      = ori
   self.skills[1].just_ori = true
+end
+
+function FINAL:init()
+  if self.fsm.vars.tag_chosen == nil then
+    -- update interfaces
+    zone_info:set_search_state(zone_info.NO)
+  else
+    local chosen = self.fsm.vars.tag_chosen
+  
+    -- update interfaces
+    zone_info:set_search_state(zone_info.YES)
+    zone_info:set_tag_id(chosen["tag_id"])
+    zone_pose:set_visibility_history(1)
+    zone_pose:set_translation(0, chosen["x_map"])
+    zone_pose:set_translation(1, chosen["y_map"])
+    printf("Found tag ( " .. chosen["tag_id"] .. " ) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. " )")
+    local q = fawkes.tf.create_quaternion_from_yaw( chosen["ori_map"] )
+    zone_pose:set_rotation( 0, q:x() )
+    zone_pose:set_rotation( 1, q:y() )
+    zone_pose:set_rotation( 2, q:z() )
+    zone_pose:set_rotation( 3, q:w() )
+    printf("Found tag yaw: " .. chosen["ori_map"] .. "q = ( " .. q:x() .. ", " .. q:y() .. ", " .. q:z() .. ", " .. q:w() .. ")")
+  end
 end

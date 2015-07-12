@@ -84,4 +84,6 @@ skiller:
         signal_hint: SignalHintInterface::/machine-signal/position-hint
       writing:
         light: RobotinoLightInterface::Light determined
+        zone_info:  ZoneInterface::/explore-zone/info
+        zone_pose:  Position3DInterface::/explore-zone/pose
 
