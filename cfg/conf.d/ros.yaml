@@ -14,3 +14,7 @@ ros:
     motor_interface_id: Robotino
     odom_frame_id: odom
     base_frame_id: base_link
+
+  clock:
+    # Frequency in Hz at which the clock should be published
+    frequency: 100
