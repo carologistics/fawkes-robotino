@@ -100,12 +100,12 @@
   ?pf <- (product (id ?product-id) (rings $?r))
   =>
   (retract ?hf)
-  (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
+  (printout t "Inserted product " ?product-id " to have a ring assembled in the RS" crlf)
   (assert (holding NONE))
   ; there is no relevant waiting time until the cs has finished the loading step right?
   (synced-modify ?mf produced-id ?product-id)
   (synced-modify ?rsf bases-loaded (- ?bl ?rb))
-  (synced-modify ?pf rings (append$ ?r ?ring-color))
+  (synced-add-to-multifield ?pf rings ?ring-color)
 )
 
 (defrule wm-insert-product-into-cs-final
