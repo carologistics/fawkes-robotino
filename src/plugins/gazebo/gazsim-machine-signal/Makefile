@@ -24,7 +24,7 @@ include $(BUILDSYSDIR)/protobuf.mk
 LIBS_gazsim_machine_signal = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
 	       Position3DInterface TransformInterface \
-	       SwitchInterface RobotinoLightInterface \
+	       SwitchInterface RobotinoLightInterface SignalHintInterface\
 	       fawkesgazeboaspect gazsim_msgs
 OBJS_gazsim_machine_signal = gazsim_machine_signal_plugin.o gazsim_machine_signal_thread.o
 
