@@ -184,6 +184,7 @@ class GripperAX12AThread
   /* void wait_for_fresh_data(); */
   void stop_left();
   void stop_right();
+  void stop_z();
   /* void set_servo_angle(unsigned int servo_id, float servo_angle); */
   void load_config();
   void config_value_erased(const char *path);

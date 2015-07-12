@@ -424,6 +424,15 @@ GripperAX12AThread::stop_right()
   __servo_if_left->msgq_enqueue(stop_message);
 }
 
+/** Stop currently running z motion. */
+void
+GripperAX12AThread::stop_z()
+{
+  DynamixelServoInterface::SetSpeedMessage *speed_msg = new DynamixelServoInterface::SetSpeedMessage();
+  speed_msg->set_speed(0);
+  __servo_if_z_align->msgq_enqueue(speed_msg);
+}
+
 /** Stop currently running motion. */
 void
 GripperAX12AThread::stop_motion()
