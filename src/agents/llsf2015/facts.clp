@@ -72,8 +72,11 @@
   (slot frame (type STRING))
   (multislot trans (type FLOAT) (cardinality 3 3))
   (multislot rot (type FLOAT) (cardinality 4 4))
-  (slot already-added (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot sync-id (type INTEGER) (default 0))
+)
+
+(deftemplate navgraph-added-for-mps
+  (slot name (type SYMBOL))
 )
 
 (deftemplate last-navgraph-compute-msg 

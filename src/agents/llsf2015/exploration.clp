@@ -214,7 +214,8 @@
   (team-color ?team-color)
   (tag-matching (tag-id ?tag) (team ?team-color) (machine ?machine) (side ?side))
   ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame)
-		    (trans $?trans) (rot $?rot) (already-added FALSE))
+		    (trans $?trans) (rot $?rot))
+  (not (navgraph-added-for-mps (name ?machine)))
   =>
   (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side ") to Navgraph-generation"  crlf)
 

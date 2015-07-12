@@ -62,7 +62,7 @@
 (deffunction navgraph-add-all-new-tags ()
   "send all new tags to the navgraph generator"
   (bind ?any-tag-to-add FALSE)
-  (delayed-do-for-all-facts ((?ft found-tag)) (not ?ft:already-added)
+  (delayed-do-for-all-facts ((?ft found-tag)) (not (any-factp ((?added-f navgraph-added-for-mps)) (eq ?ft:name ?added-f:name)))
     (bind ?any-tag-to-add TRUE)
     ; report tag position to navgraph generator
     (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
@@ -78,7 +78,7 @@
 	      " trans " ?ft:trans
 	      " rot " ?ft:rot  crlf)
    
-    (modify ?ft (already-added TRUE))
+    (assert (navgraph-added-for-mps (name ?ft:name)))
   )
   (if ?any-tag-to-add
     then
