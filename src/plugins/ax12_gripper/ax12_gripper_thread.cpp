@@ -256,6 +256,15 @@ GripperAX12AThread::loop()
 
     __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final() && !z_alignment_pending);
 
+    if (__gripper_if->is_final() && !(__servo_if_left->is_enable_prevent_alarm_shutdown() && __servo_if_right->is_enable_prevent_alarm_shutdown()))
+    {
+        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+        prevent_left_msg->set_enable_prevent_alarm_shutdown(true);
+        prevent_right_msg->set_enable_prevent_alarm_shutdown(true);
+        __servo_if_left ->msgq_enqueue(prevent_left_msg);
+        __servo_if_right->msgq_enqueue(prevent_right_msg);
+    }
 
     while (! __gripper_if->msgq_empty() ) {
       if (__gripper_if->msgq_first_is<AX12GripperInterface::CalibrateMessage>()) {
