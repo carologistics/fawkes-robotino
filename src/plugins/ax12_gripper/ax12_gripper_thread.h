@@ -56,6 +56,7 @@ class RobotisAX12A;
 
 class GripperAX12AThread
 : public fawkes::Thread,
+  public fawkes::ClockAspect,
   public fawkes::BlockedTimingAspect,
 #ifdef HAVE_TF
   public fawkes::TransformAspect,
@@ -141,6 +142,10 @@ class GripperAX12AThread
   bool         load_left_pending;
   bool         load_right_pending;
   bool         center_pending;
+  unsigned int cur_z_goal_speed;
+  bool         z_alignment_pending;
+  fawkes::Time time_to_stop_z_align;
+  
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
   std::string  __cfg_left_link;
@@ -160,6 +165,7 @@ class GripperAX12AThread
   void goto_gripper(float left, float right);
   void goto_gripper_load(float left, float right);
   void goto_gripper_timed(float left, float right, float time_sec);
+  void rel_goto_z(int rel_z);
   void get_gripper(float &left, float &right);
   void get_gripper(float &left, float &right, fawkes::Time &time);
   void set_velocities(float left_vel, float right_vel);

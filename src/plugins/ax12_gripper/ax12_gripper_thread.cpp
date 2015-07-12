@@ -239,8 +239,20 @@ GripperAX12AThread::loop()
       __servo_if_right->msgq_enqueue(prevent_right_msg);
       center_pending = false;
     }
+    if (z_alignment_pending) {
+      __servo_if_z_align->read();
+      
+      fawkes::Time now(clock);
+      if (now >= time_to_stop_z_align) {
+        // time reached - stop movement
+        DynamixelServoInterface::SetSpeedMessage *speed_msg = new DynamixelServoInterface::SetSpeedMessage();
+        speed_msg->set_speed(0);
+        __servo_if_z_align->msgq_enqueue(speed_msg);
+        z_alignment_pending = false;
+      }
+    }
 
-    __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final());
+    __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final() && !z_alignment_pending);
 
 
     while (! __gripper_if->msgq_empty() ) {
@@ -319,6 +331,10 @@ GripperAX12AThread::loop()
         set_margins(msg->left_margin(), msg->right_margin());
         __gripper_if->set_left_margin(msg->left_margin());
         __gripper_if->set_right_margin(msg->right_margin());
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::RelGotoZMessage>()) {
+        AX12GripperInterface::RelGotoZMessage *msg = __gripper_if->msgq_first(msg);
+        rel_goto_z(msg->rel_z());
         
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CenterMessage>()) {
         
@@ -430,6 +446,42 @@ GripperAX12AThread::goto_gripper(float left, float right)
 
   __servo_if_left->msgq_enqueue(goto_left);
   __servo_if_right->msgq_enqueue(goto_right);
+}
+
+/** Goto desired z value.
+ * @param rel_z relative value from actual gripper's z position in mm
+ */
+void
+GripperAX12AThread::rel_goto_z(int rel_z)
+{
+  if (rel_z == 0)
+  {
+    logger->log_warn(name(), "Z-alignment to relative 0 does nothing.");
+    return;
+  }
+  
+  __servo_if_z_align->read();
+  
+  fawkes::Time now(clock);
+  // 1mm per pi because of half a rotation for 1mm
+  float rad_to_turn = abs(rel_z) * M_PI;
+  float seconds_to_drive = rad_to_turn / ((rel_z > 0 ? __cfg_z_upwards_real_velocity : __cfg_z_downwards_real_velocity));
+  time_to_stop_z_align = now + seconds_to_drive;
+  cur_z_goal_speed = (int)(__cfg_z_speed_as_percent * 1023) & 0x3FF;
+  
+  // cw direction?
+  if (rel_z < 0)
+  {
+    cur_z_goal_speed |= 0x400;
+  }
+  
+  DynamixelServoInterface::SetModeMessage *mode_msg = new DynamixelServoInterface::SetModeMessage(DynamixelServoInterface::WHEEL);
+  DynamixelServoInterface::SetSpeedMessage *speed_msg = new DynamixelServoInterface::SetSpeedMessage(cur_z_goal_speed);
+
+  __servo_if_z_align->msgq_enqueue(mode_msg);
+  __servo_if_z_align->msgq_enqueue(speed_msg);
+  
+  z_alignment_pending = true;
 }
 
 /** Goto desired left/right values until given max_load (by config).
