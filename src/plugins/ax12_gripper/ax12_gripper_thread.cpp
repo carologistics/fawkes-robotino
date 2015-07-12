@@ -191,6 +191,8 @@ GripperAX12AThread::init_z_align()
 void
 GripperAX12AThread::finalize()
 {
+  // make sure that no servo continues movement
+  stop_motion();
   blackboard->unregister_listener(this);
   blackboard->close(__gripper_if);
   blackboard->close(__led_if);
