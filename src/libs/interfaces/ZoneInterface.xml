@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ZoneInterface" author="Tobias Neumann" year="2015">
+  <constants>
+    <enum name="MPS_IN_ZONE">
+      <comment>The information about the MPS in a zone</comment>
+      <item name="UNKNOWN">We did not detect it yet, but can't say no</item>
+      <item name="NO">We search everthing, there might be no MPS in the zone (or the skill can't find it)</item>
+      <item name="YES">We found the MPS and in the corresponding Position 3D interface are the possition</item>
+      <item name="MAYBE">We found the MPS at a far possition, but not from close</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>
+      The interface about the zone that is to be explored
+    </comment>
+    <field type="MPS_IN_ZONE" name="search_state">
+      The state of the search of the actual zone.
+    </field>
+    <field type="int32" name="tag_id">
+      The ID of the tag, if set to -1 this means no TAG is known, e.g. MPS just found maybe (with laser-lines).
+    </field>
+  </data>
+</interface>
