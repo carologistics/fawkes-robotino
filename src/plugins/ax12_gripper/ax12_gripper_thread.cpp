@@ -439,6 +439,7 @@ GripperAX12AThread::stop_motion()
 {
   stop_left();
   stop_right();
+  stop_z();
 }
 
 /** Goto desired left/right values.
