@@ -44,6 +44,7 @@
   (multislot incoming (type SYMBOL) (default (create$)))  
   (multislot incoming-agent (type SYMBOL) (default (create$)))
   (slot times-searched (type INTEGER) (default 0))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 (deftemplate exp-matching
@@ -72,6 +73,7 @@
   (multislot trans (type FLOAT) (cardinality 3 3))
   (multislot rot (type FLOAT) (cardinality 4 4))
   (slot already-added (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 (deftemplate last-navgraph-compute-msg 
@@ -124,6 +126,7 @@
   (multislot final-prod-time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot state (type SYMBOL) (allowed-values IDLE BROKEN PREPARED PROCESSING
 					    PROCESSED READY-AT-OUTPUT WAIT-IDLE DOWN))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 ; (deftemplate base-station 
@@ -139,6 +142,7 @@
   (slot cap-loaded (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
   ;the team has to fill one CS with black and the other with grey caps (config)
   (slot assigned-cap-color (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 (deftemplate ring-station
@@ -148,6 +152,7 @@
 	(default NONE))
   (slot bases-needed (type INTEGER) (allowed-values 0 1 2) (default 0))
   (slot bases-loaded (type INTEGER) (allowed-values 0 1 2 3) (default 0))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 
@@ -168,6 +173,7 @@
   (slot base (type SYMBOL) (allowed-symbols BLACK SILVER RED UNKNOWN) (default UNKNOWN))
   ; is the base from a cap-station and therefore unusable
   ; (slot base-usable (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 (deftemplate ring
@@ -187,6 +193,7 @@
   (slot end (type INTEGER))
   (slot in-production (type INTEGER) (default 0))
   (slot in-delivery (type INTEGER) (default 0))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 ; Common template for an abstract task which consists of a sequence of steps
@@ -235,16 +242,15 @@
 )
 
 (deftemplate worldmodel-change
-  (slot machine (type SYMBOL) (default NONE)); or puck-storage
-  (slot order (type INTEGER) (default 0))
-  (slot puck-id (type INTEGER) (default 0))
-  (slot change (type SYMBOL))
-  (slot value (type SYMBOL) (default NOTHING))
-  (slot amount (type INTEGER) (default 0))
-  (slot already-applied (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot key (type INTEGER) (default 0)) ; composed of sync-id of the fact to synchronize and the slot to change
+  (slot value (default nil))
   (multislot last-sent (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   (slot id (type INTEGER) (default 0)) ;random id
   (slot agent (type SYMBOL) (default DEFAULT))
+)
+
+(deftemplate wm-sync-info
+  (multislot synced-templates (type SYMBOL) (default (create$)))
 )
 
 (deftemplate wait-for-lock
@@ -369,4 +375,7 @@
   (wait-point WAIT1)
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
+
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag)))
+  ; zone-exploration, machine, cap-station, product, ring station
 )

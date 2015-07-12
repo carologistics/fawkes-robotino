@@ -104,50 +104,27 @@
   )
 )
 
-;(defrule step-get-base-finish
-;  "Base retrieved from BS"
-;  (declare (salience ?*PRIORITY-STEP-FINISH*))
-;  (phase PRODUCTION)
-;  ?step <- (step (name get-base) (state running) (base ?base-color))
-;  ?state <- (state SKILL-FINAL)
-;  ?ste <- (skill-to-execute (skill get_product_from)
-;			    (args place ?bs) (state ?skill-finish-state&final))
-;  (machine (name ?bs) (produced-id ?product-id))
-;  ?h <- (holding NONE)
-;  (puck-in-gripper TRUE)
-;  =>
-;  (printout t ?base-color " base retrieved"  crlf)
-;  (retract ?state ?ste ?h)
-;  (assert
-;    (state STEP-FINISHED)
-;    (holding ?product-id)
-;    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
-;  )
-;  (modify ?step (state finished))
-;)
-;
-;(defrule step-get-base-failed
-;  "Base retrieved from BS"
-;  (declare (salience ?*PRIORITY-STEP-FINISH*))
-;  (phase PRODUCTION)
-;  ?step <- (step (name get-base) (state running) (base ?base-color))
-;  ?state <- (state SKILL-FINAL)
-;  ?ste <- (skill-to-execute (skill get_product_from)
-;			    (args place ?bs) (state ?skill-finish-state&final))
-;  (machine (name ?bs) (produced-id ?product-id))
-;  (holding NONE)
-;  (puck-in-gripper FALSE)
-;  =>
-;  (printout t "Failed to retrieve base with color " ?base-color crlf)
-;  (retract ?state ?ste)
-;  (assert
-;    (state STEP-FAILED)
-;    ;we don't know what happened with the base, set machine as empty
-;    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
-;  )
-;  (modify ?step (state failed))
-;)
-  
+; (defrule step-get-base-finish
+;   "Base retrieved from BS"
+;   (declare (salience ?*PRIORITY-STEP-FINISH*))
+;   (phase PRODUCTION)
+;   ?step <- (step (name get-base) (state running) (base ?base-color))
+;   ?state <- (state SKILL-FINAL)
+;   ?ste <- (skill-to-execute (skill get_product_from)
+; 			    (args place ?bs) (state ?skill-finish-state&final))
+;   ?mf <- (machine (name ?bs) (produced-id ?product-id))
+;   ?h <- (holding NONE)
+;   =>
+;   (printout t ?base-color " base retrieved"  crlf)
+;   (retract ?state ?ste ?h)
+;   (assert
+;     (state STEP-FINISHED)
+;     (holding ?product-id)
+;   )
+;   (synced-modify ?mf produced-id 0)
+;   (modify ?step (state finished))
+; )
+
 (defrule step-discard-unknown-start
   "Open gripper to discard unknown base"
   (declare (salience ?*PRIORITY-STEP-START*))
@@ -191,6 +168,7 @@
   ?state <- (state STEP-STARTED)
   (game-time $?game-time)
   (team-color ?team)
+  ?ze <- (zone-exploration (name ?zone) (times-searched ?times-searched))
   =>
   (retract ?state)
   (modify ?step (state running))
@@ -204,8 +182,8 @@
                                                        search_tags ?search-tags)
                             (target ?zone))
 	  (wait-for-lock (priority ?p) (res ?zone))
-          (worldmodel-change (machine ?zone) (change ZONE_TIMES_SEARCHED_INCREMENT))
   )
+  (synced-modify ?ze times-searched (+ 1 ?times-searched))
 )
 
 (defrule step-find-tag-finish
@@ -263,10 +241,11 @@
     )
   )
   (if (eq 7 (length$ ?tf-transrot)) then
- 
-    (assert (found-tag (name ?machine) (side ?side) (frame "/map")
-                       (trans (subseq$ ?tf-transrot 1 3))
-                       (rot (subseq$ ?tf-transrot 4 7))))
+    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side 
+                            ") (frame \"/map\") (trans (create$ "
+                            (implode$ (subseq$ ?tf-transrot 1 3)) ")) "
+                            " (rot (create$ " (implode$ (subseq$ ?tf-transrot 4 7))
+                            ")))"))
     else
     (printout error "Can not transform " ?frame " to /map. Transform is empty. Tags positions are broken!!!" crlf)
     (printout error "Check time diff between base and laptop" crlf)
@@ -276,8 +255,7 @@
     (return)
   )
   (retract ?s ?ws ?skill-finish-state)
-  (assert (worldmodel-change (machine ?machine) (change ADD_TAG))
-          (state STEP-FINISHED))
+  (assert (state STEP-FINISHED))
   (modify ?step (state finished))
 
   (navgraph-add-all-new-tags)
@@ -289,17 +267,14 @@
   (time $?now)
   ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
   ?s <- (state PROD_LOOKING_FOR_TAG)
-  ?zone-fact <- (zone-exploration (name ?zone))
+  ?zone-fact <- (zone-exploration (name ?zone) (times-searched ?times-searched))
   ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   =>
   (printout t "No tag found in " ?zone crlf)
   (if (eq ?explore-zone-state final) then
     (printout t "There probably is no mps in this zone!" crlf)
     (printout t "Try this zone again later ROBOCUP FIX!" crlf)
-    (assert (worldmodel-change (machine ?zone)
-                               (change ZONE_TIMES_SEARCHED_INCREMENT)))
-    ; (assert (worldmodel-change (machine ?zone) (change ZONE_STILL_TO_EXPLORE)
-    ;                            (value FALSE)))
+    (synced-modify ?zone-fact times-searched (+ 1 ?times-searched))
   )
   (retract ?s ?ws ?skill-finish-state)
   (assert (state STEP-FAILED))

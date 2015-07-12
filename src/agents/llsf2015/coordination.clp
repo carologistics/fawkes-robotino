@@ -37,90 +37,6 @@
   (modify ?pt (state asked))
 )
 
-; (defrule coordination-compute-resources-to-lock
-;   "Decides which resources need locking for the proposed task and asserts a needed-task-lock for them. Asserts state TASK-PROPOSED-ASKED."
-;   ?pt <- (proposed-task (name ?task) (args $?a) (state proposed))
-;   (not (proposed-task (state asked)))
-;   ?s <- (state TASK-PROPOSED)
-;   =>
-;   (modify ?pt (state asked))
-;   (retract ?s)
-;   (assert (state TASK-PROPOSED-ASKED))
-;   (switch ?task
-;     (case load-with-S0 then
-;       (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
-; 				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a)))))
-;     )
-;     (case load-with-S1 then
-;       (assert (needed-task-lock (action BRING_S1) (place (nth$ 1 ?a)) 
-; 				(resource (sym-cat BRING_S1 "~" (nth$ 1 ?a)))))
-;     )
-;     (case load-with-S2 then
-;       (assert (needed-task-lock (action BRING_S2) (place (nth$ 1 ?a)) 
-; 				(resource (sym-cat BRING_S2 "~" (nth$ 1 ?a)))))
-;     )
-;     (case pick-and-deliver then
-;       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
-; 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
-; 	      (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
-; 				(resource (sym-cat BRING_ (nth$ 2 ?a) "~" (nth$ 3 ?a) "~Order" (nth$ 4 ?a))))
-;       )
-;     )
-;     (case recycle then
-;       (assert (needed-task-lock (action PICK_CO) (place (nth$ 1 ?a)) 
-; 				(resource (sym-cat PICK_CO "-" (nth$ 1 ?a))))
-;       )
-;     )
-;     (case pick-and-load then
-;       ;get puck type we move
-;       (do-for-fact ((?machine machine)) (eq ?machine:name (nth$ 1 ?a))
-; 	(bind ?puck ?machine:produced-puck)
-;       )
-;       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
-; 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
-; 	      (needed-task-lock (action (sym-cat BRING_ ?puck)) (place (nth$ 2 ?a))
-; 				(resource (sym-cat (sym-cat BRING_ ?puck) "~" (nth$ 2 ?a))))
-;       )
-;     )
-;     (case deliver then
-;       (assert (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
-; 				(resource (sym-cat BRING_ (nth$ 2 ?a) "~" (nth$ 3 ?a) "~Order" (nth$ 4 ?a)))))
-;     )
-;     (case recycle-holding then
-;       ;nothing has to be locked here because we want to get rid of an unintentionally holding puck
-;     )
-;     (case just-in-time-P3 then
-;       (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
-; 				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a))))
-; 	      (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
-; 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
-;     )
-;     (case pick-and-store then
-;       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
-; 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
-; 	      (needed-task-lock (action STORE_PUCK) (place (nth$ 3 ?a))
-; 				(resource (sym-cat STORE_PUCK "~" (nth$ 3 ?a)))))
-;     )
-;     (case store then
-;       (assert (needed-task-lock (action STORE_PUCK) (place (nth$ 1 ?a))
-; 				(resource (sym-cat STORE_PUCK "~" (nth$ 1 ?a)))))
-;     )
-;     (case get-stored-and-deliver then
-;       (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
-; 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
-; 	      (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER)
-; 					(resource (sym-cat BRING_ (nth$ 2 ?a) "~" (nth$ 3 ?a) "~Order" (nth$ 4 ?a)))))
-;     )
-;     (case produce-with-S0 then
-;       (assert (needed-task-lock (action BRING_S0) (place (nth$ 1 ?a))
-; 				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a))))
-; 	      (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
-; 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a)))))
-;     )
-;     (default (printout warn "task-locks for " ?task " not implemented yet" crlf))
-;   )
-; )
-
 (defrule coordination-ask-for-lock
   "Asks for a lock (type GET) that was computed in coordination-compute-resources-to-lock. Lock acceptance is handled in lock-managing.clp."
   (needed-task-lock (resource ?res&~NONE))
@@ -132,6 +48,16 @@
                                            (eq ?release:type RELEASE))
     (retract ?release)
   )
+)
+
+(deffunction coordination-get-fact-address-of-place (?place)
+  (bind ?coordinated-places (create$ zone-exploration machine puck-storage))
+  (progn$ (?templ ?coordinated-places)
+    (do-for-fact ((?fact ?templ)) (eq ?place ?fact:name)
+      (return ?fact)
+    )
+  )
+  (printout error "Could not find place: " ?place crlf)
 )
 
 (defrule coordination-accept-proposed-task
@@ -148,20 +74,11 @@
   (retract ?s)
   (assert (state TASK-ORDERED))
   ;update worldmodel
-  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
-    ;(printout warn "assert wmc " ?ntl:place " " ADD_INCOMING " " ?ntl:action crlf)
-    (if (eq ?ntl:place DELIVER)
-      then
-      (printout t "delivery not in worldmodel-changes atm" crlf)
-      ; (assert (worldmodel-change (order (nth$ 4 ?args)) (change SET_IN_DELIVERY)
-      ; 				 (value (nth$ 2 ?args))
-      ; 				 (amount (nth$ 3 ?args))))
-      else
-      (assert (worldmodel-change (machine ?ntl:place) (change ADD_INCOMING)
-				 (value ?ntl:action)))
-    )
+  (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
+    (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
+    (bind ?fact-ptr (synced-add-to-multifield ?fact-ptr incoming ?ntl:action))
+    (synced-add-to-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
   )
-  
 )
 
 (defrule coordination-reject-proposed-task
@@ -203,9 +120,11 @@
   ?s <- (state TASK-FINISHED)
   =>
   ;release all locks for subtask goals
-  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
+  (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
-    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
+    (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
+    (bind ?fact-ptr (synced-remove-from-multifield ?fact-ptr incoming ?ntl:action))
+    (synced-remove-from-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
     (retract ?ntl)
   )
   ;remove all steps of the task
@@ -223,9 +142,11 @@
   ?t <- (task (name ?task) (state finished))
   =>
   ;release all locks for subtask goals
-  (do-for-all-facts ((?ntl needed-task-lock)) TRUE
+  (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
-    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
+    (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
+    (bind ?fact-ptr (synced-remove-from-multifield ?fact-ptr incoming ?ntl:action))
+    (synced-remove-from-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
     (retract ?ntl)
   )
   (retract ?t)
@@ -239,7 +160,9 @@
   ;release all locks for subtask goals
   (delayed-do-for-all-facts ((?ntl needed-task-lock) (?m machine)) (eq ?m:name ?ntl:place)
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
-    (assert (worldmodel-change (machine ?ntl:place) (change REMOVE_INCOMING) (value ?ntl:action)))
+    (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
+    (bind ?fact-ptr (synced-remove-from-multifield ?fact-ptr incoming ?ntl:action))
+    (synced-remove-from-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
     (retract ?ntl)
   )
   (retract ?s )

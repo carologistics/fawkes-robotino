@@ -51,10 +51,8 @@
   (retract ?hf)
   (printout t "Got a Puck from an CS shelf with a " ?color " cap to fill the CS" crlf)
   (bind ?puck-id (random-id))
-  (assert (holding ?puck-id)
-	  (worldmodel-change (puck-id ?puck-id) (change NEW_PUCK))
-          (product (id ?puck-id) (cap ?color))
-  )
+  (synced-assert (str-cat "(product (id " ?puck-id ") (cap " ?color "))"))
+  (assert (holding ?puck-id))
 )
 
 (defrule wm-get-from-shelf-failed
@@ -71,6 +69,8 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
+  ?mps-f <- (machine (name ?mps))
+  ?cs-f <- (cap-station (name ?mps))
   (step (name insert) (state running))
   (task (name fill-cap))
   ;an inserted puck without cap will be the final product
@@ -82,10 +82,9 @@
   (retract ?hf)
   (printout t "Inserted a Puck from an CS shelf with a " ?cap " cap to fill the CS" crlf)
   (assert (holding NONE))
-  (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount ?puck-id))
-	  (worldmodel-change (machine ?mps) (change SET_CAP_LOADED) (value ?cap))
-	  (worldmodel-change (puck-id ?puck-id) (change SET_CAP) (value NONE))
-  )
+  (synced-modify ?mps-f produced-id ?puck-id)
+  (synced-modify ?cs-f cap-loaded ?cap)
+  (synced-modify ?pf cap NONE)
 )
 
 (defrule wm-insert-product-into-rs-final
@@ -124,10 +123,9 @@
   (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
   (assert (holding NONE))
   ; there is no relevant waiting time until the cs has finished the loading step right?
-  (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount ?product-id))
-	  (worldmodel-change (machine ?mps) (change SET_CAP_LOADED) (value NONE))
-	  (worldmodel-change (puck-id ?product-id) (change SET_CAP) (value ?cap))
-  )
+  (synced-modify ?mf produced-id ?product-id)
+  (synced-modify ?csf cap-loaded NONE)
+  (synced-modify ?pf cap ?cap)
 )
 
 (defrule wm-insert-product-into-ds-final
@@ -477,227 +475,6 @@
 ;   (printout error "Failed to get stored puck." crlf)
 ;   (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
 ; )
-
-(defrule wm-worldmodel-change-set-agent
-  "Set the agent field in a new worldmodel change. We know that the change is from this agent because otherwise the field would be set."
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (agent DEFAULT))
-  =>
-  (modify ?wmc (agent (sym-cat ?*ROBOT-NAME*)))
-)
-
-(defrule wm-process-wm-change-before-sending-machine
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?machine) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent&~DEFAULT))
-  ?m <- (machine (name ?machine) (loaded-id ?loaded-with) (incoming $?incoming) (incoming-agent $?incoming-agent) (produced-id ?produced))
-  =>
-  (bind ?could-apply-change TRUE)
-  (switch ?change
-    (case SET_LOADED then 
-      (modify ?m (loaded-id ?amount))
-    )
-    (case REMOVE_LOADED then 
-      (modify ?m (loaded-id 0))
-    )
-    (case ADD_INCOMING then 
-      (modify ?m (incoming (append$ ?incoming ?value))
-	         (incoming-agent (append$ ?incoming-agent ?agent)))
-    )
-    (case REMOVE_INCOMING then 
-      (modify ?m (incoming (delete-member$ ?incoming ?value))
-	         ;every agent should do only one thing at a machine
-	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
-    )
-    (case SET_PROD_FINISHED_TIME then 
-      (modify ?m (final-prod-time (create$ ?amount 0)))
-    )
-    (case SET_OUT_OF_ORDER_UNTIL then
-      (modify ?m (out-of-order-until (create$ ?amount 0)))
-    )
-    (case SET_PRODUCED then 
-      (modify ?m (produced-id ?amount))
-    )
-    (case REMOVE_PRODUCED then 
-      (modify ?m (produced-id 0))
-    )
-    (default  
-      (bind ?could-apply-change FALSE)
-    )
-  )
-  (if ?could-apply-change then
-    (modify ?wmc (already-applied TRUE))
-  )
-)
-
-(defrule wm-process-wm-change-before-sending-product
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (puck-id ?puck-id) (change ?change) (value ?value) (already-applied FALSE))
-  ?p <- (product (id ?puck-id) (rings $?rings))
-  =>
-  (bind ?could-apply-change TRUE)
-  (switch ?change
-    (case ADD_RING then 
-      (modify ?p (rings (append$ ?rings ?value)))
-    )
-    (case SET_CAP then 
-      (modify ?p (cap ?value))
-    )
-    (case REMOVE_PUCK then 
-      (retract ?p)
-    )
-    (case SET_BASE then
-      (modify ?p (base ?value))
-    )
-    (default  
-      (bind ?could-apply-change FALSE)
-    )
-  )
-  (if ?could-apply-change then
-    (modify ?wmc (already-applied TRUE))
-  )
-)
-
-(defrule wm-process-wm-change-before-sending-cap-station
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?mps) (change ?change) (value ?value) (already-applied FALSE))
-  ?cs <- (cap-station (name ?mps))
-  =>
-  (bind ?could-apply-change TRUE)
-  (switch ?change
-    (case SET_CAP_LOADED then 
-      (modify ?cs (cap-loaded ?value))
-    )
-    (default  
-      (bind ?could-apply-change FALSE)
-    )
-  )
-  (if ?could-apply-change then
-    (modify ?wmc (already-applied TRUE))
-  )
-)
-
-(defrule wm-process-wm-change-before-sending-ring-station
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?mps) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE))
-  ?rs <- (ring-station (name ?mps))
-  =>
-  (bind ?could-apply-change TRUE)
-  (switch ?change
-    (case SET_SELECTED_COLOR then 
-      (modify ?rs (selected-color ?value))
-    )
-    (case SET_BASES_NEEDED then 
-      (modify ?rs (bases-needed ?amount))
-    )
-    (default  
-      (bind ?could-apply-change FALSE)
-    )
-  )
-  (if ?could-apply-change then
-    (modify ?wmc (already-applied TRUE))
-  )
-)
-
-(defrule wm-process-wm-change-at-order-before-sending
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (order ?id) (change SET_IN_DELIVERY)
-			     (value ?puck) (amount ?amount) (already-applied FALSE))
-  ?order <- (order (id ?id))
-  =>
-  (modify ?order (in-delivery ?amount))
-  (modify ?wmc (already-applied TRUE))
-)
-
-(defrule wm-process-wm-change-exploration-zone
-  "apply wm change to local worldmodel before sending"
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?zone) (value ?value) (agent ?agent)
-                             (change ?change) (already-applied FALSE))
-  ?zone-fact <- (zone-exploration (name ?zone) (times-searched ?times-searched)
-                                  (incoming $?incoming) (incoming-agent $?incoming-agent))
-  =>  
-  (switch ?change
-    (case ZONE_STILL_TO_EXPLORE then 
-      (modify ?zone-fact (still-to-explore ?value))
-    )
-    (case ZONE_MACHINE_IDENTIFIED then 
-      (modify ?zone-fact (machine ?value))
-    )
-    (case ZONE_TIMES_SEARCHED_INCREMENT then 
-      (modify ?zone-fact (times-searched (+ 1 ?times-searched)))
-    )
-    (case ADD_INCOMING then 
-      (modify ?zone-fact (incoming (append$ ?incoming ?value))
-              (incoming-agent (append$ ?incoming-agent ?agent)))
-    )
-    (case REMOVE_INCOMING then 
-      (modify ?zone-fact (incoming (delete-member$ ?incoming ?value))
-	         ;every agent should do only one thing at a machine
-	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
-    )
-    (default
-      (printout error "Worldmodel-Change Type " ?change
-                " is not handled for zonex. Worlmodel is probably wrong." crlf)
-    )
-  )
-  (modify ?wmc (already-applied TRUE))
-)
-
-(defrule wm-process-wm-change-before-sending-puck-storage
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?storage) (change ?change) (value ?value) (already-applied FALSE) (agent ?agent))
-  ?ps <- (puck-storage (name ?storage) (incoming $?incoming) (incoming-agent $?incoming-agent))
-  =>
-  (bind ?could-apply-change TRUE)
-  (switch ?change
-    ; (case ADD_LOADED_WITH then 
-    ;   (modify ?ps (puck ?value))
-    ; )
-    ; (case REMOVE_LOADED_WITH then
-    ;   (modify ?ps (puck NONE))
-    ; )
-    (case ADD_INCOMING then 
-      (modify ?ps (incoming (append$ ?incoming ?value))
-	          (incoming-agent (append$ ?incoming-agent ?agent)))
-    )
-    (case REMOVE_INCOMING then 
-      (modify ?ps (incoming (delete-member$ ?incoming ?value))
-	         ;every agent should do only one thing at a machine
-	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
-    )
-    (default  
-      (bind ?could-apply-change FALSE)
-    )
-  )
-  (if ?could-apply-change then
-    (modify ?wmc (already-applied TRUE))
-  )
-)
-
-(defrule wm-process-wm-change-before-sending-zone
-  (declare (salience ?*PRIORITY-WM*))
-  ?wmc <- (worldmodel-change (machine ?zone) (change ?change) (value ?value) (amount ?amount) (already-applied FALSE) (agent ?agent&~DEFAULT))
-  ?zone-fact <- (zone-exploration (name ?zone) (incoming $?incoming) (incoming-agent $?incoming-agent))
-  =>
-  (bind ?could-apply-change TRUE)
-  (switch ?change
-    (case ADD_INCOMING then 
-      (modify ?zone-fact (incoming (append$ ?incoming ?value))
-              (incoming-agent (append$ ?incoming-agent ?agent)))
-    )
-    (case REMOVE_INCOMING then 
-      (modify ?zone-fact (incoming (delete-member$ ?incoming ?value))
-	      ;every agent should do only one thing at a machine
-              (incoming-agent (delete-member$ ?incoming-agent ?agent)))
-    )
-    (default  
-      (bind ?could-apply-change FALSE)
-    )
-  )
-  (if ?could-apply-change then
-    (modify ?wmc (already-applied TRUE))
-  )
-)
 
 (defrule wm-update-pose
   (declare (salience ?*PRIORITY-CLEANUP*))

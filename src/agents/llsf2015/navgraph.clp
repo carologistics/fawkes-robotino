@@ -57,8 +57,9 @@
   "We got a tag from another bot (all tags from us are processed in exploration.clp with higher priority). Add the tag directly. I hope this doesn't break anything when the robot is driving"
   (declare (salience ?*PRIORITY-LOW*))
   ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame)
-		    (trans $?trans) (rot $?rot) (already-added FALSE))
+		    (trans $?trans) (rot $?rot))
   (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
+  (not (navgraph-node (name ?machine-str&:(eq ?machine-str (str-cat ?machine)))))
   ; TODO: check in which zone the machine is located to mark that the tag in this zone was found
   =>
   (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side 
@@ -99,25 +100,26 @@
   
   (printout t "mps " ?mps " is in zone " ?zone crlf)
 
+  (bind ?zone-color-right FALSE)
   (do-for-fact ((?ze zone-exploration)) (eq ?ze:name (sym-cat Z ?zone))
     (if (eq ?ze:team ?team-color) then
-      (if (neq ?zone ?zone-intended) then
+      (if (neq (sym-cat Z ?zone) ?zone-intended) then
         (printout t "That is behind the zone I currently explore (" 
                   ?zone-intended ")" crlf)
       )
-      (assert (worldmodel-change (machine ?ze:name) (change ZONE_STILL_TO_EXPLORE)
-                                 (value FALSE))
-              (worldmodel-change (machine ?ze:name) (change ZONE_MACHINE_IDENTIFIED)
-                                 (value ?mps))
-      )
-      else
-      (printout error "mps " ?mps " in wrong zone detected. Setting it to intended zone " ?zone-intended crlf)
-      
-      (assert (worldmodel-change (machine ?zone-intended) (change ZONE_STILL_TO_EXPLORE)
-                                 (value FALSE))
-              (worldmodel-change (machine ?zone-intended) (change ZONE_MACHINE_IDENTIFIED)
-                                 (value ?mps))
-      )
+      (synced-modify ?ze still-to-explore FALSE
+                     recognized TRUE
+                     machine ?mps)
+      (bind ?zone-color-right TRUE)
+    )
+  )
+  (if (not ?zone-color-right)
+    then
+    (printout error "mps " ?mps " in wrong zone detected. Setting it to intended zone " ?zone-intended crlf)
+    (do-for-fact ((?ze zone-exploration)) (eq ?ze:name ?zone-intended)
+      (synced-modify ?ze still-to-explore FALSE
+                     recognized TRUE
+                     machine ?mps)
     )
   )
 )

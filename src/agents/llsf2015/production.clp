@@ -356,9 +356,9 @@
   (machine (name ?missing-mps) (team ?team-color) (mtype ~RS))
   (not (found-tag (name ?missing-mps)))
   ; zone-to-explore
-  (zone-exploration (name ?zone) (still-to-explore TRUE) (team ?team-color)
-                    (incoming $?i&~:(member$ FIND_TAG ?i))
-                    (times-searched ?times-searched))
+  ?z-f <- (zone-exploration (name ?zone) (still-to-explore TRUE) (team ?team-color)
+                            (incoming $?i&~:(member$ FIND_TAG ?i))
+                            (times-searched ?times-searched))
   ; no-zone searched less times
   (not (zone-exploration (name ?z2&:(neq ?zone ?z2)) (still-to-explore TRUE) (team ?team-color)
                          (incoming $?i&~:(member$ FIND_TAG ?i))
