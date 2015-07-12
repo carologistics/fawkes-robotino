@@ -62,7 +62,7 @@ clips-agent:
     #Timeout a in pre-game started robot waits for a master before it gets the master itself
     initial-master-timeout: 5.0
     #If a robot has not been seen this time it is assumed that he is lost
-    robot-timeout: 50.0
+    robot-timeout: 25.0
 
     #distance needed before a robot releases a lock
     release-distance: 0.75

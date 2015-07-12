@@ -60,9 +60,10 @@
   "Fail a task if one of the steps failed"
   (phase PRODUCTION)
   ?state <- (state STEP-FAILED)
-  ?task <- (task (state running) (current-step ?id-failed))
-  (step (id ?id-failed) (state failed))
+  ?task <- (task (state running) (current-step ?id-failed) (name ?task-name))
+  (step (id ?id-failed) (state failed) (name ?step-name))
   =>
+  (printout warn "Task " ?task-name " failed in step " ?step-name crlf)
   (retract ?state)
   (assert (state TASK-FAILED))
   (modify ?task (state failed))

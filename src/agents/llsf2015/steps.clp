@@ -28,7 +28,7 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps) (machine-feature ?feature) (gate ?gate))
+		 (machine ?mps) (machine-feature ?feature) (gate ?gate) (ring ?ring))
   (machine (name ?mps) (mtype ?mtype))
   (task (name ?task-name))
   ?state <- (state STEP-STARTED)
@@ -38,21 +38,34 @@
   (retract ?state)
   (modify ?step (state running))
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill bring_product_to) (args place ?mps)  (target ?mps))
+    ; default side of machine is input, thus we don't need it here
 	  (wait-for-lock (priority ?p) (res ?mps))
   )
+  (if (eq ?feature SLIDE) then
+    (assert 
+      (skill-to-execute (skill bring_product_to) (args place ?mps slide TRUE)  (target ?mps))
+    )
+  else
+    (assert
+      (skill-to-execute (skill bring_product_to) (args place ?mps)  (target ?mps))
+    )
+  ) 
   ; check if we have to instruct an mps:
   (if (and (eq ?mtype CS)
            (eq ?task-name fill-cap)) then
     (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock ?mps)))
   )
   (if (and (eq ?mtype CS)
-           (member$ ?task-name (create$ produce-c0 deliver-c0))) then
+           (member$ ?task-name (create$ produce-c0 deliver))) then
     (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock ?mps)))
   )
   (if (and (eq ?mtype DS)
-           (eq ?task-name deliver-c0)) then
+           (eq ?task-name deliver)) then
     (assert (mps-instruction (machine ?mps) (gate ?gate)))
+  )
+  (if (and (eq ?mtype RS)
+           (eq ?task-name add-first-ring)) then
+    (assert (mps-instruction (machine ?mps) (ring-color ?ring) (lock ?mps)))
   )
 )
 
@@ -91,27 +104,50 @@
   )
 )
 
-(defrule step-get-base-finish
-  "Base retrieved from BS"
-  (declare (salience ?*PRIORITY-STEP-FINISH*))
-  (phase PRODUCTION)
-  ?step <- (step (name get-base) (state running) (base ?base-color))
-  ?state <- (state SKILL-FINAL)
-  ?ste <- (skill-to-execute (skill get_product_from)
-			    (args place ?bs) (state ?skill-finish-state&final))
-  (machine (name ?bs) (produced-id ?product-id))
-  ?h <- (holding NONE)
-  =>
-  (printout t ?base-color " base retrieved"  crlf)
-  (retract ?state ?ste ?h)
-  (assert
-    (state STEP-FINISHED)
-    (holding ?product-id)
-    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
-  )
-  (modify ?step (state finished))
-)
-
+;(defrule step-get-base-finish
+;  "Base retrieved from BS"
+;  (declare (salience ?*PRIORITY-STEP-FINISH*))
+;  (phase PRODUCTION)
+;  ?step <- (step (name get-base) (state running) (base ?base-color))
+;  ?state <- (state SKILL-FINAL)
+;  ?ste <- (skill-to-execute (skill get_product_from)
+;			    (args place ?bs) (state ?skill-finish-state&final))
+;  (machine (name ?bs) (produced-id ?product-id))
+;  ?h <- (holding NONE)
+;  (puck-in-gripper TRUE)
+;  =>
+;  (printout t ?base-color " base retrieved"  crlf)
+;  (retract ?state ?ste ?h)
+;  (assert
+;    (state STEP-FINISHED)
+;    (holding ?product-id)
+;    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
+;  )
+;  (modify ?step (state finished))
+;)
+;
+;(defrule step-get-base-failed
+;  "Base retrieved from BS"
+;  (declare (salience ?*PRIORITY-STEP-FINISH*))
+;  (phase PRODUCTION)
+;  ?step <- (step (name get-base) (state running) (base ?base-color))
+;  ?state <- (state SKILL-FINAL)
+;  ?ste <- (skill-to-execute (skill get_product_from)
+;			    (args place ?bs) (state ?skill-finish-state&final))
+;  (machine (name ?bs) (produced-id ?product-id))
+;  (holding NONE)
+;  (puck-in-gripper FALSE)
+;  =>
+;  (printout t "Failed to retrieve base with color " ?base-color crlf)
+;  (retract ?state ?ste)
+;  (assert
+;    (state STEP-FAILED)
+;    ;we don't know what happened with the base, set machine as empty
+;    (worldmodel-change (machine ?bs) (change SET_PRODUCED) (amount 0))
+;  )
+;  (modify ?step (state failed))
+;)
+  
 (defrule step-discard-unknown-start
   "Open gripper to discard unknown base"
   (declare (salience ?*PRIORITY-STEP-START*))
@@ -399,7 +435,7 @@
 (defrule step-common-finish
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|get-base) (state running))
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
 			    (args $?args) (state final))
@@ -416,7 +452,7 @@
 (defrule step-common-fail
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|discard) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|discard|get-base) (state running))
   ?state <- (state SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
 			    (args $?args) (state failed))

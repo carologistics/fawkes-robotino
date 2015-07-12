@@ -85,10 +85,12 @@
   (bind ?*CURRENT-MASTER-TIMEOUT* ?*ROBOT-TIMEOUT*)
   (if (and (eq ?role MASTER) (not (eq ?a ?*ROBOT-NAME*)))
       then
-      (printout warn "TWO MASTERS DETECTED, WAITING RANDOM TIME AS SLAVE!!!" crlf)
-      (retract ?r)
-      (assert (lock-role SLAVE))
-      (bind ?*CURRENT-MASTER-TIMEOUT* (float (random 0 10)))
+      (printout warn "TWO MASTERS DETECTED!" crlf)
+      (if (> (str-compare ?*ROBOT-NAME* ?a) 0) then
+        (printout warn "Becoming Slave because " ?a " has a lower id!" crlf)
+        (retract ?r)
+        (assert (lock-role SLAVE))
+      )
   )
 )
 

@@ -10,23 +10,28 @@
 (defrule wm-recv-MachineInfo
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   =>
-  ;(printout t "***** Received MachineInfo *****" crlf)
+  ; (printout t "***** Received MachineInfo *****" crlf)
   (foreach ?m (pb-field-list ?p "machines")
     (bind ?m-name (sym-cat (pb-field-value ?m "name")))
     (bind ?m-type (sym-cat (pb-field-value ?m "type")))
     (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
+    (bind ?m-state (sym-cat (pb-field-value ?m "state")))
     (do-for-fact ((?machine machine))
       (eq ?machine:name ?m-name)
       
-      (if (or (neq ?machine:mtype ?m-type) (neq ?machine:team ?m-team)) then
-        (printout t "Machine " ?m-name " (" ?m-team ") is of type " ?m-type crlf)
-        (printout warn "TODO: set available-colors for ring stations " ?m-type crlf)
-        (modify ?machine (mtype ?m-type) (team ?m-team))
-        
-        else
-        (bind ?m-prepared (sym-cat (pb-field-value ?m "prepared")))
-        (if (neq ?m-prepared ?machine:prepared) then
-          (modify ?machine (prepared ?m-prepared))
+      (if (or (neq ?machine:team ?m-team) (neq ?machine:state ?m-state)) then
+        (modify ?machine (state ?m-state) (team ?m-team))
+      )
+    )
+    ; set available rings for ring-stations
+    (if (eq ?m-type RS) then
+      (do-for-fact ((?rs ring-station)) (eq ?rs:name ?m-name)
+        (if (eq 0 (length$ ?rs:available-colors)) then
+          (bind ?colors (create$))
+          (progn$ (?rc (pb-field-list ?m "ring_colors"))
+            (bind ?colors (insert$ ?colors 1 (utils-remove-prefix ?rc "RING_")))
+          )
+          (modify ?rs (available-colors ?colors))
         )
       )
     )
@@ -83,12 +88,33 @@
   )
 )
 
+(defrule wm-insert-product-into-rs-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-FINAL)
+  (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
+  (step (name insert) (state running) (ring ?ring-color))
+  (ring (color ?ring-color) (req-bases ?rb))
+  (task (name add-first-ring))
+  ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
+  ?rsf <- (ring-station (name ?mps) (bases-loaded ?bl))
+  ?hf <- (holding ?product-id)
+  ?pf <- (product (id ?product-id) (rings $?r))
+  =>
+  (retract ?hf)
+  (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
+  (assert (holding NONE))
+  ; there is no relevant waiting time until the cs has finished the loading step right?
+  (synced-modify ?mf produced-id ?product-id)
+  (synced-modify ?rsf bases-loaded (- ?bl ?rb))
+  (synced-modify ?pf rings (append$ ?r ?ring-color))
+)
+
 (defrule wm-insert-product-into-cs-final
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
-  (task (name produce-c0|deliver-c0))
+  (task (name produce-c0|deliver))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
   ?hf <- (holding ?product-id)
@@ -109,13 +135,47 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
-  (task (name produce-c0|deliver-c0))
+  (task (name produce-c0|deliver))
   ?mf <- (machine (name ?mps) (mtype DS))
-  ?hf <- (holding ?product-id&~NONE)
+  ?hf <- (holding ?produced-id&~NONE)
+  (product
+    (id ?produced-id)
+    (product-id ?product-id)
+    (rings $?r&:(eq 0 (length$ ?r)))
+    (cap ?cap-color)
+    (base ?base-color)
+  )
+  ?of <- (order (product-id ?product-id)
+    (quantity-requested ?qr) (quantity-delivered ?qd)
+    (begin ?begin) 
+    (delivery-gate ?gate) (in-delivery ?id)
+  )
   =>
   (retract ?hf)
   (printout t "Delivered product " ?product-id " to " ?mps crlf)
   (assert (holding NONE))
+  (synced-modify ?of in-delivery (- ?id 1) quantity-delivered (+ ?qd 1))
+)
+
+(defrule wm-insert-base-into-rs-slide-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-FINAL)
+  (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
+  (step (name insert) (state running) (machine-feature SLIDE))
+  (task (name fill-rs))
+  ?rsf <- (ring-station (name ?mps) (bases-needed ?bn) (bases-loaded ?bl))
+  ?hf <- (holding ?product-id)
+  ?pf <- (product (id ?product-id))
+  =>
+  (retract ?hf ?pf)
+  (printout t "Inserted base " ?product-id " into slide of " ?mps crlf)
+  (assert (holding NONE))
+  (if (> ?bn 0) then
+    (bind ?rsf (synced-modify ?rsf bases-needed (- ?bn 1)))
+  )
+  (if (< ?bl 3) then
+    (synced-modify ?rsf bases-loaded (+ ?bl 1))
+  )
 )
 
 (defrule wm-insert-failed
@@ -136,27 +196,26 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill get_product_from) (state final) (target ?mps))
-  (step (name get-output) (state running))
-  ?mf <- (machine (name ?mps) (produced-id ?puck-id))
+  (step (name get-output|get-base) (state running))
+  ?mf <- (machine (name ?mps) (produced-id ?produced-id))
   ?hf <- (holding NONE)
   =>
   (retract ?hf)
-  (printout t "Fetched Puck " ?puck-id " from the output of " ?mps crlf)
-  (assert (holding ?puck-id)
-	  (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0))
-  )
+  (printout t "Fetched product " ?produced-id " from the output of " ?mps crlf)
+  (assert (holding ?produced-id))
+  (synced-modify ?mf produced-id 0)
 )
 
 (defrule wm-get-output-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
-  (step (name get-output) (state running))
+  (step (name get-output|get-base) (state running))
   ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0))
   =>
-  (printout t "Failed to fetch a Puck from the output of " ?mps crlf)
-  (printout t "I assume there is no more output puck at " ?mps crlf)
-  (assert (worldmodel-change (machine ?mps) (change SET_PRODUCED) (amount 0)))
+  (printout t "Failed to fetch a product from the output of " ?mps crlf)
+  (printout t "I assume there is no more output product at " ?mps crlf)
+  (synced-modify ?mf produced-id 0)
 )
 
 (defrule wm-store-lights
@@ -649,47 +708,36 @@
   (retract ?pif)
 )
 
-; (defrule wm-update-puck-in-gripper
-;   (declare (salience ?*PRIORITY-CLEANUP*))
-;   ?rif <- (RobotinoSensorInterface (id "Robotino") (distance $?distances))
-;   ?pig <- (puck-in-gripper ?puck)
-;   (confval (path "/hardware/robotino/puck_sensor/index") (value ?index))
-;   (confval (path "/hardware/robotino/puck_sensor/trigger_dist") (value ?trigger))
-;   =>
-;   (bind ?dist (nth$ (+ ?index 1) ?distances))
-;   (if (and (< ?dist ?trigger) (not ?puck))
-;     then
-;     ;(printout t "Have puck in gripper" crlf)
-;     (retract ?pig)
-;     (assert (puck-in-gripper TRUE))
-    
-;     else
-    
-;     (if (and (> ?dist ?trigger) ?puck)
-; 	then
-;       ;(printout t "Have no puck in gripper" crlf)
-;       (retract ?pig)
-;       (assert (puck-in-gripper FALSE))
-;     )
-;   )
-;   (retract ?rif)
-; )
+(defrule wm-update-puck-in-gripper
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  ?grip <- (AX12GripperInterface (id "Gripper AX12") (holds_puck ?holds-puck))
+  ?pig <- (puck-in-gripper ?puck)
+  =>
+  (if (eq ?holds-puck TRUE)
+    then
+    (printout t "Have puck in gripper" crlf)
+    (retract ?pig)
+    (assert (puck-in-gripper TRUE))
+  
+    else
+    (printout t "Have no puck in gripper" crlf)
+    (retract ?pig)
+    (assert (puck-in-gripper FALSE))
+  )
+  (retract ?grip)
+)
 
 (defrule wm-set-bs-output-color
   "Set the correct loaded-id after color is ordered at BS"
   (declare (salience ?*PRIORITY-WM*))
-  ?bs <- (machine (mtype BS) (produced-id 0) (prepared TRUE))
+  ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT))
   (step (name get-base) (state running) (base ?base-color))
+  (step (name get-base) (state running) (base ?base-color) (product-id ?product-id))
   =>
-  (bind ?product-id (random-id))
-  (assert 
-    (product
-      (id ?product-id)
-      (base ?base-color)
-      (cap NONE)
-    )
-  )
-  (modify ?bs (produced-id ?product-id))
+  (bind ?produced-id (random-id))
+  (synced-assert (str-cat "(product (id " ?produced-id ") (product-id " ?product-id
+                          ") (base " ?base-color ") (cap NONE))"))
+  (synced-modify ?bs produced-id ?produced-id)
 )
 
 (deffunction wm-remove-incoming-by-agent (?agent)
@@ -704,12 +752,4 @@
     )
     (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
   ) 
-)
-
-(defrule wm-remove-out-of-order
-  (time $?now)
-  ?m <- (machine (out-of-order-until $?ooo&:(and (neq (nth$ 1 ?ooo) 0)
-						 (timeout ?now ?ooo 0.0))))
-  =>
-  (modify ?m (out-of-order-until (create$ 0 0)))
 )

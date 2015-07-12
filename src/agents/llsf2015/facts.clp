@@ -122,9 +122,8 @@
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
   (multislot final-prod-time (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
-  ; (slot priority (type INTEGER) (default 0))
-  (multislot out-of-order-until (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
-  (slot prepared (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot state (type SYMBOL) (allowed-values IDLE BROKEN PREPARED PROCESSING
+					    PROCESSED READY-AT-OUTPUT WAIT-IDLE DOWN))
 )
 
 ; (deftemplate base-station 
@@ -148,6 +147,7 @@
   (slot selected-color (type SYMBOL) (allowed-symbols NONE BLUE GREEN YELLOW ORANGE)
 	(default NONE))
   (slot bases-needed (type INTEGER) (allowed-values 0 1 2) (default 0))
+  (slot bases-loaded (type INTEGER) (allowed-values 0 1 2 3) (default 0))
 )
 
 
@@ -161,12 +161,18 @@
 (deftemplate product
   ;id to link it in other facts
   (slot id (type INTEGER))
+  (slot product-id (type INTEGER) (default 0))
   (multislot rings (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE)
 	     (default (create$ )))
   (slot cap (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
   (slot base (type SYMBOL) (allowed-symbols BLACK SILVER RED UNKNOWN) (default UNKNOWN))
   ; is the base from a cap-station and therefore unusable
   ; (slot base-usable (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
+)
+
+(deftemplate ring
+  (slot color (type SYMBOL) (allowed-values BLUE GREEN ORANGE YELLOW))
+  (slot req-bases (type INTEGER) (default 0))
 )
 
 (deftemplate order
@@ -186,7 +192,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 deliver-c0 fill-rs discard-unknown exploration-catch-up))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 add-first-ring deliver fill-rs discard-unknown exploration-catch-up))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
@@ -215,6 +221,7 @@
   (slot ring (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
   (slot gate (type INTEGER) (allowed-values 1 2 3))
+  (slot product-id (type INTEGER))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
