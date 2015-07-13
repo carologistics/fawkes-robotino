@@ -95,6 +95,11 @@ function COMMAND:init()
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)
+   elseif self.fsm.vars.command == "RELGOTOZ" then
+      print("relgotoZ")
+      theRelGotoZMessage = gripper_if.RelGotoZMessage:new()
+      theRelGotoZMessage:set_rel_z(self.fsm.vars.z_position or 0)
+      gripper_if:msgq_enqueue_copy(theRelGotoZMessage)
    elseif self.fsm.vars.grab then
       print("grab")
       theCloseMessage = gripper_if.CloseMessage:new()
