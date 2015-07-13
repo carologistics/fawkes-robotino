@@ -38,6 +38,14 @@
       is the Zone ID - 1, e.g., zone Z1 is field 0.
     </field>
   </message>
+  <message name="SetWaitZones">
+    <comment>Set zones in which to add a waiting point. They will be
+    named WAIT-Zn.</comment>
+    <field type="bool" name="zones" length="24">
+      For each zone whether it should be a waiting zone or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    </field>
+  </message>
   <message name="UpdateStationByTag">
     <comment>
       Add an obstacle to be avoided by the graph. The obstacle is

@@ -36,6 +36,17 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     int maxlenof_zones() const;
   };
 
+  class SetWaitZonesMessage : public Message
+  {
+    SetWaitZonesMessage(bool * ini_zones);
+    SetWaitZonesMessage();
+    ~SetWaitZonesMessage();
+
+    bool is_zones(int index);
+    void set_zones(unsigned int index, const bool new_zones);
+    int maxlenof_zones() const;
+  };
+
   class UpdateStationByTagMessage : public Message
   {
     UpdateStationByTagMessage(char * ini_id, Side ini_side, char * ini_frame, double * ini_tag_translation, double * ini_tag_rotation);
