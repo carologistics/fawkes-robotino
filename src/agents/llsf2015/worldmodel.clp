@@ -530,3 +530,15 @@
     (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
   ) 
 )
+
+(defrule wm-reset-broken-machine
+  "When a machine is in the broken state, the referee has to remove all pucks from it and the state is resetted"
+  (declare (salience ?*PRIORITY-WM*))
+  ?m <- (machine (name ?name) (state BROKEN) (loaded-id ?lid) (produced-id ?pid)
+                 (final-prod-time $?fpt&:(or (neq ?lid 0)
+                                             (neq ?pid 0)
+                                             (neq (nth$ 1 ?fpt) 0))))
+  =>
+  (printout warn "MPS " ?name " is broken and has to be reset!" crlf)
+  (modify ?m (loaded-id 0) (produced-id 0) (final-prod-time (create$ 0 0)))
+)

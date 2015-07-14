@@ -345,6 +345,23 @@
   (assert (state STEP-FINISHED))
 )
 
+(defrule step-fail-machine-broken
+  "Fail a step if the machine to be used becomes broken"
+  (phase PRODUCTION)
+  ?step <- (step (name ?step-name) (state running) (machine ?mps)
+                 (machine-feature ~SHELF))
+  (machine (name ?mps) (state BROKEN))
+  ?state <- (state SKILL-EXECUTION)
+  ?ste <- (skill-to-execute (target ?mps))
+  ?wfl <- (wait-for-lock (state use))
+  =>
+  (printout t "Failing step " ?step-name " because " ?mps " is broken" crlf)
+  (modify ?step (state failed))
+  (modify ?wfl (state finished))
+  (retract ?state ?ste)
+  (assert (state STEP-FAILED))
+)
+
 ; (defrule step-get-S0-start
 ;   (declare (salience ?*PRIORITY-STEP-START*))
 ;   (phase PRODUCTION)
