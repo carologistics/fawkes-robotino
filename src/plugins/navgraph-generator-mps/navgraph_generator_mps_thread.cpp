@@ -73,6 +73,7 @@ NavGraphGeneratorMPSThread::init()
   }
 
   exp_zones_.resize(24, true);
+  wait_zones_.resize(24, false);
 
   navgen_if_ =
     blackboard->open_for_reading<NavGraphGeneratorInterface>("/navgraph-generator");
@@ -130,6 +131,13 @@ NavGraphGeneratorMPSThread::loop()
 	navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage>();
       for (size_t i = 0; i < std::min(m->maxlenof_zones(), exp_zones_.size()); ++i) {
 	exp_zones_[i] = m->is_zones(i);
+      }
+
+    } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage>() ) {
+      NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage *m =
+	      navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage>();
+      for (size_t i = 0; i < std::min(m->maxlenof_zones(), wait_zones_.size()); ++i) {
+	      wait_zones_[i] = m->is_zones(i);
       }
 
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::ComputeMessage>() ) {
@@ -413,6 +421,33 @@ NavGraphGeneratorMPSThread::generate_navgraph()
       }
     }
   }
+
+	for (size_t i = 0; i < wait_zones_.size(); ++i) {
+		if (wait_zones_[i]) {
+			// calc zone coordinates
+			int col = (i / 4); // col is 0-based and is in range [0..2]
+			int col_sign = 1;
+			if (i > 2)  {
+				// magenta side, negative X coordinates
+				i = i - 3;
+				col_sign = -1;
+			}
+			int row = i - (i / 4) * 4;
+
+			float from_x = col_sign *  col      * 2.;
+			float to_x   = col_sign * (col + 1) * 2.;
+			float from_y =  row      * 1.5;
+			float to_y   = (row + 1) * 1.5;
+
+			float center_x = from_x + fabsf(from_x - to_x) / 2. * col_sign;
+			float center_y = from_y + fabsf(from_y - to_y) / 2.;
+
+			navgen_if_->msgq_enqueue
+				(new NavGraphGeneratorInterface::AddPointOfInterestMessage
+				 (NavGraph::format_name("WAIT-Z%zu", i).c_str(), center_x, center_y,
+				  NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE)); 
+		}
+	}
 
   NavGraphGeneratorInterface::ComputeMessage *compute_msg =
     new NavGraphGeneratorInterface::ComputeMessage();
