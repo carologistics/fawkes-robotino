@@ -106,10 +106,11 @@ function mps_in_zone(self, x, y, use_offset)
   if use_offset then
     mps_offset = MPS_OFFSET_TO_ZONE
   end
-  if x > self.fsm.vars.max_x - mps_offset or
-     x < self.fsm.vars.min_x + mps_offset or
-     y > self.fsm.vars.max_y - mps_offset or
-     y < self.fsm.vars.min_y + mps_offset then
+  -- x compared to the maximum - offset and minimum + offset ( depending on positive and negative numbers )
+  if x > self.fsm.vars.max_x / math.abs(self.fsm.vars.max_x) * ( math.abs(self.fsm.vars.max_x) - mps_offset ) or
+     x < self.fsm.vars.min_x / math.abs(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) or
+     y > self.fsm.vars.max_y / math.abs(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) or
+     y < self.fsm.vars.min_y / math.abs(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) then
     return false
   end
   return true
