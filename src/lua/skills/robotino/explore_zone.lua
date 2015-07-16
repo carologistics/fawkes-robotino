@@ -102,10 +102,14 @@ local tfutils = require("fawkes.tfutils")
 
 function mps_in_zone(self, x, y, use_offset)
   use_offset = use_offset or true
-  if x > self.fsm.vars.max_x - MPS_OFFSET_TO_ZONE or
-     x < self.fsm.vars.min_x + MPS_OFFSET_TO_ZONE or
-     y > self.fsm.vars.max_y - MPS_OFFSET_TO_ZONE or
-     y < self.fsm.vars.min_y + MPS_OFFSET_TO_ZONE then
+  mps_offset = 0
+  if use_offset then
+    mps_offset = MPS_OFFSET_TO_ZONE
+  end
+  if x > self.fsm.vars.max_x - mps_offset or
+     x < self.fsm.vars.min_x + mps_offset or
+     y > self.fsm.vars.max_y - mps_offset or
+     y < self.fsm.vars.min_y + mps_offset then
     return false
   end
   return true
