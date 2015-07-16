@@ -22,7 +22,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "conveyor_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"motor_move","approach_mps"}
+depends_skills     = {"motor_move","approach_mps", "ax12gripper"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "conveyor_0", type = "Position3DInterface"},
@@ -35,7 +35,8 @@ conveyor vision
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local TOLERANCE = 0.005
+local TOLERANCE_Y = 0.005
+local TOLERANCE_Z = 0.001
 local MAX_TRIES = 4
 
 function no_writer()
@@ -43,14 +44,14 @@ function no_writer()
 end
 
 function tolerance_not_ok()
-   return not (math.abs(conveyor_0:translation(1)) <= TOLERANCE)
+   return not (math.abs(conveyor_0:translation(1)) <= TOLERANCE_Y and math.abs(conveyor_0:translation(2)) <= TOLERANCE_Z)
 end
 
 fsm:define_states{ export_to=_M,
    closure={MAX_TRIES=MAX_TRIES},
    {"INIT", JumpState},
    {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}}, final_to="DRIVE_Y", fail_to="FAILED"},
-   {"DRIVE_Y", SkillJumpState, skills={{motor_move}}, final_to="SETTLE", fail_to="FAILED"},
+   {"DRIVE_Y", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="SETTLE", fail_to="FAILED"},
    {"SETTLE", JumpState},
    {"CHECK", JumpState},
 }
@@ -75,6 +76,8 @@ end
 function DRIVE_Y:init()
    self.skills[1].y = -conveyor_0:translation(1)
    self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
+   self.skills[2].command = "RELGOTOZ"
+   self.skills[2].z_position = -conveyor_0:translation(2)
 end
 
 function CHECK:init()
