@@ -49,6 +49,7 @@ GazsimConveyorThread::GazsimConveyorThread()
     BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC)
 {
   set_name("GazsimConveyorThread()");
+  loopcount_ = 0;
 }
 
 
@@ -84,9 +85,17 @@ GazsimConveyorThread::loop()
     double rot[] = {last_msg_.positions().ori_x(), last_msg_.positions().ori_y(), last_msg_.positions().ori_z(), last_msg_.positions().ori_w()};
     pos_if_->set_translation(trans);
     pos_if_->set_rotation(rot);
+    pos_if_->set_visibility_history(loopcount_);
     pos_if_->write();
     new_data_=false;
   }
+  else if((loopcount_ - pos_if_->visibility_history()) > MAX_LOOP_COUNT_TO_INVISIBLE)
+  {
+    pos_if_->set_visibility_history(-1);
+    pos_if_->write();
+    loopcount_ = -1;
+  }
+  loopcount_++;
 }
 
 void

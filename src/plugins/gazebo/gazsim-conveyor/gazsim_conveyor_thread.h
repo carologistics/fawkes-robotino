@@ -41,6 +41,8 @@
 #include <gazebo/msgs/MessageTypes.hh>
 #include <gazebo/transport/transport.hh>
 
+#define MAX_LOOP_COUNT_TO_INVISIBLE 5
+
 typedef const boost::shared_ptr<llsf_msgs::ConveyorVisionResult const> ConstConveyorVisionResultPtr;
 
 class GazsimConveyorThread
@@ -69,6 +71,8 @@ class GazsimConveyorThread
   
   gazebo::transport::SubscriberPtr conveyor_vision_sub_;
   void on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg);
+  
+  int32_t loopcount_;
   
   //copy of last msg to write the interface in the next loop
   llsf_msgs::ConveyorVisionResult last_msg_;
