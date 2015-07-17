@@ -79,6 +79,7 @@ GazsimConveyorThread::finalize()
 void
 GazsimConveyorThread::loop()
 {
+  pos_if_->set_frame("base_conveyor");
   if(new_data_)
   {
     double trans[] = {last_msg_.positions().x(), last_msg_.positions().y(), last_msg_.positions().z()};
