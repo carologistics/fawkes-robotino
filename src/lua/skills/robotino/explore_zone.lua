@@ -101,6 +101,7 @@ local tfm = require 'tf_module'
 local tfutils = require("fawkes.tfutils")
 
 function mps_in_zone(self, x, y, use_offset)
+--  printf("Check MPS (" .. x .. ", " .. y .. ")")
   use_offset = use_offset or true
   mps_offset = 0
   if use_offset then
@@ -111,6 +112,16 @@ function mps_in_zone(self, x, y, use_offset)
      x < self.fsm.vars.min_x / math.abs(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) or
      y > self.fsm.vars.max_y / math.abs(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) or
      y < self.fsm.vars.min_y / math.abs(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) then
+--[[     printf("MPS in zone x (" .. 
+                              self.fsm.vars.min_x / math.abs(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) ..
+                              ", " ..
+                              self.fsm.vars.max_x / math.abs(self.fsm.vars.max_x) * ( math.abs(self.fsm.vars.max_x) - mps_offset ) ..
+                              ") y ( " ..
+                              self.fsm.vars.min_y / math.abs(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) ..
+                              ", " ..
+                              self.fsm.vars.max_y / math.abs(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) ..
+                              ")")
+--]]
     return false
   end
   return true
@@ -236,7 +247,8 @@ end
 function cluster_visible(self)
   for k,v in pairs(self.fsm.vars.cluster) do
     local obj_map = tfm.transform({x=v:translation(0), y=v:translation(1), ori=0}, v:frame(), "/map")
-    if mps_in_zone(self, obj_map.x, obj_map.y) then
+    if v:visibility_history() > 0 and
+       mps_in_zone(self, obj_map.x, obj_map.y) then
       return true
     end
   end
@@ -273,6 +285,7 @@ fsm:add_transitions{
   {"DECIDE_CLUSTER",      "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil"},
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
   {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
+  --{"TIMEOUT_CLUSTER",     "FAILED",                       cond=cluster_visible,                                 desc="TODO this is for a test, remove me and add line above"},
   {"TIMEOUT_CLUSTER",     "FINAL",                        timeout=TIMEOUT,                                      desc="saw no cluster so stop checking zone"},
   --{"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond="table.getn(self.fsm.vars.poses_to_check) ~= 0"},
   {"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond=poses_to_check},
@@ -554,7 +567,7 @@ function DRIVE_TO_POSSIBLE_MPS:init()
   zone_pose:set_visibility_history(1)
   zone_pose:set_translation(0, chosen["x_map"])
   zone_pose:set_translation(1, chosen["y_map"])
-  printf("Found maybe ( " .. chosen["tag_id"] .. " ) (at far pose) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. " )")
+  printf("Found maybe ( " .. chosen["tag_id"] .. " ) (at far pose) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. "; " .. chosen["ori_map"] .. " )")
   local q = fawkes.tf.create_quaternion_from_yaw( chosen["ori_map"] )
   zone_pose:set_rotation( 0, q:x() )
   zone_pose:set_rotation( 1, q:y() )
