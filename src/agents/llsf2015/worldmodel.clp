@@ -117,7 +117,7 @@
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
   ?hf <- (holding ?produced-id)
-  ?pf <- (product (id ?produced-id) (product ?product-id) (cap NONE))
+  ?pf <- (product (id ?produced-id) (product-id ?product-id) (cap NONE))
   ?of <- (order (product-id ?product-id) (in-production ?ip))
   =>
   (retract ?hf)
@@ -541,4 +541,26 @@
   =>
   (printout warn "MPS " ?name " is broken and has to be reset!" crlf)
   (modify ?m (loaded-id 0) (produced-id 0) (final-prod-time (create$ 0 0)))
+)
+
+(defrule wm-reset-broken-cap-station
+  "When a machine is in the broken state, the referee has to remove all pucks from it and the state is resetted"
+  (declare (salience ?*PRIORITY-WM*))
+  (machine (name ?name) (state BROKEN) (mtype CS))
+  ?cs <- (cap-station (name ?name) (cap-loaded ~NONE))
+  =>
+  (printout warn "cap-station " ?name " is broken and has to be reset!" crlf)
+  (modify ?cs (cap-loaded NONE))
+)
+
+(defrule wm-reset-broken-ring-station
+  "When a machine is in the broken state, the referee has to remove all pucks from it and the state is resetted"
+  (declare (salience ?*PRIORITY-WM*))
+  (machine (name ?name) (state BROKEN) (mtype RS))
+  ?rs <- (ring-station (name ?name) (bases-loaded ?bl)
+                       (selected-color ?sc&:(or (neq ?bl 0)
+                                                (neq ?sc NONE))))
+  =>
+  (printout warn "ring-station " ?name " is broken and has to be reset!" crlf)
+  (modify ?rs (bases-loaded 0) (selected-color NONE))
 )
