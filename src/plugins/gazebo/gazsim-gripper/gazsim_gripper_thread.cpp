@@ -145,6 +145,8 @@ GazsimGripperThread::loop()
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::FlushMessage>()) {
       logger->log_warn(name(), "%s is not implemented in the simulation.",
                        gripper_if_->msgq_first()->type());
+    } else if (gripper_if_->msgq_first_is<AX12GripperInterface::RelGotoZMessage>()) {
+      //nothing to do
     } else {
       logger->log_warn(name(), "Unknown message received");
     }
