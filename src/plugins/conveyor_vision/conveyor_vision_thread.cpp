@@ -328,12 +328,33 @@ void ConveyorVisionThread::detect()
     {
       world_pos_z_measurements.pop_back();
     }
-    
     for (size_t i = 0; i < world_pos_z_measurements.size(); i++)
     {
       world_pos_z_average += world_pos_z_measurements[i];
     }
     world_pos_z_average /= world_pos_z_measurements.size();
+    
+    world_pos_y_measurements.push_front(world_pos_y);
+    if (world_pos_y_measurements.size() > num_frames_for_average)
+    {
+      world_pos_y_measurements.pop_back();
+    }
+    for (size_t i = 0; i < world_pos_y_measurements.size(); i++)
+    {
+      world_pos_y_average += world_pos_y_measurements[i];
+    }
+    world_pos_y_average /= world_pos_y_measurements.size();
+    
+    world_pos_x_measurements.push_front(world_pos_y);
+    if (world_pos_x_measurements.size() > num_frames_for_average)
+    {
+      world_pos_x_measurements.pop_back();
+    }
+    for (size_t i = 0; i < world_pos_x_measurements.size(); i++)
+    {
+      world_pos_x_average += world_pos_x_measurements[i];
+    }
+    world_pos_x_average /= world_pos_x_measurements.size();
     
 //    float focal_length_mm = 50;
 //    float obj_height_mm = 50;
@@ -517,7 +538,7 @@ void ConveyorVisionThread::detect()
       }
     mps_conveyor_if_->set_translation(0, world_pos_z_average);
     mps_conveyor_if_->set_translation(1, -world_pos_x);
-    mps_conveyor_if_->set_translation(2, world_pos_y);
+    mps_conveyor_if_->set_translation(2, world_pos_y_average);
     mps_conveyor_if_->set_rotation(0, 0);
     mps_conveyor_if_->set_rotation(1, 0);
     //interface->set_timestamp(&p->cart.stamp);
@@ -544,6 +565,8 @@ void ConveyorVisionThread::detect()
     } else {
             mps_conveyor_if_->set_visibility_history(-1);
             world_pos_z_measurements.clear();
+            world_pos_x_measurements.clear();
+            world_pos_y_measurements.clear();
     }
 
   }

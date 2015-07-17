@@ -109,10 +109,14 @@ class ConveyorVisionThread
   firevision::SharedMemoryImageBuffer *shm_buffer;
   unsigned char *image_buffer;
   std::deque<float> world_pos_z_measurements;
+  std::deque<float> world_pos_y_measurements;
+  std::deque<float> world_pos_x_measurements;
   std::deque<int> conveyor_average_horizontal_diff;
   std::deque<int> conveyor_average_horizontal_start;
   std::deque<int> conveyor_average_vertical_start;
   float world_pos_z_average;
+  float world_pos_y_average;
+  float world_pos_x_average;
   /// Image Buffer Id
   std::string shm_id;
   float obj_realworld_distance;
