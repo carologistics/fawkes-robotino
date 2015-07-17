@@ -113,19 +113,21 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
-  (task (name produce-c0|deliver))
+  (task (name produce-c0|produce-cx))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
-  ?hf <- (holding ?product-id)
-  ?pf <- (product (id ?product-id) (cap NONE))
+  ?hf <- (holding ?produced-id)
+  ?pf <- (product (id ?produced-id) (product ?product-id) (cap NONE))
+  ?of <- (order (product-id ?product-id) (in-production ?ip))
   =>
   (retract ?hf)
-  (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
+  (printout t "Inserted product " ?produced-id " to be finished in the CS" crlf)
   (assert (holding NONE))
   ; there is no relevant waiting time until the cs has finished the loading step right?
-  (synced-modify ?mf produced-id ?product-id)
+  (synced-modify ?mf produced-id ?produced-id)
   (synced-modify ?csf cap-loaded NONE)
   (synced-modify ?pf cap ?cap)
+  (synced-modify ?of in-production (- ?ip 1))
 )
 
 (defrule wm-insert-product-into-ds-final
@@ -133,15 +135,12 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
-  (task (name produce-c0|deliver))
+  (task (name deliver))
   ?mf <- (machine (name ?mps) (mtype DS))
   ?hf <- (holding ?produced-id&~NONE)
   (product
     (id ?produced-id)
     (product-id ?product-id)
-    (rings $?r&:(eq 0 (length$ ?r)))
-    (cap ?cap-color)
-    (base ?base-color)
   )
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd)
@@ -510,6 +509,7 @@
   ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT))
   (step (name get-base) (state running) (base ?base-color))
   (step (name get-base) (state running) (base ?base-color) (product-id ?product-id))
+  (not (skill-to-execute (skill get_product_from) (state final|failed)))
   =>
   (bind ?produced-id (random-id))
   (synced-assert (str-cat "(product (id " ?produced-id ") (product-id " ?product-id

@@ -174,7 +174,9 @@
   (team-color ?team-color&~nil)
   (holding ?product-id&~NONE)
   (product (id ?product-id) (base UNKNOWN))
-  (not (ring-station (bases-loaded ?bases&:(< ?bases 3))))
+  (machine (mtype RS) (name ?rs) (team ?team-color))
+  (ring-station (name ?rs) (bases-loaded ?bases&~:(< ?bases 3)))
+  (not (locked-resource (resource ?res&~:(str-index ?rs ?res))))
   =>
   (printout t "PROD: Discard unneeded unknown base " ?product-id crlf)
   (bind ?task-id (random-id))
@@ -450,7 +452,7 @@
   (time $?now)
   (wait-point ?wait-point)
   (not (no-task-found))
-  (not (task (state proposed|asked|rejected|ordered|running)))
+  (not (task (state proposed|asked|ordered|running)))
   =>
   (printout error "Can't find any task!." crlf)
   (printout error " Waiting..." crlf)
