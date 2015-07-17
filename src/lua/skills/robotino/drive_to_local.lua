@@ -100,8 +100,8 @@ function SKILL_GLOBAL_MOTOR_MOVE:init()
     self.skills[1].x   = self.fsm.vars.x
     self.skills[1].y   = self.fsm.vars.y
   end
-  self.skills[1].x   = 0
-  self.skills[1].y   = 0
+  self.skills[1].x   = nil
+  self.skills[1].y   = nil
   self.skills[1].ori = self.fsm.vars.ori
   
   printf("Drive to: call global_motor_move with: x(" .. tostring(self.skills[1].x) .. ") y(" .. tostring(self.skills[1].y)  ..") ori(" .. tostring(self.skills[1].ori) .. ")")
