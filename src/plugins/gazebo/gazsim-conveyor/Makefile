@@ -22,7 +22,8 @@ include $(BUILDSYSDIR)/protobuf.mk
 
 LIBS_gazsim_conveyor = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
 		fawkesinterface fawkesconfig gazsim_msgs \
-		fawkesgazeboaspect
+		fawkesgazeboaspect \
+		llsf_msgs
 OBJS_gazsim_conveyor = gazsim_conveyor_plugin.o gazsim_conveyor_thread.o
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)
