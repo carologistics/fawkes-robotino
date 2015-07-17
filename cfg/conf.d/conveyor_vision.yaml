@@ -46,7 +46,7 @@ plugins/conveyor_vision:
 
   # an attempt to optimize the measured distance to the conveyor belt by using a hough line transformation
   houghlines:
-    use_hough_line_optimization: true
+    use_hough_line_optimization: false
   
     # the number of frames used to calculate the mean distance from camera to conveyor while using hough lines
     hough_lines_averaging_count: 10
