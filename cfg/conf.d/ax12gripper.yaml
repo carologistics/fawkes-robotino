@@ -26,6 +26,10 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     left_servo_id: 2
     # Tilt servo ID for AX12 gripper
     right_servo_id: 1
+    # Servo ID for z-alignment
+    z_alignment_servo_id: 3
+    # Z alignment speed in percent (0 - 1)
+    z_speed: 1
 
     # Pan offset for RX28 PTU; deg
 #    pan_offset: 24.05
