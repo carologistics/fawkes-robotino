@@ -20,7 +20,7 @@ plugins/laser-filter:
         type: min_circle
 
         # Radius of minimum length; m
-        radius: 0.12
+        radius: 0.04
 
       2-sector:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
