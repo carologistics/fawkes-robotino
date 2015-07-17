@@ -66,7 +66,7 @@ class GazsimConveyorThread
  private:
   fawkes::Position3DInterface *pos_if_;
 
-  std::string  pos_if_name_;
+  std::string  conveyor_if_name_;
   std::string  cfg_prefix_;
   
   gazebo::transport::SubscriberPtr conveyor_vision_sub_;

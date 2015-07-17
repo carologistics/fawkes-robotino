@@ -59,12 +59,10 @@ GazsimConveyorThread::init()
   logger->log_debug(name(), 
 		    "Initializing Simulation of the Conveyor Vision Plugin");
   
-  //conveyor_if_name_ = "conveyor_0";//config->get_string("/gazsim/gripper/if-name");
-  pos_if_name_ = "mps_conveyor";
-  cfg_prefix_ = "";//config->get_string("/gazsim/gripper/cfg-prefix");
+  conveyor_if_name_ = config->get_string("/gazsim/conveyor/if-name");
 
   //setup Position3DInterface if with default values
-  pos_if_ = blackboard->open_for_writing<Position3DInterface>(pos_if_name_.c_str());
+  pos_if_ = blackboard->open_for_writing<Position3DInterface>(conveyor_if_name_.c_str());
   
   conveyor_vision_sub_ = gazebonode->Subscribe("~/RobotinoSim/ConveyorVisionResult/", &GazsimConveyorThread::on_conveyor_vision_msg, this);
   
