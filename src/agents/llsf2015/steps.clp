@@ -52,7 +52,7 @@
   ) 
   ; check if we have to instruct an mps:
   (if (and (eq ?mtype CS)
-           (eq ?task-name fill-cap)) then
+           (or (eq ?task-name fill-cap)(eq ?task-name clear-cs))) then
     (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock ?mps)))
   )
   (if (and (eq ?mtype CS)

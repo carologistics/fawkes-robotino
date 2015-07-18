@@ -72,7 +72,7 @@
   ?mps-f <- (machine (name ?mps))
   ?cs-f <- (cap-station (name ?mps))
   (step (name insert) (state running))
-  (task (name fill-cap))
+  (task (name fill-cap|clear-cs))
   ;an inserted puck without cap will be the final product
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps))
