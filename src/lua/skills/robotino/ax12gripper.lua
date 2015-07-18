@@ -46,6 +46,7 @@ fsm:define_states{
    {"CLOSE_GRIPPER_WAIT", JumpState},
    {"WAIT_FOR_GRAB", JumpState},
    {"CHECK_GRAB_SUCCESS", JumpState},
+   {"WAIT_FOR_RELGOTOZ", JumpState},
    {"FINAL_AFTER_IF_FINAL", JumpState},
 }
 
@@ -57,6 +58,9 @@ fsm:add_transitions{
    {"COMMAND", "FINAL", cond="vars.open or vars.center"},
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
+   {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
+   {"COMMAND", "WAIT_FOR_RELGOTOZ", cond="vars.relgotoz"},
+   {"WAIT_FOR_RELGOTOZ", "FINAL_AFTER_IF_FINAL", timeout=0.5},
    {"WAIT_FOR_GRAB", "CHECK_GRAB_SUCCESS", timeout=1.5},
    {"CHECK_GRAB_SUCCESS", "FINAL", cond="gripper_if:is_holds_puck()"},
    {"CHECK_GRAB_SUCCESS", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Gripper doesn't hold a puck"},
@@ -95,6 +99,12 @@ function COMMAND:init()
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)
+   elseif self.fsm.vars.command == "RELGOTOZ" then
+      print("relgotoZ")
+      self.fsm.vars.relgotoz = true
+      theRelGotoZMessage = gripper_if.RelGotoZMessage:new()
+      theRelGotoZMessage:set_rel_z(self.fsm.vars.z_position or 0)
+      gripper_if:msgq_enqueue_copy(theRelGotoZMessage)
    elseif self.fsm.vars.grab then
       print("grab")
       theCloseMessage = gripper_if.CloseMessage:new()

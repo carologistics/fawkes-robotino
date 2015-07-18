@@ -85,19 +85,22 @@ GripperAX12AThread::init()
   load_left_pending = false;
   load_right_pending = false;
   
-  bool left_servo_found = false, right_servo_found = false;
+  bool left_servo_found = false, right_servo_found = false, z_servo_found = false;
 
   __servo_if_right = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_right_servo_id).c_str());
   __servo_if_left  = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_left_servo_id).c_str());
+  __servo_if_z_align  = blackboard->open_for_reading<DynamixelServoInterface>((__cfg_driver_prefix + "/" + __cfg_z_alignment_servo_id).c_str());
 
   __servo_if_left->read();
   __servo_if_right->read();
-  
+  __servo_if_z_align->read();
+
   right_servo_found = __servo_if_right->has_writer();
   left_servo_found  = __servo_if_left->has_writer();
-  if (! (left_servo_found && right_servo_found)) {
-    throw Exception("Left and/or right servo not found: left: %i  right: %i",
-		    left_servo_found, right_servo_found);
+  z_servo_found     = __servo_if_left->has_writer();
+  if (! (left_servo_found && right_servo_found && z_servo_found)) {
+    throw Exception("Left and/or right and/or z-servo not found: left: %i  right: %i, z: %i",
+		    left_servo_found, right_servo_found, z_servo_found);
   }
 
   // set servo values from config
@@ -163,12 +166,33 @@ GripperAX12AThread::init()
   __tt_count = 0;
   __ttc_read_sensor = __tt->add_class("Read Sensor");
 #endif  
+  init_z_align();
+}
 
+void 
+GripperAX12AThread::init_z_align()
+{
+  DynamixelServoInterface::SetModeMessage *mode_msg = new DynamixelServoInterface::SetModeMessage();
+  DynamixelServoInterface::SetSpeedMessage *speed_msg = new DynamixelServoInterface::SetSpeedMessage();
+  DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_z_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+
+  mode_msg->set_mode(DynamixelServoInterface::WHEEL);
+  prevent_z_msg->set_enable_prevent_alarm_shutdown(false);
+  speed_msg->set_speed(0);
+  
+  __servo_if_z_align->msgq_enqueue(prevent_z_msg);
+  __servo_if_z_align->msgq_enqueue(mode_msg);
+  __servo_if_z_align->msgq_enqueue(speed_msg);
+
+  z_alignment_pending = false;
+  return;
 }
 
 void
 GripperAX12AThread::finalize()
 {
+  // make sure that no servo continues movement
+  stop_motion();
   blackboard->unregister_listener(this);
   blackboard->close(__gripper_if);
   blackboard->close(__led_if);
@@ -176,6 +200,7 @@ GripperAX12AThread::finalize()
   blackboard->close(__rightjoint_if);
   blackboard->close(__servo_if_right);
   blackboard->close(__servo_if_left);
+  blackboard->close(__servo_if_z_align);
   config->rem_change_handler(this);
 }
 
@@ -193,6 +218,7 @@ GripperAX12AThread::loop()
      // read data from interfaces
     __servo_if_left->read();
     __servo_if_right->read();
+    __servo_if_z_align->read();
 
       // load is given in values from 0 - 1023 is ccw load, 1024 - 2047 is cw load but we are only interested in overall load
     if (load_left_pending && (__servo_if_left->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
@@ -215,9 +241,30 @@ GripperAX12AThread::loop()
       __servo_if_right->msgq_enqueue(prevent_right_msg);
       center_pending = false;
     }
+    if (z_alignment_pending) {
+      __servo_if_z_align->read();
+      
+      fawkes::Time now(clock);
+      if (now >= time_to_stop_z_align) {
+        // time reached - stop movement
+        DynamixelServoInterface::SetSpeedMessage *speed_msg = new DynamixelServoInterface::SetSpeedMessage();
+        speed_msg->set_speed(0);
+        __servo_if_z_align->msgq_enqueue(speed_msg);
+        z_alignment_pending = false;
+      }
+    }
 
-    __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final());
+    __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final() && !z_alignment_pending);
 
+    if (__gripper_if->is_final() && !(__servo_if_left->is_enable_prevent_alarm_shutdown() && __servo_if_right->is_enable_prevent_alarm_shutdown()))
+    {
+        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
+        prevent_left_msg->set_enable_prevent_alarm_shutdown(true);
+        prevent_right_msg->set_enable_prevent_alarm_shutdown(true);
+        __servo_if_left ->msgq_enqueue(prevent_left_msg);
+        __servo_if_right->msgq_enqueue(prevent_right_msg);
+    }
 
     while (! __gripper_if->msgq_empty() ) {
       if (__gripper_if->msgq_first_is<AX12GripperInterface::CalibrateMessage>()) {
@@ -295,6 +342,10 @@ GripperAX12AThread::loop()
         set_margins(msg->left_margin(), msg->right_margin());
         __gripper_if->set_left_margin(msg->left_margin());
         __gripper_if->set_right_margin(msg->right_margin());
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::RelGotoZMessage>()) {
+        AX12GripperInterface::RelGotoZMessage *msg = __gripper_if->msgq_first(msg);
+        rel_goto_z(msg->rel_z());
         
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CenterMessage>()) {
         
@@ -384,12 +435,22 @@ GripperAX12AThread::stop_right()
   __servo_if_left->msgq_enqueue(stop_message);
 }
 
+/** Stop currently running z motion. */
+void
+GripperAX12AThread::stop_z()
+{
+  DynamixelServoInterface::SetSpeedMessage *speed_msg = new DynamixelServoInterface::SetSpeedMessage();
+  speed_msg->set_speed(0);
+  __servo_if_z_align->msgq_enqueue(speed_msg);
+}
+
 /** Stop currently running motion. */
 void
 GripperAX12AThread::stop_motion()
 {
   stop_left();
   stop_right();
+  stop_z();
 }
 
 /** Goto desired left/right values.
@@ -406,6 +467,42 @@ GripperAX12AThread::goto_gripper(float left, float right)
 
   __servo_if_left->msgq_enqueue(goto_left);
   __servo_if_right->msgq_enqueue(goto_right);
+}
+
+/** Goto desired z value.
+ * @param rel_z relative value from actual gripper's z position in mm
+ */
+void
+GripperAX12AThread::rel_goto_z(int rel_z)
+{
+  if (rel_z == 0)
+  {
+    logger->log_warn(name(), "Z-alignment to relative 0 does nothing.");
+    return;
+  }
+  
+  __servo_if_z_align->read();
+  
+  fawkes::Time now(clock);
+  // 1mm per pi because of half a rotation for 1mm
+  float rad_to_turn = abs(rel_z) * M_PI;
+  float seconds_to_drive = rad_to_turn / ((rel_z > 0 ? __cfg_z_upwards_real_velocity : __cfg_z_downwards_real_velocity));
+  time_to_stop_z_align = now + seconds_to_drive;
+  cur_z_goal_speed = (int)(__cfg_z_speed_as_percent * 1023) & 0x3FF;
+  
+  // cw direction?
+  if (rel_z < 0)
+  {
+    cur_z_goal_speed |= 0x400;
+  }
+  
+  DynamixelServoInterface::SetModeMessage *mode_msg = new DynamixelServoInterface::SetModeMessage(DynamixelServoInterface::WHEEL);
+  DynamixelServoInterface::SetSpeedMessage *speed_msg = new DynamixelServoInterface::SetSpeedMessage(cur_z_goal_speed);
+
+  __servo_if_z_align->msgq_enqueue(mode_msg);
+  __servo_if_z_align->msgq_enqueue(speed_msg);
+  
+  z_alignment_pending = true;
 }
 
 /** Goto desired left/right values until given max_load (by config).
@@ -583,38 +680,42 @@ void GripperAX12AThread::load_config()
   // Note: due to the use of auto_ptr and RefPtr resources are automatically
   // freed on destruction, therefore no special handling is necessary in init()
   // itself!
-  __cfg_driver_prefix    = config->get_string((__gripper_cfg_prefix + "driver_prefix").c_str());
-  __cfg_left_servo_id    = config->get_string((__gripper_cfg_prefix + "left_servo_id").c_str());
-  __cfg_right_servo_id   = config->get_string((__gripper_cfg_prefix + "right_servo_id").c_str());
+  __cfg_driver_prefix        = config->get_string((__gripper_cfg_prefix + "driver_prefix").c_str());
+  __cfg_left_servo_id        = config->get_string((__gripper_cfg_prefix + "left_servo_id").c_str());
+  __cfg_right_servo_id       = config->get_string((__gripper_cfg_prefix + "right_servo_id").c_str());
+  __cfg_z_alignment_servo_id = config->get_string((__gripper_cfg_prefix + "z_alignment_servo_id").c_str());
   // __cfg_cw_compl_margin  = config->get_uint((__gripper_cfg_prefix + "cw_compl_margin").c_str());
   // __cfg_ccw_compl_margin = config->get_uint((__gripper_cfg_prefix + "ccw_compl_margin").c_str());
   // __cfg_cw_compl_slope   = config->get_uint((__gripper_cfg_prefix + "cw_compl_slope").c_str());
   // __cfg_ccw_compl_slope  = config->get_uint((__gripper_cfg_prefix + "ccw_compl_slope").c_str());
-  __cfg_left_min         = config->get_float((__gripper_cfg_prefix + "left_min").c_str());
-  __cfg_left_max         = config->get_float((__gripper_cfg_prefix + "left_max").c_str());
-  __cfg_right_min        = config->get_float((__gripper_cfg_prefix + "right_min").c_str());
-  __cfg_right_max        = config->get_float((__gripper_cfg_prefix + "right_max").c_str());
-  __cfg_left_torque      = config->get_float((__gripper_cfg_prefix + "left_torque").c_str());
-  __cfg_right_torque     = config->get_float((__gripper_cfg_prefix + "right_torque").c_str());
-  __cfg_goto_zero_start  = config->get_bool((__gripper_cfg_prefix + "goto_zero_start").c_str());
-  __cfg_turn_off         = config->get_bool((__gripper_cfg_prefix + "turn_off").c_str());
+  __cfg_left_min             = config->get_float((__gripper_cfg_prefix + "left_min").c_str());
+  __cfg_left_max             = config->get_float((__gripper_cfg_prefix + "left_max").c_str());
+  __cfg_right_min            = config->get_float((__gripper_cfg_prefix + "right_min").c_str());
+  __cfg_right_max            = config->get_float((__gripper_cfg_prefix + "right_max").c_str());
+  __cfg_left_torque          = config->get_float((__gripper_cfg_prefix + "left_torque").c_str());
+  __cfg_right_torque         = config->get_float((__gripper_cfg_prefix + "right_torque").c_str());
+  __cfg_goto_zero_start      = config->get_bool((__gripper_cfg_prefix + "goto_zero_start").c_str());
+  __cfg_turn_off             = config->get_bool((__gripper_cfg_prefix + "turn_off").c_str());
     
-  __cfg_left_margin       = config->get_float((__gripper_cfg_prefix + "left_margin").c_str());
-  __cfg_right_margin      = config->get_float((__gripper_cfg_prefix + "right_margin").c_str());
-  __cfg_left_start        = config->get_float((__gripper_cfg_prefix + "left_start").c_str());
-  __cfg_right_start       = config->get_float((__gripper_cfg_prefix + "right_start").c_str());
-  __cfg_left_open_angle   = config->get_float((__gripper_cfg_prefix + "left_open").c_str());
-  __cfg_left_close_angle  = config->get_float((__gripper_cfg_prefix + "left_close").c_str());
-  __cfg_left_close_load_angle  = config->get_float((__gripper_cfg_prefix + "left_close_load").c_str());
-  __cfg_right_open_angle  = config->get_float((__gripper_cfg_prefix + "right_open").c_str());
-  __cfg_right_close_angle = config->get_float((__gripper_cfg_prefix + "right_close").c_str());
+  __cfg_left_margin          = config->get_float((__gripper_cfg_prefix + "left_margin").c_str());
+  __cfg_right_margin         = config->get_float((__gripper_cfg_prefix + "right_margin").c_str());
+  __cfg_left_start           = config->get_float((__gripper_cfg_prefix + "left_start").c_str());
+  __cfg_right_start          = config->get_float((__gripper_cfg_prefix + "right_start").c_str());
+  __cfg_left_open_angle      = config->get_float((__gripper_cfg_prefix + "left_open").c_str());
+  __cfg_left_close_angle     = config->get_float((__gripper_cfg_prefix + "left_close").c_str());
+  __cfg_left_close_load_angle= config->get_float((__gripper_cfg_prefix + "left_close_load").c_str());
+  __cfg_right_open_angle      = config->get_float((__gripper_cfg_prefix + "right_open").c_str());
+  __cfg_right_close_angle     = config->get_float((__gripper_cfg_prefix + "right_close").c_str());
   __cfg_right_close_load_angle = config->get_float((__gripper_cfg_prefix + "right_close_load").c_str());
-  __cfg_max_speed         = config->get_float((__gripper_cfg_prefix + "max_speed").c_str());
-  __cfg_max_load          = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
-  __cfg_max_torque        = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
-  __cfg_load_for_holds_puck = config->get_float((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
-  __cfg_angle_for_holds_puck = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
+  __cfg_max_speed              = config->get_float((__gripper_cfg_prefix + "max_speed").c_str());
+  __cfg_max_load               = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
+  __cfg_max_torque             = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
+  __cfg_load_for_holds_puck    = config->get_float((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
+  __cfg_angle_for_holds_puck   = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
   __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
+  __cfg_z_speed_as_percent        = config->get_float((__gripper_cfg_prefix + "z_speed").c_str());
+  __cfg_z_downwards_real_velocity = config->get_float("/gripper_z_downwards_real_vel");
+  __cfg_z_upwards_real_velocity   = config->get_float("/gripper_z_upwards_real_vel");
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());

@@ -56,6 +56,7 @@ class RobotisAX12A;
 
 class GripperAX12AThread
 : public fawkes::Thread,
+  public fawkes::ClockAspect,
   public fawkes::BlockedTimingAspect,
 #ifdef HAVE_TF
   public fawkes::TransformAspect,
@@ -89,6 +90,7 @@ class GripperAX12AThread
   fawkes::JointInterface       *__rightjoint_if;
   fawkes::DynamixelServoInterface *__servo_if_left;
   fawkes::DynamixelServoInterface *__servo_if_right;
+  fawkes::DynamixelServoInterface *__servo_if_z_align;
 
   /* fawkes::RefPtr<RobotisAX12A> __ax12a; */
   std::string   __gripper_cfg_prefix;
@@ -96,6 +98,7 @@ class GripperAX12AThread
   std::string   __cfg_driver_prefix;
   std::string   __cfg_left_servo_id;
   std::string   __cfg_right_servo_id;
+  std::string   __cfg_z_alignment_servo_id;
   /* unsigned char __cfg_left_servo_id; */
   /* unsigned char __cfg_right_servo_id; */
   /* unsigned int __cfg_cw_compl_margin; */
@@ -132,10 +135,17 @@ class GripperAX12AThread
   float        __target_right;
   float        __left_margin;
   float        __right_margin;
+  float        __cfg_z_speed_as_percent;
+  float        __cfg_z_downwards_real_velocity;
+  float        __cfg_z_upwards_real_velocity;
 
   bool         load_left_pending;
   bool         load_right_pending;
   bool         center_pending;
+  unsigned int cur_z_goal_speed;
+  bool         z_alignment_pending;
+  fawkes::Time time_to_stop_z_align;
+  
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
   std::string  __cfg_left_link;
@@ -151,9 +161,11 @@ class GripperAX12AThread
 
   float         __last_left;
   float         __last_right;
+  void init_z_align();
   void goto_gripper(float left, float right);
   void goto_gripper_load(float left, float right);
   void goto_gripper_timed(float left, float right, float time_sec);
+  void rel_goto_z(int rel_z);
   void get_gripper(float &left, float &right);
   void get_gripper(float &left, float &right, fawkes::Time &time);
   void set_velocities(float left_vel, float right_vel);
@@ -172,6 +184,7 @@ class GripperAX12AThread
   /* void wait_for_fresh_data(); */
   void stop_left();
   void stop_right();
+  void stop_z();
   /* void set_servo_angle(unsigned int servo_id, float servo_angle); */
   void load_config();
   void config_value_erased(const char *path);
