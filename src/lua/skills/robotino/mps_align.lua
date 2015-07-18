@@ -59,8 +59,7 @@ documentation      = [==[ align_mps
 
                           @param tag_id     int     optional the tag_id for align_tag
                           @param x          float   the x offset after the alignmend
-                          @param y          float   optional the y offset after the alignmend
-                          @param ori        float   optional the ori offset after the alignmend
+                          @param y          float   optional the y offset after the alignmend; TODO this just works within the AREA_LINE_ERR_Y
 ]==]
 
 -- Initialize as skill module
@@ -73,7 +72,7 @@ local llutils = require("fawkes.laser-lines_utils")
 local TAG_X_ERR=0.02
 local MIN_VIS_HIST=10
 local TIMEOUT=4
-local AREA_LINE_ERR_X=0.4
+local AREA_LINE_ERR_X=0.1
 local AREA_LINE_ERR_Y=0.2
 local AREA_LINE_ERR_ORI=0.2 --0.17
 local LINE_TRIES=3
@@ -120,21 +119,22 @@ end
 
 fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRIES=LINE_TRIES},
    {"INIT",                   JumpState},
-   {"DECIDE_RETRY",           JumpState},
-   {"ALIGN",       SkillJumpState, skills={{motor_move}}, final_to="CHECK_TAG", fail_to="FAILED"},  --TODO check if tag is right if given
+   {"SETTLE",                 JumpState},
+   {"ALIGN_TAG",              SkillJumpState, skills={{align_tag}}, final_to="DECIDE_TRY", fail_to="DECIDE_TRY"}, -- TODO if we can't find it with the tag, we can at least try with the line (correct tag is later checked
+   {"DECIDE_TRY",             JumpState},
+   {"ALIGN",                  SkillJumpState, skills={{motor_move}}, final_to="CHECK_TAG", fail_to="FAILED"},  --TODO check if tag is right if given
    {"SEARCH_LINE",            JumpState}, --TODO check visibility_history
-   {"LINE_SETTLE",            JumpState},
    {"CHECK_TAG",              SkillJumpState, skills={{check_tag}}, final_to="FINAL", fail_to="FINAL"},  --TODO go final even when failed because we have no solution right now
 }
 
 fsm:add_transitions{
-   {"INIT",             "LINE_SETTLE",        cond=true },
-   {"INIT",             "FAILED",             precond="not vars.x", desc="x argument missing"},
-   {"DECIDE_RETRY",     "SEARCH_LINE",        cond="vars.try <= LINE_TRIES", desc="try again to find a line" },
-   {"DECIDE_RETRY",     "FINAL",              cond=true, desc="tryed often enough, going final now :(" },
-   {"SEARCH_LINE",      "DECIDE_RETRY",       timeout=TIMEOUT,      desc="timeout"},
-   {"SEARCH_LINE",      "ALIGN",              cond=see_line,        desc="see line"},
-   {"LINE_SETTLE",      "SEARCH_LINE",        timeout=1,      desc="timeout"},
+   {"INIT",           "SETTLE",             cond=true },
+   {"INIT",           "FAILED",             precond="not vars.x", desc="x argument missing"},
+   {"SETTLE",         "ALIGN_TAG",          timeout=1,            desc="timeout"},
+   {"DECIDE_TRY",     "SEARCH_LINE",        cond="vars.try <= LINE_TRIES", desc="try again to find a line" },
+   {"DECIDE_TRY",     "FINAL",              cond=true, desc="tryed often enough, going final now :(" },
+   {"SEARCH_LINE",    "DECIDE_TRY",         timeout=TIMEOUT,      desc="timeout"},
+   {"SEARCH_LINE",    "ALIGN",              cond=see_line,        desc="see line"},
 }
 
 function INIT:init()
@@ -166,7 +166,21 @@ function INIT:init()
   self.fsm.vars.retry_to_recover_by_line_times = 0
 end
 
-function DECIDE_RETRY:init()
+function ALIGN_TAG:init()
+   -- use defaults for optional args
+   -- self.fsm.vars.y = self.fsm.vars.y or 0 -- just important for laser-lines? should we provice a different param for that? or automatic from navgraph?
+   self.fsm.vars.ori = self.fsm.vars.ori or 0
+   -- align by ALIGN_DISTANCE from tag to base_link with align_tag
+   local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
+   -- give align_tag the id if we have one
+   self.skills[1].tag_id = self.fsm.vars.tag_id
+   self.skills[1].x = self.fsm.vars.x + TAG_X_ERR
+--   self.skills[1].y = -self.fsm.vars.y -- see comment above
+   self.skills[1].y = 0
+   self.skills[1].ori = self.fsm.vars.ori
+end
+
+function DECIDE_TRY:init()
   self.fsm.vars.try = self.fsm.vars.try + 1
 end
 
@@ -175,7 +189,7 @@ function ALIGN:init()
    self.skills[1].x         = pp.x
    self.skills[1].y         = pp.y
    self.skills[1].ori       = pp.ori
-   self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
+   self.skills[1].tolerance = {x=0.05, y=0.03, ori=0.1}
 end
 
 function CHECK_TAG:init()
