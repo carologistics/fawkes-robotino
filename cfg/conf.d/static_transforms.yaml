@@ -36,7 +36,7 @@ plugins/static-transforms:
     mount_profile:
       frame: !frame /plate_top
       child_frame: /mount_profile
-      trans_x: 0.145
+      trans_x: 0.105
       trans_y: 0
       trans_z: 0.03
 
