@@ -83,10 +83,6 @@ nodes:
       - orientation_Z7:  -0.9
       - orientation_Z8:   0.9
 
-  - name: Exp-C4
-    pos: [3.5, 0.5]
-    properties:
-      - orientation_Z5:   2.4
   - name: Exp-C5
     pos: [4.0, 1.5]
     properties:
@@ -104,23 +100,7 @@ nodes:
       - orientation_Z8:  2.4
       - orientation_Z11: -0.9
       - orientation_Z12: 0.5
-  - name: Exp-C8
-    pos: [4.0, 5.5]
-    properties:
-      - orientation_Z12: -0.9
 
-  - name: Exp-C9
-    pos: [5.5, 1.5]
-    properties:
-      - orientation_Z9: -2.4
-  - name: Exp-C10
-    pos: [5.5, 3.0]
-    properties:
-      - orientation_Z10: -2.4
-  - name: Exp-C11
-    pos: [5.5, 4.5]
-    properties:
-      - orientation_Z11: -2.4
 # magenta half
 
   - name: Exp-M1
@@ -141,10 +121,6 @@ nodes:
       - orientation_Z19:  -0.9
       - orientation_Z20:   0.9
 
-  - name: Exp-M4
-    pos: [-3.5, 0.5]
-    properties:
-      - orientation_Z17:   2.4
   - name: Exp-M5
     pos: [-4.0, 1.5]
     properties:
@@ -162,23 +138,6 @@ nodes:
       - orientation_Z20:  2.4
       - orientation_Z23: -0.9
       - orientation_Z24: 0.5
-  - name: Exp-M8
-    pos: [-4.0, 5.5]
-    properties:
-      - orientation_Z24: -0.9
-
-  - name: Exp-M9
-    pos: [-5.5, 1.5]
-    properties:
-      - orientation_Z21: -2.4
-  - name: Exp-M10
-    pos: [-5.5, 3.0]
-    properties:
-      - orientation_Z22: -2.4
-  - name: Exp-M11
-    pos: [-5.5, 4.5]
-    properties:
-      - orientation_Z23: -2.4
 
 # drive into field points
 # Cyan
@@ -321,50 +280,28 @@ connections:
   # connecting edges in Y direction
   - [Exp-C1,  Exp-C2]
   - [Exp-C2,  Exp-C3]
-  - [Exp-C4,  Exp-C5]
   - [Exp-C5,  Exp-C6]
   - [Exp-C6,  Exp-C7]
-  - [Exp-C7, Exp-C8]
-  - [Exp-C9, Exp-C10]
-  - [Exp-C10, Exp-C11]
 
   # connecting edges in X direction
   - [Exp-CM1,  Exp-C1]
   - [Exp-CM2,  Exp-C2]
   - [Exp-CM3,  Exp-C3]
-  - [Exp-C1,  Exp-C4]
   - [Exp-C1,  Exp-C5]
   - [Exp-C2,  Exp-C6]
   - [Exp-C3,  Exp-C7]
-  - [Exp-C3,  Exp-C8]
-  - [Exp-C4,  Exp-C9]
-  - [Exp-C5,  Exp-C9]
-  - [Exp-C6,  Exp-C10]
-  - [Exp-C7,  Exp-C11]
-  - [Exp-C8,  Exp-C11]
 
   # connecting edges in Y direction
   - [Exp-M1,  Exp-M2]
   - [Exp-M2,  Exp-M3]
-  - [Exp-M4,  Exp-M5]
   - [Exp-M5,  Exp-M6]
   - [Exp-M6,  Exp-M7]
-  - [Exp-M7, Exp-M8]
-  - [Exp-M9, Exp-M10]
-  - [Exp-M10, Exp-M11]
 
   # connecting edges in X direction
   - [Exp-CM1,  Exp-M1]
   - [Exp-CM2,  Exp-M2]
   - [Exp-CM3,  Exp-M3]
-  - [Exp-M1,  Exp-M4]
   - [Exp-M1,  Exp-M5]
   - [Exp-M2,  Exp-M6]
   - [Exp-M3,  Exp-M7]
-  - [Exp-M3,  Exp-M8]
-  - [Exp-M4,  Exp-M9]
-  - [Exp-M5,  Exp-M9]
-  - [Exp-M6,  Exp-M10]
-  - [Exp-M7,  Exp-M11]
-  - [Exp-M8,  Exp-M11]
 
