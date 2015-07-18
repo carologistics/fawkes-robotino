@@ -102,15 +102,9 @@ GripperAX12AThread::init()
     throw Exception("Left and/or right and/or z-servo not found: left: %i  right: %i, z: %i",
 		    left_servo_found, right_servo_found, z_servo_found);
   }
-
-  // set servo values from config
-  float minimum_of_max_supported_speed = __servo_if_left->max_velocity();
-  if (minimum_of_max_supported_speed > __servo_if_right->max_velocity()){
-    minimum_of_max_supported_speed = __servo_if_right->max_velocity();
-  }
   
-  DynamixelServoInterface::SetVelocityMessage *vel_left = new DynamixelServoInterface::SetVelocityMessage(__cfg_max_speed * minimum_of_max_supported_speed);
-  DynamixelServoInterface::SetVelocityMessage *vel_right = new DynamixelServoInterface::SetVelocityMessage(__cfg_max_speed * minimum_of_max_supported_speed);
+  DynamixelServoInterface::SetSpeedMessage *vel_left = new DynamixelServoInterface::SetSpeedMessage((unsigned int) (__cfg_max_speed * 0x3ff));
+  DynamixelServoInterface::SetSpeedMessage *vel_right = new DynamixelServoInterface::SetSpeedMessage((unsigned int) (__cfg_max_speed * 0x3ff));
   __servo_if_left->msgq_enqueue(vel_left);
   __servo_if_right->msgq_enqueue(vel_right);
   
