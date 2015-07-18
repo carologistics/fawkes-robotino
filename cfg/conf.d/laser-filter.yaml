@@ -4,7 +4,8 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-filter
 ---
 plugins/laser-filter:
-  urg:
+  robot:
+    active: true
 
     # URG input interface
     #in/urg: Laser360Interface::Laser urg
@@ -29,7 +30,23 @@ plugins/laser-filter:
         from: 235
         to: 125
 
+  simulation:
+    active: false
+    in/sick-tim55x: Laser360Interface::Laser tim55x
+    out/filtered: Laser360Interface::Laser urg-filtered
+    filters:
+      1-min:
+        type: min_circle
+        radius: 0.12
+
+      2-sector:
+        type: circle_sector
+        from: 235
+        to: 125
+
+
   sick-downsample:
+    active: true
 
     # URG input interface
     #in/urg: Laser360Interface::Laser urg
