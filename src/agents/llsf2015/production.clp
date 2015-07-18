@@ -382,7 +382,7 @@
                     (state ~DOWN&~BROKEN))
   ;check that the task was not rejected before
   (not (and (task (name deliver) (state rejected) (id ?rej-id))
-            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
+            (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?cs))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER*))))
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
