@@ -119,7 +119,6 @@ end
 
 fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRIES=LINE_TRIES},
    {"INIT",                   JumpState},
-   {"SETTLE",                 JumpState},
    {"ALIGN_TAG",              SkillJumpState, skills={{align_tag}}, final_to="DECIDE_TRY", fail_to="DECIDE_TRY"}, -- TODO if we can't find it with the tag, we can at least try with the line (correct tag is later checked
    {"DECIDE_TRY",             JumpState},
    {"ALIGN",                  SkillJumpState, skills={{motor_move}}, final_to="CHECK_TAG", fail_to="FAILED"},  --TODO check if tag is right if given
@@ -128,9 +127,8 @@ fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRIES=LINE_T
 }
 
 fsm:add_transitions{
-   {"INIT",           "SETTLE",             cond=true },
+   {"INIT",           "ALIGN_TAG",          cond=true },
    {"INIT",           "FAILED",             precond="not vars.x", desc="x argument missing"},
-   {"SETTLE",         "ALIGN_TAG",          timeout=1,            desc="timeout"},
    {"DECIDE_TRY",     "SEARCH_LINE",        cond="vars.try <= LINE_TRIES", desc="try again to find a line" },
    {"DECIDE_TRY",     "FINAL",              cond=true, desc="tryed often enough, going final now :(" },
    {"SEARCH_LINE",    "DECIDE_TRY",         timeout=TIMEOUT,      desc="timeout"},
@@ -189,7 +187,7 @@ function ALIGN:init()
    self.skills[1].x         = pp.x
    self.skills[1].y         = pp.y
    self.skills[1].ori       = pp.ori
-   self.skills[1].tolerance = {x=0.05, y=0.03, ori=0.1}
+   --self.skills[1].tolerance = {x=0.05, y=0.03, ori=0.1} -- this does not exists
 end
 
 function CHECK_TAG:init()
