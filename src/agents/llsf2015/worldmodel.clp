@@ -300,7 +300,7 @@
 (defrule wm-update-puck-in-gripper
   (declare (salience ?*PRIORITY-CLEANUP*))
   ?grip <- (AX12GripperInterface (id "Gripper AX12") (holds_puck ?holds-puck))
-  ?pig <- (puck-in-gripper ?puck)
+  ?pig <- (puck-in-gripper ?puck&:(neq ?puck ?holds-puck))
   =>
   (if (eq ?holds-puck TRUE)
     then
