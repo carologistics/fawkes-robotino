@@ -39,6 +39,7 @@ local TOLERANCE_Y = 0.005
 local TOLERANCE_Z = 0.004
 local MAX_TRIES = 4
 local Z_DEST_POS=0.005
+local Z_DIVISOR = 2
 
 function no_writer()
    return not conveyor_0:has_writer()
@@ -90,7 +91,9 @@ function DRIVE_YZ:init()
    self.skills[1].y = conveyor_0:translation(1)
    self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
    self.skills[2].command = "RELGOTOZ"
-   self.skills[2].z_position = (conveyor_0:translation(2) - Z_DEST_POS) * 1000
+   if tolerance_z_not_ok() then
+      self.skills[2].z_position = ((conveyor_0:translation(2) - Z_DEST_POS) * 1000) / Z_DIVISOR
+   end
 end
 
 function DRIVE_Z:init()
