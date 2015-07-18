@@ -484,6 +484,7 @@ GripperAX12AThread::rel_goto_z(int rel_z)
     return;
   }
   
+  cfg_mutex_.unlock();
   if (cfg_mutex_.try_lock()) {
       config->lock();
       try {
