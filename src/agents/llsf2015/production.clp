@@ -215,8 +215,8 @@
   (product (id ?product-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color) (base ?base-color))
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
-    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) 40)))
-    (end ?end)
+    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*)))
+    (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*)))
     (in-production 0) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
   =>
@@ -274,8 +274,8 @@
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-ADD-FIRST-RING*))))
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
-    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) 40)))
-    (end ?end)
+    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-AHEAD-TIME*)))
+    (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*)))
     (in-production 0) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
   =>
@@ -337,8 +337,8 @@
   )
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
-    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) 40)))
-    (end ?end)
+    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-AHEAD-TIME*)))
+    (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*)))
     (in-production 1) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
   =>
@@ -386,8 +386,8 @@
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER*))))
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
-    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) 40)))
-    (end ?end)
+    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*)))
+    (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*DELIVER-LATEST-TIME*)))
     (delivery-gate ?gate) (in-production ?ip&:(> ?ip 0)) (in-delivery ?id)
   )
   =>
