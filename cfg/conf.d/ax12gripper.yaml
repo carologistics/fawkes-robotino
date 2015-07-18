@@ -31,6 +31,9 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     # Z alignment speed in percent (0 - 1)
     z_speed: 1
 
+    # Z position given by incremental or decremental values from the plugin
+    z_position: 20
+
     # Pan offset for RX28 PTU; deg
 #    pan_offset: 24.05
     # Tilt zero offset for RX28 PTU; deg
