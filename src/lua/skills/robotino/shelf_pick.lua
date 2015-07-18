@@ -61,14 +61,14 @@ function INIT:init()
 end
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.075 --TODO measure both values
-   local shelf_distance = 0.1
+   local shelf_to_conveyor = 0.09 --TODO measure both values
+   local shelf_distance = 0.09
    if self.fsm.vars.slot == "LEFT" then
       dest_y = shelf_to_conveyor
    elseif self.fsm.vars.slot == "MIDDLE" then
       dest_y = shelf_to_conveyor + shelf_distance
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = 0.3
+      dest_y = shelf_to_conveyor + 2*shelf_distance
    else
       dest_y = 0
       self.fsm:set_error("no shelf side set")
@@ -81,7 +81,7 @@ function GOTO_SHELF:init()
 end
 
 function APPROACH_SHELF:init()
-   self.skills[1].x = 0.05 --TODO measure this value
+   self.skills[1].x = 0.07 --TODO measure this value
 end
 
 function GRAB_PRODUCT:init()
