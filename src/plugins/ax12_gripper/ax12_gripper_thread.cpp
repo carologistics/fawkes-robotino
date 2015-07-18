@@ -490,8 +490,8 @@ GripperAX12AThread::rel_goto_z(int rel_z)
     return;
   }
   
-  cfg_mutex_.unlock();
   if (cfg_mutex_.try_lock()) {
+      config->lock();
       try {
         __cfg_z_position += rel_z;
         __gripper_if->set_z_position(__cfg_z_position);
@@ -500,9 +500,8 @@ GripperAX12AThread::rel_goto_z(int rel_z)
       catch(fawkes::Exception &e){
               logger->log_error(name(), e);
       }
+      config->unlock();
   }
-  config->unlock();
-  config->lock();
   
   __servo_if_z_align->read();
   
