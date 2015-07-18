@@ -96,7 +96,11 @@ end
 
 function DRIVE_Z:init()
    self.skills[1].command = "RELGOTOZ"
-   self.skills[1].z_position = (conveyor_0:translation(2) - Z_DEST_POS) * 1000
+   if conveyor_0:translation(2) - Z_DEST_POS < 0 then
+      self.skills[1].z_position = -1
+   else
+      self.skills[1].z_position = 1
+   end
 end
 
 function CHECK:init()
