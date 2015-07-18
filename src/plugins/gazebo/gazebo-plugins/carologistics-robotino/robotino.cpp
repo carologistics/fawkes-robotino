@@ -38,6 +38,7 @@
 #include "infraredPuckSensor.h"
 #include "gripper_laser_sensor.h"
 #include "puck_holder.h"
+#include "conveyor_vision.h"
 
 using namespace gazebo;
 
@@ -103,6 +104,7 @@ void Robotino::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
   std::string gripper_laser_right_name =  model_->GetWorld()->GetName() + "::" + name_ + "::body::gripper_laser_right";
   devices_list_.push_back((SimDevice*) new GripperLaserSensor(model_, node_, sensors::get_sensor(gripper_laser_left_name.c_str()), LEFT));
   devices_list_.push_back((SimDevice*) new GripperLaserSensor(model_, node_, sensors::get_sensor(gripper_laser_right_name.c_str()), RIGHT));
+  devices_list_.push_back((SimDevice*) new ConveyorVision(model_,node_));
 
   if(ATTACH_PUCK_TO_GRIPPER_WHEN_TURNING)
   {
