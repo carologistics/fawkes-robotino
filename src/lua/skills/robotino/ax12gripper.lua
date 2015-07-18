@@ -42,7 +42,7 @@ function relgotoz_allowed(self)
    local desired_z = self.fsm.vars.z_position
    local upper_bound = gripper_if:z_upper_bound()
    local lower_bound = gripper_if:z_lower_bound()
-   return (cur_z + desired_z) < upper_bound and (cur_z + desired_z) > lower_bound
+   return (cur_z + desired_z) <= upper_bound and (cur_z + desired_z) >= lower_bound
 end
 
 -- States
