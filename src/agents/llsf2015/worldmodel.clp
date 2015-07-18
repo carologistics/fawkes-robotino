@@ -240,36 +240,6 @@
   (printout error "Delivery failed. Try again if I have a puck." crlf) 
 )
 
-;(defrule wm-goto-failed
-;  (declare (salience ?*PRIORITY-WM-LOW*))
-;  (state SKILL-FAILED)
-;  (skill-to-execute (skill finish_puck_at) (state failed) (target ?name))
-;  ?gtdw <- (dont-wait ?dont-wait)
-;  ?hf <- (holding ?)
-;  (puck-in-gripper ?puck)
-;  =>
-;  (retract ?gtdw)
-;  (if (not ?puck) then
-;    (retract ?hf)
-;    (assert (holding NONE))
-;  )
-;  (printout error "Production failed at " ?name crlf) 
-;)
-
-;(defrule wm-take-puck-to-failed
-;  (declare (salience ?*PRIORITY-WM-LOW*))
-;  (state SKILL-FAILED)
-;  (skill-to-execute (skill take_puck_to) (state failed) (target ?name))
-;  ?hf <- (holding ~NONE)
-;  (puck-in-gripper ?puck)
-;  =>
-;  (if (not ?puck) then
-;    (retract ?hf)
-;    (assert (holding NONE))
-;    (printout error "Lost puck during take_puck_to" crlf)
-;  )
-;)
-
 (defrule wm-drive-to-failed
   (declare (salience ?*PRIORITY-WM-LOW*))
   (state SKILL-FAILED)
@@ -283,81 +253,6 @@
     (printout error "Lost puck during drive_to" crlf)
   )
 )
-
-;(defrule wm-goto-light
-;  (declare (salience ?*PRIORITY-WM*))
-;  (state SKILL-FINAL)
-;  (skill-to-execute (skill finish_puck_at) (state final))
-;  (not (lights))
-;  ?lf <- (last-lights $?lights&:(> (length$ ?lights) 0))
-;  =>
-;  (retract ?lf)
-;  (assert (lights ?lights))
-;)
-
-; (defrule wm-proc-complete-without-robot
-;   (declare (salience ?*PRIORITY-WM*))
-;   (time $?now)
-;   ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn)
-;            (final-prod-time $?fpt&:(and (timeout ?now ?fpt 0.5) (neq (nth$ 1 ?fpt) 0)))
-; 	   (produced-puck NONE)
-;          )
-;   =>
-;   (printout t "Production completed at " ?name "|" ?mtype crlf)
-;   (modify ?mf (final-prod-time (create$ 0 0)) (produced-puck ?output) (loaded-with (create$)) (junk (- (+ ?jn (length$ ?lw)) 1)))
-; )
-
-; (defrule wm-out-of-order-proc-started
-;   "machine out of order and we left the last puck there, so the machine starts producing when getting active again"
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
-;   ?gtdw <- (dont-wait true)
-;   ?hf <- (holding ?was-holding)
-;   ?lf <- (lights GREEN-OFF YELLOW-OFF RED-ON)
-;   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
-;   (time $?now)
-;   (production-time ?mtype ?min-prod-time ?)
-;   (out-of-order-time max ?ooo-max)
-;   (out-of-order-time recycle-max ?ooo-recycle-max)
-;   =>
-;   (retract ?hf ?lf ?gtdw)
-;   (assert (holding NONE))
-;   (printout t "Machine Out Of Order; Production starts afterwards at " ?name "|" ?mtype crlf)
-;   (if (eq ?mtype RECYCLE)
-;     then
-;     (bind ?ooo-time ?ooo-recycle-max)
-;     else
-;     (bind ?ooo-time ?ooo-max)
-;   )
-;   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding))
-; 	  (worldmodel-change (machine ?name) (change SET_PROD_FINISHED_TIME) (amount (+ (nth$ 1 ?now) ?min-prod-time ?ooo-time)))
-; 	  (worldmodel-change (machine ?name) (change SET_OUT_OF_ORDER_UNTIL) (amount (+ (nth$ 1 ?now) ?ooo-time)))
-;   )
-; )
-
-; (defrule wm-out-of-order-goto-aborted
-;   "machine out of order and we aborted loading the machine"
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
-;   ?gtdw <- (dont-wait false)
-;   ?lf <- (lights GREEN-OFF YELLOW-OFF RED-ON)
-;   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
-;   (time $?now)
-;   (out-of-order-time max ?ooo-max)
-;   (out-of-order-time recycle-max ?ooo-recycle-max)
-;   =>
-;   (retract ?lf ?gtdw)
-;   (printout t "Machine Out Of Order; Loading/Producing this machine aborted at " ?name "|" ?mtype crlf)
-;   (if (eq ?mtype RECYCLE)
-;     then
-;     (bind ?ooo-time ?ooo-recycle-max)
-;     else
-;     (bind ?ooo-time ?ooo-max)
-;   )
-;   (assert (worldmodel-change (machine ?name) (change SET_OUT_OF_ORDER_UNTIL) (amount (+ (nth$ 1 ?now) ?ooo-time))))
-; )
 
 (defrule wm-proc-delivered
   (declare (salience ?*PRIORITY-WM*))
@@ -392,87 +287,6 @@
   )
   (assert (state SKILL-FAILED))
 )
-
-; (defrule wm-get-produced-final
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill get_produced) (state final) (target ?name))
-;   ?hf <- (holding NONE)
-;   ?mf <- (machine (name ?name) (output ?output))
-;   =>
-;   (retract ?hf)
-;   (assert (holding ?output))
-;   (printout t "Got Produced Puck." crlf)
-;   (assert (worldmodel-change (machine ?name) (change REMOVE_PRODUCED)))
-; )
-
-; (defrule wm-get-produced-failed
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill get_produced) (state failed) (target ?name))
-;   ?hf <- (holding NONE)
-;   ;?mf <- (machine (name ?name) (output ?output))
-;   =>
-;   (retract ?hf)
-;   (assert (holding NONE))
-;   (printout error "Got Produced Puck failed." crlf)
-;   ;allow one problem. when the second occurs the machine gets blocked
-;   (assert (worldmodel-change (machine ?name) (change SET_DOUBTFUL_WORLDMODEL)))
-;   (assert (worldmodel-change (machine ?name) (change REMOVE_PRODUCED)))
-;   (printout error "remove produced puck in wm!" crlf)
-; )
-
-; (defrule wm-store-puck-final
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill store_puck) (state final) (target ?name))
-;   ?hf <- (holding ?puck)
-;   ?mf <- (puck-storage (name ?name))
-;   =>
-;   (retract ?hf)
-;   (assert (holding NONE))
-;   (printout t "Successfully stored puck." crlf)
-;   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?puck)))
-; )
-
-; (defrule wm-store-puck-failed
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FAILED)
-;   (skill-to-execute (skill store_puck) (state failed) (target ?name))
-;   ?hf <- (holding ?puck)
-;   ?mf <- (puck-storage (name ?name))
-;   (puck-in-gripper ?puck-in-gripper)
-;   =>
-;   (if (not ?puck-in-gripper) then
-;     (retract ?hf)
-;     (assert (holding NONE))
-;   )
-;   (printout error "Store puck failed" crlf)
-; )
-
-; (defrule wm-get-stored-puck-final
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill get_stored_puck) (state final) (target ?name))
-;   ?hf <- (holding NONE)
-;   ?mf <- (puck-storage (name ?name) (puck ?puck))
-;   =>
-;   (retract ?hf)
-;   (assert (holding ?puck))
-;   (printout t "Successfully got stored puck." crlf)
-;   (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
-; )
-
-; (defrule wm-get-stored-puck-failed
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FAILED)
-;   (skill-to-execute (skill get_stored_puck) (state failed) (target ?name))
-;   ?hf <- (holding NONE)
-;   ?mf <- (puck-storage (name ?name) (puck ?puck))
-;   =>
-;   (printout error "Failed to get stored puck." crlf)
-;   (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
-; )
 
 (defrule wm-update-pose
   (declare (salience ?*PRIORITY-CLEANUP*))

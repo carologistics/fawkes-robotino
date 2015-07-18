@@ -119,27 +119,6 @@
   (synced-modify ?of in-production (- ?ip 1) in-delivery (+ ?id 1))
 )
 
-; (defrule step-get-base-finish
-;   "Base retrieved from BS"
-;   (declare (salience ?*PRIORITY-STEP-FINISH*))
-;   (phase PRODUCTION)
-;   ?step <- (step (name get-base) (state running) (base ?base-color))
-;   ?state <- (state SKILL-FINAL)
-;   ?ste <- (skill-to-execute (skill get_product_from)
-; 			    (args place ?bs) (state ?skill-finish-state&final))
-;   ?mf <- (machine (name ?bs) (produced-id ?product-id))
-;   ?h <- (holding NONE)
-;   =>
-;   (printout t ?base-color " base retrieved"  crlf)
-;   (retract ?state ?ste ?h)
-;   (assert
-;     (state STEP-FINISHED)
-;     (holding ?product-id)
-;   )
-;   (synced-modify ?mf produced-id 0)
-;   (modify ?step (state finished))
-; )
-
 (defrule step-discard-unknown-start
   "Open gripper to discard unknown base"
   (declare (salience ?*PRIORITY-STEP-START*))
@@ -376,65 +355,6 @@
   (retract ?state ?ste)
   (assert (state STEP-FAILED))
 )
-
-; (defrule step-get-S0-start
-;   (declare (salience ?*PRIORITY-STEP-START*))
-;   (phase PRODUCTION)
-;   ?step <- (step (name get-s0) (state wait-for-activation) (task-priority ?p))
-;   ?state <- (state STEP-STARTED)
-;   (team-color ?team)
-;   (input-storage ?team ?ins ? ? )
-;   (secondary-storage ?team ?inssec ? ?)
-;   (game-time $?game-time)
-;   =>
-;   (retract ?state)
-;   (assert (state WAIT-FOR-LOCK))
-;   (modify ?step (state running))
-;   ; (if (tac-check-for-secondary-ins ?ins ?inssec ?game-time)
-;   ;   then
-;   ;   (assert (skill-to-execute (skill get_s0) (args place ?inssec) (target ?inssec))
-;   ; 	    (wait-for-lock (priority ?p) (res ?inssec))
-;   ;   )
-;   ;   else
-;   ;   (assert (skill-to-execute (skill get_s0) (args place ?ins) (target ?ins))
-;   ; 	    (wait-for-lock (priority ?p) (res ?ins))
-;   ;   )
-;   ; )
-; )
-
-; (defrule step-produce-at-start
-;   (declare (salience ?*PRIORITY-STEP-START*))
-;   (phase PRODUCTION)
-;   ?step <- (step (name produce-at) (state wait-for-activation) (machine ?machine))
-;   ?state <- (state STEP-STARTED)
-;   (holding ~NONE)
-;   (machine (name ?machine) (mtype ?mtype))
-;   =>
-;   (retract ?state)
-;   (assert (state WAIT-FOR-LOCK)
-; 	  (skill-to-execute (skill finish_puck_at) (args place ?machine) (target ?machine))
-; 	  (dont-wait false)
-; 	  (wait-for-lock (res ?machine))
-;   )
-;   (modify ?step (state running))
-; )
-
-; (defrule step-deliver-start
-;   (declare (salience ?*PRIORITY-STEP-START*))
-;   (phase PRODUCTION)
-;   ?step <- (step (name deliver) (state wait-for-activation) (task-priority ?p))
-;   ?state <- (state STEP-STARTED)
-;   (holding P1|P2|P3)
-;   (team-color ?team)
-;   (deliver ?team ?deliver ? ?)
-;   =>
-;   (retract ?state)
-;   (assert (state WAIT-FOR-LOCK)
-; 	  (skill-to-execute (skill deliver) (args place ?deliver) (target ?deliver))
-; 	  (wait-for-lock (priority ?p) (res ?deliver))
-;   )
-;   (modify ?step (state running))
-; )
 
 ;;;;;;;;;;;;;;;;
 ; common finish:
