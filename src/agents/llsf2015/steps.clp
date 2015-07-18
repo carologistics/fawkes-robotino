@@ -29,7 +29,7 @@
   (phase PRODUCTION)
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
 		 (machine ?mps) (machine-feature ?feature) (gate ?gate) (ring ?ring))
-  (machine (name ?mps) (mtype ?mtype))
+  (machine (name ?mps) (mtype ?mtype) (state ~DOWN))
   (task (name ?task-name))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
