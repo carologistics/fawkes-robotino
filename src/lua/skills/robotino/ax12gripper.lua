@@ -37,6 +37,14 @@ documentation      = [==[Skill to open and close AX12 - gripper.
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+function relgotoz_allowed(self)
+   local cur_z = gripper_if:z_position()
+   local desired_z = self.fsm.vars.z_position
+   local upper_bound = gripper_if:z_upper_bound()
+   local lower_bound = gripper_if:z_lower_bound()
+   return (cur_z + desired_z) < upper_bound and (cur_z + desired_z) > lower_bound
+end
+
 -- States
 fsm:define_states{
    export_to=_M,
@@ -102,9 +110,14 @@ function COMMAND:init()
    elseif self.fsm.vars.command == "RELGOTOZ" then
       print("relgotoZ")
       self.fsm.vars.relgotoz = true
-      theRelGotoZMessage = gripper_if.RelGotoZMessage:new()
-      theRelGotoZMessage:set_rel_z(self.fsm.vars.z_position or 0)
-      gripper_if:msgq_enqueue_copy(theRelGotoZMessage)
+      if relgotoz_allowed(self) then
+         theRelGotoZMessage = gripper_if.RelGotoZMessage:new()
+         theRelGotoZMessage:set_rel_z(self.fsm.vars.z_position or 0)
+         gripper_if:msgq_enqueue_copy(theRelGotoZMessage)
+      else
+         self.fsm:set_error("Desired z value out of bounds")
+         self.fsm.vars.error = true
+      end
    elseif self.fsm.vars.grab then
       print("grab")
       theCloseMessage = gripper_if.CloseMessage:new()
