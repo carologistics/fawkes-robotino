@@ -32,6 +32,9 @@ depends_interfaces = {
 }
 
 documentation      = [==[Skill to open and close AX12 - gripper.
+@param command    can be one of OPEN, CLOSE, CENTER or RELGOTOZ (RELGOTOZ requires the z_position parameter to be set)
+@param z_position only used with the RELGOTOZ-command - the desired relative position in mm.
+                  The skill fails when a desired relative z position is set that would lead out of the grippers z-bounds
 ]==]
 
 -- Initialize as skill module
