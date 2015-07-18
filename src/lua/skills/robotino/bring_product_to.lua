@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"mps_align", "product_put", "drive_to","shelf_put","slide_put"}
+depends_skills     = {"mps_align", "product_put", "drive_to","shelf_put","slide_put","conveyor_align"}
 depends_interfaces = {
 }
 
@@ -37,8 +37,8 @@ from the navgraph
 Parameters:
       @param place   the name of the MPS (see navgraph)
       @param side    optional the side of the mps, default is input (give "output" to bring to output)
-      @param shelf   Position on shelf: ( LEFT | MIDDLE | RIGHT )
-      @param slide   True if you want to put it on shelf
+      @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
+      @param slide   optional true if you want to put it on the slide
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -47,7 +47,8 @@ skillenv.skill_module(_M)
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"},

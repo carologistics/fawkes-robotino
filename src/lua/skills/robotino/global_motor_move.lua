@@ -34,7 +34,7 @@ documentation      = [==[
 
 -- Tunables
 TOLERANCE = { x=0.08, y=0.06, ori=0.02 }
-MAXTRIES = 3
+MAXTRIES = 1
 MAX_DIST = 1.5
 MAX_POSE_TRIES = 60
 

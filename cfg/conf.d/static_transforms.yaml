@@ -67,7 +67,7 @@ plugins/static-transforms:
       trans_y: 0.028
       trans_z: 0.013
 
-    #in the gripper where the puck should be holded
+    #this system is located in the gripper where the puck should be held
     gripper:
       frame: !frame /mount_profile
       child_frame: /gripper
@@ -75,3 +75,9 @@ plugins/static-transforms:
       trans_y: 0.0
       trans_z: 0.1
 
+    cam_conveyor:
+      frame: !frame /mount_profile
+      child_frame: /cam_conveyor
+      trans_x: 0.08
+      trans_y: 0.0
+      trans_z: 0.03

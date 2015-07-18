@@ -63,6 +63,10 @@ function OPEN_GRIPPER:init()
    printf("open gripper")
 end
 
+function APPROACH_MPS:init()
+   self.skills[1].vision = true
+end
+
 function MOVE_BACK:init()
    self.skills[1].x = -0.2
 end
