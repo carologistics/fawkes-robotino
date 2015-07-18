@@ -14,7 +14,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defrule prod-propose-task-idle
   "If we are idle change state to the proposed task."
-  (declare (salience ?*PRIORITY-LOW*))
+  (declare (salience ?*PRIORITY-HIGH*))
   (phase PRODUCTION)
   ?sf <- (state IDLE)
   (task (state proposed))
