@@ -36,7 +36,7 @@ conveyor vision
 skillenv.skill_module(_M)
 
 local TOLERANCE_Y = 0.005
-local TOLERANCE_Z = 0.004
+local TOLERANCE_Z = 0.003
 local MAX_TRIES = 4
 local Z_DEST_POS=0.005
 local Z_DIVISOR = 2
