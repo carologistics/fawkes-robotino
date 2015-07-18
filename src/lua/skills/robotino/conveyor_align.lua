@@ -73,14 +73,12 @@ fsm:add_transitions{
    {"CHECK", "FAILED", cond="vars.counter > MAX_TRIES", desc="max tries reached"},
    {"CHECK", "DRIVE_YZ", cond=tolerance_y_not_ok, desc="tolerance not ok, align y distance"},
    {"CHECK", "SETTLE_Z", cond=true},
-   {"CHECK_Z", "FAILED", cond="vars.counter_z > MAX_TRIES", desc="max tries reached"},
    {"CHECK_Z", "DRIVE_Z", cond=tolerance_z_not_ok, desc="tolerance not ok, align z distance"},
    {"CHECK_Z", "FINAL", cond=true},
 }
 
 function INIT:init()
    self.fsm.vars.counter = 1
-   self.fsm.vars.counter_z = 1
 end
 
 function APPROACH_MPS:init()
@@ -103,8 +101,4 @@ end
 
 function CHECK:init()
    self.fsm.vars.counter = self.fsm.vars.counter + 1
-end
-
-function CHECK_Z:init()
-   self.fsm.vars.counter_z = self.fsm.vars.counter_z + 1
 end
