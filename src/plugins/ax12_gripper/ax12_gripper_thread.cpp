@@ -485,6 +485,7 @@ GripperAX12AThread::rel_goto_z(int rel_z)
   {
     logger->log_error(name(),
             "Z-alignment failed, desired position out of bounds: position: %d, %d\n", __cfg_z_position, rel_z + __cfg_z_position);
+    return;
   }
   
   cfg_mutex_.unlock();
