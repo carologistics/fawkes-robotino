@@ -127,7 +127,6 @@
   (synced-modify ?mf produced-id ?produced-id)
   (synced-modify ?csf cap-loaded NONE)
   (synced-modify ?pf cap ?cap)
-  (synced-modify ?of in-production (- ?ip 1))
 )
 
 (defrule wm-insert-product-into-ds-final
