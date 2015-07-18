@@ -499,7 +499,8 @@ GripperAX12AThread::rel_goto_z(int rel_z)
               logger->log_error(name(), e);
       }
   }
-  cfg_mutex_.unlock();
+  config->unlock();
+  config->lock();
   
   __servo_if_z_align->read();
   
