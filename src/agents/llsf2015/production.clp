@@ -175,8 +175,9 @@
   (holding ?product-id&~NONE)
   (product (id ?product-id) (base UNKNOWN))
   (machine (mtype RS) (name ?rs) (team ?team-color))
-  (ring-station (name ?rs) (bases-loaded ?bases&~:(< ?bases 3)))
-  (not (locked-resource (resource ?res&~:(str-index ?rs ?res))))
+  (task (name fill-rs) (state rejected))
+  ;(ring-station (name ?rs) (bases-loaded ?bases&~:(< ?bases 3)))
+  ;(locked-resource (resource ?res&~:(str-index ?rs ?res)))
   =>
   (printout t "PROD: Discard unneeded unknown base " ?product-id crlf)
   (bind ?task-id (random-id))
