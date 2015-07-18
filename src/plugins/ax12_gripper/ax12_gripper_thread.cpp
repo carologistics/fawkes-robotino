@@ -167,6 +167,8 @@ GripperAX12AThread::init()
   __tt_count = 0;
   __ttc_read_sensor = __tt->add_class("Read Sensor");
 #endif  
+  __gripper_if->set_z_upper_bound(__cfg_z_upper_bound);
+  __gripper_if->set_z_lower_bound(__cfg_z_lower_bound);
   init_z_align();
 }
 
