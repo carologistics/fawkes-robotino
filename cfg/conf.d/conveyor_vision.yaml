@@ -1,0 +1,76 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/tag_vision
+---
+
+plugins/conveyor_vision:
+  # camera being used
+  #camera: "file:file:file=/home/fnolden/Bilder/Webcam/11.jpg"
+  #camera: v4l2:front:device=/dev/video0 #:size=640x480:awb=false:aec=false:agc=false:exposure=305
+  #camera: v4l2:light:device=/dev/video1:white_balance_temperature_auto=0:exposure_auto=1:exposure_absolute=305
+  camera: v4l2:conveyor:device=/dev/video_conveyor
+
+  #Shared Memory Imagebuffer name
+  shm_image_id: "conveyor_vision"
+
+  # frame of reference
+  frame: "/cam_conveyor"
+
+  transform: /plugins/static-transforms/transforms/cam_conveyor/
+
+  classifier_file: conveyor_classifier.xml
+  
+  # obj_distance is the measured distance in cm from the camera to the object 
+  # that occupies the number of pixels in width determined in obj_pixels
+  obj_realworld_distance: 21
+ 
+  # obj_pixels determines the number of pixels in width 
+  # that the object occupies in the camera's image given obj_distance 
+  obj_realworld_pixels: 180
+
+  # obj_realworld_width determines the width of the object in the real world in cm
+  obj_realworld_width: 6.5
+
+  # num_frames_for_average determines the number of images to calculate the x-average
+  num_frames_for_average: 10
+
+  # conveyor_distance_threshold determines a maximum 
+  # allowed distance in meters from the camera to the conveyor.
+  # Measurements in x above this value are ignored.
+  conveyor_distance_threshold: 1
+
+  # enable visualization of detected conveyor
+  visualization_enabled: true
+
+
+  # an attempt to optimize the measured distance to the conveyor belt by using a hough line transformation
+  houghlines:
+    use_hough_line_optimization: false
+  
+    # the number of frames used to calculate the mean distance from camera to conveyor while using hough lines
+    hough_lines_averaging_count: 10
+  
+    # config settings used for binarization
+    binary_threshold_min: 10
+    binary_threshold_max: 25
+    binary_threshold_average_min: 69
+    binary_threshold_average_max: 85
+    max_binary_value: 255
+    threshold_type: 1 # binary, inverted
+
+    # config settings for closing
+    morph_element: 1
+    morph_size: 2
+    morph_operator: 1
+    
+    # canny threshold for edge detection
+    canny_threshold: 200
+
+    # number of frames to average over lines
+    line_mean: 30
+
+    # conveyor real world properties, see above
+    conveyor_realworld_distance: 14.6
+    conveyor_realworld_pixels: 91
+    conveyor_realworld_width: 3
