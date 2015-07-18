@@ -405,7 +405,6 @@
     (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?cs))
     (needed-task-lock (task-id ?task-id) (action DELIVER) (place ?ds))
   )
-  (synced-modify ?of in-production (- ?ip 1) in-delivery (+ ?id 1))
 )
   
 (defrule prod-find-missing-mps-exploration-catch-up
