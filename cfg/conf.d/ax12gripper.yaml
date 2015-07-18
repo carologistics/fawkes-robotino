@@ -32,7 +32,10 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     z_speed: 1
 
     # Z position given by incremental or decremental values from the plugin
-    z_position: 20
+    z_position: 19
+    # lower and upper bounds of z-alignment in mm
+    z_lower_bound: 0
+    z_upper_bound: 20
 
     # upwards and downwards velocity in rad/s needed
     # to calculate the needed rotation time
