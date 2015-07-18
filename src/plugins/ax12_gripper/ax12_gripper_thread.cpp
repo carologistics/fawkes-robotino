@@ -733,8 +733,8 @@ void GripperAX12AThread::load_config()
   __cfg_angle_for_holds_puck   = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
   __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
   __cfg_z_speed_as_percent        = config->get_float((__gripper_cfg_prefix + "z_speed").c_str());
-  __cfg_z_downwards_real_velocity = config->get_float("/gripper_z_downwards_real_vel");
-  __cfg_z_upwards_real_velocity   = config->get_float("/gripper_z_upwards_real_vel");
+  __cfg_z_downwards_real_velocity = config->get_float(__gripper_cfg_prefix + "gripper_z_downwards_real_vel");
+  __cfg_z_upwards_real_velocity   = config->get_float(__gripper_cfg_prefix + "gripper_z_upwards_real_vel");
   __cfg_z_position                = config->get_uint((__gripper_cfg_prefix + "z_position").c_str());
   __cfg_z_lower_bound             = config->get_uint((__gripper_cfg_prefix + "z_lower_bound").c_str());
   __cfg_z_upper_bound             = config->get_uint((__gripper_cfg_prefix + "z_upper_bound").c_str());
