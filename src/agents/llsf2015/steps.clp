@@ -104,6 +104,21 @@
   )
 )
 
+(defrule step-deliver-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  (task (name deliver) (state running))
+  ?step <- (step (name insert) (state wait-for-activation) (task-priority ?p)
+		 (machine ?mps) (machine-feature ?feature) (base ?color))
+  ?state <- (state STEP-STARTED)
+  (team-color ?team)
+  (holding ?produced-id)
+  (product (id ?produced-id) (product-id ?product-id))
+  ?of <- (order (product-id ?product-id) (in-production ?ip) (in-delivery ?id))
+  =>
+  (synced-modify ?of in-production (- ?ip 1) in-delivery (+ ?id 1))
+)
+
 ; (defrule step-get-base-finish
 ;   "Base retrieved from BS"
 ;   (declare (salience ?*PRIORITY-STEP-FINISH*))
@@ -176,7 +191,7 @@
   (bind ?search-tags (utils-get-tags-str-still-to-explore ?team))
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill explore_zone) (args min_x (nth$ 1 ?zone-boarders)
-                                                       max_x (nth$ 2 ?zone-boarders)
+                        max_x (nth$ 2 ?zone-boarders)
                                                        min_y (nth$ 3 ?zone-boarders)
                                                        max_y (nth$ 4 ?zone-boarders)
                                                        search_tags ?search-tags)
