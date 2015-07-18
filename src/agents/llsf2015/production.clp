@@ -124,7 +124,7 @@
     (step (name get-base) (id (+ ?task-id 1))
       (task-priority ?*PRIORITY-PREFILL-RS*)
       (machine ?bs) (machine-feature CONVEYOR)
-      (base SILVER))
+      (base RED))
     (step (name insert) (id (+ ?task-id 2))
       (task-priority ?*PRIORITY-PREFILL-RS*)
       (machine ?rs) (machine-feature SLIDE))
