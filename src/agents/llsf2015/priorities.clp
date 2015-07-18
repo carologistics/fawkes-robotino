@@ -21,6 +21,7 @@
 
   ; production order priorities
   ?*PRIORITY-PREFILL-CS* = 50
+  ?*PRIORITY-CLEAR-CS* = 55
   ?*PRIORITY-PREFILL-RS* = 40
   ?*PRIORITY-ADD-FIRST-RING* = 80
   ?*PRIORITY-PRODUCE-C0* = 90

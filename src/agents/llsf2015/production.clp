@@ -406,6 +406,50 @@
     (needed-task-lock (task-id ?task-id) (action DELIVER) (place ?ds))
   )
 )
+
+(defrule prod-remove-product-with-expired-order
+  "If we couldn't deliver a product in time and it is still in the cs, we have to clear the cs. In the same task we can fill the cs with a cap again"
+  (declare (salience ?*PRIORITY-CLEAR-CS*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (holding NONE)
+  (game-time $?game-time)
+  (machine (mtype CS) (produced-id ?produced-id&~0)
+           (name ?cs) (team ?team-color)
+           (state ~DOWN&~BROKEN))
+  (product
+    (id ?produced-id)
+    (product-id ?product-id)
+    (cap ?cap-color)
+  )
+  ;check that the task was not rejected before
+  (not (and (task (name clear-cs) (state rejected) (id ?rej-id))
+            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-CLEAR-CS*))))
+  (order (product-id ?product-id)
+         (end ?end&:(< ?end (nth$ 1 ?game-time)))
+  )
+  =>
+  (printout t "PROD: Clear " ?cs " and fill it again because the order is over" crlf)
+  (bind ?task-id (random-id))
+  (assert (task (name clear-cs) (id ?task-id) (state proposed)
+                (steps (create$ (+ ?task-id 1) (+ ?task-id 2) (+ ?task-id 3)))
+                (priority ?*PRIORITY-CLEAR-CS*))
+    (step (name get-output) (id (+ ?task-id 1))
+          (task-priority ?*PRIORITY-CLEAR-CS*)
+          (machine ?cs))
+    (step (name insert) (id (+ ?task-id 2))
+          (task-priority ?*PRIORITY-CLEAR-CS*)
+          (machine ?cs)
+          (machine-feature CONVEYOR))
+    (step (name get-output) (id (+ ?task-id 3))
+          (task-priority ?*PRIORITY-CLEAR-CS*)
+          (machine ?cs))
+    (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?cs))
+    (needed-task-lock (task-id ?task-id) (action FILL_CAP) (place ?cs))
+  )
+)
   
 (defrule prod-find-missing-mps-exploration-catch-up
   "If we have not found all mps until the production phase, we have to find them now."
