@@ -123,7 +123,7 @@
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
   (game-time $?game-time)
-  (task (name deliver) (state running)))
+  (task (name deliver) (state running))
   ?step <- (step (name get-output|insert) (state running))
   ?state <- (state SKILL-EXECUTION)
   (holding ?produced-id)
