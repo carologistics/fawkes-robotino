@@ -16,7 +16,7 @@
 (deffunction mps-instruction-base-station (?machine ?team-color ?base-color)
   (bind ?instruction (mps-instruction-get-prepare-machine-msg ?machine ?team-color))
   (bind ?bs-inst (pb-create "llsf_msgs.PrepareInstructionBS"))
-  (pb-set-field ?bs-inst "side" OUTPUT)
+  (pb-set-field ?bs-inst "side" INPUT)
   (pb-set-field ?bs-inst "color" (sym-cat BASE_ ?base-color))
   (pb-set-field ?instruction "instruction_bs" ?bs-inst)
   (printout t ?base-color crlf)
