@@ -44,7 +44,7 @@ skillenv.skill_module(_M)
 local tfm = require("tf_module")
 local sensor_index = 0
 local sensor_threshold = 0.07
-local MIN_VIS_HIST = 100 --TODO other fix
+local MIN_VIS_HIST = 60 --TODO other fix
 
 if config:exists("/hardware/robotino/distance_front/index") then
    sensor_index = config:get_uint("/hardware/robotino/distance_front/index")
