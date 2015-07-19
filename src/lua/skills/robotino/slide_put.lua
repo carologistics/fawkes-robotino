@@ -54,13 +54,13 @@ fsm:add_transitions{
 
 
 function GOTO_SLIDE:init()
-   self.skills[1].y = -0.265 --TODO measure exact value
+   self.skills[1].y = -0.26 --TODO measure exact value
    self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
    self.skills[1].vel_trans = 0.15
 end
 
 function APPROACH_SLIDE:init()
-   self.skills[1].x = 0.07 --TODO measure exact value
+   self.skills[1].x = 0.065 --TODO measure exact value
 end
 
 function STORE_PRODUCT:init()
