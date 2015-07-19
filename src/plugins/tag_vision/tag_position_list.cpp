@@ -20,6 +20,9 @@
  *  Read the full text in the LICENSE.GPL_WRE file in the doc directory.
  */
 
+#include <utils/math/angle.h>
+#include <tf/types.h>
+
 #include "tag_position_list.h"
 
 /** @class TagPositionList "tag_position_list.h"
@@ -99,6 +102,62 @@ TagPositionList::~TagPositionList()
   }
 }
 
+alvar::Pose
+TagPositionList::get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if)
+{
+  alvar::Pose pose;
+//  local x   = end_point_1.x + ( end_point_2.x - end_point_1.x ) / 2
+//  local y   = end_point_1.y + ( end_point_2.y - end_point_1.y ) / 2
+//  local ori = math.normalize_mirror_rad( bearing )
+//
+//  return {x=x, y=y, ori=ori}
+  double x = laser_line_if->end_point_1(0) + ( laser_line_if->end_point_2(0) - laser_line_if->end_point_1(0) ) / 2;
+  double y = laser_line_if->end_point_1(1) + ( laser_line_if->end_point_2(1) - laser_line_if->end_point_1(1) ) / 2;
+  double ori = fawkes::normalize_mirror_rad( laser_line_if->bearing() );
+
+  pose.translation[0] = x;
+  pose.translation[1] = y;
+  pose.translation[2] = 0.26;
+
+  fawkes::tf::Quaternion f_q = fawkes::tf::create_quaternion_from_yaw(ori);
+  double q[4];
+
+  q[3] = f_q[0];
+  q[0] = f_q[1];
+  q[1] = f_q[2];
+  q[2] = f_q[3];
+
+  pose.SetQuaternion(q);
+
+  return pose;
+}
+
+alvar::Pose
+TagPositionList::get_nearest_laser_line_pose(alvar::Pose tag_pose, std::vector<fawkes::LaserLineInterface*> *laser_line_ifs)
+{
+  // get first ll as clostes
+  alvar::Pose ll_pose_clostest = get_laser_line_pose( laser_line_ifs->at(0) );
+  // for each laser_line
+  for (unsigned int i = 1; i < laser_line_ifs->size(); ++i) {
+    // get centeroid
+    // transform to what we need ;)
+    alvar::Pose ll_pose_current = get_laser_line_pose( laser_line_ifs->at(0) );
+    // check if clostest (translation)
+    double clostest_dist =  ll_pose_clostest.translation[0] * ll_pose_clostest.translation[0] +
+                            ll_pose_clostest.translation[1] * ll_pose_clostest.translation[1] +
+                            ll_pose_clostest.translation[2] * ll_pose_clostest.translation[2];
+    double current_dist  =  ll_pose_current.translation[0] * ll_pose_current.translation[0] +
+                            ll_pose_current.translation[1] * ll_pose_current.translation[1] +
+                            ll_pose_current.translation[2] * ll_pose_current.translation[2];
+    // save closest
+    if (current_dist < clostest_dist) {
+      ll_pose_clostest = ll_pose_current;
+    }
+  }
+  // return closest
+  return ll_pose_clostest;
+}
+
 /**
  * Assignes every marker found to an interface. The interface will stay the same for
  * a marker as long as the marker is considered seen (visibility history > 0). It
@@ -106,7 +165,7 @@ TagPositionList::~TagPositionList()
  *
  * @param marker_list The detected markers.
  */
-void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_list)
+void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_list, std::vector<fawkes::LaserLineInterface*> *laser_line_ifs)
 {
   for(alvar::MarkerData& marker: *marker_list)
   {
@@ -115,6 +174,7 @@ void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_l
     if(tmp_pose.translation[0]<1 && tmp_pose.translation[1]<1 && tmp_pose.translation[2]<1){
         continue;
     }
+    tmp_pose = get_nearest_laser_line_pose(tmp_pose, laser_line_ifs);
     // get the id of the marker
     u_int32_t marker_id=marker.GetId();
 

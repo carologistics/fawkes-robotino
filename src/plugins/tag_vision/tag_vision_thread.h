@@ -31,6 +31,8 @@
 #include <aspect/vision.h>
 #include <aspect/tf.h>
 
+#include <vector>
+
 // config handling
 #include <config/change_handler.h>
 
@@ -50,6 +52,7 @@
 
 //interface
 #include <interfaces/TagVisionInterface.h>
+#include <interfaces/LaserLineInterface.h>
 
 #include "tag_position_list.h"
 
@@ -120,6 +123,7 @@ class TagVisionThread
 
   /// blackboard communication
   TagPositionList *tag_interfaces;
+  std::vector<fawkes::LaserLineInterface*> *laser_line_ifs_;
 
   /// Width of the image
   unsigned int img_width;

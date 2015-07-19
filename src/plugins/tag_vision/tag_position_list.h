@@ -31,6 +31,9 @@
 #include <alvar/Marker.h>
 #include <logging/logger.h>
 
+#include <interfaces/LaserLineInterface.h>
+
+
 #include "tag_position_interface_helper.h"
 
 
@@ -42,7 +45,7 @@ public:
   /// Destructor
   ~TagPositionList();
   /// Update the blackboard with the stored data
-  void update_blackboard(std::vector<alvar::MarkerData> *marker_list);
+  void update_blackboard(std::vector<alvar::MarkerData> *marker_list, std::vector<fawkes::LaserLineInterface*> *laser_line_ifs);
 
 private:
   /// How many markers can be detected at the same time
@@ -59,6 +62,9 @@ private:
   fawkes::Clock *clock_;
   /// Publisher for the transforms
   fawkes::tf::TransformPublisher *tf_publisher_;
+
+  alvar::Pose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
+  alvar::Pose get_nearest_laser_line_pose(alvar::Pose tag_pose, std::vector<fawkes::LaserLineInterface*> *laser_line_ifs);
 };
 
 #endif // TAG_POSITION_LIST_H

@@ -25,6 +25,7 @@
 
 #include <opencv/cv.h>
 #include <math.h>
+#include <string>
 
 #define CFG_PREFIX "/plugins/tag_vision/"
 #define IMAGE_CAHNNELS 3
@@ -130,6 +131,15 @@ TagVisionThread::init()
     this->markers_ = new std::vector<alvar::MarkerData>();
     this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,frame,this->name(),this->logger, this->clock, this->tf_publisher);
 
+    // get laser-line interfaces
+    laser_line_ifs_ = new std::vector<fawkes::LaserLineInterface*>();
+    for (int i = 1; i <= 8; i++) {
+      std::string if_name = "/laser-lines/" + i;
+//      std::string if_name = "/laser-lines/" + std::to_string(i);
+
+      fawkes::LaserLineInterface *ll_if = blackboard->open_for_reading<fawkes::LaserLineInterface>(if_name.c_str());
+      laser_line_ifs_->push_back(ll_if);
+    }
 }
 
 void
@@ -148,6 +158,12 @@ TagVisionThread::finalize()
   cvReleaseImage(&ipl);
   ipl = NULL;
   delete this->tag_interfaces;
+
+  while( ! laser_line_ifs_->empty() ) {
+    blackboard->close( laser_line_ifs_->back() );
+    laser_line_ifs_->pop_back();
+  }
+  delete laser_line_ifs_;
 }
 
 void
@@ -177,7 +193,7 @@ TagVisionThread::loop()
     //get marker from img
     get_marker();
 
-    this->tag_interfaces->update_blackboard(this->markers_);
+    this->tag_interfaces->update_blackboard(this->markers_, laser_line_ifs_);
 
     cfg_mutex.unlock();
 }
