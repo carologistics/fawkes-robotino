@@ -42,7 +42,7 @@ skillenv.skill_module(_M)
 
 function relgotoz_allowed(self)
    local cur_z = gripper_if:z_position()
-   local desired_z = self.fsm.vars.z_position
+   local desired_z = self.fsm.vars.z_position or 0
    local upper_bound = gripper_if:z_upper_bound()
    local lower_bound = gripper_if:z_lower_bound()
    return (cur_z + desired_z) <= upper_bound and (cur_z + desired_z) >= lower_bound
