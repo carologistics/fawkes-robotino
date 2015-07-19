@@ -471,17 +471,16 @@ bool MachineSignalPipelineThread::bb_switch_is_enabled(SwitchInterface *sw)
 {
   bool rv = sw->is_enabled();
   while (!sw->msgq_empty()) {
-    SwitchInterface::DisableSwitchMessage *msg = sw->msgq_first_safe(msg);
-    if (msg) {
+    if (sw->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
       rv = false;
-    }
-    msg = sw->msgq_first_safe(msg);
-    if (msg) {
+    } else if (sw->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
       rv = true;
     }
+
     sw->msgq_pop();
   }
   if (rv != sw->is_enabled()) {
+    logger->log_info(name(), "*** enabled: %s", rv ? "yes" : "no");
     sw->set_enabled(rv);
     sw->write();
   }
