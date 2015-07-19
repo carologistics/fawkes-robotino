@@ -147,7 +147,7 @@ function cleanup()
    bb_output:set_visibility_history(bb_signal:visibility_history())
    bb_output:set_ready(bb_signal:is_ready())
 
-   --bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.DisableSwitchMessage:new())
+   bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.DisableSwitchMessage:new())
    --bb_sw_laser:msgq_enqueue_copy(bb_sw_laser.DisableSwitchMessage:new())
 end
 
