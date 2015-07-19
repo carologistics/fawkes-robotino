@@ -89,7 +89,7 @@ function GRAB_PRODUCT:init()
 end
 
 function LEAVE_SHELF:init()
-   self.skills[1].x = -0.1
+   self.skills[1].x = -0.2
 end
 
 function CENTER_PUCK:init()
