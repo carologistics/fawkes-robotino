@@ -1345,6 +1345,7 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
             if (hdiff < roi_G->height) {
               roi_G->start.y += hdiff/2;
               roi_G->height -= hdiff;
+              if (cfg_debug_processing_) logger->log_info(name(), "laser adapt red: %d", hdiff);
             }
           }
           else if (roi_R->height > laser_roi.width && badness_R > badness_G) {
@@ -1352,6 +1353,7 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
             if (hdiff < roi_R->height) {
               roi_R->start.y += hdiff/2;
               roi_R->height -= hdiff;
+              if (cfg_debug_processing_) logger->log_info(name(), "laser adapt green: %d", hdiff);
             }
           }
 
@@ -1361,6 +1363,9 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
             signal.yellow_roi = shared_ptr<ROI>(roi_Y);
             signal.green_roi = shared_ptr<ROI>(roi_G);
             rv = new SignalState::signal_rois_t_(signal);
+          }
+          else {
+            if (cfg_debug_processing_) logger->log_info(name(), "threw out r+g");
           }
         }
         else if (roi_R && !roi_G) {
