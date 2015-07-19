@@ -92,7 +92,7 @@
   (time $?now)
   ?mps-inst <- (mps-instruction (machine ?machine) 
                                 (seq ?seq&:(>= ?seq ?*MIN-TIMES-TO-SEND-MPS-INSTRUCTIONS*)))
-  (machine (name ?machine) (state PREPARED|READY-AT-OUTPUT))
+  (machine (name ?machine) (state PROCESSING|PREPARED|READY-AT-OUTPUT))
   =>
   (printout t "Mps " ?machine " successfully instructed" crlf)
   (retract ?mps-inst)
