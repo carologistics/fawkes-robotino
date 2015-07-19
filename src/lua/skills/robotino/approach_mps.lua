@@ -44,7 +44,7 @@ skillenv.skill_module(_M)
 local tfm = require("tf_module")
 local sensor_index = 0
 local sensor_threshold = 0.07
-local MIN_VIS_HIST = 60 --TODO other fix
+local MIN_VIS_HIST = 10
 
 if config:exists("/hardware/robotino/distance_front/index") then
    sensor_index = config:get_uint("/hardware/robotino/distance_front/index")
@@ -54,6 +54,7 @@ fsm:define_states{ export_to=_M, closure={sensor=sensor, sensor_index=sensor_ind
    {"INIT", JumpState},
    {"APPROACH_WITH_INFRARED", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
    {"SETTLE", JumpState},
+   {"CHECK_VIS_HIST", JumpState},
    {"APPROACH_WITH_CAM", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
@@ -61,8 +62,9 @@ fsm:add_transitions{
    {"INIT", "SETTLE", cond="vars.vision == true"},
    {"INIT", "FAILED", cond="not conveyor_0:has_writer()", desc="Conveyor vision disabled"},
    {"INIT", "APPROACH_WITH_INFRARED", cond=true},
-   {"SETTLE", "APPROACH_WITH_CAM", cond="conveyor_0:visibility_history() >= MIN_VIS_HIST"},
-   {"SETTLE", "FAILED", timeout=1},
+   {"SETTLE", "CHECK_VIS_HIST", timeout=1},
+   {"CHECK_VIS_HIST", "APPROACH_WITH_CAM", cond="conveyor_0:visibility_history() >= MIN_VIS_HIST"},
+   {"CHECK_VIS_HIST", "FAILED", timeout=1},
    {"APPROACH_WITH_INFRARED", "FINAL", cond="sensor:distance(sensor_index) <= vars.sensor_threshold and sensor:distance(sensor_index) > 0"}
 }
 
