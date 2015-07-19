@@ -88,10 +88,12 @@
   (unwatch rules lock-receive-message)
   (unwatch rules worldmodel-sync-receive-worldmodel)
   (unwatch rules skill-update-nochange)
+  (unwatch rules time-retract)
   (unwatch facts protobuf-msg)
   (unwatch facts active-robot)
   (unwatch facts pose)
   (unwatch facts timer)
+  (unwatch facts time)
   (unwatch facts skill-update)
 )
 
