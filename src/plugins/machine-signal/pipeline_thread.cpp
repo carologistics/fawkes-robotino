@@ -936,7 +936,7 @@ void MachineSignalPipelineThread::loop()
         }
       }
       catch (OutOfBoundsException &e){
-        logger->log_error(name(), "Signal at %d,%d: Invalid ROI: %s",
+        logger->log_debug(name(), "Signal at %d,%d: Invalid ROI: %s",
           signal_it->red_roi->start.x, signal_it->red_roi->start.y, e.what());
       }
       signal_it++;
