@@ -103,9 +103,21 @@
   (printout t "Inserted product " ?product-id " to have a ring assembled in the RS" crlf)
   (assert (holding NONE))
   ; there is no relevant waiting time until the cs has finished the loading step right?
-  (synced-modify ?mf produced-id ?product-id)
+  (synced-modify ?mf loaded-id ?product-id)
   (synced-modify ?rsf bases-loaded (- ?bl ?rb))
   (synced-add-to-multifield ?pf rings ?ring-color)
+)
+
+(defrule wm-ring-produced
+  (declare (salience ?*PRIORITY-WM*))
+  ?mf <- (machine
+    (name ?rs)
+    (state READY-AT-OUTPUT)
+    (loaded-id ?produced-id&~0)
+    (produced-id 0)
+  )
+  =>
+  (synced-modify ?mf loaded-id 0 produced-id ?produced-id)
 )
 
 (defrule wm-insert-product-into-cs-final
