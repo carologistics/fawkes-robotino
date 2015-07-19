@@ -94,7 +94,7 @@ plugins/machine_signal:
     scangrid_y_offset: 2
 
   red_off:
-    visualize: false
+    visualize: true
     reference_color:   [0x30, 0x0, 0,
                         0x20, 0x2, 0x2,
                         0x30, 0x14, 0x19]
@@ -123,7 +123,7 @@ plugins/machine_signal:
     scangrid_y_offset: 2
 
   green_off:
-    visualize: false
+    visualize: true
     reference_color:   [
                         0x20, 0x35, 0x0,
                         0x1a, 0x55, 0x0,
@@ -149,8 +149,8 @@ plugins/machine_signal:
     neighborhood_min_match: 5
 
   bright_light:
-    min_brightness: 150
-    min_points: 10
+    min_brightness: 140
+    min_points: 9
     neighborhood_min_match: 2
     min_area_cover: 0.1
 
