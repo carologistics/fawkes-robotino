@@ -28,7 +28,8 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "sensor", type="RobotinoSensorInterface"},
-   {v = "conveyor_0", type="Position3DInterface"}
+   {v = "conveyor_0", type="Position3DInterface"},
+   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
 
 documentation      = [==[
@@ -64,7 +65,7 @@ fsm:add_transitions{
    {"INIT", "APPROACH_WITH_INFRARED", cond=true},
    {"SETTLE", "CHECK_VIS_HIST", timeout=1},
    {"CHECK_VIS_HIST", "APPROACH_WITH_CAM", cond="conveyor_0:visibility_history() >= MIN_VIS_HIST"},
-   {"CHECK_VIS_HIST", "FAILED", timeout=1},
+   {"CHECK_VIS_HIST", "FAILED", timeout=4},
    {"APPROACH_WITH_INFRARED", "FINAL", cond="sensor:distance(sensor_index) <= vars.sensor_threshold and sensor:distance(sensor_index) > 0"}
 }
 
@@ -76,6 +77,9 @@ end
 
 function APPROACH_WITH_CAM:init()
    self.skills[1].x = tfm.transform({x=conveyor_0:translation(0),y=0,ori=0}, "/cam_conveyor", "/gripper").x
+   if gripper_if:is_holds_puck() then
+      self.skills[1].x = self.skills[1].x + 0.02
+   end
    self.skills[1].vel_trans = 0.05
    self.skills[1].TOLERANCE = { x=0.002, y=0.002, ori=0.01 }
 end
