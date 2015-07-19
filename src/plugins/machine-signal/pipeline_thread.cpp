@@ -855,7 +855,7 @@ void MachineSignalPipelineThread::loop()
       laser_signals.sort([&laser_roi, this](const SignalState::signal_rois_t_ &a, const SignalState::signal_rois_t_ &b) -> bool {
         return this->signal_beauty(a, laser_roi) >= this->signal_beauty(b, laser_roi);
       });
-      signal_rois->push_back(laser_signals.front());
+      if (!laser_signals.empty()) signal_rois->push_back(laser_signals.front());
     }
 
 
