@@ -75,7 +75,7 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond=no_tag_vision, desc="Tag vision disabled"},
    {"INIT", "CHECK_TAG", cond=true},
    {"CHECK_TAG", "FAILED", cond="not tag_visible()", desc="The given tag_id is not visible"},
-   {"CHECK_TAG", "FINAL", cond=tag_visible, desc="The given tag_id is not visible"},
+   {"CHECK_TAG", "FINAL", cond=tag_visible, desc="The given tag_id is visible"},
 }
 
 function CHECK_TAG:init()
