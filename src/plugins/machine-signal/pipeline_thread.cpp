@@ -96,10 +96,8 @@ MachineSignalPipelineThread::MachineSignalPipelineThread()
   combined_colormodel_ = NULL;
   last_second_ = NULL;
   buflen_ = 0;
-  bb_delivery_switch_ = NULL;
   bb_enable_switch_ = NULL;
   cfg_enable_switch_ = false;
-  cfg_delivery_mode_ = false;
 
   pos2pixel_ = NULL;
   cfg_cam_angle_y_ = 0;
@@ -271,7 +269,6 @@ void MachineSignalPipelineThread::init()
   cfg_fps_ = config->get_uint(CFG_PREFIX "/fps");
   cfg_debug_blink_ = config->get_bool(CFG_PREFIX "/debug_blink");
   cfg_debug_processing_ = config->get_bool(CFG_PREFIX "/debug_processing");
-  cfg_delivery_mode_ = config->get_bool(CFG_PREFIX "/delivery_mode");
   cfg_debug_tf_ = config->get_bool(CFG_PREFIX "/debug_tf");
   
   cfg_lasercluster_frame_ = config->get_string(CFG_PREFIX "/laser_frame");
@@ -356,10 +353,6 @@ void MachineSignalPipelineThread::init()
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
 
-  bb_delivery_switch_ = blackboard->open_for_writing<SwitchInterface>("/machine-signal/delivery-mode");
-  bb_delivery_switch_->set_enabled(cfg_delivery_mode_);
-  bb_delivery_switch_->write();
-
   bb_laser_clusters_[0] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/1");
   bb_laser_clusters_[1] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/2");
   bb_laser_clusters_[2] = blackboard->open_for_reading<Position3DInterface>("/laser-cluster/ampel/3");
@@ -422,7 +415,6 @@ void MachineSignalPipelineThread::finalize()
   }
 
   blackboard->close(bb_enable_switch_);
-  blackboard->close(bb_delivery_switch_);
   for (Position3DInterface *iface : bb_laser_clusters_) {
     blackboard->close(iface);
   }
@@ -456,12 +448,6 @@ bool MachineSignalPipelineThread::lock_if_new_data()
     data_mutex_.unlock();
     return false;
   }
-}
-
-
-bool MachineSignalPipelineThread::get_delivery_mode()
-{
-  return cfg_delivery_mode_;
 }
 
 
@@ -745,12 +731,6 @@ void MachineSignalPipelineThread::loop()
 
   cfg_enable_switch_ = bb_switch_is_enabled(bb_enable_switch_);
 
-  { bool delivery_mode_new = bb_switch_is_enabled(bb_delivery_switch_);
-  if (delivery_mode_new != cfg_delivery_mode_) {
-    new_data_ = true;
-    cfg_delivery_mode_ = delivery_mode_new;
-  } }
-
   if (cfg_enable_switch_) {
 
     std::list<ROI> *rois_R, *rois_G;
@@ -858,12 +838,11 @@ void MachineSignalPipelineThread::loop()
           best_match->update_geometry(signal_it);
         }
         else { // No historic match was found for the current signal
-          unsigned int history_len = cfg_delivery_mode_ ? buflen_ : 0;
           SignalState::historic_signal_rois_t_ new_signal;
-          logger->log_debug(name(), "new signal: dist=%f, history_len=%d", dist_min, history_len);
-          new_signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), history_len));
-          new_signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), history_len));
-          new_signal.green_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->green_roi), history_len));
+          logger->log_debug(name(), "new signal: dist=%f, history_len=%d", dist_min, 0);
+          new_signal.red_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->red_roi), 0));
+          new_signal.yellow_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->yellow_roi), 0));
+          new_signal.green_roi = shared_ptr<HistoricSmoothROI>(new HistoricSmoothROI(*(signal_it->green_roi), 0));
           SignalState *cur_state = new SignalState(buflen_, logger, new_signal);
 
           known_signals_.push_front(*cur_state);
@@ -936,16 +915,9 @@ void MachineSignalPipelineThread::loop()
       known_signals_.pop_back();
 
     // Then sort geometrically
-    if (cfg_delivery_mode_) {
-      // Ordering is critical here
-      best_signal_ = known_signals_.begin();
-      known_signals_.sort(SignalState::compare_signal_states_by_x());
-    }
-    else {
-      known_signals_.sort(SignalState::compare_signal_states_by_area());
-      best_signal_ = known_signals_.begin();
-    }
-    ///*
+    known_signals_.sort(SignalState::compare_signal_states_by_area());
+    best_signal_ = known_signals_.begin();
+
     if (unlikely(best_signal_ != known_signals_.end() && cfg_debug_blink_)) {
       logger->log_info(name(), best_signal_->get_debug_R());
       logger->log_info(name(), best_signal_->get_debug_Y());
@@ -1213,26 +1185,6 @@ ROI *MachineSignalPipelineThread::merge_rois_in_roi(const ROI &outer_roi, list<R
 }
 
 
-/*map<ROI, SignalState::signal_rois_t_, MachineSignalPipelineThread::compare_rois_by_x_> *
-MachineSignalPipelineThread::merge_rois_in_laser(
-  set<WorldROI, SignalState::compare_rois_by_area> *laser_rois,
-  list<ROI> *rois_R, list<ROI> *rois_G)
-{
-  map<ROI, SignalState::signal_rois_t_, compare_rois_by_x_> rv = nullptr;
-
-  // Match ROIs to laser clusters
-  for (WorldROI const &cluster_roi : *cluster_rois_) {
-    ROI *merged_R = merge_rois_in_roi(cluster_roi, rois_R);
-    ROI *merged_G = merge_rois_in_roi(cluster_roi, rois_G);
-    if (merged_R) drawn_rois_.push_back(merged_R);
-    if (merged_G) drawn_rois_.push_back(merged_G);
-    pair<ROI, SignalState::signal_rois_t_> cluster_signal(cluster_roi, {merged_R, nullptr, merged_G});
-    rv.insert(cluster_signal);
-  }
-  return rv;
-}*/
-
-
 std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_laser_signals(
   std::list<ROI> *rois_R, std::list<ROI> *rois_G)
 {
@@ -1414,139 +1366,6 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_lase
     if (unlikely(cfg_debug_processing_)) logger->log_debug(name(), "laser proc: %s", debug_proc_string_.c_str());
   }
   return rv;
-}
-
-std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_delivery_signals(
-  std::list<ROI> *rois_R, std::list<ROI> *rois_G)
-{
-  // First try to build signal ROIs based on laser clusters.
-  std::list<SignalState::signal_rois_t_> *rv = create_laser_signals(rois_R, rois_G);
-
-  if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
-    drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
-  }
-
-  std::list<ROI>::iterator it_R = rois_R->begin();
-
-  for (it_R = rois_R->begin(); it_R != rois_R->end(); ++it_R) {
-
-
-    bool found_some_black = false;
-    try {
-
-      shared_ptr<ROI> roi_R = shared_ptr<ROI>(new ROI(*it_R));
-
-      long int start_x, start_y, width, height;
-
-      start_y = (long int)it_R->start.y - (long int)it_R->width/3;
-      if (start_y < 0) start_y = 0;
-      height = it_R->width/2;
-      if (start_y + height > cam_height_) height = cam_height_ - start_y;
-      if (start_y > cam_height_) start_y = cam_height_;
-      ROI check_black_top(*it_R);
-      check_black_top.set_start(it_R->start.x, start_y);
-      check_black_top.set_height(height);
-      check_black_top.color = C_BACKGROUND;
-
-      if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
-        drawn_rois_.push_back(check_black_top);
-
-      black_scangrid_->set_roi(&check_black_top);
-      std::list<ROI> *black_rois_top = black_classifier_->classify();
-
-      if (!black_rois_top->empty()) {
-        found_some_black = true;
-        ROI black_top = *(black_rois_top->begin());
-        if (unlikely(cfg_tuning_mode_)) {
-          if (cfg_draw_processed_rois_) {
-            drawn_rois_.push_back(black_top);
-            delete black_rois_top;
-          }
-          else drawn_rois_.insert(drawn_rois_.end(), black_rois_top->begin(), black_rois_top->end());
-        }
-
-        if (black_top.width > roi_R->width * 0.5)
-          roi_R->width = (black_top.width + roi_R->width) / 2;
-        //roi_R->start.y = black_top.start.y + black_top.height;
-      }
-      roi_R->height = roi_R->width;
-
-      start_y = (long int)roi_R->start.y + (long int)roi_R->width; // add width since it's more reliable than height
-      shared_ptr<ROI> roi_Y = shared_ptr<ROI>(new ROI(
-        roi_R->start.x, start_y, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height));
-      roi_Y->color = C_YELLOW;
-      shared_ptr<ROI> roi_G = shared_ptr<ROI>(new ROI(
-        roi_R->start.x, start_y + roi_R->height, roi_R->width, roi_R->height, roi_R->image_width, roi_R->image_height));
-      roi_G->color = C_GREEN;
-
-      ROI check_black_bottom(*roi_Y);
-      start_x = (long int)roi_Y->start.x - (long int)roi_Y->width/4;
-      if (start_x < 0) start_x = 0;
-      if (start_x > cam_width_) start_x = cam_width_;
-      width = roi_Y->width * 1.2;
-      if (start_x + width > cam_width_) width = cam_width_ - start_x;
-      start_y = roi_Y->start.y + roi_Y->height/2;
-      if (start_y < 0) start_y = 0;
-      if (start_y > cam_height_) start_y = cam_height_;
-      height = roi_Y->height * 2.5;
-      if (start_y + height > cam_height_) height = cam_height_ - start_y;
-      check_black_bottom.set_start(start_x, start_y);
-      check_black_bottom.set_width(width);
-      check_black_bottom.set_height(height);
-      check_black_bottom.color = C_BACKGROUND;
-
-      if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_))
-        drawn_rois_.push_back(check_black_bottom);
-
-      black_scangrid_->set_roi(&check_black_bottom);
-      std::list<ROI> *black_rois_bottom = black_classifier_->classify();
-
-      if (!black_rois_bottom->empty()) {
-        found_some_black = true;
-        black_rois_bottom->sort(sort_rois_by_y_);
-        ROI black_bottom = *(black_rois_bottom->begin());
-        if (unlikely(cfg_tuning_mode_)) {
-          if (cfg_draw_processed_rois_) {
-            drawn_rois_.push_back(black_bottom);
-            delete black_rois_bottom;
-          }
-          else drawn_rois_.insert(drawn_rois_.end(), black_rois_bottom->begin(), black_rois_bottom->end());
-        }
-
-        unsigned int height_adj = (black_bottom.start.y - roi_R->start.y) / 3;
-        roi_R->height = height_adj;
-        roi_Y->height = height_adj;
-        roi_G->height = height_adj;
-        roi_Y->start.y = roi_R->start.y + roi_R->height;
-        roi_G->start.y = roi_Y->start.y + roi_Y->height;
-      }
-
-      if (found_some_black) {
-        SignalState::signal_rois_t_ signal_rois;
-        signal_rois.red_roi = roi_R;
-        signal_rois.yellow_roi = roi_Y;
-        signal_rois.green_roi = roi_G;
-        signal_rois.world_pos = NULL;
-        rv->push_back(signal_rois);
-      }
-    }
-    catch (OutOfBoundsException &e) {
-      logger->log_error(name(), e);
-    }
-  }
-
-  cfy_ctxt_green_1_.scanline_grid->set_roi(it_R->full_image(cam_width_, cam_height_));
-  cfy_ctxt_green_1_.scanline_grid->reset();
-
-  return rv;
-}
-
-
-bool MachineSignalPipelineThread::rois_delivery_zone(ROI &red, ROI &green) {
-  return (green.contains(red.start.x, red.start.y)
-            && green.contains(red.start.x + red.get_width(),
-                red.start.y + red.get_height()))
-            || green.width > cam_width_/4;
 }
 
 

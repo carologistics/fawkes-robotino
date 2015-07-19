@@ -52,7 +52,6 @@ MachineSignalSensorThread::MachineSignalSensorThread(MachineSignalPipelineThread
 {
   pipeline_thread_ = pipeline_thread;
   bb_signal_compat_ = NULL;
-  bb_open_delivery_gate_ = NULL;
 }
 
 void MachineSignalSensorThread::init() {
@@ -63,7 +62,6 @@ void MachineSignalSensorThread::init() {
     bb_signal_states_.push_back(blackboard->open_for_writing<RobotinoLightInterface>(iface_name.c_str()));
   }
   bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>("/machine-signal/best");
-  bb_open_delivery_gate_ = blackboard->open_for_writing<Position3DInterface>("/machine-signal/open-delivery-gate");
 }
 
 void MachineSignalSensorThread::finalize() {
@@ -72,7 +70,6 @@ void MachineSignalSensorThread::finalize() {
     blackboard->close(*bb_it);
   }
   blackboard->close(bb_signal_compat_);
-  blackboard->close(bb_open_delivery_gate_);
 }
 
 void MachineSignalSensorThread::loop() {
@@ -80,7 +77,6 @@ void MachineSignalSensorThread::loop() {
     std::list<SignalState> known_signals = pipeline_thread_->get_known_signals();
     std::list<SignalState>::iterator best_signal = pipeline_thread_->get_best_signal();
     std::list<SignalState>::iterator open_gate = known_signals.end();
-    int open_gate_visibility = INT_MIN;
 
     // Go through all known signals...
     std::list<SignalState>::iterator known_signal = known_signals.begin();
@@ -96,15 +92,6 @@ void MachineSignalSensorThread::loop() {
         bb_signal_states_[i]->set_ready(known_signal->ready);
         bb_signal_states_[i]->write();
 
-        // And possibly select an open delivery gate
-        if (pipeline_thread_->get_delivery_mode()
-            && known_signal->ready
-            && (known_signal->green == RobotinoLightInterface::LightState::ON)
-            && (known_signal->visibility > open_gate_visibility)
-            && (known_signal->world_pos)) {
-          open_gate_visibility = known_signal->visibility;
-          open_gate = known_signal;
-        }
         known_signal++;
       }
       else {
@@ -114,25 +101,6 @@ void MachineSignalSensorThread::loop() {
         bb_signal_states_[i]->set_visibility_history(-1);
         bb_signal_states_[i]->set_ready(false);
       }
-    }
-
-    if (pipeline_thread_->get_delivery_mode() && open_gate != known_signals.end()) {
-      bb_open_delivery_gate_->set_frame(open_gate->world_pos->frame_id.c_str());
-      double trans[3] = {
-          (double) open_gate->world_pos->m_floats[0],
-          (double) open_gate->world_pos->m_floats[1],
-          (double) open_gate->world_pos->m_floats[2]
-      };
-      bb_open_delivery_gate_->set_translation(trans);
-      bb_open_delivery_gate_->set_visibility_history(open_gate_visibility);
-      bb_open_delivery_gate_->write();
-    }
-    else {
-      bb_open_delivery_gate_->set_frame("");
-      double trans[3] = { 0.0, 0.0, 0.0 };
-      bb_open_delivery_gate_->set_translation(trans);
-      bb_open_delivery_gate_->set_visibility_history(-1);
-      bb_open_delivery_gate_->write();
     }
 
     bb_signal_compat_->set_red(best_signal->red);
@@ -153,8 +121,6 @@ void MachineSignalSensorThread::loop() {
     bb_signal_compat_->set_visibility_history(0);
     bb_signal_compat_->set_ready(true);
     bb_signal_compat_->write();
-    bb_open_delivery_gate_->set_visibility_history(0);
-    bb_open_delivery_gate_->write();
   }
 
   pipeline_thread_->unlock();
