@@ -26,6 +26,7 @@ depends_skills     = {"motor_move","approach_mps", "ax12gripper"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "conveyor_0", type = "Position3DInterface"},
+   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -36,9 +37,12 @@ conveyor vision
 skillenv.skill_module(_M)
 
 local TOLERANCE_Y = 0.005
-local TOLERANCE_Z = 0.004
+local TOLERANCE_Z = 0.002
 local MAX_TRIES = 4
-local Z_DEST_POS=0.005
+local Z_DEST_POS_WITH_PUCK = 0.002
+local Z_DEST_POS_WITHOUT_PUCK = 0.008
+local Z_DEST_POS = Z_DEST_POS_WITH_PUCK
+local Z_DIVISOR = 2
 
 function no_writer()
    return not conveyor_0:has_writer()
@@ -53,7 +57,7 @@ function tolerance_z_not_ok()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={MAX_TRIES=MAX_TRIES},
+   closure={MAX_TRIES=MAX_TRIES, Z_DEST_POS=Z_DEST_POS},
    {"INIT", JumpState},
    {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}}, final_to="DRIVE_YZ", fail_to="FAILED"},
    {"DRIVE_YZ", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="SETTLE", fail_to="FAILED"},
@@ -72,14 +76,12 @@ fsm:add_transitions{
    {"CHECK", "FAILED", cond="vars.counter > MAX_TRIES", desc="max tries reached"},
    {"CHECK", "DRIVE_YZ", cond=tolerance_y_not_ok, desc="tolerance not ok, align y distance"},
    {"CHECK", "SETTLE_Z", cond=true},
-   {"CHECK_Z", "FAILED", cond="vars.counter_z > MAX_TRIES", desc="max tries reached"},
    {"CHECK_Z", "DRIVE_Z", cond=tolerance_z_not_ok, desc="tolerance not ok, align z distance"},
    {"CHECK_Z", "FINAL", cond=true},
 }
 
 function INIT:init()
    self.fsm.vars.counter = 1
-   self.fsm.vars.counter_z = 1
 end
 
 function APPROACH_MPS:init()
@@ -87,21 +89,28 @@ function APPROACH_MPS:init()
 end
 
 function DRIVE_YZ:init()
+   if gripper_if:is_holds_puck() then
+      Z_DEST_POS = Z_DEST_POS_WITH_PUCK
+   else
+      Z_DEST_POS = Z_DEST_POS_WITHOUT_PUCK
+   end
    self.skills[1].y = conveyor_0:translation(1)
    self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
    self.skills[2].command = "RELGOTOZ"
-   self.skills[2].z_position = (conveyor_0:translation(2) - Z_DEST_POS) * 1000
+   if tolerance_z_not_ok() then
+      self.skills[2].z_position = ((conveyor_0:translation(2) - Z_DEST_POS) * 1000) / Z_DIVISOR
+   end
 end
 
 function DRIVE_Z:init()
    self.skills[1].command = "RELGOTOZ"
-   self.skills[1].z_position = (conveyor_0:translation(2) - Z_DEST_POS) * 1000
+   if conveyor_0:translation(2) - Z_DEST_POS < 0 then
+      self.skills[1].z_position = -1
+   else
+      self.skills[1].z_position = 1
+   end
 end
 
 function CHECK:init()
    self.fsm.vars.counter = self.fsm.vars.counter + 1
-end
-
-function CHECK_Z:init()
-   self.fsm.vars.counter_z = self.fsm.vars.counter_z + 1
 end
