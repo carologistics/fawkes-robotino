@@ -138,11 +138,11 @@ plugins/machine_signal:
 
 
   black:
-    u_reference: 120
+    u_reference: 126
     v_reference: 128
-    y_threshold: 32
+    y_threshold: 29
     u_threshold: 15
-    v_threshold: 20
+    v_threshold: 18
     min_points: 10
     neighborhood_min_match: 5
 
