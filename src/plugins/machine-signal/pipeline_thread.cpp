@@ -822,10 +822,10 @@ void MachineSignalPipelineThread::loop()
     rois_G_0 = cfy_ctxt_green_0_.classifier->classify();
 
     if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
-      drawn_rois_.insert(drawn_rois_.end(), rois_R_1->begin(), rois_R_1->end());
-      drawn_rois_.insert(drawn_rois_.end(), rois_R_0->begin(), rois_R_0->end());
-      drawn_rois_.insert(drawn_rois_.end(), rois_G_1->begin(), rois_G_1->end());
-      drawn_rois_.insert(drawn_rois_.end(), rois_G_0->begin(), rois_G_0->end());
+      if (cfy_ctxt_red_1_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_R_1->begin(), rois_R_1->end());
+      if (cfy_ctxt_red_0_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_R_0->begin(), rois_R_0->end());
+      if (cfy_ctxt_green_1_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_G_1->begin(), rois_G_1->end());
+      if (cfy_ctxt_green_0_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_G_0->begin(), rois_G_0->end());
     }
 
     // Create and group ROIs that make up the red, yellow and green lights of a signal
@@ -1178,10 +1178,10 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
 {
   std::list<SignalState::signal_rois_t_> *rv = new std::list<SignalState::signal_rois_t_>();
 
-  if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
+  /*if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
     drawn_rois_.insert(drawn_rois_.end(), rois_R->begin(), rois_R->end());
     drawn_rois_.insert(drawn_rois_.end(), rois_G->begin(), rois_G->end());
-  }
+  }*/
 
   std::list<ROI>::iterator it_R = rois_R->begin();
   uint i=0;
