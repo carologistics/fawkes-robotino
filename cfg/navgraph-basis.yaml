@@ -273,6 +273,7 @@ nodes:
       - only-copy-properties
       - tag_input: 97
       - tag_output: 98
+      - output_offset_x: 0.01
   - !unconnected
     name: M-CS2
     pos: [0, 0]
