@@ -59,11 +59,9 @@ end
 fsm:define_states{ export_to=_M,
    closure={MAX_TRIES=MAX_TRIES, Z_DEST_POS=Z_DEST_POS},
    {"INIT", JumpState},
-   {"APPROACH_MPS_FAR", SkillJumpState, skills={{approach_mps}}, final_to="ROUGH_ALIGN", fail_to="FAILED"},
-   {"ROUGH_ALIGN", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="APPROACH_MPS_NEAR", fail_to="FAILED"},
-   {"APPROACH_MPS_NEAR", SkillJumpState, skills={{approach_mps}}, final_to="DRIVE_YZ", fail_to="FAILED"},
-   {"DRIVE_YZ", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="SETTLE", fail_to="FINAL"},
-   {"DRIVE_Z", SkillJumpState, skills={{ax12gripper}}, final_to="SETTLE_Z", fail_to="FINAL"},
+   {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}}, final_to="DRIVE_YZ", fail_to="FAILED"},
+   {"DRIVE_YZ", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="SETTLE", fail_to="FAILED"},
+   {"DRIVE_Z", SkillJumpState, skills={{ax12gripper}}, final_to="SETTLE_Z", fail_to="FAILED"},
    {"SETTLE", JumpState},
    {"SETTLE_Z", JumpState},
    {"CHECK", JumpState},
@@ -72,7 +70,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond=no_writer, desc="no conveyor vision"},
-   {"INIT", "APPROACH_MPS_FAR", cond=true},
+   {"INIT", "APPROACH_MPS", cond=true},
    {"SETTLE", "CHECK", timeout=0.5},
    {"SETTLE_Z", "CHECK_Z", timeout=0.5},
    {"CHECK", "FAILED", cond="vars.counter > MAX_TRIES", desc="max tries reached"},
@@ -86,29 +84,16 @@ function INIT:init()
    self.fsm.vars.counter = 1
 end
 
-function APPROACH_MPS_FAR:init()
+function APPROACH_MPS:init()
    self.skills[1].x = 0.2
 end
 
-function ROUGH_ALIGN:init()
+function DRIVE_YZ:init()
    if gripper_if:is_holds_puck() then
       Z_DEST_POS = Z_DEST_POS_WITH_PUCK
    else
       Z_DEST_POS = Z_DEST_POS_WITHOUT_PUCK
    end
-   self.skills[1].y = conveyor_0:translation(1)
-   self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
-   self.skills[2].command = "RELGOTOZ"
-   if tolerance_z_not_ok() then
-      self.skills[2].z_position = ((conveyor_0:translation(2) - Z_DEST_POS) * 1000) / Z_DIVISOR
-   end
-end
-
-function APPROACH_MPS_NEAR:init()
-   self.skills[1].x = 0.15
-end
-
-function DRIVE_YZ:init()
    self.skills[1].y = conveyor_0:translation(1)
    self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
    self.skills[2].command = "RELGOTOZ"
