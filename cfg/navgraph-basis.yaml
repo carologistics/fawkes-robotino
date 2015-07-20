@@ -186,7 +186,6 @@ nodes:
     name: C-ins-out
     pos: [3.3, -0.55]
     properties:
-      - orientation: 1.57
       - always-copy: true
   - !unconnected
     name: C-ins-in
@@ -198,7 +197,6 @@ nodes:
     name: M-ins-out
     pos: [-3.3, -0.55]
     properties:
-      - orientation: 1.57
       - always-copy: true
   - !unconnected
     name: M-ins-in

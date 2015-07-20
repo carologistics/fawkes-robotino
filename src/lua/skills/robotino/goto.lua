@@ -26,9 +26,10 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "goto"
 fsm                = SkillHSM:new{name=name, start="INIT"}
-depends_skills     = { "relgoto" }
+depends_skills     = { "relgoto", "global_motor_move" }
 depends_interfaces = {
-   {v = "pose", type="Position3DInterface", id="Pose"}
+   {v = "pose", type="Position3DInterface", id="Pose"},
+   {v = "navigator", type="NavigatorInterface", id="Navigator"},
 }
 
 documentation      = [==[Move to a known location via place or x, y, ori.
@@ -46,21 +47,47 @@ skillenv.skill_module(_M)
 
 local tf_mod = require 'tf_module'
 
+-- Tunables
+local REGION_TRANS=0.2
+
 function check_navgraph(self)
   return self.fsm.vars.place ~= nil and not navgraph
 end
 
+function reached_target_region(self)
+  local region_sqr = self.fsm.vars.region_trans * self.fsm.vars.region_trans
+  local rel_pos = tf_mod.transform({
+                      x = self.fsm.vars.x,
+                      y = self.fsm.vars.y,
+                      ori = self.fsm.vars.ori or 0}, 
+                      "/map", "/base_link")
+  local distance_region_sqr = rel_pos.x * rel_pos.x + rel_pos.y * rel_pos.y
+
+  printf("Distance region sqr: " .. distance_region_sqr)
+
+  if distance_region_sqr > region_sqr then
+    return false
+  else
+    return true
+  end
+end
+
 fsm:define_states{ export_to=_M,
-  closure={check_navgraph=check_navgraph},
+  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, },
   {"INIT",          JumpState},
   {"SKILL_RELGOTO", SkillJumpState, skills={{relgoto}}, final_to="FINAL", fail_to="FAILED"},
+  {"REGION_REACHED_STOPPING", JumpState},
+  {"FINAL_ORIENTATION",       SkillJumpState, skills={{global_motor_move}}, final_to="FINAL", fail_to="FINAL"}, -- will be ok; trust me :=)
 }
 
 fsm:add_transitions{
   {"INIT",  "FAILED",         precond=check_navgraph, desc="no navgraph"},
   {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
   {"INIT",  "SKILL_RELGOTO",  cond=true},
-  {"SKILL_RELGOTO", "INIT", timeout=1, desc="Recalculate target"}
+  {"SKILL_RELGOTO", "INIT", timeout=1, desc="Recalculate target"},
+  {"SKILL_RELGOTO", "REGION_REACHED_STOPPING", cond=reached_target_region, desc="Reached target, stopping local-planner"},
+  {"REGION_REACHED_STOPPING", "FINAL_ORIENTATION", cond="vars.ori", desc="Stopped, do final orientation"},
+  {"REGION_REACHED_STOPPING", "FINAL",             cond="not vars.ori", desc="Stopped, and don't need to orientate => FINAL"},
 }
 
 function INIT:init()
@@ -111,10 +138,22 @@ function INIT:init()
       self.fsm.vars.rel_ori = rel_pos.ori
     end
   end
+
+  self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
+  printf("Driving with region: " .. self.fsm.vars.region_trans)
 end
 
 function SKILL_RELGOTO:init()
   self.skills[1].x    = self.fsm.vars.rel_x
   self.skills[1].y    = self.fsm.vars.rel_y
   self.skills[1].ori  = self.fsm.vars.rel_ori
+end
+
+function REGION_REACHED_STOPPING:init()
+  local msg = navigator.StopMessage:new( )
+  navigator:msgq_enqueue_copy(msg)
+end
+
+function FINAL_ORIENTATION:init()
+  self.args["global_motor_move"] = {ori=self.fsm.vars.ori}
 end
