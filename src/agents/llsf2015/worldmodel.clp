@@ -112,7 +112,7 @@
   (declare (salience ?*PRIORITY-WM*))
   ?mf <- (machine
     (name ?rs)
-    (state READY-AT-OUTPUT)
+    (state READY-AT-OUTPUT|IDLE)
     (loaded-id ?produced-id&~0)
     (produced-id 0)
   )
