@@ -42,7 +42,8 @@ Parameters:
 
 -- Tunables
 local MIN_VIS_HIST=40
-local TIMEOUT=120
+local WAIT_TIMEOUT=120
+local LOOK_TIMEOUT=5
 local ALIGN_POS = {
    {x=0.5, y=  0},
    {x=0.6, y=  0.1},
@@ -80,7 +81,7 @@ end
 fsm:define_states{
    export_to=_M,
    closure={ALIGN_POS=ALIGN_POS, bb_signal=bb_signal, navgraph=navgraph, done=done,
-      TIMEOUT=TIMEOUT, os=os, MIN_VIS_HIST=MIN_VIS_HIST, desired_signal=desired_signal},
+      WAIT_TIMEOUT=WAIT_TIMEOUT, os=os, MIN_VIS_HIST=MIN_VIS_HIST, desired_signal=desired_signal},
    {"INIT", JumpState},
    {"SKILL_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="LOOK", fail_to="FAILED"},
    {"LOOK", JumpState},
@@ -102,7 +103,10 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.tries = 0
-   self.fsm.vars.giveup_time = os.time() + ((self.fsm.vars.wait_for and TIMEOUT) or 20)
+   self.fsm.vars.giveup_time = (os.time() + (self.fsm.vars.wait_for and WAIT_TIMEOUT))
+                               or
+                               (LOOK_TIMEOUT * (#ALIGN_POS+1))
+
    bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.EnableSwitchMessage:new())
  
    if not(self.fsm.vars.place and navgraph:node(self.fsm.vars.place):is_valid()) then
@@ -120,7 +124,7 @@ end
 
 function LOOK:init()
    self.fsm.vars.best_vis_hist = -1
-   self.fsm.vars.look_until = os.time() + 5
+   self.fsm.vars.look_until = os.time() + LOOK_TIMEOUT
 end
 
 function LOOK:loop()
