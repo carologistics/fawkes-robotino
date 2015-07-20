@@ -32,7 +32,7 @@ depends_interfaces = {
 
 documentation      = [==[
                         The robot just drives forward until a sensor threshold is reached
-                        @param "x" int The x distance to the MPS when finished
+                        @param "offset_x" int The x offset of the conveyor belt (positive in robot direction)
                      ]==]
 
 
@@ -57,7 +57,10 @@ fsm:add_transitions{
 }
 
 function APPROACH_WITH_INFRARED:init()
-   self.fsm.vars.sensor_threshold = self.fsm.vars.x or 0.07
+   if self.fsm.vars.x_offset == nil then
+      self.fsm.vars.x_offset = 0
+   end
+   self.fsm.vars.sensor_threshold = sensor_threshold + self.fsm.vars.x_offset
    self.skills[1].x = 1
    self.skills[1].vel_trans = 0.05
 end
