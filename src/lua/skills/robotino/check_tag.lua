@@ -57,9 +57,11 @@ function tag_visible(self)
       if self.fsm.vars.tag_id then -- can I see the searched tag
         id = tag_info:tag_id(k)
         if id == self.fsm.vars.tag_id then
+          printf("check_tag: Found tag with id: " .. id)
           return true
         end
       else -- can I see any tag
+        printf("check_tag: Found any tag")
         return true
       end
     end
@@ -82,7 +84,7 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond=no_tag_vision, desc="Tag vision disabled"},
    {"INIT", "CHECK_TAG", cond=true},
    {"CHECK_TAG", "FINAL", cond=tag_visible, desc="The given tag_id is visible"},
-   {"CHECK_TAG", "FAILED", timeout=0.5, desc="The given tag_id is not visible"},
+   {"CHECK_TAG", "FAILED", timeout=1, desc="The given tag_id is not visible"},
 }
 
 function INIT:init()
@@ -103,5 +105,11 @@ function INIT:init()
   self.fsm.vars.tags[13] = tag_13
   self.fsm.vars.tags[14] = tag_14
   self.fsm.vars.tags[15] = tag_15
+
+  if self.fsm.vars.tag_id then
+    printf("check_tag: Search for tag: " .. self.fsm.vars.tag_id)
+  else
+    printf("check_tag: Search for any tag")
+  end
 end
 
