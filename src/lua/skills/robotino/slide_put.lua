@@ -60,7 +60,7 @@ function GOTO_SLIDE:init()
 end
 
 function APPROACH_SLIDE:init()
-   self.skills[1].x = 0.065 --TODO measure exact value
+   self.skills[1].x = 0.055 --TODO measure exact value
 end
 
 function STORE_PRODUCT:init()
