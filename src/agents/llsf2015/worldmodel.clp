@@ -219,11 +219,15 @@
   (state SKILL-FAILED)
   (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
   (step (name get-output|get-base) (state running))
-  ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0))
+  ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0) (state ?mps-state))
   =>
   (printout t "Failed to fetch a product from the output of " ?mps crlf)
-  (printout t "I assume there is no more output product at " ?mps crlf)
-  (synced-modify ?mf produced-id 0)
+  (if (neq ?mps-state READY-AT-OUTPUT) then
+    (printout t "MPS " ?mps " is not READY-AT-OUTPUT. So there should not be a puck anymore." crlf)
+    (synced-modify ?mf produced-id 0)
+    else
+    (printout t "MPS " ?mps " is READY-AT-OUTPUT. The puck should still be there." crlf)
+  )
 )
 
 (defrule wm-store-lights
