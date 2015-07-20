@@ -27,6 +27,7 @@ class SignalState {
         std::shared_ptr<firevision::ROI> yellow_roi;
         std::shared_ptr<firevision::ROI> green_roi;
         std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>> world_pos;
+        float truth;
     } signal_rois_t_;
 
     typedef struct {
@@ -34,6 +35,7 @@ class SignalState {
         std::shared_ptr<firevision::HistoricSmoothROI> yellow_roi;
         std::shared_ptr<firevision::HistoricSmoothROI> green_roi;
         std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>> world_pos;
+        float truth;
     } historic_signal_rois_t_;
 
     SignalState(unsigned int buflen, fawkes::Logger *logger, historic_signal_rois_t_ &signal);

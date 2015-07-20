@@ -734,6 +734,14 @@ static inline float similarity(const ROI &r1, const ROI &r2) {
   return float(roi_intersection.width * roi_intersection.height) / float(roi_union.width * roi_union.height);
 }
 
+static inline float compactness(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
+{
+  unsigned int gap1 = std::abs(s.yellow_roi->start.y - (s.red_roi->start.y + s.red_roi->height));
+  unsigned int gap2 = std::abs(s.green_roi->start.y - (s.yellow_roi->start.y + s.yellow_roi->height));
+  unsigned int h = std::abs((s.green_roi->start.y + s.green_roi->height) - s.red_roi->start.y);
+  return 1 - ((gap1 + gap2) / h);
+}
+
 float MachineSignalPipelineThread::signal_beauty(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
 {
   ROI opt_R(*(s.red_roi));
@@ -746,7 +754,7 @@ float MachineSignalPipelineThread::signal_beauty(const SignalState::signal_rois_
   opt_G.width = laser_roi.width;
   opt_G.height = laser_roi.width;
 
-  return similarity(*(s.red_roi), opt_R) * similarity(*(s.green_roi), opt_G);
+  return similarity(*(s.red_roi), opt_R) * similarity(*(s.green_roi), opt_G) * s.truth * compactness(s, laser_roi);
 }
 
 
@@ -826,6 +834,7 @@ void MachineSignalPipelineThread::loop()
     if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
       if (cfy_ctxt_red_1_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_R_1->begin(), rois_R_1->end());
       if (cfy_ctxt_red_0_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_R_0->begin(), rois_R_0->end());
+      logger->log_info(name(), "red on: %d, off: %d", rois_R_1->size(), rois_R_0->size());
       if (cfy_ctxt_green_1_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_G_1->begin(), rois_G_1->end());
       if (cfy_ctxt_green_0_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_G_0->begin(), rois_G_0->end());
     }
@@ -833,6 +842,7 @@ void MachineSignalPipelineThread::loop()
     // Create and group ROIs that make up the red, yellow and green lights of a signal
     if (cfg_debug_processing_) debug_proc_string_ = "";
     list<SignalState::signal_rois_t_> *signal_rois = new list<SignalState::signal_rois_t_>();
+
     for (const ROI &laser_roi : *cluster_rois_) {
       list<SignalState::signal_rois_t_> laser_signals;
       SignalState::signal_rois_t_ *signal;
@@ -858,7 +868,6 @@ void MachineSignalPipelineThread::loop()
       });
       if (!laser_signals.empty()) signal_rois->push_back(laser_signals.front());
     }
-
 
     if (signal_rois->size() == 0) {
       // No signals found with laser, try vanilla algorithm
@@ -1204,7 +1213,7 @@ std::list<SignalState::signal_rois_t_> *MachineSignalPipelineThread::create_fiel
       if ((roi_Y = red_green_match(&*it_R, &*it_G))) {
         auto roi_G = shared_ptr<ROI>(new ROI(*it_G));
         auto roi_R = shared_ptr<ROI>(new ROI(*it_R));
-        rv->push_back({roi_R, shared_ptr<ROI>(roi_Y), roi_G, nullptr});
+        rv->push_back({roi_R, shared_ptr<ROI>(roi_Y), roi_G, nullptr, 1.0});
         it_G = rois_G->erase(it_G);
       }
       else {
@@ -1330,7 +1339,13 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
       ROI *roi_Y = red_green_match(roi_R.get(), roi_G.get());
 
       if (roi_Y) {
-        rv = new SignalState::signal_rois_t_({shared_ptr<ROI>(roi_R), shared_ptr<ROI>(roi_Y), shared_ptr<ROI>(roi_G), nullptr});
+        rv = new SignalState::signal_rois_t_({
+          shared_ptr<ROI>(roi_R),
+              shared_ptr<ROI>(roi_Y),
+              shared_ptr<ROI>(roi_G),
+              nullptr,
+              1.0
+        });
       }
       else {
         SignalState::signal_rois_t_ signal;
@@ -1338,8 +1353,10 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
         if (roi_R && roi_G) {
           float badness_R = abs(1 - (float(roi_R->height) / float(laser_roi.width)));
           float badness_G = abs(1 - (float(roi_G->height) / float(laser_roi.width)));
-          drawn_rois_.push_back(*roi_R);
-          drawn_rois_.push_back(*roi_G);
+          if (cfg_debug_processing_) {
+            drawn_rois_.push_back(*roi_R);
+            drawn_rois_.push_back(*roi_G);
+          }
           if (roi_G->height > laser_roi.width && badness_G > badness_R) {
             // Height of roi_R is closer to the width of the laser ROI than roi_G
             uint hdiff = roi_G->height - roi_R->height;
@@ -1360,10 +1377,13 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
 
           ROI *roi_Y = red_green_match(roi_R.get(), roi_G.get());
           if (roi_Y) {
-            signal.red_roi = shared_ptr<ROI>(roi_R);
-            signal.yellow_roi = shared_ptr<ROI>(roi_Y);
-            signal.green_roi = shared_ptr<ROI>(roi_G);
-            rv = new SignalState::signal_rois_t_(signal);
+            rv = new SignalState::signal_rois_t_({
+              shared_ptr<ROI>(roi_R),
+                  shared_ptr<ROI>(roi_Y),
+                  shared_ptr<ROI>(roi_G),
+                  nullptr,
+                  1.0
+            });
           }
           else {
             if (cfg_debug_processing_) logger->log_info(name(), "threw out r+g");
@@ -1393,6 +1413,9 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
           signal.green_roi->start.y = signal.yellow_roi->start.y + signal.yellow_roi->height;
           signal.green_roi->width = signal.yellow_roi->width;
           signal.green_roi->height = signal.yellow_roi->height;
+
+          signal.truth = 0.001;
+
           rv = new SignalState::signal_rois_t_(signal);
         }
         else if (!roi_R && roi_G) {
@@ -1425,6 +1448,9 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
           signal.red_roi->start.y = start_y;
           signal.red_roi->width = signal.yellow_roi->width;
           signal.red_roi->height = signal.yellow_roi->height;
+
+          signal.truth = 0.001;
+
           rv = new SignalState::signal_rois_t_(signal);
         }
       }
