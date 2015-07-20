@@ -41,7 +41,7 @@ Parameters:
 
 
 -- Tunables
-local MIN_VIS_HIST=25
+local MIN_VIS_HIST=40
 local TIMEOUT=120
 local ALIGN_POS = {
    {x=0.5, y=  0},
