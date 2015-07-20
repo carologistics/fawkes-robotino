@@ -283,6 +283,11 @@
   (slot red (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
 )
 
+(deftemplate last-zoneinfo
+  (slot search-state (type SYMBOL) (allowed-symbols YES NO MAYBE UNKNOWN) (default UNKNOWN))
+  (slot tag-id (type INTEGER) (default -1))
+)
+
 (deftemplate mps-instruction
   (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
   (multislot timer (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
@@ -381,4 +386,7 @@
 
   (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag)))
   ; zone-exploration, machine, cap-station, product, ring station
+
+  (last-zoneinfo)
+
 )
