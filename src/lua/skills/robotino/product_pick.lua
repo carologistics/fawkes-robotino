@@ -26,7 +26,9 @@ module(..., skillenv.module_init)
 name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="OPEN_GRIPPER", debug=true}
 depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
-depends_interfaces = { }
+depends_interfaces = {
+   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
+}
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
 and opens the gripper
@@ -38,7 +40,7 @@ and opens the gripper
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
 
-fsm:define_states{ export_to=_M,
+fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="APPROACH_MPS", fail_to="FAILED"},
    {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}},
@@ -47,7 +49,8 @@ fsm:define_states{ export_to=_M,
       final_to="WAIT", fail_to="FAIL_SAFE"},
    {"WAIT", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
-      final_to="CENTER_GRIPPER", fail_to="FAILED"},
+      final_to="CHECK_PUCK", fail_to="FAILED"},
+   {"CHECK_PUCK", JumpState},
    {"CENTER_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="FINAL", fail_to="FAILED"},
    {"FAIL_SAFE", SkillJumpState, skills={{motor_move}},
@@ -56,6 +59,8 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"WAIT", "MOVE_BACK", timeout=0.5},
+   {"CHECK_PUCK", "CENTER_GRIPPER", cond="gripper_if:is_holds_puck()", desc="Got a puck"},
+   {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
 }
 
 function OPEN_GRIPPER:init()
