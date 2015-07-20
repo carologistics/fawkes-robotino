@@ -734,12 +734,13 @@ static inline float similarity(const ROI &r1, const ROI &r2) {
   return float(roi_intersection.width * roi_intersection.height) / float(roi_union.width * roi_union.height);
 }
 
-static inline float compactness(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
+inline float MachineSignalPipelineThread::compactness(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
 {
-  unsigned int gap1 = std::abs(s.yellow_roi->start.y - (s.red_roi->start.y + s.red_roi->height));
-  unsigned int gap2 = std::abs(s.green_roi->start.y - (s.yellow_roi->start.y + s.yellow_roi->height));
-  unsigned int h = std::abs((s.green_roi->start.y + s.green_roi->height) - s.red_roi->start.y);
-  return 1 - ((gap1 + gap2) / h);
+  //unsigned int gap1 = std::abs(s.yellow_roi->start.y - (s.red_roi->start.y + s.red_roi->height));
+  //unsigned int gap2 = std::abs(s.green_roi->start.y - (s.yellow_roi->start.y + s.yellow_roi->height));
+  float h = std::abs((s.green_roi->start.y + s.green_roi->height) - s.red_roi->start.y);
+  //return 1 - ((gap1 + gap2) / h * (h / laser_roi.height));
+  return 1 - (h / float(laser_roi.height));
 }
 
 float MachineSignalPipelineThread::signal_beauty(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
@@ -754,7 +755,11 @@ float MachineSignalPipelineThread::signal_beauty(const SignalState::signal_rois_
   opt_G.width = laser_roi.width;
   opt_G.height = laser_roi.width;
 
-  return similarity(*(s.red_roi), opt_R) * similarity(*(s.green_roi), opt_G) * s.truth * compactness(s, laser_roi);
+  float cmp = compactness(s, laser_roi);
+
+  if (cfg_debug_processing_) logger->log_info(name(), "truth: %f, compactness: %f", s.truth, cmp);
+
+  return similarity(*(s.red_roi), opt_R) * similarity(*(s.green_roi), opt_G) * s.truth * cmp;
 }
 
 

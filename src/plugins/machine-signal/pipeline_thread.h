@@ -107,6 +107,7 @@ class MachineSignalPipelineThread :
   private:
 
     float signal_beauty(const SignalState::signal_rois_t_ &signal, const firevision::ROI &laser_roi);
+    float compactness(const SignalState::signal_rois_t_ &s, const firevision::ROI &laser_roi);
 
     bool bb_switch_is_enabled(fawkes::SwitchInterface *sw);
 
