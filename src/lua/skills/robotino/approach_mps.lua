@@ -32,7 +32,7 @@ depends_interfaces = {
 
 documentation      = [==[
                         The robot just drives forward until a sensor threshold is reached
-                        @param "offset_x" int The x offset of the conveyor belt (positive in robot direction)
+                        @param "offset_x" int The x offset of the conveyor belt (negative in robot direction)
                         @param "x" int The x distance to the MPS when finished
                      ]==]
 
