@@ -103,9 +103,12 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.tries = 0
-   self.fsm.vars.giveup_time = (os.time() + (self.fsm.vars.wait_for and WAIT_TIMEOUT))
-                               or
-                               (LOOK_TIMEOUT * (#ALIGN_POS+1))
+   if self.fsm.vars.wait_for then
+      self.fsm.vars.giveup_time = os.time() + WAIT_TIMEOUT
+   else
+      self.fsm.vars.giveup_time = os.time() + (LOOK_TIMEOUT * (#ALIGN_POS+1))
+   end
+   print(self.fsm.vars.giveup_time)
 
    bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.EnableSwitchMessage:new())
  
