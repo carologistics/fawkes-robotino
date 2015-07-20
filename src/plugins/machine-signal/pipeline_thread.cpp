@@ -737,10 +737,12 @@ static inline float similarity(const ROI &r1, const ROI &r2) {
 float MachineSignalPipelineThread::signal_beauty(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
 {
   ROI opt_R(*(s.red_roi));
+  opt_R.start.x = laser_roi.start.x;
   opt_R.width = laser_roi.width;
   opt_R.height = laser_roi.width;
 
   ROI opt_G(*(s.green_roi));
+  opt_G.start.x = laser_roi.start.x;
   opt_G.width = laser_roi.width;
   opt_G.height = laser_roi.width;
 
