@@ -431,6 +431,12 @@ function INIT:init()
   end
   self.fsm.vars.point_cluster.ori = ori
 
+  if self.fsm.vars.change_cluster_view then
+    printf("explore_zone: change cluster view point")
+    self.fsm.vars.point_cluster.x = self.fsm.vars.point_cluster.x - ( self.fsm.vars.max_x - self.fsm.vars.min_x )
+    self.fsm.vars.point_cluster.ori = self.fsm.vars.point_cluster.ori - math.pi / 2
+  end
+
   -- interfaces in lists
   self.fsm.vars.tags = {}
   self.fsm.vars.tags[1]   = tag_0
