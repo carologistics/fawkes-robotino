@@ -557,7 +557,7 @@
     ; change explore_zone order because the mps is placed very similar every time
     (skill-call explore_zone min_x (nth$ 1 ?zone-boarders) max_x (nth$ 2 ?zone-boarders)
                 min_y (nth$ 3 ?zone-boarders) max_y (nth$ 4 ?zone-boarders)
-                search_tags ?search-tags change_order true)
+                search_tags ?search-tags change_cluster_view true)
     else
     (skill-call explore_zone min_x (nth$ 1 ?zone-boarders) max_x (nth$ 2 ?zone-boarders)
                 min_y (nth$ 3 ?zone-boarders) max_y (nth$ 4 ?zone-boarders)
