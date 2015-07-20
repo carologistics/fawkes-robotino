@@ -553,9 +553,16 @@
   (synced-modify ?ze times-searched (+ 1 ?times-searched))
   (bind ?zone-boarders (utils-get-zone-edges ?next-zone))
   (bind ?search-tags (utils-get-tags-str-still-to-explore ?team))
-  (skill-call explore_zone min_x (nth$ 1 ?zone-boarders) max_x (nth$ 2 ?zone-boarders)
-              min_y (nth$ 3 ?zone-boarders) max_y (nth$ 4 ?zone-boarders)
-              search_tags ?search-tags)
+  (if (eq ?next-zone Z16) then
+    ; change explore_zone order because the mps is placed very similar every time
+    (skill-call explore_zone min_x (nth$ 1 ?zone-boarders) max_x (nth$ 2 ?zone-boarders)
+                min_y (nth$ 3 ?zone-boarders) max_y (nth$ 4 ?zone-boarders)
+                search_tags ?search-tags change_order true)
+    else
+    (skill-call explore_zone min_x (nth$ 1 ?zone-boarders) max_x (nth$ 2 ?zone-boarders)
+                min_y (nth$ 3 ?zone-boarders) max_y (nth$ 4 ?zone-boarders)
+                search_tags ?search-tags)
+  )
 )
 
 (defrule exp-go-to-next-machine-with-a-found-tag
