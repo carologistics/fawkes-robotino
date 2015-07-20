@@ -144,7 +144,6 @@
   (printout t "Arrived. explore_zone was " ?explore-zone-state " Looking for a tag." crlf)
   (retract ?s ?final)
   (assert (state EXP_LOOKING_FOR_TAG)
-          (timer (name waiting-for-tag-since) (time ?now) (seq 1))
           (explore-zone-state ?explore-zone-state)
   )
 )
@@ -152,7 +151,6 @@
 (defrule exp-read-tag-from-exp-point
   "Read found tag in front of robot and drive nearer to the tag to get a better reading or prepare adding the tag to the navgraph when already driven to the tag."
   (phase EXPLORATION)
-  ?ws <- (timer (name waiting-for-tag-since))
   ?s <- (state EXP_LOOKING_FOR_TAG)
   ?g <- (goalmachine ?old)
   ?ze <- (zone-exploration (name ?old))
@@ -160,12 +158,9 @@
   (team-color ?team-color)
   (tag-matching (tag-id ?tag) (team ?team-color) (machine ?machine) (side ?side))
   (not (found-tag (name ?machine)))
-  ?tvi <- (TagVisionInterface (id "/tag-vision/info") (tags_visible ?num-tags&:(> ?num-tags 0)) (tag_id $?tag-ids&:(member$ ?tag ?tag-ids)))
-  ?tagpos <- (Position3DInterface (id ?tag-if-id&:(eq ?tag-if-id 
-						      (str-cat "/tag-vision/" 
-							       (- (member$ ?tag ?tag-ids) 1)))) 
-				  (visibility_history ?vh&:(> ?vh ?needed-vh)) 
-				  (translation $?trans) (rotation $?rot)
+  (last-zoneinfo (search-state YES) (tag-id ?tag))
+  ?tagpos <- (Position3DInterface (id "/explore-zone/pose")
+          (translation $?trans) (rotation $?rot)
 				  (frame ?frame) (time $?timestamp))
   ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
   (time $?now)
@@ -184,7 +179,7 @@
       (printout error "Check time diff between base and laptop" crlf)
       (assert (state EXP_IDLE)
               (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old)))
-      (retract ?s ?tvi ?tagpos ?ws ?skill-finish-state)
+      (retract ?s ?tagpos ?skill-finish-state)
       (return)
     )
   )
@@ -199,11 +194,11 @@
     (printout error "Check time diff between base and laptop" crlf)
     (assert (state EXP_IDLE)
             (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old)))
-    (retract ?s ?tvi ?tagpos ?ws ?skill-finish-state)
+    (retract ?s ?tagpos ?skill-finish-state)
     (return)
   )
   (assert (state EXP_ADD_TAG))
-  (retract ?s ?tvi ?tagpos ?ws ?skill-finish-state)
+  (retract ?s ?tagpos ?skill-finish-state)
 )
 
 (defrule exp-report-found-tag
@@ -227,13 +222,23 @@
           (machine-to-find-zone-of ?machine))
 )
 
+(defrule update-zone-info
+  "Update zone info from ZoneInterface"
+  ?zi <- (ZoneInterface (id "/explore-zone/info") (search_state ?state) (tag_id ?tag))
+  ?lzi <- (last-zoneinfo (tag-id ?old-tag) 
+    (search-state ?old-state&:(or (neq ?old-state ?state) (neq ?old-tag ?tag))))
+  =>
+  (retract ?lzi ?zi)
+  (assert (last-zoneinfo (search-state ?state) (tag-id ?tag)))
+)
+
 (defrule exp-no-tag-found
   "We couldn't see a tag => try next look-pos or skip zone"
   (phase EXPLORATION)
   (time $?now)
-  ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
   ?s <- (state EXP_LOOKING_FOR_TAG)
   ?g <- (goalmachine ?old)
+  (last-zoneinfo (search-state NO))
   ?ze <- (zone-exploration (name ?old) (look-pos $?lp)
                            (times-searched ?times-searched))
   ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
@@ -244,13 +249,40 @@
   (if (eq ?explore-zone-state FINAL) then
     (printout t "There probably is no mps in this zone!" crlf)
     (printout t "Try this zone again later ROBOCUP FIX!" crlf)
+    ; count 2 times to first explore "maybe zones"
+    (synced-modify ?ze times-searched (+ 2 ?times-searched))
+  )
+
+  (assert (state EXP_IDLE)
+	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
+  )
+  (retract ?s ?skill-finish-state)
+)
+
+(defrule exp-maybe-tag-found
+  "We maybe see a tag => try next look-pos or skip zone"
+  (phase EXPLORATION)
+  (time $?now)
+  ?s <- (state EXP_LOOKING_FOR_TAG)
+  ?g <- (goalmachine ?old)
+  (last-zoneinfo (search-state MAYBE|UNKNOWN))
+  ?ze <- (zone-exploration (name ?old) (look-pos $?lp)
+                           (times-searched ?times-searched))
+  ?skill-finish-state <- (explore-zone-state ?explore-zone-state)
+  =>
+  (printout t "Maybe found tag in zone " ?old crlf)
+
+  ; if explore_zone was final there probably is no mps in this zone
+  (if (eq ?explore-zone-state (or FINAL FAILED)) then
+    (printout t "There probably is no mps in this zone!" crlf)
+    (printout t "Try this zone again later ROBOCUP FIX!" crlf)
     (synced-modify ?ze times-searched (+ 1 ?times-searched))
   )
 
   (assert (state EXP_IDLE)
 	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
   )  
-  (retract ?ws ?s ?skill-finish-state)
+  (retract ?s ?skill-finish-state)
 )
 
 (defrule exp-drive-to-output-tag-zone-correct
