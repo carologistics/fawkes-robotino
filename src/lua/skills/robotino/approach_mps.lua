@@ -65,7 +65,7 @@ fsm:add_transitions{
    {"INIT", "APPROACH_WITH_INFRARED", cond=true},
    {"SETTLE", "CHECK_VIS_HIST", timeout=1},
    {"CHECK_VIS_HIST", "APPROACH_WITH_CAM", cond="conveyor_0:visibility_history() >= MIN_VIS_HIST"},
-   {"CHECK_VIS_HIST", "FAILED", timeout=4},
+   {"CHECK_VIS_HIST", "FAILED", timeout=10},
    {"APPROACH_WITH_INFRARED", "FINAL", cond="sensor:distance(sensor_index) <= vars.sensor_threshold and sensor:distance(sensor_index) > 0"}
 }
 
