@@ -98,7 +98,19 @@ function MPS_ALIGN:init()
 end
 
 function SKILL_PRODUCT_PUT:init()
-   self.skills[1].place = self.fsm.vars.place
+   if self.fsm.vars.side == "output" then
+      if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
+         self.skills[1].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
+      else
+         self.skills[1].offset_x = 0 
+      end 
+   else
+      if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
+         self.skills[1].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
+      else
+         self.skills[1].offset_x = 0 
+      end 
+   end 
 end
 
 function SKILL_SHELF_PUT:init()
