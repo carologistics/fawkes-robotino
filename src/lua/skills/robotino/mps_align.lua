@@ -185,7 +185,7 @@ function INIT:init()
 end
 
 function TURN_TO_SEARCH_FOR_TAG:init()
-  self.args["motor_move"] = { ori=self.fsm.vars.next_pose_ori}
+  self.args["motor_move"] = { x=nil, y=nil, ori=self.fsm.vars.next_pose_ori}
 end
 
 function CHECK_TAG:init()
