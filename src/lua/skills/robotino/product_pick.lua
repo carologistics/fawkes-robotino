@@ -30,7 +30,7 @@ depends_interfaces = { }
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
 and opens the gripper
-@param x_offset the x_offset from the navgraph point
+@param offset_x the offset_x from the navgraph point
 ]==]
 
 
@@ -64,7 +64,7 @@ function OPEN_GRIPPER:init()
 end
 
 function APPROACH_MPS:init()
-   self.skills[1].x_offset = self.fsm.vars.x_offset
+   self.skills[1].offset_x = self.fsm.vars.offset_x
 end
 
 function MOVE_BACK:init()

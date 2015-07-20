@@ -33,6 +33,7 @@ depends_interfaces = {
 documentation      = [==[
                         The robot just drives forward until a sensor threshold is reached
                         @param "offset_x" int The x offset of the conveyor belt (positive in robot direction)
+                        @param "x" int The x distance to the MPS when finished
                      ]==]
 
 
@@ -40,7 +41,7 @@ documentation      = [==[
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
 local sensor_index = 0
-local sensor_threshold = 0.07
+local sensor_threshold = 0.06
 
 if config:exists("/hardware/robotino/distance_front/index") then
    sensor_index = config:get_uint("/hardware/robotino/distance_front/index")
@@ -57,10 +58,13 @@ fsm:add_transitions{
 }
 
 function APPROACH_WITH_INFRARED:init()
-   if self.fsm.vars.x_offset == nil then
-      self.fsm.vars.x_offset = 0
+   if self.fsm.vars.offset_x == nil then
+      self.fsm.vars.offset_x = 0
    end
-   self.fsm.vars.sensor_threshold = sensor_threshold + self.fsm.vars.x_offset
+   printf("x_offset is set to: %f", self.fsm.vars.offset_x)
+   self.fsm.vars.sensor_threshold = self.fsm.vars.x or sensor_threshold + self.fsm.vars.offset_x 
+   --TODO !!!!!!!handle negative with motor_move and further driving when putting a product!!!!!!!!!!!!!!!!
+   printf("sensor threshold is: %f", self.fsm.vars.sensor_threshold)
    self.skills[1].x = 1
    self.skills[1].vel_trans = 0.05
 end
