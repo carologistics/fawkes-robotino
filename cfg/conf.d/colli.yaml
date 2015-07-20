@@ -67,8 +67,8 @@ plugins/colli:
     # ID of motor interface
     motor: Robotino
     # ID of laser interface
-    laser: Laser urg-filtered
-    #laser: Laser colli
+    #laser: Laser urg-filtered
+    laser: Laser colli
     # ID of colli target interface
     colli: Colli target
     # Maximum age (in seconds) of data for reading interfaces. If data is older than this, the colli_thread
