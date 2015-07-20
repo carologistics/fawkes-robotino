@@ -113,12 +113,7 @@
   )
 )
 
-(defrule coordination-release-after-task-finished
-  "If a task is finished the lock for the task is released and incoming facts are removed from the worldmodel. State is changed from TASK-FINISHED to IDLE."
-  (declare (salience ?*PRIORITY-LOCK-HIGH*))
-  ?t <- (task (name ?task) (state finished) (steps $?steps)) 
-  ?s <- (state TASK-FINISHED)
-  =>
+(deffunction coordination-release-all-subgoal-locks ()
   ;release all locks for subtask goals
   (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
@@ -127,6 +122,15 @@
     (synced-remove-from-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
     (retract ?ntl)
   )
+)
+
+(defrule coordination-release-after-task-finished
+  "If a task is finished the lock for the task is released and incoming facts are removed from the worldmodel. State is changed from TASK-FINISHED to IDLE."
+  (declare (salience ?*PRIORITY-LOCK-HIGH*))
+  ?t <- (task (name ?task) (state finished) (steps $?steps)) 
+  ?s <- (state TASK-FINISHED)
+  =>
+  (coordination-release-all-subgoal-locks)
   ;remove all steps of the task
   (do-for-all-facts ((?step step)) (member$ ?step:id ?steps)
     (retract ?step)
@@ -141,14 +145,7 @@
   (declare (salience ?*PRIORITY-LOCK-LOW*))
   ?t <- (task (name ?task) (state finished))
   =>
-  ;release all locks for subtask goals
-  (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
-    (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
-    (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
-    (bind ?fact-ptr (synced-remove-from-multifield ?fact-ptr incoming ?ntl:action))
-    (synced-remove-from-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
-    (retract ?ntl)
-  )
+  (coordination-release-all-subgoal-locks)
   (retract ?t)
 )
 
@@ -157,14 +154,7 @@
   ?t <- (task (name ?task) (state failed)) 
   ?s <- (state TASK-FAILED)
   =>
-  ;release all locks for subtask goals
-  (delayed-do-for-all-facts ((?ntl needed-task-lock) (?m machine)) (eq ?m:name ?ntl:place)
-    (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
-    (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
-    (bind ?fact-ptr (synced-remove-from-multifield ?fact-ptr incoming ?ntl:action))
-    (synced-remove-from-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
-    (retract ?ntl)
-  )
+  (coordination-release-all-subgoal-locks)
   (retract ?s )
   (assert (state IDLE))
   (coordination-remove-old-rejected-tasks)
