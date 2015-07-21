@@ -123,6 +123,13 @@ GripperAX12AThread::init()
   __servo_if_right->msgq_enqueue(prevent_right_msg);
   
   
+  DynamixelServoInterface::SetTorqueLimitMessage *torque_left_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+  DynamixelServoInterface::SetTorqueLimitMessage *torque_right_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+  torque_left_msg->set_torque_limit(1023);
+  torque_right_msg->set_torque_limit(1023);
+  __servo_if_left ->msgq_enqueue(torque_left_msg);
+  __servo_if_right->msgq_enqueue(torque_right_msg);
+
   //Enable autorecovery for left and right servo
   DynamixelServoInterface::SetAutorecoverEnabledMessage *recover_left_msg  = new DynamixelServoInterface::SetAutorecoverEnabledMessage();
   DynamixelServoInterface::SetAutorecoverEnabledMessage *recover_right_msg  = new DynamixelServoInterface::SetAutorecoverEnabledMessage();
