@@ -204,7 +204,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill get_product_from) (state final) (target ?mps))
-  (step (name get-output|get-base) (state running))
+  (step (name get-output) (state running))
   ?mf <- (machine (name ?mps) (produced-id ?produced-id))
   ?hf <- (holding NONE)
   =>
@@ -212,6 +212,22 @@
   (printout t "Fetched product " ?produced-id " from the output of " ?mps crlf)
   (assert (holding ?produced-id))
   (synced-modify ?mf produced-id 0)
+)
+
+(defrule wm-get-base-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-FINAL)
+  (skill-to-execute (skill get_product_from) (state final) (target ?mps))
+  (step (name get-base) (state running) (product-id ?product-id))
+  ?mf <- (machine (name ?mps) (produced-id ?produced-id))
+  ?hf <- (holding NONE)
+  ?pf <- (product (id ?produced-id))
+  =>
+  (retract ?hf)
+  (printout t "Fetched base " ?produced-id " from " ?mps crlf)
+  (assert (holding ?produced-id))
+  (synced-modify ?mf produced-id 0)
+  (synced-modify ?pf product-id ?product-id)
 )
 
 (defrule wm-get-output-failed
@@ -341,8 +357,7 @@
   (not (skill-to-execute (skill get_product_from) (state final|failed)))
   =>
   (bind ?produced-id (random-id))
-  (synced-assert (str-cat "(product (id " ?produced-id ") (product-id " ?product-id
-                          ") (base " ?base-color ") (cap NONE))"))
+  (synced-assert (str-cat "(product (id " ?produced-id ") (base " ?base-color ") (cap NONE))"))
   (synced-modify ?bs produced-id ?produced-id)
 )
 
