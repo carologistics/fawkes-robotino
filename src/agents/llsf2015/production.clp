@@ -166,20 +166,52 @@
   )
 )
 
-(defrule discard-unknown-base
-  "Discard a base with unknown color if no RS has to be pre-filled"
+(defrule insert-unintentioanlly-holding-base-to-rs
+  "Insert a base we hold unintentionally (e.g. skill-fail) in a RS for preparation"
+  (declare (salience ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (team-color ?team-color&~nil)
+  (holding ?product-id&~NONE)
+  (product (id ?product-id))
+  (machine (mtype RS) (incoming $?i&~:(member$ PREFILL-RS ?i))
+    (name ?rs) (team ?team-color)
+    (state ~DOWN&~BROKEN))
+  (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
+  ;check that the task was not rejected before
+  (not (and 
+    (task (name fill-rs) (state rejected) (id ?rej-id))
+    (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
+  ))
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*))))
+  (found-tag (name ?rs))
+  =>
+  (printout t "PROD: INSERT unintentionally holding base " ?product-id " into " ?rs crlf)
+  (bind ?task-id (random-id))
+  (assert 
+    (task (name fill-rs) (id ?task-id) (state proposed)
+      (steps (create$ (+ ?task-id 1)))
+      (priority ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*))
+    (step (name insert) (id (+ ?task-id 1))
+      (task-priority ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*)
+      (machine ?rs)
+      (machine-feature SLIDE))
+    (needed-task-lock (task-id ?task-id) (action PREFILL-RS) (place ?rs))
+  )
+)
+
+(defrule discard-unneeded-base
+  "Discard a base which is not needed if no RS can be pre-filled"
   (declare (salience ?*PRIORITY-DISCARD-UNKNOWN*))
   (phase PRODUCTION)
   (state IDLE)
   (team-color ?team-color&~nil)
   (holding ?product-id&~NONE)
-  (product (id ?product-id) (base UNKNOWN))
+  (product (id ?product-id))
   (machine (mtype RS) (name ?rs) (team ?team-color))
-  (task (name fill-rs) (state rejected))
-  ;(ring-station (name ?rs) (bases-loaded ?bases&~:(< ?bases 3)))
-  ;(locked-resource (resource ?res&~:(str-index ?rs ?res)))
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DISCARD-UNKNOWN*))))
   =>
-  (printout t "PROD: Discard unneeded unknown base " ?product-id crlf)
+  (printout t "PROD: Discard unneeded or unknown base " ?product-id crlf)
   (bind ?task-id (random-id))
   (assert
     (task (name discard-unknown) (id ?task-id) (state proposed)
@@ -226,7 +258,7 @@
     (in-production 0) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
   =>
-  (printout warn "TODO: production durations not yet implemented")
+  (printout warn "TODO: production durations not yet implemented" crlf)
   (printout t "PROD: PRODUCE C0 with " ?cap-color " cap at " ?cs crlf)
   (bind ?task-id (random-id))
   (assert (task (name produce-c0) (id ?task-id) (state proposed)
