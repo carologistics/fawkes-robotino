@@ -424,15 +424,16 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 
 	for (size_t i = 0; i < wait_zones_.size(); ++i) {
 		if (wait_zones_[i]) {
+			int z = i;
 			// calc zone coordinates
-			int col = (i / 4); // col is 0-based and is in range [0..2]
+			int col = (z / 4); // col is 0-based and is in range [0..2]
 			int col_sign = 1;
-			if (i > 2)  {
+			if (z > 2) {
 				// magenta side, negative X coordinates
-				i = i - 3;
+				z = i - 3;
 				col_sign = -1;
 			}
-			int row = i - (i / 4) * 4;
+			int row = z - (z / 4) * 4;
 
 			float from_x = col_sign *  col      * 2.;
 			float to_x   = col_sign * (col + 1) * 2.;
