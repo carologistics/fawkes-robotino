@@ -213,9 +213,9 @@ void TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *marker_l
     }
     try {
       alvar::Pose ll_pose = get_nearest_laser_line_pose(tmp_pose, laser_line_ifs);
-      logger_->log_info("tag_vision", "%i before: %f\t%f\t%f", i, tmp_pose.translation[0], tmp_pose.translation[1], tmp_pose.translation[2]);
+//      logger_->log_info("tag_vision", "%i before: %f\t%f\t%f", i, tmp_pose.translation[0], tmp_pose.translation[1], tmp_pose.translation[2]);
       tmp_pose = ll_pose;
-      logger_->log_info("tag_vision", "%i after:  %f\t%f\t%f", i, tmp_pose.translation[0], tmp_pose.translation[1], tmp_pose.translation[2]);
+//      logger_->log_info("tag_vision", "%i after:  %f\t%f\t%f", i, tmp_pose.translation[0], tmp_pose.translation[1], tmp_pose.translation[2]);
     } catch (std::exception &e) {
       logger_->log_error("tag_vision", "some strange exception that where not expected");
     }
