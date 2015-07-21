@@ -428,9 +428,9 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 			// calc zone coordinates
 			int col = (z / 4); // col is 0-based and is in range [0..2]
 			int col_sign = 1;
-			if (z > 2) {
+			if (col > 2) {
 				// magenta side, negative X coordinates
-				z = i - 3;
+				col -= 3;
 				col_sign = -1;
 			}
 			int row = z - (z / 4) * 4;
@@ -445,7 +445,7 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 
 			navgen_if_->msgq_enqueue
 				(new NavGraphGeneratorInterface::AddPointOfInterestMessage
-				 (NavGraph::format_name("WAIT-Z%zu", i).c_str(), center_x, center_y,
+				 (NavGraph::format_name("WAIT-Z%zu", i+1).c_str(), center_x, center_y,
 				  NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE)); 
 		}
 	}
