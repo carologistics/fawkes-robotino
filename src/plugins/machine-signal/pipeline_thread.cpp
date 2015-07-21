@@ -736,12 +736,12 @@ static inline float similarity(const ROI &r1, const ROI &r2) {
 
 inline float MachineSignalPipelineThread::compactness(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
 {
-  unsigned int gap1 = std::abs(s.yellow_roi->start.y - (s.red_roi->start.y + s.red_roi->height));
-  unsigned int gap2 = std::abs(s.green_roi->start.y - (s.yellow_roi->start.y + s.yellow_roi->height));
+  //unsigned int gap1 = std::abs(s.yellow_roi->start.y - (s.red_roi->start.y + s.red_roi->height));
+  //unsigned int gap2 = std::abs(s.green_roi->start.y - (s.yellow_roi->start.y + s.yellow_roi->height));
   float h = std::abs((s.green_roi->start.y + s.green_roi->height) - s.red_roi->start.y);
-  float gappitude = 1 - (float(gap1 + gap2) / h);
+  //float gappitude = 1 - (float(gap1 + gap2) / h);
   float shortitude = 1 - (h / float(laser_roi.height));
-  return (gappitude * shortitude);
+  return shortitude;
   //return 1 - (h / float(laser_roi.height));
 }
 
@@ -759,7 +759,8 @@ float MachineSignalPipelineThread::signal_beauty(const SignalState::signal_rois_
 
   float cmp = compactness(s, laser_roi);
 
-  if (cfg_debug_processing_) logger->log_info(name(), "truth: %f, compactness: %f", s.truth, cmp);
+  if (cfg_debug_processing_) debug_proc_string_ += " truth: "
+      + to_string(s.truth) + ", compactness: " + to_string(cmp);
 
   return similarity(*(s.red_roi), opt_R) * similarity(*(s.green_roi), opt_G) * s.truth * cmp;
 }
@@ -841,7 +842,6 @@ void MachineSignalPipelineThread::loop()
     if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
       if (cfy_ctxt_red_1_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_R_1->begin(), rois_R_1->end());
       if (cfy_ctxt_red_0_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_R_0->begin(), rois_R_0->end());
-      logger->log_info(name(), "red on: %d, off: %d", rois_R_1->size(), rois_R_0->size());
       if (cfy_ctxt_green_1_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_G_1->begin(), rois_G_1->end());
       if (cfy_ctxt_green_0_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_G_0->begin(), rois_G_0->end());
     }
@@ -1468,7 +1468,7 @@ SignalState::signal_rois_t_ *MachineSignalPipelineThread::create_laser_signals(
       logger->log_error(name(), e);
     }
   }
-  if (unlikely(cfg_debug_processing_)) logger->log_debug(name(), "laser proc: %s", debug_proc_string_.c_str());
+  if (unlikely(cfg_debug_processing_)) logger->log_info(name(), "laser proc: %s", debug_proc_string_.c_str());
   return rv;
 }
 
