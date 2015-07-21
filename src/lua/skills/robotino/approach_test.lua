@@ -39,6 +39,8 @@ Parameters:
       @param slide   optional true if you want to put it on the slide
       @param place
       @param side "input" or "output"
+      for example: approach_test{place="M-CRS1",option="put", side="output"}
+      This needs no localization, the place is only to get the navgraph properties
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
