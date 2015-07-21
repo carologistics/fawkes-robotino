@@ -417,6 +417,15 @@ function INIT:init()
       self.fsm.vars.point_cluster.y = self.fsm.vars.max_y
     end
   end
+  if self.fsm.vars.change_cluster_view then
+    printf("explore_zone: change cluster view point")
+    if self.fsm.vars.point_cluster.x == self.fsm.vars.max_x then
+      self.fsm.vars.point_cluster.x = self.fsm.vars.min_x
+    else
+      self.fsm.vars.point_cluster.x = self.fsm.vars.max_x
+    end
+  end
+
   -- ori will be from my point towards the center
   local dir_x = self.fsm.vars.mid_x - self.fsm.vars.point_cluster.x
   local dir_y = self.fsm.vars.mid_y - self.fsm.vars.point_cluster.y
@@ -430,12 +439,6 @@ function INIT:init()
     ori = ori * (-1)
   end
   self.fsm.vars.point_cluster.ori = ori
-
-  if self.fsm.vars.change_cluster_view then
-    printf("explore_zone: change cluster view point")
-    self.fsm.vars.point_cluster.x = self.fsm.vars.point_cluster.x - ( self.fsm.vars.max_x - self.fsm.vars.min_x )
-    self.fsm.vars.point_cluster.ori = self.fsm.vars.point_cluster.ori - math.pi / 2
-  end
 
   -- interfaces in lists
   self.fsm.vars.tags = {}
