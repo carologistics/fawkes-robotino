@@ -51,7 +51,7 @@ ifneq ($(wildcard $(SYSROOT)/usr/lib64/libalvar200.so $(SYSROOT)/usr/include/alv
 endif
 
 ifeq ($(HAVE_TF)$(HAVE_ALVAR)$(HAVE_CPP11),111)
-  CFLAGS  += $(CFLAGS_TF)
+  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CPP11)
   LDFLAGS += $(LDFLAGS_TF)
   #names of the plugins you want to build
   PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)

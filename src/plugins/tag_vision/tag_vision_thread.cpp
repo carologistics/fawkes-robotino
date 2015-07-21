@@ -44,7 +44,7 @@ TagVisionThread::TagVisionThread()
   : Thread("TagVisionThread", Thread::OPMODE_WAITFORWAKEUP),
     VisionAspect(VisionAspect::CYCLIC),
     ConfigurationChangeHandler(CFG_PREFIX),
-    fawkes::TransformAspect(fawkes::TransformAspect::ONLY_PUBLISHER,"tags")
+    fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"tags")
 {
     fv_cam = NULL;
     shm_buffer = NULL;
@@ -129,13 +129,16 @@ TagVisionThread::init()
     // set up marker
     max_marker = 16;
     this->markers_ = new std::vector<alvar::MarkerData>();
-    this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,frame,this->name(),this->logger, this->clock, this->tf_publisher);
 
+    this->tag_interfaces =
+      new TagPositionList(this->blackboard, tf_listener, this->max_marker, frame,
+			  this->name(),this->logger, this->clock,
+			  this->tf_publisher);
     // get laser-line interfaces
     laser_line_ifs_ = new std::vector<fawkes::LaserLineInterface*>();
     for (int i = 1; i <= 8; i++) {
-      std::string if_name = "/laser-lines/" + i;
-//      std::string if_name = "/laser-lines/" + std::to_string(i);
+      //std::string if_name = "/laser-lines/" + i;
+      std::string if_name = "/laser-lines/" + std::to_string(i);
 
       fawkes::LaserLineInterface *ll_if = blackboard->open_for_reading<fawkes::LaserLineInterface>(if_name.c_str());
       laser_line_ifs_->push_back(ll_if);
