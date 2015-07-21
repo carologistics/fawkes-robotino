@@ -362,17 +362,20 @@
 )
 
 (deffunction wm-remove-incoming-by-agent (?agent)
-  "remove all entries of machine-incoming fields of a specific agent (e.g. after a lost connection)"
-  (delayed-do-for-all-facts ((?m machine)) (member$ (sym-cat ?agent) ?m:incoming-agent)
-    (bind ?new-incoming ?m:incoming)
-    (bind ?new-incoming-agent ?m:incoming-agent)
-    (while (member$ (sym-cat ?agent) ?new-incoming-agent)
-      (bind ?index (member$ (sym-cat ?agent) ?new-incoming-agent))
-      (bind ?new-incoming (delete$ ?new-incoming ?index ?index))
-      (bind ?new-incoming-agent (delete$ ?new-incoming-agent ?index ?index))
+  "remove all entries of incoming fields of a specific agent (e.g. after a lost connection)"
+  (bind ?incoming-templates (create$ machine zone-exploration puck-storage))
+  (progn$ (?templ ?incoming-templates)
+    (delayed-do-for-all-facts ((?m ?templ)) (member$ (sym-cat ?agent) ?m:incoming-agent)
+      (bind ?new-incoming ?m:incoming)
+      (bind ?new-incoming-agent ?m:incoming-agent)
+      (while (member$ (sym-cat ?agent) ?new-incoming-agent)
+        (bind ?index (member$ (sym-cat ?agent) ?new-incoming-agent))
+        (bind ?new-incoming (delete$ ?new-incoming ?index ?index))
+        (bind ?new-incoming-agent (delete$ ?new-incoming-agent ?index ?index))
+      )
+      (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
     )
-    (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
-  ) 
+  )
 )
 
 (defrule wm-reset-broken-machine
