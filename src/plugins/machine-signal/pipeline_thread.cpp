@@ -736,11 +736,13 @@ static inline float similarity(const ROI &r1, const ROI &r2) {
 
 inline float MachineSignalPipelineThread::compactness(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
 {
-  //unsigned int gap1 = std::abs(s.yellow_roi->start.y - (s.red_roi->start.y + s.red_roi->height));
-  //unsigned int gap2 = std::abs(s.green_roi->start.y - (s.yellow_roi->start.y + s.yellow_roi->height));
+  unsigned int gap1 = std::abs(s.yellow_roi->start.y - (s.red_roi->start.y + s.red_roi->height));
+  unsigned int gap2 = std::abs(s.green_roi->start.y - (s.yellow_roi->start.y + s.yellow_roi->height));
   float h = std::abs((s.green_roi->start.y + s.green_roi->height) - s.red_roi->start.y);
-  //return 1 - ((gap1 + gap2) / h * (h / laser_roi.height));
-  return 1 - (h / float(laser_roi.height));
+  float gappitude = 1 - (float(gap1 + gap2) / h);
+  float shortitude = 1 - (h / float(laser_roi.height));
+  return (gappitude * shortitude);
+  //return 1 - (h / float(laser_roi.height));
 }
 
 float MachineSignalPipelineThread::signal_beauty(const SignalState::signal_rois_t_ &s, const ROI &laser_roi)
