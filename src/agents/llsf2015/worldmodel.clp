@@ -35,6 +35,14 @@
         )
       )
     )
+    (if (pb-has-field ?m "zone") then
+      (bind ?m-zone (sym-cat (pb-field-value ?m "zone")))
+      (do-for-fact ((?zone-exp zone-exploration))
+        (eq ?zone-exp:name ?m-zone)
+
+        (modify ?zone-exp (machine ?m-name))
+      )
+    )
   )
   (assert (received-machine-info))
   (retract ?pb-msg)
