@@ -27,6 +27,7 @@
   ;(if there is a master the timeout gets larger)
   ?*CURRENT-MASTER-TIMEOUT* = 5.0
   ?*INITIAL-MASTER-TIMEOUT* = 5.0
+  ?*MASTER-TIMEOUT-ROBOT-OFFSET* = 5.0
   ?*ROBOT-TIMEOUT* = 10.0
   ?*RELEASE-DISTANCE* = 0.5
 
@@ -97,9 +98,11 @@
 (defrule globals-config-timeouts
   (confval (path "/clips-agent/llsf2015/initial-master-timeout") (type FLOAT) (value ?initial))
   (confval (path "/clips-agent/llsf2015/robot-timeout") (type FLOAT) (value ?robot-timeout))
+  (confval (path "/clips-agent/llsf2015/robot-number") (type UINT) (value ?robot-number))
   =>
   (bind ?*ROBOT-TIMEOUT* ?robot-timeout)
   (bind ?*INITIAL-MASTER-TIMEOUT* ?initial)
+  (bind ?*MASTER-TIMEOUT-ROBOT-OFFSET* (* ?robot-number 3))
 )
 
 (defrule globals-config-release-distance
