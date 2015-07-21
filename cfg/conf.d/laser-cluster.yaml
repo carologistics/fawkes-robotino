@@ -140,7 +140,7 @@ laser-cluster:
     auto-start: true
 
     # input laser cloud
-    input_cloud: urg-filtered
+    input_cloud: mapless
 
     # How much must a cluster detection deviate from the previous to consider
     # this to be a different cluster (and thus restart the visibility history)
