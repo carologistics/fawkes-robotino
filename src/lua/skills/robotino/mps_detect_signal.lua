@@ -80,8 +80,7 @@ function fail()
    if fsm.vars.giveup_time then
       return os.time() > fsm.vars.giveup_time
    else
-      printf("tries: %d", tries)
-      return fsm.vars.tries > #ALIGN_POS
+      return fsm.vars.tries >= #ALIGN_POS
    end
 end
 
@@ -145,6 +144,7 @@ end
 
 function SKILL_ALIGN:init()
    self.fsm.vars.tries = self.fsm.vars.tries + 1
+   printf("attempt #%d", self.fsm.vars.tries)
    self.skills[1].x = ALIGN_POS[self.fsm.vars.tries].x
    self.skills[1].y = ALIGN_POS[self.fsm.vars.tries].y
    self.skills[1].ori = ALIGN_POS[self.fsm.vars.tries].ori
@@ -157,7 +157,7 @@ function cleanup()
    bb_output:set_visibility_history(bb_signal:visibility_history())
    bb_output:set_ready(bb_signal:is_ready())
 
-   --bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.DisableSwitchMessage:new())
+   bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.DisableSwitchMessage:new())
    --bb_sw_laser:msgq_enqueue_copy(bb_sw_laser.DisableSwitchMessage:new())
 end
 
