@@ -70,7 +70,7 @@ local llutils = require("fawkes.laser-lines_utils")
 
 -- Tunables
 local MIN_VIS_HIST=10
-local TIMEOUT=2
+local TIMEOUT=5
 local AREA_LINE_ERR_X=0.1
 local AREA_LINE_ERR_Y=0.2
 local AREA_LINE_ERR_ORI=0.2 --0.17
