@@ -359,7 +359,7 @@
 (defrule wm-set-bs-output-color
   "Set the correct loaded-id after color is ordered at BS"
   (declare (salience ?*PRIORITY-WM*))
-  ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT))
+  ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT|PROCESSING))
   (step (name get-base) (state running) (base ?base-color))
   (step (name get-base) (state running) (base ?base-color) (product-id ?product-id))
   (not (skill-to-execute (skill get_product_from) (state final|failed)))
