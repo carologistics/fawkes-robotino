@@ -162,5 +162,5 @@ plugins/machine_signal:
   
   laser-lines:
     enable: true
-    min_visibility_history: 10
+    min_visibility_history: 8
     moving_avg: true
