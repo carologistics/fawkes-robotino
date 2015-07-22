@@ -231,6 +231,8 @@ nodes:
       - only-copy-properties
       - tag_input: 17
       - tag_output: 18
+      - input_offset_x: 0.01
+      - output_offset_x: 0.02
   - !unconnected
     name: C-RS1
     pos: [0, 0]
@@ -245,6 +247,8 @@ nodes:
       - only-copy-properties
       - tag_input: 177
       - tag_output: 178
+      - input_offset_x: 0.01
+      - output_offset_x: -0.02
   - !unconnected
     name: C-BS
     pos: [0, 0]
