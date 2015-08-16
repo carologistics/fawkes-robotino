@@ -29,7 +29,7 @@
   (phase PRODUCTION)
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
 		 (machine ?mps) (machine-feature ?feature) (gate ?gate) (ring ?ring))
-  (machine (name ?mps) (mtype ?mtype))
+  (machine (name ?mps) (mtype ?mtype) (state ~DOWN))
   (task (name ?task-name))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
@@ -52,11 +52,11 @@
   ) 
   ; check if we have to instruct an mps:
   (if (and (eq ?mtype CS)
-           (eq ?task-name fill-cap)) then
+           (or (eq ?task-name fill-cap)(eq ?task-name clear-cs))) then
     (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock ?mps)))
   )
   (if (and (eq ?mtype CS)
-           (member$ ?task-name (create$ produce-c0 deliver))) then
+           (member$ ?task-name (create$ produce-c0 produce-cx deliver))) then
     (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock ?mps)))
   )
   (if (and (eq ?mtype DS)
@@ -98,32 +98,45 @@
   (modify ?step (state running))
   (printout warn "TODO: Pick bases from both BS sides" crlf)
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps))
+	  (skill-to-execute (skill get_product_from) (args place ?mps side input) (target ?mps))
 	  (wait-for-lock (priority ?p) (res ?mps))
     (mps-instruction (machine ?mps) (base-color ?color) (lock ?mps))
   )
 )
 
-; (defrule step-get-base-finish
-;   "Base retrieved from BS"
-;   (declare (salience ?*PRIORITY-STEP-FINISH*))
-;   (phase PRODUCTION)
-;   ?step <- (step (name get-base) (state running) (base ?base-color))
-;   ?state <- (state SKILL-FINAL)
-;   ?ste <- (skill-to-execute (skill get_product_from)
-; 			    (args place ?bs) (state ?skill-finish-state&final))
-;   ?mf <- (machine (name ?bs) (produced-id ?product-id))
-;   ?h <- (holding NONE)
-;   =>
-;   (printout t ?base-color " base retrieved"  crlf)
-;   (retract ?state ?ste ?h)
-;   (assert
-;     (state STEP-FINISHED)
-;     (holding ?product-id)
-;   )
-;   (synced-modify ?mf produced-id 0)
-;   (modify ?step (state finished))
-; )
+(defrule step-deliver-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  (task (name deliver) (state running))
+  ?step <- (step (name insert) (state wait-for-activation) (task-priority ?p)
+		 (machine ?mps) (machine-feature ?feature) (base ?color))
+  ?state <- (state STEP-STARTED)
+  (team-color ?team)
+  (holding ?produced-id)
+  (product (id ?produced-id) (product-id ?product-id))
+  ?of <- (order (product-id ?product-id) (in-production ?ip) (in-delivery ?id))
+  =>
+  (synced-modify ?of in-production (- ?ip 1) in-delivery (+ ?id 1))
+)
+
+(defrule step-deliver-abort
+  (declare (salience ?*PRIORITY-STEP-FAILED*))
+  (phase PRODUCTION)
+  (game-time $?game-time)
+  (task (name deliver) (state running))
+  ?step <- (step (name get-output|insert) (state running))
+  ?state <- (state SKILL-EXECUTION)
+  (holding ?produced-id)
+  (product (id ?produced-id) (product-id ?product-id))
+  (order (product-id ?product-id) (in-production ?ip)
+         (end ?end&:(< ?end (- (nth$ 1 ?game-time) ?*DELIVER-ABORT-TIMEOUT*))))
+  ?ste <- (skill-to-execute (state running))
+  =>
+  (printout warn "Abort deliver because the order has expired" crlf)
+  (retract ?state ?ste)
+  (assert (state STEP-FAILED))
+  (modify ?step (state failed))
+)
 
 (defrule step-discard-unknown-start
   "Open gripper to discard unknown base"
@@ -176,7 +189,7 @@
   (bind ?search-tags (utils-get-tags-str-still-to-explore ?team))
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill explore_zone) (args min_x (nth$ 1 ?zone-boarders)
-                                                       max_x (nth$ 2 ?zone-boarders)
+                        max_x (nth$ 2 ?zone-boarders)
                                                        min_y (nth$ 3 ?zone-boarders)
                                                        max_y (nth$ 4 ?zone-boarders)
                                                        search_tags ?search-tags)
@@ -345,64 +358,22 @@
   (assert (state STEP-FINISHED))
 )
 
-; (defrule step-get-S0-start
-;   (declare (salience ?*PRIORITY-STEP-START*))
-;   (phase PRODUCTION)
-;   ?step <- (step (name get-s0) (state wait-for-activation) (task-priority ?p))
-;   ?state <- (state STEP-STARTED)
-;   (team-color ?team)
-;   (input-storage ?team ?ins ? ? )
-;   (secondary-storage ?team ?inssec ? ?)
-;   (game-time $?game-time)
-;   =>
-;   (retract ?state)
-;   (assert (state WAIT-FOR-LOCK))
-;   (modify ?step (state running))
-;   ; (if (tac-check-for-secondary-ins ?ins ?inssec ?game-time)
-;   ;   then
-;   ;   (assert (skill-to-execute (skill get_s0) (args place ?inssec) (target ?inssec))
-;   ; 	    (wait-for-lock (priority ?p) (res ?inssec))
-;   ;   )
-;   ;   else
-;   ;   (assert (skill-to-execute (skill get_s0) (args place ?ins) (target ?ins))
-;   ; 	    (wait-for-lock (priority ?p) (res ?ins))
-;   ;   )
-;   ; )
-; )
-
-; (defrule step-produce-at-start
-;   (declare (salience ?*PRIORITY-STEP-START*))
-;   (phase PRODUCTION)
-;   ?step <- (step (name produce-at) (state wait-for-activation) (machine ?machine))
-;   ?state <- (state STEP-STARTED)
-;   (holding ~NONE)
-;   (machine (name ?machine) (mtype ?mtype))
-;   =>
-;   (retract ?state)
-;   (assert (state WAIT-FOR-LOCK)
-; 	  (skill-to-execute (skill finish_puck_at) (args place ?machine) (target ?machine))
-; 	  (dont-wait false)
-; 	  (wait-for-lock (res ?machine))
-;   )
-;   (modify ?step (state running))
-; )
-
-; (defrule step-deliver-start
-;   (declare (salience ?*PRIORITY-STEP-START*))
-;   (phase PRODUCTION)
-;   ?step <- (step (name deliver) (state wait-for-activation) (task-priority ?p))
-;   ?state <- (state STEP-STARTED)
-;   (holding P1|P2|P3)
-;   (team-color ?team)
-;   (deliver ?team ?deliver ? ?)
-;   =>
-;   (retract ?state)
-;   (assert (state WAIT-FOR-LOCK)
-; 	  (skill-to-execute (skill deliver) (args place ?deliver) (target ?deliver))
-; 	  (wait-for-lock (priority ?p) (res ?deliver))
-;   )
-;   (modify ?step (state running))
-; )
+(defrule step-fail-machine-broken
+  "Fail a step if the machine to be used becomes broken"
+  (phase PRODUCTION)
+  ?step <- (step (name ?step-name) (state running) (machine ?mps)
+                 (machine-feature ~SHELF))
+  (machine (name ?mps) (state BROKEN))
+  ?state <- (state SKILL-EXECUTION)
+  ?ste <- (skill-to-execute (target ?mps))
+  ?wfl <- (wait-for-lock (state use))
+  =>
+  (printout t "Failing step " ?step-name " because " ?mps " is broken" crlf)
+  (modify ?step (state failed))
+  (modify ?wfl (state finished))
+  (retract ?state ?ste)
+  (assert (state STEP-FAILED))
+)
 
 ;;;;;;;;;;;;;;;;
 ; common finish:

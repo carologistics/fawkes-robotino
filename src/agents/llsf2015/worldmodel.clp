@@ -35,6 +35,14 @@
         )
       )
     )
+    (if (pb-has-field ?m "zone") then
+      (bind ?m-zone (sym-cat (pb-field-value ?m "zone")))
+      (do-for-fact ((?zone-exp zone-exploration))
+        (eq ?zone-exp:name ?m-zone)
+
+        (modify ?zone-exp (machine ?m-name))
+      )
+    )
   )
   (assert (received-machine-info))
   (retract ?pb-msg)
@@ -72,7 +80,7 @@
   ?mps-f <- (machine (name ?mps))
   ?cs-f <- (cap-station (name ?mps))
   (step (name insert) (state running))
-  (task (name fill-cap))
+  (task (name fill-cap|clear-cs))
   ;an inserted puck without cap will be the final product
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps))
@@ -100,12 +108,24 @@
   ?pf <- (product (id ?product-id) (rings $?r))
   =>
   (retract ?hf)
-  (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
+  (printout t "Inserted product " ?product-id " to have a ring assembled in the RS" crlf)
   (assert (holding NONE))
   ; there is no relevant waiting time until the cs has finished the loading step right?
-  (synced-modify ?mf produced-id ?product-id)
+  (synced-modify ?mf loaded-id ?product-id)
   (synced-modify ?rsf bases-loaded (- ?bl ?rb))
-  (synced-modify ?pf rings (append$ ?r ?ring-color))
+  (synced-add-to-multifield ?pf rings ?ring-color)
+)
+
+(defrule wm-ring-produced
+  (declare (salience ?*PRIORITY-WM*))
+  ?mf <- (machine
+    (name ?rs)
+    (state READY-AT-OUTPUT|IDLE)
+    (loaded-id ?produced-id&~0)
+    (produced-id 0)
+  )
+  =>
+  (synced-modify ?mf loaded-id 0 produced-id ?produced-id)
 )
 
 (defrule wm-insert-product-into-cs-final
@@ -113,17 +133,18 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
-  (task (name produce-c0|deliver))
+  (task (name produce-c0|produce-cx))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
-  ?hf <- (holding ?product-id)
-  ?pf <- (product (id ?product-id) (cap NONE))
+  ?hf <- (holding ?produced-id)
+  ?pf <- (product (id ?produced-id) (product-id ?product-id) (cap NONE))
+  ?of <- (order (product-id ?product-id) (in-production ?ip))
   =>
   (retract ?hf)
-  (printout t "Inserted product " ?product-id " to be finished in the CS" crlf)
+  (printout t "Inserted product " ?produced-id " to be finished in the CS" crlf)
   (assert (holding NONE))
   ; there is no relevant waiting time until the cs has finished the loading step right?
-  (synced-modify ?mf produced-id ?product-id)
+  (synced-modify ?mf produced-id ?produced-id)
   (synced-modify ?csf cap-loaded NONE)
   (synced-modify ?pf cap ?cap)
 )
@@ -133,15 +154,12 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
-  (task (name produce-c0|deliver))
+  (task (name deliver))
   ?mf <- (machine (name ?mps) (mtype DS))
   ?hf <- (holding ?produced-id&~NONE)
   (product
     (id ?produced-id)
     (product-id ?product-id)
-    (rings $?r&:(eq 0 (length$ ?r)))
-    (cap ?cap-color)
-    (base ?base-color)
   )
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd)
@@ -194,7 +212,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill get_product_from) (state final) (target ?mps))
-  (step (name get-output|get-base) (state running))
+  (step (name get-output) (state running))
   ?mf <- (machine (name ?mps) (produced-id ?produced-id))
   ?hf <- (holding NONE)
   =>
@@ -204,16 +222,36 @@
   (synced-modify ?mf produced-id 0)
 )
 
+(defrule wm-get-base-final
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-FINAL)
+  (skill-to-execute (skill get_product_from) (state final) (target ?mps))
+  (step (name get-base) (state running) (product-id ?product-id))
+  ?mf <- (machine (name ?mps) (produced-id ?produced-id))
+  ?hf <- (holding NONE)
+  ?pf <- (product (id ?produced-id))
+  =>
+  (retract ?hf)
+  (printout t "Fetched base " ?produced-id " from " ?mps crlf)
+  (assert (holding ?produced-id))
+  (synced-modify ?mf produced-id 0)
+  (synced-modify ?pf product-id ?product-id)
+)
+
 (defrule wm-get-output-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
   (step (name get-output|get-base) (state running))
-  ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0))
+  ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0) (state ?mps-state))
   =>
   (printout t "Failed to fetch a product from the output of " ?mps crlf)
-  (printout t "I assume there is no more output product at " ?mps crlf)
-  (synced-modify ?mf produced-id 0)
+  (if (neq ?mps-state READY-AT-OUTPUT) then
+    (printout t "MPS " ?mps " is not READY-AT-OUTPUT. So there should not be a puck anymore." crlf)
+    (synced-modify ?mf produced-id 0)
+    else
+    (printout t "MPS " ?mps " is READY-AT-OUTPUT. The puck should still be there." crlf)
+  )
 )
 
 (defrule wm-store-lights
@@ -242,36 +280,6 @@
   (printout error "Delivery failed. Try again if I have a puck." crlf) 
 )
 
-;(defrule wm-goto-failed
-;  (declare (salience ?*PRIORITY-WM-LOW*))
-;  (state SKILL-FAILED)
-;  (skill-to-execute (skill finish_puck_at) (state failed) (target ?name))
-;  ?gtdw <- (dont-wait ?dont-wait)
-;  ?hf <- (holding ?)
-;  (puck-in-gripper ?puck)
-;  =>
-;  (retract ?gtdw)
-;  (if (not ?puck) then
-;    (retract ?hf)
-;    (assert (holding NONE))
-;  )
-;  (printout error "Production failed at " ?name crlf) 
-;)
-
-;(defrule wm-take-puck-to-failed
-;  (declare (salience ?*PRIORITY-WM-LOW*))
-;  (state SKILL-FAILED)
-;  (skill-to-execute (skill take_puck_to) (state failed) (target ?name))
-;  ?hf <- (holding ~NONE)
-;  (puck-in-gripper ?puck)
-;  =>
-;  (if (not ?puck) then
-;    (retract ?hf)
-;    (assert (holding NONE))
-;    (printout error "Lost puck during take_puck_to" crlf)
-;  )
-;)
-
 (defrule wm-drive-to-failed
   (declare (salience ?*PRIORITY-WM-LOW*))
   (state SKILL-FAILED)
@@ -285,81 +293,6 @@
     (printout error "Lost puck during drive_to" crlf)
   )
 )
-
-;(defrule wm-goto-light
-;  (declare (salience ?*PRIORITY-WM*))
-;  (state SKILL-FINAL)
-;  (skill-to-execute (skill finish_puck_at) (state final))
-;  (not (lights))
-;  ?lf <- (last-lights $?lights&:(> (length$ ?lights) 0))
-;  =>
-;  (retract ?lf)
-;  (assert (lights ?lights))
-;)
-
-; (defrule wm-proc-complete-without-robot
-;   (declare (salience ?*PRIORITY-WM*))
-;   (time $?now)
-;   ?mf <- (machine (name ?name) (mtype ?mtype) (output ?output) (loaded-with $?lw) (junk ?jn)
-;            (final-prod-time $?fpt&:(and (timeout ?now ?fpt 0.5) (neq (nth$ 1 ?fpt) 0)))
-; 	   (produced-puck NONE)
-;          )
-;   =>
-;   (printout t "Production completed at " ?name "|" ?mtype crlf)
-;   (modify ?mf (final-prod-time (create$ 0 0)) (produced-puck ?output) (loaded-with (create$)) (junk (- (+ ?jn (length$ ?lw)) 1)))
-; )
-
-; (defrule wm-out-of-order-proc-started
-;   "machine out of order and we left the last puck there, so the machine starts producing when getting active again"
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
-;   ?gtdw <- (dont-wait true)
-;   ?hf <- (holding ?was-holding)
-;   ?lf <- (lights GREEN-OFF YELLOW-OFF RED-ON)
-;   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
-;   (time $?now)
-;   (production-time ?mtype ?min-prod-time ?)
-;   (out-of-order-time max ?ooo-max)
-;   (out-of-order-time recycle-max ?ooo-recycle-max)
-;   =>
-;   (retract ?hf ?lf ?gtdw)
-;   (assert (holding NONE))
-;   (printout t "Machine Out Of Order; Production starts afterwards at " ?name "|" ?mtype crlf)
-;   (if (eq ?mtype RECYCLE)
-;     then
-;     (bind ?ooo-time ?ooo-recycle-max)
-;     else
-;     (bind ?ooo-time ?ooo-max)
-;   )
-;   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?was-holding))
-; 	  (worldmodel-change (machine ?name) (change SET_PROD_FINISHED_TIME) (amount (+ (nth$ 1 ?now) ?min-prod-time ?ooo-time)))
-; 	  (worldmodel-change (machine ?name) (change SET_OUT_OF_ORDER_UNTIL) (amount (+ (nth$ 1 ?now) ?ooo-time)))
-;   )
-; )
-
-; (defrule wm-out-of-order-goto-aborted
-;   "machine out of order and we aborted loading the machine"
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill finish_puck_at) (state final) (target ?name))
-;   ?gtdw <- (dont-wait false)
-;   ?lf <- (lights GREEN-OFF YELLOW-OFF RED-ON)
-;   ?mf <- (machine (name ?name) (mtype ?mtype) (loaded-with $?lw))
-;   (time $?now)
-;   (out-of-order-time max ?ooo-max)
-;   (out-of-order-time recycle-max ?ooo-recycle-max)
-;   =>
-;   (retract ?lf ?gtdw)
-;   (printout t "Machine Out Of Order; Loading/Producing this machine aborted at " ?name "|" ?mtype crlf)
-;   (if (eq ?mtype RECYCLE)
-;     then
-;     (bind ?ooo-time ?ooo-recycle-max)
-;     else
-;     (bind ?ooo-time ?ooo-max)
-;   )
-;   (assert (worldmodel-change (machine ?name) (change SET_OUT_OF_ORDER_UNTIL) (amount (+ (nth$ 1 ?now) ?ooo-time))))
-; )
 
 (defrule wm-proc-delivered
   (declare (salience ?*PRIORITY-WM*))
@@ -395,87 +328,6 @@
   (assert (state SKILL-FAILED))
 )
 
-; (defrule wm-get-produced-final
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill get_produced) (state final) (target ?name))
-;   ?hf <- (holding NONE)
-;   ?mf <- (machine (name ?name) (output ?output))
-;   =>
-;   (retract ?hf)
-;   (assert (holding ?output))
-;   (printout t "Got Produced Puck." crlf)
-;   (assert (worldmodel-change (machine ?name) (change REMOVE_PRODUCED)))
-; )
-
-; (defrule wm-get-produced-failed
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill get_produced) (state failed) (target ?name))
-;   ?hf <- (holding NONE)
-;   ;?mf <- (machine (name ?name) (output ?output))
-;   =>
-;   (retract ?hf)
-;   (assert (holding NONE))
-;   (printout error "Got Produced Puck failed." crlf)
-;   ;allow one problem. when the second occurs the machine gets blocked
-;   (assert (worldmodel-change (machine ?name) (change SET_DOUBTFUL_WORLDMODEL)))
-;   (assert (worldmodel-change (machine ?name) (change REMOVE_PRODUCED)))
-;   (printout error "remove produced puck in wm!" crlf)
-; )
-
-; (defrule wm-store-puck-final
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill store_puck) (state final) (target ?name))
-;   ?hf <- (holding ?puck)
-;   ?mf <- (puck-storage (name ?name))
-;   =>
-;   (retract ?hf)
-;   (assert (holding NONE))
-;   (printout t "Successfully stored puck." crlf)
-;   (assert (worldmodel-change (machine ?name) (change ADD_LOADED_WITH) (value ?puck)))
-; )
-
-; (defrule wm-store-puck-failed
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FAILED)
-;   (skill-to-execute (skill store_puck) (state failed) (target ?name))
-;   ?hf <- (holding ?puck)
-;   ?mf <- (puck-storage (name ?name))
-;   (puck-in-gripper ?puck-in-gripper)
-;   =>
-;   (if (not ?puck-in-gripper) then
-;     (retract ?hf)
-;     (assert (holding NONE))
-;   )
-;   (printout error "Store puck failed" crlf)
-; )
-
-; (defrule wm-get-stored-puck-final
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FINAL)
-;   (skill-to-execute (skill get_stored_puck) (state final) (target ?name))
-;   ?hf <- (holding NONE)
-;   ?mf <- (puck-storage (name ?name) (puck ?puck))
-;   =>
-;   (retract ?hf)
-;   (assert (holding ?puck))
-;   (printout t "Successfully got stored puck." crlf)
-;   (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
-; )
-
-; (defrule wm-get-stored-puck-failed
-;   (declare (salience ?*PRIORITY-WM*))
-;   (state SKILL-FAILED)
-;   (skill-to-execute (skill get_stored_puck) (state failed) (target ?name))
-;   ?hf <- (holding NONE)
-;   ?mf <- (puck-storage (name ?name) (puck ?puck))
-;   =>
-;   (printout error "Failed to get stored puck." crlf)
-;   (assert (worldmodel-change (machine ?name) (change REMOVE_LOADED_WITH) (value ?puck)))
-; )
-
 (defrule wm-update-pose
   (declare (salience ?*PRIORITY-CLEANUP*))
   ?pif <- (Position3DInterface (id "Pose") (translation $?pos))
@@ -488,7 +340,7 @@
 (defrule wm-update-puck-in-gripper
   (declare (salience ?*PRIORITY-CLEANUP*))
   ?grip <- (AX12GripperInterface (id "Gripper AX12") (holds_puck ?holds-puck))
-  ?pig <- (puck-in-gripper ?puck)
+  ?pig <- (puck-in-gripper ?puck&:(neq ?puck ?holds-puck))
   =>
   (if (eq ?holds-puck TRUE)
     then
@@ -507,26 +359,63 @@
 (defrule wm-set-bs-output-color
   "Set the correct loaded-id after color is ordered at BS"
   (declare (salience ?*PRIORITY-WM*))
-  ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT))
+  ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT|PROCESSING))
   (step (name get-base) (state running) (base ?base-color))
   (step (name get-base) (state running) (base ?base-color) (product-id ?product-id))
+  (not (skill-to-execute (skill get_product_from) (state final|failed)))
   =>
   (bind ?produced-id (random-id))
-  (synced-assert (str-cat "(product (id " ?produced-id ") (product-id " ?product-id
-                          ") (base " ?base-color ") (cap NONE))"))
+  (synced-assert (str-cat "(product (id " ?produced-id ") (base " ?base-color ") (cap NONE))"))
   (synced-modify ?bs produced-id ?produced-id)
 )
 
 (deffunction wm-remove-incoming-by-agent (?agent)
-  "remove all entries of machine-incoming fields of a specific agent (e.g. after a lost connection)"
-  (delayed-do-for-all-facts ((?m machine)) (member$ (sym-cat ?agent) ?m:incoming-agent)
-    (bind ?new-incoming ?m:incoming)
-    (bind ?new-incoming-agent ?m:incoming-agent)
-    (while (member$ (sym-cat ?agent) ?new-incoming-agent)
-      (bind ?index (member$ (sym-cat ?agent) ?new-incoming-agent))
-      (bind ?new-incoming (delete$ ?new-incoming ?index ?index))
-      (bind ?new-incoming-agent (delete$ ?new-incoming-agent ?index ?index))
+  "remove all entries of incoming fields of a specific agent (e.g. after a lost connection)"
+  (bind ?incoming-templates (create$ machine zone-exploration puck-storage))
+  (progn$ (?templ ?incoming-templates)
+    (delayed-do-for-all-facts ((?m ?templ)) (member$ (sym-cat ?agent) ?m:incoming-agent)
+      (bind ?new-incoming ?m:incoming)
+      (bind ?new-incoming-agent ?m:incoming-agent)
+      (while (member$ (sym-cat ?agent) ?new-incoming-agent)
+        (bind ?index (member$ (sym-cat ?agent) ?new-incoming-agent))
+        (bind ?new-incoming (delete$ ?new-incoming ?index ?index))
+        (bind ?new-incoming-agent (delete$ ?new-incoming-agent ?index ?index))
+      )
+      (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
     )
-    (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
-  ) 
+  )
+)
+
+(defrule wm-reset-broken-machine
+  "When a machine is in the broken state, the referee has to remove all pucks from it and the state is resetted"
+  (declare (salience ?*PRIORITY-WM*))
+  ?m <- (machine (name ?name) (state BROKEN) (loaded-id ?lid) (produced-id ?pid)
+                 (final-prod-time $?fpt&:(or (neq ?lid 0)
+                                             (neq ?pid 0)
+                                             (neq (nth$ 1 ?fpt) 0))))
+  =>
+  (printout warn "MPS " ?name " is broken and has to be reset!" crlf)
+  (modify ?m (loaded-id 0) (produced-id 0) (final-prod-time (create$ 0 0)))
+)
+
+(defrule wm-reset-broken-cap-station
+  "When a machine is in the broken state, the referee has to remove all pucks from it and the state is resetted"
+  (declare (salience ?*PRIORITY-WM*))
+  (machine (name ?name) (state BROKEN) (mtype CS))
+  ?cs <- (cap-station (name ?name) (cap-loaded ~NONE))
+  =>
+  (printout warn "cap-station " ?name " is broken and has to be reset!" crlf)
+  (modify ?cs (cap-loaded NONE))
+)
+
+(defrule wm-reset-broken-ring-station
+  "When a machine is in the broken state, the referee has to remove all pucks from it and the state is resetted"
+  (declare (salience ?*PRIORITY-WM*))
+  (machine (name ?name) (state BROKEN) (mtype RS))
+  ?rs <- (ring-station (name ?name) (bases-loaded ?bl)
+                       (selected-color ?sc&:(or (neq ?bl 0)
+                                                (neq ?sc NONE))))
+  =>
+  (printout warn "ring-station " ?name " is broken and has to be reset!" crlf)
+  (modify ?rs (bases-loaded 0) (selected-color NONE))
 )

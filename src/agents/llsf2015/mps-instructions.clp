@@ -16,7 +16,7 @@
 (deffunction mps-instruction-base-station (?machine ?team-color ?base-color)
   (bind ?instruction (mps-instruction-get-prepare-machine-msg ?machine ?team-color))
   (bind ?bs-inst (pb-create "llsf_msgs.PrepareInstructionBS"))
-  (pb-set-field ?bs-inst "side" OUTPUT)
+  (pb-set-field ?bs-inst "side" INPUT)
   (pb-set-field ?bs-inst "color" (sym-cat BASE_ ?base-color))
   (pb-set-field ?instruction "instruction_bs" ?bs-inst)
   (printout t ?base-color crlf)
@@ -92,7 +92,7 @@
   (time $?now)
   ?mps-inst <- (mps-instruction (machine ?machine) 
                                 (seq ?seq&:(>= ?seq ?*MIN-TIMES-TO-SEND-MPS-INSTRUCTIONS*)))
-  (machine (name ?machine) (state PREPARED|READY-AT-OUTPUT))
+  (machine (name ?machine) (state PROCESSING|PREPARED|READY-AT-OUTPUT))
   =>
   (printout t "Mps " ?machine " successfully instructed" crlf)
   (retract ?mps-inst)

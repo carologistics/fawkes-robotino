@@ -15,7 +15,7 @@
   ?*LOCK-STATUS-SEND-PERIOD* = 1.0
   ?*WORLDMODEL-SYNC-PERIOD* = 1.0
   ?*WORLDMODEL-CHANGE-SEND-PERIOD* = 0.5
-  ?*MPS_INSTRUCTION-PERIOD* = 1.0
+  ?*MPS_INSTRUCTION-PERIOD* = 0.5
 
   ?*MIN-TIMES-TO-SEND-MPS-INSTRUCTIONS* = 4
 
@@ -27,6 +27,7 @@
   ;(if there is a master the timeout gets larger)
   ?*CURRENT-MASTER-TIMEOUT* = 5.0
   ?*INITIAL-MASTER-TIMEOUT* = 5.0
+  ?*MASTER-TIMEOUT-ROBOT-OFFSET* = 5.0
   ?*ROBOT-TIMEOUT* = 10.0
   ?*RELEASE-DISTANCE* = 0.5
 
@@ -66,6 +67,14 @@
 
   ?*MESSAGE-OVERHEAD-SIZE* = 4
   ?*MAX-MESSAGE-SIZE* = 900 ; bytes
+
+  ?*PRODUCE-C0-AHEAD-TIME* = 90
+  ?*PRODUCE-C0-LATEST-TIME* = 30
+  ?*PRODUCE-CX-AHEAD-TIME* = 150
+  ?*PRODUCE-CX-LATEST-TIME* = 30
+  ?*DELIVER-AHEAD-TIME* = 20
+  ?*DELIVER-LATEST-TIME* = 10
+  ?*DELIVER-ABORT-TIMEOUT* = 30
 )
 
 (defrule globals-config-team-name
@@ -89,9 +98,11 @@
 (defrule globals-config-timeouts
   (confval (path "/clips-agent/llsf2015/initial-master-timeout") (type FLOAT) (value ?initial))
   (confval (path "/clips-agent/llsf2015/robot-timeout") (type FLOAT) (value ?robot-timeout))
+  (confval (path "/clips-agent/llsf2015/robot-number") (type UINT) (value ?robot-number))
   =>
   (bind ?*ROBOT-TIMEOUT* ?robot-timeout)
   (bind ?*INITIAL-MASTER-TIMEOUT* ?initial)
+  (bind ?*MASTER-TIMEOUT-ROBOT-OFFSET* (* ?robot-number 3))
 )
 
 (defrule globals-config-release-distance

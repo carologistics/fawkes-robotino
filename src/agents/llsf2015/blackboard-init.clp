@@ -28,6 +28,8 @@
   (blackboard-open "Position3DInterface" "/tag-vision/13")
   (blackboard-open "Position3DInterface" "/tag-vision/14")
   (blackboard-open "Position3DInterface" "/tag-vision/15")
+  (blackboard-open "ZoneInterface" "/explore-zone/info")
+  (blackboard-open "Position3DInterface" "/explore-zone/pose")
   (blackboard-open "AX12GripperInterface" "Gripper AX12")
 
   ;unwatch to avoid debug spam
@@ -44,6 +46,8 @@
   (unwatch rules TagVisionInterface-cleanup)
   (unwatch facts AX12GripperInterface)
   (unwatch rules AX12GripperInterface-cleanup)
+  (unwatch facts ZoneInterface)
+  (unwatch rules ZoneInterface-cleanup)
 
   (assert (loaded interfaces))
 )

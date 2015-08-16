@@ -98,7 +98,7 @@
   "If master was not announced within the timeout limit announce self as master."
   ?r <- (lock-role SLAVE)
   (time $?now)
-  ?mls <- (master-last-seen $?last&:(timeout ?now ?last ?*CURRENT-MASTER-TIMEOUT*))
+  ?mls <- (master-last-seen $?last&:(timeout ?now ?last (+ ?*CURRENT-MASTER-TIMEOUT* ?*MASTER-TIMEOUT-ROBOT-OFFSET*)))
   ?mn <- (master-name ?)
   =>
   (printout t "MASTER timed out -> Getting MASTER" crlf)

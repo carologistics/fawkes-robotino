@@ -59,8 +59,7 @@
   ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame)
 		    (trans $?trans) (rot $?rot))
   (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
-  (not (navgraph-node (name ?machine-str&:(eq ?machine-str (str-cat ?machine)))))
-  ; TODO: check in which zone the machine is located to mark that the tag in this zone was found
+  (not (navgraph-added-for-mps (name ?machine)))
   =>
   (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side 
 	    ") we got from another bot to Navgraph-generation"  crlf)

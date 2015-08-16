@@ -72,8 +72,11 @@
   (slot frame (type STRING))
   (multislot trans (type FLOAT) (cardinality 3 3))
   (multislot rot (type FLOAT) (cardinality 4 4))
-  (slot already-added (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot sync-id (type INTEGER) (default 0))
+)
+
+(deftemplate navgraph-added-for-mps
+  (slot name (type SYMBOL))
 )
 
 (deftemplate last-navgraph-compute-msg 
@@ -199,7 +202,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 add-first-ring deliver fill-rs discard-unknown exploration-catch-up))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring deliver fill-rs discard-unknown exploration-catch-up clear-cs))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
@@ -278,6 +281,11 @@
   (slot green (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
   (slot yellow (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
   (slot red (type SYMBOL) (allowed-symbols ON OFF BLINKING UNKNOWN) (default UNKNOWN))
+)
+
+(deftemplate last-zoneinfo
+  (slot search-state (type SYMBOL) (allowed-symbols YES NO MAYBE UNKNOWN) (default UNKNOWN))
+  (slot tag-id (type INTEGER) (default -1))
 )
 
 (deftemplate mps-instruction
@@ -378,4 +386,7 @@
 
   (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag)))
   ; zone-exploration, machine, cap-station, product, ring station
+
+  (last-zoneinfo)
+
 )
