@@ -77,4 +77,9 @@ plugins/amcl:
   alpha2: 0.3
   save_pose_period: 0.0
   max_beams: 60
-  
+  map_file: maps/llsf-map-2015.png
+
+plugins/laser-filter:
+  robot/active: false
+  sick-downsample/active: false
+  simulation/active: true
