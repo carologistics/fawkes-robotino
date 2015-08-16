@@ -20,7 +20,7 @@ plugins/laser-filter:
         type: min_circle
 
         # Radius of minimum length; m
-        radius: 0.12
+        radius: 0.04
 
       2-sector:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
@@ -28,6 +28,20 @@ plugins/laser-filter:
 
         from: 235
         to: 125
+
+  map:
+
+    # URG input interface
+    in/filtered: Laser360Interface::Laser urg-filtered
+
+    # URG filtered output interface
+    out/mapless: Laser360Interface::Laser mapless
+
+    filters:
+
+      1-map:
+        # filter to remove map parts of the laser
+        type: map_filter
 
   colli:
 
