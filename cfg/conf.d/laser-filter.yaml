@@ -4,11 +4,12 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-filter
 ---
 plugins/laser-filter:
-  urg:
+  robot:
+    active: true
 
     # URG input interface
     #in/urg: Laser360Interface::Laser urg
-    in/sick-tim55x: Laser360Interface::Laser tim55x
+    in/sick-tim55x: Laser360Interface::Laser tim55x 360
 
     # URG filtered output interface
     out/filtered: Laser360Interface::Laser urg-filtered
@@ -42,6 +43,36 @@ plugins/laser-filter:
       1-map:
         # filter to remove map parts of the laser
         type: map_filter
+
+  simulation:
+    active: false
+    in/sick-tim55x: Laser360Interface::Laser tim55x
+    out/filtered: Laser360Interface::Laser urg-filtered
+    filters:
+      1-min:
+        type: min_circle
+        radius: 0.12
+
+      2-sector:
+        type: circle_sector
+        from: 235
+        to: 125
+
+
+  sick-downsample:
+    active: true
+
+    # URG input interface
+    #in/urg: Laser360Interface::Laser urg
+    in/sick-tim55x: Laser1080Interface::Laser tim55x
+
+    # URG filtered output interface
+    out/filtered: Laser360Interface::Laser tim55x 360
+
+    filters:
+      1-min:
+        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        type: 1080to360
 
   colli:
 
