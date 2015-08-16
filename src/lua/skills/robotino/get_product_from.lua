@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"mps_align", "product_pick", "drive_to","shelf_pick", "mps_detect_signal", "conveyor_align"}
+depends_skills     = {"mps_align", "product_pick", "drive_to","shelf_pick", "conveyor_align"}
 depends_interfaces = {
 }
 
@@ -47,10 +47,9 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},--TODO proper handling
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
-   {"MPS_DETECT_SIGNAL", SkillJumpState, skills={{mps_detect_signal}}, final_to="SKILL_PRODUCT_PICK", fail_to="FAILED"},
    {"SKILL_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
 }
 
@@ -59,8 +58,7 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PICK", cond="vars.shelf", desc="Pick from shelf"},
-   {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PICK", cond="vars.side", desc="Pick from conveyor and don't watch the light"},
-   {"DECIDE_ENDSKILL", "MPS_DETECT_SIGNAL", cond=true, desc="Pick from conveyor and watch light"},
+   {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PICK", cond="true", desc="Pick from conveyor"},
 }
 
 function INIT:init()
@@ -96,13 +94,20 @@ function MPS_ALIGN:init()
    self.skills[1].ori = 0
 end
 
-function MPS_DETECT_SIGNAL:init()
-   self.skills[1].wait_for = "YELLOW"
-   self.skills[1].place = self.fsm.vars.place
-end
-
 function SKILL_PRODUCT_PICK:init()
-   self.skills[1].place = self.fsm.vars.place
+   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
+      if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
+         self.skills[1].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
+      else
+         self.skills[1].offset_x = 0 
+      end 
+   else --if no side is given get from output
+      if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
+         self.skills[1].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
+      else
+         self.skills[1].offset_x = 0 
+      end 
+   end
 end
 
 function SKILL_SHELF_PICK:init()

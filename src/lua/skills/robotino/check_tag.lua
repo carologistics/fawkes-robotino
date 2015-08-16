@@ -50,14 +50,23 @@ function no_tag_vision()
    return not tag_info:has_writer()
 end
 
-function get_tag_visible(tag)
-   return tag:visibility_history() > 0
-end
-
 -- Check if one tag is visible
-function tag_visible()
-    local tag = fsm.vars.iface_name
-    return (tag and tag:visibility_history() > 0)
+function tag_visible(self)
+  for k,v in pairs(self.fsm.vars.tags) do
+    if v:visibility_history() > 0 then
+      if self.fsm.vars.tag_id then -- can I see the searched tag
+        id = tag_info:tag_id(k)
+        if id == self.fsm.vars.tag_id then
+          printf("check_tag: Found tag with id: " .. id)
+          return true
+        end
+      else -- can I see any tag
+        printf("check_tag: Found any tag")
+        return true
+      end
+    end
+  end
+  return false
 end
 
 -- Initialize as skill module
@@ -71,27 +80,36 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    closure={input_ok=input_ok},
-   {"INIT", "FAILED", cond="not vars.tag_id", desc="No tag_id given!"},
+   --{"INIT", "FAILED", cond="not vars.tag_id", desc="No tag_id given!"},
    {"INIT", "FAILED", cond=no_tag_vision, desc="Tag vision disabled"},
    {"INIT", "CHECK_TAG", cond=true},
-   {"CHECK_TAG", "FAILED", cond="not tag_visible()", desc="The given tag_id is not visible"},
-   {"CHECK_TAG", "FINAL", cond=tag_visible, desc="The given tag_id is not visible"},
+   {"CHECK_TAG", "FINAL", cond=tag_visible, desc="The given tag_id is visible"},
+   {"CHECK_TAG", "FAILED", timeout=1, desc="The given tag_id is not visible"},
 }
 
-function CHECK_TAG:init()
-   local i=1
-   local tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
-   -- find the blackboard interface that has the ID given by the tag_id arg
-   for j=0,15 do
-      id = tag_info:tag_id(j)
-      print("j: " .. tostring(j) .. " id: " .. tostring(id))
-      -- stop when id is found
-      if id == fsm.vars.tag_id then
-         self.fsm.vars.transform_name = "/tag_" .. tostring(j)
-         self.fsm.vars.iface_name = tags[i]
-         break
-      end
-      i = i+1
-   end
-   print("i: " .. tostring(i) .. " tag_" .. tostring(i-1))
+function INIT:init()
+  self.fsm.vars.tags = {}
+  self.fsm.vars.tags[0] = tag_0
+  self.fsm.vars.tags[1] = tag_1
+  self.fsm.vars.tags[2] = tag_2
+  self.fsm.vars.tags[3] = tag_3
+  self.fsm.vars.tags[4] = tag_4
+  self.fsm.vars.tags[5] = tag_5
+  self.fsm.vars.tags[6] = tag_6
+  self.fsm.vars.tags[7] = tag_7
+  self.fsm.vars.tags[8] = tag_8
+  self.fsm.vars.tags[9] = tag_9
+  self.fsm.vars.tags[10] = tag_10
+  self.fsm.vars.tags[11] = tag_11
+  self.fsm.vars.tags[12] = tag_12
+  self.fsm.vars.tags[13] = tag_13
+  self.fsm.vars.tags[14] = tag_14
+  self.fsm.vars.tags[15] = tag_15
+
+  if self.fsm.vars.tag_id then
+    printf("check_tag: Search for tag: " .. self.fsm.vars.tag_id)
+  else
+    printf("check_tag: Search for any tag")
+  end
 end
+

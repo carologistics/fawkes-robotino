@@ -59,8 +59,7 @@ documentation      = [==[ align_mps
 
                           @param tag_id     int     optional the tag_id for align_tag
                           @param x          float   the x offset after the alignmend
-                          @param y          float   optional the y offset after the alignmend
-                          @param ori        float   optional the ori offset after the alignmend
+                          @param y          float   optional the y offset after the alignmend; TODO this just works within the AREA_LINE_ERR_Y
 ]==]
 
 -- Initialize as skill module
@@ -70,13 +69,13 @@ local tfm = require("tf_module")
 local llutils = require("fawkes.laser-lines_utils")
 
 -- Tunables
-local TAG_X_ERR=0.02
 local MIN_VIS_HIST=10
-local TIMEOUT=4
-local AREA_LINE_ERR_X=0.4
+local TIMEOUT=5
+local AREA_LINE_ERR_X=0.1
 local AREA_LINE_ERR_Y=0.2
 local AREA_LINE_ERR_ORI=0.2 --0.17
 local LINE_TRIES=3
+local POSES_ORI_TAG={0.3, 0.3, -0.9, -0.3}
 
 function see_line(self)
   self.fsm.vars.line_chosen = nil
@@ -118,23 +117,39 @@ function see_line(self)
   end
 end
 
-fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRIES=LINE_TRIES},
+function pose_ok(self)
+  local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
+  if  pp.x - self.fsm.vars.x <= AREA_LINE_ERR_X and
+      pp.y - self.fsm.vars.y <= AREA_LINE_ERR_Y and
+      pp.ori - self.fsm.vars.ori <= AREA_LINE_ERR_ORI then
+    return true
+  end
+  return false
+end
+
+fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRIES=LINE_TRIES, pose_ok=pose_ok,},
    {"INIT",                   JumpState},
-   {"DECIDE_RETRY",           JumpState},
-   {"ALIGN",       SkillJumpState, skills={{motor_move}}, final_to="CHECK_TAG", fail_to="FAILED"},  --TODO check if tag is right if given
-   {"SEARCH_LINE",            JumpState}, --TODO check visibility_history
-   {"LINE_SETTLE",            JumpState},
-   {"CHECK_TAG",              SkillJumpState, skills={{check_tag}}, final_to="FINAL", fail_to="FINAL"},  --TODO go final even when failed because we have no solution right now
+   {"TURN_TO_SEARCH_FOR_TAG", SkillJumpState, skills={{motor_move}}, final_to="CHECK_TAG", fail_to="CHECK_TAG"}, -- if this failes, we still should keep looking, the exit is in GET_NEXT_POSE_FOR_TAG
+   {"CHECK_TAG",              SkillJumpState, skills={{check_tag}}, final_to="ALIGN_TAG", fail_to="GET_NEXT_POSE_FOR_TAG"},
+   {"GET_NEXT_POSE_FOR_TAG",  JumpState},
+   {"ALIGN_TAG",              SkillJumpState, skills={{align_tag}}, final_to="DECIDE_TRY", fail_to="FAILED"}, -- if this failes, the subskill or the tag vision needs to be fixed (we checked if we see the tag before)
+   {"DECIDE_TRY",             JumpState},
+   {"SETTLE_LINE",            JumpState},
+   {"ALIGN",                  SkillJumpState, skills={{motor_move}}, final_to="CHECK_POSE", fail_to="FAILED"},
+   {"CHECK_POSE",             JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT",             "LINE_SETTLE",        cond=true },
-   {"INIT",             "FAILED",             precond="not vars.x", desc="x argument missing"},
-   {"DECIDE_RETRY",     "SEARCH_LINE",        cond="vars.try <= LINE_TRIES", desc="try again to find a line" },
-   {"DECIDE_RETRY",     "FINAL",              cond=true, desc="tryed often enough, going final now :(" },
-   {"SEARCH_LINE",      "DECIDE_RETRY",       timeout=TIMEOUT,      desc="timeout"},
-   {"SEARCH_LINE",      "ALIGN",              cond=see_line,        desc="see line"},
-   {"LINE_SETTLE",      "SEARCH_LINE",        timeout=1,      desc="timeout"},
+   {"INIT",                   "FAILED",                 precond="not vars.x", desc="x argument missing"},
+   {"INIT",                   "CHECK_TAG",              cond=true },
+   {"GET_NEXT_POSE_FOR_TAG",  "TURN_TO_SEARCH_FOR_TAG", cond="table.getn(vars.poses_ori_tag) >= 1" }, -- if there is one in the list, the init function will set the value and remove it
+   {"GET_NEXT_POSE_FOR_TAG",  "FAILED",                 cond=true, desc="Can't find tag by turning"},
+   {"DECIDE_TRY",             "SETTLE_LINE",            cond="vars.try_line <= LINE_TRIES", desc="try again to find a line" },
+   {"DECIDE_TRY",             "FAILED",                 cond=true, desc="tryed often enough, we are failed now :(" },
+   {"SETTLE_LINE",            "ALIGN",                  cond=see_line },
+   {"SETTLE_LINE",            "FAILED",                 timeout=TIMEOUT },
+   {"CHECK_POSE",             "FINAL",                  cond=pose_ok,  desc="pose is ok"},
+   {"CHECK_POSE",             "DECIDE_TRY",             cond=true,        desc="pose is not ok, retry"},
 }
 
 function INIT:init()
@@ -162,22 +177,44 @@ function INIT:init()
   self.fsm.vars.lines[8]  = line8avg
   --]]
   
-  self.fsm.vars.try = 0
-  self.fsm.vars.retry_to_recover_by_line_times = 0
+  self.fsm.vars.try_line = 0
+  self.fsm.vars.poses_ori_tag = {}
+  for k,v in pairs(POSES_ORI_TAG) do
+    self.fsm.vars.poses_ori_tag[k] = v
+  end
 end
 
-function DECIDE_RETRY:init()
-  self.fsm.vars.try = self.fsm.vars.try + 1
-end
-
-function ALIGN:init()
-   local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
-   self.skills[1].x         = pp.x
-   self.skills[1].y         = pp.y
-   self.skills[1].ori       = pp.ori
-   self.skills[1].tolerance = {x=0.01, y=0.01, ori=0.02}
+function TURN_TO_SEARCH_FOR_TAG:init()
+  self.args["motor_move"] = { x=nil, y=nil, ori=self.fsm.vars.next_pose_ori}
 end
 
 function CHECK_TAG:init()
+  self.args["check_tag"] = { tag_id=self.fsm.vars.tag_id }
+end
+
+function GET_NEXT_POSE_FOR_TAG:init()
+  self.fsm.vars.next_pose_ori = table.remove(self.fsm.vars.poses_ori_tag, 1)
+end
+
+function ALIGN_TAG:init()
+  -- align by ALIGN_DISTANCE from tag to base_link with align_tag
+  local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
+  -- give align_tag the id if we have one
   self.skills[1].tag_id = self.fsm.vars.tag_id
+  self.skills[1].x = self.fsm.vars.x
+--  self.skills[1].y = -self.fsm.vars.y -- this should be the y minus the error tag error to the middle from the navgraph
+  self.skills[1].y = 0
+  self.skills[1].ori = self.fsm.vars.ori
+end
+
+function DECIDE_TRY:init()
+  self.fsm.vars.try_line = self.fsm.vars.try_line + 1
+end
+
+function ALIGN:init()
+  local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
+  self.skills[1].x         = pp.x
+  self.skills[1].y         = pp.y
+  self.skills[1].ori       = pp.ori
+  --self.skills[1].tolerance = {x=0.05, y=0.03, ori=0.1} -- this does not exists
 end

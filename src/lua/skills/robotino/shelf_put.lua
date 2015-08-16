@@ -44,7 +44,8 @@ fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
-   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAILED"},
+   --{"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAILED"},
+   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="WAIT_AFTER_GRAB"},
    {"WAIT_AFTER_GRAB", JumpState},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
@@ -56,14 +57,14 @@ fsm:add_transitions{
 
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.075 --TODO measure both values
-   local shelf_distance = 0.1
+   local shelf_to_conveyor = 0.09 --TODO measure both values
+   local shelf_distance = 0.09
    if self.fsm.vars.slot == "LEFT" then
       dest_y = shelf_to_conveyor
    elseif self.fsm.vars.slot == "MIDDLE" then
       dest_y = shelf_to_conveyor + shelf_distance
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = 0.3
+      dest_y = shelf_to_conveyor + 2*shelf_distance
    else
       dest_y = 0
       self.fsm:set_error("no shelf side set")
@@ -76,7 +77,7 @@ function GOTO_SHELF:init()
 end
 
 function APPROACH_SHELF:init()
-   self.skills[1].x = 0.05 --TODO measure this value
+   self.skills[1].x = 0.065 --TODO measure this value
 end
 
 function STORE_PRODUCT:init()
@@ -84,5 +85,5 @@ function STORE_PRODUCT:init()
 end
 
 function LEAVE_SHELF:init()
-   self.skills[1].x = -0.1
+   self.skills[1].x = -0.2
 end

@@ -26,6 +26,7 @@ depends_skills     = {"motor_move","approach_mps", "ax12gripper"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "conveyor_0", type = "Position3DInterface"},
+   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -36,9 +37,11 @@ conveyor vision
 skillenv.skill_module(_M)
 
 local TOLERANCE_Y = 0.005
-local TOLERANCE_Z = 0.003
+local TOLERANCE_Z = 0.002
 local MAX_TRIES = 4
-local Z_DEST_POS=0.005
+local Z_DEST_POS_WITH_PUCK = 0.002
+local Z_DEST_POS_WITHOUT_PUCK = 0.008
+local Z_DEST_POS = Z_DEST_POS_WITH_PUCK
 local Z_DIVISOR = 2
 
 function no_writer()
@@ -54,7 +57,7 @@ function tolerance_z_not_ok()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={MAX_TRIES=MAX_TRIES},
+   closure={MAX_TRIES=MAX_TRIES, Z_DEST_POS=Z_DEST_POS},
    {"INIT", JumpState},
    {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}}, final_to="DRIVE_YZ", fail_to="FAILED"},
    {"DRIVE_YZ", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="SETTLE", fail_to="FAILED"},
@@ -86,6 +89,11 @@ function APPROACH_MPS:init()
 end
 
 function DRIVE_YZ:init()
+   if gripper_if:is_holds_puck() then
+      Z_DEST_POS = Z_DEST_POS_WITH_PUCK
+   else
+      Z_DEST_POS = Z_DEST_POS_WITHOUT_PUCK
+   end
    self.skills[1].y = conveyor_0:translation(1)
    self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
    self.skills[2].command = "RELGOTOZ"

@@ -63,4 +63,5 @@ fawkes/bbsync:
         cluster_mps_8: Position3DInterface::/laser-cluster/mps/8
         cluster_mps_9: Position3DInterface::/laser-cluster/mps/9
         cluster_mps_10: Position3DInterface::/laser-cluster/mps/10
-
+      writing:
+        tfTags: TransformInterface::TF tags

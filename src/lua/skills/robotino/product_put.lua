@@ -30,7 +30,7 @@ depends_interfaces = { }
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
 and opens the gripper
-@param place Navgraph place to get the align_distance
+@param offset_x the offset_x from the navgraph point
 ]==]
 
 
@@ -41,8 +41,10 @@ local tfm = require("tf_module")
 fsm:define_states{ export_to=_M,
    {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}},
       final_to="OPEN_GRIPPER", fail_to="FAILED"},
+   --{"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
+   --   final_to="WAIT", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT", fail_to="FAILED"},
+      final_to="WAIT", fail_to="WAIT"},
    {"WAIT", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
       final_to="FINAL", fail_to="FAILED"},
@@ -53,7 +55,7 @@ fsm:add_transitions{
 }
 
 function APPROACH_MPS:init()
-   self.skills[1].vision = true
+   self.skills[1].offset_x = self.fsm.vars.offset_x
 end
 
 function OPEN_GRIPPER:init()

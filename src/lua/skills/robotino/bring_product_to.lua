@@ -48,7 +48,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"}, --TODO proper handling
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"},
@@ -98,7 +98,19 @@ function MPS_ALIGN:init()
 end
 
 function SKILL_PRODUCT_PUT:init()
-   self.skills[1].place = self.fsm.vars.place
+   if self.fsm.vars.side == "output" then
+      if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
+         self.skills[1].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
+      else
+         self.skills[1].offset_x = 0 
+      end 
+   else
+      if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
+         self.skills[1].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
+      else
+         self.skills[1].offset_x = 0 
+      end 
+   end 
 end
 
 function SKILL_SHELF_PUT:init()

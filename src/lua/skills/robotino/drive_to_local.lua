@@ -92,16 +92,17 @@ end
 
 function FORCE_SET_JUST_ORI:init()
   self.fsm.vars.just_ori = true
-  printf("Drive to: force just ori")
+  printf("Drive to local: force just ori")
 end
 
 function SKILL_GLOBAL_MOTOR_MOVE:init()
   if not self.fsm.vars.just_ori then
     self.skills[1].x   = self.fsm.vars.x
     self.skills[1].y   = self.fsm.vars.y
+  else
+    self.skills[1].x   = nil
+    self.skills[1].y   = nil
   end
-  self.skills[1].x   = nil
-  self.skills[1].y   = nil
   self.skills[1].ori = self.fsm.vars.ori
   
   printf("Drive to: call global_motor_move with: x(" .. tostring(self.skills[1].x) .. ") y(" .. tostring(self.skills[1].y)  ..") ori(" .. tostring(self.skills[1].ori) .. ")")

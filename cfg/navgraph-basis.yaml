@@ -145,7 +145,6 @@ nodes:
     name: C-ins-out
     pos: [3.3, -0.55]
     properties:
-      - orientation: 1.57
       - always-copy: true
   - !unconnected
     name: C-ins-in
@@ -157,7 +156,6 @@ nodes:
     name: M-ins-out
     pos: [-3.3, -0.55]
     properties:
-      - orientation: 1.57
       - always-copy: true
   - !unconnected
     name: M-ins-in
@@ -193,6 +191,8 @@ nodes:
       - only-copy-properties
       - tag_input: 17
       - tag_output: 18
+      - input_offset_x: 0.01
+      - output_offset_x: 0.02
   - !unconnected
     name: C-RS1
     pos: [0, 0]
@@ -207,6 +207,8 @@ nodes:
       - only-copy-properties
       - tag_input: 177
       - tag_output: 178
+      - input_offset_x: 0.01
+      - output_offset_x: -0.02
   - !unconnected
     name: C-BS
     pos: [0, 0]
@@ -216,6 +218,7 @@ nodes:
       - tag_output: 66
       - input_offset_y: 0
       - output_offset_y: -0.01
+      - input_offset_x: 0.01
   - !unconnected
     name: C-DS
     pos: [0, 0]
@@ -225,6 +228,7 @@ nodes:
       - tag_output: 82
       - input_offset_y: -0.02
       - output_offset_y: 0
+      - input_offset_x: -0.02
 #Magenta
   - !unconnected
     name: M-CS1
@@ -233,6 +237,7 @@ nodes:
       - only-copy-properties
       - tag_input: 97
       - tag_output: 98
+      - output_offset_x: 0.01
   - !unconnected
     name: M-CS2
     pos: [0, 0]
@@ -254,6 +259,8 @@ nodes:
       - only-copy-properties
       - tag_input: 145
       - tag_output: 146
+      - input_offset_x: 0.01
+      - output_offset_x: -0.01
   - !unconnected
     name: M-BS
     pos: [0, 0]
@@ -261,6 +268,7 @@ nodes:
       - only-copy-properties
       - tag_input: 161
       - tag_output: 162
+      - input_offset_x: 0.01
   - !unconnected
     name: M-DS
     pos: [0, 0]
@@ -268,6 +276,7 @@ nodes:
       - only-copy-properties
       - tag_input: 49
       - tag_output: 50
+      - input_offset_x: -0.02
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)

@@ -264,7 +264,7 @@ function poses_to_check(self)
 end
 
 fsm:define_states{ export_to=_M,
-  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,poses_to_check=poses_to_check, HIST_MIN_TAG=HIST_MIN_TAG},
+  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,poses_to_check=poses_to_check, HIST_MIN_TAG=HIST_MIN_TAG, os=os},
   {"INIT",                        JumpState},
   {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_global}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
   {"DECIDE_CLUSTER",              JumpState},
@@ -291,7 +291,7 @@ fsm:add_transitions{
   {"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond=poses_to_check},
   {"DECIDE_NEXT_POINT",   "FINAL",                        cond=true},
   --{"DRIVE_TO_NEXT_EXPLORE_POINT", "FIX_INTERNAL_VARS", cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
-  {"DRIVE_TO_NEXT_EXPLORE_POINT", "FIX_INTERNAL_VARS", cond="mps_visible_laser(self, 1)",                    desc="saw line on route, drive to there"},
+  {"DRIVE_TO_NEXT_EXPLORE_POINT", "FIX_INTERNAL_VARS",    cond="mps_visible_laser(self, 1) and os.time() - vars.laser_lines_timeout_start >= 1",                    desc="saw line on route, drive to there"},
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_tag,                                 desc="saw tag, drive to"},
   {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_laser,                               desc="saw laser, drive to"},
   {"WAIT_FOR_SENSORS",    "DECIDE_NEXT_POINT",            timeout=TIMEOUT,                                      desc="saw nothing, trying next point"},
@@ -497,6 +497,9 @@ function DRIVE_TO_NEXT_EXPLORE_POINT:init()
   self.skills[1].y        = point.y
   self.skills[1].ori      = point.ori
   self.skills[1].just_ori = true
+
+  -- set timeout for jumpscondition, to not loop with sawn laserlines
+  self.fsm.vars.laser_lines_timeout_start = os.time()
 end
 
 function pose_in_front_of_mps_calculator(self, chosen, factor)
@@ -574,6 +577,7 @@ function DRIVE_TO_POSSIBLE_MPS:init()
   zone_info:set_search_state(zone_info.MAYBE)
   zone_info:set_tag_id(chosen["tag_id"])
   zone_pose:set_visibility_history(1)
+  zone_pose:set_frame("/map")
   zone_pose:set_translation(0, chosen["x_map"])
   zone_pose:set_translation(1, chosen["y_map"])
   printf("Found maybe ( " .. chosen["tag_id"] .. " ) (at far pose) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. "; " .. chosen["ori_map"] .. " )")
@@ -605,6 +609,7 @@ function FINAL:init()
     zone_info:set_search_state(zone_info.YES)
     zone_info:set_tag_id(chosen["tag_id"])
     zone_pose:set_visibility_history(1)
+    zone_pose:set_frame("/map")
     zone_pose:set_translation(0, chosen["x_map"])
     zone_pose:set_translation(1, chosen["y_map"])
     printf("Found tag ( " .. chosen["tag_id"] .. " ) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. " )")

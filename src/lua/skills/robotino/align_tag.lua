@@ -53,9 +53,12 @@ documentation      = [==[Moves the robot that the tag 0 is seen at the given poi
 
 -- Constants
 local min_distance = 0.1
-local desired_position_margin = {x=0.01, y=0.01, ori=0.01}
-local min_velocity = { x = 0.015, y = 0.015, ori = 0.05 } --minimum to start motor
-local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
+--local desired_position_margin = {x=0.01, y=0.01, ori=0.01}
+--local min_velocity = { x = 0.015, y = 0.015, ori = 0.05 } --minimum to start motor
+--local max_velocity = { x = 0.4, y = 0.4 , ori = 0.4} -- maximum, full motor
+local desired_position_margin = {x=0.05, y=0.03, ori=0.1}
+local min_velocity = { x = 0.025, y = 0.025, ori = 0.1 } --minimum to start motor
+local max_velocity = { x = 0.6, y = 0.6 , ori = 0.6} -- maximum, full motor
 local tfm = require("tf_module")
 
 local TIMEOUT=2
@@ -95,7 +98,8 @@ end
 -- Check, weather the final position is reached
 function tag_reached(self)
    local distance = tfm.transform({x = self.fsm.vars.x, y = self.fsm.vars.y, ori = math.pi}, fsm.vars.transform_name, "/base_link")
-   return (math.abs(distance.x) < desired_position_margin.x)
+   return distance
+      and (math.abs(distance.x) < desired_position_margin.x)
       and (math.abs(distance.y) < desired_position_margin.y)
 end
 

@@ -52,7 +52,8 @@ end
 fsm:define_states{ export_to=_M,
   closure={navgraph=navgraph, node_is_valid=node_is_valid},
   {"INIT",                     JumpState},
-  {"SKILL_PPGOTO",             SkillJumpState, skills={{ppgoto}},            final_to="TIMEOUT", fail_to="FAILED"},
+  {"SKILL_PPGOTO",             SkillJumpState, skills={{ppgoto}},            final_to="TIMEOUT", fail_to="FORCE_SET_JUST_ORI"},
+  {"FORCE_SET_JUST_ORI",       JumpState},
   {"TIMEOUT",                  JumpState},
   {"SKILL_GLOBAL_MOTOR_MOVE",  SkillJumpState, skills={{global_motor_move}}, final_to="FINAL",   fail_to="FINAL"},
 }
@@ -61,6 +62,7 @@ fsm:add_transitions{
   { "INIT",    "FAILED",                   cond="not navgraph", desc="navgraph not available" },
   { "INIT",    "FAILED",                   cond="not node_is_valid(self)",  desc="point invalid" },
   { "INIT",    "SKILL_PPGOTO",             cond=true },
+  { "FORCE_SET_JUST_ORI", "TIMEOUT",       cond=true },
   { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE",  timeout=0.5 },
 }
 
@@ -88,6 +90,12 @@ function SKILL_PPGOTO:init()
   self.skills[1].ori = self.fsm.vars.ori
 end
 
+function FORCE_SET_JUST_ORI:init()
+  self.fsm.vars.just_ori = true
+  printf("Drive to global: force just ori")
+end
+
+
 function SKILL_GLOBAL_MOTOR_MOVE:init()
   if not self.fsm.vars.just_ori then
     self.skills[1].x   = self.fsm.vars.x
@@ -96,6 +104,8 @@ function SKILL_GLOBAL_MOTOR_MOVE:init()
     self.skills[1].x   = nil
     self.skills[1].y   = nil
   end
+  self.skills[1].x   = nil
+  self.skills[1].y   = nil
   self.skills[1].ori = self.fsm.vars.ori
   
   printf("Drive to: call global_motor_move with: x(" .. tostring(self.skills[1].x) .. ") y(" .. tostring(self.skills[1].y)  ..") ori(" .. tostring(self.skills[1].ori) .. ")")
