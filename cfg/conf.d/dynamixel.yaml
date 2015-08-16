@@ -16,7 +16,7 @@ dynamixel:
 
     # Turn servos off on unloading the plugin? Go to zero position at start?
     turn_off: true
-    goto_zero_start: true
+    goto_zero_start: false
 
     # Default compliance values, can be adjusted via the blackboard
     cw_compl_margin: 0

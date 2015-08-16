@@ -31,6 +31,9 @@
     </comment>
 
     <field type="uint32" name="flags">Flags.</field>
+    <field type="int32" name="z_position">Z-Position.</field>
+    <field type="int32" name="z_upper_bound">Z-upper bound.</field>
+    <field type="int32" name="z_lower_bound">Z-lower bound.</field>
 
     <field type="float" name="left">Current left.</field>
     <field type="float" name="right">Current right.</field>

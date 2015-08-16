@@ -102,15 +102,9 @@ GripperAX12AThread::init()
     throw Exception("Left and/or right and/or z-servo not found: left: %i  right: %i, z: %i",
 		    left_servo_found, right_servo_found, z_servo_found);
   }
-
-  // set servo values from config
-  float minimum_of_max_supported_speed = __servo_if_left->max_velocity();
-  if (minimum_of_max_supported_speed > __servo_if_right->max_velocity()){
-    minimum_of_max_supported_speed = __servo_if_right->max_velocity();
-  }
   
-  DynamixelServoInterface::SetVelocityMessage *vel_left = new DynamixelServoInterface::SetVelocityMessage(__cfg_max_speed * minimum_of_max_supported_speed);
-  DynamixelServoInterface::SetVelocityMessage *vel_right = new DynamixelServoInterface::SetVelocityMessage(__cfg_max_speed * minimum_of_max_supported_speed);
+  DynamixelServoInterface::SetSpeedMessage *vel_left = new DynamixelServoInterface::SetSpeedMessage((unsigned int) (__cfg_max_speed * 0x3ff));
+  DynamixelServoInterface::SetSpeedMessage *vel_right = new DynamixelServoInterface::SetSpeedMessage((unsigned int) (__cfg_max_speed * 0x3ff));
   __servo_if_left->msgq_enqueue(vel_left);
   __servo_if_right->msgq_enqueue(vel_right);
   
@@ -152,6 +146,7 @@ GripperAX12AThread::init()
   __gripper_if->set_max_right_velocity(0);//__ax12a->get_max_supported_speed(__cfg_right_servo_id));
   __gripper_if->set_left_velocity(init_left_velocity);
   __gripper_if->set_right_velocity(init_right_velocity);
+  __gripper_if->set_z_position(__cfg_z_position);
   __gripper_if->write();
 
   __led_if = blackboard->open_for_writing<LedInterface>(bbid.c_str());
@@ -182,6 +177,8 @@ GripperAX12AThread::init()
   __tt_count = 0;
   __ttc_read_sensor = __tt->add_class("Read Sensor");
 #endif  
+  __gripper_if->set_z_upper_bound(__cfg_z_upper_bound);
+  __gripper_if->set_z_lower_bound(__cfg_z_lower_bound);
   init_z_align();
 }
 
@@ -496,6 +493,26 @@ GripperAX12AThread::rel_goto_z(int rel_z)
     logger->log_warn(name(), "Z-alignment to relative 0 does nothing.");
     return;
   }
+  if (rel_z + __cfg_z_position > __cfg_z_upper_bound || rel_z + __cfg_z_position < __cfg_z_lower_bound)
+  {
+    logger->log_error(name(),
+            "Z-alignment failed, desired position out of bounds: position: %d, %d\n", __cfg_z_position, rel_z + __cfg_z_position);
+    return;
+  }
+  
+  cfg_mutex_.unlock();
+  if (cfg_mutex_.try_lock()) {
+      config->lock();
+      try {
+        __cfg_z_position += rel_z;
+        __gripper_if->set_z_position(__cfg_z_position);
+        config->set_int((__gripper_cfg_prefix + "z_position").c_str(), __cfg_z_position);
+      }
+      catch(fawkes::Exception &e){
+              logger->log_error(name(), e);
+      }
+      config->unlock();
+  }
   
   __servo_if_z_align->read();
   
@@ -730,8 +747,11 @@ void GripperAX12AThread::load_config()
   __cfg_angle_for_holds_puck   = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
   __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
   __cfg_z_speed_as_percent        = config->get_float((__gripper_cfg_prefix + "z_speed").c_str());
-  __cfg_z_downwards_real_velocity = config->get_float("/gripper_z_downwards_real_vel");
-  __cfg_z_upwards_real_velocity   = config->get_float("/gripper_z_upwards_real_vel");
+  __cfg_z_downwards_real_velocity = config->get_float(__gripper_cfg_prefix + "gripper_z_downwards_real_vel");
+  __cfg_z_upwards_real_velocity   = config->get_float(__gripper_cfg_prefix + "gripper_z_upwards_real_vel");
+  __cfg_z_position                = config->get_uint((__gripper_cfg_prefix + "z_position").c_str());
+  __cfg_z_lower_bound             = config->get_uint((__gripper_cfg_prefix + "z_lower_bound").c_str());
+  __cfg_z_upper_bound             = config->get_uint((__gripper_cfg_prefix + "z_upper_bound").c_str());
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());

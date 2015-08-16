@@ -138,6 +138,9 @@ class GripperAX12AThread
   float        __cfg_z_speed_as_percent;
   float        __cfg_z_downwards_real_velocity;
   float        __cfg_z_upwards_real_velocity;
+  int          __cfg_z_position;
+  int          __cfg_z_upper_bound;
+  int          __cfg_z_lower_bound;
 
   bool         load_left_pending;
   bool         load_right_pending;

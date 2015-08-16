@@ -32,10 +32,21 @@ depends_interfaces = {
 }
 
 documentation      = [==[Skill to open and close AX12 - gripper.
+@param command    can be one of OPEN, CLOSE, CENTER or RELGOTOZ (RELGOTOZ requires the z_position parameter to be set)
+@param z_position only used with the RELGOTOZ-command - the desired relative position in mm.
+                  The skill fails when a desired relative z position is set that would lead out of the grippers z-bounds
 ]==]
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+
+function relgotoz_allowed(self)
+   local cur_z = gripper_if:z_position()
+   local desired_z = self.fsm.vars.z_position or 0
+   local upper_bound = gripper_if:z_upper_bound()
+   local lower_bound = gripper_if:z_lower_bound()
+   return (cur_z + desired_z) <= upper_bound and (cur_z + desired_z) >= lower_bound
+end
 
 -- States
 fsm:define_states{
@@ -54,7 +65,6 @@ fsm:define_states{
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true},
---   {"COMMAND", "FINAL", cond="not vars.error and gripper_if:is_final()"},
    {"COMMAND", "FINAL", cond="vars.open or vars.center"},
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
@@ -71,65 +81,35 @@ fsm:add_transitions{
 }
 
 function COMMAND:init()
-   -- if self.fsm.vars.close then
-   --    theCloseMessage = gripper_if.CloseMessage:new()
-   --    theCloseMessage:set_offset(self.fsm.vars.offset)
-   --    gripper_if:msgq_enqueue_copy(theCloseMessage)
-   -- elseif self.fsm.vars.open then
    if self.fsm.vars.command == "OPEN" then
-      print("open")
       self.fsm.vars.open = true
       theOpenMessage = gripper_if.OpenMessage:new()
       theOpenMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theOpenMessage)
    elseif self.fsm.vars.command == "CENTER" then
-      print("center")
       self.fsm.vars.center = true
       theCenterMessage = gripper_if.CenterMessage:new()
       gripper_if:msgq_enqueue_copy(theCenterMessage)
    elseif self.fsm.vars.command == "CLOSE" then
-      print("close")
       self.fsm.vars.close = true
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)
    elseif self.fsm.vars.command == "GRAB" then
-      print("grab")
       self.fsm.vars.grab = true
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue_copy(theCloseMessage)
    elseif self.fsm.vars.command == "RELGOTOZ" then
-      print("relgotoZ")
       self.fsm.vars.relgotoz = true
-      theRelGotoZMessage = gripper_if.RelGotoZMessage:new()
-      theRelGotoZMessage:set_rel_z(self.fsm.vars.z_position or 0)
-      gripper_if:msgq_enqueue_copy(theRelGotoZMessage)
-   elseif self.fsm.vars.grab then
-      print("grab")
-      theCloseMessage = gripper_if.CloseMessage:new()
-      theCloseMessage:set_offset(self.fsm.vars.offset or 0)
-      gripper_if:msgq_enqueue_copy(theCloseMessage)
-   elseif self.fsm.vars.close_load then
-      print("close load")
-      theCloseLoadMessage = gripper_if.CloseLoadMessage:new()
-      gripper_if:msgq_enqueue_copy(theCloseLoadMessage)
--- Set servo position by ID and desired angle
-   elseif self.fsm.vars.id and self.fsm.vars.angle then
-      local id = self.fsm.vars.id
-      local angle = self.fsm.vars.angle
-      print("Set servo " .. id .. " to " .. angle)
-      theSetServoMessage = gripper_if.SetServoMessage:new()
-      theSetServoMessage:set_servoID(id)
-      theSetServoMessage:set_angle(angle)
-      gripper_if:msgq_enqueue_copy(theSetServoMessage)
-   elseif self.fsm.vars.enable then
-      local enable = self.fsm.vars.enable
-      local value = self.fsm.vars.value
-      theSetEnabledMessage = gripper_if.SetEnabledMessage:new()
-      theSetEnabledMessage:set_enabled(value)
-      print("set enabled to " .. tostring(value))
-      gripper_if:msgq_enqueue_copy(theSetEnabledMessage)
+      if relgotoz_allowed(self) then
+         theRelGotoZMessage = gripper_if.RelGotoZMessage:new()
+         theRelGotoZMessage:set_rel_z(self.fsm.vars.z_position or 0)
+         gripper_if:msgq_enqueue_copy(theRelGotoZMessage)
+      else
+         self.fsm:set_error("Desired z value out of bounds")
+         self.fsm.vars.error = true
+      end
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true

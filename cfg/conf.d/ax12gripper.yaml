@@ -31,6 +31,18 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     # Z alignment speed in percent (0 - 1)
     z_speed: 1
 
+    # Z position given by incremental or decremental values from the plugin
+    z_position: 19
+    # lower and upper bounds of z-alignment in mm
+    z_lower_bound: 0
+    z_upper_bound: 20
+
+    # upwards and downwards velocity in rad/s needed
+    # to calculate the needed rotation time
+    # for the z-alignment servo
+    gripper_z_downwards_real_vel: 6.18
+    gripper_z_upwards_real_vel: 6.05
+
     # Pan offset for RX28 PTU; deg
 #    pan_offset: 24.05
     # Tilt zero offset for RX28 PTU; deg
