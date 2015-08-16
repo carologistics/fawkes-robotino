@@ -122,6 +122,22 @@ GripperAX12AThread::init()
   __servo_if_left ->msgq_enqueue(prevent_left_msg);
   __servo_if_right->msgq_enqueue(prevent_right_msg);
   
+  
+  DynamixelServoInterface::SetTorqueLimitMessage *torque_left_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+  DynamixelServoInterface::SetTorqueLimitMessage *torque_right_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+  torque_left_msg->set_torque_limit(1023);
+  torque_right_msg->set_torque_limit(1023);
+  __servo_if_left ->msgq_enqueue(torque_left_msg);
+  __servo_if_right->msgq_enqueue(torque_right_msg);
+
+  //Enable autorecovery for left and right servo
+  DynamixelServoInterface::SetAutorecoverEnabledMessage *recover_left_msg  = new DynamixelServoInterface::SetAutorecoverEnabledMessage();
+  DynamixelServoInterface::SetAutorecoverEnabledMessage *recover_right_msg  = new DynamixelServoInterface::SetAutorecoverEnabledMessage();
+  recover_left_msg->set_autorecover_enabled(true);
+  recover_right_msg->set_autorecover_enabled(true);
+  __servo_if_left ->msgq_enqueue(recover_left_msg);
+  __servo_if_right->msgq_enqueue(recover_right_msg);
+  
   // If you have more than one interface: catch exception and close them!
   std::string bbid = "Gripper AX12";
   __gripper_if = blackboard->open_for_writing<AX12GripperInterface>(bbid.c_str());
