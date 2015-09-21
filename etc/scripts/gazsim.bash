@@ -172,10 +172,10 @@ if [  $COMMAND  == start ]; then
 	#start gazebo
 	if [[ -z $VISUALIZATION ]]
 	then
-	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Gazebo -e 'bash -c \"$startup_script_location -x gazebo $REPLAY $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x gazebo $REPLAY $KEEP\"'"
 	else
 	    #run headless
-	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Gzserver -e 'bash -c \"$startup_script_location -x gzserver $REPLAY $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x gzserver $REPLAY $KEEP\"'"
 	fi
     fi
 
@@ -183,28 +183,28 @@ if [  $COMMAND  == start ]; then
     	#start roscores
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
-	    OPEN_COMMAND="$OPEN_COMMAND --tab -t Roscore$ROBO -e 'bash -c \"$startup_script_location -x roscore -p 1131$ROBO $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roscore -p 1131$ROBO $KEEP\"'"
     	done
     fi
 
     if $START_GAZEBO
     then
 	#start refbox
-	OPEN_COMMAND="$OPEN_COMMAND --tab -t Refbox -e 'bash -c \"$startup_script_location -x refbox $KEEP\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x refbox $KEEP\"'"
     	#start refbox shell
-    	OPEN_COMMAND="$OPEN_COMMAND --tab --geometry=87x82 -t Refbox_Shell -e 'bash -c \"$startup_script_location -x refbox-shell $KEEP\"'"
+    	OPEN_COMMAND="$OPEN_COMMAND --tab --geometry=87x82 -e 'bash -c \"$startup_script_location -x refbox-shell $KEEP\"'"
     fi
 
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Robotino_$ROBO -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
     done
 
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
-	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Comm -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
     fi
 
     # open windows
