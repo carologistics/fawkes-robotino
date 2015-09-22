@@ -4,33 +4,33 @@
 
 
 #include <boost/asio.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <string>
 #include <thread>
 
+class Dispatcher;
 
-class RosProxy{
+class RosProxy:
+public boost::enable_shared_from_this<RosProxy>
+{
 
 private:
-	boost::asio::io_service					io_service_;
-	std::thread								io_service_thread_;
+//	boost::asio::io_service					io_service_;
 	
-	boost::asio::ip::tcp::socket			client_socket_;
-	boost::asio::ip::tcp::socket			server_socket_;
 	boost::asio::ip::tcp::resolver 			resolver_;
 	unsigned short 							server_port_;
 	std::string 							server_host_;
-	bool									serverInit;								
-
-
-	boost::asio::streambuf buff_c;
+	//boost::shared_ptr<boost::asio::io_service>           io_service_ptr_;	
+	//boost::shared_ptr<boost::asio::ip::tcp::socket> client_socket_ptr;
 	boost::asio::streambuf buff_s;
-	
-
-
+	//boost::shared_ptr<Dispatcher> 			dispatcher_;
 
 public:
+	boost::asio::ip::tcp::socket 			client_socket_;
+	boost::asio::ip::tcp::socket			server_socket_;
 
-	RosProxy(unsigned short server_port);
+	RosProxy(boost::asio::io_service  &io_service_ , unsigned short server_port);
 	~RosProxy();
 	
 	void start_accept();
@@ -43,12 +43,15 @@ public:
 	void handle_server_reads(const boost::system::error_code &ec);
 	
 	void read_from_server();
-	void write_to_socket(boost::asio::ip::tcp::socket &socket);
+	void write_to_socket(boost::asio::ip::tcp::socket &socket, std::string s);
 	void write_to_server(std::string req);
 
-	bool init_handshake(boost::asio::ip::tcp::socket &client_socket);
+	bool init_handshake(std::string msg);
+	bool serverInit;
 
 };
+
+typedef boost::shared_ptr<RosProxy> rosProxy_ptr;
 
 #endif
 
