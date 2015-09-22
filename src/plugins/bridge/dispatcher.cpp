@@ -1,5 +1,6 @@
 
 #include "dispatecher.h"
+#include "ros_proxy.h"
 #include <boost/bind.hpp>
 #include <exception> 
 #include <boost/lexical_cast.hpp>
@@ -8,13 +9,14 @@ using namespace boost::asio;
 
 
 
-dispatcher::dispatecher(unsigned short client_port):
+dispatcher::dispatecher(unsigned short client_port,unsigned short client_port, unsigned short server_port):
 		acceptor_(io_service_, ip::tcp::endpoint( ip::tcp::v6(), client_port))
 		,client_socket_(io_service_)
 		,client_port_(client_port)
+		,ros_proxy_(new ros_proxy(server_port))
 		{
 
-		 acceptor_.set_option(socket_base::reuse_address(true));
+		acceptor_.set_option(socket_base::reuse_address(true));
 		start_accept();
 		this->io_service_.run();
 		
@@ -50,12 +52,8 @@ dispatcher::start_accept(){
 void 
 dispatcher::handle_accept(const boost::system::error_code &ec){
 	if(!ec){
-	
-		//check if rosbridge server is alive
-
 		
-		
-		connected_to_rosbrindge=true;
+		connected_to_rosbrindge=ros_proxy_->init_handshake(client_socket_);
 
 		start_accept();
 		start_dispatching();
@@ -68,10 +66,6 @@ dispatcher::start_dispatching(){
 			boost::bind(&RosProxy::handle_client_reads, this,
 						   boost::asio::placeholders::error)
 			);
-
-
-	
-
 }
 
 
@@ -88,10 +82,10 @@ RosProxy::handle_client_reads(const boost::system::error_code &ec){
 	//find out if it is a jasonmsg and breakeit down
 	//find where does it belonge
 
-	std::string reply="";  
+	//std::string reply="";  
 	//call either the ROSwith or the fawkesAdapter and get a reply
 	
-	write_to_client(reply);
+	ros_proxy_->write_to_server(req);
 
 	start_dispatching();
 	}else {
@@ -102,19 +96,23 @@ RosProxy::handle_client_reads(const boost::system::error_code &ec){
   
   
 }
-void
-RosProxy::write_to_client(std::string reply)
-{
-	size_t t =boost::asio::buffer_size(boost::asio::buffer(reply));
+// void
+// RosProxy::write_to_client(std::string reply)
+// {
+// 	size_t t =boost::asio::buffer_size(boost::asio::buffer(reply));
 
-	std::cout << "Writing to client!";
-	std::cout << t;
-	std::cout << "bytes \n!";
+// 	std::cout << "Writing to client!";
+// 	std::cout << t;
+// 	std::cout << "bytes \n!";
 
- 	boost::asio::write(client_socket_,boost::asio::buffer(reply) , ec);
-	if(ec){
-	  		std::cout << "Failed to write! \n";
-	  }
+//  	boost::asio::write(client_socket_,boost::asio::buffer(reply) , ec);
+// 	if(ec){
+// 	  		std::cout << "Failed to write! \n";
+// 	  }
   
-}
+// }
 
+int main(){
+
+	dispatcher dispatcher_=new dispatcher(8080,9090);
+}
