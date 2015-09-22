@@ -37,7 +37,7 @@ namespace fawkes {
   class Position3DInterface;
 }
 
-class RosProxy;
+class Dispatcher;
 
 class BridgeThread
 : public fawkes::Thread,
@@ -57,7 +57,7 @@ class BridgeThread
   virtual void finalize();
  private:
 
-  RosProxy *rosProxy_;
+  Dispatcher   *dispatcher_;
 
 };
 

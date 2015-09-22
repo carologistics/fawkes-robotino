@@ -21,7 +21,7 @@
 #include "bridge_thread.h"
 #include "bridge_processor.h"
 #include "bridge_interface.h"
-#include "ros_proxy.h"
+#include "dispatcher.h"
 
 #include <tf/types.h>
 #include <interfaces/Position3DInterface.h>
@@ -54,7 +54,7 @@ BridgeThread::init()
 //  proc_  = new BridgeProcessor(clips_env_mgr, logger, config, blackboard);
 //  world_ =new World("f");
  logger-> log_info("I CAN SEE THE WORLD","asddas");
-  rosProxy_= new RosProxy(8080,9090);
+  dispatcher_= new Dispatcher(8080,9090);
 
 
 
@@ -64,7 +64,7 @@ void
 BridgeThread::finalize()
 {
  // blackboard->close(pose_if_);
-  delete rosProxy_;
+  delete dispatcher_;
 }
 
 void
