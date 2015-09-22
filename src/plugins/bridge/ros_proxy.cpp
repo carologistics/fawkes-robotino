@@ -9,8 +9,7 @@ using namespace boost::asio;
 
 
 RosProxy::RosProxy(unsigned short server_port):
-		acceptor_(io_service_, ip::tcp::endpoint( ip::tcp::v6(), client_port))
-		,server_socket_(io_service_)
+		server_socket_(io_service_)
 		,resolver_(io_service_)
 		,server_port_(server_port)
 		,serverInit(false)
@@ -77,6 +76,7 @@ RosProxy::handle_connect(const boost::system::error_code &err)
 {
   if (! err) {
 //	wiat for hand shake
+  	read_from_server_to_client()
   }
   else {
     disconnect("handle_connect", err.message().c_str());
@@ -89,39 +89,46 @@ RosProxy::handle_server_reads(const boost::system::error_code &ec){
 
 
 	if(!ec){
-		write_to_client();
-		read_from_server_to_client();
+		//check if the socket is alive
+		write_to_socket(client_socket_);
+		read_from_server();
 	}
 	else {
     disconnect("handle_server_reads", ec.message().c_str());
   }
 
 }
-bool init_handshake(boost::asio::ip::tcp::socket client_socket_){
+bool RosProxy::init_handshake(boost::asio::ip::tcp::socket &client_socket){
 
 	client_socket_=client_socket;
+	boost::system::error_code ec;
 
 	//intiat the handshake with the rosBridge
-		boost::asio::read(client_socket_, buff_c, boost::asio::transfer_at_least(1),
-	 	boost::bind(&RosProxy::handle_handshak_req, this,
-	 				   boost::asio::placeholders::error);
+		boost::asio::read(client_socket_, buff_c, boost::asio::transfer_at_least(1),ec);
 //todo:check the msg to confirm
-	 	write_to_server();
+	 	std::string s="";  
+		std::ostringstream ss;
+		ss << &buff_c;
+		s = ss.str();
 
-	 	boost::asio::read(client_server_, buff_s, boost::asio::transfer_at_least(1),
-	 	boost::bind(&RosProxy::handle_handshak_req, this,
-	 				   boost::asio::placeholders::error);
+	 	write_to_server(s);
 
-	 	write_to_socket(client_socket_);
+//a temp solution for the no wait....
 
-	 	read_from_server_to_client();
+//	 	boost::asio::read(client_server_, buff_s, boost::asio::transfer_at_least(1),
+//	 	boost::bind(&RosProxy::handle_handshak_req, this,
+//	 				   boost::asio::placeholders::error);
+//
+//	 	write_to_socket(client_socket_);
+//
+//	 	read_from_server_to_client();
 
 //check if success and return accourdingly
 	 	return true;
 
 }
 void
-RosProxy::read_from_server_to_client(){
+RosProxy::read_from_server(){
 
   std::cout << "Waiting to read from  server! \n";
 		 boost::asio::async_read(server_socket_, buff_s, boost::asio::transfer_at_least(1),
@@ -132,29 +139,25 @@ RosProxy::read_from_server_to_client(){
 }
 
 
-void
-RosProxy::write_to_server()
-{
+
+void RosProxy::write_to_server(std::string s){
 	boost::system::error_code ec;
-	std::string s="";  
-	std::ostringstream ss;
-	ss << &buff_c;
-	s = ss.str();
+
 	size_t t =boost::asio::buffer_size(boost::asio::buffer(s));
 	
 	std::cout << "Writing to server!";
 	std::cout << t;
 	std::cout << "bytes \n!";
 
-  boost::asio::write(server_socket_,boost::asio::buffer(s) , ec);
+
+	boost::asio::write(server_socket_,boost::asio::buffer(s) , ec);
   if(ec){
   		std::cout << "Failed to write! \n";
   }
-  
-  
+
 }
 void
-RosProxy::write_to_socket(boost::asio::ip::tcp::socket socket)
+RosProxy::write_to_socket(boost::asio::ip::tcp::socket &socket)
 {
 	boost::system::error_code ec;
 	std::string s="";  
