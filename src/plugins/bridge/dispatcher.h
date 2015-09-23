@@ -28,14 +28,9 @@ private:
 	unsigned short 							client_port_;
 	unsigned short 							server_port_;
 	std::string 							server_host_;
-	//bool									serverInit;								
-
 
 	boost::asio::streambuf buff_c;
 	
-	
-
-
 
 public:
 
@@ -49,8 +44,7 @@ public:
 	void handle_accept(const boost::system::error_code &ec);
 
 	void handle_client_reads(const boost::system::error_code &ec);
-	void write_to_client(std::string s);
-
+	
 	RosProxy *rosProxy_;
 
 };
