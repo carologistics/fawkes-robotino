@@ -22,7 +22,6 @@ RosProxy::RosProxy(boost::asio::io_service& io_service_,unsigned short server_po
 		,server_port_(server_port)
 		,serverInit(false)
 		{
-		start_server();
 			std::cout <<"init1 \n";
 }
 
@@ -37,6 +36,7 @@ RosProxy::~RosProxy()
   	client_socket_.close();
   
 }
+
 void RosProxy::disconnect(const char *where, const char *reason){
 
 	std::cout << "Disconnected From ";
@@ -125,7 +125,6 @@ RosProxy::handle_resolve(const boost::system::error_code& err,
   }
 }
 
-
 void
 RosProxy::handle_connect(const boost::system::error_code &err)
 {
@@ -164,7 +163,6 @@ RosProxy::handle_server_reads(const boost::system::error_code &ec){
 		ss << &buff_s;
 		s = ss.str();
 
-		//dispatcher_->write_to_client(s);
 		write_to_socket(client_socket_,s);
 		read_from_server();
 	}
@@ -174,29 +172,8 @@ RosProxy::handle_server_reads(const boost::system::error_code &ec){
 
 }
 
-// bool
-// RosProxy::init_handshake(std::string msg){
-	
-// 	 	write_to_server(msg);
 
-// //a temp solution for the no wait....
-
-// //	 	boost::asio::read(client_server_, buff_s, boost::asio::transfer_at_least(1),
-// //	 	boost::bind(&RosProxy::handle_handshak_req, this,
-// //	 				   boost::asio::placeholders::error);
-// //
-// //	 	write_to_socket(client_socket_);
-// //
-// //	 	read_from_server_to_client();
-
-// //check if success and return accourdingly
-// 	 	return true;
-
-// }
-
-
-
-void RosProxy::write_to_server(std::string s){
+void RosProxy::process_req(std::string s){
 	boost::system::error_code ec;
 
 	size_t t =boost::asio::buffer_size(boost::asio::buffer(s));
@@ -214,6 +191,12 @@ void RosProxy::write_to_server(std::string s){
 
 }
 
+bool
+RosProxy::check_rosBridge_alive(){
+
+	return serverInit;
+}
+
 void
 RosProxy::write_to_socket(boost::asio::ip::tcp::socket &socket , std::string s)
 {
@@ -229,6 +212,7 @@ RosProxy::write_to_socket(boost::asio::ip::tcp::socket &socket , std::string s)
  	boost::asio::write(socket,boost::asio::buffer(s) , ec);
 	if(ec){
 	  		std::cout << "Failed to write! \n";
+	  		std::cout << ec.message().c_str();
 	  }
   
 }

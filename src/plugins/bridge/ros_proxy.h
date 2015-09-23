@@ -4,15 +4,10 @@
 
 
 #include <boost/asio.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <string>
 #include <thread>
 
-class Dispatcher;
-
-class RosProxy:
-public boost::enable_shared_from_this<RosProxy>
+class RosProxy
 {
 
 private:
@@ -21,14 +16,14 @@ private:
 	boost::asio::ip::tcp::resolver 			resolver_;
 	unsigned short 							server_port_;
 	std::string 							server_host_;
-	//boost::shared_ptr<boost::asio::io_service>           io_service_ptr_;	
-	//boost::shared_ptr<boost::asio::ip::tcp::socket> client_socket_ptr;
-	boost::asio::streambuf buff_s;
-	//boost::shared_ptr<Dispatcher> 			dispatcher_;
 
+	boost::asio::streambuf buff_s;
+	
 public:
 	boost::asio::ip::tcp::socket 			client_socket_;
 	boost::asio::ip::tcp::socket			server_socket_;
+
+	bool 									serverInit;
 
 	RosProxy(boost::asio::io_service  &io_service_ , unsigned short server_port);
 	~RosProxy();
@@ -44,14 +39,13 @@ public:
 	
 	void read_from_server();
 	void write_to_socket(boost::asio::ip::tcp::socket &socket, std::string s);
-	void write_to_server(std::string req);
-
-	bool init_handshake(std::string msg);
-	bool serverInit;
+	void process_req(std::string req);
+	
+	bool check_rosBridge_alive();
 
 };
 
-typedef boost::shared_ptr<RosProxy> rosProxy_ptr;
+//typedef boost::shared_ptr<RosProxy> rosProxy_ptr;
 
 #endif
 
