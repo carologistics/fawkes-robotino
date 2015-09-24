@@ -6,6 +6,14 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/foreach.hpp>
+#include <cassert>
+#include <exception>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 
 using namespace boost::asio;
@@ -70,14 +78,34 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec){
 
 	if(!ec){
 
-	//ALL THE JASON STUFFaf
-	std::string s="";  
-	std::ostringstream ss;
-	ss << &buff_c;
-	s = ss.str();
 
-	//todo:choose the right rosProxy instance
+	try
+    {
+        std::stringstream ss;
+        // send your JSON above to the parser below, but populate ss first
 
+
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_json(ss, pt);
+
+        BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("particles.electron"))
+        {
+            assert(v.first.empty()); // array elements have no names
+            std::cout << v.second.data() << std::endl;
+            // etc
+        }
+        return EXIT_SUCCESS;
+    }
+    catch (std::exception const& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+    return EXIT_FAILURE;
+}
+
+
+
+	
 
 
 	//this waiting for server has to be replaced with a better solution
