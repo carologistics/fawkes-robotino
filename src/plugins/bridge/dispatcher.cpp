@@ -6,9 +6,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/foreach.hpp>
+
 #include <cassert>
 #include <exception>
 #include <iostream>
@@ -16,8 +14,12 @@
 #include <string>
 
 
-using namespace boost::asio;
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
+using namespace boost::asio;
+using namespace rapidjson;
 
 
 
@@ -47,6 +49,7 @@ Dispatcher::start_accept(){
 	//this is wrong ...this makes a new instance in the same var every time someone tries to connect
 	//we want to have one of this mapping instance every
 	rosProxy_=new RosProxy(io_service_, server_port_); 
+	rosProxy_->start_server();
 	acceptor_.async_accept(rosProxy_->client_socket_,boost::bind(&Dispatcher::handle_accept, this,boost::asio::placeholders::error));
 }
 
@@ -56,7 +59,6 @@ Dispatcher::handle_accept(const boost::system::error_code &ec){
 	if(!ec){		
 		boost::system::error_code ec;
 
-		rosProxy_->start_server();
 		start_dispatching();
 
 		//Before you start accept again you have to make sure that it would replace the rosProxy instance
@@ -78,34 +80,12 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec){
 
 	if(!ec){
 
-
-	try
-    {
-        std::stringstream ss;
-        // send your JSON above to the parser below, but populate ss first
-
-
-        boost::property_tree::ptree pt;
-        boost::property_tree::read_json(ss, pt);
-
-        BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("particles.electron"))
-        {
-            assert(v.first.empty()); // array elements have no names
-            std::cout << v.second.data() << std::endl;
-            // etc
-        }
-        return EXIT_SUCCESS;
-    }
-    catch (std::exception const& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
-    return EXIT_FAILURE;
-}
-
-
-
 	
+	std::string s="";  
+	std::ostringstream ss;
+	ss << &buff_c;
+	s = ss.str();
+	//todo:choose the right rosProxy instance
 
 
 	//this waiting for server has to be replaced with a better solution
@@ -114,6 +94,30 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec){
 	}
 	while(!rosProxy_->check_rosBridge_alive());
 	rosProxy_->process_req(s);
+
+
+	Document d;
+	if (!d.Parse<0>(s.c_str()).HasParseError())
+	{
+		std::cout << "JSON: parsed! \n";
+		if(d.IsObject()){
+			std::cout << "JSON: Object! \n";
+			if(d.HasMember("op")){
+			std::cout << "JSON: op is there! \n";
+			}
+			else{std::cout << "NOPE!";}
+
+		
+		}
+		else
+			std::cout << "NOPE!";
+
+
+	}
+		else
+			std::cout << "NOPE!";
+    
+	
 
 	start_dispatching();
 	}else {
