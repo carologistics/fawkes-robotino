@@ -13,10 +13,11 @@
 #include <sstream>
 #include <string>
 
-
+#include "IStreamWrapper.cpp"
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "rapidjson/encodedstream.h"    // AutoUTFInputStream
 
 using namespace boost::asio;
 using namespace rapidjson;
@@ -32,6 +33,7 @@ Dispatcher::Dispatcher(unsigned short client_port, unsigned short server_port):
 		acceptor_.set_option(socket_base::reuse_address(true));
 		start_accept();
 		this->io_service_.run();
+
 }
 
 
@@ -71,33 +73,76 @@ Dispatcher::start_dispatching(){
 
 	boost::asio::async_read(rosProxy_->client_socket_, buff_c,boost::asio::transfer_at_least(1),
 			boost::bind(&Dispatcher::handle_client_reads, this,
-						   boost::asio::placeholders::error)
+							boost::asio::placeholders::error,
+			   				boost::asio::placeholders::bytes_transferred)
 			);
 }
 
 void
-Dispatcher::handle_client_reads(const boost::system::error_code &ec){
+Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t bytes_transferred){
 
 	if(!ec){
 
+
+	std::cout << "is by \n";
+	 std::string s="";  
 	
-	std::string s="";  
-	std::ostringstream ss;
-	ss << &buff_c;
-	s = ss.str();
+	 std::istream is(&buff_c);
+	 IStreamWrapper is_wrapper(is);
+
+	// std::cout << "is by \n";
+	// std::cout << s; 
+	// std::cout << "is by \n";
+
+	// std::cout << is.rdbuf();
+
+	// std::cout << "is by \n";
+	// std::cout << bytes_transferred;
+	// std::cout << "is sdfsdfy \n";
+	// 	is>>s;
+
+
+	// std::cout << s;
+	// std::cout << "is sdfsdfy \n";
+	
+	// 	is>>s;
+
+
+	// std::cout << s;
+	// std::cout << "is sdfsdfy \n";
+
+	// 	is>>s;
+
+
+	// std::cout << s;
+	// std::cout << "is sdfsdfy \n";
+
+	// 	is>>s;
+
+
+	// std::cout << s;
+	// std::cout << "is sdfsdfy \n";
+
+	AutoUTFInputStream<unsigned, IStreamWrapper> eis(is_wrapper);
+
+
+	//std::ostringstream ss;
+	//eis << &buff_c;
+	//s = eis.str();
 	//todo:choose the right rosProxy instance
 
 
-	//this waiting for server has to be replaced with a better solution
-	do{
-	std::cout << "waiting for rosbridge proxy to come alive \n";
-	}
-	while(!rosProxy_->check_rosBridge_alive());
-	rosProxy_->process_req(s);
+	// //this waiting for server has to be replaced with a better solution
+	// do{
+	// std::cout << "waiting for rosbridge proxy to come alive \n";
+	// }
+	// while(!rosProxy_->check_rosBridge_alive());
+	// rosProxy_->process_req(s);
 
 
-	Document d;
-	if (!d.Parse<0>(s.c_str()).HasParseError())
+	
+	 Document d;
+	 if (!d.ParseStream<0, AutoUTF<unsigned> >(eis).HasParseError())
 	{
 		std::cout << "JSON: parsed! \n";
 		if(d.IsObject()){
@@ -105,17 +150,17 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec){
 			if(d.HasMember("op")){
 			std::cout << "JSON: op is there! \n";
 			}
-			else{std::cout << "NOPE!";}
+			else{std::cout << "NOT Member! \n";}
 
 		
 		}
 		else
-			std::cout << "NOPE!";
+			std::cout << "NOT object \n!";
 
 
 	}
 		else
-			std::cout << "NOPE!";
+			std::cout << "NOT parsed! \n";
     
 	
 

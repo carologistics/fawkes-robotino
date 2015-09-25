@@ -43,7 +43,7 @@ public:
 
 	void handle_accept(const boost::system::error_code &ec);
 
-	void handle_client_reads(const boost::system::error_code &ec);
+	void handle_client_reads(const boost::system::error_code &ec, size_t bytes_transferred);
 	
 	RosProxy *rosProxy_;
 
