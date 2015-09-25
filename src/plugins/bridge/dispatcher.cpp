@@ -13,11 +13,11 @@
 #include <sstream>
 #include <string>
 
-#include "IStreamWrapper.cpp"
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
-#include "rapidjson/encodedstream.h"    // AutoUTFInputStream
+#include "rapidjson/encodedstream.h"// AutoUTFInputStream
+#include "rapidjson/memorystream.h"    
 
 using namespace boost::asio;
 using namespace rapidjson;
@@ -84,12 +84,18 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t byt
 	if(!ec){
 
 
-	std::cout << "is by \n";
-	 std::string s="";  
+	std::cout << "CLINET HANDLER \n";
 	
-	 std::istream is(&buff_c);
-	 IStreamWrapper is_wrapper(is);
+	std::string s="";  
+	std::ostringstream ss;
+	ss << &buff_c;
+	s = ss.str();
+	//todo:choose the right rosProxy instance
 
+	MemoryStream ms(s.c_str(),s.size());
+
+	
+	
 	// std::cout << "is by \n";
 	// std::cout << s; 
 	// std::cout << "is by \n";
@@ -120,10 +126,13 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t byt
 	// 	is>>s;
 
 
-	// std::cout << s;
-	// std::cout << "is sdfsdfy \n";
+	
+	AutoUTFInputStream<unsigned, MemoryStream> eis(ms);
+	std::cout << "eis.GetType()" <<std::endl;
+	std::cout << eis.GetType() <<std::endl;
+	 std::cout << "eis.HasBOM()" <<std::endl;
+	 std::cout << eis.HasBOM() <<std::endl;
 
-	AutoUTFInputStream<unsigned, IStreamWrapper> eis(is_wrapper);
 
 
 	//std::ostringstream ss;
@@ -132,12 +141,12 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t byt
 	//todo:choose the right rosProxy instance
 
 
-	// //this waiting for server has to be replaced with a better solution
-	// do{
-	// std::cout << "waiting for rosbridge proxy to come alive \n";
-	// }
-	// while(!rosProxy_->check_rosBridge_alive());
-	// rosProxy_->process_req(s);
+	//this waiting for server has to be replaced with a better solution
+	do{
+	std::cout << "waiting for rosbridge proxy to come alive \n";
+	}
+	while(!rosProxy_->check_rosBridge_alive());
+	rosProxy_->process_req(s);
 
 
 	
