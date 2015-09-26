@@ -18,7 +18,8 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/encodedstream.h"// AutoUTFInputStream
 #include "rapidjson/memorystream.h"    
-
+#include "rapidjson/error/en.h"
+#include "rapidjson/filereadstream.h"
 using namespace boost::asio;
 using namespace rapidjson;
 
@@ -71,7 +72,7 @@ Dispatcher::handle_accept(const boost::system::error_code &ec){
 void
 Dispatcher::start_dispatching(){
 
-	boost::asio::async_read(rosProxy_->client_socket_, buff_c,boost::asio::transfer_at_least(1),
+	boost::asio::async_read(rosProxy_->client_socket_, boost::asio::buffer(readBuffer,sizeof(readBuffer)),boost::asio::transfer_at_least(1),
 			boost::bind(&Dispatcher::handle_client_reads, this,
 							boost::asio::placeholders::error,
 			   				boost::asio::placeholders::bytes_transferred)
@@ -86,16 +87,16 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t byt
 
 	std::cout << "CLINET HANDLER \n";
 	
-	std::string s="";  
-	std::ostringstream ss;
-	ss << &buff_c;
-	s = ss.str();
+	std::string s(readBuffer);  
+	//std::istream is(&buff_c);
+	//s = ss.str();
 	//todo:choose the right rosProxy instance
 
-	MemoryStream ms(s.c_str(),s.size());
+	MemoryStream ms(readBuffer,sizeof(readBuffer));
+	//FileReadStream ms(is, buff_c, sizeof(buff_c));
 
-	
-	
+
+
 	// std::cout << "is by \n";
 	// std::cout << s; 
 	// std::cout << "is by \n";
@@ -126,14 +127,6 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t byt
 	// 	is>>s;
 
 
-	
-	AutoUTFInputStream<unsigned, MemoryStream> eis(ms);
-	std::cout << "eis.GetType()" <<std::endl;
-	std::cout << eis.GetType() <<std::endl;
-	 std::cout << "eis.HasBOM()" <<std::endl;
-	 std::cout << eis.HasBOM() <<std::endl;
-
-
 
 	//std::ostringstream ss;
 	//eis << &buff_c;
@@ -149,10 +142,11 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t byt
 	rosProxy_->process_req(s);
 
 
-	
+		
+	AutoUTFInputStream<unsigned, MemoryStream> eis(ms);
+
 	 Document d;
-	 if (!d.ParseStream<0, AutoUTF<unsigned> >(eis).HasParseError())
-	{
+	 if(!d.ParseStream<0, AutoUTF<unsigned> >(eis).HasParseError()){
 		std::cout << "JSON: parsed! \n";
 		if(d.IsObject()){
 			std::cout << "JSON: Object! \n";
@@ -166,12 +160,13 @@ Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t byt
 		else
 			std::cout << "NOT object \n!";
 
-
+}
+else{
+ fprintf(stderr, "\nError(offset %u): %s\n", 
+        (unsigned)d.GetErrorOffset(),
+        GetParseError_En(d.GetParseError()));
+    // ...
 	}
-		else
-			std::cout << "NOT parsed! \n";
-    
-	
 
 	start_dispatching();
 	}else {

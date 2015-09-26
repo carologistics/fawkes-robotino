@@ -30,6 +30,7 @@ private:
 	std::string 							server_host_;
 
 	boost::asio::streambuf buff_c;
+	 char readBuffer[655];
 	
 
 public:
