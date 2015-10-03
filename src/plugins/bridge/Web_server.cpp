@@ -11,9 +11,12 @@ using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
+
+
 struct connection_data {
     int sessionid;
     std::string name;
+    std::map<std::string,std::string> http_req;
 };
 
 class Web_server {
@@ -30,56 +33,43 @@ public:
     bool on_validate(connection_hdl hdl){
 
     	server::connection_ptr con=m_server.get_con_from_hdl(hdl);
-    	std::cout<<"Get_secure:" << std::endl;
-    	std::cout<< con->get_secure() <<std::endl;
-    	std::cout<<"get_host:" << std::endl;
-    	std::cout<< con->get_host() << std::endl;
-    	std::cout<<"Get_port" << std::endl;
-    	std::cout<< con->get_port() << std::endl;
-    	std::cout<<"get_request_header:" << std::endl;
-    	std::cout<< con->get_request_header("User-Agent") << std::endl;
-    	std::cout<<"get_origin:" << std::endl;
-    	std::cout<< con->get_origin() << std::endl;
+    	
+    	connection_data data;
 
-    	std::cout<<"get_state:" << std::endl;
-    	std::cout<< con->get_state() << std::endl;
+    	data.http_req["host"]=con->get_host();
+    	data.http_req["port"]=con->get_port();
+    	data.http_req["origin"]=con->get_origin();
 
-
-    	std::cout<<"get_resource:" << std::endl;
-    	std::cout<< con->get_resource() << std::endl;
-		std::cout<<"get_subprotocol:" << std::endl;
+    	std::vector<std::string> http_headers;
+    	http_headers.push_back("Accept-Encoding");
+    	http_headers.push_back("Accept-language");
+    	http_headers.push_back("Cache-Control");
+    	http_headers.push_back("Connection");
+    	http_headers.push_back("Sec-WebSocket-Extensions");
+    	http_headers.push_back("Sec-WebSocket-Key");
+    	http_headers.push_back("Sec-WebSocket-Version");
+    	http_headers.push_back("User-Agent");
     
-    	std::vector<std::string> sub= con->get_requested_subprotocols();
-		for (std::vector<std::string>::const_iterator i = sub.begin(); i != sub.end(); ++i)
-    	std::cout << *i << std::endl;
+		for (std::vector<std::string>::const_iterator i = http_headers.begin(); i != http_headers.end(); ++i)
+    	data.http_req[*i]=con->get_request_header(*i);
 
-    
-		//std::cout<<"get_repons_header:" << std::endl;
-    	//std::cout<< con->get_response_header("") << std::endl;
-
-
-
-std::cout << '\n';
-std::cout << '\n';
-std::cout << '\n';
-
-
-
-
-
+    	//I think this just copies the data ...so be carful later when extending the connection_metada object
+        m_connections[hdl] = data;
 
 		return true;
 
     }
 
     void on_open(connection_hdl hdl) {
-        connection_data data;
+        connection_data& data = get_data_from_hdl(hdl);
 
         data.sessionid = m_next_sessionid++;
         data.name = "";
 
-        m_connections[hdl] = data;
-    }
+        for (std::map<std::string,std::string>::const_iterator i = data.http_req.begin(); i != data.http_req.end(); ++i)
+    	std::cout<< i->first << "::::::" << i->second << std::endl;
+
+        }
 
     void on_close(connection_hdl hdl) {
         connection_data& data = get_data_from_hdl(hdl);
