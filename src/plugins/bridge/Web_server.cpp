@@ -24,7 +24,52 @@ public:
         m_server.set_open_handler(bind(&Web_server::on_open,this,::_1));
         m_server.set_close_handler(bind(&Web_server::on_close,this,::_1));
         m_server.set_message_handler(bind(&Web_server::on_message,this,::_1,::_2));
-        m_server.set_message_handler(bind(&Web_server::on_http,this,::_1t));
+        m_server.set_validate_handler(bind(&Web_server::on_validate,this,::_1));
+    }
+
+    bool on_validate(connection_hdl hdl){
+
+    	server::connection_ptr con=m_server.get_con_from_hdl(hdl);
+    	std::cout<<"Get_secure:" << std::endl;
+    	std::cout<< con->get_secure() <<std::endl;
+    	std::cout<<"get_host:" << std::endl;
+    	std::cout<< con->get_host() << std::endl;
+    	std::cout<<"Get_port" << std::endl;
+    	std::cout<< con->get_port() << std::endl;
+    	std::cout<<"get_request_header:" << std::endl;
+    	std::cout<< con->get_request_header("User-Agent") << std::endl;
+    	std::cout<<"get_origin:" << std::endl;
+    	std::cout<< con->get_origin() << std::endl;
+
+    	std::cout<<"get_state:" << std::endl;
+    	std::cout<< con->get_state() << std::endl;
+
+
+    	std::cout<<"get_resource:" << std::endl;
+    	std::cout<< con->get_resource() << std::endl;
+		std::cout<<"get_subprotocol:" << std::endl;
+    
+    	std::vector<std::string> sub= con->get_requested_subprotocols();
+		for (std::vector<std::string>::const_iterator i = sub.begin(); i != sub.end(); ++i)
+    	std::cout << *i << std::endl;
+
+    
+		//std::cout<<"get_repons_header:" << std::endl;
+    	//std::cout<< con->get_response_header("") << std::endl;
+
+
+
+std::cout << '\n';
+std::cout << '\n';
+std::cout << '\n';
+
+
+
+
+
+
+		return true;
+
     }
 
     void on_open(connection_hdl hdl) {
@@ -44,18 +89,6 @@ public:
 
         m_connections.erase(hdl);
     }
-
-    void on_http(websocketpp::connection_hdl hdl) {
-    server::connection_ptr con = m_server.get_con_from_hdl(hdl);
-
-    std::string res = con->get_request_body();
-
-    std::stringstream ss;
-    ss << "got HTTP request with " << res.size() << " bytes of body data.";
-
-    con->set_body(ss.str());
-    con->set_status(websocketpp::http::status_code::ok);
-}
 
     void on_message(connection_hdl hdl, server::message_ptr msg) {
         connection_data& data = get_data_from_hdl(hdl);
