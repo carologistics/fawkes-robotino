@@ -3,50 +3,32 @@
 #define __PLUGINS_BRIDGE_DISPATCHER_H_
 
 
-#include <boost/asio.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/shared_ptr.hpp>
 #include <string>
-#include <thread>
-#include "ros_proxy.h"
+#include "ros_endpoint.cpp"
 
-class RosProxy;
+class ros_endpoint;
 
-using boost::asio::ip::tcp;
-
-
-
-class Dispatcher:  
-	public boost::enable_shared_from_this<Dispatcher>
+class Dispatcher
 {
 
 private:
-	boost::asio::io_service					io_service_;
-	boost::asio::ip::tcp::acceptor			acceptor_;
-	//boost::asio::ip::tcp::socket			client_socket_;
-	//boost::shared_ptr<boost::asio::ip::tcp::socket> client_socket_ptr;
-	unsigned short 							client_port_;
-	unsigned short 							server_port_;
-	std::string 							server_host_;
+	typedef std::map<const int,ros_endpoint::ptr> ros_list;
+	bool					rosbridge_up_;
 
-	boost::asio::streambuf buff_c;
-	 char readBuffer[655];
-	
+    ros_list m_ros_list;
+
+
+    ros_endpoint::ptr rosbridge_ptr_ ;
 
 public:
 
-	Dispatcher(unsigned short client_port,unsigned short server_port);
+	Dispatcher();
 	~Dispatcher();
-	
-	void start_accept();
-	void start_dispatching();
-	void disconnect(const char *where, const char *reason);
 
-	void handle_accept(const boost::system::error_code &ec);
+	void init(ros_endpoint::ptr rosbridge_ptr);
+	bool bridges_ready();
 
-	void handle_client_reads(const boost::system::error_code &ec, size_t bytes_transferred);
-	
-	RosProxy *rosProxy_;
+	void dispatch_msg();
 
 };
 
