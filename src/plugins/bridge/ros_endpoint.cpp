@@ -81,7 +81,8 @@ public:
 
     void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
         if (msg->get_opcode() == websocketpp::frame::opcode::text) {
-             .push_back("<< " + msg->get_payload());
+              m_messages .push_back("<< " + msg->get_payload());
+             std::cout<< msg->get_payload()<<std::endl;
         } else {
             m_messages.push_back("<< " + websocketpp::utility::to_hex(msg->get_payload()));
         }
@@ -103,7 +104,7 @@ public:
         m_messages.push_back(">> " + message);
     }
 
-    friend std::ostream & operator<< (std::ostream & out, connection_metadata const & data);
+    //friend std::ostream & operator<< (std::ostream & out, connection_metadata const & data);
 private:
     int m_id;
     websocketpp::connection_hdl m_hdl;
@@ -114,24 +115,26 @@ private:
     std::vector<std::string> m_messages;
 };
 
-std::ostream & operator<< (std::ostream & out, connection_metadata const & data) {
-    out << "> URI: " << data.m_uri << "\n"
-        << "> Status: " << data.m_status << "\n"
-        << "> Remote Server: " << (data.m_server.empty() ? "None Specified" : data.m_server) << "\n"
-        << "> Error/close reason: " << (data.m_error_reason.empty() ? "N/A" : data.m_error_reason) << "\n";
-    out << "> Messages Processed: (" << data.m_messages.size() << ") \n";
+// std::ostream & operator<< (std::ostream & out, connection_metadata const & data) {
+//     out << "> URI: " << data.m_uri << "\n"
+//         << "> Status: " << data.m_status << "\n"
+//         << "> Remote Server: " << (data.m_server.empty() ? "None Specified" : data.m_server) << "\n"
+//         << "> Error/close reason: " << (data.m_error_reason.empty() ? "N/A" : data.m_error_reason) << "\n";
+//     out << "> Messages Processed: (" << data.m_messages.size() << ") \n";
 
-    std::vector<std::string>::const_iterator it;
-    for (it = data.m_messages.begin(); it != data.m_messages.end(); ++it) {
-        out << *it << "\n";
-    }
+//     std::vector<std::string>::const_iterator it;
+//     for (it = data.m_messages.begin(); it != data.m_messages.end(); ++it) {
+//         out << *it << "\n";
+//     }
 
-    return out;
-}
+//     return out;
+// }
 
-class websocket_endpoint {
+class ros_endpoint {
 public:
-    websocket_endpoint () : m_next_id(0) {
+    typedef websocketpp::lib::shared_ptr<ros_endpoint> ptr;
+
+    ros_endpoint () : m_next_id(0) {
         m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
         m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
 
@@ -141,7 +144,7 @@ public:
         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
     }
 
-    ~websocket_endpoint() {
+    ~ros_endpoint() {
         m_endpoint.stop_perpetual();
         
         for (con_list::const_iterator it = m_connection_list.begin(); it != m_connection_list.end(); ++it) {
@@ -167,6 +170,7 @@ public:
         websocketpp::lib::error_code ec;
 
         client::connection_ptr con = m_endpoint.get_connection(uri, ec);
+
 
         if (ec) {
             std::cout << "> Connect initialization error: " << ec.message() << std::endl;
@@ -257,69 +261,3 @@ private:
     con_list m_connection_list;
     int m_next_id;
 };
-
-int main() {
-    bool done = false;
-    std::string input;
-    websocket_endpoint endpoint;
-
-    while (!done) {
-        std::cout << "Enter Command: ";
-        std::getline(std::cin, input);
-
-        if (input == "quit") {
-            done = true;
-        } else if (input == "help") {
-            std::cout
-                << "\nCommand List:\n"
-                << "connect <ws uri>\n"
-                << "send <connection id> <message>\n"
-                << "close <connection id> [<close code:default=1000>] [<close reason>]\n"
-                << "show <connection id>\n"
-                << "help: Display this help text\n"
-                << "quit: Exit the program\n"
-                << std::endl;
-        } else if (input.substr(0,7) == "connect") {
-            int id = endpoint.connect(input.substr(8));
-            if (id != -1) {
-                std::cout << "> Created connection with id " << id << std::endl;
-            }
-        } else if (input.substr(0,4) == "send") {
-            std::stringstream ss(input);
-            
-            std::string cmd;
-            int id;
-            std::string message = "";
-            
-            ss >> cmd >> id;
-            std::getline(ss,message);
-            
-            endpoint.send(id, message);
-        } else if (input.substr(0,5) == "close") {
-            std::stringstream ss(input);
-            
-            std::string cmd;
-            int id;
-            int close_code = websocketpp::close::status::normal;
-            std::string reason = "";
-            
-            ss >> cmd >> id >> close_code;
-            std::getline(ss,reason);
-            
-            endpoint.close(id, close_code, reason);
-        } else if (input.substr(0,4) == "show") {
-            int id = atoi(input.substr(5).c_str());
-
-            connection_metadata::ptr metadata = endpoint.get_metadata(id);
-            if (metadata) {
-                std::cout << *metadata << std::endl;
-            } else {
-                std::cout << "> Unknown connection id " << id << std::endl;
-            }
-        } else {
-            std::cout << "> Unrecognized Command" << std::endl;
-        }
-    }
-
-    return 0;
-}
