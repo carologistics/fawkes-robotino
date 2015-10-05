@@ -6,17 +6,18 @@
 #include <string>
 #include "ros_endpoint.cpp"
 
+
 class ros_endpoint;
+class Web_server;
 
 class Dispatcher
 {
 
 private:
 	typedef std::map<const int,ros_endpoint::ptr> ros_list;
-	bool					rosbridge_up_;
+	bool					rosbridge_started_;
 
     ros_list m_ros_list;
-
 
     ros_endpoint::ptr rosbridge_ptr_ ;
 
@@ -28,9 +29,10 @@ public:
 	void init(ros_endpoint::ptr rosbridge_ptr);
 	bool bridges_ready();
 
-	void dispatch_msg();
+	void dispatch_msg(websocketpp::lib::shared_ptr<Web_server> s, std::string msg);
 
 };
+
 
 #endif
 

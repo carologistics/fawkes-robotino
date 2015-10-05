@@ -3,8 +3,9 @@
 #include <exception>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include <dispatcher.h>
 
-typedef websocketpp::server<websocketpp::config::asio> server;
+
 
 using websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
@@ -12,6 +13,7 @@ using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
 
+typedef websocketpp::server<websocketpp::config::asio> server;
 
 struct connection_data {
     int sessionid;
@@ -19,7 +21,8 @@ struct connection_data {
     std::map<std::string,std::string> http_req;
 };
 
-class Web_server {
+class Web_server: public websocketpp::lib::enable_shared_from_this<Web_server>
+{
 public:
     Web_server() : m_next_sessionid(1) {
         m_server.init_asio();
@@ -56,15 +59,20 @@ public:
     	//I think this just copies the data ...so be carful later when extending the connection_metada object
         m_connections[hdl] = data;
 
-		return true;
 
+
+        dispatcher_=new Dispatcher();
+
+		return dispatcher_->bridges_ready();
+
+        return true;
     }
 
     void on_open(connection_hdl hdl) {
         connection_data& data = get_data_from_hdl(hdl);
 
         data.sessionid = m_next_sessionid++;
-        data.name = "";
+        data.name = "Web_server";
 
         for (std::map<std::string,std::string>::const_iterator i = data.http_req.begin(); i != data.http_req.end(); ++i)
     	std::cout<< i->first << "::::::" << i->second << std::endl;
@@ -81,16 +89,9 @@ public:
     }
 
     void on_message(connection_hdl hdl, server::message_ptr msg) {
-        connection_data& data = get_data_from_hdl(hdl);
+         std::cout << "Got a message from connection "  << std::endl;
 
-        if (data.name == "") {
-            data.name = msg->get_payload();
-            std::cout << "Setting name of connection with sessionid "
-                      << data.sessionid << " to " << data.name << std::endl;
-        } else {
-            std::cout << "Got a message from connection " << data.name
-                      << " with sessionid " << data.sessionid << std::endl;
-        }
+	dispatcher_->dispatch_msg(shared_from_this(),msg->get_payload());
     }
 
     connection_data& get_data_from_hdl(connection_hdl hdl) {
@@ -116,9 +117,11 @@ private:
     int m_next_sessionid;
     server m_server;
     con_list m_connections;
+
+   Dispatcher* dispatcher_;
 };
 
 int main() {
     Web_server server;
-    server.run(8080);
+    server.run(6060);
 }

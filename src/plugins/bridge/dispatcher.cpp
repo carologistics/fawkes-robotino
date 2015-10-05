@@ -18,7 +18,7 @@
 using namespace rapidjson;
 
 Dispatcher::Dispatcher():
-		rosbridge_up_(false)
+		rosbridge_started_(false)
 		{
 		init(rosbridge_ptr_);
 }
@@ -27,14 +27,11 @@ void
 Dispatcher::init(ros_endpoint::ptr rosbridge_ptr){
     
   rosbridge_ptr = websocketpp::lib::make_shared<ros_endpoint>();
-  //m_ros_list[0] = websocketpp::lib::make_shared<ros_endpoint>();
-   int id =  rosbridge_ptr->connect("ws://localhost:9090");
+  int id =  rosbridge_ptr->connect("ws://localhost:9090");
     if (id != -1) {
         std::cout << "> Created connection with id " << id << std::endl;
    }
-
- // m_ros_list.push_back(rosbridge_ptr);
-
+   rosbridge_started_=true;
 }
 
 
@@ -43,12 +40,20 @@ Dispatcher::~Dispatcher()
 {
   	//delete rosbridge_;
  }
+
+ bool
+ Dispatcher::bridges_ready(){
+ 	return rosbridge_started_;
+ }
   	
 
 
 
 void
-Dispatcher::dispatch_msg(){
+Dispatcher::dispatch_msg(websocketpp::lib::shared_ptr<Web_server> s, std::string msg){
+
+	std::cout<< "DISPATCHING" << std::endl;
+	std::cout<< msg << std::endl;
 
 }
 
@@ -150,7 +155,7 @@ Dispatcher::dispatch_msg(){
  //}
   
  
-int main(){
-	Dispatcher *dispatcher=new Dispatcher();
-	//dispatcher->init();
-}
+// int main(){
+// 	Dispatcher *dispatcher=new Dispatcher();
+// 	dispatcher->init();
+// }
