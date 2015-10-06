@@ -69,11 +69,11 @@ public:
     	//I think this just copies the data ...so be carful later when extending the connection_metada object
         m_connections[hdl] = data;
 
-        std::cout << dispatcher_->bridges_ready();
+     //   std::cout << dispatcher_->bridges_ready();
 
-		//return dispatcher_->bridges_ready();
+		return dispatcher_->bridges_ready();
 
-        return true;
+        //return true;
     }
 
     void on_open(connection_hdl hdl) {
@@ -117,9 +117,11 @@ public:
     void run(uint16_t port) {
         m_server.listen(port);
         m_server.start_accept();
-         m_server.run();
-       // m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, &m_server);
- 
+        // m_server.run();
+        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, &m_server);
+
+        dispatcher_->run();
+
     }
 private:
     typedef std::map<connection_hdl,connection_data,std::owner_less<connection_hdl>> con_list;
@@ -131,11 +133,11 @@ private:
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
       
 
-  Dispatcher* dispatcher_;
+     Dispatcher* dispatcher_;
 };
 
 int main() {
+
     websocketpp::lib::shared_ptr<Web_server> s=websocketpp::lib::make_shared<Web_server>();
     s->run(6060);
-
 }
