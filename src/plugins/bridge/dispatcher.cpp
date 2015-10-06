@@ -17,14 +17,18 @@
 
 using namespace rapidjson;
 
-Dispatcher::Dispatcher():
-		rosbridge_started_(false)
-		{
-		init(rosbridge_ptr_);
-}
+Dispatcher::Dispatcher():rosbridge_started_(false) {}
+
+
 
 void
-Dispatcher::init(ros_endpoint::ptr rosbridge_ptr){
+Dispatcher::run(){
+		init_rosbridge(rosbridge_ptr_);
+}
+
+
+void
+Dispatcher::init_rosbridge(ros_endpoint::ptr rosbridge_ptr){
     
   rosbridge_ptr = websocketpp::lib::make_shared<ros_endpoint>();
   int id =  rosbridge_ptr->connect("ws://localhost:9090");
@@ -32,10 +36,7 @@ Dispatcher::init(ros_endpoint::ptr rosbridge_ptr){
         std::cout << "> Created connection with id " << id << std::endl;
           rosbridge_started_=true;
    }
- 
 }
-
-
 
 Dispatcher::~Dispatcher()
 {
@@ -49,11 +50,10 @@ Dispatcher::~Dispatcher()
   	
 
 void
-Dispatcher::dispatch_msg( std::string msg){
+Dispatcher::dispatch_msg(std::string msg){
 
 	std::cout<< "DISPATCHING" << std::endl;
-	std::cout<< msg << std::endl;
-
+	rosbridge_ptr_->send(0,msg);
 }
 
 // void
