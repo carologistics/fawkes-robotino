@@ -115,34 +115,12 @@ private:
     std::vector<std::string> m_messages;
 };
 
-// std::ostream & operator<< (std::ostream & out, connection_metadata const & data) {
-//     out << "> URI: " << data.m_uri << "\n"
-//         << "> Status: " << data.m_status << "\n"
-//         << "> Remote Server: " << (data.m_server.empty() ? "None Specified" : data.m_server) << "\n"
-//         << "> Error/close reason: " << (data.m_error_reason.empty() ? "N/A" : data.m_error_reason) << "\n";
-//     out << "> Messages Processed: (" << data.m_messages.size() << ") \n";
-
-//     std::vector<std::string>::const_iterator it;
-//     for (it = data.m_messages.begin(); it != data.m_messages.end(); ++it) {
-//         out << *it << "\n";
-//     }
-
-//     return out;
-// }
 
 class ros_endpoint {
 public:
     typedef websocketpp::lib::shared_ptr<ros_endpoint> ptr;
 
     ros_endpoint () : m_next_id(0) {
-        m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
-        m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
-
-        m_endpoint.init_asio();
-        m_endpoint.start_perpetual();
-
-        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
-       // m_thread->detach();
     }
 
     ~ros_endpoint() {
@@ -167,6 +145,17 @@ public:
         m_thread->join();
     }
 
+    void run(){
+        m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
+        m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
+
+        m_endpoint.init_asio();
+        m_endpoint.start_perpetual();
+
+        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
+    }
+
+
     int connect(std::string const & uri) {
         websocketpp::lib::error_code ec;
 
@@ -181,6 +170,7 @@ public:
         int new_id = m_next_id++;
         connection_metadata::ptr metadata_ptr = websocketpp::lib::make_shared<connection_metadata>(new_id, con->get_handle(), uri);
         m_connection_list[new_id] = metadata_ptr;
+        con_meta_ptr=metadata_ptr;
 
         con->set_open_handler(websocketpp::lib::bind(
             &connection_metadata::on_open,
@@ -242,7 +232,19 @@ public:
             return;
         }
         
-        metadata_it->second->record_sent_message(message);
+          metadata_it->second->record_sent_message(message);
+    }
+
+      void send(std::string message) {
+        websocketpp::lib::error_code ec;
+       
+        m_endpoint.send(con_meta_ptr->get_hdl(), message, websocketpp::frame::opcode::text, ec);
+        if (ec) {
+            std::cout << "> Error sending message: " << ec.message() << std::endl;
+            return;
+        }
+        
+        con_meta_ptr->record_sent_message(message);
     }
 
     connection_metadata::ptr get_metadata(int id) const {
@@ -253,8 +255,12 @@ public:
             return metadata_it->second;
         }
     }
-private:
+
+
+public:
     typedef std::map<int,connection_metadata::ptr> con_list;
+
+    connection_metadata::ptr con_meta_ptr;
 
     client m_endpoint;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;

@@ -33,7 +33,7 @@ public:
         m_server.set_message_handler(bind(&Web_server::on_message,this,::_1,::_2));
         m_server.set_validate_handler(bind(&Web_server::on_validate,this,::_1));
 
-        dispatcher_=new Dispatcher();
+        //dispatcher_=new Dispatcher();
     }
 
     ~Web_server() {
@@ -114,14 +114,19 @@ public:
         return it->second;
     }
 
+
     void run(uint16_t port) {
         m_server.listen(port);
         m_server.start_accept();
-        // m_server.run();
         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, &m_server);
+        //m_server.run();
 
-        dispatcher_->run();
+        //dispatcher_->run();
 
+    }
+
+    void register_dispatcher(websocketpp::lib::shared_ptr<Dispatcher> dispatcher){
+        dispatcher_=dispatcher;
     }
 private:
     typedef std::map<connection_hdl,connection_data,std::owner_less<connection_hdl>> con_list;
@@ -133,11 +138,24 @@ private:
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
       
 
-     Dispatcher* dispatcher_;
+     websocketpp::lib::shared_ptr<Dispatcher> dispatcher_;
 };
 
 int main() {
 
     websocketpp::lib::shared_ptr<Web_server> s=websocketpp::lib::make_shared<Web_server>();
+    ros_endpoint::ptr rosbridge_ptr= websocketpp::lib::make_shared<ros_endpoint>();
+    websocketpp::lib::shared_ptr<Dispatcher> dispatcher=websocketpp::lib::make_shared<Dispatcher>();
+    dispatcher->register_endpoint(rosbridge_ptr);
+    s->register_dispatcher(dispatcher);
+    
     s->run(6060);
+
+    rosbridge_ptr->run();
+    int id =  rosbridge_ptr->connect("ws://localhost:9090");
+    if (id != -1) {
+        std::cout << "> Created connection with id " << id << std::endl;
+   }
+
+
 }

@@ -26,8 +26,9 @@ public:
 	Dispatcher();
 	~Dispatcher();
 
-	void run();
-	void init_rosbridge(ros_endpoint::ptr rosbridge_ptr);
+	//void run();
+	//void init_rosbridge(ros_endpoint::ptr rosbridge_ptr);
+	void register_endpoint(ros_endpoint::ptr rosbridge_ptr);
 	bool bridges_ready();
 
 	void dispatch_msg( std::string msg);
