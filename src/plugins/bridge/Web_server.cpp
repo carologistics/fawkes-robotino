@@ -3,6 +3,7 @@
 #include <exception>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include <websocketpp/common/thread.hpp>
 #include <dispatcher.h>
 
 
@@ -31,7 +32,16 @@ public:
         m_server.set_close_handler(bind(&Web_server::on_close,this,::_1));
         m_server.set_message_handler(bind(&Web_server::on_message,this,::_1,::_2));
         m_server.set_validate_handler(bind(&Web_server::on_validate,this,::_1));
+
+        dispatcher_=new Dispatcher();
     }
+
+    ~Web_server() {
+       
+        m_thread->join();
+ }
+
+
 
     bool on_validate(connection_hdl hdl){
 
@@ -59,11 +69,9 @@ public:
     	//I think this just copies the data ...so be carful later when extending the connection_metada object
         m_connections[hdl] = data;
 
+        std::cout << dispatcher_->bridges_ready();
 
-
-        dispatcher_=new Dispatcher();
-
-		return dispatcher_->bridges_ready();
+		//return dispatcher_->bridges_ready();
 
         return true;
     }
@@ -91,7 +99,7 @@ public:
     void on_message(connection_hdl hdl, server::message_ptr msg) {
          std::cout << "Got a message from connection "  << std::endl;
 
-	dispatcher_->dispatch_msg(shared_from_this(),msg->get_payload());
+	dispatcher_->dispatch_msg(msg->get_payload());
     }
 
     connection_data& get_data_from_hdl(connection_hdl hdl) {
@@ -109,7 +117,9 @@ public:
     void run(uint16_t port) {
         m_server.listen(port);
         m_server.start_accept();
-        m_server.run();
+         m_server.run();
+       // m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, &m_server);
+ 
     }
 private:
     typedef std::map<connection_hdl,connection_data,std::owner_less<connection_hdl>> con_list;
@@ -118,10 +128,14 @@ private:
     server m_server;
     con_list m_connections;
 
-   Dispatcher* dispatcher_;
+    websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
+      
+
+  Dispatcher* dispatcher_;
 };
 
 int main() {
-    Web_server server;
-    server.run(6060);
+    websocketpp::lib::shared_ptr<Web_server> s=websocketpp::lib::make_shared<Web_server>();
+    s->run(6060);
+
 }

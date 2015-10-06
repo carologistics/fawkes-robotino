@@ -142,6 +142,7 @@ public:
         m_endpoint.start_perpetual();
 
         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
+       // m_thread->detach();
     }
 
     ~ros_endpoint() {
