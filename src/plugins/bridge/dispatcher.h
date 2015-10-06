@@ -29,7 +29,7 @@ public:
 	void init(ros_endpoint::ptr rosbridge_ptr);
 	bool bridges_ready();
 
-	void dispatch_msg(websocketpp::lib::shared_ptr<Web_server> s, std::string msg);
+	void dispatch_msg( std::string msg);
 
 };
 

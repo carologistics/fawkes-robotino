@@ -30,8 +30,9 @@ Dispatcher::init(ros_endpoint::ptr rosbridge_ptr){
   int id =  rosbridge_ptr->connect("ws://localhost:9090");
     if (id != -1) {
         std::cout << "> Created connection with id " << id << std::endl;
+          rosbridge_started_=true;
    }
-   rosbridge_started_=true;
+ 
 }
 
 
@@ -47,10 +48,8 @@ Dispatcher::~Dispatcher()
  }
   	
 
-
-
 void
-Dispatcher::dispatch_msg(websocketpp::lib::shared_ptr<Web_server> s, std::string msg){
+Dispatcher::dispatch_msg( std::string msg){
 
 	std::cout<< "DISPATCHING" << std::endl;
 	std::cout<< msg << std::endl;
