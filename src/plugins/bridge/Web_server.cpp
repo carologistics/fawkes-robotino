@@ -8,6 +8,7 @@
 
 
 
+
 using websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -22,7 +23,7 @@ struct connection_data {
     std::map<std::string,std::string> http_req;
 };
 
-class Web_server: public websocketpp::lib::enable_shared_from_this<Web_server>
+class Web_server: public Iendpoint , public websocketpp::lib::enable_shared_from_this<Web_server>
 {
 public:
     Web_server() : m_next_sessionid(1) {
@@ -114,6 +115,16 @@ public:
         return it->second;
     }
 
+        void send(std::string message) {
+        websocketpp::lib::error_code ec;
+        
+        m_server.send(m_connections.begin()->first, message, websocketpp::frame::opcode::text, ec);
+        if (ec) {
+            std::cout << "> Error sending message: " << ec.message() << std::endl;
+            return;
+        }
+        
+    }
 
     void run(uint16_t port) {
         m_server.listen(port);
@@ -127,7 +138,11 @@ public:
 
     void register_dispatcher(websocketpp::lib::shared_ptr<Dispatcher> dispatcher){
         dispatcher_=dispatcher;
+
+        websocketpp::lib::shared_ptr<Iendpoint> wrappedEndpoint= std::dynamic_pointer_cast<Iendpoint>(shared_from_this());
+        dispatcher->register_web_endpoint(wrappedEndpoint);  
     }
+
 private:
     typedef std::map<connection_hdl,connection_data,std::owner_less<connection_hdl>> con_list;
 
@@ -143,19 +158,22 @@ private:
 
 int main() {
 
-    websocketpp::lib::shared_ptr<Web_server> s=websocketpp::lib::make_shared<Web_server>();
+    websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
     ros_endpoint::ptr rosbridge_ptr= websocketpp::lib::make_shared<ros_endpoint>();
     websocketpp::lib::shared_ptr<Dispatcher> dispatcher=websocketpp::lib::make_shared<Dispatcher>();
-    dispatcher->register_endpoint(rosbridge_ptr);
-    s->register_dispatcher(dispatcher);
+
+    dispatcher->register_ros_endpoint(rosbridge_ptr);
+    web_server->register_dispatcher(dispatcher);
     
-    s->run(6060);
+    web_server->run(6060);
 
     rosbridge_ptr->run();
     int id =  rosbridge_ptr->connect("ws://localhost:9090");
     if (id != -1) {
         std::cout << "> Created connection with id " << id << std::endl;
    }
+
+
 
 
 }

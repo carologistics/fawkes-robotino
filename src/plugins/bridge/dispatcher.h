@@ -5,10 +5,9 @@
 
 #include <string>
 #include "ros_endpoint.cpp"
-
+#include <iendpoint.h>
 
 class ros_endpoint;
-class Web_server;
 
 class Dispatcher
 {
@@ -19,8 +18,9 @@ private:
 
     ros_list m_ros_list;
 
-    ros_endpoint::ptr rosbridge_ptr_ ;
+    ros_endpoint::ptr 		rosbridge_ptr_ ;
 
+     websocketpp::lib::shared_ptr<Iendpoint>	web_endpoint_ptr_;
 public:
 
 	Dispatcher();
@@ -28,10 +28,13 @@ public:
 
 	//void run();
 	//void init_rosbridge(ros_endpoint::ptr rosbridge_ptr);
-	void register_endpoint(ros_endpoint::ptr rosbridge_ptr);
+	void register_ros_endpoint(ros_endpoint::ptr rosbridge_ptr);
+	void register_web_endpoint( websocketpp::lib::shared_ptr<Iendpoint> web_endpoint_ptr);
+	
+	void reply(std::string msg);
 	bool bridges_ready();
 
-	void dispatch_msg( std::string msg);
+	void dispatch_msg(std::string msg);
 
 };
 

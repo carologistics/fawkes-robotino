@@ -152,6 +152,7 @@ public:
         m_endpoint.init_asio();
         m_endpoint.start_perpetual();
 
+        //m_endpoint.run();
         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
     }
 
@@ -267,4 +268,6 @@ public:
 
     con_list m_connection_list;
     int m_next_id;
+
+
 };
