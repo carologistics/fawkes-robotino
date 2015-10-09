@@ -4,10 +4,15 @@
 
 
 #include <string>
-#include "ros_endpoint.cpp"
-#include <iendpoint.h>
+#include <ros_endpoint.cpp>
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
+
+
+using websocketpp::connection_hdl;
 
 class ros_endpoint;
+class Isession;
 
 class Dispatcher
 {
@@ -20,16 +25,20 @@ private:
 
     ros_endpoint::ptr 		rosbridge_ptr_ ;
 
-     websocketpp::lib::shared_ptr<Iendpoint>	web_endpoint_ptr_;
+     websocketpp::lib::shared_ptr<Isession>	web_session_;
 public:
 
-	Dispatcher();
+	Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s);
 	~Dispatcher();
+
+	void configure_web_session();
+	void on_web_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg);
+	//todo::replace the big type names in a name space and use it
 
 	//void run();
 	//void init_rosbridge(ros_endpoint::ptr rosbridge_ptr);
 	void register_ros_endpoint(ros_endpoint::ptr rosbridge_ptr);
-	void register_web_endpoint( websocketpp::lib::shared_ptr<Iendpoint> web_endpoint_ptr);
+	//void register_web_endpoint( websocketpp::lib::shared_ptr<Iendpoint> web_endpoint_ptr);
 	
 	void reply(std::string msg);
 	bool bridges_ready();

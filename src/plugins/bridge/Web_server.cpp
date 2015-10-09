@@ -1,10 +1,8 @@
 #include <iostream>
 #include <map>
 #include <exception>
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
 #include <websocketpp/common/thread.hpp>
-//#include <dispatcher.h>
+#include <dispatcher.h>
 #include <web_session.h>
 
 using websocketpp::connection_hdl;
@@ -22,9 +20,7 @@ public:
         m_server->init_asio();
         m_server->set_open_handler(bind(&Web_server::on_open,this,::_1));
         m_server->set_close_handler(bind(&Web_server::on_close,this,::_1));
-        m_server->set_validate_handler(bind(&Web_server::on_validate,this,::_1));
-        
-        //toBeMoved//m_server.set_message_handler(bind(&Web_server::on_message,this,::_1,::_2));
+        m_server->set_validate_handler(bind(&Web_server::on_validate,this,::_1));        
       }
 
     ~Web_server() {
@@ -65,10 +61,9 @@ public:
         tmp_session_->set_id(m_next_sessionid);
         tmp_session_->set_name("web_session_tmp_name");
 
-       // dispatchers_[m_next_sessionid]= new Dispatcher(tmp_session_);
+       dispatchers_[m_next_sessionid]= new Dispatcher(tmp_session_);
 
         m_next_sessionid++;
-
         //ForDebuging:: Print on http req 
         // for (std::map<std::string,std::string>::const_iterator i = tmp_session_->http_req.begin(); i != tmp_session_->http_req.end(); ++i)
         // std::cout<< i->first << "::::::" << i->second << std::endl;
@@ -97,8 +92,8 @@ private:
     websocketpp::lib::shared_ptr<server>         m_server;
     websocketpp::lib::shared_ptr<web_session>    tmp_session_; //this only serve to collect the session data before intializing the dispaticher
     
-   // typedef std::map<int id,Dispatcher*> disp_list;
-   // disp_list dispatchers_;
+    typedef std::map<int, Dispatcher*> disp_list;
+    disp_list dispatchers_;
     
     int m_next_sessionid;
 
