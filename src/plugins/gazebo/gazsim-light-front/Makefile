@@ -32,7 +32,7 @@ OBJS_gazsim_light_front = gazsim_light_front_plugin.o gazsim_light_front_thread.
 OBJS_all    = $(OBJS_gazsim_light_front)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
-  CFLAGS  += $(CFLAGS_TF)
+  CFLAGS  += $(CFLAGS_TF) -mno-avx
   LDFLAGS += $(LDFLAGS_TF)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
