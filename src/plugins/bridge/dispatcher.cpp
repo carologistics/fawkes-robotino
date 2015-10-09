@@ -12,12 +12,43 @@
 #include "rapidjson/encodedstream.h"// AutoUTFInputStream
 #include "rapidjson/memorystream.h"    
 #include "rapidjson/error/en.h"
+#include  "isession.h"
 
 
 
 using namespace rapidjson;
 
-Dispatcher::Dispatcher():rosbridge_started_(false) {}
+using websocketpp::lib::placeholders::_1;
+using websocketpp::lib::placeholders::_2;
+using websocketpp::lib::bind;
+
+
+Dispatcher::Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s):
+    rosbridge_started_(false),
+    web_session_(web_s)
+    {
+  configure_web_session();
+
+}
+
+
+void Dispatcher::configure_web_session(){
+  //set the handlers to send and receive
+
+  web_session_->get_connection_ptr()->set_message_handler(bind(&Dispatcher::on_web_message,this,::_1,::_2));
+
+}
+
+
+
+void Dispatcher::on_web_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg){
+//Dispatches msg to one of the desired Bridges
+
+  std::cout << "Dispatcheing....."<< std::endl;
+
+  std::cout << msg->get_payload() << std::endl;
+
+}
 
 
 
@@ -46,11 +77,11 @@ Dispatcher::register_ros_endpoint(ros_endpoint::ptr rosbridge_ptr){
   rosbridge_started_=true;
 }
 
-void
-Dispatcher::register_web_endpoint( websocketpp::lib::shared_ptr<Iendpoint> ptr){
+// void
+// Dispatcher::register_web_endpoint( websocketpp::lib::shared_ptr<Iendpoint> ptr){
     
-  web_endpoint_ptr_=ptr;
-}
+//   web_endpoint_ptr_=ptr;
+// }
 
 
 Dispatcher::~Dispatcher()
