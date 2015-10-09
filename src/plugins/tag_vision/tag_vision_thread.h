@@ -37,7 +37,11 @@
 // cv is needed for image conversion to alvar
 #include <cv.h>
 // alvar marker detection to get poses
-#include <alvar/MarkerDetector.h>
+#ifdef HAVE_AR_TRACK_ALVAR
+#  include <ar_track_alvar/MarkerDetector.h>
+#else
+#  include <alvar/MarkerDetector.h>
+#endif
 
 // firevision camera
 #include <fvcams/camera.h>

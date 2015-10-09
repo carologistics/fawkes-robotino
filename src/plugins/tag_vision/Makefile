@@ -32,9 +32,6 @@ LIBS     += $(VISION_LIBS)
 CFLAGS	 += $(CFLAGS_OPENCV)
 LDFLAGS  += $(LDFLAGS_OPENCV)
 
-# link against alvar
-LDFLAGS  += "-lalvar200"
-
 #The necessary libraries your plugin needs.
 LIBS_tag_vision = fawkescore fawkesutils fawkesaspects fvutils \
 	        fawkestf fawkesinterface fawkesblackboard \
@@ -48,12 +45,28 @@ OBJS_all = $(OBJS_tag_vision)
 
 ifneq ($(wildcard $(SYSROOT)/usr/lib64/libalvar200.so $(SYSROOT)/usr/include/alvar),)
   HAVE_ALVAR = 1
+
+  CFLAGS_ALVAR = -DHAVE_ALVAR
+  LIBS_tag_vision += alvar200
+endif
+ifneq ($(HAVE_ALVAR),1)
+  ifeq ($(HAVE_ROS),1)
+    include $(BUILDSYSDIR)/ros.mk
+
+    HAVE_AR_TRACK_ALVAR=$(call ros-have-pkg,ar_track_alvar)
+    ifeq ($(HAVE_AR_TRACK_ALVAR),1)
+      HAVE_ALVAR     = 1
+      CFLAGS_ALVAR  += -DHAVE_ALVAR -DHAVE_AR_TRACK_ALVAR \
+		       $(call ros-pkg-cflags,ar_track_alvar) \
+		       -Wno-unused-variable
+      LDFLAGS_ALVAR += $(call ros-pkg-lflags,ar_track_alvar)
+    endif
+  endif
 endif
 
 ifeq ($(HAVE_TF)$(HAVE_ALVAR)$(HAVE_CPP11),111)
-  CFLAGS  += $(CFLAGS_TF)
-  LDFLAGS += $(LDFLAGS_TF)
-  #names of the plugins you want to build
+  CFLAGS  += $(CFLAGS_ALVAR)  $(CFLAGS_TF)
+  LDFLAGS += $(LDFLAGS_ALVAR) $(LDFLAGS_TF)
   PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
 else
   ifneq ($(HAVE_ALVAR),1)
