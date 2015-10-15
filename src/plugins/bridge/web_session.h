@@ -28,7 +28,7 @@ public:
 	std::string 		get_status();
 	server::connection_ptr 	get_connection_ptr();
 
-	void send(std::string msg);
+	bool send(std::string msg);
 
 
 
