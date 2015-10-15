@@ -61,8 +61,8 @@ public:
         tmp_session_->set_id(m_next_sessionid);
         tmp_session_->set_name("web_session_tmp_name");
 
-       dispatchers_[m_next_sessionid]= new Dispatcher(tmp_session_);
-
+       dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(tmp_session_);
+        dispatchers_[m_next_sessionid]->start();
         m_next_sessionid++;
         //ForDebuging:: Print on http req 
         // for (std::map<std::string,std::string>::const_iterator i = tmp_session_->http_req.begin(); i != tmp_session_->http_req.end(); ++i)
@@ -92,7 +92,7 @@ private:
     websocketpp::lib::shared_ptr<server>         m_server;
     websocketpp::lib::shared_ptr<web_session>    tmp_session_; //this only serve to collect the session data before intializing the dispaticher
     
-    typedef std::map<int, Dispatcher*> disp_list;
+    typedef std::map<int, websocketpp::lib::shared_ptr<Dispatcher> >disp_list;
     disp_list dispatchers_;
     
     int m_next_sessionid;
