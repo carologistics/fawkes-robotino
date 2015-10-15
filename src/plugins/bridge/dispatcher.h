@@ -31,9 +31,11 @@ public:
 	Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s);
 	~Dispatcher();
 
-	void configure_web_session();
-	void on_web_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg);
+	void web_configure_session();
+	void web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg);
 	//todo::replace the big type names in a name space and use it
+
+	bool web_forward_message(std::string msg);
 
 	//void run();
 	//void init_rosbridge(ros_endpoint::ptr rosbridge_ptr);

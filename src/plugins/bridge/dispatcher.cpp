@@ -32,22 +32,31 @@ Dispatcher::Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s):
 }
 
 
-void Dispatcher::configure_web_session(){
+void
+Dispatcher::web_configure_session(){
   //set the handlers to send and receive
-
-  web_session_->get_connection_ptr()->set_message_handler(bind(&Dispatcher::on_web_message,this,::_1,::_2));
+  web_session_->get_connection_ptr()->set_message_handler(bind(&Dispatcher::web_on_message,this,::_1,::_2));
 
 }
 
 
 
-void Dispatcher::on_web_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg){
+void
+Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg){
 //Dispatches msg to one of the desired Bridges
 
   std::cout << "Dispatcheing....."<< std::endl;
-
   std::cout << msg->get_payload() << std::endl;
 
+}
+
+
+bool
+Dispatcher::web_forward_message(std::string msg){
+
+  //TODO:: add a check if the web_session is reachable
+  //TODO:: catch exceptions
+  return web_session_->send(msg);
 }
 
 

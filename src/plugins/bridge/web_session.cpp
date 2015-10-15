@@ -49,14 +49,16 @@
 		return endpoint_ptr_->get_con_from_hdl(hdl_);
 	}
 
-	void 
+	bool 
 	web_session::send(std::string msg){
 		websocketpp::lib::error_code ec;
 		endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
 	        if (ec) {
 	            std::cout << "> Error sending message: " << ec.message() << std::endl;
-	            return;
+	            return false;
 	        }
+	        
+	        return true;
     
 	}
 
