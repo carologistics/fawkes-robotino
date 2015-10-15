@@ -26,25 +26,28 @@ using websocketpp::lib::bind;
 Dispatcher::Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s):
     rosbridge_started_(false),
     web_session_(web_s)
-    {
-  init_rosbridge();
-  //TODO::make sure it is initialized before proceeding
-  web_register_handler();
-}
+    {}
 
 Dispatcher::~Dispatcher()
 {
   	//delete rosbridge_;
  }
 
+void Dispatcher::start(){
+  init_rosbridge();
+  //TODO::make sure it is sinitialized before proceeding
+  web_register_handler();
+}
+
 void
 Dispatcher::init_rosbridge(){   
-  rosbridge_ptr_ = websocketpp::lib::make_shared<ros_endpoint>();
-  int id =  rosbridge_ptr_->connect("ws://localhost:9090");
-    if (id != -1) {
-        std::cout << "> Created connection with id " << id << std::endl;
-          rosbridge_started_=true;
-   } 
+ rosbridge_ptr_ = websocketpp::lib::make_shared<ros_endpoint>(this->shared_from_this());
+ rosbridge_ptr_->run();
+ int id =  rosbridge_ptr_->connect("ws://localhost:9090");
+   if (id != -1) {
+       std::cout << "> Created connection with id " << id << std::endl;
+         rosbridge_started_=true;
+  } 
 }
 
 void
@@ -60,6 +63,7 @@ Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::
   std::cout << "Dispatcheing....."<< std::endl;
   std::cout << msg->get_payload() << std::endl;
 
+  //TODO::check if bridge is alive
   websocketpp::lib::error_code ec;
   rosbridge_ptr_->send(msg->get_payload());
         if (ec) {

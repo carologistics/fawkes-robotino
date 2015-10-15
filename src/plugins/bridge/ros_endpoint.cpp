@@ -47,13 +47,13 @@ class connection_metadata {
 public:
     typedef websocketpp::lib::shared_ptr<connection_metadata> ptr;
 
-    connection_metadata(int id, websocketpp::connection_hdl hdl, std::string uri)
+    connection_metadata(int id, websocketpp::connection_hdl hdl, std::string uri,  websocketpp::lib::shared_ptr<Idispatcher> dispatcher)
       : m_id(id)
       , m_hdl(hdl)
       , m_status("Connecting")
       , m_uri(uri)
       , m_server("N/A")
-     
+      , m_dispatcher(dispatcher)
 
     {}
 
@@ -85,9 +85,12 @@ public:
     void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
         if (msg->get_opcode() == websocketpp::frame::opcode::text) {
               m_messages .push_back("<< " + msg->get_payload());
+
+              std::cout<< "forwarding to web" << std::endl;
              std::cout<< msg->get_payload()<<std::endl;
-            // m_dispatcher->web_forward_message(msg->get_payload());
+             m_dispatcher->web_forward_message(msg->get_payload());
         } else {
+             std::cout<< "forwarding to web HEX" << std::endl;
             m_messages.push_back("<< " + websocketpp::utility::to_hex(msg->get_payload()));
         }
     }
@@ -117,7 +120,7 @@ private:
     std::string m_server;
     std::string m_error_reason;
     std::vector<std::string> m_messages;
-  //  websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
+    websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
 };
 
 
@@ -127,7 +130,7 @@ class ros_endpoint {
 public:
     typedef websocketpp::lib::shared_ptr<ros_endpoint> ptr;
 
-    ros_endpoint () : m_next_id(0)
+    ros_endpoint (websocketpp::lib::shared_ptr<Idispatcher> dispatcher) : m_next_id(0), m_dispatcher(dispatcher)
      {
         m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
         m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
@@ -135,7 +138,11 @@ public:
         m_endpoint.init_asio();
         m_endpoint.start_perpetual();
 
-        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
+       
+    }
+
+    void run(){
+         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
     }
 
     ~ros_endpoint() {
@@ -172,7 +179,7 @@ public:
         }
 
         int new_id = m_next_id++;
-        connection_metadata::ptr metadata_ptr = websocketpp::lib::make_shared<connection_metadata>(new_id, con->get_handle(), uri);
+        connection_metadata::ptr metadata_ptr = websocketpp::lib::make_shared<connection_metadata>(new_id, con->get_handle(), uri,m_dispatcher);
         m_connection_list[new_id] = metadata_ptr;
         con_meta_ptr=metadata_ptr;
 
@@ -272,7 +279,7 @@ public:
     con_list m_connection_list;
     int m_next_id;
 
-  //  websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
+    websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
 
 
 };
