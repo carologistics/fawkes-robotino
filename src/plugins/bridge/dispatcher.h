@@ -14,7 +14,7 @@ using websocketpp::connection_hdl;
 class ros_endpoint;
 class Isession;
 
-class Dispatcher
+class Dispatcher : public Idispatcher , std::enable_shared_from_this<Dispatcher>
 {
 
 private:
@@ -31,22 +31,13 @@ public:
 	Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s);
 	~Dispatcher();
 
-	void web_configure_session();
+	void web_register_handler();
 	void web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg);
 	//todo::replace the big type names in a name space and use it
-
 	bool web_forward_message(std::string msg);
 
-	//void run();
-	//void init_rosbridge(ros_endpoint::ptr rosbridge_ptr);
-	void register_ros_endpoint(ros_endpoint::ptr rosbridge_ptr);
-	//void register_web_endpoint( websocketpp::lib::shared_ptr<Iendpoint> web_endpoint_ptr);
 	
-	void reply(std::string msg);
-	bool bridges_ready();
-
-	void dispatch_msg(std::string msg);
-
+	void init_rosbridge();
 };
 
 
