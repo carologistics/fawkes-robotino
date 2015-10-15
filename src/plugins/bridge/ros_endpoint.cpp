@@ -40,6 +40,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <idispatcher.h>
 
 typedef websocketpp::client<websocketpp::config::asio_client> client;
 class connection_metadata {
@@ -52,6 +53,8 @@ public:
       , m_status("Connecting")
       , m_uri(uri)
       , m_server("N/A")
+     
+
     {}
 
     void on_open(client * c, websocketpp::connection_hdl hdl) {
@@ -83,6 +86,7 @@ public:
         if (msg->get_opcode() == websocketpp::frame::opcode::text) {
               m_messages .push_back("<< " + msg->get_payload());
              std::cout<< msg->get_payload()<<std::endl;
+            // m_dispatcher->web_forward_message(msg->get_payload());
         } else {
             m_messages.push_back("<< " + websocketpp::utility::to_hex(msg->get_payload()));
         }
@@ -113,14 +117,25 @@ private:
     std::string m_server;
     std::string m_error_reason;
     std::vector<std::string> m_messages;
+  //  websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
 };
 
 
+
+//---------------------------------------------------ROSENDPOINT
 class ros_endpoint {
 public:
     typedef websocketpp::lib::shared_ptr<ros_endpoint> ptr;
 
-    ros_endpoint () : m_next_id(0) {
+    ros_endpoint () : m_next_id(0)
+     {
+        m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
+        m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
+
+        m_endpoint.init_asio();
+        m_endpoint.start_perpetual();
+
+        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
     }
 
     ~ros_endpoint() {
@@ -144,18 +159,6 @@ public:
         
         m_thread->join();
     }
-
-    void run(){
-        m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
-        m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
-
-        m_endpoint.init_asio();
-        m_endpoint.start_perpetual();
-
-        //m_endpoint.run();
-        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
-    }
-
 
     int connect(std::string const & uri) {
         websocketpp::lib::error_code ec;
@@ -268,6 +271,8 @@ public:
 
     con_list m_connection_list;
     int m_next_id;
+
+  //  websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
 
 
 };

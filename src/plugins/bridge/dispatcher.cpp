@@ -27,19 +27,31 @@ Dispatcher::Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s):
     rosbridge_started_(false),
     web_session_(web_s)
     {
-  configure_web_session();
-
+  init_rosbridge();
+  //TODO::make sure it is initialized before proceeding
+  web_register_handler();
 }
 
+Dispatcher::~Dispatcher()
+{
+  	//delete rosbridge_;
+ }
 
 void
-Dispatcher::web_configure_session(){
-  //set the handlers to send and receive
-  web_session_->get_connection_ptr()->set_message_handler(bind(&Dispatcher::web_on_message,this,::_1,::_2));
-
+Dispatcher::init_rosbridge(){   
+  rosbridge_ptr_ = websocketpp::lib::make_shared<ros_endpoint>();
+  int id =  rosbridge_ptr_->connect("ws://localhost:9090");
+    if (id != -1) {
+        std::cout << "> Created connection with id " << id << std::endl;
+          rosbridge_started_=true;
+   } 
 }
 
-
+void
+Dispatcher::web_register_handler(){
+  //set the handlers to send and receive
+  web_session_->get_connection_ptr()->set_message_handler(bind(&Dispatcher::web_on_message,this,::_1,::_2));
+}
 
 void
 Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg){
@@ -48,8 +60,13 @@ Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::
   std::cout << "Dispatcheing....."<< std::endl;
   std::cout << msg->get_payload() << std::endl;
 
+  websocketpp::lib::error_code ec;
+  rosbridge_ptr_->send(msg->get_payload());
+        if (ec) {
+            std::cout << "> Error sending message: " << ec.message() << std::endl;
+            return;
+        }
 }
-
 
 bool
 Dispatcher::web_forward_message(std::string msg){
@@ -61,72 +78,6 @@ Dispatcher::web_forward_message(std::string msg){
 
 
 
-// void
-// Dispatcher::run(){
-// 		init_rosbridge(rosbridge_ptr_);
-// }
-
-
-// void
-// Dispatcher::init_rosbridge(ros_endpoint::ptr rosbridge_ptr){
-    
-//   rosbridge_ptr = websocketpp::lib::make_shared<ros_endpoint,std::owner_less<ros_endpointpmak>>();
-//   int id =  rosbridge_ptr->connect("ws://localhost:9090");
-//     if (id != -1) {
-//         std::cout << "> Created connection with id " << id << std::endl;
-//           rosbridge_started_=true;
-//    } 
-// }
-
-void
-Dispatcher::register_ros_endpoint(ros_endpoint::ptr rosbridge_ptr){
-    
-  rosbridge_ptr_=rosbridge_ptr;
-
-  rosbridge_started_=true;
-}
-
-// void
-// Dispatcher::register_web_endpoint( websocketpp::lib::shared_ptr<Iendpoint> ptr){
-    
-//   web_endpoint_ptr_=ptr;
-// }
-
-
-Dispatcher::~Dispatcher()
-{
-  	//delete rosbridge_;
- }
-
- bool
- Dispatcher::bridges_ready(){
- 	return rosbridge_started_;
- }
-  	
-
-void
-Dispatcher::dispatch_msg(std::string msg){
-
-	std::cout<< "DISPATCHING" << std::endl;
-	websocketpp::lib::error_code ec;
-	rosbridge_ptr_->send(msg);
-        if (ec) {
-            std::cout << "> Error sending message: " << ec.message() << std::endl;
-            return;
-        }
-}
-
-void
-Dispatcher::reply(std::string msg){
-
-  std::cout<< "Replying" << std::endl;
-  websocketpp::lib::error_code ec;
-  //web_endpoint_ptr_->send(msg);
-        if (ec) {
-            std::cout << "> Error sending message: " << ec.message() << std::endl;
-            return;
-        }
-}
 
 // void
 // Dispatcher::handle_client_reads(const boost::system::error_code &ec , size_t bytes_transferred){
