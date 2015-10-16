@@ -56,12 +56,14 @@ public:
 
     void on_open(connection_hdl hdl) {
 
+        hdl_ids_[hdl]=m_next_sessionid;
+
         tmp_session_->set_connection_hdl(hdl);
         tmp_session_->set_endpoint(m_server);
         tmp_session_->set_id(m_next_sessionid);
         tmp_session_->set_name("web_session_tmp_name");
 
-       dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(tmp_session_);
+        dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(tmp_session_);
         dispatchers_[m_next_sessionid]->start();
         m_next_sessionid++;
         //ForDebuging:: Print on http req 
@@ -72,11 +74,20 @@ public:
     void on_close(connection_hdl hdl) {
 
         //TODO:: Find the id of this hdl and distory dispatcher instance with all its internals
-                //connection_data& data = get_data_from_hdl(hdl);
-                // std::cout << "Closing connection " << data.name
-                //           << " with sessionid " << data.sessionid << std::endl;
+       auto it = hdl_ids_.find(hdl);
 
-                // m_connections.erase(hdl);
+       if(it == hdl_ids_.end()){
+        // this connection is not in the list. This really shouldn't happen
+            // and probably means something else is wrong.
+            throw std::invalid_argument("No data available for session");
+       }
+
+       int session_id=it->second;
+
+       std::cout << "Closing connection  with sessionid " << session_id << std::endl;
+
+       hdl_ids_.erase(hdl);
+       dispatchers_.erase(session_id);
     }
 
 
@@ -87,34 +98,26 @@ public:
     }
 
 private:
-    //typedef std::map<connection_hdl,connection_data,std::owner_less<connection_hdl>> con_list;
+    typedef std::map<connection_hdl,int,std::owner_less<connection_hdl>>    hdl_list;
+    typedef std::map<int, websocketpp::lib::shared_ptr<Dispatcher> >        disp_list;
     
-    websocketpp::lib::shared_ptr<server>         m_server;
-    websocketpp::lib::shared_ptr<web_session>    tmp_session_; //this only serve to collect the session data before intializing the dispaticher
-    
-    typedef std::map<int, websocketpp::lib::shared_ptr<Dispatcher> >disp_list;
-    disp_list dispatchers_;
-    
-    int m_next_sessionid;
+    hdl_list                                                                hdl_ids_;
+    disp_list                                                               dispatchers_;
 
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
+    websocketpp::lib::shared_ptr<server>                                    m_server;
+    websocketpp::lib::shared_ptr<web_session>                               tmp_session_; //this only serve to collect the session data before intializing the dispaticher
+    
+    int                                                                     m_next_sessionid;
 
+    websocketpp::lib::shared_ptr<websocketpp::lib::thread>                  m_thread;
 };
 
 
 
 int main() {
-
     websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
-   
     web_server->run(6060);
-
 }
-
-
-
-
-
 
 
 
