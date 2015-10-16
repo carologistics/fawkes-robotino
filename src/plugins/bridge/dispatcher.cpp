@@ -41,7 +41,7 @@ void Dispatcher::start(){
 
 void
 Dispatcher::init_rosbridge(){   
- rosbridge_ptr_ = websocketpp::lib::make_shared<ros_endpoint>(this->shared_from_this());
+ rosbridge_ptr_ = websocketpp::lib::make_shared<ros_proxy>(this->shared_from_this());
  rosbridge_ptr_->run();
  int id =  rosbridge_ptr_->connect("ws://localhost:9090");
    if (id != -1) {

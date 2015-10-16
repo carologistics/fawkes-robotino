@@ -1,219 +1,224 @@
+/*
+ * Copyright (c) 2014, Peter Thorson. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the WebSocket++ Project nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL PETER THORSON BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// **NOTE:** This file is a snapshot of the WebSocket++ utility client tutorial.
+// Additional related material can be found in the tutorials/utility_client
+// directory of the WebSocket++ repository.
 
 
-//#include "dispatcher.h"
-#include "ros_proxy.h"
-#include <boost/bind.hpp>
-#include <exception> 
-#include <boost/lexical_cast.hpp>
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
 
+#include <websocketpp/common/thread.hpp>
+#include <websocketpp/common/memory.hpp>
 
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
+#include <cstdlib>
+#include <iostream>
+#include <map>
+#include <string>
+#include <sstream>
+#include <idispatcher.h>
 
+typedef websocketpp::client<websocketpp::config::asio_client> client;
+class connection_metadata {
+public:
+    typedef websocketpp::lib::shared_ptr<connection_metadata> ptr;
 
-using namespace boost::asio;
+    connection_metadata(int id, websocketpp::connection_hdl hdl, std::string uri,  websocketpp::lib::shared_ptr<Idispatcher> dispatcher)
+      : m_id(id)
+      , m_hdl(hdl)
+      , m_status("Connecting")
+      , m_uri(uri)
+      , m_server("N/A")
+      , m_dispatcher(dispatcher)
 
+    {}
 
+    void on_open(client * c, websocketpp::connection_hdl hdl) {
+        m_status = "Open";
 
-RosProxy::RosProxy(boost::asio::io_service& io_service_,unsigned short server_port):
-		server_socket_(io_service_)
-		,client_socket_(io_service_)
-		,resolver_(io_service_)
-		,server_port_(server_port)
-		,serverInit(false)
-		{
-			std::cout <<"init1 \n";
-}
+        client::connection_ptr con = c->get_con_from_hdl(hdl);
+        m_server = con->get_response_header("Server");
+    }
 
+    void on_fail(client * c, websocketpp::connection_hdl hdl) {
+        m_status = "Failed";
 
+        client::connection_ptr con = c->get_con_from_hdl(hdl);
+        m_server = con->get_response_header("Server");
+        m_error_reason = con->get_ec().message();
+    }
+    
+    void on_close(client * c, websocketpp::connection_hdl hdl) {
+        m_status = "Closed";
+        client::connection_ptr con = c->get_con_from_hdl(hdl);
+        std::stringstream s;
+        s << "close code: " << con->get_remote_close_code() << " (" 
+          << websocketpp::close::status::get_string(con->get_remote_close_code()) 
+          << "), close reason: " << con->get_remote_close_reason();
+        m_error_reason = s.str();
+    }
 
-RosProxy::~RosProxy()
-{
-	boost::system::error_code err;
-  	server_socket_.shutdown(ip::tcp::socket::shutdown_both, err);
-  	server_socket_.close();
-  	client_socket_.shutdown(ip::tcp::socket::shutdown_both, err);
-  	client_socket_.close();
-  
-}
+    void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
+        if (msg->get_opcode() == websocketpp::frame::opcode::text) {
+              std::cout<< "forwarding to web.." << std::endl;
+              std::cout<< msg->get_payload()<<std::endl;
+              m_dispatcher->web_forward_message(msg->get_payload());
+        } else {
+            std::cout<< "forwarding to web HEX" << std::endl;
+           // m_messages.push_back("<< " + websocketpp::utility::to_hex(msg->get_payload()));
+        }
+    }
 
-void RosProxy::disconnect(const char *where, const char *reason){
+    websocketpp::connection_hdl get_hdl() const {
+        return m_hdl;
+    }
+    
+    int get_id() const {
+        return m_id;
+    }
+    
+    std::string get_status() const {
+        return m_status;
+    }
 
-	std::cout << "Disconnected From ";
-	std::cout << *where;
-	std::cout << "Coz ";
-	std::cout << *reason;
-  boost::system::error_code ec;
-   server_socket_.shutdown(ip::tcp::socket::shutdown_both, ec);
-  server_socket_.close();
-
-}
-
-
-
-void RosProxy::start_server(){
-std::cout <<"starting on";
-std::cout << server_port_;
-  ip::tcp::resolver::query query("localhost", boost::lexical_cast<std::string>(server_port_));
-  resolver_.async_resolve(query,
-			  boost::bind(&RosProxy::handle_resolve, this,
-				      boost::asio::placeholders::error,
-				      boost::asio::placeholders::iterator));
-}
-
-void
-RosProxy::handle_resolve(const boost::system::error_code& err,
-					    ip::tcp::resolver::iterator endpoint_iterator)
-{
-  if (! err) {
- std::cout << "resolving \n";
-    // Attempt a connection to each endpoint in the list until we
-    // successfully establish a connection.
-#if BOOST_ASIO_VERSION > 100409
-    boost::asio::async_connect(server_socket_, endpoint_iterator,
-#else
-    server_socket_.async_connect(*endpoint_iterator,
-#endif
-			       boost::bind(&RosProxy::handle_connect, this,
-					   boost::asio::placeholders::error));
-
-
-
-
-//     boost::system::error_code ec = boost::asio::error::would_block;
-//   server_socket_.async_connect(*endpoint_iterator,
-//   			       boost::lambda::var(ec) = boost::lambda::_1);
-
-//   // Block until the asynchronous operation has completed.
-//   do {
-//     io_service_->run_one();
-// #if BOOST_VERSION >= 105400 && BOOST_VERSION < 105500
-//     // Boost 1.54 has a bug that causes async_connect to report success
-//     // if it cannot connect at all to the other side, cf.
-//     // https://svn.boost.org/trac/boost/ticket/8795
-//     // Work around by explicitly checking for connected status
-//     if (! ec) {
-//       server_socket_.remote_endpoint(ec);
-//       if (ec == boost::system::errc::not_connected) {
-//         // continue waiting for timeout
-//         ec = boost::asio::error::would_block;
-// 	server_socket_.async_connect(*endpoint_iterator,
-//                                      boost::lambda::var(ec) = boost::lambda::_1);
-//       }
-//     }
-// #endif
-//   } while (ec == boost::asio::error::would_block);
-
-//   // Determine whether a connection was successfully established.
-// 	  if (ec || ! server_socket_.is_open()) {
-// 		    disconnect("handle_resolve", ec.message().c_str());
-// 		    if (ec.value() == boost::system::errc::operation_canceled) {
-// 		      std::cout << "timed out";
-// 		    } else {
-// 		      std::cout << "waiting for server failed";
-
-// 		    }
-// 		    return;
-// 		}
-
-
-//	handle_connect(ec);
-
-
-  } else {
-    disconnect("handle_resolve", err.message().c_str());
-  }
-}
-
-void
-RosProxy::handle_connect(const boost::system::error_code &err)
-{
-  if (! err) {
-//	wiat for hand shake
-  	std::cout << "connecteed! \n";
-  	serverInit=true;
-  	read_from_server();
-  }
-  else {
-    disconnect("handle_connect", err.message().c_str());
-  }
-}
+private:
+    int m_id;
+    websocketpp::connection_hdl m_hdl;
+    std::string m_status;
+    std::string m_uri;
+    std::string m_server;
+    std::string m_error_reason;
+    websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
+};
 
 
 
-void
-RosProxy::read_from_server(){
+//---------------------------------------------------ROSENDPOINT
+class ros_proxy {
+public:
+    typedef websocketpp::lib::shared_ptr<ros_proxy> ptr;
 
-  std::cout << "Waiting to read from  server! \n";
-		 boost::asio::async_read(server_socket_, buff_s, boost::asio::transfer_at_least(1),
-		 	boost::bind(&RosProxy::handle_server_reads, this,
-		 				   boost::asio::placeholders::error)
-		 	);
+    ros_proxy (websocketpp::lib::shared_ptr<Idispatcher> dispatcher) : m_next_id(0), m_dispatcher(dispatcher)
+     {
+        m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
+        m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
 
-}
+        m_endpoint.init_asio();
+        m_endpoint.start_perpetual();
+    }
 
-void
-RosProxy::handle_server_reads(const boost::system::error_code &ec){
+    void run(){
+         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
+    }
+
+    ~ros_proxy() {
+        m_endpoint.stop_perpetual();
+
+        std::cout << "> Closing connection " << metadata_ptr->get_id() << std::endl;
+        
+        websocketpp::lib::error_code ec;
+        m_endpoint.close(metadata_ptr->get_hdl(), websocketpp::close::status::going_away, "", ec);
+        if (ec) {
+            std::cout << "> Error closing connection " << metadata_ptr->get_id() << ": "  
+                      << ec.message() << std::endl;
+        }
+        m_thread->join();
+    }
+
+    int connect(std::string const & uri) {
+        websocketpp::lib::error_code ec;
+
+        client::connection_ptr con = m_endpoint.get_connection(uri, ec);
 
 
-	if(!ec){
-		//check if the socket is alive
-		std::string s="";  
-		std::ostringstream ss;
-		ss << &buff_s;
-		s = ss.str();
+        if (ec) {
+            std::cout << "> Connect initialization error: " << ec.message() << std::endl;
+            return -1;
+        }
 
-		write_to_socket(client_socket_,s);
-		read_from_server();
-	}
-	else {
-    disconnect("handle_server_reads", ec.message().c_str());
-  }
+        int new_id = m_next_id++;
+        metadata_ptr = websocketpp::lib::make_shared<connection_metadata>(new_id, con->get_handle(), uri,m_dispatcher);
 
-}
+        con->set_open_handler(websocketpp::lib::bind(
+            &connection_metadata::on_open,
+            metadata_ptr,
+            &m_endpoint,
+            websocketpp::lib::placeholders::_1
+        ));
+        con->set_fail_handler(websocketpp::lib::bind(
+            &connection_metadata::on_fail,
+            metadata_ptr,
+            &m_endpoint,
+            websocketpp::lib::placeholders::_1
+        ));
+        con->set_close_handler(websocketpp::lib::bind(
+            &connection_metadata::on_close,
+            metadata_ptr,
+            &m_endpoint,
+            websocketpp::lib::placeholders::_1
+        ));
+        con->set_message_handler(websocketpp::lib::bind(
+            &connection_metadata::on_message,
+            metadata_ptr,
+            websocketpp::lib::placeholders::_1,
+            websocketpp::lib::placeholders::_2
+        ));
+
+        m_endpoint.connect(con);
+
+        return new_id;
+    }
+
+    void close(int id, websocketpp::close::status::value code, std::string reason) {
+        websocketpp::lib::error_code ec;
+        m_endpoint.close(metadata_ptr->get_hdl(), code, reason, ec);
+        if (ec) {
+            std::cout << "> Error initiating close: " << ec.message() << std::endl;
+        }
+    }
 
 
-void RosProxy::process_req(std::string s){
-	boost::system::error_code ec;
+      void send(std::string message) {
+        websocketpp::lib::error_code ec;
+        m_endpoint.send(metadata_ptr->get_hdl(), message, websocketpp::frame::opcode::text, ec);
+        if (ec) {
+            std::cout << "> Error sending message: " << ec.message() << std::endl;
+            return;
+        }
+    }
 
-	size_t t =boost::asio::buffer_size(boost::asio::buffer(s));
-	
-	std::cout << "Writing to server!";
-	std::cout << t;
-	std::cout << "bytes \n!";
-	std::cout << s;
+public:
+    connection_metadata::ptr metadata_ptr;
 
-	boost::asio::write(server_socket_,boost::asio::buffer(s) , ec);
-  if(ec){
-  		std::cout << "Failed to write! \n";
-  		std::cout << ec.message().c_str();
-  }
+    client m_endpoint;
+    websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
+    int m_next_id;
 
-}
+    websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
 
-bool
-RosProxy::check_rosBridge_alive(){
 
-	return serverInit;
-}
-
-void
-RosProxy::write_to_socket(boost::asio::ip::tcp::socket &socket , std::string s)
-{
-	boost::system::error_code ec;
-	size_t t =boost::asio::buffer_size(boost::asio::buffer(s));
-	
-
-	std::cout << "Writing to client!";
-	std::cout << t;
-	std::cout << "bytes \n!";
-	std::cout << s;
-
- 	boost::asio::write(socket,boost::asio::buffer(s) , ec);
-	if(ec){
-	  		std::cout << "Failed to write! \n";
-	  		std::cout << ec.message().c_str();
-	  }
-  
-}
-
+};
