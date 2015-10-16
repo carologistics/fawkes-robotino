@@ -4,28 +4,23 @@
 
 
 #include <string>
-#include <ros_endpoint.cpp>
+#include <ros_proxy.cpp>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
-#include <memory>
+
 
 using websocketpp::connection_hdl;
 
-class ros_endpoint;
+class ros_proxy;
 class Isession;
 
 class Dispatcher : public Idispatcher, public std::enable_shared_from_this<Dispatcher>
 {
 
 private:
-	typedef std::map<const int,ros_endpoint::ptr> ros_list;
 	bool					rosbridge_started_;
-
-    ros_list m_ros_list;
-
-    ros_endpoint::ptr 		rosbridge_ptr_ ;
-
-     websocketpp::lib::shared_ptr<Isession>	web_session_;
+	ros_proxy::ptr 				rosbridge_ptr_ ;
+	websocketpp::lib::shared_ptr<Isession>	web_session_;
 public:
 
 	Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s);
