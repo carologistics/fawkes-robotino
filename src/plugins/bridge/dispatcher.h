@@ -20,7 +20,7 @@ class Dispatcher : public Idispatcher, public std::enable_shared_from_this<Dispa
 private:
 	bool					rosbridge_started_;
 	ros_proxy::ptr 				rosbridge_ptr_ ;
-	websocketpp::lib::shared_ptr<Isession>	web_session_;
+	websocketpp::lib::shared_ptr<Isession>	web_session_;// public to be able to get the hdl later
 public:
 
 	Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s);
@@ -32,7 +32,6 @@ public:
 	//todo::replace the big type names in a name space and use it
 	bool web_forward_message(std::string msg);
 
-	
 	void init_rosbridge();
 };
 

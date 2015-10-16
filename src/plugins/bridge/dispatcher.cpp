@@ -12,6 +12,7 @@
 #include "rapidjson/encodedstream.h"// AutoUTFInputStream
 #include "rapidjson/memorystream.h"    
 #include "rapidjson/error/en.h"
+
 #include  "isession.h"
 
 
@@ -23,10 +24,9 @@ using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
 
-Dispatcher::Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s):
-    rosbridge_started_(false),
-    web_session_(web_s)
-    {}
+Dispatcher::Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s)
+    : rosbridge_started_(false)
+    , web_session_(web_s){}
 
 Dispatcher::~Dispatcher()
 {
@@ -35,7 +35,7 @@ Dispatcher::~Dispatcher()
 
 void Dispatcher::start(){
   init_rosbridge();
-  //TODO::make sure it is sinitialized before proceeding
+  //TODO::make sure it is initialized before proceeding
   web_register_handler();
 }
 
@@ -63,13 +63,8 @@ Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::
   std::cout << "Dispatcheing....."<< std::endl;
   std::cout << msg->get_payload() << std::endl;
 
-  //TODO::check if bridge is alive
-  websocketpp::lib::error_code ec;
+  //TODO::check if bridge is alive and if sending worked
   rosbridge_ptr_->send(msg->get_payload());
-        if (ec) {
-            std::cout << "> Error sending message: " << ec.message() << std::endl;
-            return;
-        }
 }
 
 bool

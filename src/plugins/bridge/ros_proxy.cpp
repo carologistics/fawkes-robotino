@@ -206,7 +206,7 @@ public:
         websocketpp::lib::error_code ec;
         m_endpoint.send(metadata_ptr->get_hdl(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
-            std::cout << "> Error sending message: " << ec.message() << std::endl;
+            std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
             return;
         }
     }
@@ -219,6 +219,4 @@ public:
     int m_next_id;
 
     websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
-
-
 };

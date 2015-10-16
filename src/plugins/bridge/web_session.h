@@ -30,7 +30,5 @@ public:
 
 	bool send(std::string msg);
 
-
-
 };
 
