@@ -72,8 +72,6 @@ public:
         }
 
     void on_close(connection_hdl hdl) {
-
-        //TODO:: Find the id of this hdl and distory dispatcher instance with all its internals
        auto it = hdl_ids_.find(hdl);
 
        if(it == hdl_ids_.end()){
