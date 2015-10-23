@@ -152,6 +152,8 @@ case $COMMAND in
 	$LLSF_REFBOX_DIR/bin/llsf-refbox
 	;;
     refbox-shell )
+        # wait some time such that the terminal has the final size
+	sleep 3
 	$LLSF_REFBOX_DIR/bin/llsf-refbox-shell
 	;;
 esac
