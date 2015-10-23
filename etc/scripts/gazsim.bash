@@ -48,6 +48,8 @@ REPLAY=
 FAWKES_BIN=$FAWKES_DIR/bin
 META_PLUGIN=
 START_GAZEBO=true
+TERM_GEOMETRY=105x56
+
 while getopts “hx:c:lrksn:e:dm:aof:p:” OPTION
 do
      case $OPTION in
@@ -165,7 +167,7 @@ if [  $COMMAND  == start ]; then
 
     #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
 
-    OPEN_COMMAND="gnome-terminal"
+    OPEN_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
 
     if $START_GAZEBO
     then
@@ -192,7 +194,7 @@ if [  $COMMAND  == start ]; then
 	#start refbox
 	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x refbox $KEEP\"'"
     	#start refbox shell
-    	OPEN_COMMAND="$OPEN_COMMAND --tab --geometry=87x82 -e 'bash -c \"$startup_script_location -x refbox-shell $KEEP\"'"
+    	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x refbox-shell $KEEP\"'"
     fi
 
     #start fawkes for robotinos
