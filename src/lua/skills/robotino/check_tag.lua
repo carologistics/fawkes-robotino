@@ -44,7 +44,10 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-@param tag_id the id of the tag to check for 
+@param optional tag_id the id of the tag to check for 
+
+This skill will also FINAL if at least one tag is seen
+and no tag_id was given
 ]==]
 function no_tag_vision()
    return not tag_info:has_writer()
