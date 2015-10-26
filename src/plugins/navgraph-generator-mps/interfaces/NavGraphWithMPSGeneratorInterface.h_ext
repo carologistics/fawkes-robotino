@@ -147,6 +147,39 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     virtual Message * clone() const;
   };
 
+  class SetWaitZonesMessage : public Message
+  {
+   private:
+#pragma pack(push,4)
+    /** Internal data storage, do NOT modify! */
+    typedef struct {
+      int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
+      int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
+      bool zones[24]; /**< 
+      For each zone whether it should be a waiting zone or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+     */
+    } SetWaitZonesMessage_data_t;
+#pragma pack(pop)
+
+    SetWaitZonesMessage_data_t *data;
+
+  interface_enum_map_t enum_map_Side;
+   public:
+    SetWaitZonesMessage(const bool * ini_zones);
+    SetWaitZonesMessage();
+    ~SetWaitZonesMessage();
+
+    SetWaitZonesMessage(const SetWaitZonesMessage *m);
+    /* Methods */
+    bool * is_zones() const;
+    bool is_zones(unsigned int index) const;
+    void set_zones(unsigned int index, const bool new_zones);
+    void set_zones(const bool * new_zones);
+    size_t maxlenof_zones() const;
+    virtual Message * clone() const;
+  };
+
   class UpdateStationByTagMessage : public Message
   {
    private:

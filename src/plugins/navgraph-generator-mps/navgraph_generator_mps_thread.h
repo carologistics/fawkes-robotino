@@ -85,6 +85,7 @@ class NavGraphGeneratorMPSThread
   fawkes::NavGraph                          *base_graph_;
 
   std::vector<unsigned int>                  exp_zones_;
+  std::vector<unsigned int>                  wait_zones_;
 
   unsigned int                               compute_msgid_;
 

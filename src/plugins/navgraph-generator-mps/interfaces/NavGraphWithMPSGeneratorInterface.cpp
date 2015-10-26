@@ -57,8 +57,9 @@ NavGraphWithMPSGeneratorInterface::NavGraphWithMPSGeneratorInterface() : Interfa
   add_messageinfo("ClearMessage");
   add_messageinfo("ComputeMessage");
   add_messageinfo("SetExplorationZonesMessage");
+  add_messageinfo("SetWaitZonesMessage");
   add_messageinfo("UpdateStationByTagMessage");
-  unsigned char tmp_hash[] = {0xc6, 0x58, 0xcc, 0x8, 0x7e, 0x12, 0x41, 0xb7, 0x17, 0xc4, 0x55, 0x96, 0xd5, 0x78, 0xf9, 0x6d};
+  unsigned char tmp_hash[] = {0x28, 0x85, 0xa8, 0x9b, 0x36, 0x90, 0x1c, 0xce, 0x4b, 0xd0, 0x7d, 0x32, 0xc7, 0xe4, 0x5d, 0xa0};
   set_hash(tmp_hash);
 }
 
@@ -167,6 +168,8 @@ NavGraphWithMPSGeneratorInterface::create_message(const char *type) const
     return new ComputeMessage();
   } else if ( strncmp("SetExplorationZonesMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new SetExplorationZonesMessage();
+  } else if ( strncmp("SetWaitZonesMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new SetWaitZonesMessage();
   } else if ( strncmp("UpdateStationByTagMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new UpdateStationByTagMessage();
   } else {
@@ -429,6 +432,140 @@ Message *
 NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::clone() const
 {
   return new NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage(this);
+}
+/** @class NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
+ * SetWaitZonesMessage Fawkes BlackBoard Interface Message.
+ * 
+    
+ */
+
+
+/** Constructor with initial values.
+ * @param ini_zones initial value for zones
+ */
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::SetWaitZonesMessage(const bool * ini_zones) : Message("SetWaitZonesMessage")
+{
+  data_size = sizeof(SetWaitZonesMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (SetWaitZonesMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  memcpy(data->zones, ini_zones, sizeof(bool) * 24);
+  enum_map_Side[(int)INPUT] = "INPUT";
+  enum_map_Side[(int)OUTPUT] = "OUTPUT";
+  add_fieldinfo(IFT_BOOL, "zones", 24, &data->zones);
+}
+/** Constructor */
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::SetWaitZonesMessage() : Message("SetWaitZonesMessage")
+{
+  data_size = sizeof(SetWaitZonesMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (SetWaitZonesMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_Side[(int)INPUT] = "INPUT";
+  enum_map_Side[(int)OUTPUT] = "OUTPUT";
+  add_fieldinfo(IFT_BOOL, "zones", 24, &data->zones);
+}
+
+/** Destructor */
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::~SetWaitZonesMessage()
+{
+  free(data_ptr);
+}
+
+/** Copy constructor.
+ * @param m message to copy from
+ */
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::SetWaitZonesMessage(const SetWaitZonesMessage *m) : Message("SetWaitZonesMessage")
+{
+  data_size = m->data_size;
+  data_ptr  = malloc(data_size);
+  memcpy(data_ptr, m->data_ptr, data_size);
+  data      = (SetWaitZonesMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+}
+
+/* Methods */
+/** Get zones value.
+ * 
+      For each zone whether it should be a waiting zone or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    
+ * @return zones value
+ */
+bool *
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::is_zones() const
+{
+  return data->zones;
+}
+
+/** Get zones value at given index.
+ * 
+      For each zone whether it should be a waiting zone or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    
+ * @param index index of value
+ * @return zones value
+ * @exception Exception thrown if index is out of bounds
+ */
+bool
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::is_zones(unsigned int index) const
+{
+  if (index > 24) {
+    throw Exception("Index value %u out of bounds (0..24)", index);
+  }
+  return data->zones[index];
+}
+
+/** Get maximum length of zones value.
+ * @return length of zones value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::maxlenof_zones() const
+{
+  return 24;
+}
+
+/** Set zones value.
+ * 
+      For each zone whether it should be a waiting zone or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    
+ * @param new_zones new zones value
+ */
+void
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::set_zones(const bool * new_zones)
+{
+  memcpy(data->zones, new_zones, sizeof(bool) * 24);
+}
+
+/** Set zones value at given index.
+ * 
+      For each zone whether it should be a waiting zone or not. The index
+      is the Zone ID - 1, e.g., zone Z1 is field 0.
+    
+ * @param new_zones new zones value
+ * @param index index for of the value
+ */
+void
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::set_zones(unsigned int index, const bool new_zones)
+{
+  if (index > 24) {
+    throw Exception("Index value %u out of bounds (0..24)", index);
+  }
+  data->zones[index] = new_zones;
+}
+/** Clone this message.
+ * Produces a message of the same type as this message and copies the
+ * data to the new message.
+ * @return clone of this message
+ */
+Message *
+NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::clone() const
+{
+  return new NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage(this);
 }
 /** @class NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
  * UpdateStationByTagMessage Fawkes BlackBoard Interface Message.
@@ -759,8 +896,12 @@ NavGraphWithMPSGeneratorInterface::message_valid(const Message *message) const
   if ( m2 != NULL ) {
     return true;
   }
-  const UpdateStationByTagMessage *m3 = dynamic_cast<const UpdateStationByTagMessage *>(message);
+  const SetWaitZonesMessage *m3 = dynamic_cast<const SetWaitZonesMessage *>(message);
   if ( m3 != NULL ) {
+    return true;
+  }
+  const UpdateStationByTagMessage *m4 = dynamic_cast<const UpdateStationByTagMessage *>(message);
+  if ( m4 != NULL ) {
     return true;
   }
   return false;
