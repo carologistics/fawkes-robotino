@@ -49,6 +49,7 @@ ConveyorVisionThread::ConveyorVisionThread()
     shm_buffer = NULL;
     image_buffer = NULL;
     ipl = NULL;
+    use_hough_lines_ = false;
 //    this->markers_ = NULL;
 }
 

@@ -1,0 +1,321 @@
+$#include <interfaces/AX12GripperInterface.h>
+$#include <utils/time/time.h>
+$#include <utils/time/clock.h>
+$using namespace fawkes;
+namespace fawkes {
+class AX12GripperInterface : public Interface
+{
+  static const unsigned int FLAG_SUPPORTS_LEFT;
+  static const unsigned int FLAG_SUPPORTS_RIGHT;
+  static const unsigned int ERROR_NONE;
+  static const unsigned int ERROR_UNSPECIFIC;
+  static const unsigned int ERROR_COMMUNICATION;
+  static const unsigned int ERROR_LEFT_OUTOFRANGE;
+  static const unsigned int ERROR_RIGHT_OUTOFRANGE;
+
+  class Open_AngleMessage : public Message
+  {
+    Open_AngleMessage(float ini_angle);
+    Open_AngleMessage();
+    ~Open_AngleMessage();
+
+    float angle();
+    void set_angle(const float new_angle);
+    int maxlenof_angle() const;
+  };
+
+  class CloseLoadMessage : public Message
+  {
+    CloseLoadMessage(float ini_offset);
+    CloseLoadMessage();
+    ~CloseLoadMessage();
+
+    float offset();
+    void set_offset(const float new_offset);
+    int maxlenof_offset() const;
+  };
+
+  class CenterMessage : public Message
+  {
+    CenterMessage();
+    ~CenterMessage();
+
+  };
+
+  class CloseMessage : public Message
+  {
+    CloseMessage(float ini_offset);
+    CloseMessage();
+    ~CloseMessage();
+
+    float offset();
+    void set_offset(const float new_offset);
+    int maxlenof_offset() const;
+  };
+
+  class OpenMessage : public Message
+  {
+    OpenMessage(float ini_offset);
+    OpenMessage();
+    ~OpenMessage();
+
+    float offset();
+    void set_offset(const float new_offset);
+    int maxlenof_offset() const;
+  };
+
+  class RelGotoZMessage : public Message
+  {
+    RelGotoZMessage(int ini_rel_z);
+    RelGotoZMessage();
+    ~RelGotoZMessage();
+
+    int rel_z();
+    void set_rel_z(const int new_rel_z);
+    int maxlenof_rel_z() const;
+  };
+
+  class StopLeftMessage : public Message
+  {
+    StopLeftMessage();
+    ~StopLeftMessage();
+
+  };
+
+  class StopRightMessage : public Message
+  {
+    StopRightMessage();
+    ~StopRightMessage();
+
+  };
+
+  class StopMessage : public Message
+  {
+    StopMessage();
+    ~StopMessage();
+
+  };
+
+  class FlushMessage : public Message
+  {
+    FlushMessage();
+    ~FlushMessage();
+
+  };
+
+  class CalibrateMessage : public Message
+  {
+    CalibrateMessage();
+    ~CalibrateMessage();
+
+  };
+
+  class ParkMessage : public Message
+  {
+    ParkMessage();
+    ~ParkMessage();
+
+  };
+
+  class GotoMessage : public Message
+  {
+    GotoMessage(float ini_left, float ini_right);
+    GotoMessage();
+    ~GotoMessage();
+
+    float left();
+    void set_left(const float new_left);
+    int maxlenof_left() const;
+    float right();
+    void set_right(const float new_right);
+    int maxlenof_right() const;
+  };
+
+  class TimedGotoMessage : public Message
+  {
+    TimedGotoMessage(float ini_time_sec, float ini_left, float ini_right);
+    TimedGotoMessage();
+    ~TimedGotoMessage();
+
+    float time_sec();
+    void set_time_sec(const float new_time_sec);
+    int maxlenof_time_sec() const;
+    float left();
+    void set_left(const float new_left);
+    int maxlenof_left() const;
+    float right();
+    void set_right(const float new_right);
+    int maxlenof_right() const;
+  };
+
+  class SetServoMessage : public Message
+  {
+    SetServoMessage(unsigned int ini_servoID, float ini_angle);
+    SetServoMessage();
+    ~SetServoMessage();
+
+    unsigned int servoID();
+    void set_servoID(const unsigned int new_servoID);
+    int maxlenof_servoID() const;
+    float angle();
+    void set_angle(const float new_angle);
+    int maxlenof_angle() const;
+  };
+
+  class SetEnabledMessage : public Message
+  {
+    SetEnabledMessage(bool ini_enabled);
+    SetEnabledMessage();
+    ~SetEnabledMessage();
+
+    bool is_enabled();
+    void set_enabled(const bool new_enabled);
+    int maxlenof_enabled() const;
+  };
+
+  class SetVelocityMessage : public Message
+  {
+    SetVelocityMessage(float ini_left_velocity, float ini_right_velocity);
+    SetVelocityMessage();
+    ~SetVelocityMessage();
+
+    float left_velocity();
+    void set_left_velocity(const float new_left_velocity);
+    int maxlenof_left_velocity() const;
+    float right_velocity();
+    void set_right_velocity(const float new_right_velocity);
+    int maxlenof_right_velocity() const;
+  };
+
+  class SetMarginMessage : public Message
+  {
+    SetMarginMessage(float ini_left_margin, float ini_right_margin);
+    SetMarginMessage();
+    ~SetMarginMessage();
+
+    float left_margin();
+    void set_left_margin(const float new_left_margin);
+    int maxlenof_left_margin() const;
+    float right_margin();
+    void set_right_margin(const float new_right_margin);
+    int maxlenof_right_margin() const;
+  };
+
+  unsigned int flags();
+  void set_flags(const unsigned int new_flags);
+  int maxlenof_flags() const;
+  int z_position();
+  void set_z_position(const int new_z_position);
+  int maxlenof_z_position() const;
+  int z_upper_bound();
+  void set_z_upper_bound(const int new_z_upper_bound);
+  int maxlenof_z_upper_bound() const;
+  int z_lower_bound();
+  void set_z_lower_bound(const int new_z_lower_bound);
+  int maxlenof_z_lower_bound() const;
+  float left();
+  void set_left(const float new_left);
+  int maxlenof_left() const;
+  float right();
+  void set_right(const float new_right);
+  int maxlenof_right() const;
+  unsigned int left_load();
+  void set_left_load(const unsigned int new_left_load);
+  int maxlenof_left_load() const;
+  unsigned int right_load();
+  void set_right_load(const unsigned int new_right_load);
+  int maxlenof_right_load() const;
+  float angle();
+  void set_angle(const float new_angle);
+  int maxlenof_angle() const;
+  float offset();
+  void set_offset(const float new_offset);
+  int maxlenof_offset() const;
+  unsigned int msgid();
+  void set_msgid(const unsigned int new_msgid);
+  int maxlenof_msgid() const;
+  bool is_final();
+  void set_final(const bool new_final);
+  int maxlenof_final() const;
+  unsigned int error_code();
+  void set_error_code(const unsigned int new_error_code);
+  int maxlenof_error_code() const;
+  bool is_enabled();
+  void set_enabled(const bool new_enabled);
+  int maxlenof_enabled() const;
+  bool is_calibrated();
+  void set_calibrated(const bool new_calibrated);
+  int maxlenof_calibrated() const;
+  float min_left();
+  void set_min_left(const float new_min_left);
+  int maxlenof_min_left() const;
+  float max_left();
+  void set_max_left(const float new_max_left);
+  int maxlenof_max_left() const;
+  float min_right();
+  void set_min_right(const float new_min_right);
+  int maxlenof_min_right() const;
+  float max_right();
+  void set_max_right(const float new_max_right);
+  int maxlenof_max_right() const;
+  float max_left_velocity();
+  void set_max_left_velocity(const float new_max_left_velocity);
+  int maxlenof_max_left_velocity() const;
+  float max_right_velocity();
+  void set_max_right_velocity(const float new_max_right_velocity);
+  int maxlenof_max_right_velocity() const;
+  float left_velocity();
+  void set_left_velocity(const float new_left_velocity);
+  int maxlenof_left_velocity() const;
+  float right_velocity();
+  void set_right_velocity(const float new_right_velocity);
+  int maxlenof_right_velocity() const;
+  float left_margin();
+  void set_left_margin(const float new_left_margin);
+  int maxlenof_left_margin() const;
+  float right_margin();
+  void set_right_margin(const float new_right_margin);
+  int maxlenof_right_margin() const;
+  bool is_holds_puck();
+  void set_holds_puck(const bool new_holds_puck);
+  int maxlenof_holds_puck() const;
+  bool                    oftype(const char *interface_type) const;
+  const void *            datachunk() const;
+  unsigned int            datasize() const;
+  const char *            type() const;
+  const char *            id() const;
+  const char *            uid() const;
+  unsigned int            serial() const;
+  unsigned int            mem_serial() const;
+  bool                    operator== (Interface &comp) const;
+  const unsigned char *   hash() const;
+  int                     hash_size() const;
+  const char *            hash_printable() const;
+  bool                    is_writer() const;
+  void                    set_from_chunk(void *chunk);
+  virtual Message *   create_message(const char *type) const = 0;
+  void          read();
+  void          write();
+  bool          has_writer() const;
+  unsigned int  num_readers() const;
+  bool          changed() const;
+  const fawkes::Time *  timestamp() const;
+  void          set_auto_timestamping(bool enabled);
+  void          set_timestamp(const fawkes::Time *t);
+  void          set_clock(fawkes::Clock *clock);
+  unsigned int  msgq_enqueue_copy(Message *message);
+  void          msgq_remove(Message *message);
+  void          msgq_remove(unsigned int message_id);
+  unsigned int  msgq_size();
+  void          msgq_flush();
+  void          msgq_lock();
+  bool          msgq_try_lock();
+  void          msgq_unlock();
+  void          msgq_pop();
+  Message *     msgq_first();
+  bool          msgq_empty();
+
+
+};
+
+}

@@ -1,3 +1,4 @@
+AX12GripperInterface.h
 LaserClusterInterface.h
 NavGraphWithMPSGeneratorInterface.h
 RobotinoWorldModelInterface.h

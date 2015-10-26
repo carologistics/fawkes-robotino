@@ -125,7 +125,7 @@ class ConveyorVisionThread
   unsigned int num_frames_for_average;
   float conveyor_distance_threshold;
   bool visualization_enabled;
-  bool use_hough_lines_ = false;
+  bool use_hough_lines_;
   int hough_lines_averaging_count_;
   int binary_threshold_min_;
   int binary_threshold_max_;

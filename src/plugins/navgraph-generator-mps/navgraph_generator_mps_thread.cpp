@@ -38,6 +38,20 @@ using namespace fawkes;
  * @author Tim Niemueller
  */
 
+namespace fawkes {
+  namespace workaround {
+    static inline Eigen::Vector3f
+    pointAt(const Eigen::ParametrizedLine<float,3> &l, const float k)
+    {
+#if EIGEN_VERSION_AT_LEAST(3,2,0)
+      return l.pointAt(k);
+#else
+      return l.origin() + (l.direction() * k);
+#endif
+    }
+  }
+}
+
 /** Constructor. */
 NavGraphGeneratorMPSThread::NavGraphGeneratorMPSThread()
   : Thread("NavGraphGeneratorMPSThread", Thread::OPMODE_WAITFORWAKEUP),
@@ -204,18 +218,18 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   Eigen::Vector3f     input_pos, output_pos, pose_pos;
   Eigen::Quaternionf  input_ori, output_ori, pose_ori;
   if (input) {
-    input_pos  = mline.pointAt(cfg_mps_approach_dist_);
+    input_pos  = workaround::pointAt(mline, cfg_mps_approach_dist_);
     input_ori  = proj_ori * Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitZ());
-    output_pos = mline.pointAt(-(cfg_mps_approach_dist_ + cfg_mps_width_));
+    output_pos = workaround::pointAt(mline, -(cfg_mps_approach_dist_ + cfg_mps_width_));
     output_ori = proj_ori;
-    pose_pos   = mline.pointAt(-(.5 * cfg_mps_width_));
+    pose_pos   = workaround::pointAt(mline, -(.5 * cfg_mps_width_));
     pose_ori   = output_ori;
   } else {
-    output_pos = mline.pointAt(cfg_mps_approach_dist_);
+    output_pos = workaround::pointAt(mline, cfg_mps_approach_dist_);
     output_ori = proj_ori * Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitZ());
-    input_pos  = mline.pointAt(-(cfg_mps_approach_dist_ + cfg_mps_width_));
+    input_pos  = workaround::pointAt(mline, -(cfg_mps_approach_dist_ + cfg_mps_width_));
     input_ori  = proj_ori;
-    pose_pos   = mline.pointAt(-(.5 * cfg_mps_width_));
+    pose_pos   = workaround::pointAt(mline, -(.5 * cfg_mps_width_));
     pose_ori   = input_ori;
   }
   

@@ -30,7 +30,11 @@
 #include <utils/math/angle.h>
 #include <tf/transform_publisher.h>
 
-#include <alvar/Pose.h>
+#ifdef HAVE_AR_TRACK_ALVAR
+#  include <ar_track_alvar/Pose.h>
+#else
+#  include <alvar/Pose.h>
+#endif
 
 #define EMPTY_INTERFACE_MARKER_ID 0
 #define CHILD_FRAME "/tag_"

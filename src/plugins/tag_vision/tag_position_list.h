@@ -28,7 +28,11 @@
 #include <interfaces/TagVisionInterface.h>
 #include <blackboard/blackboard.h>
 #include <blackboard/exceptions.h>
-#include <alvar/Marker.h>
+#ifdef HAVE_AR_TRACK_ALVAR
+#  include <ar_track_alvar/Marker.h>
+#else
+#  include <alvar/Marker.h>
+#endif
 #include <logging/logger.h>
 
 #include "tag_position_interface_helper.h"
