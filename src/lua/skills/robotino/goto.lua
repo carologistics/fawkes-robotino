@@ -63,8 +63,6 @@ function reached_target_region(self)
                       "/map", "/base_link")
   local distance_region_sqr = rel_pos.x * rel_pos.x + rel_pos.y * rel_pos.y
 
-  printf("Distance region sqr: " .. distance_region_sqr)
-
   if distance_region_sqr > region_sqr then
     return false
   else
@@ -140,7 +138,6 @@ function INIT:init()
   end
 
   self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
-  printf("Driving with region: " .. self.fsm.vars.region_trans)
 end
 
 function SKILL_RELGOTO:init()
