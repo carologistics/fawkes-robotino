@@ -41,16 +41,17 @@ Parameters:
 
 
 -- Tunables
-local MIN_VIS_HIST=25
-local TIMEOUT=120
+local MIN_VIS_HIST=40
+local WAIT_TIMEOUT=120
+local LOOK_TIMEOUT=5
 local ALIGN_POS = {
-   {x=0.5, y=  0},
-   {x=0.6, y=  0.1},
-   {x=0.6, y= -0.1},
-   {x=0.4, y=  0.05},
-   {x=0.4, y= -0.05},
-   {x=0.5, y=  0.075},
-   {x=0.5, y= -0.075}
+   {x=0.5,},
+   {x=0.6, ori= 0.07},
+   {x=0.6, ori=-0.07},
+   {x=0.4, ori= 0.07},
+   {x=0.4, ori=-0.07},
+   {x=0.5, ori= 0.075},
+   {x=0.5, ori=-0.075}
 }
 
 -- Initialize as skill module
@@ -75,12 +76,20 @@ function desired_signal()
       and bb_signal:green() == green
 end
 
+function fail()
+   if fsm.vars.giveup_time then
+      return os.time() > fsm.vars.giveup_time
+   else
+      return fsm.vars.tries >= #ALIGN_POS
+   end
+end
+
 
 -- States
 fsm:define_states{
    export_to=_M,
    closure={ALIGN_POS=ALIGN_POS, bb_signal=bb_signal, navgraph=navgraph, done=done,
-      TIMEOUT=TIMEOUT, os=os, MIN_VIS_HIST=MIN_VIS_HIST, desired_signal=desired_signal},
+      WAIT_TIMEOUT=WAIT_TIMEOUT, os=os, MIN_VIS_HIST=MIN_VIS_HIST, desired_signal=desired_signal},
    {"INIT", JumpState},
    {"SKILL_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="LOOK", fail_to="FAILED"},
    {"LOOK", JumpState},
@@ -96,13 +105,16 @@ fsm:add_transitions{
 
    {"LOOK", "FINAL", cond="(not vars.wait_for) and done()"},
    {"LOOK", "FINAL", cond="vars.wait_for and desired_signal()"},
-   {"LOOK", "FAILED", cond="os.time() > vars.giveup_time"},
+   {"LOOK", "FAILED", cond=fail},
    {"LOOK", "SKILL_ALIGN", cond="(os.time() > vars.look_until) and (vars.best_vis_hist < MIN_VIS_HIST)", desc="move"}
 }
 
 function INIT:init()
    self.fsm.vars.tries = 0
-   self.fsm.vars.giveup_time = os.time() + ((self.fsm.vars.wait_for and TIMEOUT) or 20)
+   if self.fsm.vars.wait_for then
+      self.fsm.vars.giveup_time = os.time() + WAIT_TIMEOUT
+   end
+
    bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.EnableSwitchMessage:new())
  
    if not(self.fsm.vars.place and navgraph:node(self.fsm.vars.place):is_valid()) then
@@ -120,7 +132,7 @@ end
 
 function LOOK:init()
    self.fsm.vars.best_vis_hist = -1
-   self.fsm.vars.look_until = os.time() + 5
+   self.fsm.vars.look_until = os.time() + LOOK_TIMEOUT
 end
 
 function LOOK:loop()
@@ -132,9 +144,7 @@ end
 
 function SKILL_ALIGN:init()
    self.fsm.vars.tries = self.fsm.vars.tries + 1
-   if self.fsm.vars.tries > #ALIGN_POS then
-      self.fsm.vars.tries = 1
-   end
+   printf("attempt #%d", self.fsm.vars.tries)
    self.skills[1].x = ALIGN_POS[self.fsm.vars.tries].x
    self.skills[1].y = ALIGN_POS[self.fsm.vars.tries].y
    self.skills[1].ori = ALIGN_POS[self.fsm.vars.tries].ori

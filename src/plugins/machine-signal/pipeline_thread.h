@@ -94,7 +94,6 @@ class MachineSignalPipelineThread :
     virtual void finalize();
 
     bool lock_if_new_data();
-    bool get_delivery_mode();
 
     void unlock();
 
@@ -107,8 +106,9 @@ class MachineSignalPipelineThread :
 
   private:
 
-    bool cfg_delivery_mode_;
-    
+    float signal_beauty(const SignalState::signal_rois_t_ &signal, const firevision::ROI &laser_roi);
+    float compactness(const SignalState::signal_rois_t_ &s, const firevision::ROI &laser_roi);
+
     bool bb_switch_is_enabled(fawkes::SwitchInterface *sw);
 
     bool cfg_enable_switch_;
@@ -119,7 +119,6 @@ class MachineSignalPipelineThread :
     fawkes::TimeWait *time_wait_;
 
     fawkes::SwitchInterface *bb_enable_switch_;
-    fawkes::SwitchInterface *bb_delivery_switch_;
 
     typedef struct {
         firevision::ColorModelSimilarity *colormodel;
@@ -240,6 +239,7 @@ class MachineSignalPipelineThread :
         }
     } sort_rois_by_y_;
 
+
     /*struct compare_signal_rois_by_x_ {
         bool operator() (SignalState::signal_rois_t_ const &signal1, SignalState::signal_rois_t_ const &signal2) {
           return signal1.red_roi->start.x <= signal2.red_roi->start.x;
@@ -254,14 +254,11 @@ class MachineSignalPipelineThread :
     std::list<SignalState::signal_rois_t_> *create_field_signals(
         std::list<firevision::ROI> *rois_R,
         std::list<firevision::ROI> *rois_G);
-    std::list<SignalState::signal_rois_t_> *create_delivery_signals(
-      std::list<firevision::ROI> *rois_R, std::list<firevision::ROI> *rois_G);
-    std::list<SignalState::signal_rois_t_> *create_laser_signals(std::list<firevision::ROI> *rois_R,
+    SignalState::signal_rois_t_ *create_laser_signals(const firevision::ROI &, std::list<firevision::ROI> *rois_R,
       std::list<firevision::ROI> *rois_G);
 
 
     // Checks to weed out implausible ROIs
-    inline bool rois_delivery_zone(firevision::ROI &red, firevision::ROI &green);
     inline bool roi_width_ok(firevision::ROI &r);
     inline bool rois_similar_width(firevision::ROI &r1, firevision::ROI &r2);
     inline bool rois_x_aligned(firevision::ROI &r1, firevision::ROI &r2);
@@ -270,7 +267,6 @@ class MachineSignalPipelineThread :
     inline bool roi1_oversize(firevision::ROI &r1, firevision::ROI &r2);
     inline bool roi1_x_overlaps_below(firevision::ROI &r1, firevision::ROI &r2);
     inline bool roi1_x_intersects(firevision::ROI &r1, firevision::ROI &r2);
-
 
 
     bool get_light_state(firevision::ROI *light);
