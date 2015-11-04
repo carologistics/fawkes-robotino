@@ -106,7 +106,7 @@ private:
     websocketpp::lib::shared_ptr<web_session>                               tmp_session_; //this only serve to collect the session data before intializing the dispaticher
     
     int                                                                     m_next_sessionid;
-
+    
     websocketpp::lib::shared_ptr<websocketpp::lib::thread>                  m_thread;
 };
 

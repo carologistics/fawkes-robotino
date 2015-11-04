@@ -41,6 +41,7 @@
 #include <string>
 #include <sstream>
 #include <idispatcher.h>
+#include "generic_bridge.h"
 
 typedef websocketpp::client<websocketpp::config::asio_client> client;
 class connection_metadata {
@@ -118,12 +119,16 @@ private:
 
 
 //---------------------------------------------------ROSENDPOINT
-class ros_proxy {
+class ros_proxy : public GenericBridge
+{
 public:
     typedef websocketpp::lib::shared_ptr<ros_proxy> ptr;
 
-    ros_proxy (websocketpp::lib::shared_ptr<Idispatcher> dispatcher) : m_next_id(0), m_dispatcher(dispatcher)
+    ros_proxy (websocketpp::lib::shared_ptr<Idispatcher> dispatcher) 
+    :m_next_id(0)
+    ,m_dispatcher(dispatcher)
      {
+        type= bridge_type::ROS_BRIDGE;
         m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
         m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
 
@@ -209,6 +214,10 @@ public:
             std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
             return;
         }
+    }
+
+    void process_request(std::string msg){
+        send(msg);
     }
 
 public:
