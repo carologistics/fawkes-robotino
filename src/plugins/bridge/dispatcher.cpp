@@ -9,9 +9,9 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
-#include "rapidjson/encodedstream.h"// AutoUTFInputStream
-#include "rapidjson/memorystream.h"    
-#include "rapidjson/error/en.h"
+// #include "rapidjson/encodedstream.h"// AutoUTFInputStream
+// #include "rapidjson/memorystream.h"    
+// #include "rapidjson/error/en.h"
 
 #include  "isession.h"
 
@@ -56,6 +56,8 @@ Dispatcher::web_register_handler(){
   web_session_->get_connection_ptr()->set_message_handler(bind(&Dispatcher::web_on_message,this,::_1,::_2));
 }
 
+
+//the single enrty point to the Birdges
 void
 Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg){
 //Dispatches msg to one of the desired Bridges
@@ -63,9 +65,17 @@ Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::
   std::cout << "Dispatcheing....."<< std::endl;
   std::cout << msg->get_payload() << std::endl;
 
+  const char*  bridge_name = dispatch(msg->get_payload());
+
+  std::cout << bridge_name << std::endl;
+
+
+
   //TODO::check if bridge is alive and if sending worked
   rosbridge_ptr_->send(msg->get_payload());
 }
+
+
 
 bool
 Dispatcher::web_forward_message(std::string msg){
@@ -75,6 +85,14 @@ Dispatcher::web_forward_message(std::string msg){
   return web_session_->send(msg);
 }
 
+const char *
+Dispatcher::dispatch(std::string msg){
+  const char* json = msg.c_str();
+  Document d;
+  d.Parse(json);
+
+  return d["op"].GetString();
+}
 
 
 

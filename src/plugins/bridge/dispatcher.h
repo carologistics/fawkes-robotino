@@ -31,6 +31,7 @@ public:
 	void web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg);
 	//todo::replace the big type names in a name space and use it
 	bool web_forward_message(std::string msg);
+	const char* dispatch(std::string);
 
 	void init_rosbridge();
 };
