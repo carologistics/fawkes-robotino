@@ -3,12 +3,12 @@
 typedef enum {
 		BLACKBOARD_BRDIGE,
 		ROS_BRIDGE
-	  } bridge_type ;
+	  } bridgeType ;
 
 class GenericBridge{
 
 public:
-	bridge_type type;
+	bridgeType type;
 
 	virtual void process_request(std::string msg)=0;
 	

@@ -128,7 +128,7 @@ public:
     :m_next_id(0)
     ,m_dispatcher(dispatcher)
      {
-        type= bridge_type::ROS_BRIDGE;
+        type= bridgeType::ROS_BRIDGE;
         m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
         m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
 

@@ -73,7 +73,6 @@ Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::
   std::cout << web_msg->get_payload() << std::endl;
 
   std::string jsonString = web_msg->get_payload();
-
   bridges_ [ dispatch(jsonString)] -> process_request(jsonString);
 }
 
@@ -88,7 +87,7 @@ Dispatcher::web_forward_message(std::string msg){
 }
 
 
-bridge_type
+bridgeType
 Dispatcher::dispatch(std::string msg){
   const char* json = msg.c_str();
   Document d;
@@ -101,12 +100,14 @@ Dispatcher::dispatch(std::string msg){
   if (d.HasMember("op"))
    {
     std::cout << "------->FOUND OP....."<<d["op"].GetString()<< std::endl;
-    if (std::string(d["topic"].GetString()).find("blackboard") )
+
+    if (std::string(d["topic"].GetString()).find("blackboard") != std::string::npos)
     {
-      return bridge_type::BLACKBOARD_BRDIGE;
+      std::cout<< "That should not happen"<<std::endl;
+      return bridgeType::BLACKBOARD_BRDIGE;
     }
   }
-  return bridge_type::ROS_BRIDGE;
+  return bridgeType::ROS_BRIDGE;
 }
 
 
