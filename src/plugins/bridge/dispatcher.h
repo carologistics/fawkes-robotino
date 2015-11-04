@@ -17,7 +17,7 @@ class Dispatcher : public Idispatcher, public std::enable_shared_from_this<Dispa
 {
 
 private:
-	typedef std::map<bridge_type, websocketpp::lib::shared_ptr<GenericBridge> > bridgesList;
+	typedef std::map<bridgeType, websocketpp::lib::shared_ptr<GenericBridge> > bridgesList;
 
 	bool					rosbridge_started_;
 	ros_proxy::ptr 				rosbridge_ptr_ ;
@@ -40,7 +40,7 @@ public:
 	//todo::replace the big type names in a name space and use it
 	bool web_forward_message(std::string msg);
 
-	bridge_type dispatch(std::string);
+	bridgeType dispatch(std::string);
 
 };
 
