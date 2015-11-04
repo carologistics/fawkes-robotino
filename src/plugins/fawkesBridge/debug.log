@@ -1,0 +1,15 @@
+I 17:32:10.329883 PluginManager: Loading plugins gazebo,gazsim-comm,gazsim-llsfrbcomm for meta plugin gazsim-organization
+I 17:32:11.108051 GazsimLLSFRbCommThread: Connected to Refbox
+I 17:32:11.108312 FawkesMainThread: Fawkes 0.5.0 startup complete
+I 17:32:47.624331 GazsimLLSFRbCommThread: Disconnected
+I 17:33:25.517696 PluginManager: Loading plugins gazebo,gazsim-comm,gazsim-llsfrbcomm for meta plugin gazsim-organization
+I 17:33:26.304123 GazsimLLSFRbCommThread: Connected to Refbox
+I 17:33:26.304342 FawkesMainThread: Fawkes 0.5.0 startup complete
+I 17:34:58.609628 PluginManager: Reloaded meta-data of bridge on file change
+I 17:35:32.094779 PluginManager: Loading plugins gazebo,gazsim-comm,gazsim-llsfrbcomm for meta plugin gazsim-organization
+I 17:35:32.824729 GazsimLLSFRbCommThread: Connected to Refbox
+I 17:35:32.825309 FawkesMainThread: Fawkes 0.5.0 startup complete
+I 17:38:56.680141 PluginManager: Reloaded meta-data of bridge on file change
+I 17:39:06.548037 PluginManager: Loading plugins gazebo,gazsim-comm,gazsim-llsfrbcomm for meta plugin gazsim-organization
+I 17:39:07.308614 GazsimLLSFRbCommThread: Connected to Refbox
+I 17:39:07.308870 FawkesMainThread: Fawkes 0.5.0 startup complete
