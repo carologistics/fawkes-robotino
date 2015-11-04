@@ -4,18 +4,16 @@
 #include <exception>
 #include <iostream>
 #include <sstream>
-#include <string>
+
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 // #include "rapidjson/encodedstream.h"// AutoUTFInputStream
 // #include "rapidjson/memorystream.h"    
-// #include "rapidjson/error/en.h"
+#include "rapidjson/error/en.h"
 
 #include  "isession.h"
-
-
 
 using namespace rapidjson;
 
@@ -37,6 +35,8 @@ void Dispatcher::start(){
   init_rosbridge();
   //TODO::make sure it is initialized before proceeding
   web_register_handler();
+
+  register_bridge();
 }
 
 void
@@ -51,6 +51,13 @@ Dispatcher::init_rosbridge(){
 }
 
 void
+Dispatcher::register_bridge(){
+
+  bridges_[rosbridge_ptr_->type]= rosbridge_ptr_;
+
+}
+
+void
 Dispatcher::web_register_handler(){
   //set the handlers to send and receive
   web_session_->get_connection_ptr()->set_message_handler(bind(&Dispatcher::web_on_message,this,::_1,::_2));
@@ -59,20 +66,15 @@ Dispatcher::web_register_handler(){
 
 //the single enrty point to the Birdges
 void
-Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg){
+Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr web_msg){
 //Dispatches msg to one of the desired Bridges
 
   std::cout << "Dispatcheing....."<< std::endl;
-  std::cout << msg->get_payload() << std::endl;
+  std::cout << web_msg->get_payload() << std::endl;
 
-  const char*  bridge_name = dispatch(msg->get_payload());
+  std::string jsonString = web_msg->get_payload();
 
-  std::cout << bridge_name << std::endl;
-
-
-
-  //TODO::check if bridge is alive and if sending worked
-  rosbridge_ptr_->send(msg->get_payload());
+  bridges_ [ dispatch(jsonString)] -> process_request(jsonString);
 }
 
 
@@ -85,13 +87,26 @@ Dispatcher::web_forward_message(std::string msg){
   return web_session_->send(msg);
 }
 
-const char *
+
+bridge_type
 Dispatcher::dispatch(std::string msg){
   const char* json = msg.c_str();
   Document d;
   d.Parse(json);
 
-  return d["op"].GetString();
+  if (d.Parse(json).HasParseError()) {
+    std::cout<< GetParseError_En(d.GetParseError());
+  }
+  
+  if (d.HasMember("op"))
+   {
+    std::cout << "------->FOUND OP....."<<d["op"].GetString()<< std::endl;
+    if (std::string(d["topic"].GetString()).find("blackboard") )
+    {
+      return bridge_type::BLACKBOARD_BRDIGE;
+    }
+  }
+  return bridge_type::ROS_BRIDGE;
 }
 
 
