@@ -10,7 +10,6 @@
 
 using websocketpp::connection_hdl;
 
-class ros_proxy;
 class Isession;
 
 class Dispatcher : public Idispatcher, public std::enable_shared_from_this<Dispatcher>
@@ -18,12 +17,10 @@ class Dispatcher : public Idispatcher, public std::enable_shared_from_this<Dispa
 
 private:
 	typedef std::map<bridgeType, websocketpp::lib::shared_ptr<GenericBridge> > bridgesList;
-
+	bridgesList 			bridges_;
 	bool					rosbridge_started_;
-	ros_proxy::ptr 				rosbridge_ptr_ ;
-	websocketpp::lib::shared_ptr<Isession>	web_session_;// public to be able to get the hdl later
-	bridgesList bridges_;
 
+	websocketpp::lib::shared_ptr<Isession>	web_session_;// public to be able to get the hdl later
 
 
 public:
@@ -32,8 +29,7 @@ public:
 	Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s);
 	~Dispatcher();
 	void start();
-	void init_rosbridge();
-	void register_bridge();
+	void register_bridges();
 
 	void web_register_handler();
 	void web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg);
