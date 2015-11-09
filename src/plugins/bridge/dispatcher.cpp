@@ -42,12 +42,14 @@ void Dispatcher::start(){
 void
 Dispatcher::init_rosbridge(){   
  rosbridge_ptr_ = websocketpp::lib::make_shared<ros_proxy>(this->shared_from_this());
- rosbridge_ptr_->run();
- int id =  rosbridge_ptr_->connect("ws://localhost:9090");
-   if (id != -1) {
-       std::cout << "> Created connection with id " << id << std::endl;
-         rosbridge_started_=true;
-  } 
+ rosbridge_started_= rosbridge_ptr_->init();
+ //Moved init to the bridge itself...U can always make only one instace like this
+ //rosbridge_ptr_->run();
+ // int id =  rosbridge_ptr_->connect("ws://localhost:9090");
+ //   if (id != -1) {
+ //       std::cout << "> Created connection with id " << id << std::endl;
+          
+ //  } 
 }
 
 void

@@ -136,10 +136,6 @@ public:
         m_endpoint.start_perpetual();
     }
 
-    void run(){
-         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
-    }
-
     ~ros_proxy() {
         m_endpoint.stop_perpetual();
 
@@ -219,6 +215,16 @@ public:
     void process_request(std::string msg){
         send(msg);
     }
+
+    bool init(){
+     m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);        
+     int id = connect("ws://localhost:9090");
+     if (id != -1) {
+        std::cout << "> Created connection with id " << id << std::endl;
+        return true;
+    } 
+    return false;
+}
 
 public:
     connection_metadata::ptr metadata_ptr;
