@@ -15,6 +15,7 @@
 
 #include  "isession.h"
 
+
 using namespace rapidjson;
 
 using websocketpp::lib::placeholders::_1;
@@ -32,32 +33,19 @@ Dispatcher::~Dispatcher()
  }
 
 void Dispatcher::start(){
-  init_rosbridge();
+  register_bridges();
   //TODO::make sure it is initialized before proceeding
   web_register_handler();
-
-  register_bridge();
 }
 
 void
-Dispatcher::init_rosbridge(){   
- rosbridge_ptr_ = websocketpp::lib::make_shared<ros_proxy>(this->shared_from_this());
- rosbridge_started_= rosbridge_ptr_->init();
- //Moved init to the bridge itself...U can always make only one instace like this
- //rosbridge_ptr_->run();
- // int id =  rosbridge_ptr_->connect("ws://localhost:9090");
- //   if (id != -1) {
- //       std::cout << "> Created connection with id " << id << std::endl;
-          
- //  } 
+Dispatcher::register_bridges(){   
+  bridges_[bridgeType::ROS_BRIDGE] = websocketpp::lib::make_shared<ros_proxy>(this->shared_from_this());
+  rosbridge_started_= bridges_[bridgeType::ROS_BRIDGE]->init();
+
+  //Add The Fawkes Bridge HERE
 }
 
-void
-Dispatcher::register_bridge(){
-
-  bridges_[rosbridge_ptr_->type]= rosbridge_ptr_;
-
-}
 
 void
 Dispatcher::web_register_handler(){
