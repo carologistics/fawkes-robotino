@@ -40,7 +40,7 @@ gazsim:
   laser:
     max_range: 9.5
     interface-id: "Laser tim55x"
-    frame-id: "/base_laser"
+    frame-id: !frame base_laser
  
   webcam:
     # list of ids for all cameras to simulate
@@ -56,8 +56,8 @@ gazsim:
       gazsim_tag: 240
       gazsim_puck: 240
     frames:
-      gazsim_tag: "/cam_front"
-      gazsim_puck: "/cam_front"
+      gazsim_tag: !frame cam_front
+      gazsim_puck: !frame cam_front
     
   light-front:
     max-distance: 0.3

@@ -32,7 +32,7 @@ laser-lines:
   max_num_lines: 8
   
   # The frame in which the result should be published; frame
-  result_frame: /base_link
+  result_frame: base_link
 
   switch_tolerance: 0.3
 

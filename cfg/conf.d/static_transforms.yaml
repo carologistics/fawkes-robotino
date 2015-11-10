@@ -9,15 +9,15 @@ plugins/static-transforms:
 
   transforms:
     base_laser:
-      frame: !frame /base_link
-      child_frame: /base_laser
+      frame: !frame base_link
+      child_frame: !frame base_laser
       trans_x: 0.17 # 0.1 for hackathon setup
       trans_y: 0.0
       trans_z: 0.26
 
     cam_tag:
-      frame: !frame /base_link
-      child_frame: /cam_tag
+      frame: !frame base_link
+      child_frame: !frame cam_tag
       trans_x: 0.1
       trans_y: 0.0
       trans_z: 0.44
@@ -26,23 +26,23 @@ plugins/static-transforms:
       rot_roll: -1.57079632679 # -90°
 
     plate_top:
-      frame: !frame /base_link
-      child_frame: /plate_top
+      frame: !frame base_link
+      child_frame: !frame plate_top
       trans_x: 0
       trans_y: 0
       trans_z: 0.78
 
     #from top plate middle to the mount_profile front at the bottom
     mount_profile:
-      frame: !frame /plate_top
-      child_frame: /mount_profile
+      frame: !frame plate_top
+      child_frame: !frame mount_profile
       trans_x: 0.105
       trans_y: 0
       trans_z: 0.03
 
     cam_joint_1:
-      frame: !frame /mount_profile
-      child_frame: /cam_joint_1
+      frame: !frame mount_profile
+      child_frame: !frame cam_joint_1
       trans_x: -0.048
       trans_y: 0.036
       trans_z: 0.18
@@ -51,8 +51,8 @@ plugins/static-transforms:
       rot_roll: 0
 
     cam_joint_2:
-      frame: !frame /cam_joint_1
-      child_frame: /cam_joint_2
+      frame: !frame cam_joint_1
+      child_frame: !frame cam_joint_2
       trans_x: 0
       trans_y: 0.023
       trans_z: 0.021
@@ -61,23 +61,24 @@ plugins/static-transforms:
       rot_roll: 0
 
     cam_signal:
-      frame: !frame /cam_joint_2
-      child_frame: /cam_signal
+      frame: !frame cam_joint_2
+      child_frame: !frame cam_signal
       trans_x: 0.02
       trans_y: 0.028
       trans_z: 0.013
 
     #this system is located in the gripper where the puck should be held
     gripper:
-      frame: !frame /mount_profile
-      child_frame: /gripper
+      frame: !frame mount_profile
+      child_frame: !frame gripper
       trans_x: 0.175
       trans_y: 0.0
       trans_z: 0.1
 
     cam_conveyor:
-      frame: !frame /mount_profile
-      child_frame: /cam_conveyor
+      frame: !frame mount_profile
+      child_frame: !frame cam_conveyor
       trans_x: 0.12
       trans_y: 0.0
       trans_z: 0.03
+

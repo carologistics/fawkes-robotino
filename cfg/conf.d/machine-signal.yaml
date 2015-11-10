@@ -68,7 +68,7 @@ plugins/machine_signal:
   debug_processing: false
   debug_tf: false
 
-  laser_frame: /base_laser
+  laser_frame: !frame base_laser
   signal_width: 0.04
   signal_bottom: 0.12
   signal_top: 0.29
@@ -76,7 +76,7 @@ plugins/machine_signal:
   cam_aperture_y: 0.8
   cam_angle: 0
   #cam_angle: 0.25 # 12.2°
-  cam_frame: /cam_signal
+  cam_frame: !frame cam_signal
 
   red_on:
     visualize: false

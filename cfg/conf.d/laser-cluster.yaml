@@ -28,7 +28,7 @@ laser-cluster:
     max_num_clusters: 5
   
     # The frame in which the result should be published; frame
-    result_frame: /base_link
+    result_frame: base_link
 
     line_removal:
       enable: false
@@ -96,7 +96,7 @@ laser-cluster:
     max_num_clusters: 10
   
     # The frame in which the result should be published; frame
-    result_frame: /base_link
+    result_frame: base_link
 
     line_removal:
       enable: true
@@ -156,7 +156,7 @@ laser-cluster:
     max_num_clusters: 10
   
     # The frame in which the result should be published; frame
-    result_frame: /base_link
+    result_frame: base_link
 
     line_removal:
       enable: false

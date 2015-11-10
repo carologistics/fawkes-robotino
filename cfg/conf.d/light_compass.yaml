@@ -11,7 +11,7 @@ plugins/light_compass:
 #  camera: "file:file:file=/home/fnolden/Bilder/omnivision/omni-abends-magdeburg.jpg"
 
   # coordinate system
-  frame: /base_link
+  frame: !frame base_link
 
   #Shared Memory Imagebuffer name
   shm_image_id: "light_compass"
