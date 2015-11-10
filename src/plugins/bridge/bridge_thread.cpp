@@ -54,17 +54,17 @@ BridgeThread::init()
 //  proc_  = new BridgeProcessor(clips_env_mgr, logger, config, blackboard);
 //  world_ =new World("f");
  logger-> log_info("I CAN SEE THE WORLD","asddas");
-  dispatcher_= new Dispatcher(8080,9090);
 
-
-
+  websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
+  web_server->run(6060);
 }
 
 void
 BridgeThread::finalize()
 {
  // blackboard->close(pose_if_);
-  delete dispatcher_;
+  //delete dispatcher_;
+  delete web_server;
 }
 
 void

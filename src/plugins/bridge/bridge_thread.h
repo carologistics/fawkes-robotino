@@ -28,6 +28,7 @@
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
 #include <plugins/clips/aspect/clips_manager.h>
+#include "Web_server.cpp"
 
 
 #include <vector>
@@ -57,7 +58,7 @@ class BridgeThread
   virtual void finalize();
  private:
 
-  Dispatcher   *dispatcher_;
+  Web_server web_server;
 
 };
 

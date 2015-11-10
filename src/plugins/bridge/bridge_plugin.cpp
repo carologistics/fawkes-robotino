@@ -35,5 +35,5 @@ class BridgePlugin : public fawkes::Plugin
   }
 };
 
-PLUGIN_DESCRIPTION("Fawkes python Bridge")
+PLUGIN_DESCRIPTION("Fawkes Webtools-bridge Bridge")
 EXPORT_PLUGIN(BridgePlugin)

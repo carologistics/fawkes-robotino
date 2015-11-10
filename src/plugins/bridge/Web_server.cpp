@@ -112,10 +112,10 @@ private:
 
 
 
-int main() {
-    websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
-    web_server->run(6060);
-}
+// int main() {
+//     websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
+//     web_server->run(6060);
+// }
 
 
 
