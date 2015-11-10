@@ -40,7 +40,8 @@
 #include <map>
 #include <string>
 #include <sstream>
-#include <idispatcher.h>
+
+#include "idispatcher.h"
 #include "generic_bridge.h"
 
 typedef websocketpp::client<websocketpp::config::asio_client> client;

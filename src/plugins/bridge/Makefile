@@ -19,39 +19,22 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/clips.mk
+include $(BUILDSYSDIR)/boost.mk
 
 LIBS_bridge = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard \
 	       Position3DInterface fawkesclipsaspect RobotinoLightInterface SkillerInterface
 OBJS_bridge = bridge_plugin.o bridge_thread.o \
-              Web_server.o
+              Web_server.o web_session.o ros_proxy.o dispatcher.o 
 
 OBJS_all    = $(OBJS_bridge)
 
 
-# #======temp:: TO BE REPLACED with python.mk and BOOST.mk includes
-# PYTHON_VERSION = 2.7
-# PYTHON_INCLUDE = /usr/include/python$(PYTHON_VERSION)
- 
-# # location of the Boost Python include files and library
- 
-# BOOST_INC = /usr/include
-# BOOST_LIB = /usr/lib
-  
-
- #You may put -I- at any point in your list of -I options. This has two effects. First, directories appearing before the -I- in the list are searched only for headers requested with quote marks. Directories after -I- are searched for all headers. Second, the directory containing the current file is not searched for anything, unless it happens to be one of the directories named by an -I switch. -I- is deprecated, -iquote should be used instead. 
-
-# MY_LDFLAGS = -L$(BOOST_LIB) -lboost_python -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION)
-
-
-# # TARGET = bridge_interface
-# #======EndTemp
-
-
+CFLAGS_CPP11 += -std=c++11 -D_WEBSOCKETPP_CPP11_STL_
 
 ifeq ($(HAVE_TF)$(HAVE_CLIPS)$(HAVE_CPP11),111)
-  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) $(CURDIR) #$(MY_CFLAGS)
-  LDFLAGS += $(LDFLAGS_TF) #$(MY_LDFLAGS)
+  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) 
+  LDFLAGS += $(LDFLAGS_TF) 
 
   PLUGINS_all = $(PLUGINDIR)/bridge.$(SOEXT)
 else

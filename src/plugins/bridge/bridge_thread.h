@@ -28,11 +28,12 @@
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
 #include <plugins/clips/aspect/clips_manager.h>
-#include "Web_server.cpp"
 
 
 #include <vector>
 #include <string>
+
+#include "Web_server.cpp"
 
 namespace fawkes {
   class Position3DInterface;
@@ -58,7 +59,7 @@ class BridgeThread
   virtual void finalize();
  private:
 
-  Web_server web_server;
+  Web_server* web_server;
 
 };
 
