@@ -2,8 +2,9 @@
 #include <map>
 #include <exception>
 #include <websocketpp/common/thread.hpp>
-#include <dispatcher.h>
-#include <web_session.h>
+
+#include "dispatcher.h"
+#include "web_session.h"
 
 using websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
@@ -97,6 +98,7 @@ public:
 
 private:
     typedef std::map<connection_hdl,int,std::owner_less<connection_hdl>>    hdl_list;
+    // typedef std::map<connection_hdl,int>    hdl_list;
     typedef std::map<int, websocketpp::lib::shared_ptr<Dispatcher> >        disp_list;
     
     hdl_list                                                                hdl_ids_;

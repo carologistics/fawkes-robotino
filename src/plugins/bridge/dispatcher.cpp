@@ -1,5 +1,4 @@
 
-#include "dispatcher.h"
 #include <cassert>
 #include <exception>
 #include <iostream>
@@ -13,7 +12,8 @@
 // #include "rapidjson/memorystream.h"    
 #include "rapidjson/error/en.h"
 
-#include  "isession.h"
+#include "isession.h"
+#include "dispatcher.h"
 
 
 using namespace rapidjson;

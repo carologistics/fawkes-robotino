@@ -19,13 +19,11 @@
  */
 
 #include "bridge_thread.h"
-#include "bridge_processor.h"
-#include "bridge_interface.h"
-#include "dispatcher.h"
-
+ 
 #include <tf/types.h>
 #include <interfaces/Position3DInterface.h>
-
+ 
+#include "dispatcher.h"
 using namespace fawkes;
 
 /** @class BridgeThread "bridge_thread.h"
