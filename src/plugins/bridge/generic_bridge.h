@@ -7,8 +7,6 @@ typedef enum {
 
 class GenericBridge{
 
-	  typedef websocketpp::lib::shared_ptr<GenericBridge> ptr;
-
 public:
 	bridgeType type;
 
