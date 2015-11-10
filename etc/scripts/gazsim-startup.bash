@@ -26,6 +26,8 @@ OPTIONS:
    -a             Start with agent
    -f arg         Path to the fawkes bin folder to use
                   ($FAWKES_DIR/bin by default)
+   -g             Run Fawkes in gdb
+   -v             Run Fawkes in valgrind
   GAZEBO:
    -e arg         Record Replay
 EOF
@@ -45,7 +47,8 @@ VISION= #,gazsim-light-front,gazsim-puck-detection
 AGENT=
 FAWKES_BIN=$FAWKES_DIR/bin
 KEEP=
-while getopts “hx:c:lrm:sp:i:f:e:da4k” OPTION
+GDB=
+while getopts “hx:c:lrm:sp:i:f:e:da4kgv” OPTION
 do
      case $OPTION in
          h)
@@ -60,6 +63,20 @@ do
              ;;
 	 r)
 	     ROS=-ros
+	     ;;
+	 g)
+	     if [ -n "$GDB" ]; then
+				echo "Can pass only either valgrind or GDB, not both"
+        exit
+       fi
+	     GDB="gdb -ex run --args"
+	     ;;
+	 v)
+	     if [ -n "$GDB" ]; then
+				echo "Can pass only either valgrind or GDB, not both"
+        exit
+       fi
+	     GDB="valgrind --verbose"
 	     ;;
 	 s)
 	     SHUTDOWN=,mongodb,gazsim-llsf-statistics,gazsim-llsf-control
@@ -132,7 +149,11 @@ case $COMMAND in
 	# ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
 	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$META_PLUGIN
-	$FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
+	$GDB $FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
+	if [ -n "$GDB" ]; then
+		echo Fawkes exited, press return to close shell
+		read
+	fi
 	;;
     comm )
 	comm_plugins=gazsim-organization$SHUTDOWN
