@@ -53,7 +53,7 @@ BridgeThread::init()
 //  world_ =new World("f");
  logger-> log_info("I CAN SEE THE WORLD","asddas");
 
-  websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
+  websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>(logger);
   web_server->run(6060);
 }
 
