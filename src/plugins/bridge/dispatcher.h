@@ -8,6 +8,8 @@
 #include "websocketpp/server.hpp"
 #include "ros_proxy.cpp"
 
+#include <logging/logger.h>
+
 using websocketpp::connection_hdl;
 
 class Isession;
@@ -20,13 +22,14 @@ private:
 	bridgesList 			bridges_;
 	bool					rosbridge_started_;
 
-	websocketpp::lib::shared_ptr<Isession>	web_session_;// public to be able to get the hdl later
+	websocketpp::lib::shared_ptr<Isession>		web_session_;// public to be able to get the hdl later
+	fawkes::Logger 								*logger_;
 
 
 public:
 
 
-	Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s);
+	Dispatcher(fawkes::Logger *logger, websocketpp::lib::shared_ptr<Isession> web_s);
 	~Dispatcher();
 	void start();
 	void register_bridges();
@@ -37,6 +40,7 @@ public:
 	bool web_forward_message(std::string msg);
 
 	bridgeType dispatch(std::string);
+
 
 };
 

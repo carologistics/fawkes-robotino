@@ -28,6 +28,7 @@
 // Additional related material can be found in the tutorials/utility_client
 // directory of the WebSocket++ repository.
 
+#include <logging/logger.h>
 
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/client.hpp>
@@ -43,6 +44,11 @@
 
 #include "idispatcher.h"
 #include "generic_bridge.h"
+
+
+
+ using namespace fawkes;
+
 
 typedef websocketpp::client<websocketpp::config::asio_client> client;
 class connection_metadata {
@@ -122,12 +128,15 @@ private:
 //---------------------------------------------------ROSENDPOINT
 class ros_proxy : public GenericBridge
 {
+
+
 public:
     typedef websocketpp::lib::shared_ptr<ros_proxy> ptr;
 
-    ros_proxy (websocketpp::lib::shared_ptr<Idispatcher> dispatcher) 
-    :m_next_id(0)
-    ,m_dispatcher(dispatcher)
+    ros_proxy (fawkes::Logger  *logger, websocketpp::lib::shared_ptr<Idispatcher> dispatcher) 
+    : m_next_id(0)
+    , m_dispatcher(dispatcher)
+    , logger_(logger)
      {
         type= bridgeType::ROS_BRIDGE;
         m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
@@ -158,7 +167,7 @@ public:
 
 
         if (ec) {
-            std::cout << "> Connect initialization error: " << ec.message() << std::endl;
+            logger_->log_info("Webtools-bridge:"," Connect initialization error: %s" , ec.message().c_str());
             return -1;
         }
 
@@ -221,18 +230,20 @@ public:
      m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);        
      int id = connect("ws://localhost:9090");
      if (id != -1) {
-        std::cout << "> Created connection with id " << id << std::endl;
+        logger_->log_info("Webtools-bridge:" , "> Created connection with id " );
         return true;
     } 
     return false;
 }
 
-public:
+private:
     connection_metadata::ptr metadata_ptr;
 
     client m_endpoint;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
     int m_next_id;
 
-    websocketpp::lib::shared_ptr<Idispatcher> m_dispatcher;
+    websocketpp::lib::shared_ptr<Idispatcher>       m_dispatcher;
+
+    fawkes::Logger                                   *logger_;
 };

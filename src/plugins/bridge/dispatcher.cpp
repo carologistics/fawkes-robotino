@@ -22,10 +22,13 @@ using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
+using namespace fawkes;
 
-Dispatcher::Dispatcher(websocketpp::lib::shared_ptr<Isession> web_s)
+Dispatcher::Dispatcher(fawkes::Logger *logger,websocketpp::lib::shared_ptr<Isession> web_s)
     : rosbridge_started_(false)
-    , web_session_(web_s){}
+    , web_session_(web_s)
+    , logger_(logger)
+    {}
 
 Dispatcher::~Dispatcher()
 {
@@ -40,9 +43,10 @@ void Dispatcher::start(){
 
 void
 Dispatcher::register_bridges(){   
-  bridges_[bridgeType::ROS_BRIDGE] = websocketpp::lib::make_shared<ros_proxy>(this->shared_from_this());
+  bridges_[bridgeType::ROS_BRIDGE] = websocketpp::lib::make_shared<ros_proxy>(logger_,this->shared_from_this());
   rosbridge_started_= bridges_[bridgeType::ROS_BRIDGE]->init();
-
+  
+  logger_->log_info("Webtools-Bridge:","registration DOne...But is it succeful?!!");
   //Add The Fawkes Bridge HERE
 }
 
@@ -59,11 +63,11 @@ void
 Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr web_msg){
 //Dispatches msg to one of the desired Bridges
 
-  std::cout << "Dispatcheing....."<< std::endl;
-  std::cout << web_msg->get_payload() << std::endl;
+  logger_->log_info("Webtools-Bridge:","Dispatcheing.....");
+  logger_->log_info("Webtools-Bridge:",web_msg->get_payload().c_str());
 
-  std::string jsonString = web_msg->get_payload();
-  bridges_ [ dispatch(jsonString)] -> process_request(jsonString);
+  //std::string jsonString = web_msg->get_payload();
+ // bridges_ [ dispatch(jsonString)] -> process_request(jsonString);
 }
 
 

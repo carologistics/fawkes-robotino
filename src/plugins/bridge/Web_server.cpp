@@ -6,16 +6,22 @@
 #include "dispatcher.h"
 #include "web_session.h"
 
+#include <logging/logger.h>
+
 using websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
+using namespace fawkes;
 
 class Web_server
 {
 public:
-    Web_server() : m_next_sessionid(1) {
+    Web_server(fawkes::Logger *logger) 
+    : m_next_sessionid(1) 
+    ,logger_(logger)
+    {
         m_server=websocketpp::lib::make_shared<server>();
 
         m_server->init_asio();
@@ -64,12 +70,14 @@ public:
         tmp_session_->set_id(m_next_sessionid);
         tmp_session_->set_name("web_session_tmp_name");
 
-        dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(tmp_session_);
+        dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(logger_,tmp_session_);
         dispatchers_[m_next_sessionid]->start();
         m_next_sessionid++;
         //ForDebuging:: Print on http req 
         // for (std::map<std::string,std::string>::const_iterator i = tmp_session_->http_req.begin(); i != tmp_session_->http_req.end(); ++i)
         // std::cout<< i->first << "::::::" << i->second << std::endl;
+
+        logger_->log_info("Webtools-Bridge:","on open");
         }
 
     void on_close(connection_hdl hdl) {
@@ -96,6 +104,8 @@ public:
         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, m_server);
     }
 
+
+
 private:
     typedef std::map<connection_hdl,int,std::owner_less<connection_hdl>>    hdl_list;
     // typedef std::map<connection_hdl,int>    hdl_list;
@@ -110,6 +120,7 @@ private:
     int                                                                     m_next_sessionid;
     
     websocketpp::lib::shared_ptr<websocketpp::lib::thread>                  m_thread;
+    fawkes::Logger                                                          *logger_;
 };
 
 
