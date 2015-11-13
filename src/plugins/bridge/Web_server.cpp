@@ -72,6 +72,9 @@ public:
 
         dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(logger_,tmp_session_);
         dispatchers_[m_next_sessionid]->start();
+
+        m_server->get_con_from_hdl(hdl)->set_message_handler(bind(&Dispatcher::web_on_message,dispatchers_[m_next_sessionid],::_1,::_2));
+
         m_next_sessionid++;
         //ForDebuging:: Print on http req 
         // for (std::map<std::string,std::string>::const_iterator i = tmp_session_->http_req.begin(); i != tmp_session_->http_req.end(); ++i)
