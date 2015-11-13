@@ -38,7 +38,7 @@ Dispatcher::~Dispatcher()
 void Dispatcher::start(){
   register_bridges();
   //TODO::make sure it is initialized before proceeding
-  web_register_handler();
+  //web_register_handler();
 }
 
 void
@@ -66,8 +66,8 @@ Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::
   logger_->log_info("Webtools-Bridge:","Dispatcheing.....");
   logger_->log_info("Webtools-Bridge:",web_msg->get_payload().c_str());
 
-  //std::string jsonString = web_msg->get_payload();
- // bridges_ [ dispatch(jsonString)] -> process_request(jsonString);
+  std::string jsonString = web_msg->get_payload();
+  bridges_ [ dispatch(jsonString)] -> process_request(jsonString);
 }
 
 

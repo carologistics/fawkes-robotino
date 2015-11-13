@@ -47,8 +47,7 @@ class BridgeThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::CLIPSManagerAspect
+  public fawkes::BlockedTimingAspect
 {
  public:
   BridgeThread();
