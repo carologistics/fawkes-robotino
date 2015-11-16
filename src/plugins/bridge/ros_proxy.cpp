@@ -35,6 +35,7 @@
 
 #include <websocketpp/common/thread.hpp>
 #include <websocketpp/common/memory.hpp>
+#include <core/threading/mutex.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -126,6 +127,9 @@ private:
 
 
 //---------------------------------------------------ROSENDPOINT
+
+using namespace fawkes;
+
 class ros_proxy : public GenericBridge
 {
 
@@ -138,6 +142,8 @@ public:
     , m_dispatcher(dispatcher)
     , logger_(logger)
      {
+
+        data_mutex_=new fawkes::Mutex();
         type= bridgeType::ROS_BRIDGE;
         m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
         m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
@@ -150,6 +156,7 @@ public:
         m_endpoint.stop_perpetual();
 
         std::cout << "> Closing connection " << metadata_ptr->get_id() << std::endl;
+        delete data_mutex_;
         
         websocketpp::lib::error_code ec;
         m_endpoint.close(metadata_ptr->get_hdl(), websocketpp::close::status::going_away, "", ec);
@@ -214,12 +221,17 @@ public:
 
 
       void send(std::string message) {
+       data_mutex_->lock();
         websocketpp::lib::error_code ec;
         m_endpoint.send(metadata_ptr->get_hdl(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
             std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
+          data_mutex_->unlock();
             return;
         }
+
+          data_mutex_->unlock();
+
     }
 
     void process_request(std::string msg){
@@ -246,4 +258,6 @@ private:
     websocketpp::lib::shared_ptr<Idispatcher>       m_dispatcher;
 
     fawkes::Logger                                   *logger_;
+    fawkes::Mutex                                    *data_mutex_;
+
 };
