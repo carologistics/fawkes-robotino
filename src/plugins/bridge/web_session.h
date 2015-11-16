@@ -1,15 +1,12 @@
 #include <map>
 #include "isession.h"
 
+namespace fawkes{
+	class Mutex;
+}
 
 class web_session : public Isession
 {
-private:
-    int                                        		 session_id_;
-    std::string                              		 session_name_;
-    websocketpp::lib::shared_ptr<server>       		 endpoint_ptr_;
-    websocketpp::connection_hdl                		 hdl_;
-    std::string						 status_;
 
 public:
 	web_session();
@@ -29,6 +26,14 @@ public:
 	server::connection_ptr 	get_connection_ptr();
 
 	bool send(std::string msg);
+
+private:
+    int                                        		 session_id_;
+    std::string                              		 session_name_;
+    websocketpp::lib::shared_ptr<server>       		 endpoint_ptr_;
+    websocketpp::connection_hdl                		 hdl_;
+    std::string										 status_;
+    fawkes::Mutex 					 				*data_mutex_;
 
 };
 

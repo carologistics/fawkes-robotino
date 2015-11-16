@@ -1,7 +1,15 @@
 #include "web_session.h"
+#include <core/threading/mutex.h>
 
-	web_session::web_session(){}
-	web_session::~web_session(){}
+using namespace fawkes;
+
+	web_session::web_session()
+	{
+		data_mutex_= new fawkes::Mutex();
+	}
+	web_session::~web_session(){
+		delete data_mutex_;
+	}
 
 	void
 	web_session::set_connection_hdl(websocketpp::connection_hdl hdl){
@@ -51,12 +59,18 @@
 
 	bool 
 	web_session::send(std::string msg){
+		data_mutex_->lock();
 		websocketpp::lib::error_code ec;
+
+		          std::cout << ">TO WEB::sending message: " << std::endl;
 		endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
+
 	        if (ec) {
 	            std::cout << "> Error sending message: " << ec.message() << std::endl;
+				data_mutex_->unlock();
 	            return false;
 	        }
+			data_mutex_->unlock();
 	        
 	        return true;
     
