@@ -16,7 +16,7 @@ hardware/laser:
     # Device file
     device: /dev/ttyACM0
 
-    frame: !frame /base_laser
+    frame: !frame base_laser
 
   tim55x:
     # Enable this configuration?
@@ -29,7 +29,7 @@ hardware/laser:
     #serial: 14200190
 
     # Frame ID
-    frame: !frame /base_laser
+    frame: !frame base_laser
 
     # Offset added to measurement timestamp in interface. Can be used to
     # account for latencies.

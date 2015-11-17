@@ -15,7 +15,7 @@ plugins/ampelvar:
   debug_buffer: 0
 
   # coordinate system
-  frame: /base_link
+  frame: !frame base_link
 
   # path to bulb file (relative to cfg dir!)
   mirror_file: /bulb-colormap/masle.bulb

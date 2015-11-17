@@ -14,7 +14,7 @@ hardware/robotino/omnivision:
      colormap_file: /bulb-colormap/map4.colormap
 
      #used coordinate system
-     frame: !frame /base_link
+     frame: !frame base_link
 
      #location of the bulbmap in relation to cfg directory
      mirror_file: /bulb-colormap/masle.bulb

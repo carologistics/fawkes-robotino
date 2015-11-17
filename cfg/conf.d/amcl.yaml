@@ -93,12 +93,6 @@ plugins/amcl:
   # Pose blackboard interface ID
   pose_interface_id: Pose
 
-  # Coordinate frame IDs
-  odom_frame_id: !frame /odom
-  base_frame_id: !frame /base_link
-  global_frame_id: !frame /map
-  laser_frame_id: !frame /base_laser
-
   # Laser angle increment between two consecutive beams
   angle_increment: 1.0
   angle_min_idx: 260
@@ -198,3 +192,7 @@ plugins/amcl:
 
     # Interface to read pose information from if use_current_pose is true
     pose_interface_id: Pose
+
+    # Coordinate frame ID for laser data
+    laser_frame_id: !frame base_laser
+
