@@ -83,3 +83,16 @@ plugins/laser-filter:
   robot/active: false
   sick-downsample/active: false
   simulation/active: true
+
+
+plugins/static-transforms:
+  transforms:
+    gazsim_tag_vision:
+      frame: !frame /base_link
+      child_frame: /gazsim_tag_vision
+      trans_x: 0.1
+      trans_y: 0.0
+      trans_z: 0.44
+      rot_pitch: 0 
+      rot_yaw: 0
+      rot_roll: 0

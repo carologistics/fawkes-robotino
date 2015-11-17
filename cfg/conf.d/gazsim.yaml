@@ -32,6 +32,7 @@ gazsim:
     message: "~/RobotinoSim/String/"
     gripper: "~/RobotinoSim/SetGripper/"
     gripper-has-puck: "~/RobotinoSim/GripperHasPuck/"
+    tag-vision: "~/tag-vision"
   
   llsf-rb-comm:
     refbox-host: "127.0.0.1"
@@ -157,3 +158,9 @@ gazsim:
     cfg-prefix: "/hardware/ax12_gripper/"
   conveyor:
     if-name: "mps_conveyor"
+
+  tag-vision:
+    tag-if-name-prefix: "/tag-vision/"
+    info-if-name: "/tag-vision/info"
+    number-interfaces: 16
+    visibility-history-increase-per-update: 30
