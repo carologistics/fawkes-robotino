@@ -28,6 +28,8 @@ OPTIONS:
                   starting as magenta)
    -p arg         Path to the fawkes folder
                   ($FAWKES_DIR/bin by default)
+   -g             Run Fawkes in gdb
+   -v             Run Fawkes in valgrind
 EOF
 }
 
@@ -49,8 +51,9 @@ FAWKES_BIN=$FAWKES_DIR/bin
 META_PLUGIN=
 START_GAZEBO=true
 TERM_GEOMETRY=105x56
+GDB=
 
-while getopts “hx:c:lrksn:e:dm:aof:p:” OPTION
+while getopts “hx:c:lrksn:e:dm:aof:p:gv” OPTION
 do
      case $OPTION in
          h)
@@ -71,6 +74,20 @@ do
              ;;
          r)
 	     ROS=-r
+             ;;
+         g)
+	     if [ -n "$GDB" ]; then
+				echo "Can pass only either valgrind or GDB, not both"
+        exit
+       fi
+	     GDB=-g
+             ;;
+         v)
+	     if [ -n "$GDB" ]; then
+				echo "Can pass only either valgrind or GDB, not both"
+        exit
+       fi
+	     GDB=-v
              ;;
 	 s)
 	     SHUTDOWN=-s
@@ -181,7 +198,7 @@ if [  $COMMAND  == start ]; then
 	fi
     fi
 
-    if [  $ROS  == "-r" ]; then
+    if [  "$ROS"  == "-r" ]; then
     	#start roscores
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
@@ -200,7 +217,7 @@ if [  $COMMAND  == start ]; then
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
     done
 
     if $START_GAZEBO
