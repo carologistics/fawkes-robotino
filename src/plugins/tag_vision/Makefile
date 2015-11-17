@@ -35,7 +35,7 @@ LDFLAGS  += $(LDFLAGS_OPENCV)
 #The necessary libraries your plugin needs.
 LIBS_tag_vision = fawkescore fawkesutils fawkesaspects fvutils \
 	        fawkestf fawkesinterface fawkesblackboard \
-		   	Position3DInterface fvcams fvmodels fvclassifiers fvfilters \
+		   	Position3DInterface LaserLineInterface fvcams fvmodels fvclassifiers fvfilters \
             fawkesconfig TagVisionInterface
 			#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_tag_vision = tag_vision_plugin.o tag_vision_thread.o tag_position_list.o tag_position_interface_helper.o
@@ -65,7 +65,7 @@ ifneq ($(HAVE_ALVAR),1)
 endif
 
 ifeq ($(HAVE_TF)$(HAVE_ALVAR)$(HAVE_CPP11),111)
-  CFLAGS  += $(CFLAGS_ALVAR)  $(CFLAGS_TF)
+  CFLAGS  += $(CFLAGS_ALVAR)  $(CFLAGS_TF) $(CFLAGS_CPP11)
   LDFLAGS += $(LDFLAGS_ALVAR) $(LDFLAGS_TF)
   PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
 else
