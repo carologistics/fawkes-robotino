@@ -38,7 +38,7 @@ Dispatcher::~Dispatcher()
 void Dispatcher::start(){
   register_bridges();
   //TODO::make sure it is initialized before proceeding
-  //web_register_handler();
+  web_register_handler();
 }
 
 void
@@ -77,7 +77,10 @@ Dispatcher::web_forward_message(std::string msg){
 
   //TODO:: add a check if the web_session is reachable
   //TODO:: catch exceptions
-  return web_session_->send(msg);
+
+  bool value= web_session_->send(msg);
+
+  return value;
 }
 
 
