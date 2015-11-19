@@ -45,8 +45,6 @@ void
 Dispatcher::register_bridges(){   
   bridges_[bridgeType::ROS_BRIDGE] = websocketpp::lib::make_shared<ros_proxy>(logger_,this->shared_from_this());
   rosbridge_started_= bridges_[bridgeType::ROS_BRIDGE]->init();
-  
-  logger_->log_info("Webtools-Bridge:","registration DOne...But is it succeful?!!");
   //Add The Fawkes Bridge HERE
 }
 
@@ -62,9 +60,7 @@ Dispatcher::web_register_handler(){
 void
 Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr web_msg){
 //Dispatches msg to one of the desired Bridges
-
   logger_->log_info("Webtools-Bridge:","Dispatcheing.....");
-  logger_->log_info("Webtools-Bridge:",web_msg->get_payload().c_str());
 
   std::string jsonString = web_msg->get_payload();
   bridges_ [ dispatch(jsonString)] -> process_request(jsonString);
@@ -74,13 +70,9 @@ Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::
 
 bool
 Dispatcher::web_forward_message(std::string msg){
-
   //TODO:: add a check if the web_session is reachable
   //TODO:: catch exceptions
-
-  bool value= web_session_->send(msg);
-
-  return value;
+  return  web_session_->send(msg);;
 }
 
 

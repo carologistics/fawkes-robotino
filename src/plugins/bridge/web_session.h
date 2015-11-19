@@ -1,10 +1,6 @@
 #include <map>
 #include "isession.h"
 
-namespace fawkes{
-	class Mutex;
-}
-
 class web_session : public Isession
 {
 
@@ -33,7 +29,5 @@ private:
     websocketpp::lib::shared_ptr<server>       		 endpoint_ptr_;
     websocketpp::connection_hdl                		 hdl_;
     std::string										 status_;
-    fawkes::Mutex 					 				*data_mutex_;
-
 };
 

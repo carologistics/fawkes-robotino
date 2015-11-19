@@ -58,7 +58,6 @@ using namespace fawkes;
 
 	bool 
 	web_session::send(std::string msg){
-		//data_mutex_->lock();
 		websocketpp::lib::error_code ec;
 
 		          std::cout << ">TO WEB::sending message: " << std::endl;
@@ -66,10 +65,8 @@ using namespace fawkes;
 
 	        if (ec) {
 	            std::cout << "> Error sending message: " << ec.message() << std::endl;
-		//		data_mutex_->unlock();
 	            return false;
 	        }
-			// data_mutex_->unlock();
 	        
 	        return true;
     
