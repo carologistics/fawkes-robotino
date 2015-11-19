@@ -9,7 +9,7 @@ navgraph:
   base_frame: !frame base_link
 
   # Global TF Frame ID
-  global_frame: /map
+  global_frame: !frame map
 
   # Blackboard interface ID for navigator interface of locomotion component
   navigator_interface_id: Navigator
