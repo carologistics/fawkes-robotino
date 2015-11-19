@@ -221,16 +221,16 @@ public:
 
 
       void send(std::string message) {
-       data_mutex_->lock();
+       // data_mutex_->lock();
         websocketpp::lib::error_code ec;
         m_endpoint.send(metadata_ptr->get_hdl(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
             std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
-          data_mutex_->unlock();
+          // data_mutex_->unlock();
             return;
         }
 
-          data_mutex_->unlock();
+          // data_mutex_->unlock();
 
     }
 
