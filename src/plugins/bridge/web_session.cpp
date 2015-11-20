@@ -5,10 +5,9 @@ using namespace fawkes;
 
 	web_session::web_session()
 	{
-		data_mutex_= new fawkes::Mutex();
 	}
+	
 	web_session::~web_session(){
-		delete data_mutex_;
 	}
 
 	void

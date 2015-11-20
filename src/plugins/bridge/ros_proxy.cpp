@@ -35,7 +35,6 @@
 
 #include <websocketpp/common/thread.hpp>
 #include <websocketpp/common/memory.hpp>
-#include <core/threading/mutex.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -44,7 +43,7 @@
 #include <sstream>
 
 #include "idispatcher.h"
-#include "generic_bridge.h"
+#include "ibridge.h"
 
 
 
@@ -130,7 +129,7 @@ private:
 
 using namespace fawkes;
 
-class ros_proxy : public GenericBridge
+class ros_proxy : public Ibridge
 {
 
 
@@ -143,7 +142,6 @@ public:
     , logger_(logger)
      {
 
-        data_mutex_=new fawkes::Mutex();
         type= bridgeType::ROS_BRIDGE;
         m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
         m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
@@ -156,7 +154,6 @@ public:
         m_endpoint.stop_perpetual();
 
         std::cout << "> Closing connection " << metadata_ptr->get_id() << std::endl;
-        delete data_mutex_;
         
         websocketpp::lib::error_code ec;
         m_endpoint.close(metadata_ptr->get_hdl(), websocketpp::close::status::going_away, "", ec);
@@ -220,7 +217,7 @@ public:
     }
 
 
-      void send(std::string message) {
+    void send(std::string message) {
         websocketpp::lib::error_code ec;
         m_endpoint.send(metadata_ptr->get_hdl(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
@@ -230,19 +227,23 @@ public:
 
     }
 
+    //---iBridge implementation
+
+    bool init(){
+        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);        
+        int id = connect("ws://localhost:9090");
+         if (id != -1) {
+            logger_->log_info("Webtools-bridge:" , "> Created connection with id " );
+            return true;
+        } 
+        return false;
+    }
+
     void process_request(std::string msg){
         send(msg);
     }
 
-    bool init(){
-     m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);        
-     int id = connect("ws://localhost:9090");
-     if (id != -1) {
-        logger_->log_info("Webtools-bridge:" , "> Created connection with id " );
-        return true;
-    } 
-    return false;
-}
+
 
 private:
     connection_metadata::ptr metadata_ptr;
