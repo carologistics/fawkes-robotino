@@ -23,6 +23,7 @@ public:
 
 	void deserialize(std::msg jsonStr);
 
+
 private:
 	std::shared_ptr<Idispatcher>  dispatcher_;
 

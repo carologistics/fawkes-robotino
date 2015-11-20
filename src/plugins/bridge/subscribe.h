@@ -1,0 +1,3 @@
+calss Subscribe{
+	
+}

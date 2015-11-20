@@ -54,7 +54,6 @@ using namespace fawkes;
  * @param baseurl base URL of the Clips webrequest processor
  */
 
-
 BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(fawkes::Logger *logger,  fawkes::Configuration *config, fawkes::BlackBoard *blackboard)
 {
   logger_         = logger;
@@ -73,6 +72,14 @@ BridgeBlackBoardProcessor::~BridgeBlackBoardProcessor()
   }
   interfaces_.clear();
 }
+
+BridgeBlackBoardProcessor::init(){}
+
+
+BridgeBlackboardProcessor::process_request(std::string msg){
+
+}
+
 
 bool
 BridgeBlackBoardProcessor::subscribe(std::string if_type, std::string if_id){

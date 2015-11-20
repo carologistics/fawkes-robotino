@@ -29,6 +29,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <generic_bridge.h>
 
 namespace fawkes {
   class BlackBoard;
@@ -36,7 +37,8 @@ namespace fawkes {
   class Logger;
 }
 
-class BridgeBlackBoardProcessor{
+class BridgeBlackBoardProcessor: public GenericBridge
+ {
  public:
   BridgeBlackBoardProcessor(fawkes::Logger *logger,fawkes::Configuration *config, fawkes::BlackBoard *blackboard);
 
