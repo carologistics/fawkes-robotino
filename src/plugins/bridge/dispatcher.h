@@ -18,7 +18,7 @@ class Dispatcher : public Idispatcher, public std::enable_shared_from_this<Dispa
 {
 
 private:
-	typedef std::map<bridgeType, websocketpp::lib::shared_ptr<GenericBridge> > bridgesList;
+	typedef std::map<bridgeType, websocketpp::lib::shared_ptr<Ibridge> > bridgesList;
 	bridgesList 			bridges_;
 	bool					rosbridge_started_;
 

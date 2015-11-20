@@ -5,13 +5,13 @@ typedef enum {
 		ROS_BRIDGE
 	  } bridgeType ;
 
-class GenericBridge{
+class Ibridge{
 
 public:
 	bridgeType type;
 
 	virtual bool init()=0;
 
-	virtual void process_request(std::string msg)=0;
-	
+	virtual void process_request(std::string json_str)=0;
+
 };
