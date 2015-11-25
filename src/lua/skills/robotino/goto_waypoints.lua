@@ -57,5 +57,5 @@ end
 
 function GOTO:init()
    fsm.vars.table_pos = fsm.vars.table_pos + 1                  -- increment list position
-   self.skills[1].place = self.fsm.vars.wp[fsm.vars.table_pos]  -- get next target
+   self.args["goto"] = { place = self.fsm.vars.wp[fsm.vars.table_pos] }
 end

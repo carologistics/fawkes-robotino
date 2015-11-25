@@ -141,9 +141,7 @@ function INIT:init()
 end
 
 function SKILL_RELGOTO:init()
-  self.skills[1].x    = self.fsm.vars.rel_x
-  self.skills[1].y    = self.fsm.vars.rel_y
-  self.skills[1].ori  = self.fsm.vars.rel_ori
+	 self.args["relgoto"] = { x = self.fsm.vars.rel_x, y = self.fsm.vars.rel_y, ori = self.fsm.vars.rel_ori }
 end
 
 function REGION_REACHED_STOPPING:init()

@@ -481,11 +481,13 @@ function INIT:init()
 end
 
 function DRIVE_TO_ZONE:init()
-  self.skills[1].x        = self.fsm.vars.point_cluster.x
-  self.skills[1].y        = self.fsm.vars.point_cluster.y
-  self.skills[1].ori      = self.fsm.vars.point_cluster.ori
-  self.skills[1].just_ori = true
-  printf("Pre Point Zone: (" .. self.skills[1].x .. ", " .. self.skills[1].y .. ", " .. self.skills[1].ori .. ")")
+	 self.args["drive_to_global"] =
+			{ x        = self.fsm.vars.point_cluster.x,
+				y        = self.fsm.vars.point_cluster.y,
+				ori      = self.fsm.vars.point_cluster.ori,
+				just_ori = true
+			}
+	 printf("Pre Point Zone: (" .. self.args["drive_to_global"].x .. ", " .. self.args["drive_to_global"].y .. ", " .. self.args["drive_to_global"].ori .. ")")
 end
 
 function DRIVE_TO_NEXT_EXPLORE_POINT:init()
@@ -493,11 +495,13 @@ function DRIVE_TO_NEXT_EXPLORE_POINT:init()
   local point = self.fsm.vars.poses_to_check[self.fsm.vars.poses_to_check_iterator]
   self.fsm.vars.poses_to_check_iterator = self.fsm.vars.poses_to_check_iterator + 1
   printf("Explore from " .. point.name .. " (" .. point.x .. ", " .. point.y .. ", " .. point.ori .. ")")
-  self.skills[1].x        = point.x
-  self.skills[1].y        = point.y
-  self.skills[1].ori      = point.ori
-  self.skills[1].just_ori = true
-
+  self.args["drive_to_local"] =
+		 { x        = point.x,
+			 y        = point.y,
+			 ori      = point.ori,
+			 just_ori = true
+		 }
+	
   -- set timeout for jumpscondition, to not loop with sawn laserlines
   self.fsm.vars.laser_lines_timeout_start = os.time()
 end
@@ -525,9 +529,7 @@ function FIX_INTERNAL_VARS:init()
     printf("Error, I have no tag and no line to turn to, continue as normal")
     ori = 0
   end
-  self.skills[1].ori      = ori
-  self.skills[1].ori      = nil
-  self.skills[1].just_ori = true
+	 self.args["motor_move"] = {ori = ori, ori = nil, just_ori = true}
 --]]
 end
 
@@ -543,10 +545,7 @@ function DRIVE_TO_POSSIBLE_MPS_PRE:init()
   x, y, ori = pose_in_front_of_mps_calculator(self, chosen, 2)
   printf("PrePoint drive: ( " .. x .. " , " .. y .. " , " .. ori .. " )")
   
-  self.skills[1].x        = x
-  self.skills[1].y        = y
-  self.skills[1].ori      = ori
-  self.skills[1].just_ori = true
+	 self.args["drive_to_local"] = {x = x, y = y, ori = ori, just_ori = true }
 end
 --]]
 
@@ -592,10 +591,7 @@ function DRIVE_TO_POSSIBLE_MPS:init()
   x, y, ori = pose_in_front_of_mps_calculator(self, chosen)
   printf("Point drive:  ( " .. x .. " , " .. y .. " , " .. ori .. " )")
   
-  self.skills[1].x        = x
-  self.skills[1].y        = y
-  self.skills[1].ori      = ori
-  self.skills[1].just_ori = true
+  self.args["drive_to_local"] = { x = x, y = y, ori = ori, just_ori = true}
 end
 
 function FINAL:init()

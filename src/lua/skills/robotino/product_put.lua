@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "product_put"
-fsm                = SkillHSM:new{name=name, start="APPROACH_MPS", debug=true}
+fsm                = SkillHSM:new{name=name, start="APPROACH_MPS", debug=false}
 depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
 depends_interfaces = { }
 
@@ -55,14 +55,14 @@ fsm:add_transitions{
 }
 
 function APPROACH_MPS:init()
-   self.skills[1].offset_x = self.fsm.vars.offset_x
+   self.args["approach_mps"].offset_x = self.fsm.vars.offset_x
 end
 
 function OPEN_GRIPPER:init()
-   self.skills[1].command = "OPEN"
+   self.args["ax12gripper"].command = "OPEN"
    printf("open gripper")
 end
 
 function MOVE_BACK:init()
-   self.skills[1].x = -0.2
+   self.args["motor_move"].x = -0.2
 end

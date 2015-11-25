@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "grip_cylinder"
-fsm                = SkillHSM:new{name=name, start="APPROACH", debug=true}
+fsm                = SkillHSM:new{name=name, start="APPROACH", debug=false}
 depends_skills     = {"motor_move", "gripper"}
 depends_interfaces = {
    {v = "motor", type = "MotorInterface"},

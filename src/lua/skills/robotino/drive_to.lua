@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "drive_to"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "ppgoto","global_motor_move" }
 depends_interfaces = { }
 
@@ -85,9 +85,7 @@ function INIT:init()
 end
 
 function SKILL_PPGOTO:init()
-  self.skills[1].x   = self.fsm.vars.x
-  self.skills[1].y   = self.fsm.vars.y
-  self.skills[1].ori = self.fsm.vars.ori
+	 self.args["ppgoto"] = {x = self.fsm.vars.x, y = self.fsm.vars.y, ori = self.fsm.vars.ori}
 end
 
 function FORCE_SET_JUST_ORI:init()
@@ -98,15 +96,12 @@ end
 
 function SKILL_GLOBAL_MOTOR_MOVE:init()
   if not self.fsm.vars.just_ori then
-    self.skills[1].x   = self.fsm.vars.x
-    self.skills[1].y   = self.fsm.vars.y
-  else
-    self.skills[1].x   = nil
-    self.skills[1].y   = nil
+		 self.args["global_motor_move"] = {x = self.fsm.vars.x, y = self.fsm.vars.y}
   end
-  self.skills[1].x   = nil
-  self.skills[1].y   = nil
-  self.skills[1].ori = self.fsm.vars.ori
+  self.args["global_motor_move"].ori = self.fsm.vars.ori
   
-  printf("Drive to: call global_motor_move with: x(" .. tostring(self.skills[1].x) .. ") y(" .. tostring(self.skills[1].y)  ..") ori(" .. tostring(self.skills[1].ori) .. ")")
+  printf("Drive to: call global_motor_move with: x(" ..
+						tostring(self.args["global_motor_move"].x) .. ") y(" ..
+						tostring(self.args["global_motor_move"].y)  ..") ori(" ..
+						tostring(self.args["global_motor_move"].ori) .. ")")
 end

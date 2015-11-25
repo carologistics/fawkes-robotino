@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "get_base"
-fsm                = SkillHSM:new{name=name, start="MPS_ALIGN", debug=true}
+fsm                = SkillHSM:new{name=name, start="MPS_ALIGN", debug=false}
 depends_skills     = {"mps_align", "product_pick"}
 depends_interfaces = {
 }
@@ -48,11 +48,7 @@ fsm:add_transitions{}
 
 function MPS_ALIGN:init()
    -- align in front of the conveyor belt
-   self.skills[1].tag_id = self.fsm.vars.tag_id
-   -- TODO config value
-   self.skills[1].x = 0.415
-   self.skills[1].y = 0
-   self.skills[1].ori = 0
+   self.args["mps_align"] = {tag_id = self.fsm.vars.tag_id, x = 0.415, y = 0, ori = 0}
 end
 
 function PRODUCT_PICK:init()

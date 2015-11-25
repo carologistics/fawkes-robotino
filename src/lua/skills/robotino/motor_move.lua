@@ -22,7 +22,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "motor_move"
-fsm                = SkillHSM:new{name=name, start="DRIVE", debug=true}
+fsm                = SkillHSM:new{name=name, start="DRIVE", debug=false}
 depends_skills     = nil
 depends_interfaces = {
     {v = "motor", type = "MotorInterface", id="Robotino" },

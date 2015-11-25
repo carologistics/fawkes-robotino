@@ -23,7 +23,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "approach_test"
-fsm                = SkillHSM:new{name=name, start="MPS_ALIGN", debug=true}
+fsm                = SkillHSM:new{name=name, start="MPS_ALIGN", debug=false}
 depends_skills     = {"mps_align","product_put","product_pick","shelf_put","shelf_pick","slide_put","conveyor_align"}
 depends_interfaces = {
 }

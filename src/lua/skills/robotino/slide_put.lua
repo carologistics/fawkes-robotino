@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "slide_put"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move", "ax12gripper","approach_mps"}
 depends_interfaces = {}
 
@@ -54,19 +54,21 @@ fsm:add_transitions{
 
 
 function GOTO_SLIDE:init()
-   self.skills[1].y = -0.26 --TODO measure exact value
-   self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
-   self.skills[1].vel_trans = 0.15
+   self.args["motor_move"] =
+			{ y = -0.26, --TODO measure exact value
+				vel_trans = 0.15,
+				tolerance = { x=0.002, y=0.002, ori=0.01 }
+			}
 end
 
 function APPROACH_SLIDE:init()
-   self.skills[1].x = 0.055 --TODO measure exact value
+   self.args["approach_mps"].x = 0.055 --TODO measure exact value
 end
 
 function STORE_PRODUCT:init()
-   self.skills[1].command = "OPEN"
+   self.args["ax12gripper"].command = "OPEN"
 end
 
 function LEAVE_SLIDE:init()
-   self.skills[1].x = -0.1
+   self.args["motor_move"].x = -0.1
 end

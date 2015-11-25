@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "align_laserlines"
-fsm                = SkillHSM:new{name=name, start="CHECK_INTERFACE", debug=true}
+fsm                = SkillHSM:new{name=name, start="CHECK_INTERFACE", debug=false}
 depends_skills     = {"motor_move"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
@@ -266,7 +266,7 @@ function INIT:init()
 end
 
 function ALIGN:init()
-   self.skills[1].ori = self.fsm.vars.ori_to_drive
-   self.skills[1].tolerance = {x=0.05, y=0.05, ori=0.02}
+   self.args["motor_move"] = {ori = self.fsm.vars.ori_to_drive,
+                              tolerance = {x=0.05, y=0.05, ori=0.02}}
    self.fsm.vars.tries = self.fsm.vars.tries + 1
 end

@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "approach_mps"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "sensor", type="RobotinoSensorInterface"},
@@ -76,12 +76,11 @@ function APPROACH_WITH_INFRARED:init()
    end
    --TODO further driving when putting a product maybe
    printf("sensor threshold is: %f", self.fsm.vars.sensor_threshold)
-   self.skills[1].x = 1
-   self.skills[1].vel_trans = 0.05
+   self.args["motor_move"] = {x = 1, vel_trans = 0.05}
 end
 
 function MOTOR_MOVE:init()
-   self.skills[1].x = -self.fsm.vars.offset_x --with the above condition this is negative so invert it
-   self.skills[1].vel_trans = 0.03
-   self.skills[1].tolerance = { x=0.001, y=0.002, ori=0.01 }
+   self.args["motor_move"] = {x = -self.fsm.vars.offset_x, --with the above condition this is negative so invert it
+			                        vel_trans = 0.03,
+															tolerance = { x=0.001, y=0.002, ori=0.01 }}
 end

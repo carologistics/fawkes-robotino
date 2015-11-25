@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "shelf_pick"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
 depends_interfaces = {}
 
@@ -57,7 +57,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   self.skills[1].command = "OPEN"
+   self.args["ax12gripper"].command = "OPEN"
 end
 
 function GOTO_SHELF:init()
@@ -75,27 +75,29 @@ function GOTO_SHELF:init()
       self.fsm.vars.error = true
    end
    
-   self.skills[1].y = -dest_y --shelf is on the right side of the conveyor
-   self.skills[1].vel_trans = 0.2
-   self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
+   self.args["motor_move"] =
+			{ y = -dest_y, --shelf is on the right side of the conveyor
+				vel_trans = 0.2,
+				tolerance = { x=0.002, y=0.002, ori=0.01 }
+			}
 end
 
 function APPROACH_SHELF:init()
-   self.skills[1].x = 0.07 --TODO measure this value
+   self.args["approach_mps"].x = 0.07 --TODO measure this value
 end
 
 function GRAB_PRODUCT:init()
-   self.skills[1].command = "CLOSE"
+   self.args["ax12gripper"].command = "CLOSE"
 end
 
 function LEAVE_SHELF:init()
-   self.skills[1].x = -0.2
+   self.args["motor_move"].x = -0.2
 end
 
 function CENTER_PUCK:init()
-   self.skills[1].command = "CENTER"
+   self.args["ax12gripper"].command = "CENTER"
 end
 
 function FAIL_SAFE:init()
-   self.skills[1].x = -0.1
+   self.args["motor_move"].x = -0.1
 end
