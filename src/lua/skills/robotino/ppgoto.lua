@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "ppgoto"
-fsm                = SkillHSM:new{name=name, start="PPGOTO", debug=true}
+fsm                = SkillHSM:new{name=name, start="PPGOTO", debug=false}
 depends_skills     = { "goto" }
 depends_interfaces = {
    {v = "ppnavi", type = "NavigatorInterface"}
@@ -156,8 +156,6 @@ end
 
 
 function SKILL_GOTO:init()
-   self.skills[1].x     = self.fsm.vars.x
-   self.skills[1].y     = self.fsm.vars.y
-   self.skills[1].ori   = self.fsm.vars.ori
-   self.skills[1].place = self.fsm.vars.place
+   self.args["goto"] = { x = self.fsm.vars.x, y = self.fsm.vars.y,
+												 ori   = self.fsm.vars.ori, place = self.fsm.vars.place}
 end

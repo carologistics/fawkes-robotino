@@ -21,7 +21,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "conveyor_align"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move","approach_mps", "ax12gripper"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
@@ -85,7 +85,7 @@ function INIT:init()
 end
 
 function APPROACH_MPS:init()
-   self.skills[1].x = 0.2
+   self.args["approach_mps"] = { x = 0.2 }
 end
 
 function DRIVE_YZ:init()
@@ -94,20 +94,19 @@ function DRIVE_YZ:init()
    else
       Z_DEST_POS = Z_DEST_POS_WITHOUT_PUCK
    end
-   self.skills[1].y = conveyor_0:translation(1)
-   self.skills[1].tolerance = { x=0.002, y=0.002, ori=0.01 }
-   self.skills[2].command = "RELGOTOZ"
+   self.args["motor_move"] = {y = conveyor_0:translation(1), tolerance = { x=0.002, y=0.002, ori=0.01 }}
+   self.args["ax12gripper"].command = "RELGOTOZ"
    if tolerance_z_not_ok() then
-      self.skills[2].z_position = ((conveyor_0:translation(2) - Z_DEST_POS) * 1000) / Z_DIVISOR
+      self.args["ax12gripper"].z_position = ((conveyor_0:translation(2) - Z_DEST_POS) * 1000) / Z_DIVISOR
    end
 end
 
 function DRIVE_Z:init()
-   self.skills[1].command = "RELGOTOZ"
+   self.args["ax12gripper"].command = "RELGOTOZ"
    if conveyor_0:translation(2) - Z_DEST_POS < 0 then
-      self.skills[1].z_position = -1
+      self.args["ax12gripper"].z_position = -1
    else
-      self.skills[1].z_position = 1
+      self.args["ax12gripper"].z_position = 1
    end
 end
 

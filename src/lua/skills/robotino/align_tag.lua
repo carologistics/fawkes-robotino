@@ -21,7 +21,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "align_tag"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
@@ -207,7 +207,7 @@ function DRIVE:loop()
 end
 
 function ORIENTATE:init()
-	self.skills[1].ori = self.fsm.vars.ori
+   self.args["motor_move"] = {ori = self.fsm.vars.ori}
 end
 
 function FAILED:init()

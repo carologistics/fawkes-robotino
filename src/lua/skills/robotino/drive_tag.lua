@@ -152,15 +152,10 @@ function DRIVE:init()
 
    print("x: " .. distance.x)
    print("y: " .. distance.y)
-   self.skills[1].x = distance.x
-   self.skills[1].y = distance.y
-   self.skills[1].ori = distance.ori
+   self.args["relgoto"] = {x = distance.x, y = distance.y, ori = distance.ori}
 end
 
 function ALIGN:init()
-   self.skills[1].x = align_tag_param.x
-   self.skills[1].y = align_tag_param.y
-   self.skills[1].ori = align_tag_param.ori
-   self.skills[1].tag_id = self.fsm.vars.id
-
+   self.args["align_tag"] = {x = align_tag_param.x, y = align_tag_param.y,
+                             ori = align_tag_param.ori, tag_id = self.fsm.vars.id}
 end

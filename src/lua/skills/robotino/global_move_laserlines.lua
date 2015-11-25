@@ -52,24 +52,29 @@ fsm:add_transitions{
 }
 
 function GLOBAL:init()
-   self.skills[1].place   = fsm.vars.place
-   self.skills[1].puck    = fsm.vars.puck
-   self.skills[1].x       = fsm.vars.x
-   self.skills[1].y       = fsm.vars.y
-   self.skills[1].ori     = fsm.vars.ori
-   self.skills[1].turn    = false
+   self.args["global_motor_move"] =
+			{ place   = fsm.vars.place,
+				puck    = fsm.vars.puck,
+				x       = fsm.vars.x,
+				y       = fsm.vars.y,
+				ori     = fsm.vars.ori,
+				turn    = false
+			}
 end
 
 function ALIGN:init()
-   self.skills[1].place = fsm.vars.place
-   self.skills[1].ori     = fsm.vars.ori
+   self.args["align_laserlines"] =
+			{ place = fsm.vars.place,
+				ori     = fsm.vars.ori }
 end
 
 function GLOBAL_BACKUP:init()
-   self.skills[1].x       = fsm.vars.x
-   self.skills[1].y       = fsm.vars.y
-   self.skills[1].ori     = fsm.vars.ori
-   self.skills[1].place   = fsm.vars.place
-   self.skills[1].puck    = fsm.vars.puck
-   self.skills[1].turn    = true
+   self.args["global_motor_move"] =
+			{ x       = fsm.vars.x,
+				y       = fsm.vars.y,
+				ori     = fsm.vars.ori,
+				place   = fsm.vars.place,
+				puck    = fsm.vars.puck,
+				turn    = true
+			}
 end

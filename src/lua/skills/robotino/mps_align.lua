@@ -27,7 +27,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "mps_align"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "align_tag", "motor_move", "check_tag" }
 depends_interfaces = {
   --[[
@@ -200,11 +200,13 @@ function ALIGN_TAG:init()
   -- align by ALIGN_DISTANCE from tag to base_link with align_tag
   local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
   -- give align_tag the id if we have one
-  self.skills[1].tag_id = self.fsm.vars.tag_id
-  self.skills[1].x = self.fsm.vars.x
---  self.skills[1].y = -self.fsm.vars.y -- this should be the y minus the error tag error to the middle from the navgraph
-  self.skills[1].y = 0
-  self.skills[1].ori = self.fsm.vars.ori
+  self.args["align_tag"] =
+		 { tag_id = self.fsm.vars.tag_id,
+			 x = self.fsm.vars.x,
+			 --  y = -self.fsm.vars.y -- this should be the y minus the error tag error to the middle from the navgraph
+			 y = 0,
+			 ori = self.fsm.vars.ori
+		 }
 end
 
 function DECIDE_TRY:init()
@@ -213,8 +215,6 @@ end
 
 function ALIGN:init()
   local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
-  self.skills[1].x         = pp.x
-  self.skills[1].y         = pp.y
-  self.skills[1].ori       = pp.ori
-  --self.skills[1].tolerance = {x=0.05, y=0.03, ori=0.1} -- this does not exists
+  self.args["motor_move"] = {x = pp.x, y = pp.y, ori = pp.ori}
+  --self.args["motor_move"].tolerance = {x=0.05, y=0.03, ori=0.1} -- this does not exists
 end

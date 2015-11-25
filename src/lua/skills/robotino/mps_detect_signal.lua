@@ -22,7 +22,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "mps_detect_signal"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"mps_align"}
 depends_interfaces = {
    { v="bb_signal", type ="RobotinoLightInterface", id = "/machine-signal/best" },
@@ -145,9 +145,10 @@ end
 function SKILL_ALIGN:init()
    self.fsm.vars.tries = self.fsm.vars.tries + 1
    printf("attempt #%d", self.fsm.vars.tries)
-   self.skills[1].x = ALIGN_POS[self.fsm.vars.tries].x
-   self.skills[1].y = ALIGN_POS[self.fsm.vars.tries].y
-   self.skills[1].ori = ALIGN_POS[self.fsm.vars.tries].ori
+   self.args["mps_align"] =
+			{ x = ALIGN_POS[self.fsm.vars.tries].x,
+				y = ALIGN_POS[self.fsm.vars.tries].y,
+				ori = ALIGN_POS[self.fsm.vars.tries].ori }
 end
 
 function cleanup()

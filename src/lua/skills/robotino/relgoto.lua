@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "relgoto"
-fsm                = SkillHSM:new{name=name, start="CHECK_INPUT", debug=true}
+fsm                = SkillHSM:new{name=name, start="CHECK_INPUT", debug=false}
 depends_skills     = nil
 depends_interfaces = {
    {v = "navigator", type="NavigatorInterface", id="Navigator"}

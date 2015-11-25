@@ -63,5 +63,5 @@ function WAIT:init()
 end
 
 function DRIVE_INTO_FIELD:init()
-   self.skills[1].wp = self.fsm.vars.waypoints
+   self.args["goto_waypoints"] = {wp = self.fsm.vars.waypoints}
 end

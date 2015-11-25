@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "drive_to_global"
-fsm                = SkillHSM:new{name=name, start="DRIVE_TO", debug=true}
+fsm                = SkillHSM:new{name=name, start="DRIVE_TO", debug=false}
 depends_skills     = { "drive_to" }
 depends_interfaces = { }
 
@@ -47,14 +47,15 @@ fsm:define_states{ export_to=_M,
   {"DRIVE_TO",  SkillJumpState, skills={{drive_to}},  final_to="FINAL", fail_to="FAILED"},
 }
 
-fsm:add_transitions{
-}
+--fsm:add_transitions{
+--}
 
 function DRIVE_TO:init()
-  self.skills[1].x        = self.fsm.vars.x
-  self.skills[1].y        = self.fsm.vars.y
-  self.skills[1].ori      = self.fsm.vars.ori
-  self.skills[1].place    = self.fsm.vars.place
-  self.skills[1].just_ori = self.fsm.vars.just_ori
-
+	 self.args["drive_to"] =
+			{ x        = self.fsm.vars.x,
+				y        = self.fsm.vars.y,
+				ori      = self.fsm.vars.ori,
+				place    = self.fsm.vars.place,
+				just_ori = self.fsm.vars.just_ori
+			}
 end

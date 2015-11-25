@@ -8,7 +8,7 @@ documentation = [==[Toggle the switch interface passed as parameter.
 
 -- Crucial skill information
 name               = "enable_switch"
-fsm                = SkillHSM:new{name=name, start="SWITCH", debug=true}
+fsm                = SkillHSM:new{name=name, start="SWITCH", debug=false}
 depends_skills     = {}
 depends_interfaces = {
    {v = "laserSwitch", type="SwitchInterface", id="/laser-cluster/ampel"},

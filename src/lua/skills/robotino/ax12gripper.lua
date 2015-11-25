@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "ax12gripper"
-fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=true}
+fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=false}
 depends_skills     = nil
 depends_interfaces = {
    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}

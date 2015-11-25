@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "product_pick"
-fsm                = SkillHSM:new{name=name, start="OPEN_GRIPPER", debug=true}
+fsm                = SkillHSM:new{name=name, start="OPEN_GRIPPER", debug=false}
 depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
 depends_interfaces = {
    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
@@ -70,39 +70,37 @@ fsm:add_transitions{
 }
 
 function OPEN_GRIPPER:init()
-   self.skills[1].command = "OPEN"
+   self.args["ax12gripper"].command = "OPEN"
    printf("open gripper")
 end
 
 function APPROACH_MPS:init()
-   self.skills[1].offset_x = self.fsm.vars.offset_x
+   self.args["approach_mps"].offset_x = self.fsm.vars.offset_x
 end
 
 function MOVE_BACK:init()
-   self.skills[1].x = -0.02
-   self.skills[1].vel_trans = 0.13
-   self.skills[1].tolerance = { x=0.001, y=0.002, ori=0.01 }
+   self.args["motor_move"] = {x = -0.02, vel_trans = 0.13, tolerance = { x=0.001, y=0.002, ori=0.01 } }
 end
 
 function MOVE_BACK_SECOND:init()
-   self.skills[1].x = -0.195
+   self.args["motor_move"] = {x = -0.195}
 end
 
 function CLOSE_GRIPPER:init()
-   self.skills[1].command = "CLOSE"
+   self.args["ax12gripper"].command = "CLOSE"
    printf("close gripper")
 end
 
 function CLOSE_GRIPPER_SECOND:init()
-   self.skills[1].command = "CLOSE"
+   self.args["ax12gripper"].command = "CLOSE"
    printf("close gripper")
 end
 
 function CENTER_GRIPPER:init()
-   self.skills[1].command = "CENTER"
+   self.args["ax12gripper"].command = "CENTER"
    printf("center gripper")
 end
 
 function FAIL_SAFE:init()
-   self.skills[1].x = -0.1
+   self.args["ax12gripper"].x = -0.1
 end

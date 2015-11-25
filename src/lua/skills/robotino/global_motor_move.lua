@@ -158,12 +158,12 @@ function TURN:init()
        ori=math.atan2(self.fsm.vars.target.y, self.fsm.vars.target.x)},
       "/map", "/base_link")
    printf("tf'd ori: %f", self.fsm.vars.bl_target.ori)
-   self.skills[1].ori = math.atan2(self.fsm.vars.bl_target.y, self.fsm.vars.bl_target.x)
-   printf("atan ori: %f", self.skills[1].ori)
-   self.skills[1].vel_rot = 1.2
-   self.skills[1].puck = true
-   self.skills[1].tolerance = mm_tolerance
-   self.skills[1].frame = "/odom"
+   self.args["motor_move"].ori = math.atan2(self.fsm.vars.bl_target.y, self.fsm.vars.bl_target.x)
+   printf("atan ori: %f", self.args["motor_move"].ori)
+   self.args["motor_move"].vel_rot = 1.2
+   self.args["motor_move"].puck = true
+   self.args["motor_move"].tolerance = mm_tolerance
+   self.args["motor_move"].frame = "/odom"
 end
 
 function WAIT_PLAUSIBLE_TARGET:init()
@@ -179,11 +179,11 @@ function DRIVE:init()
       x=self.fsm.vars.target.x,
       y=self.fsm.vars.target.y,
       ori=self.fsm.vars.target.ori}, "/map", "/base_link")
-   self.skills[1].x = self.fsm.vars.bl_target.x
-   self.skills[1].y = self.fsm.vars.bl_target.y
-   self.skills[1].puck = self.fsm.vars.puck
-   self.skills[1].tolerance = mm_tolerance
-   self.skills[1].frame = "/odom"
+   self.args["motor_move"].x = self.fsm.vars.bl_target.x
+   self.args["motor_move"].y = self.fsm.vars.bl_target.y
+   self.args["motor_move"].puck = self.fsm.vars.puck
+   self.args["motor_move"].tolerance = mm_tolerance
+   self.args["motor_move"].frame = "/odom"
 end
 
 function TURN_BACK:init()
@@ -191,10 +191,12 @@ function TURN_BACK:init()
       x=self.fsm.vars.target.x,
       y=self.fsm.vars.target.y,
       ori=self.fsm.vars.target.ori}, "/map", "/base_link")
-   self.skills[1].ori = self.fsm.vars.bl_target.ori
-   self.skills[1].vel_rot = 1.2
-   self.skills[1].puck = true
-   self.skills[1].tolerance = mm_tolerance
-   self.skills[1].frame = "/odom"
+   self.args["motor_move"] =
+			{ ori = self.fsm.vars.bl_target.ori,
+				vel_rot = 1.2,
+				puck = true,
+				tolerance = mm_tolerance,
+				frame = "/odom"
+			}
 end
 

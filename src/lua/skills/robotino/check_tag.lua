@@ -21,7 +21,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "check_tag"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {}
 depends_interfaces = { 
    {v = "tag_0", type = "Position3DInterface"},

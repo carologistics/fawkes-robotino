@@ -46,10 +46,6 @@ fsm:add_transitions{
    {"INIT", "GOTO", cond=true}
 }
 
-function INIT:init() 
-
-end
-
 function GOTO:init()
-   self.skills[1].wp = self.fsm.vars.pps
+   self.args["ppgoto_waypoints"].wp = self.fsm.vars.pps
 end
