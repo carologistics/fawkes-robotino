@@ -1,4 +1,5 @@
 #include <map>
+#include "subscirbtion.h"
 
 
 class Subscribe{
@@ -12,6 +13,6 @@ class Subscribe{
 		void publish(std::string topic, std::string client_id );
 
 	private:
-		std::map <std::string,std::string> subscirbtions;
+		std::map <std::string,Subscirbtion> topic_subscirbtions_;
 
 }
