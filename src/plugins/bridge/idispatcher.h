@@ -1,5 +1,5 @@
 class Idispatcher{
 	public:
-		virtual bool web_forward_message(std::string msg)=0;
+		virtual bool send_to_web(std::string msg)=0;
 
 };

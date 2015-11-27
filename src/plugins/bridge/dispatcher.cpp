@@ -70,7 +70,7 @@ Dispatcher::web_on_message(connection_hdl hdl, websocketpp::server<websocketpp::
 
 
 bool
-Dispatcher::web_forward_message(std::string msg){
+Dispatcher::send_to_web(std::string msg){
   //TODO:: add a check if the web_session is reachable
   //TODO:: catch exceptions
   return  web_session_->send(msg);;
