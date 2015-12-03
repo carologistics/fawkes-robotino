@@ -94,7 +94,7 @@ public:
         if (msg->get_opcode() == websocketpp::frame::opcode::text) {
               std::cout<< "forwarding to web.." << std::endl;
               std::cout<< msg->get_payload()<<std::endl;
-              m_dispatcher->web_forward_message(msg->get_payload());
+              m_dispatcher->send_to_web(msg->get_payload());
         } else {
             std::cout<< "forwarding to web HEX" << std::endl;
            // m_messages.push_back("<< " + websocketpp::utility::to_hex(msg->get_payload()));

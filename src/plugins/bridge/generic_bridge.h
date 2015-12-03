@@ -3,16 +3,21 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/error/en.h>
 
-#include <ibridge.h>
-#include <idispatcher.h>
+#include <memory>
+#include <string>
+#include <iostream>
+#include "ibridge.h"
+#include "idispatcher.h"
+#include <boost/shared_ptr.hpp>
 
+using namespace rapidjson;
 
-class GenericBridge: public ibridge
+class GenericBridge : public Ibridge
 {
 
 public:
 
-	GenericBridge(std::shared_ptr<Idispatcher> dispatcher)
+	GenericBridge(boost::shared_ptr<Idispatcher> dispatcher)
 	:dispatcher_(dispatcher)
 	{
 
@@ -20,29 +25,34 @@ public:
 
 	~GenericBridge();
 
-	virtual void incoming(std::msg jsonStr)=0;
+	virtual void incoming(std::string jsonStr)=0;
+
+
 
 	//forwards the outgoing msg to the web client 
-	void outgoing(std::msg jsonStr){
-		dispatcher_.send_to_web(jsonStr);
+	void outgoing(std::string jsonStr){
+		dispatcher_->send_to_web(jsonStr);
 	}
 
-	Documnet serialize(std::msg jsonStr){
+
+
+	bool deserialize(Document &d, std::string jsonStr){
 		const char* json = jsonStr.c_str();
-		Document d;
 		d.Parse(json);
 
 		if (d.Parse(json).HasParseError()) {
 			std::cout<< GetParseError_En(d.GetParseError());
+			return false;
 		}
-		
-		return d;
+
+		return true;
 	}
 
-	void deserialize(std::msg jsonStr);
+	void serialize(std::string jsonStr);
 
 
-private:
-	std::shared_ptr<Idispatcher>  dispatcher_;
+protected:
+	std::string 					bridge_target;
+	boost::shared_ptr<Idispatcher> 	dispatcher_;
 
-}
+};
