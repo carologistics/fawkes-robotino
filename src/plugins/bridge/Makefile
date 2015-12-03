@@ -25,7 +25,7 @@ LIBS_bridge = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard \
 	       Position3DInterface fawkesclipsaspect RobotinoLightInterface SkillerInterface
 OBJS_bridge = bridge_plugin.o bridge_thread.o \
-              Web_server.o web_session.o ros_proxy.o dispatcher.o 
+              Web_server.o web_session.o ros_proxy.o dispatcher.o fawkes_bridge.o
 
 OBJS_all    = $(OBJS_bridge)
 
