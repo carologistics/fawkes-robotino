@@ -1,0 +1,39 @@
+#include "generic_bridge.h"
+
+
+class FawkesBridge : public GenericBridge
+{
+
+	public:
+
+		FawkesBridge(boost::shared_ptr<Idispatcher> dispatcher)
+		:GenericBridge(dispatcher){
+			bridge_target="blackboard";
+		}
+
+		~FawkesBridge(){}
+
+		void incoming(std::string jsonStr){
+			Document  d;
+			deserialize(d,jsonStr);
+				//std::map  <std::string,std::string> request_details;
+			if (d.HasMember("op"))
+			{
+			    std::string op_name= std::string(d["op"].GetString());
+			    std::string msg_id= std::string(d["id"].GetString());
+			    std::cout <<"The op name is: "<<op_name<<std::endl;			     
+				   
+			    std::string topic_fullname=std::string(d["topic"].GetString());
+
+			    std::size_t pos = topic_fullname.find(bridge_target);
+			     if (pos != std::string::npos)
+			    {
+			    	 std::string topic_name= topic_fullname.erase(pos 
+			    	 	, bridge_target.length()+1);
+			    	 std::cout <<"The topic name is: "<<topic_name<<std::endl;			     
+			    }
+			}
+
+		}
+
+};
