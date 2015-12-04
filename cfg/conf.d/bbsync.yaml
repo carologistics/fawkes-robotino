@@ -28,9 +28,9 @@ fawkes/bbsync:
       reading:
         motor: MotorInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino
-        odometry: TransformInterface::TF Robotino Odometry
-        tfPose: TransformInterface::TF Pose
-        tfROS: TransformInterface::TF ROS
+        tfGripper: TransformInterface::/tf/GRIPPER AX12A
+        tfOdom:    TransformInterface::/tf/Robotino Odometry
+        tfAmcl:    TransformInterface::/tf/odom
         motor-switch: SwitchInterface::Robotino Motor
         line1: LaserLineInterface::/laser-lines/1
         line2: LaserLineInterface::/laser-lines/2
