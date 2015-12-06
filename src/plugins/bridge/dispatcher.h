@@ -6,9 +6,11 @@
 #include <string>
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
-#include "ros_proxy.cpp"
 
 #include <logging/logger.h>
+
+#include "ros_proxy.cpp"
+#include "fawkes_bridge.cpp"
 
 using websocketpp::connection_hdl;
 
