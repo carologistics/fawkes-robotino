@@ -6,9 +6,9 @@ class FawkesBridge : public GenericBridge
 
 	public:
 
-		FawkesBridge(boost::shared_ptr<Idispatcher> dispatcher)
+		FawkesBridge(std::shared_ptr<Idispatcher> dispatcher)
 		:GenericBridge(dispatcher){
-			bridge_target="blackboard";
+			topics_prefix_="blackboard";
 		}
 
 		~FawkesBridge(){}
@@ -25,15 +25,16 @@ class FawkesBridge : public GenericBridge
 				   
 			    std::string topic_fullname=std::string(d["topic"].GetString());
 
-			    std::size_t pos = topic_fullname.find(bridge_target);
+			    std::size_t pos = topic_fullname.find(topics_prefix_);
 			     if (pos != std::string::npos)
 			    {
 			    	 std::string topic_name= topic_fullname.erase(pos 
-			    	 	, bridge_target.length()+1);
+			    	 	, topics_prefix_.length()+1);
 			    	 std::cout <<"The topic name is: "<<topic_name<<std::endl;			     
 			    }
 			}
 
 		}
+
 
 };

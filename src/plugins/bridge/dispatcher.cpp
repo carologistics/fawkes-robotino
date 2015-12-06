@@ -4,7 +4,6 @@
 #include <iostream>
 #include <sstream>
 
-
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
@@ -15,7 +14,6 @@
 #include "isession.h"
 #include "dispatcher.h"
 
-
 using namespace rapidjson;
 
 using websocketpp::lib::placeholders::_1;
@@ -24,7 +22,8 @@ using websocketpp::lib::bind;
 
 using namespace fawkes;
 
-Dispatcher::Dispatcher(fawkes::Logger *logger,websocketpp::lib::shared_ptr<Isession> web_s)
+Dispatcher::Dispatcher(fawkes::Logger *logger
+  ,websocketpp::lib::shared_ptr<Isession> web_s)
     : rosbridge_started_(false)
     , web_session_(web_s)
     , logger_(logger)
@@ -42,11 +41,16 @@ void Dispatcher::start(){
 }
 
 void
-Dispatcher::register_bridges(){   
+Dispatcher::register_bridges(){ 
+
+//Register fawkedBridg
+ bridges_[bridgeType::FAWKES_BRIDGE] = websocketpp::lib::make_shared<FawkesBridge>(this->shared_from_this());
+ bridges_[bridgeType::FAWKES_BRIDGE]->init();
+
+//Register ROSbridge
   bridges_[bridgeType::ROS_BRIDGE] = websocketpp::lib::make_shared<ros_proxy>(logger_,this->shared_from_this());
   rosbridge_started_= bridges_[bridgeType::ROS_BRIDGE]->init();
-  
-  //Add The Fawkes Bridge HERE
+
 }
 
 
@@ -94,7 +98,7 @@ Dispatcher::dispatch(std::string msg){
     if (std::string(d["topic"].GetString()).find("blackboard") != std::string::npos)
     {
       std::cout<< "That should not happen"<<std::endl;
-      return bridgeType::BLACKBOARD_BRDIGE;
+      return bridgeType::FAWKES_BRIDGE;
     }
   }
   return bridgeType::ROS_BRIDGE;
