@@ -11,8 +11,8 @@
 // #include "rapidjson/memorystream.h"    
 #include "rapidjson/error/en.h"
 
-#include "isession.h"
 #include "dispatcher.h"
+#include "interfaces/isession.h"
 
 using namespace rapidjson;
 

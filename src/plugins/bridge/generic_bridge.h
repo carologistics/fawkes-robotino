@@ -7,9 +7,9 @@
 #include <string>
 #include <map>
 #include <iostream>
-#include "ibridge.h"
-#include "idispatcher.h"
-#include "icapability.h"
+#include "interfaces/ibridge.h"
+#include "interfaces/idispatcher.h"
+#include "interfaces/icapability.h"
 
 using namespace rapidjson;
 
