@@ -53,4 +53,8 @@
 		, std::shared_ptr<Icapability> handler){
 		
 		capabilities_[op_name]=handler;
+		std::cout<< "registered"<<std::endl;
+			
+
+
 	}
