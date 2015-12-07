@@ -1,16 +1,18 @@
 #include <rapidjson/document.h>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <list>
 
 #include "interfaces/icapability.h"
 
 using namespace rapidjson;
+
 struct  details{
 	std::string subscribtion_id;
 	std::string msg_type;
-   	std::string throttle_rate;
-   	std::string queue_length;
+   	double throttle_rate;
+   	int queue_length;
    	std::string fragment_size;
    	// compression": compression
 };
@@ -22,7 +24,7 @@ class Subscribtion{
 		Subscribtion(std::string client_id, std::string topic);
 		~Subscribtion();
 
-		void subscribe(details subscribe_args);
+		void subscribe(details *subscribe_args);
 		void unsubscribe();
 
 		void publish();
@@ -52,6 +54,6 @@ class Subscribe: public Icapability
 
 	private:
 		std::string client_id_;
-		std::map <std::string,Subscribtion*> topic_subscirbtions_;
+		std::map <std::string,std::shared_ptr<Subscribtion> > topic_subscirbtions_;
 
 };
