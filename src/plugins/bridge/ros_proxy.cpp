@@ -42,8 +42,8 @@
 #include <string>
 #include <sstream>
 
-#include "idispatcher.h"
-#include "ibridge.h"
+#include "interfaces/idispatcher.h"
+#include "interfaces/ibridge.h"
 
 
 
