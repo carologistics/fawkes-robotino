@@ -13,6 +13,7 @@ class FawkesBridge : public GenericBridge
 
 		~FawkesBridge(){}
 
+
 		void incoming(std::string jsonStr){
 			Document  d;
 			deserialize(d,jsonStr);
@@ -32,6 +33,15 @@ class FawkesBridge : public GenericBridge
 			    	 	, topics_prefix_.length()+1);
 			    	 std::cout <<"The topic name is: "<<topic_name<<std::endl;			     
 			    }
+
+				if(capabilities_.find(op_name)==capabilities_.end()){
+					//throw exception or something
+					 std::cout <<"No handler registerd for operation ("<<op_name<<")"<<std::endl;			     
+					return;
+				}
+
+				capabilities_[op_name]->handle_message(d);
+
 			}
 
 		}

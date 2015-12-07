@@ -5,9 +5,11 @@
 
 #include <memory>
 #include <string>
+#include <map>
 #include <iostream>
 #include "ibridge.h"
 #include "idispatcher.h"
+#include "icapability.h"
 
 using namespace rapidjson;
 
@@ -33,8 +35,16 @@ public:
 	void process_request(std::string jsonStr);
 
 
+	/*adding/removing the capability that is responsible 
+	for this operation to the map with the operation name as key*/
+	void register_operation(std::string, std::shared_ptr<Icapability> capability);
+
+	void deregister_operation(std::string, std::shared_ptr<Icapability> capability);
+
+
 protected:
-	std::string 					topics_prefix_;
-	std::shared_ptr<Idispatcher> 	dispatcher_;
+	std::string 												topics_prefix_;
+	std::shared_ptr<Idispatcher> 								dispatcher_;
+	std::map <std::string , std::shared_ptr<Icapability> > 		capabilities_ ;
 
 };
