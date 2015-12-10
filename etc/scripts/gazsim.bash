@@ -43,7 +43,7 @@ EOF
 
 COMMAND=start
 CONF=
-VISUALIZATION=
+HEADLESS=
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
@@ -95,7 +95,7 @@ while true; do
 	     CONF=-c\ $OPTARG
              ;;
          -l)
-	     VISUALIZATION=-l
+	     HEADLESS=-l
              ;;
          -x)
 	     COMMAND=$OPTARG
@@ -235,7 +235,7 @@ if [  $COMMAND  == start ]; then
     if $START_GAZEBO
     then
 	#start gazebo
-	if [[ -z $VISUALIZATION ]]
+	if [[ -z $HEADLESS ]]
 	then
 	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x gazebo $REPLAY $KEEP\"'"
 	else
