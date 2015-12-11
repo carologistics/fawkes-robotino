@@ -43,11 +43,20 @@ OBJS_tag_vision = tag_vision_plugin.o tag_vision_thread.o tag_position_list.o ta
 
 OBJS_all = $(OBJS_tag_vision)
 
-ifneq ($(wildcard $(SYSROOT)/usr/lib64/libalvar200.so $(SYSROOT)/usr/include/alvar),)
-  HAVE_ALVAR = 1
+ifneq ($(wildcard $(SYSROOT)/usr/include/alvar),)
+  ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar200.so),)
+    HAVE_ALVAR = 1
 
-  CFLAGS_ALVAR = -DHAVE_ALVAR
-  LIBS_tag_vision += alvar200
+    CFLAGS_ALVAR = -DHAVE_ALVAR
+    LIBS_ALVAR   = alvar200
+  else
+    ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar.so),)
+    HAVE_ALVAR = 1
+
+    CFLAGS_ALVAR = -DHAVE_ALVAR
+    LIBS_ALVAR   = alvar
+    endif
+  endif
 endif
 ifneq ($(HAVE_ALVAR),1)
   ifeq ($(HAVE_ROS),1)
