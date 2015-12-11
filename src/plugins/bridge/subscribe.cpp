@@ -6,7 +6,9 @@
 #include <cstdio>
 
 //later::dont forget to propagae the client_id from bridge till here
-		Subscribe::Subscribe(){
+		Subscribe::Subscribe(std::shared_ptr <IbridgeManager> manager )
+		:Icapability(manager )
+		{
 			client_id_="";
 		}
 
@@ -39,8 +41,9 @@
     			static const char* kTypeNames[] = { "Null", "False", "True", "Object", "Array", "String", "Number" };
 		    	for (Value::ConstMemberIterator itr = d.MemberBegin(); itr != d.MemberEnd(); ++itr)
         		printf("Type of member %s is %s\n", itr->name.GetString(), kTypeNames[itr->value.GetType()]);
-        	
 
+
+        	///todo:: make sure the members are there before quering them
 			details subscribe_args;
 			subscribe_args.subscribtion_id=std::string(d["id"].GetString());
 			subscribe_args.msg_type=std::string(d["type"].GetString());
@@ -51,6 +54,8 @@
 			topic_subscirbtions_[topic_name]->subscribe(&subscribe_args);
 
 		}
+
+		Subscribe::publish(){}
 
 
 		Subscribtion::Subscribtion(std::string client_id, std::string topic)
@@ -63,5 +68,5 @@
 		void
 		Subscribtion::subscribe(details *subscirbe_args){
   			std::cout <<"REACHED THE SUBSCRIBTION STAGE WITH "<<topic_<<std::endl;
-			// details_list_.push_back(subscirbe_args);
+			details_list_.push_back(subscirbe_args);
 		}

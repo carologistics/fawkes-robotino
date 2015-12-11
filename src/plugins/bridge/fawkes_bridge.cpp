@@ -1,5 +1,6 @@
 #include "generic_bridge.h"
 #include "subscribe.h"
+#include "generic_bridge_manager.h"
 
 
 class FawkesBridge : public GenericBridge
@@ -15,7 +16,10 @@ class FawkesBridge : public GenericBridge
 		~FawkesBridge(){}
 
 		bool init(){
-			register_operation("subscribe",std::make_shared<Subscribe>());
+
+			//TODO//replace with correct instance of bridgeManager
+
+			register_operation("subscribe",std::make_shared<Subscribe>( std::make_shared<GenericBridgeManager>()));
 			return true;
 		}
 

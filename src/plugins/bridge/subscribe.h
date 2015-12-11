@@ -1,10 +1,10 @@
+#include "interfaces/icapability.h"
+
 #include <rapidjson/document.h>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <list>
-
-#include "interfaces/icapability.h"
 
 using namespace rapidjson;
 
@@ -16,6 +16,7 @@ struct  details{
    	std::string fragment_size;
    	// compression": compression
 };
+
 
 
 class Subscribtion{
@@ -33,7 +34,7 @@ class Subscribtion{
 		std::string 			client_id_;
 		std::string 			topic_;
 		//handler 		 publish			find a way to register it
-		std::list<details> 		details_list_;
+		std::list<details*> 		details_list_;
 
 };
 
@@ -41,13 +42,13 @@ class Subscribtion{
 class Subscribe: public Icapability
 {
 	public:
-		Subscribe();
+		Subscribe(std::shared_ptr <IbridgeManager> manager);
 		~Subscribe();
 
 		void subscirbe(Document &d);
 		void unsubscirbe(Document &d);
 
-		void publish(std::string topic, std::string client_id );
+		void publish();
 
 		void handle_message(Document &d);
 
