@@ -18,10 +18,10 @@ class GenericBridge : public Ibridge
 
 public:
 
-	GenericBridge(std::shared_ptr<Idispatcher> dispatcher);
+	GenericBridge(std::shared_ptr<Idispatcher> dispatcher,std::string target_prefix);
 	~GenericBridge();
 
-	virtual void incoming(std::string jsonStr)=0;
+	void incoming(std::string jsonStr);
 	
 	void outgoing(std::string jsonStr);
 
@@ -43,7 +43,8 @@ public:
 
 
 protected:
-	std::string 												topics_prefix_;
+	//This is the prefix that is expected from the topics mapped to this bridge
+	std::string 												target_prefix_;
 	std::shared_ptr<Idispatcher> 								dispatcher_;
 	std::map <std::string , std::shared_ptr<Icapability> > 		capabilities_ ;
 

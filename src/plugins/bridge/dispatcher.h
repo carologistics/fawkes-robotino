@@ -10,7 +10,7 @@
 #include <logging/logger.h>
 
 #include "ros_proxy.cpp"
-#include "fawkes_bridge.cpp"
+#include "generic_bridge.h"
 
 using websocketpp::connection_hdl;
 

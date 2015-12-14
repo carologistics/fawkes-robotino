@@ -1,14 +1,55 @@
+//Move these include and related implementationslater to the protocol layer
+#include "subscribe.h"
+//--
 
 #include "generic_bridge.h"
+#include "generic_bridge_manager.h"
+
 
 	
-	GenericBridge::GenericBridge(std::shared_ptr<Idispatcher> dispatcher)
-	:dispatcher_(dispatcher)
-	{
-
-	}
+	GenericBridge::GenericBridge(std::shared_ptr<Idispatcher> dispatcher ,std::string target_prefix)
+	:target_prefix_(target_prefix)
+	,dispatcher_(dispatcher)
+	
+	{}
 
 	GenericBridge::~GenericBridge(){}
+
+	void 
+	GenericBridge::incoming(std::string jsonStr){
+			Document  d;
+			deserialize(d,jsonStr);
+				//std::map  <std::string,std::string> request_details;
+			if (d.HasMember("op"))
+			{
+			    std::string op_name= std::string(d["op"].GetString());
+			    // std::string msg_id= std::string(d["id"].GetString());
+			    std::cout <<"The op name is: "<<op_name<<std::endl;			     
+				   
+			    std::string topic_fullname=std::string(d["topic"].GetString());
+
+			    std::size_t pos = topic_fullname.find(target_prefix_);
+			     if (pos != std::string::npos)
+			    {
+			    	 std::string topic_name= topic_fullname.erase(pos 
+			    	 	, target_prefix_.length()+1);
+
+			    	 d["topic"].SetString(StringRef(topic_name.c_str()));
+
+			    	 std::cout <<"The topic name is: "<<topic_name<<std::endl;			     
+			    }
+
+				if(capabilities_.find(op_name)==capabilities_.end()){
+					//throw exception or something
+					 std::cout <<"No handler registerd for operation ("<<op_name<<")"<<std::endl;			     
+					return;
+				}
+
+				capabilities_[op_name]->handle_message(d);
+
+			}
+
+		}
 
 	//forwards the outgoing msg to the web client 
 	void 
@@ -38,10 +79,10 @@
 	//overriding from IBridge
 	bool 
 	GenericBridge::init(){
-		//nothing I can think of now
-		return true;
-	}
-
+			//TODO//replace with correct instance of bridgeManager not a new one
+			register_operation("subscribe",std::make_shared<Subscribe>( std::make_shared<GenericBridgeManager>()));
+			return true;
+		}
 	void 
 	GenericBridge::process_request(std::string jsonStr){
 		incoming(jsonStr);
