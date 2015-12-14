@@ -55,6 +55,7 @@
 
 		}
 
+		void
 		Subscribe::publish(){}
 
 

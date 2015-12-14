@@ -44,7 +44,7 @@ void
 Dispatcher::register_bridges(){ 
 
 //Register fawkedBridg
- bridges_[bridgeType::FAWKES_BRIDGE] = websocketpp::lib::make_shared<FawkesBridge>(this->shared_from_this());
+ bridges_[bridgeType::FAWKES_BRIDGE] = websocketpp::lib::make_shared<GenericBridge>(this->shared_from_this(),"blackboard");
  bridges_[bridgeType::FAWKES_BRIDGE]->init();
 
 //Register ROSbridge
