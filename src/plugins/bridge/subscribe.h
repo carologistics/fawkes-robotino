@@ -1,4 +1,5 @@
 #include "interfaces/icapability.h"
+#include "interfaces/ibridge_manager.h"
 
 #include <rapidjson/document.h>
 #include <iostream>

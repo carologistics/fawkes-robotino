@@ -1,10 +1,5 @@
-//Move these include and related implementationslater to the protocol layer
-#include "subscribe.h"
-//--
 
 #include "generic_bridge.h"
-#include "generic_bridge_manager.h"
-
 
 	
 	GenericBridge::GenericBridge(std::shared_ptr<Idispatcher> dispatcher ,std::string target_prefix)
@@ -80,7 +75,6 @@
 	bool 
 	GenericBridge::init(){
 			//TODO//replace with correct instance of bridgeManager not a new one
-			register_operation("subscribe",std::make_shared<Subscribe>( std::make_shared<GenericBridgeManager>()));
 			return true;
 		}
 	void 

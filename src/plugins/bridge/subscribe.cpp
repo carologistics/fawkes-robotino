@@ -1,13 +1,12 @@
 #include "subscribe.h"
 
-
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
 #include "rapidjson/prettywriter.h" // for stringify JSON
 #include <cstdio>
 
 //later::dont forget to propagae the client_id from bridge till here
 		Subscribe::Subscribe(std::shared_ptr <IbridgeManager> manager )
-		:Icapability(manager )
+		:Icapability(manager)
 		{
 			client_id_="";
 		}
@@ -25,7 +24,7 @@
 		}
 
 		void 
-		Subscribe::subscirbe(Document &d){
+	Subscribe::subscirbe(Document &d){
 
 			std::cout<< "Subscribing";
 
@@ -34,7 +33,7 @@
 			std::cout<< " TO" << topic_name << std::endl;
 
 			if(topic_subscirbtions_.find(topic_name)==topic_subscirbtions_.end()){
-				topic_subscirbtions_[topic_name]= std::make_shared<Subscribtion>(client_id_,topic_name);
+					topic_subscirbtions_[topic_name]= std::make_shared<Subscribtion>(client_id_,topic_name);
 			}
 
 			    // Iterating object members
@@ -53,7 +52,12 @@
 
 			topic_subscirbtions_[topic_name]->subscribe(&subscribe_args);
 
+			//TODO::What happens if topic not found or could not subscribe
+			manager_->subscribe(topic_name);
+		
 		}
+
+
 
 		void
 		Subscribe::publish(){}
