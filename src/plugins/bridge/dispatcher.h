@@ -10,7 +10,9 @@
 #include <logging/logger.h>
 
 #include "ros_proxy.cpp"
-#include "generic_bridge.h"
+//#include "generic_bridge.h"
+#include "generic_bridge_manager.h"
+#include "interfaces/ibridge_manager.h"
 
 using websocketpp::connection_hdl;
 
@@ -42,6 +44,10 @@ public:
 	bool send_to_web(std::string msg);
 
 	bridgeType dispatch(std::string);
+
+
+	///temp Bridge manager intialization:
+	GenericBridgeManager* fawkes_bridge_manager_;
 
 
 };
