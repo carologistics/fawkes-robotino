@@ -3,7 +3,7 @@
 
 class IbridgeManager{
 	public:
-		virtual void publish()=0;
+		virtual bool subscribe(std::string topic_name)=0;
 };
 
 #endif
