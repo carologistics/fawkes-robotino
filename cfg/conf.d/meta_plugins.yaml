@@ -17,15 +17,14 @@ fawkes/meta_plugins:
   #
   # Gazebo stuff
   #
-  gazsim-meta-ros: ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,navgraph-generator,navgraph-generator-mps,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,gazsim-gripper,gazsim-conveyor,webview
-  gazsim-meta-robotino-ros: gazsim-meta-robotino,gazsim-meta-ros
-  gazsim-meta-vision: fvbase,gazsim-webcam,tag_vision,gazsim-machine-signal
-  gazsim-meta-robotino-default-high-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-puck-detection,gazsim-light-front
-  gazsim-meta-robotino-default-low-level: gazsim-meta-robotino,gazsim-meta-ros,gazsim-meta-vision
+  gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,ros-move-base,amcl,navgraph,navgraph-generator,navgraph-generator-mps,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
+  gazsim-meta-robotino-no-ros: gazsim-meta-robotino,amcl,navgraph,navgraph-generator,navgraph-generator-mps,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
+  gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
+  gazsim-meta-robotino-vision-low-level: fvbase,gazsim-webcam,tag_vision,gazsim-machine-signal
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
   gazsim-meta-clips: m-clips,clips-agent
-  gazsim-meta-agent: gazsim-meta-vision,gazsim-meta-clips
+  gazsim-meta-agent: gazsim-meta-clips
  
   #
   # Robotino base meta plugin
