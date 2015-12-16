@@ -47,7 +47,8 @@ using namespace gazebo;
 /** Constructor. */
 TagVisionSimThread::TagVisionSimThread()
   : Thread("TagVisionSimThread", Thread::OPMODE_WAITFORWAKEUP),
-    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
+    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
+    TransformAspect(TransformAspect::ONLY_PUBLISHER,"tags")
 {
 }
 
@@ -59,6 +60,7 @@ void TagVisionSimThread::init()
   gazebo_topic_ = config->get_string("/gazsim/topics/tag-vision");
   tag_if_name_prefix_ = config->get_string("/gazsim/tag-vision/tag-if-name-prefix");
   info_if_name_ = config->get_string("/gazsim/tag-vision/info-if-name");
+  frame_name_ = config->get_string("/gazsim/tag-vision/frame");
   number_interfaces_ = config->get_int("/gazsim/tag-vision/number-interfaces");
   visibility_history_increase_per_update_ = config->get_int("/gazsim/tag-vision/visibility-history-increase-per-update");
   
@@ -130,7 +132,7 @@ void TagVisionSimThread::loop()
       tag_pos_ifs_[if_index]->set_rotation(1, pose.orientation().y());
       tag_pos_ifs_[if_index]->set_rotation(2, pose.orientation().z());
       tag_pos_ifs_[if_index]->set_rotation(3, pose.orientation().w());
-      tag_pos_ifs_[if_index]->set_frame("/gazsim_tag_vision");
+      tag_pos_ifs_[if_index]->set_frame(frame_name_.c_str());
       //compute visibility history
       int current_vis_hist = tag_pos_ifs_[if_index]->visibility_history();
       if(current_vis_hist < 0)
@@ -142,6 +144,20 @@ void TagVisionSimThread::loop()
       tag_pos_ifs_[if_index]->write();
       info_if_->set_tag_id(if_index, tag_id);
       used_ifs.insert(if_index);
+
+      
+      // publish the transform
+      tf::Transform transform(tf::Quaternion(pose.orientation().x(),
+                                             pose.orientation().y(),
+                                             pose.orientation().z(),
+                                             pose.orientation().w()),
+                              tf::Vector3(pose.position().x(),
+                                          pose.position().y(),
+                                          pose.position().z()));
+      Time time(clock);
+      std::string tag_frame_name = std::string("tag_")+std::to_string(if_index);
+      tf::StampedTransform stamped_transform(transform,time,frame_name_,tag_frame_name);
+      tf_publisher->send_transform(stamped_transform);
     }
     //clear tags which became unvisibe and count visible tags
     int number_found_tags = 0;

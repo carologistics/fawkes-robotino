@@ -32,6 +32,7 @@
 #include <plugins/gazebo/aspect/gazebo.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/TagVisionInterface.h>
+#include <aspect/tf.h>
 
 //from Gazebo
 #include <gazebo/transport/TransportTypes.hh>
@@ -49,7 +50,8 @@ class TagVisionSimThread
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
   public fawkes::BlockedTimingAspect,
-  public fawkes::GazeboAspect
+  public fawkes::GazeboAspect,
+  public fawkes::TransformAspect
 {
  public:
   TagVisionSimThread();
@@ -78,6 +80,7 @@ class TagVisionSimThread
   std::string gazebo_topic_;
   std::string tag_if_name_prefix_;
   std::string info_if_name_;
+  std::string frame_name_;
   int number_interfaces_;
   int visibility_history_increase_per_update_;
   

@@ -164,3 +164,4 @@ gazsim:
     info-if-name: "/tag-vision/info"
     number-interfaces: 16
     visibility-history-increase-per-update: 30
+    frame: !frame gazsim_tag_vision
