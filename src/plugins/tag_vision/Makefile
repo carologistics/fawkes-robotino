@@ -76,6 +76,7 @@ endif
 ifeq ($(HAVE_TF)$(HAVE_ALVAR)$(HAVE_CPP11),111)
   CFLAGS  += $(CFLAGS_ALVAR)  $(CFLAGS_TF) $(CFLAGS_CPP11)
   LDFLAGS += $(LDFLAGS_ALVAR) $(LDFLAGS_TF)
+  LIBS_tag_vision += $(LIBS_ALVAR)
   PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
 else
   ifneq ($(HAVE_ALVAR),1)
