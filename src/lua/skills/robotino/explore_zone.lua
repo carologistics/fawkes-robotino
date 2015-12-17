@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "explore_zone"
-fsm                = SkillHSM:new{name=name, start="INIT"}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "drive_to_global", "drive_to_local", "motor_move" }
 depends_interfaces = {
   {v = "pose",      type="Position3DInterface", id="Pose"},
@@ -100,26 +100,33 @@ skillenv.skill_module(_M)
 local tfm = require 'tf_module'
 local tfutils = require("fawkes.tfutils")
 
+function signum(x)
+  if (x >= 0) then return 1 else return -1 end
+end
+
 function mps_in_zone(self, x, y, use_offset)
 --  printf("Check MPS (" .. x .. ", " .. y .. ")")
-  use_offset = use_offset or true
+  if use_offset == nil then
+    use_offset = true
+  end
   mps_offset = 0
   if use_offset then
     mps_offset = MPS_OFFSET_TO_ZONE
   end
   -- x compared to the maximum - offset and minimum + offset ( depending on positive and negative numbers )
-  if x > self.fsm.vars.max_x / math.abs(self.fsm.vars.max_x) * ( math.abs(self.fsm.vars.max_x) - mps_offset ) or
-     x < self.fsm.vars.min_x / math.abs(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) or
-     y > self.fsm.vars.max_y / math.abs(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) or
-     y < self.fsm.vars.min_y / math.abs(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) then
---[[     printf("MPS in zone x (" .. 
-                              self.fsm.vars.min_x / math.abs(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) ..
+  if x > signum(self.fsm.vars.max_x) * ( math.abs(self.fsm.vars.max_x) - mps_offset ) or
+     x < signum(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) or
+     y > signum(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) or
+     y < signum(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) then
+---[[
+     printf("MPS in zone x (" .. 
+                              signum(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) ..
                               ", " ..
-                              self.fsm.vars.max_x / math.abs(self.fsm.vars.max_x) * ( math.abs(self.fsm.vars.max_x) - mps_offset ) ..
+                              signum(self.fsm.vars.max_x) * ( math.abs(self.fsm.vars.max_x) - mps_offset ) ..
                               ") y ( " ..
-                              self.fsm.vars.min_y / math.abs(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) ..
+                              signum(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) ..
                               ", " ..
-                              self.fsm.vars.max_y / math.abs(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) ..
+                              signum(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) ..
                               ")")
 --]]
     return false
@@ -156,6 +163,7 @@ function mps_visible_tag(self, hist_min, use_offset_to_boarder)
   for k,v in pairs( self.fsm.vars.tags ) do
 
     if v:visibility_history() >= hist_min then
+      -- printf("Tag: %s vis his %u", tostring(k), v:visibility_history())
       if tag_searched(self, v:id()) then
         local point_on_obj = {}
 
@@ -178,12 +186,17 @@ function mps_visible_tag(self, hist_min, use_offset_to_boarder)
         if mps_in_zone(self, obj_map.x, obj_map.y, use_offset_to_boarder) then
           table.insert( tags_vis, point_on_obj )
           printf("Found MPS by tag at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
+        else
+          print("MPS not in zone")
         end
+      else
+        print("Not the wanted tag")
       end
     end
   end
 
   if table.getn( tags_vis ) <= 0 then
+    print("Tag not visible?")
     return false
   end
 
