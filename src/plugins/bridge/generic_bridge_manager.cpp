@@ -1,26 +1,30 @@
 #include  "generic_bridge_manager.h"
 
-		GenericBridgeManager::GenericBridgeManager(std::shared_ptr<GenericBridge> bridge
-			,std::shared_ptr<IBridgeProcessor> processor)
-		:processor_(processor)
-		,bridge_(bridge)
-		{
-			subscribe_capability_=std::make_shared<Subscribe>(this->shared_from_this());
-			bridge->register_operation("subscribe",subscribe_capability_);
-
-		}
+		GenericBridgeManager::GenericBridgeManager()
+		{}
 
 		GenericBridgeManager::~GenericBridgeManager(){}
 
 
-		
-		void 
-		GenericBridgeManager::register_operations(){
+		void GenericBridgeManager::register_bridge(std::shared_ptr<GenericBridge> bridge){
+			bridge_=bridge;
+			register_bridge_operations();
+		}
 
-			//Move all operation registration here
+		void GenericBridgeManager::register_processor(std::shared_ptr<IBridgeProcessor> processor){
+			processor_=processor;
+		}
+		
+
+
+		void 
+		GenericBridgeManager::register_bridge_operations(){
+			subscribe_capability_=std::make_shared<Subscribe>(this->shared_from_this());
+			bridge_->register_operation("subscribe",subscribe_capability_);
 		}
 
 
+		//-------Propagating to processor and Handling of publishing
 		bool 
 		GenericBridgeManager::subscribe(std::string topic_name){
 			bool result = processor_->subscribe(topic_name);

@@ -12,17 +12,19 @@
 class GenericBridgeManager : public  IbridgeManager, public std::enable_shared_from_this<GenericBridgeManager>
 {
 	public:
-		GenericBridgeManager(std::shared_ptr<GenericBridge> bridge
-			,std::shared_ptr<IBridgeProcessor> processor);
+		GenericBridgeManager();
 		~GenericBridgeManager();
 
-		void register_operations();
+		void register_bridge( std::shared_ptr<GenericBridge> bridge);
+		void register_processor(std::shared_ptr<IBridgeProcessor> processor);
 
 		bool subscribe(std::string topic_name);
 
 
 	protected:
-		std::shared_ptr<IBridgeProcessor>		processor_;
+		void register_bridge_operations();
+
+		std::shared_ptr<IBridgeProcessor> 		processor_;
 		std::shared_ptr<GenericBridge> 			bridge_;
 		
 		std::shared_ptr<Subscribe>				subscribe_capability_;
