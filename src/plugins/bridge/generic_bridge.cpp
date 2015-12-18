@@ -24,10 +24,10 @@
 			    std::string topic_fullname=std::string(d["topic"].GetString());
 
 			    std::size_t pos = topic_fullname.find(target_prefix_);
-			     if (pos != std::string::npos)
+			     if (pos != std::string::npos && pos < 4)
 			    {
-			    	 std::string topic_name= topic_fullname.erase(pos 
-			    	 	, target_prefix_.length()+1);
+			    	 std::string topic_name= topic_fullname.erase(0
+			    	 	, target_prefix_.length()+pos+1);
 
 			    	 d["topic"].SetString(StringRef(topic_name.c_str()));
 
@@ -77,6 +77,7 @@
 			//TODO//replace with correct instance of bridgeManager not a new one
 			return true;
 		}
+	
 	void 
 	GenericBridge::process_request(std::string jsonStr){
 		incoming(jsonStr);

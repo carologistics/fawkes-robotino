@@ -34,6 +34,7 @@
 
 #include "Web_server.cpp"
 #include "generic_bridge_manager.h"
+#include "blackboard_processor.h"
 
 namespace fawkes {
   class Position3DInterface;
@@ -59,6 +60,7 @@ class BridgeThread
   Web_server* web_server;
 
   std::shared_ptr<GenericBridgeManager> fawkes_bridge_manager_;
+  std::shared_ptr<BridgeBlackBoardProcessor> proc_;
 
 };
 
