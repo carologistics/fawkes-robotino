@@ -29,17 +29,15 @@
 #include <aspect/blocked_timing.h>
 #include <plugins/clips/aspect/clips_manager.h>
 
-
 #include <vector>
 #include <string>
 
 #include "Web_server.cpp"
+#include "generic_bridge_manager.h"
 
 namespace fawkes {
   class Position3DInterface;
 }
-
-class Dispatcher;
 
 class BridgeThread
 : public fawkes::Thread,
@@ -59,6 +57,8 @@ class BridgeThread
  private:
 
   Web_server* web_server;
+
+  std::shared_ptr<GenericBridgeManager> fawkes_bridge_manager_;
 
 };
 

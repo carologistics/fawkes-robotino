@@ -1,3 +1,6 @@
+#ifndef GENERIC_BRIDGE_MANAGER
+#define GENERIC_BRIDGE_MANAGER
+
 #include <string>
 #include <memory>
 
@@ -29,3 +32,5 @@ class GenericBridgeManager : public  IbridgeManager, public std::enable_shared_f
 		
 		std::shared_ptr<Subscribe>				subscribe_capability_;
 };
+
+#endif

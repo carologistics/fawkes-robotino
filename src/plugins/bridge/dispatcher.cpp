@@ -23,10 +23,12 @@ using websocketpp::lib::bind;
 using namespace fawkes;
 
 Dispatcher::Dispatcher(fawkes::Logger *logger
-  ,websocketpp::lib::shared_ptr<Isession> web_s)
+  ,websocketpp::lib::shared_ptr<Isession> web_s
+  ,std::shared_ptr<GenericBridgeManager> fawkes_bridge_manager)
     : rosbridge_started_(false)
     , web_session_(web_s)
     , logger_(logger)
+    ,fawkes_bridge_manager_(fawkes_bridge_manager)
     {}
 
 Dispatcher::~Dispatcher()
@@ -45,7 +47,7 @@ Dispatcher::register_bridges(){
 
 //Register fawkedBridge
  websocketpp::lib::shared_ptr<GenericBridge> fawkes_bridge=websocketpp::lib::make_shared<GenericBridge>(this->shared_from_this(),"blackboard");
- fawkes_bridge_manager_=new GenericBridgeManager(fawkes_bridge,websocketpp::lib::make_shared<IBridgeProcessor>());
+  fawkes_bridge_manager_->register_bridge(fawkes_bridge);
 
  bridges_[bridgeType::FAWKES_BRIDGE] = fawkes_bridge;
  bridges_[bridgeType::FAWKES_BRIDGE]->init();

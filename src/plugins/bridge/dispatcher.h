@@ -10,9 +10,10 @@
 #include <logging/logger.h>
 
 #include "ros_proxy.cpp"
+
 //#include "generic_bridge.h"
 #include "generic_bridge_manager.h"
-#include "interfaces/ibridge_manager.h"
+//#include "interfaces/ibridge_manager.h"
 
 using websocketpp::connection_hdl;
 
@@ -29,11 +30,12 @@ private:
 	websocketpp::lib::shared_ptr<Isession>		web_session_;// public to be able to get the hdl later
 	fawkes::Logger 								*logger_;
 
+	std::shared_ptr<GenericBridgeManager>                                  fawkes_bridge_manager_;
 
 public:
 
 
-	Dispatcher(fawkes::Logger *logger, websocketpp::lib::shared_ptr<Isession> web_s);
+	Dispatcher(fawkes::Logger *logger, websocketpp::lib::shared_ptr<Isession> web_s ,std::shared_ptr<GenericBridgeManager>   fawkes_bridge_manager_);
 	~Dispatcher();
 	void start();
 	void register_bridges();
@@ -44,11 +46,6 @@ public:
 	bool send_to_web(std::string msg);
 
 	bridgeType dispatch(std::string);
-
-
-	///temp Bridge manager intialization:
-	GenericBridgeManager* fawkes_bridge_manager_;
-
 
 };
 

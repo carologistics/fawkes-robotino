@@ -1,10 +1,12 @@
 #include <iostream>
 #include <map>
+#include <memory>
 #include <exception>
 #include <websocketpp/common/thread.hpp>
 
 #include "dispatcher.h"
 #include "web_session.h"
+#include "generic_bridge_manager.h"
 
 #include <logging/logger.h>
 
@@ -18,9 +20,10 @@ using namespace fawkes;
 class Web_server
 {
 public:
-    Web_server(fawkes::Logger *logger) 
+    Web_server(fawkes::Logger *logger,std::shared_ptr<GenericBridgeManager> fawkes_bridge_manager) 
     : m_next_sessionid(1) 
     ,logger_(logger)
+    ,fawkes_bridge_manager_(fawkes_bridge_manager)
     {
         m_server=websocketpp::lib::make_shared<server>();
 
@@ -70,7 +73,7 @@ public:
         tmp_session_->set_id(m_next_sessionid);
         tmp_session_->set_name("web_session_tmp_name");
 
-        dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(logger_,tmp_session_);
+        dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(logger_,tmp_session_,fawkes_bridge_manager_);
         dispatchers_[m_next_sessionid]->start();
 
         m_next_sessionid++;
@@ -122,6 +125,8 @@ private:
     
     websocketpp::lib::shared_ptr<websocketpp::lib::thread>                  m_thread;
     fawkes::Logger                                                          *logger_;
+
+    std::shared_ptr<GenericBridgeManager>                                  fawkes_bridge_manager_;
 };
 
 
