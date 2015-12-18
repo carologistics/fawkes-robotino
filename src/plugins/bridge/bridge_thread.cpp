@@ -23,8 +23,6 @@
 #include <tf/types.h>
 #include <interfaces/Position3DInterface.h>
 
-#include "interfaces/ibridge_processor.h"
-
 using namespace fawkes;
 
 /** @class BridgeThread "bridge_thread.h"
@@ -50,15 +48,16 @@ void
 BridgeThread::init()
 {
 //  pose_if_ = blackboard->open_for_reading<Position3DInterface>("Pose");
-//  proc_  = new BridgeProcessor(clips_env_mgr, logger, config, blackboard);
 //  world_ =new World("f");
  logger-> log_info("I CAN SEE THE WORLD","asddas");
 
- fawkes_bridge_manager_=std::make_shared<GenericBridgeManager> ();
- fawkes_bridge_manager_->register_processor(std::make_shared<IBridgeProcessor>() );
+ proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
 
-  websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>(logger, fawkes_bridge_manager_);
-  web_server->run(6060);
+ fawkes_bridge_manager_=std::make_shared<GenericBridgeManager> ();
+ fawkes_bridge_manager_->register_processor(proc_);
+
+ websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>(logger, fawkes_bridge_manager_);
+ web_server->run(6060);
 }
 
 void

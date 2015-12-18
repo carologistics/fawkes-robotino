@@ -40,6 +40,13 @@
 #include <cstring>
 #include <cstdlib>
 
+#include <iostream>
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
+
+using namespace rapidjson;
+using namespace std;
 
 using namespace fawkes;
 
@@ -73,18 +80,24 @@ BridgeBlackBoardProcessor::~BridgeBlackBoardProcessor()
   interfaces_.clear();
 }
 
-BridgeBlackBoardProcessor::init(){}
-
-
-BridgeBlackboardProcessor::process_request(std::string msg){
-
-}
-
-
 bool
-BridgeBlackBoardProcessor::subscribe(std::string if_type, std::string if_id){
+BridgeBlackBoardProcessor::subscribe(std::string full_name){
 
-  std::string full_name = if_type+"::"+if_id;
+  //TODO::take care of the differnt ways the topic is spelled
+
+   std::size_t pos =full_name.find("::");
+   std::string if_type=full_name;
+   std::string if_id=full_name;
+
+    if (pos != std::string::npos)
+    {
+      if_type.erase(pos,full_name.length());
+      if_id.erase(0 ,pos+2);
+      logger_->log_info("BridgeProcessor::if_type",if_type.c_str());
+      logger_->log_info("BridgeProcessor::if_id",if_id.c_str());
+    
+    }
+
   bool found=false;
 
   InterfaceInfoList *iil=blackboard_->list_all();
@@ -116,8 +129,43 @@ BridgeBlackBoardProcessor::subscribe(std::string if_type, std::string if_id){
     logger_->log_info("FawkesBridge::", "Interface %s was already opened",full_name.c_str());
   }
 
-  return true;
+  return found;
 }
+
+std::string 
+BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
+
+  StringBuffer s;
+      Writer<StringBuffer> writer(s);
+      
+      writer.StartObject();
+      writer.String("hello");
+      writer.String("world");
+      writer.String("t");
+      writer.Bool(true);
+      writer.String("f");
+      writer.Bool(false);
+      writer.String("n");
+      writer.Null();
+      writer.String("i");
+      writer.Uint(123);
+      writer.String("pi");
+      writer.Double(3.1416);
+      writer.String("a");
+      writer.StartArray();
+      for (unsigned i = 0; i < 4; i++)
+          writer.Uint(i);
+      writer.EndArray();
+      writer.EndObject();
+
+      std::cout << s.GetString() << std::endl;
+
+      publish();
+      return s.GetString();
+
+
+}
+
 
 void 
 BridgeBlackBoardProcessor::publish(){

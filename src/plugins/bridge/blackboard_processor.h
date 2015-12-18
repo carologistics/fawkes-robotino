@@ -29,7 +29,9 @@
 #include <list>
 #include <map>
 #include <set>
-#include <generic_bridge.h>
+ 
+#include "interfaces/ibridge_processor.h"
+
 
 namespace fawkes {
   class BlackBoard;
@@ -37,14 +39,16 @@ namespace fawkes {
   class Logger;
 }
 
-class BridgeBlackBoardProcessor: public GenericBridge
+class BridgeBlackBoardProcessor: public IBridgeProcessor
  {
  public:
   BridgeBlackBoardProcessor(fawkes::Logger *logger,fawkes::Configuration *config, fawkes::BlackBoard *blackboard);
 
   virtual ~BridgeBlackBoardProcessor();
 
-  bool subscribe(std::string if_type , std::string if_id);
+  bool subscribe(std::string full_name);
+  std::string read_single_topic(std::string);
+
   void publish();
   void postInterface(fawkes::Interface* iface);
 
