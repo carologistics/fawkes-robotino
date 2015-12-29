@@ -158,44 +158,65 @@ BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
         writer.String(fieldName.c_str(), (SizeType)fieldName.length());
       #endif
 
-
       std::string fieldType= fi.get_typename();
-         
-      if (fieldType== "bool")
-        writer.Bool(fi.get_bool());
 
-      else if (fieldType== "string")
-        writer.String(fi.get_string());
 
-      else if (fieldType== "double")
-        writer.Double(fi.get_double());
+      if (fi.get_length() > 1){
 
-      else if (fieldType== "uint32")
-        writer.Uint(fi.get_uint32());
+       writer.StartArray();
+       if(fieldType == "bool"){
+        bool * arr = fi.get_bools();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Bool(arr[i]);
+        }
+      writer.EndArray();
 
-      else if (fieldType== "int32")
-        writer.Int(fi.get_int32());
+      if(fieldType == "double"){
+        double * arr = fi.get_doubles();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Double(arr[i]);
+        }
+      writer.EndArray();
 
-      else if (fieldType== "int8")
-        writer.Int(fi.get_int8());
+      }
+      else{
+        if (fieldType== "bool")
+          writer.Bool(fi.get_bool());
 
-      else if (fieldType== "uint8")
-        writer.Uint(fi.get_uint8());
+        else if (fieldType== "string")
+          writer.String(fi.get_string());
 
-      else if (fieldType== "int16")
-        writer.Uint(fi.get_int16());
+        else if (fieldType== "double")
+          writer.Double(fi.get_double());
 
-      else if (fieldType== "uint16")
-        writer.Uint(fi.get_uint16());
+        else if (fieldType== "uint32")
+          writer.Uint(fi.get_uint32());
 
-      else if (fieldType== "int64")
-        writer.Int64(fi.get_int64());
+        else if (fieldType== "int32")
+          writer.Int(fi.get_int32());
 
-      else if (fieldType== "uint64")
-        writer.Uint64(fi.get_uint64());
+        else if (fieldType== "int8")
+          writer.Int(fi.get_int8());
 
-      else
-        writer.String(fi.get_value_string());
+        else if (fieldType== "uint8")
+          writer.Uint(fi.get_uint8());
+
+        else if (fieldType== "int16")
+          writer.Uint(fi.get_int16());
+
+        else if (fieldType== "uint16")
+          writer.Uint(fi.get_uint16());
+
+        else if (fieldType== "int64")
+          writer.Int64(fi.get_int64());
+
+        else if (fieldType== "uint64")
+          writer.Uint64(fi.get_uint64());
+
+        else
+          writer.String(fi.get_value_string());
+      }
+
 
      // else if (fieldType== "float")
      //    writer.Uint(fi.get_uint64());
@@ -272,7 +293,7 @@ BridgeBlackBoardProcessor::postInterface(fawkes::Interface* iface){
 
 for (InterfaceFieldIterator fi  = iface->fields(); fi != iface->fields_end(); ++fi){
       logger_->log_info("Name",fi.get_name());
-      logger_->log_info("Type",fi.get_name());
+      logger_->log_info("Type",fi.get_typename());
       logger_->log_info("Value",fi.get_value_string());
 }
 
