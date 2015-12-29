@@ -135,36 +135,102 @@ BridgeBlackBoardProcessor::subscribe(std::string full_name){
 std::string 
 BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
 
-  StringBuffer s;
-      Writer<StringBuffer> writer(s);
-      
-      writer.StartObject();
-      writer.String("hello");
-      writer.String("world");
-      writer.String("t");
-      writer.Bool(true);
-      writer.String("f");
-      writer.Bool(false);
-      writer.String("n");
-      writer.Null();
-      writer.String("i");
-      writer.Uint(123);
-      writer.String("pi");
-      writer.Double(3.1416);
-      writer.String("a");
-      writer.StartArray();
-      for (unsigned i = 0; i < 4; i++)
-          writer.Uint(i);
-      writer.EndArray();
-      writer.EndObject();
+  if (interfaces_.find(full_name) == interfaces_.end()){
+    if(!subscribe(full_name))
+      return "";
+  }
 
-      std::cout << s.GetString() << std::endl;
+  interfaces_[full_name]->read();      
+      //Fields
+
+  StringBuffer s;
+  Writer<StringBuffer> writer(s);      
+  writer.StartObject();
+
+  for (InterfaceFieldIterator fi  = interfaces_[full_name]->fields(); fi != interfaces_[full_name]->fields_end(); ++fi){ 
+
+
+      std::string fieldName= fi.get_name();
+
+      #ifdef RAPIDJSON_HAS_STDSTRING
+        writer.String(fieldName);
+      #else
+        writer.String(fieldName.c_str(), (SizeType)fieldName.length());
+      #endif
+
+
+      std::string fieldType= fi.get_typename();
+         
+      if (fieldType== "bool")
+        writer.Bool(fi.get_bool());
+
+      else if (fieldType== "string")
+        writer.String(fi.get_string());
+
+      else if (fieldType== "double")
+        writer.Double(fi.get_double());
+
+      else if (fieldType== "uint32")
+        writer.Uint(fi.get_uint32());
+
+      else if (fieldType== "int32")
+        writer.Int(fi.get_int32());
+
+      else if (fieldType== "int8")
+        writer.Int(fi.get_int8());
+
+      else if (fieldType== "uint8")
+        writer.Uint(fi.get_uint8());
+
+      else if (fieldType== "int16")
+        writer.Uint(fi.get_int16());
+
+      else if (fieldType== "uint16")
+        writer.Uint(fi.get_uint16());
+
+      else if (fieldType== "int64")
+        writer.Int64(fi.get_int64());
+
+      else if (fieldType== "uint64")
+        writer.Uint64(fi.get_uint64());
+
+      else
+        writer.String(fi.get_value_string());
+
+     // else if (fieldType== "float")
+     //    writer.Uint(fi.get_uint64());
+        
+     //  else if (fieldType== "byte");
+     //  else if (fieldType== "unknown")
+     //  else if (fieldType== "_info->enumtype") find out where is this coming from
+
+      //writer.Null();  find what null means in blackboard...if it exists
+      
+      // writer.StartArray();
+      // for (unsigned i = 0; i < 4; i++)
+      //     writer.Uint(i);
+      // writer.EndArray();
+        
+
+    }
+    writer.EndObject();
+    std::cout << s.GetString() << std::endl;
 
       publish();
+
       return s.GetString();
 
-
 }
+
+
+// void 
+// BridgeBlackBoardProcessor::publish(){
+
+//   for ( ifi_ = interfaces_.begin(); ifi_ != interfaces_.end(); ++ifi_){
+//     postInterface(ifi_->second);
+//   }
+
+// }
 
 
 void 
