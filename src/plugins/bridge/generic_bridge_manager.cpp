@@ -30,7 +30,7 @@
 			bool result = processor_->subscribe(topic_name);
 			if(result){
 				std::cout<< "Subscribed to topic:"<<topic_name<<std::endl;
-				std::string jsonStr= processor_->read_single_topic(topic_name);
+				std::string jsonStr= processor_->publish_topic(topic_name,"");
 				bridge_->outgoing(jsonStr);
 			}
 			else
