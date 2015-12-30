@@ -132,8 +132,10 @@ BridgeBlackBoardProcessor::subscribe(std::string full_name){
   return found;
 }
 
+//TODO::replace all this CRAP with a proper serializer 
 std::string 
-BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
+BridgeBlackBoardProcessor::publish_topic(std::string full_name,std::string id){
+
 
   if (interfaces_.find(full_name) == interfaces_.end()){
     if(!subscribe(full_name))
@@ -141,12 +143,29 @@ BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
   }
 
   interfaces_[full_name]->read();      
-      //Fields
-
+  
   StringBuffer s;
   Writer<StringBuffer> writer(s);      
   writer.StartObject();
 
+  writer.String("op");
+  writer.String("publish");
+
+  if(!id.empty()){
+    writer.String("id");
+    writer.String(id.c_str(),(SizeType)id.length());
+  }
+
+  writer.String("topic");
+  writer.String(full_name.c_str(), (SizeType)full_name.length());
+  
+
+  //TODO::handle JSON  types Object, null and Blackboard type float 
+  
+      //Fields
+  writer.String("msg");
+  //"msg" Json construction: 
+  writer.StartObject();
   for (InterfaceFieldIterator fi  = interfaces_[full_name]->fields(); fi != interfaces_[full_name]->fields_end(); ++fi){ 
 
 
@@ -161,7 +180,7 @@ BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
       std::string fieldType= fi.get_typename();
 
 
-      if (fi.get_length() > 1){
+      if (fi.get_length() > 1 && fieldType != "string"){
 
        writer.StartArray();
 
@@ -225,11 +244,6 @@ BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
           writer.Int(arr[i]);
         }
 
-         else {
-       const char * arr = fi.get_value_string();
-          writer.String(arr);
-        }
-
 
       writer.EndArray();
 
@@ -273,40 +287,23 @@ BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
       }
 
 
-     // else if (fieldType== "float")
-     //    writer.Uint(fi.get_uint64());
-        
      //  else if (fieldType== "byte");
      //  else if (fieldType== "unknown")
      //  else if (fieldType== "_info->enumtype") find out where is this coming from
 
       //writer.Null();  find what null means in blackboard...if it exists
-      
-      // writer.StartArray();
-      // for (unsigned i = 0; i < 4; i++)
-      //     writer.Uint(i);
-      // writer.EndArray();
-        
+
 
     }
-    writer.EndObject();
+    writer.EndObject();//the "msg" Json object
+    writer.EndObject();//the full JSON object
     std::cout << s.GetString() << std::endl;
 
-      publish();
+    publish();
 
-      return s.GetString();
+    return s.GetString();
 
 }
-
-
-// void 
-// BridgeBlackBoardProcessor::publish(){
-
-//   for ( ifi_ = interfaces_.begin(); ifi_ != interfaces_.end(); ++ifi_){
-//     postInterface(ifi_->second);
-//   }
-
-// }
 
 
 void 
@@ -317,6 +314,8 @@ BridgeBlackBoardProcessor::publish(){
   }
 
 }
+
+
 
 void 
 BridgeBlackBoardProcessor::postInterface(fawkes::Interface* iface){

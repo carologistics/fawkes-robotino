@@ -47,7 +47,7 @@ class BridgeBlackBoardProcessor: public IBridgeProcessor
   virtual ~BridgeBlackBoardProcessor();
 
   bool subscribe(std::string full_name);
-  std::string read_single_topic(std::string);
+  std::string publish_topic(std::string topic_full_name, std::string id);
 
   void publish();
   void postInterface(fawkes::Interface* iface);
