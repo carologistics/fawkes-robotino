@@ -164,18 +164,73 @@ BridgeBlackBoardProcessor::read_single_topic(std::string full_name){
       if (fi.get_length() > 1){
 
        writer.StartArray();
+
        if(fieldType == "bool"){
         bool * arr = fi.get_bools();
         for (unsigned i = 0; i < fi.get_length()-1; i++)
           writer.Bool(arr[i]);
         }
-      writer.EndArray();
 
-      if(fieldType == "double"){
+        else if(fieldType == "double"){
         double * arr = fi.get_doubles();
         for (unsigned i = 0; i < fi.get_length()-1; i++)
           writer.Double(arr[i]);
         }
+
+         else if(fieldType == "uint64"){
+        uint64_t * arr = fi.get_uint64s();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Uint64(arr[i]);
+        }
+
+        else if(fieldType == "uint32"){
+        uint32_t * arr = fi.get_uint32s();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Uint(arr[i]);
+        }
+
+        else if(fieldType == "uint16"){
+        uint16_t * arr = fi.get_uint16s();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Uint(arr[i]);
+        }
+
+         else if(fieldType == "uint8"){
+        uint8_t * arr = fi.get_uint8s();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Uint(arr[i]);
+        }
+
+        else if(fieldType == "uint64"){
+        uint64_t * arr = fi.get_uint64s();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Uint64(arr[i]);
+        }
+
+        else if(fieldType == "int32"){
+        int32_t * arr = fi.get_int32s();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Int(arr[i]);
+        }
+
+        else if(fieldType == "int16"){
+        int16_t * arr = fi.get_int16s();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Int(arr[i]);
+        }
+
+         else if(fieldType == "int8"){
+        int8_t * arr = fi.get_int8s();
+        for (unsigned i = 0; i < fi.get_length()-1; i++)
+          writer.Int(arr[i]);
+        }
+
+         else {
+       const char * arr = fi.get_value_string();
+          writer.String(arr);
+        }
+
+
       writer.EndArray();
 
       }
