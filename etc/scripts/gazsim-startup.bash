@@ -38,12 +38,12 @@ EOF
 #default values
 COMMAND=
 CONF=gazsim-configurations/default
-ROS=
+ROS=-no-ros
 SHUTDOWN=
 PORT=11311
 ROBOTINO=
 REPLAY=
-VISION= #,gazsim-light-front,gazsim-puck-detection
+VISION=,gazsim-meta-robotino-vision-high-level
 AGENT=
 FAWKES_BIN=$FAWKES_DIR/bin
 KEEP=
@@ -91,10 +91,10 @@ do
 	     REPLAY=-r\ --record_path\ $OPTARG
 	     ;;
 	 d)
-	     VISION=,gazsim-meta-vision
+	     VISION=,gazsim-meta-robotino-vision-low-level
 	     ;;
 	 a)
-	     AGENT=,clips,clips-agent,clips-protobuf,clips-motor-switch,clips-webview,clips-navgraph,agent-monitor
+	     AGENT=,gazsim-meta-agent
 	     ;;
          k)
              KEEP=yes
