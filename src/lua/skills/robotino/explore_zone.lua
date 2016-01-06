@@ -118,7 +118,7 @@ function mps_in_zone(self, x, y, use_offset)
      x < signum(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) or
      y > signum(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) or
      y < signum(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) then
----[[
+--[[
      printf("MPS in zone x (" .. 
                               signum(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) ..
                               ", " ..
@@ -145,7 +145,7 @@ function tag_searched(self, if_ID)
     return true
   end
 
-  printf("TAG ID: " .. get_tag_id(self, if_ID))
+  --printf("TAG ID: " .. get_tag_id(self, if_ID))
 
   for k,v in pairs(self.fsm.vars.search_tags) do
     if v == get_tag_id(self, if_ID) then
@@ -185,18 +185,18 @@ function mps_visible_tag(self, hist_min, use_offset_to_boarder)
 
         if mps_in_zone(self, obj_map.x, obj_map.y, use_offset_to_boarder) then
           table.insert( tags_vis, point_on_obj )
-          printf("Found MPS by tag at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
+          --printf("Found MPS by tag at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
         else
-          print("MPS not in zone")
+          --print("MPS not in zone")
         end
       else
-        print("Not the wanted tag")
+        --print("Not the wanted tag")
       end
     end
   end
 
   if table.getn( tags_vis ) <= 0 then
-    print("Tag not visible?")
+    --print("Tag not visible?")
     return false
   end
 
@@ -235,7 +235,7 @@ function mps_visible_laser(self, hist_min)
       
       if mps_in_zone( self, obj_map.x, obj_map.y ) then
         table.insert( lines_vis, point_on_obj )
-          printf("Found MPS by laser-lines at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
+          print_debug("Found MPS by laser-lines at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
       end
     end
   end
@@ -400,17 +400,19 @@ function INIT:init()
       end
       self.fsm.vars.poses_to_check = poses_to_check_dir
     end
-    
+
+    --[[ 
     local output = "Explore: \n"
     for i,value in ipairs(self.fsm.vars.poses_to_check) do
       output = output .. value.name .. ": (" .. value.x .. ", " ..value.y .. ", " .. value.ori .. ")\n"
     end
     printf(output)
+    --]]
     self.fsm.vars.poses_to_check_iterator = 1
   end
 
   -- point to check for clusters and to drive to with drive_to_global
-  printf("Walls: x (" .. tostring(wall_min_x) .. tostring(wall_max_x) .. ") y (" .. tostring(wall_min_y) .. tostring(wall_max_y) .. ")")
+  --printf("Walls: x (" .. tostring(wall_min_x) .. tostring(wall_max_x) .. ") y (" .. tostring(wall_min_y) .. tostring(wall_max_y) .. ")")
 
   self.fsm.vars.point_cluster = {}
   if wall_max_x then
@@ -431,7 +433,7 @@ function INIT:init()
     end
   end
   if self.fsm.vars.change_cluster_view then
-    printf("explore_zone: change cluster view point")
+    --printf("explore_zone: change cluster view point")
     if self.fsm.vars.point_cluster.x == self.fsm.vars.max_x then
       self.fsm.vars.point_cluster.x = self.fsm.vars.min_x
     else
@@ -500,14 +502,14 @@ function DRIVE_TO_ZONE:init()
 				ori      = self.fsm.vars.point_cluster.ori,
 				just_ori = true
 			}
-	 printf("Pre Point Zone: (" .. self.args["drive_to_global"].x .. ", " .. self.args["drive_to_global"].y .. ", " .. self.args["drive_to_global"].ori .. ")")
+	 --printf("Pre Point Zone: (" .. self.args["drive_to_global"].x .. ", " .. self.args["drive_to_global"].y .. ", " .. self.args["drive_to_global"].ori .. ")")
 end
 
 function DRIVE_TO_NEXT_EXPLORE_POINT:init()
   --local point = table.remove(self.fsm.vars.poses_to_check, 1)
   local point = self.fsm.vars.poses_to_check[self.fsm.vars.poses_to_check_iterator]
   self.fsm.vars.poses_to_check_iterator = self.fsm.vars.poses_to_check_iterator + 1
-  printf("Explore from " .. point.name .. " (" .. point.x .. ", " .. point.y .. ", " .. point.ori .. ")")
+  --printf("Explore from " .. point.name .. " (" .. point.x .. ", " .. point.y .. ", " .. point.ori .. ")")
   self.args["drive_to_local"] =
 		 { x        = point.x,
 			 y        = point.y,
@@ -592,17 +594,17 @@ function DRIVE_TO_POSSIBLE_MPS:init()
   zone_pose:set_frame("/map")
   zone_pose:set_translation(0, chosen["x_map"])
   zone_pose:set_translation(1, chosen["y_map"])
-  printf("Found maybe ( " .. chosen["tag_id"] .. " ) (at far pose) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. "; " .. chosen["ori_map"] .. " )")
+  --printf("Found maybe ( " .. chosen["tag_id"] .. " ) (at far pose) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. "; " .. chosen["ori_map"] .. " )")
   local q = fawkes.tf.create_quaternion_from_yaw( chosen["ori_map"] )
   zone_pose:set_rotation( 0, q:x() )
   zone_pose:set_rotation( 1, q:y() )
   zone_pose:set_rotation( 2, q:z() )
   zone_pose:set_rotation( 3, q:w() )
-  printf("Found maybe (at far pose) yaw: " .. chosen["ori_map"] .. "q = ( " .. q:x() .. ", " .. q:y() .. ", " .. q:z() .. ", " .. q:w() .. ")")
+  --printf("Found maybe (at far pose) yaw: " .. chosen["ori_map"] .. "q = ( " .. q:x() .. ", " .. q:y() .. ", " .. q:z() .. ", " .. q:w() .. ")")
 
   -- get point to drive to (in front of MPS)
   x, y, ori = pose_in_front_of_mps_calculator(self, chosen)
-  printf("Point drive:  ( " .. x .. " , " .. y .. " , " .. ori .. " )")
+  --printf("Point drive:  ( " .. x .. " , " .. y .. " , " .. ori .. " )")
   
   self.args["drive_to_local"] = { x = x, y = y, ori = ori, just_ori = true}
 end
