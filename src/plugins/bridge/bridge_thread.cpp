@@ -53,7 +53,7 @@ BridgeThread::init()
  // time_var_=new Time(clock);
  // time_var_->stamp();
 
- // proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
+proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
 
  fawkes_bridge_manager_=std::make_shared<GenericBridgeManager> (clock);
  fawkes_bridge_manager_->register_processor(proc_);

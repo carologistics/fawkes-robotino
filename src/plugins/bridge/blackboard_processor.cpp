@@ -157,7 +157,10 @@ BridgeBlackBoardProcessor::publish_topic(std::string full_name,std::string id){
   }
 
   writer.String("topic");
-  writer.String(full_name.c_str(), (SizeType)full_name.length());
+//  writer.String(full_name.c_str(), (SizeType)full_name.length());
+  std::string prefiexed_topic_name= "/blackboard/"+full_name;
+  writer.String(prefiexed_topic_name.c_str(), (SizeType)prefiexed_topic_name.length());
+
   
 
   //TODO::handle JSON  types Object, null and Blackboard type float 
