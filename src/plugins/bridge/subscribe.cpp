@@ -65,6 +65,8 @@ using namespace fawkes;
 
 		bool Subscribe::publish()
 		{
+			  			std::cout <<"Subscribe::publish()....map sizea";
+			  			std::cout <<topic_subscirbtions_.size()<<std::endl;
 			for (std::map<std::string,std::shared_ptr<Subscribtion>>::iterator it= topic_subscirbtions_.begin()
 					;it!=topic_subscirbtions_.end(); ++it ){
 				it->second->publish();
@@ -104,11 +106,11 @@ using namespace fawkes;
 
 		bool //Return wither its time to publish this topic or not
 		Subscribtion::publish(){
-			double throttle_rate= details_list_.front()->throttle_rate; //TODO.Choose the smalest throttle rate not just take the first one
+			//double throttle_rate= details_list_.front()->throttle_rate; //TODO.Choose the smalest throttle rate not just take the first one
 			fawkes::Time now(clock_);
 			std::cout << last_published_time_->in_msec()<<std::endl;
 
-			if ((now.in_msec() - (*last_published_time_).in_msec()) > throttle_rate);
+			if ((now.in_msec() - (*last_published_time_).in_msec()) >= 60);
 			{
 				last_published_time_->stamp();
 				std::cout << "STAMPED"<<std::endl;	

@@ -33,7 +33,7 @@
 		//-------Propagating to processor and Handling of publishing
 		bool 
 		GenericBridgeManager::subscribe(std::string topic_name){
-			bool result = processor_->subscribe(topic_name);
+			bool result = processor_->subscribe(topic_name);// TODO:: catch exceptions
 			if(result){
 				std::cout<< "Subscribed to topic:"<<topic_name<<std::endl;
 				std::string jsonStr= processor_->publish_topic(topic_name,"");
@@ -48,7 +48,9 @@
 		}
 
 		bool GenericBridgeManager::loop(){
+			std::cout<<"LOOP"<<std::endl;
 			if(bridge_inited_ && processor_inited_){
+				std::cout<<"Publishing......."<<std::endl;
 				subscribe_capability_->publish();
 				return true;
 			}
