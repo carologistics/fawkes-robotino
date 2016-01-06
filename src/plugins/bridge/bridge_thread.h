@@ -57,10 +57,10 @@ class BridgeThread
   virtual void finalize();
  private:
 
-  Web_server* web_server;
 
-  std::shared_ptr<GenericBridgeManager> fawkes_bridge_manager_;
-  std::shared_ptr<BridgeBlackBoardProcessor> proc_;
+  std::shared_ptr<GenericBridgeManager>                   fawkes_bridge_manager_;
+  std::shared_ptr<BridgeBlackBoardProcessor>              proc_;
+   websocketpp::lib::shared_ptr<Web_server>               web_server_;
 
 };
 

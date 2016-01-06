@@ -53,27 +53,28 @@ BridgeThread::init()
  // time_var_=new Time(clock);
  // time_var_->stamp();
 
-proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
+  proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
 
- fawkes_bridge_manager_=std::make_shared<GenericBridgeManager> (clock);
- fawkes_bridge_manager_->register_processor(proc_);
+  fawkes_bridge_manager_=std::make_shared<GenericBridgeManager> (clock);
+  fawkes_bridge_manager_->register_processor(proc_);
 
- websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>(logger, fawkes_bridge_manager_);
- web_server->run(6060);
+  web_server_=websocketpp::lib::make_shared<Web_server>(logger, fawkes_bridge_manager_);
+  web_server_->run(6060);
 }
 
 void
 BridgeThread::finalize()
 {
  // blackboard->close(pose_if_);
-  //delete dispatcher_;
- // delete web_server;
+  // delete proc_;
+  // delete fawkes_bridge_manager_;
+  // delete web_server_;//when do i actually need to teminate it..noty sure yet
 }
 
 void
 BridgeThread::loop()
 {
-  //fawkes_bridge_manager_->loop();
+   fawkes_bridge_manager_->loop();
   // if (pose_if_->has_writer()) {
   //   pose_if_->read();
   //   double *r = pose_if_->rotation();
