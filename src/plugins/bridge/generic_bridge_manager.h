@@ -10,18 +10,23 @@
 
 #include "subscribe.h"
 
+namespace fawkes {
+  class Clock;
+}
 
 
 class GenericBridgeManager : public  IbridgeManager, public std::enable_shared_from_this<GenericBridgeManager>
 {
 	public:
-		GenericBridgeManager();
+		GenericBridgeManager(fawkes::Clock *clock);
 		~GenericBridgeManager();
 
 		void register_bridge( std::shared_ptr<GenericBridge> bridge);
 		void register_processor(std::shared_ptr<IBridgeProcessor> processor);
 
 		bool subscribe(std::string topic_name);
+
+		bool loop();
 
 
 	protected:
@@ -31,6 +36,12 @@ class GenericBridgeManager : public  IbridgeManager, public std::enable_shared_f
 		std::shared_ptr<GenericBridge> 			bridge_;
 		
 		std::shared_ptr<Subscribe>				subscribe_capability_;
+
+		bool									bridge_inited_;
+		bool									processor_inited_;
+
+		fawkes::Clock 							*clock_;
 };
+
 
 #endif

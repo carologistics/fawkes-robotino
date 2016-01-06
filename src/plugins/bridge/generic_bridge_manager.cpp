@@ -1,7 +1,11 @@
 #include  "generic_bridge_manager.h"
 
-		GenericBridgeManager::GenericBridgeManager()
-		{}
+		GenericBridgeManager::GenericBridgeManager(fawkes::Clock *clock)
+		:bridge_inited_(false),
+		processor_inited_(false)
+		{
+			clock_=clock;
+		}
 
 		GenericBridgeManager::~GenericBridgeManager(){}
 
@@ -9,17 +13,19 @@
 		void GenericBridgeManager::register_bridge(std::shared_ptr<GenericBridge> bridge){
 			bridge_=bridge;
 			register_bridge_operations();
+			bridge_inited_=true;
 		}
 
 		void GenericBridgeManager::register_processor(std::shared_ptr<IBridgeProcessor> processor){
 			processor_=processor;
+			processor_inited_=true;
 		}
 		
 
 
 		void 
 		GenericBridgeManager::register_bridge_operations(){
-			subscribe_capability_=std::make_shared<Subscribe>(this->shared_from_this());
+			subscribe_capability_=std::make_shared<Subscribe>(clock_,this->shared_from_this());
 			bridge_->register_operation("subscribe",subscribe_capability_);
 		}
 
@@ -36,10 +42,19 @@
 			else
 			{
 				std::cout<<"Topic does not exist in distenation";
+				//unsubscribe it from the bridge
 			}	
 			return result;
 		}
 
+		bool GenericBridgeManager::loop(){
+			if(bridge_inited_ && processor_inited_){
+				subscribe_capability_->publish();
+				return true;
+			}
+			return false;
+		}
+		
 
 
 
