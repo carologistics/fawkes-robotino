@@ -50,10 +50,12 @@ BridgeThread::init()
 //  pose_if_ = blackboard->open_for_reading<Position3DInterface>("Pose");
 //  world_ =new World("f");
  logger-> log_info("I CAN SEE THE WORLD","asddas");
+ // time_var_=new Time(clock);
+ // time_var_->stamp();
 
- proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
+ // proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
 
- fawkes_bridge_manager_=std::make_shared<GenericBridgeManager> ();
+ fawkes_bridge_manager_=std::make_shared<GenericBridgeManager> (clock);
  fawkes_bridge_manager_->register_processor(proc_);
 
  websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>(logger, fawkes_bridge_manager_);
@@ -65,12 +67,13 @@ BridgeThread::finalize()
 {
  // blackboard->close(pose_if_);
   //delete dispatcher_;
-  delete web_server;
+ // delete web_server;
 }
 
 void
 BridgeThread::loop()
 {
+  //fawkes_bridge_manager_->loop();
   // if (pose_if_->has_writer()) {
   //   pose_if_->read();
   //   double *r = pose_if_->rotation();
@@ -82,5 +85,18 @@ BridgeThread::loop()
   // }
 
   // //  proc_->getAgentState();
-  
+
+  //Palying around with time
+
+  // time_var_->stamp();
+  // fawkes::Time now(clock);
+  // now.stamp();
+ 
+  //   std::cout<< "time_is" << now.in_msec() <<std::endl;
+  //   std::cout<< "time_is" << (*time_var_).in_msec() <<std::endl;
+    
+  //   std::cout<< "time_is" << now.in_msec() - (*time_var_).in_msec() <<std::endl;
+    
+  //   std::cout<< "0000000000000000000000000000000000000"  <<std::endl;
+
 }

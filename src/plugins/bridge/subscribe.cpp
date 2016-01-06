@@ -1,13 +1,19 @@
 #include "subscribe.h"
 
+#include <utils/time/time.h>
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
 #include "rapidjson/prettywriter.h" // for stringify JSON
 #include <cstdio>
 
+
+
+using namespace fawkes;
+
 //later::dont forget to propagae the client_id from bridge till here
-		Subscribe::Subscribe(std::shared_ptr <IbridgeManager> manager )
+		Subscribe::Subscribe(fawkes::Clock *clock, std::shared_ptr <IbridgeManager> manager )
 		:Icapability(manager)
 		{
+			clock_=clock;
 			client_id_="";
 		}
 
@@ -33,7 +39,7 @@
 			std::cout<< " TO" << topic_name << std::endl;
 
 			if(topic_subscirbtions_.find(topic_name)==topic_subscirbtions_.end()){
-					topic_subscirbtions_[topic_name]= std::make_shared<Subscribtion>(client_id_,topic_name);
+					topic_subscirbtions_[topic_name]= std::make_shared<Subscribtion>(clock_,client_id_,topic_name);
 			}
 
 			    // Iterating object members
@@ -57,21 +63,56 @@
 		
 		}
 
+		bool Subscribe::publish()
+		{
+			for (std::map<std::string,std::shared_ptr<Subscribtion>>::iterator it= topic_subscirbtions_.begin()
+					;it!=topic_subscirbtions_.end(); ++it ){
+				it->second->publish();
+			}
+
+			return true;
+		
+		}
 
 
-		void
-		Subscribe::publish(){}
+//------------Subscribtion Object
 
 
-		Subscribtion::Subscribtion(std::string client_id, std::string topic)
+		Subscribtion::Subscribtion(fawkes::Clock *clock, std::string client_id, std::string topic)
 		:client_id_(client_id)
 		,topic_(topic)
-		{}
+		{
+			clock_=clock;
+		}
 
 		Subscribtion::~Subscribtion(){}
 
 		void
 		Subscribtion::subscribe(details *subscirbe_args){
+  			
   			std::cout <<"REACHED THE SUBSCRIBTION STAGE WITH "<<topic_<<std::endl;
 			details_list_.push_back(subscirbe_args);
+			
+			last_published_time_=new Time(clock_);
+			last_published_time_->stamp();
+			std::cout << last_published_time_->in_msec()<<std::endl;	
+
+		}
+		
+		//Will be called by the publich method in Subscribe  
+		//for each iteration to know whither i should publish this topic or not yet
+
+		bool //Return wither its time to publish this topic or not
+		Subscribtion::publish(){
+			double throttle_rate= details_list_.front()->throttle_rate; //TODO.Choose the smalest throttle rate not just take the first one
+			fawkes::Time now(clock_);
+			std::cout << last_published_time_->in_msec()<<std::endl;
+
+			if ((now.in_msec() - (*last_published_time_).in_msec()) > throttle_rate);
+			{
+				last_published_time_->stamp();
+				std::cout << "STAMPED"<<std::endl;	
+				return true;
+			}
+			return false;
 		}
