@@ -19,12 +19,13 @@ namespace fawkes {
 //using namespace fawkes;
 
 struct  details{
+	details(): subscribtion_id(""),throttle_rate(0){}
 	std::string subscribtion_id;
 	std::string msg_type;
-   	double throttle_rate;
+   	int throttle_rate;
    	int queue_length;
-   	std::string fragment_size;
-   	// compression": compression
+   	int fragment_size;
+   	std::string compression;
 };
 
 
