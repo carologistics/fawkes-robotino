@@ -34,7 +34,7 @@ clips-agent:
   # each loop. This can be used to trigger loop events in CLIPS.
   assert-time-each-loop: true
 
-  llsf2015:
+  rcll2016:
     enable-sim: true
     play-exploration-without-refbox: false
 

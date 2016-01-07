@@ -39,10 +39,10 @@ clips-agent:
  
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  agent: llsf2015/llsf2015
+  agent: rcll2016/rcll2016
 
  
-  llsf2015:
+  rcll2016:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: nothing
         
