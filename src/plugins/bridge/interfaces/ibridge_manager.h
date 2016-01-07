@@ -4,6 +4,8 @@
 class IbridgeManager{
 	public:
 		virtual bool subscribe(std::string topic_name)=0;
+
+		virtual bool publish(std::string topic_name)=0;
 };
 
 #endif

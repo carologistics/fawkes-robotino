@@ -40,9 +40,11 @@ class Subscribtion
 
 		bool publish();
 
+		const char* get_topic_name();
+
+		std::string 				topic_;
 	private:
 		std::string 				client_id_;
-		std::string 				topic_;
 		//handler 		 publish			find a way to register it
 		std::list<details*> 		details_list_;
 		fawkes::Clock 				*clock_;

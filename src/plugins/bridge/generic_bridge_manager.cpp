@@ -47,7 +47,16 @@
 			return result;
 		}
 
+		bool GenericBridgeManager::publish(std::string topic_name){
+				std::string jsonStr= processor_->publish_topic(topic_name,"");
+				bridge_->outgoing(jsonStr);
+
+				return true;
+		}
+
 		bool GenericBridgeManager::loop(){
+			//Note: there is a calling cycle here the subscibe->publish ends up calling the manager after all
+			//not sure if that is okay or not....anyways..this is just for testing at the moment..later the event can be caused by someone else
 			std::cout<<"LOOP"<<std::endl;
 			if(bridge_inited_ && processor_inited_){
 				std::cout<<"Publishing......."<<std::endl;

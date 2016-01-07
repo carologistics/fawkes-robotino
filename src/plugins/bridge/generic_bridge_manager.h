@@ -25,6 +25,7 @@ class GenericBridgeManager : public  IbridgeManager, public std::enable_shared_f
 		void register_processor(std::shared_ptr<IBridgeProcessor> processor);
 
 		bool subscribe(std::string topic_name);
+		bool publish(std::string topic_name);
 
 		bool loop();
 
