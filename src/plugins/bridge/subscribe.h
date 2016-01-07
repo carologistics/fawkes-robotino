@@ -14,6 +14,7 @@ using namespace rapidjson;
 namespace fawkes {
   class Clock;
   class Time;
+  class Mutex;
  }
 
 //using namespace fawkes;
@@ -50,6 +51,9 @@ class Subscribtion
 		std::list<details*> 		details_list_;
 		fawkes::Clock 				*clock_;
 		fawkes::Time 				*last_published_time_;
+
+		fawkes::Mutex				*sub_list_mutex_;
+		fawkes::Mutex 				*time_mutex_;
 };
 
 
