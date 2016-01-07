@@ -9,6 +9,8 @@
 
 using namespace fawkes;
 
+		bool compare_throttle_rate(details *first, details *second){return (first->throttle_rate <= second->throttle_rate);	}
+
 //later::dont forget to propagae the client_id from bridge till here
 		Subscribe::Subscribe(fawkes::Clock *clock, std::shared_ptr <IbridgeManager> manager )
 		:Icapability(manager)
@@ -30,7 +32,7 @@ using namespace fawkes;
 		}
 
 		void 
-	Subscribe::subscirbe(Document &d){
+		Subscribe::subscirbe(Document &d){
 
 			std::cout<< "Subscribing";
 
@@ -39,27 +41,29 @@ using namespace fawkes;
 			std::cout<< " TO" << topic_name << std::endl;
 
 			if(topic_subscirbtions_.find(topic_name)==topic_subscirbtions_.end()){
-					topic_subscirbtions_[topic_name]= std::make_shared<Subscribtion>(clock_,client_id_,topic_name);
+					if (manager_->subscribe(topic_name))
+						topic_subscirbtions_[topic_name]= std::make_shared<Subscribtion>(clock_,client_id_,topic_name);
+					else
+						return;
 			}
 
-			    // Iterating object members
-    			static const char* kTypeNames[] = { "Null", "False", "True", "Object", "Array", "String", "Number" };
-		    	for (Value::ConstMemberIterator itr = d.MemberBegin(); itr != d.MemberEnd(); ++itr)
-        		printf("Type of member %s is %s\n", itr->name.GetString(), kTypeNames[itr->value.GetType()]);
 
-
-        	///todo:: make sure the members are there before quering them
 			details subscribe_args;
+			if(d.HasMember("id"))
 			subscribe_args.subscribtion_id=std::string(d["id"].GetString());
+			if(d.HasMember("type"))
 			subscribe_args.msg_type=std::string(d["type"].GetString());
-			subscribe_args.throttle_rate=d["throttle_rate"].GetDouble();
+			if(d.HasMember("throttle_rate"))
+			subscribe_args.throttle_rate=d["throttle_rate"].GetInt();
+			if(d.HasMember("queue_length"))
 			subscribe_args.queue_length=d["queue_length"].GetInt();
-			// // subscribe_args.fragment_size=std::string(d["fragment_size"].GetString());
+			if(d.HasMember("fragment_size"))
+			subscribe_args.fragment_size=d["fragment_size"].GetInt();
+			if(d.HasMember("compression"))
+			subscribe_args.compression=std::string(d["compression"].GetString());	
 
 			topic_subscirbtions_[topic_name]->subscribe(&subscribe_args);
 
-			//TODO::What happens if topic not found or could not subscribe
-			manager_->subscribe(topic_name);
 		
 		}
 
@@ -78,7 +82,7 @@ using namespace fawkes;
 		}
 
 
-//------------Subscribtion Object
+		//--------------------------------------------SUBSCBTION
 
 
 		Subscribtion::Subscribtion(fawkes::Clock *clock, std::string client_id, std::string topic)
@@ -95,6 +99,8 @@ using namespace fawkes;
   			
   			std::cout <<"REACHED THE SUBSCRIBTION STAGE WITH "<<topic_<<std::endl;
 			details_list_.push_back(subscirbe_args);
+
+			details_list_.sort(compare_throttle_rate);
 			
 			last_published_time_=new Time(clock_);
 			last_published_time_->stamp();
@@ -107,7 +113,8 @@ using namespace fawkes;
 
 		bool //Return wither its time to publish this topic or not
 		Subscribtion::publish(){
-			double throttle_rate= details_list_.front()->throttle_rate; //TODO.Choose the smalest throttle rate not just take the first one
+
+			int throttle_rate=details_list_.front()->throttle_rate; //should be garantead to be the smallest
 			fawkes::Time now(clock_);
 			std::cout << last_published_time_->in_msec()<<std::endl;
 
@@ -121,4 +128,6 @@ using namespace fawkes;
 		}
 
 
+
 		const char* Subscribtion::get_topic_name() {return topic_.c_str();}
+	
