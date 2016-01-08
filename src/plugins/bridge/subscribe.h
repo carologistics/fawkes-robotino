@@ -20,7 +20,7 @@ namespace fawkes {
 //using namespace fawkes;
 
 struct  details{
-	details(): subscribtion_id(""),throttle_rate(0){}
+	details(): subscribtion_id(""),msg_type(""),throttle_rate(0),queue_length(1),fragment_size(0),compression("") {}
 	std::string subscribtion_id;
 	std::string msg_type;
    	int throttle_rate;
@@ -37,15 +37,16 @@ class Subscribtion
 		Subscribtion(fawkes::Clock *clock, std::string client_id, std::string topic);
 		~Subscribtion();
 
-		void subscribe(details *subscribe_args);
-		void unsubscribe();
+		void 		subscribe(details *subscribe_args);
+		bool		unsubscribe(std::string subs_id);
 
-		bool publish();
+		bool 		publish();
 
-		const char* get_topic_name();
-
-		std::string 				topic_;
+		std::string get_topic_name();
+		int 		get_subscribtion_size();
+	
 	private:
+		std::string 				topic_;
 		std::string 				client_id_;
 		//handler 		 publish			find a way to register it
 		std::list<details*> 		details_list_;
@@ -65,7 +66,7 @@ class Subscribe
 		~Subscribe();
 
 		void subscirbe(Document &d);
-		void unsubscirbe(Document &d);
+		bool unsubscribe(Document &d);
 
 		bool publish();
 
@@ -77,5 +78,7 @@ class Subscribe
 		fawkes::Clock 				*clock_;
 		std::string client_id_;
 
+		fawkes::Mutex				*random_mutex_;
+		
 };
 
