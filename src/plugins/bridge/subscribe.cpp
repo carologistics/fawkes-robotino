@@ -19,6 +19,7 @@ using namespace fawkes;
 		{
 			clock_=clock;
 			client_id_="";
+			random_mutex_=new Mutex();
 
 		}
 
@@ -30,6 +31,8 @@ using namespace fawkes;
 
 			if (op_name=="subscribe")
 				subscirbe(d);
+			else if (op_name=="unsubscribe")
+				unsubscribe(d);			
 			else
 				std::cout<< "No operation with this name in this capability"<<std::endl;
 		}
@@ -50,8 +53,8 @@ using namespace fawkes;
 					//	return;
 			}
 
-
-			details *subscribe_args=new details();
+		
+			details* subscribe_args=new details();
 			if(d.HasMember("id"))
 				subscribe_args->subscribtion_id=std::string(d["id"].GetString());
 			if(d.HasMember("type"))
@@ -65,9 +68,38 @@ using namespace fawkes;
 			if(d.HasMember("compression"))
 				subscribe_args->compression=std::string(d["compression"].GetString());	
 
+			
 			topic_subscirbtions_[topic_name]->subscribe(subscribe_args);
-
 		
+		}
+
+		//return true is there topic no longer exists in the list..Including if it wasnot there from originaly
+		bool Subscribe::unsubscribe(Document &d){
+			std::string topic_name=std::string(d["topic"].GetString());
+			if(topic_subscirbtions_.find(topic_name)==topic_subscirbtions_.end()){
+				std::cout<<"No topic found to unsubscribe from"<<std::endl;
+				//todo::maybe u have to try remove it from manager just in case it was not removed
+				return true;
+			}
+				
+			if(d.HasMember("id")){
+				std::string subs_id=std::string(d["id"].GetString());
+				topic_subscirbtions_[topic_name]->unsubscribe(subs_id);
+				
+				//was it the last subscribtion
+				if(topic_subscirbtions_[topic_name]->get_subscribtion_size() == 0)
+				{
+					//remove the whole object
+					topic_subscirbtions_.erase(topic_name);
+					//manager_->unsubscribe(topic_name);
+				}
+						
+				return true;
+			}
+			else 
+				std::cout << "there was no Id send" <<std::endl;
+
+			return false;
 		}
 
 		bool Subscribe::publish()
@@ -77,8 +109,11 @@ using namespace fawkes;
 
 			for (std::map<std::string,std::shared_ptr<Subscribtion>>::iterator it= topic_subscirbtions_.begin()
 					;it!=topic_subscirbtions_.end(); ++it ){
-				if (it->second->publish())//is it time to publish
-					manager_->publish(it->second->topic_);
+
+				bool must_publish= it->second->publish();
+				
+				if (must_publish)
+					manager_->publish(it->second->get_topic_name());
 			}
 
 			return true;
@@ -107,40 +142,57 @@ using namespace fawkes;
 
   			sub_list_mutex_->lock();
 			details_list_.push_back(subscirbe_args);
-
 			details_list_.sort(compare_throttle_rate);
 			sub_list_mutex_->unlock();
 			
 			time_mutex_->lock();
 			last_published_time_=new Time(clock_);
 			last_published_time_->stamp();
-			std::cout << last_published_time_->in_msec()<<std::endl;	
 			time_mutex_->unlock();
 		}
 		
-		//Will be called by the publich method in Subscribe  
-		//for each iteration 	to know whither i should publish this topic or not yet
+		bool
+		Subscribtion::unsubscribe(std::string subs_id){
+			bool found =false;
+
+			for (std::list<details*>::iterator it= details_list_.begin() ;it!=details_list_.end(); ++it ){
+				if ( (*it)->subscribtion_id == subs_id && !subs_id.empty() )
+				{
+					found = true;
+  					sub_list_mutex_->lock();
+					details_list_.erase(it);
+  					sub_list_mutex_->unlock();
+
+					break;
+				}
+			}	
+
+			return found;		
+		}
 
 		bool //Return wither its time to publish this topic or not
 		Subscribtion::publish(){
 
-			sub_list_mutex_->lock();
-			int throttle_rate=details_list_.front()->throttle_rate; //should be garantead to be the smallest
-			sub_list_mutex_->unlock();
+			if(get_subscribtion_size() > 0){
 
-			fawkes::Time now(clock_);
-			std::cout << last_published_time_->in_msec()<<std::endl;
-			std::cout << throttle_rate <<std::endl;
-			std::cout<< (now.in_msec() - (*last_published_time_).in_msec()) <<std::endl;
+				sub_list_mutex_->lock();
+				int throttle_rate=details_list_.front()->throttle_rate; //should be garantead to be the smallest
+				sub_list_mutex_->unlock();
 
-			if ( (now.in_msec() - (*last_published_time_).in_msec()) >= throttle_rate)
-			{
 				time_mutex_->lock();
-				last_published_time_->stamp();
+				fawkes::Time now(clock_);
+				int time_passed= (now.in_msec() - (*last_published_time_).in_msec()); 
 				time_mutex_->unlock();
 
-				std::cout << "STAMPED"<<std::endl;	
-				return true;
+				if (time_passed >= throttle_rate)
+				{
+					time_mutex_->lock();
+					last_published_time_->stamp();
+					time_mutex_->unlock();
+
+					std::cout << "STAMPED"<<std::endl;	
+					return true;
+				}
 			}
 
 			return false;
@@ -148,5 +200,13 @@ using namespace fawkes;
 
 
 
-		const char* Subscribtion::get_topic_name() {return topic_.c_str();}
+		std::string Subscribtion::get_topic_name() {return topic_;}
+
+		int Subscribtion::get_subscribtion_size(){
+			sub_list_mutex_->lock();
+			int num_of_subscribtions = details_list_.size();
+			sub_list_mutex_->unlock();
+
+			return num_of_subscribtions;
+		}
 	
