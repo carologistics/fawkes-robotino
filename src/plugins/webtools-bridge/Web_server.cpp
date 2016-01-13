@@ -20,10 +20,10 @@ using namespace fawkes;
 class Web_server
 {
 public:
-    Web_server(fawkes::Logger *logger,std::shared_ptr<GenericBridgeManager> fawkes_bridge_manager) 
+    Web_server(fawkes::Logger *logger,std::shared_ptr<BridgeManager> bridge_manager) 
     : m_next_sessionid(1) 
     ,logger_(logger)
-    ,fawkes_bridge_manager_(fawkes_bridge_manager)
+    ,bridge_manager_(bridge_manager)
     {
         m_server=websocketpp::lib::make_shared<server>();
 
@@ -66,16 +66,15 @@ public:
 
     void on_open(connection_hdl hdl) {
 
-        hdl_ids_[hdl]=m_next_sessionid;
 
         tmp_session_->set_connection_hdl(hdl);
         tmp_session_->set_endpoint(m_server);
         tmp_session_->set_id(m_next_sessionid);
         tmp_session_->set_name("web_session_tmp_name");
+        hdl_ids_[hdl]=tmp_session_;
 
-        dispatchers_[m_next_sessionid]= websocketpp::lib::make_shared<Dispatcher>(logger_,tmp_session_,fawkes_bridge_manager_);
-        dispatchers_[m_next_sessionid]->start();
-
+        m_server->get_con_from_hdl(hdl)->set_message_handler(bind(&Web_server::on_message,this,::_1,::_2));
+        
         m_next_sessionid++;
         //ForDebuging:: Print on http req 
         // for (std::map<std::string,std::string>::const_iterator i = tmp_session_->http_req.begin(); i != tmp_session_->http_req.end(); ++i)
@@ -101,6 +100,19 @@ public:
        dispatchers_.erase(session_id);
     }
 
+    //finds the reqeusting sessions by  its hdl. extracts the pay load from the msg. Forwards both to incoming of the bridge manger
+    void
+    on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr web_msg)
+    {
+
+        websocketpp::lib::shared_ptr<web_session>  session = hdl_ids_ [hdl];
+
+        std::string jsonString = web_msg -> get_payload();
+
+        bridge_manager_ -> incoming(jsonString,session);
+
+        logger_ -> log_info("Webtools-Bridge:","Msg Received!");
+    }
 
     void run(uint16_t port) {
         m_server->listen(port);
@@ -111,22 +123,18 @@ public:
 
 
 private:
-    typedef std::map<connection_hdl,int,std::owner_less<connection_hdl>>    hdl_list;
-    // typedef std::map<connection_hdl,int>    hdl_list;
-    typedef std::map<int, websocketpp::lib::shared_ptr<Dispatcher> >        disp_list;
-    
-    hdl_list                                                                hdl_ids_;
-    disp_list                                                               dispatchers_;
+    std::map<connection_hdl, websocketpp::lib::shared_ptr<web_session>
+        ,std::owner_less<connection_hdl>>                                              hdl_ids_;
 
-    websocketpp::lib::shared_ptr<server>                                    m_server;
-    websocketpp::lib::shared_ptr<web_session>                               tmp_session_; //this only serve to collect the session data before intializing the dispaticher
+    websocketpp::lib::shared_ptr<server>                                               m_server;
+    websocketpp::lib::shared_ptr<web_session>                                          tmp_session_; //this only serve to collect the session data before intializing the dispaticher
     
-    int                                                                     m_next_sessionid;
+    unsigned int                                                                       m_next_sessionid;
     
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread>                  m_thread;
-    fawkes::Logger                                                          *logger_;
+    websocketpp::lib::shared_ptr<websocketpp::lib::thread>                             m_thread;
+    fawkes::Logger                                                                     *logger_;
 
-    std::shared_ptr<GenericBridgeManager>                                  fawkes_bridge_manager_;
+    std::shared_ptr<BridgeManager>                                                     bridge_manager_;
 };
 
 
