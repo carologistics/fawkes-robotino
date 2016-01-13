@@ -1,0 +1,73 @@
+#include  "generic_bridge_manager.h"
+
+		GenericBridgeManager::GenericBridgeManager(fawkes::Clock *clock)
+		:bridge_inited_(false),
+		processor_inited_(false)
+		{
+			clock_=clock;
+		}
+
+		GenericBridgeManager::~GenericBridgeManager(){}
+
+
+		void GenericBridgeManager::register_bridge(std::shared_ptr<GenericBridge> bridge){
+			bridge_=bridge;
+			register_bridge_operations();
+			bridge_inited_=true;
+		}
+
+		void GenericBridgeManager::register_processor(std::shared_ptr<IBridgeProcessor> processor){
+			processor_=processor;
+			processor_inited_=true;
+		}
+		
+
+
+		void 
+		GenericBridgeManager::register_bridge_operations(){
+			subscribe_capability_=std::make_shared<Subscribe>(clock_,this->shared_from_this());
+			bridge_->register_operation("subscribe",subscribe_capability_);
+			bridge_->register_operation("unsubscribe",subscribe_capability_);
+
+		}
+
+
+		//-------Propagating to processor and Handling of publishing
+		bool 
+		GenericBridgeManager::subscribe(std::string topic_name){
+			bool result = processor_->subscribe(topic_name);// TODO:: catch exceptions
+			if(result){
+				std::cout<< "Subscribed to topic:"<<topic_name<<std::endl;
+				std::string jsonStr= processor_->publish_topic(topic_name,"");
+				bridge_->outgoing(jsonStr);
+			}
+			else
+			{
+				std::cout<<"Topic does not exist in distenation";
+				//unsubscribe it from the bridge
+			}	
+			return result;
+		}
+
+		bool GenericBridgeManager::publish(std::string topic_name){
+				std::string jsonStr= processor_->publish_topic(topic_name,"");
+				bridge_->outgoing(jsonStr);
+
+				return true;
+		}
+
+		bool GenericBridgeManager::loop(){
+			//Note: there is a calling cycle here the subscibe->publish ends up calling the manager after all
+			//not sure if that is okay or not....anyways..this is just for testing at the moment..later the event can be caused by someone else
+			std::cout<<"LOOP"<<std::endl;
+			if(bridge_inited_ && processor_inited_){
+				std::cout<<"Publishing......."<<std::endl;
+				subscribe_capability_->publish();
+				return true;
+			}
+			return false;
+		}
+		
+
+
+
