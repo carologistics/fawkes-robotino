@@ -59,7 +59,7 @@ NavGraphWithMPSGeneratorInterface::NavGraphWithMPSGeneratorInterface() : Interfa
   add_messageinfo("SetExplorationZonesMessage");
   add_messageinfo("SetWaitZonesMessage");
   add_messageinfo("UpdateStationByTagMessage");
-  unsigned char tmp_hash[] = {0x28, 0x85, 0xa8, 0x9b, 0x36, 0x90, 0x1c, 0xce, 0x4b, 0xd0, 0x7d, 0x32, 0xc7, 0xe4, 0x5d, 0xa0};
+  unsigned char tmp_hash[] = {0x61, 0xde, 0x75, 0x88, 0x4d, 0xa3, 0x30, 0xd6, 0x10, 0xd2, 0x5e, 0x75, 0x43, 0xcd, 0x91, 0xf5};
   set_hash(tmp_hash);
 }
 
@@ -575,27 +575,27 @@ NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::clone() const
 
 
 /** Constructor with initial values.
- * @param ini_id initial value for id
+ * @param ini_name initial value for name
  * @param ini_side initial value for side
  * @param ini_frame initial value for frame
  * @param ini_tag_translation initial value for tag_translation
  * @param ini_tag_rotation initial value for tag_rotation
  */
-NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTagMessage(const char * ini_id, const Side ini_side, const char * ini_frame, const double * ini_tag_translation, const double * ini_tag_rotation) : Message("UpdateStationByTagMessage")
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTagMessage(const char * ini_name, const Side ini_side, const char * ini_frame, const double * ini_tag_translation, const double * ini_tag_rotation) : Message("UpdateStationByTagMessage")
 {
   data_size = sizeof(UpdateStationByTagMessage_data_t);
   data_ptr  = malloc(data_size);
   memset(data_ptr, 0, data_size);
   data      = (UpdateStationByTagMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
-  strncpy(data->id, ini_id, 64);
+  strncpy(data->name, ini_name, 64);
   data->side = ini_side;
   strncpy(data->frame, ini_frame, 32);
   memcpy(data->tag_translation, ini_tag_translation, sizeof(double) * 3);
   memcpy(data->tag_rotation, ini_tag_rotation, sizeof(double) * 4);
   enum_map_Side[(int)INPUT] = "INPUT";
   enum_map_Side[(int)OUTPUT] = "OUTPUT";
-  add_fieldinfo(IFT_STRING, "id", 64, data->id);
+  add_fieldinfo(IFT_STRING, "name", 64, data->name);
   add_fieldinfo(IFT_ENUM, "side", 1, &data->side, "Side", &enum_map_Side);
   add_fieldinfo(IFT_STRING, "frame", 32, data->frame);
   add_fieldinfo(IFT_DOUBLE, "tag_translation", 3, &data->tag_translation);
@@ -611,7 +611,7 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTag
   data_ts   = (message_data_ts_t *)data_ptr;
   enum_map_Side[(int)INPUT] = "INPUT";
   enum_map_Side[(int)OUTPUT] = "OUTPUT";
-  add_fieldinfo(IFT_STRING, "id", 64, data->id);
+  add_fieldinfo(IFT_STRING, "name", 64, data->name);
   add_fieldinfo(IFT_ENUM, "side", 1, &data->side, "Side", &enum_map_Side);
   add_fieldinfo(IFT_STRING, "frame", 32, data->frame);
   add_fieldinfo(IFT_DOUBLE, "tag_translation", 3, &data->tag_translation);
@@ -637,38 +637,38 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTag
 }
 
 /* Methods */
-/** Get id value.
+/** Get name value.
  * 
       ID of the obstacle. Can later be used to remove it again.
     
- * @return id value
+ * @return name value
  */
 char *
-NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::id() const
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::name() const
 {
-  return data->id;
+  return data->name;
 }
 
-/** Get maximum length of id value.
- * @return length of id value, can be length of the array or number of 
+/** Get maximum length of name value.
+ * @return length of name value, can be length of the array or number of 
  * maximum number of characters for a string
  */
 size_t
-NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::maxlenof_id() const
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::maxlenof_name() const
 {
   return 64;
 }
 
-/** Set id value.
+/** Set name value.
  * 
       ID of the obstacle. Can later be used to remove it again.
     
- * @param new_id new id value
+ * @param new_name new name value
  */
 void
-NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::set_id(const char * new_id)
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::set_name(const char * new_name)
 {
-  strncpy(data->id, new_id, sizeof(data->id));
+  strncpy(data->name, new_name, sizeof(data->name));
 }
 
 /** Get side value.

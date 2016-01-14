@@ -52,7 +52,7 @@
       given as a centroid in X-Y ground-support plane of global frame,
       typical /map frame.
     </comment>
-    <field type="string" name="id" length="64">
+    <field type="string" name="name" length="64">
       ID of the obstacle. Can later be used to remove it again.
     </field>
     <field type="Side" name="side">Which side are we reporting.</field>
