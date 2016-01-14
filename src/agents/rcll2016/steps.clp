@@ -64,7 +64,7 @@
     (assert (mps-instruction (machine ?mps) (gate ?gate)))
   )
   (if (and (eq ?mtype RS)
-           (eq ?task-name add-first-ring)) then
+           (member$ ?task-name (create$ add-first-ring add-additional-ring))) then
     (assert (mps-instruction (machine ?mps) (ring-color ?ring) (lock ?mps)))
   )
 )

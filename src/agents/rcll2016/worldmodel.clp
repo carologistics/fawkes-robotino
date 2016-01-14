@@ -101,7 +101,7 @@
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running) (ring ?ring-color))
   (ring (color ?ring-color) (req-bases ?rb))
-  (task (name add-first-ring))
+  (task (name add-first-ring|add-additional-ring))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?rsf <- (ring-station (name ?mps) (bases-loaded ?bl))
   ?hf <- (holding ?product-id)
