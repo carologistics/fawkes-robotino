@@ -26,7 +26,7 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"mps_align"}
 depends_interfaces = {
    { v="bb_signal", type ="RobotinoLightInterface", id = "/machine-signal/best" },
-   { v="bb_output", type ="RobotinoLightInterface", id = "Light determined" },
+   { v="bb_output", type ="RobotinoLightInterface", id = "Light determined", writing=true },
    { v="bb_sw_machine_signal", type="SwitchInterface", id="/machine-signal" },
    { v="bb_signal_hint", type="SignalHintInterface", id="/machine-signal/position-hint" },
    { v="bb_sw_laser", type="SwitchInterface", id="laser-lines" }

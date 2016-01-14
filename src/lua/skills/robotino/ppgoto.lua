@@ -27,7 +27,7 @@ name               = "ppgoto"
 fsm                = SkillHSM:new{name=name, start="PPGOTO", debug=false}
 depends_skills     = { "goto" }
 depends_interfaces = {
-   {v = "ppnavi", type = "NavigatorInterface"}
+   {v = "ppnavi", type = "NavigatorInterface", id="Pathplan"}
 }
 
 documentation      = [==[Pathplan goto skill.

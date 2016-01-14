@@ -37,6 +37,10 @@ function SWITCH:init()
       delivery       = deliverySwitch
    }
    iface = ifmap[self.fsm.vars.iface]
+	 for k,v in pairs(ifmap) do
+			printf("** %s: %s", k, v:uid())
+	 end
+	 printf("Called for %s (%s)", self.fsm.vars.iface, iface:uid())
    if self.fsm.vars.enable then
       msg = iface.EnableSwitchMessage:new()
    else

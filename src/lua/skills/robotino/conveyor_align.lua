@@ -25,7 +25,7 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move","approach_mps", "ax12gripper"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
-   {v = "conveyor_0", type = "Position3DInterface"},
+   {v = "conveyor_0", type = "Position3DInterface", id="mps_conveyor"},
    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 

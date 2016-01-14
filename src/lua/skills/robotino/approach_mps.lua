@@ -27,7 +27,7 @@ name               = "approach_mps"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
-   {v = "sensor", type="RobotinoSensorInterface"},
+   {v = "sensor", type="RobotinoSensorInterface", id="Robotino"},
 }
 
 documentation      = [==[
