@@ -66,13 +66,13 @@
     (bind ?any-tag-to-add TRUE)
     ; report tag position to navgraph generator
     (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
-    (blackboard-set-msg-field ?msg "id" (str-cat ?ft:name))
+    (blackboard-set-msg-field ?msg "name" (str-cat ?ft:name))
     (blackboard-set-msg-field ?msg "side" ?ft:side)
     (blackboard-set-msg-field ?msg "frame" ?ft:frame)
     (blackboard-set-msg-multifield ?msg "tag_translation" ?ft:trans)
     (blackboard-set-msg-multifield ?msg "tag_rotation" ?ft:rot)
     (blackboard-send-msg ?msg)
-    (printout t "Send UpdateStationByTagMessage: id " (str-cat ?ft:name) 
+    (printout t "Send UpdateStationByTagMessage: name " (str-cat ?ft:name) 
 	      " side " ?ft:side
 	      " frame " ?ft:frame
 	      " trans " ?ft:trans
