@@ -19,6 +19,23 @@ class AX12GripperInterface : public Interface
     Open_AngleMessage();
     ~Open_AngleMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
     float angle();
     void set_angle(const float new_angle);
     int maxlenof_angle() const;
@@ -30,6 +47,23 @@ class AX12GripperInterface : public Interface
     CloseLoadMessage();
     ~CloseLoadMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
     float offset();
     void set_offset(const float new_offset);
     int maxlenof_offset() const;
@@ -40,6 +74,23 @@ class AX12GripperInterface : public Interface
     CenterMessage();
     ~CenterMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
   };
 
   class CloseMessage : public Message
@@ -47,6 +98,23 @@ class AX12GripperInterface : public Interface
     CloseMessage(float ini_offset);
     CloseMessage();
     ~CloseMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
     float offset();
     void set_offset(const float new_offset);
@@ -59,6 +127,23 @@ class AX12GripperInterface : public Interface
     OpenMessage();
     ~OpenMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
     float offset();
     void set_offset(const float new_offset);
     int maxlenof_offset() const;
@@ -70,6 +155,23 @@ class AX12GripperInterface : public Interface
     RelGotoZMessage();
     ~RelGotoZMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
     int rel_z();
     void set_rel_z(const int new_rel_z);
     int maxlenof_rel_z() const;
@@ -80,12 +182,46 @@ class AX12GripperInterface : public Interface
     StopLeftMessage();
     ~StopLeftMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
   };
 
   class StopRightMessage : public Message
   {
     StopRightMessage();
     ~StopRightMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
   };
 
@@ -94,12 +230,46 @@ class AX12GripperInterface : public Interface
     StopMessage();
     ~StopMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
   };
 
   class FlushMessage : public Message
   {
     FlushMessage();
     ~FlushMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
   };
 
@@ -108,12 +278,46 @@ class AX12GripperInterface : public Interface
     CalibrateMessage();
     ~CalibrateMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
   };
 
   class ParkMessage : public Message
   {
     ParkMessage();
     ~ParkMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
   };
 
@@ -122,6 +326,23 @@ class AX12GripperInterface : public Interface
     GotoMessage(float ini_left, float ini_right);
     GotoMessage();
     ~GotoMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
     float left();
     void set_left(const float new_left);
@@ -136,6 +357,23 @@ class AX12GripperInterface : public Interface
     TimedGotoMessage(float ini_time_sec, float ini_left, float ini_right);
     TimedGotoMessage();
     ~TimedGotoMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
     float time_sec();
     void set_time_sec(const float new_time_sec);
@@ -154,6 +392,23 @@ class AX12GripperInterface : public Interface
     SetServoMessage();
     ~SetServoMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
     unsigned int servoID();
     void set_servoID(const unsigned int new_servoID);
     int maxlenof_servoID() const;
@@ -168,6 +423,23 @@ class AX12GripperInterface : public Interface
     SetEnabledMessage();
     ~SetEnabledMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
     bool is_enabled();
     void set_enabled(const bool new_enabled);
     int maxlenof_enabled() const;
@@ -178,6 +450,23 @@ class AX12GripperInterface : public Interface
     SetVelocityMessage(float ini_left_velocity, float ini_right_velocity);
     SetVelocityMessage();
     ~SetVelocityMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
     float left_velocity();
     void set_left_velocity(const float new_left_velocity);
@@ -192,6 +481,23 @@ class AX12GripperInterface : public Interface
     SetMarginMessage(float ini_left_margin, float ini_right_margin);
     SetMarginMessage();
     ~SetMarginMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
     float left_margin();
     void set_left_margin(const float new_left_margin);
@@ -293,7 +599,7 @@ class AX12GripperInterface : public Interface
   const char *            hash_printable() const;
   bool                    is_writer() const;
   void                    set_from_chunk(void *chunk);
-  virtual Message *   create_message(const char *type) const = 0;
+  virtual fawkes::Message *  create_message @ create_message_generic(const char *type) const;
   void          read();
   void          write();
   bool          has_writer() const;
@@ -312,10 +618,18 @@ class AX12GripperInterface : public Interface
   bool          msgq_try_lock();
   void          msgq_unlock();
   void          msgq_pop();
-  Message *     msgq_first();
+  fawkes::Message * msgq_first @ msgq_first_generic();
   bool          msgq_empty();
 
 
 };
+
+
+$[
+
+fawkes.AX12GripperInterface.msgq_first     = fawkes.Interface.msgq_first
+fawkes.AX12GripperInterface.create_message = fawkes.Interface.create_message
+
+$]
 
 }
