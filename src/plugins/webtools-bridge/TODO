@@ -1,0 +1,12 @@
+TODO:
+
+* Iterate over all the ifdefines and make the naming consistenet
+* look how to adpt ur own namespace...call it bridge
+
+
+
+Changes and Why:
+#Web_server on_msg handler moved fom disptech:
+	-the handler is no longer ()instance specific 
+	-I dont want to do websocket stuff from the BridgeManager (extracing the payload and finding the session by its handler)
+	-its much cleaner to just make a call to the BrigeManager with the session_object and the json string.

@@ -4,9 +4,8 @@
 #include <exception>
 #include <websocketpp/common/thread.hpp>
 
-#include "dispatcher.h"
 #include "web_session.h"
-#include "generic_bridge_manager.h"
+#include "bridge_manager.h"
 
 #include <logging/logger.h>
 
@@ -39,7 +38,7 @@ public:
 
 
     bool on_validate(connection_hdl hdl){
-        tmp_session_= websocketpp::lib::make_shared<web_session>();
+        tmp_session_= websocketpp::lib::make_shared<WebSession>();
         tmp_session_->set_status("validating");//todo::use status codes from websocketpp
 
         server::connection_ptr con=m_server->get_con_from_hdl(hdl);
@@ -92,20 +91,21 @@ public:
             throw std::invalid_argument("No data available for session");
        }
 
-       int session_id=it->second;
+       int session_id=it->second->get_id();
 
        std::cout << "Closing connection  with sessionid " << session_id << std::endl;
 
        hdl_ids_.erase(hdl);
-       dispatchers_.erase(session_id);
     }
 
-    //finds the reqeusting sessions by  its hdl. extracts the pay load from the msg. Forwards both to incoming of the bridge manger
+    /*Finds the reqeusting sessions by  its hdl. 
+    *Extracts the pay load from the msg.
+    *Forwards both to incoming of the bridge manger*/
     void
     on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr web_msg)
     {
 
-        websocketpp::lib::shared_ptr<web_session>  session = hdl_ids_ [hdl];
+        websocketpp::lib::shared_ptr<WebSession>  session = hdl_ids_ [hdl];
 
         std::string jsonString = web_msg -> get_payload();
 
@@ -123,11 +123,11 @@ public:
 
 
 private:
-    std::map<connection_hdl, websocketpp::lib::shared_ptr<web_session>
+    std::map<connection_hdl, websocketpp::lib::shared_ptr<WebSession>
         ,std::owner_less<connection_hdl>>                                              hdl_ids_;
 
     websocketpp::lib::shared_ptr<server>                                               m_server;
-    websocketpp::lib::shared_ptr<web_session>                                          tmp_session_; //this only serve to collect the session data before intializing the dispaticher
+    websocketpp::lib::shared_ptr<WebSession>                                          tmp_session_; //this only serve to collect the session data before intializing the dispaticher
     
     unsigned int                                                                       m_next_sessionid;
     
