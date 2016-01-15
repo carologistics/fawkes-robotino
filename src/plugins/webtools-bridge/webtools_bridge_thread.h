@@ -34,8 +34,7 @@
 #include <string>
 
 #include "Web_server.cpp"
-//#include "generic_bridge_manager.h"
-//#include "blackboard_processor.h"
+#include "bridge_manager.h"
 
 namespace fawkes {
   class Position3DInterface;

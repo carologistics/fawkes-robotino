@@ -50,7 +50,9 @@ WebtoolsBridgeThread::init()
  logger-> log_info("I CAN SEE THE WORLD","YAAY");
  // time_var_=new Time(clock);
  // time_var_->stamp();
-  // bridge_manager_=std::make_shared<BridgeManager> ();
+  bridge_manager_=std::make_shared<BridgeManager> ();
+    //register capabiolity managers
+    //register processors
 
 
   // proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
@@ -58,8 +60,8 @@ WebtoolsBridgeThread::init()
 
 
 
-  // web_server_=websocketpp::lib::make_shared<Web_server>(logger, fawkes_bridge_manager_);
-  // web_server_->run(6060);
+  web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);
+  web_server_->run(6060);
 }
 
 void
