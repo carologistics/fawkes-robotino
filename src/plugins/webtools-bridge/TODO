@@ -39,3 +39,8 @@ CHECK:
 Questions:
 	-what if the frequency that the topic changes at is very high. then we will congest the network with trafice while it might not be importent at all to (if the publishing rate is high)
 	-Do i need to mutex fawkes::clock?
+
+
+	_________________________________________________
+
+	-->Make a until/Protocol that contain all the msg formats and proper serializer for them
