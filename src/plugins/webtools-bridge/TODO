@@ -2,6 +2,7 @@ TODO:
 
 * Iterate over all the ifdefines and make the naming consistenet
 * look how to adpt ur own namespace...call it bridge
+* publish witha 
 
 
 
@@ -10,3 +11,31 @@ Changes and Why:
 	-the handler is no longer ()instance specific 
 	-I dont want to do websocket stuff from the BridgeManager (extracing the payload and finding the session by its handler)
 	-its much cleaner to just make a call to the BrigeManager with the session_object and the json string.
+
+
+#Nameing Convention:
+	-Names of capabilities are gonna be named after the central data type they are managing (ex. SubscribtionCapability) and they can provide multiple operations.
+
+#the cenrtalDataType instances list (ex Subscribtion_List). is owend and managed by the capability itself and passed to the processor by virtual inhertance. That means all the processors will be able to maintain the same list of data.
+Processors could choose to impelment their own version of the dataObject and overwrite the generate_ and distory_ methods in the capability.
+CapabilityManager will only acess this list when destrying a session (or processor. but that might not be needed)
+The implementation of the basic processing of the dataObjet is in the operation named methods of the baseCapability class (ex. Subscribtion_capability.susbscribe()). Processors my override that behaviore if they wish to give the capability it a differnet semantic.
+
+#the other option is to maintain the list on the CapabilityManager's side. That basically means that all the basic operations semantic and behavior will be coded in an operation named method in the manager (ex. CapabilityManager::subscibe()). The processors::operation() will only be called when generating_  an instace of the dataObject to get the overridden dataObjectType. and in ditsroying_ to destroy and processor specefic relation to that dataObject instance. 
+
+#Shared Namespace between clinets. In our approach each topic has a unique name in the globale topic namspace and has one subscibtion instance. In each subscribtion instance there could be mulitble clients subscrbing and for each multiple requests.
+(takecare of the maping now a subscribtionObject could have multiple identical requests but for differnet clients. The mapping is only unique by client&&request_ID).
+what do i need to do is:
+	-have multiple requests per client (with unique id for that client)
+	-
+
+
+
+CHECK:
+
+	-what throttle rate and queuelenght on the JS side
+
+
+Questions:
+	-what if the frequency that the topic changes at is very high. then we will congest the network with trafice while it might not be importent at all to (if the publishing rate is high)
+	-Do i need to mutex fawkes::clock?

@@ -6,7 +6,7 @@
 class BridgeProcessor{
 
 public:
-	BridgeProcessor()
+	BridgeProcessor(std::string prefix)
 	:	prefix_(prefix)
 	{
 
@@ -16,11 +16,11 @@ public:
 
 	std::string get_prefix()
 	{
-		return prefix;
+		return prefix_;
 	}
 
 private:
-	std::string prefix;
+	std::string prefix_;
 
 };
 

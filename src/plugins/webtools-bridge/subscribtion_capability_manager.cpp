@@ -1,6 +1,5 @@
 #include "capability_manager.h"
 #include "subscribtion_capability.h"
-#include "subscribtion.h"
 
 using namespace rapidjson;
 
@@ -38,25 +37,80 @@ SubscribtionCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
 	{
 		return false;
 	}
-	processores_[processor.get_prefix()]=processor;
+	//find if it was used before
+	std::string processor_prefix= processor.get_prefix();
+	size_t found = processores_.find(processor_prefix);
+	if(found != std::string::npos)
+	{
+		//throw exception this prefix name is invalide coz it was used before
+
+	}
+
+	processores_[processor_prefix]=processor;
+	
 	return true;
 }
 
 void
-SubscribtionCapabilityManager::handle_message(Document &d, std::string client_id)
+SubscribtionCapabilityManager::handle_message(Document &d
+	,	std::shared_ptr<WebSession> session)
 {
+	try
+	{
+		std::string msg_op = std::string(d["op"].GetString());
+	}
+	catch(Exception ){
+		//	"Wrong msg option"
+	}
+ 
+	std::string msg_topic = std::string(d["topic"].GetString());
+	std::string match_prefix ="";
 
-	//first decides which Source to call ..longest match ..
-	//Q .. Do i have to look within each processor or is it enough with the map
-		std::string source_name= "blackboard";
+	for( ProcessorList::iterator it = processores_.begin();
+		it != processores_.end(); it++)
+	{
+		std::string processor_prefix = it->first;
+		std::size_t found = msg_topic.find(processor_prefix);
+		if(found != std::string::npos)
+		{
+			//allow freedom of 2 characters before the match to account 
+			//for leading "/" ot "//" or and other startting charachters
+			if (found < 1)
+			{
+				if(processor_prefix.length() = match_prefix.length())
+				{
+					//Throw an exception. That there are 2 names with confusion prefixs
+					//a conflict like "/bl" and  "bl1" when looking for "bl".
+					//this cozed by the fliexibility
 
-	//decides which opreation it should call
+				}
+				else if(processor_prefix.length() > match_prefix.length())
+				{
+					match_prefix = processor_prefix.length();
+				}
+			}
+		} 
+		
+	}
 
-		std::string op_name= std::string(d["op"].GetString());
+	if(match_prefix.lenght() == 0)
+	{
+		//throw Exception: this means no processors was regiesterd for this
+		return ;
+	}
 
-		if(op_name=="subscribe")
-		 processores_[source_name].subscribe(Document &d, std::string client_id);
-		else if (op_name=="unsubscribe")
-			processores_[source_name].unsubscribe(Document &d, std::string client_id);
+
+	//Go with the bridge name to the operation
+	if(msg_op=="subscribe")
+	{	
+		processores_[match_prefix]->
+			subscribe(Document &d, session);
+	}else 
+
+	if (msg_op=="unsubscribe")
+	}
+		processores_[match_prefix]->
+			unsubscribe(Document &d);
+	}
 
 }
