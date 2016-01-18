@@ -8,67 +8,6 @@
 
 using namespace rapidjson;
 
-
-SubscribtionCapability::SubscribtionCapability(fawkes::Clock *clock)
-	:	clock_(clock)
-{
-
-}
-
-SubscribtionCapability::~SubscribtionCapability()
-{
-
-}
-
-bool
-SubscribtionCapability::subscribe(Document &d ,std::shared_ptr<WebSession> session )
-{
-	if(!d.HasMember("topic")){
-		//throw missing msg feild excepotion
-	}
-
-	std::string topic_name = std::string( d["topic"].GetString() );
-
-	//Is it a new topic? Create a new subscribtion instace by the processor
-	if( topic_subscribtion_.find(topic_name) == topic_subscribtion_.end() )
-	{
-		std::shared_ptr <Subscribtion> new_subscribtion = create_subscribtion (topic_name);
-
-		if( new_subscribtion == NULL)
-		{
-			//maybe throw Exception that the topic was not found in the processor
-			return false;
-		}
-
-		//Mutex.lock()
-		topic_subscribtion_[topic_name] = new_subscribtion;
-		//Mutex.unlock();
-	}
-	//Add the request parameters and session info for that session
-	topic_subscribtion_[topic_name] -> add_subscribtion_request( d ,session );
-
-	return true;
-}
-
-void
-SubscribtionCapability::unsubscribe(Document &d , std::shared_ptr<WebSession> session)
-{
-	//TODO:implement
-}
-
-
-std::shared_ptr <Subscribtion>
-SubscribtionCapability::create_subscribtion (std::string topic_name)
-{
-	return NULL;
-}
-
-bool
-SubscribtionCapability::destroy_subscribtion(std::string topic_name)
-{
-	return true;
-}
-
 //=================================   SUBSCRIBTION  ===================================
 
 

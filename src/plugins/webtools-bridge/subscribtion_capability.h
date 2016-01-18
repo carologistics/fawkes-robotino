@@ -61,6 +61,7 @@ class Subscribtion
 		bool static compare_throttle_rate(SubscribtionRequest first, SubscribtionRequest second);
 		fawkes::Clock 				*clock_;
 
+		typedef enum status { ACTIVE, DORMANT };
 		// fawkes::Mutex				*sub_list_mutex_;
 		// fawkes::Mutex 				*time_mutex_;
 };
@@ -69,21 +70,14 @@ class Subscribtion
 class SubscribtionCapability
 {
 	public:
-		SubscribtionCapability(fawkes::Clock *clock);
+		SubscribtionCapability();
 		~SubscribtionCapability();
 
-		bool	subscribe(rapidjson::Document &d 
-							,std::shared_ptr<WebSession> session);
-		void	unsubscribe(rapidjson::Document &d
-							,std::shared_ptr<WebSession> session);
-	protected:
-		virtual std::shared_ptr<Subscribtion>	create_subscribtion(std::string topic_name);
-		virtual bool							destroy_subscribtion(std::string topic_name);
+		virtual std::shared_ptr<Subscribtion> 	subscribe( rapidjson::Document &d 
+														, std::shared_ptr<WebSession> session) = 0 ;
+		virtual void 							unsubscribe( rapidjson::Document &d
+														,std::shared_ptr<WebSession> session) = 0 ;
 
-	private:
-		std::map <std::string,std::shared_ptr<Subscribtion> > topic_subscribtion_;
-		fawkes::Clock 				*clock_;
-
-
+//		std::map <std::string,std::shared_ptr<Subscribtion> > topic_subscribtion_;
 };
 
