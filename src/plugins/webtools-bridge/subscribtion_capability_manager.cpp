@@ -1,6 +1,9 @@
-#include "capability_manager.h"
+#include "subscription_capability_manager.h"
 #include "subscribtion_capability.h"
 
+#include <exception>
+
+using namespace fawkes;
 using namespace rapidjson;
 
 
@@ -12,42 +15,50 @@ using namespace rapidjson;
 
 
 
-SubscribtionCapabilityManager::SubscribtionCapabilityManager()
+SubscribtionCapabilityManager::SubscribtionCapabilityManager()	
 :	CapabilityManager("subscribtion")
 {
 
 }
 
-SubscribtionCapabilityManager::~SubscribetionCapabilityManager()
+SubscribtionCapabilityManager::~SubscribtionCapabilityManager()
 {
 	//TODO: check if something need to be changed
 }
-
-void 
-SubscriptionCapabilityManager::subscribe(	std::string bridge_prefix
-										,	Document &d
-										,	std::shared_ptr<WebSession> session)
-{
-	//TODO::MOVE ALL THE TYPE RELATED STUFF TO a proper protocol Class
-	if(!d.HasMember("topic") || !d.HasMember("id")){
-		//throw missing msg feild exception
-	}
 	
-	//TODO:: Make a Protocol Structure in the until
-	if(d.HasMember("topic"))		std::string topic_name 		= 	std::string( d["topic"].GetString() );
-	if(d.HasMember("id")) 			std::string id 				= 	std::string(d["id"].GetString());
-	if(d.HasMember("compression")) 	std::string compression		=	std::string(d["compression"].GetString());	
-	if(d.HasMember("throttle_rate"))unsigned int throttle_rate	=	d["throttle_rate"].GetUint();
-	if(d.HasMember("queue_length")) unsigned int queue_length 	=	d["queue_length"].GetUint();
-	if(d.HasMember("fragment_size"))unsigned int fragment_size 	=	d["fragment_size"].GetUint();
+void 
+SubscribtionCapabilityManager::subscribe( std::string bridge_prefix
+										, std::string topic_name 
+										, std::string id 		
+										, std::string compression
+										, unsigned int throttle_rate	
+										, unsigned int queue_length 	
+										, unsigned int fragment_size 	
+									   	, std::shared_ptr<WebSession> session)
+{
 
+	std::shared_ptr <SubscribtionCapability> subscription_processor;
+	subscription_processor = std::dynamic_pointer_cast<SubscribtionCapability> (processores_[bridge_prefix]);
+	if( subscription_processor == NULL){
+		//throw and exception This should not happen
+	}
+
+	std::shared_ptr <Subscribtion> subscriber;
 	
 	try{
 		//always creates a new subscriber for that topic with the given Session and parameters
 		//TODO:: pass the pure string arguments or a "protocol" type
-		std::shared_ptr <Subscribtion> subscriber = processores_[match_prefix]-> subscribe(Document &d, session);
-	}catch(Exception){
+		subscriber = subscription_processor-> subscribe(topic_name 
+													, id 		
+													, compression
+													, throttle_rate	
+													, queue_length 	
+													, fragment_size 	
+													, session);
+
+	}catch(std::exception &e){
 		//TODD:: Thorw the appropriate expcetion
+		return;
 	}
 
 	/*push it to the topic_subscribertion_map maintaing only ONE instance per topic
@@ -60,34 +71,64 @@ SubscriptionCapabilityManager::subscribe(	std::string bridge_prefix
 	{
 		topic_subscribtion_[topic_name] = subscriber;
 		//Activate the listeners or whatever the publishs
-		subscriber.activate();
+		subscriber->activate();
 	}else{
-		topic_subscribtion_[topic_name].append(subscriber);
+		topic_subscribtion_[topic_name]->append(subscriber);
 	}
 	//Mutex.unlock();
 }
 
 void
-SubscriptionCapabilityManager::unsubscribe(Document &d
-										,	std::shared_ptr<WebSession> session)
+SubscribtionCapabilityManager::unsubscribe	( std::string bridge_prefix
+											, std::string topic_name 
+											, std::string id 		
+											, std::shared_ptr<WebSession> session)
 {
+	std::shared_ptr <SubscribtionCapability> subscription_processor;
+	subscription_processor = std::dynamic_pointer_cast<SubscribtionCapability> (processores_[bridge_prefix]);
+	if( subscription_processor == NULL){
+		//throw and exception This should not happen
+	}
 	
+	std::shared_ptr <Subscribtion> subscription;
+	
+	if(topic_subscribtion_.find(topic_name) != topic_subscribtion_.end()){
+
+		subscription = topic_subscribtion_[topic_name];
+
+		try{
+			subscription_processor->unsubscribe(id, subscription ,session );
+		}catch (std::exception &e){
+			//say something
+		}
+
+		if(subscription-> empty()){
+			topic_subscribtion_[topic_name] -> finalize();
+			topic_subscribtion_.erase(topic_name);
+		}
+
+		return;
+	}
+
+	//throw exception that topic was not found
+
 }
 
 
 bool
 SubscribtionCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
 {
-	SubscribtionCapability *subscribtion_processor;
-	subscribtion_processor = dynamic_cast<SubscribtionCapability *>(processor);
-	if(bridge_processor == NULL)
+	std::shared_ptr <SubscribtionCapability> subscribtion_processor;
+	subscribtion_processor = std::dynamic_pointer_cast<SubscribtionCapability> (processor);
+
+	if(subscribtion_processor == NULL)
 	{
 		return false;
 	}
 	//find if it was used before
-	std::string processor_prefix= processor.get_prefix();
-	size_t found = processores_.find(processor_prefix);
-	if(found != std::string::npos)
+	std::string processor_prefix= processor->get_prefix();
+	
+	if(processores_.find(processor_prefix) == processores_.end())
 	{
 		//throw exception this prefix name is invalide coz it was used before
 
@@ -102,31 +143,33 @@ void
 SubscribtionCapabilityManager::handle_message(Document &d
 	,	std::shared_ptr<WebSession> session)
 {
-
+	std::string msg_op;
 	//TODO::Pass the Dom the a Protocol Class that will have the deserialized types
 	try
 	{
-		std::string msg_op = std::string(d["op"].GetString());
+		msg_op = std::string(d["op"].GetString());
 	}
-	catch(Exception ){
+	catch(std::exception &e){
 		//	"Wrong msg option"
 	}
  
 	std::string msg_topic = std::string(d["topic"].GetString());
 	std::string match_prefix ="";
 
-	for( ProcessorList::iterator it = processores_.begin();
+
+	//posible Optimization. if the same topic name exists in the topic_subscription just get the prefix from there
+	for( ProcessorMap::iterator it = processores_.begin();
 		it != processores_.end(); it++)
 	{
 		std::string processor_prefix = it->first;
 		std::size_t found_at = msg_topic.find(processor_prefix);
-		if(found != std::string::npos)
+		if(found_at != std::string::npos)
 		{
 			//allow freedom of 2 characters before the match to account 
 			//for leading "/" ot "//" or and other startting charachters
 			if (found_at < 1)
 			{
-				if(processor_prefix.length() = match_prefix.length())
+				if(processor_prefix.length() == match_prefix.length())
 				{
 					//Throw an exception. That there are 2 names with confusion prefixs
 					//a conflict like "/bl" and  "bl1" when looking for "bl".
@@ -142,22 +185,46 @@ SubscribtionCapabilityManager::handle_message(Document &d
 		
 	}
 
-	if(match_prefix.lenght() == 0)
+	if(match_prefix.length() == 0)
 	{
-		//throw Exception: this means no processors was regiesterd for this
+		//throw Exception: this means no processors was recognized
 		return ;
 	}
 
+	//TODO::MOVE ALL THE TYPE RELATED STUFF TO a proper protocol Class
+	if(!d.HasMember("topic") || !d.HasMember("id")){
+		//throw missing msg feild exception
+	}
 
-	//Go with the bridge name to the operation
+	
+	//Go with To the proper operation with the bridge_prefix and the request Paramters
 	if(msg_op=="subscribe")
 	{	
-		subscribe(match_prefix, Document &d, session);
+		std::string  topic_name 	= 	"";
+		std::string  id 			= 	"";
+		std::string  compression	=	"";	
+		unsigned int throttle_rate	=	0;
+		unsigned int queue_length 	=	1;
+		unsigned int fragment_size 	=	0;
+		
+		if(d.HasMember("topic"))		 topic_name 	= 	std::string( d["topic"].GetString());
+		if(d.HasMember("id")) 			 id 			= 	std::string(d["id"].GetString());
+		if(d.HasMember("compression")) 	 compression	=	std::string(d["compression"].GetString());	
+		if(d.HasMember("throttle_rate")) throttle_rate	=	d["throttle_rate"].GetUint();
+		if(d.HasMember("queue_length"))  queue_length 	=	d["queue_length"].GetUint();
+		if(d.HasMember("fragment_size")) fragment_size 	=	d["fragment_size"].GetUint();
+		
+		subscribe( match_prefix
+				, topic_name , id , compression , throttle_rate , queue_length , fragment_size 
+				, session);
 	}else 
 
 	if (msg_op=="unsubscribe")
-	}
-		unsubscribe(match_prefix, Document &d, session);
+	{
+		std::string topic_name 		= 	std::string( d["topic"].GetString() );
+		std::string id 				= 	std::string(d["id"].GetString());
+	
+		unsubscribe(match_prefix, topic_name, id , session);	
 	}
 
 }

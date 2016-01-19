@@ -1,5 +1,3 @@
-
-#include <rapidjson/document.h>
 #include <map>
 #include <list>
 #include <memory>
@@ -17,18 +15,29 @@ class WebSession;
 class Subscribtion
 {	
 	public:
-		Subscribtion(std::string topic_name, fawkes::Clock *clock);
-		~Subscribtion();// finalize oper and listeners interfaces 
-		std::string get_topic_name();
+		Subscribtion(std::string topic_name 
+					, std::string processor_prefix 
+					, fawkes::Clock *clock);
 
-		void	add_subscribtion_request(rapidjson::Document &d
-										,std::shared_ptr <WebSession> session);
-		void	remove_subscribtion_request(rapidjson::Document &d
-											,std::shared_ptr <WebSession> session);
+		~Subscribtion();// finalize oper and listeners interfaces 
+		
+		std::string get_topic_name();
+		std::string get_processor_prefix();
+
+		void 	activate();
+		void 	deactivate();
+		void	append(std::shared_ptr <Subscribtion> another_subscription);
+		bool 	empty();
+
+		void 	finalize();
+
+		// void	add_subscribtion_request(rapidjson::Document &d
+		// 								,std::shared_ptr <WebSession> session);
+		// void	remove_subscribtion_request(rapidjson::Document &d
+		// 									,std::shared_ptr <WebSession> session);
 
 	protected:
 		void 	publish(std::string json_str);
-
 
 	private:
 	
@@ -56,12 +65,13 @@ class Subscribtion
 		
 		std::map <std::shared_ptr<WebSession> , RequestList>    subscribers_; //maping of sessionTo requets list
 		std::string 											topic_name_;
+		std::string 											processor_prefix_;
 
 
 		bool static compare_throttle_rate(SubscribtionRequest first, SubscribtionRequest second);
 		fawkes::Clock 				*clock_;
 
-		typedef enum status { ACTIVE, DORMANT };
+		enum status { ACTIVE, DORMANT };
 		// fawkes::Mutex				*sub_list_mutex_;
 		// fawkes::Mutex 				*time_mutex_;
 };
@@ -70,14 +80,16 @@ class Subscribtion
 class SubscribtionCapability
 {
 	public:
-		SubscribtionCapability();
-		~SubscribtionCapability();
+		virtual std::shared_ptr<Subscribtion> 	subscribe 	( std::string topic_name 
+															, std::string id 		
+															, std::string compression
+															, unsigned int throttle_rate	
+															, unsigned int queue_length 	
+															, unsigned int fragment_size 	
+														   	, std::shared_ptr<WebSession> session) = 0 ;
 
-		virtual std::shared_ptr<Subscribtion> 	subscribe( rapidjson::Document &d 
-														, std::shared_ptr<WebSession> session) = 0 ;
-		virtual void 							unsubscribe( rapidjson::Document &d
-														,std::shared_ptr<WebSession> session) = 0 ;
-
-//		std::map <std::string,std::shared_ptr<Subscribtion> > topic_subscribtion_;
+		virtual void 							unsubscribe	( std::string id
+															, std::shared_ptr<Subscribtion> 
+															, std::shared_ptr<WebSession> session ) = 0 ;
 };
 

@@ -9,10 +9,9 @@ public:
 	BridgeProcessor(std::string prefix)
 	:	prefix_(prefix)
 	{
-
 	}
 	
-	~BridgeProcessor();
+	virtual ~BridgeProcessor();
 
 	std::string get_prefix()
 	{
