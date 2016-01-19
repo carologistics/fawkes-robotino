@@ -23,9 +23,126 @@ SubscriptionCapabilityManager::SubscriptionCapabilityManager()
 
 SubscriptionCapabilityManager::~SubscriptionCapabilityManager()
 {
-	//TODO: check if something need to be changed
+	//TODO: check if something needs to be changed
 }
 	
+
+bool
+SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
+{
+	std::shared_ptr <SubscriptionCapability> Subscription_processor;
+	Subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processor);
+
+	if(Subscription_processor == NULL)
+	{
+		return false;
+	}
+	//find if it was used before
+	std::string processor_prefix= processor->get_prefix();
+	
+	if(processores_.find(processor_prefix) == processores_.end())
+	{
+		//throw exception this prefix name is invalide coz it was used before
+
+	}
+
+	processores_[processor_prefix]=processor;
+	
+	return true;
+}
+
+void
+SubscriptionCapabilityManager::handle_message(Document &d
+	,	std::shared_ptr<WebSession> session)
+{
+	std::string msg_op;
+	//TODO::Pass the Dom the a Protocol Class that will have the deserialized types
+	try
+	{
+		msg_op = std::string(d["op"].GetString());
+	}
+	catch(std::exception &e){
+		//	"Wrong msg option"
+	}
+ 
+	std::string msg_topic = std::string(d["topic"].GetString());
+	std::string match_prefix ="";
+
+
+	//Check the logic..might be wrong
+	//posible Optimization. if the same topic name exists in the topic_subscription just get the prefix from there
+	for( ProcessorMap::iterator it = processores_.begin();
+		it != processores_.end(); it++)
+	{
+		std::string processor_prefix = it->first;
+		std::size_t found_at = msg_topic.find(processor_prefix);
+		if(found_at != std::string::npos)
+		{
+			//allow freedom of 2 characters before the match to account 
+			//for leading "/" ot "//" or and other startting charachters
+			if (found_at < 1)
+			{
+				if(processor_prefix.length() == match_prefix.length())
+				{
+					//Throw an exception. That there are 2 names with confusion prefixs
+					//a conflict like "/bl" and  "bl1" when looking for "bl".
+					//this cozed by the fliexibility
+
+				}
+				else if(processor_prefix.length() > match_prefix.length())
+				{
+					match_prefix = processor_prefix.length();
+				}
+			}
+		} 
+		
+	}
+
+	if(match_prefix.length() == 0)
+	{
+		//throw Exception: this means no processors was recognized
+		return ;
+	}
+
+	//TODO::MOVE ALL THE TYPE RELATED STUFF TO a proper protocol Class
+	if(!d.HasMember("topic") || !d.HasMember("id")){
+		//throw missing msg feild exception
+	}
+
+	
+	//Go with To the proper operation with the bridge_prefix and the request Paramters
+	if(msg_op=="subscribe")
+	{	
+		std::string  topic_name 	= 	"";
+		std::string  id 			= 	"";
+		std::string  compression	=	"";	
+		unsigned int throttle_rate	=	0;
+		unsigned int queue_length 	=	1;
+		unsigned int fragment_size 	=	0;
+		
+		if(d.HasMember("topic"))		 topic_name 	= 	std::string( d["topic"].GetString());
+		if(d.HasMember("id")) 			 id 			= 	std::string(d["id"].GetString());
+		if(d.HasMember("compression")) 	 compression	=	std::string(d["compression"].GetString());	
+		if(d.HasMember("throttle_rate")) throttle_rate	=	d["throttle_rate"].GetUint();
+		if(d.HasMember("queue_length"))  queue_length 	=	d["queue_length"].GetUint();
+		if(d.HasMember("fragment_size")) fragment_size 	=	d["fragment_size"].GetUint();
+		
+		subscribe( match_prefix
+				, topic_name , id , compression , throttle_rate , queue_length , fragment_size 
+				, session);
+	}else 
+
+	if (msg_op=="unsubscribe")
+	{
+		std::string topic_name 		= 	std::string( d["topic"].GetString() );
+		std::string id 				= 	std::string(d["id"].GetString());
+	
+		unsubscribe(match_prefix, topic_name, id , session);	
+	}
+
+}
+
+
 void 
 SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 										, std::string topic_name 
@@ -114,117 +231,3 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 
 }
 
-
-bool
-SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
-{
-	std::shared_ptr <SubscriptionCapability> Subscription_processor;
-	Subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processor);
-
-	if(Subscription_processor == NULL)
-	{
-		return false;
-	}
-	//find if it was used before
-	std::string processor_prefix= processor->get_prefix();
-	
-	if(processores_.find(processor_prefix) == processores_.end())
-	{
-		//throw exception this prefix name is invalide coz it was used before
-
-	}
-
-	processores_[processor_prefix]=processor;
-	
-	return true;
-}
-
-void
-SubscriptionCapabilityManager::handle_message(Document &d
-	,	std::shared_ptr<WebSession> session)
-{
-	std::string msg_op;
-	//TODO::Pass the Dom the a Protocol Class that will have the deserialized types
-	try
-	{
-		msg_op = std::string(d["op"].GetString());
-	}
-	catch(std::exception &e){
-		//	"Wrong msg option"
-	}
- 
-	std::string msg_topic = std::string(d["topic"].GetString());
-	std::string match_prefix ="";
-
-
-	//posible Optimization. if the same topic name exists in the topic_subscription just get the prefix from there
-	for( ProcessorMap::iterator it = processores_.begin();
-		it != processores_.end(); it++)
-	{
-		std::string processor_prefix = it->first;
-		std::size_t found_at = msg_topic.find(processor_prefix);
-		if(found_at != std::string::npos)
-		{
-			//allow freedom of 2 characters before the match to account 
-			//for leading "/" ot "//" or and other startting charachters
-			if (found_at < 1)
-			{
-				if(processor_prefix.length() == match_prefix.length())
-				{
-					//Throw an exception. That there are 2 names with confusion prefixs
-					//a conflict like "/bl" and  "bl1" when looking for "bl".
-					//this cozed by the fliexibility
-
-				}
-				else if(processor_prefix.length() > match_prefix.length())
-				{
-					match_prefix = processor_prefix.length();
-				}
-			}
-		} 
-		
-	}
-
-	if(match_prefix.length() == 0)
-	{
-		//throw Exception: this means no processors was recognized
-		return ;
-	}
-
-	//TODO::MOVE ALL THE TYPE RELATED STUFF TO a proper protocol Class
-	if(!d.HasMember("topic") || !d.HasMember("id")){
-		//throw missing msg feild exception
-	}
-
-	
-	//Go with To the proper operation with the bridge_prefix and the request Paramters
-	if(msg_op=="subscribe")
-	{	
-		std::string  topic_name 	= 	"";
-		std::string  id 			= 	"";
-		std::string  compression	=	"";	
-		unsigned int throttle_rate	=	0;
-		unsigned int queue_length 	=	1;
-		unsigned int fragment_size 	=	0;
-		
-		if(d.HasMember("topic"))		 topic_name 	= 	std::string( d["topic"].GetString());
-		if(d.HasMember("id")) 			 id 			= 	std::string(d["id"].GetString());
-		if(d.HasMember("compression")) 	 compression	=	std::string(d["compression"].GetString());	
-		if(d.HasMember("throttle_rate")) throttle_rate	=	d["throttle_rate"].GetUint();
-		if(d.HasMember("queue_length"))  queue_length 	=	d["queue_length"].GetUint();
-		if(d.HasMember("fragment_size")) fragment_size 	=	d["fragment_size"].GetUint();
-		
-		subscribe( match_prefix
-				, topic_name , id , compression , throttle_rate , queue_length , fragment_size 
-				, session);
-	}else 
-
-	if (msg_op=="unsubscribe")
-	{
-		std::string topic_name 		= 	std::string( d["topic"].GetString() );
-		std::string id 				= 	std::string(d["id"].GetString());
-	
-		unsubscribe(match_prefix, topic_name, id , session);	
-	}
-
-}
