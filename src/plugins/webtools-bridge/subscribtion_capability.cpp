@@ -11,8 +11,9 @@ using namespace rapidjson;
 //=================================   SUBSCRIBTION  ===================================
 
 
-Subscribtion::Subscribtion(std::string topic_name , fawkes::Clock * clock)
+Subscribtion::Subscribtion(std::string topic_name , std::string prefix, fawkes::Clock * clock)
 	: 	topic_name_(topic_name)
+	,	processor_prefix(prefix)
 	,	clock_(clock)
 {
 }
