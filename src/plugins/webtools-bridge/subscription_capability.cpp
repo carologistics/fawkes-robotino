@@ -15,30 +15,117 @@ Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::
 	: 	topic_name_(topic_name)
 	,	processor_prefix(prefix)
 	,	clock_(clock)
+	,	active_status(DORMANT)
 {
+
 }
+
+
+Subscription::~Subscription()
+{
+	delete clock;
+}
+
+void
+Subscription::activate()
+{
+	//implement such that is only active subscribtion for a topic is active at anypoint of time
+	//
+	active_status_ = ACTIVE;
+}
+
+void
+Subscription::deactivate()
+{
+	active_status_ = DORMANT;
+}
+
+void
+Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
+{
+	if (this.topic_name_ != subscription_to_append.get_topic_name()){
+		//throw exceptoin that they dont belong to the same topic and cant be merged
+		return;
+	}
+
+	for(std::map <std::shared_ptr, RequestList>::iterator 
+		 it_subscribers = subscription_to_append.subscribers_.begin()
+		;it_subscribers != subscription_to_append.subscribers_.end()
+		;it_subscribers++){
+
+		for(RequestList::iterator 
+			 it_requests = it_subscribers->second.begin() 
+			;it_requests != it_subscribers->second.end()
+			;it_requests++ ){
+
+			add_Subscription_request(it_subscribers->first, *it_requests);
+
+		}
+	}
+}
+
+bool
+Subscription::empty()
+{
+	//This assumes that the clients removale and the removale of their subscribtions were done correctly
+	return subscribers_.empty();
+}
+
+void
+Subscription::finalize()
+{
+	//close all the processor specefic interfaces or listenners or whatever u used
+}
+
+
+
+
+
 
 /*
 this should be called by each subscribe() call to add the request and the requesting session
 */
+
 void
-Subscription::add_Subscription_request(Document &d, std::shared_ptr <WebSession> session)
+Subscription::add_Subscription_request(SubscriptionRequest request
+								   	, std::shared_ptr<WebSession> session);
+{
+	
+	add_Subscription_request( request.id
+							, request.compression
+							, request.throttle_rate
+							, request.queue_length
+							, request.fragment_size
+							, session);
+}
+
+void
+Subscription::add_Subscription_request( std::string id 		
+									, std::string compression
+									, unsigned int throttle_rate	
+									, unsigned int queue_length 	
+									, unsigned int fragment_size 	
+								   	, std::shared_ptr<WebSession> session);
 {
 	SubscriptionRequest request;
 
-	if(d.HasMember("id")) 			request.id 				= 	std::string(d["id"].GetString());
-	if(d.HasMember("compression")) 	request.compression		=	std::string(d["compression"].GetString());	
-	if(d.HasMember("throttle_rate"))request.throttle_rate	=	d["throttle_rate"].GetUint();
-	if(d.HasMember("queue_length")) request.queue_length 	=	d["queue_length"].GetUint();
-	if(d.HasMember("fragment_size"))request.fragment_size 	=	d["fragment_size"].GetUint();
-
-	if (subscribers_.find(session) != subscribers_.end() 
-						&& !subscribers_[session].empty()){
+	if ( subscribers_.find(session) != subscribers_.end() && !(subscribers_[session].empty()) ){
 		//if there was old Subscriptions point to the same time_object
+		if(subscribers_[session].find(id) != subscribers_[session].end())
+		{
+			//throw exception..That id already exists for that client on that topic
+		}
+			
 		request.last_published_time = subscribers_[session].front().last_published_time;
 	}else{
-		request.last_published_time = new fawkes::Time(clock_);
+		request.last_published_time = std::make_shared<fawkes::Time> (clock_);
 	}
+	
+	request.id=id;
+	request.compression=compression;
+	request.throttle_rate=throttle_rate;
+	request.queue_length=queue_length;
+	request.fragment_size=fragment_size;
 
 	//sub_list_mutex_->lock();
 	subscribers_[session].push_back(request);
@@ -50,7 +137,7 @@ Subscription::add_Subscription_request(Document &d, std::shared_ptr <WebSession>
 this should be called by each unsubscribe() to remove the request and posibly the requesting session
 */
 void
-Subscription::remove_Subscription_request(Document &d, std::shared_ptr <WebSession> session)
+Subscription::remove_Subscription_request(std::string subscription_id, std::shared_ptr <WebSession> session)
 {
 	//TODO:: lock by mutex
 
@@ -58,14 +145,10 @@ Subscription::remove_Subscription_request(Document &d, std::shared_ptr <WebSessi
 		//throw Exception that the subscirber does not exist 
 	}
 
-	if(!d.HasMember("id")){
-		//throw Exception that  there was no id in msg ..Wrong format			
-	}
-	
-	std::string Subscription_id = std::string(d["id"].GetString());
-	
-	for(RequestList::iterator it = subscribers_[session].begin()
-						;it != subscribers_[session].end(); it++){
+	for(RequestList::iterator 
+		 it = subscribers_[session].begin()
+		;it != subscribers_[session].end()
+		;it++){
 		
 		if((*it).id == Subscription_id){
 			//sub_list_mutex_->lock();
