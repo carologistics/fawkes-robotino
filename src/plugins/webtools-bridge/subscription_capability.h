@@ -12,28 +12,28 @@ namespace fawkes {
 
 class WebSession;
 
-class Subscribtion
+class Subscription
 {	
 	public:
-		Subscribtion(std::string topic_name 
+		Subscription(std::string topic_name 
 					, std::string processor_prefix 
 					, fawkes::Clock *clock);
 
-		~Subscribtion();// finalize oper and listeners interfaces 
+		~Subscription();// finalize oper and listeners interfaces 
 		
 		std::string get_topic_name();
 		std::string get_processor_prefix();
 
 		void 	activate();
 		void 	deactivate();
-		void	append(std::shared_ptr <Subscribtion> another_subscription);
+		void	append(std::shared_ptr <Subscription> another_subscription);
 		bool 	empty();
 
 		void 	finalize();
 
-		// void	add_subscribtion_request(rapidjson::Document &d
+		// void	add_Subscription_request(rapidjson::Document &d
 		// 								,std::shared_ptr <WebSession> session);
-		// void	remove_subscribtion_request(rapidjson::Document &d
+		// void	remove_Subscription_request(rapidjson::Document &d
 		// 									,std::shared_ptr <WebSession> session);
 
 	protected:
@@ -41,13 +41,13 @@ class Subscribtion
 
 	private:
 	
-		struct SubscribtionRequest{
-			SubscribtionRequest()
+		struct SubscriptionRequest{
+			SubscriptionRequest()
 				:	id("") , compression("")
 				,	throttle_rate(0) ,queue_length(1) , fragment_size(0)	
 			{
 			}
-			~SubscribtionRequest()
+			~SubscriptionRequest()
 			{
 				delete last_published_time;
 			}
@@ -61,14 +61,14 @@ class Subscribtion
 		 	fawkes::Time	*last_published_time;
 		};
 
-		typedef std::list<SubscribtionRequest> RequestList;
+		typedef std::list<SubscriptionRequest> RequestList;
 		
 		std::map <std::shared_ptr<WebSession> , RequestList>    subscribers_; //maping of sessionTo requets list
 		std::string 											topic_name_;
 		std::string 											processor_prefix_;
 
 
-		bool static compare_throttle_rate(SubscribtionRequest first, SubscribtionRequest second);
+		bool static compare_throttle_rate(SubscriptionRequest first, SubscriptionRequest second);
 		fawkes::Clock 				*clock_;
 
 		enum status { ACTIVE, DORMANT };
@@ -77,10 +77,10 @@ class Subscribtion
 };
 
 
-class SubscribtionCapability
+class SubscriptionCapability
 {
 	public:
-		virtual std::shared_ptr<Subscribtion> 	subscribe 	( std::string topic_name 
+		virtual std::shared_ptr<Subscription> 	subscribe 	( std::string topic_name 
 															, std::string id 		
 															, std::string compression
 															, unsigned int throttle_rate	
@@ -89,7 +89,7 @@ class SubscribtionCapability
 														   	, std::shared_ptr<WebSession> session) = 0 ;
 
 		virtual void 							unsubscribe	( std::string id
-															, std::shared_ptr<Subscribtion> 
+															, std::shared_ptr<Subscription> 
 															, std::shared_ptr<WebSession> session ) = 0 ;
 };
 

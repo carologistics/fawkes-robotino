@@ -1,5 +1,5 @@
 #include "subscription_capability_manager.h"
-#include "subscribtion_capability.h"
+#include "subscription_capability.h"
 
 #include <exception>
 
@@ -9,25 +9,25 @@ using namespace rapidjson;
 
 //DECIDE..will i extend the susbscribtion capability or not...i can even make i a virtual inheritance.
 //but then the capability manager also became a capability...it will implement the operations anyways
-//and i can even keep the subscribtion list in the base class and be able to access it from the manager 
-//and the processor...but Subscribtion then will contain all the list of any ever subscribed processor 
+//and i can even keep the Subscription list in the base class and be able to access it from the manager 
+//and the processor...but Subscription then will contain all the list of any ever subscribed processor 
 // at the very same place..
 
 
 
-SubscribtionCapabilityManager::SubscribtionCapabilityManager()	
-:	CapabilityManager("subscribtion")
+SubscriptionCapabilityManager::SubscriptionCapabilityManager()	
+:	CapabilityManager("Subscription")
 {
 
 }
 
-SubscribtionCapabilityManager::~SubscribtionCapabilityManager()
+SubscriptionCapabilityManager::~SubscriptionCapabilityManager()
 {
 	//TODO: check if something need to be changed
 }
 	
 void 
-SubscribtionCapabilityManager::subscribe( std::string bridge_prefix
+SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 										, std::string topic_name 
 										, std::string id 		
 										, std::string compression
@@ -37,13 +37,13 @@ SubscribtionCapabilityManager::subscribe( std::string bridge_prefix
 									   	, std::shared_ptr<WebSession> session)
 {
 
-	std::shared_ptr <SubscribtionCapability> subscription_processor;
-	subscription_processor = std::dynamic_pointer_cast<SubscribtionCapability> (processores_[bridge_prefix]);
+	std::shared_ptr <SubscriptionCapability> subscription_processor;
+	subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
 	if( subscription_processor == NULL){
 		//throw and exception This should not happen
 	}
 
-	std::shared_ptr <Subscribtion> subscriber;
+	std::shared_ptr <Subscription> subscriber;
 	
 	try{
 		//always creates a new subscriber for that topic with the given Session and parameters
@@ -67,34 +67,34 @@ SubscribtionCapabilityManager::subscribe( std::string bridge_prefix
 	//Is it a new topic? Just push it to the map and activate the subscriber
 
 	//Mutex.lock()
-	if( topic_subscribtion_.find(topic_name) == topic_subscribtion_.end() )
+	if( topic_Subscription_.find(topic_name) == topic_Subscription_.end() )
 	{
-		topic_subscribtion_[topic_name] = subscriber;
+		topic_Subscription_[topic_name] = subscriber;
 		//Activate the listeners or whatever the publishs
 		subscriber->activate();
 	}else{
-		topic_subscribtion_[topic_name]->append(subscriber);
+		topic_Subscription_[topic_name]->append(subscriber);
 	}
 	//Mutex.unlock();
 }
 
 void
-SubscribtionCapabilityManager::unsubscribe	( std::string bridge_prefix
+SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 											, std::string topic_name 
 											, std::string id 		
 											, std::shared_ptr<WebSession> session)
 {
-	std::shared_ptr <SubscribtionCapability> subscription_processor;
-	subscription_processor = std::dynamic_pointer_cast<SubscribtionCapability> (processores_[bridge_prefix]);
+	std::shared_ptr <SubscriptionCapability> subscription_processor;
+	subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
 	if( subscription_processor == NULL){
 		//throw and exception This should not happen
 	}
 	
-	std::shared_ptr <Subscribtion> subscription;
+	std::shared_ptr <Subscription> subscription;
 	
-	if(topic_subscribtion_.find(topic_name) != topic_subscribtion_.end()){
+	if(topic_Subscription_.find(topic_name) != topic_Subscription_.end()){
 
-		subscription = topic_subscribtion_[topic_name];
+		subscription = topic_Subscription_[topic_name];
 
 		try{
 			subscription_processor->unsubscribe(id, subscription ,session );
@@ -103,8 +103,8 @@ SubscribtionCapabilityManager::unsubscribe	( std::string bridge_prefix
 		}
 
 		if(subscription-> empty()){
-			topic_subscribtion_[topic_name] -> finalize();
-			topic_subscribtion_.erase(topic_name);
+			topic_Subscription_[topic_name] -> finalize();
+			topic_Subscription_.erase(topic_name);
 		}
 
 		return;
@@ -116,12 +116,12 @@ SubscribtionCapabilityManager::unsubscribe	( std::string bridge_prefix
 
 
 bool
-SubscribtionCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
+SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
 {
-	std::shared_ptr <SubscribtionCapability> subscribtion_processor;
-	subscribtion_processor = std::dynamic_pointer_cast<SubscribtionCapability> (processor);
+	std::shared_ptr <SubscriptionCapability> Subscription_processor;
+	Subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processor);
 
-	if(subscribtion_processor == NULL)
+	if(Subscription_processor == NULL)
 	{
 		return false;
 	}
@@ -140,7 +140,7 @@ SubscribtionCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
 }
 
 void
-SubscribtionCapabilityManager::handle_message(Document &d
+SubscriptionCapabilityManager::handle_message(Document &d
 	,	std::shared_ptr<WebSession> session)
 {
 	std::string msg_op;

@@ -3,15 +3,15 @@
 #include <list>
 #include <memory>
 
-#include "subscribtion_capability.h" 
+#include "Subscription_capability.h" 
 #include "web_session.h"
 
 using namespace rapidjson;
 
-//=================================   SUBSCRIBTION  ===================================
+//=================================   Subscription  ===================================
 
 
-Subscribtion::Subscribtion(std::string topic_name , std::string prefix, fawkes::Clock * clock)
+Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::Clock * clock)
 	: 	topic_name_(topic_name)
 	,	processor_prefix(prefix)
 	,	clock_(clock)
@@ -22,9 +22,9 @@ Subscribtion::Subscribtion(std::string topic_name , std::string prefix, fawkes::
 this should be called by each subscribe() call to add the request and the requesting session
 */
 void
-Subscribtion::add_subscribtion_request(Document &d, std::shared_ptr <WebSession> session)
+Subscription::add_Subscription_request(Document &d, std::shared_ptr <WebSession> session)
 {
-	SubscribtionRequest request;
+	SubscriptionRequest request;
 
 	if(d.HasMember("id")) 			request.id 				= 	std::string(d["id"].GetString());
 	if(d.HasMember("compression")) 	request.compression		=	std::string(d["compression"].GetString());	
@@ -34,7 +34,7 @@ Subscribtion::add_subscribtion_request(Document &d, std::shared_ptr <WebSession>
 
 	if (subscribers_.find(session) != subscribers_.end() 
 						&& !subscribers_[session].empty()){
-		//if there was old subscribtions point to the same time_object
+		//if there was old Subscriptions point to the same time_object
 		request.last_published_time = subscribers_[session].front().last_published_time;
 	}else{
 		request.last_published_time = new fawkes::Time(clock_);
@@ -50,7 +50,7 @@ Subscribtion::add_subscribtion_request(Document &d, std::shared_ptr <WebSession>
 this should be called by each unsubscribe() to remove the request and posibly the requesting session
 */
 void
-Subscribtion::remove_subscribtion_request(Document &d, std::shared_ptr <WebSession> session)
+Subscription::remove_Subscription_request(Document &d, std::shared_ptr <WebSession> session)
 {
 	//TODO:: lock by mutex
 
@@ -62,12 +62,12 @@ Subscribtion::remove_subscribtion_request(Document &d, std::shared_ptr <WebSessi
 		//throw Exception that  there was no id in msg ..Wrong format			
 	}
 	
-	std::string subscribtion_id = std::string(d["id"].GetString());
+	std::string Subscription_id = std::string(d["id"].GetString());
 	
 	for(RequestList::iterator it = subscribers_[session].begin()
 						;it != subscribers_[session].end(); it++){
 		
-		if((*it).id == subscribtion_id){
+		if((*it).id == Subscription_id){
 			//sub_list_mutex_->lock();
 			subscribers_[session].erase(it);
   			//sub_list_mutex_->unlock();
@@ -89,7 +89,7 @@ Subscribtion::remove_subscribtion_request(Document &d, std::shared_ptr <WebSessi
 *for now just drop it. Later maybe queue it).
 */
 void
-Subscribtion::publish(std::string json_str)
+Subscription::publish(std::string json_str)
 {
 	for(std::map <std::shared_ptr<WebSession> , RequestList>::iterator it =
 	 subscribers_.begin() ; it != subscribers_.end(); it++)
@@ -124,7 +124,7 @@ Subscribtion::publish(std::string json_str)
 
 //TODO:replace by a lambda function
 bool
-Subscribtion::compare_throttle_rate(SubscribtionRequest first, SubscribtionRequest second)
+Subscription::compare_throttle_rate(SubscriptionRequest first, SubscriptionRequest second)
 {
 	return (first.throttle_rate <= second.throttle_rate);
 }
