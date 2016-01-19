@@ -1,14 +1,16 @@
 #include "capability_manager.h"
 
 
-class Subscribtion;
+class Subscription;
 
-class SubscribtionCapabilityManager
+class SubscriptionCapability;
+
+class SubscriptionCapabilityManager
 : public CapabilityManager
 {
 public:
-	SubscribtionCapabilityManager();
-	~SubscribtionCapabilityManager();
+	SubscriptionCapabilityManager();
+	~SubscriptionCapabilityManager();
 
 	void handle_message( rapidjson::Document &d 
 									, std::shared_ptr <WebSession>);
@@ -31,5 +33,5 @@ private:
 					, std::string id 		
 					, std::shared_ptr<WebSession> session);
 
-	std::map <std::string,std::shared_ptr<Subscribtion> > topic_subscribtion_;
+	std::map <std::string,std::shared_ptr<Subscription> > topic_Subscription_;
 };
