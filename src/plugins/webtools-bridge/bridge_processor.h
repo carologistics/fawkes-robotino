@@ -12,6 +12,7 @@ public:
 	}
 	
 	virtual ~BridgeProcessor();
+	
 
 	std::string get_prefix()
 	{
@@ -21,6 +22,8 @@ public:
 private:
 	std::string prefix_;
 
+
+
 };
 
-#endif
+#endif		

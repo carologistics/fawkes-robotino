@@ -190,7 +190,7 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 		//Activate the listeners or whatever the publishs
 		subscriber->activate();
 	}else{
-		topic_Subscription_[topic_name]->append(subscriber);
+		topic_Subscription_[topic_name]->subsum(subscriber);
 	}
 	//Mutex.unlock();
 }

@@ -28,8 +28,8 @@ class Subscription
 		bool 		empty();
 
 
-		virtual void 	activate();
-		virtual void 	deactivate();
+		virtual void 	activate(); 	//Dont forget to set the right status
+		virtual void 	deactivate();	//Dont forget to set the right status
 		virtual void 	finalize();// finalize oper and listeners interfaces 
 
 		void add_Subscription_request( std::string id 		
