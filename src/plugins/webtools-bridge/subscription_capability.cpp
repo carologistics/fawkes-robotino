@@ -59,9 +59,9 @@ Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
 			;it_requests++ ){
 
 			add_Subscription_request(it_subscribers->first, *it_requests);
-
 		}
 	}
+
 }
 
 bool
@@ -141,7 +141,9 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 {
 	//TODO:: lock by mutex
 
+	//TODO:: make sure there is only one session object per session. Otherwise implement an equality operator
 	if(subscribers_.find(session) != subscribers_.end()){
+
 		//throw Exception that the subscirber does not exist 
 	}
 
