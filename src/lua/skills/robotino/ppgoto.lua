@@ -54,14 +54,32 @@ x, y:      global world cartesian coordinates of target point
 ori:       orientation of robot at destination, radian offset from forward
            clock-wise positive
 place:     name of a place
+stop:      true to stop
 ]==]
 
 -- Initialize as skill module
 skillenv.skill_module(...)
 
 -- Jumpconditions
-function jumpcond_paramfail(state)
-   return state.fsm.vars.param_fail
+function jumpcond_paramfail(self)
+   if self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil then
+      return false
+   elseif self.fsm.vars.place ~= nil then
+      return false
+   elseif self.fsm.vars.stop ~= nil then
+      return false
+   else
+      return true
+   end
+end
+
+function place_not_valid(self)
+   if self.fsm.vars.place then
+      self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
+      if not self.fsm.vars.node:is_valid() then
+         return true
+      end
+   end
 end
 
 function jumpcond_navifail(state)
@@ -103,7 +121,8 @@ fsm:define_states{
 -- Transitions
 fsm:add_transitions{
    {"PPGOTO", "FAILED", cond_and_precond="not ppnavi:has_writer()", desc="No writer for interface"},
-   {"PPGOTO", "FAILED", cond=jumpcond_paramfail, desc="Invalid/insufficient parameters"},
+   {"PPGOTO", "FAILED", precond=jumpcond_paramfail, desc="Invalid/insufficient parameters"},
+   {"PPGOTO", "FAILED", precond=place_not_valid, desc="Place parameter invalid"},
    {"PPGOTO", "FINAL", cond=jumpcond_navifinal, desc="Position reached"},
    {"PPGOTO", "TIMEOUT", cond=jumpcond_navifail, desc="Navigator failure with err: " .. ppnavi:error_code() .. " try goto"},
    {"TIMEOUT", "SKILL_GOTO", timeout=1},
@@ -123,22 +142,20 @@ function PPGOTO:init()
       -- place goto
       local place = self.fsm.vars.place
       if self.fsm.vars.ori ~= nil then
-	 local ori = self.fsm.vars.ori
-	 local m = ppnavi.PlaceWithOriGotoMessage:new(place, ori)
-	 printf("Sending PlaceWithOriGotoMessage(%s, %f)", place, ori)
-	 self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
-   printf("msgid: %d/%d  final: %s", state.fsm.vars.msgid)
+	      local ori = self.fsm.vars.ori
+	      local m = ppnavi.PlaceWithOriGotoMessage:new(place, ori)
+	      printf("Sending PlaceWithOriGotoMessage(%s, %f)", place, ori)
+	      self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
+         printf("msgid: %d/%d  final: %s", state.fsm.vars.msgid)
       else
-	 local m = ppnavi.PlaceGotoMessage:new(place)
-	 printf("Sending PlaceGotoMessage(%s)", place)
-	 self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
+	      local m = ppnavi.PlaceGotoMessage:new(place)
+	      printf("Sending PlaceGotoMessage(%s)", place)
+	      self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
       end
    elseif self.fsm.vars.stop ~= nil then
       local m = ppnavi.StopMessage:new()
       printf("Sending StopGotoMessage")
       self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
-   else
-      self.fsm.vars.param_fail = true
    end
    self.wait_start = 1
 end
