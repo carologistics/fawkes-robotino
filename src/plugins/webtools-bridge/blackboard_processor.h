@@ -43,16 +43,44 @@ namespace fawkes {
   class BlackBoard;
   class Interface;
   class Logger;
+  class BlackBoardInterfaceListener;
 }
 
 class WebSession;
+
+class BlackBoardSubscription
+: public Subscription 
+, public fawkes::BlackBoardInterfaceListener
+{
+  public:
+    BlackBoardSubscription(std::string topic_name 
+                          , std::string processor_prefix 
+                          , fawkes::Clock *clock
+                          , fawkes::BlackBoard *blackboard
+                          , fawkes::Interface *interface);
+
+    ~BlackBoardSubscription();
+
+    fawkes::Interface* get_interface_ptr();
+
+    void  activate_impl();
+    void  deactivate_impl();
+    void  finalize_impl();// finalize oper and listeners interfaces 
+
+    void bb_interface_data_changed(fawkes::Interface *interface) throw();
+
+  private:
+    fawkes::BlackBoard         *blackboard_;
+    fawkes::Interface          *interface_;
+};
 
 class BridgeBlackBoardProcessor
 : public BridgeProcessor,
   public SubscriptionCapability
 {
  public:
-  BridgeBlackBoardProcessor( fawkes::Logger *logger
+  BridgeBlackBoardProcessor(std::string prefix 
+                          , fawkes::Logger *logger
                           , fawkes::Configuration *config
                           , fawkes::BlackBoard *blackboard 
                           , fawkes::Clock *clock)
@@ -68,45 +96,20 @@ class BridgeBlackBoardProcessor
                                               , unsigned int fragment_size  
                                               , std::shared_ptr<WebSession> session);
 
-  void                            unsubscribe ( std::string id
-                                            , std::shared_ptr<Subscription> 
-                                            , std::shared_ptr<WebSession> session ) ; 
+  void  unsubscribe ( std::string id
+                    , std::shared_ptr<Subscription> 
+                    , std::shared_ptr<WebSession> session ) ; 
 
 private:
-  fawkes::Logger       *logger_;
-  fawkes::Configuration *config_;
-  fawkes::BlackBoard *blackboard_;
-  fawkes::Clock       *clock_;
+  fawkes::Logger         *logger_;
+  fawkes::Configuration  *config_;
+  fawkes::BlackBoard     *blackboard_;
+  fawkes::Clock          *clock_;
 
-  std::map<std::string, fawkes::Interface *>interfaces_;
   std::map<std::string, fawkes::Interface *>::iterator ifi_;
 
 };
 
 
-class BlackBoardSubscription
-: public Subscription,
-, public BlackBoardInterfaceListener
-{
-  public:
-    BlackBoardSubscription(std::string topic_name 
-                          , std::string processor_prefix 
-                          , fawkes::Clock *clock
-                          , fawkes::BlackBoard *blackboard);
-
-    ~BlackBoardSubscription();
-
-    Interface* get_interface_ptr();
-
-    void  activate();
-    void  deactivate();
-    void  finalize();// finalize oper and listeners interfaces 
-
-    void bb_interface_data_changed(Interface *interface) throw();
-
-  private:
-    Inteface                   *interface_;
-    fawkes::BlackBoard         *blackboard_;
-};
 
 #endif

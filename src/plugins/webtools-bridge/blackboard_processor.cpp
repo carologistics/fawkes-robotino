@@ -61,10 +61,12 @@ using namespace fawkes;
  * @param baseurl base URL of the Clips webrequest processor
  */
 
-BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(fawkes::Logger *logger
+BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(std::string prefix
+                                                    , fawkes::Logger *logger
                                                     , fawkes::Configuration *config
                                                     , fawkes::BlackBoard *blackboard
                                                     , fawkes::Clock *clock)
+:BridgeProcessor(prefix)
 {
   logger_         = logger;
   config_         = config;
@@ -77,10 +79,10 @@ BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(fawkes::Logger *logger
 /** Destructor. */
 BridgeBlackBoardProcessor::~BridgeBlackBoardProcessor()
 {
-  for (ifi_ = interfaces_.begin(); ifi_ != interfaces_.end(); ++ifi_) {
-    blackboard_->close(ifi_->second);
-  }
-  interfaces_.clear();
+  // for (ifi_ = interface_.begin(); ifi_ != interface_.end(); ++ifi_) {
+  //   blackboard_->close(ifi_->second);
+  // }
+  // interface_.clear();
 }
 
 std::shared_ptr <Subscription> 
@@ -94,6 +96,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 {
 
   //Extract prefix from the name
+  std::string topic_name="";
   std::size_t pos = prefixed_topic_name.find(prefix_);
   if (pos != std::string::npos && pos < 2)
   {
@@ -105,17 +108,20 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
   //TODO::take care of the differnt ways the topic is spelled
 
   //Extracet the BlackBoard Interface Type and Id
-  std::size_t pos =topic_name.find("::");
+  pos =topic_name.find("::");
+  std::string if_id=topic_name;
+  std::string if_type=topic_name;
+  
   if (pos != std::string::npos)
   {
-    std::string if_type=topic_name;
-    if_type.erase(pos,Subscription.length());
-
-    std::string if_id=topic_name;
+    if_type.erase(pos,topic_name.length());
     if_id.erase(0 ,pos+2);
 
     logger_->log_info("BridgeProcessor::if_type",if_type.c_str());
     logger_->log_info("BridgeProcessor::if_id",if_id.c_str());
+  }
+  else{
+    //throw exception
   }
 
   //Look for the topic in the BlackBoard intefaces
@@ -134,23 +140,26 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
   {
     logger_->log_info("FawkesBridge::","Interface Does not Exist");
     //Throw and Exception that was noInterface and escilate that exception from the other calling CPM
-    return;
+    //return;
   }
  
+  //Open the interface
+  Interface *iface;
+  try{
+    iface = blackboard_->open_for_reading(if_type.c_str(), if_id.c_str());
+  }catch (Exception &e) {
+    logger_->log_info("FawkesBridge::","Failed to open interface: %s\n", e.what());
+    //Throw and may be not catch it and escelate it to the calling CPM.
+   // return;
+  }
+   logger_->log_info("FawkesBridge::", "Interface %s  Succefully Opened!",topic_name.c_str());
+
   //Make a DROMANT BlacksubSubsciption Instace
   std::shared_ptr <BlackBoardSubscription> new_subscirption;
-  new_subscirption = std::make_shared <BlackBoardSubsciption>(topic_name , prefix_ ,clock_ , blackboard_);
+  new_subscirption = std::make_shared <BlackBoardSubscription>(topic_name , prefix_ ,clock_ , blackboard_ , iface);
 
-  new_subscirption.add_Subscription_request();
-  // //Open the interface
-  // try{
-  //   Interface *iface = blackboard_->open_for_reading(if_type.c_str(), if_id.c_str());
-  // }catch (Exception &e) {
-  //   logger_->log_info("FawkesBridge::","Failed to open interface: %s\n", e.what());
-  //   //Throw and may be not catch it and escelate it to the calling CPM.
-  //   return;
-  // }
-  //  logger_->log_info("FawkesBridge::", "Interface %s  Succefully Opened!",topic_name.c_str());
+  new_subscirption->add_Subscription_request(id , compression , throttle_rate  
+                                      ,  queue_length , fragment_size , session);
   
   return new_subscirption ;
 }
@@ -159,10 +168,13 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
 void
 BridgeBlackBoardProcessor::unsubscribe( std::string id
-                                      , std::shared_ptr <BlackBoardSubscription>  bb_subscription
+                                      , std::shared_ptr <Subscription>  subscription
                                       , std::shared_ptr<WebSession> session)
 {
-  bb_subscription->remove_Subscription_request(id, s);
+  std::shared_ptr <BlackBoardSubscription>  bb_subscription
+                  = std::static_pointer_cast<BlackBoardSubscription> (subscription);
+
+  bb_subscription->remove_Subscription_request(id, session);
   
 }
 
@@ -171,80 +183,87 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
 //====================================  BlackBoardSubsciption ===========================================
 
 
-BlackBoardSubsciption::BlackBoardSubscription(std::string topic_name 
+BlackBoardSubscription::BlackBoardSubscription(std::string topic_name 
                                               , std::string processor_prefix 
                                               , fawkes::Clock *clock
-                                              , fawkes::BlackBoard *blackboard)
+                                              , fawkes::BlackBoard *blackboard
+                                              , fawkes::Interface *interface)
 : Subscription(topic_name,processor_prefix, clock)
+, BlackBoardInterfaceListener("WebToolsBridgeListener")
 , blackboard_(blackboard)
+, interface_(interface)
 {
   
 }
 
-BlackBoardSubsciption::~BlackBoardSubscription()
+BlackBoardSubscription::~BlackBoardSubscription()
 {
+  BlackBoardSubscription::finalize();
   delete interface_;
 }
 
-Interface*
-BlackBoardSubsciption::get_interface_ptr()
+fawkes::Interface*
+BlackBoardSubscription::get_interface_ptr()
 {
   return  interface_;
 }
 
 
 void
-BlackBoardSubsciption::activate()
+BlackBoardSubscription::activate_impl()
 {
-  if(active_status_ != ACTIVE)
-  {
-    //Extracet the BlackBoard Interface Type and Id
-    std::size_t pos =topic_name.find("::");
-    if (pos != std::string::npos)
-    {
-      std::string if_type=topic_name;
-      if_type.erase(pos,Subscription.length());
+   if(active_status_ != ACTIVE)
+   {
+  //   //Extracet the BlackBoard Interface Type and Id
+  //   std::size_t pos =topic_name.find("::");
+  //   if (pos != std::string::npos)
+  //   {
+  //     std::string if_type=topic_name;
+  //     if_type.erase(pos,Subscription.length());
 
-      std::string if_id=topic_name;
-      if_id.erase(0 ,pos+2);
-    }
+  //     std::string if_id=topic_name;
+  //     if_id.erase(0 ,pos+2);
+  //   }
 
-    //Open the interface
-    try{
-      interfaces_ = blackboard_->open_for_reading(if_type.c_str(), if_id.c_str());
-    }catch (Exception &e) {
-      logger_->log_info("FawkesBridge::","Failed to open interface: %s\n", e.what());
-      //Throw and may be not catch it and escelate it to the calling CPM.
-      return;
-    }
+  //   //Open the interface
+  //   try{
+  //     interface_ = blackboard_->open_for_reading(if_type.c_str(), if_id.c_str());
+  //   }catch (Exception &e) {
+  //     logger_->log_info("FawkesBridge::","Failed to open interface: %s\n", e.what());
+  //     //Throw and may be not catch it and escelate it to the calling CPM.
+  //     return;
+  //   }
 
-    bbil_add_data_interface(interfaces_);
+  //Checf interface is valid is and thorw exception if not
+
+    bbil_add_data_interface(interface_);
 
     active_status_=ACTIVE;
   }
 }
 
 void
-BlackBoardSubsciption::deactivate()
+BlackBoardSubscription::deactivate_impl()
 {
   if(active_status_ != DORMANT){
-    bbil_remove_data_interface(interfaces_);
-    blackboard_->close(interfaces_);
+    bbil_remove_data_interface(interface_);
+    
 
-    active_status_=DORMANT;
   }
 }
 
 void
-BlackBoardSubsciption::finalize()
+BlackBoardSubscription::finalize_impl()
 {
-    deactivate();
+  deactivate();
+  blackboard_->close(interface_);
 }
 
 void 
-BlackBoardSubsciption::bb_interface_data_changed(Interface *interface) throw()
+BlackBoardSubscription::bb_interface_data_changed(fawkes::Interface *interface) throw()
 {
-  if(active_status_ == !ACTIVE){
+  if(active_status_ == ACTIVE){
+    //this should not happen 
     return;
   }
 
@@ -257,14 +276,15 @@ BlackBoardSubsciption::bb_interface_data_changed(Interface *interface) throw()
   writer.String("op");
   writer.String("publish");
 
-  if(!id.empty()){
-    writer.String("id");
-    writer.String(id.c_str(),(SizeType)id.length());
-  }
+//TODO:: IMPORTANT..just Move everything but the msg to be client aware
+  // if(!id.empty()){
+  //   writer.String("id");
+  //   writer.String(id.c_str(),(SizeType)id.length());
+  // }
 
   writer.String("topic");
 //  writer.String(topic_name.c_str(), (SizeType)topic_name.length());
-  std::string prefiexed_topic_name= "/"+processor_prefix_"/"+topic_name_;
+  std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
   writer.String(prefiexed_topic_name.c_str(), (SizeType)prefiexed_topic_name.length());
 
   
@@ -275,7 +295,7 @@ BlackBoardSubsciption::bb_interface_data_changed(Interface *interface) throw()
   writer.String("msg");
   //"msg" Json construction: 
   writer.StartObject();
-  for (InterfaceFieldIterator fi  = interfaces_[topic_name]->fields(); fi != interfaces_[topic_name]->fields_end(); ++fi){ 
+  for (InterfaceFieldIterator fi  = interface->fields(); fi != interface->fields_end(); ++fi){ 
 
 
       std::string fieldName= fi.get_name();

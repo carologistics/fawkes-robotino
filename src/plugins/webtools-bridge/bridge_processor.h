@@ -19,7 +19,7 @@ public:
 		return prefix_;
 	}
 
-private:
+protected:
 	std::string prefix_;
 
 
