@@ -78,5 +78,3 @@ WebSession::send(std::string msg){
     return true;
 }
 
-
-

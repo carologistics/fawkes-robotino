@@ -1,9 +1,11 @@
-
 #include <map>
 #include <list>
 #include <memory>
 
-#include "Subscription_capability.h" 
+#include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
+
+#include "subscription_capability.h" 
 #include "web_session.h"
 
 using namespace rapidjson;
@@ -13,9 +15,9 @@ using namespace rapidjson;
 
 Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::Clock * clock)
 	: 	topic_name_(topic_name)
-	,	processor_prefix(prefix)
+	,	processor_prefix_(prefix)
 	,	clock_(clock)
-	,	active_status(DORMANT)
+	,	active_status_(DORMANT)
 {
 
 }
@@ -23,34 +25,59 @@ Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::
 
 Subscription::~Subscription()
 {
-	delete clock;
+	//delete it from the class created the subscriptiuon (ie. processor)
+	//delete clock_;
 }
 
 void
 Subscription::activate()
 {
-	//implement such that is only active subscribtion for a topic is active at anypoint of time
-	//
+	activate_impl();
 	active_status_ = ACTIVE;
 }
 
 void
 Subscription::deactivate()
 {
+	Subscription::deactivate_impl();
 	active_status_ = DORMANT;
+}
+
+void
+Subscription::finalize()
+{
+	Subscription::finalize_impl();
+}
+
+void
+Subscription::activate_impl()
+{
+	//Override to extend behavior
+}
+
+void
+Subscription::deactivate_impl()
+{
+	//Override to extend behavior
+}
+
+void
+Subscription::finalize_impl()
+{
+	//Override to extend behavior
 }
 
 void
 Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
 {
-	if (this.topic_name_ != subscription_to_append.get_topic_name()){
+	if (topic_name_ != subscription_to_append->get_topic_name()){
 		//throw exceptoin that they dont belong to the same topic and cant be merged
 		return;
 	}
 
-	for(std::map <std::shared_ptr, RequestList>::iterator 
-		 it_subscribers = subscription_to_append.subscribers_.begin()
-		;it_subscribers != subscription_to_append.subscribers_.end()
+	for(std::map <std::shared_ptr<WebSession>, RequestList>::iterator 
+		 it_subscribers = subscription_to_append->subscribers_.begin()
+		;it_subscribers != subscription_to_append->subscribers_.end()
 		;it_subscribers++){
 
 		for(RequestList::iterator 
@@ -58,7 +85,13 @@ Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
 			;it_requests != it_subscribers->second.end()
 			;it_requests++ ){
 
-			add_Subscription_request(it_subscribers->first, *it_requests);
+			add_Subscription_request( it_requests->id
+									, it_requests->compression
+									, it_requests->throttle_rate
+									, it_requests->queue_length
+									, it_requests->fragment_size
+									, it_subscribers->first);
+			subscription_to_append->finalize();
 		}
 	}
 
@@ -71,15 +104,6 @@ Subscription::empty()
 	return subscribers_.empty();
 }
 
-void
-Subscription::finalize()
-{
-	//close all the processor specefic interfaces or listenners or whatever u used
-}
-
-
-
-
 
 
 /*
@@ -87,34 +111,33 @@ this should be called by each subscribe() call to add the request and the reques
 */
 
 void
-Subscription::add_Subscription_request(SubscriptionRequest request
-								   	, std::shared_ptr<WebSession> session);
-{
-	
-	add_Subscription_request( request.id
-							, request.compression
-							, request.throttle_rate
-							, request.queue_length
-							, request.fragment_size
-							, session);
-}
-
-void
 Subscription::add_Subscription_request( std::string id 		
 									, std::string compression
 									, unsigned int throttle_rate	
 									, unsigned int queue_length 	
 									, unsigned int fragment_size 	
-								   	, std::shared_ptr<WebSession> session);
+								   	, std::shared_ptr<WebSession> session)
 {
 	SubscriptionRequest request;
+	//CHANGE:this matches for the pointer not the object
 
-	if ( subscribers_.find(session) != subscribers_.end() && !(subscribers_[session].empty()) ){
-		//if there was old Subscriptions point to the same time_object
-		if(subscribers_[session].find(id) != subscribers_[session].end())
-		{
-			//throw exception..That id already exists for that client on that topic
-		}
+	std::map <std::shared_ptr<WebSession> , RequestList>::iterator it;
+
+	it = std::find_if(subscribers_.begin(), subscribers_.end() 
+					,	[session](const std::pair<std::shared_ptr<WebSession> , RequestList> & t) 
+						-> bool 
+						{ 
+			     			 return t.first->get_id() == session->get_id();
+			  			} 
+			  		);	
+
+	//if there was old Subscriptions point to the same time_object
+	if (it != subscribers_.end() && !(subscribers_[session].empty()) ){
+	
+		// if(subscribers_[session].find(id) != subscribers_[session].end())
+		// {
+		// 	//throw exception..That id already exists for that client on that topic
+		// }
 			
 		request.last_published_time = subscribers_[session].front().last_published_time;
 	}else{
@@ -141,8 +164,17 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 {
 	//TODO:: lock by mutex
 
+	std::map <std::shared_ptr<WebSession> , RequestList>::iterator it;
+
+	it = std::find_if(subscribers_.begin(), subscribers_.end() 
+					,	[session](const std::pair<std::shared_ptr<WebSession> , RequestList> & t) 
+						-> bool 
+						{ 
+			     			 return t.first->get_id() == session->get_id();
+			  			} 
+			  		);	
 	//TODO:: make sure there is only one session object per session. Otherwise implement an equality operator
-	if(subscribers_.find(session) != subscribers_.end()){
+	if(it != subscribers_.end()){
 
 		//throw Exception that the subscirber does not exist 
 	}
@@ -152,7 +184,7 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 		;it != subscribers_[session].end()
 		;it++){
 		
-		if((*it).id == Subscription_id){
+		if((*it).id == subscription_id){
 			//sub_list_mutex_->lock();
 			subscribers_[session].erase(it);
   			//sub_list_mutex_->unlock();

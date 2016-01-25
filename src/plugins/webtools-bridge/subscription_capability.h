@@ -28,9 +28,9 @@ class Subscription
 		bool 		empty();
 
 
-		virtual void 	activate(); 	//Dont forget to set the right status
-		virtual void 	deactivate();	//Dont forget to set the right status
-		virtual void 	finalize();// finalize oper and listeners interfaces 
+		void 	activate(); 	//Dont forget to set the right status
+		void 	deactivate();	//Dont forget to set the right status
+		void 	finalize();// finalize oper and listeners interfaces 
 
 		void add_Subscription_request( std::string id 		
 									, std::string compression
@@ -39,8 +39,6 @@ class Subscription
 									, unsigned int fragment_size 	
 								   	, std::shared_ptr<WebSession> session);
 
-		void add_Subscription_request(SubscriptionRequest request
-								   	,std::shared_ptr<WebSession> session);
 	
 		void remove_Subscription_request(std::string id
 		 								,std::shared_ptr <WebSession> session);
@@ -48,17 +46,16 @@ class Subscription
 	protected:
 		void 	publish(std::string json_str);
 
-	private:
+		virtual void 	activate_impl(); 	//Dont forget to set the right status
+		virtual void 	deactivate_impl();	//Dont forget to set the right status
+		virtual void 	finalize_impl();// finalize oper and listeners interfaces 
+
 	
 		struct SubscriptionRequest{
 			SubscriptionRequest()
 				:	id("") , compression("")
 				,	throttle_rate(0) ,queue_length(1) , fragment_size(0)	
 			{
-			}
-			~SubscriptionRequest()
-			{
-				delete last_published_time;
 			}
 
 			std::string		id;
@@ -73,12 +70,12 @@ class Subscription
 		typedef std::list<SubscriptionRequest> RequestList;
 		enum Status { ACTIVE, DORMANT };
 
-		
-		std::map <std::shared_ptr<WebSession> , RequestList>    subscribers_; //maping of sessionTo requets list
 		std::string 											topic_name_;
 		std::string 											processor_prefix_;
 		fawkes::Clock 											*clock_;
+		
 		Status	 												active_status_;
+		std::map <std::shared_ptr<WebSession> , RequestList>    subscribers_; //maping of sessionTo requets list
 
 		bool static compare_throttle_rate(SubscriptionRequest first, SubscriptionRequest second);
 
