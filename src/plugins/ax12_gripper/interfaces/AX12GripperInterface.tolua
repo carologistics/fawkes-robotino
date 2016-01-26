@@ -627,7 +627,12 @@ class AX12GripperInterface : public Interface
 
 $[
 
+assert(fawkes.Interface.msgq_first)
+assert(fawkes.Interface.msgq_enqueue)
+assert(fawkes.Interface.create_message)
+
 fawkes.AX12GripperInterface.msgq_first     = fawkes.Interface.msgq_first
+fawkes.AX12GripperInterface.msgq_enqueue   = fawkes.Interface.msgq_enqueue
 fawkes.AX12GripperInterface.create_message = fawkes.Interface.create_message
 
 $]
