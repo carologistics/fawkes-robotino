@@ -80,9 +80,9 @@ end
 function send_transrot(vx, vy, omega)
    local oc  = motor:controller()
    local ocn = motor:controller_thread_name()
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
-   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
+   motor:msgq_enqueue(motor.AcquireControlMessage:new())
+   motor:msgq_enqueue(motor.TransRotMessage:new(vx, vy, omega))
+   motor:msgq_enqueue(motor.AcquireControlMessage:new(oc, ocn))
 end
 
 function get_tag_distance(tag)

@@ -115,7 +115,7 @@ function INIT:init()
       self.fsm.vars.giveup_time = os.time() + WAIT_TIMEOUT
    end
 
-   bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.EnableSwitchMessage:new())
+   bb_sw_machine_signal:msgq_enqueue(bb_sw_machine_signal.EnableSwitchMessage:new())
  
    if not(self.fsm.vars.place and navgraph:node(self.fsm.vars.place):is_valid()) then
       self.fsm.vars.place = "place-default"
@@ -125,9 +125,9 @@ function INIT:init()
    msg:set_translation(0, node:property_as_float("signal_hint_x"))
    msg:set_translation(1, node:property_as_float("signal_hint_y"))
    msg:set_translation(2, node:property_as_float("signal_hint_z"))
-   bb_signal_hint:msgq_enqueue_copy(msg)
+   bb_signal_hint:msgq_enqueue(msg)
 
-   bb_sw_laser:msgq_enqueue_copy(bb_sw_laser.EnableSwitchMessage:new())
+   bb_sw_laser:msgq_enqueue(bb_sw_laser.EnableSwitchMessage:new())
 end
 
 function LOOK:init()
@@ -158,8 +158,8 @@ function cleanup()
    bb_output:set_visibility_history(bb_signal:visibility_history())
    bb_output:set_ready(bb_signal:is_ready())
 
-   bb_sw_machine_signal:msgq_enqueue_copy(bb_sw_machine_signal.DisableSwitchMessage:new())
-   --bb_sw_laser:msgq_enqueue_copy(bb_sw_laser.DisableSwitchMessage:new())
+   bb_sw_machine_signal:msgq_enqueue(bb_sw_machine_signal.DisableSwitchMessage:new())
+   --bb_sw_laser:msgq_enqueue(bb_sw_laser.DisableSwitchMessage:new())
 end
 
 function FINAL:init()

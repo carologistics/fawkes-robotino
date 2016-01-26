@@ -92,14 +92,14 @@ function MOVING:init()
    self.fsm.vars.msgid_timeout = os.time() + 1
    if not math.isnan( self.fsm.vars.ori ) then
       local msg_ori = navigator.SetOrientationModeMessage:new( navigator.OrientAtTarget )
-      fsm.vars.ori_msgid = navigator:msgq_enqueue_copy(msg_ori)
+      fsm.vars.ori_msgid = navigator:msgq_enqueue(msg_ori)
    end
 
    local msg = navigator.CartesianGotoMessage:new(
       self.fsm.vars.x,
       self.fsm.vars.y,
       self.fsm.vars.ori)
-   fsm.vars.goto_msgid = navigator:msgq_enqueue_copy(msg)
+   fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
 
 
