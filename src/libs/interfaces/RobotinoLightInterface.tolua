@@ -70,7 +70,12 @@ class RobotinoLightInterface : public Interface
 
 $[
 
+assert(fawkes.Interface.msgq_first)
+assert(fawkes.Interface.msgq_enqueue)
+assert(fawkes.Interface.create_message)
+
 fawkes.RobotinoLightInterface.msgq_first     = fawkes.Interface.msgq_first
+fawkes.RobotinoLightInterface.msgq_enqueue   = fawkes.Interface.msgq_enqueue
 fawkes.RobotinoLightInterface.create_message = fawkes.Interface.create_message
 
 $]

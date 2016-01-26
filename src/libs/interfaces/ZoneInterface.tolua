@@ -61,7 +61,12 @@ class ZoneInterface : public Interface
 
 $[
 
+assert(fawkes.Interface.msgq_first)
+assert(fawkes.Interface.msgq_enqueue)
+assert(fawkes.Interface.create_message)
+
 fawkes.ZoneInterface.msgq_first     = fawkes.Interface.msgq_first
+fawkes.ZoneInterface.msgq_enqueue   = fawkes.Interface.msgq_enqueue
 fawkes.ZoneInterface.create_message = fawkes.Interface.create_message
 
 $]

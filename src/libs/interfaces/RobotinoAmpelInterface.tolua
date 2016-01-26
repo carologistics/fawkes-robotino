@@ -59,7 +59,12 @@ class RobotinoAmpelInterface : public Interface
 
 $[
 
+assert(fawkes.Interface.msgq_first)
+assert(fawkes.Interface.msgq_enqueue)
+assert(fawkes.Interface.create_message)
+
 fawkes.RobotinoAmpelInterface.msgq_first     = fawkes.Interface.msgq_first
+fawkes.RobotinoAmpelInterface.msgq_enqueue   = fawkes.Interface.msgq_enqueue
 fawkes.RobotinoAmpelInterface.create_message = fawkes.Interface.create_message
 
 $]

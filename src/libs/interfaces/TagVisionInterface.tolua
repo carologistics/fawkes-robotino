@@ -57,7 +57,12 @@ class TagVisionInterface : public Interface
 
 $[
 
+assert(fawkes.Interface.msgq_first)
+assert(fawkes.Interface.msgq_enqueue)
+assert(fawkes.Interface.create_message)
+
 fawkes.TagVisionInterface.msgq_first     = fawkes.Interface.msgq_first
+fawkes.TagVisionInterface.msgq_enqueue   = fawkes.Interface.msgq_enqueue
 fawkes.TagVisionInterface.create_message = fawkes.Interface.create_message
 
 $]
