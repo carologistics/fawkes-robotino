@@ -215,6 +215,6 @@ end
 
 function ALIGN:init()
   local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
-  self.args["motor_move"] = {x = pp.x, y = pp.y, ori = pp.ori}
+  self.args["motor_move"] = {x = pp.x, y = pp.y + self.fsm.vars.y, ori = pp.ori}
   --self.args["motor_move"].tolerance = {x=0.05, y=0.03, ori=0.1} -- this does not exists
 end
