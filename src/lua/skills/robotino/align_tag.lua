@@ -203,7 +203,7 @@ function DRIVE:loop()
    --print("velocity:")
    --printtable(velocity)
    --send motor message
-   send_transrot(velocity.x, velocity.y, velocity.ori)
+   send_transrot(-velocity.x, -velocity.y, velocity.ori)
 end
 
 function ORIENTATE:init()
