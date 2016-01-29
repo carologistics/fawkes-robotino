@@ -51,6 +51,9 @@ end
 function charging()
   --TODO check loading voltage
   printf(battery:voltage())
+  if battery:voltage() > 27000 then
+     return true
+  end
 end
 
 fsm:define_states{ export_to=_M,
@@ -64,8 +67,8 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", cond=no_battery_writer, desc="No Writer for BatteryInterface"},
    {"INIT", "ALIGN_TAG", cond=true},
-   --{"CHECK_CHARGING", "ALIGN_AGAIN", cond="not charging()", desc="If not charging, do something"}, --TODO proper handle
-   {"CHECK_CHARGING", "FINAL", cond=true, desc="If not charging, do something"}, --TODO proper handle
+   {"CHECK_CHARGING", "FAILED", cond="not charging()", desc="If not charging, do something"}, --TODO maybe try again or something
+   {"CHECK_CHARGING", "FINAL", cond=charging, desc="If not charging, do something"},
 }
 
 function ALIGN_TAG:init()
