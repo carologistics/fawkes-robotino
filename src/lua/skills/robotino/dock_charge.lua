@@ -40,7 +40,7 @@ documentation      = [==[
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local default_tag_id = 114
+local default_tag_id = 81
 local left_sensor_index = 3
 local right_sensor_index = 4
 
@@ -51,7 +51,7 @@ end
 function charging()
   --TODO check loading voltage
   printf(battery:voltage())
-  if battery:voltage() > 27000 then
+  if battery:voltage() > 26800 then
      return true
   end
 end
@@ -60,13 +60,15 @@ fsm:define_states{ export_to=_M,
    closure={charging=charging},
    {"INIT", JumpState},
    {"ALIGN_TAG", SkillJumpState, skills={{align_tag}}, final_to="DRIVE_BACKWARDS", fail_to="FAILED"},
-   {"DRIVE_BACKWARDS", SkillJumpState, skills={{motor_move}}, final_to="CHECK_CHARGING", fail_to="FAILED"},
+   {"DRIVE_BACKWARDS", SkillJumpState, skills={{motor_move}}, final_to="SETTLE_VOLTAGE", fail_to="FAILED"},
+   {"SETTLE_VOLTAGE", JumpState},
    {"CHECK_CHARGING", JumpState},
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond=no_battery_writer, desc="No Writer for BatteryInterface"},
    {"INIT", "ALIGN_TAG", cond=true},
+   {"SETTLE_VOLTAGE", "CHECK_CHARGING", timeout=2},
    {"CHECK_CHARGING", "FAILED", cond="not charging()", desc="If not charging, do something"}, --TODO maybe try again or something
    {"CHECK_CHARGING", "FINAL", cond=charging, desc="If not charging, do something"},
 }
@@ -76,5 +78,8 @@ function ALIGN_TAG:init()
 end
 
 function DRIVE_BACKWARDS:init()
-   self.args["motor_move"] = {x = -0.4, y = 0, ori = 0} --TODO measure the distance between dock and tag
+   self.args["motor_move"] = {x = -0.14, y = 0, ori = 0,
+			                     vel_trans = 0.12,
+									   tolerance = { x=0.05, y=0.05, ori=0.01 }}
+--TODO measure the distance between dock and tag
 end
