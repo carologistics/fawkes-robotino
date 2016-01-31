@@ -11,7 +11,7 @@ public:
 	{
 	}
 	
-	virtual ~BridgeProcessor();
+	virtual ~BridgeProcessor(){}
 	
 
 	std::string get_prefix()
