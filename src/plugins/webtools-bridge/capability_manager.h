@@ -27,9 +27,11 @@ class CapabilityManager
 		}
 
 		virtual void handle_message( rapidjson::Document &d 
-									, std::shared_ptr <WebSession>);
+									, std::shared_ptr <WebSession>)
+		{}
 
-		virtual bool register_processor(std::shared_ptr <BridgeProcessor> processor);
+		virtual bool register_processor(std::shared_ptr <BridgeProcessor> processor)
+		{return false;}
 
 
 		std::string get_name()	{return capability_name_;}
