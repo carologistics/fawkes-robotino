@@ -104,6 +104,17 @@ Subscription::empty()
 	return subscribers_.empty();
 }
 
+std::string
+Subscription::get_topic_name()
+{
+	return topic_name_;
+}
+
+std::string
+Subscription::get_processor_prefix()
+{
+	return processor_prefix_;
+}
 
 
 /*
