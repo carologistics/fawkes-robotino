@@ -45,6 +45,7 @@
 #include "rapidjson/stringbuffer.h"
 
 
+
 using namespace rapidjson;
 using namespace std;
 
@@ -105,7 +106,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   if(topic_name == ""){
     //this should not happen
-    throw fawkes::SyntaxErrorException("BlackboardProcessor: Processor prefix could is not in topic name");
+    throw fawkes::SyntaxErrorException("BlackBoardProcessor: Topic Name '%s' does not contian prefix of %s processor ", prefixed_topic_name.c_str() , prefix_.c_str());
   }
 
   //TODO::take care of the differnt ways the topic is spelled
@@ -119,11 +120,11 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
   {
     if_type.erase(pos,topic_name.length());
     if_id.erase(0 ,pos+2);
-    logger_->log_info("BlackboardProcessor: if_type",if_type.c_str());
-    logger_->log_info("BlackboardProcessor: if_id",if_id.c_str());
+    //logger_->log_info("BlackboardProcessor: if_type",if_type.c_str());
+    //logger_->log_info("BlackboardProcessor: if_id",if_id.c_str());
   }
   else{
-    throw fawkes::SyntaxErrorException("BlackboardProcessor: Wrong topic name format");
+    throw fawkes::SyntaxErrorException("BlackBoardProcessor: Wrong 'Topic Name' format!");
   }
 
   //Look for the topic in the BlackBoard intefaces
@@ -140,27 +141,30 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   if(! found)
   {
-    throw fawkes::UnknownTypeException("BlackboardProcessor: Interface does not exist!");
+    throw fawkes::UnknownTypeException("BlackboardProcessor: Interface '%s' was not found!", topic_name.c_str());
   }
  
-  //Open the interface
-  Interface *iface;
+  
+  std::shared_ptr <BlackBoardSubscription> new_subscirption;
+
+  //Open the interface and create a dromant subscription instance with it
   try{
-    iface = blackboard_->open_for_reading(if_type.c_str(), if_id.c_str());
-  }catch (Exception &e) {
-   // logger_->log_info("FawkesBridge::","Failed to open interface: %s\n", e.what());
-    delete iface;
+
+    new_subscirption = std::make_shared <BlackBoardSubscription>(topic_name 
+                                                               , prefix_ 
+                                                               , clock_ 
+                                                               , blackboard_ 
+                                                               , blackboard_->open_for_reading(if_type.c_str(), if_id.c_str()) );
+                                                               
+  }catch (fawkes::Exception &e) {
+    logger_->log_info("BlackBoardProcessor:" , "Failed to open subsribe to '%s': %s\n", topic_name.c_str(), e.what());
     throw e;
   }
 
-  logger_->log_info("BlackboardProcessor:", "Interface %s  Succefully Opened!", topic_name.c_str());
-
-  //Make a DROMANT BlacksubSubsciption Instace
-  std::shared_ptr <BlackBoardSubscription> new_subscirption;
-  new_subscirption = std::make_shared <BlackBoardSubscription>(topic_name , prefix_ ,clock_ , blackboard_ , iface);
+  logger_->log_info("BlackboardProcessor:", "Interface '%s' Succefully Opened!", topic_name.c_str());
 
   new_subscirption->add_Subscription_request(id , compression , throttle_rate  
-                                      ,  queue_length , fragment_size , session);
+                                           , queue_length , fragment_size , session);
   
   return new_subscirption ;
 }
