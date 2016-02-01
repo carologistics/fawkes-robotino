@@ -33,12 +33,14 @@
 #include <vector>
 #include <string>
 
-#include "Web_server.cpp"
-#include "bridge_manager.h"
 
 namespace fawkes {
   class Position3DInterface;
 }
+
+class BridgeManager;
+
+class Web_server;
 
 class WebtoolsBridgeThread
 : public fawkes::Thread,
@@ -55,12 +57,10 @@ class WebtoolsBridgeThread
   virtual void init();
   virtual void loop();
   virtual void finalize();
+
  private:
-
-
-  std::shared_ptr<BridgeManager>                          bridge_manager_;
-  // std::shared_ptr<BridgeBlackBoardProcessor>              proc_;
-   websocketpp::lib::shared_ptr<Web_server>               web_server_; //todo::replace with a std::shared_ptr
+  std::shared_ptr<BridgeManager>              bridge_manager_;
+  std::shared_ptr<Web_server>                 web_server_;
 
 };
 
