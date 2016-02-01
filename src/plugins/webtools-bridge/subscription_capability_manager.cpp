@@ -176,7 +176,7 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 	if( topic_Subscription_.find(topic_name) == topic_Subscription_.end() )
 	{
 		topic_Subscription_[topic_name] = subscriber;
-		//Activate the listeners or whatever the publishs
+		//Activate the listeners or whatever that publishs
 		subscriber->activate();
 	}else{
 		topic_Subscription_[topic_name]->subsume(subscriber);
