@@ -24,6 +24,12 @@
 #include <tf/types.h>
 #include <interfaces/Position3DInterface.h>
 
+#include "Web_server.cpp"
+#include "bridge_manager.h"
+#include "subscription_capability_manager.h"
+#include "blackboard_processor.h"
+
+
 using namespace fawkes;
 
 
@@ -47,20 +53,27 @@ WebtoolsBridgeThread::init()
 //  pose_if_ = blackboard->open_for_reading<Position3DInterface>("Pose");
 //  world_ =new World("f");
 
- logger-> log_info("I CAN SEE THE WORLD","YAAY");
+  logger-> log_info("I CAN SEE THE WORLD","YAAY");
  // time_var_=new Time(clock);
  // time_var_->stamp();
+
+
   bridge_manager_=std::make_shared<BridgeManager> ();
-    //register capabiolity managers
-    //register processors
 
+  std::shared_ptr<SubscriptionCapabilityManager> subscription_cpm=
+                                              std::make_shared<SubscriptionCapabilityManager>();
+  //register capability managers
+  bridge_manager_->register_operation_handler("subscribe" , subscription_cpm );
+  bridge_manager_->register_operation_handler("unsubscribe" , subscription_cpm );
+  
+  //register processors
+  bridge_manager_->register_processor(std::make_shared<BridgeBlackBoardProcessor> ("blackboard"
+                                                                                  , logger
+                                                                                  , config
+                                                                                  , blackboard
+                                                                                  , clock));
 
-  // proc_ = std::make_shared<BridgeBlackBoardProcessor> (logger, config, blackboard);
-  // bridge_manager_->register_processor(proc_);
-
-
-
-  web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);
+  web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);  
   web_server_->run(6060);
 }
 

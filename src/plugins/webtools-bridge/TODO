@@ -44,3 +44,18 @@ Questions:
 	_________________________________________________
 
 	-->Make a until/Protocol that contain all the msg formats and proper serializer for them
+
+
+
+
+
+WESBSESSIOTN:
+
+So now i am thinkiinng about how to implement the websession closing event
+Option 1: centralized and all the way from the close handler to the (Manager) toeach of the capabilites each capability propagates the even to the all owened objects and they  (like Subscription) and they manage the session closing and deleting it from the list!!
+Fine but there is a lot of indirection in between
+And since tim had said that its poor design to jum a level when ur trying to go bach then I will satrt propagating from where ever i started propagating the on_msg() [either inside the websession itself of starting with the web_server]
+
+Option 2: Let the handler be inside the websession itsefl and destroy that object.Now how do we tell other objects that has a pointer to that that it no longer exists. A solution would be to check each time ur trying to use that object if it is still valid and then delete it if not. This means there are points in time where i will have a reffrece to an empty session and that is a bit scary.
+
+there is an idea that i can not quite formulate though. to have some form of central entity that manages this...So the objects will tell that entity that they have this session handler and when the session is closed an event fires all overthe places where this handler is registered ....Relitivly easy since u can make a pure virtual class that any one that has a session has to implement..this class has a punsh of sessions that know how to and when its closed in the sesison. it calles all instances that has this session
