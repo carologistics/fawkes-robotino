@@ -72,6 +72,7 @@ BridgeManager::register_operation_handler(std::string op_name,std::shared_ptr <C
 	}
 	
 	//throw fawkes::IllegalArgumentException("BridgeManager: Operation '" + op_name.c_str()+ "' was already registered");	
+	return false;
 }
 
 //DECEIDE:maybe keep track of a list of processors with thier prefix
@@ -83,7 +84,7 @@ BridgeManager::register_processor(std::shared_ptr<BridgeProcessor> processor)
 	{
 		it->second->register_processor(processor);
 	}
-	
+
 	return true;
 }
 
