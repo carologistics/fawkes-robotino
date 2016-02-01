@@ -21,7 +21,7 @@
 
 #include "blackboard_processor.h"
 
-#include <core/exception.h>
+#include <core/exceptions/software.h>
 #include <core/threading/mutex_locker.h>
 #include <utils/misc/string_conversions.h>
 #include <utils/time/time.h>
@@ -72,7 +72,7 @@ BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(std::string prefix
   config_         = config;
   blackboard_     = blackboard;
   clock_          = clock;
-  logger_->log_info("BlackBoard processor::", "Intialzed");
+  logger_->log_info("BlackBoardProcessor::", "Initialized!");
 }
 
 
@@ -97,18 +97,21 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   //Extract prefix from the name
   std::string topic_name="";
-  std::size_t pos = prefixed_topic_name.find(prefix_);
-  if (pos != std::string::npos && pos < 2)
+  std::size_t pos = prefixed_topic_name.find(prefix_,0);
+  if (pos != std::string::npos && pos <= 1)
   {
-    std::string topic_name= prefixed_topic_name.erase(0 , prefix_.length()+pos+1);//+1 accounts for the leading '/' before the topic name
-  }else{
-    //throw exception that the prefix was not found in the topic_name
+    topic_name= prefixed_topic_name.erase(0 , prefix_.length()+pos+1);//+1 accounts for the leading '/' before the topic name
+  }
+
+  if(topic_name == ""){
+    //this should not happen
+    throw fawkes::SyntaxErrorException("BlackboardProcessor: Processor prefix could is not in topic name");
   }
 
   //TODO::take care of the differnt ways the topic is spelled
 
   //Extracet the BlackBoard Interface Type and Id
-  pos =topic_name.find("::");
+  pos =topic_name.find("::",0);
   std::string if_id=topic_name;
   std::string if_type=topic_name;
   
@@ -116,12 +119,11 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
   {
     if_type.erase(pos,topic_name.length());
     if_id.erase(0 ,pos+2);
-
-    logger_->log_info("BridgeProcessor::if_type",if_type.c_str());
-    logger_->log_info("BridgeProcessor::if_id",if_id.c_str());
+    logger_->log_info("BlackboardProcessor: if_type",if_type.c_str());
+    logger_->log_info("BlackboardProcessor: if_id",if_id.c_str());
   }
   else{
-    //throw exception
+    throw fawkes::SyntaxErrorException("BlackboardProcessor: Wrong topic name format");
   }
 
   //Look for the topic in the BlackBoard intefaces
@@ -138,9 +140,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   if(! found)
   {
-    logger_->log_info("FawkesBridge::","Interface Does not Exist");
-    //Throw and Exception that was noInterface and escilate that exception from the other calling CPM
-    //return;
+    throw fawkes::UnknownTypeException("BlackboardProcessor: Interface does not exist!");
   }
  
   //Open the interface
@@ -148,11 +148,12 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
   try{
     iface = blackboard_->open_for_reading(if_type.c_str(), if_id.c_str());
   }catch (Exception &e) {
-    logger_->log_info("FawkesBridge::","Failed to open interface: %s\n", e.what());
-    //Throw and may be not catch it and escelate it to the calling CPM.
-   // return;
+   // logger_->log_info("FawkesBridge::","Failed to open interface: %s\n", e.what());
+    delete iface;
+    throw e;
   }
-   logger_->log_info("FawkesBridge::", "Interface %s  Succefully Opened!",topic_name.c_str());
+
+  logger_->log_info("BlackboardProcessor:", "Interface %s  Succefully Opened!", topic_name.c_str());
 
   //Make a DROMANT BlacksubSubsciption Instace
   std::shared_ptr <BlackBoardSubscription> new_subscirption;
@@ -169,7 +170,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 void
 BridgeBlackBoardProcessor::unsubscribe( std::string id
                                       , std::shared_ptr <Subscription>  subscription
-                                      , std::shared_ptr<WebSession> session)
+                                      , std::shared_ptr <WebSession> session)
 {
   std::shared_ptr <BlackBoardSubscription>  bb_subscription
                   = std::static_pointer_cast<BlackBoardSubscription> (subscription);
