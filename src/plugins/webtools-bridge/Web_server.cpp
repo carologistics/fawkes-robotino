@@ -3,6 +3,8 @@
 #include <memory>
 #include <exception>
 #include <websocketpp/common/thread.hpp>
+#include <core/exceptions/software.h>
+
 
 #include "web_session.h"
 #include "bridge_manager.h"
@@ -109,9 +111,15 @@ public:
 
         std::string jsonString = web_msg -> get_payload();
 
-        bridge_manager_ -> incoming(jsonString,session);
+        try{
+            bridge_manager_ -> incoming(jsonString,session);        
+        }
+        catch(fawkes::Exception &e)
+        {
+            logger_ -> log_error("Webtools-Bridge",e);
+        }
 
-        logger_ -> log_info("Webtools-Bridge:","Msg Received!");
+        logger_ -> log_info("Webtools-Bridge","Msg Received!");
     }
 
     void run(uint16_t port) {
@@ -127,7 +135,7 @@ private:
         ,std::owner_less<connection_hdl>>                                              hdl_ids_;
 
     websocketpp::lib::shared_ptr<server>                                               m_server;
-    websocketpp::lib::shared_ptr<WebSession>                                          tmp_session_; //this only serve to collect the session data before intializing the dispaticher
+    websocketpp::lib::shared_ptr<WebSession>                                           tmp_session_; //this only serve to collect the session data before intializing the dispaticher
     
     unsigned int                                                                       m_next_sessionid;
     
