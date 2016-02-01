@@ -1,7 +1,7 @@
 #include "subscription_capability_manager.h"
 #include "subscription_capability.h"
 
-#include <exception>
+#include <core/exceptions/software.h>
 
 using namespace fawkes;
 using namespace rapidjson;
@@ -32,7 +32,6 @@ SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
 {
 	std::shared_ptr <SubscriptionCapability> Subscription_processor;
 	Subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processor);
-
 	if(Subscription_processor == NULL)
 	{
 		return false;
@@ -53,63 +52,56 @@ SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
 
 void
 SubscriptionCapabilityManager::handle_message(Document &d
-	,	std::shared_ptr<WebSession> session)
-{
-	std::string msg_op;
+											, std::shared_ptr<WebSession> session)
+{	
+
+	//TODO::MOVE ALL THE TYPE RELATED STUFF TO a proper protocol Class
+	if(!d.HasMember("topic") || !d.HasMember("id")){
+		throw fawkes::MissingParameterException("SubscriptionCPM: Wrong Json Msg, topic name or id missing!");
+	}
+
 	//TODO::Pass the Dom the a Protocol Class that will have the deserialized types
-	try
-	{
-		msg_op = std::string(d["op"].GetString());
-	}
-	catch(std::exception &e){
-		//	"Wrong msg option"
-	}
- 
+	std::string msg_op = std::string(d["op"].GetString());
+
 	std::string msg_topic = std::string(d["topic"].GetString());
 	std::string match_prefix ="";
 
-
-	//Check the logic..might be wrong
-	//posible Optimization. if the same topic name exists in the topic_subscription just get the prefix from there
+	//Find longest matching processor presfix within topic_name 
+	//TODO:Check the logic..might be wrong
+	//TODO:posible Optimization. if the same topic name exists in the topic_subscription just get the prefix from there
 	for( ProcessorMap::iterator it = processores_.begin();
 		it != processores_.end(); it++)
 	{
 		std::string processor_prefix = it->first;
-		std::size_t found_at = msg_topic.find(processor_prefix);
+		std::size_t found_at = msg_topic.find(processor_prefix,0);
+
 		if(found_at != std::string::npos)
 		{
-			//allow freedom of 2 characters before the match to account 
+			//allows freedom of 2 characters before the match to account 
 			//for leading "/" ot "//" or and other startting charachters
-			if (found_at < 1)
+			if (found_at <= 1)
 			{
 				if(processor_prefix.length() == match_prefix.length())
 				{
 					//Throw an exception. That there are 2 names with confusion prefixs
 					//a conflict like "/bl" and  "bl1" when looking for "bl".
 					//this cozed by the fliexibility
+					throw fawkes::IllegalArgumentException("SubscriptionCPM: Could not select processor, 2 conflicting names!");
 
 				}
 				else if(processor_prefix.length() > match_prefix.length())
 				{
-					match_prefix = processor_prefix.length();
+					match_prefix = processor_prefix;
 				}
 			}
-		} 
-		
+		}
 	}
 
 	if(match_prefix.length() == 0)
 	{
-		//throw Exception: this means no processors was recognized
-		return ;
+		throw fawkes::IllegalArgumentException("SubscriptionCPM: No processor recognized for this topic!") ;
 	}
 
-	//TODO::MOVE ALL THE TYPE RELATED STUFF TO a proper protocol Class
-	if(!d.HasMember("topic") || !d.HasMember("id")){
-		//throw missing msg feild exception
-	}
-
-	
 	//Go with To the proper operation with the bridge_prefix and the request Paramters
 	if(msg_op=="subscribe")
 	{	
@@ -156,9 +148,7 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 
 	std::shared_ptr <SubscriptionCapability> subscription_processor;
 	subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
-	if( subscription_processor == NULL){
-		//throw and exception This should not happen
-	}
+	//should be garanteed to work
 
 	std::shared_ptr <Subscription> subscriber;
 	
@@ -173,9 +163,8 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 													, fragment_size 	
 													, session);
 
-	}catch(std::exception &e){
-		//TODD:: Thorw the appropriate expcetion
-		return;
+	}catch(Exception &e){
+		throw e;
 	}
 
 	/*push it to the topic_subscribertion_map maintaing only ONE instance per topic
@@ -203,9 +192,6 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 {
 	std::shared_ptr <SubscriptionCapability> subscription_processor;
 	subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
-	if( subscription_processor == NULL){
-		//throw and exception This should not happen
-	}
 	
 	std::shared_ptr <Subscription> subscription;
 	
@@ -215,8 +201,8 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 
 		try{
 			subscription_processor->unsubscribe(id, subscription ,session );
-		}catch (std::exception &e){
-			//say something
+		}catch (Exception &e){
+			throw e;
 		}
 
 		if(subscription-> empty()){
@@ -226,7 +212,7 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 
 		return;
 	}
-
+	
 	//throw exception that topic was not found
 
 }
