@@ -66,10 +66,12 @@ class BlackBoardSubscription
 
     fawkes::Interface* get_interface_ptr();
 
-    void         activate_impl();
-    void         deactivate_impl();
-    void         finalize_impl();// finalize oper and listeners interfaces 
-    std::string  serialize_impl();// data serliazation implementation
+    void activate_impl();
+    void deactivate_impl();
+    void finalize_impl();// finalize oper and listeners interfaces 
+    std::string   serialize(std::string op
+                          , std::string topic
+                          , std::string id);
 
     void bb_interface_data_changed(fawkes::Interface *interface) throw();
 

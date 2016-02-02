@@ -55,7 +55,7 @@ BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(std::string prefix
                                                     , fawkes::Configuration *config
                                                     , fawkes::BlackBoard *blackboard
                                                     , fawkes::Clock *clock)
-:BridgeProcessor(prefix)
+  :BridgeProcessor(prefix)
 {
   logger_         = logger;
   config_         = config;
@@ -135,7 +135,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
   
   std::shared_ptr <BlackBoardSubscription> new_subscirption;
 
-  //Open the interface and create a dromant subscription instance with it
+  //Open the interface and create a DORMANT subscription instance with it
   try{
 
     new_subscirption = std::make_shared <BlackBoardSubscription>(topic_name 
@@ -145,7 +145,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
                                                                , blackboard_->open_for_reading(if_type.c_str(), if_id.c_str()) );
                                                                
   }catch (fawkes::Exception &e) {
-    logger_->log_info("BlackBoardProcessor:" , "Failed to open subsribe to '%s': %s\n", topic_name.c_str(), e.what());
+    logger_->log_info("BlackBoardProcessor:" , "Failed to open subscribe to '%s': %s\n", topic_name.c_str(), e.what());
     throw e;
   }
 
@@ -191,8 +191,10 @@ BlackBoardSubscription::BlackBoardSubscription(std::string topic_name
 
 BlackBoardSubscription::~BlackBoardSubscription()
 {
-  BlackBoardSubscription::finalize();
-  delete interface_;
+  if (interface_ != NULL )
+  {
+    delete interface_;
+  }
 }
 
 fawkes::Interface*
@@ -205,58 +207,48 @@ BlackBoardSubscription::get_interface_ptr()
 void
 BlackBoardSubscription::activate_impl()
 {
-   if(active_status_ != ACTIVE)
-   {
-  //   //Extracet the BlackBoard Interface Type and Id
-  //   std::size_t pos =topic_name.find("::");
-  //   if (pos != std::string::npos)
-  //   {
-  //     std::string if_type=topic_name;
-  //     if_type.erase(pos,Subscription.length());
-
-  //     std::string if_id=topic_name;
-  //     if_id.erase(0 ,pos+2);
-  //   }
-
-  //   //Open the interface
-  //   try{
-  //     interface_ = blackboard_->open_for_reading(if_type.c_str(), if_id.c_str());
-  //   }catch (Exception &e) {
-  //     logger_->log_info("FawkesBridge::","Failed to open interface: %s\n", e.what());
-  //     //Throw and may be not catch it and escelate it to the calling CPM.
-  //     return;
-  //   }
-
-  //Checf interface is valid is and thorw exception if not
-
-    bbil_add_data_interface(interface_);
-  }
+  bbil_add_data_interface(interface_);
+  blackboard_->register_listener(this);
 }
 
 void
 BlackBoardSubscription::deactivate_impl()
 {
-  if(active_status_ != DORMANT){
-    bbil_remove_data_interface(interface_);
-  }
+  bbil_remove_data_interface(interface_);
+  blackboard_->unregister_listener(this);
 }
 
 void
 BlackBoardSubscription::finalize_impl()
 {
-  deactivate();
   blackboard_->close(interface_);
 }
 
-std::string
-BlackBoardSubscription::serialize_impl()
+std::string  
+BlackBoardSubscription::serialize(std::string op
+                                , std::string prefiexed_topic_name
+                                , std::string id)
 {
-  //Create the Json that will hold the data
+  //Default 'publish' header
   StringBuffer s;
   Writer<StringBuffer> writer(s);      
   writer.StartObject();
 
-  //Fill in the data
+  writer.String("op");
+  writer.String(op.c_str(),(SizeType)op.length());
+
+  writer.String("id");
+  writer.String(id.c_str(),(SizeType)id.length());
+  
+  writer.String("topic");
+  writer.String(prefiexed_topic_name.c_str(), (SizeType)prefiexed_topic_name.length());
+  
+  writer.String("msg");
+
+  //Start of Data Json creation 
+  writer.StartObject();
+
+  //Data filling from interface
   for (InterfaceFieldIterator fi  = interface_->fields(); fi != interface_->fields_end(); ++fi)
   { 
 
@@ -335,7 +327,6 @@ BlackBoardSubscription::serialize_impl()
       writer.Int(arr[i]);
     }
 
-
     writer.EndArray();
 
     }
@@ -386,9 +377,11 @@ BlackBoardSubscription::serialize_impl()
 
   }
   
-  //Close the json
-  writer.EndObject();
+  writer.EndObject(); //End of data json
 
+  
+  writer.EndObject();//End of complete Json_msg 
+  
   return s.GetString();
 }
 
