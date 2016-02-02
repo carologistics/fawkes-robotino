@@ -4,6 +4,9 @@
 
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
 
 #include "subscription_capability.h" 
 #include "web_session.h"
@@ -49,6 +52,36 @@ Subscription::finalize()
 	Subscription::finalize_impl();
 }
 
+//Serialization could be moved later to a Protocol hadleing util
+std::string
+Subscription::serialize(std::string op
+						, std::string prefiexed_topic_name
+						, std::string id)
+{
+	std::string msg=serialize_impl();//the msg feild of the json_msg
+
+	StringBuffer s;
+  	Writer<StringBuffer> writer(s);      
+	writer.StartObject();
+
+	writer.String("op");
+	writer.String(op.c_str(),(SizeType)op.length());
+
+	writer.String("id");
+	writer.String(id.c_str(),(SizeType)id.length());
+	
+	writer.String("topic");
+	writer.String(prefiexed_topic_name.c_str(), (SizeType)prefiexed_topic_name.length());
+	
+	writer.String("msg");
+	writer.String(msg.c_str(), (SizeType)msg.length());
+
+	writer.EndObject();//the full JSON_msg 
+    std::cout << s.GetString() << std::endl;
+
+    return s.GetString();
+}
+
 void
 Subscription::activate_impl()
 {
@@ -66,6 +99,16 @@ Subscription::finalize_impl()
 {
 	//Override to extend behavior
 }
+
+
+std::string
+Subscription::serialize_impl()
+{
+	//Override to extend behavior
+	return "";
+}
+
+
 
 void
 Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
@@ -210,6 +253,9 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 	}
 }
 
+
+
+
 /*This will be called by the whatever event that trigger the publish with the json msg.
 *(Like a periodic clock or an data update listener).
 *It checks for each session if enough time has passed since the last publish 
@@ -217,29 +263,41 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 *for now just drop it. Later maybe queue it).
 */
 void
-Subscription::publish(std::string json_str)
+Subscription::publish()
 {
-	for(std::map <std::shared_ptr<WebSession> , RequestList>::iterator it =
-	 subscribers_.begin() ; it != subscribers_.end(); it++)
+
+	std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
+
+	for(std::map <std::shared_ptr<WebSession> , RequestList>::iterator 
+		it = subscribers_.begin() 
+		; it != subscribers_.end()
+		; it++)
 	{
-		if( it->second.empty() ) {
+		if( it->second.empty() ) 
+		{
 			//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
 			//throw some exception
 			subscribers_.erase(it);
 			continue;
 		}
 
+		//Checking if it is time to publish topic
 		//sub_list_mutex_->lock();
 		fawkes::Time now(clock_);
 		//smallest throttle_rate always on the top
 		unsigned int throttle_rate = it->second.front().throttle_rate;
+		std::string  id= it->second.front().id;// could be done here to minimize locking
 		unsigned int last_published = it->second.front().last_published_time->in_msec();
 		unsigned int time_passed = (now.in_msec() -last_published ); 
 		//sub_list_mutex_->unlock();
 
 		if (time_passed >= throttle_rate) {
-			//send it to session
-			it->first->send(json_str);
+
+			std::string complete_json_msg = serialize("publish"
+											, prefiexed_topic_name
+											, id);
+			//send msg it to session
+			it->first->send(complete_json_msg);
 			//catch exception
 
 			//Only stamp if it was sent
