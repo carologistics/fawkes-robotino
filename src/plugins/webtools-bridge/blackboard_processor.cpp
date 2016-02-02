@@ -35,32 +35,20 @@
 
 #include <blackboard/blackboard.h>
 
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
 #include <string>
 #include <cstring>
 #include <cstdlib>
 
-#include <iostream>
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-
-
-
-using namespace rapidjson;
 using namespace std;
 
 using namespace fawkes;
 
-/** @class AgentMonitorWebRequestProcessor "agent-monitor-processor.h"
- * Web request processor for monitoring the CLIPS agents in LLSF.
- * @author Frederik Zwilling
- */
+using namespace rapidjson;
 
-/** Constructor.
- * @param clips_env_mgr CLIPS environment manager
- * @param logger logger to report problems
- * @param baseurl base URL of the Clips webrequest processor
- */
+//=================================   Processor  ===================================
 
 BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(std::string prefix
                                                     , fawkes::Logger *logger
@@ -185,7 +173,7 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
 
 
 
-//====================================  BlackBoardSubsciption ===========================================
+//====================================  Subsciption ===========================================
 
 
 BlackBoardSubscription::BlackBoardSubscription(std::string topic_name 
@@ -242,8 +230,6 @@ BlackBoardSubscription::activate_impl()
   //Checf interface is valid is and thorw exception if not
 
     bbil_add_data_interface(interface_);
-
-    active_status_=ACTIVE;
   }
 }
 
@@ -252,8 +238,6 @@ BlackBoardSubscription::deactivate_impl()
 {
   if(active_status_ != DORMANT){
     bbil_remove_data_interface(interface_);
-    
-
   }
 }
 
@@ -264,162 +248,134 @@ BlackBoardSubscription::finalize_impl()
   blackboard_->close(interface_);
 }
 
-void 
-BlackBoardSubscription::bb_interface_data_changed(fawkes::Interface *interface) throw()
+std::string
+BlackBoardSubscription::serialize_impl()
 {
-  if(active_status_ == ACTIVE){
-    //this should not happen 
-    return;
-  }
-
-  interface->read();
-  
+  //Create the Json that will hold the data
   StringBuffer s;
   Writer<StringBuffer> writer(s);      
   writer.StartObject();
 
-  writer.String("op");
-  writer.String("publish");
+  //Fill in the data
+  for (InterfaceFieldIterator fi  = interface_->fields(); fi != interface_->fields_end(); ++fi)
+  { 
 
-//TODO:: IMPORTANT..just Move everything but the msg to be client aware
-  // if(!id.empty()){
-  //   writer.String("id");
-  //   writer.String(id.c_str(),(SizeType)id.length());
-  // }
+    std::string fieldName= fi.get_name();
 
-  writer.String("topic");
-//  writer.String(topic_name.c_str(), (SizeType)topic_name.length());
-  std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
-  writer.String(prefiexed_topic_name.c_str(), (SizeType)prefiexed_topic_name.length());
+    #ifdef RAPIDJSON_HAS_STDSTRING
+    writer.String(fieldName);
+    #else
+    writer.String(fieldName.c_str(), (SizeType)fieldName.length());
+    #endif
 
-  
-
-  //TODO::handle JSON  types Object, null and Blackboard type float 
-  
-      //Fields
-  writer.String("msg");
-  //"msg" Json construction: 
-  writer.StartObject();
-  for (InterfaceFieldIterator fi  = interface->fields(); fi != interface->fields_end(); ++fi){ 
+    std::string fieldType= fi.get_typename();
 
 
-      std::string fieldName= fi.get_name();
+    if (fi.get_length() > 1 && fieldType != "string"){
 
-      #ifdef RAPIDJSON_HAS_STDSTRING
-        writer.String(fieldName);
-      #else
-        writer.String(fieldName.c_str(), (SizeType)fieldName.length());
-      #endif
+    writer.StartArray();
 
-      std::string fieldType= fi.get_typename();
+    if(fieldType == "bool"){
+    bool * arr = fi.get_bools();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Bool(arr[i]);
+    }
 
+    else if(fieldType == "double"){
+    double * arr = fi.get_doubles();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Double(arr[i]);
+    }
 
-      if (fi.get_length() > 1 && fieldType != "string"){
+     else if(fieldType == "uint64"){
+    uint64_t * arr = fi.get_uint64s();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Uint64(arr[i]);
+    }
 
-       writer.StartArray();
+    else if(fieldType == "uint32"){
+    uint32_t * arr = fi.get_uint32s();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Uint(arr[i]);
+    }
 
-       if(fieldType == "bool"){
-        bool * arr = fi.get_bools();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Bool(arr[i]);
-        }
+    else if(fieldType == "uint16"){
+    uint16_t * arr = fi.get_uint16s();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Uint(arr[i]);
+    }
 
-        else if(fieldType == "double"){
-        double * arr = fi.get_doubles();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Double(arr[i]);
-        }
+     else if(fieldType == "uint8"){
+    uint8_t * arr = fi.get_uint8s();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Uint(arr[i]);
+    }
 
-         else if(fieldType == "uint64"){
-        uint64_t * arr = fi.get_uint64s();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Uint64(arr[i]);
-        }
+    else if(fieldType == "uint64"){
+    uint64_t * arr = fi.get_uint64s();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Uint64(arr[i]);
+    }
 
-        else if(fieldType == "uint32"){
-        uint32_t * arr = fi.get_uint32s();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Uint(arr[i]);
-        }
+    else if(fieldType == "int32"){
+    int32_t * arr = fi.get_int32s();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Int(arr[i]);
+    }
 
-        else if(fieldType == "uint16"){
-        uint16_t * arr = fi.get_uint16s();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Uint(arr[i]);
-        }
+    else if(fieldType == "int16"){
+    int16_t * arr = fi.get_int16s();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Int(arr[i]);
+    }
 
-         else if(fieldType == "uint8"){
-        uint8_t * arr = fi.get_uint8s();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Uint(arr[i]);
-        }
-
-        else if(fieldType == "uint64"){
-        uint64_t * arr = fi.get_uint64s();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Uint64(arr[i]);
-        }
-
-        else if(fieldType == "int32"){
-        int32_t * arr = fi.get_int32s();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Int(arr[i]);
-        }
-
-        else if(fieldType == "int16"){
-        int16_t * arr = fi.get_int16s();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Int(arr[i]);
-        }
-
-         else if(fieldType == "int8"){
-        int8_t * arr = fi.get_int8s();
-        for (unsigned i = 0; i < fi.get_length()-1; i++)
-          writer.Int(arr[i]);
-        }
+     else if(fieldType == "int8"){
+    int8_t * arr = fi.get_int8s();
+    for (unsigned i = 0; i < fi.get_length()-1; i++)
+      writer.Int(arr[i]);
+    }
 
 
-      writer.EndArray();
+    writer.EndArray();
 
-      }
-      else{
-        if (fieldType== "bool")
-          writer.Bool(fi.get_bool());
+    }
+    else{
+    if (fieldType== "bool")
+      writer.Bool(fi.get_bool());
 
-        else if (fieldType== "string")
-          writer.String(fi.get_string());
+    else if (fieldType== "string")
+      writer.String(fi.get_string());
 
-        else if (fieldType== "double")
-          writer.Double(fi.get_double());
+    else if (fieldType== "double")
+      writer.Double(fi.get_double());
 
-        else if (fieldType== "uint32")
-          writer.Uint(fi.get_uint32());
+    else if (fieldType== "uint32")
+      writer.Uint(fi.get_uint32());
 
-        else if (fieldType== "int32")
-          writer.Int(fi.get_int32());
+    else if (fieldType== "int32")
+      writer.Int(fi.get_int32());
 
-        else if (fieldType== "int8")
-          writer.Int(fi.get_int8());
+    else if (fieldType== "int8")
+      writer.Int(fi.get_int8());
 
-        else if (fieldType== "uint8")
-          writer.Uint(fi.get_uint8());
+    else if (fieldType== "uint8")
+      writer.Uint(fi.get_uint8());
 
-        else if (fieldType== "int16")
-          writer.Uint(fi.get_int16());
+    else if (fieldType== "int16")
+      writer.Uint(fi.get_int16());
 
-        else if (fieldType== "uint16")
-          writer.Uint(fi.get_uint16());
+    else if (fieldType== "uint16")
+      writer.Uint(fi.get_uint16());
 
-        else if (fieldType== "int64")
-          writer.Int64(fi.get_int64());
+    else if (fieldType== "int64")
+      writer.Int64(fi.get_int64());
 
-        else if (fieldType== "uint64")
-          writer.Uint64(fi.get_uint64());
+    else if (fieldType== "uint64")
+      writer.Uint64(fi.get_uint64());
 
-        else
-          writer.String(fi.get_value_string());
-      }
-
+    else
+      writer.String(fi.get_value_string());
+    }
 
      //  else if (fieldType== "byte");
      //  else if (fieldType== "unknown")
@@ -428,10 +384,23 @@ BlackBoardSubscription::bb_interface_data_changed(fawkes::Interface *interface) 
       //writer.Null();  find what null means in blackboard...if it exists
 
 
-    }
-    writer.EndObject();//the "msg" Json object
-    writer.EndObject();//the full JSON object
-    std::cout << s.GetString() << std::endl;
+  }
+  
+  //Close the json
+  writer.EndObject();
 
-    publish(s.GetString());
+  return s.GetString();
+}
+
+void 
+BlackBoardSubscription::bb_interface_data_changed(fawkes::Interface *interface) throw()
+{
+  if(active_status_ == DORMANT){
+    //this should not happen 
+    return;
+  }
+
+  interface_->read();
+
+  publish();
 }

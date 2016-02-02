@@ -48,6 +48,9 @@ namespace fawkes {
 
 class WebSession;
 
+
+//=================================   Subscription  ===================================
+
 class BlackBoardSubscription
 : public Subscription 
 , public fawkes::BlackBoardInterfaceListener
@@ -63,9 +66,10 @@ class BlackBoardSubscription
 
     fawkes::Interface* get_interface_ptr();
 
-    void  activate_impl();
-    void  deactivate_impl();
-    void  finalize_impl();// finalize oper and listeners interfaces 
+    void         activate_impl();
+    void         deactivate_impl();
+    void         finalize_impl();// finalize oper and listeners interfaces 
+    std::string  serialize_impl();// data serliazation implementation
 
     void bb_interface_data_changed(fawkes::Interface *interface) throw();
 
@@ -73,6 +77,11 @@ class BlackBoardSubscription
     fawkes::BlackBoard         *blackboard_;
     fawkes::Interface          *interface_;
 };
+
+
+
+
+//=================================   Processor  ===================================
 
 class BridgeBlackBoardProcessor
 : public BridgeProcessor,
