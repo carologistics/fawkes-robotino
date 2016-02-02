@@ -28,9 +28,12 @@ class Subscription
 		bool 		empty();
 
 
-		void 	activate(); 	//Dont forget to set the right status
-		void 	deactivate();	//Dont forget to set the right status
-		void 	finalize();// finalize oper and listeners interfaces 
+		void 			activate(); 	//Dont forget to set the right status
+		void 			deactivate();	//Dont forget to set the right status
+		void 			finalize();// finalize oper and listeners interfaces 
+		std::string 	serialize(std::string op
+						, std::string topic
+						, std::string id);
 
 		void add_Subscription_request( std::string id 		
 									, std::string compression
@@ -44,12 +47,12 @@ class Subscription
 		 								,std::shared_ptr <WebSession> session);
 
 	protected:
-		void 	publish(std::string json_str);
+		void 	publish();
 
-		virtual void 	activate_impl(); 	//Dont forget to set the right status
-		virtual void 	deactivate_impl();	//Dont forget to set the right status
-		virtual void 	finalize_impl();// finalize oper and listeners interfaces 
-
+		virtual void 			activate_impl(); 	//Dont forget to set the right status
+		virtual void 			deactivate_impl();	//Dont forget to set the right status
+		virtual void 			finalize_impl();	//Finalize oper and listeners interfaces 
+		virtual std::string 	serialize_impl();	//Implement serializtion of the data to publish in the JsonMsg
 	
 		struct SubscriptionRequest{
 			SubscriptionRequest()
