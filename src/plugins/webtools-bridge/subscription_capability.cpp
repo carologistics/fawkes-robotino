@@ -15,14 +15,13 @@ using namespace rapidjson;
 
 //=================================   Subscription  ===================================
 
-
 Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::Clock * clock)
 	: 	topic_name_(topic_name)
 	,	processor_prefix_(prefix)
 	,	clock_(clock)
 	,	active_status_(DORMANT)
+	,	finalized (false)
 {
-
 }
 
 
@@ -35,21 +34,30 @@ Subscription::~Subscription()
 void
 Subscription::activate()
 {
-	activate_impl();
-	active_status_ = ACTIVE;
+	if(active_status_ != ACTIVE){
+		activate_impl();
+		active_status_ = ACTIVE;
+	}
 }
 
 void
 Subscription::deactivate()
 {
-	Subscription::deactivate_impl();
-	active_status_ = DORMANT;
+	if(active_status_ != DORMANT){
+		deactivate_impl();
+		active_status_ = DORMANT;
+	}
 }
 
 void
 Subscription::finalize()
 {
-	Subscription::finalize_impl();
+	if(!finalized)
+	{
+		if(active_status_ == ACTIVE) { deactivate(); }
+		Subscription::finalize_impl();
+		finalized=true;
+	}
 }
 
 //Serialization could be moved later to a Protocol hadleing util
@@ -58,7 +66,6 @@ Subscription::serialize(std::string op
 						, std::string prefiexed_topic_name
 						, std::string id)
 {
-	std::string msg=serialize_impl();//the msg feild of the json_msg
 
 	StringBuffer s;
   	Writer<StringBuffer> writer(s);      
@@ -74,10 +81,13 @@ Subscription::serialize(std::string op
 	writer.String(prefiexed_topic_name.c_str(), (SizeType)prefiexed_topic_name.length());
 	
 	writer.String("msg");
-	writer.String(msg.c_str(), (SizeType)msg.length());
+	writer.StartObject();
+	//Serialize you data json here
+	writer.EndObject();	//End if data json
 
-	writer.EndObject();//the full JSON_msg 
-    std::cout << s.GetString() << std::endl;
+	writer.EndObject();//End of complete Json_msg 
+    
+    //std::cout << s.GetString() << std::endl;
 
     return s.GetString();
 }
@@ -98,14 +108,6 @@ void
 Subscription::finalize_impl()
 {
 	//Override to extend behavior
-}
-
-
-std::string
-Subscription::serialize_impl()
-{
-	//Override to extend behavior
-	return "";
 }
 
 
@@ -265,45 +267,47 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 void
 Subscription::publish()
 {
-
-	std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
-
-	for(std::map <std::shared_ptr<WebSession> , RequestList>::iterator 
-		it = subscribers_.begin() 
-		; it != subscribers_.end()
-		; it++)
+	if( active_status_ == ACTIVE)
 	{
-		if( it->second.empty() ) 
+		std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
+	
+		for(std::map <std::shared_ptr<WebSession> , RequestList>::iterator 
+			it = subscribers_.begin() 
+			; it != subscribers_.end()
+			; it++)
 		{
-			//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
-			//throw some exception
-			subscribers_.erase(it);
-			continue;
-		}
-
-		//Checking if it is time to publish topic
-		//sub_list_mutex_->lock();
-		fawkes::Time now(clock_);
-		//smallest throttle_rate always on the top
-		unsigned int throttle_rate = it->second.front().throttle_rate;
-		std::string  id= it->second.front().id;// could be done here to minimize locking
-		unsigned int last_published = it->second.front().last_published_time->in_msec();
-		unsigned int time_passed = (now.in_msec() -last_published ); 
-		//sub_list_mutex_->unlock();
-
-		if (time_passed >= throttle_rate) {
-
-			std::string complete_json_msg = serialize("publish"
-											, prefiexed_topic_name
-											, id);
-			//send msg it to session
-			it->first->send(complete_json_msg);
-			//catch exception
-
-			//Only stamp if it was sent
-			//time_mutex_->lock();
-			it->second.front().last_published_time->stamp();
-			//time_mutex_->unlock();
+			if( it->second.empty() ) 
+			{
+				//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
+				//throw some exception
+				subscribers_.erase(it);
+				continue;
+			}
+	
+			//Checking if it is time to publish topic
+			//sub_list_mutex_->lock();
+			fawkes::Time now(clock_);
+			//smallest throttle_rate always on the top
+			unsigned int throttle_rate = it->second.front().throttle_rate;
+			std::string  id= it->second.front().id;// could be done here to minimize locking
+			unsigned int last_published = it->second.front().last_published_time->in_msec();
+			unsigned int time_passed = (now.in_msec() -last_published ); 
+			//sub_list_mutex_->unlock();
+	
+			if (time_passed >= throttle_rate) {
+	
+				std::string complete_json_msg = serialize("publish"
+												, prefiexed_topic_name
+												, id);
+				//send msg it to session
+				it->first->send(complete_json_msg);
+				//catch exception
+	
+				//Only stamp if it was sent
+				//time_mutex_->lock();
+				it->second.front().last_published_time->stamp();
+				//time_mutex_->unlock();
+			}
 		}
 	}
 }
