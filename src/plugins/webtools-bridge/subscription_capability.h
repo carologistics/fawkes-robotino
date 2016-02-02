@@ -4,12 +4,13 @@
 #include <utils/time/time.h>
 
 
+
 namespace fawkes {
   class Clock;
   class Time;
   class Mutex;
  }
-
+ 
 class WebSession;
 
 class Subscription
@@ -28,12 +29,12 @@ class Subscription
 		bool 		empty();
 
 
-		void 			activate(); 	//Dont forget to set the right status
-		void 			deactivate();	//Dont forget to set the right status
-		void 			finalize();// finalize oper and listeners interfaces 
-		std::string 	serialize(std::string op
-						, std::string topic
-						, std::string id);
+		void 					activate(); 	//Dont forget to set the right status
+		void 					deactivate();	//Dont forget to set the right status
+		void 					finalize();		//Implicitly calles deactivate
+		virtual std::string 	serialize(std::string op
+								, std::string topic
+								, std::string id);
 
 		void add_Subscription_request( std::string id 		
 									, std::string compression
@@ -49,10 +50,9 @@ class Subscription
 	protected:
 		void 	publish();
 
-		virtual void 			activate_impl(); 	//Dont forget to set the right status
-		virtual void 			deactivate_impl();	//Dont forget to set the right status
-		virtual void 			finalize_impl();	//Finalize oper and listeners interfaces 
-		virtual std::string 	serialize_impl();	//Implement serializtion of the data to publish in the JsonMsg
+		virtual void 			activate_impl(); 	//will be implicitly called from activate()
+		virtual void 			deactivate_impl();	//will be implicitly called from deactive() and finalize()
+		virtual void 			finalize_impl();	//will be implicitly called from finialize()
 	
 		struct SubscriptionRequest{
 			SubscriptionRequest()
@@ -84,6 +84,10 @@ class Subscription
 
 		// fawkes::Mutex				*sub_list_mutex_;
 		// fawkes::Mutex 				*time_mutex_;
+
+		private:
+			bool finalized; //set to true if it was Object was finilazed berfore
+
 };
 
 
