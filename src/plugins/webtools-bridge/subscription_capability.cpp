@@ -16,11 +16,11 @@ using namespace rapidjson;
 //=================================   Subscription  ===================================
 
 Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::Clock * clock)
-	: 	topic_name_(topic_name)
+	:	finalized (false)
+	, 	topic_name_(topic_name)
 	,	processor_prefix_(prefix)
 	,	clock_(clock)
 	,	active_status_(DORMANT)
-	,	finalized (false)
 {
 }
 
@@ -185,10 +185,14 @@ Subscription::add_Subscription_request( std::string id
 						{ 
 			     			 return t.first->get_id() == session->get_id();
 			  			} 
-			  		);	
+			  		);
 
-	//if there was old Subscriptions point to the same time_object
-	if (it != subscribers_.end() && !(subscribers_[session].empty()) ){
+	if(it == subscribers_.end()){
+		register_session_handlers(session);
+	}
+
+	//if there was older requests for this session,  point to the same last_published_time
+	if ( it != subscribers_.end() && !(subscribers_[session].empty()) ){
 	
 		// if(subscribers_[session].find(id) != subscribers_[session].end())
 		// {
@@ -219,7 +223,6 @@ void
 Subscription::remove_Subscription_request(std::string subscription_id, std::shared_ptr <WebSession> session)
 {
 	//TODO:: lock by mutex
-
 	std::map <std::shared_ptr<WebSession> , RequestList>::iterator it;
 
 	it = std::find_if(subscribers_.begin(), subscribers_.end() 
@@ -232,7 +235,8 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 	//TODO:: make sure there is only one session object per session. Otherwise implement an equality operator
 	if(it != subscribers_.end()){
 
-		//throw Exception that the subscirber does not exist 
+		//there is no such session. Maybe session was closed before the request is processed
+		return;
 	}
 
 	for(RequestList::iterator 
@@ -248,11 +252,25 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 		}
 	}
 
+	//sub_list_mutex_->lock();
 	if(subscribers_[session].empty()){
-		//sub_list_mutex_->lock();
 		subscribers_.erase(session);
-		//sub_list_mutex_->lock();
 	}
+	//sub_list_mutex_->lock();
+}
+
+void 
+Subscription::register_session_handlers(std::shared_ptr<WebSession> session)
+{
+	//session->register_on_close_handler(bind(Subscription::on_terminate_session,this,::_1));
+}
+
+void 
+Subscription::on_terminate_session(std::shared_ptr<WebSession> session)
+{
+	//sub_list_mutex_->lock();
+	subscribers_.erase(session);
+	//sub_list_mutex_->lock();
 }
 
 
