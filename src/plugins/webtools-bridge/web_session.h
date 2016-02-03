@@ -2,14 +2,20 @@
 #define _WEB_SESSION_H
 
 #include <map>
+#include <memory>
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include <boost/function.hpp>
 
+class WebSession;
 //TODO::move to commonNameSpace
 typedef websocketpp::server<websocketpp::config::asio> server;
+typedef boost::function < void (std::shared_ptr<WebSession>) > handler; 
 
-class WebSession
+
+class WebSession 
+: public std::enable_shared_from_this<WebSession>
 {
 
 public:
@@ -29,6 +35,9 @@ public:
 	
 	bool 						send(std::string msg);
 
+	void						terminate();//this will be called when session is closed from server
+	
+	void 						register_terminate_callback(handler terminate_callback);
 
     std::map<std::string,std::string>					http_req;
     
@@ -39,6 +48,8 @@ private:
     std::string                              			session_name_;
     std::string										 	status_;
     int                                        			session_id_;
+
+    std::vector<handler> 						terminate_callbacks_;
 };
 
 #endif

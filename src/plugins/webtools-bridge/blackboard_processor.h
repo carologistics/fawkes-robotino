@@ -81,8 +81,6 @@ class BlackBoardSubscription
 };
 
 
-
-
 //=================================   Processor  ===================================
 
 class BridgeBlackBoardProcessor

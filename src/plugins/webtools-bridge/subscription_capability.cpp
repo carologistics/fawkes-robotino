@@ -234,7 +234,6 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 			  		);	
 	//TODO:: make sure there is only one session object per session. Otherwise implement an equality operator
 	if(it != subscribers_.end()){
-
 		//there is no such session. Maybe session was closed before the request is processed
 		return;
 	}
@@ -272,8 +271,6 @@ Subscription::on_terminate_session(std::shared_ptr<WebSession> session)
 	subscribers_.erase(session);
 	//sub_list_mutex_->lock();
 }
-
-
 
 
 /*This will be called by the whatever event that trigger the publish with the json msg.

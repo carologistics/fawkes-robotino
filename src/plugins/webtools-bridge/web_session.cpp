@@ -78,3 +78,31 @@ WebSession::send(std::string msg){
     return true;
 }
 
+//Will be called from Web_server if this session was closed.
+//It makes sure the event is propagated by calling all the registered terminate callbacks
+void WebSession::terminate()
+{
+	//mutex
+	for(std::vector<handler>::iterator 
+		it = terminate_callbacks_.begin();
+		it != terminate_callbacks_.end() ;
+		it++)
+	{
+		handler terminate_callback = (*it);
+		terminate_callback(shared_from_this());
+	}
+	//unlock mutex
+}
+
+
+//Call from each class that stors sessions with every new session to get notified when this session is close.
+//Parameter: the result of a boost::bind of session_terminate_handler ,within the storing class, to be calledback when session terminates
+//eg,[boost::bind(Subscription::on_terminate_session,this,::_1)]
+
+void
+WebSession::register_terminate_callback(handler terminate_callback)
+{
+	//lock_mutex
+	terminate_callbacks_.push_back(terminate_callback);
+	//unlock_mutex
+}
