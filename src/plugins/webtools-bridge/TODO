@@ -59,3 +59,21 @@ And since tim had said that its poor design to jum a level when ur trying to go 
 Option 2: Let the handler be inside the websession itsefl and destroy that object.Now how do we tell other objects that has a pointer to that that it no longer exists. A solution would be to check each time ur trying to use that object if it is still valid and then delete it if not. This means there are points in time where i will have a reffrece to an empty session and that is a bit scary.
 
 there is an idea that i can not quite formulate though. to have some form of central entity that manages this...So the objects will tell that entity that they have this session handler and when the session is closed an event fires all overthe places where this handler is registered ....Relitivly easy since u can make a pure virtual class that any one that has a session has to implement..this class has a punsh of sessions that know how to and when its closed in the sesison. it calles all instances that has this session
+
+
+
+
+After Descution:
+register the one on_close_handler() to the session itself and give the session the ability to register close_handlers that it can propagate to when it fires.
+
+Moving from this approach i think i will keep also the on_msg handler  within the session and call the bridge manager from there Or even just regesiter the incoming and a handler() [but then i need to keed track of hdl to get the right session]
+
+the question is then what happens when there is no more subscription in this object.  
+One solution is to propagate the event back to the Manager and let it delete it from the list [which means that i will need to delete an active subscription, hence create a shared ptr that u have from within subscription. rm the shared_ptr from the subscription list and then it will also destoried when u get out of scope]
+
+another way is to have the closing event firing to the manager since it is the one that will delete the subsciption anyway. And the manager propagates this event to all the subscription it has
+
+hmmm...in this direction it means everytime there is a new session (how would i know that) i register the CPM as a close_handler in the sesison
+
+make the register the close handler from subscription that means that u have to get the event back to the owning mnger once u need to delete urself
+

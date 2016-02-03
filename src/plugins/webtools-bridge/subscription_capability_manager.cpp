@@ -190,6 +190,7 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 											, std::string id 		
 											, std::shared_ptr<WebSession> session)
 {
+	//select thre right processor
 	std::shared_ptr <SubscriptionCapability> subscription_processor;
 	subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
 	
