@@ -66,9 +66,9 @@ class Subscription
 		std::string 			get_processor_prefix();
 
 	protected:
+		virtual void 			finalize_impl();	//will be implicitly called from finialize()
 		virtual void 			activate_impl(); 	//will be implicitly called from activate()
 		virtual void 			deactivate_impl();	//will be implicitly called from deactive() 
-		virtual void 			finalize_impl();	//will be implicitly called from finialize()
 		virtual std::string 	serialize(std::string op
 											, std::string topic
 											, std::string id);
