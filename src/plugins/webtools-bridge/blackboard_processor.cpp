@@ -151,7 +151,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   logger_->log_info("BlackboardProcessor:", "Interface '%s' Succefully Opened!", topic_name.c_str());
 
-  new_subscirption->add_Subscription_request(id , compression , throttle_rate  
+  new_subscirption->add_request(id , compression , throttle_rate  
                                            , queue_length , fragment_size , session);
   
   return new_subscirption ;
@@ -167,7 +167,7 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
   std::shared_ptr <BlackBoardSubscription>  bb_subscription
                   = std::static_pointer_cast<BlackBoardSubscription> (subscription);
 
-  bb_subscription->remove_Subscription_request(id, session);
+  bb_subscription->remove_request(id, session);
   
 }
 
@@ -388,8 +388,8 @@ BlackBoardSubscription::serialize(std::string op
 void 
 BlackBoardSubscription::bb_interface_data_changed(fawkes::Interface *interface) throw()
 {
-  if(active_status_ == DORMANT){
-    //this should not happen 
+  if( !is_active() ){
+    //this should not happen. listener should be deregistered in deactivate_impl()
     return;
   }
 

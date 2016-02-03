@@ -4,8 +4,11 @@
 
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 
 #include "subscription_capability.h" 
@@ -16,11 +19,11 @@ using namespace rapidjson;
 //=================================   Subscription  ===================================
 
 Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::Clock * clock)
-	:	finalized (false)
+	:	active_status_(DORMANT)
 	, 	topic_name_(topic_name)
 	,	processor_prefix_(prefix)
 	,	clock_(clock)
-	,	active_status_(DORMANT)
+	,	finalized (false)
 {
 }
 
@@ -34,7 +37,7 @@ Subscription::~Subscription()
 void
 Subscription::activate()
 {
-	if(active_status_ != ACTIVE){
+	if(is_active()){
 		activate_impl();
 		active_status_ = ACTIVE;
 	}
@@ -43,7 +46,7 @@ Subscription::activate()
 void
 Subscription::deactivate()
 {
-	if(active_status_ != DORMANT){
+	if(!(is_active())){
 		deactivate_impl();
 		active_status_ = DORMANT;
 	}
@@ -54,7 +57,7 @@ Subscription::finalize()
 {
 	if(!finalized)
 	{
-		if(active_status_ == ACTIVE) { deactivate(); }
+		if(is_active()) { deactivate(); }
 		Subscription::finalize_impl();
 		finalized=true;
 	}
@@ -120,17 +123,17 @@ Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
 		return;
 	}
 
-	for(std::map <std::shared_ptr<WebSession>, RequestList>::iterator 
-		 it_subscribers = subscription_to_append->subscribers_.begin()
-		;it_subscribers != subscription_to_append->subscribers_.end()
+	for(std::map <std::shared_ptr<WebSession>, std::list<Request> >::iterator 
+		 it_subscribers = subscription_to_append->subscriptions_.begin()
+		;it_subscribers != subscription_to_append->subscriptions_.end()
 		;it_subscribers++){
 
-		for(RequestList::iterator 
+		for(std::list<Request>::iterator 
 			 it_requests = it_subscribers->second.begin() 
 			;it_requests != it_subscribers->second.end()
 			;it_requests++ ){
 
-			add_Subscription_request( it_requests->id
+			add_request( it_requests->id
 									, it_requests->compression
 									, it_requests->throttle_rate
 									, it_requests->queue_length
@@ -146,7 +149,14 @@ bool
 Subscription::empty()
 {
 	//This assumes that the clients removale and the removale of their subscribtions were done correctly
-	return subscribers_.empty();
+	return subscriptions_.empty();
+}
+
+bool
+Subscription::is_active()
+{
+	//This assumes that the clients removale and the removale of their subscribtions were done correctly
+	return (active_status_ == ACTIVE );
 }
 
 std::string
@@ -167,39 +177,40 @@ this should be called by each subscribe() call to add the request and the reques
 */
 
 void
-Subscription::add_Subscription_request( std::string id 		
-									, std::string compression
-									, unsigned int throttle_rate	
-									, unsigned int queue_length 	
-									, unsigned int fragment_size 	
-								   	, std::shared_ptr<WebSession> session)
+Subscription::add_request( std::string id 		
+						, std::string compression
+						, unsigned int throttle_rate	
+						, unsigned int queue_length 	
+						, unsigned int fragment_size 	
+						, std::shared_ptr<WebSession> session)
 {
-	SubscriptionRequest request;
+	Request request;
 	//CHANGE:this matches for the pointer not the object
 
-	std::map <std::shared_ptr<WebSession> , RequestList>::iterator it;
+	std::map < std::shared_ptr<WebSession> , std::list<Request>>::iterator it;
 
-	it = std::find_if(subscribers_.begin(), subscribers_.end() 
-					,	[session](const std::pair<std::shared_ptr<WebSession> , RequestList> & t) 
+	it = std::find_if(subscriptions_.begin(), subscriptions_.end() 
+					,	[session](const std::pair< std::shared_ptr<WebSession> , std::list<Request>> & t) 
 						-> bool 
 						{ 
 			     			 return t.first->get_id() == session->get_id();
 			  			} 
 			  		);
 
-	if(it == subscribers_.end()){
+	//if it is a new session, register my terminate_handler for the session's callbacks
+	if(it == subscriptions_.end()){
 		register_session_handlers(session);
 	}
 
 	//if there was older requests for this session,  point to the same last_published_time
-	if ( it != subscribers_.end() && !(subscribers_[session].empty()) ){
+	if ( it != subscriptions_.end() && !(subscriptions_[session].empty()) ){
 	
-		// if(subscribers_[session].find(id) != subscribers_[session].end())
+		// if(subscriptions_[session].find(id) != subscriptions_[session].end())
 		// {
 		// 	//throw exception..That id already exists for that client on that topic
 		// }
 			
-		request.last_published_time = subscribers_[session].front().last_published_time;
+		request.last_published_time = subscriptions_[session].front().last_published_time;
 	}else{
 		request.last_published_time = std::make_shared<fawkes::Time> (clock_);
 	}
@@ -211,8 +222,8 @@ Subscription::add_Subscription_request( std::string id
 	request.fragment_size=fragment_size;
 
 	//sub_list_mutex_->lock();
-	subscribers_[session].push_back(request);
-	subscribers_[session].sort(compare_throttle_rate);//replace by a lambda function
+	subscriptions_[session].push_back(request);
+	subscriptions_[session].sort(compare_throttle_rate);//replace by a lambda function
 	//sub_list_mutex_->unlock();
 }
 
@@ -220,40 +231,40 @@ Subscription::add_Subscription_request( std::string id
 this should be called by each unsubscribe() to remove the request and posibly the requesting session
 */
 void
-Subscription::remove_Subscription_request(std::string subscription_id, std::shared_ptr <WebSession> session)
+Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSession> session)
 {
 	//TODO:: lock by mutex
-	std::map <std::shared_ptr<WebSession> , RequestList>::iterator it;
+	std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator it;
 
-	it = std::find_if(subscribers_.begin(), subscribers_.end() 
-					,	[session](const std::pair<std::shared_ptr<WebSession> , RequestList> & t) 
+	it = std::find_if(subscriptions_.begin(), subscriptions_.end() 
+					,	[session](const std::pair<std::shared_ptr<WebSession> , std::list<Request> > & t) 
 						-> bool 
 						{ 
 			     			 return t.first->get_id() == session->get_id();
 			  			} 
 			  		);	
 	//TODO:: make sure there is only one session object per session. Otherwise implement an equality operator
-	if(it != subscribers_.end()){
+	if(it != subscriptions_.end()){
 		//there is no such session. Maybe session was closed before the request is processed
 		return;
 	}
 
-	for(RequestList::iterator 
-		 it = subscribers_[session].begin()
-		;it != subscribers_[session].end()
+	for( std::list< Request >::iterator 
+		 it = subscriptions_[session].begin()
+		;it != subscriptions_[session].end()
 		;it++){
 		
 		if((*it).id == subscription_id){
 			//sub_list_mutex_->lock();
-			subscribers_[session].erase(it);
+			subscriptions_[session].erase(it);
   			//sub_list_mutex_->unlock();
   			break;
 		}
 	}
 
 	//sub_list_mutex_->lock();
-	if(subscribers_[session].empty()){
-		subscribers_.erase(session);
+	if(subscriptions_[session].empty()){
+		subscriptions_.erase(session);
 	}
 	//sub_list_mutex_->lock();
 }
@@ -261,15 +272,17 @@ Subscription::remove_Subscription_request(std::string subscription_id, std::shar
 void 
 Subscription::register_session_handlers(std::shared_ptr<WebSession> session)
 {
-	//session->register_on_close_handler(bind(Subscription::on_terminate_session,this,::_1));
+	session->register_terminate_callback( boost::bind(&Subscription::terminate_session_handler,this,_1) );
 }
 
 void 
-Subscription::on_terminate_session(std::shared_ptr<WebSession> session)
+Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
 {
 	//sub_list_mutex_->lock();
-	subscribers_.erase(session);
+	std::cout<< "Session terminated NICELY :D" << std::endl;
+	subscriptions_.erase(session);
 	//sub_list_mutex_->lock();
+	//check if subscription became empty and trigger the delete from the owning class if that was the case
 }
 
 
@@ -282,20 +295,20 @@ Subscription::on_terminate_session(std::shared_ptr<WebSession> session)
 void
 Subscription::publish()
 {
-	if( active_status_ == ACTIVE)
+	if( is_active() )
 	{
 		std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
 	
-		for(std::map <std::shared_ptr<WebSession> , RequestList>::iterator 
-			it = subscribers_.begin() 
-			; it != subscribers_.end()
+		for(std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator 
+			it = subscriptions_.begin() 
+			; it != subscriptions_.end()
 			; it++)
 		{
 			if( it->second.empty() ) 
 			{
 				//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
 				//throw some exception
-				subscribers_.erase(it);
+				subscriptions_.erase(it);
 				continue;
 			}
 	
@@ -329,7 +342,7 @@ Subscription::publish()
 
 //TODO:replace by a lambda function
 bool
-Subscription::compare_throttle_rate(SubscriptionRequest first, SubscriptionRequest second)
+Subscription::compare_throttle_rate(Request first, Request second)
 {
 	return (first.throttle_rate <= second.throttle_rate);
 }
