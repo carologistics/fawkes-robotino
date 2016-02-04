@@ -8,6 +8,11 @@
 #include <websocketpp/server.hpp>
 #include <boost/function.hpp>
 
+namespace fawkes{
+	class Mutex;
+}
+
+
 class WebSession;
 //TODO::move to commonNameSpace
 typedef websocketpp::server<websocketpp::config::asio> server;
@@ -19,7 +24,7 @@ class WebSession
 {
 
 public:
-	WebSession();
+	WebSession(fawkes::Mutex *mutex);
 	~WebSession();
 
 	void 						set_connection_hdl(websocketpp::connection_hdl hdl);
@@ -49,7 +54,8 @@ private:
     std::string										 	status_;
     int                                        			session_id_;
 
-    std::vector<handler> 						terminate_callbacks_;
+    std::vector<handler> 								terminate_callbacks_;
+    fawkes::Mutex 										*mutex_;	
 };
 
 #endif
