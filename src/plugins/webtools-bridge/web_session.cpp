@@ -1,6 +1,11 @@
 #include "web_session.h"
+#include <core/threading/mutex.h>
+#include <core/threading/mutex_locker.h>
 
-WebSession::WebSession()
+using namespace fawkes;
+
+WebSession::WebSession(fawkes::Mutex *mutex)
+: mutex_(mutex)
 {
 }
 
@@ -65,6 +70,9 @@ WebSession::get_connection_ptr()
 //TODO::catch exceptions and print in the log
 bool 
 WebSession::send(std::string msg){
+
+	MutexLocker ml(mutex_);
+
 	websocketpp::lib::error_code ec;
 
     std::cout << ">TO WEB::sending message: " << std::endl;

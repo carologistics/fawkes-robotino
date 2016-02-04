@@ -4,6 +4,8 @@
 #include <exception>
 #include <websocketpp/common/thread.hpp>
 #include <core/exceptions/software.h>
+#include <core/threading/mutex_locker.h>
+#include <core/threading/mutex.h>
 
 
 #include "web_session.h"
@@ -23,24 +25,30 @@ class Web_server
 public:
     Web_server(fawkes::Logger *logger,std::shared_ptr<BridgeManager> bridge_manager) 
     : m_next_sessionid(1) 
-    ,logger_(logger)
     ,bridge_manager_(bridge_manager)
+    ,logger_(logger)
     {
         m_server=websocketpp::lib::make_shared<server>();
 
         m_server->init_asio();
         m_server->set_open_handler(bind(&Web_server::on_open,this,::_1));
         m_server->set_close_handler(bind(&Web_server::on_close,this,::_1));
-        m_server->set_validate_handler(bind(&Web_server::on_validate,this,::_1));        
+        m_server->set_validate_handler(bind(&Web_server::on_validate,this,::_1));  
+
+        mutex_=new fawkes::Mutex();
       }
 
     ~Web_server() {
-         m_thread->join();
+      //   m_thread->join();
+        delete mutex_;
  }
 
 
     bool on_validate(connection_hdl hdl){
-        tmp_session_= websocketpp::lib::make_shared<WebSession>();
+
+        MutexLocker ml(mutex_);
+
+        tmp_session_= websocketpp::lib::make_shared<WebSession>(mutex_);
         tmp_session_->set_status("validating");//todo::use status codes from websocketpp
 
         server::connection_ptr con=m_server->get_con_from_hdl(hdl);
@@ -65,8 +73,9 @@ public:
         return true;
     }
 
-    void on_open(connection_hdl hdl) {
-
+    void on_open(connection_hdl hdl) 
+    {
+        MutexLocker ml(mutex_);
 
         tmp_session_->set_connection_hdl(hdl);
         tmp_session_->set_endpoint(m_server);
@@ -84,20 +93,22 @@ public:
         logger_->log_info("Webtools-Bridge:","on open");
         }
 
-    void on_close(connection_hdl hdl) {
-       auto it = hdl_ids_.find(hdl);
+    void on_close(connection_hdl hdl) 
+    {
+        MutexLocker ml(mutex_);
+        auto it = hdl_ids_.find(hdl);
 
-       if(it == hdl_ids_.end()){
-        // this connection is not in the list. This really shouldn't happen
-            // and probably means something else is wrong.
-            throw std::invalid_argument("No data available for session");
-       }
+        if(it == hdl_ids_.end()){
+            // this connection is not in the list. This really shouldn't happen
+             // and probably means something else is wrong.
+             throw std::invalid_argument("No data available for session");
+        }
 
-       int session_id=it->second->get_id();
+        int session_id=it->second->get_id();
+        it->second->terminate();
 
-       std::cout << "Closing connection  with sessionid " << session_id << std::endl;
-
-       hdl_ids_.erase(hdl);
+        std::cout << "Closing connection  with sessionid " << session_id << std::endl;
+        hdl_ids_.erase(hdl);
     }
 
     /*Finds the reqeusting sessions by  its hdl. 
@@ -106,10 +117,13 @@ public:
     void
     on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr web_msg)
     {
+        MutexLocker ml(mutex_);
 
         websocketpp::lib::shared_ptr<WebSession>  session = hdl_ids_ [hdl];
 
         std::string jsonString = web_msg -> get_payload();
+
+        logger_ -> log_info("Webtools-Bridge","Msg Received!");
 
         try{
             bridge_manager_ -> incoming(jsonString,session);        
@@ -119,13 +133,13 @@ public:
             logger_ -> log_error("Webtools-Bridge",e);
         }
 
-        logger_ -> log_info("Webtools-Bridge","Msg Received!");
+
     }
 
     void run(uint16_t port) {
         m_server->listen(port);
         m_server->start_accept();
-        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, m_server);
+     //   m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, m_server);
     }
 
 
@@ -139,10 +153,13 @@ private:
     
     unsigned int                                                                       m_next_sessionid;
     
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread>                             m_thread;
-    fawkes::Logger                                                                     *logger_;
+  //  websocketpp::lib::shared_ptr<websocketpp::lib::thread>                             m_thread;
 
     std::shared_ptr<BridgeManager>                                                     bridge_manager_;
+    
+    fawkes::Logger                                                                     *logger_;
+    fawkes::Mutex                                                                      *mutex_;
+
 };
 
 
