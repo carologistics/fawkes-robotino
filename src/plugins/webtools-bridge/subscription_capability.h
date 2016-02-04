@@ -72,6 +72,8 @@ class Subscription
 		virtual std::string 	serialize(std::string op
 											, std::string topic
 											, std::string id);
+
+		fawkes::Mutex 			*mutex_;
 		
 	private:
 		void 					register_session_handlers(std::shared_ptr<WebSession> session);	
@@ -95,7 +97,6 @@ class Subscription
 		std::string 	topic_name_;
 		std::string 	processor_prefix_;
 		fawkes::Clock	*clock_;
-		
 		bool 			finalized; //set to true if it was Object was finilazed berfore
 
 		std::map <std::shared_ptr<WebSession> , std::list<Request>>    subscriptions_; //maping of sessionTo requets list

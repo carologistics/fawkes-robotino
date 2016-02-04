@@ -10,11 +10,14 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 
+#include <core/threading/mutex.h>
+#include <core/threading/mutex_locker.h>
 
 #include "subscription_capability.h" 
 #include "web_session.h"
 
 using namespace rapidjson;
+using namespace fawkes;
 
 //=================================   Subscription  ===================================
 
@@ -25,6 +28,7 @@ Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::
 	,	clock_(clock)
 	,	finalized (false)
 {
+	mutex_=new fawkes::Mutex();
 }
 
 
@@ -32,6 +36,7 @@ Subscription::~Subscription()
 {
 	//delete it from the class created the subscriptiuon (ie. processor)
 	//delete clock_;
+	delete mutex_;
 }
 
 void
@@ -128,6 +133,8 @@ Subscription::get_processor_prefix()
 void
 Subscription::publish()
 {
+	MutexLocker ml(mutex_);
+
 	if( is_active() )
 	{
 		std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
@@ -160,14 +167,19 @@ Subscription::publish()
 				std::string complete_json_msg = serialize("publish"
 												, prefiexed_topic_name
 												, id);
-				//send msg it to session
-				it->first->send(complete_json_msg);
-				//catch exception
 	
 				//Only stamp if it was sent
 				//time_mutex_->lock();
 				it->second.front().last_published_time->stamp();
 				//time_mutex_->unlock();
+
+				// To avoid deadlock if the session mutex was locked to process a request 
+				//(and the request cant add coz ur locking the subscription)
+				ml.unlock();
+				//send msg it to session
+				it->first->send(complete_json_msg);
+				ml.relock();
+				//catch exception
 			}
 		}
 	}
@@ -182,8 +194,10 @@ Subscription::add_request( std::string id
 						, unsigned int fragment_size 	
 						, std::shared_ptr<WebSession> session)
 {
+
 	Request request;
 	//CHANGE:this matches for the pointer not the object
+	MutexLocker ml(mutex_);
 
 	std::map < std::shared_ptr<WebSession> , std::list<Request>>::iterator it;
 
@@ -231,7 +245,8 @@ this should be called by each unsubscribe() to remove the request and posibly th
 void
 Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSession> session)
 {
-	//TODO:: lock by mutex
+	MutexLocker ml(mutex_);
+
 	std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator it;
 
 	it = std::find_if(subscriptions_.begin(), subscriptions_.end() 
@@ -271,6 +286,8 @@ void
 Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
 {
 	//sub_list_mutex_->lock();
+	MutexLocker ml(mutex_);
+
 	std::cout<< "Session terminated NICELY :D" << std::endl;
 	subscriptions_.erase(session);
 	//sub_list_mutex_->lock();
