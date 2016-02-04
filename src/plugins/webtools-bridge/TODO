@@ -77,3 +77,25 @@ hmmm...in this direction it means everytime there is a new session (how would i 
 
 make the register the close handler from subscription that means that u have to get the event back to the owning mnger once u need to delete urself
 
+
+
+THREADING:
+first try. 2 threads expected. One  that comes generated on the server to handle session and another with events coming on the bb_listener.
+Will make mainlly 2 mutex 1 to lock for any session related operations. and another for Subscription base
+	//Problem: if u lock the session mutex at send a deadlock may arrise, If publish is called and Locked the subscription mutex
+	//at the same time a request came on another thread, lockeing the session mutex with on_msg()..
+	//Now when publish tries to send it will wait for the mutex and 
+	//one solution is to unlock the subscription mutex right before sending 
+[This wont work. What if i closed a session while another is publishing on it.if u unlock before u send the could mean that the session will be terminated and ereasd from the the map before and the publish it will not longer be there at this point]
+
+	//another is to make sure the msg wont lock the whole tim the request is beeing processed by starting the processing on another //thread
+	//allowing msgs to be processed more frequesntly. But that means that u need to have Mutex for bridge_manager->incoming to allow only one 
+	//thread to do the processing from there on. Or make sure that u have mutex all in Capability and Capability managers
+
+
+So i want to go for the second solution then. but that does not really solve the close sitution.ie, What if i close the session while i am publishing. The session mutex is locked and the subscription mutex will be called when u want to terminate the sesison. So,I wont be able to tereminate coz the publish locked the subsrciption and i wont be able to send cos the closed locked the session
+
+So..On_msg should process stuff in a a differnt thread. as well as on_close.u can even delete the session from the server and just let the terminate propagate that on a differnt thread. That means i will be able to get the hell out of the handlers and unlock the session. and send could be called. and worst case senario in this case is that  u send to sessions that went out of scope for one publish then terminate them 
+
+
+|I think i will go for that. all that time and i am not even sure how many threads could be called from the server....What is the server is thread safe...What if i dont have to care about the handlers or the sending synq. this means i only have to care for my data and bridge stuff...For this u need to take a big look within the websocketpp and that is my next step....For now all i want is to have a working version of it even with all this confusion
