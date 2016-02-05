@@ -53,7 +53,7 @@ Subscription::finalize()
 void
 Subscription::activate()
 {
-	if(is_active()){
+	if(!is_active()){
 		activate_impl();
 		active_status_ = ACTIVE;
 	}
@@ -62,7 +62,7 @@ Subscription::activate()
 void
 Subscription::deactivate()
 {
-	if(!(is_active())){
+	if(is_active()){
 		deactivate_impl();
 		active_status_ = DORMANT;
 	}

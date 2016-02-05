@@ -71,7 +71,7 @@ WebSession::get_connection_ptr()
 bool 
 WebSession::send(std::string msg){
 
-	MutexLocker ml(mutex_);
+	//MutexLocker ml(mutex_);
 
 	websocketpp::lib::error_code ec;
 
