@@ -139,7 +139,7 @@ public:
     void run(uint16_t port) {
         m_server->listen(port);
         m_server->start_accept();
-     //   m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, m_server);
+        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, m_server);
     }
 
 
@@ -153,7 +153,7 @@ private:
     
     unsigned int                                                                       m_next_sessionid;
     
-  //  websocketpp::lib::shared_ptr<websocketpp::lib::thread>                             m_thread;
+    websocketpp::lib::shared_ptr<websocketpp::lib::thread>                             m_thread;
 
     std::shared_ptr<BridgeManager>                                                     bridge_manager_;
     
