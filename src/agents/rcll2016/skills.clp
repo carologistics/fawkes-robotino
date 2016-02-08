@@ -32,7 +32,7 @@
 (defrule skill-common-call
   "call an arbitory skill with a set of args (alternating parameter-name and value)"
   (declare (salience ?*PRIORITY-SKILL-DEFAULT*))
-  ?ste <- (skill-to-execute (skill ?skill&~finish_puck_at&~deliver)
+  ?ste <- (skill-to-execute (skill ?skill)
 			    (args $?args) (state wait-for-lock) (target ?target))
   (wait-for-lock (res ?target) (state use))
   ?s <- (state WAIT-FOR-LOCK)
@@ -65,71 +65,3 @@
 ;;;;;;;;;;;;;;;;;;
 ; special cases for skill calls/final-/failed-handling
 ;;;;;;;;;;;;;;;;;;
-(defrule skill-call-deliver
-  "Call deliver skill which also uses the finish_puck_at_skill"
-  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
-  ?ste <- (skill-to-execute (skill deliver) (args $?args) (state wait-for-lock) (target ?deliver))
-  (wait-for-lock (res ?deliver) (state use))
-  ?s <- (state WAIT-FOR-LOCK)
-  =>
-  (retract ?s)
-  (assert (state SKILL-EXECUTION))
-  (modify ?ste (state running))
-  (skill-call finish_puck_at (insert$ ?args 1 (create$ mtype DE dont_wait false out_of_order ignore)))
-)
-
-(defrule skill-deliver-done
-  (declare (salience ?*PRIORITY-SKILL-DEFAULT*))
-  ?sf <- (state SKILL-EXECUTION)
-  ?df <- (skill-done (name "finish_puck_at") (status ?s))
-  ?wfl <- (wait-for-lock (res ?place) (state use))
-  ?ste <- (skill-to-execute (skill deliver) (state running))
-  =>
-  (printout t "skill deliver is " ?s crlf)
-  (retract ?sf ?df)
-  (modify ?wfl (state finished))
-  (if (eq ?s FINAL)
-    then
-    (modify ?ste (state final))
-    else
-    (modify ?ste (state failed))
-  )
-  (assert (state (sym-cat SKILL- ?s)))
-)
-
-(defrule skill-get_s0-failed
-  "different to the common skill handling we restart get_s0 directly if it fails"
-  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
-  ?sf <- (state SKILL-EXECUTION)
-  ?df <- (skill-done (name "get_s0") (status FAILED))
-  ?ste <- (skill-to-execute (skill get_s0) (args $?args) (state running))
-  =>
-  (printout t "get_s0 failed, restarting it" crlf)
-  (retract ?df)
-  (skill-call get_s0 ?args)
-)
-
-(defrule skill-take-puck-to-failed
-  "different to the common skill handling we want to restart if we still have a puck"
-  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
-  ?sf <- (state SKILL-EXECUTION)
-  ?df <- (skill-done (name "take_puck_to") (status FAILED))
-  ?ste <- (skill-to-execute (skill take_puck_to) (args $?args) (state running))
-  (puck-in-gripper TRUE)
-  =>
-  (printout t "take_puck_to failed, restarting it because I still have a puck" crlf)
-  (retract ?df)
-  (skill-call take_puck_to ?args)
-)
-
-(defrule skill-deliver-failed-retry-if-holding-puck
-  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
-  ?sf <- (state SKILL-EXECUTION)
-  ?df <- (skill-done (name "finish_puck_at") (status FAILED))
-  ?ste <- (skill-to-execute (skill deliver) (args $?args) (state running))
-  (puck-in-gripper TRUE)
-  =>
-  (printout t "take_puck_to failed, restarting it because I still have a puck" crlf)
-  (retract ?df)
-  (skill-call finish_puck_at (insert$ ?args 1 (create$ mtype DE dont_wait false out_of_order ignore)))
-)
