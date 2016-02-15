@@ -474,7 +474,6 @@
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*)))
-    (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*DELIVER-LATEST-TIME*)))
     (delivery-gate ?gate) (in-production ?ip&:(> ?ip 0)) (in-delivery ?id)
   )
   =>
