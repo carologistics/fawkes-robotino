@@ -145,6 +145,7 @@
   (slot cap-loaded (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
   ;the team has to fill one CS with black and the other with grey caps (config)
   (slot assigned-cap-color (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
+  (slot caps-on-shelf (type INTEGER) (default 3))
   (slot sync-id (type INTEGER) (default 0))
 )
 
@@ -226,7 +227,6 @@
   (slot zone (type SYMBOL))
   (slot product-type (type SYMBOL))
   (slot machine-feature (type SYMBOL) (allowed-symbols CONVEYOR SHELF SLIDE))
-  (slot shelf-slot (type SYMBOL) (allowed-symbols LEFT MIDDLE RIGHT))
   (slot base (type SYMBOL) (allowed-symbols BLACK SILVER RED))
   (slot ring (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))

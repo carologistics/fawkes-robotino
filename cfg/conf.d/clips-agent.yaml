@@ -79,8 +79,6 @@ clips-agent:
         C-CS2: BLACK
         M-CS1: GREY
         M-CS2: BLACK
-      #on which shelf slot are new caps to fill into the station? (LEFT, RIGHT, MIDDLE)
-      shelf-slot-new-caps: LEFT
     
     waiting-points:
       ins-1-robotino1: WAIT_FOR_INS_1_ROBOTINO_1

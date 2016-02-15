@@ -111,9 +111,9 @@
   =>
   (path-load  rcll2016/utils.clp)
   (path-load  rcll2016/net.clp)
-  (path-load  rcll2016/skills.clp)
   (path-load  rcll2016/worldmodel-synchronization.clp)
   (path-load  rcll2016/worldmodel.clp)
+  (path-load  rcll2016/skills.clp)
   (path-load  rcll2016/lock-managing.clp)
   (path-load  rcll2016/lock-usage.clp)
   (if

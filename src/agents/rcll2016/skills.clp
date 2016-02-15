@@ -65,3 +65,34 @@
 ;;;;;;;;;;;;;;;;;;
 ; special cases for skill calls/final-/failed-handling
 ;;;;;;;;;;;;;;;;;;
+(defrule skill-get-product-from-shelf
+  "If we get a base from a shelf we need to determine the correct slot as late as possible"
+  (declare (salience ?*PRIORITY-SKILL-SPECIAL-CASE*))
+  ?ste <- (skill-to-execute (skill get_product_from)
+			    (args place ?mps shelf TRUE) (state wait-for-lock) (target ?target))
+  ?cs <- (cap-station (name ?mps) (caps-on-shelf ?caps))
+  (wait-for-lock (res ?target) (state use))
+  ?s <- (state WAIT-FOR-LOCK)
+  =>
+  (retract ?s)
+  (assert (state SKILL-EXECUTION))
+  (modify ?ste (state running))
+  (switch ?caps
+    (case 3
+      then
+      (bind ?sslot RIGHT)
+      (synced-modify ?cs caps-on-shelf 2)
+    )
+    (case 2
+      then
+      (bind ?sslot MIDDLE)
+      (synced-modify ?cs caps-on-shelf 1)
+    )
+    (case 1
+      then
+      (bind ?sslot LEFT)
+      (synced-modify ?cs caps-on-shelf 3)
+    )
+  )
+  (skill-call get_product_from place ?mps shelf ?sslot)
+)
