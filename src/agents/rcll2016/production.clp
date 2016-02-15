@@ -198,27 +198,27 @@
   )
 )
 
-(defrule discard-unneeded-base
-  "Discard a base which is not needed if no RS can be pre-filled"
-  (declare (salience ?*PRIORITY-DISCARD-UNKNOWN*))
-  (phase PRODUCTION)
-  (state IDLE)
-  (team-color ?team-color&~nil)
-  (holding ?product-id&~NONE)
-  (product (id ?product-id))
-  (machine (mtype RS) (name ?rs) (team ?team-color))
-  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DISCARD-UNKNOWN*))))
-  =>
-  (printout t "PROD: Discard unneeded or unknown base " ?product-id crlf)
-  (bind ?task-id (random-id))
-  (assert
-    (task (name discard-unknown) (id ?task-id) (state proposed)
-      (steps (create$ (+ ?task-id 1)))
-      (priority ?*PRIORITY-DISCARD-UNKNOWN*))
-    (step (name discard) (id (+ ?task-id 1))
-      (task-priority ?*PRIORITY-DISCARD-UNKNOWN*))
-  )
-)
+;(defrule discard-unneeded-base
+;  "Discard a base which is not needed if no RS can be pre-filled"
+;  (declare (salience ?*PRIORITY-DISCARD-UNKNOWN*))
+;  (phase PRODUCTION)
+;  (state IDLE)
+;  (team-color ?team-color&~nil)
+;  (holding ?product-id&~NONE)
+;  (product (id ?product-id))
+;  (machine (mtype RS) (name ?rs) (team ?team-color))
+;  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DISCARD-UNKNOWN*))))
+;  =>
+;  (printout t "PROD: Discard unneeded or unknown base " ?product-id crlf)
+;  (bind ?task-id (random-id))
+;  (assert
+;    (task (name discard-unknown) (id ?task-id) (state proposed)
+;      (steps (create$ (+ ?task-id 1)))
+;      (priority ?*PRIORITY-DISCARD-UNKNOWN*))
+;    (step (name discard) (id (+ ?task-id 1))
+;      (task-priority ?*PRIORITY-DISCARD-UNKNOWN*))
+;  )
+;)
   
 (defrule prod-produce-c0
   "Produce a C0"
