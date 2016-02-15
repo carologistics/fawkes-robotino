@@ -45,7 +45,7 @@ local left_sensor_index = 3
 local right_sensor_index = 4
 local backwards_distance = 0.14
 local voltage_treshold = 26800
-local try_right_dist = 0.03
+local try_dist = 0.03
 
 function no_battery_writer()
    return not battery:has_writer()
@@ -67,15 +67,22 @@ fsm:define_states{ export_to=_M,
    {"SETTLE_VOLTAGE", JumpState},
    {"CHECK_CHARGING", JumpState},
    {"TRY_RIGHT", SkillJumpState, skills={{motor_move}}, final_to="SETTLE_VOLTAGE", fail_to="FAILED"},
+   {"TRY_LEFT", SkillJumpState, skills={{motor_move}}, final_to="SETTLE_VOLTAGE", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond=no_battery_writer, desc="No Writer for BatteryInterface"},
    {"INIT", "ALIGN_TAG", cond=true},
    {"SETTLE_VOLTAGE", "CHECK_CHARGING", timeout=2},
-   {"CHECK_CHARGING", "TRY_RIGHT", cond="not charging()", desc="If not charging, do something"}, --TODO maybe try again or something
+   {"CHECK_CHARGING", "TRY_RIGHT", cond="not charging() and vars.try_index == 1", desc="Not charging, try to drive a bit to the right"},
+   {"CHECK_CHARGING", "TRY_LEFT", cond="not charging() and vars.try_index == 2", desc="Not charging, try to drive a bit to the left"},
+   {"CHECK_CHARGING", "FAILED", cond="not charging() and vars.try_index == 3", desc="Not charging after all tries, something is wrong"},
    {"CHECK_CHARGING", "FINAL", cond=charging, desc="If not charging, do something"},
 }
+
+function INIT:init()
+   self.fsm.vars.try_index = 1
+end
 
 function ALIGN_TAG:init()
    self.args["align_tag"] = {tag_id = self.fsm.vars.tag_id or default_tag_id, x = 0.5, y = 0, ori = 0}
@@ -85,11 +92,18 @@ function DRIVE_BACKWARDS:init()
    self.args["motor_move"] = {x = -backwards_distance, y = 0, ori = 0,
 			                     vel_trans = 0.12,
 									   tolerance = { x=0.05, y=0.05, ori=0.01 }}
---TODO measure the distance between dock and tag
 end
+
 function TRY_RIGHT:init()
-   self.args["motor_move"] = {x = 0, y = -try_right_dist, ori = 0,
+   self.fsm.vars.try_index = self.fsm.vars.try_index + 1
+   self.args["motor_move"] = {x = 0, y = -try_dist, ori = 0,
 			                     vel_trans = 0.08,
 									   tolerance = { x=0.02, y=0.02, ori=0.01 }}
---TODO measure the distance between dock and tag
+end
+
+function TRY_LEFT:init()
+   self.fsm.vars.try_index = self.fsm.vars.try_index + 1
+   self.args["motor_move"] = {x = 0, y = try_dist * 2, ori = 0,
+			                     vel_trans = 0.08,
+									   tolerance = { x=0.02, y=0.02, ori=0.01 }}
 end
