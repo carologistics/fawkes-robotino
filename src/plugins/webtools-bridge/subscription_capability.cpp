@@ -46,6 +46,18 @@ Subscription::finalize()
 	{
 		if(is_active()) { deactivate(); }
 		Subscription::finalize_impl();
+
+		if(!empty()){
+
+			for(it_subscriptions_ = subscriptions_.begin()
+				;it_subscriptions_ != subscriptions_.end()
+				;it_subscriptions_++){
+
+				remove_session(it_subscriptions_->first);
+		
+			}
+		}
+
 		finalized=true;
 	}
 }
@@ -76,14 +88,13 @@ Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
 		return;
 	}
 
-	for(std::map <std::shared_ptr<WebSession>, std::list<Request> >::iterator 
-		 it_subscribers = subscription_to_append->subscriptions_.begin()
-		;it_subscribers != subscription_to_append->subscriptions_.end()
-		;it_subscribers++){
+	for( it_subscriptions_ = subscription_to_append->subscriptions_.begin()
+		;it_subscriptions_ != subscription_to_append->subscriptions_.end()
+		;it_subscriptions_++){
 
 		for(std::list<Request>::iterator 
-			 it_requests = it_subscribers->second.begin() 
-			;it_requests != it_subscribers->second.end()
+			 it_requests = it_subscriptions_->second.begin() 
+			;it_requests != it_subscriptions_->second.end()
 			;it_requests++ ){
 
 			add_request( it_requests->id
@@ -91,7 +102,11 @@ Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
 									, it_requests->throttle_rate
 									, it_requests->queue_length
 									, it_requests->fragment_size
-									, it_subscribers->first);
+									, it_subscriptions_->first);
+
+			subscription_to_append->remove_request( it_requests->id , it_subscriptions_->first);
+		
+
 			subscription_to_append->finalize();
 		}
 	}
@@ -108,7 +123,6 @@ Subscription::empty()
 bool
 Subscription::is_active()
 {
-	//This assumes that the clients removale and the removale of their subscribtions were done correctly
 	return (active_status_ == ACTIVE );
 }
 
@@ -211,7 +225,7 @@ Subscription::add_request( std::string id
 
 	//if it is a new session, register my terminate_handler for the session's callbacks
 	if(it == subscriptions_.end()){
-		register_session_handlers(session);
+		add_new_session(session);
 	}
 
 	//if there was older requests for this session,  point to the same last_published_time
@@ -277,7 +291,7 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 
 	//sub_list_mutex_->lock();
 	if(subscriptions_[session].empty()){
-		subscriptions_.erase(session);
+		remove_session(session);
 	}
 	//sub_list_mutex_->lock();
 }
@@ -295,9 +309,18 @@ Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
 }
 
 void 
-Subscription::register_session_handlers(std::shared_ptr<WebSession> session)
+Subscription::add_new_session(std::shared_ptr<WebSession> session)
 {
+	//register termination handler
 	session->register_terminate_callback( boost::bind(&Subscription::terminate_session_handler,this,_1) );
+}
+
+void 
+Subscription::remove_session(std::shared_ptr<WebSession> session)
+{
+	//deregister termination handler
+	session->deregister_terminate_callback( &Subscription::terminate_session_handler );
+	subscriptions_.erase(session);
 }
 
 void

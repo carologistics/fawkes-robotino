@@ -3,7 +3,7 @@ TODO:
 * Iterate over all the ifdefines and make the naming consistenet
 * look how to adpt ur own namespace...call it bridge
 * publish witha 
-
+* start the processing for each request on a thread if u want to handle many requests concurently. Move the mutex to the session itself.
 
 
 Changes and Why:
@@ -99,3 +99,33 @@ So..On_msg should process stuff in a a differnt thread. as well as on_close.u ca
 
 
 |I think i will go for that. all that time and i am not even sure how many threads could be called from the server....What is the server is thread safe...What if i dont have to care about the handlers or the sending synq. this means i only have to care for my data and bridge stuff...For this u need to take a big look within the websocketpp and that is my next step....For now all i want is to have a working version of it even with all this confusion
+
+
+
+
+BUG ON termination: (solved)
+Description: when u refresh the session the whole thing craches
+Analysis: after analysis i found that the session was recognozed and a new session mutiple times after it was added the first time with results in calling of terminate more than once for the same subscriber.
+
+FOUND IT: so the bug was generated coz each time u have a request u create a new subscription object  and add a request to it (which means the session terminate call back will also be registered to the session).
+Shorlt after u will call subsume on that session from ..Which calls add request on the correct subscription object and the tmpSubscription object goes out of scope..but the termination call back was not deleted from the sessions.... it will be called when u try to terminate 
+
+Solution:
+ *only register the termination call back if the subscription object was active
+ *make sure u de register all sessions when finializing which should be in subsum  (this is crusial)...but how would i do that..I only have the subscription object and i need to find out which callbacks are equal to it
+
+Basically either make sure that the subscription object out lives all registered sessions. Or deregsiter all the sessions call backs on finilazations
+
+
+In only one subscription active analogy it is doable to insure that the session handler wont be regsitered unless this is the one active subscription. But that does not explicitly state the problem anywhere so that other developers could account for it. It just hides it in the between the lines which i find a little less reusable.
+
+Finding the terminated subscriptionm obejct and delete its handlers sounds like a better idea for me.
+
+To do this i have to change the way that i am storing call backs for effciantcey ...
+Map it to ...:
+	topic_id : could be a good idea coz in fact i need one terminate to be mapped to one subscription object. In this approach actually i dont have to care about derigstring a handler. Once another one is registered it replaces the old one.. I like this but it means i always have to have a unique name (somthing like the _prefixed_topic_name) in all the other capabilites that will be implemented for all the other 
+
+	unique_id: for subscriptions (but this will mean i have to do the same with all other capabilites)
+
+
+	To look on how u got here check the stashed  version

@@ -86,6 +86,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   //Extract prefix from the name
   std::string topic_name="";
+
   std::size_t pos = prefixed_topic_name.find(prefix_,0);
   if (pos != std::string::npos && pos <= 1)
   {
@@ -100,7 +101,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
   //TODO::take care of the differnt ways the topic is spelled
 
   //Extracet the BlackBoard Interface Type and Id
-  pos =topic_name.find("::",0);
+  pos = topic_name.find("::",0);
   std::string if_id=topic_name;
   std::string if_type=topic_name;
   
@@ -114,6 +115,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
   else{
     throw fawkes::SyntaxErrorException("BlackBoardProcessor: Wrong 'Topic Name' format!");
   }
+
 
   //Look for the topic in the BlackBoard intefaces
   bool found=false;

@@ -146,16 +146,16 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 									   	, std::shared_ptr<WebSession> session)
 {
 
-	std::shared_ptr <SubscriptionCapability> subscription_processor;
-	subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
+	std::shared_ptr <SubscriptionCapability> processor;
+	processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
 	//should be garanteed to work
 
-	std::shared_ptr <Subscription> subscriber;
+	std::shared_ptr <Subscription> subscription;
 	
 	try{
-		//always creates a new subscriber for that topic with the given Session and parameters
+		//always creates a new subscription for that topic with the given Session and parameters
 		//TODO:: pass the pure string arguments or a "protocol" type
-		subscriber = subscription_processor-> subscribe(topic_name 
+		subscription = processor-> subscribe(topic_name 
 													, id 		
 													, compression
 													, throttle_rate	
@@ -167,19 +167,19 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 		throw e;
 	}
 
-	/*push it to the topic_subscribertion_map maintaing only ONE instance per topic
-	*containing all the clients maped to thier individuale requests*/
+	/*push it to the topic_subscription_map maintaing only ONE Subscription instance per topic.
+	*ps.Subscription contains all the clients maped to thier individuale requests*/
 
-	//Is it a new topic? Just push it to the map and activate the subscriber
+	//Is it a new topic? Just push it to the map and activate the Subscription
 
 	//Mutex.lock()
 	if( topic_Subscription_.find(topic_name) == topic_Subscription_.end() )
 	{
-		topic_Subscription_[topic_name] = subscriber;
+		topic_Subscription_[topic_name] = subscription;
 		//Activate the listeners or whatever that publishs
-		subscriber->activate();
+		subscription->activate();
 	}else{
-		topic_Subscription_[topic_name]->subsume(subscriber);
+		topic_Subscription_[topic_name]->subsume(subscription);
 	}
 	//Mutex.unlock();
 }
@@ -191,8 +191,8 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 											, std::shared_ptr<WebSession> session)
 {
 	//select thre right processor
-	std::shared_ptr <SubscriptionCapability> subscription_processor;
-	subscription_processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
+	std::shared_ptr <SubscriptionCapability> processor;
+	processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
 	
 	std::shared_ptr <Subscription> subscription;
 	
@@ -201,7 +201,7 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 		subscription = topic_Subscription_[topic_name];
 
 		try{
-			subscription_processor->unsubscribe(id, subscription ,session );
+			processor->unsubscribe(id, subscription ,session );
 		}catch (Exception &e){
 			throw e;
 		}
