@@ -76,8 +76,9 @@ class Subscription
 		fawkes::Mutex 			*mutex_;
 		
 	private:
-		void 					register_session_handlers(std::shared_ptr<WebSession> session);	
-		
+		void 					add_new_session(std::shared_ptr<WebSession> session);	
+		void 					remove_session(std::shared_ptr<WebSession> session);
+
 		enum 			Status { ACTIVE, DORMANT };
 		struct 			Request
 						{
@@ -99,8 +100,9 @@ class Subscription
 		fawkes::Clock	*clock_;
 		bool 			finalized; //set to true if it was Object was finilazed berfore
 
-		std::map <std::shared_ptr<WebSession> , std::list<Request>>    subscriptions_; //maping of sessionTo requets list
-
+		
+		std::map <std::shared_ptr<WebSession> , std::list<Request>>    			subscriptions_; //maping of sessionTo requets list
+		std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator 	it_subscriptions_;
 		bool static compare_throttle_rate(Request first, Request second);
 
 		// fawkes::Mutex				*sub_list_mutex_;

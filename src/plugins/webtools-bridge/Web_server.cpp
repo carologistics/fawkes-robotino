@@ -48,7 +48,7 @@ public:
 
         MutexLocker ml(mutex_);
 
-        tmp_session_= websocketpp::lib::make_shared<WebSession>(mutex_);
+        tmp_session_= websocketpp::lib::make_shared<WebSession>();
         tmp_session_->set_status("validating");//todo::use status codes from websocketpp
 
         server::connection_ptr con=m_server->get_con_from_hdl(hdl);

@@ -20,7 +20,7 @@ BridgeManager::incoming(std::string json,std::shared_ptr<WebSession> session)
 
 	if (!d.HasMember("op"))
 	{
-		throw fawkes::MissingParameterException("BridgeManager: wrong json!, Op field missing");
+		throw fawkes::MissingParameterException("BridgeManager: wrong json!, 'Op' field is missing!");
 	}
 
     std::string op_name=std::string(d["op"].GetString());
@@ -30,7 +30,9 @@ BridgeManager::incoming(std::string json,std::shared_ptr<WebSession> session)
 	}
 	try{
 		operation_cpm_map_[op_name]->handle_message(d,session);
-	}catch(fawkes::Exception &e)
+	}
+
+	catch(fawkes::Exception &e)
 	{
 		throw e;
 	}

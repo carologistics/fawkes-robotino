@@ -16,15 +16,16 @@ namespace fawkes{
 class WebSession;
 //TODO::move to commonNameSpace
 typedef websocketpp::server<websocketpp::config::asio> server;
-typedef boost::function < void (std::shared_ptr<WebSession>) > handler; 
+typedef boost::function < void (std::shared_ptr<WebSession>) > Callback; 
 
+class Subscription;
 
 class WebSession 
 : public std::enable_shared_from_this<WebSession>
 {
 
 public:
-	WebSession(fawkes::Mutex *mutex);
+	WebSession();
 	~WebSession();
 
 	void 						set_connection_hdl(websocketpp::connection_hdl hdl);
@@ -42,7 +43,8 @@ public:
 
 	void						terminate();//this will be called when session is closed from server
 	
-	void 						register_terminate_callback(handler terminate_callback);
+	void 						register_terminate_callback(Callback terminate_callback);
+	void 						deregister_terminate_callback(void (Subscription::*callback)(std::shared_ptr<WebSession>)); 
 
     std::map<std::string,std::string>					http_req;
     
@@ -54,7 +56,7 @@ private:
     std::string										 	status_;
     int                                        			session_id_;
 
-    std::vector<handler> 								terminate_callbacks_;
+    std::vector<Callback> 								terminate_callbacks_;
     fawkes::Mutex 										*mutex_;	
 };
 
