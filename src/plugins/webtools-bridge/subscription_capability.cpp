@@ -272,10 +272,12 @@ Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
 	MutexLocker ml(mutex_);
 
 	std::cout<< "Session terminated NICELY :D" << std::endl;
-	remove_session(session);//this is a cycle call..take care maybe there is a problem
-	subscriptions_.erase(session);
-	//sub_list_mutex_->lock();
-	//check if subscription became empty and trigger the delete from the owning class if that was the case
+
+	//make sure the session is still there and was not deleted while waiting for the mutex
+	if (subscriptions_.find(session) != subscriptions_.end())
+		subscriptions_.erase(session);
+	
+	//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
 }
 
 void 
