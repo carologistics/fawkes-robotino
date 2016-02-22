@@ -57,10 +57,11 @@ Subscription::finalize()
 
 			for(it_subscriptions_ = subscriptions_.begin()
 				;it_subscriptions_ != subscriptions_.end()
-				;it_subscriptions_++){
+				;it_subscriptions_++)
+			{
 
 				remove_session(it_subscriptions_->first);
-		
+				subscriptions_.erase(it_subscriptions_->first);
 			}
 		}
 
@@ -132,8 +133,8 @@ Subscription::deactivate_impl()
 
 /**Subsumes a DORMANT Subscription instace into an ACTIVE one.
  * This is usually called when there is more than one Subscription instance for the same topic.
- * The owning instance must be Active and the instance to be subsumed is must to be Dormant
- * ie, ActiveInstance.Subsume(DormantInstance). After the call, the dormant instance could be safly deleted afterwards.
+ * The owning instance must be Active and the instance to be subsumed must to be Dormant
+ * ie, ActiveInstance.Subsume(DormantInstance). After the call, the dormant instance could be safly deleted.
  * @param  The Dormant Subscription Instance to subsume
  */
 void
@@ -173,7 +174,7 @@ Subscription::subsume(std::shared_ptr <Subscription> dormant_subscription)
 									, it_requests ->fragment_size
 									, it_subscriptions ->first);
 
-			dormant_subscription->remove_request( it_requests ->id , it_subscriptions ->first);
+			//dormant_subscription->remove_request( it_requests ->id , it_subscriptions ->first);
 
 		}
 	}
@@ -258,6 +259,7 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 	//sub_list_mutex_->lock();
 	if(subscriptions_[session].empty()){
 		remove_session(session);
+		subscriptions_.erase(session);
 	}
 	//sub_list_mutex_->lock();
 }
@@ -270,6 +272,7 @@ Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
 	MutexLocker ml(mutex_);
 
 	std::cout<< "Session terminated NICELY :D" << std::endl;
+	remove_session(session);//this is a cycle call..take care maybe there is a problem
 	subscriptions_.erase(session);
 	//sub_list_mutex_->lock();
 	//check if subscription became empty and trigger the delete from the owning class if that was the case
@@ -280,7 +283,7 @@ Subscription::add_new_session(std::shared_ptr<WebSession> session)
 {
 	//register termination handler
 	session->register_terminate_callback( boost::bind(&Subscription::terminate_session_handler,this,_1) );
-	subscriptions_[session];// Check if okay
+//	subscriptions_[session];// Check if okay
 }
 
 void 
@@ -288,7 +291,7 @@ Subscription::remove_session(std::shared_ptr<WebSession> session)
 {
 	//deregister termination handler
 	session->deregister_terminate_callback( &Subscription::terminate_session_handler );
-	subscriptions_.erase(session);
+//	subscriptions_.erase(session);
 }
 
 
