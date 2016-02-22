@@ -39,6 +39,7 @@ Subscription::~Subscription()
 	delete mutex_;
 }
 
+//---------------------INSTACE OPERATIONS
 void
 Subscription::finalize()
 {
@@ -85,6 +86,50 @@ Subscription::deactivate()
 	}
 }
 
+bool
+Subscription::is_active()
+{
+	return (active_status_ == ACTIVE );
+}
+
+bool
+Subscription::empty()
+{
+	//This assumes that the clients removale and the removale of their subscribtions were done correctly
+	return subscriptions_.empty();
+}
+
+
+std::string
+Subscription::get_topic_name()
+{
+	return topic_name_;
+}
+
+std::string
+Subscription::get_processor_prefix()
+{
+	return processor_prefix_;
+}
+
+void
+Subscription::finalize_impl()
+{
+	//Override to extend behavior
+}
+
+void
+Subscription::activate_impl()
+{
+	//Override to extend behavior
+}
+
+void
+Subscription::deactivate_impl()
+{
+	//Override to extend behavior
+}
+
 /**Subsumes a DORMANT Subscription instace into an ACTIVE one.
  * This is usually called when there is more than one Subscription instance for the same topic.
  * The owning instance must be Active and the instance to be subsumed is must to be Dormant
@@ -111,116 +156,31 @@ Subscription::subsume(std::shared_ptr <Subscription> dormant_subscription)
 	}
 
 
-	for( it_subscriptions_ = dormant_subscription->subscriptions_.begin()
-		;it_subscriptions_ != dormant_subscription->subscriptions_.end()
-		;it_subscriptions_++){
+	for(std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator 
+		it_subscriptions = dormant_subscription->subscriptions_.begin()
+		;it_subscriptions != dormant_subscription->subscriptions_.end()
+		;it_subscriptions ++){
 
-		for(std::list<Request>::iterator 
-			 it_requests = it_subscriptions_->second.begin() 
-			;it_requests != it_subscriptions_->second.end()
-			;it_requests++ ){
+		for(std::list< Request >::iterator 
+			it_requests = it_subscriptions ->second.begin() 
+			;it_requests != it_subscriptions ->second.end()
+			;it_requests ++ ){
 
-			add_request( it_requests->id
-									, it_requests->compression
-									, it_requests->throttle_rate
-									, it_requests->queue_length
-									, it_requests->fragment_size
-									, it_subscriptions_->first);
+			add_request( it_requests ->id
+									, it_requests ->compression
+									, it_requests ->throttle_rate
+									, it_requests ->queue_length
+									, it_requests ->fragment_size
+									, it_subscriptions ->first);
 
-			dormant_subscription->remove_request( it_requests->id , it_subscriptions_->first);
+			dormant_subscription->remove_request( it_requests ->id , it_subscriptions ->first);
 
-			dormant_subscription->finalize();
 		}
 	}
-
+		dormant_subscription->finalize();
 }
 
-bool
-Subscription::empty()
-{
-	//This assumes that the clients removale and the removale of their subscribtions were done correctly
-	return subscriptions_.empty();
-}
-
-bool
-Subscription::is_active()
-{
-	return (active_status_ == ACTIVE );
-}
-
-std::string
-Subscription::get_topic_name()
-{
-	return topic_name_;
-}
-
-std::string
-Subscription::get_processor_prefix()
-{
-	return processor_prefix_;
-}
-
-/*This will be called by the whatever event that trigger the publish with the json msg.
-*(Like a periodic clock or an data update listener).
-*It checks for each session if enough time has passed since the last publish 
-*(ie, > throttle_rate). If so, it sends the json. Otherwise  (not sure yet, but 
-*for now just drop it. Later maybe queue it).
-*/
-void
-Subscription::publish()
-{
-	MutexLocker ml(mutex_);
-
-	if( is_active() )
-	{
-		std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
-	
-		for( it_subscriptions_ = subscriptions_.begin() 
-			; it_subscriptions_ != subscriptions_.end()
-			; it_subscriptions_++)
-		{
-			if( it_subscriptions_->second.empty() ) 
-			{
-				//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
-				//throw some exception
-				subscriptions_.erase(it_subscriptions_);
-				continue;
-			}
-	
-			//Checking if it is time to publish topic
-			//sub_list_mutex_->lock();
-			fawkes::Time now(clock_);
-			//smallest throttle_rate always on the top
-			unsigned int throttle_rate = it_subscriptions_->second.front().throttle_rate;
-			std::string  id= it_subscriptions_->second.front().id;// could be done here to minimize locking
-			unsigned int last_published = it_subscriptions_->second.front().last_published_time->in_msec();
-			unsigned int time_passed = (now.in_msec() -last_published ); 
-			//sub_list_mutex_->unlock();
-	
-			if (time_passed >= throttle_rate) {
-	
-				std::string complete_json_msg = serialize("publish"
-												, prefiexed_topic_name
-												, id);
-	
-				//Only stamp if it was sent
-				//time_mutex_->lock();
-				it_subscriptions_->second.front().last_published_time->stamp();
-				//time_mutex_->unlock();
-
-				// To avoid deadlock if the session mutex was locked to process a request 
-				//(and the request cant add coz ur locking the subscription)
-				ml.unlock();
-				//send msg it to session
-				it_subscriptions_->first->send(complete_json_msg);
-				ml.relock();
-				//catch exception
-			}
-		}
-	}
-}
-
-//------REQUEST HANDLING
+//---------------------REQUEST HANDLING
 
 /*this should be called by each subscribe() call to add the request and the requesting session*/
 void
@@ -278,8 +238,7 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 
 	it_subscriptions_ = subscriptions_.find(session);	
 
-	//TODO:: make sure there is only one session object per session. Otherwise implement an equalit_subscriptions_y operator
-	if(it_subscriptions_ != subscriptions_.end()){
+	if(it_subscriptions_ == subscriptions_.end()){
 		//there is no such session. Maybe session was closed before the request is processed
 		return;
 	}
@@ -303,8 +262,7 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 	//sub_list_mutex_->lock();
 }
 
-//-----SESSION HANDLING
-
+//---------------------SESSION HANDLING
 void 
 Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
 {
@@ -333,22 +291,67 @@ Subscription::remove_session(std::shared_ptr<WebSession> session)
 	subscriptions_.erase(session);
 }
 
-void
-Subscription::finalize_impl()
-{
-	//Override to extend behavior
-}
 
-void
-Subscription::activate_impl()
-{
-	//Override to extend behavior
-}
+//--------------Capability Handling
 
+/**This will be called by the whatever event that trigger the publish,Like a periodic clock 
+ * or an data update listener).
+ * It checks for each session if enough time has passed since its last publish 
+ * If so, it serialize the data and send the json. Otherwise  (not sure yet, but 
+ * for now just drop it new data. Later maybe queue it depending on the queue size).
+ */
 void
-Subscription::deactivate_impl()
+Subscription::publish()
 {
-	//Override to extend behavior
+	MutexLocker ml(mutex_);
+
+	if( is_active() )
+	{
+		std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
+	
+		for( it_subscriptions_ = subscriptions_.begin() 
+			; it_subscriptions_ != subscriptions_.end()
+			; it_subscriptions_++)
+		{
+			if( it_subscriptions_->second.empty() ) 
+			{
+				//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
+				//throw some exception
+				subscriptions_.erase(it_subscriptions_);
+				continue;
+			}
+	
+			//Checking if it is time to publish topic
+			//sub_list_mutex_->lock();
+			fawkes::Time now(clock_);
+			//smallest throttle_rate always on the top
+			unsigned int throttle_rate = it_subscriptions_->second.front().throttle_rate;
+			std::string  id= it_subscriptions_->second.front().id;// could be done here to minimize locking
+			unsigned int last_published = it_subscriptions_->second.front().last_published_time->in_msec();
+			unsigned int time_passed = (now.in_msec() -last_published ); 
+			//sub_list_mutex_->unlock();
+	
+			if (time_passed >= throttle_rate) {
+	
+				std::string complete_json_msg = serialize("publish"
+												, prefiexed_topic_name
+												, id);
+	
+				//Only stamp if it was sent
+				//time_mutex_->lock();
+				it_subscriptions_->second.front().last_published_time->stamp();
+				//time_mutex_->unlock();
+
+				// To avoid deadlock if the session mutex was locked to process a request 
+				//(and the request cant add coz ur locking the subscription)
+				ml.unlock();
+				//send msg it to session
+				it_subscriptions_->first->send(complete_json_msg);
+				ml.relock();
+				//catch exception
+			}
+		}
+	}
 }
 
 //Serialization could be moved later to a Protocol hadleing util
@@ -382,6 +385,8 @@ Subscription::serialize(std::string op
 
     return s.GetString();
 }
+
+//-------------To be removed
 
 //TODO:replace by a lambda function
 bool
