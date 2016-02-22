@@ -92,15 +92,17 @@ WebSession::send(std::string msg){
  */
 void WebSession::terminate()
 {
-	
+
 	for(std::vector<Callback>::iterator 
 		it = terminate_callbacks_.begin();
-		it != terminate_callbacks_.end() ;
+		it != terminate_callbacks_.end() ; 
 		it++)
 	{
 		Callback terminate_callback = (*it);
 		terminate_callback(shared_from_this());
 	}
+
+	terminate_callbacks_.clear();
 }
 
 
@@ -122,5 +124,4 @@ void
 WebSession::deregister_terminate_callback( void (Subscription::*callback)(std::shared_ptr<WebSession>) )
 {
 	terminate_callbacks_.erase(std::find(terminate_callbacks_.begin(), terminate_callbacks_.end(), callback));
-
 }
