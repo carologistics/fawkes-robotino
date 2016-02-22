@@ -42,11 +42,16 @@ Subscription::~Subscription()
 void
 Subscription::finalize()
 {
+	MutexLocker ml(mutex_);
 	if(!finalized)
 	{
+		//If still active deactivate 
 		if(is_active()) { deactivate(); }
+		
+		//call the extended version
 		Subscription::finalize_impl();
 
+		//Deregister from sessions and remove them
 		if(!empty()){
 
 			for(it_subscriptions_ = subscriptions_.begin()
@@ -80,16 +85,34 @@ Subscription::deactivate()
 	}
 }
 
+/**Subsumes a DORMANT Subscription instace into an ACTIVE one.
+ * This is usually called when there is more than one Subscription instance for the same topic.
+ * The owning instance must be Active and the instance to be subsumed is must to be Dormant
+ * ie, ActiveInstance.Subsume(DormantInstance). After the call, the dormant instance could be safly deleted afterwards.
+ * @param  The Dormant Subscription Instance to subsume
+ */
 void
-Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
+Subscription::subsume(std::shared_ptr <Subscription> dormant_subscription)
 {
-	if (topic_name_ != subscription_to_append->get_topic_name()){
+
+	if (topic_name_ != dormant_subscription->get_topic_name()){
 		//throw exceptoin that they dont belong to the same topic and cant be merged
 		return;
 	}
 
-	for( it_subscriptions_ = subscription_to_append->subscriptions_.begin()
-		;it_subscriptions_ != subscription_to_append->subscriptions_.end()
+	if (!is_active()){
+		//throw exceptoin that they dont belong to the same topic and cant be merged
+		return;
+	}
+
+	if (dormant_subscription->is_active()){
+		//throw exceptoin that they dont belong to the same topic and cant be merged
+		return;
+	}
+
+
+	for( it_subscriptions_ = dormant_subscription->subscriptions_.begin()
+		;it_subscriptions_ != dormant_subscription->subscriptions_.end()
 		;it_subscriptions_++){
 
 		for(std::list<Request>::iterator 
@@ -104,10 +127,9 @@ Subscription::subsume(std::shared_ptr <Subscription> subscription_to_append)
 									, it_requests->fragment_size
 									, it_subscriptions_->first);
 
-			subscription_to_append->remove_request( it_requests->id , it_subscriptions_->first);
-		
+			dormant_subscription->remove_request( it_requests->id , it_subscriptions_->first);
 
-			subscription_to_append->finalize();
+			dormant_subscription->finalize();
 		}
 	}
 
@@ -153,16 +175,15 @@ Subscription::publish()
 	{
 		std::string prefiexed_topic_name= "/"+processor_prefix_+"/"+topic_name_;
 	
-		for(std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator 
-			it = subscriptions_.begin() 
-			; it != subscriptions_.end()
-			; it++)
+		for( it_subscriptions_ = subscriptions_.begin() 
+			; it_subscriptions_ != subscriptions_.end()
+			; it_subscriptions_++)
 		{
-			if( it->second.empty() ) 
+			if( it_subscriptions_->second.empty() ) 
 			{
 				//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
 				//throw some exception
-				subscriptions_.erase(it);
+				subscriptions_.erase(it_subscriptions_);
 				continue;
 			}
 	
@@ -170,9 +191,9 @@ Subscription::publish()
 			//sub_list_mutex_->lock();
 			fawkes::Time now(clock_);
 			//smallest throttle_rate always on the top
-			unsigned int throttle_rate = it->second.front().throttle_rate;
-			std::string  id= it->second.front().id;// could be done here to minimize locking
-			unsigned int last_published = it->second.front().last_published_time->in_msec();
+			unsigned int throttle_rate = it_subscriptions_->second.front().throttle_rate;
+			std::string  id= it_subscriptions_->second.front().id;// could be done here to minimize locking
+			unsigned int last_published = it_subscriptions_->second.front().last_published_time->in_msec();
 			unsigned int time_passed = (now.in_msec() -last_published ); 
 			//sub_list_mutex_->unlock();
 	
@@ -184,20 +205,22 @@ Subscription::publish()
 	
 				//Only stamp if it was sent
 				//time_mutex_->lock();
-				it->second.front().last_published_time->stamp();
+				it_subscriptions_->second.front().last_published_time->stamp();
 				//time_mutex_->unlock();
 
 				// To avoid deadlock if the session mutex was locked to process a request 
 				//(and the request cant add coz ur locking the subscription)
 				ml.unlock();
 				//send msg it to session
-				it->first->send(complete_json_msg);
+				it_subscriptions_->first->send(complete_json_msg);
 				ml.relock();
 				//catch exception
 			}
 		}
 	}
 }
+
+//------REQUEST HANDLING
 
 /*this should be called by each subscribe() call to add the request and the requesting session*/
 void
@@ -213,23 +236,15 @@ Subscription::add_request( std::string id
 	//CHANGE:this matches for the pointer not the object
 	MutexLocker ml(mutex_);
 
-	std::map < std::shared_ptr<WebSession> , std::list<Request>>::iterator it;
-
-	it = std::find_if(subscriptions_.begin(), subscriptions_.end() 
-					,	[session](const std::pair< std::shared_ptr<WebSession> , std::list<Request>> & t) 
-						-> bool 
-						{ 
-			     			 return t.first->get_id() == session->get_id();
-			  			} 
-			  		);
+	it_subscriptions_ = subscriptions_.find(session);
 
 	//if it is a new session, register my terminate_handler for the session's callbacks
-	if(it == subscriptions_.end()){
+	if(it_subscriptions_ == subscriptions_.end()){
 		add_new_session(session);
 	}
 
 	//if there was older requests for this session,  point to the same last_published_time
-	if ( it != subscriptions_.end() && !(subscriptions_[session].empty()) ){
+	if ( it_subscriptions_ != subscriptions_.end() && !(subscriptions_[session].empty()) ){
 	
 		// if(subscriptions_[session].find(id) != subscriptions_[session].end())
 		// {
@@ -261,29 +276,21 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 {
 	MutexLocker ml(mutex_);
 
-	std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator it;
+	it_subscriptions_ = subscriptions_.find(session);	
 
-	it = std::find_if(subscriptions_.begin(), subscriptions_.end() 
-					,	[session](const std::pair<std::shared_ptr<WebSession> , std::list<Request> > & t) 
-						-> bool 
-						{ 
-			     			 return t.first->get_id() == session->get_id();
-			  			} 
-			  		);	
-	//TODO:: make sure there is only one session object per session. Otherwise implement an equality operator
-	if(it != subscriptions_.end()){
+	//TODO:: make sure there is only one session object per session. Otherwise implement an equalit_subscriptions_y operator
+	if(it_subscriptions_ != subscriptions_.end()){
 		//there is no such session. Maybe session was closed before the request is processed
 		return;
 	}
 
-	for( std::list< Request >::iterator 
-		 it = subscriptions_[session].begin()
-		;it != subscriptions_[session].end()
-		;it++){
+	for( it_requests_  = subscriptions_[session].begin()
+		;it_requests_  != subscriptions_[session].end()
+		;it_requests_ ++){
 		
-		if((*it).id == subscription_id){
+		if((*it_requests_).id == subscription_id){
 			//sub_list_mutex_->lock();
-			subscriptions_[session].erase(it);
+			subscriptions_[session].erase(it_requests_ );
   			//sub_list_mutex_->unlock();
   			break;
 		}
@@ -295,6 +302,8 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 	}
 	//sub_list_mutex_->lock();
 }
+
+//-----SESSION HANDLING
 
 void 
 Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
@@ -313,6 +322,7 @@ Subscription::add_new_session(std::shared_ptr<WebSession> session)
 {
 	//register termination handler
 	session->register_terminate_callback( boost::bind(&Subscription::terminate_session_handler,this,_1) );
+	subscriptions_[session];// Check if okay
 }
 
 void 

@@ -104,7 +104,7 @@ void WebSession::terminate()
 }
 
 
-/** An objects wants to be notified with termination events.
+/** An object wants to be notified with termination events.
  * This is called by any object that wants to keep track of the session termination (usually a CapabilityObject).
  * The object send its termination callback to be called when session terminats but WebSession::terminate()
  * @param terminate_callback The Object's method that will be called ,binded as a boost::function

@@ -103,6 +103,7 @@ class Subscription
 		
 		std::map <std::shared_ptr<WebSession> , std::list<Request>>    			subscriptions_; //maping of sessionTo requets list
 		std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator 	it_subscriptions_;
+		std::list< Request >::iterator											it_requests_;
 		bool static compare_throttle_rate(Request first, Request second);
 
 		// fawkes::Mutex				*sub_list_mutex_;
