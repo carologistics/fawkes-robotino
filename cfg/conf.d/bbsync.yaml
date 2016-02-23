@@ -27,44 +27,10 @@ fawkes/bbsync:
       # mapped to remote instance locally
       reading:
         motor: MotorInterface::Robotino
+        battery: BatteryInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino
         tfGripper: TransformInterface::/tf/GRIPPER AX12A
         tfOdom:    TransformInterface::/tf/Robotino Odometry
         tfAmcl:    TransformInterface::/tf/odom
-        tfLaserFrontDist:    TransformInterface::/tf/laser-front-dist
-        motor-switch: SwitchInterface::Robotino Motor
-        line1: LaserLineInterface::/laser-lines/1
-        line2: LaserLineInterface::/laser-lines/2
-        line3: LaserLineInterface::/laser-lines/3
-        line4: LaserLineInterface::/laser-lines/4
-        line5: LaserLineInterface::/laser-lines/5
-        line6: LaserLineInterface::/laser-lines/6
-        line7: LaserLineInterface::/laser-lines/7
-        line8: LaserLineInterface::/laser-lines/8
-        line1avg: LaserLineInterface::/laser-lines/1/moving_avg
-        line2avg: LaserLineInterface::/laser-lines/2/moving_avg
-        line3avg: LaserLineInterface::/laser-lines/3/moving_avg
-        line4avg: LaserLineInterface::/laser-lines/4/moving_avg
-        line5avg: LaserLineInterface::/laser-lines/5/moving_avg
-        line6avg: LaserLineInterface::/laser-lines/6/moving_avg
-        line7avg: LaserLineInterface::/laser-lines/7/moving_avg
-        line8avg: LaserLineInterface::/laser-lines/8/moving_avg
-        pose: Position3DInterface::Pose
-        laserswitch: SwitchInterface::/laser-cluster/ampel
-        navigator: NavigatorInterface::Navigator
-        gripper: AX12GripperInterface::Gripper AX12
-        laser-lines: SwitchInterface::laser-lines
-        cluster_mps_1: Position3DInterface::/laser-cluster/mps/1
-        cluster_mps_2: Position3DInterface::/laser-cluster/mps/2
-        cluster_mps_3: Position3DInterface::/laser-cluster/mps/3
-        cluster_mps_4: Position3DInterface::/laser-cluster/mps/4
-        cluster_mps_5: Position3DInterface::/laser-cluster/mps/5
-        cluster_mps_6: Position3DInterface::/laser-cluster/mps/6
-        cluster_mps_7: Position3DInterface::/laser-cluster/mps/7
-        cluster_mps_8: Position3DInterface::/laser-cluster/mps/8
-        cluster_mps_9: Position3DInterface::/laser-cluster/mps/9
-        cluster_mps_10: Position3DInterface::/laser-cluster/mps/10
-        arduino: ArduinoInterface::Arduino
-        laser_front_dist: Position3DInterface::front_dist
       writing:
         tfTags: TransformInterface::TF tags
