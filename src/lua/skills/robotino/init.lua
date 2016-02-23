@@ -59,6 +59,7 @@ skillenv.use_skill("skills.robotino.bring_product_to")
 skillenv.use_skill("skills.robotino.get_product_from")
 skillenv.use_skill("skills.robotino.approach_test")
 skillenv.use_skill("skills.robotino.dock_charge")
+skillenv.use_skill("skills.robotino.drive_battery")
 -- Uncomment to use gripper for technical challenge
 --skillenv.use_skill("skills.robotino.gripper")
 --skillenv.use_skill("skills.robotino.grip_cylinder")
