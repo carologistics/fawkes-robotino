@@ -78,6 +78,8 @@ plugins/amcl:
   save_pose_period: 0.0
   max_beams: 60
   map_file: maps/llsf-map-2015.png
+  origin_x: -7.0
+  origin_y: -1.1
 
 plugins/laser-filter:
   robot/active: false
