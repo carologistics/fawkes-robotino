@@ -57,11 +57,11 @@ Subscription::finalize()
 
 			for(it_subscriptions_ = subscriptions_.begin()
 				;it_subscriptions_ != subscriptions_.end()
-				;it_subscriptions_++)
+				;)
 			{
 
 				remove_session(it_subscriptions_->first);
-				subscriptions_.erase(it_subscriptions_->first);
+				subscriptions_.erase(it_subscriptions_++);
 			}
 		}
 
@@ -272,7 +272,7 @@ Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
 	MutexLocker ml(mutex_);
 
 	std::cout<< "Session terminated NICELY :D" << std::endl;
-
+	
 	//make sure the session is still there and was not deleted while waiting for the mutex
 	if (subscriptions_.find(session) != subscriptions_.end())
 		subscriptions_.erase(session);
@@ -322,7 +322,7 @@ Subscription::publish()
 			{
 				//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
 				//throw some exception
-				subscriptions_.erase(it_subscriptions_);
+				subscriptions_.erase(it_subscriptions_++);
 				continue;
 			}
 	
