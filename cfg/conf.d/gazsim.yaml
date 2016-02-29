@@ -165,3 +165,6 @@ gazsim:
     number-interfaces: 16
     visibility-history-increase-per-update: 30
     frame: !frame gazsim_tag_vision
+
+  navgraph-generator:
+    tag01: "~/tag_01/gazsim/gps/"
