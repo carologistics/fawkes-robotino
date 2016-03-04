@@ -153,8 +153,9 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   logger_->log_info("BlackboardProcessor:", "Interface '%s' Succefully Opened!", topic_name.c_str());
 
-  new_subscirption->add_request(id , compression , throttle_rate  
-                                           , queue_length , fragment_size , session);
+  //Moved to SubscriptionCapabilityManager
+  // new_subscirption->add_request(id , compression , throttle_rate  
+  //                                          , queue_length , fragment_size , session);
   
   return new_subscirption ;
 }

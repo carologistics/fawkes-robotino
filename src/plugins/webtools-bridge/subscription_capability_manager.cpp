@@ -181,6 +181,40 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 	}else{
 		topic_Subscription_[topic_name]->subsume(subscription);
 	}
+
+//I LOVE THIS LINE: 
+	topic_Subscription_[topic_name]->add_request(id , compression , throttle_rate , queue_length , fragment_size , session);
+	/*this line showed me so many things that lead me to a new restructuring a lot in my mind in my mind.
+    So first moving this line from the processor to here eliminates the bug that i was struggling with. Since it only add_request
+    to those subscriptions that is actually correct eliminating the need to make all the session registering for the temporary dormant
+    Subscription object that is always returned by the processor.
+    Moving it here only registers the subscription to the session [callbacks] only if this is the one worthy of keeping*/
+
+    /*but then again what does it even mean to make a new temp subscription Object by the processor which only stores redundant data
+    [Interface, Interface Listener to register to and blackboard interface] that u already had in the Active object (in case that was not the first subscription to this topic)
+    It seems to me that we are (and we actually are) the processor to call its subscribe method to do some of processing processor specific.
+    The looking for the interface, opening it, and passing it to a Subscription Object to store this is very redundant after the first time.
+
+    MoreOver, Why am i storing a Subscription Object Separate from the Superscription Capability anyways. Why doest the bridge just extend
+    Subscription Capability that knows all what happens on the subscription and just leaves a virtual Methods with the capability Operations name to specify the behaviour
+    Why is The bridge processor even called a bridge processor and why does it "have" capability related objects. It sounds now that the capability Specific Object [subscription]
+    could be the capability itself and the Bridge [aka Bridge Processor] itslef.
+
+    Then i think about the implications and that we actually wont return anything to the Capability Manager which stores a list of bridges (also stored in every other capability Manager that this processor extend the capability Of).
+    . why the hell a Bridge Manager is called a Bridge Manager and what deos it manage..U would expect it to manage bridges but that is a very vague concept on this design.
+    What is a bridge in this analogy is it the processor. if so. then why is there a lot of things needs to be done outside of it
+
+    Anyway...From here i thought a lot a reached also a stream of idea that make me think of the Client centred design that i think i should have.Lets start
+    with the definition of the bridge from the clients side..Why do we have one session one client...blabla ...all the arguments are clear in mu head but i will put them in the
+    commit when i start the re factoring..It makes not sense to me at this point to go like  this.
+    Due to that intersecting parts all over and me trying to accommodate functionalities from the wrong directing and its hard to add or remove code.
+    It is highly not clear to me what i did and why i did it and the readability of the code is really bad....If u set the right assumption from the start and follow the idea
+    THEY intended the bridge to be with out trying to extend that idea..I think this design is awesome. Just remove all the levels of indirection
+
+    Lets try this and if it worked with as much sessions as i want
+    (meaning the bug is where i thought it was) instead of fixing the bug i will
+    restructure the whole thing to element the redundancy and miss clarity. More explanations to come*/
+
 	//Mutex.unlock();
 }
 

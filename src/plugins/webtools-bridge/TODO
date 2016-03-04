@@ -129,3 +129,58 @@ Map it to ...:
 
 
 	To look on how u got here check the stashed  version
+
+
+
+
+
+	LOG:
+
+	4/March/2016
+	so started again after a long pause so that would be a good chance to refactor some stuff that does not make sence coz i have a new eye on things now.
+	State of the run is that is could accept as many new sessions and requests..First terminattion of the sessions happend nicely. yet when u refresh the second time it craches with stacktrace
+
+	After outputting
+[2016-03-04 11:00:19] [control] Control frame received with opcode 8
+11:00:19.189882 stderr: [2016-03-04 11:00:19] [fatal] handle_read_frame error: websocketpp.transport:7 (End of File)
+
+
+	#0  fawkes::Mutex::lock (this=0x0)
+    at /home/mgomaa/fawkes-robotino/fawkes/src/libs/core/threading/mutex.cpp:92
+#1  0x00007ffff7daa750 in fawkes::MutexLocker::MutexLocker (this=0x7fffea2cfe20, mutex=<optimized out>, 
+    initially_lock=<optimized out>)
+    at /home/mgomaa/fawkes-robotino/fawkes/src/libs/core/threading/mutex_locker.cpp:109
+#2  0x00007fffea5d0a96 in Subscription::terminate_session_handler (this=0x7fffe001e088, session=
+    std::shared_ptr (count 7, weak 1) 0x7fffe00240e8)
+    at /home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge/subscription_capability.cpp:272
+#3  0x00007fffea5d2521 in operator() (a1=..., p=<optimized out>, this=<optimized out>)
+    at /usr/include/boost/bind/mem_fn_template.hpp:165
+#4  operator()<boost::_mfi::mf1<void, Subscription, std::shared_ptr<WebSession> >, boost::_bi::list1<std::shared_ptr<WebSession>&> > (a=<synthetic pointer>, f=..., this=<optimized out>)
+    at /usr/include/boost/bind/bind.hpp:313
+#5  operator()<std::shared_ptr<WebSession> > (a1=..., this=<optimized out>)
+    at /usr/include/boost/bind/bind_template.hpp:32
+#6  boost::detail::function::void_function_obj_invoker1<boost::_bi::bind_t<void, boost::_mfi::mf1<void, Subscription, std::shared_ptr<WebSession> >, boost::_bi::list2<boost::_bi::value<Subscription*>, boost::arg<1> > >, void, std::shared_ptr<WebSession> >::invoke (function_obj_ptr=..., a0=...)
+    at /usr/include/boost/function/function_template.hpp:153
+#7  0x00007fffea5c5f51 in operator() (a0=..., this=0x7fffea2cff20)
+    at /usr/include/boost/function/function_template.hpp:767
+#8  WebSession::terminate (this=0x7fffe00240e8)
+    at /home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge/web_session.cpp:102
+#9  0x00007fffea5a086b in Web_server::on_close (this=0x7fffe400c658, 
+    hdl=std::weak_ptr (count 14, weak 9) 0x7fffe0017d30)
+    at /home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge/Web_server.cpp:108
+#10 0x00007fffea5a0636 in operator()<std::weak_ptr<void>, void> (__object=<optimized out>, 
+    this=<optimized out>) at /usr/include/c++/4.8.3/functional:601
+#11 __call<void, std::weak_ptr<void>&&, 0ul, 1ul> (__args=<optimized out>, this=<optimized out>)
+    at /usr/include/c++/4.8.3/functional:1296
+#12 operator()<std::weak_ptr<void>, void> (this=<optimized out>)
+    at /usr/include/c++/4.8.3/functional:1355
+#13 std::_Function_handler<void (std::weak_ptr<void>), std::_Bind<std::_Mem_fn<void (Web_server::*)(std::weak_ptr<void>)> (Web_server*, std::_Placeholder<1>)> >::_M_invoke(std::_Any_data const&, std::weak_ptr<void>) (__functor=..., __args#0=...) at /usr/include/c++/4.8.3/functional:2071
+#14 0x00007fffea5a74c1 in std::function<void (std::weak_ptr<void>)>::operator()(std::weak_ptr<void>) const (this=this@entry=0x7fffe0018778, __args#0=std::weak_ptr (count 14, weak 9) 0x7fffe0017d30)
+    at /usr/include/c++/4.8.3/functional:2471
+#15 0x00007fffea5aa57d in websocketpp::connection<websocketpp::config::asio>::handle_terminate (
+    this=0x7fffe0017d30, tstat=<optimized out>, ec=...)
+    at /usr/include/websocketpp/impl/connection_impl.hpp:1540
+#16 0x00007fffea5ab7bd in websocketpp::transport::asio::connection<websocketpp::config::asio::transport_config>::handle_async_shutdown(std::shared_ptr<boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>, boost::asio::deadline_timer_service<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime> > > >, std::function<void (std::error_code const&)>, boost::system::error_code const&) (this=0x7fffe0017d30, 
+    shutdown_timer=std::shared_ptr (count 4, weak 0) 0x7fffe0024b88, callback=..., ec=...)
+    at /usr/include/websocketpp/transport/asio/connection.hpp:1100
+#17 0x00007fffea5a9401 in _M_call<std::shared_ptr<websocketpp::transport::asio::connection<websocketpp::config::asio::transport_config> >&, std::shared_ptr<boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>, boost::asio::deadline_timer_service<boost::posi
