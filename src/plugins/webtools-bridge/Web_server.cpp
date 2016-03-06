@@ -105,7 +105,8 @@ public:
         }
 
         int session_id=it->second->get_id();
-        it->second->terminate();
+        //TODO::replace by smarter registration mechanism
+        it->second->on_terminate();
 
         std::cout << "Closing connection  with sessionid " << session_id << std::endl;
         hdl_ids_.erase(hdl);
