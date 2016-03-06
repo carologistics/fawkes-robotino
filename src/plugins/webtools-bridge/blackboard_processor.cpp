@@ -118,33 +118,39 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
 
   //Look for the topic in the BlackBoard intefaces
-  bool found=false;
+  // bool found=false;
 
-  InterfaceInfoList *iil=blackboard_->list_all();
-  for (InterfaceInfoList::iterator i = iil->begin(); i != iil->end(); ++i){
-    if(if_type.compare(i->type()) == 0 && if_id.compare(i->id())){
-      found= true;
-      break;
-    }
-  }
-  delete iil;
+  // InterfaceInfoList *iil=blackboard_->list_all();
+  // for (InterfaceInfoList::iterator i = iil->begin(); i != iil->end(); ++i){
+  //   if(if_type.compare(i->type()) == 0 && if_id.compare(i->id())){
+  //     found= true;
+  //     break;
+  //   }
+  // }
+  // delete iil;
 
-  if(! found)
-  {
-    throw fawkes::UnknownTypeException("BlackboardProcessor: Interface '%s' was not found!", topic_name.c_str());
-  }
+  // if(! found)
+  // {
+  //   throw fawkes::UnknownTypeException("BlackboardProcessor: Interface '%s' was not found!", topic_name.c_str());
+  // }
  
   
-  std::shared_ptr <BlackBoardSubscription> new_subscirption;
+  // std::shared_ptr <BlackBoardSubscription> new_subscirption;
+   std::shared_ptr <Subscription> new_subscirption;
 
   //Open the interface and create a DORMANT subscription instance with it
   try{
 
-    new_subscirption = std::make_shared <BlackBoardSubscription>(topic_name 
+    // new_subscirption = std::make_shared <BlackBoardSubscription>(topic_name 
+    //                                                            , prefix_ 
+    //                                                            , clock_ 
+    //                                                            , blackboard_ 
+    //                                                            , blackboard_->open_for_reading(if_type.c_str(), if_id.c_str()) );
+
+     new_subscirption = std::make_shared <Subscription>(topic_name 
                                                                , prefix_ 
-                                                               , clock_ 
-                                                               , blackboard_ 
-                                                               , blackboard_->open_for_reading(if_type.c_str(), if_id.c_str()) );
+                                                               , clock_ );
+   
                                                                
   }catch (fawkes::Exception &e) {
     logger_->log_info("BlackBoardProcessor:" , "Failed to open subscribe to '%s': %s\n", topic_name.c_str(), e.what());
@@ -153,7 +159,6 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   logger_->log_info("BlackboardProcessor:", "Interface '%s' Succefully Opened!", topic_name.c_str());
 
-  //Moved to SubscriptionCapabilityManager
   // new_subscirption->add_request(id , compression , throttle_rate  
   //                                          , queue_length , fragment_size , session);
   
