@@ -22,7 +22,8 @@ using namespace fawkes;
 //=================================   Subscription  ===================================
 
 Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::Clock * clock)
-	:	active_status_(DORMANT)
+	:	SessionListener()
+	, 	active_status_(DORMANT)
 	, 	topic_name_(topic_name)
 	,	processor_prefix_(prefix)
 	,	clock_(clock)
@@ -266,7 +267,7 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 
 //---------------------SESSION HANDLING
 void 
-Subscription::terminate_session_handler(std::shared_ptr<WebSession> session)
+Subscription::session_terminated(std::shared_ptr<WebSession> session)
 {
 	//sub_list_mutex_->lock();
 	MutexLocker ml(mutex_);
@@ -284,7 +285,7 @@ void
 Subscription::add_new_session(std::shared_ptr<WebSession> session)
 {
 	//register termination handler
-	session->register_terminate_callback( boost::bind(&Subscription::terminate_session_handler,this,_1) );
+	register_as_terminat_listener( session );
 //	subscriptions_[session];// Check if okay
 }
 
@@ -292,7 +293,7 @@ void
 Subscription::remove_session(std::shared_ptr<WebSession> session)
 {
 	//deregister termination handler
-	session->deregister_terminate_callback( &Subscription::terminate_session_handler );
+	unregister_as_terminat_listener( session );
 //	subscriptions_.erase(session);
 }
 

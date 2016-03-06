@@ -2,6 +2,7 @@
 #include <list>
 #include <memory>
 #include <utils/time/time.h>
+#include "session_listener.h"
 
 
 
@@ -34,6 +35,7 @@ class SubscriptionCapability
 
 //=================================   Subscription   ===================================
 class Subscription
+:	public SessionListener
 {	
 	public:
 		Subscription(std::string topic_name 
@@ -61,7 +63,7 @@ class Subscription
 		void 					remove_request(std::string id 
 												, std::shared_ptr<WebSession> session);
 
-		void 					terminate_session_handler(std::shared_ptr<WebSession> session);
+		void 					session_terminated (std::shared_ptr<WebSession> session);
 
 		void 					publish();
 
@@ -78,6 +80,7 @@ class Subscription
 	protected:
 		void 					add_new_session(std::shared_ptr<WebSession> session);	
 		void 					remove_session(std::shared_ptr<WebSession> session);
+
 
 		enum 			Status { ACTIVE, DORMANT };
 		struct 			Request
