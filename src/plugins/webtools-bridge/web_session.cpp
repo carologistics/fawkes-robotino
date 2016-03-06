@@ -1,7 +1,7 @@
 #include "web_session.h"
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
-#include "subscription_capability.h"
+#include "session_listener.h"
 
 using namespace fawkes;
 
@@ -12,6 +12,7 @@ WebSession::WebSession()
 WebSession::~WebSession()
 {
 }
+
 
 void
 WebSession::set_connection_hdl(websocketpp::connection_hdl hdl)
@@ -86,25 +87,24 @@ WebSession::send(std::string msg){
     return true;
 }
 
-/** This session has been closed from the server.
- * This method is called whenever the session is closed by the server. 
+/** This session has been closed from the server
+. * This method is called whenever the session is closed by the server. 
  * It Notifies anyone that registered for the session termination by directly calling their registed callback with the session ptr.
  */
-void WebSession::terminate()
+void WebSession::on_terminate()
 {
 
-	for(std::vector<Callback>::iterator 
-		it = terminate_callbacks_.begin();
-		it != terminate_callbacks_.end() ; 
-		it++)
+	for(it_handlers_ = callbacks_[TERMINATE].begin();
+		it_handlers_ != callbacks_[TERMINATE].end() ; 
+		it_handlers_++)
 	{
-		Callback terminate_callback = (*it);
-		terminate_callback(shared_from_this());
+		(*it_handlers_)->session_terminated(shared_from_this());
 	}
 
-	terminate_callbacks_.clear();
+	//Clear the whole map to be ready for termination.
+	//TODO::move to Finalize() and call it
+	callbacks_.clear();
 }
-
 
 /** An object wants to be notified with termination events.
  * This is called by any object that wants to keep track of the session termination (usually a CapabilityObject).
@@ -113,15 +113,20 @@ void WebSession::terminate()
  *  ex[boost::bind(Subscription::on_terminate_session,this,::_1))
  */
 void
-WebSession::register_terminate_callback(Callback terminate_callback)
+WebSession::register_callback(Event event, std::shared_ptr <SessionListener> callback_hdl)
 {
-	//lock_mutex
-	terminate_callbacks_.push_back(terminate_callback);
-	//unlock_mutex
+	//TODO:: add mutex
+	callbacks_[event].push_back(callback_hdl);
 }
 
 void
-WebSession::deregister_terminate_callback( void (Subscription::*callback)(std::shared_ptr<WebSession>) )
+WebSession::unregister_callback(Event event, std::shared_ptr <SessionListener> callback_hdl )
 {
-	terminate_callbacks_.erase(std::find(terminate_callbacks_.begin(), terminate_callbacks_.end(), callback));
+	//TODO:: add mutex
+	it_handlers_ = std::find_if(callbacks_[event].begin(), callbacks_[event].end(), 
+		[&](std::shared_ptr<SessionListener> const& s){return s == callback_hdl;});
+
+	if( it_handlers_ != callbacks_[event].end() ) {
+		callbacks_[event].erase(it_handlers_);
+	}
 }

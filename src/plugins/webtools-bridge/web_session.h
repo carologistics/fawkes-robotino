@@ -2,11 +2,12 @@
 #define _WEB_SESSION_H
 
 #include <map>
+#include <list>
 #include <memory>
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
-#include <boost/function.hpp>
+
 
 namespace fawkes{
 	class Mutex;
@@ -16,9 +17,8 @@ namespace fawkes{
 class WebSession;
 //TODO::move to commonNameSpace
 typedef websocketpp::server<websocketpp::config::asio> server;
-typedef boost::function < void (std::shared_ptr<WebSession>) > Callback; 
 
-class Subscription;
+class SessionListener;
 
 class WebSession 
 : public std::enable_shared_from_this<WebSession>
@@ -41,12 +41,17 @@ public:
 	
 	bool 						send(std::string msg);
 
-	void						terminate();//this will be called when session is closed from server
 	
-	void 						register_terminate_callback(Callback terminate_callback);
-	void 						deregister_terminate_callback(void (Subscription::*callback)(std::shared_ptr<WebSession>)); 
 
     std::map<std::string,std::string>					http_req;
+
+	//==Session Event handlers
+	//TODO::Move to a seperate class
+    enum Event { TERMINATE } ;
+	void						on_terminate();//this will be called when session is closed from server
+	
+	void 						register_callback(Event event ,std::shared_ptr <SessionListener> callback_hdl );
+	void 						unregister_callback(Event event ,std::shared_ptr <SessionListener> callback_hdl); 
     
 private:
     websocketpp::connection_hdl                			hdl_;
@@ -56,8 +61,11 @@ private:
     std::string										 	status_;
     int                                        			session_id_;
 
-    std::vector<Callback> 								terminate_callbacks_;
     fawkes::Mutex 										*mutex_;	
+
+    std::map<Event,std::list<std::shared_ptr <SessionListener> >>			callbacks_;
+    std::map<Event,std::list<std::shared_ptr <SessionListener> >>::iterator	it_callbacks_;
+    std::list<std::shared_ptr <SessionListener> >::iterator					it_handlers_;
 };
 
 #endif
