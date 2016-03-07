@@ -262,6 +262,10 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 		remove_session(session);
 		subscriptions_.erase(session);
 	}
+	else{
+		//Always have the least throttel rate on the top
+		subscriptions_[session].sort(compare_throttle_rate);
+	}
 	//sub_list_mutex_->lock();
 }
 
