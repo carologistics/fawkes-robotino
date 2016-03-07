@@ -323,6 +323,7 @@ Subscription::publish()
 			{
 				//This means unsubscribe() didnt work properly to delete that session after unsubscribing all clients components
 				//throw some exception
+				remove_session( it_subscriptions_->first);
 				subscriptions_.erase(it_subscriptions_++);
 				continue;
 			}
