@@ -184,3 +184,51 @@ Map it to ...:
     shutdown_timer=std::shared_ptr (count 4, weak 0) 0x7fffe0024b88, callback=..., ec=...)
     at /usr/include/websocketpp/transport/asio/connection.hpp:1100
 #17 0x00007fffea5a9401 in _M_call<std::shared_ptr<websocketpp::transport::asio::connection<websocketpp::config::asio::transport_config> >&, std::shared_ptr<boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>, boost::asio::deadline_timer_service<boost::posi
+
+
+
+
+New Bug:
+
+When trying mutiple Subscribtions requests fast..crash with backtrace
+#0  0x0000003af7a8636a in strlen () from /lib64/libc.so.6
+#1  0x0000003afbabfd25 in std::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string(char const*, std::allocator<char> const&) () from /lib64/libstdc++.so.6
+#2  0x00007ffff793c7b7 in fawkes::BlackBoardInterfaceManager::readers (this=this@entry=0x705d30, 
+    uid="Laser360Interface::Laser colli")
+    at /home/mgomaa/fawkes-robotino/fawkes/src/libs/blackboard/internal/interface_manager.cpp:694
+#3  0x00007ffff793cb36 in fawkes::BlackBoardInterfaceManager::list_all (this=0x705d30)
+    at /home/mgomaa/fawkes-robotino/fawkes/src/libs/blackboard/internal/interface_manager.cpp:555
+#4  0x00007fff8bdd6867 in BridgeBlackBoardProcessor::subscribe (this=0x7ffec4011dc8, 
+    prefixed_topic_name=..., id="subscribe:/blackboard/Laser360Interface::Laser colli:4", 
+    compression="none", throttle_rate=0, queue_length=0, fragment_size=0, session=
+    std::shared_ptr (count 8, weak 1) 0x7ffed8007188)
+    at /home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge/blackboard_processor.cpp:123
+#5  0x00007fff8bdce8d9 in SubscriptionCapabilityManager::subscribe (this=this@entry=0x7ffec4023b58, 
+    bridge_prefix="blackboard", topic_name="/blackboard/Laser360Interface::Laser colli", 
+    id="subscribe:/blackboard/Laser360Interface::Laser colli:4", compression="none", 
+    throttle_rate=throttle_rate@entry=0, queue_length=queue_length@entry=0, 
+    fragment_size=fragment_size@entry=0, session=std::shared_ptr (count 8, weak 1) 0x7ffed8007188)
+    at /home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge/subscription_capability_manager.cpp:158
+#6  0x00007fff8bdd0a07 in SubscriptionCapabilityManager::handle_message (this=0x7ffec4023b58, d=..., 
+    session=std::shared_ptr (count 8, weak 1) 0x7ffed8007188)
+    at /home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge/subscription_capability_manager.cpp:124
+#7  0x00007fff8bdcb3f6 in BridgeManager::incoming (this=0x7ffec40223d8, 
+    json="{\"op\":\"subscribe\",\"id\":\"subscribe:/blackboard/Laser360Interface::Laser colli:4\",\"type\":\"std_msgs/String\",\"topic\":\"/blackboard/Laser360Interface::Laser colli\",\"compression\":\"none\",\"throttle_rate\":0,\"qu"..., session=std::shared_ptr (count 8, weak 1) 0x7ffed8007188)
+    at /home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge/bridge_manager.cpp:32
+#8  0x00007fff8bda8fb5 in Web_server::on_message (this=0x7ffec4023e58, hdl=..., web_msg=...)
+    at /home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge/Web_server.cpp:130
+#9  0x00007fff8bda37bd in operator()<std::weak_ptr<void>, std::shared_ptr<websocketpp::message_buffer::message<websocketpp::message_buffer::alloc::con_msg_manager> >, void> (__object=<optimized out>, 
+    this=<optimized out>) at /usr/include/c++/4.8.3/functional:601
+#10 __call<void, std::weak_ptr<void>&&, std::shared_ptr<websocketpp::message_buffer::message<websocketpp::message_buffer::alloc::con_msg_manager> >&&, 0ul, 1ul, 2ul> (__args=<optimized out>, 
+    this=<optimized out>) at /usr/include/c++/4.8.3/functional:1296
+#11 operator()<std::weak_ptr<void>, std::shared_ptr<websocketpp::message_buffer::message<websocketpp::message_buffer::alloc::con_msg_manager> >, void> (this=<optimized out>)
+    at /usr/include/c++/4.8.3/functional:1355
+#12 std::_Function_handler<void (std::weak_ptr<void>, std::shared_ptr<websocketpp::message_buffer::message<websocketpp::message_buffer::alloc::con_msg_manager> >), std::_Bind<std::_Mem_fn<void (Web_server::*)(std::weak_ptr<void>, std::shared_ptr<websocketpp::message_buffer::message<websocketpp::message_buffer::alloc::con_msg_manager> >)> (Web_server*, std::_Placeholder<1>, std::_Placeholder<2>)> >::_M_invoke(std::_Any_data const&, std::weak_ptr<void>, std::shared_ptr<websocketpp::message_buffer::message<websocketpp::message_buffer::alloc::con_msg_manager> >) (__functor=..., __args#0=..., __args#1=...)
+    at /usr/include/c++/4.8.3/functional:2071
+#13 0x00007fff8bdc09a8 in operator() (__args#1=..., __args#0=..., this=0x7ffec4025098)
+    at /usr/include/c++/4.8.3/functional:2471
+#14 websocketpp::connection<websocketpp::config::asio>::handle_read_frame (this=0x7ffec4024550, ec=..., 
+    bytes_transferred=2445) at /usr/include/websocketpp/impl/connection_impl.hpp:983
+#15 0x00007fff8bdac865 in operator() (__args#1=2445, __args#0=..., this=0x7ffec4024e80)
+    at /usr/include/c++/4.8.3/functional:2471
+
