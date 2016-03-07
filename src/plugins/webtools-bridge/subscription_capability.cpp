@@ -49,9 +49,8 @@ Subscription::finalize()
 	{
 		//If still active deactivate 
 		if(is_active()) { deactivate(); }
-		
 		//call the extended version
-		Subscription::finalize_impl();
+		finalize_impl();
 
 		//Deregister from sessions and remove them
 		if(!empty()){
@@ -60,7 +59,6 @@ Subscription::finalize()
 				;it_subscriptions_ != subscriptions_.end()
 				;)
 			{
-
 				remove_session(it_subscriptions_->first);
 				subscriptions_.erase(it_subscriptions_++);
 			}
@@ -73,6 +71,7 @@ Subscription::finalize()
 void
 Subscription::activate()
 {
+	MutexLocker ml(mutex_);
 	if(!is_active()){
 		activate_impl();
 		active_status_ = ACTIVE;
@@ -82,6 +81,7 @@ Subscription::activate()
 void
 Subscription::deactivate()
 {
+	MutexLocker ml(mutex_);
 	if(is_active()){
 		deactivate_impl();
 		active_status_ = DORMANT;
@@ -349,13 +349,14 @@ Subscription::publish()
 				it_subscriptions_->second.front().last_published_time->stamp();
 				//time_mutex_->unlock();
 
-				// To avoid deadlock if the session mutex was locked to process a request 
-				//(and the request cant add coz ur locking the subscription)
-				ml.unlock();
+				//Unnecessary right now. No Mutex at session
+				//// To avoid deadlock if the session mutex was locked to process a request 
+				////(and the request cant add coz ur locking the subscription)
+				////ml.unlock();
+
 				//send msg it to session
 				it_subscriptions_->first->send(complete_json_msg);
-				ml.relock();
-				//catch exception
+				////ml.relock();
 			}
 		}
 	}
@@ -367,6 +368,7 @@ Subscription::serialize(std::string op
 						, std::string prefiexed_topic_name
 						, std::string id)
 {
+	//MutexLocker ml(mutex_);
 
 	StringBuffer s;
   	Writer<StringBuffer> writer(s);      
