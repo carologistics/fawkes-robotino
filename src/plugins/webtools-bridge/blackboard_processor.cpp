@@ -199,10 +199,11 @@ BlackBoardSubscription::BlackBoardSubscription(std::string topic_name
 
 BlackBoardSubscription::~BlackBoardSubscription()
 {
-  if (interface_ != NULL )
-  {
-    delete interface_;
-  }
+  //Not Needed
+  // if (interface_ != NULL )
+  // {
+  //delete this->interface_;
+  // }
 }
 
 fawkes::Interface*
@@ -237,6 +238,7 @@ BlackBoardSubscription::serialize(std::string op
                                 , std::string prefiexed_topic_name
                                 , std::string id)
 {
+
   //Default 'publish' header
   StringBuffer s;
   Writer<StringBuffer> writer(s);      
