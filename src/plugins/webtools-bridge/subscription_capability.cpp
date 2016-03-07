@@ -281,7 +281,13 @@ Subscription::session_terminated(std::shared_ptr<WebSession> session)
 	//make sure the session is still there and was not deleted while waiting for the mutex
 	if (subscriptions_.find(session) != subscriptions_.end())
 		subscriptions_.erase(session);
-	
+
+	if(subscriptions_.empty()){
+		//std::shared_ptr<Susbcription> my_self= shared_from_this();
+		//terminat_me();
+		//ml.unlock();
+		//finalize();
+	}
 	//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
 }
 
