@@ -50,7 +50,7 @@ public:
 
 	void						on_terminate();//this will be called when session is closed from server
 	
-	void 						call_callbacks(EventType event_type);
+	void 						emitt_event(EventType event_type);
 	
 	
 private:

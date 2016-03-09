@@ -95,14 +95,14 @@ WebSession::send(std::string msg){
  */
 void WebSession::on_terminate()
 {
-	call_callbacks( EventType::TERMINATE );
+	emitt_event( EventType::TERMINATE );
 }
 
 void
-WebSession::call_callbacks(EventType event_type)
+WebSession::emitt_event(EventType event_type)
 {
-	for(it_callables_  = events_to_callable_map_ [event_type].begin();
-		it_callables_ != events_to_callable_map_ [event_type].end() ; 
+	for(it_callables_  = callbacks_ [event_type].begin();
+		it_callables_ != callbacks_ [event_type].end() ; 
 		it_callables_++)
 	{
 		(*it_callables_)->callback(event_type , shared_from_this());

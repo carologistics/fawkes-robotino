@@ -74,7 +74,7 @@ class Subscription
 		void 					callback( EventType event_type , std::shared_ptr <EventEmitter> handler) ;
 
 								//EventEmitter implementation (emitt event to SubCapManager)
-		void					call_callbacks (EventType event_type ) ;
+		void					emitt_event (EventType event_type ) ;
 		
 		void 					publish();
 
