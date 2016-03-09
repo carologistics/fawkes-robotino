@@ -5,6 +5,8 @@
 
 #include "callable.h"
 #include "event_type.h"
+#include "event_emitter.h"
+
 
 
 
@@ -16,7 +18,7 @@ namespace fawkes {
 
 class Subscription;
 class WebSession;
-class EventHandler;
+class EventEmitter;
 
 //=================================   SubscribeCapability  ===================================
 class SubscriptionCapability
@@ -39,13 +41,15 @@ class SubscriptionCapability
 //=================================   Subscription   ===================================
 class Subscription
 :	public Callable
+,	public EventEmitter
+,	public std::enable_shared_from_this<Subscription>
 {	
 	public:
 		Subscription(std::string topic_name 
 					, std::string processor_prefix 
 					, fawkes::Clock *clock);
 
-		~Subscription();
+		virtual ~Subscription();
 		
 		void 					finalize();		//Implicitly calles deactivate
 		void 					activate(); 	
@@ -66,8 +70,12 @@ class Subscription
 		void 					remove_request(std::string id 
 												, std::shared_ptr<WebSession> session);
 
-		void 					callback( EventType event_type , std::shared_ptr <EventHandler> handler) ;
+								//Callable impl. will be called when session emitts events
+		void 					callback( EventType event_type , std::shared_ptr <EventEmitter> handler) ;
 
+								//EventEmitter implementation (emitt event to SubCapManager)
+		void					call_callbacks (EventType event_type ) ;
+		
 		void 					publish();
 
 	protected:

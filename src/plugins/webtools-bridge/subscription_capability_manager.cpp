@@ -1,6 +1,7 @@
 #include "subscription_capability_manager.h"
 #include "subscription_capability.h"
 
+
 #include <core/exceptions/software.h>
 
 using namespace fawkes;
@@ -134,6 +135,32 @@ SubscriptionCapabilityManager::handle_message(Document &d
 
 }
 
+void
+SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <EventEmitter> event_emitter)
+{
+	try{
+		//check if the event emitter was a Subscription
+		std::shared_ptr <Subscription> subscription;
+		subscription = std::dynamic_pointer_cast<Subscription> (event_emitter);
+		if(subscription != NULL)
+		{
+			if(event_type == EventType::TERMINATE )
+			{
+				//construct the prefixed_name from info in the subscription
+				std::string prefixed_topic_name="/"+subscription->get_processor_prefix()+"/"+subscription->get_topic_name();
+				
+				//does the subscription exist (unique per topic_name)
+				if (topic_Subscription_.find(prefixed_topic_name) != topic_Subscription_.end())
+				{
+					topic_Subscription_.erase(prefixed_topic_name);
+				}
+			}
+		}
+	}
+	catch(Exception &e){
+		//if exception was fired it only means that the casting failed becasue the emitter is not a subscription
+	}
+}
 
 void 
 SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
@@ -179,6 +206,8 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 		//Activate the listeners or whatever that publishs
 		//subscription->register_callback( TERMINATE , shared_from_this() );
 		subscription->activate();
+		//Subscriptions should norify me if it was terminated (by calling my callback)
+		subscription->register_callback( EventType::TERMINATE , shared_from_this() );
 	}else{
 		topic_Subscription_[topic_name]->subsume(subscription);
 		//subscription->finalize();
@@ -225,4 +254,5 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 	//throw exception that topic was not found
 
 }
+
 

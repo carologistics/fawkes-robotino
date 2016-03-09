@@ -72,7 +72,6 @@ Subscription::finalize()
 void
 Subscription::activate()
 {
-	MutexLocker ml(mutex_);
 	if(!is_active()){
 		activate_impl();
 		active_status_ = ACTIVE;
@@ -82,7 +81,6 @@ Subscription::activate()
 void
 Subscription::deactivate()
 {
-	MutexLocker ml(mutex_);
 	if(is_active()){
 		deactivate_impl();
 		active_status_ = DORMANT;
@@ -291,9 +289,19 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 // 	}
 // 	//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
 // }
+void
+Subscription::call_callbacks(EventType event_type)
+{
+	for(it_callables_  = events_to_callable_map_ [event_type].begin();
+		it_callables_ != events_to_callable_map_ [event_type].end() ; 
+		it_callables_++)
+	{
+		(*it_callables_)->callback(event_type , shared_from_this());
+	}
+}
 
 void 
-Subscription::callback(EventType event_type , std::shared_ptr<EventHandler> event_handler)
+Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> event_emitter)
 {
 	//sub_list_mutex_->lock();
 	MutexLocker ml(mutex_);
@@ -301,7 +309,7 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventHandler> even
 	try{
 		//check if the event emitter was a session
 		std::shared_ptr <WebSession> session;
-		session = std::dynamic_pointer_cast<WebSession> (event_handler);
+		session = std::dynamic_pointer_cast<WebSession> (event_emitter);
 		if(session != NULL)
 		{
 			if(event_type == EventType::TERMINATE )
@@ -314,10 +322,14 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventHandler> even
 
 				//was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
 				if(subscriptions_.empty()){
-					//std::shared_ptr<Susbcription> my_self= shared_from_this();
-					//terminat_me();
-					//ml.unlock();
-					//finalize();
+					std::shared_ptr<Subscription> my_self= shared_from_this();// Just to keep object alive till after its deleted from manager
+					call_callbacks(EventType::TERMINATE);
+					
+					ml.unlock();
+					my_self->finalize();
+					std::cout<< "Subscripton topic terminated!" << std::endl;
+
+					//finalize will need the mutex
 				}
 				//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
 
@@ -332,11 +344,15 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventHandler> even
 }
 
 
+
+
+
+
 void 
 Subscription::add_new_session(std::shared_ptr<WebSession> session)
 {
 	//register termination handler
-	register_for_event(EventType::TERMINATE , session );
+	session->register_callback(EventType::TERMINATE , shared_from_this() );
 //	subscriptions_[session];// Check if okay
 }
 
@@ -344,7 +360,7 @@ void
 Subscription::remove_session(std::shared_ptr<WebSession> session)
 {
 	//deregister termination handler
-	unregister_from_event(EventType::TERMINATE , session );
+	session->unregister_callback(EventType::TERMINATE , shared_from_this() );
 //	subscriptions_.erase(session);
 }
 

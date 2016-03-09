@@ -1,12 +1,13 @@
 #include "web_session.h"
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
+#include "callable.h"
 
 
 using namespace fawkes;
 
 WebSession::WebSession()
-: EventHandler()
+: EventEmitter()
 {
 }
 
@@ -97,7 +98,13 @@ void WebSession::on_terminate()
 	call_callbacks( EventType::TERMINATE );
 }
 
-//called automatically after events are emitted
-void WebSession::do_on_event(EventType event_type){
-	//Nothing for now
+void
+WebSession::call_callbacks(EventType event_type)
+{
+	for(it_callables_  = events_to_callable_map_ [event_type].begin();
+		it_callables_ != events_to_callable_map_ [event_type].end() ; 
+		it_callables_++)
+	{
+		(*it_callables_)->callback(event_type , shared_from_this());
+	}
 }

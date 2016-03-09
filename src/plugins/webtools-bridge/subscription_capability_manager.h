@@ -1,12 +1,17 @@
 #include "capability_manager.h"
-
+#include "callable.h"
+#include "event_type.h"
 
 class Subscription;
-
 class SubscriptionCapability;
+class EventHandter;
+
+
 
 class SubscriptionCapabilityManager
 : public CapabilityManager
+, public Callable
+, public std::enable_shared_from_this<SubscriptionCapabilityManager>
 {
 public:
 	SubscriptionCapabilityManager();
@@ -17,6 +22,7 @@ public:
 
 	bool register_processor(std::shared_ptr <BridgeProcessor> processor);
 
+	void callback(EventType event_type , std::shared_ptr <EventEmitter> event_emitter);
 
 private:
 	void subscribe 	( std::string bridge_prefix
