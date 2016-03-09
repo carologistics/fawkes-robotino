@@ -2,7 +2,9 @@
 #include <list>
 #include <memory>
 #include <utils/time/time.h>
-#include "session_listener.h"
+
+#include "callable.h"
+#include "event_type.h"
 
 
 
@@ -11,9 +13,10 @@ namespace fawkes {
   class Time;
   class Mutex;
  }
- 
-class WebSession;
+
 class Subscription;
+class WebSession;
+class EventHandler;
 
 //=================================   SubscribeCapability  ===================================
 class SubscriptionCapability
@@ -35,7 +38,7 @@ class SubscriptionCapability
 
 //=================================   Subscription   ===================================
 class Subscription
-:	public SessionListener
+:	public Callable
 {	
 	public:
 		Subscription(std::string topic_name 
@@ -63,7 +66,7 @@ class Subscription
 		void 					remove_request(std::string id 
 												, std::shared_ptr<WebSession> session);
 
-		void 					session_terminated (std::shared_ptr<WebSession> session);
+		void 					callback( EventType event_type , std::shared_ptr <EventHandler> handler) ;
 
 		void 					publish();
 

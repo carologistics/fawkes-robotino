@@ -1,18 +1,34 @@
 #include "callable.h"
 #include "event_handler.h"
 
+EventHandler::EventHandler()
+{
+
+}
+
+EventHandler::~EventHandler()
+{
+	events_to_callable_map_.clear();
+}
+
 void
 EventHandler::call_callbacks(EventType event_type)
 {
+
 	for(it_callables_  = events_to_callable_map_ [event_type].begin();
 		it_callables_ != events_to_callable_map_ [event_type].end() ; 
 		it_callables_++)
 	{
 		(*it_callables_)->callback(event_type , shared_from_this());
 	}
-	//Clear the whole map to be ready for termination.
-	//TODO::move to Finalize() and call it
-	//events_to_callable_map_ .clear();
+
+	do_on_event(event_type);
+}
+
+void
+EventHandler::do_on_event(EventType event_type){
+
+	//extend if you want something to happend after event had been emitted (called Automatically from call_callbacks())
 }
 
 void 

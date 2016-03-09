@@ -1,11 +1,12 @@
 #include "web_session.h"
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
-#include "session_listener.h"
+
 
 using namespace fawkes;
 
 WebSession::WebSession()
+: EventHandler()
 {
 }
 
@@ -93,40 +94,10 @@ WebSession::send(std::string msg){
  */
 void WebSession::on_terminate()
 {
-
-	for(it_handlers_ = callbacks_[TERMINATE].begin();
-		it_handlers_ != callbacks_[TERMINATE].end() ; 
-		it_handlers_++)
-	{
-		(*it_handlers_)->session_terminated(shared_from_this());
-	}
-
-	//Clear the whole map to be ready for termination.
-	//TODO::move to Finalize() and call it
-	callbacks_.clear();
+	call_callbacks( EventType::TERMINATE );
 }
 
-/** An object wants to be notified with termination events.
- * This is called by any object that wants to keep track of the session termination (usually a CapabilityObject).
- * The object send its termination callback to be called when session terminats but WebSession::terminate()
- * @param terminate_callback The Object's method that will be called ,binded as a boost::function
- *  ex[boost::bind(Subscription::on_terminate_session,this,::_1))
- */
-void
-WebSession::register_callback(Event event, std::shared_ptr <SessionListener> callback_hdl)
-{
-	//TODO:: add mutex
-	callbacks_[event].push_back(callback_hdl);
-}
-
-void
-WebSession::unregister_callback(Event event, std::shared_ptr <SessionListener> callback_hdl )
-{
-	//TODO:: add mutex
-	it_handlers_ = std::find_if(callbacks_[event].begin(), callbacks_[event].end(), 
-		[&](std::shared_ptr<SessionListener> const& s){return s == callback_hdl;});
-
-	if( it_handlers_ != callbacks_[event].end() ) {
-		callbacks_[event].erase(it_handlers_);
-	}
+//called automatically after events are emitted
+void WebSession::do_on_event(EventType event_type){
+	//Nothing for now
 }
