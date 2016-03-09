@@ -8,7 +8,7 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
-#include "event_handler.h"
+#include "event_emitter.h"
 #include "event_type.h"
 
 namespace fawkes{
@@ -23,7 +23,8 @@ typedef websocketpp::server<websocketpp::config::asio> server;
 class SessionListener;
 
 class WebSession 
-: public EventHandler
+: public EventEmitter
+, public std::enable_shared_from_this<WebSession>
 {
 
 public:
@@ -48,7 +49,8 @@ public:
     std::map<std::string,std::string>					http_req;
 
 	void						on_terminate();//this will be called when session is closed from server
-	void 						do_on_event(EventType event_type);
+	
+	void 						call_callbacks(EventType event_type);
 	
 	
 private:
