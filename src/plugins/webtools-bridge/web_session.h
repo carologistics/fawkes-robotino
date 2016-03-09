@@ -8,6 +8,8 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
+#include "event_handler.h"
+#include "event_type.h"
 
 namespace fawkes{
 	class Mutex;
@@ -21,7 +23,7 @@ typedef websocketpp::server<websocketpp::config::asio> server;
 class SessionListener;
 
 class WebSession 
-: public std::enable_shared_from_this<WebSession>
+: public EventHandler
 {
 
 public:
@@ -45,14 +47,10 @@ public:
 
     std::map<std::string,std::string>					http_req;
 
-	//==Session Event handlers
-	//TODO::Move to a seperate class
-    enum Event { TERMINATE } ;
 	void						on_terminate();//this will be called when session is closed from server
+	void 						do_on_event(EventType event_type);
 	
-	void 						register_callback(Event event ,std::shared_ptr <SessionListener> callback_hdl );
-	void 						unregister_callback(Event event ,std::shared_ptr <SessionListener> callback_hdl); 
-    
+	
 private:
     websocketpp::connection_hdl                			hdl_;
     websocketpp::lib::shared_ptr<server>       		 	endpoint_ptr_;
@@ -63,9 +61,6 @@ private:
 
     fawkes::Mutex 										*mutex_;	
 
-    std::map<Event,std::list<std::shared_ptr <SessionListener> >>			callbacks_;
-    std::map<Event,std::list<std::shared_ptr <SessionListener> >>::iterator	it_callbacks_;
-    std::list<std::shared_ptr <SessionListener> >::iterator					it_handlers_;
 };
 
 #endif

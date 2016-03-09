@@ -18,7 +18,7 @@ class Callable
 	protected:
 		 void register_for_event	( EventType event_type , std::shared_ptr <EventHandler> handler );
   		 void unregister_from_event	( EventType event_type , std::shared_ptr <EventHandler> handler );
-  	
+  
 };
 
 #endif

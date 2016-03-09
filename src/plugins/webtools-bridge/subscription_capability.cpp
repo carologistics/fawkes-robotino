@@ -12,6 +12,8 @@
 
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
+#include <core/exceptions/software.h>
+
 
 #include "subscription_capability.h" 
 #include "web_session.h"
@@ -22,8 +24,7 @@ using namespace fawkes;
 //=================================   Subscription  ===================================
 
 Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::Clock * clock)
-	:	SessionListener()
-	, 	active_status_(DORMANT)
+	:	active_status_(DORMANT)
 	, 	topic_name_(topic_name)
 	,	processor_prefix_(prefix)
 	,	clock_(clock)
@@ -270,32 +271,72 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 }
 
 //---------------------SESSION HANDLING
+// void 
+// Subscription::session_terminated(std::shared_ptr<WebSession> session)
+// {
+// 	//sub_list_mutex_->lock();
+// 	MutexLocker ml(mutex_);
+
+// 	std::cout<< "Session terminated NICELY :D" << std::endl;
+	
+// 	//make sure the session is still there and was not deleted while waiting for the mutex
+// 	if (subscriptions_.find(session) != subscriptions_.end())
+// 		subscriptions_.erase(session);
+
+// 	if(subscriptions_.empty()){
+// 		//std::shared_ptr<Susbcription> my_self= shared_from_this();
+// 		//terminat_me();
+// 		//ml.unlock();
+// 		//finalize();
+// 	}
+// 	//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
+// }
+
 void 
-Subscription::session_terminated(std::shared_ptr<WebSession> session)
+Subscription::callback(EventType event_type , std::shared_ptr<EventHandler> event_handler)
 {
 	//sub_list_mutex_->lock();
 	MutexLocker ml(mutex_);
 
-	std::cout<< "Session terminated NICELY :D" << std::endl;
-	
-	//make sure the session is still there and was not deleted while waiting for the mutex
-	if (subscriptions_.find(session) != subscriptions_.end())
-		subscriptions_.erase(session);
+	try{
+		//check if the event emitter was a session
+		std::shared_ptr <WebSession> session;
+		session = std::dynamic_pointer_cast<WebSession> (event_handler);
+		if(session != NULL)
+		{
+			if(event_type == EventType::TERMINATE )
+			{
+				//make sure the session is still there and was not deleted while waiting for the mutex
+				if (subscriptions_.find(session) != subscriptions_.end())
+					subscriptions_.erase(session);
 
-	if(subscriptions_.empty()){
-		//std::shared_ptr<Susbcription> my_self= shared_from_this();
-		//terminat_me();
-		//ml.unlock();
-		//finalize();
+				std::cout<< "Session terminated NICELY :D" << std::endl;
+
+				//was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
+				if(subscriptions_.empty()){
+					//std::shared_ptr<Susbcription> my_self= shared_from_this();
+					//terminat_me();
+					//ml.unlock();
+					//finalize();
+				}
+				//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
+
+			}
+		}
+		
 	}
-	//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
+	catch(Exception &e){
+		//if exception was fired it only means that the casting failed becasue the emitter is not a session
+	}
+
 }
+
 
 void 
 Subscription::add_new_session(std::shared_ptr<WebSession> session)
 {
 	//register termination handler
-	register_as_terminat_listener( session );
+	register_for_event(EventType::TERMINATE , session );
 //	subscriptions_[session];// Check if okay
 }
 
@@ -303,7 +344,7 @@ void
 Subscription::remove_session(std::shared_ptr<WebSession> session)
 {
 	//deregister termination handler
-	unregister_as_terminat_listener( session );
+	unregister_from_event(EventType::TERMINATE , session );
 //	subscriptions_.erase(session);
 }
 

@@ -23,8 +23,8 @@ include $(BUILDSYSDIR)/boost.mk
 
 LIBS_webtools_bridge = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard 
-OBJS_webtools_bridge = webtools_bridge_plugin.o webtools_bridge_thread.o \
-						Web_server.o session_listener.o web_session.o bridge_manager.o subscription_capability_manager.o \
+OBJS_webtools_bridge = event_handler.o callable.o webtools_bridge_plugin.o webtools_bridge_thread.o \
+						Web_server.o  web_session.o bridge_manager.o subscription_capability_manager.o \
 						subscription_capability.o blackboard_processor.o 
 
 OBJS_all    = $(OBJS_webtools_bridge)

@@ -177,9 +177,11 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 	{
 		topic_Subscription_[topic_name] = subscription;
 		//Activate the listeners or whatever that publishs
+		//subscription->register_callback( TERMINATE , shared_from_this() );
 		subscription->activate();
 	}else{
 		topic_Subscription_[topic_name]->subsume(subscription);
+		//subscription->finalize();
 	}
 
 	//To be moved back to the subscrib() if the processor
