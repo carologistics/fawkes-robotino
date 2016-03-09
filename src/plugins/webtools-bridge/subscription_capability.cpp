@@ -290,10 +290,10 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 // 	//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
 // }
 void
-Subscription::call_callbacks(EventType event_type)
+Subscription::emitt_event(EventType event_type)
 {
-	for(it_callables_  = events_to_callable_map_ [event_type].begin();
-		it_callables_ != events_to_callable_map_ [event_type].end() ; 
+	for(it_callables_  = callbacks_ [event_type].begin();
+		it_callables_ != callbacks_ [event_type].end() ; 
 		it_callables_++)
 	{
 		(*it_callables_)->callback(event_type , shared_from_this());
@@ -323,7 +323,7 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 				//was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
 				if(subscriptions_.empty()){
 					std::shared_ptr<Subscription> my_self= shared_from_this();// Just to keep object alive till after its deleted from manager
-					call_callbacks(EventType::TERMINATE);
+					emitt_event(EventType::TERMINATE);
 					
 					ml.unlock();
 					my_self->finalize();
