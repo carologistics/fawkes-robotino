@@ -1,5 +1,5 @@
 /***************************************************************************
- *  gazsim-navgraph-generator_thread.h - Thread for generating the navgraph without exploration phase
+ *  gazsim_navgraph_generator_thread.h - Thread for generating the navgraph without exploration phase
  *
  *  Created: Mon Feb 15 11:27:09 2016
  *  Copyright  2016  David Schmidt
@@ -22,28 +22,22 @@
 #define __PLUGINS_GAZSIM_NAVGRAPH_GENERATOR_THREAD_H_
 
 #include <core/threading/thread.h>
-//#include <aspect/clock.h>
+//#include <aspect/clock.h>	//TODO corresponds to next TODO
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-//#include <aspect/blackboard.h>
+#include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
-
-/*
-namespace fawkes {
-  class Position3DInterface;
-}
-*/
+#include <interfaces/NavGraphWithMPSGeneratorInterface.h>
 
 //gazebo headers
 #include <plugins/gazebo/aspect/gazebo.h>
-//#include <gazebo/transport/TransportTypes.hh>
 
 class GazsimNavgraphGeneratorThread
 : public fawkes::Thread,
-//public fawkes::ClockAspect,
+//public fawkes::ClockAspect,	//TODO is this needed? currently not, but maybe one should always implement a timeout?
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
-//public fawkes::BlackBoardAspect,
+  public fawkes::BlackBoardAspect,
   public fawkes::BlockedTimingAspect,
   public fawkes::GazeboAspect
 {
@@ -54,16 +48,31 @@ class GazsimNavgraphGeneratorThread
   virtual void loop();
   virtual void finalize();
  private:
-  //Subscriber to receive tag_01 position from gazebo
-  std::string tag_01_;
-  gazebo::transport::SubscriberPtr subscriber_tag_01_;
+  //controlling flags
+  bool task_finished_;
+  bool computation_is_running_;
 
-  //copy of last msg to write the interface in the next loop
-  gazebo::msgs::PosesStamped last_msg_;
-  bool new_data_;
+  //Subscribers to receive tag positions from gazebo
+  std::vector<std::string> tags_;
+  std::vector<std::string> related_mps_;
+  std::vector<gazebo::transport::SubscriberPtr> subscriber_tags_;
 
-  //handler function for incoming messages about the machine light signals
-  void on_tag_vision_msg(ConstPosesStampedPtr &msg);
+  //navgraph generator interface
+  std::string nav_gen_if_name_;
+  fawkes::NavGraphWithMPSGeneratorInterface *nav_gen_if_;
+
+  //list of poses of the tags
+  std::map<int,gazebo::msgs::Pose> tag_msgs_;
+
+  //handler function for incoming messages about the tag positions
+  void on_tag_msg(ConstPosePtr &msg);
+
+  //extract mpsID ordered by tagID
+  std::map<int,std::string> mps_id_;
+  void get_mpsID_by_tagID();
+
+  //send station msg with pose information to navgraph generator
+  void send_station_msg(int id, gazebo::msgs::Pose pose);
 };
 
 #endif
