@@ -1,5 +1,5 @@
 /***************************************************************************
- *  gazsim-navgraph-generator_plugin.cpp - Generates navgraph without exploration
+ *  gazsim_navgraph_generator_plugin.cpp - Generates navgraph without exploration
  *
  *  Created: Mon Feb 15 11:25:00 2016
  *  Copyright  2016  David Schmidt
@@ -20,11 +20,11 @@
 
 #include <core/plugin.h>
 
-#include "gazsim-navgraph-generator_thread.h"
+#include "gazsim_navgraph_generator_thread.h"
 
 using namespace fawkes;
 
-/** Plugin to ...
+/** Plugin to generate navgraph without exploration phase in simulation
  * @author David Schmidt
  */
 class GazsimNavgraphGeneratorPlugin : public fawkes::Plugin
