@@ -33,98 +33,101 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-GazsimNavgraphGeneratorThread::GazsimNavgraphGeneratorThread()
-  : Thread("GazsimNavgraphGeneratorThread", Thread::OPMODE_WAITFORWAKEUP),
-    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE),
-	task_finished_(false),
-	computation_is_running_(false)
-{
+GazsimNavgraphGeneratorThread::GazsimNavgraphGeneratorThread() :
+    Thread("GazsimNavgraphGeneratorThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
+        BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE), task_finished_(false), computation_is_running_(
+        false) {
 }
 
-void
-GazsimNavgraphGeneratorThread::init()
-{
+void GazsimNavgraphGeneratorThread::init() {
   logger->log_debug(name(), "Initializing GazsimNavgraphGenerator Plugin");
 
   //read config values
   tags_ = config->get_strings("/gazsim/navgraph-generator/all-active-tags");
   related_mps_ = config->get_strings("/gazsim/navgraph-generator/related-mps");
-  nav_gen_if_name_ = config->get_string("/gazsim/navgraph-generator/nav-gen-if-name");
-  
+  nav_gen_if_name_ = config->get_string(
+      "/gazsim/navgraph-generator/nav-gen-if-name");
+
   //open interfaces
   //TODO error reports, that we need writing access however we cant, because somebody else has
-  //	it also should be sufficient to open for reading, in the first place
-  nav_gen_if_ = blackboard->open_for_reading<fawkes::NavGraphWithMPSGeneratorInterface>(nav_gen_if_name_.data());
-  
+  //  it also should be sufficient to open for reading, in the first place
+  nav_gen_if_ = blackboard->open_for_reading<
+      fawkes::NavGraphWithMPSGeneratorInterface>(nav_gen_if_name_.data());
+
   //subscribing to gazebo tag messages
-  for(unsigned i=0;i<tags_.size();++i)
-	  subscriber_tags_.push_back(gazebo_world_node->Subscribe
-	  	  (tags_[i], &GazsimNavgraphGeneratorThread::on_tag_msg, this));
+  for (unsigned i = 0; i < tags_.size(); ++i)
+    subscriber_tags_.push_back(
+        gazebo_world_node->Subscribe(tags_[i],
+            &GazsimNavgraphGeneratorThread::on_tag_msg, this));
   tag_msgs_.clear();
 }
 
-void GazsimNavgraphGeneratorThread::finalize(){}
-
-void
-GazsimNavgraphGeneratorThread::loop()
-{
-	//check if navgraph is already computed
-	if(task_finished_)
-		return;
-	//check if computation of navgraph is running
-	if(computation_is_running_){
-		if(nav_gen_if_->is_final()){
-			task_finished_=true;
-			computation_is_running_=false;
-			//TODO close interface nav_gen_if_
-		}
-		return;
-	}
-	//check if all tag-messages were received
-	if(tag_msgs_.size()<tags_.size())
-		return;
-	//send the position of all tags
-	for(std::map<int,gazebo::msgs::Pose>::iterator it=tag_msgs_.begin();it!=tag_msgs_.end();++it){
-		logger->log_info(name(),"tag %i gets sent to NavgraphGenerator.",(*it).first);
-		send_station_msg((*it).first,(*it).second);
-	}
-	nav_gen_if_->msgq_append(new NavGraphWithMPSGeneratorInterface::ComputeMessage());
-	computation_is_running_=true;
-	//TODO unsubscribe all subcribers in subscriber_tags_
+void GazsimNavgraphGeneratorThread::finalize() {
 }
 
-void GazsimNavgraphGeneratorThread::on_tag_msg(ConstPosePtr &msg)
-{
-	int underscore=msg->name().find('_');
-	int id=std::atoi(msg->name().substr(underscore+1).data());
-	tag_msgs_[id].CopyFrom(*msg);
+void GazsimNavgraphGeneratorThread::loop() {
+  //check if navgraph is already computed
+  if (task_finished_)
+    return;
+  //check if computation of navgraph is running
+  if (computation_is_running_) {
+    if (nav_gen_if_->is_final()) {
+      task_finished_ = true;
+      computation_is_running_ = false;
+      //TODO close interface nav_gen_if_
+    }
+    return;
+  }
+  //check if all tag-messages were received
+  if (tag_msgs_.size() < tags_.size())
+    return;
+  //send the position of all tags
+  for (std::map<int, gazebo::msgs::Pose>::iterator it = tag_msgs_.begin();
+      it != tag_msgs_.end(); ++it) {
+    logger->log_info(name(), "tag %i gets sent to NavgraphGenerator.",
+        (*it).first);
+    send_station_msg((*it).first, (*it).second);
+  }
+  nav_gen_if_->msgq_enqueue(
+      new NavGraphWithMPSGeneratorInterface::ComputeMessage());
+  computation_is_running_ = true;
+  //TODO unsubscribe all subcribers in subscriber_tags_
 }
 
-void GazsimNavgraphGeneratorThread::get_mpsID_by_tagID()
-{
-	if(tags_.size()!=related_mps_.size()){
-		logger->log_error(name(),"There are %i tags defined, but %i!=%i related mps!",tags_.size(),related_mps_.size(),tags_.size());
-		return;
-	}
-	for(unsigned i=0;i<tags_.size();++i){
-		int underscore=tags_[i].find('_');
-		int slash=tags_[i].substr(underscore+1).find('/');
-		int id=std::atoi(tags_[i].substr(underscore+1,slash).data());
-		mps_id_[id]=related_mps_[i];
-	}
+void GazsimNavgraphGeneratorThread::on_tag_msg(ConstPosePtr &msg) {
+  int underscore = msg->name().find('_');
+  int id = std::atoi(msg->name().substr(underscore + 1).data());
+  tag_msgs_[id].CopyFrom(*msg);
 }
 
-void GazsimNavgraphGeneratorThread::send_station_msg(int id, gazebo::msgs::Pose pose){
-	NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage* stationMsg=new NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage();
-	stationMsg->set_id(mps_id_[id].data());
-	stationMsg->set_side(NavGraphWithMPSGeneratorInterface::Side::INPUT);
-	stationMsg->set_frame("/map");
-	stationMsg->set_tag_translation(0,pose.position().x());
-	stationMsg->set_tag_translation(1,pose.position().y());
-	stationMsg->set_tag_translation(2,pose.position().z());
-	stationMsg->set_tag_rotation(0,pose.orientation().w());
-	stationMsg->set_tag_rotation(1,pose.orientation().x());
-	stationMsg->set_tag_rotation(2,pose.orientation().y());
-	stationMsg->set_tag_rotation(3,pose.orientation().z());
-	nav_gen_if_->msgq_append(stationMsg);
+void GazsimNavgraphGeneratorThread::get_mpsID_by_tagID() {
+  if (tags_.size() != related_mps_.size()) {
+    logger->log_error(name(),
+        "There are %i tags defined, but %i!=%i related mps!", tags_.size(),
+        related_mps_.size(), tags_.size());
+    return;
+  }
+  for (unsigned i = 0; i < tags_.size(); ++i) {
+    int underscore = tags_[i].find('_');
+    int slash = tags_[i].substr(underscore + 1).find('/');
+    int id = std::atoi(tags_[i].substr(underscore + 1, slash).data());
+    mps_id_[id] = related_mps_[i];
+  }
+}
+
+void GazsimNavgraphGeneratorThread::send_station_msg(int id,
+    gazebo::msgs::Pose pose) {
+  NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage* stationMsg =
+      new NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage();
+  stationMsg->set_id(mps_id_[id].data());
+  stationMsg->set_side(NavGraphWithMPSGeneratorInterface::Side::INPUT);
+  stationMsg->set_frame("/map");
+  stationMsg->set_tag_translation(0, pose.position().x());
+  stationMsg->set_tag_translation(1, pose.position().y());
+  stationMsg->set_tag_translation(2, pose.position().z());
+  stationMsg->set_tag_rotation(0, pose.orientation().w());
+  stationMsg->set_tag_rotation(1, pose.orientation().x());
+  stationMsg->set_tag_rotation(2, pose.orientation().y());
+  stationMsg->set_tag_rotation(3, pose.orientation().z());
+  nav_gen_if_->msgq_enqueue(stationMsg);
 }
