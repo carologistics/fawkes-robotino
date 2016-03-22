@@ -72,6 +72,10 @@ clips-agent:
       R-1: 0
       R-2: 15
       R-3: 30
+      # timeouts when testing with cyan and magenta at the same time
+      R-4: 0
+      R-5: 15
+      R-6: 30
     #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
     cap-station:
       assigned-color:

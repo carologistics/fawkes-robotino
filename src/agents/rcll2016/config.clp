@@ -92,6 +92,9 @@
   ?cr1 <- (confval (path "/clips-agent/rcll2016/move-into-field-waittime/R-1") (type UINT) (value ?wait-r-1))
   ?cr2 <- (confval (path "/clips-agent/rcll2016/move-into-field-waittime/R-2") (type UINT) (value ?wait-r-2))
   ?cr3 <- (confval (path "/clips-agent/rcll2016/move-into-field-waittime/R-3") (type UINT) (value ?wait-r-3))
+  ?cr4 <- (confval (path "/clips-agent/rcll2016/move-into-field-waittime/R-1") (type UINT) (value ?wait-r-4))
+  ?cr5 <- (confval (path "/clips-agent/rcll2016/move-into-field-waittime/R-2") (type UINT) (value ?wait-r-5))
+  ?cr6 <- (confval (path "/clips-agent/rcll2016/move-into-field-waittime/R-3") (type UINT) (value ?wait-r-6))
   =>
   (if (eq ?*ROBOT-NAME* "R-1")
     then
@@ -105,6 +108,18 @@
     then
     (assert (move-into-field-waittime ?wait-r-3))
   )
-  (retract ?cr1 ?cr2 ?cr3)
+  (if (eq ?*ROBOT-NAME* "R-4")
+    then
+    (assert (move-into-field-waittime ?wait-r-4))
+  )
+  (if (eq ?*ROBOT-NAME* "R-5")
+    then
+    (assert (move-into-field-waittime ?wait-r-5))
+  )
+  (if (eq ?*ROBOT-NAME* "R-6")
+    then
+    (assert (move-into-field-waittime ?wait-r-6))
+  )
+  (retract ?cr1 ?cr2 ?cr3 ?cr4 ?cr5 ?cr6)
 )
 
