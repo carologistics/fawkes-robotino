@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  RosProxyProcessor.h - Monitoring the CLIPS agents in LLSF via webview
+ *  RosBridgeProxyProcessor.h - Monitoring the CLIPS agents in LLSF via webview
  *
  *  Created: Mon Mar 2016
  *  Copyright  2016  MosafaGomaa
@@ -23,72 +23,46 @@
 #ifndef __PLUGINS_ROSPROXY_PROCESSOR_H_
 #define __PLUGINS_ROSPROXY_PROCESSOR_H_
 
-// #include <config/config.h>
-
-// #include <string>
-// #include <list>
-// #include <map>
-// #include <set>
-
-// #include <blackboard/interface_listener.h>
-// #include <interface/interface.h>
-// #include <core/exceptions/system.h>
-// #include <core/threading/mutex_locker.h>
 
 #include "bridge_processor.h"
 #include "subscription_capability.h"
 
+//TODO:move includes to cpp and use from namespace
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
+#include <websocketpp/common/thread.hpp>
+#include <websocketpp/common/memory.hpp>
 
-class WebSession;
+#include <logging/logger.h>
 
+namespace fawkes {
+  class Clock;
+  class Logger;
+}
 
 //=================================   Subscription  ===================================
-
-class BlackBoardSubscription
-: public Subscription 
-, public fawkes::BlackBoardInterfaceListener
-{
-  public:
-    BlackBoardSubscription(std::string topic_name 
-                          , std::string processor_prefix 
-                          , fawkes::Clock *clock
-                          , fawkes::BlackBoard *blackboard
-                          , fawkes::Interface *interface);
-
-    ~BlackBoardSubscription();
-
-    fawkes::Interface* get_interface_ptr();
-
-    void activate_impl();
-    void deactivate_impl();
-    void finalize_impl();// finalize oper and listeners interfaces 
-    std::string   serialize(std::string op
-                          , std::string topic
-                          , std::string id);
-
-    void bb_interface_data_changed(fawkes::Interface *interface) throw();
-
-  private:
-    fawkes::BlackBoard         *blackboard_;
-    fawkes::Interface          *interface_;
-};
-
+//its optional here wither to keep track of the subscribtions or act 
+//as a pure proxy only forwading requests.For now, pure proxy
 
 //=================================   Processor  ===================================
 
-class BridgeBlackBoardProcessor
-: public BridgeProcessor,
-  public SubscriptionCapability
+class WebSession;
+class EventEmitter;
+
+class RosBridgeProxyProcessor
+: public BridgeProcessor
+, public SubscriptionCapability
+, public Callable
+, public std::enable_shared_from_this<RosBridgeProxyProcessor>
 {
  public:
-  BridgeBlackBoardProcessor(std::string prefix 
+  RosBridgeProxyProcessor(std::string prefix 
                           , fawkes::Logger *logger
-                          , fawkes::Configuration *config
-                          , fawkes::BlackBoard *blackboard 
-                          , fawkes::Clock *clock)
-;
+                          , fawkes::Clock  *clock);
 
-  virtual ~BridgeBlackBoardProcessor();
+  virtual ~RosBridgeProxyProcessor();
+
+  void init();
 
   std::shared_ptr<Subscription>  subscribe   ( std::string topic_name 
                                               , std::string id    
@@ -98,18 +72,32 @@ class BridgeBlackBoardProcessor
                                               , unsigned int fragment_size  
                                               , std::shared_ptr<WebSession> session);
 
-  void  unsubscribe ( std::string id
-                    , std::shared_ptr<Subscription> 
-                    , std::shared_ptr<WebSession> session ) ; 
+  void                           unsubscribe ( std::string id
+                                              , std::shared_ptr<Subscription> 
+                                              , std::shared_ptr<WebSession> session ) ; 
+
+  //handles session termination
+  void  callback  ( EventType event_type , std::shared_ptr <EventEmitter> handler) ; 
+
+
 
 private:
-  fawkes::Logger         *logger_;
-  fawkes::Configuration  *config_;
-  fawkes::BlackBoard     *blackboard_;
-  fawkes::Clock          *clock_;
+  void  create_rb_connection(std::shared_ptr <WebSession> new_session);
+  void  close_rb_connection(std::shared_ptr <WebSession> session);
 
-  std::map<std::string, fawkes::Interface *>::iterator ifi_;
+  void rb_send(std::shared_ptr <WebSession> session , std::string message);
+  void rb_on_message(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_client>::message_ptr msg);
 
+  websocketpp::client<websocketpp::config::asio_client>                              rosbridge_endpoint_;
+  std::map< websocketpp::connection_hdl , std::shared_ptr <WebSession> 
+                                        , std::owner_less<websocketpp::connection_hdl>>           pears_map_;
+  std::map< websocketpp::connection_hdl , std::shared_ptr <WebSession> 
+                                        , std::owner_less<websocketpp::connection_hdl>>::iterator     it_pears_;
+  websocketpp::lib::shared_ptr<websocketpp::lib::thread>                             proxy_thread_;
+
+
+  fawkes::Logger                                                                    *logger_; 
+  fawkes::Clock                                                                     *clock_; 
 };
 
 
