@@ -20,8 +20,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef __PLUGINS_BRIDGE_BRIDGE_PROCESSOR_H_
-#define __PLUGINS_BRIDGE_BRIDGE_PROCESSOR_H_
+#ifndef __PLUGINS_BLACKBOARD_PROCESSOR_H_
+#define __PLUGINS_BLACKBOARD_PROCESSOR_H_
 
 #include <config/config.h>
 
