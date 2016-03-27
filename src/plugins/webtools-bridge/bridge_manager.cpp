@@ -86,7 +86,8 @@ BridgeManager::register_processor(std::shared_ptr<BridgeProcessor> processor)
 	{
 		it->second->register_processor(processor);
 	}
-
+	processor->init();
+	
 	return true;
 }
 
