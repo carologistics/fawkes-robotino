@@ -58,7 +58,8 @@ RosBridgeProxyProcessor::init()
 void 
 RosBridgeProxyProcessor::create_rb_connection(std::shared_ptr <WebSession> new_session)
 {
-    init();
+  //  init();
+  //  proxy_thread_ = websocketpp::lib::make_shared<websocketpp::lib::thread>(&websocketpp::client<websocketpp::config::asio_client> ::run, &rosbridge_endpoint_);  
     
     //create a proxy client connected to RosBirdge
     std::string const & uri="ws://localhost:9090";//store it as a conf
@@ -82,13 +83,12 @@ RosBridgeProxyProcessor::create_rb_connection(std::shared_ptr <WebSession> new_s
 
     //register for session's termination events
     new_session->register_callback(EventType::TERMINATE , shared_from_this() );
-   
+    
     //store the mapping <session , rosBridge_client>
     pears_map_[con->get_handle()]= new_session ;
 
     logger_->log_info("RosBridgeProxyProcessor"," new_connection created" , ec.message().c_str());
-
-
+ //   proxy_thread_->detach();
 }
 
 
@@ -98,7 +98,7 @@ RosBridgeProxyProcessor::close_rb_connection(std::shared_ptr <WebSession> sessio
 {
     //get the RosProxy connections_hdl for this session
     it_pears_ = std::find_if(pears_map_.begin(), pears_map_.end(), 
-        [&](const std::pair< connection_hdl , std::shared_ptr <WebSession>>  & v){return v.second.get() == it_pears_->second.get();});
+        [&](const std::pair< connection_hdl , std::shared_ptr <WebSession>>  & v){return v.second.get() == session.get();});
 
     if( it_pears_ != pears_map_.end())
     {
@@ -122,22 +122,27 @@ void
 RosBridgeProxyProcessor::rb_send(std::shared_ptr <WebSession> session , std::string message)
 {
     it_pears_ = std::find_if(pears_map_.begin(), pears_map_.end(), 
-        [&](const std::pair< connection_hdl , std::shared_ptr <WebSession>>  & v){return v.second.get() == it_pears_->second.get();});
+        [&](const std::pair< connection_hdl , std::shared_ptr <WebSession>>  & v){return v.second.get() == session.get();});
 
      //send over the rosBridge_client corresponding to the session 
     if (it_pears_  == pears_map_.end())
     {
         //try
         create_rb_connection(session);
-    }
 
-    websocketpp::lib::error_code ec;
-    rosbridge_endpoint_.send(it_pears_->first, message, websocketpp::frame::opcode::text, ec);
-    if (ec)
+        //call itself knowing the session is there
+        rb_send(session , message);
+    }
+    else
     {
-        logger_->log_info("RosBridgeProxyProcessor","cloud not send: %s" , ec.message().c_str());
-        // std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
-        return;
+        websocketpp::lib::error_code ec;
+        rosbridge_endpoint_.send(it_pears_->first, message, websocketpp::frame::opcode::text, ec);
+        if (ec)
+        {
+            logger_->log_info("RosBridgeProxyProcessor","cloud not send: %s" , ec.message().c_str());
+            // std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
+            return;
+        }   
     }
 }
 
@@ -169,9 +174,8 @@ RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <Eve
             {
                 //get the RosProxy connections_hdl for this session
                 it_pears_ = std::find_if(pears_map_.begin(), pears_map_.end(), 
-                        [&](const std::pair< connection_hdl , std::shared_ptr <WebSession>>  & v){return v.second.get() == it_pears_->second.get();});
+                        [&](const std::pair< connection_hdl , std::shared_ptr <WebSession>>  & v){return v.second.get() == session.get();});
 
-                //make sure the session is still there and was not deleted while waiting for the mutex
                 if (it_pears_ != pears_map_.end())
                 {
                     websocketpp::lib::error_code ec;
@@ -212,7 +216,7 @@ RosBridgeProxyProcessor::subscribe   ( std::string topic_name
 
     rb_send(session , jsonMsg);
 
-    //Make a starndered Subscribtion instace (for bookkeeping and desgin consistancy)
+    //create a Subscribtion instace (to keep consistancy with other Bridge_processors)
     std::shared_ptr <Subscription> new_subscirption;
       //create a DORMANT subscription instance 
     try{
