@@ -62,7 +62,7 @@ class RosBridgeProxyProcessor
 
   virtual ~RosBridgeProxyProcessor();
 
-  void init();
+ void init();
 
   std::shared_ptr<Subscription>  subscribe   ( std::string topic_name 
                                               , std::string id    
