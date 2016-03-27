@@ -1,12 +1,14 @@
 #include <map>
 #include <list>
 #include <memory>
-#include <utils/time/time.h>
 
 #include "callable.h"
 #include "event_type.h"
 #include "event_emitter.h"
 
+
+#ifndef __PLUGINS_SUBSCRIPTION_CAPABILITY_H_
+#define __PLUGINS_SUBSCRIPTION_CAPABILITY_H_
 
 
 
@@ -125,5 +127,4 @@ class Subscription
 
 };
 
-
-
+#endif

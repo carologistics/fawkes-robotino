@@ -27,13 +27,14 @@
 #include <utils/time/time.h>
 #include <utils/misc/string_split.h>
 
+#include <logging/logger.h>
+
+#include <blackboard/blackboard.h>
+
 #include <interface/interface.h>
 #include <interface/field_iterator.h>
 #include <interface/interface_info.h>
 
-#include <logging/logger.h>
-
-#include <blackboard/blackboard.h>
 
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
@@ -43,9 +44,7 @@
 #include <cstdlib>
 
 using namespace std;
-
 using namespace fawkes;
-
 using namespace rapidjson;
 
 //=================================   Processor  ===================================
