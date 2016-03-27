@@ -3,6 +3,7 @@
 
 #include <string>
 
+
 class BridgeProcessor{
 
 public:
@@ -12,6 +13,9 @@ public:
 	}
 	
 	virtual ~BridgeProcessor(){}
+
+	virtual void init()
+	{}
 	
 
 	std::string get_prefix()
