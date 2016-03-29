@@ -48,7 +48,10 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/joystick
     # movement commands. To get the appropriate value sum up values of
     # the appropriate BUTTON_* constants of the JoystickInterface.
     # To react to all buttons, set value to 4294967295.
-    deadman_button_mask: 4294967295
+    # The value "4294965759" accepts all buttons except the axis push-down
+    # buttons on the XBox-Controller. They have rather surprising effects
+    # making the robot drive unexpectedly.
+    deadman_button_mask: 4294965759
 
     # Drive mode switching
     # Certain button or an axis can be configured that will allow to
