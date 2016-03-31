@@ -3,10 +3,12 @@
 #include "web_session.h"
 
 #include <core/exceptions/software.h>
+#include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
 #include <utils/time/time.h>
 #include <logging/logger.h>
 
+#include "serializer.cpp"
 /*This acts as a proxy to RosBridge. Each session has a uniques proxy inatance where 
 the incoming and outgoing intercations are uniquly mapped 
 */
@@ -18,11 +20,18 @@ RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Lo
 ,   logger_(logger)
 ,   clock_(clock)
 {
-   rosbridge_endpoint_.clear_access_channels(websocketpp::log::alevel::all);
-   rosbridge_endpoint_.clear_error_channels(websocketpp::log::elevel::all);
-   rosbridge_endpoint_.init_asio();
-   rosbridge_endpoint_.start_perpetual();
+    rosbridge_endpoint_.clear_access_channels(websocketpp::log::alevel::all);
+    rosbridge_endpoint_.clear_error_channels(websocketpp::log::elevel::all);
+    rosbridge_endpoint_.init_asio();
+    rosbridge_endpoint_.start_perpetual();
 
+    rosbridge_endpoint_.set_message_handler(websocketpp::lib::bind(
+        &RosBridgeProxyProcessor::rb_on_message,
+        this,
+        websocketpp::lib::placeholders::_1,
+        websocketpp::lib::placeholders::_2));
+
+    mutex_=new fawkes::Mutex();
 }
 
 RosBridgeProxyProcessor::~RosBridgeProxyProcessor()
@@ -42,9 +51,9 @@ RosBridgeProxyProcessor::~RosBridgeProxyProcessor()
          //           << ec.message() << std::endl;
         }
     }
-   
-    proxy_thread_->join();
 
+    proxy_thread_->join();
+    delete mutex_;
 }
 
 void 
@@ -57,10 +66,7 @@ RosBridgeProxyProcessor::init()
 //Creats a new webskocet connection to RosBridge and maps it to the new_session 
 void 
 RosBridgeProxyProcessor::create_rb_connection(std::shared_ptr <WebSession> new_session)
-{
-  //  init();
-  //  proxy_thread_ = websocketpp::lib::make_shared<websocketpp::lib::thread>(&websocketpp::client<websocketpp::config::asio_client> ::run, &rosbridge_endpoint_);  
-    
+{ 
     //create a proxy client connected to RosBirdge
     std::string const & uri="ws://localhost:9090";//store it as a conf
     
@@ -74,21 +80,15 @@ RosBridgeProxyProcessor::create_rb_connection(std::shared_ptr <WebSession> new_s
         return;
     }
 
-    con->set_message_handler(websocketpp::lib::bind(
-        &RosBridgeProxyProcessor::rb_on_message,
-        this,
-        websocketpp::lib::placeholders::_1,
-        websocketpp::lib::placeholders::_2));
     rosbridge_endpoint_.connect(con);
 
     //register for session's termination events
     new_session->register_callback(EventType::TERMINATE , shared_from_this() );
-    
     //store the mapping <session , rosBridge_client>
     pears_map_[con->get_handle()]= new_session ;
+    
 
     logger_->log_info("RosBridgeProxyProcessor"," new_connection created" , ec.message().c_str());
- //   proxy_thread_->detach();
 }
 
 
@@ -121,6 +121,7 @@ RosBridgeProxyProcessor::close_rb_connection(std::shared_ptr <WebSession> sessio
 void
 RosBridgeProxyProcessor::rb_send(std::shared_ptr <WebSession> session , std::string message)
 {
+    MutexLocker ml(mutex_);
     it_pears_ = std::find_if(pears_map_.begin(), pears_map_.end(), 
         [&](const std::pair< connection_hdl , std::shared_ptr <WebSession>>  & v){return v.second.get() == session.get();});
 
@@ -131,7 +132,8 @@ RosBridgeProxyProcessor::rb_send(std::shared_ptr <WebSession> session , std::str
         create_rb_connection(session);
 
         //call itself knowing the session is there
-        rb_send(session , message);
+        mutex_->unlock();
+        rb_send(session, message);
     }
     else
     {
@@ -141,7 +143,8 @@ RosBridgeProxyProcessor::rb_send(std::shared_ptr <WebSession> session , std::str
         {
             logger_->log_info("RosBridgeProxyProcessor","cloud not send: %s" , ec.message().c_str());
             // std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
-            return;
+            mutex_->unlock();
+            rb_send(session, message);//keep sending till u get through...shouldnt be like this..this is falty
         }   
     }
 }
@@ -149,7 +152,7 @@ RosBridgeProxyProcessor::rb_send(std::shared_ptr <WebSession> session , std::str
 void
 RosBridgeProxyProcessor::rb_on_message(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_client>::message_ptr msg)
 {
-    //MutexLocker ml(mutex_);
+    MutexLocker ml(mutex_);
     std::string jsonString = msg -> get_payload();  
     if(pears_map_.find(hdl) == pears_map_.end())
     {
@@ -163,7 +166,7 @@ RosBridgeProxyProcessor::rb_on_message(websocketpp::connection_hdl hdl, websocke
 void
 RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <EventEmitter> event_emitter) 
 {
-    //mutext lock
+    MutexLocker ml(mutex_);
     try{
         //check if the event emitter was a session
         std::shared_ptr <WebSession> session;
@@ -210,8 +213,8 @@ RosBridgeProxyProcessor::subscribe   ( std::string topic_name
                                             , std::shared_ptr<WebSession> session)
 {
     //Mutex.lock
-
-    std::string jsonMsg="";
+    std::string jsonMsg= Serializer::op_subscribe( topic_name , id , compression 
+                                                , throttle_rate , queue_length , fragment_size );
     //serialize msg
 
     rb_send(session , jsonMsg);

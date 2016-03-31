@@ -38,6 +38,7 @@
 namespace fawkes {
   class Clock;
   class Logger;
+  class Mutex;
 }
 
 //=================================   Subscription  ===================================
@@ -97,7 +98,9 @@ private:
 
 
   fawkes::Logger                                                                    *logger_; 
-  fawkes::Clock                                                                     *clock_; 
+  fawkes::Clock                                                                     *clock_;
+  fawkes::Mutex                                                                     *mutex_;
+
 };
 
 
