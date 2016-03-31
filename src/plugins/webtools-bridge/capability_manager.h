@@ -3,7 +3,7 @@
 #define _CAPABILTY_MANAGER_H
 
 #include "bridge_processor.h"
-#include <rapidjson/document.h>
+#include <rapidjson/document.h>//todo:move to the cpps
 
 #include <string>
 #include <map>
