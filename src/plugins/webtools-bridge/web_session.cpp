@@ -23,7 +23,7 @@ WebSession::set_connection_hdl(websocketpp::connection_hdl hdl)
 }
 
 void 
-WebSession::set_endpoint(websocketpp::lib::shared_ptr<server> endpoint_ptr)
+WebSession::set_endpoint(std::shared_ptr<server> endpoint_ptr)
 {
 	endpoint_ptr_=endpoint_ptr;
 }
