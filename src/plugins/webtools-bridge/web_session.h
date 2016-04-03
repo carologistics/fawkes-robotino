@@ -32,7 +32,7 @@ public:
 	~WebSession();
 
 	void 						set_connection_hdl(websocketpp::connection_hdl hdl);
-	void 						set_endpoint(websocketpp::lib::shared_ptr<server> endpoint_ptr);
+	void 						set_endpoint(std::shared_ptr<server> endpoint_ptr);
 	void 						set_id(int id);
 	void						set_name(std::string name);
 	void 						set_status(std::string status);
@@ -55,7 +55,7 @@ public:
 	
 private:
     websocketpp::connection_hdl                			hdl_;
-    websocketpp::lib::shared_ptr<server>       		 	endpoint_ptr_;
+    std::shared_ptr<server>       		 	endpoint_ptr_;
 
     std::string                              			session_name_;
     std::string										 	status_;

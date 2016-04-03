@@ -120,7 +120,7 @@ public:
     {
         MutexLocker ml(mutex_);
 
-        websocketpp::lib::shared_ptr<WebSession>  session = hdl_ids_ [hdl];
+        std::shared_ptr<WebSession>  session = hdl_ids_ [hdl];
 
         std::string jsonString = web_msg -> get_payload();
 
@@ -146,15 +146,15 @@ public:
 
 
 private:
-    std::map<connection_hdl, websocketpp::lib::shared_ptr<WebSession>
+    std::map<connection_hdl, std::shared_ptr<WebSession>
         ,std::owner_less<connection_hdl>>                                              hdl_ids_;
 
-    websocketpp::lib::shared_ptr<server>                                               m_server;
-    websocketpp::lib::shared_ptr<WebSession>                                           tmp_session_; //this only serve to collect the session data before intializing the dispaticher
+    std::shared_ptr<server>                                               m_server;
+    std::shared_ptr<WebSession>                                           tmp_session_; //this only serve to collect the session data before intializing the dispaticher
     
     unsigned int                                                                       m_next_sessionid;
     
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread>                             m_thread;
+    std::shared_ptr<websocketpp::lib::thread>                             m_thread;
 
     std::shared_ptr<BridgeManager>                                                     bridge_manager_;
     
@@ -166,7 +166,7 @@ private:
 
 
 // int main() {
-//     websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
+//     std::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
 //     web_server->run(6060);
 // }
 
@@ -174,9 +174,9 @@ private:
 
 // int main() {
 
-//     websocketpp::lib::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
+//     std::shared_ptr<Web_server> web_server=websocketpp::lib::make_shared<Web_server>();
 //     ros_endpoint::ptr rosbridge_ptr= websocketpp::lib::make_shared<ros_endpoint>();
-//     websocketpp::lib::shared_ptr<Dispatcher> dispatcher=websocketpp::lib::make_shared<Dispatcher>();
+//     std::shared_ptr<Dispatcher> dispatcher=websocketpp::lib::make_shared<Dispatcher>();
 
 //     dispatcher->register_ros_endpoint(rosbridge_ptr);
 //     web_server->register_dispatcher(dispatcher);
@@ -193,10 +193,10 @@ private:
 
 
 
-    // void register_dispatcher(websocketpp::lib::shared_ptr<Dispatcher> dispatcher){
+    // void register_dispatcher(std::shared_ptr<Dispatcher> dispatcher){
     //     dispatcher_=dispatcher;
 
-    //     websocketpp::lib::shared_ptr<Iendpoint> wrappedEndpoint= std::dynamic_pointer_cast<Iendpoint>(shared_from_this());
+    //     std::shared_ptr<Iendpoint> wrappedEndpoint= std::dynamic_pointer_cast<Iendpoint>(shared_from_this());
     //     dispatcher->register_web_endpoint(wrappedEndpoint);  
     // }
 

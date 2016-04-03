@@ -106,7 +106,7 @@ class BridgeBlackBoardProcessor
                                               , std::shared_ptr<WebSession> session);
 
   void  unsubscribe ( std::string id
-                    , std::shared_ptr<Subscription> 
+                    , std::shared_ptr<Subscription> subscription
                     , std::shared_ptr<WebSession> session ) ; 
 
 private:

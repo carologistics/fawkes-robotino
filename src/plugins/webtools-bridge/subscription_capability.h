@@ -1,3 +1,7 @@
+
+#ifndef __PLUGINS_SUBSCRIPTION_CAPABILITY_H_
+#define __PLUGINS_SUBSCRIPTION_CAPABILITY_H_
+
 #include <map>
 #include <list>
 #include <memory>
@@ -5,11 +9,6 @@
 #include "callable.h"
 #include "event_type.h"
 #include "event_emitter.h"
-
-
-#ifndef __PLUGINS_SUBSCRIPTION_CAPABILITY_H_
-#define __PLUGINS_SUBSCRIPTION_CAPABILITY_H_
-
 
 
 namespace fawkes {
@@ -35,7 +34,7 @@ class SubscriptionCapability
 														   	, std::shared_ptr<WebSession> session) = 0 ;
 
 		virtual void 							unsubscribe	( std::string id
-															, std::shared_ptr<Subscription> 
+															, std::shared_ptr<Subscription> subscription
 															, std::shared_ptr<WebSession> session ) = 0 ;
 };
 
