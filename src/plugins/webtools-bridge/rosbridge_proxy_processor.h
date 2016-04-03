@@ -26,6 +26,7 @@
 
 #include "bridge_processor.h"
 #include "subscription_capability.h"
+#include "callable.h"
 
 //TODO:move includes to cpp and use from namespace
 #include <websocketpp/config/asio_no_tls_client.hpp>
@@ -48,6 +49,7 @@ namespace fawkes {
 //=================================   Processor  ===================================
 
 class WebSession;
+class ProxySession;
 class EventEmitter;
 
 class RosBridgeProxyProcessor
@@ -74,33 +76,23 @@ class RosBridgeProxyProcessor
                                               , std::shared_ptr<WebSession> session);
 
   void                           unsubscribe ( std::string id
-                                              , std::shared_ptr<Subscription> 
+                                              , std::shared_ptr<Subscription> subscription
                                               , std::shared_ptr<WebSession> session ) ; 
 
-  //handles session termination
-  void  callback  ( EventType event_type , std::shared_ptr <EventEmitter> handler) ; 
-
-
+  void callback( EventType event_type , std::shared_ptr <EventEmitter> handler) ; 
+  void forward_to_proxy_session(std::shared_ptr <WebSession> session , std::string message);
 
 private:
-  void  create_rb_connection(std::shared_ptr <WebSession> new_session);
-  void  close_rb_connection(std::shared_ptr <WebSession> session);
+  fawkes::Logger                                              *logger_; 
+  fawkes::Clock                                               *clock_;
+  fawkes::Mutex                                               *mutex_;
 
-  void rb_send(std::shared_ptr <WebSession> session , std::string message);
-  void rb_on_message(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_client>::message_ptr msg);
+  std::list<std::shared_ptr <ProxySession>>                   pears_;
+  std::list<std::shared_ptr <ProxySession>> ::iterator        it_pears_;
 
-  websocketpp::client<websocketpp::config::asio_client>                              rosbridge_endpoint_;
-  std::map< websocketpp::connection_hdl , std::shared_ptr <WebSession> 
-                                        , std::owner_less<websocketpp::connection_hdl>>           pears_map_;
-  std::map< websocketpp::connection_hdl , std::shared_ptr <WebSession> 
-                                        , std::owner_less<websocketpp::connection_hdl>>::iterator     it_pears_;
-  websocketpp::lib::shared_ptr<websocketpp::lib::thread>                             proxy_thread_;
-
-
-  fawkes::Logger                                                                    *logger_; 
-  fawkes::Clock                                                                     *clock_;
-  fawkes::Mutex                                                                     *mutex_;
-
+  std::shared_ptr<websocketpp::client<websocketpp::config::asio_client>>          rosbridge_endpoint_;
+  std::shared_ptr<websocketpp::lib::thread>                                       proxy_thread_;
+  
 };
 
 
