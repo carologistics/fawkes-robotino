@@ -9,7 +9,7 @@
 #include <utils/time/time.h>
 #include <logging/logger.h>
 
-#include "serializer.H"
+#include "serializer.h"
 
 /*This acts as a proxy_server to RosBridge. For each web_session, a session to "RosBridge Server" is created to act a proxy
 forwarding all incoming and outgoing intercations.*/
@@ -220,13 +220,12 @@ RosBridgeProxyProcessor::subscribe   ( std::string topic_name
 void 
 RosBridgeProxyProcessor::unsubscribe ( std::string id
                                         , std::shared_ptr<Subscription> subscription
-                                        , std::shared_ptr<WebSession> session ) 
+                                        , std::shared_ptr<WebSession> web_session ) 
 {
-    std::string jsonMsg= Serializer::op_subscribe( topic_name , id , compression 
-                                                , throttle_rate , queue_length , fragment_size );
+    std::string jsonMsg= Serializer::op_unsubscribe( subscription->get_topic_name() , id );
     //try catch
     forward_to_proxy_session(web_session , jsonMsg);
 
-    subscription->remove_request(id, session);
+    subscription->remove_request(id, web_session);
     
 }
