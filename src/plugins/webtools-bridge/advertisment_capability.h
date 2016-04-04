@@ -74,9 +74,6 @@ class Advertisment
 		virtual void 			finalize_impl();	//will be implicitly called from finialize()
 		virtual void 			activate_impl(); 	//will be implicitly called from activate()
 		virtual void 			deactivate_impl();	//will be implicitly called from deactive() 
-		virtual std::string 	serialize(std::string op
-											, std::string topic
-											, std::string id);
 
 		fawkes::Mutex 			*mutex_;
 		
@@ -92,7 +89,6 @@ class Advertisment
 		Status	 		active_status_;
 		std::string 	topic_name_;
 		std::string 	processor_prefix_;
-		fawkes::Clock	*clock_;
 	
 		bool 			finalized; //set to true if it was Object was finilazed berfore
 		
