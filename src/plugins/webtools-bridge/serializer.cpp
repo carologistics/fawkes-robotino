@@ -73,3 +73,86 @@ Serializer::op_unsubscribe(std::string prefixed_topic_name
 
     return s.GetString();
 }
+
+
+std::string
+Serializer::op_advertise( std::string prefixed_topic_name , std::string id , std::string type )
+{
+	std::string op="advertise";
+
+	StringBuffer s;
+  	Writer<StringBuffer> writer(s);      
+	writer.StartObject();
+
+	writer.String("op");
+	writer.String(op.c_str(),(SizeType)op.length());
+
+	writer.String("id");
+	writer.String(id.c_str(),(SizeType)id.length());
+	
+	writer.String("topic");
+	writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
+
+	writer.String("type");
+	writer.String(type.c_str(), (SizeType)type.length());
+
+	writer.EndObject();//End of complete Json_msg 
+    
+    //std::cout << s.GetString() << std::endl;
+
+    return s.GetString();
+}
+
+std::string
+Serializer::op_unadvertise( std::string prefixed_topic_name , std::string id )
+{
+	std::string op="unadvertise";
+
+	StringBuffer s;
+  	Writer<StringBuffer> writer(s);      
+	writer.StartObject();
+
+	writer.String("op");
+	writer.String(op.c_str(),(SizeType)op.length());
+
+	writer.String("id");
+	writer.String(id.c_str(),(SizeType)id.length());
+	
+	writer.String("topic");
+	writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
+
+	writer.EndObject();//End of complete Json_msg 
+    
+    //std::cout << s.GetString() << std::endl;
+
+    return s.GetString();
+}
+
+std::string
+Serializer::op_publish( std::string prefixed_topic_name , std::string id , std::string msg_in_json)
+{
+	std::string op="publish";
+
+	StringBuffer s;
+  	Writer<StringBuffer> writer(s);      
+	writer.StartObject();
+
+	writer.String("op");
+	writer.String(op.c_str(),(SizeType)op.length());
+
+	writer.String("id");
+	writer.String(id.c_str(),(SizeType)id.length());
+	
+	writer.String("topic");
+	writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
+
+	writer.String("msg");
+	writer.String(msg_in_json.c_str(), (SizeType)msg_in_json.length());
+
+	writer.EndObject();//End of complete Json_msg 
+    
+    //std::cout << s.GetString() << std::endl;
+
+    return s.GetString();
+}
+
