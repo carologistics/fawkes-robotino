@@ -55,7 +55,7 @@ public:
 	
 private:
     websocketpp::connection_hdl                			hdl_;
-    std::shared_ptr<server>       		 	endpoint_ptr_;
+    std::shared_ptr<server>       		 				endpoint_ptr_;
 
     std::string                              			session_name_;
     std::string										 	status_;
