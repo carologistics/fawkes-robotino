@@ -113,7 +113,7 @@ SubscriptionCapabilityManager::handle_message(Document &d
 		unsigned int queue_length 	=	1;
 		unsigned int fragment_size 	=	0;
 		
-		if(d.HasMember("topic"))		 topic_name 	= 	std::string( d["topic"].GetString());
+		if(d.HasMember("topic"))		 topic_name 	= 	std::string(d["topic"].GetString());
 		if(d.HasMember("id")) 			 id 			= 	std::string(d["id"].GetString());
 		if(d.HasMember("compression")) 	 compression	=	std::string(d["compression"].GetString());	
 		if(d.HasMember("throttle_rate")) throttle_rate	=	d["throttle_rate"].GetUint();
@@ -127,7 +127,7 @@ SubscriptionCapabilityManager::handle_message(Document &d
 
 	if (msg_op=="unsubscribe")
 	{
-		std::string topic_name 		= 	std::string( d["topic"].GetString() );
+		std::string topic_name 		= 	std::string(d["topic"].GetString());
 		std::string id 				= 	std::string(d["id"].GetString());
 	
 		unsubscribe(match_prefix, topic_name, id , session);	
@@ -147,7 +147,8 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 			if(event_type == EventType::TERMINATE )
 			{
 				//construct the prefixed_name from info in the subscription
-				std::string prefixed_topic_name="/"+subscription->get_processor_prefix()+"/"+subscription->get_topic_name();
+				//std::string prefixed_topic_name="/"+subscription->get_processor_prefix()+"/"+subscription->get_topic_name();
+				std::string prefixed_topic_name=subscription->get_topic_name();
 				
 				//does the subscription exist (unique per topic_name)
 				if (topic_Subscription_.find(prefixed_topic_name) != topic_Subscription_.end())

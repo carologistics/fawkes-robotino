@@ -90,15 +90,8 @@ ProxySession::send(std::string const & msg){
 
     std::cout << ">TO Proxy::sending message: "<<msg << std::endl;
 
-    try{
-
     endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
-    }
-    catch(...)
-    {
-                std::cout << "> exceptions sending message: "  << std::endl;
 
-    }
     if (ec) {
         std::cout << "> Error sending message: " << ec.message() << std::endl;
         return false;
