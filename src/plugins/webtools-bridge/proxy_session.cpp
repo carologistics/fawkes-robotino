@@ -4,6 +4,7 @@
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
 #include "callable.h"
+#include <exception>
 
 
 using namespace fawkes;
@@ -76,7 +77,7 @@ ProxySession::on_message(websocketpp::connection_hdl hdl, websocketpp::client<we
 
 //TODO::catch exceptions and print in the log
 bool 
-ProxySession::send(std::string msg){
+ProxySession::send(std::string const & msg){
 
 	MutexLocker ml(mutex_);
     if(status_!="open")
@@ -87,10 +88,17 @@ ProxySession::send(std::string msg){
 
 	websocketpp::lib::error_code ec;
 
-    std::cout << ">TO Proxy::sending message: " << std::endl;
+    std::cout << ">TO Proxy::sending message: "<<msg << std::endl;
 
-	endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
+    try{
 
+    endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
+    }
+    catch(...)
+    {
+                std::cout << "> exceptions sending message: "  << std::endl;
+
+    }
     if (ec) {
         std::cout << "> Error sending message: " << ec.message() << std::endl;
         return false;

@@ -41,7 +41,7 @@ public:
 	void on_fail(websocketpp::connection_hdl hdl);
 	void on_close(websocketpp::connection_hdl hdl);//this will be called when session is closed from server
 	void on_message(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_client>::message_ptr msg);
-	bool send(std::string msg);
+	bool send( std::string const & msg);
 
 	void 							set_id(int id);
 	int 							get_id();
@@ -58,7 +58,7 @@ private:
     std::shared_ptr <WebSession> 						web_session_;
 
     websocketpp::connection_hdl                			hdl_;
-    std::shared_ptr<Client>       			endpoint_ptr_;
+    std::shared_ptr<Client>       						endpoint_ptr_;
 
     std::string										 	status_;
     int                                        			session_id_;
