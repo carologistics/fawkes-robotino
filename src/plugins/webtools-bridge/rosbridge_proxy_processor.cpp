@@ -56,7 +56,7 @@ RosBridgeProxyProcessor::~RosBridgeProxyProcessor()
 void 
 RosBridgeProxyProcessor::init()
 {
-    proxy_thread_ = websocketpp::lib::make_shared<websocketpp::lib::thread>(&websocketpp::client<websocketpp::config::asio_client> ::run, rosbridge_endpoint_.get());  
+    proxy_thread_ = websocketpp::lib::make_shared<websocketpp::lib::thread>(&websocketpp::client<websocketpp::config::asio_client> ::run, rosbridge_endpoint_);  
     logger_->log_info("RosBridgeProxyProcessor"," Proxy Thread Started" );
 }
 
@@ -193,7 +193,6 @@ RosBridgeProxyProcessor::subscribe   ( std::string topic_name
                                             , unsigned int fragment_size  
                                             , std::shared_ptr<WebSession> web_session)
 {
-
     std::string jsonMsg= Serializer::op_subscribe( topic_name , id , compression 
                                                 , throttle_rate , queue_length , fragment_size );
     //try catch
@@ -214,7 +213,6 @@ RosBridgeProxyProcessor::subscribe   ( std::string topic_name
                                            , queue_length , fragment_size , web_session);
 
     return new_subscirption ;
-
 }
 
 void 
@@ -224,8 +222,53 @@ RosBridgeProxyProcessor::unsubscribe ( std::string id
 {
     std::string jsonMsg= Serializer::op_unsubscribe( subscription->get_topic_name() , id );
     //try catch
+     logger_->log_info("Processor:" , jsonMsg.c_str());
+    forward_to_proxy_session(web_session , jsonMsg);
+    subscription->remove_request(id, web_session);   
+}
+
+std::shared_ptr<Advertisment> 
+RosBridgeProxyProcessor::advertise  ( std::string topic_name 
+                                        , std::string id    
+                                        , std::string type  
+                                        , std::shared_ptr<WebSession> web_session)
+{
+    std::string jsonMsg= Serializer::op_advertise( topic_name , id , type );
+    //try catch
     forward_to_proxy_session(web_session , jsonMsg);
 
-    subscription->remove_request(id, web_session);
-    
+    //create a DORMANT  Subscribtion instace (to keep consistancy with other Bridge_processors)
+    std::shared_ptr <Advertisment> new_advertisment;
+    try{
+        new_advertisment = std::make_shared <Advertisment>(topic_name , prefix_);
+    }
+    catch (fawkes::Exception &e) 
+    {
+        logger_->log_info("Processor:" , "Failed to advertise to '%s':", topic_name.c_str(), e.what());
+        throw e;
+    }
+
+    new_advertisment->add_request(id , web_session);
+
+    return new_advertisment;
+}
+  
+void                         
+RosBridgeProxyProcessor::unadvertise ( std::string id
+                                        , std::shared_ptr<Advertisment> advertisment
+                                        , std::shared_ptr<WebSession> web_session )
+{
+    std::string jsonMsg= Serializer::op_unadvertise( advertisment->get_topic_name() , id );
+    forward_to_proxy_session(web_session , jsonMsg);
+    advertisment->remove_request(id, web_session); 
+}
+
+void
+RosBridgeProxyProcessor::publish     ( std::string id
+                                        , std::string msg_in_json
+                                        , std::shared_ptr<Advertisment> advertisment
+                                        , std::shared_ptr<WebSession> web_session )
+{
+    std::string jsonMsg= Serializer::op_publish( advertisment->get_topic_name() , id , msg_in_json);
+    forward_to_proxy_session(web_session , jsonMsg);
 }

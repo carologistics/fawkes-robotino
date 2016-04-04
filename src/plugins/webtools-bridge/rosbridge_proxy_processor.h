@@ -26,6 +26,7 @@
 
 #include "bridge_processor.h"
 #include "subscription_capability.h"
+#include "advertisment_capability.h"
 #include "callable.h"
 
 //TODO:move includes to cpp and use from namespace
@@ -55,6 +56,7 @@ class EventEmitter;
 class RosBridgeProxyProcessor
 : public BridgeProcessor
 , public SubscriptionCapability
+, public AdvertismentCapability
 , public Callable
 , public std::enable_shared_from_this<RosBridgeProxyProcessor>
 {
@@ -67,17 +69,31 @@ class RosBridgeProxyProcessor
 
  void init();
 
-  std::shared_ptr<Subscription>  subscribe   ( std::string topic_name 
-                                              , std::string id    
-                                              , std::string compression
-                                              , unsigned int throttle_rate  
-                                              , unsigned int queue_length   
-                                              , unsigned int fragment_size  
-                                              , std::shared_ptr<WebSession> session);
-
-  void                           unsubscribe ( std::string id
-                                              , std::shared_ptr<Subscription> subscription
-                                              , std::shared_ptr<WebSession> session ) ; 
+  std::shared_ptr<Subscription> subscribe   ( std::string topic_name 
+                                            , std::string id    
+                                            , std::string compression
+                                            , unsigned int throttle_rate  
+                                            , unsigned int queue_length   
+                                            , unsigned int fragment_size  
+                                            , std::shared_ptr<WebSession> session);
+  
+  void                          unsubscribe ( std::string id
+                                            , std::shared_ptr<Subscription> subscription
+                                            , std::shared_ptr<WebSession> session ) ; 
+  
+  std::shared_ptr<Advertisment> advertise   ( std::string topic_name 
+                                            , std::string id    
+                                            , std::string type  
+                                            , std::shared_ptr<WebSession> session);
+  
+  void                          unadvertise ( std::string id
+                                            , std::shared_ptr<Advertisment> advertisment
+                                            , std::shared_ptr<WebSession> session );
+  
+  void                          publish     ( std::string id
+                                            , std::string msg_in_json //TODO:: figure out a clever way to keep track of msgs types and content without the need to have the info before hands
+                                            , std::shared_ptr<Advertisment> advertisment
+                                            , std::shared_ptr<WebSession> session );
 
   void callback( EventType event_type , std::shared_ptr <EventEmitter> handler) ; 
   void forward_to_proxy_session(std::shared_ptr <WebSession> session , std::string message);
