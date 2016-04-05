@@ -38,7 +38,8 @@ private:
 
 	void publish	( std::string bridge_prefix
 					, std::string topic_name 
-					, std::string id 
+					, std::string id
+					, bool latch
 					, std::string msg_jsonStr	
 					, std::shared_ptr<WebSession> session);
 

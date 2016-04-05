@@ -1,7 +1,10 @@
 #include "serializer.h"
 
+#include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
+
 
 
 using namespace rapidjson;
@@ -129,7 +132,8 @@ Serializer::op_unadvertise( std::string prefixed_topic_name , std::string id )
 }
 
 std::string
-Serializer::op_publish( std::string prefixed_topic_name , std::string id , std::string msg_in_json)
+Serializer::op_publish( std::string prefixed_topic_name , std::string id 
+						, bool latch, std::string msg_in_json)
 {
 	std::string op="publish";
 
@@ -146,8 +150,20 @@ Serializer::op_publish( std::string prefixed_topic_name , std::string id , std::
 	writer.String("topic");
 	writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
 
+	writer.String("latch");
+	writer.Bool(latch);
+	
 	writer.String("msg");
-	writer.String(msg_in_json.c_str(), (SizeType)msg_in_json.length());
+	Document  d;
+
+	if (d.Parse(msg_in_json.c_str()).HasParseError())
+	{
+		//std::cout<< GetParseError_En(d.GetParseError());
+		return "";
+		//throw
+	}
+	d.Parse(msg_in_json.c_str());
+	d.Accept(writer);
 
 	writer.EndObject();//End of complete Json_msg 
     

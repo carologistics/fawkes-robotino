@@ -32,6 +32,7 @@ class AdvertismentCapability
 															, std::shared_ptr<WebSession> session ) = 0 ;
 
 		virtual void 						publish		( std::string id
+															, bool latch
 															, std::string msg_in_json //TODO:: figure out a clever way to keep track of msgs types and content without the need to have the info before hands
 															, std::shared_ptr<Advertisment> advertisment
 															, std::shared_ptr<WebSession> session ) = 0 ;
