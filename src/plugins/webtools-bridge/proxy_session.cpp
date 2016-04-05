@@ -79,7 +79,7 @@ ProxySession::on_message(websocketpp::connection_hdl hdl, websocketpp::client<we
 bool 
 ProxySession::send(std::string const & msg){
 
-	MutexLocker ml(mutex_);
+	//MutexLocker ml(mutex_);
     if(status_!="open")
     {
         return false;

@@ -27,6 +27,8 @@
 #include "bridge_processor.h"
 #include "subscription_capability.h"
 #include "advertisment_capability.h"
+#include "service_capability.h"
+
 #include "callable.h"
 
 //TODO:move includes to cpp and use from namespace
@@ -57,6 +59,7 @@ class RosBridgeProxyProcessor
 : public BridgeProcessor
 , public SubscriptionCapability
 , public AdvertismentCapability
+, public ServiceCapability
 , public Callable
 , public std::enable_shared_from_this<RosBridgeProxyProcessor>
 {
@@ -95,6 +98,10 @@ class RosBridgeProxyProcessor
                                             , std::string msg_in_json //TODO:: figure out a clever way to keep track of msgs types and content without the need to have the info before hands
                                             , std::shared_ptr<Advertisment> advertisment
                                             , std::shared_ptr<WebSession> session );
+
+  void                          call_service( std::string srv_call_json 
+                                            , std::shared_ptr<WebSession> session );
+
 
   void callback( EventType event_type , std::shared_ptr <EventEmitter> handler) ; 
   void forward_to_proxy_session(std::shared_ptr <WebSession> session , std::string message);

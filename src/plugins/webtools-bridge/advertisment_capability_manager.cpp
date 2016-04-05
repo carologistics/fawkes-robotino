@@ -47,6 +47,7 @@ AdvertismentCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
 }
 
 void
+//TODO::remnam it (DispatchtoCapability)
 AdvertismentCapabilityManager::handle_message(Document &d
 											, std::shared_ptr<WebSession> session)
 {	
