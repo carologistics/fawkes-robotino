@@ -80,16 +80,7 @@ WebSession::send(std::string msg){
 	websocketpp::lib::error_code ec;
 
     std::cout << ">TO WEB::sending message: " << std::endl;
-
-    try{
-
 	endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
-    }
-    catch(...)
-    {
-    	        std::cout << "> exceptions sending message: " << std::endl;
-
-    }
 
     if (ec) {
         std::cout << "> Error sending message: " << ec.message() << std::endl;

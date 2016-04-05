@@ -138,6 +138,7 @@ RosBridgeProxyProcessor::forward_to_proxy_session(std::shared_ptr <WebSession> w
         //wait for session to be ready
         while((*it_pears_)->get_status() != "open")
         {
+            logger_->log_info("RosBridgeProxyProcessor"," connecting" );
             if((*it_pears_)->get_status() == "connecting")
             {
                 //wait
@@ -273,3 +274,14 @@ RosBridgeProxyProcessor::publish     ( std::string id
     std::string jsonMsg= Serializer::op_publish( advertisment->get_topic_name() , id , latch , msg_in_json);
     forward_to_proxy_session(web_session , jsonMsg);
 }
+
+
+
+void
+RosBridgeProxyProcessor::call_service( std::string srv_call_json 
+                                            , std::shared_ptr<WebSession> web_session )
+{
+    logger_->log_info("Processor:" , "calling service'%s':", srv_call_json.c_str());
+    forward_to_proxy_session(web_session , srv_call_json);   
+}
+
