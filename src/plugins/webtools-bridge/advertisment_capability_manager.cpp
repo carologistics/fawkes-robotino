@@ -1,6 +1,10 @@
 #include "advertisment_capability_manager.h"
 #include "advertisment_capability.h"
 
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+
 #include <core/exceptions/software.h>
 
 using namespace fawkes;
@@ -120,9 +124,14 @@ AdvertismentCapabilityManager::handle_message(Document &d
 	{
 		std::string topic_name 		= 	std::string(d["topic"].GetString());
 		std::string id 				= 	std::string(d["id"].GetString());
-		std::string msg_jsonStr		= 	std::string(d["msg"].GetString());
+		bool latch					= 	d["latch"].GetBool();
+		//TEMP: for now keep the msg as a json and just forward it to ros
+		StringBuffer buffer;
+   		Writer<StringBuffer> writer(buffer);
+    	d["msg"].Accept(writer);
+		std::string msg_jsonStr		= buffer.GetString();
 	
-		publish(match_prefix, topic_name, id , msg_jsonStr , session);	
+		publish(match_prefix, topic_name, id , latch , msg_jsonStr , session);	
 	}
 
 }
@@ -244,7 +253,8 @@ AdvertismentCapabilityManager::unadvertise	( std::string bridge_prefix
 void
 AdvertismentCapabilityManager::publish	( std::string bridge_prefix
 											, std::string topic_name 
-											, std::string id 	
+											, std::string id
+											, bool latch
 											, std::string msg_jsonStr	
 											, std::shared_ptr<WebSession> session)
 {
@@ -259,7 +269,7 @@ AdvertismentCapabilityManager::publish	( std::string bridge_prefix
 		advertisment = topic_Advertisment_[topic_name];
 
 		try{
-			processor->publish(id, msg_jsonStr , advertisment , session );
+			processor->publish(id , latch , msg_jsonStr , advertisment , session );
 		}catch (Exception &e){
 			throw e;
 		}

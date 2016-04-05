@@ -265,10 +265,11 @@ RosBridgeProxyProcessor::unadvertise ( std::string id
 
 void
 RosBridgeProxyProcessor::publish     ( std::string id
+                                        , bool latch
                                         , std::string msg_in_json
                                         , std::shared_ptr<Advertisment> advertisment
                                         , std::shared_ptr<WebSession> web_session )
 {
-    std::string jsonMsg= Serializer::op_publish( advertisment->get_topic_name() , id , msg_in_json);
+    std::string jsonMsg= Serializer::op_publish( advertisment->get_topic_name() , id , latch , msg_in_json);
     forward_to_proxy_session(web_session , jsonMsg);
 }

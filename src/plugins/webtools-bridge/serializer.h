@@ -18,7 +18,7 @@ public:
 
 	static std::string	op_advertise 	( std::string topic_name , std::string id , std::string type );
 	static std::string	op_unadvertise	( std::string topic_name , std::string id );
-	static std::string	op_publish		( std::string topic_name , std::string id , std::string msg_in_json);
+	static std::string	op_publish		( std::string topic_name , std::string id , bool latch ,  std::string msg_in_json);
 				
 };
 
