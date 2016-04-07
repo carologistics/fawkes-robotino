@@ -3,6 +3,18 @@
 
 #include <string>
 
+#include <core/utils/lockptr.h>
+#include <logging/logger.h>
+#include <config/config.h>
+
+#include <string>
+#include <list>
+#include <map>
+#include <set>
+
+#include <clipsmm.h>
+#include <clips/clips.h>
+
 
 class Serializer
 {
@@ -19,7 +31,8 @@ public:
 	static std::string	op_advertise 	( std::string topic_name , std::string id , std::string type );
 	static std::string	op_unadvertise	( std::string topic_name , std::string id );
 	static std::string	op_publish		( std::string topic_name , std::string id , bool latch ,  std::string msg_in_json);
-				
+
+	static std::string	serialize(CLIPS::Fact::pointer fact);
 };
 
 #endif
