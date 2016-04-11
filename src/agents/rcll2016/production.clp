@@ -495,7 +495,7 @@
   )
 )
 
-(defrule prod-remove-product-with-expired-order
+(defrule prod-remove-product-with-expired-order-from-cs
   "If we couldn't deliver a product in time and it is still in the cs, we have to clear the cs. In the same task we can fill the cs with a cap again"
   (declare (salience ?*PRIORITY-CLEAR-CS*))
   (phase PRODUCTION)
@@ -538,7 +538,42 @@
     (needed-task-lock (task-id ?task-id) (action FILL_CAP) (place ?cs))
   )
 )
-  
+
+(defrule prod-remove-product-with-expired-order-from-rs
+  "If we couldn't deliver a product in time and it is still in the rs, we have to clear the rs. In the same task we can fill the rs with a cap again"
+  (declare (salience ?*PRIORITY-CLEAR-RS*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (holding NONE)
+  (game-time $?game-time)
+  (machine (mtype RS) (produced-id ?produced-id&~0)
+           (name ?rs) (team ?team-color)
+           (state ~DOWN&~BROKEN))
+  (product
+    (id ?produced-id)
+    (product-id ?product-id)
+  )
+  ;check that the task was not rejected before
+  (not (and (task (name clear-rs) (state rejected) (id ?rej-id))
+            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-CLEAR-RS*))))
+  (order (product-id ?product-id)
+         (end ?end&:(< ?end (nth$ 1 ?game-time)))
+  )
+  =>
+  (printout t "PROD: Clear " ?rs " because the order is over" crlf)
+  (bind ?task-id (random-id))
+  (assert (task (name clear-rs) (id ?task-id) (state proposed)
+                (steps (create$ (+ ?task-id 1)))
+                (priority ?*PRIORITY-CLEAR-RS*))
+    (step (name get-output) (id (+ ?task-id 1))
+          (task-priority ?*PRIORITY-CLEAR-RS*)
+          (machine ?rs))
+    (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?rs))
+  )
+)
+ 
 (defrule prod-find-missing-mps-exploration-catch-up
   "If we have not found all mps until the production phase, we have to find them now."
   (declare (salience ?*PRIORITY-FIND-MISSING-MPS*))
