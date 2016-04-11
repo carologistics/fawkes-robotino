@@ -2,18 +2,7 @@
 #define _UTIL_SERIALIZER_
 
 #include <string>
-
-#include <core/utils/lockptr.h>
-#include <logging/logger.h>
-#include <config/config.h>
-
-#include <string>
-#include <list>
-#include <map>
-#include <set>
-
 #include <clipsmm.h>
-#include <clips/clips.h>
 
 
 class Serializer
