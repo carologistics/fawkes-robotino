@@ -47,8 +47,8 @@
 #include <fvclassifiers/simple.h>
 
 #include <fvutils/adapters/iplimage.h>
-#include "opencv2/objdetect/objdetect.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/objdetect/objdetect.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 //interface
 #include <interfaces/TagVisionInterface.h>

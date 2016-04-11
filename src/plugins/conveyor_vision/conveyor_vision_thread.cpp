@@ -191,7 +191,7 @@ ConveyorVisionThread::loop()
     fv_cam->dispose_buffer();
     //convert img
     firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
-    frame = Mat(ipl);
+    frame = cvarrToMat(ipl);
     detect();
     mps_conveyor_if_->write();
     //get marker from img
