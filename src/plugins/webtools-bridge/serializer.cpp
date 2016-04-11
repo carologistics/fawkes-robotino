@@ -201,7 +201,7 @@ Serializer::serialize(CLIPS::Fact::pointer fact)
 	{
 		for(std::vector<std::string>::iterator it = slot_names.begin(); slot_names.size() > 0 && it != slot_names.end(); it++)
 		{
-			writer.String( it->c_str() , (SizeType) it->length() );//write slot name as a key
+			writer.String( it->c_str() , (SizeType) it->length() );//write slot name as a key for json pair
 			
 			CLIPS::Values values= fact->slot_value( *it );  
 			bool multifield= values.size()>0; 
@@ -222,7 +222,7 @@ Serializer::serialize(CLIPS::Fact::pointer fact)
 		}
 	}else
 	{//ordered fact
-		writer.String("fields" );//key used to refrence the fact's feilds
+		writer.String("fields" );//wirte the json pair key that will be used to refrence the feilds of the fact
 		CLIPS::Values values= fact->slot_value("");
 		writer.StartArray();	//field values will be stored in a json array
 		for(CLIPS::Values::iterator it = values.begin(); it != values.end(); it++)
