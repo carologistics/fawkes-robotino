@@ -20,10 +20,8 @@
 
 #include <string>
 #include <unordered_map>
-//#include <tf/types.h>
-//#include <interfaces/Position3DInterface.h>
 #include <interfaces/NavGraphWithMPSGeneratorInterface.h>
-#include <tf/types.h>
+
 #include "gazsim_navgraph_generator_thread.h"
 
 using namespace fawkes;
@@ -35,9 +33,9 @@ using namespace fawkes;
 
 /** Constructor. */
 GazsimNavgraphGeneratorThread::GazsimNavgraphGeneratorThread() :
-		Thread("GazsimNavgraphGeneratorThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
-				BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE), task_finished_(false), computation_is_running_(
-				false) {
+		Thread("GazsimNavgraphGeneratorThread", Thread::OPMODE_WAITFORWAKEUP),
+		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE),
+		task_finished_(false), computation_is_running_(false) {
 }
 
 void GazsimNavgraphGeneratorThread::init() {
@@ -45,21 +43,22 @@ void GazsimNavgraphGeneratorThread::init() {
 
 	//read config values
 	tags_ = config->get_strings("/gazsim/navgraph-generator/all-active-tags");
-	related_mps_ = config->get_strings("/gazsim/navgraph-generator/related-mps");
+	related_mps_ = config->get_strings(
+	        "/gazsim/navgraph-generator/related-mps");
 	nav_gen_if_name_ = config->get_string(
-			"/gazsim/navgraph-generator/nav-gen-if-name");
+	        "/gazsim/navgraph-generator/nav-gen-if-name");
 
 	//open interfaces
-	//TODO error reports, that we need writing access however we cant, because somebody else has
-	//	it also should be sufficient to open for reading, in the first place
-	nav_gen_if_ = blackboard->open_for_reading<
-			fawkes::NavGraphWithMPSGeneratorInterface>(nav_gen_if_name_.data());
+	nav_gen_if_ = blackboard
+	        ->open_for_reading<fawkes::NavGraphWithMPSGeneratorInterface>(
+	        nav_gen_if_name_.data());
 
 	//subscribing to gazebo tag messages
 	for (unsigned i = 0; i < tags_.size(); ++i)
 		subscriber_tags_.push_back(
-				gazebo_world_node->Subscribe(tags_[i],
-						&GazsimNavgraphGeneratorThread::on_tag_msg, this));
+		        gazebo_world_node->Subscribe(
+		                tags_[i], &GazsimNavgraphGeneratorThread::on_tag_msg,
+		                this));
 	tag_msgs_.clear();
 
 	//sort the mpsIDs to the tagIDs in mps_id_
@@ -75,10 +74,12 @@ void GazsimNavgraphGeneratorThread::loop() {
 		return;
 	//check if computation of navgraph is running
 	if (computation_is_running_) {
+		nav_gen_if_->read();
 		if (nav_gen_if_->is_final()) {
 			task_finished_ = true;
 			computation_is_running_ = false;
-			//TODO close interface nav_gen_if_
+			blackboard->close(nav_gen_if_);
+			logger->log_info(name(), "Navgraph is generated!");
 		}
 		return;
 	}
@@ -87,15 +88,28 @@ void GazsimNavgraphGeneratorThread::loop() {
 		return;
 	//send the position of all tags
 	for (std::map<int, gazebo::msgs::Pose>::iterator it = tag_msgs_.begin();
-			it != tag_msgs_.end(); ++it) {
-		logger->log_info(name(), "tag %i gets sent to NavgraphGenerator.",
-				(*it).first);
+	        it != tag_msgs_.end(); ++it) {
+//		logger->log_info(name(), "tag %i gets sent to NavgraphGenerator.",
+//		                 (*it).first);
 		send_station_msg((*it).first, (*it).second);
 	}
-	nav_gen_if_->msgq_enqueue(
-			new NavGraphWithMPSGeneratorInterface::ComputeMessage());
+	bool* allFalse = new bool[24];
+	for (int i = 0; i < 24; ++i)
+		allFalse[i] = false;
+	NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage* delete_explo_navgraph_msg =
+	        new NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage(allFalse);
+	//delete_explo_navgraph_msg->set_zones(allFalse);
+	nav_gen_if_->msgq_enqueue(delete_explo_navgraph_msg);
+	compute_msg_ = new NavGraphWithMPSGeneratorInterface::ComputeMessage();
+	nav_gen_if_->msgq_enqueue(compute_msg_);
 	computation_is_running_ = true;
-	//TODO unsubscribe all subcribers in subscriber_tags_
+
+	logger->log_info(name(), "Start unsubscribing!");
+	while (!subscriber_tags_.empty()) {
+		subscriber_tags_.back()->Unsubscribe();
+		subscriber_tags_.pop_back();
+	}
+	logger->log_info(name(), "Finished unsubscribing!");
 }
 
 void GazsimNavgraphGeneratorThread::on_tag_msg(ConstPosePtr &msg) {
@@ -107,8 +121,8 @@ void GazsimNavgraphGeneratorThread::on_tag_msg(ConstPosePtr &msg) {
 void GazsimNavgraphGeneratorThread::get_mpsID_by_tagID() {
 	if (tags_.size() != related_mps_.size()) {
 		logger->log_error(name(),
-				"There are %i tags defined, but %i!=%i related mps!", tags_.size(),
-				related_mps_.size(), tags_.size());
+		                  "There are %i tags defined, but %i!=%i related mps!",
+		                  tags_.size(), related_mps_.size(), tags_.size());
 		return;
 	}
 	for (unsigned i = 0; i < tags_.size(); ++i) {
@@ -116,16 +130,16 @@ void GazsimNavgraphGeneratorThread::get_mpsID_by_tagID() {
 		int slash = tags_[i].substr(underscore + 1).find('/');
 		int id = std::atoi(tags_[i].substr(underscore + 1, slash).data());
 		mps_id_[id] = related_mps_[i];
-		logger->log_info(name(),"Full tag name:  %s", tags_[i].data());
-		logger->log_info(name(),"Extracted id:   %i", id);
-		logger->log_info(name(),"Related MPS-ID: %s", mps_id_[id].data());
+//		logger->log_info(name(), "Full tag name:  %s", tags_[i].data());
+//		logger->log_info(name(), "Extracted id:   %i", id);
+//		logger->log_info(name(), "Related MPS-ID: %s", mps_id_[id].data());
 	}
 }
 
 void GazsimNavgraphGeneratorThread::send_station_msg(int id,
                                                      gazebo::msgs::Pose pose) {
 	NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage* stationMsg =
-			new NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage();
+	        new NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage();
 	stationMsg->set_id(mps_id_[id].data());
 	stationMsg->set_side(NavGraphWithMPSGeneratorInterface::Side::INPUT);
 	stationMsg->set_frame("/map");
@@ -136,11 +150,12 @@ void GazsimNavgraphGeneratorThread::send_station_msg(int id,
 	stationMsg->set_tag_rotation(1, pose.orientation().y());
 	stationMsg->set_tag_rotation(2, pose.orientation().z());
 	stationMsg->set_tag_rotation(3, pose.orientation().w());
-	double tag_orientation=tf::get_yaw(tf::Quaternion(pose.orientation().x(),pose.orientation().y(),
-	                                                  pose.orientation().z(),pose.orientation().w()));
-	logger->log_info(name(),"ID:%i",id);
-	logger->log_info(name(),"Name:%s",mps_id_[id].data());
-	logger->log_info(name(),"Position:%f,%f,%f",pose.position().x(),pose.position().y(),pose.position().z());
-	logger->log_info(name(),"Rotation:%f",tag_orientation);
+	/*
+	 double tag_orientation=fawkes::tf::get_yaw(pose);
+	 logger->log_info(name(),"ID:%i",id);
+	 logger->log_info(name(),"Name:%s",mps_id_[id].data());
+	 logger->log_info(name(),"Position:%f,%f,%f",pose.position().x(),pose.position().y(),pose.position().z());
+	 logger->log_info(name(),"Rotation:%f",tag_orientation);
+	 */
 	nav_gen_if_->msgq_enqueue(stationMsg);
 }

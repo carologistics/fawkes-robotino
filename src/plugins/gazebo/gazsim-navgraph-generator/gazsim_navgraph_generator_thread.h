@@ -22,7 +22,7 @@
 #define __PLUGINS_GAZSIM_NAVGRAPH_GENERATOR_THREAD_H_
 
 #include <core/threading/thread.h>
-//#include <aspect/clock.h>	//TODO corresponds to next TODO
+//#include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <aspect/blackboard.h>
@@ -33,14 +33,12 @@
 #include <plugins/gazebo/aspect/gazebo.h>
 
 class GazsimNavgraphGeneratorThread:
-	public fawkes::Thread,
-	//public fawkes::ClockAspect,	//TODO is this needed? currently not, but maybe one should always implement a timeout?
-	public fawkes::LoggingAspect,
-	public fawkes::ConfigurableAspect,
-	public fawkes::BlackBoardAspect,
-	public fawkes::BlockedTimingAspect,
-	public fawkes::GazeboAspect
-{
+        public fawkes::Thread,
+        //public fawkes::ClockAspect,
+        public fawkes::LoggingAspect,
+        public fawkes::ConfigurableAspect,
+        public fawkes::BlackBoardAspect, public fawkes::BlockedTimingAspect,
+        public fawkes::GazeboAspect {
 public:
 	GazsimNavgraphGeneratorThread();
 
@@ -51,6 +49,7 @@ private:
 	//controlling flags
 	bool task_finished_;
 	bool computation_is_running_;
+	fawkes::NavGraphWithMPSGeneratorInterface::ComputeMessage* compute_msg_;
 
 	//Subscribers to receive tag positions from gazebo
 	std::vector<std::string> tags_;
@@ -62,13 +61,13 @@ private:
 	fawkes::NavGraphWithMPSGeneratorInterface *nav_gen_if_;
 
 	//list of poses of the tags
-	std::map<int,gazebo::msgs::Pose> tag_msgs_;
+	std::map<int, gazebo::msgs::Pose> tag_msgs_;
 
 	//handler function for incoming messages about the tag positions
 	void on_tag_msg(ConstPosePtr &msg);
 
 	//extract mpsID ordered by tagID
-	std::map<int,std::string> mps_id_;
+	std::map<int, std::string> mps_id_;
 	void get_mpsID_by_tagID();
 
 	//send station msg with pose information to navgraph generator
