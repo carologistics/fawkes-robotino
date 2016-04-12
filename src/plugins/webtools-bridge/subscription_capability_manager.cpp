@@ -147,8 +147,11 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 			if(event_type == EventType::TERMINATE )
 			{
 				//construct the prefixed_name from info in the subscription
-				//std::string prefixed_topic_name="/"+subscription->get_processor_prefix()+"/"+subscription->get_topic_name();
-				std::string prefixed_topic_name=subscription->get_topic_name();
+				std::string prefixed_topic_name;
+				if(subscription->get_processor_prefix() == "/") //temp fix to accomodiate both prefixes 
+					prefixed_topic_name=subscription->get_topic_name();
+				else
+					prefixed_topic_name = subscription->get_processor_prefix()+"/"+subscription->get_topic_name();
 				
 				//does the subscription exist (unique per topic_name)
 				if (topic_Subscription_.find(prefixed_topic_name) != topic_Subscription_.end())

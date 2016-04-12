@@ -352,7 +352,6 @@ Subscription::publish()
 
 	if( is_active() )
 	{
-		std::string prefiexed_topic_name=topic_name_;
 	
 		for( it_subscriptions_ = subscriptions_.begin() 
 			; it_subscriptions_ != subscriptions_.end()
@@ -380,7 +379,7 @@ Subscription::publish()
 			if (time_passed >= throttle_rate) {
 	
 				std::string complete_json_msg = serialize("publish"
-												, prefiexed_topic_name
+												, topic_name_
 												, id);
 	
 				//Only stamp if it was sent
@@ -404,10 +403,12 @@ Subscription::publish()
 //Serialization could be moved later to a Protocol hadleing util
 std::string
 Subscription::serialize(std::string op
-						, std::string prefiexed_topic_name
+						, std::string topic_name
 						, std::string id)
 {
 	//MutexLocker ml(mutex_);
+
+	std::string prefixed_topic_name= processor_prefix_+"/"+topic_name_;//not always the cast. (for its ros /topic_name)
 
 	StringBuffer s;
   	Writer<StringBuffer> writer(s);      
@@ -420,7 +421,7 @@ Subscription::serialize(std::string op
 	writer.String(id.c_str(),(SizeType)id.length());
 	
 	writer.String("topic");
-	writer.String(prefiexed_topic_name.c_str(), (SizeType)prefiexed_topic_name.length());
+	writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
 	
 	writer.String("msg");
 	writer.StartObject();
