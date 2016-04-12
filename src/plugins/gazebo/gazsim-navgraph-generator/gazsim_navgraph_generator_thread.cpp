@@ -139,7 +139,7 @@ void GazsimNavgraphGeneratorThread::send_station_msg(int id,
                                                      gazebo::msgs::Pose pose) {
 	NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage* stationMsg =
 	        new NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage();
-	stationMsg->set_id(mps_id_[id].data());
+	stationMsg->set_name(mps_id_[id].data());
 	stationMsg->set_side(NavGraphWithMPSGeneratorInterface::Side::INPUT);
 	stationMsg->set_frame("/map");
 	stationMsg->set_tag_translation(0, pose.position().x());
