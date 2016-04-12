@@ -106,7 +106,6 @@ void GazsimNavgraphGeneratorThread::loop() {
 
 	logger->log_info(name(), "Start unsubscribing!");
 	while (!subscriber_tags_.empty()) {
-		subscriber_tags_.back()->Unsubscribe();
 		subscriber_tags_.pop_back();
 	}
 	logger->log_info(name(), "Finished unsubscribing!");
