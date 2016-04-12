@@ -235,9 +235,11 @@ BlackBoardSubscription::finalize_impl()
 
 std::string  
 BlackBoardSubscription::serialize(std::string op
-                                , std::string prefiexed_topic_name
+                                , std::string topic_name
                                 , std::string id)
 {
+
+  std::string prefixed_topic_name= processor_prefix_+"/"+topic_name;
 
   //Default 'publish' header
   StringBuffer s;
@@ -251,7 +253,7 @@ BlackBoardSubscription::serialize(std::string op
   writer.String(id.c_str(),(SizeType)id.length());
   
   writer.String("topic");
-  writer.String(prefiexed_topic_name.c_str(), (SizeType)prefiexed_topic_name.length());
+  writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
   
   writer.String("msg");
 
