@@ -270,7 +270,8 @@
     then
     (assert (lock (type RELEASE_RVCD) (agent ?a) (resource ?r)))
   )
-  (delayed-do-for-all-facts ((?accept lock)) (and (eq ?accept:type ACCEPT) (eq ?accept:agent ?a) (eq ?accept:resource ?r))
+  ; retract all previous accepts and refuses
+  (delayed-do-for-all-facts ((?accept lock)) (and (or (eq ?accept:type ACCEPT) (eq ?accept:type REFUSE)) (eq ?accept:agent ?a) (eq ?accept:resource ?r))
     (retract ?accept)
   )
 )
