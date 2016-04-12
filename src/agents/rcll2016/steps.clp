@@ -119,24 +119,24 @@
   (synced-modify ?of in-production (- ?ip 1) in-delivery (+ ?id 1))
 )
 
-(defrule step-deliver-abort
-  (declare (salience ?*PRIORITY-STEP-FAILED*))
-  (phase PRODUCTION)
-  (game-time $?game-time)
-  (task (name deliver) (state running))
-  ?step <- (step (name get-output|insert) (state running))
-  ?state <- (state SKILL-EXECUTION)
-  (holding ?produced-id)
-  (product (id ?produced-id) (product-id ?product-id))
-  (order (product-id ?product-id) (in-production ?ip)
-         (end ?end&:(< ?end (- (nth$ 1 ?game-time) ?*DELIVER-ABORT-TIMEOUT*))))
-  ?ste <- (skill-to-execute (state running))
-  =>
-  (printout warn "Abort deliver because the order has expired" crlf)
-  (retract ?state ?ste)
-  (assert (state STEP-FAILED))
-  (modify ?step (state failed))
-)
+;(defrule step-deliver-abort
+;  (declare (salience ?*PRIORITY-STEP-FAILED*))
+;  (phase PRODUCTION)
+;  (game-time $?game-time)
+;  (task (name deliver) (state running))
+;  ?step <- (step (name get-output|insert) (state running))
+;  ?state <- (state SKILL-EXECUTION)
+;  (holding ?produced-id)
+;  (product (id ?produced-id) (product-id ?product-id))
+;  (order (product-id ?product-id) (in-production ?ip)
+;         (end ?end&:(< ?end (- (nth$ 1 ?game-time) ?*DELIVER-ABORT-TIMEOUT*))))
+;  ?ste <- (skill-to-execute (state running))
+;  =>
+;  (printout warn "Abort deliver because the order has expired" crlf)
+;  (retract ?state ?ste)
+;  (assert (state STEP-FAILED))
+;  (modify ?step (state failed))
+;)
 
 (defrule step-discard-unknown-start
   "Open gripper to discard unknown base"
