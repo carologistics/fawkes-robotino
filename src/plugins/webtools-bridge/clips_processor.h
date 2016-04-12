@@ -24,12 +24,10 @@
 #define __PLUGINS_CLIPS_PROCESSOR_H_
 
 #include <string>
-#include <list>
-#include <map>
+
+#include <core/utils/lockptr.h>
 
 #include <config/config.h>
-#include <core/exceptions/system.h>
-#include <core/threading/mutex_locker.h>
 
 #include "bridge_processor.h"
 #include "subscription_capability.h"
@@ -38,6 +36,7 @@ namespace fawkes {
   class Clock;
   class Logger;
   class CLIPSEnvManager;
+  class Mutex;
 }
 
 namespace CLIPS {
@@ -54,7 +53,8 @@ class ClipsSubscription
   public:
     ClipsSubscription(std::string topic_name 
                           , std::string processor_prefix 
-                          , fawkes::Clock *clock);
+                          , fawkes::Clock *clock
+                          , fawkes::LockPtr<CLIPS::Environment> &clips);
 
     ~ClipsSubscription();
 
@@ -67,7 +67,7 @@ class ClipsSubscription
                           , std::string id);
 
   private:
-  //TO Be filled soon
+  fawkes::LockPtr<CLIPS::Environment> clips_;
 
 };
 
@@ -83,10 +83,11 @@ class ClipsProcessor
                           , fawkes::Logger *logger
                           , fawkes::Configuration *config
                           , fawkes::Clock *clock
-                          , fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr)
-;
+                          , fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr);
 
-  virtual ~ClipsProcessor();
+  virtual ~ClipsProcessor();//why did i leave this virtual. does it make sense
+
+  void init();
 
   std::shared_ptr<Subscription>  subscribe   ( std::string topic_name 
                                               , std::string id    
@@ -106,6 +107,9 @@ private:
   fawkes::Clock          *clock_;
 
   fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
+  fawkes::LockPtr<CLIPS::Environment>      clips_;
+
+  std::string env_name_;
 };
 
 
