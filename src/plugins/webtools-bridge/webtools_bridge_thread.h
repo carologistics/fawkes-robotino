@@ -48,7 +48,8 @@ class WebtoolsBridgeThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
-  public fawkes::BlockedTimingAspect
+  public fawkes::BlockedTimingAspect,
+  public fawkes::CLIPSManagerAspect
 {
  public:
   WebtoolsBridgeThread();
