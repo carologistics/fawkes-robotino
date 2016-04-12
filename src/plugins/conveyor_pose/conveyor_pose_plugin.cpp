@@ -1,9 +1,9 @@
 
 /***************************************************************************
- *  plugin_template_plugin.cpp - Empty example
+ *  conveyor_pose_plugin.cpp -
  *
- *  Created: Mi 23. Mai 18:07:14 CEST 2012
- *  Copyright  2012  Daniel Ewert
+ *  Created: Thr 12. April 16:28:00 CEST 2016
+ *  Copyright  2016 Tobias Neumann
  *
  ****************************************************************************/
 
@@ -26,8 +26,8 @@
 
 using namespace fawkes;
 
-/** Template! Makes the robotino move forward for 3 seconds
- * @author Daniel Ewert
+/** Conveyor pose, calculates the pose of the conveyor from a pointcloud (from intel real sense)
+ * @author Tobias Neumann
  */
 class PCLLoopPlugin : public fawkes::Plugin
 {

@@ -1,8 +1,8 @@
 /***************************************************************************
- *  plugin_template_thread.cpp - template thread
+ *  conveyor_pose_thread.cpp - conveyor_pose thread
  *
- *  Created: Mi 23. Mai 17:44:14 CEST 2012
- *  Copyright  2012 Daniel Ewert 
+ *  Created: Thr 12. April 16:28:00 CEST 2016
+ *  Copyright  2016 Tobias Neumann
  *
  ****************************************************************************/
 
