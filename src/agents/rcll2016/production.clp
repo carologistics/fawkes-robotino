@@ -100,7 +100,7 @@
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
   (holding NONE)
-  (machine (mtype RS) (incoming $?i&~:(member$ PREFILL_RS ?i))
+  (machine (mtype RS) (incoming $?i&~:(member$ PREFILL-RS ?i))
     (name ?rs) (team ?team-color)
     (state ~DOWN&~BROKEN))
   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
