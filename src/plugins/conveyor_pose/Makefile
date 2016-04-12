@@ -23,6 +23,8 @@ include $(BUILDSYSDIR)/pcl.mk
 include $(BUILDSYSDIR)/boost.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
+REQUIRED_PCL_LIBS = sample_consensus segmentation filters surface features
+
 #The necessary libraries your plugin needs.
 LIBS_conveyor_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkestf fawkesblackboard fawkesinterface fawkespcl_utils
@@ -31,8 +33,8 @@ OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o
 
 OBJS_all = $(OBJS_conveyor_pose)
 
-CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFFLAGS_conveyor_pose)
-LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL)
+CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFFLAGS_conveyor_pose) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
+LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
 
 #names of the plugins you want to build
 PLUGINS_all = $(PLUGINDIR)/conveyor-pose.$(SOEXT)

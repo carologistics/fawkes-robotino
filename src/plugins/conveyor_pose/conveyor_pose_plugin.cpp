@@ -29,18 +29,18 @@ using namespace fawkes;
 /** Conveyor pose, calculates the pose of the conveyor from a pointcloud (from intel real sense)
  * @author Tobias Neumann
  */
-class PCLLoopPlugin : public fawkes::Plugin
+class ConveyorPosePlugin : public fawkes::Plugin
 {
  public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  PCLLoopPlugin(Configuration *config)
+  ConveyorPosePlugin(Configuration *config)
     : Plugin(config)
   {
-    thread_list.push_back(new PCLLoopThread());
+    thread_list.push_back(new ConveyorPoseThread());
   }
 };
 
-PLUGIN_DESCRIPTION("PCL loop")
-EXPORT_PLUGIN(PCLLoopPlugin)
+PLUGIN_DESCRIPTION("Plugin to detec the conveyor beld from a pointcloud")
+EXPORT_PLUGIN(ConveyorPosePlugin)

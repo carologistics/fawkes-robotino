@@ -32,7 +32,12 @@
 
 #include <string>
 
-class PCLLoopThread
+typedef pcl::PointXYZ Point;
+typedef pcl::PointCloud<Point> Cloud;
+typedef typename Cloud::Ptr CloudPtr;
+typedef typename Cloud::ConstPtr CloudConstPtr;
+
+class ConveyorPoseThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
   public fawkes::LoggingAspect,
@@ -40,21 +45,37 @@ class PCLLoopThread
   public fawkes::BlackBoardAspect,
   public fawkes::PointCloudAspect
 {
+private:
+  std::string cloud_in_name_;
+  bool cloud_in_registered_;
+  pcl::PCLHeader header_;
+  fawkes::RefPtr<const Cloud> cloud_in_;
+  fawkes::RefPtr<Cloud> cloud_out_plane_;
+  fawkes::RefPtr<Cloud> cloud_out_result_;
 
- public:
-  PCLLoopThread();
+ /**
+  * check if the pointcloud is available
+  */
+ bool pc_in_check();
+
+ bool is_inbetween(double a, double b, double val);
+ CloudPtr cloud_remove_gripper(CloudPtr in);
+ CloudPtr cloud_remove_offset_to_front(CloudPtr in);
+ CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
+ CloudPtr cloud_cluster(CloudPtr in);
+ CloudPtr vg(CloudPtr in);
+ void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
+
+protected:
+  virtual void run() { Thread::run(); }
+
+public:
+  ConveyorPoseThread();
 
   virtual void init();
   virtual void loop();
   virtual void finalize();
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected:
-  virtual void run() { Thread::run(); }
-
- private:
-  fawkes::RefPtr<pcl::PointCloud<pcl::PointXYZ>> pcl_;
-  fawkes::RefPtr<const pcl::PointCloud<pcl::PointXYZ>> ros_cloud_;
 };
 
 
