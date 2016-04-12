@@ -21,25 +21,23 @@
 
 #include "blackboard_processor.h"
 
+#include <core/exceptions/system.h>
 #include <core/exceptions/software.h>
-#include <core/threading/mutex_locker.h>
+
 #include <utils/misc/string_conversions.h>
 #include <utils/time/time.h>
 #include <utils/misc/string_split.h>
 
 #include <logging/logger.h>
-
 #include <blackboard/blackboard.h>
 
 #include <interface/interface.h>
 #include <interface/field_iterator.h>
 #include <interface/interface_info.h>
 
-
-#include "rapidjson/writer.h"
+#include "rapidjson/writer.h"//TODO:: be moved when serializer is complete
 #include "rapidjson/stringbuffer.h"
 
-#include <string>
 #include <cstring>
 #include <cstdlib>
 
@@ -82,6 +80,9 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
                                       , unsigned int fragment_size  
                                       , std::shared_ptr<WebSession> session)
 {
+  //TODO:: what happens if u subscribed to an interface before its posted.
+  //For now we throw an exception assuming something is wrong..but it could be that it 
+  //we're just not there yet 
 
   //Extract prefix from the name
   std::string topic_name="";

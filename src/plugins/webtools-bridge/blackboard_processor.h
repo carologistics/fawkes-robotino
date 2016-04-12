@@ -2,8 +2,7 @@
 /***************************************************************************
  *  BridgeBlackboardProcessor.h - Monitoring the CLIPS agents in LLSF via webview
  *
- *  Created: Fri May 09 16:04:13 2014
- *  Copyright  2014  Frederik Zwilling
+ *  Copyright  2016  Mostafa Gomaa
  *
  ****************************************************************************/
 
@@ -23,17 +22,11 @@
 #ifndef __PLUGINS_BLACKBOARD_PROCESSOR_H_
 #define __PLUGINS_BLACKBOARD_PROCESSOR_H_
 
-#include <config/config.h>
-
 #include <string>
-#include <list>
 #include <map>
-#include <set>
 
+#include <config/config.h>
 #include <blackboard/interface_listener.h>
-#include <interface/interface.h>
-#include <core/exceptions/system.h>
-#include <core/threading/mutex_locker.h>
 
 #include "bridge_processor.h"
 #include "subscription_capability.h"
@@ -44,6 +37,7 @@ namespace fawkes {
   class Interface;
   class Logger;
   class BlackBoardInterfaceListener;
+  class Mutex;
 }
 
 class WebSession;

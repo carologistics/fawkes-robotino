@@ -2,7 +2,7 @@
 #include <list>
 #include <memory>
 
-#include <rapidjson/document.h>
+#include <rapidjson/document.h>//To be removed from here after serialzer is moved
 #include <rapidjson/error/en.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
@@ -14,7 +14,6 @@
 #include <core/threading/mutex_locker.h>
 #include <core/exceptions/software.h>
 #include <utils/time/time.h>
-
 
 
 #include "subscription_capability.h" 
