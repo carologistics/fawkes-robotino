@@ -171,6 +171,7 @@ void TagVisionSimThread::loop()
         {
           current_vis_hist = 0;
         }
+        map_id_if_.erase(info_if_->tag_id(i));
         current_vis_hist -= visibility_history_increase_per_update_;
         tag_pos_ifs_[i]->set_visibility_history(current_vis_hist);
         tag_pos_ifs_[i]->write();
@@ -183,7 +184,7 @@ void TagVisionSimThread::loop()
     }
     info_if_->set_tags_visible(number_found_tags);
     info_if_->write();
- }
+  }
 }
 
 void TagVisionSimThread::on_tag_vision_msg(ConstPosesStampedPtr &msg)
