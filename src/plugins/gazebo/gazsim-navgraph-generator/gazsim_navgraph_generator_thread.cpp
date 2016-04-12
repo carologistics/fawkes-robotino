@@ -97,7 +97,8 @@ void GazsimNavgraphGeneratorThread::loop() {
 	for (int i = 0; i < 24; ++i)
 		allFalse[i] = false;
 	NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage* delete_explo_navgraph_msg =
-	        new NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage(allFalse);
+	        new NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage(
+	                allFalse);
 	//delete_explo_navgraph_msg->set_zones(allFalse);
 	nav_gen_if_->msgq_enqueue(delete_explo_navgraph_msg);
 	compute_msg_ = new NavGraphWithMPSGeneratorInterface::ComputeMessage();
@@ -106,6 +107,8 @@ void GazsimNavgraphGeneratorThread::loop() {
 
 	logger->log_info(name(), "Start unsubscribing!");
 	while (!subscriber_tags_.empty()) {
+		//subscriber_tags_.back()->Unsubscribe();
+		//gazebo 4.x seems to unsubscribe by deleting pointer on next line
 		subscriber_tags_.pop_back();
 	}
 	logger->log_info(name(), "Finished unsubscribing!");
@@ -114,6 +117,9 @@ void GazsimNavgraphGeneratorThread::loop() {
 void GazsimNavgraphGeneratorThread::on_tag_msg(ConstPosePtr &msg) {
 	int underscore = msg->name().find('_');
 	int id = std::atoi(msg->name().substr(underscore + 1).data());
+	if (msg->position().x() > -1 && msg->position().x() < 1
+	    && msg->position().y() < 0)
+		return;
 	tag_msgs_[id].CopyFrom(*msg);
 }
 
