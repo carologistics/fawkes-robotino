@@ -62,6 +62,9 @@ class ClipsSubscription
     void deactivate_impl();
     void finalize_impl();
 
+    void publish_loop();
+
+
     std::string   serialize(std::string op
                           , std::string topic
                           , std::string id);

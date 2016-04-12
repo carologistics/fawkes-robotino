@@ -36,6 +36,8 @@
 #include <clipsmm.h>
 #include <clips/clips.h>//am not sure i even need this ..lets see
 
+#include <thread>
+#include <unistd.h>
 
 using namespace fawkes ;
 using namespace rapidjson ;
@@ -60,6 +62,8 @@ void
 ClipsSubscription::activate_impl()
 {
 
+  std::thread t(&ClipsSubscription::publish_loop, this);
+  t.detach();
 }
 
 void
@@ -123,6 +127,13 @@ ClipsSubscription::serialize(std::string op
     
   }
   return "";
+}
+
+void
+ClipsSubscription::publish_loop()
+{
+  //sleep(100);
+  publish();
 }
 
 
@@ -229,6 +240,8 @@ ClipsProcessor::subscribe   ( std::string prefixed_topic_name
     throw e;
   }
   
+    logger_->log_info("ClipsProcessor", "DONE");
+
   return new_subscirption;
 }
 
@@ -239,3 +252,5 @@ ClipsProcessor::unsubscribe ( std::string id
 {
 
 }
+
+

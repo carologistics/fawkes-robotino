@@ -26,8 +26,14 @@
 
 #include "Web_server.cpp"
 #include "bridge_manager.h"
+
 #include "subscription_capability_manager.h"
+#include "advertisment_capability_manager.h"
+#include "service_capability_manager.h"
+
 #include "blackboard_processor.h"
+#include "rosbridge_proxy_processor.h"
+#include "clips_processor.h"
 
 
 using namespace fawkes;
@@ -62,9 +68,21 @@ WebtoolsBridgeThread::init()
 
   std::shared_ptr<SubscriptionCapabilityManager> subscription_cpm=
                                               std::make_shared<SubscriptionCapabilityManager>();
+
+  std::shared_ptr<AdvertismentCapabilityManager> advertisment_cpm=
+                                              std::make_shared<AdvertismentCapabilityManager>();
+
+  std::shared_ptr<ServiceCapabilityManager> service_cpm=
+                                              std::make_shared<ServiceCapabilityManager>();
+
   //register capability managers
   bridge_manager_->register_operation_handler("subscribe" , subscription_cpm );
   bridge_manager_->register_operation_handler("unsubscribe" , subscription_cpm );
+
+  bridge_manager_->register_operation_handler("advertise" , advertisment_cpm );
+  bridge_manager_->register_operation_handler("unadvertise" , advertisment_cpm );
+
+  bridge_manager_->register_operation_handler("call_service" , service_cpm );
   
   //register processors
   bridge_manager_->register_processor(std::make_shared<BridgeBlackBoardProcessor> ("blackboard"
@@ -72,6 +90,21 @@ WebtoolsBridgeThread::init()
                                                                                   , config
                                                                                   , blackboard
                                                                                   , clock));
+
+  bridge_manager_->register_processor(std::make_shared<RosBridgeProxyProcessor> ("/"
+                                                                                  , logger
+                                                                                  , clock));
+
+  bridge_manager_->register_processor(std::make_shared<ClipsProcessor> ("clips"
+                                                                        , logger
+                                                                        , config
+                                                                        , clock
+                                                                        , clips_env_mgr));
+
+
+  // bridge_manager_->register_processor(std::make_shared<ClipsProcessor> ("/"
+  //                                                                       , logger
+  //                                                                       , clock));
 
   web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);  
   web_server_->run(6060);
