@@ -28,6 +28,7 @@ OPTIONS:
                   ($FAWKES_DIR/bin by default)
    -g             Run Fawkes in gdb
    -v             Run Fawkes in valgrind
+   -t             Skip Exploration and add all navgraph points
   GAZEBO:
    -e arg         Record Replay
 EOF
@@ -48,7 +49,9 @@ AGENT=
 FAWKES_BIN=$FAWKES_DIR/bin
 KEEP=
 GDB=
-while getopts “hx:c:lrm:sp:i:f:e:da4kgv” OPTION
+SKIP_EXPLORATION=
+
+while getopts “hx:c:lrm:sp:i:f:e:da4kgvt” OPTION
 do
      case $OPTION in
          h)
@@ -102,6 +105,9 @@ do
          m)
              META_PLUGIN=,$OPTARG
              ;;
+	 t)
+	     SKIP_EXPLORATION=",gazsim-navgraph-generator"
+	     ;;
 	 f)
 	     FAWKES_BIN=$OPTARG
 	     ;;
@@ -146,9 +152,9 @@ case $COMMAND in
 	$opti gzclient
 	;;
     fawkes )
-	# ulimit -c unlimited
+	ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
-	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$META_PLUGIN
+	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$META_PLUGIN$SKIP_EXPLORATION
 	$GDB $FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
 	if [ -n "$GDB" ]; then
 		echo Fawkes exited, press return to close shell
