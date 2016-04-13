@@ -86,6 +86,9 @@ ClipsSubscription::serialize(std::string op
                             , std::string topic_name
                             , std::string id)
 {
+  std::string prefixed_topic_name= processor_prefix_+"/"+topic_name;
+  std::string tmpl_name = topic_name;
+  std::string env_name_="agent";
 
   std::map<std::string, LockPtr<CLIPS::Environment>> envs =
   clips_env_mgr_->environments();
@@ -98,17 +101,14 @@ ClipsSubscription::serialize(std::string op
     else
     {
       throw fawkes::UnknownTypeException("ClipsProcessor: Environment '%s' was not found!", env_name_.c_str());
-      //say what was wrong no envs Vs Wrong name
+      //TODO:say what was wrong no envs Vs Wrong name
     }
   }
   clips_ = envs[env_name_];
-
   MutexLocker lock(clips_.objmutex_ptr()); 
-  
-  std::string prefixed_topic_name= processor_prefix_+"/"+topic_name;
-  std::string tmpl_name = topic_name;
-  
-  CLIPS::Fact::pointer fact= clips_->get_facts(); //intialize it with the first fact
+  CLIPS::Fact::pointer fact= clips_->get_facts(); //the first fact in the env
+ 
+  //does fact exist
   bool fact_found = false;
   while (fact)
   {
@@ -144,73 +144,108 @@ ClipsSubscription::serialize(std::string op
     writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
     
     writer.String("msg");
-    
-    //Serializer::serialize(fact, writer);  
-    writer.StartObject();
+    //Serilaize the all matching facts 
+    /*
+    *Non-ordered fact:
+    {fact: [
+                 { slot1: [ value1, vlaue2] , slot2:[] } , //a mathcing fact
+                 { slot1: [ value1, vlaue2] , slot2:[] } , //another mathcing fact
+            ]
+    }
 
+    *ordered fact 
+    {fact: [
+                 { fleids: [ valu1, vlaue2 , value3 ] } , //a mathcing fact
+                 { fleids: [] } ,                         //another mathcing fact 
+            ]
+    }
+
+    {fact:[]} //a predicate
+    */
+    writer.StartObject();//start of msg json
     std::string name = fact->get_template()->name();
-    writer.String("fact_name");
-    writer.String(name.c_str(),(SizeType)name.length()); //key for fact_name
+    writer.String(name.c_str(),(SizeType)name.length()); //factName: as the Key
 
-    std::vector<std::string> slot_names= fact->slot_names();
-    if(slot_names.size() > 0 )// is it a non-ordered fact 
+    writer.StartArray(); //start of fact jsons array 
+    CLIPS::Fact::pointer fact= clips_->get_facts();
+    while (fact)
     {
-      for(std::vector<std::string>::iterator it = slot_names.begin(); slot_names.size() > 0 && it != slot_names.end(); it++)
+      CLIPS::Template::pointer tmpl = fact->get_template();
+      if(tmpl->name().compare(tmpl_name) == 0)
       {
+        std::vector<std::string> slot_names= fact->slot_names();
+        bool ordered_fact = slot_names.size() == 1 && slot_names[0] == "implied" ? true : false;
+        bool predicate_fact = ordered_fact && fact->slot_value("").size() < 1 ? true : false; 
 
-        writer.String( it->c_str() , (SizeType) it->length() );//write slot name as a key for json pair
-        
-        CLIPS::Values values= fact->slot_value( *it );  
-        bool multifield= values.size()>1; 
-        if(multifield)     writer.StartArray(); // write values of slot as a json array only if slot is mutifeild
-        for(CLIPS::Values::iterator it2 = values.begin(); values.size()>0 && it2 != values.end(); it2++)
+        std::cout <<slot_names[0]<<std::endl;
+
+        //A Non-ordered Fact Serialization
+        if( ! ordered_fact )
         {
-          switch(it2->type())
+          writer.StartObject();//start of 'A' fact json   
+          for(std::vector<std::string>::iterator it = slot_names.begin(); slot_names.size() > 0 && it != slot_names.end(); it++)
           {
-          case CLIPS::TYPE_INTEGER :
-           writer.Int64(it2->as_integer());
-           break;
-          case CLIPS::TYPE_FLOAT :
-           writer.Double(it2->as_float());
-           break;
-          default :
-             writer.String( it2-> as_string().c_str() , (SizeType)it2->as_string().length() );
+            writer.String( it->c_str() , (SizeType) it->length() );// slot_name as key
+            CLIPS::Values values= fact->slot_value( *it );  
+            writer.StartArray(); // array of slot values
+            for(CLIPS::Values::iterator it2 = values.begin(); values.size()>0 && it2 != values.end(); it2++)
+            {
+              switch(it2->type())
+              {
+                case CLIPS::TYPE_INTEGER :
+                  writer.Int64(it2->as_integer());
+                  break;
+                case CLIPS::TYPE_FLOAT :
+                  writer.Double(it2->as_float());
+                  break;
+                default :
+                   writer.String( it2-> as_string().c_str() , (SizeType)it2->as_string().length() );
+              }
+            }
+            writer.EndArray(); //end slot values array
+          }
+          writer.EndObject();//end of 'one' fact json   
+        }
+
+        //An Ordered Fact Serialization
+        else
+        {
+          if(! predicate_fact )
+          {
+            writer.StartObject();//start of 'A' fact json   
+            writer.String("fields" );// key for fields array
+            writer.StartArray();  //start of fields array
+            CLIPS::Values values= fact->slot_value("");
+            for(CLIPS::Values::iterator it = values.begin(); values.size()!=0 && it != values.end() ; it++)
+            {
+               switch(it->type())
+               {
+                  case CLIPS::TYPE_INTEGER :
+                    writer.Int64(it->as_integer());
+                    break;
+                  case CLIPS::TYPE_FLOAT :
+                    writer.Double(it->as_float());
+                    break;
+                  default :
+                    writer.String( it-> as_string().c_str() , (SizeType)it->as_string().length() );
+                    break;
+               }
+            }
+            writer.EndArray();//end fields array
+            writer.EndObject();//end 'A' fact json    
           }
         }
-        if(multifield)     writer.EndArray();
       }
+      fact = fact->next();
     }
-    else
-    {//ordered fact
-      std::cout << "ordered"<<std::endl;
-      writer.String("fields" );//wirte the json pair key that will be used to refrence the feilds of the fact
-      CLIPS::Values values= fact->slot_value("");
-      writer.StartArray();  //field values will be stored in a json array
-      for(CLIPS::Values::iterator it = values.begin(); values.size()!=0 && it != values.end() ; it++)
-      {
-         switch(it->type())
-         {
-           case CLIPS::TYPE_INTEGER :
-            writer.Int(it->as_integer());
-            break;
-           case CLIPS::TYPE_FLOAT :
-            writer.Double(it->as_float());
-            break;
-           default :
-            writer.String( it-> as_string().c_str() , (SizeType)it->as_string().length() );
-            break;
-         }
-      }
-      writer.EndArray();
-    }
-
-    writer.EndObject();
+    
+    writer.EndArray();//end of fact jsons array 
+    writer.EndObject();//End of msg json
 
     writer.EndObject();//End of complete Json_msg 
     
     std::cout << s.GetString()<<std::endl;
     return s.GetString();
-    
   }
 }
 
