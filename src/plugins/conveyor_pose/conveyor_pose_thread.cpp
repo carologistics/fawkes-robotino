@@ -49,6 +49,8 @@
 #include <pcl/common/distances.h>
 #include <pcl/registration/distances.h>
 
+#include <tf/types.h>
+
 #include <cmath>
 
 using namespace fawkes;
@@ -61,7 +63,8 @@ using namespace fawkes;
 /** Constructor. */
 ConveyorPoseThread::ConveyorPoseThread() :
 		Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP),
-		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
+		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
+		fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
 {
 
 }
@@ -83,11 +86,14 @@ ConveyorPoseThread::init()
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("/conveyor-pose");
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
+
+  visualisation_ = new Visualisation(rosnode);
 }
 
 void
 ConveyorPoseThread::finalize()
 {
+  delete visualisation_;
   blackboard->close(bb_enable_switch_);
 }
 
@@ -97,6 +103,7 @@ ConveyorPoseThread::loop()
   bb_switch_is_enabled();
   if ( ! cfg_enable_switch_ ) { return; }
   if ( ! pc_in_check() ) { return; }
+
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
   CloudPtr cloud_pt = cloud_remove_gripper(cloud_in);
@@ -112,18 +119,13 @@ ConveyorPoseThread::loop()
   // get centroid
   Eigen::Vector4f centroid;
   pcl::compute3DCentroid<Point, float>(*biggest, centroid);
-//  logger->log_info(name(), "%lf, %lf, %lf", centroid(0), centroid(1), centroid(2));
-//
-//  // just viz stuff from here
-//  visualization_msgs::MarkerArray ma;
-//  // add arrow normal
-//  visualization_msgs::Marker arrow = draw_normal(header, centroid, coeff);
-//  ma.markers.push_back(arrow);
-//  // add plane
-//  visualization_msgs::Marker plane = draw_plane(header, centroid, coeff);
-//  ma.markers.push_back(plane);
-//  pub_markers_.publish(ma);
 
+  Eigen::Vector3f normal;
+  normal(0) = coeff->values[0];
+  normal(1) = coeff->values[1];
+  normal(2) = coeff->values[2];
+  tf_send(centroid, normal);
+  visualisation_->marker_draw(header_, centroid, coeff);
 }
 
 bool
@@ -313,7 +315,38 @@ ConveyorPoseThread::bb_switch_is_enabled()
   cfg_enable_switch_ = rv;
 }
 
+void
+ConveyorPoseThread::tf_send(Eigen::Vector4f centroid, Eigen::Vector3f normal)
+{
+  fawkes::tf::StampedTransform transform;
 
+  transform.frame_id = header_.frame_id;
+  transform.child_frame_id = "conveyor";
+  // TODO use time of header, just don't works with bagfiles
+//  transform.stamp = fawkes::Time((long)header_.stamp);
+
+  fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
+
+  Eigen::Vector3f tf_orign;
+  tf_orign(0) = 1;
+  tf_orign(1) = 0;
+  tf_orign(2) = 0;
+  Eigen::Quaternion<float> q;
+  q.setFromTwoVectors(tf_orign, normal);
+  Eigen::Quaternion<float> q_offset;
+  Eigen::AngleAxisf rollAngle(0, Eigen::Vector3f::UnitZ());
+  Eigen::AngleAxisf yawAngle(0, Eigen::Vector3f::UnitY());
+  Eigen::AngleAxisf pitchAngle(1.57, Eigen::Vector3f::UnitX());
+  q_offset = rollAngle * yawAngle * pitchAngle;
+  q = q * q_offset;
+
+  fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
+
+  transform.setOrigin(origin);
+  transform.setRotation(rot);
+
+  tf_publisher->send_transform(transform);
+}
 
 
 

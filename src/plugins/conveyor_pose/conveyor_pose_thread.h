@@ -29,8 +29,13 @@
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/pointcloud.h>
+#include <aspect/tf.h>
+
+#include <plugins/ros/aspect/ros.h>
 
 #include <interfaces/SwitchInterface.h>
+
+#include "visualisation.hpp"
 
 #include <string>
 
@@ -45,9 +50,13 @@ class ConveyorPoseThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
-  public fawkes::PointCloudAspect
+  public fawkes::PointCloudAspect,
+  public fawkes::ROSAspect,
+  public fawkes::TransformAspect
 {
 private:
+  Visualisation * visualisation_;
+
   std::string cloud_in_name_;
   bool cloud_in_registered_;
   pcl::PCLHeader header_;
@@ -77,6 +86,8 @@ private:
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
  void bb_switch_is_enabled();
+
+ void tf_send(Eigen::Vector4f centroid, Eigen::Vector3f normal);
 
 protected:
   virtual void run() { Thread::run(); }
