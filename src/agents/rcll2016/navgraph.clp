@@ -201,3 +201,28 @@
   )
   (assert (place-waitpoint-assignment (place (sym-cat ?p)) (waitpoint ?nearest-wp)))
 )
+
+(defrule navgraph-remove-exp-graph-when-not-needed-anymore
+  "When the explration is finished and we have found all machines, we can remove left exploration points"
+  (phase PRODUCTION)
+  (not (exp-graph-removed))
+  (forall (machine (name ?mps))
+          (found-tag (name ?mps)))
+  =>
+  (printout t "Removing all exploration points" crlf)
+  (assert (exp-graph-removed))
+
+  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetExplorationZonesMessage"))
+  (blackboard-set-msg-multifield ?msg "zones" (create-multifield-with-length-and-entry 24 FALSE))
+  (printout t "Setting Zones still to explore: " (create-multifield-with-length-and-entry 24 FALSE) crlf)
+  (blackboard-send-msg ?msg)
+  
+  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
+  (bind ?compute-msg-id (blackboard-send-msg ?msg))
+    
+  ; save the last compute-msg-id to know when it was processed
+  (do-for-all-facts ((?lncm last-navgraph-compute-msg)) TRUE
+                    (retract ?lncm)
+                    )
+  (assert (last-navgraph-compute-msg (id ?compute-msg-id)))
+)
