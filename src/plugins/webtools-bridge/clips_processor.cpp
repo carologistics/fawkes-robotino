@@ -29,7 +29,7 @@
 
 #include <logging/logger.h>
 #include <core/threading/mutex_locker.h>
- #include <core/exceptions/system.h>
+#include <core/exceptions/system.h>
 #include <core/exceptions/software.h>
 #include <plugins/clips/aspect/clips_env_manager.h>
 
@@ -38,6 +38,7 @@
 
 #include <thread>
 #include <unistd.h>
+#include <iostream>
 
 using namespace fawkes ;
 using namespace rapidjson ;
@@ -45,10 +46,13 @@ using namespace rapidjson ;
 
 ClipsSubscription::ClipsSubscription(std::string topic_name 
                           , std::string processor_prefix 
+                          , fawkes::Logger *logger
                           , fawkes::Clock *clock
-                          , fawkes::LockPtr<CLIPS::Environment> &clips)
-: Subscription(topic_name,processor_prefix, clock)
+                          , fawkes::LockPtr<CLIPS::Environment> &clips
+                          , fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr)
+: Subscription(topic_name,processor_prefix, logger ,clock)
 , clips_(clips)
+, clips_env_mgr_(clips_env_mgr)
 {
 
 }
@@ -60,8 +64,7 @@ ClipsSubscription::~ClipsSubscription()
 
 void
 ClipsSubscription::activate_impl()
-{
-
+{ 
   std::thread t(&ClipsSubscription::publish_loop, this);
   t.detach();
 }
@@ -84,10 +87,27 @@ ClipsSubscription::serialize(std::string op
                             , std::string id)
 {
 
-  std::string prefixed_topic_name= processor_prefix_+"/"+topic_name;
-  std::string tmpl_name = topic_name;
+  std::map<std::string, LockPtr<CLIPS::Environment>> envs =
+  clips_env_mgr_->environments();
+  if (envs.find(env_name_) == envs.end()) 
+  {
+    if (envs.size() == 1)
+    { // if there is only one just select it
+      env_name_ = envs.begin()->first;
+    }
+    else
+    {
+      throw fawkes::UnknownTypeException("ClipsProcessor: Environment '%s' was not found!", env_name_.c_str());
+      //say what was wrong no envs Vs Wrong name
+    }
+  }
+  clips_ = envs[env_name_];
 
   MutexLocker lock(clips_.objmutex_ptr()); 
+  
+  std::string prefixed_topic_name= processor_prefix_+"/"+topic_name;
+  std::string tmpl_name = topic_name;
+  
   CLIPS::Fact::pointer fact= clips_->get_facts(); //intialize it with the first fact
   bool fact_found = false;
   while (fact)
@@ -96,12 +116,18 @@ ClipsSubscription::serialize(std::string op
     if(tmpl->name().compare(tmpl_name) == 0)
     {
       fact_found= true;
+      std::cout << "found" << std::endl;
       break;
     }
     fact = fact->next();
   }
 
-  if(fact_found)
+  if(! fact_found)
+  {
+    logger_->log_info("ClipsProcessor", "couldn't find fact with template name %s for now", tmpl_name.c_str());
+    return "";
+  }
+  else
   {
     //Default 'publish' header
     StringBuffer s;
@@ -119,21 +145,86 @@ ClipsSubscription::serialize(std::string op
     
     writer.String("msg");
     
-    Serializer::serialize(fact);
+    //Serializer::serialize(fact, writer);  
+    writer.StartObject();
+
+    std::string name = fact->get_template()->name();
+    writer.String("fact_name");
+    writer.String(name.c_str(),(SizeType)name.length()); //key for fact_name
+
+    std::vector<std::string> slot_names= fact->slot_names();
+    if(slot_names.size() > 0 )// is it a non-ordered fact 
+    {
+      for(std::vector<std::string>::iterator it = slot_names.begin(); slot_names.size() > 0 && it != slot_names.end(); it++)
+      {
+
+        writer.String( it->c_str() , (SizeType) it->length() );//write slot name as a key for json pair
+        
+        CLIPS::Values values= fact->slot_value( *it );  
+        bool multifield= values.size()>1; 
+        if(multifield)     writer.StartArray(); // write values of slot as a json array only if slot is mutifeild
+        for(CLIPS::Values::iterator it2 = values.begin(); values.size()>0 && it2 != values.end(); it2++)
+        {
+          switch(it2->type())
+          {
+          case CLIPS::TYPE_INTEGER :
+           writer.Int64(it2->as_integer());
+           break;
+          case CLIPS::TYPE_FLOAT :
+           writer.Double(it2->as_float());
+           break;
+          default :
+             writer.String( it2-> as_string().c_str() , (SizeType)it2->as_string().length() );
+          }
+        }
+        if(multifield)     writer.EndArray();
+      }
+    }
+    else
+    {//ordered fact
+      std::cout << "ordered"<<std::endl;
+      writer.String("fields" );//wirte the json pair key that will be used to refrence the feilds of the fact
+      CLIPS::Values values= fact->slot_value("");
+      writer.StartArray();  //field values will be stored in a json array
+      for(CLIPS::Values::iterator it = values.begin(); values.size()!=0 && it != values.end() ; it++)
+      {
+         switch(it->type())
+         {
+           case CLIPS::TYPE_INTEGER :
+            writer.Int(it->as_integer());
+            break;
+           case CLIPS::TYPE_FLOAT :
+            writer.Double(it->as_float());
+            break;
+           default :
+            writer.String( it-> as_string().c_str() , (SizeType)it->as_string().length() );
+            break;
+         }
+      }
+      writer.EndArray();
+    }
+
+    writer.EndObject();
 
     writer.EndObject();//End of complete Json_msg 
     
+    std::cout << s.GetString()<<std::endl;
     return s.GetString();
     
   }
-  return "";
 }
 
 void
 ClipsSubscription::publish_loop()
 {
-  //sleep(100);
-  publish();
+  while(true)
+  {
+
+    publish();
+  //  sleep(100);
+  }
+
+
 }
 
 
@@ -192,16 +283,33 @@ ClipsProcessor::subscribe   ( std::string prefixed_topic_name
                             , unsigned int throttle_rate  
                             , unsigned int queue_length   
                             , unsigned int fragment_size  
-                            , std::shared_ptr<WebSession> session)
+                            , std::shared_ptr<WebSession> web_session)
 {
   std::string tmpl_name = ""; //get it from the prefixed topic name
+
   std::size_t pos = prefixed_topic_name.find(prefix_,0);
   if (pos != std::string::npos && pos <= 1)
   {
     tmpl_name= prefixed_topic_name.substr(pos+prefix_.length()+1);//+1 accounts for the leading '/' before the topic name
   }
 
+  std::map<std::string, LockPtr<CLIPS::Environment>> envs =
+  clips_env_mgr_->environments();
+  if (envs.find(env_name_) == envs.end()) 
+  {
+    if (envs.size() == 1)
+    { // if there is only one just select it
+      env_name_ = envs.begin()->first;
+    }
+    else
+    {
+      throw fawkes::UnknownTypeException("ClipsProcessor: Environment '%s' was not found!", env_name_.c_str());
+      //say what was wrong no envs Vs Wrong name
+    }
+  }
+  clips_ = envs[env_name_];
   MutexLocker lock(clips_.objmutex_ptr()); 
+
   CLIPS::Fact::pointer fact= clips_->get_facts(); //intialize it with the first fact
   bool fact_found = false;
   while (fact)
@@ -232,14 +340,19 @@ ClipsProcessor::subscribe   ( std::string prefixed_topic_name
 
     new_subscirption = std::make_shared <ClipsSubscription>(tmpl_name
                                                             , prefix_ 
+                                                            , logger_
                                                             , clock_ 
-                                                            , clips_);
+                                                            , clips_
+                                                            , clips_env_mgr_);
                                                                
   }catch (fawkes::Exception &e) {
     logger_->log_info("ClipsProcessor:" , "Failed to subscribe to '%s': %s\n", tmpl_name.c_str(), e.what());
     throw e;
   }
-  
+
+    new_subscirption->add_request(id , compression , throttle_rate  
+                                           , queue_length , fragment_size , web_session);  
+   
     logger_->log_info("ClipsProcessor", "DONE");
 
   return new_subscirption;
