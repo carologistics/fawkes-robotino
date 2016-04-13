@@ -53,8 +53,10 @@ class ClipsSubscription
   public:
     ClipsSubscription(std::string topic_name 
                           , std::string processor_prefix 
+                          , fawkes::Logger *logger
                           , fawkes::Clock *clock
-                          , fawkes::LockPtr<CLIPS::Environment> &clips);
+                          , fawkes::LockPtr<CLIPS::Environment> &clips
+                          ,fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr);
 
     ~ClipsSubscription();
 
@@ -71,6 +73,7 @@ class ClipsSubscription
 
   private:
   fawkes::LockPtr<CLIPS::Environment> clips_;
+   fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
 
 };
 
