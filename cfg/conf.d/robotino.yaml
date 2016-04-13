@@ -112,5 +112,8 @@ hardware/robotino:
     max_omega: 1.57
 
   distance_front:
-    #index of the MPS distance sensor in the Distances field of the interface
+    # Index of the MPS distance sensor in the Distances field of the interface
     index: 0
+
+    # Threshold when the sensor fires
+    sensor_threshold: 0.1

@@ -41,10 +41,13 @@ documentation      = [==[
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
 local sensor_index = 0
-local sensor_threshold = 0.055
+local sensor_threshold = 0.1
 
 if config:exists("/hardware/robotino/distance_front/index") then
    sensor_index = config:get_uint("/hardware/robotino/distance_front/index")
+end
+if config:exists("/hardware/robotino/distance_front/sensor_threshold") then
+   sensor_threshold = config:get_float("/hardware/robotino/distance_front/sensor_threshold")
 end
 
 fsm:define_states{ export_to=_M, closure={sensor=sensor, sensor_index=sensor_index},
@@ -71,12 +74,13 @@ function APPROACH_WITH_INFRARED:init()
    printf("x_offset is set to: %f", self.fsm.vars.offset_x)
    if self.fsm.vars.offset_x >= 0 then
       self.fsm.vars.sensor_threshold = self.fsm.vars.x or sensor_threshold + self.fsm.vars.offset_x 
+      print(self.fsm.vars.sensor_threshold)
    else
       self.fsm.vars.sensor_threshold = sensor_threshold -- the threshold is negative so we adjust the rest in the upcoming motor_move state
    end
    --TODO further driving when putting a product maybe
    printf("sensor threshold is: %f", self.fsm.vars.sensor_threshold)
-   self.args["motor_move"] = {x = 1, vel_trans = 0.15}
+   self.args["motor_move"] = {x = 1, vel_trans = 0.05}
 end
 
 function MOTOR_MOVE:init()
