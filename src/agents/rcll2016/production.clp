@@ -97,7 +97,7 @@
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
   (holding NONE)
-  (machine (mtype CS) (loaded-id 0) (incoming $?i&~:(member$ CLEAR_CS ?i))
+  (machine (mtype CS) (loaded-id 0) (incoming $?i&~:(member$ GET-PROD ?i))
            (name ?machine) (produced-id ?produced-id&~0) (team ?team-color)
            (state READY-AT-OUTPUT))
   ;check that the task was not rejected before
@@ -114,7 +114,7 @@
 	  (step (name get-output) (id (+ ?task-id 1))
 		  (task-priority ?*PRIORITY-CLEAR-CS*)
 		  (machine ?machine))
-    (needed-task-lock (task-id ?task-id) (action CLEAR_CS) (place ?machine))
+    (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?machine))
   )
 )
 
