@@ -50,6 +50,23 @@ depends_interfaces = {
   {v = "line7", type="LaserLineInterface", id="/laser-lines/7"},
   {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
   --]]
+   {v = "tag_0", type = "Position3DInterface"},
+   {v = "tag_1", type = "Position3DInterface"},
+   {v = "tag_2", type = "Position3DInterface"},
+   {v = "tag_3", type = "Position3DInterface"},
+   {v = "tag_4", type = "Position3DInterface"},
+   {v = "tag_5", type = "Position3DInterface"},
+   {v = "tag_6", type = "Position3DInterface"},
+   {v = "tag_7", type = "Position3DInterface"},
+   {v = "tag_8", type = "Position3DInterface"},
+   {v = "tag_9", type = "Position3DInterface"},
+   {v = "tag_10", type = "Position3DInterface"},
+   {v = "tag_11", type = "Position3DInterface"},
+   {v = "tag_12", type = "Position3DInterface"},
+   {v = "tag_13", type = "Position3DInterface"},
+   {v = "tag_14", type = "Position3DInterface"},
+   {v = "tag_15", type = "Position3DInterface"},
+   {v = "tag_info", type = "TagVisionInterface"},
 }
 
 documentation      = [==[ align_mps
@@ -58,6 +75,7 @@ documentation      = [==[ align_mps
                           - aligns to the machine via sensor information AND a optional offsets which are given as parameters 
 
                           @param tag_id     int     optional the tag_id for align_tag
+                          @param place      string  
                           @param x          float   the x offset after the alignmend
                           @param y          float   optional the y offset after the alignmend; TODO this just works within the AREA_LINE_ERR_Y
 ]==]
@@ -67,154 +85,196 @@ skillenv.skill_module(_M)
 
 local tfm = require("tf_module")
 local llutils = require("fawkes.laser-lines_utils")
+local tag_utils = require("tag_utils")
 
 -- Tunables
 local MIN_VIS_HIST=10
-local TIMEOUT=5
-local AREA_LINE_ERR_X=0.1
-local AREA_LINE_ERR_Y=0.2
-local AREA_LINE_ERR_ORI=0.2 --0.17
-local LINE_TRIES=3
-local POSES_ORI_TAG={0.3, 0.3, -0.9, -0.3}
+local MIN_VIS_HIST_TAG=10
 
-function see_line(self)
-  self.fsm.vars.line_chosen = nil
-  -- visible
-  local lines_vis = {}
-  for k,v in pairs( self.fsm.vars.lines ) do
-    if v:visibility_history() >= MIN_VIS_HIST then
-      local center = llutils.laser_lines_center({ x=v:end_point_1(0),
-                                                  y=v:end_point_1(1)},
-                                                { x=v:end_point_2(0),
-                                                  y=v:end_point_2(1)}, v:bearing())
+local LINE_LENGTH_MIN=0.64
+local LINE_LENGTH_MAX=0.71
+local LINE_XDIST_MAX=0.6
+local LINE_BEARING_MIN=0.1
+local SEARCH_MOVES={ {ori=0.5}, {ori=-1} }
 
-      local trans = tfm.transform({x=center.x, y=center.y, ori=center.ori}, v:frame_id(), "/base_link")
-      local x   = trans.x
-      local y   = trans.y
-      local ori = trans.ori
-      printf("Got line: (%f, %f, %f)", x, y, ori)
-      printf("Errors are: (%f, %f, %f)", math.abs(x - self.fsm.vars.x), math.abs(y - self.fsm.vars.y), math.angle_distance(ori, self.fsm.vars.ori))
+local MAX_TRANS_ERR=0.05
+local MAX_ORI_ERR=0.1
 
-      if math.abs(x - self.fsm.vars.x)                <= AREA_LINE_ERR_X and
-         math.abs(y - self.fsm.vars.y)                <= AREA_LINE_ERR_Y and
-         math.angle_distance(ori, self.fsm.vars.ori)  <= AREA_LINE_ERR_ORI then
-         printf("OK  line: (%f, %f, %f)", math.abs(x - self.fsm.vars.x), math.abs(y - self.fsm.vars.y), math.angle_distance(ori, self.fsm.vars.ori))
-        table.insert( lines_vis, {x=x, y=y, ori=ori, bearing_err = math.abs(math.angle_distance(ori, self.fsm.vars.ori)), frame_id="/base_link"} )
+
+function get_lines()
+   for i,line in ipairs(self.fsm.vars.lines) do
+      if line:visibility_history() >= MIN_VIS_HIST and
+         line:length() >= LINE_LENGTH_MIN and
+         line:length() <= LINE_LENGTH_MAX and
+         line:bearing() > LINE_BEARING_MIN and
+         math.min(line:end_point_1(0), line:end_point_2(0)) <= LINE_XDIST_MAX
+      then
+         table.insert(fsm.vars.interesting_lines, {iface=line, idx=i})
       end
-    end
-  end
-  if table.getn( lines_vis ) <= 0 then
-    return false
-  else
-    -- get best line (by bearing? or what would be better)
-    self.fsm.vars.line_best = lines_vis[1]
-    for k,v in pairs( lines_vis ) do
-      if self.fsm.vars.line_best.bearing_err > v.bearing_err then
-        self.fsm.vars.line_best = v
-      end
-    end
-    return true
-  end
+   end
 end
 
-function pose_ok(self)
-  local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
-  if  pp.x - self.fsm.vars.x <= AREA_LINE_ERR_X and
-      pp.y - self.fsm.vars.y <= AREA_LINE_ERR_Y and
-      pp.ori - self.fsm.vars.ori <= AREA_LINE_ERR_ORI then
-    return true
-  end
-  return false
+
+function tag_visible(vis_hist)
+   local tag_iface = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   return tag_iface and tag_iface:visibility_history() > vis_hist
 end
 
-fsm:define_states{ export_to=_M, closure={see_line = see_line, LINE_TRIES=LINE_TRIES, pose_ok=pose_ok,},
+
+function pose_error()
+   local node = navgraph:node(fsm.vars.place)
+   local node_bl = tfm.transform(
+      { x=node:x(), y=node:y(), ori=node:get_property_as_float("orientation") },
+      "/map", "/base_link"
+   )
+   return node_bl.x > MAX_TRANS_ERR
+      or node_bl.y > MAX_TRANS_ERR
+      or node_bl.ori > MAX_ORI_ERR
+end
+
+
+function place_valid()
+   if fsm.vars.place then
+      if (string.sub(fsm.vars.place, -1) == "I"
+         or string.sub(fsm.vars.place, -1) == "O") then
+         return navgraph:node(fsm.vars.place):is_valid()
+      else
+         print("ERROR: place arg must be a machine INPUT or OUTPUT node!")
+         return false
+      end
+   end
+   return true
+end
+
+
+function want_search()
+   if fsm.vars.place then
+      return fsm.vars.globalsearch_done and fsm.vars.search_idx <= #SEARCH_MOVES
+   else
+      return fsm.vars.search_idx <= #SEARCH_MOVES
+   end
+end
+
+
+function best_line()
+   local min_bearing = 1000
+   local best_line = nil
+   for i,line in ipairs(fsm.vars.line) do
+      if line:bearing() < min_bearing then
+         best_line = line
+      end
+   end
+   fsm.vars.best_line = best_line
+   return best_line
+end
+
+
+fsm:define_states{ export_to=_M, closure={SEARCH_MOVES=SEARCH_MOVES, place_valid=place_valid,
+      pose_error=pose_error, tag_visible=tag_visible, MIN_VIS_HIST_TAG=MIN_VIS_HIST_TAG,
+      want_search=want_search, line_visible=line_visible },
    {"INIT",                   JumpState},
-   {"TURN_TO_SEARCH_FOR_TAG", SkillJumpState, skills={{motor_move}}, final_to="CHECK_TAG", fail_to="CHECK_TAG"}, -- if this failes, we still should keep looking, the exit is in GET_NEXT_POSE_FOR_TAG
-   {"CHECK_TAG",              SkillJumpState, skills={{check_tag}}, final_to="ALIGN_TAG", fail_to="GET_NEXT_POSE_FOR_TAG"},
-   {"GET_NEXT_POSE_FOR_TAG",  JumpState},
-   {"ALIGN_TAG",              SkillJumpState, skills={{align_tag}}, final_to="DECIDE_TRY", fail_to="FAILED"}, -- if this failes, the subskill or the tag vision needs to be fixed (we checked if we see the tag before)
-   {"DECIDE_TRY",             JumpState},
+   {"CHECK_TAG",              JumpState},
+   {"SEARCH",                 JumpState},
+   {"SEARCH_LINES",           SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
+   {"SEARCH_GLOBAL",          SkillJumpState, skills={{"global_motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
+   {"FIND_TAG",               SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
    {"SETTLE_LINE",            JumpState},
-   {"ALIGN",                  SkillJumpState, skills={{motor_move}}, final_to="CHECK_POSE", fail_to="FAILED"},
-   {"CHECK_POSE",             JumpState},
+   {"ALIGN",                  SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"INIT",                   "FAILED",                 precond="not vars.x", desc="x argument missing"},
-   {"INIT",                   "CHECK_TAG",              cond=true },
-   {"GET_NEXT_POSE_FOR_TAG",  "TURN_TO_SEARCH_FOR_TAG", cond="table.getn(vars.poses_ori_tag) >= 1" }, -- if there is one in the list, the init function will set the value and remove it
-   {"GET_NEXT_POSE_FOR_TAG",  "FAILED",                 cond=true, desc="Can't find tag by turning"},
-   {"DECIDE_TRY",             "SETTLE_LINE",            cond="vars.try_line <= LINE_TRIES", desc="try again to find a line" },
-   {"DECIDE_TRY",             "FAILED",                 cond=true, desc="tryed often enough, we are failed now :(" },
-   {"SETTLE_LINE",            "ALIGN",                  cond=see_line },
-   {"SETTLE_LINE",            "FAILED",                 timeout=TIMEOUT },
-   {"CHECK_POSE",             "FINAL",                  cond=pose_ok,  desc="pose is ok"},
-   {"CHECK_POSE",             "DECIDE_TRY",             cond=true,        desc="pose is not ok, retry"},
+   {"INIT",          "FAILED",          precond="not place_valid()", desc="place arg invalid"},
+   {"INIT",          "FAILED",          precond="not vars.x", desc="x argument missing"},
+   {"INIT",          "CHECK_TAG",       cond=true},
+
+   {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
+   {"CHECK_TAG",     "ALIGN",           cond="tag_visible(MIN_VIS_HIST_TAG)"},
+
+   {"FIND_TAG",      "SEARCH_GLOBAL",   cond="want_search() and vars.place and pose_error"},
+   {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0"},
+   {"FIND_TAG",      "FAILED",          cond="not want_search()", timeout=1},
+
+   {"SEARCH_GLOBAL", "CHECK_TAG",       cond="tag_visible(MIN_VIS_HIST_TAG)"},
+   {"SEARCH_LINES",  "CHECK_TAG",       cond="tag_visible(MIN_VIS_HIST_TAG)"},
+
+   {"SETTLE_LINE",   "ALIGN",           cond=best_line},
 }
 
 function INIT:init()
-  self.fsm.vars.y   = self.fsm.vars.y   or 0
-  self.fsm.vars.ori = self.fsm.vars.ori or 0
-  self.fsm.vars.lines = {}
-  ---[[
-  self.fsm.vars.lines[1]  = line1
-  self.fsm.vars.lines[2]  = line2
-  self.fsm.vars.lines[3]  = line3
-  self.fsm.vars.lines[4]  = line4
-  self.fsm.vars.lines[5]  = line5
-  self.fsm.vars.lines[6]  = line6
-  self.fsm.vars.lines[7]  = line7
-  self.fsm.vars.lines[8]  = line8
-  --]]
-  --[[
-  self.fsm.vars.lines[1]  = line1avg
-  self.fsm.vars.lines[2]  = line2avg
-  self.fsm.vars.lines[3]  = line3avg
-  self.fsm.vars.lines[4]  = line4avg
-  self.fsm.vars.lines[5]  = line5avg
-  self.fsm.vars.lines[6]  = line6avg
-  self.fsm.vars.lines[7]  = line7avg
-  self.fsm.vars.lines[8]  = line8avg
-  --]]
-  
-  self.fsm.vars.try_line = 0
-  self.fsm.vars.poses_ori_tag = {}
-  for k,v in pairs(POSES_ORI_TAG) do
-    self.fsm.vars.poses_ori_tag[k] = v
-  end
+   self.fsm.vars.y   = self.fsm.vars.y   or 0
+   self.fsm.vars.ori = self.fsm.vars.ori or 0
+
+   self.fsm.vars.lines = {}
+   self.fsm.vars.lines[1]  = line1
+   self.fsm.vars.lines[2]  = line2
+   self.fsm.vars.lines[3]  = line3
+   self.fsm.vars.lines[4]  = line4
+   self.fsm.vars.lines[5]  = line5
+   self.fsm.vars.lines[6]  = line6
+   self.fsm.vars.lines[7]  = line7
+   self.fsm.vars.lines[8]  = line8
+
+   self.fsm.vars.interesting_lines = {}
+
+   self.fsm.vars.tags = {}
+   self.fsm.vars.tags[1] = tag_0
+   self.fsm.vars.tags[2] = tag_1
+   self.fsm.vars.tags[3] = tag_2
+   self.fsm.vars.tags[4] = tag_3
+   self.fsm.vars.tags[5] = tag_4
+   self.fsm.vars.tags[6] = tag_5
+   self.fsm.vars.tags[7] = tag_6
+   self.fsm.vars.tags[8] = tag_7
+   self.fsm.vars.tags[9] = tag_8
+   self.fsm.vars.tags[10] = tag_9
+   self.fsm.vars.tags[11] = tag_10
+   self.fsm.vars.tags[12] = tag_11
+   self.fsm.vars.tags[13] = tag_12
+   self.fsm.vars.tags[14] = tag_13
+   self.fsm.vars.tags[15] = tag_14
+   self.fsm.vars.tags[16] = tag_15
+
+   self.fsm.vars.search_idx = 0
+   self.fsm.vars.globalsearch_done = false
 end
 
-function TURN_TO_SEARCH_FOR_TAG:init()
-  self.args["motor_move"] = { x=nil, y=nil, ori=self.fsm.vars.next_pose_ori}
+function FIND_TAG:loop()
+   get_lines()
 end
 
-function CHECK_TAG:init()
-  self.args["check_tag"] = { tag_id=self.fsm.vars.tag_id }
+function FIND_TAG:exit()
+   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
 end
 
-function GET_NEXT_POSE_FOR_TAG:init()
-  self.fsm.vars.next_pose_ori = table.remove(self.fsm.vars.poses_ori_tag, 1)
+function SEARCH_GLOBAL:init()
+   self.args["global_motor_move"] = self.fsm.vars.place
 end
 
-function ALIGN_TAG:init()
-  -- align by ALIGN_DISTANCE from tag to base_link with align_tag
-  local tag_transformed = tfm.transform({x=self.fsm.vars.x, y=self.fsm.vars.y, ori=self.fsm.vars.ori}, "/base_link", "/cam_tag")
-  -- give align_tag the id if we have one
-  self.args["align_tag"] =
-		 { tag_id = self.fsm.vars.tag_id,
-			 x = self.fsm.vars.x,
-			 --  y = -self.fsm.vars.y -- this should be the y minus the error tag error to the middle from the navgraph
-			 y = 0,
-			 ori = self.fsm.vars.ori
-		 }
+function SEARCH_GLOBAL:exit()
+   self.fsm.vars.globalsearch_done = true
 end
 
-function DECIDE_TRY:init()
-  self.fsm.vars.try_line = self.fsm.vars.try_line + 1
+function SEARCH_LINES:init()
+   local min_dist = 1000
+   local target = nil
+   for i,line in ipairs(self.fsm.vars.interesting_lines) do
+      local center = llutils.center(line)
+      local dist = math.vec_length(center.x, center.y)
+      if dist * line:bearing() < min_dist then
+         target = llutils.point_in_front(llutis.center(line), self.fsm.vars.x)
+         min_dist = dist * line:bearing()
+      end
+   end
+   
+   if target then
+      self.args["motor_move"] = { x=target.x, y=target.y, ori=target.ori }
+   else
+      self.args["motor_move"] = SEARCH_MOVES[self.fsm.vars.search_idx]
+   end
 end
 
 function ALIGN:init()
-  local pp = llutils.point_in_front(self.fsm.vars.line_best, self.fsm.vars.x)
-  self.args["motor_move"] = {x = pp.x, y = pp.y + self.fsm.vars.y, ori = pp.ori}
-  --self.args["motor_move"].tolerance = {x=0.05, y=0.03, ori=0.1} -- this does not exists
+   self.args["motor_move"] = llutils.point_in_front(llutils.center(
+      self.fsm.vars.best_line), self.fsm.vars.x)
 end
+
