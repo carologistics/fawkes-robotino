@@ -260,6 +260,7 @@
   (slot res (type SYMBOL))
   (slot state (type SYMBOL) (allowed-values new get use finished) (default new))
   (slot priority (type INTEGER) (default 0))
+  (slot place (type SYMBOL) (default NOT-SET))
 )
 
 (deftemplate skill-to-execute
@@ -267,6 +268,17 @@
   (multislot args (type SYMBOL) (default (create$)))
   (slot state (type SYMBOL) (allowed-symbols wait-for-lock running final failed) (default wait-for-lock))
   (slot target (type SYMBOL))
+)
+
+(deftemplate zone-waitpoint
+  (slot name (type SYMBOL))
+  (slot x (type FLOAT))
+  (slot y (type FLOAT))
+)
+
+(deftemplate place-waitpoint-assignment
+  (slot place (type SYMBOL))
+  (slot waitpoint (type SYMBOL))
 )
 
 (deftemplate puck-storage
@@ -302,6 +314,10 @@
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
 
+)
+
+(deftemplate exp-current-zone
+  (slot name (type SYMBOL))
 )
 
 (deffacts startup-facts

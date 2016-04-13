@@ -408,3 +408,19 @@
   (assert (state STEP-FAILED))
   (modify ?step (state failed))
 )
+
+;;;;;;;;;;;;;;;;;
+; other stuff
+;;;;;;;;;;;;;;;;;
+(defrule step-set-wait-for-lock-position
+  "Set the position in a requested lock to be able to find a wait point near it"
+  (skill-to-execute (skill get_product_from) (args $?args) (target ?mps))
+  ?wfl <- (wait-for-lock (priority ?p) (res ?mps))
+  =>
+  ; input or output side?
+  (bind ?navpoint (sym-cat ?navpoint "-O"))
+  (if (or (member$ input ?args) (member$ shelf ?args)) then
+    (bind ?navpoint (sym-cat ?navpoint "-I"))
+  )
+  (modify ?wfl (place ?navpoint))
+)

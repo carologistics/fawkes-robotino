@@ -642,13 +642,23 @@
   (phase PRODUCTION)
   (state IDLE)
   (time $?now)
-  (wait-point ?wait-point)
   (not (no-task-found))
   (not (task (state proposed|asked|ordered|running)))
   =>
   (printout error "Can't find any task!." crlf)
   (printout error " Waiting..." crlf)
   (save-facts (str-cat "agent-snapshot-no-task" (nth$ 1 ?now) ".clp") visible)
+
+  ;find random waiting point
+  (bind ?wpts (create$))
+  (do-for-all-facts ((?wpt zone-waitpoint)) TRUE
+    (bind ?wpts (create$ ?wpt:name ?wpts))
+  )
+  (if (> (length$ ?wpts) 0) then
+    (bind ?index (random 1 (length$ ?wpts)))
+    (bind ?wait-point (nth$ ?index ?wpts))
+  )
+  
   (skill-call goto place (str-cat ?wait-point))
   (assert (no-task-found))
 )
