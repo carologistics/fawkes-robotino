@@ -56,7 +56,7 @@ fsm:add_transitions{
 function GOTO_SLIDE:init()
    self.args["motor_move"] =
 			{ y = -0.26, --TODO measure exact value
-				vel_trans = 0.15,
+				vel_trans = 0.2,
 				tolerance = { x=0.002, y=0.002, ori=0.01 }
 			}
 end
