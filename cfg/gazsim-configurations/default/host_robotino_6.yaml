@@ -26,7 +26,7 @@ plugins/light_front:
   shm_image_id: "robotino6/light_front"
   
 clips-agent:
-  llsf2015:
+  rcll2016:
     #agent-role:
     
     exploration:      
@@ -42,7 +42,7 @@ clips-agent:
     robot-name: R-6
     robot-number: 6
 
-    peer-address: 127.0.0.6
+    peer-address: 127.0.0.1
     peer-recv-port: 4416
     peer-send-port: 4426
     cyan-recv-port: 4456
