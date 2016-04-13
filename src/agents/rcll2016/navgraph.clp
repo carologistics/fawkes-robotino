@@ -201,3 +201,15 @@
   )
   (assert (place-waitpoint-assignment (place (sym-cat ?p)) (waitpoint ?nearest-wp)))
 )
+
+(defrule navgraph-sim-add-found-tags-when-added-by-ground-truth
+  "When the gazsim-navgraph-generator plugin is used to add the navgraph points to test production without exploration, we have to add the found-tags"
+  (phase PRODUCTION)
+  (not (sim-was-in-exploration))
+  (machine (name ?mps))
+  (not (found-tag (name ?mps)))
+  (navgraph-node (name ?mps-o-str&:(eq ?mps-o-str (str-cat ?mps "-O"))))
+  =>
+  (assert (found-tag (name ?mps) (side OUTPUT))
+          (navgraph-added-for-mps (name ?mps)))
+)
