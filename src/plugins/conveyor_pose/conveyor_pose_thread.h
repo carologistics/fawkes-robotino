@@ -30,6 +30,8 @@
 #include <aspect/blackboard.h>
 #include <aspect/pointcloud.h>
 
+#include <interfaces/SwitchInterface.h>
+
 #include <string>
 
 typedef pcl::PointXYZ Point;
@@ -49,22 +51,32 @@ private:
   std::string cloud_in_name_;
   bool cloud_in_registered_;
   pcl::PCLHeader header_;
+
   fawkes::RefPtr<const Cloud> cloud_in_;
   fawkes::RefPtr<Cloud> cloud_out_plane_;
   fawkes::RefPtr<Cloud> cloud_out_result_;
+
+  fawkes::SwitchInterface * bb_enable_switch_;
+
+  bool cfg_enable_switch_;
+  bool cfg_use_visualisation_;
 
  /**
   * check if the pointcloud is available
   */
  bool pc_in_check();
+ bool is_enabled() const { return cfg_enable_switch_; }
 
  bool is_inbetween(double a, double b, double val);
+
  CloudPtr cloud_remove_gripper(CloudPtr in);
  CloudPtr cloud_remove_offset_to_front(CloudPtr in);
  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
  CloudPtr cloud_cluster(CloudPtr in);
  CloudPtr vg(CloudPtr in);
+
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
+ void bb_switch_is_enabled();
 
 protected:
   virtual void run() { Thread::run(); }

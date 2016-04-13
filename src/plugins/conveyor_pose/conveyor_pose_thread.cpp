@@ -72,24 +72,31 @@ ConveyorPoseThread::init()
 //  cloud_in_name_ = "/depth/points";
   cloud_in_name_ = "/camera/depth/points";
   cloud_in_registered_ = false;
+  cfg_enable_switch_ = true;
+  cfg_use_visualisation_ = true;
 
   cloud_out_plane_ = new Cloud();
   cloud_out_result_ = new Cloud();
   pcl_manager->add_pointcloud("conveyor_pose/plane", cloud_out_plane_);
   pcl_manager->add_pointcloud("conveyor_pose/result", cloud_out_result_);
+
+  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("/conveyor-pose");
+  bb_enable_switch_->set_enabled(cfg_enable_switch_);
+  bb_enable_switch_->write();
 }
 
 void
 ConveyorPoseThread::finalize()
 {
+  blackboard->close(bb_enable_switch_);
 }
 
 void
 ConveyorPoseThread::loop()
 {
+  bb_switch_is_enabled();
+  if ( ! cfg_enable_switch_ ) { return; }
   if ( ! pc_in_check() ) { return; }
-
-  header_ = cloud_in_->header;
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
   CloudPtr cloud_pt = cloud_remove_gripper(cloud_in);
@@ -105,7 +112,7 @@ ConveyorPoseThread::loop()
   // get centroid
   Eigen::Vector4f centroid;
   pcl::compute3DCentroid<Point, float>(*biggest, centroid);
-  logger->log_info(name(), "%i, %i, %i", centroid(0), centroid(1), centroid(2));
+//  logger->log_info(name(), "%lf, %lf, %lf", centroid(0), centroid(1), centroid(2));
 //
 //  // just viz stuff from here
 //  visualization_msgs::MarkerArray ma;
@@ -122,20 +129,24 @@ ConveyorPoseThread::loop()
 bool
 ConveyorPoseThread::pc_in_check()
 {
-  if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {                   // does the pc exists
-    if ( ! cloud_in_registered_) {                                                // do I already have this pc
+  if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {                // does the pc exists
+    if ( ! cloud_in_registered_) {                                             // do I already have this pc
       cloud_in_ = pcl_manager->get_pointcloud<Point>(cloud_in_name_.c_str());
       if (cloud_in_->points.size() > 0) {
         cloud_in_registered_ = true;
       }
     }
+
+    unsigned long time_old = header_.stamp;
+    header_ = cloud_in_->header;
+
+    return time_old != header_.stamp;                                          // true, if there is a new cloud, false otherwise
+
   } else {
+    logger->log_debug(name(), "can't get pointcloud %s", cloud_in_name_.c_str());
     cloud_in_registered_ = false;
-
-    logger->log_warn(name(), "can't get pointcloud %s", cloud_in_name_.c_str());
+    return false;
   }
-
-  return cloud_in_registered_;
 }
 
 bool
@@ -281,7 +292,26 @@ ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud
   cloud_out->header = header_;
 }
 
+void
+ConveyorPoseThread::bb_switch_is_enabled()
+{
+  bool rv = bb_enable_switch_->is_enabled();
+  while ( ! bb_enable_switch_->msgq_empty() ) {
+    if (bb_enable_switch_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+      rv = false;
+    } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+      rv = true;
+    }
 
+    bb_enable_switch_->msgq_pop();
+  }
+  if ( rv != bb_enable_switch_->is_enabled() ) {
+    logger->log_info(name(), "*** enabled: %s", rv ? "yes" : "no");
+    bb_enable_switch_->set_enabled(rv);
+    bb_enable_switch_->write();
+  }
+  cfg_enable_switch_ = rv;
+}
 
 
 
