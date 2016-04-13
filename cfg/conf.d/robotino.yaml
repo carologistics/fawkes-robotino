@@ -4,30 +4,85 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/robotino
 ---
 hardware/robotino:
-  # Host to connect to
-  hostname: 127.0.0.1
 
-  # If true quit Fawkes on disconnect from Robotino Com server, otherwise
-  # retry connection. If run from LCD menu should be set to true.
-  quit_on_disconnect: true
+  # Hardware access driver mode, can be one of:
+  # - direct: directly communicate with Robotino base through USB
+  #           NOTE: disable controld3! This has only been tested
+  #           on Robotino 3 (firmware 1.1.1)
+  # - openrobotino: use OpenRobotino API to communicate with base
+  #                 This compiles with API 1 or 2 (preferring 2).
+  driver: direct
+
+  # *** Common Settings for all drivers
+
+  # Minimum time in milliseconds between two data updates.
+  # Lower values increase the machine load (considerably) but decrease
+  # the average sensor data age. Zero means receive as fast as possible
+  # without waiting between receive calls
+  cycle-time: 5
 
   # Time threshold after all motor velocities are set to zero if no new messages arrived inbetween
   deadman_time_threshold: 0.5
 
-  # Base coordinate frame
-  base_frame: !frame base_link
+  openrobotino:
+    # Configuration settings specific to the OpenRobotino driver
 
-  # Minimum time in milliseconds between two Robotino sensor readings.
-  # Lower values increase the machine load (considerably) but decrease
-  # the average sensor data age. Zero means receive as fast as possible
-  # without waiting between receive calls
-  sensor_update_cycle_time: 5
+    # Host to connect to
+    hostname: 127.0.0.1
+
+    # If true quit Fawkes on disconnect from Robotino Com server, otherwise
+    # retry connection. If run from LCD menu should be set to true.
+    quit_on_disconnect: true
+
+  direct:
+    # Configuration settings specific to the direct comm driver
+
+    # Path to device file to access base at
+    # It is strongly recommended NOT to set this. In that case, the plugin will
+    # introspect the system for a matching USB device and determine the device
+    # path automatically. This is most often the better way.
+    # A typical problem is not that the device cannot be determined, but rather
+    # that the user running fawkes has no permission to access such device. In
+    # particular, on the default Ubuntu installation add the user robotino to
+    # the group dialout: usermod -a -G dialout robotino (and reboot)
+    # device: /dev/ttyACM1
+
+
+  # The motor and drive settings and limits are enforced for direct
+  # communication, for the openrobotino driver, these values are
+  # checked by controld3, cf. /etc/robotino/controld3.conf on the
+  # robotino base
+
+  motor:
+    # Minimum and maximum acceleration of motors
+    acceleration-limits: [-11500, 11500]
+
+    rpm-max: 3000
+  
+  drive:
+    layout:
+      # Distance from Robotino center to wheel center in meters
+      rb: 0.175
+
+      # Wheel radius in meters
+      rw: 0.060
+
+      # Gear ratio between motors and wheels
+      gear: 32.0
+
+    # Maximum acceleration and deceleration for translation, m/s^2
+    trans-acceleration: 0.8
+    trans-deceleration: 1.5
+
+    # Maximum acceleration and deceleration for rotation, rad/s^2
+    rot-acceleration: 1.6
+    rot-deceleration: 3.14
 
   bumper:
     # Set to true to enable the emergency stop on bumper contact (provided
     # by OpenRobotino, or false to keep going (warning, you should handle
     # bumper contact by yourself then!).
-    estop_enabled: false
+    estop_enabled: true
 
   gyro:
     # Enable Gyro publishing? This creates an IMUInterface and publishes
@@ -36,7 +91,7 @@ hardware/robotino:
     # If disabled, no interface will be opened and written. Recommended if you
     # intend to use the imu plugin for gyro access
     # If you enable this, you should also set the odometry mode to copy
-    enable: false
+    enable: true
     
     # Gyro coordinate frame
     frame: !frame gyro
@@ -44,7 +99,6 @@ hardware/robotino:
     interface_id: IMU Robotino
 
   odometry:
-
     # Odometry mode, one of "calc" or "copy"
     # calc: calculate on our own based on IMUInterface and velocity data
     # copy: copy values as-is from OpenRobotino
@@ -53,9 +107,6 @@ hardware/robotino:
     # directly to the Fawkes machine.
     mode: calc
     #mode: copy
-
-    # Odometry coordinate frame
-    frame: !frame odom
 
     # Odom TF offset. This time is added to the current time when the
     # odometry <- base_link TF is published
@@ -76,43 +127,22 @@ hardware/robotino:
         # If wheel odometry is used (not the gyro) multiple the odometry delta
         # with this factor, that is an empirical value that you need to
         # adjust to your specific robot. Default (1.0) means no adjustment.
-        phi: 0.6
-        trans: 0.7
+        phi: 1.0
+        trans: 1.0
 
   gripper:
     # Enable gripper {ENABLED=true / DISABLED=false}
     enable_gripper: true
-    
+
     # ID of the Gripper Interface
-    gripper_id: Robotino 
+    gripper_id: Robotino
 
-  sensors:
-    # ID of analog_in port for IR sensor on the left side of puck guidance device
-    left_ir_id: 4
-    # ID of analog_in port for IR sensor on the right side of puck guidance device
-    right_ir_id: 5
-
-  joystick:
-    # Axis index for forward/backward movement
-    axis_forward: 1
-
-    # Axis index for sideward movement
-    axis_sideward: 0
-
-    # Axis index for rotational movement
-    axis_rotation: 3
-
-    # Maximum velocity forward; m/s
-    max_vx: 1.5
-
-    # Maximum velocity sideward; m/s
-    max_vy: 1.5
-
-    # Maximum rotation; rad/s
-    max_omega: 1.57
-
-  puck_sensor:
-    #index of the puck sensor in the Distances field of the interface
-    index: 8
-    #max distance when there is a puck in the gripper
-    trigger_dist: 0.07
+    # Maximum current in A for the motor output.
+    # If the current is larger than maxcurrent for more than
+    # max-time milliseconds the set-point is set to 0. To recover
+    # from the over current situation decrease the set-point in your
+    # application below the set-point when the over current flag had
+    # been set
+    # Currently not implemented
+    #current-max: 1
+    #current-max-time: 400
