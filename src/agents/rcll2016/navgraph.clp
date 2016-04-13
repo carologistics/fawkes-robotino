@@ -175,7 +175,7 @@
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
   (retract ?ngg-if)
   (do-for-all-facts ((?waitzone navgraph-node)) (eq "WAIT-Z" (sub-string 1 6 ?waitzone:name))
-    (assert (zone-waitpoint (name (sym-cat (sub-string 6 (str-length ?waitzone:name) ?waitzone:name)))
+    (assert (zone-waitpoint (name (str-cat "WAIT-" (sym-cat (sub-string 6 (str-length ?waitzone:name) ?waitzone:name))))
                             (x (nth$ 1 ?waitzone:pos)) (y (nth$ 2 ?waitzone:pos))))
   )
 )
