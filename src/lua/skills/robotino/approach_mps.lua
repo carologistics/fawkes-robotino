@@ -76,7 +76,7 @@ function APPROACH_WITH_INFRARED:init()
    end
    --TODO further driving when putting a product maybe
    printf("sensor threshold is: %f", self.fsm.vars.sensor_threshold)
-   self.args["motor_move"] = {x = 1, vel_trans = 0.05}
+   self.args["motor_move"] = {x = 1, vel_trans = 0.15}
 end
 
 function MOTOR_MOVE:init()
