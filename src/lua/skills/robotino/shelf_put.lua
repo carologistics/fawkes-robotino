@@ -78,7 +78,7 @@ function GOTO_SHELF:init()
 end
 
 function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = 0.065 --TODO measure this value
+   self.args["approach_mps"].offset_x = 0.01 --TODO measure this value
 end
 
 function STORE_PRODUCT:init()
