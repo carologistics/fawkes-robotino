@@ -83,7 +83,8 @@ ConveyorPoseThread::init()
   pcl_manager->add_pointcloud("conveyor_pose/plane", cloud_out_plane_);
   pcl_manager->add_pointcloud("conveyor_pose/result", cloud_out_result_);
 
-  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("/conveyor-pose");
+  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("/conveyor-pose/switch");
+  bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>("/conveyor-pose");
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
 
@@ -100,9 +101,11 @@ ConveyorPoseThread::finalize()
 void
 ConveyorPoseThread::loop()
 {
+  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose;
+
   bb_switch_is_enabled();
-  if ( ! cfg_enable_switch_ ) { return; }
-  if ( ! pc_in_check() ) { return; }
+  if ( ! cfg_enable_switch_ ) { pose_write(pose, -1); return; }
+  if ( ! pc_in_check() ) { pose_write(pose, -1); return; }
 
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
@@ -124,7 +127,11 @@ ConveyorPoseThread::loop()
   normal(0) = coeff->values[0];
   normal(1) = coeff->values[1];
   normal(2) = coeff->values[2];
-  tf_send(centroid, normal);
+  pose = calculate_pose(centroid, normal);
+
+  pose_write(pose, 1);
+  tf_send_from_pose_if(pose);
+
   visualisation_->marker_draw(header_, centroid, coeff);
 }
 
@@ -315,18 +322,9 @@ ConveyorPoseThread::bb_switch_is_enabled()
   cfg_enable_switch_ = rv;
 }
 
-void
-ConveyorPoseThread::tf_send(Eigen::Vector4f centroid, Eigen::Vector3f normal)
+std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion>
+ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal)
 {
-  fawkes::tf::StampedTransform transform;
-
-  transform.frame_id = header_.frame_id;
-  transform.child_frame_id = "conveyor";
-  // TODO use time of header, just don't works with bagfiles
-//  transform.stamp = fawkes::Time((long)header_.stamp);
-
-  fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
-
   Eigen::Vector3f tf_orign;
   tf_orign(0) = 1;
   tf_orign(1) = 0;
@@ -340,15 +338,51 @@ ConveyorPoseThread::tf_send(Eigen::Vector4f centroid, Eigen::Vector3f normal)
   q_offset = rollAngle * yawAngle * pitchAngle;
   q = q * q_offset;
 
+  fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
   fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
 
-  transform.setOrigin(origin);
-  transform.setRotation(rot);
+  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> ret;
+  ret.first = origin;
+  ret.second = rot;
+
+  return ret;
+}
+
+void
+ConveyorPoseThread::tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose)
+{
+  fawkes::tf::StampedTransform transform;
+
+  transform.frame_id = header_.frame_id;
+  transform.child_frame_id = "conveyor";
+  // TODO use time of header, just don't works with bagfiles
+//  transform.stamp = fawkes::Time((long)header_.stamp);
+
+  transform.setOrigin(pose.first);
+  transform.setRotation(pose.second);
 
   tf_publisher->send_transform(transform);
 }
 
+void
+ConveyorPoseThread::pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose, int vis_hist)
+{
+  double translation[3], rotation[4];
+  translation[0] = pose.first.x();
+  translation[1] = pose.first.y();
+  translation[2] = pose.first.z();
+  rotation[0] = pose.second.x();
+  rotation[1] = pose.second.y();
+  rotation[2] = pose.second.z();
+  rotation[3] = pose.second.w();
+  bb_pose_->set_translation(translation);
+  bb_pose_->set_rotation(rotation);
 
+  bb_pose_->set_frame(header_.frame_id.c_str());
+  fawkes::Time stamp((long)header_.stamp);
+  bb_pose_->set_visibility_history(vis_hist);
+  bb_pose_->write();
+}
 
 
 

@@ -34,10 +34,12 @@
 #include <plugins/ros/aspect/ros.h>
 
 #include <interfaces/SwitchInterface.h>
+#include <interfaces/Position3DInterface.h>
 
 #include "visualisation.hpp"
 
 #include <string>
+#include <map>
 
 typedef pcl::PointXYZ Point;
 typedef pcl::PointCloud<Point> Cloud;
@@ -66,6 +68,7 @@ private:
   fawkes::RefPtr<Cloud> cloud_out_result_;
 
   fawkes::SwitchInterface * bb_enable_switch_;
+  fawkes::Position3DInterface * bb_pose_;
 
   bool cfg_enable_switch_;
   bool cfg_use_visualisation_;
@@ -87,7 +90,9 @@ private:
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
  void bb_switch_is_enabled();
 
- void tf_send(Eigen::Vector4f centroid, Eigen::Vector3f normal);
+ std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
+ void tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose);
+ void pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose, int vis_hist);
 
 protected:
   virtual void run() { Thread::run(); }
