@@ -100,6 +100,10 @@
   (machine (mtype CS) (loaded-id 0) (incoming $?i&~:(member$ GET-PROD ?i))
            (name ?machine) (produced-id ?produced-id&~0) (team ?team-color)
            (state READY-AT-OUTPUT))
+  (product
+    (id ?produced-id)
+    (base UNKNOWN) ;only remove empty bases -> unknown color
+  )
   ;check that the task was not rejected before
   (not (and (task (name clear-cs) (state rejected) (id ?rej-id))
             (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?machine))))
@@ -469,7 +473,7 @@
       (task-priority ?*PRIORITY-PRODUCE-CX*)
       (machine ?cs)
       (machine-feature CONVEYOR))
-    (needed-task-lock (task-id ?task-id) (action PROD-CAP) (place ?cs))
+    (needed-task-lock (task-id ?task-id) (action PROD_CAP) (place ?cs))
   )
 )
 
