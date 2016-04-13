@@ -52,6 +52,7 @@ class BlackBoardSubscription
   public:
     BlackBoardSubscription(std::string topic_name 
                           , std::string processor_prefix 
+                          , fawkes::Logger *logger
                           , fawkes::Clock *clock
                           , fawkes::BlackBoard *blackboard
                           , fawkes::Interface *interface);
