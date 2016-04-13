@@ -60,8 +60,8 @@ using namespace fawkes;
 
 /** Constructor. */
 ConveyorPoseThread::ConveyorPoseThread() :
-		Thread("PCLLoopThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
-				BlockedTimingAspect::WAKEUP_HOOK_SKILL)
+		Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP),
+		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
 {
 
 }
