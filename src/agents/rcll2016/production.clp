@@ -659,7 +659,7 @@
     (bind ?wait-point (nth$ ?index ?wpts))
   )
   
-  (skill-call goto place (str-cat ?wait-point))
+  (skill-call ppgoto place (str-cat ?wait-point))
   (assert (no-task-found))
 )
 

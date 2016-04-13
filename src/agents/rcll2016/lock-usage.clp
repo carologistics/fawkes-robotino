@@ -71,7 +71,7 @@
   (place-waitpoint-assignment (place ?place) (waitpoint ?nearest-wp))
   =>
   (printout t "Waiting for lock of " ?res " at " ?nearest-wp crlf)
-  (skill-call goto place (str-cat ?nearest-wp))
+  (skill-call ppgoto place (str-cat ?nearest-wp))
   (assert (driving-to-wait-point))
 )
 
@@ -95,7 +95,7 @@
     (bind ?wait-point (nth$ ?index ?wpts))
   )
   (printout t "Waiting for lock of " ?res " at " ?wait-point crlf)
-  (skill-call goto place (str-cat ?wait-point))
+  (skill-call ppgoto place (str-cat ?wait-point))
   (assert (driving-to-wait-point))
 )
 
