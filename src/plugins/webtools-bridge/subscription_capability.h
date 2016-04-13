@@ -15,6 +15,7 @@ namespace fawkes {
   class Clock;
   class Time;
   class Mutex;
+  class Logger;
  }
 
 class Subscription;
@@ -48,6 +49,7 @@ class Subscription
 	public:
 		Subscription(std::string topic_name 
 					, std::string processor_prefix 
+					, fawkes::Logger *logger
 					, fawkes::Clock *clock);
 
 		virtual ~Subscription();
@@ -112,7 +114,11 @@ class Subscription
 		Status	 		active_status_;
 		std::string 	topic_name_;
 		std::string 	processor_prefix_;
+		
 		fawkes::Clock	*clock_;
+		fawkes::Logger 	*logger_;
+
+
 		bool 			finalized; //set to true if it was Object was finilazed berfore
 		
 		std::map <std::shared_ptr<WebSession> , std::list<Request>>    			subscriptions_; //maping of sessionTo requets list

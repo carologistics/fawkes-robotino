@@ -143,6 +143,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
     new_subscirption = std::make_shared <BlackBoardSubscription>(topic_name 
                                                                , prefix_ 
+                                                               , logger_
                                                                , clock_ 
                                                                , blackboard_ 
                                                                , blackboard_->open_for_reading(if_type.c_str(), if_id.c_str()) );
@@ -186,10 +187,11 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
 
 BlackBoardSubscription::BlackBoardSubscription(std::string topic_name 
                                               , std::string processor_prefix 
+                                              , fawkes::Logger *logger
                                               , fawkes::Clock *clock
                                               , fawkes::BlackBoard *blackboard
                                               , fawkes::Interface *interface)
-: Subscription(topic_name,processor_prefix, clock)
+: Subscription(topic_name,processor_prefix, logger ,clock)
 , BlackBoardInterfaceListener("WebToolsBridgeListener")
 , blackboard_(blackboard)
 , interface_(interface)

@@ -202,7 +202,7 @@ RosBridgeProxyProcessor::subscribe   ( std::string topic_name
     //create a DORMANT  Subscribtion instace (to keep consistancy with other Bridge_processors)
     std::shared_ptr <Subscription> new_subscirption;
     try{
-        new_subscirption = std::make_shared <Subscription>(topic_name , prefix_, clock_);
+        new_subscirption = std::make_shared <Subscription>(topic_name , prefix_, logger_ , clock_);
     }
     catch (fawkes::Exception &e) 
     {

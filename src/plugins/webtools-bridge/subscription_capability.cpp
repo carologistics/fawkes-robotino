@@ -1,6 +1,7 @@
 #include <map>
 #include <list>
 #include <memory>
+#include <iostream>
 
 #include <rapidjson/document.h>//To be removed from here after serialzer is moved
 #include <rapidjson/error/en.h>
@@ -14,6 +15,7 @@
 #include <core/threading/mutex_locker.h>
 #include <core/exceptions/software.h>
 #include <utils/time/time.h>
+#include <logging/logger.h>
 
 
 #include "subscription_capability.h" 
@@ -24,13 +26,14 @@ using namespace fawkes;
 
 //=================================   Subscription  ===================================
 
-Subscription::Subscription(std::string topic_name , std::string prefix, fawkes::Clock * clock)
+Subscription::Subscription(std::string topic_name , std::string prefix ,  fawkes::Logger * logger , fawkes::Clock * clock)
 	:	active_status_(DORMANT)
 	, 	topic_name_(topic_name)
 	,	processor_prefix_(prefix)
 	,	clock_(clock)
 	,	finalized (false)
 {
+	logger_ = logger;
 	mutex_=new fawkes::Mutex();
 }
 
@@ -349,7 +352,6 @@ void
 Subscription::publish()
 {
 	MutexLocker ml(mutex_);
-
 	if( is_active() )
 	{
 	
@@ -375,7 +377,7 @@ Subscription::publish()
 			unsigned int last_published = it_subscriptions_->second.front().last_published_time->in_msec();
 			unsigned int time_passed = (now.in_msec() -last_published ); 
 			//sub_list_mutex_->unlock();
-	
+
 			if (time_passed >= throttle_rate) {
 	
 				std::string complete_json_msg = serialize("publish"
@@ -393,7 +395,8 @@ Subscription::publish()
 				////ml.unlock();
 
 				//send msg it to session
-				it_subscriptions_->first->send(complete_json_msg);
+				if(complete_json_msg.size() > 1)
+					it_subscriptions_->first->send(complete_json_msg);
 				////ml.relock();
 			}
 		}
@@ -408,6 +411,7 @@ Subscription::serialize(std::string op
 {
 	//MutexLocker ml(mutex_);
 
+	std::cout <<" default serialzer shoudl not come here "<< std::endl;
 	std::string prefixed_topic_name= processor_prefix_+"/"+topic_name_;//not always the cast. (for its ros /topic_name)
 
 	StringBuffer s;
