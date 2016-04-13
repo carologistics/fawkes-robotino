@@ -86,6 +86,13 @@ void GazsimNavgraphGeneratorThread::loop() {
 	//check if all tag-messages were received
 	if (tag_msgs_.size() < tags_.size())
 		return;
+
+	//check if the transform map nedded by navgraph-generator exists otherwise wait
+	if(!tf_listener->frame_exists("map")){
+    logger->log_debug(name(), "Waiting until frame map exists");
+    return;
+  }
+	
 	//send the position of all tags
 	for (std::map<int, gazebo::msgs::Pose>::iterator it = tag_msgs_.begin();
 	        it != tag_msgs_.end(); ++it) {
@@ -147,7 +154,7 @@ void GazsimNavgraphGeneratorThread::send_station_msg(int id,
 	        new NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage();
 	stationMsg->set_id(mps_id_[id].data());
 	stationMsg->set_side(NavGraphWithMPSGeneratorInterface::Side::INPUT);
-	stationMsg->set_frame("/map");
+	stationMsg->set_frame("map");
 	stationMsg->set_tag_translation(0, pose.position().x());
 	stationMsg->set_tag_translation(1, pose.position().y());
 	stationMsg->set_tag_translation(2, pose.position().z());

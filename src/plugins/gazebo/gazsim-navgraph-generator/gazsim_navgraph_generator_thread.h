@@ -28,6 +28,7 @@
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
 #include <interfaces/NavGraphWithMPSGeneratorInterface.h>
+#include <aspect/tf.h>
 
 //gazebo headers
 #include <plugins/gazebo/aspect/gazebo.h>
@@ -37,7 +38,9 @@ class GazsimNavgraphGeneratorThread:
         //public fawkes::ClockAspect,
         public fawkes::LoggingAspect,
         public fawkes::ConfigurableAspect,
-        public fawkes::BlackBoardAspect, public fawkes::BlockedTimingAspect,
+        public fawkes::BlackBoardAspect,
+	      public fawkes::BlockedTimingAspect,
+	      public fawkes::TransformAspect,
         public fawkes::GazeboAspect {
 public:
 	GazsimNavgraphGeneratorThread();
