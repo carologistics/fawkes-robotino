@@ -232,6 +232,7 @@
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot product-id (type INTEGER))
+  (slot already-at-mps (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task

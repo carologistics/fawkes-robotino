@@ -28,7 +28,8 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps) (machine-feature ?feature) (gate ?gate) (ring ?ring))
+                 (machine ?mps) (machine-feature ?feature) (gate ?gate) (ring ?ring)
+                 (already-at-mps ?already-at-mps))
   (machine (name ?mps) (mtype ?mtype) (state ~DOWN))
   (task (name ?task-name))
   ?state <- (state STEP-STARTED)
@@ -41,15 +42,25 @@
     ; default side of machine is input, thus we don't need it here
 	  (wait-for-lock (priority ?p) (res ?mps))
   )
+  (bind ?args (create$ place ?mps))
+  
   (if (eq ?feature SLIDE) then
-    (assert 
-      (skill-to-execute (skill bring_product_to) (args place ?mps slide TRUE)  (target ?mps))
+    (bind ?args (create$ ?args slide TRUE))
+  )
+  (if ?already-at-mps then
+    ;the shelf position we used last can be derived from the number of caps on the shelf
+    (bind ?sslot MIDDLE)
+    (do-for-fact ((?cs cap-station)) (eq ?cs:name ?mps)
+      (switch ?cs:caps-on-shelf
+        (case 3 then (bind ?sslot LEFT))
+        (case 2 then (bind ?sslot RIGHT))
+        (case 1 then (bind ?sslot MIDDLE))
+      )
     )
-  else
-    (assert
-      (skill-to-execute (skill bring_product_to) (args place ?mps)  (target ?mps))
-    )
-  ) 
+    (bind ?args (create$ ?args atmps ?sslot))
+  )
+  
+  (assert (skill-to-execute (skill bring_product_to) (args ?args) (target ?mps)))
   ; check if we have to instruct an mps:
   (if (and (eq ?mtype CS)
            (or (eq ?task-name fill-cap)(eq ?task-name clear-cs))) then
