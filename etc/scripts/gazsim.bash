@@ -30,13 +30,14 @@ OPTIONS:
                   ($FAWKES_DIR/bin by default)
    -g             Run Fawkes in gdb
    -v             Run Fawkes in valgrind
+   -t             Skip Exploration and add all navgraph points
 EOF
 }
 
  
 #check options
 
-COMMAND=
+COMMAND=start
 CONF=
 VISUALIZATION=
 ROS=
@@ -52,8 +53,9 @@ META_PLUGIN=
 START_GAZEBO=true
 TERM_GEOMETRY=105x56
 GDB=
+SKIP_EXPLORATION=
 
-while getopts “hx:c:lrksn:e:dm:aof:p:gv” OPTION
+while getopts “hx:c:lrksn:e:dm:aof:p:gvt” OPTION
 do
      case $OPTION in
          h)
@@ -122,6 +124,9 @@ do
 	     ;;
 	 f)
 	     FIRST_ROBOTINO_NUMBER=$OPTARG
+	     ;;
+	 t)
+	     SKIP_EXPLORATION="-t"
 	     ;;
 	 p)
 	     FAWKES_BIN=$OPTARG/bin
@@ -217,7 +222,7 @@ if [  $COMMAND  == start ]; then
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
     done
 
     if $START_GAZEBO

@@ -165,3 +165,8 @@ gazsim:
     number-interfaces: 16
     visibility-history-increase-per-update: 30
     frame: !frame gazsim_tag_vision
+
+  navgraph-generator:
+    all-active-tags: ["~/tag_65/gazsim/gps/","~/tag_01/gazsim/gps/","~/tag_17/gazsim/gps/","~/tag_33/gazsim/gps/","~/tag_177/gazsim/gps/","~/tag_81/gazsim/gps/","~/tag_161/gazsim/gps/","~/tag_97/gazsim/gps/","~/tag_113/gazsim/gps/","~/tag_129/gazsim/gps/","~/tag_145/gazsim/gps/","~/tag_49/gazsim/gps/"]
+    related-mps: ["C-BS","C-CS1","C-CS2","C-RS1","C-RS2","C-DS","M-BS","M-CS1","M-CS2","M-RS1","M-RS2","M-DS"]
+    nav-gen-if-name: "/navgraph-generator-mps"
