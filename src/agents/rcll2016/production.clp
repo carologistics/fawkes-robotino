@@ -659,11 +659,11 @@
   (do-for-all-facts ((?wpt zone-waitpoint)) TRUE
     (bind ?wpts (create$ ?wpt:name ?wpts))
   )
+  (bind ?wait-point WAIT1)
   (if (> (length$ ?wpts) 0) then
     (bind ?index (random 1 (length$ ?wpts)))
     (bind ?wait-point (nth$ ?index ?wpts))
   )
-  
   (skill-call ppgoto place (str-cat ?wait-point))
   (assert (no-task-found))
 )
