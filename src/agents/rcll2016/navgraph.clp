@@ -132,8 +132,7 @@
   "To generate waiting positions in the empty zones we have to send the SetWaitZones message to the navgraph-generation interface"
   (phase PRODUCTION)
   (forall (machine (name ?mps))
-          (zone-exploration (times-searched ?ts) (machine ?found&:(or (eq ?mps ?found)
-                                                                      (and (eq ?found UNKNOWN) (> ?ts 2))))))
+          (zone-exploration (times-searched ?ts) (machine ?found&:(eq ?mps ?found))))
   (not (added-waiting-positions))
   (not (requested-waiting-positions))
   =>
