@@ -82,19 +82,6 @@
   )
   (if ?any-tag-to-add
     then
-    ; send message which zones are still to explore
-    (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetExplorationZonesMessage"))
-    (bind $?zones-still-to-explore-multifield (create-multifield-with-length 24))
-    (do-for-all-facts ((?zone-to-explore zone-exploration)) TRUE
-    ;get index of zone (e.g. Z15 -> 15)
-      (bind ?zone-name (str-cat ?zone-to-explore:name))
-      (bind ?zone-index (eval (sub-string 2 (str-length ?zone-name) ?zone-name)))
-      (bind ?zones-still-to-explore-multifield
-	    (replace$ ?zones-still-to-explore-multifield ?zone-index ?zone-index (sym-cat ?zone-to-explore:still-to-explore)))
-    )
-    (blackboard-set-msg-multifield ?msg "zones" ?zones-still-to-explore-multifield)
-    (blackboard-send-msg ?msg)
-
     ; send compute message so we can drive to the output
     (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
     (bind ?compute-msg-id (blackboard-send-msg ?msg))
