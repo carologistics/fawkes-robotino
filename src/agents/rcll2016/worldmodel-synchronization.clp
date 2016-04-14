@@ -273,7 +273,7 @@
             (if (eq ?slot-index-diff 0)
               then
               ;override
-              (dyn-override-multifield ?fact ?slot (explode$ ?value))
+              (dyn-override-multifield ?fact ?slot (explode$ ?value)) ;only when changed
               else
               (if (eq ?slot-index-diff 1)
                 then
@@ -283,8 +283,7 @@
               )
             )
             else
-            (dyn-mod ?fact ?slot ?value)
-            ; TODO only change if there really is a change
+            (dyn-mod ?fact ?slot ?value) ;modifies only when there is a change
           )
         )
       )

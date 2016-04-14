@@ -120,6 +120,13 @@
   (return ?round)
 )
 
+(deffunction string-from-multifield ($?mf)
+  (bind ?res "")
+  (progn$ (?f ?mf)
+    (bind ?res (str-cat ?res ?f ","))
+  )
+)
+
 (deffunction utils-get-zone-edges (?zone)
   "returns the edges of a zone"
   ; compute cyan edges first and mirrow them later if neccessary
@@ -315,6 +322,11 @@
   (if (not (deftemplate-slot-multip (fact-relation ?f) ?slot))
     then
     (printout error "Slot " ?slot " is no multifield!" crlf)
+  )
+  ; skip overriding if there is no change
+  (if (eq (string-from-multifield ?multifield)
+          (string-from-multifield (fact-slot-value ?f ?slot))) then
+    (return ?f)
   )
   (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
   (progn$ (?cur-slot (fact-slot-names ?f))
