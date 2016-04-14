@@ -307,17 +307,17 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 
 				std::cout<< "Session terminated NICELY :D" << std::endl;
 
-				//was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
-				if(subscriptions_.empty()){
-					std::shared_ptr<Subscription> my_self= shared_from_this();// Just to keep object alive till after its deleted from manager
-					emitt_event(EventType::TERMINATE);
+				// //was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
+				// if(subscriptions_.empty()){
+				// 	std::shared_ptr<Subscription> my_self= shared_from_this();// Just to keep object alive till after its deleted from manager
+				// 	emitt_event(EventType::TERMINATE);
 					
-					ml.unlock();
-					my_self->finalize();
-					std::cout<< "Subscripton topic terminated!" << std::endl;
+				// 	ml.unlock();
+				// 	my_self->finalize();
+				// 	std::cout<< "Subscripton topic terminated!" << std::endl;
 
-					//finalize will need the mutex
-				}
+				// 	//finalize will need the mutex
+				// }
 				//TODO:check if subscription became empty and trigger the delete from the owning class if that was the case
 
 			}
