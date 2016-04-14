@@ -62,7 +62,11 @@ function GOTO_SLIDE:init()
 end
 
 function APPROACH_SLIDE:init()
-   self.args["approach_mps"].x = 0.055 --TODO measure exact value
+   self.fsm.vars.front_distance = 0.08
+   if config:exists("/hardware/robotino/distance_front/sensor_threshold") then
+      self.fsm.vars.front_distance = config:get_float("/hardware/robotino/distance_front/sensor_threshold")
+   end
+   self.args["approach_mps"].x = self.fsm.vars.front_distance 
 end
 
 function STORE_PRODUCT:init()
