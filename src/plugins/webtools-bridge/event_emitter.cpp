@@ -1,8 +1,15 @@
 #include "callable.h"
 #include "event_emitter.h"
 
+
+#include <core/threading/mutex.h>
+#include <core/threading/mutex_locker.h>
+
+using namespace fawkes;
+
 EventEmitter::EventEmitter()
 {
+	mutex_ = new fawkes::Mutex();
 
 }
 
@@ -29,12 +36,16 @@ EventEmitter::emitt_event(EventType event_type)
 void 
 EventEmitter::register_callback  ( EventType event_type , std::shared_ptr <Callable> callable )
 {
+		MutexLocker ml(mutex_);
+
 	callbacks_ [event_type].push_back(callable);
 }
 
 void
 EventEmitter::unregister_callback( EventType event_type , std::shared_ptr <Callable> callable )
 {
+		MutexLocker ml(mutex_);
+
 	it_callables_ = std::find_if(callbacks_ [event_type].begin(), callbacks_ [event_type].end(), 
 		[&](std::shared_ptr<Callable> const& c){return c == callable;});
 

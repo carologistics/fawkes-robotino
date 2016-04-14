@@ -65,8 +65,8 @@ ClipsSubscription::~ClipsSubscription()
 void
 ClipsSubscription::activate_impl()
 { 
-  std::thread t(&ClipsSubscription::publish_loop, this);
-  t.detach();
+  //std::thread t(&ClipsSubscription::publish_loop, this);
+  //t.detach();
 }
 
 void
@@ -139,7 +139,7 @@ ClipsSubscription::serialize(std::string op
 
     writer.String("id");
     writer.String(id.c_str(),(SizeType)id.length());
-    
+  
     writer.String("topic");
     writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
     
@@ -249,18 +249,18 @@ ClipsSubscription::serialize(std::string op
   }
 }
 
-void
-ClipsSubscription::publish_loop()
-{
-  while(true)
-  {
+// void
+// ClipsSubscription::publish_loop()
+// {
+//   while(true)
+//   {
 
-    publish();
-  //  sleep(100);
-  }
+//     publish();
+//   //  sleep(100);
+//   }
 
 
-}
+// }
 
 
 
@@ -400,5 +400,4 @@ ClipsProcessor::unsubscribe ( std::string id
 {
 
 }
-
 

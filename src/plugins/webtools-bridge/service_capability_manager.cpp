@@ -21,6 +21,10 @@ ServiceCapabilityManager::~ServiceCapabilityManager()
 {
 	//TODO: check if something needs to be changed
 }
+
+void 
+ServiceCapabilityManager::init()
+{}
 	
 
 bool

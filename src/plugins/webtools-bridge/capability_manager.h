@@ -30,6 +30,9 @@ class CapabilityManager
 									, std::shared_ptr <WebSession>)
 		{}
 
+		virtual void init() 
+		{}
+
 		virtual bool register_processor(std::shared_ptr <BridgeProcessor> processor)
 		{return false;}
 

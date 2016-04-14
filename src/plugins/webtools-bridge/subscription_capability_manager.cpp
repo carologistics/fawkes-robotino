@@ -1,8 +1,14 @@
+
+
 #include "subscription_capability_manager.h"
 #include "subscription_capability.h"
 
 #include <utils/time/time.h>
+
+#include <core/threading/mutex.h>
+#include <core/threading/mutex_locker.h>
 #include <core/exceptions/software.h>
+#include <iostream>
 
 using namespace fawkes;
 using namespace rapidjson;
@@ -19,12 +25,25 @@ using namespace rapidjson;
 SubscriptionCapabilityManager::SubscriptionCapabilityManager()	
 :	CapabilityManager("Subscription")
 {
-
+	initialized_=false;
+	mutex_ = new fawkes::Mutex();
 }
 
 SubscriptionCapabilityManager::~SubscriptionCapabilityManager()
 {
 	//TODO: check if something needs to be changed
+	publisher_thread->join();
+}
+
+void
+SubscriptionCapabilityManager::init()
+{
+	if(!initialized_)
+	{
+		publisher_thread= std::make_shared<std::thread>(&SubscriptionCapabilityManager::publish_loop, this);
+		initialized_ = true;
+		std::cout << "publisher loop intrialized"<<std::endl;
+	}
 }
 	
 
@@ -138,6 +157,8 @@ SubscriptionCapabilityManager::handle_message(Document &d
 void
 SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <EventEmitter> event_emitter)
 {
+
+
 	try{
 		//check if the event emitter was a Subscription
 		std::shared_ptr <Subscription> subscription;
@@ -156,6 +177,11 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 				//does the subscription exist (unique per topic_name)
 				if (topic_Subscription_.find(prefixed_topic_name) != topic_Subscription_.end())
 				{
+					if( subscription->get_processor_prefix() ==  "clips")
+					{
+						unregister_callback(EventType::PUBLISH , subscription ); 
+					}
+
 					topic_Subscription_.erase(prefixed_topic_name);
 				}
 			}
@@ -212,15 +238,25 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 		subscription->activate();
 		//Subscriptions should norify me if it was terminated (by calling my callback)
 		subscription->register_callback( EventType::TERMINATE , shared_from_this() );
+
+					std::cout << "CLIPS SUBSCRIPTIONS "<<std::endl;
+
+		if(bridge_prefix ==  "clips")
+		{
+			register_callback(EventType::PUBLISH , topic_Subscription_[topic_name] ); 
+					std::cout << "registered to publish"<<std::endl;
+
+		}
+		
 	}else{
 		topic_Subscription_[topic_name]->subsume(subscription);
 		//subscription->finalize();
 	}
 
+
 	//To be moved back to the subscrib() if the processor
 	//..Or does it! u want to keep track of the subscription all the time..leaving that as a choice to the processor does not seem right.
 	// topic_Subscription_[topic_name]->add_request(id , compression , throttle_rate , queue_length , fragment_size , session);
-	
 
 	//Mutex.unlock();
 }
@@ -250,6 +286,12 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 		if(subscription-> empty()){
 			topic_Subscription_[topic_name] -> finalize();
 			topic_Subscription_.erase(topic_name);
+			
+			if(bridge_prefix ==  "clips")
+			{
+				unregister_callback(EventType::PUBLISH , topic_Subscription_[topic_name] ); 
+			}
+
 		}
 
 		return;
@@ -259,4 +301,27 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 
 }
 
+void 
+SubscriptionCapabilityManager::publish_loop()
+{
+	while(true)
+	{
+		emitt_event (EventType::PUBLISH);
+	}
+}
+
+void
+SubscriptionCapabilityManager::emitt_event(EventType event_type)
+{
+	MutexLocker ml(mutex_);
+
+	for(it_callables_  = callbacks_ [event_type].begin();
+		it_callables_ != callbacks_ [event_type].end() ; 
+		it_callables_++)
+	{
+		(*it_callables_)->callback(event_type , shared_from_this());
+	}
+
+	//do_on_event(event_type);
+}
 

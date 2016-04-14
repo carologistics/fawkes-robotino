@@ -64,7 +64,7 @@ class ClipsSubscription
     void deactivate_impl();
     void finalize_impl();
 
-    void publish_loop();
+    // void publish_loop();
 
 
     std::string   serialize(std::string op
@@ -73,7 +73,7 @@ class ClipsSubscription
 
   private:
   fawkes::LockPtr<CLIPS::Environment> clips_;
-   fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
+  fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
 
 };
 
