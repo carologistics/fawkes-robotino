@@ -615,14 +615,10 @@
   (machine (name ?missing-mps) (team ?team-color))
   (not (found-tag (name ?missing-mps)))
   ; zone-to-explore
-  ?z-f <- (zone-exploration (name ?zone) (machine ~UNKNOWN) 
+  ?z-f <- (zone-exploration (name ?zone) (machine ?missing-mps) 
                             (still-to-explore TRUE) (team ?team-color)
                             (incoming $?i&~:(member$ FIND_TAG ?i))
                             (times-searched ?times-searched))
-  ; no-zone searched less times
-  (not (zone-exploration (name ?z2&:(neq ?zone ?z2)) (still-to-explore TRUE) (team ?team-color)
-                         (incoming $?i&~:(member$ FIND_TAG ?i))
-                         (times-searched ?less-times-searched&:(< ?less-times-searched ?times-searched))))
   ;check that the task was not rejected before
   (not (and (task (name exploration-catch-up) (state rejected) (id ?rej-id))
 	    (step (name find-tag) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (zone ?zone))))
