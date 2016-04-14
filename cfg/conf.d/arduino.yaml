@@ -1,0 +1,10 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/dynamixel
+---
+arduino:
+
+  # Example configuration for a servo chain, choose any name as
+  # top element, e.g. ptu or example.
+  device: /dev/ttyACM0
