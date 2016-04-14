@@ -288,7 +288,6 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 
  	if(event_type == EventType::PUBLISH )
   	{
-  		std::cout << "publish recived"<<std::endl;
 		ml.unlock();
    		publish();
   	}

@@ -27,7 +27,7 @@ void
 ProxySession::terminate()
 {
     std::shared_ptr <ProxySession> me= shared_from_this();
-    web_session_->unregister_callback(EventType::TERMINATE , shared_from_this() );
+ //   web_session_->unregister_callback(EventType::TERMINATE , shared_from_this() );
 
     //emit termination event for all listeners of this session (should delete all ptrs to this instance)
     me->emitt_event( EventType::TERMINATE );    

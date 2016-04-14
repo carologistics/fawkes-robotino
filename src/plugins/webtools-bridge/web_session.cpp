@@ -95,7 +95,9 @@ WebSession::send(std::string msg){
  */
 void WebSession::on_terminate()
 {
-	emitt_event( EventType::TERMINATE );
+    std::shared_ptr <WebSession> me= shared_from_this();
+
+	me->emitt_event( EventType::TERMINATE );
 }
 
 void
@@ -103,8 +105,17 @@ WebSession::emitt_event(EventType event_type)
 {
 	for(it_callables_  = callbacks_ [event_type].begin();
 		it_callables_ != callbacks_ [event_type].end() ; 
-		it_callables_++)
+		)
 	{
 		(*it_callables_)->callback(event_type , shared_from_this());
+		
+		if(event_type == EventType::TERMINATE)
+		{
+			it_callables_ = callbacks_ [event_type].erase(it_callables_);	
+		}
+		else
+		{
+			it_callables_++;
+		}
 	}
 }
