@@ -38,6 +38,7 @@ skiller:
         machine_signal_3: RobotinoLightInterface::/machine-signal/2
         delivery_mode: SwitchInterface::/machine-signal/delivery-mode
         gripper_if: AX12GripperInterface::Gripper AX12
+        gripper_arduino_if: ArduinoInterface::Arduino
         line1: LaserLineInterface::/laser-lines/1
         line2: LaserLineInterface::/laser-lines/2
         line3: LaserLineInterface::/laser-lines/3
