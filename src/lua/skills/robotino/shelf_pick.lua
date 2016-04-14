@@ -61,8 +61,8 @@ function INIT:init()
 end
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.09 --TODO measure both values
-   local shelf_distance = 0.09
+   local shelf_to_conveyor = 0.1 --TODO measure both values
+   local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
       dest_y = shelf_to_conveyor
    elseif self.fsm.vars.slot == "MIDDLE" then
