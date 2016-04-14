@@ -799,7 +799,6 @@
   (phase PRODUCTION)
   (found-tag (name ?mps) (frame "/map") (trans $?trans) (rot $?rot) (side ?side))
   (machine (name ?mps) (team ?team&~nil))
-  (zone-exploration (name ?zone) (machine ?mps))
   ;check that the mps of the other team was not found
   (not (found-tag (name ?mps-mirrow&:(and (neq ?mps ?mps-mirrow)
 					  (eq (sub-string 2 (str-length (str-cat ?mps)) (str-cat ?mps))
@@ -823,10 +822,27 @@
     else
     (bind ?mps-mirrow (sym-cat "C" ?mps-mirrow))
   )
-
   ;assert mirrowed tag
   (assert (found-tag (name ?mps-mirrow) (side ?side) (frame "/map")
                      (trans ?trans-mirrow) (rot ?rot-mirrow)))
+)
+
+(defrule exp-add-exp-zone-mps-from-other-team
+  "If the exploration finished and we know the zones of our mpss we can derive in which zone the others team mpss are."
+  (phase PRODUCTION)
+  (machine (name ?mps) (team ?team&~nil))
+  (zone-exploration (name ?zone) (machine ?mps))
+  (not (zone-exploration (machine ?mps-mirrow&:(and (neq ?mps ?mps-mirrow)
+					  (eq (sub-string 2 (str-length (str-cat ?mps)) (str-cat ?mps))
+					      (sub-string 2 (str-length (str-cat ?mps-mirrow)) (str-cat ?mps-mirrow)))))))
+  =>
+  ; get name of the mirrowed mps
+  (bind ?mps-mirrow (sym-cat (sub-string 2 (str-length ?mps) ?mps)))
+  (if (eq ?team CYAN) then
+    (bind ?mps-mirrow (sym-cat "M" ?mps-mirrow))
+    else
+    (bind ?mps-mirrow (sym-cat "C" ?mps-mirrow))
+  )
   ;set zone-exploration
   (bind ?zone-int (eval (sub-string 2 (str-length (str-cat ?zone)) (str-cat ?zone))))
   (if (<= ?zone-int 12) then
@@ -834,7 +850,7 @@
     else
     (bind ?zone-mirrow (sym-cat Z (- ?zone-int 12)))
   )
-  (printout error "Zone of Mirrowed mps of " ?mps "," ?zone " is " ?zone-mirrow crlf)
+  (printout t "Zone of Mirrowed mps of " ?mps "," ?zone " is " ?zone-mirrow crlf)
   (do-for-fact ((?zone-expl-mir zone-exploration)) (eq ?zone-expl-mir:name ?zone-mirrow)
     (modify ?zone-expl-mir (machine ?mps-mirrow))
   )
