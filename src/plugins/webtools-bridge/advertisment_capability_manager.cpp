@@ -21,6 +21,10 @@ AdvertismentCapabilityManager::~AdvertismentCapabilityManager()
 {
 	//TODO: check if something needs to be changed
 }
+
+void 
+AdvertismentCapabilityManager::init()
+{}
 	
 
 bool

@@ -286,6 +286,13 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 	//sub_list_mutex_->lock();
 	MutexLocker ml(mutex_);
 
+ 	if(event_type == EventType::PUBLISH )
+  	{
+  		std::cout << "publish recived"<<std::endl;
+		ml.unlock();
+   		publish();
+  	}
+
 	try{
 		//check if the event emitter was a session
 		std::shared_ptr <WebSession> session;

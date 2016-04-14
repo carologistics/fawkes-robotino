@@ -9,6 +9,8 @@ public:
 	ServiceCapabilityManager();
 	~ServiceCapabilityManager();
 
+	void init();
+
 	void handle_message( rapidjson::Document &d 
 									, std::shared_ptr <WebSession>);
 

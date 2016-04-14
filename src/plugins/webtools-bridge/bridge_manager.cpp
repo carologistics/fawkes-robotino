@@ -70,6 +70,7 @@ BridgeManager::register_operation_handler(std::string op_name,std::shared_ptr <C
 	if(operation_cpm_map_.find(op_name)==operation_cpm_map_.end())
 	{
 		operation_cpm_map_[op_name]=cpm;
+		operation_cpm_map_[op_name]->init();
 		return true;
 	}
 	

@@ -11,6 +11,10 @@
 
 class Callable;
 
+namespace fawkes{
+	class Mutex;
+}
+
 class EventEmitter
 {
 	public:
@@ -28,6 +32,7 @@ class EventEmitter
   		std::map<EventType,std::list<std::shared_ptr <Callable> >>					callbacks_;
     	std::map<EventType,std::list<std::shared_ptr <Callable> >>::iterator		it_events_;
     	std::list<std::shared_ptr <Callable> >::iterator							it_callables_;
+    	fawkes::Mutex *mutex_;
 };
 
 #endif

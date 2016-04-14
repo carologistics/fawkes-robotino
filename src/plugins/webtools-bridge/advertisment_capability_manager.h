@@ -17,6 +17,8 @@ public:
 	AdvertismentCapabilityManager();
 	~AdvertismentCapabilityManager();
 
+	void init();
+
 	void handle_message( rapidjson::Document &d 
 									, std::shared_ptr <WebSession>);
 
