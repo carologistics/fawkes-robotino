@@ -30,43 +30,31 @@ name               = "mps_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "align_tag", "motor_move", "check_tag" }
 depends_interfaces = {
-  --[[
-  {v = "line1avg", type="LaserLineInterface", id="/laser-lines/1/moving_avg"},
-  {v = "line2avg", type="LaserLineInterface", id="/laser-lines/2/moving_avg"},
-  {v = "line3avg", type="LaserLineInterface", id="/laser-lines/3/moving_avg"},
-  {v = "line4avg", type="LaserLineInterface", id="/laser-lines/4/moving_avg"},
-  {v = "line5avg", type="LaserLineInterface", id="/laser-lines/5/moving_avg"},
-  {v = "line6avg", type="LaserLineInterface", id="/laser-lines/6/moving_avg"},
-  {v = "line7avg", type="LaserLineInterface", id="/laser-lines/7/moving_avg"},
-  {v = "line8avg", type="LaserLineInterface", id="/laser-lines/8/moving_avg"},
-  --]]
-  ---[[
-  {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
-  {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
-  {v = "line3", type="LaserLineInterface", id="/laser-lines/3"},
-  {v = "line4", type="LaserLineInterface", id="/laser-lines/4"},
-  {v = "line5", type="LaserLineInterface", id="/laser-lines/5"},
-  {v = "line6", type="LaserLineInterface", id="/laser-lines/6"},
-  {v = "line7", type="LaserLineInterface", id="/laser-lines/7"},
-  {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
-  --]]
-   {v = "tag_0", type = "Position3DInterface"},
-   {v = "tag_1", type = "Position3DInterface"},
-   {v = "tag_2", type = "Position3DInterface"},
-   {v = "tag_3", type = "Position3DInterface"},
-   {v = "tag_4", type = "Position3DInterface"},
-   {v = "tag_5", type = "Position3DInterface"},
-   {v = "tag_6", type = "Position3DInterface"},
-   {v = "tag_7", type = "Position3DInterface"},
-   {v = "tag_8", type = "Position3DInterface"},
-   {v = "tag_9", type = "Position3DInterface"},
-   {v = "tag_10", type = "Position3DInterface"},
-   {v = "tag_11", type = "Position3DInterface"},
-   {v = "tag_12", type = "Position3DInterface"},
-   {v = "tag_13", type = "Position3DInterface"},
-   {v = "tag_14", type = "Position3DInterface"},
-   {v = "tag_15", type = "Position3DInterface"},
-   {v = "tag_info", type = "TagVisionInterface"},
+   {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
+   {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
+   {v = "line3", type="LaserLineInterface", id="/laser-lines/3"},
+   {v = "line4", type="LaserLineInterface", id="/laser-lines/4"},
+   {v = "line5", type="LaserLineInterface", id="/laser-lines/5"},
+   {v = "line6", type="LaserLineInterface", id="/laser-lines/6"},
+   {v = "line7", type="LaserLineInterface", id="/laser-lines/7"},
+   {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
+   {v = "tag_0", type = "Position3DInterface", id="/tag-vision/0"},
+   {v = "tag_1", type = "Position3DInterface", id="/tag-vision/1"},
+   {v = "tag_2", type = "Position3DInterface", id="/tag-vision/2"},
+   {v = "tag_3", type = "Position3DInterface", id="/tag-vision/3"},
+   {v = "tag_4", type = "Position3DInterface", id="/tag-vision/4"},
+   {v = "tag_5", type = "Position3DInterface", id="/tag-vision/5"},
+   {v = "tag_6", type = "Position3DInterface", id="/tag-vision/6"},
+   {v = "tag_7", type = "Position3DInterface", id="/tag-vision/7"},
+   {v = "tag_8", type = "Position3DInterface", id="/tag-vision/8"},
+   {v = "tag_9", type = "Position3DInterface", id="/tag-vision/9"},
+   {v = "tag_10", type = "Position3DInterface", id="/tag-vision/10"},
+   {v = "tag_11", type = "Position3DInterface", id="/tag-vision/11"},
+   {v = "tag_12", type = "Position3DInterface", id="/tag-vision/12"},
+   {v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
+   {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
+   {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
+   {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
 }
 
 documentation      = [==[ align_mps
@@ -102,7 +90,7 @@ local MAX_ORI_ERR=0.1
 
 
 function get_lines()
-   for i,line in ipairs(self.fsm.vars.lines) do
+   for i,line in ipairs(fsm.vars.lines) do
       if line:visibility_history() >= MIN_VIS_HIST and
          line:length() >= LINE_LENGTH_MIN and
          line:length() <= LINE_LENGTH_MAX and
@@ -117,6 +105,7 @@ end
 
 function tag_visible(vis_hist)
    local tag_iface = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   print(tag_iface:visibility_history())
    return tag_iface and tag_iface:visibility_history() > vis_hist
 end
 
@@ -159,7 +148,7 @@ end
 function best_line()
    local min_bearing = 1000
    local best_line = nil
-   for i,line in ipairs(fsm.vars.line) do
+   for i,line in ipairs(fsm.vars.lines) do
       if line:bearing() < min_bearing then
          best_line = line
       end
@@ -188,7 +177,7 @@ fsm:add_transitions{
    {"INIT",          "CHECK_TAG",       cond=true},
 
    {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
-   {"CHECK_TAG",     "ALIGN",           cond="tag_visible(MIN_VIS_HIST_TAG)"},
+   {"CHECK_TAG",     "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)"},
 
    {"FIND_TAG",      "SEARCH_GLOBAL",   cond="want_search() and vars.place and pose_error"},
    {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0"},

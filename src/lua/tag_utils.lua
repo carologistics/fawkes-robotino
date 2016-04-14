@@ -2,9 +2,9 @@ require("fawkes.modinit")
 module(..., fawkes.modinit.register_all)
 
 function iface_for_id(tag_iface_list, tag_info_iface, tag_id)
-   for i,id in ipairs(tag_info_iface:tag_id()) do
-      if id == tag_id then
-         return tag_iface_list[i]
+   for i = 0,15 do
+      if tag_id == tag_info_iface:tag_id(i) then
+         return tag_iface_list[i+1]
       end
    end
    return nil
