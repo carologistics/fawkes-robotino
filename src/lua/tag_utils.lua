@@ -12,9 +12,11 @@ end
 
 function bad_tags(tag_iface_list, tag_info_iface, tag_id)
    rv = {}
-   for i = 0,15 do
-      if tag_info_iface:tag_id(i) ~= 0 and tag_info_iface:tag_id(i) ~= tag_id then
-         table.insert(rv, tag_iface_list[i+1])
+   if tag_id then
+      for i = 0,15 do
+         if tag_info_iface:tag_id(i) ~= 0 and tag_info_iface:tag_id(i) ~= tag_id then
+            table.insert(rv, tag_iface_list[i+1])
+         end
       end
    end
    return rv
