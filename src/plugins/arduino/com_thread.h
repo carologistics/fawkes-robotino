@@ -97,6 +97,7 @@ private:
     bool cfg_enable_gyro_;
     unsigned int cfg_sensor_update_cycle_time_;
     bool cfg_gripper_enabled_;
+    bool z_movement_pending;
 
     bool opened_;
     unsigned int open_tries_;
