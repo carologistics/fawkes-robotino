@@ -643,7 +643,8 @@
   (phase PRODUCTION)
   (state IDLE)
   (time $?now)
-  (not (no-task-found))
+  (game-time $?game-time)
+  (not (no-task-found ?))
   (not (task (state proposed|asked|ordered|running)))
   =>
   (printout error "Can't find any task!." crlf)
@@ -661,12 +662,25 @@
     (bind ?wait-point (nth$ ?index ?wpts))
   )
   (skill-call ppgoto place (str-cat ?wait-point))
-  (assert (no-task-found))
+  (assert (no-task-found (nth$ 1 ?game-time)))
 )
 
 (defrule prod-remove-nothing-to-do-fact
-  ?no-task <- (no-task-found)
+  ?no-task <- (no-task-found ?)
   (state ~IDLE)
   =>
   (retract ?no-task)
+)
+
+(defrule prod-remove-rejected-tasks-after-timeout
+  ?no-task <- (no-task-found ?waiting-since)
+  (game-time $?game-time&:(< (+ ?waiting-since ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING*)
+                             (nth$ 1 ?game-time)))
+  (state IDLE)
+  =>
+  (printout t "Removing rejected tasks after waiting for "
+            ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING* "s" crlf)
+  (coordination-remove-old-rejected-tasks)
+  (retract ?no-task)
+  (assert (no-task-found (nth$ 1 ?game-time)))
 )
