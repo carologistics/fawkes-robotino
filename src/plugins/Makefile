@@ -27,6 +27,7 @@ SUBDIRS	= clips-motor-switch \
 	  agent-monitor \
 	  marker_writer \
 	  conveyor_vision \
+	  motor-led
 
 include $(BUILDSYSDIR)/rules.mk
 
