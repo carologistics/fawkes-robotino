@@ -76,6 +76,7 @@ ArduinoComThread::init()
 
     try {
         cfg_device_ = config->get_string("/arduino/device");
+        cfg_rpm_    = config->get_int("/arduino/rpm");
     } catch (Exception &e) {
     }
 
