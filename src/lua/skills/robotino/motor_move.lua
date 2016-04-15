@@ -39,10 +39,10 @@ documentation      = [==[Move on a (kind of) straight line relative to /base_lin
 ]==]
 
 -- Tunables
-local V_MAX =     { x=0.35,  y=0.35,  ori=1.5 }    -- ultimate limit
+local V_MAX =     { x=0.35,  y=0.35,  ori=1.4 }    -- ultimate limit
 local V_MIN =     { x=0.01, y=0.01, ori=0.08 }   -- below the motor won't even start
 local TOLERANCE = { x=0.02, y=0.02, ori=0.025 } -- accuracy
-local D_DECEL =   { x=0.03, y=0.03, ori=0.07 }    -- deceleration distance
+local D_DECEL =   { x=0.03, y=0.03, ori=0.15 }    -- deceleration distance
 local ACCEL =     { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
 
 -- Initialize as skill module
