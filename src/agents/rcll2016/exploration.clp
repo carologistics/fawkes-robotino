@@ -112,8 +112,6 @@
     (printout error "Ouch, starting exploration but I don't know my team color" crlf)
   )
   (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
-  ;disable delivery mode of the machine_signal plugin (for safety)
-  (skill-call enable_switch iface "delivery" enable false)
 )
 
 (defrule exp-goto-first
