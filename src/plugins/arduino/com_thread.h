@@ -91,6 +91,7 @@ private:
 private:
     std::string cfg_device_;
     unsigned int cfg_rpm_;
+    float seconds_per_mm;
     std::string cfg_hostname_;
     std::string cfg_prefix_;
     std::string cfg_name_;

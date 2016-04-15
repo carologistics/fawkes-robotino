@@ -289,6 +289,9 @@ ArduinoComThread::load_config()
     try {
         cfg_device_ = config->get_string("/arduino/device");
         cfg_rpm_ = config->get_int("/arduino/rpm");
+
+        // 2mm / rotation
+        seconds_per_mm = (2. / cfg_rpm_) / 60.;
     } catch (Exception &e) {
     }
 }
