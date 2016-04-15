@@ -99,6 +99,7 @@ private:
     unsigned int cfg_sensor_update_cycle_time_;
     bool cfg_gripper_enabled_;
     bool z_movement_pending;
+    fawkes::Time time_to_stop_z_align;
 
     bool opened_;
     unsigned int open_tries_;
@@ -112,7 +113,9 @@ private:
     boost::asio::streambuf input_buffer_;
     boost::mutex io_mutex_;
     fawkes::ArduinoInterface *arduino_if;
+
     void load_config();
+    void reset_timer_for_z_alignment();
 
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */

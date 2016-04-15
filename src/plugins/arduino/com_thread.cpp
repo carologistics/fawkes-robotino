@@ -101,6 +101,14 @@ ArduinoComThread::loop()
 {
     time_wait_->mark_start();
 
+    if (z_movement_pending) {
+        fawkes::Time now(clock);
+        if (now >= time_to_stop_z_align) {
+            arduino_if->set_final(false);
+            z_movement_pending = false;
+        }
+    }
+
     if (opened_) {
         while (!arduino_if->msgq_empty()) {
             if (arduino_if->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>()) {
@@ -110,6 +118,9 @@ ArduinoComThread::loop()
                 req.add_command(ArduinoComMessage::CMD_STEP_UP);
                 req.set_num_steps(msg->num_mm());
                 send_and_recv(req);
+
+                reset_timer_for_z_alignment();
+
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>()) {
                 ArduinoInterface::MoveDownwardsMessage *msg = arduino_if->msgq_first(msg);
 
@@ -117,6 +128,8 @@ ArduinoComThread::loop()
                 req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
                 req.set_num_steps(msg->num_mm());
                 send_and_recv(req);
+
+                reset_timer_for_z_alignment();
             }
             arduino_if->msgq_pop();
         }
@@ -136,6 +149,18 @@ ArduinoComThread::loop()
     }
 
     time_wait_->wait();
+}
+
+void
+ArduinoComThread::reset_timer_for_z_alignment()
+{
+    fawkes::Time now(clock);
+    float seconds_to_drive = cfg_rpm_ + seconds_per_mm * msg->num_mm();
+
+    time_to_stop_z_align = now + seconds_to_drive;
+
+    arduino_if->set_final(false);
+    z_movement_pending = true;
 }
 
 bool
