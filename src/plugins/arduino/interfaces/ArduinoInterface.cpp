@@ -51,9 +51,10 @@ ArduinoInterface::ArduinoInterface() : Interface()
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
   add_fieldinfo(IFT_UINT32, "z_position", 1, &data->z_position);
+  add_fieldinfo(IFT_BOOL, "final", 1, &data->final);
   add_messageinfo("MoveUpwardsMessage");
   add_messageinfo("MoveDownwardsMessage");
-  unsigned char tmp_hash[] = {0x6f, 0xe3, 0xa7, 0x6c, 0x2f, 0x38, 0xb0, 0x61, 0x12, 0xd2, 0xac, 0x2f, 0xe8, 0x62, 0xab, 0x5f};
+  unsigned char tmp_hash[] = {0xb8, 0xd3, 0x66, 0x9a, 0x16, 0xc3, 0x20, 0xa7, 0x41, 0xda, 0x21, 0x2f, 0x89, 0x5c, 0x2b, 0x69};
   set_hash(tmp_hash);
 }
 
@@ -91,6 +92,37 @@ void
 ArduinoInterface::set_z_position(const uint32_t new_z_position)
 {
   data->z_position = new_z_position;
+  data_changed = true;
+}
+
+/** Get final value.
+ * True, if the last move command has been finished
+ * @return final value
+ */
+bool
+ArduinoInterface::is_final() const
+{
+  return data->final;
+}
+
+/** Get maximum length of final value.
+ * @return length of final value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+ArduinoInterface::maxlenof_final() const
+{
+  return 1;
+}
+
+/** Set final value.
+ * True, if the last move command has been finished
+ * @param new_final new final value
+ */
+void
+ArduinoInterface::set_final(const bool new_final)
+{
+  data->final = new_final;
   data_changed = true;
 }
 

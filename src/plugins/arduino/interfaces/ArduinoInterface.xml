@@ -6,6 +6,7 @@
       Interface to access Arduino functionalities
     </comment>
     <field type="uint32" name="z_position">Current z-position</field>
+    <field type="bool" name="final">True, if the last move command has been finished</field>
   </data>
 
   <!-- Motion commands -->

@@ -45,6 +45,7 @@ class ArduinoInterface : public Interface
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     uint32_t z_position; /**< Current z-position */
+    bool final; /**< True, if the last move command has been finished */
   } ArduinoInterface_data_t;
 #pragma pack(pop)
 
@@ -116,6 +117,9 @@ class ArduinoInterface : public Interface
   uint32_t z_position() const;
   void set_z_position(const uint32_t new_z_position);
   size_t maxlenof_z_position() const;
+  bool is_final() const;
+  void set_final(const bool new_final);
+  size_t maxlenof_final() const;
   virtual Message * create_message(const char *type) const;
 
   virtual void copy_values(const Interface *other);

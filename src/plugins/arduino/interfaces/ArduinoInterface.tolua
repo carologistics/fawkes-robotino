@@ -31,6 +31,9 @@ class ArduinoInterface : public Interface
   unsigned int z_position();
   void set_z_position(const unsigned int new_z_position);
   int maxlenof_z_position() const;
+  bool is_final();
+  void set_final(const bool new_final);
+  int maxlenof_final() const;
   bool                    oftype(const char *interface_type) const;
   const void *            datachunk() const;
   unsigned int            datasize() const;
