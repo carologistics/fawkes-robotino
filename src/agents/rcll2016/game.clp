@@ -53,13 +53,12 @@
   (phase EXPLORATION|PRODUCTION|WHACK_A_MOLE_CHALLENGE)
   ?sf <- (state WAIT_START)
   ?cf <- (change-state RUNNING)
-  ?rf <- (refbox-state ?)
   (started-in ?phase)
   (team-color ?team-color)
   (move-into-field-waittime ?wait-cfg)
   (time $?now)
   =>
-  (retract ?sf ?cf ?rf)
+  (retract ?sf ?cf)
   (assert (state MOVE_INTO_FIELD))
   (if (eq ?phase SETUP)
     then
@@ -88,7 +87,6 @@
   =>
   (retract ?sf)
   (assert (state IDLE))
-  (assert (refbox-state RUNNING))
   (assert (exploration-start))
 )
 
@@ -99,6 +97,7 @@
   ?rf <- (refbox-state ~?cs)
   (not (simulation-is-running))
   =>
+  (printout t "Paused, disabling motor" crlf)
   (retract ?sf ?cf ?rf)
   (motor-disable)
   (assert (state PAUSED))
@@ -114,6 +113,7 @@
   ?rf <- (refbox-state PAUSED)
   (not (simulation-is-running))
   =>
+  (printout t "Unpaused, enabling motor" crlf)
   (retract ?sf ?pf ?cf ?rf)
   (assert (state ?old-state))
   (assert (refbox-state RUNNING))
