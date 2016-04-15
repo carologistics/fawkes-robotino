@@ -10,6 +10,16 @@ function iface_for_id(tag_iface_list, tag_info_iface, tag_id)
    return nil
 end
 
+function bad_tags(tag_iface_list, tag_info_iface, tag_id)
+   rv = {}
+   for i = 0,15 do
+      if tag_info_iface:tag_id(i) ~= 0 and tag_info_iface:tag_id(i) ~= tag_id then
+         table.insert(rv, tag_iface_list[i+1])
+      end
+   end
+   return rv
+end
+
 function some_tag(tag_iface_list)
    for i,iface in ipairs(tag_iface_list) do
       if iface:visibility_history() > 0 then

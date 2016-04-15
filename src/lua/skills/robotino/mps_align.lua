@@ -71,42 +71,37 @@ documentation      = [==[ align_mps
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local tfm = require("tf_module")
+local tfm = require("fawkes.tfutils")
 local llutils = require("fawkes.laser-lines_utils")
 local tag_utils = require("tag_utils")
 
 -- Tunables
-local MIN_VIS_HIST=10
+local MIN_VIS_HIST_LINE=10
 local MIN_VIS_HIST_TAG=10
 
 local LINE_LENGTH_MIN=0.64
 local LINE_LENGTH_MAX=0.71
 local LINE_XDIST_MAX=0.6
-local LINE_BEARING_MIN=0.1
-local SEARCH_MOVES={ {ori=0.5}, {ori=-1} }
 
 local MAX_TRANS_ERR=0.05
 local MAX_ORI_ERR=0.1
+local LINE_MATCH_TOLERANCE=0.3
 
-
-function get_lines()
-   for i,line in ipairs(fsm.vars.lines) do
-      if line:visibility_history() >= MIN_VIS_HIST and
-         line:length() >= LINE_LENGTH_MIN and
-         line:length() <= LINE_LENGTH_MAX and
-         line:bearing() > LINE_BEARING_MIN and
-         math.min(line:end_point_1(0), line:end_point_2(0)) <= LINE_XDIST_MAX
-      then
-         table.insert(fsm.vars.interesting_lines, {iface=line, idx=i})
-      end
-   end
-end
+local TURN_MOVES={
+   { ori = math.pi/2},
+   { ori = -math.pi},
+   { ori = -math.pi/2}
+}
+local MAX_TRIES = 6
 
 
 function tag_visible(vis_hist)
    local tag_iface = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
-   print(tag_iface:visibility_history())
-   return tag_iface and tag_iface:visibility_history() > vis_hist
+   if tag_iface and tag_iface:visibility_history() > vis_hist then
+      print("Tag visible: " .. tag_iface:id())
+      return true
+   end
+   return false
 end
 
 
@@ -123,50 +118,31 @@ end
 
 
 function place_valid()
-   if fsm.vars.place then
-      if (string.sub(fsm.vars.place, -1) == "I"
-         or string.sub(fsm.vars.place, -1) == "O") then
-         return navgraph:node(fsm.vars.place):is_valid()
-      else
-         print("ERROR: place arg must be a machine INPUT or OUTPUT node!")
-         return false
-      end
-   end
-   return true
+   return not fsm.vars.place
+      or (navgraph:node(fsm.vars.place):is_valid()
+      and (string.sub(fsm.vars.place, -1) == "I"
+         or string.sub(fsm.vars.place, -1) == "O"))
 end
 
 
 function want_search()
    if fsm.vars.place then
-      return fsm.vars.globalsearch_done and fsm.vars.search_idx <= #SEARCH_MOVES
+      return fsm.vars.globalsearch_done and fsm.vars.search_idx <= MAX_TRIES
    else
-      return fsm.vars.search_idx <= #SEARCH_MOVES
+      return fsm.vars.search_idx <= MAX_TRIES
    end
 end
 
 
-function best_line()
-   local min_bearing = 1000
-   local best_line = nil
-   for i,line in ipairs(fsm.vars.lines) do
-      if line:bearing() < min_bearing then
-         best_line = line
-      end
-   end
-   fsm.vars.best_line = best_line
-   return best_line
-end
-
-
-fsm:define_states{ export_to=_M, closure={SEARCH_MOVES=SEARCH_MOVES, place_valid=place_valid,
+fsm:define_states{ export_to=_M, closure={place_valid=place_valid,
       pose_error=pose_error, tag_visible=tag_visible, MIN_VIS_HIST_TAG=MIN_VIS_HIST_TAG,
       want_search=want_search, line_visible=line_visible },
    {"INIT",                   JumpState},
    {"CHECK_TAG",              JumpState},
-   {"SEARCH",                 JumpState},
+   {"FIND_TAG",               JumpState},
    {"SEARCH_LINES",           SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
    {"SEARCH_GLOBAL",          SkillJumpState, skills={{"global_motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
-   {"FIND_TAG",               SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
+   {"TURN_AROUND",            SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
    {"SETTLE_LINE",            JumpState},
    {"ALIGN",                  SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"},
 }
@@ -177,16 +153,19 @@ fsm:add_transitions{
    {"INIT",          "CHECK_TAG",       cond=true},
 
    {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
-   {"CHECK_TAG",     "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)"},
+   {"CHECK_TAG",     "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
 
-   {"FIND_TAG",      "SEARCH_GLOBAL",   cond="want_search() and vars.place and pose_error"},
-   {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0"},
-   {"FIND_TAG",      "FAILED",          cond="not want_search()", timeout=1},
+   {"FIND_TAG",      "SEARCH_GLOBAL",   cond="want_search() and vars.place and pose_error()", desc="correct pose"},
+   {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0", desc="search 4 tag"},
+   {"FIND_TAG",      "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
+   {"FIND_TAG",      "TURN_AROUND",     timeout=1, desc="no interesting lines"},
+   {"FIND_TAG",      "FAILED",          cond="not want_search()"},
 
-   {"SEARCH_GLOBAL", "CHECK_TAG",       cond="tag_visible(MIN_VIS_HIST_TAG)"},
-   {"SEARCH_LINES",  "CHECK_TAG",       cond="tag_visible(MIN_VIS_HIST_TAG)"},
+   {"SEARCH_GLOBAL", "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
+   {"SEARCH_LINES",  "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
 
-   {"SETTLE_LINE",   "ALIGN",           cond=best_line},
+   {"SETTLE_LINE",   "ALIGN",           cond="vars.matched_line"},
+   {"SETTLE_LINE",   "CHECK_TAG",       timeout=2, desc="lost line"}
 }
 
 function INIT:init()
@@ -194,14 +173,21 @@ function INIT:init()
    self.fsm.vars.ori = self.fsm.vars.ori or 0
 
    self.fsm.vars.lines = {}
-   self.fsm.vars.lines[1]  = line1
-   self.fsm.vars.lines[2]  = line2
-   self.fsm.vars.lines[3]  = line3
-   self.fsm.vars.lines[4]  = line4
-   self.fsm.vars.lines[5]  = line5
-   self.fsm.vars.lines[6]  = line6
-   self.fsm.vars.lines[7]  = line7
-   self.fsm.vars.lines[8]  = line8
+   self.fsm.vars.lines[line1:id()]  = line1
+   self.fsm.vars.lines[line2:id()]  = line2
+   self.fsm.vars.lines[line3:id()]  = line3
+   self.fsm.vars.lines[line4:id()]  = line4
+   self.fsm.vars.lines[line5:id()]  = line5
+   self.fsm.vars.lines[line6:id()]  = line6
+   self.fsm.vars.lines[line7:id()]  = line7
+   self.fsm.vars.lines[line8:id()]  = line8
+
+   -- Tracker to remember how often we looked for a tag at each line
+   -- Required so we don't alternate between two lines that both don't have the desired tag.
+   self.fsm.vars.lines_visited = {}
+   for k,v in pairs(self.fsm.vars.lines) do
+      self.fsm.vars.lines_visited[k] = 0
+   end
 
    self.fsm.vars.interesting_lines = {}
 
@@ -227,43 +213,155 @@ function INIT:init()
    self.fsm.vars.globalsearch_done = false
 end
 
-function FIND_TAG:loop()
-   get_lines()
+-- Match tag to laser line
+function match_line(tag, lines)
+   local matched_line = nil
+   if tag and tag:visibility_history() >= MIN_VIS_HIST_TAG then
+      local tag_laser = tfm.transform6D(
+         { x=tag:translation(0), y=tag:translation(1), z=tag:translation(2),
+            ori = { x=tag:rotation(0), y=tag:rotation(1), z=tag:rotation(2), w=tag:rotation(3)  }
+         }, tag:frame(), "/base_laser"
+      )
+      local min_dist = 1000
+      for k,line in pairs(lines) do
+         local line_center = llutils.center(line)
+         local dist = math.vec_length(tag_laser.x - line_center.x, tag_laser.y - line_center.y)
+         if line:visibility_history() >= MIN_VIS_HIST_LINE
+            and dist < LINE_MATCH_TOLERANCE
+            and dist < min_dist
+         then
+            min_dist = dist
+            matched_line = line
+            printf("tag: %f,%f; center: %f,%f", tag_laser.x, tag_laser.y, line_center.x, line_center.y)
+            printf("matched %s tag dist: %f", line:id(), dist)
+         end
+      end
+   end
+
+   return matched_line
 end
 
-function FIND_TAG:exit()
-   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
+-- Return all lines which may have the tag we're looking for
+function get_interesting_lines(lines)
+   local rv = {}
+   
+   -- Shallow-copy input table so we don't delete values from it
+   local good_lines = {}
+   for k,v in pairs(lines) do good_lines[k] = v end
+
+   -- Match unwanted tags to lines and remove them
+   local bad_tags = tag_utils.bad_tags(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   for j,tag in ipairs(bad_tags) do
+      if tag:visibility_history() > 0 then
+         local matched = match_line(tag, good_lines)
+         if matched then good_lines[matched:id()] = nil end
+      end
+   end
+   
+   -- Use only lines that have been inspected 0 times or less often than the others
+   local max_num_visited = 1
+   for k,v in pairs(fsm.vars.lines_visited) do
+      if v > max_num_visited then
+         max_num_visited = v
+      end
+   end
+
+   for k,line in pairs(good_lines) do
+      if line then
+         local center = llutils.center(line)
+         local ori = math.atan2(center.y, center.x)
+         if line:visibility_history() >= MIN_VIS_HIST_LINE and
+            line:length() >= LINE_LENGTH_MIN and
+            line:length() <= LINE_LENGTH_MAX and
+            fsm.vars.lines_visited[line:id()] < max_num_visited and
+            math.min(line:end_point_1(0), line:end_point_2(0)) <= LINE_XDIST_MAX
+         then
+            table.insert(rv, line)
+            printf("interesting %s ori: %f", line:id(), ori)
+         end
+      end
+   end
+   return rv
 end
+
+
+function CHECK_TAG:loop()
+   local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   if tag and tag:visibility_history() > MIN_VIS_HIST_TAG then
+      self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
+   end
+end
+function CHECK_TAG:init()
+end
+
+function FIND_TAG:init()
+   self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
+end
+
+function FIND_TAG:loop()
+   self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
+end
+
 
 function SEARCH_GLOBAL:init()
    self.args["global_motor_move"] = self.fsm.vars.place
 end
-
 function SEARCH_GLOBAL:exit()
    self.fsm.vars.globalsearch_done = true
 end
 
+
 function SEARCH_LINES:init()
    local min_dist = 1000
-   local target = nil
-   for i,line in ipairs(self.fsm.vars.interesting_lines) do
-      local center = llutils.center(line)
-      local dist = math.vec_length(center.x, center.y)
-      if dist * line:bearing() < min_dist then
-         target = llutils.point_in_front(llutis.center(line), self.fsm.vars.x)
-         min_dist = dist * line:bearing()
+   local ori = nil
+   local chosen_line = nil
+
+   for i,l in ipairs(self.fsm.vars.interesting_lines) do
+      local center = tfm.transform(llutils.center(l), "/base_laser", "/base_link")
+      ori = math.atan2(center.y, center.x)
+
+      if math.abs(ori) < min_dist then
+         min_dist = math.abs(ori)
+         chosen_line = l
       end
    end
+
+   self.fsm.vars.lines_visited[chosen_line:id()] = self.fsm.vars.lines_visited[chosen_line:id()] + 1
    
-   if target then
-      self.args["motor_move"] = { x=target.x, y=target.y, ori=target.ori }
-   else
-      self.args["motor_move"] = SEARCH_MOVES[self.fsm.vars.search_idx]
+   print("SEARCH LINES turn ori: " .. ori)
+   self.args["motor_move"].ori = ori
+   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
+end
+
+
+function TURN_AROUND:init()
+   print("TURN_AROUND search_idx: " .. self.fsm.vars.search_idx)
+   self.args["motor_move"] = TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]
+   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
+
+   for k,v in pairs(self.fsm.vars.lines_visited) do
+      self.fsm.vars.lines_visited[k] = 0
    end
 end
 
+
+function SETTLE_LINE:loop()
+   local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   if tag then
+      print("Matched tag: " .. tag:id())
+   end
+
+   self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
+   if self.fsm.vars.matched_line then
+      print("Matched line: " .. self.fsm.vars.matched_line:id())
+   end
+end
+
+
 function ALIGN:init()
-   self.args["motor_move"] = llutils.point_in_front(llutils.center(
-      self.fsm.vars.best_line), self.fsm.vars.x)
+   local center = llutils.center(self.fsm.vars.matched_line)
+   local center_bl = tfm.transform(center, "/base_laser", "/base_link")
+   local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
+   self.args["motor_move"] = p
 end
 
