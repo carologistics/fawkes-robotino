@@ -586,7 +586,7 @@
   )
   ;check that the task was not rejected before
   (not (and (task (name clear-rs) (state rejected) (id ?rej-id))
-            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
+            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?cs))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-CLEAR-RS*))))
   (order (product-id ?product-id)
          (end ?end&:(< ?end (nth$ 1 ?game-time)))
