@@ -76,7 +76,8 @@ local llutils = require("fawkes.laser-lines_utils")
 local tag_utils = require("tag_utils")
 
 -- Tunables
-local MIN_VIS_HIST_LINE=10
+local MIN_VIS_HIST_LINE=15
+local MIN_VIS_HIST_LINE_SEARCH=4
 local MIN_VIS_HIST_TAG=10
 
 local LINE_LENGTH_MIN=0.64
@@ -88,15 +89,30 @@ local MAX_ORI_ERR=0.1
 local LINE_MATCH_TOLERANCE=0.3
 
 local TURN_MOVES={
-   { ori = math.pi/2},
-   { ori = -math.pi},
-   { ori = -math.pi/2}
+   { ori = math.pi},
+   { ori = -math.pi/2},
+   { ori = -math.pi}
 }
-local MAX_TRIES = 6
+local MAX_TRIES = 8
 
 
 function tag_visible(vis_hist)
-   local tag_iface = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   local tag_iface = nil
+   if fsm.vars.tag_id then
+      tag_iface = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   else
+      local min_dist = 1000
+      for i = 0,15 do
+         if tag_info:tag_id(i) ~= 0 and fsm.vars.tags[i+1]:visibility_history() > vis_hist
+            and fsm.vars.tags[i+1]:translation(2) < min_dist
+         then
+            tag_iface = fsm.vars.tags[i+1]
+            min_dist = tag_iface:translation(2)
+            fsm.vars.tag_id = tag_info:tag_id(i)
+         end
+      end
+   end
+
    if tag_iface and tag_iface:visibility_history() > vis_hist then
       print("Tag visible: " .. tag_iface:id())
       return true
@@ -224,7 +240,7 @@ function match_line(tag, lines)
       )
       local min_dist = 1000
       for k,line in pairs(lines) do
-         local line_center = llutils.center(line)
+         local line_center = llutils.center(line, 0)
          local dist = math.vec_length(tag_laser.x - line_center.x, tag_laser.y - line_center.y)
          if line:visibility_history() >= MIN_VIS_HIST_LINE
             and dist < LINE_MATCH_TOLERANCE
@@ -268,9 +284,9 @@ function get_interesting_lines(lines)
 
    for k,line in pairs(good_lines) do
       if line then
-         local center = llutils.center(line)
+         local center = llutils.center(line, 0)
          local ori = math.atan2(center.y, center.x)
-         if line:visibility_history() >= MIN_VIS_HIST_LINE and
+         if line:visibility_history() >= MIN_VIS_HIST_LINE_SEARCH and
             line:length() >= LINE_LENGTH_MIN and
             line:length() <= LINE_LENGTH_MAX and
             fsm.vars.lines_visited[line:id()] < max_num_visited and
@@ -317,7 +333,7 @@ function SEARCH_LINES:init()
    local chosen_line = nil
 
    for i,l in ipairs(self.fsm.vars.interesting_lines) do
-      local center = tfm.transform(llutils.center(l), "/base_laser", "/base_link")
+      local center = tfm.transform(llutils.center(l, 0), "/base_laser", "/base_link")
       ori = math.atan2(center.y, center.x)
 
       if math.abs(ori) < min_dist then
@@ -360,8 +376,10 @@ end
 
 function ALIGN:init()
    local center = llutils.center(self.fsm.vars.matched_line)
+   printf("center l: %f, %f, %f", center.x, center.y, center.ori)
    local center_bl = tfm.transform(center, "/base_laser", "/base_link")
    local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
-   self.args["motor_move"] = p
+   printf("p: %f %f %f", p.x, p.y, p.ori)
+   self.args["motor_move"] = {x=p.x, y=p.y, ori=math.angle_distance(p.ori, self.fsm.vars.ori or 0)}
 end
 
