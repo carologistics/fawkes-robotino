@@ -98,3 +98,5 @@ plugins/static-transforms:
       rot_pitch: 0 
       rot_yaw: 0
       rot_roll: 0
+
+hardware/robotino/distance_front/sensor_threshold: 0.055
