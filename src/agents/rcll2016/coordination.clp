@@ -77,7 +77,7 @@
   (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
     (bind ?fact-ptr (synced-add-to-multifield ?fact-ptr incoming ?ntl:action))
-    (synced-add-to-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
+    (synced-add-to-multifield ?fact-ptr incoming-agent (sym-cat ?*ROBOT-NAME*))
   )
 )
 
@@ -119,7 +119,7 @@
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
     (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
     (bind ?fact-ptr (synced-remove-from-multifield ?fact-ptr incoming ?ntl:action))
-    (synced-remove-from-multifield ?fact-ptr incoming-agent ?*ROBOT-NAME*)
+    (synced-remove-from-multifield ?fact-ptr incoming-agent (sym-cat ?*ROBOT-NAME*))
     (retract ?ntl)
   )
 )
