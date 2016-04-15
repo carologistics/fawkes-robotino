@@ -1,0 +1,15 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/motor-led
+---
+/motor-led:
+  # Interface IDs of MotorInterface and RobotinoSensorInterface to read from
+  # and send message to.
+  motor-interface-id: Robotino
+  sensor-interface-id: Robotino
+
+  # Digital output to toggle on motor state changes.
+  # This is the number as it appears on the Robotino, i.e. 1 to 8, not
+  # the interface index!
+  digital-out: 8
