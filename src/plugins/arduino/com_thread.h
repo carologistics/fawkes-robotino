@@ -110,6 +110,7 @@ private:
     boost::asio::streambuf input_buffer_;
     boost::mutex io_mutex_;
     fawkes::ArduinoInterface *arduino_if;
+    void load_config();
 
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */

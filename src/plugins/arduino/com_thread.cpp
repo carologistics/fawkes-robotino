@@ -74,12 +74,8 @@ ArduinoComThread::init()
 
     // -------------------------------------------------------------------------- //
 
-    try {
-        cfg_device_ = config->get_string("/arduino/device");
-        cfg_rpm_    = config->get_int("/arduino/rpm");
-    } catch (Exception &e) {
-    }
-
+    load_config();
+    
     arduino_if =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
 
@@ -284,4 +280,14 @@ ArduinoComThread::read_packet()
         logger->log_warn(name(), "Read junk off line");
     }
     input_buffer_.consume(bytes_read - 1);
+}
+
+void
+ArduinoComThread::load_config()
+{
+    try {
+        cfg_device_ = config->get_string("/arduino/device");
+        cfg_rpm_ = config->get_int("/arduino/rpm");
+    } catch (Exception &e) {
+    }
 }
