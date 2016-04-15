@@ -118,14 +118,13 @@
   "Robotino drives to the first machine to start the first round."
   (phase EXPLORATION)
   ?s <- (state EXP_START)
-  ?df <- (skill-done (name "enable_switch"))
   (exp-tactic LINE)
   (first-exploration-machine ?v)
   (zone-exploration (name ?v) (x ?) (y ?))
   (not (driven-to-waiting-point))
   =>
   (printout t "First machine: " ?v crlf)
-  (retract ?s ?df)
+  (retract ?s)
   (assert (state EXP_LOCK_REQUIRED)
     (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?v))
     (exp-next-machine ?v)
