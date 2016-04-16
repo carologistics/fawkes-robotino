@@ -9,7 +9,8 @@ using namespace rapidjson;
 
 std::string  
 Serializer::op_subscribe(std::string prefixed_topic_name 
-		                              , std::string id    
+		                              , std::string id
+		                              , std::string type 
 		                              , std::string compression
 		                              , unsigned int throttle_rate  
 		                              , unsigned int queue_length   
@@ -27,17 +28,25 @@ Serializer::op_subscribe(std::string prefixed_topic_name
 	writer.String("id");
 	writer.String(id.c_str(),(SizeType)id.length());
 	
+	writer.String("type");
+	writer.String(type.c_str(),(SizeType)type.length());
+	
 	writer.String("topic");
 	writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
 
 	writer.String("throttle_rate");
 	writer.Uint(throttle_rate);
 
+	
 	writer.String("queue_length");
-	writer.Uint(fragment_size);
-
-	writer.String("fragment_size");
+	if(queue_length <1 ) 	 queue_length = 1;
 	writer.Uint(queue_length);
+	
+	if(fragment_size != 0)
+	{
+		writer.String("fragment_size");
+		writer.Uint(fragment_size);
+	}
 
 	writer.String("compression");
 	writer.String(compression.c_str(),(SizeType)compression.length());
@@ -239,6 +248,9 @@ Serializer::serialize(CLIPS::Fact::pointer fact)
 		}
 		writer.EndArray();
 	}
+
+	writer.EndObject();
+
 
     return s.GetString();
 }

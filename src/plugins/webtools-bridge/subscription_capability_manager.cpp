@@ -125,22 +125,24 @@ SubscriptionCapabilityManager::handle_message(Document &d
 	//Go with To the proper operation with the bridge_prefix and the request Paramters
 	if(msg_op=="subscribe")
 	{	
-		std::string  topic_name 	= 	"";
-		std::string  id 			= 	"";
-		std::string  compression	=	"";	
-		unsigned int throttle_rate	=	0;
-		unsigned int queue_length 	=	1;
-		unsigned int fragment_size 	=	0;
+		std::string 	topic_name 	= 	"";
+		std::string  	id 		= 	"";
+		std::string	type		=	"";
+		std::string	compression	=	"";	
+		unsigned int	throttle_rate	=	0;
+		unsigned int	queue_length 	=	1;
+		unsigned int	fragment_size 	=	0;
 		
-		if(d.HasMember("topic"))		 topic_name 	= 	std::string(d["topic"].GetString());
-		if(d.HasMember("id")) 			 id 			= 	std::string(d["id"].GetString());
-		if(d.HasMember("compression")) 	 compression	=	std::string(d["compression"].GetString());	
-		if(d.HasMember("throttle_rate")) throttle_rate	=	d["throttle_rate"].GetUint();
-		if(d.HasMember("queue_length"))  queue_length 	=	d["queue_length"].GetUint();
-		if(d.HasMember("fragment_size")) fragment_size 	=	d["fragment_size"].GetUint();
+		if(d.HasMember("topic"))		topic_name 	= 	std::string(d["topic"].GetString());
+		if(d.HasMember("id")) 			id 			= 	std::string(d["id"].GetString());
+		if(d.HasMember("type"))			type 		=	std::string(d["type"].GetString());
+		if(d.HasMember("compression")) 	compression	=	std::string(d["compression"].GetString());	
+		if(d.HasMember("throttle_rate"))throttle_rate	=	d["throttle_rate"].GetUint();
+		if(d.HasMember("queue_length")) queue_length 	=	d["queue_length"].GetUint();
+		if(d.HasMember("fragment_size"))fragment_size 	=	d["fragment_size"].GetUint();
 		
 		subscribe( match_prefix
-				, topic_name , id , compression , throttle_rate , queue_length , fragment_size 
+				, topic_name , id ,type , compression , throttle_rate , queue_length , fragment_size 
 				, session);
 	}else 
 
@@ -195,7 +197,8 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 void 
 SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 										, std::string topic_name 
-										, std::string id 		
+										, std::string id 
+										, std::string type
 										, std::string compression
 										, unsigned int throttle_rate	
 										, unsigned int queue_length 	
@@ -214,6 +217,7 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 		//TODO:: pass the pure string arguments or a "protocol" type
 		subscription = processor-> subscribe(topic_name 
 													, id 		
+													, type
 													, compression
 													, throttle_rate	
 													, queue_length 	

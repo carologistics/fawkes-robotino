@@ -187,14 +187,15 @@ RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <Eve
 //Capabilities
 std::shared_ptr<Subscription>
 RosBridgeProxyProcessor::subscribe   ( std::string topic_name 
-                                            , std::string id    
+                                            , std::string id 
+                                            , std::string type   
                                             , std::string compression
                                             , unsigned int throttle_rate  
                                             , unsigned int queue_length   
                                             , unsigned int fragment_size  
                                             , std::shared_ptr<WebSession> web_session)
 {
-    std::string jsonMsg= Serializer::op_subscribe( topic_name , id , compression 
+    std::string jsonMsg= Serializer::op_subscribe( topic_name , id , type , compression 
                                                 , throttle_rate , queue_length , fragment_size );
     //try catch
     forward_to_proxy_session(web_session , jsonMsg);
