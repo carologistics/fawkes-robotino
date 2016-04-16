@@ -314,6 +314,7 @@ ClipsProcessor::init()
 std::shared_ptr<Subscription>
 ClipsProcessor::subscribe   ( std::string prefixed_topic_name 
                             , std::string id    
+                            , std::string type   
                             , std::string compression
                             , unsigned int throttle_rate  
                             , unsigned int queue_length   

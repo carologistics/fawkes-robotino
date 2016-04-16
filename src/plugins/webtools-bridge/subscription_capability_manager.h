@@ -43,7 +43,8 @@ public:
 private:
 	void subscribe 	( std::string bridge_prefix
 					, std::string topic_name 
-					, std::string id 		
+					, std::string id
+					, std::string type 		
 					, std::string compression
 					, unsigned int throttle_rate	
 					, unsigned int queue_length 	

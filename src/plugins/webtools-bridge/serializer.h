@@ -10,6 +10,7 @@ class Serializer
 public:
 	static std::string  op_subscribe( std::string topic_name 
 		                            , std::string id    
+		                            , std::string type    
 		                            , std::string compression
 		                            , unsigned int throttle_rate  
 		                            , unsigned int queue_length   

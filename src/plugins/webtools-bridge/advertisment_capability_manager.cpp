@@ -214,10 +214,6 @@ AdvertismentCapabilityManager::advertise( std::string bridge_prefix
 		//advertisment->finalize();
 	}
 
-	//To be moved back to the subscrib() if the processor
-	//..Or does it! u want to keep track of the advertisment all the time..leaving that as a choice to the processor does not seem right.
-	// topic_Advertisment_[topic_name]->add_request(id , compression , throttle_rate , queue_length , fragment_size , session);
-	
 
 	//Mutex.unlock();
 }
