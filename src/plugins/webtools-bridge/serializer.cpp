@@ -106,6 +106,13 @@ Serializer::op_advertise( std::string prefixed_topic_name , std::string id , std
 	writer.String("type");
 	writer.String(type.c_str(), (SizeType)type.length());
 
+	writer.String("latch");
+	writer.Bool(false);
+	
+	writer.String("queue_size");
+	writer.Int(100);
+	
+
 	writer.EndObject();//End of complete Json_msg 
     
     //std::cout << s.GetString() << std::endl;
