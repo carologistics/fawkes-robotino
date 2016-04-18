@@ -109,10 +109,14 @@ AdvertismentCapabilityManager::handle_message(Document &d
 		std::string  topic_name 	= 	"";
 		std::string  id 			= 	"";
 		std::string  type			=	"";	
+		// bool 		 latch			=	false;
+		// int 		 queue_size 	=	100;
 		
 		if(d.HasMember("topic"))		 topic_name 	= 	std::string(d["topic"].GetString());
 		if(d.HasMember("id")) 			 id 			= 	std::string(d["id"].GetString());
 		if(d.HasMember("type")) 		 type			=	std::string(d["type"].GetString());	
+		// if(d.HasMember("latch"))		 latch			= 	d["topic"].GetBool();
+		// if(d.HasMember("queue_size"))	 queue_size		=	d["queue_size"].GetInt();	
 		
 		advertise( match_prefix, topic_name , id , type , session);
 	}else 
