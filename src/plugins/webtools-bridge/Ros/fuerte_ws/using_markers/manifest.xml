@@ -1,0 +1,16 @@
+<package>
+  <description brief="using_markers">
+
+     using_markers
+
+  </description>
+  <author>LabPRoGrAMR 1</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/using_markers</url>
+  <depend package="roscpp"/>
+  <depend package="visualization_msgs"/>
+
+</package>
+
+
