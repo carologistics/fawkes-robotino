@@ -288,8 +288,14 @@ BlackBoardSubscription::serialize(std::string op
       writer.Bool(arr[i]);
     }
 
-    else if(fieldType == "double"){
+    else if(fieldType == "double" ){
     double * arr = fi.get_doubles();
+    for (unsigned i = 0; i < fi.get_length(); i++)
+      writer.Double(arr[i]);
+    }
+
+    else if(fieldType == "float" ){
+    float * arr = fi.get_floats();
     for (unsigned i = 0; i < fi.get_length(); i++)
       writer.Double(arr[i]);
     }
@@ -318,10 +324,10 @@ BlackBoardSubscription::serialize(std::string op
       writer.Uint(arr[i]);
     }
 
-    else if(fieldType == "uint64"){
+    else if(fieldType == "int64"){
     uint64_t * arr = fi.get_uint64s();
     for (unsigned i = 0; i < fi.get_length(); i++)
-      writer.Uint64(arr[i]);
+      writer.Int64(arr[i]);
     }
 
     else if(fieldType == "int32"){
@@ -355,6 +361,9 @@ BlackBoardSubscription::serialize(std::string op
     else if (fieldType== "double")
       writer.Double(fi.get_double());
 
+    else if (fieldType== "float")
+      writer.Double(fi.get_float());
+
     else if (fieldType== "uint32")
       writer.Uint(fi.get_uint32());
 
@@ -368,7 +377,7 @@ BlackBoardSubscription::serialize(std::string op
       writer.Uint(fi.get_uint8());
 
     else if (fieldType== "int16")
-      writer.Uint(fi.get_int16());
+      writer.Int(fi.get_int16());
 
     else if (fieldType== "uint16")
       writer.Uint(fi.get_uint16());
