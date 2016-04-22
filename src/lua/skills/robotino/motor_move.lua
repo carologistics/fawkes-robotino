@@ -48,7 +48,7 @@ local ACCEL =     { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor ev
 -- Initialize as skill module
 skillenv.skill_module(_M )
 
-local tfm = require("tf_module")
+local tfm = require("fawkes.tfutils")
 
 function invalid_params(self)
    return self.fsm.vars.ori <= -2 * math.pi or self.fsm.vars.ori >= 2 * math.pi
@@ -57,17 +57,18 @@ end
 function send_transrot(vx, vy, omega)
    local oc  = motor:controller()
    local ocn = motor:controller_thread_name()
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
-   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
+   motor:msgq_enqueue(motor.AcquireControlMessage:new())
+   motor:msgq_enqueue(motor.TransRotMessage:new(vx, vy, omega))
+   motor:msgq_enqueue(motor.AcquireControlMessage:new(oc, ocn))
 end
 
 function set_speed(self)
-   local dist_target = tfm.transform(
+   local dist_target = tfm.transform6D(
       { x   = self.fsm.vars.target.x,
         y   = self.fsm.vars.target.y,
+        z   = self.fsm.vars.target.z,
         ori = self.fsm.vars.target.ori },
-      self.fsm.vars.frame, "/base_link")
+      self.fsm.vars.frame, self.fsm.vars.base_frame)
 
    if self.fsm.vars.ori > math.pi and dist_target.ori < -self.fsm.vars.tolerance_arg.ori then
       dist_target.ori = 2*math.pi + dist_target.ori
@@ -102,8 +103,8 @@ function set_speed(self)
          -- slowed us down a bit before doing this ;-)
          if dist_target[k] < 0 then v[k] = v[k] * -1 end
 
-         -- printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
-         --   k, dist_target[k], v_acc, v_dec, v[k])
+         printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
+           k, dist_target[k], v_acc, v_dec, v[k])
       else
          v[k] = 0
       end
@@ -156,8 +157,15 @@ function DRIVE:init()
 
    self.fsm.vars.cycle = 0
    
+   if self.fsm.vars.global then
+      self.fsm.vars.base_frame = self.fsm.vars.frame
+      self.fsm.vars.frame = "/base_link"
+   else
+      self.fsm.vars.base_frame = frame
+   end
+
    self.fsm.vars.target = tfm.transform(
-      { x=x, y=y, ori=ori }, "/base_link", self.fsm.vars.frame)
+      { x=x, y=y, ori=ori }, self.fsm.vars.base_frame, self.fsm.vars.frame)
 
    local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
    local vmin_rot = self.fsm.vars.vel_rot or V_MAX.ori
@@ -179,5 +187,5 @@ end
 
 function STOP_NAVIGATOR:init()
    local msg = navigator.StopMessage:new( )
-   navigator:msgq_enqueue_copy(msg)
+   navigator:msgq_enqueue(msg)
 end
