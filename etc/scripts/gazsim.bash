@@ -65,7 +65,8 @@ SKIP_EXPLORATION=
 FAWKES_USED=false
 
 if [[ -n $TMUX ]]; then
-	TERM_COMMAND="true"
+	# if $TMUX is set we're inside a tmux session
+	TERM_COMMAND=":"
 	SUBTERM_ARGS="; tmux new-window"
 else
 	TERM_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
@@ -282,7 +283,7 @@ if [  $COMMAND  == start ]; then
     fi
 
     # open windows
-    #echo $OPEN_COMMAND
+    echo "executing $OPEN_COMMAND"
     eval $OPEN_COMMAND
 
     sleep 10s
