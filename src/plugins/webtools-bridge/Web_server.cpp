@@ -1,7 +1,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <websocketpp/common/thread.hpp>
+#include "websocketpp/common/thread.hpp"
 #include <exception>
 #include <core/exceptions/software.h>
 #include <core/threading/mutex_locker.h>
