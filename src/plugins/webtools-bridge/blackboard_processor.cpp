@@ -269,12 +269,9 @@ BlackBoardSubscription::serialize(std::string op
 
     std::string fieldName= fi.get_name();
 
-    #ifdef RAPIDJSON_HAS_STDSTRING
-    writer.String(fieldName);
-    #else
+    
     writer.String(fieldName.c_str(), (SizeType)fieldName.length());
-    #endif
-
+    
     std::string fieldType= fi.get_typename();
 
 

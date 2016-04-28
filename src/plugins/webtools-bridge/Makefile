@@ -38,7 +38,7 @@ OBJS_all    = $(OBJS_webtools_bridge)
 CFLAGS_CPP11 += -std=c++11 -D_WEBSOCKETPP_CPP11_STL_
 
 ifeq ($(HAVE_TF)$(HAVE_CLIPS)$(HAVE_CPP11),111)
-  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) 
+  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) -I/home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge
   LDFLAGS += $(LDFLAGS_TF) 
 
   PLUGINS_all = $(PLUGINDIR)/webtools-bridge.$(SOEXT)

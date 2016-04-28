@@ -14,15 +14,15 @@
    */
   function init() {
     // Connect to ROS.
-    var ros = new ROSLIB.Ros({
-      url : 'ws://localhost:6060'
+    var ros_1 = new ROSLIB.Ros({
+      url : 'ws://localhost:9090'
     });
 
 //====================================== TFClinet for R1
 
      // Setup a client to listen to TF of R1s.
     var tfClient_R1 = new ROSLIB.TFClient({
-      ros : ros ,
+      ros : ros_1 ,
       angularThres : 0.01,
       transThres : 0.01,
       fixedFrame : '/map'
@@ -39,13 +39,13 @@
 
     // Setup the marker client.
     var gridClient = new ROS3D.OccupancyGridClient({
-      ros : ros,
+      ros : ros_1,
       rootObject : viewer.scene
     });
 
 //=======Marker arrow shape to Show robot frame /base_link of TF
     var markerClient = new ROS3D.MarkerClient({
-      ros : ros ,
+      ros : ros_1 ,
       tfClient : tfClient_R1,
       topic : '/arrow__marker',
       rootObject : viewer.scene
@@ -55,7 +55,7 @@
 //=====Marker Arrray 
 
     var markerArrayClient = new ROS3D.MarkerArrayClient({
-      ros : ros ,
+      ros : ros_1 ,
       tfClient : tfClient_R1,
       topic : '/visualization_marker_array',
       rootObject : viewer.scene
@@ -64,6 +64,9 @@
 
  //-=======================BB Monitor
 
+    var ros = new ROSLIB.Ros({
+      url : 'ws://localhost:6060'
+    });
   
  var listener = new ROSLIB.Topic({
     ros : ros,
