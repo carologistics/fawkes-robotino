@@ -91,10 +91,8 @@ function products(){
 		    messageType : 'mm',
 		    throttle_rate:1000,
 	  	});
-	  	//listener.div_index=div_ids; //keep the dev's id as a topic attridute
 	  	listener.subscribe(function(message) 
 	  	{
-	  	//	var dev_id="#mproductsdiv_"+this.div_index;	
 	  		$("#"+wedgit_id).empty();// clear the div
 
 	  		for (var key in message)//present the content in the div 
@@ -104,22 +102,23 @@ function products(){
 
 	  				for( var fact in message[key] )
 	  				{
-	  					var $product_div=$("<div id=product_"+message[key][fact].id+"> </div>");
-	  					$product_div.addClass("products");
-		  				$("#"+wedgit_id).append($product_div);//dev will hold this product
-
+	  					var $product_div=$("<div> </div>");
+	  					$product_div.addClass("products").attr('id',"product_"+message[key][fact].id);
 
 		  				var base_color = message[key][fact].base[0];
-		  				$("#product_"+message[key][fact].id).append("<div class=products_base style= background-color:"+base_color+"> </div>");
+		  				$product_div.append("<div class=products_base style= background-color:"+base_color+"> </div>");
 
 		  				for( var ring_index in message[key][fact].rings )
 		  				{
 		  					var ring_color = message[key][fact].rings[ring_index];
-		  					$("#product_"+message[key][fact].id).append("<div class=products_ring style= background-color:"+ring_color+"> </div>");
+		  					$product_div.append("<div class=products_ring style= background-color:"+ring_color+"> </div>");
 		  				}
 		  				
 		  				var cap_color = message[key][fact].cap[0];
-		  				$("#product_"+message[key][fact].id).append("<div class=products_cap style= background-color:"+cap_color+"> </div>");
+		  				$product_div.append("<div class=products_cap style= background-color:"+cap_color+"> </div>");
+		  				
+		  				
+		  				$("#"+wedgit_id).append($product_div); //div will hold this product
 	  				}
 	  			}
 	  		}
