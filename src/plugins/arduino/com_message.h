@@ -36,7 +36,7 @@ class ArduinoComMessage
 		CMD_NONE                =       0,
 		CMD_STEP_UP		=	1,
 		CMD_STEP_DOWN		=	2,
-		CMD_TO_UPPER_LIMIT	=	3,
+		CMD_TO_Z_0		=	3,
 	} command_id_t;
 
 	typedef enum {
