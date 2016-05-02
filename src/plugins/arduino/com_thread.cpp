@@ -119,7 +119,7 @@ ArduinoComThread::loop()
                 req.set_num_steps(msg->num_mm());
                 send_and_recv(req);
 
-                reset_timer_for_z_alignment();
+                reset_timer_for_z_alignment(msg->num_mm());
 
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>()) {
                 ArduinoInterface::MoveDownwardsMessage *msg = arduino_if->msgq_first(msg);
@@ -152,10 +152,10 @@ ArduinoComThread::loop()
 }
 
 void
-ArduinoComThread::reset_timer_for_z_alignment()
+ArduinoComThread::reset_timer_for_z_alignment(unsigned int num_mm)
 {
     fawkes::Time now(clock);
-    float seconds_to_drive = cfg_rpm_ + seconds_per_mm * msg->num_mm();
+    float seconds_to_drive = cfg_rpm_ + seconds_per_mm * num_mm;
 
     time_to_stop_z_align = now + seconds_to_drive;
 
