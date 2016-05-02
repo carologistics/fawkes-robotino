@@ -39,14 +39,6 @@ documentation      = [==[Skill to modify the z position of the AX12 gripper by u
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
---function relgotoz_allowed(self)
---   local cur_z = gripper_arduino_if:z_position()
---   local desired_z = self.fsm.vars.num_steps or 0
---   local upper_bound = gripper_if:z_upper_bound()
---   local lower_bound = gripper_if:z_lower_bound()
---   return (cur_z + desired_z) <= upper_bound and (cur_z + desired_z) >= lower_bound
---end
-
 -- States
 fsm:define_states{
    export_to=_M,
