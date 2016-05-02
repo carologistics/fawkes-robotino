@@ -111,6 +111,8 @@ ArduinoComThread::loop()
 
     if (opened_) {
         while (!arduino_if->msgq_empty()) {
+
+            arduino_if->read();
             if (arduino_if->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>()) {
                 ArduinoInterface::MoveUpwardsMessage *msg = arduino_if->msgq_first(msg);
 
@@ -118,6 +120,8 @@ ArduinoComThread::loop()
                 req.add_command(ArduinoComMessage::CMD_STEP_UP);
                 req.set_num_steps(msg->num_mm());
                 send_and_recv(req);
+                arduino_if->set_z_position(arduino_if->z_position() - msg->num_mm());
+                arduino_if->write();
 
                 reset_timer_for_z_alignment(msg->num_mm());
 
@@ -128,9 +132,11 @@ ArduinoComThread::loop()
                 req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
                 req.set_num_steps(msg->num_mm());
                 send_and_recv(req);
+                arduino_if->set_z_position(arduino_if->z_position() + msg->num_mm());
 
-                reset_timer_for_z_alignment();
+                arduino_if->write();
 
+                reset_timer_for_z_alignment(msg->num_mm());
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
                 goto_zero_position();
             }
