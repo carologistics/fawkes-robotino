@@ -42,7 +42,7 @@ skillenv.skill_module(_M)
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={gripper_arduino_if=gripper_arduino_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded},
+   closure={gripper_arduino_if=gripper_arduino_if},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
 }
