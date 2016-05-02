@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "ax12gripper"
 fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=false}
-depends_skills     = nil
+depends_skills     = { "gripper_z_align" }
 depends_interfaces = {
    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
@@ -57,7 +57,7 @@ fsm:define_states{
    {"CLOSE_GRIPPER_WAIT", JumpState},
    {"WAIT_FOR_GRAB", JumpState},
    {"CHECK_GRAB_SUCCESS", JumpState},
-   {"WAIT_FOR_RELGOTOZ", JumpState},
+   {"RELGOTOZ", SkillJumpState, skills={{gripper_z_align}}, final_to="FINAL", fail_to="FAILED"},
    {"FINAL_AFTER_IF_FINAL", JumpState},
 }
 
@@ -68,9 +68,7 @@ fsm:add_transitions{
    {"COMMAND", "FINAL", cond="vars.open or vars.center"},
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
-   {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
-   {"COMMAND", "WAIT_FOR_RELGOTOZ", cond="vars.relgotoz"},
-   {"WAIT_FOR_RELGOTOZ", "FINAL_AFTER_IF_FINAL", timeout=0.5},
+   {"COMMAND", "RELGOTOZ", cond="vars.relgotoz"},
    {"WAIT_FOR_GRAB", "CHECK_GRAB_SUCCESS", timeout=1.5},
    {"CHECK_GRAB_SUCCESS", "FINAL", cond="gripper_if:is_holds_puck()"},
    {"CHECK_GRAB_SUCCESS", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Gripper doesn't hold a puck"},
@@ -102,16 +100,18 @@ function COMMAND:init()
       gripper_if:msgq_enqueue_copy(theCloseMessage)
    elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
-      if relgotoz_allowed(self) then
-         theRelGotoZMessage = gripper_if.RelGotoZMessage:new()
-         theRelGotoZMessage:set_rel_z(self.fsm.vars.z_position or 0)
-         gripper_if:msgq_enqueue_copy(theRelGotoZMessage)
-      else
-         self.fsm:set_error("Desired z value out of bounds")
-         self.fsm.vars.error = true
-      end
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
    end
+end
+
+function RELGOTOZ:init()
+      if self.fsm.vars.z_position > 0 then
+        self.args["gripper_z_align"].command = "UP"
+        self.args["gripper_z_align"].num_mm = self.fsm.vars.z_position
+      else
+        self.args["gripper_z_align"].command = "DOWN"
+        self.args["gripper_z_align"].num_mm = -self.fsm.vars.z_position
+      end
 end
