@@ -130,6 +130,9 @@ ArduinoComThread::loop()
                 send_and_recv(req);
 
                 reset_timer_for_z_alignment();
+
+            } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
+                goto_zero_position();
             }
             arduino_if->msgq_pop();
         }
