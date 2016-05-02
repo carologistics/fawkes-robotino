@@ -320,3 +320,12 @@ ArduinoComThread::load_config()
     } catch (Exception &e) {
     }
 }
+void
+ArduinoComThread::goto_zero_position()
+{
+    ArduinoComMessage req;
+    req.add_command(ArduinoComMessage::CMD_TO_Z_0);
+    send_and_recv(req);
+    arduino_if->set_z_position(0);
+    arduino_if->write();
+}
