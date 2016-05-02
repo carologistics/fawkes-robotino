@@ -66,6 +66,10 @@ function COMMAND:init()
       theDownMessage = gripper_arduino_if.MoveDownwardsMessage:new()
       theDownMessage:set_num_mm(self.fsm.vars.num_mm or 0)
       gripper_arduino_if:msgq_enqueue_copy(theDownMessage)
+   elseif self.fsm.vars.command == "TO_UPPER_Z" then
+      self.fsm.vars.movetoz0 = true
+      theToZ0Message = gripper_arduino_if.MoveToZ0Message:new()
+      gripper_arduino_if:msgq_enqueue_copy(theToZ0Message)
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
