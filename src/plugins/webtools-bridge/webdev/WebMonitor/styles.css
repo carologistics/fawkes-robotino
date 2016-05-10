@@ -1,11 +1,30 @@
 
-.products{
-    border: 3px solid #73AD21;
-    float: left;
-    margin: 3px;
-    position:relative;
-    bottom: 0;
+html, body {
+    height : 100%;
+    margin :2px ;
+    padding: 2px;
 
+}
+.wedgit{
+    border: 3px solid #73AD21;
+    margin : 6px;
+    position: relative;
+}
+
+.product{
+    border: 3px solid #73AD21;
+    margin: 3px;
+    display: inline-block;
+}
+
+.order{
+    border: 3px solid #73AD21;
+    margin: 3px;
+    display: inline-block;
+}
+
+.active-order{
+    border: 6px solid #000000;    
 }
 
 .products_cap{
@@ -22,4 +41,11 @@
 .products_base{
 	width: 50px;
     height: 30px;
+}
+
+.part_processing{
+    opacity: 0.2;
+}
+.part_complete{
+    opacity: 1;
 }

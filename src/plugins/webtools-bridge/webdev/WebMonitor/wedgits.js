@@ -1,8 +1,11 @@
 var ros ;
+var product_facts;// to hold the updated json contaning the "product" facts
+var order_facts;// to hold the updated json contaning the "order" facts
 
 function load(){
 	init();
 	simple_monitor();
+	orders();
 	products();
 
 }
@@ -73,56 +76,235 @@ function simple_monitor(){
 }
 
 
-function products(){
+// function products(){
 
+// 	var destination_bridge_name= "clips";
+// 	var topic_name= "product";
+// 	var wedgit_id= 	"products_wedgit";
+	
+// 	$("body").append("<div id="+wedgit_id+"  class=wedgit>  </div>");//the wedgit container
+	
+// 	$(document).ready(function()
+// 	{
+//     	var prefiexed_topic_name = destination_bridge_name +"/" + topic_name ; 
+
+//     	var listener = new ROSLIB.Topic({
+// 		    ros : ros,
+// 		    name : prefiexed_topic_name,
+// 		    messageType : 'mm',
+// 		    throttle_rate:1000,
+// 	  	});
+// 	  	listener.subscribe(function(message) 
+// 	  	{
+// 	  		$("#"+wedgit_id).empty();// clear the div
+
+// 	  		for (var key in message)//present the content in the div 
+// 	  		{
+// 	  			if(message[key].constructor === Array)
+// 	  			{
+
+// 	  				for( var fact in message[key] )
+// 	  				{
+// 	  					var $product_div=$("<div> </div>");
+// 	  					$product_div.addClass("products").attr('id',"product_"+message[key][fact].id);
+		  				
+// 		  				var base_color = message[key][fact].base[0];
+// 		  				$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
+		  				
+// 		  				for( var ring_index in message[key][fact].rings )
+// 		  				{
+// 		  					var ring_color = message[key][fact].rings[ring_index];
+// 		  					$product_div.prepend("<div class=products_ring style= background-color:"+ring_color+"> </div>");
+// 		  				}
+		  				
+// 		  				var cap_color = message[key][fact].cap[0];
+// 		  				$product_div.prepend("<div class=products_cap style= background-color:"+cap_color+"> </div>");
+
+
+		  				
+// 		  				$("#"+wedgit_id).append($product_div); //div will hold this product
+// 	  				}
+// 	  			}
+// 	  		}
+// 	  	});
+// 	});
+// }
+
+
+
+function products()
+{
 	var destination_bridge_name= "clips";
-	var topic_name= "product";
+	var product_topic_name= "product";
 	var wedgit_id= 	"products_wedgit";
+
+	var $wedgit_div= $("<div>  </div>").addClass("widget").attr('id',wedgit_id);// div contaning the wedgit
+
+
+	$("body").append($wedgit_div);//the wedgit container
 	
-	$("body").append("<div id="+wedgit_id+"  class=wedgit container >  </dev>");//the wedgit container
-	
+
 	$(document).ready(function()
 	{
-    	var prefiexed_topic_name = destination_bridge_name +"/" + topic_name ; 
 
-    	var listener = new ROSLIB.Topic({
+    	var product_facts_listener = new ROSLIB.Topic({
 		    ros : ros,
-		    name : prefiexed_topic_name,
+		    name : destination_bridge_name +"/" + product_topic_name ,
 		    messageType : 'mm',
 		    throttle_rate:1000,
 	  	});
-	  	listener.subscribe(function(message) 
+
+	  	product_facts_listener.subscribe(function(message) 
+	  	{
+	  		product_facts=message;
+	  		$("#"+wedgit_id).empty();// clear the div
+	  		$("#"+wedgit_id).append("<h1> Products:</h1>");
+
+	  		if( order_facts != null)
+	  		{
+	  			for( var product in product_facts.product )
+				{
+
+					if (JSON.parse(product_facts.product[product]["product-id"]) !=0 )//A product that describes a production process
+					{
+						
+						var related_order; 
+						for( var product_index2 in product_facts.product)
+						{
+							if (JSON.parse(product_facts.product[product_index2].id) == JSON.parse(product_facts.product[product]["product-id"]) )
+			  				{
+			  					related_order = product_facts.product[product_index2];				
+			  				}
+						}
+
+
+						$("#order_"+product_facts.product[product]["product-id"])// Mark this order as active
+
+						var $product_div=$("#product_"+product_facts.product[product]["product-id"]).clone();//Make a similare DIV
+						$product_div.attr('id',"product_"+product_facts.product[product].id).addClass("product").removeClass("order");
+						
+						$product_div.children().addClass("part_processing");//set all the part to still processing
+
+						if (product_facts.product[product].base[0] == related_order.base[0] )
+						{
+							$product_div.children(".products_base").removeClass("part_processing").addClass("part_complete");
+						}
+						 
+						
+						for( var ring_index in product_facts.product[product].rings )
+						{
+							if (product_facts.product[product].rings[ring_index] == related_order.rings[ring_index])
+							{
+						 		$product_div.children(".products_ring."+ring_index).removeClass("part_processing").addClass("part_complete");
+							}
+						}
+						
+						if (product_facts.product[product].cap[0] == related_order.cap[0])
+						{
+							$product_div.children(".products_cap").removeClass("part_processing").addClass("part_complete");
+						}
+
+						$("#"+wedgit_id).append($product_div); //div will hold this product	  				
+
+					}
+					
+				}
+	  		}
+	  	});
+	});
+
+}
+
+
+function orders(){
+
+	var destination_bridge_name= "clips";
+	var order_topic_name= "order";
+	var product_topic_name= "product";
+	var wedgit_id= 	"orders_wedgit";
+
+	var $wedgit_div= $("<div>  </div>").addClass("widget").attr('id',wedgit_id);// div contaning the wedgit
+
+
+	$("body").append($wedgit_div);//the wedgit container
+	
+
+	$(document).ready(function()
+	{
+
+    // 	var product_facts_listener = new ROSLIB.Topic({
+		  //   ros : ros,
+		  //   name : destination_bridge_name +"/" + product_topic_name ,
+		  //   messageType : 'mm',
+		  //   throttle_rate:1000,
+	  	// });
+
+	  	// product_facts_listener.subscribe(function(message) 
+	  	// {
+	  	// 	product_facts=message;
+
+	  	// });
+
+
+    	var order_facts_listener = new ROSLIB.Topic({
+		    ros : ros,
+		    name : destination_bridge_name +"/" + order_topic_name ,
+		    messageType : 'mm',
+		    throttle_rate:1000,
+	  	});
+	  	order_facts_listener.subscribe(function(message) 
 	  	{
 	  		$("#"+wedgit_id).empty();// clear the div
+	  		$("#"+wedgit_id).append("<h1> Orders: </h1>");
 
-	  		for (var key in message)//present the content in the div 
+	  		order_facts= message;
+
+	  		if( product_facts != null)
 	  		{
-	  			if(message[key].constructor === Array)
-	  			{
-
-	  				for( var fact in message[key] )
-	  				{
-	  					var $product_div=$("<div> </div>");
-	  					$product_div.addClass("products").attr('id',"product_"+message[key][fact].id);
-
-		  				var base_color = message[key][fact].base[0];
-		  				$product_div.append("<div class=products_base style= background-color:"+base_color+"> </div>");
-
-		  				for( var ring_index in message[key][fact].rings )
+				for( var order in order_facts.order )
+				{
+					for( var product in product_facts.product )
+					{
+						if (JSON.parse(product_facts.product[product].id) == JSON.parse( order_facts.order[order]["product-id"] ))
 		  				{
-		  					var ring_color = message[key][fact].rings[ring_index];
-		  					$product_div.append("<div class=products_ring style= background-color:"+ring_color+"> </div>");
+							var $order_div=$("<div> </div>").addClass("order");
+							var $product_div=$("<div> </div>").addClass("product").attr('id',"product_"+product_facts.product[product].id);
+							
+							var base_color = product_facts.product[product].base[0];
+							$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
+							
+							for( var ring_index in product_facts.product[product].rings )
+							{
+								var ring_color = product_facts.product[product].rings[ring_index];
+								$product_div.prepend("<div class='products_ring "+ring_index +" ' style= background-color:"+ring_color+"> </div>");
+							}
+							
+							var cap_color = product_facts.product[product].cap[0];
+							$product_div.prepend("<div class=products_cap style= background-color:"+cap_color+"> </div>");
+
+
+							//order info
+							if(JSON.parse( order_facts.order[order]["in-production"][0] ) == 1)
+							{
+								$order_div.addClass("active-order")
+							}
+
+							var $order_info=$("<div> </div>").addClass("order_info");
+							$order_info.append("<span> Gate: </span>").append("<span>"+ order_facts.order[order]["delivery-gate"][0]+"</span>").append("<br>");
+							$order_info.append("<span>"+ order_facts.order[order]["begin"][0] + ":" + order_facts.order[order]["end"][0]+"</span>").append("<br>");
+							$order_info.append("<span>"+ order_facts.order[order]["quantity-delivered"][0] + "/" + order_facts.order[order]["quantity-requested"][0]+"</span>").append("<br>");
+
+							$order_div.append($product_div);
+							$order_div.append($order_info);
+
+							$("#"+wedgit_id).append($order_div); //div will hold this product	  				
+
 		  				}
-		  				
-		  				var cap_color = message[key][fact].cap[0];
-		  				$product_div.append("<div class=products_cap style= background-color:"+cap_color+"> </div>");
-		  				
-		  				
-		  				$("#"+wedgit_id).append($product_div); //div will hold this product
-	  				}
-	  			}
+					}
+				}
 	  		}
 	  	});
 	});
 }
+
 
