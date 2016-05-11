@@ -173,8 +173,10 @@
 )
 
 (defrule net-recv-order
+  ; Assert orders sent by the refbox. Only done by master to avoid conflicting random ids of linked products
   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?p))
   (team-color ?team)
+  (lock-role MASTER)
   =>
   (foreach ?o (pb-field-list ?p "orders")
     ;check if this order is for our team and if the order is new
@@ -198,23 +200,16 @@
             (utils-remove-prefix ?ring RING_)))
           )
           (bind ?cap (utils-remove-prefix (pb-field-value ?o "cap_color") CAP_))
-          (assert
-            (order
-              (id ?id)
-              (product-id ?product-id)
-              (complexity ?complexity)
-              (delivery-gate ?delivery-gate)
-              (quantity-requested ?quantity-requested)
-              (begin ?begin)
-              (end ?end)
-            )
-            (product
-              (id ?product-id)
-              (base ?base)
-              (rings ?rings)
-              (cap ?cap)
-            )
-          )
+          (printout t "ding" crlf)
+          (synced-assert (str-cat
+                          "(order (id " ?id ")(product-id " ?product-id ")(complexity " ?complexity
+                          ")(delivery-gate " ?delivery-gate ")(quantity-requested " ?quantity-requested
+                          ")(begin " ?begin ")(end " ?end "))"))
+          (printout t "dang" crlf)
+          (synced-assert (str-cat
+                          "(product (id " ?product-id ")(base " ?base
+                          ")(rings " (implode$ ?rings) ")(cap " ?cap "))"))
+          (printout t "dong" crlf)
           (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
       (do-for-fact ((?order order)) (eq ?order:id (pb-field-value ?o "id"))
@@ -223,7 +218,7 @@
           else
             (bind ?quantity-delivered (pb-field-value ?o "quantity_delivered_magenta"))
           )
-          (modify ?order (quantity-delivered ?quantity-delivered))
+          (synced-modify ?order quantity-delivered ?quantity-delivered)
       )
     )
   )
