@@ -70,6 +70,54 @@ WebviewRCLLRefBoxRequestProcessor::~WebviewRCLLRefBoxRequestProcessor()
 }
 
 
+std::string
+WebviewRCLLRefBoxRequestProcessor::gen_orders_table(const mongo::BSONObj *doc)
+{
+	std::string rv =
+		"<table>"
+		"<tr><th>ID</th><th>Product</th>"
+		"<th>Requested</th><th>Delivered</th><th colspan=\"2\">Period</th></tr>\n";
+	
+	std::vector<BSONElement> orders = (*doc)["orders"].Array();
+	for (const BSONElement &o : orders) {
+		std::vector<BSONElement> del_period = o["delivery-period"].Array();
+		std::vector<BSONElement> quant_deliv = o["quantity-delivered"].Array();
+		std::string base_color = o["base-color"].String().substr(5);
+		std::transform(base_color.begin(), base_color.end(), base_color.begin(), ::tolower);
+		std::string cap_color = o["cap-color"].String().substr(4);
+		std::transform(cap_color.begin(), cap_color.end(), cap_color.begin(), ::tolower);
+		std::string prod_string =
+			std::string("<div>") +
+			"<div style=\"float: left; width: 8px; height:12px; background-color: " + base_color + "\"></div>";
+
+		if (o.Obj().hasField("ring-colors")) {
+			std::vector<BSONElement> rings = o["ring-colors"].Array();
+			for (const BSONElement &r : rings) {
+				const std::string ring_color = r.String().substr(5);
+				prod_string +=
+					"<div style=\"float: left; margin-left: 1px; "
+					"width: 6px; height:12px; background-color: " + ring_color + "\"></div>" +
+					"</div>";
+			}
+		}
+
+		prod_string +=
+			"<div style=\"float: left; margin-left: 1px; "
+			"width: 4px; height:12px; background-color: " + cap_color + "\"></div>" +
+			"</div>";
+		      
+		rv += "<tr><td>" + std::to_string(o["id"].Long()) + "</td><td>" + prod_string + "</td>" +
+			"<td>" + std::to_string(o["quantity-requested"].Long()) + "</td>"+
+			"<td><span style=\"color: #88ffff; weight: bold;\">" + std::to_string(quant_deliv[0].Long()) + "</span> / "
+			"<span style=\"color: #ff88ff; weight: bold;\">" + std::to_string(quant_deliv[1].Long()) + "</span></td>" +
+			"<td>" + std::to_string(del_period[0].Long()) + "-" + std::to_string(del_period[1].Long()) + "</td>" +
+			"<td>(Act. " + std::to_string(o["activate-at"].Long()) + ")</td></tr>";
+	}
+	rv += "</table>";
+	return rv;
+}
+
+
 WebReply *
 WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *request)
 {
@@ -91,7 +139,7 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
     *r += "<h2>RCLL RefBox Database Report</h2>\n";
 
     time_t query_time = time(0);
-    query_time -= 24 * 60;
+    query_time -= 30 * 60;
 
     BSONObj query = BSON("start-time" << BSONObjBuilder().appendTimeT("$gt", query_time).obj());
 
@@ -127,6 +175,10 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
       r->append_body("<tr><td></td>\n"
 		     "<td><i>Production:</i> %ld</td></tr>\n",
 		     doc["phase-points-magenta"]["PRODUCTION"].Long());
+
+      r->append_body("<tr><td><b>Orders:</b></td>\n"
+                     "<td>%s</td></tr>\n",
+                     gen_orders_table(&doc).c_str());
 
       *r += "</table>\n";
     }
@@ -204,22 +256,10 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
       *r += "</table></td></tr>\n";
 
       if (doc.hasField("orders")) {
-	r->append_body("<tr id=\"game-%s-orders\">"
-		       "<td valign=\"top\"><div style=\"margin-top: 12px\">Orders</div></td>"
-		       "<td colspan=\"6\"><table>"
-		       "<tr><th>ID</th><th>Team</th><th>Product</th>"
-		       "<th>Requested</th><th>Delivered</th><th>Period</th></tr>\n",
-		       doc["_id"].OID().str().c_str());
-	std::vector<BSONElement> orders = doc["orders"].Array();
-	for (const BSONElement &o : orders) {
-	  std::vector<BSONElement> del_period = o["delivery-period"].Array();
-	  r->append_body("<tr><td>%lu</td><td>%s</td><td>%s</td>"
-			 "<td>%lu</td><td>%lu</td><td>%lu-%lu (Act. %lu)</td></tr>",
-			 o["id"].Long(), o["team"].String().c_str(), o["product"].String().c_str(),
-			 o["quantity-requested"].Long(), o["quantity-delivered"].Long(),
-			 del_period[0].Long(), del_period[1].Long(), o["activate-at"].Long());
-	}
-	*r += "</table></td></tr>\n";
+	      r->append_body("<tr id=\"game-%s-orders\">"
+	                     "<td valign=\"top\"><div style=\"margin-top: 12px\">Orders</div></td>"
+	                     "<td colspan=\"6\">%s</td></tr>\n",
+	                     doc["_id"].OID().str().c_str(), gen_orders_table(&doc).c_str());
       }
 
       if (doc.hasField("machines")) {

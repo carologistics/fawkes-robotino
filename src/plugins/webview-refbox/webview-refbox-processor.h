@@ -30,6 +30,7 @@
 
 namespace mongo {
   class DBClientBase;
+  class BSONObj;
 }
 
 class WebviewRCLLRefBoxRequestProcessor : public fawkes::WebRequestProcessor
@@ -41,8 +42,9 @@ class WebviewRCLLRefBoxRequestProcessor : public fawkes::WebRequestProcessor
   virtual fawkes::WebReply * process_request(const fawkes::WebRequest *request);
 
  private:
+  std::string gen_orders_table(const mongo::BSONObj *doc);
 
- private:
+	private:
   mongo::DBClientBase *mongodb_;
 
   std::string           baseurl_;
