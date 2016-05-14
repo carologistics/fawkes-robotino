@@ -1,21 +1,3 @@
-var ros ;
-var product_facts;// to hold the updated json contaning the "product" facts
-var order_facts;// to hold the updated json contaning the "order" facts
-
-function load(){
-	init();
-	simple_monitor();
-	orders();
-	products();
-
-}
-
-function init() {
-  // Connect to ROS.
-  ros = new ROSLIB.Ros({
-    url : 'ws://localhost:6060'
-  });
-}
 
 
 //A simple monitor that allowes live subsscriptions (clips, bb, Ros) Topics. Showes a textaul representation of the topics lively updated. 
@@ -146,7 +128,6 @@ function products()
 
 	$(document).ready(function()
 	{
-
     	var product_facts_listener = new ROSLIB.Topic({
 		    ros : ros,
 		    name : destination_bridge_name +"/" + product_topic_name ,
@@ -178,10 +159,9 @@ function products()
 						}
 
 
-						$("#order_"+product_facts.product[product]["product-id"])// Mark this order as active
 
 						var $product_div=$("#product_"+product_facts.product[product]["product-id"]).clone();//Make a similare DIV
-						$product_div.attr('id',"product_"+product_facts.product[product].id).addClass("product").removeClass("order");
+						$product_div.attr('id',"product_"+product_facts.product[product].id);
 						
 						$product_div.children().addClass("part_processing");//set all the part to still processing
 
@@ -232,6 +212,7 @@ function orders(){
 	$(document).ready(function()
 	{
 
+	//to listen to the product incase the product widget not instialized
     // 	var product_facts_listener = new ROSLIB.Topic({
 		  //   ros : ros,
 		  //   name : destination_bridge_name +"/" + product_topic_name ,
