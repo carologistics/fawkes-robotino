@@ -39,7 +39,11 @@ int main( int argc, char** argv )
   ros::init(argc, argv, "arrow");
   ros::NodeHandle n;
   ros::Rate r(1);
-  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("arrow__marker", 1);
+  ros::Publisher marker_pub_R1 = n.advertise<visualization_msgs::Marker>("arrow_marker_R1", 1);
+  ros::Publisher marker_pub_R2 = n.advertise<visualization_msgs::Marker>("arrow_marker_R2", 1);
+  ros::Publisher marker_pub_R3 = n.advertise<visualization_msgs::Marker>("arrow_marker_R3", 1);
+  
+
 // %EndTag(INIT)%
 
   // Set our initial shape type to be a cube
@@ -93,8 +97,8 @@ int main( int argc, char** argv )
 
     // Set the color -- be sure to set alpha to something non-zero!
 // %Tag(COLOR)%
-    marker.color.r = 0.0f;
-    marker.color.g = 1.0f;
+    marker.color.r = 1.0f;
+    marker.color.g = 0.0f;
     marker.color.b = 0.0f;
     marker.color.a = 1.0;
 // %EndTag(COLOR)%
@@ -105,7 +109,20 @@ int main( int argc, char** argv )
 
     // Publish the marker
 // %Tag(PUBLISH)%
-    marker_pub.publish(marker);
+    marker_pub_R1.publish(marker);
+
+
+    marker.color.r = 0.0f;
+    marker.color.g = 1.0f;
+    marker.color.b = 0.0f;
+    marker.color.a = 1.0;
+    marker_pub_R2.publish(marker);
+    
+    marker.color.r = 0.0f;
+    marker.color.g = 0.0f;
+    marker.color.b = 1.0f;
+    marker.color.a = 1.0;
+    marker_pub_R3.publish(marker);
 // %EndTag(PUBLISH)%
 
     // Cycle between different shapes
