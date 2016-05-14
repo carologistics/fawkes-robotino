@@ -7,6 +7,7 @@
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
 #include <utils/time/time.h>
+#include <config/config.h>
 #include <logging/logger.h>
 
 #include "serializer.h"
@@ -17,13 +18,15 @@ forwarding all incoming and outgoing intercations.*/
 using namespace fawkes;
 using namespace websocketpp;
 
-RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Logger *logger , fawkes::Clock *clock)
+RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Logger *logger , fawkes::Configuration *config , fawkes::Clock *clock)
 :   BridgeProcessor(prefix)
 ,   logger_(logger)
 ,   clock_(clock)
 {
+    config_= config;
+    rosbridge_uri_= config_->get_string("/webtools-bridge/rosbridge-uri");
+
     rosbridge_endpoint_=websocketpp::lib::make_shared<Client>();
-    
     rosbridge_endpoint_->clear_access_channels(websocketpp::log::alevel::all);
     rosbridge_endpoint_->clear_error_channels(websocketpp::log::elevel::all);
     rosbridge_endpoint_->init_asio();
@@ -77,12 +80,11 @@ RosBridgeProxyProcessor::forward_to_proxy_session(std::shared_ptr <WebSession> w
     if (it_pears_  == pears_.end())
     {
         //create a proxy_session to act as a client to the "Ros Bridge Server". 
-        std::string const & uri="ws://localhost:9090";//TODO::store it as a conf
         
         websocketpp::lib::error_code ec;
 
         websocketpp::client<websocketpp::config::asio_client>::connection_ptr con;
-        con = rosbridge_endpoint_->get_connection(uri, ec);
+        con = rosbridge_endpoint_->get_connection( rosbridge_uri_ , ec);
         if (ec)
         {
             logger_->log_info("RosBridgeProxyProcessor"," Connect initialization error: %s" , ec.message().c_str());

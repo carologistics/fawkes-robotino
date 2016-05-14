@@ -42,6 +42,7 @@
 namespace fawkes {
   class Clock;
   class Logger;
+  class Configuration;
   class Mutex;
 }
 
@@ -66,6 +67,7 @@ class RosBridgeProxyProcessor
  public:
   RosBridgeProxyProcessor(std::string prefix 
                           , fawkes::Logger *logger
+                          , fawkes::Configuration *config
                           , fawkes::Clock  *clock);
 
   virtual ~RosBridgeProxyProcessor();
@@ -108,7 +110,10 @@ class RosBridgeProxyProcessor
   void forward_to_proxy_session(std::shared_ptr <WebSession> session , std::string message);
 
 private:
+  std::string                                                  rosbridge_uri_; 
+
   fawkes::Logger                                              *logger_; 
+  fawkes::Configuration                                       *config_;
   fawkes::Clock                                               *clock_;
   fawkes::Mutex                                               *mutex_;
 
