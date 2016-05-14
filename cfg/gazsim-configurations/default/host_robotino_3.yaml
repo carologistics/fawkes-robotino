@@ -62,3 +62,9 @@ plugins/tag_vision:
 
 plugins/robot-memory:
   database: robmem3
+
+webtools-bridge:
+  port: 4040
+  #port where rosbridge is expected to start. Websocket connection will be established to forward the Ros requests to the Rosbridge
+  rosbridge-port: 7070
+  rosbridge-uri: "ws://localhost:7070"

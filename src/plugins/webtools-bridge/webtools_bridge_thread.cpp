@@ -20,7 +20,7 @@
 
 
 #include "webtools_bridge_thread.h"
- 
+
 #include <tf/types.h>
 #include <interfaces/Position3DInterface.h>
 
@@ -93,6 +93,7 @@ WebtoolsBridgeThread::init()
 
   bridge_manager_->register_processor(std::make_shared<RosBridgeProxyProcessor> ("/"
                                                                                   , logger
+                                                                                  , config
                                                                                   , clock));
 
   bridge_manager_->register_processor(std::make_shared<ClipsProcessor> ("clips"
@@ -107,7 +108,7 @@ WebtoolsBridgeThread::init()
   //                                                                       , clock));
 
   web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);  
-  web_server_->run(6060);
+  web_server_->run(config->get_int("/webtools-bridge/port"));
 }
 
 void
