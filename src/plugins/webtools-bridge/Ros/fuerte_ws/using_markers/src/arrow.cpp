@@ -38,7 +38,7 @@ int main( int argc, char** argv )
 {
   ros::init(argc, argv, "arrow");
   ros::NodeHandle n;
-  ros::Rate r(1);
+  ros::Rate r(0.1);
   ros::Publisher marker_pub_R1 = n.advertise<visualization_msgs::Marker>("arrow_marker_R1", 1);
   ros::Publisher marker_pub_R2 = n.advertise<visualization_msgs::Marker>("arrow_marker_R2", 1);
   ros::Publisher marker_pub_R3 = n.advertise<visualization_msgs::Marker>("arrow_marker_R3", 1);
