@@ -81,6 +81,7 @@ WebtoolsBridgeThread::init()
 
   bridge_manager_->register_operation_handler("advertise" , advertisment_cpm );
   bridge_manager_->register_operation_handler("unadvertise" , advertisment_cpm );
+  bridge_manager_->register_operation_handler("publish" , advertisment_cpm );
 
   bridge_manager_->register_operation_handler("call_service" , service_cpm );
   
