@@ -113,7 +113,6 @@ function simple_monitor(){
 // }
 
 
-
 function products()
 {
 	var destination_bridge_name= "clips";
@@ -139,7 +138,7 @@ function products()
 	  	{
 	  		product_facts=message;
 	  		$("#"+wedgit_id).empty();// clear the div
-	  		$("#"+wedgit_id).append("<h1> Products:</h1>");
+	  		$("#"+wedgit_id).append("<h2> Products:</h2>");
 
 	  		if( order_facts != null)
 	  		{
@@ -236,7 +235,7 @@ function orders(){
 	  	order_facts_listener.subscribe(function(message) 
 	  	{
 	  		$("#"+wedgit_id).empty();// clear the div
-	  		$("#"+wedgit_id).append("<h1> Orders: </h1>");
+	  		$("#"+wedgit_id).append("<h2> Orders: </h2>");
 
 	  		order_facts= message;
 
@@ -289,3 +288,95 @@ function orders(){
 }
 
 
+
+function robotInfo( robot_name , bridge_connection )
+{
+	//var robot_name="Robot 1";
+	var destination_bridge_name= "clips";
+	var provided_tools= { tasks:true } ;
+	var container_id=	"robot_info__"+robot_name;
+
+	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id).append("<h1>"+robot_name+"</h1>");// div contaning the wedgi
+	$("body").append($container_div);//the wedgit container
+
+	
+	$(document).ready(function()
+	{
+
+		if(provided_tools["tasks"])
+		{
+			var wedgit_id = "tasks"+"__"+robot_name;
+			var $wedgit_div= $("<div>  </div>").attr('id',wedgit_id).append("<h2> Running Task: </h2>").append("<p> </p>").append("<ol> </ol>").addClass("wedgit");// div contaning the wedgit
+
+			var running_task;
+
+			var task_facts_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "task" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	task_facts_listener.subscribe(function(message){
+
+		  		for ( task_index in message.task)
+		  		{
+		  			var task = message.task[task_index];
+		  			if(	task.state == "running")
+		  			{
+		  				running_task=task;
+		  				$wedgit_div.find("p").empty().html("<b>"+task.name+"</b>"+"  "+"<sup> priority:"+JSON.parse(task.priority)+"</sup>");
+		  			}
+		  			else
+		  			{
+		  				running_task=null;
+		  				$wedgit_div.find("p").empty();
+		  				$wedgit_div.find("ol").empty();// to delete the details if there was an old task
+		  				$wedgit_div.find("p").text(" No running Task ");
+		  			}
+
+		  		}
+
+
+		  	});
+
+			var step_facts_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "step" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	step_facts_listener.subscribe(function(message){
+
+	  			if(running_task)
+	  			{
+	  				var $ol_element  = $("<ol></ol>");
+
+		  			for( step_index in message.step )
+		  			{
+		  				var step = message.step[step_index];
+		  				var step_order= $.inArray( step.id[0] , running_task.steps  );
+		  				if ( step_order > -1 )
+		  				{
+		  					//ex (step (id 911606601) (name get-output) (state failed) (task-priority 50) (machine C-CS1) (zone nil) (product-type nil) (machine-feature CONVEYOR) (shelf-slot LEFT) (base BLACK) (ring BLUE) (cs-operation MOUNT_CAP) (gate 1) (product-id 0))
+		  					var $li_content=$("<span>" +"<b>"+step.name+"</b>"  +"<sup>"+step["task-priority"]+"</sup>"  +" machine:"+"<b>"+step.machine+"</b>"   +" feature:"+"<b>"+step["machine-feature"]+"</b>"  +" shelf:"+"<b>"+step["shelf-slot"]+"</b>"   +" base:"+"<b>"+step["base"]+"</b>"  +"</span>");
+
+		  					if(step.state == "running") $li_content.addClass("highlight");
+		  					var $li_element = $("<li> </li>" ).append($li_content);
+
+		  					$ol_element.append($li_element );
+		  				}
+		  			}
+
+		  			$wedgit_div.find("ol").remove().append($ol_element);// to prepare for the refresh
+		  			$wedgit_div.append($ol_element);// to prepare for the refresh
+		  		}
+
+		  	});
+
+		  	$container_div.append($wedgit_div);
+		}
+	});
+
+}
