@@ -12,6 +12,10 @@ function load(){
 	simple_monitor();
 	orders();
 	products();
+  robotInfo("Robot 1" , ros);
+  robotInfo("Robot 2" , ros_2);
+  robotInfo("Robot 3" , ros_3);
+
 
 }
 
@@ -28,5 +32,18 @@ function init() {
  ros_3 = new ROSLIB.Ros({
     url : 'ws://localhost:4040'
   });
+
+
+ // ros = new ROSLIB.Ros({
+ //    url : 'ws://localhost:9090'
+ //  });
+
+ // ros_2 = new ROSLIB.Ros({
+ //    url : 'ws://localhost:8080'
+ //  });
+
+ // ros_3 = new ROSLIB.Ros({
+ //    url : 'ws://localhost:7070'
+ //  });
 
 }

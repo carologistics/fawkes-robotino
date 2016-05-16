@@ -5,6 +5,14 @@ html, body {
     padding: 2px;
 
 }
+.container{
+    border: 3px dotted #73AD21;
+    margin : 6px;
+    width : 30% ;
+    position: relative;
+    float: left;
+}
+
 .wedgit{
     border: 3px solid #73AD21;
     margin : 6px;
@@ -48,4 +56,8 @@ html, body {
 }
 .part_complete{
     opacity: 1;
+}
+
+.highlight{
+    background-color: #FFFF00;
 }
