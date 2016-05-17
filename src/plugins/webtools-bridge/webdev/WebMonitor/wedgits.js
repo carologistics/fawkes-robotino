@@ -293,20 +293,58 @@ function robotInfo( robot_name , bridge_connection )
 {
 	//var robot_name="Robot 1";
 	var destination_bridge_name= "clips";
-	var provided_tools= { tasks:true } ;
+	var provided_tools= { tasks:true , state:true } ;
 	var container_id=	"robot_info__"+robot_name;
 
-	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id).append("<h1>"+robot_name+"</h1>");// div contaning the wedgi
+	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id);// div contaning the wedgi
 	$("body").append($container_div);//the wedgit container
+	
+	var $container_header= $("<div>  </div>").addClass("container_header");
+	$container_header.append($("<h1>"+robot_name+"</h1>").addClass("container_header_element"));
+	$container_div.append($container_header);
 
 	
 	$(document).ready(function()
 	{
 
+		//------------The State Wedgit
+
+		if(provided_tools["state"])
+		{
+		  	var wedgit_id = "state"+"__"+robot_name;
+			var $state_wedgit_div= $("<div>  </div>").attr('id',wedgit_id).addClass("wedgit").addClass("container_header_element");// div contaning the wedgit
+
+			var old_state = "something";
+
+			var state_fact_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "state" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	state_fact_listener.subscribe(function(message){
+
+		  		if(old_state != message.state[0].fields[0])
+		  		{
+		  			$state_wedgit_div.empty();
+		  			$state_wedgit_div.html("<span>" + message.state[0].fields[0] + "</span>");
+		  			old_state = message.state[0].fields[0];
+		  		}
+
+		  	});
+
+		  	$container_header.append($state_wedgit_div);
+			
+		}
+
+
+		//------------The Task Wedgit
+
 		if(provided_tools["tasks"])
 		{
 			var wedgit_id = "tasks"+"__"+robot_name;
-			var $wedgit_div= $("<div>  </div>").attr('id',wedgit_id).append("<h2> Running Task: </h2>").append("<p> </p>").append("<ol> </ol>").addClass("wedgit");// div contaning the wedgit
+			var $task_wedgit_div= $("<div>  </div>").attr('id',wedgit_id).append("<h2> Running Task: </h2>").append("<p> </p>").append("<ol> </ol>").addClass("wedgit");// div contaning the wedgit
 
 			var running_task;
 
@@ -325,14 +363,14 @@ function robotInfo( robot_name , bridge_connection )
 		  			if(	task.state == "running")
 		  			{
 		  				running_task=task;
-		  				$wedgit_div.find("p").empty().html("<b>"+task.name+"</b>"+"  "+"<sup> priority:"+JSON.parse(task.priority)+"</sup>");
+		  				$task_wedgit_div.find("p").empty().html("<b>"+task.name+"</b>"+"  "+"<sup> priority:"+JSON.parse(task.priority)+"</sup>");
 		  			}
 		  			else
 		  			{
 		  				running_task=null;
-		  				$wedgit_div.find("p").empty();
-		  				$wedgit_div.find("ol").empty();// to delete the details if there was an old task
-		  				$wedgit_div.find("p").text(" No running Task ");
+		  				$task_wedgit_div.find("p").empty();
+		  				$task_wedgit_div.find("ol").empty();// to delete the details if there was an old task
+		  				$task_wedgit_div.find("p").text(" No running Task ");
 		  			}
 
 		  		}
@@ -369,14 +407,17 @@ function robotInfo( robot_name , bridge_connection )
 		  				}
 		  			}
 
-		  			$wedgit_div.find("ol").remove().append($ol_element);// to prepare for the refresh
-		  			$wedgit_div.append($ol_element);// to prepare for the refresh
+		  			$task_wedgit_div.find("ol").remove().append($ol_element);// to prepare for the refresh
+		  			$task_wedgit_div.append($ol_element);// to prepare for the refresh
 		  		}
 
 		  	});
 
-		  	$container_div.append($wedgit_div);
+		  	$container_div.append($task_wedgit_div);
 		}
+
+
 	});
+
 
 }
