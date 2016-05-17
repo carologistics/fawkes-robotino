@@ -1,4 +1,4 @@
-
+\
 html, body {
     height : 100%;
     margin :2px ;
@@ -16,7 +16,7 @@ html, body {
 .wedgit{
     border: 3px solid #73AD21;
     margin : 6px;
-    display: block;
+    display:block;
 }
 
 .container_header_element
@@ -24,8 +24,31 @@ html, body {
     border: none;
     display: inline-block;
 }
+/*Lock Role Images and position*/
+div[id^="lock_role__"].master img
+{
+    content:url("img/master_joda.png");
+    width  : 100px ;
+    height : 100px ;
+}
 
+div[id^="lock_role__"].slave img
+{
+    content:url("img/slaves.jpg");
+    width  : 80px ;
+    height : 80px ;
+}
 
+div[id^="lock_role__"] 
+{
+    position : absolute ;
+    right: 5px;
+}
+
+/*div[id^="lock_role__"].slave img
+{
+    pcontent:url("http://imgur.com/SZ8Cm.jpg");
+}*/
 
 #map{
       width : 100% ;
