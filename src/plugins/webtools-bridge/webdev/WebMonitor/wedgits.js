@@ -293,7 +293,7 @@ function robotInfo( robot_name , bridge_connection )
 {
 	//var robot_name="Robot 1";
 	var destination_bridge_name= "clips";
-	var provided_tools= { tasks:true , state:true } ;
+	var provided_tools= { tasks:true , state:true , lock_role: true} ;
 	var container_id=	"robot_info__"+robot_name;
 
 	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id);// div contaning the wedgi
@@ -308,6 +308,49 @@ function robotInfo( robot_name , bridge_connection )
 	{
 
 		//------------The State Wedgit
+
+		if(provided_tools["lock_role"])
+		{
+		  	var wedgit_id = "lock_role"+"__"+robot_name;
+			var $lock_role_wedgit_div= $("<div>  </div>").attr('id',wedgit_id).addClass("wedgit").addClass("container_header_element");// div contaning the wedgit
+
+			var old_lock_role = "something";
+
+			var lock_role_fact_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "lock-role" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	lock_role_fact_listener.subscribe(function(message){
+
+		  		if(old_lock_role != message["lock-role"][0].fields[0])
+		  		{
+		  			$lock_role_wedgit_div.empty();
+		  			$lock_role_wedgit_div.html(' <img> </img>');
+		  			//$lock_role_wedgit_div.html("<span>" +  message["lock-role"][0].fields[0] + "</span>");
+		  			if ( message["lock-role"][0].fields[0] == "MASTER")
+		  			{
+		  				$lock_role_wedgit_div.addClass("master");
+		  			}
+		  			else
+		  			{
+		  				$lock_role_wedgit_div.addClass("slave");
+		  			}
+
+
+		  			old_lock_role = message["lock-role"][0].fields[0];
+		  		}
+
+		  	});
+
+		  	$container_header.append($lock_role_wedgit_div);
+			
+		}
+
+
+		//------------The Role Wedgit
 
 		if(provided_tools["state"])
 		{
