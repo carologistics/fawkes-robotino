@@ -16,7 +16,20 @@ html, body {
 .wedgit{
     border: 3px solid #73AD21;
     margin : 6px;
-    position: relative;
+    display: block;
+}
+
+.container_header_element
+{
+    border: none;
+    display: inline-block;
+}
+
+
+
+#map{
+      width : 100% ;
+       display: inline-block;
 }
 
 .product{
