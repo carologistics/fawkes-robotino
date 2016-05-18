@@ -293,7 +293,7 @@ function robotInfo( robot_name , bridge_connection )
 {
 	//var robot_name="Robot 1";
 	var destination_bridge_name= "clips";
-	var provided_tools= { tasks:true , state:true , lock_role: true , locked_resource: true , skills : true} ;
+	var provided_tools= { tasks:true , state:true , lock_role: true , locked_resource: true , skills : true , holding : true} ;
 	var container_id=	"robot_info__"+robot_name;
 
 	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id);// div contaning the wedgi
@@ -307,6 +307,7 @@ function robotInfo( robot_name , bridge_connection )
 	$(document).ready(function()
 	{
 
+		
 		//------------The State Wedgit
 
 		if(provided_tools["lock_role"])
@@ -350,6 +351,82 @@ function robotInfo( robot_name , bridge_connection )
 		  	$container_header.append($lock_role_wedgit_div);
 			
 		}
+
+
+		//=----------Holding Wedgit
+		if(provided_tools["holding"])
+		{
+		  	var wedgit_id = "holding"+"__"+robot_name;
+			var $holding_wedgit_div= $("<div>  </div>").attr('id',wedgit_id).addClass("wedgit").addClass("container_header_element");// div contaning the wedgit
+
+			var old_holding = "NONE";
+
+			var holding_fact_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "holding" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	holding_fact_listener.subscribe(function(message){
+
+		  		if(old_holding != message.holding[0].fields[0])
+		  		{
+		  			old_holding= message.holding[0].fields[0];
+		  		}
+
+		  	});
+
+
+		  	var product_facts_listener = new ROSLIB.Topic({
+		    ros : ros,
+		    name : destination_bridge_name +"/" + "product" ,
+		    messageType : 'mm',
+		    throttle_rate:1000,
+	  		});
+
+
+	  		product_facts_listener.subscribe(function(message) 
+	  		{
+		  		$holding_wedgit_div.empty();// clear the div
+
+		  		if( old_holding != "NONE")
+		  		{
+		  			for( var product in message.product )
+					{
+
+						if (JSON.parse(message.product[product]["id"]) == old_holding )//A product that describes a production process
+						{
+
+							var $product_div=$("<div> </div>");//Make a similare DIV
+
+							var base_color = message.product[product].base[0];
+							$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
+							
+							for( var ring_index in message.product[product].rings )
+							{
+								var ring_color = message.product[product].rings[ring_index];
+								$product_div.prepend("<div class='products_ring "+ring_index +" ' style= background-color:"+ring_color+"> </div>");
+							}
+							
+							var cap_color = message.product[product].cap[0];
+							$product_div.prepend("<div class=products_cap style= background-color:"+cap_color+"> </div>");
+
+							$holding_wedgit_div.append($product_div); //div will hold this product	  				
+
+						}
+						
+					}
+		  		}
+		  	});
+
+
+
+		  	$container_header.append($holding_wedgit_div);
+			
+		}
+
+
 
 
 		//------------The Role Wedgit
