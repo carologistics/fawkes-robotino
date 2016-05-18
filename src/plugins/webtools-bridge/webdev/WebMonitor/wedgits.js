@@ -293,7 +293,7 @@ function robotInfo( robot_name , bridge_connection )
 {
 	//var robot_name="Robot 1";
 	var destination_bridge_name= "clips";
-	var provided_tools= { tasks:true , state:true , lock_role: true} ;
+	var provided_tools= { tasks:true , state:true , lock_role: true , locked_resource: true } ;
 	var container_id=	"robot_info__"+robot_name;
 
 	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id);// div contaning the wedgi
@@ -337,6 +337,8 @@ function robotInfo( robot_name , bridge_connection )
 		  			else
 		  			{
 		  				$lock_role_wedgit_div.addClass("slave");
+		  				$lock_role_wedgit_div.html("<span>" +  message["lock-role"][0].fields[0] + "</span>");
+
 		  			}
 
 
@@ -371,7 +373,7 @@ function robotInfo( robot_name , bridge_connection )
 		  		if(old_state != message.state[0].fields[0])
 		  		{
 		  			$state_wedgit_div.empty();
-		  			$state_wedgit_div.html("<span>" + message.state[0].fields[0] + "</span>");
+		  			$state_wedgit_div.html("<sub>" + message.state[0].fields[0] + "</sub>");
 		  			old_state = message.state[0].fields[0];
 		  		}
 
@@ -400,23 +402,26 @@ function robotInfo( robot_name , bridge_connection )
 
 		  	task_facts_listener.subscribe(function(message){
 
+		  		running_task=null;
+
 		  		for ( task_index in message.task)
 		  		{
 		  			var task = message.task[task_index];
 		  			if(	task.state == "running")
 		  			{
 		  				running_task=task;
-		  				$task_wedgit_div.find("p").empty().html("<b>"+task.name+"</b>"+"  "+"<sup> priority:"+JSON.parse(task.priority)+"</sup>");
-		  			}
-		  			else
-		  			{
-		  				running_task=null;
-		  				$task_wedgit_div.find("p").empty();
-		  				$task_wedgit_div.find("ol").empty();// to delete the details if there was an old task
-		  				$task_wedgit_div.find("p").text(" No running Task ");
+		  				$task_wedgit_div.find("p").empty().html("<b> "+task.name+"</b>"+"  "+"<sup> priority:"+JSON.parse(task.priority)+"</sup>");
+		  				break;
 		  			}
 
 		  		}
+
+	  			if(!running_task)
+	  			{
+	  				$task_wedgit_div.find("p").empty();
+	  				$task_wedgit_div.find("ol").empty();// to delete the details if there was an old task
+	  				$task_wedgit_div.find("p").text(" No running Task ");
+	  			}
 
 
 		  	});
@@ -434,29 +439,73 @@ function robotInfo( robot_name , bridge_connection )
 	  			{
 	  				var $ol_element  = $("<ol></ol>");
 
-		  			for( step_index in message.step )
-		  			{
-		  				var step = message.step[step_index];
-		  				var step_order= $.inArray( step.id[0] , running_task.steps  );
-		  				if ( step_order > -1 )
-		  				{
-		  					//ex (step (id 911606601) (name get-output) (state failed) (task-priority 50) (machine C-CS1) (zone nil) (product-type nil) (machine-feature CONVEYOR) (shelf-slot LEFT) (base BLACK) (ring BLUE) (cs-operation MOUNT_CAP) (gate 1) (product-id 0))
-		  					var $li_content=$("<span>" +"<b>"+step.name+"</b>"  +"<sup>"+step["task-priority"]+"</sup>"  +" machine:"+"<b>"+step.machine+"</b>"   +" feature:"+"<b>"+step["machine-feature"]+"</b>"  +" shelf:"+"<b>"+step["shelf-slot"]+"</b>"   +" base:"+"<b>"+step["base"]+"</b>"  +"</span>");
+	  				for (task_step_index in running_task.steps )
+	  				{
 
-		  					if(step.state == "running") $li_content.addClass("highlight");
-		  					var $li_element = $("<li> </li>" ).append($li_content);
+			  			for( step_index in message.step )
+			  			{
+			  				var step = message.step[step_index];
+			  				// var step_order= $.inArray( step.id[0] , running_task.steps  );
+			  				if ( step.id[0] == running_task.steps[task_step_index] )
+			  				{
+			  					//ex (step (id 911606601) (name get-output) (state failed) (task-priority 50) (machine C-CS1) (zone nil) (product-type nil) (machine-feature CONVEYOR) (shelf-slot LEFT) (base BLACK) (ring BLUE) (cs-operation MOUNT_CAP) (gate 1) (product-id 0))
+			  					var $li_content=$("<span>" +"<b>"+step.name+"</b>"  +"<sup>"+step["task-priority"]+"</sup>"  +" machine:"+"<b>"+step.machine+"</b>"   +" feature:"+"<b>"+step["machine-feature"]+"</b>"  +" shelf:"+"<b>"+step["shelf-slot"]+"</b>"   +" base:"+"<b>"+step["base"]+"</b>"  +"</span>");
+			  					if(step.state == "running") $li_content.addClass("highlight");
 
-		  					$ol_element.append($li_element );
-		  				}
-		  			}
+			  					var $li_element = $("<li> </li>" ).append($li_content);
 
-		  			$task_wedgit_div.find("ol").remove().append($ol_element);// to prepare for the refresh
+			  					$ol_element.append($li_element );
+			  				}
+			  			}
+
+	  				}
+
+
+		  			$task_wedgit_div.find("ol").remove();// to prepare for the refresh
 		  			$task_wedgit_div.append($ol_element);// to prepare for the refresh
 		  		}
 
 		  	});
 
 		  	$container_div.append($task_wedgit_div);
+		}
+
+
+
+		if(provided_tools["locked_resource"])
+		{
+			var wedgit_id = "locked_resources"+"__"+robot_name;
+			var $locked_resource_wedgit_div= $("<div>  </div>").attr('id',wedgit_id).append("<h2> Locked Resources: </h2>").append("<ul> </ul>").addClass("wedgit");// div contaning the wedgit
+
+
+			var locked_resources_facts_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "locked-resource" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	locked_resources_facts_listener.subscribe(function(message){
+
+			  	$locked_resource_wedgit_div.find("ul").empty();// refresh and delete unlocked resources
+
+		  		for ( fact_index in message["locked-resource"])
+		  		{
+		  			var fact = message["locked-resource"][fact_index];
+		  			if(	fact.agent == robot_name)
+		  			{
+		  				var $li_element  = $("<li></li>");
+		  				$li_element.html("<span>"+fact.resource+"</span>");
+		  				
+		  				$locked_resource_wedgit_div.find("ul").append($li_element);
+		  			}
+
+
+		  		}
+
+		  	});
+
+		  	$container_div.append($locked_resource_wedgit_div);
 		}
 
 
