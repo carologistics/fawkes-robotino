@@ -293,7 +293,7 @@ function robotInfo( robot_name , bridge_connection )
 {
 	//var robot_name="Robot 1";
 	var destination_bridge_name= "clips";
-	var provided_tools= { tasks:true , state:true , lock_role: true , locked_resource: true } ;
+	var provided_tools= { tasks:true , state:true , lock_role: true , locked_resource: true , skills : true} ;
 	var container_id=	"robot_info__"+robot_name;
 
 	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id);// div contaning the wedgi
@@ -471,7 +471,7 @@ function robotInfo( robot_name , bridge_connection )
 		}
 
 
-
+		//------------Locked resources wedgit
 		if(provided_tools["locked_resource"])
 		{
 			var wedgit_id = "locked_resources"+"__"+robot_name;
@@ -487,19 +487,25 @@ function robotInfo( robot_name , bridge_connection )
 
 		  	locked_resources_facts_listener.subscribe(function(message){
 
-			  	$locked_resource_wedgit_div.find("ul").empty();// refresh and delete unlocked resources
+			  	$locked_resource_wedgit_div.find("ul").empty();// refresh and delete unlocked resources"<span>"+fact.resource+"</span>"
+			  	var something_locked;
 
 		  		for ( fact_index in message["locked-resource"])
 		  		{
 		  			var fact = message["locked-resource"][fact_index];
 		  			if(	fact.agent == robot_name)
 		  			{
+		  				something_locked = true;
 		  				var $li_element  = $("<li></li>");
 		  				$li_element.html("<span>"+fact.resource+"</span>");
-		  				
+	
 		  				$locked_resource_wedgit_div.find("ul").append($li_element);
 		  			}
+		  		}
 
+		  		if (!something_locked)
+		  		{
+		  			$locked_resource_wedgit_div.find("ul").append("<li> <span> No Locked Resources</span> </li>")
 
 		  		}
 
@@ -507,6 +513,110 @@ function robotInfo( robot_name , bridge_connection )
 
 		  	$container_div.append($locked_resource_wedgit_div);
 		}
+
+		//--------------skills wedgit
+		if(provided_tools["skills"])
+		{
+			var wedgit_id = "skills"+"__"+robot_name;
+			var $skills_wedgit_div= $("<div>  </div>").attr('id',wedgit_id).addClass("wedgit") // div contaning the wedgit
+				.append("<h2> Skills: </h2>")
+				.append("<h3 > to-excute:&nbsp </h3>") .append("<p class=execute> </p> <br>")
+				.append("<h3 > Running:&nbsp </h3>") .append("<p class=running> </p> <br>")
+				.append("<h3 > Last Done:&nbsp </h3>") .append("<p class=done> </p> <br>")
+
+
+			var skill_to_excute_fact_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "skill-to-execute" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	skill_to_excute_fact_listener.subscribe(function(message){
+
+			  	$skills_wedgit_div.find("p.execute").empty();
+
+		  		for ( fact_index in message["skill-to-execute"])
+		  		{
+		  			var fact = message["skill-to-execute"][fact_index];
+
+		  			$skills_wedgit_div.find("p.execute").append("<pa>"+ fact["skill"] +"&nbsp &nbsp</b>");
+		  			for (args_index in fact["args"])
+		  			{
+		  				if(args_index% 2)
+		  				{
+		  					$skills_wedgit_div.find("p.execute span").append( "<strong>"+fact["args"][args_index]+"</strong> &nbsp " );
+		  				}
+		  				else
+		  				{
+		  					//$skills_wedgit_div.find("p.execute span").append( fact["args"][args_index] );
+		  				}
+		  			}
+		  		
+		  		}
+
+		  	});
+
+
+			var skill_fact_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "skill" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	skill_fact_listener.subscribe(function(message){
+
+			  	$skills_wedgit_div.find("p.running").empty();// refresh and delete unlocked resources"<span>"+fact.resource+"</span>"
+
+		  		for ( fact_index in message["skill"])
+		  		{
+
+		  			var fact = message["skill"][fact_index];
+		  			if(	fact.status == "RUNNING" )
+		  			{
+
+		  				$skills_wedgit_div.find("p.running").append($("<span>"+ message["skill"][fact_index]["skill-string"] +"</span>").addClass("highlight"));
+		  			}
+					else
+					{
+			  			$skills_wedgit_div.find("p.running").append("<span> "+ message["skill"][fact_index]["skill-string"] +"<sub>"+message["skill"][fact_index]["state"] +"</sub>"+"</span>")
+					}
+
+		  		}
+
+		  	});
+
+
+		  	var skill_done_fact_listener = new ROSLIB.Topic({
+			    ros : bridge_connection ,
+			    name : destination_bridge_name +"/" + "skill-done" ,
+			    messageType : 'mm',
+			    throttle_rate:1000,
+		  	});
+
+		  	skill_done_fact_listener.subscribe(function(message){
+
+			  	$skills_wedgit_div.find("p.done").empty();
+
+		  		for ( fact_index in message["skill-done"])
+		  		{
+		  			var fact = message["skill-done"][fact_index];
+		  			var $span = $("<span>"+ fact["name"] +"</span> <br>");
+		  			$span.addClass(fact["status"][0]);
+		  			$skills_wedgit_div.find("p.done").append($span);
+		  		}
+
+		  	});
+
+
+
+		  	$container_div.append($skills_wedgit_div);
+
+		}
+
+
+
 
 
 	});

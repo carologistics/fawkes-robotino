@@ -51,6 +51,31 @@ div[id^="lock_role__"]
     pcontent:url("http://imgur.com/SZ8Cm.jpg");
 }*/
 
+/*----------------------SkillsWidgit*/
+div[id^="skills__"] h3
+{
+    display: inline-block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+}
+
+
+div[id^="skills__"] p
+{
+       display: inline-block;
+}
+
+div[id^="skills__"] p.done span.FINAL
+{
+       color: green;
+}
+
+div[id^="skills__"] p.done span.FAILED
+{
+       color: red;
+}
+
+
 #map{
       width : 100% ;
        display: inline-block;
@@ -98,3 +123,5 @@ div[id^="lock_role__"]
 .highlight{
     background-color: #FFFF00;
 }
+
+
