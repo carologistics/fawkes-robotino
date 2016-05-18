@@ -19,11 +19,29 @@ html, body {
     display:block;
 }
 
+.container_header
+{
+    border: 3px dashed #73AD21;
+    position: relative;
+    min-height: 100px
+}
 .container_header_element
 {
-    border: none;
+   
     display: inline-block;
+    border :none;
+    position: relative;
 }
+
+div[id^="holding__"] 
+{
+    overflow:hidden;
+    position: absolute;
+    left: 50%;
+    bottom:0%;
+}
+
+
 /*Lock Role Images and position*/
 div[id^="lock_role__"].master img
 {
@@ -65,6 +83,11 @@ div[id^="skills__"] p
        display: inline-block;
 }
 
+div[id^="skills__"] p.running span
+{
+       display: inline-block;
+}
+
 div[id^="skills__"] p.done span.FINAL
 {
        color: green;
@@ -74,7 +97,6 @@ div[id^="skills__"] p.done span.FAILED
 {
        color: red;
 }
-
 
 #map{
       width : 100% ;
@@ -98,17 +120,20 @@ div[id^="skills__"] p.done span.FAILED
 }
 
 .products_cap{
+    
 	width: 50px;
     height: 10px;
 }
 
 
 .products_ring{
+    
 	width: 50px;
     height: 20px;
 }
 
 .products_base{
+    
 	width: 50px;
     height: 30px;
 }
