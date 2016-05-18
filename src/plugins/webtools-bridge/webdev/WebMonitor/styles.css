@@ -28,21 +28,22 @@ html, body {
 div[id^="lock_role__"].master img
 {
     content:url("img/master_joda.png");
-    width  : 100px ;
-    height : 100px ;
+    width  : 75px ;
+    height : 75px ;
 }
-
+/*
 div[id^="lock_role__"].slave img
 {
     content:url("img/slaves.jpg");
     width  : 80px ;
     height : 80px ;
-}
+}*/
 
 div[id^="lock_role__"] 
 {
     position : absolute ;
-    right: 5px;
+    right: 0px;
+    top: 0px;
 }
 
 /*div[id^="lock_role__"].slave img

@@ -12,9 +12,9 @@ function load(){
 	simple_monitor();
 	orders();
 	products();
-  robotInfo("Robot 1" , ros);
-  robotInfo("Robot 2" , ros_2);
-  robotInfo("Robot 3" , ros_3);
+  robotInfo("R-1" , ros);
+  robotInfo("R-2" , ros_2);
+  robotInfo("R-3" , ros_3);
 
 
 }
