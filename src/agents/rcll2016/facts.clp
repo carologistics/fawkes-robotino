@@ -154,7 +154,6 @@
   (multislot available-colors (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot selected-color (type SYMBOL) (allowed-symbols NONE BLUE GREEN YELLOW ORANGE)
 	(default NONE))
-  (slot bases-needed (type INTEGER) (allowed-values 0 1 2) (default 0))
   (slot bases-loaded (type INTEGER) (allowed-values 0 1 2 3) (default 0))
   (slot sync-id (type INTEGER) (default 0))
 )
