@@ -51,7 +51,7 @@ fsm:define_states{
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_arduino_if:has_writer()", desc="No writer for arduino"},
    {"CHECK_WRITER", "COMMAND", cond=true},
-   {"COMMAND", "FINAL", cond="vars.moveup or vars.movedown or vars.movezero"},
+   {"COMMAND", "FINAL", cond="vars.moveup or vars.movedown or vars.movetozero"},
    {"COMMAND", "FAILED", cond="vars.error"},
 }
 
@@ -67,7 +67,7 @@ function COMMAND:init()
       theDownMessage:set_num_mm(self.fsm.vars.num_mm or 0)
       gripper_arduino_if:msgq_enqueue_copy(theDownMessage)
    elseif self.fsm.vars.command == "TO_UPPER_Z" then
-      self.fsm.vars.movetoz0 = true
+      self.fsm.vars.movetozero = true
       theToZ0Message = gripper_arduino_if.MoveToZ0Message:new()
       gripper_arduino_if:msgq_enqueue_copy(theToZ0Message)
    else
