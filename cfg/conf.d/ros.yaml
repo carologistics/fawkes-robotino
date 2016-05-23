@@ -15,6 +15,11 @@ ros:
     odom_frame_id: odom
     base_frame_id: base_link
 
+  pcl:
+    # The time interval which is used to search for new pointclouds in ROS.
+    # This is the maximum time until a pointcloud from ROS is visible and usable in FAWKES
+   ros-research-ival: 2.
+
   clock:
     # Frequency in Hz at which the clock should be published
     frequency: 100
