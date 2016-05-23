@@ -35,6 +35,7 @@
 
 #include <interfaces/SwitchInterface.h>
 #include <interfaces/Position3DInterface.h>
+#include <interfaces/LaserLineInterface.h>
 
 #include "visualisation.hpp"
 
@@ -60,15 +61,21 @@ private:
   Visualisation * visualisation_;
 
   std::string cloud_in_name_;
+  std::string cloud_out_inter_1_name_;
+  std::string cloud_out_result_name_;
+  std::vector<std::string> laserlines_names_;
+  std::string bb_tag_name_;
   bool cloud_in_registered_;
   pcl::PCLHeader header_;
 
   fawkes::RefPtr<const Cloud> cloud_in_;
-  fawkes::RefPtr<Cloud> cloud_out_plane_;
+  fawkes::RefPtr<Cloud> cloud_out_inter_1_;
   fawkes::RefPtr<Cloud> cloud_out_result_;
 
   fawkes::SwitchInterface * bb_enable_switch_;
   fawkes::Position3DInterface * bb_pose_;
+  std::vector<fawkes::LaserLineInterface * > laserlines_;
+  fawkes::Position3DInterface * bb_tag_;
 
   bool cfg_enable_switch_;
   bool cfg_use_visualisation_;
@@ -79,10 +86,15 @@ private:
  bool pc_in_check();
  bool is_enabled() const { return cfg_enable_switch_; }
 
+ void if_read();
+ bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
+ Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
+
  bool is_inbetween(double a, double b, double val);
 
  CloudPtr cloud_remove_gripper(CloudPtr in);
- CloudPtr cloud_remove_offset_to_front(CloudPtr in);
+ CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
+ CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll);
  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
  CloudPtr cloud_cluster(CloudPtr in);
  CloudPtr vg(CloudPtr in);

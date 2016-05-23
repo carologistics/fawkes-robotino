@@ -138,7 +138,7 @@ public:
 
   Visualisation(fawkes::LockPtr<ros::NodeHandle> rosnode)
   {
-    pub_markers_ = rosnode->advertise<visualization_msgs::MarkerArray>("visualization_marker", 10);
+    pub_markers_ = rosnode->advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
   }
 };
 

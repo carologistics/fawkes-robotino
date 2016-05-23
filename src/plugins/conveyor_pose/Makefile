@@ -28,7 +28,7 @@ REQUIRED_PCL_LIBS = sample_consensus segmentation filters surface features
 #The necessary libraries your plugin needs.
 LIBS_conveyor_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkestf fawkesblackboard fawkesinterface fawkespcl_utils \
-		SwitchInterface Position3DInterface
+		SwitchInterface Position3DInterface LaserLineInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o
 

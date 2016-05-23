@@ -74,14 +74,32 @@ ConveyorPoseThread::init()
 {
 //  cloud_in_name_ = "/depth/points";
   cloud_in_name_ = "/camera/depth/points";
+//  cloud_in_name_ = "/conveyor/cam";
+  cloud_out_inter_1_name_ = "conveyor_pose/plane";
+  cloud_out_result_name_ = "conveyor_pose/result";
+  bb_tag_name_ = "/tag-vision/0";
   cloud_in_registered_ = false;
   cfg_enable_switch_ = true;
   cfg_use_visualisation_ = true;
 
-  cloud_out_plane_ = new Cloud();
+  laserlines_names_.push_back("/laser-lines/1");
+  laserlines_names_.push_back("/laser-lines/2");
+  laserlines_names_.push_back("/laser-lines/3");
+  laserlines_names_.push_back("/laser-lines/4");
+  laserlines_names_.push_back("/laser-lines/5");
+  laserlines_names_.push_back("/laser-lines/6");
+  laserlines_names_.push_back("/laser-lines/7");
+  laserlines_names_.push_back("/laser-lines/8");
+
+  for (std::string ll : laserlines_names_) {
+    laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
+  }
+  bb_tag_ = blackboard->open_for_reading<fawkes::Position3DInterface>(bb_tag_name_.c_str());
+
+  cloud_out_inter_1_ = new Cloud();
   cloud_out_result_ = new Cloud();
-  pcl_manager->add_pointcloud("conveyor_pose/plane", cloud_out_plane_);
-  pcl_manager->add_pointcloud("conveyor_pose/result", cloud_out_result_);
+  pcl_manager->add_pointcloud(cloud_out_inter_1_name_.c_str(), cloud_out_inter_1_);
+  pcl_manager->add_pointcloud(cloud_out_result_name_.c_str(), cloud_out_result_);
 
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("/conveyor-pose/switch");
   bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>("/conveyor-pose");
@@ -94,6 +112,8 @@ ConveyorPoseThread::init()
 void
 ConveyorPoseThread::finalize()
 {
+  pcl_manager->remove_pointcloud(cloud_out_inter_1_name_.c_str());
+  pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
 }
@@ -107,14 +127,28 @@ ConveyorPoseThread::loop()
   if ( ! cfg_enable_switch_ ) { pose_write(pose, -1); return; }
   if ( ! pc_in_check() ) { pose_write(pose, -1); return; }
 
+  if_read();
+
+  fawkes::LaserLineInterface * ll = NULL;
+  bool use_laserline = laserline_get_best_fit( ll );
+
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
-  CloudPtr cloud_pt = cloud_remove_gripper(cloud_in);
-  CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_pt);
+  CloudPtr cloud_vg = vg(cloud_in);
+  CloudPtr cloud_pt = cloud_remove_gripper(cloud_vg);
+  CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_pt, ll, use_laserline);
+  CloudPtr cloud_front_side(new Cloud);
+//  if ( use_laserline ) {
+//    cloud_front_side = cloud_remove_offset_to_left_right(cloud_pt, ll);
+//  } else {
+    *cloud_front_side = *cloud_front;
+//  }
+
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
-  CloudPtr cloud_pl = cloud_get_plane(cloud_front, coeff);
-  if ( cloud_pl == NULL ) { return; }
-  cloud_publish(cloud_pl, cloud_out_plane_);
+  CloudPtr cloud_pl = cloud_get_plane(cloud_front_side, coeff);
+  if ( cloud_pl == NULL ) { pose_write(pose, -1); return; }
+
+  cloud_publish(cloud_pl, cloud_out_inter_1_);
 
   CloudPtr biggest = cloud_cluster(cloud_pl);
   cloud_publish(biggest, cloud_out_result_);
@@ -158,6 +192,68 @@ ConveyorPoseThread::pc_in_check()
   }
 }
 
+void
+ConveyorPoseThread::if_read()
+{
+  for (fawkes::LaserLineInterface * ll : laserlines_) {
+    ll->read();
+  }
+  bb_tag_->read();
+}
+
+bool
+ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit)
+{
+  best_fit = laserlines_.front();
+
+  // get best line
+  for (fawkes::LaserLineInterface * ll : laserlines_) {
+    // just with writer
+    if ( ! ll->has_writer() ) { continue; }
+    // just with history
+    if ( ll->visibility_history() <= 2 ) { continue; }
+    // just if not too far away
+    Eigen::Vector3f center = laserline_get_center_transformed(ll);
+
+    if ( std::sqrt( center(0) * center(0) +
+                    center(2) * center(2) ) > 0.8 ) { continue; }
+
+    // take with lowest angle
+    if ( fabs(best_fit->bearing()) > fabs(ll->bearing()) ) {
+      best_fit = ll;
+    }
+  }
+
+  if ( ! best_fit->has_writer() ) { logger->log_info(name(), "no writer"); best_fit = NULL; return false; }
+  if ( best_fit->visibility_history() <= 2 ) { logger->log_info(name(), "vis hist"); best_fit = NULL; return false;  }
+  if ( fabs(best_fit->bearing()) > 0.35 ) { logger->log_info(name(), "angle"); best_fit = NULL; return false;  } // ~20 deg
+  Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
+
+  if ( std::sqrt( center(0) * center(0) +
+                  center(2) * center(2) ) > 0.8 ) { best_fit = NULL; return false;  }
+
+  return true;
+}
+
+Eigen::Vector3f
+ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface * ll)
+{
+  fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
+  tf_in.stamp = ll->timestamp();
+  tf_in.frame_id = ll->frame_id();
+  tf_in.setX( ll->end_point_2(0) + ( ll->end_point_1(0) - ll->end_point_2(0) ) / 2. );
+  tf_in.setY( ll->end_point_2(1) + ( ll->end_point_1(1) - ll->end_point_2(1) ) / 2. );
+  tf_in.setZ( ll->end_point_2(2) + ( ll->end_point_1(2) - ll->end_point_2(2) ) / 2. );
+
+//  logger->log_info(name(), "laser: %f %f %f", tf_in.getX(), tf_in.getY(), tf_in.getZ());
+  tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+//  logger->log_info(name(), "camer: %f %f %f", tf_out.getX(), tf_out.getY(), tf_out.getZ());
+
+  Eigen::Vector3f out( tf_out.getX(), tf_out.getY(), tf_out.getZ() );
+
+  return out;
+}
+
 bool
 ConveyorPoseThread::is_inbetween(double a, double b, double val) {
   double low = std::min(a, b);
@@ -186,19 +282,49 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
 }
 
 CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in)
+ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
-  // get lowest z point
+  double space = 0.06;
+  double z_min, z_max;
+  if ( use_ll ) {
+    Eigen::Vector3f c = laserline_get_center_transformed(ll);
+    z_min = c(2) - ( space / 2. );
+  } else {
+    // get lowest z point
+    double lowest_z = 1000;
+    for (Point p : *in) {
+      if ( p.z < lowest_z ) {
+        lowest_z = p.z;
+      }
+    }
+
+    z_min = lowest_z -0.01;
+  }
+  z_max = z_min + space;
+
   CloudPtr out(new Cloud);
-  double lowest_z = 1000;
   for (Point p : *in) {
-    if ( p.z < lowest_z ) {
-      lowest_z = p.z;
+    if ( p.z >= z_min && p.z <= z_max) {
+      out->push_back(p);
     }
   }
-  // get all points within 5cm of the clostest points
+
+  return out;
+}
+
+CloudPtr
+ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll)
+{
+  double space = 0.12;
+  Eigen::Vector3f c = laserline_get_center_transformed(ll);
+
+  double x_min = c(0) - ( space / 2. );
+  double x_max = c(0) + ( space / 2. );
+//  logger->log_info(name(), "%f => %f - %f", c(0), x_min, x_max);
+
+  CloudPtr out(new Cloud);
   for (Point p : *in) {
-    if ( p.z - lowest_z < 0.05) {
+    if ( p.x >= x_min && p.x <= x_max ) {
       out->push_back(p);
     }
   }
@@ -218,7 +344,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (0.0025);
+  seg.setDistanceThreshold (0.0015);
 
   seg.setInputCloud (in);
   seg.segment (*inliers, *coeff);
@@ -255,7 +381,7 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (0.0005);
+  ec.setClusterTolerance (0.0011);
   ec.setMinClusterSize (100);
   ec.setMaxClusterSize (25000);
   ec.setSearchMethod (tree);
@@ -284,7 +410,7 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
 CloudPtr
 ConveyorPoseThread::vg(CloudPtr in)
 {
-  float ls = 0.00025;
+  float ls = 0.001;
   pcl::VoxelGrid<pcl::PointXYZ> vg;
   CloudPtr out (new Cloud);
   vg.setInputCloud (in);
@@ -356,7 +482,7 @@ ConveyorPoseThread::tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::
   transform.frame_id = header_.frame_id;
   transform.child_frame_id = "conveyor";
   // TODO use time of header, just don't works with bagfiles
-//  transform.stamp = fawkes::Time((long)header_.stamp);
+  transform.stamp = fawkes::Time((long)header_.stamp);
 
   transform.setOrigin(pose.first);
   transform.setRotation(pose.second);
