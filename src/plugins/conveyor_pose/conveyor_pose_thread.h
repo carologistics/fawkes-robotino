@@ -93,6 +93,7 @@ private:
  bool is_inbetween(double a, double b, double val);
 
  CloudPtr cloud_remove_gripper(CloudPtr in);
+ CloudPtr cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid);
  CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll);
  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);

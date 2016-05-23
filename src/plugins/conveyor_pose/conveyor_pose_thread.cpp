@@ -130,7 +130,7 @@ ConveyorPoseThread::loop()
   if_read();
 
   fawkes::LaserLineInterface * ll = NULL;
-  bool use_laserline = laserline_get_best_fit( ll );
+  bool use_laserline = false;//laserline_get_best_fit( ll );
 
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
@@ -138,19 +138,25 @@ ConveyorPoseThread::loop()
   CloudPtr cloud_pt = cloud_remove_gripper(cloud_vg);
   CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_pt, ll, use_laserline);
   CloudPtr cloud_front_side(new Cloud);
-//  if ( use_laserline ) {
-//    cloud_front_side = cloud_remove_offset_to_left_right(cloud_pt, ll);
-//  } else {
+  if ( use_laserline ) {
+    cloud_front_side = cloud_remove_offset_to_left_right(cloud_pt, ll);
+  } else {
     *cloud_front_side = *cloud_front;
-//  }
+  }
 
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
   CloudPtr cloud_pl = cloud_get_plane(cloud_front_side, coeff);
   if ( cloud_pl == NULL ) { pose_write(pose, -1); return; }
 
-  cloud_publish(cloud_pl, cloud_out_inter_1_);
+  Eigen::Vector4f center;
+  pcl::compute3DCentroid<Point, float>(*cloud_front, center);
+  CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
 
-  CloudPtr biggest = cloud_cluster(cloud_pl);
+  cloud_publish(cloud_front, cloud_out_inter_1_);
+//  cloud_publish(cloud_center, cloud_out_result_);
+
+  CloudPtr biggest = cloud_cluster(cloud_center);
+//  CloudPtr biggest = cloud_cluster(cloud_pl);
   cloud_publish(biggest, cloud_out_result_);
 
   // get centroid
@@ -271,7 +277,7 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
 {
   CloudPtr out(new Cloud);
   for (Point p : *in) {
-    if ( ! (is_inbetween(-0.025, -0.055, p.y) && p.z < 0.11) )  { // remove gripper
+    if ( ! (is_inbetween(-0.02, -0.055, p.y) && p.z < 0.11) )  { // remove gripper
       if (p.y < 0.03 && p.y > -0.04) { // leave just correct hight
         out->push_back(p);
       }
@@ -279,6 +285,23 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
   }
 
   return out;
+}
+
+CloudPtr
+ConveyorPoseThread::cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid)
+{
+  float distance = 0.05;
+
+  CloudPtr cloud_out(new Cloud);
+
+  for (Point p : *in) {
+    if ( p.x >= centroid(0) - distance && p.x <= centroid(0) + distance &&
+         p.y >= centroid(1) - distance && p.y <= centroid(1) + distance) {
+      cloud_out->push_back(p);
+    }
+  }
+
+  return cloud_out;
 }
 
 CloudPtr
@@ -298,7 +321,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
       }
     }
 
-    z_min = lowest_z -0.01;
+    z_min = lowest_z -0.02;
   }
   z_max = z_min + space;
 
