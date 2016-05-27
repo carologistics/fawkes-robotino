@@ -62,7 +62,7 @@ OPEN_COMMAND="gnome-terminal"
 
 if [ $ROSBRIDGE_PORT == "9090" ]
 then 
-	OPEN_COMMAND="$OPEN_COMMAND --tab -t R1_rosbridge -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; roslaunch rosbridge_server rosbridge_websocket.launch; exec bash\"'"
+    OPEN_COMMAND="$OPEN_COMMAND --tab -t R1_rosbridge -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; roslaunch rosbridge_server rosbridge_websocket.launch; exec bash\"'"
 fi
 
 if [ $ROSBRIDGE_PORT == "8080" ]
@@ -77,7 +77,13 @@ fi
 
 
 OPEN_COMMAND="$OPEN_COMMAND --tab -t tf2 -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun tf2_web_republisher tf2_web_republisher; exec bash\"'"
+OPEN_COMMAND="$OPEN_COMMAND --tab -t marker -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun visualization_marker_tutorials arrow; exec bash\"'"
  
 
 eval $OPEN_COMMAND
 
+
+#TODO:
+#check the ros running distro and adapt commands for feurte (like rosrun and the bridgeport)
+#let the port be passed to the ROSBRIDGE launch script
+#Try to idnetify which robot we will ge the visualization_marker topic from and either start it 
