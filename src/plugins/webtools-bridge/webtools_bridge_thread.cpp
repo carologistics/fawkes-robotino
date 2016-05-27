@@ -34,7 +34,7 @@
 #include "blackboard_processor.h"
 #include "rosbridge_proxy_processor.h"
 #include "clips_processor.h"
-
+#include <string>
 
 using namespace fawkes;
 
@@ -62,6 +62,11 @@ WebtoolsBridgeThread::init()
   logger-> log_info("I CAN SEE THE WORLD","YAAY");
  // time_var_=new Time(clock);
  // time_var_->stamp();
+  int rosbridge_port= config->get_int("/webtools-bridge/rosbridge-port");
+  std::string server_bash = "./launch_server.bash -p "+std::to_string (rosbridge_port );
+  system(server_bash.c_str());
+  //Maybe wait a bit after starting the servers
+
 
 
   bridge_manager_=std::make_shared<BridgeManager> ();
