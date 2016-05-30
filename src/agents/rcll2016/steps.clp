@@ -386,6 +386,23 @@
   (assert (state STEP-FAILED))
 )
 
+(defrule step-abort-filling-rs
+  "abort filling 4th base into RS (can happen because of race condition)"
+  (declare (salience ?*PRIORITY-STEP-FAILED*))
+  (phase PRODUCTION)
+  ?step <- (step (id ?step-id) (name insert) (state running)
+                 (machine ?mps) (machine-feature SLIDE)
+                 (already-at-mps ?already-at-mps))
+  (ring-station (name ?mps) (bases-loaded 3))
+  ?state <- (state SKILL-EXECUTION)
+  ?ste <- (skill-to-execute (state running))
+  =>
+  (printout t "Step: Abort filling 4th base into RS" crlf)
+  (retract ?state ?ste)
+  (assert (state STEP-FAILED))
+  (modify ?step (state failed))
+)
+
 ;;;;;;;;;;;;;;;;
 ; common finish:
 ;;;;;;;;;;;;;;;;
