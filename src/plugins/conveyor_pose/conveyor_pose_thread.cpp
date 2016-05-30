@@ -80,7 +80,7 @@ ConveyorPoseThread::init()
   conveyor_pose_name_ = "conveyor_pose/pose";
   switch_name_ = "conveyor_pose/switch";
   conveyor_frame_id_ = "conveyor_pose";
-  vis_hist_pose_diff = 0.02;
+  vis_hist_pose_diff = 0.002;
   vis_hist_angle_diff = 0.1;
 
   bb_tag_name_ = "/tag-vision/0";
@@ -407,7 +407,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (0.0015);
+  seg.setDistanceThreshold (0.0025);
 
   seg.setInputCloud (in);
   seg.segment (*inliers, *coeff);
@@ -545,7 +545,9 @@ ConveyorPoseThread::tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::
   transform.frame_id = header_.frame_id;
   transform.child_frame_id = conveyor_frame_id_;
   // TODO use time of header, just don't works with bagfiles
-  transform.stamp = fawkes::Time((long)header_.stamp);
+  fawkes::Time pt;
+  pt.set_time((long)header_.stamp / 1000);
+  transform.stamp = pt;
 
   transform.setOrigin(pose.first);
   transform.setRotation(pose.second);
