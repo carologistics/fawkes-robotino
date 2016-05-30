@@ -111,6 +111,7 @@ ConveyorPoseThread::init()
   cfg_centroid_radius_        = config->get_float( (cfg_prefix + "centroid/radius").c_str() );
 
   cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
+  cfg_front_offset_           = config->get_float( (cfg_prefix + "front/offset").c_str() );
 
   cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
 
@@ -148,6 +149,7 @@ ConveyorPoseThread::finalize()
   pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
+  blackboard->close(bb_pose_);
 }
 
 void
@@ -164,15 +166,15 @@ ConveyorPoseThread::loop()
 
   if_read();
 
-//  fawkes::LaserLineInterface * ll = NULL;
-//  bool use_laserline = false;//laserline_get_best_fit( ll );
+  fawkes::LaserLineInterface * ll = NULL;
+  bool use_laserline = laserline_get_best_fit( ll );
 
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
   CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
   CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
-//  CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_pt, ll, use_laserline);
-//
+  CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
+
 //  CloudPtr cloud_front_side(new Cloud);
 //  if ( use_laserline ) {
 //    // TODO, if this is used, a cfg values for each machine is needed
@@ -182,8 +184,8 @@ ConveyorPoseThread::loop()
 //  }
 
   Eigen::Vector4f center;
-  pcl::compute3DCentroid<Point, float>(*cloud_gripper, center);
-  CloudPtr cloud_center = cloud_remove_centroid_based(cloud_gripper, center);
+  pcl::compute3DCentroid<Point, float>(*cloud_front, center);
+  CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
 
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
   CloudPtr cloud_plane = cloud_get_plane(cloud_center, coeff);
@@ -195,7 +197,7 @@ ConveyorPoseThread::loop()
 
 //  CloudPtr cloud_biggest = cloud_cluster(cloud_center);
   CloudPtr cloud_biggest = cloud_cluster(cloud_plane);
-  cloud_publish(cloud_center, cloud_out_inter_1_);
+  cloud_publish(cloud_front, cloud_out_inter_1_);
   cloud_publish(cloud_biggest, cloud_out_result_);
 
   // get centroid
@@ -379,7 +381,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
   double z_min, z_max;
   if ( use_ll ) {
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
-    z_min = c(2) - ( space / 2. );
+    z_min = c(2) + cfg_front_offset_ - ( space / 2. );
   } else {
     // get lowest z point
     double lowest_z = 1000;

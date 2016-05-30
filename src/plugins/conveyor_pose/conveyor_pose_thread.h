@@ -81,6 +81,7 @@ private:
   float cfg_centroid_radius_;
 
   float cfg_front_space_;
+  float cfg_front_offset_;
 
   float cfg_plane_dist_threshold_;
 

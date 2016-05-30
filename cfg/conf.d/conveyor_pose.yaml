@@ -19,7 +19,7 @@ conveyor_pose:
     pose_of_beld: pose
     # the switch interface
     switch: switch
-    # the laser lines (currently not used), they don't use the prefix
+    # the laser lines, they don't use the prefix
     laser_lines: [
       "/laser-lines/1",
       "/laser-lines/2",
@@ -55,8 +55,10 @@ conveyor_pose:
     # the radius wich is not pruned around the centroid
     radius: 0.05
   front:
-    # the distance that is not pruned at the front of the MPS (currently not used)
-    space: 0.06
+    # the distance that is not pruned at the front of the MPS
+    space: 0.1
+    # this should be a tf, but I did not get it work :(
+    offset: -0.04
   plane:
     # the allowed noise for a plane
     dist_threshold: 0.0025
