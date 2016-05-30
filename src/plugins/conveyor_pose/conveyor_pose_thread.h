@@ -60,25 +60,38 @@ class ConveyorPoseThread
 private:
   Visualisation * visualisation_;
 
+  // cfg values
   std::string cloud_in_name_;
   std::string cloud_out_inter_1_name_;
   std::string cloud_out_result_name_;
+  std::string conveyor_pose_name_;
+  std::string switch_name_;
+  std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
   std::string bb_tag_name_;
-  bool cloud_in_registered_;
-  pcl::PCLHeader header_;
+  float vis_hist_pose_diff;
+  float vis_hist_angle_diff;
 
+  // state vars
+  bool cfg_enable_switch_;
+  bool cloud_in_registered_;
+  bool cfg_use_visualisation_;
+  pcl::PCLHeader header_;
+  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_;
+  int vis_hist_;
+
+  // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
   fawkes::RefPtr<Cloud> cloud_out_inter_1_;
   fawkes::RefPtr<Cloud> cloud_out_result_;
 
+  // interfaces write
   fawkes::SwitchInterface * bb_enable_switch_;
   fawkes::Position3DInterface * bb_pose_;
+
+  // interfaces read
   std::vector<fawkes::LaserLineInterface * > laserlines_;
   fawkes::Position3DInterface * bb_tag_;
-
-  bool cfg_enable_switch_;
-  bool cfg_use_visualisation_;
 
  /**
   * check if the pointcloud is available
@@ -91,6 +104,7 @@ private:
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
 
  bool is_inbetween(double a, double b, double val);
+ void update_vis_hist_by_pose_diff(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_current);
 
  CloudPtr cloud_remove_gripper(CloudPtr in);
  CloudPtr cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid);
@@ -98,14 +112,14 @@ private:
  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll);
  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
  CloudPtr cloud_cluster(CloudPtr in);
- CloudPtr vg(CloudPtr in);
+ CloudPtr cloud_voxel_grid(CloudPtr in);
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
  void bb_switch_is_enabled();
 
  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
  void tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose);
- void pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose, int vis_hist);
+ void pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose);
 
 protected:
   virtual void run() { Thread::run(); }

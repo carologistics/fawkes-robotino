@@ -77,6 +77,12 @@ ConveyorPoseThread::init()
 //  cloud_in_name_ = "/conveyor/cam";
   cloud_out_inter_1_name_ = "conveyor_pose/plane";
   cloud_out_result_name_ = "conveyor_pose/result";
+  conveyor_pose_name_ = "conveyor_pose/pose";
+  switch_name_ = "conveyor_pose/switch";
+  conveyor_frame_id_ = "conveyor_pose";
+  vis_hist_pose_diff = 0.02;
+  vis_hist_angle_diff = 0.1;
+
   bb_tag_name_ = "/tag-vision/0";
   cloud_in_registered_ = false;
   cfg_enable_switch_ = true;
@@ -101,8 +107,8 @@ ConveyorPoseThread::init()
   pcl_manager->add_pointcloud(cloud_out_inter_1_name_.c_str(), cloud_out_inter_1_);
   pcl_manager->add_pointcloud(cloud_out_result_name_.c_str(), cloud_out_result_);
 
-  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>("/conveyor-pose/switch");
-  bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>("/conveyor-pose");
+  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(switch_name_.c_str());
+  bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>(conveyor_pose_name_.c_str());
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
 
@@ -121,56 +127,65 @@ ConveyorPoseThread::finalize()
 void
 ConveyorPoseThread::loop()
 {
-  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose;
+  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_current;
 
   bb_switch_is_enabled();
-  if ( ! cfg_enable_switch_ ) { pose_write(pose, -1); return; }
-  if ( ! pc_in_check() ) { pose_write(pose, -1); return; }
+  if ( ! cfg_enable_switch_ || ! pc_in_check() ) {
+    vis_hist_ = -1;
+    pose_write(pose_current);
+    return;
+  }
 
   if_read();
 
-  fawkes::LaserLineInterface * ll = NULL;
-  bool use_laserline = false;//laserline_get_best_fit( ll );
+//  fawkes::LaserLineInterface * ll = NULL;
+//  bool use_laserline = false;//laserline_get_best_fit( ll );
 
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
-  CloudPtr cloud_vg = vg(cloud_in);
-  CloudPtr cloud_pt = cloud_remove_gripper(cloud_vg);
-  CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_pt, ll, use_laserline);
-  CloudPtr cloud_front_side(new Cloud);
-  if ( use_laserline ) {
-    cloud_front_side = cloud_remove_offset_to_left_right(cloud_pt, ll);
-  } else {
-    *cloud_front_side = *cloud_front;
-  }
-
-  pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
-  CloudPtr cloud_pl = cloud_get_plane(cloud_front_side, coeff);
-  if ( cloud_pl == NULL ) { pose_write(pose, -1); return; }
+  CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
+  CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
+//  CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_pt, ll, use_laserline);
+//
+//  CloudPtr cloud_front_side(new Cloud);
+//  if ( use_laserline ) {
+//    // TODO, if this is used, a cfg values for each machine is needed
+//    cloud_front_side = cloud_remove_offset_to_left_right(cloud_pt, ll);
+//  } else {
+//    *cloud_front_side = *cloud_front;
+//  }
 
   Eigen::Vector4f center;
-  pcl::compute3DCentroid<Point, float>(*cloud_front, center);
-  CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
+  pcl::compute3DCentroid<Point, float>(*cloud_gripper, center);
+  CloudPtr cloud_center = cloud_remove_centroid_based(cloud_gripper, center);
 
-  cloud_publish(cloud_front, cloud_out_inter_1_);
-//  cloud_publish(cloud_center, cloud_out_result_);
+  pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
+  CloudPtr cloud_plane = cloud_get_plane(cloud_center, coeff);
+  if ( cloud_plane == NULL ) {
+    vis_hist_ = -1;
+    pose_write(pose_current);
+    return;
+  }
 
-  CloudPtr biggest = cloud_cluster(cloud_center);
-//  CloudPtr biggest = cloud_cluster(cloud_pl);
-  cloud_publish(biggest, cloud_out_result_);
+//  CloudPtr cloud_biggest = cloud_cluster(cloud_center);
+  CloudPtr cloud_biggest = cloud_cluster(cloud_plane);
+  cloud_publish(cloud_center, cloud_out_inter_1_);
+  cloud_publish(cloud_biggest, cloud_out_result_);
 
   // get centroid
   Eigen::Vector4f centroid;
-  pcl::compute3DCentroid<Point, float>(*biggest, centroid);
+  pcl::compute3DCentroid<Point, float>(*cloud_biggest, centroid);
 
   Eigen::Vector3f normal;
   normal(0) = coeff->values[0];
   normal(1) = coeff->values[1];
   normal(2) = coeff->values[2];
-  pose = calculate_pose(centroid, normal);
+  pose_current = calculate_pose(centroid, normal);
 
-  pose_write(pose, 1);
-  tf_send_from_pose_if(pose);
+  update_vis_hist_by_pose_diff(pose_current);
+  pose_ = pose_current;
+  pose_write(pose_);
+  tf_send_from_pose_if(pose_);
 
   visualisation_->marker_draw(header_, centroid, coeff);
 }
@@ -270,6 +285,31 @@ ConveyorPoseThread::is_inbetween(double a, double b, double val) {
   } else {
     return false;
   }
+}
+
+void
+ConveyorPoseThread::update_vis_hist_by_pose_diff(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_current)
+{
+  // check distance
+  float pl_sqr = pose_.first.x() * pose_.first.x() +
+                 pose_.first.y() * pose_.first.y() +
+                 pose_.first.z() * pose_.first.z();
+  float pc_sqr = pose_current.first.x() * pose_current.first.x() +
+                 pose_current.first.y() * pose_current.first.y() +
+                 pose_current.first.z() * pose_current.first.z();
+  if ( std::fabs(pc_sqr - pl_sqr) > vis_hist_pose_diff ) {
+    vis_hist_ = 1;
+    return;
+  }
+
+  // check angle
+  if ( pose_.second.angleShortestPath( pose_current.second ) > vis_hist_angle_diff ) {
+    vis_hist_ = 1;
+    return;
+  }
+
+  // otherwise integrate
+  vis_hist_ = std::max(vis_hist_, 0) + 1;
 }
 
 CloudPtr
@@ -397,7 +437,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
 CloudPtr
 ConveyorPoseThread::cloud_cluster(CloudPtr in)
 {
-  in = vg(in);
+  in = cloud_voxel_grid(in);
   // Creating the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (in);
@@ -431,7 +471,7 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
 }
 
 CloudPtr
-ConveyorPoseThread::vg(CloudPtr in)
+ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
 {
   float ls = 0.001;
   pcl::VoxelGrid<pcl::PointXYZ> vg;
@@ -503,7 +543,7 @@ ConveyorPoseThread::tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::
   fawkes::tf::StampedTransform transform;
 
   transform.frame_id = header_.frame_id;
-  transform.child_frame_id = "conveyor";
+  transform.child_frame_id = conveyor_frame_id_;
   // TODO use time of header, just don't works with bagfiles
   transform.stamp = fawkes::Time((long)header_.stamp);
 
@@ -514,7 +554,7 @@ ConveyorPoseThread::tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::
 }
 
 void
-ConveyorPoseThread::pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose, int vis_hist)
+ConveyorPoseThread::pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose)
 {
   double translation[3], rotation[4];
   translation[0] = pose.first.x();
@@ -529,7 +569,7 @@ ConveyorPoseThread::pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quater
 
   bb_pose_->set_frame(header_.frame_id.c_str());
   fawkes::Time stamp((long)header_.stamp);
-  bb_pose_->set_visibility_history(vis_hist);
+  bb_pose_->set_visibility_history(vis_hist_);
   bb_pose_->write();
 }
 
