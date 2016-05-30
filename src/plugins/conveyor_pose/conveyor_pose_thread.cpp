@@ -72,40 +72,66 @@ ConveyorPoseThread::ConveyorPoseThread() :
 void
 ConveyorPoseThread::init()
 {
-//  cloud_in_name_ = "/depth/points";
-  cloud_in_name_ = "/camera/depth/points";
-//  cloud_in_name_ = "/conveyor/cam";
-  cloud_out_inter_1_name_ = "conveyor_pose/plane";
-  cloud_out_result_name_ = "conveyor_pose/result";
-  conveyor_pose_name_ = "conveyor_pose/pose";
-  switch_name_ = "conveyor_pose/switch";
-  conveyor_frame_id_ = "conveyor_pose";
-  vis_hist_pose_diff = 0.002;
-  vis_hist_angle_diff = 0.1;
+  const std::string cfg_prefix = "/conveyor_pose/";
 
-  bb_tag_name_ = "/tag-vision/0";
+  cloud_in_name_ = config->get_string( (cfg_prefix + "cloud_in").c_str() );
+
+  const std::string if_prefix = config->get_string( (cfg_prefix + "if/prefix").c_str() ) + "/";
+
+  cloud_out_inter_1_name_ = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_intermediet").c_str() );
+  cloud_out_result_name_  = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
+  conveyor_pose_name_     = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
+  switch_name_            = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
+
+  laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
+//  laserlines_names_.push_back("/laser-lines/1");
+//  laserlines_names_.push_back("/laser-lines/2");
+//  laserlines_names_.push_back("/laser-lines/3");
+//  laserlines_names_.push_back("/laser-lines/4");
+//  laserlines_names_.push_back("/laser-lines/5");
+//  laserlines_names_.push_back("/laser-lines/6");
+//  laserlines_names_.push_back("/laser-lines/7");
+//  laserlines_names_.push_back("/laser-lines/8");
+
+//  bb_tag_name_ = "/tag-vision/0";
+
+  conveyor_frame_id_          = config->get_string( (cfg_prefix + "conveyor_frame_id").c_str() );
+  vis_hist_pose_diff_         = config->get_float( (cfg_prefix + "vis_hist/diff_pose").c_str() );
+  vis_hist_angle_diff_        = config->get_float( (cfg_prefix + "vis_hist/diff_angle").c_str() );
+
+  cfg_enable_switch_          = config->get_bool( (cfg_prefix + "switch_default").c_str() );
+  cfg_use_visualisation_      = config->get_bool( (cfg_prefix + "use_visualisation").c_str() );
+
+  cfg_gripper_y_min_          = config->get_float( (cfg_prefix + "gripper/y_min").c_str() );
+  cfg_gripper_y_max_          = config->get_float( (cfg_prefix + "gripper/y_max").c_str() );
+  cfg_gripper_z_max_          = config->get_float( (cfg_prefix + "gripper/z_max").c_str() );
+  cfg_gripper_slice_y_min_    = config->get_float( (cfg_prefix + "gripper/slice/y_min").c_str() );
+  cfg_gripper_slice_y_max_    = config->get_float( (cfg_prefix + "gripper/slice/y_max").c_str() );
+
+  cfg_centroid_radius_        = config->get_float( (cfg_prefix + "centroid/radius").c_str() );
+
+  cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
+
+  cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
+
+  cfg_cluster_tolerance_      = config->get_float( (cfg_prefix + "cluster/tolerance").c_str() );
+  cfg_cluster_size_min_       = config->get_float( (cfg_prefix + "cluster/size_min").c_str() );
+  cfg_cluster_size_max_       = config->get_float( (cfg_prefix + "cluster/size_max").c_str() );
+
+  cfg_voxel_grid_leave_size_  = config->get_float( (cfg_prefix + "voxel_grid/leave_size").c_str() );
+
   cloud_in_registered_ = false;
-  cfg_enable_switch_ = true;
-  cfg_use_visualisation_ = true;
-
-  laserlines_names_.push_back("/laser-lines/1");
-  laserlines_names_.push_back("/laser-lines/2");
-  laserlines_names_.push_back("/laser-lines/3");
-  laserlines_names_.push_back("/laser-lines/4");
-  laserlines_names_.push_back("/laser-lines/5");
-  laserlines_names_.push_back("/laser-lines/6");
-  laserlines_names_.push_back("/laser-lines/7");
-  laserlines_names_.push_back("/laser-lines/8");
-
-  for (std::string ll : laserlines_names_) {
-    laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
-  }
-  bb_tag_ = blackboard->open_for_reading<fawkes::Position3DInterface>(bb_tag_name_.c_str());
 
   cloud_out_inter_1_ = new Cloud();
   cloud_out_result_ = new Cloud();
   pcl_manager->add_pointcloud(cloud_out_inter_1_name_.c_str(), cloud_out_inter_1_);
   pcl_manager->add_pointcloud(cloud_out_result_name_.c_str(), cloud_out_result_);
+
+  for (std::string ll : laserlines_names_) {
+    laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
+  }
+
+//  bb_tag_ = blackboard->open_for_reading<fawkes::Position3DInterface>(bb_tag_name_.c_str());
 
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(switch_name_.c_str());
   bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>(conveyor_pose_name_.c_str());
@@ -187,7 +213,9 @@ ConveyorPoseThread::loop()
   pose_write(pose_);
   tf_send_from_pose_if(pose_);
 
-  visualisation_->marker_draw(header_, centroid, coeff);
+  if (cfg_use_visualisation_) {
+    visualisation_->marker_draw(header_, centroid, coeff);
+  }
 }
 
 bool
@@ -219,7 +247,7 @@ ConveyorPoseThread::if_read()
   for (fawkes::LaserLineInterface * ll : laserlines_) {
     ll->read();
   }
-  bb_tag_->read();
+//  bb_tag_->read();
 }
 
 bool
@@ -297,13 +325,13 @@ ConveyorPoseThread::update_vis_hist_by_pose_diff(std::pair<fawkes::tf::Vector3, 
   float pc_sqr = pose_current.first.x() * pose_current.first.x() +
                  pose_current.first.y() * pose_current.first.y() +
                  pose_current.first.z() * pose_current.first.z();
-  if ( std::fabs(pc_sqr - pl_sqr) > vis_hist_pose_diff ) {
+  if ( std::fabs(pc_sqr - pl_sqr) > vis_hist_pose_diff_ ) {
     vis_hist_ = 1;
     return;
   }
 
   // check angle
-  if ( pose_.second.angleShortestPath( pose_current.second ) > vis_hist_angle_diff ) {
+  if ( pose_.second.angleShortestPath( pose_current.second ) > vis_hist_angle_diff_ ) {
     vis_hist_ = 1;
     return;
   }
@@ -317,8 +345,8 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
 {
   CloudPtr out(new Cloud);
   for (Point p : *in) {
-    if ( ! (is_inbetween(-0.02, -0.055, p.y) && p.z < 0.11) )  { // remove gripper
-      if (p.y < 0.03 && p.y > -0.04) { // leave just correct hight
+    if ( ! (is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) && p.z < cfg_gripper_z_max_) )  { // remove gripper
+      if (p.y < cfg_gripper_slice_y_max_ && p.y > cfg_gripper_slice_y_min_) { // leave just correct hight
         out->push_back(p);
       }
     }
@@ -330,7 +358,7 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
 CloudPtr
 ConveyorPoseThread::cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid)
 {
-  float distance = 0.05;
+  float distance = cfg_centroid_radius_;
 
   CloudPtr cloud_out(new Cloud);
 
@@ -347,7 +375,7 @@ ConveyorPoseThread::cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f cen
 CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
-  double space = 0.06;
+  double space = cfg_front_space_;
   double z_min, z_max;
   if ( use_ll ) {
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
@@ -407,7 +435,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (0.0025);
+  seg.setDistanceThreshold (cfg_plane_dist_threshold_);
 
   seg.setInputCloud (in);
   seg.segment (*inliers, *coeff);
@@ -444,9 +472,9 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (0.0011);
-  ec.setMinClusterSize (100);
-  ec.setMaxClusterSize (25000);
+  ec.setClusterTolerance (cfg_cluster_tolerance_);
+  ec.setMinClusterSize (cfg_cluster_size_min_);
+  ec.setMaxClusterSize (cfg_cluster_size_max_);
   ec.setSearchMethod (tree);
   ec.setInputCloud (in);
   ec.extract (cluster_indices);
@@ -473,7 +501,7 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
 CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
 {
-  float ls = 0.001;
+  float ls = cfg_voxel_grid_leave_size_;
   pcl::VoxelGrid<pcl::PointXYZ> vg;
   CloudPtr out (new Cloud);
   vg.setInputCloud (in);

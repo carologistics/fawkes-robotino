@@ -68,9 +68,27 @@ private:
   std::string switch_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
-  std::string bb_tag_name_;
-  float vis_hist_pose_diff;
-  float vis_hist_angle_diff;
+//  std::string bb_tag_name_;
+  float vis_hist_pose_diff_;
+  float vis_hist_angle_diff_;
+
+  float cfg_gripper_y_min_;
+  float cfg_gripper_y_max_;
+  float cfg_gripper_z_max_;
+  float cfg_gripper_slice_y_min_;
+  float cfg_gripper_slice_y_max_;
+
+  float cfg_centroid_radius_;
+
+  float cfg_front_space_;
+
+  float cfg_plane_dist_threshold_;
+
+  float cfg_cluster_tolerance_;
+  float cfg_cluster_size_min_;
+  float cfg_cluster_size_max_;
+
+  float cfg_voxel_grid_leave_size_;
 
   // state vars
   bool cfg_enable_switch_;
@@ -91,7 +109,7 @@ private:
 
   // interfaces read
   std::vector<fawkes::LaserLineInterface * > laserlines_;
-  fawkes::Position3DInterface * bb_tag_;
+//  fawkes::Position3DInterface * bb_tag_;
 
  /**
   * check if the pointcloud is available

@@ -1,0 +1,69 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
+---
+conveyor_pose:
+  # the point cloud that is used to detect the belt
+  cloud_in: "/camera/depth/points"
+
+  if:
+    # the prefix used for all interfaces
+    prefix: conveyor_pose
+
+    # the output point clouds
+    cloud_out_intermediet: inter
+    cloud_out_result: result
+  
+    # the position 3d interface of the result
+    pose_of_beld: pose
+    # the switch interface
+    switch: switch
+    # the laser lines (currently not used), they don't use the prefix
+    laser_lines: [
+      "/laser-lines/1",
+      "/laser-lines/2",
+      "/laser-lines/3",
+      "/laser-lines/4",
+      "/laser-lines/5",
+      "/laser-lines/6",
+      "/laser-lines/7",
+      "/laser-lines/8"
+    ]
+  
+  conveyor_frame_id: conveyor_pose
+  switch_default: true
+  use_visualisation: true
+
+
+  # the maximum allowed distance that the vis_hist is not resetet
+  vis_hist:
+    # distance in x, y, z
+    diff_pose: 0.002
+    # distance in angle in rad
+    diff_angle: 0.1
+
+  # the dimensions of the gripper in the point cloud (check rotation of actual tf)
+  gripper:
+    y_min: -0.02
+    y_max: -0.055
+    z_max: 0.11
+    slice:
+      y_min: -0.04
+      y_max: 0.03
+  centroid:
+    # the radius wich is not pruned around the centroid
+    radius: 0.05
+  front:
+    # the distance that is not pruned at the front of the MPS (currently not used)
+    space: 0.06
+  plane:
+    # the allowed noise for a plane
+    dist_threshold: 0.0025
+  cluster:
+    tolerance: 0.0011
+    size_min: 100
+    size_max: 25000
+  voxel_grid:
+    leave_size: 0.001
+
