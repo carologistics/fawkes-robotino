@@ -52,6 +52,7 @@ META_PLUGIN=
 START_GAZEBO=true
 TERM_GEOMETRY=105x56
 GDB=
+FAWKES_USED=false
 
 while getopts “hx:c:lrksn:e:dm:aof:p:gv” OPTION
 do
@@ -218,6 +219,7 @@ if [  $COMMAND  == start ]; then
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
 	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
+	FAWKES_USED=true
     done
 
     if $START_GAZEBO
@@ -230,10 +232,17 @@ if [  $COMMAND  == start ]; then
     #echo $OPEN_COMMAND
     eval $OPEN_COMMAND
 
-    # publish initial poses
-    sleep 15s
-    echo "publish initial poses"
-    $initial_pose_script_location -d
+    sleep 10s
+    if $FAWKES_USED
+    then
+	sleep 15s
+	# publish initial poses
+	echo "publish initial poses"
+	$initial_pose_script_location -d
+    else
+	echo "Skipped publishing poses"
+    fi
+
 
     else
     usage
