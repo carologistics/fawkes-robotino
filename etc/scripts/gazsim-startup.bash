@@ -152,7 +152,7 @@ case $COMMAND in
 	$opti gzclient
 	;;
     fawkes )
-	ulimit -c unlimited
+	# ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
 	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$META_PLUGIN$SKIP_EXPLORATION
 	$GDB $FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
