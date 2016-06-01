@@ -22,18 +22,36 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "motor_move"
-fsm                = SkillHSM:new{name=name, start="DRIVE", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = nil
 depends_interfaces = {
-    {v = "motor", type = "MotorInterface", id="Robotino" },
-    {v = "navigator", type="NavigatorInterface", id="Navigator"},
+   {v = "motor", type = "MotorInterface", id="Robotino" },
+   {v = "navigator", type="NavigatorInterface", id="Navigator"},
+   {v = "tag_0", type = "Position3DInterface", id="/tag-vision/0"},
+   {v = "tag_1", type = "Position3DInterface", id="/tag-vision/1"},
+   {v = "tag_2", type = "Position3DInterface", id="/tag-vision/2"},
+   {v = "tag_3", type = "Position3DInterface", id="/tag-vision/3"},
+   {v = "tag_4", type = "Position3DInterface", id="/tag-vision/4"},
+   {v = "tag_5", type = "Position3DInterface", id="/tag-vision/5"},
+   {v = "tag_6", type = "Position3DInterface", id="/tag-vision/6"},
+   {v = "tag_7", type = "Position3DInterface", id="/tag-vision/7"},
+   {v = "tag_8", type = "Position3DInterface", id="/tag-vision/8"},
+   {v = "tag_9", type = "Position3DInterface", id="/tag-vision/9"},
+   {v = "tag_10", type = "Position3DInterface", id="/tag-vision/10"},
+   {v = "tag_11", type = "Position3DInterface", id="/tag-vision/11"},
+   {v = "tag_12", type = "Position3DInterface", id="/tag-vision/12"},
+   {v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
+   {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
+   {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"}
 }
 
-documentation      = [==[Move on a (kind of) straight line relative to /base_link.
-@param x The target X coordinate
+documentation      = [==[Move on a (kind of) straight line relative to the given coordinates.
+@param x The target X coordinate, relative to /base_link
 @param y Dito
-@param ori Relative rotation. -pi <= ori <= pi.
-@param frame Measure distances relative to this frame. Can be "/map" or "/odom" (default).
+@param ori Relative rotation. -pi <= ori <= pi, rel. to /base_link.
+@param frame Optional: Motion reference frame. Input coordinates are
+   transformed into this frame, so its origin must be independent of the
+   robot. Defaults to /odom.
 @param vel_trans Translational top-speed. Upper limit: hardcoded tunable in skill module.
 @param vel_rot Rotational top-speed. Upper limit: dito.
 ]==]
@@ -52,6 +70,7 @@ local tfm = require("fawkes.tfutils")
 
 function invalid_params(self)
    return self.fsm.vars.ori <= -2 * math.pi or self.fsm.vars.ori >= 2 * math.pi
+      or self.fsm.vars.frame == "/base_link"
 end
 
 function send_transrot(vx, vy, omega)
@@ -62,57 +81,71 @@ function send_transrot(vx, vy, omega)
    motor:msgq_enqueue(motor.AcquireControlMessage:new(oc, ocn))
 end
 
-function set_speed(self)
-   local dist_target = tfm.transform6D(
-      { x   = self.fsm.vars.target.x,
-        y   = self.fsm.vars.target.y,
-        z   = self.fsm.vars.target.z,
-        ori = self.fsm.vars.target.ori },
-      self.fsm.vars.frame, self.fsm.vars.base_frame)
-
-   if self.fsm.vars.ori > math.pi and dist_target.ori < -self.fsm.vars.tolerance_arg.ori then
-      dist_target.ori = 2*math.pi + dist_target.ori
-   elseif self.fsm.vars.ori < -math.pi and dist_target.ori > self.fsm.vars.tolerance_arg.ori then
-      dist_target.ori = -2*math.pi + dist_target.ori
+function scalar(x)
+   if tfm.is_quaternion(x) then
+      return fawkes.tf.get_yaw(x)
+   else
+      return x
    end
+end
 
-   local v = { x=1, y=1, ori=1 }
-   local a = { x=0, y=0, ori=0 }
+function set_speed(self)
+   local v = {}
 
-   for k, _ in pairs(dist_target) do
-      if math.abs(dist_target[k]) > self.fsm.vars.tolerance_arg[k] then
-         if D_DECEL[k] > 0 then a[k] = V_MAX[k] / D_DECEL[k] end
+   local dist_target = tfm.transform6D(
+      self.fsm.vars.target,
+      self.fsm.vars.target_frame, "/base_link")
 
-         -- speed if we're accelerating.
-         -- We cannot accelerate based on the distance from the starting
-         -- point since odometry tends to lag by 0.5 seconds when accelerating,
-         -- i.e. the distance driven will stay at 0 for a short while.
-         v_acc = self.fsm.vars.cycle * ACCEL[k]
+   if not dist_target then
+      self.fsm.vars.tf_failed = true
+      v = { x=0, y=0, ori=0 }
+   else
+      local d_ori = fawkes.tf.get_yaw(dist_target.ori)
+      --[[ if self.fsm.vars.ori > math.pi and d_ori < -self.fsm.vars.tolerance_arg.ori then
+         d_ori = 2*math.pi + d_ori
+         dist_target.ori = fawkes.tf.Quaternion:new(0, d_ori, 0)
+      elseif self.fsm.vars.ori < -math.pi and d_ori > self.fsm.vars.tolerance_arg.ori then
+         d_ori = -2*math.pi + d_ori
+         dist_target.ori = fawkes.tf.Quaternion:new(0, d_ori, 0)
+      end ]]--
 
-         -- speed if we're decelerating
-         v_dec = a[k]/5 * math.abs(dist_target[k])
-         
-         -- decide if we wanna decelerate, accelerate or max out
-         v[k] = math.min(
-            self.fsm.vars.vmax_arg[k],
-            math.max(V_MIN[k], math.min(V_MAX[k], v_acc, v_dec))
-         )
+      local a = { x=0, y=0, ori=0 }
 
-         -- finally reverse if the target is behind us
-         -- hopefully the deceleration function(dist_target[k])
-         -- slowed us down a bit before doing this ;-)
-         if dist_target[k] < 0 then v[k] = v[k] * -1 end
+      for k, _ in pairs(dist_target) do
+         -- Ignore z axis: no way to move up & down in /base_link!
+         if k ~= "z" then
+            if math.abs(scalar(dist_target[k])) > self.fsm.vars.tolerance_arg[k] then
+               if D_DECEL[k] > 0 then a[k] = V_MAX[k] / D_DECEL[k] end
 
-         printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
-           k, dist_target[k], v_acc, v_dec, v[k])
-      else
-         v[k] = 0
+               -- speed if we're accelerating.
+               -- We cannot accelerate based on the distance from the starting
+               -- point since odometry tends to lag by 0.5 seconds when accelerating,
+               -- i.e. the distance driven will stay at 0 for a short while.
+               v_acc = self.fsm.vars.cycle * ACCEL[k]
+
+               -- speed if we're decelerating
+               v_dec = a[k]/5 * math.abs(scalar(dist_target[k]))
+               
+               -- decide if we wanna decelerate, accelerate or max out
+               v[k] = math.min(
+                  self.fsm.vars.vmax_arg[k],
+                  math.max(V_MIN[k], math.min(V_MAX[k], v_acc, v_dec))
+               )
+
+               -- finally reverse if the target is behind us
+               -- hopefully the deceleration function(dist_target[k])
+               -- slowed us down a bit before doing this ;-)
+               if scalar(dist_target[k]) < 0 then v[k] = v[k] * -1 end
+
+               printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
+                 k, scalar(dist_target[k]), v_acc, v_dec, v[k])
+            else
+               v[k] = 0
+            end
+         end
       end
    end
 
-   -- do not drive backwards with puck
-   if self.fsm.vars.puck and v.x < 0 then v.x = 0 end
-   
    self.fsm.vars.cycle = self.fsm.vars.cycle + 1
 
    send_transrot(v.x, v.y, v.ori)
@@ -125,47 +158,93 @@ function drive_done()
       and fsm.vars.speed.ori == 0
 end
 
+function pos3d_iface(frame)
+   if frame and string.sub(frame, 1, 4) == "/tag" then
+      local idx = tonumber(string.sub(frame, 6))
+      return fsm.vars.tags[idx+1]
+   end
+end
+
+function cam_frame_visible(frame)
+   pos_iface = pos3d_iface(frame)
+   return pos_iface and pos_iface:visibility_history() > 0
+end
+
 fsm:define_states{ export_to=_M,
-   closure={motor=motor, navigator=navigator},
+   closure={motor=motor, navigator=navigator, pos3d_iface=pos3d_iface, cam_frame_visible=cam_frame_visible},
+   {"INIT", JumpState},
    {"DRIVE", JumpState},
+   {"DRIVE_CAM", JumpState},
    {"STOP_NAVIGATOR", JumpState},
 }
 
 fsm:add_transitions{
-   {"DRIVE", "FAILED", cond=invalid_params, desc="|ori| >= 2*PI", desc="invalid params"},
-   {"DRIVE", "FAILED", precond="not motor:has_writer()", desc="No writer for motor"},
-   {"DRIVE", "FAILED", cond="not vars.target", desc="TF failed"},
+   {"INIT", "FAILED", cond=invalid_params, desc="|ori| >= 2*PI", desc="invalid params"},
+   {"INIT", "FAILED", precond="not motor:has_writer()", desc="No writer for motor"},
+   {"INIT", "FAILED", cond="not vars.target", desc="target TF failed"},
+   {"INIT", "FAILED", cond="vars.stop_attempts > 5", desc="Navigator won't stop"},
+   {"INIT", "STOP_NAVIGATOR", cond="navigator:has_writer() and not navigator:is_final()"},
+   {"INIT", "DRIVE_CAM", cond="pos3d_iface(vars.frame)"},
+   {"INIT", "DRIVE", cond=true},
+
+   {"STOP_NAVIGATOR", "INIT", timeout=1},
+   
    {"DRIVE", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
-   {"DRIVE", "STOP_NAVIGATOR", cond="navigator:has_writer() and not navigator:is_final()"},
-   {"STOP_NAVIGATOR", "DRIVE", timeout=1},
+   {"DRIVE", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
    {"DRIVE", "FINAL", cond=drive_done},
+
+   {"DRIVE_CAM", "FAILED", cond="not cam_frame_visible(vars.frame)", desc="Lost frame"},
+   {"DRIVE_CAM", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
+   {"DRIVE_CAM", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
+   {"DRIVE_CAM", "FINAL", cond=drive_done},
 }
 
-function DRIVE:init()
-   local x = self.fsm.vars.x or 0
-   local y = self.fsm.vars.y or 0
-   local ori = self.fsm.vars.ori or 0
+function INIT:init()
+   self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
+      tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
 
-   -- make sure it is set, even if it was not before
-   self.fsm.vars.ori = ori
-
-   if ori == math.pi then ori = ori - 1e-6 end
-   if ori == -math.pi then ori = ori + 1e-6 end
-
-   local frame = self.fsm.vars.frame or "/odom"
-   self.fsm.vars.frame = frame
-
-   self.fsm.vars.cycle = 0
-   
-   if self.fsm.vars.global then
-      self.fsm.vars.base_frame = self.fsm.vars.frame
-      self.fsm.vars.frame = "/base_link"
-   else
-      self.fsm.vars.base_frame = frame
+   if self.fsm.vars.puck then
+      print("WARNING: motor_move: puck argument is deprecated!")
    end
+   
+   self.fsm.vars.target_frame = self.fsm.vars.frame or "/odom"
 
-   self.fsm.vars.target = tfm.transform(
-      { x=x, y=y, ori=ori }, self.fsm.vars.base_frame, self.fsm.vars.frame)
+   -- If frame arg is specified, input coordinates are relative to it
+   -- If unspecified, input coordinates are relative to /base_link
+   self.fsm.vars.arg_frame = self.fsm.vars.frame or "/base_link"
+
+   -- Initialize unspecified arguments with default values
+   if self.fsm.vars.frame then
+      local cur_pos = tfm.transform6D(
+         { x=0, y=0, z=0, ori=fawkes.tf.create_quaternion_from_yaw(0) },
+         "/base_link",
+         self.fsm.vars.target_frame)
+      self.fsm.vars.x = self.fsm.vars.x or cur_pos.x
+      self.fsm.vars.y = self.fsm.vars.y or cur_pos.y
+      self.fsm.vars.z = self.fsm.vars.z or cur_pos.z
+      self.fsm.vars.ori = self.fsm.vars.ori or fawkes.tf.get_yaw(cur_pos.ori)
+   else
+      self.fsm.vars.x = self.fsm.vars.x or 0
+      self.fsm.vars.y = self.fsm.vars.y or 0
+      self.fsm.vars.z = self.fsm.vars.z or 0
+      self.fsm.vars.ori = self.fsm.vars.ori or 0
+   end
+   
+   -- Make sure that ori ~= |math.pi|
+   if self.fsm.vars.ori == math.pi then self.fsm.vars.ori = self.fsm.vars.ori - 1e-6 end
+   if self.fsm.vars.ori == -math.pi then self.fsm.vars.ori = self.fsm.vars.ori + 1e-6 end
+   
+   self.fsm.vars.qori = fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.ori)
+   
+   self.fsm.vars.cycle = 0
+   self.fsm.vars.stop_attempts = self.fsm.vars.stop_attempts or 0
+
+   self.fsm.vars.target = tfm.transform6D(
+      { x=self.fsm.vars.x, y=self.fsm.vars.y, z=self.fsm.vars.z, ori=self.fsm.vars.qori },
+      self.fsm.vars.arg_frame, self.fsm.vars.target_frame)
+
+   printf("Target %s: %f, %f, %f, %f", self.fsm.vars.target_frame, self.fsm.vars.target.x,
+      self.fsm.vars.target.y, self.fsm.vars.target.z, fawkes.tf.get_yaw(self.fsm.vars.target.ori))
 
    local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
    local vmin_rot = self.fsm.vars.vel_rot or V_MAX.ori
@@ -185,7 +264,17 @@ function DRIVE:exit()
    send_transrot(0, 0, 0)
 end
 
+function DRIVE_CAM:loop()
+   set_speed(self)
+end
+
+function DRIVE_CAM:exit()
+   send_transrot(0, 0, 0)
+end
+
 function STOP_NAVIGATOR:init()
    local msg = navigator.StopMessage:new( )
    navigator:msgq_enqueue(msg)
+   self.fsm.vars.stop_attempts = self.fsm.vars.stop_attempts + 1
 end
+
