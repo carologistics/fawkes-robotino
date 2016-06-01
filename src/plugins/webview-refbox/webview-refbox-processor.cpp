@@ -139,9 +139,10 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
     *r += "<h2>RCLL RefBox Database Report</h2>\n";
 
     time_t query_time = time(0);
-    query_time -= 30 * 60;
+    query_time -= 24 * 3600;
 
-    BSONObj query = BSON("start-time" << BSONObjBuilder().appendTimeT("$gt", query_time).obj());
+    BSONObj query = BSON("start-time" << BSONObjBuilder().appendTimeT("$gt", query_time).obj() <<
+                         "end-time" << BSON("$exists" << false));
 
     // check if there is a running game
     std::shared_ptr<DBClientCursor> cursor =
@@ -164,17 +165,17 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
 
       r->append_body("<tr><td><b>Points Cyan:</b></td>\n"
 		     "<td><i>Exploration:</i> %ld</td></tr>\n",
-		     doc["phase-points-cyan"]["EXPLORATION"].Long());
+		     doc["phase-points-cyan"]["EXPLORATION"].numberLong());
       r->append_body("<tr><td></td>\n"
 		     "<td><i>Production:</i> %ld</td></tr>\n",
-		     doc["phase-points-cyan"]["PRODUCTION"].Long());
+		     doc["phase-points-cyan"]["PRODUCTION"].numberLong());
 
       r->append_body("<tr><td><b>Points Magenta:</b></td>\n"
 		     "<td><i>Exploration:</i> %ld</td></tr>\n",
-		     doc["phase-points-magenta"]["EXPLORATION"].Long());
+		     doc["phase-points-magenta"]["EXPLORATION"].numberLong());
       r->append_body("<tr><td></td>\n"
 		     "<td><i>Production:</i> %ld</td></tr>\n",
-		     doc["phase-points-magenta"]["PRODUCTION"].Long());
+		     doc["phase-points-magenta"]["PRODUCTION"].numberLong());
 
       r->append_body("<tr><td><b>Orders:</b></td>\n"
                      "<td>%s</td></tr>\n",
@@ -202,9 +203,9 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
       std::vector<BSONElement> points = doc["total-points"].Array();
 
       int winner_team = -1;
-      if (points[0].Long() > points[1].Long()) {
+      if (points[0].numberLong() > points[1].numberLong()) {
 	winner_team = 0;
-      } else if (points[1].Long() > points[0].Long()) {
+      } else if (points[1].numberLong() > points[0].numberLong()) {
 	winner_team = 1;
       } // else draw
 
@@ -219,17 +220,17 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
 
       r->append_body("<td style=\"background-color: #88ffff; text-align: center;\">%u</td>"
 		     "<td style=\"background-color: #ff88ff; text-align: center;\">%u</td>\n",
-		     points[0].Long(), points[1].Long());
+		     points[0].numberLong(), points[1].numberLong());
 
       r->append_body("<td><i>Exploration:</i> %ld</td>\n",
-		     doc["phase-points-cyan"]["EXPLORATION"].Long());
+		     doc["phase-points-cyan"]["EXPLORATION"].numberLong());
       r->append_body("<td><i>Production:</i> %ld</td>\n",
-		     doc["phase-points-cyan"]["PRODUCTION"].Long());
+		     doc["phase-points-cyan"]["PRODUCTION"].numberLong());
 
       r->append_body("<td><i>Exploration:</i> %ld</td>\n",
-		     doc["phase-points-magenta"]["EXPLORATION"].Long());
+		     doc["phase-points-magenta"]["EXPLORATION"].numberLong());
       r->append_body("<td><i>Production:</i> %ld</td>\n",
-		     doc["phase-points-magenta"]["PRODUCTION"].Long());
+		     doc["phase-points-magenta"]["PRODUCTION"].numberLong());
 
       *r += "</tr>\n";
 
@@ -250,7 +251,7 @@ WebviewRCLLRefBoxRequestProcessor::process_request(const fawkes::WebRequest *req
       for (const BSONElement &pd : pointinfo) {
 	r->append_body("<tr><td style=\"background-color: #%s\">%s</td><td>%lu</td><td>%.2f</td><td>%s</td></tr>\n",
 		       pd["team"].String() == "CYAN" ? "88ffff" : "ff88ff",
-		       pd["team"].String().c_str(), pd["points"].Long(),
+		       pd["team"].String().c_str(), pd["points"].numberLong(),
 		       pd["game-time"].Double(), pd["reason"].String().c_str());
       }
       *r += "</table></td></tr>\n";
