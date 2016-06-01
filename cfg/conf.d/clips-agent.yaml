@@ -70,12 +70,12 @@ clips-agent:
     #Timeouts before the robot starts to drive into the field
     move-into-field-waittime:
       R-1: 0
-      R-2: 15
-      R-3: 30
+      R-2: 7
+      R-3: 14
       # timeouts when testing with cyan and magenta at the same time
       R-4: 0
-      R-5: 15
-      R-6: 30
+      R-5: 7
+      R-6: 14
     #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
     cap-station:
       assigned-color:
