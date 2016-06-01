@@ -19,6 +19,8 @@ OPTIONS:
    -c arg         Use a specific configuration-folder
                   in cfg/gazsim-configurations/
    -r             Start with ros
+   --ros-launch-main  Run launch file for main (non-robot) roscore
+   --ros-launch   Run launch file for robot roscore
    -s             Keep statistics and shutdown after game
    -i robotino[1|2|3]
                   Robotino instance
@@ -39,6 +41,7 @@ EOF
 COMMAND=
 CONF=gazsim-configurations/default
 ROS=-no-ros
+ROS_LAUNCH=
 SHUTDOWN=
 PORT=11311
 ROBOTINO=
@@ -48,72 +51,87 @@ AGENT=
 FAWKES_BIN=$FAWKES_DIR/bin
 KEEP=
 GDB=
-while getopts “hx:c:lrm:sp:i:f:e:da4kgv” OPTION
-do
+
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:" -l "ros,ros-launch:" -- "$@")
+if [ $? != 0 ]
+then
+    echo "Failed to parse parameters"
+    usage
+    exit 1
+fi
+
+eval set -- "$OPTS"
+while true; do
+     OPTION=$1
+     OPTARG=$2
      case $OPTION in
-         h)
+         -h)
              usage
              exit 1
              ;;
-         c)
+         -c)
 	     CONF=gazsim-configurations/$OPTARG
              ;;
-         x)
+         -x)
 	     COMMAND=$OPTARG
              ;;
-	 r)
+	 -r)
 	     ROS=-ros
 	     ;;
-	 g)
+	 --ros-launch)
+	     ROS_LAUNCH="$OPTARG"
+	     ;;
+	 -g)
 	     if [ -n "$GDB" ]; then
 				echo "Can pass only either valgrind or GDB, not both"
         exit
        fi
 	     GDB="gdb -ex run --args"
 	     ;;
-	 v)
+	 -v)
 	     if [ -n "$GDB" ]; then
 				echo "Can pass only either valgrind or GDB, not both"
         exit
        fi
 	     GDB="valgrind --verbose"
 	     ;;
-	 s)
+	 -s)
 	     SHUTDOWN=,mongodb,gazsim-llsf-statistics,gazsim-llsf-control
 	     ;;
-	 p)
+	 -p)
 	     PORT=$OPTARG
 	     ;;
-	 i)
+	 -i)
 	     ROBOTINO=$OPTARG
 	     ;;
-	 e)
+	 -e)
 	     REPLAY=-r\ --record_path\ $OPTARG
 	     ;;
-	 d)
+	 -d)
 	     VISION=,gazsim-meta-robotino-vision-low-level
 	     ;;
-	 a)
+	 -a)
 	     AGENT=,gazsim-meta-agent
 	     ;;
-         k)
+         -k)
              KEEP=yes
              ;;
-         m)
+         -m)
              META_PLUGIN=,$OPTARG
              ;;
-	 f)
+	 -f)
 	     FAWKES_BIN=$OPTARG
 	     ;;
-         ?)
-             usage
-             exit
+         --)
+             break
              ;;
      esac
+     shift
 done
 
 if [[ -z $COMMAND ]]
 then
+     echo "No command given"
      usage
      exit 1
 fi
@@ -162,6 +180,10 @@ case $COMMAND in
     roscore ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
 	roscore -p $PORT
+	;;
+    roslaunch)
+	export ROS_MASTER_URI=http://localhost:$PORT
+	roslaunch --wait ${ROS_LAUNCH%:*} ${ROS_LAUNCH##*:}
 	;;
     move_base ) 
 	export ROS_MASTER_URI=http://localhost:$PORT

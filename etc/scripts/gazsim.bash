@@ -9,27 +9,31 @@ usage: $0 options
 This script starts or kills the a Gazebo-simulation
 
 OPTIONS:
-   -h             Show this message
-   -x start|kill  Start or kill simulation
-   -c arg         Use a specific configuration-folder
-                  in cfg/gazsim-configurations/
-   -n arg         Specify number Robotinos
-   -m arg         load fawkes with the specified (meta-)plugin
-   -a             Run with default CLIPS-agent (don't mix with -m)
-   -l             Run Gazebo headless
-   -k             Keep started shells open after finish
-   -s             Keep statistics and shutdown after game
-   -r             Start with ROS
-   -e arg         Record replay
-   -d             Detailed simulation (e.g. simulated webcam)
-   -o             Omitt starting gazebo (necessary when starting
-                  different teams)
-   -f arg         First Robotino Number (default 1, choose 4 when
-                  starting as magenta)
-   -p arg         Path to the fawkes folder
-                  ($FAWKES_DIR/bin by default)
-   -g             Run Fawkes in gdb
-   -v             Run Fawkes in valgrind
+   -h                Show this message
+   -x start|kill     Start or kill simulation
+   -c arg            Use a specific configuration-folder
+                     in cfg/gazsim-configurations/
+   -n arg            Specify number Robotinos
+   -m arg            load fawkes with the specified (meta-)plugin
+   -a                Run with default CLIPS-agent (don't mix with -m)
+   -l                Run Gazebo headless
+   -k                Keep started shells open after finish
+   -s                Keep statistics and shutdown after game
+   -r|--ros          Start with ROS support
+   --ros-launch-main Run ROS launch file once for main (non-robot) master
+                     Argument: package:file.launch
+                     Calls: roslaunch package file.launch
+   --ros-launch      Run launch file for each robot (on their roscore)
+   -e arg            Record replay
+   -d                Detailed simulation (e.g. simulated webcam)
+   -o                Omitt starting gazebo (necessary when starting
+                     different teams)
+   -f arg            First Robotino Number (default 1, choose 4 when
+                     starting as magenta)
+   -p arg            Path to the fawkes folder
+                     ($FAWKES_DIR/bin by default)
+   -g                Run Fawkes in gdb
+   -v                Run Fawkes in valgrind
 EOF
 }
 
@@ -40,6 +44,8 @@ COMMAND=
 CONF=
 VISUALIZATION=
 ROS=
+ROS_LAUNCH_MAIN=
+ROS_LAUNCH_ROBOT=
 AGENT=
 DETAILED=
 KEEP=
@@ -53,43 +59,54 @@ START_GAZEBO=true
 TERM_GEOMETRY=105x56
 GDB=
 
-while getopts “hx:c:lrksn:e:dm:aof:p:gv” OPTION
-do
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gv" -l "ros,ros-launch-main:,ros-launch:" -- "$@")
+if [ $? != 0 ]
+then
+    echo "Failed to parse parameters"
+    usage
+    exit 1
+fi
+
+eval set -- "$OPTS"
+while true; do
+     OPTION=$1
+     OPTARG=$2
      case $OPTION in
-         h)
+         -h)
+    	     echo "Display help on request"
              usage
              exit 1
              ;;
-         c)
+         -c)
 	     CONF=-c\ $OPTARG
              ;;
-         l)
+         -l)
 	     VISUALIZATION=-l
              ;;
-         x)
+         -x)
 	     COMMAND=$OPTARG
              ;;
-         k)
+         -k)
 	     KEEP=-k
              ;;
-         r)
+         -r)
 	     ROS=-r
              ;;
-         g)
+         -g)
 	     if [ -n "$GDB" ]; then
 				echo "Can pass only either valgrind or GDB, not both"
         exit
        fi
 	     GDB=-g
              ;;
-         v)
+         -v)
 	     if [ -n "$GDB" ]; then
 				echo "Can pass only either valgrind or GDB, not both"
         exit
        fi
 	     GDB=-v
              ;;
-	 s)
+	 -s)
 	     SHUTDOWN=-s
 	     #done in two steps because otherwise ps would find grep serching for the pattern
 	     PS=$(ps -ef)
@@ -99,42 +116,48 @@ do
 		 exit
 	     fi
 	     ;;
-	 n)
+	 -n)
 	     NUM_ROBOTINOS=$OPTARG
 	     ;;
-	 e)
+	 -e)
 	     REPLAY="-e $OPTARG"
 	     ;;
-	 d)
+	 -d)
 	     DETAILED="-d"
 	     ;;
-	 m)
+	 -m)
 	     META_PLUGIN="-m $OPTARG"
 	     ;;
-	 a)
+	 -a)
 	     META_PLUGIN="-m gazsim-meta-agent"
 	     ;;
 	 o)
 	     START_GAZEBO=false
 	     ;;
-	 r)
+	 -r|--ros)
 	     ROS=-r
 	     ;;
-	 f)
+	 --ros-launch-main)
+	     ROS_LAUNCH_MAIN="--ros-launch $OPTARG"
+	     ;;
+	 --ros-launch-robot)
+	     ROS_LAUNCH_ROBOT="--ros-launch $OPTARG"
+	     ;;
+	 -f)
 	     FIRST_ROBOTINO_NUMBER=$OPTARG
 	     ;;
-	 p)
+	 -p)
 	     FAWKES_BIN=$OPTARG/bin
 	     ;;
-         ?)
-             usage
-             exit
+	 --) break;
              ;;
      esac
+     shift
 done
 
 if [[ -z $COMMAND ]]
 then
+     echo "No command given"
      usage
      exit 1
 fi
@@ -200,9 +223,18 @@ if [  $COMMAND  == start ]; then
 
     if [  "$ROS"  == "-r" ]; then
     	#start roscores
+	# main roscore (non-robot)
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roscore -p ${ROS_MASTER_URI##*:} $KEEP\"'"
+	if [ -n "$ROS_LAUNCH_MAIN" ]; then
+		OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p ${ROS_MASTER_URI##*:} $KEEP\"'"
+	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
-	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roscore -p 1131$ROBO $KEEP\"'"
+	    # robot roscore
+	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP\"'"
+	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
+		OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_URI $KEEP\"'"
+	fi
     	done
     fi
 
@@ -217,13 +249,13 @@ if [  $COMMAND  == start ]; then
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1131$ROBO -i robotino$ROBO $KEEP $CONF $ROS $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN\"'"
     done
 
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN\"'"
     fi
 
     # open windows
