@@ -60,22 +60,7 @@ OPEN_COMMAND="gnome-terminal"
 
 # #Launch the Rosbridge and Tf2_web_republisher instace for each ros core 
 
-if [ $ROSBRIDGE_PORT == "9090" ]
-then 
-    OPEN_COMMAND="$OPEN_COMMAND --tab -t R1_rosbridge -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; roslaunch rosbridge_server rosbridge_websocket.launch; exec bash\"'"
-fi
-
-if [ $ROSBRIDGE_PORT == "8080" ]
-then 
-    OPEN_COMMAND="$OPEN_COMMAND --tab -t R2_rosbridge -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; roslaunch rosbridge_server rosbridge_websocket_8080.launch; exec bash\"'"
-fi
-
-if [ $ROSBRIDGE_PORT == "7070" ]
-then 
-    OPEN_COMMAND="$OPEN_COMMAND --tab -t R3_rosbridge -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; roslaunch rosbridge_server rosbridge_websocket_7070.launch; exec bash\"'"
-fi
-
-
+OPEN_COMMAND="$OPEN_COMMAND --tab -t rosbridge -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; roslaunch rosbridge_server rosbridge_websocket.launch port:=$ROSBRIDGE_PORT; exec bash\"'"
 OPEN_COMMAND="$OPEN_COMMAND --tab -t tf2 -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun tf2_web_republisher tf2_web_republisher; exec bash\"'"
 OPEN_COMMAND="$OPEN_COMMAND --tab -t marker -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun visualization_marker_tutorials arrow; exec bash\"'"
  
