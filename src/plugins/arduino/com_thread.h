@@ -82,7 +82,8 @@ private:
     void close_device();
     void flush_device();
 
-    void read_packet();
+    std::string read_packet();
+    std::string read_packet(unsigned int timeout);
     void send_message(ArduinoComMessage &msg);
     std::shared_ptr<ArduinoComMessage>
     send_and_recv(ArduinoComMessage &msg);
@@ -103,6 +104,8 @@ private:
     bool cfg_gripper_enabled_;
     bool z_movement_pending;
     fawkes::Time time_to_stop_z_align;
+    char current_arduino_status;
+    bool read_pending_;
 
     bool opened_;
     unsigned int open_tries_;

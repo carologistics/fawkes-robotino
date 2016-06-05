@@ -290,31 +290,52 @@ private:
 };
 
 /// @endcond
-
-void
+std::string
 ArduinoComThread::read_packet()
 {
-    boost::system::error_code ec = boost::asio::error::would_block;
-    size_t bytes_read = 0;
+    logger->log_error(name(), "read");
+    std::string s = read_packet(10000);
+    if (s.find("AT ") == std::string::npos) {
+        logger->log_error(name(), "Package error - bytes read: %zu", bytes_read_);
+    }
+    if (bytes_read_ > 4) {
+        logger->log_debug(name(), "Package received: %s:", s.c_str());
+      current_arduino_status = s.at(3);
+    }
+    if (current_arduino_status == 'E') {
+        // TODO
+        logger->log_error(name(), "Arduino error: %s", s.substr(4));
+    }
+    read_pending_ = false;
+    return s;
+}
 
-    deadline_.expires_from_now(boost::posix_time::milliseconds(200));
+void
+std::string
+ArduinoComThread::read_packet(unsigned int timeout)
+{
+    boost::system::error_code ec = boost::asio::error::would_block;
+    bytes_read_ = 0;
+
+    deadline_.expires_from_now(boost::posix_time::milliseconds(timeout));
+    deadline_.async_wait(boost::bind(handle_nodata, boost::asio::placeholders::error));
+
     boost::asio::async_read_until(serial_, input_buffer_, "\r\n",
             (boost::lambda::var(ec) = boost::lambda::_1,
-            boost::lambda::var(bytes_read) = boost::lambda::_2));
+            boost::lambda::var(bytes_read_) = boost::lambda::_2));
 
     do io_service_.run_one(); while (ec == boost::asio::error::would_block);
 
-
     if (ec) {
         if (ec.value() == boost::system::errc::operation_canceled) {
+            logger->log_error(name(), "Arduino read operation cancelled: %s", ec.message());
         }
     }
 
-    // Read all potential junk before the start header
-    if (bytes_read > 1) {
-        logger->log_warn(name(), "Read junk off line");
-    }
-    input_buffer_.consume(bytes_read - 1);
+    std::string s(boost::asio::buffer_cast<const char*>(input_buffer_.data()), bytes_read_);
+    input_buffer_.consume(bytes_read_);
+    deadline_.cancel();
+    return s;
 }
 
 void
