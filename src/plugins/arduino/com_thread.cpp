@@ -331,6 +331,14 @@ ArduinoComThread::read_packet()
 }
 
 void
+handle_nodata(const boost::system::error_code &ec)
+{
+  // ec may be set if the timer is cancelled, i.e., updated
+  if (! ec) {
+    printf("No data received for too long, re-establishing connection\n");
+  }
+}
+
 std::string
 ArduinoComThread::read_packet(unsigned int timeout)
 {
