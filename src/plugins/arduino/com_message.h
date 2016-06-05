@@ -39,6 +39,7 @@ class ArduinoComMessage
 		CMD_TO_Z_0		=	3,
 		CMD_SET_ACCEL		=	4,
 		CMD_SET_SPEED		=	5,
+		CMD_QUERY_POS		=	6,
 	} command_id_t;
 
 	typedef enum {
