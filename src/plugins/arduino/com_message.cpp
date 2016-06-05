@@ -143,6 +143,16 @@ void ArduinoComMessage::set_num_steps(unsigned int num_mm)
     data_size_ += sprintf(data_+4,"%u", (num_mm * NUM_STEPS_PER_MM));
 }
 
+void ArduinoComMessage::set_accel(unsigned int accel)
+{
+    data_size_ += sprintf(data_+4,"%u", accel);
+}
+
+void ArduinoComMessage::set_speed(unsigned int speed)
+{
+    data_size_ += sprintf(data_+4,"%u", speed);
+}
+
 /** Get access to buffer for sending.
  * This implies packing. Note that after calling this methods later
  * modifications to the message will be ignored. The buffer is invalidated

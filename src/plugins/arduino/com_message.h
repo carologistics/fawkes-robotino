@@ -37,6 +37,8 @@ class ArduinoComMessage
 		CMD_STEP_UP		=	1,
 		CMD_STEP_DOWN		=	2,
 		CMD_TO_Z_0		=	3,
+		CMD_SET_ACCEL		=	4,
+		CMD_SET_SPEED		=	5,
 	} command_id_t;
 
 	typedef enum {
@@ -55,6 +57,8 @@ class ArduinoComMessage
 	void add_command(command_id_t cmdid);
         
         void set_num_steps(unsigned int num_steps);
+        void set_accel(unsigned int accel);
+        void set_speed(unsigned int speed);
 
 	boost::asio::const_buffer buffer();
 
