@@ -86,6 +86,7 @@ ArduinoComThread::init()
     opened_ = true;
     open_tries_ = 0;
     z_movement_pending = false;
+    current_stepper_pos = 0;
 
     blackboard->register_listener(this);
 }

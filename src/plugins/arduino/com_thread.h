@@ -106,6 +106,7 @@ private:
     bool z_movement_pending;
     fawkes::Time time_to_stop_z_align;
     char current_arduino_status;
+    int current_stepper_pos;
     bool read_pending_;
 
     bool opened_;
