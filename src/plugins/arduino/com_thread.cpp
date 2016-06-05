@@ -244,24 +244,24 @@ ArduinoComThread::flush_device()
     if (serial_.is_open()) {
         try {
             boost::system::error_code ec = boost::asio::error::would_block;
-            size_t bytes_read = 0;
+            bytes_read_ = 0;
             do {
                 ec = boost::asio::error::would_block;
-                bytes_read = 0;
+                bytes_read_ = 0;
 
                 deadline_.expires_from_now(boost::posix_time::milliseconds(200));
                 boost::asio::async_read(serial_, input_buffer_,
                         boost::asio::transfer_at_least(1),
                         (boost::lambda::var(ec) = boost::lambda::_1,
-                        boost::lambda::var(bytes_read) = boost::lambda::_2));
+                        boost::lambda::var(bytes_read_) = boost::lambda::_2));
 
                 do io_service_.run_one(); while (ec == boost::asio::error::would_block);
 
-                if (bytes_read > 0) {
-                    logger->log_warn(name(), "Flushing %zu bytes\n", bytes_read);
+                if (bytes_read_ > 0) {
+                    logger->log_warn(name(), "Flushing %zu bytes\n", bytes_read_);
                 }
 
-            } while (bytes_read > 0);
+            } while (bytes_read_ > 0);
             deadline_.expires_from_now(boost::posix_time::pos_infin);
         } catch (boost::system::system_error &e) {
             // ignore, just assume done, if there really is an error we'll
