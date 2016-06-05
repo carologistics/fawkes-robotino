@@ -311,11 +311,6 @@ ArduinoComThread::sync_with_arduino()
     return;
 }
 
-private:
-    char c_;
-};
-
-/// @endcond
 std::string
 ArduinoComThread::read_packet()
 {
