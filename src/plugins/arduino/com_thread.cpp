@@ -87,6 +87,8 @@ ArduinoComThread::init()
     open_tries_ = 0;
     z_movement_pending = false;
     current_stepper_pos = 0;
+    // read initial "IDLE"-message
+    read_pending_ = true;
 
     blackboard->register_listener(this);
 }
@@ -124,6 +126,8 @@ ArduinoComThread::loop()
                 arduino_if->set_z_position(arduino_if->z_position() - msg->num_mm());
                 arduino_if->write();
 
+                read_pending_ = true;
+
                 reset_timer_for_z_alignment(msg->num_mm());
 
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>()) {
@@ -135,6 +139,7 @@ ArduinoComThread::loop()
                 send_and_recv(req);
                 arduino_if->set_z_position(arduino_if->z_position() + msg->num_mm());
 
+                read_pending_ = true;
                 arduino_if->write();
 
                 reset_timer_for_z_alignment(msg->num_mm());
@@ -143,6 +148,14 @@ ArduinoComThread::loop()
             }
             arduino_if->msgq_pop();
         }
+
+        if (read_pending_ || z_movement_pending) {
+            read_packet();
+        }
+
+        z_movement_pending = current_arduino_status != 'I';
+        arduino_if->set_final(!z_movement_pending);
+        arduino_if->write();
 
     } else {
         try {
