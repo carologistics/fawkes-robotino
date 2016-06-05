@@ -160,7 +160,11 @@ fsm:define_states{ export_to=_M, closure={place_valid=place_valid,
    {"SEARCH_GLOBAL",          SkillJumpState, skills={{"global_motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
    {"TURN_AROUND",            SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
    {"SETTLE_LINE",            JumpState},
-   {"ALIGN",                  SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"},
+   {"NO_LINE",                JumpState},
+   {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_PRECISE", fail_to="FAILED"},
+   {"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
+   {"RETRY_ALIGN",            JumpState},
+   {"ALIGN_TURN",             SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -168,8 +172,8 @@ fsm:add_transitions{
    {"INIT",          "FAILED",          precond="not vars.x", desc="x argument missing"},
    {"INIT",          "CHECK_TAG",       cond=true},
 
-   {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
    {"CHECK_TAG",     "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
+   {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
 
    {"FIND_TAG",      "SEARCH_GLOBAL",   cond="want_search() and vars.place and pose_error()", desc="correct pose"},
    {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0", desc="search 4 tag"},
@@ -180,8 +184,11 @@ fsm:add_transitions{
    {"SEARCH_GLOBAL", "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
    {"SEARCH_LINES",  "SETTLE_LINE",     cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
 
-   {"SETTLE_LINE",   "ALIGN",           cond="vars.matched_line"},
-   {"SETTLE_LINE",   "CHECK_TAG",       timeout=2, desc="lost line"}
+   {"SETTLE_LINE",   "ALIGN_FAST",      cond="vars.matched_line and vars.tag_frame_id"},
+   {"SETTLE_LINE",   "NO_LINE",         timeout=2, desc="lost line"},
+   {"NO_LINE",       "ALIGN_PRECISE",   cond="tag_visible(MIN_VIS_HIST_TAG)"},
+   {"NO_LINE",       "CHECK_TAG",       cond=true},
+   {"ALIGN_FAST",    "FAILED",          cond="fsm.vars.align_attempts >= 3"}
 }
 
 function INIT:init()
@@ -207,23 +214,8 @@ function INIT:init()
 
    self.fsm.vars.interesting_lines = {}
 
-   self.fsm.vars.tags = {}
-   self.fsm.vars.tags[1] = tag_0
-   self.fsm.vars.tags[2] = tag_1
-   self.fsm.vars.tags[3] = tag_2
-   self.fsm.vars.tags[4] = tag_3
-   self.fsm.vars.tags[5] = tag_4
-   self.fsm.vars.tags[6] = tag_5
-   self.fsm.vars.tags[7] = tag_6
-   self.fsm.vars.tags[8] = tag_7
-   self.fsm.vars.tags[9] = tag_8
-   self.fsm.vars.tags[10] = tag_9
-   self.fsm.vars.tags[11] = tag_10
-   self.fsm.vars.tags[12] = tag_11
-   self.fsm.vars.tags[13] = tag_12
-   self.fsm.vars.tags[14] = tag_13
-   self.fsm.vars.tags[15] = tag_14
-   self.fsm.vars.tags[16] = tag_15
+   self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
+      tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
 
    self.fsm.vars.search_idx = 0
    self.fsm.vars.globalsearch_done = false
@@ -307,8 +299,10 @@ function CHECK_TAG:loop()
       self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
    end
 end
+
 function CHECK_TAG:init()
 end
+
 
 function FIND_TAG:init()
    self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
@@ -322,6 +316,7 @@ end
 function SEARCH_GLOBAL:init()
    self.args["global_motor_move"] = self.fsm.vars.place
 end
+
 function SEARCH_GLOBAL:exit()
    self.fsm.vars.globalsearch_done = true
 end
@@ -361,10 +356,17 @@ function TURN_AROUND:init()
 end
 
 
+function SETTLE_LINE:init()
+   self.fsm.vars.align_attempts = 0
+end
+
+
 function SETTLE_LINE:loop()
-   local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
    if tag then
-      print("Matched tag: " .. tag:id())
+      local tag_idx = string.sub(tag:id(), 13)
+      self.fsm.vars.tag_frame_id = "/tag_" .. tag_idx
+      print("Matched tag frame: " .. self.fsm.vars.tag_frame_id)
    end
 
    self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
@@ -374,12 +376,62 @@ function SETTLE_LINE:loop()
 end
 
 
-function ALIGN:init()
+function ALIGN_FAST:init()
    local center = llutils.center(self.fsm.vars.matched_line)
    printf("center l: %f, %f, %f", center.x, center.y, center.ori)
    local center_bl = tfm.transform(center, "/base_laser", "/base_link")
    local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
-   printf("p: %f %f %f", p.x, p.y, p.ori)
-   self.args["motor_move"] = {x=p.x, y=p.y, ori=math.angle_distance(p.ori, self.fsm.vars.ori or 0)}
+   
+   self.fsm.vars.p_tag = tfm.transform6D(
+      {  x = p.x,
+         y = p.y + (self.fsm.vars.y or 0),
+         z = 0,
+         ori = fawkes.tf.create_quaternion_from_yaw(math.pi) },
+      "/base_link", self.fsm.vars.tag_frame_id
+   )
+   printf("p    : %f %f %f", p.x, p.y, p.ori)
+   printf("p tag: %f %f %f",
+      self.fsm.vars.p_tag.x,
+      self.fsm.vars.p_tag.y,
+      fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori))
+
+
+   self.args["motor_move"] = {
+      x = p.x,
+      y = p.y + (self.fsm.vars.y or 0),
+      ori = p.ori,
+      tolerance = { x=0.05, y=0.03, ori=0.03 }
+   }
 end
+
+
+function ALIGN_PRECISE:init()
+   self.fsm.vars.align_attempts = self.fsm.vars.align_attempts + 1
+  
+   if self.fsm.vars.p_tag then
+      self.args["motor_move"] = { 
+         x = self.fsm.vars.p_tag.x,
+         y = self.fsm.vars.p_tag.y,
+         ori = math.pi,
+         frame = self.fsm.vars.tag_frame_id
+      }
+   else
+      -- Input coordinates are supposed to be relative to laser line, but there is no
+      -- transform for laser lines, so we this weird an stupid "manual transformation"
+      self.args["motor_move"] = {
+         x = self.fsm.vars.x,
+         y = -self.fsm.vars.y,
+         ori = math.pi,
+         frame = self.fsm.vars.tag_frame_id
+      }
+   end
+end
+
+
+function ALIGN_TURN:init()
+   self.args["motor_move"] = {
+      ori = self.fsm.vars.ori
+   }
+end
+
 
