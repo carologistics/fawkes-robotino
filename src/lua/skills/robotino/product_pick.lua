@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="OPEN_GRIPPER", debug=false}
-depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
+depends_skills     = {"motor_move", "ax12gripper"}
 depends_interfaces = {
    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
@@ -39,11 +39,15 @@ and opens the gripper
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
+local x_distance = 0.07
+if config:exists("/hardware/robotino/align_distance_conveyor/x") then
+   local x_distance = config:get_float("/hardware/robotino/align_distance_conveyor/x")
+end
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="APPROACH_MPS", fail_to="FAILED"},
-   {"APPROACH_MPS", SkillJumpState, skills={{approach_mps}},
+      final_to="DRIVE_FORWARD", fail_to="FAILED"},
+   {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}},
       final_to="CLOSE_GRIPPER", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="WAIT", fail_to="FAIL_SAFE"},
@@ -74,8 +78,9 @@ function OPEN_GRIPPER:init()
    printf("open gripper")
 end
 
-function APPROACH_MPS:init()
-   self.args["approach_mps"].offset_x = self.fsm.vars.offset_x
+function DRIVE_FORWARD:init()
+   self.args["motor_move"].x = x_distance
+   self.args["motor_move"].vel_trans = 0.2
 end
 
 function MOVE_BACK:init()
