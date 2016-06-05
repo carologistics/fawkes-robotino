@@ -202,6 +202,8 @@ ArduinoComThread::open_device()
         serial_.set_option(STOP);
         serial_.set_option(thecsize);
 
+        sync_with_arduino();
+
     } catch (boost::system::system_error &e) {
         throw Exception("Arduino failed I/O: %s", e.what());
     }
@@ -262,28 +264,31 @@ ArduinoComThread::send_and_recv(ArduinoComMessage &msg)
     return NULL;
 }
 
-/// @cond INTERNAL
-
-class match_char
+void
+ArduinoComThread::sync_with_arduino()
 {
-public:
+    std::string s;
+    std::size_t found;
+    fawkes::Time start_time;
+    fawkes::Time now;
 
-    explicit match_char(char c) : c_(c)
-    {
-    }
+    logger->log_debug(name(), "sync with arduino");
+    do {
+        s = read_packet(3000);
+        found = s.find("AT HELLO");
+        now = fawkes::Time();
+    } while (found == std::string::npos && (now - start_time < 3.));
 
-    template <typename Iterator>
-    std::pair<Iterator, bool> operator()(
-            Iterator begin, Iterator end) const
-    {
-        Iterator i = begin;
-        while (i != end) {
-            //            std::cout << "compare: " << (int) c_ << ": " << c_ << " with: " << (int) *i << std::endl;
-            if (c_ == *i++)
-                return std::make_pair(i, true);
-        }
-        return std::make_pair(i, false);
+    if (now - start_time >= 3.) {
+        logger->log_error(name(), "Timeout reached trying to sync with arduino");
     }
+    if (found == std::string::npos) {
+        logger->log_error(name(), "Synchronization with Arduino failed, HELLO-Package not located");
+    } else {
+        logger->log_info(name(), "Synchronization with Arduino successful");
+    }
+    return;
+}
 
 private:
     char c_;
