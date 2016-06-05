@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "shelf_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
+depends_skills     = {"motor_move", "ax12gripper"}
 depends_interfaces = {}
 
 documentation      = [==[ shelf_pick
@@ -39,11 +39,15 @@ documentation      = [==[ shelf_pick
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+local x_distance = 0.07
+if config:exists("/hardware/robotino/align_distance_conveyor/x") then
+   local x_distance = config:get_float("/hardware/robotino/align_distance_conveyor/x")
+end
 
 fsm:define_states{ export_to=_M,
    {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
-   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
+   {"APPROACH_SHELF", SkillJumpState, skills={{motor_move}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="CENTER_PUCK", fail_to="FAILED"},
    {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
@@ -83,7 +87,8 @@ function GOTO_SHELF:init()
 end
 
 function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = 0.07 --TODO measure this value
+   self.args["motor_move"].x = x_distance
+   self.args["motor_move"].vel_trans = 0.2
 end
 
 function GRAB_PRODUCT:init()
