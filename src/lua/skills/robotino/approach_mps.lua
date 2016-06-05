@@ -74,9 +74,8 @@ function APPROACH_WITH_INFRARED:init()
    else
       self.fsm.vars.sensor_threshold = sensor_threshold -- the threshold is negative so we adjust the rest in the upcoming motor_move state
    end
-   --TODO further driving when putting a product maybe
    printf("sensor threshold is: %f", self.fsm.vars.sensor_threshold)
-   self.args["motor_move"] = {x = 1, vel_trans = 0.05}
+   self.args["motor_move"] = {x = 1, vel_trans = 0.2}
 end
 
 function MOTOR_MOVE:init()
