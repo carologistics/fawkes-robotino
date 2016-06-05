@@ -30,7 +30,7 @@
 using namespace fawkes;
 
 /// @cond INTERNAL
-const char ArduinoComMessage::MSG_HEAD[] = {'A', 'T', '+'};
+const char ArduinoComMessage::MSG_HEAD[] = {'A', 'T', ' '};
 
 // 5: 0xAA + payload_size/2 ... + checksum/2
 //const unsigned int ArduinoComMessage::MSG_METADATA_SIZE = 5;
