@@ -57,11 +57,13 @@ documentation      = [==[Move on a (kind of) straight line relative to the given
 ]==]
 
 -- Tunables
-local V_MAX =     { x=0.35,  y=0.35,  ori=1.4 }    -- ultimate limit
-local V_MIN =     { x=0.01, y=0.01, ori=0.08 }   -- below the motor won't even start
-local TOLERANCE = { x=0.02, y=0.02, ori=0.025 } -- accuracy
-local D_DECEL =   { x=0.03, y=0.03, ori=0.15 }    -- deceleration distance
-local ACCEL =     { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
+local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
+local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.6 }
+local V_MIN =         { x=0.005, y=0.005, ori=0.02 }   -- below the motor won't even start
+local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
+local TOLERANCE_CAM = { x=0.005, y=0.005, ori=0.005 }
+local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
+local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
 
 -- Initialize as skill module
 skillenv.skill_module(_M )
@@ -88,6 +90,7 @@ function scalar(x)
       return x
    end
 end
+
 
 function set_speed(self)
    local v = {}
@@ -124,7 +127,7 @@ function set_speed(self)
                v_acc = self.fsm.vars.cycle * ACCEL[k]
 
                -- speed if we're decelerating
-               v_dec = a[k]/5 * math.abs(scalar(dist_target[k]))
+               v_dec = a[k]/self.fsm.vars.decel_factor * math.abs(scalar(dist_target[k]))
                
                -- decide if we wanna decelerate, accelerate or max out
                v[k] = math.min(
@@ -223,6 +226,7 @@ function INIT:init()
       self.fsm.vars.y = self.fsm.vars.y or cur_pos.y
       self.fsm.vars.z = self.fsm.vars.z or cur_pos.z
       self.fsm.vars.ori = self.fsm.vars.ori or fawkes.tf.get_yaw(cur_pos.ori)
+      print("motor_move frame: " .. self.fsm.vars.frame)
    else
       self.fsm.vars.x = self.fsm.vars.x or 0
       self.fsm.vars.y = self.fsm.vars.y or 0
@@ -246,13 +250,17 @@ function INIT:init()
    printf("Target %s: %f, %f, %f, %f", self.fsm.vars.target_frame, self.fsm.vars.target.x,
       self.fsm.vars.target.y, self.fsm.vars.target.z, fawkes.tf.get_yaw(self.fsm.vars.target.ori))
 
-   local vmax_arg = self.fsm.vars.vel_trans or math.max(V_MAX.x, V_MAX.y)
-   local vmin_rot = self.fsm.vars.vel_rot or V_MAX.ori
-   self.fsm.vars.vmax_arg = { x=vmax_arg, y=vmax_arg, ori=vmin_rot }
-
    self.fsm.vars.speed = { x=0, y=0, ori=0 }
-   self.fsm.vars.tolerance_arg = self.fsm.vars.tolerance or TOLERANCE
+end
 
+function DRIVE:init()
+   self.fsm.vars.vmax_arg = {
+      x = math.min(V_MAX.x, self.fsm.vars.vel_trans or V_MAX.x),
+      y = math.min(V_MAX.y, self.fsm.vars.vel_trans or V_MAX.y),
+      ori = math.min(V_MAX.ori, self.fsm.vars.vel_rot or V_MAX.ori)
+   }
+   self.fsm.vars.tolerance_arg = self.fsm.vars.tolerance or TOLERANCE
+   self.fsm.vars.decel_factor = 5
    set_speed(self)
 end
 
@@ -262,6 +270,17 @@ end
 
 function DRIVE:exit()
    send_transrot(0, 0, 0)
+end
+
+function DRIVE_CAM:init()
+   self.fsm.vars.vmax_arg = {
+      x = math.min(V_MAX_CAM.x, self.fsm.vars.vel_trans or V_MAX_CAM.x),
+      y = math.min(V_MAX_CAM.y, self.fsm.vars.vel_trans or V_MAX_CAM.y),
+      ori = math.min(V_MAX_CAM.ori, self.fsm.vars.vel_rot or V_MAX_CAM.ori)
+   }
+   self.fsm.vars.tolerance_arg = self.fsm.vars.tolerance or TOLERANCE_CAM
+   self.fsm.vars.decel_factor = 10
+   set_speed(self)
 end
 
 function DRIVE_CAM:loop()
