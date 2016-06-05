@@ -319,7 +319,6 @@ private:
 std::string
 ArduinoComThread::read_packet()
 {
-    logger->log_error(name(), "read");
     std::string s = read_packet(10000);
     if (s.find("AT ") == std::string::npos) {
         logger->log_error(name(), "Package error - bytes read: %zu", bytes_read_);
