@@ -59,7 +59,7 @@ documentation      = [==[Move on a (kind of) straight line relative to the given
 -- Tunables
 local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
 local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.6 }
-local V_MIN =         { x=0.005, y=0.005, ori=0.02 }   -- below the motor won't even start
+local V_MIN =         { x=0.01, y=0.01, ori=0.08 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
 local TOLERANCE_CAM = { x=0.005, y=0.005, ori=0.005 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
@@ -260,7 +260,11 @@ function DRIVE:init()
       ori = math.min(V_MAX.ori, self.fsm.vars.vel_rot or V_MAX.ori)
    }
    self.fsm.vars.tolerance_arg = self.fsm.vars.tolerance or TOLERANCE
+   
+   -- "Magic", i.e. heuristic multiplier that determines how much we brake
+   -- when approaching target. Important to avoid overshooting.
    self.fsm.vars.decel_factor = 5
+   
    set_speed(self)
 end
 
@@ -279,7 +283,11 @@ function DRIVE_CAM:init()
       ori = math.min(V_MAX_CAM.ori, self.fsm.vars.vel_rot or V_MAX_CAM.ori)
    }
    self.fsm.vars.tolerance_arg = self.fsm.vars.tolerance or TOLERANCE_CAM
+
+   -- "Magic", i.e. heuristic multiplier that determines how much we brake
+   -- when approaching target. Important to avoid overshooting.
    self.fsm.vars.decel_factor = 10
+   
    set_speed(self)
 end
 
