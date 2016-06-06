@@ -113,6 +113,11 @@ ConveyorPoseThread::init()
   cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
   cfg_front_offset_           = config->get_float( (cfg_prefix + "front/offset").c_str() );
 
+  cfg_product_normal_distance_weight_ = config->get_float( (cfg_prefix + "product/normal_distance_weight").c_str() );
+  cfg_product_dist_threshold_         = config->get_float( (cfg_prefix + "product/dist_threshold").c_str() );
+  cfg_product_radius_limit_min_       = config->get_float( (cfg_prefix + "product/radius_limit_min").c_str() );
+  cfg_product_radius_limit_max_       = config->get_float( (cfg_prefix + "product/radius_limit_max").c_str() );
+
   cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
 
   cfg_cluster_tolerance_      = config->get_float( (cfg_prefix + "cluster/tolerance").c_str() );
@@ -187,8 +192,10 @@ ConveyorPoseThread::loop()
   pcl::compute3DCentroid<Point, float>(*cloud_front, center);
   CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
 
+  CloudPtr cloud_cycle = cloud_remove_products(cloud_center);
+
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
-  CloudPtr cloud_plane = cloud_get_plane(cloud_center, coeff);
+  CloudPtr cloud_plane = cloud_get_plane(cloud_cycle, coeff);
   if ( cloud_plane == NULL ) {
     vis_hist_ = -1;
     pose_write(pose_current);
@@ -197,7 +204,9 @@ ConveyorPoseThread::loop()
 
 //  CloudPtr cloud_biggest = cloud_cluster(cloud_center);
   CloudPtr cloud_biggest = cloud_cluster(cloud_plane);
-  cloud_publish(cloud_front, cloud_out_inter_1_);
+//  cloud_publish(cloud_front, cloud_out_inter_1_);
+  cloud_publish(cloud_cycle, cloud_out_inter_1_);
+//  cloud_publish(cloud_cycle, cloud_out_result_);
   cloud_publish(cloud_biggest, cloud_out_result_);
 
   // get centroid
@@ -423,6 +432,45 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
   }
 
   return out;
+}
+
+CloudPtr
+ConveyorPoseThread::cloud_remove_products(CloudPtr in)
+{
+  // Estimate point normals
+  pcl::NormalEstimation<Point, pcl::Normal> ne;
+  pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point> ());
+  ne.setSearchMethod (tree);
+  ne.setInputCloud (in);
+  ne.setKSearch (50);
+  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+  ne.compute (*cloud_normals);
+
+  // Create the segmentation object for cylinder segmentation and set all the parameters
+  pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg;
+  seg.setOptimizeCoefficients (true);
+  seg.setModelType (pcl::SACMODEL_CYLINDER);
+  seg.setMethodType (pcl::SAC_RANSAC);
+  seg.setNormalDistanceWeight (cfg_product_normal_distance_weight_);
+  seg.setMaxIterations (1000);
+  seg.setDistanceThreshold (cfg_product_dist_threshold_);
+  seg.setRadiusLimits (cfg_product_radius_limit_min_, cfg_product_radius_limit_max_);
+  seg.setInputCloud (in);
+  seg.setInputNormals (cloud_normals);
+
+  // Obtain the cylinder inliers and coefficients
+  pcl::PointIndices::Ptr inliers_cylinder (new pcl::PointIndices);
+  pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
+  seg.segment (*inliers_cylinder, *coefficients_cylinder);
+
+  pcl::ExtractIndices<Point> extract;
+  extract.setInputCloud (in);
+  extract.setIndices (inliers_cylinder);
+  extract.setNegative (true);
+  CloudPtr cloud_cylinder (new Cloud ());
+  extract.filter (*cloud_cylinder);
+
+  return cloud_cylinder;
 }
 
 CloudPtr

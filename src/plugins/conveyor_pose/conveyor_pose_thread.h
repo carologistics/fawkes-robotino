@@ -83,6 +83,11 @@ private:
   float cfg_front_space_;
   float cfg_front_offset_;
 
+  float cfg_product_normal_distance_weight_;
+  float cfg_product_dist_threshold_;
+  float cfg_product_radius_limit_min_;
+  float cfg_product_radius_limit_max_;
+
   float cfg_plane_dist_threshold_;
 
   float cfg_cluster_tolerance_;
@@ -129,6 +134,7 @@ private:
  CloudPtr cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid);
  CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll);
+ CloudPtr cloud_remove_products(CloudPtr in);
  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
  CloudPtr cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);

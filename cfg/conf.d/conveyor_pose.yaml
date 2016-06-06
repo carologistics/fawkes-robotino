@@ -59,6 +59,11 @@ conveyor_pose:
     space: 0.1
     # this should be a tf, but I did not get it work :(
     offset: -0.04
+  product:
+    normal_distance_weight: 0.1
+    dist_threshold: 0.025
+    radius_limit_min: 0.015
+    radius_limit_max: 0.025
   plane:
     # the allowed noise for a plane
     dist_threshold: 0.0025
