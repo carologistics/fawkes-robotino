@@ -390,6 +390,10 @@
 
   (pose (x 0.0) (y 0.0))
   (puck-in-gripper FALSE)
+
+  (team-robot R-1)
+  (team-robot R-2)
+  (team-robot R-3)
   
   ; Input storage per team color
   (input-storage CYAN Ins1 0 0)

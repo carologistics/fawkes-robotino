@@ -57,6 +57,11 @@
   (team-color ?team-color)
   (move-into-field-waittime ?wait-cfg)
   (time $?now)
+  (pose (x ?px) (y ?py))
+  (not (and
+    (active-robot (name ?name) (x ?x) (y ?y&:(and (< ?y 0) (< (abs ?x) (abs ?px)))))
+    (team-robot ?name)
+  ))
   =>
   (retract ?sf ?cf)
   (assert (state MOVE_INTO_FIELD))
@@ -68,7 +73,12 @@
     (bind ?wait 0)
     (assert (lock-announce-restart))
   )
-  (skill-call drive_into_field team ?team-color wait ?wait)
+  (if (eq ?*ROBOT-NAME* R-1)
+    then
+    (skill-call drive_into_field team ?team-color wait 0)
+    else
+    (skill-call drive_into_field team ?team-color wait ?wait)
+  )
 )
 
 (defrule move-into-field-done
