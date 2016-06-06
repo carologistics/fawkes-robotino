@@ -163,7 +163,6 @@ function TURN:init()
    self.args["motor_move"].vel_rot = 1.2
    self.args["motor_move"].puck = true
    self.args["motor_move"].tolerance = mm_tolerance
-   self.args["motor_move"].frame = "/odom"
 end
 
 function WAIT_PLAUSIBLE_TARGET:init()
@@ -183,7 +182,6 @@ function DRIVE:init()
    self.args["motor_move"].y = self.fsm.vars.bl_target.y
    self.args["motor_move"].puck = self.fsm.vars.puck
    self.args["motor_move"].tolerance = mm_tolerance
-   self.args["motor_move"].frame = "/odom"
 end
 
 function TURN_BACK:init()
