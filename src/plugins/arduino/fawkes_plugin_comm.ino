@@ -21,6 +21,8 @@ AccelStepper myAccelStepper(forwardstep, backwardstep);
 #define CMD_STEP_UP 1
 #define CMD_STEP_DOWN 2
 #define CMD_TO_Z_0 3
+#define CMD_SET_ACCEL 4
+#define CMD_SET_SPEED 5
 
 //#define DEBUG
 
@@ -78,6 +80,8 @@ void read_package() {
 
       cur_cmd = buffer_[package_start + 2] - '0';
       int n_steps = 0;
+      int new_accel = 0;
+      int new_speed = 0;
       switch (cur_cmd) {
         case CMD_STEP_UP:
           n_steps = 0;
@@ -95,6 +99,14 @@ void read_package() {
           break;
         case CMD_TO_Z_0:
           gotoUpperLimit();
+          break;
+        case CMD_SET_ACCEL:
+          sscanf (buffer_ + (package_start + 3),"%d",&new_accel);
+          myAccelStepper.setAcceleration((double)new_accel);
+          break;
+        case CMD_SET_SPEED:
+          sscanf (buffer_ + (package_start + 3),"%d",&new_speed);
+          myAccelStepper.setMaxSpeed((double)new_speed);
           break;
         default:
           #ifdef DEBUG
