@@ -37,9 +37,9 @@ conveyor vision
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local TOLERANCE_Y = 0.005
+local TOLERANCE_Y = 0.003
 local TOLERANCE_Z = 0.002
-local MAX_TRIES = 2
+local MAX_TRIES = 5
 local X_DEST_POS = 0.28
 local Z_DEST_POS_WITH_PUCK = 0.032
 local Z_DEST_POS_WITHOUT_PUCK = 0.03
@@ -55,12 +55,13 @@ function see_conveyor()
    return if_conveyor:visibility_history() > 5
 end
 
-function tolerance_y_not_ok()
-   return not (math.abs(if_conveyor:translation(1)) <= TOLERANCE_Y)
-end
-
-function tolerance_z_not_ok()
-   return not (math.abs(if_conveyor:translation(2) - Z_DEST_POS) <= TOLERANCE_Z)
+function tolerances_ok(self)
+   local pose = pose_des(self)
+   print("pose_y = " .. pose.y)
+   print("pose_z = " .. pose.z)
+   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and self.fsm.vars.counter < MAX_TRIES then
+      return true
+   end
 end
 
 function check_for_second_try(self)
@@ -95,7 +96,7 @@ function pose_offset(self)
 
    return { x = cp.x,
             y = cp.y,
-            z = cp.z - Z_DEST_POS,
+            z = cp.z,
             ori = ori
           }
 end
@@ -103,6 +104,7 @@ end
 function pose_des(self)
    local pose = pose_offset(self)
    pose.x = pose.x - X_DEST_POS
+   pose.z = pose.z - Z_DEST_POS
    return pose
 end
 
@@ -120,6 +122,7 @@ fsm:add_transitions{
    {"CHECK_VISION", "FAILED", timeout=5, desc="No vis_hist on conveyor vision"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DRIVE", cond=see_conveyor},
+   {"DECIDE_TRY", "FINAL", cond=tolerances_ok},
    {"DECIDE_TRY", "CHECK_VISION", cond=check_for_second_try, desc="Do a 2. alignment"},
    {"DECIDE_TRY", "FINAL", cond=true, desc="Robot is aligned"},
 }
@@ -134,6 +137,7 @@ end
 
 function DECIDE_TRY:init()
    self.fsm.vars.counter = self.fsm.vars.counter + 1
+   print("Try number " .. self.fsm.vars.counter)
 end
 
 function DRIVE:init()
@@ -141,7 +145,7 @@ function DRIVE:init()
 
    self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.4}
    self.args["ax12gripper"].command = "RELGOTOZ"
-   if tolerance_z_not_ok() then
+   if math.abs(pose.z) <= TOLERANCE_Z then
       local z_position = 0 --TODO (pose.z * 1000) / Z_DIVISOR)
       self.args["ax12gripper"].z_position = z_position
       print("z_pose: " .. z_position)
