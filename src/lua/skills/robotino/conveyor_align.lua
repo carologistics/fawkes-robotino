@@ -59,13 +59,13 @@ function tolerances_ok(self)
    local pose = pose_des(self)
    print("pose_y = " .. pose.y)
    print("pose_z = " .. pose.z)
-   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and self.fsm.vars.counter < MAX_TRIES then
+   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and max_tries_not_reached(self) then
       return true
    end
 end
 
-function check_for_second_try(self)
-   return self.fsm.vars.counter < MAX_TRIES --TODO check_tolerances
+function max_tries_not_reached(self)
+   return (self.fsm.vars.counter < MAX_TRIES)
 end
 
 function pose_offset(self)
@@ -122,9 +122,9 @@ fsm:add_transitions{
    {"CHECK_VISION", "FAILED", timeout=5, desc="No vis_hist on conveyor vision"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DRIVE", cond=see_conveyor},
-   {"DECIDE_TRY", "FINAL", cond=tolerances_ok},
-   {"DECIDE_TRY", "CHECK_VISION", cond=check_for_second_try, desc="Do a 2. alignment"},
-   {"DECIDE_TRY", "FINAL", cond=true, desc="Robot is aligned"},
+   {"DECIDE_TRY", "FINAL", cond=tolerances_ok, desc="Robot is aligned"},
+   {"DECIDE_TRY", "CHECK_VISION", cond=max_tries_not_reached, desc="Do another alignment"},
+   {"DECIDE_TRY", "FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
 }
 
 function INIT:init()
