@@ -24,7 +24,6 @@ AccelStepper myAccelStepper(forwardstep, backwardstep);
 #define CMD_SET_ACCEL 4
 #define CMD_SET_SPEED 5
 
-//#define DEBUG
 #define STATUS_MOVING 0
 #define STATUS_IDLE 1
 #define STATUS_ERROR 2
@@ -71,14 +70,9 @@ void gotoUpperLimit() {
 }
 
 void read_package() {
-//  if (Serial.available() > 0) {
     int len = Serial.readBytesUntil(TERMINATOR, buffer_, 128);
     // Skip too short packages
     if (len < 4) return;
-
-//    Serial.print("I received: ");
-//    Serial.print(len);
-//    Serial.println(" Bytes:");
 
     int package_start = 0;
     bool package_located = false;
@@ -133,8 +127,6 @@ void read_package() {
 }
 
 void setup() {
-  // put your setup code here, to run once:
-
   Serial.begin(115200);
   Serial.setTimeout(10);
   pinMode(13, OUTPUT);
