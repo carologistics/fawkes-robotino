@@ -25,6 +25,11 @@ AccelStepper myAccelStepper(forwardstep, backwardstep);
 #define CMD_SET_SPEED 5
 
 //#define DEBUG
+#define STATUS_MOVING 0
+#define STATUS_IDLE 1
+#define STATUS_ERROR 2
+
+char status_array_[] = {'M', 'I', 'E'};
 
 int incomingByte = 0;   // for incoming serial data
 int steps_pending = 0;
@@ -47,6 +52,13 @@ void backwardstep() {
   steps_pending--;
 }
 
+void send_packet(int status_, char* buffer_, int len) {
+    Serial.print(AT);
+    Serial.print(status_array_[status_]);
+    for (int i = 0; i < len; i++) {
+      Serial.print(buffer_[i]);
+    }
+    Serial.print("\r\n");
 }
 
 void gotoUpperLimit() {
