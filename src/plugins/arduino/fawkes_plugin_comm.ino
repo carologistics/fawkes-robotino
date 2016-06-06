@@ -20,7 +20,7 @@ AccelStepper myAccelStepper(forwardstep, backwardstep);
 
 #define CMD_STEP_UP 1
 #define CMD_STEP_DOWN 2
-#define CMD_TO_UPPER_LIMIT 3
+#define CMD_TO_Z_0 3
 
 //#define DEBUG
 
@@ -93,6 +93,7 @@ void read_package() {
           myAccelStepper.moveTo(myAccelStepper.currentPosition() + n_steps);
           upwards = false;
           break;
+        case CMD_TO_Z_0:
           gotoUpperLimit();
           break;
         default:
