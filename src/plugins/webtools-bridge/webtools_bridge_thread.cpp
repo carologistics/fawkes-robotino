@@ -63,7 +63,7 @@ WebtoolsBridgeThread::init()
  // time_var_=new Time(clock);
  // time_var_->stamp();
   int rosbridge_port= config->get_int("/webtools-bridge/rosbridge-port");
-  std::string server_bash = "./launch_server.bash -p "+std::to_string (rosbridge_port );
+  std::string server_bash = "../src/plugins/webtools-bridge/./launch_server.bash -p "+std::to_string (rosbridge_port );
   system(server_bash.c_str());
   //Maybe wait a bit after starting the servers
 
@@ -112,9 +112,15 @@ WebtoolsBridgeThread::init()
   // bridge_manager_->register_processor(std::make_shared<ClipsProcessor> ("/"
   //                                                                       , logger
   //                                                                       , clock));
-
-  web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);  
-  web_server_->run(config->get_int("/webtools-bridge/port"));
+  try
+  {
+    web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);  
+    web_server_->run(config->get_int("/webtools-bridge/port"));
+  }
+  catch(...)
+  {
+    logger->log_warn(name(), " Wepsocekt Server crached");
+  }
 }
 
 void
