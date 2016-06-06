@@ -151,5 +151,7 @@ void loop() {
       send_packet(STATUS_IDLE, "", 0);
       myMotor->release();
     }
+  } else {
+    read_package();
   }
 }
