@@ -100,6 +100,7 @@ void read_package() {
           sscanf (buffer_ + (package_start + 3),"%d",&n_steps);
           steps_pending = abs(n_steps);
           myAccelStepper.moveTo(myAccelStepper.currentPosition() - n_steps);
+          send_packet(STATUS_MOVING, "", 0);
           upwards = true;
           break;
         case CMD_STEP_DOWN:
@@ -107,6 +108,7 @@ void read_package() {
           sscanf (buffer_ + (package_start + 3),"%d",&n_steps);
           steps_pending = abs(n_steps);
           myAccelStepper.moveTo(myAccelStepper.currentPosition() + n_steps);
+          send_packet(STATUS_MOVING, "", 0);
           upwards = false;
           break;
         case CMD_TO_Z_0:
@@ -122,6 +124,7 @@ void read_package() {
           break;
         default:
           #ifdef DEBUG
+             send_packet(STATUS_ERROR, "unknown command", 15);
           #endif
           break;
       }
@@ -145,12 +148,15 @@ void setup() {
   myAccelStepper.setCurrentPosition(current_position);
   myAccelStepper.setMaxSpeed(800.0);
   myAccelStepper.setAcceleration(800.0);
+  Serial.println("AT HELLO");
+  send_packet(STATUS_IDLE, "", 0);
 }
 
 void loop() {
   if (myAccelStepper.distanceToGo() != 0) {
     myAccelStepper.run();
     if (myAccelStepper.distanceToGo() == 0) {
+      send_packet(STATUS_IDLE, "", 0);
       myMotor->release();
     }
   }
