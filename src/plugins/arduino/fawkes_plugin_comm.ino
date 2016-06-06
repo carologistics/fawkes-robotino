@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
+#include <AccelStepper.h>
 
 // Connect a stepper motor with 48 steps per revolution (7.5 degree)
 // to motor port #2 (M3 and M4)
@@ -8,6 +9,7 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 2);
 
 #define AT "AT+"
+AccelStepper myAccelStepper(forwardstep, backwardstep);
 #define TERMINATOR 'X'
 #define BUTTONPIN 42
 
@@ -26,21 +28,23 @@ int steps_pending = 0;
 bool upwards = false;
 bool to_start_pos_pending = false;
 int cur_cmd = 0;
+long current_position;
 
 char buffer_[128];
 int buffer_p = 0;
 int buttonState = 0;         // variable for reading the pushbutton status
 
 
-/*
-void send_packet(const char* buffer_, int len) {
-  Serial.print(AT);
-  for (int i = 0; i < len; i++) {
-    Serial.print(buffer_[i]);
-  }
-  Serial.print("\r\n");
+void forwardstep() {
+  myMotor->onestep(FORWARD, DOUBLE);
+  steps_pending--;
 }
-*/
+void backwardstep() {
+  myMotor->onestep(BACKWARD, DOUBLE);
+  steps_pending--;
+}
+
+}
 
 void gotoUpperLimit() {
   buttonState = digitalRead(BUTTONPIN);
@@ -75,29 +79,23 @@ void read_package() {
       int n_steps = 0;
       switch (cur_cmd) {
         case CMD_STEP_UP:
-          #ifdef DEBUG
-             Serial.println("step up");
-          #endif
           n_steps = 0;
           sscanf (buffer_ + (package_start + 3),"%d",&n_steps);
-          steps_pending = n_steps;
+          steps_pending = abs(n_steps);
+          myAccelStepper.moveTo(myAccelStepper.currentPosition() - n_steps);
           upwards = true;
           break;
         case CMD_STEP_DOWN:
-          #ifdef DEBUG
-             Serial.println("step down");
-          #endif
           n_steps = 0;
           sscanf (buffer_ + (package_start + 3),"%d",&n_steps);
-          steps_pending = n_steps;
+          steps_pending = abs(n_steps);
+          myAccelStepper.moveTo(myAccelStepper.currentPosition() + n_steps);
           upwards = false;
           break;
-        case CMD_TO_UPPER_LIMIT:
           gotoUpperLimit();
           break;
         default:
           #ifdef DEBUG
-             Serial.println("unknown command");
           #endif
           break;
       }
@@ -116,19 +114,18 @@ void setup() {
   myMotor->setSpeed(500);  // 10 rpm
   // initialize the pushbutton pin as an input:
   pinMode(BUTTONPIN, INPUT);
+
+  current_position = 0;
+  myAccelStepper.setCurrentPosition(current_position);
+  myAccelStepper.setMaxSpeed(800.0);
+  myAccelStepper.setAcceleration(800.0);
 }
 
 void loop() {
-  read_package();
-
-  if (steps_pending != 0) {
-    if (upwards) {
-      myMotor->step(steps_pending, UPWARDS, DOUBLE);
-      steps_pending = 0;
-    } else {
-      myMotor->step(steps_pending, DOWNWARDS, DOUBLE);
-      steps_pending = 0;
+  if (myAccelStepper.distanceToGo() != 0) {
+    myAccelStepper.run();
+    if (myAccelStepper.distanceToGo() == 0) {
+      myMotor->release();
     }
-    myMotor->release();
   }
 }
