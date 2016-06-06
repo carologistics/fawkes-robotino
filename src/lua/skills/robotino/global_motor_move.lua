@@ -196,7 +196,6 @@ function TURN_BACK:init()
 				vel_rot = 1.2,
 				puck = true,
 				tolerance = mm_tolerance,
-				frame = "/odom"
 			}
 end
 
