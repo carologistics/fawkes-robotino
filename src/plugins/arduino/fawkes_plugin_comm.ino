@@ -8,8 +8,9 @@
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 2);
 
-#define AT "AT+"
 AccelStepper myAccelStepper(forwardstep, backwardstep);
+
+#define AT "AT "
 #define TERMINATOR 'X'
 #define BUTTONPIN 42
 
@@ -69,7 +70,7 @@ void read_package() {
     bool package_located = false;
 
     for (package_start = 0; package_start < len - 2 && !package_located; package_start++) {
-      if (buffer_[package_start] == 'A' && buffer_[package_start + 1] == 'T' && buffer_[package_start + 2] == '+') {
+      if (buffer_[package_start] == 'A' && buffer_[package_start + 1] == 'T' && buffer_[package_start + 2] == ' ') {
         package_located = true;
       }
     }
