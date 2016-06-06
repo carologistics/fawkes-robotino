@@ -59,7 +59,7 @@
   (time $?now)
   (pose (x ?px) (y ?py))
   (not (and
-    (active-robot (name ?name) (x ?x) (y ?y&:(and (< ?y 0) (< (abs ?x) (abs ?px)))))
+    (active-robot (name ?name) (x ?x) (y ?y&:(and (> ?x 6) (> (abs ?y) (abs ?py)))))
     (team-robot ?name)
   ))
   =>
