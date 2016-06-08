@@ -35,7 +35,6 @@ int steps_pending = 0;
 bool upwards = false;
 bool to_start_pos_pending = false;
 int cur_cmd = 0;
-long current_position;
 
 char buffer_[128];
 int buffer_p = 0;
@@ -140,8 +139,6 @@ void setup() {
   // initialize the pushbutton pin as an input:
   pinMode(BUTTONPIN, INPUT);
 
-  current_position = 0;
-  myAccelStepper.setCurrentPosition(current_position);
   myAccelStepper.setMaxSpeed(800.0);
   myAccelStepper.setAcceleration(800.0);
   Serial.println("AT HELLO");
