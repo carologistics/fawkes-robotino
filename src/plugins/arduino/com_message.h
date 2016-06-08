@@ -57,9 +57,7 @@ class ArduinoComMessage
 
 	void add_command(command_id_t cmdid);
         
-        void set_num_steps(unsigned int num_steps);
-        void set_accel(unsigned int accel);
-        void set_speed(unsigned int speed);
+        void set_number(unsigned int number);
 
 	boost::asio::const_buffer buffer();
 

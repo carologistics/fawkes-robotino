@@ -111,24 +111,29 @@ ArduinoComThread::loop()
             if (arduino_if->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>()) {
                 ArduinoInterface::MoveUpwardsMessage *msg = arduino_if->msgq_first(msg);
 
-                ArduinoComMessage req;
-                req.add_command(ArduinoComMessage::CMD_STEP_UP);
-                req.set_num_steps(msg->num_mm());
-                send_and_recv(req);
-
-                read_pending_ = true;
-
+                if (current_z_position_ - (int) msg->num_mm() < 0) {
+                    logger->log_error(name(), "Limit exceeded, min: %i, desired: %i", 0, current_z_position_ + msg->num_mm());
+                } else {
+                    ArduinoComMessage req;
+                    req.add_command(ArduinoComMessage::CMD_STEP_UP);
+                    req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                    send_and_recv(req);
+                    read_pending_ = true;
+                }
 
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>()) {
                 ArduinoInterface::MoveDownwardsMessage *msg = arduino_if->msgq_first(msg);
 
-                ArduinoComMessage req;
-                req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
-                req.set_num_steps(msg->num_mm());
-                send_and_recv(req);
+                if (current_z_position_ + (int) msg->num_mm() > cfg_max_mm_) {
+                    logger->log_error(name(), "Limit exceeded, max: %i, desired: %i", cfg_max_mm_, current_z_position_ + msg->num_mm());
+                } else {
 
-                read_pending_ = true;
-                arduino_if->write();
+                    ArduinoComMessage req;
+                    req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
+                    req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                    send_and_recv(req);
+                    read_pending_ = true;
+                }
 
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
                 goto_zero_position();

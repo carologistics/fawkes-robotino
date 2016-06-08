@@ -138,19 +138,9 @@ ArduinoComMessage::add_command(command_id_t cmdid)
     //        std::cout << std::endl;
 }
 
-void ArduinoComMessage::set_num_steps(unsigned int num_mm)
+void ArduinoComMessage::set_number(unsigned int number)
 {
-    data_size_ += sprintf(data_+4,"%u", (num_mm * NUM_STEPS_PER_MM));
-}
-
-void ArduinoComMessage::set_accel(unsigned int accel)
-{
-    data_size_ += sprintf(data_+4,"%u", accel);
-}
-
-void ArduinoComMessage::set_speed(unsigned int speed)
-{
-    data_size_ += sprintf(data_+4,"%u", speed);
+    data_size_ += sprintf(data_+4,"%u", number);
 }
 
 /** Get access to buffer for sending.
