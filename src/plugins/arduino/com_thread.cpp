@@ -109,7 +109,7 @@ ArduinoComThread::loop()
     time_wait_->mark_start();
 
     if (opened_) {
-        while (!arduino_if->msgq_empty()) {
+        while (!arduino_if->msgq_empty() && arduino_if->is_final()) {
 
             arduino_if->read();
             if (arduino_if->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>()) {
