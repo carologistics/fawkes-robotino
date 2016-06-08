@@ -19,6 +19,8 @@ conveyor_pose:
     pose_of_beld: pose
     # the switch interface
     switch: switch
+    # the dynamic config interface
+    switch: config
     # the laser lines, they don't use the prefix
     laser_lines: [
       "/laser-lines/1",

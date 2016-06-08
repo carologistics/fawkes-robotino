@@ -34,6 +34,7 @@
 #include <plugins/ros/aspect/ros.h>
 
 #include <interfaces/SwitchInterface.h>
+#include <interfaces/ConveyorConfigInterface.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/LaserLineInterface.h>
 
@@ -64,8 +65,9 @@ private:
   std::string cloud_in_name_;
   std::string cloud_out_inter_1_name_;
   std::string cloud_out_result_name_;
-  std::string conveyor_pose_name_;
-  std::string switch_name_;
+  std::string cfg_bb_conveyor_pose_name_;
+  std::string cfg_bb_switch_name_;
+  std::string cfg_bb_config_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
 //  std::string bb_tag_name_;
@@ -111,6 +113,7 @@ private:
 
   // interfaces write
   fawkes::SwitchInterface * bb_enable_switch_;
+  fawkes::ConveyorConfigInterface * bb_config_;
   fawkes::Position3DInterface * bb_pose_;
 
   // interfaces read
@@ -121,7 +124,6 @@ private:
   * check if the pointcloud is available
   */
  bool pc_in_check();
- bool is_enabled() const { return cfg_enable_switch_; }
 
  void if_read();
  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
@@ -140,7 +142,6 @@ private:
  CloudPtr cloud_voxel_grid(CloudPtr in);
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
- void bb_switch_is_enabled();
 
  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
  void tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose);

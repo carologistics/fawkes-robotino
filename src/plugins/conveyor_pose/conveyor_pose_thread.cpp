@@ -78,10 +78,11 @@ ConveyorPoseThread::init()
 
   const std::string if_prefix = config->get_string( (cfg_prefix + "if/prefix").c_str() ) + "/";
 
-  cloud_out_inter_1_name_ = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_intermediet").c_str() );
-  cloud_out_result_name_  = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
-  conveyor_pose_name_     = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
-  switch_name_            = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
+  cloud_out_inter_1_name_     = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_intermediet").c_str() );
+  cloud_out_result_name_      = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
+  cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
+  cfg_bb_switch_name_         = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
+  cfg_bb_config_name_         = if_prefix + config->get_string( (cfg_prefix + "if/config").c_str() );
 
   laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
 //  laserlines_names_.push_back("/laser-lines/1");
@@ -139,10 +140,13 @@ ConveyorPoseThread::init()
 
 //  bb_tag_ = blackboard->open_for_reading<fawkes::Position3DInterface>(bb_tag_name_.c_str());
 
-  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(switch_name_.c_str());
-  bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>(conveyor_pose_name_.c_str());
+  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(cfg_bb_switch_name_.c_str());
+  bb_config_        = blackboard->open_for_writing<ConveyorConfigInterface>(cfg_bb_config_name_.c_str());
+  bb_pose_          = blackboard->open_for_writing<fawkes::Position3DInterface>(cfg_bb_conveyor_pose_name_.c_str());
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
+  bb_config_->set_product_removal( false );
+  bb_config_->write();
 
   visualisation_ = new Visualisation(rosnode);
 }
@@ -155,6 +159,7 @@ ConveyorPoseThread::finalize()
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
   blackboard->close(bb_pose_);
+  blackboard->close(bb_config_);
 }
 
 void
@@ -162,14 +167,13 @@ ConveyorPoseThread::loop()
 {
   std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_current;
 
-  bb_switch_is_enabled();
-  if ( ! cfg_enable_switch_ || ! pc_in_check() ) {
+  if_read();
+
+  if ( ! bb_enable_switch_->is_enabled() || ! pc_in_check() ) {
     vis_hist_ = -1;
     pose_write(pose_current);
     return;
   }
-
-  if_read();
 
   fawkes::LaserLineInterface * ll = NULL;
   bool use_laserline = laserline_get_best_fit( ll );
@@ -192,7 +196,12 @@ ConveyorPoseThread::loop()
   pcl::compute3DCentroid<Point, float>(*cloud_front, center);
   CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
 
-  CloudPtr cloud_cycle = cloud_remove_products(cloud_center);
+  CloudPtr cloud_cycle(new Cloud);
+  if ( bb_config_->is_product_removal() ) {
+    cloud_cycle = cloud_remove_products(cloud_center);
+  } else {
+    *cloud_cycle = *cloud_center;
+  }
 
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
   CloudPtr cloud_plane = cloud_get_plane(cloud_cycle, coeff);
@@ -255,10 +264,49 @@ ConveyorPoseThread::pc_in_check()
 void
 ConveyorPoseThread::if_read()
 {
+  // enable switch
+  bb_enable_switch_->read();
+
+  bool rv = bb_enable_switch_->is_enabled();
+  while ( ! bb_enable_switch_->msgq_empty() ) {
+    if (bb_enable_switch_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+      rv = false;
+    } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+      rv = true;
+    }
+
+    bb_enable_switch_->msgq_pop();
+  }
+  if ( rv != bb_enable_switch_->is_enabled() ) {
+    logger->log_info(name(), "*** enabled: %s", rv ? "yes" : "no");
+    bb_enable_switch_->set_enabled(rv);
+    bb_enable_switch_->write();
+  }
+
+  // laser lines
   for (fawkes::LaserLineInterface * ll : laserlines_) {
     ll->read();
   }
-//  bb_tag_->read();
+
+  // config
+  bb_config_->read();
+
+  rv = bb_config_->is_product_removal();
+  while ( ! bb_config_->msgq_empty() ) {
+    if (bb_config_->msgq_first_is<ConveyorConfigInterface::disable_product_removalMessage>()) {
+      rv = false;
+    } else if (bb_config_->msgq_first_is<ConveyorConfigInterface::enable_product_removalMessage>()) {
+      rv = true;
+    }
+
+    bb_config_->msgq_pop();
+  }
+
+  if ( rv != bb_config_->is_product_removal() ) {
+    logger->log_info(name(), "*** remove products from point cloud: %s", rv ? "yes" : "no");
+    bb_config_->set_product_removal( rv );
+    bb_config_->write();
+  }
 }
 
 bool
@@ -566,27 +614,6 @@ ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud
 {
   **cloud_out = *cloud_in;
   cloud_out->header = header_;
-}
-
-void
-ConveyorPoseThread::bb_switch_is_enabled()
-{
-  bool rv = bb_enable_switch_->is_enabled();
-  while ( ! bb_enable_switch_->msgq_empty() ) {
-    if (bb_enable_switch_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
-      rv = false;
-    } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
-      rv = true;
-    }
-
-    bb_enable_switch_->msgq_pop();
-  }
-  if ( rv != bb_enable_switch_->is_enabled() ) {
-    logger->log_info(name(), "*** enabled: %s", rv ? "yes" : "no");
-    bb_enable_switch_->set_enabled(rv);
-    bb_enable_switch_->write();
-  }
-  cfg_enable_switch_ = rv;
 }
 
 std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion>
