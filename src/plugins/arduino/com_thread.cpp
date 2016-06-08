@@ -336,7 +336,7 @@ ArduinoComThread::read_packet()
       current_arduino_status = s.at(3);
     }
     if (current_arduino_status == 'E') {
-        logger->log_error(name(), "Arduino error: %s", s.substr(4));
+        logger->log_error(name(), "Arduino error: %s", s.substr(4).c_str());
     } else if (current_arduino_status == 'I') {
         current_z_position_ = stoi(s.substr(4)) / ArduinoComMessage::NUM_STEPS_PER_MM;
     }
