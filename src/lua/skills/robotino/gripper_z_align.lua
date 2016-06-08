@@ -39,6 +39,8 @@ documentation      = [==[Skill to modify the z position of the AX12 gripper by u
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+local max_mm = 0
+
 -- States
 fsm:define_states{
    export_to=_M,
@@ -58,18 +60,28 @@ fsm:add_transitions{
 }
 
 function COMMAND:init()
+   if config:exists("/arduino/max_mm") then
+      max_mm = config:get_uint("/arduino/max_mm")
+   end
    if self.fsm.vars.command == "UP" then
-      self.fsm.vars.moveup = true
-      theUpMessage = gripper_arduino_if.MoveUpwardsMessage:new()
-      theUpMessage:set_num_mm(self.fsm.vars.num_mm or 0)
-      gripper_arduino_if:msgq_enqueue_copy(theUpMessage)
+      if gripper_arduino_if:z_position() - self.fsm.vars.num_mm < 0 then
+         self.fsm:set_error("desired position out of bounds: " .. gripper_arduino_if:z_position() - self.fsm.vars.num_mm .. " < 0")
+	 self.fsm.vars.error = true
+      else
+         theUpMessage = gripper_arduino_if.MoveUpwardsMessage:new()
+         theUpMessage:set_num_mm(self.fsm.vars.num_mm or 0)
+         gripper_arduino_if:msgq_enqueue_copy(theUpMessage)
+      end
    elseif self.fsm.vars.command == "DOWN" then
-      self.fsm.vars.movedown = true
-      theDownMessage = gripper_arduino_if.MoveDownwardsMessage:new()
-      theDownMessage:set_num_mm(self.fsm.vars.num_mm or 0)
-      gripper_arduino_if:msgq_enqueue_copy(theDownMessage)
+      if gripper_arduino_if:z_position() + self.fsm.vars.num_mm > max_mm then
+         self.fsm:set_error("desired position out of bounds: " .. gripper_arduino_if:z_position() + self.fsm.vars.num_mm .. " > " .. max_mm)
+	 self.fsm.vars.error = true
+      else
+         theDownMessage = gripper_arduino_if.MoveDownwardsMessage:new()
+         theDownMessage:set_num_mm(self.fsm.vars.num_mm or 0)
+         gripper_arduino_if:msgq_enqueue_copy(theDownMessage)
+      end
    elseif self.fsm.vars.command == "TO_UPPER_Z" then
-      self.fsm.vars.movetozero = true
       theToZ0Message = gripper_arduino_if.MoveToZ0Message:new()
       gripper_arduino_if:msgq_enqueue_copy(theToZ0Message)
    else
