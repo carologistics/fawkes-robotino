@@ -347,6 +347,12 @@ ArduinoComThread::load_config()
     try {
         cfg_device_ = config->get_string("/arduino/device");
         cfg_rpm_ = config->get_int("/arduino/rpm");
+        cfg_speed_ = config->get_int("/arduino/speed");
+        cfg_accel_ = config->get_int("/arduino/accel");
+        cfg_max_mm_ = config->get_int("/arduino/max_mm");
+
+        set_speed_pending_ = true;
+        set_acceleration_pending_ = true;
 
         // 2mm / rotation
         seconds_per_mm = (2. / cfg_rpm_) / 60.;

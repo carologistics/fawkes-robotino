@@ -13,3 +13,6 @@ arduino:
   # This value is used to determine the time needed to 
   # perform movements since we cannot read from the arduino yet.
   rpm: 80
+  speed: 800
+  accel: 1000
+  max_mm: 40
