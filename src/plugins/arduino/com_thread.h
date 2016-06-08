@@ -89,7 +89,6 @@ private:
     std::shared_ptr<ArduinoComMessage>
     send_and_recv(ArduinoComMessage &msg);
     void process_message(ArduinoComMessage::pointer m);
-    void goto_zero_position();
 
 private:
     std::string cfg_device_;

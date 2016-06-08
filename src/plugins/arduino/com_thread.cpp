@@ -142,7 +142,7 @@ ArduinoComThread::loop()
                 }
 
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
-                goto_zero_position();
+                move_to_z_0_pending_ = true;
             }
             arduino_if->msgq_pop();
         }
@@ -395,13 +395,4 @@ ArduinoComThread::load_config()
         seconds_per_mm = (2. / cfg_rpm_) / 60.;
     } catch (Exception &e) {
     }
-}
-void
-ArduinoComThread::goto_zero_position()
-{
-    ArduinoComMessage req;
-    req.add_command(ArduinoComMessage::CMD_TO_Z_0);
-    send_and_recv(req);
-    arduino_if->set_z_position(0);
-    arduino_if->write();
 }
