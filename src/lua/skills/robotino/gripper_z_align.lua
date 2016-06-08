@@ -44,6 +44,7 @@ fsm:define_states{
    export_to=_M,
    closure={gripper_arduino_if=gripper_arduino_if},
    {"CHECK_WRITER", JumpState},
+   {"WAIT_COMMAND", JumpState},
    {"COMMAND", JumpState},
 }
 
@@ -51,8 +52,9 @@ fsm:define_states{
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_arduino_if:has_writer()", desc="No writer for arduino"},
    {"CHECK_WRITER", "COMMAND", cond=true},
-   {"COMMAND", "FINAL", cond="vars.moveup or vars.movedown or vars.movetozero"},
-   {"COMMAND", "FAILED", cond="vars.error"},
+   {"COMMAND", "WAIT_COMMAND", timeout=1.0},
+   {"WAIT_COMMAND", "FINAL", cond="gripper_arduino_if:is_final()"},
+   {"WAIT_COMMAND", "FAILED", cond="vars.error"},
 }
 
 function COMMAND:init()
