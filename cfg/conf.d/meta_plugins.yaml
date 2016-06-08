@@ -32,7 +32,7 @@ fawkes/meta_plugins:
   m-base-bare: imu,robotino,webview,static-transforms
   m-base-joy: m-base-bare,joystick,joystick-teleop
   m-base-joy-safe: m-base-bare,laser,laser-filter,joystick,joystick-teleop
-  m-base-gripper: dynamixel,ax12_gripper
+  m-base-gripper: arduino,dynamixel,ax12_gripper
   m-base-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan,ros-move-base
   m-base-laser: laser,laser-filter,m-base-ros,laser-pointclouds,laser-cluster,laser-lines,map-lasergen
-  m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,colli,amcl,arduino,m-base-joy
+  m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,colli,amcl,m-base-joy
