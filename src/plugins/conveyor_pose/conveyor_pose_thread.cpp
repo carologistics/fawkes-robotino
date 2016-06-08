@@ -332,9 +332,9 @@ ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fi
     }
   }
 
-  if ( ! best_fit->has_writer() ) { logger->log_info(name(), "no writer"); best_fit = NULL; return false; }
-  if ( best_fit->visibility_history() <= 2 ) { logger->log_info(name(), "vis hist"); best_fit = NULL; return false;  }
-  if ( fabs(best_fit->bearing()) > 0.35 ) { logger->log_info(name(), "angle"); best_fit = NULL; return false;  } // ~20 deg
+  if ( ! best_fit->has_writer() ) { logger->log_info(name(), "no writer for laser lines"); best_fit = NULL; return false; }
+  if ( best_fit->visibility_history() <= 2 ) { best_fit = NULL; return false;  }
+  if ( fabs(best_fit->bearing()) > 0.35 ) { best_fit = NULL; return false;  } // ~20 deg
   Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
 
   if ( std::sqrt( center(0) * center(0) +
@@ -353,9 +353,7 @@ ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface 
   tf_in.setY( ll->end_point_2(1) + ( ll->end_point_1(1) - ll->end_point_2(1) ) / 2. );
   tf_in.setZ( ll->end_point_2(2) + ( ll->end_point_1(2) - ll->end_point_2(2) ) / 2. );
 
-//  logger->log_info(name(), "laser: %f %f %f", tf_in.getX(), tf_in.getY(), tf_in.getZ());
   tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
-//  logger->log_info(name(), "camer: %f %f %f", tf_out.getX(), tf_out.getY(), tf_out.getZ());
 
   Eigen::Vector3f out( tf_out.getX(), tf_out.getY(), tf_out.getZ() );
 
@@ -470,7 +468,6 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
 
   double x_min = c(0) - ( space / 2. );
   double x_max = c(0) + ( space / 2. );
-//  logger->log_info(name(), "%f => %f - %f", c(0), x_min, x_max);
 
   CloudPtr out(new Cloud);
   for (Point p : *in) {
@@ -541,9 +538,6 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   if (inliers->indices.size () == 0) {
     logger->log_error(name(), "Could not estimate a planar model for the given dataset.");
     return CloudPtr();
-  } else {
-    // get plane
-//      ROS_INFO("%sGot plane with %lu inliers", node_name_.c_str(), inliers->indices.size ());
   }
 
   // get inliers
