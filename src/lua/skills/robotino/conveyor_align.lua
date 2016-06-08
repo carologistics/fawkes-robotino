@@ -26,6 +26,7 @@ depends_skills     = {"motor_move", "ax12gripper"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
+   {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
    {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
@@ -126,6 +127,7 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.counter = 0
+   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
 end
 
 function DECIDE_TRY:init()
@@ -143,4 +145,16 @@ function DRIVE:init()
    if math.abs(pose.z) <= TOLERANCE_Z then
       self.args["ax12gripper"].z_position = z_position
    end
+end
+
+function cleanup()
+   conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+end
+
+function FINAL:init()
+   cleanup()
+end
+
+function FAILED:init()
+   cleanup()
 end
