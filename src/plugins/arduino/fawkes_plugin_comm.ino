@@ -12,7 +12,7 @@ AccelStepper myAccelStepper(forwardstep, backwardstep);
 
 #define AT "AT "
 #define TERMINATOR 'X'
-#define BUTTONPIN 42
+#define BUTTONPIN 2
 
 // Rotation direction for upwards or downwards movement
 #define UPWARDS BACKWARD
