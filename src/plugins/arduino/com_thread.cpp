@@ -90,6 +90,11 @@ ArduinoComThread::init()
     // read initial "IDLE"-message
     read_pending_ = true;
 
+    // Initially nullify the z-position
+    move_to_z_0_pending_ = true;
+    msecs_to_wait = 0;
+    current_z_position_ = 0;
+
     blackboard->register_listener(this);
 }
 
@@ -117,6 +122,7 @@ ArduinoComThread::loop()
                     ArduinoComMessage req;
                     req.add_command(ArduinoComMessage::CMD_STEP_UP);
                     req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                    msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
                     send_and_recv(req);
                     read_pending_ = true;
                 }
@@ -131,6 +137,7 @@ ArduinoComThread::loop()
                     ArduinoComMessage req;
                     req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
                     req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                    msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
                     send_and_recv(req);
                     read_pending_ = true;
                 }
@@ -294,7 +301,8 @@ ArduinoComThread::sync_with_arduino()
 std::string
 ArduinoComThread::read_packet()
 {
-    std::string s = read_packet(10000);
+    logger->log_debug(name(), "secs to wait: %u", msecs_to_wait);
+    std::string s = read_packet(msecs_to_wait);
     if (s.find("AT ") == std::string::npos) {
         logger->log_error(name(), "Package error - bytes read: %zu", bytes_read_);
     }

@@ -109,6 +109,8 @@ private:
     char current_arduino_status;
     int current_stepper_pos;
 
+    unsigned int msecs_to_wait;
+
     size_t bytes_read_;
     bool read_pending_;
 
