@@ -124,6 +124,7 @@ void
 ArduinoComMessage::add_command(command_id_t cmdid)
 {
     data_[3] = 0xff & (cmdid + '0');
+    current_cmd_ = cmdid;
 //    cur_cmd_ = cur_data_;
 //    cur_data_ += 2;
 //    inc_payload_by(2);

@@ -71,7 +71,8 @@ class ArduinoComMessage
 	char *data_;
 	unsigned short data_size_;
 
-	char *cur_cmd_;
+        unsigned int current_cmd_;
+
 	char *cur_data_;
         
         long steps;
