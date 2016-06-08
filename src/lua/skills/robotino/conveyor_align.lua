@@ -27,15 +27,19 @@ depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+   {v = "conveyor_config", type = "ConveyorConfigInterface", id="conveyor_pose/config"},
    {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
-conveyor vision
+                         conveyor vision
+                         @param product_present boolean If a product lies on the
+                                                conveyor. The new conveyor vision
+                                                needs this information in form of
+                                                an interface message.
 ]==]
 
 -- Initialize as skill module
--- TODO Use SwitchInterface
 -- TODO Argument if there is a product on the conveyor
 
 skillenv.skill_module(_M)
@@ -128,6 +132,9 @@ fsm:add_transitions{
 function INIT:init()
    self.fsm.vars.counter = 0
    conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
+   if product_present then
+      conveyor_config:msgq_enqueue_copy(conveyor_config.EnableProductRemovalMessage:new())
+   end
 end
 
 function DECIDE_TRY:init()
@@ -149,6 +156,8 @@ end
 
 function cleanup()
    conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+   -- Disable the product removal flag by default
+   conveyor_config:msgq_enqueue_copy(conveyor_config.DisableProductRemovalMessage:new())
 end
 
 function FINAL:init()
