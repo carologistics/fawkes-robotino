@@ -169,7 +169,7 @@ ConveyorPoseThread::loop()
 
   if_read();
 
-  if ( ! bb_enable_switch_->is_enabled() || ! pc_in_check() ) {
+  if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
     vis_hist_ = -1;
     pose_write(pose_current);
     return;
