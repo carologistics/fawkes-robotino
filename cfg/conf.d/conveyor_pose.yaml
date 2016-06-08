@@ -20,7 +20,7 @@ conveyor_pose:
     # the switch interface
     switch: switch
     # the dynamic config interface
-    switch: config
+    config: config
     # the laser lines, they don't use the prefix
     laser_lines: [
       "/laser-lines/1",
@@ -43,7 +43,7 @@ conveyor_pose:
     # distance in x, y, z
     diff_pose: 0.002
     # distance in angle in rad
-    diff_angle: 0.1
+    diff_angle: 0.2
 
   # the dimensions of the gripper in the point cloud (check rotation of actual tf)
   gripper:
