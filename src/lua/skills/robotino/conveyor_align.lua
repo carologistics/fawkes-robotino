@@ -22,7 +22,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "conveyor_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move","approach_mps", "ax12gripper"}
+--depends_skills     = {"motor_move", "ax12gripper"}
+depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
@@ -111,14 +112,14 @@ end
 fsm:define_states{ export_to=_M,
    closure={},
    {"INIT", JumpState},
-   {"APPROACH", SkillJumpState, skills={{approach_mps}}, final_to="CHECK_VISION", fail_to="FAILED"},
    {"CHECK_VISION", JumpState},
-   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="FAILED"},
+   --{"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="FAILED"},
+   {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="DECIDE_TRY", fail_to="FAILED"},
    {"DECIDE_TRY", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "APPROACH", cond=true},
+   {"INIT", "CHECK_VISION", cond=true},
    {"CHECK_VISION", "FAILED", timeout=5, desc="No vis_hist on conveyor vision"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DRIVE", cond=see_conveyor},
@@ -131,10 +132,6 @@ function INIT:init()
    self.fsm.vars.counter = 0
 end
 
-function APPROACH:init()
-   self.args["approach_mps"] = { x = 0.2 }
-end
-
 function DECIDE_TRY:init()
    self.fsm.vars.counter = self.fsm.vars.counter + 1
    print("Try number " .. self.fsm.vars.counter)
@@ -143,11 +140,11 @@ end
 function DRIVE:init()
    local pose = pose_des(self)
 
-   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.4}
-   self.args["ax12gripper"].command = "RELGOTOZ"
-   if math.abs(pose.z) <= TOLERANCE_Z then
-      local z_position = 0 --TODO (pose.z * 1000) / Z_DIVISOR)
-      self.args["ax12gripper"].z_position = z_position
-      print("z_pose: " .. z_position)
-   end
+   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.4} --TODO set tolerances as defined in the global variable
+   --self.args["ax12gripper"].command = "RELGOTOZ"
+   --if math.abs(pose.z) <= TOLERANCE_Z then
+   --   local z_position = 0 --TODO (pose.z * 1000) / Z_DIVISOR)
+   --   self.args["ax12gripper"].z_position = z_position
+   --   print("z_pose: " .. z_position)
+   --end
 end

@@ -46,7 +46,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="DRIVE_FORWARD", fail_to="FAILED"},
+      final_to="WAIT_OPEN", fail_to="FAILED"},
    {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}},
       final_to="CLOSE_GRIPPER", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
@@ -67,6 +67,7 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
 }
 
 fsm:add_transitions{
+   {"WAIT_OPEN", "DRIVE_FORWARD", timeout=1},
    {"WAIT", "MOVE_BACK", timeout=0.5},
    {"WAIT_SECOND", "MOVE_BACK_SECOND", timeout=0.1},
    {"CHECK_PUCK", "CENTER_GRIPPER", cond="gripper_if:is_holds_puck()", desc="Got a puck"},

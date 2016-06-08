@@ -28,7 +28,7 @@ default-properties:
     - shortcut_tolerance: 1.2
 
     # Distance from base_link to the MPS to align
-    - align_distance: 0.5
+    - align_distance: 0.4
 
     # Signal position on the table. Z is the table height above ground.
     - signal_hint_x: 0.035

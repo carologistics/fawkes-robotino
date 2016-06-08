@@ -67,7 +67,7 @@ fsm:add_transitions{
 
 function MPS_ALIGN:init()
    -- align in front of the conveyor belt
-   self.skills[1].x = 0.6
+   self.args["mps_align"].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       self.skills[1].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    else
