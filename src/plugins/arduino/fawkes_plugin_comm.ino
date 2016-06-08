@@ -51,12 +51,10 @@ void backwardstep() {
   steps_pending--;
 }
 
-void send_packet(int status_, char* buffer_, int len) {
+void send_packet(int status_, int value_to_send) {
     Serial.print(AT);
     Serial.print(status_array_[status_]);
-    for (int i = 0; i < len; i++) {
-      Serial.print(buffer_[i]);
-    }
+    Serial.print(value_to_send);
     Serial.print("\r\n");
 }
 
@@ -67,6 +65,10 @@ void gotoUpperLimit() {
       delay(10);
       buttonState = digitalRead(BUTTONPIN);
   }
+  myAccelStepper.setCurrentPosition(0);
+  myAccelStepper.moveTo(0);
+  myMotor->release();
+  send_packet(STATUS_IDLE, 0);
 }
 
 void read_package() {
@@ -94,7 +96,7 @@ void read_package() {
           sscanf (buffer_ + (package_start + 3),"%d",&n_steps);
           steps_pending = abs(n_steps);
           myAccelStepper.moveTo(myAccelStepper.currentPosition() - n_steps);
-          send_packet(STATUS_MOVING, "", 0);
+          send_packet(STATUS_MOVING, 0);
           upwards = true;
           break;
         case CMD_STEP_DOWN:
@@ -102,10 +104,11 @@ void read_package() {
           sscanf (buffer_ + (package_start + 3),"%d",&n_steps);
           steps_pending = abs(n_steps);
           myAccelStepper.moveTo(myAccelStepper.currentPosition() + n_steps);
-          send_packet(STATUS_MOVING, "", 0);
+          send_packet(STATUS_MOVING, 0);
           upwards = false;
           break;
         case CMD_TO_Z_0:
+          send_packet(STATUS_MOVING, 0);
           gotoUpperLimit();
           break;
         case CMD_SET_ACCEL:
@@ -141,14 +144,14 @@ void setup() {
   myAccelStepper.setMaxSpeed(800.0);
   myAccelStepper.setAcceleration(800.0);
   Serial.println("AT HELLO");
-  send_packet(STATUS_IDLE, "", 0);
+  send_packet(STATUS_IDLE, 0);
 }
 
 void loop() {
   if (myAccelStepper.distanceToGo() != 0) {
     myAccelStepper.run();
     if (myAccelStepper.distanceToGo() == 0) {
-      send_packet(STATUS_IDLE, "", 0);
+      send_packet(STATUS_IDLE, myAccelStepper.currentPosition());
       myMotor->release();
     }
   } else {

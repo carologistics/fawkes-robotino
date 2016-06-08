@@ -86,7 +86,6 @@ ArduinoComThread::init()
     opened_ = true;
     open_tries_ = 0;
     z_movement_pending = false;
-    current_stepper_pos = 0;
     // read initial "IDLE"-message
     read_pending_ = true;
 
@@ -177,6 +176,7 @@ ArduinoComThread::loop()
 
         z_movement_pending = current_arduino_status != 'I';
         arduino_if->set_final(!z_movement_pending);
+        arduino_if->set_z_position(current_z_position_);
         arduino_if->write();
 
     } else {
@@ -334,8 +334,9 @@ ArduinoComThread::read_packet()
       current_arduino_status = s.at(3);
     }
     if (current_arduino_status == 'E') {
-        // TODO
         logger->log_error(name(), "Arduino error: %s", s.substr(4));
+    } else if (current_arduino_status == 'I') {
+        current_z_position_ = stoi(s.substr(4)) / ArduinoComMessage::NUM_STEPS_PER_MM;
     }
     read_pending_ = false;
     return s;
