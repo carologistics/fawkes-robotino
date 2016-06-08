@@ -293,9 +293,9 @@ ConveyorPoseThread::if_read()
 
   rv = bb_config_->is_product_removal();
   while ( ! bb_config_->msgq_empty() ) {
-    if (bb_config_->msgq_first_is<ConveyorConfigInterface::disable_product_removalMessage>()) {
+    if (bb_config_->msgq_first_is<ConveyorConfigInterface::DisableProductRemovalMessage>()) {
       rv = false;
-    } else if (bb_config_->msgq_first_is<ConveyorConfigInterface::enable_product_removalMessage>()) {
+    } else if (bb_config_->msgq_first_is<ConveyorConfigInterface::EnableProductRemovalMessage>()) {
       rv = true;
     }
 

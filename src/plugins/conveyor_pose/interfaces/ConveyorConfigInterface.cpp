@@ -51,9 +51,9 @@ ConveyorConfigInterface::ConveyorConfigInterface() : Interface()
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
   add_fieldinfo(IFT_BOOL, "product_removal", 1, &data->product_removal);
-  add_messageinfo("enable_product_removalMessage");
-  add_messageinfo("disable_product_removalMessage");
-  unsigned char tmp_hash[] = {0xd5, 0xbb, 0xaf, 0x8b, 0xca, 0xed, 00, 0x4b, 0xa6, 0x96, 0xfc, 0x70, 0x92, 0xea, 0xd7, 0xaf};
+  add_messageinfo("EnableProductRemovalMessage");
+  add_messageinfo("DisableProductRemovalMessage");
+  unsigned char tmp_hash[] = {0x5c, 0x6c, 0x75, 0xaf, 0xbf, 0x1d, 0xc4, 0x13, 0x4d, 0x59, 0x6a, 0x66, 0x3e, 0x64, 0x26, 0xce};
   set_hash(tmp_hash);
 }
 
@@ -104,10 +104,10 @@ ConveyorConfigInterface::set_product_removal(const bool new_product_removal)
 Message *
 ConveyorConfigInterface::create_message(const char *type) const
 {
-  if ( strncmp("enable_product_removalMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
-    return new enable_product_removalMessage();
-  } else if ( strncmp("disable_product_removalMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
-    return new disable_product_removalMessage();
+  if ( strncmp("EnableProductRemovalMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new EnableProductRemovalMessage();
+  } else if ( strncmp("DisableProductRemovalMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new DisableProductRemovalMessage();
   } else {
     throw UnknownTypeException("The given type '%s' does not match any known "
                                "message type for this interface type.", type);
@@ -136,25 +136,25 @@ ConveyorConfigInterface::enum_tostring(const char *enumtype, int val) const
 }
 
 /* =========== messages =========== */
-/** @class ConveyorConfigInterface::enable_product_removalMessage <interfaces/ConveyorConfigInterface.h>
- * enable_product_removalMessage Fawkes BlackBoard Interface Message.
+/** @class ConveyorConfigInterface::EnableProductRemovalMessage <interfaces/ConveyorConfigInterface.h>
+ * EnableProductRemovalMessage Fawkes BlackBoard Interface Message.
  * 
     
  */
 
 
 /** Constructor */
-ConveyorConfigInterface::enable_product_removalMessage::enable_product_removalMessage() : Message("enable_product_removalMessage")
+ConveyorConfigInterface::EnableProductRemovalMessage::EnableProductRemovalMessage() : Message("EnableProductRemovalMessage")
 {
-  data_size = sizeof(enable_product_removalMessage_data_t);
+  data_size = sizeof(EnableProductRemovalMessage_data_t);
   data_ptr  = malloc(data_size);
   memset(data_ptr, 0, data_size);
-  data      = (enable_product_removalMessage_data_t *)data_ptr;
+  data      = (EnableProductRemovalMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
 }
 
 /** Destructor */
-ConveyorConfigInterface::enable_product_removalMessage::~enable_product_removalMessage()
+ConveyorConfigInterface::EnableProductRemovalMessage::~EnableProductRemovalMessage()
 {
   free(data_ptr);
 }
@@ -162,12 +162,12 @@ ConveyorConfigInterface::enable_product_removalMessage::~enable_product_removalM
 /** Copy constructor.
  * @param m message to copy from
  */
-ConveyorConfigInterface::enable_product_removalMessage::enable_product_removalMessage(const enable_product_removalMessage *m) : Message("enable_product_removalMessage")
+ConveyorConfigInterface::EnableProductRemovalMessage::EnableProductRemovalMessage(const EnableProductRemovalMessage *m) : Message("EnableProductRemovalMessage")
 {
   data_size = m->data_size;
   data_ptr  = malloc(data_size);
   memcpy(data_ptr, m->data_ptr, data_size);
-  data      = (enable_product_removalMessage_data_t *)data_ptr;
+  data      = (EnableProductRemovalMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
 }
 
@@ -178,29 +178,29 @@ ConveyorConfigInterface::enable_product_removalMessage::enable_product_removalMe
  * @return clone of this message
  */
 Message *
-ConveyorConfigInterface::enable_product_removalMessage::clone() const
+ConveyorConfigInterface::EnableProductRemovalMessage::clone() const
 {
-  return new ConveyorConfigInterface::enable_product_removalMessage(this);
+  return new ConveyorConfigInterface::EnableProductRemovalMessage(this);
 }
-/** @class ConveyorConfigInterface::disable_product_removalMessage <interfaces/ConveyorConfigInterface.h>
- * disable_product_removalMessage Fawkes BlackBoard Interface Message.
+/** @class ConveyorConfigInterface::DisableProductRemovalMessage <interfaces/ConveyorConfigInterface.h>
+ * DisableProductRemovalMessage Fawkes BlackBoard Interface Message.
  * 
     
  */
 
 
 /** Constructor */
-ConveyorConfigInterface::disable_product_removalMessage::disable_product_removalMessage() : Message("disable_product_removalMessage")
+ConveyorConfigInterface::DisableProductRemovalMessage::DisableProductRemovalMessage() : Message("DisableProductRemovalMessage")
 {
-  data_size = sizeof(disable_product_removalMessage_data_t);
+  data_size = sizeof(DisableProductRemovalMessage_data_t);
   data_ptr  = malloc(data_size);
   memset(data_ptr, 0, data_size);
-  data      = (disable_product_removalMessage_data_t *)data_ptr;
+  data      = (DisableProductRemovalMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
 }
 
 /** Destructor */
-ConveyorConfigInterface::disable_product_removalMessage::~disable_product_removalMessage()
+ConveyorConfigInterface::DisableProductRemovalMessage::~DisableProductRemovalMessage()
 {
   free(data_ptr);
 }
@@ -208,12 +208,12 @@ ConveyorConfigInterface::disable_product_removalMessage::~disable_product_remova
 /** Copy constructor.
  * @param m message to copy from
  */
-ConveyorConfigInterface::disable_product_removalMessage::disable_product_removalMessage(const disable_product_removalMessage *m) : Message("disable_product_removalMessage")
+ConveyorConfigInterface::DisableProductRemovalMessage::DisableProductRemovalMessage(const DisableProductRemovalMessage *m) : Message("DisableProductRemovalMessage")
 {
   data_size = m->data_size;
   data_ptr  = malloc(data_size);
   memcpy(data_ptr, m->data_ptr, data_size);
-  data      = (disable_product_removalMessage_data_t *)data_ptr;
+  data      = (DisableProductRemovalMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
 }
 
@@ -224,9 +224,9 @@ ConveyorConfigInterface::disable_product_removalMessage::disable_product_removal
  * @return clone of this message
  */
 Message *
-ConveyorConfigInterface::disable_product_removalMessage::clone() const
+ConveyorConfigInterface::DisableProductRemovalMessage::clone() const
 {
-  return new ConveyorConfigInterface::disable_product_removalMessage(this);
+  return new ConveyorConfigInterface::DisableProductRemovalMessage(this);
 }
 /** Check if message is valid and can be enqueued.
  * @param message Message to check
@@ -235,11 +235,11 @@ ConveyorConfigInterface::disable_product_removalMessage::clone() const
 bool
 ConveyorConfigInterface::message_valid(const Message *message) const
 {
-  const enable_product_removalMessage *m0 = dynamic_cast<const enable_product_removalMessage *>(message);
+  const EnableProductRemovalMessage *m0 = dynamic_cast<const EnableProductRemovalMessage *>(message);
   if ( m0 != NULL ) {
     return true;
   }
-  const disable_product_removalMessage *m1 = dynamic_cast<const disable_product_removalMessage *>(message);
+  const DisableProductRemovalMessage *m1 = dynamic_cast<const DisableProductRemovalMessage *>(message);
   if ( m1 != NULL ) {
     return true;
   }

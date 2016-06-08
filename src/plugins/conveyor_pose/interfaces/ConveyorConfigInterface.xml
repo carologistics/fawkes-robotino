@@ -10,12 +10,12 @@
       This should only be activated if there is a product to be expected, otherwise the performance decreases.
     </field>
   </data>
-  <message name="enable_product_removal">
+  <message name="EnableProductRemoval">
     <comment>
       Enables the detection of cycles to remove product out of the point clouds.
     </comment>
   </message>
-  <message name="disable_product_removal">
+  <message name="DisableProductRemoval">
     <comment>
       Disables the detection of cycles to remove product out of the point clouds.
     </comment>

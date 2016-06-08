@@ -55,7 +55,7 @@ class ConveyorConfigInterface : public Interface
 
  public:
   /* messages */
-  class enable_product_removalMessage : public Message
+  class EnableProductRemovalMessage : public Message
   {
    private:
 #pragma pack(push,4)
@@ -63,21 +63,21 @@ class ConveyorConfigInterface : public Interface
     typedef struct {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-    } enable_product_removalMessage_data_t;
+    } EnableProductRemovalMessage_data_t;
 #pragma pack(pop)
 
-    enable_product_removalMessage_data_t *data;
+    EnableProductRemovalMessage_data_t *data;
 
    public:
-    enable_product_removalMessage();
-    ~enable_product_removalMessage();
+    EnableProductRemovalMessage();
+    ~EnableProductRemovalMessage();
 
-    enable_product_removalMessage(const enable_product_removalMessage *m);
+    EnableProductRemovalMessage(const EnableProductRemovalMessage *m);
     /* Methods */
     virtual Message * clone() const;
   };
 
-  class disable_product_removalMessage : public Message
+  class DisableProductRemovalMessage : public Message
   {
    private:
 #pragma pack(push,4)
@@ -85,16 +85,16 @@ class ConveyorConfigInterface : public Interface
     typedef struct {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-    } disable_product_removalMessage_data_t;
+    } DisableProductRemovalMessage_data_t;
 #pragma pack(pop)
 
-    disable_product_removalMessage_data_t *data;
+    DisableProductRemovalMessage_data_t *data;
 
    public:
-    disable_product_removalMessage();
-    ~disable_product_removalMessage();
+    DisableProductRemovalMessage();
+    ~DisableProductRemovalMessage();
 
-    disable_product_removalMessage(const disable_product_removalMessage *m);
+    DisableProductRemovalMessage(const DisableProductRemovalMessage *m);
     /* Methods */
     virtual Message * clone() const;
   };

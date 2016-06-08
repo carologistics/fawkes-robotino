@@ -6,17 +6,17 @@ namespace fawkes {
 class ConveyorConfigInterface : public Interface
 {
 
-  class enable_product_removalMessage : public Message
+  class EnableProductRemovalMessage : public Message
   {
-    enable_product_removalMessage();
-    ~enable_product_removalMessage();
+    EnableProductRemovalMessage();
+    ~EnableProductRemovalMessage();
 
   };
 
-  class disable_product_removalMessage : public Message
+  class DisableProductRemovalMessage : public Message
   {
-    disable_product_removalMessage();
-    ~disable_product_removalMessage();
+    DisableProductRemovalMessage();
+    ~DisableProductRemovalMessage();
 
   };
 
