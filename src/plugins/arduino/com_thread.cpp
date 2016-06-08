@@ -148,6 +148,29 @@ ArduinoComThread::loop()
             arduino_if->msgq_pop();
         }
 
+        if (set_acceleration_pending_) {
+            ArduinoComMessage req;
+            req.add_command(ArduinoComMessage::CMD_SET_ACCEL);
+            req.set_number(cfg_accel_);
+            send_and_recv(req);
+            set_acceleration_pending_ = false;
+
+        } else if (set_speed_pending_) {
+            ArduinoComMessage req;
+            req.add_command(ArduinoComMessage::CMD_SET_SPEED);
+            req.set_number(cfg_speed_);
+            send_and_recv(req);
+            set_speed_pending_ = false;
+
+        } else if (move_to_z_0_pending_) {
+            ArduinoComMessage req;
+            req.add_command(ArduinoComMessage::CMD_TO_Z_0);
+            msecs_to_wait = 10000;
+            send_and_recv(req);
+            move_to_z_0_pending_ = false;
+            read_pending_ = true;
+        }
+
         if (read_pending_ || z_movement_pending) {
             read_packet();
         }

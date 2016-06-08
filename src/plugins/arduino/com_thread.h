@@ -113,6 +113,9 @@ private:
 
     size_t bytes_read_;
     bool read_pending_;
+    bool set_speed_pending_;
+    bool set_acceleration_pending_;
+    bool move_to_z_0_pending_;
 
     bool opened_;
     unsigned int open_tries_;
