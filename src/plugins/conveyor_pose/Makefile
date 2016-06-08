@@ -23,12 +23,14 @@ include $(BUILDSYSDIR)/pcl.mk
 include $(BUILDSYSDIR)/boost.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
+PRESUBDIRS = interfaces
+
 REQUIRED_PCL_LIBS = sample_consensus segmentation filters surface features
 
 #The necessary libraries your plugin needs.
 LIBS_conveyor_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkestf fawkesblackboard fawkesinterface fawkespcl_utils \
-		SwitchInterface Position3DInterface LaserLineInterface
+		SwitchInterface ConveyorConfigInterface Position3DInterface LaserLineInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o
 

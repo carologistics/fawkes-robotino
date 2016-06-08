@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ConveyorConfigInterface" author="Tobias Neumann" year="2016">
+  <data>
+    <comment>
+      The interface where external transient config values can be set for the conveyor_pose plugin.
+    </comment>
+    <field type="bool" name="product_removal">
+      True if a product detection should be run and remove detected cycles.
+      This should only be activated if there is a product to be expected, otherwise the performance decreases.
+    </field>
+  </data>
+  <message name="enable_product_removal">
+    <comment>
+      Enables the detection of cycles to remove product out of the point clouds.
+    </comment>
+  </message>
+  <message name="disable_product_removal">
+    <comment>
+      Disables the detection of cycles to remove product out of the point clouds.
+    </comment>
+  </message>
+</interface>
