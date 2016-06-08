@@ -125,7 +125,6 @@ private:
     fawkes::ArduinoInterface *arduino_if;
 
     void load_config();
-    void reset_timer_for_z_alignment(unsigned int num_mm);
 
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */
