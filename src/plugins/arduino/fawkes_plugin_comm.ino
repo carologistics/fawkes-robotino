@@ -126,6 +126,7 @@ void read_package() {
           break;
       }
     }
+    memset(buffer_, 0, 128);
     Serial.flush();
 }
 
