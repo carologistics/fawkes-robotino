@@ -216,10 +216,12 @@ ArduinoComThread::open_device()
         boost::asio::serial_port::parity PARITY(boost::asio::serial_port::parity::none);
         boost::asio::serial_port::baud_rate BAUD(115200);
         boost::asio::serial_port::character_size thecsize(boost::asio::serial_port::character_size(8U));
+        boost::asio::serial_port::stop_bits STOP( boost::asio::serial_port::stop_bits::one );
 
         serial_.set_option(PARITY);
         serial_.set_option(BAUD);
         serial_.set_option(thecsize);
+        serial_.set_option(STOP);
 
         {
             struct termios param;
