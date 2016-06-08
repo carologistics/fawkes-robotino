@@ -34,7 +34,7 @@ conveyor_pose:
     ]
   
   conveyor_frame_id: conveyor_pose
-  switch_default: true
+  switch_default: false
   use_visualisation: true
 
 
