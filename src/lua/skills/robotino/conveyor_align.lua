@@ -132,7 +132,7 @@ fsm:add_transitions{
 function INIT:init()
    self.fsm.vars.counter = 0
    conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
-   if product_present then
+   if self.fsm.vars.product_present then
       conveyor_config:msgq_enqueue_copy(conveyor_config.EnableProductRemovalMessage:new())
    end
 end
