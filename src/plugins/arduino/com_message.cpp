@@ -104,16 +104,6 @@ ArduinoComMessage::ctor()
     memcpy(data_, MSG_HEAD, 3);
 }
 
-/** Increase payload by a number of bytes.
- * This may reallocate the memory to hold the data if it exceeds the current size.
- * @param count number of bytes to extend payload by
- */
-void
-ArduinoComMessage::inc_payload_by(uint16_t count)
-{
-    cur_cmd_[1] += count;
-}
-
 /** Add a command header.
  * This only allocates the header. You must call the appropriate methods to
  * add the required data fields afterwards or the message will be

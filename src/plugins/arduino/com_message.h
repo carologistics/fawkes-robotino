@@ -63,7 +63,6 @@ class ArduinoComMessage
 
  private:
 	void ctor();
-	void inc_payload_by(uint16_t count);
   
  private:
 	mode_t mode_;
