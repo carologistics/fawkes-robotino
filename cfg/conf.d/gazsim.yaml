@@ -157,7 +157,10 @@ gazsim:
     if-name: "Gripper AX12"
     cfg-prefix: "/hardware/ax12_gripper/"
   conveyor:
-    if-name: "conveyor_pose/pose"
+    pose-if-name: "conveyor_pose/pose"
+    switch-if-name: "conveyor_pose/switch"
+    config-if-name: "conveyor_pose/config"
+    frame: "cam_conveyor"
 
   tag-vision:
     tag-if-name-prefix: "/tag-vision/"
