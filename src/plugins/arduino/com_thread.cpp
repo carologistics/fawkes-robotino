@@ -370,7 +370,7 @@ ArduinoComThread::read_packet(unsigned int timeout)
 
     if (ec) {
         if (ec.value() == boost::system::errc::operation_canceled) {
-            logger->log_error(name(), "Arduino read operation cancelled: %s", ec.message());
+            logger->log_error(name(), "Arduino read operation cancelled: %s", ec.message().c_str());
         }
     }
 
