@@ -39,9 +39,10 @@ documentation      = [==[ shelf_pick
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+
 local x_distance = 0.07
 if config:exists("/hardware/robotino/align_distance_conveyor/x") then
-   local x_distance = config:get_float("/hardware/robotino/align_distance_conveyor/x")
+   x_distance = config:get_float("/hardware/robotino/align_distance_conveyor/x")
 end
 
 fsm:define_states{ export_to=_M,
