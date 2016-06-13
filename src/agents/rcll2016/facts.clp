@@ -154,7 +154,6 @@
   (multislot available-colors (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot selected-color (type SYMBOL) (allowed-symbols NONE BLUE GREEN YELLOW ORANGE)
 	(default NONE))
-  (slot bases-needed (type INTEGER) (allowed-values 0 1 2) (default 0))
   (slot bases-loaded (type INTEGER) (allowed-values 0 1 2 3) (default 0))
   (slot sync-id (type INTEGER) (default 0))
 )
@@ -232,6 +231,7 @@
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot product-id (type INTEGER))
+  (slot already-at-mps (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
@@ -390,6 +390,10 @@
 
   (pose (x 0.0) (y 0.0))
   (puck-in-gripper FALSE)
+
+  (team-robot R-1)
+  (team-robot R-2)
+  (team-robot R-3)
   
   ; Input storage per team color
   (input-storage CYAN Ins1 0 0)

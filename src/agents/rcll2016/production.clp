@@ -85,7 +85,8 @@
 	  (step (name insert) (id (+ ?task-id 2))
 		  (task-priority ?*PRIORITY-PREFILL-CS*)
 		  (machine ?machine)
-      (machine-feature CONVEYOR))
+      (machine-feature CONVEYOR)
+      (already-at-mps TRUE))
     (needed-task-lock (task-id ?task-id) (action FILL_CAP) (place ?machine))
   )
 )
@@ -227,27 +228,29 @@
   )
 )
 
-;(defrule discard-unneeded-base
-;  "Discard a base which is not needed if no RS can be pre-filled"
-;  (declare (salience ?*PRIORITY-DISCARD-UNKNOWN*))
-;  (phase PRODUCTION)
-;  (state IDLE)
-;  (team-color ?team-color&~nil)
-;  (holding ?product-id&~NONE)
-;  (product (id ?product-id))
-;  (machine (mtype RS) (name ?rs) (team ?team-color))
-;  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DISCARD-UNKNOWN*))))
-;  =>
-;  (printout t "PROD: Discard unneeded or unknown base " ?product-id crlf)
-;  (bind ?task-id (random-id))
-;  (assert
-;    (task (name discard-unknown) (id ?task-id) (state proposed)
-;      (steps (create$ (+ ?task-id 1)))
-;      (priority ?*PRIORITY-DISCARD-UNKNOWN*))
-;    (step (name discard) (id (+ ?task-id 1))
-;      (task-priority ?*PRIORITY-DISCARD-UNKNOWN*))
-;  )
-;)
+(defrule discard-unneeded-base
+  "Discard a base which is not needed if no RS can be pre-filled"
+  (declare (salience ?*PRIORITY-DISCARD-UNKNOWN*))
+  (phase PRODUCTION)
+  (state IDLE)
+  (team-color ?team-color&~nil)
+  (holding ?product-id&~NONE)
+  (product (id ?product-id))
+  (machine (mtype RS) (name ?rs))
+  ;only discard if ring stations have at least two bases loaded
+  (ring-station (name ?rs) (bases-loaded ?bl&~:(< ?bl 3)))
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DISCARD-UNKNOWN*))))
+  =>
+  (printout t "PROD: Discard unneeded or unknown base " ?product-id crlf)
+  (bind ?task-id (random-id))
+  (assert
+    (task (name discard-unknown) (id ?task-id) (state proposed)
+      (steps (create$ (+ ?task-id 1)))
+      (priority ?*PRIORITY-DISCARD-UNKNOWN*))
+    (step (name discard) (id (+ ?task-id 1))
+      (task-priority ?*PRIORITY-DISCARD-UNKNOWN*))
+  )
+)
   
 (defrule prod-produce-c0
   "Produce a C0"
@@ -585,7 +588,7 @@
   )
   ;check that the task was not rejected before
   (not (and (task (name clear-rs) (state rejected) (id ?rej-id))
-            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
+            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?cs))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-CLEAR-RS*))))
   (order (product-id ?product-id)
          (end ?end&:(< ?end (nth$ 1 ?game-time)))
@@ -611,17 +614,13 @@
   (team-color ?team-color&~nil)
   (holding NONE)
   ; there is a mps not found jet
-  (machine (name ?missing-mps) (team ?team-color) (mtype ~RS))
+  (machine (name ?missing-mps) (team ?team-color))
   (not (found-tag (name ?missing-mps)))
   ; zone-to-explore
-  ?z-f <- (zone-exploration (name ?zone) (machine ~UNKNOWN) 
+  ?z-f <- (zone-exploration (name ?zone) (machine ?missing-mps) 
                             (still-to-explore TRUE) (team ?team-color)
                             (incoming $?i&~:(member$ FIND_TAG ?i))
                             (times-searched ?times-searched))
-  ; no-zone searched less times
-  (not (zone-exploration (name ?z2&:(neq ?zone ?z2)) (still-to-explore TRUE) (team ?team-color)
-                         (incoming $?i&~:(member$ FIND_TAG ?i))
-                         (times-searched ?less-times-searched&:(< ?less-times-searched ?times-searched))))
   ;check that the task was not rejected before
   (not (and (task (name exploration-catch-up) (state rejected) (id ?rej-id))
 	    (step (name find-tag) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (zone ?zone))))
@@ -646,7 +645,8 @@
   (phase PRODUCTION)
   (state IDLE)
   (time $?now)
-  (not (no-task-found))
+  (game-time $?game-time)
+  (not (no-task-found ?))
   (not (task (state proposed|asked|ordered|running)))
   =>
   (printout error "Can't find any task!." crlf)
@@ -658,18 +658,31 @@
   (do-for-all-facts ((?wpt zone-waitpoint)) TRUE
     (bind ?wpts (create$ ?wpt:name ?wpts))
   )
+  (bind ?wait-point WAIT1)
   (if (> (length$ ?wpts) 0) then
     (bind ?index (random 1 (length$ ?wpts)))
     (bind ?wait-point (nth$ ?index ?wpts))
   )
-  
   (skill-call ppgoto place (str-cat ?wait-point))
-  (assert (no-task-found))
+  (assert (no-task-found (nth$ 1 ?game-time)))
 )
 
 (defrule prod-remove-nothing-to-do-fact
-  ?no-task <- (no-task-found)
+  ?no-task <- (no-task-found ?)
   (state ~IDLE)
   =>
   (retract ?no-task)
+)
+
+(defrule prod-remove-rejected-tasks-after-timeout
+  ?no-task <- (no-task-found ?waiting-since)
+  (game-time $?game-time&:(< (+ ?waiting-since ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING*)
+                             (nth$ 1 ?game-time)))
+  (state IDLE)
+  =>
+  (printout t "Removing rejected tasks after waiting for "
+            ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING* "s" crlf)
+  (coordination-remove-old-rejected-tasks)
+  (retract ?no-task)
+  (assert (no-task-found (nth$ 1 ?game-time)))
 )

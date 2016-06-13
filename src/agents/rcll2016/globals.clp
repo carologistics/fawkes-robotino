@@ -51,6 +51,9 @@
   ;After the change of a decision based on a new worldmodel the remove msg might have arrived before the add message. Timeout to wait until there is a field to remove:
   ?*DELAYED-WORLDMODEL-CHANGE-TIMEOUT* = 10
 
+  ;Timeout before removing rejected tasks when no task is found
+  ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING* = 25
+  
   ?*PI* = 3.141592653589
   ?*2PI* = 6.2831853
   ?*PI-HALF* = 1.5707963
@@ -72,7 +75,7 @@
   ?*PRODUCE-C0-LATEST-TIME* = 30
   ?*PRODUCE-CX-AHEAD-TIME* = 150
   ?*PRODUCE-CX-LATEST-TIME* = 30
-  ?*DELIVER-AHEAD-TIME* = 20
+  ?*DELIVER-AHEAD-TIME* = 60
   ?*DELIVER-LATEST-TIME* = 10
   ?*DELIVER-ABORT-TIMEOUT* = 30
 )

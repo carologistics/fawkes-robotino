@@ -132,15 +132,11 @@
   "To generate waiting positions in the empty zones we have to send the SetWaitZones message to the navgraph-generation interface"
   (phase PRODUCTION)
   (forall (machine (name ?mps))
-          (found-tag (name ?mps))
-          (zone-exploration (times-searched ?ts) (machine ?found&:(or (eq ?mps ?found)
-                                                                      (and (eq ?found UNKNOWN) (> ?ts 2))))))
+          (zone-exploration (times-searched ?ts) (machine ?found&:(eq ?mps ?found))))
   (not (added-waiting-positions))
   (not (requested-waiting-positions))
   =>
-  (printout error "Adding waiting positions in empty zones" crlf)
-  (printout error "Adding waiting positions in empty zones" crlf)
-  (printout error "Adding waiting positions in empty zones" crlf)
+  (printout t "Adding waiting positions in empty zones" crlf)
   (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetWaitZonesMessage"))
   (bind $?zones-to-wait (create-multifield-with-length-and-entry 24 FALSE))
 
@@ -153,7 +149,6 @@
   (printout t "Adding wait-zones in: " ?zones-to-wait crlf)
   (blackboard-set-msg-multifield ?msg "zones" ?zones-to-wait)
   (blackboard-send-msg ?msg)
-  (printout t "Sent wait zones" crlf)
 
   (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
   (bind ?compute-msg-id (blackboard-send-msg ?msg))
