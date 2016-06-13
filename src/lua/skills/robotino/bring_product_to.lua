@@ -39,7 +39,7 @@ Parameters:
       @param side    optional the side of the mps, default is input (give "output" to bring to output)
       @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
       @param slide   optional true if you want to put it on the slide
-      @param atmps   optional position at mps shelf, default NO (not at mps at all) : ( NO | LEFT | MIDDLE | RIGHT )
+      @param atmps   optional position at mps shelf, default NO (not at mps at all) : ( NO | LEFT | MIDDLE | RIGHT | CONVEYOR )
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -47,6 +47,10 @@ skillenv.skill_module(_M)
 
 function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
+end
+
+function already_at_conveyor(self)
+   return (self.fsm.vars.atmps == "CONVEYOR")
 end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
@@ -64,6 +68,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
+   {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to"},
    {"INIT", "RE_MPS_ALIGN", cond=already_at_mps, desc="At mps, skip DRIVE and ALIGN"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PUT", cond="vars.shelf", desc="Put on shelf"},
