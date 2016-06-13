@@ -75,6 +75,7 @@ while true; do
      OPTARG=$2
      case $OPTION in
          -h)
+    	     echo "Display help on request"
              usage
              exit 1
              ;;
@@ -153,8 +154,7 @@ while true; do
 	 -p)
 	     FAWKES_BIN=$OPTARG/bin
 	     ;;
-         --)
-	     break
+	 --) break;
              ;;
      esac
      shift
@@ -237,9 +237,9 @@ if [  $COMMAND  == start ]; then
     	do
 	    # robot roscore
 	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP\"'"
-	    if [ -n "$ROS_LAUNCH_ROBOT" ]; then
+	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
 		OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_URI $KEEP\"'"
-	    fi
+	fi
     	done
     fi
 
@@ -254,7 +254,7 @@ if [  $COMMAND  == start ]; then
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
     done
 
     if $START_GAZEBO
