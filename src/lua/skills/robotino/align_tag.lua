@@ -25,23 +25,23 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
-   {v = "tag_0", type = "Position3DInterface"},
-   {v = "tag_1", type = "Position3DInterface"},
-   {v = "tag_2", type = "Position3DInterface"},
-   {v = "tag_3", type = "Position3DInterface"},
-   {v = "tag_4", type = "Position3DInterface"},
-   {v = "tag_5", type = "Position3DInterface"},
-   {v = "tag_6", type = "Position3DInterface"},
-   {v = "tag_7", type = "Position3DInterface"},
-   {v = "tag_8", type = "Position3DInterface"},
-   {v = "tag_9", type = "Position3DInterface"},
-   {v = "tag_10", type = "Position3DInterface"},
-   {v = "tag_11", type = "Position3DInterface"},
-   {v = "tag_12", type = "Position3DInterface"},
-   {v = "tag_13", type = "Position3DInterface"},
-   {v = "tag_14", type = "Position3DInterface"},
-   {v = "tag_15", type = "Position3DInterface"},
-   {v = "tag_info", type = "TagVisionInterface"},
+   {v = "tag_0", type = "Position3DInterface", id="/tag-vision/0"},
+   {v = "tag_1", type = "Position3DInterface", id="/tag-vision/1"},
+   {v = "tag_2", type = "Position3DInterface", id="/tag-vision/2"},
+   {v = "tag_3", type = "Position3DInterface", id="/tag-vision/3"},
+   {v = "tag_4", type = "Position3DInterface", id="/tag-vision/4"},
+   {v = "tag_5", type = "Position3DInterface", id="/tag-vision/5"},
+   {v = "tag_6", type = "Position3DInterface", id="/tag-vision/6"},
+   {v = "tag_7", type = "Position3DInterface", id="/tag-vision/7"},
+   {v = "tag_8", type = "Position3DInterface", id="/tag-vision/8"},
+   {v = "tag_9", type = "Position3DInterface", id="/tag-vision/9"},
+   {v = "tag_10", type = "Position3DInterface", id="/tag-vision/10"},
+   {v = "tag_11", type = "Position3DInterface", id="/tag-vision/11"},
+   {v = "tag_12", type = "Position3DInterface", id="/tag-vision/12"},
+   {v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
+   {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
+   {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
+   {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
 }
 
 documentation      = [==[Moves the robot that the tag 0 is seen at the given point.
@@ -80,9 +80,9 @@ end
 function send_transrot(vx, vy, omega)
    local oc  = motor:controller()
    local ocn = motor:controller_thread_name()
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new())
-   motor:msgq_enqueue_copy(motor.TransRotMessage:new(vx, vy, omega))
-   motor:msgq_enqueue_copy(motor.AcquireControlMessage:new(oc, ocn))
+   motor:msgq_enqueue(motor.AcquireControlMessage:new())
+   motor:msgq_enqueue(motor.TransRotMessage:new(vx, vy, omega))
+   motor:msgq_enqueue(motor.AcquireControlMessage:new(oc, ocn))
 end
 
 function get_tag_distance(tag)

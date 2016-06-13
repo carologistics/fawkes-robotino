@@ -27,7 +27,7 @@ name               = "ppgoto"
 fsm                = SkillHSM:new{name=name, start="PPGOTO", debug=false}
 depends_skills     = { "goto" }
 depends_interfaces = {
-   {v = "ppnavi", type = "NavigatorInterface"}
+   {v = "ppnavi", type = "NavigatorInterface", id="Pathplan"}
 }
 
 documentation      = [==[Pathplan goto skill.
@@ -118,7 +118,7 @@ function PPGOTO:init()
       local ori = self.fsm.vars.ori or math.nan
       local m = ppnavi.CartesianGotoMessage:new(x, y, ori)
       printf("Sending CartesianGotoMessage(%f, %f, %f)", x, y, ori)
-      self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
+      self.fsm.vars.msgid = ppnavi:msgq_enqueue(m)
    elseif self.fsm.vars.place ~= nil then
       -- place goto
       local place = self.fsm.vars.place
@@ -126,17 +126,17 @@ function PPGOTO:init()
 	 local ori = self.fsm.vars.ori
 	 local m = ppnavi.PlaceWithOriGotoMessage:new(place, ori)
 	 printf("Sending PlaceWithOriGotoMessage(%s, %f)", place, ori)
-	 self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
+	 self.fsm.vars.msgid = ppnavi:msgq_enqueue(m)
    printf("msgid: %d/%d  final: %s", state.fsm.vars.msgid)
       else
 	 local m = ppnavi.PlaceGotoMessage:new(place)
 	 printf("Sending PlaceGotoMessage(%s)", place)
-	 self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
+	 self.fsm.vars.msgid = ppnavi:msgq_enqueue(m)
       end
    elseif self.fsm.vars.stop ~= nil then
       local m = ppnavi.StopMessage:new()
       printf("Sending StopGotoMessage")
-      self.fsm.vars.msgid = ppnavi:msgq_enqueue_copy(m)
+      self.fsm.vars.msgid = ppnavi:msgq_enqueue(m)
    else
       self.fsm.vars.param_fail = true
    end
@@ -150,7 +150,7 @@ end
 function PPGOTO:reset()
    if ppnavi:has_writer() and not ppnavi:is_final() then
       printf("ppgoto: sending stop");
-      ppnavi:msgq_enqueue_copy(ppnavi.StopMessage:new())
+      ppnavi:msgq_enqueue(ppnavi.StopMessage:new())
    end
 end
 

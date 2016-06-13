@@ -54,9 +54,9 @@ fsm:add_transitions{
 
 function COMMAND:init()
    if self.fsm.vars.close then
-      gripper_if:msgq_enqueue_copy(gripper_if.CloseGripperMessage:new())
+      gripper_if:msgq_enqueue(gripper_if.CloseGripperMessage:new())
    elseif self.fsm.vars.open then
-      gripper_if:msgq_enqueue_copy(gripper_if.OpenGripperMessage:new())
+      gripper_if:msgq_enqueue(gripper_if.OpenGripperMessage:new())
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true

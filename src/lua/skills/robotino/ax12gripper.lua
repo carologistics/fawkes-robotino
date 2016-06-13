@@ -85,27 +85,27 @@ function COMMAND:init()
       self.fsm.vars.open = true
       theOpenMessage = gripper_if.OpenMessage:new()
       theOpenMessage:set_offset(self.fsm.vars.offset or 0)
-      gripper_if:msgq_enqueue_copy(theOpenMessage)
+      gripper_if:msgq_enqueue(theOpenMessage)
    elseif self.fsm.vars.command == "CENTER" then
       self.fsm.vars.center = true
       theCenterMessage = gripper_if.CenterMessage:new()
-      gripper_if:msgq_enqueue_copy(theCenterMessage)
+      gripper_if:msgq_enqueue(theCenterMessage)
    elseif self.fsm.vars.command == "CLOSE" then
       self.fsm.vars.close = true
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
-      gripper_if:msgq_enqueue_copy(theCloseMessage)
+      gripper_if:msgq_enqueue(theCloseMessage)
    elseif self.fsm.vars.command == "GRAB" then
       self.fsm.vars.grab = true
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
-      gripper_if:msgq_enqueue_copy(theCloseMessage)
+      gripper_if:msgq_enqueue(theCloseMessage)
    elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
       if relgotoz_allowed(self) then
          theRelGotoZMessage = gripper_if.RelGotoZMessage:new()
          theRelGotoZMessage:set_rel_z(self.fsm.vars.z_position or 0)
-         gripper_if:msgq_enqueue_copy(theRelGotoZMessage)
+         gripper_if:msgq_enqueue(theRelGotoZMessage)
       else
          self.fsm:set_error("Desired z value out of bounds")
          self.fsm.vars.error = true

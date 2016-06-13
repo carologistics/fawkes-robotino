@@ -188,7 +188,7 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     typedef struct {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-      char id[64]; /**< 
+      char name[64]; /**< 
       ID of the obstacle. Can later be used to remove it again.
      */
       int32_t side; /**< Which side are we reporting. */
@@ -208,15 +208,15 @@ class NavGraphWithMPSGeneratorInterface : public Interface
 
   interface_enum_map_t enum_map_Side;
    public:
-    UpdateStationByTagMessage(const char * ini_id, const Side ini_side, const char * ini_frame, const double * ini_tag_translation, const double * ini_tag_rotation);
+    UpdateStationByTagMessage(const char * ini_name, const Side ini_side, const char * ini_frame, const double * ini_tag_translation, const double * ini_tag_rotation);
     UpdateStationByTagMessage();
     ~UpdateStationByTagMessage();
 
     UpdateStationByTagMessage(const UpdateStationByTagMessage *m);
     /* Methods */
-    char * id() const;
-    void set_id(const char * new_id);
-    size_t maxlenof_id() const;
+    char * name() const;
+    void set_name(const char * new_name);
+    size_t maxlenof_name() const;
     Side side() const;
     void set_side(const Side new_side);
     size_t maxlenof_side() const;

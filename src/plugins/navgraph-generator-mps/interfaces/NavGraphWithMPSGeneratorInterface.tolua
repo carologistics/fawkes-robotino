@@ -16,12 +16,46 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     ClearMessage();
     ~ClearMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
   };
 
   class ComputeMessage : public Message
   {
     ComputeMessage();
     ~ComputeMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
   };
 
@@ -30,6 +64,23 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     SetExplorationZonesMessage(bool * ini_zones);
     SetExplorationZonesMessage();
     ~SetExplorationZonesMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
 
     bool is_zones(int index);
     void set_zones(unsigned int index, const bool new_zones);
@@ -42,6 +93,23 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     SetWaitZonesMessage();
     ~SetWaitZonesMessage();
 
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
     bool is_zones(int index);
     void set_zones(unsigned int index, const bool new_zones);
     int maxlenof_zones() const;
@@ -49,13 +117,30 @@ class NavGraphWithMPSGeneratorInterface : public Interface
 
   class UpdateStationByTagMessage : public Message
   {
-    UpdateStationByTagMessage(char * ini_id, Side ini_side, char * ini_frame, double * ini_tag_translation, double * ini_tag_rotation);
+    UpdateStationByTagMessage(char * ini_name, Side ini_side, char * ini_frame, double * ini_tag_translation, double * ini_tag_rotation);
     UpdateStationByTagMessage();
     ~UpdateStationByTagMessage();
 
-    char * id();
-    void set_id(const char * new_id);
-    int maxlenof_id() const;
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+    char * name();
+    void set_name(const char * new_name);
+    int maxlenof_name() const;
     Side side();
     void set_side(const Side new_side);
     int maxlenof_side() const;
@@ -90,7 +175,7 @@ class NavGraphWithMPSGeneratorInterface : public Interface
   const char *            hash_printable() const;
   bool                    is_writer() const;
   void                    set_from_chunk(void *chunk);
-  virtual Message *   create_message(const char *type) const = 0;
+  virtual fawkes::Message *  create_message @ create_message_generic(const char *type) const;
   void          read();
   void          write();
   bool          has_writer() const;
@@ -109,10 +194,23 @@ class NavGraphWithMPSGeneratorInterface : public Interface
   bool          msgq_try_lock();
   void          msgq_unlock();
   void          msgq_pop();
-  Message *     msgq_first();
+  fawkes::Message * msgq_first @ msgq_first_generic();
   bool          msgq_empty();
 
 
 };
+
+
+$[
+
+assert(fawkes.Interface.msgq_first)
+assert(fawkes.Interface.msgq_enqueue)
+assert(fawkes.Interface.create_message)
+
+fawkes.NavGraphWithMPSGeneratorInterface.msgq_first     = fawkes.Interface.msgq_first
+fawkes.NavGraphWithMPSGeneratorInterface.msgq_enqueue   = fawkes.Interface.msgq_enqueue
+fawkes.NavGraphWithMPSGeneratorInterface.create_message = fawkes.Interface.create_message
+
+$]
 
 }

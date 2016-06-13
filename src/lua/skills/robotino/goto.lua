@@ -146,7 +146,7 @@ end
 
 function REGION_REACHED_STOPPING:init()
   local msg = navigator.StopMessage:new( )
-  navigator:msgq_enqueue_copy(msg)
+  navigator:msgq_enqueue(msg)
 end
 
 function FINAL_ORIENTATION:init()

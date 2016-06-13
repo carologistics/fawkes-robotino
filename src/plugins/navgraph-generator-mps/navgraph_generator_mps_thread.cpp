@@ -135,9 +135,9 @@ NavGraphGeneratorMPSThread::loop()
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage>() ) {
       NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage *m =
 	navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage>();
-      logger->log_warn(name(), "Updating station %s from tag", m->id());
+      logger->log_warn(name(), "Updating station %s from tag", m->name());
 
-      update_station(m->id(), (m->side() == NavGraphWithMPSGeneratorInterface::INPUT),
+      update_station(m->name(), (m->side() == NavGraphWithMPSGeneratorInterface::INPUT),
 		     m->frame(), m->tag_translation(), m->tag_rotation());
 
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage>() ) {
