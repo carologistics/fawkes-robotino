@@ -1,30 +1,30 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-# to start fawkes, use robotino3.yaml in cfg/
+# to start fawkes, use robotino6.yaml in cfg/
 
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 
 webview:
   # TCP port for Webview HTTP requests; TCP port
-  port: !tcp-port 8083
+  port: !tcp-port 8086
 
 #seperate the shared memory images for the webcam:
 firevision:
   fountain:
-    tcp_port: !tcp-port 2213
+    tcp_port: !tcp-port 2216
 
 gazsim:
-  robot-name: "robotino3"
+  robot-name: "robotino6"
   visualization:
-    label-script-name: "label/robotino3"
+    label-script-name: "label/robotino6"
 
 plugins/light_front:
   #Camera for gazebo simulation:
-  camera: shmem:gazsim_cam:image_id=robotino3/gazsim_light_front:deep_copy=true
-  shm_image_id: "robotino3/light_front"
-
+  camera: shmem:gazsim_cam:image_id=robotino6/gazsim_light_front:deep_copy=true
+  shm_image_id: "robotino6/light_front"
+  
 clips-agent:
   rcll2016:
     #agent-role:
@@ -43,14 +43,13 @@ clips-agent:
     robot-number: 3
 
     peer-address: 127.0.0.1
-    peer-recv-port: 4413
-    peer-send-port: 4423
-    cyan-recv-port: 4453
-    magenta-recv-port: 4463
-    cyan-send-port: 4473
-    magenta-send-port: 4483
-
-    
+    peer-recv-port: 4416
+    peer-send-port: 4426
+    cyan-recv-port: 4456
+    magenta-recv-port: 4466
+    cyan-send-port: 4476
+    magenta-send-port: 4486
+        
 plugins/tag_vision:
-  shm_image_id: "tag_vision_robotino_3"
-  camera: shmem:gazsim_cam:image_id=robotino3/gazsim_tag:deep_copy=true
+  shm_image_id: "tag_vision_robotino_6"
+  camera: shmem:gazsim_cam:image_id=robotino6/gazsim_tag:deep_copy=true
