@@ -1,8 +1,9 @@
+
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Plugins
+#         Makefile Build System for Fawkes: Robotino Motor LED Indicator
 #                            -------------------
-#   Created on Mon May 14 11:37:00 2012
-#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
+#   Created on Fri Apr 15 15:00:36 2016
+#   Copyright (C) 2011 by Tim Niemueller, AllemaniACs RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,22 +14,17 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= clips-motor-switch \
-	  voltagelogger \
-	  machine-signal \
-	  ax12_gripper \
-	  tag_vision \
-      navgraph_broker \
-	  navgraph-generator-mps \
-	  gazebo \
-	  agent-monitor \
-	  marker_writer \
-	  conveyor_vision \
-	  motor-led
+LIBS_motor_led = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+		fawkesblackboard fawkesinterface MotorInterface RobotinoSensorInterface
+OBJS_motor_led = motor_led_plugin.o motor_led_thread.o
 
-include $(BUILDSYSDIR)/rules.mk
+OBJS_all = $(OBJS_motor_led)
 
-gazebo: ax12_gripper tag_vision machine-signal
+CFLAGS += $(CFLAGS_CPP11)
+
+PLUGINS_all = $(PLUGINDIR)/motor-led.so
+
+include $(BUILDSYSDIR)/base.mk
