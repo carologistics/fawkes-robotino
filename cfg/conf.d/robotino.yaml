@@ -111,8 +111,5 @@ hardware/robotino:
     # Maximum rotation; rad/s
     max_omega: 1.57
 
-  distance_front:
-    #index of the MPS distance sensor in the Distances field of the interface
-    index: 0
   align_distance_conveyor:
     x: 0.07
