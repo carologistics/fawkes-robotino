@@ -61,8 +61,8 @@ function INIT:init()
 end
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.09 --TODO measure both values
-   local shelf_distance = 0.09
+   local shelf_to_conveyor = 0.1 --TODO measure both values
+   local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
       dest_y = shelf_to_conveyor
    elseif self.fsm.vars.slot == "MIDDLE" then
@@ -77,13 +77,13 @@ function GOTO_SHELF:init()
    
    self.args["motor_move"] =
 			{ y = -dest_y, --shelf is on the right side of the conveyor
-				vel_trans = 0.2,
 				tolerance = { x=0.002, y=0.002, ori=0.01 }
 			}
 end
 
 function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = 0.07 --TODO measure this value
+   --leaving this in, if an offset will be required
+   self.args["approach_mps"].offset_x = 0.01
 end
 
 function GRAB_PRODUCT:init()

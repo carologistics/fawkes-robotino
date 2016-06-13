@@ -56,13 +56,17 @@ fsm:add_transitions{
 function GOTO_SLIDE:init()
    self.args["motor_move"] =
 			{ y = -0.26, --TODO measure exact value
-				vel_trans = 0.15,
+				vel_trans = 0.2,
 				tolerance = { x=0.002, y=0.002, ori=0.01 }
 			}
 end
 
 function APPROACH_SLIDE:init()
-   self.args["approach_mps"].x = 0.055 --TODO measure exact value
+   self.fsm.vars.front_distance = 0.08
+   if config:exists("/hardware/robotino/distance_front/sensor_threshold") then
+      self.fsm.vars.front_distance = config:get_float("/hardware/robotino/distance_front/sensor_threshold")
+   end
+   self.args["approach_mps"].x = self.fsm.vars.front_distance 
 end
 
 function STORE_PRODUCT:init()

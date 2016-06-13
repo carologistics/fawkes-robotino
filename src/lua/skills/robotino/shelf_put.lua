@@ -73,13 +73,12 @@ function GOTO_SHELF:init()
    
    self.args["motor_move"] =
 			{ y = -dest_y, --shelf is on the right side of the conveyor
-				vel_trans = 0.2,
 				tolerance = { x=0.002, y=0.002, ori=0.01 }
 			}
 end
 
 function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = 0.065 --TODO measure this value
+   self.args["approach_mps"].offset_x = 0.01 --TODO measure this value
 end
 
 function STORE_PRODUCT:init()
