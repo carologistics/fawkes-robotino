@@ -219,7 +219,7 @@
   (printout t "Wait until ComputeMessage is processed" crlf)
   (retract ?s)
   (assert (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
-          (machine-to-find-zone-of ?machine))
+          (exp-current-zone (name ?machine)))
 )
 
 (defrule update-zone-info
@@ -289,7 +289,7 @@
   "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards. Case if the detected tag is in the zone we are currently exploring."
   (phase EXPLORATION)
   ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
-  ?mtfz <- (machine-to-find-zone-of ?machine)
+  ?mtfz <- (exp-current-zone (name ?machine))
   (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
   =>
@@ -303,7 +303,7 @@
   "Drive to the output tag of a found machine, so that we can align in front of the light-signal afterwards. Case if the detected tag is in a different zone than we are currently exploring. We switch to the nearest tactic so the find-nearest rule can select this mps or another mps with found tag."
   (phase EXPLORATION)
   ?s <- (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
-  ?mtfz <- (machine-to-find-zone-of ?machine)
+  ?mtfz <- (exp-current-zone (name ?machine))
   (goalmachine ?zone)
   (zone-exploration (name ~?zone) (machine ?machine))
   ?tactic <- (exp-tactic ?)
@@ -799,7 +799,8 @@
   (phase PRODUCTION)
   (found-tag (name ?mps) (frame "/map") (trans $?trans) (rot $?rot) (side ?side))
   (machine (name ?mps) (team ?team&~nil))
-  ;check that
+  (zone-exploration (name ?zone) (machine ?mps))
+  ;check that the mps of the other team was not found
   (not (found-tag (name ?mps-mirrow&:(and (neq ?mps ?mps-mirrow)
 					  (eq (sub-string 2 (str-length (str-cat ?mps)) (str-cat ?mps))
 					      (sub-string 2 (str-length (str-cat ?mps-mirrow)) (str-cat ?mps-mirrow)))))))
@@ -825,5 +826,16 @@
 
   ;assert mirrowed tag
   (assert (found-tag (name ?mps-mirrow) (side ?side) (frame "/map")
-		     (trans ?trans-mirrow) (rot ?rot-mirrow)))
+                     (trans ?trans-mirrow) (rot ?rot-mirrow)))
+  ;set zone-exploration
+  (bind ?zone-int (eval (sub-string 2 (str-length (str-cat ?zone)) (str-cat ?zone))))
+  (if (<= ?zone-int 12) then
+    (bind ?zone-mirrow (sym-cat Z (+ ?zone-int 12)))
+    else
+    (bind ?zone-mirrow (sym-cat Z (- ?zone-int 12)))
+  )
+  (printout error "Zone of Mirrowed mps of " ?mps "," ?zone " is " ?zone-mirrow crlf)
+  (do-for-fact ((?zone-expl-mir zone-exploration)) (eq ?zone-expl-mir:name ?zone-mirrow)
+    (modify ?zone-expl-mir (machine ?mps-mirrow))
+  )
 )

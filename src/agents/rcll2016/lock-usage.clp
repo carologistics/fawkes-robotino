@@ -61,18 +61,41 @@
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
 )
 
-(defrule lock-drive-to-waiting-point
-  "If our lock for a resource was refused and there exists a wait-point for the resource go to the wait-point."
+(defrule lock-drive-to-zone-waiting-point
+  "If our lock for a resource was refused and there exists a wait-point for a near zone go to the wait-point."
+  (declare (salience ?*PRIORITY-LOW*))
+  (phase PRODUCTION)
+  ?lae <- (wait-for-lock (res ?res) (state get) (place ?place))
+  ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
+  (not (driving-to-wait-point))
+  (place-waitpoint-assignment (place ?place) (waitpoint ?nearest-wp))
+  =>
+  (printout t "Waiting for lock of " ?res " at " ?nearest-wp crlf)
+  (skill-call ppgoto place (str-cat ?nearest-wp))
+  (assert (driving-to-wait-point))
+)
+
+(defrule lock-drive-to-nearest-waiting-point
+  "If our lock for a resource was refused and the place is not set for the resource go to the nearest wait-point."
   (declare (salience ?*PRIORITY-LOW*))
   (phase PRODUCTION)
   ?lae <- (wait-for-lock (res ?res) (state get))
   ?l <- (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
   (wait-point ?wait-point)
-  (not (driving-ro-wait-point))
-  (holding ?puck)
+  (not (driving-to-wait-point))
+  (added-waiting-positions)
   =>
+  ;find random waiting point
+  (bind ?wpts (create$))
+  (delayed-do-for-all-facts ((?wpt zone-waitpoint)) TRUE
+    (bind ?wpts (create$ ?wpt:name ?wpts))
+  )
+  (if (> (length$ ?wpts) 0) then
+    (bind ?index (random 1 (length$ ?wpts)))
+    (bind ?wait-point (nth$ ?index ?wpts))
+  )
   (printout t "Waiting for lock of " ?res " at " ?wait-point crlf)
-  (skill-call goto place (str-cat ?wait-point))
+  (skill-call ppgoto place (str-cat ?wait-point))
   (assert (driving-to-wait-point))
 )
 
