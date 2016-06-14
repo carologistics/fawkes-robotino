@@ -194,7 +194,7 @@
   )
 )
 
-(defrule insert-unintentioanlly-holding-base-to-rs
+(defrule insert-unintentionally-holding-base-to-rs
   "Insert a base we hold unintentionally (e.g. skill-fail) in a RS for preparation"
   (declare (salience ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*))
   (phase PRODUCTION)
@@ -271,7 +271,7 @@
   (found-tag (name ?bs))
   ;check that the task was not rejected before
   (not (and (task (name produce-c0) (state rejected) (id ?rej-id))
-            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
+            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 3))) (machine ?cs))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PRODUCE-C0*))))
   ;check for open C0 order
   (product (id ?product-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color) (base ?base-color))
@@ -286,13 +286,17 @@
   (printout t "PROD: PRODUCE C0 with " ?cap-color " cap at " ?cs crlf)
   (bind ?task-id (random-id))
   (assert (task (name produce-c0) (id ?task-id) (state proposed)
-    (steps (create$ (+ ?task-id 1) (+ ?task-id 2)))
+    (steps (create$ (+ ?task-id 1) (+ ?task-id 2) (+ ?task-id 3)))
     (priority ?*PRIORITY-PRODUCE-C0*))
     (step (name get-base) (id (+ ?task-id 1))
       (task-priority ?*PRIORITY-PRODUCE-C0*)
       (machine ?bs) (machine-feature CONVEYOR)
       (base ?base-color) (product-id ?product-id))
-    (step (name insert) (id (+ ?task-id 2))
+    (step (name drive-to) (id (+ ?task-id 2))
+      (task-priority ?*PRIORITY-PRODUCE-C0*)
+      (machine ?cs)
+      (side INPUT))
+    (step (name insert) (id (+ ?task-id 3))
       (task-priority ?*PRIORITY-PRODUCE-C0*)
       (machine ?cs)
       (machine-feature CONVEYOR))
@@ -448,7 +452,7 @@
   (found-tag (name ?rs))
   ;check that the task was not rejected before
   (not (and (task (name produce-cx) (state rejected) (id ?rej-id))
-            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
+            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 3))) (machine ?cs))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PRODUCE-CX*))))
   ;check for open C0 order
   (product
@@ -467,12 +471,16 @@
   (printout t "PROD: PRODUCE Cx with " ?cap-color " cap at " ?cs crlf)
   (bind ?task-id (random-id))
   (assert (task (name produce-cx) (id ?task-id) (state proposed)
-    (steps (create$ (+ ?task-id 1) (+ ?task-id 2)))
+    (steps (create$ (+ ?task-id 1) (+ ?task-id 2) (+ ?task-id 3)))
     (priority ?*PRIORITY-PRODUCE-CX*))
     (step (name get-output) (id (+ ?task-id 1))
       (task-priority ?*PRIORITY-PRODUCE-CX*)
       (machine ?rs) (machine-feature CONVEYOR))
-    (step (name insert) (id (+ ?task-id 2))
+    (step (name drive-to) (id (+ ?task-id 2))
+      (task-priority ?*PRIORITY-PRODUCE-CX*)
+      (machine ?cs)
+      (side INPUT))
+    (step (name insert) (id (+ ?task-id 3))
       (task-priority ?*PRIORITY-PRODUCE-CX*)
       (machine ?cs)
       (machine-feature CONVEYOR))

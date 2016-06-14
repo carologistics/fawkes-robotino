@@ -34,7 +34,7 @@
   (declare (salience ?*PRIORITY-SKILL-DEFAULT*))
   ?ste <- (skill-to-execute (skill ?skill)
 			    (args $?args) (state wait-for-lock) (target ?target))
-  (wait-for-lock (res ?target) (state use))
+  (wait-for-lock (res ?res&:(or (eq ?res ?target) (eq ?res (sym-cat ?target "-I")) (eq ?res (sym-cat ?target "-O")))) (state use))
   ?s <- (state WAIT-FOR-LOCK)
   =>
   (retract ?s)
@@ -71,7 +71,8 @@
   ?ste <- (skill-to-execute (skill get_product_from)
 			    (args place ?mps shelf TRUE) (state wait-for-lock) (target ?target))
   ?cs <- (cap-station (name ?mps) (caps-on-shelf ?caps))
-  (wait-for-lock (res ?target) (state use))
+  ;(wait-for-lock (res ?target) (state use))
+  (wait-for-lock (res ?res&:(or (eq ?res (sym-cat ?target "-I")) (eq ?res (sym-cat ?target "-O")))) (state use))
   ?s <- (state WAIT-FOR-LOCK)
   =>
   (retract ?s)
