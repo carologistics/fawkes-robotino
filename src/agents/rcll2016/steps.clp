@@ -145,6 +145,7 @@
 		 (machine ?mps) (machine-feature ?feature) (base ?color))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
+  (machine (mtype BS) (name ?mps) (state IDLE))
   =>
   (retract ?state)
   (modify ?step (state running))
