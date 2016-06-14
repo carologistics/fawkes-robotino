@@ -129,6 +129,7 @@
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (game-time $?game-time)
+  (machine (name ?mps) (state IDLE))
   =>
   (retract ?state)
   (modify ?step (state running))
