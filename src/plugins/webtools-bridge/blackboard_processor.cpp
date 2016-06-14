@@ -182,6 +182,37 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
 }
 
 
+  std::shared_ptr<Advertisment> 
+  BridgeBlackBoardProcessor::advertise ( std::string topic_name 
+                                          , std::string id    
+                                          , std::string type  
+                                          , std::shared_ptr<WebSession> session) 
+  {
+    //To Be Implemented
+    std::shared_ptr <Advertisment>  advertisment = std::make_shared<Advertisment>(topic_name , prefix_);
+    advertisment -> add_request(id , session);
+    return advertisment;
+  }
+
+  void            
+  BridgeBlackBoardProcessor::unadvertise ( std::string id
+                              , std::shared_ptr<Advertisment> advertisment
+                              , std::shared_ptr<WebSession> session )  
+  {
+    //To Be Implemented
+  }
+
+  void            
+  BridgeBlackBoardProcessor::publish   ( std::string id
+                              , bool latch
+                              , std::string msg_in_json //TODO:: figure out a clever way to keep track of msgs types and content without the need to have the info before hands
+                              , std::shared_ptr<Advertisment> advertisment
+                              , std::shared_ptr<WebSession> session )  
+  {
+    //To Be Implemented
+  }
+
+
 
 //====================================  Subsciption ===========================================
 

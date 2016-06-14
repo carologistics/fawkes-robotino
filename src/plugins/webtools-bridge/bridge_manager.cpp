@@ -10,6 +10,16 @@ BridgeManager::BridgeManager()
 
 BridgeManager::~BridgeManager()
 {
+	operation_cpm_map_.clear();
+}
+
+void BridgeManager::finalize()
+{
+	for (std::map<std::string, std::shared_ptr <CapabilityManager>>::iterator it= operation_cpm_map_.begin()
+			;it!=operation_cpm_map_.end(); ++it )
+	{
+		it->second->finalize();
+	}
 }
 
 void

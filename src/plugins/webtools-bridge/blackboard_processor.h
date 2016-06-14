@@ -30,6 +30,7 @@
 
 #include "bridge_processor.h"
 #include "subscription_capability.h"
+#include "advertisment_capability.h"
 
 namespace fawkes {
   class Clock;
@@ -79,8 +80,10 @@ class BlackBoardSubscription
 //=================================   Processor  ===================================
 
 class BridgeBlackBoardProcessor
-: public BridgeProcessor,
-  public SubscriptionCapability
+: public BridgeProcessor
+,  public SubscriptionCapability
+,  public AdvertismentCapability
+
 {
  public:
   BridgeBlackBoardProcessor(std::string prefix 
@@ -104,6 +107,22 @@ class BridgeBlackBoardProcessor
   void  unsubscribe ( std::string id
                     , std::shared_ptr<Subscription> subscription
                     , std::shared_ptr<WebSession> session ) ; 
+
+  
+  std::shared_ptr<Advertisment> advertise ( std::string topic_name 
+                                          , std::string id    
+                                          , std::string type  
+                                          , std::shared_ptr<WebSession> session) ;
+
+  void            unadvertise ( std::string id
+                              , std::shared_ptr<Advertisment> advertisment
+                              , std::shared_ptr<WebSession> session )  ;
+
+  void            publish   ( std::string id
+                              , bool latch
+                              , std::string msg_in_json //TODO:: figure out a clever way to keep track of msgs types and content without the need to have the info before hands
+                              , std::shared_ptr<Advertisment> advertisment
+                              , std::shared_ptr<WebSession> session )  ;
 
 private:
   fawkes::Logger         *logger_;

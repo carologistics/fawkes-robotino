@@ -19,11 +19,14 @@ class CapabilityManager
 
 		CapabilityManager(std::string capability_name)
 			: capability_name_(capability_name)
+			, initialized_(false)
+			, finalized_(false)
 		{
 		}
 		
 		~CapabilityManager()
 		{
+			processores_.clear();
 		}
 
 		virtual void handle_message( rapidjson::Document &d 
@@ -31,6 +34,9 @@ class CapabilityManager
 		{}
 
 		virtual void init() 
+		{}
+		
+		virtual void finalize()
 		{}
 
 		virtual bool register_processor(std::shared_ptr <BridgeProcessor> processor)
@@ -44,6 +50,8 @@ class CapabilityManager
 		
 		ProcessorMap 	processores_;
 		std::string 	capability_name_;
+		bool initialized_;
+		bool finalized_;
 };
 
 #endif

@@ -366,7 +366,7 @@ ClipsProcessor::subscribe   ( std::string prefixed_topic_name
   }
 
   if(! fact_found)
-  logger_->log_info("ClipsProcessor", "couldn't find fact with template name %s for now", tmpl_name.c_str());
+    logger_->log_info("ClipsProcessor", "couldn't find fact with template name %s for now", tmpl_name.c_str());
 
   //for now, always make a subscription intstance for the subscription request (even if no fact found)
   std::shared_ptr <ClipsSubscription> new_subscirption;

@@ -25,14 +25,15 @@ using namespace rapidjson;
 SubscriptionCapabilityManager::SubscriptionCapabilityManager()	
 :	CapabilityManager("Subscription")
 {
-	initialized_=false;
-	mutex_ = new fawkes::Mutex();
+	__mutex = new fawkes::Mutex();
 }
 
 SubscriptionCapabilityManager::~SubscriptionCapabilityManager()
 {
 	//TODO: check if something needs to be changed
+	topic_Subscription_.clear();
 	publisher_thread->join();
+	delete __mutex;
 }
 
 void
@@ -40,12 +41,33 @@ SubscriptionCapabilityManager::init()
 {
 	if(!initialized_)
 	{
+		run_publish_loop = true;
 		publisher_thread= std::make_shared<std::thread>(&SubscriptionCapabilityManager::publish_loop, this);
-		initialized_ = true;
+		
 		std::cout << "publisher loop intrialized"<<std::endl;
+		initialized_ = true;
 	}
 }
-	
+
+void
+SubscriptionCapabilityManager::finalize()
+{
+	MutexLocker ml(__mutex);
+
+	if(!finalized_)
+	{
+		run_publish_loop = false;
+		
+		for(std::map <std::string , std::shared_ptr<Subscription> > ::iterator it = topic_Subscription_.begin()
+			; it != topic_Subscription_.end()
+			; it++)
+		{
+			it->second->finalize();
+		}
+
+		finalized_=true;
+	}
+}
 
 bool
 SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
@@ -160,6 +182,7 @@ void
 SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <EventEmitter> event_emitter)
 {
 
+	MutexLocker ml(__mutex);
 
 	try{
 		//check if the event emitter was a Subscription
@@ -184,6 +207,7 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 						unregister_callback(EventType::PUBLISH , subscription ); 
 					}
 
+					topic_Subscription_[prefixed_topic_name] -> finalize();
 					topic_Subscription_.erase(prefixed_topic_name);
 				}
 			}
@@ -205,6 +229,7 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 										, unsigned int fragment_size 	
 									   	, std::shared_ptr<WebSession> session)
 {
+	MutexLocker ml(__mutex);
 
 	std::shared_ptr <SubscriptionCapability> processor;
 	processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
@@ -271,6 +296,8 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 											, std::string id 		
 											, std::shared_ptr<WebSession> session)
 {
+	MutexLocker ml(__mutex);
+
 	//select thre right processor
 	std::shared_ptr <SubscriptionCapability> processor;
 	processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
@@ -308,7 +335,7 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 void 
 SubscriptionCapabilityManager::publish_loop()
 {
-	while(true)
+	while(run_publish_loop)
 	{
 		emitt_event (EventType::PUBLISH);
 	}
@@ -328,4 +355,6 @@ SubscriptionCapabilityManager::emitt_event(EventType event_type)
 
 	//do_on_event(event_type);
 }
+
+
 

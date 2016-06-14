@@ -16,6 +16,7 @@ EventEmitter::EventEmitter()
 EventEmitter::~EventEmitter()
 {
 	callbacks_.clear();
+	delete mutex_;
 }
 
 void
@@ -36,7 +37,7 @@ EventEmitter::emitt_event(EventType event_type)
 void 
 EventEmitter::register_callback  ( EventType event_type , std::shared_ptr <Callable> callable )
 {
-		MutexLocker ml(mutex_);
+	MutexLocker ml(mutex_);
 
 	callbacks_ [event_type].push_back(callable);
 }
@@ -44,7 +45,7 @@ EventEmitter::register_callback  ( EventType event_type , std::shared_ptr <Calla
 void
 EventEmitter::unregister_callback( EventType event_type , std::shared_ptr <Callable> callable )
 {
-		MutexLocker ml(mutex_);
+	MutexLocker ml(mutex_);
 
 	it_callables_ = std::find_if(callbacks_ [event_type].begin(), callbacks_ [event_type].end(), 
 		[&](std::shared_ptr<Callable> const& c){return c == callable;});
