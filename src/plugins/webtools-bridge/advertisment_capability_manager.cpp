@@ -6,6 +6,9 @@
 #include <rapidjson/stringbuffer.h>
 
 #include <core/exceptions/software.h>
+#include <core/threading/mutex.h>
+#include <core/threading/mutex_locker.h>
+
 
 using namespace fawkes;
 using namespace rapidjson;
@@ -14,18 +17,39 @@ using namespace rapidjson;
 AdvertismentCapabilityManager::AdvertismentCapabilityManager()	
 :	CapabilityManager("Advertisment")
 {
+	__mutex = new fawkes::Mutex();
 
 }
 
 AdvertismentCapabilityManager::~AdvertismentCapabilityManager()
 {
-	//TODO: check if something needs to be changed
+	topic_Advertisment_.clear();
 }
 
 void 
 AdvertismentCapabilityManager::init()
-{}
-	
+{
+	initialized_ = true;
+}
+
+void
+AdvertismentCapabilityManager::finalize()
+{
+	MutexLocker ml(__mutex);
+
+	if(!finalized_)
+	{	
+		for(std::map <std::string , std::shared_ptr<Advertisment> > ::iterator it = topic_Advertisment_.begin()
+			; it != topic_Advertisment_.end()
+			; it++)
+		{
+			it->second->finalize();
+		}
+
+		finalized_=true;
+	}
+}
+
 
 bool
 AdvertismentCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
@@ -148,6 +172,9 @@ AdvertismentCapabilityManager::handle_message(Document &d
 void
 AdvertismentCapabilityManager::callback(EventType event_type , std::shared_ptr <EventEmitter> event_emitter)
 {
+
+	MutexLocker ml(__mutex);
+
 	try{
 		//check if the event emitter was a Advertisment
 		std::shared_ptr <Advertisment> advertisment;
@@ -163,6 +190,7 @@ AdvertismentCapabilityManager::callback(EventType event_type , std::shared_ptr <
 				//does the advertisment exist (unique per topic_name)
 				if (topic_Advertisment_.find(prefixed_topic_name) != topic_Advertisment_.end())
 				{
+					topic_Advertisment_[prefixed_topic_name] -> finalize();
 					topic_Advertisment_.erase(prefixed_topic_name);
 				}
 			}
@@ -180,6 +208,7 @@ AdvertismentCapabilityManager::advertise( std::string bridge_prefix
 										, std::string type	
 									   	, std::shared_ptr<WebSession> session)
 {
+	MutexLocker ml(__mutex);
 
 	std::shared_ptr <AdvertismentCapability> processor;
 	processor = std::dynamic_pointer_cast<AdvertismentCapability> (processores_[bridge_prefix]);
@@ -228,6 +257,8 @@ AdvertismentCapabilityManager::unadvertise	( std::string bridge_prefix
 											, std::string id 		
 											, std::shared_ptr<WebSession> session)
 {
+	MutexLocker ml(__mutex);
+
 	//select thre right processor
 	std::shared_ptr <AdvertismentCapability> processor;
 	processor = std::dynamic_pointer_cast<AdvertismentCapability> (processores_[bridge_prefix]);
@@ -263,6 +294,8 @@ AdvertismentCapabilityManager::publish	( std::string bridge_prefix
 											, std::string msg_jsonStr	
 											, std::shared_ptr<WebSession> session)
 {
+	MutexLocker ml(__mutex);
+
 	//select thre right processor
 	std::shared_ptr <AdvertismentCapability> processor;
 	processor = std::dynamic_pointer_cast<AdvertismentCapability> (processores_[bridge_prefix]);

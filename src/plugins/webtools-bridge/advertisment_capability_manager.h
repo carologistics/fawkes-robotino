@@ -7,6 +7,11 @@ class AdvertismentCapability;
 class EventHandter;
 
 
+namespace fawkes
+{
+	class Mutex;
+}
+
 
 class AdvertismentCapabilityManager
 : public CapabilityManager
@@ -18,6 +23,7 @@ public:
 	~AdvertismentCapabilityManager();
 
 	void init();
+	void finalize();
 
 	void handle_message( rapidjson::Document &d 
 									, std::shared_ptr <WebSession>);
@@ -46,4 +52,6 @@ private:
 					, std::shared_ptr<WebSession> session);
 
 	std::map <std::string,std::shared_ptr<Advertisment> > topic_Advertisment_;
+
+	fawkes::Mutex	*__mutex;
 };

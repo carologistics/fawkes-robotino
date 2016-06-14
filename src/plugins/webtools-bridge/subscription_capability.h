@@ -90,7 +90,7 @@ class Subscription
 											, std::string topic
 											, std::string id);
 
-		fawkes::Mutex 			*mutex_;
+		fawkes::Mutex 			*__mutex;
 		
 	protected:
 		void 					add_new_session(std::shared_ptr<WebSession> session);	
@@ -102,6 +102,7 @@ class Subscription
 						{
 							Request(): id("") ,compression("")	,throttle_rate(0) ,queue_length(1) ,fragment_size(0)
 							{}
+							~Request(){ last_published_time.reset();}
 							std::string		id;
 						   	std::string 	compression;
 						   	unsigned int 	throttle_rate;

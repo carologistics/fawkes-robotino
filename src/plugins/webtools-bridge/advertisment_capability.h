@@ -76,7 +76,7 @@ class Advertisment
 		virtual void 			activate_impl(); 	//will be implicitly called from activate()
 		virtual void 			deactivate_impl();	//will be implicitly called from deactive() 
 
-		fawkes::Mutex 			*mutex_;
+		fawkes::Mutex 			*__mutex;
 		
 	protected:
 		enum 			Status { ACTIVE, DORMANT };
@@ -84,6 +84,7 @@ class Advertisment
 						{
 							Request(): id("") 
 							{}
+							~Request(){};
 							std::string		id;
 						};
 		

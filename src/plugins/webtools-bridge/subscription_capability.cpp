@@ -34,7 +34,7 @@ Subscription::Subscription(std::string topic_name , std::string prefix ,  fawkes
 	,	finalized (false)
 {
 	logger_ = logger;
-	mutex_=new fawkes::Mutex();
+	__mutex=new fawkes::Mutex();
 }
 
 
@@ -42,14 +42,17 @@ Subscription::~Subscription()
 {
 	//delete it from the class created the subscriptiuon (ie. processor)
 	//delete clock_;
-	delete mutex_;
+
+	subscriptions_.clear();
+	delete __mutex;
 }
 
 //---------------------INSTACE OPERATIONS
 void
 Subscription::finalize()
 {
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
+
 	if(!finalized)
 	{
 		//If still active deactivate 
@@ -65,6 +68,7 @@ Subscription::finalize()
 				;)
 			{
 				remove_session(it_subscriptions_->first);
+				it_subscriptions_->second.clear();
 				subscriptions_.erase(it_subscriptions_++);
 			}
 		}
@@ -199,7 +203,7 @@ Subscription::add_request( std::string id
 
 	Request request;
 	//CHANGE:this matches for the pointer not the object
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
 
 	it_subscriptions_ = subscriptions_.find(session);
 
@@ -239,7 +243,7 @@ this should be called by each unsubscribe() to remove the request and posibly th
 void
 Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSession> session)
 {
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
 
 	it_subscriptions_ = subscriptions_.find(session);	
 
@@ -284,7 +288,7 @@ void
 Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> event_emitter)
 {
 	//sub_list_mutex_->lock();
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
 
  	if(event_type == EventType::PUBLISH )
   	{
@@ -304,9 +308,18 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 				if (subscriptions_.find(session) != subscriptions_.end())
 					subscriptions_.erase(session);
 
-				std::cout<< "Session terminated NICELY :D" << std::endl;
+				// was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
+				if(subscriptions_.empty()){
+					std::shared_ptr<Subscription> my_self= shared_from_this();// Just to keep object alive till after its deleted from manager
+					ml.unlock();// to allow others to call finialize or do whatever is necessary to the object
+					emitt_event(EventType::TERMINATE);
+					
+				}
+				std::cout<< "Session terminated NICELY :D" << std::endl;				
 
-				// //was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
+
+
+			 //was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
 				// if(subscriptions_.empty()){
 				// 	std::shared_ptr<Subscription> my_self= shared_from_this();// Just to keep object alive till after its deleted from manager
 				// 	emitt_event(EventType::TERMINATE);
@@ -357,7 +370,7 @@ Subscription::remove_session(std::shared_ptr<WebSession> session)
 void
 Subscription::publish()
 {
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
 	if( is_active() )
 	{
 	

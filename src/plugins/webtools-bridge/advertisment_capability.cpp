@@ -20,20 +20,22 @@ Advertisment::Advertisment(std::string topic_name , std::string prefix)
 	,	processor_prefix_(prefix)
 	,	finalized (false)
 {
-	mutex_=new fawkes::Mutex();
+	__mutex=new fawkes::Mutex();
 }
 
 
 Advertisment::~Advertisment()
 {
-	delete mutex_;
+	advertisments_.clear();
+	delete __mutex;
 }
 
 //---------------------INSTACE OPERATIONS
 void
 Advertisment::finalize()
 {
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
+
 	if(!finalized)
 	{
 		//If still active deactivate 
@@ -49,6 +51,7 @@ Advertisment::finalize()
 				;)
 			{
 				it_advertisments_->first->unregister_callback(EventType::TERMINATE , shared_from_this()); 
+				it_advertisments_->second.clear();
 				advertisments_.erase(it_advertisments_++);
 			}
 		}
@@ -170,7 +173,7 @@ Advertisment::add_request( std::string id , std::shared_ptr<WebSession> session)
 
 	Request request;
 	//CHANGE:this matches for the pointer not the object
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
 
 	it_advertisments_ = advertisments_.find(session);
 
@@ -199,7 +202,7 @@ this should be called by each unadvertive() to remove the request and posibly th
 void
 Advertisment::remove_request(std::string advertisment_id, std::shared_ptr <WebSession> session)
 {
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
 
 	it_advertisments_ = advertisments_.find(session);	
 
@@ -240,7 +243,7 @@ void
 Advertisment::callback(EventType event_type , std::shared_ptr<EventEmitter> event_emitter)
 {
 	//sub_list_mutex_->lock();
-	MutexLocker ml(mutex_);
+	MutexLocker ml(__mutex);
 
 	try{
 		//check if the event emitter was a session
@@ -259,10 +262,12 @@ Advertisment::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 				//was it the last session? if yes, Advertisment emit TERMINATTION event to the Advertisment_Manager.
 				if(advertisments_.empty()){
 					std::shared_ptr<Advertisment> my_self= shared_from_this();// Just to keep object alive till after its deleted from manager
+					ml.unlock();
+					
 					emitt_event(EventType::TERMINATE);
 					
-					ml.unlock();
-					my_self->finalize();
+					//ml.unlock();
+					//my_self->finalize();
 					std::cout<< "Advertisment topic terminated!" << std::endl;
 
 					//finalize will need the mutex
