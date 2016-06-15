@@ -17,6 +17,3 @@ firevision:
       signal:
         string: v4l2:signal:device=/dev/video_signal
         frame: !frame base_link
-      conveyor:
-        string: v4l2:conveyor:device=/dev/video_conveyor
-        frame: !frame base_link
