@@ -48,6 +48,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/common/distances.h>
 #include <pcl/registration/distances.h>
+#include <pcl/features/normal_3d_omp.h>
 
 #include <tf/types.h>
 
@@ -241,7 +242,8 @@ ConveyorPoseThread::loop()
     return;
   }
 
-  CloudPtr cloud_choosen = cloud_cluster(cloud_plane);
+  std::vector<CloudPtr> clouds_cluster = cloud_cluster(cloud_plane);
+  CloudPtr cloud_choosen = cluster_find_biggest(clouds_cluster);
 
   cloud_publish(cloud_without_products, cloud_out_inter_1_);
   cloud_publish(cloud_choosen, cloud_out_result_);
@@ -590,20 +592,29 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   }
 
   // get inliers
-  CloudPtr out(new Cloud);
-  for (size_t i = 0; i < inliers->indices.size (); ++i) {
-    Point p;
-    p.x = in->points[inliers->indices[i]].x;
-    p.y = in->points[inliers->indices[i]].y;
-    p.z = in->points[inliers->indices[i]].z;
+  pcl::ExtractIndices<Point> extract;
+  extract.setInputCloud (in);
+  extract.setIndices (inliers);
+  extract.setNegative (false);
 
-    out->push_back(p);
+  CloudPtr out ( new Cloud );
+  extract.filter (*out);
+
+  // check if cloud normal is ok
+  Eigen::Vector4f plane;
+  float coverture;
+  pcl::computePointNormal(*out, plane, coverture);
+
+  if ( plane(2) > 0.99 ) {
+    return out;
+  } else {
+    logger->log_info(name(), "Discard plane, because of normal (%f\t%f\t%f)", plane(0), plane(1), plane(2));
+
+    return CloudPtr();
   }
-
-  return out;
 }
 
-CloudPtr
+std::vector<CloudPtr>
 ConveyorPoseThread::cloud_cluster(CloudPtr in)
 {
   in = cloud_voxel_grid(in);
@@ -620,38 +631,39 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
   ec.setInputCloud (in);
   ec.extract (*cluster_indices);
 
-  return cluster_find_biggest(in, cluster_indices);
+  return cluster_split(in, cluster_indices);
 }
 
-CloudPtr
-ConveyorPoseThread::cluster_find_biggest(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
+std::vector<CloudPtr>
+ConveyorPoseThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
 {
-  CloudPtr biggeset(new Cloud);
-  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices->begin (); it != cluster_indices->end (); ++it) {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
-    for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit) {
-      cloud_cluster->points.push_back (in->points[*pit]); //*
+  std::vector<CloudPtr> clouds_out;
+  for (std::vector<pcl::PointIndices>::const_iterator c_it = cluster_indices->begin (); c_it != cluster_indices->end (); ++c_it) {
+    CloudPtr cloud_cluster (new Cloud);
+    for (std::vector<int>::const_iterator p_it = c_it->indices.begin (); p_it != c_it->indices.end (); ++p_it) {
+      cloud_cluster->points.push_back (in->points[*p_it]);
     }
     cloud_cluster->width = cloud_cluster->points.size ();
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
 
-    if (biggeset->size() < cloud_cluster->width) {
-      biggeset = cloud_cluster;
+    clouds_out.push_back(cloud_cluster);
+  }
+
+  return clouds_out;
+}
+
+CloudPtr
+ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in)
+{
+  CloudPtr biggeset(new Cloud);
+  for (CloudPtr current : clouds_in) {
+    if ( biggeset->size() < current->size() ) {
+      biggeset = current;
     }
   }
 
   return biggeset;
-}
-
-boost::shared_ptr<std::vector<pcl::PointIndices>>
-ConveyorPoseThread::cluster_prune_normal_based(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
-{
-  boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices_cleaned( new std::vector<pcl::PointIndices> );
-
-
-
-  return cluster_indices_cleaned;
 }
 
 CloudPtr
