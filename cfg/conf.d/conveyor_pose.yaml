@@ -34,7 +34,7 @@ conveyor_pose:
     ]
   
   conveyor_frame_id: conveyor_pose
-  switch_default: false
+  switch_default: true
   product_removal_default: false
   use_visualisation: true
 
@@ -52,8 +52,8 @@ conveyor_pose:
     y_max: -0.055
     z_max: 0.11
     slice:
-      y_min: -0.04
-      y_max: 0.03
+      y_min: -0.025
+      y_max: 0.045
   centroid:
     # the radius wich is not pruned around the centroid
     radius: 0.05
@@ -65,8 +65,8 @@ conveyor_pose:
   product:
     normal_distance_weight: 0.1
     dist_threshold: 0.025
-    radius_limit_min: 0.015
-    radius_limit_max: 0.025
+    radius_limit_min: 0.0185
+    radius_limit_max: 0.0225
   plane:
     # the allowed noise for a plane
     dist_threshold: 0.0025
