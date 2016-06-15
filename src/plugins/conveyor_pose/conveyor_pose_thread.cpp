@@ -143,9 +143,10 @@ ConveyorPoseThread::init()
 
 //  bb_tag_ = blackboard->open_for_reading<fawkes::Position3DInterface>(bb_tag_name_.c_str());
 
+  enable_pose_ = false;
+
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(cfg_bb_switch_name_.c_str());
   bb_config_        = blackboard->open_for_writing<ConveyorConfigInterface>(cfg_bb_config_name_.c_str());
-  bb_pose_          = blackboard->open_for_writing<fawkes::Position3DInterface>(cfg_bb_conveyor_pose_name_.c_str());
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
   bb_config_->set_product_removal( cfg_enable_product_removal_ );
@@ -161,8 +162,26 @@ ConveyorPoseThread::finalize()
   pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
-  blackboard->close(bb_pose_);
+  bb_pose_conditional_close();
   blackboard->close(bb_config_);
+}
+
+void
+ConveyorPoseThread::bb_pose_conditional_open()
+{
+  if ( ! enable_pose_ ) {
+    enable_pose_ = true;
+    bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>(cfg_bb_conveyor_pose_name_.c_str());
+  }
+}
+
+void
+ConveyorPoseThread::bb_pose_conditional_close()
+{
+  if ( enable_pose_ ) {
+    enable_pose_ = false;
+    blackboard->close(bb_pose_);
+  }
 }
 
 void
@@ -173,10 +192,17 @@ ConveyorPoseThread::loop()
   if_read();
 
   if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
-    vis_hist_ = -1;
-    pose_write(pose_current);
+    if ( enable_pose_ ) {
+      vis_hist_ = -1;
+      pose_write(pose_current);
+    }
+
+    bb_pose_conditional_close();
+
     return;
   }
+
+  bb_pose_conditional_open();
 
   fawkes::LaserLineInterface * ll = NULL;
   bool use_laserline = laserline_get_best_fit( ll );
@@ -216,10 +242,9 @@ ConveyorPoseThread::loop()
   }
 
   CloudPtr cloud_choosen = cloud_cluster(cloud_plane);
-//  cloud_publish(cloud_front, cloud_out_inter_1_);
-  cloud_publish(cloud_center, cloud_out_inter_1_);
-//  cloud_publish(cloud_cycle, cloud_out_result_);
-  cloud_publish(cloud_bottom_removed, cloud_out_result_);
+
+  cloud_publish(cloud_without_products, cloud_out_inter_1_);
+  cloud_publish(cloud_choosen, cloud_out_result_);
 
   // get centroid
   Eigen::Vector4f centroid;

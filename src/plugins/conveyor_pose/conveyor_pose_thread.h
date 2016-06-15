@@ -101,6 +101,7 @@ private:
   float cfg_voxel_grid_leave_size_;
 
   // state vars
+  bool enable_pose_;
   bool cfg_enable_switch_;
   bool cfg_enable_product_removal_;
   bool cloud_in_registered_;
@@ -127,6 +128,8 @@ private:
   * check if the pointcloud is available
   */
  bool pc_in_check();
+ void bb_pose_conditional_open();
+ void bb_pose_conditional_close();
 
  void if_read();
  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
