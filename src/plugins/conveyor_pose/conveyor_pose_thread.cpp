@@ -198,7 +198,7 @@ ConveyorPoseThread::loop()
       pose_write(pose_current);
     }
 
-    bb_pose_conditional_close();
+//    bb_pose_conditional_close();
 
     return;
   }
