@@ -115,6 +115,8 @@ ConveyorPoseThread::init()
   cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
   cfg_front_offset_           = config->get_float( (cfg_prefix + "front/offset").c_str() );
 
+  cfg_bottom_offset_          = config->get_float( (cfg_prefix + "bottom/offset").c_str() );
+
   cfg_product_normal_distance_weight_ = config->get_float( (cfg_prefix + "product/normal_distance_weight").c_str() );
   cfg_product_dist_threshold_         = config->get_float( (cfg_prefix + "product/dist_threshold").c_str() );
   cfg_product_radius_limit_min_       = config->get_float( (cfg_prefix + "product/radius_limit_min").c_str() );
@@ -196,12 +198,13 @@ ConveyorPoseThread::loop()
   Eigen::Vector4f center;
   pcl::compute3DCentroid<Point, float>(*cloud_front, center);
   CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
+  CloudPtr cloud_bottom_removed = cloud_remove_offset_to_bottom(cloud_center);
 
   CloudPtr cloud_without_products(new Cloud);
   if ( bb_config_->is_product_removal() ) {
-    cloud_without_products = cloud_remove_products(cloud_center);
+    cloud_without_products = cloud_remove_products(cloud_bottom_removed);
   } else {
-    *cloud_without_products = *cloud_center;
+    *cloud_without_products = *cloud_bottom_removed;
   }
 
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
@@ -212,16 +215,15 @@ ConveyorPoseThread::loop()
     return;
   }
 
-//  CloudPtr cloud_biggest = cloud_cluster(cloud_center);
-  CloudPtr cloud_biggest = cloud_cluster(cloud_plane);
+  CloudPtr cloud_choosen = cloud_cluster(cloud_plane);
 //  cloud_publish(cloud_front, cloud_out_inter_1_);
-  cloud_publish(cloud_without_products, cloud_out_inter_1_);
+  cloud_publish(cloud_center, cloud_out_inter_1_);
 //  cloud_publish(cloud_cycle, cloud_out_result_);
-  cloud_publish(cloud_biggest, cloud_out_result_);
+  cloud_publish(cloud_bottom_removed, cloud_out_result_);
 
   // get centroid
   Eigen::Vector4f centroid;
-  pcl::compute3DCentroid<Point, float>(*cloud_biggest, centroid);
+  pcl::compute3DCentroid<Point, float>(*cloud_choosen, centroid);
 
   Eigen::Vector3f normal;
   normal(0) = coeff->values[0];
@@ -431,6 +433,27 @@ ConveyorPoseThread::cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f cen
 }
 
 CloudPtr
+ConveyorPoseThread::cloud_remove_offset_to_bottom(CloudPtr in)
+{
+  float lowest = -200;
+  for (Point p : *in) {
+    if ( p.y > lowest ) { // the y axis faces downwards
+      lowest = p.y;
+    }
+  }
+
+  CloudPtr out(new Cloud);
+  float limit = lowest - cfg_bottom_offset_;
+  for (Point p : *in) {
+    if (p.y >= limit) {
+      out->push_back(p);
+    }
+  }
+
+  return out;
+}
+
+CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
   double space = cfg_front_space_;
@@ -447,7 +470,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
       }
     }
 
-    z_min = lowest_z -0.02;
+    z_min = lowest_z - (lowest_z / 2.);
   }
   z_max = z_min + space;
 
@@ -563,18 +586,23 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (in);
 
-  std::vector<pcl::PointIndices> cluster_indices;
+  boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices(new std::vector<pcl::PointIndices>);
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
   ec.setClusterTolerance (cfg_cluster_tolerance_);
   ec.setMinClusterSize (cfg_cluster_size_min_);
   ec.setMaxClusterSize (cfg_cluster_size_max_);
   ec.setSearchMethod (tree);
   ec.setInputCloud (in);
-  ec.extract (cluster_indices);
+  ec.extract (*cluster_indices);
 
+  return cluster_find_biggest(in, cluster_indices);
+}
+
+CloudPtr
+ConveyorPoseThread::cluster_find_biggest(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
+{
   CloudPtr biggeset(new Cloud);
-  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
-  {
+  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices->begin (); it != cluster_indices->end (); ++it) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit) {
       cloud_cluster->points.push_back (in->points[*pit]); //*
@@ -589,6 +617,16 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
   }
 
   return biggeset;
+}
+
+boost::shared_ptr<std::vector<pcl::PointIndices>>
+ConveyorPoseThread::cluster_prune_normal_based(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
+{
+  boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices_cleaned( new std::vector<pcl::PointIndices> );
+
+
+
+  return cluster_indices_cleaned;
 }
 
 CloudPtr

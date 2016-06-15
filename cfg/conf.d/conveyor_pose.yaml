@@ -59,9 +59,11 @@ conveyor_pose:
     radius: 0.05
   front:
     # the distance that is not pruned at the front of the MPS
-    space: 0.1
+    space: 0.04
     # this should be a tf, but I did not get it work :(
-    offset: -0.04
+    offset: 0.005
+  bottom:
+    offset: 0.06
   product:
     normal_distance_weight: 0.1
     dist_threshold: 0.025
