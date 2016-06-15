@@ -124,6 +124,7 @@ ConveyorPoseThread::init()
   cfg_product_radius_limit_max_       = config->get_float( (cfg_prefix + "product/radius_limit_max").c_str() );
 
   cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
+  cfg_normal_z_minimum_       = config->get_float( (cfg_prefix + "plane/normal_z_minimum").c_str() );
 
   cfg_cluster_tolerance_      = config->get_float( (cfg_prefix + "cluster/tolerance").c_str() );
   cfg_cluster_size_min_       = config->get_float( (cfg_prefix + "cluster/size_min").c_str() );
@@ -605,7 +606,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   float coverture;
   pcl::computePointNormal(*out, plane, coverture);
 
-  if ( plane(2) > 0.99 ) {
+  if ( plane(2) > cfg_normal_z_minimum_ ) {
     return out;
   } else {
     logger->log_info(name(), "Discard plane, because of normal (%f\t%f\t%f)", plane(0), plane(1), plane(2));
