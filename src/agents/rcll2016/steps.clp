@@ -147,14 +147,21 @@
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (machine (mtype BS) (name ?mps) (state IDLE))
+  ?bs <- (base-station (name ?mps) (active-side ?side))
   =>
   (retract ?state)
   (modify ?step (state running))
-  (printout warn "TODO: Pick bases from both BS sides" crlf)
+  (if (eq ?side INPUT) then
+    (bind ?res (sym-cat ?mps "-I"))
+    (synced-modify ?bs active-side OUTPUT)
+  else
+    (bind ?res (sym-cat ?mps "-O"))
+    (synced-modify ?bs active-side INPUT)
+  )
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill get_product_from) (args place ?mps side input) (target ?mps))
-	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-I")))
-    (mps-instruction (machine ?mps) (base-color ?color) (lock (sym-cat ?mps "-I")))
+    (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?side)) (target ?mps))
+    (wait-for-lock (priority ?p) (res ?res))
+    (mps-instruction (machine ?mps) (base-color ?color) (side ?side) (lock ?res))
   )
 )
 

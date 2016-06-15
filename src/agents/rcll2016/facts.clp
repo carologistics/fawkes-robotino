@@ -132,9 +132,11 @@
   (slot sync-id (type INTEGER) (default 0))
 )
 
-; (deftemplate base-station 
-;   (slot name (type SYMBOL) (allowed-symbols C-BS M-BS))
-; )
+(deftemplate base-station
+  (slot name (type SYMBOL) (allowed-symbols C-BS M-BS))
+  (slot active-side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default INPUT))
+  (slot sync-id (type INTEGER) (default 0))
+)
 
 ; (deftemplate delivery-station 
 ;   (slot name (type SYMBOL) (allowed-symbols C-DS M-DS))
@@ -314,7 +316,7 @@
   (slot ring-color (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
-
+  (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT))
 )
 
 (deftemplate exp-current-zone
@@ -329,6 +331,7 @@
   (holding NONE)
 
   (machine (name C-BS) (team CYAN) (mtype BS))
+  (base-station (name C-BS))
   (machine (name C-CS1) (team CYAN) (mtype CS))
   (cap-station (name C-CS1))
   (machine (name C-CS2) (team CYAN) (mtype CS))
@@ -340,6 +343,7 @@
   (machine (name C-DS) (team CYAN) (mtype DS))
 
   (machine (name M-BS) (team MAGENTA) (mtype BS))
+  (base-station (name M-BS))
   (machine (name M-CS1) (team MAGENTA) (mtype CS))
   (cap-station (name M-CS1))
   (machine (name M-CS2) (team MAGENTA) (mtype CS))
