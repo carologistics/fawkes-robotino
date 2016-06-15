@@ -100,6 +100,7 @@ private:
 
   // state vars
   bool cfg_enable_switch_;
+  bool cfg_enable_product_removal_;
   bool cloud_in_registered_;
   bool cfg_use_visualisation_;
   pcl::PCLHeader header_;

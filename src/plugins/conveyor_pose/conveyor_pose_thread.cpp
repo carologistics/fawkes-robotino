@@ -101,6 +101,7 @@ ConveyorPoseThread::init()
   vis_hist_angle_diff_        = config->get_float( (cfg_prefix + "vis_hist/diff_angle").c_str() );
 
   cfg_enable_switch_          = config->get_bool( (cfg_prefix + "switch_default").c_str() );
+  cfg_enable_product_removal_ = config->get_bool( (cfg_prefix + "product_removal_default").c_str() );
   cfg_use_visualisation_      = config->get_bool( (cfg_prefix + "use_visualisation").c_str() );
 
   cfg_gripper_y_min_          = config->get_float( (cfg_prefix + "gripper/y_min").c_str() );
@@ -145,7 +146,7 @@ ConveyorPoseThread::init()
   bb_pose_          = blackboard->open_for_writing<fawkes::Position3DInterface>(cfg_bb_conveyor_pose_name_.c_str());
   bb_enable_switch_->set_enabled(cfg_enable_switch_);
   bb_enable_switch_->write();
-  bb_config_->set_product_removal( false );
+  bb_config_->set_product_removal( cfg_enable_product_removal_ );
   bb_config_->write();
 
   visualisation_ = new Visualisation(rosnode);
@@ -196,15 +197,15 @@ ConveyorPoseThread::loop()
   pcl::compute3DCentroid<Point, float>(*cloud_front, center);
   CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
 
-  CloudPtr cloud_cycle(new Cloud);
+  CloudPtr cloud_without_products(new Cloud);
   if ( bb_config_->is_product_removal() ) {
-    cloud_cycle = cloud_remove_products(cloud_center);
+    cloud_without_products = cloud_remove_products(cloud_center);
   } else {
-    *cloud_cycle = *cloud_center;
+    *cloud_without_products = *cloud_center;
   }
 
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
-  CloudPtr cloud_plane = cloud_get_plane(cloud_cycle, coeff);
+  CloudPtr cloud_plane = cloud_get_plane(cloud_without_products, coeff);
   if ( cloud_plane == NULL ) {
     vis_hist_ = -1;
     pose_write(pose_current);
@@ -214,7 +215,7 @@ ConveyorPoseThread::loop()
 //  CloudPtr cloud_biggest = cloud_cluster(cloud_center);
   CloudPtr cloud_biggest = cloud_cluster(cloud_plane);
 //  cloud_publish(cloud_front, cloud_out_inter_1_);
-  cloud_publish(cloud_cycle, cloud_out_inter_1_);
+  cloud_publish(cloud_without_products, cloud_out_inter_1_);
 //  cloud_publish(cloud_cycle, cloud_out_result_);
   cloud_publish(cloud_biggest, cloud_out_result_);
 

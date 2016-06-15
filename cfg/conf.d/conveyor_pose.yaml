@@ -35,6 +35,7 @@ conveyor_pose:
   
   conveyor_frame_id: conveyor_pose
   switch_default: false
+  product_removal_default: false
   use_visualisation: true
 
 
