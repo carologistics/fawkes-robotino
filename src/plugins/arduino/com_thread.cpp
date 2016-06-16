@@ -115,30 +115,35 @@ ArduinoComThread::loop()
             if (arduino_if->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>()) {
                 ArduinoInterface::MoveUpwardsMessage *msg = arduino_if->msgq_first(msg);
 
-                if (current_z_position_ - (int) msg->num_mm() < 0) {
-                    logger->log_error(name(), "Limit exceeded, min: %i, desired: %i", 0, current_z_position_ + msg->num_mm());
-                } else {
-                    ArduinoComMessage req;
-                    req.add_command(ArduinoComMessage::CMD_STEP_UP);
-                    req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
-                    msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
-                    send_and_recv(req);
-                    read_pending_ = true;
+                if (msg->num_mm() > 0) {
+                    if (current_z_position_ - (int) msg->num_mm() < 0) {
+                        logger->log_error(name(), "Limit exceeded, min: %i, desired: %i", 0, current_z_position_ + msg->num_mm());
+                    } else {
+                           ArduinoComMessage req;
+                           req.add_command(ArduinoComMessage::CMD_STEP_UP);
+                           req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                           msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
+                           logger->log_debug(name(), "sending: %u", msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                           send_and_recv(req);
+                           read_pending_ = true;
+                    }
                 }
 
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>()) {
                 ArduinoInterface::MoveDownwardsMessage *msg = arduino_if->msgq_first(msg);
 
-                if (current_z_position_ + (int) msg->num_mm() > cfg_max_mm_) {
-                    logger->log_error(name(), "Limit exceeded, max: %i, desired: %i", cfg_max_mm_, current_z_position_ + msg->num_mm());
-                } else {
-
-                    ArduinoComMessage req;
-                    req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
-                    req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
-                    msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
-                    send_and_recv(req);
-                    read_pending_ = true;
+                if (msg->num_mm() > 0) {
+                    if (current_z_position_ + (int) msg->num_mm() > cfg_max_mm_) {
+                        logger->log_error(name(), "Limit exceeded, max: %i, desired: %i", cfg_max_mm_, current_z_position_ + msg->num_mm());
+                    } else {
+                           ArduinoComMessage req;
+                           req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
+                           req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                           msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
+                           logger->log_debug(name(), "sending: %u", msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                           send_and_recv(req);
+                           read_pending_ = true;
+                    }
                 }
 
             } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
