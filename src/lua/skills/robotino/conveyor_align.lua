@@ -149,7 +149,7 @@ function DRIVE:init()
    local z_position = pose.z * 1000
    print("z_pose: " .. z_position)
    self.args["ax12gripper"].command = "RELGOTOZ"
-   if math.abs(pose.z) <= TOLERANCE_Z then
+   if math.abs(pose.z) >= TOLERANCE_Z then
       self.args["ax12gripper"].z_position = z_position
    end
 end
