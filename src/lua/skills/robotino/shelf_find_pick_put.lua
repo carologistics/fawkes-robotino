@@ -1,10 +1,11 @@
 
 ----------------------------------------------------------------------------
---  shelf_pick.lua
+--  shelf_find_pick_put.lua
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
 --             2015  Tobias Neumann
+--             2016  David Schmidt
 --
 ----------------------------------------------------------------------------
 
@@ -34,9 +35,7 @@ depends_interfaces = {
 documentation      = [==[ shelf_pick
 
                           This skill does:
-                          - Picks of Shelf                    
-
-                          @param slot       string  the slot to pick the puck of; options ( LEFT | MIDDLE | RIGHT )
+                          - Picks of Shelf
 ]==]
 
 -- Initialize as skill module
@@ -85,7 +84,7 @@ function GOTO_SHELF:init()
       self.fsm:set_error("no shelf side set")
       self.fsm.vars.error = true
    end
-   
+
    self.args["motor_move"] =
 			{ y = -dest_y, --shelf is on the right side of the conveyor
 				vel_trans = 0.2,
@@ -123,7 +122,7 @@ function MOVE_INFRONT_CONVEYOR:init()
       self.fsm:set_error("no shelf side set")
       self.fsm.vars.error = true
    end
-   
+
    self.args["motor_move"] =
 			{ y = dest_y, --shelf is on the right side of the conveyor
 				vel_trans = 0.2,

@@ -60,6 +60,7 @@ skillenv.use_skill("skills.robotino.get_product_from")
 skillenv.use_skill("skills.robotino.approach_test")
 skillenv.use_skill("skills.robotino.tagless_mps_align")
 skillenv.use_skill("skills.robotino.shelf_find_pick_put")
+skillenv.use_skill("skills.robotino.drive_zone_mps_produce")
 -- Uncomment to use gripper for technical challenge
 --skillenv.use_skill("skills.robotino.gripper")
 --skillenv.use_skill("skills.robotino.grip_cylinder")
