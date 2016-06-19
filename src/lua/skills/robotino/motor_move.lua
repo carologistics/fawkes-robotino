@@ -59,7 +59,7 @@ documentation      = [==[Move on a (kind of) straight line relative to the given
 -- Tunables
 local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
 local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.6 }
-local V_MIN =         { x=0.01, y=0.01, ori=0.08 }   -- below the motor won't even start
+local V_MIN =         { x=0.01, y=0.01, ori=0.06 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
 local TOLERANCE_CAM = { x=0.005, y=0.005, ori=0.005 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
@@ -140,8 +140,8 @@ function set_speed(self)
                -- slowed us down a bit before doing this ;-)
                if scalar(dist_target[k]) < 0 then v[k] = v[k] * -1 end
 
-               printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
-                 k, scalar(dist_target[k]), v_acc, v_dec, v[k])
+               -- printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
+               --   k, scalar(dist_target[k]), v_acc, v_dec, v[k])
             else
                v[k] = 0
             end
