@@ -72,7 +72,13 @@ class RosBridgeProxyProcessor
 
   virtual ~RosBridgeProxyProcessor();
 
- void init();
+  void    init();
+  void    finalize();
+
+  void    on_open(connection_hdl hdl) ;
+  void    on_fail(connection_hdl hdl) ;
+  void    on_close(connection_hdl hdl) ;
+  
 
   std::shared_ptr<Subscription> subscribe   ( std::string topic_name 
                                             , std::string id    
@@ -110,7 +116,7 @@ class RosBridgeProxyProcessor
   void forward_to_proxy_session(std::shared_ptr <WebSession> session , std::string message);
 
 private:
-  std::string                                                  rosbridge_uri_; 
+  std::string                                                 rosbridge_uri_; 
 
   fawkes::Logger                                              *logger_; 
   fawkes::Configuration                                       *config_;
@@ -122,7 +128,6 @@ private:
 
   std::shared_ptr<websocketpp::client<websocketpp::config::asio_client>>          rosbridge_endpoint_;
   std::shared_ptr<websocketpp::lib::thread>                                       proxy_thread_;
-  
 };
 
 
