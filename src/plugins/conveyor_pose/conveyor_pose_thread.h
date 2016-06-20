@@ -70,6 +70,8 @@ private:
   std::string cfg_bb_config_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
+
+  bool cfg_pose_close_if_no_new_pointclouds_;
 //  std::string bb_tag_name_;
   float vis_hist_pose_diff_;
   float vis_hist_angle_diff_;

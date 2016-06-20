@@ -86,6 +86,7 @@ ConveyorPoseThread::init()
   cfg_bb_config_name_         = if_prefix + config->get_string( (cfg_prefix + "if/config").c_str() );
 
   laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
+
 //  laserlines_names_.push_back("/laser-lines/1");
 //  laserlines_names_.push_back("/laser-lines/2");
 //  laserlines_names_.push_back("/laser-lines/3");
@@ -96,6 +97,8 @@ ConveyorPoseThread::init()
 //  laserlines_names_.push_back("/laser-lines/8");
 
 //  bb_tag_name_ = "/tag-vision/0";
+
+  cfg_pose_close_if_no_new_pointclouds_  = config->get_bool( (cfg_prefix + "if/pose_close_if_new_pc").c_str() );
 
   conveyor_frame_id_          = config->get_string( (cfg_prefix + "conveyor_frame_id").c_str() );
   vis_hist_pose_diff_         = config->get_float( (cfg_prefix + "vis_hist/diff_pose").c_str() );
@@ -146,6 +149,9 @@ ConveyorPoseThread::init()
 //  bb_tag_ = blackboard->open_for_reading<fawkes::Position3DInterface>(bb_tag_name_.c_str());
 
   enable_pose_ = false;
+  if ( ! cfg_pose_close_if_no_new_pointclouds_ ) {
+    bb_pose_conditional_open();
+  }
 
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(cfg_bb_switch_name_.c_str());
   bb_config_        = blackboard->open_for_writing<ConveyorConfigInterface>(cfg_bb_config_name_.c_str());
@@ -199,7 +205,9 @@ ConveyorPoseThread::loop()
       pose_write(pose_current);
     }
 
-//    bb_pose_conditional_close();
+    if ( cfg_pose_close_if_no_new_pointclouds_ ) {
+      bb_pose_conditional_close();
+    }
 
     return;
   }
