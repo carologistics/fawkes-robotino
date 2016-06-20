@@ -75,6 +75,8 @@ ConveyorPoseThread::init()
 {
   const std::string cfg_prefix = "/conveyor_pose/";
 
+  cfg_debug_mode_ = config->get_bool( (cfg_prefix + "debug").c_str() );
+
   cloud_in_name_ = config->get_string( (cfg_prefix + "cloud_in").c_str() );
 
   const std::string if_prefix = config->get_string( (cfg_prefix + "if/prefix").c_str() ) + "/";
@@ -155,7 +157,7 @@ ConveyorPoseThread::init()
 
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(cfg_bb_switch_name_.c_str());
   bb_config_        = blackboard->open_for_writing<ConveyorConfigInterface>(cfg_bb_config_name_.c_str());
-  bb_enable_switch_->set_enabled(cfg_enable_switch_);
+  bb_enable_switch_->set_enabled( cfg_debug_mode_ || cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug mode is used
   bb_enable_switch_->write();
   bb_config_->set_product_removal( cfg_enable_product_removal_ );
   bb_config_->write();
@@ -317,8 +319,13 @@ ConveyorPoseThread::if_read()
     bb_enable_switch_->msgq_pop();
   }
   if ( rv != bb_enable_switch_->is_enabled() ) {
-    logger->log_info(name(), "*** enabled: %s", rv ? "yes" : "no");
-    bb_enable_switch_->set_enabled(rv);
+    if ( ! cfg_debug_mode_ ) {
+      logger->log_info(name(), "*** enabled: %s", rv ? "yes" : "no");
+      bb_enable_switch_->set_enabled(rv);
+    } else {
+      logger->log_warn(name(), "*** enabled: %s, ignored because of DEBUG MODE, if will be ENABLED", rv ? "yes" : "no");
+      bb_enable_switch_->set_enabled(true);
+    }
     bb_enable_switch_->write();
   }
 

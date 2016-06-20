@@ -107,6 +107,7 @@ private:
   // state vars
   bool enable_pose_;
   bool cfg_enable_switch_;
+  bool cfg_debug_mode_;
   bool cfg_enable_product_removal_;
   bool cloud_in_registered_;
   bool cfg_use_visualisation_;
