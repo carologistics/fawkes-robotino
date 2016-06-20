@@ -58,6 +58,9 @@ ProxySession::on_fail(websocketpp::connection_hdl hdl)
 void ProxySession::on_close(websocketpp::connection_hdl hdl)
 {   
  	MutexLocker ml(mutex_);
+
+    std::cout << " on close " << std::endl;
+
  	status_= "closed";
  	terminate();
 }
@@ -72,6 +75,8 @@ ProxySession::on_message(websocketpp::connection_hdl hdl, websocketpp::client<we
         //throw
     }
     std::string jsonString = msg -> get_payload();  
+
+    //maybe check for its validity before
     web_session_-> send(jsonString);        
 }
 
@@ -134,6 +139,8 @@ void
 ProxySession::callback( EventType event_type , std::shared_ptr <EventEmitter> event_emitter)
 {
 
+    MutexLocker ml(mutex_);
+
     try{
         //check if the event emitter was a web_session
         std::shared_ptr <WebSession> session = std::dynamic_pointer_cast<WebSession> (event_emitter);
@@ -143,9 +150,11 @@ ProxySession::callback( EventType event_type , std::shared_ptr <EventEmitter> ev
             {
                 websocketpp::lib::error_code ec;
             	endpoint_ptr_->close( hdl_ , websocketpp::close::status::going_away, "", ec);
-		        if (ec)
-		        {
-		           // logger_->log_info("ProxySession","cloud not close connection to rosbridge: %s" , ec.message().c_str());
+
+                if (ec)
+                {
+                std::cout << "ProxySession:cloud not close connection to rosbridge "<< std::endl;
+		            //logger_->log_info("ProxySession","cloud not close connection to rosbridge: %s" , ec.message().c_str());
 		            return;
 		        }
 		     }
@@ -164,5 +173,16 @@ ProxySession::emitt_event(EventType event_type)
 		it_callables_++)
 	{
 		(*it_callables_)->callback(event_type , shared_from_this());
+
+        if(event_type == EventType::TERMINATE)
+        {
+            it_callables_ = callbacks_ [event_type].erase(it_callables_);   
+        }
+        else
+        {
+            it_callables_++;
+        }
 	}
+
+
 }

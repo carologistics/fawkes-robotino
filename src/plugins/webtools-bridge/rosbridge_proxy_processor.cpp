@@ -22,6 +22,7 @@ RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Lo
 :   BridgeProcessor(prefix)
 ,   logger_(logger)
 ,   clock_(clock)
+,   finalized_(false)
 {
     config_= config;
     rosbridge_uri_= config_->get_string("/webtools-bridge/rosbridge-uri");
@@ -37,23 +38,13 @@ RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Lo
 
 RosBridgeProxyProcessor::~RosBridgeProxyProcessor()
 {
+    finalize();
     rosbridge_endpoint_->stop_perpetual();
 
-    websocketpp::lib::error_code ec;
-
-    for (it_pears_ = pears_.begin();
-         it_pears_ != pears_.end() ; it_pears_++)
-    {
-        (*it_pears_)->unregister_callback(EventType::TERMINATE , shared_from_this() );
-        rosbridge_endpoint_->close((*it_pears_)->get_connection_hdl() , websocketpp::close::status::going_away, "", ec);
-        if (ec) 
-        {
-           logger_->log_info("RosBridgeProxyProcessor"," Error closing connection : : %s" , ec.message().c_str());
-        }
-    }
-
+    rosbridge_endpoint_ ->stop();
     proxy_thread_->join();
     delete mutex_;
+    pears_.clear();
 }
 
 void 
@@ -62,6 +53,58 @@ RosBridgeProxyProcessor::init()
     proxy_thread_ = websocketpp::lib::make_shared<websocketpp::lib::thread>(&websocketpp::client<websocketpp::config::asio_client> ::run, rosbridge_endpoint_);  
     logger_->log_info("RosBridgeProxyProcessor"," Proxy Thread Started" );
 }
+
+void 
+RosBridgeProxyProcessor::finalize()
+{
+    MutexLocker ml(mutex_);
+
+    websocketpp::lib::error_code ec;
+
+
+    if(!finalized_)
+    {
+        logger_->log_info( "RosBridgeProxyProcessor:"," Finalizing" ) ;
+
+        for (  it_pears_ = pears_.begin()
+            ; it_pears_ != pears_.end()
+            ; )
+        {
+            (*it_pears_)->unregister_callback(EventType::TERMINATE , shared_from_this() );
+            rosbridge_endpoint_->close((*it_pears_)->get_connection_hdl() , websocketpp::close::status::going_away, "", ec);
+            pears_.erase(it_pears_++);
+
+            if (ec) 
+            {
+               logger_->log_info("RosBridgeProxyProcessor"," Error closing connection : : %s" , ec.message().c_str());
+            }
+        }
+
+        finalized_=true;
+    }
+
+}
+
+
+void 
+RosBridgeProxyProcessor::on_open(connection_hdl hdl) 
+{
+
+
+}
+
+void
+RosBridgeProxyProcessor::on_fail(connection_hdl hdl) 
+{
+
+}
+
+void
+RosBridgeProxyProcessor::on_close(connection_hdl hdl) 
+{
+
+}
+
 
 /*creates new a session to to "Ros Bridge" acting as proxy,
  and wrappes the a unique web_session and mapes its interactions
@@ -93,6 +136,7 @@ RosBridgeProxyProcessor::forward_to_proxy_session(std::shared_ptr <WebSession> w
         }
 
         //Register all the proxy_session handlers to the proxy_session itslef
+        //Create a session proxy that wrappes the web_session and implements the comunication to/from Rosbridge
         std::shared_ptr  <ProxySession> rosbridge_session = std::make_shared<ProxySession>(web_session);
 
         con->set_open_handler(websocketpp::lib::bind(
@@ -116,7 +160,23 @@ RosBridgeProxyProcessor::forward_to_proxy_session(std::shared_ptr <WebSession> w
 
         rosbridge_endpoint_->connect(con);
 
-        //register for proxy_session's termination events
+        //REPLACE BY THIS
+        //TODO::check if the connection was established within some time  frame .
+        //Timeout if not connected or create the proxy_session if it was OR just move all the
+        // proxy_session creation to the on_connect callback (there should be one somewhere!!)
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        
+        //Move the call to here and let the on_message() be registered in the session
+        //std::shared_ptr  <ProxySession> rosbridge_session = std::make_shared<ProxySession>(web_session);
+        //     websocketpp::lib::placeholders::_2));
+        // con->set_message_handler(websocketpp::lib::bind(
+        //     &ProxySession::on_message,
+        //     rosbridge_session,
+        //     websocketpp::lib::placeholders::_1,
+
+
+        ////register for proxy_session's termination events
         rosbridge_session->register_callback(EventType::TERMINATE , shared_from_this() );
 
         pears_.push_back(rosbridge_session); 
@@ -124,7 +184,8 @@ RosBridgeProxyProcessor::forward_to_proxy_session(std::shared_ptr <WebSession> w
         logger_->log_info("RosBridgeProxyProcessor"," new_connection created" , ec.message().c_str());
     }
 
-    //TODO::replace all this with a better written version
+
+    ////TODO::replace all this with a better written version
      it_pears_ = std::find_if(pears_.begin(), pears_.end(), 
             [&](const std::shared_ptr <ProxySession>  & v)
             {return v->get_web_session().get() == web_session.get();});
@@ -133,11 +194,11 @@ RosBridgeProxyProcessor::forward_to_proxy_session(std::shared_ptr <WebSession> w
     {
 
         logger_->log_info("RosBridgeProxyProcessor"," still not found" );
-        //throw
+        ////throw
     }
     else
     {
-        //wait for session to be ready
+        ////wait for session to be ready
         while((*it_pears_)->get_status() != "open")
         {
             logger_->log_info("RosBridgeProxyProcessor"," connecting" );
@@ -168,7 +229,7 @@ RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <Eve
         {
             if(event_type == EventType::TERMINATE )
             {
-                //get the RosProxy connections_hdl for this session
+                
                 it_pears_ = std::find_if(pears_.begin(), pears_.end(), 
                         [&](const std::shared_ptr <ProxySession>  & v){return v.get() == session.get();});
 
@@ -185,6 +246,8 @@ RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <Eve
         //if exception was fired it only means that the casting failed becasue the emitter is not a session
     }
 }
+
+
 
 //Capabilities
 std::shared_ptr<Subscription>
