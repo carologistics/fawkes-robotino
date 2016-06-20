@@ -130,6 +130,7 @@ ConveyorPoseThread::init()
 
   cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
   cfg_normal_z_minimum_       = config->get_float( (cfg_prefix + "plane/normal_z_minimum").c_str() );
+  cfg_plane_height_minimum_   = config->get_float( (cfg_prefix + "plane/height_minimum").c_str() );
 
   cfg_cluster_tolerance_      = config->get_float( (cfg_prefix + "cluster/tolerance").c_str() );
   cfg_cluster_size_min_       = config->get_float( (cfg_prefix + "cluster/size_min").c_str() );
@@ -588,39 +589,71 @@ ConveyorPoseThread::cloud_remove_products(CloudPtr in)
 CloudPtr
 ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff)
 {
-  // get planes
-  pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-  // Create the segmentation object
-  pcl::SACSegmentation<pcl::PointXYZ> seg;
-  // Optional
-//    seg.setOptimizeCoefficients (true);
-  // Mandatory
-  seg.setModelType (pcl::SACMODEL_PLANE);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (cfg_plane_dist_threshold_);
+  CloudPtr out ( new Cloud(*in) );
 
-  seg.setInputCloud (in);
-  seg.segment (*inliers, *coeff);
+  while (true) {
+    // get planes
+    pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+    // Create the segmentation object
+    pcl::SACSegmentation<pcl::PointXYZ> seg;
+    // Optional
+  //    seg.setOptimizeCoefficients (true);
+    // Mandatory
+    seg.setModelType (pcl::SACMODEL_PLANE);
+    seg.setMethodType (pcl::SAC_RANSAC);
+    seg.setDistanceThreshold (cfg_plane_dist_threshold_);
 
-  if (inliers->indices.size () == 0) {
-    logger->log_error(name(), "Could not estimate a planar model for the given dataset.");
-    return CloudPtr();
+    seg.setInputCloud (out);
+    seg.segment (*inliers, *coeff);
+
+    if (inliers->indices.size () == 0) {
+      logger->log_error(name(), "Could not estimate a planar model for the given dataset.");
+      return CloudPtr();
+    }
+
+    // get inliers
+    CloudPtr tmp ( new Cloud );
+    pcl::ExtractIndices<Point> extract;
+    extract.setInputCloud (out);
+    extract.setIndices (inliers);
+    extract.setNegative (false);
+
+    extract.filter (*tmp);
+    *out = *tmp;
+
+    // check if the height is ok (remove shelfs)
+    float y_min = -200;
+    float y_max = 200;
+    for (Point p : *out ) {
+      if (p.y > y_min) {
+        y_min = p.y;
+      }
+      if (p.y < y_max) {
+        y_max = p.y;
+      }
+    }
+
+    float height = y_min - y_max;
+    if (height < cfg_plane_height_minimum_) {
+      logger->log_info(name(), "Discard plane, because of height restriction. is: %f\tshould: %f", height, cfg_plane_height_minimum_);
+
+      tmp->clear();
+      pcl::ExtractIndices<Point> extract;
+      extract.setInputCloud (out);
+      extract.setIndices (inliers);
+      extract.setNegative (true);
+      extract.filter (*tmp);
+      *out = *tmp;
+    } else {
+      // height is ok
+      break;
+    }
   }
-
-  // get inliers
-  pcl::ExtractIndices<Point> extract;
-  extract.setInputCloud (in);
-  extract.setIndices (inliers);
-  extract.setNegative (false);
-
-  CloudPtr out ( new Cloud );
-  extract.filter (*out);
 
   // check if cloud normal is ok
   Eigen::Vector4f plane;
   float coverture;
   pcl::computePointNormal(*out, plane, coverture);
-
   if ( plane(2) > cfg_normal_z_minimum_ ) {
     return out;
   } else {

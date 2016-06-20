@@ -96,6 +96,7 @@ private:
 
   float cfg_plane_dist_threshold_;
 
+  float cfg_plane_height_minimum_;
   float cfg_normal_z_minimum_;
 
   float cfg_cluster_tolerance_;
