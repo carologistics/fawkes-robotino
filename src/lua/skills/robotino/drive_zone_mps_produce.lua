@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "drive_zone_mps_produce"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"goto", "tagless_mps_align", "shelf_find_pick_put", "product_put", "product_pick"}
+depends_skills     = {"goto", "tagless_mps_align", "shelf_find_pick_put", "product_put", "product_pick", "motor_move"}
 depends_interfaces = {}
 
 documentation      = [==[ drive_zone_mps_recognize
@@ -41,6 +41,8 @@ documentation      = [==[ drive_zone_mps_recognize
 skillenv.skill_module(_M)
 
 -- CONSTANTS
+Y_OFFSET_CONVEYOR = 0.025
+
 MPS_LENGTH = 0.7
 MPS_WIDTH = 0.35
 BOT_RADIUS = 0.46/2
@@ -108,7 +110,9 @@ fsm:define_states{ export_to=_M,
    {"CHECK_FOR_LASERLINE", SkillJumpState, skills={{tagless_mps_align}}, final_to="GET_PUCK", fail_to="DRIVE_CORNER"},
    {"GET_PUCK", SkillJumpState, skills={{shelf_find_pick_put}}, final_to="PUT_PUCK", fail_to="DRIVE_TO_OTHER_SIDE"},
    {"PUT_PUCK", SkillJumpState, skills={{product_put}}, final_to="DRIVE_TO_OUTPUT", fail_to="FAILED"},
-   {"DRIVE_TO_OUTPUT", SkillJumpState, skills={{goto}}, final_to="RETRIEVE_PUCK", fail_to="FAILED"},
+   {"DRIVE_TO_OUTPUT", SkillJumpState, skills={{goto}}, final_to="ALIGN_LASERLINE", fail_to="FAILED"},
+   {"ALIGN_LASERLINE", SkillJumpState, skills={{tagless_mps_align}}, final_to="ALIGN_CONVEYOR", fail_to="FAILED"},
+   {"ALIGN_CONVEYOR", SkillJumpState, skills={{motor_move}}, final_to="RETRIEVE_PUCK", fail_to="FAILED"},
    {"RETRIEVE_PUCK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"DRIVE_TO_OTHER_SIDE", SkillJumpState, skills={{goto}}, final_to="CHECK_FOR_LASERLINE", fail_to="FAILED"},
 }
@@ -183,6 +187,18 @@ function DRIVE_TO_OUTPUT:init()
    self.args["goto"].x = outputpose[1]
    self.args["goto"].y = outputpose[2]
    self.args["goto"].ori = outputpose[3]
+end
+
+function ALIGN_LASERLINE:init()
+   self.args["tagless_mps_align"].ori = math.pi/2
+   self.args["tagless_mps_align"].x1 = self.fsm.vars.x1
+   self.args["tagless_mps_align"].x2 = self.fsm.vars.x2
+   self.args["tagless_mps_align"].y1 = self.fsm.vars.y1
+   self.args["tagless_mps_align"].y2 = self.fsm.vars.y2
+end
+
+function ALIGN_CONVEYOR:init()
+   self.args["motor_move"] = {y = -Y_OFFSET_CONVEYOR, vel_trans = 0.2, tolerance = { x=0.002, y=0.002, ori=0.01 }}
 end
 
 function DRIVE_TO_OTHER_SIDE:init()

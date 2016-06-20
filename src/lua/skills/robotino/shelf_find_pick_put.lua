@@ -41,6 +41,17 @@ documentation      = [==[ shelf_pick
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+-- CONSTANTS
+MPS_LENGTH = 0.7
+MPS_WIDTH = 0.35
+BOT_RADIUS = 0.46/2
+START_DIST_TO_MPS = 0.15+BOT_RADIUS
+
+Y_OFFSET_CONVEYOR = 0.025
+
+D_SHELF_CONVEYOR = 0.1
+D_SHELF_SPACE = 0.1
+
 fsm:define_states{ export_to=_M,
    closure={gripper_if=gripper_if},
    {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
@@ -68,16 +79,14 @@ function INIT:init()
 end
 
 function GOTO_SHELF:init()
-   local shelf_to_middle = 0.08 --TODO measure both values
-   local shelf_distance = 0.09
    if self.fsm.vars.slot == "LEFT" then
-      dest_y = shelf_to_middle
+      dest_y = -Y_OFFSET_CONVEYOR + D_SHELF_CONVEYOR -- offset with "-", because shelf is to the right
       self.fsm.vars.slot = "MIDDLE"
    elseif self.fsm.vars.slot == "MIDDLE" then
-      dest_y = shelf_distance
+      dest_y = D_SHELF_SPACE
       self.fsm.vars.slot = "RIGHT"
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = shelf_distance
+      dest_y = D_SHELF_SPACE
       self.fsm.vars.slot = "ERROR"
    else
       dest_y = 0
@@ -109,14 +118,12 @@ function CENTER_PUCK:init()
 end
 
 function MOVE_INFRONT_CONVEYOR:init()
-   local shelf_to_conveyor = 0.09 --TODO measure both values
-   local shelf_distance = 0.09
    if self.fsm.vars.slot == "MIDDLE" then
-      dest_y = shelf_to_conveyor
+      dest_y = D_SHELF_CONVEYOR
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = shelf_to_conveyor + shelf_distance
+      dest_y = D_SHELF_CONVEYOR + D_SHELF_SPACE
    elseif self.fsm.vars.slot == "ERROR" then
-      dest_y = shelf_to_conveyor + 2*shelf_distance
+      dest_y = D_SHELF_CONVEYOR + 2*D_SHELF_SPACE
    else
       dest_y = 0
       self.fsm:set_error("no shelf side set")
