@@ -8,12 +8,29 @@ class BridgeProcessor{
 public:
 	BridgeProcessor(std::string prefix)
 	:	prefix_(prefix)
+	,	initialized_(false)
+	,	finalized_(false)
 	{
 	}
 	
 	virtual ~BridgeProcessor(){}
 
-	virtual void init()	{}
+	virtual void init()	
+	{
+		if(!initialized_)
+		{
+			initialized_ = true;
+		}
+	}
+
+	virtual void finalize()	
+	{
+		if(!finalized_)
+		{
+			finalized_ = true;
+		}
+	}
+
 
 	std::string get_prefix()
 	{
@@ -22,6 +39,8 @@ public:
 
 protected:
 	std::string prefix_;
+	bool initialized_;
+	bool finalized_;
 
 };
 

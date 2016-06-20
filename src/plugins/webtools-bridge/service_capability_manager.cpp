@@ -22,11 +22,6 @@ ServiceCapabilityManager::~ServiceCapabilityManager()
 	//TODO: check if something needs to be changed
 }
 
-void 
-ServiceCapabilityManager::init()
-{}
-	
-
 bool
 ServiceCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
 {
