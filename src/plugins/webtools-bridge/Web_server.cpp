@@ -27,22 +27,73 @@ public:
     : m_next_sessionid(1) 
     ,bridge_manager_(bridge_manager)
     ,logger_(logger)
+    ,finalized_(false)
     {
         m_server=websocketpp::lib::make_shared<server>();
 
         m_server->init_asio();
         m_server->set_open_handler(bind(&Web_server::on_open,this,::_1));
         m_server->set_close_handler(bind(&Web_server::on_close,this,::_1));
-        m_server->set_validate_handler(bind(&Web_server::on_validate,this,::_1));  
+        m_server->set_validate_handler(bind(&Web_server::on_validate,this,::_1)); 
+        m_server->set_reuse_addr(true);
 
         mutex_=new fawkes::Mutex();
       }
 
-    ~Web_server() {
-      //   m_thread->join();
-        delete mutex_;
- }
 
+    ~Web_server() {
+
+        if(!finalized_) { finalize(); }
+
+        //TODO: What if the asio::run thread gets stuck while holding the mutex 
+        //(in on_message of ex while processing  a request), am not sure if it could stop and join
+        if(!m_server->stopped())
+        {
+            m_server->stop();
+            usleep(100000);     
+            logger_->log_info("webserver terminating", "Stopping Asio");
+        } 
+        
+        if(m_thread != NULL ) m_thread->join();   
+            
+        // if the asio::i_o_service was stopped before all on_close callbacks gets 
+        // called, distructor terminates the session objects
+        MutexLocker ml(mutex_);  
+        while(!hdl_ids_.empty())
+        {
+            logger_->log_info("webserver", "emptying hdls");
+           hdl_ids_.begin()->second->on_terminate();
+            hdl_ids_.erase(hdl_ids_.begin());
+        } 
+
+        m_server.reset();
+        delete mutex_;
+    }
+
+    void finalize()
+    {
+        websocketpp::lib::error_code ec;
+        
+        if(!finalized_)
+        {
+            logger_->log_info( "WebServer:"," Finalizing" ) ;
+
+            for ( std::map<connection_hdl, std::shared_ptr<WebSession> >::iterator it = hdl_ids_.begin()
+                ; it != hdl_ids_.end()
+                ; )
+            {
+                m_server -> close( it->first , websocketpp::close::status::going_away, "", ec);
+                it++;
+                // usleep(5000); // wait for session closing to terminate cleanly. Or just count on the termination in the destrouctor 
+                if (ec) 
+                {
+                    logger_->log_info( "WebServer:"," Error closing connection : : %s" , ec.message().c_str() );
+                }
+            }
+
+            finalized_=true;
+        }
+    }
 
     bool on_validate(connection_hdl hdl){
 
@@ -81,6 +132,8 @@ public:
         tmp_session_->set_endpoint(m_server);
         tmp_session_->set_id(m_next_sessionid);
         tmp_session_->set_name("web_session_tmp_name");
+        tmp_session_->set_status("open");//todo::use status codes from websocketpp
+
         hdl_ids_[hdl]=tmp_session_;
 
         m_server->get_con_from_hdl(hdl)->set_message_handler(bind(&Web_server::on_message,this,::_1,::_2));
@@ -91,11 +144,15 @@ public:
         // std::cout<< i->first << "::::::" << i->second << std::endl;
 
         logger_->log_info("Webtools-Bridge:","on open");
-        }
+    }
 
     void on_close(connection_hdl hdl) 
     {
         MutexLocker ml(mutex_);
+        tmp_session_->set_status("close");
+
+        websocketpp::lib::error_code ec;
+
         auto it = hdl_ids_.find(hdl);
 
         if(it == hdl_ids_.end()){
@@ -107,9 +164,12 @@ public:
         int session_id=it->second->get_id();
         //TODO::replace by smarter registration mechanism
         it->second->on_terminate();
-
+        
         std::cout << "Closing connection  with sessionid " << session_id << std::endl;
+                
         hdl_ids_.erase(hdl);
+        
+        
     }
 
     /*Finds the reqeusting sessions by  its hdl. 
@@ -134,7 +194,6 @@ public:
             logger_ -> log_error("Webtools-Bridge",e);
         }
 
-
     }
 
     void run(uint16_t port) {
@@ -146,21 +205,22 @@ public:
 
 
 private:
-    std::map<connection_hdl, std::shared_ptr<WebSession>
-        ,std::owner_less<connection_hdl>>                                              hdl_ids_;
+    std::map < connection_hdl, std::shared_ptr<WebSession>
+                            , std::owner_less<connection_hdl> > hdl_ids_;
 
-    std::shared_ptr<server>                                               m_server;
-    std::shared_ptr<WebSession>                                           tmp_session_; //this only serve to collect the session data before intializing the dispaticher
+    std::shared_ptr<server>                                     m_server;
+    std::shared_ptr<WebSession>                                 tmp_session_; //this only serve to collect the session data before intializing the dispaticher
     
-    unsigned int                                                                       m_next_sessionid;
+    unsigned int                                                m_next_sessionid;
     
-    std::shared_ptr<websocketpp::lib::thread>                             m_thread;
+    std::shared_ptr<websocketpp::lib::thread>                   m_thread;
 
-    std::shared_ptr<BridgeManager>                                                     bridge_manager_;
+    std::shared_ptr<BridgeManager>                              bridge_manager_;
     
-    fawkes::Logger                                                                     *logger_;
-    fawkes::Mutex                                                                      *mutex_;
-
+    fawkes::Logger                                              *logger_;
+    fawkes::Mutex                                               *mutex_;
+    bool                                                        finalized_;
+    bool                                                        running_;
 };
 
 
