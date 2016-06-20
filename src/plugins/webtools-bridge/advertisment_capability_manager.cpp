@@ -46,7 +46,7 @@ AdvertismentCapabilityManager::finalize()
 			it->second->finalize();
 		}
 
-		finalized_=true;
+		CapabilityManager::finalize();
 	}
 }
 

@@ -10,15 +10,15 @@ BridgeManager::BridgeManager()
 
 BridgeManager::~BridgeManager()
 {
-	operation_cpm_map_.clear();
+	
 }
 
 void BridgeManager::finalize()
 {
-	for (std::map<std::string, std::shared_ptr <CapabilityManager>>::iterator it= operation_cpm_map_.begin()
-			;it!=operation_cpm_map_.end(); ++it )
+	while (!operation_cpm_map_.empty())
 	{
-		it->second->finalize();
+		operation_cpm_map_.begin()-> second-> finalize();
+		operation_cpm_map_.erase(operation_cpm_map_.begin());
 	}
 }
 

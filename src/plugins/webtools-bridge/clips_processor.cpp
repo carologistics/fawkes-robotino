@@ -292,23 +292,28 @@ ClipsProcessor::~ClipsProcessor()
 void
 ClipsProcessor::init()
 {
-  std::map<std::string, LockPtr<CLIPS::Environment>> envs =
-  clips_env_mgr_->environments();
-
-  if (envs.find(env_name_) == envs.end()) 
+  if(!initialized_)
   {
-    if (envs.size() == 1)
-    { // if there is only one just select it
-      env_name_ = envs.begin()->first;
-    }
-    else
-    {
-      throw fawkes::UnknownTypeException("ClipsProcessor: Environment '%s' was not found!", env_name_.c_str());
-      //say what was wrong no envs Vs Wrong name
-    }
-  }
+    std::map<std::string, LockPtr<CLIPS::Environment>> envs =
+    clips_env_mgr_->environments();
 
-  clips_ = envs[env_name_];
+    if (envs.find(env_name_) == envs.end()) 
+    {
+      if (envs.size() == 1)
+      { // if there is only one just select it
+        env_name_ = envs.begin()->first;
+      }
+      else
+      {
+        throw fawkes::UnknownTypeException("ClipsProcessor: Environment '%s' was not found!", env_name_.c_str());
+        //say what was wrong no envs Vs Wrong name
+      }
+    }
+
+    clips_ = envs[env_name_];
+    
+  BridgeProcessor::init();
+  }
 }
 
 std::shared_ptr<Subscription>

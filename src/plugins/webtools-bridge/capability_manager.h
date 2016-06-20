@@ -26,7 +26,6 @@ class CapabilityManager
 		
 		~CapabilityManager()
 		{
-			processores_.clear();
 		}
 
 		virtual void handle_message( rapidjson::Document &d 
@@ -37,7 +36,18 @@ class CapabilityManager
 		{}
 		
 		virtual void finalize()
-		{}
+		{
+			if(!finalized_)
+			{
+				while (!processores_.empty())
+				{
+					processores_.begin()-> second ->finalize();
+					processores_.erase(processores_.begin());
+				}
+
+				finalized_=true;
+			}
+		}
 
 		virtual bool register_processor(std::shared_ptr <BridgeProcessor> processor)
 		{return false;}

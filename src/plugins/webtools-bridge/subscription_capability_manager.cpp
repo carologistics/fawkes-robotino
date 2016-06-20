@@ -65,7 +65,7 @@ SubscriptionCapabilityManager::finalize()
 			it->second->finalize();
 		}
 
-		finalized_=true;
+		CapabilityManager::finalize();
 	}
 }
 
@@ -268,14 +268,16 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 		//Subscriptions should norify me if it was terminated (by calling my callback)
 		subscription->register_callback( EventType::TERMINATE , shared_from_this() );
 
-					std::cout << "CLIPS SUBSCRIPTIONS "<<std::endl;
+		//HUGE TODO :: REMOVE THIS SHIT and make another publishing sckeem...subscriptions should allow someone to register a publisher..
+		//(who ever that is publisher..he should emmit events..and when the event is emmited.
+		// It will call all the publish() from the subscription by the power of call_backwes
+	if(bridge_prefix ==  "clips"))
+	{
+		std::cout << "CLIPS SUBSCRIPTIONS "<<std::endl;
+		register_callback(EventType::PUBLISH , topic_Subscription_[topic_name] ); 
+				std::cout << "registered to publish"<<std::endl;
 
-		if(bridge_prefix ==  "clips")
-		{
-			register_callback(EventType::PUBLISH , topic_Subscription_[topic_name] ); 
-					std::cout << "registered to publish"<<std::endl;
-
-		}
+	}
 		
 	}else{
 		topic_Subscription_[topic_name]->subsume(subscription);
