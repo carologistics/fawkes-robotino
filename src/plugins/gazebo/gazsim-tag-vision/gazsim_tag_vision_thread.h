@@ -80,6 +80,7 @@ class TagVisionSimThread
   std::string gazebo_topic_;
   std::string tag_if_name_prefix_;
   std::string info_if_name_;
+  std::string sim_frame_name_;
   std::string frame_name_;
   int number_interfaces_;
   int visibility_history_increase_per_update_;
