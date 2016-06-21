@@ -46,6 +46,9 @@ namespace fawkes {
   class Mutex;
 }
 
+using websocketpp::connection_hdl;
+
+
 //=================================   Subscription  ===================================
 //its optional here wither to keep track of the subscribtions or act 
 //as a pure proxy only forwading requests.For now, pure proxy
@@ -75,7 +78,7 @@ class RosBridgeProxyProcessor
   void    init();
   void    finalize();
 
-  void    on_open(connection_hdl hdl) ;
+  void    on_open( std::shared_ptr<WebSession> web_session , connection_hdl hdl  ) ;
   void    on_fail(connection_hdl hdl) ;
   void    on_close(connection_hdl hdl) ;
   
@@ -113,7 +116,10 @@ class RosBridgeProxyProcessor
 
 
   void callback( EventType event_type , std::shared_ptr <EventEmitter> handler) ; 
-  void forward_to_proxy_session(std::shared_ptr <WebSession> session , std::string message);
+  
+  void process_request(std::shared_ptr <WebSession> session , std::string message);
+  void connect_to_rosbridge(std::shared_ptr <WebSession> session );
+
 
 private:
   std::string                                                 rosbridge_uri_; 
@@ -123,8 +129,8 @@ private:
   fawkes::Clock                                               *clock_;
   fawkes::Mutex                                               *mutex_;
 
-  std::list<std::shared_ptr <ProxySession>>                   pears_;
-  std::list<std::shared_ptr <ProxySession>> ::iterator        it_pears_;
+  std::list<std::shared_ptr <ProxySession>>                   peers_;
+  std::list<std::shared_ptr <ProxySession>> ::iterator        it_peers_;
 
   std::shared_ptr<websocketpp::client<websocketpp::config::asio_client>>          rosbridge_endpoint_;
   std::shared_ptr<websocketpp::lib::thread>                                       proxy_thread_;
