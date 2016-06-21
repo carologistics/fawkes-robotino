@@ -10,70 +10,72 @@
 using namespace fawkes;
 using namespace websocketpp;
 
-ProxySession::ProxySession(std::shared_ptr <WebSession> web_session )
-: EventEmitter()
-, web_session_(web_session)
-, status_("connecting")
+ProxySession::ProxySession()
+: status_("connecting")
 {
-	mutex_=new fawkes::Mutex();
+    web_session_available = false;
+    std::shared_ptr <WebSession> dumy_session = websocketpp::lib::make_shared<WebSession>();
+	mutex_ = new fawkes::Mutex();
 }
 
 ProxySession::~ProxySession()
 {
     delete mutex_;
+    web_session_.reset();
 }
 
-void
-ProxySession::terminate()
-{
-    std::shared_ptr <ProxySession> me= shared_from_this();
- //   web_session_->unregister_callback(EventType::TERMINATE , shared_from_this() );
+// void
+// ProxySession::terminate()
+// {
+//     std::shared_ptr <ProxySession> me= shared_from_this();
+//  //   web_session_->unregister_callback(EventType::TERMINATE , shared_from_this() );
 
-    //emit termination event for all listeners of this session (should delete all ptrs to this instance)
-    me->emitt_event( EventType::TERMINATE );    
-}
+//     //emit termination event for all listeners of this session (should delete all ptrs to this instance)
+//     me->emitt_event( EventType::TERMINATE );    
+//}
 
 
-void
-ProxySession::on_open( websocketpp::connection_hdl hdl , std::shared_ptr<Client> endpoint_ptr )
-{
-    MutexLocker ml(mutex_);
-    web_session_->register_callback(EventType::TERMINATE , shared_from_this() );
-	hdl_ = hdl;
-    endpoint_ptr_=endpoint_ptr;
-	status_="open";
-}
+// void
+// ProxySession::on_open( websocketpp::connection_hdl hdl , std::shared_ptr<Client> endpoint_ptr )
+// {
+//     MutexLocker ml(mutex_);
+//     web_session_->register_callback(EventType::TERMINATE , shared_from_this() );
+// 	hdl_ = hdl;
+//     endpoint_ptr_=endpoint_ptr;
+// 	status_="open";
+// }
 
-void
-ProxySession::on_fail(websocketpp::connection_hdl hdl)
-{
-	MutexLocker ml(mutex_);
-	status_="failed";
-	terminate();
-	//TODO:do something about the fail
-}
+// void
+// ProxySession::on_fail(websocketpp::connection_hdl hdl)
+// {
+// 	MutexLocker ml(mutex_);
+// 	status_="failed";
+// 	terminate();
+// 	//TODO:do something about the fail
+// }
 
-/* It Notifies anyone that registered for the session termination by directly calling their registed callback with the session ptr.
- */
-void ProxySession::on_close(websocketpp::connection_hdl hdl)
-{   
- 	MutexLocker ml(mutex_);
+// /* It Notifies anyone that registered for the session termination by directly calling their registed callback with the session ptr.
+//  */
+// void ProxySession::on_close(websocketpp::connection_hdl hdl)
+// {   
+//  	MutexLocker ml(mutex_);
 
-    std::cout << " on close " << std::endl;
+//     std::cout << " on close " << std::endl;
 
- 	status_= "closed";
- 	terminate();
-}
+//  	status_= "closed";
+//  	terminate();
+//}
 
 void
 ProxySession::on_message(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio_client>::message_ptr msg)
 {
     MutexLocker ml(mutex_);
-    if(status_!="open")
+    if(status_!="open" && !web_session_available)
     {
         return;
         //throw
     }
+
     std::string jsonString = msg -> get_payload();  
 
     //maybe check for its validity before
@@ -107,12 +109,35 @@ ProxySession::send(std::string const & msg){
 void
 ProxySession::set_id(int id)
 {
+    MutexLocker ml(mutex_);
 	session_id_=id;
+}
+
+void
+ProxySession::set_connection_hdl(websocketpp::connection_hdl hdl)
+{
+    MutexLocker ml(mutex_);
+    hdl_=hdl;
+}
+
+void 
+ProxySession::set_endpoint(std::shared_ptr<Client> endpoint_ptr)
+{
+    MutexLocker ml(mutex_);
+    endpoint_ptr_=endpoint_ptr;
+}
+
+void
+ProxySession::set_status(std::string status)
+{
+    MutexLocker ml(mutex_);
+    status_ = status ;
 }
 
 int 
 ProxySession::get_id()
 {
+    MutexLocker ml(mutex_);
 	return session_id_;
 }
 
@@ -126,63 +151,34 @@ ProxySession::get_status()
 websocketpp::connection_hdl
 ProxySession::get_connection_hdl()
 {
+    MutexLocker ml(mutex_);
 	return hdl_;
 }
 
 std::shared_ptr <WebSession>
 ProxySession::get_web_session()
 {
+    MutexLocker ml(mutex_);
 	return web_session_;
 }
 
-void  
-ProxySession::callback( EventType event_type , std::shared_ptr <EventEmitter> event_emitter)
+void 
+ProxySession::register_web_session( std::shared_ptr <WebSession> web_session )
 {
-
     MutexLocker ml(mutex_);
-
-    try{
-        //check if the event emitter was a web_session
-        std::shared_ptr <WebSession> session = std::dynamic_pointer_cast<WebSession> (event_emitter);
-        if(session != NULL)
-        {
-            if(event_type == EventType::TERMINATE )
-            {
-                websocketpp::lib::error_code ec;
-            	endpoint_ptr_->close( hdl_ , websocketpp::close::status::going_away, "", ec);
-
-                if (ec)
-                {
-                std::cout << "ProxySession:cloud not close connection to rosbridge "<< std::endl;
-		            //logger_->log_info("ProxySession","cloud not close connection to rosbridge: %s" , ec.message().c_str());
-		            return;
-		        }
-		     }
-        }
-    }
-    catch(Exception &e){
-        //if exception was fired it only means that the casting failed becasue the emitter is not a session
-    }
-} 
+    web_session_ = web_session;
+    web_session_available = true;
+}
 
 void
-ProxySession::emitt_event(EventType event_type)
+ProxySession::unregister_web_session()
 {
-	for(it_callables_  = callbacks_ [event_type].begin();
-		it_callables_ != callbacks_ [event_type].end() ; 
-		it_callables_++)
-	{
-		(*it_callables_)->callback(event_type , shared_from_this());
-
-        if(event_type == EventType::TERMINATE)
-        {
-            it_callables_ = callbacks_ [event_type].erase(it_callables_);   
-        }
-        else
-        {
-            it_callables_++;
-        }
-	}
-
-
+    MutexLocker ml(mutex_);
+    web_session_available = false;
+    std::shared_ptr <WebSession> dumy_session = websocketpp::lib::make_shared<WebSession>();
+    web_session_ = dumy_session;
 }
+
+
+
+
