@@ -215,11 +215,14 @@ class MachineSignalPipelineThread :
     firevision::ColorModelBlack *black_colormodel_;
     firevision::ScanlineGrid *black_scangrid_;
 
-    firevision::FilterROIDraw *roi_drawer_;
+    firevision::FilterROIDraw *roi_drawer_, *roi_drawer_signal_;
     firevision::SharedMemoryImageBuffer *shmbuf_;
-    firevision::SharedMemoryImageBuffer *shmbuf_cam_;
+    firevision::SharedMemoryImageBuffer *shmbuf_cam_, *shmbuf_color_, *shmbuf_rois_, *shmbuf_signal_;
     firevision::FilterColorThreshold *color_filter_;
     firevision::ColorModelSimilarity *combined_colormodel_;
+
+    // All ROIs we want to see painted in the tuning buffer
+    std::list<firevision::ROI> drawn_rois_, drawn_signal_rois_;
 
     void setup_color_classifier(color_classifier_context_t_ *classifier, firevision::ROI *roi = nullptr);
     void setup_camera();
@@ -245,9 +248,6 @@ class MachineSignalPipelineThread :
           return signal1.red_roi->start.x <= signal2.red_roi->start.x;
         }
     } sort_signal_rois_by_x_; //*/
-
-    // All ROIs we want to see painted in the tuning buffer
-    std::list<firevision::ROI> drawn_rois_;
 
 
     firevision::ROI *red_green_match(firevision::ROI *roi_R, firevision::ROI *roi_G);

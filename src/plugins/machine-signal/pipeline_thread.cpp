@@ -182,7 +182,11 @@ void MachineSignalPipelineThread::init()
 
   shmbuf_ = new SharedMemoryImageBuffer("machine-signal", YUV422_PLANAR, cam_width_, cam_height_);
   shmbuf_cam_ = new SharedMemoryImageBuffer("machine-cam", YUV422_PLANAR, cam_width_, cam_height_);
+  shmbuf_color_ = new SharedMemoryImageBuffer("machine-snap-color", YUV422_PLANAR, cam_width_, cam_height_);
+  shmbuf_rois_ = new SharedMemoryImageBuffer("machine-snap-rois", YUV422_PLANAR, cam_width_, cam_height_);
+  shmbuf_signal_ = new SharedMemoryImageBuffer("machine-snap-signal", YUV422_PLANAR, cam_width_, cam_height_);
   roi_drawer_ = new FilterROIDraw(&drawn_rois_, FilterROIDraw::DASHED_HINT);
+  roi_drawer_signal_ = new FilterROIDraw(&drawn_signal_rois_, FilterROIDraw::DASHED_HINT);
 
   // Configure RED ON classifier
   cfy_ctxt_red_1_.cfg_ref_col = config->get_uints(CFG_PREFIX "/red_on/reference_color");
@@ -815,6 +819,7 @@ void MachineSignalPipelineThread::loop()
     cfy_ctxt_green_0_.classifier->set_src_buffer(camera_->buffer(), cam_width_, cam_height_);
 
     drawn_rois_.clear();
+    drawn_signal_rois_.clear();
 
     cluster_rois_ = bb_get_laser_rois();
 
@@ -839,7 +844,7 @@ void MachineSignalPipelineThread::loop()
     rois_G_1 = cfy_ctxt_green_1_.classifier->classify();
     rois_G_0 = cfy_ctxt_green_0_.classifier->classify();
 
-    if (unlikely(cfg_tuning_mode_ && !cfg_draw_processed_rois_)) {
+    if (unlikely(cfg_tuning_mode_)) {
       if (cfy_ctxt_red_1_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_R_1->begin(), rois_R_1->end());
       if (cfy_ctxt_red_0_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_R_0->begin(), rois_R_0->end());
       if (cfy_ctxt_green_1_.visualize) drawn_rois_.insert(drawn_rois_.end(), rois_G_1->begin(), rois_G_1->end());
@@ -946,10 +951,10 @@ void MachineSignalPipelineThread::loop()
         best_match->signal_rois_history_.green_roi->set_image_width(cam_width_);
         best_match->signal_rois_history_.green_roi->set_image_height(cam_height_);
 
-        if (unlikely(cfg_tuning_mode_ && cfg_draw_processed_rois_)) {
-          drawn_rois_.push_back(*(best_match->signal_rois_history_.red_roi));
-          drawn_rois_.push_back(*(best_match->signal_rois_history_.yellow_roi));
-          drawn_rois_.push_back(*(best_match->signal_rois_history_.green_roi));
+        if (unlikely(cfg_tuning_mode_)) {
+          drawn_signal_rois_.push_back(*(best_match->signal_rois_history_.red_roi));
+          drawn_signal_rois_.push_back(*(best_match->signal_rois_history_.yellow_roi));
+          drawn_signal_rois_.push_back(*(best_match->signal_rois_history_.green_roi));
         }
       }
       catch (OutOfBoundsException &e){
@@ -972,18 +977,30 @@ void MachineSignalPipelineThread::loop()
 
       // Visualize color similarities in tuning buffer
       color_filter_->set_src_buffer(camera_->buffer(), ROI::full_image(cam_width_, cam_height_));
-      color_filter_->set_dst_buffer(shmbuf_->buffer(), ROI::full_image(shmbuf_->width(), shmbuf_->height()));
+      color_filter_->set_dst_buffer(shmbuf_color_->buffer(), ROI::full_image(shmbuf_color_->width(), shmbuf_color_->height()));
       color_filter_->apply();
 
-      if (cluster_rois_) {
-        drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
-      }
+      memcpy(shmbuf_rois_->buffer(), shmbuf_color_->buffer(), shmbuf_color_->data_size());
+      memcpy(shmbuf_signal_->buffer(), shmbuf_color_->buffer(), shmbuf_color_->data_size());
+
+      std::list<ROI> laser_rois(cluster_rois_->begin(), cluster_rois_->end());
+      roi_drawer_->set_rois(&laser_rois);
+      roi_drawer_->set_src_buffer(shmbuf_cam_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
+      roi_drawer_->set_dst_buffer(shmbuf_cam_->buffer(), NULL);
+      roi_drawer_->apply();
+
+      drawn_rois_.insert(drawn_rois_.end(), cluster_rois_->begin(), cluster_rois_->end());
 
       // Visualize the signals and bright spots we found
       roi_drawer_->set_rois(&drawn_rois_);
-      roi_drawer_->set_src_buffer(shmbuf_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
-      roi_drawer_->set_dst_buffer(shmbuf_->buffer(), NULL);
+      roi_drawer_->set_src_buffer(shmbuf_color_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
+      roi_drawer_->set_dst_buffer(shmbuf_rois_->buffer(), NULL);
       roi_drawer_->apply();
+
+      roi_drawer_signal_->set_rois(&drawn_signal_rois_);
+      roi_drawer_signal_->set_src_buffer(shmbuf_color_->buffer(), ROI::full_image(cam_width_, cam_height_), 0);
+      roi_drawer_signal_->set_dst_buffer(shmbuf_signal_->buffer(), NULL);
+      roi_drawer_signal_->apply();
 
       shmbuf_cam_->unlock();
       shmbuf_->unlock();
@@ -1037,7 +1054,7 @@ bool MachineSignalPipelineThread::get_light_state(firevision::ROI *light)
     float area_ratio = (float)(roi_it->width * roi_it->height) / (float)(light->width * light->height);
     if (roi_aspect_ok(*roi_it) && area_ratio > cfg_light_on_min_area_cover_) {
       if (unlikely(cfg_tuning_mode_))
-        drawn_rois_.push_back(*roi_it);
+        drawn_signal_rois_.push_back(*roi_it);
       delete bright_rois;
       return true;
     }
