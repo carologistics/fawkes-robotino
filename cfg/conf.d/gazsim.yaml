@@ -155,6 +155,7 @@ gazsim:
 
   gripper:
     if-name: "Gripper AX12"
+    arduino-if-name: "Arduino"
     cfg-prefix: "/hardware/ax12_gripper/"
   conveyor:
     if-name: "mps_conveyor"

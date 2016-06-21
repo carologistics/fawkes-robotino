@@ -23,7 +23,7 @@ include $(BUILDSYSDIR)/protobuf.mk
 LIBS_gazsim_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
 		fawkesinterface fawkesconfig AX12GripperInterface LedInterface \
 	       	JointInterface DynamixelServoInterface gazsim_msgs \
-		fawkesgazeboaspect
+		fawkesgazeboaspect ArduinoInterface
 OBJS_gazsim_gripper = gazsim_gripper_plugin.o gazsim_gripper_thread.o
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)
