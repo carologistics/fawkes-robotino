@@ -151,6 +151,8 @@ function DRIVE:init()
    self.args["ax12gripper"].command = "RELGOTOZ"
    if math.abs(pose.z) >= TOLERANCE_Z then
       self.args["ax12gripper"].z_position = z_position
+   else
+      self.args["ax12gripper"].z_position = 0
    end
 end
 
