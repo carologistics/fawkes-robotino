@@ -246,16 +246,60 @@ ConveyorPoseThread::loop()
     *cloud_without_products = *cloud_bottom_removed;
   }
 
+  // search for best plane
+  CloudPtr cloud_choosen;
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
-  CloudPtr cloud_plane = cloud_get_plane(cloud_without_products, coeff);
-  if ( cloud_plane == NULL ) {
-    vis_hist_ = -1;
-    pose_write(pose_current);
-    return;
-  }
+  do {
+    CloudPtr cloud_plane = cloud_get_plane(cloud_without_products, coeff);
+    if ( cloud_plane == NULL || ! cloud_plane ) {
+      vis_hist_ = -1;
+      pose_write(pose_current);
+      return;
+    }
 
-  std::vector<CloudPtr> clouds_cluster = cloud_cluster(cloud_plane);
-  CloudPtr cloud_choosen = cluster_find_biggest(clouds_cluster);
+    size_t id;
+    boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices = cloud_cluster(cloud_plane);
+    if ( cluster_indices->size() <= 0 ) {
+      vis_hist_ = -1;
+      pose_write(pose_current);
+      return;
+    }
+    std::vector<CloudPtr> clouds_cluster = cluster_split(cloud_plane, cluster_indices);
+    cloud_choosen = cluster_find_biggest(clouds_cluster, id);
+
+    // check if plane is ok, otherwise remove indicies
+
+    // check if the height is ok (remove shelfs)
+    float y_min = -200;
+    float y_max = 200;
+    for (Point p : *cloud_choosen ) {
+      if (p.y > y_min) {
+        y_min = p.y;
+      }
+      if (p.y < y_max) {
+        y_max = p.y;
+      }
+    }
+
+    float height = y_min - y_max;
+    if (height < cfg_plane_height_minimum_) {
+      logger->log_info(name(), "Discard plane, because of height restriction. is: %f\tshould: %f", height, cfg_plane_height_minimum_);
+
+
+      logger->log_info(name(), "id: %u\tsize: %u\t%u", id, cluster_indices->size(), clouds_cluster.size());
+      boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
+      CloudPtr tmp(new Cloud);
+      pcl::ExtractIndices<Point> extract;
+      extract.setInputCloud (cloud_without_products);
+      extract.setIndices( extract_indicies );
+      extract.setNegative (true);
+      extract.filter (*tmp);
+      *cloud_without_products = *tmp;
+    } else {
+      // height is ok
+      break;
+    }
+  } while (true);
 
   cloud_publish(cloud_without_products, cloud_out_inter_1_);
   cloud_publish(cloud_choosen, cloud_out_result_);
@@ -591,64 +635,34 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
 {
   CloudPtr out ( new Cloud(*in) );
 
-  while (true) {
-    // get planes
-    pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-    // Create the segmentation object
-    pcl::SACSegmentation<pcl::PointXYZ> seg;
-    // Optional
-  //    seg.setOptimizeCoefficients (true);
-    // Mandatory
-    seg.setModelType (pcl::SACMODEL_PLANE);
-    seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setDistanceThreshold (cfg_plane_dist_threshold_);
+  // get planes
+  pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+  // Create the segmentation object
+  pcl::SACSegmentation<pcl::PointXYZ> seg;
+  // Optional
+//    seg.setOptimizeCoefficients (true);
+  // Mandatory
+  seg.setModelType (pcl::SACMODEL_PLANE);
+  seg.setMethodType (pcl::SAC_RANSAC);
+  seg.setDistanceThreshold (cfg_plane_dist_threshold_);
 
-    seg.setInputCloud (out);
-    seg.segment (*inliers, *coeff);
+  seg.setInputCloud (out);
+  seg.segment (*inliers, *coeff);
 
-    if (inliers->indices.size () == 0) {
-      logger->log_error(name(), "Could not estimate a planar model for the given dataset.");
-      return CloudPtr();
-    }
-
-    // get inliers
-    CloudPtr tmp ( new Cloud );
-    pcl::ExtractIndices<Point> extract;
-    extract.setInputCloud (out);
-    extract.setIndices (inliers);
-    extract.setNegative (false);
-
-    extract.filter (*tmp);
-    *out = *tmp;
-
-    // check if the height is ok (remove shelfs)
-    float y_min = -200;
-    float y_max = 200;
-    for (Point p : *out ) {
-      if (p.y > y_min) {
-        y_min = p.y;
-      }
-      if (p.y < y_max) {
-        y_max = p.y;
-      }
-    }
-
-    float height = y_min - y_max;
-    if (height < cfg_plane_height_minimum_) {
-      logger->log_info(name(), "Discard plane, because of height restriction. is: %f\tshould: %f", height, cfg_plane_height_minimum_);
-
-      tmp->clear();
-      pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (out);
-      extract.setIndices (inliers);
-      extract.setNegative (true);
-      extract.filter (*tmp);
-      *out = *tmp;
-    } else {
-      // height is ok
-      break;
-    }
+  if (inliers->indices.size () == 0) {
+    logger->log_error(name(), "Could not estimate a planar model for the given dataset.");
+    return CloudPtr();
   }
+
+  // get inliers
+  CloudPtr tmp ( new Cloud );
+  pcl::ExtractIndices<Point> extract;
+  extract.setInputCloud (out);
+  extract.setIndices (inliers);
+  extract.setNegative (false);
+
+  extract.filter (*tmp);
+  *out = *tmp;
 
   // check if cloud normal is ok
   Eigen::Vector4f plane;
@@ -663,7 +677,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   }
 }
 
-std::vector<CloudPtr>
+boost::shared_ptr<std::vector<pcl::PointIndices>>
 ConveyorPoseThread::cloud_cluster(CloudPtr in)
 {
   in = cloud_voxel_grid(in);
@@ -680,7 +694,7 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
   ec.setInputCloud (in);
   ec.extract (*cluster_indices);
 
-  return cluster_split(in, cluster_indices);
+  return cluster_indices;
 }
 
 std::vector<CloudPtr>
@@ -703,13 +717,16 @@ ConveyorPoseThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl
 }
 
 CloudPtr
-ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in)
+ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id)
 {
   CloudPtr biggeset(new Cloud);
+  size_t i = 0;
   for (CloudPtr current : clouds_in) {
     if ( biggeset->size() < current->size() ) {
       biggeset = current;
+      id = i;
     }
+    ++i;
   }
 
   return biggeset;

@@ -80,9 +80,9 @@ conveyor_pose:
     # the allowed noise for a plane
     dist_threshold: 0.0025
     normal_z_minimum: 0.98
-    height_minimum: 0.015
+    height_minimum: 0.02
   cluster:
-    tolerance: 0.0011
+    tolerance: 0.0015
     size_min: 100
     size_max: 25000
   voxel_grid:

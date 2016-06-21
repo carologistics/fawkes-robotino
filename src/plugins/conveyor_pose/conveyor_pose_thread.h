@@ -151,11 +151,11 @@ private:
  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll);
  CloudPtr cloud_remove_products(CloudPtr in);
  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
- std::vector<CloudPtr> cloud_cluster(CloudPtr in);
+ boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
 
  std::vector<CloudPtr> cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
- CloudPtr cluster_find_biggest(std::vector<CloudPtr> clouds_in);
+ CloudPtr cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id);
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
