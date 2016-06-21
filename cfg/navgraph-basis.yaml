@@ -35,6 +35,11 @@ default-properties:
     - signal_hint_y: -0.1
     - signal_hint_z: 0.78
 
+    # Offset for aligning in front of the conveyor using the laser line
+    - input_offset_y: 0.025
+    - output_offset_y: -0.025
+
+
 nodes:
 
 # Default point, used only for mps_detect_signal when no or an invalid place= is given
@@ -182,8 +187,6 @@ nodes:
       - only-copy-properties
       - tag_input: 1
       - tag_output: 2
-      - input_offset_y: -0.02
-      - output_offset_y: -0.01
   - !unconnected
     name: C-CS2
     pos: [0, 0]
@@ -216,8 +219,6 @@ nodes:
       - only-copy-properties
       - tag_input: 65
       - tag_output: 66
-      - input_offset_y: 0
-      - output_offset_y: -0.01
       - input_offset_x: 0.01
   - !unconnected
     name: C-DS
@@ -226,8 +227,6 @@ nodes:
       - only-copy-properties
       - tag_input: 81
       - tag_output: 82
-      - input_offset_y: -0.02
-      - output_offset_y: 0
       - input_offset_x: -0.02
 #Magenta
   - !unconnected
