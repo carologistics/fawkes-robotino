@@ -54,7 +54,7 @@ D_SHELF_SPACE = 0.1
 
 fsm:define_states{ export_to=_M,
    closure={gripper_if=gripper_if},
-   {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="OPEN_GRIPPER", fail_to="FAILED" },
+   {"INIT", JumpState},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
@@ -68,6 +68,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
+   {"INIT", "OPEN_GRIPPER", cond="true"},
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
    {"CHECK_PUCK", "OPEN_GRIPPER", cond="not gripper_if:is_holds_puck()", desc="Gripper doesn't hold a puck"},
    {"CHECK_PUCK", "CENTER_PUCK", cond="true"},
@@ -106,7 +107,7 @@ function GOTO_SHELF:init()
 end
 
 function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = 0.05 --TODO measure this value
+   self.args["approach_mps"].x = 0.09 --TODO measure this value
 end
 
 function GRAB_PRODUCT:init()
