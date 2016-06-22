@@ -32,10 +32,10 @@ Serializer::op_subscribe(std::string prefixed_topic_name
 	writer.String(type.c_str(),(SizeType)type.length());
 	
 	writer.String("topic");
-	writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
+writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
 
-	writer.String("throttle_rate");
-	writer.Uint(throttle_rate);
+writer.String("throttle_rate");
+writer.Uint(throttle_rate);
 
 	
 	writer.String("queue_length");

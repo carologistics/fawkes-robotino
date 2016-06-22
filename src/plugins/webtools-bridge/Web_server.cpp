@@ -41,8 +41,9 @@ public:
       }
 
 
-    ~Web_server() {
-
+    ~Web_server() 
+    {
+        
         if(!finalized_) { finalize(); }
 
         //TODO: What if the asio::run thread gets stuck while holding the mutex 
@@ -51,53 +52,52 @@ public:
         {
             m_server->stop();
             usleep(100000);     
-            logger_->log_info("webserver terminating", "Stopping Asio");
-        } 
-        
-        if(m_thread != NULL ) m_thread->join();   
-            
-        // if the asio::i_o_service was stopped before all on_close callbacks gets 
-        // called, distructor terminates the session objects
-        MutexLocker ml(mutex_);  
-        while(!hdl_ids_.empty())
-        {
-            logger_->log_info("webserver", "emptying hdls");
-           hdl_ids_.begin()->second->on_terminate();
-            hdl_ids_.erase(hdl_ids_.begin());
+            logger_->log_info("WebServer", "Stopping Asio");
         } 
 
+        if(m_thread != NULL ) m_thread->join();   
+
+        delete mutex_;        
         m_server.reset();
-        delete mutex_;
     }
 
     void finalize()
     {
+        MutexLocker ml(mutex_);        
+        if(finalized_){ return; }
+
+        logger_->log_info( "WebServer:"," Finalizing" ) ;
+        
         websocketpp::lib::error_code ec;
         
-        if(!finalized_)
+        for ( std::map<connection_hdl, std::shared_ptr<WebSession> >::iterator it = hdl_ids_.begin()
+            ; it != hdl_ids_.end()
+            ; )
         {
-            logger_->log_info( "WebServer:"," Finalizing" ) ;
-
-            for ( std::map<connection_hdl, std::shared_ptr<WebSession> >::iterator it = hdl_ids_.begin()
-                ; it != hdl_ids_.end()
-                ; )
+            m_server -> close( it->first , websocketpp::close::status::going_away, "", ec);
+            it++;
+            // usleep(5000); // wait for session closing to terminate cleanl by handler. Or just count on the termination in the destrouctor 
+            if (ec) 
             {
-                m_server -> close( it->first , websocketpp::close::status::going_away, "", ec);
-                it++;
-                // usleep(5000); // wait for session closing to terminate cleanly. Or just count on the termination in the destrouctor 
-                if (ec) 
-                {
-                    logger_->log_info( "WebServer:"," Error closing connection : : %s" , ec.message().c_str() );
-                }
+                logger_->log_info( "WebServer:"," Error closing connection : : %s" , ec.message().c_str() );
             }
-
-            finalized_=true;
         }
+
+        while(!hdl_ids_.empty())
+        {
+            logger_->log_info("WebServer", "emptying hdls");
+            hdl_ids_.begin()->second->on_terminate(); //Should garanty the all sessions instanes went out of scope
+            hdl_ids_.erase(hdl_ids_.begin());
+        } 
+
+        finalized_=true;
+    
     }
 
     bool on_validate(connection_hdl hdl){
 
         MutexLocker ml(mutex_);
+        if(finalized_) { return false; }
 
         tmp_session_= websocketpp::lib::make_shared<WebSession>();
         tmp_session_->set_status("validating");//todo::use status codes from websocketpp
@@ -120,14 +120,14 @@ public:
 
         for (std::vector<std::string>::const_iterator i = register_headers.begin(); i != register_headers.end(); ++i)
         tmp_session_->http_req[*i]=con->get_request_header(*i);
-
         return true;
     }
 
     void on_open(connection_hdl hdl) 
     {
         MutexLocker ml(mutex_);
-
+        if(finalized_) { return; }
+    
         tmp_session_->set_connection_hdl(hdl);
         tmp_session_->set_endpoint(m_server);
         tmp_session_->set_id(m_next_sessionid);
@@ -143,18 +143,21 @@ public:
         // for (std::map<std::string,std::string>::const_iterator i = tmp_session_->http_req.begin(); i != tmp_session_->http_req.end(); ++i)
         // std::cout<< i->first << "::::::" << i->second << std::endl;
 
-        logger_->log_info("Webtools-Bridge:","on open");
+        logger_->log_info("Webtools-Bridge:","on open");   
     }
 
     void on_close(connection_hdl hdl) 
     {
         MutexLocker ml(mutex_);
+        if(finalized_) { return; }
+    
         tmp_session_->set_status("close");
 
         websocketpp::lib::error_code ec;
 
         auto it = hdl_ids_.find(hdl);
 
+        //TODO:: just do the termination if its there. do not throw and nothing otherwise
         if(it == hdl_ids_.end()){
             // this connection is not in the list. This really shouldn't happen
              // and probably means something else is wrong.
@@ -168,8 +171,6 @@ public:
         std::cout << "Closing connection  with sessionid " << session_id << std::endl;
                 
         hdl_ids_.erase(hdl);
-        
-        
     }
 
     /*Finds the reqeusting sessions by  its hdl. 
@@ -179,7 +180,8 @@ public:
     on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr web_msg)
     {
         MutexLocker ml(mutex_);
-
+        if(finalized_) { return; }
+    
         std::shared_ptr<WebSession>  session = hdl_ids_ [hdl];
 
         std::string jsonString = web_msg -> get_payload();
