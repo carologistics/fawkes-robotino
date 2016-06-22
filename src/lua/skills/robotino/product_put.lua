@@ -37,9 +37,9 @@ and opens the gripper
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
-local x_distance = 0.075
+local x_distance = 0.071
 if config:exists("/hardware/robotino/align_distance_conveyor/x") then
-      x_distance = config:get_float("/hardware/robotino/align_distance_conveyor/x") + 0.05
+      x_distance = config:get_float("/hardware/robotino/align_distance_conveyor/x") + 0.01
 end
 
 fsm:define_states{ export_to=_M,

@@ -48,9 +48,9 @@ local tfm = require("fawkes.tfutils")
 local TOLERANCE_Y = 0.003
 local TOLERANCE_Z = 0.003
 local MAX_TRIES = 5
-local X_DEST_POS = 0.08
-local Z_DEST_POS = 0.048
-local Z_DEST_POS_WITH_PUCK = 0.052
+local X_DEST_POS = 0.11
+local Z_DEST_POS = 0.052
+local Z_DEST_POS_WITH_PUCK = 0.054
 local cfg_frame_ = "gripper"
 
 function no_writer()
@@ -115,7 +115,8 @@ fsm:define_states{ export_to=_M,
    closure={},
    {"INIT", JumpState},
    {"CHECK_VISION", JumpState},
-   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="FAILED"},
+   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="SETTLE_VISION", fail_to="FAILED"},
+   {"SETTLE_VISION", JumpState},
    {"DECIDE_TRY", JumpState},
 }
 
@@ -124,6 +125,7 @@ fsm:add_transitions{
    {"CHECK_VISION", "FAILED", timeout=5, desc="No vis_hist on conveyor vision"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DRIVE", cond=see_conveyor},
+   {"SETTLE_VISION", "DECIDE_TRY", timeout=1, desc="check"},
    {"DECIDE_TRY", "FINAL", cond=tolerances_ok, desc="Robot is aligned"},
    {"DECIDE_TRY", "CHECK_VISION", cond=max_tries_not_reached, desc="Do another alignment"},
    {"DECIDE_TRY", "FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
