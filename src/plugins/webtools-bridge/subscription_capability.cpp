@@ -31,7 +31,7 @@ Subscription::Subscription(std::string topic_name , std::string prefix ,  fawkes
 	, 	topic_name_(topic_name)
 	,	processor_prefix_(prefix)
 	,	clock_(clock)
-	,	finalized (false)
+	,	finalized_ (false)
 {
 	logger_ = logger;
 	__mutex=new fawkes::Mutex();
@@ -52,28 +52,26 @@ void
 Subscription::finalize()
 {
 	MutexLocker ml(__mutex);
+	if(!finalized_) { return ; }
+	
+	//If still active deactivate 
+	if(is_active()) { deactivate(); }
+	//call the extended version
+	finalize_impl();
 
-	if(!finalized)
-	{
-		//If still active deactivate 
-		if(is_active()) { deactivate(); }
-		//call the extended version
-		finalize_impl();
+	//Deregister from sessions and remove them
+	if(!empty()){
 
-		//Deregister from sessions and remove them
-		if(!empty()){
-
-			for(it_subscriptions_ = subscriptions_.begin()
-				;it_subscriptions_ != subscriptions_.end()
-				;)
-			{
-				remove_session(it_subscriptions_->first);
-				it_subscriptions_->second.clear();
-				subscriptions_.erase(it_subscriptions_++);
-			}
+		for(  it_subscriptions_ = subscriptions_.begin()
+			; it_subscriptions_ != subscriptions_.end()
+			; )
+		{
+			remove_session(it_subscriptions_->first);
+			it_subscriptions_->second.clear();
+			subscriptions_.erase(it_subscriptions_++);
 		}
 
-		finalized=true;
+		finalized_=true;
 	}
 }
 
@@ -289,6 +287,7 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 {
 	//sub_list_mutex_->lock();
 	MutexLocker ml(__mutex);
+	if(finalized_) { return ;}
 
  	if(event_type == EventType::PUBLISH )
   	{
@@ -315,11 +314,10 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 					emitt_event(EventType::TERMINATE);
 					
 				}
+
 				std::cout<< "Session terminated NICELY :D" << std::endl;				
 
-
-
-			 //was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
+				//was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
 				// if(subscriptions_.empty()){
 				// 	std::shared_ptr<Subscription> my_self= shared_from_this();// Just to keep object alive till after its deleted from manager
 				// 	emitt_event(EventType::TERMINATE);

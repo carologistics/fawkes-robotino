@@ -5,6 +5,7 @@
 #include "event_emitter.h"
 
 #include <thread>
+#include <unistd.h>
 
 class Subscription;
 class SubscriptionCapability;
@@ -62,5 +63,6 @@ private:
 	bool run_publish_loop;
 
 	fawkes::Mutex 			*__mutex;
+	fawkes::Mutex 			*__publish_mutex;
 
 };

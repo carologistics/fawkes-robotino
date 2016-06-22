@@ -9,6 +9,7 @@ using namespace fawkes;
 
 WebSession::WebSession()
 : EventEmitter()
+, status_("N/A")
 {
 }
 
@@ -109,6 +110,7 @@ WebSession::emitt_event(EventType event_type)
 	{
 		(*it_callables_)->callback(event_type , shared_from_this());
 		
+		//this is dangerous ..i am assuming the the callalbe obj is still there after the callback
 		if(event_type == EventType::TERMINATE)
 		{
 			it_callables_ = callbacks_ [event_type].erase(it_callables_);	

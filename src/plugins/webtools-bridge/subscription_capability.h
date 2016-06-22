@@ -83,7 +83,7 @@ class Subscription
 		void 					publish();
 
 	protected:
-		virtual void 			finalize_impl();	//will be implicitly called from finialize()
+		virtual void 			finalize_impl();	//will be implicitly called from finalize()
 		virtual void 			activate_impl(); 	//will be implicitly called from activate()
 		virtual void 			deactivate_impl();	//will be implicitly called from deactive() 
 		virtual std::string 	serialize(std::string op
@@ -121,7 +121,7 @@ class Subscription
 		fawkes::Logger 	*logger_;
 
 
-		bool 			finalized; //set to true if it was Object was finilazed berfore
+		bool 			finalized_; //set to true if it was Object was finilazed berfore
 		
 		std::map <std::shared_ptr<WebSession> , std::list<Request>>    			subscriptions_; //maping of sessionTo requets list
 		std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator 	it_subscriptions_;

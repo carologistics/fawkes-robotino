@@ -5,10 +5,14 @@
 
 #include <utils/time/time.h>
 
+#include <core/threading/thread.h>
+
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
 #include <core/exceptions/software.h>
+
 #include <iostream>
+
 
 using namespace fawkes;
 using namespace rapidjson;
@@ -26,14 +30,18 @@ SubscriptionCapabilityManager::SubscriptionCapabilityManager()
 :	CapabilityManager("Subscription")
 {
 	__mutex = new fawkes::Mutex();
+	__publish_mutex = new fawkes::Mutex();
 }
 
 SubscriptionCapabilityManager::~SubscriptionCapabilityManager()
 {
 	//TODO: check if something needs to be changed
+	if(!finalized_) { finalize(); }
+	
+	if(publisher_thread != NULL) { publisher_thread -> join() ; }	
+	
+	delete __mutex ;
 	topic_Subscription_.clear();
-	publisher_thread->join();
-	delete __mutex;
 }
 
 void
@@ -45,7 +53,8 @@ SubscriptionCapabilityManager::init()
 		publisher_thread= std::make_shared<std::thread>(&SubscriptionCapabilityManager::publish_loop, this);
 		
 		std::cout << "publisher loop intrialized"<<std::endl;
-		initialized_ = true;
+
+		CapabilityManager::init();
 	}
 }
 
@@ -53,15 +62,23 @@ void
 SubscriptionCapabilityManager::finalize()
 {
 	MutexLocker ml(__mutex);
+	MutexLocker ml_publish(__publish_mutex);
 
 	if(!finalized_)
 	{
+
 		run_publish_loop = false;
-		
+
 		for(std::map <std::string , std::shared_ptr<Subscription> > ::iterator it = topic_Subscription_.begin()
 			; it != topic_Subscription_.end()
 			; it++)
 		{
+			
+			if( it->second ->get_processor_prefix() ==  "clips")
+			{
+				unregister_callback(EventType::PUBLISH , it->second ); 
+			}
+
 			it->second->finalize();
 		}
 
@@ -183,7 +200,8 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 {
 
 	MutexLocker ml(__mutex);
-
+	if(finalized_) { return; }
+	
 	try{
 		//check if the event emitter was a Subscription
 		std::shared_ptr <Subscription> subscription;
@@ -204,6 +222,7 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 				{
 					if( subscription->get_processor_prefix() ==  "clips")
 					{
+
 						unregister_callback(EventType::PUBLISH , subscription ); 
 					}
 
@@ -230,6 +249,8 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 									   	, std::shared_ptr<WebSession> session)
 {
 	MutexLocker ml(__mutex);
+	if(finalized_) { return; }
+
 
 	std::shared_ptr <SubscriptionCapability> processor;
 	processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
@@ -271,7 +292,7 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 		//HUGE TODO :: REMOVE THIS SHIT and make another publishing sckeem...subscriptions should allow someone to register a publisher..
 		//(who ever that is publisher..he should emmit events..and when the event is emmited.
 		// It will call all the publish() from the subscription by the power of call_backwes
-	if(bridge_prefix ==  "clips"))
+	if(bridge_prefix ==  "clips")
 	{
 		std::cout << "CLIPS SUBSCRIPTIONS "<<std::endl;
 		register_callback(EventType::PUBLISH , topic_Subscription_[topic_name] ); 
@@ -299,6 +320,7 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 											, std::shared_ptr<WebSession> session)
 {
 	MutexLocker ml(__mutex);
+	if(finalized_) { return; }
 
 	//select thre right processor
 	std::shared_ptr <SubscriptionCapability> processor;
@@ -337,9 +359,14 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 void 
 SubscriptionCapabilityManager::publish_loop()
 {
+	MutexLocker ml(__publish_mutex);
+
 	while(run_publish_loop)
-	{
+	{	
 		emitt_event (EventType::PUBLISH);
+		ml.unlock();
+		usleep(100000);
+		MutexLocker ml(__publish_mutex);
 	}
 }
 

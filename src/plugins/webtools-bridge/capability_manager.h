@@ -33,7 +33,13 @@ class CapabilityManager
 		{}
 
 		virtual void init() 
-		{}
+		{
+			if(!initialized_)
+			{
+				initialized_ = true ; 
+			}
+
+		}
 		
 		virtual void finalize()
 		{
