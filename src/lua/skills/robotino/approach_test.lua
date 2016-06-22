@@ -70,8 +70,10 @@ function MPS_ALIGN:init()
    self.args["mps_align"].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
+      self.args["mps_align"].y = 0.02
    else
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
+      self.args["mps_align"].y = -0.02
    end 
 end
 
