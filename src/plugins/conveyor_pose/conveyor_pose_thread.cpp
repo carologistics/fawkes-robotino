@@ -51,6 +51,7 @@
 #include <pcl/features/normal_3d_omp.h>
 
 #include <tf/types.h>
+#include <utils/math/angle.h>
 
 #include <cmath>
 
@@ -103,8 +104,10 @@ ConveyorPoseThread::init()
   cfg_pose_close_if_no_new_pointclouds_  = config->get_bool( (cfg_prefix + "if/pose_close_if_new_pc").c_str() );
 
   conveyor_frame_id_          = config->get_string( (cfg_prefix + "conveyor_frame_id").c_str() );
-  vis_hist_pose_diff_         = config->get_float( (cfg_prefix + "vis_hist/diff_pose").c_str() );
+  cfg_pose_diff_              = config->get_float( (cfg_prefix + "vis_hist/diff_pose").c_str() );
   vis_hist_angle_diff_        = config->get_float( (cfg_prefix + "vis_hist/diff_angle").c_str() );
+  cfg_pose_avg_hist_size_     = config->get_uint( (cfg_prefix + "vis_hist/average/size").c_str() );
+  cfg_pose_avg_min_           = config->get_uint( (cfg_prefix + "vis_hist/average/used_min").c_str() );
 
   cfg_enable_switch_          = config->get_bool( (cfg_prefix + "switch_default").c_str() );
   cfg_enable_product_removal_ = config->get_bool( (cfg_prefix + "product_removal_default").c_str() );
@@ -198,14 +201,13 @@ ConveyorPoseThread::bb_pose_conditional_close()
 void
 ConveyorPoseThread::loop()
 {
-  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_current;
-
   if_read();
 
   if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
-      vis_hist_ = -1;
-      pose_write(pose_current);
+      pose trash;
+      trash.valid = false;
+      pose_add_element(trash);
     }
 
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
@@ -242,6 +244,7 @@ ConveyorPoseThread::loop()
   CloudPtr cloud_without_products(new Cloud);
   if ( bb_config_->is_product_removal() ) {
     cloud_without_products = cloud_remove_products(cloud_bottom_removed);
+//    *cloud_without_products = *cloud_bottom_removed;
   } else {
     *cloud_without_products = *cloud_bottom_removed;
   }
@@ -252,16 +255,18 @@ ConveyorPoseThread::loop()
   do {
     CloudPtr cloud_plane = cloud_get_plane(cloud_without_products, coeff);
     if ( cloud_plane == NULL || ! cloud_plane ) {
-      vis_hist_ = -1;
-      pose_write(pose_current);
+      pose trash;
+      trash.valid = false;
+      pose_add_element(trash);
       return;
     }
 
     size_t id;
     boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices = cloud_cluster(cloud_plane);
     if ( cluster_indices->size() <= 0 ) {
-      vis_hist_ = -1;
-      pose_write(pose_current);
+      pose trash;
+      trash.valid = false;
+      pose_add_element(trash);
       return;
     }
     std::vector<CloudPtr> clouds_cluster = cluster_split(cloud_plane, cluster_indices);
@@ -285,8 +290,6 @@ ConveyorPoseThread::loop()
     if (height < cfg_plane_height_minimum_) {
       logger->log_info(name(), "Discard plane, because of height restriction. is: %f\tshould: %f", height, cfg_plane_height_minimum_);
 
-
-      logger->log_info(name(), "id: %u\tsize: %u\t%u", id, cluster_indices->size(), clouds_cluster.size());
       boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
@@ -312,15 +315,22 @@ ConveyorPoseThread::loop()
   normal(0) = coeff->values[0];
   normal(1) = coeff->values[1];
   normal(2) = coeff->values[2];
-  pose_current = calculate_pose(centroid, normal);
+  pose pose_current = calculate_pose(centroid, normal);;
+  pose_add_element(pose_current);
 
-  update_vis_hist_by_pose_diff(pose_current);
-  pose_ = pose_current;
-  pose_write(pose_);
-  tf_send_from_pose_if(pose_);
+  pose pose_average;
+  bool pose_average_availabe = pose_get_avg(pose_average);
 
-  if (cfg_use_visualisation_) {
-    visualisation_->marker_draw(header_, centroid, coeff);
+  if (pose_average_availabe) {
+    vis_hist_ = std::max(1, vis_hist_ + 1);
+    pose_write(pose_average);
+
+    tf_send_from_pose_if(pose_current);
+    if (cfg_use_visualisation_) {
+      visualisation_->marker_draw(header_, pose_average.translation, pose_average.rotation);
+    }
+  } else {
+    vis_hist_ = -1;
   }
 }
 
@@ -400,6 +410,112 @@ ConveyorPoseThread::if_read()
   }
 }
 
+void
+ConveyorPoseThread::pose_add_element(pose element)
+{
+  //add element
+  poses_.push_front(element);
+
+  // if to full, remove oldest
+  while (poses_.size() > cfg_pose_avg_hist_size_) {
+    poses_.pop_back();
+  }
+}
+
+bool
+ConveyorPoseThread::pose_get_avg(pose & out)
+{
+  pose median;
+
+  // count invalid loops
+  unsigned int invalid = 0;
+  for (pose p : poses_) {
+    if ( ! p.valid ) {
+      invalid++;
+    }
+  }
+
+  if (invalid > 3) {
+    logger->log_warn(name(), "view unstable, got %u invalid frames", invalid);
+  }
+
+  // Weiszfeld's algorithm to find the geometric median
+  median.translation.setValue(0, 0, 0);
+  median.rotation.setEuler(0, 0, 0);
+  unsigned int iteraterions = 20;
+  for (unsigned int i = 0; i < iteraterions; ++i) {
+
+    fawkes::tf::Vector3 numerator(0, 0, 0);
+    double divisor = 0;
+
+    for (pose p : poses_) {
+      if ( p.valid ) {
+        double divisor_current = (p.translation - median.translation).norm();
+        divisor += ( 1 / divisor_current );
+        numerator += ( p.translation / divisor_current );
+//        logger->log_info(name(), "(%lf\t%lf\t%lf) /\t%lf", numerator.x(), numerator.y(), numerator.z(), divisor);
+      }
+    }
+    median.translation = numerator / divisor;
+
+  }
+
+  // remove outliers
+  std::list<pose> poses_used;
+  for (pose p : poses_) {
+    if ( p.valid ) {
+      double dist = (p.translation - median.translation).norm();
+
+//      logger->log_info(name(), "(%f\t%f\t%f)\t(%f\t%f\t%f) => %lf",
+//          median.translation.x(), median.translation.y(), median.translation.z(),
+//          p.translation.x(), p.translation.y(), p.translation.z(),
+//          dist);
+
+      if (dist <= cfg_pose_diff_) {
+        poses_used.push_back(p);
+      }
+    }
+  }
+
+  if (poses_used.size() <= cfg_pose_avg_min_) {
+    logger->log_warn(name(), "not enough for average, got: %u", poses_used.size());
+    return false;
+  }
+
+  // calculate average
+  double roll = 0;
+  double pitch = 0;
+  double yaw = 0;
+  for (pose p : poses_used) {
+    out.translation.setX( out.translation.x() + p.translation.x() );
+    out.translation.setY( out.translation.y() + p.translation.y() );
+    out.translation.setZ( out.translation.z() + p.translation.z() );
+
+    fawkes::tf::Matrix3x3 m(p.rotation);
+    fawkes::tf::Scalar rc, pc, yc;
+    m.getEulerYPR(yc, pc, rc);
+    roll += fawkes::normalize_rad(rc);
+    pitch += fawkes::normalize_rad(pc);
+    yaw += fawkes::normalize_rad(yc);
+  }
+
+  // normalize
+  out.translation.setX( out.translation.x() / poses_used.size() );
+  out.translation.setY( out.translation.y() / poses_used.size() );
+  out.translation.setZ( out.translation.z() / poses_used.size() );
+
+  roll /= poses_used.size();
+  pitch /= poses_used.size();
+  yaw /= poses_used.size();
+  out.rotation.setEuler(yaw, pitch, roll);
+
+//  logger->log_info(name(), "got %u for avg: (%f\t%f\t%f)\t(%f\t%f\t%f)", poses_used.size(),
+//      out.translation.x(), out.translation.y(), out.translation.z(),
+//      roll, pitch, yaw);
+
+  return true;
+}
+
 bool
 ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit)
 {
@@ -461,31 +577,6 @@ ConveyorPoseThread::is_inbetween(double a, double b, double val) {
   } else {
     return false;
   }
-}
-
-void
-ConveyorPoseThread::update_vis_hist_by_pose_diff(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_current)
-{
-  // check distance
-  float pl_sqr = pose_.first.x() * pose_.first.x() +
-                 pose_.first.y() * pose_.first.y() +
-                 pose_.first.z() * pose_.first.z();
-  float pc_sqr = pose_current.first.x() * pose_current.first.x() +
-                 pose_current.first.y() * pose_current.first.y() +
-                 pose_current.first.z() * pose_current.first.z();
-  if ( std::fabs(pc_sqr - pl_sqr) > vis_hist_pose_diff_ ) {
-    vis_hist_ = 1;
-    return;
-  }
-
-  // check angle
-  if ( pose_.second.angleShortestPath( pose_current.second ) > vis_hist_angle_diff_ ) {
-    vis_hist_ = 1;
-    return;
-  }
-
-  // otherwise integrate
-  vis_hist_ = std::max(vis_hist_, 0) + 1;
 }
 
 CloudPtr
@@ -752,7 +843,7 @@ ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud
   cloud_out->header = header_;
 }
 
-std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion>
+ConveyorPoseThread::pose
 ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal)
 {
   Eigen::Vector3f tf_orign;
@@ -771,15 +862,15 @@ ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f nor
   fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
   fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
 
-  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> ret;
-  ret.first = origin;
-  ret.second = rot;
+  pose ret;
+  ret.translation = origin;
+  ret.rotation = rot;
 
   return ret;
 }
 
 void
-ConveyorPoseThread::tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose)
+ConveyorPoseThread::tf_send_from_pose_if(pose pose)
 {
   fawkes::tf::StampedTransform transform;
 
@@ -790,23 +881,23 @@ ConveyorPoseThread::tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::
   pt.set_time((long)header_.stamp / 1000);
   transform.stamp = pt;
 
-  transform.setOrigin(pose.first);
-  transform.setRotation(pose.second);
+  transform.setOrigin(pose.translation);
+  transform.setRotation(pose.rotation);
 
   tf_publisher->send_transform(transform);
 }
 
 void
-ConveyorPoseThread::pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose)
+ConveyorPoseThread::pose_write(pose pose)
 {
   double translation[3], rotation[4];
-  translation[0] = pose.first.x();
-  translation[1] = pose.first.y();
-  translation[2] = pose.first.z();
-  rotation[0] = pose.second.x();
-  rotation[1] = pose.second.y();
-  rotation[2] = pose.second.z();
-  rotation[3] = pose.second.w();
+  translation[0] = pose.translation.x();
+  translation[1] = pose.translation.y();
+  translation[2] = pose.translation.z();
+  rotation[0] = pose.rotation.x();
+  rotation[1] = pose.rotation.y();
+  rotation[2] = pose.rotation.z();
+  rotation[3] = pose.rotation.w();
   bb_pose_->set_translation(translation);
   bb_pose_->set_rotation(rotation);
 

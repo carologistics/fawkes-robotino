@@ -59,6 +59,21 @@ class ConveyorPoseThread
   public fawkes::TransformAspect
 {
 private:
+  class pose {
+  public:
+    bool valid = true;
+    fawkes::tf::Vector3 translation;
+    fawkes::tf::Quaternion rotation;
+    pose() {
+      translation.setX(0);
+      translation.setY(0);
+      translation.setZ(0);
+      rotation.setX(0);
+      rotation.setY(0);
+      rotation.setZ(0);
+      rotation.setW(0);
+    }
+  };
   Visualisation * visualisation_;
 
   // cfg values
@@ -73,7 +88,7 @@ private:
 
   bool cfg_pose_close_if_no_new_pointclouds_;
 //  std::string bb_tag_name_;
-  float vis_hist_pose_diff_;
+  float cfg_pose_diff_;
   float vis_hist_angle_diff_;
 
   float cfg_gripper_y_min_;
@@ -116,6 +131,11 @@ private:
   std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_;
   int vis_hist_;
 
+  size_t cfg_pose_avg_hist_size_;
+  size_t cfg_pose_avg_min_;
+
+  std::list<pose> poses_;
+
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
   fawkes::RefPtr<Cloud> cloud_out_inter_1_;
@@ -137,12 +157,14 @@ private:
  void bb_pose_conditional_open();
  void bb_pose_conditional_close();
 
+ void pose_add_element(pose element);
+ bool pose_get_avg(pose & out);
+
  void if_read();
  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
 
  bool is_inbetween(double a, double b, double val);
- void update_vis_hist_by_pose_diff(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_current);
 
  CloudPtr cloud_remove_gripper(CloudPtr in);
  CloudPtr cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid);
@@ -159,9 +181,9 @@ private:
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
- std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
- void tf_send_from_pose_if(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose);
- void pose_write(std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose);
+ pose calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
+ void tf_send_from_pose_if(pose pose);
+ void pose_write(pose pose);
 
 protected:
   virtual void run() { Thread::run(); }

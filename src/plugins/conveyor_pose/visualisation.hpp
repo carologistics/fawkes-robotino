@@ -37,7 +37,7 @@ class Visualisation
 private:
   ros::Publisher  pub_markers_;
 
-  visualization_msgs::Marker draw_normal(pcl::PCLHeader header, Eigen::Vector4f centroid, pcl::ModelCoefficients::Ptr coeff)
+  visualization_msgs::Marker draw_normal(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
   {
     visualization_msgs::Marker arrow;
     arrow.header = pcl_conversions::fromPCL( header );
@@ -51,19 +51,21 @@ private:
     arrow.color.g = 1.0f;
     arrow.color.a = 1.0;
     geometry_msgs::Point start, end;
-    start.x = centroid(0);
-    start.y = centroid(1);
-    start.z = centroid(2);
+    start.x = centroid.x();
+    start.y = centroid.y();
+    start.z = centroid.z();
     arrow.points.push_back(start);
-    end.x = centroid(0) - coeff->values[0] * 0.05;
-    end.y = centroid(1) - coeff->values[1] * 0.05;
-    end.z = centroid(2) - coeff->values[2] * 0.05;
+    fawkes::tf::Vector3 normal(0, 0, 1);
+    normal = normal.rotate(fawkes::tf::Vector3(rotation.x(), rotation.y(), rotation.z()), rotation.w());
+    end.x = centroid.x() - normal.x() * 0.05;
+    end.y = centroid.y() - normal.y() * 0.05;
+    end.z = centroid.z() - normal.z() * 0.05;
     arrow.points.push_back(end);
 
     return arrow;
   }
 
-  visualization_msgs::Marker draw_plane(pcl::PCLHeader header, Eigen::Vector4f centroid, pcl::ModelCoefficients::Ptr coeff)
+  visualization_msgs::Marker draw_plane(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
   {
     visualization_msgs::Marker plane;
 
@@ -82,13 +84,13 @@ private:
     // get plane version 2: conveyor size from centroid
     float t, b, l, r, dl, dr;
     const float width = 0.019;
-    t = centroid(1) - 0.015;
-    b = centroid(1) + 0.023;
-    float plane_angle = std::atan2( coeff->values[0], - coeff->values[2] );
-    r = centroid(0) + std::cos( plane_angle ) * width;
-    l = centroid(0) - std::cos( plane_angle ) * width;
-    dr = centroid(2) + std::sin( plane_angle ) * width;
-    dl = centroid(2) - std::sin( plane_angle ) * width;
+    t = centroid.y() - 0.015;
+    b = centroid.y() + 0.023;
+    float plane_angle = 0;//std::atan2( coeff->values[0], - coeff->values[2] );
+    r = centroid.x() + std::cos( plane_angle ) * width;
+    l = centroid.x() - std::cos( plane_angle ) * width;
+    dr = centroid.z() + std::sin( plane_angle ) * width;
+    dl = centroid.z() - std::sin( plane_angle ) * width;
 
     tl.x = l;
     tl.y = t;
@@ -123,16 +125,16 @@ private:
 
 public:
 
-  void marker_draw(pcl::PCLHeader header, Eigen::Vector4f centroid, pcl::ModelCoefficients::Ptr coeff)
+  void marker_draw(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
   {
     // just viz stuff from here
     visualization_msgs::MarkerArray ma;
     // add arrow normal
-    visualization_msgs::Marker arrow = draw_normal(header, centroid, coeff);
+    visualization_msgs::Marker arrow = draw_normal(header, centroid, rotation);
     ma.markers.push_back(arrow);
     // add plane
-    visualization_msgs::Marker plane = draw_plane(header, centroid, coeff);
-    ma.markers.push_back(plane);
+//    visualization_msgs::Marker plane = draw_plane(header, centroid, rotation);
+//    ma.markers.push_back(plane);
     pub_markers_.publish(ma);
   }
 

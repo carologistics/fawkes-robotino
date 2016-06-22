@@ -7,7 +7,7 @@ conveyor_pose:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
   # - the switch if is ignored, the plugin i running always
-  debug: true
+  debug: false
   # the point cloud that is used to detect the belt
   cloud_in: "/camera/depth/points"
 
@@ -49,9 +49,14 @@ conveyor_pose:
   # the maximum allowed distance that the vis_hist is not resetet
   vis_hist:
     # distance in x, y, z
-    diff_pose: 0.002
+    diff_pose: 0.003
     # distance in angle in rad
     diff_angle: 0.2
+    average:
+      # number of used elements for avg calculation
+      size: 10
+      # the minimum of poses used for a successfull used average
+      used_min: 3
 
   # the dimensions of the gripper in the point cloud (check rotation of actual tf)
   gripper:
@@ -59,8 +64,8 @@ conveyor_pose:
     y_max: -0.055
     z_max: 0.11
     slice:
-      y_min: -0.025
-      y_max: 0.045
+      y_min: -0.035
+      y_max: 0.035
   centroid:
     # the radius wich is not pruned around the centroid
     radius: 0.05
