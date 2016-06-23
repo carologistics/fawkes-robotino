@@ -77,7 +77,7 @@ function OPEN_GRIPPER:init()
 end
 
 function DRIVE_FORWARD:init()
-   self.args["motor_move"].x = x_distance
+   self.args["motor_move"].x = x_distance + self.fsm.vars.offset_x
    self.args["motor_move"].vel_trans = 0.2
 end
 
