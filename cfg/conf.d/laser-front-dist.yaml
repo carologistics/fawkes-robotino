@@ -1,0 +1,11 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+plugins/laser-front-dist:
+
+  input_laser_interface: "Laser urg-filtered"
+
+  output_result_interface: "front_dist"
+
+  number_beams_used: 9
+
