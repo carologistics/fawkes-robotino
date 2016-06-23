@@ -11,7 +11,7 @@ fawkes/meta_plugins:
   m-fv-vision: m-bare,m-fv,machine-signal,tag_vision,fvretriever
   m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf
   m-clips-agent: m-clips,m-fv-vision,clips-agent
-  m-skiller: ros,m-fv-vision,ros-pcl,navgraph,navgraph-generator,navgraph-generator-mps,laser_front_dist,skiller
+  m-skiller: ros,m-fv-vision,ros-pcl,navgraph,navgraph-generator,navgraph-generator-mps,skiller
   m-full: m-skiller,m-clips-agent
 
   #
@@ -35,4 +35,4 @@ fawkes/meta_plugins:
   m-base-gripper: arduino,dynamixel,ax12_gripper
   m-base-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan,ros-move-base
   m-base-laser: laser,laser-filter,m-base-ros,laser-pointclouds,laser-cluster,laser-lines,map-lasergen
-  m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,colli,amcl,m-base-joy
+  m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,colli,amcl,m-base-joy,laser_front_dist
