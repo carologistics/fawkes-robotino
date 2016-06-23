@@ -56,7 +56,7 @@ function map() {
 
 //============================================================================>Robot 2
 
-//====================================== TFClinet for R2
+// //====================================== TFClinet for R2
 
   // Setup a client to listen to TF of R2.
   var tfClient_R2= new ROSLIB.TFClient({
