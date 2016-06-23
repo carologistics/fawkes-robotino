@@ -48,7 +48,7 @@ using namespace gazebo;
 TagVisionSimThread::TagVisionSimThread()
   : Thread("TagVisionSimThread", Thread::OPMODE_WAITFORWAKEUP),
     BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
-    TransformAspect(TransformAspect::ONLY_PUBLISHER,"tags")
+    TransformAspect(TransformAspect::BOTH,"tags")
 {
 }
 
@@ -60,7 +60,8 @@ void TagVisionSimThread::init()
   gazebo_topic_ = config->get_string("/gazsim/topics/tag-vision");
   tag_if_name_prefix_ = config->get_string("/gazsim/tag-vision/tag-if-name-prefix");
   info_if_name_ = config->get_string("/gazsim/tag-vision/info-if-name");
-  frame_name_ = config->get_string("/gazsim/tag-vision/frame");
+  sim_frame_name_ = config->get_string("/gazsim/tag-vision/frame");
+  frame_name_ = config->get_string("/plugins/tag_vision/frame");
   number_interfaces_ = config->get_int("/gazsim/tag-vision/number-interfaces");
   visibility_history_increase_per_update_ = config->get_int("/gazsim/tag-vision/visibility-history-increase-per-update");
   
@@ -125,13 +126,26 @@ void TagVisionSimThread::loop()
         logger->log_info(name(), "Not enough interfaces to write all tag-poses to the blackboard.\n");
         continue;
       }
-      tag_pos_ifs_[if_index]->set_translation(0, pose.position().x());
-      tag_pos_ifs_[if_index]->set_translation(1, pose.position().y());
-      tag_pos_ifs_[if_index]->set_translation(2, pose.position().z());
-      tag_pos_ifs_[if_index]->set_rotation(0, pose.orientation().x());
-      tag_pos_ifs_[if_index]->set_rotation(1, pose.orientation().y());
-      tag_pos_ifs_[if_index]->set_rotation(2, pose.orientation().z());
-      tag_pos_ifs_[if_index]->set_rotation(3, pose.orientation().w());
+
+      tf::Pose pose_sim_frame(tf::Quaternion(pose.orientation().x(),
+                                             pose.orientation().y(),
+                                             pose.orientation().z(),
+                                             pose.orientation().w()),
+                              tf::Vector3(pose.position().x(),
+                                          pose.position().y(),
+                                          pose.position().z()));
+      Time time(clock);
+      tf::Stamped<tf::Pose> spose_sim_frame(pose_sim_frame, time, sim_frame_name_);
+      tf::Stamped<tf::Pose> spose_tag_frame;
+      tf_listener->transform_pose(frame_name_, spose_sim_frame, spose_tag_frame);
+      
+      tag_pos_ifs_[if_index]->set_translation(0, spose_tag_frame.getOrigin().x());
+      tag_pos_ifs_[if_index]->set_translation(1, spose_tag_frame.getOrigin().y());
+      tag_pos_ifs_[if_index]->set_translation(2, spose_tag_frame.getOrigin().z());
+      tag_pos_ifs_[if_index]->set_rotation(0, spose_tag_frame.getRotation().x());
+      tag_pos_ifs_[if_index]->set_rotation(1, spose_tag_frame.getRotation().y());
+      tag_pos_ifs_[if_index]->set_rotation(2, spose_tag_frame.getRotation().z());
+      tag_pos_ifs_[if_index]->set_rotation(3, spose_tag_frame.getRotation().w());
       tag_pos_ifs_[if_index]->set_frame(frame_name_.c_str());
       //compute visibility history
       int current_vis_hist = tag_pos_ifs_[if_index]->visibility_history();
@@ -147,14 +161,8 @@ void TagVisionSimThread::loop()
 
       
       // publish the transform
-      tf::Transform transform(tf::Quaternion(pose.orientation().x(),
-                                             pose.orientation().y(),
-                                             pose.orientation().z(),
-                                             pose.orientation().w()),
-                              tf::Vector3(pose.position().x(),
-                                          pose.position().y(),
-                                          pose.position().z()));
-      Time time(clock);
+      tf::Transform transform(spose_tag_frame.getRotation(),
+                              spose_tag_frame.getOrigin());
       std::string tag_frame_name = std::string("tag_")+std::to_string(if_index);
       tf::StampedTransform stamped_transform(transform,time,frame_name_,tag_frame_name);
       tf_publisher->send_transform(stamped_transform);
