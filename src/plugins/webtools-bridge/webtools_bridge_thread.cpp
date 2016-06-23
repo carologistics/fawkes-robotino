@@ -154,11 +154,11 @@ WebtoolsBridgeThread::loop()
   // fawkes::Time now(clock);
   // now.stamp();
  
-  //   std::cout<< "time_is" << now.in_msec() <<std::endl;
-  //   std::cout<< "time_is" << (*time_var_).in_msec() <<std::endl;
+  //   //std::cout<< "time_is" << now.in_msec() <<std::endl;
+  //   //std::cout<< "time_is" << (*time_var_).in_msec() <<std::endl;
     
-  //   std::cout<< "time_is" << now.in_msec() - (*time_var_).in_msec() <<std::endl;
+  //   //std::cout<< "time_is" << now.in_msec() - (*time_var_).in_msec() <<std::endl;
     
-  //   std::cout<< "0000000000000000000000000000000000000"  <<std::endl;
+  //   //std::cout<< "0000000000000000000000000000000000000"  <<std::endl;
 
 }

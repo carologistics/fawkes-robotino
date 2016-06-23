@@ -52,7 +52,7 @@ SubscriptionCapabilityManager::init()
 		run_publish_loop = true;
 		publisher_thread= std::make_shared<std::thread>(&SubscriptionCapabilityManager::publish_loop, this);
 		
-		std::cout << "publisher loop intrialized"<<std::endl;
+		//std::cout << "publisher loop intrialized"<<std::endl;
 
 		CapabilityManager::init();
 	}
@@ -294,9 +294,9 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 		// It will call all the publish() from the subscription by the power of call_backwes
 	if(bridge_prefix ==  "clips")
 	{
-		std::cout << "CLIPS SUBSCRIPTIONS "<<std::endl;
+		//std::cout << "CLIPS SUBSCRIPTIONS "<<std::endl;
 		register_callback(EventType::PUBLISH , topic_Subscription_[topic_name] ); 
-				std::cout << "registered to publish"<<std::endl;
+				//std::cout << "registered to publish"<<std::endl;
 
 	}
 		

@@ -53,7 +53,7 @@ writer.Uint(throttle_rate);
 
 	writer.EndObject();//End of complete Json_msg 
     
-    //std::cout << s.GetString() << std::endl;
+    ////std::cout << s.GetString() << std::endl;
 
     return s.GetString();
 }
@@ -79,7 +79,7 @@ Serializer::op_unsubscribe(std::string prefixed_topic_name
 
 	writer.EndObject();//End of complete Json_msg 
     
-    //std::cout << s.GetString() << std::endl;
+    ////std::cout << s.GetString() << std::endl;
 
     return s.GetString();
 }
@@ -115,7 +115,7 @@ Serializer::op_advertise( std::string prefixed_topic_name , std::string id , std
 
 	writer.EndObject();//End of complete Json_msg 
     
-    //std::cout << s.GetString() << std::endl;
+    ////std::cout << s.GetString() << std::endl;
 
     return s.GetString();
 }
@@ -140,7 +140,7 @@ Serializer::op_unadvertise( std::string prefixed_topic_name , std::string id )
 
 	writer.EndObject();//End of complete Json_msg 
     
-    //std::cout << s.GetString() << std::endl;
+    ////std::cout << s.GetString() << std::endl;
 
     return s.GetString();
 }
@@ -172,7 +172,7 @@ Serializer::op_publish( std::string prefixed_topic_name , std::string id
 
 	if (d.Parse(msg_in_json.c_str()).HasParseError())
 	{
-		//std::cout<< GetParseError_En(d.GetParseError());
+		////std::cout<< GetParseError_En(d.GetParseError());
 		return "";
 		//throw
 	}
@@ -181,7 +181,7 @@ Serializer::op_publish( std::string prefixed_topic_name , std::string id
 
 	writer.EndObject();//End of complete Json_msg 
     
-    //std::cout << s.GetString() << std::endl;
+    ////std::cout << s.GetString() << std::endl;
 
     return s.GetString();
 }
@@ -192,7 +192,7 @@ Serializer::op_publish( std::string prefixed_topic_name , std::string id
 
 // 	if (d.Parse(json_str.c_str()).HasParseError())
 // 	{
-// 		//std::cout<< GetParseError_En(d.GetParseError());
+// 		////std::cout<< GetParseError_En(d.GetParseError());
 // 		return "";
 // 		//throw
 // 	}

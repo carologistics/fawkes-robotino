@@ -33,7 +33,7 @@ RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Lo
 
     rosbridge_endpoint_=websocketpp::lib::make_shared<Client>();
     rosbridge_endpoint_->clear_access_channels(websocketpp::log::alevel::all);
-    rosbridge_endpoint_->clear_error_channels(websocketpp::log::elevel::all);
+//    rosbridge_endpoint_->clear_error_channels(websocketpp::log::elevel::all);
     rosbridge_endpoint_->init_asio();
     rosbridge_endpoint_->set_reuse_addr(true);
     rosbridge_endpoint_->start_perpetual();
@@ -76,7 +76,7 @@ RosBridgeProxyProcessor::finalize()
 {   //Assumes that all web_sessions were terminated by my termination callbacks. Done while WebServer is finalizing.
     
     MutexLocker ml(mutex_);
-    if( !finalized_ ) { return }
+    if( !finalized_ ) { return; }
     
     websocketpp::lib::error_code ec;
     logger_->log_info( "RosBridgeProxyProcessor:"," Finalizing" ) ;
@@ -308,7 +308,7 @@ RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <Eve
                    
                 if (it_peers_ != peers_.end())
                 {
-                     std::cout<< "removing web_peer session" << std::endl;        
+                     //std::cout<< "removing web_peer session" << std::endl;        
                     (*it_peers_) -> unregister_web_session();
 
                     websocketpp::lib::error_code ec;
