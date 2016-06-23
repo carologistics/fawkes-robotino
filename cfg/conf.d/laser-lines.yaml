@@ -51,4 +51,4 @@ laser-lines:
   # average the laser lines
   moving_avg_enabled: true
   # The size (number of elements) of the moving average window
-  moving_avg_window_size: 10 
+  moving_avg_window_size: 5
