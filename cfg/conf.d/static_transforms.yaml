@@ -76,9 +76,12 @@ plugins/static-transforms:
       trans_z: 0.1
 
     cam_conveyor:
-      frame: !frame mount_profile
+      frame: !frame gripper
       child_frame: !frame cam_conveyor
-      trans_x: 0.12
-      trans_y: 0.0
-      trans_z: 0.03
+      trans_x: -0.01
+      trans_y: -0.023
+      trans_z: -0.05
+      rot_yaw: -1.57
+      rot_pitch: 0
+      rot_roll: -1.57
 

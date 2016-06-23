@@ -1,0 +1,95 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
+---
+conveyor_pose:
+  # sets the debug mode within the plugin, which eases the debugging,
+  # which results in the following:
+  # - the switch if is ignored, the plugin i running always
+  debug: false
+  # the point cloud that is used to detect the belt
+  cloud_in: "/camera/depth/points"
+
+  if:
+    # the prefix used for all interfaces
+    prefix: conveyor_pose
+
+    # the output point clouds
+    cloud_out_intermediet: inter
+    cloud_out_result: result
+  
+    # the position 3d interface of the result
+    pose_of_beld: pose
+    # should the pose interface be closed if no new pointcloud is availabe.
+    # This would result that the if would have no writer after starup and at some ocasions during runtime.
+    pose_close_if_new_pc: false
+    # the switch interface
+    switch: switch
+    # the dynamic config interface
+    config: config
+    # the laser lines, they don't use the prefix
+    laser_lines: [
+      "/laser-lines/1",
+      "/laser-lines/2",
+      "/laser-lines/3",
+      "/laser-lines/4",
+      "/laser-lines/5",
+      "/laser-lines/6",
+      "/laser-lines/7",
+      "/laser-lines/8"
+    ]
+  
+  conveyor_frame_id: conveyor_pose
+  switch_default: false
+  product_removal_default: false
+  use_visualisation: true
+
+
+  # the maximum allowed distance that the vis_hist is not resetet
+  vis_hist:
+    # distance in x, y, z
+    diff_pose: 0.003
+    # distance in angle in rad
+    diff_angle: 0.2
+    average:
+      # number of used elements for avg calculation
+      size: 10
+      # the minimum of poses used for a successfull used average
+      used_min: 3
+
+  # the dimensions of the gripper in the point cloud (check rotation of actual tf)
+  gripper:
+    y_min: -0.02
+    y_max: -0.055
+    z_max: 0.11
+    slice:
+      y_min: -0.035
+      y_max: 0.035
+  centroid:
+    # the radius wich is not pruned around the centroid
+    radius: 0.05
+  front:
+    # the distance that is not pruned at the front of the MPS
+    space: 0.04
+    # this should be a tf, but I did not get it work :(
+    offset: 0.005
+  bottom:
+    offset: 0.06
+  product:
+    normal_distance_weight: 0.1
+    dist_threshold: 0.025
+    radius_limit_min: 0.0185
+    radius_limit_max: 0.0225
+  plane:
+    # the allowed noise for a plane
+    dist_threshold: 0.0025
+    normal_z_minimum: 0.98
+    height_minimum: 0.02
+  cluster:
+    tolerance: 0.0015
+    size_min: 100
+    size_max: 25000
+  voxel_grid:
+    leave_size: 0.001
+
