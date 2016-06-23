@@ -82,7 +82,7 @@ LaserFrontDistThread::loop()
 
 	//write result
 	if_result_->set_visibility_history(1);
-	if_result_->set_translation(1, average);
+	if_result_->set_translation(0, average);
 	if_result_->set_frame(frame_.c_str());
 	if_result_->write();
 }

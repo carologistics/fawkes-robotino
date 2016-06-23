@@ -64,5 +64,6 @@ fawkes/bbsync:
         cluster_mps_9: Position3DInterface::/laser-cluster/mps/9
         cluster_mps_10: Position3DInterface::/laser-cluster/mps/10
         arduino: ArduinoInterface::Arduino
+        laser_front_dist: Position3DInterface::front_dist
       writing:
         tfTags: TransformInterface::TF tags

@@ -7,5 +7,5 @@ plugins/laser-front-dist:
 
   output_result_interface: "front_dist"
 
-  number_beams_used: 9
+  number_beams_used: 13
 
