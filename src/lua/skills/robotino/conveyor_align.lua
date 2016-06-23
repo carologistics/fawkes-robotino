@@ -45,13 +45,11 @@ documentation      = [==[aligns the robot orthogonal to the conveyor by using th
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local TOLERANCE_Y = 0.003
-local TOLERANCE_Z = 0.003
-local MAX_TRIES = 5
-local X_DEST_POS = 0.08
-local Z_DEST_POS = 0.048
-local Z_DEST_POS_WITH_PUCK = 0.052
-local cfg_frame_ = "gripper"
+local TOLERANCE_Y = 0.002
+local MAX_TRIES = 4
+local Z_DEST_POS_WITH_PUCK = 0.002
+local Z_DEST_POS_WITHOUT_PUCK = 0.008
+local Z_DEST_POS = Z_DEST_POS_WITH_PUCK
 
 function no_writer()
    return not if_conveyor:has_writer()
@@ -104,29 +102,23 @@ function pose_offset(self)
           }
 end
 
-function pose_des(self)
-   local pose = pose_offset(self)
-   pose.x = pose.x - X_DEST_POS
-   pose.z = pose.z + Z_DEST_POS
-   return pose
-end
+--TODO check vis_hist
 
 fsm:define_states{ export_to=_M,
-   closure={},
+   closure={MAX_TRIES=MAX_TRIES},
    {"INIT", JumpState},
-   {"CHECK_VISION", JumpState},
-   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="FAILED"},
-   {"DECIDE_TRY", JumpState},
+   {"DRIVE_YZ", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="SETTLE", fail_to="FAILED"},
+   {"SETTLE", JumpState},
+   {"CHECK", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "CHECK_VISION", cond=true},
-   {"CHECK_VISION", "FAILED", timeout=5, desc="No vis_hist on conveyor vision"},
-   {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "DRIVE", cond=see_conveyor},
-   {"DECIDE_TRY", "FINAL", cond=tolerances_ok, desc="Robot is aligned"},
-   {"DECIDE_TRY", "CHECK_VISION", cond=max_tries_not_reached, desc="Do another alignment"},
-   {"DECIDE_TRY", "FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
+   {"INIT", "FAILED", cond=no_writer, desc="no conveyor vision"},
+   {"INIT", "SETTLE", cond=true},
+   {"SETTLE", "CHECK", timeout=0.5},
+   {"CHECK", "FAILED", cond="vars.counter > MAX_TRIES", desc="max tries reached"},
+   {"CHECK", "DRIVE_YZ", cond=tolerance_y_not_ok, desc="tolerance not ok, align y distance"},
+   {"CHECK", "FINAL", cond=true},
 }
 
 function INIT:init()
@@ -137,23 +129,15 @@ function INIT:init()
    end
 end
 
-function DECIDE_TRY:init()
-   self.fsm.vars.counter = self.fsm.vars.counter + 1
-   print("Try number " .. self.fsm.vars.counter)
-end
-
-function DRIVE:init()
-   local pose = pose_des(self)
-
-   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.4} --TODO set tolerances as defined in the global variable
-   local z_position = pose.z * 1000
-   print("z_pose: " .. z_position)
-   self.args["ax12gripper"].command = "RELGOTOZ"
-   if math.abs(pose.z) >= TOLERANCE_Z then
-      self.args["ax12gripper"].z_position = z_position
+function DRIVE_YZ:init()
+   if gripper_if:is_holds_puck() then
+      Z_DEST_POS = Z_DEST_POS_WITH_PUCK
    else
-      self.args["ax12gripper"].z_position = 0
+      Z_DEST_POS = Z_DEST_POS_WITHOUT_PUCK
    end
+   self.args["motor_move"] = {y = conveyor_0:translation(1), tolerance = { x=0.002, y=0.002, ori=0.01 }}
+   self.args["ax12gripper"].command = "RELGOTOZ"
+   self.args["ax12gripper"].z_position = 0 --(Z_DEST_POS * 1000)
 end
 
 function cleanup()
