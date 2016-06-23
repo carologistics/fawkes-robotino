@@ -62,7 +62,7 @@ OPEN_COMMAND="gnome-terminal"
 
 OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; roslaunch rosbridge_server rosbridge_websocket.launch port:=$ROSBRIDGE_PORT; exec bash\"'"
 OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun tf2_web_republisher tf2_web_republisher; exec bash\"'"
-OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun visualization_marker_tutorials arrow; exec bash\"'"
+OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun arrow_marker arrow; exec bash\"'"
  
 
 eval $OPEN_COMMAND

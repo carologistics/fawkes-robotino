@@ -315,7 +315,7 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 					
 				}
 
-				std::cout<< "Session terminated NICELY :D" << std::endl;				
+				//std::cout<< "Session terminated NICELY :D" << std::endl;				
 
 				//was it the last session? if yes, Subscription emit TERMINATTION event and destories itself.
 				// if(subscriptions_.empty()){
@@ -324,7 +324,7 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 					
 				// 	ml.unlock();
 				// 	my_self->finalize();
-				// 	std::cout<< "Subscripton topic terminated!" << std::endl;
+				// 	//std::cout<< "Subscripton topic terminated!" << std::endl;
 
 				// 	//finalize will need the mutex
 				// }
@@ -428,7 +428,7 @@ Subscription::serialize(std::string op
 {
 	//MutexLocker ml(mutex_);
 
-	std::cout <<" default serialzer shoudl not come here "<< std::endl;
+	//std::cout <<" default serialzer shoudl not come here "<< std::endl;
 	std::string prefixed_topic_name= processor_prefix_+"/"+topic_name_;//not always the cast. (for its ros /topic_name)
 
 	StringBuffer s;
@@ -451,7 +451,7 @@ Subscription::serialize(std::string op
 
 	writer.EndObject();//End of complete Json_msg 
     
-    //std::cout << s.GetString() << std::endl;
+    ////std::cout << s.GetString() << std::endl;
 
     return s.GetString();
 }

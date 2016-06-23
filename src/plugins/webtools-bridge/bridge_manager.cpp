@@ -66,7 +66,7 @@ BridgeManager::deserialize(std::string jsonStr,Document &d)
 
 	if (d.Parse(json).HasParseError())
 	{
-		std::cout<< GetParseError_En(d.GetParseError());
+		//std::cout<< GetParseError_En(d.GetParseError());
 		return false;
 	}
 

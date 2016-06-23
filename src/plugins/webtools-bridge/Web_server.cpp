@@ -35,6 +35,7 @@ public:
         m_server->set_open_handler(bind(&Web_server::on_open,this,::_1));
         m_server->set_close_handler(bind(&Web_server::on_close,this,::_1));
         m_server->set_validate_handler(bind(&Web_server::on_validate,this,::_1)); 
+        m_server->clear_access_channels(websocketpp::log::alevel::all);
         m_server->set_reuse_addr(true);
 
         mutex_=new fawkes::Mutex();
@@ -141,7 +142,7 @@ public:
         m_next_sessionid++;
         //ForDebuging:: Print on http req 
         // for (std::map<std::string,std::string>::const_iterator i = tmp_session_->http_req.begin(); i != tmp_session_->http_req.end(); ++i)
-        // std::cout<< i->first << "::::::" << i->second << std::endl;
+        // //std::cout<< i->first << "::::::" << i->second << std::endl;
 
         logger_->log_info("Webtools-Bridge:","on open");   
     }
@@ -248,7 +249,7 @@ private:
 //     rosbridge_ptr->run();
 //     int id =  rosbridge_ptr->connect("ws://localhost:9090");
 //     if (id != -1) {
-//         std::cout << "> Created connection with id " << id << std::endl;
+//         //std::cout << "> Created connection with id " << id << std::endl;
 //    }
 
 // }
@@ -264,7 +265,7 @@ private:
 
 
  //    void on_message(connection_hdl hdl, server::message_ptr msg) {
- //         std::cout << "Got a message from connection "  << std::endl;
+ //         //std::cout << "Got a message from connection "  << std::endl;
 
     // dispatcher_->dispatch_msg(msg->get_payload());
  //    }
@@ -287,7 +288,7 @@ private:
         
  //        m_server.send(m_connections.begin()->first, message, websocketpp::frame::opcode::text, ec);
  //        if (ec) {
- //            std::cout << "> Error sending message: " << ec.message() << std::endl;
+ //            //std::cout << "> Error sending message: " << ec.message() << std::endl;
  //            return;
  //        }
         

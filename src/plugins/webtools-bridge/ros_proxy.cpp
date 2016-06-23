@@ -92,11 +92,11 @@ public:
 
     void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
         if (msg->get_opcode() == websocketpp::frame::opcode::text) {
-              std::cout<< "forwarding to web.." << std::endl;
-              std::cout<< msg->get_payload()<<std::endl;
+              //std::cout<< "forwarding to web.." << std::endl;
+              //std::cout<< msg->get_payload()<<std::endl;
               m_dispatcher->send_to_web(msg->get_payload());
         } else {
-            std::cout<< "forwarding to web HEX" << std::endl;
+            //std::cout<< "forwarding to web HEX" << std::endl;
            // m_messages.push_back("<< " + websocketpp::utility::to_hex(msg->get_payload()));
         }
     }
@@ -153,12 +153,12 @@ public:
     ~ros_proxy() {
         m_endpoint.stop_perpetual();
 
-        std::cout << "> Closing connection " << metadata_ptr->get_id() << std::endl;
+        //std::cout << "> Closing connection " << metadata_ptr->get_id() << std::endl;
         
         websocketpp::lib::error_code ec;
         m_endpoint.close(metadata_ptr->get_hdl(), websocketpp::close::status::going_away, "", ec);
         if (ec) {
-            std::cout << "> Error closing connection " << metadata_ptr->get_id() << ": "  
+            //std::cout << "> Error closing connection " << metadata_ptr->get_id() << ": "  
                       << ec.message() << std::endl;
         }
         m_thread->join();
@@ -212,7 +212,7 @@ public:
         websocketpp::lib::error_code ec;
         m_endpoint.close(metadata_ptr->get_hdl(), code, reason, ec);
         if (ec) {
-            std::cout << "> Error initiating close: " << ec.message() << std::endl;
+            //std::cout << "> Error initiating close: " << ec.message() << std::endl;
         }
     }
 
@@ -221,7 +221,7 @@ public:
         websocketpp::lib::error_code ec;
         m_endpoint.send(metadata_ptr->get_hdl(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
-            std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
+            //std::cout << "> Error sending message to ros: " << ec.message() << std::endl;
             return;
         }
 

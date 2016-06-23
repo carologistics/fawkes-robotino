@@ -60,7 +60,7 @@ ProxySession::~ProxySession()
 // {   
 //  	MutexLocker ml(mutex_);
 
-//     std::cout << " on close " << std::endl;
+//     //std::cout << " on close " << std::endl;
 
 //  	status_= "closed";
 //  	terminate();
@@ -95,12 +95,12 @@ ProxySession::send(std::string const & msg){
 
 	websocketpp::lib::error_code ec;
 
-    std::cout << ">TO Proxy::sending message: "<<msg << std::endl;
+    //std::cout << ">TO Proxy::sending message: "<<msg << std::endl;
 
     endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
 
     if (ec) {
-        std::cout << "> Error sending message: " << ec.message() << std::endl;
+        //std::cout << "> Error sending message: " << ec.message() << std::endl;
         return false;
     }
     return true;

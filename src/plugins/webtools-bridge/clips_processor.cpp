@@ -116,7 +116,7 @@ ClipsSubscription::serialize(std::string op
     if(tmpl->name().compare(tmpl_name) == 0)
     {
       fact_found= true;
-      std::cout << "found" << std::endl;
+      //std::cout << "found" << std::endl;
       break;
     }
     fact = fact->next();
@@ -124,7 +124,7 @@ ClipsSubscription::serialize(std::string op
 
   if(! fact_found)
   {
-    logger_->log_info("ClipsProcessor", "couldn't find fact with template name %s for now", tmpl_name.c_str());
+    //logger_->log_info("ClipsProcessor", "couldn't find fact with template name %s for now", tmpl_name.c_str());
     return "";
   }
   else
@@ -177,7 +177,7 @@ ClipsSubscription::serialize(std::string op
         bool ordered_fact = slot_names.size() == 1 && slot_names[0] == "implied" ? true : false;
         bool predicate_fact = ordered_fact && fact->slot_value("").size() < 1 ? true : false; 
 
-        std::cout <<slot_names[0]<<std::endl;
+        //std::cout <<slot_names[0]<<std::endl;
 
         //A Non-ordered Fact Serialization
         if( ! ordered_fact )
@@ -244,7 +244,7 @@ ClipsSubscription::serialize(std::string op
 
     writer.EndObject();//End of complete Json_msg 
     
-    std::cout << s.GetString()<<std::endl;
+    //std::cout << s.GetString()<<std::endl;
     return s.GetString();
   }
 }

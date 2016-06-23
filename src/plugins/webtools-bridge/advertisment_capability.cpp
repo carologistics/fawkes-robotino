@@ -257,7 +257,7 @@ Advertisment::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 				if (advertisments_.find(session) != advertisments_.end())
 					advertisments_.erase(session);
 
-				std::cout<< "Session terminated NICELY :D" << std::endl;
+				//std::cout<< "Session terminated NICELY :D" << std::endl;
 
 				//was it the last session? if yes, Advertisment emit TERMINATTION event to the Advertisment_Manager.
 				if(advertisments_.empty()){
@@ -268,7 +268,7 @@ Advertisment::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 					
 					//ml.unlock();
 					//my_self->finalize();
-					std::cout<< "Advertisment topic terminated!" << std::endl;
+					//std::cout<< "Advertisment topic terminated!" << std::endl;
 
 					//finalize will need the mutex
 				}

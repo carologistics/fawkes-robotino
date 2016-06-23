@@ -50,7 +50,7 @@ void
 ServiceCapabilityManager::handle_message(Document &d
 											, std::shared_ptr<WebSession> session)
 {	
-			std::cout<< "in manager"<< std::endl;
+			//std::cout<< "in manager"<< std::endl;
 
 	//TODO::MOVE ALL THE TYPE RELATED STUFF TO a proper protocol Class
 	if(!d.HasMember("op")){
@@ -64,7 +64,7 @@ ServiceCapabilityManager::handle_message(Document &d
 	std::string processor_prefix="/";
 	if(processores_.find(processor_prefix) != processores_.end())
 	{
-		std::cout<< "found processor"<< std::endl;
+		//std::cout<< "found processor"<< std::endl;
 
 		std::shared_ptr <ServiceCapability> service_processor;
 		service_processor = std::dynamic_pointer_cast<ServiceCapability> (processores_[processor_prefix]);
@@ -77,7 +77,7 @@ ServiceCapabilityManager::handle_message(Document &d
 		if (msg_op=="call_service")
 		{
 
-		std::cout<< "op is call service"<< std::endl;
+		//std::cout<< "op is call service"<< std::endl;
 			//TEMP: for now keep the msg as a json and just forward it to ros
 			StringBuffer buffer;
 	   		Writer<StringBuffer> writer(buffer);
@@ -87,6 +87,6 @@ ServiceCapabilityManager::handle_message(Document &d
 			service_processor -> call_service( srv_call_json , session);	
 		}
 	}
-			std::cout<< "end manager"<< std::endl;
+			//std::cout<< "end manager"<< std::endl;
 
 }
