@@ -94,6 +94,10 @@ function MPS_ALIGN:init()
    self.args["mps_align"].ori = 0
 end
 
+function CONVEYOR_ALIGN:init()
+   self.args["conveyor_align"].product_present = true
+end
+
 function SKILL_PRODUCT_PICK:init()
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then

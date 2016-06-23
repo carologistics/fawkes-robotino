@@ -157,9 +157,5 @@ hardware/robotino:
     # Currently not implemented
     #current-max: 1
     #current-max-time: 400
-  distance_front:
-    # Index of the MPS distance sensor in the Distances field of the interface
-    index: 0
-
-    # Threshold when the sensor fires
-    sensor_threshold: 0.1
+  align_distance_conveyor:
+    x: 0.07

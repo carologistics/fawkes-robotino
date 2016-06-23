@@ -59,10 +59,13 @@ GazsimConveyorThread::init()
   logger->log_debug(name(), 
 		    "Initializing Simulation of the Conveyor Vision Plugin");
   
-  conveyor_if_name_ = config->get_string("/gazsim/conveyor/if-name");
+  conveyor_if_name_ = config->get_string("/gazsim/conveyor/pose-if-name");
+  frame_name_ = config->get_string("/gazsim/conveyor/frame");
 
   //setup Position3DInterface if with default values
   pos_if_ = blackboard->open_for_writing<Position3DInterface>(conveyor_if_name_.c_str());
+  switch_if_ = blackboard->open_for_writing<SwitchInterface>(config->get_string("/gazsim/conveyor/switch-if-name").c_str());
+  conv_config_if_ = blackboard->open_for_writing<ConveyorConfigInterface>(config->get_string("/gazsim/conveyor/config-if-name").c_str());
   
   conveyor_vision_sub_ = gazebonode->Subscribe("~/RobotinoSim/ConveyorVisionResult/", &GazsimConveyorThread::on_conveyor_vision_msg, this);
   
@@ -72,15 +75,18 @@ void
 GazsimConveyorThread::finalize()
 {
   blackboard->close(pos_if_);
+  blackboard->close(switch_if_);
+  blackboard->close(conv_config_if_);
 }
 
 void
 GazsimConveyorThread::loop()
 {
-  pos_if_->set_frame("base_conveyor");
+	pos_if_->set_frame(frame_name_.c_str());
   if(new_data_)
   {
-    double trans[] = {last_msg_.positions().x(), last_msg_.positions().y(), last_msg_.positions().z()};
+    //swap the axis' because the cam_conveyor frame has the z-axis facing foward
+    double trans[] = {-last_msg_.positions().y(), -last_msg_.positions().z(), last_msg_.positions().x()};
     double rot[] = {last_msg_.positions().ori_x(), last_msg_.positions().ori_y(), last_msg_.positions().ori_z(), last_msg_.positions().ori_w()};
     pos_if_->set_translation(trans);
     pos_if_->set_rotation(rot);
