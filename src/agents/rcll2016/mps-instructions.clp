@@ -13,10 +13,10 @@
   (return ?instruction)
 )
 
-(deffunction mps-instruction-base-station (?machine ?team-color ?base-color)
+(deffunction mps-instruction-base-station (?machine ?team-color ?base-color ?side)
   (bind ?instruction (mps-instruction-get-prepare-machine-msg ?machine ?team-color))
   (bind ?bs-inst (pb-create "llsf_msgs.PrepareInstructionBS"))
-  (pb-set-field ?bs-inst "side" INPUT)
+  (pb-set-field ?bs-inst "side" ?side)
   (pb-set-field ?bs-inst "color" (sym-cat BASE_ ?base-color))
   (pb-set-field ?instruction "instruction_bs" ?bs-inst)
   (printout t ?base-color crlf)
@@ -59,7 +59,7 @@
                                 (timer $?t&:(timeout ?now ?t ?*MPS_INSTRUCTION-PERIOD*))
                                 (base-color ?base-color) (gate ?gate)
                                 (ring-color ?ring-color) (cs-operation ?cs-op)
-                                (lock ?lock))
+                                (side ?side) (lock ?lock))
   ;eigther no lock needed or already aquired
   (or (machine (name ?unused&:(eq ?lock NONE)))
       (wait-for-lock (res ?lock) (state use)))
@@ -70,7 +70,7 @@
   (switch ?mtype
     (case BS
       then
-      (bind ?instruction (mps-instruction-base-station ?machine ?team-color ?base-color)))
+      (bind ?instruction (mps-instruction-base-station ?machine ?team-color ?base-color ?side)))
     (case CS
       then
       (bind ?instruction (mps-instruction-cap-station ?machine ?team-color ?cs-op)))

@@ -73,7 +73,8 @@
     (bind ?wait 0)
     (assert (lock-announce-restart))
   )
-  (if (eq ?*ROBOT-NAME* R-1)
+  (printout t ?*ROBOT-NAME* crlf)
+  (if (eq ?*ROBOT-NAME* "R-1")
     then
     (skill-call drive_into_field team ?team-color wait 0)
     else
