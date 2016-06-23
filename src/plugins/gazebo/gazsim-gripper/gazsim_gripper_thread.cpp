@@ -27,6 +27,7 @@
 #include <core/threading/read_write_lock.h>
 #include <core/threading/wait_condition.h>
 #include <interfaces/AX12GripperInterface.h>
+#include <interfaces/ArduinoInterface.h>
 #include <interfaces/LedInterface.h>
 #include <interfaces/JointInterface.h>
 #include <boost/lexical_cast.hpp>
@@ -62,6 +63,7 @@ GazsimGripperThread::init()
 		    "Initializing Simulation of the Light Front Plugin");
   
   gripper_if_name_ = config->get_string("/gazsim/gripper/if-name");
+  arduino_if_name_ = config->get_string("/gazsim/gripper/arduino-if-name");
   cfg_prefix_ = config->get_string("/gazsim/gripper/cfg-prefix");
 
   set_gripper_pub_ = gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/gripper"));
@@ -84,6 +86,11 @@ GazsimGripperThread::init()
   gripper_if_->set_right_velocity(0);
   gripper_if_->set_final(true);
   gripper_if_->write();
+  
+  arduino_if_ = blackboard->open_for_writing<ArduinoInterface>(arduino_if_name_.c_str());
+  arduino_if_->set_z_position(0);
+  arduino_if_->set_final(true);
+  arduino_if_->write();
 }
 
 void
@@ -153,6 +160,10 @@ GazsimGripperThread::loop()
 
     gripper_if_->msgq_pop();
     gripper_if_->write();
+  }
+  
+  while (! arduino_if_->msgq_empty() ) {
+    arduino_if_->msgq_pop();
   }
 }
 

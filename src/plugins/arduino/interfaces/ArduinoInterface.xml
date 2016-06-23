@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ArduinoInterface" author="Tim Niemueller, Nicolas Limpert" year="2016">
+  <data>
+    <comment>
+      Interface to access Arduino functionalities
+    </comment>
+    <field type="uint32" name="z_position">Current z-position</field>
+    <field type="bool" name="final">True, if the last move command has been finished</field>
+  </data>
+
+  <!-- Motion commands -->
+  <message name="MoveUpwards">
+    <comment>Move gripper upwards.</comment>
+    <field type="uint32" name="num_mm">Number of mm to drive up</field>
+  </message>
+  <message name="MoveDownwards">
+    <comment>Move gripper downwards.</comment>
+    <field type="uint32" name="num_mm">Number of mm to drive down</field>
+  </message>
+  <message name="MoveToZ0">
+    <comment>Move gripper to upper z position.</comment>
+  </message>
+</interface>

@@ -1,8 +1,8 @@
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Plugins
+#              Makefile Build System for Fawkes: Robotis Servo interface
 #                            -------------------
-#   Created on Mon May 14 11:37:00 2012
-#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
+#   Created on Mon Mar 23 22:51:01 2015
+#   Copyright (C) 2006-2011 by Tim Niemueller, Carologistics RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,24 +13,12 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../../..
+
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= clips-motor-switch \
-	  voltagelogger \
-	  machine-signal \
-	  ax12_gripper \
-	  arduino \
-	  tag_vision \
-      navgraph_broker \
-	  navgraph-generator-mps \
-	  gazebo \
-	  agent-monitor \
-	  marker_writer \
-	  conveyor_vision \
-	  motor-led \
-		conveyor_pose \
+INTERFACES_all = $(notdir $(patsubst %.xml,%,$(wildcard $(SRCDIR)/*.xml)))
+include $(BUILDSYSDIR)/interface.mk
 
-include $(BUILDSYSDIR)/rules.mk
+include $(BUILDSYSDIR)/base.mk
 
-gazebo: ax12_gripper tag_vision machine-signal arduino

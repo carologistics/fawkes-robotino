@@ -1,0 +1,18 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/dynamixel
+---
+arduino:
+
+  # Example configuration for a servo chain, choose any name as
+  # top element, e.g. ptu or example.
+  device: /dev/arduino
+
+  # RPM value of the stepper motor in use.
+  # This value is used to determine the time needed to 
+  # perform movements since we cannot read from the arduino yet.
+  rpm: 80
+  speed: 800
+  accel: 1000
+  max_mm: 40

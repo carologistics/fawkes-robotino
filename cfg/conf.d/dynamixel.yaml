@@ -58,7 +58,7 @@ dynamixel:
     # Servos to be discovered on initialization.
     # Either set the desired servo IDs that should be found in the servo chain
     # or leave this field empty (servos: []) to discover all available servos
-    servos: [1, 2, 3]
+    servos: [1, 2]
 
     # Autorecover of servos which disable their torque (by setting torque limit to 0)
     # after an alarm shutdown. One can set a servo to automatically recover from such a situation

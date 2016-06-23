@@ -90,7 +90,6 @@ class GripperAX12AThread
   fawkes::JointInterface       *__rightjoint_if;
   fawkes::DynamixelServoInterface *__servo_if_left;
   fawkes::DynamixelServoInterface *__servo_if_right;
-  fawkes::DynamixelServoInterface *__servo_if_z_align;
 
   /* fawkes::RefPtr<RobotisAX12A> __ax12a; */
   std::string   __gripper_cfg_prefix;
@@ -98,7 +97,6 @@ class GripperAX12AThread
   std::string   __cfg_driver_prefix;
   std::string   __cfg_left_servo_id;
   std::string   __cfg_right_servo_id;
-  std::string   __cfg_z_alignment_servo_id;
   /* unsigned char __cfg_left_servo_id; */
   /* unsigned char __cfg_right_servo_id; */
   /* unsigned int __cfg_cw_compl_margin; */
@@ -135,12 +133,6 @@ class GripperAX12AThread
   float        __target_right;
   float        __left_margin;
   float        __right_margin;
-  float        __cfg_z_speed_as_percent;
-  float        __cfg_z_downwards_real_velocity;
-  float        __cfg_z_upwards_real_velocity;
-  int          __cfg_z_position;
-  int          __cfg_z_upper_bound;
-  int          __cfg_z_lower_bound;
 
   bool         load_left_pending;
   bool         load_right_pending;
@@ -164,7 +156,6 @@ class GripperAX12AThread
 
   float         __last_left;
   float         __last_right;
-  void init_z_align();
   void goto_gripper(float left, float right);
   void goto_gripper_load(float left, float right);
   void goto_gripper_timed(float left, float right, float time_sec);
@@ -187,7 +178,6 @@ class GripperAX12AThread
   /* void wait_for_fresh_data(); */
   void stop_left();
   void stop_right();
-  void stop_z();
   /* void set_servo_angle(unsigned int servo_id, float servo_angle); */
   void load_config();
   void config_value_erased(const char *path);
