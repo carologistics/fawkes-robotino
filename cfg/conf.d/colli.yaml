@@ -67,8 +67,8 @@ plugins/colli:
     # ID of motor interface
     motor: Robotino
     # ID of laser interface
-    #laser: Laser urg-filtered
-    laser: Laser colli
+    laser: Laser urg-filtered
+    #laser: Laser colli
     # ID of colli target interface
     colli: Colli target
     # Maximum age (in seconds) of data for reading interfaces. If data is older than this, the colli_thread
@@ -118,7 +118,7 @@ plugins/colli:
     # max velocity if emergency stop triggers
     max_vel: 0.2
     # number of beams that are used to check for distance (beams in directions of robot)
-    beams_used: 11
+    beams_used: 15
  
   drive_mode:
     # Used drive restriction. Options are: differential or omnidirectional
@@ -154,14 +154,14 @@ plugins/colli:
 
   roboshape:
     # Define the roboshape: 1 is angular (default), 2 is round
-    shape: 2
+    shape: 1
 
     angular:
       # Dimensions of angular robot
-      width_x: 0.53
+      width_x: 0.55
       width_y: 0.45
       # The Lasers offset from back/left, seen from behind left
-      laser_offset_x_from_back: 0.415
+      laser_offset_x_from_back: 0.405
       laser_offset_y_from_left: 0.225
 
     round:
@@ -212,8 +212,8 @@ plugins/colli:
         # The angle inbetween old obstacles been deleted.
         # The angle area is always from min -> max, where 0 is the front
         # Unit is deg as int (360° if). Set boath to 0 to disable this feature
-        angle_min: 280
-        angle_max: 80
+        angle_min: 290
+        angle_max: 70
 
     buffer_size: 2
 
