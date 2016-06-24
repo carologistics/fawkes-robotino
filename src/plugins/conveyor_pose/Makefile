@@ -21,6 +21,7 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/pcl.mk
 include $(BUILDSYSDIR)/boost.mk
+include $(BUILDSYSDIR)/ros.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 PRESUBDIRS = interfaces
@@ -36,7 +37,7 @@ OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o
 
 OBJS_all = $(OBJS_conveyor_pose)
 
-CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFFLAGS_conveyor_pose) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
+CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) $(CFLAGS_conveyor_pose) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
 LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
 
 #names of the plugins you want to build
