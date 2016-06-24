@@ -24,12 +24,12 @@ SUBDIRS	= clips-motor-switch \
 	  tag_vision \
       navgraph_broker \
 	  navgraph-generator-mps \
+	  conveyor_pose \
 	  gazebo \
 	  agent-monitor \
 	  marker_writer \
 	  conveyor_vision \
 	  motor-led \
-		conveyor_pose \
 
 include $(BUILDSYSDIR)/rules.mk
 
