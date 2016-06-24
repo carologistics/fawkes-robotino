@@ -37,7 +37,7 @@ laser-lines:
   switch_tolerance: 0.3
 
   # input laser cloud
-  input_cloud: urg-filtered
+  input_cloud: filtered-1080
   #input_cloud: Line-Sector
 
   # To have contiguous lines without large holes, a clustering is
