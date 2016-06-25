@@ -158,17 +158,17 @@ fi
 case $COMMAND in
     gazebo )
 	# change Language (in german there is an error that gazebo can not use a number with comma)
-	export LANG="en_US"
+	export LC_ALL="C"
 	gazebo $REPLAY $GAZEBO_WORLD
 	;;
     gzserver ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
-	export LANG="en_US"
+	export LC_ALL="C"
 	gzserver $REPLAY $GAZEBO_WORLD
 	;;
     gzclient ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
-	export LANG="en_US"
+	export LC_ALL="C"
 	#use optirun if available
 	#opti=$(command -v optirun)
 	$opti gzclient
