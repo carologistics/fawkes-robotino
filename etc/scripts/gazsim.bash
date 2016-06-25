@@ -73,6 +73,9 @@ else
 	SUBTERM_ARGS="--tab -e"
 fi
 
+ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
+ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
+
 OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:" -- "$@")
 if [ $? != 0 ]
 then
@@ -247,16 +250,16 @@ if [  $COMMAND  == start ]; then
     if [  "$ROS"  == "-r" ]; then
     	#start roscores
 	# main roscore (non-robot)
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roscore -p ${ROS_MASTER_URI##*:} $KEEP\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP\"'"
 	if [ -n "$ROS_LAUNCH_MAIN" ]; then
-		OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p ${ROS_MASTER_URI##*:} $KEEP\"'"
+		OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP\"'"
 	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
 	    # robot roscore
 	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP\"'"
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_URI $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP\"'"
 	fi
     	done
     fi
