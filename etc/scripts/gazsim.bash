@@ -240,26 +240,26 @@ if [  $COMMAND  == start ]; then
 	#start gazebo
 	if [[ -z $HEADLESS ]]
 	then
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x gazebo $REPLAY $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x gazebo $REPLAY $KEEP\"'"
 	else
 	    #run headless
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x gzserver $REPLAY $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x gzserver $REPLAY $KEEP\"'"
 	fi
     fi
 
     if [  "$ROS"  == "-r" ]; then
     	#start roscores
 	# main roscore (non-robot)
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP\"'"
 	if [ -n "$ROS_LAUNCH_MAIN" ]; then
-		OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP\"'"
+		OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP\"'"
 	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
 	    # robot roscore
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP\"'"
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP\"'"
 	fi
     	done
     fi
@@ -267,22 +267,22 @@ if [  $COMMAND  == start ]; then
     if $START_GAZEBO
     then
 	#start refbox
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x refbox $KEEP\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x refbox $KEEP\"'"
     	#start refbox shell
-    	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"$startup_script_location -x refbox-shell $KEEP\"'"
+    	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x refbox-shell $KEEP\"'"
     fi
 
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
 	FAWKES_USED=true
     done
 
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN\"'"
     fi
 
     # open windows
