@@ -212,7 +212,8 @@ case $COMMAND in
 esac
 
 
-if [ "$KEEP" == "yes" ]; then
+if [[ "$KEEP" == "yes" ]]; then
+	echo -n "Press ENTER to exit..."
 	read
 fi
 
