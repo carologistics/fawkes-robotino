@@ -306,10 +306,8 @@ function robotInfo( robot_name , bridge_connection )
 	
 	$(document).ready(function()
 	{
-
 		
 		//------------The State Wedgit
-
 		if(provided_tools["lock_role"])
 		{
 		  	var wedgit_id = "lock_role"+"__"+robot_name;
