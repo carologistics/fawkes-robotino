@@ -2,72 +2,89 @@
 var product_facts;// to hold the updated json contaning the "product" facts
 var order_facts;// to hold the updated json contaning the "order" facts
 
-__robots();
 
-function __robots(){
-  var R_1;
-  var R_2; 
-  var R_3;
-};//To  dynamicly store conncetion information for differnt robots
+var __robots = [];
+//__robots();
+// function __robots(){
+//   var R_1;
+//   var R_2; 
+//   var R_3;
+// };//To  dynamicly store conncetion information for differnt robots
 
-//temp to store the connection for the wedgits that do not yet use the __robot
-var ros;
+var ros ; 
 var ros_2;
-var ros_3;
+var ros_3 ; 
 
-function load(){
-	//initialize all the connections to the bridge
-	init();
-  exploration_results();
-	map();
-	simple_monitor();
-	orders();
-	products();
-  robotInfo("R-1" , ros);
-  robotInfo("R-2" , ros_2);
-  robotInfo("R-3" , ros_3);
+
+var intialiazed_ = false;
+var exploration_results_wedgit  ;
+var mps_monotor;
+
+
+function connect() {
+ //  // Connect to ROS.
+  // var r1_con = new ROSLIB.Ros({ url : 'ws://robotino-laptop-1:6060' });
+  // var r2_con = new ROSLIB.Ros({ url : 'ws://robotino-laptop-2:6060' });
+  // var r3_con = new ROSLIB.Ros({ url : 'ws://robotino-laptop-3:6060' });
+  var r1_con = new ROSLIB.Ros({ url : 'ws://localhost:6060' });
+  var r2_con = new ROSLIB.Ros({ url : 'ws://localhost:5050' });
+  var r3_con = new ROSLIB.Ros({ url : 'ws://localhost:4040' }); 
+
+  //  __robots.push ( { name: "R 1"  , connection : r1_con , alive: false } ) ;  
+  //  __robots.push ( { name: "R 2"  , connection : r2_con , alive: false } ) ;
+  // __robots.push ( { name: "R 3"  , connection : r3_con , alive: false } ) ;
+
+
+   ros = r1_con; 
+   ros_2 = r2_con;
+   ros3 = r3_con; 
+
+  //load();
+  
+
+  r1_con.on('connection', function() {
+    var robot_info = { name: "R 1"  , connection : r1_con , alive: false }  ;
+    __robots.push (  robot_info ) ;  
+    load( robot_info );
+  });
+
+ r2_con.on('connection', function() {
+  var robot_info = { name: "R 2"  , connection : r2_con , alive: false } ;
+   __robots.push ( robot_info  ) ;
+  load( robot_info );
+  })
+ 
+
+  r3_con.on('connection', function() {
+    var robot_info = { name: "R 3"  , connection : r3_con , alive: false } ;
+    __robots.push ( robot_info ) ;
+    load( robot_info );
+  })
 
 
 }
 
-function init() {
-  // Connect to ROS.
-  r1_ros = new ROSLIB.Ros({ url : 'ws://localhost:6060' });
+
+function init(){
+  if ( intialiazed_ ) { return ; }
   
-  r1_ros.on('connection', function() {
-    __robots.R_1 = { name: "R 1"  , connection : r1_ros , alive: true} ;  
-  });
-  ros = r1_ros;
+  exploration_results_wedgit = new exploration_results () ;
+  mps_monitor = new MpsMonitor () ;
+  
+ // map();
+  simple_monitor();
+  products();
+  orders();
+
+  intialiazed_ = true;
+}
 
 
- r2_ros = new ROSLIB.Ros({ url : 'ws://localhost:5050' });
+function load( robot_info ){
+  init();
 
- r2_ros.on('connection', function() {
-    var R_2 = { name: "R 2"  , connection : r2_ros , alive: true} ;  
-    __robots ["R_2"] = R_2 ;
-  })
- ros_2 = r2_ros ;
+  exploration_results_wedgit . visualize ( robot_info );
+  mps_monitor                . visualize ( robot_info );
 
- 
- r3_ros= new ROSLIB.Ros({  url : 'ws://localhost:4040' });
-
-  r3_ros.on('connection', function() {
-    var R_3 = { name: "R 3"  , connection : r3_ros , alive: true} ;  
-    __robots ["R_3"] = R_3 ;
-  })
-  ros_3 = r3_ros;
-
-
- // ros = new ROSLIB.Ros({
- //    url : 'ws://localhost:9090'
- //  });
-
- // ros_2 = new ROSLIB.Ros({
- //    url : 'ws://localhost:8080'
- //  });
-
- // ros_3 = new ROSLIB.Ros({
- //    url : 'ws://localhost:7070'
- //  });
-
+  robotInfo( robot_info.name , robot_info.connection );
 }
