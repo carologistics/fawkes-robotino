@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "slide_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "ax12gripper"}
+depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
 depends_interfaces = {}
 
 documentation      = [==[ slide_put
@@ -48,7 +48,7 @@ end
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
-   {"APPROACH_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
+   {"APPROACH_SLIDE", SkillJumpState, skills={{approach_mps}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
    {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SLIDE", fail_to="FAILED"},
    {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
@@ -67,8 +67,7 @@ function GOTO_SLIDE:init()
 end
 
 function APPROACH_SLIDE:init()
-   self.args["motor_move"].x = x_distance
-   self.args["motor_move"].vel_trans = 0.2
+   self.args["approach_mps"].x = x_distance
 end
 
 function STORE_PRODUCT:init()
