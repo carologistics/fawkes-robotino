@@ -18,11 +18,12 @@ var ros_3 ;
 
 var intialiazed_ = false;
 var exploration_results_wedgit  ;
-var mps_monotor;
+var mps_monitor;
 
 
 function connect() {
- //  // Connect to ROS.
+ 
+  // Connect to ROS.
   // var r1_con = new ROSLIB.Ros({ url : 'ws://robotino-laptop-1:6060' });
   // var r2_con = new ROSLIB.Ros({ url : 'ws://robotino-laptop-2:6060' });
   // var r3_con = new ROSLIB.Ros({ url : 'ws://robotino-laptop-3:6060' });
@@ -34,13 +35,13 @@ function connect() {
   //  __robots.push ( { name: "R 2"  , connection : r2_con , alive: false } ) ;
   // __robots.push ( { name: "R 3"  , connection : r3_con , alive: false } ) ;
 
+  
 
    ros = r1_con; 
    ros_2 = r2_con;
    ros3 = r3_con; 
 
-  //load();
-  
+  //load();  
 
   r1_con.on('connection', function() {
     var robot_info = { name: "R 1"  , connection : r1_con , alive: false }  ;
@@ -64,12 +65,17 @@ function connect() {
 
 }
 
+window.  $layout_container = $("<div> <div>") . addClass ("layout_container"); 
+window . $layout_side = $("<div> <div>") . addClass ("layout_side") ;
 
 function init(){
   if ( intialiazed_ ) { return ; }
+
+  $("body").append(window. $layout_container) ;
+  $("body").append(window. $layout_side) ;
   
-  exploration_results_wedgit = new exploration_results () ;
-  mps_monitor = new MpsMonitor () ;
+  exploration_results_wedgit = new exploration_results ( window. $layout_container ) ;
+  mps_monitor = new MpsMonitor ( ) ;
   
  // map();
   simple_monitor();

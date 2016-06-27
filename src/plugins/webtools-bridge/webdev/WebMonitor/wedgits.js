@@ -5,7 +5,7 @@ function simple_monitor(){
 
 	var div_ids=0;// index to be used to make unique ids
 
-	$("body").append("<div id=monitor_div  class=wedgit container>  </dev>");//the wedgit container
+	window.$layout_container.append("<div id=monitor_div  class=wedgit container>  </dev>");//the wedgit container
 	$("#monitor_div").append("<button class=smplmntr > subscribe </button>");
 	$("#monitor_div").append("<input  type='text' class=smplmntr > </input>");
 
@@ -64,7 +64,7 @@ function simple_monitor(){
 // 	var topic_name= "product";
 // 	var wedgit_id= 	"products_wedgit";
 	
-// 	$("body").append("<div id="+wedgit_id+"  class=wedgit>  </div>");//the wedgit container
+// 	window.$layout_container.append("<div id="+wedgit_id+"  class=wedgit>  </div>");//the wedgit container
 	
 // 	$(document).ready(function()
 // 	{
@@ -122,7 +122,7 @@ function products()
 	var $wedgit_div= $("<div>  </div>").addClass("widget").attr('id',wedgit_id);// div contaning the wedgit
 
 
-	$("body").append($wedgit_div);//the wedgit container
+	window.$layout_container.append($wedgit_div);//the wedgit container
 	
 
 	$(document).ready(function()
@@ -205,13 +205,13 @@ function orders(){
 	var $wedgit_div= $("<div>  </div>").addClass("widget").attr('id',wedgit_id);// div contaning the wedgit
 
 
-	$("body").append($wedgit_div);//the wedgit container
+	window.$layout_container.append($wedgit_div);//the wedgit container
 	
 
 	$(document).ready(function()
 	{
 
-	//to listen to the product incase the product widget not instialized
+	//to listen to the  incase the product widget not instialized
     // 	var product_facts_listener = new ROSLIB.Topic({
 		  //   ros : ros,
 		  //   name : destination_bridge_name +"/" + product_topic_name ,
@@ -247,8 +247,8 @@ function orders(){
 					{
 						if (JSON.parse(product_facts.product[product].id) == JSON.parse( order_facts.order[order]["product-id"] ))
 		  				{
-							var $order_div=$("<div> </div>").addClass("order");
-							var $product_div=$("<div> </div>").addClass("product").attr('id',"product_"+product_facts.product[product].id);
+							var $order_div=$("<div> </div>").addClass("order");// the class order is given to  each one of the orders_divs that contain the product div 
+							var $product_div=$("<div> </div>").addClass("product").attr('id',"product_"+product_facts.product[product].id);// the class 'produced' is given to the div containing  peace itself
 							
 							var base_color = product_facts.product[product].base[0];
 							$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
@@ -297,7 +297,7 @@ function robotInfo( robot_name , bridge_connection )
 	var container_id=	"robot_info__"+robot_name;
 
 	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id);// div contaning the wedgi
-	$("body").append($container_div);//the wedgit container
+	window.$layout_container.append($container_div);//the wedgit container
 	
 	var $container_header= $("<div>  </div>").addClass("container_header");
 	$container_header.append($("<h1>"+robot_name+"</h1>").addClass("container_header_element"));
