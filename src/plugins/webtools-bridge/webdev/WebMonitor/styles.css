@@ -4,10 +4,28 @@ html, body {
     padding: 2px;
 
 }
+
+.layout_container{
+    border: 3px dotted #73AD21;
+    margin : 6px;
+    width : 83% ;
+    position: absolute;
+    left: 0%;
+}
+
+/*.layout_side{
+    width : 15% ;
+    position: absolute;
+    right: 0%;
+}*/
+
+
+/*This is avery bad css and needs to be cahnged
+ *till i do so,to decode this css u need to know all wedgits have the blocking unless  a container it had displayed in */
 .container{
     border: 3px dotted #73AD21;
     margin : 6px;
-    width : 30% ;
+    width : 31% ;
     position: relative;
     float: left;
 }
@@ -124,7 +142,6 @@ div[id^="skills__"] p.done span.FAILED
     height: 10px;
 }
 
-
 .products_ring{
     
 	width: 50px;
@@ -148,4 +165,39 @@ div[id^="skills__"] p.done span.FAILED
     background-color: #FFFF00;
 }
 
+.monitor
+{
 
+}
+
+.mps.monitor{
+    position: fixed;
+    border: 3px dashed #73AD21;
+    margin : 2px;
+    height: 98%;
+    width : 15% ;
+    position: fixed;
+    right: 0% ;
+
+}
+
+.mps.wedgit{
+    
+    border: 3px solid #73AD21;
+    margin : 6px;
+    display:block;
+    height: 15.3% ;
+}
+
+.row_element{
+    display: block;
+    border : 3px ; 
+    position: relative;
+}
+
+.col_element{
+    display: inline-block;
+    border :3px ;
+    width:  50% ; /*only allow 2 of them on the same row*/
+    position: relative ;
+}
