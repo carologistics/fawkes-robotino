@@ -141,7 +141,7 @@ nodes:
       - only-copy-properties
       - tag_input: 97
       - tag_output: 98
-      - output_offset_x: 0.01
+      - output_offset_y: -0.015
   - !unconnected
     name: M-CS2
     pos: [0, 0]
@@ -149,6 +149,7 @@ nodes:
       - only-copy-properties
       - tag_input: 113
       - tag_output: 114
+      - output_offset_x: -0.02
   - !unconnected
     name: M-RS1
     pos: [0, 0]
@@ -163,8 +164,8 @@ nodes:
       - only-copy-properties
       - tag_input: 145
       - tag_output: 146
-      - input_offset_x: 0.01
       - output_offset_x: -0.01
+      - input_offset_x: -0.02
   - !unconnected
     name: M-BS
     pos: [0, 0]
@@ -172,7 +173,10 @@ nodes:
       - only-copy-properties
       - tag_input: 161
       - tag_output: 162
-      - input_offset_x: 0.01
+      - input_offset_x: -0.02
+      - input_offset_y: 0.03
+      - output_offset_x: -0.02
+      - output_offset_y: -0.03
   - !unconnected
     name: M-DS
     pos: [0, 0]
