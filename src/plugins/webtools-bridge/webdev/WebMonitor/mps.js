@@ -46,15 +46,13 @@ function MpsMetadata( options ){ //Machine data comes as the want
 						} ;
 
 
-
-
-
 //----------------------------------------------------- Monitor
 
 
 function MpsWedgit ( machine_name ,  $parent )  {
 
 	var	 that 			= this ;
+	this. machine_name_	= machine_name;
  	this. wedgit_id_ 	= machine_name + "_wedgit" ; // ex, 'C-RS1_wedgit'
 	this. $parent_ 		= $parent ;	
 	this. $wedgit_div_	= $("<div>  </div>") 	.addClass("wedgit")	
@@ -64,86 +62,95 @@ function MpsWedgit ( machine_name ,  $parent )  {
 												.append( $("<span > </span>" ) . addClass ("body") )
 												.append( $("<span > </span>" ) . addClass ("footer") );
 	
+	//-=======================================Not tested	
+	this. $wedgit_row_element_ = $("<span> </span>" ) . addClass( "row_element" ) ;	
+	this. $wedgit_col_element_ = $("<div> </div>" ) . addClass( "col_element" ) ;
+
+	//construct wedgit header 
+	var unprefrixed_machine_name = ( machine_name + "") . split('-') [1] || ( machine_name_ + "") ;
+	this.$wedgit_div_ .find(".header") .append ( "<b>" + unprefrixed_machine_name + "</b>" + "<sub>" + "N/A" + "</sub>" );
+
+	//construct wedgit body
+	var $row ;
+	var $col ;
+
+	//==Row
+	$row =  $("<span> </span>" ) . addClass( "row_element" ) ;
+	$col =  $("<div> </div>" ) . addClass( "col_element" ) ;
+	$col.append(" <b> loaded_id </b> ").addClass("loaded_id");
+	$col.appendTo($row);
+
+	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
+	$col.append("<b> produced_id </b> ").addClass("produced_id");
+	$col.appendTo($row);
+	$row. appendTo (this.$wedgit_div_.find(".body"));
+
+	//==title Row
+	$row =  $("<span> </span>" ) . addClass( "row_element" ) ;
+	$row.append("<b> Incoming: </b> ");
+	$row. appendTo (this.$wedgit_div_.find(".body"));
+
+	//==Row
+	$row =  $("<span> </span>" ) . addClass( "row_element" ) ;
+	$col =  $("<div> </div>" ) . addClass( "col_element" ) ;
+	$col.append("<b> incoming agents </b> ").addClass("incoming_agent");
+	$col.appendTo($row);
+
+	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
+	$col.append("<b> incoming </b> ").addClass("incoming");
+	$col.appendTo($row);
+	$row. appendTo (this.$wedgit_div_.find(".body"));
+	//EndBody
+	//-===================================================
+	
 
 	//do I need document .ready here ..Check!
-	this. $parent_ . append ( this.$wedgit_div_ ) ;	
+	$(document) . ready (function() {
+		that. $parent_ . append ( that .$wedgit_div_ ) ;	
+	});
 
 
-	//return the div to be visualized would make sense 
 	this . visualize = function () {
 
 		var machine_metadata_ = window . machines [machine_name] ; 
-
-		// $(document) . ready (function() {
-		// });
-
+		// take machine name with out team prefix |C-|RS|
 		var unprefrixed_machine_name = ( machine_metadata_ . name + "") . split('-') [1] || ( machine_metadata_ . name + "") ;
-		var $header = $( 
-			"<b> " + unprefrixed_machine_name	+ "</b>" +	 // take machine name with out team prefix |C-|RS|  
-					
-			"<sub>" + machine_metadata_ . state 						+ "</sub>" 
-		);
+	
 
+		//==============================================Un tested	
+		var $w_header = $( "<b> " + unprefrixed_machine_name	+ "</b>" + "<sub>" + machine_metadata_ . state 	+ "</sub>" );
+		that.$wedgit_div_ . find( ".header" )	.empty() .append ( $w_header );
 
-		var $content_body = $("<table> </table>") ;
-		
-		var $tr;
-		var $tb;
-
-		$tr = $("<tr></tr>") ;
-		$tb = $("<tb></tb>") .append( ( ( machine_metadata_.loaded_id )?    machine_metadata_ .loaded_id	: "no Loaded") );
-		$tb.appendTo($tr);
-		$tb = $("<tb></tb>") .append( ( ( machine_metadata_ .produced_id )?  machine_metadata_ .produced_id : " no Produced") ) ;
-		$tb.appendTo($tr);
-		$tr.appendTo($content_body);
+		var $w_body ;
+		that.$wedgit_div_ . find ( $(".loaded_id") ) .empty() .append ( ( ( machine_metadata_.loaded_id )?    machine_metadata_ .loaded_id	: "no Loaded") );
+		that.$wedgit_div_ . find ( $(".produced_id") ) .empty() .append( ( ( machine_metadata_ .produced_id )?  machine_metadata_ .produced_id : " no Produced") ) ;
 
 		if(machine_metadata_ . incoming.length > 0 )
 		{
-			$tr = $("<tr></tr>") ;
 			for ( index in machine_metadata_.incoming) {
-				$tb = $("<tb></tb>") .append( machine_metadata_ .incoming [index]  ) ;
-				$tb.appendTo($tr) ; 
-			}
-			$tr.appendTo($content_body);
+				that.$wedgit_div_ . find ( $(".incoming") ) .empty() .append( machine_metadata_ .incoming [index]  ) ; 
+	0		}
 		}
 
 		if(machine_metadata_ . incoming_agent > 0 )
 		{
-
-			$tr = $("<tr></tr>") ;
 			for ( i in machine_metadata_.incoming_agent) {
-				$tb = $("<tb></tb>") .append( machine_metadata_ .incoming_agent [i] ) ;
-				$tb.appendTo($tr) ; 
+				that.$wedgit_div_ . find ( $(".incoming_agent") ) .empty() .append( machine_metadata_ .incoming_agent [i] ) ;
 			}
-			$tr.appendTo($content_body);
 		}
-
-		that.$wedgit_div_ . find( ".header" )	. empty();
-		that.$wedgit_div_ . find( ".body" )		. empty();
-		that.$wedgit_div_ . find( ".footer" )	. empty();
-
-		that.$wedgit_div_ . find( ".header" )	. append ( $header );
-		that.$wedgit_div_ . find( ".body" )		. append ( $content_body );
-		// that.$wedgit_div_ . find( ".wedgit_footer" ) 	. append ( $header_footer );
-
-		//return $wedgit_div_ ;
 	}
 
 }
-
 
 function MpsMonitor()
 {
 	
 	var that 							= 	this ;
-
 	//to keep track and eliminate redundancy of the state of the data to display in the div when the topic gets published  
 	this.	data_to_show_				= 	{} ; 
-	
 	// subscribtion_info object parameters
 	this.	destination_bridge_name_ 	= 	"clips" ;
 	this.	topic_name_ 				= 	"" ;
-	
 	//coming from wedgit object parameters
  	this.	 div_id_ 					= 	"mps_monitor" ;
 	this.	$div_ 						= 	$("<div>  </div>")	.	attr('id', this.wedgit_id_ )
@@ -182,8 +189,6 @@ function MpsMonitor()
 		 	"M-BS" 	: new MpsWedgit( "M-BS"  , this.$div_ ) ,
 		} ;		
 	}
-
-
 
 
 	this.visualize = function( robot_info ) {
@@ -229,8 +234,6 @@ function MpsMonitor()
 					that . wedgits [ machine_name ] . visualize();
 
 				}
-
-
 
 				// if( ! ( that.data_to_show_ . hasOwnProperty ( zone_f ) ) )
 				// {
