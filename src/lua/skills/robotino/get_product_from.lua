@@ -51,8 +51,7 @@ end
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},--TODO proper handling
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
@@ -63,11 +62,13 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="Already in front of the mps, align"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
+   {"DECIDE_ENDSKILL", "MPS_ALIGN", cond="vars.counter <= 1", desc="Pick from shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PICK", cond="vars.shelf", desc="Pick from shelf"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PICK", cond="true", desc="Pick from conveyor"},
 }
 
 function INIT:init()
+   self.fsm.vars.counter = 0
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
 end
 
@@ -80,6 +81,7 @@ function DRIVE_TO:init()
 end
 
 function MPS_ALIGN:init()
+   self.fsm.vars.counter = self.fsm.vars.counter + 1
    -- align in front of the conveyor belt
    self.args["mps_align"].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
@@ -98,10 +100,6 @@ function MPS_ALIGN:init()
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
    end
    self.args["mps_align"].ori = 0
-end
-
-function CONVEYOR_ALIGN:init()
-   self.args["conveyor_align"].product_present = true
 end
 
 function SKILL_PRODUCT_PICK:init()
