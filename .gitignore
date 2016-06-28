@@ -26,3 +26,6 @@
 #Generated Protobuf C++ Files
 *.pb.h
 *.pb.cpp
+
+# vim mergetool files
+*.orig
