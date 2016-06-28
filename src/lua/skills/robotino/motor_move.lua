@@ -140,8 +140,8 @@ function set_speed(self)
                -- slowed us down a bit before doing this ;-)
                if scalar(dist_target[k]) < 0 then v[k] = v[k] * -1 end
 
-               -- printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
-               --   k, scalar(dist_target[k]), v_acc, v_dec, v[k])
+               printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
+                 k, scalar(dist_target[k]), v_acc, v_dec, v[k])
             else
                v[k] = 0
             end
