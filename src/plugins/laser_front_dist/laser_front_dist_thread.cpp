@@ -84,7 +84,7 @@ LaserFrontDistThread::loop()
 	frame_ = if_laser_->frame();
 
         //publish transform
-        tf::Transform transform(tf::Quaternion(0,0,0,1),
+        tf::Transform transform(tf::create_quaternion_from_yaw(M_PI),
                       tf::Vector3(average, 0, 0));
         Time time(clock);
         tf::StampedTransform stamped_transform(transform, time, frame_.c_str(), target_frame_.c_str());
