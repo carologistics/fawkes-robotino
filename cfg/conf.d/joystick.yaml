@@ -113,7 +113,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/joystick
   # A laser must be present for this feature to work.
     collision_safety:
       # True to enable collision safety feature.
-      enabled: true
+      enabled: false
 
       # Stopping distance if obstacle is within configured angle
       distance: 0.4
