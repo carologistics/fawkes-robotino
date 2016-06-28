@@ -9,3 +9,4 @@ plugins/laser-front-dist:
 
   number_beams_used: 13
 
+  target_frame: "front_dist"
