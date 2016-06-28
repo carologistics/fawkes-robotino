@@ -50,6 +50,8 @@ skills/deliver_puck:
    #front sensor distance when checking if we still have the puck at the delivery gates
    front_sensor_dist: 0.05
 
+skills/align_distance_conveyor/x: 0.25
+
 fawkes:
   # Main app relevant settings
   mainapp:

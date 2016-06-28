@@ -42,7 +42,8 @@ depends_interfaces = {
    {v = "tag_12", type = "Position3DInterface", id="/tag-vision/12"},
    {v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
    {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
-   {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"}
+   {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
+   {v = "if_front_dist", type = "Position3DInterface", id="front_dist"}
 }
 
 documentation      = [==[Move on a (kind of) straight line relative to the given coordinates.
@@ -69,6 +70,12 @@ local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this facto
 skillenv.skill_module(_M )
 
 local tfm = require("fawkes.tfutils")
+
+local laser_front_dist_frame = "/motor_move_frame_empty"
+if config:exists("/plugins/laser-front-dist/target_frame") then
+   laser_front_dist_frame = config:get_string("/plugins/laser-front-dist/target_frame")
+end
+
 
 function invalid_params(self)
    return self.fsm.vars.ori <= -2 * math.pi or self.fsm.vars.ori >= 2 * math.pi
@@ -162,10 +169,15 @@ function drive_done()
 end
 
 function pos3d_iface(frame)
+   -- return Position3DInterface of frame if it can be used for control, otherwise false
    if frame and string.sub(frame, 1, 4) == "/tag" then
       local idx = tonumber(string.sub(frame, 6))
       return fsm.vars.tags[idx+1]
    end
+   if frame == laser_front_dist_frame then
+      return if_front_dist
+   end
+   return false
 end
 
 function cam_frame_visible(frame)

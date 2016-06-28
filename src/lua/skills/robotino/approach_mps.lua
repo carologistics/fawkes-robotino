@@ -57,16 +57,13 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   printf("approach_mps: x is set to: %f", self.fsm.vars.x)
    x_to_drive = if_front_dist:translation(0) - self.fsm.vars.x
-   printf("approach_mps: x to drive: %f", x_to_drive)
 end
 
 function APPROACH:init()
    printf("x is set to: %f", self.fsm.vars.x)
    x_to_drive = if_front_dist:translation(0) - self.fsm.vars.x
-   printf("x to drive: %f", x_to_drive)
-   self.args["motor_move"] = {x = x_to_drive, vel_trans = 0.2}
+   self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.2, frame="front_dist"}
 end
 
 function FAILED:init()
