@@ -1,8 +1,9 @@
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Plugins
+#         Makefile Build System for Fawkes: laser_front_dist Plugin
 #                            -------------------
-#   Created on Mon May 14 11:37:00 2012
-#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
+#   Created on Thu Jun 23 22:35:32 2016
+ 
+#   Copyright (C) 2016 by Frederik Zwilling
 #
 #*****************************************************************************
 #
@@ -13,25 +14,17 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= clips-motor-switch \
-	  voltagelogger \
-	  machine-signal \
-	  ax12_gripper \
-	  arduino \
-	  tag_vision \
-      navgraph_broker \
-	  navgraph-generator-mps \
-	  conveyor_pose \
-	  gazebo \
-	  agent-monitor \
-	  marker_writer \
-	  conveyor_vision \
-	  motor-led \
-		laser_front_dist \
+LIBS_laser_front_dist = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+                      fawkesblackboard fawkesinterface Laser360Interface \
+											Position3DInterface
 
-include $(BUILDSYSDIR)/rules.mk
+OBJS_laser_front_dist = laser_front_dist_plugin.o laser_front_dist_thread.o
 
-gazebo: ax12_gripper tag_vision machine-signal arduino
+PLUGINS_all = $(PLUGINDIR)/laser_front_dist.$(SOEXT)
+
+OBJS_all = $(OBJS_laser_front_dist)
+
+include $(BUILDSYSDIR)/base.mk

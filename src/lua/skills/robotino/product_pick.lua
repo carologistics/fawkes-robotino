@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="OPEN_GRIPPER", debug=false}
-depends_skills     = {"motor_move", "ax12gripper"}
+depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
 depends_interfaces = {
    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
@@ -47,7 +47,7 @@ end
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="WAIT_OPEN", fail_to="FAILED"},
-   {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}},
+   {"DRIVE_FORWARD", SkillJumpState, skills={{approach_mps}},
       final_to="CLOSE_GRIPPER", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="MOVE_BACK", fail_to="FAIL_SAFE"},
@@ -77,8 +77,7 @@ function OPEN_GRIPPER:init()
 end
 
 function DRIVE_FORWARD:init()
-   self.args["motor_move"].x = x_distance + self.fsm.vars.offset_x
-   self.args["motor_move"].vel_trans = 0.2
+   self.args["approach_mps"].x = x_distance
 end
 
 function MOVE_BACK:init()

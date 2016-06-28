@@ -51,7 +51,7 @@ plugins/laser-filter:
     filters:
       1-min:
         type: min_circle
-        radius: 0.12
+        radius: 0.04
 
       2-sector:
         type: circle_sector

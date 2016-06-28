@@ -168,4 +168,4 @@ hardware/robotino:
     #current-max: 1
     #current-max-time: 400
   align_distance_conveyor:
-    x: 0.07
+    x: 0.10
