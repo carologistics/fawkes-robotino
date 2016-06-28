@@ -85,7 +85,9 @@ plugins/laser-filter:
   robot/active: false
   sick-downsample/active: false
   simulation/active: true
+  robot-1080/active: false
 
+laser-lines/input_cloud: urg-filtered
 
 plugins/static-transforms:
   transforms:
