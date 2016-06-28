@@ -17,8 +17,9 @@ var ros_3 ;
 
 
 var intialiazed_ = false;
-var exploration_results_wedgit  ;
+//var exploration_results_wedgit  ;
 var mps_monitor;
+var map;
 
 
 function connect() {
@@ -44,20 +45,20 @@ function connect() {
   //load();  
 
   r1_con.on('connection', function() {
-    var robot_info = { name: "R 1"  , connection : r1_con , alive: false }  ;
+    var robot_info = { name: "R1"  , connection : r1_con , alive: false }  ;
     __robots.push (  robot_info ) ;  
     load( robot_info );
   });
 
  r2_con.on('connection', function() {
-  var robot_info = { name: "R 2"  , connection : r2_con , alive: false } ;
+  var robot_info = { name: "R2"  , connection : r2_con , alive: false } ;
    __robots.push ( robot_info  ) ;
   load( robot_info );
   })
  
 
   r3_con.on('connection', function() {
-    var robot_info = { name: "R 3"  , connection : r3_con , alive: false } ;
+    var robot_info = { name: "R3"  , connection : r3_con , alive: false } ;
     __robots.push ( robot_info ) ;
     load( robot_info );
   })
@@ -74,23 +75,28 @@ function init(){
   $("body").append(window. $layout_container) ;
   $("body").append(window. $layout_side) ;
   
-  exploration_results_wedgit = new exploration_results ( window. $layout_container ) ;
+  //exploration_results_wedgit = new exploration_results ( window. $layout_container ) ;
+  intialiazed_ = true;
+  map = new Map();
   mps_monitor = new MpsMonitor ( ) ;
-  
- // map();
   simple_monitor();
   products();
   orders();
 
-  intialiazed_ = true;
 }
 
 
 function load( robot_info ){
   init();
 
-  exploration_results_wedgit . visualize ( robot_info );
+ // exploration_results_wedgit . visualize ( robot_info );
   mps_monitor                . visualize ( robot_info );
+  map                        . visualize_marker (robot_info);
+  
+  if(robot_info . name == "R1"){
+    map                        . visualize_map (robot_info);
+    map                        . visualize_marker_array (robot_info);
+  }
 
   robotInfo( robot_info.name , robot_info.connection );
 }
