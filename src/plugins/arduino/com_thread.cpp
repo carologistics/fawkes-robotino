@@ -174,8 +174,9 @@ ArduinoComThread::loop()
             send_and_recv(req);
             move_to_z_0_pending_ = false;
             read_pending_ = true;
+            arduino_if->set_final(false);
 
-        } else if (init_pos_pending_) {
+        } else if (init_pos_pending_ && arduino_if->is_final()) {
             ArduinoComMessage req;
             req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
             req.set_number(cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
