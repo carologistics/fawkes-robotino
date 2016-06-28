@@ -78,7 +78,7 @@ LaserFrontDistThread::loop()
 			if_result_->write();
 			return;
 		}
-		sum += if_laser_->distances(360-i);
+		sum += if_laser_->distances(359-i);
 	}
 	float average = sum / (float) beams_used_;
 	frame_ = if_laser_->frame();
