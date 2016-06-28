@@ -141,6 +141,7 @@ fsm:define_states{ export_to=_M, closure={
    {"TURN_AROUND",            SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
    {"MATCH_LINE",             JumpState},
    {"NO_LINE",                JumpState},
+   {"SEARCH_TAG_LINE",        SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_LINE", fail_to="CHECK_TAG"},
    {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
    {"MATCH_AVG_LINE",         JumpState},
    {"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
@@ -161,14 +162,15 @@ fsm:add_transitions{
 
    {"SEARCH_LINES",  "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
 
-   {"MATCH_LINE",   "ALIGN_FAST",       cond="vars.matched_line and vars.tag_frame_id"},
+   {"MATCH_LINE",   "ALIGN_FAST",       cond="vars.matched_line and tag_visible(MIN_VIS_HIST_TAG)"},
    {"MATCH_LINE",   "NO_LINE",          timeout=2, desc="lost line"},
 
    {"MATCH_AVG_LINE", "ALIGN_PRECISE",  timeout=1},
 
-   {"NO_LINE",       "MATCH_AVG_LINE",  cond="tag_visible(MIN_VIS_HIST_TAG)"},
-   {"NO_LINE",       "CHECK_TAG",       cond=true},
-   {"ALIGN_FAST",    "FAILED",          cond="fsm.vars.align_attempts >= 3"}
+   {"NO_LINE",       "FAILED",          cond="vars.approached_tag"},
+   {"NO_LINE",       "SEARCH_TAG_LINE", cond=true},
+
+   {"ALIGN_FAST",    "FAILED",          cond="vars.align_attempts >= 3"}
 }
 
 function INIT:init()
@@ -230,6 +232,7 @@ function match_line(tag, lines)
          then
             min_dist = dist
             matched_line = line
+            printf("Line dist: %f", dist)
          end
       end
    end
@@ -288,9 +291,6 @@ function CHECK_TAG:loop()
    end
 end
 
-function CHECK_TAG:init()
-end
-
 
 function FIND_TAG:init()
    self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
@@ -341,16 +341,29 @@ end
 
 
 function MATCH_LINE:loop()
-   local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
-   if tag then
-      local tag_idx = string.sub(tag:id(), 13)
-      self.fsm.vars.tag_frame_id = "/tag_" .. tag_idx
-      print("Matched tag frame: " .. self.fsm.vars.tag_frame_id)
-   end
-
+   local tag = tag_utils.iface_for_id(self.fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
    self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
 end
 
+
+function SEARCH_TAG_LINE:init()
+   self.fsm.vars.approached_tag = true
+   local frame = tag_utils.frame_for_id(self.fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
+
+   if frame then
+      self.args["motor_move"] = {
+         x = 0.4,
+         ori = math.pi,
+         frame = frame
+      }
+   else
+      -- This should never happen since we had the frame in the previous state
+      -- and we didn't move. So let's fail miserably if it does happen.
+      self.args["motor_move"] = {
+         frame = "LOST_TAG_FRAME"
+      }
+   end
+end
 
 function ALIGN_FAST:init()
    local center = llutils.center(self.fsm.vars.matched_line)

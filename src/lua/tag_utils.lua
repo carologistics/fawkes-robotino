@@ -30,3 +30,12 @@ function some_tag(tag_iface_list)
    end
    return nil
 end
+
+function frame_for_id(tag_iface_list, tag_info_iface, tag_id)
+   local tag = iface_for_id(tag_iface_list, tag_info_iface, tag_id)
+   if tag then
+      local tag_idx = string.sub(tag:id(), 13) 
+      return "/tag_" .. tag_idx   
+   end
+   return nil
+end
