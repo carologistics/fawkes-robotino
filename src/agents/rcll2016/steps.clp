@@ -453,6 +453,21 @@
   (modify ?step (state failed))
 )
 
+(defrule step-fail-insert-slide
+  "skip filling 4th base into RS (can happen because of race condition)"
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (id ?step-id) (name insert) (state wait-for-activation)
+                 (machine ?mps) (machine-feature SLIDE)
+                 (already-at-mps ?already-at-mps))
+  (ring-station (name ?mps) (bases-loaded 3))
+  ?state <- (state STEP-STARTED)
+  =>
+  (retract ?state)
+  (modify ?step (state failed))
+  (assert (state STEP-FAILED))
+)
+
 ;;;;;;;;;;;;;;;;
 ; common finish:
 ;;;;;;;;;;;;;;;;
