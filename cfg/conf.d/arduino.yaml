@@ -16,3 +16,6 @@ arduino:
   speed: 800
   accel: 1000
   max_mm: 40
+
+  # go to this position after initialization
+  init_mm: 20

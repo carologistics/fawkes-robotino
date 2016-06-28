@@ -103,6 +103,7 @@ private:
     unsigned int cfg_sensor_update_cycle_time_;
     bool cfg_gripper_enabled_;
     int cfg_max_mm_;
+    unsigned int cfg_init_mm_;
     bool z_movement_pending;
     fawkes::Time time_to_stop_z_align;
     char current_arduino_status;
@@ -116,6 +117,7 @@ private:
     bool set_speed_pending_;
     bool set_acceleration_pending_;
     bool move_to_z_0_pending_;
+    bool init_pos_pending_;
 
     bool opened_;
     unsigned int open_tries_;

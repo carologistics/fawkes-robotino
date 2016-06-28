@@ -93,6 +93,7 @@ ArduinoComThread::init()
     move_to_z_0_pending_ = true;
     msecs_to_wait = 0;
     current_z_position_ = 0;
+    init_pos_pending_ = true;
 
     blackboard->register_listener(this);
 }
@@ -172,6 +173,16 @@ ArduinoComThread::loop()
             msecs_to_wait = 10000;
             send_and_recv(req);
             move_to_z_0_pending_ = false;
+            read_pending_ = true;
+
+        } else if (init_pos_pending_) {
+            ArduinoComMessage req;
+            req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
+            req.set_number(cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
+            msecs_to_wait = ((double) (cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
+            logger->log_debug(name(), "sending: %u", cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
+            send_and_recv(req);
+            init_pos_pending_ = false;
             read_pending_ = true;
         }
 
@@ -394,6 +405,7 @@ ArduinoComThread::load_config()
         cfg_speed_ = config->get_int("/arduino/speed");
         cfg_accel_ = config->get_int("/arduino/accel");
         cfg_max_mm_ = config->get_int("/arduino/max_mm");
+        cfg_init_mm_ = config->get_uint("/arduino/init_mm");
 
         set_speed_pending_ = true;
         set_acceleration_pending_ = true;
