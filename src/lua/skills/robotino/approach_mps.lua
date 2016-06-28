@@ -42,7 +42,12 @@ skillenv.skill_module(_M)
 local x_to_drive = 0
 
 function mps_is_near()
-   return if_front_dist:visibility_history() > 0 and x_to_drive < 1.0
+   if if_front_dist:visibility_history() > 0 and x_to_drive < 1.0 then
+      return true
+   else
+      printf("mps_approach failed: visibility history is %f, dist to object in front is %f. I don't drive with this visibility history or this far without collision avoidance", if_front_dist:visibility_history(), x_to_drive)
+      return false
+   end
 end
 
 
@@ -67,5 +72,5 @@ function APPROACH:init()
 end
 
 function FAILED:init()
-   printf("mps_approach failed: visibility history is %f, dist to object in front is %f. I don't drive with this visibility history or this far without collision avoidance", if_front_dist:visibility_history(), x_to_drive)
+   printf("mps_approach failed (maybe because of subskill): visibility history is %f, dist to object in front is %f.", if_front_dist:visibility_history(), if_front_dist:translation(0))
 end
