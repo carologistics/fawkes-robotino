@@ -179,6 +179,7 @@ fsm:define_states{ export_to=_M,
    {"DRIVE", JumpState},
    {"DRIVE_CAM", JumpState},
    {"STOP_NAVIGATOR", JumpState},
+   {"FALLBACK_TO_ODOM", JumpState},
 }
 
 fsm:add_transitions{
@@ -196,10 +197,12 @@ fsm:add_transitions{
    {"DRIVE", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
    {"DRIVE", "FINAL", cond=drive_done},
 
-   {"DRIVE_CAM", "FAILED", cond="not cam_frame_visible(vars.frame)", desc="Lost frame"},
-   {"DRIVE_CAM", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
+   {"DRIVE_CAM", "FALLBACK_TO_ODOM", cond="not cam_frame_visible(vars.frame)", desc="Lost frame"},
+   {"DRIVE_CAM", "FALLBACK_TO_ODOM", cond="vars.tf_failed", desc="dist TF failed"},
    {"DRIVE_CAM", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
    {"DRIVE_CAM", "FINAL", cond=drive_done},
+
+   {"FALLBACK_TO_ODOM", "DRIVE", cond=true},
 }
 
 function INIT:init()
@@ -226,7 +229,7 @@ function INIT:init()
       self.fsm.vars.y = self.fsm.vars.y or cur_pos.y
       self.fsm.vars.z = self.fsm.vars.z or cur_pos.z
       self.fsm.vars.ori = self.fsm.vars.ori or fawkes.tf.get_yaw(cur_pos.ori)
-      print("motor_move frame: " .. self.fsm.vars.frame)
+      print("special motor_move frame given: " .. self.fsm.vars.frame)
    else
       self.fsm.vars.x = self.fsm.vars.x or 0
       self.fsm.vars.y = self.fsm.vars.y or 0
@@ -247,6 +250,13 @@ function INIT:init()
       { x=self.fsm.vars.x, y=self.fsm.vars.y, z=self.fsm.vars.z, ori=self.fsm.vars.qori },
       self.fsm.vars.arg_frame, self.fsm.vars.target_frame)
 
+   if self.fsm.vars.frame then
+      -- save target in odom for fallback
+      self.fsm.vars.fallback_target_odom = tfm.transform6D(
+         {x=self.fsm.vars.target.x, y=self.fsm.vars.target.y, z=self.fsm.vars.target.z, ori=self.fsm.vars.target.ori},
+         self.fsm.vars.target_frame, "/odom")
+   end
+   
    printf("Target %s: %f, %f, %f, %f", self.fsm.vars.target_frame, self.fsm.vars.target.x,
       self.fsm.vars.target.y, self.fsm.vars.target.z, fawkes.tf.get_yaw(self.fsm.vars.target.ori))
 
@@ -303,5 +313,12 @@ function STOP_NAVIGATOR:init()
    local msg = navigator.StopMessage:new( )
    navigator:msgq_enqueue(msg)
    self.fsm.vars.stop_attempts = self.fsm.vars.stop_attempts + 1
+end
+
+function FALLBACK_TO_ODOM:init()
+   printf("motor_move: lost target frame %s, falling back to odom frame", self.fsm.vars.target_frame)
+   
+   self.fsm.vars.target = self.fsm.vars.fallback_target_odom
+   self.fsm.vars.target_frame = "/odom"
 end
 
