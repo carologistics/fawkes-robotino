@@ -89,8 +89,8 @@ plugins/colli:
 
   occ_grid:
     # Grid Dimensions (in m)
-    width: 6.5
-    height: 6.5
+    width: 8
+    height: 8
     # Cell dimensions (in cm)
     cell_width: 5
     cell_height: 5
@@ -118,7 +118,7 @@ plugins/colli:
     # max velocity if emergency stop triggers
     max_vel: 0.2
     # number of beams that are used to check for distance (beams in directions of robot)
-    beams_used: 11
+    beams_used: 15
  
   drive_mode:
     # Used drive restriction. Options are: differential or omnidirectional
@@ -154,14 +154,14 @@ plugins/colli:
 
   roboshape:
     # Define the roboshape: 1 is angular (default), 2 is round
-    shape: 2
+    shape: 1
 
     angular:
       # Dimensions of angular robot
-      width_x: 0.53
+      width_x: 0.55
       width_y: 0.45
       # The Lasers offset from back/left, seen from behind left
-      laser_offset_x_from_back: 0.415
+      laser_offset_x_from_back: 0.405
       laser_offset_y_from_left: 0.225
 
     round:
