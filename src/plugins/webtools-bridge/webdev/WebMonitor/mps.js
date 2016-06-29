@@ -14,14 +14,19 @@ function MpsMetadata( options ){ //Machine data comes as the want
 	this . team = options.team				|| "N/A" ;
 	this . img = options.img				|| "N/A" ;
 	this . incoming = options.incoming		|| "N/A" ;
-	this . incoming_agent = options.incoming_agent|| "N/A" ;
+	this . incoming_agent = options.incoming_agent || "N/A" ;
 	this . produced_id = options.produced_id|| "N/A" ;
 	this . loaded_id = options 	.loaded_id	|| "N/A" ;
-
 	
+	this . tag_found =false;
+	this . explored = false;		//The exploration recognized
+
 	var that = this ;
 }
 
+init_mps();
+
+function init_mps(){
 	//------------------------------------------------------- Global
 	window.team = new TeamMetadata({
 		name 	: "Caro", 
@@ -29,121 +34,404 @@ function MpsMetadata( options ){ //Machine data comes as the want
 	});// make  sure you have the team data pretty early
 
 	// this naming is consistent with the naming in the clips facts (machine.. ) 
-	window.machines  =  { 	"C-RS1"	: new MpsMetadata( {name : "C-RS1" } ),
-							"C-RS2"	: new MpsMetadata( {name : "C-RS2" } ),
-							"C-CS1"	: new MpsMetadata( {name : "C-CS1" } ),
-							"C-CS2"	: new MpsMetadata( {name : "C-CS2" } ),
-							"C-DS" 	: new MpsMetadata( {name : "C-DS" } ),
-							"C-BS" 	: new MpsMetadata( {name : "C-BS" } ),
+	if(window.team.color ==  "CYAN" ){
 
-							"M-RS1"	: new MpsMetadata( {name : "M-RS1" } ),
-							"M-RS2"	: new MpsMetadata( {name : "M-RS2" } ),
-							"M-CS1"	: new MpsMetadata( {name : "M-CS1" } ),
-							"M-CS2"	: new MpsMetadata( {name : "M-CS2" } ),
-							"M-DS" 	: new MpsMetadata( {name : "M-DS" } ),
-							"M-BS" 	: new MpsMetadata( {name : "M-BS" } ),
+		window.machines  =  { 	"C-BS" 	: new MpsMetadata( {name : "C-BS" } ),
+								"C-RS1"	: new MpsMetadata( {name : "C-RS1" } ),
+								"C-RS2"	: new MpsMetadata( {name : "C-RS2" } ),
+								"C-CS1"	: new MpsMetadata( {name : "C-CS1" } ),
+								"C-CS2"	: new MpsMetadata( {name : "C-CS2" } ),
+								"C-DS" 	: new MpsMetadata( {name : "C-DS" } )
+								
+							} ;
+	}
+	else {
+		window.machines  =  { 	"M-BS" 	: new MpsMetadata( {name : "M-BS" } ),
+								"M-RS1"	: new MpsMetadata( {name : "M-RS1" } ),
+								"M-RS2"	: new MpsMetadata( {name : "M-RS2" } ),
+								"M-CS1"	: new MpsMetadata( {name : "M-CS1" } ),
+								"M-CS2"	: new MpsMetadata( {name : "M-CS2" } ),
+								"M-DS" 	: new MpsMetadata( {name : "M-DS" } )
+								
+							} ;
+		
+	}
 
-						} ;
-
-
-
+	
+}
 
 
 //----------------------------------------------------- Monitor
 
-
 function MpsWedgit ( machine_name ,  $parent )  {
 
 	var	 that 			= this ;
+	this. machine_name_	= machine_name;
  	this. wedgit_id_ 	= machine_name + "_wedgit" ; // ex, 'C-RS1_wedgit'
 	this. $parent_ 		= $parent ;	
 	this. $wedgit_div_	= $("<div>  </div>") 	.addClass("wedgit")	
 												.addClass( "mps" )				
 												.attr('id', this.wedgit_id_ )
-								 				.append( $("<span > </span>" ) . addClass ("header") )
-												.append( $("<span > </span>" ) . addClass ("body") )
-												.append( $("<span > </span>" ) . addClass ("footer") );
+								 				.append( $("<div > </div>" ) . addClass ("header") )
+												.append( $("<div > </div>" ) . addClass ("body") )
+												.append( $("<div > </div>" ) . addClass ("footer") );
+	var $row ;
+	var $col ;
+	
+	this. $wedgit_row_element_ = $("<span> </span>" ) . addClass( "row_element" ) ;	
+	this. $wedgit_col_element_ = $("<div> </div>" ) . addClass( "col_element" ) ;
+
+	//construct wedgit header 
+	var unprefrixed_machine_name = ( machine_name + "") . split('-') [1] || ( machine_name_ + "") ;
+	this.$wedgit_div_ .find(".header") ;
+
+
+	//=========Machine Title
+	$col =  $("<span> </span>" ) ;
+	$col.append ( "<b>" + unprefrixed_machine_name + "</b>" + "<sub>" + "N/A" + "</sub>" ).addClass("machine_name");
+	$col. appendTo (this.$wedgit_div_.find(".header"));
+
+	//=================The Extra Machine information
+	if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
+	{
+
+		$col = $("<img> </img>" ) ;
+		$col.append(" N.A  ").addClass("base_loaded").addClass("not_loaded");
+		$col. appendTo (this.$wedgit_div_.find(".header"));
+
+		$col =  $("<span> </span>" );
+		$col.append(" <sup> N.A </sup> ").addClass("available_colors");
+		$col. appendTo (this.$wedgit_div_.find(".header"));
+
+
+	}
+
+	if(unprefrixed_machine_name == "CS2" || unprefrixed_machine_name == "CS1")
+	{
+
+		$col = $("<img> </img>" ) ;
+		$col.append(" N.A  ").addClass("cap_loaded").addClass("not_loaded");
+		$col. appendTo (this.$wedgit_div_.find(".header"));
+
+		$col =  $("<div> </div>" ) .addClass ("col_element");
+		$col.append("<sup> N.A </sup> ").addClass("caps_on_shelf");
+		$col. appendTo (this.$wedgit_div_.find(".header"));
+	}
+
+	if(unprefrixed_machine_name == "BS" )
+	{
+		$col =  $("<span> </span>" ) ;
+		$col.append("<sup> N.A </sup> ").addClass("active_side");
+		$col. appendTo (this.$wedgit_div_.find(".header"));
+	}
+	
+
+
+	// //=================The Extra Machine information
+	// if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
+	// {
+	// 	$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
+	// 	$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("available_colors");
+	// 	$col.appendTo($row);
+			
+	// 	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("selected_color");
+	// 	$col.appendTo($row);
+	// 	$row. appendTo (this.$wedgit_div_.find(".header"));
+	// }
+
+	// if(unprefrixed_machine_name == "CS2" || unprefrixed_machine_name == "CS1")
+	// {
+	// 	$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
+	// 	$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("caps_on_shelf");
+	// 	$col.appendTo($row);
+			
+	// 	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("cap_loaded");
+	// 	$col.appendTo($row);
+	// 	$row. appendTo (this.$wedgit_div_.find(".header"));
+	// }
+
+	// if(unprefrixed_machine_name == "BS" )
+	// {
+	// 	$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
+	// 	$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("active_side");
+	// 	$col.appendTo($row);
+	// 	$row. appendTo (this.$wedgit_div_.find(".header"));
+	// }
+	
+
+	//Wedgit Body
+
+	//=================Incoming
+	$row =  $("<div> </div>" ) . addClass( "row_element" ) ;	
+	$col = $("<span> </span>" ) . addClass( "col_element" ) ;
+	$col.append("<b> Incoming: </b> ");
+	var $content = $("<sup> Nothing </sup> ")  . addClass ("incoming");
+	$col. append($content);
+	$col.appendTo($row);
+
+	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
+	var $col_col = $("<div> N.A </div>" ) . addClass( "col_element" ) .addClass("loaded_id");
+	$col_col.appendTo($col);
+	$col_col = $("<div> N.A </div>" ) . addClass( "col_element" ) .addClass("produced_id");
+	$col_col.appendTo($col);
+	$col.appendTo($row);
+
+	$row. appendTo (this.$wedgit_div_.find(".body"));
+
+	//==Row
+	// $row =  $("<div> </div>" ) . addClass( "row_element" ) ;
+	// $col =  $("<div> </div>" ) . addClass( "col_element" ) ;
+	// $col.append(" <b> loaded_id </b> ").addClass("loaded_id");
+	// $col.appendTo($row);
+
+	// $col = $("<div> </div>" ) . addClass( "col_element" ) ;
+	// $col.append("<sup> produced_id </sup> ").addClass("produced_id");
+	// $col.appendTo($row);
+	// $row. appendTo (this.$wedgit_div_.find(".body"));
+	
+
+	//----Exploration stuff
+	// //==Row
+	$col =  $("<div> </div>" )  .append("<b> Exp: </b> ") .addClass("mps_exploration");
+	$img = $("<img> </img>"  ) .addClass("tag_found") .addClass("not_done");	
+	$col .append( $img );
+	$img = $("<img> </img>"  ) .addClass("explored").addClass("not_done");
+	$col .append( $img);
+	$col .appendTo($row);
+	$col. appendTo (this.$wedgit_div_.find(".footer"));
+	//-------------------
+
+
+	//EndBody
+	//-===================================================
 	
 
 	//do I need document .ready here ..Check!
-	this. $parent_ . append ( this.$wedgit_div_ ) ;	
+	$(document) . ready (function() {
+		that. $parent_ . append ( that .$wedgit_div_ ) ;	
+	});
 
 
-	//return the div to be visualized would make sense 
 	this . visualize = function () {
 
 		var machine_metadata_ = window . machines [machine_name] ; 
-
-		// $(document) . ready (function() {
-		// });
-
+		// take machine name with out team prefix |C-|RS|
 		var unprefrixed_machine_name = ( machine_metadata_ . name + "") . split('-') [1] || ( machine_metadata_ . name + "") ;
-		var $header = $( 
-			"<b> " + unprefrixed_machine_name	+ "</b>" +	 // take machine name with out team prefix |C-|RS|  
-					
-			"<sub>" + machine_metadata_ . state 						+ "</sub>" 
-		);
+	
+		var $w_header; 
+		//==============Title	
+		$w_header = $( "<b> " + unprefrixed_machine_name	+ "</b>" + "<sub>" + machine_metadata_ . state 	+ "</sub>" );
+		that.$wedgit_div_ . find( "machine_name" )	.empty() .append ( $w_header );	
 
 
-		var $content_body = $("<table> </table>") ;
+		//==============Machine Info
+		if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
+		{		
+			that.$wedgit_div_ . find (".available_colors") .empty();
+			if( machine_metadata_ .hasOwnProperty("available_colors") && machine_metadata_ . available_colors.length > 0 )
+			{
+				for ( i in machine_metadata_.available_colors) 
+				{
+					$colored_ring = $("<span> </span>") . addClass("col_element") .css ("background-color" , machine_metadata_ . available_colors[i] ).addClass ("mps_puck"); 
+
+					if( machine_metadata_ .hasOwnProperty("selected_color") && machine_metadata_ . selected_color == machine_metadata_ . available_colors[i])
+					{
+						$colored_ring . addClass("selected_color");
+					}
+
+					that.$wedgit_div_ . find (".available_colors") .append( $colored_ring ) ;
+				}
+			}
+			else
+			{	
+				that.$wedgit_div_ . find (".available_colors" ) .append(" N.A" );
+			}
+
+
+			if(machine_metadata_ .hasOwnProperty ("base_loaded") )
+			{
+				if( machine_metadata_.  base_loaded != 0){
+
+					that.$wedgit_div_ . find (".base_loaded"). removeClass("not_loaded") .addClass("loaded");
+				}
+				else {
+					that.$wedgit_div_ . find (".base_loaded"). removeClass("loaded") .addClass("not_loaded");				
+				}
+			}
+
+			//Dont for get to add the base loaded
+		}
+
+
+		if(unprefrixed_machine_name == "CS2" || unprefrixed_machine_name == "CS1")
+		{		
+			that.$wedgit_div_ . find (".caps_on_shelf"). empty();
+			
+			if(machine_metadata_ .hasOwnProperty ("caps_on_shelf")  && machine_metadata_ .caps_on_shelf > 0 )
+			{
+				for (var i =1 ; i <= machine_metadata_.caps_on_shelf ; i++) 
+				{
+					$colored_cap= $("<div> </div>") .addClass("col_element"). css ("background-color" , machine_metadata_ . assigned_cap_color ).addClass ("mps_puck"); 
+					that.$wedgit_div_ . find (".caps_on_shelf") .append( $colored_cap ) ;
+					// that.$wedgit_div_ . find (".caps_on_shelf") .append( machine_metadata_ .assigned_cap_color  + " | ") ;
+				 }  
+			}
+			else
+			{	
+				that.$wedgit_div_ . find (".caps_on_shelf" ) .append(" None" );
+			}
+
+			if(machine_metadata_ .hasOwnProperty ("cap_loaded") )
+			{
+				if(machine_metadata_. cap_loaded != "NONE")
+				{
+
+					that.$wedgit_div_ . find (".cap_loaded"). removeClass("not_loaded") .addClass("loaded");
+				}
+				else
+				{
+					that.$wedgit_div_ . find (".cap_loaded"). removeClass("loaded") .addClass("not_loaded");		
+				}
+			}
+
+		}	
+
+		if(unprefrixed_machine_name == "BS")
+		{		
+			if(machine_metadata_ .hasOwnProperty ("active_side") )
+			{ 
+				that.$wedgit_div_ . find (".active_side"). empty() . append (machine_metadata_ . active_side);
+			}
+		}	
+
+		//===================
+
+
+
+		// //==============Machine Info
+		// if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
+		// {		
+		// 	that.$wedgit_div_ . find (".available_colors") .empty();
+		// 	if( machine_metadata_ .hasOwnProperty("available_colors") && machine_metadata_ . available_colors.length > 0 )
+		// 	{
+		// 		for ( i in machine_metadata_.available_colors) 
+		// 		{
+		// 			that.$wedgit_div_ . find (".available_colors") .append( machine_metadata_ .available_colors [i]  + " | ") ;
+		// 		}
+		// 	}
+		// 	else
+		// 	{	
+		// 		that.$wedgit_div_ . find (".available_colors" ) .append(" N.A" );
+		// 	}
+
+		// 	if(machine_metadata_ .hasOwnProperty("selected_color"))
+		// 	{
+		// 		that.$wedgit_div_ . find (".selected_color") .empty(). append ( machine_metadata_ .selected_color );
+				
+		// 		if(machine_metadata_ . selected_color != "NONE")
+		// 		{
+		// 			that.$wedgit_div_ . find (".selected_color") .addClass("highlight") ;
+		// 		}
+		// 		else
+		// 		{
+		// 			that.$wedgit_div_ . find (".selected_color") .removeClass("highlight") ;
+		// 		}
+		// 	}
+
+		// 	//Dont for get to add the base loaded
+		// }
+
+
+		// if(unprefrixed_machine_name == "CS2" || unprefrixed_machine_name == "CS1")
+		// {		
+		// 	that.$wedgit_div_ . find (".caps_on_shelf"). empty();
+			
+		// 	if(machine_metadata_ .hasOwnProperty ("caps_on_shelf")  && machine_metadata_ .caps_on_shelf > 0 )
+		// 	{
+		// 		for (var i =0 ; i < machine_metadata_.caps_on_shelf ; i++) 
+		// 		{
+		// 			that.$wedgit_div_ . find (".caps_on_shelf") .append( machine_metadata_ .assigned_cap_color  + " | ") ;
+		// 		 }  
+		// 	}
+		// 	else
+		// 	{	
+		// 		that.$wedgit_div_ . find (".caps_on_shelf" ) .append(" None" );
+		// 	}
+
+		// 	if(machine_metadata_ .hasOwnProperty ("cap_loaded"))
+		// 	{
+		// 		that.$wedgit_div_ . find (".cap_loaded"). empty() . append (machine_metadata_ . cap_loaded);
+		// 	}
+
+		// }	
+
+		// if(unprefrixed_machine_name == "BS")
+		// {		
+		// 	if(machine_metadata_ .hasOwnProperty ("active_side") )
+		// 	{ 
+		// 		that.$wedgit_div_ . find (".active_side"). empty() . append (machine_metadata_ . active_side);
+		// 	}
+		// }	
+
+		// //===================
+
+		var $w_body ;
 		
-		var $tr;
-		var $tb;
 
-		$tr = $("<tr></tr>") ;
-		$tb = $("<tb></tb>") .append( ( ( machine_metadata_.loaded_id )?    machine_metadata_ .loaded_id	: "no Loaded") );
-		$tb.appendTo($tr);
-		$tb = $("<tb></tb>") .append( ( ( machine_metadata_ .produced_id )?  machine_metadata_ .produced_id : " no Produced") ) ;
-		$tb.appendTo($tr);
-		$tr.appendTo($content_body);
+
+		that.$wedgit_div_ . find ( $(".incoming") ) .empty();
+
+		if(machine_metadata_ . incoming.length == 0 && machine_metadata_ . incoming_agent.length == 0){
+			that.$wedgit_div_ . find ( $(".incoming") ) .append( "<sub> Nothing</sub>"  ) ;
+		}
+		
+		var $incoming_content = $("<span></span>");
+
+		if(machine_metadata_ . incoming_agent.length > 0 )
+		{
+			for ( i in machine_metadata_.incoming_agent) {
+				$incoming_content .append( machine_metadata_ .incoming_agent [i]  + " | ") ;
+			}
+		}
 
 		if(machine_metadata_ . incoming.length > 0 )
 		{
-			$tr = $("<tr></tr>") ;
 			for ( index in machine_metadata_.incoming) {
-				$tb = $("<tb></tb>") .append( machine_metadata_ .incoming [index]  ) ;
-				$tb.appendTo($tr) ; 
+				$incoming_content .append( machine_metadata_ .incoming [index] + " | " )  ; 
 			}
-			$tr.appendTo($content_body);
 		}
 
-		if(machine_metadata_ . incoming_agent > 0 )
-		{
 
-			$tr = $("<tr></tr>") ;
-			for ( i in machine_metadata_.incoming_agent) {
-				$tb = $("<tb></tb>") .append( machine_metadata_ .incoming_agent [i] ) ;
-				$tb.appendTo($tr) ; 
-			}
-			$tr.appendTo($content_body);
+		that.$wedgit_div_ . find ( $(".incoming") ) .append( $incoming_content  ) ;
+
+
+		//Exploration Stuff
+		if (machine_metadata_ . tag_found){
+			that.$wedgit_div_ . find ( $(".tag_found") ) .removeClass ("not_done") .addClass( "done" ) ;
 		}
 
-		that.$wedgit_div_ . find( ".header" )	. empty();
-		that.$wedgit_div_ . find( ".body" )		. empty();
-		that.$wedgit_div_ . find( ".footer" )	. empty();
+		if(machine_metadata_ .explored){
+			that.$wedgit_div_ . find ( $(".explored") ) .removeClass ("not_done").addClass( "done" ) ;
+		}
 
-		that.$wedgit_div_ . find( ".header" )	. append ( $header );
-		that.$wedgit_div_ . find( ".body" )		. append ( $content_body );
-		// that.$wedgit_div_ . find( ".wedgit_footer" ) 	. append ( $header_footer );
 
-		//return $wedgit_div_ ;
 	}
 
 }
-
 
 function MpsMonitor()
 {
 	
 	var that 							= 	this ;
-
 	//to keep track and eliminate redundancy of the state of the data to display in the div when the topic gets published  
 	this.	data_to_show_				= 	{} ; 
-	
 	// subscribtion_info object parameters
 	this.	destination_bridge_name_ 	= 	"clips" ;
-	this.	topic_name_ 				= 	"" ;
-	
 	//coming from wedgit object parameters
  	this.	 div_id_ 					= 	"mps_monitor" ;
 	this.	$div_ 						= 	$("<div>  </div>")	.	attr('id', this.wedgit_id_ )
@@ -184,8 +472,6 @@ function MpsMonitor()
 	}
 
 
-
-
 	this.visualize = function( robot_info ) {
 			
 		var robot_info				=  robot_info;	
@@ -196,22 +482,21 @@ function MpsMonitor()
 		*/
 
 		//---------------------------------------------------------------------Subscription to machine fact
-		// Fact: (machine (name M-DS) (team MAGENTA) (mtype DS) (incoming) (incoming-agent) (loaded-id 0) (produced-id 0) (x 0.0) (y 0.0) (final-prod-time 0 0) (state IDLE) (sync-id 38))
-		
-		var topic_name 				= "machine" ;
-
+		// Fact: (machine (name M-DS) (team MAGENTA) (mtype DS) (incoming) (incoming-agent) (loaded-id 0) (produced-id 0) (x 0.0) (y 0.0) (final-prod-time 0 0) (state IDLE) (sync-id 38))		
+		var topic_name = "machine" ;
 		var machine_fact_listener 	= new ROSLIB.Topic( {
 			ros 			: robot_info.connection  									,
 		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
 		    messageType 	: 'mm' 													  	,
-		    throttle_rate	: 1000 													  	,
+		    throttle_rate	: window.throttle_rate 									  	,
 		});
 
 		machine_fact_listener . subscribe ( 	function(message) {
-			
-			for( index_f in message [topic_name] )
+			var topic_name_ = "machine"; 
+
+			for( index_f in message [topic_name_] )
 			{
-				var machine_fact = message  [topic_name] [index_f]  ;  
+				var machine_fact = message  [topic_name_] [index_f]  ;  
 				var machine_name = machine_fact ["name"] [0];
 		
 				if( window.team.color == machine_fact ["team"][0] ) {
@@ -230,21 +515,181 @@ function MpsMonitor()
 
 				}
 
+			}			
+				
+		});
 
 
-				// if( ! ( that.data_to_show_ . hasOwnProperty ( zone_f ) ) )
-				// {
-				// 	that.data_to_show_ [zone_f] 	= 	robot_info_.name ; //keep track of the d 
+		//======================================================Zone-Exploitation Fact Subscription
+		//(zone-exploration (name Z7) (machine UNKNOWN) (team CYAN) (x 0.0) (y 0.0) (look-pos) (current-look-pos 1) (recognized FALSE) (still-to-explore TRUE) (next nil) (incoming) (incoming-agent) (times-searched 0) (sync-id 20))	
+		var topic_name = "zone-exploration" ;
+		var zone_exploration_fact_listener 	= new ROSLIB.Topic( {
+			ros 			: robot_info.connection  									,
+		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
+		    messageType 	: 'mm' 													  	,
+		    throttle_rate	: window.throttle_rate 									  	,
+		});
+
+		zone_exploration_fact_listener . subscribe ( 	function(message) {
+			var topic_name_ = "zone-exploration"; 
+
+			for( index_f in message [topic_name_] )
+			{
+				var zone_exploration_fact = message  [topic_name_] [index_f]  ;  
+				var machine_name = zone_exploration_fact ["machine"] [0];
+		
+				//To tell the the machine it was found
+				if(  machines. hasOwnProperty( machine_name )   && !(machines[machine_name] .explored) && zone_exploration_fact["recognized"] == "TRUE" ) {
 					
-				// 	$(document) . ready (function() {
-				// 		that.$wedgit_div .find("p") 	.	append ( "<b> "+zone_f+": </b>" + machine_f + "<sub> by:"+ robot_info_.name +"</sub> &nbsp &nbsp") ;
-				// 	});
-				// }		
+					window.machines[machine_name] . explored 		= true  ;
+					that . wedgits [ machine_name ] . visualize();
 
+				}
 
 			}			
 				
 		});
+
+		//TODO : unsubscribe when all are found or phase changes
+
+
+
+		//======================================================Found Tag Fact Subscription
+		//(found-tag (name C-RS1) (side OUTPUT) (frame "/map") (trans -3.122295 4.689034 0.0) (rot 0.0 0.0 0.888741277126459 -0.458409142940703) (sync-id 624140))	
+		var topic_name = "found-tag" ;
+		var found_tag_fact_listener 	= new ROSLIB.Topic( {
+			ros 			: robot_info.connection  									,
+		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
+		    messageType 	: 'mm' 													  	,
+		    throttle_rate	: window.throttle_rate 									 	,
+		});
+
+		found_tag_fact_listener . subscribe ( 	function(message) {
+			var topic_name_ = "found-tag"; 
+
+			for( index_f in message [topic_name_] )
+			{
+				var found_tag_fact = message  [topic_name_] [index_f]  ;  
+				var machine_name = found_tag_fact ["name"] [0];
+		
+				//To tell the the machine it was found
+				if(  machines. hasOwnProperty( machine_name )  && !(machines[machine_name] .tag_found) ) {
+					
+					window.machines[machine_name] . tag_found 	= true  ; 	
+					
+					that . wedgits [ machine_name ] . visualize();
+				}
+
+			}			
+				
+		});
+
+
+
+	//======================================Station information Subscriptions
+	//---RING STATION FACT
+	//(ring-station (name C-RS2) (available-colors YELLOW ORANGE) (selected-color NONE) (bases-loaded 0) (sync-id 8))	
+	topic_name  = "ring-station";
+	var ring_station_fact_listener = new ROSLIB.Topic( {
+			ros 			: robot_info.connection  									,
+		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
+		    messageType 	: 'mm' 													  	,
+		    throttle_rate	: window.throttle_rate 									  	,
+		});
+
+		ring_station_fact_listener . subscribe ( 	function(message) {
+			var topic_name_ = "ring-station";
+			
+			for( index_f in message [topic_name_] )
+			{
+				var ring_station_fact = message  [topic_name_] [index_f]  ;  
+				var machine_name = ring_station_fact["name"] [0];
+		
+				// only MpsObject that has the right name accordion to the team colour should be initialized in the machines object. with the right prefix 
+				if( machines.hasOwnProperty( machine_name ) ){
+
+					window.machines[machine_name] . available_colors= ring_station_fact["available-colors"]  ; 	
+					window.machines[machine_name] . selected_color 	= ring_station_fact["selected-color"][0] ;
+					window.machines[machine_name] . bases_loaded 	= ring_station_fact["bases-loaded"][0] 	;
+					
+					that . wedgits [ machine_name ] . visualize();
+
+				}
+
+			}			
+				
+		});
+
+
+
+	//---CAP STATION FACT
+	//(cap-station (name C-CS1) (cap-loaded NONE) (assigned-cap-color GREY) (caps-on-shelf 3) (sync-id 13))	
+	topic_name  = "cap-station";
+	var cap_station_fact_listener = new ROSLIB.Topic( {
+			ros 			: robot_info.connection  									,
+		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
+		    messageType 	: 'mm' 													  	,
+		    throttle_rate	: window.throttle_rate 									  	,
+		});
+		
+		cap_station_fact_listener . subscribe ( 	function(message) {
+			var topic_name_ = "cap-station";
+			
+			for( index_f in message [topic_name_] )
+			{
+				cap_station_fact = message  [topic_name_] [index_f]  ;  
+				machine_name = cap_station_fact["name"] [0];
+		
+				// only MpsObject that has the right name accordion to the team colour should be initialized in the machines object. with the right prefix 
+				if( machines.hasOwnProperty( machine_name ) ){
+
+					window.machines[machine_name] . cap_loaded 		= cap_station_fact["cap-loaded"][0] ;
+					window.machines[machine_name] . assigned_cap_color 	= cap_station_fact["assigned-cap-color"][0] ;
+					window.machines[machine_name] . caps_on_shelf 	= cap_station_fact["caps-on-shelf"][0] 	;
+
+					that . wedgits [ machine_name ] . visualize();
+
+				}
+
+			}			
+				
+		});
+
+
+	//---BASE STATION FACT
+	//(base-station (name C-BS) (active-side INPUT) (sync-id 0))	
+	topic_name  = "base-station";
+	var base_station_fact_listener = new ROSLIB.Topic( {
+			ros 			: robot_info.connection  									,
+		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
+		    messageType 	: 'mm' 													  	,
+		    throttle_rate	: window.throttle_rate 										,
+		});
+		
+		base_station_fact_listener . subscribe ( 	function(message) {
+			var topic_name_ = "base-station";
+			
+			for( index_f in message [topic_name_] )
+			{
+				base_station_fact = message  [topic_name_] [index_f]  ;  
+				machine_name = base_station_fact["name"] [0];
+		
+				// only MpsObject that has the right name accordion to the team colour should be initialized in the machines object. with the right prefix 
+				if( machines.hasOwnProperty( machine_name ) ){
+
+					window.machines[machine_name] . active_side = base_station_fact["active-side"][0] ;
+				
+					that . wedgits [ machine_name ] . visualize();
+
+				}
+
+			}			
+				
+		});
+
+
+
+
 
 	};
 

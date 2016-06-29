@@ -5,7 +5,7 @@ function simple_monitor(){
 
 	var div_ids=0;// index to be used to make unique ids
 
-	$("body").append("<div id=monitor_div  class=wedgit container>  </dev>");//the wedgit container
+	window.$layout_container.append("<div id=monitor_div  class=wedgit container>  </div>");//the wedgit container
 	$("#monitor_div").append("<button class=smplmntr > subscribe </button>");
 	$("#monitor_div").append("<input  type='text' class=smplmntr > </input>");
 
@@ -21,32 +21,32 @@ function simple_monitor(){
 			    ros : ros,
 			    name : prefiexed_topic_name,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate ,
 		  	});
-		  	listener.div_index=div_ids; //keep the dev's id as a topic attridute
+		  	listener.div_index=div_ids; //keep the div's id as a topic attridute
 		  	listener.subscribe(function(message) 
 		  	{
-		  		var dev_id="#monitor_div_"+this.div_index;
+		  		var div_id="#monitor_div_"+this.div_index;
 		  		
-		  		$(dev_id).empty();// clear the div
+		  		$(div_id).empty();// clear the div
 
 		  		for (var key in message)//present the content in the div 
 		  		{
-		  			var dev_content = key + " : ";
+		  			var div_content = key + " : ";
 		  			if(message[key].constructor === Array)
 		  			{
 		  				for( var fact in message[key] )
 		  				{
-		  					dev_content+= JSON.stringify(message[key][fact], null, 5) + "<br>"; //TODO: maybe i dont need to stringfiy 
+		  					div_content+= JSON.stringify(message[key][fact], null, 5) + "<br>"; //TODO: maybe i dont need to stringfiy 
 		  				}
 		  			}
 		  			else
 		  			{
-		  				dev_content+= message[key] + "<br>"; 
+		  				div_content+= message[key] + "<br>"; 
 		  			}
 		
-		  			dev_content+=  "<br>"; 
-		  			$(dev_id).append(dev_content);
+		  			div_content+=  "<br>"; 
+		  			$(div_id).append(div_content);
 		  		}
 		  		
 		  	});
@@ -64,7 +64,7 @@ function simple_monitor(){
 // 	var topic_name= "product";
 // 	var wedgit_id= 	"products_wedgit";
 	
-// 	$("body").append("<div id="+wedgit_id+"  class=wedgit>  </div>");//the wedgit container
+// 	window.$layout_container.append("<div id="+wedgit_id+"  class=wedgit>  </div>");//the wedgit container
 	
 // 	$(document).ready(function()
 // 	{
@@ -122,7 +122,7 @@ function products()
 	var $wedgit_div= $("<div>  </div>").addClass("widget").attr('id',wedgit_id);// div contaning the wedgit
 
 
-	$("body").append($wedgit_div);//the wedgit container
+	window.$layout_container.append($wedgit_div);//the wedgit container
 	
 
 	$(document).ready(function()
@@ -131,7 +131,7 @@ function products()
 		    ros : ros,
 		    name : destination_bridge_name +"/" + product_topic_name ,
 		    messageType : 'mm',
-		    throttle_rate:1000,
+		    throttle_rate:window.throttle_rate,
 	  	});
 
 	  	product_facts_listener.subscribe(function(message) 
@@ -205,13 +205,13 @@ function orders(){
 	var $wedgit_div= $("<div>  </div>").addClass("widget").attr('id',wedgit_id);// div contaning the wedgit
 
 
-	$("body").append($wedgit_div);//the wedgit container
+	window.$layout_container.append($wedgit_div);//the wedgit container
 	
 
 	$(document).ready(function()
 	{
 
-	//to listen to the product incase the product widget not instialized
+	//to listen to the  incase the product widget not instialized
     // 	var product_facts_listener = new ROSLIB.Topic({
 		  //   ros : ros,
 		  //   name : destination_bridge_name +"/" + product_topic_name ,
@@ -230,7 +230,7 @@ function orders(){
 		    ros : ros,
 		    name : destination_bridge_name +"/" + order_topic_name ,
 		    messageType : 'mm',
-		    throttle_rate:1000,
+		    throttle_rate:window.throttle_rate,
 	  	});
 	  	order_facts_listener.subscribe(function(message) 
 	  	{
@@ -247,8 +247,8 @@ function orders(){
 					{
 						if (JSON.parse(product_facts.product[product].id) == JSON.parse( order_facts.order[order]["product-id"] ))
 		  				{
-							var $order_div=$("<div> </div>").addClass("order");
-							var $product_div=$("<div> </div>").addClass("product").attr('id',"product_"+product_facts.product[product].id);
+							var $order_div=$("<div> </div>").addClass("order");// the class order is given to  each one of the orders_divs that contain the product div 
+							var $product_div=$("<div> </div>").addClass("product").attr('id',"product_"+product_facts.product[product].id);// the class 'produced' is given to the div containing  peace itself
 							
 							var base_color = product_facts.product[product].base[0];
 							$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
@@ -256,7 +256,7 @@ function orders(){
 							for( var ring_index in product_facts.product[product].rings )
 							{
 								var ring_color = product_facts.product[product].rings[ring_index];
-								$product_div.prepend("<div class='products_ring "+ring_index +" ' style= background-color:"+ring_color+"> </div>");
+								$product_div.prepend("<div class='products_ring "+ring_index +"' style= background-color:"+ring_color+"> </div>");
 							}
 							
 							var cap_color = product_facts.product[product].cap[0];
@@ -297,7 +297,7 @@ function robotInfo( robot_name , bridge_connection )
 	var container_id=	"robot_info__"+robot_name;
 
 	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id);// div contaning the wedgi
-	$("body").append($container_div);//the wedgit container
+	window.$layout_container.append($container_div);//the wedgit container
 	
 	var $container_header= $("<div>  </div>").addClass("container_header");
 	$container_header.append($("<h1>"+robot_name+"</h1>").addClass("container_header_element"));
@@ -319,7 +319,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "lock-role" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	lock_role_fact_listener.subscribe(function(message){
@@ -363,7 +363,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "holding" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	holding_fact_listener.subscribe(function(message){
@@ -380,7 +380,7 @@ function robotInfo( robot_name , bridge_connection )
 		    ros : ros,
 		    name : destination_bridge_name +"/" + "product" ,
 		    messageType : 'mm',
-		    throttle_rate:1000,
+		    throttle_rate:window.throttle_rate,
 	  		});
 
 
@@ -440,7 +440,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "state" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	state_fact_listener.subscribe(function(message){
@@ -472,7 +472,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "task" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	task_facts_listener.subscribe(function(message){
@@ -505,7 +505,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "step" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	step_facts_listener.subscribe(function(message){
@@ -557,7 +557,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "locked-resource" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	locked_resources_facts_listener.subscribe(function(message){
@@ -604,7 +604,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "skill-to-execute" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	skill_to_excute_fact_listener.subscribe(function(message){
@@ -637,7 +637,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "skill" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	skill_fact_listener.subscribe(function(message){
@@ -667,7 +667,7 @@ function robotInfo( robot_name , bridge_connection )
 			    ros : bridge_connection ,
 			    name : destination_bridge_name +"/" + "skill-done" ,
 			    messageType : 'mm',
-			    throttle_rate:1000,
+			    throttle_rate:window.throttle_rate,
 		  	});
 
 		  	skill_done_fact_listener.subscribe(function(message){

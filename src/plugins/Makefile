@@ -30,7 +30,8 @@ SUBDIRS	= clips-motor-switch \
 	  marker_writer \
 	  conveyor_vision \
 	  motor-led \
-		laser_front_dist \
+	laser_front_dist \
+	webtools-bridge \
 
 include $(BUILDSYSDIR)/rules.mk
 

@@ -30,15 +30,29 @@ OBJS_webtools_bridge =  webtools_bridge_plugin.o webtools_bridge_thread.o \
 						subscription_capability_manager.o subscription_capability.o \
 					 	advertisment_capability_manager.o advertisment_capability.o	\
 					 	service_capability_manager.o 
-									
+								
 
 OBJS_all    = $(OBJS_webtools_bridge)
 
+# ifneq ($(PKGCONFIG),)
+#   HAVE_WEBSOCKETPP = $(if $(shell $(PKGCONFIG) --exists 'libdc1394-2'; echo $${?/1/}),1,0)
+
+ifneq ($(wildcard $(SYSROOT)/usr/include/websocketpp/version.hpp),)
+	HAVE_WEBSOCKETPP:=1
+else
+	WEBSOCKETPP_ERROR:="Websocketpp_Not_Found"
+endif
+
+ifneq ($(wildcard $(SYSROOT)/usr/include/rapidjson/rapidjson.h),)
+	HAVE_RAPIDJSON:=1
+else
+	RAPIDJSON_ERROR:="Rapidjson_Not_Found"
+endif
 
 CFLAGS_CPP11 += -std=c++11 -D_WEBSOCKETPP_CPP11_STL_
 
-ifeq ($(HAVE_TF)$(HAVE_CLIPS)$(HAVE_CPP11),111)
-  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) -I/home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge
+ifeq ($(HAVE_TF)$(HAVE_CLIPS)$(HAVE_CPP11)$(HAVE_WEBSOCKETPP)$(HAVE_RAPIDJSON),11111)
+  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) 
   LDFLAGS += $(LDFLAGS_TF) 
 
   PLUGINS_all = $(PLUGINDIR)/webtools-bridge.$(SOEXT)
@@ -50,13 +64,19 @@ else
     WARN_TARGETS += warning_tf
   endif
   ifneq ($(HAVE_CLIPS),1)
-    WARN_TARGETS = warning_clips
+    WARN_TARGETS += warning_clips
+  endif
+  ifneq ($(HAVE_WEBSOCKETPP),1)
+    WARN_TARGETS += warning_websocketpp
+  endif
+  ifneq ($(HAVE_RAPIDJSON),1)
+    WARN_TARGETS += warning_rapidjson
   endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_tf warning_ros warning_geometry_msgs warning_cpp11 warning_clips
+.PHONY: warning_tf warning_ros warning_geometry_msgs warning_cpp11 warning_clips warning_websocketpp
 warning_tf: 
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting webtools-bridge libs" \
                          "$(TNORMAL) (tf not available)"
@@ -64,6 +84,10 @@ warning_cpp11:
 	<$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build webtools-bridge plugin$(TNORMAL) (C++11 not supported)"
 warning_clips:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build webtools-bridge plugin$(TNORMAL) ($(CLIPS_ERROR))"
+warning_websocketpp:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build webtools-bridge plugin$(TNORMAL) ($(WEBSOCKETPP_ERROR))"
+warning_rapidjson:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build webtools-bridge plugin$(TNORMAL) ($(RAPIDJSON_ERROR))"
 endif
 
 

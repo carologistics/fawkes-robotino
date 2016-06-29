@@ -4,27 +4,30 @@
 
 
 //Object that represents the exploration-result widget
-function exploration_results()
+function exploration_results( $parent )
 {
 
-	var that 								= this;
+	var that 							= this;
+	this.	$parent_ 					= $parent;
+
+	//to keep track of only the new data to be able to update the widget only when new (exploration-result) facts were found
+	this.	data_to_show_ 				= {} ; 
 	
 	// subscribtion_info object paraemters
-	this.topic_name_ 						= "exploration-result" ;
-	this.destination_bridge_name_ 			= "clips" ;
+	this.	topic_name_ 				= "exploration-result" ;
+	this.	destination_bridge_name_ 	= "clips" ;
 	
 	//coming from wedgit object parameters
- 	this.wedgit_id_ 						= "exploration_results";
-
-	this. $wedgit_div= $("<div>  </div>") 	.addClass("wedgit")
-											
+ 	this.	wedgit_id_ 					= "exploration_results";
+	this.	$wedgit_div 				= $("<div>  </div>") 	
+											.addClass("wedgit")
 											.attr('id', this.wedgit_id_ )
 								 			.append("<h2> Exploration Resutls: </h2>")
 								 			.append("<p> </p>");
 	
-	//to keep track of only the new data to be able to update the widget only when new (exploration-result) facts were found
-	this.data_to_show_ = {} ; 
-	$("body") . append (this.$wedgit_div);
+	this.$parent_ . append (this.$wedgit_div);
+
+
 	
 	//with Object oriented should be the virtual function the u have to overide t make this wedgit work ...and u shoudl give it all the parameters for a subscription.
 	//u wont care how many subscriptions divs are gonna be there or who drawes them coz u can always assume there is one and only one with that name. Which is the one in this Wegit Object
@@ -45,7 +48,7 @@ function exploration_results()
 				ros 			: robot_info_.connection  									,
 			    name 			: that.destination_bridge_name_  + "/"  + that.topic_name_  ,
 			    messageType 	: 'mm' 													  	,
-			    throttle_rate	: 1000 													  	,
+			    throttle_rate	: window.throttle_rate 													  	,
 			});
 				
 			exploration_results_listener . subscribe ( 	function(message) {
