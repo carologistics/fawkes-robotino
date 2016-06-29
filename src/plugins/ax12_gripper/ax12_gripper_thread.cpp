@@ -99,7 +99,10 @@ GripperAX12AThread::init()
     throw Exception("Left and/or right and/or z-servo not found: left: %i  right: %i, z: %i",
 		    left_servo_found, right_servo_found, z_servo_found);
   }
-  
+
+  joystick_if_ =
+    blackboard->open_for_reading<JoystickInterface>("Joystick", __cfg_ifid_joystick_.c_str());
+
   DynamixelServoInterface::SetSpeedMessage *vel_left = new DynamixelServoInterface::SetSpeedMessage((unsigned int) (__cfg_max_speed * 0x3ff));
   DynamixelServoInterface::SetSpeedMessage *vel_right = new DynamixelServoInterface::SetSpeedMessage((unsigned int) (__cfg_max_speed * 0x3ff));
   __servo_if_left->msgq_enqueue(vel_left);
@@ -637,6 +640,8 @@ void GripperAX12AThread::load_config()
   __cfg_load_for_holds_puck    = config->get_uint((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
   __cfg_angle_for_holds_puck   = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
   __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
+  __cfg_ifid_joystick_         = config->get_string(__gripper_cfg_prefix + "joystick_interface_id");
+
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());

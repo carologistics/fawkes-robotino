@@ -32,7 +32,7 @@ endif
 
 LIBS_ax12_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
 	       fawkesinterface fawkesconfig AX12GripperInterface LedInterface JointInterface \
-               DynamixelServoInterface
+               DynamixelServoInterface JoystickInterface
 OBJS_ax12_gripper = $(patsubst %.cpp,%.o,$(patsubst qa/%,,$(subst $(SRCDIR)/,,$(wildcard $(SRCDIR)/*.cpp $(foreach d,$(DRIVERS),$(SRCDIR)/$d/*.cpp )))))
 
 PLUGINS_all = $(PLUGINDIR)/ax12_gripper.so
