@@ -851,4 +851,13 @@
   (do-for-fact ((?zone-expl-mir zone-exploration)) (eq ?zone-expl-mir:name ?zone-mirrow)
     (modify ?zone-expl-mir (machine ?mps-mirrow))
   )
+  )
+
+(defrule exp-remove-old-skill-facts
+  "If the exploration has passed and there are still some leftovers, remove them"
+  (phase PRODUCTION)
+  ?old <- (skill (name "explore_zone"))
+  ?new <- (skill (name ?something&:(neq ?old ?new)))
+  =>
+  (retract ?old)
 )
