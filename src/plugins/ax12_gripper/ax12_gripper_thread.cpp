@@ -256,7 +256,6 @@ GripperAX12AThread::loop()
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::TimedGotoMessage>()) {
         AX12GripperInterface::TimedGotoMessage *msg = __gripper_if->msgq_first(msg);
 
-        printf("timedgotomessage\n");
         goto_gripper_timed(msg->left(), msg->right(), msg->time_sec());
         __gripper_if->set_msgid(msg->id());
         __gripper_if->set_final(false);
@@ -276,8 +275,6 @@ GripperAX12AThread::loop()
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetVelocityMessage>()) {
         AX12GripperInterface::SetVelocityMessage *msg = __gripper_if->msgq_first(msg);
 
-        printf("set velocity message\n");
-
         if (msg->left_velocity() > __gripper_if->max_left_velocity()) {
           logger->log_warn(name(), "Desired left velocity %f too high, max is %f",
                            msg->left_velocity(), __gripper_if->max_left_velocity());
@@ -290,20 +287,17 @@ GripperAX12AThread::loop()
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::OpenMessage>()) {
         AX12GripperInterface::OpenMessage *msg = __gripper_if->msgq_first(msg);
-        printf("open left: %f, right: %f\n", __cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
         goto_gripper(__cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
         AX12GripperInterface::CloseMessage *msg = __gripper_if->msgq_first(msg);
 
-        printf("performing close\n");
         goto_gripper(__cfg_left_close_angle, __cfg_right_close_angle);
         // set_move_load_pending(true);
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseLoadMessage>()) {
         AX12GripperInterface::CloseLoadMessage *msg = __gripper_if->msgq_first(msg);
 
-        printf("performing close with load\n");
         goto_gripper_load(__cfg_left_close_load_angle, __cfg_right_close_load_angle);
         // set_move_load_pending(true);
 
