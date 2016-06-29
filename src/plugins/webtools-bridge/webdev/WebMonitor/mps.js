@@ -72,9 +72,9 @@ function MpsWedgit ( machine_name ,  $parent )  {
 	this. $wedgit_div_	= $("<div>  </div>") 	.addClass("wedgit")	
 												.addClass( "mps" )				
 												.attr('id', this.wedgit_id_ )
-								 				.append( $("<span > </span>" ) . addClass ("header") )
-												.append( $("<span > </span>" ) . addClass ("body") )
-												.append( $("<span > </span>" ) . addClass ("footer") );
+								 				.append( $("<div > </div>" ) . addClass ("header") )
+												.append( $("<div > </div>" ) . addClass ("body") )
+												.append( $("<div > </div>" ) . addClass ("footer") );
 	var $row ;
 	var $col ;
 	
@@ -87,95 +87,124 @@ function MpsWedgit ( machine_name ,  $parent )  {
 
 
 	//=========Machine Title
-	$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
-	$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+	$col =  $("<span> </span>" ) ;
 	$col.append ( "<b>" + unprefrixed_machine_name + "</b>" + "<sub>" + "N/A" + "</sub>" ).addClass("machine_name");
-	$col.appendTo($row);
-	$row. appendTo (this.$wedgit_div_.find(".header"));
-
-
+	$col. appendTo (this.$wedgit_div_.find(".header"));
 
 	//=================The Extra Machine information
 	if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
 	{
-		$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
-		$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
-		$col.append("<sup> N.A </sup> ").addClass("available_colors");
-		$col.appendTo($row);
-			
-		$col = $("<div> </div>" ) . addClass( "col_element" ) ;
-		$col.append("<sup> N.A </sup> ").addClass("selected_color");
-		$col.appendTo($row);
-		$row. appendTo (this.$wedgit_div_.find(".header"));
+
+		$col = $("<img> </img>" ) ;
+		$col.append(" N.A  ").addClass("base_loaded").addClass("not_loaded");
+		$col. appendTo (this.$wedgit_div_.find(".header"));
+
+		$col =  $("<span> </span>" );
+		$col.append(" <sup> N.A </sup> ").addClass("available_colors");
+		$col. appendTo (this.$wedgit_div_.find(".header"));
+
+
 	}
 
 	if(unprefrixed_machine_name == "CS2" || unprefrixed_machine_name == "CS1")
 	{
-		$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
-		$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+
+		$col = $("<img> </img>" ) ;
+		$col.append(" N.A  ").addClass("cap_loaded").addClass("not_loaded");
+		$col. appendTo (this.$wedgit_div_.find(".header"));
+
+		$col =  $("<div> </div>" ) .addClass ("col_element");
 		$col.append("<sup> N.A </sup> ").addClass("caps_on_shelf");
-		$col.appendTo($row);
-			
-		$col = $("<div> </div>" ) . addClass( "col_element" ) ;
-		$col.append("<sup> N.A </sup> ").addClass("cap_loaded");
-		$col.appendTo($row);
-		$row. appendTo (this.$wedgit_div_.find(".header"));
+		$col. appendTo (this.$wedgit_div_.find(".header"));
 	}
 
 	if(unprefrixed_machine_name == "BS" )
 	{
-		$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
-		$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+		$col =  $("<span> </span>" ) ;
 		$col.append("<sup> N.A </sup> ").addClass("active_side");
-		$col.appendTo($row);
-		$row. appendTo (this.$wedgit_div_.find(".header"));
+		$col. appendTo (this.$wedgit_div_.find(".header"));
 	}
+	
+
+
+	// //=================The Extra Machine information
+	// if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
+	// {
+	// 	$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
+	// 	$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("available_colors");
+	// 	$col.appendTo($row);
+			
+	// 	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("selected_color");
+	// 	$col.appendTo($row);
+	// 	$row. appendTo (this.$wedgit_div_.find(".header"));
+	// }
+
+	// if(unprefrixed_machine_name == "CS2" || unprefrixed_machine_name == "CS1")
+	// {
+	// 	$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
+	// 	$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("caps_on_shelf");
+	// 	$col.appendTo($row);
+			
+	// 	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("cap_loaded");
+	// 	$col.appendTo($row);
+	// 	$row. appendTo (this.$wedgit_div_.find(".header"));
+	// }
+
+	// if(unprefrixed_machine_name == "BS" )
+	// {
+	// 	$row =  $("<span> </span>" ) .addClass( "row_element" ) ;
+	// 	$col =  $("<div> </div>" ) .addClass( "col_element" ) ;
+	// 	$col.append("<sup> N.A </sup> ").addClass("active_side");
+	// 	$col.appendTo($row);
+	// 	$row. appendTo (this.$wedgit_div_.find(".header"));
+	// }
 	
 
 	//Wedgit Body
 
-	//----Exploration stuff
-	// //==Row
-	$row =  $("<span> </span>" ) .append("<span class = 'row_element' > <b> Exploration: </b> </span>") .addClass( "row_element" ) ;
-	$col =  $("<div> </div>" ) . addClass( "col_element" ) ;
-	$col.append("<sup> NoTag </sup> ").addClass("tag_found");
+	//=================Incoming
+	$row =  $("<div> </div>" ) . addClass( "row_element" ) ;	
+	$col = $("<span> </span>" ) . addClass( "col_element" ) ;
+	$col.append("<b> Incoming: </b> ");
+	var $content = $("<sup> Nothing </sup> ")  . addClass ("incoming");
+	$col. append($content);
 	$col.appendTo($row);
 
 	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
-	$col.append("<sup> NotExplored </sup> ").addClass("explored");
+	var $col_col = $("<div> N.A </div>" ) . addClass( "col_element" ) .addClass("loaded_id");
+	$col_col.appendTo($col);
+	$col_col = $("<div> N.A </div>" ) . addClass( "col_element" ) .addClass("produced_id");
+	$col_col.appendTo($col);
 	$col.appendTo($row);
+
 	$row. appendTo (this.$wedgit_div_.find(".body"));
-	//-------------------
 
 	//==Row
-	$row =  $("<span> </span>" ) . addClass( "row_element" ) ;
-	$col =  $("<div> </div>" ) . addClass( "col_element" ) ;
-	$col.append(" <b> loaded_id </b> ").addClass("loaded_id");
-	$col.appendTo($row);
-
-	$col = $("<div> </div>" ) . addClass( "col_element" ) ;
-	$col.append("<sup> produced_id </sup> ").addClass("produced_id");
-	$col.appendTo($row);
-	$row. appendTo (this.$wedgit_div_.find(".body"));
-
-	//==title Row
-	$row =  $("<span> </span>" ) . addClass( "row_element" ) ;
-	$row.append("<b> Incoming: </b> ");
-	$row. appendTo (this.$wedgit_div_.find(".body"));
-
-	// //==Row
-	 $row =  $("<span> </span>" ) .append("<span class= 'row_element' > Incoming: </span> ");
-	 $row. append("<sup> nothing incoming </sup> ") .addClass( "row_element" ) . addClass ("incoming");
-	//--agents and resource shown in the same field
+	// $row =  $("<div> </div>" ) . addClass( "row_element" ) ;
 	// $col =  $("<div> </div>" ) . addClass( "col_element" ) ;
-	// $col.append("<sub> no incoming agents </sub> ").addClass("incoming_agent");
+	// $col.append(" <b> loaded_id </b> ").addClass("loaded_id");
 	// $col.appendTo($row);
 
 	// $col = $("<div> </div>" ) . addClass( "col_element" ) ;
-	// $col.append("<sub> noting incoming </sub> ").addClass("incoming");
+	// $col.append("<sup> produced_id </sup> ").addClass("produced_id");
 	// $col.appendTo($row);
-	$row. appendTo (this.$wedgit_div_.find(".body"));
+	// $row. appendTo (this.$wedgit_div_.find(".body"));
 	
+
+	//----Exploration stuff
+	// //==Row
+	$col =  $("<div> </div>" )  .append("<b> Exp: </b> ") .addClass("mps_exploration");
+	$img = $("<img> </img>"  ) .addClass("tag_found") .addClass("not_done");	
+	$col .append( $img );
+	$img = $("<img> </img>"  ) .addClass("explored").addClass("not_done");
+	$col .append( $img);
+	$col .appendTo($row);
+	$col. appendTo (this.$wedgit_div_.find(".footer"));
+	//-------------------
 
 
 	//EndBody
@@ -197,7 +226,8 @@ function MpsWedgit ( machine_name ,  $parent )  {
 		var $w_header; 
 		//==============Title	
 		$w_header = $( "<b> " + unprefrixed_machine_name	+ "</b>" + "<sub>" + machine_metadata_ . state 	+ "</sub>" );
-		that.$wedgit_div_ . find( "machine_name" )	.empty() .append ( $w_header );
+		that.$wedgit_div_ . find( "machine_name" )	.empty() .append ( $w_header );	
+
 
 		//==============Machine Info
 		if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
@@ -207,7 +237,14 @@ function MpsWedgit ( machine_name ,  $parent )  {
 			{
 				for ( i in machine_metadata_.available_colors) 
 				{
-					that.$wedgit_div_ . find (".available_colors") .append( machine_metadata_ .available_colors [i]  + " | ") ;
+					$colored_ring = $("<span> </span>") . addClass("col_element") .css ("background-color" , machine_metadata_ . available_colors[i] ).addClass ("mps_puck"); 
+
+					if( machine_metadata_ .hasOwnProperty("selected_color") && machine_metadata_ . selected_color == machine_metadata_ . available_colors[i])
+					{
+						$colored_ring . addClass("selected_color");
+					}
+
+					that.$wedgit_div_ . find (".available_colors") .append( $colored_ring ) ;
 				}
 			}
 			else
@@ -215,21 +252,19 @@ function MpsWedgit ( machine_name ,  $parent )  {
 				that.$wedgit_div_ . find (".available_colors" ) .append(" N.A" );
 			}
 
-			if(machine_metadata_ .hasOwnProperty("selected_color"))
+
+			if(machine_metadata_ .hasOwnProperty ("base_loaded") )
 			{
-				that.$wedgit_div_ . find (".selected_color") .empty(). append ( machine_metadata_ .selected_color );
-				
-				if(machine_metadata_ . selected_color != "NONE")
-				{
-					that.$wedgit_div_ . find (".selected_color") .addClass("highlight") ;
+				if( machine_metadata_.  base_loaded != 0){
+
+					that.$wedgit_div_ . find (".base_loaded"). removeClass("not_loaded") .addClass("loaded");
 				}
-				else
-				{
-					that.$wedgit_div_ . find (".selected_color") .removeClass("highlight") ;
+				else {
+					that.$wedgit_div_ . find (".base_loaded"). removeClass("loaded") .addClass("not_loaded");				
 				}
 			}
 
-			//Dont for get to add the base-loaded
+			//Dont for get to add the base loaded
 		}
 
 
@@ -239,9 +274,11 @@ function MpsWedgit ( machine_name ,  $parent )  {
 			
 			if(machine_metadata_ .hasOwnProperty ("caps_on_shelf")  && machine_metadata_ .caps_on_shelf > 0 )
 			{
-				for (var i =0 ; i < machine_metadata_.caps_on_shelf ; i++) 
+				for (var i =1 ; i <= machine_metadata_.caps_on_shelf ; i++) 
 				{
-					that.$wedgit_div_ . find (".caps_on_shelf") .append( machine_metadata_ .assigned_cap_color  + " | ") ;
+					$colored_cap= $("<div> </div>") .addClass("col_element"). css ("background-color" , machine_metadata_ . assigned_cap_color ).addClass ("mps_puck"); 
+					that.$wedgit_div_ . find (".caps_on_shelf") .append( $colored_cap ) ;
+					// that.$wedgit_div_ . find (".caps_on_shelf") .append( machine_metadata_ .assigned_cap_color  + " | ") ;
 				 }  
 			}
 			else
@@ -249,9 +286,17 @@ function MpsWedgit ( machine_name ,  $parent )  {
 				that.$wedgit_div_ . find (".caps_on_shelf" ) .append(" None" );
 			}
 
-			if(machine_metadata_ .hasOwnProperty ("cap_loaded"))
+			if(machine_metadata_ .hasOwnProperty ("cap_loaded") )
 			{
-				that.$wedgit_div_ . find (".cap_loaded"). empty() . append (machine_metadata_ . cap_loaded);
+				if(machine_metadata_. cap_loaded != "NONE")
+				{
+
+					that.$wedgit_div_ . find (".cap_loaded"). removeClass("not_loaded") .addClass("loaded");
+				}
+				else
+				{
+					that.$wedgit_div_ . find (".cap_loaded"). removeClass("loaded") .addClass("not_loaded");		
+				}
 			}
 
 		}	
@@ -264,14 +309,85 @@ function MpsWedgit ( machine_name ,  $parent )  {
 			}
 		}	
 
+		//===================
+
+
+
+		// //==============Machine Info
+		// if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
+		// {		
+		// 	that.$wedgit_div_ . find (".available_colors") .empty();
+		// 	if( machine_metadata_ .hasOwnProperty("available_colors") && machine_metadata_ . available_colors.length > 0 )
+		// 	{
+		// 		for ( i in machine_metadata_.available_colors) 
+		// 		{
+		// 			that.$wedgit_div_ . find (".available_colors") .append( machine_metadata_ .available_colors [i]  + " | ") ;
+		// 		}
+		// 	}
+		// 	else
+		// 	{	
+		// 		that.$wedgit_div_ . find (".available_colors" ) .append(" N.A" );
+		// 	}
+
+		// 	if(machine_metadata_ .hasOwnProperty("selected_color"))
+		// 	{
+		// 		that.$wedgit_div_ . find (".selected_color") .empty(). append ( machine_metadata_ .selected_color );
+				
+		// 		if(machine_metadata_ . selected_color != "NONE")
+		// 		{
+		// 			that.$wedgit_div_ . find (".selected_color") .addClass("highlight") ;
+		// 		}
+		// 		else
+		// 		{
+		// 			that.$wedgit_div_ . find (".selected_color") .removeClass("highlight") ;
+		// 		}
+		// 	}
+
+		// 	//Dont for get to add the base loaded
+		// }
+
+
+		// if(unprefrixed_machine_name == "CS2" || unprefrixed_machine_name == "CS1")
+		// {		
+		// 	that.$wedgit_div_ . find (".caps_on_shelf"). empty();
+			
+		// 	if(machine_metadata_ .hasOwnProperty ("caps_on_shelf")  && machine_metadata_ .caps_on_shelf > 0 )
+		// 	{
+		// 		for (var i =0 ; i < machine_metadata_.caps_on_shelf ; i++) 
+		// 		{
+		// 			that.$wedgit_div_ . find (".caps_on_shelf") .append( machine_metadata_ .assigned_cap_color  + " | ") ;
+		// 		 }  
+		// 	}
+		// 	else
+		// 	{	
+		// 		that.$wedgit_div_ . find (".caps_on_shelf" ) .append(" None" );
+		// 	}
+
+		// 	if(machine_metadata_ .hasOwnProperty ("cap_loaded"))
+		// 	{
+		// 		that.$wedgit_div_ . find (".cap_loaded"). empty() . append (machine_metadata_ . cap_loaded);
+		// 	}
+
+		// }	
+
+		// if(unprefrixed_machine_name == "BS")
+		// {		
+		// 	if(machine_metadata_ .hasOwnProperty ("active_side") )
+		// 	{ 
+		// 		that.$wedgit_div_ . find (".active_side"). empty() . append (machine_metadata_ . active_side);
+		// 	}
+		// }	
+
+		// //===================
+
 		var $w_body ;
-		that.$wedgit_div_ . find ( $(".loaded_id") ) .empty() .append ( ( ( machine_metadata_.loaded_id )?    machine_metadata_ .loaded_id	: "<sup>Nothing Loaded</sup>") );
-		that.$wedgit_div_ . find ( $(".produced_id") ) .empty() .append( ( ( machine_metadata_ .produced_id )?  machine_metadata_ .produced_id : " <sup>Nothing Produced </sup>") ) ;
+		
+
 
 		that.$wedgit_div_ . find ( $(".incoming") ) .empty();
 
 		if(machine_metadata_ . incoming.length == 0 && machine_metadata_ . incoming_agent.length == 0){
-			that.$wedgit_div_ . find ( $(".incoming") ) .append( "<sup> nothing incoming </sup>"  ) ;
+			that.$wedgit_div_ . find ( $(".incoming") ) .append( "<sub> Nothing</sub>"  ) ;
 		}
 		
 		var $incoming_content = $("<span></span>");
@@ -296,11 +412,11 @@ function MpsWedgit ( machine_name ,  $parent )  {
 
 		//Exploration Stuff
 		if (machine_metadata_ . tag_found){
-			that.$wedgit_div_ . find ( $(".tag_found") ) .empty() .append( "TagFound" ) ;
+			that.$wedgit_div_ . find ( $(".tag_found") ) .removeClass ("not_done") .addClass( "done" ) ;
 		}
 
 		if(machine_metadata_ .explored){
-			that.$wedgit_div_ . find ( $(".explored") ) .empty() .append( "Explored" ) ;
+			that.$wedgit_div_ . find ( $(".explored") ) .removeClass ("not_done").addClass( "done" ) ;
 		}
 
 
@@ -372,7 +488,7 @@ function MpsMonitor()
 			ros 			: robot_info.connection  									,
 		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
 		    messageType 	: 'mm' 													  	,
-		    throttle_rate	: 1000 													  	,
+		    throttle_rate	: window.throttle_rate 									  	,
 		});
 
 		machine_fact_listener . subscribe ( 	function(message) {
@@ -411,7 +527,7 @@ function MpsMonitor()
 			ros 			: robot_info.connection  									,
 		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
 		    messageType 	: 'mm' 													  	,
-		    throttle_rate	: 1000 													  	,
+		    throttle_rate	: window.throttle_rate 									  	,
 		});
 
 		zone_exploration_fact_listener . subscribe ( 	function(message) {
@@ -445,7 +561,7 @@ function MpsMonitor()
 			ros 			: robot_info.connection  									,
 		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
 		    messageType 	: 'mm' 													  	,
-		    throttle_rate	: 1000 													  	,
+		    throttle_rate	: window.throttle_rate 									 	,
 		});
 
 		found_tag_fact_listener . subscribe ( 	function(message) {
@@ -478,7 +594,7 @@ function MpsMonitor()
 			ros 			: robot_info.connection  									,
 		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
 		    messageType 	: 'mm' 													  	,
-		    throttle_rate	: 1000 													  	,
+		    throttle_rate	: window.throttle_rate 									  	,
 		});
 
 		ring_station_fact_listener . subscribe ( 	function(message) {
@@ -513,7 +629,7 @@ function MpsMonitor()
 			ros 			: robot_info.connection  									,
 		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
 		    messageType 	: 'mm' 													  	,
-		    throttle_rate	: 1000 													  	,
+		    throttle_rate	: window.throttle_rate 									  	,
 		});
 		
 		cap_station_fact_listener . subscribe ( 	function(message) {
@@ -547,7 +663,7 @@ function MpsMonitor()
 			ros 			: robot_info.connection  									,
 		    name 			: that.destination_bridge_name_  + "/"  + topic_name  		,
 		    messageType 	: 'mm' 													  	,
-		    throttle_rate	: 1000 													  	,
+		    throttle_rate	: window.throttle_rate 										,
 		});
 		
 		base_station_fact_listener . subscribe ( 	function(message) {

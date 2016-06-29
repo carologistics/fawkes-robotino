@@ -35,7 +35,8 @@ function Map() {
           ros : robot_info.connection   ,
           angularThres : 0.01,
           transThres : 0.01,
-          fixedFrame : '/map' 
+          fixedFrame : '/map' ,
+          rate: 1
         });
 
         //=======Marker arrow shape to Show robot frame /base_link of TF
