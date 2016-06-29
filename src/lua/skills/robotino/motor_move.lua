@@ -62,7 +62,7 @@ local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
 local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.6 }
 local V_MIN =         { x=0.008, y=0.008, ori=0.05 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
-local TOLERANCE_CAM = { x=0.002, y=0.002, ori=0.01 }
+local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
 local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
 
@@ -147,8 +147,8 @@ function set_speed(self)
                -- slowed us down a bit before doing this ;-)
                if scalar(dist_target[k]) < 0 then v[k] = v[k] * -1 end
 
-               -- printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
-               --   k, scalar(dist_target[k]), v_acc, v_dec, v[k])
+               printf("%s: d_t=%f, v_acc=%f, v_dec=%f, v=%f",
+                 k, scalar(dist_target[k]), v_acc, v_dec, v[k])
             else
                v[k] = 0
             end

@@ -30,6 +30,32 @@ plugins/laser-filter:
         from: 235
         to: 125
 
+  robot-1080:
+    active: true
+
+    # URG input interface
+    #in/urg: Laser360Interface::Laser urg
+    in/sick-tim55x: Laser1080Interface::Laser tim55x
+
+    # URG filtered output interface
+    out/filtered: Laser1080Interface::Laser filtered-1080
+
+    filters:
+
+      1-min:
+        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        type: min_circle
+
+        # Radius of minimum length; m
+        radius: 0.04
+
+      2-sector:
+        # Ignore a defined range of beams (e.g. those hitting the robot itself)
+        type: circle_sector
+
+        from: 705
+        to: 375
+
   map:
 
     # URG input interface
