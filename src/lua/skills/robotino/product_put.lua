@@ -39,7 +39,7 @@ skillenv.skill_module(_M)
 local tfm = require("tf_module")
 local x_distance = 0.075
 if config:exists("/skills/align_distance_conveyor/x") then
-      x_distance = config:get_float("/skills/align_distance_conveyor/x") - 0.01
+      x_distance = config:get_float("/skills/align_distance_conveyor/x")
 end
 
 fsm:define_states{ export_to=_M,
