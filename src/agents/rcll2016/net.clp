@@ -199,16 +199,13 @@
             (utils-remove-prefix ?ring RING_)))
           )
           (bind ?cap (utils-remove-prefix (pb-field-value ?o "cap_color") CAP_))
-          (printout t "ding" crlf)
           (synced-assert (str-cat
                           "(order (id " ?id ")(product-id " ?product-id ")(complexity " ?complexity
                           ")(delivery-gate " ?delivery-gate ")(quantity-requested " ?quantity-requested
                           ")(begin " ?begin ")(end " ?end "))"))
-          (printout t "dang" crlf)
           (synced-assert (str-cat
                           "(product (id " ?product-id ")(base " ?base
                           ")(rings " (implode$ ?rings) ")(cap " ?cap "))"))
-          (printout t "dong" crlf)
           (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
       (do-for-fact ((?order order)) (eq ?order:id (pb-field-value ?o "id"))

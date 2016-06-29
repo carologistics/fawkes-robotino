@@ -468,6 +468,77 @@
   (assert (state STEP-FAILED))
 )
 
+
+
+(defrule step-wait-for-rs-start
+  "We want to wait for an RS to be usable. Drive to a waiting position near the RS."
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (id ?step-id) (name wait-for-rs) (state wait-for-activation) (task-priority ?p)
+                 (machine ?mps))
+  (machine (name ?mps))
+  ?state <- (state STEP-STARTED)
+  (game-time $?game-time)
+  (place-waitpoint-assignment (place ?place&:(eq ?place (sym-cat ?mps "-I"))) (waitpoint ?waitpoint))
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (assert (state WAIT-FOR-RS)
+          (timer (name wait-for-rs-dont-call-two-skills))
+  )
+  (skill-call ppgoto place (str-cat ?waitpoint))
+)
+
+(defrule step-wait-for-rs-lock-before-finish
+  "Wait until the RS can be used for production (IDLE, no other robot waiting, and loaded with enough bases).
+   Furthermore we need to aquire the lock, to be sure noone commits to using the rs without enough bases."
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  (task (state running) (id ?task-id))
+  (step (name wait-for-rs) (state running) (machine ?rs) (ring ?ring))
+  ?state <- (state WAIT-FOR-RS)
+  (machine (name ?rs) (state IDLE) (incoming $?i&~:(member$ PROD_RING ?i)))
+  (ring (color ?ring) (req-bases ?br))
+  (ring-station (name ?rs) (bases-loaded ?bl&:(>= ?bl ?br)))
+  =>
+  (retract ?state)
+  (assert (state WAIT-FOR-RS-LOCK)
+          (needed-task-lock (task-id ?task-id) (action PROD_RING) (place ?rs))
+  )
+)
+(defrule step-wait-for-rs-finish
+  "Finish after also getting the lock."
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  (task (state running) (id ?task-id))
+  ?step <- (step (name wait-for-rs))
+  ?state <- (state WAIT-FOR-RS-LOCK)
+  (needed-task-lock (task-id ?task-id) (action PROD_RING) (place ?rs) (resource ?res))
+  (lock (type ACCEPT) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
+  (time $?now)
+  ;ensure that no two skills are called directly after each other
+  ?timer <- (timer (name wait-for-rs-dont-call-two-skills) (time $?t&:(timeout ?now ?t 1.0)))
+  =>
+  (retract ?state ?timer)
+  (assert (state STEP-FINISHED))
+  (modify ?step (state finished))
+)
+(defrule step-wait-for-rs-lock-refused
+  "When the lock is refused someone else is using the rs. Go back to
+the waiting state until we can use it again."
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  (task (state running) (id ?task-id))
+  ?step <- (step (name wait-for-rs))
+  ?state <- (state WAIT-FOR-RS-LOCK)
+  ?ntl <- (needed-task-lock (task-id ?task-id) (action PROD_RING) (place ?rs) (resource ?res))
+  (lock (type REFUSE) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
+  =>
+  (retract ?state ?ntl)
+  (assert (state WAIT-FOR-RS)
+          (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
+)
+
 ;;;;;;;;;;;;;;;;
 ; common finish:
 ;;;;;;;;;;;;;;;;
