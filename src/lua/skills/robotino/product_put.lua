@@ -59,8 +59,7 @@ fsm:add_transitions{
 }
 
 function DRIVE_FORWARD:init()
-   self.args["motor_move"].x = x_distance
-   self.args["motor_move"].vel_trans = 0.2
+   self.args["approach_mps"].x = x_distance - self.fsm.vars.offset_x
 end
 
 function OPEN_GRIPPER:init()
