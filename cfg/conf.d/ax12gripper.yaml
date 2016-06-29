@@ -102,7 +102,7 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
 
     # Angle for holds_puck is a threshold to tell whether the load is probably
     # enough for a puck to be held
-    angle_for_holds_puck_threshold: -0.4
+    angle_for_holds_puck_threshold: -0.5
 
     # A value to be substracted from the destination opening angle on center command
     # This is needed because the gripper tends to open a little on each center command otherwise
