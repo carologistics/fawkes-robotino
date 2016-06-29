@@ -19,3 +19,6 @@ arduino:
 
   # go to this position after initialization
   init_mm: 26
+
+  # Interface ID for JoystickInterface to read data from
+  joystick_interface_id: Joystick

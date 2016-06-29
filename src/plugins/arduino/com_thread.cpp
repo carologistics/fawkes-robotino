@@ -79,6 +79,9 @@ ArduinoComThread::init()
     arduino_if =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
 
+    joystick_if_ =
+        blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
+
     deadline_.expires_at(boost::posix_time::pos_infin);
 
     open_device();
@@ -407,6 +410,7 @@ ArduinoComThread::load_config()
         cfg_accel_ = config->get_int("/arduino/accel");
         cfg_max_mm_ = config->get_int("/arduino/max_mm");
         cfg_init_mm_ = config->get_uint("/arduino/init_mm");
+        cfg_ifid_joystick_ = config->get_string("/arduino/joystick_interface_id");
 
         set_speed_pending_ = true;
         set_acceleration_pending_ = true;
