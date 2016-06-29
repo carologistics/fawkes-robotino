@@ -77,7 +77,7 @@ function OPEN_GRIPPER:init()
 end
 
 function DRIVE_FORWARD:init()
-   self.args["approach_mps"].x = x_distance
+   self.args["approach_mps"].x = x_distance - self.fsm.vars.offset_x
 end
 
 function MOVE_BACK:init()
