@@ -149,6 +149,14 @@ function set_speed(self)
       end
    end
 
+   if self.fsm.vars.frame and self.fsm.vars.target_frame ~= "/odom" then 
+      -- save target in odom for fallback
+      self.fsm.vars.fallback_target_odom = tfm.transform6D(
+         {x=self.fsm.vars.target.x, y=self.fsm.vars.target.y, z=self.fsm.vars.target.z, ori=self.fsm.vars.target.ori},
+         self.fsm.vars.target_frame, "/odom")
+   end
+
+   
    self.fsm.vars.cycle = self.fsm.vars.cycle + 1
 
    send_transrot(v.x, v.y, v.ori)
