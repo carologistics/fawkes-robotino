@@ -26,7 +26,8 @@ PRESUBDIRS = interfaces
 #CFLAGS += -DUSE_TIMETRACKER
 
 LIBS_arduino = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface ArduinoInterface
+		fawkesblackboard fawkesinterface ArduinoInterface \
+                JoystickInterface
 		
 OBJS_arduino = arduino_plugin.o com_thread.o com_message.o
 
