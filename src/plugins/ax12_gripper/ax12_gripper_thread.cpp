@@ -344,6 +344,14 @@ GripperAX12AThread::loop()
 
       __gripper_if->msgq_pop();
     }
+
+    joystick_if_->read();
+
+    if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_13) {
+        goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
+    } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_12) {
+        goto_gripper(__cfg_left_close_angle, __cfg_right_close_angle);
+    }
     __gripper_if->set_angle(get_opening_angle());
     __gripper_if->set_holds_puck(holds_puck());
     __gripper_if->write();
