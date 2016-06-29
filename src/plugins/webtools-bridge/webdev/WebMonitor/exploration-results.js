@@ -48,7 +48,7 @@ function exploration_results( $parent )
 				ros 			: robot_info_.connection  									,
 			    name 			: that.destination_bridge_name_  + "/"  + that.topic_name_  ,
 			    messageType 	: 'mm' 													  	,
-			    throttle_rate	: 1000 													  	,
+			    throttle_rate	: window.throttle_rate 													  	,
 			});
 				
 			exploration_results_listener . subscribe ( 	function(message) {
