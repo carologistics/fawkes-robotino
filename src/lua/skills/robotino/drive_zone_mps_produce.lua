@@ -108,28 +108,40 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
+   {"INSTRUCT_MACHINE_RETRIEVE", JumpState},
+   {"KILLALL_RETRIEVE", JumpState},
    {"DRIVE_TO_START", SkillJumpState, skills={{goto}}, final_to="DRIVE_CORNER", fail_to="FAILED"},
    {"DRIVE_CORNER", SkillJumpState, skills={{goto}}, final_to="CHECK_FOR_LASERLINE", fail_to="FAILED"},
    {"LOWER_ACCURACY", SkillJumpState, skills={{goto}}, final_to="CHECK_FOR_LASERLINE", fail_to="FAILED"},
    {"CHECK_FOR_LASERLINE", SkillJumpState, skills={{tagless_mps_align}}, final_to="GET_PUCK", fail_to="DRIVE_CORNER"},
-   {"GET_PUCK", SkillJumpState, skills={{shelf_find_pick_put}}, final_to="INSTRUCT_MACHINE", fail_to="DRIVE_TO_OTHER_SIDE"},
-   {"INSTRUCT_MACHINE", JumpState},
-   {"KILLALL", JumpState},
+   {"GET_PUCK", SkillJumpState, skills={{shelf_find_pick_put}}, final_to="PUT_PUCK", fail_to="DRIVE_TO_OTHER_SIDE"},
    {"PUT_PUCK", SkillJumpState, skills={{product_put}}, final_to="DRIVE_TO_OUTPUT", fail_to="FAILED"},
    {"DRIVE_TO_OUTPUT", SkillJumpState, skills={{goto}}, final_to="ALIGN_LASERLINE", fail_to="FAILED"},
    {"ALIGN_LASERLINE", SkillJumpState, skills={{tagless_mps_align}}, final_to="ALIGN_CONVEYOR", fail_to="FAILED"},
    {"ALIGN_CONVEYOR", SkillJumpState, skills={{motor_move}}, final_to="RETRIEVE_PUCK", fail_to="FAILED"},
-   {"RETRIEVE_PUCK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"RETRIEVE_PUCK", SkillJumpState, skills={{product_pick}}, final_to="INSTRUCT_MACHINE_MOUNT", fail_to="FAILED"},
+   {"INSTRUCT_MACHINE_MOUNT", JumpState},
+   {"KILLALL_MOUNT", JumpState},
    {"DRIVE_TO_OTHER_SIDE", SkillJumpState, skills={{goto}}, final_to="CHECK_FOR_LASERLINE", fail_to="FAILED"},
+   {"DRIVE_TO_INPUT", SkillJumpState, skills={{goto}}, final_to="ALIGN_LASERLINE_2", fail_to="FAILED"},
+   {"ALIGN_LASERLINE_2", SkillJumpState, skills={{tagless_mps_align}}, final_to="ALIGN_CONVEYOR_2", fail_to="FAILED"},
+   {"ALIGN_CONVEYOR_2", SkillJumpState, skills={{motor_move}}, final_to="PUT_PUCK_2", fail_to="FAILED"},
+   {"PUT_PUCK_2", SkillJumpState, skills={{product_put}}, final_to="DRIVE_TO_OUTPUT_2", fail_to="FAILED"},
+   {"DRIVE_TO_OUTPUT_2", SkillJumpState, skills={{goto}}, final_to="ALIGN_LASERLINE_3", fail_to="FAILED"},
+   {"ALIGN_LASERLINE_3", SkillJumpState, skills={{tagless_mps_align}}, final_to="ALIGN_CONVEYOR_3", fail_to="FAILED"},
+   {"ALIGN_CONVEYOR_3", SkillJumpState, skills={{motor_move}}, final_to="RETRIEVE_PUCK_2", fail_to="FAILED"},
+   {"RETRIEVE_PUCK_2", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"INIT", "DRIVE_TO_START", cond=calc_xy_coordinates},
+   {"INIT", "INSTRUCT_MACHINE_RETRIEVE", cond=calc_xy_coordinates},
    {"INIT", "FAILED", cond=true, desc="zoneID is not between 1 and 24"},
+   {"INSTRUCT_MACHINE_RETRIEVE", "KILLALL_RETRIEVE", timeout=3},
+   {"KILLALL_RETRIEVE", "DRIVE_TO_START", cond=true},
    {"DRIVE_CORNER", "LOWER_ACCURACY", timeout=30},
    {"LOWER_ACCURACY", "DRIVE_CORNER", timeout=30},
-   {"INSTRUCT_MACHINE", "KILLALL", timeout=3},
-   {"KILLALL", "PUT_PUCK", cond=true},
+   {"INSTRUCT_MACHINE_MOUNT", "KILLALL_MOUNT", timeout=3},
+   {"KILLALL_MOUNT", "DRIVE_TO_OTHER_SIDE", cond=true},
 }
 
 function INIT:init()
@@ -192,11 +204,19 @@ function GET_PUCK:init()
    self.fsm.vars.mps_pose = {self.fsm.vars.mps_pose.x,self.fsm.vars.mps_pose.y,self.fsm.vars.mps_pose.ori}
 end
 
-function INSTRUCT_MACHINE:init()
+function INSTRUCT_MACHINE_RETRIEVE:init()
+   os.execute("../../llsf-refbox/bin/rcll-prepare-machine Carologistics " .. self.fsm.vars.machine .. "  RETRIEVE_CAP &")
+end
+
+function INSTRUCT_MACHINE_MOUNT:init()
    os.execute("../../llsf-refbox/bin/rcll-prepare-machine Carologistics " .. self.fsm.vars.machine .. "  MOUNT_CAP &")
 end
 
-function KILLALL:init()
+function KILLALL_RETRIEVE:init()
+   os.execute("killall -9 rcll-prepare-machine")
+end
+
+function KILLALL_MOUNT:init()
    os.execute("killall -9 rcll-prepare-machine")
 end
 
@@ -207,6 +227,20 @@ function DRIVE_TO_OUTPUT:init()
    self.args["goto"].ori = outputpose[3]
 end
 
+function DRIVE_TO_OUTPUT_2:init()
+   local outputpose = transform_pose({-START_POS[1],-START_POS[2],START_POS[3]+math.pi},transform_pose({0.,0.,0.},self.fsm.vars.mps_pose))
+   self.args["goto"].x = outputpose[1]
+   self.args["goto"].y = outputpose[2]
+   self.args["goto"].ori = outputpose[3]
+end
+
+function DRIVE_TO_INPUT:init()
+   local inputpose = transform_pose({START_POS[1],START_POS[2],START_POS[3]},transform_pose({0.,0.,0.},self.fsm.vars.mps_pose))
+   self.args["goto"].x = inputpose[1]
+   self.args["goto"].y = inputpose[2]
+   self.args["goto"].ori = inputpose[3]
+end
+
 function ALIGN_LASERLINE:init()
    self.args["tagless_mps_align"].ori = math.pi/2
    self.args["tagless_mps_align"].x1 = self.fsm.vars.x1
@@ -215,7 +249,31 @@ function ALIGN_LASERLINE:init()
    self.args["tagless_mps_align"].y2 = self.fsm.vars.y2
 end
 
+function ALIGN_LASERLINE_2:init()
+   self.args["tagless_mps_align"].ori = math.pi/2
+   self.args["tagless_mps_align"].x1 = self.fsm.vars.x1
+   self.args["tagless_mps_align"].x2 = self.fsm.vars.x2
+   self.args["tagless_mps_align"].y1 = self.fsm.vars.y1
+   self.args["tagless_mps_align"].y2 = self.fsm.vars.y2
+end
+
+function ALIGN_LASERLINE_3:init()
+   self.args["tagless_mps_align"].ori = math.pi/2
+   self.args["tagless_mps_align"].x1 = self.fsm.vars.x1
+   self.args["tagless_mps_align"].x2 = self.fsm.vars.x2
+   self.args["tagless_mps_align"].y1 = self.fsm.vars.y1
+   self.args["tagless_mps_align"].y2 = self.fsm.vars.y2
+end
+
 function ALIGN_CONVEYOR:init()
+   self.args["motor_move"] = {y = -Y_OFFSET_CONVEYOR, vel_trans = 0.2, tolerance = { x=0.002, y=0.002, ori=0.01 }}
+end
+
+function ALIGN_CONVEYOR_2:init()
+   self.args["motor_move"] = {y = +Y_OFFSET_CONVEYOR, vel_trans = 0.2, tolerance = { x=0.002, y=0.002, ori=0.01 }}
+end
+
+function ALIGN_CONVEYOR_3:init()
    self.args["motor_move"] = {y = -Y_OFFSET_CONVEYOR, vel_trans = 0.2, tolerance = { x=0.002, y=0.002, ori=0.01 }}
 end
 
