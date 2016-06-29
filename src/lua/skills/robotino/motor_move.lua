@@ -188,6 +188,7 @@ fsm:define_states{ export_to=_M,
    {"DRIVE_CAM", JumpState},
    {"STOP_NAVIGATOR", JumpState},
    {"FALLBACK_TO_ODOM", JumpState},
+   {"RECOVER_TO_FRAME", JumpState},
 }
 
 fsm:add_transitions{
@@ -211,6 +212,9 @@ fsm:add_transitions{
    {"DRIVE_CAM", "FINAL", cond=drive_done},
 
    {"FALLBACK_TO_ODOM", "DRIVE", cond=true},
+   {"DRIVE", "RECOVER_TO_FRAME", cond="cam_frame_visible(vars.frame)", desc="frame visible again"},
+   {"RECOVER_TO_FRAME", "FAILED", cond="vars.num_fallbacks > 5", desc="Too many fallbacks"},
+   {"RECOVER_TO_FRAME", "DRIVE_CAM", cond=true},
 }
 
 function INIT:init()
@@ -253,6 +257,7 @@ function INIT:init()
    
    self.fsm.vars.cycle = 0
    self.fsm.vars.stop_attempts = self.fsm.vars.stop_attempts or 0
+   self.fsm.vars.num_fallbacks = 0
 
    self.fsm.vars.target = tfm.transform6D(
       { x=self.fsm.vars.x, y=self.fsm.vars.y, z=self.fsm.vars.z, ori=self.fsm.vars.qori },
@@ -263,6 +268,7 @@ function INIT:init()
       self.fsm.vars.fallback_target_odom = tfm.transform6D(
          {x=self.fsm.vars.target.x, y=self.fsm.vars.target.y, z=self.fsm.vars.target.z, ori=self.fsm.vars.target.ori},
          self.fsm.vars.target_frame, "/odom")
+      self.fsm.vars.recover_target_frame = self.fsm.vars.target
    end
    
    printf("Target %s: %f, %f, %f, %f", self.fsm.vars.target_frame, self.fsm.vars.target.x,
@@ -328,5 +334,12 @@ function FALLBACK_TO_ODOM:init()
    
    self.fsm.vars.target = self.fsm.vars.fallback_target_odom
    self.fsm.vars.target_frame = "/odom"
+   self.fsm.vars.num_fallbacks = self.fsm.vars.num_fallbacks + 1
 end
 
+function RECOVER_TO_FRAME:init()
+   printf("motor_move: found original target frame %s again, using it", self.fsm.vars.frame)
+   
+   self.fsm.vars.target = self.fsm.vars.recover_target_frame
+   self.fsm.vars.target_frame = self.fsm.vars.frame
+end
