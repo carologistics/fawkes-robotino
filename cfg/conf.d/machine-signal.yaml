@@ -37,7 +37,7 @@ plugins/machine_signal:
   # Disable this to see the raw ROIs as they come out of the classifier
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
-  draw_processed_rois: true
+  draw_processed_rois: false
  
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
@@ -54,8 +54,8 @@ plugins/machine_signal:
   # ROIs higher/wider than this will have their height truncated and will be
   # re-classified. Currently used only when NOT in delivery
   # mode. Fixes disturbances from same-colored environment objects.
-  roi_max_height: 108
-  roi_max_width: 108
+  roi_max_height: 90
+  roi_max_width: 90
 
   # Maximum distance in pixels a signal is allowed to jump between frames
   # Increase this if you want to try and detect signals while moving.
@@ -79,30 +79,31 @@ plugins/machine_signal:
   cam_frame: !frame cam_signal
 
   red_on:
-    visualize: false
+    visualize: true
     reference_color:   [0xff, 0, 0x0,
                         0xe0, 0, 0x40,
                         0xff, 0x7c, 0xb0,
                         0xff, 0xa0, 0xb0,
                         0xff, 0xe0, 0xe0,
                         0xff, 0xf0, 0xf0]
-    chroma_thresh:     [40, 30, 20, 15, 10, 10]
+    chroma_thresh:     [40, 30, 20, 15, 60, 60]
     saturation_thresh: [30, 40, 35, 20, 10, 10]
     luma_thresh:       [240, 200, 200, 240, 200, 200]
     min_points: 28
     basic_roi_size: 10
-    neighborhood_min_match: 8
+    neighborhood_min_match: 7
     scangrid_x_offset: 2
     scangrid_y_offset: 2
 
   red_off:
-    visualize: true
+    visualize: false
     reference_color:   [0x30, 0x0, 0,
                         0x20, 0x2, 0x2,
-                        0x30, 0x14, 0x19]
-    chroma_thresh:     [20, 8, 30]
-    saturation_thresh: [20, 10, 15]
-    luma_thresh:       [220, 180, 220]
+                        0x30, 0x14, 0x19,
+                        0x23, 0xc, 0]
+    chroma_thresh:     [20, 12, 30, 15]
+    saturation_thresh: [20, 10, 15, 10]
+    luma_thresh:       [220, 210, 220, 233]
     min_points: 40
     basic_roi_size: 10
     neighborhood_min_match: 6
@@ -128,12 +129,14 @@ plugins/machine_signal:
     visualize: true
     reference_color:   [
                         0x20, 0x35, 0x0,
-                        0x1a, 0x55, 0x0,
+                        0x10, 0x25, 0x0,
                         0x0a, 0x1b, 0,
-                        0,    0x16, 2]
-    chroma_thresh:     [15, 15, 15, 25]
-    saturation_thresh: [15, 20, 7, 8]
-    luma_thresh:       [200, 200, 180, 190]
+                        0,    0x16, 2,
+                        0x14, 0x18, 4,
+                        0x27, 0x1b, 0xd]
+    chroma_thresh:     [12, 12, 12, 25, 10, 20]
+    saturation_thresh: [8, 8, 7, 8, 6, 8]
+    luma_thresh:       [200, 200, 180, 190, 190, 230]
     min_points: 40
     basic_roi_size: 10
     neighborhood_min_match: 9
@@ -151,7 +154,7 @@ plugins/machine_signal:
     neighborhood_min_match: 5
 
   bright_light:
-    min_brightness: 140
+    min_brightness: 175
     min_points: 9
     neighborhood_min_match: 2
     min_area_cover: 0.1
