@@ -156,6 +156,8 @@ ArduinoComThread::loop()
             arduino_if->msgq_pop();
         }
 
+        joystick_if_->read();
+
         if (set_acceleration_pending_) {
             ArduinoComMessage req;
             req.add_command(ArduinoComMessage::CMD_SET_ACCEL);
@@ -188,7 +190,28 @@ ArduinoComThread::loop()
             send_and_recv(req);
             init_pos_pending_ = false;
             read_pending_ = true;
+        } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_14 &&
+                   arduino_if->is_final() && !init_pos_pending_) {
+            ArduinoComMessage req;
+            req.add_command(ArduinoComMessage::CMD_STEP_UP);
+            req.set_number(2 * ArduinoComMessage::NUM_STEPS_PER_MM);
+            msecs_to_wait = ((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
+            logger->log_debug(name(), "sending: %u", 2 * ArduinoComMessage::NUM_STEPS_PER_MM);
+            send_and_recv(req);
+            arduino_if->set_final(false);
+            read_pending_ = true;
+        } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_15 &&
+                   arduino_if->is_final() && !init_pos_pending_) {
+            ArduinoComMessage req;
+            req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
+            req.set_number(2 * ArduinoComMessage::NUM_STEPS_PER_MM);
+            msecs_to_wait = ((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
+            logger->log_debug(name(), "sending: %u", 2 * ArduinoComMessage::NUM_STEPS_PER_MM);
+            send_and_recv(req);
+            arduino_if->set_final(false);
+            read_pending_ = true;
         }
+
 
         if (read_pending_ || z_movement_pending) {
             read_packet();
