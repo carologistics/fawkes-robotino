@@ -92,6 +92,7 @@ nodes:
       - only-copy-properties
       - tag_input: 1
       - tag_output: 2
+      - output_offset_x: -0.003
   - !unconnected
     name: C-CS2
     pos: [0, 0]
@@ -99,8 +100,8 @@ nodes:
       - only-copy-properties
       - tag_input: 17
       - tag_output: 18
-      - input_offset_x: 0.01
-      - output_offset_x: 0.02
+      - input_offset_x: 0.0
+      - output_offset_x: 0.0
   - !unconnected
     name: C-RS1
     pos: [0, 0]
@@ -108,6 +109,7 @@ nodes:
       - only-copy-properties
       - tag_input: 33
       - tag_output: 34
+      - input_offset_y: 0.02
   - !unconnected
     name: C-RS2
     pos: [0, 0]
@@ -115,8 +117,9 @@ nodes:
       - only-copy-properties
       - tag_input: 177
       - tag_output: 178
-      - input_offset_x: 0.01
-      - output_offset_x: -0.02
+      - input_offset_x: -0.01
+      - input_offset_y: 0.02
+      - output_offset_x: 0.005
   - !unconnected
     name: C-BS
     pos: [0, 0]
@@ -124,7 +127,7 @@ nodes:
       - only-copy-properties
       - tag_input: 65
       - tag_output: 66
-      - input_offset_x: 0.01
+      - output_offset_x: -0.015 #the gripper should be 2mm higher in z
   - !unconnected
     name: C-DS
     pos: [0, 0]
@@ -132,7 +135,7 @@ nodes:
       - only-copy-properties
       - tag_input: 81
       - tag_output: 82
-      - input_offset_x: -0.02
+      - input_offset_x: 0.02
 #Magenta
   - !unconnected
     name: M-CS1
