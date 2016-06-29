@@ -53,6 +53,10 @@ START_POS={-MPS_WIDTH/2-START_DIST_TO_MPS,0.,0.}
 -- Variables
 local tfm = require("tf_module")
 
+--Constants
+local MACHINE = "C-CS1"
+
+
 function int_div(a,b)
    return (a-a%b)/b
 end
@@ -108,7 +112,9 @@ fsm:define_states{ export_to=_M,
    {"DRIVE_CORNER", SkillJumpState, skills={{goto}}, final_to="CHECK_FOR_LASERLINE", fail_to="FAILED"},
    {"LOWER_ACCURACY", SkillJumpState, skills={{goto}}, final_to="CHECK_FOR_LASERLINE", fail_to="FAILED"},
    {"CHECK_FOR_LASERLINE", SkillJumpState, skills={{tagless_mps_align}}, final_to="GET_PUCK", fail_to="DRIVE_CORNER"},
-   {"GET_PUCK", SkillJumpState, skills={{shelf_find_pick_put}}, final_to="PUT_PUCK", fail_to="DRIVE_TO_OTHER_SIDE"},
+   {"GET_PUCK", SkillJumpState, skills={{shelf_find_pick_put}}, final_to="INSTRUCT_MACHINE", fail_to="DRIVE_TO_OTHER_SIDE"},
+   {"INSTRUCT_MACHINE", JumpState},
+   {"KILLALL", JumpState},
    {"PUT_PUCK", SkillJumpState, skills={{product_put}}, final_to="DRIVE_TO_OUTPUT", fail_to="FAILED"},
    {"DRIVE_TO_OUTPUT", SkillJumpState, skills={{goto}}, final_to="ALIGN_LASERLINE", fail_to="FAILED"},
    {"ALIGN_LASERLINE", SkillJumpState, skills={{tagless_mps_align}}, final_to="ALIGN_CONVEYOR", fail_to="FAILED"},
@@ -122,11 +128,15 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond=true, desc="zoneID is not between 1 and 24"},
    {"DRIVE_CORNER", "LOWER_ACCURACY", timeout=30},
    {"LOWER_ACCURACY", "DRIVE_CORNER", timeout=30},
+   {"INSTRUCT_MACHINE", "KILLALL", timeout=3},
+   {"KILLALL", "PUT_PUCK", cond=true},
 }
 
 function INIT:init()
+   self.fsm.vars.machine = self.fsm.vars.machine or MACHINE
    self.fsm.vars.poi_idx = 0
    self.fsm.vars.data_taken = 0
+   os.execute("../../llsf-refbox/bin/rcll-set-machine-state " .. self.fsm.vars.machine .. "  RESET &")
 end
 
 function DRIVE_TO_START:init()
@@ -180,6 +190,14 @@ function GET_PUCK:init()
    local mps_pose = transform_pose({0.,0.,0.},START_POS)
    self.fsm.vars.mps_pose = tfm.transform({x=mps_pose[1], y=mps_pose[2], ori=mps_pose[3]}, "/base_link", "/map")
    self.fsm.vars.mps_pose = {self.fsm.vars.mps_pose.x,self.fsm.vars.mps_pose.y,self.fsm.vars.mps_pose.ori}
+end
+
+function INSTRUCT_MACHINE:init()
+   os.execute("../../llsf-refbox/bin/rcll-prepare-machine Carologistics " .. self.fsm.vars.machine .. "  MOUNT_CAP &")
+end
+
+function KILLALL:init()
+   os.execute("killall -9 rcll-prepare-machine")
 end
 
 function DRIVE_TO_OUTPUT:init()
