@@ -6,7 +6,7 @@ html, body {
 }
 
 .layout_container{
-    border: 3px dotted #73AD21;
+    /*border: 3px dotted #73AD21;*/
     margin : 6px;
     width : 83% ;
     position: absolute;
@@ -139,19 +139,19 @@ div[id^="skills__"] p.done span.FAILED
 .products_cap{
     
 	width: 50px;
-    height: 10px;
+    height: 5px;
 }
 
 .products_ring{
     
 	width: 50px;
-    height: 20px;
+    height: 12px;
 }
 
 .products_base{
     
 	width: 50px;
-    height: 30px;
+    height: 17px;
 }
 
 .part_processing{
@@ -168,6 +168,18 @@ div[id^="skills__"] p.done span.FAILED
 .monitor
 {
 
+}
+.header
+{
+    border: 3px dashed #73AD21;
+    min-height: 10px;
+    position: relative;
+
+}
+
+.footer{
+   bottom: 0px;
+   position: absolute;
 }
 
 .mps.monitor{
@@ -187,17 +199,73 @@ div[id^="skills__"] p.done span.FAILED
     margin : 6px;
     display:block;
     height: 15.3% ;
+    position:  relative;
 }
 
 .row_element{
     display: block;
-    border : 3px ; 
+    border : 3px ;
+    margin : 6px; 
     position: relative;
 }
 
 .col_element{
-    display: inline-block;
-    border :3px ;
-    width:  50% ; /*only allow 2 of them on the same row*/
-    position: relative ;
+   display: inline-block;
+    /*only allow 2 of them on the same row*/
+    width:  45% ;
+      /*border :3px ;*/
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.caps_on_shelf{
+    min-height: auto;
+    min-width: auto;
+    right: 0%;
+    
+}
+.mps_puck{
+    min-height: 20px;
+    width: 10px; 
+}
+
+.mps_exploration{
+    right: 100%;
+}
+
+
+.selected_color{
+    border: 6px solid #000000;    
+}
+
+img.done{
+    content:url("img/check.png");
+    width  : 25px ;
+    height : 25px ;
+}
+
+img.not_done{
+    content:url("img/not_check.png");
+    width  : 25px ;
+    height : 25px ;
+}
+
+
+img.loaded{
+    content:url("img/loaded.png");
+    width  : 25px ;
+    height : 25px ;
+    right : 0px;
+}
+
+img.not_loaded{
+    content:url("img/not_loaded.png");
+    width  : 25px ;
+    height : 25px ;
+    right : 0px;
+}
+
+
+/*
+
 }

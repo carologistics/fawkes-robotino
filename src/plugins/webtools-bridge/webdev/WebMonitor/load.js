@@ -2,22 +2,21 @@
 var product_facts;// to hold the updated json contaning the "product" facts
 var order_facts;// to hold the updated json contaning the "order" facts
 
-window.throttle_rate = 5000; 
-
+window.throttle_rate = 5000
+var remote = true;
 
 var __robots = [];
+
 //__robots();
 // function __robots(){
 //   var R_1;
-//   var R_2; 
+//   var R_2;
 //   var R_3;
 // };//To  dynamicly store conncetion information for differnt robots
-
-var ros ; 
+var ros ;
 var ros_2;
-var ros_3 ; 
 
-var remote = false; 
+var ros_3 ;
 
 var intialiazed_ = false;
 //var exploration_results_wedgit  ;
@@ -35,6 +34,12 @@ function connect() {
   //  __robots.push ( { name: "R 1"  , connection : r1_con , alive: false } ) ;  
   //  __robots.push ( { name: "R 2"  , connection : r2_con , alive: false } ) ;
   // __robots.push ( { name: "R 3"  , connection : r3_con , alive: false } ) ;
+
+    var marker_connection= new ROSLIB.Ros({ url : 'ws://localhost:9090' });    
+    var robot_info = { name: "marker"  , connection : marker_connection , alive: false }  ;
+    __robots.push (  robot_info ) ;  
+
+
 
   if(remote){
  
@@ -95,41 +100,47 @@ function connect() {
 
 
   r1_con.on('connection', function() {
-    var robot_info = { name: "R1"  , connection : r1_con , alive: false }  ;
+    var robot_info = { name: "R1"  , connection : r1_con , alive: true }  ;
     __robots.push (  robot_info ) ;  
     load( robot_info );
   });
 
  r2_con.on('connection', function() {
-  var robot_info = { name: "R2"  , connection : r2_con , alive: false } ;
+  var robot_info = { name: "R2"  , connection : r2_con , alive: true} ;
    __robots.push ( robot_info  ) ;
   load( robot_info );
   });
  
 
   r3_con.on('connection', function() {
-    var robot_info = { name: "R3"  , connection : r3_con , alive: false } ;
+    var robot_info = { name: "R3"  , connection : r3_con , alive: true } ;
     __robots.push ( robot_info ) ;
     load( robot_info );
   });
 }
 
-window.  $layout_container = $("<div> <div>") . addClass ("layout_container"); 
+window . $layout_container = $("<div> <div>") . addClass ("layout_container"); 
 window . $layout_side = $("<div> <div>") . addClass ("layout_side") ;
+window . $production = $("<div> </div>"). addClass ("wedgit").addClass("production");
+
 
 function init(){
   if ( intialiazed_ ) { return ; }
-  intialiazed_ = true;
+    intialiazed_ = true;
 
-  $("body").append(window. $layout_container) ;
-  $("body").append(window. $layout_side) ;
-  
-  //exploration_results_wedgit = new exploration_results ( window. $layout_container ) ;
-  map = new Map();
-  mps_monitor = new MpsMonitor ( ) ;
-  simple_monitor();
-  products();
-  orders();
+    $("body").append(window. $layout_container) ;
+    $("body").append(window. $layout_side) ;
+
+
+    //exploration_results_wedgit = new exploration_results ( window. $layout_container ) ;
+    map = new Map();
+    mps_monitor = new MpsMonitor ( ) ;
+    // simple_monitor();
+
+    window. $production.appendTo(window. $layout_side) ;
+
+    orders();
+    products();
 
 }
 
@@ -139,7 +150,8 @@ function load( robot_info ){
 
  // exploration_results_wedgit . visualize ( robot_info );
   mps_monitor                . visualize ( robot_info );
-  map                        . visualize_marker (robot_info);
+  map                        . visualize_marker (robot_info , __robots[0] );
+  // map                        . visualize_marker (robot_info , robot_info );
   
   if(robot_info . name == "R1"){
     map                        . visualize_map (robot_info);

@@ -1,6 +1,5 @@
 
-
-//A simple monitor that allowes live subsscriptions (clips, bb, Ros) Topics. Showes a textaul representation of the topics lively updated. 
+//A simple monitor that allowes live subsscriptions (clips, bb, Ros) Topics. Showes a textaul representation of the topics lively updated.
 function simple_monitor(){
 
 	var div_ids=0;// index to be used to make unique ids
@@ -63,12 +62,12 @@ function simple_monitor(){
 // 	var destination_bridge_name= "clips";
 // 	var topic_name= "product";
 // 	var wedgit_id= 	"products_wedgit";
-	
+
 // 	window.$layout_container.append("<div id="+wedgit_id+"  class=wedgit>  </div>");//the wedgit container
-	
+
 // 	$(document).ready(function()
 // 	{
-//     	var prefiexed_topic_name = destination_bridge_name +"/" + topic_name ; 
+//     	var prefiexed_topic_name = destination_bridge_name +"/" + topic_name ;
 
 //     	var listener = new ROSLIB.Topic({
 // 		    ros : ros,
@@ -76,11 +75,11 @@ function simple_monitor(){
 // 		    messageType : 'mm',
 // 		    throttle_rate:1000,
 // 	  	});
-// 	  	listener.subscribe(function(message) 
+// 	  	listener.subscribe(function(message)
 // 	  	{
 // 	  		$("#"+wedgit_id).empty();// clear the div
 
-// 	  		for (var key in message)//present the content in the div 
+// 	  		for (var key in message)//present the content in the div
 // 	  		{
 // 	  			if(message[key].constructor === Array)
 // 	  			{
@@ -89,21 +88,21 @@ function simple_monitor(){
 // 	  				{
 // 	  					var $product_div=$("<div> </div>");
 // 	  					$product_div.addClass("products").attr('id',"product_"+message[key][fact].id);
-		  				
+
 // 		  				var base_color = message[key][fact].base[0];
 // 		  				$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
-		  				
+
 // 		  				for( var ring_index in message[key][fact].rings )
 // 		  				{
 // 		  					var ring_color = message[key][fact].rings[ring_index];
 // 		  					$product_div.prepend("<div class=products_ring style= background-color:"+ring_color+"> </div>");
 // 		  				}
-		  				
+
 // 		  				var cap_color = message[key][fact].cap[0];
 // 		  				$product_div.prepend("<div class=products_cap style= background-color:"+cap_color+"> </div>");
 
 
-		  				
+
 // 		  				$("#"+wedgit_id).append($product_div); //div will hold this product
 // 	  				}
 // 	  			}
@@ -113,17 +112,20 @@ function simple_monitor(){
 // }
 
 
+
 function products()
 {
 	var destination_bridge_name= "clips";
 	var product_topic_name= "product";
 	var wedgit_id= 	"products_wedgit";
+	var $wedgit_div__= $("<div>  </div>").addClass("col_element").attr('id',wedgit_id);// div contaning the wedgit
 
-	var $wedgit_div= $("<div>  </div>").addClass("widget").attr('id',wedgit_id);// div contaning the wedgit
+	// window.$layout_container.append($wedgit_div);//the wedgit container
+	window.$production.append($wedgit_div__);//the wedgit container
 
 
-	window.$layout_container.append($wedgit_div);//the wedgit container
-	
+
+
 
 	$(document).ready(function()
 	{
@@ -134,7 +136,7 @@ function products()
 		    throttle_rate:window.throttle_rate,
 	  	});
 
-	  	product_facts_listener.subscribe(function(message) 
+	  	product_facts_listener.subscribe(function(message)
 	  	{
 	  		product_facts=message;
 	  		$("#"+wedgit_id).empty();// clear the div
@@ -147,13 +149,13 @@ function products()
 
 					if (JSON.parse(product_facts.product[product]["product-id"]) !=0 )//A product that describes a production process
 					{
-						
-						var related_order; 
+
+						var related_order;
 						for( var product_index2 in product_facts.product)
 						{
 							if (JSON.parse(product_facts.product[product_index2].id) == JSON.parse(product_facts.product[product]["product-id"]) )
 			  				{
-			  					related_order = product_facts.product[product_index2];				
+			  					related_order = product_facts.product[product_index2];
 			  				}
 						}
 
@@ -161,15 +163,15 @@ function products()
 
 						var $product_div=$("#product_"+product_facts.product[product]["product-id"]).clone();//Make a similare DIV
 						$product_div.attr('id',"product_"+product_facts.product[product].id);
-						
+
 						$product_div.children().addClass("part_processing");//set all the part to still processing
 
 						if (product_facts.product[product].base[0] == related_order.base[0] )
 						{
 							$product_div.children(".products_base").removeClass("part_processing").addClass("part_complete");
 						}
-						 
-						
+
+
 						for( var ring_index in product_facts.product[product].rings )
 						{
 							if (product_facts.product[product].rings[ring_index] == related_order.rings[ring_index])
@@ -177,39 +179,40 @@ function products()
 						 		$product_div.children(".products_ring."+ring_index).removeClass("part_processing").addClass("part_complete");
 							}
 						}
-						
+
 						if (product_facts.product[product].cap[0] == related_order.cap[0])
 						{
 							$product_div.children(".products_cap").removeClass("part_processing").addClass("part_complete");
 						}
 
-						$("#"+wedgit_id).append($product_div); //div will hold this product	  				
+						$("#"+wedgit_id).append($product_div); //div will hold this product
 
 					}
-					
+
 				}
 	  		}
 	  	});
 	});
-
 }
 
 
 function orders(){
+
 
 	var destination_bridge_name= "clips";
 	var order_topic_name= "order";
 	var product_topic_name= "product";
 	var wedgit_id= 	"orders_wedgit";
 
-	var $wedgit_div= $("<div>  </div>").addClass("widget").attr('id',wedgit_id);// div contaning the wedgit
+	var $wedgit_div= $("<div>  </div>").addClass("col_element").attr('id',wedgit_id);// div contaning the wedgit
 
 
-	window.$layout_container.append($wedgit_div);//the wedgit container
+	window.$production.prepend($wedgit_div);//the wedgit container
 	
 
 	$(document).ready(function()
 	{
+		window.$layout_container.append(window.$production);
 
 	//to listen to the  incase the product widget not instialized
     // 	var product_facts_listener = new ROSLIB.Topic({
