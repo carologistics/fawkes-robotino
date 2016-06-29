@@ -29,6 +29,8 @@
 #include <aspect/logging.h>
 #include <aspect/blackboard.h>
 #include <aspect/configurable.h>
+#include <aspect/tf.h>
+#include <aspect/clock.h>
 
 #include <string>
 
@@ -41,8 +43,10 @@ class LaserFrontDistThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
   public fawkes::LoggingAspect,
+  public fawkes::ClockAspect,
   public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect
+  public fawkes::BlackBoardAspect,
+  public fawkes::TransformAspect
 {
 
  public:
@@ -61,6 +65,7 @@ class LaserFrontDistThread
   fawkes::Position3DInterface* if_result_;
   std::string frame_;
   int beams_used_;
+  std::string target_frame_;
 };
 
 

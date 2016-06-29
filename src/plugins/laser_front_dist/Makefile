@@ -16,15 +16,36 @@
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
+include $(BUILDCONFDIR)/tf/tf.mk
 
 LIBS_laser_front_dist = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                       fawkesblackboard fawkesinterface Laser360Interface \
-											Position3DInterface
+		    	Position3DInterface fawkestf
 
 OBJS_laser_front_dist = laser_front_dist_plugin.o laser_front_dist_thread.o
 
-PLUGINS_all = $(PLUGINDIR)/laser_front_dist.$(SOEXT)
 
 OBJS_all = $(OBJS_laser_front_dist)
+
+ifeq ($(HAVE_TF),1)
+  CFLAGS  += $(CFLAGS_TF)
+  LDFLAGS += $(LDFLAGS_TF)
+
+  PLUGINS_all = $(PLUGINDIR)/laser_front_dist.$(SOEXT)
+else
+
+  ifneq ($(HAVE_TF),1)
+    WARN_TARGETS += warning_tf
+  endif
+endif
+
+ifeq ($(OBJSSUBMAKE),1)
+all: $(WARN_TARGETS)
+.PHONY: warning_tf warning_gazebo warning_protobuf
+warning_tf:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting laser-front-dist Plugin$(TNORMAL) " \
+                         "(tf not available)"
+endif
+
 
 include $(BUILDSYSDIR)/base.mk

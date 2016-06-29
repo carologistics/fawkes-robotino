@@ -31,6 +31,7 @@ fawkes/bbsync:
         tfGripper: TransformInterface::/tf/GRIPPER AX12A
         tfOdom:    TransformInterface::/tf/Robotino Odometry
         tfAmcl:    TransformInterface::/tf/odom
+        tfLaserFrontDist:    TransformInterface::/tf/laser-front-dist
         motor-switch: SwitchInterface::Robotino Motor
         line1: LaserLineInterface::/laser-lines/1
         line2: LaserLineInterface::/laser-lines/2
