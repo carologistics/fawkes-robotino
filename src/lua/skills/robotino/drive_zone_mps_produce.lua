@@ -270,7 +270,7 @@ function ALIGN_CONVEYOR:init()
 end
 
 function ALIGN_CONVEYOR_2:init()
-   self.args["motor_move"] = {y = +Y_OFFSET_CONVEYOR, vel_trans = 0.2, tolerance = { x=0.002, y=0.002, ori=0.01 }}
+   self.args["motor_move"] = {y = Y_OFFSET_CONVEYOR, vel_trans = 0.2, tolerance = { x=0.002, y=0.002, ori=0.01 }}
 end
 
 function ALIGN_CONVEYOR_3:init()
@@ -282,4 +282,20 @@ function DRIVE_TO_OTHER_SIDE:init()
    self.args["goto"].x = outputpose[1]
    self.args["goto"].y = outputpose[2]
    self.args["goto"].ori = outputpose[3]
+end
+
+function PUT_PUCK:init()
+   self.args["product_put"].offset_x = 0.
+end
+
+function PUT_PUCK_2:init()
+   self.args["product_put"].offset_x = 0.
+end
+
+function RETRIEVE_PUCK:init()
+   self.args["product_pick"].offset_x = 0.
+end
+
+function RETRIEVE_PUCK_2:init()
+   self.args["product_pick"].offset_x = 0.
 end
