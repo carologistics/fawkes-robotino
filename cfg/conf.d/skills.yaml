@@ -7,4 +7,4 @@ skills:
   # The distance the robot has to drive after being aligned
   # in front of the mps
   align_distance_conveyor:
-    x: 0.3
+    x: 0.29
