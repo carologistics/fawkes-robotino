@@ -60,15 +60,15 @@ documentation      = [==[Move on a (kind of) straight line relative to the given
 -- Tunables
 local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
 local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.3 }
-local V_MIN =         { x=0.008, y=0.008, ori=0.05 }   -- below the motor won't even start
+local V_MIN =         { x=0.006, y=0.006, ori=0.02 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
 local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
 local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
 local MONITOR_LEN     = 15   -- STUCK monitor: Watch distance moved over this many loops
 local STUCK_MAX       = 120  -- STUCK timeout: Fail after being stuck for this many loops
-local STUCK_THRESHOLD = 0.7  -- STUCK threshold: Consider ourselves stuck if we moved less than
-                             --                  this factor times the current speed during the
+local STUCK_THRESHOLD = 0.8  -- STUCK threshold: Consider ourselves stuck if we moved less than
+                             --                  this factor times V_MIN speed during the
                              --                  last MONITOR_LEN loops
 
 -- Initialize as skill module
@@ -159,8 +159,8 @@ function set_speed(self)
                   for i = 1,MONITOR_LEN do
                      dist_sum = dist_sum + self.fsm.vars.moved_dist[i][k]
                   end
-                  -- printf("dist_sum: %f", dist_sum)
-                  if dist_sum < STUCK_THRESHOLD * v[k] then
+                  printf("dist_sum: %f", dist_sum)
+                  if dist_sum < STUCK_THRESHOLD * (V_MIN[k] + self.fsm.vars.tolerance_arg[k]) then
                      self.fsm.vars.stuck_count = self.fsm.vars.stuck_count + 1
                      v[k] = v[k] + self.fsm.vars.stuck_count * 0.5 * V_MIN[k]
                      printf("motor_move: STUCK #%d: increasing speed by %f.",
