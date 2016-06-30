@@ -158,7 +158,7 @@ plugins/colli:
 
     angular:
       # Dimensions of angular robot
-      width_x: 0.55
+      width_x: 0.6 #0.55
       width_y: 0.45
       # The Lasers offset from back/left, seen from behind left
       laser_offset_x_from_back: 0.405
