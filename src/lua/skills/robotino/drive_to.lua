@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "drive_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = { "ppgoto","global_motor_move" }
+depends_skills     = { "goto","global_motor_move" }
 depends_interfaces = { }
 
 documentation      = [==[Drive to point with colisoin avoidance and last part with global_motor_move
@@ -36,7 +36,7 @@ Parameters:
       x:            x coordinate to drive to (if place is not set)
       y:            y coordinate to drive to (if place is not set)
       ori:          alternativ orientation
-      just_ori:     if true => after ppgoto finished, global_motor_move is just called with ori (for exploration)
+      just_ori:     if true => after goto finished, global_motor_move is just called with ori (for exploration)
 ]==]
 
 -- Initialize as skill module
@@ -52,7 +52,7 @@ end
 fsm:define_states{ export_to=_M,
   closure={navgraph=navgraph, node_is_valid=node_is_valid},
   {"INIT",                     JumpState},
-  {"SKILL_PPGOTO",             SkillJumpState, skills={{ppgoto}},            final_to="TIMEOUT", fail_to="FORCE_SET_JUST_ORI"},
+  {"SKILL_PPGOTO",             SkillJumpState, skills={{goto}},            final_to="TIMEOUT", fail_to="FORCE_SET_JUST_ORI"},
   {"FORCE_SET_JUST_ORI",       JumpState},
   {"TIMEOUT",                  JumpState},
   {"SKILL_GLOBAL_MOTOR_MOVE",  SkillJumpState, skills={{global_motor_move}}, final_to="FINAL",   fail_to="FINAL"},
@@ -85,7 +85,7 @@ function INIT:init()
 end
 
 function SKILL_PPGOTO:init()
-	 self.args["ppgoto"] = {x = self.fsm.vars.x, y = self.fsm.vars.y, ori = self.fsm.vars.ori}
+	 self.args["goto"] = {x = self.fsm.vars.x, y = self.fsm.vars.y, ori = self.fsm.vars.ori}
 end
 
 function FORCE_SET_JUST_ORI:init()
