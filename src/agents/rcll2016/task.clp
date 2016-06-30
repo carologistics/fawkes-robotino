@@ -71,6 +71,8 @@
   (assert (state TASK-FAILED-WAITING)
           (timer (name wait-after-fail)))
   (modify ?task (state failed))
+  (printout t "Calling motor_move to stop current skill" crlf)
+  (skill-call motor_move x 0.0)
 )
 
 (defrule task-fail
