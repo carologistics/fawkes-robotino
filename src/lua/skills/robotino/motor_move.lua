@@ -59,12 +59,17 @@ documentation      = [==[Move on a (kind of) straight line relative to the given
 
 -- Tunables
 local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
-local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.6 }
+local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.3 }
 local V_MIN =         { x=0.008, y=0.008, ori=0.05 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
 local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
 local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
+local MONITOR_LEN     = 15   -- STUCK monitor: Watch distance moved over this many loops
+local STUCK_MAX       = 120  -- STUCK timeout: Fail after being stuck for this many loops
+local STUCK_THRESHOLD = 0.7  -- STUCK threshold: Consider ourselves stuck if we moved less than
+                             --                  this factor times the current speed during the
+                             --                  last MONITOR_LEN loops
 
 -- Initialize as skill module
 skillenv.skill_module(_M )
@@ -121,9 +126,16 @@ function set_speed(self)
 
       local a = { x=0, y=0, ori=0 }
 
+      self.fsm.vars.monitor_idx = (self.fsm.vars.monitor_idx % MONITOR_LEN) + 1
+      self.fsm.vars.moved_dist[self.fsm.vars.monitor_idx] = { x=0, y=0, ori=0 }
+
       for k, _ in pairs(dist_target) do
          -- Ignore z axis: no way to move up & down in /base_link!
          if k ~= "z" then
+            local delta_dist = math.abs(self.fsm.vars.last_dist_target[k] - scalar(dist_target[k]))
+            self.fsm.vars.moved_dist[self.fsm.vars.monitor_idx][k] = delta_dist
+            self.fsm.vars.last_dist_target[k] = scalar(dist_target[k])
+
             if math.abs(scalar(dist_target[k])) > self.fsm.vars.tolerance_arg[k] then
                if D_DECEL[k] > 0 then a[k] = V_MAX[k] / D_DECEL[k] end
 
@@ -141,6 +153,21 @@ function set_speed(self)
                   self.fsm.vars.vmax_arg[k],
                   math.max(V_MIN[k], math.min(V_MAX[k], v_acc, v_dec))
                )
+
+               if #self.fsm.vars.moved_dist == MONITOR_LEN then
+                  local dist_sum = 0
+                  for i = 1,MONITOR_LEN do
+                     dist_sum = dist_sum + self.fsm.vars.moved_dist[i][k]
+                  end
+                  -- printf("dist_sum: %f", dist_sum)
+                  if dist_sum < STUCK_THRESHOLD * v[k] then
+                     self.fsm.vars.stuck_count = self.fsm.vars.stuck_count + 1
+                     v[k] = v[k] + self.fsm.vars.stuck_count * 0.5 * V_MIN[k]
+                     printf("motor_move: STUCK #%d: increasing speed by %f.",
+                        self.fsm.vars.stuck_count,
+                        self.fsm.vars.stuck_count * V_MIN[k])
+                  end
+               end
 
                -- finally reverse if the target is behind us
                -- hopefully the deceleration function(dist_target[k])
@@ -193,7 +220,8 @@ function cam_frame_visible(frame)
 end
 
 fsm:define_states{ export_to=_M,
-   closure={motor=motor, navigator=navigator, pos3d_iface=pos3d_iface, cam_frame_visible=cam_frame_visible},
+   closure={motor=motor, navigator=navigator, pos3d_iface=pos3d_iface, cam_frame_visible=cam_frame_visible,
+      STUCK_MAX=STUCK_MAX},
    {"INIT", JumpState},
    {"DRIVE", JumpState},
    {"DRIVE_CAM", JumpState},
@@ -215,11 +243,13 @@ fsm:add_transitions{
    
    {"DRIVE", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
    {"DRIVE", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
+   {"DRIVE", "FAILED", cond="vars.stuck_count > STUCK_MAX", desc="STUCK"},
    {"DRIVE", "FINAL", cond=drive_done},
 
    {"DRIVE_CAM", "FALLBACK_TO_ODOM", cond="not cam_frame_visible(vars.frame)", desc="Lost frame"},
    {"DRIVE_CAM", "FALLBACK_TO_ODOM", cond="vars.tf_failed", desc="dist TF failed"},
    {"DRIVE_CAM", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
+   {"DRIVE_CAM", "FAILED", cond="vars.stuck_count > STUCK_MAX", desc="STUCK"},
    {"DRIVE_CAM", "FINAL", cond=drive_done},
 
    {"FALLBACK_TO_ODOM", "DRIVE", cond=true},
@@ -273,6 +303,11 @@ function INIT:init()
    self.fsm.vars.target = tfm.transform6D(
       { x=self.fsm.vars.x, y=self.fsm.vars.y, z=self.fsm.vars.z, ori=self.fsm.vars.qori },
       self.fsm.vars.arg_frame, self.fsm.vars.target_frame)
+   self.fsm.vars.last_dist_target = {
+      x = self.fsm.vars.target.x,
+      y = self.fsm.vars.target.y,
+      ori = scalar(self.fsm.vars.target.ori)
+   }
 
    if self.fsm.vars.frame then
       -- save target in odom for fallback
@@ -280,12 +315,21 @@ function INIT:init()
          {x=self.fsm.vars.target.x, y=self.fsm.vars.target.y, z=self.fsm.vars.target.z, ori=self.fsm.vars.target.ori},
          self.fsm.vars.target_frame, "/odom")
       self.fsm.vars.recover_target_frame = self.fsm.vars.target
+      self.fsm.vars.last_dist_target = {
+         x = self.fsm.vars.fallback_target_odom.x,
+         y = self.fsm.vars.fallback_target_odom.y,
+         ori = scalar(self.fsm.vars.fallback_target_odom.ori)
+      }
    end
-   
+
+   self.fsm.vars.monitor_idx = 0
+
    printf("Target %s: %f, %f, %f, %f", self.fsm.vars.target_frame, self.fsm.vars.target.x,
       self.fsm.vars.target.y, self.fsm.vars.target.z, fawkes.tf.get_yaw(self.fsm.vars.target.ori))
 
    self.fsm.vars.speed = { x=0, y=0, ori=0 }
+   self.fsm.vars.moved_dist = { }
+   self.fsm.vars.stuck_count = 0
 end
 
 function DRIVE:init()
