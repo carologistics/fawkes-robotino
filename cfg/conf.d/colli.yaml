@@ -158,7 +158,7 @@ plugins/colli:
 
     angular:
       # Dimensions of angular robot
-      width_x: 0.6 #0.55
+      width_x: 0.55
       width_y: 0.45
       # The Lasers offset from back/left, seen from behind left
       laser_offset_x_from_back: 0.405
@@ -175,7 +175,7 @@ plugins/colli:
       # Extension of the shape
       front: 0.1
       right: 0.05
-      back: 0.05
+      back: 0.025
       left: 0.05
 
 
@@ -198,7 +198,7 @@ plugins/colli:
       initial_size: 500
 
       # the max time difference of the laser reading history for the search in seconds
-      max_length: 9.0
+      max_length: 15.0
 
       # the min time difference of the laser reading history for the search in seconds
       min_length: 1.5
@@ -222,13 +222,13 @@ plugins/colli:
       # occupied cell
       occupied: 1000
       # cell near an obstacle
-      near: 4
+      near: 14
       # cell still relatively near on obstacle
-      mid: 3
+      mid: 12
       # cell further away from obstacle
-      far: 2
+      far: 11
       # free cell
-      free: 1
+      free: 10
 
   search:
     a_star:
@@ -239,4 +239,4 @@ plugins/colli:
     # the line search is executed after a-star and searches for a obstacle free line
     line:
       # this are the maximum allowed costs on this line
-      cost_max: 5
+      cost_max: 20
