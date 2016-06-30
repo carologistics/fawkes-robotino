@@ -101,11 +101,11 @@ plugins/colli:
     mode: "linear"
 
     # Translation acceleration/deceleration
-    trans_acc: 0.1
-    trans_dec: 0.1
+    trans_acc: 0.8
+    trans_dec: 0.8
     # Rotation acceleration/deceleration
-    rot_acc: 0.15
-    rot_dec: 0.15
+    rot_acc: 0.1
+    rot_dec: 0.1
 
   # Config values for emergency stopping
   emergency_stopping:
@@ -132,13 +132,13 @@ plugins/colli:
 
     normal:
       # Max translation/rotation velocities
-      max_trans: 0.8
-      max_rot: 1.4
+      max_trans: 0.6
+      max_rot: 1.
 
     escape:
       # Max translation/rotation velocities for escape-mode
       max_trans: 0.3
-      max_rot: 0.8
+      max_rot: 0.6
 
     # Modifies the values used to calculate when to start breaking to stop at the target
     stopping_adjustment:
@@ -198,7 +198,7 @@ plugins/colli:
       initial_size: 500
 
       # the max time difference of the laser reading history for the search in seconds
-      max_length: 15.0
+      max_length: 9.0
 
       # the min time difference of the laser reading history for the search in seconds
       min_length: 1.5
