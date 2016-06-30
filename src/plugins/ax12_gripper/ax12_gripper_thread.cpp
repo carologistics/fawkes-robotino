@@ -99,7 +99,10 @@ GripperAX12AThread::init()
     throw Exception("Left and/or right and/or z-servo not found: left: %i  right: %i, z: %i",
 		    left_servo_found, right_servo_found, z_servo_found);
   }
-  
+
+  joystick_if_ =
+    blackboard->open_for_reading<JoystickInterface>("Joystick", __cfg_ifid_joystick_.c_str());
+
   DynamixelServoInterface::SetSpeedMessage *vel_left = new DynamixelServoInterface::SetSpeedMessage((unsigned int) (__cfg_max_speed * 0x3ff));
   DynamixelServoInterface::SetSpeedMessage *vel_right = new DynamixelServoInterface::SetSpeedMessage((unsigned int) (__cfg_max_speed * 0x3ff));
   __servo_if_left->msgq_enqueue(vel_left);
@@ -253,7 +256,6 @@ GripperAX12AThread::loop()
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::TimedGotoMessage>()) {
         AX12GripperInterface::TimedGotoMessage *msg = __gripper_if->msgq_first(msg);
 
-        printf("timedgotomessage\n");
         goto_gripper_timed(msg->left(), msg->right(), msg->time_sec());
         __gripper_if->set_msgid(msg->id());
         __gripper_if->set_final(false);
@@ -273,8 +275,6 @@ GripperAX12AThread::loop()
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetVelocityMessage>()) {
         AX12GripperInterface::SetVelocityMessage *msg = __gripper_if->msgq_first(msg);
 
-        printf("set velocity message\n");
-
         if (msg->left_velocity() > __gripper_if->max_left_velocity()) {
           logger->log_warn(name(), "Desired left velocity %f too high, max is %f",
                            msg->left_velocity(), __gripper_if->max_left_velocity());
@@ -287,20 +287,17 @@ GripperAX12AThread::loop()
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::OpenMessage>()) {
         AX12GripperInterface::OpenMessage *msg = __gripper_if->msgq_first(msg);
-        printf("open left: %f, right: %f\n", __cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
         goto_gripper(__cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
         AX12GripperInterface::CloseMessage *msg = __gripper_if->msgq_first(msg);
 
-        printf("performing close\n");
         goto_gripper(__cfg_left_close_angle, __cfg_right_close_angle);
         // set_move_load_pending(true);
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseLoadMessage>()) {
         AX12GripperInterface::CloseLoadMessage *msg = __gripper_if->msgq_first(msg);
 
-        printf("performing close with load\n");
         goto_gripper_load(__cfg_left_close_load_angle, __cfg_right_close_load_angle);
         // set_move_load_pending(true);
 
@@ -340,6 +337,14 @@ GripperAX12AThread::loop()
       }
 
       __gripper_if->msgq_pop();
+    }
+
+    joystick_if_->read();
+
+    if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_13) {
+        goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
+    } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_12) {
+        goto_gripper(__cfg_left_close_angle, __cfg_right_close_angle);
     }
     __gripper_if->set_angle(get_opening_angle());
     __gripper_if->set_holds_puck(holds_puck());
@@ -637,6 +642,8 @@ void GripperAX12AThread::load_config()
   __cfg_load_for_holds_puck    = config->get_uint((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
   __cfg_angle_for_holds_puck   = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
   __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
+  __cfg_ifid_joystick_         = config->get_string(__gripper_cfg_prefix + "joystick_interface_id");
+
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());
