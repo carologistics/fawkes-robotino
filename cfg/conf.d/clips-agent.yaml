@@ -55,7 +55,7 @@ clips-agent:
     magenta-port: 4442
 
     team-name: Carologistics
-    crypto-key: randomkey
+    crypto-key: txzNX8AX
     cipher: "aes-128-cbc"
 
     #Timeouts used in the locking:
