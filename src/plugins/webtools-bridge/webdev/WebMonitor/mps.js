@@ -35,7 +35,7 @@ function init_mps(){
 	//------------------------------------------------------- Global
 	window.team = new TeamMetadata({
 		name 	: "Caro", 
-		color	: "CYAN"
+		color	: "MAGENTA"
 	});// make  sure you have the team data pretty early
 
 	// this naming is consistent with the naming in the clips facts (machine.. ) 
@@ -92,8 +92,8 @@ function MpsWedgit ( machine_name ,  $parent )  {
 
 
 	//=========Machine Title
-	$col =  $("<span> </span>" ) ;
-	$col.append ( "<b>" + unprefrixed_machine_name + "</b>" + "<sub>" + "N/A" + "</sub>" ).addClass("machine_name");
+	$col =  $("<span> </span>" ) .addClass("machine_name") ;
+	$col.append ( "<b>" + unprefrixed_machine_name + "</b>" + "<sub>" + "N/A" + "</sub>" );
 	$col. appendTo (this.$wedgit_div_.find(".header"));
 
 	//=================The Extra Machine information
@@ -230,14 +230,15 @@ function MpsWedgit ( machine_name ,  $parent )  {
 	
 		var $w_header; 
 		//==============Title	
-		$w_header = $( "<b> " + unprefrixed_machine_name	+ "</b>" + "<sub>" + machine_metadata_ . state 	+ "</sub>" );
-		that.$wedgit_div_ . find( "machine_name" )	.empty() .append ( $w_header );	
+		w_header =  "<b> " + unprefrixed_machine_name	+ "</b>" + "<sub>" + machine_metadata_ . state 	+ "</sub>" ;
+		that. $wedgit_div_ .find( ".machine_name" )	.empty() ;
+		that. $wedgit_div_ .find( ".machine_name" )	.append ( w_header );	
 
 
 		//==============Machine Info
 		if(unprefrixed_machine_name == "RS2" || unprefrixed_machine_name == "RS1")
 		{		
-			that.$wedgit_div_ . find (".available_colors") .empty();
+			that .$wedgit_div_ . find (".available_colors") .empty();
 			if( machine_metadata_ .hasOwnProperty("available_colors") && machine_metadata_ . available_colors.length > 0 )
 			{
 				for ( i in machine_metadata_.available_colors) 

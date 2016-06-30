@@ -149,7 +149,10 @@ function load( robot_info ){
   init();
 
  // exploration_results_wedgit . visualize ( robot_info );
+ if(robot_info . name == "R3"){
+  
   mps_monitor                . visualize ( robot_info );
+ }
   map                        . visualize_marker (robot_info , __robots[0] );
   // map                        . visualize_marker (robot_info , robot_info );
   
