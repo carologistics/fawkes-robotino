@@ -6,7 +6,7 @@ function Map() {
 
   $(document) . ready (function()
   {   
-    var $map = $("<div>  </div>") .addClass("wedgit")  .attr("id" , "map") ;
+    var $map = $("<div>  </div>") .addClass("wedgit") .addClass("container") .attr("id" , "map") ;
     $(window.$layout_container).append($map) ;//the wedgit container
 
   });
@@ -27,7 +27,7 @@ function Map() {
 
 
 
-    this. visualize_marker =  function (  tf_robot_info ,  marker ) {
+    this. visualize_marker =  function (  tf_robot_info  ,  marker_connection_on ) {
 
         //====================================== TFClinet for R1
          // Setup a client to listen to TF of R_1.
@@ -41,7 +41,7 @@ function Map() {
 
         //=======Marker arrow shape to Show robot frame /base_link of TF
         var markerClient= new ROS3D.MarkerClient({
-          ros : marker.connection   ,
+          ros : marker_connection_on.connection   ,
           tfClient : tfClient,
           topic : '/arrow_marker_'+ tf_robot_info.name ,
           rootObject : that. viewer.scene

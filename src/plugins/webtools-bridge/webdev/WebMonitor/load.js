@@ -3,7 +3,7 @@ var product_facts;// to hold the updated json contaning the "product" facts
 var order_facts;// to hold the updated json contaning the "order" facts
 
 window.throttle_rate = 5000
-var remote = true;
+var remote = false;
 
 var __robots = [];
 
