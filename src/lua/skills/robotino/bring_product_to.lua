@@ -83,7 +83,7 @@ function INIT:init()
 end
 
 function DRIVE_TO:init()
-   if self.fsm.vars.side == "output" then
+   if self.fsm.vars.side == "output" or self.fsm.vars.side == "OUTPUT" then
       self.args["drive_to"] = {place = self.fsm.vars.place .. "-O"}
    else
       self.args["drive_to"] = {place = self.fsm.vars.place .. "-I"}
@@ -94,7 +94,7 @@ function MPS_ALIGN:init()
    self.fsm.vars.counter = self.fsm.vars.counter + 1
    -- align in front of the conveyor belt
    self.args["mps_align"] = {x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")}
-   if self.fsm.vars.side == "output" then
+   if self.fsm.vars.side == "output" or self.fsm.vars.side == "OUTPUT"  then
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_y") then
          self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_y")
       else
@@ -136,7 +136,7 @@ function RE_MPS_ALIGN:init()
 end
 
 function SKILL_PRODUCT_PUT:init()
-   if self.fsm.vars.side == "output" then
+   if self.fsm.vars.side == "output" or self.fsm.vars.side == "OUTPUT" then
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
          self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
       else
