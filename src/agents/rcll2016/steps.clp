@@ -148,20 +148,21 @@
   (team-color ?team)
   (machine (mtype BS) (name ?mps) (state IDLE))
   ?bs <- (base-station (name ?mps) (active-side ?side))
+  ?bsc <- (bs-side-changed)
   =>
-  (retract ?state)
+  (retract ?state ?bsc)
   (modify ?step (state running))
   (if (eq ?side INPUT) then
-    (bind ?res (sym-cat ?mps "-I"))
-    (synced-modify ?bs active-side OUTPUT)
-  else
     (bind ?res (sym-cat ?mps "-O"))
-    (synced-modify ?bs active-side INPUT)
+    (bind ?out-side OUTPUT)
+  else
+    (bind ?res (sym-cat ?mps "-I"))
+    (bind ?out-side INPUT)
   )
   (assert (state WAIT-FOR-LOCK)
-    (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?side)) (target ?mps))
+    (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?out-side)) (target ?mps))
     (wait-for-lock (priority ?p) (res ?res))
-    (mps-instruction (machine ?mps) (base-color ?color) (side ?side) (lock ?res))
+    (mps-instruction (machine ?mps) (base-color ?color) (side ?out-side) (lock ?res))
   )
 )
 

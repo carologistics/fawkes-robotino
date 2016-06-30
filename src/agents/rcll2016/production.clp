@@ -400,7 +400,7 @@
   (product
     (id ?produced-id)
     (product-id ?product-id)
-    (rings $?assembled&:(> (length$ ?r) (length ?assembled)))
+    (rings $?assembled&:(> (length$ ?r) (length$ ?assembled)))
   )
   (ring (color ?ring-color&:(eq (nth$ (+ (length$ ?assembled) 1) ?r) ?ring-color)) (req-bases ?rb))
   (machine (mtype RS) (incoming $?i&~:(member$ PROD_RING ?i))
@@ -471,7 +471,7 @@
   (product
     (id ?produced-id)
     (product-id ?product-id)
-    (rings $?assembled&:(> (length$ ?r) (length ?assembled)))
+    (rings $?assembled&:(> (length$ ?r) (length$ ?assembled)))
   )
   (ring (color ?ring-color&:(eq (nth$ (+ (length$ ?assembled) 1) ?r) ?ring-color)) (req-bases ?rb))
   (machine (mtype RS) (name ?rs) (team ?team-color) (produced-id 0|?produced-id)
@@ -488,7 +488,7 @@
     (state READY-AT-OUTPUT)
   )
   (not (and (task (name add-additional-ring) (state rejected) (id ?rej-id))
-            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 4))) (machine ?rs))))
+            (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 5))) (machine ?rs))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING*))))
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))

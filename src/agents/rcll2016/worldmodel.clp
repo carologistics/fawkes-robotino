@@ -52,6 +52,21 @@
   (retract ?pb-msg)
 )
 
+(defrule wm-drive-to-bs-started
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-EXECUTION)
+  (skill-to-execute (skill drive_to) (state running) (target ?mps))
+  ?bs <- (base-station (name ?mps) (active-side ?side))
+  (not (bs-side-changed))
+  =>
+  (if (eq ?side INPUT) then
+    (synced-modify ?bs active-side OUTPUT)
+  else
+    (synced-modify ?bs active-side INPUT)
+  )
+  (assert (bs-side-changed))
+)
+
 (defrule wm-get-cap-from-shelf-final
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
