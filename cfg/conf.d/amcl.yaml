@@ -146,7 +146,7 @@ plugins/amcl:
     # Image file containing the map, must be a PNG file
     # If path starts with slash (/) it's considered to be absolute,
     # otherwise relative to the config directory
-    map_file: maps/llsf-map-2015-colli-wall.png
+    map_file: maps/llsf-map-2016-colli-wall.png
     # Resolution of the map; meters per pixel
     resolution: 0.05
 
