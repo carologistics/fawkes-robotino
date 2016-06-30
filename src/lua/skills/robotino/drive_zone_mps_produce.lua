@@ -26,7 +26,9 @@ module(..., skillenv.module_init)
 name               = "drive_zone_mps_produce"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"goto", "tagless_mps_align", "shelf_find_pick_put", "product_put", "product_pick", "motor_move"}
-depends_interfaces = {}
+depends_interfaces = {
+   {v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"}
+}
 
 documentation      = [==[ drive_zone_mps_recognize
 
@@ -59,6 +61,11 @@ local MACHINE = "C-CS1"
 
 function int_div(a,b)
    return (a-a%b)/b
+end
+
+function speak(text)
+   speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(text))
+   printf(text)
 end
 
 -- the two arguments are both of the form (x,y,ori) and assumed relative in the same coordinate system
@@ -107,6 +114,7 @@ function calc_xy_coordinates(self)
 end
 
 fsm:define_states{ export_to=_M,
+   closure={speechsynth=speechsynth},
    {"INIT", JumpState},
    {"INSTRUCT_MACHINE_RETRIEVE", JumpState},
    {"KILLALL_RETRIEVE", JumpState},
@@ -141,10 +149,11 @@ fsm:add_transitions{
    {"DRIVE_CORNER", "LOWER_ACCURACY", timeout=30},
    {"LOWER_ACCURACY", "DRIVE_CORNER", timeout=30},
    {"INSTRUCT_MACHINE_MOUNT", "KILLALL_MOUNT", timeout=3},
-   {"KILLALL_MOUNT", "DRIVE_TO_OTHER_SIDE", cond=true},
+   {"KILLALL_MOUNT", "DRIVE_TO_INPUT", cond=true},
 }
 
 function INIT:init()
+   speak("Hello!")
    self.fsm.vars.machine = self.fsm.vars.machine or MACHINE
    self.fsm.vars.poi_idx = 0
    self.fsm.vars.data_taken = 0
@@ -158,6 +167,7 @@ function DRIVE_TO_START:init()
 end
 
 function DRIVE_CORNER:init()
+   speak("I drive to a corner!")
    self.fsm.vars.corner = (self.fsm.vars.corner+1)%4
    self.args["goto"].ori = math.pi/4 + self.fsm.vars.corner*math.pi/2
    self.fsm.vars.accuracy = 0.2
@@ -191,6 +201,7 @@ function LOWER_ACCURACY:init()
 end
 
 function CHECK_FOR_LASERLINE:init()
+   speak("I am looking for a mps!")
    self.args["tagless_mps_align"].ori = math.pi/2
    self.args["tagless_mps_align"].x1 = self.fsm.vars.x1
    self.args["tagless_mps_align"].x2 = self.fsm.vars.x2
