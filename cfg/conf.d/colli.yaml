@@ -198,7 +198,7 @@ plugins/colli:
       initial_size: 500
 
       # the max time difference of the laser reading history for the search in seconds
-      max_length: 15.0
+      max_length: 9.0
 
       # the min time difference of the laser reading history for the search in seconds
       min_length: 1.5
