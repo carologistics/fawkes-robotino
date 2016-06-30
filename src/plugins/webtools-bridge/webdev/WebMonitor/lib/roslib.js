@@ -119,7 +119,8 @@ function ActionClient(options) {
     ros : this.ros,
     name : this.serverName + '/feedback',
     messageType : this.actionName + 'Feedback',
-    throttle_rate : 5000
+    throttle_rate :1000 , 
+    queue_length : 5
   });
 
   var statusListener = new Topic({

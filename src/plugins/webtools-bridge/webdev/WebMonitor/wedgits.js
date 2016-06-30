@@ -115,179 +115,188 @@ function simple_monitor(){
 
 function products()
 {
-	var destination_bridge_name= "clips";
-	var product_topic_name= "product";
-	var wedgit_id= 	"products_wedgit";
-	var $wedgit_div__= $("<div>  </div>").addClass("col_element").attr('id',wedgit_id);// div contaning the wedgit
+	var that = this; 
+
+	this.  destination_bridge_name= "clips";
+	this.  product_topic_name= "product";
+	this.  wedgit_id= 	"products_wedgit";
+	this.  $wedgit_div__= $("<div>  </div>").addClass("col_element").attr('id',this.wedgit_id);// div contaning the wedgit
 
 	// window.$layout_container.append($wedgit_div);//the wedgit container
-	window.$production.append($wedgit_div__);//the wedgit container
+	window.$production.append(this.$wedgit_div__);//the wedgit container
 
 
 
+	this.visualize = function( robot_info){
 
+		$(document).ready(function()
+		{
+	    	var product_facts_listener = new ROSLIB.Topic({
+			    ros : robot_info.connection,
+			    name : "clips" +"/" + that.product_topic_name ,
+			    messageType : 'mm',
+			    throttle_rate:window.throttle_rate,
+		  	});
 
-	$(document).ready(function()
-	{
-    	var product_facts_listener = new ROSLIB.Topic({
-		    ros : ros,
-		    name : destination_bridge_name +"/" + product_topic_name ,
-		    messageType : 'mm',
-		    throttle_rate:window.throttle_rate,
-	  	});
+		  	product_facts_listener.subscribe(function(message)
+		  	{
+		  		product_facts=message;
+		  		$("#"+that.wedgit_id).empty();// clear the div
+		  		$("#"+that.wedgit_id).append("<h2> Products:</h2>");
 
-	  	product_facts_listener.subscribe(function(message)
-	  	{
-	  		product_facts=message;
-	  		$("#"+wedgit_id).empty();// clear the div
-	  		$("#"+wedgit_id).append("<h2> Products:</h2>");
-
-	  		if( order_facts != null)
-	  		{
-	  			for( var product in product_facts.product )
-				{
-
-					if (JSON.parse(product_facts.product[product]["product-id"]) !=0 )//A product that describes a production process
+		  		if( order_facts != null)
+		  		{
+		  			for( var product in product_facts.product )
 					{
 
-						var related_order;
-						for( var product_index2 in product_facts.product)
+						if (JSON.parse(product_facts.product[product]["product-id"]) !=0 )//A product that describes a production process
 						{
-							if (JSON.parse(product_facts.product[product_index2].id) == JSON.parse(product_facts.product[product]["product-id"]) )
-			  				{
-			  					related_order = product_facts.product[product_index2];
-			  				}
-						}
 
-
-
-						var $product_div=$("#product_"+product_facts.product[product]["product-id"]).clone();//Make a similare DIV
-						$product_div.attr('id',"product_"+product_facts.product[product].id);
-
-						$product_div.children().addClass("part_processing");//set all the part to still processing
-
-						if (product_facts.product[product].base[0] == related_order.base[0] )
-						{
-							$product_div.children(".products_base").removeClass("part_processing").addClass("part_complete");
-						}
-
-
-						for( var ring_index in product_facts.product[product].rings )
-						{
-							if (product_facts.product[product].rings[ring_index] == related_order.rings[ring_index])
+							var related_order;
+							for( var product_index2 in product_facts.product)
 							{
-						 		$product_div.children(".products_ring."+ring_index).removeClass("part_processing").addClass("part_complete");
+								if (JSON.parse(product_facts.product[product_index2].id) == JSON.parse(product_facts.product[product]["product-id"]) )
+				  				{
+				  					related_order = product_facts.product[product_index2];
+				  				}
 							}
-						}
 
-						if (product_facts.product[product].cap[0] == related_order.cap[0])
-						{
-							$product_div.children(".products_cap").removeClass("part_processing").addClass("part_complete");
-						}
 
-						$("#"+wedgit_id).append($product_div); //div will hold this product
+
+							var $product_div=$("#product_"+product_facts.product[product]["product-id"]).clone();//Make a similare DIV
+							$product_div.attr('id',"product_"+product_facts.product[product].id);
+
+							$product_div.children().addClass("part_processing");//set all the part to still processing
+
+							if (product_facts.product[product].base[0] == related_order.base[0] )
+							{
+								$product_div.children(".products_base").removeClass("part_processing").addClass("part_complete");
+							}
+
+
+							for( var ring_index in product_facts.product[product].rings )
+							{
+								if (product_facts.product[product].rings[ring_index] == related_order.rings[ring_index])
+								{
+							 		$product_div.children(".products_ring."+ring_index).removeClass("part_processing").addClass("part_complete");
+								}
+							}
+
+							if (product_facts.product[product].cap[0] == related_order.cap[0])
+							{
+								$product_div.children(".products_cap").removeClass("part_processing").addClass("part_complete");
+							}
+
+							$("#"+that.wedgit_id).append($product_div); //div will hold this product
+
+						}
 
 					}
+		  		}
+		  	});
+		});
 
-				}
-	  		}
-	  	});
-	});
+
+	};
+
 }
 
 
-function orders(){
+function orders( ){
+
+	var that = this;
+	this. desination_bridge_name= "clips";
+	this. order_topic_name= "order";
+	this. product_topic_name= "product";
+	this. wedgit_id= 	"orders_wedgit";
+
+	this. $wedgit_div= $("<div>  </div>").append("<h2> Orders: </h2>")
+										.addClass("col_element").attr('id',this.wedgit_id);// div contaning the wedgit
 
 
-	var destination_bridge_name= "clips";
-	var order_topic_name= "order";
-	var product_topic_name= "product";
-	var wedgit_id= 	"orders_wedgit";
-
-	var $wedgit_div= $("<div>  </div>").addClass("col_element").attr('id',wedgit_id);// div contaning the wedgit
-
-
-	window.$production.prepend($wedgit_div);//the wedgit container
+	window.$production.prepend(this.$wedgit_div);//the wedgit container
 	
+	this.visualize = function( robot_info ){
 
-	$(document).ready(function()
-	{
-		window.$layout_container.append(window.$production);
+		// $(document).ready(function()
+		// {
+		// 	// window.$layout_container.append(window.$production);
 
-	//to listen to the  incase the product widget not instialized
-    // 	var product_facts_listener = new ROSLIB.Topic({
-		  //   ros : ros,
-		  //   name : destination_bridge_name +"/" + product_topic_name ,
-		  //   messageType : 'mm',
-		  //   throttle_rate:1000,
-	  	// });
+		//to listen to the  incase the product widget not instialized
+	    // 	var product_facts_listener = new ROSLIB.Topic({
+			  //   ros : ros,
+			  //   name : destination_bridge_name +"/" + product_topic_name ,
+			  //   messageType : 'mm',
+			  //   throttle_rate:1000,
+		  	// });
 
-	  	// product_facts_listener.subscribe(function(message) 
-	  	// {
-	  	// 	product_facts=message;
+		  	// product_facts_listener.subscribe(function(message) 
+		  	// {
+		  	// 	product_facts=message;
 
-	  	// });
+		  	// });
 
 
-    	var order_facts_listener = new ROSLIB.Topic({
-		    ros : ros,
-		    name : destination_bridge_name +"/" + order_topic_name ,
-		    messageType : 'mm',
-		    throttle_rate:window.throttle_rate,
-	  	});
-	  	order_facts_listener.subscribe(function(message) 
-	  	{
-	  		$("#"+wedgit_id).empty();// clear the div
-	  		$("#"+wedgit_id).append("<h2> Orders: </h2>");
+	    	var order_facts_listener = new ROSLIB.Topic({
+			    ros : robot_info.connection,
+			    name : "clips" +"/" + that.order_topic_name ,
+			    messageType : 'mm',
+			    throttle_rate:window.throttle_rate,
+		  	});
+		  	order_facts_listener.subscribe(function(message) 
+		  	{
+		  		$("#"+that.wedgit_id).empty();// clear the div
+		  		$("#"+that.wedgit_id).append("<h2> Orders: </h2>");
 
-	  		order_facts= message;
+		  		order_facts= message;
 
-	  		if( product_facts != null)
-	  		{
-				for( var order in order_facts.order )
-				{
-					for( var product in product_facts.product )
+		  		if( product_facts != null)
+		  		{
+					for( var order in order_facts.order )
 					{
-						if (JSON.parse(product_facts.product[product].id) == JSON.parse( order_facts.order[order]["product-id"] ))
-		  				{
-							var $order_div=$("<div> </div>").addClass("order");// the class order is given to  each one of the orders_divs that contain the product div 
-							var $product_div=$("<div> </div>").addClass("product").attr('id',"product_"+product_facts.product[product].id);// the class 'produced' is given to the div containing  peace itself
-							
-							var base_color = product_facts.product[product].base[0];
-							$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
-							
-							for( var ring_index in product_facts.product[product].rings )
-							{
-								var ring_color = product_facts.product[product].rings[ring_index];
-								$product_div.prepend("<div class='products_ring "+ring_index +"' style= background-color:"+ring_color+"> </div>");
-							}
-							
-							var cap_color = product_facts.product[product].cap[0];
-							$product_div.prepend("<div class=products_cap style= background-color:"+cap_color+"> </div>");
+						for( var product in product_facts.product )
+						{
+							if (JSON.parse(product_facts.product[product].id) == JSON.parse( order_facts.order[order]["product-id"] ))
+			  				{
+								var $order_div=$("<div> </div>").addClass("order");// the class order is given to  each one of the orders_divs that contain the product div 
+								var $product_div=$("<div> </div>").addClass("product").attr('id',"product_"+product_facts.product[product].id);// the class 'produced' is given to the div containing  peace itself
+								
+								var base_color = product_facts.product[product].base[0];
+								$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
+								
+								for( var ring_index in product_facts.product[product].rings )
+								{
+									var ring_color = product_facts.product[product].rings[ring_index];
+									$product_div.prepend("<div class='products_ring "+ring_index +"' style= background-color:"+ring_color+"> </div>");
+								}
+								
+								var cap_color = product_facts.product[product].cap[0];
+								$product_div.prepend("<div class=products_cap style= background-color:"+cap_color+"> </div>");
 
 
-							//order info
-							if(JSON.parse( order_facts.order[order]["in-production"][0] ) == 1)
-							{
-								$order_div.addClass("active-order")
-							}
+								//order info
+								if(JSON.parse( order_facts.order[order]["in-production"][0] ) == 1)
+								{
+									$order_div.addClass("active-order")
+								}
 
-							var $order_info=$("<div> </div>").addClass("order_info");
-							$order_info.append("<span> Gate: </span>").append("<span>"+ order_facts.order[order]["delivery-gate"][0]+"</span>").append("<br>");
-							$order_info.append("<span>"+ order_facts.order[order]["begin"][0] + ":" + order_facts.order[order]["end"][0]+"</span>").append("<br>");
-							$order_info.append("<span>"+ order_facts.order[order]["quantity-delivered"][0] + "/" + order_facts.order[order]["quantity-requested"][0]+"</span>").append("<br>");
+								var $order_info=$("<div> </div>").addClass("order_info");
+								$order_info.append("<span> Gate: </span>").append("<span>"+ order_facts.order[order]["delivery-gate"][0]+"</span>").append("<br>");
+								$order_info.append("<span>"+ order_facts.order[order]["begin"][0] + ":" + order_facts.order[order]["end"][0]+"</span>").append("<br>");
+								$order_info.append("<span>"+ order_facts.order[order]["quantity-delivered"][0] + "/" + order_facts.order[order]["quantity-requested"][0]+"</span>").append("<br>");
 
-							$order_div.append($product_div);
-							$order_div.append($order_info);
+								$order_div.append($product_div);
+								$order_div.append($order_info);
 
-							$("#"+wedgit_id).append($order_div); //div will hold this product	  				
+								$("#"+that. wedgit_id).append($order_div); //div will hold this product	  				
 
-		  				}
+			  				}
+						}
 					}
-				}
-	  		}
-	  	});
-	});
+		  		}
+		  	});
+		// });
+	};
 }
 
 
@@ -701,3 +710,6 @@ function robotInfo( robot_name , bridge_connection )
 
 
 }
+
+
+

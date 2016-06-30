@@ -35,7 +35,7 @@ function init_mps(){
 	//------------------------------------------------------- Global
 	window.team = new TeamMetadata({
 		name 	: "Caro", 
-		color	: "MAGENTA"
+		color	: "CYAN"
 	});// make  sure you have the team data pretty early
 
 	// this naming is consistent with the naming in the clips facts (machine.. ) 
@@ -692,9 +692,6 @@ function MpsMonitor()
 			}			
 				
 		});
-
-
-
 
 
 	};

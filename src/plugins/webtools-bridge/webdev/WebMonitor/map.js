@@ -4,12 +4,8 @@ function Map() {
 
   var that = this ; 
 
-  $(document) . ready (function()
-  {   
-    var $map = $("<div>  </div>") .addClass("wedgit") .addClass("container") .attr("id" , "map") ;
+    var $map = $("<div>  </div>") .addClass("wedgit") .attr("id" , "map") ;
     $(window.$layout_container).append($map) ;//the wedgit container
-
-  });
 
     // ====================================Create Viewer Scence where the map and the robots will be displaied.
     this. viewer = new ROS3D.Viewer({
@@ -33,7 +29,7 @@ function Map() {
          // Setup a client to listen to TF of R_1.
         var tfClient = new ROSLIB.TFClient({
           ros : tf_robot_info.connection   ,
-          angularThres : 0.01,
+          angularThres :0.01,
           transThres : 0.01,
           fixedFrame : '/map' ,
           rate: 10
@@ -65,7 +61,8 @@ function Map() {
           ros : robot_info.connection   ,
           angularThres : 0.01,
           transThres : 0.01,
-          fixedFrame : '/map' 
+          fixedFrame : '/map',
+          rate : 10
       });
 
       //=============================================================Navgraph Marker Array to show the 
