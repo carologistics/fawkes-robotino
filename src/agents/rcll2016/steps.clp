@@ -143,24 +143,21 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name get-base) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps) (machine-feature ?feature) (base ?color))
+		 (machine ?mps) (machine-feature ?feature) (base ?color) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (machine (mtype BS) (name ?mps) (state PROCESSING|READY-AT-OUTPUT))
-  ?bs <- (base-station (name ?mps) (active-side ?side))
   ?bsc <- (bs-side-changed)
   =>
   (retract ?state ?bsc)
   (modify ?step (state running))
   (if (eq ?side INPUT) then
-    (bind ?res (sym-cat ?mps "-O"))
-    (bind ?out-side OUTPUT)
-  else
     (bind ?res (sym-cat ?mps "-I"))
-    (bind ?out-side INPUT)
+  else
+    (bind ?res (sym-cat ?mps "-O"))
   )
   (assert (state WAIT-FOR-LOCK)
-    (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?out-side)) (target ?mps))
+    (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?side)) (target ?mps))
     (wait-for-lock (priority ?p) (res ?res))
   )
 )
@@ -393,7 +390,7 @@
 (defrule step-instruct-mps
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name instruct-mps) (state wait-for-activation)
+  ?step <- (step (name instruct-mps) (state wait-for-activation) (side ?side)
                  (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
                  (cs-operation ?cs-op) (lock ?lock) (task-priority ?p))
   (machine (name ?mps) (mtype ?mtype) (state IDLE))
@@ -404,16 +401,6 @@
   (switch ?mtype
     (case BS
       then
-      ; check which side should be used
-      (bind ?side INPUT)
-      (do-for-fact ((?bs base-station)) (eq ?bs:name ?mps)
-                   (bind ?side ?bs:active-side)
-                   (if (eq ?side INPUT) then
-                     (bind ?side OUTPUT)
-                     else
-                     (bind ?side INPUT)
-                   )
-      )
       (assert (mps-instruction (machine ?mps) (base-color ?base) (side ?side)))
     )
     (case CS
