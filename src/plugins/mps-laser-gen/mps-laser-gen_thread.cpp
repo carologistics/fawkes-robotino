@@ -110,6 +110,8 @@ MPSLaserGenThread::loop()
   Eigen::Rotation2Df sensor_rotation(tf::get_yaw(tf_transform.getRotation()));
   Eigen::Translation2f sensor_translation(tf_transform.getOrigin().x(), tf_transform.getOrigin().y());
 
+  Eigen::Transform<float,2,Eigen::Affine> transform = sensor_translation * sensor_rotation;
+
   visualization_msgs::MarkerArray m;
 // #if ROS_VERSION_MINIMUM(1,10,0)
 //   {
@@ -134,11 +136,11 @@ MPSLaserGenThread::loop()
 		  }
 
 		  MPS mps;
-		  mps.center = sensor_translation * sensor_rotation * Eigen::Vector2f(n.x(), n.y());
-		  mps.corners[0] = Eigen::Vector2f(  mps_width_2, - mps_length_2);
-		  mps.corners[1] = Eigen::Vector2f(- mps_width_2, - mps_length_2);
-		  mps.corners[2] = Eigen::Vector2f(- mps_width_2,   mps_length_2);
-		  mps.corners[3] = Eigen::Vector2f(  mps_width_2,   mps_length_2);
+		  mps.center = transform * Eigen::Vector2f(n.x(), n.y());
+		  mps.corners[0] = sensor_rotation * Eigen::Vector2f(  mps_width_2, - mps_length_2);
+		  mps.corners[1] = sensor_rotation * Eigen::Vector2f(- mps_width_2, - mps_length_2);
+		  mps.corners[2] = sensor_rotation * Eigen::Vector2f(- mps_width_2,   mps_length_2);
+		  mps.corners[3] = sensor_rotation * Eigen::Vector2f(  mps_width_2,   mps_length_2);
 
 		  Eigen::Rotation2Df rot(ori);
 
@@ -147,7 +149,8 @@ MPSLaserGenThread::loop()
 		  mps.corners[2] = (rot * mps.corners[2]) + mps.center;
 		  mps.corners[3] = (rot * mps.corners[3]) + mps.center;
 
-		  float dists[4] = { mps.corners[0].norm(), mps.corners[1].norm(), mps.corners[2].norm(), mps.corners[3].norm() };
+		  float dists[4] = { mps.corners[0].norm(), mps.corners[1].norm(),
+		                     mps.corners[2].norm(), mps.corners[3].norm() };
 		  mps.closest_idx = 0;
 		  for (unsigned int i = 1; i < 4; ++i) {
 			  if (dists[i] < dists[mps.closest_idx])  mps.closest_idx = i;
