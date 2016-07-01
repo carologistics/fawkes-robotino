@@ -244,6 +244,7 @@
   (machine (mtype RS) (name ?rs))
   ;only discard if ring stations have at least two bases loaded
   (ring-station (name ?rs) (bases-loaded ?bl&~:(< ?bl 3)))
+  (found-tag (name ?rs))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DISCARD-UNKNOWN*))))
   =>
   (printout t "PROD: Discard unneeded or unknown base " ?product-id crlf)
