@@ -138,6 +138,20 @@ void TagVisionSimThread::loop()
       tf::Stamped<tf::Pose> spose_sim_frame(pose_sim_frame, time, sim_frame_name_);
       tf::Stamped<tf::Pose> spose_tag_frame;
       tf_listener->transform_pose(frame_name_, spose_sim_frame, spose_tag_frame);
+
+      //check if nan values are contained
+      if(std::isnan(spose_tag_frame.getOrigin().x()) ||
+         std::isnan(spose_tag_frame.getOrigin().y()) ||
+         std::isnan(spose_tag_frame.getOrigin().z()) ||
+         std::isnan(spose_tag_frame.getRotation().x()) ||
+         std::isnan(spose_tag_frame.getRotation().y()) ||
+         std::isnan(spose_tag_frame.getRotation().z()) ||
+         std::isnan(spose_tag_frame.getRotation().w()))
+      {
+	      //skip this tag
+	      logger->log_error(name(), "Tag orientation or position is malformed, skipping this tag!");
+	      continue;
+      }
       
       tag_pos_ifs_[if_index]->set_translation(0, spose_tag_frame.getOrigin().x());
       tag_pos_ifs_[if_index]->set_translation(1, spose_tag_frame.getOrigin().y());
@@ -147,6 +161,8 @@ void TagVisionSimThread::loop()
       tag_pos_ifs_[if_index]->set_rotation(2, spose_tag_frame.getRotation().z());
       tag_pos_ifs_[if_index]->set_rotation(3, spose_tag_frame.getRotation().w());
       tag_pos_ifs_[if_index]->set_frame(frame_name_.c_str());
+
+      
       //compute visibility history
       int current_vis_hist = tag_pos_ifs_[if_index]->visibility_history();
       if(current_vis_hist < 0)
