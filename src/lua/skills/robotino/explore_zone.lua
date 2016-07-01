@@ -279,7 +279,7 @@ end
 fsm:define_states{ export_to=_M,
   closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,poses_to_check=poses_to_check, HIST_MIN_TAG=HIST_MIN_TAG, os=os},
   {"INIT",                        JumpState},
-  {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_global}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
+  {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_local}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
   {"DECIDE_CLUSTER",              JumpState},
   {"TIMEOUT_CLUSTER",             JumpState},
   {"DECIDE_NEXT_POINT",           JumpState},
