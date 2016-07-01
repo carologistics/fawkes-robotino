@@ -89,13 +89,20 @@ MPSLaserGenThread::loop()
 
   std::string global_frame = "map";
   std::string sensor_frame = "base_laser";
-  
+
+  float data[360];
+  for (unsigned int i = 0; i < 360; ++i)
+	  data[i] = std::numeric_limits<float>::quiet_NaN();
+
   fawkes::Time source_time(0,0);
   tf::StampedTransform tf_transform;
   try {
 	  tf_listener->lookup_transform(sensor_frame, global_frame,
 	                                source_time, tf_transform);
   } catch (Exception &e) {
+	  laser_if_->set_frame(sensor_frame.c_str());
+	  laser_if_->set_distances(data);
+	  laser_if_->write();
 	  logger->log_warn(name(), "Failed to acquire transform for sensor frame, skipping loop");
 	  return;
   }
@@ -205,10 +212,6 @@ MPSLaserGenThread::loop()
 		  }
 	  }
   }
-
-  float data[360];
-  for (unsigned int i = 0; i < 360; ++i)
-	  data[i] = std::numeric_limits<float>::quiet_NaN();
 
 
   for (unsigned int i = 0; i < 360; ++i) {
