@@ -295,7 +295,7 @@ fsm:add_transitions{
   {"INIT",                "FAILED",                       cond="vars.parameter_nil",                            desc="one ore more parameter are nil"},
   {"INIT",                "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil",                   desc="deactivate cluster search, directly goto 1. search point"},
   {"INIT",                "DRIVE_TO_ZONE",                cond=true},
-  --{"DRIVE_TO_ZONE",       "DRIVE_TO_POSSIBLE_MPS_PRE",    cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
+  {"DRIVE_TO_ZONE",       "FIX_INTERNAL_VARS",            cond="mps_visible_laser(self, 1) and os.time() - vars.laser_lines_timeout_start >= 1",                    desc="saw line on route, drive to there"},
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
   {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
   --{"TIMEOUT_CLUSTER",     "FAILED",                       cond=cluster_visible,                                 desc="TODO this is for a test, remove me and add line above"},
@@ -493,6 +493,9 @@ function INIT:init()
   self.fsm.vars.cluster[8]  = cluster_mps_8
   self.fsm.vars.cluster[9]  = cluster_mps_9
   self.fsm.vars.cluster[10] = cluster_mps_10
+  
+  -- set timeout for jumpscondition, to not loop with sawn laserlines
+  self.fsm.vars.laser_lines_timeout_start = os.time()
 end
 
 function DRIVE_TO_ZONE:init()
