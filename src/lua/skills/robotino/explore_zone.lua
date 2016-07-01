@@ -499,7 +499,7 @@ function INIT:init()
 end
 
 function DRIVE_TO_ZONE:init()
-	 self.args["drive_to_global"] =
+	 self.args["drive_to_local"] =
 			{ x        = self.fsm.vars.point_cluster.x,
 				y        = self.fsm.vars.point_cluster.y,
 				ori      = self.fsm.vars.point_cluster.ori,
