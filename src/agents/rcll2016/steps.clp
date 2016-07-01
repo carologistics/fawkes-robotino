@@ -146,7 +146,7 @@
 		 (machine ?mps) (machine-feature ?feature) (base ?color))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
-  (machine (mtype BS) (name ?mps) (state IDLE))
+  (machine (mtype BS) (name ?mps) (state PROCESSING|READY-AT-OUTPUT))
   ?bs <- (base-station (name ?mps) (active-side ?side))
   ?bsc <- (bs-side-changed)
   =>
@@ -162,7 +162,6 @@
   (assert (state WAIT-FOR-LOCK)
     (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?out-side)) (target ?mps))
     (wait-for-lock (priority ?p) (res ?res))
-    (mps-instruction (machine ?mps) (base-color ?color) (side ?out-side) (lock ?res))
   )
 )
 
@@ -395,9 +394,9 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name instruct-mps) (state wait-for-activation)
-		 (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
-                 (cs-operation ?cs-op))
-  (machine (name ?mps) (mtype ?mtype))
+                 (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
+                 (cs-operation ?cs-op) (lock ?lock) (task-priority ?p))
+  (machine (name ?mps) (mtype ?mtype) (state IDLE))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   =>
@@ -405,7 +404,18 @@
   (switch ?mtype
     (case BS
       then
-      (assert (mps-instruction (machine ?mps) (base-color ?base))))
+      ; check which side should be used
+      (bind ?side INPUT)
+      (do-for-fact ((?bs base-station)) (eq ?bs:name ?mps)
+                   (bind ?side ?bs:active-side)
+                   (if (eq ?side INPUT) then
+                     (bind ?side OUTPUT)
+                     else
+                     (bind ?side INPUT)
+                   )
+      )
+      (assert (mps-instruction (machine ?mps) (base-color ?base) (side ?side)))
+    )
     (case CS
       then
       (assert (mps-instruction (machine ?mps) (cs-operation ?cs-op))))
@@ -540,13 +550,103 @@ the waiting state until we can use it again."
           (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
 )
 
+(defrule step-wait-for-output-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name wait-for-output) (state wait-for-activation) (machine ?mps))
+  ?state <- (state STEP-STARTED)
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (assert (state WAIT_FOR_OUTPUT))
+)
+
+(defrule step-wait-for-output-finish
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name wait-for-output) (state running) (machine ?mps))
+  ?state <- (state WAIT_FOR_OUTPUT)
+  (machine (name ?mps) (state READY-AT-OUTPUT))
+  =>
+  (retract ?state)
+  (modify ?step (state finished))
+  (assert (state STEP-FINISHED))
+)
+
+(defrule step-acquire-lock-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name acquire-lock) (state wait-for-activation)
+                 (lock ?lock) (task-priority ?p))
+  ?state <- (state STEP-STARTED)
+  =>
+  (retract ?state)
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?lock) (priority ?p)))
+  ; Retract all lock releases for ?res that gets the lock
+  (do-for-all-facts ((?release lock)) (and (eq ?release:agent ?*ROBOT-NAME*)
+                                           (eq ?release:resource ?lock)
+                                           (eq ?release:type RELEASE))
+    (retract ?release)
+  )
+  (modify ?step (state running))
+  (assert (state WAIT-FOR-STEP-LOCK))
+)
+
+(defrule step-acquire-lock-finish
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  ?step <- (step (name acquire-lock) (state running)
+                 (lock ?lock) (task-priority ?p))
+  ?state <- (state WAIT-FOR-STEP-LOCK)
+  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?lock))
+  =>
+  (retract ?state)
+  (modify ?step (state finished))
+  (assert (state STEP-FINISHED))
+)
+
+(defrule step-acquire-lock-release
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name release-lock) (state wait-for-activation)
+                 (lock ?lock) (task-priority ?p))
+  ?state <- (state STEP-STARTED)
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?lock))
+  =>
+  (retract ?state ?l)
+  (modify ?step (state finished))
+  (assert (state STEP-FINISHED)
+          (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?lock)))
+)
+(defrule step-get-base-finish-fail
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  ?step <- (step (name get-base) (state running))
+  ?state <- (state ?result&SKILL-FINAL|SKILL-FAILED)
+  ?ste <- (skill-to-execute (skill get_product_from)
+                            (args $?args) (state final|failed))
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource PREPARE-BS))  
+  =>
+  (retract ?state ?ste ?l)
+  ;release lock of instructing/using the BS. Can't be done in a later step because the task is aborted when the step fails.
+  (if (eq ?result SKILL-FINAL)
+    then
+    (assert (state STEP-FINISHED))
+    (modify ?step (state finished))
+    else
+    (assert (state STEP-FAILED))
+    (modify ?step (state failed))
+  )
+  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
+)
+
 ;;;;;;;;;;;;;;;;
 ; common finish:
 ;;;;;;;;;;;;;;;;
 (defrule step-common-finish
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|get-base|drive-to) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|drive-to) (state running))
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper|drive_to)
 			    (args $?args) (state final))
@@ -557,13 +657,14 @@ the waiting state until we can use it again."
   (modify ?step (state finished))
 )
 
+
 ;;;;;;;;;;;;;;;;
 ; common fail:
 ;;;;;;;;;;;;;;;;
 (defrule step-common-fail
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|discard|get-base|drive-to) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|discard|drive-to) (state running))
   ?state <- (state SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper|drive_to)
 			    (args $?args) (state failed))

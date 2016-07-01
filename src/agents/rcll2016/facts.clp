@@ -220,7 +220,8 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base find-tag instruct-mps discard drive-to wait-for-rs))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base find-tag instruct-mps discard
+                                            drive-to wait-for-rs wait-for-output acquire-lock release-lock))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
@@ -235,6 +236,7 @@
   (slot product-id (type INTEGER))
   (slot already-at-mps (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT))
+  (slot lock (type SYMBOL) (default NONE))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
