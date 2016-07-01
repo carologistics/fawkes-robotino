@@ -534,7 +534,7 @@ function pose_in_front_of_mps_calculator(self, chosen, factor)
 end
 
 function FIX_INTERNAL_VARS:init()
-  self.fsm.vars.poses_to_check_iterator = self.fsm.vars.poses_to_check_iterator - 1
+  self.fsm.vars.poses_to_check_iterator = math.max(1, self.fsm.vars.poses_to_check_iterator - 1)
 --[[ this is code to turn to the possivle MPS
   local ori = nil
   if self.fsm.vars.line_chosen ~=nil then
