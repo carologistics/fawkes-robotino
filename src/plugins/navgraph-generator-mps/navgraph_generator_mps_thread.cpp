@@ -317,22 +317,25 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 
   for (const auto &s : stations_) {
     navgen_if_->msgq_enqueue
-      (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
-       ((s.first + "-I").c_str(),
-	s.second.input_pos[0], s.second.input_pos[1], s.second.input_yaw,
-	mps_node_insmode(s.first + "-I")));
+	    (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
+	     ((s.first + "-I").c_str(),
+	      s.second.input_pos[0], s.second.input_pos[1], s.second.input_yaw,
+	      mps_node_insmode(s.first + "-I")));
 
     navgen_if_->msgq_enqueue
-      (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
-       ((s.first + "-O").c_str(),
-	s.second.output_pos[0], s.second.output_pos[1], s.second.output_yaw,
-	mps_node_insmode(s.first + "-O")));
+	    (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
+	     ((s.first + "-O").c_str(),
+        s.second.output_pos[0], s.second.output_pos[1], s.second.output_yaw,
+        mps_node_insmode(s.first + "-O")));
 
     navgen_if_->msgq_enqueue
-      (new NavGraphGeneratorInterface::AddPointOfInterestMessage
-       (s.first.c_str(),
-	s.second.pose_pos[0], s.second.pose_pos[1],
-	NavGraphGeneratorInterface::UNCONNECTED));
+	    (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
+	     (s.first.c_str(),
+	      s.second.pose_pos[0], s.second.pose_pos[1], s.second.output_yaw,
+	      NavGraphGeneratorInterface::UNCONNECTED));
+    navgen_if_->msgq_enqueue
+	    (new NavGraphGeneratorInterface::SetPointOfInterestPropertyMessage
+	     (s.first.c_str(), "mps", "true"));
 
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddObstacleMessage
