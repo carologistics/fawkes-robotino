@@ -64,7 +64,6 @@ fsm:add_transitions{
   { "INIT",    "SKILL_PPGOTO",             cond=true },
   { "FORCE_SET_JUST_ORI", "TIMEOUT",       cond=true },
   { "TIMEOUT", "SKILL_GLOBAL_MOTOR_MOVE",  timeout=0.5 },
-  { "SKILL_PPGOTO", "FAILED",  timeout=50 },
 }
 
 function INIT:init()
