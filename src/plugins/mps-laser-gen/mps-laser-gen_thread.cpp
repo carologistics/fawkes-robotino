@@ -88,7 +88,7 @@ MPSLaserGenThread::loop()
   const float mps_width_2 = mps_width / 2.;
 
   std::string global_frame = "map";
-  std::string sensor_frame = "base_laser";
+  std::string sensor_frame = "base_link";
 
   float data[360];
   for (unsigned int i = 0; i < 360; ++i)
