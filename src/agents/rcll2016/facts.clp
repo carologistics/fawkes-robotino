@@ -53,6 +53,8 @@
   (slot green (type SYMBOL) (allowed-symbols ON OFF))
   (slot mtype (type STRING))
   (slot found (type SYMBOL) (allowed-symbols TRUE MAYBE FALSE) (default FALSE))
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS
+                                               M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS NONE) (default NONE))
   (slot sync-id (type INTEGER) (default 0))
 )
 

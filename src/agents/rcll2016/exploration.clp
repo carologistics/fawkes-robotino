@@ -345,7 +345,7 @@
   )
   (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
   (assert (exploration-result (machine ?machine) (mtype ?mtype) (zone ?zone)))
-  (synced-modify ?exp found MAYBE)
+  (synced-modify ?exp found MAYBE machine ?machine)
 )
 
 (defrule exp-explore-light-signal-failed
@@ -892,3 +892,27 @@
     )
   )
 )
+
+
+(defrule exp-conclude-ds-report
+  "When we found and reported all machines except for the DS, conclude the correct report"
+  (phase EXPLORATION)
+  (team-color ?team)
+  (points ?team 40)
+  (lock-role MASTER)
+  (machine (mtype DS) (name ?ds) (team ?team))
+  ?exp <- (exp-matching (found FALSE) (mtype ?mtype))
+  (exp-matching (found TRUE) (machine C-BS|M-BS))
+  (exp-matching (found TRUE) (machine C-CS1|M-CS1))
+  (exp-matching (found TRUE) (machine C-CS2|M-CS2))
+  (exp-matching (found TRUE) (machine C-RS1|M-RS1))
+  (exp-matching (found TRUE) (machine C-RS2|M-RS2))
+  =>
+  (if (eq ?team CYAN) then
+    (bind ?zone Z4)
+    else
+    (bind ?zone Z16)
+  )
+  (assert (exploration-result (machine ?ds) (mtype ?mtype) (zone ?zone)))
+)
+
