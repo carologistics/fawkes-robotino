@@ -255,7 +255,14 @@ MPSLaserGenThread::loop()
 void
 MPSLaserGenThread::finalize()
 {
-	vispub_.shutdown();
+  float data[360];
+  for (unsigned int i = 0; i < 360; ++i)
+	  data[i] = std::numeric_limits<float>::quiet_NaN();
+  laser_if_->set_frame("");
+  laser_if_->set_distances(data);
+  laser_if_->write();
+
+  vispub_.shutdown();
 	blackboard->close(laser_if_);
 }
 
