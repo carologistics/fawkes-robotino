@@ -52,6 +52,8 @@
   (slot yellow (type SYMBOL) (allowed-symbols ON OFF))
   (slot green (type SYMBOL) (allowed-symbols ON OFF))
   (slot mtype (type STRING))
+  (slot found (type SYMBOL) (allowed-symbols TRUE MAYBE FALSE) (default FALSE))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 (deftemplate exploration-result
@@ -327,8 +329,8 @@
 
 (deffacts startup-facts
   (team-color nil)
-  (points-magenta 0)
-  (points-cyan 0)
+  (points MAGENTA 0)
+  (points CYAN 0)
   (last-lights)
   (holding NONE)
 
@@ -411,7 +413,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)
