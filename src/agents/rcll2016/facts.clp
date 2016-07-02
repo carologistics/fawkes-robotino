@@ -139,6 +139,7 @@
 (deftemplate base-station
   (slot name (type SYMBOL) (allowed-symbols C-BS M-BS))
   (slot active-side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default INPUT))
+  (slot fail-side (type SYMBOL) (allowed-symbols INPUT OUTPUT NONE) (default NONE))
   (slot sync-id (type INTEGER) (default 0))
 )
 
@@ -208,7 +209,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-cs clear-rs))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
@@ -239,7 +240,7 @@
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot product-id (type INTEGER))
   (slot already-at-mps (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
-  (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT))
+  (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default OUTPUT))
   (slot lock (type SYMBOL) (default NONE))
 )
 

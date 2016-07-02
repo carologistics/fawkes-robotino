@@ -138,7 +138,7 @@
   (machine (mtype BS) 
     (name ?bs) (team ?team-color)
     (state ~DOWN&~BROKEN))
-  (base-station (name ?bs) (active-side ?bs-side))
+  (base-station (name ?bs) (active-side ?bs-side) (fail-side ?fs&:(neq ?bs-side ?fs)))
   (found-tag (name ?bs))
   ;check that the task was not rejected before
   (not (and (task (name fill-rs) (state rejected) (id ?rej-id))
@@ -261,6 +261,33 @@
       (task-priority ?*PRIORITY-DISCARD-UNKNOWN*))
   )
 )
+
+(defrule prod-clear-bs
+  "Clear BS if base retrieval failed"
+  (declare (salience ?*PRIORITY-CLEAR-BS*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (holding NONE)
+  (machine (mtype BS) (name ?bs) (team ?team-color) (state READY-AT-OUTPUT))
+  (base-station (name ?bs) (fail-side ?side))
+  (not (locked-resource (resource ?res&:(eq ?res (sym-cat ?bs "-" ?side)))))
+  (not (and (task (name clear-bs) (state rejected) (id ?rej-id))
+            (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?bs))))
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-CLEAR-BS*))))
+  =>
+  (printout t "PROD: Clearing BS due to failed base retrieval" crlf)
+  (bind ?task-id (random-id))
+  (assert
+    (task (name clear-bs) (id ?task-id) (state proposed)
+      (steps (create$ (+ ?task-id 1)))
+      (priority ?*PRIORITY-CLEAR-BS*))
+    (step (name get-output) (id (+ ?task-id 1))
+      (task-priority ?*PRIORITY-CLEAR-BS*)
+      (machine ?bs) (machine-feature CONVEYOR) (side ?side))
+    (needed-task-lock (task-id ?task-id) (action CLEAR-BS) (place ?bs))
+  )
+)
   
 (defrule prod-produce-c0
   "Produce a C0"
@@ -278,7 +305,7 @@
   (machine (mtype BS) 
     (name ?bs) (team ?team-color)
     (state ~DOWN&~BROKEN))
-  (base-station (name ?bs) (active-side ?bs-side))
+  (base-station (name ?bs) (active-side ?bs-side) (fail-side ?fs&:(neq ?bs-side ?fs)))
   (found-tag (name ?bs))
   ;check that the task was not rejected before
   (not (and (task (name produce-c0) (state rejected) (id ?rej-id))
@@ -322,7 +349,7 @@
       (machine-feature CONVEYOR))
     (needed-task-lock (task-id ?task-id) (action PROD_CAP) (place ?cs))
   )
-  (synced-modify ?of in-production 1)
+  (synced-modify ?of in-production 2)
 )
 
 (defrule prod-add-first-ring
@@ -353,7 +380,7 @@
     (name ?bs) (team ?team-color)
     (state ~DOWN&~BROKEN)
   )
-  (base-station (name ?bs) (active-side ?bs-side))
+  (base-station (name ?bs) (active-side ?bs-side) (fail-side ?fs&:(neq ?bs-side ?fs)))
   (found-tag (name ?bs))
   ;check that the task was not rejected before
   (not (and (task (name add-first-ring) (state rejected) (id ?rej-id))

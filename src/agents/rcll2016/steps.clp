@@ -125,17 +125,22 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps))
+		 (machine ?mps) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (game-time $?game-time)
-  (machine (name ?mps) (state IDLE))
+  (machine (name ?mps) (mtype ?type) (state IDLE))
   =>
   (retract ?state)
   (modify ?step (state running))
+  (if (and (eq ?type BS) (eq ?side INPUT)) then
+    (bind ?res (sym-cat ?mps "-I"))
+  else
+    (bind ?res (sym-cat ?mps "-O"))
+  )
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps))
-	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-O")))
+	  (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?side)) (target ?mps))
+	  (wait-for-lock (priority ?p) (res ?res))
   )
 )
 
@@ -374,16 +379,20 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps))
+		 (machine ?mps) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   =>
   (retract ?state)
   (modify ?step (state running))
-  (printout warn "TODO: use skill to get a puck from an MPS" crlf)
+  (if (eq ?side INPUT) then
+    (bind ?res (sym-cat ?mps "-I"))
+  else
+    (bind ?res (sym-cat ?mps "-O"))
+  )
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps ))
-	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-O")))
+	  (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?side)) (target ?mps ))
+	  (wait-for-lock (priority ?p) (res ?res))
   )
 )
 
@@ -608,11 +617,13 @@ the waiting state until we can use it again."
 (defrule step-get-base-finish-fail
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-base) (state running))
+  ?step <- (step (name get-base) (state running) (side ?side))
   ?state <- (state ?result&SKILL-FINAL|SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from)
                             (args $?args) (state final|failed))
   ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource PREPARE-BS))  
+  (machine (name ?mps) (team ?team-color))
+  ?bsf <- (base-station (name ?mps))
   =>
   (retract ?state ?ste ?l)
   ;release lock of instructing/using the BS. Can't be done in a later step because the task is aborted when the step fails.
@@ -620,9 +631,11 @@ the waiting state until we can use it again."
     then
     (assert (state STEP-FINISHED))
     (modify ?step (state finished))
+    (synced-modify ?bsf fail-side NONE)
     else
     (assert (state STEP-FAILED))
     (modify ?step (state failed))
+    (synced-modify ?bsf fail-side ?side)
   )
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
 )
