@@ -611,6 +611,7 @@ MachineSignalPipelineThread::bb_get_laser_rois()
     );
 
     LaserLineInterface *best_line = bb_laser_lines_[0];
+    best_line->read();
 
     if (string(best_line->frame_id()) != "") {
       // Find the leftmost endpoint, as seen from base_link
