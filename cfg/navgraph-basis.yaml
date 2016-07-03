@@ -177,9 +177,9 @@ nodes:
       - tag_input: 161
       - tag_output: 162
       - input_offset_x: -0.01
-      - input_offset_y: 0.03
-      - output_offset_x: -0.02
-      - output_offset_y: -0.03
+      - input_offset_y: 0.025
+      - output_offset_x: -0.015
+      - output_offset_y: -0.035
   - !unconnected
     name: M-DS
     pos: [0, 0]
