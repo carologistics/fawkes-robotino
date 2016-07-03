@@ -159,7 +159,6 @@ function set_speed(self)
                   for i = 1,MONITOR_LEN do
                      dist_sum = dist_sum + self.fsm.vars.moved_dist[i][k]
                   end
-                  printf("dist_sum: %f", dist_sum)
                   if dist_sum < STUCK_THRESHOLD * (V_MIN[k] + self.fsm.vars.tolerance_arg[k]) then
                      self.fsm.vars.stuck_count = self.fsm.vars.stuck_count + 1
                      v[k] = v[k] + self.fsm.vars.stuck_count * 0.5 * V_MIN[k]
@@ -190,8 +189,10 @@ function set_speed(self)
    
    self.fsm.vars.cycle = self.fsm.vars.cycle + 1
    
-   printf("motor_move: dist_target=(%f, %f, %f) V=(%f, %f, %f)", v.x, v.y, v.ori, dist_target.x, dist_target.y,
-      scalar(dist_target.ori))
+   if self.fsm.vars.stuck_count > 0 then
+      print_debug("motor_move: dist_target=(%f, %f, %f) V=(%f, %f, %f)", v.x, v.y, v.ori, dist_target.x, dist_target.y,
+         scalar(dist_target.ori))
+   end
    send_transrot(v.x, v.y, v.ori)
    self.fsm.vars.speed = v
 end
