@@ -8,12 +8,14 @@ fawkes/meta_plugins:
   #
   m-bare: bbsync,static-transforms,webview
   m-fv: fvbase,fvfountain
-  m-fv-vision: m-bare,m-fv,tag_vision,fvretriever
+  m-fv-vision: m-bare,m-fv
   m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf
   m-clips-agent: m-clips,m-fv-vision,clips-agent
-  m-skiller: m-fv-vision,ros,navgraph,navgraph-generator,navgraph-generator-mps,skiller
+  m-skiller: navgraph,skiller
   m-full: m-skiller,m-clips-agent
-  m-demo: m-bare,m-base-laser,m-base-ros,m-skiller,colli,amcl
+  m-demo-laser: laser,laser-filter,laser-pointclouds,laser-cluster,map-lasergen
+  m-demo-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan,ros-move-base
+  m-demo: m-bare,m-demo-ros,m-demo-laser,amcl,colli,m-skiller
 
   #
   # Gazebo stuff
