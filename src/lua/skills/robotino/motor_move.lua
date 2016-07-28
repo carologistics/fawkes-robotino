@@ -61,10 +61,10 @@ documentation      = [==[Move on a (kind of) straight line relative to the given
 local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
 local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.6 }
 local V_MIN =         { x=0.008, y=0.008, ori=0.05 }   -- below the motor won't even start
-local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
+local TOLERANCE =     { x=0.04, y=0.04, ori=0.05 } -- accuracy
 local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
-local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
+local ACCEL =         { x=0.03, y=0.03, ori=0.1 }   -- accelerate by this factor every loop
 
 -- Initialize as skill module
 skillenv.skill_module(_M )
