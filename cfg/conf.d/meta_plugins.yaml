@@ -8,16 +8,17 @@ fawkes/meta_plugins:
   #
   m-bare: bbsync,static-transforms,webview
   m-fv: fvbase,fvfountain
-  m-fv-vision: m-bare,m-fv,machine-signal,tag_vision,fvretriever
+  m-fv-vision: m-bare,m-fv,tag_vision,fvretriever
   m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf
   m-clips-agent: m-clips,m-fv-vision,clips-agent
-  m-skiller: ros,m-fv-vision,ros-pcl,navgraph,navgraph-generator,navgraph-generator-mps,skiller
+  m-skiller: m-fv-vision,ros,navgraph,navgraph-generator,navgraph-generator-mps,skiller
   m-full: m-skiller,m-clips-agent
+  m-demo: m-bare,m-base-laser,m-base-ros,m-skiller,colli,amcl
 
   #
   # Gazebo stuff
   #
-  gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,gazsim-gripper,gazsim-conveyor,laser_front_dist,webview
+  gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,gazsim-gripper,gazsim-conveyor,webview
   gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,ros-move-base,amcl,navgraph,navgraph-generator,navgraph-generator-mps,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-robotino-no-ros: gazsim-meta-robotino,amcl,navgraph,navgraph-generator,navgraph-generator-mps,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
@@ -29,10 +30,10 @@ fawkes/meta_plugins:
   #
   # Robotino base meta plugin
   #
-  m-base-bare: imu,robotino,webview,static-transforms,motor-led
+  m-base-bare: imu,robotino,webview,static-transforms
   m-base-joy: m-base-bare,joystick,joystick-teleop
   m-base-joy-safe: m-base-bare,laser,laser-filter,joystick,joystick-teleop
-  m-base-gripper: arduino,dynamixel,ax12_gripper
+  m-base-gripper: dynamixel,ax12_gripper
   m-base-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan,ros-move-base
   m-base-laser: laser,laser-filter,m-base-ros,laser-pointclouds,laser-cluster,laser-lines,map-lasergen
-  m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,colli,amcl,m-base-joy,laser_front_dist
+  m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,colli,amcl,m-base-joy
