@@ -43,6 +43,9 @@ OPTIONS:
                       optionally, "--start-game=PHASE" may be given
                       to set the phase explicitly)
                      Typically requires at least --team-cyan.
+   --asp             Run with ASP agent and global planer
+   --asp-exec        Run the ASP executive for the robots
+   --asp-planer      Start the ASP planner
 EOF
 }
 
@@ -74,6 +77,7 @@ FAWKES_USED=false
 START_GAME=
 TEAM_CYAN=
 TEAM_MAGENTA=
+START_ASP_PLANER=false
 
 if [[ -n $TMUX ]]; then
 	# if $TMUX is set we're inside a tmux session
@@ -87,7 +91,7 @@ fi
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,asp,asp-exec,asp-planer" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -158,6 +162,20 @@ while true; do
 	     ;;
 	 -a)
 	     META_PLUGIN="-m gazsim-meta-agent"
+	     ;;
+	 --asp)
+	     META_PLUGIN="-m gazsim-meta-agent"
+	     START_ASP_PLANER=true
+	     ;;
+	 --asp-exec)
+	     META_PLUGIN="-m gazsim-meta-agent"
+	     ;;
+	 --asp-planer)
+	     START_ASP_PLANER=true
+	     START_GAZEBO=false
+	     NUM_ROBOTINOS=0
+	     NUM_CYAN=0
+	     NUM_MAGENTA=0
 	     ;;
 	 -o)
 	     START_GAZEBO=false
@@ -320,6 +338,11 @@ if [  $COMMAND  == start ]; then
 	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"'"
 	FAWKES_USED=true
     done
+
+    if $START_ASP_PLANER
+    then
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"'"
+    fi
 
     if $START_GAZEBO
     then

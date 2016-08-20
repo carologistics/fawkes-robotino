@@ -14,6 +14,7 @@ fawkes/meta_plugins:
   m-skiller: ros,m-fv-vision,navgraph,navgraph-generator,navgraph-generator-mps,skiller,realsense,conveyor-pose,ros-pcl
   m-robot-memory: mongodb,robot-memory
   m-full: m-skiller,m-clips-agent
+  m-asp-planer: m-robot-memory,asp,asp-planer,navgraph,navgraph-generator,navgraph-generator-mps,webview
 
   #
   # Gazebo stuff
@@ -26,6 +27,7 @@ fawkes/meta_plugins:
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
   gazsim-meta-clips: m-clips,clips-agent
   gazsim-meta-agent: gazsim-meta-clips
+  gazsim-meta-asp-planer: ros,navgraph,m-robot-memory,m-clips,clips-agent,m-asp-planer,static-transforms,gazebo
  
   #
   # Robotino base meta plugin
