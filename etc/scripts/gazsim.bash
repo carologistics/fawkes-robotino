@@ -35,6 +35,7 @@ OPTIONS:
    -g                Run Fawkes in gdb
    -v                Run Fawkes in valgrind
    -t                Skip Exploration and add all navgraph points
+   --asp             Run with ASP agent and global planer
 EOF
 }
 
@@ -63,8 +64,9 @@ TERM_GEOMETRY=105x56
 GDB=
 SKIP_EXPLORATION=
 FAWKES_USED=false
+START_ASP_PLANER=false
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,asp" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -141,6 +143,10 @@ while true; do
 	     ;;
 	 -a)
 	     META_PLUGIN="-m gazsim-meta-agent"
+	     ;;
+	 --asp)
+		 META_PLUGIN="-m asp-agent"
+	     START_ASP_PLANER=true
 	     ;;
 	 -o)
 	     START_GAZEBO=false
@@ -266,6 +272,11 @@ if [  $COMMAND  == start ]; then
 	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
 	FAWKES_USED=true
     done
+
+    if $START_ASP_PLANER
+    then
+	  OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp $KEEP $CONF $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
+    fi
 
     if $START_GAZEBO
     then

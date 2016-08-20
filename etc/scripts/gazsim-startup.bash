@@ -182,6 +182,9 @@ case $COMMAND in
 	comm_plugins=gazsim-organization$SHUTDOWN
 	$FAWKES_BIN/fawkes -p $comm_plugins
 	;;
+	asp )
+		$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planer.yaml -p asp-planer
+	;;
     roscore ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
 	roscore -p $PORT
