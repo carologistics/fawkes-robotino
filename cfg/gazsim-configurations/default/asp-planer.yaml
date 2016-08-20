@@ -1,0 +1,35 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+#include main config file
+include:
+  - !ignore-missing conf.d/
+  #concrete configuration in an other file because I could not override config values when using a single file
+  - gazsim-configurations/gazsim-config-override.yaml
+---
+
+webview:
+  #TCP port for Webview HTTP requests; TCP port
+  port: !tcp-port 8088
+
+asp-agent:
+  team-name: ASP Rules!
+
+  peer-address: 127.0.0.1
+  peer-recv-port: 4418
+  peer-send-port: 4428
+  cyan-recv-port: 4458
+  magenta-recv-port: 4468
+  cyan-send-port: 4478
+  magenta-send-port: 4488
+
+fawkes:
+
+  # Main app relevant settings
+  mainapp:
+    loggers: console;file/debug:debug8.log
+
+    net:
+      tcp_port: !tcp-port 1928
+      service_name: "Fawkes on ASP global planer"
+

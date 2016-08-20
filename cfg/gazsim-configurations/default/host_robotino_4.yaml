@@ -30,6 +30,19 @@ plugins/light_front:
   camera: shmem:gazsim_cam:image_id=robotino4/gazsim_light_front:deep_copy=true
   shm_image_id: "robotino4/light_front"
   
+asp-agent:
+  team-name: ASP Rocks!
+  robot-name: A
+  robot-number: 4
+
+  peer-address: 127.0.0.1
+  peer-recv-port: 4414
+  peer-send-port: 4424
+  cyan-recv-port: 4454
+  magenta-recv-port: 4464
+  cyan-send-port: 4474
+  magenta-send-port: 4484
+
 clips-agent:
   rcll2016:
     #agent-role:

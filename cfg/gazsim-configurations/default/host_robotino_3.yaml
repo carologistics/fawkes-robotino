@@ -6,11 +6,6 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 
-network:
-  fawkes:
-    tcp_port: !tcp-port 1923
-    service_name: "Fawkes on Gazsim Robotino 3 (Cyan)"
-
 webview:
   # TCP port for Webview HTTP requests; TCP port
   port: !tcp-port 8083
@@ -29,6 +24,19 @@ plugins/light_front:
   #Camera for gazebo simulation:
   camera: shmem:gazsim_cam:image_id=robotino3/gazsim_light_front:deep_copy=true
   shm_image_id: "robotino3/light_front"
+
+asp-agent:
+  team-name: ASP Rules!
+  robot-name: P
+  robot-number: 3
+
+  peer-address: 127.0.0.1
+  peer-recv-port: 4413
+  peer-send-port: 4423
+  cyan-recv-port: 4453
+  magenta-recv-port: 4463
+  cyan-send-port: 4473
+  magenta-send-port: 4483
 
 clips-agent:
   rcll2016:
@@ -59,3 +67,9 @@ clips-agent:
 plugins/tag_vision:
   shm_image_id: "tag_vision_robotino_3"
   camera: shmem:gazsim_cam:image_id=robotino3/gazsim_tag:deep_copy=true
+
+webtools-bridge:
+  port: 4040
+  #port where rosbridge is expected to start. Websocket connection will be established to forward the Ros requests to the Rosbridge
+  rosbridge-port: 7070
+  rosbridge-uri: "ws://localhost:7070"
