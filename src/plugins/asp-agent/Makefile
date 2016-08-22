@@ -19,7 +19,7 @@ include $(BUILDSYSDIR)/boost.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/protobuf.mk
 
-LIBS_asp_agent = asp_common fawkes_protobuf_comm llsf_msgs fawkescore
+LIBS_asp_agent = asp_common fawkes_protobuf_comm llsf_msgs fawkescore asp_msgs
 OBJS_asp_agent = asp_agent_plugin.o asp_agent_thread.o refbox_comm.o
 
 OBJS_all = $(OBJS_asp_agent)
