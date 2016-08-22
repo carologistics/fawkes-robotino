@@ -31,8 +31,8 @@ plugins/light_front:
   shm_image_id: "robotino5/light_front"
   
 asp-agent:
-  team-name: ASP Rocks!
-  robot-name: T'Pol
+  team-name: "ASP Rocks!"
+  robot-name: "T'Pol"
   robot-number: 5
 
   peer-address: 127.0.0.1
