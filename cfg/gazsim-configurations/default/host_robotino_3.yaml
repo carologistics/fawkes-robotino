@@ -27,7 +27,7 @@ plugins/light_front:
 
 asp-agent:
   team-name: ASP Rules!
-  robot-name: P
+  robot-name: Spock
   robot-number: 3
 
   peer-address: 127.0.0.1

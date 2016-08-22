@@ -14,6 +14,8 @@ webview:
 
 asp-agent:
   team-name: ASP Rules!
+  robot-number: 8
+  robot-name: Surak
 
   peer-address: 127.0.0.1
   peer-recv-port: 4418
