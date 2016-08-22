@@ -17,7 +17,9 @@ BASEDIR = ../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/fvconf.mk
 
-SUBDIRS = interfaces llsf_msgs asp_msgs
+SUBDIRS = interfaces llsf_msgs asp_msgs asp_common
+
+asp_common: asp_msgs
 
 include $(BUILDSYSDIR)/rules.mk
 
