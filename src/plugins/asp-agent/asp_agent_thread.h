@@ -40,6 +40,7 @@ class AspAgentThread
   public fawkes::TransformAspect,
   public fawkes::aspCommon::RefboxComm
 {
+	protected:
 	void recvPublic(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,
 		const std::shared_ptr<google::protobuf::Message>& msg) override;
 	void recvTeam(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,

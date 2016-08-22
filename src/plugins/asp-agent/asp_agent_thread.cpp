@@ -19,14 +19,7 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <cassert>
-#include <cstdlib>
-
 #include "asp_agent_thread.h"
-//#include "fawkes_zugriff/blackboard.hpp"
-//#include "fawkes_zugriff/fawkes.hpp"
-//#include "fawkes_zugriff/logging.hpp"
-//#include "fawkes_zugriff/refbox.hpp"
 
 using namespace fawkes;
 
@@ -62,13 +55,13 @@ void
 AspAgentThread::loop()
 {
 	sendPeriodicMessages();
-	logger->log_warn(LoggingComponent, "Muh! %s", publicOpen() ? "true" : "false");
 	return;
 }
 
 void
 AspAgentThread::finalize()
 {
+	closePublic();
 	logger->log_info(LoggingComponent, "Finalize ASP Agent");
 	return;
 }
