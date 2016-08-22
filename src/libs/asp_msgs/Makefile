@@ -1,8 +1,8 @@
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Libraries
+#             Makefile Build System for Fawkes : ASP Protobuf Messages
 #                            -------------------
-#   Created on Tue Nov 07 16:12:59 2006
-#   copyright (C) 2006-2011 by Tim Niemueller, AllemaniACs RoboCup Team
+#   Created on Mon Aug 15 16:42:33 2016
+#   Copyright (C) 2016 by Björn Schäpers
 #
 #*****************************************************************************
 #
@@ -13,12 +13,13 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../..
+
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDSYSDIR)/fvconf.mk
 
-SUBDIRS = interfaces llsf_msgs asp_msgs
+PROTOBUF_all = asp_msgs
 
-include $(BUILDSYSDIR)/rules.mk
+MSGS_asp_msgs = $(notdir $(patsubst %.proto,%,$(wildcard $(SRCDIR)/*.proto)))
 
-
+include $(BUILDSYSDIR)/protobuf.mk
+include $(BUILDSYSDIR)/base.mk
