@@ -22,7 +22,7 @@
 using namespace protobuf_comm;
 
 namespace fawkes {
-namespace asp {
+namespace aspCommon {
 
 /**
  * @class MessageStruct
@@ -244,6 +244,7 @@ void RefboxComm::recvError(const boost::asio::ip::udp::endpoint& endpoint, const
 void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id,
 		const uint16_t msg_type, const std::shared_ptr<google::protobuf::Message>& msg) {
 	assert(comp_id == 2000);
+	Log->log_warn(LoggingComponent, "Message: %d %d", comp_id, msg_type);
 	switch ( msg_type )
 	{
 		case llsf_msgs::GameState_CompType_MSG_TYPE :
@@ -253,6 +254,7 @@ void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint
 			{
 				const auto prefixLen = std::strlen(ConfigPrefix);
 				char buffer[prefixLen + 20];
+				const auto suffix = buffer + prefixLen;
 				std::strcpy(buffer, ConfigPrefix);
 				if ( game->team_cyan() == TeamName )
 				{
@@ -260,10 +262,9 @@ void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint
 					Beacon->set_team_color(llsf_msgs::Team::CYAN);
 
 					unsigned short recvPort, sendPort;
-					std::strcat(buffer, "cyan-send-port");
+					std::strcpy(suffix, "cyan-send-port");
 					sendPort = Config->get_int(buffer);
-					buffer[prefixLen] = 0;
-					std::strcat(buffer, "cyan-recv-port");
+					std::strcpy(suffix, "cyan-recv-port");
 					recvPort = Config->get_int(buffer);
 
 					openTeam(sendPort, recvPort);
@@ -274,10 +275,9 @@ void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint
 					Beacon->set_team_color(llsf_msgs::Team::MAGENTA);
 
 					unsigned short recvPort, sendPort;
-					std::strcat(buffer, "magenta-send-port");
+					std::strcpy(suffix, "magenta-send-port");
 					sendPort = Config->get_int(buffer);
-					buffer[prefixLen] = 0;
-					std::strcat(buffer, "cyanmagentarecv-port");
+					std::strcpy(suffix, "magenta-recv-port");
 					recvPort = Config->get_int(buffer);
 
 					openTeam(sendPort, recvPort);
@@ -592,7 +592,7 @@ void RefboxComm::newTeamMate(const uint32_t /*mate*/)
  *
  * Registers the common llsf_msgs and handled asp_msgs, additional (asp_)msgs have to be registered by the subclasses.
  */
-RefboxComm::RefboxComm(Logger *log, Configuration *config) :
+RefboxComm::RefboxComm(Logger*& log, Configuration*& config) :
 	ChannelMutex(Mutex::RECURSIVE), PublicChannel(nullptr), TeamChannel(nullptr), Number(0),
 	MessageMutex(Mutex::RECURSIVE), NextMessageID(0), NextAckPos(AckedMessages),
 	Now(Clock::now()),
@@ -616,8 +616,6 @@ RefboxComm::RefboxComm(Logger *log, Configuration *config) :
 	TeamRegister->add_message_type<llsf_msgs::RingInfo>();
 	TeamRegister->add_message_type<asp_msgs::Ack>();
 	TeamRegister->add_message_type<asp_msgs::PlanerBeacon>();
-
-	setConfigPrefix("/asp-agent/");
 	return;
 }
 
@@ -634,6 +632,15 @@ RefboxComm::~RefboxComm()
 	delete PublicRegister;
 	delete TeamRegister;
 	delete Beacon;
+	return;
+}
+
+/**
+ * @brief Inits the usage of the config. Call only after the config member is a valid pointer.
+ */
+void RefboxComm::initRefboxComm(void)
+{
+	setConfigPrefix("/asp-agent/");
 	return;
 }
 
@@ -682,6 +689,7 @@ void RefboxComm::openPublic(void)
 		std::strcpy(suffix, "peer-recv-port");
 		const auto recvPort = Config->get_int(buffer);
 
+		Log->log_info(LoggingComponent, "Open the public channel. %s %d %d", address.c_str(), sendPort, recvPort);
 		PublicChannel = new ProtobufBroadcastPeer(address, sendPort, recvPort, PublicRegister);
 		setupPeer(PublicChannel);
 		PublicChannel->signal_received().connect(boost::bind(&RefboxComm::recvPublic, this, _1, _2, _3, _4));
@@ -768,7 +776,7 @@ void RefboxComm::setConfigPrefix(const char *prefix)
 	Number = Config->get_int(buffer);
 
 	std::strcpy(suffix, "team-name");
-	TeamName = Config->get_string(suffix);
+	TeamName = Config->get_string(buffer);
 	return;
 }
 

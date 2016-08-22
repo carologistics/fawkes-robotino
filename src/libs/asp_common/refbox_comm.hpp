@@ -52,7 +52,7 @@ class Configuration;
 class Logger;
 class Mutex;
 
-	namespace asp {
+	namespace aspCommon {
 
 using Clock = std::chrono::high_resolution_clock;
 using TimePoint = Clock::time_point;
@@ -141,8 +141,8 @@ class RefboxComm
 	llsf_msgs::BeaconSignal* const Beacon;
 	MessageStruct *BeaconStruct;
 
-	Logger* const Log;
-	Configuration* const Config;
+	Logger*& Log;
+	Configuration*& Config;
 	const char *ConfigPrefix;
 
 	virtual void recvPublic(const boost::asio::ip::udp::endpoint &endpoint, const uint16_t comp_id,
@@ -161,8 +161,10 @@ class RefboxComm
 	public:
 	const char *LoggingComponent;
 
-	RefboxComm(Logger *log, Configuration *config);
+	RefboxComm(Logger*& log, Configuration*& config);
 	virtual ~RefboxComm(void);
+
+	void initRefboxComm(void);
 
 	bool checkPublic(void);
 	bool publicOpen(void) const noexcept;
@@ -181,7 +183,7 @@ class RefboxComm
 	uint32_t number(void) const noexcept;
 };
 
-	} //namespace asp
+	} //namespace aspCommon
 } //namespace fawkes
 
 #endif
