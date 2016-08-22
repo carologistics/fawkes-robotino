@@ -13,7 +13,7 @@ webview:
   port: !tcp-port 8088
 
 asp-agent:
-  team-name: ASP Rules!
+  team-name: "ASP Rules!"
   robot-number: 8
   robot-name: Surak
 

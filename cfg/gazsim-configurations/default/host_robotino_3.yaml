@@ -26,7 +26,7 @@ plugins/light_front:
   shm_image_id: "robotino3/light_front"
 
 asp-agent:
-  team-name: ASP Rules!
+  team-name: "ASP Rules!"
   robot-name: Spock
   robot-number: 3
 

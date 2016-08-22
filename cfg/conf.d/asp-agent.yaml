@@ -12,7 +12,7 @@ asp-agent:
   cyan-port: 4441
   magenta-port: 4442
 
-  team-name: ASP Rules!
+  team-name: "ASP Rules!"
   crypto-key: "live long and prosper"
   cipher: "aes-128-cbc"
 

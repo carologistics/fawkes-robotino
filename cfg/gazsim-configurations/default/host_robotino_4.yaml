@@ -31,7 +31,7 @@ plugins/light_front:
   shm_image_id: "robotino4/light_front"
   
 asp-agent:
-  team-name: ASP Rocks!
+  team-name: "ASP Rocks!"
   robot-name: Tuvok
   robot-number: 4
 
