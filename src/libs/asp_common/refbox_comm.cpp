@@ -244,7 +244,6 @@ void RefboxComm::recvError(const boost::asio::ip::udp::endpoint& endpoint, const
 void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id,
 		const uint16_t msg_type, const std::shared_ptr<google::protobuf::Message>& msg) {
 	assert(comp_id == 2000);
-	Log->log_warn(LoggingComponent, "Message: %d %d", comp_id, msg_type);
 	switch ( msg_type )
 	{
 		case llsf_msgs::GameState_CompType_MSG_TYPE :
@@ -507,7 +506,7 @@ void RefboxComm::openTeam(const unsigned short send, const unsigned short recv)
 
 		TeamChannel = new ProtobufBroadcastPeer(address, send, recv, TeamRegister, key, cipher);
 		setupPeer(TeamChannel);
-		TeamChannel->signal_received().connect(boost::bind(&RefboxComm::recvTeam, this, _1, _2, _3, _4));
+		TeamChannel->signal_received().connect(boost::bind(&RefboxComm::recvTeamCommon, this, _1, _2, _3, _4));
 		sendPeriodicMessages();
 	} //try
 	catch ( ... )
@@ -692,7 +691,7 @@ void RefboxComm::openPublic(void)
 		Log->log_info(LoggingComponent, "Open the public channel. %s %d %d", address.c_str(), sendPort, recvPort);
 		PublicChannel = new ProtobufBroadcastPeer(address, sendPort, recvPort, PublicRegister);
 		setupPeer(PublicChannel);
-		PublicChannel->signal_received().connect(boost::bind(&RefboxComm::recvPublic, this, _1, _2, _3, _4));
+		PublicChannel->signal_received().connect(boost::bind(&RefboxComm::recvPublicCommon, this, _1, _2, _3, _4));
 	} //try
 	catch ( Exception& e )
 	{
