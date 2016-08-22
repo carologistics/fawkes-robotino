@@ -1,0 +1,85 @@
+<!-- Generator: GNU source-highlight 3.1.8
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt>
+<i><font color="#9A1900">/***************************************************************************</font></i>
+<i><font color="#9A1900"> *  aps_agent_thread.cpp -  ASP-based agent main thread</font></i>
+<i><font color="#9A1900"> *</font></i>
+<i><font color="#9A1900"> *  Created on Mon Aug 15 17:39:02 2016</font></i>
+<i><font color="#9A1900"> *  Copyright (C) 2016 by Björn Schäpers</font></i>
+<i><font color="#9A1900"> ****************************************************************************/</font></i>
+
+<i><font color="#9A1900">/*  This program is free software; you can redistribute it and/or modify</font></i>
+<i><font color="#9A1900"> *  it under the terms of the GNU General Public License as published by</font></i>
+<i><font color="#9A1900"> *  the Free Software Foundation; either version 2 of the License, or</font></i>
+<i><font color="#9A1900"> *  (at your option) any later version.</font></i>
+<i><font color="#9A1900"> *</font></i>
+<i><font color="#9A1900"> *  This program is distributed in the hope that it will be useful,</font></i>
+<i><font color="#9A1900"> *  but WITHOUT ANY WARRANTY; without even the implied warranty of</font></i>
+<i><font color="#9A1900"> *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</font></i>
+<i><font color="#9A1900"> *  GNU Library General Public License for more details.</font></i>
+<i><font color="#9A1900"> *</font></i>
+<i><font color="#9A1900"> *  Read the full text in the LICENSE.GPL file in the doc directory.</font></i>
+<i><font color="#9A1900"> */</font></i>
+
+<b><font color="#000080">#include</font></b> <font color="#FF0000">&lt;cassert&gt;</font>
+<b><font color="#000080">#include</font></b> <font color="#FF0000">&lt;cstdlib&gt;</font>
+
+<b><font color="#000080">#include</font></b> <font color="#FF0000">&lt;core/exceptions/software.h&gt;</font>
+
+<b><font color="#000080">#include</font></b> <font color="#FF0000">"asp_agent_thread.h"</font>
+<i><font color="#9A1900">//#include "fawkes_zugriff/blackboard.hpp"</font></i>
+<i><font color="#9A1900">//#include "fawkes_zugriff/fawkes.hpp"</font></i>
+<i><font color="#9A1900">//#include "fawkes_zugriff/logging.hpp"</font></i>
+<i><font color="#9A1900">//#include "fawkes_zugriff/refbox.hpp"</font></i>
+
+<b><font color="#0000FF">using</font></b> <b><font color="#0000FF">namespace</font></b> fawkes<font color="#990000">;</font>
+
+<i><font color="#9A1900">/** </font></i><font color="#009900">@class</font><i><font color="#9A1900"> AspAgentThread "asp_agent_thread.h"</font></i>
+<i><font color="#9A1900"> * The thread to start and control the Asp agent.</font></i>
+<i><font color="#9A1900"> */</font></i>
+
+<i><font color="#9A1900">/** Constructor. */</font></i>
+AspAgentThread<font color="#990000">::</font><b><font color="#000000">AspAgentThread</font></b><font color="#990000">()</font> <font color="#990000">:</font> <b><font color="#000000">Thread</font></b><font color="#990000">(</font><font color="#FF0000">"AspAgentThread"</font><font color="#990000">,</font> Thread<font color="#990000">::</font>OPMODE_WAITFORWAKEUP<font color="#990000">),</font>
+		<b><font color="#000000">BlockedTimingAspect</font></b><font color="#990000">(</font>BlockedTimingAspect<font color="#990000">::</font>WAKEUP_HOOK_THINK<font color="#990000">),</font> asp<font color="#990000">::</font><b><font color="#000000">RefboxComm</font></b><font color="#990000">(</font>logger<font color="#990000">,</font> config<font color="#990000">)</font>
+<font color="#FF0000">{</font>
+	<b><font color="#0000FF">return</font></b><font color="#990000">;</font>
+<font color="#FF0000">}</font>
+
+<i><font color="#9A1900">/** Destructor. */</font></i>
+AspAgentThread<font color="#990000">::~</font><b><font color="#000000">AspAgentThread</font></b><font color="#990000">()</font>
+<font color="#FF0000">{</font>
+	<b><font color="#0000FF">return</font></b><font color="#990000">;</font>
+<font color="#FF0000">}</font>
+
+<font color="#009900">void</font>
+AspAgentThread<font color="#990000">::</font><b><font color="#000000">init</font></b><font color="#990000">()</font>
+<font color="#FF0000">{</font>
+	logger<font color="#990000">-&gt;</font><b><font color="#000000">log_info</font></b><font color="#990000">(</font><b><font color="#000000">name</font></b><font color="#990000">(),</font> <font color="#FF0000">"Initialize ASP Agent"</font><font color="#990000">);</font>
+	<b><font color="#000000">activateBeacon</font></b><font color="#990000">();</font>
+	<b><font color="#000000">openPublic</font></b><font color="#990000">();</font>
+	<b><font color="#0000FF">return</font></b><font color="#990000">;</font>
+<font color="#FF0000">}</font>
+
+<font color="#009900">void</font>
+AspAgentThread<font color="#990000">::</font><b><font color="#000000">loop</font></b><font color="#990000">()</font>
+<font color="#FF0000">{</font>
+	<b><font color="#0000FF">return</font></b><font color="#990000">;</font>
+<font color="#FF0000">}</font>
+
+<font color="#009900">void</font>
+AspAgentThread<font color="#990000">::</font><b><font color="#000000">finalize</font></b><font color="#990000">()</font>
+<font color="#FF0000">{</font>
+	logger<font color="#990000">-&gt;</font><b><font color="#000000">log_info</font></b><font color="#990000">(</font><b><font color="#000000">name</font></b><font color="#990000">(),</font> <font color="#FF0000">"Finalize ASP Agent"</font><font color="#990000">);</font>
+	<b><font color="#0000FF">return</font></b><font color="#990000">;</font>
+<font color="#FF0000">}</font>
+
+<i><font color="#9A1900">//bool</font></i>
+<i><font color="#9A1900">//AspAgentThread::prepare_finalize_user()</font></i>
+<i><font color="#9A1900">//{</font></i>
+<i><font color="#9A1900">//	logger-&gt;log_info(name(), "Prepare Finalize ASP Agent");</font></i>
+<i><font color="#9A1900">//	return true;</font></i>
+<i><font color="#9A1900">//}</font></i>
+
+</tt></pre>
