@@ -3,7 +3,6 @@
 #include <asp_msgs/Ack.pb.h>
 #include <asp_msgs/Beacon.pb.h>
 #include <config/config.h>
-#include <core/threading/mutex_locker.h>
 #include <llsf_msgs/BeaconSignal.pb.h>
 #include <llsf_msgs/ExplorationInfo.pb.h>
 #include <llsf_msgs/GameState.pb.h>

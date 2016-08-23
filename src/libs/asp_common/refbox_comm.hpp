@@ -30,6 +30,7 @@
 #include <vector>
 
 #include <core/threading/mutex.h>
+#include <core/threading/mutex_locker.h>
 
 namespace google {
 	namespace protobuf {
@@ -179,6 +180,13 @@ class RefboxComm
 	void activateBeacon(void);
 
 	void sendPeriodicMessages(void);
+	template<class... Args>
+	void sendMessage(Args&&... args)
+	{
+		MutexLocker locker(&MessageMutex);
+		PeriodicMessages.emplace_back(std::forward<Args>(args)...);
+		return;
+	}
 
 	uint32_t number(void) const noexcept;
 };
