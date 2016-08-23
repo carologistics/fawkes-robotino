@@ -402,6 +402,7 @@ void RefboxComm::recvTeamCommon(const boost::asio::ip::udp::endpoint& endpoint, 
  */
 void RefboxComm::registerTeamMate(const uint32_t number)
 {
+	MutexLocker locker(&MessageMutex);
 	if ( TeamMates.count(number) == 0 )
 	{
 		//We detected a new mate!
@@ -451,6 +452,7 @@ bool RefboxComm::checkTeamMates(void)
 	constexpr auto timeout = std::chrono::seconds(10);
 	const TimePoint limit = Now - timeout;
 
+	MutexLocker locker(&MessageMutex);
 	auto iter = TeamMates.begin();
 	const auto end = TeamMates.end();
 	bool modified = false;
@@ -464,7 +466,6 @@ bool RefboxComm::checkTeamMates(void)
 				"Team mate %d is considered dead, because we heard over %d seconds nothing from him.", mate,
 				timeout.count());
 
-			MutexLocker locker(&MessageMutex);
 			//We hope we find max one dead team member so we purge the acks immediatly.
 			//When it is expected to find more than one dead robot save the numbers and remove them in one sweep.
 			for ( MessageStruct& m : PeriodicMessages )
