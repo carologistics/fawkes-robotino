@@ -32,3 +32,6 @@ webview:
 
   # directories with static files
   static-dirs: ["@BASEDIR@/res/webview","@BASEDIR@/res/agent-monitor"]
+
+  # Enable the feature that users can send messages to the BlackBoard using webview?
+  bb_enable_msgs: true
