@@ -36,6 +36,11 @@ class AspPlanerThread
   public fawkes::LoggingAspect,
   public fawkes::aspCommon::RefboxComm
 {
+	private:
+	void constructRefboxComm(void);
+	void initRefboxComm(void);
+	void finalizeRefboxComm(void);
+
 	protected:
 	void recvPublic(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,
 		const std::shared_ptr<google::protobuf::Message>& msg) override;

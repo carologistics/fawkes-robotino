@@ -19,7 +19,7 @@ include $(BUILDSYSDIR)/boost.mk
 include $(BUILDSYSDIR)/protobuf.mk
 
 LIBS_asp_planer = asp_common fawkes_protobuf_comm llsf_msgs fawkescore asp_msgs
-OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o refbox_comm.o
+OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_refbox_comm.o
 
 OBJS_all = $(OBJS_asp_planer)
 

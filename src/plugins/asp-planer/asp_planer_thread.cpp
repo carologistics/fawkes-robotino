@@ -21,8 +21,6 @@
 
 #include "asp_planer_thread.h"
 
-#include <asp_msgs/Beacon.pb.h>
-
 using namespace fawkes;
 
 /** @class AspAgentThread "asp_agent_thread.h"
@@ -33,7 +31,7 @@ using namespace fawkes;
 AspPlanerThread::AspPlanerThread() : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), aspCommon::RefboxComm(logger, config)
 {
-	LoggingComponent = name();
+	constructRefboxComm();
 	return;
 }
 
@@ -48,10 +46,6 @@ AspPlanerThread::init()
 {
 	logger->log_info(LoggingComponent, "Initialize ASP Planer");
 	initRefboxComm();
-	auto msg = new asp_msgs::PlanerBeacon;
-	msg->set_number(number());
-	sendMessage(msg, aspCommon::StandardTimings::Beacon, true);
-	openPublic();
 	return;
 }
 
@@ -65,8 +59,8 @@ AspPlanerThread::loop()
 void
 AspPlanerThread::finalize()
 {
-	closePublic();
 	logger->log_info(LoggingComponent, "Finalize ASP Planer");
+	finalizeRefboxComm();
 	return;
 }
 

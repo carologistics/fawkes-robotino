@@ -1,5 +1,5 @@
 /***************************************************************************
- *  refbox_comm.cpp - ASP-based planer plugin refbox communication
+ *  asp_planer_refbox_comm.cpp - ASP-based planer plugin refbox communication
  *
  *  Created on Mon Aug 22 23:00:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -21,7 +21,41 @@
 
 #include "asp_planer_thread.h"
 
+#include <asp_msgs/Beacon.pb.h>
 #include <llsf_msgs/GameState.pb.h>
+
+using namespace fawkes;
+
+/**
+ * @brief Takes care of everything regarding refbox communication in the constructor.
+ */
+void AspPlanerThread::constructRefboxComm(void)
+{
+	LoggingComponent = name();
+	return;
+}
+
+/**
+ * @brief Takes care of everything regarding refbox communication in init().
+ */
+void AspPlanerThread::initRefboxComm(void)
+{
+	aspCommon::RefboxComm::initRefboxComm();
+	auto msg = new asp_msgs::PlanerBeacon;
+	msg->set_number(number());
+	sendMessage(msg, aspCommon::StandardTimings::Beacon, true);
+	openPublic();
+	return;
+}
+
+/**
+ * @brief Takes care of everything regarding refbox communication in finalize().
+ */
+void AspPlanerThread::finalizeRefboxComm(void)
+{
+	closePublic();
+	return;
+}
 
 /**
  * @brief Handles public messages.
