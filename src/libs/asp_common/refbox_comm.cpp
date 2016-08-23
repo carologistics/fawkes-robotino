@@ -702,7 +702,6 @@ void RefboxComm::openPublic(void)
 		std::strcpy(suffix, "peer-recv-port");
 		const auto recvPort = Config->get_int(buffer);
 
-		Log->log_info(LoggingComponent, "Open the public channel. %s %d %d", address.c_str(), sendPort, recvPort);
 		PublicChannel = new ProtobufBroadcastPeer(address, sendPort, recvPort, PublicRegister);
 		setupPeer(PublicChannel);
 		PublicChannel->signal_received().connect(boost::bind(&RefboxComm::recvPublicCommon, this, _1, _2, _3, _4));
