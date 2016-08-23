@@ -210,6 +210,20 @@ void MessageStruct::changeDelay(const std::chrono::milliseconds& delay, const un
  *
  * The common and default behavior is handeld in RefboxComm::recvPublicCommon.
  *
+ * @fn void RefboxComm::recvTeam(const boost::asio::ip::udp::endpoint&, const uint16_t,
+		const uint16_t, const std::shared_ptr<google::protobuf::Message>&)
+ * @brief Will be called when a message was send on the team channel.
+ * @param[in] endpoint From which endpoint the message was send.
+ * @param[in] comp_id The component id of the message.
+ * @param[in] msg_type The type of the message.
+ * @param[in] msg The message.
+ *
+ * The common and default behavior is handeld in RefboxComm::recvTeamCommon.
+ *
+ * @fn void RefboxComm::sendMessage(Args&&...)
+ * @brief Queues a message in PeriodicMessages.
+ * @param[in, out] message The message, will be moved.
+ *
  */
 
 /**
