@@ -21,8 +21,14 @@
 
 #include "asp_agent_thread.h"
 
+#include <asp_msgs/Beacon.pb.h>
 #include <llsf_msgs/BeaconSignal.pb.h>
 #include <llsf_msgs/GameState.pb.h>
+
+/**
+ * @var AspAgentThread::Planer
+ * @brief The id of the current planer.
+ */
 
 /**
  * @brief Handles public messages.
@@ -63,6 +69,26 @@ void AspAgentThread::recvTeam(const boost::asio::ip::udp::endpoint& /*endpoint*/
 		{
 			switch ( msg_type )
 			{
+				case asp_msgs::PlanerBeacon_CompType_MSG_TYPE :
+				{
+					auto beacon = std::static_pointer_cast<asp_msgs::PlanerBeacon>(msg);
+					const auto planer = beacon->number();
+					if ( planer != Planer )
+					{
+						if ( Planer )
+						{
+							Log->log_error(LoggingComponent,
+								"We think %d is the planer, but now %d claims to be one. We now accept him.",
+								Planer, planer);
+						} //if ( Planer )
+						else
+						{
+							Log->log_warn(LoggingComponent, "Detected planer: %d", planer);
+						} //else -> if ( Planer )
+						Planer = planer;
+					} //if ( planer != Planer )
+					break;
+				} //case asp_msgs::PlanerBeacon_CompType_MSG_TYPE
 				default : break;
 			} //switch ( msg_type )
 			break;
@@ -78,5 +104,18 @@ void AspAgentThread::recvTeam(const boost::asio::ip::udp::endpoint& /*endpoint*/
 void AspAgentThread::updateBeacon(void)
 {
 
+	return;
+}
+
+/**
+ * @brief Handles a dead planer.
+ */
+void AspAgentThread::deadTeamMate(const uint32_t mate)
+{
+	if ( mate == Planer )
+	{
+		Log->log_warn(LoggingComponent, "We lost our planer.");
+		Planer = 0;
+	} //if ( mate == Planer )
 	return;
 }

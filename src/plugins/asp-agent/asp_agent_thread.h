@@ -40,6 +40,9 @@ class AspAgentThread
   public fawkes::TransformAspect,
   public fawkes::aspCommon::RefboxComm
 {
+	private:
+	uint32_t Planer;
+
 	protected:
 	void recvPublic(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,
 		const std::shared_ptr<google::protobuf::Message>& msg) override;
@@ -47,6 +50,8 @@ class AspAgentThread
 		const std::shared_ptr<google::protobuf::Message>& msg) override;
 
 	void updateBeacon(void) override;
+
+	void deadTeamMate(const uint32_t mate) override;
 
 	public:
 	AspAgentThread();

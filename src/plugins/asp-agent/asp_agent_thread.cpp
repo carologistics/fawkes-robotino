@@ -29,7 +29,8 @@ using namespace fawkes;
 
 /** Constructor. */
 AspAgentThread::AspAgentThread() : Thread("AspAgentThread", Thread::OPMODE_WAITFORWAKEUP),
-		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), aspCommon::RefboxComm(logger, config)
+		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), aspCommon::RefboxComm(logger, config),
+		Planer(0)
 {
 	LoggingComponent = name();
 	return;
