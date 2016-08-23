@@ -32,7 +32,7 @@ AspAgentThread::AspAgentThread() : Thread("AspAgentThread", Thread::OPMODE_WAITF
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), aspCommon::RefboxComm(logger, config),
 		Planer(0)
 {
-	LoggingComponent = name();
+	constructRefboxComm();
 	return;
 }
 
@@ -47,8 +47,6 @@ AspAgentThread::init()
 {
 	logger->log_info(LoggingComponent, "Initialize ASP Agent");
 	initRefboxComm();
-	activateBeacon();
-	openPublic();
 	return;
 }
 
@@ -62,8 +60,8 @@ AspAgentThread::loop()
 void
 AspAgentThread::finalize()
 {
-	closePublic();
 	logger->log_info(LoggingComponent, "Finalize ASP Agent");
+	finalizeRefboxComm();
 	return;
 }
 

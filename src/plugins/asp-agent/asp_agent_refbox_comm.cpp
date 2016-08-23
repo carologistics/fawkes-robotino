@@ -1,5 +1,5 @@
 /***************************************************************************
- *  refbox_comm.cpp - ASP-based agent plugin refbox communication
+ *  asp_agent_refbox_comm.cpp - ASP-based agent plugin refbox communication
  *
  *  Created on Mon Aug 22 15:25:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -25,10 +25,41 @@
 #include <llsf_msgs/BeaconSignal.pb.h>
 #include <llsf_msgs/GameState.pb.h>
 
+using namespace fawkes;
+
 /**
  * @var AspAgentThread::Planer
  * @brief The id of the current planer.
  */
+
+/**
+ * @brief Takes care of everything regarding refbox communication in the constructor.
+ */
+void AspAgentThread::constructRefboxComm(void)
+{
+	LoggingComponent = name();
+	return;
+}
+
+/**
+ * @brief Takes care of everything regarding refbox communication in init().
+ */
+void AspAgentThread::initRefboxComm(void)
+{
+	aspCommon::RefboxComm::initRefboxComm();
+	activateBeacon();
+	openPublic();
+	return;
+}
+
+/**
+ * @brief Takes care of everything regarding refbox communication in finalize().
+ */
+void AspAgentThread::finalizeRefboxComm(void)
+{
+	closePublic();
+	return;
+}
 
 /**
  * @brief Handles public messages.
