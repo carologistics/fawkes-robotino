@@ -2,7 +2,14 @@
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
 asp-agent:
-  agent-role: nothing
+  planer:
+    debug: true
+    more-models: false
+
+    program-path: ../src/agents/asp/
+    program-files: [constants.lp, exploration.lp, facts.lp, robot.lp, state.lp]
+
+    look-ahaed: 300
 
   #real-world-setup:
   peer-address: 172.26.255.255
@@ -13,6 +20,8 @@ asp-agent:
   team-name: "ASP Rules!"
   crypto-key: "live long and prosper"
   cipher: "aes-128-cbc"
+
+  exploration-time: 240
 
   #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
   cap-station:

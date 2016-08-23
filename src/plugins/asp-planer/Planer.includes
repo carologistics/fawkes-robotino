@@ -1,0 +1,10 @@
+../../../fawkes/src/libs
+../../../fawkes/src
+../../../src/libs
+../../../src
+.
+~/clingo/libclasp
+~/clingo/libclingo
+~/clingo/libgringo
+~/clingo/liblp
+~/clingo/libprogram_opts
