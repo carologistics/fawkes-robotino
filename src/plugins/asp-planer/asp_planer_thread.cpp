@@ -48,7 +48,6 @@ AspPlanerThread::init()
 {
 	logger->log_info(LoggingComponent, "Initialize ASP Planer");
 	initRefboxComm();
-	activateBeacon();
 	auto msg = new asp_msgs::PlanerBeacon;
 	msg->set_number(number());
 	sendMessage(msg, aspCommon::StandardTimings::Beacon, true);
