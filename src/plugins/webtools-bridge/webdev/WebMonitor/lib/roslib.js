@@ -119,7 +119,7 @@ function ActionClient(options) {
     ros : this.ros,
     name : this.serverName + '/feedback',
     messageType : this.actionName + 'Feedback',
-    throttle_rate :1000 , 
+    throttle_rate :window.tf_throttle_rate,
     queue_length : 5
   });
 
@@ -2547,11 +2547,57 @@ var Image = Canvas.Image || global.Image;
  * @param callback - function with params:
  *   * data - the uncompressed data
  */
+
 function decompressPng(data, callback) {
   // Uncompresses the data before sending it through (use image/canvas to do so).
   var image = new Image();
   // When the image loads, extracts the raw data (JSON message).
   image.onload = function() {
+    // Creates a local canvas to draw on.
+    var canvas = new Canvas();
+   var  context = canvas.getContext('2d');
+
+   
+    // Sets width and height.
+    canvas.width = image.width;
+    canvas.height = image.height;
+
+    // Prevents anti-aliasing and loosing data
+    context.imageSmoothingEnabled = false;
+    context.webkitImageSmoothingEnabled = false;
+    context.mozImageSmoothingEnabled = false;
+
+    // Puts the data into the image.
+    context.drawImage(image, 0, 0);
+    // Grabs the raw, uncompressed data.
+    var imageData = context.getImageData(0, 0, image.width, image.height).data;
+
+    // Constructs the JSON.
+    var jsonData = '';
+    for (var i = 0; i < imageData.length; i += 4) {
+      // RGB
+      jsonData += String.fromCharCode(imageData[i], imageData[i + 1], imageData[i + 2]);
+    }
+    callback(JSON.parse(jsonData));
+    //context.drawImage('iVBORw0KGgoAAAANSUhEUgAAADEAAAAyCAIAAAB6aqTlAAAINklEQVR4nM2Z208b2R3Hf+fMjG9MhuEScPOwsrwP2SY0MVkgwYQ4ZkzIBTCGNClFq1VUdaWVVtlV2UpVV/sn9J9o5JC0a4IgJKW2ISSlZJeQiqpJtKrUpwocX8eTsfGM59IHGzebBQKGhPhpHsbW7xx/5ns+Xw36yv6l2JsRx5fCkLnU5dFzkviTTEWKkbPaixqNBFGBGjCOLYyAe6Bzcn5qMNKz3KeRYAo/DLS6cXXUl5dxhSEqmAhYxQB5k7o/V5VRZMvs44DnYPc+8l4g3MW5JDz7ODgYGRyxjjAiS2p8shtbbzAiizWe78XW64zI9mi839nvwgIXU3XZxB3C1jSfkzTy3t0bOE8A+WBxxnxXGfv3zEzoHxNath8WA9/SWdoPmdmHkwuhsGUZ0yPWiUfBh+/dDYT3Q0V1+GkoPL04MatYkDL7ODAY6TNXq4jkemE+fOBOLQBM0ncty/isaImTDHNbi/xSoHkNs0PjWsTb0dacPuvuJ9R9yO60laZXBKE4vCIIxdkVQbiArTcZke3xKtf87k5fXtbVWpXVRX7sWRAitAYnO10KVE0/GR2MDEguWZldHBuMDETdEH4WqJTrDHpeVzFWEtGOAS4D4WeBao0lJXNOX+1ReL+z32V8oSn6g6UQfOD2ERr67MqwVHVrfhS6Or23ntxiOJr3H/eepwnjxMNA6/v03JzH26VRltt/D7S68Xsj1hFGrDcT8ipBIUAYdESh3EqsuBaESRMFqwqFjLoRckhWVl76Y7RsYfH1RjNScE7Nm816XqYIKRLrxtYblSILmNSNqKnpOKmqiFDzuVRy7etHlWtzzVy/iZanFsYZAYTT5zxSBWFKTy0GSzvACsCvLZzhaN7fMQCPAnDM7ZOq4sbVSslyez4AZwd70ze/CzICCO0eWAoxHM1r2Z7NMES2T66Uw6HxhaZbSD2L7j4JrZF83HueJu4sjA5G3CPWmUqRzQvCGWwdLVy1YOt0gYU2bJ0q/tLZzksQvv8NRGgNPF5fZmI+OBhBX3w+LFFZgzy1ML4pVz0a7+f6u7JKhWLIMK+9fScYomG7sxwOJaV22xhutNYSZkVMydn9Uq2OCJCi8W5svcHS96cXSFMNsAqFSKNuypkngYfase+vMyLb06bAnI4RyeDwfJCxAD6dRWL/0Z60fzE4OENG3XDHuly9tMz3DmTEImhz/g4rPALhVKNPqloxrvYWQJMvt3Te/C44IYDQFYMlQN7MSgE09PFvh7cbeOsst4ry5mPlc1a4asPWqUqR7UYNNvsaaNWuyqeLqf+z1if6XkWtnBQozLsNFlGDzX4BW29Wimz328rE17GIbPYvSjC+T8/tcizVC/C83QNLIZajk6+JpRIsaPhXV35IC6XxieJ2UhqfKO4n5VV2wMvWcmmNlZfPu3qzWVYUI6lKMjap+EUhMiuyjJE0AqHreUzosk5RajbG7yi1XgMKdh3qXIVZzY25M4eaWtNUgnvONTnczy1xqrZ2pmq1jiAsuXjCebLR4Y6TKZKQCX0fy9wZEkA40fFfd2e7LEw9GR9FCUs2ff7gQLTvpmUZc8fd2QPaX4YEEJpdp719EgAcPqqIuDfX1XSxQ7Rc+08jrU0qPG1RzbcW/jz9bRCOnfNwZ89dUMPIafuqLFJYAfh2DyyFqjg6sVVSfhQr64KCHM1fvz1SXk4VkwlUFZE6gEFVEFpdiReGqyHQiaYPkU4qmq6CgimUi6beJCpbyhQcSbY5jzWcSpNJwqBg7Q2j8n2obsx3mMvB/DdLM2PQVByI4ehU8sTJlDkqtP60C/36Nx9viEo1R8fLRqV81UH2K/ZdJmXHqoMcRxx7oNybHi9o6KOG9ZW7nPwsmdDGD5UFwQbPVEm40VW7c3eOthoBEu0eWArVcHRsRxSi39mdOzfuAgs/pLBSZLvLoxA12Oxv37g3pxC1Ohy7Z9z1ZkKRdKxhTBkkVUNyNF1SPiBNFFY0IBHOQd6Ui0fXK34WXc6h5mPHQdd0UCCfShabn15hNiog53NGg0FDevZ5/C0Uv1qOjpbv47tW/BixzozzYNABTIAkSUNyjG/ByGlziFXITBEgI4xRjiKMSBUj8b0IyyKlyO60vTNhWaQUfXr1y+0WwzIw3haHaNju3AaI+zn6edl5uNVeiD658llZxfAlzqpd7NPF5Ot64dZ3F9l/by+rGO6iw73KImbuMBzNi83te+dwnX1piawQfBE6HvW4XQ3I7rSVimEdR0d2V/fL6oXIcaRlvdyyTjO7FVv1ZrOky6BiDISRwIoYSZS8hyQBg0JKIFEUIUOOT/RiK7I5juxhHVg31vDe1oFXURIs/CQgm/1TDyyF6jl65R1AiRHrzBg1tra8QZRMZlnNY91oAF0n85KYSJccWCd0rGkI6yrKJWMvn47Y7Th6qu3wSceJdp5KevHle9ZlVsP5VKwjSfD5jJZNxdxRHCUZZk6LXBZo/jZmh8zzN0YvHB44036m06cbdI2LHPDDeDgwJSpCljuBZzQMrRcbXa1RInWGP914yJnEEQlRFTWV04xkVYRUW9uHPzuZNMR0rBjkV0olfncwAiCE2cXgP+fR1w22PaiVm4oUeduwH8EEn9oII2jD/5r6m8j6aM1fRV4CABiBCS3S5ypg9KdecaCI0fXCsBMia/nrWH0pQX6BD1zP3md7AIAm1KzSf/BislmGBTgvnhs5MDItZmle7BCKt0d7C063Fy96NhEp5LQNbeT724zfH/XO7T5za5KFPr9q3yXbL5XOytWPGrpvPfBzfbAwBi0/P62IVcqU5Y+RP8CWPv8DskPQlKvvkhYAAAAASUVORK5CYII=',0,0);
+//     context.clearRect(0,0,0,0);
+//    this.src = "img/not_check.png";
+//   window.location.reload(true);
+
+    // notLock ( this , callback );
+
+  };
+  // Sends the image data to load.
+  image.src = 'data:image/png;base64,' + data;
+  //image.crossOrigin = "Anonymous";
+
+}
+
+
+
+
+function notLock( image , cl ){
+
     // Creates a local canvas to draw on.
     var canvas = new Canvas();
     var context = canvas.getContext('2d');
@@ -2576,10 +2622,14 @@ function decompressPng(data, callback) {
       // RGB
       jsonData += String.fromCharCode(imageData[i], imageData[i + 1], imageData[i + 2]);
     }
-    callback(JSON.parse(jsonData));
-  };
-  // Sends the image data to load.
-  image.src = 'data:image/png;base64,' + data;
+
+    cl(JSON.parse(jsonData));
+
+    // return jsonData;
+    //context.drawImage('iVBORw0KGgoAAAANSUhEUgAAADEAAAAyCAIAAAB6aqTlAAAINklEQVR4nM2Z208b2R3Hf+fMjG9MhuEScPOwsrwP2SY0MVkgwYQ4ZkzIBTCGNClFq1VUdaWVVtlV2UpVV/sn9J9o5JC0a4IgJKW2ISSlZJeQiqpJtKrUpwocX8eTsfGM59IHGzebBQKGhPhpHsbW7xx/5ns+Xw36yv6l2JsRx5fCkLnU5dFzkviTTEWKkbPaixqNBFGBGjCOLYyAe6Bzcn5qMNKz3KeRYAo/DLS6cXXUl5dxhSEqmAhYxQB5k7o/V5VRZMvs44DnYPc+8l4g3MW5JDz7ODgYGRyxjjAiS2p8shtbbzAiizWe78XW64zI9mi839nvwgIXU3XZxB3C1jSfkzTy3t0bOE8A+WBxxnxXGfv3zEzoHxNath8WA9/SWdoPmdmHkwuhsGUZ0yPWiUfBh+/dDYT3Q0V1+GkoPL04MatYkDL7ODAY6TNXq4jkemE+fOBOLQBM0ncty/isaImTDHNbi/xSoHkNs0PjWsTb0dacPuvuJ9R9yO60laZXBKE4vCIIxdkVQbiArTcZke3xKtf87k5fXtbVWpXVRX7sWRAitAYnO10KVE0/GR2MDEguWZldHBuMDETdEH4WqJTrDHpeVzFWEtGOAS4D4WeBao0lJXNOX+1ReL+z32V8oSn6g6UQfOD2ERr67MqwVHVrfhS6Or23ntxiOJr3H/eepwnjxMNA6/v03JzH26VRltt/D7S68Xsj1hFGrDcT8ipBIUAYdESh3EqsuBaESRMFqwqFjLoRckhWVl76Y7RsYfH1RjNScE7Nm816XqYIKRLrxtYblSILmNSNqKnpOKmqiFDzuVRy7etHlWtzzVy/iZanFsYZAYTT5zxSBWFKTy0GSzvACsCvLZzhaN7fMQCPAnDM7ZOq4sbVSslyez4AZwd70ze/CzICCO0eWAoxHM1r2Z7NMES2T66Uw6HxhaZbSD2L7j4JrZF83HueJu4sjA5G3CPWmUqRzQvCGWwdLVy1YOt0gYU2bJ0q/tLZzksQvv8NRGgNPF5fZmI+OBhBX3w+LFFZgzy1ML4pVz0a7+f6u7JKhWLIMK+9fScYomG7sxwOJaV22xhutNYSZkVMydn9Uq2OCJCi8W5svcHS96cXSFMNsAqFSKNuypkngYfase+vMyLb06bAnI4RyeDwfJCxAD6dRWL/0Z60fzE4OENG3XDHuly9tMz3DmTEImhz/g4rPALhVKNPqloxrvYWQJMvt3Te/C44IYDQFYMlQN7MSgE09PFvh7cbeOsst4ry5mPlc1a4asPWqUqR7UYNNvsaaNWuyqeLqf+z1if6XkWtnBQozLsNFlGDzX4BW29Wimz328rE17GIbPYvSjC+T8/tcizVC/C83QNLIZajk6+JpRIsaPhXV35IC6XxieJ2UhqfKO4n5VV2wMvWcmmNlZfPu3qzWVYUI6lKMjap+EUhMiuyjJE0AqHreUzosk5RajbG7yi1XgMKdh3qXIVZzY25M4eaWtNUgnvONTnczy1xqrZ2pmq1jiAsuXjCebLR4Y6TKZKQCX0fy9wZEkA40fFfd2e7LEw9GR9FCUs2ff7gQLTvpmUZc8fd2QPaX4YEEJpdp719EgAcPqqIuDfX1XSxQ7Rc+08jrU0qPG1RzbcW/jz9bRCOnfNwZ89dUMPIafuqLFJYAfh2DyyFqjg6sVVSfhQr64KCHM1fvz1SXk4VkwlUFZE6gEFVEFpdiReGqyHQiaYPkU4qmq6CgimUi6beJCpbyhQcSbY5jzWcSpNJwqBg7Q2j8n2obsx3mMvB/DdLM2PQVByI4ehU8sTJlDkqtP60C/36Nx9viEo1R8fLRqV81UH2K/ZdJmXHqoMcRxx7oNybHi9o6KOG9ZW7nPwsmdDGD5UFwQbPVEm40VW7c3eOthoBEu0eWArVcHRsRxSi39mdOzfuAgs/pLBSZLvLoxA12Oxv37g3pxC1Ohy7Z9z1ZkKRdKxhTBkkVUNyNF1SPiBNFFY0IBHOQd6Ui0fXK34WXc6h5mPHQdd0UCCfShabn15hNiog53NGg0FDevZ5/C0Uv1qOjpbv47tW/BixzozzYNABTIAkSUNyjG/ByGlziFXITBEgI4xRjiKMSBUj8b0IyyKlyO60vTNhWaQUfXr1y+0WwzIw3haHaNju3AaI+zn6edl5uNVeiD658llZxfAlzqpd7NPF5Ot64dZ3F9l/by+rGO6iw73KImbuMBzNi83te+dwnX1piawQfBE6HvW4XQ3I7rSVimEdR0d2V/fL6oXIcaRlvdyyTjO7FVv1ZrOky6BiDISRwIoYSZS8hyQBg0JKIFEUIUOOT/RiK7I5juxhHVg31vDe1oFXURIs/CQgm/1TDyyF6jl65R1AiRHrzBg1tra8QZRMZlnNY91oAF0n85KYSJccWCd0rGkI6yrKJWMvn47Y7Th6qu3wSceJdp5KevHle9ZlVsP5VKwjSfD5jJZNxdxRHCUZZk6LXBZo/jZmh8zzN0YvHB44036m06cbdI2LHPDDeDgwJSpCljuBZzQMrRcbXa1RInWGP914yJnEEQlRFTWV04xkVYRUW9uHPzuZNMR0rBjkV0olfncwAiCE2cXgP+fR1w22PaiVm4oUeduwH8EEn9oII2jD/5r6m8j6aM1fRV4CABiBCS3S5ypg9KdecaCI0fXCsBMia/nrWH0pQX6BD1zP3md7AIAm1KzSf/BislmGBTgvnhs5MDItZmle7BCKt0d7C063Fy96NhEp5LQNbeT724zfH/XO7T5za5KFPr9q3yXbL5XOytWPGrpvPfBzfbAwBi0/P62IVcqU5Y+RP8CWPv8DskPQlKvvkhYAAAAASUVORK5CYII=',0,0);
+//     context.clearRect(0,0,0,0);
+//    this.src = "img/not_check.png";
+//   window.location.reload(true);
 }
 
 module.exports = decompressPng;

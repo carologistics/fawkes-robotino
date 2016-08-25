@@ -21,6 +21,7 @@ function MpsMetadata( options ){ //Machine data comes as the want
 	this . incoming_agent = options.incoming_agent || "N/A" ;
 	this . produced_id = options.produced_id|| "N/A" ;
 	this . loaded_id = options 	.loaded_id	|| "N/A" ;
+	this . nav_node = {};
 
 	this . tag_found =false;
 	this . explored = false;		//The exploration recognized
@@ -225,9 +226,9 @@ function MpsWedgit ( machine_name ,  $parent )  {
 	this . visualize = function () {
 
 		var machine_metadata_ = window . machines [machine_name] ; 
-		// take machine name with out team prefix |C-|RS|
-		var unprefrixed_machine_name = ( machine_metadata_ . name + "") . split('-') [1] || ( machine_metadata_ . name + "") ;
-	
+	// take machine name with out team prefix |C-|RS|
+	var unprefrixed_machine_name = ( machine_metadata_ . name + "") . split('-') [1] || ( machine_metadata_ . name + "") ;
+
 		var $w_header; 
 		//==============Title	
 		w_header =  "<b> " + unprefrixed_machine_name	+ "</b>" + "<sub>" + machine_metadata_ . state 	+ "</sub>" ;
@@ -692,6 +693,9 @@ function MpsMonitor()
 			}			
 				
 		});
+
+
+
 
 
 	};

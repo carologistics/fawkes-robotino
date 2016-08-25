@@ -9,7 +9,8 @@ html, body {
     /*border: 3px dotted #73AD21;*/
     margin : 6px;
     width : 83% ;
-    position: absolute;
+    min-width : 31% ;
+    position: relative;
     left: 0%;
 }
 
@@ -25,7 +26,8 @@ html, body {
 .container{
     border: 3px dotted #73AD21;
     margin : 6px;
-    width : 31% ;
+    min-width : 31% ;
+    max-width : 31% ;
     position: relative;
     float: left;
 }
@@ -183,13 +185,13 @@ div[id^="skills__"] p.done span.FAILED
 }
 
 .mps.monitor{
-    position: fixed;
     border: 3px dashed #73AD21;
     margin : 2px;
     height: 98%;
-    width : 15% ;
+    min-width : 15% ;
     position: fixed;
     right: 0% ;
+    top: 0%;
 
 }
 
@@ -265,6 +267,19 @@ img.not_loaded{
     right : 0px;
 }
 
+
+/*
+.game_info.monitor{
+    position: fixed;
+    top : 0px;
+    display: block;
+    
+}*/
+.game_info .col_element
+{
+    width: 23%;
+
+}
 
 /*
 
