@@ -4,7 +4,11 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 asp-agent:
-  agent-role: nothing
+  planer:
+    debug: true
+
+    program-path: ../src/agents/asp/
+    program-files: [exploration.lp, facts.lp, robot.lp]
 
   #real-world-setup:
   peer-address: 172.26.255.255

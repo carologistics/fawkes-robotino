@@ -19,7 +19,7 @@ include $(BUILDSYSDIR)/boost.mk
 include $(BUILDSYSDIR)/protobuf.mk
 
 LIBS_asp_planer = asp_common fawkes_protobuf_comm llsf_msgs fawkescore asp_msgs
-OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_refbox_comm.o
+OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_refbox_comm.o asp_planer_clingo.o
 
 OBJS_all = $(OBJS_asp_planer)
 
@@ -28,7 +28,12 @@ HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
 #TODO: export this in .mk and really check
 HAVE_CLINGO = 1
-CFLAGS_CLINGO = -DWITH_THREADS=1
+CFLAGS_CLINGO = -DWITH_THREADS=1 \
+	-I $(HOME)/clingo/libclasp \
+	-I $(HOME)/clingo/libclingo \
+	-I $(HOME)/clingo/libgringo \
+	-I $(HOME)/clingo/liblp \
+	-I $(HOME)/clingo/libprogram_opts
 LDFLAGS_CLINGO = -L$(HOME)/clingo/build/debug/ -Wl,-rpath=$(HOME)/clingo/build/debug/ -lclingo
 
 ifeq ($(HAVE_CPP11)$(HAVE_PROTOBUF)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),1111)

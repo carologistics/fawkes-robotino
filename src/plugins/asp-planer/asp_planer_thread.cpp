@@ -29,9 +29,11 @@ using namespace fawkes;
 
 /** Constructor. */
 AspPlanerThread::AspPlanerThread() : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
-		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), aspCommon::RefboxComm(logger, config)
+		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), aspCommon::RefboxComm(logger, config),
+		Control(nullptr), ClingoDebug(false)
 {
 	constructRefboxComm();
+	constructClingo();
 	return;
 }
 
@@ -46,6 +48,7 @@ AspPlanerThread::init()
 {
 	logger->log_info(LoggingComponent, "Initialize ASP Planer");
 	initRefboxComm();
+	initClingo();
 	return;
 }
 
@@ -61,6 +64,7 @@ AspPlanerThread::finalize()
 {
 	logger->log_info(LoggingComponent, "Finalize ASP Planer");
 	finalizeRefboxComm();
+	finalizeClingo();
 	return;
 }
 

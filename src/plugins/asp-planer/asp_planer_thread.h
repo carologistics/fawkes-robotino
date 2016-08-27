@@ -29,6 +29,19 @@
 #include <asp_common/refbox_comm.hpp>
 #include <core/threading/thread.h>
 
+namespace Clingo {
+class Control;
+class Part;
+
+template<typename T>
+class ToIterator;
+
+template<typename T, typename I>
+class Span;
+
+using PartSpan = Span<Part, ToIterator<Part>>;
+}
+
 class AspPlanerThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
@@ -37,9 +50,18 @@ class AspPlanerThread
   public fawkes::aspCommon::RefboxComm
 {
 	private:
+	Clingo::Control *Control;
+	bool ClingoDebug;
+
 	void constructRefboxComm(void);
 	void initRefboxComm(void);
 	void finalizeRefboxComm(void);
+
+	void constructClingo(void);
+	void initClingo(void);
+	void finalizeClingo(void);
+
+	void ground(const Clingo::PartSpan& parts);
 
 	protected:
 	void recvPublic(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,
