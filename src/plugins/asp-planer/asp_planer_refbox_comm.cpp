@@ -29,7 +29,8 @@ using namespace fawkes;
 /**
  * @brief Takes care of everything regarding refbox communication in the constructor.
  */
-void AspPlanerThread::constructRefboxComm(void)
+void
+AspPlanerThread::constructRefboxComm(void)
 {
 	LoggingComponent = name();
 	return;
@@ -38,7 +39,8 @@ void AspPlanerThread::constructRefboxComm(void)
 /**
  * @brief Takes care of everything regarding refbox communication in init().
  */
-void AspPlanerThread::initRefboxComm(void)
+void
+AspPlanerThread::initRefboxComm(void)
 {
 	aspCommon::RefboxComm::initRefboxComm();
 	auto msg = new asp_msgs::PlanerBeacon;
@@ -51,7 +53,8 @@ void AspPlanerThread::initRefboxComm(void)
 /**
  * @brief Takes care of everything regarding refbox communication in finalize().
  */
-void AspPlanerThread::finalizeRefboxComm(void)
+void
+AspPlanerThread::finalizeRefboxComm(void)
 {
 	closePublic();
 	return;
@@ -60,7 +63,8 @@ void AspPlanerThread::finalizeRefboxComm(void)
 /**
  * @brief Handles public messages.
  */
-void AspPlanerThread::recvPublic(const boost::asio::ip::udp::endpoint& /*endpoint*/, const uint16_t comp_id,
+void
+AspPlanerThread::recvPublic(const boost::asio::ip::udp::endpoint& /*endpoint*/, const uint16_t comp_id,
 		const uint16_t msg_type, const std::shared_ptr<google::protobuf::Message>& msg)
 {
 	assert(comp_id == 2000);
@@ -79,7 +83,8 @@ void AspPlanerThread::recvPublic(const boost::asio::ip::udp::endpoint& /*endpoin
 /**
  * @brief Handles team messages.
  */
-void AspPlanerThread::recvTeam(const boost::asio::ip::udp::endpoint& /*endpoint*/, const uint16_t comp_id,
+void
+AspPlanerThread::recvTeam(const boost::asio::ip::udp::endpoint& /*endpoint*/, const uint16_t comp_id,
 		const uint16_t msg_type, const std::shared_ptr<google::protobuf::Message>& msg)
 {
 	switch ( comp_id )

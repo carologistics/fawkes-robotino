@@ -58,7 +58,8 @@ using fawkes::MutexLocker;
 /**
  * @brief Takes care of everything regarding clingo interface in the constructor.
  */
-void AspPlanerThread::constructClingo(void)
+void
+AspPlanerThread::constructClingo(void)
 {
 	auto clingoLogger = [this](const Clingo::WarningCode code, char const *msg) {
 			fawkes::Logger::LogLevel level = fawkes::Logger::LL_NONE;
@@ -83,7 +84,8 @@ void AspPlanerThread::constructClingo(void)
 /**
  * @brief Takes care of everything regarding clingo interface in init().
  */
-void AspPlanerThread::initClingo(void)
+void
+AspPlanerThread::initClingo(void)
 {
 	constexpr auto infix = "planer/";
 	const auto prefixLen = std::strlen(ConfigPrefix), infixLen = std::strlen(infix);
@@ -119,7 +121,8 @@ void AspPlanerThread::initClingo(void)
 /**
  * @brief Does the loop for clingo.
  */
-void AspPlanerThread::loopClingo(void)
+void
+AspPlanerThread::loopClingo(void)
 {
 	MutexLocker cliLocker(&ClingoMutex);
 	MutexLocker reqLocker(&RequestMutex);
@@ -152,7 +155,8 @@ void AspPlanerThread::loopClingo(void)
 /**
  * @brief Takes care of everything regarding clingo interface in finalize().
  */
-void AspPlanerThread::finalizeClingo(void)
+void
+AspPlanerThread::finalizeClingo(void)
 {
 	MutexLocker locker(&ClingoMutex);
 	delete Control;
@@ -163,7 +167,8 @@ void AspPlanerThread::finalizeClingo(void)
 /**
  * @brief Resets the clingo solver.
  */
-void AspPlanerThread::resetClingo(void)
+void
+AspPlanerThread::resetClingo(void)
 {
 	Log->log_info(LoggingComponent, "Resetting Clingo.");
 	MutexLocker locker(&ClingoMutex);
@@ -186,7 +191,8 @@ void AspPlanerThread::resetClingo(void)
 /**
  * @brief Queues a request for grounding.
  */
-void AspPlanerThread::queueGround(GroundRequest&& request)
+void
+AspPlanerThread::queueGround(GroundRequest&& request)
 {
 	MutexLocker locker(&RequestMutex);
 	Requests.emplace_back(std::move(request));
@@ -196,7 +202,8 @@ void AspPlanerThread::queueGround(GroundRequest&& request)
 /**
  * @brief Grounds the given parts and if wished for prints that it does so.
  */
-void AspPlanerThread::ground(const Clingo::PartSpan& parts)
+void
+AspPlanerThread::ground(const Clingo::PartSpan& parts)
 {
 	if ( ClingoDebug )
 	{
@@ -235,7 +242,8 @@ void AspPlanerThread::ground(const Clingo::PartSpan& parts)
 /**
  * @brief Starts the solving process, if it isn't running.
  */
-void AspPlanerThread::solve(void)
+void
+AspPlanerThread::solve(void)
 {
 	MutexLocker locker(&ClingoMutex);
 	if ( Solving )
@@ -257,7 +265,8 @@ void AspPlanerThread::solve(void)
  * @param[in] newModel The new Model.
  * @return If the solver should search for additional models.
  */
-bool AspPlanerThread::newModel(const Clingo::Model& model)
+bool
+AspPlanerThread::newModel(const Clingo::Model& model)
 {
 	const Clingo::SymbolVector symbols = model.symbols();
 	if ( ClingoDebug )
@@ -297,7 +306,8 @@ bool AspPlanerThread::newModel(const Clingo::Model& model)
  *        we told him to be finished.
  * @param[in] result Contains the information what condition has been met.
  */
-void AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
+void
+AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 {
 	if ( ClingoDebug )
 	{
@@ -313,14 +323,16 @@ void AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 	return;
 }
 
-void AspPlanerThread::setTeam(const bool cyan)
+void
+AspPlanerThread::setTeam(const bool cyan)
 {
 	std::vector<Clingo::Symbol> param(1, Clingo::String(cyan ? "C" : "M"));
 	queueGround({"ourTeam", param, false});
 	return;
 }
 
-void AspPlanerThread::unsetTeam(void)
+void
+AspPlanerThread::unsetTeam(void)
 {
 	resetClingo();
 	return;
