@@ -120,6 +120,26 @@ void AspPlanerThread::finalizeClingo(void)
 }
 
 /**
+ * @brief Resets the clingo solver.
+ */
+void AspPlanerThread::resetClingo(void)
+{
+	Log->log_info(LoggingComponent, "Resetting Clingo.");
+	MutexLocker locker(&ClingoMutex);
+	if ( Solving )
+	{
+		Control->interrupt();
+		Solving = false;
+	} //if ( Solving )
+	locker.unlock();
+
+	finalizeClingo();
+	constructClingo();
+	initClingo();
+	return;
+}
+
+/**
  * @brief Grounds the given parts and if wished for prints that it does so.
  */
 void AspPlanerThread::ground(const Clingo::PartSpan& parts)
@@ -239,3 +259,15 @@ void AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 	return;
 }
 
+void AspPlanerThread::setTeam(const bool cyan)
+{
+	Clingo::Symbol param = Clingo::String(cyan ? "C" : "M");
+	ground({{"ourTeam", Clingo::SymbolSpan(&param, 1)}});
+	return;
+}
+
+void AspPlanerThread::unsetTeam(void)
+{
+	resetClingo();
+	return;
+}

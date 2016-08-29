@@ -67,6 +67,8 @@ class AspPlanerThread
 	void initClingo(void);
 	void finalizeClingo(void);
 
+	void resetClingo(void);
+
 	void ground(const Clingo::PartSpan& parts);
 	void solve(void);
 
@@ -78,6 +80,9 @@ class AspPlanerThread
 		const std::shared_ptr<google::protobuf::Message>& msg) override;
 	void recvTeam(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,
 		const std::shared_ptr<google::protobuf::Message>& msg) override;
+
+	void setTeam(const bool cyan) override;
+	void unsetTeam(void) override;
 
 	public:
 	AspPlanerThread();
