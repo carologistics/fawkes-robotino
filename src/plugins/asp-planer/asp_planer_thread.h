@@ -53,6 +53,7 @@ class AspPlanerThread
 	Clingo::Control *Control;
 	bool Solving;
 	unsigned int LastTick;
+	unsigned int LastGameTime;
 
 	fawkes::Mutex RequestMutex;
 	std::vector<GroundRequest> Requests;
@@ -83,6 +84,9 @@ class AspPlanerThread
 
 	void setTeam(const bool cyan) override;
 	void unsetTeam(void) override;
+
+	void newTeamMate(const uint32_t mate) override;
+	void deadTeamMate(const uint32_t mate) override;
 
 	public:
 	AspPlanerThread();

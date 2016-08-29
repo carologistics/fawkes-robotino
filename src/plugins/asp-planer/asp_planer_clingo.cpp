@@ -62,6 +62,9 @@ using fawkes::MutexLocker;
  * @var AspPlanerThread::LastTick
  * @brief The last tick for the asp program.
  *
+ * @var AspPlanerThread::LastGameTime
+ * @brief The last game time for the asp program.
+ *
  * @var AspPlanerThread::RequestMutex
  * @brief Protects AspPlanerThread::Requests.
  *
@@ -162,6 +165,18 @@ AspPlanerThread::loopClingo(void)
 	Requests.clear();
 	reqLocker.unlock();
 
+	const auto gameTime = this->gameTime();
+	std::vector<Clingo::Symbol> symbols;
+	symbols.reserve(gameTime - LastGameTime + 1);
+
+	for ( auto i = LastGameTime; i <= gameTime; ++i )
+	{
+		symbols.emplace_back(Clingo::Number(i));
+		parts.emplace_back("transition", Clingo::SymbolSpan(&symbols.back(), 1));
+	} //for ( auto i = LastGameTime; i <= gameTime; ++i )
+	LastGameTime = gameTime;
+
+	ground(parts);
 	solve();
 	return;
 }
@@ -195,6 +210,7 @@ AspPlanerThread::resetClingo(void)
 	Requests.clear();
 	RequestMutex.unlock();
 	LastTick = 0;
+	LastGameTime = 0;
 
 	finalizeClingo();
 	constructClingo();
@@ -349,5 +365,25 @@ void
 AspPlanerThread::unsetTeam(void)
 {
 	resetClingo();
+	return;
+}
+
+void
+AspPlanerThread::newTeamMate(const uint32_t mate)
+{
+	std::vector<Clingo::Symbol> params;
+	params.emplace_back(Clingo::Number(mate));
+	params.emplace_back(Clingo::Number(gameTime()));
+	queueGround({"addRobot", params, true});
+	return;
+}
+
+void
+AspPlanerThread::deadTeamMate(const uint32_t mate)
+{
+	std::vector<Clingo::Symbol> params;
+	params.emplace_back(Clingo::Number(mate));
+	params.emplace_back(Clingo::Number(gameTime()));
+	queueGround({"removeRobot", params, true});
 	return;
 }

@@ -9,7 +9,7 @@ asp-agent:
     more-models: false
 
     program-path: ../src/agents/asp/
-    program-files: [exploration.lp, facts.lp, robot.lp]
+    program-files: [exploration.lp, facts.lp, robot.lp, state.lp]
 
   #real-world-setup:
   peer-address: 172.26.255.255
