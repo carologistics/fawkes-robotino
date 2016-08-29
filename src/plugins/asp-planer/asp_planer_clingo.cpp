@@ -21,6 +21,7 @@
 
 #include "asp_planer_thread.h"
 
+#include <algorithm>
 #include <clingo.hh>
 #include <cstring>
 
@@ -184,9 +185,35 @@ void AspPlanerThread::solve(void)
  */
 bool AspPlanerThread::newModel(const Clingo::Model& model)
 {
+	const Clingo::SymbolVector symbols = model.symbols();
 	if ( ClingoDebug )
 	{
+		static Clingo::SymbolVector oldSymbols;
 		Log->log_info(LoggingComponent, "New model found.");
+
+		/* To save (de-)allocations just move found symbols at the end of the vector and move the end iterator to the
+		 * front. After this everything in [begin, end) is in oldSymbols but not in symbols. */
+		auto begin = oldSymbols.begin(), end = oldSymbols.end();
+
+		for ( const Clingo::Symbol& symbol : symbols )
+		{
+			auto iter = std::find(begin, end, symbol);
+			if ( iter == end )
+			{
+				Log->log_info(LoggingComponent, "New Symbol: %s", symbol.to_string().c_str());
+			} //if ( iter == end )
+			else
+			{
+				std::swap(*iter, *--end);
+			} //else -> if ( iter == end )
+		} //for ( const Clingo::Symbol& symbol : symbols )
+
+		for ( ; begin != end; ++begin )
+		{
+			Log->log_info(LoggingComponent, "Symbol removed: %s", begin->to_string().c_str());
+		} //for ( ; begin != end; ++begin )
+
+		oldSymbols = symbols;
 	} //if ( ClingoDebug )
 	return MoreModels;
 }
