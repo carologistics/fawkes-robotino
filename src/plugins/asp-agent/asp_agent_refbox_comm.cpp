@@ -35,7 +35,8 @@ using namespace fawkes;
 /**
  * @brief Takes care of everything regarding refbox communication in the constructor.
  */
-void AspAgentThread::constructRefboxComm(void)
+void
+AspAgentThread::constructRefboxComm(void)
 {
 	LoggingComponent = name();
 	return;
@@ -44,7 +45,8 @@ void AspAgentThread::constructRefboxComm(void)
 /**
  * @brief Takes care of everything regarding refbox communication in init().
  */
-void AspAgentThread::initRefboxComm(void)
+void
+AspAgentThread::initRefboxComm(void)
 {
 	aspCommon::RefboxComm::initRefboxComm();
 	activateBeacon();
@@ -55,7 +57,8 @@ void AspAgentThread::initRefboxComm(void)
 /**
  * @brief Takes care of everything regarding refbox communication in finalize().
  */
-void AspAgentThread::finalizeRefboxComm(void)
+void
+AspAgentThread::finalizeRefboxComm(void)
 {
 	closePublic();
 	return;
@@ -64,7 +67,8 @@ void AspAgentThread::finalizeRefboxComm(void)
 /**
  * @brief Handles public messages.
  */
-void AspAgentThread::recvPublic(const boost::asio::ip::udp::endpoint& /*endpoint*/, const uint16_t comp_id,
+void
+AspAgentThread::recvPublic(const boost::asio::ip::udp::endpoint& /*endpoint*/, const uint16_t comp_id,
 		const uint16_t msg_type, const std::shared_ptr<google::protobuf::Message>& msg)
 {
 	assert(comp_id == 2000);
@@ -83,7 +87,8 @@ void AspAgentThread::recvPublic(const boost::asio::ip::udp::endpoint& /*endpoint
 /**
  * @brief Handles team messages.
  */
-void AspAgentThread::recvTeam(const boost::asio::ip::udp::endpoint& /*endpoint*/, const uint16_t comp_id,
+void
+AspAgentThread::recvTeam(const boost::asio::ip::udp::endpoint& /*endpoint*/, const uint16_t comp_id,
 		const uint16_t msg_type, const std::shared_ptr<google::protobuf::Message>& msg)
 {
 	switch ( comp_id )
@@ -132,7 +137,8 @@ void AspAgentThread::recvTeam(const boost::asio::ip::udp::endpoint& /*endpoint*/
 /**
  * @brief Updates the robot position in the beacon.
  */
-void AspAgentThread::updateBeacon(void)
+void
+AspAgentThread::updateBeacon(void)
 {
 
 	return;
@@ -141,7 +147,8 @@ void AspAgentThread::updateBeacon(void)
 /**
  * @brief Handles a dead planer.
  */
-void AspAgentThread::deadTeamMate(const uint32_t mate)
+void
+AspAgentThread::deadTeamMate(const uint32_t mate)
 {
 	if ( mate == Planer )
 	{
