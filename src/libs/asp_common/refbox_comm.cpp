@@ -93,21 +93,6 @@ MessageStruct::MessageStruct(google::protobuf::Message *m, const std::chrono::mi
 }
 
 /**
- * @brief The move constructor.
- *
- * Implemented to ensure the message is only deleted once!
- */
-//MessageStruct::MessageStruct(MessageStruct&& that) noexcept : Message(that.Message), Delay(that.Delay),
-//		Counter(that.Counter), DelayAfterCounter(that.DelayAfterCounter), MessageID(that.MessageID),
-//		NeedsAck(that.NeedsAck), ReceivedAcks(std::move(that.ReceivedAcks)), Function(std::move(that.Function)),
-//		LastSend(std::move(that.LastSend)), DeleteMessage(that.DeleteMessage)
-//{
-//	that.Message = nullptr;
-//	that.DeleteMessage = false;
-//	return;
-//}
-
-/**
  * @brief Destructor.
  */
 MessageStruct::~MessageStruct(void)
