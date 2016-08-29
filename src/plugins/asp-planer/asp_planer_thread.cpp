@@ -30,7 +30,7 @@ using namespace fawkes;
 /** Constructor. */
 AspPlanerThread::AspPlanerThread() : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), aspCommon::RefboxComm(logger, config),
-		Control(nullptr), ClingoDebug(false)
+		ClingoDebug(false), MoreModels(false), Control(nullptr), Solving(false)
 {
 	constructRefboxComm();
 	constructClingo();

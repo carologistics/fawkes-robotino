@@ -27,11 +27,14 @@
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <asp_common/refbox_comm.hpp>
+#include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 
 namespace Clingo {
 class Control;
+class Model;
 class Part;
+class SolveResult;
 
 template<typename T>
 class ToIterator;
@@ -50,8 +53,11 @@ class AspPlanerThread
   public fawkes::aspCommon::RefboxComm
 {
 	private:
-	Clingo::Control *Control;
 	bool ClingoDebug;
+	bool MoreModels;
+	fawkes::Mutex ClingoMutex;
+	Clingo::Control *Control;
+	bool Solving;
 
 	void constructRefboxComm(void);
 	void initRefboxComm(void);
@@ -62,6 +68,10 @@ class AspPlanerThread
 	void finalizeClingo(void);
 
 	void ground(const Clingo::PartSpan& parts);
+	void solve(void);
+
+	bool newModel(const Clingo::Model& model);
+	void solvingFinished(const Clingo::SolveResult& result);
 
 	protected:
 	void recvPublic(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,
