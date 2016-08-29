@@ -584,6 +584,7 @@ void RefboxComm::updateBeacon(void)
 
 /**
  * @brief Will be called, if a team mate is considered dead. The default implementation does nothing.
+ * @param[in] mate The number of the team mate.
  */
 void RefboxComm::deadTeamMate(const uint32_t /*mate*/)
 {
@@ -592,6 +593,7 @@ void RefboxComm::deadTeamMate(const uint32_t /*mate*/)
 
 /**
  * @brief Will be called, if a new team mate is detected. The default implementation does nothing.
+ * @param[in] mate The number of the team mate.
  */
 void RefboxComm::newTeamMate(const uint32_t /*mate*/)
 {
