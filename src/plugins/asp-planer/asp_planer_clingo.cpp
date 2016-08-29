@@ -30,6 +30,20 @@
 using fawkes::MutexLocker;
 
 /**
+ * @struct GroundRequest
+ * @brief A simple container for a ground request.
+ *
+ * @var GroundRequest::Name
+ * @brief The name of the program to ground.
+ *
+ * @var GroundRequest::Params
+ * @brief The parameters for the request.
+ *
+ * @var GroundRequest::AddTick
+ * @brief If the current tick should be appended to the parameters.
+ */
+
+/**
  * @var AspPlanerThread::ClingoDebug
  * @brief Wether there should be debug output regarding grounding, solving, etc.
  *
