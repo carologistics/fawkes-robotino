@@ -6,6 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 asp-agent:
   planer:
     debug: true
+    more-models: false
 
     program-path: ../src/agents/asp/
     program-files: [exploration.lp, facts.lp, robot.lp]
