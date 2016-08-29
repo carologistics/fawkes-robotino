@@ -280,6 +280,7 @@ void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint
 					recvPort = Config->get_int(buffer);
 
 					openTeam(sendPort, recvPort);
+					setTeam(true);
 				} //if ( game->team_cyan() == TeamName )
 				if ( game->team_magenta() == TeamName )
 				{
@@ -293,6 +294,7 @@ void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint
 					recvPort = Config->get_int(buffer);
 
 					openTeam(sendPort, recvPort);
+					setTeam(false);
 				} //if ( game->team_magenta() == TeamName )
 			} //if ( !teamOpen() )
 			else
@@ -300,6 +302,7 @@ void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint
 				if ( game->team_cyan() != TeamName && game->team_magenta() != TeamName )
 				{
 					closeTeam();
+					unsetTeam();
 				} //if ( game->team_cyan() != TeamName && game->team_magenta() != TeamName )
 			} //else -> if ( !teamOpen() )
 			break;
@@ -598,6 +601,23 @@ void RefboxComm::deadTeamMate(const uint32_t /*mate*/)
 void RefboxComm::newTeamMate(const uint32_t /*mate*/)
 {
    return;
+}
+
+/**
+ * @brief Will be called, if we know which team we are. The default implementation does nothing.
+ * @param[in] cyan If we are the cyan team.
+ */
+void RefboxComm::setTeam(const bool /*cyan*/)
+{
+	return;
+}
+
+/**
+ * @brief Will be called, if our team assignment is revoced. The default implementation does nothing.
+ */
+void RefboxComm::unsetTeam(void)
+{
+	return;
 }
 
 /**

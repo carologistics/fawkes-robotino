@@ -159,6 +159,9 @@ class RefboxComm
 	virtual void deadTeamMate(const uint32_t mate);
 	virtual void newTeamMate(const uint32_t mate);
 
+	virtual void setTeam(const bool cyan);
+	virtual void unsetTeam(void);
+
 	public:
 	const char *LoggingComponent;
 
