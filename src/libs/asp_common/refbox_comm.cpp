@@ -125,7 +125,8 @@ MessageStruct::~MessageStruct(void)
  * @param[in] delay The new delay.
  * @param[in] count For how many sendings the new delay should be used.
  */
-void MessageStruct::changeDelay(const std::chrono::milliseconds& delay, const unsigned short count) noexcept
+void
+MessageStruct::changeDelay(const std::chrono::milliseconds& delay, const unsigned short count) noexcept
 {
 	DelayAfterCounter = Delay;
 	Delay = delay;
@@ -229,7 +230,8 @@ void MessageStruct::changeDelay(const std::chrono::milliseconds& delay, const un
  * @brief Will be called when a sending error occured.
  * @param[in] msg The error message.
  */
-void RefboxComm::sendError(const std::string& msg)
+void
+RefboxComm::sendError(const std::string& msg)
 {
 	Log->log_warn(LoggingComponent, "Sending Error: %s", msg.c_str());
 	return;
@@ -240,7 +242,8 @@ void RefboxComm::sendError(const std::string& msg)
  * @param[in] endpoint From which endpoint the message was received.
  * @param[in] msg The error message.
  */
-void RefboxComm::recvError(const boost::asio::ip::udp::endpoint& endpoint, const std::string& msg)
+void
+RefboxComm::recvError(const boost::asio::ip::udp::endpoint& endpoint, const std::string& msg)
 {
 	Log->log_warn(LoggingComponent, "Receiving Error from %s:%hu: %s", endpoint.address().to_string().c_str(),
 		endpoint.port(), msg.c_str());
@@ -254,7 +257,8 @@ void RefboxComm::recvError(const boost::asio::ip::udp::endpoint& endpoint, const
  * @param[in] msg_type The type of the message.
  * @param[in] msg The message.
  */
-void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id,
+void
+RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id,
 		const uint16_t msg_type, const std::shared_ptr<google::protobuf::Message>& msg) {
 	assert(comp_id == 2000);
 	switch ( msg_type )
@@ -332,7 +336,8 @@ void RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint
  * @param[in] msg_type The type of the message.
  * @param[in] msg The message.
  */
-void RefboxComm::recvTeamCommon(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id,
+void
+RefboxComm::recvTeamCommon(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id,
 		const uint16_t msg_type, const std::shared_ptr<google::protobuf::Message>& msg) {
 	switch ( comp_id )
 	{
@@ -403,7 +408,8 @@ void RefboxComm::recvTeamCommon(const boost::asio::ip::udp::endpoint& endpoint, 
  * @brief Registers the fact, that team mate X is (still) alive.
  * @param[in] number The number of the team mate.
  */
-void RefboxComm::registerTeamMate(const uint32_t number)
+void
+RefboxComm::registerTeamMate(const uint32_t number)
 {
 	MutexLocker locker(&MessageMutex);
 	if ( TeamMates.count(number) == 0 )
@@ -420,7 +426,8 @@ void RefboxComm::registerTeamMate(const uint32_t number)
  * @param[in] message The message to be checked.
  * @return If we have all acks.
  */
-bool RefboxComm::checkAcks(const MessageStruct& message)
+bool
+RefboxComm::checkAcks(const MessageStruct& message)
 {
 	switch ( message.NeedsAck )
 	{
@@ -450,7 +457,8 @@ bool RefboxComm::checkAcks(const MessageStruct& message)
  * @brief Checks if the team mates are considered alive.
  * @return If the number of team mates considered alive has been modified.
  */
-bool RefboxComm::checkTeamMates(void)
+bool
+RefboxComm::checkTeamMates(void)
 {
 	constexpr auto timeout = std::chrono::seconds(10);
 	const TimePoint limit = Now - timeout;
@@ -493,7 +501,8 @@ bool RefboxComm::checkTeamMates(void)
  * @brief connects The peer to our error methods.
  * @param[in] peer the peer to connect.
  */
-void RefboxComm::setupPeer(ProtobufBroadcastPeer *peer) {
+void
+RefboxComm::setupPeer(ProtobufBroadcastPeer *peer) {
 	peer->signal_recv_error().connect(boost::bind(&RefboxComm::recvError, this, _1, _2));
 	peer->signal_send_error().connect(boost::bind(&RefboxComm::sendError, this, _1));
 	return;
@@ -504,7 +513,8 @@ void RefboxComm::setupPeer(ProtobufBroadcastPeer *peer) {
  * @param[in] send The port used for sending.
  * @param[in] recv The port used for receiving.
  */
-void RefboxComm::openTeam(const unsigned short send, const unsigned short recv)
+void
+RefboxComm::openTeam(const unsigned short send, const unsigned short recv)
 {
 	MutexLocker locker(&ChannelMutex);
 	try
@@ -538,7 +548,8 @@ void RefboxComm::openTeam(const unsigned short send, const unsigned short recv)
  * @param[in] id The message id.
  * @return If this message is new, e.g. should be handled.
  */
-bool RefboxComm::ackMessageID(const uint32_t id)
+bool
+RefboxComm::ackMessageID(const uint32_t id)
 {
 	MutexLocker locker(&MessageMutex);
 	auto ack = new asp_msgs::Ack;
@@ -569,7 +580,8 @@ bool RefboxComm::ackMessageID(const uint32_t id)
  * @param[in] needAck The value to set for the need ack field, cf. MessageStruct documentation.
  * @return The id.
  */
-uint32_t RefboxComm::setMessageID(MessageStruct& message, const uint32_t needAck) {
+uint32_t
+RefboxComm::setMessageID(MessageStruct& message, const uint32_t needAck) {
 	assert(message.Counter == 0);
 	message.NeedsAck = needAck;
 	message.MessageID = NextMessageID + Number;
@@ -580,7 +592,8 @@ uint32_t RefboxComm::setMessageID(MessageStruct& message, const uint32_t needAck
 /**
  * @brief Will be called everytime the beacon signal will be send. The default implementation does nothing.
  */
-void RefboxComm::updateBeacon(void)
+void
+RefboxComm::updateBeacon(void)
 {
 	return;
 }
@@ -589,7 +602,8 @@ void RefboxComm::updateBeacon(void)
  * @brief Will be called, if a team mate is considered dead. The default implementation does nothing.
  * @param[in] mate The number of the team mate.
  */
-void RefboxComm::deadTeamMate(const uint32_t /*mate*/)
+void
+RefboxComm::deadTeamMate(const uint32_t /*mate*/)
 {
    return;
 }
@@ -598,16 +612,18 @@ void RefboxComm::deadTeamMate(const uint32_t /*mate*/)
  * @brief Will be called, if a new team mate is detected. The default implementation does nothing.
  * @param[in] mate The number of the team mate.
  */
-void RefboxComm::newTeamMate(const uint32_t /*mate*/)
+void
+RefboxComm::newTeamMate(const uint32_t /*mate*/)
 {
-   return;
+	return;
 }
 
 /**
  * @brief Will be called, if we know which team we are. The default implementation does nothing.
  * @param[in] cyan If we are the cyan team.
  */
-void RefboxComm::setTeam(const bool /*cyan*/)
+void
+RefboxComm::setTeam(const bool /*cyan*/)
 {
 	return;
 }
@@ -615,7 +631,8 @@ void RefboxComm::setTeam(const bool /*cyan*/)
 /**
  * @brief Will be called, if our team assignment is revoced. The default implementation does nothing.
  */
-void RefboxComm::unsetTeam(void)
+void
+RefboxComm::unsetTeam(void)
 {
 	return;
 }
@@ -673,7 +690,8 @@ RefboxComm::~RefboxComm()
 /**
  * @brief Inits the usage of the config. Call only after the config member is a valid pointer.
  */
-void RefboxComm::initRefboxComm(void)
+void
+RefboxComm::initRefboxComm(void)
 {
 	setConfigPrefix("/asp-agent/");
 	return;
@@ -683,7 +701,8 @@ void RefboxComm::initRefboxComm(void)
  * @brief Checks if the public channel is open and if not tries to open it.
  * @return If the public channel is now open.
  */
-bool RefboxComm::checkPublic(void)
+bool
+RefboxComm::checkPublic(void)
 {
 	if ( publicOpen() )
 	{
@@ -697,7 +716,8 @@ bool RefboxComm::checkPublic(void)
  * @brief Checks if the public channel is open.
  * @return Wether the channel is open.
  */
-bool RefboxComm::publicOpen(void) const noexcept
+bool
+RefboxComm::publicOpen(void) const noexcept
 {
 	MutexLocker locker(&ChannelMutex);
 	return PublicChannel;
@@ -706,7 +726,8 @@ bool RefboxComm::publicOpen(void) const noexcept
 /**
  * @brief Opens the public channel.
  */
-void RefboxComm::openPublic(void)
+void
+RefboxComm::openPublic(void)
 {
 	MutexLocker locker(&ChannelMutex);
 	assert(!publicOpen());
@@ -746,7 +767,8 @@ void RefboxComm::openPublic(void)
 /**
  * @brief Closes the public channel, assumes the channel is open. Closes the team channel if neccessary.
  */
-void RefboxComm::closePublic(void) noexcept
+void
+RefboxComm::closePublic(void) noexcept
 {
 	if ( teamOpen() )
 	{
@@ -763,7 +785,8 @@ void RefboxComm::closePublic(void) noexcept
  * @brief Checks if the team channel is open.
  * @return Wether the channel is open.
  */
-bool RefboxComm::teamOpen(void) const noexcept
+bool
+RefboxComm::teamOpen(void) const noexcept
 {
 	return TeamChannel;
 }
@@ -771,7 +794,8 @@ bool RefboxComm::teamOpen(void) const noexcept
 /**
  * @brief Closes the team channel. Assumes the channel is open.
  */
-void RefboxComm::closeTeam(void) noexcept
+void
+RefboxComm::closeTeam(void) noexcept
 {
 	assert(teamOpen());
 	assert(publicOpen());
@@ -786,7 +810,8 @@ void RefboxComm::closeTeam(void) noexcept
  * @param The new prefix.
  * @note This closes all existing channels and clears every message to send!
  */
-void RefboxComm::setConfigPrefix(const char *prefix)
+void
+RefboxComm::setConfigPrefix(const char *prefix)
 {
 	MutexLocker locker(&MessageMutex);
 	PeriodicMessages.clear();
@@ -817,7 +842,8 @@ void RefboxComm::setConfigPrefix(const char *prefix)
 /**
  * @brief Sets some values in the beacon, and adds it to the messages to be sent. Sets the BeaconStruct member.
  */
-void RefboxComm::activateBeacon(void)
+void
+RefboxComm::activateBeacon(void)
 {
 	const auto prefixLen = std::strlen(ConfigPrefix);
 	char buffer[prefixLen + 20];
@@ -839,7 +865,8 @@ void RefboxComm::activateBeacon(void)
 /**
  * @brief Sends all periodic messages, which have to be send.
  */
-void RefboxComm::sendPeriodicMessages(void)
+void
+RefboxComm::sendPeriodicMessages(void)
 {
 	if ( !teamOpen() )
 	{
@@ -918,7 +945,8 @@ void RefboxComm::sendPeriodicMessages(void)
  * @brief Returns the number of this team member.
  * @return The number.
  */
-uint32_t RefboxComm::number(void) const noexcept
+uint32_t
+RefboxComm::number(void) const noexcept
 {
 	return Number;
 }
