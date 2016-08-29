@@ -30,20 +30,14 @@
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 
-namespace Clingo {
-class Control;
-class Model;
-class Part;
-class SolveResult;
+#include <clingo.hh>
 
-template<typename T>
-class ToIterator;
-
-template<typename T, typename I>
-class Span;
-
-using PartSpan = Span<Part, ToIterator<Part>>;
-}
+struct GroundRequest
+{
+	const char *Name;
+	Clingo::SymbolVector Params;
+	bool AddTick;
+};
 
 class AspPlanerThread
 : public fawkes::Thread,
@@ -58,6 +52,10 @@ class AspPlanerThread
 	fawkes::Mutex ClingoMutex;
 	Clingo::Control *Control;
 	bool Solving;
+	unsigned int LastTick;
+
+	fawkes::Mutex RequestMutex;
+	std::vector<GroundRequest> Requests;
 
 	void constructRefboxComm(void);
 	void initRefboxComm(void);
@@ -65,10 +63,12 @@ class AspPlanerThread
 
 	void constructClingo(void);
 	void initClingo(void);
+	void loopClingo(void);
 	void finalizeClingo(void);
 
 	void resetClingo(void);
 
+	void queueGround(GroundRequest&& request);
 	void ground(const Clingo::PartSpan& parts);
 	void solve(void);
 

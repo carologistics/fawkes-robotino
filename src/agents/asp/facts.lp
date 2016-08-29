@@ -20,7 +20,7 @@ machine("DS").
 team("C").
 team("M").
 
-#external ourTeam(t) : team(t).
-
-teamMachine(T, M) :- ourTeam(T), machine(M).
+#program ourTeam(t).
+%todo This or an external?
+teamMachine(t, M) :- team(t), machine(M).
 

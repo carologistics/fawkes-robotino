@@ -22,7 +22,6 @@
 #include "asp_planer_thread.h"
 
 #include <algorithm>
-#include <clingo.hh>
 #include <cstring>
 
 #include <core/exception.h>
@@ -45,6 +44,15 @@ using fawkes::MutexLocker;
  *
  * @var AspPlanerThread::Solving
  * @brief Wether clingo is solving.
+ *
+ * @var AspPlanerThread::LastTick
+ * @brief The last tick for the asp program.
+ *
+ * @var AspPlanerThread::RequestMutex
+ * @brief Protects AspPlanerThread::Requests.
+ *
+ * @var AspPlanerThread::Requests
+ * @brief Stores everything we have to add to the solver for the next iteration.
  */
 
 /**
@@ -109,6 +117,39 @@ void AspPlanerThread::initClingo(void)
 }
 
 /**
+ * @brief Does the loop for clingo.
+ */
+void AspPlanerThread::loopClingo(void)
+{
+	MutexLocker cliLocker(&ClingoMutex);
+	MutexLocker reqLocker(&RequestMutex);
+	if ( Solving || Requests.empty() )
+	{
+		return;
+	} //if ( Solving || Requests.empty() )
+
+	const Clingo::Symbol tickSymbol = Clingo::Number(LastTick++);
+	std::vector<Clingo::Part> parts;
+	for ( GroundRequest& request : Requests )
+	{
+		if ( request.AddTick )
+		{
+			request.Params.push_back(tickSymbol);
+		} //if ( request.AddTick )
+		parts.emplace_back(request.Name, request.Params);
+	} //for ( GroundRequest& request : Requests )
+
+	//We are not allowed to clear requests before grounding! The params are just stored as "pointers".
+	ground(parts);
+	parts.clear();
+	Requests.clear();
+	reqLocker.unlock();
+
+	solve();
+	return;
+}
+
+/**
  * @brief Takes care of everything regarding clingo interface in finalize().
  */
 void AspPlanerThread::finalizeClingo(void)
@@ -131,11 +172,24 @@ void AspPlanerThread::resetClingo(void)
 		Control->interrupt();
 		Solving = false;
 	} //if ( Solving )
-	locker.unlock();
+	RequestMutex.lock();
+	Requests.clear();
+	RequestMutex.unlock();
+	LastTick = 0;
 
 	finalizeClingo();
 	constructClingo();
 	initClingo();
+	return;
+}
+
+/**
+ * @brief Queues a request for grounding.
+ */
+void AspPlanerThread::queueGround(GroundRequest&& request)
+{
+	MutexLocker locker(&RequestMutex);
+	Requests.emplace_back(std::move(request));
 	return;
 }
 
@@ -261,8 +315,8 @@ void AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 
 void AspPlanerThread::setTeam(const bool cyan)
 {
-	Clingo::Symbol param = Clingo::String(cyan ? "C" : "M");
-	ground({{"ourTeam", Clingo::SymbolSpan(&param, 1)}});
+	std::vector<Clingo::Symbol> param(1, Clingo::String(cyan ? "C" : "M"));
+	queueGround({"ourTeam", param, false});
 	return;
 }
 
