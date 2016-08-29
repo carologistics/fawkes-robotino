@@ -140,6 +140,15 @@ MessageStruct::changeDelay(const std::chrono::milliseconds& delay, const unsigne
  *
  * 1 to 6 for the robot number or 8 respectively 9 for the planer.
  *
+ * @var RefboxComm::ExplorationTime
+ * @brief How long the exploration is.
+ *
+ * @var RefboxComm::GameStateMutex
+ * @brief Protects GameState.
+ *
+ * @var RefboxComm::GameState
+ * @brief A copy of the last game state we received.
+ *
  * @var RefboxComm::MessageMutex
  * @brief Protects the access of PeriodicMessages and friends.
  *
@@ -294,6 +303,16 @@ RefboxComm::recvPublicCommon(const boost::asio::ip::udp::endpoint& endpoint, con
 					unsetTeam();
 				} //if ( game->team_cyan() != TeamName && game->team_magenta() != TeamName )
 			} //else -> if ( !teamOpen() )
+			MutexLocker locker(&GameStateMutex);
+			if ( GameState->state() != game->state() )
+			{
+				gameStateChanged(game->state(), GameState->state());
+			} //if ( GameState->state() != game->state() )
+			if ( GameState->phase() != game->phase() )
+			{
+				gamePhaseChanged(game->phase(), GameState->phase());
+			} //if ( GameState->phase() != game->phase() )
+			*GameState = *game;
 			break;
 		} //case llsf_msgs::GameState_CompType_MSG_TYPE
 		case llsf_msgs::VersionInfo_CompType_MSG_TYPE :
@@ -575,6 +594,28 @@ RefboxComm::setMessageID(MessageStruct& message, const uint32_t needAck) {
 }
 
 /**
+ * @brief Will be called, when the game state has changed. The default implementation does nothing.
+ * @param[in] newState The state in which the game is now.
+ * @param[in] oldState The state in which the game was before.
+ */
+void
+RefboxComm::gameStateChanged(const int /*newState*/, const int /*oldState*/)
+{
+	return;
+}
+
+/**
+ * @brief Will be called, when the game phase has changed. The default implementation does nothing.
+ * @param[in] newPhase The phase in which the game is now.
+ * @param[in] oldPhase The phase in which the game was before.
+ */
+void
+RefboxComm::gamePhaseChanged(const int /*newPhase*/, const int /*oldPhase*/)
+{
+	return;
+}
+
+/**
  * @brief Will be called everytime the beacon signal will be send. The default implementation does nothing.
  */
 void
@@ -631,6 +672,7 @@ RefboxComm::unsetTeam(void)
  */
 RefboxComm::RefboxComm(Logger*& log, Configuration*& config) :
 	ChannelMutex(Mutex::RECURSIVE), PublicChannel(nullptr), TeamChannel(nullptr), Number(0),
+	ExplorationTime(0), GameState(new llsf_msgs::GameState),
 	MessageMutex(Mutex::RECURSIVE), NextMessageID(0), NextAckPos(AckedMessages),
 	Now(Clock::now()),
 	PublicRegister(new MessageRegister()), TeamRegister(new MessageRegister()), Beacon(new llsf_msgs::BeaconSignal),
@@ -653,6 +695,12 @@ RefboxComm::RefboxComm(Logger*& log, Configuration*& config) :
 	TeamRegister->add_message_type<llsf_msgs::RingInfo>();
 	TeamRegister->add_message_type<asp_msgs::Ack>();
 	TeamRegister->add_message_type<asp_msgs::PlanerBeacon>();
+
+	GameState->set_phase(llsf_msgs::GameState_Phase_SETUP);
+	GameState->set_state(llsf_msgs::GameState_State_INIT);
+	llsf_msgs::Time *time = GameState->mutable_game_time();
+	time->set_sec(0);;
+	time->set_nsec(0);
 	return;
 }
 
@@ -821,7 +869,32 @@ RefboxComm::setConfigPrefix(const char *prefix)
 
 	std::strcpy(suffix, "team-name");
 	TeamName = Config->get_string(buffer);
+
+	std::strcpy(suffix, "exploration-time");
+	ExplorationTime = Config->get_uint(buffer);
 	return;
+}
+
+/**
+ * @brief Returns how many seconds game time have passed since the start.
+ * @return The seconds.
+ */
+unsigned int
+RefboxComm::gameTime(void) const
+{
+	MutexLocker locker(&GameStateMutex);
+	return (GameState->phase() == llsf_msgs::GameState_Phase_PRODUCTION ? ExplorationTime : 0) +
+		GameState->game_time().sec();
+}
+
+/**
+ * @brief Returns how long the exploration phase is.
+ * @return ExplorationTime
+ */
+unsigned int
+RefboxComm::explorationTime(void) const noexcept
+{
+	return ExplorationTime;
 }
 
 /**

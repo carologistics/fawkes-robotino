@@ -40,6 +40,7 @@ class Message;
 
 namespace llsf_msgs {
 class BeaconSignal;
+class GameState;
 }
 
 namespace protobuf_comm {
@@ -109,6 +110,9 @@ class RefboxComm
 
 	std::string TeamName;
 	uint32_t Number;
+	unsigned int ExplorationTime;
+	mutable Mutex GameStateMutex;
+	llsf_msgs::GameState* const GameState;
 
 	mutable Mutex MessageMutex;
 	std::vector<MessageStruct> PeriodicMessages;
@@ -154,6 +158,9 @@ class RefboxComm
 	bool ackMessageID(const uint32_t id);
 	uint32_t setMessageID(MessageStruct& message, const uint32_t needAck = 10);
 
+	virtual void gameStateChanged(const int newState, const int oldState);
+	virtual void gamePhaseChanged(const int newPhase, const int oldPhase);
+
 	virtual void updateBeacon(void);
 
 	virtual void deadTeamMate(const uint32_t mate);
@@ -179,6 +186,9 @@ class RefboxComm
 	void closeTeam(void) noexcept;
 
 	void setConfigPrefix(const char *prefix);
+
+	unsigned int gameTime(void) const;
+	unsigned int explorationTime(void) const noexcept;
 
 	void activateBeacon(void);
 

@@ -21,6 +21,8 @@ asp-agent:
   crypto-key: "live long and prosper"
   cipher: "aes-128-cbc"
 
+  exploration-time: 240
+
   #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
   cap-station:
     assigned-color:
