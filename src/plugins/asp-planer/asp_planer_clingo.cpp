@@ -65,6 +65,9 @@ using fawkes::MutexLocker;
  * @var AspPlanerThread::LastGameTime
  * @brief The last game time for the asp program.
  *
+ * @var AspPlanerThread::Horizon
+ * @brief The horizon, up to which point (measured in gametime in seconds) the planer should plan.
+ *
  * @var AspPlanerThread::RequestMutex
  * @brief Protects AspPlanerThread::Requests.
  *
@@ -176,6 +179,17 @@ AspPlanerThread::loopClingo(void)
 	} //for ( auto i = LastGameTime; i <= gameTime; ++i )
 	LastGameTime = gameTime;
 
+	Clingo::Symbol horizonValueSymbol = Clingo::Number(Horizon);
+	Clingo::SymbolSpan horizonSpan(&horizonValueSymbol, 1);
+	Clingo::Symbol horizonSymbol = Clingo::Function("horizon", horizonSpan);
+	Control->assign_external(horizonSymbol, Clingo::TruthValue::False);
+
+	//TODO: How to choose this number? Should it be configurable?
+	constexpr unsigned int lookAhaed = 300;
+	Horizon = gameTime + lookAhaed;
+	horizonValueSymbol = Clingo::Number(Horizon);
+	Control->assign_external(horizonSymbol, Clingo::TruthValue::True);
+
 	ground(parts);
 	solve();
 	return;
@@ -211,6 +225,7 @@ AspPlanerThread::resetClingo(void)
 	RequestMutex.unlock();
 	LastTick = 0;
 	LastGameTime = 0;
+	Horizon = 0;
 
 	finalizeClingo();
 	constructClingo();

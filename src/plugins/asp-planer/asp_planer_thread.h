@@ -54,6 +54,7 @@ class AspPlanerThread
 	bool Solving;
 	unsigned int LastTick;
 	unsigned int LastGameTime;
+	unsigned int Horizon;
 
 	fawkes::Mutex RequestMutex;
 	std::vector<GroundRequest> Requests;
