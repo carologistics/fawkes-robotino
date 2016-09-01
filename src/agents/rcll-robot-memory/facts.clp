@@ -397,6 +397,7 @@
   (timer (name exploration-finished) (time (create$ 0 0)) (seq 1))
   (timer (name send-worldmodel-sync) (time (create$ 0 0)) (seq 1))
   (timer (name send-tag-poses-sync) (time (create$ 0 0)) (seq 1))
+  (timer (name save-wm-in-rm) (time (create$ 0 0)) (seq 1))
 
   (already-received-wm-changes (create$))
 
