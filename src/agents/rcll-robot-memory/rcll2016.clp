@@ -142,6 +142,7 @@
   (path-load  rcll-robot-memory/production.clp)
   (path-load  rcll-robot-memory/exploration.clp)
   (path-load  rcll-robot-memory/config.clp)
+  (path-load  rcll-robot-memory/robot-memory.clp)
   (reset)
   ;(facts)
 
