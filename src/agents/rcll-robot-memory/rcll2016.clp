@@ -1,16 +1,15 @@
 ;---------------------------------------------------------------------------
-;  rcll2016.clp - Main file for the rcll2016 agent
+;  rcll2016.clp - Main file for the rcll2016 agent with the robot memory
 ;
-;  Created: Mon Feb 10 16:09:26 2014
+;  Created: Thu Sep 01 15:18:09 2016
 ;  Copyright  2012  Tim Niemueller [www.niemueller.de]
 ;             2014 Frederik Zwilling
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-; LLSF2014 agent includes
-(path-load  rcll2016/priorities.clp)
-(path-load  rcll2016/globals.clp)
-(path-load  rcll2016/facts.clp)
+(path-load  rcll-robot-memory/priorities.clp)
+(path-load  rcll-robot-memory/globals.clp)
+(path-load  rcll-robot-memory/facts.clp)
 
 (defrule load-config
   "Load configration for initialization."
@@ -24,7 +23,7 @@
   "Initializes clips agent."
   (init)
 )
- 
+
 ; Request clips-features
 (defrule enable-blackboard
   "If blackboard feature is set load the blackboard, if it is not yet loaded."
@@ -33,7 +32,7 @@
   =>
   (printout t "Requesting blackboard feature" crlf)
   (ff-feature-request "blackboard")
-  (path-load "rcll2016/blackboard-init.clp")
+  (path-load "rcll-robot-memory/blackboard-init.clp")
 )
 
 (defrule enable-motor-switch
@@ -62,7 +61,7 @@
   =>
   (printout t "Requesting navgraph feature" crlf)
   (ff-feature-request "navgraph")
-  (path-load  rcll2016/navgraph.clp)
+  (path-load  rcll-robot-memory/navgraph.clp)
 )
 
 (defrule enable-tf
@@ -72,6 +71,15 @@
   =>
   (printout t "Requesting transform feature" crlf)
   (ff-feature-request "tf")
+)
+
+(defrule enable-robot-memroy
+  "If the robot_memory feature is set, load it, if it is not yet loaded."
+  (ff-feature robot_memory)
+  (not (ff-feature-loaded tf))
+  =>
+  (printout t "Requesting robot-memory feature" crlf)
+  (ff-feature-request "robot_memory")
 )
 
 (deffunction unwatch-rules-facts ()
@@ -107,32 +115,33 @@
   (ff-feature-loaded motor-switch)
   (ff-feature-loaded protobuf)
   (ff-feature-loaded tf)
+  (ff-feature-loaded robot_memory)
   (ff-feature navgraph)
   =>
-  (path-load  rcll2016/utils.clp)
-  (path-load  rcll2016/worldmodel-synchronization.clp)
-  (path-load  rcll2016/net.clp)
-  (path-load  rcll2016/worldmodel.clp)
-  (path-load  rcll2016/skills.clp)
-  (path-load  rcll2016/lock-managing.clp)
-  (path-load  rcll2016/lock-usage.clp)
+  (path-load  rcll-robot-memory/utils.clp)
+  (path-load  rcll-robot-memory/worldmodel-synchronization.clp)
+  (path-load  rcll-robot-memory/net.clp)
+  (path-load  rcll-robot-memory/worldmodel.clp)
+  (path-load  rcll-robot-memory/skills.clp)
+  (path-load  rcll-robot-memory/lock-managing.clp)
+  (path-load  rcll-robot-memory/lock-usage.clp)
   (if
     (any-factp ((?conf confval))
       (and (eq ?conf:path "/clips-agent/rcll2016/enable-sim")
 	   (eq ?conf:type BOOL) (eq ?conf:value TRUE)))
   then
     (printout t "Loading simulation" crlf)
-    (path-load  rcll2016/sim.clp)
+    (path-load  rcll-robot-memory/sim.clp)
   )
-  (path-load  rcll2016/game.clp)
-  (path-load  rcll2016/mps-instructions.clp)
-  (path-load  rcll2016/tactical-help.clp)
-  (path-load  rcll2016/task.clp)
-  (path-load  rcll2016/steps.clp)
-  (path-load  rcll2016/coordination.clp)
-  (path-load  rcll2016/production.clp)
-  (path-load  rcll2016/exploration.clp)
-  (path-load  rcll2016/config.clp)
+  (path-load  rcll-robot-memory/game.clp)
+  (path-load  rcll-robot-memory/mps-instructions.clp)
+  (path-load  rcll-robot-memory/tactical-help.clp)
+  (path-load  rcll-robot-memory/task.clp)
+  (path-load  rcll-robot-memory/steps.clp)
+  (path-load  rcll-robot-memory/coordination.clp)
+  (path-load  rcll-robot-memory/production.clp)
+  (path-load  rcll-robot-memory/exploration.clp)
+  (path-load  rcll-robot-memory/config.clp)
   (reset)
   ;(facts)
 

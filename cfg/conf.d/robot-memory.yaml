@@ -5,8 +5,9 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/robot-memory
 ---
 plugins/robot-memory:
 
-  database: fawkes
-  test-collection: "robmem.test"
+  database: robmem
+  default-collection: "robmem.test"
   interface-name: "memory"
+  more-debug-output: false
 
   blackboard-collection: "robmem.bb"
