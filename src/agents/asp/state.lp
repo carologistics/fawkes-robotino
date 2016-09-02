@@ -46,6 +46,12 @@ end(R, T, gt) :- doing(R, T, gt, 0).
 % Update the task duration per robot.
 duration(R, T, gt, D) :- robot(R, gt), task(T), duration(T, TD), location(R, gt, RL), location(T, TL), driveDuration(RL, TL, DD), D = TD + DD.
 
+% Our goal is to maximize our points.
+#maximize { P : points(P) }.
+
+% Points are awarded for a successful execution of a task, but in order to achieve that, a task must be startet.
+points(P) :- P = #sum{ PI : points(T, PI), begin(_, T, _) }.
+
 % Called to update the time estimation for a robot. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program update(r, t, gt, d).
 update(r, t, gt, d).
