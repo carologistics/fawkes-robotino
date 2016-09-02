@@ -6,6 +6,7 @@ zoneToExplore(Z, 0) :- zone(Z).
 task(explore(Z)) :- zone(Z).
 location(explore(Z), Z) :- zone(Z). %todo: What location?
 duration(explore(Z), explorationTaskDuration) :- zone(Z).
+points(explore(Z), explorationPoints) :- zone(Z).
 
 #program transition(gt). %Extra explorationTransition and ground only when something to explore?
 zoneToExplore(Z, gt) :- zoneToExplore(Z, gt - 1), not zoneExplored(Z, gt).

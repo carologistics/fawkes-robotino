@@ -10,9 +10,12 @@
 % success(T): Task T is successful executed.
 % toBeDone(T): Task T is yet to be done.
 %
+% points(T, P): A successful execution of task T awards P points.
+%
 % duration(T, D): Task T should be done in D seconds.
 % duration(R, T, GT, D): Task T should be done in D seconds from robot R at gametime GT. This includes the time for getting there.
 % update(R, T, GT, D): Update the time estimation for robot R on Task T at GT to D seconds.
+%
 % location(T, L): The task T is to be done at location L.
 % location(R, GT, L): The robot R is at gametime GT at location L.
 
