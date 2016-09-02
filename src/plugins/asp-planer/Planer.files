@@ -8,7 +8,7 @@ asp_planer_clingo.cpp
 
 ../../../cfg/gazsim-configurations/default/asp-planer.yaml
 
-../../agents/asp/constans.lp
+../../agents/asp/constants.lp
 ../../agents/asp/exploration.lp
 ../../agents/asp/facts.lp
 ../../agents/asp/robot.lp
