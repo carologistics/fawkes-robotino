@@ -883,8 +883,18 @@ unsigned int
 RefboxComm::gameTime(void) const
 {
 	MutexLocker locker(&GameStateMutex);
-	return (GameState->phase() == llsf_msgs::GameState_Phase_PRODUCTION ? ExplorationTime : 0) +
-		GameState->game_time().sec();
+	unsigned int ret = GameState->game_time().sec();
+
+	/* We use gametime in the asp program, counting the seconds the game is running since start of the exploration. But
+	 * also need the production phase to start at a fixed point. */
+	switch ( GameState->phase() )
+	{
+		case llsf_msgs::GameState_Phase_EXPLORATION : break;
+		case llsf_msgs::GameState_Phase_PRODUCTION  : ret += ExplorationTime; break;
+		default : ret = 0; break;
+	} //switch ( GameState->phase() )
+
+	return ret;
 }
 
 /**
