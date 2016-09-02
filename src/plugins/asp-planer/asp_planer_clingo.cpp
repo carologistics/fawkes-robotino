@@ -169,15 +169,6 @@ AspPlanerThread::loopClingo(void)
 	reqLocker.unlock();
 
 	const auto gameTime = this->gameTime();
-	std::vector<Clingo::Symbol> symbols;
-	symbols.reserve(gameTime - LastGameTime + 1);
-
-	for ( auto i = LastGameTime; i <= gameTime; ++i )
-	{
-		symbols.emplace_back(Clingo::Number(i));
-		parts.emplace_back("transition", Clingo::SymbolSpan(&symbols.back(), 1));
-	} //for ( auto i = LastGameTime; i <= gameTime; ++i )
-	LastGameTime = gameTime;
 
 	Clingo::Symbol horizonValueSymbol = Clingo::Number(Horizon);
 	Clingo::SymbolSpan horizonSpan(&horizonValueSymbol, 1);
@@ -185,10 +176,22 @@ AspPlanerThread::loopClingo(void)
 	Control->assign_external(horizonSymbol, Clingo::TruthValue::False);
 
 	//TODO: How to choose this number? Should it be configurable?
-	constexpr unsigned int lookAhaed = 300;
+	const unsigned int lookAhaed = gameTime < explorationTime() ? 120 : 300;
 	Horizon = gameTime + lookAhaed;
 	horizonValueSymbol = Clingo::Number(Horizon);
 	Control->assign_external(horizonSymbol, Clingo::TruthValue::True);
+
+	std::vector<Clingo::Symbol> symbols;
+	symbols.reserve(Horizon - LastGameTime + 1);
+
+	//TODO: Everytime until horizon? Or just the new horizon?
+	//TODO: Storing in vector and grounding once or grounding every single program?
+	for ( auto i = LastGameTime; i <= Horizon; ++i )
+	{
+		symbols.emplace_back(Clingo::Number(i));
+		parts.emplace_back("transition", Clingo::SymbolSpan(&symbols.back(), 1));
+	} //for ( auto i = LastGameTime; i <= Horizon; ++i )
+	LastGameTime = gameTime;
 
 	ground(parts);
 	solve();
