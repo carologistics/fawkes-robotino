@@ -25,7 +25,7 @@ LIBS_webtools_bridge = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard 
 OBJS_webtools_bridge =  webtools_bridge_plugin.o webtools_bridge_thread.o \
 						event_emitter.o callable.o serializer.o \
-						Web_server.o web_session.o proxy_session.o bridge_manager.o \
+						websocket_server.o web_session.o proxy_session.o bridge_manager.o \
 						blackboard_processor.o rosbridge_proxy_processor.o clips_processor.o \
 						subscription_capability_manager.o subscription_capability.o \
 					 	advertisment_capability_manager.o advertisment_capability.o	\

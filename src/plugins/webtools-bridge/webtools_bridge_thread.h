@@ -40,7 +40,7 @@ namespace fawkes {
 
 class BridgeManager;
 
-class Web_server;
+class WebSocketServer;
 
 class WebtoolsBridgeThread
 : public fawkes::Thread,
@@ -61,7 +61,7 @@ class WebtoolsBridgeThread
 
  private:
   std::shared_ptr<BridgeManager>              bridge_manager_;
-  std::shared_ptr<Web_server>                 web_server_;
+  std::shared_ptr<WebSocketServer>                 web_server_;
 
 };
 

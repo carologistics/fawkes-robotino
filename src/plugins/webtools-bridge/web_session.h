@@ -37,7 +37,12 @@ namespace fawkes{
 
 class WebSession;
 //TODO::move to commonNameSpace
+//typedef websocketpp::server<websocketpp::config::asio> server;
+#ifndef _SERVER
+#define _SERVER
 typedef websocketpp::server<websocketpp::config::asio> server;
+#endif
+
 
 class SessionListener;
 

@@ -21,7 +21,7 @@
 
 #include "webtools_bridge_thread.h"
 
-#include "Web_server.cpp"
+#include "websocket_server.h"
 #include "bridge_manager.h"
 
 #include "subscription_capability_manager.h"
@@ -102,7 +102,7 @@ WebtoolsBridgeThread::init()
 
   try
   {
-    web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);  
+    web_server_=websocketpp::lib::make_shared<WebSocketServer>(logger, bridge_manager_);  
     web_server_->run(config->get_int("/webtools-bridge/port"));
   }
   catch(...)
