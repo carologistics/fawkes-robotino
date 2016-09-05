@@ -52,10 +52,10 @@ Serializer::op_subscribe(std::string prefixed_topic_name
 	writer.String(type.c_str(),(SizeType)type.length());
 	
 	writer.String("topic");
-writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
+	writer.String(prefixed_topic_name.c_str(), (SizeType)prefixed_topic_name.length());
 
-writer.String("throttle_rate");
-writer.Uint(throttle_rate);
+	writer.String("throttle_rate");
+	writer.Uint(throttle_rate);
 
 	
 	writer.String("queue_length");
@@ -237,11 +237,11 @@ Serializer::serialize(CLIPS::Fact::pointer fact)
 	{
 		for(std::vector<std::string>::iterator it = slot_names.begin(); slot_names.size() > 0 && it != slot_names.end(); it++)
 		{
-			writer.String( it->c_str() , (SizeType) it->length() );//write slot name as a key for json pair
+			writer.String( it->c_str() , (SizeType) it->length() );//write slot name as a key for JOSN pair
 			
 			CLIPS::Values values= fact->slot_value( *it );  
 			bool multifield= values.size()>0; 
-			if(multifield)     writer.StartArray();	// write values of slot as a json array only if slot is mutifeild
+			if(multifield)     writer.StartArray();	// write values of slot as a json array only if slot is multi field
 			for(CLIPS::Values::iterator it2 = values.begin(); it2 != values.end(); it2++)
 			{
 				switch(it2->type())
@@ -258,7 +258,7 @@ Serializer::serialize(CLIPS::Fact::pointer fact)
 		}
 	}else
 	{//ordered fact
-		writer.String("fields" );//wirte the json pair key that will be used to refrence the feilds of the fact
+		writer.String("fields" );//write the json pair key that will be used to reference the fields of the fact
 		CLIPS::Values values= fact->slot_value("");
 		writer.StartArray();	//field values will be stored in a json array
 		for(CLIPS::Values::iterator it = values.begin(); it != values.end(); it++)

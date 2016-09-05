@@ -23,7 +23,6 @@
 #include <string>
 #include <clipsmm.h>
 
-
 class Serializer
 {
 public:
