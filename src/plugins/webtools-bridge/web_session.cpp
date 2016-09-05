@@ -1,3 +1,22 @@
+/***************************************************************************
+ *  web_session.cpp -  Session object to keep track of a unique session. 
+ *  Created: 2016 
+ *  Copyright  2016 Mostafa Gomaa 
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
 #include "web_session.h"
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
@@ -92,7 +111,7 @@ WebSession::send(std::string msg){
 
 /** This session has been closed from the server
 . * This method is called whenever the session is closed by the server. 
- * It Notifies anyone that registered for the session termination by directly calling their registed callback with the session ptr.
+ * It Notifies anyone that registered for the session termination by directly calling their resisted callback with the session ptr.
  */
 void WebSession::on_terminate()
 {
@@ -110,7 +129,7 @@ WebSession::emitt_event(EventType event_type)
 	{
 		(*it_callables_)->callback(event_type , shared_from_this());
 		
-		//this is dangerous ..i am assuming the the callalbe obj is still there after the callback
+		//this is dangerous ..i am assuming the the callable obj is still there after the callback
 		if(event_type == EventType::TERMINATE)
 		{
 			it_callables_ = callbacks_ [event_type].erase(it_callables_);	

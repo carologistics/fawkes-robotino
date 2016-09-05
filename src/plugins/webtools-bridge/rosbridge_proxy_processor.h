@@ -1,9 +1,9 @@
 
 /***************************************************************************
- *  RosBridgeProxyProcessor.h - Monitoring the CLIPS agents in LLSF via webview
+ *  rosbridge_proxy_processor.h - Processes  Requests Targeted for ROS. Proxy To RosBridge server
  *
  *  Created: Mon Mar 2016
- *  Copyright  2016  MosafaGomaa
+ *  Copyright  2016  Mosafa Gomaa
  *
  ****************************************************************************/
 

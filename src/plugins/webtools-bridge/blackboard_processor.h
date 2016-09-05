@@ -1,8 +1,8 @@
-
 /***************************************************************************
- *  BridgeBlackboardProcessor.h - Monitoring the CLIPS agents in LLSF via webview
+ * blackboard_processor.h - Processor for Bridge Requests Targeted for the BlackBoard 
  *
- *  Copyright  2016  Mostafa Gomaa
+ *  Created: Mon April 11 2016
+ *  Copyright  21016 Mostafa Gomaa 
  *
  ****************************************************************************/
 

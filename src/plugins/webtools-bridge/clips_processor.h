@@ -1,6 +1,6 @@
 
 /***************************************************************************
- * ClipsProcessor.h - process Webtools-Bridge requests intended for Clips Facts
+ * clips_processor.h - Processor for Bridge Requests Targeted for Clips Facts
  *
  *  Created: Mon April 11 2016
  *  Copyright  21016 Mostafa Gomaa 

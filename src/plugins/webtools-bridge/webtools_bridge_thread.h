@@ -1,5 +1,5 @@
 /***************************************************************************
- *  webtools_bridge_plugin.cpp - Websocket access to diffrent components mimicing the rosbridge protocol
+ *  webtools_bridge_thread.h -  Gives Websocket access ,by mimicking the rosbridge protocol, to different Fawkes components
  *
  *  Created: Wed Jan 13 16:33:00 2016 
  *  Copyright  2016 Mostafa Gomaa 

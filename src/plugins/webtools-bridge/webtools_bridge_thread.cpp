@@ -1,5 +1,5 @@
 /***************************************************************************
- *  webtools_bridge_plugin.cpp - Websocket access to diffrent components mimicing the rosbridge protocol
+ *  webtools_bridge_thread.cpp - Gives Websocket access ,by mimicking the rosbridge protocol, to different Fawkes components
  *
  *  Created: Wed Jan 13 16:33:00 2016 
  *  Copyright  2016 Mostafa Gomaa 
@@ -21,9 +21,6 @@
 
 #include "webtools_bridge_thread.h"
 
-#include <tf/types.h>
-#include <interfaces/Position3DInterface.h>
-
 #include "Web_server.cpp"
 #include "bridge_manager.h"
 
@@ -34,10 +31,10 @@
 #include "blackboard_processor.h"
 #include "rosbridge_proxy_processor.h"
 #include "clips_processor.h"
+
 #include <string>
 
 using namespace fawkes;
-
 
 
 WebtoolsBridgeThread::WebtoolsBridgeThread()
@@ -56,18 +53,12 @@ WebtoolsBridgeThread::~WebtoolsBridgeThread()
 void
 WebtoolsBridgeThread::init()
 {
-//  pose_if_ = blackboard->open_for_reading<Position3DInterface>("Pose");
-//  world_ =new World("f");
+  logger-> log_info("Webtools-Bridge-thread","initiating");
 
-  logger-> log_info("I CAN SEE THE WORLD","YAAY");
- // time_var_=new Time(clock);
- // time_var_->stamp();
   int rosbridge_port= config->get_int("/webtools-bridge/rosbridge-port");
   std::string server_bash = "../src/plugins/webtools-bridge/./launch_server.bash -p "+std::to_string (rosbridge_port );
   system(server_bash.c_str());
   //Maybe wait a bit after starting the servers
-
-
 
   bridge_manager_=std::make_shared<BridgeManager> ();
 
@@ -80,7 +71,7 @@ WebtoolsBridgeThread::init()
   std::shared_ptr<ServiceCapabilityManager> service_cpm=
                                               std::make_shared<ServiceCapabilityManager>();
 
-  //register capability managers
+  //register capability managers to the bridge under the operations they should handle
   bridge_manager_->register_operation_handler("subscribe" , subscription_cpm );
   bridge_manager_->register_operation_handler("unsubscribe" , subscription_cpm );
 
@@ -109,9 +100,6 @@ WebtoolsBridgeThread::init()
                                                                         , clips_env_mgr));
 
 
-  // bridge_manager_->register_processor(std::make_shared<ClipsProcessor> ("/"
-  //                                                                       , logger
-  //                                                                       , clock));
   try
   {
     web_server_=websocketpp::lib::make_shared<Web_server>(logger, bridge_manager_);  
@@ -126,39 +114,9 @@ WebtoolsBridgeThread::init()
 void
 WebtoolsBridgeThread::finalize()
 {
- // blackboard->close(pose_if_);
-  // delete proc_;
-  // delete fawkes_bridge_manager_;
-  // delete web_server_;//when do i actually need to teminate it..noty sure yet
 }
 
 void
 WebtoolsBridgeThread::loop()
 {
- //  fawkes_bridge_manager_->loop();
-  // if (pose_if_->has_writer()) {
-  //   pose_if_->read();
-  //   double *r = pose_if_->rotation();
-  //   tf::Quaternion pose_q(r[0], r[1], r[2], r[3]);
-  //   logger->log_info(name(), "Pose: (%f,%f,%f)", pose_if_->translation(0),
-  //                    pose_if_->translation(1), tf::get_yaw(pose_q));
-  // } else {
-  //   logger->log_warn(name(), "No writer for pose interface");
-  // }
-
-  // //  proc_->getAgentState();
-
-  //Palying around with time
-
-  // time_var_->stamp();
-  // fawkes::Time now(clock);
-  // now.stamp();
- 
-  //   //std::cout<< "time_is" << now.in_msec() <<std::endl;
-  //   //std::cout<< "time_is" << (*time_var_).in_msec() <<std::endl;
-    
-  //   //std::cout<< "time_is" << now.in_msec() - (*time_var_).in_msec() <<std::endl;
-    
-  //   //std::cout<< "0000000000000000000000000000000000000"  <<std::endl;
-
 }

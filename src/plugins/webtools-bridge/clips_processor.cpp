@@ -1,9 +1,9 @@
 
 /***************************************************************************
- * ClipsProcessor.cpp - process Webtools-Bridge requests intended for Clips Facts
+ * clips_processor.cpp - Processor for Bridge Requests Targeted for Clips Facts
  *
  *  Created: Mon April 11 2016
- *  Copyright  2016 Mostafa Gomaa 
+ *  Copyright  21016 Mostafa Gomaa 
  *
  ****************************************************************************/
 
@@ -19,6 +19,7 @@
  *
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
+
 #include "clips_processor.h"
 #include "serializer.h"
 

@@ -1,8 +1,8 @@
-
 /***************************************************************************
- *  BridgeBlackBoardProcessor.cpp - Providing the backende calles to be acceable by python bridge
+ * blackboard_processor.cpp - Processor for Bridge Requests Targeted for the BlackBoard 
  *
- *  Copyright  2015 Mostafa Gomaa
+ *  Created: Mon April 11 2016
+ *  Copyright  21016 Mostafa Gomaa 
  *
  ****************************************************************************/
 
@@ -19,6 +19,7 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
+ 
 #include "blackboard_processor.h"
 
 #include <core/exceptions/system.h>

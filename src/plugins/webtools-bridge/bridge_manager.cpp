@@ -1,8 +1,35 @@
+/***************************************************************************
+ *  bridge_manager.cpp - Single access point for sessions to the bridge's capabilities.
+ *  Created: 2016 
+ *  Copyright  2016 Mostafa Gomaa 
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
+
 #include "bridge_manager.h"
 
 #include <core/exceptions/software.h>
 
 using namespace rapidjson;
+
+
+/** @class BridgeManager 
+ * Player plugin for Fawkes.
+ * Keeps track of what capabilities the bridge provides, Dispatching the incoming requests to the proper capability manger.
+ * @author Mostafa Gomaa
+ */
 
 BridgeManager::BridgeManager()
 {
