@@ -125,23 +125,6 @@ WebSocketServer::on_validate(connection_hdl hdl){
     tmp_session_->set_status("validating");//todo::use status codes from websocketpp
 
     server::connection_ptr con=m_server->get_con_from_hdl(hdl);
-
-    std::vector<std::string> register_headers;
-    register_headers.push_back("Accept-Encoding");
-    register_headers.push_back("Accept-language");
-    register_headers.push_back("Cache-Control");
-    register_headers.push_back("Connection");
-    register_headers.push_back("Sec-WebSocket-Extensions");
-    register_headers.push_back("Sec-WebSocket-Key");
-    register_headers.push_back("Sec-WebSocket-Version");
-    register_headers.push_back("User-Agent");
-
-    tmp_session_->http_req["host"]=con->get_host();
-    tmp_session_->http_req["port"]=con->get_port();
-    tmp_session_->http_req["origin"]=con->get_origin();
-
-    for (std::vector<std::string>::const_iterator i = register_headers.begin(); i != register_headers.end(); ++i)
-    tmp_session_->http_req[*i]=con->get_request_header(*i);
     return true;
 }
 
@@ -154,7 +137,6 @@ WebSocketServer::on_open(connection_hdl hdl)
     tmp_session_->set_connection_hdl(hdl);
     tmp_session_->set_endpoint(m_server);
     tmp_session_->set_id(m_next_sessionid);
-    tmp_session_->set_name("web_session_tmp_name");
     tmp_session_->set_status("open");//todo::use status codes from websocketpp
 
     hdl_ids_[hdl]=tmp_session_;

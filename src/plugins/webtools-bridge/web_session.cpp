@@ -55,12 +55,6 @@ WebSession::set_id(int id)
 	session_id_=id;
 }
 
-void 
-WebSession::set_name(std::string name)
-{
-	session_name_=name;
-}
-
 void
 WebSession::set_status(std::string status)
 {
@@ -71,12 +65,6 @@ int
 WebSession::get_id()
 {
 	return session_id_;
-}
-
-std::string 
-WebSession::get_name()
-{
-	return session_name_;
 }
 
 std::string 
