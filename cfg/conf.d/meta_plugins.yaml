@@ -15,7 +15,7 @@ fawkes/meta_plugins:
   m-full: m-skiller,m-clips-agent
   m-demo-laser: laser,laser-filter,laser-pointclouds,laser-cluster,map-lasergen
   m-demo-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan,ros-move-base
-  m-demo: m-bare,m-demo-ros,m-demo-laser,amcl,colli,m-skiller
+  m-demo: m-bare,m-demo-ros,m-demo-laser,amcl,colli,m-skiller,m-fv,tag_vision
 
   #
   # Gazebo stuff
