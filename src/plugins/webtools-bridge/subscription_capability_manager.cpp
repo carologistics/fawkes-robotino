@@ -1,5 +1,5 @@
 /***************************************************************************
- *  subscription_capability_manager.cpp - Handler and Dispatcher of Subscription Requests and Objects.   
+ *  subscription_capability_manager.cpp - Handler of SubscriptionCapability related Requests (subscribe and unsubscribe).  
  *  Created: 2016 
  *  Copyright  2016 Mostafa Gomaa 
  ****************************************************************************/
@@ -22,15 +22,10 @@
 #include "subscription_capability.h"
 
 #include <utils/time/time.h>
-
 #include <core/threading/thread.h>
-
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
 #include <core/exceptions/software.h>
-
-#include <iostream>
-
 
 using namespace fawkes;
 using namespace rapidjson;
@@ -42,8 +37,18 @@ using namespace rapidjson;
 //and the processor...but Subscription then will contain all the list of any ever subscribed processor 
 // at the very same place..
 
+/** @class SubscriptionCapabilityManager "subscription_capability_manager.h"
+ * Provides handlers for requests of operation provided by SubscriptionCapability [subscribe, unsubscribe] 
+ * and performs the necessary subscription book keeping.
+ * It maintains a mapping for any BridgeProcessor that implements the SubscriptionCapability and responsible
+ * of dispatching the subscription requests to the proper BridgeProcessor. 
+ * The book keeping is maintained by keeping track of single Subscription instances per unique topic (regardless where 
+ * the topic data lives or which BridgeProcessor creates it).
+ * 
+ * @author Mostafa Gomaa
+ */
 
-
+/** Constructor. */
 SubscriptionCapabilityManager::SubscriptionCapabilityManager()	
 :	CapabilityManager("Subscription")
 {
@@ -51,24 +56,29 @@ SubscriptionCapabilityManager::SubscriptionCapabilityManager()
 	__publish_mutex = new fawkes::Mutex();
 }
 
+/** Destructor. */
 SubscriptionCapabilityManager::~SubscriptionCapabilityManager()
 {
 	//TODO: check if something needs to be changed
 	if(!finalized_) { finalize(); }
 	
-	if(publisher_thread != NULL) { publisher_thread -> join() ; }	
+	if( publisher_thread != NULL ) { publisher_thread -> join() ; }	
 	
 	delete __mutex ;
 	topic_Subscription_.clear();
 }
+
 
 void
 SubscriptionCapabilityManager::init()
 {
 	if(!initialized_)
 	{
+		//TODO::the publish_loop is a temporary way to publish those topics that do not have their own publish on topic update mechanism 
+		//it runs on a separate thread dedicated to emit periodic publish events causing any subscription registered to this 
+		//periodic publisher, to call its internal publish  
 		run_publish_loop = true;
-		publisher_thread= std::make_shared<std::thread>(&SubscriptionCapabilityManager::publish_loop, this);
+		publisher_thread = std::make_shared<std::thread>(&SubscriptionCapabilityManager::publish_loop, this);
 		
 		//std::cout << "publisher loop intrialized"<<std::endl;
 
@@ -91,7 +101,7 @@ SubscriptionCapabilityManager::finalize()
 			; it != topic_Subscription_.end()
 			; it++)
 		{
-			
+			//TODO::Completely remove this hard coding after creating a proper publisher
 			if( it->second ->get_processor_prefix() ==  "clips")
 			{
 				unregister_callback(EventType::PUBLISH , it->second ); 
@@ -104,6 +114,14 @@ SubscriptionCapabilityManager::finalize()
 	}
 }
 
+
+
+/** Register A BridgeProcessor
+ * This method will be called from the BridgeManager whenever a BridgeProcessor is registered to it.
+ * If the BridgeProcessor provides a SubscriptionCapability,this method registers the processor with a key indicating its prefix.
+ * Each Processor has a unique prefix that will be included in the topic_name of the requests intended for this Processor.
+ * Usually you do not need to call this method.
+ */
 bool
 SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
 {
@@ -127,6 +145,15 @@ SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
 	return true;
 }
 
+/** Handle Subscription Related Requests
+ * This handler Processes the "subscribe"/"unsubscribe" JSON requests and extracts the 
+ * topic prefix (indicating the target BridgeProcessor where the topic data lives) from 
+ * the topic_name of the request.
+ * Then it forwards the extracted request parameters necessary for the operation and forwards 
+ * them to the internal method that will process the operation. 
+ * @param d The Dom object containing the deserialized JSON request
+ * @param session The session that made the request and where the replies should be sent
+ */
 void
 SubscriptionCapabilityManager::handle_message(Document &d
 											, std::shared_ptr<WebSession> session)
@@ -213,6 +240,13 @@ SubscriptionCapabilityManager::handle_message(Document &d
 
 }
 
+/** Callback to Handle Events, The SubscriptionCapabilityManager is Registered To.
+ * Will be called when a Subscription instance is terminated for any reason.
+ * This callback insures the removal of the terminated Subscription instance from the 
+ * topic_subscription_mapping making sure the instance could safely go out-of-scope. 
+ * @param event_type type of the event that caused this callback method to be called.
+ * @param event_emitter the object instance initiated the callback method call.
+ */
 void
 SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <EventEmitter> event_emitter)
 {
@@ -230,7 +264,7 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 			{
 				//construct the prefixed_name from info in the subscription
 				std::string prefixed_topic_name;
-				if(subscription->get_processor_prefix() == "/") //temp fix to accomodiate both prefixes 
+				if(subscription->get_processor_prefix() == "/") //temp fix to accommodate both prefixes 
 					prefixed_topic_name=subscription->get_topic_name();
 				else
 					prefixed_topic_name = subscription->get_processor_prefix()+"/"+subscription->get_topic_name();
@@ -251,10 +285,30 @@ SubscriptionCapabilityManager::callback(EventType event_type , std::shared_ptr <
 		}
 	}
 	catch(Exception &e){
-		//if exception was fired it only means that the casting failed becasue the emitter is not a subscription
+		//if exception was fired it only means that the casting failed because the emitter is not a subscription
 	}
 }
 
+
+
+/** Create a Subscription For A Topic and maintains Subscription Book keeping
+ * This method will be called by the SubscriptionCapabilityManager's handler on "subscribe" requests.
+ * first it forwards the "subscribe" request parameters to the targeted BridgeProcessor,
+ * Which will execute the subscription (whatever that means for this BirdgeProcessor!) and return a
+ * Subscription Object 
+ * The Subscription Object is then used to maintain the necessary subscription book keeping.A unique 
+ * mapping of single Subscription instance per topic is then maintained by flattening all Subscription 
+ * instances targeted for the one topic. 
+ * @param bridge_prefix Key to select the BridgeProcessor that will process the subscription.
+ * @param topic_name Full name of the topic to subscribe, prefixed with the Processor's prefix (ex, /blackboard/pose).
+ * @param id The Id field in the subscription request. Used to map many requests on the same subscription.
+ * @param type The type field in the subscription request (According to rosbridge protocol)
+ * @param compression The compression field of the rosbridge subscription request
+ * @param throttle_rate	The throttle_rate field of the rosbridge subscription request
+ * @param queue_length The queue_length field of the rosbridge subscription request
+ * @param fragment_size The fragment_size field of the rosbridge subscription request
+ * @param session The session that made the subscription request, and where publishing for the topic will be sent
+*/
 void 
 SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 										, std::string topic_name 
@@ -269,15 +323,12 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 	MutexLocker ml(__mutex);
 	if(finalized_) { return; }
 
-
 	std::shared_ptr <SubscriptionCapability> processor;
 	processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
-	//should be garanteed to work
 
+	//always creates a new subscription for that topic with the given Session and request parameters
 	std::shared_ptr <Subscription> subscription;
-	
 	try{
-		//always creates a new subscription for that topic with the given Session and parameters
 		//TODO:: pass the pure string arguments or a "protocol" type
 		subscription = processor-> subscribe(topic_name 
 													, id 		
@@ -288,49 +339,47 @@ SubscriptionCapabilityManager::subscribe( std::string bridge_prefix
 													, fragment_size 	
 													, session);
 
-	}catch(Exception &e){
-		throw e;
-	}
+	}catch(Exception &e){ throw e; } //TODO
 
-	/*push it to the topic_subscription_map maintaing only ONE Subscription instance per topic.
-	*ps.Subscription contains all the clients maped to thier individuale requests*/
+	//push it to the topic_subscription_map maintain only ONE Subscription instance per topic.
+	//ps.Subscription contains all the sessions mapped to their individual requests
 
 	//Is it a new topic? Just push it to the map and activate the Subscription
-
-	//Mutex.lock()
 	if( topic_Subscription_.find(topic_name) == topic_Subscription_.end() )
 	{
 		topic_Subscription_[topic_name] = subscription;
+
 		//Activate the listeners or whatever that publishs
-		//subscription->register_callback( TERMINATE , shared_from_this() );
 		subscription->activate();
-		//Subscriptions should norify me if it was terminated (by calling my callback)
+
+		//Register for Subscriptions to notify me if it was terminated (by calling my callback)
 		subscription->register_callback( EventType::TERMINATE , shared_from_this() );
 
-		//HUGE TODO :: REMOVE THIS SHIT and make another publishing sckeem...subscriptions should allow someone to register a publisher..
-		//(who ever that is publisher..he should emmit events..and when the event is emmited.
-		// It will call all the publish() from the subscription by the power of call_backwes
-	if(bridge_prefix ==  "clips")
-	{
-		//std::cout << "CLIPS SUBSCRIPTIONS "<<std::endl;
-		register_callback(EventType::PUBLISH , topic_Subscription_[topic_name] ); 
-				//std::cout << "registered to publish"<<std::endl;
-
-	}
+		//HUGE TODO :: REMOVE THIS SHIT and make another publishing skeem...subscriptions should allow someone to register a publisher..
+		//(who ever that is publisher..he should emit events..and when the event is emitted.
+		// It will call all the publish() from the subscription by the power of call_backes
+		if(bridge_prefix ==  "clips") register_callback(EventType::PUBLISH , topic_Subscription_[topic_name] ); 
 		
-	}else{
+	}
+	else
+	{
 		topic_Subscription_[topic_name]->subsume(subscription);
-		//subscription->finalize();
 	}
 
 
 	//To be moved back to the subscrib() if the processor
 	//..Or does it! u want to keep track of the subscription all the time..leaving that as a choice to the processor does not seem right.
 	// topic_Subscription_[topic_name]->add_request(id , compression , throttle_rate , queue_length , fragment_size , session);
-
-	//Mutex.unlock();
 }
 
+
+/** Remove A Subscription For A Topic and maintain the Subscription Book keeping.
+ * @param bridge_prefix Key of the BridgeProcessor that will process the unsubscribe operation.
+ * @param topic_name Full name of the topic, prefixed with the Processor's prefix (ex, /blackboard/pose).
+ * @param id The Id field in the request. Used to select which request should be removed form the Subscription.
+ * @param session The session that made the subscription request, and the destination for the publishing events 
+ * of that topic.
+*/
 void
 SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 											, std::string topic_name 
@@ -340,23 +389,23 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 	MutexLocker ml(__mutex);
 	if(finalized_) { return; }
 
-	//select thre right processor
+	//Cast the BridgeProcessor to a SubscriptioCapability to perform the operation
 	std::shared_ptr <SubscriptionCapability> processor;
 	processor = std::dynamic_pointer_cast<SubscriptionCapability> (processores_[bridge_prefix]);
-	
-	std::shared_ptr <Subscription> subscription;
-	
-	if(topic_Subscription_.find(topic_name) != topic_Subscription_.end()){
 
+	std::shared_ptr <Subscription> subscription;	
+	if(topic_Subscription_.find(topic_name) != topic_Subscription_.end())
+	{
 		subscription = topic_Subscription_[topic_name];
 
-		try{
+		try
+		{
 			processor->unsubscribe(id, subscription ,session );
-		}catch (Exception &e){
-			throw e;
 		}
+		catch (Exception &e){ throw e; }
 
-		if(subscription-> empty()){
+		if(subscription-> empty())
+		{
 			topic_Subscription_[topic_name] -> finalize();
 			topic_Subscription_.erase(topic_name);
 			
@@ -374,6 +423,7 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 
 }
 
+//TODO:: this will be replaced with a more proper Publishing mechanism
 void 
 SubscriptionCapabilityManager::publish_loop()
 {
@@ -399,7 +449,6 @@ SubscriptionCapabilityManager::emitt_event(EventType event_type)
 	{
 		(*it_callables_)->callback(event_type , shared_from_this());
 	}
-
 	//do_on_event(event_type);
 }
 

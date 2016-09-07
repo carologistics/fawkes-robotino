@@ -18,7 +18,6 @@
  */
 
 #include "capability_manager.h"
-
 #include "callable.h"
 #include "event_type.h"
 #include "event_emitter.h"
@@ -28,8 +27,7 @@
 
 class Subscription;
 class SubscriptionCapability;
-class EventHandter;
-
+ 
 namespace fawkes
 {
 	class Mutex;
