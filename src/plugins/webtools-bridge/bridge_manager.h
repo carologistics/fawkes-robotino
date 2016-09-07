@@ -31,11 +31,12 @@
 #include "web_session.h"
 
 
-/*TODDO:Change the name of this class suggestions
+/*TODO:Change the name of this class suggestions
 	* CapabiltiesDispatcher
 	* BridgeMother
-	* 
+	* Bridge
 */
+
 class BridgeManager 
 //:  public std::enable_shared_from_this<BridgeManager>
 {
@@ -46,8 +47,6 @@ class BridgeManager
 		void finalize();
 
 		void incoming(std::string JsonMsg ,std::shared_ptr <WebSession> session);
-
-		void outgoing(std::string jsonMsg , std::string client_id);
 
 		bool deserialize(std::string jsonSt , rapidjson::Document &d);
 
