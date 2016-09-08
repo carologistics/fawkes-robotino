@@ -189,8 +189,20 @@ nodes:
       - tag_output: 50
       - input_offset_x: -0.02
 
+  - name: P1
+    pos: [1, 1.5]
+
+  - name: P2
+    pos: [3, 1.5]
+
+  - name: P_CHARGE
+    pos: [4, 2]
+    properties:
+      - orientation: 3.141
+
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
 # common
-
+  - [P1, P2]
+  - [P2, P_CHARGE]
