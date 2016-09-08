@@ -22,10 +22,10 @@ plugins/colli:
   security_distance: 0.05
 
   # Default maximum translation velocity (in m/s)
-  max_velocity: 0.2
+  max_velocity: 0.3
 
   # Default maximum rotation velocity (in rad/s)
-  max_rotation: 0.4
+  max_rotation: 0.8
 
   # Default escaping behaviour (just enabled/disabled)
   escaping_enabled: false
@@ -166,7 +166,7 @@ plugins/colli:
 
     round:
       # For round roboter
-      radius: 0.20 #real value 0.23
+      radius: 0.21 #real value 0.23
       # The Lasers offset from center
       laser_offset_x_from_middle: 0.19
       laser_offset_y_from_middle: 0.0
