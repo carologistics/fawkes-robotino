@@ -73,7 +73,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", cond=no_battery_writer, desc="No Writer for BatteryInterface"},
    {"INIT", "ALIGN_TAG", cond=true},
-   {"SETTLE_VOLTAGE", "CHECK_CHARGING", timeout=2},
+   {"SETTLE_VOLTAGE", "CHECK_CHARGING", timeout=3},
    {"CHECK_CHARGING", "TRY_RIGHT", cond="not charging() and vars.try_index == 1", desc="Not charging, try to drive a bit to the right"},
    {"CHECK_CHARGING", "TRY_LEFT", cond="not charging() and vars.try_index == 2", desc="Not charging, try to drive a bit to the left"},
    {"CHECK_CHARGING", "FAILED", cond="not charging() and vars.try_index == 3", desc="Not charging after all tries, something is wrong"},
