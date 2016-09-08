@@ -41,10 +41,11 @@ skillenv.skill_module(_M)
 
 local charge_point = "P_CHARGE"
 local battery_empty_threshold = 22000
-local waypoints = {"Exp-C3", "Exp-C7", "Exp-M1", "Exp-M5", "Exp-CM3"}
+local waypoints = {"P1", "P2"}
 
 function battery_empty()
-  if battery:voltage() > battery_empty_threshold then
+  print("battery voltage " .. battery:voltage())
+  if battery:voltage() < battery_empty_threshold then
      return true
   end
 end
