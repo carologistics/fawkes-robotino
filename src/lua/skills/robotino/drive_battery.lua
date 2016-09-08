@@ -59,13 +59,15 @@ fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"GOTO", SkillJumpState, skills={{ppgoto_waypoints}}, final_to="GOTO", fail_to="FAILED"},
    {"GOTO_CHARGE", SkillJumpState, skills={{ppgoto}}, final_to="DOCK_CHARGE", fail_to="FAILED"},
-   {"DOCK_CHARGE", SkillJumpState, skills={{dock_charge}}, final_to="FINAL", fail_to="FAILED"}, --TODO don't final, goto charge check instead
+   {"DOCK_CHARGE", SkillJumpState, skills={{dock_charge}}, final_to="CHARGE", fail_to="FAILED"},
+   {"CHARGE", JumpState},
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond=no_battery_writer, desc="No writer for BatteryInterface"},
    {"INIT", "GOTO", cond=true},
    {"GOTO", "GOTO_CHARGE", cond=battery_empty},
+   {"CHARGE", "GOTO", timeout=60},
    --TODO transition to check loading state/time
 }
 
