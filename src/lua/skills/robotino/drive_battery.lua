@@ -42,6 +42,7 @@ skillenv.skill_module(_M)
 local charge_point = "P_CHARGE"
 local battery_empty_threshold = 22000
 local waypoints = {"P1", "P2"}
+local charge_tag_id = 1
 
 function battery_empty()
   print("battery voltage " .. battery:voltage())
@@ -74,4 +75,8 @@ end
 
 function GOTO_CHARGE:init()
    self.args["ppgoto"].place = charge_point
+end
+
+function DOCK_CHARGE:init()
+   self.args["dock_charge"].tag_id = charge_tag_id
 end
