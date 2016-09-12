@@ -48,6 +48,12 @@ using namespace rapidjson;
 
 //=================================   Processor  ===================================
 
+
+
+/** Class BridgeBlackBoardProcessor "blackboard_processor.h"
+* Derives from several Capability classes to provide those capabilities for to BlackBoard Interface.
+* 
+*/
 BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(std::string prefix
                                                     , fawkes::Logger *logger
                                                     , fawkes::Configuration *config
@@ -72,6 +78,12 @@ BridgeBlackBoardProcessor::~BridgeBlackBoardProcessor()
   // interface_.clear();
 }
 
+/** Perform a Subscription to a Blackboard Topic (handling a "subscribe" opcode)
+ * checks if topic exists in the BlackBoard. If so, create a new BlackBoardSubscription instance 
+ * with the bb_interface information and the request and return it.   
+ * @param session The session that issued the request and that expects a publish on change of topic data
+ * @return BlackboardSubscription
+ */
 std::shared_ptr <Subscription> 
 BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name 
                                       , std::string id    
@@ -162,6 +174,7 @@ BridgeBlackBoardProcessor::subscribe( std::string prefixed_topic_name
 
   logger_->log_info("BlackboardProcessor:", "Interface '%s' Succefully Opened!", topic_name.c_str());
 
+  //TODO:: add_request should be removed and the request is add on Subscription during construction/ OR moved to the SubscriptionCapabilty manager maybe.
   new_subscirption->add_request(id , compression , throttle_rate  
                                            , queue_length , fragment_size , session);
   
@@ -203,6 +216,14 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
     //To Be Implemented
   }
 
+  /** Handle opcode "publish", updating the topic data with the data in the json msg.
+  * This is the implementation of the publish operation of the AdvertismentCapability.
+  * It will be called when a session wants to publish a topic (writing the data to the bb_interface).
+  * Usually this comes after an "advertise" message allowing the session to change the topic data.
+  * @param  msg_in_json The topic data to update
+  * @oaram advertisement The Advertisment instance created to update this topic 
+  * @param session The session that will do the publishing
+  */
   void            
   BridgeBlackBoardProcessor::publish   ( std::string id
                               , bool latch
@@ -215,9 +236,19 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
 
 
 
-//====================================  Subsciption ===========================================
+//====================================  Subscription ===========================================
 
+/** Class BlackBoardSubscription "blackboard_processor.h"
+ * Derives from Subscription class and extends its behaviour to enable publishing of BlackBoard topics.
+ * Derives from BlackBoardInterfaceListener to listen to changes made on a topic and publishes when needed. 
+*/
 
+/** Constructor 
+* @param topic_name Full topic name, Including the "blackboard/" prefix
+* @param processor_prefix The Processor's unique
+* @param blackboard blackboad where the topic lives
+* @param interface interface to access the topic from blackboard
+*/
 BlackBoardSubscription::BlackBoardSubscription(std::string topic_name 
                                               , std::string processor_prefix 
                                               , fawkes::Logger *logger
@@ -229,9 +260,10 @@ BlackBoardSubscription::BlackBoardSubscription(std::string topic_name
 , blackboard_(blackboard)
 , interface_(interface)
 {
-  
 }
 
+
+/** Destructor */
 BlackBoardSubscription::~BlackBoardSubscription()
 {
   //Not Needed
@@ -241,13 +273,18 @@ BlackBoardSubscription::~BlackBoardSubscription()
   // }
 }
 
+
 fawkes::Interface*
 BlackBoardSubscription::get_interface_ptr()
 {
   return  interface_;
 }
 
-
+/**Activate() extended behaviour
+* this will be called by default from Subscription::Activate().
+* procedures done here are necessary for the blackboard listener 
+* to notify on changes. 
+*/
 void
 BlackBoardSubscription::activate_impl()
 {
@@ -255,6 +292,10 @@ BlackBoardSubscription::activate_impl()
   blackboard_->register_listener(this);
 }
 
+
+/**Deactivate() extended behaviour
+* this will be called by default from Subscription::deactivate().
+*/
 void
 BlackBoardSubscription::deactivate_impl()
 {
@@ -268,6 +309,12 @@ BlackBoardSubscription::finalize_impl()
   blackboard_->close(interface_);
 }
 
+
+
+/**Creates a "publish" rosbridge protocol JSON Message
+* serializes the blackboard topic data into the "msg:" field of 
+* the rosbridge protocol, "publish" opcode, JSON message 
+*/
 std::string  
 BlackBoardSubscription::serialize(std::string op
                                 , std::string topic_name
@@ -438,6 +485,11 @@ BlackBoardSubscription::serialize(std::string op
   return s.GetString();
 }
 
+
+/**  Register To Listen To BlackBoard Interface's Change Events
+* Trigger a publish whenever a change happens On the BlackBoard topic
+* @param interface The interface to listen too 
+*/
 void 
 BlackBoardSubscription::bb_interface_data_changed(fawkes::Interface *interface) throw()
 {
