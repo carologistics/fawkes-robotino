@@ -27,6 +27,25 @@
 
 using namespace rapidjson;
 
+/** Class Serializer "serlializer.h"
+ * This class is used to serilze the differnt JSON messages of 
+ * the Rosbridge protocol  
+*/
+
+
+/** Create an subscribe message
+* This creates a RosBridge "subscribe" JSON message (Ex, 
+* message formate:
+ { "op": "subscribe",
+  (optional) "id": <string>,
+  "topic": <string>,
+  (optional) "type": <string>,
+  (optional) "throttle_rate": <int>,
+  (optional) "queue_length": <int>,
+  (optional) "fragment_size": <int>,
+  (optional) "compression": <string>
+}
+*/
 std::string  
 Serializer::op_subscribe(std::string prefixed_topic_name 
 		                              , std::string id
@@ -78,6 +97,16 @@ Serializer::op_subscribe(std::string prefixed_topic_name
     return s.GetString();
 }
 
+
+
+/** Create an unsubscribe message
+* This creates a RosBridge "unsubscribe" JSON message (Ex, 
+* message formate:
+ { "op": "unsubscribe",
+  (optional) "id": <string>,
+  "topic": <string>
+}
+*/
 std::string  
 Serializer::op_unsubscribe(std::string prefixed_topic_name 
 		                              , std::string id)
@@ -105,6 +134,15 @@ Serializer::op_unsubscribe(std::string prefixed_topic_name
 }
 
 
+/** Create an advertise message
+* This creates a RosBridge "advertise" JSON message (Ex, 
+* message formate:
+ { "op": "advertise",
+  (optional) "id": <string>,
+  "topic": <string>,
+  "type": <string>
+}
+*/
 std::string
 Serializer::op_advertise( std::string prefixed_topic_name , std::string id , std::string type )
 {
@@ -140,6 +178,15 @@ Serializer::op_advertise( std::string prefixed_topic_name , std::string id , std
     return s.GetString();
 }
 
+
+/** Create an unadvertise message
+* This creates a JSON message with a RosBridge "unadvertise"  opcode 
+* message formate:
+ { "op": "unadvertise",
+  (optional) "id": <string>,
+  "topic": <string>
+}
+*/
 std::string
 Serializer::op_unadvertise( std::string prefixed_topic_name , std::string id )
 {
@@ -165,6 +212,19 @@ Serializer::op_unadvertise( std::string prefixed_topic_name , std::string id )
     return s.GetString();
 }
 
+
+
+/** Create an publish message
+* This creates a JSON message with a RosBridge "publish"  opcode 
+* message formate:
+{ "op": "publish",
+  (optional) "id": <string>,
+  "topic": <string>,
+  "msg": <json>
+}
+
+ @param msg_in_json The topic data in JSON
+*/
 std::string
 Serializer::op_publish( std::string prefixed_topic_name , std::string id 
 						, bool latch, std::string msg_in_json)
@@ -220,6 +280,9 @@ Serializer::op_publish( std::string prefixed_topic_name , std::string id
 // 	d.Accept(writer);    
 // }
 
+
+/** Serialize a Clips Fact as a JSON msg
+*/
 std::string
 Serializer::serialize(CLIPS::Fact::pointer fact)
 {
