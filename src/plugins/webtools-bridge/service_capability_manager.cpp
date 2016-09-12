@@ -31,6 +31,14 @@
 using namespace fawkes;
 using namespace rapidjson;
 
+
+/** Class ServiceCapailityManager "service_capbility_manager.h"
+	This class provides handlers for Operations provided by the ServiceCapability 
+	(Service calls).
+	Messages with an "op:service_call" are handled here and dispatched to the targeted BridgeProcessor 
+	from its list.  BridgeProcessor's registered here all provide ServiceCapability
+*/
+
 ServiceCapabilityManager::ServiceCapabilityManager()	
 :	CapabilityManager("Service")
 {
@@ -65,6 +73,13 @@ ServiceCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> p
 	return true;
 }
 
+/** Handles the Service Call Requests
+ * Dispatches the service call requests to the requested BridgeProcessor providing the ServiceCapabiliy.
+
+ * For now this is hard coded to rout all service_call requests to the RosBridgeProxyProcessor since it the
+ * only one that provides a ServiceCapabiliy. This is wrong and this code should be replaced with a dynamic
+ * selection like what is done in the handler of SubscriptionCapabilityManager.  
+*/
 void
 //TODO::remnam it (DispatchtoCapability)
 ServiceCapabilityManager::handle_message(Document &d
