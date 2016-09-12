@@ -17,9 +17,6 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-
-
-
 #include "advertisment_capability_manager.h"
 #include "advertisment_capability.h"
 
@@ -35,7 +32,10 @@
 using namespace fawkes;
 using namespace rapidjson;
 
-
+/** Class AdvertismentCapabilityManager "advertisment_capability_manager.h"
+* Handles requests with rosbridge protocol opcodes ["advertise" , "unadvertise" , "publish"] and 
+* dispatches them to the targeted BridgeProcessor (ex, BlackBoard, clips, Ros) p 
+*/
 AdvertismentCapabilityManager::AdvertismentCapabilityManager()	
 :	CapabilityManager("Advertisment")
 {
@@ -72,7 +72,11 @@ AdvertismentCapabilityManager::finalize()
 	}
 }
 
-
+/** Register BridgeProcessors
+* Keeps track of the BridgeProcessor, if it provides AdvertismentCapabilities
+* and maps it to its unique prefix.
+* @param processor BridgeProcessor to map
+*/
 bool
 AdvertismentCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
 {
@@ -95,6 +99,13 @@ AdvertismentCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
 	
 	return true;
 }
+
+/** Handles And Dispatches The JSON request
+* processes the JSON dom and calls the correct operation, according to the 
+* opcode, on the targeted BridgeProcessor
+* @param d The Dom object containg the JSON message
+* @param session The session that issued the request.
+*/
 
 void
 //TODO::remnam it (DispatchtoCapability)
@@ -250,10 +261,10 @@ AdvertismentCapabilityManager::advertise( std::string bridge_prefix
 		throw e;
 	}
 
-	/*push it to the topic_advertisment_map maintaing only ONE Advertisment instance per topic.
-	*ps.Advertisment contains all the clients maped to thier individuale requests*/
+	/*push it to the topic_advertisment_map maintain only ONE Advertisement instance per topic.
+	*ps.Advertisement contains all the clients mapped to their individual requests*/
 
-	//Is it a new topic? Just push it to the map and activate the Advertisment
+	//Is it a new topic? Just push it to the map and activate the Advertisement
 
 	//Mutex.lock()
 	if( topic_Advertisment_.find(topic_name) == topic_Advertisment_.end() )
