@@ -34,8 +34,6 @@
 
 #include "serializer.h"
 
-/*This acts as a proxy_server to RosBridge. For each web_session, a session to "RosBridge Server" is created to act a proxy
-forwarding all incoming and outgoing intercations.*/
 
 using namespace websocketpp;
 using websocketpp::connection_hdl;
@@ -45,6 +43,28 @@ using websocketpp::lib::bind;
 
 using namespace fawkes;
 
+
+/** Class RosBridgeProxyProcessor "rosbridge_proxy_processor.h"
+ * This acts as a proxy server, creating and maintaining ProxySessions to RosBridge python server. 
+ * When "WebSession" makes a request that targets RosBridge, a unique ProxySession to
+ * "RosBridge Server" is created, encapsulating the "WebSession" (and acts a proxy forwarding 
+ * all incoming interactions from the RosBridge to the WebSession). 
+ * Requests incoming from the client's WebSession are processed here and sent to RosBridge
+ * through the proper ProxySession.
+ *
+ * This BridgeProcessor provide SubscriptionCapability, ServiceCapability and AdvertismentCapability
+ * to Ros by forwarding the requests to RosBridge to handle them.  
+ *
+ * Act as a proxy between WebSessions connected to our internal WebSocket Server and the RosBridge 
+ * python Server. JSON messages targeted for RosBridge are dispatched to here, by different 
+ * CapabilityManagers. 
+ *
+ * While some operations have the usual book keeping implemented in them (subscribe(), unsubscribe())
+ * to keep consistency with the other BridgProcessor, Others just forwards the requests (like, call_service() ) 
+*/
+
+
+/** Constructor */
 RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Logger *logger , fawkes::Configuration *config , fawkes::Clock *clock)
 :   BridgeProcessor(prefix)
 ,   logger_(logger)
@@ -63,6 +83,7 @@ RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Lo
     mutex_=new fawkes::Mutex();
 }
 
+/** Destructor */
 RosBridgeProxyProcessor::~RosBridgeProxyProcessor()
 {
     if (!finalized_) { finalize(); }
@@ -81,6 +102,7 @@ RosBridgeProxyProcessor::~RosBridgeProxyProcessor()
     rosbridge_endpoint_.reset();
 }
 
+
 void 
 RosBridgeProxyProcessor::init()
 {
@@ -92,6 +114,7 @@ RosBridgeProxyProcessor::init()
         BridgeProcessor::init();
     }
 }
+
 
 void 
 RosBridgeProxyProcessor::finalize()
@@ -127,12 +150,12 @@ RosBridgeProxyProcessor::finalize()
 
 }
 
+
 /*to think about: What if this asiorun thread wants to terminate before the other webserver is already finished..
 is that even possible....
 why not move the web_Session terminatoin to the finilization from the dytrctor....
 because u need to make sure the session was joined right!
 */
-
 void 
 RosBridgeProxyProcessor::on_open( std::shared_ptr<WebSession> web_session , connection_hdl hdl  ) 
 {
@@ -164,6 +187,7 @@ RosBridgeProxyProcessor::on_open( std::shared_ptr<WebSession> web_session , conn
     logger_->log_info("RosBridgeProxyProcessor"," new connection to rosbirdge established" );        
 }
 
+
 void
 RosBridgeProxyProcessor::on_fail(connection_hdl hdl) 
 {
@@ -171,6 +195,7 @@ RosBridgeProxyProcessor::on_fail(connection_hdl hdl)
     //Just say that the session failed..There is no session created at this point
     //The time out should take care of that if failed..
 }
+
 
 void
 RosBridgeProxyProcessor::on_close(connection_hdl hdl) 
@@ -192,6 +217,7 @@ RosBridgeProxyProcessor::on_close(connection_hdl hdl)
         logger_->log_info("RosBridgeProxyProcessor"," proxy session deleted" );
     }
 }
+
 
 //should only be called from within a Mutex
 void
@@ -309,6 +335,7 @@ RosBridgeProxyProcessor::process_request(std::shared_ptr <WebSession> web_sessio
     
 }
 
+
 //Handles Session termination
 void
 RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <EventEmitter> event_emitter) 
@@ -350,7 +377,6 @@ RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <Eve
 }
 
 
-//Capabilities
 std::shared_ptr<Subscription>
 RosBridgeProxyProcessor::subscribe   ( std::string topic_name 
                                             , std::string id 
@@ -383,6 +409,7 @@ RosBridgeProxyProcessor::subscribe   ( std::string topic_name
     return new_subscirption ;
 }
 
+
 void 
 RosBridgeProxyProcessor::unsubscribe ( std::string id
                                         , std::shared_ptr<Subscription> subscription
@@ -394,6 +421,7 @@ RosBridgeProxyProcessor::unsubscribe ( std::string id
     process_request(web_session , jsonMsg);
     subscription->remove_request(id, web_session);   
 }
+
 
 std::shared_ptr<Advertisment> 
 RosBridgeProxyProcessor::advertise  ( std::string topic_name 
@@ -421,6 +449,7 @@ RosBridgeProxyProcessor::advertise  ( std::string topic_name
     return new_advertisment;
 }
   
+
 void                         
 RosBridgeProxyProcessor::unadvertise ( std::string id
                                         , std::shared_ptr<Advertisment> advertisment
@@ -430,6 +459,7 @@ RosBridgeProxyProcessor::unadvertise ( std::string id
     process_request(web_session , jsonMsg);
     advertisment->remove_request(id, web_session); 
 }
+
 
 void
 RosBridgeProxyProcessor::publish     ( std::string id
@@ -441,7 +471,6 @@ RosBridgeProxyProcessor::publish     ( std::string id
     std::string jsonMsg= Serializer::op_publish( advertisment->get_topic_name() , id , latch , msg_in_json);
     process_request(web_session , jsonMsg);
 }
-
 
 
 void
