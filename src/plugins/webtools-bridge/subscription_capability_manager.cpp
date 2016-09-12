@@ -38,13 +38,14 @@ using namespace rapidjson;
 // at the very same place..
 
 /** @class SubscriptionCapabilityManager "subscription_capability_manager.h"
- * Provides handlers for requests of operation provided by SubscriptionCapability [subscribe, unsubscribe] 
- * and performs the necessary subscription book keeping.
- * It maintains a mapping for any BridgeProcessor that implements the SubscriptionCapability and responsible
- * of dispatching the subscription requests to the proper BridgeProcessor. 
- * The book keeping is maintained by keeping track of single Subscription instances per unique topic (regardless where 
- * the topic data lives or which BridgeProcessor creates it).
- * 
+ * Provides handlers to process the JSON messages with opcodes ["subscribe" , "unsubscribe"]
+ * and dispatches them to the corresponding operation provided by SubscriptionCapability [subscribe(), unsubscribe()] 
+ * More importantly, it performs the necessary subscription book keeping.
+ *
+ * It maintains mapping for BridgeProcessors that provide SubscriptionCapability, by their prefix. Furthermore, it
+ * maintains the book keeping of all Subscriptions made to a topic. Each unique topic is mapped to a single 
+ * Subscription instance (regardless where the topic data lives or which BridgeProcessor creates the Subscription). 
+ * Subscription instances are created by the BridgeProcessor that know how to reach that topic data (specified by its prefix).
  * @author Mostafa Gomaa
  */
 
@@ -85,6 +86,7 @@ SubscriptionCapabilityManager::init()
 		CapabilityManager::init();
 	}
 }
+
 
 void
 SubscriptionCapabilityManager::finalize()
