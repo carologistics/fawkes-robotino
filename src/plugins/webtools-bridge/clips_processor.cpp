@@ -45,6 +45,23 @@ using namespace fawkes ;
 using namespace rapidjson ;
 
 
+
+
+
+/** Class ClipsSubscription "clips_processor"
+* Implements "Susbscription" object with clips facts in mind as a topic. 
+* It holds objects and environments necessary to access the clips fact when publishing, and implements
+* Serialize(), that prescribes how to get a CLIPS fact's data and serializes in a publish JSON message
+* ready to published to the web client via WebSession.
+*/
+
+
+/** Consturctor
+* @paramt topic_name the full name of topic that will be subscribed to (including the "clips/" prefix) 
+* @param processor_prefix the "clips/" prefix 
+* @param clips the clips environment, necessary access the fact data 
+* @param clips_env_mgr the clips environment manager, necessary access the fact data
+*/
 ClipsSubscription::ClipsSubscription(std::string topic_name 
                           , std::string processor_prefix 
                           , fawkes::Logger *logger
@@ -82,6 +99,14 @@ ClipsSubscription::finalize_impl()
 
 }
 
+/* Creates the JSON message to be Published
+* This method is derived from Subscription, it prescribes how to get a 
+* CLIPS fact's data and serialzes in a JSON message with a rosbridge "publish" opcode
+* ready to published.
+
+* This is called from by the publish() method of the Subscription whenever
+* the subscription wants to publish. 
+ */
 std::string
 ClipsSubscription::serialize(std::string op
                             , std::string topic_name
@@ -266,6 +291,11 @@ ClipsSubscription::serialize(std::string op
 
 
 //=================================   Processor  ===================================
+
+
+/** Class ClipsProcessor "clips_processor.h"
+  Derives from different Capability classes and provides those Capabilities for Clips FActs
+*/
 
 ClipsProcessor::ClipsProcessor(std::string prefix 
                               , fawkes::Logger *logger
