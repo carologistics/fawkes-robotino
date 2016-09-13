@@ -15,29 +15,13 @@
   (phase PRODUCTION)
   =>
   ; (printout t "Saving WM in RM" crlf)
-  (bind ?worldmodel (pb-create "llsf_msgs.Worldmodel"))
   (progn$ (?templ ?templates)
     ;save all facts of this template
     (delayed-do-for-all-facts ((?fact ?templ)) TRUE
       ;save this fact as a document
-      (bind ?doc (bson-create))
-      (bson-append ?doc "type" (str-cat ?templ))
-      (bson-append ?doc "sync_id" (fact-slot-value ?fact sync-id))
-      ;append kv-pair for each field
-      (progn$ (?slot (fact-slot-names ?fact))
-        (if (neq ?slot sync-id) then
-          (if (deftemplate-slot-multip ?templ ?slot)
-            then
-            ; append multifield as array
-            (bson-append-array ?doc ?slot (fact-slot-value ?fact ?slot))
-            else
-            ; appand value directly for singlefields
-            (bson-append ?doc ?slot (fact-slot-value ?fact ?slot))
-          )
-        )
-      )
-      (bind ?query-for-sync-id (str-cat "{\"sync_id\": " (fact-slot-value ?fact sync-id) "}"))
-      (robmem-upsert "robmem.clips" ?doc ?query-for-sync-id)
+      (bind ?doc (rm-structured-fact-to-bson ?fact))
+      (bind ?query-for-sync-id (str-cat "{\"sync-id\": " (fact-slot-value ?fact sync-id) "}"))
+      (robmem-upsert "robmem.clipswm" ?doc ?query-for-sync-id)
       (bson-destroy ?doc)
     )
   )
