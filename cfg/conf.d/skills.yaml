@@ -8,3 +8,12 @@ skills:
   # in front of the mps
   align_distance_conveyor:
     x: 0.31
+
+  # drive_battery skill config values
+  drive_battery:
+    # threshold where the robot thinks to be empty and drives to charge (uint)
+    battery_empty_threshold: 22000
+    # tag_id of of charging station (uint)
+    charge_tag_id: 1
+    # name of the point in front of the charging station
+    charge_point: "P_CHARGE"

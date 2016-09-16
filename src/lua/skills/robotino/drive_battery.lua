@@ -39,10 +39,23 @@ Parameters:
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local charge_point = "P_CHARGE"
-local battery_empty_threshold = 22000
 local waypoints = {"P1", "P2"}
+
+local charge_point = "P_CHARGE"
+if config:exists("/skills/drive_battery/charge_point") then
+   charge_point= config:get_string("/skills/drive_battery/charge_point")
+   print("Using charge_point config value: " .. charge_point)
+end
+local battery_empty_threshold = 22000
+if config:exists("/skills/drive_battery/battery_empty_threshold") then
+   battery_empty_threshold = config:get_uint("/skills/drive_battery/battery_empty_threshold")
+   print("Using battery_empty_threshold config value: " .. battery_empty_threshold)
+end
 local charge_tag_id = 1
+if config:exists("/skills/drive_battery/charge_tag_id") then
+   charge_tag_id= config:get_uint("/skills/drive_battery/charge_tag_id")
+   print("Using charge_tag_id config value: " .. charge_tag_id)
+end
 
 function battery_empty()
   print("battery voltage " .. battery:voltage())
