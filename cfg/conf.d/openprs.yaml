@@ -51,7 +51,7 @@ openprs:
     # Hostname where the oprs-server can be reached. Warning,
     # OpenPRS is quite picky about the hostname. Set this only
     # if you run oprs-server yourself on a _remote_ host.
-    #hostname: some.remote-host.com
+    hostname: 127.0.0.1
 
     # The TCP port that oprs-server listens on for connections.
     # If oprs-server is started by Fawkes it will be instructed to
@@ -64,6 +64,12 @@ openprs:
     # to inject commands for OpenPRS kernels.
     proxy-tcp-port: !tcp-port 3401
 
+    # Time in seconds to wait for the server to be reachable on
+    # initializing the plugin. This is particularly relevant when
+    # run is set to true as on a loaded system it may take some
+    # time for the server to be actually up.
+    timeout: 50.0
+
   kernels:
     # This will be posted as OPRS_DATA_PATH environment variable for
     # newly instantiated kernels. The special string $HOME will be
@@ -73,3 +79,9 @@ openprs:
                 "@BASEDIR@/src/agents/openprs",
                 "/usr/share/openprs/data",
                 "$HOME/openprs", "$HOME/robotics/openprs"]
+
+    # Timeout for the kernel process to come up after starting it.
+    # This is relevant especially on loaded system, e.g. running
+    # multiple robot instances for simulation on a single machine.
+    # The timeout is given in seconds.
+    start-timeout: 30.0
