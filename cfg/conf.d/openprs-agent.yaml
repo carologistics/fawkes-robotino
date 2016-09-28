@@ -8,7 +8,7 @@ openprs-agent:
   # In which mode should the agent kernel run? One of:
   # - OPRS:  run in console mode
   # - XOPRS: run in graphical mode
-  oprs-mode: OPRS
+  oprs-mode: XOPRS
 
   # Whether to wait for a GDB connection for a short time at startup
   # or not. Use this to debug problems in OpenPRS modules. It will
