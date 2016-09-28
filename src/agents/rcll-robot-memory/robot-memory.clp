@@ -17,12 +17,12 @@
 )
 
 (defrule rm-save-worldmodel
-  ; save the worldmodel which is synced between the robot in the robot memory
+  ; save the initial worldmodel which is synced between the robot in the robot memory
   (time $?now)
-  ?s <- (timer (name save-wm-in-rm) (time $?t&:(timeout ?now ?t ?*WORLDMODEL-SYNC-PERIOD*)) (seq ?seq))
   (lock-role MASTER)
   (wm-sync-info (synced-templates $?templates))
   (phase EXPLORATION|PRODUCTION)
+  (not (rm-saved-initial-wm))
   =>
   ; (printout t "Saving WM in RM" crlf)
   (progn$ (?templ ?templates)
@@ -35,7 +35,7 @@
       (bson-destroy ?doc)
     )
   )
-  (modify ?s (time ?now) (seq (+ ?seq 1)))
+  (assert (rm-saved-initial-wm))
 )
 
 (defrule rm-log-task
@@ -74,3 +74,24 @@
 ;   (robmem-insert "syncedrobmem.clips_action_state" ?doc)
 ;   (bson-destroy ?doc)
 ; )
+
+(deffunction rm-update-fact (?fact)
+  ; update in synced robot memory
+  (bind ?doc (rm-structured-fact-to-bson ?fact))
+  (bind ?query-for-sync-id (str-cat "{\"sync-id\": " (fact-slot-value ?fact sync-id) "}"))
+  (robmem-upsert "syncedrobmem.clipswm" ?doc ?query-for-sync-id)
+  (bson-destroy ?doc)
+)
+
+(deffunction rm-insert-fact (?fact)
+  ; insert in synced robot memory
+  (bind ?doc (rm-structured-fact-to-bson ?fact))
+  (robmem-insert "syncedrobmem.clipswm" ?doc)
+  (bson-destroy ?doc)
+)
+
+(deffunction rm-remove-fact (?fact)
+  ; remove in synced robot memory by the fact's sync id
+  (bind ?query-for-sync-id (str-cat "{\"sync-id\": " (fact-slot-value ?fact sync-id) "}"))
+  (robmem-remove "syncedrobmem.clipswm" ?query-for-sync-id)
+)
