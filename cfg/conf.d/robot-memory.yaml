@@ -11,3 +11,36 @@ plugins/robot-memory:
   more-debug-output: false
 
   blackboard-collection: "robmem.bb"
+ 
+  setup:
+    # The mongo client conntection to use for the robot memory. Defined below
+    # (robotmemory-local for default, robotmemory-cluster for synced robot memory)
+    mongo-client-connection: "robotmemory-cluster"
+    # distribute robot memory
+    distributed: true
+    # configuration for setting up all mongod and mongos instances:
+    local:
+      port: 27017
+    config:
+      port: 27031
+      db-path: "~/.robot-memory/dbs/config"
+    replicated:
+      port: 27021
+      replica-set-name: "syncedrobmem"
+      db-path: "~/.robot-memory/dbs/distributed"
+      replica-set-members: "[{_id:1,host:'172.26.108.91:27021'}, {_id:2,host:'172.26.108.92:27021'}, {_id:3, host:'172.26.108.93:27021'}]"
+      replica-id: 1 #this should be the robot number, override it in host.yaml
+    mongos:
+      port: 27041
+    
+    
+  
+plugins/mongodb/clients:
+    robotmemory-cluster:
+      active: true
+      mode: connection
+      hostport: localhost:27041
+    robotmemory-local:
+      active: true
+      mode: connection
+      hostport: localhost:27017
