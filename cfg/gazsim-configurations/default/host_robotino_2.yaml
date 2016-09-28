@@ -59,3 +59,31 @@ clips-agent:
 plugins/tag_vision:
   shm_image_id: "tag_vision_robotino_2"
   camera: shmem:gazsim_cam:image_id=robotino2/gazsim_tag:deep_copy=true
+
+webtools-bridge:
+  port: 5050
+  #port where rosbridge is expected to start. Websocket connection will be established to forward the Ros requests to the Rosbridge
+  rosbridge-port: 8080
+  rosbridge-uri: "ws://localhost:8080"
+
+openprs:
+  message-passer:
+    tcp-port: !tcp-port 3302
+    proxy-tcp-port: !tcp-port 3303
+  server:
+    tcp-port: !tcp-port 3402
+    proxy-tcp-port: !tcp-port 3403
+
+openprs-agent:
+  llsf2014:
+    team-name: Carologistics
+    robot-name: R-2
+    robot-number: 2
+    # Communication settings
+    peer-address: 127.0.0.1 #137.226.233.255
+    peer-public-send-port: 4422
+    peer-public-recv-port: 4412
+    peer-cyan-send-port: 4472
+    peer-cyan-recv-port: 4452
+    peer-magenta-send-port: 4482
+    peer-magenta-recv-port: 4462
