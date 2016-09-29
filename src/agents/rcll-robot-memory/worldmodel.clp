@@ -52,6 +52,21 @@
   (retract ?pb-msg)
 )
 
+(defrule wm-drive-to-bs-started
+  (declare (salience ?*PRIORITY-WM*))
+  (state SKILL-EXECUTION)
+  (skill-to-execute (skill drive_to) (state running) (target ?mps))
+  ?bs <- (base-station (name ?mps) (active-side ?side))
+  (not (bs-side-changed))
+  =>
+  (if (eq ?side INPUT) then
+    (synced-modify ?bs active-side OUTPUT)
+  else
+    (synced-modify ?bs active-side INPUT)
+  )
+  (assert (bs-side-changed))
+)
+
 (defrule wm-get-cap-from-shelf-final
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
@@ -182,16 +197,13 @@
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running) (machine-feature SLIDE))
   (task (name fill-rs) (state running))
-  ?rsf <- (ring-station (name ?mps) (bases-needed ?bn) (bases-loaded ?bl))
+  ?rsf <- (ring-station (name ?mps) (bases-loaded ?bl))
   ?hf <- (holding ?product-id)
   ?pf <- (product (id ?product-id))
   =>
   (retract ?hf ?pf)
   (printout t "Inserted base " ?product-id " into slide of " ?mps crlf)
   (assert (holding NONE))
-  (if (> ?bn 0) then
-    (bind ?rsf (synced-modify ?rsf bases-needed (- ?bn 1)))
-  )
   (if (< ?bl 3) then
     (synced-modify ?rsf bases-loaded (+ ?bl 1))
   )

@@ -52,6 +52,10 @@
   (slot yellow (type SYMBOL) (allowed-symbols ON OFF))
   (slot green (type SYMBOL) (allowed-symbols ON OFF))
   (slot mtype (type STRING))
+  (slot found (type SYMBOL) (allowed-symbols TRUE MAYBE FALSE) (default FALSE))
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS
+                                               M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS NONE) (default NONE))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 (deftemplate exploration-result
@@ -132,9 +136,12 @@
   (slot sync-id (type INTEGER) (default 0))
 )
 
-; (deftemplate base-station 
-;   (slot name (type SYMBOL) (allowed-symbols C-BS M-BS))
-; )
+(deftemplate base-station
+  (slot name (type SYMBOL) (allowed-symbols C-BS M-BS))
+  (slot active-side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default INPUT))
+  (slot fail-side (type SYMBOL) (allowed-symbols INPUT OUTPUT NONE) (default NONE))
+  (slot sync-id (type INTEGER) (default 0))
+)
 
 ; (deftemplate delivery-station 
 ;   (slot name (type SYMBOL) (allowed-symbols C-DS M-DS))
@@ -154,7 +161,6 @@
   (multislot available-colors (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot selected-color (type SYMBOL) (allowed-symbols NONE BLUE GREEN YELLOW ORANGE)
 	(default NONE))
-  (slot bases-needed (type INTEGER) (allowed-values 0 1 2) (default 0))
   (slot bases-loaded (type INTEGER) (allowed-values 0 1 2 3) (default 0))
   (slot sync-id (type INTEGER) (default 0))
 )
@@ -203,7 +209,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-cs clear-rs))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
@@ -219,7 +225,8 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base find-tag instruct-mps discard))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base find-tag instruct-mps discard
+                                            drive-to wait-for-rs wait-for-output acquire-lock release-lock))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
@@ -233,6 +240,8 @@
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot product-id (type INTEGER))
   (slot already-at-mps (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default OUTPUT))
+  (slot lock (type SYMBOL) (default NONE))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
@@ -314,7 +323,7 @@
   (slot ring-color (type SYMBOL) (allowed-symbols BLUE GREEN YELLOW ORANGE))
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
-
+  (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT))
 )
 
 (deftemplate exp-current-zone
@@ -323,12 +332,13 @@
 
 (deffacts startup-facts
   (team-color nil)
-  (points-magenta 0)
-  (points-cyan 0)
+  (points MAGENTA 0)
+  (points CYAN 0)
   (last-lights)
   (holding NONE)
 
   (machine (name C-BS) (team CYAN) (mtype BS))
+  (base-station (name C-BS))
   (machine (name C-CS1) (team CYAN) (mtype CS))
   (cap-station (name C-CS1))
   (machine (name C-CS2) (team CYAN) (mtype CS))
@@ -340,6 +350,7 @@
   (machine (name C-DS) (team CYAN) (mtype DS))
 
   (machine (name M-BS) (team MAGENTA) (mtype BS))
+  (base-station (name M-BS))
   (machine (name M-CS1) (team MAGENTA) (mtype CS))
   (cap-station (name M-CS1))
   (machine (name M-CS2) (team MAGENTA) (mtype CS))
@@ -391,6 +402,10 @@
 
   (pose (x 0.0) (y 0.0))
   (puck-in-gripper FALSE)
+
+  (team-robot R-1)
+  (team-robot R-2)
+  (team-robot R-3)
   
   ; Input storage per team color
   (input-storage CYAN Ins1 0 0)
@@ -401,7 +416,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)

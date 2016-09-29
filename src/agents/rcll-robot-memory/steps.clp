@@ -6,6 +6,26 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(defrule step-drive-to-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name drive-to) (state wait-for-activation) (task-priority ?p)
+    (machine ?mps) (side ?side))
+  ?state <- (state STEP-STARTED)
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (if (eq ?side INPUT) then
+    (bind ?place (sym-cat ?mps "-I"))
+    else
+    (bind ?place (sym-cat ?mps "-O"))
+  )
+  (assert (state WAIT-FOR-LOCK)
+    (wait-for-lock (priority ?p) (res ?place))
+    (skill-to-execute (skill drive_to) (args place ?place) (target ?mps))
+  )
+)
+
 (defrule step-get-from-shelf
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
@@ -20,7 +40,7 @@
   (printout warn "TODO: Pick dynamically from different shelf positions." crlf)
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill get_product_from) (args place ?mps shelf TRUE) (target ?mps))
-	  (wait-for-lock (priority ?p) (res ?mps))
+	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-I")))
   )
 )
 
@@ -28,9 +48,9 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
-                 (machine ?mps) (machine-feature ?feature) (gate ?gate) (ring ?ring)
+                 (machine ?mps) (machine-feature ?feature&~SLIDE) (gate ?gate) (ring ?ring)
                  (already-at-mps ?already-at-mps))
-  (machine (name ?mps) (mtype ?mtype) (state ~DOWN))
+  (machine (name ?mps) (mtype ?mtype) (state IDLE))
   (task (name ?task-name))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
@@ -40,13 +60,10 @@
   (modify ?step (state running))
   (assert (state WAIT-FOR-LOCK)
     ; default side of machine is input, thus we don't need it here
-	  (wait-for-lock (priority ?p) (res ?mps))
+	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-I")))
   )
   (bind ?args (create$ place ?mps))
   
-  (if (eq ?feature SLIDE) then
-    (bind ?args (create$ ?args slide TRUE))
-  )
   (if ?already-at-mps then
     ;the shelf position we used last can be derived from the number of caps on the shelf
     (bind ?sslot MIDDLE)
@@ -63,28 +80,32 @@
   (assert (skill-to-execute (skill bring_product_to) (args ?args) (target ?mps)))
   ; check if we have to instruct an mps:
   (if (and (eq ?mtype CS)
-           (or (eq ?task-name fill-cap)(eq ?task-name clear-cs))) then
-    (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock ?mps)))
+           (eq ?task-name fill-cap)) then
+    (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype CS)
            (member$ ?task-name (create$ produce-c0 produce-cx deliver))) then
-    (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock ?mps)))
+    (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype DS)
            (eq ?task-name deliver)) then
-    (assert (mps-instruction (machine ?mps) (gate ?gate)))
+    (assert (mps-instruction (machine ?mps) (gate ?gate) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype RS)
            (member$ ?task-name (create$ add-first-ring add-additional-ring))) then
-    (assert (mps-instruction (machine ?mps) (ring-color ?ring) (lock ?mps)))
+    (assert (mps-instruction (machine ?mps) (ring-color ?ring) (lock (sym-cat ?mps "-I"))))
   )
 )
 
-(defrule step-get-output-start
+(defrule step-insert-slide-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps))
+  ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
+                 (machine ?mps) (machine-feature SLIDE) (gate ?gate) (ring ?ring)
+                 (already-at-mps ?already-at-mps))
+  (machine (name ?mps) (mtype ?mtype) (state ~DOWN))
+  (ring-station (name ?mps) (bases-loaded ?bl&:(< ?bl 3)))
+  (task (name ?task-name))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (game-time $?game-time)
@@ -92,8 +113,34 @@
   (retract ?state)
   (modify ?step (state running))
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill get_product_from) (args place ?mps ) (target ?mps))
-	  (wait-for-lock (priority ?p) (res ?mps))
+    ; default side of machine is input, thus we don't need it here
+	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-I")))
+  )
+  (bind ?args (create$ place ?mps))
+  (bind ?args (create$ ?args slide TRUE))
+  (assert (skill-to-execute (skill bring_product_to) (args ?args) (target ?mps)))
+)
+
+(defrule step-get-output-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p)
+		 (machine ?mps) (side ?side))
+  ?state <- (state STEP-STARTED)
+  (team-color ?team)
+  (game-time $?game-time)
+  (machine (name ?mps) (mtype ?type) (state IDLE))
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (if (and (eq ?type BS) (eq ?side INPUT)) then
+    (bind ?res (sym-cat ?mps "-I"))
+  else
+    (bind ?res (sym-cat ?mps "-O"))
+  )
+  (assert (state WAIT-FOR-LOCK)
+	  (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?side)) (target ?mps))
+	  (wait-for-lock (priority ?p) (res ?res))
   )
 )
 
@@ -101,17 +148,22 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name get-base) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps) (machine-feature ?feature) (base ?color))
+		 (machine ?mps) (machine-feature ?feature) (base ?color) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
+  (machine (mtype BS) (name ?mps) (state PROCESSING|READY-AT-OUTPUT))
+  ?bsc <- (bs-side-changed)
   =>
-  (retract ?state)
+  (retract ?state ?bsc)
   (modify ?step (state running))
-  (printout warn "TODO: Pick bases from both BS sides" crlf)
+  (if (eq ?side INPUT) then
+    (bind ?res (sym-cat ?mps "-I"))
+  else
+    (bind ?res (sym-cat ?mps "-O"))
+  )
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill get_product_from) (args place ?mps side input) (target ?mps))
-	  (wait-for-lock (priority ?p) (res ?mps))
-    (mps-instruction (machine ?mps) (base-color ?color) (lock ?mps))
+    (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?side)) (target ?mps))
+    (wait-for-lock (priority ?p) (res ?res))
   )
 )
 
@@ -327,26 +379,30 @@
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
   ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p)
-		 (machine ?mps))
+		 (machine ?mps) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   =>
   (retract ?state)
   (modify ?step (state running))
-  (printout warn "TODO: use skill to get a puck from an MPS" crlf)
+  (if (eq ?side INPUT) then
+    (bind ?res (sym-cat ?mps "-I"))
+  else
+    (bind ?res (sym-cat ?mps "-O"))
+  )
   (assert (state WAIT-FOR-LOCK)
-	  (skill-to-execute (skill get_product_from) (args place ?mps) (target ?mps))
-	  (wait-for-lock (priority ?p) (res ?mps))
+	  (skill-to-execute (skill get_product_from) (args place ?mps side (lowcase ?side)) (target ?mps ))
+	  (wait-for-lock (priority ?p) (res ?res))
   )
 )
 
 (defrule step-instruct-mps
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name instruct-mps) (state wait-for-activation)
-		 (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
-                 (cs-operation ?cs-op))
-  (machine (name ?mps) (mtype ?mtype))
+  ?step <- (step (name instruct-mps) (state wait-for-activation) (side ?side)
+                 (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
+                 (cs-operation ?cs-op) (lock ?lock) (task-priority ?p))
+  (machine (name ?mps) (mtype ?mtype) (state IDLE))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   =>
@@ -354,7 +410,8 @@
   (switch ?mtype
     (case BS
       then
-      (assert (mps-instruction (machine ?mps) (base-color ?base))))
+      (assert (mps-instruction (machine ?mps) (base-color ?base) (side ?side)))
+    )
     (case CS
       then
       (assert (mps-instruction (machine ?mps) (cs-operation ?cs-op))))
@@ -386,15 +443,212 @@
   (assert (state STEP-FAILED))
 )
 
+(defrule step-abort-filling-rs
+  "abort filling 4th base into RS (can happen because of race condition)"
+  (declare (salience ?*PRIORITY-STEP-FAILED*))
+  (phase PRODUCTION)
+  ?step <- (step (id ?step-id) (name insert) (state running)
+                 (machine ?mps) (machine-feature SLIDE)
+                 (already-at-mps ?already-at-mps))
+  (ring-station (name ?mps) (bases-loaded 3))
+  ?state <- (state SKILL-EXECUTION)
+  ?ste <- (skill-to-execute (state running))
+  =>
+  (printout t "Step: Abort filling 4th base into RS" crlf)
+  (retract ?state ?ste)
+  (assert (state STEP-FAILED))
+  (modify ?step (state failed))
+)
+
+(defrule step-fail-insert-slide
+  "skip filling 4th base into RS (can happen because of race condition)"
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (id ?step-id) (name insert) (state wait-for-activation)
+                 (machine ?mps) (machine-feature SLIDE)
+                 (already-at-mps ?already-at-mps))
+  (ring-station (name ?mps) (bases-loaded 3))
+  ?state <- (state STEP-STARTED)
+  =>
+  (retract ?state)
+  (modify ?step (state failed))
+  (assert (state STEP-FAILED))
+)
+
+
+
+(defrule step-wait-for-rs-start
+  "We want to wait for an RS to be usable. Drive to a waiting position near the RS."
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (id ?step-id) (name wait-for-rs) (state wait-for-activation) (task-priority ?p)
+                 (machine ?mps))
+  (machine (name ?mps))
+  ?state <- (state STEP-STARTED)
+  (game-time $?game-time)
+  (place-waitpoint-assignment (place ?place&:(eq ?place (sym-cat ?mps "-I"))) (waitpoint ?waitpoint))
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (assert (state WAIT-FOR-RS)
+          (timer (name wait-for-rs-dont-call-two-skills))
+  )
+  (skill-call ppgoto place (str-cat ?waitpoint))
+)
+
+(defrule step-wait-for-rs-lock-before-finish
+  "Wait until the RS can be used for production (IDLE, no other robot waiting, and loaded with enough bases).
+   Furthermore we need to aquire the lock, to be sure noone commits to using the rs without enough bases."
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  (task (state running) (id ?task-id))
+  (step (name wait-for-rs) (state running) (machine ?rs) (ring ?ring))
+  ?state <- (state WAIT-FOR-RS)
+  (machine (name ?rs) (state IDLE) (incoming $?i&~:(member$ PROD_RING ?i)))
+  (ring (color ?ring) (req-bases ?br))
+  (ring-station (name ?rs) (bases-loaded ?bl&:(>= ?bl ?br)))
+  =>
+  (retract ?state)
+  (assert (state WAIT-FOR-RS-LOCK)
+          (needed-task-lock (task-id ?task-id) (action PROD_RING) (place ?rs))
+  )
+)
+(defrule step-wait-for-rs-finish
+  "Finish after also getting the lock."
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  (task (state running) (id ?task-id))
+  ?step <- (step (name wait-for-rs))
+  ?state <- (state WAIT-FOR-RS-LOCK)
+  (needed-task-lock (task-id ?task-id) (action PROD_RING) (place ?rs) (resource ?res))
+  (lock (type ACCEPT) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
+  (time $?now)
+  ;ensure that no two skills are called directly after each other
+  ?timer <- (timer (name wait-for-rs-dont-call-two-skills) (time $?t&:(timeout ?now ?t 1.0)))
+  =>
+  (retract ?state ?timer)
+  (assert (state STEP-FINISHED))
+  (modify ?step (state finished))
+)
+(defrule step-wait-for-rs-lock-refused
+  "When the lock is refused someone else is using the rs. Go back to
+the waiting state until we can use it again."
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  (task (state running) (id ?task-id))
+  ?step <- (step (name wait-for-rs))
+  ?state <- (state WAIT-FOR-RS-LOCK)
+  ?ntl <- (needed-task-lock (task-id ?task-id) (action PROD_RING) (place ?rs) (resource ?res))
+  (lock (type REFUSE) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
+  =>
+  (retract ?state ?ntl)
+  (assert (state WAIT-FOR-RS)
+          (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
+)
+
+(defrule step-wait-for-output-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name wait-for-output) (state wait-for-activation) (machine ?mps))
+  ?state <- (state STEP-STARTED)
+  =>
+  (retract ?state)
+  (modify ?step (state running))
+  (assert (state WAIT_FOR_OUTPUT))
+)
+
+(defrule step-wait-for-output-finish
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name wait-for-output) (state running) (machine ?mps))
+  ?state <- (state WAIT_FOR_OUTPUT)
+  (machine (name ?mps) (state READY-AT-OUTPUT))
+  =>
+  (retract ?state)
+  (modify ?step (state finished))
+  (assert (state STEP-FINISHED))
+)
+
+(defrule step-acquire-lock-start
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name acquire-lock) (state wait-for-activation)
+                 (lock ?lock) (task-priority ?p))
+  ?state <- (state STEP-STARTED)
+  =>
+  (retract ?state)
+  (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?lock) (priority ?p)))
+  ; Retract all lock releases for ?res that gets the lock
+  (do-for-all-facts ((?release lock)) (and (eq ?release:agent ?*ROBOT-NAME*)
+                                           (eq ?release:resource ?lock)
+                                           (eq ?release:type RELEASE))
+    (retract ?release)
+  )
+  (modify ?step (state running))
+  (assert (state WAIT-FOR-STEP-LOCK))
+)
+
+(defrule step-acquire-lock-finish
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  ?step <- (step (name acquire-lock) (state running)
+                 (lock ?lock) (task-priority ?p))
+  ?state <- (state WAIT-FOR-STEP-LOCK)
+  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?lock))
+  =>
+  (retract ?state)
+  (modify ?step (state finished))
+  (assert (state STEP-FINISHED))
+)
+
+(defrule step-acquire-lock-release
+  (declare (salience ?*PRIORITY-STEP-START*))
+  (phase PRODUCTION)
+  ?step <- (step (name release-lock) (state wait-for-activation)
+                 (lock ?lock) (task-priority ?p))
+  ?state <- (state STEP-STARTED)
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?lock))
+  =>
+  (retract ?state ?l)
+  (modify ?step (state finished))
+  (assert (state STEP-FINISHED)
+          (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?lock)))
+)
+(defrule step-get-base-finish-fail
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  ?step <- (step (name get-base) (state running) (side ?side))
+  ?state <- (state ?result&SKILL-FINAL|SKILL-FAILED)
+  ?ste <- (skill-to-execute (skill get_product_from)
+                            (args $?args) (state final|failed))
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource PREPARE-BS))  
+  (machine (name ?mps) (team ?team-color))
+  ?bsf <- (base-station (name ?mps))
+  =>
+  (retract ?state ?ste ?l)
+  ;release lock of instructing/using the BS. Can't be done in a later step because the task is aborted when the step fails.
+  (if (eq ?result SKILL-FINAL)
+    then
+    (assert (state STEP-FINISHED))
+    (modify ?step (state finished))
+    (synced-modify ?bsf fail-side NONE)
+    else
+    (assert (state STEP-FAILED))
+    (modify ?step (state failed))
+    (synced-modify ?bsf fail-side ?side)
+  )
+  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
+)
+
 ;;;;;;;;;;;;;;;;
 ; common finish:
 ;;;;;;;;;;;;;;;;
 (defrule step-common-finish
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|get-base) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|drive-to) (state running))
   ?state <- (state SKILL-FINAL)
-  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
+  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper|drive_to)
 			    (args $?args) (state final))
   ; TODO add new skills with |skill
   =>
@@ -403,15 +657,16 @@
   (modify ?step (state finished))
 )
 
+
 ;;;;;;;;;;;;;;;;
 ; common fail:
 ;;;;;;;;;;;;;;;;
 (defrule step-common-fail
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|discard|get-base) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output|discard|drive-to) (state running))
   ?state <- (state SKILL-FAILED)
-  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper)
+  ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper|drive_to)
 			    (args $?args) (state failed))
   ; TODO add new skills with |skill
   =>
@@ -428,7 +683,7 @@
   (skill-to-execute (skill get_product_from) (args $?args) (target ?mps))
   ?wfl <- (wait-for-lock (priority ?p) (res ?mps))
   =>
-  ; input or output side?
+   input or output side?
   (bind ?navpoint (sym-cat ?navpoint "-O"))
   (if (or (member$ input ?args) (member$ shelf ?args)) then
     (bind ?navpoint (sym-cat ?navpoint "-I"))

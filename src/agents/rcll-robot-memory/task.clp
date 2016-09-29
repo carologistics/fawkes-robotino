@@ -59,16 +59,34 @@
   (printout info "Timelog: Task " ?task-name " finished." crlf)
 )
 
-(defrule task-fail
-  "Fail a task if one of the steps failed"
+(defrule task-fail-wait
+  "Fail a task if one of the steps failed, wait before failing to avoid
+  calling two skills directly after each other"
   (phase PRODUCTION)
   ?state <- (state STEP-FAILED)
   ?task <- (task (state running) (current-step ?id-failed) (name ?task-name))
   (step (id ?id-failed) (state failed) (name ?step-name))
+  (time $?now)
   =>
   (printout warn "Task " ?task-name " failed in step " ?step-name crlf)
+  (printout t "Waiting 1s to avoid calling two skills instantly" crlf)
   (retract ?state)
-  (assert (state TASK-FAILED))
+  (assert (state TASK-FAILED-WAITING)
+          (timer (name wait-after-fail)))
   (modify ?task (state failed))
+  (printout t "Calling motor_move to stop current skill" crlf)
+  (skill-call motor_move x 0.0)
   (printout info "Timelog: Task " ?task-name " failed." crlf)
+)
+
+(defrule task-fail
+  "Fail a task if one of the steps failed, after waiting"
+  (phase PRODUCTION)
+  ?state <- (state TASK-FAILED-WAITING)
+  (time $?now)
+  ?tm <- (timer (name wait-after-fail) (time $?t&:(timeout ?now ?t 1.0)))
+  =>
+  (printout t "Waiting 1s finished" crlf)
+  (retract ?state ?tm)
+  (assert (state TASK-FAILED))
 )

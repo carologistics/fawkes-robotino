@@ -21,7 +21,7 @@
 
 (defrule change-state-ignore
   "State changes are only allowed during play"
-  (phase ~PRODUCTION&~EXPLORATION&~WHACK_A_MOLE_CHALLENGE)
+  (phase ~PRODUCTION&~EXPLORATION&~POST_GAME)
   ?cf <- (change-state ?)
   =>
   (retract ?cf)
@@ -57,6 +57,11 @@
   (team-color ?team-color)
   (move-into-field-waittime ?wait-cfg)
   (time $?now)
+  (pose (x ?px) (y ?py))
+  (not (and
+    (active-robot (name ?name) (x ?x) (y ?y&:(and (< ?y 0) (< (abs ?x) (abs ?px)))))
+    (team-robot ?name)
+  ))
   =>
   (retract ?sf ?cf)
   (assert (state MOVE_INTO_FIELD))
@@ -68,7 +73,13 @@
     (bind ?wait 0)
     (assert (lock-announce-restart))
   )
-  (skill-call drive_into_field team ?team-color wait ?wait)
+  (printout t ?*ROBOT-NAME* crlf)
+  (if (eq ?*ROBOT-NAME* "R-1")
+    then
+    (skill-call drive_into_field team ?team-color wait 0)
+    else
+    (skill-call drive_into_field team ?team-color wait ?wait)
+  )
 )
 
 (defrule move-into-field-done
@@ -95,7 +106,7 @@
   ?sf <- (state ?state&~PAUSED&~WAIT_START)
   ?cf <- (change-state ?cs&~RUNNING)
   ?rf <- (refbox-state ~?cs)
-  (not (simulation-is-running))
+  ; (not (simulation-is-running))
   =>
   (printout t "Paused, disabling motor" crlf)
   (retract ?sf ?cf ?rf)
@@ -111,7 +122,7 @@
   ?pf <- (pre-pause-state ?old-state)
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state PAUSED)
-  (not (simulation-is-running))
+  ; (not (simulation-is-running))
   =>
   (printout t "Unpaused, enabling motor" crlf)
   (retract ?sf ?pf ?cf ?rf)

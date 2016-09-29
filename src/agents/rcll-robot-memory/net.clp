@@ -67,6 +67,7 @@
   ?f <- (timer (name beacon) (time $?t&:(timeout ?now ?t ?*BEACON-PERIOD*)) (seq ?seq))
   (team-color ?team-color&CYAN|MAGENTA)
   (peer-id private ?peer)
+  (Position3DInterface (id "Pose") (translation $?trans) (rotation $?ori) (time $?ptime))
   =>
   (modify ?f (time ?now) (seq (+ ?seq 1)))
   (if (debug 3) then (printout t "Sending beacon" crlf))
@@ -81,17 +82,15 @@
   (pb-set-field ?beacon "team_color" ?team-color)
   (pb-set-field ?beacon "number" ?*ROBOT-NUMBER*)
 
-  (do-for-fact ((?pose Position3DInterface)) (eq ?pose:id "Pose")
-    (bind ?beacon-pose (pb-field-value ?beacon "pose"))
-    (pb-set-field ?beacon-pose "x" (nth$ 1 ?pose:translation))
-    (pb-set-field ?beacon-pose "y" (nth$ 2 ?pose:translation))
-    (pb-set-field ?beacon-pose "ori" (tf-yaw-from-quat ?pose:rotation))
-    (bind ?beacon-pose-time (pb-field-value ?beacon-pose "timestamp"))
-    (pb-set-field ?beacon-pose-time "sec" (nth$ 1 ?pose:time))
-    (pb-set-field ?beacon-pose-time "nsec" (* (nth$ 2 ?pose:time) 1000))
-    (pb-set-field ?beacon-pose "timestamp" ?beacon-pose-time)
-    (pb-set-field ?beacon "pose" ?beacon-pose)
-  )
+  (bind ?beacon-pose (pb-field-value ?beacon "pose"))
+  (pb-set-field ?beacon-pose "x" (nth$ 1 ?trans))
+  (pb-set-field ?beacon-pose "y" (nth$ 2 ?trans))
+  (pb-set-field ?beacon-pose "ori" (tf-yaw-from-quat ?ori))
+  (bind ?beacon-pose-time (pb-field-value ?beacon-pose "timestamp"))
+  (pb-set-field ?beacon-pose-time "sec" (nth$ 1 ?ptime))
+  (pb-set-field ?beacon-pose-time "nsec" (* (nth$ 2 ?ptime) 1000))
+  (pb-set-field ?beacon-pose "timestamp" ?beacon-pose-time)
+  (pb-set-field ?beacon "pose" ?beacon-pose)
 
   (pb-broadcast ?peer ?beacon)
   (pb-destroy ?beacon)
@@ -116,8 +115,8 @@
   (refbox-state ?state)
   ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-from ?host ?port))
   ?tc <- (team-color ?team-color)
-  ?pm <- (points-magenta ?)
-  ?pc <- (points-cyan ?)
+  ?pm <- (points MAGENTA ?)
+  ?pc <- (points CYAN ?)
   =>
   (retract ?pf ?gt ?pm ?pc)
   (bind ?new-state (pb-field-value ?p "state"))
@@ -146,8 +145,8 @@
   (bind ?sec (pb-field-value ?time "sec"))
   (bind ?nsec (pb-field-value ?time "nsec"))
   (assert (game-time (create$ ?sec (/ ?nsec 1000)))
-	  (points-magenta (pb-field-value ?p "points_magenta"))
-	  (points-cyan (pb-field-value ?p "points_cyan"))
+	  (points MAGENTA (pb-field-value ?p "points_magenta"))
+	  (points CYAN (pb-field-value ?p "points_cyan"))
   )
 )
 
@@ -173,8 +172,10 @@
 )
 
 (defrule net-recv-order
+  ; Assert orders sent by the refbox. Only done by master to avoid conflicting random ids of linked products
   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?p))
   (team-color ?team)
+  (lock-role MASTER)
   =>
   (foreach ?o (pb-field-list ?p "orders")
     ;check if this order is for our team and if the order is new
@@ -198,23 +199,13 @@
             (utils-remove-prefix ?ring RING_)))
           )
           (bind ?cap (utils-remove-prefix (pb-field-value ?o "cap_color") CAP_))
-          (assert
-            (order
-              (id ?id)
-              (product-id ?product-id)
-              (complexity ?complexity)
-              (delivery-gate ?delivery-gate)
-              (quantity-requested ?quantity-requested)
-              (begin ?begin)
-              (end ?end)
-            )
-            (product
-              (id ?product-id)
-              (base ?base)
-              (rings ?rings)
-              (cap ?cap)
-            )
-          )
+          (synced-assert (str-cat
+                          "(order (id " ?id ")(product-id " ?product-id ")(complexity " ?complexity
+                          ")(delivery-gate " ?delivery-gate ")(quantity-requested " ?quantity-requested
+                          ")(begin " ?begin ")(end " ?end "))"))
+          (synced-assert (str-cat
+                          "(product (id " ?product-id ")(base " ?base
+                          ")(rings " (implode$ ?rings) ")(cap " ?cap "))"))
           (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
       (do-for-fact ((?order order)) (eq ?order:id (pb-field-value ?o "id"))
@@ -223,7 +214,7 @@
           else
             (bind ?quantity-delivered (pb-field-value ?o "quantity_delivered_magenta"))
           )
-          (modify ?order (quantity-delivered ?quantity-delivered))
+          (synced-modify ?order quantity-delivered ?quantity-delivered)
       )
     )
   )

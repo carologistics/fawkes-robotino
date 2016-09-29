@@ -40,3 +40,9 @@
   (return (and (>= ?current-time (- ?begin ?estimated-time-needed))
 	       (<= ?current-time (- ?end ?estimated-time-needed))))
 )
+
+(deffunction tac-ring-mount-time (?complexity ?rings)
+  "Determine time to mount the remaining rings plus cap"
+  (bind ?max-rings (eval (sub-string 2 3 (str-cat ?complexity))))
+  (return (+ (* (- ?max-rings ?rings) ?*PRODUCE-RING-AHEAD-TIME*) ?*PRODUCE-CAP-AHEAD-TIME*))
+)
