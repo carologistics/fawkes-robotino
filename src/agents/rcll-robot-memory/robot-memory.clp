@@ -11,7 +11,9 @@
   (not (rm-cleared-old-wm))
   =>
   (printout t "Clearing old worl dmodel in robot memory" crlf)
-  (robmem-remove "syncedrobmem.clipswm" "{}")
+  (bind ?remove-query (bson-create))
+  (robmem-remove "syncedrobmem.clipswm" ?remove-query)
+  (bson-destroy ?remove-query)
   ;TODO: verify if this worked
   (assert (rm-cleared-old-wm))
 )
@@ -78,9 +80,11 @@
 (deffunction rm-update-fact (?fact)
   ; update in synced robot memory
   (bind ?doc (rm-structured-fact-to-bson ?fact))
-  (bind ?query-for-sync-id (str-cat "{\"sync-id\": " (fact-slot-value ?fact sync-id) "}"))
-  (robmem-upsert "syncedrobmem.clipswm" ?doc ?query-for-sync-id)
+  (bind ?query (bson-create))
+  (bson-append ?query "sync-id" (fact-slot-value ?fact sync-id))
+  (robmem-upsert "syncedrobmem.clipswm" ?doc ?query)
   (bson-destroy ?doc)
+  (bson-destroy ?query)
 )
 
 (deffunction rm-insert-fact (?fact)
@@ -92,6 +96,8 @@
 
 (deffunction rm-remove-fact (?fact)
   ; remove in synced robot memory by the fact's sync id
-  (bind ?query-for-sync-id (str-cat "{\"sync-id\": " (fact-slot-value ?fact sync-id) "}"))
-  (robmem-remove "syncedrobmem.clipswm" ?query-for-sync-id)
+  (bind ?remove-query (bson-create))
+  (bson-append ?remove-query "sync-id" (fact-slot-value ?fact sync-id))
+  (robmem-remove "syncedrobmem.clipswm" ?remove-query)
+  (bson-destroy ?remove-query)
 )

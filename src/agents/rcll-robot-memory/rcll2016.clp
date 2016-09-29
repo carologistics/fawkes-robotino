@@ -119,8 +119,9 @@
   (ff-feature navgraph)
   =>
   (path-load  rcll-robot-memory/utils.clp)
-  (path-load  rcll-robot-memory/worldmodel-synchronization.clp)
   (path-load  rcll-robot-memory/net.clp)
+  (path-load  rcll-robot-memory/robot-memory.clp)
+  (path-load  rcll-robot-memory/worldmodel-synchronization.clp)
   (path-load  rcll-robot-memory/worldmodel.clp)
   (path-load  rcll-robot-memory/skills.clp)
   (path-load  rcll-robot-memory/lock-managing.clp)
@@ -142,7 +143,6 @@
   (path-load  rcll-robot-memory/production.clp)
   (path-load  rcll-robot-memory/exploration.clp)
   (path-load  rcll-robot-memory/config.clp)
-  (path-load  rcll-robot-memory/robot-memory.clp)
   (reset)
   ;(facts)
 
