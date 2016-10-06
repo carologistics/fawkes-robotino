@@ -13,6 +13,8 @@ plugins/robot-memory:
   blackboard-collection: "robmem.bb"
  
   setup:
+    # When fawkes starts mongod, it might need some time to initialize the db (especially the first time)
+    max_setup_time: 5000000
     # The mongo client conntection to use for the robot memory. Defined below
     # (robotmemory-local for default, robotmemory-cluster for synced robot memory)
     mongo-client-connection: "robotmemory-cluster"
