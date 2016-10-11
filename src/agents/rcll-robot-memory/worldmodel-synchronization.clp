@@ -462,3 +462,44 @@
     (build ?new-rule)
   )
 )
+
+(deffunction worldmodel-sync-remove-fact-with-sync-id (?sync-id $?templates)
+  ; (progn$ (?templ ?templates)       
+  (do-for-fact ((?fact ?templates)) (eq ?fact:sync-id ?sync-id)
+    (retract ?fact)
+  )
+)
+
+(defrule worldmodel-sync-get-trigger-update
+  ?u <- (robmem-trigger (name "robmem-wm") (ptr ?obj))
+  (wm-sync-info (synced-templates $?templates))
+  =>
+  ; (printout warn "I got a trigger update:" (bson-tostring ?obj) crlf)
+  (bind ?optype (bson-get ?obj "op"))
+  (if (eq ?optype "i") then
+    (rm-assert-from-bson (bson-get ?obj "o"))
+  )
+  (if (eq ?optype "u") then
+    ; get updated document (?obj may only contain the changes)
+    (bind ?query (bson-parse (str-cat "{_id:ObjectId(\"" (bson-get (bson-get ?obj "o2") "_id") "\")}")))
+    (bind ?c (robmem-query "syncedrobmem.clipswm" ?query))
+    (if (not (robmem-cursor-more ?c)) then
+      (printout error "Could not find updated document: " (bson-tostring ?query) crlf)
+    )
+    (bson-destroy ?query)
+    (bind ?updated-doc (robmem-cursor-next ?c))
+    (bind ?sync-id (bson-get ?updated-doc "sync-id"))
+    ; update by removing the old fact and asserting the new one
+    (worldmodel-sync-remove-fact-with-sync-id ?sync-id ?templates)
+    (rm-assert-from-bson ?updated-doc)
+  )
+  (if (eq ?optype "r") then
+    (printout warn "Trigger remove not tested yet" crlf)
+    (bind ?sync-id (bson-get (bson-get ?obj "o") "sync-id"))
+    (worldmodel-sync-remove-fact-with-sync-id ?sync-id ?templates)
+  )
+
+  (retract ?u)
+  ;TODO: check:
+  (bson-destroy ?obj)
+)

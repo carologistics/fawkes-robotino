@@ -7,6 +7,7 @@
 ;---------------------------------------------------------------------------
 
 (defrule rm-clear-old-worldmodel-on-new-start
+  "clear old worldmodel and register triggers for new updates"
   (phase SETUP|PRE_GAME)
   (not (rm-cleared-old-wm))
   =>
@@ -14,8 +15,14 @@
   (bind ?remove-query (bson-create))
   (robmem-remove "syncedrobmem.clipswm" ?remove-query)
   (bson-destroy ?remove-query)
-  ;TODO: verify if this worked
   (assert (rm-cleared-old-wm))
+
+  ; create triggers to keep worldmodel in sync with robot memory
+  (bind ?query (bson-create))
+  (bind ?trigger (robmem-trigger-register "syncedrobmem.clipswm" ?query "robmem-wm"))
+  (bson-destroy ?query)
+  ; memory trigger to be able to remove it
+  (assert (registered-trigger "syncedrobmem.clipswm" ?trigger))
 )
 
 (defrule rm-save-worldmodel
@@ -82,7 +89,7 @@
   (bind ?doc (rm-structured-fact-to-bson ?fact))
   (bind ?query (bson-create))
   (bson-append ?query "sync-id" (fact-slot-value ?fact sync-id))
-  (robmem-upsert "syncedrobmem.clipswm" ?doc ?query)
+  (robmem-update "syncedrobmem.clipswm" ?doc ?query)
   (bson-destroy ?doc)
   (bson-destroy ?query)
 )
