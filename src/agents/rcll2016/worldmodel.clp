@@ -50,6 +50,7 @@
   )
   (assert (received-machine-info))
   (retract ?pb-msg)
+  (pb-destroy ?p)
 )
 
 (defrule wm-get-cap-from-shelf-final

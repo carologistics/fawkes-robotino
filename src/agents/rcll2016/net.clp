@@ -148,6 +148,7 @@
 	  (points-magenta (pb-field-value ?p "points_magenta"))
 	  (points-cyan (pb-field-value ?p "points_cyan"))
   )
+  (pb-destroy ?p)
 )
 
 (defrule net-recv-BeaconSignal
@@ -167,8 +168,7 @@
     (bind ?x (pb-field-value ?beacon-pose "x"))
     (bind ?y (pb-field-value ?beacon-pose "y"))
   )
-  (assert (active-robot (name (sym-cat ?beacon-name)) (last-seen ?now) (x ?x) (y ?y)))     
-  (retract ?pf) 
+  (assert (active-robot (name (sym-cat ?beacon-name)) (last-seen ?now) (x ?x) (y ?y)))
 )
 
 (defrule net-recv-order
@@ -218,5 +218,4 @@
       )
     )
   )
-  (retract ?pf)
 )

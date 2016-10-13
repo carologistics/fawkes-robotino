@@ -404,6 +404,7 @@
     )
   )
   (retract ?msg)
+  (pb-destroy ?p)
   ;reenable watching
   (progn$ (?templ ?templs)
     (watch facts ?templ)
@@ -472,6 +473,7 @@
     (worldmodel-sync-apply-key-value-msg ?pair)
   )
   (retract ?pmsg)
+  (pb-destroy ?p)
   ;send acknowledgment
   (bind ?msg-ack (pb-create "llsf_msgs.WorldmodelChangeAck"))
   (pb-set-field ?msg-ack "id" ?id)  
@@ -488,6 +490,7 @@
     (retract ?wmc)
   )
   (retract ?pmsg)
+  (pb-destroy ?p)
 )
 
 (defrule worldmodel-sync-apply-delayed-worldmodel-change

@@ -611,7 +611,6 @@
   ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p))
   (not (have-exp-info))
   =>
-  (retract ?pbm)
   (foreach ?m (pb-field-list ?p "zones")
     (bind ?name (sym-cat (pb-field-value ?m "zone")))
     (bind ?team (sym-cat (pb-field-value ?m "team_color")))
@@ -637,6 +636,8 @@
   )
   (assert (exp-machines-initialized) 
 	  (have-exp-info))
+  (retract ?pbm)
+  (pb-destroy ?p)
 )
 
 (defrule exp-send-recognized-machines
@@ -678,7 +679,6 @@
   (phase EXPLORATION)
   ?pbm <- (protobuf-msg (type "llsf_msgs.MachineReportInfo") (ptr ?p))
   =>
-  (retract ?pbm)
   (unwatch facts zone-exploration)
   (foreach ?machine (pb-field-list ?p "reported_machines")
     (do-for-fact ((?m zone-exploration)) (eq ?m:machine (sym-cat ?machine))
@@ -687,6 +687,8 @@
     )
   )
   (watch facts zone-exploration)
+  (retract ?pbm)
+  (pb-destroy ?p)
 )
 
 (defrule exp-prepare-for-production-get-lock-for-ins
@@ -789,6 +791,8 @@
       (retract ?s)
       (assert (state EXP_PREPARE_FOR_PRODUCTION_FINISHED))
   )
+  (retract ?pf)
+  (pb-destroy ?p)
 )
 
 (defrule exp-add-missing-tag-from-other-team
