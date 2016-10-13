@@ -1,9 +1,13 @@
 ; Standart problem description in blocks world
 ; Source: https://github.com/gerryai/PDDL4J/blob/master/pddl/blockworld
 
-(define (problem pb5)
+(define (problem blocks_world_from_robot_memory)
    (:domain blocksworld)
-   (:objects a b c d e)
-   (:init (on-table a) (on-table b) (on-table c) (on-table d) (on-table e)  
-          (clear a)  (clear b) (clear c) (clear d) (clear e) (arm-empty))
+   (:objects
+     <<#OBJECTS|{relation:'object'}>><<name>> <</OBJECTS>>
+   )
+   (:init <<#ONTABLE|{relation:'on-table'}>>(on-table <<object>>) <</ONTABLE>>
+          <<#CLEAR|{relation:'clear'}>>(clear <<object>>) <</CLEAR>>
+          <<#HOLDING|{relation:{$in:['holding','arm-empty']}}>>(<<relation>> <<object>>) <</HOLDING>>
+   )
 (:goal (and (on a b) (on b c) (on c d) (on d e))))
