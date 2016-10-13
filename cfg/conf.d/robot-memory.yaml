@@ -14,7 +14,7 @@ plugins/robot-memory:
  
   setup:
     # When fawkes starts mongod, it might need some time to initialize the db (especially the first time)
-    max_setup_time: 5000000
+    max_setup_time: 15000000
     # The mongo client conntection to use for the robot memory. Defined below
     # (robotmemory-local for default, robotmemory-cluster for synced robot memory)
     mongo-client-connection: "robotmemory-cluster"
@@ -22,6 +22,7 @@ plugins/robot-memory:
     distributed: true
     # configuration for setting up all mongod and mongos instances:
     local:
+      replica-set-name: "local" #single instance set needed to optain the oplog, not actually replicated 
       port: 27017
     config:
       port: 27031
