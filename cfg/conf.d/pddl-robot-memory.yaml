@@ -11,3 +11,9 @@ plugins/pddl-robot-memory:
   input-problem-description: blocks-world/problem-template.pddl
   # Where to put the generated problem file (in src/agents) 
   output-problem-description: blocks-world/generated-problem.pddl
+  
+  # Interface used to start generation with message and show when its final
+  interface-name: "pddl-gen"
+  
+  #do you want to generate the pddl when the plugin is initialized?
+  generate-on-init: true
