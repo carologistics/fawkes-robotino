@@ -1,5 +1,7 @@
 ../../../fawkes/src/libs
+../../../fawkes/src
 ../../../src/libs
+../../../src
 .
 ~/clingo/libclasp
 ~/clingo/libclingo

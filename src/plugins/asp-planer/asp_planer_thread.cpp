@@ -28,9 +28,9 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-AspPlanerThread::AspPlanerThread() : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
+AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), aspCommon::RefboxComm(logger, config),
-		ClingoDebug(false), MoreModels(false), ClingoMutex(Mutex::RECURSIVE), Control(nullptr), Solving(false),
+		ClingoDebug(false), MoreModels(false), ClingoMutex(Mutex::RECURSIVE), Solving(false),
 		LastTick(0), LastGameTime(0), Horizon(0)
 {
 	constructRefboxComm();
@@ -39,7 +39,7 @@ AspPlanerThread::AspPlanerThread() : Thread("AspPlanerThread", Thread::OPMODE_WA
 }
 
 /** Destructor. */
-AspPlanerThread::~AspPlanerThread()
+AspPlanerThread::~AspPlanerThread(void)
 {
 	return;
 }

@@ -29,6 +29,7 @@
 #include <asp_common/refbox_comm.hpp>
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
+#include <plugins/asp/aspect/asp.h>
 
 #include <clingo.hh>
 
@@ -44,13 +45,13 @@ class AspPlanerThread
   public fawkes::BlockedTimingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::LoggingAspect,
+  public fawkes::ASPAspect,
   public fawkes::aspCommon::RefboxComm
 {
 	private:
 	bool ClingoDebug;
 	bool MoreModels;
 	fawkes::Mutex ClingoMutex;
-	Clingo::Control *Control;
 	bool Solving;
 	unsigned int LastTick;
 	unsigned int LastGameTime;
@@ -90,8 +91,8 @@ class AspPlanerThread
 	void deadTeamMate(const uint32_t mate) override;
 
 	public:
-	AspPlanerThread();
-	~AspPlanerThread();
+	AspPlanerThread(void);
+	~AspPlanerThread(void);
 
 	void init() override;
 	void loop() override;

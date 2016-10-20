@@ -81,23 +81,7 @@ using fawkes::MutexLocker;
 void
 AspPlanerThread::constructClingo(void)
 {
-	auto clingoLogger = [this](const Clingo::WarningCode code, char const *msg) {
-			fawkes::Logger::LogLevel level = fawkes::Logger::LL_NONE;
-			switch ( code ) {
-				case Clingo::WarningCode::AtomUndefined      :
-				case Clingo::WarningCode::OperationUndefined :
-				case Clingo::WarningCode::RuntimeError       : level = fawkes::Logger::LL_ERROR; break;
-				case Clingo::WarningCode::Other              :
-				case Clingo::WarningCode::VariableUnbounded  : level = fawkes::Logger::LL_WARN;
-				case Clingo::WarningCode::FileIncluded       :
-				case Clingo::WarningCode::GlobalVariable     : level = fawkes::Logger::LL_INFO; break;
-			} //switch ( code )
-			Log->log(level, "Clingo", msg);
-			return;
-		};
-
-	MutexLocker locker(&ClingoMutex);
-	Control = new Clingo::Control({}, clingoLogger);
+	//Using the aspect.
 	return;
 }
 
@@ -129,7 +113,7 @@ AspPlanerThread::initClingo(void)
 	for ( const auto file : files )
 	{
 		Log->log_info(LoggingComponent, "Loading file program file %s.", file.c_str());
-		Control->load((path + file).c_str());
+		ClingoControl->load((path + file).c_str());
 	} //for ( const auto file : files )
 	locker.unlock();
 
@@ -173,13 +157,13 @@ AspPlanerThread::loopClingo(void)
 	Clingo::Symbol horizonValueSymbol = Clingo::Number(Horizon);
 	Clingo::SymbolSpan horizonSpan(&horizonValueSymbol, 1);
 	Clingo::Symbol horizonSymbol = Clingo::Function("horizon", horizonSpan);
-	Control->assign_external(horizonSymbol, Clingo::TruthValue::False);
+	ClingoControl->assign_external(horizonSymbol, Clingo::TruthValue::False);
 
 	//TODO: How to choose this number? Should it be configurable?
 	const unsigned int lookAhaed = gameTime < explorationTime() ? 120 : 300;
 	Horizon = gameTime + lookAhaed;
 	horizonValueSymbol = Clingo::Number(Horizon);
-	Control->assign_external(horizonSymbol, Clingo::TruthValue::True);
+	ClingoControl->assign_external(horizonSymbol, Clingo::TruthValue::True);
 
 	std::vector<Clingo::Symbol> symbols;
 	symbols.reserve(Horizon - LastGameTime + 1);
@@ -204,9 +188,6 @@ AspPlanerThread::loopClingo(void)
 void
 AspPlanerThread::finalizeClingo(void)
 {
-	MutexLocker locker(&ClingoMutex);
-	delete Control;
-	Control = nullptr;
 	return;
 }
 
@@ -220,7 +201,7 @@ AspPlanerThread::resetClingo(void)
 	MutexLocker locker(&ClingoMutex);
 	if ( Solving )
 	{
-		Control->interrupt();
+		ClingoControl->interrupt();
 		Solving = false;
 	} //if ( Solving )
 	RequestMutex.lock();
@@ -230,8 +211,9 @@ AspPlanerThread::resetClingo(void)
 	LastGameTime = 0;
 	Horizon = 0;
 
-	finalizeClingo();
-	constructClingo();
+	/** @todo: Reset the ClingoControl, how to deal with this?
+	 * We need to do what ASPAspectIniFin does in init(), or find a method within clingo.
+	 */
 	initClingo();
 	return;
 }
@@ -278,7 +260,7 @@ AspPlanerThread::ground(const Clingo::PartSpan& parts)
 	} //if ( ClingoDebug )
 
 	MutexLocker locker(&ClingoMutex);
-	Control->ground(parts);
+	ClingoControl->ground(parts);
 
 	if ( ClingoDebug )
 	{
@@ -303,7 +285,7 @@ AspPlanerThread::solve(void)
 	{
 		Log->log_info(LoggingComponent, "Start solving.");
 	} //if ( ClingoDebug )
-	Control->solve_async([this](const Clingo::Model& model) { return newModel(model); },
+	ClingoControl->solve_async([this](const Clingo::Model& model) { return newModel(model); },
 		[this](const Clingo::SolveResult& result) { solvingFinished(result); return; });
 	return;
 }
