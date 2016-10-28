@@ -25,7 +25,9 @@ module(..., skillenv.module_init)
 name               = "drive_into_field"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"goto"}
-depends_interfaces = { }
+depends_interfaces = {
+   {v = "pose",      type="Position3DInterface", id="Pose"}
+}
 
 documentation      = [==[Drives into field after given offset
 
@@ -38,6 +40,10 @@ skillenv.skill_module(_M)
 
 local TIMEOUT_UPPER_LIMIT = 60
 
+function is_in_field(x)
+   return pose:translation(1) > 0.0
+end
+
 fsm:define_states{ export_to=_M,
    --closure={wait=fsm.vars.wait},
    {"INIT",             JumpState},
@@ -48,6 +54,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT",   "WAIT", cond=true},
    {"WAIT",   "DRIVE_INTO_FIELD", timeout=TIMEOUT_UPPER_LIMIT},   -- this just creates the transision
+   {"DRIVE_INTO_FIELD", "FINAL", cond=is_in_field, desc="Already in field"},
 }
 
 function INIT:init()
