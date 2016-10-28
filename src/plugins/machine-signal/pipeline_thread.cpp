@@ -611,12 +611,7 @@ MachineSignalPipelineThread::bb_get_laser_rois()
     );
 
     LaserLineInterface *best_line = bb_laser_lines_[0];
-    for (LaserLineInterface *bb_line : bb_laser_lines_) {
-      bb_line->read();
-      if (bb_line->visibility_history() > 0 && std::abs(bb_line->bearing()) < std::abs(best_line->bearing())) {
-        best_line = bb_line;
-      }
-    }
+    best_line->read();
 
     if (string(best_line->frame_id()) != "") {
       // Find the leftmost endpoint, as seen from base_link
