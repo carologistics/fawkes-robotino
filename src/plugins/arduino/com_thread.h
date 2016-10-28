@@ -30,6 +30,7 @@
 #include <aspect/blackboard.h>
 #include <blackboard/interface_listener.h>
 #include <aspect/blocked_timing.h>
+#include <interfaces/JoystickInterface.h>
 
 #include <utils/time/time.h>
 
@@ -99,6 +100,7 @@ private:
     std::string cfg_hostname_;
     std::string cfg_prefix_;
     std::string cfg_name_;
+    std::string cfg_ifid_joystick_;
     bool cfg_enable_gyro_;
     unsigned int cfg_sensor_update_cycle_time_;
     bool cfg_gripper_enabled_;
@@ -131,6 +133,7 @@ private:
     boost::asio::streambuf input_buffer_;
     boost::mutex io_mutex_;
     fawkes::ArduinoInterface *arduino_if;
+    fawkes::JoystickInterface *joystick_if_;
 
     void load_config();
 

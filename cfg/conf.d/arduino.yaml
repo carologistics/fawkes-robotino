@@ -18,4 +18,7 @@ arduino:
   max_mm: 40
 
   # go to this position after initialization
-  init_mm: 13
+  init_mm: 26
+
+  # Interface ID for JoystickInterface to read data from
+  joystick_interface_id: Joystick
