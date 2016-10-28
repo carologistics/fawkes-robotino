@@ -334,7 +334,7 @@
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
-  (exp-matching (red ?red) (yellow ?yellow) (green ?green) (mtype ?mtype))
+  ?exp <- (exp-matching (red ?red) (yellow ?yellow) (green ?green) (mtype ?mtype) (found FALSE|MAYBE))
   =>
   (printout t "Explored light done." crlf)
   (printout warn "TODO: ensure that tag is in the explored zone" crlf)
@@ -345,6 +345,7 @@
   )
   (printout t "Read light: red: " ?red " yellow: " ?yellow " green: " ?green crlf)
   (assert (exploration-result (machine ?machine) (mtype ?mtype) (zone ?zone)))
+  (synced-modify ?exp found MAYBE machine ?machine)
 )
 
 (defrule exp-explore-light-signal-failed
@@ -371,7 +372,7 @@
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
-  (not (exp-matching (red ?red) (yellow ?yellow) (green ?green) (mtype ?mtype)))
+  (not (exp-matching (red ?red) (yellow ?yellow) (green ?green) (mtype ?mtype) (found FALSE|MAYBE)))
   =>
   (printout t "Explored light done." crlf)
   (retract ?s ?final ?l-signal)
@@ -610,6 +611,7 @@
   (phase EXPLORATION)
   ?pbm <- (protobuf-msg (type "llsf_msgs.ExplorationInfo") (ptr ?p))
   (not (have-exp-info))
+  (lock-role ?role)
   =>
   (retract ?pbm)
   (foreach ?m (pb-field-list ?p "zones")
@@ -620,23 +622,25 @@
       (modify ?me (team ?team))
     )
   )
-  (foreach ?sig (pb-field-list ?p "signals")
-    (bind ?mtype (pb-field-value ?sig "type"))
-    (bind ?red BLINKING)
-    (bind ?yellow BLINKING)
-    (bind ?green BLINKING)
-    (progn$ (?light (pb-field-list ?sig "lights"))
-      (bind ?light-state (pb-field-value ?light "state"))
-      (switch (sym-cat (pb-field-value ?light "color"))
-	(case RED then (bind ?red ?light-state))
-	(case YELLOW then (bind ?yellow ?light-state))
-	(case GREEN then (bind ?green ?light-state))
+  (if (eq ?role MASTER) then 
+    (foreach ?sig (pb-field-list ?p "signals")
+      (bind ?mtype (pb-field-value ?sig "type"))
+      (bind ?red BLINKING)
+      (bind ?yellow BLINKING)
+      (bind ?green BLINKING)
+      (progn$ (?light (pb-field-list ?sig "lights"))
+        (bind ?light-state (pb-field-value ?light "state"))
+        (switch (sym-cat (pb-field-value ?light "color"))
+          (case RED then (bind ?red ?light-state))
+          (case YELLOW then (bind ?yellow ?light-state))
+          (case GREEN then (bind ?green ?light-state))
+        )
       )
+      (assert (exp-matching (mtype ?mtype) (red ?red) (yellow ?yellow) (green ?green) (found FALSE)))
     )
-    (assert (exp-matching (mtype ?mtype) (red ?red) (yellow ?yellow) (green ?green)))
   )
   (assert (exp-machines-initialized) 
-	  (have-exp-info))
+          (have-exp-info))
 )
 
 (defrule exp-send-recognized-machines
@@ -852,3 +856,63 @@
     (modify ?zone-expl-mir (machine ?mps-mirrow))
   )
 )
+
+; (defrule exp-remove-old-skill-facts
+;   "If the exploration has passed and there are still some leftovers, remove them"
+;   (phase PRODUCTION)
+;   ?old <- (skill (name "explore_zone"))
+;   ?new <- (skill (name ?something&:(neq ?old ?new)))
+;   =>
+;   (retract ?old)
+; )
+
+(defrule exp-report-was-right
+  "If we reported a machine and the report was right, save this information to the fact-base"
+  (phase EXPLORATION)
+  ?exp <- (exp-matching (found MAYBE))
+  (team-color ?team)
+  (points ?team ?p)
+  (lock-role MASTER)
+  =>
+  ;check that all reports were right
+  (bind ?correct-points 0)
+  (bind ?maybe-points 0)
+  (do-for-all-facts ((?expmatch exp-matching)) TRUE
+    (if (eq ?expmatch:found TRUE) then
+      (bind ?correct-points (+ ?correct-points 8))
+    )
+    (if (eq ?expmatch:found MAYBE) then
+      (bind ?maybe-points (+ ?maybe-points 8))
+    )
+  )
+  (if (eq ?p (+ ?correct-points ?maybe-points)) then
+    ; all maybe's are right 
+    (delayed-do-for-all-facts ((?expmatch exp-matching)) (eq ?expmatch:found MAYBE)
+      (synced-modify ?expmatch found TRUE)
+    )
+  )
+)
+
+
+(defrule exp-conclude-ds-report
+  "When we found and reported all machines except for the DS, conclude the correct report"
+  (phase EXPLORATION)
+  (team-color ?team)
+  (points ?team 40)
+  (lock-role MASTER)
+  (machine (mtype DS) (name ?ds) (team ?team))
+  ?exp <- (exp-matching (found FALSE) (mtype ?mtype))
+  (exp-matching (found TRUE) (machine C-BS|M-BS))
+  (exp-matching (found TRUE) (machine C-CS1|M-CS1))
+  (exp-matching (found TRUE) (machine C-CS2|M-CS2))
+  (exp-matching (found TRUE) (machine C-RS1|M-RS1))
+  (exp-matching (found TRUE) (machine C-RS2|M-RS2))
+  =>
+  (if (eq ?team CYAN) then
+    (bind ?zone Z4)
+    else
+    (bind ?zone Z16)
+  )
+  (assert (exploration-result (machine ?ds) (mtype ?mtype) (zone ?zone)))
+)
+

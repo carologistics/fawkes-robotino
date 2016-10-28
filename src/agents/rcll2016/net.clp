@@ -115,8 +115,8 @@
   (refbox-state ?state)
   ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-from ?host ?port))
   ?tc <- (team-color ?team-color)
-  ?pm <- (points-magenta ?)
-  ?pc <- (points-cyan ?)
+  ?pm <- (points MAGENTA ?)
+  ?pc <- (points CYAN ?)
   =>
   (retract ?pf ?gt ?pm ?pc)
   (bind ?new-state (pb-field-value ?p "state"))
@@ -145,8 +145,8 @@
   (bind ?sec (pb-field-value ?time "sec"))
   (bind ?nsec (pb-field-value ?time "nsec"))
   (assert (game-time (create$ ?sec (/ ?nsec 1000)))
-	  (points-magenta (pb-field-value ?p "points_magenta"))
-	  (points-cyan (pb-field-value ?p "points_cyan"))
+	  (points MAGENTA (pb-field-value ?p "points_magenta"))
+	  (points CYAN (pb-field-value ?p "points_cyan"))
   )
 )
 

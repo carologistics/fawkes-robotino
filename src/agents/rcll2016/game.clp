@@ -21,7 +21,7 @@
 
 (defrule change-state-ignore
   "State changes are only allowed during play"
-  (phase ~PRODUCTION&~EXPLORATION&~WHACK_A_MOLE_CHALLENGE)
+  (phase ~PRODUCTION&~EXPLORATION&~POST_GAME)
   ?cf <- (change-state ?)
   =>
   (retract ?cf)
@@ -106,7 +106,7 @@
   ?sf <- (state ?state&~PAUSED&~WAIT_START)
   ?cf <- (change-state ?cs&~RUNNING)
   ?rf <- (refbox-state ~?cs)
-  (not (simulation-is-running))
+  ; (not (simulation-is-running))
   =>
   (printout t "Paused, disabling motor" crlf)
   (retract ?sf ?cf ?rf)
@@ -122,7 +122,7 @@
   ?pf <- (pre-pause-state ?old-state)
   ?cf <- (change-state RUNNING)
   ?rf <- (refbox-state PAUSED)
-  (not (simulation-is-running))
+  ; (not (simulation-is-running))
   =>
   (printout t "Unpaused, enabling motor" crlf)
   (retract ?sf ?pf ?cf ?rf)
