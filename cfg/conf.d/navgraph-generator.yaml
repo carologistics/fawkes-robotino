@@ -50,7 +50,7 @@ navgraph-generator:
     edges_by_map:
       # The edges by map filter removes edges if the closest point on
       # the edge to any occupied map cell is below a given distance.
-      distance: 0.3
+      distance: 0.4
 
   visualization:
     enable: true
