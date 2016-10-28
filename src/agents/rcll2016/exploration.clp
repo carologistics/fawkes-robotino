@@ -315,7 +315,7 @@
 (defrule exp-explore-light-signal
   "Preparing recognition of the light signals after we arrived at the output side."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "drive_to") (status FINAL|FAILED)) 
+  ?final <- (skill-done (name "drive_to") (status FINAL)) 
   ?s <- (state EXP_DRIVE_TO_OUTPUT)
   (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
@@ -324,6 +324,21 @@
   (retract ?s ?final)
   (assert (state EXP_DETECT_LIGHT))
   (skill-call mps_detect_signal place ?machine)
+)
+
+(defrule exp-explore-light-signal-drive-to-failed
+  "The robot was not able to drive to the output side, skip this zone for now"
+  (phase EXPLORATION)
+  ?final <- (skill-done (name "drive_to") (status FAILED)) 
+  ?s <- (state EXP_DRIVE_TO_OUTPUT)
+  (zone-exploration (name ?zone) (machine ?machine))
+  ?g <- (goalmachine ?zone)
+  =>
+  (printout t "Driving to the light signal failed. Skipping this zone for now." crlf)
+  (retract ?s ?final)
+  (assert (state EXP_IDLE)
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?zone))
+  )
 )
 
 (defrule exp-explore-light-signal-finished
