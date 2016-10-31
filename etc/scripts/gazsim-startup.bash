@@ -31,6 +31,7 @@ OPTIONS:
    -g             Run Fawkes in gdb
    -v             Run Fawkes in valgrind
    -t             Skip Exploration and add all navgraph points
+   -w             Alternative world file
   GAZEBO:
    -e arg         Record Replay
 EOF
@@ -53,8 +54,9 @@ FAWKES_BIN=$FAWKES_DIR/bin
 KEEP=
 GDB=
 SKIP_EXPLORATION=
+GAZEBO_WORLD=$GAZEBO_WORLD_PATH
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:t" -l "ros,ros-launch:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:tw:" -l "ros,ros-launch:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -102,6 +104,9 @@ while true; do
 	     ;;
 	 -p)
 	     PORT=$OPTARG
+	     ;;
+	 -w)
+	     GAZEBO_WORLD=$OPTARG
 	     ;;
 	 -i)
 	     ROBOTINO=$OPTARG
@@ -154,12 +159,12 @@ case $COMMAND in
     gazebo )
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LANG="en_US"
-	gazebo $REPLAY $GAZEBO_WORLD_PATH
+	gazebo $REPLAY $GAZEBO_WORLD
 	;;
     gzserver ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LANG="en_US"
-	gzserver $REPLAY $GAZEBO_WORLD_PATH
+	gzserver $REPLAY $GAZEBO_WORLD
 	;;
     gzclient ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
