@@ -231,7 +231,7 @@ MPSLaserGenThread::loop()
 				                         Eigen::Vector2f(0,0), beam);
 			  if (intersect_1.allFinite()) {
 				  float l = intersect_1.norm();
-				  if (isnan(data[i]) || l < data[i])  data[i] = l;
+				  if (std::isnan(data[i]) || l < data[i])  data[i] = l;
 			  }
 
 			  Eigen::Vector2f intersect_2 =
@@ -240,7 +240,7 @@ MPSLaserGenThread::loop()
 				                         Eigen::Vector2f(0,0), beam);
 			  if (intersect_2.allFinite()) {
 				  float l = intersect_2.norm();
-				  if (isnan(data[i]) || l < data[i])  data[i] = l;
+				  if (std::isnan(data[i]) || l < data[i])  data[i] = l;
 			  }
 		  }
 	  }
