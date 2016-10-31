@@ -31,7 +31,7 @@ using namespace fawkes;
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPAgent", "ASP Agent"),
 		aspCommon::RefboxComm(logger, config),
-		ClingoDebug(false), MoreModels(false), ClingoMutex(Mutex::RECURSIVE), Solving(false),
+		MoreModels(false),
 		LastTick(0), LastGameTime(0), Horizon(0)
 {
 	constructRefboxComm();

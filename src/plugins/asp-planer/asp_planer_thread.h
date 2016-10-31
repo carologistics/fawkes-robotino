@@ -49,16 +49,17 @@ class AspPlanerThread
   public fawkes::aspCommon::RefboxComm
 {
 	private:
-	bool ClingoDebug;
 	bool MoreModels;
-	fawkes::Mutex ClingoMutex;
-	bool Solving;
 	unsigned int LastTick;
 	unsigned int LastGameTime;
 	unsigned int Horizon;
 
 	fawkes::Mutex RequestMutex;
 	std::vector<GroundRequest> Requests;
+
+	fawkes::Mutex SymbolMutex;
+	Clingo::SymbolVector Symbols;
+	bool NewSymbols;
 
 	void constructRefboxComm(void);
 	void initRefboxComm(void);
@@ -69,13 +70,9 @@ class AspPlanerThread
 	void loopClingo(void);
 	void finalizeClingo(void);
 
-	void resetClingo(void);
-
 	void queueGround(GroundRequest&& request);
-	void ground(const Clingo::PartSpan& parts);
-	void solve(void);
 
-	bool newModel(const Clingo::Model& model);
+	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult& result);
 
 	protected:

@@ -26,6 +26,7 @@
 
 #include <core/exception.h>
 #include <core/threading/mutex_locker.h>
+#include <plugins/asp/aspect/clingo_access.h>
 
 using fawkes::MutexLocker;
 
@@ -44,20 +45,8 @@ using fawkes::MutexLocker;
  */
 
 /**
- * @var AspPlanerThread::ClingoDebug
- * @brief Wether there should be debug output regarding grounding, solving, etc.
- *
  * @var AspPlanerThread::MoreModels
  * @brief If we want to have more than one model (if available) from the solver.
- *
- * @var AspPlanerThread::ClingoMutex
- * @brief Protects all clingo related members.
- *
- * @var AspPlanerThread::Control
- * @brief The Clingo-Control.
- *
- * @var AspPlanerThread::Solving
- * @brief Wether clingo is solving.
  *
  * @var AspPlanerThread::LastTick
  * @brief The last tick for the asp program.
@@ -91,6 +80,14 @@ AspPlanerThread::constructClingo(void)
 void
 AspPlanerThread::initClingo(void)
 {
+	ClingoAcc->registerModelCallback(std::make_shared<std::function<bool(void)>>([this](void) { return newModel(); }));
+	ClingoAcc->registerFinishCallback(std::make_shared<std::function<void(Clingo::SolveResult)>>(
+		[this](const Clingo::SolveResult result)
+		{
+			solvingFinished(result);
+			return;
+		}));
+
 	constexpr auto infix = "planer/";
 	const auto prefixLen = std::strlen(ConfigPrefix), infixLen = std::strlen(infix);
 	char buffer[prefixLen + infixLen + 20];
@@ -103,22 +100,19 @@ AspPlanerThread::initClingo(void)
 	std::strcpy(suffix, "program-files");
 	const auto files = Config->get_strings(buffer);
 	std::strcpy(suffix, "debug");
-	ClingoDebug = Config->get_bool(buffer);
+	ClingoAcc->Debug = Config->get_bool(buffer);
 	std::strcpy(suffix, "more-models");
 	MoreModels  = Config->get_bool(buffer);
 
 	Log->log_info(LoggingComponent, "Loading program files from %s. Debug state: %s", path.c_str(),
-		ClingoDebug ? "true" : "false");
-	MutexLocker locker(&ClingoMutex);
-	for ( const auto file : files )
+		ClingoAcc->Debug ? "true" : "false");
+	for ( const auto& file : files )
 	{
-		Log->log_info(LoggingComponent, "Loading file program file %s.", file.c_str());
-		ClingoControl->load((path + file).c_str());
-	} //for ( const auto file : files )
-	locker.unlock();
+		ClingoAcc->loadFile(path + file);
+	} //for ( const auto& file : files )
 
-	ground({Clingo::Part("base", Clingo::SymbolSpan())});
-	solve();
+	ClingoAcc->ground({Clingo::Part("base", Clingo::SymbolSpan())});
+	ClingoAcc->startSolving();
 	return;
 }
 
@@ -128,12 +122,11 @@ AspPlanerThread::initClingo(void)
 void
 AspPlanerThread::loopClingo(void)
 {
-	MutexLocker cliLocker(&ClingoMutex);
 	MutexLocker reqLocker(&RequestMutex);
-	if ( Solving || Requests.empty() )
+	if ( ClingoAcc->solving() || Requests.empty() )
 	{
 		return;
-	} //if ( Solving || Requests.empty() )
+	} //if ( ClingoAcc->solving() || Requests.empty() )
 
 	const Clingo::Symbol tickSymbol = Clingo::Number(LastTick++);
 	std::vector<Clingo::Part> parts;
@@ -147,7 +140,7 @@ AspPlanerThread::loopClingo(void)
 	} //for ( GroundRequest& request : Requests )
 
 	//We are not allowed to clear requests before grounding! The params are just stored as "pointers".
-	ground(parts);
+	ClingoAcc->ground(parts);
 	parts.clear();
 	Requests.clear();
 	reqLocker.unlock();
@@ -157,15 +150,15 @@ AspPlanerThread::loopClingo(void)
 	Clingo::Symbol horizonValueSymbol = Clingo::Number(Horizon);
 	Clingo::SymbolSpan horizonSpan(&horizonValueSymbol, 1);
 	Clingo::Symbol horizonSymbol = Clingo::Function("horizon", horizonSpan);
-	ClingoControl->assign_external(horizonSymbol, Clingo::TruthValue::False);
+	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::False);
 
 	//TODO: How to choose this number? Should it be configurable?
 	const unsigned int lookAhaed = gameTime < explorationTime() ? 120 : 300;
 	Horizon = gameTime + lookAhaed;
 	horizonValueSymbol = Clingo::Number(Horizon);
-	ClingoControl->assign_external(horizonSymbol, Clingo::TruthValue::True);
+	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::True);
 
-	std::vector<Clingo::Symbol> symbols;
+	Clingo::SymbolVector symbols;
 	symbols.reserve(Horizon - LastGameTime + 1);
 
 	//TODO: Everytime until horizon? Or just the new horizon?
@@ -177,8 +170,8 @@ AspPlanerThread::loopClingo(void)
 	} //for ( auto i = LastGameTime; i <= Horizon; ++i )
 	LastGameTime = gameTime;
 
-	ground(parts);
-	solve();
+	ClingoAcc->ground(parts);
+	ClingoAcc->startSolving();
 	return;
 }
 
@@ -188,33 +181,6 @@ AspPlanerThread::loopClingo(void)
 void
 AspPlanerThread::finalizeClingo(void)
 {
-	return;
-}
-
-/**
- * @brief Resets the clingo solver.
- */
-void
-AspPlanerThread::resetClingo(void)
-{
-	Log->log_info(LoggingComponent, "Resetting Clingo.");
-	MutexLocker locker(&ClingoMutex);
-	if ( Solving )
-	{
-		ClingoControl->interrupt();
-		Solving = false;
-	} //if ( Solving )
-	RequestMutex.lock();
-	Requests.clear();
-	RequestMutex.unlock();
-	LastTick = 0;
-	LastGameTime = 0;
-	Horizon = 0;
-
-	/** @todo: Reset the ClingoControl, how to deal with this?
-	 * We need to do what ASPAspectIniFin does in init(), or find a method within clingo.
-	 */
-	initClingo();
 	return;
 }
 
@@ -230,104 +196,15 @@ AspPlanerThread::queueGround(GroundRequest&& request)
 }
 
 /**
- * @brief Grounds the given parts and if wished for prints that it does so.
- */
-void
-AspPlanerThread::ground(const Clingo::PartSpan& parts)
-{
-	if ( ClingoDebug )
-	{
-		Log->log_info(LoggingComponent, "Grounding %d parts:", parts.size());
-		auto i = 0;
-		for ( const Clingo::Part& part : parts )
-		{
-			std::string params;
-			bool first = true;
-			for ( const auto& param : part.params() )
-			{
-				if ( first )
-				{
-					first = false;
-				} //if ( first )
-				else
-				{
-					params += ", ";
-				} //else -> if ( first )
-				params += param.to_string();
-			} //for ( const auto& param : part.params() )
-			Log->log_info(LoggingComponent, "Part #%d: %s [%s]", ++i, part.name(), params.c_str());
-		} //for ( const auto& part : parts )
-	} //if ( ClingoDebug )
-
-	MutexLocker locker(&ClingoMutex);
-	ClingoControl->ground(parts);
-
-	if ( ClingoDebug )
-	{
-		Log->log_info(LoggingComponent, "Grounding done.");
-	} //if ( ClingoDebug )
-	return;
-}
-
-/**
- * @brief Starts the solving process, if it isn't running.
- */
-void
-AspPlanerThread::solve(void)
-{
-	MutexLocker locker(&ClingoMutex);
-	if ( Solving )
-	{
-		return;
-	} //if ( Solving )
-	Solving = true;
-	if ( ClingoDebug )
-	{
-		Log->log_info(LoggingComponent, "Start solving.");
-	} //if ( ClingoDebug )
-	ClingoControl->solve_async([this](const Clingo::Model& model) { return newModel(model); },
-		[this](const Clingo::SolveResult& result) { solvingFinished(result); return; });
-	return;
-}
-
-/**
  * @brief Is called, when the solver has found a new model.
- * @param[in] newModel The new Model.
  * @return If the solver should search for additional models.
  */
 bool
-AspPlanerThread::newModel(const Clingo::Model& model)
+AspPlanerThread::newModel(void)
 {
-	const Clingo::SymbolVector symbols = model.symbols();
-	if ( ClingoDebug )
-	{
-		static Clingo::SymbolVector oldSymbols;
-		Log->log_info(LoggingComponent, "New model found.");
-
-		/* To save (de-)allocations just move found symbols at the end of the vector and move the end iterator to the
-		 * front. After this everything in [begin, end) is in oldSymbols but not in symbols. */
-		auto begin = oldSymbols.begin(), end = oldSymbols.end();
-
-		for ( const Clingo::Symbol& symbol : symbols )
-		{
-			auto iter = std::find(begin, end, symbol);
-			if ( iter == end )
-			{
-				Log->log_info(LoggingComponent, "New Symbol: %s", symbol.to_string().c_str());
-			} //if ( iter == end )
-			else
-			{
-				std::swap(*iter, *--end);
-			} //else -> if ( iter == end )
-		} //for ( const Clingo::Symbol& symbol : symbols )
-
-		for ( ; begin != end; ++begin )
-		{
-			Log->log_info(LoggingComponent, "Symbol removed: %s", begin->to_string().c_str());
-		} //for ( ; begin != end; ++begin )
-
-		oldSymbols = symbols;
-	} //if ( ClingoDebug )
+	MutexLocker locker(&SymbolMutex);
+	Symbols = ClingoAcc->modelSymbols();
+	NewSymbols = true;
 	return MoreModels;
 }
 
@@ -339,13 +216,6 @@ AspPlanerThread::newModel(const Clingo::Model& model)
 void
 AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 {
-	if ( ClingoDebug )
-	{
-		Log->log_info(LoggingComponent, "Solving done.");
-	} //if ( ClingoDebug )
-	MutexLocker locker(&ClingoMutex);
-	Solving = false;
-
 	if ( result.is_unsatisfiable() )
 	{
 		throw fawkes::Exception("The program is infeasable! We have no way to recover!");
@@ -356,7 +226,7 @@ AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 void
 AspPlanerThread::setTeam(const bool cyan)
 {
-	std::vector<Clingo::Symbol> param(1, Clingo::String(cyan ? "C" : "M"));
+	Clingo::SymbolVector param(1, Clingo::String(cyan ? "C" : "M"));
 	queueGround({"ourTeam", param, false});
 	return;
 }
@@ -364,14 +234,15 @@ AspPlanerThread::setTeam(const bool cyan)
 void
 AspPlanerThread::unsetTeam(void)
 {
-	resetClingo();
+	//TODO: I think it is clear what to do.
+	throw fawkes::Exception("Should unset the team, but this is not implemented!");
 	return;
 }
 
 void
 AspPlanerThread::newTeamMate(const uint32_t mate)
 {
-	std::vector<Clingo::Symbol> params;
+	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::Number(mate));
 	params.emplace_back(Clingo::Number(gameTime()));
 	queueGround({"addRobot", params, true});
@@ -381,7 +252,7 @@ AspPlanerThread::newTeamMate(const uint32_t mate)
 void
 AspPlanerThread::deadTeamMate(const uint32_t mate)
 {
-	std::vector<Clingo::Symbol> params;
+	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::Number(mate));
 	params.emplace_back(Clingo::Number(gameTime()));
 	queueGround({"removeRobot", params, true});
