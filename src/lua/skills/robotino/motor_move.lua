@@ -46,15 +46,13 @@ depends_interfaces = {
    {v = "if_front_dist", type = "Position3DInterface", id="front_dist"}
 }
 
-documentation      = [==[Move on a (kind of) straight line relative to the given coordinates.
-@param x The target X coordinate, relative to /base_link
-@param y Dito
-@param ori Relative rotation. -pi <= ori <= pi, rel. to /base_link.
-@param frame Optional: Motion reference frame. Input coordinates are
-   transformed into this frame, so its origin must be independent of the
-   robot. Defaults to /odom.
-@param vel_trans Translational top-speed. Upper limit: hardcoded tunable in skill module.
-@param vel_rot Rotational top-speed. Upper limit: dito.
+documentation      = [==[Move on a (kind of) straight line to the given coordinates.
+@param x (Optional) The target X coordinate, relative to /base_link
+@param y (Optional) Dito
+@param ori (Optional) Rotation. -math.pi <= ori <= math.pi
+@param frame (Optional) Reference frame for input coordinates. Defaults to base_link.
+@param vel_trans (Optional) Translational top-speed. Upper limit: hardcoded tunable in skill module.
+@param vel_rot (Optional) Rotational top-speed. Upper limit: dito.
 ]==]
 
 -- Tunables
