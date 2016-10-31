@@ -32,7 +32,8 @@ OBJS_webtools_bridge =  webtools_bridge_plugin.o webtools_bridge_thread.o \
 					 	service_capability_manager.o 
 									
 
-OBJS_all    = $(OBJS_webtools_bridge)
+OBJS_gui = $(OBJS_webtools_bridge)
+DISABLE_OBJS_all_WARNING = 1
 
 
 CFLAGS_CPP11 += -std=c++11 -D_WEBSOCKETPP_CPP11_STL_
@@ -41,7 +42,7 @@ ifeq ($(HAVE_TF)$(HAVE_CLIPS)$(HAVE_CPP11),111)
   CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) -I/home/mgomaa/fawkes-robotino/src/plugins/webtools-bridge
   LDFLAGS += $(LDFLAGS_TF) 
 
-  PLUGINS_all = $(PLUGINDIR)/webtools-bridge.$(SOEXT)
+  PLUGINS_gui = $(PLUGINDIR)/webtools-bridge.$(SOEXT)
 else
   ifneq ($(HAVE_CPP11),1)
     WARN_TARGETS += warning_cpp11
@@ -55,7 +56,7 @@ else
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
-all: $(WARN_TARGETS)
+gui: $(WARN_TARGETS)
 .PHONY: warning_tf warning_ros warning_geometry_msgs warning_cpp11 warning_clips
 warning_tf: 
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting webtools-bridge libs" \
