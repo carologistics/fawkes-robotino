@@ -32,7 +32,8 @@ OBJS_webtools_bridge =  webtools_bridge_plugin.o webtools_bridge_thread.o \
 					 	service_capability_manager.o 
 								
 
-OBJS_all    = $(OBJS_webtools_bridge)
+OBJS_gui = $(OBJS_webtools_bridge)
+DISABLE_OBJS_all_WARNING = 1
 
 # ifneq ($(PKGCONFIG),)
 #   HAVE_WEBSOCKETPP = $(if $(shell $(PKGCONFIG) --exists 'libdc1394-2'; echo $${?/1/}),1,0)
@@ -55,7 +56,7 @@ ifeq ($(HAVE_TF)$(HAVE_CLIPS)$(HAVE_CPP11)$(HAVE_WEBSOCKETPP)$(HAVE_RAPIDJSON),1
   CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) 
   LDFLAGS += $(LDFLAGS_TF) 
 
-  PLUGINS_all = $(PLUGINDIR)/webtools-bridge.$(SOEXT)
+  PLUGINS_gui = $(PLUGINDIR)/webtools-bridge.$(SOEXT)
 else
   ifneq ($(HAVE_CPP11),1)
     WARN_TARGETS += warning_cpp11
@@ -75,7 +76,7 @@ else
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
-all: $(WARN_TARGETS)
+gui: $(WARN_TARGETS)
 .PHONY: warning_tf warning_ros warning_geometry_msgs warning_cpp11 warning_clips warning_websocketpp
 warning_tf: 
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting webtools-bridge libs" \
