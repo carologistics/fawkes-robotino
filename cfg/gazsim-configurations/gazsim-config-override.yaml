@@ -79,9 +79,12 @@ plugins/amcl:
   alpha2: 0.3
   save_pose_period: 0.0
   max_beams: 60
-  map_file: maps/llsf-map-2015.png
+  map_file: maps/rc-2016.png
   origin_x: -7.0
   origin_y: -1.1
+  map-lasergen/map_file: maps/rc-2016-wall.png
+  map-lasergen/origin_x: -7.0
+  map-lasergen/origin_y: -1.1
 
 plugins/laser-filter:
   robot/active: false
