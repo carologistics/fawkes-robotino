@@ -145,7 +145,7 @@ while true; do
 	     META_PLUGIN="-m gazsim-meta-agent"
 	     ;;
 	 --asp)
-	     META_PLUGIN="-m asp-agent"
+	     META_PLUGIN="-m gazsim-meta-agent"
 	     START_ASP_PLANER=true
 	     ;;
 	 -o)
