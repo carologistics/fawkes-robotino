@@ -18,8 +18,8 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
 include $(BUILDSYSDIR)/protobuf.mk
 
-LIBS_asp_planer = asp_common fawkes_protobuf_comm llsf_msgs fawkescore asp_msgs
-OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_refbox_comm.o asp_planer_clingo.o
+LIBS_asp_planer = fawkes_protobuf_comm llsf_msgs fawkescore
+OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_clingo.o
 
 OBJS_all = $(OBJS_asp_planer)
 

@@ -26,7 +26,6 @@
 #include <aspect/blocked_timing.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <asp_common/refbox_comm.hpp>
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 #include <plugins/asp/aspect/asp.h>
@@ -45,12 +44,17 @@ class AspPlanerThread
   public fawkes::BlockedTimingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::LoggingAspect,
-  public fawkes::ASPAspect,
-  public fawkes::aspCommon::RefboxComm
+  public fawkes::ASPAspect
 {
 	private:
+	const char* const LoggingComponent;
+	const char* const ConfigPrefix;
+
 	bool MoreModels;
+	unsigned int ExplorationTime;
+
 	unsigned int LastTick;
+	unsigned int GameTime;
 	unsigned int LastGameTime;
 	unsigned int Horizon;
 
@@ -60,10 +64,6 @@ class AspPlanerThread
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;
 	bool NewSymbols;
-
-	void constructRefboxComm(void);
-	void initRefboxComm(void);
-	void finalizeRefboxComm(void);
 
 	void constructClingo(void);
 	void initClingo(void);
@@ -75,17 +75,11 @@ class AspPlanerThread
 	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult& result);
 
-	protected:
-	void recvPublic(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,
-		const std::shared_ptr<google::protobuf::Message>& msg) override;
-	void recvTeam(const boost::asio::ip::udp::endpoint& endpoint, const uint16_t comp_id, const uint16_t msg_type,
-		const std::shared_ptr<google::protobuf::Message>& msg) override;
+	void setTeam(const bool cyan);
+	void unsetTeam(void);
 
-	void setTeam(const bool cyan) override;
-	void unsetTeam(void) override;
-
-	void newTeamMate(const uint32_t mate) override;
-	void deadTeamMate(const uint32_t mate) override;
+	void newTeamMate(const uint32_t mate);
+	void deadTeamMate(const uint32_t mate);
 
 	public:
 	AspPlanerThread(void);

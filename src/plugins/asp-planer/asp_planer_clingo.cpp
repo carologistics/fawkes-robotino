@@ -96,15 +96,15 @@ AspPlanerThread::initClingo(void)
 	std::strcpy(buffer + prefixLen, infix);
 
 	std::strcpy(suffix, "program-path");
-	const auto path  = Config->get_string(buffer);
+	const auto path  = config->get_string(buffer);
 	std::strcpy(suffix, "program-files");
-	const auto files = Config->get_strings(buffer);
+	const auto files = config->get_strings(buffer);
 	std::strcpy(suffix, "debug");
-	ClingoAcc->Debug = Config->get_bool(buffer);
+	ClingoAcc->Debug = config->get_bool(buffer);
 	std::strcpy(suffix, "more-models");
-	MoreModels  = Config->get_bool(buffer);
+	MoreModels  = config->get_bool(buffer);
 
-	Log->log_info(LoggingComponent, "Loading program files from %s. Debug state: %s", path.c_str(),
+	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %s", path.c_str(),
 		ClingoAcc->Debug ? "true" : "false");
 	for ( const auto& file : files )
 	{
@@ -145,16 +145,14 @@ AspPlanerThread::loopClingo(void)
 	Requests.clear();
 	reqLocker.unlock();
 
-	const auto gameTime = this->gameTime();
-
 	Clingo::Symbol horizonValueSymbol = Clingo::Number(Horizon);
 	Clingo::SymbolSpan horizonSpan(&horizonValueSymbol, 1);
 	Clingo::Symbol horizonSymbol = Clingo::Function("horizon", horizonSpan);
 	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::False);
 
 	//TODO: How to choose this number? Should it be configurable?
-	const unsigned int lookAhaed = gameTime < explorationTime() ? 120 : 300;
-	Horizon = gameTime + lookAhaed;
+	const unsigned int lookAhaed = GameTime < ExplorationTime ? 120 : 300;
+	Horizon = GameTime + lookAhaed;
 	horizonValueSymbol = Clingo::Number(Horizon);
 	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::True);
 
@@ -168,7 +166,7 @@ AspPlanerThread::loopClingo(void)
 		symbols.emplace_back(Clingo::Number(i));
 		parts.emplace_back("transition", Clingo::SymbolSpan(&symbols.back(), 1));
 	} //for ( auto i = LastGameTime; i <= Horizon; ++i )
-	LastGameTime = gameTime;
+	LastGameTime = GameTime;
 
 	ClingoAcc->ground(parts);
 	ClingoAcc->startSolving();
@@ -244,7 +242,7 @@ AspPlanerThread::newTeamMate(const uint32_t mate)
 {
 	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::Number(mate));
-	params.emplace_back(Clingo::Number(gameTime()));
+	params.emplace_back(Clingo::Number(GameTime));
 	queueGround({"addRobot", params, true});
 	return;
 }
@@ -254,7 +252,7 @@ AspPlanerThread::deadTeamMate(const uint32_t mate)
 {
 	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::Number(mate));
-	params.emplace_back(Clingo::Number(gameTime()));
+	params.emplace_back(Clingo::Number(GameTime));
 	queueGround({"removeRobot", params, true});
 	return;
 }

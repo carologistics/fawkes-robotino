@@ -30,11 +30,9 @@ using namespace fawkes;
 /** Constructor. */
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPAgent", "ASP Agent"),
-		aspCommon::RefboxComm(logger, config),
-		MoreModels(false),
-		LastTick(0), LastGameTime(0), Horizon(0)
+		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), MoreModels(false),
+		ExplorationTime(0), LastTick(0), GameTime(0), LastGameTime(0), Horizon(0)
 {
-	constructRefboxComm();
 	constructClingo();
 	return;
 }
@@ -49,7 +47,13 @@ void
 AspPlanerThread::init()
 {
 	logger->log_info(LoggingComponent, "Initialize ASP Planer");
-	initRefboxComm();
+	const auto prefixLen = std::strlen(ConfigPrefix);
+	char buffer[prefixLen + 20];
+	const auto suffix = buffer + prefixLen;
+	std::strcpy(buffer, ConfigPrefix);
+
+	std::strcpy(suffix, "exploration-time");
+	ExplorationTime = config->get_uint(buffer);
 	initClingo();
 	return;
 }
@@ -58,7 +62,6 @@ void
 AspPlanerThread::loop()
 {
 	loopClingo();
-	sendPeriodicMessages();
 	return;
 }
 
@@ -66,7 +69,6 @@ void
 AspPlanerThread::finalize()
 {
 	logger->log_info(LoggingComponent, "Finalize ASP Planer");
-	finalizeRefboxComm();
 	finalizeClingo();
 	return;
 }
