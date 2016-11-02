@@ -29,6 +29,7 @@
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 #include <plugins/asp/aspect/asp.h>
+#include <plugins/robot-memory/aspect/robot_memory_aspect.h>
 
 #include <clingo.hh>
 
@@ -44,7 +45,8 @@ class AspPlanerThread
   public fawkes::BlockedTimingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::LoggingAspect,
-  public fawkes::ASPAspect
+  public fawkes::ASPAspect,
+  public fawkes::RobotMemoryAspect
 {
 	private:
 	const char* const LoggingComponent;
