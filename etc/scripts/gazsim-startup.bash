@@ -183,7 +183,7 @@ case $COMMAND in
 	$FAWKES_BIN/fawkes -p $comm_plugins
 	;;
     asp )
-	$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planer.yaml -p asp,asp-planer
+	$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planer.yaml -p m-asp-planer
 	;;
     roscore ) 
 	export ROS_MASTER_URI=http://localhost:$PORT

@@ -13,6 +13,7 @@ fawkes/meta_plugins:
   m-clips-agent: m-clips,m-fv-vision,clips-agent
   m-skiller: ros,m-fv-vision,ros-pcl,navgraph,navgraph-generator,navgraph-generator-mps,mps-laser-gen,skiller
   m-full: m-skiller,m-clips-agent
+  m-asp-planer: m-robot-memory,asp,asp-planer
 
   #
   # Gazebo stuff
@@ -25,6 +26,7 @@ fawkes/meta_plugins:
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
   gazsim-meta-clips: m-clips,clips-agent
   gazsim-meta-agent: gazsim-meta-clips
+  gazsim-meta-asp-planer: ros,navgraph,m-robot-memory,m-clips,clips-agent,m-asp-planer
  
   #
   # Robotino base meta plugin
