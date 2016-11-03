@@ -183,7 +183,14 @@ case $COMMAND in
 	$FAWKES_BIN/fawkes -p $comm_plugins
 	;;
     asp )
-	$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planer.yaml -p m-asp-planer
+	ulimit -c unlimited
+	export ROS_MASTER_URI=http://localhost:$PORT
+	robotino_plugins=gazsim-meta-asp-planer
+	$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planer.yaml -p $robotino_plugins
+	if [ -n "$GDB" ]; then
+		echo Fawkes exited, press return to close shell
+		read
+	fi
 	;;
     roscore ) 
 	export ROS_MASTER_URI=http://localhost:$PORT

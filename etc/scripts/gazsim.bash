@@ -275,7 +275,11 @@ if [  $COMMAND  == start ]; then
 
     if $START_ASP_PLANER
     then
-	  OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp $KEEP $CONF $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roscore -p 11328 $KEEP\"'"
+	if [ -n "$ROS_LAUNCH_MAIN" ]; then
+		OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_URI $KEEP\"'"
+	fi
+	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp -p 11328 $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
     fi
 
     if $START_GAZEBO
