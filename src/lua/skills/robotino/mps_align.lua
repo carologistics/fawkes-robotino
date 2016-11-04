@@ -7,6 +7,7 @@
 --             2015  Tobias Neumann
 --                   Johannes Rothe
 --                   Nicolas Limpert
+--             2016  Victor Mataré
 --
 ----------------------------------------------------------------------------
 
@@ -65,14 +66,12 @@ depends_interfaces = {
    {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
 }
 
-documentation      = [==[ align_mps
-
-                          This skill does:
-                          - aligns to the machine via sensor information AND a optional offsets which are given as parameters 
-
-                          @param tag_id     int     optional the tag_id for align_tag
-                          @param x          float   the x offset after the alignmend
-                          @param y          float   optional the y offset after the alignmend; TODO this just works within the AREA_LINE_ERR_Y
+documentation      = [==[Align precisely at the given coordinates, relative to the center of an MPS
+@param tag_id (optional) Make sure to align only to the MPS with the given tag ID. Turn around and look for
+                         it if it's not currently visible. Fail if it cannot be found. If unspecified, use
+                         the first tag that's visible and aligned with some laser line.
+@param x X offset, i.e. distance from the MPS in meters.
+@param y (optional) Y offset from the center of the MPS. Defaults to 0.
 ]==]
 
 -- Initialize as skill module
