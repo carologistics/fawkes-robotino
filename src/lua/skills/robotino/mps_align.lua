@@ -83,7 +83,7 @@ local llutils = require("fawkes.laser-lines_utils")
 local tag_utils = require("tag_utils")
 
 -- Tunables
-local MIN_VIS_HIST_LINE=15
+local MIN_VIS_HIST_LINE=5 --15
 local MIN_VIS_HIST_LINE_SEARCH=4
 local MIN_VIS_HIST_TAG=10
 
