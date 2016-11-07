@@ -68,3 +68,4 @@ fawkes/bbsync:
         laser_front_dist: Position3DInterface::front_dist
       writing:
         tfTags: TransformInterface::TF tags
+        mps-laser: Laser360Interface::Laser MPS
