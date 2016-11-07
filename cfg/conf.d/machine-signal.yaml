@@ -37,7 +37,7 @@ plugins/machine_signal:
   # Disable this to see the raw ROIs as they come out of the classifier
   # (Useful for tuning the colormodels).
   # Ignored if tuning_mode == false.
-  draw_processed_rois: false
+  draw_processed_rois: true
  
   # Maximum width ratio between red and green ROIs. A red and a green
   # ROI that exceed this are not considered as part of a signal.
@@ -46,7 +46,7 @@ plugins/machine_signal:
   roi_xalign_by_width: 0.5
 
   # ROIs that exceed this aspect ratio are ignored.
-  roi_max_aspect_ratio: 1.5
+  roi_max_aspect_ratio: 1.7
 
   # Green ROIs that start above this line are ignored
   roi_green_horizon: 100
