@@ -105,7 +105,6 @@ plugins/laser-filter:
     # URG input interface
     in/urg: Laser360Interface::Laser urg-filtered
     in/map: Laser360Interface::Map Laser
-    in/mps: Laser360Interface::Laser MPS
 
     # URG filtered output interface
     out/filtered: Laser360Interface::Laser colli
