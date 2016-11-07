@@ -153,3 +153,6 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
 
     # Name used for tf
     name: AX12Gripper
+
+    # Interface ID for JoystickInterface to read data from
+    joystick_interface_id: Joystick

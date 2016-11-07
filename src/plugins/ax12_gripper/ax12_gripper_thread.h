@@ -35,6 +35,7 @@
 #include <aspect/clock.h>
 #include <blackboard/interface_listener.h>
 #include <interfaces/DynamixelServoInterface.h>
+#include <interfaces/JoystickInterface.h>
 #include <utils/time/time.h>
 #include <config/change_handler.h>
 
@@ -90,6 +91,8 @@ class GripperAX12AThread
   fawkes::JointInterface       *__rightjoint_if;
   fawkes::DynamixelServoInterface *__servo_if_left;
   fawkes::DynamixelServoInterface *__servo_if_right;
+  fawkes::JoystickInterface    *joystick_if_;
+
 
   /* fawkes::RefPtr<RobotisAX12A> __ax12a; */
   std::string   __gripper_cfg_prefix;
@@ -129,6 +132,8 @@ class GripperAX12AThread
   unsigned int __cfg_load_for_holds_puck;
   float        __cfg_angle_for_holds_puck;
   float        __cfg_center_angle_correction_amount;
+  std::string  __cfg_ifid_joystick_;
+
   float        __target_left;
   float        __target_right;
   float        __left_margin;
