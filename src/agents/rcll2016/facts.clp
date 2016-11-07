@@ -52,6 +52,10 @@
   (slot yellow (type SYMBOL) (allowed-symbols ON OFF))
   (slot green (type SYMBOL) (allowed-symbols ON OFF))
   (slot mtype (type STRING))
+  (slot found (type SYMBOL) (allowed-symbols TRUE MAYBE FALSE) (default FALSE))
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS
+                                               M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS NONE) (default NONE))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 (deftemplate exploration-result
@@ -135,6 +139,7 @@
 (deftemplate base-station
   (slot name (type SYMBOL) (allowed-symbols C-BS M-BS))
   (slot active-side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default INPUT))
+  (slot fail-side (type SYMBOL) (allowed-symbols INPUT OUTPUT NONE) (default NONE))
   (slot sync-id (type INTEGER) (default 0))
 )
 
@@ -204,7 +209,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-cs clear-rs))
+  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
@@ -220,7 +225,8 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base find-tag instruct-mps discard drive-to wait-for-rs))
+  (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base find-tag instruct-mps discard
+                                            drive-to wait-for-rs wait-for-output acquire-lock release-lock))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
@@ -234,7 +240,8 @@
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot product-id (type INTEGER))
   (slot already-at-mps (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
-  (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT))
+  (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default OUTPUT))
+  (slot lock (type SYMBOL) (default NONE))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
@@ -325,8 +332,8 @@
 
 (deffacts startup-facts
   (team-color nil)
-  (points-magenta 0)
-  (points-cyan 0)
+  (points MAGENTA 0)
+  (points CYAN 0)
   (last-lights)
   (holding NONE)
 
@@ -409,7 +416,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)
