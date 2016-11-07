@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "explore_zone"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = { "drive_to_global", "drive_to_local", "motor_move" }
 depends_interfaces = {
   {v = "pose",      type="Position3DInterface", id="Pose"},
@@ -72,11 +72,11 @@ local HIST_MIN_LINE = 5
 local HIST_MIN_TAG  = 5
 local ROBOT_WALL_DIST = 0.35
 local TAG_DIST = 0.5
-local MPS_OFFSET_TO_ZONE = 0.2
-local WALL_MIN_X = -5.9
-local WALL_MAX_X =  5.9
-local WALL_MIN_Y =  0.1
-local WALL_MAX_Y =  5.9
+local MPS_OFFSET_TO_ZONE = 0.1
+local WALL_MIN_X = -5.95
+local WALL_MAX_X =  6.0
+local WALL_MIN_Y =  0.05
+local WALL_MAX_Y =  5.95
 
 documentation      = [==[
 Explores a zone defined by (x_min, y_min) and (x_max, y_max)
@@ -279,7 +279,7 @@ end
 fsm:define_states{ export_to=_M,
   closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,poses_to_check=poses_to_check, HIST_MIN_TAG=HIST_MIN_TAG, os=os},
   {"INIT",                        JumpState},
-  {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_global}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
+  {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_local}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
   {"DECIDE_CLUSTER",              JumpState},
   {"TIMEOUT_CLUSTER",             JumpState},
   {"DECIDE_NEXT_POINT",           JumpState},
@@ -293,9 +293,9 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
   {"INIT",                "FAILED",                       cond="vars.parameter_nil",                            desc="one ore more parameter are nil"},
+  {"INIT",                "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil",                   desc="deactivate cluster search, directly goto 1. search point"},
   {"INIT",                "DRIVE_TO_ZONE",                cond=true},
-  --{"DRIVE_TO_ZONE",       "DRIVE_TO_POSSIBLE_MPS_PRE",    cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
-  {"DECIDE_CLUSTER",      "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil"},
+  {"DRIVE_TO_ZONE",       "FIX_INTERNAL_VARS",            cond="mps_visible_laser(self, 1) and os.time() - vars.laser_lines_timeout_start >= 1",                    desc="saw line on route, drive to there"},
   {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
   {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
   --{"TIMEOUT_CLUSTER",     "FAILED",                       cond=cluster_visible,                                 desc="TODO this is for a test, remove me and add line above"},
@@ -493,10 +493,13 @@ function INIT:init()
   self.fsm.vars.cluster[8]  = cluster_mps_8
   self.fsm.vars.cluster[9]  = cluster_mps_9
   self.fsm.vars.cluster[10] = cluster_mps_10
+  
+  -- set timeout for jumpscondition, to not loop with sawn laserlines
+  self.fsm.vars.laser_lines_timeout_start = os.time()
 end
 
 function DRIVE_TO_ZONE:init()
-	 self.args["drive_to_global"] =
+	 self.args["drive_to_local"] =
 			{ x        = self.fsm.vars.point_cluster.x,
 				y        = self.fsm.vars.point_cluster.y,
 				ori      = self.fsm.vars.point_cluster.ori,
@@ -531,7 +534,7 @@ function pose_in_front_of_mps_calculator(self, chosen, factor)
 end
 
 function FIX_INTERNAL_VARS:init()
-  self.fsm.vars.poses_to_check_iterator = self.fsm.vars.poses_to_check_iterator - 1
+  self.fsm.vars.poses_to_check_iterator = math.max(1, self.fsm.vars.poses_to_check_iterator - 1)
 --[[ this is code to turn to the possivle MPS
   local ori = nil
   if self.fsm.vars.line_chosen ~=nil then
