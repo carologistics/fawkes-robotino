@@ -27,6 +27,7 @@ name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"mps_align", "product_put", "drive_to","shelf_put","slide_put","conveyor_align","motor_move"}
 depends_interfaces = {
+  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
 
 documentation      = [==[ 
@@ -53,7 +54,7 @@ function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
 end
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
@@ -71,6 +72,9 @@ fsm:add_transitions{
    {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to"},
    {"INIT", "RE_MPS_ALIGN", cond=already_at_mps, desc="At mps, skip DRIVE and ALIGN"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
+   {"DRIVE_TO", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
+   {"MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
+   {"RE_MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    {"DECIDE_ENDSKILL", "MPS_ALIGN", cond="vars.counter <= 1", desc="Put on shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PUT", cond="vars.shelf", desc="Put on shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SLIDE_PUT", cond="vars.slide", desc="Put on slide"},
