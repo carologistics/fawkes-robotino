@@ -24,6 +24,7 @@ plugins/robot-memory:
     local:
       replica-set-name: "local" #single instance set needed to optain the oplog, not actually replicated 
       port: 27017
+      db-path: "~/.robot-memory/dbs/local"
     config:
       port: 27031
       db-path: "~/.robot-memory/dbs/config"
