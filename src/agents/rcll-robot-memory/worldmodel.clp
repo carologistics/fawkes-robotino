@@ -11,6 +11,7 @@
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   (phase ?phase)
   (game-time $?game-time)
+  (lock-role MASTER)
   =>
   ; (printout t "***** Received MachineInfo *****" crlf)
   (foreach ?m (pb-field-list ?p "machines")
@@ -21,19 +22,18 @@
     (do-for-fact ((?machine machine))
       (eq ?machine:name ?m-name)
       
-      (if (or (neq ?machine:team ?m-team) (neq ?machine:state ?m-state)) then
-        (modify ?machine (state ?m-state) (team ?m-team))
+      (if (neq ?machine:state ?m-state) then
+	(synced-modify ?machine state ?m-state)
       )
     )
     ; set available rings for ring-stations
     (if (eq ?m-type RS) then
       (do-for-fact ((?rs ring-station)) (eq ?rs:name ?m-name)
         (if (eq 0 (length$ ?rs:available-colors)) then
-          (bind ?colors (create$))
+          (bind ?rs-fact ?rs)
           (progn$ (?rc (pb-field-list ?m "ring_colors"))
-            (bind ?colors (insert$ ?colors 1 (utils-remove-prefix ?rc "RING_")))
+            (bind ?rs-fact (synced-add-to-multifield ?rs-fact available-colors (utils-remove-prefix ?rc "RING_")))
           )
-          (modify ?rs (available-colors ?colors))
         )
       )
     )
@@ -44,7 +44,7 @@
       (bind ?m-zone (sym-cat (pb-field-value ?m "zone")))
       (do-for-fact ((?zone-exp zone-exploration))
         (eq ?zone-exp:name ?m-zone)
-        (modify ?zone-exp (machine ?m-name))
+        (synced-modify ?zone-exp machine ?m-name)
       )
     )
   )
@@ -408,9 +408,10 @@
                  (final-prod-time $?fpt&:(or (neq ?lid 0)
                                              (neq ?pid 0)
                                              (neq (nth$ 1 ?fpt) 0))))
+  (lock-role MASTER)
   =>
   (printout warn "MPS " ?name " is broken and has to be reset!" crlf)
-  (modify ?m (loaded-id 0) (produced-id 0) (final-prod-time (create$ 0 0)))
+  (synced-modify ?m loaded-id 0 produced-id 0)
 )
 
 (defrule wm-reset-broken-cap-station
@@ -418,9 +419,10 @@
   (declare (salience ?*PRIORITY-WM*))
   (machine (name ?name) (state BROKEN) (mtype CS))
   ?cs <- (cap-station (name ?name) (cap-loaded ~NONE))
+  (lock-role MASTER)
   =>
   (printout warn "cap-station " ?name " is broken and has to be reset!" crlf)
-  (modify ?cs (cap-loaded NONE))
+  (synced-modify ?cs cap-loaded NONE)
 )
 
 (defrule wm-reset-broken-ring-station
@@ -430,7 +432,8 @@
   ?rs <- (ring-station (name ?name) (bases-loaded ?bl)
                        (selected-color ?sc&:(or (neq ?bl 0)
                                                 (neq ?sc NONE))))
+  (lock-role MASTER)
   =>
   (printout warn "ring-station " ?name " is broken and has to be reset!" crlf)
-  (modify ?rs (bases-loaded 0) (selected-color NONE))
+  (synced-modify ?rs bases-loaded 0 selected-color NONE)
 )

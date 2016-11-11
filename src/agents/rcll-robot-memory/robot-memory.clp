@@ -11,7 +11,7 @@
   (phase SETUP|PRE_GAME)
   (not (rm-cleared-old-wm))
   =>
-  (printout t "Clearing old worl dmodel in robot memory" crlf)
+  (printout t "Clearing old world model in robot memory" crlf)
   (bind ?remove-query (bson-create))
   (robmem-remove "syncedrobmem.clipswm" ?remove-query)
   (bson-destroy ?remove-query)
