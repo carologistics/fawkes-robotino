@@ -83,19 +83,43 @@
 )
 
 (defrule globals-config-team-name
+  (not (use-asp))
   (confval (path "/clips-agent/rcll2016/team-name") (type STRING) (value ?team-name))
   =>
   (bind ?*TEAM-NAME* ?team-name)
 )
 
+(defrule globals-config-team-name-asp
+  (use-asp)
+  (confval (path "/asp-agent/team-name") (type STRING) (value ?team-name))
+  =>
+  (bind ?*TEAM-NAME* ?team-name)
+)
+
 (defrule globals-config-robot-name
+  (not (use-asp))
   (confval (path "/clips-agent/rcll2016/robot-name") (type STRING) (value ?robot-name))
   =>
   (bind ?*ROBOT-NAME* ?robot-name)
 )
 
+(defrule globals-config-robot-name-asp
+  (use-asp)
+  (confval (path "/asp-agent/robot-name") (type STRING) (value ?robot-name))
+  =>
+  (bind ?*ROBOT-NAME* ?robot-name)
+)
+
 (defrule globals-config-robot-number
+  (not (use-asp))
   (confval (path "/clips-agent/rcll2016/robot-number") (type UINT) (value ?robot-number))
+  =>
+  (bind ?*ROBOT-NUMBER* ?robot-number)
+)
+
+(defrule globals-config-robot-number-asp
+  (use-asp)
+  (confval (path "/asp-agent/robot-number") (type UINT) (value ?robot-number))
   =>
   (bind ?*ROBOT-NUMBER* ?robot-number)
 )

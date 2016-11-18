@@ -7,6 +7,27 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(defrule use-asp
+  "Checks if we use the asp configuration."
+  (declare (salience 750))
+  (confval (path "/clips-agent/rcll2016/use-asp") (value TRUE))
+  (not (asp-checked))
+  =>
+  (assert (use-asp))
+  (assert (asp-checked))
+  (printout t "Use ASP" crlf)
+)
+
+(defrule use-no-asp
+  "Also checks if we use the asp configuration."
+  (declare (salience 750))
+  (confval (path "/clips-agent/rcll2016/use-asp") (value FALSE))
+  (not (asp-checked))
+  =>
+  (assert (asp-checked))
+  (printout t "Use no ASP" crlf)
+)
+
 (path-load  rcll-robot-memory/priorities.clp)
 (path-load  rcll-robot-memory/globals.clp)
 (path-load  rcll-robot-memory/facts.clp)
@@ -16,6 +37,7 @@
   (init)
   =>
   (config-load "/clips-agent")
+  (config-load "/asp-agent")
   (config-load "/hardware/robotino")
 )
 
@@ -109,6 +131,7 @@
   "Actual initialization rule. Loads the need rule-files for skills and inter-robot communication."
   ;when all clips features are available and the init file is loaded
   (declare (salience ?*PRIORITY-HIGH*))
+  (asp-checked)
   (agent-init)
   (ff-feature-loaded blackboard)
   (loaded interfaces)

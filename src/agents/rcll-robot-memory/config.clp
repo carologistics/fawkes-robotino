@@ -16,6 +16,7 @@
 
 (defrule conf-read-comm-config
   "Reads general values needed for communication from cfg/conf.d/clips-agent.yaml"
+  (not (use-asp))
   (confval (path "/clips-agent/rcll2016/peer-address") (value ?address))
   (confval (path "/clips-agent/rcll2016/crypto-key") (value ?key))
   (confval (path "/clips-agent/rcll2016/cipher") (value ?cipher))
@@ -24,8 +25,20 @@
 	  (private-peer-key ?key ?cipher))
 )
 
+(defrule conf-read-comm-config-asp
+  "Reads general values needed for communication from cfg/conf.d/clips-agent.yaml"
+  (use-asp)
+  (confval (path "/asp-agent/peer-address") (value ?address))
+  (confval (path "/asp-agent/crypto-key") (value ?key))
+  (confval (path "/asp-agent/cipher") (value ?cipher))
+  =>
+  (assert (peer-address ?address)
+	  (private-peer-key ?key ?cipher))
+)
+
 (defrule conf-team-specific-ports-remote
   "Reads team specific ports for encrypted communication from cfg/conf.d/clips-agent.yaml"
+  (not (use-asp))
   (confval (path "/clips-agent/rcll2016/peer-address") (value ?address))
   (confval (path "/clips-agent/rcll2016/cyan-port") (value ?cyan-port))
   (confval (path "/clips-agent/rcll2016/magenta-port") (value ?magenta-port))
@@ -35,13 +48,40 @@
 	  (private-peer-port MAGENTA ?magenta-port))
 )
 
+(defrule conf-team-specific-ports-remote-asp
+  "Reads team specific ports for encrypted communication from cfg/conf.d/clips-agent.yaml"
+  (use-asp)
+  (confval (path "/asp-agent/peer-address") (value ?address))
+  (confval (path "/asp-agent/cyan-port") (value ?cyan-port))
+  (confval (path "/asp-agent/magenta-port") (value ?magenta-port))
+  =>
+  (assert (private-peer-address ?address)
+	  (private-peer-port CYAN ?cyan-port)
+	  (private-peer-port MAGENTA ?magenta-port))
+)
+
 (defrule conf-team-specific-ports-local
   "Reads team specific ports for encrypted communication in the simulation from cfg/conf.d/clips-agent.yaml"
+  (not (use-asp))
   (confval (path "/clips-agent/rcll2016/peer-address") (value ?address))
   (confval (path "/clips-agent/rcll2016/cyan-send-port") (value ?cyan-send-port))
   (confval (path "/clips-agent/rcll2016/cyan-recv-port") (value ?cyan-recv-port))
   (confval (path "/clips-agent/rcll2016/magenta-send-port") (value ?magenta-send-port))
   (confval (path "/clips-agent/rcll2016/magenta-recv-port") (value ?magenta-recv-port))
+  =>
+  (assert (private-peer-address ?address)
+	  (private-peer-ports CYAN ?cyan-send-port ?cyan-recv-port)
+	  (private-peer-ports MAGENTA ?magenta-send-port ?magenta-recv-port))
+)
+
+(defrule conf-team-specific-ports-local-asp
+  "Reads team specific ports for encrypted communication in the simulation from cfg/conf.d/clips-agent.yaml"
+  (use-asp)
+  (confval (path "/asp-agent/peer-address") (value ?address))
+  (confval (path "/asp-agent/cyan-send-port") (value ?cyan-send-port))
+  (confval (path "/asp-agent/cyan-recv-port") (value ?cyan-recv-port))
+  (confval (path "/asp-agent/magenta-send-port") (value ?magenta-send-port))
+  (confval (path "/asp-agent/magenta-recv-port") (value ?magenta-recv-port))
   =>
   (assert (private-peer-address ?address)
 	  (private-peer-ports CYAN ?cyan-send-port ?cyan-recv-port)
