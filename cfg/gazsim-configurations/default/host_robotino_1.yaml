@@ -41,6 +41,7 @@ asp-agent:
 clips-agent:
   rcll2016:
     #agent-role:
+    use-asp: true
     
     exploration:      
       row: HIGH

@@ -12,6 +12,7 @@ webview:
 
 clips-agent:
   rcll2016:
+    use-asp: true
     load-reasoner: false
 
 asp-agent:

@@ -46,6 +46,7 @@ asp-agent:
 clips-agent:
   rcll2016:
     #agent-role: P3-ONLY
+    use-asp: true
     
     exploration:      
       row: MID
