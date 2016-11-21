@@ -11,6 +11,8 @@ webview:
   port: !tcp-port 8088
 
 clips-agent:
+  skill-sim: true
+
   rcll2016:
     use-asp: true
     load-reasoner: false
