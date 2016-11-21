@@ -12,6 +12,7 @@ webview:
 
 clips-agent:
   skill-sim: true
+  load-reasoner: false
 
   rcll2016:
     use-asp: true
