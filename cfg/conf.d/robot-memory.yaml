@@ -36,6 +36,10 @@ plugins/robot-memory:
       replica-id: 1 #this should be the robot number, override it in host.yaml
     mongos:
       port: 27041
+
+  computables:
+    transform:
+      collections: ['robmem.blackboard','robmem.transform','robmem.test']
     
     
   
