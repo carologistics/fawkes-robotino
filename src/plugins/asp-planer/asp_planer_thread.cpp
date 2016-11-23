@@ -86,7 +86,7 @@ void AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 
 /** Constructor. */
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
-		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPAgent", "ASP Agent"),
+		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPPlaner", "ASP-Planer"),
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), MoreModels(false),
 		ExplorationTime(0), LastTick(0), GameTime(0), LastGameTime(0), Horizon(0)
 {
