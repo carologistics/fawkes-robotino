@@ -23,6 +23,8 @@ asp-agent:
   robot-number: 8
   robot-name: Surak
 
+  load-planer: true
+
   peer-address: 127.0.0.1
   peer-recv-port: 4418
   peer-send-port: 4428
