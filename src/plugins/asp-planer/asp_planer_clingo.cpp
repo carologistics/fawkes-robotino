@@ -237,21 +237,29 @@ AspPlanerThread::unsetTeam(void)
 	return;
 }
 
+/**
+ * @brief Adds a new robot to the ASP program.
+ * @param[in] mate The name of the new robot.
+ */
 void
-AspPlanerThread::newTeamMate(const uint32_t mate)
+AspPlanerThread::newTeamMate(const std::string& mate)
 {
 	Clingo::SymbolVector params;
-	params.emplace_back(Clingo::Number(mate));
+	params.emplace_back(Clingo::Id(mate.c_str()));
 	params.emplace_back(Clingo::Number(GameTime));
 	queueGround({"addRobot", params, true});
 	return;
 }
 
+/**
+ * @brief Removes a robot of the ASP program.
+ * @param[in] mate The name of the robot.
+ */
 void
-AspPlanerThread::deadTeamMate(const uint32_t mate)
+AspPlanerThread::deadTeamMate(const std::string& mate)
 {
 	Clingo::SymbolVector params;
-	params.emplace_back(Clingo::Number(mate));
+	params.emplace_back(Clingo::Id(mate.c_str()));
 	params.emplace_back(Clingo::Number(GameTime));
 	queueGround({"removeRobot", params, true});
 	return;

@@ -21,11 +21,68 @@
 
 #include "asp_planer_thread.h"
 
+#include <core/threading/mutex_locker.h>
+
 using namespace fawkes;
 
-/** @class AspAgentThread "asp_agent_thread.h"
- * The thread to start and control the Asp agent.
+/**
+ * @struct RobotInformation
+ * @brief Stores information for a robot.
+ *
+ * @property RobotInformation::LastSeen
+ * @brief When did we last hear of the robot.
+ *
+ * @property RobotInformation::X
+ * @brief The reported x coordinate of the robot.
+ *
+ * @property RobotInformation::Y
+ * @brief The reported y coordinate of the robot.
  */
+
+/** @class AspPlanerThread "asp_planer_thread.h"
+ * The thread to start and control the ASP planer.
+ *
+ * @property AspPlanerThread::RobotMemoryCallbacks
+ * @brief Contains all registered callbacks in the robot memory.
+ *
+ * @property AspPlanerThread::Robots
+ * @brief The robot information in a lookup table.
+ */
+
+/**
+ * @brief Gets called, when a beacon is received, updates the robot information.
+ * @param[in] document The DB document.
+ */
+void AspPlanerThread::beaconCallback(const mongo::BSONObj document)
+{
+	try
+	{
+		const auto object(document.getField("o"));
+		const std::string& name(object["name"].String());
+		bool newRobot = false;
+		MutexLocker locker(&RobotsMutex);
+		if ( !Robots.count(name) )
+		{
+			newRobot = true;
+		} //if ( !Robots.count(name) )
+		const auto& time(object["last-seen"].Array());
+		Robots[name] = {Time(time.at(0).Long(), time.at(1).Long()), object["x"].Double(), object["y"].Double()};
+		if ( newRobot )
+		{
+			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
+			newTeamMate(name);
+		} //if ( newRobot )
+	} //try
+	catch ( const std::exception& e )
+	{
+		logger->log_error(LoggingComponent, "Exception while updating robot information: %s", e.what());
+	} //catch ( const std::exception& e )
+	catch ( ... )
+	{
+		logger->log_error(LoggingComponent, "Exception while updating robot information.");
+	} //catch ( ... )
+	return;
+}
 
 /** Constructor. */
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
@@ -33,6 +90,8 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), MoreModels(false),
 		ExplorationTime(0), LastTick(0), GameTime(0), LastGameTime(0), Horizon(0)
 {
+	//We don't expect more than 3 robots.
+	Robots.reserve(3);
 	constructClingo();
 	return;
 }
@@ -54,6 +113,13 @@ AspPlanerThread::init()
 
 	std::strcpy(suffix, "exploration-time");
 	ExplorationTime = config->get_uint(buffer);
+
+	RobotMemoryCallbacks.reserve(1);
+
+	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
+		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planer",
+		&AspPlanerThread::beaconCallback, this));
+
 	initClingo();
 	return;
 }
@@ -61,6 +127,25 @@ AspPlanerThread::init()
 void
 AspPlanerThread::loop()
 {
+	{
+		MutexLocker locker(&RobotsMutex);
+		const auto now(clock->now());
+		static const Time timeOut(10, 0);
+		auto iter = Robots.begin();
+		while ( iter != Robots.end() )
+		{
+			if ( now - iter->second.LastSeen >= timeOut )
+			{
+				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", iter->first.c_str());
+				deadTeamMate(iter->first);
+				iter = Robots.erase(iter);
+			} //if ( now - iter->second.LastSeen >= timeOut )
+			else
+			{
+				++iter;
+			} //else -> if ( now - iter->second.LastSeen >= timeOut )
+		} //while ( iter != Robots.end() )
+	} //Block for iteration over Robots
 	loopClingo();
 	return;
 }
@@ -69,6 +154,11 @@ void
 AspPlanerThread::finalize()
 {
 	logger->log_info(LoggingComponent, "Finalize ASP Planer");
+	for ( const auto& callback : RobotMemoryCallbacks )
+	{
+		robot_memory->remove_trigger(callback);
+	} //for ( const auto& callback : RobotMemoryCallbacks )
+	RobotMemoryCallbacks.clear();
 	finalizeClingo();
 	return;
 }

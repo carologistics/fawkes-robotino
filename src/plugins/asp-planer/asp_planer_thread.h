@@ -24,6 +24,7 @@
 #define __PLUGINS_ASP_AGENT_THREAD_H_
 
 #include <aspect/blocked_timing.h>
+#include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <core/threading/mutex.h>
@@ -33,6 +34,11 @@
 
 #include <clingo.hh>
 
+#include <unordered_map>
+#include <vector>
+
+class EventTrigger;
+
 struct GroundRequest
 {
 	const char *Name;
@@ -40,10 +46,18 @@ struct GroundRequest
 	bool AddTick;
 };
 
+struct RobotInformation
+{
+	fawkes::Time LastSeen;
+	double X;
+	double Y;
+};
+
 class AspPlanerThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
   public fawkes::ConfigurableAspect,
+  public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
   public fawkes::ASPAspect,
   public fawkes::RobotMemoryAspect
@@ -51,6 +65,7 @@ class AspPlanerThread
 	private:
 	const char* const LoggingComponent;
 	const char* const ConfigPrefix;
+	std::vector<EventTrigger*> RobotMemoryCallbacks;
 
 	bool MoreModels;
 	unsigned int ExplorationTime;
@@ -62,6 +77,9 @@ class AspPlanerThread
 
 	fawkes::Mutex RequestMutex;
 	std::vector<GroundRequest> Requests;
+
+	fawkes::Mutex RobotsMutex;
+	std::unordered_map<std::string, RobotInformation> Robots;
 
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;
@@ -80,8 +98,10 @@ class AspPlanerThread
 	void setTeam(const bool cyan);
 	void unsetTeam(void);
 
-	void newTeamMate(const uint32_t mate);
-	void deadTeamMate(const uint32_t mate);
+	void newTeamMate(const std::string& mate);
+	void deadTeamMate(const std::string& mate);
+
+	void beaconCallback(const mongo::BSONObj document);
 
 	public:
 	AspPlanerThread(void);
