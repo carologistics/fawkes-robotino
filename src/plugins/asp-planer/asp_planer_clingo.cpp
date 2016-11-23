@@ -161,15 +161,15 @@ AspPlanerThread::loopClingo(void)
 
 	//TODO: Everytime until horizon? Or just the new horizon?
 	//TODO: Storing in vector and grounding once or grounding every single program?
-	for ( auto i = LastGameTime; i <= Horizon; ++i )
-	{
-		symbols.emplace_back(Clingo::Number(i));
-		parts.emplace_back("transition", Clingo::SymbolSpan(&symbols.back(), 1));
-	} //for ( auto i = LastGameTime; i <= Horizon; ++i )
+//	for ( auto i = LastGameTime; i <= Horizon; ++i )
+//	{
+//		symbols.emplace_back(Clingo::Number(i));
+//		parts.emplace_back("transition", Clingo::SymbolSpan(&symbols.back(), 1));
+//	} //for ( auto i = LastGameTime; i <= Horizon; ++i )
 	LastGameTime = GameTime;
 
 	ClingoAcc->ground(parts);
-	ClingoAcc->startSolving();
+//	ClingoAcc->startSolving();
 	return;
 }
 
