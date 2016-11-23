@@ -16,9 +16,8 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
-include $(BUILDSYSDIR)/protobuf.mk
 
-LIBS_asp_planer = fawkes_protobuf_comm llsf_msgs fawkescore fawkesaspaspect fawkesrobotmemory
+LIBS_asp_planer = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory
 OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_clingo.o
 
 OBJS_all = $(OBJS_asp_planer)
@@ -36,22 +35,18 @@ CFLAGS_CLINGO = -DWITH_THREADS=1 \
 	-I $(HOME)/clingo/libprogram_opts
 LDFLAGS_CLINGO = -L$(HOME)/clingo/build/debug/ -Wl,-rpath=$(HOME)/clingo/build/debug/ -lclingo
 
-ifeq ($(HAVE_CPP11)$(HAVE_PROTOBUF)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),1111)
-  CFLAGS  += $(CFLAGS_PROTOBUF) $(CFLAGS_CPP11) \
+ifeq ($(HAVE_CPP11)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
+  CFLAGS  += $(CFLAGS_CPP11) \
 		 $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
 		 $(CFLAGS_CLINGO)
 		 #-DNDEBUG
-  LDFLAGS += $(LDFLAGS_PROTOBUF) \
-		 $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
+  LDFLAGS += $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
 		 $(LDFLAGS_CLINGO)
 
   PLUGINS_all = $(PLUGINDIR)/asp-planer.$(SOEXT)
 else
   ifneq ($(HAVE_CPP11),1)
     WARN_TARGETS += warning_cpp11
-  endif
-  ifneq ($(HAVE_PROTOBUF),1)
-    WARN_TARGETS += warning_protobuf
   endif
   ifneq ($(HAVE_CLINGO),1)
 	WARN_TARGETS += warning_clingo
@@ -63,9 +58,7 @@ endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_protobuf warning_clingo warning_cpp11 warning_tf
-warning_protobuf:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) (protobuf not found)"
+.PHONY: warning_clingo warning_cpp11
 warning_clingo:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) ($(CLINGO_ERROR))"
 warning_cpp11:
