@@ -75,11 +75,13 @@ void AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 	} //try
 	catch ( const std::exception& e )
 	{
-		logger->log_error(LoggingComponent, "Exception while updating robot information: %s", e.what());
+		logger->log_error(LoggingComponent, "Exception while updating robot information: %s\n%s", e.what(),
+			document.toString().c_str());
 	} //catch ( const std::exception& e )
 	catch ( ... )
 	{
-		logger->log_error(LoggingComponent, "Exception while updating robot information.");
+		logger->log_error(LoggingComponent, "Exception while updating robot information.\n%s",
+			document.toString().c_str());
 	} //catch ( ... )
 	return;
 }
