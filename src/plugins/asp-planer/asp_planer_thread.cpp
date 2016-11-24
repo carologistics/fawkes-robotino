@@ -53,7 +53,8 @@ using namespace fawkes;
  * @brief Gets called, when a beacon is received, updates the robot information.
  * @param[in] document The DB document.
  */
-void AspPlanerThread::beaconCallback(const mongo::BSONObj document)
+void
+AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 {
 	try
 	{
@@ -90,7 +91,8 @@ void AspPlanerThread::beaconCallback(const mongo::BSONObj document)
  * @brief Gets called, when the team color is changed.
  * @param[in] document The document with the new color.
  */
-void AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
+void
+AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
 {
 	try
 	{
