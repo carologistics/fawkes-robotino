@@ -138,7 +138,8 @@ AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPPlaner", "ASP-Planer"),
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColorSet(false), MoreModels(false),
-		ExplorationTime(0), LastTick(0), GameTime(0), LastGameTime(0), Horizon(0)
+		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0),
+		Interrupt(InterruptSolving::Not)
 {
 	//We don't expect more than 3 robots.
 	Robots.reserve(3);

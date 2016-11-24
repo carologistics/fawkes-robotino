@@ -39,6 +39,12 @@
 
 class EventTrigger;
 
+enum class InterruptSolving : unsigned short {
+	Not = 0,
+	Normal,
+	Critical
+};
+
 struct GroundRequest
 {
 	const char *Name;
@@ -71,12 +77,14 @@ class AspPlanerThread
 	bool MoreModels;
 	unsigned int ExplorationTime;
 
+	unsigned int LookAhaed;
 	unsigned int LastTick;
 	unsigned int GameTime;
-	unsigned int LastGameTime;
 	unsigned int Horizon;
+	fawkes::Time LastModel;
 
 	fawkes::Mutex RequestMutex;
+	InterruptSolving Interrupt;
 	std::vector<GroundRequest> Requests;
 
 	fawkes::Mutex RobotsMutex;
@@ -91,7 +99,7 @@ class AspPlanerThread
 	void loopClingo(void);
 	void finalizeClingo(void);
 
-	void queueGround(GroundRequest&& request);
+	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
 
 	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult& result);
