@@ -66,6 +66,7 @@ class AspPlanerThread
 	const char* const LoggingComponent;
 	const char* const ConfigPrefix;
 	std::vector<EventTrigger*> RobotMemoryCallbacks;
+	bool TeamColorSet;
 
 	bool MoreModels;
 	unsigned int ExplorationTime;
@@ -102,6 +103,7 @@ class AspPlanerThread
 	void deadTeamMate(const std::string& mate);
 
 	void beaconCallback(const mongo::BSONObj document);
+	void teamColorCallback(const mongo::BSONObj document);
 
 	public:
 	AspPlanerThread(void);

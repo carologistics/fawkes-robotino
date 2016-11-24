@@ -86,10 +86,56 @@ void AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 	return;
 }
 
+/**
+ * @brief Gets called, when the team color is changed.
+ * @param[in] document The document with the new color.
+ */
+void AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
+{
+	try
+	{
+		const auto object(document.getField("o"));
+		const std::string& color(object["values"].Array().at(0).String());
+		if ( TeamColorSet )
+		{
+			if ( color == "nil" )
+			{
+				TeamColorSet = false;
+				logger->log_info(LoggingComponent, "Unsetting Team-Color.");
+			} //if ( color == "nil" )
+			else
+			{
+				logger->log_info(LoggingComponent, "Changing Team-Color to %s.", color.c_str());
+			} //else -> if ( color == "nil" )
+			unsetTeam();
+		} //if ( TeamColorSet )
+		else
+		{
+			logger->log_info(LoggingComponent, "Setting Team-Color to %s.", color.c_str());
+			TeamColorSet = true;
+		} //else -> if ( TeamColorSet )
+		if ( color != "nil" )
+		{
+			setTeam(color == "CYAN");
+		} //if ( color != "nil" )
+	} //try
+	catch ( const std::exception& e )
+	{
+		logger->log_error(LoggingComponent, "Exception while updating the team color: %s\n%s", e.what(),
+			document.toString().c_str());
+	} //catch ( const std::exception& e )
+	catch ( ... )
+	{
+		logger->log_error(LoggingComponent, "Exception while updating the team color.\n%s",
+			document.toString().c_str());
+	} //catch ( ... )
+	return;
+}
+
 /** Constructor. */
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPPlaner", "ASP-Planer"),
-		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), MoreModels(false),
+		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColorSet(false), MoreModels(false),
 		ExplorationTime(0), LastTick(0), GameTime(0), LastGameTime(0), Horizon(0)
 {
 	//We don't expect more than 3 robots.
@@ -116,11 +162,15 @@ AspPlanerThread::init()
 	std::strcpy(suffix, "exploration-time");
 	ExplorationTime = config->get_uint(buffer);
 
-	RobotMemoryCallbacks.reserve(1);
+	RobotMemoryCallbacks.reserve(2);
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planer",
 		&AspPlanerThread::beaconCallback, this));
+
+	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
+		mongo::Query(R"({"relation": "team-color"})"), "robmem.planer",
+		&AspPlanerThread::teamColorCallback, this));
 
 	initClingo();
 	return;
