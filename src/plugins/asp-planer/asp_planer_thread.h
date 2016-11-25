@@ -111,6 +111,7 @@ class AspPlanerThread
 	void deadTeamMate(const std::string& mate);
 
 	void beaconCallback(const mongo::BSONObj document);
+	void gameTimeCallback(const mongo::BSONObj document);
 	void teamColorCallback(const mongo::BSONObj document);
 
 	public:
