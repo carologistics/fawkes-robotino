@@ -88,6 +88,40 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 }
 
 /**
+ * @brief Gets called, when a game state is received, updates the internal game-time.
+ * @param[in] document The DB document.
+ */
+void
+AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
+{
+	try
+	{
+		const auto object(document.getField("o"));
+		const std::string phase(object["phase"].String());
+		const unsigned int gameTime(object["time"].Long());
+		if ( phase == "EXPLORATION" )
+		{
+			GameTime = gameTime;
+		} //if ( phase == "EXPLORATION" )
+		else if ( phase == "PRODUCTION" )
+		{
+			GameTime = ExplorationTime + gameTime;
+		} //else if ( phase == "PRODUCTION" )
+	} //try
+	catch ( const std::exception& e )
+	{
+		logger->log_error(LoggingComponent, "Exception while updating game time: %s\n%s", e.what(),
+			document.toString().c_str());
+	} //catch ( const std::exception& e )
+	catch ( ... )
+	{
+		logger->log_error(LoggingComponent, "Exception while updating game time.\n%s",
+			document.toString().c_str());
+	} //catch ( ... )
+	return;
+}
+
+/**
  * @brief Gets called, when the team color is changed.
  * @param[in] document The document with the new color.
  */
@@ -165,11 +199,15 @@ AspPlanerThread::init()
 	std::strcpy(suffix, "exploration-time");
 	ExplorationTime = config->get_uint(buffer);
 
-	RobotMemoryCallbacks.reserve(2);
+	RobotMemoryCallbacks.reserve(3);
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planer",
 		&AspPlanerThread::beaconCallback, this));
+
+	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
+		mongo::Query(R"({"relation": "game-time"})"), "robmem.planer",
+		&AspPlanerThread::gameTimeCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "team-color"})"), "robmem.planer",

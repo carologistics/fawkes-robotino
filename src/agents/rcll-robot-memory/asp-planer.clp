@@ -10,8 +10,9 @@
   (bson-destroy ?doc)
 )
 
-(deffacts team-color-to-robmem-init
+(deffacts to-robmem-init
   (asp-synced tc nil)
+  (asp-synced gt 0 PRE_GAME)
 )
 
 (defrule team-color-to-robmem
@@ -23,6 +24,21 @@
   (assert (asp-synced tc ?tc))
   (bind ?doc (rm-ordered-fact-to-bson ?new))
   (robmem-upsert "robmem.planer" ?doc  "{\"relation\": \"team-color\"}")
+  (bson-destroy ?doc)
+)
+
+(defrule game-time-to-robmem
+  "Updates the game-time-phase-tuple in the robot memory."
+  ?gt <- (game-time ?t ?)
+  (phase ?p)
+  (not (asp-synced gt ?t ?p))
+  =>
+  (assert (asp-synced gt ?t ?p))
+  (bind ?doc (bson-create))
+  (bson-append ?doc "relation" game-time)
+  (bson-append ?doc "time" ?t)
+  (bson-append ?doc "phase" ?p)
+  (robmem-upsert "robmem.planer" ?doc "{\"relation\": \"game-time\"}")
   (bson-destroy ?doc)
 )
 
