@@ -59,7 +59,7 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 	try
 	{
 		const auto object(document.getField("o"));
-		const std::string& name(object["name"].String());
+		const std::string name(object["name"].String());
 		bool newRobot = false;
 		MutexLocker locker(&RobotsMutex);
 		if ( !Robots.count(name) )
@@ -97,7 +97,7 @@ AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
 	try
 	{
 		const auto object(document.getField("o"));
-		const std::string& color(object["values"].Array().at(0).String());
+		const std::string color(object["values"].Array().at(0).String());
 		if ( TeamColorSet )
 		{
 			if ( color == "nil" )
