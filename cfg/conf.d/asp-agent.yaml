@@ -11,7 +11,7 @@ asp-agent:
     program-path: ../src/agents/asp/
     program-files: [constants.lp, exploration.lp, facts.lp, robot.lp, state.lp]
 
-    look-ahaed: 300
+    look-ahaed: 15
 
   #real-world-setup:
   peer-address: 172.26.255.255
