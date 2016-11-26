@@ -98,6 +98,7 @@ class AspPlanerThread
 	void initClingo(void);
 	void loopClingo(void);
 	void finalizeClingo(void);
+	bool interruptSolving(void) const noexcept;
 
 	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
 
