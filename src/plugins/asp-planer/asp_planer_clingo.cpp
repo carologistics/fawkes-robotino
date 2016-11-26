@@ -30,6 +30,16 @@
 
 using fawkes::MutexLocker;
 
+static constexpr int doubleCoordToInt(const double d) noexcept
+{
+	return static_cast<int>(d * 100);
+}
+
+static constexpr double intCoordToDouble(const int i) noexcept
+{
+	return i / 100.;
+}
+
 /**
  * @brief States the current interrupt request.
  * @note Sort by priority, i.e. Critical should always be the last element. We use operator> when setting the value.
@@ -136,8 +146,13 @@ AspPlanerThread::initClingo(void)
 		ClingoAcc->loadFile(path + file);
 	} //for ( const auto& file : files )
 
+	auto symbol(Clingo::Number(0));
 	ClingoAcc->ground({Clingo::Part("base", Clingo::SymbolSpan())});
-	ClingoAcc->startSolving();
+	ClingoAcc->ground({Clingo::Part("transition", Clingo::SymbolSpan(&symbol, 1))});
+
+	//We have to unlock, to prevent a deadlock in newModel.
+	locker.unlock();
+	ClingoAcc->startSolvingBlocking();
 	return;
 }
 
@@ -151,27 +166,16 @@ AspPlanerThread::loopClingo(void)
 	MutexLocker reqLocker(&RequestMutex);
 	if ( ClingoAcc->solving() )
 	{
-		const auto now(clock->now());
-		const auto diff(now - LastModel);
-		switch ( Interrupt )
+		if ( interruptSolving() )
 		{
-			case InterruptSolving::Not      : return;
-			case InterruptSolving::Normal   :
-			{
-				//! @todo Read threashold from config.
-				static const fawkes::Time threshold(10, 0);
-				if ( diff <= threshold )
-				{
-					break;
-				} //if ( diff <= threshold )
-				return;
-			} //case InterruptSolving::Normal
-			case InterruptSolving::Critical : break;
-		} //switch ( Interrupt )
-
-		logger->log_warn(LoggingComponent, "Interrupt solving process for new information. LastModel: %s", diff.str());
-		assert(!Requests.empty());
-		ClingoAcc->cancelSolving();
+			logger->log_warn(LoggingComponent, "Interrupt solving process for new information.");
+			assert(!Requests.empty());
+			ClingoAcc->cancelSolving();
+		} //if ( interruptSolving() )
+		else
+		{
+			return;
+		} //else -> if ( interruptSolving )
 	} //if ( ClingoAcc->solving() )
 
 	if ( Requests.empty() )
@@ -210,9 +214,24 @@ AspPlanerThread::loopClingo(void)
 	horizonSymbol = Clingo::Function("horizon", horizonSpan);
 	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::True);
 
+	MutexLocker robLocker(&RobotsMutex);
+	parts.reserve(Horizon - oldHorizon + Robots.size());
+	std::vector<Clingo::SymbolVector> robotSymbols;
+	robotSymbols.reserve(Robots.size());
+	for ( const auto& info : Robots )
+	{
+		Clingo::SymbolVector symbols;
+		symbols.reserve(4);
+		symbols.emplace_back(Clingo::String(info.first.c_str()));
+		symbols.emplace_back(Clingo::Number(GameTime));
+		symbols.emplace_back(Clingo::Number(doubleCoordToInt(info.second.X)));
+		symbols.emplace_back(Clingo::Number(doubleCoordToInt(info.second.Y)));
+		robotSymbols.emplace_back(symbols);
+		parts.emplace_back("setRobotLocation", Clingo::SymbolSpan(&robotSymbols.back().front(), 4));
+	} //for ( const auto& info : Robots )
+
 	Clingo::SymbolVector symbols;
 	symbols.reserve(Horizon - oldHorizon);
-
 	for ( auto i = oldHorizon + 1; i <= Horizon; ++i )
 	{
 		symbols.emplace_back(Clingo::Number(i));
@@ -220,7 +239,14 @@ AspPlanerThread::loopClingo(void)
 	} //for ( auto i = oldHorizon + 1; i <= Horizon; ++i )
 
 	ClingoAcc->ground(parts);
-//	ClingoAcc->startSolving();
+	reqLocker.relock();
+	if ( interruptSolving() )
+	{
+		logger->log_info(LoggingComponent, "Solving would be interrupted immediately, just don't start it.");
+		return;
+	} //if ( Interrupt != InterruptSolving::Not )
+	reqLocker.unlock();
+	ClingoAcc->startSolving();
 	return;
 }
 
@@ -233,6 +259,34 @@ AspPlanerThread::finalizeClingo(void)
 	MutexLocker locker(ClingoAcc.objmutex_ptr());
 	ClingoAcc->cancelSolving();
 	return;
+}
+
+/**
+ * @brief Says if the solving process should be interrupted.
+ * @return If the solving should be interrupted.
+ * @note RequestLock must be locked before calling this method and unlocked when appropriate!
+ */
+bool
+AspPlanerThread::interruptSolving(void) const noexcept
+{
+	const auto now(clock->now());
+	const auto diff(now - LastModel);
+	switch ( Interrupt )
+	{
+		case InterruptSolving::Not      : break;
+		case InterruptSolving::Normal   :
+		{
+			//! @todo Read threashold from config.
+			static const fawkes::Time threshold(10, 0);
+			if ( diff <= threshold )
+			{
+				return true;
+			} //if ( diff <= threshold )
+			break;
+		} //case InterruptSolving::Normal
+		case InterruptSolving::Critical : return true;
+	} //switch ( Interrupt )
+	return false;
 }
 
 /**
@@ -315,7 +369,7 @@ void
 AspPlanerThread::newTeamMate(const std::string& mate)
 {
 	Clingo::SymbolVector params;
-	params.emplace_back(Clingo::Id(mate.c_str()));
+	params.emplace_back(Clingo::String(mate.c_str()));
 	params.emplace_back(Clingo::Number(GameTime));
 	queueGround({"addRobot", params, true}, InterruptSolving::Critical);
 	return;
@@ -329,7 +383,7 @@ void
 AspPlanerThread::deadTeamMate(const std::string& mate)
 {
 	Clingo::SymbolVector params;
-	params.emplace_back(Clingo::Id(mate.c_str()));
+	params.emplace_back(Clingo::String(mate.c_str()));
 	params.emplace_back(Clingo::Number(GameTime));
 	queueGround({"removeRobot", params, true}, InterruptSolving::Critical);
 	return;
