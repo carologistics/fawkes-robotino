@@ -39,7 +39,12 @@
 
 class EventTrigger;
 
-enum class InterruptSolving : unsigned short {
+namespace fawkes {
+	class MutexLocker;
+}
+
+enum class InterruptSolving : unsigned short
+{
 	Not = 0,
 	JustStarted,
 	Normal,
@@ -58,6 +63,7 @@ struct RobotInformation
 	fawkes::Time LastSeen;
 	double X;
 	double Y;
+	std::vector<Clingo::Symbol> DriveDurations;
 };
 
 class AspPlanerThread
@@ -73,7 +79,7 @@ class AspPlanerThread
 	const char* const LoggingComponent;
 	const char* const ConfigPrefix;
 	std::vector<EventTrigger*> RobotMemoryCallbacks;
-	bool TeamColorSet;
+	const char* TeamColor;
 
 	bool MoreModels;
 	unsigned int ExplorationTime;
@@ -82,11 +88,17 @@ class AspPlanerThread
 	unsigned int LastTick;
 	unsigned int GameTime;
 	unsigned int Horizon;
+	fawkes::Time SolvingStarted;
 	fawkes::Time LastModel;
+	unsigned int MachinesFound;
+	bool StillNeedExploring;
+	bool CompleteRestart;
+	unsigned int TimeResolution;
 	unsigned int MaxDriveDuration;
 
 	fawkes::Mutex RequestMutex;
 	InterruptSolving Interrupt;
+	bool SentCancel;
 	std::vector<GroundRequest> Requests;
 
 	fawkes::Mutex RobotsMutex;
@@ -101,8 +113,12 @@ class AspPlanerThread
 	void loopClingo(void);
 	void finalizeClingo(void);
 	bool interruptSolving(void) const noexcept;
+	void loadFilesAndGroundBase(fawkes::MutexLocker& locker);
 
 	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
+
+	unsigned int realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept;
+	unsigned int aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept;
 
 	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult& result);
