@@ -206,6 +206,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPPlaner", "ASP-Planer"),
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColorSet(false), MoreModels(false),
 		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0),
+		MaxDriveDuration(0),
 		Interrupt(InterruptSolving::Not)
 {
 	//We don't expect more than 3 robots.

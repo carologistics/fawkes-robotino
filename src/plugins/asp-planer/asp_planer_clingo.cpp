@@ -23,6 +23,11 @@
 
 #include <algorithm>
 #include <cstring>
+#include <sstream>
+#include <experimental/string_view>
+
+//! @todo Replace include and using, once C++17 is implemented properly.
+using std::experimental::string_view;
 
 #include <core/exception.h>
 #include <core/threading/mutex_locker.h>
@@ -87,6 +92,9 @@ static constexpr double intCoordToDouble(const int i) noexcept
  * @property AspPlanerThread::LastModel
  * @brief When the last model was found, i.e. how old is our plan.
  *
+ * @property AspPlanerThread::MaxDriveDuration
+ * @brief The maximum we expect a robot needs for driving to some point.
+ *
  *
  * @property AspPlanerThread::RequestMutex
  * @brief Protects AspPlanerThread::Requests.
@@ -122,10 +130,11 @@ AspPlanerThread::initClingo(void)
 			solvingFinished(result);
 			return;
 		}));
+	ClingoAcc->setGroundCallback([this](auto... args) { this->groundFunctions(args...); return; });
 
 	constexpr auto infix = "planer/";
 	const auto prefixLen = std::strlen(ConfigPrefix), infixLen = std::strlen(infix);
-	char buffer[prefixLen + infixLen + 20];
+	char buffer[prefixLen + std::max<size_t>(infixLen + 20, 40)];
 	const auto suffix = buffer + prefixLen + infixLen;
 	std::strcpy(buffer, ConfigPrefix);
 	std::strcpy(buffer + prefixLen, infix);
@@ -141,6 +150,8 @@ AspPlanerThread::initClingo(void)
 	std::strcpy(suffix, "look-ahaed");
 	LookAhaed = config->get_uint(buffer);
 
+	std::strcpy(buffer + prefixLen, "time-estimations/max-drive-duration");
+	MaxDriveDuration = config->get_uint(buffer);
 
 	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %s", path.c_str(),
 		ClingoAcc->Debug ? "true" : "false");
@@ -342,6 +353,75 @@ AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 	{
 		throw fawkes::Exception("The program is infeasable! We have no way to recover!");
 	} //if ( result.is_unsatisfiable() )
+	return;
+}
+
+/**
+ * @brief Used to implement external functions in ASP, e.g. drive duration based on the nav graph.
+ * @param[in] loc The location from where the function is called.
+ * @param[in] name The function name.
+ * @param[in] arguments The ASP arguments for the function.
+ * @param[in] retFunction The function used to return the calculated value.
+ */
+void
+AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, const Clingo::SymbolSpan& arguments,
+	Clingo::SymbolSpanCallback& retFunction)
+{
+	if ( ClingoAcc->Debug )
+	{
+		std::stringstream functionCall;
+		functionCall<<name<<'(';
+		auto sep = "";
+		for ( const auto& argument : arguments )
+		{
+			functionCall<<sep<<argument;
+			sep = ", ";
+		} //for ( const auto& argument : arguments )
+		functionCall<<')';
+
+		const auto functionCallStr(functionCall.str());
+		logger->log_warn(LoggingComponent, "Called %s.", functionCallStr.c_str());
+	} //if ( ClingoAcc->Debug )
+
+	string_view view(name);
+
+	switch ( arguments.size() )
+	{
+		case 0 :
+		{
+			if ( view == "explorationTaskDuration" )
+			{
+				static const unsigned int dur = [this](void) {
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/explore-zone");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(dur)});
+				return;
+			} //if ( view == "explorationTaskDuration" )
+			else if ( view == "maxDriveDuration" )
+			{
+				retFunction({Clingo::Number(MaxDriveDuration)});
+				return;
+			} //else if ( view == "maxDriveDuration" )
+			break;
+		} //case 0
+	} //switch ( arguments.size() )
+
+	std::stringstream functionCall;
+	functionCall<<name<<'(';
+	auto sep = "";
+	for ( const auto& argument : arguments )
+	{
+		functionCall<<sep<<argument;
+		sep = ", ";
+	} //for ( const auto& argument : arguments )
+	functionCall<<')';
+
+	const auto functionCallStr(functionCall.str());
+	throw fawkes::Exception("Called function %s from %s:%d-%d, but there exists no definition of %s/%d!",
+		functionCallStr.c_str(), loc.begin_file(), loc.begin_line(), loc.begin_column(), name, arguments.size());
 	return;
 }
 
