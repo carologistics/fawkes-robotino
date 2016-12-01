@@ -35,16 +35,6 @@ using std::experimental::string_view;
 
 using fawkes::MutexLocker;
 
-static constexpr int doubleCoordToInt(const double d) noexcept
-{
-	return static_cast<int>(d * 100);
-}
-
-static constexpr double intCoordToDouble(const int i) noexcept
-{
-	return i / 100.;
-}
-
 /**
  * @brief States the current interrupt request.
  * @note Sort by priority. We use operator> when setting the value.
@@ -92,6 +82,21 @@ static constexpr double intCoordToDouble(const int i) noexcept
  * @property AspPlanerThread::LastModel
  * @brief When the last model was found, i.e. how old is our plan.
  *
+ * @property AspPlanerThread::SolvingStarted
+ * @brief When the solving was started.
+ *
+ * @property AspPlanerThread::MachinesFound
+ * @brief How many machines we have found.
+ *
+ * @property AspPlanerThread::StillNeedExploring
+ * @brief If we still need exploring.
+ *
+ * @property AspPlanerThread::CompleteRestart
+ * @brief If we should restart the asp solver from the very beginning.
+ *
+ * @property AspPlanerThread::TimeResolution
+ * @brief How many real time seconds are one time unit for ASP.
+ *
  * @property AspPlanerThread::MaxDriveDuration
  * @brief The maximum we expect a robot needs for driving to some point.
  *
@@ -101,6 +106,9 @@ static constexpr double intCoordToDouble(const int i) noexcept
  *
  * @property AspPlanerThread::Interrupt
  * @brief If the solving should be interrupted for the new requests.
+ *
+ * @property AspPlanerThread::SentCancel
+ * @brief If we already sent the cancel command to the ASP Solver.
  *
  * @property AspPlanerThread::Requests
  * @brief Stores everything we have to add to the solver for the next iteration.
@@ -139,34 +147,19 @@ AspPlanerThread::initClingo(void)
 	std::strcpy(buffer, ConfigPrefix);
 	std::strcpy(buffer + prefixLen, infix);
 
-	std::strcpy(suffix, "program-path");
-	const auto path  = config->get_string(buffer);
-	std::strcpy(suffix, "program-files");
-	const auto files = config->get_strings(buffer);
 	std::strcpy(suffix, "debug");
 	ClingoAcc->Debug = config->get_bool(buffer);
 	std::strcpy(suffix, "more-models");
 	MoreModels  = config->get_bool(buffer);
 	std::strcpy(suffix, "look-ahaed");
 	LookAhaed = config->get_uint(buffer);
+	std::strcpy(suffix, "time-resolution");
+	TimeResolution = config->get_uint(buffer);
 
 	std::strcpy(buffer + prefixLen, "time-estimations/max-drive-duration");
 	MaxDriveDuration = config->get_uint(buffer);
 
-	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %s", path.c_str(),
-		ClingoAcc->Debug ? "true" : "false");
-	for ( const auto& file : files )
-	{
-		ClingoAcc->loadFile(path + file);
-	} //for ( const auto& file : files )
-
-	auto symbol(Clingo::Number(0));
-	ClingoAcc->ground({Clingo::Part("base", Clingo::SymbolSpan())});
-	ClingoAcc->ground({Clingo::Part("transition", Clingo::SymbolSpan(&symbol, 1))});
-
-	//We have to unlock, to prevent a deadlock in newModel.
-	locker.unlock();
-	ClingoAcc->startSolvingBlocking();
+	loadFilesAndGroundBase(locker);
 	return;
 }
 
@@ -180,25 +173,30 @@ AspPlanerThread::loopClingo(void)
 	MutexLocker reqLocker(&RequestMutex);
 	if ( ClingoAcc->solving() )
 	{
-		if ( interruptSolving() )
+		if ( interruptSolving() && !SentCancel )
 		{
-			logger->log_warn(LoggingComponent, "Interrupt solving process for new information.");
 			assert(!Requests.empty());
+			logger->log_warn(LoggingComponent, "Interrupt solving process for new information: %d", Requests.size());
 			ClingoAcc->cancelSolving();
-		} //if ( interruptSolving() )
-		else
-		{
-			return;
-		} //else -> if ( interruptSolving )
+			SentCancel = true;
+		} //if ( interruptSolving() && !SentCancel )
+		return;
 	} //if ( ClingoAcc->solving() )
 
-	if ( Requests.empty() )
+	if ( CompleteRestart )
+	{
+		ClingoAcc->reset();
+		loadFilesAndGroundBase(aspLocker);
+		Horizon = 0;
+	} //if ( CompleteRestart )
+	else if ( Requests.empty() )
 	{
 		//Nothing todo.
-		//! @todo Increment the lookahaed?!?
+		//! @todo Increment the lookahaed?!? If yes, reset it on the complete restart!
 		return;
 	} //if ( Requests.empty() )
 
+	SentCancel = false;
 	//Copy requests, so the lock can be released and new events be recorded.
 	decltype(Requests) requests;
 	std::swap(requests, Requests);
@@ -223,33 +221,81 @@ AspPlanerThread::loopClingo(void)
 
 	//Cap the horizon at game end.
 	const auto oldHorizon(std::move(Horizon));
-	Horizon = std::min(GameTime + LookAhaed, (15 + 4) * 60u);
+	Horizon = realGameTimeToAspGameTime(std::min(GameTime + LookAhaed, (15 + 4) * 60u));
 	horizonValueSymbol = Clingo::Number(Horizon);
 	horizonSymbol = Clingo::Function("horizon", horizonSpan);
 	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::True);
 
 	MutexLocker robLocker(&RobotsMutex);
-	parts.reserve(Horizon - oldHorizon + Robots.size());
 	std::vector<Clingo::SymbolVector> robotSymbols;
 	robotSymbols.reserve(Robots.size());
-	for ( const auto& info : Robots )
+	for ( auto& paar : Robots )
 	{
-		Clingo::SymbolVector symbols;
-		symbols.reserve(4);
-		symbols.emplace_back(Clingo::String(info.first.c_str()));
-		symbols.emplace_back(Clingo::Number(GameTime));
-		symbols.emplace_back(Clingo::Number(doubleCoordToInt(info.second.X)));
-		symbols.emplace_back(Clingo::Number(doubleCoordToInt(info.second.Y)));
-		robotSymbols.emplace_back(symbols);
-		parts.emplace_back("setRobotLocation", Clingo::SymbolSpan(&robotSymbols.back().front(), 4));
-	} //for ( const auto& info : Robots )
+		auto& info(paar.second);
+		for ( const auto& symbol : info.DriveDurations )
+		{
+			ClingoAcc->release_external(symbol);
+		} //for ( const auto& symbol : info.DriveDurations )
+		info.DriveDurations.clear();
 
+		auto distanceToDuration = [this](const unsigned int distance) noexcept {
+				//! @todo Werte holen!
+				constexpr unsigned int constantCosts = 4;
+				constexpr unsigned int costPerDistance = 2;
+				return std::min(constantCosts + distance * costPerDistance, MaxDriveDuration);
+			};
+
+		for ( const auto machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
+		{
+			std::string target;
+			target.reserve(7);
+			target += TeamColor;
+			target += "-";
+			target += machine;
+			target += "-X";
+
+			for ( const auto side : {"I", "O"} )
+			{
+				target.back() = side[0];
+				//! @todo NavGraphen Fragen!
+				const unsigned int distance = 7;
+
+				Clingo::Symbol symbol(Clingo::Function("driveDuration", {Clingo::String(paar.first.c_str()),
+					Clingo::Function("m", {Clingo::String(TeamColor), Clingo::String(machine), Clingo::String(side)}),
+					Clingo::Number(realGameTimeToAspGameTime(distanceToDuration(distance)))}));
+				ClingoAcc->assign_external(symbol, Clingo::TruthValue::True);
+				info.DriveDurations.emplace_back(std::move(symbol));
+			} //for ( const auto side : {"I", "O"} )
+		} //for ( const auto machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
+
+		if ( StillNeedExploring )
+		{
+			for ( auto zone = 1; zone <= 24; ++zone )
+			{
+				//! @todo NavGraphen Fragen!
+				const unsigned int distance = 7;
+
+				Clingo::Symbol symbol(Clingo::Function("driveDuration", {Clingo::String(paar.first.c_str()),
+					Clingo::Function("z", {Clingo::Number(zone)}),
+					Clingo::Number(realGameTimeToAspGameTime(distanceToDuration(distance)))}));
+				ClingoAcc->assign_external(symbol, Clingo::TruthValue::True);
+				info.DriveDurations.emplace_back(std::move(symbol));
+			} //for ( auto zone = 1; zone <= 24; ++zone )
+		} //if ( StillNeedExploring )
+	} //for ( auto& paar : Robots )
+	robLocker.unlock();
+
+	parts.reserve(Horizon - oldHorizon);
 	Clingo::SymbolVector symbols;
-	symbols.reserve(Horizon - oldHorizon);
+	symbols.reserve((Horizon - oldHorizon) * (StillNeedExploring ? 2 : 1));
 	for ( auto i = oldHorizon + 1; i <= Horizon; ++i )
 	{
 		symbols.emplace_back(Clingo::Number(i));
 		parts.emplace_back("transition", Clingo::SymbolSpan(&symbols.back(), 1));
+		if ( StillNeedExploring )
+		{
+			parts.emplace_back("explorationTransition", Clingo::SymbolSpan(&symbols.back(), 1));
+		} //if ( StillNeedExploring )
 	} //for ( auto i = oldHorizon + 1; i <= Horizon; ++i )
 
 	ClingoAcc->ground(parts);
@@ -261,6 +307,7 @@ AspPlanerThread::loopClingo(void)
 	} //if ( Interrupt != InterruptSolving::Not )
 	reqLocker.unlock();
 	ClingoAcc->startSolving();
+	SolvingStarted = clock->now();
 	return;
 }
 
@@ -302,6 +349,71 @@ AspPlanerThread::interruptSolving(void) const noexcept
 		case InterruptSolving::Critical    : return true;
 	} //switch ( Interrupt )
 	return false;
+}
+
+/**
+ * @brief Loads the ASP files into the solver and grounds the base program.
+ * @param[in, out] locker The locker used to lock ClingoAcc. Has to be locked at the beginning.
+ */
+void
+AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
+{
+	constexpr auto infix = "planer/";
+	const auto prefixLen = std::strlen(ConfigPrefix), infixLen = std::strlen(infix);
+	char buffer[prefixLen + infixLen + 20];
+	const auto suffix = buffer + prefixLen + infixLen;
+	std::strcpy(buffer, ConfigPrefix);
+	std::strcpy(buffer + prefixLen, infix);
+
+	std::strcpy(suffix, "program-path");
+	const auto path  = config->get_string(buffer);
+	std::strcpy(suffix, "program-files");
+	const auto files = config->get_strings(buffer);
+
+	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %s", path.c_str(),
+		ClingoAcc->Debug ? "true" : "false");
+	for ( const auto& file : files )
+	{
+		ClingoAcc->loadFile(path + file);
+	} //for ( const auto& file : files )
+
+	auto symbol(Clingo::Number(0));
+	ClingoAcc->ground({Clingo::Part("base", Clingo::SymbolSpan())});
+	ClingoAcc->ground({Clingo::Part("transition", Clingo::SymbolSpan(&symbol, 1))});
+
+	if ( StillNeedExploring )
+	{
+		ClingoAcc->ground({Clingo::Part("explore", Clingo::SymbolSpan())});
+		ClingoAcc->ground({Clingo::Part("explorationTransition", Clingo::SymbolSpan(&symbol, 1))});
+	} //if ( StillNeedExploring )
+
+	//We have to unlock, to prevent a deadlock in newModel.
+	locker.unlock();
+	ClingoAcc->startSolvingBlocking();
+	locker.relock();
+	return;
+}
+
+/**
+ * @brief Transforms the real time to ASP time steps.
+ * @param[in] realGameTime The real game time in seconds.
+ * @return The ASP time units.
+ */
+unsigned int
+AspPlanerThread::realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept
+{
+	return realGameTime / TimeResolution + ((realGameTime % TimeResolution) * 2 >= TimeResolution ? 1 : 0);
+}
+
+/**
+ * @brief Transforms the ASP time steps to real time.
+ * @param[in] aspGameTime The ASP time units.
+ * @return The real game time in seconds.
+ */
+unsigned int
+AspPlanerThread::aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept
+{
+	return aspGameTime * TimeResolution;
 }
 
 /**
@@ -454,7 +566,7 @@ AspPlanerThread::newTeamMate(const std::string& mate)
 {
 	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::String(mate.c_str()));
-	params.emplace_back(Clingo::Number(GameTime));
+	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(GameTime)));
 	queueGround({"addRobot", params, true}, InterruptSolving::Critical);
 	return;
 }
@@ -468,7 +580,7 @@ AspPlanerThread::deadTeamMate(const std::string& mate)
 {
 	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::String(mate.c_str()));
-	params.emplace_back(Clingo::Number(GameTime));
+	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(GameTime)));
 	queueGround({"removeRobot", params, true}, InterruptSolving::Critical);
 	return;
 }

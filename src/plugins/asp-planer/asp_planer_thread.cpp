@@ -134,11 +134,11 @@ AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
 	{
 		const auto object(document.getField("o"));
 		const std::string color(object["values"].Array().at(0).String());
-		if ( TeamColorSet )
+		if ( TeamColor )
 		{
 			if ( color == "nil" )
 			{
-				TeamColorSet = false;
+				TeamColor = nullptr;
 				logger->log_info(LoggingComponent, "Unsetting Team-Color.");
 			} //if ( color == "nil" )
 			else
@@ -146,15 +146,17 @@ AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
 				logger->log_info(LoggingComponent, "Changing Team-Color to %s.", color.c_str());
 			} //else -> if ( color == "nil" )
 			unsetTeam();
-		} //if ( TeamColorSet )
+		} //if ( TeamColor )
 		else
 		{
 			logger->log_info(LoggingComponent, "Setting Team-Color to %s.", color.c_str());
-			TeamColorSet = true;
-		} //else -> if ( TeamColorSet )
+		} //else -> if ( TeamColor )
+
 		if ( color != "nil" )
 		{
-			setTeam(color == "CYAN");
+			const auto cyan = color == "CYAN";
+			setTeam(cyan);
+			TeamColor = cyan ? "C" : "M";
 		} //if ( color != "nil" )
 	} //try
 	catch ( const std::exception& e )
@@ -204,10 +206,10 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 /** Constructor. */
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPPlaner", "ASP-Planer"),
-		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColorSet(false), MoreModels(false),
+		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr), MoreModels(false),
 		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0),
-		MaxDriveDuration(0),
-		Interrupt(InterruptSolving::Not)
+		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false), TimeResolution(1), MaxDriveDuration(0),
+		Interrupt(InterruptSolving::Not), SentCancel(false)
 {
 	//We don't expect more than 3 robots.
 	Robots.reserve(3);
@@ -291,6 +293,7 @@ AspPlanerThread::finalize()
 	} //for ( const auto& callback : RobotMemoryCallbacks )
 	RobotMemoryCallbacks.clear();
 	finalizeClingo();
+	logger->log_info(LoggingComponent, "ASP Planer finalized");
 	return;
 }
 
