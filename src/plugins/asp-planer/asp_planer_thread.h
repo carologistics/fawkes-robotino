@@ -83,6 +83,7 @@ class AspPlanerThread
 	unsigned int GameTime;
 	unsigned int Horizon;
 	fawkes::Time LastModel;
+	unsigned int MaxDriveDuration;
 
 	fawkes::Mutex RequestMutex;
 	InterruptSolving Interrupt;
@@ -105,6 +106,8 @@ class AspPlanerThread
 
 	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult& result);
+	void groundFunctions(const Clingo::Location& loc, char const *name, const Clingo::SymbolSpan& arguments,
+		Clingo::SymbolSpanCallback& retFunction);
 
 	void setTeam(const bool cyan);
 	void unsetTeam(void);
