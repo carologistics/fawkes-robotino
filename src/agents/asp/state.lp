@@ -19,30 +19,35 @@
 %
 % duration(R, T, GT, D): Task T should be done in D seconds from robot R at gametime GT. This includes the time for getting there.
 % update(R, T, GT, D): Update the time estimation for robot R on Task T at GT to D time units.
-%
-% location(R, GT, L): The robot R is at gametime GT at location L.
 
 % Called for every gametime we like to consider. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program transition(gt).
 
-#external update(R, T, gt, D) : robot(R, gt), task(T), D = 1..maxDuration.
+#external update(R, T, gt, D)    : robot(R, gt), task(T), D = 1..maxDuration.
+#external toBeDone(T, gt)        : task(T).
+#external success(T, gt)         : task(T).
+#external driveDuration(R, L, D) : robot(R, gt), location(L), D = 1..@maxDriveDuration().
 
 % Can start at max one task and only if not doing something else right now.
 { begin(R, T, gt) : task(T) } 1 :- robot(R, gt), toBeDone(T, gt), not doing(R, T2, gt, _), task(T2), T != T2.
 
 % Initialize and update doing.
 doing(R, T, gt, D) :- begin(R, T, gt), duration(R, T, gt, D).
-%doing(R, T, gt, D) :- doing(R, T, gt-1, D+1), D > 1, not update(R, T, gt, _).
-%doing(R, T, gt, D) :- update(R, T, gt, D).
+doing(R, T, gt, D) :- doing(R, T, gt-1, D+1), D > 1, not update(R, T, gt, _).
+doing(R, T, gt, D) :- update(R, T, gt, D).
 
 % Setting end.
-%end(R, T, gt) :- doing(R, T, gt-1, 1), not update(R, T, gt, _).
+end(R, T, gt) :- doing(R, T, gt-1, 1), not update(R, T, gt, _).
 
-% Only one robot per task.
-%:- { doing(R, T, gt, _) : robot(R, gt) } != 1, task(T).
+% Max one robot per task.
+:- 2 { doing(R, T, gt, _) : robot(R, gt) }, task(T).
 
 % Calculate complete duration per robot.
-duration(R, T, gt, D) :- robot(R, gt), task(T), duration(T, D1), location(R, RL, gt), location(T, TL), driveDuration(RL, TL, D2), D = D1 + D2.
+duration(R, T, gt, D) :- robot(R, gt), task(T), duration(T, TD), location(T, TL), driveDuration(R, TL, DD), D = TD + DD.
+
+% Update Task status.
+toBeDone(T, gt) :- toBeDone(T, gt-1), not success(T, gt).
+success(T, gt)  :- success(T, gt-1).
 
 % Called to update the time estimation for a robot. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program update(r, t, gt, d).
