@@ -11,7 +11,20 @@ asp-agent:
     program-path: ../src/agents/asp/
     program-files: [constants.lp, exploration.lp, facts.lp, robot.lp, state.lp]
 
-    look-ahaed: 15
+    #Look ahaed in real time seconds.
+    look-ahaed: 30
+    #How many real time seconds should be one time unit for the ASP solver.
+    time-resolution: 5
+
+  #Time estimations for tasks, given in real time seconds.
+  time-estimations:
+    explore-zone: 5
+    fetch-product: 10
+    deliver-product: 15
+    fetch-from-shelf: 20
+
+    max-task-duration: 50
+    max-drive-duration: 30
 
   #real-world-setup:
   peer-address: 172.26.255.255
@@ -32,43 +45,4 @@ asp-agent:
       C-CS2: BLACK
       M-CS1: GREY
       M-CS2: BLACK
-    
-  waiting-points:
-    ins-1-robotino1: WAIT_FOR_INS_1_ROBOTINO_1
-    ins-2-robotino1: WAIT_FOR_INS_2_ROBOTINO_1
-    ins-1-robotino2: WAIT_FOR_INS_1_ROBOTINO_2
-    ins-2-robotino2: WAIT_FOR_INS_2_ROBOTINO_2
-    ins-1-robotino3: WAIT_FOR_INS_1_ROBOTINO_3
-    ins-2-robotino3: WAIT_FOR_INS_2_ROBOTINO_3
-    deliver1: WAIT_FOR_DELIVER_1
-    deliver2: WAIT_FOR_DELIVER_2
-
-  production-times:
-    t1-min: 3
-    t1-max: 8
-    t2-min: 15
-    t2-max: 25
-    t3-min: 40
-    t3-max: 60
-    t4-min: 40
-    t4-max: 60
-    t5-min: 20
-    t5-max: 40
-    recycle-min: 2
-    recycle-max: 2
-
-  out-of-order-times:
-    max: 120
-    min: 30
-    recycle-max: 40
-    recycle-min: 20
-
-  estimated-skill-duration:
-    get-produced: 20
-    get-stored-puck: 18
-    deliver: 10
-
-  puck-storage-points:
-    cyan: [D1_PUCK_STORAGE_1, D1_PUCK_STORAGE_2]
-    magenta: [D2_PUCK_STORAGE_1, D2_PUCK_STORAGE_2]
 
