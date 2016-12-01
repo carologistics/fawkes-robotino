@@ -170,18 +170,25 @@
         (eq ?conf:type BOOL) (eq ?conf:value FALSE))))
   then
     (path-load  rcll-robot-memory/production.clp)
-    (path-load  rcll-robot-memory/exploration.clp)
   else
     (printout t "Not loading the reasoner" crlf)
   )
+  (path-load  rcll-robot-memory/exploration.clp)
   (path-load  rcll-robot-memory/config.clp)
-  (if
-    (any-factp ((?conf confval))
-      (and (eq ?conf:path "/asp-agent/load-planer")
-           (eq ?conf:type BOOL) (eq ?conf:value TRUE)))
+  (if (any-factp ((?f use-asp)) (eq 1 1))
   then
-    (printout t "Loading Planer rules" crlf)
-    (path-load  rcll-robot-memory/asp-planer.clp)
+    (path-load  rcll-robot-memory/asp-common.clp)
+    (if
+      (any-factp ((?conf confval))
+        (and (eq ?conf:path "/asp-agent/load-planer")
+             (eq ?conf:type BOOL) (eq ?conf:value TRUE)))
+    then
+      (printout t "Loading Planer rules" crlf)
+      (path-load  rcll-robot-memory/asp-planer.clp)
+    else
+      (printout t "Loading ASP Executive rules" crlf)
+      (path-load  rcll-robot-memory/asp-exec.clp)
+    )
   )
   (reset)
   ;(facts)

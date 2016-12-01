@@ -1,3 +1,8 @@
+(deffacts asp-planer-helper
+  "Facts we need to use the old rules."
+  (lock-role MASTER)
+)
+
 (defrule active-robot-to-robmem
   "Updates the active-robot fact in the robot memory."
   ?ar <- (active-robot (name ?name) (last-seen ?ls-m ?ls-s))
