@@ -13,6 +13,7 @@
 (deffacts to-robmem-init
   (asp-synced tc nil)
   (asp-synced gt 0 PRE_GAME)
+  (asp-to-sync zones)
 )
 
 (defrule team-color-to-robmem
@@ -39,6 +40,32 @@
   (bson-append ?doc "time" ?t)
   (bson-append ?doc "phase" ?p)
   (robmem-upsert "robmem.planer" ?doc "{\"relation\": \"game-time\"}")
+  (bson-destroy ?doc)
+)
+
+(defrule accumulate-zones-to-explore
+  "Accumulates the zones we need to explore, before we send them through the robot memory."
+  (have-exp-info)
+  (team-color ?team)
+  (zone-exploration (team ?team) (name ?z))
+  (not (asp-synced zone ?z))
+  ?toSync <- (asp-to-sync zones $?zones)
+  =>
+  (assert (asp-synced zone ?z))
+  (retract ?toSync)
+  (assert (asp-to-sync zones $?zones ?z))
+)
+
+(defrule zones-to-explore-to-robmem
+  "Sets the zones we need to explore in the robot memory."
+  (asp-to-sync zones $?zones&:(eq (length $?zones) 12))
+  (not (asp-synced zones))
+  =>
+  (assert (asp-synced zones))
+  (bind ?doc (bson-create))
+  (bson-append ?doc "relation" zones)
+  (bson-append-array ?doc "zones" $?zones)
+  (robmem-insert "robmem.planer" ?doc)
   (bson-destroy ?doc)
 )
 
