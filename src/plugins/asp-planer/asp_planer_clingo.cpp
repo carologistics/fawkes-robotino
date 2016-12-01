@@ -42,10 +42,13 @@ static constexpr double intCoordToDouble(const int i) noexcept
 
 /**
  * @brief States the current interrupt request.
- * @note Sort by priority, i.e. Critical should always be the last element. We use operator> when setting the value.
+ * @note Sort by priority. We use operator> when setting the value.
  *
  * @var InterruptSolving::Not
  * @brief Do not interrupt.
+ *
+ * @var InterruptSolving::JustStarted
+ * @brief Only interrupt if the solving was just started.
  *
  * @var InterruptSolving::Normal
  * @brief Do interrupt, if the plan isn't to old.
@@ -273,8 +276,9 @@ AspPlanerThread::interruptSolving(void) const noexcept
 	const auto diff(now - LastModel);
 	switch ( Interrupt )
 	{
-		case InterruptSolving::Not      : break;
-		case InterruptSolving::Normal   :
+		case InterruptSolving::Not         : break;
+		case InterruptSolving::JustStarted : /** @todo Do it! */break;
+		case InterruptSolving::Normal      :
 		{
 			//! @todo Read threashold from config.
 			static const fawkes::Time threshold(10, 0);
@@ -284,7 +288,7 @@ AspPlanerThread::interruptSolving(void) const noexcept
 			} //if ( diff <= threshold )
 			break;
 		} //case InterruptSolving::Normal
-		case InterruptSolving::Critical : return true;
+		case InterruptSolving::Critical    : return true;
 	} //switch ( Interrupt )
 	return false;
 }
@@ -386,5 +390,19 @@ AspPlanerThread::deadTeamMate(const std::string& mate)
 	params.emplace_back(Clingo::String(mate.c_str()));
 	params.emplace_back(Clingo::Number(GameTime));
 	queueGround({"removeRobot", params, true}, InterruptSolving::Critical);
+	return;
+}
+
+/**
+ * @brief Adds a zone to explore.
+ * @param[in] zone The zone number.
+ */
+void AspPlanerThread::addZoneToExplore(const long zone)
+{
+	assert(zone >= 1 && zone <= 24);
+	Clingo::SymbolVector params;
+	params.emplace_back(Clingo::Number(zone));
+	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(GameTime)));
+	queueGround({"zoneToExplore", params, false}, InterruptSolving::JustStarted);
 	return;
 }

@@ -41,6 +41,7 @@ class EventTrigger;
 
 enum class InterruptSolving : unsigned short {
 	Not = 0,
+	JustStarted,
 	Normal,
 	Critical
 };
@@ -111,9 +112,12 @@ class AspPlanerThread
 	void newTeamMate(const std::string& mate);
 	void deadTeamMate(const std::string& mate);
 
+	void addZoneToExplore(const long zone);
+
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);
 	void teamColorCallback(const mongo::BSONObj document);
+	void zonesCallback(const mongo::BSONObj document);
 
 	public:
 	AspPlanerThread(void);

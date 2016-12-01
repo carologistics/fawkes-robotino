@@ -23,6 +23,8 @@
 
 #include <core/threading/mutex_locker.h>
 
+#include <cstdlib>
+
 using namespace fawkes;
 
 /**
@@ -168,6 +170,37 @@ AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
 	return;
 }
 
+/**
+ * @brief Gets called, when the zones to explore are set.
+ * @param[in] document The document with the zones.
+ */
+void
+AspPlanerThread::zonesCallback(const mongo::BSONObj document)
+{
+	try
+	{
+		const auto object(document.getField("o"));
+		const auto zones(object["zones"].Array());
+		char *unused;
+		for ( const auto& zone : zones )
+		{
+			//+1 to get rid of the Z.
+			addZoneToExplore(std::strtol(zone.String().c_str() + 1, &unused, 10));
+		} //for ( const auto& zone : zones )
+	} //try
+	catch ( const std::exception& e )
+	{
+		logger->log_error(LoggingComponent, "Exception while updating the team color: %s\n%s", e.what(),
+			document.toString().c_str());
+	} //catch ( const std::exception& e )
+	catch ( ... )
+	{
+		logger->log_error(LoggingComponent, "Exception while updating the team color.\n%s",
+			document.toString().c_str());
+	} //catch ( ... )
+	return;
+}
+
 /** Constructor. */
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPPlaner", "ASP-Planer"),
@@ -199,7 +232,7 @@ AspPlanerThread::init()
 	std::strcpy(suffix, "exploration-time");
 	ExplorationTime = config->get_uint(buffer);
 
-	RobotMemoryCallbacks.reserve(3);
+	RobotMemoryCallbacks.reserve(4);
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planer",
@@ -212,6 +245,10 @@ AspPlanerThread::init()
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "team-color"})"), "robmem.planer",
 		&AspPlanerThread::teamColorCallback, this));
+
+	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
+		mongo::Query(R"({"relation": "zones"})"), "robmem.planer",
+		&AspPlanerThread::zonesCallback, this));
 
 	initClingo();
 	return;
