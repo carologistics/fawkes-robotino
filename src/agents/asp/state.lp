@@ -26,18 +26,20 @@
 #external driveDuration(R, L, D) : robot(R, gt), location(L), D = 1..@maxDriveDuration().
 
 % Can start at max one task and only if not doing something else right now.
-{ begin(R, T, gt) : task(T) } 1 :- robot(R, gt), toBeDone(T, gt), not doing(R, T2, gt, _), task(T2), T != T2.
+{ begin(R, T, gt) : task(T) } 1 :- robot(R, gt), possible(R, T, gt), toBeDone(T, gt).
 
 % Initialize and update doing.
 doing(R, T, gt, D) :- begin(R, T, gt), duration(R, T, gt, D).
-doing(R, T, gt, D) :- doing(R, T, gt-1, D+1), D > 1, not update(R, T, gt, _).
+doing(R, T, gt, D) :- doing(R, T, gt-1, D+1), D > 0, not update(R, T, gt, _).
 doing(R, T, gt, D) :- update(R, T, gt, D).
 
 % Setting end.
 end(R, T, gt) :- doing(R, T, gt-1, 1), not update(R, T, gt, _).
 
 % Max one robot per task.
-:- 2 { doing(R, T, gt, _) : robot(R, gt) }, task(T).
+:- 2 { doing(R, T, gt, _) : robot(R, gt) }, toBeDone(T, gt).
+% Max one task per robot.
+:- 2 { doing(R, T, gt, _) : toBeDone(T, gt) }, robot(R, gt).
 
 % Calculate complete duration per robot.
 duration(R, T, gt, D) :- robot(R, gt), task(T), duration(T, TD), location(T, TL), driveDuration(R, TL, DD), D = TD + DD.
