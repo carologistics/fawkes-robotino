@@ -221,7 +221,9 @@ AspPlanerThread::loopClingo(void)
 
 	//Cap the horizon at game end.
 	const auto oldHorizon(std::move(Horizon));
-	Horizon = realGameTimeToAspGameTime(std::min(GameTime + LookAhaed, (15 + 4) * 60u));
+	//Use a fixed look ahaed of one minute for the exploration phase.
+	const auto usedLookAhaed = StillNeedExploring ? 60 : LookAhaed;
+	Horizon = realGameTimeToAspGameTime(std::min(GameTime + usedLookAhaed, (15 + 4) * 60u));
 	horizonValueSymbol = Clingo::Number(Horizon);
 	horizonSymbol = Clingo::Function("horizon", horizonSpan);
 	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::True);
