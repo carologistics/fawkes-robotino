@@ -232,11 +232,7 @@ AspPlanerThread::loopClingo(void)
 	for ( auto& paar : Robots )
 	{
 		auto& info(paar.second);
-		for ( const auto& symbol : info.DriveDurations )
-		{
-			ClingoAcc->release_external(symbol);
-		} //for ( const auto& symbol : info.DriveDurations )
-		info.DriveDurations.clear();
+		releaseExternals(info, false);
 
 		auto distanceToDuration = [this](const unsigned int distance) noexcept {
 				//! @todo Werte holen!
@@ -391,6 +387,24 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 	locker.unlock();
 	ClingoAcc->startSolvingBlocking();
 	locker.relock();
+	return;
+}
+
+/**
+ * @brief Releases all externals associated by this information.
+ * @param[in] info The information.
+ * @param[in] lock If the ASP solver object should be locked. Set to false, if you have locked it before calling this
+ *                 method.
+ */
+void
+AspPlanerThread::releaseExternals(RobotInformation& info, const bool lock)
+{
+	MutexLocker locker(ClingoAcc.objmutex_ptr(), lock);
+	for ( const auto& symbol : info.DriveDurations )
+	{
+		ClingoAcc->release_external(symbol);
+	} //for ( const auto& symbol : info.DriveDurations )
+	info.DriveDurations.clear();
 	return;
 }
 

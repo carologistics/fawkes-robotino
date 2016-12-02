@@ -271,6 +271,7 @@ AspPlanerThread::loop()
 			{
 				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", iter->first.c_str());
 				deadTeamMate(iter->first);
+				releaseExternals(iter->second);
 				iter = Robots.erase(iter);
 			} //if ( now - iter->second.LastSeen >= timeOut )
 			else
