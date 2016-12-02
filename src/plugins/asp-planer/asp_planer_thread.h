@@ -29,6 +29,7 @@
 #include <aspect/logging.h>
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
+#include <navgraph/aspect/navgraph.h>
 #include <plugins/asp/aspect/asp.h>
 #include <plugins/robot-memory/aspect/robot_memory_aspect.h>
 
@@ -69,8 +70,8 @@ struct PlanElement
 struct RobotInformation
 {
 	fawkes::Time LastSeen;
-	double X;
-	double Y;
+	float X;
+	float Y;
 	std::vector<Clingo::Symbol> DriveDurations;
 };
 
@@ -81,7 +82,8 @@ class AspPlanerThread
   public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
   public fawkes::ASPAspect,
-  public fawkes::RobotMemoryAspect
+  public fawkes::RobotMemoryAspect,
+  public fawkes::NavGraphAspect
 {
 	private:
 	const char* const LoggingComponent;

@@ -86,7 +86,8 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 			newRobot = true;
 		} //if ( !Robots.count(name) )
 		const auto& time(object["last-seen"].Array());
-		Robots[name] = {Time(time.at(0).Long(), time.at(1).Long()), object["x"].Double(), object["y"].Double()};
+		Robots[name] = {Time(time.at(0).Long(), time.at(1).Long()), static_cast<float>(object["x"].Double()),
+			static_cast<float>(object["y"].Double())};
 		if ( newRobot )
 		{
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());

@@ -31,6 +31,7 @@ using std::experimental::string_view;
 
 #include <core/exception.h>
 #include <core/threading/mutex_locker.h>
+#include <navgraph/navgraph.h>
 #include <plugins/asp/aspect/clingo_access.h>
 
 using fawkes::MutexLocker;
@@ -163,6 +164,37 @@ AspPlanerThread::initClingo(void)
 	return;
 }
 
+
+/**
+ * @brief Helper function to calculate the center point of each zone.
+ * @return An array with the center points. Zone i is in the element [i]. [0] is kept "empty".
+ * @todo Why can't we modify the array as constexpr?
+ */
+static auto
+calculateZoneCoords(void) noexcept
+{
+	std::array<float[2], 25> ret{};
+
+	for ( int i = 0; i < 24; ++i )
+	{
+		const auto row = i % 4;
+		auto column    = i / 4;
+
+		//Real columns:         6  5  4  1  2  3
+		//To the base of 0:     5  4  3  0  1  2
+		//For the calculation: -3 -2 -1  0  1  2
+		if ( column >= 3 )
+		{
+			column = 2 - column;
+		} //if ( column >= 3 )
+
+		ret[i + 1][0] = column * 2. + 1.;
+		ret[i + 1][1] = row * 1.5 + .75;
+	} //for ( int i = 0; i < 24; ++i )
+
+	return ret;
+}
+
 /**
  * @brief Does the loop for clingo.
  */
@@ -236,13 +268,15 @@ AspPlanerThread::loopClingo(void)
 		auto& info(paar.second);
 		releaseExternals(info, false);
 
-		auto distanceToDuration = [this](const unsigned int distance) noexcept {
+		auto distanceToDuration = [this](const float distance) noexcept {
 				//! @todo Werte holen!
 				constexpr unsigned int constantCosts = 4;
 				constexpr unsigned int costPerDistance = 2;
-				return std::min(constantCosts + distance * costPerDistance, MaxDriveDuration);
+				return std::min(constantCosts + static_cast<unsigned int>(distance * costPerDistance), MaxDriveDuration);
 			};
 
+		MutexLocker navgraphLocker(navgraph.objmutex_ptr());
+		const auto robotNode = navgraph->closest_node(info.X, info.Y);
 		for ( const auto machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
 		{
 			std::string target;
@@ -255,8 +289,20 @@ AspPlanerThread::loopClingo(void)
 			for ( const auto side : {"I", "O"} )
 			{
 				target.back() = side[0];
-				//! @todo NavGraphen Fragen!
-				const unsigned int distance = 7;
+				const auto targetNode = navgraph->node(target);
+				if ( !targetNode.is_valid() )
+				{
+					/* If the input side isn't in the navgraph neither will be the output side, so skip this machine
+					 * entirely. */
+					break;
+				} //if ( !targetNode.is_valid() )
+				const auto path = navgraph->search_path(robotNode, targetNode);
+				if ( path.nodes().empty() )
+				{
+					//No path found, damn.
+					continue;
+				}
+				const float distance = path.cost();
 
 				Clingo::Symbol symbol(Clingo::Function("driveDuration", {Clingo::String(paar.first.c_str()),
 					Clingo::Function("m", {Clingo::String(TeamColor), Clingo::String(machine), Clingo::String(side)}),
@@ -268,10 +314,23 @@ AspPlanerThread::loopClingo(void)
 
 		if ( StillNeedExploring )
 		{
+			//! @todo If calculateZoneCoords() is constexpr, make this also constexpr.
+			static const std::array<float[2], 25> zoneCoords(calculateZoneCoords());
 			for ( auto zone = 1; zone <= 24; ++zone )
 			{
-				//! @todo NavGraphen Fragen!
-				const unsigned int distance = 7;
+				const auto targetNode = navgraph->closest_node(zoneCoords[zone][0], zoneCoords[zone][1]);
+				if ( !targetNode.is_valid() )
+				{
+					//There is no nearest node?!? Okay we can give up!
+					break;
+				} //if ( !targetNode.is_valid() )
+				const auto path = navgraph->search_path(robotNode, targetNode);
+				if ( path.nodes().empty() )
+				{
+					//No path found, damn.
+					continue;
+				}
+				const float distance = path.cost();
 
 				Clingo::Symbol symbol(Clingo::Function("driveDuration", {Clingo::String(paar.first.c_str()),
 					Clingo::Function("z", {Clingo::Number(zone)}),

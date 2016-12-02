@@ -17,7 +17,7 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
 
-LIBS_asp_planer = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory
+LIBS_asp_planer = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory fawkesnavgraphaspect
 OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_clingo.o
 
 OBJS_all = $(OBJS_asp_planer)
@@ -35,6 +35,7 @@ CFLAGS_CLINGO = -DWITH_THREADS=1 \
 	-I $(HOME)/clingo/libprogram_opts
 LDFLAGS_CLINGO = -L$(HOME)/clingo-build/bin/ -Wl,-rpath=$(HOME)/clingo-build/bin/ -lclingo
 
+#Actually we use C++14, but there is no fawkes flag for that.
 ifeq ($(HAVE_CPP11)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
   CFLAGS  += $(CFLAGS_CPP11) \
 		 $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
