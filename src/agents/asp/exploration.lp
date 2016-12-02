@@ -10,6 +10,7 @@ points(explore(Z), explorationPoints) :- zone(Z).
 #program explorationTransition(gt).
 
 #external toBeDone(explore(Z), gt) : zone(Z).
+#external robot(R, gt)             : robot(R).
 
 possible(R, explore(Z), gt) :- robot(R, gt), toBeDone(explore(Z), gt).
 
