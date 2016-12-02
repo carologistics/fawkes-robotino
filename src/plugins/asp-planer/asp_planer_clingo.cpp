@@ -523,12 +523,12 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/explore-zone");
 						return config->get_uint(buffer);
 					}();
-				retFunction({Clingo::Number(dur)});
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //if ( view == "explorationTaskDuration" )
 			else if ( view == "maxDriveDuration" )
 			{
-				retFunction({Clingo::Number(MaxDriveDuration)});
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxDriveDuration))});
 				return;
 			} //else if ( view == "maxDriveDuration" )
 			break;
