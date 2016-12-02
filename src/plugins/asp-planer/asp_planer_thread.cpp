@@ -28,6 +28,23 @@
 using namespace fawkes;
 
 /**
+ * @struct PlanElement
+ * @brief An element of the plan.
+ *
+ * @property PlanElement::Robot
+ * @brief The robot name for the task.
+ *
+ * @property PlanElement::Task
+ * @brief The task with it's parameters.
+ *
+ * @property PlanElement::Begin
+ * @brief The game time on which the task should start.
+ *
+ * @property PlanElement::End
+ * @brief The estimated end time for the task, if available. If not it is set to zero.
+ */
+
+/**
  * @struct RobotInformation
  * @brief Stores information for a robot.
  *
@@ -257,6 +274,24 @@ AspPlanerThread::init()
 	return;
 }
 
+namespace std {
+
+/**
+ * @brief Helper class to instantiate a std::unordered_map with a std::pair as key.
+ */
+template<typename T1, typename T2>
+struct hash<pair<T1, T2>>
+{
+	auto operator()(const pair<T1, T2>& pair) const
+		noexcept(noexcept(hash<T1>{}(pair.first) && noexcept(hash<T2>{}(pair.second))))
+	{
+		//Is this a good hash?
+		return hash<T1>{}(pair.first) << 16 ^ hash<T2>{}(pair.second);
+	}
+};
+}
+
+
 void
 AspPlanerThread::loop()
 {
@@ -280,6 +315,40 @@ AspPlanerThread::loop()
 			} //else -> if ( now - iter->second.LastSeen >= timeOut )
 		} //while ( iter != Robots.end() )
 	} //Block for iteration over Robots
+
+	{
+		MutexLocker symbolLocker(&SymbolMutex);
+		if ( NewSymbols )
+		{
+			std::unordered_map<std::pair<std::string, std::string>, std::pair<unsigned int, unsigned int>> map;
+			for ( const auto& symbol : Symbols )
+			{
+				const bool begin = std::strcmp(symbol.name(), "begin") == 0,
+					end = std::strcmp(symbol.name(), "end") == 0;
+				if ( begin || end )
+				{
+					const auto args(symbol.arguments());
+					auto& pair = map[{args[0].to_string(), args[1].to_string()}];
+					if ( begin )
+					{
+						pair.first = args[2].number();
+					} //if ( begin )
+					else
+					{
+						pair.second = args[2].number();
+					} //else -> if ( begin )
+				} //if ( begin || end )
+			} //for ( const auto& symbol : Symbols )
+
+			logger->log_info(LoggingComponent, "Plan size: %d", map.size());
+			for ( const auto& pair : map )
+			{
+				logger->log_info(LoggingComponent, "Plan element: (%s, %s, %d, %d)",
+					pair.first.first.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
+			} //for ( const auto& pair : map )
+			NewSymbols = false;
+		} //if ( NewSymbols )
+	} //Block fot the plan extraction.
 	loopClingo();
 	return;
 }

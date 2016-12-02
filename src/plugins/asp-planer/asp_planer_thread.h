@@ -58,6 +58,14 @@ struct GroundRequest
 	bool AddTick;
 };
 
+struct PlanElement
+{
+	std::string Robot;
+	std::string Task;
+	unsigned int Begin;
+	unsigned int End;
+};
+
 struct RobotInformation
 {
 	fawkes::Time LastSeen;
