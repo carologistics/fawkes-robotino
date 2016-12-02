@@ -5,14 +5,14 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 asp-agent:
   planer:
-    debug: true
-    more-models: false
+    debug: false #true
+    more-models: true #false
 
     program-path: ../src/agents/asp/
     program-files: [constants.lp, exploration.lp, facts.lp, robot.lp, state.lp]
 
     #Look ahaed in real time seconds.
-    look-ahaed: 30
+    look-ahaed: 300
     #How many real time seconds should be one time unit for the ASP solver.
     time-resolution: 5
 
