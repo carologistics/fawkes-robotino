@@ -1,6 +1,3 @@
-% The planning horizon, how far (regarding gametime) we should plan.
-#external horizon(h).
-
 % Given from other files:
 % task(T): There is a task T.
 % location(T, L): The task T is located at L.
@@ -46,8 +43,15 @@ end(R, T, gt) :- doing(R, T, gt-1, 1), not update(R, T, gt, _).
 duration(R, T, gt, D) :- robot(R, gt), task(T), duration(T, TD), location(T, TL), driveDuration(R, TL, DD), D = TD + DD.
 
 % Update Task status.
-toBeDone(T, gt) :- toBeDone(T, gt-1), not success(T, gt).
-success(T, gt)  :- success(T, gt-1).
+toBeDone(T, gt) :- toBeDone(T, gt-1), not end(_, T, gt).
+
+% The planning horizon, how far (regarding gametime) we should plan.
+#external horizon(gt).
+
+% Our goal.
+#maximize{ P@2,T,GT : begin(_, T, GT), points(T, P), horizon(gt) }.
+
+#minimize{ GT@1,T : begin(_, T, GT), task(T) }.
 
 % Called to update the time estimation for a robot. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program update(r, t, gt, d).
