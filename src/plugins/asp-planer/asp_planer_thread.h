@@ -116,6 +116,7 @@ class AspPlanerThread
 	void loadFilesAndGroundBase(fawkes::MutexLocker& locker);
 
 	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
+	void releaseExternals(RobotInformation &info, const bool lock = true);
 
 	unsigned int realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept;
 	unsigned int aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept;
