@@ -36,6 +36,7 @@ using std::experimental::string_view;
 using fawkes::MutexLocker;
 
 /**
+ * @enum InterruptSolving
  * @brief States the current interrupt request.
  * @note Sort by priority. We use operator> when setting the value.
  *
