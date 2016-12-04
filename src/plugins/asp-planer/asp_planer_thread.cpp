@@ -86,12 +86,12 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 			newRobot = true;
 		} //if ( !Robots.count(name) )
 		const auto& time(object["last-seen"].Array());
-		Robots[name] = {Time(time.at(0).Long(), time.at(1).Long()), static_cast<float>(object["x"].Double()),
-			static_cast<float>(object["y"].Double())};
+		const auto& info = Robots[name] = {Time(time.at(0).Long(), time.at(1).Long()),
+			static_cast<float>(object["x"].Double()), static_cast<float>(object["y"].Double())};
 		if ( newRobot )
 		{
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
-			newTeamMate(name);
+			newTeamMate(name, info);
 		} //if ( newRobot )
 	} //try
 	catch ( const std::exception& e )
@@ -227,6 +227,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr), MoreModels(false),
 		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0),
 		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false), TimeResolution(1), MaxDriveDuration(0),
+		UpdateNavgraphDistances(false),
 		Interrupt(InterruptSolving::Not), SentCancel(false)
 {
 	//We don't expect more than 3 robots.

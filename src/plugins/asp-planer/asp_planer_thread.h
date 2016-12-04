@@ -30,6 +30,7 @@
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 #include <navgraph/aspect/navgraph.h>
+#include <navgraph/navgraph.h>
 #include <plugins/asp/aspect/asp.h>
 #include <plugins/robot-memory/aspect/robot_memory_aspect.h>
 
@@ -72,7 +73,6 @@ struct RobotInformation
 	fawkes::Time LastSeen;
 	float X;
 	float Y;
-	std::vector<Clingo::Symbol> DriveDurations;
 };
 
 class AspPlanerThread
@@ -83,7 +83,8 @@ class AspPlanerThread
   public fawkes::LoggingAspect,
   public fawkes::ASPAspect,
   public fawkes::RobotMemoryAspect,
-  public fawkes::NavGraphAspect
+  public fawkes::NavGraphAspect,
+  public fawkes::NavGraph::ChangeListener
 {
 	private:
 	const char* const LoggingComponent;
@@ -106,6 +107,11 @@ class AspPlanerThread
 	unsigned int TimeResolution;
 	unsigned int MaxDriveDuration;
 
+	bool UpdateNavgraphDistances;
+	std::vector<Clingo::Symbol> NavgraphDistances;
+	std::unordered_map<std::string, Clingo::Symbol> NavgraphNodesForASP;
+	static constexpr auto NodePropertyASP = "ASP-Location";
+
 	fawkes::Mutex RequestMutex;
 	InterruptSolving Interrupt;
 	bool SentCancel;
@@ -117,6 +123,9 @@ class AspPlanerThread
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;
 	bool NewSymbols;
+
+	void fillNavgraphNodesForASP(void);
+	void graph_changed(void) noexcept override final;
 
 	void constructClingo(void);
 	void initClingo(void);
@@ -139,7 +148,7 @@ class AspPlanerThread
 	void setTeam(const bool cyan);
 	void unsetTeam(void);
 
-	void newTeamMate(const std::string& mate);
+	void newTeamMate(const std::string& mate, const RobotInformation& info);
 	void deadTeamMate(const std::string& mate);
 
 	void addZoneToExplore(const long zone);
