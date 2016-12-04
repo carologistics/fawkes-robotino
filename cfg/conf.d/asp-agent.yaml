@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 asp-agent:
   planer:
-    debug: false #true
+    debug-level: 20
     more-models: true #false
 
     program-path: ../src/agents/asp/

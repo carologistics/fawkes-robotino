@@ -148,8 +148,8 @@ AspPlanerThread::initClingo(void)
 	std::strcpy(buffer, ConfigPrefix);
 	std::strcpy(buffer + prefixLen, infix);
 
-	std::strcpy(suffix, "debug");
-	ClingoAcc->Debug = config->get_bool(buffer);
+	std::strcpy(suffix, "debug-level");
+	ClingoAcc->DebugLevel = static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer));
 	std::strcpy(suffix, "more-models");
 	MoreModels  = config->get_bool(buffer);
 	std::strcpy(suffix, "look-ahaed");
@@ -427,8 +427,8 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 	std::strcpy(suffix, "program-files");
 	const auto files = config->get_strings(buffer);
 
-	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %s", path.c_str(),
-		ClingoAcc->Debug ? "true" : "false");
+	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %d", path.c_str(),
+		ClingoAcc->DebugLevel.load());
 	for ( const auto& file : files )
 	{
 		ClingoAcc->loadFile(path + file);
@@ -554,7 +554,7 @@ void
 AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, const Clingo::SymbolSpan& arguments,
 	Clingo::SymbolSpanCallback& retFunction)
 {
-	if ( ClingoAcc->Debug )
+	if ( ClingoAcc->DebugLevel >= fawkes::ClingoAccess::All )
 	{
 		std::stringstream functionCall;
 		functionCall<<name<<'(';
@@ -568,7 +568,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 
 		const auto functionCallStr(functionCall.str());
 		logger->log_warn(LoggingComponent, "Called %s.", functionCallStr.c_str());
-	} //if ( ClingoAcc->Debug )
+	} //if ( ClingoAcc->DebugLevel >= fawkes::ClingoAccess::All )
 
 	string_view view(name);
 
