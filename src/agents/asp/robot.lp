@@ -6,6 +6,9 @@ robot(r, gt, t).
 #program removeRobot(r, gt, t).
 killRobot(r, gt, t).
 
+#program setRobotLocation(r, l, gt).
+location(r, l, gt).
+
 #program transition(gt).
 
 #external robot(R, gt, T)     : robot(R), T = 0..maxTicks.

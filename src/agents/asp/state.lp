@@ -20,10 +20,11 @@
 % Called for every gametime we like to consider. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program transition(gt).
 
-#external update(R, T, gt, D)    : robot(R, gt), task(T), D = 1..maxDuration.
-#external toBeDone(T, gt)        : task(T).
-#external success(T, gt)         : task(T).
-#external driveDuration(R, L, D) : robot(R, gt), location(L), D = 1..@maxDriveDuration().
+#external update(R, T, gt, D)      : robot(R, gt), task(T), D = 1..maxDuration.
+#external toBeDone(T, gt)          : task(T).
+#external success(T, gt)           : task(T).
+#external location(R, L, gt)       : robot(R, gt), location(L).
+#external driveDuration(L1, L2, D) : location(L1), location(L2), D = 1..@maxDriveDuration().
 
 % Can start at max one task and only if not doing something else right now.
 { begin(R, T, gt) : task(T) } 1 :- robot(R, gt), possible(R, T, gt), toBeDone(T, gt).
@@ -35,6 +36,12 @@ doing(R, T, gt, D) :- update(R, T, gt, D).
 
 % Setting end.
 end(R, T, gt) :- doing(R, T, gt-1, 1), not update(R, T, gt, _).
+
+% Update robot location.
+% Set robot location to location of the task it just finished. (This seems reasonable.)
+location(R, L, gt) :- end(R, T, gt), location(T, L).
+% In the moment a robot starts a task we do not store its location.
+location(R, L, gt) :- not begin(R, _, gt), location(R, L, gt-1).
 
 % Max one robot per task.
 :- 2 { doing(R, T, gt, _) : robot(R, gt) }, toBeDone(T, gt).
