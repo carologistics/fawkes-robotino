@@ -252,7 +252,7 @@ AspPlanerThread::initClingo(void)
  * @return An array with the center points. Zone i is in the element [i]. [0] is kept "empty".
  * @todo Why can't we modify the array as constexpr?
  */
-static auto
+/*static auto
 calculateZoneCoords(void) noexcept
 {
 	std::array<float[2], 25> ret{};
@@ -275,7 +275,7 @@ calculateZoneCoords(void) noexcept
 	} //for ( int i = 0; i < 24; ++i )
 
 	return ret;
-}
+}*/
 
 /**
  * @brief Does the loop for clingo.
