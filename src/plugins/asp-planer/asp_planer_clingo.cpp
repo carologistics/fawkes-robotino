@@ -678,12 +678,11 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 
 /**
  * @brief Sets the team for the solver.
- * @param[in] cyan If the team color is cyan.
  */
 void
-AspPlanerThread::setTeam(const bool cyan)
+AspPlanerThread::setTeam(void)
 {
-	Clingo::SymbolVector param(1, Clingo::String(cyan ? "C" : "M"));
+	Clingo::SymbolVector param(1, Clingo::String(TeamColor));
 	queueGround({"ourTeam", param, false}, InterruptSolving::Critical);
 
 	fillNavgraphNodesForASP();

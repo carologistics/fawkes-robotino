@@ -172,9 +172,8 @@ AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
 
 		if ( color != "nil" )
 		{
-			const auto cyan = color == "CYAN";
-			setTeam(cyan);
-			TeamColor = cyan ? "C" : "M";
+			TeamColor = color == "CYAN" ? "C" : "M";
+			setTeam();
 		} //if ( color != "nil" )
 	} //try
 	catch ( const std::exception& e )

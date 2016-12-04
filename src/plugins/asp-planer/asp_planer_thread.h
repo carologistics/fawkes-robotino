@@ -145,7 +145,7 @@ class AspPlanerThread
 	void groundFunctions(const Clingo::Location& loc, char const *name, const Clingo::SymbolSpan& arguments,
 		Clingo::SymbolSpanCallback& retFunction);
 
-	void setTeam(const bool cyan);
+	void setTeam(void);
 	void unsetTeam(void);
 
 	void newTeamMate(const std::string& mate, const RobotInformation& info);
