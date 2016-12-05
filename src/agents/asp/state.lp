@@ -61,7 +61,10 @@ toBeDone(T, gt) :- toBeDone(T, gt-1), not end(_, T, gt).
 % Our goal.
 #maximize{ P@2,T,GT : begin(_, T, GT), points(T, P), horizon(gt) }.
 
-#minimize{ GT@1,T : begin(_, T, GT), task(T) }.
+#heuristic begin(_,T,GT). [GT,false]
+%#heuristic begin(_,T,GT). [-1,sign]
+
+%#minimize{ GT@1,T : begin(_, T, GT), task(T) }.
 
 % Called to update the time estimation for a robot. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program update(r, t, gt, d).
