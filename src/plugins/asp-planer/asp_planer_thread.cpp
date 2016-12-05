@@ -72,6 +72,12 @@ using namespace fawkes;
  *
  * @property AspPlanerThread::RobotInformations
  * @brief The robot information in a lookup table.
+ *
+ * @property AspPlanerThread::RobotTaskBegin
+ * @brief Saves when a robot has begun a task, so we can fix this in the asp program.
+ *
+ * @property AspPlanerThread::RobotTaskEnd
+ * @brief Saves when a robot has finished a task, so we can fix this in the asp program.
  */
 
 /**
@@ -230,7 +236,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPPlaner", "ASP-Planer"),
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr), MoreModels(false),
-		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0),
+		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0), Past(0),
 		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false), TimeResolution(1), MaxDriveDuration(0),
 		Unsat(false), UpdateNavgraphDistances(false),
 		Interrupt(InterruptSolving::Not), SentCancel(false)
@@ -280,24 +286,6 @@ AspPlanerThread::init()
 	initClingo();
 	return;
 }
-
-namespace std {
-
-/**
- * @brief Helper class to instantiate a std::unordered_map with a std::pair as key.
- */
-template<typename T1, typename T2>
-struct hash<pair<T1, T2>>
-{
-	auto operator()(const pair<T1, T2>& pair) const
-		noexcept(noexcept(hash<T1>{}(pair.first) && noexcept(hash<T2>{}(pair.second))))
-	{
-		//Is this a good hash?
-		return hash<T1>{}(pair.first) << 16 ^ hash<T2>{}(pair.second);
-	}
-};
-}
-
 
 void
 AspPlanerThread::loop()

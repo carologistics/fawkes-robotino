@@ -66,4 +66,18 @@ toBeDone(T, gt) :- toBeDone(T, gt-1), not end(_, T, gt).
 % Called to update the time estimation for a robot. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program update(r, t, gt, d).
 update(r, t, gt, d).
+:- begin(r, T, gt), T != t.
 
+#program begun(r, t, gt).
+:- not begin(r, t, gt).
+:- begin(R, t, _), R != r.
+
+#program ended(r, t, gt).
+end(r, t, gt).
+
+#program past(r, gt).
+:- begin(r, _, gt).
+:- update(r, _, gt, _).
+
+#program past(gt).
+:- horizon(gt).
