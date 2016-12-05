@@ -800,7 +800,7 @@ AspPlanerThread::newTeamMate(const std::string& mate, const RobotInformation& in
 	queueGround({"addRobot", params, true}, InterruptSolving::Critical);
 
 	params.emplace(params.begin() + 1, NavgraphNodesForASP.find(node.name())->second);
-	queueGround({"setRobotLocation", params, false});
+	queueGround({"setRobotLocation", params, true});
 	return;
 }
 
