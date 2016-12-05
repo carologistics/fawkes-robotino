@@ -107,6 +107,8 @@ class AspPlanerThread
 	unsigned int TimeResolution;
 	unsigned int MaxDriveDuration;
 
+	bool Unsat;
+
 	bool UpdateNavgraphDistances;
 	std::vector<Clingo::Symbol> NavgraphDistances;
 	std::unordered_map<std::string, Clingo::Symbol> NavgraphNodesForASP;

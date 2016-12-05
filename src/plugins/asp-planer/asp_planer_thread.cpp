@@ -64,6 +64,9 @@ using namespace fawkes;
  * @property AspPlanerThread::RobotMemoryCallbacks
  * @brief Contains all registered callbacks in the robot memory.
  *
+ * @property AspPlanerThread::Unsat
+ * @brief The program was unsatisfiable.
+ *
  * @property AspPlanerThread::Robots
  * @brief The robot information in a lookup table.
  */
@@ -226,7 +229,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr), MoreModels(false),
 		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0),
 		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false), TimeResolution(1), MaxDriveDuration(0),
-		UpdateNavgraphDistances(false),
+		Unsat(false), UpdateNavgraphDistances(false),
 		Interrupt(InterruptSolving::Not), SentCancel(false)
 {
 	//We don't expect more than 3 robots.
@@ -296,6 +299,11 @@ struct hash<pair<T1, T2>>
 void
 AspPlanerThread::loop()
 {
+	if ( Unsat )
+	{
+		throw fawkes::Exception("The program is infeasable! We have no way to recover!");
+	} //if ( Unsat )
+
 	{
 		MutexLocker locker(&RobotsMutex);
 		const auto now(clock->now());

@@ -602,7 +602,7 @@ AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 {
 	if ( result.is_unsatisfiable() )
 	{
-		throw fawkes::Exception("The program is infeasable! We have no way to recover!");
+		Unsat = true;
 	} //if ( result.is_unsatisfiable() )
 	return;
 }
