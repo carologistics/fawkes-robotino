@@ -80,6 +80,9 @@ using fawkes::MutexLocker;
  * @property AspPlanerThread::Horizon
  * @brief The horizon, up to which point (measured in gametime in seconds) the planer should plan.
  *
+ * @property AspPlanerThread::Past
+ * @brief Up to which point the past has been fixed.
+ *
  * @property AspPlanerThread::LastModel
  * @brief When the last model was found, i.e. how old is our plan.
  *
@@ -315,7 +318,7 @@ AspPlanerThread::loopClingo(void)
 			NavgraphDistances.clear();
 			loadFilesAndGroundBase(aspLocker);
 			fillNavgraphNodesForASP();
-			Horizon = 0;
+			Horizon = Past = 0;
 			UpdateNavgraphDistances = true;
 		} //if ( CompleteRestart )
 
@@ -354,6 +357,9 @@ AspPlanerThread::loopClingo(void)
 	Clingo::SymbolSpan horizonSpan(&horizonValueSymbol, 1);
 	Clingo::Symbol horizonSymbol = Clingo::Function("horizon", horizonSpan);
 	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::False);
+
+	//Handle the past.
+	setPast();
 
 	//Set the new horizon.
 	const auto oldHorizon(std::move(Horizon));
@@ -559,6 +565,65 @@ AspPlanerThread::updateNavgraphDistances()
 			setDuration();
 		} //for ( auto to = from; ++to != end; )
 	} //for ( auto from = NavgraphDistances.begin(); from != end; ++from )
+	return;
+}
+
+/**
+ * @brief Sets the past for the program, i.e. releases externals we know their status and sets if a robot doesn't begin
+ *        or end a task.
+ * @note Assumes ClingoAcc as locked.
+ */
+void
+AspPlanerThread::setPast()
+{
+	//How many seconds of the past we still keep open to receive messages from the robots.
+	constexpr decltype(GameTime) variablePast = 8;
+
+	if ( GameTime <= variablePast )
+	{
+		//There is nothing we could ever fix.
+		return;
+	} //if ( GameTime <= variablePast )
+
+	//-1 for
+	const auto fixUpTo = GameTime - variablePast;
+	if ( fixUpTo <= Past )
+	{
+		//Nothing new to fix.
+		return;
+	} //if ( fixUpTo <= Past )
+
+	static const auto robotVector([this](void)
+		{
+			std::vector<Clingo::Symbol> ret;
+			ret.reserve(Robots.size());
+			for ( const auto& robot : Robots )
+			{
+				ret.emplace_back(Clingo::String(robot.c_str()));
+			} //for ( const auto& robot : Robots )
+			return ret;
+		}());
+	std::vector<Clingo::Part> parts;
+	parts.reserve(Robots.size() * (fixUpTo - Past));
+
+	MutexLocker locker(&RobotsMutex);
+	for ( auto t = Past; t <= fixUpTo; ++t )
+	{
+		const auto number = Clingo::Number(t);
+		parts.emplace_back("past", Clingo::SymbolSpan{number});
+
+		for ( const auto& robot : robotVector )
+		{
+			if ( !RobotTaskBegin.count({robot, t}) )
+			{
+				parts.emplace_back("past", Clingo::SymbolSpan{robot, number});
+			} //if ( !RobotTaskBegin.count({robot, t}) )
+		} //for ( const auto& robot : robotVector )
+	} //for ( auto t = Past; t <= fixUpTo; ++t )
+	locker.unlock();
+
+	ClingoAcc->ground(parts);
+	Past = fixUpTo;
 	return;
 }
 

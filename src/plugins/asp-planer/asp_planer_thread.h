@@ -75,6 +75,23 @@ struct RobotInformation
 	float Y;
 };
 
+namespace std {
+
+/**
+ * @brief Helper class to instantiate a std::unordered_map with a std::pair as key.
+ */
+template<typename T1, typename T2>
+struct hash<pair<T1, T2>>
+{
+	auto operator()(const pair<T1, T2>& pair) const
+		noexcept(noexcept(hash<T1>{}(pair.first) && noexcept(hash<T2>{}(pair.second))))
+	{
+		//Is this a good hash?
+		return hash<T1>{}(pair.first) << 16 ^ hash<T2>{}(pair.second);
+	}
+};
+}
+
 class AspPlanerThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
@@ -99,6 +116,7 @@ class AspPlanerThread
 	unsigned int LastTick;
 	unsigned int GameTime;
 	unsigned int Horizon;
+	unsigned int Past;
 	fawkes::Time SolvingStarted;
 	fawkes::Time LastModel;
 	unsigned int MachinesFound;
@@ -123,6 +141,8 @@ class AspPlanerThread
 
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
+	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Symbol> RobotTaskBegin;
+	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Symbol> RobotTaskEnd;
 
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;
@@ -139,6 +159,7 @@ class AspPlanerThread
 	void loadFilesAndGroundBase(fawkes::MutexLocker& locker);
 
 	void updateNavgraphDistances(void);
+	void setPast(void);
 
 	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
 	void releaseExternals(RobotInformation &info, const bool lock = true);
