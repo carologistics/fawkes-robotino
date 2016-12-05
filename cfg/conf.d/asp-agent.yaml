@@ -1,7 +1,7 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
+#doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 asp-agent:
   planer:
@@ -9,12 +9,17 @@ asp-agent:
     more-models: true #false
 
     program-path: ../src/agents/asp/
-    program-files: [constants.lp, exploration.lp, facts.lp, robot.lp, state.lp]
+    program-files: [facts.lp, robot.lp, state.lp]
+    exploration-files: [exploration.lp]
 
     #Look ahaed in real time seconds.
     look-ahaed: 300
     #How many real time seconds should be one time unit for the ASP solver.
     time-resolution: 5
+    #How many robot adding and removing events there are expected at most.
+    max-ticks: 25
+    #Names of possible used robots.
+    robots: [Tuvok,T'Pol,Spock]
 
   #Time estimations for tasks, given in real time seconds.
   time-estimations:

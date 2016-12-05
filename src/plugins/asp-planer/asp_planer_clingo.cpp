@@ -453,15 +453,19 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 		ClingoAcc->loadFile(path + file);
 	} //for ( const auto& file : files )
 
+	if ( StillNeedExploring )
+	{
+		std::strcpy(suffix, "exploration-files");
+		const auto files = config->get_strings(buffer);
+		for ( const auto& file : files )
+		{
+			ClingoAcc->loadFile(path + file);
+		} //for ( const auto& file : files )
+	} //if ( StillNeedExploring )
+
 	auto symbol(Clingo::Number(0));
 	ClingoAcc->ground({Clingo::Part("base", Clingo::SymbolSpan())});
 	ClingoAcc->ground({Clingo::Part("transition", Clingo::SymbolSpan(&symbol, 1))});
-
-	if ( StillNeedExploring )
-	{
-		ClingoAcc->ground({Clingo::Part("explore", Clingo::SymbolSpan())});
-		ClingoAcc->ground({Clingo::Part("explorationTransition", Clingo::SymbolSpan(&symbol, 1))});
-	} //if ( StillNeedExploring )
 
 	//We have to unlock, to prevent a deadlock in newModel.
 	locker.unlock();
