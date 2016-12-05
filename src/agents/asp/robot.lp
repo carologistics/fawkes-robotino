@@ -1,4 +1,4 @@
-robot("Tuvok";"T'Pol";"Spock").
+robot(@robots()).
 
 #program addRobot(r, gt, t).
 robot(r, gt, t).
@@ -11,8 +11,8 @@ location(r, l, gt).
 
 #program transition(gt).
 
-#external robot(R, gt, T)     : robot(R), T = 0..maxTicks.
-#external killRobot(R, gt, T) : robot(R), T = 0..maxTicks.
+#external robot(R, gt, T)          : robot(R), T = 0..@maxTicks().
+#external killRobot(R, gt, T)      : robot(R), T = 0..@maxTicks().
 
 robot(R, gt) :- robot(R, gt, _), not killRobot(R, gt, _).
 robot(R, gt) :- robot(R, gt, T1), killRobot(R, gt, T2), T1 > T2.

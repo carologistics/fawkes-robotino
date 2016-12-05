@@ -101,6 +101,9 @@ using fawkes::MutexLocker;
  * @property AspPlanerThread::MaxDriveDuration
  * @brief The maximum we expect a robot needs for driving to some point.
  *
+ * @property AspPlanerThread::Robots
+ * @brief The robots that are available.
+ *
  *
  * @property AspPlanerThread::UpdateNavgraphDistances
  * @brief If the distances between the known locations should be recalculated. (Because the navgraph was changed.)
@@ -128,6 +131,9 @@ using fawkes::MutexLocker;
  * @brief Stores everything we have to add to the solver for the next iteration.
  */
 
+/**
+ * @brief Fill the NavgraphNodesForASP with the nodes we export to ASP.
+ */
 void
 AspPlanerThread::fillNavgraphNodesForASP(void)
 {
@@ -161,12 +167,14 @@ AspPlanerThread::fillNavgraphNodesForASP(void)
 	if ( StillNeedExploring )
 	{
 		//! @todo Do we need nodes for the zones? (I think yes.)
+		const auto dummyNode = std::string(TeamColor) + "-ins-out";
 //		static const auto zones(calculateZoneCoords());
 //		MutexLocker locker(navgraph.objmutex_ptr());
-//		for ( auto zone = 1; zone <= 24; ++zone )
-//		{
+		for ( auto zone = 1; zone <= 24; ++zone )
+		{
+			NavgraphNodesForASP.insert({dummyNode, Clingo::Function("z", {Clingo::Number(zone)})});
 //			const auto node = navgraph->closest_node(zones[zone][0], zones[zone][1], false, NodePropertyASP);
-//		} //for ( auto zone = 1; zone <= 24; ++zone )
+		} //for ( auto zone = 1; zone <= 24; ++zone )
 	} //if ( StillNeedExploring )
 	return;
 }
@@ -239,6 +247,8 @@ AspPlanerThread::initClingo(void)
 	LookAhaed = config->get_uint(buffer);
 	std::strcpy(suffix, "time-resolution");
 	TimeResolution = config->get_uint(buffer);
+	std::strcpy(suffix, "robots");
+	Robots = config->get_strings(buffer);
 
 	std::strcpy(buffer + prefixLen, "time-estimations/max-drive-duration");
 	MaxDriveDuration = config->get_uint(buffer);
@@ -304,72 +314,14 @@ AspPlanerThread::loopClingo(void)
 			ClingoAcc->reset();
 			NavgraphDistances.clear();
 			loadFilesAndGroundBase(aspLocker);
+			fillNavgraphNodesForASP();
 			Horizon = 0;
 			UpdateNavgraphDistances = true;
 		} //if ( CompleteRestart )
 
 		if ( UpdateNavgraphDistances )
 		{
-			UpdateNavgraphDistances = false;
-			for ( const auto& distance : NavgraphDistances )
-			{
-				ClingoAcc->release_external(distance);
-			} //for ( const auto& distance : NavgraphDistances )
-
-			NavgraphDistances.clear();
-			MutexLocker locker(navgraph.objmutex_ptr());
-
-			auto distanceToDuration = [this](const float distance) noexcept {
-					//! @todo Werte holen!
-					constexpr unsigned int constantCosts = 4;
-					constexpr unsigned int costPerDistance = 2;
-					return std::min(constantCosts + static_cast<unsigned int>(distance * costPerDistance),
-						MaxDriveDuration);
-				};
-
-			const auto end = NavgraphNodesForASP.end();
-			for ( auto from = NavgraphNodesForASP.begin(); from != end; ++from )
-			{
-				const auto& fromNode = navgraph->node(from->first);
-				for ( auto to = from; ++to != end; )
-				{
-					const auto& toNode = navgraph->node(to->first);
-
-					/* If we use invalid nodes or don't find a path take a bug number for the duration.
-					 * This is done because initally the nav graph is not connected and we wouldn't set durations. By
-					 * that the ASP solver wouldn't assign tasks, because it could not calculate the estimated time
-					 * for the tasks.
-					 * The default value should be an upper bound on the driving duration a robot would take without
-					 * mobile obstacles, i.e. drive from one end of the field to the other side, possibly around
-					 * machines, but there is no replanning because of other robots.
-					 */
-					auto findDuration = [this,&toNode,&fromNode,distanceToDuration](void) {
-							if ( fromNode.is_valid() && toNode.is_valid() )
-							{
-								const auto path = navgraph->search_path(fromNode, toNode);
-								if ( !path.empty() )
-								{
-									return distanceToDuration(path.cost());
-								} //if ( !path.empty() )
-							} //if ( fromNode.is_valid() && toNode.is_valid() )
-							return 60u;
-						};
-
-					if ( !toNode.is_valid() )
-					{
-						continue;
-					} //if ( !toNode.is_valid() )
-
-					const auto duration = realGameTimeToAspGameTime(findDuration());
-
-					Clingo::Symbol arguments[3] = {from->second, to->second, Clingo::Number(duration)};
-					NavgraphDistances.emplace_back(Clingo::Function("drivingDuration", {arguments, 3}));
-					ClingoAcc->assign_external(NavgraphDistances.back(), Clingo::TruthValue::True);
-					std::swap(arguments[0], arguments[1]);
-					NavgraphDistances.emplace_back(Clingo::Function("drivingDuration", {arguments, 3}));
-					ClingoAcc->assign_external(NavgraphDistances.back(), Clingo::TruthValue::True);
-				} //for ( auto to = from; ++to != end; )
-			} //for ( auto from = NavgraphDistances.begin(); from != end; ++from )
+			updateNavgraphDistances();
 		} //if ( UpdateNavgraphDistances )
 	} //if ( CompleteRestart || UpdateNavgraphDistances )
 	else if ( Requests.empty() )
@@ -387,6 +339,7 @@ AspPlanerThread::loopClingo(void)
 	reqLocker.unlock();
 
 	std::vector<Clingo::Part> parts;
+	parts.reserve(requests.size());
 	for ( GroundRequest& request : requests )
 	{
 		parts.emplace_back(request.Name, request.Params);
@@ -395,17 +348,18 @@ AspPlanerThread::loopClingo(void)
 	//We are not allowed to clear requests before grounding! The params are just stored as "pointers".
 	ClingoAcc->ground(parts);
 	parts.clear();
-	reqLocker.unlock();
 
+	//Unset the old horizon.
 	Clingo::Symbol horizonValueSymbol = Clingo::Number(Horizon);
 	Clingo::SymbolSpan horizonSpan(&horizonValueSymbol, 1);
 	Clingo::Symbol horizonSymbol = Clingo::Function("horizon", horizonSpan);
 	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::False);
 
-	//Cap the horizon at game end.
+	//Set the new horizon.
 	const auto oldHorizon(std::move(Horizon));
 	//Use a fixed look ahaed of one minute for the exploration phase.
-	const auto usedLookAhaed = StillNeedExploring ? 60 : LookAhaed;
+	const auto usedLookAhaed = StillNeedExploring ? 90u : LookAhaed;
+	//Cap the horizon at game end.
 	Horizon = realGameTimeToAspGameTime(std::min(GameTime + usedLookAhaed, (15 + 4) * 60u));
 	horizonValueSymbol = Clingo::Number(Horizon);
 	horizonSymbol = Clingo::Function("horizon", horizonSpan);
@@ -413,15 +367,11 @@ AspPlanerThread::loopClingo(void)
 
 	parts.reserve(Horizon - oldHorizon);
 	Clingo::SymbolVector symbols;
-	symbols.reserve((Horizon - oldHorizon) * (StillNeedExploring ? 2 : 1));
+	symbols.reserve(Horizon - oldHorizon);
 	for ( auto i = oldHorizon + 1; i <= Horizon; ++i )
 	{
 		symbols.emplace_back(Clingo::Number(i));
 		parts.emplace_back("transition", Clingo::SymbolSpan(&symbols.back(), 1));
-		if ( StillNeedExploring )
-		{
-			parts.emplace_back("explorationTransition", Clingo::SymbolSpan(&symbols.back(), 1));
-		} //if ( StillNeedExploring )
 	} //for ( auto i = oldHorizon + 1; i <= Horizon; ++i )
 
 	ClingoAcc->ground(parts);
@@ -517,6 +467,94 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 	locker.unlock();
 	ClingoAcc->startSolvingBlocking();
 	locker.relock();
+	return;
+}
+
+/**
+ * @brief Updates the navgraph distances.
+ * @note Assumes, that ClingoAcc is locked.
+ */
+void
+AspPlanerThread::updateNavgraphDistances()
+{
+	UpdateNavgraphDistances = false;
+	for ( const auto& distance : NavgraphDistances )
+	{
+		ClingoAcc->assign_external(distance, Clingo::TruthValue::Free);
+	} //for ( const auto& distance : NavgraphDistances )
+
+	NavgraphDistances.clear();
+	NavgraphDistances.reserve(NavgraphNodesForASP.size() * (NavgraphNodesForASP.size() - 1));
+	MutexLocker locker(navgraph.objmutex_ptr());
+
+	auto distanceToDuration = [this](const float distance) noexcept
+		{
+			//! @todo Werte holen!
+			constexpr unsigned int constantCosts = 4;
+			constexpr unsigned int costPerDistance = 2;
+			return std::min(constantCosts + static_cast<unsigned int>(distance * costPerDistance),
+				MaxDriveDuration);
+		};
+
+	const auto end = NavgraphNodesForASP.end();
+	for ( auto from = NavgraphNodesForASP.begin(); from != end; ++from )
+	{
+		const auto& fromNode = navgraph->node(from->first);
+		for ( auto to = from; ++to != end; )
+		{
+			const auto& toNode = navgraph->node(to->first);
+
+			/* If we use invalid nodes or don't find a path take a bug number for the duration.
+			 * This is done because initally the nav graph is not connected and we wouldn't set durations. By
+			 * that the ASP solver wouldn't assign tasks, because it could not calculate the estimated time
+			 * for the tasks.
+			 * The default value should be an upper bound on the driving duration a robot would take without
+			 * mobile obstacles, i.e. drive from one end of the field to the other side, possibly around
+			 * machines, but there is no replanning because of other robots.
+			 */
+			auto findDuration = [this,&toNode,&fromNode,distanceToDuration](void) {
+					if ( fromNode.is_valid() && toNode.is_valid() )
+					{
+						const auto path = navgraph->search_path(fromNode, toNode);
+						if ( !path.empty() )
+						{
+							return distanceToDuration(path.cost());
+						} //if ( !path.empty() )
+					} //if ( fromNode.is_valid() && toNode.is_valid() )
+					return MaxDriveDuration;
+				};
+
+			const auto duration = realGameTimeToAspGameTime(findDuration());
+
+			Clingo::Symbol arguments[3] = {from->second, to->second, Clingo::Number(duration)};
+
+			std::function<void(void)> setDuration;
+			if ( StillNeedExploring )
+			{
+				setDuration = [this,&arguments](void)
+				{
+					NavgraphDistances.emplace_back(Clingo::Function("driveDuration", {arguments, 3}));
+					ClingoAcc->assign_external(NavgraphDistances.back(), Clingo::TruthValue::True);
+					return;
+				};
+			} //if ( StillNeedExploring )
+			else
+			{
+				setDuration = [this,&arguments](void)
+				{
+					Clingo::SymbolVector vec(sizeof(arguments) / sizeof(arguments[0]));
+					std::copy(std::begin(arguments), std::end(arguments), vec.begin());
+					queueGround(GroundRequest{"setDuration", vec});
+					return;
+				};
+			} //else -> if ( StillNeedExploring )
+
+			setDuration();
+
+			std::swap(arguments[0], arguments[1]);
+			setDuration();
+		} //for ( auto to = from; ++to != end; )
+	} //for ( auto from = NavgraphDistances.begin(); from != end; ++from )
 	return;
 }
 
@@ -656,6 +694,43 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxDriveDuration))});
 				return;
 			} //else if ( view == "maxDriveDuration" )
+			else if ( view == "robots" )
+			{
+				static const auto robots = [this](void) {
+						Clingo::SymbolVector ret;
+						ret.reserve(Robots.size());
+
+						for ( const auto& robot : Robots )
+						{
+							ret.emplace_back(Clingo::String(robot.c_str()));
+						} //for ( const auto& robot : Robots )
+						return ret;
+					}();
+				retFunction({robots.data(), robots.size()});
+				return;
+			} //else if ( view == "robots" )
+			else if ( view == "maxTicks" )
+			{
+				static const unsigned int ticks = [this](void) {
+						char buffer[std::strlen(ConfigPrefix) + 20];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-ticks");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(ticks)});
+				return;
+			} //else if ( view == "maxTicks" )
+			else if ( view == "maxTaskDuration" )
+			{
+				static const unsigned int dur = [this](void) {
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/max-task-duration");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
+				return;
+			} //else if ( view == "maxTaskDuration" )
 			break;
 		} //case 0
 	} //switch ( arguments.size() )

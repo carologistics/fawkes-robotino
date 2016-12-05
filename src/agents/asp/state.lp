@@ -17,17 +17,17 @@
 % duration(R, T, GT, D): Task T should be done in D seconds from robot R at gametime GT. This includes the time for getting there.
 % update(R, T, GT, D): Update the time estimation for robot R on Task T at GT to D time units.
 
+#external driveDuration(L1, L2, D) : location(L1), location(L2), D = 0..@maxDriveDuration().
+
 % Called for every gametime we like to consider. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program transition(gt).
 
-#external update(R, T, gt, D)      : robot(R, gt), task(T), D = 1..maxDuration.
-#external toBeDone(T, gt)          : task(T).
-#external success(T, gt)           : task(T).
-#external location(R, L, gt)       : robot(R, gt), location(L).
-#external driveDuration(L1, L2, D) : location(L1), location(L2), D = 1..@maxDriveDuration().
+#external update(R, T, gt, D) : robot(R), task(T), D = 0..@maxTaskDuration().
+#external toBeDone(T, gt)     : task(T).
+#external success(T, gt)      : task(T).
 
 % Can start at max one task and only if not doing something else right now.
-{ begin(R, T, gt) : task(T) } 1 :- robot(R, gt), possible(R, T, gt), toBeDone(T, gt).
+{ begin(R, T, gt) : toBeDone(T, gt) } 1 :- location(R, _, gt), possible(R, T, gt).
 
 % Initialize and update doing.
 doing(R, T, gt, D) :- begin(R, T, gt), duration(R, T, gt, D).
@@ -35,7 +35,8 @@ doing(R, T, gt, D) :- doing(R, T, gt-1, D+1), D > 0, not update(R, T, gt, _).
 doing(R, T, gt, D) :- update(R, T, gt, D).
 
 % Setting end.
-end(R, T, gt) :- doing(R, T, gt-1, 1), not update(R, T, gt, _).
+end(R, T, gt) :- doing(R, T, gt-1, 1), not update(R, T, gt, D), D = 1..@maxTaskDuration().
+end(R, T, gt) :- update(R, T, gt, 0).
 
 % Update robot location.
 % Set robot location to location of the task it just finished. (This seems reasonable.)
@@ -49,7 +50,7 @@ location(R, L, gt) :- not begin(R, _, gt), location(R, L, gt-1).
 :- 2 { doing(R, T, gt, _) : toBeDone(T, gt) }, robot(R, gt).
 
 % Calculate complete duration per robot.
-duration(R, T, gt, D) :- robot(R, gt), task(T), duration(T, TD), location(T, TL), driveDuration(R, TL, DD), D = TD + DD.
+duration(R, T, gt, D) :- toBeDone(T, gt), duration(T, TD), location(T, TL), location(R, RL, gt), driveDuration(RL, TL, DD), D = TD + DD.
 
 % Update Task status.
 toBeDone(T, gt) :- toBeDone(T, gt-1), not end(_, T, gt).

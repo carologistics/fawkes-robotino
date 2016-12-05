@@ -106,12 +106,14 @@ class AspPlanerThread
 	bool CompleteRestart;
 	unsigned int TimeResolution;
 	unsigned int MaxDriveDuration;
+	std::vector<std::string> Robots;
 
 	bool Unsat;
 
 	bool UpdateNavgraphDistances;
 	std::vector<Clingo::Symbol> NavgraphDistances;
-	std::unordered_map<std::string, Clingo::Symbol> NavgraphNodesForASP;
+	//As long as we don't have nodes for the zones we need a multimap.
+	std::unordered_multimap<std::string, Clingo::Symbol> NavgraphNodesForASP;
 	static constexpr auto NodePropertyASP = "ASP-Location";
 
 	fawkes::Mutex RequestMutex;
@@ -120,7 +122,7 @@ class AspPlanerThread
 	std::vector<GroundRequest> Requests;
 
 	fawkes::Mutex RobotsMutex;
-	std::unordered_map<std::string, RobotInformation> Robots;
+	std::unordered_map<std::string, RobotInformation> RobotInformations;
 
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;
@@ -135,6 +137,8 @@ class AspPlanerThread
 	void finalizeClingo(void);
 	bool interruptSolving(void) const noexcept;
 	void loadFilesAndGroundBase(fawkes::MutexLocker& locker);
+
+	void updateNavgraphDistances(void);
 
 	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
 	void releaseExternals(RobotInformation &info, const bool lock = true);

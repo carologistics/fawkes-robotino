@@ -67,7 +67,10 @@ using namespace fawkes;
  * @property AspPlanerThread::Unsat
  * @brief The program was unsatisfiable.
  *
- * @property AspPlanerThread::Robots
+ * @property AspPlanerThread::RobotsMutex
+ * @brief The mutex for the robots information.
+ *
+ * @property AspPlanerThread::RobotInformations
  * @brief The robot information in a lookup table.
  */
 
@@ -84,12 +87,12 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 		const std::string name(object["name"].String());
 		bool newRobot = false;
 		MutexLocker locker(&RobotsMutex);
-		if ( !Robots.count(name) )
+		if ( !RobotInformations.count(name) )
 		{
 			newRobot = true;
-		} //if ( !Robots.count(name) )
+		} //if ( !RobotInformations.count(name) )
 		const auto& time(object["last-seen"].Array());
-		const auto& info = Robots[name] = {Time(time.at(0).Long(), time.at(1).Long()),
+		const auto& info = RobotInformations[name] = {Time(time.at(0).Long(), time.at(1).Long()),
 			static_cast<float>(object["x"].Double()), static_cast<float>(object["y"].Double())};
 		if ( newRobot )
 		{
@@ -308,21 +311,21 @@ AspPlanerThread::loop()
 		MutexLocker locker(&RobotsMutex);
 		const auto now(clock->now());
 		static const Time timeOut(10, 0);
-		auto iter = Robots.begin();
-		while ( iter != Robots.end() )
+		auto iter = RobotInformations.begin();
+		while ( iter != RobotInformations.end() )
 		{
 			if ( now - iter->second.LastSeen >= timeOut )
 			{
 				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", iter->first.c_str());
 				releaseExternals(iter->second);
 				deadTeamMate(iter->first);
-				iter = Robots.erase(iter);
+				iter = RobotInformations.erase(iter);
 			} //if ( now - iter->second.LastSeen >= timeOut )
 			else
 			{
 				++iter;
 			} //else -> if ( now - iter->second.LastSeen >= timeOut )
-		} //while ( iter != Robots.end() )
+		} //while ( iter != RobotInformations.end() )
 	} //Block for iteration over Robots
 
 	{
