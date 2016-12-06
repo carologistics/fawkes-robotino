@@ -15,3 +15,11 @@
   (retract ?f)
 )
 
+(deftemplate planElement
+  (slot robot (type STRING))
+  (slot index (type INTEGER))
+  (slot task (type STRING))
+  (slot begin (type INTEGER))
+  (slot end (type INTEGER))
+  (slot sync-id (type INTEGER) (default 0))
+)
