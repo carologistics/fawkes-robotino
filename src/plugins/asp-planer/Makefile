@@ -18,7 +18,7 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
 
 LIBS_asp_planer = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory fawkesnavgraphaspect
-OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_clingo.o
+OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_clingo.o asp_planer_plan.o
 
 OBJS_all = $(OBJS_asp_planer)
 
