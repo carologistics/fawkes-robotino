@@ -28,23 +28,6 @@
 using namespace fawkes;
 
 /**
- * @struct PlanElement
- * @brief An element of the plan.
- *
- * @property PlanElement::Robot
- * @brief The robot name for the task.
- *
- * @property PlanElement::Task
- * @brief The task with it's parameters.
- *
- * @property PlanElement::Begin
- * @brief The game time on which the task should start.
- *
- * @property PlanElement::End
- * @brief The estimated end time for the task, if available. If not it is set to zero.
- */
-
-/**
  * @struct RobotInformation
  * @brief Stores information for a robot.
  *
