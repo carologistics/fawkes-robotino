@@ -316,39 +316,7 @@ AspPlanerThread::loop()
 		} //while ( iter != RobotInformations.end() )
 	} //Block for iteration over Robots
 
-	{
-		MutexLocker symbolLocker(&SymbolMutex);
-		if ( NewSymbols )
-		{
-			std::unordered_map<std::pair<std::string, std::string>, std::pair<unsigned int, unsigned int>> map;
-			for ( const auto& symbol : Symbols )
-			{
-				const bool begin = std::strcmp(symbol.name(), "begin") == 0,
-					end = std::strcmp(symbol.name(), "end") == 0;
-				if ( begin || end )
-				{
-					const auto args(symbol.arguments());
-					auto& pair = map[{args[0].to_string(), args[1].to_string()}];
-					if ( begin )
-					{
-						pair.first = args[2].number();
-					} //if ( begin )
-					else
-					{
-						pair.second = args[2].number();
-					} //else -> if ( begin )
-				} //if ( begin || end )
-			} //for ( const auto& symbol : Symbols )
-
-			logger->log_info(LoggingComponent, "Plan size: %d", map.size());
-			for ( const auto& pair : map )
-			{
-				logger->log_info(LoggingComponent, "Plan element: (%s, %s, %d, %d)",
-					pair.first.first.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
-			} //for ( const auto& pair : map )
-			NewSymbols = false;
-		} //if ( NewSymbols )
-	} //Block fot the plan extraction.
+	loopPlan();
 	loopClingo();
 	return;
 }

@@ -126,6 +126,8 @@ class AspPlanerThread
 	unsigned int MaxDriveDuration;
 	std::vector<std::string> Robots;
 
+	fawkes::Time LastPlan;
+
 	bool Unsat;
 
 	bool UpdateNavgraphDistances;
@@ -184,6 +186,8 @@ class AspPlanerThread
 	void gameTimeCallback(const mongo::BSONObj document);
 	void teamColorCallback(const mongo::BSONObj document);
 	void zonesCallback(const mongo::BSONObj document);
+
+	void loopPlan(void);
 
 	public:
 	AspPlanerThread(void);
