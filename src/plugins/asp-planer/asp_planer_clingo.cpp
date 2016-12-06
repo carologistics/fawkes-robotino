@@ -485,7 +485,7 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
  * @note Assumes, that ClingoAcc is locked.
  */
 void
-AspPlanerThread::updateNavgraphDistances()
+AspPlanerThread::updateNavgraphDistances(void)
 {
 	UpdateNavgraphDistances = false;
 	for ( const auto& distance : NavgraphDistances )
@@ -494,7 +494,16 @@ AspPlanerThread::updateNavgraphDistances()
 	} //for ( const auto& distance : NavgraphDistances )
 
 	NavgraphDistances.clear();
-	NavgraphDistances.reserve(NavgraphNodesForASP.size() * (NavgraphNodesForASP.size() - 1));
+	if ( StillNeedExploring )
+	{
+		NavgraphDistances.reserve(NavgraphNodesForASP.size() * NavgraphNodesForASP.size());
+	} //if ( StillNeedExploring )
+	else
+	{
+		//Release the memory!
+		NavgraphDistances.shrink_to_fit();
+	} //else -> if ( StillNeedExploring )
+
 	MutexLocker locker(navgraph.objmutex_ptr());
 
 	auto distanceToDuration = [this](const float distance) noexcept
@@ -510,7 +519,24 @@ AspPlanerThread::updateNavgraphDistances()
 	for ( auto from = NavgraphNodesForASP.begin(); from != end; ++from )
 	{
 		const auto& fromNode = navgraph->node(from->first);
-		for ( auto to = from; ++to != end; )
+		auto start = from;
+		if ( !StillNeedExploring )
+		{
+			/* Increment the start when we are not in exploration. At least when there are no special nodes for the
+			 * zones and the starting area we need also the distances between the node X and X.
+			 *
+			 * The example why we need this:
+			 * Exploration phase started, the robot is located in zone(Z) (at least for Clingo), it gets the task to
+			 * explore Z, but because there is no driveDuration(z(Z), z(Z), _) the doing will not be set and by that
+			 * no end. Resulting in every robot has to do explore(Z) in step 0 without duration and begin another zone
+			 * in step 1.
+			 *
+			 * In the production phase something like that will most likely not happen and we can reduce the facts for
+			 * the solver and by that increase the performance.
+			 */
+			++start;
+		} //if ( !StillNeedExploring )
+		for ( auto to = start; to != end; ++to )
 		{
 			const auto& toNode = navgraph->node(to->first);
 
@@ -563,7 +589,7 @@ AspPlanerThread::updateNavgraphDistances()
 
 			std::swap(arguments[0], arguments[1]);
 			setDuration();
-		} //for ( auto to = from; ++to != end; )
+		} //for ( auto to = start; to != end; ++to )
 	} //for ( auto from = NavgraphDistances.begin(); from != end; ++from )
 	return;
 }
