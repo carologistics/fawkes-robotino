@@ -143,8 +143,9 @@ class AspPlanerThread
 
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Symbol> RobotTaskBegin;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Symbol> RobotTaskEnd;
+	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Part> RobotTaskBegin;
+	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Part> RobotTaskEnd;
+	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Part> RobotTaskUpdate;
 
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;

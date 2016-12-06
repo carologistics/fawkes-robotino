@@ -614,10 +614,10 @@ AspPlanerThread::setPast()
 
 		for ( const auto& robot : robotVector )
 		{
-			if ( !RobotTaskBegin.count({robot, t}) )
+			if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
 			{
 				parts.emplace_back("past", Clingo::SymbolSpan{robot, number});
-			} //if ( !RobotTaskBegin.count({robot, t}) )
+			} //if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
 		} //for ( const auto& robot : robotVector )
 	} //for ( auto t = Past; t <= fixUpTo; ++t )
 	locker.unlock();
