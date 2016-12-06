@@ -224,7 +224,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr), MoreModels(false),
 		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0), Past(0),
 		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false), TimeResolution(1), MaxDriveDuration(0),
-		Unsat(false), UpdateNavgraphDistances(false),
+		PlanElements(0), Unsat(false), UpdateNavgraphDistances(false),
 		Interrupt(InterruptSolving::Not), SentCancel(false)
 {
 	//We don't expect more than 3 robots.
@@ -240,7 +240,7 @@ AspPlanerThread::~AspPlanerThread(void)
 }
 
 void
-AspPlanerThread::init()
+AspPlanerThread::init(void)
 {
 	logger->log_info(LoggingComponent, "Initialize ASP Planer");
 	const auto prefixLen = std::strlen(ConfigPrefix);
@@ -269,12 +269,13 @@ AspPlanerThread::init()
 		mongo::Query(R"({"relation": "zones"})"), "robmem.planer",
 		&AspPlanerThread::zonesCallback, this));
 
+	initPlan();
 	initClingo();
 	return;
 }
 
 void
-AspPlanerThread::loop()
+AspPlanerThread::loop(void)
 {
 	if ( Unsat )
 	{
@@ -308,7 +309,7 @@ AspPlanerThread::loop()
 }
 
 void
-AspPlanerThread::finalize()
+AspPlanerThread::finalize(void)
 {
 	logger->log_info(LoggingComponent, "Finalize ASP Planer");
 	for ( const auto& callback : RobotMemoryCallbacks )

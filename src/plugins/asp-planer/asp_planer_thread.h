@@ -245,17 +245,18 @@ class AspPlanerThread
 	void teamColorCallback(const mongo::BSONObj document);
 	void zonesCallback(const mongo::BSONObj document);
 
+	void initPlan(void);
 	void loopPlan(void);
-	void updatePlanDB(const std::string& robot, const long elementIndex, const PlanElement& element);
+	void updatePlanDB(const std::string& robot, const long long elementIndex, const PlanElement& element);
 	void removeFromPlanDB(const std::string& robot, const PlanElement& element);
 
 	public:
 	AspPlanerThread(void);
 	~AspPlanerThread(void);
 
-	void init() override;
-	void loop() override;
-	void finalize() override;
+	void init(void) override;
+	void loop(void) override;
+	void finalize(void) override;
 //	bool prepare_finalize_user() override;
 
 	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
