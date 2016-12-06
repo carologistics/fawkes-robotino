@@ -600,7 +600,7 @@ AspPlanerThread::updateNavgraphDistances(void)
  * @note Assumes ClingoAcc as locked.
  */
 void
-AspPlanerThread::setPast()
+AspPlanerThread::setPast(void)
 {
 	//How many seconds of the past we still keep open to receive messages from the robots.
 	constexpr decltype(GameTime) variablePast = 8;

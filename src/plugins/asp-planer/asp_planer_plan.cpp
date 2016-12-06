@@ -22,9 +22,11 @@
 #include "asp_planer_thread.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 
 #include <core/threading/mutex_locker.h>
+#include <plugins/robot-memory/robot_memory.h>
 
 using fawkes::MutexLocker;
 
@@ -79,6 +81,17 @@ using fawkes::MutexLocker;
  */
 
 /**
+ * @brief Initalized plan elements.
+ */
+void
+AspPlanerThread::initPlan(void)
+{
+	//Clear old plan, if in db.
+	robot_memory->drop_collection("syncedrobmem.plan");
+	return;
+}
+
+/**
  * @brief Handles everything concerning the plan in the loop.
  */
 void
@@ -108,7 +121,9 @@ AspPlanerThread::loopPlan(void)
 				//Assumes begin(robot, task, time) and end(robot, task, time).
 				const decltype(auto) args(symbol.arguments());
 				//If not in the map until now it will add (robot, task, 0, 0).
-				auto& pair = map[{args[0].to_string(), args[1].to_string()}];
+				//Because the robot name is a string in ASP .to_string() will include ", we have to remove them.
+				const auto tempRobotName(args[0].to_string());
+				auto& pair = map[{tempRobotName.substr(1, tempRobotName.size() - 2), args[1].to_string()}];
 				if ( begin )
 				{
 					pair.first = args[2].number();
@@ -140,17 +155,7 @@ AspPlanerThread::loopPlan(void)
 			};
 
 		MutexLocker planLocker(&PlanMutex);
-		//Prepare the plans.
-//		for ( auto& plan : Plan )
-//		{
-//			const auto end = plan.second.Plan.end();
-//			for ( auto iter = plan.second.Plan.begin() + plan.second.FirstNotDone; iter != end; ++iter )
-//			{
-//				iter->Visited = false;
-//			} //for ( auto iter = plan.second.Plan.begin() + plan.second.FirstNotDone; iter != end; ++iter )
-//		} //for ( auto& plan : Plan )
-
-		logger->log_info(LoggingComponent, "New plan size: %d", map.size());
+		logger->log_info(LoggingComponent, "Extracted plan size: %d", map.size());
 		for ( const auto& pair : map )
 		{
 			logger->log_info(LoggingComponent, "Plan element: (%s, %s, %d, %d)",
@@ -165,7 +170,7 @@ AspPlanerThread::loopPlan(void)
 			//Search for the position in the plan of the element.
 			auto iter = std::lower_bound(plan.begin(), plan.end(), element, planBegin);
 
-			if ( sameTask(element, *iter) )
+			if ( iter != plan.end() && sameTask(element, *iter) )
 			{
 				iter->Visited = true;
 				if ( !equal(element, *iter) )
@@ -177,16 +182,17 @@ AspPlanerThread::loopPlan(void)
 					iter->Action = PlanElement::Update;
 				} //if ( !equal(element, *iter) )
 				//In the else case nothing is to do.
-			} //if ( sameTask(element, *iter) )
+			} //if ( iter != plan.end() && sameTask(element, *iter) )
 			else
 			{
 				//We have a differnt task, so we add the element.
 				iter = plan.emplace(iter, element);
 				iter->Visited = true;
 				iter->Action  = PlanElement::Insert;
-			} //else -> if ( sameTask(element, *iter) )
+			} //else -> if ( iter != plan.end() && sameTask(element, *iter) )
 		} //for ( const auto& pair : map )
 
+		PlanElements = 0;
 		//Now sweep the plan for changes.
 		for ( auto& pair : Plan )
 		{
@@ -248,10 +254,12 @@ AspPlanerThread::loopPlan(void)
 
 			//Now erase the elements moved to the end of the vector.
 			plan.erase(end, plan.end());
+			PlanElements += plan.size();
 		} //for ( auto& pair : Plan )
 
 		NewSymbols = false;
 		LastPlan = clock->now();
+		logger->log_info(LoggingComponent, "New composed plan size: %d", PlanElements);
 	} //if ( NewSymbols )
 	return;
 }
