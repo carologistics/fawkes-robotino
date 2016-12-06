@@ -60,12 +60,66 @@ struct GroundRequest
 	bool AddTick;
 };
 
-struct PlanElement
+struct BasicPlanElement
 {
-	std::string Robot;
 	std::string Task;
 	unsigned int Begin;
 	unsigned int End;
+};
+
+inline bool operator==(const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
+{
+	return e1.Begin == e2.Begin && e1.End == e2.End && e1.Task == e2.Task;
+}
+
+inline bool operator!=(const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
+{
+	return !(e1 == e2);
+}
+
+struct PlanElement : public BasicPlanElement
+{
+	bool Done = false;
+
+	bool Visited = false;
+	enum {
+		Nothing,
+		Insert,
+		Update,
+	} Action = Nothing;
+
+	//Construct from base class.
+	inline PlanElement(const BasicPlanElement& b) noexcept : BasicPlanElement(b)
+	{
+		return;
+	}
+	inline PlanElement(BasicPlanElement&& b) noexcept : BasicPlanElement(std::move(b))
+	{
+		return;
+	}
+
+	//Reactivate default copy constructors and assignment operators.
+	inline PlanElement(const PlanElement& e) = default;
+	inline PlanElement(PlanElement&& e) noexcept = default;
+	inline PlanElement& operator=(const PlanElement& e) = default;
+	inline PlanElement& operator=(PlanElement&& e) noexcept = default;
+};
+
+inline bool operator==(const PlanElement& e1, const PlanElement& e2) noexcept
+{
+	return static_cast<BasicPlanElement>(e1) == static_cast<BasicPlanElement>(e2) && e1.Done == e2.Done &&
+		e1.Visited == e2.Visited && e1.Action == e2.Action;
+}
+
+inline bool operator!=(const PlanElement& e1, const PlanElement& e2) noexcept
+{
+	return !(e1 == e2);
+}
+
+struct RobotPlan
+{
+	std::vector<PlanElement> Plan;
+	std::size_t FirstNotDone = 0;
 };
 
 struct RobotInformation
@@ -126,7 +180,10 @@ class AspPlanerThread
 	unsigned int MaxDriveDuration;
 	std::vector<std::string> Robots;
 
+	fawkes::Mutex PlanMutex;
 	fawkes::Time LastPlan;
+	std::unordered_map<std::string, RobotPlan> Plan;
+	std::size_t PlanElements;
 
 	bool Unsat;
 
@@ -189,6 +246,8 @@ class AspPlanerThread
 	void zonesCallback(const mongo::BSONObj document);
 
 	void loopPlan(void);
+	void updatePlanDB(const std::string& robot, const long elementIndex, const PlanElement& element);
+	void removeFromPlanDB(const std::string& robot, const PlanElement& element);
 
 	public:
 	AspPlanerThread(void);
