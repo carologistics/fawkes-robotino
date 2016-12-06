@@ -263,3 +263,64 @@ AspPlanerThread::loopPlan(void)
 	} //if ( NewSymbols )
 	return;
 }
+
+/**
+ * @brief Helper function to create the query.
+ * @param[in] robot For which robot the plan element is.
+ * @param[in] element The element.
+ * @return The MongoDB query.
+ */
+static std::string
+createQuery(const std::string& robot, const PlanElement& element)
+{
+	static constexpr auto queryTemplate = R"({"relation": "planElement", "robot": "%s", "task": "%s"})";
+	char queryString[std::strlen(queryTemplate) + robot.size() + element.Task.size() + 5];
+	std::sprintf(queryString, queryTemplate, robot.c_str(), element.Task.c_str());
+	return queryString;
+}
+
+/**
+ * @brief Heper function to create a BSON object out of a PlanElement.
+ * @param[in] robot For which robot the plan element is.
+ * @param[in] elementIndex The index of the element, used for the ordering on the executive. Is ignored if set to -1.
+ * @param[in] element The element.
+ * @return The object.
+ */
+static mongo::BSONObj
+createObject(const std::string& robot, const long long elementIndex, const PlanElement& element)
+{
+	mongo::BSONObjBuilder builder;
+	builder.append("relation", "planElement").append("robot", robot).append("task", element.Task).
+		append("begin", element.Begin).append("end", element.End);
+	if ( elementIndex >= 0 )
+	{
+		 builder.append("index", elementIndex);
+	} //if ( elementIndex >= 0 )
+	return builder.obj();
+}
+
+/**
+ * @brief Upserts the plan element in the robot memory.
+ * @param[in] robot For which robot the plan element is.
+ * @param[in] elementIndex The index of the element, used for the ordering on the executive.
+ * @param[in] element The element.
+ */
+void
+AspPlanerThread::updatePlanDB(const std::string& robot, const long long elementIndex, const PlanElement& element)
+{
+	robot_memory->update(createQuery(robot, element), createObject(robot, elementIndex, element), "syncedrobmem.plan",
+		true);
+	return;
+}
+
+/**
+ * @brief Removes a plan element from the robot memory.
+ * @param[in] robot For which robot the plan element is.
+ * @param[in] element The element.
+ */
+void
+AspPlanerThread::removeFromPlanDB(const std::string& robot, const PlanElement& element)
+{
+	robot_memory->remove(createObject(robot, -1, element), "syncedrobmem.plan");
+	return;
+}
