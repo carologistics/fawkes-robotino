@@ -3,6 +3,15 @@
   (lock-role ASP-Exec)
 )
 
+(deftemplate planElement
+  (slot index (type INTEGER))
+  (slot task (type STRING))
+  (slot begin (type INTEGER))
+  (slot end (type INTEGER))
+  (slot done (allowed-symbols TRUE FALSE) (default FALSE))
+  (slot _id)
+)
+
 (deffacts asp-exec-init
   (not-registered-rm)
 )
