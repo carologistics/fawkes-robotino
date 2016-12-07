@@ -53,6 +53,26 @@
   (printout t "Bound Thres " ?thres crlf)
 )
 
+(deffunction asp-create-feedback-bson (?action ?task)
+  "Creates a BSON object for a feedback and inserts the common information."
+  (bind ?doc (bson-create))
+  (bson-append ?doc "action" ?action)
+  (bson-append ?doc "robot" (sym-cat ?*ROBOT-NAME*))
+  (bson-append ?doc "task" (sym-cat ?task))
+  (return ?doc)
+)
+
+(deffunction asp-send-feedback (?doc)
+  "Inserts the document in RM and destroys the object."
+  (robmem-insert "syncedrobmem.planFeedback" ?doc)
+  (bson-destroy ?doc)
+)
+
+(deffunction asp-game-time (?gt)
+  "Adds the exploration time, when we are in the production phase."
+  (return (+ ?gt ?*ASP-EXPLORATION-TIME*))
+)
+
 (defrule asp-register-plan-update
   "Registers for plan updates in the rm."
   ?flag <- (not-registered-rm)
