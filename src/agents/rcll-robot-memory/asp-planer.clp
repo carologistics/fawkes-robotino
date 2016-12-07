@@ -1,6 +1,7 @@
 (deffacts asp-planer-helper
   "Facts we need to use the old rules."
-  (lock-role MASTER)
+  (lock-role MASTER) ;So we get the zone informations.
+  (simulation-is-running) ;To disable the motor enable calls, we have no motor!
 )
 
 (defrule active-robot-to-robmem
