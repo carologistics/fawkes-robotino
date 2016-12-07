@@ -124,14 +124,7 @@ AspPlanerThread::loopPlan(void)
 				//Because the robot name is a string in ASP .to_string() will include ", we have to remove them.
 				const auto tempRobotName(args[0].to_string());
 				auto& pair = map[{tempRobotName.substr(1, tempRobotName.size() - 2), args[1].to_string()}];
-				if ( begin )
-				{
-					pair.first = args[2].number();
-				} //if ( begin )
-				else
-				{
-					pair.second = args[2].number();
-				} //else -> if ( begin )
+				(begin ? pair.first : pair.second) = aspGameTimeToRealGameTime(args[2].number());
 			} //if ( begin || end )
 		} //for ( const auto& symbol : Symbols )
 
@@ -221,7 +214,7 @@ AspPlanerThread::loopPlan(void)
 								break;
 							} //if ( !newOrdering )
 #if __has_cpp_attribute(fallthrough)
-							//GCC 7, Clan 3.9 or later.
+							//GCC 7, Clang 3.9 or later.
 							[[fallthrough]];
 #endif
 						} //case PlanElement::Nothing
@@ -280,6 +273,32 @@ createQuery(const std::string& robot, const PlanElement& element)
 }
 
 /**
+ * @brief Transforms the task string from ASP syntax to CLIPS syntax.
+ * @param[in] string The string to transform.
+ * @return The transformed string.
+ */
+static std::string
+taskASPtoCLIPS(std::string string)
+{
+	std::transform(string.begin(), string.end(), string.begin(),
+		[](const char c) noexcept { return c == ',' ? ' ' : c; });
+	return string;
+}
+
+/**
+ * @brief Transforms the task string from CLIPS syntax to ASP syntax.
+ * @param[in] string The string to transform.
+ * @return The transformed string.
+ */
+static std::string
+taskCLIPStoASP(std::string string)
+{
+	std::transform(string.begin(), string.end(), string.begin(),
+		[](const char c) noexcept { return c == ' ' ? ',' : c; });
+	return string;
+}
+
+/**
  * @brief Heper function to create a BSON object out of a PlanElement.
  * @param[in] robot For which robot the plan element is.
  * @param[in] elementIndex The index of the element, used for the ordering on the executive. Is ignored if set to -1.
@@ -287,10 +306,11 @@ createQuery(const std::string& robot, const PlanElement& element)
  * @return The object.
  */
 static mongo::BSONObj
-createObject(const std::string& robot, const long long elementIndex, const PlanElement& element)
+createObject(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
 	mongo::BSONObjBuilder builder;
-	builder.append("relation", "planElement").append("robot", robot).append("task", element.Task).
+	builder.append("relation", "planElement").append("robot", robot).
+		append("task", "\"" + taskASPtoCLIPS(element.Task) + "\"").
 		append("begin", element.Begin).append("end", element.End);
 	if ( elementIndex >= 0 )
 	{
@@ -306,7 +326,7 @@ createObject(const std::string& robot, const long long elementIndex, const PlanE
  * @param[in] element The element.
  */
 void
-AspPlanerThread::updatePlanDB(const std::string& robot, const long long elementIndex, const PlanElement& element)
+AspPlanerThread::updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
 	robot_memory->update(createQuery(robot, element), createObject(robot, elementIndex, element), "syncedrobmem.plan",
 		true);
@@ -322,5 +342,52 @@ void
 AspPlanerThread::removeFromPlanDB(const std::string& robot, const PlanElement& element)
 {
 	robot_memory->remove(createObject(robot, -1, element), "syncedrobmem.plan");
+	return;
+}
+
+/**
+ * @brief Gets called if there is feedback from one of the robots.
+ * @param[in] document The document with the feedback.
+ */
+void
+AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
+{
+	try
+	{
+		const auto object(document.getField("o"));
+		const auto action(object["action"].String());
+		const auto robot(object["robot"].String());
+		const auto task(taskCLIPStoASP(object["task"].String()));
+
+
+//		auto& robotPlan(Plan[robot]);
+
+		//Switch only the first character because it is unique and we skip all the string handling.
+		switch ( action[0] )
+		{
+			case 'b' : robotBegunWithTask(robot, task, object["begin"].Long()); break;
+			case 'u' :
+			{
+
+				break;
+			} //case 'u'
+			case 'e' :
+			{
+
+				break;
+			} //case 'e'
+			default : throw fawkes::Exception("Unknown action %s!", action.c_str());
+		} //switch ( action[0] )
+	} //try
+	catch ( const std::exception& e )
+	{
+		logger->log_error(LoggingComponent, "Exception while extracting plan feedback: %s\n%s", e.what(),
+			document.toString().c_str());
+	} //catch ( const std::exception& e )
+	catch ( ... )
+	{
+		logger->log_error(LoggingComponent, "Exception while extracting plan feedback.\n%s",
+			document.toString().c_str());
+	} //catch ( ... )
 	return;
 }

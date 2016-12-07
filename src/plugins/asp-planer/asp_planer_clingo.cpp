@@ -22,6 +22,7 @@
 #include "asp_planer_thread.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <sstream>
 #include <experimental/string_view>
@@ -319,6 +320,8 @@ AspPlanerThread::loopClingo(void)
 			loadFilesAndGroundBase(aspLocker);
 			fillNavgraphNodesForASP();
 			Horizon = Past = 0;
+			LastTick = 0;
+			LastModel = SolvingStarted = LastPlan = fawkes::Time();
 			UpdateNavgraphDistances = true;
 		} //if ( CompleteRestart )
 
@@ -920,5 +923,66 @@ void AspPlanerThread::addZoneToExplore(const long zone)
 	params.emplace_back(Clingo::Number(zone));
 	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(GameTime)));
 	queueGround({"zoneToExplore", params, false}, InterruptSolving::JustStarted);
+	return;
+}
+
+/**
+ * @brief Helper function to decompose a string and transform it to a Clingo::Function.
+ * @param[in] string The task string.
+ */
+static Clingo::Symbol
+taskStringToFunction(const std::string& string)
+{
+	const auto paramsBegin = string.find('(');
+	const auto task(string.substr(0, paramsBegin));
+	string_view params(string);
+	params.remove_prefix(paramsBegin + 1);
+	params.remove_suffix(1);
+
+	Clingo::SymbolVector arguments;
+	arguments.reserve(std::count(params.begin(), params.end(), ','));
+
+	auto pos = params.find(','), lastPos = string_view::npos;
+	static_assert(string_view::npos + 1 == 0);
+
+	do
+	{ //while ( lastPos != string_view::npos )
+		const auto param = params.substr(lastPos + 1, pos - (lastPos + 1)).to_string();
+		if ( param.find('(') == std::string::npos )
+		{
+			if ( std::isdigit(param[0]) )
+			{
+				char *unused;
+				arguments.emplace_back(Clingo::Number(std::strtol(param.c_str(), &unused, 10)));
+			} //if ( std::isdigit(param[0]) )
+			else
+			{
+				arguments.emplace_back(Clingo::Id(param.c_str()));
+			} //else -> if ( std::isdigit(param[0]) )
+		} //if ( param.find('(') == std::string::npos )
+		else
+		{
+			//The param is a function itself!
+			throw "Not implemented yet";
+		} //else -> if ( param.find('(') == std::string::npos )
+		pos = params.find(',', lastPos = pos);
+	} while ( lastPos != string_view::npos );
+
+	return Clingo::Function(task.c_str(), arguments);
+}
+
+/**
+ * @brief A robot has begun with a task, add it to the program.
+ * @param[in] robot The robot.
+ * @param[in] task The task.
+ * @param[in] time At which point in time the task was begun.
+ */
+void
+AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, const unsigned int time)
+{
+	GroundRequest request{"begun", {Clingo::String(robot), taskStringToFunction(task),
+		Clingo::Number(realGameTimeToAspGameTime(time))}, false};
+	RobotTaskBegin.insert({{Clingo::String(robot), time}, request});
+	queueGround(std::move(request), InterruptSolving::Critical);
 	return;
 }

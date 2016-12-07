@@ -146,6 +146,18 @@ struct hash<pair<T1, T2>>
 };
 }
 
+namespace Clingo {
+/**
+ * @brief Simple convenience function.
+ * @param[in] string The C++-String.
+ * @return The Clingo::Symbol constructed from the string.
+ */
+inline Symbol String(const std::string& str)
+{
+	return String(str.c_str());
+}
+}
+
 class AspPlanerThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
@@ -200,9 +212,9 @@ class AspPlanerThread
 
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Part> RobotTaskBegin;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Part> RobotTaskEnd;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, Clingo::Part> RobotTaskUpdate;
+	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskBegin;
+	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskEnd;
+	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskUpdate;
 
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;
@@ -240,6 +252,8 @@ class AspPlanerThread
 
 	void addZoneToExplore(const long zone);
 
+	void robotBegunWithTask(const std::string& robot, const std::string& task, const unsigned int time);
+
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);
 	void teamColorCallback(const mongo::BSONObj document);
@@ -247,8 +261,10 @@ class AspPlanerThread
 
 	void initPlan(void);
 	void loopPlan(void);
-	void updatePlanDB(const std::string& robot, const long long elementIndex, const PlanElement& element);
+	void updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element);
 	void removeFromPlanDB(const std::string& robot, const PlanElement& element);
+
+	void planFeedbackCallback(const mongo::BSONObj document);
 
 	public:
 	AspPlanerThread(void);
