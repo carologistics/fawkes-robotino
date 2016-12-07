@@ -80,19 +80,79 @@
   =>
   (retract ?flag)
   (bind ?query (bson-create))
-  (bind ?o (bson-create))
-  (bson-append ?o "robot" ?name)
-  (bson-append ?query "o" ?o)
-  (printout t "Query: " (bson-tostring ?query) crlf)
-  (bind ?trigger (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan"))
+  (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan-retract-fact")
+  (bson-append ?query "robot" (sym-cat ?name))
+  (bind ?trigger (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan-filtered"))
   (bson-destroy ?query)
+)
+
+;Doesn't work :/
+(defrule asp-plan-retract-fact
+  "Retracts the plan element fact which entry was deleted in the robmem."
+  (robmem-trigger (name "robmem-plan-retract-fact") (ptr ?obj))
+  (test (eq (bson-get ?obj "op") "d"))
+  ?element <- (planElement (_id ?id))
+  (test (eq (bson-get (bson-get ?obj "o") "_id") ?id))
+  =>
+  (printout t "Delete " ?id crlf)
+  (retract ?element)
+)
+
+(defrule asp-plan-retract-prepare
+  "Asserts a helper to retract a planElement."
+  ?trigger <- (robmem-trigger (name "robmem-plan-retract-fact") (ptr ?obj))
+  =>
+  (if (eq (bson-get ?obj "op") "d") then
+    (bind ?id (bson-get (bson-get ?obj "o") "_id"))
+    (assert (retractPlanElement (sym-cat ?id)))
+  )
+  (bson-destroy ?obj)
+  (retract ?trigger)
+)
+
+(defrule asp-plan-retract-planElement
+  "Retracts a planElement which isn't in the RM anymore."
+  ?helper <- (retractPlanElement ?id)
+  ?element <- (planElement (_id ?id))
+  =>
+  (retract ?helper ?element)
+)
+
+(defrule asp-plan-retract-helper-cleanup
+  "Removes helpers, this are the delete messages for planElements of other robots."
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  ?helper <- (retractPlanElement ?)
+  =>
+  (retract ?helper)
+)
+
+;Not needed as long asp-plan-retract-fact doesn't work
+(defrule asp-plan-retract-fact-cleanup
+  "Retracts the trigger fact and destroys the bson object."
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  ?trigger <- (robmem-trigger (name "robmem-plan-retract-fact") (ptr ?obj))
+  =>
+  (printout t "Retract: " (bson-tostring ?obj) crlf)
+  (printout t "ID: " (bson-tostring (bson-get (bson-get ?obj "o") "_id")) crlf)
+  (bson-destroy ?obj)
+  (retract ?trigger)
 )
 
 (defrule asp-plan-update
   "We have an update for our plan."
-  ?update <- (robmem-trigger (name "robmem-plan") (ptr ?obj))
+  ?update <- (robmem-trigger (name "robmem-plan-filtered") (ptr ?obj))
   =>
-  (printout t "Plan update " (bson-tostring ?obj) crlf)
+  (bind ?o (bson-get ?obj "o"))
+  (bind ?op (bson-get ?obj "op"))
+  (switch ?op
+    (case "i" then
+      (rm-assert-from-bson ?o)
+    )
+    (case "u" then
+      (printout t "Plan update: " (bson-tostring ?o))
+      (rm-assert-from-bson ?o)
+    )
+  )
   (retract ?update)
   (bson-destroy ?obj)
 )
