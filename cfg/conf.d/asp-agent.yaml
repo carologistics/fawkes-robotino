@@ -21,12 +21,22 @@ asp-agent:
     #Names of possible used robots.
     robots: [Tuvok,T'Pol,Spock]
 
+  exec:
+    #How many seconds a task may be started before the time stated by the planer.
+    #The concrete value will be calculated by the time-resolution / 2 + given tolerance.
+    task-begin-tolerance: 1
+
+    #If our new estimation diverts more than this value in seconds we send an update.
+    update-threshold: 3
+
   #Time estimations for tasks, given in real time seconds.
   time-estimations:
     explore-zone: 5
     fetch-product: 10
     deliver-product: 15
     fetch-from-shelf: 20
+
+    read-mps-light: 10
 
     max-task-duration: 50
     max-drive-duration: 30
