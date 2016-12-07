@@ -72,8 +72,8 @@ update(r, t, gt, d).
 :- begin(r, T, gt), T != t.
 
 #program begun(r, t, gt).
-:- not begin(r, t, gt).
-:- begin(R, t, _), R != r.
+:- not begin(r, t, gt), robot(r, gt).
+:- begin(R, t, _), R != r, robot(r, gt).
 
 #program ended(r, t, gt).
 end(r, t, gt).

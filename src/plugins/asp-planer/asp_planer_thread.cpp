@@ -251,7 +251,7 @@ AspPlanerThread::init(void)
 	std::strcpy(suffix, "exploration-time");
 	ExplorationTime = config->get_uint(buffer);
 
-	RobotMemoryCallbacks.reserve(4);
+	RobotMemoryCallbacks.reserve(5);
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planer",
@@ -268,6 +268,9 @@ AspPlanerThread::init(void)
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "zones"})"), "robmem.planer",
 		&AspPlanerThread::zonesCallback, this));
+
+	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
+		mongo::Query(), "syncedrobmem.planFeedback", &AspPlanerThread::planFeedbackCallback, this));
 
 	initPlan();
 	initClingo();
