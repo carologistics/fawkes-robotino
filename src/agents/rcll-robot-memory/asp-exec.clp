@@ -156,3 +156,84 @@
   (retract ?update)
   (bson-destroy ?obj)
 )
+
+(deffunction asp-start-exploration (?zone)
+  (assert (state EXP_LOCK_ACCEPTED))
+  (assert (exp-next-machine (sym-cat Z ?zone)))
+)
+
+(deffunction asp-start-task (?string)
+  "Looks at the string and asserts the facts to actually start the task."
+  (bind ?paramsBegin (str-index "(" ?string))
+  (bind ?task (sub-string 1 (- ?paramsBegin 1) ?string))
+  (bind ?paramsString (sub-string (+ ?paramsBegin 1) (- (str-length ?string) 1) ?string))
+  (bind ?params (explode$ ?paramsString))
+  (switch ?task
+    (case "explore" then (asp-start-exploration (nth$ 1 ?params)))
+    (default (printout warn "Unknown task " ?task " cannot start!" crlf))
+  )
+  (return (create$ ?task ?params))
+)
+
+(defrule asp-choose-next-task
+  "Choose the next task, if we aren't doing anything else."
+  (not (asp-doing $?))
+  (game-time ?gt ?)
+  (planElement (done FALSE) (index ?idx) (task ?task) (begin ?begin&:(<= (- ?begin ?*ASP-TASK-BEGIN-TOLERANCE*) (asp-game-time ?gt))) (end ?end))
+  (not (planElement (done FALSE) (index ?otherIdx&:(< ?otherIdx ?idx))))
+  =>
+  (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" crlf)
+  (bind ?gt (asp-game-time ?gt))
+  (bind ?doc (asp-create-feedback-bson begin ?task))
+  (bson-append ?doc "begin" ?gt)
+  (asp-send-feedback ?doc)
+  (bind ?pair (asp-start-task ?task))
+  (bind ?task (nth$ 1 ?pair))
+  (delete$ ?pair 1 1)
+  (bind ?params ?pair)
+  (assert (asp-doing ?idx ?task ?params ?gt (+ (- ?gt ?begin) ?end)))
+)
+
+(defrule asp-update-time-estimation
+  "Update the time estimation if we are near the end."
+  (game-time ?gt ?)
+  ?doing <- (asp-doing ?idx ?task ?begin ?end&:(<= ?end (- (asp-game-time ?gt) 1)))
+  =>
+  (bind ?gt (asp-game-time ?gt))
+  (retract ?doing)
+  (bind ?end (+ ?end ?*ASP-UPDATE-THRESHOLD*))
+  (assert (asp-doing ?idx ?task ?begin ?end))
+  (bind ?doc (asp-create-feedback-bson update ?task))
+  (bson-append ?doc "end" ?end)
+  (asp-send-feedback ?doc)
+)
+
+(defrule asp-update-time-estimation-exp
+  "Updates the time estimation for the explore task, if we have to look for the mps light."
+  (game-time ?gt ?t)
+  ?doing <- (asp-doing ?idx ?task ?begin ?end&:(>= (abs (- ?end (+ (asp-game-time ?gt) ?*ASP-READ-MPS-LIGHT-TIME*))) ?*ASP-UPDATE-THRESHOLD*))
+  (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
+  =>
+  (bind ?gt (asp-game-time ?gt))
+  (retract ?doing)
+  (bind ?end (+ ?gt ?*ASP-READ-MPS-LIGHT-TIME*))
+  (bind ?doc (asp-create-feedback-bson update ?task))
+  (bson-append ?doc "end" ?end)
+  (asp-send-feedback ?doc)
+)
+
+(defrule asp-end-exploration
+  "Send an end message for the explore skill."
+  (game-time ?gt ?)
+  ?doing <- (asp-doing ?idx ?task $?)
+  ?state <- (state EXP_IDLE)
+  ?planElement <- (planElement (index ?idx))
+  =>
+  (bind ?gt (asp-game-time ?gt))
+  (retract ?doing ?state)
+  (modify ?planElement (done TRUE))
+  (bind ?doc (asp-create-feedback-bson end ?task))
+  (bson-append ?doc "end" ?gt)
+  (asp-send-feedback ?doc)
+)
+
