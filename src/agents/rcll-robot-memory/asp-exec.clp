@@ -211,6 +211,7 @@
   (modify ?doing (end ?end))
   (bind ?doc (asp-create-feedback-bson update ?task))
   (bson-append ?doc "end" ?end)
+  (bson-append ?doc "time" ?gt)
   (asp-send-feedback ?doc)
 )
 
@@ -226,6 +227,18 @@
   (modify ?doing (end ?end))
   (bind ?doc (asp-create-feedback-bson update ?task))
   (bson-append ?doc "end" ?end)
+  (bson-append ?doc "time" ?gt)
+  (asp-send-feedback ?doc)
+)
+
+(defrule asp-found-machine
+  "Sends the information about the found machine."
+  (declare (salience ?*PRIORITY-HIGH*))
+  (last-zoneinfo (search-state YES))
+  (exp-current-zone (name ?machine))
+  =>
+  (bind ?doc (asp-create-feedback-bson foundMachine ""))
+  (bson-append ?doc "machine" ?machine)
   (asp-send-feedback ?doc)
 )
 
@@ -241,6 +254,8 @@
   (modify ?planElement (done TRUE))
   (bind ?doc (asp-create-feedback-bson end ?task))
   (bson-append ?doc "end" ?gt)
+  ;Todo: We have to check if it was really a success!
+  (bson-append ?doc "success" TRUE)
   (asp-send-feedback ?doc)
 )
 
