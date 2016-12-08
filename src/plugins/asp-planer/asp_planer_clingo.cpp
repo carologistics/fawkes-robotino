@@ -508,7 +508,7 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 		} //for ( const auto& file : files )
 	} //if ( StillNeedExploring )
 
-	auto symbol(Clingo::Number(0));
+	const auto symbol(Clingo::Number(0));
 	ClingoAcc->ground({Clingo::Part("base", Clingo::SymbolSpan())});
 	ClingoAcc->ground({Clingo::Part("transition", Clingo::SymbolSpan(&symbol, 1))});
 
@@ -961,6 +961,22 @@ void AspPlanerThread::addZoneToExplore(const long zone)
 }
 
 /**
+ * @brief Called if a machine is found.
+ */
+void
+AspPlanerThread::foundAMachine(void)
+{
+	if ( ++MachinesFound == 6 )
+	{
+		ClingoAcc.lock();
+		StillNeedExploring = false;
+		CompleteRestart = true;
+		ClingoAcc.unlock();
+	} //if ( ++MachinesFound == 6 )
+	return;
+}
+
+/**
  * @brief Helper function to decompose a string and transform it to a Clingo::Function.
  * @param[in] string The task string.
  */
@@ -1012,11 +1028,69 @@ taskStringToFunction(const std::string& string)
  * @param[in] time At which point in time the task was begun.
  */
 void
-AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, const unsigned int time)
+AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time)
 {
+	time = realGameTimeToAspGameTime(time);
 	GroundRequest request{"begun", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(realGameTimeToAspGameTime(time))}, false};
+		Clingo::Number(time)}, false};
+	MutexLocker locker(&RobotsMutex);
 	RobotTaskBegin.insert({{Clingo::String(robot), time}, request});
+	queueGround(std::move(request), InterruptSolving::Critical);
+	return;
+}
+
+/**
+ * @brief A robot updates the time estimation for a task, add it to the program.
+ * @param[in] robot The robot.
+ * @param[in] task The task.
+ * @param[in] time At which point in time the update was emitted.
+ * @param[in] end The new estimated end time.
+ */
+void
+AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task,
+		unsigned int time, unsigned int end)
+{
+	const auto duration = std::max(1u, realGameTimeToAspGameTime(end - time));
+	time = realGameTimeToAspGameTime(time);
+	end = realGameTimeToAspGameTime(end);
+	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
+		Clingo::Number(time), Clingo::Number(duration)}, false};
+	MutexLocker locker(&RobotsMutex);
+	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
+	queueGround(std::move(request), InterruptSolving::Critical);
+	return;
+}
+
+/**
+ * @brief A robot has finished a task, add it to the program.
+ * @param[in] robot The robot.
+ * @param[in] task The task.
+ * @param[in] time At which point in time the task was finished.
+ */
+void
+AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time)
+{
+	time = realGameTimeToAspGameTime(time);
+	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
+		Clingo::Number(time), Clingo::Number(0)}, false};
+	MutexLocker locker(&RobotsMutex);
+	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
+	queueGround(std::move(request), InterruptSolving::Critical);
+	return;
+}
+
+/**
+ * @brief A task was not successfully executed.
+ * @param[in] task The task.
+ * @param[in] time At which point in time the task was finished.
+ */
+void
+AspPlanerThread::taskWasFailure(const std::string& task, unsigned int time)
+{
+	time = realGameTimeToAspGameTime(time);
+	GroundRequest request{"failure", {taskStringToFunction(task), Clingo::Number(time)}, false};
+	MutexLocker locker(&RobotsMutex);
+	TaskSuccess.insert({time, request});
 	queueGround(std::move(request), InterruptSolving::Critical);
 	return;
 }

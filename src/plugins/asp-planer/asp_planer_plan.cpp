@@ -67,6 +67,9 @@ using fawkes::MutexLocker;
  *
  * @property RobotPlan::FirstNotDone
  * @brief The index in the plan for the first task which is not done.
+ *
+ * @property RobotPlan::CurrentTask
+ * @brief The task, the robot should be doing currently.
  */
 
 /**
@@ -258,21 +261,6 @@ AspPlanerThread::loopPlan(void)
 }
 
 /**
- * @brief Helper function to create the query.
- * @param[in] robot For which robot the plan element is.
- * @param[in] element The element.
- * @return The MongoDB query.
- */
-static std::string
-createQuery(const std::string& robot, const PlanElement& element)
-{
-	static constexpr auto queryTemplate = R"({"relation": "planElement", "robot": "%s", "task": "%s"})";
-	char queryString[std::strlen(queryTemplate) + robot.size() + element.Task.size() + 5];
-	std::sprintf(queryString, queryTemplate, robot.c_str(), element.Task.c_str());
-	return queryString;
-}
-
-/**
  * @brief Transforms the task string from ASP syntax to CLIPS syntax.
  * @param[in] string The string to transform.
  * @return The transformed string.
@@ -296,6 +284,21 @@ taskCLIPStoASP(std::string string)
 	std::transform(string.begin(), string.end(), string.begin(),
 		[](const char c) noexcept { return c == ' ' ? ',' : c; });
 	return string;
+}
+
+/**
+ * @brief Helper function to create the query.
+ * @param[in] robot For which robot the plan element is.
+ * @param[in] element The element.
+ * @return The MongoDB query.
+ */
+static std::string
+createQuery(const std::string& robot, const PlanElement& element)
+{
+	static constexpr auto queryTemplate = R"({"relation": "planElement", "robot": "%s", "task": "\"%s\""})";
+	char queryString[std::strlen(queryTemplate) + robot.size() + element.Task.size() + 5];
+	std::sprintf(queryString, queryTemplate, robot.c_str(), taskASPtoCLIPS(element.Task).c_str());
+	return queryString;
 }
 
 /**
@@ -359,23 +362,45 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 		const auto robot(object["robot"].String());
 		const auto task(taskCLIPStoASP(object["task"].String()));
 
-
-//		auto& robotPlan(Plan[robot]);
+		MutexLocker planLocker(&PlanMutex);
+		auto& robotPlan(Plan[robot]);
+//		logger->log_info(LoggingComponent, "Plan-Feedback, R: %s T: %s A: %s", robot.c_str(), task.c_str(),
+//			action.c_str());
 
 		//Switch only the first character because it is unique and we skip all the string handling.
 		switch ( action[0] )
 		{
-			case 'b' : robotBegunWithTask(robot, task, object["begin"].Long()); break;
+			case 'b' :
+			{
+				robotBegunWithTask(robot, task, object["begin"].Long());
+				assert(robotPlan.CurrentTask.empty());
+				robotPlan.CurrentTask = task;
+				break;
+			} //case 'b'
 			case 'u' :
 			{
-
+				assert(robotPlan.CurrentTask == task);
+				robotUpdatesTaskTimeEstimation(robot, task, object["time"].Long(), object["end"].Long());
 				break;
 			} //case 'u'
 			case 'e' :
 			{
+				assert(robotPlan.CurrentTask == task);
+				robotPlan.CurrentTask.clear();
+				auto& plan(robotPlan.Plan);
+				assert(plan[robotPlan.FirstNotDone].Task == task);
+				assert(!plan[robotPlan.FirstNotDone].Done);
+				plan[robotPlan.FirstNotDone++].Done = true;
+				const auto end(object["end"].Long());
+				robotFinishedTask(robot, task, end);
 
+				if ( object["success"].String() == "FALSE" )
+				{
+					taskWasFailure(task, end);
+				} //if ( object["success"].String() == "FALSE" )
 				break;
 			} //case 'e'
+			case 'f' : foundAMachine(); break;
 			default : throw fawkes::Exception("Unknown action %s!", action.c_str());
 		} //switch ( action[0] )
 	} //try
