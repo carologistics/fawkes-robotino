@@ -118,15 +118,16 @@
       (bind ?zone-color-right TRUE)
     )
   )
-  (if (and (not ?zone-color-right) (eq ?phase EXPLORATION))
-    then
-    (printout error "mps " ?mps " in wrong zone detected. Setting it to intended zone " ?zone-intended crlf)
-    (do-for-fact ((?ze zone-exploration)) (eq ?ze:name ?zone-intended)
-      (synced-modify ?ze still-to-explore FALSE
-                     recognized TRUE
-                     machine ?mps)
-    )
-  )
+  ;With the comments above this doesn't seem to work, but I have no idea what to do about it.
+  ;(if (and (not ?zone-color-right) (eq ?phase EXPLORATION))
+  ;  then
+  ;  (printout error "mps " ?mps " in wrong zone detected. Setting it to intended zone " ?zone-intended crlf)
+  ;  (do-for-fact ((?ze zone-exploration)) (eq ?ze:name ?zone-intended)
+  ;    (synced-modify ?ze still-to-explore FALSE
+  ;                   recognized TRUE
+  ;                   machine ?mps)
+  ;  )
+  ;)
 )
 
 (defrule navgraph-generate-waiting-positions
