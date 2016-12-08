@@ -374,15 +374,20 @@ AspPlanerThread::loopClingo(void)
 	reqLocker.unlock();
 
 	std::vector<Clingo::Part> parts;
-	parts.reserve(requests.size());
-	for ( GroundRequest& request : requests )
-	{
-		parts.emplace_back(request.Name, request.Params);
-	} //for ( GroundRequest& request : requests )
+	auto groundRequests = [&parts,&requests,this](void)
+		{
+			parts.reserve(requests.size());
+			for ( GroundRequest& request : requests )
+			{
+				parts.emplace_back(request.Name, request.Params);
+			} //for ( GroundRequest& request : requests )
 
-	//We are not allowed to clear requests before grounding! The params are just stored as "pointers".
-	ClingoAcc->ground(parts);
-	parts.clear();
+			//We are not allowed to clear requests before grounding! The params are just stored as "pointers".
+			ClingoAcc->ground(parts);
+			parts.clear();
+			return;
+		};
+	groundRequests();
 
 	//Unset the old horizon.
 	Clingo::Symbol horizonValueSymbol = Clingo::Number(Horizon);
@@ -391,7 +396,9 @@ AspPlanerThread::loopClingo(void)
 	ClingoAcc->assign_external(horizonSymbol, Clingo::TruthValue::False);
 
 	//Handle the past.
-	setPast();
+	requests.clear();
+	setPast(requests);
+	groundRequests();
 
 	//Set the new horizon.
 	const auto oldHorizon(std::move(Horizon));
@@ -629,10 +636,11 @@ AspPlanerThread::updateNavgraphDistances(void)
 /**
  * @brief Sets the past for the program, i.e. releases externals we know their status and sets if a robot doesn't begin
  *        or end a task.
+ * @param[out] requests Stores ground requests in this vector.
  * @note Assumes ClingoAcc as locked.
  */
 void
-AspPlanerThread::setPast(void)
+AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 {
 	//How many seconds of the past we still keep open to receive messages from the robots.
 	constexpr decltype(GameTime) variablePast = 8;
@@ -643,8 +651,7 @@ AspPlanerThread::setPast(void)
 		return;
 	} //if ( GameTime <= variablePast )
 
-	//-1 for
-	const auto fixUpTo = GameTime - variablePast;
+	const auto fixUpTo = realGameTimeToAspGameTime(GameTime - variablePast);
 	if ( fixUpTo <= Past )
 	{
 		//Nothing new to fix.
@@ -661,26 +668,24 @@ AspPlanerThread::setPast(void)
 			} //for ( const auto& robot : Robots )
 			return ret;
 		}());
-	std::vector<Clingo::Part> parts;
-	parts.reserve(Robots.size() * (fixUpTo - Past));
+	requests.reserve(Robots.size() * (fixUpTo - Past));
 
 	MutexLocker locker(&RobotsMutex);
 	for ( auto t = Past; t <= fixUpTo; ++t )
 	{
 		const auto number = Clingo::Number(t);
-		parts.emplace_back("past", Clingo::SymbolSpan{number});
+		requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{number}, false});
 
 		for ( const auto& robot : robotVector )
 		{
 			if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
 			{
-				parts.emplace_back("past", Clingo::SymbolSpan{robot, number});
+				requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{robot, number}, false});
 			} //if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
 		} //for ( const auto& robot : robotVector )
 	} //for ( auto t = Past; t <= fixUpTo; ++t )
 	locker.unlock();
 
-	ClingoAcc->ground(parts);
 	Past = fixUpTo;
 	return;
 }
