@@ -11,7 +11,8 @@
 % doing(R, T, GT, D): Robot R is doing task T at gametime GT, with GT in [GTb, GTe). And we estimate still D time units for doing so.
 % possible(R, T, GT): Task T is doable by robot R at GT. E.g. he is holding the needed workpiece.
 %
-% success(T, GT): Task T is successful executed.
+% success(T, GT): Task T is successful executed. Currently not in use.
+% failure(T, GT): Task T was executed, but not successfully, so we have to do it again.
 % toBeDone(T, GT): Task T is yet to be done.
 %
 % duration(R, T, GT, D): Task T should be done in D seconds from robot R at gametime GT. This includes the time for getting there.
@@ -21,8 +22,8 @@
 #program transition(gt).
 
 #external update(R, T, gt, D) : robot(R), task(T), D = 0..@maxTaskDuration().
-#external toBeDone(T, gt)     : task(T).
-#external success(T, gt)      : task(T).
+#external spawnTask(T, gt)    : task(T).
+#external failure(T, gt)      : task(T).
 
 % Can start at max one task and only if not doing something else right now.
 { begin(R, T, gt) : toBeDone(T, gt) } 1 :- location(R, _, gt), possible(R, T, gt).
@@ -67,14 +68,13 @@ toBeDone(T, gt) :- toBeDone(T, gt-1), not end(_, T, gt).
 % Called to update the time estimation for a robot. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program update(r, t, gt, d).
 update(r, t, gt, d).
-:- begin(r, T, gt), T != t.
 
 #program begun(r, t, gt).
 :- not begin(r, t, gt), robot(r, gt).
 :- begin(R, t, _), R != r, robot(r, gt).
 
-#program ended(r, t, gt).
-end(r, t, gt).
+#program failure(t, gt).
+failure(t, gt).
 
 #program past(r, gt).
 :- begin(r, _, gt).
