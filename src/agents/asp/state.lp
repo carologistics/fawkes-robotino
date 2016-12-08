@@ -17,8 +17,6 @@
 % duration(R, T, GT, D): Task T should be done in D seconds from robot R at gametime GT. This includes the time for getting there.
 % update(R, T, GT, D): Update the time estimation for robot R on Task T at GT to D time units.
 
-#external driveDuration(L1, L2, D) : location(L1), location(L2), D = 0..@maxDriveDuration().
-
 % Called for every gametime we like to consider. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #program transition(gt).
 
