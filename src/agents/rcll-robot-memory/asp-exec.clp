@@ -12,6 +12,14 @@
   (slot _id)
 )
 
+(deftemplate asp-doing
+  (slot index (type INTEGER))
+  (slot task (type STRING))
+  (multislot params)
+  (slot begin (type INTEGER))
+  (slot end (type INTEGER))
+)
+
 (deffacts asp-exec-init
   (not-registered-rm)
 )
@@ -177,7 +185,7 @@
 
 (defrule asp-choose-next-task
   "Choose the next task, if we aren't doing anything else."
-  (not (asp-doing $?))
+  (not (asp-doing))
   (game-time ?gt ?)
   (planElement (done FALSE) (index ?idx) (task ?task) (begin ?begin&:(<= (- ?begin ?*ASP-TASK-BEGIN-TOLERANCE*) (asp-game-time ?gt))) (end ?end))
   (not (planElement (done FALSE) (index ?otherIdx&:(< ?otherIdx ?idx))))
@@ -189,20 +197,19 @@
   (asp-send-feedback ?doc)
   (bind ?pair (asp-start-task ?task))
   (bind ?task (nth$ 1 ?pair))
-  (delete$ ?pair 1 1)
-  (bind ?params ?pair)
-  (assert (asp-doing ?idx ?task ?params ?gt (+ (- ?gt ?begin) ?end)))
+  (bind ?params (delete$ ?pair 1 1))
+  (assert (asp-doing (index ?idx) (task ?task) (params ?params) (begin ?gt) (end (+ (- ?gt ?begin) ?end))))
 )
 
 (defrule asp-update-time-estimation
   "Update the time estimation if we are near the end."
   (game-time ?gt ?)
-  ?doing <- (asp-doing ?idx ?task ?begin ?end&:(<= ?end (- (asp-game-time ?gt) 1)))
+  ?doing <- (asp-doing (index ?idx) (end ?end&:(<= ?end (- (asp-game-time ?gt) 1))))
+  (planElement (index ?idx) (task ?task))
   =>
   (bind ?gt (asp-game-time ?gt))
-  (retract ?doing)
   (bind ?end (+ ?end ?*ASP-UPDATE-THRESHOLD*))
-  (assert (asp-doing ?idx ?task ?begin ?end))
+  (modify ?doing (end ?end))
   (bind ?doc (asp-create-feedback-bson update ?task))
   (bson-append ?doc "end" ?end)
   (asp-send-feedback ?doc)
@@ -211,12 +218,13 @@
 (defrule asp-update-time-estimation-exp
   "Updates the time estimation for the explore task, if we have to look for the mps light."
   (game-time ?gt ?t)
-  ?doing <- (asp-doing ?idx ?task ?begin ?end&:(>= (abs (- ?end (+ (asp-game-time ?gt) ?*ASP-READ-MPS-LIGHT-TIME*))) ?*ASP-UPDATE-THRESHOLD*))
+  ?doing <- (asp-doing (index ?idx) (end ?end&:(>= (abs (- ?end (+ (asp-game-time ?gt) ?*ASP-READ-MPS-LIGHT-TIME*))) ?*ASP-UPDATE-THRESHOLD*)))
+  (planElement (index ?idx) (task ?task))
   (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
   =>
   (bind ?gt (asp-game-time ?gt))
-  (retract ?doing)
   (bind ?end (+ ?gt ?*ASP-READ-MPS-LIGHT-TIME*))
+  (modify ?doing (end ?end))
   (bind ?doc (asp-create-feedback-bson update ?task))
   (bson-append ?doc "end" ?end)
   (asp-send-feedback ?doc)
@@ -225,9 +233,9 @@
 (defrule asp-end-exploration
   "Send an end message for the explore skill."
   (game-time ?gt ?)
-  ?doing <- (asp-doing ?idx ?task $?)
+  ?doing <- (asp-doing (index ?idx))
   ?state <- (state EXP_IDLE)
-  ?planElement <- (planElement (index ?idx))
+  ?planElement <- (planElement (index ?idx) (task ?task))
   =>
   (bind ?gt (asp-game-time ?gt))
   (retract ?doing ?state)
