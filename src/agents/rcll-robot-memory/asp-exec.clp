@@ -51,14 +51,12 @@
   (confval (path "/asp-agent/time-estimations/read-mps-light") (type UINT) (value ?time))
   =>
   (bind ?*ASP-READ-MPS-LIGHT-TIME* ?time)
-  (printout t "MP Light time " ?time crlf)
 )
 
 (defrule asp-bind-update-threshold
   (confval (path "/asp-agent/exec/update-threshold") (type UINT) (value ?thres))
   =>
   (bind ?*ASP-UPDATE-THRESHOLD* ?thres)
-  (printout t "Bound Thres " ?thres crlf)
 )
 
 (deffunction asp-create-feedback-bson (?action ?task)
