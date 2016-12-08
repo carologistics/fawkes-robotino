@@ -150,7 +150,7 @@
       (rm-assert-from-bson ?o)
     )
     (case "u" then
-      (printout t "Plan update: " (bson-tostring ?o))
+      (do-for-fact ((?pE planElement)) (eq ?pE:_id (sym-cat (bson-get ?o "_id"))) (retract ?pE))
       (rm-assert-from-bson ?o)
     )
   )
