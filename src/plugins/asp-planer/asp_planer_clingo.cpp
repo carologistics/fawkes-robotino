@@ -323,6 +323,35 @@ AspPlanerThread::loopClingo(void)
 			LastTick = 0;
 			LastModel = SolvingStarted = LastPlan = fawkes::Time();
 			UpdateNavgraphDistances = true;
+			Requests.clear();
+
+			MutexLocker robLocker(&RobotsMutex);
+			reqLocker.unlock();
+			setTeam();
+			auto groundPastActions = [this](auto map)
+				{
+					auto iter = map.begin();
+					const auto end = map.end();
+					while ( iter != end )
+					{
+						if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore") == 0 )
+						{
+							//Remove all references to the exploration phase, we don't need this information!
+							iter = map.erase(iter);
+						} //if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore") == 0 )
+						else
+						{
+							GroundRequest copy(iter->second);
+							queueGround(std::move(copy));
+						} //else -> if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore")=0)
+					} //while ( iter != end )
+					return;
+				};
+
+			groundPastActions(RobotTaskBegin);
+			groundPastActions(RobotTaskUpdate);
+			groundPastActions(TaskSuccess);
+			reqLocker.relock();
 		} //if ( CompleteRestart )
 
 		if ( UpdateNavgraphDistances )
