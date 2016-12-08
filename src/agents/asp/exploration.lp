@@ -20,5 +20,5 @@ possible(R, explore(Z), gt) :- robot(R, gt), toBeDone(explore(Z), gt).
 success(explore(z), gt).
 
 #program zoneToExplore(z, gt).
-toBeDone(explore(z), gt).
+spawnTask(explore(z), gt).
 
