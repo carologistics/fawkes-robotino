@@ -5,6 +5,7 @@ asp_planer_thread.h
 asp_planer_thread.cpp
 asp_planer_clingo.cpp
 asp_planer_plan.cpp
+asp_planer_types.h
 
 ../../../cfg/gazsim-configurations/default/asp-planer.yaml
 
