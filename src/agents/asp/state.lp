@@ -52,13 +52,15 @@ location(R, L, gt) :- robot(R, gt), location(R, L, gt-1), not begin(R, _, gt-1),
 duration(R, T, gt, D) :- toBeDone(T, gt), duration(T, TD), location(T, TL), location(R, RL, gt), driveDuration(RL, TL, DD), D = TD + DD.
 
 % Update Task status.
+toBeDone(T, gt) :- spawnTask(T, gt).
 toBeDone(T, gt) :- toBeDone(T, gt-1), not end(_, T, gt).
+toBeDone(T, gt) :- failure(T, gt).
 
 % The planning horizon, how far (regarding gametime) we should plan.
 #external horizon(gt).
 
 % Our goal.
-#maximize{ P@2,T,GT : begin(_, T, GT), points(T, P), horizon(gt) }.
+#maximize{ P@2,T,GT : begin(_, T, GT), points(T, P) }.%, horizon(gt) }.
 
 #heuristic begin(_,T,GT). [GT,false]
 %#heuristic begin(_,T,GT). [-1,sign]
