@@ -91,8 +91,8 @@ class AspPlanerThread
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
 	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskBegin;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskEnd;
 	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskUpdate;
+	std::unordered_map<unsigned int, GroundRequest> TaskSuccess;
 
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;
@@ -130,7 +130,12 @@ class AspPlanerThread
 
 	void addZoneToExplore(const long zone);
 
-	void robotBegunWithTask(const std::string& robot, const std::string& task, const unsigned int time);
+	void foundAMachine(void);
+	void robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time);
+	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, unsigned int time,
+		unsigned int end);
+	void robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time);
+	void taskWasFailure(const std::string& task, unsigned int time);
 
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);

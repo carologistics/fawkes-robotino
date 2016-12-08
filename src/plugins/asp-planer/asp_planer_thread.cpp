@@ -59,11 +59,11 @@ using namespace fawkes;
  * @property AspPlanerThread::RobotTaskBegin
  * @brief Saves when a robot has begun a task, so we can fix this in the asp program.
  *
- * @property AspPlanerThread::RobotTaskEnd
- * @brief Saves when a robot has finished a task, so we can fix this in the asp program.
- *
  * @property AspPlanerThread::RobotTaskUpdate
  * @brief Saves when a robot updates a task time estimation, so we can fix this in the asp program.
+ *
+ * @property AspPlanerThread::TaskSuccess
+ * @brief Saves when a task was successfully executed.
  */
 
 /**
