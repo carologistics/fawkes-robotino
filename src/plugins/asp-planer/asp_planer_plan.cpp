@@ -203,6 +203,10 @@ AspPlanerThread::loopPlan(void)
 
 			while ( iter != end )
 			{
+//				static constexpr const char *action[] = {"Nothing", "Insert", "Update"};
+//				logger->log_info(LoggingComponent, "Plan Sweep %s: (%s, %d, %d, %svisited, %s) %s", robot.c_str(),
+//					iter->Task.c_str(), iter->Begin, iter->End, iter->Visited ? "" : "not ", action[iter->Action],
+//					newOrdering ? "New Order" : "");
 				if ( iter->Visited )
 				{
 					//Handle element.
@@ -331,6 +335,8 @@ createObject(const std::string& robot, const int elementIndex, const PlanElement
 void
 AspPlanerThread::updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
+//	logger->log_info(LoggingComponent, "Update Plan DB, Query: %s", createQuery(robot, element).c_str());
+//	logger->log_info(LoggingComponent, "Update Plan DB, Object: %s", createObject(robot, elementIndex, element).toString().c_str());
 	robot_memory->update(createQuery(robot, element), createObject(robot, elementIndex, element), "syncedrobmem.plan",
 		true);
 	return;
@@ -344,6 +350,7 @@ AspPlanerThread::updatePlanDB(const std::string& robot, const int elementIndex, 
 void
 AspPlanerThread::removeFromPlanDB(const std::string& robot, const PlanElement& element)
 {
+//	logger->log_info(LoggingComponent, "Remove from Plan DB: %s", createObject(robot, -1, element).toString().c_str());
 	robot_memory->remove(createObject(robot, -1, element), "syncedrobmem.plan");
 	return;
 }
