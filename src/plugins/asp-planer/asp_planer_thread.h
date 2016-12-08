@@ -109,7 +109,7 @@ class AspPlanerThread
 	void loadFilesAndGroundBase(fawkes::MutexLocker& locker);
 
 	void updateNavgraphDistances(void);
-	void setPast(void);
+	void setPast(std::vector<GroundRequest>& requests);
 
 	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
 	void releaseExternals(RobotInformation &info, const bool lock = true);
