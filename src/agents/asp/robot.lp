@@ -1,3 +1,4 @@
+% Declare which robots are potentially available.
 robot(@robots()).
 
 #program addRobot(r, gt, t).

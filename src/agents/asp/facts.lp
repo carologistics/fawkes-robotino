@@ -1,5 +1,3 @@
-zone(1..24).
-
 % Machines as string, so they can be in upper case.
 machine("BS"; "CS1"; "CS2"; "RS1"; "RS2"; "DS").
 
