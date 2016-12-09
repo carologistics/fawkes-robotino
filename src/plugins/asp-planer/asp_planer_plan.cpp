@@ -166,6 +166,12 @@ AspPlanerThread::loopPlan(void)
 			//Search for the position in the plan of the element.
 			auto iter = std::lower_bound(plan.begin(), plan.end(), element, planBegin);
 
+			if ( iter != plan.begin() && iter != plan.end() && sameTask(*iter, *(iter - 1)) )
+			{
+				//We are just scheduled for later, so prevent (de-)allocations by pointing to the old location.
+				--iter;
+			} //if ( iter != plan.begin() && iter != plan.end() && sameTask(*iter, *(iter - 1)) )
+
 			if ( iter != plan.end() && sameTask(element, *iter) )
 			{
 				iter->Visited = true;
