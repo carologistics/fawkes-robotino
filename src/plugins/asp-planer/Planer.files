@@ -9,6 +9,7 @@ asp_planer_types.h
 
 ../../../cfg/gazsim-configurations/default/asp-planer.yaml
 
+../../agents/asp/delivery.lp
 ../../agents/asp/exploration.lp
 ../../agents/asp/facts.lp
 ../../agents/asp/feedRS.lp
@@ -16,6 +17,7 @@ asp_planer_types.h
 ../../agents/asp/getProduct.lp
 ../../agents/asp/machines.lp
 ../../agents/asp/mountCap.lp
+../../agents/asp/mountRing.lp
 ../../agents/asp/orders.lp
 ../../agents/asp/prepareCS.lp
 ../../agents/asp/production.lp

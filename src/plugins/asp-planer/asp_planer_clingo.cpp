@@ -858,6 +858,18 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //if ( view == "mountCapTaskDuration" )
+			else if ( view == "mountRingTaskDuration" )
+			{
+				static const unsigned int dur = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/deliver-product");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
+				return;
+			} //if ( view == "mountRingTaskDuration" )
 			else if ( view == "feedRSTaskDuration" )
 			{
 				static const unsigned int dur = [this](void)
@@ -870,6 +882,18 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //if ( view == "feedRSTaskDuration" )
+			else if ( view == "deliverTaskDuration" )
+			{
+				static const unsigned int dur = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/deliver-product");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
+				return;
+			} //if ( view == "deliverTaskDuration" )
 			else if ( view == "getProductTaskDuration" )
 			{
 				static const unsigned int dur = [this](void)

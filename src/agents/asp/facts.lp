@@ -27,10 +27,6 @@ capColor("BLACK"; "GREY").
 ringColor("GREEN"; "ORANGE"; "YELLOW"; "BLUE").
 ringCost(0..2).
 
-% How many "new" products a robot can spawn, spawning happens when a new base is fetched or a CS is prepared.
-productIndex(1..30).
-nextID(R, 1, 0) :- robot(R).
-
 capStationAssignment("CS1", @capColor(1)).
 capStationAssignment("CS2", @capColor(2)).
 
