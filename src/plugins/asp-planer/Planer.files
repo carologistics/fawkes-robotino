@@ -11,5 +11,10 @@ asp_planer_types.h
 
 ../../agents/asp/exploration.lp
 ../../agents/asp/facts.lp
-../../agents/asp/robot.lp
+../../agents/asp/getBase.lp
+../../agents/asp/orders.lp
+../../agents/asp/prepareCS.lp
+../../agents/asp/production.lp
+../../agents/asp/products.lp
 ../../agents/asp/state.lp
+../../agents/asp/robot.lp

@@ -18,7 +18,12 @@ setLocation(r, l, gt, t).
 
 robot(R, gt) :- robot(R, gt, _), not killRobot(R, gt, _).
 robot(R, gt) :- robot(R, gt, T1), killRobot(R, gt, T2), T1 > T2.
-robot(R, gt) :- robot(R, gt-1),  not killRobot(R, gt, _).
+robot(R, gt) :- robot(R, gt-1), not killRobot(R, gt, _).
+
+holding(R, gt, none) :- robot(R, gt, _), not killRobot(R, gt, _).
+holding(R, gt, none) :- robot(R, gt, T1), killRobot(R, gt, T2), T1 > T2.
+holding(R, gt, P)    :- holding(R, gt-1, P), not killRobot(R, gt, _), not putDown(R, _, gt).%, bringLocation(L).
+holding(R, gt, P)    :- not killRobot(R, gt, _), pickUp(R, P, _, gt).
 
 location(R, L, gt) :- setLocation(R, L, gt, _), not killRobot(R, gt, _).
 location(R, L, gt) :- setLocation(R, L, gt, T1), killRobot(R, gt, T2), T1 > T2.
