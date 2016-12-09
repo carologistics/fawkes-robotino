@@ -18,7 +18,7 @@ inUse(L, gt) :- begin(R, getProduct(L, R, S), gt), not end(R, getProduct(L, R, S
 free(L, gt)  :- end(R, getProduct(L, R, _), gt).
 
 possible(R, getProduct(L, R, S), gt) :- task(getProduct(L, R, S)), holding(R, gt, none), getLocation(M, L),
-										not storing(M, gt, none).
+										not storing(M, gt, none), not inUse(L, gt).
 
 { pickUp(R, P, M, gt)
   } = 1 :- end(R, getProduct(L, R, S), gt), not failure(getProduct(L, R, S), gt), getLocation(M, L), storing(M, gt, P).
