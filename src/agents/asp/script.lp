@@ -47,7 +47,13 @@ def prepareCSTaskDuration():
 def mountCapTaskDuration():
 	return toASP(15)
 
+def mountRingTaskDuration():
+	return toASP(15)
+
 def feedRSTaskDuration():
+	return toASP(15)
+
+def deliverTaskDuration():
 	return toASP(15)
 
 def getProductTaskDuration():
