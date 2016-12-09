@@ -44,11 +44,9 @@ baseLocation(m(t, M, S)) :- baseStation(M), side(S).
 getLocation(M, m(t, M, "O")) :- capStation(M).
 getLocation(M, m(t, M, "O")) :- ringStation(M).
 
-bringLocation(m(t, M, "I")) :- deliveryStation(M).
-bringLocation(m(t, M, "I")) :- capStation(M).
-bringLocation(m(t, M, "I")) :- ringStation(M).
+deliverLocation(m(t, M, "I")) :- deliveryStation(M).
 
 capLocation(M, m(t, M, "I")) :- capStation(M).
 
-slideLocation(m(t, M, "I")) :- ringStation(M).
+ringLocation(M, m(t, M, "I")) :- ringStation(M).
 
