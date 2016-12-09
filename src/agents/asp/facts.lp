@@ -4,6 +4,11 @@ capStation("CS1"; "CS2").
 ringStation("RS1"; "RS2").
 deliveryStation("DS").
 
+machine(M) :- baseStation(M).
+machine(M) :- capStation(M).
+machine(M) :- ringStation(M).
+machine(M) :- deliveryStation(M).
+
 % Machine sides.
 side("I"; "O").
 
