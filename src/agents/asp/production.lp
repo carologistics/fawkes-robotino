@@ -1,9 +1,6 @@
 % Create the tasks when we know which team we are, since we can then use the special locations.
 #program ourTeam(t).
 
-%task(bringProdct(L, O, Q, S))              :- bringLocation(L), order(O), quantitiy(Q), step(S).
-%task(bringProdctSlide(L, O, Q, S))         :- slideLocation(L), order(O), quantitiy(Q), step(S).
-
 #external nextTask(T1, T2) : task(T1), task(T2).
 
 % Set the the ring color assignments and the cost for a color.
