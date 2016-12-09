@@ -41,8 +41,8 @@ capStationAssignment("CS2", @capColor(2)).
 #program ourTeam(t).
 baseLocation(m(t, M, S)) :- baseStation(M), side(S).
 
-getLocation(m(t, M, "O")) :- capStation(M).
-getLocation(m(t, M, "O")) :- ringStation(M).
+getLocation(M, m(t, M, "O")) :- capStation(M).
+getLocation(M, m(t, M, "O")) :- ringStation(M).
 
 bringLocation(m(t, M, "I")) :- deliveryStation(M).
 bringLocation(m(t, M, "I")) :- capStation(M).

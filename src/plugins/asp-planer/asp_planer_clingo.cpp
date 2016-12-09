@@ -846,6 +846,18 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //if ( view == "prepareCSTaskDuration" )
+			else if ( view == "getProductTaskDuration" )
+			{
+				static const unsigned int dur = [this](void)
+				{
+					char buffer[std::strlen(ConfigPrefix) + 40];
+					std::strcpy(buffer, ConfigPrefix);
+					std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-product");
+					return config->get_uint(buffer);
+				}();
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
+				return;
+			} //if ( view == "getProductTaskDuration" )
 			else if ( view == "maxDriveDuration" )
 			{
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxDriveDuration))});
