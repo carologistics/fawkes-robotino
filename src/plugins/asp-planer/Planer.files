@@ -18,5 +18,6 @@ asp_planer_types.h
 ../../agents/asp/prepareCS.lp
 ../../agents/asp/production.lp
 ../../agents/asp/products.lp
+../../agents/asp/script.lp
 ../../agents/asp/state.lp
 ../../agents/asp/robot.lp
