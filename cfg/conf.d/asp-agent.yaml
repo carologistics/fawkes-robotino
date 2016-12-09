@@ -20,6 +20,8 @@ asp-agent:
     max-ticks: 25
     #Names of possible used robots.
     robots: [Tuvok,T'Pol,Spock]
+    max-orders: 10
+    max-quantitiy: 2
 
   exec:
     #How many seconds a task may be started before the time stated by the planer.
@@ -34,11 +36,11 @@ asp-agent:
     explore-zone: 5
     fetch-product: 10
     deliver-product: 15
-    fetch-from-shelf: 20
+    fetch-from-shelf: 35 #This includes the time to put the fetched product into the CS. 
 
     read-mps-light: 10
 
-    max-task-duration: 50
+    max-task-duration: 65
     max-drive-duration: 30
 
   #real-world-setup:

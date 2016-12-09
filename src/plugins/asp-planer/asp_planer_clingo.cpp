@@ -812,7 +812,8 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 		{
 			if ( view == "explorationTaskDuration" )
 			{
-				static const unsigned int dur = [this](void) {
+				static const unsigned int dur = [this](void)
+					{
 						char buffer[std::strlen(ConfigPrefix) + 40];
 						std::strcpy(buffer, ConfigPrefix);
 						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/explore-zone");
@@ -821,6 +822,30 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //if ( view == "explorationTaskDuration" )
+			else if ( view == "getTaskDuration" )
+			{
+				static const unsigned int dur = [this](void)
+				{
+					char buffer[std::strlen(ConfigPrefix) + 40];
+					std::strcpy(buffer, ConfigPrefix);
+					std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-product");
+					return config->get_uint(buffer);
+				}();
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
+				return;
+			} //if ( view == "getTaskDuration" )
+			else if ( view == "prepareCSTaskDuration" )
+			{
+				static const unsigned int dur = [this](void)
+				{
+					char buffer[std::strlen(ConfigPrefix) + 40];
+					std::strcpy(buffer, ConfigPrefix);
+					std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-from-shelf");
+					return config->get_uint(buffer);
+				}();
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
+				return;
+			} //if ( view == "prepareCSTaskDuration" )
 			else if ( view == "maxDriveDuration" )
 			{
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxDriveDuration))});
@@ -843,7 +868,8 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			} //else if ( view == "robots" )
 			else if ( view == "maxTicks" )
 			{
-				static const unsigned int ticks = [this](void) {
+				static const unsigned int ticks = [this](void)
+					{
 						char buffer[std::strlen(ConfigPrefix) + 20];
 						std::strcpy(buffer, ConfigPrefix);
 						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-ticks");
@@ -854,7 +880,8 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			} //else if ( view == "maxTicks" )
 			else if ( view == "maxTaskDuration" )
 			{
-				static const unsigned int dur = [this](void) {
+				static const unsigned int dur = [this](void)
+					{
 						char buffer[std::strlen(ConfigPrefix) + 40];
 						std::strcpy(buffer, ConfigPrefix);
 						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/max-task-duration");
@@ -863,8 +890,64 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //else if ( view == "maxTaskDuration" )
+			else if ( view == "maxOrders" )
+			{
+				static const unsigned int orders = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 20];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-orders");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(orders)});
+				return;
+			} //else if ( view == "maxOrders" )
+			else if ( view == "maxQuantitiy" )
+			{
+				static const unsigned int qty = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 20];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-quantitiy");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(qty)});
+				return;
+			} //else if ( view == "maxQuantitiy" )
+			else if ( view == "minDeliveryTime" )
+			{
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(ExplorationTime))});
+				return;
+			} //else if ( view == "minDeliveryTime" )
+			else if ( view == "maxDeliveryTime" )
+			{
+				retFunction({Clingo::Number(realGameTimeToAspGameTime((4 + 15) * 60u))});
+				return;
+			} //else if ( view == "maxDeliveryTime" )
 			break;
 		} //case 0
+		case 1 :
+		{
+			if ( view == "capColor" )
+			{
+				static const std::string colorOne = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						//We assume the distribution is the same, for CYAN and MAGENTA.
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "cap-station/assigned-color/C-CS1");
+						return config->get_string(buffer);
+					}();
+				//The second CS has to have the other color, don't bother the config.
+				static const std::string colorTwo = colorOne == "BLACK" ? "GREY" : "BLACK";
+				static const std::string* colors[] = {&colorOne, &colorTwo};
+				const auto index = arguments[0].number();
+				assert(index >= 1 && index <= 2);
+				retFunction({Clingo::String(*colors[index - 1])});
+				return;
+			} //if ( view == "capColor" )
+			break;
+		} //case 1
 	} //switch ( arguments.size() )
 
 	std::stringstream functionCall;
