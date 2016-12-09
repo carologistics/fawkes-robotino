@@ -11,9 +11,11 @@
 % doing(R, T, GT, D): Robot R is doing task T at gametime GT, with GT in [GTb, GTe). And we estimate still D time units for doing so.
 % possible(R, T, GT): Task T is doable by robot R at GT. E.g. he is holding the needed workpiece.
 %
-% success(T, GT): Task T is successful executed. Currently not in use.
-% failure(T, GT): Task T was executed, but not successfully, so we have to do it again.
+% success(T, GT):  Task T is successful executed. Currently not in use.
+% failure(T, GT):  Task T was executed, but not successfully, so we have to do it again.
 % toBeDone(T, GT): Task T is yet to be done.
+% canSkip(T, GT):  Task T can be skipped at GT, because what it should achieve already holds. I.e. preparing the cap station, but it is prepared.
+% done(T, GT):     Task T can be considered as done, this is for tasks that are skipped.
 %
 % duration(R, T, GT, D): Task T should be done in D seconds from robot R at gametime GT. This includes the time for getting there.
 % update(R, T, GT, D): Update the time estimation for robot R on Task T at GT to D time units.
@@ -26,7 +28,7 @@
 #external failure(T, gt)      : task(T).
 
 % Can start at max one task and only if not doing something else right now.
-{ begin(R, T, gt) : toBeDone(T, gt) } 1 :- location(R, _, gt), possible(R, T, gt).
+{ begin(R, T, gt) : toBeDone(T, gt), not canSkip(T, gt) } 1 :- location(R, _, gt), possible(R, T, gt).
 
 % Initialize and update doing.
 doing(R, T, gt, D) :- begin(R, T, gt), duration(R, T, gt, D).
@@ -53,7 +55,7 @@ duration(R, T, gt, D) :- toBeDone(T, gt), duration(T, TD), location(T, TL), loca
 
 % Update Task status.
 toBeDone(T, gt) :- spawnTask(T, gt).
-toBeDone(T, gt) :- toBeDone(T, gt-1), not end(_, T, gt).
+toBeDone(T, gt) :- toBeDone(T, gt-1), not end(_, T, gt), not done(T, gt).
 toBeDone(T, gt) :- failure(T, gt).
 
 % The planning horizon, how far (regarding gametime) we should plan.
