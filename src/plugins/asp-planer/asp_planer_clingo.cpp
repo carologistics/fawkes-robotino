@@ -825,27 +825,39 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			else if ( view == "getTaskDuration" )
 			{
 				static const unsigned int dur = [this](void)
-				{
-					char buffer[std::strlen(ConfigPrefix) + 40];
-					std::strcpy(buffer, ConfigPrefix);
-					std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-product");
-					return config->get_uint(buffer);
-				}();
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-product");
+						return config->get_uint(buffer);
+					}();
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //if ( view == "getTaskDuration" )
 			else if ( view == "prepareCSTaskDuration" )
 			{
 				static const unsigned int dur = [this](void)
-				{
-					char buffer[std::strlen(ConfigPrefix) + 40];
-					std::strcpy(buffer, ConfigPrefix);
-					std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-from-shelf");
-					return config->get_uint(buffer);
-				}();
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-from-shelf");
+						return config->get_uint(buffer);
+					}();
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //if ( view == "prepareCSTaskDuration" )
+			else if ( view == "mountCapTaskDuration" )
+			{
+				static const unsigned int dur = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/deliver-product");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
+				return;
+			} //if ( view == "mountCapTaskDuration" )
 			else if ( view == "getProductTaskDuration" )
 			{
 				static const unsigned int dur = [this](void)
