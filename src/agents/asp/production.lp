@@ -1,10 +1,8 @@
 % Create the tasks when we know which team we are, since we can then use the special locations.
 #program ourTeam(t).
 
-task(getProduct(L, O, Q, S))               :- getLocation(L),   order(O), quantitiy(Q), step(S).
-task(bringProdct(L, O, Q, S))              :- bringLocation(L), order(O), quantitiy(Q), step(S).
-task(getProductFromShelf(L, Sh, O, Q, St)) :- shelfLocation(L), order(O), quantitiy(Q), step(St), shelf(Sh).
-task(bringProdctSlide(L, O, Q, S))         :- slideLocation(L), order(O), quantitiy(Q), step(S).
+%task(bringProdct(L, O, Q, S))              :- bringLocation(L), order(O), quantitiy(Q), step(S).
+%task(bringProdctSlide(L, O, Q, S))         :- slideLocation(L), order(O), quantitiy(Q), step(S).
 
 #external nextTask(T1, T2) : task(T1), task(T2).
 
