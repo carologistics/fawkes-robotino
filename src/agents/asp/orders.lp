@@ -1,9 +1,27 @@
-% How many orders there are at most an their quantity.
-% If we try to add an order with a higher number or quantity it will not be considered.
-order(1..@maxOrders()).
-quantity(1..@maxQuantity()).
+% Defined programs:
+% newOrder(o, q, b, c, r1, r2,   A new order has arrived, its number is o, its quantity q. The ordered products are of
+%          r3, delBegin,         the form (b, r1, r2, r3, c), but the rs can be "none". The order is posted at gt and
+%          delEnd, gt)           its delivery windows is [delBegin, delEnd].
+%
+% In this file defined predicates:
+% base(O, B)                     The base color for order O is B.
+% cap(O, C)                      The cap color for order O is C.
+% orderTimeframe(O, B, E)        The time frame for the delivery of the order O is [B, E].
+% ring(O, R, C)                  The color of the R-th ring for order O is C.
+% spawnTask(T, GT)               Spawns the task for a order.
+%
+% Additionally used predicates:
+% baseColor(B)                   Defined in facts.lp
+% capColor(C)                    Defined in facts.lp
+% capLocation(M, L)              Defined in facts.lp
+% capStationAssignment(M, C)     Defined in facts.lp
+% deliverLocation(L)             Defined in facts.lp
+% deliveryTimes(L, U)            Defined in facts.lp
+% order(O)                       Defined in facts.lp
+% ringColor(B)                   Defined in facts.lp
+% ringLocation(M, L)             Defined in facts.lp
+% ringStationAssignment(M, R)    Defined in facts.lp
 
-deliveryTimes(@minDeliveryTime(), @maxDeliveryTime()).
 
 #external base(O, B) : order(O), baseColor(B).
 #external cap(O, C)  : order(O), capColor(C).

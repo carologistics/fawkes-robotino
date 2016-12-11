@@ -1,7 +1,31 @@
-% Everythin concerning the getBase task.
-% The task prepares the base station with a base and fetches it.
+% Defined programs:
+% ourTeam(t)                     Setup the get base tasks, that are possible, as soon as we know the special locations.
+% transition(gt)                 Update implications from the pickup tasks.
+%
+% In this file defined predicates:
+% duration(getBase(_), D)        How long it takes to retreive the base from the base station, once the robot has
+%                                arrived.
+% free(L, gt)                    The machine side L is freed in time step GT.
+% genProduct(R, I, B, GT)        The robot R generated a new product with index I and base color B at GT.
+% inUse(L, GT)                   The machine side L is in use for time step GT.
+% location(getBase(_), L)        Where the retreival will take place.
+% pickup(R, P, L)                The robot R picked up product P at location L.
+% points(getBase(_), P)          How many points are awarded for the retreival.
+% possible(R, getBase(_), GT)    If robot R can perform the retreival task at GT.
+% spawn(getBase(_), T)           The get base tasks are possible after T, see state.lp
+% task(getBase(L, R, B, S))      The task to get a new base of color Bfrom the base station L by robot R. S is to
+%                                enumerate how often a robot is able to perform this task.
+%
+% Additionally used predicates:
+% baseLocation(L)                Defined in facts.lp
+% begin(R, T, GT)                Defined in state.lp
+% deliveryTimes(L, U)            Defined in facts.lp
+% end(R, T, GT)                  Defined in state.lp
+% failure(R, T, GT)              Defined in state.lp
+% holding(R, P, GT)              Defined in robots.lp
+% nextID(R, I, GT)               Defined in products.lp
 
-% In ourTeam the locations are generated.
+
 #program ourTeam(t).
 
 % Each robot can get each color from each side 8 times, that should suffice.
@@ -16,9 +40,9 @@ spawnTask(getBase(L, R, B, S), T)                 :- task(getBase(L, R, B, S)), 
 inUse(L, gt) :- begin(R, getBase(_, R, _, _), gt), not end(R, getBase(_, R, _, _), gt), baseLocation(L).
 free(L, gt)  :- end(R, getBase(_, R, _, _), gt), baseLocation(L).
 
-possible(R, getBase(L, R, B, S), gt) :- task(getBase(L, R, B, S)), holding(R, gt, none), not inUse(L, gt).
+possible(R, getBase(L, R, B, S), gt) :- task(getBase(L, R, B, S)), holding(R, none, gt), not inUse(L, gt).
 
-{ genProduct(R, I, B);
+{ genProduct(R, I, B, gt);
   pickUp(R, product(R, I), L)
   } = 2 :- end(R, getBase(L, R, B, S), gt), not failure(getBase(L, R, B, S), gt), nextID(R, I, gt).
 

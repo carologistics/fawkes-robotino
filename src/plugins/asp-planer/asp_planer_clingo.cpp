@@ -619,7 +619,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 				{
 					Clingo::SymbolVector vec(sizeof(arguments) / sizeof(arguments[0]));
 					std::copy(std::begin(arguments), std::end(arguments), vec.begin());
-					queueGround(GroundRequest{"setDuration", vec});
+					queueGround(GroundRequest{"setDriveDuration", vec});
 					return;
 				};
 			} //else -> if ( StillNeedExploring )
