@@ -15,13 +15,14 @@ asp_planer_types.h
 ../../agents/asp/feedRS.lp
 ../../agents/asp/getBase.lp
 ../../agents/asp/getProduct.lp
+../../agents/asp/goal.lp
 ../../agents/asp/machines.lp
 ../../agents/asp/mountCap.lp
 ../../agents/asp/mountRing.lp
 ../../agents/asp/orders.lp
 ../../agents/asp/prepareCS.lp
-../../agents/asp/production.lp
 ../../agents/asp/products.lp
 ../../agents/asp/script.lp
 ../../agents/asp/state.lp
-../../agents/asp/robot.lp
+../../agents/asp/startHere.lp
+../../agents/asp/robots.lp

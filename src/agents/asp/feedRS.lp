@@ -1,7 +1,32 @@
-% Everything concerning the feedRS task.
-% The task feeds the product a robot holds into the ring station for the advanced colors.
+% Defined programs:
+% ourTeam(t)                     Setup the feed rs tasks, that are possible, as soon as we know the special locations.
+% transition(gt)                 Update implications from the feed tasks.
+%
+% In this file defined predicates:
+% rsFed(M, GT)                   The ring station M has received an additional base for the advanced colors in GT.
+% duration(feedRS(_), D)         How long it takes to put the product onto the ring stations slide, once the robot has
+%                                arrived.
+% free(L, gt)                    The machine side L is freed in time step GT.
+% inUse(L, GT)                   The machine side L is in use for time step GT.
+% location(feedRS(_), L)         Where the feeding will take place.
+% points(feedRS(_), P)           How many points are awarded for the feeding.
+% possible(R, feedRS(_), GT)     If robot R can perform the feed task at GT.
+% putDown(R, L, P, GT)           Robot R puts product P down at location L in GT.
+% spawn(feedRS(_), T)            The feed RS tasks are possible after T, see state.lp
+% task(feedRS(L, R, S))          The task to feed a product into ring station L by robot R. S is to enumerate how often
+%                                a robot is able to perform this task.
+%
+% Additionally used predicates:
+% begin(R, T, GT)                Defined in state.lp
+% end(R, T, GT)                  Defined in state.lp
+% failure(R, T, GT)              Defined in state.lp
+% holding(R, P, GT)              Defined in robots.lp
+% ringColorCost(Col, Cost)       Defined in facts.lp
+% ringCost(C)                    Defined in facts.lp
+% ringLocation(M, L)             Defined in facts.lp
+% ringStationAssignment(M, C)    Defined in facts.lp
 
-% In ourTeam the locations are generated.
+
 #program ourTeam(t).
 
 % This means each robot can feed each RS up to 10 times.
@@ -17,9 +42,10 @@ spawn(feedRS(L, R, S), T)                        :- task(feedRS(L, R, S)), deliv
 inUse(L, gt) :- begin(R, feedRS(L, R, S), gt), not end(R, feedRS(L, R, S), gt).
 free(L, gt)  :- end(R, feedRS(L, R, _), gt).
 
-possible(R, feedRS(L, R, S), gt) :- task(feedRS(L, R, S)), not holding(R, gt, none), ringLocation(M, L),
+% Maybe get more sophisticated and only allow transparent bases for the last fillment.
+possible(R, feedRS(L, R, S), gt) :- task(feedRS(L, R, S)), not holding(R, none, gt), ringLocation(M, L),
 									ringStationAssignment(M, Color), ringColorCost(Color, Cost), ringCost(Cost),
-									Cost > 0, not inUse(L, gt).
+									Cost > 0, not inUse(L, gt), rsFillState(M, FS, gt), FS < 3.
 
 { rsFed(M, gt);
   putDown(R, L, P, gt)
