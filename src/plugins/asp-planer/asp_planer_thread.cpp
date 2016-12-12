@@ -130,13 +130,18 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 			newRobot = true;
 		} //if ( !RobotInformations.count(name) )
 		const auto& time(object["last-seen"].Array());
-		const auto& info = RobotInformations[name] = {Time(time.at(0).Long(), time.at(1).Long()),
-			static_cast<float>(object["x"].Double()), static_cast<float>(object["y"].Double())};
+		auto& info = RobotInformations[name];
 		if ( newRobot )
 		{
+			info = {Time(time.at(0).Long(), time.at(1).Long()),
+				static_cast<float>(object["x"].Double()), static_cast<float>(object["y"].Double()), GameTime};
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
 			newTeamMate(name, info);
 		} //if ( newRobot )
+		else
+		{
+			info.LastSeen = Time(Time(time.at(0).Long(), time.at(1).Long()));
+		} //else -> if ( newRobot )
 	} //try
 	catch ( const std::exception& e )
 	{

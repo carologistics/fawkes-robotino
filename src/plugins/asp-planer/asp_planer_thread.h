@@ -108,6 +108,7 @@ class AspPlanerThread
 
 	void constructClingo(void);
 	void initClingo(void);
+	void resetClingo(fawkes::MutexLocker& aspLocker, fawkes::MutexLocker& reqLocker);
 	void loopClingo(void);
 	void finalizeClingo(void);
 	bool interruptSolving(void) const noexcept;

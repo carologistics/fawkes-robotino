@@ -120,6 +120,7 @@ struct RobotInformation
 	fawkes::Time LastSeen;
 	float X;
 	float Y;
+	unsigned int GameTime;
 };
 
 struct RingColorInformation

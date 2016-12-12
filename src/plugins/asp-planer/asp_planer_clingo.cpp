@@ -275,6 +275,74 @@ AspPlanerThread::initClingo(void)
 	return;
 }
 
+/**
+ * @brief Resets clingo and refills it with the needed information.
+ * @param[in] aspLocker The locked locker for clingo.
+ * @param[in] reqLocker The locked locker for the requests.
+ */
+void
+AspPlanerThread::resetClingo(MutexLocker& aspLocker, MutexLocker& reqLocker)
+{
+	ClingoAcc->reset();
+	NavgraphDistances.clear();
+	loadFilesAndGroundBase(aspLocker);
+	fillNavgraphNodesForASP();
+	Horizon = Past = 0;
+	LastTick = 0;
+	LastModel = SolvingStarted = LastPlan = fawkes::Time();
+	UpdateNavgraphDistances = true;
+	Requests.clear();
+
+	MutexLocker robLocker(&RobotsMutex);
+	reqLocker.unlock();
+	setTeam();
+	auto groundPastActions = [this](auto map)
+		{
+			auto iter = map.begin();
+			const auto end = map.end();
+			while ( iter != end )
+			{
+				if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore") == 0 )
+				{
+					//Remove all references to the exploration phase, we don't need this information!
+					iter = map.erase(iter);
+				} //if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore") == 0 )
+				else
+				{
+					GroundRequest copy(iter->second);
+					queueGround(std::move(copy));
+				} //else -> if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore")=0)
+			} //while ( iter != end )
+			return;
+		};
+
+	if ( !StillNeedExploring )
+	{
+		updateNavgraphDistances();
+	} //if ( !StillNeedExploring )
+
+	for ( const auto& pair : RobotInformations )
+	{
+		newTeamMate(pair.first, pair.second);
+	} //for ( const auto& pair : RobotInformations )
+
+	for ( const auto& color : RingColors )
+	{
+		setRingColor(color);
+	} //for ( const auto& color : RingColors )
+
+	for ( const auto& order : Orders )
+	{
+		addOrder(order);
+	} //for ( const auto& order : Orders )
+
+	groundPastActions(RobotTaskBegin);
+	groundPastActions(RobotTaskUpdate);
+	groundPastActions(TaskSuccess);
+	reqLocker.relock();
+	return;
+}
+
 
 /**
  * @brief Helper function to calculate the center point of each zone.
@@ -326,53 +394,13 @@ AspPlanerThread::loopClingo(void)
 		return;
 	} //if ( ClingoAcc->solving() )
 
-	if ( CompleteRestart || UpdateNavgraphDistances )
+	if ( CompleteRestart ) {
+		resetClingo(aspLocker, reqLocker);
+	} //if ( CompleteRestart )
+	else if ( UpdateNavgraphDistances )
 	{
-		if ( CompleteRestart ) {
-			ClingoAcc->reset();
-			NavgraphDistances.clear();
-			loadFilesAndGroundBase(aspLocker);
-			fillNavgraphNodesForASP();
-			Horizon = Past = 0;
-			LastTick = 0;
-			LastModel = SolvingStarted = LastPlan = fawkes::Time();
-			UpdateNavgraphDistances = true;
-			Requests.clear();
-
-			MutexLocker robLocker(&RobotsMutex);
-			reqLocker.unlock();
-			setTeam();
-			auto groundPastActions = [this](auto map)
-				{
-					auto iter = map.begin();
-					const auto end = map.end();
-					while ( iter != end )
-					{
-						if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore") == 0 )
-						{
-							//Remove all references to the exploration phase, we don't need this information!
-							iter = map.erase(iter);
-						} //if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore") == 0 )
-						else
-						{
-							GroundRequest copy(iter->second);
-							queueGround(std::move(copy));
-						} //else -> if ( !StillNeedExploring && std::strcmp(iter->second.Params[1].name(), "explore")=0)
-					} //while ( iter != end )
-					return;
-				};
-
-			groundPastActions(RobotTaskBegin);
-			groundPastActions(RobotTaskUpdate);
-			groundPastActions(TaskSuccess);
-			reqLocker.relock();
-		} //if ( CompleteRestart )
-
-		if ( UpdateNavgraphDistances )
-		{
-			updateNavgraphDistances();
-		} //if ( UpdateNavgraphDistances )
-	} //if ( CompleteRestart || UpdateNavgraphDistances )
+		updateNavgraphDistances();
+	} //else if ( UpdateNavgraphDistances )
 	else if ( Requests.empty() )
 	{
 		//Nothing todo.
@@ -1067,7 +1095,7 @@ AspPlanerThread::newTeamMate(const std::string& mate, const RobotInformation& in
 
 	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::String(mate.c_str()));
-	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(GameTime)));
+	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(info.GameTime)));
 	queueGround({"addRobot", params, true}, InterruptSolving::Critical);
 
 	params.emplace(params.begin() + 1, NavgraphNodesForASP.find(node.name())->second);
