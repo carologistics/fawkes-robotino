@@ -42,8 +42,8 @@ ring(order, 3, r3).
 :- ring(order, 3, R), ringColor(R), R != r3.
 
 spawnTask(mountCap(L, o, Q), gt) :- Q = 1..q, capLocation(M, L), capStationAssignment(M, c).
-spawnTask(mountRing(L, o, Q, 1), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r1), r1 != none.
-spawnTask(mountRing(L, o, Q, 2), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r2), r2 != none.
-spawnTask(mountRing(L, o, Q, 3), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r3), r3 != none.
+spawnTask(mountRing(L, o, Q, 1), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r1), r1 != "none".
+spawnTask(mountRing(L, o, Q, 2), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r2), r2 != "none".
+spawnTask(mountRing(L, o, Q, 3), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r3), r3 != "none".
 spawnTask(deliver(L, o, Q), deliveryBegin)   :- Q = 1..q, deliverLocation(L).
 spawnTask(lateDeliver(L, o, Q), deliveryEnd) :- Q = 1..q, deliverLocation(L).

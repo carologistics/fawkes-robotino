@@ -25,9 +25,9 @@ nextID(R, 0, T-1) :- robot(R), deliveryTimes(_, T).
 product(R, I) :- genProduct(R, I, _, gt).
 { base(product(R, I), B);
   cap( product(R, I), none, gt);
-  ring(product(R, I), 1, none, gt);
-  ring(product(R, I), 2, none, gt);
-  ring(product(R, I), 3, none, gt)
+  ring(product(R, I), 1, "none", gt);
+  ring(product(R, I), 2, "none", gt);
+  ring(product(R, I), 3, "none", gt)
   } = 5 :- genProduct(R, I, B, gt).
 
 cap(P, C, gt) :- cap(P, C, gt-1), not capMounted(_, P, gt), not delivered(P, gt).
