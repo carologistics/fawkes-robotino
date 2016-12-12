@@ -72,6 +72,12 @@ using fawkes::MutexLocker;
  * @property AspPlanerThread::LookAhaed
  * @brief How many seconds the planer should look ahaed.
  *
+ * @property AspPlanerThread::MaxOrders
+ * @brief The maximum amount of orders we expect.
+ *
+ * @property AspPlanerThread::MaxQuantity
+ * @brief The maximum quantity for an order we expect.
+ *
  * @property AspPlanerThread::MoreModels
  * @brief If we want to have more than one model (if available) from the solver.
  *
@@ -245,6 +251,11 @@ AspPlanerThread::initClingo(void)
 
 	std::strcpy(suffix, "debug-level");
 	ClingoAcc->DebugLevel = static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer));
+
+	std::strcpy(suffix, "max-orders");
+	MaxOrders = config->get_uint(buffer);
+	std::strcpy(suffix, "max-quantity");
+	MaxQuantity = config->get_uint(buffer);
 	std::strcpy(suffix, "more-models");
 	MoreModels  = config->get_bool(buffer);
 	std::strcpy(suffix, "look-ahaed");
@@ -258,6 +269,9 @@ AspPlanerThread::initClingo(void)
 	MaxDriveDuration = config->get_uint(buffer);
 
 	loadFilesAndGroundBase(locker);
+
+	Orders.reserve(MaxOrders);
+	RingColors.reserve(4);
 	return;
 }
 
@@ -952,28 +966,14 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			} //else if ( view == "maxTaskDuration" )
 			else if ( view == "maxOrders" )
 			{
-				static const unsigned int orders = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 20];
-						std::strcpy(buffer, ConfigPrefix);
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-orders");
-						return config->get_uint(buffer);
-					}();
-				retFunction({Clingo::Number(orders)});
+				retFunction({Clingo::Number(MaxOrders)});
 				return;
 			} //else if ( view == "maxOrders" )
-			else if ( view == "maxQuantitiy" )
+			else if ( view == "maxQuantity" )
 			{
-				static const unsigned int qty = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 20];
-						std::strcpy(buffer, ConfigPrefix);
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-quantitiy");
-						return config->get_uint(buffer);
-					}();
-				retFunction({Clingo::Number(qty)});
+				retFunction({Clingo::Number(MaxQuantity)});
 				return;
-			} //else if ( view == "maxQuantitiy" )
+			} //else if ( view == "maxQuantity" )
 			else if ( view == "minDeliveryTime" )
 			{
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(ExplorationTime))});
@@ -1097,9 +1097,39 @@ void AspPlanerThread::addZoneToExplore(const long zone)
 {
 	assert(zone >= 1 && zone <= 24);
 	Clingo::SymbolVector params;
+	params.reserve(2);
 	params.emplace_back(Clingo::Number(zone));
 	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(GameTime)));
 	queueGround({"zoneToExplore", params, false}, InterruptSolving::JustStarted);
+	return;
+}
+
+/**
+ * @brief Adds the ring info to asp.
+ * @param[in] info The info.
+ */
+void
+AspPlanerThread::setRingColor(const RingColorInformation& info)
+{
+	Clingo::SymbolVector params = {Clingo::String(info.Color), Clingo::Number(info.Cost), Clingo::String(info.Machine)};
+	queueGround({"setRingInfo", params, false}, InterruptSolving::JustStarted);
+	return;
+}
+
+/**
+ * @brief Adds an order to asp.
+ * @param[in] order The order.
+ */
+void
+AspPlanerThread::addOrder(const OrderInformation& order)
+{
+	Clingo::SymbolVector params = {Clingo::Number(order.Number), Clingo::Number(order.Quantity),
+		Clingo::String(order.Base), Clingo::String(order.Cap), Clingo::String(order.Rings[0]),
+		Clingo::String(order.Rings[1]), Clingo::String(order.Rings[2]),
+		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryBegin)),
+		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryEnd)),
+		Clingo::Number(realGameTimeToAspGameTime(order.GameTime))};
+	queueGround({"newOrder", params, false}, InterruptSolving::Critical);
 	return;
 }
 

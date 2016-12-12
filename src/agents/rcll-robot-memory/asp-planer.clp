@@ -75,3 +75,38 @@
   (bson-destroy ?doc)
 )
 
+(defrule ring-info-to-robmem
+  "Sets the ring color cost and machine assignment in the robot memory."
+  (ring (color ?color) (req-bases ?cost))
+  (ring-station (name ?machine) (available-colors ?colors&:(member$ ?color ?colors)))
+  (not (asp-synced ring ?color))
+  =>
+  (assert (asp-synced ring ?color))
+  (bind ?doc (bson-create))
+  (bson-append ?doc "relation" ring)
+  (bson-append ?doc "color" ?color)
+  (bson-append ?doc "cost" ?cost)
+  (bson-append ?doc "machine" ?machine)
+  (robmem-insert "robmem.planer" ?doc)
+  (bson-destroy ?doc)
+)
+
+(defrule order-to-robmem
+  "Sets the order info in the robot memory."
+  (order (id ?number) (quantity-requested ?qty) (begin ?begin) (end ?end) (product-id ?prod))
+  (product (id ?prod) (base ?base) (cap ?cap) (rings $?rings))
+  (not (asp-synced order ?number))
+  =>
+  (assert (asp-synced order ?number))
+  (bind ?doc (bson-create))
+  (bson-append ?doc "relation" order)
+  (bson-append ?doc "number" ?number)
+  (bson-append ?doc "quantity" ?qty)
+  (bson-append ?doc "begin" ?begin)
+  (bson-append ?doc "end" ?end)
+  (bson-append ?doc "base" ?base)
+  (bson-append ?doc "cap" ?cap)
+  (bson-append ?doc "rings" ?rings)
+  (robmem-insert "robmem.planer" ?doc)
+  (bson-destroy ?doc)
+)

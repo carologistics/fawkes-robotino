@@ -55,6 +55,8 @@ class AspPlanerThread
 
 	bool MoreModels;
 	unsigned int ExplorationTime;
+	unsigned int MaxOrders;
+	unsigned int MaxQuantity;
 
 	unsigned int LookAhaed;
 	unsigned int LastTick;
@@ -87,6 +89,9 @@ class AspPlanerThread
 	InterruptSolving Interrupt;
 	bool SentCancel;
 	std::vector<GroundRequest> Requests;
+
+	std::vector<RingColorInformation> RingColors;
+	std::vector<OrderInformation> Orders;
 
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
@@ -130,6 +135,9 @@ class AspPlanerThread
 
 	void addZoneToExplore(const long zone);
 
+	void setRingColor(const RingColorInformation& info);
+	void addOrder(const OrderInformation& order);
+
 	void foundAMachine(void);
 	void robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time);
 	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, unsigned int time,
@@ -139,6 +147,8 @@ class AspPlanerThread
 
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);
+	void orderCallback(const mongo::BSONObj document);
+	void ringColorCallback(const mongo::BSONObj document);
 	void teamColorCallback(const mongo::BSONObj document);
 	void zonesCallback(const mongo::BSONObj document);
 
