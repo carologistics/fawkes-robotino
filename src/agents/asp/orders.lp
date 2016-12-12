@@ -6,7 +6,7 @@
 % In this file defined predicates:
 % base(O, B)                     The base color for order O is B.
 % cap(O, C)                      The cap color for order O is C.
-% orderTimeframe(O, B, E)        The time frame for the delivery of the order O is [B, E].
+% orderDeadline(O, D)            The time frame for the delivery of the order O ends at D.
 % ring(O, R, C)                  The color of the R-th ring for order O is C.
 % spawnTask(T, GT)               Spawns the task for a order.
 %
@@ -26,10 +26,10 @@
 #external base(O, B) : order(O), baseColor(B).
 #external cap(O, C)  : order(O), capColor(C).
 #external ring(O, R, C) : order(O), R = 1..3, ringColor(C).
-#external orderTimeframe(O, B, E) : order(O), deliveryTimes(L, U), B = L..U, E = L..U, B < E.
+#external orderDeadline(O, D) : order(O), deliveryTimes(L, U), D = L..U.
 
 #program newOrder(o, q, b, c, r1, r2, r3, deliveryBegin, deliveryEnd, gt).
-orderTimeframe(order, deliveryBegin, deliveryEnd).
+orderDeadline(order, deliveryEnd).
 base(o, b).
 :- base(order, B), baseColor(B), B != b.
 cap(order, c).

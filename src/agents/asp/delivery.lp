@@ -28,7 +28,7 @@
 % holding(R, P, GT)              Defined in robots.lp
 % location(R, L, GT)             Defined in state.lp
 % order(O)                       Defined in facts.lp
-% orderTimeFramw(B, E)           Defined in facts.lp
+% orderDeadline(O, D)            Defined in orders.lp
 % quantity(Q)                    Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
 % ring(P, R, C, GT)              Defined in products.lp
@@ -56,7 +56,7 @@ possible(R, deliver(L, O, Q), gt) :- task(deliver(L, O, Q)), holding(R, P, gt), 
 									 base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2), ring(P, 2, R2, gt),
 									 ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, C, gt), cap(O, C),
 									 location(R, RL, gt), driveDuration(RL, L, DD), duration(deliver(L, O, Q), TD),
-									 D = TD + DD, D < E, orderTimeframe(O, _, E).
+									 D = TD + DD, D < E, orderDeadline(O, E).
 
 possible(R, lateDeliver(L, O, Q), gt) :- task(lateDeliver(L, O, Q)), holding(R, P, gt), not inUse(L, gt), base(P, B),
 										 base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2),
