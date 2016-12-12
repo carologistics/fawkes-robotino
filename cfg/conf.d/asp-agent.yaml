@@ -9,7 +9,7 @@ asp-agent:
     more-models: true #false
 
     program-path: ../src/agents/asp/
-    program-files: [facts.lp, robot.lp, state.lp]
+    program-files: [delivery.lp, facts.lp, feedRS.lp, getBase.lp, getProduct.lp, goal.lp, machines.lp, mountCap.lp, mountRing.lp, orders.lp, prepareCS.lp, products.lp, robots.lp, state.lp]
     exploration-files: [exploration.lp]
 
     #Look ahaed in real time seconds.
