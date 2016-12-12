@@ -35,10 +35,56 @@ using namespace fawkes;
  * @brief When did we last hear of the robot.
  *
  * @property RobotInformation::X
- * @brief The reported x coordinate of the robot.
+ * @brief The reported x coordinate of the robot, when he was added.
  *
  * @property RobotInformation::Y
- * @brief The reported y coordinate of the robot.
+ * @brief The reported y coordinate of the robot, when he was added.
+ *
+ * @property RobotInformation::GameTIme
+ * @brief The game time, when the robot was added.
+ */
+
+/**
+ * @struct RingColorInformation
+ * @brief Stores information about a ring color.
+ *
+ * @property RingColorInformation::Color
+ * @brief The name of the color.
+ *
+ * @property RingColorInformation::Machine
+ * @brief Which machine serves the color.
+ *
+ * @property RingColorInformation::Cost
+ * @brief How many additional bases are needed to get the color.
+ */
+
+/**
+ * @struct OrderInformation
+ * @brief Stores information about orders.
+ *
+ * @property OrderInformation::Number
+ * @brief The order number.
+ *
+ * @property OrderInformation::Quantity
+ * @brief How many products for the order can be delivered.
+ *
+ * @property OrderInformation::Base
+ * @brief The base color of the ordered product.
+ *
+ * @property OrderInformation::Cap
+ * @brief The cap color of the ordered product.
+ *
+ * @property OrderInformation::Rings
+ * @brief The ring colors of the ordered product, can be "none".
+ *
+ * @property OrderInformation::DeliveryBegin
+ * @brief The begin of the delivery time window.
+ *
+ * @property OrderInformation::DeliveryEnd
+ * @brief The end of the delivery time window.
+ *
+ * @property OrderInformation::GameTime
+ * @brief The game time, when we received the order.
  */
 
 /** @class AspPlanerThread "asp_planer_thread.h"
@@ -140,6 +186,84 @@ AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
 }
 
 /**
+ * @brief Gets called if we got a new order.
+ * @param[in] document The information about the order.
+ */
+void
+AspPlanerThread::orderCallback(const mongo::BSONObj document)
+{
+	try
+	{
+		const auto object(document.getField("o"));
+		const unsigned int number(object["number"].Long());
+		const unsigned int quantity(object["quanitity"].Long());
+		const std::string base(object["base"].String());
+		const std::string cap(object["cap"].String());
+		const auto rings(object["rings"].Array());
+		const std::string ring1(rings.size() >= 1 ? rings[0].String() : "none");
+		const std::string ring2(rings.size() >= 2 ? rings[1].String() : "none");
+		const std::string ring3(rings.size() >= 3 ? rings[2].String() : "none");
+		const unsigned int delBegin(object["begin"].Long() + ExplorationTime);
+		const unsigned int delEnd(object["end"].Long() + ExplorationTime);
+		OrderInformation info{number, quantity, base, cap, {ring1, ring2, ring3}, delBegin, delEnd, GameTime};
+		addOrder(info);
+		Orders.emplace_back(std::move(info));
+
+		if ( number > MaxOrders )
+		{
+			logger->log_error(LoggingComponent, "We expect no higher order numbers than %d, but got %d! This order "
+				"will not be considered by the ASP program!", MaxOrders, number);
+		} //if ( number > MaxOrders )
+		if ( quantity > MaxQuantity )
+		{
+			logger->log_error(LoggingComponent, "We expect no higher quantities for orders than %d, but got %d! This "
+				"order will not be considered by the ASP program!", MaxQuantity, quantity);
+		} //if ( quantity > MaxQuantity )
+	} //try
+	catch ( const std::exception& e )
+	{
+		logger->log_error(LoggingComponent, "Exception while extracting an order: %s\n%s", e.what(),
+			document.toString().c_str());
+	} //catch ( const std::exception& e )
+	catch ( ... )
+	{
+		logger->log_error(LoggingComponent, "Exception while extracting an order.\n%s",
+			document.toString().c_str());
+	} //catch ( ... )
+	return;
+}
+
+/**
+ * @brief Gets called if we know all we need to know about a ring color.
+ * @param[in] document The information about the color.
+ */
+void
+AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
+{
+	try
+	{
+		const auto object(document.getField("o"));
+		const std::string color(object["color"].String());
+		const unsigned int cost(object["cost"].Long());
+		const std::string machine(object["machine"].String().substr(2));
+		RingColorInformation info{color, machine, cost};
+		setRingColor(info);
+		RingColors.emplace_back(std::move(info));
+	} //try
+	catch ( const std::exception& e )
+	{
+		logger->log_error(LoggingComponent, "Exception while setting ring color: %s\n%s", e.what(),
+			document.toString().c_str());
+	} //catch ( const std::exception& e )
+	catch ( ... )
+	{
+		logger->log_error(LoggingComponent, "Exception while setting ring color.\n%s",
+			document.toString().c_str());
+	} //catch ( ... )
+	return;
+}
+
+/**
  * @brief Gets called, when the team color is changed.
  * @param[in] document The document with the new color.
  */
@@ -222,7 +346,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_THINK), ASPAspect("ASPPlaner", "ASP-Planer"),
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr), MoreModels(false),
-		ExplorationTime(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0), Past(0),
+		ExplorationTime(0), MaxOrders(0), MaxQuantity(0), LookAhaed(0), LastTick(0), GameTime(0), Horizon(0), Past(0),
 		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false), TimeResolution(1), MaxDriveDuration(0),
 		PlanElements(0), Unsat(false), UpdateNavgraphDistances(false),
 		Interrupt(InterruptSolving::Not), SentCancel(false)
@@ -251,7 +375,7 @@ AspPlanerThread::init(void)
 	std::strcpy(suffix, "exploration-time");
 	ExplorationTime = config->get_uint(buffer);
 
-	RobotMemoryCallbacks.reserve(5);
+	RobotMemoryCallbacks.reserve(7);
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planer",
@@ -260,6 +384,14 @@ AspPlanerThread::init(void)
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "game-time"})"), "robmem.planer",
 		&AspPlanerThread::gameTimeCallback, this));
+
+	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
+		mongo::Query(R"({"relation": "order"})"), "robmem.planer",
+		&AspPlanerThread::orderCallback, this));
+
+	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
+		mongo::Query(R"({"relation": "ring"})"), "robmem.planer",
+		&AspPlanerThread::ringColorCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "team-color"})"), "robmem.planer",

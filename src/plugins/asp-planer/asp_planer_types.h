@@ -29,6 +29,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <libs/utils/time/time.h>
+
 class EventTrigger;
 
 namespace fawkes {
@@ -118,6 +120,25 @@ struct RobotInformation
 	fawkes::Time LastSeen;
 	float X;
 	float Y;
+};
+
+struct RingColorInformation
+{
+	std::string Color;
+	std::string Machine;
+	unsigned int Cost;
+};
+
+struct OrderInformation
+{
+	unsigned int Number;
+	unsigned int Quantity;
+	std::string Base;
+	std::string Cap;
+	std::string Rings[3];
+	unsigned int DeliveryBegin;
+	unsigned int DeliveryEnd;
+	unsigned int GameTime;
 };
 
 namespace std {
