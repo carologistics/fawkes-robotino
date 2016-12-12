@@ -26,7 +26,7 @@
 % holding(R, P, GT)              Defined in robots.lp
 % location(R, L, GT)             Defined in state.lp
 % order(O)                       Defined in facts.lp
-% quantitiy(Q)                   Defined in facts.lp
+% quantity(Q)                    Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
 % ring(P, R, C, GT)              Defined in products.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
