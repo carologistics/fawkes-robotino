@@ -38,4 +38,4 @@ ring(P, R, C, gt) :- ringMounted(_, P, C, gt), ring(P, R, none, gt-1), not ring(
 %ring(P, 1, C, gt) :- ringMounted(_, P, C, gt), ring(P, 1, none, gt-1).
 
 nextID(R, I, gt) :- nextID(R, I, gt-1), not genProduct(R, _, _, gt).
-nextID(R, I, gt) :- robot(R), MaxID = #max{ J:genProduct(R, J, _, gt) }, I = MaxID + 1.
+nextID(R, I, gt) :- robot(R), I = #max{ J+1 : genProduct(R, J, _, gt) }, I != #inf.
