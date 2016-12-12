@@ -81,3 +81,4 @@ failure(t, gt).
 
 #program past(gt).
 %:- horizon(gt).
+:- failure(T, gt), task(T).
