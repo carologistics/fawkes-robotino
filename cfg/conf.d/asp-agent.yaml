@@ -21,7 +21,7 @@ asp-agent:
     #Names of possible used robots.
     robots: [Tuvok,T'Pol,Spock]
     max-orders: 10
-    max-quantitiy: 2
+    max-quantity: 2
 
   exec:
     #How many seconds a task may be started before the time stated by the planer.

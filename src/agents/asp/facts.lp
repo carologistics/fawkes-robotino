@@ -23,7 +23,7 @@
 % location(m(T, M, S))           The navgraph locations for all machine sides.
 % machine(M)                     All machines (without team info).
 % order(O)                       All orders O.
-% quantitiy(Q)                   All possible quantities for orders Q.
+% quantity(Q)                    All possible quantities for orders Q.
 % ringColor(C)                   All ring colors.
 % ringColorCost(Col, Cost)       The mapping from ring color Col to its corresponding cost Cost.
 % ringLocation(M, L)             The location for the input of the ring stations, both the slide and the "normal" input.
