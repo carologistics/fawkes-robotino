@@ -19,7 +19,7 @@
 % robot(R)                       Defined in facts.lp
 
 
-nextID(R, 0, T-1) :- robot(R), deliveryTimes(_, T).
+nextID(R, 0, T-1) :- robot(R), deliveryTimes(T, _).
 
 #program transition(gt).
 product(R, I) :- genProduct(R, I, _, gt).
