@@ -78,7 +78,7 @@
 (defrule ring-info-to-robmem
   "Sets the ring color cost and machine assignment in the robot memory."
   (ring (color ?color) (req-bases ?cost))
-  (ring-station (name ?machine) (available-colors ?colors&:(member$ ?color ?colors)))
+  (ring-station (name ?machine) (available-colors $?colors&:(neq (member$ ?color $?colors) FALSE)))
   (not (asp-synced ring ?color))
   =>
   (assert (asp-synced ring ?color))
@@ -106,7 +106,7 @@
   (bson-append ?doc "end" ?end)
   (bson-append ?doc "base" ?base)
   (bson-append ?doc "cap" ?cap)
-  (bson-append ?doc "rings" ?rings)
+  (bson-append-array ?doc "rings" $?rings)
   (robmem-insert "robmem.planer" ?doc)
   (bson-destroy ?doc)
 )
