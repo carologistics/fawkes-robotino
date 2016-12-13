@@ -40,7 +40,7 @@
 % Initialize and update doing.
 doing(R, T, gt, D) :- begin(R, T, gt), duration(R, T, gt, D).
 doing(R, T, gt, D) :- doing(R, T, gt-1, D+1), D > 0, not update(R, T, gt, _).
-doing(R, T, gt, D) :- update(R, T, gt, D).
+doing(R, T, gt, D) :- update(R, T, gt, D), D != 0.
 
 % Setting end.
 end(R, T, gt) :- doing(R, T, gt-1, 1), not update(R, T, gt, D), D = 1..@maxTaskDuration().
