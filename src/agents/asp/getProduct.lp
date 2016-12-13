@@ -25,10 +25,7 @@
 
 #program ourTeam(t).
 
-% This means each robot can get 20 products from each machine.
-#const maxGetProduct = 20.
-
-task(getProduct(L, R, S))                                :- robot(R), getLocation(_, L), S = 1..maxGetProduct.
+task(getProduct(L, R, S))                                :- robot(R), getLocation(_, L), S = 1..@maxGetProduct().
 points(getProduct(L, R, S), 0)                           :- task(getProduct(L, R, S)).
 duration(getProduct(L, R, S), @getProductTaskDuration()) :- task(getProduct(L, R, S)).
 location(getProduct(L, R, S), L)                         :- task(getProduct(L, R, S)).

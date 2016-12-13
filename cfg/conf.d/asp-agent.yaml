@@ -20,8 +20,12 @@ asp-agent:
     max-ticks: 25
     #Names of possible used robots.
     robots: [Tuvok,T'Pol,Spock]
-    max-orders: 10
+    max-orders: 8
     max-quantity: 2
+    max-feed-rs: 6
+    max-get-base: 10
+    max-get-product: 20
+    max-prep-cs: 4
 
   exec:
     #How many seconds a task may be started before the time stated by the planer.

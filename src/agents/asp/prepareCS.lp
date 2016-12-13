@@ -31,11 +31,7 @@
 
 #program ourTeam(t).
 
-% This means each robot can prepare each CS up to 3 times, even when one robot is doing all the preparations we can
-% produce at least 3 products.
-#const maxPrepCS = 3.
-
-task(prepareCS(L, R, S))                               :- robot(R), capLocation(_, L), S = 1..maxPrepCS.
+task(prepareCS(L, R, S))                               :- robot(R), capLocation(_, L), S = 1..@maxPrepCS().
 points(prepareCS(L, R, S), 3)                          :- task(prepareCS(L, R, S)).
 duration(prepareCS(L, R, S), @prepareCSTaskDuration()) :- task(prepareCS(L, R, S)).
 location(prepareCS(L, R, S), L)	                       :- task(prepareCS(L, R, S)).

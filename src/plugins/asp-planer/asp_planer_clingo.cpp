@@ -939,15 +939,63 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			else if ( view == "getProductTaskDuration" )
 			{
 				static const unsigned int dur = [this](void)
-				{
-					char buffer[std::strlen(ConfigPrefix) + 40];
-					std::strcpy(buffer, ConfigPrefix);
-					std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-product");
-					return config->get_uint(buffer);
-				}();
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/fetch-product");
+						return config->get_uint(buffer);
+					}();
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
 			} //if ( view == "getProductTaskDuration" )
+			else if ( view == "maxFeedRS" )
+			{
+				static const unsigned int max = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-feed-rs");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(max)});
+				return;
+			} //if ( view == "maxFeedRS" )
+			else if ( view == "maxGetBase" )
+			{
+				static const unsigned int max = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-get-base");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(max)});
+				return;
+			} //if ( view == "maxGetBase" )
+			else if ( view == "maxGetProduct" )
+			{
+				static const unsigned int max = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-get-product");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(max)});
+				return;
+			} //if ( view == "maxGetProduct" )
+			else if ( view == "maxPrepCS" )
+			{
+				static const unsigned int max = [this](void)
+					{
+						char buffer[std::strlen(ConfigPrefix) + 40];
+						std::strcpy(buffer, ConfigPrefix);
+						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-prep-cs");
+						return config->get_uint(buffer);
+					}();
+				retFunction({Clingo::Number(max)});
+				return;
+			} //if ( view == "maxPrepCS" )
 			else if ( view == "maxDriveDuration" )
 			{
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxDriveDuration))});
