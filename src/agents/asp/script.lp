@@ -13,10 +13,10 @@ def robots():
 	return ["Tuvok", "T'Pol", "Spock"]
 
 def maxOrders():
-	return 10
+	return MaxOrders
 
 def maxQuantity():
-	return 2
+	return MaxQuantity
 
 def minDeliveryTime():
 	return toASP(240)
@@ -61,5 +61,20 @@ def getProductTaskDuration():
 
 def getTaskDuration():
 	return toASP(5)
+
+def gameRange():
+	return range(0, maxDeliveryTime() + 1)
+
+def maxFeedRS():
+	return MaxFeedRS
+
+def maxGetBase():
+	return MaxGetBase
+
+def maxGetProduct():
+	return MaxGetProduct
+
+def maxPrepCS():
+	return MaxPrepCS
 
 #end.

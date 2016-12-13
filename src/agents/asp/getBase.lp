@@ -30,7 +30,7 @@
 
 % Each robot can get each color from each side 8 times, that should suffice.
 % The tasks are spawned immediatly, but with a negative score, so the maximize won't choose them just for fun.
-task(getBase(L, R, B, S))                         :- robot(R), baseLocation(L), S = 1..8, baseColor(B).
+task(getBase(L, R, B, S))                         :- robot(R), baseLocation(L), S = 1..@maxGetBase(), baseColor(B).
 points(getBase(L, R, B, S), -1)                   :- task(getBase(L, R, B, S)).
 duration(getBase(L, R, B, S), @getTaskDuration()) :- task(getBase(L, R, B, S)).
 location(getBase(L, R, B, S), L)                  :- task(getBase(L, R, B, S)).

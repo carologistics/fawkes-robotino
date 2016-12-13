@@ -29,10 +29,7 @@
 
 #program ourTeam(t).
 
-% This means each robot can feed each RS up to 10 times.
-#const maxFeedRS = 10.
-
-task(feedRS(L, R, S))                            :- robot(R), ringLocation(_, L), S = 1..maxFeedRS.
+task(feedRS(L, R, S))                            :- robot(R), ringLocation(_, L), S = 1..@maxFeedRS().
 points(feedRS(L, R, S), 2)                       :- task(feedRS(L, R, S)).
 duration(feedRS(L, R, S), @feedRSTaskDuration()) :- task(feedRS(L, R, S)).
 location(feedRS(L, R, S), L)	                 :- task(feedRS(L, R, S)).
