@@ -41,8 +41,8 @@ spawn(prepareCS(L, R, S), T)                           :- task(prepareCS(L, R, S
 inUse(L, gt) :- begin(R, prepareCS(L, R, S), gt), not end(R, prepareCS(L, R, S), gt).
 free(L, gt)  :- end(R, prepareCS(L, R, _), gt).
 
-possible(R, prepareCS(L, R, S), gt) :- task(prepareCS(L, R, S)), holding(R, none, gt), capLocation(M, L),
-									   not csPrepared(M, gt), storing(M, none, gt), not inUse(L, gt),
+possible(R, prepareCS(L, R, S), gt) :- task(prepareCS(L, R, S)), not holding(R, _, gt), capLocation(M, L),
+									   not csPrepared(M, gt), not storing(M, _, gt), not inUse(L, gt),
 									   toBeDone(prepareCS(L, R, S), gt).
 
 { csPrepared(M, gt);

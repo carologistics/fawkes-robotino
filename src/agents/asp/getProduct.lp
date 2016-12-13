@@ -35,8 +35,8 @@ spawn(getProduct(L, R, S), T)                            :- task(getProduct(L, R
 inUse(L, gt) :- begin(R, getProduct(L, R, S), gt), not end(R, getProduct(L, R, S), gt).
 free(L, gt)  :- end(R, getProduct(L, R, _), gt).
 
-possible(R, getProduct(L, R, S), gt) :- task(getProduct(L, R, S)), holding(R, none, gt), getLocation(M, L),
-										storing(M, P, gt), P != none, not inUse(L, gt).
+possible(R, getProduct(L, R, S), gt) :- task(getProduct(L, R, S)), not holding(R, _, gt), getLocation(M, L),
+										storing(M, P, gt), not inUse(L, gt).
 
 { pickUp(R, P, M, gt)
   } = 1 :- end(R, getProduct(L, R, S), gt), not failure(getProduct(L, R, S), gt), getLocation(M, L), storing(M, P, gt).

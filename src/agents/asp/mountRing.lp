@@ -52,17 +52,17 @@ inUse(L, gt) :- begin(R, mountRing(L, O, Q, Ring), gt), not end(R, mountRing(L, 
 free(L, gt)  :- end(_, mountRing(L, _, _, _), gt).
 
 possible(R, mountRing(L, O, Q, 1), gt) :- task(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
-										  rsFillState(M, FS, gt), storing(M, none, gt), not inUse(L, gt),
+										  rsFillState(M, FS, gt), not storing(M, _, gt), not inUse(L, gt),
 										  base(P, B), base(O, B), ring(P, 1, none, gt), cap(P, none, gt),
 										  ringColorCost(Color, Cost), Cost <= FS.
 
 possible(R, mountRing(L, O, Q, 2), gt) :- task(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
-										  rsFillState(M, FS, gt), storing(M, none, gt), not inUse(L, gt),
+										  rsFillState(M, FS, gt), not storing(M, _, gt), not inUse(L, gt),
 										  base(P, B), base(O, B), not ring(P, 1, none, gt), ring(P, 2, none, gt),
 										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS.
 
 possible(R, mountRing(L, O, Q, 3), gt) :- task(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
-										  rsFillState(M, FS, gt), storing(M, none, gt), not inUse(L, gt),
+										  rsFillState(M, FS, gt), not storing(M, _, gt), not inUse(L, gt),
 										  base(P, B), base(O, B), not ring(P, 2, none, gt), ring(P, 3, none, gt),
 										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS.
 
