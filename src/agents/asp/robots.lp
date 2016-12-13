@@ -39,11 +39,8 @@ robot(R, gt) :- robot(R, gt, T1), killRobot(R, gt, T2), T1 > T2.
 robot(R, gt) :- robot(R, gt-1), not killRobot(R, gt, _).
 
 %Todo: What happens with the product if a robot is taken out with a product in his gripper?
-holding(R, none, gt) :- robot(R, gt, _), not killRobot(R, gt, _).
-holding(R, none, gt) :- robot(R, gt, T1), killRobot(R, gt, T2), T1 > T2.
-holding(R, P   , gt) :- holding(R, P, gt-1), not killRobot(R, gt, _), not putDown(R, _, _, gt).
-holding(R, P   , gt) :- not killRobot(R, gt, _), pickUp(R, P, _, gt).
-holding(R, none, gt) :- putDown(R, _, _, gt).
+holding(R, P, gt) :- holding(R, P, gt-1), not putDown(R, P, _, gt).
+holding(R, P, gt) :- pickUp(R, P, _, gt).
 
 location(R, L, gt) :- setLocation(R, L, gt, _), not killRobot(R, gt, _).
 location(R, L, gt) :- setLocation(R, L, gt, T1), killRobot(R, gt, T2), T1 > T2.

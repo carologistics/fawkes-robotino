@@ -44,9 +44,9 @@ inUse(L, gt) :- begin(R, mountCap(L, O, Q), gt), not end(R, mountCap(L, O, Q), g
 free(L, gt)  :- end(_, mountCap(L, _, _), gt).
 
 possible(R, mountCap(L, O, Q), gt) :- task(mountCap(L, O, Q)), holding(R, P, gt), capLocation(M, L),
-									  csPrepared(M, gt), storing(M, none, gt), not inUse(L, gt), base(P, B), base(O, B),
-									  ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2), ring(P, 2, R2, gt),
-									  ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, none, gt).
+									  csPrepared(M, gt), not storing(M, _, gt), not inUse(L, gt), base(P, B),
+									  base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2),
+									  ring(P, 2, R2, gt), ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, none, gt).
 
 { putDown(R, L, P, gt);
   capMounted(M, P, gt);

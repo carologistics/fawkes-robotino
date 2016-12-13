@@ -21,17 +21,14 @@
 % pickUp(R, P, M, GT)            Defined in some tasks descriptions.
 % process(M, P, GT)              Defined in some tasks descriptions.
 
-storing(M, none, T-1) :- machine(M), deliveryTimes(T, _).
-
 rsFillState(M, 0, T-1) :- ringStation(M), deliveryTimes(T, _).
 
 #program transition(gt).
 % Update inUse, we block a machine one time step longer than actually used, this is because of the time resolution.
 inUse(L, gt) :- inUse(L, gt-1), not free(L, gt-1).
 
-storing(M, P   , gt) :- storing(M, P, gt-1), not pickUp(_, P, M, gt).
-storing(M, none, gt) :- storing(M, P, gt-1), pickUp(_, P, M, gt).
-storing(M, P   , gt) :- process(M, P, gt). %TODO: Consider processing time.
+storing(M, P, gt) :- storing(M, P, gt-1), not pickUp(_, P, M, gt).
+storing(M, P, gt) :- process(M, P, gt). %TODO: Consider processing time.
 
 csPrepared(M, gt) :- csPrepared(M, gt-1), not capMounted(M, _, gt).
 
