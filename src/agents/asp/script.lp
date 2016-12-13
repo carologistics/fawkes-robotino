@@ -77,4 +77,27 @@ def maxGetProduct():
 def maxPrepCS():
 	return MaxPrepCS
 
+import clingo
+
+def main(ctl):
+	(withExploration, programParts) = generateInstance()
+	ctl.configuration.solver.heuristic = "Domain"
+
+	for file in ["delivery.lp", "facts.lp", "feedRS.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
+		ctl.load(file)
+
+	if withExploration:
+		ctl.load("exploration.lp")
+
+	ctl.ground([("base", [])])
+
+	for gt in gameRange():
+		print("Start ground " + str(gt) + ": " + str(programParts[gt]))
+		ctl.ground(programParts[gt])
+		ctl.ground([("transition", [gt])])
+		if ctl.solve().unsatisfiable:
+			return
+
+	print("Start solve.")
+	ctl.solve()
 #end.
