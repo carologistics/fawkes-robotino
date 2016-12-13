@@ -1,6 +1,6 @@
-% For the external functions which are implemented in C++.
-
 #script (python)
+
+import clingo
 
 def toASP(time):
 	res = 5
@@ -10,7 +10,7 @@ def toASP(time):
 	return ret
 
 def robots():
-	return ["Tuvok", "T'Pol", "Spock"]
+	return Robots
 
 def maxOrders():
 	return MaxOrders
@@ -25,7 +25,7 @@ def maxDeliveryTime():
 	return toASP(19 * 60)
 
 def capColor(m):
-	if m == 1:
+	if m == clingo.Number(1):
 		return "GREY"
 	return "BLACK"
 
@@ -36,7 +36,7 @@ def explorationTaskDuration():
 	return toASP(5)
 
 def maxTaskDuration():
-	return toASP(65)
+	return toASP(35)
 
 def maxTicks():
 	return 25
@@ -77,8 +77,6 @@ def maxGetProduct():
 def maxPrepCS():
 	return MaxPrepCS
 
-import clingo
-
 def main(ctl):
 	(withExploration, programParts) = generateInstance()
 	ctl.configuration.solver.heuristic = "Domain"
@@ -89,15 +87,22 @@ def main(ctl):
 	if withExploration:
 		ctl.load("exploration.lp")
 
+	print("Ground base.", flush = True)
 	ctl.ground([("base", [])])
 
 	for gt in gameRange():
-		print("Start ground " + str(gt) + ": " + str(programParts[gt]))
+		print("Start ground " + str(gt) + ": " + str(programParts[gt]), flush = True)
 		ctl.ground(programParts[gt])
+		print("Start ground " + str(gt) + ": (transition, [" + str(gt) + "])", flush = True)
 		ctl.ground([("transition", [gt])])
+		#programParts[gt].append(("transition", [gt]))
+		#for part in programParts[gt]:
+		#	print("Start ground " + str(gt) + ": " + str(part), flush = True)
+		#	ctl.ground([part])
+		print("Start solve " + str(gt) + ".", flush = True)
 		if ctl.solve().unsatisfiable:
 			return
 
-	print("Start solve.")
+	print("Start solve.", flush = True)
 	ctl.solve()
 #end.

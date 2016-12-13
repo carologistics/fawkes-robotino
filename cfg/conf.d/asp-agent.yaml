@@ -44,7 +44,7 @@ asp-agent:
 
     read-mps-light: 10
 
-    max-task-duration: 65
+    max-task-duration: 35 #Does not include the drive duration.
     max-drive-duration: 30
 
   #real-world-setup:
