@@ -6,7 +6,7 @@
 % duration(getBase(_), D)        How long it takes to retreive the base from the base station, once the robot has
 %                                arrived.
 % free(L, gt)                    The machine side L is freed in time step GT.
-% genProduct(R, I, B, GT)        The robot R generated a new product with index I and base color B at GT.
+% genProduct(R, B, GT)           The robot R generated a new product with base color B at GT.
 % inUse(L, GT)                   The machine side L is in use for time step GT.
 % location(getBase(_), L)        Where the retreival will take place.
 % pickup(R, P, L)                The robot R picked up product P at location L.
@@ -23,7 +23,6 @@
 % end(R, T, GT)                  Defined in state.lp
 % failure(R, T, GT)              Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
-% nextID(R, I, GT)               Defined in products.lp
 
 
 #program ourTeam(t).
@@ -43,8 +42,8 @@ free(L, gt)  :- end(R, getBase(_, R, _, _), gt), baseLocation(L).
 possible(R, getBase(L, R, B, S), gt) :- task(getBase(L, R, B, S)), not holding(R, _, gt), not inUse(L, gt),
 										toBeDone(getBase(L, R, B, S), gt).
 
-{ genProduct(R, I, B, gt);
-  pickUp(R, product(R, I), L)
-  } = 2 :- end(R, getBase(L, R, B, S), gt), not failure(getBase(L, R, B, S), gt), nextID(R, I, gt).
+{ genProduct(R, B, gt);
+  pickUp(R, product(R, gt), L)
+  } = 2 :- end(R, getBase(L, R, B, S), gt), not failure(getBase(L, R, B, S), gt).
 
 

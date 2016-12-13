@@ -7,7 +7,7 @@
 % csPrepared(M, GT)              Also defined in machines.lp
 % duration(prepareCS(_), D)      How long it takes to prepare the cap station, once the robot has arrived.
 % free(L, gt)                    The machine side L is freed in time step GT.
-% genProduct(R, I, B, GT)        The robot R generated a new product with index I and base color B at GT.
+% genProduct(R, B, GT)           The robot R generated a new product with base color B at GT.
 % inUse(L, GT)                   The machine side L is in use for time step GT.
 % location(prepareCS(_), L)      Where the preparation will take place.
 % points(prepareCS(_), P)        How many points are awarded for the preparation.
@@ -25,7 +25,6 @@
 % end(R, T, GT)                  Defined in state.lp
 % failure(R, T, GT)              Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
-% nextID(R, I, GT)               Defined in products.lp
 % storing(M, P, GT)              Defined in machines.lp
 
 
@@ -46,7 +45,7 @@ possible(R, prepareCS(L, R, S), gt) :- task(prepareCS(L, R, S)), not holding(R, 
 									   toBeDone(prepareCS(L, R, S), gt).
 
 { csPrepared(M, gt);
-  genProduct(R, I, "TRANSPARENT", gt);
-  process(M, product(R, I), gt)
-  } = 3 :- end(R, prepareCS(L, R, S), gt), not failure(prepareCS(L, R, S), gt), nextID(R, I, gt), capLocation(M, L).
+  genProduct(R, "TRANSPARENT", gt);
+  process(M, product(R, gt), gt)
+  } = 3 :- end(R, prepareCS(L, R, S), gt), not failure(prepareCS(L, R, S), gt), capLocation(M, L).
 
