@@ -57,12 +57,12 @@ possible(R, mountRing(L, O, Q, 1), gt) :- task(mountRing(L, O, Q, 1)), holding(R
 										  ringColorCost(Color, Cost), Cost <= FS.
 
 possible(R, mountRing(L, O, Q, 2), gt) :- task(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
-										  rsFillState(M, FS, gt), storing(M, gt, none), not inUse(L, gt),
+										  rsFillState(M, FS, gt), storing(M, none, gt), not inUse(L, gt),
 										  base(P, B), base(O, B), not ring(P, 1, none, gt), ring(P, 2, none, gt),
 										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS.
 
 possible(R, mountRing(L, O, Q, 3), gt) :- task(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
-										  rsFillState(M, FS, gt), storing(M, gt, none), not inUse(L, gt),
+										  rsFillState(M, FS, gt), storing(M, none, gt), not inUse(L, gt),
 										  base(P, B), base(O, B), not ring(P, 2, none, gt), ring(P, 3, none, gt),
 										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS.
 

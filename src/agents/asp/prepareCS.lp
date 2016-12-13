@@ -42,7 +42,8 @@ inUse(L, gt) :- begin(R, prepareCS(L, R, S), gt), not end(R, prepareCS(L, R, S),
 free(L, gt)  :- end(R, prepareCS(L, R, _), gt).
 
 possible(R, prepareCS(L, R, S), gt) :- task(prepareCS(L, R, S)), holding(R, none, gt), capLocation(M, L),
-									   not csPrepared(M, gt), storing(M, none, gt), not inUse(L, gt).
+									   not csPrepared(M, gt), storing(M, none, gt), not inUse(L, gt),
+									   toBeDone(prepareCS(L, R, S), gt).
 
 { csPrepared(M, gt);
   genProduct(R, I, "TRANSPARENT", gt);
