@@ -1173,7 +1173,7 @@ void
 AspPlanerThread::setRingColor(const RingColorInformation& info)
 {
 	Clingo::SymbolVector params = {Clingo::String(info.Color), Clingo::Number(info.Cost), Clingo::String(info.Machine)};
-	queueGround({"setRingInfo", params, false}, InterruptSolving::JustStarted);
+	queueGround({"setRingInfo", params, false});
 	return;
 }
 
