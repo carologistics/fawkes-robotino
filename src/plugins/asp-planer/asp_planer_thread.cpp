@@ -201,7 +201,7 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
 	{
 		const auto object(document.getField("o"));
 		const unsigned int number(object["number"].Long());
-		const unsigned int quantity(object["quanitity"].Long());
+		const unsigned int quantity(object["quantity"].Long());
 		const std::string base(object["base"].String());
 		const std::string cap(object["cap"].String());
 		const auto rings(object["rings"].Array());
@@ -210,8 +210,14 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
 		const std::string ring3(rings.size() >= 3 ? rings[2].String() : "none");
 		const unsigned int delBegin(object["begin"].Long() + ExplorationTime);
 		const unsigned int delEnd(object["end"].Long() + ExplorationTime);
-		OrderInformation info{number, quantity, base, cap, {ring1, ring2, ring3}, delBegin, delEnd, GameTime};
-		addOrder(info);
+		OrderInformation info{number, quantity, base, cap, {ring1, ring2, ring3}, delBegin, delEnd,
+			std::max(GameTime, ExplorationTime)};
+		if ( RingColors.size() == 4 )
+		{
+			//Do only spawn tasks when we have the ring infos.
+			addOrder(info);
+		} //if ( RingColors.size() > 4 )
+
 		Orders.emplace_back(std::move(info));
 
 		if ( number > MaxOrders )
@@ -254,6 +260,15 @@ AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
 		RingColorInformation info{color, machine, cost};
 		setRingColor(info);
 		RingColors.emplace_back(std::move(info));
+
+		if ( RingColors.size() == 4 )
+		{
+			//We have the last ring info, spawn orders we have received until now.
+			for ( const auto& order : Orders )
+			{
+				addOrder(order);
+			} //for ( const auto& order : Orders )
+		} //if ( RingColors.size() == 4 )
 	} //try
 	catch ( const std::exception& e )
 	{
