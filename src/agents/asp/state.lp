@@ -58,7 +58,7 @@ location(R, L, gt) :- robot(R, gt), location(R, L, gt-1), not begin(R, _, gt-1),
 :- 2 { doing(R, T, gt, _) : toBeDone(T, gt) }, robot(R, gt).
 
 % Calculate complete duration per robot.
-duration(R, T, gt, D) :- toBeDone(T, gt), duration(T, TD), location(T, TL), location(R, RL, gt), driveDuration(RL, TL, DD), D = TD + DD.
+duration(R, T, gt, D) :- possible(R, T, gt), duration(T, TD), location(T, TL), location(R, RL, gt), driveDuration(RL, TL, DD), D = TD + DD.
 
 % Update Task status.
 toBeDone(T, gt) :- spawnTask(T, gt).
