@@ -3,13 +3,14 @@
 
 #script (python)
 
-MaxOrders = 8
-MaxQuantity = 2
+MaxOrders = 1
+MaxQuantity = 1
 
-MaxFeedRS = 4
-MaxGetBase = 8
-MaxGetProduct = 15
-MaxPrepCS = 3
+MaxFeedRS = 2
+MaxGetBase = 2
+MaxGetProduct = 4
+MaxPrepCS = 1
+Robots = ["Spock"] #, "T'Pol", "Tuvok"]
 
 def generateInstance():
 	list = []
@@ -22,9 +23,9 @@ def generateInstance():
 		#("addRobot", ["Tuvok", 0, 0]),
 		#("setRobotLocation", ["Tuvok", "ins-out", 0, 1]),
 		#("addRobot", ["T'Pol", 0, 2]),
-		#("setRobotLocation", ["T'Pol", "ins-out", 3, 1]),
+		#("setRobotLocation", ["T'Pol", "ins-out", 0, 3]),
 		("addRobot", ["Spock", 0, 4]),
-		("setRobotLocation", ["Spock", "ins-out", 5, 1])])
+		("setRobotLocation", ["Spock", "ins-out", 0, 5])])
 
 
 	list[minDeliveryTime()].extend([
@@ -34,7 +35,7 @@ def generateInstance():
 		("setRingInfo", ["ORANGE", 0, "RS1"])])
 
 	list[minDeliveryTime()].extend([
-		("newOrder", [7, 1, "RED", "BLACK", "GREEN", "YELLOW", "ORANGE", 172, 206, minDeliveryTime()]),
+		#("newOrder", [7, 1, "RED", "BLACK", "GREEN", "YELLOW", "ORANGE", 172, 206, minDeliveryTime()]),
 		("newOrder", [1, 1, "BLACK", "BLACK", "none", "none", "none", 48, 228, minDeliveryTime()])])
 
 	gt = toASP(120 + 240)
