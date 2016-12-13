@@ -66,6 +66,7 @@ location(m(T, M, S)) :- baseStation(M),     team(T), side(S).
 location(m(T, M, S)) :- capStation(M),      team(T), side(S).
 location(m(T, M, S)) :- ringStation(M),     team(T), side(S).
 location(m(T, M, S)) :- deliveryStation(M), team(T), side(S).
+location("ins-out").
 
 baseColor("RED"; "BLACK"; "SILVER"). %There exists also transparent bases, but they are not used for production.
 capColor("BLACK"; "GREY").
