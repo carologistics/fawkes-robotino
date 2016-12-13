@@ -35,7 +35,7 @@
 #external failure(T, gt)      : task(T).
 
 % Can start at max one task and only if not doing something else right now.
-{ begin(R, T, gt) : toBeDone(T, gt) } 1 :- location(R, _, gt), possible(R, T, gt).
+{ begin(R, T, gt) : toBeDone(T, gt), possible(R, T, gt) } 1 :- location(R, _, gt).
 
 % Initialize and update doing.
 doing(R, T, gt, D) :- begin(R, T, gt), duration(R, T, gt, D).
