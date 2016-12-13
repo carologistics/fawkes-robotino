@@ -149,7 +149,7 @@ AspPlanerThread::fillNavgraphNodesForASP(void)
 {
 	NavgraphNodesForASP.clear();
 	//Maschinen * Seiten + Zonen
-	NavgraphNodesForASP.reserve(6 * 2 + 24);
+	NavgraphNodesForASP.reserve(6 * 2 + 24 + 1);
 
 	//The machines.
 	std::string name;
@@ -174,10 +174,12 @@ AspPlanerThread::fillNavgraphNodesForASP(void)
 		} //for ( const auto& side : {"I", "O"} )
 	} //for ( const auto& machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
 
+	NavgraphNodesForASP.insert({std::string(TeamColor) + "-ins-out", Clingo::String("ins-out")});
+
 	if ( StillNeedExploring )
 	{
 		//! @todo Do we need nodes for the zones? (I think yes.)
-		const auto dummyNode = std::string(TeamColor) + "-ins-out";
+		const auto dummyNode = std::string(TeamColor) + "-ins-in";
 //		static const auto zones(calculateZoneCoords());
 //		MutexLocker locker(navgraph.objmutex_ptr());
 		for ( auto zone = 1; zone <= 24; ++zone )
@@ -600,24 +602,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 	for ( auto from = NavgraphNodesForASP.begin(); from != end; ++from )
 	{
 		const auto& fromNode = navgraph->node(from->first);
-		auto start = from;
-		if ( !StillNeedExploring )
-		{
-			/* Increment the start when we are not in exploration. At least when there are no special nodes for the
-			 * zones and the starting area we need also the distances between the node X and X.
-			 *
-			 * The example why we need this:
-			 * Exploration phase started, the robot is located in zone(Z) (at least for Clingo), it gets the task to
-			 * explore Z, but because there is no driveDuration(z(Z), z(Z), _) the doing will not be set and by that
-			 * no end. Resulting in every robot has to do explore(Z) in step 0 without duration and begin another zone
-			 * in step 1.
-			 *
-			 * In the production phase something like that will most likely not happen and we can reduce the facts for
-			 * the solver and by that increase the performance.
-			 */
-			++start;
-		} //if ( !StillNeedExploring )
-		for ( auto to = start; to != end; ++to )
+		for ( auto to = from; to != end; ++to )
 		{
 			const auto& toNode = navgraph->node(to->first);
 
