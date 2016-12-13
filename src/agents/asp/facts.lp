@@ -32,7 +32,6 @@
 % ringStation(M)                 All the ring stations (without team info).
 % robot(R)                       All possible available robots.
 % side(S)                        All sides of a machine.
-% team(T)                        All possible teams.
 %
 % Additionally used predicates:
 % -- none --                     Or else this wouldn't be facts, or would they?
@@ -60,12 +59,6 @@ machine(M) :- deliveryStation(M).
 
 side("I"; "O").
 
-team("C"; "M").
-
-location(m(T, M, S)) :- baseStation(M),     team(T), side(S).
-location(m(T, M, S)) :- capStation(M),      team(T), side(S).
-location(m(T, M, S)) :- ringStation(M),     team(T), side(S).
-location(m(T, M, S)) :- deliveryStation(M), team(T), side(S).
 location("ins-out").
 
 baseColor("RED"; "BLACK"; "SILVER"). %There exists also transparent bases, but they are not used for production.
@@ -80,6 +73,11 @@ capStationAssignment("CS2", @capColor(2)).
 #external ringColorCost(RingColor, Cost)      : ringColor(RingColor), ringCost(Cost).
 
 #program ourTeam(t).
+location(m(t, M, S)) :- baseStation(M),     side(S).
+location(m(t, M, S)) :- capStation(M),      side(S).
+location(m(t, M, S)) :- ringStation(M),     side(S).
+location(m(t, M, S)) :- deliveryStation(M), side(S).
+
 baseLocation(m(t, M, S)) :- baseStation(M), side(S).
 
 getLocation(M, m(t, M, "O")) :- capStation(M).
