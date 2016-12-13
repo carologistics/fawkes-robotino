@@ -15,7 +15,7 @@ def defaultMap():
 		("setDriveDuration", [clingo.Function("m", ["C", "BS", "I"]),  clingo.Function("m", ["C", "CS2", "I"]), toASP( 5)]),
 		("setDriveDuration", [clingo.Function("m", ["C", "BS", "I"]),  clingo.Function("m", ["C", "DS", "O"]),  toASP( 5)]),
 		("setDriveDuration", [clingo.Function("m", ["C", "BS", "I"]),  clingo.Function("m", ["C", "DS", "I"]),  toASP( 5)]),
-		("setDriveDuration", [clingo.Function("m", ["C", "BS", "I"]),  "ins-out",                              toASP( 5)]),
+		("setDriveDuration", [clingo.Function("m", ["C", "BS", "I"]),  "ins-out",                               toASP( 5)]),
 
 		# From BS-O
 		("setDriveDuration", [clingo.Function("m", ["C", "BS", "O"]),  clingo.Function("m", ["C", "BS", "I"]),  toASP( 5)]),
@@ -183,19 +183,19 @@ def defaultMap():
 		("setDriveDuration", [clingo.Function("m", ["C", "CS2", "O"]), "ins-out",                               toASP( 5)]),
 
 		# From ins-out
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "BS", "I"]),  toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "BS", "O"]),  toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "RS1", "O"]), toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "RS1", "I"]), toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "RS2", "O"]), toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "RS2", "I"]), toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "CS1", "O"]), toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "CS1", "I"]), toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "CS2", "O"]), toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "CS2", "I"]), toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "DS", "O"]),  toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                clingo.Function("m", ["C", "DS", "I"]),  toASP( 5)]),
-		("setDriveDuration", ["ins-out",                                "ins-out",                               toASP( 0)])
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "BS", "I"]),  toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "BS", "O"]),  toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "RS1", "O"]), toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "RS1", "I"]), toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "RS2", "O"]), toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "RS2", "I"]), toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "CS1", "O"]), toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "CS1", "I"]), toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "CS2", "O"]), toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "CS2", "I"]), toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "DS", "O"]),  toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               clingo.Function("m", ["C", "DS", "I"]),  toASP( 5)]),
+		("setDriveDuration", ["ins-out",                               "ins-out",                               toASP( 0)])
 	]
 	return list
 
