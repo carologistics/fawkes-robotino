@@ -50,6 +50,7 @@ struct GroundRequest
 	const char *Name;
 	Clingo::SymbolVector Params;
 	std::string AddTick;
+	std::vector<Clingo::Symbol> ExternalsToRelease;
 };
 
 struct BasicPlanElement

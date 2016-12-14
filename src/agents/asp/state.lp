@@ -77,8 +77,6 @@ failure(t, gt).
 
 #program past(r, gt).
 :- begin(r, _, gt).
-:- update(r, _, gt, _).
 
 #program past(gt).
 %:- horizon(gt).
-:- failure(T, gt), task(T).

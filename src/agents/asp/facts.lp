@@ -94,7 +94,5 @@ driveDuration(l1, l2, d).
 
 #program setRingInfo(col, cost, m).
 ringStationAssignment(m, col).
-:- ringStationAssignment(M, col), ringStation(M), M != m.
 
 ringColorCost(col, cost).
-:- ringColorCost(col, C), ringCost(C), C != cost.
