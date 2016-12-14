@@ -564,9 +564,7 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 		} //for ( const auto& file : files )
 	} //if ( StillNeedExploring )
 
-	const auto symbol(Clingo::Number(0));
 	ClingoAcc->ground({Clingo::Part("base", Clingo::SymbolSpan())});
-	ClingoAcc->ground({Clingo::Part("transition", Clingo::SymbolSpan(&symbol, 1))});
 
 	//We have to unlock, to prevent a deadlock in newModel.
 	locker.unlock();
@@ -1106,7 +1104,10 @@ void
 AspPlanerThread::setTeam(void)
 {
 	Clingo::SymbolVector param(1, Clingo::String(TeamColor));
-	queueGround({"ourTeam", param, std::string()}, InterruptSolving::Critical);
+	queueGround({"ourTeam", param}, InterruptSolving::Critical);
+
+	param[0] = Clingo::Number(0);
+	queueGround({"transition", param});
 
 	fillNavgraphNodesForASP();
 	graph_changed();
