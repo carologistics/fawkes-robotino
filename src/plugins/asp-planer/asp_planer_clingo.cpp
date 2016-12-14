@@ -154,13 +154,13 @@ AspPlanerThread::fillNavgraphNodesForASP(void)
 	//The machines.
 	std::string name;
 	name.reserve(7);
-	name = TeamColor;
-	name += "-";
 
 	Clingo::Symbol arguments[3];
 	arguments[0] = Clingo::String(TeamColor);
 	for ( const auto& machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
 	{
+		name = TeamColor;
+		name += "-";
 		name += machine;
 		name += "-S";
 
