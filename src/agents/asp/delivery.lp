@@ -35,33 +35,39 @@
 
 
 #program ourTeam(t).
-task(deliver(L, O, Q))                             :- order(O), quantity(Q), deliverLocation(L).
-points(deliver(L, O, Q), 20)                       :- task(deliver(L, O, Q)).
-duration(deliver(L, O, Q), @deliverTaskDuration()) :- task(deliver(L, O, Q)).
-location(deliver(L, O, Q), L)	                   :- task(deliver(L, O, Q)).
+deliverTask(deliver(L, O, Q))          :- order(O), quantity(Q), deliverLocation(L).
+task(T)                                :- deliverTask(T).
+points(T, 20)                          :- deliverTask(T).
+duration(T, @deliverTaskDuration())    :- deliverTask(T).
+location(T, L)	                       :- deliverTask(T), deliverLocation(L).
 
-task(lateDeliver(L, O, Q))                             :- order(O), quantity(Q), deliverLocation(L).
-points(lateDeliver(L, O, Q), 5)                        :- task(lateDeliver(L, O, Q)).
-duration(lateDeliver(L, O, Q), @deliverTaskDuration()) :- task(lateDeliver(L, O, Q)).
-location(lateDeliver(L, O, Q), L)	                   :- task(lateDeliver(L, O, Q)).
+lateDeliverTask(lateDeliver(L, O, Q))  :- order(O), quantity(Q), deliverLocation(L).
+task(T)                                :- lateDeliverTask(T).
+points(T, 5)                           :- lateDeliverTask(T).
+duration(T, @deliverTaskDuration())    :- lateDeliverTask(T).
+location(T, L)	                       :- lateDeliverTask(T), deliverLocation(L).
 
 #program transition(gt).
-inUse(L, gt) :- begin(R, deliver(L, O, Q), gt), not end(R, deliver(L, O, Q), gt).
-free(L, gt)  :- end(_, deliver(L, _, _), gt).
 
-inUse(L, gt) :- begin(R, lateDeliver(L, O, Q), gt), not end(R, lateDeliver(L, O, Q), gt).
-free(L, gt)  :- end(_, lateDeliver(L, _, _), gt).
+#external spawnTask(T, gt) : deliverTask(T).
+#external spawnTask(T, gt) : lateDeliverTask(T).
 
-possible(R, deliver(L, O, Q), gt) :- task(deliver(L, O, Q)), holding(R, P, gt), not inUse(L, gt), base(P, B),
+inUse(L, gt) :- begin(R, T, gt), deliverTask(T), location(T, L).
+free(L, gt)  :- end(_, T, gt), deliverTask(T), location(T, L).
+
+inUse(L, gt) :- begin(R, T, gt), lateDeliverTask(T), location(T, L).
+free(L, gt)  :- end(_, T, gt), lateDeliverTask(T), location(T, L).
+
+possible(R, deliver(L, O, Q), gt) :- deliverTask(deliver(L, O, Q)), holding(R, P, gt), not inUse(L, gt), base(P, B),
 									 base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2), ring(P, 2, R2, gt),
-									 ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, C, gt), cap(O, C),
+									 ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, C, gt), cap(O, C), robot(R, gt),
 									 location(R, RL, gt).%, driveDuration(RL, L, DD), duration(deliver(L, O, Q), TD),
 									 %D = TD + DD, D < E, orderDeadline(O, E).
 
-possible(R, lateDeliver(L, O, Q), gt) :- task(lateDeliver(L, O, Q)), holding(R, P, gt), not inUse(L, gt), base(P, B),
-										 base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2),
+possible(R, lateDeliver(L, O, Q), gt) :- lateDeliverTask(lateDeliver(L, O, Q)), holding(R, P, gt), not inUse(L, gt),
+										 base(P, B), base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2),
 										 ring(P, 2, R2, gt), ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, C, gt),
-										 cap(O, C).
+										 cap(O, C), robot(R, gt).
 
 { putDown(R, L, P, gt);
   delivered(P, gt);

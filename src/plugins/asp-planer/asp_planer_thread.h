@@ -57,6 +57,7 @@ class AspPlanerThread
 	unsigned int ExplorationTime;
 	unsigned int MaxOrders;
 	unsigned int MaxQuantity;
+	unsigned int MaxTaskDuration;
 
 	unsigned int LookAhaed;
 	std::unordered_map<std::string, unsigned int> NextTick;
@@ -85,6 +86,16 @@ class AspPlanerThread
 	std::unordered_multimap<std::string, Clingo::Symbol> NavgraphNodesForASP;
 	static constexpr auto NodePropertyASP = "ASP-Location";
 
+	fawkes::Mutex LocationTaskMutex;
+	Clingo::Symbol DeliveryLocation;
+	std::vector<Clingo::Symbol> RingLocations;
+	std::vector<Clingo::Symbol> CapLocations;
+	std::vector<Clingo::Symbol> BaseLocations;
+	std::vector<Clingo::Symbol> GetLocations;
+	std::vector<Clingo::Symbol> Tasks;
+	std::vector<Clingo::Symbol> RingTasks[3];
+	std::vector<Clingo::Symbol> CapTasks;
+
 	fawkes::Mutex RequestMutex;
 	InterruptSolving Interrupt;
 	bool SentCancel;
@@ -97,7 +108,7 @@ class AspPlanerThread
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
 	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskBegin;
 	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskUpdate;
-	std::unordered_map<unsigned int, GroundRequest> TaskSuccess;
+	std::unordered_multimap<unsigned int, GroundRequest> TaskSuccess;
 
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;

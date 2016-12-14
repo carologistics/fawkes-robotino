@@ -72,8 +72,8 @@ using fawkes::MutexLocker;
  */
 
 /**
- * @property AspPlanerThread::LookAhaed
- * @brief How many seconds the planer should look ahaed.
+ * @property AspPlanerThread::MoreModels
+ * @brief If we want to have more than one model (if available) from the solver.
  *
  * @property AspPlanerThread::MaxOrders
  * @brief The maximum amount of orders we expect.
@@ -81,8 +81,12 @@ using fawkes::MutexLocker;
  * @property AspPlanerThread::MaxQuantity
  * @brief The maximum quantity for an order we expect.
  *
- * @property AspPlanerThread::MoreModels
- * @brief If we want to have more than one model (if available) from the solver.
+ * @property AspPlanerThread::MaxTaskDuration
+ * @brief How long the longest task is.
+ *
+ *
+ * @property AspPlanerThread::LookAhaed
+ * @brief How many seconds the planer should look ahaed.
  *
  * @property AspPlanerThread::NextTick
  * @brief The next tick for each robot.
@@ -129,6 +133,31 @@ using fawkes::MutexLocker;
  *
  * @property AspPlanerThread::NodePropertyASP
  * @brief The property which is set to nodes which are exported to ASP.
+ *
+ *
+ * @property AspPlanerThread::LocationTaskMutex;
+ * @brief The mutex for the saved locations and tasks.
+ *
+ * @property AspPlanerThread::DeliveryLocation
+ * @brief The input side of the delivery station.
+ *
+ * @property AspPlanerThread::RingLocations
+ * @brief The input sides of the ring stations.
+ *
+ * @property AspPlanerThread::CapLocations
+ * @brief The input sides of the cap stations.
+ *
+ * @property AspPlanerThread::BaseLocations
+ * @brief The sides of the base station.
+ *
+ * @property AspPlanerThread::GetLocations
+ * @brief The output sides of the cap and ring stations.
+ *
+ * @property AspPlanerThread::Tasks
+ * @brief All possible tasks.
+ *
+ * @property AspPlanerThread::RingTasks
+ * @brief The tasks to mount a ring, the array position determines which ring.
  *
  *
  * @property AspPlanerThread::RequestMutex
@@ -247,12 +276,14 @@ AspPlanerThread::initClingo(void)
 		}));
 	ClingoAcc->setGroundCallback([this](auto... args) { this->groundFunctions(args...); return; });
 
-	constexpr auto infix = "planer/";
-	const auto prefixLen = std::strlen(ConfigPrefix), infixLen = std::strlen(infix);
-	char buffer[prefixLen + std::max<size_t>(infixLen + 20, 40)];
-	const auto suffix = buffer + prefixLen + infixLen;
+	constexpr auto infixPlaner = "planer/";
+	constexpr auto infixTime = "time-estimations/";
+	constexpr auto infixPlanerLen = std::strlen(infixPlaner), infixTimeLen = std::strlen(infixTime);
+	const auto prefixLen = std::strlen(ConfigPrefix);
+	char buffer[prefixLen + std::max<size_t>(infixPlanerLen, infixTimeLen) + 20];
+	auto suffix = buffer + prefixLen + infixPlanerLen;
 	std::strcpy(buffer, ConfigPrefix);
-	std::strcpy(buffer + prefixLen, infix);
+	std::strcpy(buffer + prefixLen, infixPlaner);
 
 	std::strcpy(suffix, "debug-level");
 	ClingoAcc->DebugLevel = static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer));
@@ -271,13 +302,22 @@ AspPlanerThread::initClingo(void)
 	Robots = config->get_strings(buffer);
 	NextTick.reserve(Robots.size());
 
-	std::strcpy(buffer + prefixLen, "time-estimations/max-drive-duration");
+	std::strcpy(buffer + prefixLen, infixTime);
+	suffix = buffer + prefixLen + infixTimeLen;
+	std::strcpy(suffix, "max-drive-duration");
 	MaxDriveDuration = config->get_uint(buffer);
+	std::strcpy(suffix, "max-task-duration");
+	MaxTaskDuration = config->get_uint(buffer);
 
 	loadFilesAndGroundBase(locker);
 
 	Orders.reserve(MaxOrders);
 	RingColors.reserve(4);
+
+	CapLocations.reserve(2);
+	RingLocations.reserve(2);
+	BaseLocations.reserve(2);
+	GetLocations.reserve(4);
 	return;
 }
 
@@ -708,17 +748,72 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 	requests.reserve(Robots.size() * (fixUpTo - Past));
 
 	MutexLocker locker(&RobotsMutex);
+	MutexLocker taskLocker(&LocationTaskMutex);
 	for ( auto t = Past; t <= fixUpTo; ++t )
 	{
 		const auto number = Clingo::Number(t);
-		requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{number}});
+		std::vector<Clingo::Symbol> externals;
+		const auto hasNoOrder = std::find_if(Orders.begin(), Orders.end(),
+			[this,t](const OrderInformation& order)
+			{
+				return realGameTimeToAspGameTime(order.GameTime) == t;
+			}) == Orders.end();
+		const auto failureRange = TaskSuccess.equal_range(t);
+
+		externals.reserve(Tasks.size() * 2);
+		Clingo::SymbolVector externalParams = {Clingo::Symbol(), Clingo::Number(t)};
+		for ( const auto& task : Tasks )
+		{
+			externalParams[0] = task;
+			if ( hasNoOrder )
+			{
+				externals.emplace_back(Clingo::Function("spawnTask", externalParams));
+			} //if ( hasNoOrder )
+
+			const auto taskFailed = std::find_if(failureRange.first, failureRange.second,
+				[&task](const std::pair<unsigned int, GroundRequest>& pair)
+				{
+					return pair.second.Params[0] == task;
+				}) != failureRange.second;
+
+			if ( !taskFailed )
+			{
+				externalParams.emplace_back(Clingo::Function("failure", externalParams));
+			} //if ( !taskFailed )
+		} //for ( const auto& task : Tasks )
+
+		requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{number}, std::string(), externals});
 
 		for ( const auto& robot : robotVector )
 		{
-			if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
+			externals.clear();
+			externals.reserve(Tasks.size() * MaxTaskDuration);
+
+			Clingo::SymbolVector externalParams = {robot, Clingo::Symbol(), Clingo::Number(t), Clingo::Symbol()};
+
+			const auto hasUpdate = RobotTaskUpdate.count({robot, t}) > 0;
+			const auto updateTask = hasUpdate ? RobotTaskUpdate[{robot, t}].Params[1] : Clingo::Symbol();
+
+			for ( decltype(MaxTaskDuration) dur = 0; dur <= realGameTimeToAspGameTime(MaxTaskDuration); ++dur )
 			{
-				requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{robot, number}});
-			} //if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
+				externalParams[3] = Clingo::Number(dur);
+				for ( const auto& task : Tasks )
+				{
+					if ( task == updateTask )
+					{
+						continue;
+					} //if ( task == updateTask )
+					externalParams[1] = task;
+					externals.emplace_back(Clingo::Function("update", externalParams));
+				} //for ( const auto& task : Tasks )
+			} //for ( decltype(MaxTaskDuration) dur = 0; dur <= realGameTimeToAspGameTime(MaxTaskDuration); ++dur )
+
+			/* If there is an update or begin for the robot, ground "past" without parameters. This program does not
+			 * exist, but this way we can add the externals. */
+			requests.emplace_back(GroundRequest{"past",
+				(!RobotTaskBegin.count({robot, t}) && !hasUpdate) ?
+				Clingo::SymbolVector{robot, number} : Clingo::SymbolVector{},
+				std::string(), externals});
 		} //for ( const auto& robot : robotVector )
 	} //for ( auto t = Past; t <= fixUpTo; ++t )
 	locker.unlock();
@@ -1025,14 +1120,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			} //else if ( view == "maxTicks" )
 			else if ( view == "maxTaskDuration" )
 			{
-				static const unsigned int dur = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 40];
-						std::strcpy(buffer, ConfigPrefix);
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/max-task-duration");
-						return config->get_uint(buffer);
-					}();
-				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxTaskDuration))});
 				return;
 			} //else if ( view == "maxTaskDuration" )
 			else if ( view == "maxOrders" )
@@ -1103,11 +1191,94 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 void
 AspPlanerThread::setTeam(void)
 {
-	Clingo::SymbolVector param(1, Clingo::String(TeamColor));
-	queueGround({"ourTeam", param}, InterruptSolving::Critical);
+	//Lock, so our team and transition 0 are grounded in one batch.
+	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
+	Clingo::SymbolVector params(1, Clingo::String(TeamColor));
+	queueGround({"ourTeam", params}, InterruptSolving::Critical);
 
-	param[0] = Clingo::Number(0);
-	queueGround({"transition", param});
+	params[0] = Clingo::Number(0);
+	queueGround({"transition", params});
+
+	params.reserve(4);
+	params.emplace_back(Clingo::String("DS"));
+	params.emplace_back(Clingo::String("I"));
+
+	MutexLocker locationTaskLocker(&LocationTaskMutex);
+	DeliveryLocation = Clingo::Function("m", params);
+	CapLocations.clear();
+	RingLocations.clear();
+	BaseLocations.clear();
+	GetLocations.clear();
+
+	for ( const auto& cs : {"CS1", "CS2"} )
+	{
+		params[1] = Clingo::String(cs);
+		CapLocations.emplace_back(Clingo::Function("m", params));
+	} //for ( const auto& cs : {"CS1", "CS2"} )
+
+	for ( const auto& rs : {"RS1", "RS2"} )
+	{
+		params[1] = Clingo::String(rs);
+		RingLocations.emplace_back(Clingo::Function("m", params));
+	} //for ( const auto& rs : {"RS1", "RS2"} )
+
+	params[1] = Clingo::String("BS");
+	BaseLocations.emplace_back(Clingo::Function("m", params));
+	params[2] = Clingo::String("O");
+	BaseLocations.emplace_back(Clingo::Function("m", params));
+
+	for ( const auto& mps : {"CS1", "CS2", "RS1", "RS2"} )
+	{
+		params[1] = Clingo::String(mps);
+		GetLocations.emplace_back(Clingo::Function("m", params));
+	} //for ( const auto& mps : {"CS1", "CS2", "RS1", "RS2"} )
+
+	CapTasks.clear();
+	CapTasks.reserve(2 * MaxOrders * MaxQuantity);
+	for ( auto i = 0; i < 3; ++i )
+	{
+		RingTasks[i].clear();
+		RingTasks[i].reserve(2 * MaxOrders * MaxQuantity);
+	} //for ( auto i = 0; i < 3; ++i )
+	Tasks.clear();
+	Tasks.reserve(2 * MaxOrders * MaxQuantity + CapTasks.size() +
+		RingTasks[0].size() + RingTasks[1].size() + RingTasks[2].size());
+	for ( decltype(MaxOrders) order = 1; order <= MaxOrders; ++order )
+	{
+		params[1] = Clingo::Number(order);
+		for ( decltype(MaxQuantity) qty = 1; qty <= MaxQuantity; ++qty )
+		{
+			params[2] = Clingo::Number(qty);
+
+			params[0] = DeliveryLocation;
+			for ( const auto& task : {"deliver", "lateDeliver"} )
+			{
+				Tasks.emplace_back(Clingo::Function(task, params));
+			} //for ( const auto& task : {"deliver", "lateDeliver"} )
+
+			for ( const auto& location : CapLocations )
+			{
+				params[0] = location;
+				CapTasks.emplace_back(Clingo::Function("mountCap", params));
+				Tasks.emplace_back(Clingo::Function("mountCap", params));
+			} //for ( const auto& location : CapLocations )
+
+			params.emplace_back(Clingo::Symbol());
+			for ( const auto& location : RingLocations )
+			{
+				params[0] = location;
+				for ( auto ring = 0; ring < 3; ++ring )
+				{
+					params[3] = Clingo::Number(ring);
+					RingTasks[ring].emplace_back(Clingo::Function("mountRing", params));
+					Tasks.emplace_back(Clingo::Function("mountRing", params));
+				} //for ( auto ring = 0; ring < 3; ++ring )
+			} //for ( const auto& location : RingLocations )
+			params.pop_back();
+		} //for ( decltype(MaxQuantity) qty = 1; qty <= MaxQuantity; ++qty )
+	} //for ( decltype(MaxOrders) order = 1; order <= MaxOrders; ++order )
+
+	locationTaskLocker.unlock();
 
 	fillNavgraphNodesForASP();
 	graph_changed();

@@ -18,6 +18,8 @@ points(explore(Z), 100) :- zone(Z).
 
 #program transition(gt).
 
+#external spawnTask(explore(Z), gt) : zone(Z).
+
 possible(R, explore(Z), gt) :- robot(R, gt), toBeDone(explore(Z), gt).
 
 #program zoneToExplore(z, gt).

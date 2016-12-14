@@ -32,11 +32,12 @@ location(getProduct(L, R, S), L)                         :- task(getProduct(L, R
 spawn(getProduct(L, R, S), T)                            :- task(getProduct(L, R, S)), deliveryTimes(T, _).
 
 #program transition(gt).
-inUse(L, gt) :- begin(R, getProduct(L, R, S), gt), not end(R, getProduct(L, R, S), gt).
+inUse(L, gt) :- begin(R, getProduct(L, R, S), gt).
 free(L, gt)  :- end(R, getProduct(L, R, _), gt).
 
 possible(R, getProduct(L, R, S), gt) :- task(getProduct(L, R, S)), not holding(R, _, gt), getLocation(M, L),
-										storing(M, P, gt), not inUse(L, gt).
+										storing(M, P, gt), not inUse(L, gt),
+										gt >= U, deliveryTimes(U, _), robot(R, gt).
 
 { pickUp(R, P, M, gt)
   } = 1 :- end(R, getProduct(L, R, S), gt), not failure(getProduct(L, R, S), gt), getLocation(M, L), storing(M, P, gt).

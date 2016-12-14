@@ -36,13 +36,14 @@ location(feedRS(L, R, S), L)	                 :- task(feedRS(L, R, S)).
 spawn(feedRS(L, R, S), T)                        :- task(feedRS(L, R, S)), deliveryTimes(T, _).
 
 #program transition(gt).
-inUse(L, gt) :- begin(R, feedRS(L, R, S), gt), not end(R, feedRS(L, R, S), gt).
+inUse(L, gt) :- begin(R, feedRS(L, R, S), gt).
 free(L, gt)  :- end(R, feedRS(L, R, _), gt).
 
 % Maybe get more sophisticated and only allow transparent bases for the last fillment.
 possible(R, feedRS(L, R, S), gt) :- task(feedRS(L, R, S)), holding(R, P, gt), ringLocation(M, L),
 									ringStationAssignment(M, Color), ringColorCost(Color, Cost), ringCost(Cost),
-									Cost > 0, not inUse(L, gt), rsFillState(M, FS, gt), FS < 3.
+									Cost > 0, not inUse(L, gt), rsFillState(M, FS, gt), FS < 3,
+									gt >= U, deliveryTimes(U, _), robot(R, gt).
 
 { rsFed(M, gt);
   putDown(R, L, P, gt)

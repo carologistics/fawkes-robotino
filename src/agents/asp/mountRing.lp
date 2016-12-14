@@ -40,31 +40,35 @@
 % For the points we cheat a little bit. The points are only awarded for the last ring, but this is difficult to model
 % so we award for every mount and subtract the before awarded from the points for the next ring. So we don't get 80
 % points for the 3rd ring of a C3, but only 50, because we got 10 for the 1st and 20 for the 2nd, in total 80.
-task(mountRing(L, O, Q, R))                               :- order(O), quantity(Q), capLocation(_, L), R = 1..3.
-points(mountRing(L, O, Q, 1), 10)                         :- task(mountRing(L, O, Q, 1)).
-points(mountRing(L, O, Q, 2), 20)                         :- task(mountRing(L, O, Q, 2)).
-points(mountRing(L, O, Q, 3), 50)                         :- task(mountRing(L, O, Q, 3)).
-duration(mountRing(L, O, Q, R), @mountRingTaskDuration()) :- task(mountRing(L, O, Q, R)).
-location(mountRing(L, O, Q, R), L)	                      :- task(mountRing(L, O, Q, R)).
+ringTask(mountRing(L, O, Q, R))       :- order(O), quantity(Q), ringLocation(_, L), R = 1..3.
+task(T)                               :- ringTask(T).
+points(mountRing(L, O, Q, 1), 10)     :- task(mountRing(L, O, Q, 1)).
+points(mountRing(L, O, Q, 2), 20)     :- task(mountRing(L, O, Q, 2)).
+points(mountRing(L, O, Q, 3), 50)     :- task(mountRing(L, O, Q, 3)).
+duration(T, @mountRingTaskDuration()) :- ringTask(T).
+location(mountRing(L, O, Q, R), L)	  :- task(mountRing(L, O, Q, R)).
 
 #program transition(gt).
-inUse(L, gt) :- begin(R, mountRing(L, O, Q, Ring), gt), not end(R, mountRing(L, O, Q, Ring), gt).
-free(L, gt)  :- end(_, mountRing(L, _, _, _), gt).
 
-possible(R, mountRing(L, O, Q, 1), gt) :- task(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
+#external spawnTask(T, gt) : ringTask(T).
+
+inUse(L, gt) :- begin(R, T, gt), ringTask(T), location(T, L).
+free(L, gt)  :- end(_, T, gt), ringTask(T), location(T, L).
+
+possible(R, mountRing(L, O, Q, 1), gt) :- ringTask(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
 										  rsFillState(M, FS, gt), not storing(M, _, gt), not inUse(L, gt),
 										  base(P, B), base(O, B), ring(P, 1, none, gt), cap(P, none, gt),
-										  ringColorCost(Color, Cost), Cost <= FS.
+										  ringColorCost(Color, Cost), Cost <= FS, robot(R, gt).
 
-possible(R, mountRing(L, O, Q, 2), gt) :- task(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
+possible(R, mountRing(L, O, Q, 2), gt) :- ringTask(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
 										  rsFillState(M, FS, gt), not storing(M, _, gt), not inUse(L, gt),
 										  base(P, B), base(O, B), not ring(P, 1, none, gt), ring(P, 2, none, gt),
-										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS.
+										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS, robot(R, gt).
 
-possible(R, mountRing(L, O, Q, 3), gt) :- task(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
+possible(R, mountRing(L, O, Q, 3), gt) :- ringTask(mountRing(L, O, Q, 1)), holding(R, P, gt), ringLocation(M, L),
 										  rsFillState(M, FS, gt), not storing(M, _, gt), not inUse(L, gt),
 										  base(P, B), base(O, B), not ring(P, 2, none, gt), ring(P, 3, none, gt),
-										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS.
+										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS, robot(R, gt).
 
 { putDown(R, L, P, gt);
   ringMounted(M, P, Color, gt);
