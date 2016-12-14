@@ -32,6 +32,6 @@ storing(M, P, gt) :- process(M, P, gt). %TODO: Consider processing time.
 
 csPrepared(M, gt) :- csPrepared(M, gt-1), not capMounted(M, _, gt).
 
-rsFillState(M, S,   gt) :- rsFillState(M, S, gt-1), not rsFed(M, gt), not ringMounted(M, _, C, gt), ringColor(C).
-rsFillState(M, S+1, gt) :- rsFillState(M, S, gt-1), rsFed(M, gt).
-rsFillState(M, S-C, gt) :- rsFillState(M, S, gt-1), ringMounted(M, _, C, gt), ringCost(Cost), ringColorCost(C, Cost).
+rsFillState(M, S,      gt) :- rsFillState(M, S, gt-1), not rsFed(M, gt), not ringMounted(M, _, C, gt), ringColor(C).
+rsFillState(M, S+1,    gt) :- rsFillState(M, S, gt-1), rsFed(M, gt).
+rsFillState(M, S-Cost, gt) :- rsFillState(M, S, gt-1), ringMounted(M, _, C, gt), ringCost(Cost), ringColorCost(C, Cost).
