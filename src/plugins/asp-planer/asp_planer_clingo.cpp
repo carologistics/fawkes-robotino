@@ -66,6 +66,9 @@ using fawkes::MutexLocker;
  *
  * @property GroundRequest::AddTick
  * @brief The name of the robot which tick we want to use, empty if no tick.
+ *
+ * @property GroundRequest::ExternalsToRelease
+ * @brief The externals which should be released after this grounding.
  */
 
 /**
@@ -422,14 +425,22 @@ AspPlanerThread::loopClingo(void)
 	auto groundRequests = [&parts,&requests,this](void)
 		{
 			parts.reserve(requests.size());
-			for ( GroundRequest& request : requests )
+			for ( const GroundRequest& request : requests )
 			{
 				parts.emplace_back(request.Name, request.Params);
-			} //for ( GroundRequest& request : requests )
+			} //for ( const GroundRequest& request : requests )
 
 			//We are not allowed to clear requests before grounding! The params are just stored as "pointers".
 			ClingoAcc->ground(parts);
 			parts.clear();
+
+			for ( const GroundRequest& request : requests )
+			{
+				for ( const Clingo::Symbol& external : request.ExternalsToRelease )
+				{
+					ClingoAcc->release_external(external);
+				} //for ( const Clingo::Symbol& external : request.ExternalsToRelease )
+			} //for ( const GroundRequest& request : requests )
 			return;
 		};
 	groundRequests();
@@ -702,13 +713,13 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 	for ( auto t = Past; t <= fixUpTo; ++t )
 	{
 		const auto number = Clingo::Number(t);
-		requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{number}, std::string()});
+		requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{number}});
 
 		for ( const auto& robot : robotVector )
 		{
 			if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
 			{
-				requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{robot, number}, std::string()});
+				requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{robot, number}});
 			} //if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
 		} //for ( const auto& robot : robotVector )
 	} //for ( auto t = Past; t <= fixUpTo; ++t )
@@ -1172,7 +1183,26 @@ void
 AspPlanerThread::setRingColor(const RingColorInformation& info)
 {
 	Clingo::SymbolVector params = {Clingo::String(info.Color), Clingo::Number(info.Cost), Clingo::String(info.Machine)};
-	queueGround({"setRingInfo", params, std::string()});
+	std::vector<Clingo::Symbol> externals;
+	externals.reserve(3);
+
+	auto otherMachine(info.Machine);
+	assert(otherMachine.size() == 3 && (otherMachine[2] == '1' || otherMachine[2] == '2'));
+	otherMachine[2] = otherMachine[2] == '1' ? '2' : '1';
+	Clingo::SymbolVector externalParams = {Clingo::String(otherMachine), Clingo::String(info.Color)};
+	externals.emplace_back(Clingo::Function("ringStationAssignment", externalParams));
+
+	std::swap(externalParams[0], externalParams[1]);
+	for ( decltype(info.Cost) cost = 0; cost <= 2; ++cost )
+	{
+		if ( cost == info.Cost )
+		{
+			continue;
+		} //if ( cost == info.Cost )
+		externalParams[1] = Clingo::Number(cost);
+		externalParams.emplace_back(Clingo::Function("ringColorCost", externalParams));
+	} //for ( decltype(info.Cost) cost = 0; cost <= 2; ++cost )
+	queueGround({"setRingInfo", params, std::string(), externals});
 	return;
 }
 
@@ -1265,7 +1295,7 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 {
 	time = realGameTimeToAspGameTime(time);
 	GroundRequest request{"begun", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time)}, std::string()};
+		Clingo::Number(time)}};
 	MutexLocker locker(&RobotsMutex);
 	RobotTaskBegin.insert({{Clingo::String(robot), time}, request});
 	queueGround(std::move(request), InterruptSolving::Critical);
@@ -1287,7 +1317,7 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
 	time = realGameTimeToAspGameTime(time);
 	end = realGameTimeToAspGameTime(end);
 	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time), Clingo::Number(duration)}, std::string()};
+		Clingo::Number(time), Clingo::Number(duration)}};
 	MutexLocker locker(&RobotsMutex);
 	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
 	queueGround(std::move(request), InterruptSolving::Critical);
@@ -1321,7 +1351,7 @@ void
 AspPlanerThread::taskWasFailure(const std::string& task, unsigned int time)
 {
 	time = realGameTimeToAspGameTime(time);
-	GroundRequest request{"failure", {taskStringToFunction(task), Clingo::Number(time)}, std::string()};
+	GroundRequest request{"failure", {taskStringToFunction(task), Clingo::Number(time)}};
 	MutexLocker locker(&RobotsMutex);
 	TaskSuccess.insert({time, request});
 	queueGround(std::move(request), InterruptSolving::Critical);
