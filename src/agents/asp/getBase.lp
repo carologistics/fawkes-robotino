@@ -39,8 +39,7 @@ spawnTask(getBase(L, R, B, S), T)                 :- task(getBase(L, R, B, S)), 
 inUse(L, gt) :- begin(R, getBase(_, R, _, _), gt), not end(R, getBase(_, R, _, _), gt), baseLocation(L).
 free(L, gt)  :- end(R, getBase(_, R, _, _), gt), baseLocation(L).
 
-possible(R, getBase(L, R, B, S), gt) :- task(getBase(L, R, B, S)), not holding(R, _, gt), not inUse(L, gt),
-										toBeDone(getBase(L, R, B, S), gt).
+possible(R, getBase(L, R, B, S), gt) :- task(getBase(L, R, B, S)), not holding(R, _, gt), not inUse(L, gt).
 
 { genProduct(R, B, gt);
   pickUp(R, product(R, gt), L)
