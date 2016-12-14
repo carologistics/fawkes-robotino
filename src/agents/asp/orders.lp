@@ -26,11 +26,12 @@
 #external base(O, B) : order(O), baseColor(B).
 #external cap(O, C)  : order(O), capColor(C).
 #external ring(O, R, C) : order(O), R = 1..3, ringColor(C).
-#external orderDeadline(O, D) : order(O), deliveryTimes(L, U), D = L..U.
+% This is too much, but we need this information.
+%#external orderDeadline(O, D) : order(O), deliveryTimes(L, U), D = L..U.
 
 #program newOrder(o, q, b, c, r1, r2, r3, deliveryBegin, deliveryEnd, gt).
-orderDeadline(o, deliveryEnd).
-:- orderDeadline(o, D), deliveryTimes(L, U), D >= L, D <= U, D != deliveryEnd.
+%orderDeadline(o, deliveryEnd).
+%:- orderDeadline(o, D), deliveryTimes(L, U), D >= L, D <= U, D != deliveryEnd.
 base(o, b).
 :- base(o, B), baseColor(B), B != b.
 cap(o, c).
