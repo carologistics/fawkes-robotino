@@ -23,7 +23,6 @@
 #ifndef __PLUGINS_ASP_AGENT_THREAD_H_
 #define __PLUGINS_ASP_AGENT_THREAD_H_
 
-#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
@@ -38,7 +37,6 @@
 
 class AspPlanerThread
 : public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
