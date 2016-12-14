@@ -25,8 +25,8 @@ killRobot(r, gt, t).
 
 #program transition(gt).
 
-#external robot(R, L, gt, T)  : robot(R), T = 0..@maxTicks(), location(L).
-#external killRobot(R, gt, T) : robot(R), T = 0..@maxTicks().
+#external addRobot(R, L, gt, T) : robot(R), T = 0..@maxTicks(), location(L).
+#external killRobot(R, gt, T)   : robot(R), T = 0..@maxTicks().
 
 robot(R, gt) :- addRobot(R, _, gt, _), not killRobot(R, gt, _).
 robot(R, gt) :- addRobot(R, _, gt, T1), killRobot(R, gt, T2), T1 = T2 + 1.
