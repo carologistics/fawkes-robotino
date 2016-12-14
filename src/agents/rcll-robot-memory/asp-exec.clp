@@ -189,14 +189,14 @@
   (not (planElement (done FALSE) (index ?otherIdx&:(< ?otherIdx ?idx))))
   =>
   (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" crlf)
-  (bind ?gt (asp-game-time ?gt))
-  (bind ?doc (asp-create-feedback-bson begin ?task))
-  (bson-append ?doc "begin" ?gt)
-  (asp-send-feedback ?doc)
   (bind ?pair (asp-start-task ?task))
   (bind ?task (nth$ 1 ?pair))
   (bind ?params (delete$ ?pair 1 1))
   (assert (asp-doing (index ?idx) (task ?task) (params ?params) (begin ?gt) (end (+ (- ?gt ?begin) ?end))))
+  (bind ?gt (asp-game-time ?gt))
+  (bind ?doc (asp-create-feedback-bson begin ?task))
+  (bson-append ?doc "begin" ?gt)
+  (asp-send-feedback ?doc)
 )
 
 (defrule asp-update-time-estimation
@@ -205,9 +205,10 @@
   ?doing <- (asp-doing (index ?idx) (end ?end&:(<= ?end (- (asp-game-time ?gt) 1))))
   (planElement (index ?idx) (task ?task))
   =>
-  (bind ?gt (asp-game-time ?gt))
   (bind ?end (+ ?end ?*ASP-UPDATE-THRESHOLD*))
   (modify ?doing (end ?end))
+  (bind ?gt (asp-game-time ?gt))
+  (bind ?end (asp-game-time ?end))
   (bind ?doc (asp-create-feedback-bson update ?task))
   (bson-append ?doc "end" ?end)
   (bson-append ?doc "time" ?gt)
@@ -221,9 +222,10 @@
   (planElement (index ?idx) (task ?task))
   (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
   =>
-  (bind ?gt (asp-game-time ?gt))
   (bind ?end (+ ?gt ?*ASP-READ-MPS-LIGHT-TIME*))
   (modify ?doing (end ?end))
+  (bind ?gt (asp-game-time ?gt))
+  (bind ?end (asp-game-time ?end))
   (bind ?doc (asp-create-feedback-bson update ?task))
   (bson-append ?doc "end" ?end)
   (bson-append ?doc "time" ?gt)
