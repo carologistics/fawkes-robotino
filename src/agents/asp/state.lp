@@ -31,7 +31,6 @@
 #program transition(gt).
 
 #external update(R, T, gt, D) : robot(R), task(T), D = 0..@maxTaskDuration().
-#external spawnTask(T, gt)    : task(T).
 #external failure(T, gt)      : task(T).
 
 % Can start at max one task and only if not doing something else right now.

@@ -36,10 +36,11 @@ location(getBase(L, R, B, S), L)                  :- task(getBase(L, R, B, S)).
 spawnTask(getBase(L, R, B, S), T)                 :- task(getBase(L, R, B, S)), deliveryTimes(T, _).
 
 #program transition(gt).
-inUse(L, gt) :- begin(R, getBase(_, R, _, _), gt), not end(R, getBase(_, R, _, _), gt), baseLocation(L).
+inUse(L, gt) :- begin(R, getBase(_, R, _, _), gt), baseLocation(L).
 free(L, gt)  :- end(R, getBase(_, R, _, _), gt), baseLocation(L).
 
-possible(R, getBase(L, R, B, S), gt) :- task(getBase(L, R, B, S)), not holding(R, _, gt), not inUse(L, gt).
+possible(R, getBase(L, R, B, S), gt) :- task(getBase(L, R, B, S)), not holding(R, _, gt), not inUse(L, gt),
+										gt >= U, deliveryTimes(U, _), robot(R, gt).
 
 { genProduct(R, B, gt);
   pickUp(R, product(R, gt), L)

@@ -34,22 +34,26 @@
 
 #program ourTeam(t).
 
-task(mountCap(L, O, Q))                              :- order(O), quantity(Q), capLocation(_, L).
-points(mountCap(L, O, Q), 10)                        :- task(mountCap(L, O, Q)).
-duration(mountCap(L, O, Q), @mountCapTaskDuration()) :- task(mountCap(L, O, Q)).
-location(mountCap(L, O, Q), L)	                     :- task(mountCap(L, O, Q)).
+capTask(mountCap(L, O, Q))           :- order(O), quantity(Q), capLocation(_, L).
+task(T)                              :- capTask(T).
+points(T, 10)                        :- capTask(T).
+duration(T, @mountCapTaskDuration()) :- capTask(T).
+location(mountCap(L, O, Q), L)	     :- capTask(mountCap(L, O, Q)).
 
 #program transition(gt).
-inUse(L, gt) :- begin(R, mountCap(L, O, Q), gt), not end(R, mountCap(L, O, Q), gt).
-free(L, gt)  :- end(_, mountCap(L, _, _), gt).
 
-possible(R, mountCap(L, O, Q), gt) :- task(mountCap(L, O, Q)), holding(R, P, gt), capLocation(M, L),
-									  csPrepared(M, gt), not storing(M, _, gt), not inUse(L, gt), base(P, B),
-									  base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2),
-									  ring(P, 2, R2, gt), ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, none, gt).
+#external spawnTask(T, gt) : capTask(T).
+
+inUse(L, gt) :- begin(R, T, gt), capTask(T), location(T, L).
+free(L, gt)  :- end(_, T, gt), capTask(T), location(T, L).
+
+possible(R, T, gt) :- capTask(T), holding(R, P, gt), location(T, L), capLocation(M, L), csPrepared(M, gt),
+					  not storing(M, _, gt), not inUse(L, gt), base(P, B), base(O, B),
+					  ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2), ring(P, 2, R2, gt),
+					  ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, none, gt), robot(R, gt).
 
 { putDown(R, L, P, gt);
   capMounted(M, P, gt);
   process(M, P, gt)
-  } = 3 :- end(R, mountCap(L, O, Q), gt), not failure(mountCap(L, O, Q), gt), capLocation(M, L), holding(R, P, gt).
+  } = 3 :- end(R, T, gt), capTask(T), not failure(T, gt), location(T, L), capLocation(M, L), holding(R, P, gt).
 
