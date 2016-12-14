@@ -49,7 +49,7 @@ struct GroundRequest
 {
 	const char *Name;
 	Clingo::SymbolVector Params;
-	bool AddTick;
+	std::string AddTick;
 };
 
 struct BasicPlanElement

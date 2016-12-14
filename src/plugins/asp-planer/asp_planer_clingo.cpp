@@ -65,7 +65,7 @@ using fawkes::MutexLocker;
  * @brief The parameters for the request.
  *
  * @property GroundRequest::AddTick
- * @brief If the current tick should be appended to the parameters.
+ * @brief The name of the robot which tick we want to use, empty if no tick.
  */
 
 /**
@@ -81,8 +81,8 @@ using fawkes::MutexLocker;
  * @property AspPlanerThread::MoreModels
  * @brief If we want to have more than one model (if available) from the solver.
  *
- * @property AspPlanerThread::LastTick
- * @brief The last tick for the asp program.
+ * @property AspPlanerThread::NextTick
+ * @brief The next tick for each robot.
  *
  * @property AspPlanerThread::Horizon
  * @brief The horizon, up to which point (measured in gametime in seconds) the planer should plan.
@@ -266,6 +266,7 @@ AspPlanerThread::initClingo(void)
 	TimeResolution = config->get_uint(buffer);
 	std::strcpy(suffix, "robots");
 	Robots = config->get_strings(buffer);
+	NextTick.reserve(Robots.size());
 
 	std::strcpy(buffer + prefixLen, "time-estimations/max-drive-duration");
 	MaxDriveDuration = config->get_uint(buffer);
@@ -290,7 +291,7 @@ AspPlanerThread::resetClingo(MutexLocker& aspLocker, MutexLocker& reqLocker)
 	loadFilesAndGroundBase(aspLocker);
 	fillNavgraphNodesForASP();
 	Horizon = Past = 0;
-	LastTick = 0;
+	NextTick.clear();
 	LastModel = SolvingStarted = LastPlan = fawkes::Time();
 	UpdateNavgraphDistances = true;
 	Requests.clear();
@@ -701,13 +702,13 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 	for ( auto t = Past; t <= fixUpTo; ++t )
 	{
 		const auto number = Clingo::Number(t);
-		requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{number}, false});
+		requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{number}, std::string()});
 
 		for ( const auto& robot : robotVector )
 		{
 			if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
 			{
-				requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{robot, number}, false});
+				requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{robot, number}, std::string()});
 			} //if ( !RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t}) )
 		} //for ( const auto& robot : robotVector )
 	} //for ( auto t = Past; t <= fixUpTo; ++t )
@@ -761,10 +762,10 @@ void
 AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	if ( request.AddTick )
+	if ( !request.AddTick.empty() )
 	{
-		request.Params.push_back(Clingo::Number(LastTick++));
-	} //if ( request.AddTick )
+		request.Params.push_back(Clingo::Number(NextTick[request.AddTick]++));
+	} //if ( !request.AddTick.empty() )
 	Requests.emplace_back(std::move(request));
 
 	if ( static_cast<unsigned short>(interrupt) > static_cast<unsigned short>(Interrupt) )
@@ -1094,7 +1095,7 @@ void
 AspPlanerThread::setTeam(void)
 {
 	Clingo::SymbolVector param(1, Clingo::String(TeamColor));
-	queueGround({"ourTeam", param, false}, InterruptSolving::Critical);
+	queueGround({"ourTeam", param, std::string()}, InterruptSolving::Critical);
 
 	fillNavgraphNodesForASP();
 	graph_changed();
@@ -1128,11 +1129,9 @@ AspPlanerThread::newTeamMate(const std::string& mate, const RobotInformation& in
 
 	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::String(mate.c_str()));
+	params.emplace_back(NavgraphNodesForASP.find(node.name())->second);
 	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(info.GameTime)));
-	queueGround({"addRobot", params, true}, InterruptSolving::Critical);
-
-	params.emplace(params.begin() + 1, NavgraphNodesForASP.find(node.name())->second);
-	queueGround({"setRobotLocation", params, true});
+	queueGround({"addRobot", params, mate}, InterruptSolving::Critical);
 	return;
 }
 
@@ -1146,7 +1145,7 @@ AspPlanerThread::deadTeamMate(const std::string& mate)
 	Clingo::SymbolVector params;
 	params.emplace_back(Clingo::String(mate.c_str()));
 	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(GameTime)));
-	queueGround({"removeRobot", params, true}, InterruptSolving::Critical);
+	queueGround({"removeRobot", params, mate}, InterruptSolving::Critical);
 	return;
 }
 
@@ -1161,7 +1160,7 @@ void AspPlanerThread::addZoneToExplore(const long zone)
 	params.reserve(2);
 	params.emplace_back(Clingo::Number(zone));
 	params.emplace_back(Clingo::Number(realGameTimeToAspGameTime(GameTime)));
-	queueGround({"zoneToExplore", params, false}, InterruptSolving::JustStarted);
+	queueGround({"zoneToExplore", params, std::string()}, InterruptSolving::JustStarted);
 	return;
 }
 
@@ -1173,7 +1172,7 @@ void
 AspPlanerThread::setRingColor(const RingColorInformation& info)
 {
 	Clingo::SymbolVector params = {Clingo::String(info.Color), Clingo::Number(info.Cost), Clingo::String(info.Machine)};
-	queueGround({"setRingInfo", params, false});
+	queueGround({"setRingInfo", params, std::string()});
 	return;
 }
 
@@ -1190,7 +1189,7 @@ AspPlanerThread::addOrder(const OrderInformation& order)
 		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryBegin)),
 		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryEnd)),
 		Clingo::Number(realGameTimeToAspGameTime(order.GameTime))};
-	queueGround({"newOrder", params, false}, InterruptSolving::Critical);
+	queueGround({"newOrder", params, std::string()}, InterruptSolving::Critical);
 	return;
 }
 
@@ -1266,7 +1265,7 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 {
 	time = realGameTimeToAspGameTime(time);
 	GroundRequest request{"begun", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time)}, false};
+		Clingo::Number(time)}, std::string()};
 	MutexLocker locker(&RobotsMutex);
 	RobotTaskBegin.insert({{Clingo::String(robot), time}, request});
 	queueGround(std::move(request), InterruptSolving::Critical);
@@ -1288,7 +1287,7 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
 	time = realGameTimeToAspGameTime(time);
 	end = realGameTimeToAspGameTime(end);
 	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time), Clingo::Number(duration)}, false};
+		Clingo::Number(time), Clingo::Number(duration)}, std::string()};
 	MutexLocker locker(&RobotsMutex);
 	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
 	queueGround(std::move(request), InterruptSolving::Critical);
@@ -1306,7 +1305,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 {
 	time = realGameTimeToAspGameTime(time);
 	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time), Clingo::Number(0)}, false};
+		Clingo::Number(time), Clingo::Number(0)}, std::string()};
 	MutexLocker locker(&RobotsMutex);
 	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
 	queueGround(std::move(request), InterruptSolving::Critical);
@@ -1322,7 +1321,7 @@ void
 AspPlanerThread::taskWasFailure(const std::string& task, unsigned int time)
 {
 	time = realGameTimeToAspGameTime(time);
-	GroundRequest request{"failure", {taskStringToFunction(task), Clingo::Number(time)}, false};
+	GroundRequest request{"failure", {taskStringToFunction(task), Clingo::Number(time)}, std::string()};
 	MutexLocker locker(&RobotsMutex);
 	TaskSuccess.insert({time, request});
 	queueGround(std::move(request), InterruptSolving::Critical);

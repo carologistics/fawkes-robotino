@@ -17,7 +17,7 @@ asp-agent:
     #How many real time seconds should be one time unit for the ASP solver.
     time-resolution: 5
     #How many robot adding and removing events there are expected at most.
-    max-ticks: 25
+    max-ticks: 7
     #Names of possible used robots.
     robots: [Tuvok,T'Pol,Spock]
     max-orders: 8

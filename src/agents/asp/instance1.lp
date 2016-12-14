@@ -5,6 +5,7 @@
 
 MaxOrders = 1
 MaxQuantity = 1
+MaxTicks = 7
 
 MaxFeedRS = 2
 MaxGetBase = 2
