@@ -48,9 +48,9 @@ end(R, T, gt) :- update(R, T, gt, 0).
 
 % Update robot location.
 % Set robot location to location of the task it just finished. (This seems reasonable.)
-location(R, L, gt) :- end(R, T, gt), location(T, L), not setLocation(R, _, gt, _).
+location(R, L, gt) :- end(R, T, gt), location(T, L), not addRobot(R, _, gt, _).
 % In the moment a robot starts a task we do not store its location.
-location(R, L, gt) :- robot(R, gt), location(R, L, gt-1), not begin(R, _, gt-1), not setLocation(R, _, gt, _).
+location(R, L, gt) :- robot(R, gt), location(R, L, gt-1), not begin(R, _, gt-1), not addRobot(R, _, gt, _).
 
 % Max one robot per task.
 :- 2 { doing(R, T, gt, _) : robot(R, gt) }, toBeDone(T, gt).

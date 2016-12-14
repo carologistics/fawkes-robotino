@@ -59,7 +59,7 @@ class AspPlanerThread
 	unsigned int MaxQuantity;
 
 	unsigned int LookAhaed;
-	unsigned int LastTick;
+	std::unordered_map<std::string, unsigned int> NextTick;
 	unsigned int GameTime;
 	unsigned int Horizon;
 	unsigned int Past;

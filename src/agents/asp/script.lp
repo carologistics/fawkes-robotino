@@ -39,7 +39,7 @@ def maxTaskDuration():
 	return toASP(35)
 
 def maxTicks():
-	return 25
+	return MaxTicks
 
 def prepareCSTaskDuration():
 	return toASP(35)
