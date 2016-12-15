@@ -757,37 +757,19 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 	{
 		const auto number = Clingo::Number(t);
 		std::vector<Clingo::Symbol> externals;
-		const auto hasNoOrder = std::find_if(Orders.begin(), Orders.end(),
-			[this,t](const OrderInformation& order)
-			{
-				return realGameTimeToAspGameTime(order.GameTime) == t;
-			}) == Orders.end();
-		const auto failureRange = TaskSuccess.equal_range(t);
 
 		externals.reserve(Tasks.size() * 2);
 		Clingo::SymbolVector externalParams = {Clingo::Symbol(), Clingo::Number(t)};
 		for ( const auto& task : Tasks )
 		{
 			externalParams[0] = task;
-			if ( hasNoOrder )
-			{
-				externals.emplace_back(Clingo::Function("spawnTask", externalParams));
-			} //if ( hasNoOrder )
-
-			const auto taskFailed = std::find_if(failureRange.first, failureRange.second,
-				[&task](const std::pair<unsigned int, GroundRequest>& pair)
-				{
-					return pair.second.Params[0] == task;
-				}) != failureRange.second;
-
-			if ( !taskFailed )
-			{
-				externalParams.emplace_back(Clingo::Function("failure", externalParams));
-			} //if ( !taskFailed )
+			externals.emplace_back(Clingo::Function("spawnTask", externalParams));
+			externalParams.emplace_back(Clingo::Function("failure", externalParams));
 		} //for ( const auto& task : Tasks )
 
 		requests.emplace_back(GroundRequest{"past", Clingo::SymbolVector{number}, std::string(), externals});
 
+		MutexLocker distanceLocker(&DistanceMutex);
 		for ( const auto& robot : robotVector )
 		{
 			externals.clear();
@@ -795,18 +777,11 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 
 			Clingo::SymbolVector externalParams = {robot, Clingo::Symbol(), Clingo::Number(t), Clingo::Symbol()};
 
-			const auto hasUpdate = RobotTaskUpdate.count({robot, t}) > 0;
-			const auto updateTask = hasUpdate ? RobotTaskUpdate[{robot, t}].Params[1] : Clingo::Symbol();
-
 			for ( decltype(MaxTaskDuration) dur = 0; dur <= realGameTimeToAspGameTime(MaxTaskDuration); ++dur )
 			{
 				externalParams[3] = Clingo::Number(dur);
 				for ( const auto& task : Tasks )
 				{
-					if ( task == updateTask )
-					{
-						continue;
-					} //if ( task == updateTask )
 					externalParams[1] = task;
 					externals.emplace_back(Clingo::Function("update", externalParams));
 				} //for ( const auto& task : Tasks )
@@ -815,7 +790,7 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 			/* If there is an update or begin for the robot, ground "past" without parameters. This program does not
 			 * exist, but this way we can add the externals. */
 			requests.emplace_back(GroundRequest{"past",
-				(!RobotTaskBegin.count({robot, t}) && !hasUpdate) ?
+				(!RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t})) ?
 				Clingo::SymbolVector{robot, number} : Clingo::SymbolVector{},
 				std::string(), externals});
 		} //for ( const auto& robot : robotVector )
