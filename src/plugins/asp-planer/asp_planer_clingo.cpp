@@ -179,6 +179,7 @@ using fawkes::MutexLocker;
 void
 AspPlanerThread::fillNavgraphNodesForASP(void)
 {
+	MutexLocker locker(&DistanceMutex);
 	NavgraphNodesForASP.clear();
 	//Maschinen * Seiten + Zonen
 	NavgraphNodesForASP.reserve(6 * 2 + 24 + 1);
@@ -301,6 +302,8 @@ AspPlanerThread::initClingo(void)
 	std::strcpy(suffix, "robots");
 	Robots = config->get_strings(buffer);
 	NextTick.reserve(Robots.size());
+	std::strcpy(suffix, "max-ticks");
+	MaxTicks = config->get_uint(buffer);
 
 	std::strcpy(buffer + prefixLen, infixTime);
 	suffix = buffer + prefixLen + infixTimeLen;
@@ -620,6 +623,7 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 void
 AspPlanerThread::updateNavgraphDistances(void)
 {
+	MutexLocker distanceLocker(&DistanceMutex);
 	UpdateNavgraphDistances = false;
 	for ( const auto& distance : NavgraphDistances )
 	{
@@ -637,7 +641,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 		NavgraphDistances.shrink_to_fit();
 	} //else -> if ( StillNeedExploring )
 
-	MutexLocker locker(navgraph.objmutex_ptr());
+	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
 
 	auto distanceToDuration = [this](const float distance) noexcept
 		{
@@ -1108,14 +1112,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			} //else if ( view == "robots" )
 			else if ( view == "maxTicks" )
 			{
-				static const unsigned int ticks = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 20];
-						std::strcpy(buffer, ConfigPrefix);
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-ticks");
-						return config->get_uint(buffer);
-					}();
-				retFunction({Clingo::Number(ticks)});
+				retFunction({Clingo::Number(MaxTicks)});
 				return;
 			} //else if ( view == "maxTicks" )
 			else if ( view == "maxTaskDuration" )
