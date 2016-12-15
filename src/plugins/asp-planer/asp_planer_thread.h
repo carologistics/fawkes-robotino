@@ -56,6 +56,7 @@ class AspPlanerThread
 	unsigned int MaxOrders;
 	unsigned int MaxQuantity;
 	unsigned int MaxTaskDuration;
+	unsigned int MaxTicks;
 
 	unsigned int LookAhaed;
 	std::unordered_map<std::string, unsigned int> NextTick;
@@ -79,6 +80,7 @@ class AspPlanerThread
 	bool Unsat;
 
 	bool UpdateNavgraphDistances;
+	fawkes::Mutex DistanceMutex;
 	std::vector<Clingo::Symbol> NavgraphDistances;
 	//As long as we don't have nodes for the zones we need a multimap.
 	std::unordered_multimap<std::string, Clingo::Symbol> NavgraphNodesForASP;

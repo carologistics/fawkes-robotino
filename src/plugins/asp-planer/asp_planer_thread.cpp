@@ -366,7 +366,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_CONTINUOUS),
 		ASPAspect("ASPPlaner", "ASP-Planer"),
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr), MoreModels(false),
-		ExplorationTime(0), MaxOrders(0), MaxQuantity(0), LookAhaed(0), GameTime(0), Horizon(0), Past(0),
+		ExplorationTime(0), MaxOrders(0), MaxQuantity(0), MaxTicks(0), LookAhaed(0), GameTime(0), Horizon(0), Past(0),
 		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false), TimeResolution(1), MaxDriveDuration(0),
 		PlanElements(0), Unsat(false), UpdateNavgraphDistances(false),
 		Interrupt(InterruptSolving::Not), SentCancel(false)
