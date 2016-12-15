@@ -12,7 +12,7 @@
 % points(feedRS(_), P)           How many points are awarded for the feeding.
 % possible(R, feedRS(_), GT)     If robot R can perform the feed task at GT.
 % putDown(R, L, P, GT)           Robot R puts product P down at location L in GT.
-% spawn(feedRS(_), T)            The feed RS tasks are possible after T, see state.lp
+% spawnTask(feedRS(_), T)        The feed RS tasks are possible after T, see state.lp
 % task(feedRS(L, R, S))          The task to feed a product into ring station L by robot R. S is to enumerate how often
 %                                a robot is able to perform this task.
 %
@@ -33,7 +33,7 @@ task(feedRS(L, R, S))                            :- robot(R), ringLocation(_, L)
 points(feedRS(L, R, S), 2)                       :- task(feedRS(L, R, S)).
 duration(feedRS(L, R, S), @feedRSTaskDuration()) :- task(feedRS(L, R, S)).
 location(feedRS(L, R, S), L)	                 :- task(feedRS(L, R, S)).
-spawn(feedRS(L, R, S), T)                        :- task(feedRS(L, R, S)), deliveryTimes(T, _).
+spawnTask(feedRS(L, R, S), T)                    :- task(feedRS(L, R, S)), deliveryTimes(T, _).
 
 #program transition(gt).
 inUse(L, gt) :- begin(R, feedRS(L, R, S), gt).

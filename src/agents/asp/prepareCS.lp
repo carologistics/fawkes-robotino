@@ -13,7 +13,7 @@
 % points(prepareCS(_), P)        How many points are awarded for the preparation.
 % possible(R, prepareCS(_), GT)  If robot R can perform the preparation task at GT.
 % process(M, P, GT)              The machine M starts the processing of the product P at GT.
-% spawn(prepareCS(_), T)         The prepare CS tasks are possible after T, see state.lp
+% spawnTask(prepareCS(_), T)     The prepare CS tasks are possible after T, see state.lp
 % task(prepareCS(L, R, S))       The task to prepare the cap station L by robot R. S is to enumerate how often a robot
 %                                is able to perform this task. Preparing means get a dummy product from the shelf and
 %                                insert it in the cap station for cap unmountment.
@@ -34,7 +34,7 @@ task(prepareCS(L, R, S))                               :- robot(R), capLocation(
 points(prepareCS(L, R, S), 3)                          :- task(prepareCS(L, R, S)).
 duration(prepareCS(L, R, S), @prepareCSTaskDuration()) :- task(prepareCS(L, R, S)).
 location(prepareCS(L, R, S), L)	                       :- task(prepareCS(L, R, S)).
-spawn(prepareCS(L, R, S), T)                           :- task(prepareCS(L, R, S)), deliveryTimes(T, _).
+spawnTask(prepareCS(L, R, S), T)                       :- task(prepareCS(L, R, S)), deliveryTimes(T, _).
 
 #program transition(gt).
 inUse(L, gt) :- begin(R, prepareCS(L, R, S), gt).

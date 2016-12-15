@@ -12,7 +12,7 @@
 % pickup(R, P, L)                The robot R picked up product P at location L.
 % points(getBase(_), P)          How many points are awarded for the retreival.
 % possible(R, getBase(_), GT)    If robot R can perform the retreival task at GT.
-% spawn(getBase(_), T)           The get base tasks are possible after T, see state.lp
+% spawnTask(getBase(_), T)       The get base tasks are possible after T, see state.lp
 % task(getBase(L, R, B, S))      The task to get a new base of color Bfrom the base station L by robot R. S is to
 %                                enumerate how often a robot is able to perform this task.
 %
