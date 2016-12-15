@@ -865,7 +865,26 @@ AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving int
 	MutexLocker locker(&RequestMutex);
 	if ( !request.AddTick.empty() )
 	{
-		request.Params.push_back(Clingo::Number(NextTick[request.AddTick]++));
+		const auto currentTick(Clingo::Number(NextTick[request.AddTick]++));
+		request.Params.push_back(currentTick);
+
+		Clingo::SymbolVector addRobotParams = {Clingo::String(request.AddTick), {}, {}, currentTick};
+		Clingo::SymbolVector killRobotParams = {Clingo::String(request.AddTick), {}, currentTick};
+
+		const auto end = realGameTimeToAspGameTime(19 * 60), start = realGameTimeToAspGameTime(GameTime);
+		request.ExternalsToRelease.reserve(request.ExternalsToRelease.size() + (end - start + 1) *
+			(NavgraphNodesForASP.size() + 1));
+		for ( auto gt = start; gt <= end; ++gt )
+		{
+			addRobotParams[2] = killRobotParams[1] = Clingo::Number(gt);
+			request.ExternalsToRelease.emplace_back(Clingo::Function("killRobot", killRobotParams));
+
+			for ( const auto& pair : NavgraphNodesForASP )
+			{
+				addRobotParams[1] = pair.second;
+				request.ExternalsToRelease.emplace_back(Clingo::Function("addRobot", addRobotParams));
+			} //for ( const auto& pair : NavgraphNodesForASP )
+		} //for ( auto gt = start; gt <= end; ++gt )
 	} //if ( !request.AddTick.empty() )
 	Requests.emplace_back(std::move(request));
 
