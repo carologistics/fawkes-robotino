@@ -773,7 +773,9 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 		for ( const auto& robot : robotVector )
 		{
 			externals.clear();
-			externals.reserve(Tasks.size() * MaxTaskDuration);
+			const auto tickStart = NextTick[robot.name()];
+			externals.reserve(Tasks.size() * MaxTaskDuration +
+				(MaxTicks - tickStart + 1) * (NavgraphNodesForASP.size() + 1));
 
 			Clingo::SymbolVector externalParams = {robot, Clingo::Symbol(), Clingo::Number(t), Clingo::Symbol()};
 
@@ -786,6 +788,22 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 					externals.emplace_back(Clingo::Function("update", externalParams));
 				} //for ( const auto& task : Tasks )
 			} //for ( decltype(MaxTaskDuration) dur = 0; dur <= realGameTimeToAspGameTime(MaxTaskDuration); ++dur )
+
+			Clingo::SymbolVector& addRobotParams(externalParams);
+			Clingo::SymbolVector killRobotParams(externalParams);
+			killRobotParams.erase(killRobotParams.begin() + 1);
+
+			for ( auto tick = tickStart; tick <= MaxTicks; ++tick )
+			{
+				addRobotParams[3] = killRobotParams[2] = Clingo::Number(tick);
+				externals.emplace_back(Clingo::Function("killRobot", killRobotParams));
+
+				for ( const auto& pair : NavgraphNodesForASP )
+				{
+					addRobotParams[2] = pair.second;
+					externals.emplace_back(Clingo::Function("addRobot", addRobotParams));
+				} //for ( const auto& pair : NavgraphNodesForASP )
+			} //for ( auto tick = tickStart; tick <= MaxTicks; ++tick )
 
 			/* If there is an update or begin for the robot, ground "past" without parameters. This program does not
 			 * exist, but this way we can add the externals. */
