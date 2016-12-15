@@ -21,13 +21,9 @@ def generateInstance():
 	list[0].extend(defaultMap())
 	list[0].extend([
 		("ourTeam", ["C"]),
-		#("addRobot", ["Tuvok", 0, 0]),
-		#("setRobotLocation", ["Tuvok", "ins-out", 0, 1]),
-		#("addRobot", ["T'Pol", 0, 2]),
-		#("setRobotLocation", ["T'Pol", "ins-out", 0, 3]),
-		("addRobot", ["Spock", 0, 4]),
-		("setRobotLocation", ["Spock", "ins-out", 0, 5])])
-
+		#("addRobot", ["Tuvok", "ins-out", 0, 0]),
+		#("addRobot", ["T'Pol", "ins-out", 0, 0]),
+		("addRobot", ["Spock", "ins-out", 0, 0])])
 
 	list[minDeliveryTime()].extend([
 		("setRingInfo", ["YELLOW", 1, "RS2"]),
