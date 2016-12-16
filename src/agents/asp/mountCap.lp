@@ -21,6 +21,7 @@
 % cap(P, C, GT)                  Defined in products.lp
 % capLocation(L)                 Defined in facts.lp
 % csPrepared(M, GT)              Defined in machines.lp
+% deliveryTimes(L, U)            Defined in facts.lp
 % end(R, T, GT)                  Defined in state.lp
 % failure(R, T, GT)              Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
@@ -42,7 +43,7 @@ location(mountCap(L, O, Q), L)	     :- capTask(mountCap(L, O, Q)).
 
 #program transition(gt).
 
-#external spawnTask(T, gt) : capTask(T).
+#external spawnTask(mountCap(L, O, Q), gt) : capTask(mountCap(L, O, Q)), deliveryTimes(B, _), gt >= B, not orderSpawed(O).
 
 inUse(L, gt) :- begin(R, T, gt), capTask(T), location(T, L).
 free(L, gt)  :- end(_, T, gt), capTask(T), location(T, L).

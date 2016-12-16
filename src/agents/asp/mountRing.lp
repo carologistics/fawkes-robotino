@@ -21,6 +21,7 @@
 % begin(R, T, GT)                Defined in state.lp
 % cap(P, C, GT)                  Defined in products.lp
 % csPrepared(M, GT)              Defined in machines.lp
+% deliveryTimes(L, U)            Defined in facts.lp
 % end(R, T, GT)                  Defined in state.lp
 % failure(R, T, GT)              Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
@@ -50,7 +51,7 @@ location(mountRing(L, O, Q, R), L)	  :- task(mountRing(L, O, Q, R)).
 
 #program transition(gt).
 
-#external spawnTask(T, gt) : ringTask(T).
+#external spawnTask(mountRing(L, O, Q, R), gt) : ringTask(mountRing(L, O, Q, R)), deliveryTimes(B, _), B >= gt, not orderSpawned(O).
 
 inUse(L, gt) :- begin(R, T, gt), ringTask(T), location(T, L).
 free(L, gt)  :- end(_, T, gt), ringTask(T), location(T, L).

@@ -31,17 +31,13 @@
 
 #program newOrder(o, q, b, c, r1, r2, r3, deliveryBegin, deliveryEnd, gt).
 %orderDeadline(o, deliveryEnd).
-%:- orderDeadline(o, D), deliveryTimes(L, U), D >= L, D <= U, D != deliveryEnd.
 base(o, b).
-:- base(o, B), baseColor(B), B != b.
 cap(o, c).
-:- cap(o, C), capColor(C), C != c.
 ring(o, 1, r1).
-:- ring(o, 1, R), ringColor(R), R != r1.
 ring(o, 2, r2).
-:- ring(o, 2, R), ringColor(R), R != r2.
 ring(o, 3, r3).
-:- ring(o, 3, R), ringColor(R), R != r3.
+
+orderSpawned(o).
 
 spawnTask(mountCap(L, o, Q), gt) :- Q = 1..q, capLocation(M, L), capStationAssignment(M, c).
 spawnTask(mountRing(L, o, Q, 1), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r1), r1 != "none".

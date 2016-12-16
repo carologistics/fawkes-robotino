@@ -34,7 +34,11 @@
 #external failure(T, gt)      : task(T).
 
 % Can start at max one task and only if not doing something else right now.
-{ begin(R, T, gt) : toBeDone(T, gt), possible(R, T, gt) } 1 :- location(R, _, gt).
+{ begin(R, T, gt) : task(T) } 1 :- robot(R).
+
+:- begin(R, _, gt), not location(R, _, gt).
+:- begin(_, T, gt), not toBeDone(T, gt).
+:- begin(R, T, gt), not possible(R, T, gt).
 
 % Initialize and update doing.
 doing(R, T, gt, D) :- begin(R, T, gt), duration(R, T, gt, D).
@@ -57,7 +61,8 @@ location(R, L, gt) :- robot(R, gt), location(R, L, gt-1), not begin(R, _, gt-1),
 :- 2 { doing(R, T, gt, _) : toBeDone(T, gt) }, robot(R, gt).
 
 % Calculate complete duration per robot.
-duration(R, T, gt, D) :- possible(R, T, gt), duration(T, TD), location(T, TL), location(R, RL, gt), driveDuration(RL, TL, DD), D = TD + DD.
+duration(R, T, gt, TD + DD) :- possible(R, T, gt), duration(T, TD), location(T, TL), location(R, RL, gt), driveDuration(RL, TL, DD).
+%Todo: duration task location, start location, nicht dynamisch
 
 % Update Task status.
 toBeDone(T, gt) :- spawnTask(T, gt).
