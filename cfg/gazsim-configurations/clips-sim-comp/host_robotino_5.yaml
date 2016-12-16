@@ -6,6 +6,11 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 
+network:
+  fawkes:
+    tcp_port: !tcp-port 1925
+    service_name: "Fawkes on Gazsim Robotino 5 (Magenta)"
+
 webview:
   # TCP port for Webview HTTP requests; TCP port
   port: !tcp-port 8085
