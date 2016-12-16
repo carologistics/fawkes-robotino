@@ -52,6 +52,8 @@ DETAILED=
 KEEP=
 SHUTDOWN=
 NUM_ROBOTINOS=3
+NUM_CYAN=3
+NUM_MAGENTA=0
 FIRST_ROBOTINO_NUMBER=1
 REPLAY=
 FAWKES_BIN=$FAWKES_DIR/bin
@@ -121,6 +123,12 @@ while true; do
 	     ;;
 	 -n)
 	     NUM_ROBOTINOS=$OPTARG
+	     if (( $NUM_ROBOTINOS >= 3 )); then
+		     NUM_CYAN=3
+         NUM_MAGENTA=$(expr $NUM_ROBOTINOS - 3)
+       else
+	       NUM_CYAN=$NUM_ROBOTINOS
+       fi
 	     ;;
 	 -e)
 	     REPLAY="-e $OPTARG"
@@ -275,7 +283,7 @@ if [  $COMMAND  == start ]; then
 	sleep 15s
 	# publish initial poses
 	echo "publish initial poses"
-	$initial_pose_script_location -d
+	$initial_pose_script_location -c $NUM_CYAN -m $NUM_MAGENTA -d
     else
 	echo "Skipped publishing poses"
     fi
