@@ -5,21 +5,21 @@
 ---
 asp-agent:
   planer:
-    debug-level: 20
-    more-models: true #false
+    debug-level: 40
 
     program-path: ../src/agents/asp/
     program-files: [delivery.lp, facts.lp, feedRS.lp, getBase.lp, getProduct.lp, goal.lp, machines.lp, mountCap.lp, mountRing.lp, orders.lp, prepareCS.lp, products.lp, robots.lp, state.lp]
+    #program-files: [facts.lp, robots.lp, goal.lp, state.lp]
     exploration-files: [exploration.lp]
 
     #Look ahaed in real time seconds.
     look-ahaed: 300
     #How many real time seconds should be one time unit for the ASP solver.
     time-resolution: 5
-    #How many robot adding and removing events there are expected at most.
-    max-ticks: 7
     #Names of possible used robots.
     robots: [Tuvok,T'Pol,Spock]
+    robot-timeout: 10
+
     max-orders: 8
     max-quantity: 2
     max-feed-rs: 6
@@ -40,11 +40,10 @@ asp-agent:
     explore-zone: 5
     fetch-product: 10
     deliver-product: 15
-    fetch-from-shelf: 35 #This includes the time to put the fetched product into the CS. 
+    prepare-cs: 35 #Fetch a product from the shelf and put in into the machine.
 
     read-mps-light: 10
 
-    max-task-duration: 35 #Does not include the drive duration.
     max-drive-duration: 30
 
   #real-world-setup:
@@ -58,6 +57,7 @@ asp-agent:
   cipher: "aes-128-cbc"
 
   exploration-time: 240
+  production-end: 900
 
   #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
   cap-station:

@@ -121,7 +121,6 @@ struct RobotInformation
 	fawkes::Time LastSeen;
 	float X;
 	float Y;
-	unsigned int GameTime;
 };
 
 struct RingColorInformation
@@ -140,7 +139,6 @@ struct OrderInformation
 	std::string Rings[3];
 	unsigned int DeliveryBegin;
 	unsigned int DeliveryEnd;
-	unsigned int GameTime;
 };
 
 namespace std {

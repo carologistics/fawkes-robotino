@@ -37,53 +37,6 @@ using std::experimental::string_view;
 using fawkes::MutexLocker;
 
 /**
- * @enum InterruptSolving
- * @brief States the current interrupt request.
- * @note Sort by priority. We use operator> when setting the value.
- *
- * @var InterruptSolving::Not
- * @brief Do not interrupt.
- *
- * @var InterruptSolving::JustStarted
- * @brief Only interrupt if the solving was just started.
- *
- * @var InterruptSolving::Normal
- * @brief Do interrupt, if the plan isn't to old.
- *
- * @var InterruptSolving::Critical
- * @brief Interrupt in any case.
- */
-
-/**
- * @struct GroundRequest
- * @brief A simple container for a ground request.
- *
- * @property GroundRequest::Name
- * @brief The name of the program to ground.
- *
- * @property GroundRequest::Params
- * @brief The parameters for the request.
- *
- * @property GroundRequest::AddTick
- * @brief The name of the robot which tick we want to use, empty if no tick.
- *
- * @property GroundRequest::ExternalsToRelease
- * @brief The externals which should be released after this grounding.
- */
-
-/**
- * @property AspPlanerThread::MoreModels
- * @brief If we want to have more than one model (if available) from the solver.
- *
- * @property AspPlanerThread::MaxOrders
- * @brief The maximum amount of orders we expect.
- *
- * @property AspPlanerThread::MaxQuantity
- * @brief The maximum quantity for an order we expect.
- *
- * @property AspPlanerThread::MaxTaskDuration
- * @brief How long the longest task is.
- *
  *
  * @property AspPlanerThread::LookAhaed
  * @brief How many seconds the planer should look ahaed.
@@ -171,11 +124,11 @@ using fawkes::MutexLocker;
  *
  * @property AspPlanerThread::Requests
  * @brief Stores everything we have to add to the solver for the next iteration.
- */
+ *
 
 /**
  * @brief Fill the NavgraphNodesForASP with the nodes we export to ASP.
- */
+ *
 void
 AspPlanerThread::fillNavgraphNodesForASP(void)
 {
@@ -227,7 +180,7 @@ AspPlanerThread::fillNavgraphNodesForASP(void)
 /**
  * @brief Will be called if the navgraph is changed. Will add the property "ASP-Location" to all nodes which are used by
  *        the ASP encoding.
- */
+ *
 void
 AspPlanerThread::graph_changed(void) noexcept
 {
@@ -248,18 +201,8 @@ AspPlanerThread::graph_changed(void) noexcept
 }
 
 /**
- * @brief Takes care of everything regarding clingo interface in the constructor.
- */
-void
-AspPlanerThread::constructClingo(void)
-{
-	//Using the aspect.
-	return;
-}
-
-/**
  * @brief Takes care of everything regarding clingo interface in init().
- */
+ *
 void
 AspPlanerThread::initClingo(void)
 {
@@ -277,41 +220,6 @@ AspPlanerThread::initClingo(void)
 		}));
 	ClingoAcc->setGroundCallback([this](auto... args) { this->groundFunctions(args...); return; });
 
-	constexpr auto infixPlaner = "planer/";
-	constexpr auto infixTime = "time-estimations/";
-	constexpr auto infixPlanerLen = std::strlen(infixPlaner), infixTimeLen = std::strlen(infixTime);
-	const auto prefixLen = std::strlen(ConfigPrefix);
-	char buffer[prefixLen + std::max<size_t>(infixPlanerLen, infixTimeLen) + 20];
-	auto suffix = buffer + prefixLen + infixPlanerLen;
-	std::strcpy(buffer, ConfigPrefix);
-	std::strcpy(buffer + prefixLen, infixPlaner);
-
-	std::strcpy(suffix, "debug-level");
-	ClingoAcc->DebugLevel = static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer));
-
-	std::strcpy(suffix, "max-orders");
-	MaxOrders = config->get_uint(buffer);
-	std::strcpy(suffix, "max-quantity");
-	MaxQuantity = config->get_uint(buffer);
-	std::strcpy(suffix, "more-models");
-	MoreModels  = config->get_bool(buffer);
-	std::strcpy(suffix, "look-ahaed");
-	LookAhaed = config->get_uint(buffer);
-	std::strcpy(suffix, "time-resolution");
-	TimeResolution = config->get_uint(buffer);
-	std::strcpy(suffix, "robots");
-	Robots = config->get_strings(buffer);
-	NextTick.reserve(Robots.size());
-	std::strcpy(suffix, "max-ticks");
-	MaxTicks = config->get_uint(buffer);
-
-	std::strcpy(buffer + prefixLen, infixTime);
-	suffix = buffer + prefixLen + infixTimeLen;
-	std::strcpy(suffix, "max-drive-duration");
-	MaxDriveDuration = config->get_uint(buffer);
-	std::strcpy(suffix, "max-task-duration");
-	MaxTaskDuration = config->get_uint(buffer);
-
 	loadFilesAndGroundBase(locker);
 
 	Orders.reserve(MaxOrders);
@@ -328,7 +236,7 @@ AspPlanerThread::initClingo(void)
  * @brief Resets clingo and refills it with the needed information.
  * @param[in] aspLocker The locked locker for clingo.
  * @param[in] reqLocker The locked locker for the requests.
- */
+ *
 void
 AspPlanerThread::resetClingo(MutexLocker& aspLocker, MutexLocker& reqLocker)
 {
@@ -397,7 +305,7 @@ AspPlanerThread::resetClingo(MutexLocker& aspLocker, MutexLocker& reqLocker)
  * @brief Helper function to calculate the center point of each zone.
  * @return An array with the center points. Zone i is in the element [i]. [0] is kept "empty".
  * @todo Why can't we modify the array as constexpr?
- */
+ *
 /*static auto
 calculateZoneCoords(void) noexcept
 {
@@ -421,11 +329,11 @@ calculateZoneCoords(void) noexcept
 	} //for ( int i = 0; i < 24; ++i )
 
 	return ret;
-}*/
+}*
 
 /**
  * @brief Does the loop for clingo.
- */
+ *
 void
 AspPlanerThread::loopClingo(void)
 {
@@ -533,7 +441,7 @@ AspPlanerThread::loopClingo(void)
 
 /**
  * @brief Takes care of everything regarding clingo interface in finalize().
- */
+ *
 void
 AspPlanerThread::finalizeClingo(void)
 {
@@ -546,7 +454,7 @@ AspPlanerThread::finalizeClingo(void)
  * @brief Says if the solving process should be interrupted.
  * @return If the solving should be interrupted.
  * @note RequestLock must be locked before calling this method and unlocked when appropriate!
- */
+ *
 bool
 AspPlanerThread::interruptSolving(void) const noexcept
 {
@@ -555,7 +463,7 @@ AspPlanerThread::interruptSolving(void) const noexcept
 	switch ( Interrupt )
 	{
 		case InterruptSolving::Not         : break;
-		case InterruptSolving::JustStarted : /** @todo Do it! */break;
+		case InterruptSolving::JustStarted : /** @todo Do it! *break;
 		case InterruptSolving::Normal      :
 		{
 			//! @todo Read threashold from config.
@@ -574,7 +482,7 @@ AspPlanerThread::interruptSolving(void) const noexcept
 /**
  * @brief Loads the ASP files into the solver and grounds the base program.
  * @param[in, out] locker The locker used to lock ClingoAcc. Has to be locked at the beginning.
- */
+ *
 void
 AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 {
@@ -619,7 +527,7 @@ AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
 /**
  * @brief Updates the navgraph distances.
  * @note Assumes, that ClingoAcc is locked.
- */
+ *
 void
 AspPlanerThread::updateNavgraphDistances(void)
 {
@@ -667,7 +575,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 			 * The default value should be an upper bound on the driving duration a robot would take without
 			 * mobile obstacles, i.e. drive from one end of the field to the other side, possibly around
 			 * machines, but there is no replanning because of other robots.
-			 */
+			 *
 			auto findDuration = [this,&toNode,&fromNode,distanceToDuration](void) {
 					if ( fromNode.is_valid() && toNode.is_valid() )
 					{
@@ -719,7 +627,7 @@ AspPlanerThread::updateNavgraphDistances(void)
  *        or end a task.
  * @param[out] requests Stores ground requests in this vector.
  * @note Assumes ClingoAcc as locked.
- */
+ *
 void
 AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 {
@@ -806,7 +714,7 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
 			} //for ( auto tick = tickStart; tick <= MaxTicks; ++tick )
 
 			/* If there is an update or begin for the robot, ground "past" without parameters. This program does not
-			 * exist, but this way we can add the externals. */
+			 * exist, but this way we can add the externals. *
 			requests.emplace_back(GroundRequest{"past",
 				(!RobotTaskBegin.count({robot, t}) && !RobotTaskUpdate.count({robot, t})) ?
 				Clingo::SymbolVector{robot, number} : Clingo::SymbolVector{},
@@ -824,7 +732,7 @@ AspPlanerThread::setPast(std::vector<GroundRequest>& requests)
  * @param[in] info The information.
  * @param[in] lock If the ASP solver object should be locked. Set to false, if you have locked it before calling this
  *                 method.
- */
+ *
 void
 AspPlanerThread::releaseExternals(RobotInformation& info, const bool lock)
 {
@@ -836,7 +744,7 @@ AspPlanerThread::releaseExternals(RobotInformation& info, const bool lock)
  * @brief Transforms the real time to ASP time steps.
  * @param[in] realGameTime The real game time in seconds.
  * @return The ASP time units.
- */
+ *
 unsigned int
 AspPlanerThread::realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept
 {
@@ -847,7 +755,7 @@ AspPlanerThread::realGameTimeToAspGameTime(const unsigned int realGameTime) cons
  * @brief Transforms the ASP time steps to real time.
  * @param[in] aspGameTime The ASP time units.
  * @return The real game time in seconds.
- */
+ *
 unsigned int
 AspPlanerThread::aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept
 {
@@ -858,7 +766,7 @@ AspPlanerThread::aspGameTimeToRealGameTime(const unsigned int aspGameTime) const
  * @brief Queues a request for grounding.
  * @param[in, out] request The request, will me moved.
  * @param[in] interrupt Which interrupt level this request has.
- */
+ *
 void
 AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving interrupt)
 {
@@ -898,7 +806,7 @@ AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving int
 /**
  * @brief Is called, when the solver has found a new model.
  * @return If the solver should search for additional models.
- */
+ *
 bool
 AspPlanerThread::newModel(void)
 {
@@ -914,7 +822,7 @@ AspPlanerThread::newModel(void)
  * @brief Is called, when the solver is finished. Either because the search is exhausted, the program is infeasable or
  *        we told him to be finished.
  * @param[in] result Contains the information what condition has been met.
- */
+ *
 void
 AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 {
@@ -931,7 +839,7 @@ AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
  * @param[in] name The function name.
  * @param[in] arguments The ASP arguments for the function.
  * @param[in] retFunction The function used to return the calculated value.
- */
+ *
 void
 AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, const Clingo::SymbolSpan& arguments,
 	Clingo::SymbolSpanCallback& retFunction)
@@ -1196,7 +1104,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 
 /**
  * @brief Sets the team for the solver.
- */
+ *
 void
 AspPlanerThread::setTeam(void)
 {
@@ -1307,7 +1215,7 @@ AspPlanerThread::unsetTeam(void)
  * @brief Adds a new robot to the ASP program.
  * @param[in] mate The name of the new robot.
  * @param[in] info The information to the robot.
- */
+ *
 void
 AspPlanerThread::newTeamMate(const std::string& mate, const RobotInformation& info)
 {
@@ -1330,7 +1238,7 @@ AspPlanerThread::newTeamMate(const std::string& mate, const RobotInformation& in
 /**
  * @brief Removes a robot of the ASP program.
  * @param[in] mate The name of the robot.
- */
+ *
 void
 AspPlanerThread::deadTeamMate(const std::string& mate)
 {
@@ -1344,7 +1252,7 @@ AspPlanerThread::deadTeamMate(const std::string& mate)
 /**
  * @brief Adds a zone to explore.
  * @param[in] zone The zone number.
- */
+ *
 void AspPlanerThread::addZoneToExplore(const long zone)
 {
 	assert(zone >= 1 && zone <= 24);
@@ -1359,7 +1267,7 @@ void AspPlanerThread::addZoneToExplore(const long zone)
 /**
  * @brief Adds the ring info to asp.
  * @param[in] info The info.
- */
+ *
 void
 AspPlanerThread::setRingColor(const RingColorInformation& info)
 {
@@ -1390,7 +1298,7 @@ AspPlanerThread::setRingColor(const RingColorInformation& info)
 /**
  * @brief Adds an order to asp.
  * @param[in] order The order.
- */
+ *
 void
 AspPlanerThread::addOrder(const OrderInformation& order)
 {
@@ -1406,7 +1314,7 @@ AspPlanerThread::addOrder(const OrderInformation& order)
 
 /**
  * @brief Called if a machine is found.
- */
+ *
 void
 AspPlanerThread::foundAMachine(void)
 {
@@ -1423,7 +1331,7 @@ AspPlanerThread::foundAMachine(void)
 /**
  * @brief Helper function to decompose a string and transform it to a Clingo::Function.
  * @param[in] string The task string.
- */
+ *
 static Clingo::Symbol
 taskStringToFunction(const std::string& string)
 {
@@ -1470,7 +1378,7 @@ taskStringToFunction(const std::string& string)
  * @param[in] robot The robot.
  * @param[in] task The task.
  * @param[in] time At which point in time the task was begun.
- */
+ *
 void
 AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time)
 {
@@ -1489,7 +1397,7 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
  * @param[in] task The task.
  * @param[in] time At which point in time the update was emitted.
  * @param[in] end The new estimated end time.
- */
+ *
 void
 AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task,
 		unsigned int time, unsigned int end)
@@ -1510,7 +1418,7 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
  * @param[in] robot The robot.
  * @param[in] task The task.
  * @param[in] time At which point in time the task was finished.
- */
+ *
 void
 AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time)
 {
@@ -1527,7 +1435,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
  * @brief A task was not successfully executed.
  * @param[in] task The task.
  * @param[in] time At which point in time the task was finished.
- */
+ *
 void
 AspPlanerThread::taskWasFailure(const std::string& task, unsigned int time)
 {

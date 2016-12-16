@@ -1,0 +1,248 @@
+/***************************************************************************
+ *  asp_planer_doc_and_config.cpp - ASP-based planer plugin documentation
+ *
+ *  Created on Fri Dec 16 10:47:02 2016
+ *  Copyright (C) 2016 by Björn Schäpers
+ *
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
+#include "asp_planer_thread.h"
+
+#include <plugins/asp/aspect/clingo_access.h>
+
+#include <algorithm>
+#include <cstring>
+
+/**
+ * @struct RobotInformation
+ * @brief Stores information for a robot.
+ *
+ * @property RobotInformation::LastSeen
+ * @brief When did we last hear of the robot.
+ *
+ * @property RobotInformation::X
+ * @brief The reported x coordinate of the robot.
+ *
+ * @property RobotInformation::Y
+ * @brief The reported y coordinate of the robot.
+ */
+
+/**
+ * @struct RingColorInformation
+ * @brief Stores information about a ring color.
+ *
+ * @property RingColorInformation::Color
+ * @brief The name of the color.
+ *
+ * @property RingColorInformation::Machine
+ * @brief Which machine serves the color.
+ *
+ * @property RingColorInformation::Cost
+ * @brief How many additional bases are needed to get the color.
+ */
+
+/**
+ * @struct OrderInformation
+ * @brief Stores information about orders.
+ *
+ * @property OrderInformation::Number
+ * @brief The order number.
+ *
+ * @property OrderInformation::Quantity
+ * @brief How many products for the order can be delivered.
+ *
+ * @property OrderInformation::Base
+ * @brief The base color of the ordered product.
+ *
+ * @property OrderInformation::Cap
+ * @brief The cap color of the ordered product.
+ *
+ * @property OrderInformation::Rings
+ * @brief The ring colors of the ordered product, can be "none".
+ *
+ * @property OrderInformation::DeliveryBegin
+ * @brief The begin of the delivery time window.
+ *
+ * @property OrderInformation::DeliveryEnd
+ * @brief The end of the delivery time window.
+ */
+
+/**
+ * @enum InterruptSolving
+ * @brief States the current interrupt request.
+ * @note Sort by priority. We use operator> when setting the value.
+ *
+ * @var InterruptSolving::Not
+ * @brief Do not interrupt.
+ *
+ * @var InterruptSolving::JustStarted
+ * @brief Only interrupt if the solving was just started.
+ *
+ * @var InterruptSolving::Normal
+ * @brief Do interrupt, if the plan isn't to old.
+ *
+ * @var InterruptSolving::Critical
+ * @brief Interrupt in any case.
+ */
+
+/**
+ * @struct GroundRequest
+ * @brief A simple container for a ground request.
+ *
+ * @property GroundRequest::Name
+ * @brief The name of the program to ground.
+ *
+ * @property GroundRequest::Params
+ * @brief The parameters for the request.
+ *
+ * @property GroundRequest::AddTick
+ * @brief The name of the robot which tick we want to use, empty if no tick.
+ *
+ * @property GroundRequest::ExternalsToRelease
+ * @brief The externals which should be released after this grounding.
+ */
+
+/** @class AspPlanerThread "asp_planer_thread.h"
+ * The thread to start and control the ASP planer.
+ *
+ * @property AspPlanerThread::LoggingComponent
+ * @brief The component name for the logging facility.
+ *
+ * @property AspPlanerThread::ConfigPrefix
+ * @brief The prefix for the config access.
+ *
+ * @property AspPlanerThread::RobotMemoryCallbacks
+ * @brief Contains all registered callbacks in the robot memory.
+ *
+ * @property AspPlanerThread::TeamColor
+ * @brief The team color for us as string, either "C" or "M".
+ */
+
+/**
+ * @property AspPlanerThread::Unsat
+ * @brief The program was unsatisfiable.
+ *
+ * @property AspPlanerThread::ExplorationTime
+ * @brief The time for the exploration phase, in seconds.
+ *
+ * @property AspPlanerThread::DeliverProductTaskDuration
+ * @brief How many seconds it will take a robot to put a product in a machine.
+ *
+ * @property AspPlanerThread::FetchProductTaskDuration
+ * @brief How many seconds it will take a robot to get a product from a machine.
+ *
+ * @property AspPlanerThread::LookAhaed
+ * @brief How many seconds the planer should look into the future.
+ *
+ * @property AspPlanerThread::MaxDriveDuration
+ * @brief An upper bound for the time (in seconds) the robot has to drive between two locations.
+ *
+ * @property AspPlanerThread::MaxOrders
+ * @brief The maximum amount of orders we expect.
+ *
+ * @property AspPlanerThread::MaxQuantity
+ * @brief The maximum quantity for an order we expect.
+ *
+ * @property AspPlanerThread::MaxTaskDuration
+ * @brief An upper bound on the time (in seconds) for the execution of a task.
+ *
+ * @property AspPlanerThread::PossibleRobots
+ * @brief The names of the robots we may have.
+ *
+ * @property AspPlanerThread::PrepareCSTaskDuration
+ * @brief How many seconds it will take a robot to prepare a cap station.
+ *
+ * @property AspPlanerThread::ProductionEnd
+ * @brief At which time point the production phase will end.
+ *
+ * @property AspPlanerThread::TimeResolution
+ * @brief How many real time seconds will be one asp time step.
+ */
+
+/**
+ * @property AspPlanerThread::WorldMutex
+ * @brief The mutex for the world model, including the robot informations.
+ *
+ * @property AspPlanerThread::GameTime
+ * @brief The current game time (as reported by the refbox) in (floored) seconds.
+ *
+ * @property AspPlanerThread::Orders
+ * @brief The information about the orders.
+ *
+ * @property AspPlanerThread::RingColors
+ * @brief The information about the ring colors.
+ *
+ * @property AspPlanerThread::Robots
+ * @brief The robot information in a lookup table.
+ */
+
+/**
+ * @brief Reads the config and fills the members.
+ */
+void
+AspPlanerThread::loadConfig(void)
+{
+	constexpr auto infixPlaner = "planer/";
+	constexpr auto infixTime = "time-estimations/";
+
+	constexpr auto infixPlanerLen = std::strlen(infixPlaner), infixTimeLen = std::strlen(infixTime);
+	const auto prefixLen = std::strlen(ConfigPrefix);
+
+	char buffer[prefixLen + std::max<size_t>(infixPlanerLen, infixTimeLen) + 20];
+	std::strcpy(buffer, ConfigPrefix);
+
+	//The plain part.
+	auto suffix = buffer + prefixLen;
+	std::strcpy(suffix, "exploration-time");
+	ExplorationTime = config->get_uint(buffer);
+
+	std::strcpy(suffix, "production-end");
+	ProductionEnd = ExplorationTime + config->get_uint(buffer);
+
+	//The planer part.
+	suffix = buffer + prefixLen + infixPlanerLen;
+	std::strcpy(buffer + prefixLen, infixPlaner);
+
+	std::strcpy(suffix, "debug-level");
+	ClingoAcc->DebugLevel = static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer));
+
+	std::strcpy(suffix, "max-orders");
+	MaxOrders = config->get_uint(buffer);
+	std::strcpy(suffix, "max-quantity");
+	MaxQuantity = config->get_uint(buffer);
+	std::strcpy(suffix, "look-ahaed");
+	LookAhaed = config->get_uint(buffer);
+	std::strcpy(suffix, "time-resolution");
+	TimeResolution = config->get_uint(buffer);
+	std::strcpy(suffix, "robots");
+	PossibleRobots = config->get_strings(buffer);
+
+	//The time-estimation part.
+	suffix = buffer + prefixLen + infixTimeLen;
+	std::strcpy(buffer + prefixLen, infixTime);
+
+	std::strcpy(suffix, "deliver-product");
+	DeliverProductTaskDuration = config->get_uint(buffer);
+	std::strcpy(suffix, "fetch-prodcut");
+	FetchProductTaskDuration = config->get_uint(buffer);
+	std::strcpy(suffix, "max-drive-duration");
+	MaxDriveDuration = config->get_uint(buffer);
+	std::strcpy(suffix, "prepare-cs");
+	PrepareCSTaskDuration = config->get_uint(buffer);
+
+	MaxTaskDuration = std::max({DeliverProductTaskDuration, FetchProductTaskDuration, PrepareCSTaskDuration});
+	return;
+}

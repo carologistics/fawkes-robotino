@@ -23,94 +23,12 @@
 
 #include <core/threading/mutex_locker.h>
 
+#include <algorithm>
 #include <cstdlib>
+#include <string>
 
 using namespace fawkes;
 
-/**
- * @struct RobotInformation
- * @brief Stores information for a robot.
- *
- * @property RobotInformation::LastSeen
- * @brief When did we last hear of the robot.
- *
- * @property RobotInformation::X
- * @brief The reported x coordinate of the robot, when he was added.
- *
- * @property RobotInformation::Y
- * @brief The reported y coordinate of the robot, when he was added.
- *
- * @property RobotInformation::GameTIme
- * @brief The game time, when the robot was added.
- */
-
-/**
- * @struct RingColorInformation
- * @brief Stores information about a ring color.
- *
- * @property RingColorInformation::Color
- * @brief The name of the color.
- *
- * @property RingColorInformation::Machine
- * @brief Which machine serves the color.
- *
- * @property RingColorInformation::Cost
- * @brief How many additional bases are needed to get the color.
- */
-
-/**
- * @struct OrderInformation
- * @brief Stores information about orders.
- *
- * @property OrderInformation::Number
- * @brief The order number.
- *
- * @property OrderInformation::Quantity
- * @brief How many products for the order can be delivered.
- *
- * @property OrderInformation::Base
- * @brief The base color of the ordered product.
- *
- * @property OrderInformation::Cap
- * @brief The cap color of the ordered product.
- *
- * @property OrderInformation::Rings
- * @brief The ring colors of the ordered product, can be "none".
- *
- * @property OrderInformation::DeliveryBegin
- * @brief The begin of the delivery time window.
- *
- * @property OrderInformation::DeliveryEnd
- * @brief The end of the delivery time window.
- *
- * @property OrderInformation::GameTime
- * @brief The game time, when we received the order.
- */
-
-/** @class AspPlanerThread "asp_planer_thread.h"
- * The thread to start and control the ASP planer.
- *
- * @property AspPlanerThread::RobotMemoryCallbacks
- * @brief Contains all registered callbacks in the robot memory.
- *
- * @property AspPlanerThread::Unsat
- * @brief The program was unsatisfiable.
- *
- * @property AspPlanerThread::RobotsMutex
- * @brief The mutex for the robots information.
- *
- * @property AspPlanerThread::RobotInformations
- * @brief The robot information in a lookup table.
- *
- * @property AspPlanerThread::RobotTaskBegin
- * @brief Saves when a robot has begun a task, so we can fix this in the asp program.
- *
- * @property AspPlanerThread::RobotTaskUpdate
- * @brief Saves when a robot updates a task time estimation, so we can fix this in the asp program.
- *
- * @property AspPlanerThread::TaskSuccess
- * @brief Saves when a task was successfully executed.
- */
 
 /**
  * @brief Gets called, when a beacon is received, updates the robot information.
@@ -124,24 +42,19 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 		const auto object(document.getField("o"));
 		const std::string name(object["name"].String());
 		bool newRobot = false;
-		MutexLocker locker(&RobotsMutex);
-		if ( !RobotInformations.count(name) )
+		MutexLocker locker(&WorldMutex);
+		if ( !Robots.count(name) )
 		{
 			newRobot = true;
-		} //if ( !RobotInformations.count(name) )
+		} //if ( !Robots.count(name) )
 		const auto& time(object["last-seen"].Array());
-		auto& info = RobotInformations[name];
+		Robots[name] = {Time(time.at(0).Long(), time.at(1).Long()),
+			static_cast<float>(object["x"].Double()), static_cast<float>(object["y"].Double())};
 		if ( newRobot )
 		{
-			info = {Time(time.at(0).Long(), time.at(1).Long()),
-				static_cast<float>(object["x"].Double()), static_cast<float>(object["y"].Double()), GameTime};
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
-			newTeamMate(name, info);
+			setInterupt(InterruptSolving::Critical);
 		} //if ( newRobot )
-		else
-		{
-			info.LastSeen = Time(Time(time.at(0).Long(), time.at(1).Long()));
-		} //else -> if ( newRobot )
 	} //try
 	catch ( const std::exception& e )
 	{
@@ -168,6 +81,7 @@ AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
 		const auto object(document.getField("o"));
 		const std::string phase(object["phase"].String());
 		const unsigned int gameTime(object["time"].Long());
+		MutexLocker locker(&WorldMutex);
 		if ( phase == "EXPLORATION" )
 		{
 			GameTime = gameTime;
@@ -210,15 +124,16 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
 		const std::string ring3(rings.size() >= 3 ? rings[2].String() : "none");
 		const unsigned int delBegin(object["begin"].Long() + ExplorationTime);
 		const unsigned int delEnd(object["end"].Long() + ExplorationTime);
-		OrderInformation info{number, quantity, base, cap, {ring1, ring2, ring3}, delBegin, delEnd,
-			std::max(GameTime, ExplorationTime)};
+
+		MutexLocker locker(&WorldMutex);
+		Orders.emplace_back(number, quantity, base, cap, std::array<std::string, 3>{ring1, ring2, ring3}, delBegin,
+			delEnd);
+
 		if ( RingColors.size() == 4 )
 		{
 			//Do only spawn tasks when we have the ring infos.
-			addOrder(info);
+			addOrderToASP(Orders.back());
 		} //if ( RingColors.size() > 4 )
-
-		Orders.emplace_back(std::move(info));
 
 		if ( number > MaxOrders )
 		{
@@ -257,16 +172,18 @@ AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
 		const std::string color(object["color"].String());
 		const unsigned int cost(object["cost"].Long());
 		const std::string machine(object["machine"].String().substr(2));
-		RingColorInformation info{color, machine, cost};
-		setRingColor(info);
-		RingColors.emplace_back(std::move(info));
+
+		MutexLocker locker(&WorldMutex);
+		RingColors.emplace_back(color, machine, cost);
+
+		addRingColorToASP(RingColors.back());
 
 		if ( RingColors.size() == 4 )
 		{
 			//We have the last ring info, spawn orders we have received until now.
 			for ( const auto& order : Orders )
 			{
-				addOrder(order);
+				addOrderToASP(order);
 			} //for ( const auto& order : Orders )
 		} //if ( RingColors.size() == 4 )
 	} //try
@@ -341,13 +258,33 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 	try
 	{
 		const auto object(document.getField("o"));
-		const auto zones(object["zones"].Array());
-		char *unused;
-		for ( const auto& zone : zones )
+		const auto zonesArray(object["zones"].Array());
+		std::vector<unsigned int> zones;
+		zones.reserve(zonesArray.size());
+		std::transform(std::begin(zonesArray), std::end(zonesArray), std::back_inserter(zones),
+			[](const mongo::BSONElement& zone)
+			{
+				return std::stoi(zone.String());
+			});
+		const auto begin = zones.begin();
+		auto end = zones.end();
+		MutexLocker locker(&WorldMutex);
+		for ( auto zone = 1u; zone <= 24u; ++zone )
 		{
-			//+1 to get rid of the Z.
-			addZoneToExplore(std::strtol(zone.String().c_str() + 1, &unused, 10));
-		} //for ( const auto& zone : zones )
+			auto iter = std::find(begin, end, zone);
+			if ( iter == end )
+			{
+				releaseZone(zone);
+			} //if ( iter == end )
+			else
+			{
+				ZonesToExplore.push_back(zone);
+				addZoneToExplore(zone);
+				/* Move the found zone to the end, and move the end iterator one to the left. So the std::find has to
+				 * search a smaller range. */
+				std::swap(*iter, *--end);
+			} //else -> if ( iter == end )
+		} //for ( auto zone = 1u; zone <= 24u; ++zone )
 	} //try
 	catch ( const std::exception& e )
 	{
@@ -362,38 +299,47 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 	return;
 }
 
-/** Constructor. */
+/**
+ * @brief Constructor.
+ */
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_CONTINUOUS),
 		ASPAspect("ASPPlaner", "ASP-Planer"),
-		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr), MoreModels(false),
-		ExplorationTime(0), MaxOrders(0), MaxQuantity(0), MaxTicks(0), LookAhaed(0), GameTime(0), Horizon(0), Past(0),
-		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false), TimeResolution(1), MaxDriveDuration(0),
-		PlanElements(0), Unsat(false), UpdateNavgraphDistances(false),
-		Interrupt(InterruptSolving::Not), SentCancel(false)
+		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr),
+		Unsat(false),
+		//Config
+		ExplorationTime(0), DeliverProductTaskDuration(0), FetchProductTaskDuration(0), LookAhaed(0),
+		MaxDriveDuration(0), MaxOrders(0), MaxQuantity(0), MaxTaskDuration(0), PrepareCSTaskDuration(0),
+		TimeResolution(0),
+		//Worldmodel
+		GameTime(0)
+		/*Horizon(0), Past(0),
+		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false),
+		PlanElements(0), UpdateNavgraphDistances(false),
+		Interrupt(InterruptSolving::Not), SentCancel(false)*/
 {
-	//We don't expect more than 3 robots.
-	Robots.reserve(3);
-	constructClingo();
 	return;
 }
 
-/** Destructor. */
+/**
+ * @brief Destructor.
+ */
 AspPlanerThread::~AspPlanerThread(void)
 {
 	return;
 }
 
+/**
+ * @brief Initliaizes the robmem callbacks and world model. Also calls the specialized inits.
+ */
 void
 AspPlanerThread::init(void)
 {
 	logger->log_info(LoggingComponent, "Initialize ASP Planer");
-	const auto prefixLen = std::strlen(ConfigPrefix);
-	char buffer[prefixLen + 20];
-	const auto suffix = buffer + prefixLen;
-	std::strcpy(buffer, ConfigPrefix);
-
-	std::strcpy(suffix, "exploration-time");
-	ExplorationTime = config->get_uint(buffer);
+	loadConfig();
+	Orders.reserve(MaxOrders);
+	RingColors.reserve(4);
+	Robots.reserve(PossibleRobots.size());
+	ZonesToExplore.reserve(12);
 
 	RobotMemoryCallbacks.reserve(7);
 
@@ -438,24 +384,23 @@ AspPlanerThread::loop(void)
 	} //if ( Unsat )
 
 	{
-		MutexLocker locker(&RobotsMutex);
+		MutexLocker locker(&WorldMutex);
 		const auto now(clock->now());
-		static const Time timeOut(10, 0);
-		auto iter = RobotInformations.begin();
-		while ( iter != RobotInformations.end() )
+		static const Time timeOut(config->get_int(ConfigPrefix + std::string("planer/robot-timeout")), 0);
+		auto iter = Robots.begin();
+		while ( iter != Robots.end() )
 		{
 			if ( now - iter->second.LastSeen >= timeOut )
 			{
 				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", iter->first.c_str());
-				releaseExternals(iter->second);
-				deadTeamMate(iter->first);
-				iter = RobotInformations.erase(iter);
+				setInterupt(InterruptSolving::Critical);
+				iter = Robots.erase(iter);
 			} //if ( now - iter->second.LastSeen >= timeOut )
 			else
 			{
 				++iter;
 			} //else -> if ( now - iter->second.LastSeen >= timeOut )
-		} //while ( iter != RobotInformations.end() )
+		} //while ( iter != Robots.end() )
 	} //Block for iteration over Robots
 
 	loopPlan();
@@ -476,11 +421,4 @@ AspPlanerThread::finalize(void)
 	logger->log_info(LoggingComponent, "ASP Planer finalized");
 	return;
 }
-
-//bool
-//AspAgentThread::prepare_finalize_user()
-//{
-//	logger->log_info(LoggingComponent, "Prepare Finalize ASP Planer");
-//	return true;
-//}
 

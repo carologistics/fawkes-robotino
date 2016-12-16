@@ -42,7 +42,7 @@ using fawkes::MutexLocker;
  *
  * @property BasicPlanElement::End
  * @brief The estimated end time for the task, if available. If not it is set to zero.
- */
+ *
 
 /**
  * @struct PlanElement
@@ -56,7 +56,7 @@ using fawkes::MutexLocker;
  *
  * @property PlanElement::Action
  * @brief What to do with this element in the syncronized plan.
- */
+ *
 
 /**
  * @struct RobotPlan
@@ -70,7 +70,7 @@ using fawkes::MutexLocker;
  *
  * @property RobotPlan::CurrentTask
  * @brief The task, the robot should be doing currently.
- */
+ *
 
 /**
  * @property AspPlanerThread::PlanMutex
@@ -81,11 +81,11 @@ using fawkes::MutexLocker;
  *
  * @property AspPlanerThread::Plan
  * @brief The mapping from robot name to its plan.
- */
+ *
 
 /**
  * @brief Initalized plan elements.
- */
+ *
 void
 AspPlanerThread::initPlan(void)
 {
@@ -96,7 +96,7 @@ AspPlanerThread::initPlan(void)
 
 /**
  * @brief Handles everything concerning the plan in the loop.
- */
+ *
 void
 AspPlanerThread::loopPlan(void)
 {
@@ -111,7 +111,7 @@ AspPlanerThread::loopPlan(void)
 		} //if ( clock->now() - LastModel < planThreshold )
 
 		/* Extract the information. Since we have no guarantees about the ordering in the model we use a map to assemble
-		 * the (robot, task, begin, end) tuples. */
+		 * the (robot, task, begin, end) tuples. *
 		std::unordered_map<std::pair<std::string, std::string>, std::pair<unsigned int, unsigned int>> map;
 		//Reserve enough space for the known plan + 1 entry per robot.
 		map.reserve(PlanElements + Robots.size());
@@ -178,7 +178,7 @@ AspPlanerThread::loopPlan(void)
 				if ( !equal(element, *iter) )
 				{
 					/* We have the same task, but begin and/or end differs, but the element is still sorted right in the
-					 * plan. So we only update the element. */
+					 * plan. So we only update the element. *
 					iter->Begin  = element.Begin;
 					iter->End    = element.End;
 					iter->Action = PlanElement::Update;
@@ -221,7 +221,7 @@ AspPlanerThread::loopPlan(void)
 						case PlanElement::Nothing :
 						{
 							/* We have to update the DB entry if we have a new ordering, when something before this
-							 * index was added or removed. So only break when newOrderung is not set. */
+							 * index was added or removed. So only break when newOrderung is not set. *
 							if ( !newOrdering )
 							{
 								break;
@@ -252,7 +252,7 @@ AspPlanerThread::loopPlan(void)
 					 * The element to remove is moved to the end of the range by shifting, this preserves the ordering.
 					 * iter will now point to the next element.
 					 * Std::remove gives the iterator to the first element to erase, in our case the element we wan't to
-					 * remove, so let end point to that. */
+					 * remove, so let end point to that. *
 					end = std::remove(iter, end, *iter);
 					newOrdering = true;
 				} //else -> if ( iter->Visited )
@@ -274,7 +274,7 @@ AspPlanerThread::loopPlan(void)
  * @brief Transforms the task string from ASP syntax to CLIPS syntax.
  * @param[in] string The string to transform.
  * @return The transformed string.
- */
+ *
 static std::string
 taskASPtoCLIPS(std::string string)
 {
@@ -287,7 +287,7 @@ taskASPtoCLIPS(std::string string)
  * @brief Transforms the task string from CLIPS syntax to ASP syntax.
  * @param[in] string The string to transform.
  * @return The transformed string.
- */
+ *
 static std::string
 taskCLIPStoASP(std::string string)
 {
@@ -301,7 +301,7 @@ taskCLIPStoASP(std::string string)
  * @param[in] robot For which robot the plan element is.
  * @param[in] element The element.
  * @return The MongoDB query.
- */
+ *
 static std::string
 createQuery(const std::string& robot, const PlanElement& element)
 {
@@ -317,7 +317,7 @@ createQuery(const std::string& robot, const PlanElement& element)
  * @param[in] elementIndex The index of the element, used for the ordering on the executive. Is ignored if set to -1.
  * @param[in] element The element.
  * @return The object.
- */
+ *
 static mongo::BSONObj
 createObject(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
@@ -337,7 +337,7 @@ createObject(const std::string& robot, const int elementIndex, const PlanElement
  * @param[in] robot For which robot the plan element is.
  * @param[in] elementIndex The index of the element, used for the ordering on the executive.
  * @param[in] element The element.
- */
+ *
 void
 AspPlanerThread::updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
@@ -352,7 +352,7 @@ AspPlanerThread::updatePlanDB(const std::string& robot, const int elementIndex, 
  * @brief Removes a plan element from the robot memory.
  * @param[in] robot For which robot the plan element is.
  * @param[in] element The element.
- */
+ *
 void
 AspPlanerThread::removeFromPlanDB(const std::string& robot, const PlanElement& element)
 {
@@ -364,7 +364,7 @@ AspPlanerThread::removeFromPlanDB(const std::string& robot, const PlanElement& e
 /**
  * @brief Gets called if there is feedback from one of the robots.
  * @param[in] document The document with the feedback.
- */
+ *
 void
 AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 {
@@ -377,8 +377,8 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 
 		MutexLocker planLocker(&PlanMutex);
 		auto& robotPlan(Plan[robot]);
-//		logger->log_info(LoggingComponent, "Plan-Feedback, R: %s T: %s A: %s", robot.c_str(), task.c_str(),
-//			action.c_str());
+		logger->log_info(LoggingComponent, "Plan-Feedback, R: %s T: %s A: %s CT: %s", robot.c_str(), task.c_str(),
+			action.c_str(), robotPlan.CurrentTask.c_str());
 
 		//Switch only the first character because it is unique and we skip all the string handling.
 		switch ( action[0] )

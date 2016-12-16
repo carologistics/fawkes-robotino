@@ -51,16 +51,30 @@ class AspPlanerThread
 	std::vector<EventTrigger*> RobotMemoryCallbacks;
 	const char* TeamColor;
 
-	bool MoreModels;
+	bool Unsat;
+
 	unsigned int ExplorationTime;
+	unsigned int DeliverProductTaskDuration;
+	unsigned int FetchProductTaskDuration;
+	unsigned int LookAhaed;
+	unsigned int MaxDriveDuration;
 	unsigned int MaxOrders;
 	unsigned int MaxQuantity;
 	unsigned int MaxTaskDuration;
-	unsigned int MaxTicks;
+	std::vector<std::string> PossibleRobots;
+	unsigned int PrepareCSTaskDuration;
+	unsigned int ProductionEnd;
+	unsigned int TimeResolution;
 
-	unsigned int LookAhaed;
-	std::unordered_map<std::string, unsigned int> NextTick;
+	fawkes::Mutex WorldMutex;
 	unsigned int GameTime;
+	std::vector<OrderInformation> Orders;
+	std::vector<RingColorInformation> RingColors;
+	std::unordered_map<std::string, RobotInformation> Robots;
+	std::vector<unsigned int> ZonesToExplore;
+
+	/*
+	std::unordered_map<std::string, unsigned int> NextTick;
 	unsigned int Horizon;
 	unsigned int Past;
 	fawkes::Time SolvingStarted;
@@ -68,16 +82,11 @@ class AspPlanerThread
 	unsigned int MachinesFound;
 	bool StillNeedExploring;
 	bool CompleteRestart;
-	unsigned int TimeResolution;
-	unsigned int MaxDriveDuration;
-	std::vector<std::string> Robots;
 
 	fawkes::Mutex PlanMutex;
 	fawkes::Time LastPlan;
 	std::unordered_map<std::string, RobotPlan> Plan;
 	std::size_t PlanElements;
-
-	bool Unsat;
 
 	bool UpdateNavgraphDistances;
 	fawkes::Mutex DistanceMutex;
@@ -101,9 +110,6 @@ class AspPlanerThread
 	bool SentCancel;
 	std::vector<GroundRequest> Requests;
 
-	std::vector<RingColorInformation> RingColors;
-	std::vector<OrderInformation> Orders;
-
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
 	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskBegin;
@@ -113,15 +119,37 @@ class AspPlanerThread
 	fawkes::Mutex SymbolMutex;
 	Clingo::SymbolVector Symbols;
 	bool NewSymbols;
+	*/
 
-	void fillNavgraphNodesForASP(void);
+	void loadConfig(void);
+
 	void graph_changed(void) noexcept override final;
 
-	void constructClingo(void);
+	void setInterupt(const InterruptSolving interupt) noexcept;
+
+	void setTeam(void);
+	void unsetTeam(void);
+
+	void addOrderToASP(const OrderInformation& order);
+	void addRingColorToASP(const RingColorInformation& color);
+
+	void addZoneToExplore(const unsigned int zone);
+	void releaseZone(const unsigned int zone);
+
 	void initClingo(void);
-	void resetClingo(fawkes::MutexLocker& aspLocker, fawkes::MutexLocker& reqLocker);
 	void loopClingo(void);
 	void finalizeClingo(void);
+
+	void initPlan(void);
+	void loopPlan(void);
+	void updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element);
+	void removeFromPlanDB(const std::string& robot, const PlanElement& element);
+
+	void planFeedbackCallback(const mongo::BSONObj document);
+	/*
+	void fillNavgraphNodesForASP(void);
+
+	void resetClingo(fawkes::MutexLocker& aspLocker, fawkes::MutexLocker& reqLocker);
 	bool interruptSolving(void) const noexcept;
 	void loadFilesAndGroundBase(fawkes::MutexLocker& locker);
 
@@ -139,9 +167,6 @@ class AspPlanerThread
 	void groundFunctions(const Clingo::Location& loc, char const *name, const Clingo::SymbolSpan& arguments,
 		Clingo::SymbolSpanCallback& retFunction);
 
-	void setTeam(void);
-	void unsetTeam(void);
-
 	void newTeamMate(const std::string& mate, const RobotInformation& info);
 	void deadTeamMate(const std::string& mate);
 
@@ -156,6 +181,7 @@ class AspPlanerThread
 		unsigned int end);
 	void robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time);
 	void taskWasFailure(const std::string& task, unsigned int time);
+	*/
 
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);
@@ -164,13 +190,6 @@ class AspPlanerThread
 	void teamColorCallback(const mongo::BSONObj document);
 	void zonesCallback(const mongo::BSONObj document);
 
-	void initPlan(void);
-	void loopPlan(void);
-	void updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element);
-	void removeFromPlanDB(const std::string& robot, const PlanElement& element);
-
-	void planFeedbackCallback(const mongo::BSONObj document);
-
 	public:
 	AspPlanerThread(void);
 	~AspPlanerThread(void);
@@ -178,7 +197,6 @@ class AspPlanerThread
 	void init(void) override;
 	void loop(void) override;
 	void finalize(void) override;
-//	bool prepare_finalize_user() override;
 
 	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 	protected: void run() override { Thread::run(); return; }
