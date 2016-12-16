@@ -15,6 +15,8 @@ OPTIONS:
    -p arg              Fawkes remote as port 
    -o arg arg arg arg  Initial orientation (quaternion)
    -d                  Publish default initial localization for all three robots
+   -c N                Assume N available robots of team cyan (default: 3)
+   -m N                Assume N available robots of team magenta (default: 0)
 EOF
 }
  
@@ -27,7 +29,9 @@ O0=0.0
 O1=0.0
 O2=0.0
 O3=1.0
-while getopts “hx:y:p:o:d” OPTION
+CN=3
+MN=0
+while getopts “hx:y:p:o:dc:m:” OPTION
 do
      case $OPTION in
          h)
@@ -39,6 +43,12 @@ do
 	     ;;
 	 y)
 	     Y=$OPTARG
+	     ;;
+	 c)
+	     CN=$OPTARG
+	     ;;
+	 m)
+	     MN=$OPTARG
 	     ;;
 	 o)
 	     # option with 4 option arguments
@@ -62,13 +72,25 @@ do
 	 d)
 	     script_path=$FAWKES_DIR/bin
 	     set_pose=$script_path/ffset_pose
-	     $set_pose -r localhost:1921 -t 2.0 --  3.5  -0.5 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1922 -t 2.0 --  4.5 -0.5 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1923 -t 2.0 --  5.5  -0.5 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1924 -t 2.0 -- -3.5  -0.5 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1925 -t 2.0 -- -4.5 -0.5 0.0  0.0 0.0 0.7 0.7
-	     $set_pose -r localhost:1926 -t 2.0 -- -5.5  -0.5 0.0  0.0 0.0 0.7 0.7
-	     exit 1
+       if (( $CN >= 1 )); then
+			   $set_pose -r localhost:1921 -t 2.0 --  3.5  -0.5 0.0  0.0 0.0 0.7 0.7
+	     fi
+       if (( $CN >= 2 )); then
+		     $set_pose -r localhost:1922 -t 2.0 --  4.5 -0.5 0.0  0.0 0.0 0.7 0.7
+	     fi
+       if (( $CN >= 3 )); then
+		     $set_pose -r localhost:1923 -t 2.0 --  5.5  -0.5 0.0  0.0 0.0 0.7 0.7
+	     fi
+       if (( $MN >= 1 )); then
+		     $set_pose -r localhost:1924 -t 2.0 -- -3.5  -0.5 0.0  0.0 0.0 0.7 0.7
+	     fi
+       if (( $MN >= 2 )); then
+		     $set_pose -r localhost:1925 -t 2.0 -- -4.5 -0.5 0.0  0.0 0.0 0.7 0.7
+	     fi
+       if (( $MN >= 3 )); then
+		     $set_pose -r localhost:1926 -t 2.0 -- -5.5  -0.5 0.0  0.0 0.0 0.7 0.7
+	     fi
+	     exit 0
 	     ;;
          ?)
              usage
