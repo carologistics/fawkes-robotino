@@ -45,14 +45,6 @@ enum class InterruptSolving : unsigned short
 	Critical
 };
 
-struct GroundRequest
-{
-	const char *Name;
-	Clingo::SymbolVector Params;
-	std::string AddTick;
-	std::vector<Clingo::Symbol> ExternalsToRelease;
-};
-
 struct BasicPlanElement
 {
 	std::string Task;
@@ -116,11 +108,18 @@ struct RobotPlan
 	std::string CurrentTask;
 };
 
+using ProductIdentifier = std::string;
+
+using TaskDescription = std::string;
+
 struct RobotInformation
 {
 	fawkes::Time LastSeen;
+	bool Alive;
 	float X;
 	float Y;
+	ProductIdentifier Holding;
+	TaskDescription Doing;
 };
 
 struct RingColorInformation
