@@ -370,8 +370,8 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 
 		MutexLocker planLocker(&PlanMutex);
 		auto& robotPlan(Plan[robot]);
-//		logger->log_info(LoggingComponent, "Plan-Feedback, R: %s T: %s A: %s", robot.c_str(), task.c_str(),
-//			action.c_str());
+		logger->log_info(LoggingComponent, "Plan-Feedback, R: %s T: %s A: %s CT: %s", robot.c_str(), task.c_str(),
+			action.c_str(), robotPlan.CurrentTask.c_str());
 
 		//Switch only the first character because it is unique and we skip all the string handling.
 		switch ( action[0] )
@@ -422,3 +422,4 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 	} //catch ( ... )
 	return;
 }
+
