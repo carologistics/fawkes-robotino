@@ -132,6 +132,12 @@ struct RobotInformation
 	Clingo::Symbol DoingExternal;
 };
 
+struct CapColorInformation
+{
+	std::string Color;
+	std::string Machine;
+};
+
 struct RingColorInformation
 {
 	std::string Color;

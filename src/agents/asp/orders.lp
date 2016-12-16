@@ -7,8 +7,8 @@
 % base(O, B)                     The base color for order O is B.
 % cap(O, C)                      The cap color for order O is C.
 % orderDeadline(O, D)            The time frame for the delivery of the order O ends at D.
+% orderDone(O)                   The order O is completely serverd.
 % ring(O, R, C)                  The color of the R-th ring for order O is C.
-% spawnTask(T, GT)               Spawns the task for a order.
 %
 % Additionally used predicates:
 % baseColor(B)                   Defined in facts.lp
@@ -18,6 +18,7 @@
 % deliverLocation(L)             Defined in facts.lp
 % deliveryTimes(L, U)            Defined in facts.lp
 % order(O)                       Defined in facts.lp
+% quantity(Q)                    Defined in facts.lp
 % ringColor(B)                   Defined in facts.lp
 % ringLocation(M, L)             Defined in facts.lp
 % ringStationAssignment(M, R)    Defined in facts.lp
@@ -26,22 +27,14 @@
 #external base(O, B) : order(O), baseColor(B).
 #external cap(O, C)  : order(O), capColor(C).
 #external ring(O, R, C) : order(O), R = 1..3, ringColor(C).
-% This is too much, but we need this information.
-%#external orderDeadline(O, D) : order(O), deliveryTimes(L, U), D = L..U.
+#external orderDeadline(O, D) : order(O), deliveryTimes(L, U), D = L..U.
+#external orderDone(o) : order(O).
 
 #program newOrder(o, q, b, c, r1, r2, r3, deliveryBegin, deliveryEnd, gt).
-%orderDeadline(o, deliveryEnd).
+orderDeadline(o, deliveryEnd).
 base(o, b).
 cap(o, c).
-ring(o, 1, r1).
-ring(o, 2, r2).
-ring(o, 3, r3).
+ring(o, 1, r1) :- r1 != "none".
+ring(o, 2, r2) :- r2 != "none".
+ring(o, 3, r3) :- r3 != "none".
 
-orderSpawned(o).
-
-spawnTask(mountCap(L, o, Q), gt) :- Q = 1..q, capLocation(M, L), capStationAssignment(M, c).
-spawnTask(mountRing(L, o, Q, 1), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r1), r1 != "none".
-spawnTask(mountRing(L, o, Q, 2), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r2), r2 != "none".
-spawnTask(mountRing(L, o, Q, 3), gt) :- Q = 1..q, ringLocation(M, L), ringStationAssignment(M, r3), r3 != "none".
-spawnTask(deliver(L, o, Q), deliveryBegin)   :- Q = 1..q, deliverLocation(L).
-spawnTask(lateDeliver(L, o, Q), deliveryEnd) :- Q = 1..q, deliverLocation(L).

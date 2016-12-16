@@ -221,46 +221,54 @@ AspPlanerThread::loopClingo(void)
 /**
  * @brief Queues a ground request.
  * @param[in] part The program part to ground.
+ * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueGround(Clingo::Part&& part)
+AspPlanerThread::queueGround(Clingo::Part&& atom, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	GroundRequests.push_back(part);
+	GroundRequests.push_back(atom);
+	setInterrupt(interrupt, false);
 	return;
 }
 
 /**
  * @brief Queues a release request.
  * @param[in] atom The atom to release.
+ * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueRelease(Clingo::Symbol&& part)
+AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	ReleaseRequests.push_back(part);
+	ReleaseRequests.push_back(atom);
+	setInterrupt(interrupt, false);
 	return;
 }
 
 /**
  * @brief Queues a assign request.
  * @param[in] atom The atom to release.
+ * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueAssign(Clingo::Symbol&& part)
+AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	AssignRequests.push_back(part);
+	AssignRequests.push_back(atom);
+	setInterrupt(interrupt, false);
 	return;
 }
 
 /**
  * @brief Sets the interrupt value.
+ * @param[in] interrupt Which level of interrupt is requested.
+ * @param[in] lock If we should lock, if set to false we expect it to be locked by the caller.
  */
 void
-AspPlanerThread::setInterrupt(const InterruptSolving interrupt)
+AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
 {
-	MutexLocker locker(&RequestMutex);
+	MutexLocker locker(&RequestMutex, lock);
 	if ( static_cast<unsigned short>(interrupt) > static_cast<unsigned short>(Interrupt) )
 	{
 		Interrupt = interrupt;
@@ -515,20 +523,9 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 		{
 			if ( view == "capColor" )
 			{
-				static const std::string colorOne = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 40];
-						std::strcpy(buffer, ConfigPrefix);
-						//We assume the distribution is the same, for CYAN and MAGENTA.
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "cap-station/assigned-color/C-CS1");
-						return config->get_string(buffer);
-					}();
-				//The second CS has to have the other color, don't bother the config.
-				static const std::string colorTwo = colorOne == "BLACK" ? "GREY" : "BLACK";
-				static const std::string* colors[] = {&colorOne, &colorTwo};
 				const auto index = arguments[0].number();
 				assert(index >= 1 && index <= 2);
-				retFunction({Clingo::String(*colors[index - 1])});
+				retFunction({Clingo::String(CapColors[index - 1].Color)});
 				return;
 			} //if ( view == "capColor" )
 			break;
@@ -574,6 +571,45 @@ AspPlanerThread::unsetTeam(void)
 {
 	//TODO: I think it is clear what to do.
 	throw fawkes::Exception("Should unset the team, but this is not implemented!");
+	return;
+}
+
+/**
+ * @brief Adds an order to asp.
+ * @param[in] order The order.
+ */
+void
+AspPlanerThread::addOrderToASP(const OrderInformation& order)
+{
+	Clingo::SymbolVector params = {Clingo::Number(order.Number), Clingo::Number(order.Quantity),
+		Clingo::String(order.Base), Clingo::String(order.Cap), Clingo::String(order.Rings[0]),
+		Clingo::String(order.Rings[1]), Clingo::String(order.Rings[2]),
+		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryBegin)),
+		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryEnd))};
+	queueGround({"newOrder", params}, InterruptSolving::Critical);
+
+	for ( const auto& color : BaseColors )
+	{
+		queueRelease(Clingo::Function("base", {Clingo::Number(order.Number), Clingo::String(color)}));
+	} //for ( const auto& color : BaseColors )
+
+	for ( const auto& color : CapColors )
+	{
+		queueRelease(Clingo::Function("cap", {Clingo::Number(order.Number), Clingo::String(color.Color)}));
+	} //for ( const auto& color : CapColors )
+
+	for ( const auto& color : RingColors )
+	{
+		for ( auto ring = 1; ring <= 3; ++ring )
+		{
+			queueRelease(Clingo::Function("ring",
+				{Clingo::Number(order.Number), Clingo::Number(ring), Clingo::String(color.Color)}));
+		} //for ( auto ring = 1; ring <= 3; ++ring )
+	} //for ( const auto& color : RingColors )
+
+	for ( decltype(MaxQuantity) qty = 1; qty <= MaxQuantity; ++qty )
+	{
+	} //for ( decltype(MaxQuantity) qty = 1; qty <= MaxQuantity; ++qty )
 	return;
 }
 
@@ -631,23 +667,6 @@ AspPlanerThread::setRingColor(const RingColorInformation& info)
 		externalParams.emplace_back(Clingo::Function("ringColorCost", externalParams));
 	} //for ( decltype(info.Cost) cost = 0; cost <= 2; ++cost )
 	queueGround({"setRingInfo", params, std::string(), externals});
-	return;
-}
-
-/**
- * @brief Adds an order to asp.
- * @param[in] order The order.
- *
-void
-AspPlanerThread::addOrder(const OrderInformation& order)
-{
-	Clingo::SymbolVector params = {Clingo::Number(order.Number), Clingo::Number(order.Quantity),
-		Clingo::String(order.Base), Clingo::String(order.Cap), Clingo::String(order.Rings[0]),
-		Clingo::String(order.Rings[1]), Clingo::String(order.Rings[2]),
-		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryBegin)),
-		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryEnd)),
-		Clingo::Number(realGameTimeToAspGameTime(order.GameTime))};
-	queueGround({"newOrder", params, std::string()}, InterruptSolving::Critical);
 	return;
 }
 

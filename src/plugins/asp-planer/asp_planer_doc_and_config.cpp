@@ -76,6 +76,17 @@
  */
 
 /**
+ * @struct CapColorInformation
+ * @brief The mapping of a cap color to the station.
+ *
+ * @property CapColorInformation::Color
+ * @brief The color of the cap.
+ *
+ * @property CapColorInformation::Machine
+ * @brief The machine.
+ */
+
+/**
  * @struct OrderInformation
  * @brief Stores information about orders.
  *
@@ -177,6 +188,15 @@
  */
 
 /**
+ * @property AspPlanerThread::BaseColors
+ * @brief All available base colors.
+ *
+ * @property AspPlanerThread::SpecialBaseColor
+ * @brief The base color, for the dummy products on the cap stations shelf.
+ *
+ * @property AspPlanerThread::CapColors
+ * @brief The cap colors and their machine matching.
+ *
  * @property AspPlanerThread::WorldMutex
  * @brief The mutex for the world model, including the robot informations.
  *
@@ -269,11 +289,13 @@ AspPlanerThread::loadConfig(void)
 {
 	constexpr auto infixPlaner = "planer/";
 	constexpr auto infixTime = "time-estimations/";
+	constexpr auto infixCapStation = "cap-station/assigned-color/";
 
 	constexpr auto infixPlanerLen = std::strlen(infixPlaner), infixTimeLen = std::strlen(infixTime);
+	constexpr auto infixCapStationLen = std::strlen(infixCapStation);
 	const auto prefixLen = std::strlen(ConfigPrefix);
 
-	char buffer[prefixLen + std::max<size_t>(infixPlanerLen, infixTimeLen) + 20];
+	char buffer[prefixLen + std::max<size_t>({infixPlanerLen, infixTimeLen, infixCapStationLen}) + 20];
 	std::strcpy(buffer, ConfigPrefix);
 
 	//The plain part.
@@ -316,5 +338,16 @@ AspPlanerThread::loadConfig(void)
 	PrepareCSTaskDuration = config->get_uint(buffer);
 
 	MaxTaskDuration = std::max({DeliverProductTaskDuration, FetchProductTaskDuration, PrepareCSTaskDuration});
+
+	//The cap-station part.
+	suffix = buffer + prefixLen + infixCapStationLen;
+	std::strcpy(buffer + prefixLen, infixCapStation);
+
+	CapColors.reserve(2);
+	//We assume the distribution is the same, for CYAN and MAGENTA.
+	std::strcpy(suffix, "C-CS1");
+	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "C-CS1"});
+	std::strcpy(suffix, "C-CS2");
+	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "C-CS2"});
 	return;
 }

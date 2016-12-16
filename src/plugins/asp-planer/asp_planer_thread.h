@@ -66,6 +66,10 @@ class AspPlanerThread
 	unsigned int ProductionEnd;
 	unsigned int TimeResolution;
 
+	const std::vector<std::string> BaseColors = {"RED", "BLACK", "SILVER"};
+	const std::string SpecialBaseColor = "TRANSPARENT";
+	std::vector<CapColorInformation> CapColors;
+
 	fawkes::Mutex WorldMutex;
 	unsigned int GameTime;
 	std::vector<OrderInformation> Orders;
@@ -146,10 +150,10 @@ class AspPlanerThread
 	void finalizeClingo(void);
 	void loopClingo(void);
 
-	void queueGround(Clingo::Part&& part);
-	void queueRelease(Clingo::Symbol&& atom);
-	void queueAssign(Clingo::Symbol&& atom);
-	void setInterrupt(const InterruptSolving interrupt);
+	void queueGround(Clingo::Part&& part, const InterruptSolving interrupt = InterruptSolving::Not);
+	void queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
+	void queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
+	void setInterrupt(const InterruptSolving interrupt, const bool lock = true);
 	bool shouldInterrupt(void) const;
 
 	bool newModel(void);
