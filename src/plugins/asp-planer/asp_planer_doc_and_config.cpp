@@ -36,17 +36,29 @@
  * @property RobotInformation::Alive
  * @brief If the robot is considered alive.
  *
+ * @property RobotInformation::AliveExternal
+ * @brief The external if a robot is alive or not.
+ *
  * @property RobotInformation::X
  * @brief The reported x coordinate of the robot.
  *
  * @property RobotInformation::Y
  * @brief The reported y coordinate of the robot.
  *
+ * @property RobotInformation::LocationExternal
+ * @brief Where the robot was reported last.
+ *
  * @property RobotInformation::Holding
  * @brief Identifies what the robot is holding.
  *
+ * @property RobotInformation::HoldingExternal
+ * @brief What was set last time for the robot holding.
+ *
  * @property RobotInformation::Doing
  * @brief Identifies which task the robot is doing right now.
+ *
+ * @property RobotInformation::DoingExternal
+ * @brief What was set last time for the robot doing.
  */
 
 /**
@@ -185,6 +197,23 @@
  */
 
 /**
+ * @property AspPlanerThread::NodePropertyASP
+ * @brief The string for the asp node property. All nodes we export to ASP are marked with this.
+ *
+ * @property AspPlanerThread::NavgraphDistanceMutex
+ * @brief The mutex for all distance stuff.
+ *
+ * @property AspPlanerThread::NavgraphNodesForASP
+ * @brief A mapping from the navgraph node name to its asp atom.
+ *
+ * @property AspPlanerThread::UpdateNavgraphDistances.
+ * @brief If the distances have to be updated.
+ *
+ * @property AspPlanerThread::NavgraphDistances.
+ * @brief The externals with the distance, we export to ASP.
+ */
+
+/**
  * @property AspPlanerThread::RequestMutex
  * @brief The mutex for the requests and interupt handling.
  *
@@ -199,11 +228,34 @@
  *
  * @property AspPlanterThread::ReleaseRequests
  * @brief Requests for releasing externals.
+ *
+ * @property AspPlanterThread::AssignRequests
+ * @brief Requests for assigning true to externals.
+ */
+
+/**
+ * @property AspPlanerThread::SolvingMutex
+ * @brief Mutex for some solving related values.
+ *
+ * @property AspPlanerThread::LastModel
+ * @brief When we received the last model.
+ *
+ * @property AspPlanerThread::SolvingStarted
+ * @brief When we started with the solving.
+ *
+ * @property AspPlanerThread::NewSymbols
+ * @brief Denotes if there are new (unprocessed) symbols.
+ *
+ * @property AspPlanerThread::Symbols
+ * @brief The symbols from the last model.
  */
 
 /**
  * @property AspPlanerThread::PlanMutex
  * @brief The mutex for the plan.
+ *
+ * @property AspPlanerThread::LastPlan
+ * @brief When we extracted the last plan.
  *
  * @property AspPlanerThread::StartSolvingGameTime
  * @brief The game time, when the solving was started.

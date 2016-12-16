@@ -26,6 +26,10 @@ asp-agent:
     max-get-product: 20
     max-prep-cs: 4
 
+  interrupt-thresholds:
+    just-started: 2
+    normal: 10
+
   exec:
     #How many seconds a task may be started before the time stated by the planer.
     #The concrete value will be calculated by the time-resolution / 2 + given tolerance.

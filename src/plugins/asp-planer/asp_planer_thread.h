@@ -73,6 +73,25 @@ class AspPlanerThread
 	std::unordered_map<std::string, RobotInformation> Robots;
 	std::vector<unsigned int> ZonesToExplore;
 
+	static constexpr auto NodePropertyASP = "ASP-Location";
+	fawkes::Mutex NavgraphDistanceMutex;
+	//As long as we don't have nodes for the zones we need a multimap.
+	std::unordered_multimap<std::string, Clingo::Symbol> NavgraphNodesForASP;
+	bool UpdateNavgraphDistances;
+	std::vector<Clingo::Symbol> NavgraphDistances;
+
+	/*
+	fawkes::Mutex TaskLocationMutex;
+	Clingo::Symbol DeliveryLocation;
+	std::vector<Clingo::Symbol> RingLocations;
+	std::vector<Clingo::Symbol> CapLocations;
+	std::vector<Clingo::Symbol> BaseLocations;
+	std::vector<Clingo::Symbol> GetLocations;
+	std::vector<Clingo::Symbol> Tasks;
+	std::vector<Clingo::Symbol> RingTasks[3];
+	std::vector<Clingo::Symbol> CapTasks;
+	*/
+
 	/*
 	std::unordered_map<std::string, unsigned int> NextTick;
 	unsigned int Horizon;
@@ -87,23 +106,6 @@ class AspPlanerThread
 	fawkes::Time LastPlan;
 	std::unordered_map<std::string, RobotPlan> Plan;
 	std::size_t PlanElements;
-
-	bool UpdateNavgraphDistances;
-	fawkes::Mutex DistanceMutex;
-	std::vector<Clingo::Symbol> NavgraphDistances;
-	//As long as we don't have nodes for the zones we need a multimap.
-	std::unordered_multimap<std::string, Clingo::Symbol> NavgraphNodesForASP;
-	static constexpr auto NodePropertyASP = "ASP-Location";
-
-	fawkes::Mutex LocationTaskMutex;
-	Clingo::Symbol DeliveryLocation;
-	std::vector<Clingo::Symbol> RingLocations;
-	std::vector<Clingo::Symbol> CapLocations;
-	std::vector<Clingo::Symbol> BaseLocations;
-	std::vector<Clingo::Symbol> GetLocations;
-	std::vector<Clingo::Symbol> Tasks;
-	std::vector<Clingo::Symbol> RingTasks[3];
-	std::vector<Clingo::Symbol> CapTasks;
 
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
@@ -121,13 +123,24 @@ class AspPlanerThread
 	bool SentCancel;
 	std::vector<Clingo::Part> GroundRequests;
 	std::vector<Clingo::Symbol> ReleaseRequests;
+	std::vector<Clingo::Symbol> AssignRequests;
 
-	fawkes::Mutex PlanMutex;
+	mutable fawkes::Mutex SolvingMutex;
+	fawkes::Time LastModel;
+	fawkes::Time SolvingStarted;
+	bool NewSymbols;
+	Clingo::SymbolVector Symbols;
+
+	mutable fawkes::Mutex PlanMutex;
+	fawkes::Time LastPlan;
 	unsigned int StartSolvingGameTime;
 
 	void loadConfig(void);
 
 	void graph_changed(void) noexcept override final;
+	void fillNavgraphNodesForASP(void);
+	void updateNavgraphDistances(void);
+	Clingo::Symbol nearestLocation(const float x, const float y);
 
 	void initClingo(void);
 	void finalizeClingo(void);
@@ -135,14 +148,14 @@ class AspPlanerThread
 
 	void queueGround(Clingo::Part&& part);
 	void queueRelease(Clingo::Symbol&& atom);
+	void queueAssign(Clingo::Symbol&& atom);
+	void setInterrupt(const InterruptSolving interrupt);
 	bool shouldInterrupt(void) const;
 
 	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult& result);
 	void groundFunctions(const Clingo::Location& loc, char const *name, const Clingo::SymbolSpan& arguments,
 		Clingo::SymbolSpanCallback& retFunction);
-
-	void setInterrupt(const InterruptSolving interrupt);
 
 	void setTeam(void);
 	void unsetTeam(void);
@@ -160,19 +173,13 @@ class AspPlanerThread
 
 	void planFeedbackCallback(const mongo::BSONObj document);
 	/*
-	void fillNavgraphNodesForASP(void);
-
 	void resetClingo(fawkes::MutexLocker& aspLocker, fawkes::MutexLocker& reqLocker);
 	bool interruptSolving(void) const noexcept;
 
-	void updateNavgraphDistances(void);
 	void setPast(std::vector<GroundRequest>& requests);
 
 	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
 	void releaseExternals(RobotInformation &info, const bool lock = true);
-
-	unsigned int realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept;
-	unsigned int aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept;
 
 	void newTeamMate(const std::string& mate, const RobotInformation& info);
 	void deadTeamMate(const std::string& mate);
@@ -189,6 +196,9 @@ class AspPlanerThread
 	void robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time);
 	void taskWasFailure(const std::string& task, unsigned int time);
 	*/
+
+	unsigned int realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept;
+	unsigned int aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept;
 
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);

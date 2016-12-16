@@ -7,6 +7,9 @@ asp_planer_clingo.cpp
 asp_planer_plan.cpp
 asp_planer_types.h
 asp_planer_doc_and_config.cpp
+asp_planer_externals.h
+asp_planer_externals.cpp
+asp_planer_graph.cpp
 
 ../../agents/asp/defaultMap.lp
 ../../agents/asp/delivery.lp

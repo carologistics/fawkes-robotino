@@ -108,18 +108,28 @@ struct RobotPlan
 	std::string CurrentTask;
 };
 
-using ProductIdentifier = std::string;
+struct ProductIdentifier
+{
 
-using TaskDescription = std::string;
+};
+
+struct TaskDescription
+{
+
+};
 
 struct RobotInformation
 {
 	fawkes::Time LastSeen;
 	bool Alive;
+	Clingo::Symbol AliveExternal;
 	float X;
 	float Y;
+	Clingo::Symbol LocationExternal;
 	ProductIdentifier Holding;
+	Clingo::Symbol HoldingExternal;
 	TaskDescription Doing;
+	Clingo::Symbol DoingExternal;
 };
 
 struct RingColorInformation
@@ -163,10 +173,12 @@ namespace Clingo {
  * @param[in] string The C++-String.
  * @return The Clingo::Symbol constructed from the string.
  */
-inline Symbol String(const std::string& str)
+inline Symbol
+String(const std::string& str)
 {
 	return String(str.c_str());
 }
+
 }
 
 #endif

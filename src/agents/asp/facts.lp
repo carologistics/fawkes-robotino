@@ -39,6 +39,9 @@
 
 robot(@robots()).
 
+horizon(@horizon()).
+zone(1..24).
+
 % How many orders there are at most an their quantity.
 % If we try to add an order with a higher number or quantity it will not be considered.
 order(1..@maxOrders()).
@@ -71,6 +74,8 @@ capStationAssignment("CS2", @capColor(2)).
 
 #external ringStationAssignment(M, RingColor) : ringStation(M), ringColor(RingColor).
 #external ringColorCost(RingColor, Cost)      : ringColor(RingColor), ringCost(Cost).
+
+#external driveDuration(L1, L2, D) : location(L1), location(L2), D = 0..@maxDriveDuration().
 
 #program ourTeam(t).
 location(m(t, M, S)) :- baseStation(M),     side(S).
