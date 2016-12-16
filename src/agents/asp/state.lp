@@ -40,6 +40,8 @@
 :- begin(_, T, gt), not toBeDone(T, gt).
 :- begin(R, T, gt), not possible(R, T, gt).
 
+%todo: Add :- not begin(t), possible(t-1), erzeugt frühe pläne
+
 % Initialize and update doing.
 doing(R, T, gt, D) :- begin(R, T, gt), duration(R, T, gt, D).
 doing(R, T, gt, D) :- doing(R, T, gt-1, D+1), D > 0, not update(R, T, gt, _).

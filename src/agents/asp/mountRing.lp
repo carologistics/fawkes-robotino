@@ -71,6 +71,8 @@ possible(R, mountRing(L, O, Q, 3), gt) :- ringTask(mountRing(L, O, Q, 1)), holdi
 										  base(P, B), base(O, B), not ring(P, 2, none, gt), ring(P, 3, none, gt),
 										  cap(P, none, gt), ringColorCost(Color, Cost), Cost <= FS, robot(R, gt).
 
+%Todo: mache aus possible() mehrere impossible und dann possible :- not impossible
+%Todo: remove the fake choice rules
 { putDown(R, L, P, gt);
   ringMounted(M, P, Color, gt);
   produced(M, gt, P)
