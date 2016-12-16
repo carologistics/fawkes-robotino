@@ -20,6 +20,7 @@
  */
 
 #include "asp_planer_thread.h"
+#include "asp_planer_externals.h"
 
 #include <core/threading/mutex_locker.h>
 
@@ -29,6 +30,27 @@
 
 using namespace fawkes;
 
+/**
+ * @brief Transforms the real time to ASP time steps.
+ * @param[in] realGameTime The real game time in seconds.
+ * @return The ASP time units.
+ */
+unsigned int
+AspPlanerThread::realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept
+{
+	return realGameTime / TimeResolution + ((realGameTime % TimeResolution) * 2 >= TimeResolution ? 1 : 0);
+}
+
+/**
+ * @brief Transforms the ASP time steps to real time.
+ * @param[in] aspGameTime The ASP time units.
+ * @return The real game time in seconds.
+ */
+unsigned int
+AspPlanerThread::aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept
+{
+	return aspGameTime * TimeResolution;
+}
 
 /**
  * @brief Gets called, when a beacon is received, updates the robot information.
@@ -54,6 +76,7 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 		{
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
 			setInterrupt(InterruptSolving::Critical);
+			info.AliveExternal = generateAliveExternal(name);
 		} //if ( newRobot )
 		info.LastSeen = Time(time.at(0).Long(), time.at(1).Long());
 		info.Alive = true;
@@ -315,8 +338,12 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		TimeResolution(0),
 		//Worldmodel
 		GameTime(0),
+		//Distances
+		UpdateNavgraphDistances(true),
 		//Requests
 		Interrupt(InterruptSolving::Not), SentCancel(false),
+		//Solving
+		NewSymbols(false),
 		//Plan
 		StartSolvingGameTime(0)
 		/*Horizon(0), Past(0),
