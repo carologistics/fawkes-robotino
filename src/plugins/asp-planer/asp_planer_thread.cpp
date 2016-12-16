@@ -48,13 +48,17 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 			newRobot = true;
 		} //if ( !Robots.count(name) )
 		const auto& time(object["last-seen"].Array());
-		Robots[name] = {Time(time.at(0).Long(), time.at(1).Long()),
-			static_cast<float>(object["x"].Double()), static_cast<float>(object["y"].Double())};
+		auto& info = Robots[name];
+
 		if ( newRobot )
 		{
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
-			setInterupt(InterruptSolving::Critical);
+			setInterrupt(InterruptSolving::Critical);
 		} //if ( newRobot )
+		info.LastSeen = Time(time.at(0).Long(), time.at(1).Long());
+		info.Alive = true;
+		info.X = static_cast<float>(object["x"].Double());
+		info.Y = static_cast<float>(object["y"].Double());
 	} //try
 	catch ( const std::exception& e )
 	{
@@ -126,8 +130,7 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
 		const unsigned int delEnd(object["end"].Long() + ExplorationTime);
 
 		MutexLocker locker(&WorldMutex);
-		Orders.emplace_back(number, quantity, base, cap, std::array<std::string, 3>{ring1, ring2, ring3}, delBegin,
-			delEnd);
+		Orders.emplace_back(OrderInformation{number, quantity, base, cap, ring1, ring2, ring3, delBegin, delEnd});
 
 		if ( RingColors.size() == 4 )
 		{
@@ -174,7 +177,7 @@ AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
 		const std::string machine(object["machine"].String().substr(2));
 
 		MutexLocker locker(&WorldMutex);
-		RingColors.emplace_back(color, machine, cost);
+		RingColors.emplace_back(RingColorInformation{color, machine, cost});
 
 		addRingColorToASP(RingColors.back());
 
@@ -311,11 +314,14 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		MaxDriveDuration(0), MaxOrders(0), MaxQuantity(0), MaxTaskDuration(0), PrepareCSTaskDuration(0),
 		TimeResolution(0),
 		//Worldmodel
-		GameTime(0)
+		GameTime(0),
+		//Requests
+		Interrupt(InterruptSolving::Not), SentCancel(false),
+		//Plan
+		StartSolvingGameTime(0)
 		/*Horizon(0), Past(0),
 		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false),
-		PlanElements(0), UpdateNavgraphDistances(false),
-		Interrupt(InterruptSolving::Not), SentCancel(false)*/
+		PlanElements(0), UpdateNavgraphDistances(false),*/
 {
 	return;
 }
@@ -387,20 +393,16 @@ AspPlanerThread::loop(void)
 		MutexLocker locker(&WorldMutex);
 		const auto now(clock->now());
 		static const Time timeOut(config->get_int(ConfigPrefix + std::string("planer/robot-timeout")), 0);
-		auto iter = Robots.begin();
-		while ( iter != Robots.end() )
+		for ( auto& pair : Robots )
 		{
-			if ( now - iter->second.LastSeen >= timeOut )
+			auto& info(pair.second);
+			if ( now - info.LastSeen >= timeOut )
 			{
-				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", iter->first.c_str());
-				setInterupt(InterruptSolving::Critical);
-				iter = Robots.erase(iter);
-			} //if ( now - iter->second.LastSeen >= timeOut )
-			else
-			{
-				++iter;
-			} //else -> if ( now - iter->second.LastSeen >= timeOut )
-		} //while ( iter != Robots.end() )
+				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", pair.first.c_str());
+				setInterrupt(InterruptSolving::Critical);
+				info.Alive = false;
+			} //if ( now - info.LastSeen >= timeOut )
+		} //for ( auto& pair : Robots )
 	} //Block for iteration over Robots
 
 	loopPlan();

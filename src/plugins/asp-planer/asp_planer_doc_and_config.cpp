@@ -33,11 +33,20 @@
  * @property RobotInformation::LastSeen
  * @brief When did we last hear of the robot.
  *
+ * @property RobotInformation::Alive
+ * @brief If the robot is considered alive.
+ *
  * @property RobotInformation::X
  * @brief The reported x coordinate of the robot.
  *
  * @property RobotInformation::Y
  * @brief The reported y coordinate of the robot.
+ *
+ * @property RobotInformation::Holding
+ * @brief Identifies what the robot is holding.
+ *
+ * @property RobotInformation::Doing
+ * @brief Identifies which task the robot is doing right now.
  */
 
 /**
@@ -96,23 +105,6 @@
  *
  * @var InterruptSolving::Critical
  * @brief Interrupt in any case.
- */
-
-/**
- * @struct GroundRequest
- * @brief A simple container for a ground request.
- *
- * @property GroundRequest::Name
- * @brief The name of the program to ground.
- *
- * @property GroundRequest::Params
- * @brief The parameters for the request.
- *
- * @property GroundRequest::AddTick
- * @brief The name of the robot which tick we want to use, empty if no tick.
- *
- * @property GroundRequest::ExternalsToRelease
- * @brief The externals which should be released after this grounding.
  */
 
 /** @class AspPlanerThread "asp_planer_thread.h"
@@ -187,6 +179,34 @@
  *
  * @property AspPlanerThread::Robots
  * @brief The robot information in a lookup table.
+ *
+ * @property AspPlanerThread::ZonesToExplore
+ * @brief Which zones we have to explore.
+ */
+
+/**
+ * @property AspPlanerThread::RequestMutex
+ * @brief The mutex for the requests and interupt handling.
+ *
+ * @property AspPlanerThread::Interrupt
+ * @brief The current interrupt state.
+ *
+ * @property AspPlanerThread::SentCancel
+ * @brief If a cancel was sent to the solver.
+ *
+ * @property AspPlanerThread::GroundRequests
+ * @brief Requests for new groundings.
+ *
+ * @property AspPlanterThread::ReleaseRequests
+ * @brief Requests for releasing externals.
+ */
+
+/**
+ * @property AspPlanerThread::PlanMutex
+ * @brief The mutex for the plan.
+ *
+ * @property AspPlanerThread::StartSolvingGameTime
+ * @brief The game time, when the solving was started.
  */
 
 /**

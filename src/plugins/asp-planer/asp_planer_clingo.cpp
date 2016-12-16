@@ -23,9 +23,11 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cstring>
 #include <sstream>
 #include <experimental/string_view>
+#include <thread>
 
 //! @todo Replace include and using, once C++17 is implemented properly.
 using std::experimental::string_view;
@@ -37,94 +39,134 @@ using std::experimental::string_view;
 using fawkes::MutexLocker;
 
 /**
- *
- * @property AspPlanerThread::LookAhaed
- * @brief How many seconds the planer should look ahaed.
- *
- * @property AspPlanerThread::NextTick
- * @brief The next tick for each robot.
- *
- * @property AspPlanerThread::Horizon
- * @brief The horizon, up to which point (measured in gametime in seconds) the planer should plan.
- *
- * @property AspPlanerThread::Past
- * @brief Up to which point the past has been fixed.
- *
- * @property AspPlanerThread::LastModel
- * @brief When the last model was found, i.e. how old is our plan.
- *
- * @property AspPlanerThread::SolvingStarted
- * @brief When the solving was started.
- *
- * @property AspPlanerThread::MachinesFound
- * @brief How many machines we have found.
- *
- * @property AspPlanerThread::StillNeedExploring
- * @brief If we still need exploring.
- *
- * @property AspPlanerThread::CompleteRestart
- * @brief If we should restart the asp solver from the very beginning.
- *
- * @property AspPlanerThread::TimeResolution
- * @brief How many real time seconds are one time unit for ASP.
- *
- * @property AspPlanerThread::MaxDriveDuration
- * @brief The maximum we expect a robot needs for driving to some point.
- *
- * @property AspPlanerThread::Robots
- * @brief The robots that are available.
- *
- *
- * @property AspPlanerThread::UpdateNavgraphDistances
- * @brief If the distances between the known locations should be recalculated. (Because the navgraph was changed.)
- *
- * @property AspPlanerThread::NavgraphDistances
- * @brief The currently assigned externals for the distances.
- *
- * @property AspPlanerThread::NavgraphNodesForASP
- * @brief Mapping of all navgraph nodes we export to asp to their corrosponding symbols.
- *
- * @property AspPlanerThread::NodePropertyASP
- * @brief The property which is set to nodes which are exported to ASP.
- *
- *
- * @property AspPlanerThread::LocationTaskMutex;
- * @brief The mutex for the saved locations and tasks.
- *
- * @property AspPlanerThread::DeliveryLocation
- * @brief The input side of the delivery station.
- *
- * @property AspPlanerThread::RingLocations
- * @brief The input sides of the ring stations.
- *
- * @property AspPlanerThread::CapLocations
- * @brief The input sides of the cap stations.
- *
- * @property AspPlanerThread::BaseLocations
- * @brief The sides of the base station.
- *
- * @property AspPlanerThread::GetLocations
- * @brief The output sides of the cap and ring stations.
- *
- * @property AspPlanerThread::Tasks
- * @brief All possible tasks.
- *
- * @property AspPlanerThread::RingTasks
- * @brief The tasks to mount a ring, the array position determines which ring.
- *
- *
- * @property AspPlanerThread::RequestMutex
- * @brief Protects AspPlanerThread::Requests.
- *
- * @property AspPlanerThread::Interrupt
- * @brief If the solving should be interrupted for the new requests.
- *
- * @property AspPlanerThread::SentCancel
- * @brief If we already sent the cancel command to the ASP Solver.
- *
- * @property AspPlanerThread::Requests
- * @brief Stores everything we have to add to the solver for the next iteration.
- *
+ * @brief Takes care of everything regarding clingo interface in init().
+ */
+void
+AspPlanerThread::initClingo(void)
+{
+	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
+	navgraph->add_change_listener(this);
+	navgraphLocker.unlock();
+
+	MutexLocker locker(ClingoAcc.objmutex_ptr());
+	ClingoAcc->registerModelCallback(std::make_shared<std::function<bool(void)>>([this](void) { return newModel(); }));
+	ClingoAcc->registerFinishCallback(std::make_shared<std::function<void(Clingo::SolveResult)>>(
+		[this](const Clingo::SolveResult result)
+		{
+			solvingFinished(result);
+			return;
+		}));
+	ClingoAcc->setGroundCallback([this](auto... args) { this->groundFunctions(args...); return; });
+
+	constexpr auto infix = "planer/";
+	const auto prefixLen = std::strlen(ConfigPrefix);
+	constexpr auto infixLen = std::strlen(infix);
+	char buffer[prefixLen + infixLen + 20];
+	const auto suffix = buffer + prefixLen + infixLen;
+	std::strcpy(buffer, ConfigPrefix);
+	std::strcpy(buffer + prefixLen, infix);
+
+	std::strcpy(suffix, "program-path");
+	const auto path  = config->get_string(buffer);
+	std::strcpy(suffix, "program-files");
+	const auto files = config->get_strings(buffer);
+
+	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %d", path.c_str(),
+		ClingoAcc->DebugLevel.load());
+	for ( const auto& file : files )
+	{
+		ClingoAcc->loadFile(path + file);
+	} //for ( const auto& file : files )
+
+	ClingoAcc->ground({{"base", {}}});
+
+//	CapLocations.reserve(2);
+//	RingLocations.reserve(2);
+//	BaseLocations.reserve(2);
+//	GetLocations.reserve(4);
+	return;
+}
+
+/**
+ * @brief Takes care of everything regarding clingo interface in finalize().
+ */
+void
+AspPlanerThread::finalizeClingo(void)
+{
+	MutexLocker locker(ClingoAcc.objmutex_ptr());
+	if ( ClingoAcc->solving() )
+	{
+		ClingoAcc->cancelSolving();
+		do //while ( ClingoAcc->solving() )
+		{
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(20ms);
+		} while ( ClingoAcc->solving() );
+	} //if ( ClingoAcc->solving() )
+	return;
+}
+
+/**
+ * @brief Handles the loop concerning the solving process.
+ */
+void
+AspPlanerThread::loopClingo(void)
+{
+	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
+	MutexLocker reqLocker(&RequestMutex);
+
+	if ( TeamColor == nullptr )
+	{
+		return;
+	} //if ( TeamColor == nullptr )
+
+	if ( ClingoAcc->solving() )
+	{
+		if ( shouldInterrupt() && !SentCancel )
+		{
+			ClingoAcc->cancelSolving();
+			SentCancel = true;
+		} //if ( shouldInterrupt() && !SentCancel )
+		return;
+	} //if ( ClingoAcc->solving() )
+
+	SentCancel = false;
+	Interrupt = InterruptSolving::Not;
+
+	//Set "initial" state.
+	MutexLocker worldLocker(&WorldMutex);
+
+	worldLocker.unlock();
+
+	ClingoAcc->ground(GroundRequests);
+	GroundRequests.clear();
+
+	for ( const auto& atom : ReleaseRequests )
+	{
+		ClingoAcc->release_external(atom);
+	} //for ( const auto& atom : ReleaseRequests )
+	reqLocker.unlock();
+
+	MutexLocker planLocker(&PlanMutex);
+	worldLocker.relock();
+	StartSolvingGameTime = GameTime;
+	ClingoAcc->startSolving();
+	return;
+}
+
+/**
+ * @brief Sets the interrupt value.
+ */
+void
+AspPlanerThread::setInterrupt(const InterruptSolving interrupt)
+{
+	MutexLocker locker(&RequestMutex);
+	if ( static_cast<unsigned short>(interrupt) > static_cast<unsigned short>(Interrupt) )
+	{
+		Interrupt = interrupt;
+	} //if ( static_cast<unsigned short>(interrupt) > static_cast<unsigned short>(Interrupt) )
+	return;
+}
 
 /**
  * @brief Fill the NavgraphNodesForASP with the nodes we export to ASP.
@@ -197,38 +239,6 @@ AspPlanerThread::graph_changed(void) noexcept
 	} //for ( auto node : navgraph->nodes() )
 
 	UpdateNavgraphDistances = true;
-	return;
-}
-
-/**
- * @brief Takes care of everything regarding clingo interface in init().
- *
-void
-AspPlanerThread::initClingo(void)
-{
-	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
-	navgraph->add_change_listener(this);
-	navgraphLocker.unlock();
-
-	MutexLocker locker(ClingoAcc.objmutex_ptr());
-	ClingoAcc->registerModelCallback(std::make_shared<std::function<bool(void)>>([this](void) { return newModel(); }));
-	ClingoAcc->registerFinishCallback(std::make_shared<std::function<void(Clingo::SolveResult)>>(
-		[this](const Clingo::SolveResult result)
-		{
-			solvingFinished(result);
-			return;
-		}));
-	ClingoAcc->setGroundCallback([this](auto... args) { this->groundFunctions(args...); return; });
-
-	loadFilesAndGroundBase(locker);
-
-	Orders.reserve(MaxOrders);
-	RingColors.reserve(4);
-
-	CapLocations.reserve(2);
-	RingLocations.reserve(2);
-	BaseLocations.reserve(2);
-	GetLocations.reserve(4);
 	return;
 }
 
@@ -440,17 +450,6 @@ AspPlanerThread::loopClingo(void)
 }
 
 /**
- * @brief Takes care of everything regarding clingo interface in finalize().
- *
-void
-AspPlanerThread::finalizeClingo(void)
-{
-	MutexLocker locker(ClingoAcc.objmutex_ptr());
-	ClingoAcc->cancelSolving();
-	return;
-}
-
-/**
  * @brief Says if the solving process should be interrupted.
  * @return If the solving should be interrupted.
  * @note RequestLock must be locked before calling this method and unlocked when appropriate!
@@ -477,51 +476,6 @@ AspPlanerThread::interruptSolving(void) const noexcept
 		case InterruptSolving::Critical    : return true;
 	} //switch ( Interrupt )
 	return false;
-}
-
-/**
- * @brief Loads the ASP files into the solver and grounds the base program.
- * @param[in, out] locker The locker used to lock ClingoAcc. Has to be locked at the beginning.
- *
-void
-AspPlanerThread::loadFilesAndGroundBase(MutexLocker& locker)
-{
-	constexpr auto infix = "planer/";
-	const auto prefixLen = std::strlen(ConfigPrefix), infixLen = std::strlen(infix);
-	char buffer[prefixLen + infixLen + 20];
-	const auto suffix = buffer + prefixLen + infixLen;
-	std::strcpy(buffer, ConfigPrefix);
-	std::strcpy(buffer + prefixLen, infix);
-
-	std::strcpy(suffix, "program-path");
-	const auto path  = config->get_string(buffer);
-	std::strcpy(suffix, "program-files");
-	const auto files = config->get_strings(buffer);
-
-	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %d", path.c_str(),
-		ClingoAcc->DebugLevel.load());
-	for ( const auto& file : files )
-	{
-		ClingoAcc->loadFile(path + file);
-	} //for ( const auto& file : files )
-
-	if ( StillNeedExploring )
-	{
-		std::strcpy(suffix, "exploration-files");
-		const auto files = config->get_strings(buffer);
-		for ( const auto& file : files )
-		{
-			ClingoAcc->loadFile(path + file);
-		} //for ( const auto& file : files )
-	} //if ( StillNeedExploring )
-
-	ClingoAcc->ground({Clingo::Part("base", Clingo::SymbolSpan())});
-
-	//We have to unlock, to prevent a deadlock in newModel.
-	locker.unlock();
-	ClingoAcc->startSolvingBlocking();
-	locker.relock();
-	return;
 }
 
 /**
@@ -1446,3 +1400,4 @@ AspPlanerThread::taskWasFailure(const std::string& task, unsigned int time)
 	queueGround(std::move(request), InterruptSolving::Critical);
 	return;
 }
+*/

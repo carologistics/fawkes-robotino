@@ -8,9 +8,8 @@ asp-agent:
     debug-level: 40
 
     program-path: ../src/agents/asp/
-    program-files: [delivery.lp, facts.lp, feedRS.lp, getBase.lp, getProduct.lp, goal.lp, machines.lp, mountCap.lp, mountRing.lp, orders.lp, prepareCS.lp, products.lp, robots.lp, state.lp]
+    program-files: [delivery.lp, exploration.lp, facts.lp, feedRS.lp, getBase.lp, getProduct.lp, goal.lp, machines.lp, mountCap.lp, mountRing.lp, orders.lp, prepareCS.lp, products.lp, robots.lp, state.lp]
     #program-files: [facts.lp, robots.lp, goal.lp, state.lp]
-    exploration-files: [exploration.lp]
 
     #Look ahaed in real time seconds.
     look-ahaed: 300

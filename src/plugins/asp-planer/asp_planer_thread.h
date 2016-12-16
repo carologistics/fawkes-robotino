@@ -105,11 +105,6 @@ class AspPlanerThread
 	std::vector<Clingo::Symbol> RingTasks[3];
 	std::vector<Clingo::Symbol> CapTasks;
 
-	fawkes::Mutex RequestMutex;
-	InterruptSolving Interrupt;
-	bool SentCancel;
-	std::vector<GroundRequest> Requests;
-
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
 	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskBegin;
@@ -121,11 +116,33 @@ class AspPlanerThread
 	bool NewSymbols;
 	*/
 
+	fawkes::Mutex RequestMutex;
+	InterruptSolving Interrupt;
+	bool SentCancel;
+	std::vector<Clingo::Part> GroundRequests;
+	std::vector<Clingo::Symbol> ReleaseRequests;
+
+	fawkes::Mutex PlanMutex;
+	unsigned int StartSolvingGameTime;
+
 	void loadConfig(void);
 
 	void graph_changed(void) noexcept override final;
 
-	void setInterupt(const InterruptSolving interupt) noexcept;
+	void initClingo(void);
+	void finalizeClingo(void);
+	void loopClingo(void);
+
+	void queueGround(Clingo::Part&& part);
+	void queueRelease(Clingo::Symbol&& atom);
+	bool shouldInterrupt(void) const;
+
+	bool newModel(void);
+	void solvingFinished(const Clingo::SolveResult& result);
+	void groundFunctions(const Clingo::Location& loc, char const *name, const Clingo::SymbolSpan& arguments,
+		Clingo::SymbolSpanCallback& retFunction);
+
+	void setInterrupt(const InterruptSolving interrupt);
 
 	void setTeam(void);
 	void unsetTeam(void);
@@ -135,10 +152,6 @@ class AspPlanerThread
 
 	void addZoneToExplore(const unsigned int zone);
 	void releaseZone(const unsigned int zone);
-
-	void initClingo(void);
-	void loopClingo(void);
-	void finalizeClingo(void);
 
 	void initPlan(void);
 	void loopPlan(void);
@@ -151,7 +164,6 @@ class AspPlanerThread
 
 	void resetClingo(fawkes::MutexLocker& aspLocker, fawkes::MutexLocker& reqLocker);
 	bool interruptSolving(void) const noexcept;
-	void loadFilesAndGroundBase(fawkes::MutexLocker& locker);
 
 	void updateNavgraphDistances(void);
 	void setPast(std::vector<GroundRequest>& requests);
@@ -161,11 +173,6 @@ class AspPlanerThread
 
 	unsigned int realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept;
 	unsigned int aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept;
-
-	bool newModel(void);
-	void solvingFinished(const Clingo::SolveResult& result);
-	void groundFunctions(const Clingo::Location& loc, char const *name, const Clingo::SymbolSpan& arguments,
-		Clingo::SymbolSpanCallback& retFunction);
 
 	void newTeamMate(const std::string& mate, const RobotInformation& info);
 	void deadTeamMate(const std::string& mate);
