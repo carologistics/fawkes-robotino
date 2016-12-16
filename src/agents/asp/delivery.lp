@@ -22,6 +22,7 @@
 % cap(O, C)                      Defined in orders.lp
 % cap(P, C, GT)                  Defined in products.lp
 % deliverLocation(L)             Defined in facts.lp
+% deliveryTimes(L, U)            Defined in facts.lp
 % driveDuration(L1, L2, D)       Defined in facts.lp
 % end(R, T, GT)                  Defined in state.lp
 % failure(R, T, GT)              Defined in state.lp
@@ -49,8 +50,8 @@ location(T, L)	                       :- lateDeliverTask(T), deliverLocation(L).
 
 #program transition(gt).
 
-#external spawnTask(T, gt) : deliverTask(T).
-#external spawnTask(T, gt) : lateDeliverTask(T).
+#external spawnTask(deliver(L, O, Q), gt) : deliverTask(deliver(L, O, Q)), deliveryTimes(B, _), gt >= B, not orderSpawned(O).
+#external spawnTask(lateDeliver(L, O, Q), gt) : lateDeliverTask(lateDeliver(L, O, Q)), deliveryTimes(B, _), gt >= B, not orderSpawned(O).
 
 inUse(L, gt) :- begin(R, T, gt), deliverTask(T), location(T, L).
 free(L, gt)  :- end(_, T, gt), deliverTask(T), location(T, L).

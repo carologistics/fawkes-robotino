@@ -102,6 +102,8 @@ def main(ctl):
 		print("Start solve " + str(gt) + ".", flush = True)
 		if ctl.solve().unsatisfiable:
 			return
+		if gt == 75:
+			return
 
 	print("Start solve.", flush = True)
 	ctl.solve()
