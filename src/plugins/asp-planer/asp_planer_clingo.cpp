@@ -116,10 +116,10 @@ AspPlanerThread::loopClingo(void)
 	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
 	MutexLocker reqLocker(&RequestMutex);
 
-	if ( TeamColor == nullptr )
+	if ( !ProgramGrounded )
 	{
 		return;
-	} //if ( TeamColor == nullptr )
+	} //if ( !ProgramGrounded )
 
 	const auto requests = GroundRequests.size() + ReleaseRequests.size() + AssignRequests.size();
 	if ( ClingoAcc->solving() )
@@ -564,6 +564,7 @@ AspPlanerThread::setTeam(void)
 {
 	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
 	ClingoAcc->ground({{"ourTeam", {Clingo::String(TeamColor)}}});
+	ProgramGrounded = true;
 
 	fillNavgraphNodesForASP();
 	graph_changed();

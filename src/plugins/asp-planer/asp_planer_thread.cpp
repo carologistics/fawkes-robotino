@@ -343,7 +343,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		//Requests
 		Interrupt(InterruptSolving::Not), SentCancel(false),
 		//Solving
-		NewSymbols(false),
+		ProgramGrounded(false), NewSymbols(false),
 		//Plan
 		StartSolvingGameTime(0)
 		/*Horizon(0), Past(0),

@@ -129,6 +129,7 @@ class AspPlanerThread
 	std::vector<Clingo::Symbol> ReleaseRequests;
 	std::vector<Clingo::Symbol> AssignRequests;
 
+	bool ProgramGrounded;
 	mutable fawkes::Mutex SolvingMutex;
 	fawkes::Time LastModel;
 	fawkes::Time SolvingStarted;
