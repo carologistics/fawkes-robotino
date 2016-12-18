@@ -85,7 +85,7 @@ using fawkes::MutexLocker;
 
 /**
  * @brief Initalized plan elements.
- *
+ */
 void
 AspPlanerThread::initPlan(void)
 {
@@ -96,11 +96,11 @@ AspPlanerThread::initPlan(void)
 
 /**
  * @brief Handles everything concerning the plan in the loop.
- *
+ */
 void
 AspPlanerThread::loopPlan(void)
 {
-	MutexLocker symbolLocker(&SymbolMutex);
+/*	MutexLocker symbolLocker(&SymbolMutex);
 	if ( NewSymbols )
 	{
 		static const fawkes::Time planThreshold(500L);
@@ -266,7 +266,7 @@ AspPlanerThread::loopPlan(void)
 		NewSymbols = false;
 		LastPlan = clock->now();
 		logger->log_info(LoggingComponent, "New composed plan size: %d", PlanElements);
-	} //if ( NewSymbols )
+	} //if ( NewSymbols )*/
 	return;
 }
 
@@ -364,11 +364,11 @@ AspPlanerThread::removeFromPlanDB(const std::string& robot, const PlanElement& e
 /**
  * @brief Gets called if there is feedback from one of the robots.
  * @param[in] document The document with the feedback.
- *
+ */
 void
 AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 {
-	try
+/*	try
 	{
 		const auto object(document.getField("o"));
 		const auto action(object["action"].String());
@@ -427,6 +427,6 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 		logger->log_error(LoggingComponent, "Exception while extracting plan feedback.\n%s",
 			document.toString().c_str());
 	} //catch ( ... )
-	return;
+	return;*/
 }
-*/
+
