@@ -75,9 +75,10 @@ capStationAssignment("CS2", @capColor(2)).
 #external ringStationAssignment(M, RingColor) : ringStation(M), ringColor(RingColor).
 #external ringColorCost(RingColor, Cost)      : ringColor(RingColor), ringCost(Cost).
 
+#program ourTeam(t).
+
 #external driveDuration(L1, L2, D) : location(L1), location(L2), D = 0..@maxDriveDuration().
 
-#program ourTeam(t).
 location(m(t, M, S)) :- baseStation(M),     side(S).
 location(m(t, M, S)) :- capStation(M),      side(S).
 location(m(t, M, S)) :- ringStation(M),     side(S).
