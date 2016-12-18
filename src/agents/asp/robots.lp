@@ -12,10 +12,10 @@
 
 #external availableRobot(R) : robot(R).
 #external holding(R, P, 0) : robot(R), product(P).
-#external robotLocation(R, L, 0) : robot(R), location(L).
-
 
 #program ourTeam(t).
+
+#external robotLocation(R, L, 0) : robot(R), location(L).
 
 %Todo: What happens with the product if a robot is taken out with a product in his gripper?
 holding(R, P, GT) :- holding(R, P, GT-1), not putDown(R, P, GT), not horizon(GT).

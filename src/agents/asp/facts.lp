@@ -20,6 +20,7 @@
 % driveDuration(L1, L2, D)       It will take D time units for a robot to drive from L1 to L2, not accounting for
 %                                obstacles on its way.
 % getLocation(M, L)              The locations L where a product can be picked up, with its machine M.
+% horizon(X)                     How far in the future we want to look, i.e. planning covers time steps [0,X).
 % location(m(T, M, S))           The navgraph locations for all machine sides.
 % machine(M)                     All machines (without team info).
 % order(O)                       All orders O.
@@ -32,6 +33,7 @@
 % ringStation(M)                 All the ring stations (without team info).
 % robot(R)                       All possible available robots.
 % side(S)                        All sides of a machine.
+% zone(Z)                        All zones in the game.
 %
 % Additionally used predicates:
 % -- none --                     Or else this wouldn't be facts, or would they?
