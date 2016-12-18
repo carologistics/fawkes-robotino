@@ -254,6 +254,9 @@
  */
 
 /**
+ * @property AspPlanerThread::ProgramGrounded
+ * @brief If we have grounded our program.
+ *
  * @property AspPlanerThread::SolvingMutex
  * @brief Mutex for some solving related values.
  *
