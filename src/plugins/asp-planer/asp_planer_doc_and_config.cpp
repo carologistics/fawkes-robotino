@@ -330,7 +330,7 @@ AspPlanerThread::loadConfig(void)
 
 	std::strcpy(suffix, "deliver-product");
 	DeliverProductTaskDuration = config->get_uint(buffer);
-	std::strcpy(suffix, "fetch-prodcut");
+	std::strcpy(suffix, "fetch-product");
 	FetchProductTaskDuration = config->get_uint(buffer);
 	std::strcpy(suffix, "max-drive-duration");
 	MaxDriveDuration = config->get_uint(buffer);
