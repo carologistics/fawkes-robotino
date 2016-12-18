@@ -82,9 +82,10 @@ AspPlanerThread::graph_changed(void) noexcept
 
 /**
  * @brief Fill the NavgraphNodesForASP with the nodes we export to ASP.
+ * @param[in] lockWorldMutex If the world mutex should be locked.
  */
 void
-AspPlanerThread::fillNavgraphNodesForASP(void)
+AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 {
 	MutexLocker locker(&NavgraphDistanceMutex);
 	NavgraphNodesForASP.clear();
@@ -121,12 +122,13 @@ AspPlanerThread::fillNavgraphNodesForASP(void)
 	const auto dummyNode = std::string(TeamColor) + "-ins-in";
 //	static const auto zones(calculateZoneCoords());
 //	MutexLocker locker(navgraph.objmutex_ptr());
-	MutexLocker worldLocker(&WorldMutex);
+	MutexLocker worldLocker(&WorldMutex, lockWorldMutex);
 	for ( auto zone : ZonesToExplore )
 	{
 		NavgraphNodesForASP.insert({dummyNode, Clingo::Function("z", {Clingo::Number(zone)})});
 //		const auto node = navgraph->closest_node(zones[zone][0], zones[zone][1], false, NodePropertyASP);
 	} //for ( auto zone : ZonesToExplore )
+	UpdateNavgraphDistances = true;
 	return;
 }
 

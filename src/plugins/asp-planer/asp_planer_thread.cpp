@@ -311,6 +311,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 				std::swap(*iter, *--end);
 			} //else -> if ( iter == end )
 		} //for ( auto zone = 1u; zone <= 24u; ++zone )
+		fillNavgraphNodesForASP(false);
 	} //try
 	catch ( const std::exception& e )
 	{

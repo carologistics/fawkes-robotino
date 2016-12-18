@@ -566,7 +566,7 @@ AspPlanerThread::setTeam(void)
 	ClingoAcc->ground({{"ourTeam", {Clingo::String(TeamColor)}}});
 	ProgramGrounded = true;
 
-	fillNavgraphNodesForASP();
+	fillNavgraphNodesForASP(true);
 	graph_changed();
 	UpdateNavgraphDistances = true;
 	return;
