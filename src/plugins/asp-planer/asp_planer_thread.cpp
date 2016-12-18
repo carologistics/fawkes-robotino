@@ -424,12 +424,12 @@ AspPlanerThread::loop(void)
 		for ( auto& pair : Robots )
 		{
 			auto& info(pair.second);
-			if ( now - info.LastSeen >= timeOut )
+			if ( info.Alive && now - info.LastSeen >= timeOut )
 			{
 				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", pair.first.c_str());
 				setInterrupt(InterruptSolving::Critical);
 				info.Alive = false;
-			} //if ( now - info.LastSeen >= timeOut )
+			} //if ( info.Alive && now - info.LastSeen >= timeOut )
 		} //for ( auto& pair : Robots )
 	} //Block for iteration over Robots
 
