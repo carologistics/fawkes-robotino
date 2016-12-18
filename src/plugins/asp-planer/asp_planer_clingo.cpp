@@ -622,6 +622,28 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
 }
 
 /**
+ * @brief Adds the ring info to asp.
+ * @param[in] info The info.
+ */
+void
+AspPlanerThread::addRingColorToASP(const RingColorInformation& info)
+{
+	const auto color(Clingo::String(info.Color));
+	queueGround({"setRingInfo", {color, Clingo::Number(info.Cost), Clingo::String(info.Machine)}});
+
+	for ( const auto& machine : {"RS1", "RS2"} )
+	{
+		queueRelease(Clingo::Function("ringStationAssignment", {Clingo::String(machine), color}));
+	} //for ( const auto& machine : {"RS1", "RS2"} )
+
+	for ( auto cost = 0; cost <= 2; ++cost )
+	{
+		queueRelease(Clingo::Function("ringColorCost", {color, Clingo::Number(cost)}));
+	} //for ( auto cost = 0; cost <= 2; ++cost )
+	return;
+}
+
+/**
  * @brief Adds a zone to explore.
  * @param[in] zone The zone number.
  */
@@ -644,37 +666,6 @@ AspPlanerThread::releaseZone(const unsigned int zone)
 	assert(zone >= 1 && zone <= 24);
 	queueRelease(generateExploreLocationExternal(zone));
 	queueRelease(generateExploreTaskExternal(zone));
-	return;
-}
-
-/**
- * @brief Adds the ring info to asp.
- * @param[in] info The info.
- *
-void
-AspPlanerThread::setRingColor(const RingColorInformation& info)
-{
-	Clingo::SymbolVector params = {Clingo::String(info.Color), Clingo::Number(info.Cost), Clingo::String(info.Machine)};
-	std::vector<Clingo::Symbol> externals;
-	externals.reserve(3);
-
-	auto otherMachine(info.Machine);
-	assert(otherMachine.size() == 3 && (otherMachine[2] == '1' || otherMachine[2] == '2'));
-	otherMachine[2] = otherMachine[2] == '1' ? '2' : '1';
-	Clingo::SymbolVector externalParams = {Clingo::String(otherMachine), Clingo::String(info.Color)};
-	externals.emplace_back(Clingo::Function("ringStationAssignment", externalParams));
-
-	std::swap(externalParams[0], externalParams[1]);
-	for ( decltype(info.Cost) cost = 0; cost <= 2; ++cost )
-	{
-		if ( cost == info.Cost )
-		{
-			continue;
-		} //if ( cost == info.Cost )
-		externalParams[1] = Clingo::Number(cost);
-		externalParams.emplace_back(Clingo::Function("ringColorCost", externalParams));
-	} //for ( decltype(info.Cost) cost = 0; cost <= 2; ++cost )
-	queueGround({"setRingInfo", params, std::string(), externals});
 	return;
 }
 
