@@ -300,7 +300,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 			auto iter = std::find(begin, end, zone);
 			if ( iter == end )
 			{
-				releaseZone(zone);
+				releaseZone(zone, false);
 			} //if ( iter == end )
 			else
 			{
