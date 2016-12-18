@@ -1,4 +1,4 @@
-#program transition(gt).
+#program ourTeam(t).
 % Our goal.
 #maximize{ P@2,T,GT : begin(_, T, GT), points(T, P) }.
 
