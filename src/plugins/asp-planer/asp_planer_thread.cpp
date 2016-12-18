@@ -290,7 +290,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 		std::transform(std::begin(zonesArray), std::end(zonesArray), std::back_inserter(zones),
 			[](const mongo::BSONElement& zone)
 			{
-				return std::stoi(zone.String());
+				return std::stoi(zone.String().substr(1));
 			});
 		const auto begin = zones.begin();
 		auto end = zones.end();
@@ -314,12 +314,12 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 	} //try
 	catch ( const std::exception& e )
 	{
-		logger->log_error(LoggingComponent, "Exception while updating the team color: %s\n%s", e.what(),
+		logger->log_error(LoggingComponent, "Exception while extracting the zones to explore: %s\n%s", e.what(),
 			document.toString().c_str());
 	} //catch ( const std::exception& e )
 	catch ( ... )
 	{
-		logger->log_error(LoggingComponent, "Exception while updating the team color.\n%s",
+		logger->log_error(LoggingComponent, "Exception while extracting the zones to explore.\n%s",
 			document.toString().c_str());
 	} //catch ( ... )
 	return;
