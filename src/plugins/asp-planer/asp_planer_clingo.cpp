@@ -121,13 +121,15 @@ AspPlanerThread::loopClingo(void)
 		return;
 	} //if ( TeamColor == nullptr )
 
+	const auto requests = GroundRequests.size() + ReleaseRequests.size() + AssignRequests.size();
 	if ( ClingoAcc->solving() )
 	{
-		if ( shouldInterrupt() && !SentCancel )
+		if ( requests > 0 && shouldInterrupt() && !SentCancel )
 		{
+			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %d", requests);
 			ClingoAcc->cancelSolving();
 			SentCancel = true;
-		} //if ( shouldInterrupt() && !SentCancel )
+		} //if ( requests > 0 && shouldInterrupt() && !SentCancel )
 		return;
 	} //if ( ClingoAcc->solving() )
 
@@ -144,6 +146,13 @@ AspPlanerThread::loopClingo(void)
 			ClingoAcc->assign_external(external, true);
 		} //for ( const auto& external : NavgraphDistances )
 	} //if ( UpdateNavgraphDistances )
+	else if ( requests == 0 && Interrupt == InterruptSolving::Not )
+	{
+		//Nothing to do.
+		return;
+	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
+	navgraphLocker.unlock();
+	reqLocker.unlock();
 
 	SentCancel = false;
 	Interrupt = InterruptSolving::Not;
@@ -174,7 +183,6 @@ AspPlanerThread::loopClingo(void)
 		auto& robot(pair.second);
 		ClingoAcc->assign_external(robot.AliveExternal, robot.Alive);
 
-
 		checkAndRelease(robot.LocationExternal);
 		checkAndRelease(robot.HoldingExternal);
 		checkAndRelease(robot.DoingExternal);
@@ -193,6 +201,7 @@ AspPlanerThread::loopClingo(void)
 	worldLocker.unlock();
 	navgraphLocker.unlock();
 
+	reqLocker.relock();
 	ClingoAcc->ground(GroundRequests);
 	GroundRequests.clear();
 
