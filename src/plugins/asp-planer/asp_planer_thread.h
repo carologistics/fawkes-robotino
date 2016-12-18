@@ -143,7 +143,7 @@ class AspPlanerThread
 	void loadConfig(void);
 
 	void graph_changed(void) noexcept override final;
-	void fillNavgraphNodesForASP(void);
+	void fillNavgraphNodesForASP(const bool lockWorldMutex);
 	void updateNavgraphDistances(void);
 	Clingo::Symbol nearestLocation(const float x, const float y);
 
