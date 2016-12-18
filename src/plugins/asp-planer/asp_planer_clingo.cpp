@@ -660,11 +660,19 @@ AspPlanerThread::addZoneToExplore(const unsigned int zone)
 /**
  * @brief Releases the externals for a zone exploration.
  * @param[in] zone The zone number.
+ * @param[in] removeAndFillNodes If @link ZonesToExplore the vector @endlink should be cleaned and the
+ *                               fillNavgraphNodesForASP() should be called.
  */
 void
-AspPlanerThread::releaseZone(const unsigned int zone)
+AspPlanerThread::releaseZone(const unsigned int zone, const bool removeAndFillNodes)
 {
 	assert(zone >= 1 && zone <= 24);
+	if ( removeAndFillNodes )
+	{
+		MutexLocker locker(&WorldMutex);
+		ZonesToExplore.erase(std::find(ZonesToExplore.begin(), ZonesToExplore.end(), zone));
+		fillNavgraphNodesForASP(false);
+	} //if ( removeAndFillNodes )
 	queueRelease(generateExploreLocationExternal(zone));
 	queueRelease(generateExploreTaskExternal(zone));
 	return;

@@ -169,7 +169,7 @@ class AspPlanerThread
 	void addRingColorToASP(const RingColorInformation& color);
 
 	void addZoneToExplore(const unsigned int zone);
-	void releaseZone(const unsigned int zone);
+	void releaseZone(const unsigned int zone, const bool removeAndFillNodes);
 
 	void initPlan(void);
 	void loopPlan(void);
