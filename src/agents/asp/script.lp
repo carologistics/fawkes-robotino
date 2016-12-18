@@ -2,10 +2,12 @@
 
 import clingo
 
+def clingoToASP(timeSymbol):
+	return toASP(timeSymbol.number)
+
 def toASP(time):
-	res = 5
-	ret = time // res
-	if (time % res) * 2 >= res:
+	ret = time // Res
+	if (time % Res) * 2 >= Res:
 		ret = ret + 1
 	return ret
 
@@ -19,10 +21,10 @@ def maxQuantity():
 	return MaxQuantity
 
 def minDeliveryTime():
-	return toASP(240)
+	return toASP(StartDelivery)
 
 def maxDeliveryTime():
-	return toASP(19 * 60)
+	return toASP(EndDelivery)
 
 def capColor(m):
 	if m == clingo.Number(1):
@@ -37,9 +39,6 @@ def explorationTaskDuration():
 
 def maxTaskDuration():
 	return toASP(35)
-
-def maxTicks():
-	return MaxTicks
 
 def prepareCSTaskDuration():
 	return toASP(35)
@@ -63,7 +62,10 @@ def getTaskDuration():
 	return toASP(5)
 
 def gameRange():
-	return range(0, maxDeliveryTime() + 1)
+	return range(0, toASP(End) + 1)
+
+def horizon():
+	return toASP(Horizon)
 
 def maxFeedRS():
 	return MaxFeedRS
@@ -77,34 +79,44 @@ def maxGetProduct():
 def maxPrepCS():
 	return MaxPrepCS
 
+class Foo:
+	def __init__(self, ctl):
+		self.ctl = ctl
+
+	def onModel(self, model):
+		print("Model")
+
+	def solve(self, gt):
+		self.ctl.solve(self.onModel)
+
 def main(ctl):
-	(withExploration, programParts) = generateInstance()
-	ctl.configuration.solver.heuristic = "Domain"
+	(withExploration, instance) = generateInstance()
+	#ctl.configuration.solver.heuristic = "Domain"
 
-	for file in ["delivery.lp", "facts.lp", "feedRS.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
+	for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
 		ctl.load(file)
-
-	if withExploration:
-		ctl.load("exploration.lp")
 
 	print("Ground base.", flush = True)
 	ctl.ground([("base", [])])
+	print("Ground team.", flush = True)
+	ctl.ground([("ourTeam", ["C"])])
 
-	for gt in gameRange():
-		print("Start ground " + str(gt) + ": " + str(programParts[gt]), flush = True)
-		ctl.ground(programParts[gt])
-		print("Start ground " + str(gt) + ": (transition, [" + str(gt) + "])", flush = True)
-		ctl.ground([("transition", [gt])])
-		#programParts[gt].append(("transition", [gt]))
-		#for part in programParts[gt]:
-		#	print("Start ground " + str(gt) + ": " + str(part), flush = True)
-		#	ctl.ground([part])
-		print("Start solve " + str(gt) + ".", flush = True)
-		if ctl.solve().unsatisfiable:
-			return
-		if gt == 75:
-			return
+	for robot in robots():
+		ctl.assign_external(clingo.Function("availableRobot", [robot]), True)
+		ctl.assign_external(clingo.Function("robotLocation", [robot, "ins-out", 0]), True)
 
-	print("Start solve.", flush = True)
+	print("Solve after init.", flush = True)
 	ctl.solve()
+
+	print("Begin with instance.", flush = True)
+	f = Foo(ctl)
+	for gt in gameRange():
+		print("Prepare " + str(gt), flush = True)
+		(assign, release) = instance[gt]
+		for a in assign:
+			ctl.assign_external(a[0], a[1])
+		for r in release:
+			ctl.release_external(r)
+		print("Solve " + str(gt), flush = True)
+		f.solve(gt)
 #end.
