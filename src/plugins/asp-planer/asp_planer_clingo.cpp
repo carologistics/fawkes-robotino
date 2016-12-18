@@ -193,13 +193,12 @@ AspPlanerThread::loopClingo(void)
 		} //if ( !robot.Alive )
 
 		checkAndSet(robot.HoldingExternal = generateHoldingExternal(name, robot.Holding));
-		if ( checkAndSet(robot.DoingExternal = generateDoingExternal(name, robot.Doing)) )
+		if ( !checkAndSet(robot.DoingExternal = generateDoingExternal(name, robot.Doing)) )
 		{
 			checkAndSet(robot.LocationExternal = generateRobotLocationExternal(name, nearestLocation(robot.X, robot.Y)));
-		} //if ( checkAndSet(robot.DoingExternal = generateDoingExternal(name, robot.Doing)) )
+		} //if ( !checkAndSet(robot.DoingExternal = generateDoingExternal(name, robot.Doing)) )
 	} //for ( auto& pair : Robots )
 	worldLocker.unlock();
-	navgraphLocker.unlock();
 
 	reqLocker.relock();
 	ClingoAcc->ground(GroundRequests);
