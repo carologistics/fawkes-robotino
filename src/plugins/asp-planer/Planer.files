@@ -20,6 +20,7 @@ asp_planer_graph.cpp
 ../../agents/asp/getProduct.lp
 ../../agents/asp/goal.lp
 ../../agents/asp/instance1.lp
+../../agents/asp/instance-exploration.lp
 ../../agents/asp/machines.lp
 ../../agents/asp/mountCap.lp
 ../../agents/asp/mountRing.lp
