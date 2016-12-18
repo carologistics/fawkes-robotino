@@ -159,11 +159,11 @@ AspPlanerThread::loopClingo(void)
 
 	//Set "initial" state.
 	MutexLocker worldLocker(&WorldMutex);
-	auto checkAndRelease = [this](const Clingo::Symbol& external)
+	auto checkAndUnset = [this](const Clingo::Symbol& external)
 		{
 			if ( isValidExternal(external) )
 			{
-				ClingoAcc->release_external(external);
+				ClingoAcc->assign_external(external, false);
 			} //if ( isValidExternal(external) )
 			return;
 		};
@@ -183,9 +183,9 @@ AspPlanerThread::loopClingo(void)
 		auto& robot(pair.second);
 		ClingoAcc->assign_external(robot.AliveExternal, robot.Alive);
 
-		checkAndRelease(robot.LocationExternal);
-		checkAndRelease(robot.HoldingExternal);
-		checkAndRelease(robot.DoingExternal);
+		checkAndUnset(robot.LocationExternal);
+		checkAndUnset(robot.HoldingExternal);
+		checkAndUnset(robot.DoingExternal);
 
 		if ( !robot.Alive )
 		{
