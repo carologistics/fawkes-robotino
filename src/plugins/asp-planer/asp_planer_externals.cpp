@@ -101,5 +101,5 @@ generateExploreLocationExternal(const unsigned int zone)
 Clingo::Symbol
 generateExploreTaskExternal(const unsigned int zone)
 {
-	return Clingo::Function("task", {Clingo::Function("explore", {Clingo::Number(zone)})});
+	return Clingo::Function("toBeDone", {Clingo::Function("explore", {Clingo::Number(zone)}), Clingo::Number(0)});
 }
