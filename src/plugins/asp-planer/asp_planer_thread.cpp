@@ -343,8 +343,10 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		UpdateNavgraphDistances(true),
 		//Requests
 		Interrupt(InterruptSolving::Not), SentCancel(false),
+		//Solving, loop intern
+		ProgramGrounded(false), ProductionStarted(false),
 		//Solving
-		ProgramGrounded(false), NewSymbols(false),
+		NewSymbols(false),
 		//Plan
 		StartSolvingGameTime(0)
 		/*Horizon(0), Past(0),

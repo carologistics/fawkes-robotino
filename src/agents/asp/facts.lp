@@ -24,6 +24,7 @@
 % location(m(T, M, S))           The navgraph locations for all machine sides.
 % machine(M)                     All machines (without team info).
 % order(O)                       All orders O.
+% productionStarted              The production phase has started.
 % quantity(Q)                    All possible quantities for orders Q.
 % ringColor(C)                   All ring colors.
 % ringColorCost(Col, Cost)       The mapping from ring color Col to its corresponding cost Cost.
@@ -50,6 +51,9 @@ order(1..@maxOrders()).
 quantity(1..@maxQuantity()).
 
 deliveryTimes(@minDeliveryTime(), @maxDeliveryTime()).
+
+#external currentTime(GT) : GT = 0..@maxDeliveryTime().
+#external productionStarted.
 
 % Machines as string, so they can be in upper case.
 baseStation("BS").
@@ -104,3 +108,6 @@ driveDuration(l1, l2, d).
 ringStationAssignment(m, col).
 
 ringColorCost(col, cost).
+
+#program startProduction.
+productionStarted.

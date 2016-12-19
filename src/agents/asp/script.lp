@@ -151,6 +151,9 @@ def addOrder(ctl, order):
 		ctl.release_external(clingo.Function("orderDeadline", [order.Number, gt]))
 
 
+def currentTimeExternal(time):
+	return clingo.Function("currentTime", [time])
+
 def main(ctl):
 	(zonesToExplore, ringColors, orders, machineFailures) = generateInstance()
 
@@ -173,6 +176,7 @@ def main(ctl):
 	f = Foo(ctl)
 	first = True
 	nextOrder = 0
+	lastGT = 0
 	for gt in gameRange():
 		if gt == 0:
 			for zone in range(1, 25):
@@ -183,6 +187,8 @@ def main(ctl):
 		elif gt == minDeliveryTime():
 			for ring in ringColors:
 				setRingColor(ctl, ring)
+			ctl.ground([("startProduction", [])])
+			ctl.release_external(clingo.Function("productionStarted", []))
 
 		if gt == toASP(orders[nextOrder].Spawn):
 			addOrder(ctl, orders[nextOrder])
@@ -193,6 +199,9 @@ def main(ctl):
 			first = False
 			print("Add test instance.", flush = True)
 			ctl.ground([("testInstance", [])])
+		for t in range(lastGT, gt):
+			ctl.release_external(currentTimeExternal(t))
+		ctl.assign_external(currentTimeExternal(gt), True)
 		print("Solve " + str(gt), flush = True)
 		f.solve(gt)
 #end.
