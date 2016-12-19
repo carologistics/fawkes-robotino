@@ -6,8 +6,8 @@
 % In this file defined predicates:
 % base(O, B)                     The base color for order O is B.
 % cap(O, C)                      The cap color for order O is C.
+% orderBegin(O, B)               The time frame for the delivery of the order O begins at B.
 % orderDeadline(O, D)            The time frame for the delivery of the order O ends at D.
-% orderDone(O)                   The order O is completely serverd.
 % ring(O, R, C)                  The color of the R-th ring for order O is C.
 %
 % Additionally used predicates:
@@ -27,10 +27,11 @@
 #external base(O, B) : order(O), baseColor(B).
 #external cap(O, C)  : order(O), capColor(C).
 #external ring(O, R, C) : order(O), R = 1..3, ringColor(C).
+#external orderBegin(O, B) : order(O), deliveryTimes(L, U), B = L..U.
 #external orderDeadline(O, D) : order(O), deliveryTimes(L, U), D = L..U.
-#external orderDone(o) : order(O).
 
-#program newOrder(o, q, b, c, r1, r2, r3, deliveryBegin, deliveryEnd, gt).
+#program newOrder(o, q, b, c, r1, r2, r3, deliveryBegin, deliveryEnd).
+orderBegin(om, deliveryBegin).
 orderDeadline(o, deliveryEnd).
 base(o, b).
 cap(o, c).
