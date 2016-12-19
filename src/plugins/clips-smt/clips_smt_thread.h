@@ -29,6 +29,8 @@
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
 
+#include "clips_smt_data.h"
+
 #include <vector>
 #include <string>
 #include <map>
