@@ -15,10 +15,10 @@ CancelSolveTime = 3
 StartDelivery = 240
 EndDelivery = 1140
 
-MaxFeedRS = 2
-MaxGetBase = 2
+MaxFeedRS = 3
+MaxGetBase = 4
 MaxGetProduct = 4
-MaxPrepCS = 1
+MaxPrepCS = 2
 Robots = ["Tuvok"] #, "T'Pol", "Spock"]
 
 def generateInstance():
@@ -35,3 +35,7 @@ def generateInstance():
 		[])
 
 #end.
+
+#program testInstance.
+%:- not begin("Tuvok", prepareCS(m("C", "CS1", "I"), "Tuvok", 1), 0).
+%:- not begin("Tuvok", prepareCS(m("C", "CS2", "I"), "Tuvok", 1), 8).

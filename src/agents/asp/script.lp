@@ -134,7 +134,7 @@ def setRingColor(ctl, ring):
 
 def addOrder(ctl, order):
 	print("Add Order: " + str(order))
-	ctl.ground([("newOrder", [order.Number, order.Quantity, order.Base, order.Cap, order.Ring1, order.Ring2, order.Ring3, order.DelBegin, order.DelEnd])])
+	ctl.ground([("newOrder", [order.Number, order.Quantity, order.Base, order.Cap, order.Ring1, order.Ring2, order.Ring3, toASP(order.DelBegin), toASP(order.DelEnd)])])
 
 	for color in ["BLACK", "RED", "SILVER"]:
 		ctl.release_external(clingo.Function("base", [order.Number, color]))
@@ -190,10 +190,9 @@ def main(ctl):
 			ctl.ground([("startProduction", [])])
 			ctl.release_external(clingo.Function("productionStarted", []))
 
-		if gt == toASP(orders[nextOrder].Spawn):
+		if nextOrder < maxOrders() and gt == toASP(orders[nextOrder].Spawn):
 			addOrder(ctl, orders[nextOrder])
-			if nextOrder < maxOrders():
-				nextOrder = nextOrder + 1
+			nextOrder = nextOrder + 1
 
 		if first:
 			first = False
