@@ -6,14 +6,14 @@
 % In this file defined predicates:
 % csPrepared(M, GT)              Also defined in machines.lp
 % free(L, GT)                    The machine side L is freed in time step GT.
-% genProduct(R, B, GT)           The robot R generated a new product with base color B at GT.
+% generateProduct(R, B, GT)      The robot R generated a new product with base color B at GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(prepareCS(_), P)        How many points are awarded for the preparation.
 % possible(R, prepareCS(_), GT)  If robot R can perform the preparation task at GT.
 % process(M, P, GT)              The machine M starts the processing of the product P at GT.
-% task(prepareCS(L, R, S))       The task to prepare the cap station L by robot R. S is to enumerate how often a robot
-%                                is able to perform this task. Preparing means get a dummy product from the shelf and
-%                                insert it in the cap station for cap unmountment.
+% task(prepareCS(L, S))          The task to prepare the cap station L. S is to enumerate how often a robot is able to
+%                                perform this task. Preparing means get a dummy product from the shelf and insert it in
+%                                the cap station for cap unmountment.
 % taskDuration(prepareCS(_), D)  How long it takes to prepare the cap station, once the robot has arrived.
 % taskLocation(prepareCS(_), L)  Where the preparation will take place.
 % toBeDone(prepareCS(_), 0)      The prepare CS tasks are possible.
@@ -22,7 +22,7 @@
 % begin(R, T, GT)                Defined in state.lp
 % capLocation(L)                 Defined in facts.lp
 % end(R, T, GT)                  Defined in state.lp
-% failure(R, T, GT)              Defined in state.lp
+% generatedProduct(R, P, GT)     Defined in products.lp
 % holding(R, P, GT)              Defined in robots.lp
 % productionStarted              Defined in facts.lp
 % robot(R)                       Defined in facts.lp
@@ -44,8 +44,8 @@ free(L, GT)  :- end(_, prepareCS(L, _), GT).
 possible(R, prepareCS(L, S), GT) :- task(prepareCS(L, S)), robot(R), not holding(R, _, GT), capLocation(M, L),
 									not csPrepared(M, GT), not storing(M, _, GT), GT = 0..@horizon()-1.
 
-csPrepared(R, M, GT) :- end(R, prepareCS(L, S), GT), capLocation(M, L).
+csPreparedByRobot(R, M, GT) :- end(R, prepareCS(L, S), GT), capLocation(M, L).
 
-csPrepared(M, GT)                :- csPrepared(_, M, GT).
-genProduct(R, "TRANSPARENT", GT) :- csPrepared(R, _, GT).
-process(M, product(R, GT), GT)   :- csPrepared(R, M, GT).
+csPrepared(M, GT)                     :- csPreparedByRobot(_, M, GT).
+generateProduct(R, "TRANSPARENT", GT) :- csPreparedByRobot(R, _, GT).
+process(M, P, GT)                     :- csPreparedByRobot(R, M, GT), generatedProduct(R, P, GT).

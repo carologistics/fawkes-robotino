@@ -173,18 +173,18 @@ def main(ctl):
 	ctl.solve()
 
 	print("Begin with instance.", flush = True)
+	for zone in range(1, 25):
+		if zone in zonesToExplore:
+			spawnZone(ctl, zone)
+		else:
+			releaseZone(ctl, zone)
+
 	f = Foo(ctl)
 	first = True
 	nextOrder = 0
 	lastGT = 0
 	for gt in gameRange():
-		if gt == 0:
-			for zone in range(1, 25):
-				if zone in zonesToExplore:
-					spawnZone(ctl, zone)
-				else:
-					releaseZone(ctl, zone)
-		elif gt == minDeliveryTime():
+		if gt == minDeliveryTime():
 			for ring in ringColors:
 				setRingColor(ctl, ring)
 			ctl.ground([("startProduction", [])])
@@ -198,6 +198,7 @@ def main(ctl):
 			first = False
 			print("Add test instance.", flush = True)
 			ctl.ground([("testInstance", [])])
+
 		for t in range(lastGT, gt):
 			ctl.release_external(currentTimeExternal(t))
 		ctl.assign_external(currentTimeExternal(gt), True)

@@ -7,7 +7,7 @@
 % location(L)                    Defined in facts.lp
 % pickUp(R, P, L, GT)            Defined in some task descriptions.
 % product(P)                     Defined in product.lp
-% putDown(R, P,  GT)             Defined in some task descriptions.
+% putDown(R, P, GT)              Defined in some task descriptions.
 % robot(R)                       Defined in facts.lp
 
 #external availableRobot(R) : robot(R).
