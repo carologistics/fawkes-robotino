@@ -1,6 +1,9 @@
 #script (python)
 
 import clingo
+import time
+
+from collections import namedtuple
 
 def clingoToASP(timeSymbol):
 	return toASP(timeSymbol.number)
@@ -62,7 +65,7 @@ def getTaskDuration():
 	return toASP(5)
 
 def gameRange():
-	return range(0, toASP(End) + 1)
+	return range(toASP(Start), toASP(End) + 1)
 
 def horizon():
 	return toASP(Horizon)
@@ -79,19 +82,77 @@ def maxGetProduct():
 def maxPrepCS():
 	return MaxPrepCS
 
+RingInfo = namedtuple("RingInfo", "Color Machine Cost")
+OrderInfo = namedtuple("OrderInfo", "Number Quantity Base Cap Ring1 Ring2 Ring3 DelBegin DelEnd Spawn")
+
 class Foo:
 	def __init__(self, ctl):
 		self.ctl = ctl
+		self.LastModel = None
 
 	def onModel(self, model):
-		print("Model")
+		self.LastModel = model
 
 	def solve(self, gt):
-		self.ctl.solve(self.onModel)
+		result = self.ctl.solve_async(self.onModel)
+		if not result.wait(CancelSolveTime):
+			print("Interrupt solving.", flush = True)
+			self.ctl.interrupt()
+
+		result.get()
+
+def zoneLocationExternal(zone):
+	return clingo.Function("location", [clingo.Function("z", [zone])])
+
+def taskExternal(task):
+	return clingo.Function("toBeDone", [task, 0])
+
+def zoneTaskExternal(zone):
+	return taskExternal(clingo.Function("explore", [zone]))
+
+def spawnZone(ctl, zone):
+	print("Add zone " + str(zone) + " to explore.", flush = True)
+	ctl.assign_external(zoneLocationExternal(zone), True)
+	ctl.assign_external(zoneTaskExternal(zone), True)
+
+def releaseZone(ctl, zone, array = None):
+	ctl.release_external(zoneLocationExternal(zone))
+	ctl.release_external(zoneTaskExternal(zone))
+
+	if array != None:
+		print("Remove zone " + str(zone) + " from the zones to explore.", flush = True)
+		array.remove(zone)
+
+def setRingColor(ctl, ring):
+	print("Set Ring-Color: " + str(ring))
+	ctl.ground([("setRingInfo", [ring.Color, ring.Cost, ring.Machine])])
+
+	for machine in ["RS1", "RS2"]:
+		ctl.release_external(clingo.Function("ringStationAssignment", [machine, ring.Color]))
+	for cost in [0,1,2]:
+		ctl.release_external(clingo.Function("ringColorCost", [ring.Color, cost]));
+
+def addOrder(ctl, order):
+	print("Add Order: " + str(order))
+	ctl.ground([("newOrder", [order.Number, order.Quantity, order.Base, order.Cap, order.Ring1, order.Ring2, order.Ring3, order.DelBegin, order.DelEnd])])
+
+	for color in ["BLACK", "RED", "SILVER"]:
+		ctl.release_external(clingo.Function("base", [order.Number, color]))
+
+	for color in ["BLACK", "GREY"]:
+		ctl.release_external(clingo.Function("cap", [order.Number, color]))
+
+	for color in ["BLUE", "YELLOW", "ORANGE", "GREEN"]:
+		for ring in [1,2,3]:
+			ctl.release_external(clingo.Function("ring", [order.Number, ring, color]))
+
+	for gt in range(minDeliveryTime(), maxDeliveryTime() + 1):
+		ctl.release_external(clingo.Function("orderBegin", [order.Number, gt]))
+		ctl.release_external(clingo.Function("orderDeadline", [order.Number, gt]))
+
 
 def main(ctl):
-	(withExploration, instance) = generateInstance()
-	#ctl.configuration.solver.heuristic = "Domain"
+	(zonesToExplore, ringColors, orders, machineFailures) = generateInstance()
 
 	for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
 		ctl.load(file)
@@ -110,13 +171,28 @@ def main(ctl):
 
 	print("Begin with instance.", flush = True)
 	f = Foo(ctl)
+	first = True
+	nextOrder = 0
 	for gt in gameRange():
-		print("Prepare " + str(gt), flush = True)
-		(assign, release) = instance[gt]
-		for a in assign:
-			ctl.assign_external(a[0], a[1])
-		for r in release:
-			ctl.release_external(r)
+		if gt == 0:
+			for zone in range(1, 25):
+				if zone in zonesToExplore:
+					spawnZone(ctl, zone)
+				else:
+					releaseZone(ctl, zone)
+		elif gt == minDeliveryTime():
+			for ring in ringColors:
+				setRingColor(ctl, ring)
+
+		if gt == toASP(orders[nextOrder].Spawn):
+			addOrder(ctl, orders[nextOrder])
+			if nextOrder < maxOrders():
+				nextOrder = nextOrder + 1
+
+		if first:
+			first = False
+			print("Add test instance.", flush = True)
+			ctl.ground([("testInstance", [])])
 		print("Solve " + str(gt), flush = True)
 		f.solve(gt)
 #end.
