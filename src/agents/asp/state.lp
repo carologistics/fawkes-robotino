@@ -32,7 +32,7 @@ fullDuration(T, L, DD + TD) :- taskDuration(T, TD), taskLocation(T, TL), driveDu
 % Only start tasks that are possible.
 :- begin(R, T, GT), not possible(R, T, GT).
 % Start tasks as early as possible.
-:- begin(R, T, GT),  possible(R, T, GT-1), robotLocation(R, _, GT-1).
+:- begin(R, T, GT),  possible(R, T, GT-1), robotLocation(R, _, GT-1), toBeDone(T, GT-1).
 
 % Initialize and update doing.
 doing(R, T, GT, D) :- begin(R, T, GT), robotLocation(R, L, GT), fullDuration(T, L, D).
