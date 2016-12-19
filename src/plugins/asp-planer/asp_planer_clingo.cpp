@@ -220,7 +220,26 @@ AspPlanerThread::loopClingo(void)
 	MutexLocker planLocker(&PlanMutex);
 	MutexLocker solvingLokcer(&SolvingMutex);
 	worldLocker.relock();
+
+	auto currentTimeExternal = [](const unsigned int time)
+		{
+			return Clingo::Function("currentTime", {Clingo::Number(time)});
+		};
+
+	if ( GameTime >= ExplorationTime && !ProductionStarted )
+	{
+		ProductionStarted = true;
+		ClingoAcc->ground({{"startProduction", {}}});
+		ClingoAcc->release_external(Clingo::Id("productionStarted"));
+	} //if ( GameTime >= ExplorationTime && !ProductionStarted )
+
+	const auto aspGameTime = realGameTimeToAspGameTime(GameTime);
 	StartSolvingGameTime = GameTime;
+	for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
+	{
+		ClingoAcc->release_external(currentTimeExternal(gt));
+	} //for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
+	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
 	SolvingStarted = clock->now();
 	ClingoAcc->startSolving();
 	return;
