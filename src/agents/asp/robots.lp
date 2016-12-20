@@ -5,9 +5,9 @@
 %
 % Additionally used predicates:
 % location(L)                    Defined in facts.lp
-% pickUp(R, P, L, GT)            Defined in some task descriptions.
+% pickUp(R, P, GT)               Defined in some task descriptions.
 % product(P)                     Defined in product.lp
-% putDown(R, P, GT)              Defined in some task descriptions.
+% putDown(R, GT)                 Defined in some task descriptions.
 % robot(R)                       Defined in facts.lp
 
 #external availableRobot(R) : robot(R).
@@ -18,6 +18,6 @@
 #external robotLocation(R, L, 0) : robot(R), location(L).
 
 %Todo: What happens with the product if a robot is taken out with a product in his gripper?
-holding(R, P, GT) :- holding(R, P, GT-1), not putDown(R, P, GT), not horizon(GT).
-holding(R, P, GT) :- pickUp(R, P, _, GT), not horizon(GT).
+holding(R, P, GT) :- holding(R, P, GT-1), not putDown(R, GT), not horizon(GT).
+holding(R, P, GT) :- pickUp(R, P, GT), not horizon(GT).
 

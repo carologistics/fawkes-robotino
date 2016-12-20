@@ -8,7 +8,7 @@
 % generateProduct(R, B, GT)      The robot R generated a new product with base color B at GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % taskLocation(getBase(_), L)    Where the retreival will take place.
-% pickup(R, P, L)                The robot R picked up product P at location L.
+% pickup(R, P, GT)               The robot R picked up product P at time step GT.
 % possible(R, getBase(_), GT)    If robot R can perform the retreival task at GT.
 % toBeDone(getBase(_), 0)        The get base tasks are possible.
 % task(getBase(L, B, S))         The task to get a new base of color Bfrom the base station L. S is to enumerate how
@@ -41,4 +41,4 @@ free(L, GT)  :- end(R, T, GT), getBaseTask(T), baseLocation(L).
 possible(R, T, GT) :- getBaseTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 
 generateProduct(R, B, GT) :- end(R, getBase(_, B, _), GT).
-pickUp(R, P, "BS", GT) :- end(R, getBase(_, B, _), GT), generatedProduct(R, P, GT).
+pickUp(R, P, GT) :- end(R, getBase(_, B, _), GT), generatedProduct(R, P, GT).

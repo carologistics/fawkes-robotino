@@ -8,7 +8,7 @@
 % points(mountCap(_), P)         How many points are awarded for the mounting.
 % possible(R, mountCap(_), GT)   If robot R can perform the mount task at GT.
 % process(M, P, GT)              The machine M starts the processing of the product P at GT.
-% putDown(R, P, GT)              Robot R puts product P down at location L in GT.
+% putDown(R, GT)                 Robot R puts his product in GT.
 % task(mountCap(L, O, Q))        The task to mount a cap on a product of (O,Q) at L.
 % taskDuration(mountCap(_), D)   How long it takes to put the product into the cap station, once the robot has arrived.
 % taskLocation(mountCap(_), L)   Where the mounting will take place.
@@ -60,7 +60,7 @@ impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), ring(O, Ring
 
 capMountedByRobot(R, M, P, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L), capLocation(M, L), holding(R, P, GT-1).
 
-putDown(R, P, GT)    :- capMountedByRobot(R, _, P, GT).
+putDown(R, GT)       :- capMountedByRobot(R, _, _, GT).
 capMounted(M, P, GT) :- capMountedByRobot(_, M, P, GT).
 process(M, P, GT)    :- capMountedByRobot(_, M, P, GT).
 
