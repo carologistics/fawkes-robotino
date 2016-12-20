@@ -33,7 +33,7 @@
 
 prepCSTask(prepareCS(L, S))               :- capLocation(_, L), S = 1..@maxPrepCS().
 task(T)                                   :- prepCSTask(T).
-points(T, 2)                              :- prepCSTask(T).
+points(T, 3)                              :- prepCSTask(T).
 taskDuration(T, @prepareCSTaskDuration()) :- prepCSTask(T).
 taskLocation(prepareCS(L, S), L)          :- task(prepareCS(L, S)).
 toBeDone(T, 0)                            :- prepCSTask(T), productionStarted.

@@ -37,5 +37,5 @@ free(L, GT) :- end(R, getProduct(L, _), GT).
 possible(R, getProduct(L, S), GT) :- task(getProduct(L, S)), robot(R), not holding(R, _, GT), getLocation(M, L),
 									 storing(M, P, GT), GT = 0..@horizon()-1.
 
-pickUp(R, P, M, GT) :- end(R, getProduct(L, S), GT), getLocation(M, L), storing(M, P, GT).
+pickUp(R, P, M, GT) :- end(R, getProduct(L, S), GT), getLocation(M, L), storing(M, P, GT-1).
 

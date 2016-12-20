@@ -31,7 +31,7 @@
 #external orderDeadline(O, D) : order(O), deliveryTimes(L, U), D = L..U.
 
 #program newOrder(o, q, b, c, r1, r2, r3, deliveryBegin, deliveryEnd).
-orderBegin(om, deliveryBegin).
+orderBegin(o, deliveryBegin).
 orderDeadline(o, deliveryEnd).
 base(o, b).
 cap(o, c).
