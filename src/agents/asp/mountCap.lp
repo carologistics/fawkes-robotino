@@ -41,8 +41,8 @@ taskDuration(T, @mountCapTaskDuration()) :- capTask(T).
 
 #external toBeDone(T, 0) : capTask(T).
 
-inUse(L, R, GT) :- begin(R, T, GT), capTask(T), location(T, L).
-free(L, GT) :- end(_, T, GT), capTask(T), location(T, L).
+inUse(L, R, GT) :- begin(R, T, GT), capTask(T), taskLocation(T, L).
+free(L, GT) :- end(_, T, GT), capTask(T), taskLocation(T, L).
 
 possible(R, T, GT) :- not impossible(R, T, GT), capTask(T), robot(R), GT = 0..@horizon()-1.
 

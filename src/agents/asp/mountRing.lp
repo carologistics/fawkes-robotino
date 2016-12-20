@@ -51,8 +51,8 @@ taskDuration(T, @mountRingTaskDuration()) :- ringTask(T).
 
 #external toBeDone(T, 0) : ringTask(T).
 
-inUse(L, R, GT) :- begin(R, T, GT), ringTask(T), location(T, L).
-free(L, GT) :- end(_, T, GT), ringTask(T), location(T, L).
+inUse(L, R, GT) :- begin(R, T, GT), ringTask(T), taskLocation(T, L).
+free(L, GT) :- end(_, T, GT), ringTask(T), taskLocation(T, L).
 
 possible(R, T, GT) :- ringTask(T), robot(R), GT = 0..@horizon()-1, not impossible(R, T, GT).
 
