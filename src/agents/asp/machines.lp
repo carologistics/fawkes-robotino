@@ -40,6 +40,6 @@ storing(M, P, GT) :- process(M, P, GT). %TODO: Consider processing time.
 csPrepared(M, GT) :- csPrepared(M, GT-1), not capMounted(M, _, GT), not horizon(GT).
 
 rsFillState(M, S,      GT) :- rsFillState(M, S, GT-1), not rsFed(M, GT), not ringMounted(M, _, _, GT), not horizon(GT).
-rsFillState(M, S+1,    GT) :- rsFillState(M, S, GT-1), rsFed(M, GT), not horizon(GT).
+rsFillState(M, S+1,    GT) :- rsFillState(M, S, GT-1), rsFed(M, GT), not horizon(GT), S <= 2.
 rsFillState(M, S-Cost, GT) :- rsFillState(M, S, GT-1), ringMounted(M, _, Col, GT), ringCost(Cost),
-							  ringColorCost(Col, Cost), not horizon(GT).
+							  ringColorCost(Col, Cost), not horizon(GT), S >= Cost.
