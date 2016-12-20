@@ -154,6 +154,12 @@ def addOrder(ctl, order):
 def currentTimeExternal(time):
 	return clingo.Function("currentTime", [time])
 
+def ringStationExternal(machine, fillState):
+	return clingo.Function("rsFillState", [machine, fillState, 0])
+
+def capStationExternal(machine):
+	return clingo.Function("csPrepared", [machine, 0])
+
 def main(ctl):
 	(zonesToExplore, ringColors, orders, machineFailures) = generateInstance()
 
@@ -178,6 +184,14 @@ def main(ctl):
 			spawnZone(ctl, zone)
 		else:
 			releaseZone(ctl, zone)
+
+	ringStations = {"RS1" : 0, "RS2" : 0}
+	capStations = {"CS1" : False, "CS2" : False}
+
+	ctl.assign_external(ringStationExternal("RS1", 0), True)
+	ctl.assign_external(ringStationExternal("RS2", 0), True)
+	ctl.assign_external(capStationExternal("CS1"), False)
+	ctl.assign_external(capStationExternal("CS2"), False)
 
 	f = Foo(ctl)
 	first = True

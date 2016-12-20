@@ -29,15 +29,16 @@
 % The tasks are always existent.
 getBaseTask(getBase(L, B, S))       :- baseLocation(L), S = 1..@maxGetBase(), baseColor(B).
 task(T)                             :- getBaseTask(T).
+% Prevents a senseless getBase task, but has a great negative impact on the solving process.
+%points(T, -1)                       :- getBaseTask(T).
 taskDuration(T, @getTaskDuration()) :- getBaseTask(T).
 taskLocation(getBase(L, B, S), L)   :- task(getBase(L, B, S)).
 toBeDone(T, 2)                      :- getBaseTask(T), productionStarted.
 
-#program transition(gt).
-inUse(L, R, GT) :- begin(R, getBase(_, _, _), GT), baseLocation(L).
-free(L, GT)  :- end(R, getBase(_, _, _), GT), baseLocation(L).
+inUse(L, R, GT) :- begin(R, T, GT), getBaseTask(T), baseLocation(L).
+free(L, GT)  :- end(R, T, GT), getBaseTask(T), baseLocation(L).
 
-possible(R, getBase(L, B, S), GT) :- task(getBase(L, B, S)), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
+possible(R, T, GT) :- getBaseTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 
 generateProduct(R, B, GT) :- end(R, getBase(_, B, _), GT).
-pickUp(R, P, "BS") :- end(R, getBase(_, B, _), GT), generatedProduct(R, P, GT).
+pickUp(R, P, "BS", GT) :- end(R, getBase(_, B, _), GT), generatedProduct(R, P, GT).

@@ -31,7 +31,7 @@
 
 feedRSTask(feedRS(L, S))               :- ringLocation(_, L), S = 1..@maxFeedRS().
 task(T)                                :- feedRSTask(T).
-points(T, 1)                           :- feedRSTask(T).
+points(T, 2)                           :- feedRSTask(T).
 taskDuration(T, @feedRSTaskDuration()) :- feedRSTask(T).
 taskLocation(feedRS(L, S), L)          :- task(feedRS(L, S)).
 toBeDone(T, 0)                         :- feedRSTask(T), productionStarted.
@@ -44,7 +44,7 @@ possible(R, feedRS(L, S), GT) :- task(feedRS(L, S)), robot(R), holding(R, P, GT)
 								 ringStationAssignment(M, Color), ringColorCost(Color, Cost), ringCost(Cost),
 								 Cost > 0, rsFillState(M, FS, GT), FS < 3, GT = 0..@horizon()-1.
 
-rsFedByRobot(R, M, P, GT) :- end(R, feedRS(L, _), GT), ringLocation(M, L), holding(R, P, GT).
+rsFedByRobot(R, M, P, GT) :- end(R, feedRS(L, _), GT), ringLocation(M, L), holding(R, P, GT-1).
 
 rsFed(M, GT)      :- rsFedByRobot(_, M, _, GT).
 putDown(R, P, GT) :- rsFedByRobot(R, _, P, GT).
