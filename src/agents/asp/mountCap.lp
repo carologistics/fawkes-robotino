@@ -1,18 +1,18 @@
 % Defined programs:
 % ourTeam(t)                     Setup the mount cap tasks, that are possible, as soon as we know the special locations.
-% transition(gt)                 Update implications from the mount tasks.
 %
 % In this file defined predicates:
 % capMounted(M, P, GT)           Machine M mounted a cap on product P from in GT.
-% duration(mountCap(_), D)       How long it takes to put the product into the cap station, once the robot has arrived.
-% free(L, gt)                    The machine side L is freed in time step GT.
-% inUse(L, GT)                   The machine side L is in use for time step GT.
-% location(mountCap(_), L)       Where the mounting will take place.
+% free(L, GT)                    The machine side L is freed in time step GT.
+% inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(mountCap(_), P)         How many points are awarded for the mounting.
 % possible(R, mountCap(_), GT)   If robot R can perform the mount task at GT.
 % process(M, P, GT)              The machine M starts the processing of the product P at GT.
-% putDown(R, L, P, GT)           Robot R puts product P down at location L in GT.
+% putDown(R, P, GT)              Robot R puts product P down at location L in GT.
 % task(mountCap(L, O, Q))        The task to mount a cap on a product of (O,Q) at L.
+% taskDuration(mountCap(_), D)   How long it takes to put the product into the cap station, once the robot has arrived.
+% taskLocation(mountCap(_), L)   Where the mounting will take place.
+% toBeDone(mountCap(_), 0)       The task has to be done.
 %
 % Additionally used predicates:
 % base(O, B)                     Defined in orders.lp
@@ -21,11 +21,8 @@
 % cap(P, C, GT)                  Defined in products.lp
 % capLocation(L)                 Defined in facts.lp
 % csPrepared(M, GT)              Defined in machines.lp
-% deliveryTimes(L, U)            Defined in facts.lp
 % end(R, T, GT)                  Defined in state.lp
-% failure(R, T, GT)              Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
-% location(R, L, GT)             Defined in state.lp
 % order(O)                       Defined in facts.lp
 % quantity(Q)                    Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
@@ -35,26 +32,35 @@
 
 #program ourTeam(t).
 
-capTask(mountCap(L, O, Q))           :- order(O), quantity(Q), capLocation(_, L).
-task(T)                              :- capTask(T).
-points(T, 10)                        :- capTask(T).
-duration(T, @mountCapTaskDuration()) :- capTask(T).
-location(mountCap(L, O, Q), L)	     :- capTask(mountCap(L, O, Q)).
+capTask(mountCap(L, O, Q))               :- order(O), quantity(Q), capLocation(_, L).
+order(mountCap(L, O, Q), O)              :- capTask(mountCap(L, O, Q)).
+taskLocation(mountCap(L, O, Q), L)       :- capTask(mountCap(L, O, Q)).
+task(T)                                  :- capTask(T).
+points(T, 10)                            :- capTask(T).
+taskDuration(T, @mountCapTaskDuration()) :- capTask(T).
 
-#program transition(gt).
+#external toBeDone(T, 0) : capTask(T).
 
-#external spawnTask(mountCap(L, O, Q), gt) : capTask(mountCap(L, O, Q)), deliveryTimes(B, _), gt >= B, not orderSpawed(O).
+inUse(L, R, GT) :- begin(R, T, GT), capTask(T), location(T, L).
+free(L, GT) :- end(_, T, GT), capTask(T), location(T, L).
 
-inUse(L, gt) :- begin(R, T, gt), capTask(T), location(T, L).
-free(L, gt)  :- end(_, T, gt), capTask(T), location(T, L).
+possible(R, T, GT) :- not impossible(R, T, GT), capTask(T), robot(R), GT = 0..@horizon()-1.
 
-possible(R, T, gt) :- capTask(T), holding(R, P, gt), location(T, L), capLocation(M, L), csPrepared(M, gt),
-					  not storing(M, _, gt), not inUse(L, gt), base(P, B), base(O, B),
-					  ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2), ring(P, 2, R2, gt),
-					  ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, none, gt), robot(R, gt).
+% The machine has to be prepared.
+impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), capLocation(M, L), not csPrepared(M, GT),
+						GT = 0..@horizon()-1.
+% The robot has to hold a product.
+impossible(R, T, GT) :- capTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
+% The product has to have the correct base color.
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), base(O, B), not base(P, B).
+% The product is not allowed to have a cap.
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), cap(P, _, GT).
+% The all rings has to be mounted.
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color), not ring(P, Ring, Color, GT).
 
-{ putDown(R, L, P, gt);
-  capMounted(M, P, gt);
-  process(M, P, gt)
-  } = 3 :- end(R, T, gt), capTask(T), not failure(T, gt), location(T, L), capLocation(M, L), holding(R, P, gt).
+capMountedByRobot(R, M, P, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L), capLocation(M, L), holding(R, P, GT-1).
+
+putDown(R, P, GT)    :- capMountedByRobot(R, _, P, GT).
+capMounted(M, P, GT) :- capMountedByRobot(_, M, P, GT).
+process(M, P, GT)    :- capMountedByRobot(_, M, P, GT).
 
