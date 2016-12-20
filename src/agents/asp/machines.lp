@@ -11,7 +11,7 @@
 % capMounted(M, P, GT)           Defined in mountCap.lp
 % deliveryTimes(B, E)            Defined in facts.lp
 % free(L, GT)                    Defined in the task descriptions.
-% pickUp(R, P, M, GT)            Defined in some tasks descriptions.
+% pickUp(R, P, GT)               Defined in some tasks descriptions.
 % process(M, P, GT)              Defined in some tasks descriptions.
 % product(P)                     Defined in product.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
@@ -34,7 +34,7 @@ inUse(L, R, GT) :- inUse(L, R, GT-1), not free(L, GT-1), not horizon(GT).
 % Benchmark them against each other!
 %:- 2 { inUse(L, R, GT) : robot(R) }.
 
-storing(M, P, GT) :- storing(M, P, GT-1), not pickUp(_, P, M, GT), not horizon(GT).
+storing(M, P, GT) :- storing(M, P, GT-1), not pickUp(_, P, GT), not horizon(GT).
 storing(M, P, GT) :- process(M, P, GT). %TODO: Consider processing time.
 
 csPrepared(M, GT) :- csPrepared(M, GT-1), not capMounted(M, _, GT), not horizon(GT).

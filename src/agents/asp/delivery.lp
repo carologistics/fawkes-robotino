@@ -6,7 +6,7 @@
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(deliver(_), P)          How many points are awarded for the delivery.
 % possible(R, deliver(_), GT)    If robot R can perform the delivery task at GT.
-% putDown(R, P, GT)              Robot R puts product P down in GT.
+% putDown(R, GT)                 Robot R puts his product down in GT.
 % task(deliver(L, O, Q))         The task to deliver a product of (O,Q) to L within the time for the order.
 % task(lateDeliver(L, O, Q))     The task to deliver a product of (O,Q) to L after the time for the order.
 % taskDuration(deliver(_), D)    How long it takes to put the product into the delivery station, once the robot has
@@ -77,4 +77,4 @@ impossible(R, T, GT) :- lateDeliverTask(T), currentTime(CT), order(T, O), orderD
 						robot(R), GT = 0..@horizon()-1.
 
 
-putDown(R, P, GT) :- end(R, T, GT), allDeliverTasks(T), holding(R, P, GT-1).
+putDown(R, GT) :- end(R, T, GT), allDeliverTasks(T).

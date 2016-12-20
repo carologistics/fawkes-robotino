@@ -7,7 +7,7 @@
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(feedRS(_), P)           How many points are awarded for the feeding.
 % possible(R, feedRS(_), GT)     If robot R can perform the feed task at GT.
-% putDown(R, L, P, GT)           Robot R puts product P down at location L in GT.
+% putDown(R, GT)                 Robot R puts his product down in GT.
 % task(feedRS(L, S))             The task to feed a product into ring station L, S is to enumerate how often a robot is
 %                                able to perform this task.
 % taskDuration(feedRS(_), D)     How long it takes to put the product onto the ring stations slide, once the robot has
@@ -46,6 +46,6 @@ possible(R, feedRS(L, S), GT) :- task(feedRS(L, S)), robot(R), holding(R, P, GT)
 
 rsFedByRobot(R, M, P, GT) :- end(R, feedRS(L, _), GT), ringLocation(M, L), holding(R, P, GT-1).
 
-rsFed(M, GT)      :- rsFedByRobot(_, M, _, GT).
-putDown(R, P, GT) :- rsFedByRobot(R, _, P, GT).
+rsFed(M, GT)   :- rsFedByRobot(_, M, _, GT).
+putDown(R, GT) :- rsFedByRobot(R, _, _, GT).
 

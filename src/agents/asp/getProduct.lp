@@ -4,7 +4,7 @@
 % In this file defined predicates:
 % free(L, GT)                    The machine side L is freed in time step GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
-% pickup(R, P, L)                The robot R picked up product P at location L.
+% pickup(R, P, GT)                The robot R picked up product P at time step GT.
 % possible(R, getProduct(_), GT) If robot R can perform the retreival task at GT.
 % task(getProduct(L, S))         The task to fetch a product from the base station L. S is to enumerate how often a
 %                                robot is able to perform this task.
@@ -37,5 +37,5 @@ free(L, GT) :- end(R, getProduct(L, _), GT).
 possible(R, getProduct(L, S), GT) :- task(getProduct(L, S)), robot(R), not holding(R, _, GT), getLocation(M, L),
 									 storing(M, P, GT), GT = 0..@horizon()-1.
 
-pickUp(R, P, M, GT) :- end(R, getProduct(L, S), GT), getLocation(M, L), storing(M, P, GT-1).
+pickUp(R, P, GT) :- end(R, getProduct(L, S), GT), getLocation(M, L), storing(M, P, GT-1).
 

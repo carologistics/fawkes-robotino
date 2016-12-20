@@ -8,7 +8,7 @@
 % points(mountRing(_), P)        How many points are awarded for the mounting.
 % possible(R, mountRing(_), GT)  If robot R can perform the mount task at GT.
 % process(M, P, GT)              The machine M starts the processing of the product P at GT.
-% putDown(R, P, GT)              Robot R puts product P down in GT.
+% putDown(R, GT)                 Robot R puts his product down in GT.
 % ringMounted(M, P, C, GT)       Machine M mounted a ring of color C on product P from in GT.
 % task(mountRing(L, O, Q, R))    The task to mount the R-th ring on a product of (O,Q) at L.
 % taskDuration(mountRing(_), D)  How long it takes to put the product into ring cap station, once the robot has arrived.
@@ -72,7 +72,7 @@ impossible(R, T, GT) :- ringTask(T), robot(R), ring(T, Ring), order(T, O), taskL
 ringMountedByRobot(R, P, M, C, GT) :- end(R, T, GT), ringTask(T), taskLocation(T, L), ringLocation(M, L),
 									  holding(R, P, GT-1), order(T, O), ring(T, Ring), ring(O, Ring, C).
 
-putDown(R, P, GT)        :- ringMountedByRobot(R, P, _, _, GT).
+putDown(R, GT)           :- ringMountedByRobot(R, _, _, _, GT).
 ringMounted(M, P, C, GT) :- ringMountedByRobot(_, P, M, C, GT).
 process(M, P, GT)        :- ringMountedByRobot(_, P, M, _, GT).
 
