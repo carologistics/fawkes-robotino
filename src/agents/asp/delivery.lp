@@ -1,19 +1,18 @@
 % Defined programs:
 % ourTeam(t)                     Setup the delivery tasks, that are possible, as soon as we know the special locations.
-% transition(gt)                 Update implications from the delivery tasks.
 %
 % In this file defined predicates:
-% delivered(P, GT)               Product P was delivered at GT.
-% duration(deliver(_), D)        How long it takes to put the product into the delivery station, once the robot has
-%                                arrived.
-% free(L, gt)                    The machine side L is freed in time step GT.
-% inUse(L, GT)                   The machine side L is in use for time step GT.
-% location(deliver(_), L)        Where the delivery will take place.
+% free(L, GT)                    The machine side L is freed in time step GT.
+% inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(deliver(_), P)          How many points are awarded for the delivery.
 % possible(R, deliver(_), GT)    If robot R can perform the delivery task at GT.
-% putDown(R, L, P, GT)           Robot R puts product P down at location L in GT.
+% putDown(R, P, GT)              Robot R puts product P down in GT.
 % task(deliver(L, O, Q))         The task to deliver a product of (O,Q) to L within the time for the order.
 % task(lateDeliver(L, O, Q))     The task to deliver a product of (O,Q) to L after the time for the order.
+% taskDuration(deliver(_), D)    How long it takes to put the product into the delivery station, once the robot has
+%                                arrived.
+% taskLocation(deliver(_), L)    Where the delivery will take place.
+% toBeDone(deliver(_), 0)        The task is possible.
 %
 % Additionally used predicates:
 % base(O, B)                     Defined in orders.lp
@@ -22,13 +21,12 @@
 % cap(O, C)                      Defined in orders.lp
 % cap(P, C, GT)                  Defined in products.lp
 % deliverLocation(L)             Defined in facts.lp
-% deliveryTimes(L, U)            Defined in facts.lp
 % driveDuration(L1, L2, D)       Defined in facts.lp
 % end(R, T, GT)                  Defined in state.lp
-% failure(R, T, GT)              Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
 % location(R, L, GT)             Defined in state.lp
 % order(O)                       Defined in facts.lp
+% orderBegin(O, B)               Defined in orders.lp
 % orderDeadline(O, D)            Defined in orders.lp
 % quantity(Q)                    Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
@@ -36,48 +34,47 @@
 
 
 #program ourTeam(t).
-deliverTask(deliver(L, O, Q))          :- order(O), quantity(Q), deliverLocation(L).
-task(T)                                :- deliverTask(T).
-points(T, 20)                          :- deliverTask(T).
-duration(T, @deliverTaskDuration())    :- deliverTask(T).
-location(T, L)	                       :- deliverTask(T), deliverLocation(L).
+deliverTask(deliver(L, O, Q))         :- order(O), quantity(Q), deliverLocation(L).
+order(deliver(L, O, Q), O)            :- deliverTask(deliver(L, O, Q)).
+points(T, 20)                         :- deliverTask(T).
 
-lateDeliverTask(lateDeliver(L, O, Q))  :- order(O), quantity(Q), deliverLocation(L).
-task(T)                                :- lateDeliverTask(T).
-points(T, 5)                           :- lateDeliverTask(T).
-duration(T, @deliverTaskDuration())    :- lateDeliverTask(T).
-location(T, L)	                       :- lateDeliverTask(T), deliverLocation(L).
+lateDeliverTask(lateDeliver(L, O, Q)) :- order(O), quantity(Q), deliverLocation(L).
+order(lateDeliver(L, O, Q), O)        :- lateDeliverTask(lateDeliver(L, O, Q)).
+points(T, 5)                          :- lateDeliverTask(T).
 
-#program transition(gt).
+allDeliverTasks(T) :- deliverTask(T).
+allDeliverTasks(T) :- lateDeliverTask(T).
 
-#external spawnTask(deliver(L, O, Q), gt) : deliverTask(deliver(L, O, Q)), deliveryTimes(B, _), gt >= B, not orderSpawned(O).
-#external spawnTask(lateDeliver(L, O, Q), gt) : lateDeliverTask(lateDeliver(L, O, Q)), deliveryTimes(B, _), gt >= B, not orderSpawned(O).
+task(T)                                 :- allDeliverTasks(T).
+taskDuration(T, @deliverTaskDuration()) :- allDeliverTasks(T).
+taskLocation(T, L)	                    :- allDeliverTasks(T), deliverLocation(L).
 
-inUse(L, gt) :- begin(R, T, gt), deliverTask(T), location(T, L).
-free(L, gt)  :- end(_, T, gt), deliverTask(T), location(T, L).
+#external toBeDone(T, 0) : allDeliverTasks(T).
 
-inUse(L, gt) :- begin(R, T, gt), lateDeliverTask(T), location(T, L).
-free(L, gt)  :- end(_, T, gt), lateDeliverTask(T), location(T, L).
+inUse(L, R, GT) :- begin(R, T, GT), allDeliverTasks(T), taskLocation(T, L).
+free(L, GT) :- end(_, T, GT), allDeliverTasks(T), taskLocation(T, L).
 
-possible(R, deliver(L, O, Q), gt) :- deliverTask(deliver(L, O, Q)), holding(R, P, gt), not inUse(L, gt), base(P, B),
-									 base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2), ring(P, 2, R2, gt),
-									 ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, C, gt), cap(O, C), robot(R, gt),
-									 location(R, RL, gt).%, driveDuration(RL, L, DD), duration(deliver(L, O, Q), TD),
-									 %D = TD + DD, D < E, orderDeadline(O, E).
+possible(R, T, GT) :- allDeliverTasks(T), robot(R), GT = 0..@horizon()-1, not impossible(R, T, GT).
 
-possible(R, lateDeliver(L, O, Q), gt) :- lateDeliverTask(lateDeliver(L, O, Q)), holding(R, P, gt), not inUse(L, gt),
-										 base(P, B), base(O, B), ring(P, 1, R1, gt), ring(O, 1, R1), ring(O, 2, R2),
-										 ring(P, 2, R2, gt), ring(P, 3, R3, gt), ring(O, 3, R3), cap(P, C, gt),
-										 cap(O, C), robot(R, gt).
+% The robot has to hold a product.
+impossible(R, T, GT) :- allDeliverTasks(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
+% The product has to have the correct base color.
+impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), base(O, B), not base(P, B).
+% The product has to have the correct cap color.
+impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), cap(O, C), not cap(P, C, GT).
+% The all rings has to be mounted.
+impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color),
+						not ring(P, Ring, Color, GT).
 
-{ putDown(R, L, P, gt);
-  delivered(P, gt);
-  end(R, lateDeliver(L, O, Q), gt)
-  } = 3 :- end(R, deliver(L, O, Q), gt), not failure(deliver(L, O, Q), gt), deliverLocation(L), holding(R, P, gt).
+% Do not deliver before its time.
+impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderBegin(O, B), B < GT + CT, robot(R),
+						GT = 0..@horizon()-1.
+% Do not deliver after its time.
+impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D > GT + CT, robot(R),
+						GT = 0..@horizon()-1.
+% Do not late deliver before its time.
+impossible(R, T, GT) :- lateDeliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D < GT + CT,
+						robot(R), GT = 0..@horizon()-1.
 
-{ putDown(R, L, P, gt);
-  delivered(P, gt);
-  end(R, deliver(L, O, Q), gt)
-  } = 3 :- end(R, lateDeliver(L, O, Q), gt), not failure(lateDeliver(L, O, Q), gt), deliverLocation(L),
-		   holding(R, P, gt).
 
+putDown(R, P, GT) :- end(R, T, GT), allDeliverTasks(T), holding(R, P, GT-1).
