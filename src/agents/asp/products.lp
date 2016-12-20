@@ -13,7 +13,6 @@
 % capMounted(P, C, GT)           Defined in mountCap.lp
 % capStationAssignment(M, C)     Defined in facts.lp
 % currentTime(T)                 Defined in facts.lp
-% delivered(P, GT)               Defined in delivery.lp
 % deliveryTimes(L, U)            Defined in facts.lp
 % generateProduct(R, B, GT)      Defined in some task descriptions.
 % ringMounted(M, P, C, GT)       Defined in mountRing.lp
@@ -27,9 +26,9 @@ generatedProduct(R, product(R, GT + CT), GT) :- generateProduct(R, _, GT), curre
 product(P) :- generatedProduct(_, P, _).
 base(P, B) :- generateProduct(R, B, GT), generatedProduct(R, P, GT).
 
-cap(P, C, GT) :- cap(P, C, GT-1), not delivered(P, GT), not horizon(GT).
-cap(P, C, GT) :- capMounted(M, P, GT), capStationAssignment(M, C), not delivered(P, GT).
+cap(P, C, GT) :- cap(P, C, GT-1), not horizon(GT).
+cap(P, C, GT) :- capMounted(M, P, GT), capStationAssignment(M, C).
 
-ring(P, R, C, GT) :- ring(P, R, C, GT-1), not delivered(P, GT), not horizon(GT).
+ring(P, R, C, GT) :- ring(P, R, C, GT-1), not horizon(GT).
 ring(P, R, C, GT) :- ringMounted(_, P, C, GT), not ring(P, R, _, GT-1), ring(P, R-1, _, GT-1), not horizon(GT).
 %ring(P, 1, C, GT) :- ringMounted(_, P, C, GT), nor ring(P, 1, _, GT-1), not horizon(GT).
