@@ -90,6 +90,8 @@ class Control:
 		self.CTL.assign_external(capStationExternal("CS1"), False)
 		self.CTL.assign_external(capStationExternal("CS2"), False)
 
+		releaseDriveDuration(self.CTL)
+
 		for gt in gameRange():
 			if gt >= minDeliveryTime() and not self.ProductionStarted:
 				self.ProductionStarted = True
@@ -106,7 +108,6 @@ class Control:
 			for t in range(self.LastGameTime, gt):
 				self.CTL.release_external(currentTimeExternal(t))
 			self.CTL.assign_external(currentTimeExternal(gt), True)
-			print("Solve " + str(gt), flush = True)
 			self.LastGameTime = gt
 
 			if self.FirstSolve:
@@ -114,6 +115,7 @@ class Control:
 				print("Add test instance.", flush = True)
 				self.CTL.ground([("testInstance", [])])
 
+			print("Solve " + str(gt), flush = True)
 			self.solve()
 
 	def onModel(self, model):
