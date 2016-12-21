@@ -1,105 +1,11 @@
 #script (python)
 
 import clingo
-import time
 
 from collections import namedtuple
 
-def clingoToASP(timeSymbol):
-	return toASP(timeSymbol.number)
-
-def toASP(time):
-	ret = time // Res
-	if (time % Res) * 2 >= Res:
-		ret = ret + 1
-	return ret
-
-def robots():
-	return Robots
-
-def maxOrders():
-	return MaxOrders
-
-def maxQuantity():
-	return MaxQuantity
-
-def minDeliveryTime():
-	return toASP(StartDelivery)
-
-def maxDeliveryTime():
-	return toASP(EndDelivery)
-
-def capColor(m):
-	if m == clingo.Number(1):
-		return "GREY"
-	return "BLACK"
-
-def maxDriveDuration():
-	return toASP(30)
-
-def explorationTaskDuration():
-	return toASP(5)
-
-def maxTaskDuration():
-	return toASP(35)
-
-def prepareCSTaskDuration():
-	return toASP(35)
-
-def mountCapTaskDuration():
-	return toASP(15)
-
-def mountRingTaskDuration():
-	return toASP(15)
-
-def feedRSTaskDuration():
-	return toASP(15)
-
-def deliverTaskDuration():
-	return toASP(15)
-
-def getProductTaskDuration():
-	return toASP(10)
-
-def getTaskDuration():
-	return toASP(5)
-
-def gameRange():
-	return range(toASP(Start), toASP(End) + 1)
-
-def horizon():
-	return toASP(Horizon)
-
-def maxFeedRS():
-	return MaxFeedRS
-
-def maxGetBase():
-	return MaxGetBase
-
-def maxGetProduct():
-	return MaxGetProduct
-
-def maxPrepCS():
-	return MaxPrepCS
-
 RingInfo = namedtuple("RingInfo", "Color Machine Cost")
 OrderInfo = namedtuple("OrderInfo", "Number Quantity Base Cap Ring1 Ring2 Ring3 DelBegin DelEnd Spawn")
-
-class Foo:
-	def __init__(self, ctl):
-		self.ctl = ctl
-		self.LastModel = None
-
-	def onModel(self, model):
-		self.LastModel = model
-
-	def solve(self, gt):
-		result = self.ctl.solve_async(self.onModel)
-		if not result.wait(CancelSolveTime):
-			print("Interrupt solving.", flush = True)
-			self.ctl.interrupt()
-
-		result.get()
 
 def zoneLocationExternal(zone):
 	return clingo.Function("location", [clingo.Function("z", [zone])])
@@ -110,47 +16,6 @@ def taskExternal(task):
 def zoneTaskExternal(zone):
 	return taskExternal(clingo.Function("explore", [zone]))
 
-def spawnZone(ctl, zone):
-	print("Add zone " + str(zone) + " to explore.", flush = True)
-	ctl.assign_external(zoneLocationExternal(zone), True)
-	ctl.assign_external(zoneTaskExternal(zone), True)
-
-def releaseZone(ctl, zone, array = None):
-	ctl.release_external(zoneLocationExternal(zone))
-	ctl.release_external(zoneTaskExternal(zone))
-
-	if array != None:
-		print("Remove zone " + str(zone) + " from the zones to explore.", flush = True)
-		array.remove(zone)
-
-def setRingColor(ctl, ring):
-	print("Set Ring-Color: " + str(ring))
-	ctl.ground([("setRingInfo", [ring.Color, ring.Cost, ring.Machine])])
-
-	for machine in ["RS1", "RS2"]:
-		ctl.release_external(clingo.Function("ringStationAssignment", [machine, ring.Color]))
-	for cost in [0,1,2]:
-		ctl.release_external(clingo.Function("ringColorCost", [ring.Color, cost]));
-
-def addOrder(ctl, order):
-	print("Add Order: " + str(order))
-	ctl.ground([("newOrder", [order.Number, order.Quantity, order.Base, order.Cap, order.Ring1, order.Ring2, order.Ring3, toASP(order.DelBegin), toASP(order.DelEnd)])])
-
-	for color in ["BLACK", "RED", "SILVER"]:
-		ctl.release_external(clingo.Function("base", [order.Number, color]))
-
-	for color in ["BLACK", "GREY"]:
-		ctl.release_external(clingo.Function("cap", [order.Number, color]))
-
-	for color in ["BLUE", "YELLOW", "ORANGE", "GREEN"]:
-		for ring in [1,2,3]:
-			ctl.release_external(clingo.Function("ring", [order.Number, ring, color]))
-
-	for gt in range(minDeliveryTime(), maxDeliveryTime() + 1):
-		ctl.release_external(clingo.Function("orderBegin", [order.Number, gt]))
-		ctl.release_external(clingo.Function("orderDeadline", [order.Number, gt]))
-
-
 def currentTimeExternal(time):
 	return clingo.Function("currentTime", [time])
 
@@ -160,62 +25,208 @@ def ringStationExternal(machine, fillState):
 def capStationExternal(machine):
 	return clingo.Function("csPrepared", [machine, 0])
 
+def taskLocation(machine):
+	return clingo.Function("m", ["C", machine, "I"])
+
+def deliveryTaskExternal(number, qty):
+	return taskExternal(clingo.Function("deliver", [taskLocation("DS"), number, qty]))
+
+def lateDeliveryTaskExternal(number, qty):
+	return taskExternal(clingo.Function("lateDeliver", [taskLocation("DS"), number, qty]))
+
+class Order:
+	def __init__(self, info):
+		self.Info = info
+		self.CapTask = None
+		self.RingTask = [None, None, None, None] # One more for index based access beginning at 1.
+		self.DeliveryTasks = [None, None]
+
+	def __repr__(self):
+		return "Order(Order=(%d,%d), CapTask=%s, RingTask=%s, DeliveryTasks=%s)" % (self.Info.Number, self.Info.Quantity, str(self.CapTask), str(self.RingTask[1:]), str(self.DeliveryTasks))
+
+class Control:
+	def __init__(self, ctl, zonesToExplore, ringColors, orders, machineFailures):
+		self.CapStations       = {"CS1" : False, "CS2" : False}
+		self.CTL               = ctl
+		self.FirstSolve        = True
+		self.LastGameTime      = 0
+		self.LastModel         = None
+		self.MachineFailures   = machineFailures
+		self.NextOrder         = 0
+		self.Orders            = orders
+		self.OrdersWithTasks   = {}
+		self.ProductionStarted = False
+		self.RingColors        = ringColors
+		self.RingStations      = {"RS1" : 0, "RS2" : 0}
+		self.ZonesToExplore    = zonesToExplore
+
+		for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "functions.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
+			self.CTL.load(file)
+
+		self.CapColors         = {capColor(clingo.Number(1)) : "CS1", capColor(clingo.Number(2)) : "CS2"}
+
+		print("Ground base.", flush = True)
+		self.CTL.ground([("base", [])])
+		print("Ground team.", flush = True)
+		self.CTL.ground([("ourTeam", ["C"])])
+
+		for robot in robots():
+			self.CTL.assign_external(clingo.Function("availableRobot", [robot]), True)
+			self.CTL.assign_external(clingo.Function("robotLocation", [robot, "ins-out", 0]), True)
+
+		print("Solve after init.", flush = True)
+		self.CTL.solve()
+
+	def run(self):
+		print("Begin with instance.", flush = True)
+		for zone in range(1, 25):
+			if zone in self.ZonesToExplore:
+				self.spawnZone(zone)
+			else:
+				self.releaseZone(zone)
+
+		self.CTL.assign_external(ringStationExternal("RS1", 0), True)
+		self.CTL.assign_external(ringStationExternal("RS2", 0), True)
+		self.CTL.assign_external(capStationExternal("CS1"), False)
+		self.CTL.assign_external(capStationExternal("CS2"), False)
+
+		for gt in gameRange():
+			if gt >= minDeliveryTime() and not self.ProductionStarted:
+				self.ProductionStarted = True
+				for ring in self.RingColors:
+					self.setRingColor(ring)
+				self.CTL.ground([("startProduction", [])])
+				self.CTL.release_external(clingo.Function("productionStarted", []))
+
+			while self.NextOrder < maxOrders() and gt == toASP(self.Orders[self.NextOrder].Spawn):
+				order = self.Orders[self.NextOrder]
+				self.addOrder(order)
+				self.NextOrder = self.NextOrder + 1
+
+			for t in range(self.LastGameTime, gt):
+				self.CTL.release_external(currentTimeExternal(t))
+			self.CTL.assign_external(currentTimeExternal(gt), True)
+			print("Solve " + str(gt), flush = True)
+			self.LastGameTime = gt
+
+			if self.FirstSolve:
+				self.FirstSolve = False
+				print("Add test instance.", flush = True)
+				self.CTL.ground([("testInstance", [])])
+
+			self.solve()
+
+	def onModel(self, model):
+		self.LastModel = model
+
+	def solve(self):
+		if StepSeconds is None:
+			self.CTL.solve(self.onModel)
+		else:
+			future = self.CTL.solve_async(self.onModel)
+			if not future.wait(StepSeconds):
+				future.cancel()
+				future.get()
+
+	def spawnZone(self, zone):
+		print("Add zone " + str(zone) + " to explore.", flush = True)
+		self.CTL.assign_external(zoneLocationExternal(zone), True)
+		self.CTL.assign_external(zoneTaskExternal(zone), True)
+
+	def releaseZone(self, zone, remove = False):
+		self.CTL.release_external(zoneLocationExternal(zone))
+		self.CTL.release_external(zoneTaskExternal(zone))
+
+		if remove:
+			print("Remove zone " + str(zone) + " from the zones to explore.", flush = True)
+			self.ZonesToExplore.remove(zone)
+
+	def setRingColor(self, ring):
+		print("Set Ring-Color: " + str(ring), flush = True)
+		self.CTL.ground([("setRingInfo", [ring.Color, ring.Cost, ring.Machine])])
+
+		for machine in ["RS1", "RS2"]:
+			self.CTL.release_external(clingo.Function("ringStationAssignment", [machine, ring.Color]))
+		for cost in [0,1,2]:
+			self.CTL.release_external(clingo.Function("ringColorCost", [ring.Color, cost]));
+
+	def addOrder(self, info):
+		print("Add Order: " + str(info), flush = True)
+		self.CTL.ground([("newOrder", [info.Number, info.Quantity, info.Base, info.Cap, info.Ring1, info.Ring2, info.Ring3, toASP(info.DelBegin), toASP(info.DelEnd)])])
+
+		tasks = []
+		for qty in range(1, info.Quantity + 1):
+			order = Order(info)
+			self.OrdersWithTasks[(info.Number, qty)] = order
+			#print("Qty " + str(qty) + ": " + str(order) + " | " + str(self.OrdersWithTasks), flush = True)
+			order.CapTask = self.capTaskExternal(info.Number, qty, info.Cap)
+			tasks.append(order.CapTask)
+			if info.Ring1 != "none":
+				order.RingTask[1] = self.ringTaskExternal(info.Number, qty, 1, info.Ring1)
+				tasks.append(order.RingTask[1])
+			if info.Ring2 != "none":
+				order.RingTask[2] = self.ringTaskExternal(info.Number, qty, 2, info.Ring2)
+				tasks.append(order.RingTask[2])
+			if info.Ring3 != "none":
+				order.RingTask[3] = self.ringTaskExternal(info.Number, qty, 3, info.Ring3)
+				tasks.append(order.RingTask[3])
+			order.DeliveryTasks[0] = deliveryTaskExternal(info.Number, qty)
+			order.DeliveryTasks[1] = lateDeliveryTaskExternal(info.Number, qty)
+			tasks.extend(order.DeliveryTasks)
+
+			#print("Qty " + str(qty) + ": " + str(order) + " | " + str(self.OrdersWithTasks), flush = True)
+
+		#print("Tasks " + str(tasks), flush = True)
+		for task in tasks:
+			#print("Task " + str(task), flush = True)
+			self.CTL.assign_external(task, True)
+
+		for color in ["BLACK", "RED", "SILVER"]:
+			self.CTL.release_external(clingo.Function("base", [info.Number, color]))
+
+		qtyRange = range(1, maxQuantity() + 1)
+
+		for color in ["BLACK", "GREY"]:
+			self.CTL.release_external(clingo.Function("cap", [info.Number, color]))
+			for qty in qtyRange:
+				task = self.capTaskExternal(info.Number, qty, color)
+				if task not in tasks:
+					self.CTL.release_external(task)
+
+		for color in ["BLUE", "YELLOW", "ORANGE", "GREEN"]:
+			for ring in [1,2,3]:
+				self.CTL.release_external(clingo.Function("ring", [info.Number, ring, color]))
+				for qty in qtyRange:
+					task = self.ringTaskExternal(info.Number, qty, ring, color)
+					if task not in tasks:
+						self.CTL.release_external(task)
+
+		for qty in qtyRange:
+			task = deliveryTaskExternal(info.Number, qty)
+			if task not in tasks:
+				self.CTL.release_external(task)
+			task = lateDeliveryTaskExternal(info.Number, qty)
+			if task not in tasks:
+				self.CTL.release_external(task)
+
+		for gt in range(minDeliveryTime(), maxDeliveryTime() + 1):
+			self.CTL.release_external(clingo.Function("orderBegin", [info.Number, gt]))
+			self.CTL.release_external(clingo.Function("orderDeadline", [info.Number, gt]))
+
+	def capTaskExternal(self, order, qty, color):
+		return taskExternal(clingo.Function("mountCap", [taskLocation(self.CapColors[color]), order, qty]))
+
+	def ringTaskExternal(self, order, qty, ring, color):
+		for ringInfo in self.RingColors:
+			if ringInfo.Color == color:
+				machine = ringInfo.Machine
+				break
+		return taskExternal(clingo.Function("mountRing", [taskLocation(machine), order, qty, ring]))
+
 def main(ctl):
 	(zonesToExplore, ringColors, orders, machineFailures) = generateInstance()
 
-	for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
-		ctl.load(file)
+	control = Control(ctl, zonesToExplore, ringColors, orders, machineFailures)
+	control.run()
 
-	print("Ground base.", flush = True)
-	ctl.ground([("base", [])])
-	print("Ground team.", flush = True)
-	ctl.ground([("ourTeam", ["C"])])
-
-	for robot in robots():
-		ctl.assign_external(clingo.Function("availableRobot", [robot]), True)
-		ctl.assign_external(clingo.Function("robotLocation", [robot, "ins-out", 0]), True)
-
-	print("Solve after init.", flush = True)
-	ctl.solve()
-
-	print("Begin with instance.", flush = True)
-	for zone in range(1, 25):
-		if zone in zonesToExplore:
-			spawnZone(ctl, zone)
-		else:
-			releaseZone(ctl, zone)
-
-	ringStations = {"RS1" : 0, "RS2" : 0}
-	capStations = {"CS1" : False, "CS2" : False}
-
-	ctl.assign_external(ringStationExternal("RS1", 0), True)
-	ctl.assign_external(ringStationExternal("RS2", 0), True)
-	ctl.assign_external(capStationExternal("CS1"), False)
-	ctl.assign_external(capStationExternal("CS2"), False)
-
-	f = Foo(ctl)
-	first = True
-	nextOrder = 0
-	lastGT = 0
-	for gt in gameRange():
-		if gt == minDeliveryTime():
-			for ring in ringColors:
-				setRingColor(ctl, ring)
-			ctl.ground([("startProduction", [])])
-			ctl.release_external(clingo.Function("productionStarted", []))
-
-		if nextOrder < maxOrders() and gt == toASP(orders[nextOrder].Spawn):
-			addOrder(ctl, orders[nextOrder])
-			nextOrder = nextOrder + 1
-
-		if first:
-			first = False
-			print("Add test instance.", flush = True)
-			ctl.ground([("testInstance", [])])
-
-		for t in range(lastGT, gt):
-			ctl.release_external(currentTimeExternal(t))
-		ctl.assign_external(currentTimeExternal(gt), True)
-		print("Solve " + str(gt), flush = True)
-		f.solve(gt)
 #end.
