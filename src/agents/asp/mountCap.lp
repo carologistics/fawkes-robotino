@@ -16,17 +16,17 @@
 %
 % Additionally used predicates:
 % base(O, B)                     Defined in orders.lp
-% base(P, B)                     Defined in products.lp
 % begin(R, T, GT)                Defined in state.lp
-% cap(P, C, GT)                  Defined in products.lp
 % capLocation(L)                 Defined in facts.lp
 % csPrepared(M, GT)              Defined in machines.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
 % order(O)                       Defined in facts.lp
+% productBase(P, B)              Defined in products.lp
+% productCap(P, C, GT)           Defined in products.lp
+% productRing(P, R, C, GT)       Defined in products.lp
 % quantity(Q)                    Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
-% ring(P, R, C, GT)              Defined in products.lp
 % storing(M, P, GT)              Defined in machines.lp
 
 
@@ -52,11 +52,12 @@ impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), capLocation(M,
 % The robot has to hold a product.
 impossible(R, T, GT) :- capTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 % The product has to have the correct base color.
-impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), base(O, B), not base(P, B).
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), base(O, B), not productBase(P, B).
 % The product is not allowed to have a cap.
-impossible(R, T, GT) :- capTask(T), holding(R, P, GT), cap(P, _, GT).
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), productCap(P, _, GT).
 % The all rings has to be mounted.
-impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color), not ring(P, Ring, Color, GT).
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color),
+						not productRing(P, Ring, Color, GT).
 
 capMountedByRobot(R, M, P, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L), capLocation(M, L), holding(R, P, GT-1).
 

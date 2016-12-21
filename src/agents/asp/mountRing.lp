@@ -17,17 +17,18 @@
 %
 % Additionally used predicates:
 % base(O, B)                     Defined in orders.lp
-% base(P, B)                     Defined in products.lp
 % begin(R, T, GT)                Defined in state.lp
-% cap(P, C, GT)                  Defined in products.lp
 % end(R, T, GT)                  Defined in state.lp
 % failure(R, T, GT)              Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
 % location(R, L, GT)             Defined in state.lp
 % order(O)                       Defined in facts.lp
 % quantity(Q)                    Defined in facts.lp
+% productBase(P, B)              Defined in products.lp
+% productCap(P, C, GT)           Defined in products.lp
+% productRing(P, R, C, GT)       Defined in products.lp
+% quantitiy(Q)                   Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
-% ring(P, R, C, GT)              Defined in products.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
 % ringLocation(L)                Defined in facts.lp
 % rsFillState(M, FS, GT)         Defined in machines.lp
@@ -59,12 +60,12 @@ possible(R, T, GT) :- ringTask(T), robot(R), GT = 0..@horizon()-1, not impossibl
 % The robot has to hold a product.
 impossible(R, T, GT) :- ringTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 % The product has to have the correct base color.
-impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), order(T, O), base(O, B), not base(P, B).
+impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), order(T, O), base(O, B), not productBase(P, B).
 % The product is not allowed to have a cap.
-impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), cap(P, _, GT).
+impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), productCap(P, _, GT).
 % The all lower rings has to be mounted.
 impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), order(T, O), ring(T, TaskRing), ring(O, Ring, Color),
-						Ring < TaskRing, not ring(P, Ring, Color, GT).
+						Ring < TaskRing, not productRing(P, Ring, Color, GT).
 % The fill state of the ring station has to be high enough.
 impossible(R, T, GT) :- ringTask(T), robot(R), ring(T, Ring), order(T, O), taskLocation(T, L), ringLocation(M, L),
 						ring(O, Ring, Color), ringColorCost(Color, Cost), rsFillState(M, FS, GT), FS < Cost.
