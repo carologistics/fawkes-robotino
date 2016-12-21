@@ -16,10 +16,8 @@
 %
 % Additionally used predicates:
 % base(O, B)                     Defined in orders.lp
-% base(P, B)                     Defined in products.lp
 % begin(R, T, GT)                Defined in state.lp
 % cap(O, C)                      Defined in orders.lp
-% cap(P, C, GT)                  Defined in products.lp
 % deliverLocation(L)             Defined in facts.lp
 % driveDuration(L1, L2, D)       Defined in facts.lp
 % end(R, T, GT)                  Defined in state.lp
@@ -28,9 +26,11 @@
 % order(O)                       Defined in facts.lp
 % orderBegin(O, B)               Defined in orders.lp
 % orderDeadline(O, D)            Defined in orders.lp
+% productBase(P, B)              Defined in products.lp
+% productCap(P, C, GT)           Defined in products.lp
+% productRing(P, R, C, GT)       Defined in products.lp
 % quantity(Q)                    Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
-% ring(P, R, C, GT)              Defined in products.lp
 
 
 #program ourTeam(t).
@@ -59,12 +59,12 @@ possible(R, T, GT) :- allDeliverTasks(T), robot(R), GT = 0..@horizon()-1, not im
 % The robot has to hold a product.
 impossible(R, T, GT) :- allDeliverTasks(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 % The product has to have the correct base color.
-impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), base(O, B), not base(P, B).
+impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), base(O, B), not productBase(P, B).
 % The product has to have the correct cap color.
-impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), cap(O, C), not cap(P, C, GT).
+impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), cap(O, C), not productCap(P, C, GT).
 % The all rings has to be mounted.
 impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color),
-						not ring(P, Ring, Color, GT).
+						not productRing(P, Ring, Color, GT).
 
 % Do not deliver before its time.
 impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderBegin(O, B), B > GT + CT, robot(R),
