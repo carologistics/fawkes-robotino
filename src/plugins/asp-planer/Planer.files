@@ -16,6 +16,7 @@ asp_planer_graph.cpp
 ../../agents/asp/exploration.lp
 ../../agents/asp/facts.lp
 ../../agents/asp/feedRS.lp
+../../agents/asp/functions.lp
 ../../agents/asp/getBase.lp
 ../../agents/asp/getProduct.lp
 ../../agents/asp/goal.lp

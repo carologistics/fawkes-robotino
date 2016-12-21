@@ -10,7 +10,7 @@ Horizon = 120
 Start = 0
 End = 0
 
-CancelSolveTime = 3
+StepSeconds = 3
 
 StartDelivery = 240
 EndDelivery = 1140
