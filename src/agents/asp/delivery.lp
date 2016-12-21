@@ -67,13 +67,13 @@ impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), ring
 						not ring(P, Ring, Color, GT).
 
 % Do not deliver before its time.
-impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderBegin(O, B), B < GT + CT, robot(R),
+impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderBegin(O, B), B > GT + CT, robot(R),
 						GT = 0..@horizon()-1.
 % Do not deliver after its time.
-impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D > GT + CT, robot(R),
+impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D < GT + CT, robot(R),
 						GT = 0..@horizon()-1.
 % Do not late deliver before its time.
-impossible(R, T, GT) :- lateDeliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D < GT + CT,
+impossible(R, T, GT) :- lateDeliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D > GT + CT,
 						robot(R), GT = 0..@horizon()-1.
 
 
