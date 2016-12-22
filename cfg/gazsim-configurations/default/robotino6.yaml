@@ -17,7 +17,3 @@ fawkes:
   mainapp:
     loggers: console;file/debug:debug6.log
 
-    net:
-      tcp_port: !tcp-port 1926
-      service_name: "Fawkes on Gazsim Robotino 6 (Magenta)"
-
