@@ -29,8 +29,27 @@ OBJS_mps_laser_gen = mps-laser-gen_plugin.o mps-laser-gen_thread.o
 CFLAGS +=  $(CFLAGS_TF) $(CFLAGS_NAVGRAPH) $(CFLAGS_EIGEN3) $(CFLAGS_ROS) $(call ros-pkg-cflags,visualization_msgs)
 LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_NAVGRAPH) $(LDFLAGS_EIGEN3) $(LDFLAGS_ROS) $(call ros-pkg-lflags,visualization_msgs)
 
-PLUGINS_all = $(PLUGINDIR)/mps-laser-gen.$(SOEXT)
+ifeq ($(HAVE_ROS)$(call ros-have-pkg,visualization_msgs),11)
+  PLUGINS_all = $(PLUGINDIR)/mps-laser-gen.$(SOEXT)
+else
+  ifneq ($(HAVE_ROS),1)
+    WARN_TARGETS += warning_ros
+  endif
+  ifneq ($(call ros-have-pkg,visualization_msgs),1)
+    WARN_TARGETS += warning_visualization_msgs
+  endif
+endif
 
 OBJS_all = $(OBJS_mps-laser-gen)
+
+ifeq ($(OBJSSUBMAKE),1)
+all: $(WARN_TARGETS)
+
+.PHONY: warning_ros warning_visualization_msgs
+warning_ros:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting mps-laser-gen plugin$(TNORMAL) (ROS not found)"
+warning_visualization_msgs:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting mps-laser-gen plugin$(TNORMAL) (ROS package visualization_msgs not found)"
+endif
 
 include $(BUILDSYSDIR)/base.mk
