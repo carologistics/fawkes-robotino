@@ -23,6 +23,8 @@ asp_planer_graph.cpp
 ../../agents/asp/instance1.lp
 ../../agents/asp/instance-exploration.lp
 ../../agents/asp/instance-exploration-check.lp
+../../agents/asp/instance-r1-o1-c0-check.lp
+../../agents/asp/instance-r2-o1-c2.0-check.lp
 ../../agents/asp/machines.lp
 ../../agents/asp/mountCap.lp
 ../../agents/asp/mountRing.lp
