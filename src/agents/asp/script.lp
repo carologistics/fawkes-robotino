@@ -92,7 +92,10 @@ class Control:
 
 		releaseDriveDuration(self.CTL)
 
-		for gt in gameRange():
+		gameTimes = gameRange()
+		gameTimesCount = len(gameTimes)
+		for index in range(0, gameTimesCount):
+			gt = gameTimes[index]
 			if gt >= minDeliveryTime() and not self.ProductionStarted:
 				self.ProductionStarted = True
 				for ring in self.RingColors:
@@ -117,6 +120,34 @@ class Control:
 
 			print("Solve " + str(gt), flush = True)
 			self.solve()
+			if index < gameTimesCount - 1:
+				nextGT = gameTimes[index+1]
+				for step in range(0, nextGT - gt + 1):
+					self.update(step)
+
+	def update(self, step):
+		prepared = self.CapStations.copy()
+		for symbol in self.LastModel.symbols():
+			if symbol.name == "rsFillState":
+				self.updateFillState(symbol)
+			elif symbol.name == "csPrepared":
+				prepared[symbol.arguments[0].string] = True
+
+		for key in prepared:
+			new = prepared[key]
+			old = self.CapStations[key]
+			if new != old:
+				print("Change " + str(key) + " prepare state from " + str(old) + " to " + str(new) + ".", flush = True)
+				self.CTL.assign_external(capStationExternal(key), new)
+				self.CapStations[key] = new
+
+	def updateFillState(self, symbol):
+		machine = symbol.arguments[0].string
+		oldFillState = self.RingStations[machine]
+		newFillState = symbol.arguments[1].number
+		print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
+		self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
+		self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
 
 	def onModel(self, model):
 		self.LastModel = model
@@ -128,6 +159,7 @@ class Control:
 			future = self.CTL.solve_async(self.onModel)
 			if not future.wait(StepSeconds):
 				future.cancel()
+				print("Interrupt solving.", flush = True)
 				future.get()
 
 	def spawnZone(self, zone):
