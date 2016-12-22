@@ -53,9 +53,8 @@ class PuckVisionInterface : public Interface
   const char * tostring_PuckColor(PuckColor value) const;
 
  private:
-#pragma pack(push,4)
   /** Internal data storage, do NOT modify! */
-  typedef struct {
+  typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     char frame[32]; /**< 
@@ -80,7 +79,6 @@ class PuckVisionInterface : public Interface
     double puck3_polar[2]; /**< Polar koordinates (Phi, R) = (x, y).
          */
   } PuckVisionInterface_data_t;
-#pragma pack(pop)
 
   PuckVisionInterface_data_t *data;
 

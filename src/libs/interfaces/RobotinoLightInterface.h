@@ -50,9 +50,8 @@ class RobotinoLightInterface : public Interface
   const char * tostring_LightState(LightState value) const;
 
  private:
-#pragma pack(push,4)
   /** Internal data storage, do NOT modify! */
-  typedef struct {
+  typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     int32_t red; /**< State of red light */
@@ -61,7 +60,6 @@ class RobotinoLightInterface : public Interface
     int32_t visibility_history; /**< visibility history */
     bool ready; /**< Data valid and ready */
   } RobotinoLightInterface_data_t;
-#pragma pack(pop)
 
   RobotinoLightInterface_data_t *data;
 

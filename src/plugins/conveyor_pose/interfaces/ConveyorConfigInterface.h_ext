@@ -39,9 +39,8 @@ class ConveyorConfigInterface : public Interface
   /* constants */
 
  private:
-#pragma pack(push,4)
   /** Internal data storage, do NOT modify! */
-  typedef struct {
+  typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     bool product_removal; /**< 
@@ -49,7 +48,6 @@ class ConveyorConfigInterface : public Interface
       This should only be activated if there is a product to be expected, otherwise the performance decreases.
      */
   } ConveyorConfigInterface_data_t;
-#pragma pack(pop)
 
   ConveyorConfigInterface_data_t *data;
 
@@ -58,13 +56,11 @@ class ConveyorConfigInterface : public Interface
   class EnableProductRemovalMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } EnableProductRemovalMessage_data_t;
-#pragma pack(pop)
 
     EnableProductRemovalMessage_data_t *data;
 
@@ -80,13 +76,11 @@ class ConveyorConfigInterface : public Interface
   class DisableProductRemovalMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } DisableProductRemovalMessage_data_t;
-#pragma pack(pop)
 
     DisableProductRemovalMessage_data_t *data;
 

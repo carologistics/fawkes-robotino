@@ -48,9 +48,8 @@ class ZoneInterface : public Interface
   const char * tostring_MPS_IN_ZONE(MPS_IN_ZONE value) const;
 
  private:
-#pragma pack(push,4)
   /** Internal data storage, do NOT modify! */
-  typedef struct {
+  typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     int32_t search_state; /**< 
@@ -60,7 +59,6 @@ class ZoneInterface : public Interface
       The ID of the tag, if set to -1 this means no TAG is known, e.g. MPS just found maybe (with laser-lines).
      */
   } ZoneInterface_data_t;
-#pragma pack(pop)
 
   ZoneInterface_data_t *data;
 

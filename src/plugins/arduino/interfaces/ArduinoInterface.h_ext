@@ -39,15 +39,13 @@ class ArduinoInterface : public Interface
   /* constants */
 
  private:
-#pragma pack(push,4)
   /** Internal data storage, do NOT modify! */
-  typedef struct {
+  typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     uint32_t z_position; /**< Current z-position */
     bool final; /**< True, if the last move command has been finished */
   } ArduinoInterface_data_t;
-#pragma pack(pop)
 
   ArduinoInterface_data_t *data;
 
@@ -56,14 +54,12 @@ class ArduinoInterface : public Interface
   class MoveUpwardsMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       uint32_t num_mm; /**< Number of mm to drive up */
     } MoveUpwardsMessage_data_t;
-#pragma pack(pop)
 
     MoveUpwardsMessage_data_t *data;
 
@@ -83,14 +79,12 @@ class ArduinoInterface : public Interface
   class MoveDownwardsMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       uint32_t num_mm; /**< Number of mm to drive down */
     } MoveDownwardsMessage_data_t;
-#pragma pack(pop)
 
     MoveDownwardsMessage_data_t *data;
 
@@ -110,13 +104,11 @@ class ArduinoInterface : public Interface
   class MoveToZ0Message : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } MoveToZ0Message_data_t;
-#pragma pack(pop)
 
     MoveToZ0Message_data_t *data;
 

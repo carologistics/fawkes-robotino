@@ -51,15 +51,13 @@ class RobotinoAmpelInterface : public Interface
   const char * tostring_AmpelState(AmpelState value) const;
 
  private:
-#pragma pack(push,4)
   /** Internal data storage, do NOT modify! */
-  typedef struct {
+  typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     int32_t state; /**< 
  */
   } RobotinoAmpelInterface_data_t;
-#pragma pack(pop)
 
   RobotinoAmpelInterface_data_t *data;
 

@@ -39,9 +39,8 @@ class TagVisionInterface : public Interface
   /* constants */
 
  private:
-#pragma pack(push,4)
   /** Internal data storage, do NOT modify! */
-  typedef struct {
+  typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     char frame[32]; /**< 
@@ -54,7 +53,6 @@ class TagVisionInterface : public Interface
       The IDs of the tags. The IDs are in the same order the Tag_nr interfaces are in
      */
   } TagVisionInterface_data_t;
-#pragma pack(pop)
 
   TagVisionInterface_data_t *data;
 

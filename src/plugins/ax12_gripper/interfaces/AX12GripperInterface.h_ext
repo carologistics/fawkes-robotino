@@ -46,9 +46,8 @@ class AX12GripperInterface : public Interface
   static const uint32_t ERROR_RIGHT_OUTOFRANGE;
 
  private:
-#pragma pack(push,4)
   /** Internal data storage, do NOT modify! */
-  typedef struct {
+  typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     uint32_t flags; /**< Flags. */
@@ -84,7 +83,6 @@ class AX12GripperInterface : public Interface
     target right value to consider the motion as final. */
     bool holds_puck; /**< True if the gripper holds a puck */
   } AX12GripperInterface_data_t;
-#pragma pack(pop)
 
   AX12GripperInterface_data_t *data;
 
@@ -93,14 +91,12 @@ class AX12GripperInterface : public Interface
   class Open_AngleMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       float angle; /**< Current angle. */
     } Open_AngleMessage_data_t;
-#pragma pack(pop)
 
     Open_AngleMessage_data_t *data;
 
@@ -120,14 +116,12 @@ class AX12GripperInterface : public Interface
   class CloseLoadMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       float offset; /**< Current offset. */
     } CloseLoadMessage_data_t;
-#pragma pack(pop)
 
     CloseLoadMessage_data_t *data;
 
@@ -147,13 +141,11 @@ class AX12GripperInterface : public Interface
   class CenterMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } CenterMessage_data_t;
-#pragma pack(pop)
 
     CenterMessage_data_t *data;
 
@@ -169,14 +161,12 @@ class AX12GripperInterface : public Interface
   class CloseMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       float offset; /**< Current offset. */
     } CloseMessage_data_t;
-#pragma pack(pop)
 
     CloseMessage_data_t *data;
 
@@ -196,14 +186,12 @@ class AX12GripperInterface : public Interface
   class OpenMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       float offset; /**< Current offset. */
     } OpenMessage_data_t;
-#pragma pack(pop)
 
     OpenMessage_data_t *data;
 
@@ -223,14 +211,12 @@ class AX12GripperInterface : public Interface
   class RelGotoZMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       int32_t rel_z; /**< New z relative to the current z, in mm. */
     } RelGotoZMessage_data_t;
-#pragma pack(pop)
 
     RelGotoZMessage_data_t *data;
 
@@ -250,13 +236,11 @@ class AX12GripperInterface : public Interface
   class StopLeftMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } StopLeftMessage_data_t;
-#pragma pack(pop)
 
     StopLeftMessage_data_t *data;
 
@@ -272,13 +256,11 @@ class AX12GripperInterface : public Interface
   class StopRightMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } StopRightMessage_data_t;
-#pragma pack(pop)
 
     StopRightMessage_data_t *data;
 
@@ -294,13 +276,11 @@ class AX12GripperInterface : public Interface
   class StopMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } StopMessage_data_t;
-#pragma pack(pop)
 
     StopMessage_data_t *data;
 
@@ -316,13 +296,11 @@ class AX12GripperInterface : public Interface
   class FlushMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } FlushMessage_data_t;
-#pragma pack(pop)
 
     FlushMessage_data_t *data;
 
@@ -338,13 +316,11 @@ class AX12GripperInterface : public Interface
   class CalibrateMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } CalibrateMessage_data_t;
-#pragma pack(pop)
 
     CalibrateMessage_data_t *data;
 
@@ -360,13 +336,11 @@ class AX12GripperInterface : public Interface
   class ParkMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
     } ParkMessage_data_t;
-#pragma pack(pop)
 
     ParkMessage_data_t *data;
 
@@ -382,15 +356,13 @@ class AX12GripperInterface : public Interface
   class GotoMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       float left; /**< Current left. */
       float right; /**< Current right. */
     } GotoMessage_data_t;
-#pragma pack(pop)
 
     GotoMessage_data_t *data;
 
@@ -413,9 +385,8 @@ class AX12GripperInterface : public Interface
   class TimedGotoMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       float time_sec; /**< Time in seconds when to reach
@@ -423,7 +394,6 @@ class AX12GripperInterface : public Interface
       float left; /**< Current left. */
       float right; /**< Current right. */
     } TimedGotoMessage_data_t;
-#pragma pack(pop)
 
     TimedGotoMessage_data_t *data;
 
@@ -449,15 +419,13 @@ class AX12GripperInterface : public Interface
   class SetServoMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       uint32_t servoID; /**< Servo ID. */
       float angle; /**< Target Servo angle. */
     } SetServoMessage_data_t;
-#pragma pack(pop)
 
     SetServoMessage_data_t *data;
 
@@ -480,14 +448,12 @@ class AX12GripperInterface : public Interface
   class SetEnabledMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       bool enabled; /**< Is the left/right unit enabled? */
     } SetEnabledMessage_data_t;
-#pragma pack(pop)
 
     SetEnabledMessage_data_t *data;
 
@@ -507,15 +473,13 @@ class AX12GripperInterface : public Interface
   class SetVelocityMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       float left_velocity; /**< Maximum left velocity currently reached. */
       float right_velocity; /**< Maximum right velocity currently reached. */
     } SetVelocityMessage_data_t;
-#pragma pack(pop)
 
     SetVelocityMessage_data_t *data;
 
@@ -538,9 +502,8 @@ class AX12GripperInterface : public Interface
   class SetMarginMessage : public Message
   {
    private:
-#pragma pack(push,4)
     /** Internal data storage, do NOT modify! */
-    typedef struct {
+    typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
       float left_margin; /**< Margin in radians around a
@@ -548,7 +511,6 @@ class AX12GripperInterface : public Interface
       float right_margin; /**< Margin in radians around a
     target right value to consider the motion as final. */
     } SetMarginMessage_data_t;
-#pragma pack(pop)
 
     SetMarginMessage_data_t *data;
 
