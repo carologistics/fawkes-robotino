@@ -55,6 +55,29 @@ clips-agent:
     cyan-send-port: 4475
     magenta-send-port: 4485
 
+  llsf2015:
+    #agent-role:
+    
+    exploration:      
+      row: MID
+
+    dynamic-role-change/enabled: true
+    
+    play-exploration-without-refbox: false
+    # uncomment following line ONLY if you are playing without refbox
+    # unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
+
+    team-name: Carologistics-2
+    robot-name: R-5
+    robot-number: 5
+
+    peer-address: 127.0.0.1
+    peer-recv-port: 4415
+    peer-send-port: 4425
+    cyan-recv-port: 4455
+    magenta-recv-port: 4465
+    cyan-send-port: 4475
+    magenta-send-port: 4485
         
 plugins/tag_vision:
   shm_image_id: "tag_vision_robotino_5"

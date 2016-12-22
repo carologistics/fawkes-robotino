@@ -4,51 +4,7 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 clips-agent:
-  # If true, will enable watching of facts and rules
-  clips-debug: true
-
-  # Directory where to look for CLIPS files
-  clips-dirs: ["@BASEDIR@/src/agents/"]
-
-  # If CLIPS debugging is enabled, certain rules and facts can be excluded
-  # from watching, e.g. if they are showing up at too high frequencies or
-  # are not of interest.
-  unwatch-facts: ["time"]
-  unwatch-rules: ["time-retract", "blackboard-read"]
-
-  # If true, simulate skills (assuming they always succeed) instead of
-  # actually executing the skills. The time indicates how long it should
-  # take to declare success on skill execution. Note that this cannot
-  # simulate side effects, like a called component writing to an interface
-  skill-sim: false
-  skill-sim-time: 2.0
-
-  # automatically pre-require redefine-warning feature? Enabling
-  # this in the plugin instead of in the initial code (init.clp) is
-  # beneficial because it already catches errors in said file.
-  request-redefine-warning-feature: true
-
-  # If set to true, will trigger the assertion of a (time (now)) fact in
-  # each loop. This can be used to trigger loop events in CLIPS.
-  assert-time-each-loop: true
-
-  # If set to true will force the acquisition of the skiller control.
-  # This is particularly useful to kick an SkillGUI which is holding
-  # the lock just due to an oversight.
-  steal-skiller-control: true
- 
-  # Agent name. On startup the clips-agent will try to resolve a file named
-  # <agent name>.clp. It must be in the CLIPS path directories.
-  #
-  # Note that this release does not include the production phase code for 2016
-  # for the rcll2016 domain model and agent specification
-  agent: rcll2016/rcll2016
-  # To use the 2015 agent, which does include the old production phase code,
-  # uncomment the following line. The config values are in clips-agent-2015.yaml.
-  # agent: llsf2015/llsf2015
-
- 
-  rcll2016:
+  llsf2015:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: nothing
         
@@ -83,9 +39,6 @@ clips-agent:
       R-5: 7
       R-6: 14
     
-    #Timeout before the robot starts to drive into the field after its leading robot
-    #move-into-field-waittime: 2
-
     #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
     cap-station:
       assigned-color:
