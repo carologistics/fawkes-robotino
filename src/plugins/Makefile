@@ -31,7 +31,6 @@ SUBDIRS	= clips-motor-switch \
 	  conveyor_vision \
 	  motor-led \
 		laser_front_dist \
-		webtools-bridge \
 		mps-laser-gen
 
 include $(BUILDSYSDIR)/rules.mk
