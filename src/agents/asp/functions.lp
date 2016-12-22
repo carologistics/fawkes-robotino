@@ -6,10 +6,12 @@ def clingoToASP(timeSymbol):
 	return toASP(timeSymbol.number)
 
 def toASP(time):
+	if time == 0:
+		return 0
 	ret = time // Res
 	if (time % Res) * 2 >= Res:
 		ret = ret + 1
-	return ret
+	return max(ret, 1)
 
 def robots():
 	return Robots
@@ -64,10 +66,15 @@ def getTaskDuration():
 def gameSteps():
 	if StepSeconds is None:
 		return 1
-	return toASP(StepSeconds)
+	return StepSeconds
 
 def gameRange():
-	return range(toASP(Start), toASP(End) + 1, gameSteps())
+	ret = []
+	for second in range(Start, End + 1, gameSteps()):
+		step = toASP(second)
+		if step not in ret:
+			ret.append(step)
+	return ret
 
 def horizon():
 	return toASP(Horizon)
