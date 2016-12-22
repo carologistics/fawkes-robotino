@@ -33,7 +33,7 @@ task(T)                             :- getBaseTask(T).
 %points(T, -1)                       :- getBaseTask(T).
 taskDuration(T, @getTaskDuration()) :- getBaseTask(T).
 taskLocation(getBase(L, B, S), L)   :- task(getBase(L, B, S)).
-toBeDone(T, 2)                      :- getBaseTask(T), productionStarted.
+toBeDone(T, 0)                      :- getBaseTask(T), productionStarted.
 
 inUse(L, R, GT) :- begin(R, T, GT), getBaseTask(T), baseLocation(L).
 free(L, GT)  :- end(R, T, GT), getBaseTask(T), baseLocation(L).

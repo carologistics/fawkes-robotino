@@ -30,6 +30,6 @@ productCap(P, C, GT) :- productCap(P, C, GT-1), not horizon(GT).
 productCap(P, C, GT) :- capMounted(M, P, GT), capStationAssignment(M, C).
 
 productRing(P, R, C, GT) :- productRing(P, R, C, GT-1), not horizon(GT).
+productRing(P, 1, C, GT) :- ringMounted(_, P, C, GT), not productRing(P, 1, _, GT-1), not horizon(GT).
 productRing(P, R, C, GT) :- ringMounted(_, P, C, GT), not productRing(P, R, _, GT-1), productRing(P, R-1, _, GT-1),
 							not horizon(GT).
-%ring(P, 1, C, GT) :- ringMounted(_, P, C, GT), nor ring(P, 1, _, GT-1), not horizon(GT).
