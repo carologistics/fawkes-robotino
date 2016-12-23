@@ -35,6 +35,8 @@
 #include <string>
 #include <map>
 
+#include <iostream>
+
 namespace fawkes {
   class NavGraphStaticListEdgeConstraint;
 }
@@ -71,6 +73,8 @@ class ClipsSmtThread
   void clips_smt_unblock_edge(std::string env_name, std::string from, std::string to);
 **/
  private:
+  void clips_smt_dummy(std::string foo);
+
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 
 };
