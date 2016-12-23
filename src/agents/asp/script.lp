@@ -44,6 +44,16 @@ class Order:
 	def __repr__(self):
 		return "Order(Order=(%d,%d), CapTask=%s, RingTask=%s, DeliveryTasks=%s)" % (self.Info.Number, self.Info.Quantity, str(self.CapTask), str(self.RingTask[1:]), str(self.DeliveryTasks))
 
+class RobotState:
+	def __init__(self, name):
+		self.Name = name
+		self.Location = "ins-out"
+		self.Task = None
+		self.Holding = None
+
+	def __repr__(self):
+		return "RobotState(Name=%s, Task=%s, Holding=%s)" % (self.Name, self.Location, self.Task, self.Holding)
+
 class Control:
 	def __init__(self, ctl, zonesToExplore, ringColors, orders, machineFailures):
 		self.CapStations       = {"CS1" : False, "CS2" : False}
@@ -58,6 +68,7 @@ class Control:
 		self.ProductionStarted = False
 		self.RingColors        = ringColors
 		self.RingStations      = {"RS1" : 0, "RS2" : 0}
+		self.Robots            = {}
 		self.ZonesToExplore    = zonesToExplore
 
 		for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "functions.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
@@ -73,6 +84,7 @@ class Control:
 		for robot in robots():
 			self.CTL.assign_external(clingo.Function("availableRobot", [robot]), True)
 			self.CTL.assign_external(clingo.Function("robotLocation", [robot, "ins-out", 0]), True)
+			self.Robots[robot] = RobotState(robot)
 
 		print("Solve after init.", flush = True)
 		self.CTL.solve()
@@ -126,12 +138,17 @@ class Control:
 					self.update(step)
 
 	def update(self, step):
-		prepared = self.CapStations.copy()
-		for symbol in self.LastModel.symbols():
+		prepared = {"CS1" : False, "CS2" : False}
+		for symbol in self.LastModel:
 			if symbol.name == "rsFillState":
-				self.updateFillState(symbol)
+				self.updateFillState(symbol, step)
 			elif symbol.name == "csPrepared":
-				prepared[symbol.arguments[0].string] = True
+				if symbol.arguments[1].number == step:
+					prepared[symbol.arguments[0].string] = True
+			elif symbol.name == "doing":
+				self.setRobotTask(symbol, step)
+			elif symbol.name == "end":
+				self.endRobotTask(symbol, step)
 
 		for key in prepared:
 			new = prepared[key]
@@ -141,16 +158,35 @@ class Control:
 				self.CTL.assign_external(capStationExternal(key), new)
 				self.CapStations[key] = new
 
-	def updateFillState(self, symbol):
+	def updateFillState(self, symbol, step):
+		if symbol.arguments[2].number != step:
+			return
 		machine = symbol.arguments[0].string
 		oldFillState = self.RingStations[machine]
 		newFillState = symbol.arguments[1].number
-		print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
-		self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
-		self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
+		if oldFillState != newFillState:
+			print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
+			self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
+			self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
+
+	def setRobotTask(self, symbol, step):
+		if symbol.arguments[3].number != step:
+			return
+		self.Robots[symbol.arguments[0].string].Task = (symbol.arguments[1],symbol.arguments[2])
+
+	def endRobotTask(self, symbol, step):
+		if symbol.arguments[2].number != step:
+			return
+		temp = str(symbol.arguments[1]).split('(')
+		task = temp[0]
+		parameters = temp[1][:-1].split(',')
+		if task == "explore":
+			self.releaseZone(int(parameters[0]), True)
+			# Little hack, so it will have a location which is not released.
+			self.Robots[symbol.arguments[0].string].Location = "ins-out"
 
 	def onModel(self, model):
-		self.LastModel = model
+		self.LastModel = model.symbols(True)
 
 	def solve(self):
 		if StepSeconds is None:
