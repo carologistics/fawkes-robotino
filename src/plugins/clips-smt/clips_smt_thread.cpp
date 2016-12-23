@@ -72,6 +72,14 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   clips->batch_evaluate(SRCDIR"/clips/navgraph.clp");
   //clips_smt_load(clips);
 
+  clips->add_function("clips_smt_dummy",
+    sigc::slot<void>(
+      sigc::bind<0>(
+        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_dummy),
+  env_name)
+    )
+  );
+
  /**
   clips->add_function("navgraph-block-edge",
     sigc::slot<void, std::string, std::string>(
@@ -177,6 +185,12 @@ ClipsSmtThread::clips_smt_unblock_edge(std::string env_name,
 		   from.c_str(), to.c_str());
 }
 **/
+
+void
+ClipsSmtThread::clips_smt_dummy(std::string foo)
+{
+  std::cout << "This is a smt test message: " << foo << std::endl;
+}
 
 void
 ClipsSmtThread::loop()
