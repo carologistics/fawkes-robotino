@@ -1,6 +1,6 @@
 % In this file defined predicates:
 % begin(R, T, GT)                The execution of task T by robot R starts in GT.
-% doing(R, T, GT, D)             The remaining estimation for the execution of task T by robot R at GT is D.
+% doing(R, T, D, GT)             The remaining estimation for the execution of task T by robot R at GT is D.
 % end(R, T, GT)                  Robot R has finished its execution of T in GT.
 % fullDuration(T, L, D)          The duration it would take to execute task T, starting from location L is D.
 % robotLocation(R, L, GT)        The robot R is at location L in GT, that means particually he is not moving (the whole
@@ -35,16 +35,16 @@ fullDuration(T, L, DD + TD) :- taskDuration(T, TD), taskLocation(T, TL), driveDu
 :- begin(R, T, GT),  possible(R, T, GT-1), robotLocation(R, _, GT-1), toBeDone(T, GT-1).
 
 % Initialize and update doing.
-doing(R, T, GT, D) :- begin(R, T, GT), robotLocation(R, L, GT), fullDuration(T, L, D).
-doing(R, T, GT, D) :- doing(R, T, GT-1, D+1), D > 0, not horizon(GT).
+doing(R, T, D, GT) :- begin(R, T, GT), robotLocation(R, L, GT), fullDuration(T, L, D).
+doing(R, T, D, GT) :- doing(R, T, D+1, GT-1), D > 0, not horizon(GT).
 
 % Max one robot per task.
-:- 2 { doing(R, T, GT, _) : robot(R) }, task(T), horizon(H), GT = 0..H-1.
+:- 2 { doing(R, T, _, GT) : robot(R) }, task(T), horizon(H), GT = 0..H-1.
 % Max one task per robot.
-:- 2 { doing(R, T, GT, _) : task(T) }, robot(R), horizon(H), GT = 0..H-1.
+:- 2 { doing(R, T, _, GT) : task(T) }, robot(R), horizon(H), GT = 0..H-1.
 
 % Setting end.
-end(R, T, GT) :- doing(R, T, GT-1, 1), not horizon(GT).
+end(R, T, GT) :- doing(R, T, 1, GT-1), not horizon(GT).
 
 % Update robot location.
 % Set robot location to location of the task it just finished.
