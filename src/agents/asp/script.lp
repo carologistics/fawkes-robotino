@@ -65,6 +65,7 @@ class Control:
 		self.NextOrder         = 0
 		self.Orders            = orders
 		self.OrdersWithTasks   = {}
+		self.Plan              = {}
 		self.ProductionStarted = False
 		self.RingColors        = ringColors
 		self.RingStations      = {"RS1" : 0, "RS2" : 0}
@@ -85,6 +86,7 @@ class Control:
 			self.CTL.assign_external(clingo.Function("availableRobot", [robot]), True)
 			self.CTL.assign_external(clingo.Function("robotLocation", [robot, "ins-out", 0]), True)
 			self.Robots[robot] = RobotState(robot)
+			self.Plan[robot] = []
 
 		print("Solve after init.", flush = True)
 		self.CTL.solve()
@@ -137,6 +139,15 @@ class Control:
 				for step in range(0, nextGT - gt + 1):
 					self.update(step)
 
+		print("Plan:", flush = True)
+		for robot in self.Plan:
+			print("  For Robot " + robot + ":", flush = True)
+			plan = self.Plan[robot]
+			i = 1
+			for task in plan:
+				print("    " + str(i) + ": " + task, flush = True)
+				i = i + 1
+
 	def update(self, step):
 		prepared = {"CS1" : False, "CS2" : False}
 		for symbol in self.LastModel:
@@ -149,6 +160,8 @@ class Control:
 				self.setRobotTask(symbol, step)
 			elif symbol.name == "end":
 				self.endRobotTask(symbol, step)
+			elif symbol.name == "begin":
+				self.beginRobotTask(symbol, step)
 
 		for key in prepared:
 			new = prepared[key]
@@ -168,6 +181,11 @@ class Control:
 			print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
 			self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
 			self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
+
+	def beginRobotTask(self, symbol, step):
+		if symbol.arguments[2].number != step:
+			return
+		self.Plan[symbol.arguments[0].string].append(str(symbol.arguments[1]))
 
 	def setRobotTask(self, symbol, step):
 		if symbol.arguments[3].number != step:
