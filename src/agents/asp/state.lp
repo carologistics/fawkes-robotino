@@ -19,6 +19,7 @@
 #program ourTeam(t).
 
 #external toBeDone(T, 0) : task(T).
+#external robotDoing(R, T, D) : robot(R), task(T), taskDuration(T, TD), DD = @maxDriveDuration(), D = 1..TD+DD.
 
 fullDuration(T, L, DD + TD) :- taskDuration(T, TD), taskLocation(T, TL), driveDuration(L, TL, DD).
 
@@ -37,6 +38,7 @@ fullDuration(T, L, DD + TD) :- taskDuration(T, TD), taskLocation(T, TL), driveDu
 % Initialize and update doing.
 doing(R, T, D, GT) :- begin(R, T, GT), robotLocation(R, L, GT), fullDuration(T, L, D).
 doing(R, T, D, GT) :- doing(R, T, D+1, GT-1), D > 0, not horizon(GT).
+doing(R, T, D, 0) :- robotDoing(R, T, D).
 
 % Max one robot per task.
 :- 2 { doing(R, T, _, GT) : robot(R) }, task(T), horizon(H), GT = 0..H-1.
