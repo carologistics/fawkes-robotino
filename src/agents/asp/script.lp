@@ -50,6 +50,7 @@ class RobotState:
 		self.Location = "ins-out"
 		self.Task = None
 		self.Holding = None
+		self.LastStep = -1
 
 	def __repr__(self):
 		return "RobotState(Name=%s, Task=%s, Holding=%s)" % (self.Name, self.Location, self.Task, self.Holding)
@@ -84,8 +85,8 @@ class Control:
 
 		for robot in robots():
 			self.CTL.assign_external(clingo.Function("availableRobot", [robot]), True)
-			self.CTL.assign_external(clingo.Function("robotLocation", [robot, "ins-out", 0]), True)
 			self.Robots[robot] = RobotState(robot)
+			self.Robots[robot].Location = "ins-out"
 			self.Plan[robot] = []
 
 		print("Solve after init.", flush = True)
@@ -105,6 +106,8 @@ class Control:
 		self.CTL.assign_external(capStationExternal("CS2"), False)
 
 		releaseDriveDuration(self.CTL)
+
+		externals = []
 
 		gameTimes = gameRange()
 		gameTimesCount = len(gameTimes)
@@ -132,11 +135,34 @@ class Control:
 				print("Add test instance.", flush = True)
 				self.CTL.ground([("testInstance", [])])
 
+			for external in externals:
+				print("Unset external: " + str(external), flush = True)
+				self.CTL.assign_external(external, False)
+			externals = []
+
+			for robot in self.Robots:
+				info = self.Robots[robot]
+				if info.Task is not None:
+					external = clingo.Function("robotDoing", [robot, info.Task[0], info.Task[1]])
+					externals.append(external)
+					print("Set robot task: " + str(external), flush = True)
+					self.CTL.assign_external(external, True)
+				else:
+					external = clingo.Function("robotLocation", [robot, "ins-out", 0])
+					externals.append(external)
+					print("Set robot location: " + str(external), flush = True)
+					self.CTL.assign_external(external, True)
+				if info.Holding is not None:
+					external = self.holdingExternal(info.Holding)
+					externals.append(external)
+					print("Set robot holding: " + str(external), flush = True)
+					self.CTL.assign_external(external, True)
+
 			print("Solve " + str(gt), flush = True)
 			self.solve()
 			if index < gameTimesCount - 1:
 				nextGT = gameTimes[index+1]
-				for step in range(0, nextGT - gt + 1):
+				for step in range(0, nextGT - gt):
 					self.update(step)
 
 		print("Plan:", flush = True)
@@ -150,6 +176,7 @@ class Control:
 
 	def update(self, step):
 		prepared = {"CS1" : False, "CS2" : False}
+		print("Update on basis of step: " + str(step), flush = True)
 		for symbol in self.LastModel:
 			if symbol.name == "rsFillState":
 				self.updateFillState(symbol, step)
@@ -190,18 +217,23 @@ class Control:
 	def setRobotTask(self, symbol, step):
 		if symbol.arguments[3].number != step:
 			return
-		self.Robots[symbol.arguments[0].string].Task = (symbol.arguments[1],symbol.arguments[2])
+		info = self.Robots[symbol.arguments[0].string]
+		info.Task = (symbol.arguments[1],symbol.arguments[2])
+		info.LastStep = step
 
 	def endRobotTask(self, symbol, step):
 		if symbol.arguments[2].number != step:
 			return
+		info = self.Robots[symbol.arguments[0].string]
+		if info.LastStep != step:
+			info.Task = None
 		temp = str(symbol.arguments[1]).split('(')
 		task = temp[0]
 		parameters = temp[1][:-1].split(',')
 		if task == "explore":
 			self.releaseZone(int(parameters[0]), True)
 			# Little hack, so it will have a location which is not released.
-			self.Robots[symbol.arguments[0].string].Location = "ins-out"
+			info.Location = "ins-out"
 
 	def onModel(self, model):
 		self.LastModel = model.symbols(True)
