@@ -36,7 +36,7 @@ using namespace fawkes;
 /** Constructor. */
 ClipsSmtThread::ClipsSmtThread()
   : Thread("ClipsSmtThread", Thread::OPMODE_WAITFORWAKEUP),
-    CLIPSFeature("navgraph"), CLIPSFeatureAspect(this)
+    CLIPSFeature("smt"), CLIPSFeatureAspect(this) // CLIPSFeature("navgraph") before
 {
 }
 
@@ -69,11 +69,11 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   logger->log_info(name(), "Called to initialize environment %s", env_name.c_str());
 
   clips.lock();
-  clips->batch_evaluate(SRCDIR"/clips/navgraph.clp");
+  //clips->batch_evaluate(SRCDIR"/clips/navgraph.clp");
   //clips_smt_load(clips);
 
   clips->add_function("clips_smt_dummy",
-    sigc::slot<void>(
+    sigc::slot<void, std::string>(
       sigc::bind<0>(
         sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_dummy),
   env_name)
@@ -187,9 +187,9 @@ ClipsSmtThread::clips_smt_unblock_edge(std::string env_name,
 **/
 
 void
-ClipsSmtThread::clips_smt_dummy(std::string foo)
+ClipsSmtThread::clips_smt_dummy(std::string foo, std::string bar)
 {
-  std::cout << "This is a smt test message: " << foo << std::endl;
+  std::cout << "This is a smt test message: " << foo << " and " << bar << std::endl;
 }
 
 void

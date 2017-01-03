@@ -26,7 +26,7 @@
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <plugins/clips/aspect/clips_feature.h>
-#include <navgraph/aspect/navgraph.h>
+//#include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
 
 #include "clips_smt_data.h"
@@ -45,7 +45,7 @@ class ClipsSmtThread
 : public fawkes::Thread,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
-  public fawkes::NavGraphAspect,
+  //public fawkes::NavGraphAspect,
   public fawkes::CLIPSFeature,
   public fawkes::CLIPSFeatureAspect
 {
@@ -73,7 +73,7 @@ class ClipsSmtThread
   void clips_smt_unblock_edge(std::string env_name, std::string from, std::string to);
 **/
  private:
-  void clips_smt_dummy(std::string foo);
+  void clips_smt_dummy(std::string foo, std::string bar);
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 
