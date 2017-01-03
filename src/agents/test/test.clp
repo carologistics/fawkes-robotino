@@ -6,11 +6,11 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-(deffacts init 
+(deffacts init
   "Initializes clips agent."
   (init)
 )
- 
+
 
 ; Example for loading a feature
 ;(defrule enable-tf
@@ -24,6 +24,17 @@
 ;  ; or functions.
 ;  (path-load "test/test-tf.clp")
 ;)
+
+; Request clips-features
+(defrule enable-smt
+  "If smt feature is set load the smt, if it is not yet loaded."
+  (ff-feature smt)
+  (not (ff-feature-loaded smt))
+  =>
+  (printout t "Requesting smt feature" crlf)
+  (ff-feature-request "smt")
+  (path-load "test/smt-init.clp")
+)
 
 (defrule print-features
   "Print all features as they become available"
