@@ -32,7 +32,7 @@
 
 class Order {
 private:
-  //time deadLine
+  float deadLine;
   WorkingPiece target;
 };
 
