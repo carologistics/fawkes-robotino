@@ -38,7 +38,10 @@ private:
   WorkingPiece wp;
   int currentPosition;
   int targetPosition;
-  //time busyTime TODO from Igor: How to add a time var?
+  float busyTime;
+public:
+  void setId(int given_id) { id = given_id; }
+  int getId() { return id; }
 };
 
 
