@@ -50,7 +50,6 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
-
 }
 
 
@@ -189,7 +188,28 @@ ClipsSmtThread::clips_smt_unblock_edge(std::string env_name,
 void
 ClipsSmtThread::clips_smt_dummy(std::string foo, std::string bar)
 {
+  std::string cfg_base_frame_      = config->get_string("/frames/base");
+  std::string cfg_global_frame_    = config->get_string("/frames/fixed");
+  std::string cfg_nav_if_id_       = config->get_string("/navgraph/navigator_interface_id");
+  float cfg_resend_interval_ = config->get_float("/navgraph/resend_interval");
+  float cfg_replan_interval_ = config->get_float("/navgraph/replan_interval");
+  float cfg_replan_factor_   = config->get_float("/navgraph/replan_cost_factor");
+  float cfg_target_time_     = config->get_float("/navgraph/target_time");
+  float cfg_target_ori_time_ = config->get_float("/navgraph/target_ori_time");
+  bool cfg_log_graph_       = config->get_bool("/navgraph/log_graph");
+  bool cfg_abort_on_error_  = config->get_bool("/navgraph/abort_on_error");
   std::cout << "This is a smt test message: " << foo << " and " << bar << std::endl;
+  std::cout << "Moreover we test to get config values "<< std::endl;
+  std::cout << "cfg_base_frame_ " << cfg_base_frame_ << std::endl;
+  std::cout << "cfg_global_frame_ " << cfg_global_frame_ << std::endl;
+  std::cout << "cfg_nav_if_id_ " << cfg_nav_if_id_ << std::endl;
+  std::cout << "cfg_resend_interval_ " << cfg_resend_interval_ << std::endl;
+  std::cout << "cfg_replan_interval_ " << cfg_replan_interval_ << std::endl;
+  std::cout << "cfg_replan_factor_ " << cfg_replan_factor_ << std::endl;
+  std::cout << "cfg_target_time_ " << cfg_target_time_ << std::endl;
+  std::cout << "cfg_target_ori_time_ " << cfg_target_ori_time_ << std::endl;
+  std::cout << "cfg_log_graph_ " << cfg_log_graph_ << std::endl;
+  std::cout << "cfg_abort_on_error_ " << cfg_abort_on_error_ << std::endl;
 }
 
 void
