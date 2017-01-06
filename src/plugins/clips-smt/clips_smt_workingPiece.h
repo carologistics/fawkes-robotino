@@ -42,13 +42,27 @@ enum WorkingPieceComponent
 	 CAP_BLACK, CAP_GRAY};
 
 
-using namespace std;
-
 class WorkingPiece {
-private:
-  std::vector<WorkingPieceComponent> workingPieceComponents;
+private:t
+  std::vector<WorkingPieceComponent> _workingPieceComponents;
 public:
 
+	void convertToWorkPiece(std::String input)
+	{	
+		std::vector<WorkingPieceComponent> workingPieceComponents;
+		vector<char> inputAsChars (input.begin(), input.end());
+		for (int i = 0; i < inputAsChars.size(); ++i)
+		{
+			WorkingPieceComponent currentWorkingPieceComponent;
+			assert((inputAsChars[i]>= 0) && (inputAsChars[i]<10))
+			currentWorkingPieceComponent = static_cast<WorkingPieceComponent>((int)inputAsChars[i]);
+			workingPieceComponents.push_back(currentWorkingPieceComponent)
+		}
+
+		//making shure all charackters were converted:
+		assert (workingPieceComponents.size() == inputAsChars.size())
+		_workingPieceComponents = workingPieceComponents;
+	}
   //getEncodedWorkingPiece() TODO from Igor: What is the return value?
   //void setWorkingPiece() TODO from Igor: Which parameter to use?
 };
