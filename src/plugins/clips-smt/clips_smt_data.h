@@ -24,10 +24,10 @@
 #include "clips_smt_robot.h"
 #include "clips_smt_machine.h"
 #include "clips_smt_order.h"
-#include "clips_smt_thread.h"
+//#include "clips_smt_thread.h"
 
 
-struct clips_smt_data {
+struct SmtData {
   /**
     Requirements from meeting:
       Current order [dyn]
@@ -38,10 +38,24 @@ struct clips_smt_data {
 
       Robots position and length of current action?
   */
-  std::vector<Robot> robots;
-  std::vector<Machine> machines;
-  std::vector<Order> currentOrders;
+  std::vector<Robot> _robots;
+  std::vector<Machine> _machines;
+  std::vector<Order> _currentOrders;
   //pointsForWorkingStep
   //NavGraph
+
+  std::string toString() {
+    std::string dataDescription = "\n";
+    for(Robot robot: _robots) {
+        dataDescription += robot.toString() + "\n";
+    }
+    for(Machine machine: _machines) {
+        dataDescription += machine.toString() + "\n";
+    }
+    for(Order order: _currentOrders) {
+        dataDescription += order.toString() + "\n";
+    }
+    return dataDescription;
+  }
 };
 #endif

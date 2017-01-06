@@ -50,6 +50,17 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
+  Robot robot(42, 1, 2);
+  _smtData._robots.push_back(robot);
+
+  Machine machine(27,2,3,10,MachineType::cap);
+  _smtData._machines.push_back(machine);
+
+  Order order(30);
+  _smtData._currentOrders.push_back(order);
+
+  std::cout << _smtData.toString() << std::endl;
+
 }
 
 
