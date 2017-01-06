@@ -21,50 +21,87 @@
 #ifndef _PLUGINS_CLIPS_SMT_WORKINGPIECE_H_
 #define _PLUGINS_CLIPS_SMT_WORKINGPIECE_H_
 
+#include <cassert>
+
 /*
  * Base Colors:
- * Red
- * Black 
- * Silver
+ * Red 0
+ * Black 1
+ * Silver 2
  * Ring Colors:
- * Blue
- * Green
- * Yellow
- * Orange
+ * Blue 3
+ * Green 4
+ * Yellow 5
+ * Orange 6
  * Cap Colors:
- * Gray
- * Black
+ * Gray 7
+ * Black 8
 */
 
 enum WorkingPieceComponent
-	{BASE_RED, BASE_SILVER, BASE_BLACK, 
+	{BASE_RED, BASE_SILVER, BASE_BLACK,
 	 RING_BLUE, RING_GREEN, RING_YELLOW, RING_ORANGE,
 	 CAP_BLACK, CAP_GRAY};
 
 
 class WorkingPiece {
-private:t
-  std::vector<WorkingPieceComponent> _workingPieceComponents;
-public:
 
-	void convertToWorkPiece(std::String input)
-	{	
+private:
+  std::vector<WorkingPieceComponent> _workingPieceComponents;
+
+public:
+	WorkingPiece(){}
+
+	WorkingPiece(std::string input)
+	{
+		_workingPieceComponents = convertToWorkPiece(input);
+	}
+
+	std::vector<WorkingPieceComponent> convertToWorkPiece(std::string input)
+	{
 		std::vector<WorkingPieceComponent> workingPieceComponents;
-		vector<char> inputAsChars (input.begin(), input.end());
-		for (int i = 0; i < inputAsChars.size(); ++i)
+		std::vector<char> inputAsChars (input.begin(), input.end());
+		for (unsigned int i = 0; i < inputAsChars.size(); ++i)
 		{
 			WorkingPieceComponent currentWorkingPieceComponent;
-			assert((inputAsChars[i]>= 0) && (inputAsChars[i]<10))
+			assert((inputAsChars[i]>= 0) && (inputAsChars[i]<9));
 			currentWorkingPieceComponent = static_cast<WorkingPieceComponent>((int)inputAsChars[i]);
-			workingPieceComponents.push_back(currentWorkingPieceComponent)
+			workingPieceComponents.push_back(currentWorkingPieceComponent);
 		}
 
 		//making shure all charackters were converted:
-		assert (workingPieceComponents.size() == inputAsChars.size())
-		_workingPieceComponents = workingPieceComponents;
+		assert (workingPieceComponents.size() == inputAsChars.size());
+		return workingPieceComponents;
 	}
-  //getEncodedWorkingPiece() TODO from Igor: What is the return value?
-  //void setWorkingPiece() TODO from Igor: Which parameter to use?
+
+  int getBaseComponent()
+	{
+		for(WorkingPieceComponent workingPieceComponent: _workingPieceComponents) {
+			if(workingPieceComponent>=0 && workingPieceComponent<3) {
+				return workingPieceComponent;
+			}
+		}
+
+		return -1;
+	}
+
+	// std::vector<int> getRingComponent()
+
+	int getCapComponent()
+	{
+		for(WorkingPieceComponent workingPieceComponent: _workingPieceComponents) {
+			if(workingPieceComponent>=7 && workingPieceComponent<9) {
+				return workingPieceComponent;
+			}
+		}
+
+		return -1;
+	}
+
+	std::string toString()
+	{
+		return "_workingPieceComponents";
+	}
 };
 
 #endif

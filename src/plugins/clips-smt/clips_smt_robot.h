@@ -22,7 +22,7 @@
 #define _PLUGINS_CLIPS_SMT_ROBOT_H_
 
 #include "clips_smt_workingPiece.h"
-#include "clips_smt_data.h"
+//#include "clips_smt_data.h"
 
 
 using namespace std;
@@ -36,6 +36,8 @@ using namespace std;
   */
 
 class Robot {
+  typedef float smtTime;
+  //time format used for the SMT solving is defined here
 private:
   unsigned int _id;
   WorkingPiece _wp;
@@ -45,32 +47,37 @@ private:
 
 public:
   //constructor
-  Robot(unsigned int id, int currentPos, int targetPos, WorkingPiece wp)
+  Robot(unsigned int id, int currentPos, int targetPos)
   {
     _id = id;
     _currentPosition = currentPos;
     _targetPosition = targetPos;
-    _wp = wp;
+    //_wp = wp;
   }
 
-  void setId(int id) 
-  { 
-    _id = id; 
-  }
-  
   unsigned int getId() const
-  { 
-    return _id; 
+  {
+    return _id;
   }
-  
+
   int getCurrentPosition() const
   {
     return _currentPosition;
   }
-  
+
+  void setCurrentPosition(int currentPos)
+  {
+    _currentPosition = currentPos;
+  }
+
   int getTargetPosition() const
   {
     return _targetPosition;
+  }
+
+  void setTargetPosition(int targetPos)
+  {
+    _targetPosition = targetPos;
   }
 
   smtTime getBusyTimeLeft() const
@@ -78,7 +85,24 @@ public:
     return _busyTimeLeft;
   }
 
+  void setBusyTimeLeft(smtTime busyTimeLeft)
+  {
+    _busyTimeLeft = busyTimeLeft;
+  }
 
+  std::string toString()
+  {
+    std::string robotDescription;
+    robotDescription += "Robot [id:";
+    robotDescription += std::to_string(_id);
+    robotDescription += "] is at position ";
+    robotDescription += std::to_string(_currentPosition);
+    robotDescription += " -> ";
+    robotDescription += std::to_string(_targetPosition);
+    robotDescription += " and holds workingPiece ";
+    robotDescription += _wp.toString();
+    return robotDescription;
+  }
 };
 
 

@@ -22,9 +22,9 @@
 #define _PLUGINS_CLIPS_SMT_ORDER_H_
 
 
-#include "clips_smt_thread.h"
+//#include "clips_smt_thread.h"
 #include "clips_smt_workingPiece.h"
-#include "clips_smt_data.h"
+//#include "clips_smt_data.h"
 
 
 
@@ -36,16 +36,17 @@
 */
 
 class Order {
-
+  typedef float smtTime;
+  //time format used for the SMT solving is defined here
 private:
-  	smtTime _deadline; 
+  	smtTime _deadline;
   	WorkingPiece _targetPiece;
 
 public:
-	Order(smtTime deadline, WorkingPiece targetPiece)
+	Order(smtTime deadline)
 	{
 		_deadline = deadline;
-		_targetPiece = targetPiece
+		//_targetPiece = targetPiece;
 	}
 
 	smtTime getDeadline() const
@@ -53,7 +54,7 @@ public:
 		return _deadline;
 	}
 
-	void setDeadline(deadline) const
+	void setDeadline(smtTime deadline)
 	{
 		_deadline = deadline;
 	}
@@ -63,10 +64,20 @@ public:
 		return _targetPiece;
 	}
 
-	void setWorkingPiece(targetPiece) 
+	void setWorkingPiece(WorkingPiece targetPiece)
 	{
 		_targetPiece = targetPiece;
 	}
+
+  std::string toString()
+  {
+    std::string orderDescription;
+    orderDescription += "Order has deadline ";
+    orderDescription += std::to_string(_deadline);
+    orderDescription += " and requires workingPiece ";
+    orderDescription += _targetPiece.toString();
+    return orderDescription;
+  }
 };
 
 #endif

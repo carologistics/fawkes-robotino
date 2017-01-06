@@ -22,12 +22,12 @@
 #define _PLUGINS_CLIPS_SMT_MACHINE__H_
 
 #include "clips_smt_workingPiece.h"
-#include "clips_smt_data.h"
+//#include "clips_smt_data.h"
 
   /**
     Requirements from meeting:
       Current working piece for all machines [dyn]
-      List of machines 
+      List of machines
       Size of aux-materials-queue [dyn]
       Lenght of working step of a machine [sta2]
   */
@@ -35,14 +35,15 @@
 enum MachineType {base, cap, ring, delivery};
 
 class Machine {
-
+  typedef float smtTime;
+  //time format used for the SMT solving is defined here
 private:
   unsigned int _id;
   int _positionA;
   int _positionB;
   WorkingPiece _wp;
-  smtTime _defaultBusyTime
-  smtTime _busyTimeLeft
+  smtTime _defaultBusyTime;
+  smtTime _busyTimeLeft;
   MachineType _machineType; // TODO from Igor: Or maybe Vector<int> outputRequirement
 
 public:
@@ -72,12 +73,12 @@ public:
   {
     return _positionB;
   }
-  
+
   WorkingPiece getWorkingPiece() const
   {
     return _wp;
   }
-  
+
   void setWorkingPiece(WorkingPiece wp)
   {
     //TODO (Lukas) add working piece check for wp here
@@ -99,6 +100,21 @@ public:
     return _machineType;
   }
 
+  std::string toString()
+  {
+    std::string machineDescription;
+    machineDescription += "Machine [id:";
+    machineDescription += std::to_string(_id);
+    machineDescription += ", machineType:";
+    machineDescription += std::to_string(_machineType);
+    machineDescription += "] is at positions [";
+    machineDescription += std::to_string(_positionA);
+    machineDescription += ", ";
+    machineDescription += std::to_string(_positionB);
+    machineDescription += "] and holds workingPiece ";
+    machineDescription += _wp.toString();
+    return machineDescription;
+  }
 };
 
 
