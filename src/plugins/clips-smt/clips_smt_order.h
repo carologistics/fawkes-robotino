@@ -21,7 +21,12 @@
 #ifndef _PLUGINS_CLIPS_SMT_ORDER_H_
 #define _PLUGINS_CLIPS_SMT_ORDER_H_
 
+
+#include "clips_smt_thread.h"
 #include "clips_smt_workingPiece.h"
+#include "clips_smt_data.h"
+
+
 
 /**
 (Global and) local deadlines [dyn]
@@ -31,9 +36,37 @@
 */
 
 class Order {
+
 private:
-  float deadLine;
-  WorkingPiece target;
+  	smtTime _deadline; 
+  	WorkingPiece _targetPiece;
+
+public:
+	Order(smtTime deadline, WorkingPiece targetPiece)
+	{
+		_deadline = deadline;
+		_targetPiece = targetPiece
+	}
+
+	smtTime getDeadline() const
+	{
+		return _deadline;
+	}
+
+	void setDeadline(deadline) const
+	{
+		_deadline = deadline;
+	}
+
+	WorkingPiece getWorkingPiece() const
+	{
+		return _targetPiece;
+	}
+
+	void setWorkingPiece(targetPiece) 
+	{
+		_targetPiece = targetPiece;
+	}
 };
 
 #endif

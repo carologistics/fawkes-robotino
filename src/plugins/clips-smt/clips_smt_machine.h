@@ -22,11 +22,12 @@
 #define _PLUGINS_CLIPS_SMT_MACHINE__H_
 
 #include "clips_smt_workingPiece.h"
+#include "clips_smt_data.h"
 
   /**
     Requirements from meeting:
       Current working piece for all machines [dyn]
-      List of machines
+      List of machines 
       Size of aux-materials-queue [dyn]
       Lenght of working step of a machine [sta2]
   */
@@ -34,14 +35,71 @@
 enum MachineType {base, cap, ring, delivery};
 
 class Machine {
+
 private:
-  int id;
-  int positionA;
-  int positionB;
-  WorkingPiece wp;
-  //time defaultBusyTime
-  //time busyTimeLeft
-  MachineType machineType; // TODO from Igor: Or maybe Vector<int> outputRequirement
+  unsigned int _id;
+  int _positionA;
+  int _positionB;
+  WorkingPiece _wp;
+  smtTime _defaultBusyTime
+  smtTime _busyTimeLeft
+  MachineType _machineType; // TODO from Igor: Or maybe Vector<int> outputRequirement
+
+public:
+
+  //Constructor
+  Machine(unsigned int id, int posA, int posB, smtTime defaultBusyTime, MachineType machineType)
+  {
+    _id = id;
+    _positionA = posA;
+    _positionB = posB;
+    _defaultBusyTime = defaultBusyTime;
+    _machineType = machineType;
+  }
+
+  //getter & setters
+  unsigned int getId() const
+  {
+    return _id;
+  }
+
+  int getPositionA() const
+  {
+    return _positionA;
+  }
+
+  int getPositionB() const
+  {
+    return _positionB;
+  }
+  
+  WorkingPiece getWorkingPiece() const
+  {
+    return _wp;
+  }
+  
+  void setWorkingPiece(WorkingPiece wp)
+  {
+    //TODO (Lukas) add working piece check for wp here
+    _wp = wp;
+  }
+
+  void setBusyTimeLeft( smtTime timeLeft)
+  {
+    _busyTimeLeft = timeLeft;
+  }
+
+  smtTime getBusyTimeLeft() const
+  {
+    return _busyTimeLeft;
+  }
+
+  MachineType getMachineType() const
+  {
+    return _machineType;
+  }
+
 };
+
 
 #endif
