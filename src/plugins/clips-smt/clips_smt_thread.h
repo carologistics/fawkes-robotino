@@ -29,8 +29,6 @@
 //#include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
 
-#include "clips_smt_data.h"
-
 #include <vector>
 #include <string>
 #include <map>
@@ -50,6 +48,10 @@ class ClipsSmtThread
   public fawkes::CLIPSFeatureAspect
 {
  public:
+
+  typedef int smtTime;
+  //time format used for the SMT solving is defined here
+
   ClipsSmtThread();
   virtual ~ClipsSmtThread();
 

@@ -22,6 +22,8 @@
 #define _PLUGINS_CLIPS_SMT_ROBOT_H_
 
 #include "clips_smt_workingPiece.h"
+#include "clips_smt_data.h"
+
 
 using namespace std;
 
@@ -30,18 +32,53 @@ using namespace std;
       Current working piece for all robots [dyn]
       List of robots
       Number of robots and identity [sta2]
+
   */
 
 class Robot {
 private:
-  int id;
-  WorkingPiece wp;
-  int currentPosition;
-  int targetPosition;
-  float busyTime;
+  unsigned int _id;
+  WorkingPiece _wp;
+  int _currentPosition;
+  int _targetPosition;
+  smtTime _busyTimeLeft;
+
 public:
-  void setId(int given_id) { id = given_id; }
-  int getId() { return id; }
+  //constructor
+  Robot(unsigned int id, int currentPos, int targetPos, WorkingPiece wp)
+  {
+    _id = id;
+    _currentPosition = currentPos;
+    _targetPosition = targetPos;
+    _wp = wp;
+  }
+
+  void setId(int id) 
+  { 
+    _id = id; 
+  }
+  
+  unsigned int getId() const
+  { 
+    return _id; 
+  }
+  
+  int getCurrentPosition() const
+  {
+    return _currentPosition;
+  }
+  
+  int getTargetPosition() const
+  {
+    return _targetPosition;
+  }
+
+  smtTime getBusyTimeLeft() const
+  {
+    return _busyTimeLeft;
+  }
+
+
 };
 
 

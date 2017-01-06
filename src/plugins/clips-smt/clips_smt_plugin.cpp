@@ -24,19 +24,20 @@
 
 using namespace fawkes;
 
+
 /** CLIPS smt plugin.
  * @author Igor Nicolai Bongartz
  */
 class ClipsSmtPlugin : public fawkes::Plugin
 {
  public:
-  /** Constructor.
-   * @param config Fawkes configuration
-   */
-  ClipsSmtPlugin(Configuration *config) : Plugin(config)
-  {
-    thread_list.push_back(new ClipsSmtThread());
-  }
+	/** Constructor.
+	* @param config Fawkes configuration
+	*/
+	ClipsSmtPlugin(Configuration *config) : Plugin(config)
+	{
+	thread_list.push_back(new ClipsSmtThread());
+}
 };
 
 

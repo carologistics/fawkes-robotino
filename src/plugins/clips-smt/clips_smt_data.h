@@ -24,8 +24,8 @@
 #include "clips_smt_robot.h"
 #include "clips_smt_machine.h"
 #include "clips_smt_order.h"
+#include "clips_smt_thread.h"
 
-using namespace std;
 
 struct clips_smt_data {
   /**
