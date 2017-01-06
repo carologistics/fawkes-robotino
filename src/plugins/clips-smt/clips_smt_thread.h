@@ -49,7 +49,7 @@ class ClipsSmtThread
 {
  public:
 
-  typedef int smtTime;
+  typedef float smtTime;
   //time format used for the SMT solving is defined here
 
   ClipsSmtThread();
