@@ -21,12 +21,34 @@
 #ifndef _PLUGINS_CLIPS_SMT_WORKINGPIECE_H_
 #define _PLUGINS_CLIPS_SMT_WORKINGPIECE_H_
 
+/*
+ * Base Colors:
+ * Red
+ * Black 
+ * Silver
+ * Ring Colors:
+ * Blue
+ * Green
+ * Yellow
+ * Orange
+ * Cap Colors:
+ * Gray
+ * Black
+*/
+
+enum WorkingPieceComponent
+	{BASE_RED, BASE_SILVER, BASE_BLACK, 
+	 RING_BLUE, RING_GREEN, RING_YELLOW, RING_ORANGE,
+	 CAP_BLACK, CAP_GRAY};
+
+
 using namespace std;
 
 class WorkingPiece {
 private:
-  std::vector<int> pieces;
+  std::vector<WorkingPieceComponent> workingPieceComponents;
 public:
+
   //getEncodedWorkingPiece() TODO from Igor: What is the return value?
   //void setWorkingPiece() TODO from Igor: Which parameter to use?
 };
