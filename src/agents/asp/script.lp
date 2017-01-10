@@ -165,6 +165,10 @@ class Control:
 				for step in range(0, nextGT - gt):
 					self.update(step)
 
+		steps = horizonSteps()
+		for step in range(steps[0], steps[1] + 1):
+			self.extractPlan(step)
+
 		print("Plan:", flush = True)
 		for robot in self.Plan:
 			print("  For Robot " + robot + ":", flush = True)
@@ -173,6 +177,11 @@ class Control:
 			for task in plan:
 				print("    " + str(i) + ": " + task, flush = True)
 				i = i + 1
+
+	def extractPlan(self, step):
+		for symbol in self.LastModel:
+			if symbol.name == "begin":
+				self.beginRobotTask(symbol, step)
 
 	def update(self, step):
 		prepared = {"CS1" : False, "CS2" : False}
