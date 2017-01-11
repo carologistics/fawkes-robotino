@@ -99,6 +99,16 @@ class Product:
 	def __repr__(self):
 		return "Product(Base=%s, Rings=%s, Cap=%s)" % (self.Base, str(self.Rings), self.Cap)
 
+class Machine:
+	def __init__(self, name):
+		self.Name = name
+		self.Storing = None
+		self.Working = None
+		self.Broken = None
+
+	def __repr__(self):
+		return "Machine(Name=%s, Storing=%s, Working=%s, Broken=%s)" % (self.Name, str(self.Storing), str(self.Working), str(self.Broken))
+
 class Control:
 	def __init__(self, ctl, zonesToExplore, ringColors, orders, machineFailures):
 		self.CapStations       = {"CS1" : False, "CS2" : False}
@@ -134,6 +144,9 @@ class Control:
 			self.Robots[robot] = RobotState(robot)
 			self.Robots[robot].Location = "ins-out"
 			self.Plan[robot] = []
+
+		for machine in ["BS", "DS", "RS1", "RS2", "CS1", "CS2"]:
+			self.Machines[machine] = Machine(machine)
 
 		print("Solve after init.", flush = True)
 		self.CTL.solve()
@@ -242,6 +255,10 @@ class Control:
 					self.CTL.assign_external(external, True)
 				externals.extend(productExternals)
 
+			for name in self.Machines:
+				machine = self.Machines[name]
+				# TODO hier weiter machen!
+
 			print("Solve " + str(gt), flush = True)
 			self.solve()
 			if index < gameTimesCount - 1:
@@ -263,6 +280,8 @@ class Control:
 				i = i + 1
 
 	def extractPlan(self, step):
+		if self.LastModel is None:
+			return
 		for symbol in self.LastModel:
 			if symbol.name == "begin":
 				self.beginRobotTask(symbol, step)
@@ -278,6 +297,17 @@ class Control:
 				self.endRobotTask(symbol, step)
 			elif symbol.name == "begin":
 				self.beginRobotTask(symbol, step)
+
+		for name in self.Machines:
+			machine = self.Machines[name]
+			if machine.Broken is not None:
+				machine.Broken = machine.Broken - 1
+				if machine.Broken == 0:
+					machine.Broken = None
+			elif machine.Working is not None:
+				machine.Working = machine.Working - 1
+				if machine.Working == 0:
+					machine.Working = None
 
 	def updateFillState(self, symbol, step):
 		if symbol.arguments[2].number != step:
@@ -333,8 +363,8 @@ class Control:
 		elif task == "prepareCS":
 			machine = parameters[0][1][1]
 			self.updatePrepareState(machine, True)
-			product = self.spawnProduct("TRANSPARENT")
-			#self.machineProcess(machine, product)
+			productIndex = self.spawnProduct("TRANSPARENT")
+			self.machineProcess(machine, productIndex)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 
 	def spawnProduct(self, base):
@@ -342,7 +372,12 @@ class Control:
 			print("Trying to spawn a new product, but there already the maximum of products in use, increase MaxProducts!", flush = True)
 			sys.exit()
 		self.Products.append(Product(base))
-		return self.Products[-1]
+		return len(self.Products)
+
+	def machineProcess(self, machineName, productIndex):
+		machine = self.Machines[machineName]
+		machine.Holding = productIndex
+		machine.Working = machineWorkingDuration(machineName)
 
 	def onModel(self, model):
 		self.LastModel = model.symbols(True)
