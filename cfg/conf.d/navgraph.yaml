@@ -16,7 +16,7 @@ navgraph:
 
   # Graph file to use for path planning
   graph_file: navgraph-basis.yaml
- 
+
   # Interval in which the resend the goto command; sec
   resend_interval: 1
 
@@ -32,13 +32,13 @@ navgraph:
   # if it is at most as expensive as the current plan. When setting this to
   # 2.0, the new plan may be up to twice as expensive as the current plan
   # to switch.
-  replan_cost_factor: 1.5                
+  replan_cost_factor: 1.5
 
   # Update the visualization at this interval. This will trigger a compuation
   # of all constraints and if any change occurs the graph will be published
   # again. This is done whether the robot is currently driving or standing still.
-  visualization_interval: 0.5      
-  
+  visualization_interval: 0.5
+
   # Time to keep moving after the target tolerance has been reached; sec
   target_time: 2.0 #0.6
 
@@ -65,7 +65,7 @@ navgraph:
   visualization:
 
     # Set to true to enable visualization by publishing messages for rviz
-    enable: true
+    enable: false
 
     # The color for the cost factors (from constraints) of an edge is
     # scaled from red over orange to yellow (from 0.0 to 1.0). The
@@ -77,4 +77,3 @@ navgraph:
 
   interactive:
     out-file: navgraph-interactive-saved.yaml
-
