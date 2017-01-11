@@ -2,6 +2,7 @@
 % base                           The static facts, regarding machines.
 %
 % In this file defined predicates:
+% broken(M, D, GT)               The machine M is broken for at least D time steps.
 % csPrepared(M, GT)              If the cap station M is prepared to mount a cap in GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % processing(M, P, D, GT)        The machine M processes product P for the next D time steps from GT on.
@@ -9,7 +10,9 @@
 % storing(M, P, GT)              Machine M stores product P in GT.
 %
 % Additionally used predicates:
+% baseStation(M)                 Defined in facts.lp
 % capMounted(M, P, GT)           Defined in mountCap.lp
+% deliveryStation(M)             Defined in facts.lp
 % deliveryTimes(B, E)            Defined in facts.lp
 % free(L, GT)                    Defined in the task descriptions.
 % pickUp(R, P, GT)               Defined in some tasks descriptions.
@@ -21,9 +24,11 @@
 % ringStation(M)                 Defined in facts.lp
 % rsFed(M, GT)                   Defined in feedRS.lp
 
+#external broken(M, D, 0) : capStation(M), D = 1..@clingoToASP(60).
+#external broken(M, D, 0) : ringStation(M), D = 1..@clingoToASP(60).
 #external csPrepared(M, 0) : capStation(M).
 #external rsFillState(M, S, 0) : ringStation(M), S = 0..3.
-#external processing(M, P, D, 0) : machine(M), product(P), D = 1..@maxWorkingDuration().
+#external processing(M, P, D, 0) : machine(M), product(P), D = 1..@maxWorkingDuration(), not baseStation(M).
 #external storing(M, P, 0) : capStation(M), product(P).
 #external storing(M, P, 0) : ringStation(M), product(P).
 
@@ -36,8 +41,10 @@ inUse(L, R, GT) :- inUse(L, R, GT-1), not free(L, GT-1), not horizon(GT).
 % Benchmark them against each other!
 %:- 2 { inUse(L, R, GT) : robot(R) }.
 
+broken(M, D, GT) :- broken(M, D-1, GT-1), not horizon(GT), D != 1.
+
 storing(M, P, GT) :- storing(M, P, GT-1), not pickUp(_, P, GT), not horizon(GT).
-storing(M, P, GT) :- processing(M, P, 0, GT).
+storing(M, P, GT) :- processing(M, P, 0, GT), not deliveryStation(M).
 
 processing(M, P, D, GT) :- process(M, P, GT), D = @machineWorkingDuration(M).
 processing(M, P, D, GT) :- processing(M, P, D-1, GT-1), not horizon(GT), D != 0.
