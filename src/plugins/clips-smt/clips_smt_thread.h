@@ -26,7 +26,7 @@
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <plugins/clips/aspect/clips_feature.h>
-//#include <navgraph/aspect/navgraph.h>
+#include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
 
 #include <vector>
@@ -34,6 +34,9 @@
 #include <map>
 
 #include <iostream>
+
+//#include <z3.h>
+#include <z3++.h>
 
 #include "clips_smt_data.h"
 
@@ -45,7 +48,7 @@ class ClipsSmtThread
 : public fawkes::Thread,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
-  //public fawkes::NavGraphAspect,
+  public fawkes::NavGraphAspect,
   public fawkes::CLIPSFeature,
   public fawkes::CLIPSFeatureAspect
 {
@@ -79,7 +82,9 @@ class ClipsSmtThread
  private:
   SmtData _smtData;
 
+//  z3::context _z3_context;
   void clips_smt_dummy(std::string foo, std::string bar);
+  z3::expr_vector clips_smt_create_formula();
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 
