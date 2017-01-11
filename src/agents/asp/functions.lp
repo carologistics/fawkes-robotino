@@ -19,6 +19,9 @@ def robots():
 def maxOrders():
 	return MaxOrders
 
+def maxProducts():
+	return MaxProducts
+
 def maxQuantity():
 	return MaxQuantity
 

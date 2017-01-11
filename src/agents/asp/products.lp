@@ -13,12 +13,14 @@
 % capMounted(P, C, GT)           Defined in mountCap.lp
 % capStationAssignment(M, C)     Defined in facts.lp
 % currentTime(T)                 Defined in facts.lp
-% deliveryTimes(L, U)            Defined in facts.lp
 % generateProduct(R, B, GT)      Defined in some task descriptions.
 % ringMounted(M, P, C, GT)       Defined in mountRing.lp
-% robot(R)                       Defined in facts.lp
 
-#external product(product(R, T)) : robot(R), deliveryTimes(L, U), T = L..U.
+#external product(product(I))              : I = 0..@maxProducts().
+#external productBase(product(I), B)       : I = 0..@maxProducts(), baseColor(B).
+#external productBase(product(I), B)       : I = 0..@maxProducts(), B = "TRANSPARENT".
+#external productCap(product(I), C, 0)     : I = 0..@maxProducts(), capColor(C).
+#external productRing(product(I), R, C, 0) : I = 0..@maxProducts(), ringColor(C), R = 1..3.
 
 #program ourTeam(t).
 
