@@ -34,6 +34,40 @@ def deliveryTaskExternal(number, qty):
 def lateDeliveryTaskExternal(number, qty):
 	return taskExternal(clingo.Function("lateDeliver", [taskLocation("DS"), number, qty]))
 
+def splitParameters(string):
+	temp = []
+	loop = True
+
+	while loop:
+		comma = string.find(',')
+		paranthesis = string.find('(')
+		if comma != -1 and comma < paranthesis or paranthesis == -1 and comma != -1:
+			temp.append(string[:comma])
+			string = string[comma+1:]
+		elif paranthesis != -1:
+			count = 1
+			index = paranthesis + 1
+			while count != 0:
+				if string[index] == ')':
+					count = count - 1
+				elif string[index] == '(':
+					count = count + 1
+				index = index + 1
+			temp.append((string[:paranthesis], splitParameters(string[paranthesis+1:index-1])))
+			string = string[index+1:]
+
+		loop = comma != -1 or paranthesis != -1
+
+	temp.append(string)
+
+	ret = []
+	for s in temp:
+		if s[0] == '"':
+			ret.append(s[1:-1])
+		else:
+			ret.append(s)
+	return ret
+
 class Order:
 	def __init__(self, info):
 		self.Info = info
@@ -53,7 +87,7 @@ class RobotState:
 		self.LastStep = -1
 
 	def __repr__(self):
-		return "RobotState(Name=%s, Task=%s, Holding=%s)" % (self.Name, self.Location, self.Task, self.Holding)
+		return "RobotState(Name=%s, Location=%s, Task=%s, Holding=%s)" % (self.Name, str(self.Location), str(self.Task), str(self.Holding))
 
 class Control:
 	def __init__(self, ctl, zonesToExplore, ringColors, orders, machineFailures):
@@ -68,6 +102,7 @@ class Control:
 		self.OrdersWithTasks   = {}
 		self.Plan              = {}
 		self.ProductionStarted = False
+		self.Products          = {}
 		self.RingColors        = ringColors
 		self.RingStations      = {"RS1" : 0, "RS2" : 0}
 		self.Robots            = {}
@@ -159,7 +194,7 @@ class Control:
 						self.CTL.assign_external(external, True)
 
 				if setLocation:
-					external = clingo.Function("robotLocation", [robot, "ins-out", 0])
+					external = clingo.Function("robotLocation", [robot, info.Location, 0])
 					externals.append(external)
 					print("Set robot location: " + str(external), flush = True)
 					self.CTL.assign_external(external, True)
@@ -196,28 +231,16 @@ class Control:
 				self.beginRobotTask(symbol, step)
 
 	def update(self, step, gt):
-		prepared = {"CS1" : False, "CS2" : False}
 		print("Update on basis of step: " + str(step), flush = True)
 		for symbol in self.LastModel:
 			if symbol.name == "rsFillState":
 				self.updateFillState(symbol, step)
-			elif symbol.name == "csPrepared":
-				if symbol.arguments[1].number == step:
-					prepared[symbol.arguments[0].string] = True
 			elif symbol.name == "doing":
 				self.setRobotTask(symbol, step, gt)
 			elif symbol.name == "end":
 				self.endRobotTask(symbol, step)
 			elif symbol.name == "begin":
 				self.beginRobotTask(symbol, step)
-
-		for key in prepared:
-			new = prepared[key]
-			old = self.CapStations[key]
-			if new != old:
-				print("Change " + str(key) + " prepare state from " + str(old) + " to " + str(new) + ".", flush = True)
-				self.CTL.assign_external(capStationExternal(key), new)
-				self.CapStations[key] = new
 
 	def updateFillState(self, symbol, step):
 		if symbol.arguments[2].number != step:
@@ -229,6 +252,15 @@ class Control:
 			print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
 			self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
 			self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
+
+	def updatePrepareState(self, machine, state):
+		oldState = self.CapStations[machine]
+		if state != oldState:
+			print("Change " + str(machine) + " prepare state from " + str(oldState) + " to " + str(state) + ".", flush = True)
+			self.CTL.assign_external(capStationExternal(machine), state)
+			self.CapStations[machine] = state
+		else:
+			print("Update prepare state, without update!", flush = True)
 
 	def beginRobotTask(self, symbol, step):
 		if symbol.arguments[2].number != step:
@@ -253,13 +285,20 @@ class Control:
 
 	def endRobotTaskWithoutCheck(self, robot, symbol):
 		info = self.Robots[robot]
-		temp = str(symbol).split('(')
-		task = temp[0]
-		parameters = temp[1][:-1].split(',')
+		string = str(symbol)
+		pos = string.find('(')
+		task = string[:pos]
+		parameters = splitParameters(string[pos+1:-1])
 		if task == "explore":
 			self.releaseZone(int(parameters[0]), True)
 			# Little hack, so it will have a location which is not released.
 			info.Location = "ins-out"
+		elif task == "prepareCS":
+			machine = parameters[0][1][1]
+			self.updatePrepareState(machine, True)
+			#product = self.spawnProduct(robot, ?!?)
+			#self.machineProcess(machine, product)
+			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 
 	def onModel(self, model):
 		self.LastModel = model.symbols(True)
