@@ -1,6 +1,7 @@
 #script (python)
 
 import clingo
+import sys
 
 from collections import namedtuple
 
@@ -89,6 +90,15 @@ class RobotState:
 	def __repr__(self):
 		return "RobotState(Name=%s, Location=%s, Task=%s, Holding=%s)" % (self.Name, str(self.Location), str(self.Task), str(self.Holding))
 
+class Product:
+	def __init__(self, base):
+		self.Base = base
+		self.Cap = None
+		self.Rings = [None, None, None]
+
+	def __repr__(self):
+		return "Product(Base=%s, Rings=%s, Cap=%s)" % (self.Base, str(self.Rings), self.Cap)
+
 class Control:
 	def __init__(self, ctl, zonesToExplore, ringColors, orders, machineFailures):
 		self.CapStations       = {"CS1" : False, "CS2" : False}
@@ -96,13 +106,14 @@ class Control:
 		self.FirstSolve        = True
 		self.LastGameTime      = 0
 		self.LastModel         = None
+		self.Machines          = {}
 		self.MachineFailures   = machineFailures
 		self.NextOrder         = 0
 		self.Orders            = orders
 		self.OrdersWithTasks   = {}
 		self.Plan              = {}
 		self.ProductionStarted = False
-		self.Products          = {}
+		self.Products          = []
 		self.RingColors        = ringColors
 		self.RingStations      = {"RS1" : 0, "RS2" : 0}
 		self.Robots            = {}
@@ -184,8 +195,10 @@ class Control:
 					if remaining < 0:
 						print("Calculated remaining time is " + str(remaining) + "! This should not happen.", flush = True)
 						self.endRobotTaskWithoutCheck(robot, info.Task[0])
+						info.Task = None
 					elif remaining == 0:
 						self.endRobotTaskWithoutCheck(robot, info.Task[0])
+						info.Task = None
 					else:
 						setLocation = False
 						external = clingo.Function("robotDoing", [robot, info.Task[0], remaining])
@@ -204,6 +217,30 @@ class Control:
 					externals.append(external)
 					print("Set robot holding: " + str(external), flush = True)
 					self.CTL.assign_external(external, True)
+
+				info.LastStep = -1
+
+			for productIndex in range(0, len(self.Products)):
+				product = self.Products[productIndex]
+				productFunction = clingo.Function("product", [productIndex])
+				productExternals = []
+
+				productExternals.append(clingo.Function("product", [productFunction]))
+				productExternals.append(clingo.Function("productBase", [productFunction, product.Base]))
+				print("Add product %d: %s" % (productIndex, product), flush = True)
+
+				for ring in range(0, 3):
+					if product.Rings[ring] is not None:
+						productExternals.append(clingo.Function("productRing", [productFunction, ring+1, product.Rings[ring], 0]))
+					else:
+						break
+
+				if product.Cap is not None:
+					productExternals.append(clingo.Function("productCap", [productFunction, product.Cap, 0]))
+
+				for external in productExternals:
+					self.CTL.assign_external(external, True)
+				externals.extend(productExternals)
 
 			print("Solve " + str(gt), flush = True)
 			self.solve()
@@ -296,9 +333,16 @@ class Control:
 		elif task == "prepareCS":
 			machine = parameters[0][1][1]
 			self.updatePrepareState(machine, True)
-			#product = self.spawnProduct(robot, ?!?)
+			product = self.spawnProduct("TRANSPARENT")
 			#self.machineProcess(machine, product)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+
+	def spawnProduct(self, base):
+		if len(self.Products) == maxProducts():
+			print("Trying to spawn a new product, but there already the maximum of products in use, increase MaxProducts!", flush = True)
+			sys.exit()
+		self.Products.append(Product(base))
+		return self.Products[-1]
 
 	def onModel(self, model):
 		self.LastModel = model.symbols(True)
@@ -312,6 +356,8 @@ class Control:
 				future.cancel()
 				print("Interrupt solving.", flush = True)
 				future.get()
+			else:
+				print("Solving finished.", flush = True)
 
 	def spawnZone(self, zone):
 		print("Add zone " + str(zone) + " to explore.", flush = True)
