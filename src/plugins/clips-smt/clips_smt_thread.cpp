@@ -26,6 +26,7 @@
 
 #include <clipsmm.h>
 
+
 using namespace fawkes;
 
 /** @class ClipsNavGraphThread "clips-protobuf-thread.h"
@@ -199,31 +200,86 @@ ClipsSmtThread::clips_smt_unblock_edge(std::string env_name,
 }
 **/
 
+/**
+z3::expr_vector
+ClipsSmtThread::clips_smt_create_formula()
+{
+    z3::expr_vector constraints(_z3_context);
+	z3::expr_vector variables(_z3_context);
+	//std::cout << "Variables.size() " << variables.size() << std::endl;
+	for(unsigned i = 0; i < 2; ++i){
+		z3::expr var(_z3_context);
+		const char* varName = ("x_" + std::to_string(i)).c_str();
+		var=_z3_context.real_const(varName);
+		variables.push_back(var);
+		//std::cout << "Created z3 Variable " << var << std::endl;
+		//std::cout << "Variables.size() " << variables.size() << std::endl;
+	}
+
+	//std::cout << "Variables.size() " << variables.size() << std::endl;
+
+	z3::expr polynomial1(_z3_context);
+	z3::expr polynomial2(_z3_context);
+	polynomial1 = _z3_context.int_val(0);
+	polynomial2 = _z3_context.int_val(0);
+
+    z3::expr coeff11(_z3_context);
+    z3::expr coeff12(_z3_context);
+    z3::expr coeff21(_z3_context);
+    z3::expr coeff22(_z3_context);
+    coeff11=_z3_context.real_val(2);
+    coeff12=_z3_context.real_val(1);
+    coeff21=_z3_context.real_val(0);
+    coeff22=_z3_context.real_val(1);
+
+    z3::expr term11(_z3_context);
+    z3::expr term12(_z3_context);
+    z3::expr term21(_z3_context);
+    z3::expr term22(_z3_context);
+    term11=variables[0]*coeff11;
+    term12=variables[1]*coeff12;
+    term21=variables[0]*coeff21;
+    term22=variables[1]*coeff22;
+
+    polynomial1 = term11 + term12;
+    polynomial2 = term21 + term22;
+
+	//std::cout << "Constant: " << _constants(i) << std::endl;
+	z3::expr constant1 = _z3_context.real_val(2);
+	z3::expr constraint1(polynomial1 <= constant1);
+	z3::expr constant2 = _z3_context.real_val(2);
+	z3::expr constraint2(polynomial1 <= constant2);
+
+	constraints.push_back(constraint1);
+	constraints.push_back(constraint2);
+
+	return constraints;
+}
+**/
+
+
 void
 ClipsSmtThread::clips_smt_dummy(std::string foo, std::string bar)
 {
-  std::string cfg_base_frame_      = config->get_string("/frames/base");
-  std::string cfg_global_frame_    = config->get_string("/frames/fixed");
-  std::string cfg_nav_if_id_       = config->get_string("/navgraph/navigator_interface_id");
-  float cfg_resend_interval_ = config->get_float("/navgraph/resend_interval");
-  float cfg_replan_interval_ = config->get_float("/navgraph/replan_interval");
-  float cfg_replan_factor_   = config->get_float("/navgraph/replan_cost_factor");
-  float cfg_target_time_     = config->get_float("/navgraph/target_time");
-  float cfg_target_ori_time_ = config->get_float("/navgraph/target_ori_time");
-  bool cfg_log_graph_       = config->get_bool("/navgraph/log_graph");
-  bool cfg_abort_on_error_  = config->get_bool("/navgraph/abort_on_error");
-  std::cout << "This is a smt test message: " << foo << " and " << bar << std::endl;
-  std::cout << "Moreover we test to get config values "<< std::endl;
-  std::cout << "cfg_base_frame_ " << cfg_base_frame_ << std::endl;
-  std::cout << "cfg_global_frame_ " << cfg_global_frame_ << std::endl;
-  std::cout << "cfg_nav_if_id_ " << cfg_nav_if_id_ << std::endl;
-  std::cout << "cfg_resend_interval_ " << cfg_resend_interval_ << std::endl;
-  std::cout << "cfg_replan_interval_ " << cfg_replan_interval_ << std::endl;
-  std::cout << "cfg_replan_factor_ " << cfg_replan_factor_ << std::endl;
-  std::cout << "cfg_target_time_ " << cfg_target_time_ << std::endl;
-  std::cout << "cfg_target_ori_time_ " << cfg_target_ori_time_ << std::endl;
-  std::cout << "cfg_log_graph_ " << cfg_log_graph_ << std::endl;
-  std::cout << "cfg_abort_on_error_ " << cfg_abort_on_error_ << std::endl;
+    /**
+    // Build simple formula   INPUT
+    z3::optimize z3Optimizer(_z3_context);
+    z3::expr_vector constraintsExpression = clips_smt_create_formula();
+    //std::cout << "constraints " << constraintsExpression << std::endl;
+    //std::cout << constraints << std::endl << constants << std::endl;
+    for (unsigned i = 0; i < constraintsExpression.size(); i++) {
+        z3Optimizer.add(constraintsExpression[i]);
+        std::cout << "constraint " << constraintsExpression[i] << std::endl;
+    }
+    z3::check_result res = z3Optimizer.check();
+    std::cout << "result: " << res << std::endl;
+
+    //return (z3::sat == res);
+  // Give it to z3 solver   SOLVING
+
+  // Evaluate               OUTPUT
+  **/
+
 }
 
 void
