@@ -38,8 +38,13 @@ plugins/robot-memory:
       port: 27041
 
   computables:
+    blackboard:
+      priority: 10
+      caching-time: 0.0
     transform:
       collections: ['robmem.blackboard','robmem.transform','robmem.test']
+      priority: -10
+      caching-time: 0.0
     
     
   
