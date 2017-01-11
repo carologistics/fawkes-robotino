@@ -32,10 +32,10 @@
     (! (time-set-idle-looptime $ilt_sec $ilt_usec))
     (! (navgraph-load))
     ;(! (say "Agent loaded and ready to run"))
-    (! (ppgoto "M1"))
-    (! (print "LLSF2014 agent successfully initialized"))
+    (! (ppgoto "C-DS"))
+    (! (print "LLSF2016 agent successfully initialized"))
   )
-  :effects ((~> (agent-init)) (=> (peer-id public @peer-id)))
+  :effects ((~> (agent-init)) (=> (peer-id public @peer-id)) )
 )
 
 (defop say

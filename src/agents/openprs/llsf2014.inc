@@ -11,12 +11,18 @@
 declare op_predicate  say
 declare op_predicate  ppgoto
 declare cwp           peer-id
-declare predicate     team-color
+declare ff   		team-color 0
+declare ff 	 		game-time 0
+declare ff 			game-state 0
+declare ff			game-phase 0
 
 declare symbol public
 declare symbol private
 declare symbol CYAN
 declare symbol MAGENTA
+
+add (game-state null)
+add (game-phase null)
 
 load db  "llsf2014.db"
 load opf "llsf2014.opf"

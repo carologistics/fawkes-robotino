@@ -1,4 +1,3 @@
-
 ;---------------------------------------------------------------------------
 ;  net.opf - Network OPs for LLSF2014 agent
 ;
@@ -72,12 +71,33 @@
     the private team channel has been setup periodically send the message."
 )
 
-; Example how to process a GameState message
-; (defop net-enable-got-some
-;   :invocation (protobuf-msg "llsf_msgs.GameState" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
-;                               $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
-;   :context ()
-;   :body ((! (print "Got gamestate")))
-; )
+
+ (defop net-recv-GameState
+    :invocation (protobuf-msg "llsf_msgs.GameState" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
+                                $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)  
+    :context ((game-phase $old-phase) 
+              (game-state $old-state))         
+    :setting (& (setting "team-name" $team-name)
+                (setting "robot-name" $robot-name) 
+                (setting "robot-number" $robot-number))
+    :body(
+      (! (= $phase (pb-field-value $msg "phase")))
+      (! (= $state (pb-field-value $msg "state")))
+      (! (= $sim-time (pb-field-value $msg "game_time")))
+      (! (= $sec-time (pb-field-value $sim-time "sec")))
+      
+      (if (? (~(= $old-phase $phase)))
+        (! (printf (FORMAT "switching to different phase %s \n" $phase)))
+        (=> (game-phase $phase))
+      )
+      (if (? (~(= $old-state $state)))
+        (! (printf (FORMAT "Game state %s \n" $state)))
+        (=> (game-state $state))
+      )
+  )
+  :effects((=> (game-time $sec-time)))
+ :documentation
+    "replaces game state and phase from the database with the new ones."
+  )
 
 )
