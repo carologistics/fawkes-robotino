@@ -64,8 +64,8 @@ public:
 		for (unsigned int i = 0; i < inputAsChars.size(); ++i)
 		{
 			WorkingPieceComponent currentWorkingPieceComponent;
-			assert((inputAsChars[i]>= 0) && (inputAsChars[i]<9));
-			currentWorkingPieceComponent = static_cast<WorkingPieceComponent>((int)inputAsChars[i]);
+			assert((inputAsChars[i]>= 48) && (inputAsChars[i]<57));
+			currentWorkingPieceComponent = static_cast<WorkingPieceComponent>((int)inputAsChars[i]-48);
 			workingPieceComponents.push_back(currentWorkingPieceComponent);
 		}
 
@@ -100,7 +100,33 @@ public:
 
 	std::string toString()
 	{
-		return "_workingPieceComponents";
+		std::string workingPieceDescription;
+		workingPieceDescription += "[";
+		for(WorkingPieceComponent workingPieceComponent: _workingPieceComponents) {
+			switch(workingPieceComponent) {
+				case 0: workingPieceDescription += " B_RED";
+								break;
+				case 1: workingPieceDescription += " B_SILVER";
+							  break;
+				case 2: workingPieceDescription += " B_BLACK";
+								break;
+				case 3: workingPieceDescription += " R_BLUE";
+							  break;
+				case 4: workingPieceDescription += " R_GREEN";
+								break;
+				case 5: workingPieceDescription += " R_YELLOW";
+								break;
+				case 6: workingPieceDescription += " R_ORANGE";
+								break;
+				case 7: workingPieceDescription += " C_BLACK";
+				        break;
+				case 8: workingPieceDescription += " C_GRAY";
+								break;
+				default: break;
+			}
+		}
+		workingPieceDescription += " ]";
+		return workingPieceDescription;
 	}
 };
 

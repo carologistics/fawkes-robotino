@@ -49,13 +49,14 @@ private:
 public:
 
   //Constructor
-  Machine(unsigned int id, int posA, int posB, smtTime defaultBusyTime, MachineType machineType)
+  Machine(unsigned int id, int posA, int posB, smtTime defaultBusyTime, MachineType machineType, WorkingPiece wp)
   {
     _id = id;
     _positionA = posA;
     _positionB = posB;
     _defaultBusyTime = defaultBusyTime;
     _machineType = machineType;
+    _wp = wp;
   }
 
   //getter & setters
