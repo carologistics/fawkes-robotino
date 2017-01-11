@@ -4,6 +4,7 @@
 % In this file defined predicates:
 % csPrepared(M, GT)              If the cap station M is prepared to mount a cap in GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
+% processing(M, P, D, GT)        The machine M processes product P for the next D time steps from GT on.
 % rsFillState(M, S, GT)          Ring station M has S additional bases loaded in GT.
 % storing(M, P, GT)              Machine M stores product P in GT.
 %
@@ -22,6 +23,7 @@
 
 #external csPrepared(M, 0) : capStation(M).
 #external rsFillState(M, S, 0) : ringStation(M), S = 0..3.
+#external processing(M, P, D, 0) : machine(M), product(P), D = 1..@maxWorkingDuration().
 #external storing(M, P, 0) : capStation(M), product(P).
 #external storing(M, P, 0) : ringStation(M), product(P).
 
@@ -35,7 +37,10 @@ inUse(L, R, GT) :- inUse(L, R, GT-1), not free(L, GT-1), not horizon(GT).
 %:- 2 { inUse(L, R, GT) : robot(R) }.
 
 storing(M, P, GT) :- storing(M, P, GT-1), not pickUp(_, P, GT), not horizon(GT).
-storing(M, P, GT) :- process(M, P, GT). %TODO: Consider processing time.
+storing(M, P, GT) :- processing(M, P, 0, GT).
+
+processing(M, P, D, GT) :- process(M, P, GT), D = @machineWorkingDuration(M).
+processing(M, P, D, GT) :- processing(M, P, D-1, GT-1), not horizon(GT), D != 0.
 
 csPrepared(M, GT) :- csPrepared(M, GT-1), not capMounted(M, _, GT), not horizon(GT).
 
