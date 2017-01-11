@@ -47,12 +47,12 @@ private:
 
 public:
   //constructor
-  Robot(unsigned int id, int currentPos, int targetPos)
+  Robot(unsigned int id, int currentPos, int targetPos, WorkingPiece wp)
   {
     _id = id;
     _currentPosition = currentPos;
     _targetPosition = targetPos;
-    //_wp = wp;
+    _wp = wp;
   }
 
   unsigned int getId() const

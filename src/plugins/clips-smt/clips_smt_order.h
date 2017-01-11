@@ -43,10 +43,10 @@ private:
   	WorkingPiece _targetPiece;
 
 public:
-	Order(smtTime deadline)
+	Order(smtTime deadline, WorkingPiece tp)
 	{
 		_deadline = deadline;
-		//_targetPiece = targetPiece;
+		_targetPiece = tp;
 	}
 
 	smtTime getDeadline() const
