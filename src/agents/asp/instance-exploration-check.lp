@@ -19,6 +19,7 @@ MaxFeedRS = 2
 MaxGetBase = 2
 MaxGetProduct = 4
 MaxPrepCS = 1
+MaxProducts = 5
 Robots = ["Tuvok", "T'Pol", "Spock"]
 
 def generateInstance():
