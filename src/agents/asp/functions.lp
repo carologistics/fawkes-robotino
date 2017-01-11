@@ -16,6 +16,18 @@ def toASP(time):
 def robots():
 	return Robots
 
+def machineWorkingDuration(machine):
+	machine = str(machine)
+	if machine[:2] == "CS":
+		return toASP(20)
+	elif machine[:2] == "RS":
+		return toASP(50)
+	elif machine == "DS":
+		return toASP(30)
+	elif machine == "BS":
+		return toASP(5)
+	return toASP(1)
+
 def maxOrders():
 	return MaxOrders
 
@@ -24,6 +36,12 @@ def maxProducts():
 
 def maxQuantity():
 	return MaxQuantity
+
+def maxWorkingDuration():
+	ret = 0
+	for machine in ["BS", "DS", "RS1", "RS2", "CS1", "CS2"]:
+		ret = max(ret, machineWorkingDuration(machine))
+	return ret
 
 def minDeliveryTime():
 	return toASP(StartDelivery)
