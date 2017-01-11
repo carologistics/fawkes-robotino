@@ -142,16 +142,28 @@ class Control:
 
 			for robot in self.Robots:
 				info = self.Robots[robot]
+				setLocation = True
+
 				if info.Task is not None:
-					external = clingo.Function("robotDoing", [robot, info.Task[0], info.Task[1]])
-					externals.append(external)
-					print("Set robot task: " + str(external), flush = True)
-					self.CTL.assign_external(external, True)
-				else:
+					remaining = info.Task[1] - gt
+					if remaining < 0:
+						print("Calculated remaining time is " + str(remaining) + "! This should not happen.", flush = True)
+						self.endRobotTaskWithoutCheck(robot, info.Task[0])
+					elif remaining == 0:
+						self.endRobotTaskWithoutCheck(robot, info.Task[0])
+					else:
+						setLocation = False
+						external = clingo.Function("robotDoing", [robot, info.Task[0], remaining])
+						externals.append(external)
+						print("Set robot task: " + str(external), flush = True)
+						self.CTL.assign_external(external, True)
+
+				if setLocation:
 					external = clingo.Function("robotLocation", [robot, "ins-out", 0])
 					externals.append(external)
 					print("Set robot location: " + str(external), flush = True)
 					self.CTL.assign_external(external, True)
+
 				if info.Holding is not None:
 					external = self.holdingExternal(info.Holding)
 					externals.append(external)
@@ -163,7 +175,7 @@ class Control:
 			if index < gameTimesCount - 1:
 				nextGT = gameTimes[index+1]
 				for step in range(0, nextGT - gt):
-					self.update(step)
+					self.update(step, gt)
 
 		steps = horizonSteps()
 		for step in range(steps[0], steps[1] + 1):
@@ -183,7 +195,7 @@ class Control:
 			if symbol.name == "begin":
 				self.beginRobotTask(symbol, step)
 
-	def update(self, step):
+	def update(self, step, gt):
 		prepared = {"CS1" : False, "CS2" : False}
 		print("Update on basis of step: " + str(step), flush = True)
 		for symbol in self.LastModel:
@@ -193,7 +205,7 @@ class Control:
 				if symbol.arguments[1].number == step:
 					prepared[symbol.arguments[0].string] = True
 			elif symbol.name == "doing":
-				self.setRobotTask(symbol, step)
+				self.setRobotTask(symbol, step, gt)
 			elif symbol.name == "end":
 				self.endRobotTask(symbol, step)
 			elif symbol.name == "begin":
@@ -223,20 +235,25 @@ class Control:
 			return
 		self.Plan[symbol.arguments[0].string].append(str(symbol.arguments[1]))
 
-	def setRobotTask(self, symbol, step):
+	def setRobotTask(self, symbol, step, gt):
 		if symbol.arguments[3].number != step:
 			return
 		info = self.Robots[symbol.arguments[0].string]
-		info.Task = (symbol.arguments[1],symbol.arguments[2])
+		info.Task = (symbol.arguments[1],symbol.arguments[2].number + gt + step)
 		info.LastStep = step
 
 	def endRobotTask(self, symbol, step):
 		if symbol.arguments[2].number != step:
 			return
-		info = self.Robots[symbol.arguments[0].string]
+		robot = symbol.arguments[0].string
+		info = self.Robots[robot]
 		if info.LastStep != step:
 			info.Task = None
-		temp = str(symbol.arguments[1]).split('(')
+		self.endRobotTaskWithoutCheck(robot, symbol.arguments[1])
+
+	def endRobotTaskWithoutCheck(self, robot, symbol):
+		info = self.Robots[robot]
+		temp = str(symbol).split('(')
 		task = temp[0]
 		parameters = temp[1][:-1].split(',')
 		if task == "explore":
