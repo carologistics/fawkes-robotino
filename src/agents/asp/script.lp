@@ -224,7 +224,7 @@ class Control:
 					print("Set robot location: " + str(external), flush = True)
 
 				if info.Holding is not None:
-					external = self.holdingExternal(info.Holding)
+					external = clingo.Function("holding", [robot, self.productExternal(info.Holding), 0])
 					externals.append(external)
 					print("Set robot holding: " + str(external), flush = True)
 
@@ -369,13 +369,17 @@ class Control:
 			productIndex = self.spawnProduct("TRANSPARENT")
 			self.machineProcess(machine, productIndex)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+		elif task == "getBase":
+			productIndex = self.spawnProduct(parameters[1])
+			info.Holding = productIndex
+			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 
 	def spawnProduct(self, base):
 		if len(self.Products) == maxProducts():
 			print("Trying to spawn a new product, but there already the maximum of products in use, increase MaxProducts!", flush = True)
 			sys.exit()
 		self.Products.append(Product(base))
-		return len(self.Products)
+		return len(self.Products) - 1
 
 	def machineProcess(self, machineName, productIndex):
 		machine = self.Machines[machineName]
