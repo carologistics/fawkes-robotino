@@ -377,6 +377,13 @@ class Control:
 			self.updateFillState(machine, 1)
 			self.destroyProduct(productIndex)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+		elif task == "getProduct":
+			machineName = parameters[0][1][1]
+			machine = self.Machines[machineName]
+			productIndex = machine.Storing
+			machine.Storing = None
+			info.Holding = productIndex
+			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 
 	def spawnProduct(self, base):
 		if len(self.Products) == maxProducts():
