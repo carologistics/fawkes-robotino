@@ -313,6 +313,7 @@ class Control:
 	def updateFillState(self, machine, modify):
 		oldFillState = self.RingStations[machine]
 		newFillState = oldFillState + modify
+		self.RingStations[machine] = newFillState
 		if newFillState < 0 or newFillState > 3:
 			print("Invalid fill state for %s: %d!" % (machine, newFillState), flush = True)
 			sys.exit()
@@ -384,6 +385,15 @@ class Control:
 			machine.Storing = None
 			info.Holding = productIndex
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+		elif task == "mountRing":
+			machine = parameters[0][1][1]
+			order = int(parameters[1])
+			qty = int(parameters[2])
+			ring = int(parameters[3])
+			productIndex = info.Holding
+			info.Holding = None
+			self.mountRing(machine, productIndex, order, qty, ring)
+			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 
 	def spawnProduct(self, base):
 		if len(self.Products) == maxProducts():
@@ -404,6 +414,22 @@ class Control:
 			machine = self.Machines[name]
 			if machine.Storing is not None and machine.Storing >= index:
 				machine.Storing = machine.Storing - 1
+
+	def mountRing(self, machineName, productIndex, order, qty, ring):
+		self.machineProcess(machineName, productIndex)
+		if ring == 1:
+			ringColor = self.OrdersWithTasks[(order, 1)].Info.Ring1
+		elif ring == 2:
+			ringColor = self.OrdersWithTasks[(order, 1)].Info.Ring2
+		elif ring == 3:
+			ringColor = self.OrdersWithTasks[(order, 1)].Info.Ring3
+		for info in self.RingColors:
+			if info.Color == ringColor:
+				cost = info.Cost
+				break
+		self.updateFillState(machineName, -cost)
+		self.Products[productIndex].Rings[ring-1] = ringColor
+		self.CTL.release_external(self.OrdersWithTasks[(order, qty)].RingTask[ring])
 
 	def machineProcess(self, machineName, productIndex):
 		machine = self.Machines[machineName]
