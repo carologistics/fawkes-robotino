@@ -249,7 +249,15 @@ class Control:
 
 			for name in self.Machines:
 				machine = self.Machines[name]
-				# TODO hier weiter machen!
+				if machine.Broken is not None:
+					externals.append(clingo.Function("broken", [name, machine.Broken, 0]))
+					print("%s is for %d steps broken." % (name, machine.Broken), flush = True)
+				if machine.Working is not None:
+					externals.append(clingo.Function("processing", [name, self.productExternal(machine.Storing), machine.Working, 0]))
+					print("%s is working on %d for %d steps." % (name, machine.Storing, machine.Working), flush = True)
+				elif machine.Storing is not None:
+					externals.append(clingo.Function("storing", [name, self.productExternal(machine.Storing), 0]))
+					print("%s is storing %d." % (name, machine.Storing), flush = True)
 
 			for external in externals:
 				self.CTL.assign_external(external, True)
@@ -371,7 +379,7 @@ class Control:
 
 	def machineProcess(self, machineName, productIndex):
 		machine = self.Machines[machineName]
-		machine.Holding = productIndex
+		machine.Storing = productIndex
 		machine.Working = machineWorkingDuration(machineName)
 
 	def onModel(self, model):
