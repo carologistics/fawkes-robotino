@@ -292,9 +292,7 @@ class Control:
 	def update(self, step, gt):
 		print("Update on basis of step: " + str(step), flush = True)
 		for symbol in self.LastModel:
-			if symbol.name == "rsFillState":
-				self.updateFillState(symbol, step)
-			elif symbol.name == "doing":
+			if symbol.name == "doing":
 				self.setRobotTask(symbol, step, gt)
 			elif symbol.name == "end":
 				self.endRobotTask(symbol, step)
@@ -312,16 +310,15 @@ class Control:
 				if machine.Working == 0:
 					machine.Working = None
 
-	def updateFillState(self, symbol, step):
-		if symbol.arguments[2].number != step:
-			return
-		machine = symbol.arguments[0].string
+	def updateFillState(self, machine, modify):
 		oldFillState = self.RingStations[machine]
-		newFillState = symbol.arguments[1].number
-		if oldFillState != newFillState:
-			print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
-			self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
-			self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
+		newFillState = oldFillState + modify
+		if newFillState < 0 or newFillState > 3:
+			print("Invalid fill state for %s: %d!" % (machine, newFillState), flush = True)
+			sys.exit()
+		print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
+		self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
+		self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
 
 	def updatePrepareState(self, machine, state):
 		oldState = self.CapStations[machine]
@@ -373,6 +370,13 @@ class Control:
 			productIndex = self.spawnProduct(parameters[1])
 			info.Holding = productIndex
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+		elif task == "feedRS":
+			machine = parameters[0][1][1]
+			productIndex = info.Holding
+			info.Holding = None
+			self.updateFillState(machine, 1)
+			self.destroyProduct(productIndex)
+			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 
 	def spawnProduct(self, base):
 		if len(self.Products) == maxProducts():
@@ -380,6 +384,19 @@ class Control:
 			sys.exit()
 		self.Products.append(Product(base))
 		return len(self.Products) - 1
+
+	def destroyProduct(self, index):
+		self.Products.pop(index)
+
+		for robot in self.Robots:
+			info = self.Robots[robot]
+			if info.Holding is not None and info.Holding >= index:
+				info.Holding = info.Holding - 1
+
+		for name in self.Machines:
+			machine = self.Machines[name]
+			if machine.Storing is not None and machine.Storing >= index:
+				machine.Storing = machine.Storing - 1
 
 	def machineProcess(self, machineName, productIndex):
 		machine = self.Machines[machineName]
