@@ -217,47 +217,42 @@ class Control:
 						external = clingo.Function("robotDoing", [robot, info.Task[0], remaining])
 						externals.append(external)
 						print("Set robot task: " + str(external), flush = True)
-						self.CTL.assign_external(external, True)
 
 				if setLocation:
 					external = clingo.Function("robotLocation", [robot, info.Location, 0])
 					externals.append(external)
 					print("Set robot location: " + str(external), flush = True)
-					self.CTL.assign_external(external, True)
 
 				if info.Holding is not None:
 					external = self.holdingExternal(info.Holding)
 					externals.append(external)
 					print("Set robot holding: " + str(external), flush = True)
-					self.CTL.assign_external(external, True)
 
 				info.LastStep = -1
 
 			for productIndex in range(0, len(self.Products)):
 				product = self.Products[productIndex]
-				productFunction = clingo.Function("product", [productIndex])
-				productExternals = []
+				productFunction = self.productExternal(productIndex)
 
-				productExternals.append(clingo.Function("product", [productFunction]))
-				productExternals.append(clingo.Function("productBase", [productFunction, product.Base]))
+				externals.append(clingo.Function("product", [productFunction]))
+				externals.append(clingo.Function("productBase", [productFunction, product.Base]))
 				print("Add product %d: %s" % (productIndex, product), flush = True)
 
 				for ring in range(0, 3):
 					if product.Rings[ring] is not None:
-						productExternals.append(clingo.Function("productRing", [productFunction, ring+1, product.Rings[ring], 0]))
+						externals.append(clingo.Function("productRing", [productFunction, ring+1, product.Rings[ring], 0]))
 					else:
 						break
 
 				if product.Cap is not None:
-					productExternals.append(clingo.Function("productCap", [productFunction, product.Cap, 0]))
-
-				for external in productExternals:
-					self.CTL.assign_external(external, True)
-				externals.extend(productExternals)
+					externals.append(clingo.Function("productCap", [productFunction, product.Cap, 0]))
 
 			for name in self.Machines:
 				machine = self.Machines[name]
 				# TODO hier weiter machen!
+
+			for external in externals:
+				self.CTL.assign_external(external, True)
 
 			print("Solve " + str(gt), flush = True)
 			self.solve()
@@ -488,6 +483,9 @@ class Control:
 				machine = ringInfo.Machine
 				break
 		return taskExternal(clingo.Function("mountRing", [taskLocation(machine), order, qty, ring]))
+
+	def productExternal(self, productIndex):
+		return clingo.Function("product", [productIndex])
 
 def main(ctl):
 	(zonesToExplore, ringColors, orders, machineFailures) = generateInstance()
