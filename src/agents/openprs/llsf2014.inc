@@ -17,7 +17,7 @@ declare ff 			game-state 0
 declare ff			game-phase 0
 declare ff 			machine 1
 declare ff 			ring-station 1
-
+declare ff			order 1
 declare symbol public
 declare symbol private
 declare symbol CYAN
