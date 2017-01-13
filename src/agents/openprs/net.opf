@@ -100,4 +100,63 @@
     "replaces game state and phase from the database with the new ones."
   )
 
+
+(defop net-recv-MachineInfo 
+    :invocation (protobuf-msg "llsf_msgs.MachineInfo" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
+                                $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
+    :context((game-phase $phase)
+            (team-color $team-color))
+    :setting (& (setting "team-name" $team-name)
+                (setting "robot-name" $robot-name) 
+                (setting "robot-number" $robot-number))
+    :body(
+      (? (= $team-color (pb-field-value $msg "team_color")))
+      (! (= @machines  (pb-field-list $msg "machines")))
+      
+      (while (? (~ (null @machines)))
+        (! (= @machine (car @machines)))
+        (! (= @machines (cdr @machines)))
+        (! (= @machine-name (pb-field-value @machine "name")))
+        (! (= @machine-type (pb-field-value @machine "type")))
+        (! (= @machine-state (pb-field-value @machine "state")))
+        (! (= @machine-zone (pb-field-value @machine "zone")))
+        (! (= @machine-pose (pb-field-value @machine "pose")))   
+        (! (= @machine-loaded-with (pb-field-value @machine "loaded_with")))
+        (! (= @machine-ringcolors (pb-field-list @machine "ring_colors")))   
+
+        ;Update Machine Information
+        (if (? (& (machine $m-name $m-type $m-state $m-zone $m-pose $m-loaded-with) (= $m-name @machine-name)))
+          (if (? (||  (~ (= $m-state @machine-state)) 
+                      (~ (= $m-loaded-with @machine-loaded-with)) 
+                      (~ (= $m-pose @machine-pose)) ))
+            (=> (machine @machine-name @machine-type @machine-state @machine-zone @machine-pose @machine-loaded-with)) 
+            (! (print "The thing is working"))
+            )
+          else  
+          (if (? (= null $m-name))
+            (=> (machine @machine-name @machine-type @machine-state @machine-zone @machine-pose @machine-loaded-with)) 
+            (! (print "first time is working"))
+            )
+          )
+
+        ;Add Information about the ring-stations 
+        (if (? (= "RS" @machine-type))
+           (if (? (& (ring-station $name (avilible-colors $colors)) (= $name @machine-name)) )
+                ;Do nothing. Its there already
+            else
+            (if (? (= null $name))
+                (=> (ring-station @machine-name (avilible-colors @machine-ringcolors)))
+                (! (print "added the ring station"))
+                )
+            )
+          )
+
+        )
+      )
+    :effects()
+    :documentation
+      "Process MachineInfo message"
+)
+
+
 )
