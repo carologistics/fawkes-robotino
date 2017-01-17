@@ -109,6 +109,22 @@ class Machine:
 	def __repr__(self):
 		return "Machine(Name=%s, Storing=%s, Working=%s, Broken=%s)" % (self.Name, str(self.Storing), str(self.Working), str(self.Broken))
 
+class PlanEntry:
+	def __init__(self,task,begin):
+		self.Task = task
+		self.Begin = begin
+		self.End = None
+		self.Score = 0
+
+	def __repr__(self):
+		return "PlanEntry(Begin = %3d, End = %3s, Score = %3d Task = %s)" % (self.Begin, str(self.End), self.Score, self.Task)
+
+class Plan:
+	def __init__(self,robot):
+		self.Robot = robot
+		self.Score = 0
+		self.Entries = []
+
 class Control:
 	def __init__(self, ctl, zonesToExplore, ringColors, orders, machineFailures):
 		self.CapStations       = {"CS1" : False, "CS2" : False}
@@ -143,7 +159,7 @@ class Control:
 			self.CTL.assign_external(clingo.Function("availableRobot", [robot]), True)
 			self.Robots[robot] = RobotState(robot)
 			self.Robots[robot].Location = "ins-out"
-			self.Plan[robot] = []
+			self.Plan[robot] = Plan(robot)
 
 		for machine in ["BS", "DS", "RS1", "RS2", "CS1", "CS2"]:
 			self.Machines[machine] = Machine(machine)
@@ -207,10 +223,10 @@ class Control:
 					remaining = info.Task[1] - gt
 					if remaining < 0:
 						print("Calculated remaining time is " + str(remaining) + "! This should not happen.", flush = True)
-						self.endRobotTaskWithoutCheck(robot, info.Task[0])
+						self.endRobotTaskWithoutCheck(robot, info.Task[0], gt)
 						info.Task = None
 					elif remaining == 0:
-						self.endRobotTaskWithoutCheck(robot, info.Task[0])
+						self.endRobotTaskWithoutCheck(robot, info.Task[0], gt)
 						info.Task = None
 					else:
 						setLocation = False
@@ -271,23 +287,29 @@ class Control:
 
 		steps = horizonSteps()
 		for step in range(steps[0], steps[1] + 1):
-			self.extractPlan(step)
+			self.extractPlan(step, gt)
 
+		score = 0
 		print("Plan:", flush = True)
 		for robot in self.Plan:
-			print("  For Robot " + robot + ":", flush = True)
 			plan = self.Plan[robot]
+			score = score + plan.Score
+			print("  For Robot " + robot + " (" + str(plan.Score) + " Score):", flush = True)
 			i = 1
-			for task in plan:
-				print("    " + str(i) + ": " + task, flush = True)
+			for entry in plan.Entries:
+				print("    %2d: %s" % (i, str(entry)), flush = True)
 				i = i + 1
 
-	def extractPlan(self, step):
+		print("Overall score: " + str(score), flush = True)
+		print("CS prepare state: CS1: %5s CS2: %5s" % (str(self.CapStations["CS1"]), str(self.CapStations["CS2"])), flush = True)
+		print("RS fill state:    RS1: %5d RS2: %5d" % (self.RingStations["RS1"], self.RingStations["RS2"]), flush = True)
+
+	def extractPlan(self, step, gt):
 		if self.LastModel is None:
 			return
 		for symbol in self.LastModel:
 			if symbol.name == "begin":
-				self.beginRobotTask(symbol, step)
+				self.beginRobotTask(symbol, step, gt)
 
 	def update(self, step, gt):
 		print("Update on basis of step: " + str(step), flush = True)
@@ -295,9 +317,9 @@ class Control:
 			if symbol.name == "doing":
 				self.setRobotTask(symbol, step, gt)
 			elif symbol.name == "end":
-				self.endRobotTask(symbol, step)
+				self.endRobotTask(symbol, step, gt)
 			elif symbol.name == "begin":
-				self.beginRobotTask(symbol, step)
+				self.beginRobotTask(symbol, step, gt)
 
 		for name in self.Machines:
 			machine = self.Machines[name]
@@ -330,10 +352,10 @@ class Control:
 		else:
 			print("Update prepare state, without update!", flush = True)
 
-	def beginRobotTask(self, symbol, step):
+	def beginRobotTask(self, symbol, step, gt):
 		if symbol.arguments[2].number != step:
 			return
-		self.Plan[symbol.arguments[0].string].append(str(symbol.arguments[1]))
+		self.Plan[symbol.arguments[0].string].Entries.append(PlanEntry(str(symbol.arguments[1]), gt + step))
 
 	def setRobotTask(self, symbol, step, gt):
 		if symbol.arguments[3].number != step:
@@ -342,31 +364,40 @@ class Control:
 		info.Task = (symbol.arguments[1],symbol.arguments[2].number + gt + step)
 		info.LastStep = step
 
-	def endRobotTask(self, symbol, step):
+	def endRobotTask(self, symbol, step, gt):
 		if symbol.arguments[2].number != step:
 			return
 		robot = symbol.arguments[0].string
 		info = self.Robots[robot]
 		if info.LastStep != step:
 			info.Task = None
-		self.endRobotTaskWithoutCheck(robot, symbol.arguments[1])
+		self.endRobotTaskWithoutCheck(robot, symbol.arguments[1], gt + step)
 
-	def endRobotTaskWithoutCheck(self, robot, symbol):
+	def endRobotTaskWithoutCheck(self, robot, symbol, time):
+		plan = self.Plan[robot]
+		for entry in plan.Entries:
+			if entry.End is None:
+				entry.End = time
+				break
+
 		info = self.Robots[robot]
 		string = str(symbol)
 		pos = string.find('(')
 		task = string[:pos]
 		parameters = splitParameters(string[pos+1:-1])
+		score = 0
 		if task == "explore":
 			self.releaseZone(int(parameters[0]), True)
 			# Little hack, so it will have a location which is not released.
 			info.Location = "ins-out"
+			score = 100
 		elif task == "prepareCS":
 			machine = parameters[0][1][1]
 			self.updatePrepareState(machine, True)
 			productIndex = self.spawnProduct("TRANSPARENT")
 			self.machineProcess(machine, productIndex)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+			score = 3
 		elif task == "getBase":
 			productIndex = self.spawnProduct(parameters[1])
 			info.Holding = productIndex
@@ -378,6 +409,7 @@ class Control:
 			self.updateFillState(machine, 1)
 			self.destroyProduct(productIndex)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+			score = 2
 		elif task == "getProduct":
 			machineName = parameters[0][1][1]
 			machine = self.Machines[machineName]
@@ -394,6 +426,12 @@ class Control:
 			info.Holding = None
 			self.mountRing(machine, productIndex, order, qty, ring)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+			if ring == 1:
+				score = 10
+			elif ring == 2:
+				score = 20
+			elif ring == 3:
+				score = 50
 		elif task == "mountCap":
 			machine = parameters[0][1][1]
 			order = int(parameters[1])
@@ -402,14 +440,21 @@ class Control:
 			info.Holding = None
 			self.mountCap(machine, productIndex, order, qty)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+			score = 10
 		elif task == "deliver" or task == "lateDeliver":
 			machine = parameters[0][1][1]
 			order = int(parameters[1])
 			qty = int(parameters[2])
 			productIndex = info.Holding
 			info.Holding = None
-			self.deliver(machine, productIndex, order, qty, task == "lateDeliver")
+			self.deliver(machine, productIndex, order, qty)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+			if task == "lateDeliver":
+				score = 5
+			else:
+				score = 20
+		entry.Score = score
+		plan.Score += score
 
 	def spawnProduct(self, base):
 		if len(self.Products) == maxProducts():
@@ -453,7 +498,7 @@ class Control:
 		self.Products[productIndex].Cap = self.OrdersWithTasks[(order, 1)].Info.Cap
 		self.CTL.release_external(self.OrdersWithTasks[(order, qty)].CapTask)
 
-	def deliver(self, machineName, productIndex, order, qty, late):
+	def deliver(self, machineName, productIndex, order, qty):
 		for external in self.OrdersWithTasks[(order, qty)].DeliveryTasks:
 			self.CTL.release_external(external)
 		self.destroyProduct(productIndex)
