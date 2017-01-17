@@ -130,12 +130,12 @@
                       (~ (= $m-loaded-with @machine-loaded-with)) 
                       (~ (= $m-pose @machine-pose)) ))
             (=> (machine @machine-name @machine-type @machine-state @machine-zone @machine-pose @machine-loaded-with)) 
-            (! (print "The thing is working"))
+            (! (print "updating MachineInfo"))
             )
           else  
           (if (? (= null $m-name))
             (=> (machine @machine-name @machine-type @machine-state @machine-zone @machine-pose @machine-loaded-with)) 
-            (! (print "first time is working"))
+            (! (print "adding MachineInfo"))
             )
           )
 
@@ -146,7 +146,7 @@
             else
             (if (? (= null $name))
                 (=> (ring-station @machine-name (avilible-colors @machine-ringcolors)))
-                (! (print "added the ring station"))
+                (! (print "added the RingStation"))
                 )
             )
           )
@@ -158,7 +158,7 @@
       "Process MachineInfo messages
       TODO: -remove the loaded-with and pose info after knowing what is it for
             - changes of team_color is also propagated
-            - maybe put the zone information in a seperate fact like clips (zone-exp)
+            - maybe put the zone information in a separate fact like clips (zone-exp)
 
       "
   )
@@ -193,11 +193,6 @@
               (! (= @quantity-delivered @quantity_delivered_magenta )) 
               )
             (=> (order @id @complexity @base-color @ring-colors @cap-color @quantity-requested @quantity-delivered @delivery-period-begin @delivery-period-end @delivery-gate)) 
-            
-            (if (? (= 1 @id)) (print "this is one"))
-            (if (? (= 2 @id)) (print @id))
-            
-            
             )
           
           )
@@ -205,6 +200,32 @@
       :effects()
       :documentation "Process the OrderInfo messages"
   )
+
+
+(defop net-recv-RingInfo 
+  :invocation(protobuf-msg "llsf_msgs.RingInfo" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
+                                $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
+  :body( 
+    (! (= @rings (pb-field-list $msg "rings")))
+
+    (while (? (~ (null @rings)))
+      (! (= @ring (car @rings)))
+      (! (= @rings (cdr @rings)))
+      (! (= @ring-color (pb-field-value @ring "ring_color")))
+      (if (? (~ (ring (val @ring-color) @raw-material)))
+        (! (= @raw-material (pb-field-value @ring "raw_material")))
+        (=> (ring @ring-color @raw-material))
+        (! (print "added RingInfo"))
+        )
+      )
+
+    )
+  :effects()
+  :documentation "Process the RingInfo message that contains information about how many bases does a ring colour needs"
+
+
+  )
+
 
 
 
