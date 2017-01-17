@@ -17,7 +17,8 @@ def robots():
 	return Robots
 
 def machineWorkingDuration(machine):
-	machine = str(machine)
+	if isinstance(machine, clingo.Symbol):
+		machine = str(machine)[1:-1]
 	if machine[:2] == "CS":
 		return toASP(20)
 	elif machine[:2] == "RS":
