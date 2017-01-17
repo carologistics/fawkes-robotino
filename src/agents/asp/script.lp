@@ -1,6 +1,7 @@
 #script (python)
 
 import clingo
+import datetime
 import sys
 
 from collections import namedtuple
@@ -130,6 +131,8 @@ class Control:
 		self.CapStations       = {"CS1" : False, "CS2" : False}
 		self.CTL               = ctl
 		self.FirstSolve        = True
+		self.GroundTime        = None
+		self.InitialSolveTime  = None
 		self.LastGameTime      = 0
 		self.LastModel         = None
 		self.Machines          = {}
@@ -144,6 +147,7 @@ class Control:
 		self.RingColors        = ringColors
 		self.RingStations      = {"RS1" : 0, "RS2" : 0}
 		self.Robots            = {}
+		self.StartUpTime       = None
 		self.ZonesToExplore    = zonesToExplore
 
 		for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "functions.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
@@ -151,10 +155,13 @@ class Control:
 
 		self.CapColors         = {capColor(clingo.Number(1)) : "CS1", capColor(clingo.Number(2)) : "CS2"}
 
+		groundBegin = datetime.datetime.now()
 		print("Ground base.", flush = True)
 		self.CTL.ground([("base", [])])
 		print("Ground team.", flush = True)
 		self.CTL.ground([("ourTeam", ["C"])])
+		groundEnd = datetime.datetime.now()
+		self.GroundTime = groundEnd - groundBegin
 
 		for robot in robots():
 			self.CTL.assign_external(clingo.Function("availableRobot", [robot]), True)
@@ -165,8 +172,13 @@ class Control:
 		for machine in ["BS", "DS", "RS1", "RS2", "CS1", "CS2"]:
 			self.Machines[machine] = Machine(machine)
 
+		solveBegin = datetime.datetime.now()
 		print("Solve after init.", flush = True)
 		self.CTL.solve()
+		solveEnd = datetime.datetime.now()
+		self.InitialSolveTime = solveEnd - solveBegin
+
+		self.StartUpTime = self.GroundTime + self.InitialSolveTime
 
 	def run(self):
 		print("Begin with instance.", flush = True)
@@ -305,6 +317,9 @@ class Control:
 		print("Overall score: " + str(score), flush = True)
 		print("CS prepare state: CS1: %5s CS2: %5s" % (str(self.CapStations["CS1"]), str(self.CapStations["CS2"])), flush = True)
 		print("RS fill state:    RS1: %5d RS2: %5d" % (self.RingStations["RS1"], self.RingStations["RS2"]), flush = True)
+		print("Time for grounding base & team: %s" % str(self.GroundTime), flush = True)
+		print("Time for solving base & team:   %s" % str(self.InitialSolveTime), flush = True)
+		print("Overall startup time:           %s" % str(self.StartUpTime), flush = True)
 
 	def extractPlan(self, step, gt):
 		if self.LastModel is None:
