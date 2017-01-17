@@ -394,6 +394,14 @@ class Control:
 			info.Holding = None
 			self.mountRing(machine, productIndex, order, qty, ring)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+		elif task == "mountCap":
+			machine = parameters[0][1][1]
+			order = int(parameters[1])
+			qty = int(parameters[2])
+			productIndex = info.Holding
+			info.Holding = None
+			self.mountCap(machine, productIndex, order, qty)
+			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 
 	def spawnProduct(self, base):
 		if len(self.Products) == maxProducts():
@@ -430,6 +438,12 @@ class Control:
 		self.updateFillState(machineName, -cost)
 		self.Products[productIndex].Rings[ring-1] = ringColor
 		self.CTL.release_external(self.OrdersWithTasks[(order, qty)].RingTask[ring])
+
+	def mountCap(self, machineName, productIndex, order, qty):
+		self.machineProcess(machineName, productIndex)
+		self.updatePrepareState(machineName, False)
+		self.Products[productIndex].Cap = self.OrdersWithTasks[(order, 1)].Info.Cap
+		self.CTL.release_external(self.OrdersWithTasks[(order, qty)].CapTask)
 
 	def machineProcess(self, machineName, productIndex):
 		machine = self.Machines[machineName]
