@@ -134,6 +134,7 @@ class Control:
 		self.LastModel         = None
 		self.Machines          = {}
 		self.MachineFailures   = machineFailures
+		self.ModifyCTL         = True
 		self.NextOrder         = 0
 		self.Orders            = orders
 		self.OrdersWithTasks   = {}
@@ -286,6 +287,7 @@ class Control:
 					self.update(step, gt)
 
 		steps = horizonSteps()
+		self.ModifyCTL = False
 		for step in range(steps[0], steps[1] + 1):
 			self.extractPlan(step, gt)
 
@@ -310,6 +312,8 @@ class Control:
 		for symbol in self.LastModel:
 			if symbol.name == "begin":
 				self.beginRobotTask(symbol, step, gt)
+			elif symbol.name == "end":
+				self.endRobotTask(symbol, step, gt)
 
 	def update(self, step, gt):
 		print("Update on basis of step: " + str(step), flush = True)
@@ -340,15 +344,17 @@ class Control:
 			print("Invalid fill state for %s: %d!" % (machine, newFillState), flush = True)
 			sys.exit()
 		print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
-		self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
-		self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
+		if self.ModifyCTL:
+			self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
+			self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
 
 	def updatePrepareState(self, machine, state):
 		oldState = self.CapStations[machine]
 		if state != oldState:
 			print("Change " + str(machine) + " prepare state from " + str(oldState) + " to " + str(state) + ".", flush = True)
-			self.CTL.assign_external(capStationExternal(machine), state)
 			self.CapStations[machine] = state
+			if self.ModifyCTL:
+				self.CTL.assign_external(capStationExternal(machine), state)
 		else:
 			print("Update prepare state, without update!", flush = True)
 
@@ -490,17 +496,20 @@ class Control:
 				break
 		self.updateFillState(machineName, -cost)
 		self.Products[productIndex].Rings[ring-1] = ringColor
-		self.CTL.release_external(self.OrdersWithTasks[(order, qty)].RingTask[ring])
+		if self.ModifyCTL:
+			self.CTL.release_external(self.OrdersWithTasks[(order, qty)].RingTask[ring])
 
 	def mountCap(self, machineName, productIndex, order, qty):
 		self.machineProcess(machineName, productIndex)
 		self.updatePrepareState(machineName, False)
 		self.Products[productIndex].Cap = self.OrdersWithTasks[(order, 1)].Info.Cap
-		self.CTL.release_external(self.OrdersWithTasks[(order, qty)].CapTask)
+		if self.ModifyCTL:
+			self.CTL.release_external(self.OrdersWithTasks[(order, qty)].CapTask)
 
 	def deliver(self, machineName, productIndex, order, qty):
-		for external in self.OrdersWithTasks[(order, qty)].DeliveryTasks:
-			self.CTL.release_external(external)
+		if self.ModifyCTL:
+			for external in self.OrdersWithTasks[(order, qty)].DeliveryTasks:
+				self.CTL.release_external(external)
 		self.destroyProduct(productIndex)
 
 	def machineProcess(self, machineName, productIndex):
@@ -525,12 +534,14 @@ class Control:
 
 	def spawnZone(self, zone):
 		print("Add zone " + str(zone) + " to explore.", flush = True)
-		self.CTL.assign_external(zoneLocationExternal(zone), True)
-		self.CTL.assign_external(zoneTaskExternal(zone), True)
+		if self.ModifyCTL:
+			self.CTL.assign_external(zoneLocationExternal(zone), True)
+			self.CTL.assign_external(zoneTaskExternal(zone), True)
 
 	def releaseZone(self, zone, remove = False):
-		self.CTL.release_external(zoneLocationExternal(zone))
-		self.CTL.release_external(zoneTaskExternal(zone))
+		if self.ModifyCTL:
+			self.CTL.release_external(zoneLocationExternal(zone))
+			self.CTL.release_external(zoneTaskExternal(zone))
 
 		if remove:
 			print("Remove zone " + str(zone) + " from the zones to explore.", flush = True)
