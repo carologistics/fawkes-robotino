@@ -402,6 +402,14 @@ class Control:
 			info.Holding = None
 			self.mountCap(machine, productIndex, order, qty)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+		elif task == "deliver" or task == "lateDeliver":
+			machine = parameters[0][1][1]
+			order = int(parameters[1])
+			qty = int(parameters[2])
+			productIndex = info.Holding
+			info.Holding = None
+			self.deliver(machine, productIndex, order, qty, task == "lateDeliver")
+			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 
 	def spawnProduct(self, base):
 		if len(self.Products) == maxProducts():
@@ -444,6 +452,11 @@ class Control:
 		self.updatePrepareState(machineName, False)
 		self.Products[productIndex].Cap = self.OrdersWithTasks[(order, 1)].Info.Cap
 		self.CTL.release_external(self.OrdersWithTasks[(order, qty)].CapTask)
+
+	def deliver(self, machineName, productIndex, order, qty, late):
+		for external in self.OrdersWithTasks[(order, qty)].DeliveryTasks:
+			self.CTL.release_external(external)
+		self.destroyProduct(productIndex)
 
 	def machineProcess(self, machineName, productIndex):
 		machine = self.Machines[machineName]
