@@ -20,7 +20,6 @@ asp_planer_graph.cpp
 ../../agents/asp/getBase.lp
 ../../agents/asp/getProduct.lp
 ../../agents/asp/goal.lp
-../../agents/asp/instance1.lp
 ../../agents/asp/instance-exploration.lp
 ../../agents/asp/instance-exploration-check.lp
 ../../agents/asp/instance-exploration-small-lookahaed.lp
