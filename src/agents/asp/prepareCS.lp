@@ -42,7 +42,8 @@ inUse(L, R, GT) :- begin(R, prepareCS(L, _), GT).
 free(L, GT)  :- end(_, prepareCS(L, _), GT).
 
 possible(R, prepareCS(L, S), GT) :- task(prepareCS(L, S)), robot(R), not holding(R, _, GT), capLocation(M, L),
-									not csPrepared(M, GT), not storing(M, _, GT), GT = 0..@horizon()-1.
+									not csPrepared(M, GT), not storing(M, _, GT), not processing(M, _, _, GT),
+									GT = 0..@horizon()-1.
 
 csPreparedByRobot(R, M, GT) :- end(R, prepareCS(L, S), GT), capLocation(M, L).
 

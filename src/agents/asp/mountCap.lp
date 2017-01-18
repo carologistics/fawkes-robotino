@@ -46,6 +46,10 @@ free(L, GT) :- end(_, T, GT), capTask(T), taskLocation(T, L).
 
 possible(R, T, GT) :- not impossible(R, T, GT), capTask(T), robot(R), GT = 0..@horizon()-1.
 
+% The machine has to have an empty output.
+impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), capLocation(M, L), storing(M, _, GT).
+% The machine has to be in idle.
+impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), capLocation(M, L), processing(M, _, _, GT).
 % The machine has to be prepared.
 impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), capLocation(M, L), not csPrepared(M, GT),
 						GT = 0..@horizon()-1.
