@@ -19,40 +19,36 @@ MaxFeedRS = 1
 MaxGetBase = 1
 MaxGetProduct = 2
 MaxPrepCS = 1
-MaxProducts = 10
+MaxProducts = 5
 Robots = ["Tuvok", "T'Pol"]
 
 def generateInstance():
 	return ([],
 		[RingInfo("YELLOW", "RS2", 1), RingInfo("GREEN", "RS2", 0),
 		 RingInfo("BLUE", "RS1", 2), RingInfo("ORANGE", "RS1", 0)],
-		[OrderInfo(1, 1, "BLACK", "BLACK", "GREEN", "ORANGE", "GREEN", 240, 1140, 240)],
+		[OrderInfo(1, 1, "BLACK", "BLACK", "GREEN", "ORANGE", "none", 240, 1140, 240)],
 		[])
 
 #end.
 
 #program testInstance.
+testTask("Tuvok", 1, prepareCS(L, 1),        L, 0) :- L = m("C", "CS2", "I").
+testTask("Tuvok", 2, getProduct(L, 1),       L, W) :- L = m("C", "CS2", "O"), W = @machineWorkingDuration("CS2").
 
-:- not begin("T'Pol", prepareCS(m("C", "CS2", "I"), 1), 0).
-:- not begin("T'Pol", getProduct(m("C", "CS2", "O"), 1), D1),
-   fullDuration(getProduct(m("C", "CS2", "0"), 1), "ins-out", D1).
-:- not begin("T'Pol", feedRS(m("C", "RS1", "I"), 1), D1 + D2),
-   fullDuration(prepareCS(m("C", "CS2", "I"), 1), "ins-out", D1),
-   fullDuration(getProduct(m("C", "CS2", "O"), 1), m("C", "CS2", "I"), D2).
-:- not begin("T'Pol", prepareCS(m("C", "CS1", "I"), 1), D1 + D2 + D3),
-   fullDuration(prepareCS(m("C", "CS2", "I"), 1), "ins-out", D1),
-   fullDuration(getProduct(m("C", "CS2", "O"), 1), m("C", "CS2", "I"), D2),
-   fullDuration(freedRS(m("C", "RS1", "I"), 1), m("C", "CS2", "O"), D3).
-:- not begin("T'Pol", getProduct(m("C", "CS1", "O"), 1), D1 + D2 + D3 + D4),
-   fullDuration(prepareCS(m("C", "CS2", "I"), 1), "ins-out", D1),
-   fullDuration(getProduct(m("C", "CS2", "O"), 1), m("C", "CS2", "I"), D2),
-   fullDuration(freedRS(m("C", "RS1", "I"), 1), m("C", "CS2", "O"), D3),
-   fullDuration(prepareCS(m("C", "CS1", "I"), 1), m("C", "RS1", "I"), D4).
-:- not begin("T'Pol", feedRS(m("C", "RS2", "I"), 1), D1 + D2 + D3 + D4 + D5),
-   fullDuration(prepareCS(m("C", "CS2", "I"), 1), "ins-out", D1),
-   fullDuration(getProduct(m("C", "CS2", "O"), 1), m("C", "CS2", "I"), D2),
-   fullDuration(freedRS(m("C", "RS1", "I"), 1), m("C", "CS2", "O"), D3),
-   fullDuration(prepareCS(m("C", "CS1", "I"), 1), m("C", "RS1", "I"), D4),
-   fullDuration(getProduct(m("C", "CS1", "O"), 1), m("C", "CS1", "I"), D5).
+testTask("T'Pol", 1, getBase(L, "BLACK", 1), L, 0) :- L = m("C", "BS",  "O").
+testTask("T'Pol", 2, mountRing(L, 1, 1, 1),  L, 0) :- L = m("C", "RS2", "I").
+testTask("T'Pol", 3, getProduct(L, 1),       L, W) :- L = m("C", "RS2", "O"), W = @machineWorkingDuration("RS2").
+testTask("T'Pol", 4, mountRing(L, 1, 1, 2),  L, 0) :- L = m("C", "RS1", "I").
+testTask("T'Pol", 5, getProduct(L, 1),       L, W) :- L = m("C", "RS1", "O"), W = @machineWorkingDuration("RS1").
+testTask("T'Pol", 6, mountCap(L, 1, 1),      L, 0) :- L = m("C", "CS2", "I").
+testTask("T'Pol", 7, getProduct(L, 2),       L, W) :- L = m("C", "CS2", "O"), W = @machineWorkingDuration("CS2").
+testTask("T'Pol", 8, deliver(L, 1, 1),       L, 0) :- L = m("C", "DS",  "I").
 
-:- not begin("Tuvok", getBase(m("C", "BS", "O"), "BLACK", 1), 0).
+startTestTask(R, 1, 0, D) :- testTask(R, 1, Task, _, _), fullDuration(Task, "ins-out", D).
+startTestTask(R, Number, Time, Duration) :- testTask(R, Number, Task, Location, Wait),
+											testTask(R, Number-1, PrevTask, PrevLocation, _),
+											startTestTask(R, Number-1, PrevStart, PrevDuration),
+											fullDuration(Task, PrevLocation, Duration),
+											Time = PrevStart + PrevDuration + Wait.
+
+:- not begin(R, Task, Time), startTestTask(R, Number, Time, _), testTask(R, Number, Task, _, _).
