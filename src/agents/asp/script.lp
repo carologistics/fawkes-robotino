@@ -298,10 +298,11 @@ class Control:
 				for step in range(0, nextGT - gt):
 					self.update(step, gt)
 
-		steps = horizonSteps()
-		self.ModifyCTL = False
-		for step in range(steps[0], steps[1] + 1):
-			self.extractPlan(step, gt)
+		if self.LastModel is not None:
+			steps = horizonSteps()
+			self.ModifyCTL = False
+			for step in range(steps[0], steps[1] + 1):
+				self.update(step, gt)
 
 		score = 0
 		print("Plan:", flush = True)
@@ -320,15 +321,6 @@ class Control:
 		print("Time for grounding base & team: %s" % str(self.GroundTime), flush = True)
 		print("Time for solving base & team:   %s" % str(self.InitialSolveTime), flush = True)
 		print("Overall startup time:           %s" % str(self.StartUpTime), flush = True)
-
-	def extractPlan(self, step, gt):
-		if self.LastModel is None:
-			return
-		for symbol in self.LastModel:
-			if symbol.name == "begin":
-				self.beginRobotTask(symbol, step, gt)
-			elif symbol.name == "end":
-				self.endRobotTask(symbol, step, gt)
 
 	def update(self, step, gt):
 		print("Update on basis of step: " + str(step), flush = True)
