@@ -1,0 +1,70 @@
+;---------------------------------------------------------------------------
+;  production.opf - OpenPRS OP file for RCll2017 openprs-agent
+;
+;  Created: Tue Jan 17 15:43:00 2017
+;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+
+(
+
+	(defop produce-c0-imperative
+		:invocation	(timer "beacon" $last-sec $last-usec $seq)
+		:context( 	(order $id c0 $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
+					(peer-id private $peer-id)
+				 	(machine $bs-name "BS" $bs-state $bs-zone $bs-pose $bs-loaded-with)
+				 	(machine $cs-name "CS" $cs-state $cs-zone $cs-pose $cs-loaded-with)
+				   	(agent-state IDLE)
+				   	(team-color $team-color )
+				   	)
+
+		:body(
+			(~> (agent-state IDLE))
+			; drive to the machine
+			(! (print "Producing C0..."))
+			(! (print (string-cat $bs-name "-I")))
+			(! (drive-to (string-cat $bs-name "-I"))) ;; todos, get the side from a fact that makes sure the active-side is updated
+			; get the lock
+
+			;Send the instruction
+			(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
+			(! (= @bs-inst (pb-create "llsf_msgs.PrepareInstructionBS")))
+			(! (pb-set-field @bs-inst "side" INPUT))
+			(! (pb-set-field @bs-inst "color" $base-color))
+			(! (pb-set-field @instruction "instruction_bs" @bs-inst ))
+			(! (pb-set-field @instruction "team_color" $team-color))
+			(! (pb-set-field @instruction "machine" $bs-name ))
+			(! (pb-broadcast $peer-id @instruction))
+
+			;get the base 
+			(! (get-product-from $bs-name "input"))
+			
+			;drive to CS
+			;(! (skill-call "drive_to" "place" (string-cat $machine-name "-I"))) ;; todos, get the side from an fact that makes sure the active-side is updated
+			
+
+			)
+
+
+	:effects ()
+	:documentation "A completly imparative way to produce the c0 product using only a single robot. 
+					This is only an exemplary Op to test the water. It starts in response for a C0 order and assumes nothing else is happing on the feild
+					No locks. No coordination and everything is hard coded"
+
+	)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	)
