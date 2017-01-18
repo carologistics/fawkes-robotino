@@ -36,7 +36,7 @@ using namespace fawkes;
 
 /** Constructor. */
 ClipsSmtThread::ClipsSmtThread()
-  : Thread("ClipsSmtThread", Thread::OPMODE_WAITFORWAKEUP),
+  : Thread("ClipsSmtThread", Thread::OPMODE_WAITFORWAKEUP) ,
     CLIPSFeature("smt"), CLIPSFeatureAspect(this) // CLIPSFeature("navgraph") before
 {
 }
@@ -51,10 +51,12 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
-  WorkingPiece workingPieceRobot("04448");
-  Robot robot(42, 1, 2, workingPieceRobot);
-  _smtData._robots.push_back(robot);
-
+  try
+  {
+    WorkingPiece workingPieceRobot("572394273");
+    Robot robot(42, 1, 2, workingPieceRobot);
+    _smtData._robots.push_back(robot);
+ 
   WorkingPiece workingPieceMachine("13467");
   Machine machine(27,2,3,10,MachineType::cap, workingPieceMachine);
   _smtData._machines.push_back(machine);
@@ -63,8 +65,15 @@ ClipsSmtThread::init()
   Order order(30, targetPieceOrder);
   _smtData._currentOrders.push_back(order);
 
+  std::cout << workingPieceRobot.isConsistent() << " ; " <<  workingPieceRobot.toInt() << std::endl;
   std::cout << _smtData.toString() << std::endl;
-
+  }
+  catch (const runtime_error& error)
+  {
+    std::cout << "Someting Bad Happend:" << std::endl;
+    std::cout << error.what() << std::endl;
+  }
+  
 }
 
 

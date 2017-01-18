@@ -25,17 +25,17 @@
 
 /*
  * Base Colors:
- * Red 0
- * Black 1
- * Silver 2
+ * Red 		0
+ * Black 	1
+ * Silver 	2
  * Ring Colors:
- * Blue 3
- * Green 4
- * Yellow 5
- * Orange 6
+ * Blue 	3
+ * Green 	4
+ * Yellow 	5
+ * Orange 	6
  * Cap Colors:
- * Gray 7
- * Black 8
+ * Gray 	7
+ * Black 	8
 */
 
 enum WorkingPieceComponent
@@ -57,6 +57,12 @@ public:
 		_workingPieceComponents = convertToWorkPiece(input);
 	}
 
+	WorkingPiece(int input)
+	{
+		_workingPieceComponents = convertToWorkPiece(input);
+	}
+
+
 	std::vector<WorkingPieceComponent> convertToWorkPiece(std::string input)
 	{
 		std::vector<WorkingPieceComponent> workingPieceComponents;
@@ -64,17 +70,34 @@ public:
 		for (unsigned int i = 0; i < inputAsChars.size(); ++i)
 		{
 			WorkingPieceComponent currentWorkingPieceComponent;
-			assert((inputAsChars[i]>= 48) && (inputAsChars[i]<57));
+			if ((inputAsChars[i]< 48) || (inputAsChars[i]>=57))
+			{
+				throw std::runtime_error("SMT_ERROR: Failed to create a WorkingPieceComponent with undefined Char.");
+			}
 			currentWorkingPieceComponent = static_cast<WorkingPieceComponent>((int)inputAsChars[i]-48);
 			workingPieceComponents.push_back(currentWorkingPieceComponent);
 		}
 
 		//making shure all charackters were converted:
-		assert (workingPieceComponents.size() == inputAsChars.size());
+		if (workingPieceComponents.size() == inputAsChars.size())
+			{
+				throw std::runtime_error("SMT_ERROR: Not all input charackters could be converted.");
+			}
 		return workingPieceComponents;
 	}
 
-  int getBaseComponent()
+
+	std::vector<WorkingPieceComponent> convertToWorkPiece(int input)
+	{
+		if (input < 0)
+			{
+				throw std::runtime_error("SMT_ERROR: Cannot create WorkingPiece from Negative Int");
+			}
+		convertToWorkPiece(std::to_string(input));	
+	}
+
+
+  	int getBaseComponent()
 	{
 		for(WorkingPieceComponent workingPieceComponent: _workingPieceComponents) {
 			if(workingPieceComponent>=0 && workingPieceComponent<3) {
@@ -96,6 +119,43 @@ public:
 		}
 
 		return -1;
+	}
+
+	bool isConsistent()
+	{
+		if (_workingPieceComponents.size() == 0)
+		{
+			return true;
+		}
+
+		for (std::vector<WorkingPieceComponent>::iterator it = _workingPieceComponents.begin() ; it != _workingPieceComponents.end(); ++it)
+		{
+			//Base only at first position
+			if (it !=_workingPieceComponents.begin())
+			{
+				if(*it >= 0 && *it < 3)
+				{
+					return false;
+				}
+			}
+
+			//Cap only at last position
+			if (it != _workingPieceComponents.end()-1)
+			{
+				if(*it >= 7 && *it < 9)
+				{
+					return false;
+				}				
+			}
+		}
+
+		//No RingComponent/Cap as Base
+		if (*_workingPieceComponents.begin()  >  3 && *_workingPieceComponents.begin() < 9)
+		{
+			return false;
+		}
+  
+    	return true;
 	}
 
 	std::string toString()
@@ -127,6 +187,41 @@ public:
 		}
 		workingPieceDescription += " ]";
 		return workingPieceDescription;
+	}
+
+	int toInt()
+	{
+		std::string temporaryString;
+		for(WorkingPieceComponent workingPieceComponent: _workingPieceComponents) {
+			switch(workingPieceComponent) {
+				case 0: temporaryString += "0";
+								break;
+				case 1: temporaryString += "1";
+							  break;
+				case 2: temporaryString += "2";
+								break;
+				case 3: temporaryString += "3";
+							  break;
+				case 4: temporaryString += "4";
+								break;
+				case 5: temporaryString += "5";
+								break;
+				case 6: temporaryString += "6";
+								break;
+				case 7: temporaryString += "7";
+				        break;
+				case 8: temporaryString += "8";
+								break;
+				default: break;
+			}
+		}
+
+		if (_workingPieceComponents.size() != temporaryString.size())
+		{
+			throw std::runtime_error("SMT_ERROR: Unable to convert WorkingPiece to Int");
+		}
+
+		return std::stoi( temporaryString );
 	}
 };
 
