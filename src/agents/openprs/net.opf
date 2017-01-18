@@ -119,22 +119,24 @@
         (! (= @machine-name (pb-field-value @machine "name")))
         (! (= @machine-type (pb-field-value @machine "type")))
         (! (= @machine-state (pb-field-value @machine "state")))
+        (! (= @machine-prepared (pb-field-value @machine "prepared")))
         (! (= @machine-zone (pb-field-value @machine "zone")))
         (! (= @machine-pose (pb-field-value @machine "pose")))   
         (! (= @machine-loaded-with (pb-field-value @machine "loaded_with")))
         (! (= @machine-ringcolors (pb-field-list @machine "ring_colors")))   
 
         ;Update Machine Information
-        (if (? (& (machine $m-name $m-type $m-state $m-zone $m-pose $m-loaded-with) (= $m-name @machine-name)))
+        (if (? (& (machine $m-name $m-type $m-state $m-prepared $m-zone $m-pose $m-loaded-with) (= $m-name @machine-name)))
           (if (? (||  (~ (= $m-state @machine-state)) 
                       (~ (= $m-loaded-with @machine-loaded-with)) 
                       (~ (= $m-pose @machine-pose)) ))
-            (=> (machine @machine-name @machine-type @machine-state @machine-zone @machine-pose @machine-loaded-with)) 
+                      (~ (= $m-prepared @machine-prepared))
+            (=> (machine @machine-name @machine-type @machine-state @machine-prepared @machine-zone @machine-pose @machine-loaded-with)) 
             (! (print "updating MachineInfo"))
             )
           else  
           (if (? (= null $m-name))
-            (=> (machine @machine-name @machine-type @machine-state @machine-zone @machine-pose @machine-loaded-with)) 
+            (=> (machine @machine-name @machine-type @machine-state @machine-prepared @machine-prepared @machine-zone @machine-pose @machine-loaded-with)) 
             (! (print "adding MachineInfo"))
             )
           )
@@ -159,7 +161,7 @@
       TODO: -remove the loaded-with and pose info after knowing what is it for
             - changes of team_color is also propagated
             - maybe put the zone information in a separate fact like clips (zone-exp)
-
+            - maybe find a shorter way to check the conditions for the machine
       "
   )
 
@@ -223,8 +225,9 @@
   :effects()
   :documentation "Process the RingInfo message that contains information about how many bases does a ring colour needs"
 
-
   )
+
+
 
 
 
