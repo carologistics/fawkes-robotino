@@ -42,6 +42,9 @@ private:
   int _positionA;
   int _positionB;
   WorkingPiece _wp;
+  std::vector<WorkingPieceComponent> _inputWpType;
+  std::vector<WorkingPieceComponent> _inputWpContainer;
+  WorkingPieceComponent _outputWpType;
   smtTime _defaultBusyTime;
   smtTime _busyTimeLeft;
   MachineType _machineType; // TODO from Igor: Or maybe Vector<int> outputRequirement
@@ -49,14 +52,22 @@ private:
 public:
 
   //Constructor
-  Machine(unsigned int id, int posA, int posB, smtTime defaultBusyTime, MachineType machineType, WorkingPiece wp)
+  Machine(unsigned int id, int posA, int posB, smtTime defaultBusyTime, MachineType machineType, WorkingPiece wp,   
+          std::vector<WorkingPieceComponent> inputWpType,
+          std::vector<WorkingPieceComponent> inputWpContainer,
+          WorkingPieceComponent outputWpType)
   {
     _id = id;
     _positionA = posA;
     _positionB = posB;
     _defaultBusyTime = defaultBusyTime;
     _machineType = machineType;
+    if (!wp.isConsistent()) throw std::runtime_error("SMT_ERROR: Cannot Set Inconsistent WorkingPiece for Machine");
     _wp = wp;
+
+    _inputWpType = inputWpType;
+    _inputWpContainer = inputWpContainer;
+    _outputWpType = outputWpType;
   }
 
   //getter & setters
@@ -82,7 +93,7 @@ public:
 
   void setWorkingPiece(WorkingPiece wp)
   {
-    //TODO (Lukas) add working piece check for wp here
+    if (!wp.isConsistent()) throw std::runtime_error("SMT_ERROR: Cannot Set Inconsistent WorkingPiece for Machine");
     _wp = wp;
   }
 
@@ -100,6 +111,39 @@ public:
   {
     return _machineType;
   }
+
+  WorkingPieceComponent getOutputType() const
+  {
+    return _outputWpType;
+  }
+
+  std::vector<WorkingPieceComponent> getInputType() const
+  {
+    return _inputWpType;
+  }
+
+  std::vector<WorkingPieceComponent> getInputContainer() const
+  {
+    return _inputWpContainer;
+  }
+
+  bool hasRecievedWorkPieceComponent(WorkingPieceComponent wpc) const
+  {
+    for(WorkingPieceComponent workingPieceComponent: _inputWpContainer) {
+      if (wpc == workingPieceComponent) return true;
+    }
+
+    return false;
+  }
+
+
+  bool hasRecievedWorkPieceComponent(int input) const
+  {
+    if (input < 0 ) throw std::runtime_error("SMT_ERROR: Unable to Convert negative Number to WorkingPieceComponent.");
+    WorkingPieceComponent wpc = static_cast<WorkingPieceComponent>(input);
+    return hasRecievedWorkPieceComponent(wpc);
+  }
+
 
   std::string toString()
   {

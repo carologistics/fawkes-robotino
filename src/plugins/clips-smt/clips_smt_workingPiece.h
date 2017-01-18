@@ -79,7 +79,7 @@ public:
 		}
 
 		//making shure all charackters were converted:
-		if (workingPieceComponents.size() == inputAsChars.size())
+		if (workingPieceComponents.size() != inputAsChars.size())
 			{
 				throw std::runtime_error("SMT_ERROR: Not all input charackters could be converted.");
 			}

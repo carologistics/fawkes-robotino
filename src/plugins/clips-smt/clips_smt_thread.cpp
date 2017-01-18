@@ -53,20 +53,24 @@ ClipsSmtThread::init()
 {
   try
   {
-    WorkingPiece workingPieceRobot("572394273");
+    WorkingPiece workingPieceRobot("5345447");
     Robot robot(42, 1, 2, workingPieceRobot);
     _smtData._robots.push_back(robot);
  
-  WorkingPiece workingPieceMachine("13467");
-  Machine machine(27,2,3,10,MachineType::cap, workingPieceMachine);
-  _smtData._machines.push_back(machine);
+    WorkingPiece workingPieceMachine("13467");
+    std::vector<WorkingPieceComponent> inputWpType = {RING_BLUE, RING_GREEN};
+    std::vector<WorkingPieceComponent> inputWpContainer = {RING_GREEN};
+    WorkingPieceComponent outputWP = RING_ORANGE;
+    Machine machine(27,2,3,10,MachineType::cap, workingPieceMachine, inputWpType, inputWpContainer, outputWP);
+    _smtData._machines.push_back(machine);
+    if (machine.hasRecievedWorkPieceComponent(4)) std::cout<< "WorkingPieceComponent is already in Machine" << std::endl;
 
-  WorkingPiece targetPieceOrder("24468");
-  Order order(30, targetPieceOrder);
-  _smtData._currentOrders.push_back(order);
+    WorkingPiece targetPieceOrder("24468");
+    Order order(30, targetPieceOrder);
+    _smtData._currentOrders.push_back(order);
 
-  std::cout << workingPieceRobot.isConsistent() << " ; " <<  workingPieceRobot.toInt() << std::endl;
-  std::cout << _smtData.toString() << std::endl;
+  
+    std::cout << _smtData.toString() << std::endl;
   }
   catch (const runtime_error& error)
   {
