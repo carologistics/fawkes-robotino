@@ -57,6 +57,10 @@ free(L, GT) :- end(_, T, GT), ringTask(T), taskLocation(T, L).
 
 possible(R, T, GT) :- ringTask(T), robot(R), GT = 0..@horizon()-1, not impossible(R, T, GT).
 
+% The machine has to have an empty output.
+impossible(R, T, GT) :- ringTask(T), robot(R), taskLocation(T, L), ringLocation(M, L), storing(M, _, GT).
+% The machine has to be in idle.
+impossible(R, T, GT) :- ringTask(T), robot(R), taskLocation(T, L), ringLocation(M, L), processing(M, _, _, GT).
 % The robot has to hold a product.
 impossible(R, T, GT) :- ringTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 % The product has to have the correct base color.
