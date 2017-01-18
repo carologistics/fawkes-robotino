@@ -35,7 +35,7 @@
     (! (ppgoto "C-DS"))
     (! (print "LLSF2016 agent successfully initialized"))
   )
-  :effects ((~> (agent-init)) (=> (peer-id public @peer-id)) )
+  :effects ((~> (agent-init)) (=> (peer-id public @peer-id)) (=> (agent-state IDLE)) )
 )
 
 (defop say
@@ -52,6 +52,15 @@
   :action (skill-call "ppgoto" "place" $place)
   :documentation "go to a place"
 )
+
+
+(defop drive-to
+  :invocation (! (drive-to $place))
+  :call (dirve-to $place)
+  :action (skill-call "drive_to" "place" $place)
+  :documentation "Drive to a place"
+)
+
 
 (defop agent-print-skiller-iface
   :invocation (bb-data "type" "SkillerInterface" "id" "Skiller" "time" $t_sec $t_usec $data)
