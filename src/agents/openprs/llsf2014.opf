@@ -61,6 +61,12 @@
   :documentation "Drive to a place"
 )
 
+(defop get-product-from
+  :invocation (! (get-product-from $place $side))
+  :call (get-product-from $place $side)
+  :action (skill-call "get_product_from" "place" $place "side" $side)
+  :documentation "Drive to a place"
+)      
 
 (defop agent-print-skiller-iface
   :invocation (bb-data "type" "SkillerInterface" "id" "Skiller" "time" $t_sec $t_usec $data)
