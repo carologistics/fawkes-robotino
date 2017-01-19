@@ -2,7 +2,6 @@
 % ourTeam(t)                     Setup the delivery tasks, that are possible, as soon as we know the special locations.
 %
 % In this file defined predicates:
-% free(L, GT)                    The machine side L is freed in time step GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(deliver(_), P)          How many points are awarded for the delivery.
 % possible(R, deliver(_), GT)    If robot R can perform the delivery task at GT.
@@ -51,8 +50,8 @@ taskLocation(T, L)	                    :- allDeliverTasks(T), deliverLocation(L)
 
 #external toBeDone(T, 0) : allDeliverTasks(T).
 
-inUse(L, R, GT) :- begin(R, T, GT), allDeliverTasks(T), taskLocation(T, L).
-free(L, GT) :- end(_, T, GT), allDeliverTasks(T), taskLocation(T, L).
+inUse(L, R, GT) :- doing(R, T, _, GT), allDeliverTasks(T), taskLocation(T, L).
+inUse(L, R, GT) :- end(R, T, GT), allDeliverTasks(T), taskLocation(T, L).
 
 possible(R, T, GT) :- allDeliverTasks(T), robot(R), GT = 0..@horizon()-1, not impossible(R, T, GT).
 

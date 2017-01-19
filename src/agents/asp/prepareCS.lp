@@ -5,7 +5,6 @@
 %
 % In this file defined predicates:
 % csPrepared(M, GT)              Also defined in machines.lp
-% free(L, GT)                    The machine side L is freed in time step GT.
 % generateProduct(R, B, GT)      The robot R generated a new product with base color B at GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(prepareCS(_), P)        How many points are awarded for the preparation.
@@ -38,8 +37,8 @@ taskDuration(T, @prepareCSTaskDuration()) :- prepCSTask(T).
 taskLocation(prepareCS(L, S), L)          :- task(prepareCS(L, S)).
 toBeDone(T, 0)                            :- prepCSTask(T), productionStarted.
 
-inUse(L, R, GT) :- begin(R, prepareCS(L, _), GT).
-free(L, GT)  :- end(_, prepareCS(L, _), GT).
+inUse(L, R, GT) :- doing(R, prepareCS(L, _), _, GT).
+inUse(L, R, GT) :- end(R, prepareCS(L, _), GT).
 
 possible(R, prepareCS(L, S), GT) :- task(prepareCS(L, S)), robot(R), not holding(R, _, GT), capLocation(M, L),
 									not csPrepared(M, GT), not storing(M, _, GT), not processing(M, _, _, GT),

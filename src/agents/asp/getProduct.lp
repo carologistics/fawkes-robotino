@@ -2,7 +2,6 @@
 % ourTeam(t)                     Setup the get product tasks, that are possible, as soon as we know the special locations.
 %
 % In this file defined predicates:
-% free(L, GT)                    The machine side L is freed in time step GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % pickup(R, P, GT)                The robot R picked up product P at time step GT.
 % possible(R, getProduct(_), GT) If robot R can perform the retreival task at GT.
@@ -31,8 +30,8 @@ taskDuration(T, @getProductTaskDuration()) :- getProductTask(T).
 taskLocation(getProduct(L, S), L)          :- task(getProduct(L, S)).
 toBeDone(T, 0)                             :- getProductTask(T), productionStarted.
 
-inUse(L, R, GT) :- begin(R, getProduct(L, S), GT).
-free(L, GT) :- end(R, getProduct(L, _), GT).
+inUse(L, R, GT) :- doing(R, getProduct(L, _), _, GT).
+inUse(L, R, GT) :- end(R, getProduct(L, _), GT).
 
 possible(R, getProduct(L, S), GT) :- task(getProduct(L, S)), robot(R), not holding(R, _, GT), getLocation(M, L),
 									 storing(M, P, GT), GT = 0..@horizon()-1.

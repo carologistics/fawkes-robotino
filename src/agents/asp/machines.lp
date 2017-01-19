@@ -4,7 +4,6 @@
 % In this file defined predicates:
 % broken(M, D, GT)               The machine M is broken for at least D time steps.
 % csPrepared(M, GT)              If the cap station M is prepared to mount a cap in GT.
-% inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % processing(M, P, D, GT)        The machine M processes product P for the next D time steps from GT on.
 % rsFillState(M, S, GT)          Ring station M has S additional bases loaded in GT.
 % storing(M, P, GT)              Machine M stores product P in GT.
@@ -14,7 +13,7 @@
 % capMounted(M, P, GT)           Defined in mountCap.lp
 % deliveryStation(M)             Defined in facts.lp
 % deliveryTimes(B, E)            Defined in facts.lp
-% free(L, GT)                    Defined in the task descriptions.
+% inUse(L, R, GT)                Defined in the task descriptions.
 % pickUp(R, P, GT)               Defined in some tasks descriptions.
 % process(M, P, GT)              Defined in some tasks descriptions.
 % product(P)                     Defined in product.lp
@@ -33,13 +32,13 @@
 #external storing(M, P, 0) : ringStation(M), product(P).
 
 #program ourTeam(t).
-% Update inUse, we block a machine one time step longer than actually used, this is because of the time resolution.
-inUse(L, R, GT) :- inUse(L, R, GT-1), not free(L, GT-1), not horizon(GT).
+% A location is in use, when a robot stands there.
+inUse(L, R, GT) :- robotLocation(R, L, GT).
 
 % Each location is used by at most one robot.
-:- inUse(L, R1, GT), inUse(L, R2, GT), R1 != R2.
+:- inUse(L, R1, GT), inUse(L, R2, GT), R1 != R2, L != "ins-out".
 % Benchmark them against each other!
-%:- 2 { inUse(L, R, GT) : robot(R) }.
+%:- 2 { inUse(L, R, GT) : robot(R) }, L != "ins-out".
 
 broken(M, D, GT) :- broken(M, D-1, GT-1), not horizon(GT), D != 1.
 
