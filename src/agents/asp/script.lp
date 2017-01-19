@@ -60,7 +60,8 @@ def splitParameters(string):
 
 		loop = comma != -1 or paranthesis != -1
 
-	temp.append(string)
+	if len(string) != 0:
+		temp.append(string)
 
 	ret = []
 	for s in temp:
