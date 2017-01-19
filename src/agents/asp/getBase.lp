@@ -4,7 +4,6 @@
 % In this file defined predicates:
 % taskDuration(getBase(_), D)    How long it takes to retreive the base from the base station, once the robot has
 %                                arrived.
-% free(L, gt)                    The machine side L is freed in time step GT.
 % generateProduct(R, B, GT)      The robot R generated a new product with base color B at GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % taskLocation(getBase(_), L)    Where the retreival will take place.
@@ -35,8 +34,8 @@ taskDuration(T, @getTaskDuration()) :- getBaseTask(T).
 taskLocation(getBase(L, B, S), L)   :- task(getBase(L, B, S)).
 toBeDone(T, 0)                      :- getBaseTask(T), productionStarted.
 
-inUse(L, R, GT) :- begin(R, T, GT), getBaseTask(T), baseLocation(L).
-free(L, GT)  :- end(R, T, GT), getBaseTask(T), baseLocation(L).
+inUse(L, R, GT) :- doing(R, T, _, GT), getBaseTask(T), baseLocation(L).
+inUse(L, R, GT) :- end(R, T, GT), getBaseTask(T), baseLocation(L).
 
 possible(R, T, GT) :- getBaseTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 

@@ -3,7 +3,6 @@
 %                                locations.
 %
 % In this file defined predicates:
-% free(L, GT)                    The machine side L is freed in time step GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(mountRing(_), P)        How many points are awarded for the mounting.
 % possible(R, mountRing(_), GT)  If robot R can perform the mount task at GT.
@@ -52,8 +51,8 @@ taskDuration(T, @mountRingTaskDuration()) :- ringTask(T).
 
 #external toBeDone(T, 0) : ringTask(T).
 
-inUse(L, R, GT) :- begin(R, T, GT), ringTask(T), taskLocation(T, L).
-free(L, GT) :- end(_, T, GT), ringTask(T), taskLocation(T, L).
+inUse(L, R, GT) :- doing(R, T, _, GT), ringTask(T), taskLocation(T, L).
+inUse(L, R, GT) :- end(R, T, GT), ringTask(T), taskLocation(T, L).
 
 possible(R, T, GT) :- ringTask(T), robot(R), GT = 0..@horizon()-1, not impossible(R, T, GT).
 

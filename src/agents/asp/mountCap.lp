@@ -3,7 +3,6 @@
 %
 % In this file defined predicates:
 % capMounted(M, P, GT)           Machine M mounted a cap on product P from in GT.
-% free(L, GT)                    The machine side L is freed in time step GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(mountCap(_), P)         How many points are awarded for the mounting.
 % possible(R, mountCap(_), GT)   If robot R can perform the mount task at GT.
@@ -41,8 +40,8 @@ taskDuration(T, @mountCapTaskDuration()) :- capTask(T).
 
 #external toBeDone(T, 0) : capTask(T).
 
-inUse(L, R, GT) :- begin(R, T, GT), capTask(T), taskLocation(T, L).
-free(L, GT) :- end(_, T, GT), capTask(T), taskLocation(T, L).
+inUse(L, R, GT) :- doing(R, T, _, GT), capTask(T), taskLocation(T, L).
+inUse(L, R, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L).
 
 possible(R, T, GT) :- not impossible(R, T, GT), capTask(T), robot(R), GT = 0..@horizon()-1.
 

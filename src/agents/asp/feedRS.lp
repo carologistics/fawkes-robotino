@@ -3,7 +3,6 @@
 %
 % In this file defined predicates:
 % rsFed(M, GT)                   The ring station M has received an additional base for the advanced colors in GT.
-% free(L, GT)                    The machine side L is freed in time step GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % points(feedRS(_), P)           How many points are awarded for the feeding.
 % possible(R, feedRS(_), GT)     If robot R can perform the feed task at GT.
@@ -36,8 +35,8 @@ taskDuration(T, @feedRSTaskDuration()) :- feedRSTask(T).
 taskLocation(feedRS(L, S), L)          :- task(feedRS(L, S)).
 toBeDone(T, 0)                         :- feedRSTask(T), productionStarted.
 
-inUse(L, R, GT) :- begin(R, feedRS(L, _), GT).
-free(L, GT) :- end(R, feedRS(L, _), GT).
+inUse(L, R, GT) :- doing(R, feedRS(L, _), _, GT).
+inUse(L, R, GT) :- end(R, feedRS(L, _), GT).
 
 % Maybe get more sophisticated and only allow transparent bases for the last fillment.
 possible(R, feedRS(L, S), GT) :- task(feedRS(L, S)), robot(R), holding(R, P, GT), ringLocation(M, L),
