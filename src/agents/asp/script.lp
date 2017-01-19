@@ -151,7 +151,7 @@ class Control:
 		self.StartUpTime       = None
 		self.ZonesToExplore    = zonesToExplore
 
-		for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "functions.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp"]:
+		for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "functions.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp", "taskGoto.lp"]:
 			self.CTL.load(file)
 
 		self.CapColors         = {capColor(clingo.Number(1)) : "CS1", capColor(clingo.Number(2)) : "CS2"}
@@ -467,6 +467,8 @@ class Control:
 				score = 5
 			else:
 				score = 20
+		elif task == "goto":
+			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 		entry.Score = score
 		plan.Score += score
 
