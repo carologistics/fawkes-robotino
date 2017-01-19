@@ -3,7 +3,7 @@
 %
 % In this file defined predicates:
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
-% possible(R, goto(_), GT)       If robot R can perform the goto task at GT. (Yes he can.)
+% possible(R, goto(_), GT)       If robot R can perform the goto task at GT.
 % task(goto(L))                  The robot goes to location L.
 % taskDuration(goto(_), D)       How long the task is.
 % taskLocation(goto(_), L)       Where the goto will end.
@@ -31,4 +31,4 @@ toBeDone(T, GT)          :- gotoTask(T), GT = 0..@horizon()-1.
 inUse(L, R, GT) :- doing(R, T, _, GT), gotoTask(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), gotoTask(T), taskLocation(T, L).
 
-possible(R, T, GT) :- gotoTask(T), robot(R), GT = 0..@horizon()-1.
+possible(R, T, GT) :- gotoTask(T), robot(R), robotLocation(R, RL, GT), taskLocation(T, TL), RL != TL, GT = 0..@horizon()-1.
