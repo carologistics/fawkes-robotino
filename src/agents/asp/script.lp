@@ -151,7 +151,7 @@ class Control:
 		self.StartUpTime       = None
 		self.ZonesToExplore    = zonesToExplore
 
-		for file in ["defaultMap.lp", "delivery.lp", "facts.lp", "feedRS.lp", "functions.lp", "getBase.lp", "getProduct.lp", "goal.lp", "machines.lp", "mountCap.lp", "mountRing.lp", "orders.lp", "prepareCS.lp", "products.lp", "robots.lp", "state.lp", "taskGoto.lp"]:
+		for file in ["defaultMap.lp", "facts.lp", "functions.lp", "goal.lp", "machines.lp", "orders.lp", "products.lp", "robots.lp", "state.lp", "taskDeliver.lp", "taskGoto.lp", "taskFeedRS.lp", "taskGetBase.lp", "taskGetProduct.lp", "taskMountCap.lp", "taskMountRing.lp", "taskPrepareCS.lp"]:
 			self.CTL.load(file)
 
 		self.CapColors         = {capColor(clingo.Number(1)) : "CS1", capColor(clingo.Number(2)) : "CS2"}
