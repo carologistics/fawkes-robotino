@@ -16,11 +16,9 @@
 %
 % Additionally used predicates:
 % base(O, B)                     Defined in orders.lp
-% begin(R, T, GT)                Defined in state.lp
+% doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
-% failure(R, T, GT)              Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
-% location(R, L, GT)             Defined in state.lp
 % order(O)                       Defined in facts.lp
 % quantity(Q)                    Defined in facts.lp
 % productBase(P, B)              Defined in products.lp
@@ -29,7 +27,7 @@
 % quantitiy(Q)                   Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
-% ringLocation(L)                Defined in facts.lp
+% ringLocation(M, L)             Defined in facts.lp
 % rsFillState(M, FS, GT)         Defined in machines.lp
 % storing(M, P, GT)              Defined in machines.lp
 

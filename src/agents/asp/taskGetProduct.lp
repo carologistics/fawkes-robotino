@@ -1,9 +1,10 @@
 % Defined programs:
-% ourTeam(t)                     Setup the get product tasks, that are possible, as soon as we know the special locations.
+% ourTeam(t)                     Setup the get product tasks, that are possible, as soon as we know the special
+%                                locations.
 %
 % In this file defined predicates:
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
-% pickup(R, P, GT)                The robot R picked up product P at time step GT.
+% pickup(R, P, GT)               The robot R picked up product P at time step GT.
 % possible(R, getProduct(_), GT) If robot R can perform the retreival task at GT.
 % task(getProduct(L, S))         The task to fetch a product from the base station L. S is to enumerate how often a
 %                                robot is able to perform this task.
@@ -12,9 +13,8 @@
 % toBeDone(getProduct(_), 0)     The get product tasks are possible.
 %
 % Additionally used predicates:
-% begin(R, T, GT)                Defined in state.lp
+% doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
-% failure(R, T, GT)              Defined in state.lp
 % getLocation(M, L)              Defined in facts.lp
 % holding(R, P, GT)              Defined in robots.lp
 % productionStarted              Defined in facts.lp

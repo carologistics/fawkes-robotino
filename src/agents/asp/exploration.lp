@@ -6,16 +6,17 @@
 % task(explore(Z))               The task to explore zone Z.
 % taskDuration(explore(Z), D)    The needed time to explore zone Z.
 % taskLocation(explore(Z), L)    The location to explore zone Z.
+% toBeDone(explore(Z), 0)        The zone has to be explored.
 %
 % Additionally used predicates:
 % horizon(H)                     Defined in facts.lp
 % robot(R)                       Defined in facts.lp
-% toBeDone(explore(Z), GT)       Defined in state.lp
 % zone(Z)                        Defined in facts.lp
 
 task(explore(Z)) :- zone(Z).
 
 #external location(z(Z)) : zone(Z).
+#external toBeDone(explore(Z), 0) : zone(Z).
 
 taskLocation(explore(Z), z(Z)) :- zone(Z), location(z(Z)).
 taskDuration(explore(Z), @explorationTaskDuration()) :- zone(Z).

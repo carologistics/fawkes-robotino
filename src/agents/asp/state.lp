@@ -3,6 +3,7 @@
 % doing(R, T, D, GT)             The remaining estimation for the execution of task T by robot R at GT is D.
 % end(R, T, GT)                  Robot R has finished its execution of T in GT.
 % fullDuration(T, L, D)          The duration it would take to execute task T, starting from location L is D.
+% robotDoing(R, T, D)            The robot R is doing task T in gt 0 for an estimated duration of D.
 % robotLocation(R, L, GT)        The robot R is at location L in GT, that means particually he is not moving (the whole
 %                                time unit).
 % toBeDone(T, GT)                Task T has still to be done at GT.
@@ -18,7 +19,6 @@
 
 #program ourTeam(t).
 
-#external toBeDone(T, 0) : task(T).
 #external robotDoing(R, T, D) : robot(R), task(T), taskDuration(T, TD), DD = @maxDriveDuration(), D = 1..TD+DD.
 
 fullDuration(T, L, DD + TD) :- taskDuration(T, TD), taskLocation(T, TL), driveDuration(L, TL, DD).

@@ -1,3 +1,5 @@
+% Contains the optimization goal.
+
 #program ourTeam(t).
 % Our goal.
 #maximize{ P@2,T : end(_, T, GT), points(T, P) }.

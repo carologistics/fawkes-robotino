@@ -2,6 +2,7 @@
 % base                           The static facts.
 % setDriveDuration(l1, l2, d)    Sets driveDuration, see there for parameters.
 % setRingInfo(col, cost, m)      Sets the cost for ring color col and assigns it to machine m.
+% startProduction                The production phase has started, so we can activate the tasks for that phase.
 % ourTeam(t)                     Sets the locations when we know our color. As cyan we are only interested in C-RS1-I
 %                                for example. To keep the locations for task spawning small we define them in this
 %                                program.
@@ -103,6 +104,7 @@ ringLocation(M, m(t, M, "I")) :- ringStation(M).
 
 #program setDriveDuration(l1, l2, d).
 driveDuration(l1, l2, d).
+driveDuration(l2, l1, d).
 
 #program setRingInfo(col, cost, m).
 ringStationAssignment(m, col).

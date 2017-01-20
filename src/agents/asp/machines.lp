@@ -1,9 +1,10 @@
 % Defined programs:
-% base                           The static facts, regarding machines.
+% ourTeam(t)                     Updates the states of machines.
 %
 % In this file defined predicates:
 % broken(M, D, GT)               The machine M is broken for at least D time steps.
 % csPrepared(M, GT)              If the cap station M is prepared to mount a cap in GT.
+% inUse(L, R, GT)                The location L is blocked by robot R in GT.
 % processing(M, P, D, GT)        The machine M processes product P for the next D time steps from GT on.
 % rsFillState(M, S, GT)          Ring station M has S additional bases loaded in GT.
 % storing(M, P, GT)              Machine M stores product P in GT.
@@ -11,8 +12,10 @@
 % Additionally used predicates:
 % baseStation(M)                 Defined in facts.lp
 % capMounted(M, P, GT)           Defined in mountCap.lp
+% capStation(M)                  Defined in facts.lp
 % deliveryStation(M)             Defined in facts.lp
 % deliveryTimes(B, E)            Defined in facts.lp
+% horizon(GT)                    Defined in facts.lp
 % inUse(L, R, GT)                Defined in the task descriptions.
 % pickUp(R, P, GT)               Defined in some tasks descriptions.
 % process(M, P, GT)              Defined in some tasks descriptions.
@@ -21,6 +24,7 @@
 % ringCost(C)                    Defined in facts.lp
 % ringMounted(M, P, C, GT)       Defined in mountRing.lp
 % ringStation(M)                 Defined in facts.lp
+% robotLocation(R, L, GT)        Defined in robots.lp and state.lp
 % rsFed(M, GT)                   Defined in feedRS.lp
 
 #external broken(M, D, 0) : capStation(M), D = 1..@clingoToASP(60).

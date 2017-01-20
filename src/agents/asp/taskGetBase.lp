@@ -15,7 +15,7 @@
 %
 % Additionally used predicates:
 % baseLocation(L)                Defined in facts.lp
-% begin(R, T, GT)                Defined in state.lp
+% doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % generatedProduct(R, P, GT)     Defined in products.lp
 % holding(R, P, GT)              Defined in robots.lp

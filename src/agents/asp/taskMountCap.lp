@@ -15,9 +15,9 @@
 %
 % Additionally used predicates:
 % base(O, B)                     Defined in orders.lp
-% begin(R, T, GT)                Defined in state.lp
 % capLocation(L)                 Defined in facts.lp
 % csPrepared(M, GT)              Defined in machines.lp
+% doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
 % order(O)                       Defined in facts.lp

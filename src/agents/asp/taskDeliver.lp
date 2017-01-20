@@ -15,13 +15,12 @@
 %
 % Additionally used predicates:
 % base(O, B)                     Defined in orders.lp
-% begin(R, T, GT)                Defined in state.lp
 % cap(O, C)                      Defined in orders.lp
 % deliverLocation(L)             Defined in facts.lp
 % driveDuration(L1, L2, D)       Defined in facts.lp
+% doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
-% location(R, L, GT)             Defined in state.lp
 % order(O)                       Defined in facts.lp
 % orderBegin(O, B)               Defined in orders.lp
 % orderDeadline(O, D)            Defined in orders.lp
@@ -30,6 +29,7 @@
 % productRing(P, R, C, GT)       Defined in products.lp
 % quantity(Q)                    Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
+% robot(R)                       Defined in facts.lp
 
 
 #program ourTeam(t).
