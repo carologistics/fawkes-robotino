@@ -126,19 +126,18 @@
         (! (= @machine-ringcolors (pb-field-list @machine "ring_colors")))   
 
         ;Update Machine Information
-        (if (? (& (machine $m-name $m-type $m-state $m-prepared $m-zone $m-pose $m-loaded-with) (= $m-name @machine-name)))
-          (if (? (||  (~ (= $m-state @machine-state)) 
-                      (~ (= $m-loaded-with @machine-loaded-with)) 
-                      (~ (= $m-pose @machine-pose)) ))
-                      (~ (= $m-prepared @machine-prepared))
+        (if (? (machine (val @machine-name) @m-type @m-state @m-prepared @m-zone @m-pose @m-loaded-with))
+          (if (? (||  (~ (= (val @m-state) @machine-state)) 
+                      (~ (= (val @m-prepared) @machine-prepared))
+                       ))
+                      ;(~ (= (val @m-loaded-with) @machine-loaded-with)) 
+                      ;(~ (= (val @m-pose) @machine-pose))
             (=> (machine @machine-name @machine-type @machine-state @machine-prepared @machine-zone @machine-pose @machine-loaded-with)) 
             (! (print "updating MachineInfo"))
             )
           else  
-          (if (? (= null $m-name))
-            (=> (machine @machine-name @machine-type @machine-state @machine-prepared @machine-prepared @machine-zone @machine-pose @machine-loaded-with)) 
-            (! (print "adding MachineInfo"))
-            )
+            (=> (machine @machine-name @machine-type @machine-state @machine-prepared @machine-zone @machine-pose @machine-loaded-with)) 
+            (! (printf (FORMAT "adding MachineInfo %s \n" (val @machine-name))))
           )
 
         ;Add Information about the ring-stations 
@@ -158,7 +157,7 @@
     :effects()
     :documentation
       "Process MachineInfo messages
-      TODO: -remove the loaded-with and pose info after knowing what is it for
+      TODO: - remove the loaded-with and pose info after knowing what is it for
             - changes of team_color is also propagated
             - maybe put the zone information in a separate fact like clips (zone-exp)
             - maybe find a shorter way to check the conditions for the machine
