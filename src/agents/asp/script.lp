@@ -6,6 +6,13 @@ import sys
 
 from collections import namedtuple
 
+FlushPrint = False
+
+def myPrint(string, flush = False):
+	print(string)
+	if flush:
+		sys.stdout.flush()
+
 RingInfo = namedtuple("RingInfo", "Color Machine Cost")
 OrderInfo = namedtuple("OrderInfo", "Number Quantity Base Cap Ring1 Ring2 Ring3 DelBegin DelEnd Spawn")
 
@@ -157,9 +164,9 @@ class Control:
 		self.CapColors         = {capColor(clingo.Number(1)) : "CS1", capColor(clingo.Number(2)) : "CS2"}
 
 		groundBegin = datetime.datetime.now()
-		print("Ground base.", flush = True)
+		myPrint("Ground base.", flush = FlushPrint)
 		self.CTL.ground([("base", [])])
-		print("Ground team.", flush = True)
+		myPrint("Ground team.", flush = FlushPrint)
 		self.CTL.ground([("ourTeam", ["C"])])
 		groundEnd = datetime.datetime.now()
 		self.GroundTime = groundEnd - groundBegin
@@ -174,7 +181,7 @@ class Control:
 			self.Machines[machine] = Machine(machine)
 
 		solveBegin = datetime.datetime.now()
-		print("Solve after init.", flush = True)
+		myPrint("Solve after init.", flush = FlushPrint)
 		self.CTL.solve()
 		solveEnd = datetime.datetime.now()
 		self.InitialSolveTime = solveEnd - solveBegin
@@ -182,7 +189,7 @@ class Control:
 		self.StartUpTime = self.GroundTime + self.InitialSolveTime
 
 	def run(self):
-		print("Begin with instance.", flush = True)
+		myPrint("Begin with instance.", flush = FlushPrint)
 		for zone in range(1, 25):
 			if zone in self.ZonesToExplore:
 				self.spawnZone(zone)
@@ -221,11 +228,11 @@ class Control:
 
 			if self.FirstSolve:
 				self.FirstSolve = False
-				print("Add test instance.", flush = True)
+				myPrint("Add test instance.", flush = FlushPrint)
 				self.CTL.ground([("testInstance", [])])
 
 			for external in externals:
-				print("Unset external: " + str(external), flush = True)
+				myPrint("Unset external: " + str(external), flush = FlushPrint)
 				self.CTL.assign_external(external, False)
 			externals = []
 
@@ -236,7 +243,7 @@ class Control:
 				if info.Task is not None:
 					remaining = info.Task[1] - gt
 					if remaining < 0:
-						print("Calculated remaining time is " + str(remaining) + "! This should not happen.", flush = True)
+						myPrint("Calculated remaining time is " + str(remaining) + "! This should not happen.", flush = FlushPrint)
 						self.endRobotTaskWithoutCheck(robot, info.Task[0], gt)
 						info.Task = None
 					elif remaining == 0:
@@ -246,17 +253,17 @@ class Control:
 						setLocation = False
 						external = clingo.Function("robotDoing", [robot, info.Task[0], remaining])
 						externals.append(external)
-						print("Set robot task: " + str(external), flush = True)
+						myPrint("Set robot task: " + str(external), flush = FlushPrint)
 
 				if setLocation:
 					external = clingo.Function("robotLocation", [robot, info.Location, 0])
 					externals.append(external)
-					print("Set robot location: " + str(external), flush = True)
+					myPrint("Set robot location: " + str(external), flush = FlushPrint)
 
 				if info.Holding is not None:
 					external = clingo.Function("holding", [robot, self.productExternal(info.Holding), 0])
 					externals.append(external)
-					print("Set robot holding: " + str(external), flush = True)
+					myPrint("Set robot holding: " + str(external), flush = FlushPrint)
 
 				info.LastStep = -1
 
@@ -266,7 +273,7 @@ class Control:
 
 				externals.append(clingo.Function("product", [productFunction]))
 				externals.append(clingo.Function("productBase", [productFunction, product.Base]))
-				print("Add product %d: %s" % (productIndex, product), flush = True)
+				myPrint("Add product %d: %s" % (productIndex, product), flush = FlushPrint)
 
 				for ring in range(0, 3):
 					if product.Rings[ring] is not None:
@@ -281,18 +288,18 @@ class Control:
 				machine = self.Machines[name]
 				if machine.Broken is not None:
 					externals.append(clingo.Function("broken", [name, machine.Broken, 0]))
-					print("%s is for %d steps broken." % (name, machine.Broken), flush = True)
+					myPrint("%s is for %d steps broken." % (name, machine.Broken), flush = FlushPrint)
 				if machine.Working is not None:
 					externals.append(clingo.Function("processing", [name, self.productExternal(machine.Storing), machine.Working, 0]))
-					print("%s is working on %d for %d steps." % (name, machine.Storing, machine.Working), flush = True)
+					myPrint("%s is working on %d for %d steps." % (name, machine.Storing, machine.Working), flush = FlushPrint)
 				elif machine.Storing is not None:
 					externals.append(clingo.Function("storing", [name, self.productExternal(machine.Storing), 0]))
-					print("%s is storing %d." % (name, machine.Storing), flush = True)
+					myPrint("%s is storing %d." % (name, machine.Storing), flush = FlushPrint)
 
 			for external in externals:
 				self.CTL.assign_external(external, True)
 
-			print("Solve " + str(gt), flush = True)
+			myPrint("Solve " + str(gt), flush = FlushPrint)
 			self.solve()
 			if index < gameTimesCount - 1:
 				nextGT = gameTimes[index+1]
@@ -306,25 +313,25 @@ class Control:
 				self.update(step, gt)
 
 		score = 0
-		print("Plan:", flush = True)
+		myPrint("Plan:", flush = FlushPrint)
 		for robot in self.Plan:
 			plan = self.Plan[robot]
 			score = score + plan.Score
-			print("  For Robot " + robot + " (" + str(plan.Score) + " Score):", flush = True)
+			myPrint("  For Robot " + robot + " (" + str(plan.Score) + " Score):", flush = FlushPrint)
 			i = 1
 			for entry in plan.Entries:
-				print("    %2d: %s" % (i, str(entry)), flush = True)
+				myPrint("    %2d: %s" % (i, str(entry)), flush = FlushPrint)
 				i = i + 1
 
-		print("Overall score: " + str(score), flush = True)
-		print("CS prepare state: CS1: %5s CS2: %5s" % (str(self.CapStations["CS1"]), str(self.CapStations["CS2"])), flush = True)
-		print("RS fill state:    RS1: %5d RS2: %5d" % (self.RingStations["RS1"], self.RingStations["RS2"]), flush = True)
-		print("Time for grounding base & team: %s" % str(self.GroundTime), flush = True)
-		print("Time for solving base & team:   %s" % str(self.InitialSolveTime), flush = True)
-		print("Overall startup time:           %s" % str(self.StartUpTime), flush = True)
+		myPrint("Overall score: " + str(score), flush = FlushPrint)
+		myPrint("CS prepare state: CS1: %5s CS2: %5s" % (str(self.CapStations["CS1"]), str(self.CapStations["CS2"])), flush = FlushPrint)
+		myPrint("RS fill state:    RS1: %5d RS2: %5d" % (self.RingStations["RS1"], self.RingStations["RS2"]), flush = FlushPrint)
+		myPrint("Time for grounding base & team: %s" % str(self.GroundTime), flush = FlushPrint)
+		myPrint("Time for solving base & team:   %s" % str(self.InitialSolveTime), flush = FlushPrint)
+		myPrint("Overall startup time:           %s" % str(self.StartUpTime), flush = FlushPrint)
 
 	def update(self, step, gt):
-		print("Update on basis of step: " + str(step), flush = True)
+		myPrint("Update on basis of step: " + str(step), flush = FlushPrint)
 		for symbol in self.LastModel:
 			if symbol.name == "doing":
 				self.setRobotTask(symbol, step, gt)
@@ -349,9 +356,9 @@ class Control:
 		newFillState = oldFillState + modify
 		self.RingStations[machine] = newFillState
 		if newFillState < 0 or newFillState > 3:
-			print("Invalid fill state for %s: %d!" % (machine, newFillState), flush = True)
+			myPrint("Invalid fill state for %s: %d!" % (machine, newFillState), flush = FlushPrint)
 			sys.exit()
-		print("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = True)
+		myPrint("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = FlushPrint)
 		if self.ModifyCTL:
 			self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
 			self.CTL.assign_external(ringStationExternal(machine, newFillState), True)
@@ -359,12 +366,12 @@ class Control:
 	def updatePrepareState(self, machine, state):
 		oldState = self.CapStations[machine]
 		if state != oldState:
-			print("Change " + str(machine) + " prepare state from " + str(oldState) + " to " + str(state) + ".", flush = True)
+			myPrint("Change " + str(machine) + " prepare state from " + str(oldState) + " to " + str(state) + ".", flush = FlushPrint)
 			self.CapStations[machine] = state
 			if self.ModifyCTL:
 				self.CTL.assign_external(capStationExternal(machine), state)
 		else:
-			print("Update prepare state, without update!", flush = True)
+			myPrint("Update prepare state, without update!", flush = FlushPrint)
 
 	def beginRobotTask(self, symbol, step, gt):
 		if symbol.arguments[2].number != step:
@@ -474,7 +481,7 @@ class Control:
 
 	def spawnProduct(self, base):
 		if len(self.Products) == maxProducts():
-			print("Trying to spawn a new product, but there already the maximum of products in use, increase MaxProducts!", flush = True)
+			myPrint("Trying to spawn a new product, but there already the maximum of products in use, increase MaxProducts!", flush = FlushPrint)
 			sys.exit()
 		self.Products.append(Product(base))
 		return len(self.Products) - 1
@@ -537,13 +544,13 @@ class Control:
 			future = self.CTL.solve_async(self.onModel)
 			if not future.wait(StepSeconds):
 				future.cancel()
-				print("Interrupt solving.", flush = True)
+				myPrint("Interrupt solving.", flush = FlushPrint)
 				future.get()
 			else:
-				print("Solving finished.", flush = True)
+				myPrint("Solving finished.", flush = FlushPrint)
 
 	def spawnZone(self, zone):
-		print("Add zone " + str(zone) + " to explore.", flush = True)
+		myPrint("Add zone " + str(zone) + " to explore.", flush = FlushPrint)
 		if self.ModifyCTL:
 			self.CTL.assign_external(zoneLocationExternal(zone), True)
 			self.CTL.assign_external(zoneTaskExternal(zone), True)
@@ -554,11 +561,11 @@ class Control:
 			self.CTL.release_external(zoneTaskExternal(zone))
 
 		if remove:
-			print("Remove zone " + str(zone) + " from the zones to explore.", flush = True)
+			myPrint("Remove zone " + str(zone) + " from the zones to explore.", flush = FlushPrint)
 			self.ZonesToExplore.remove(zone)
 
 	def setRingColor(self, ring):
-		print("Set Ring-Color: " + str(ring), flush = True)
+		myPrint("Set Ring-Color: " + str(ring), flush = FlushPrint)
 		self.CTL.ground([("setRingInfo", [ring.Color, ring.Cost, ring.Machine])])
 
 		for machine in ["RS1", "RS2"]:
@@ -567,14 +574,14 @@ class Control:
 			self.CTL.release_external(clingo.Function("ringColorCost", [ring.Color, cost]));
 
 	def addOrder(self, info):
-		print("Add Order: " + str(info), flush = True)
+		myPrint("Add Order: " + str(info), flush = FlushPrint)
 		self.CTL.ground([("newOrder", [info.Number, info.Quantity, info.Base, info.Cap, info.Ring1, info.Ring2, info.Ring3, toASP(info.DelBegin), toASP(info.DelEnd)])])
 
 		tasks = []
 		for qty in range(1, info.Quantity + 1):
 			order = Order(info)
 			self.OrdersWithTasks[(info.Number, qty)] = order
-			#print("Qty " + str(qty) + ": " + str(order) + " | " + str(self.OrdersWithTasks), flush = True)
+			#myPrint("Qty " + str(qty) + ": " + str(order) + " | " + str(self.OrdersWithTasks), flush = FlushPrint)
 			order.CapTask = self.capTaskExternal(info.Number, qty, info.Cap)
 			tasks.append(order.CapTask)
 			if info.Ring1 != "none":
@@ -590,11 +597,11 @@ class Control:
 			order.DeliveryTasks[1] = lateDeliveryTaskExternal(info.Number, qty)
 			tasks.extend(order.DeliveryTasks)
 
-			#print("Qty " + str(qty) + ": " + str(order) + " | " + str(self.OrdersWithTasks), flush = True)
+			#myPrint("Qty " + str(qty) + ": " + str(order) + " | " + str(self.OrdersWithTasks), flush = FlushPrint)
 
-		#print("Tasks " + str(tasks), flush = True)
+		#myPrint("Tasks " + str(tasks), flush = FlushPrint)
 		for task in tasks:
-			#print("Task " + str(task), flush = True)
+			#myPrint("Task " + str(task), flush = FlushPrint)
 			self.CTL.assign_external(task, True)
 
 		for color in ["BLACK", "RED", "SILVER"]:
@@ -647,5 +654,6 @@ def main(ctl):
 
 	control = Control(ctl, zonesToExplore, ringColors, orders, machineFailures)
 	control.run()
+	sys.stdout.flush()
 
 #end.
