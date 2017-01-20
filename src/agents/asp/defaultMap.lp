@@ -10,7 +10,7 @@ driveDuration(L1, L2, @clingoToASP(5)) :- location(L1), location(L2), not setDri
 #script (python)
 
 def releaseDriveDuration(ctl):
-	print("Release driveDurations.", flush = True)
+	myPrint("Release driveDurations.", flush = True)
 
 	locations = [clingo.String("ins-out")]
 
