@@ -13,15 +13,10 @@
 % Additionally used predicates:
 % baseColor(B)                   Defined in facts.lp
 % capColor(C)                    Defined in facts.lp
-% capLocation(M, L)              Defined in facts.lp
-% capStationAssignment(M, C)     Defined in facts.lp
-% deliverLocation(L)             Defined in facts.lp
 % deliveryTimes(L, U)            Defined in facts.lp
 % order(O)                       Defined in facts.lp
 % quantity(Q)                    Defined in facts.lp
 % ringColor(B)                   Defined in facts.lp
-% ringLocation(M, L)             Defined in facts.lp
-% ringStationAssignment(M, R)    Defined in facts.lp
 
 
 #external base(O, B) : order(O), baseColor(B).

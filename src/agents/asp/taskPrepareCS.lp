@@ -1,7 +1,6 @@
 % Defined programs:
 % ourTeam(t)                     Setup the prepare cs tasks, that are possible, as soon as we know the special
 %                                locations.
-% transition(GT)                 Update implications from the prepare tasks.
 %
 % In this file defined predicates:
 % csPrepared(M, GT)              Also defined in machines.lp
@@ -18,8 +17,8 @@
 % toBeDone(prepareCS(_), 0)      The prepare CS tasks are possible.
 %
 % Additionally used predicates:
-% begin(R, T, GT)                Defined in state.lp
 % capLocation(L)                 Defined in facts.lp
+% doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % generatedProduct(R, P, GT)     Defined in products.lp
 % holding(R, P, GT)              Defined in robots.lp

@@ -7,6 +7,7 @@
 % points(feedRS(_), P)           How many points are awarded for the feeding.
 % possible(R, feedRS(_), GT)     If robot R can perform the feed task at GT.
 % putDown(R, GT)                 Robot R puts his product down in GT.
+% rsFed(M, GT)                   Machine M was fed with a product in GT.
 % task(feedRS(L, S))             The task to feed a product into ring station L, S is to enumerate how often a robot is
 %                                able to perform this task.
 % taskDuration(feedRS(_), D)     How long it takes to put the product onto the ring stations slide, once the robot has
@@ -15,7 +16,7 @@
 % toBeDone(feedRS(_), 0)         The feed RS tasks are possible.
 %
 % Additionally used predicates:
-% begin(R, T, GT)                Defined in state.lp
+% doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
 % productionStarted              Defined in facts.lp
