@@ -193,6 +193,7 @@
               else
               (! (= @quantity-delivered @quantity_delivered_magenta )) 
               )
+            (! (print "Adding Order"))
             (=> (order @id @complexity @base-color @ring-colors @cap-color @quantity-requested @quantity-delivered @delivery-period-begin @delivery-period-end @delivery-gate)) 
             )
           

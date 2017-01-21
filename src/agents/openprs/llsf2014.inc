@@ -11,6 +11,8 @@
 declare op_predicate  say
 declare op_predicate  ppgoto
 declare op_predicate  conf-load-rcll2017
+declare op_predicate  bring-product-to
+declare op_predicate  get-product-from
 
 declare cwp           peer-id
 
