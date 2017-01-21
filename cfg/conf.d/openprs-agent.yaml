@@ -54,3 +54,13 @@ openprs-agent:
     peer-private-key: randomkey
     peer-private-cipher: aes-128-cbc
     beacon-interval: 2.0
+
+
+  rcll2017:
+   #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
+      cap-station:
+        assigned-color:
+          C-CS1: grey
+          C-CS2: black
+          M-CS1: grey
+          M-CS2: black
