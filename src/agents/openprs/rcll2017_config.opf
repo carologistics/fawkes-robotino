@@ -1,0 +1,45 @@
+;---------------------------------------------------------------------------
+;  production.opf - OpenPRS OP file for RCll2017 openprs-agent
+;
+;  Created: Tue Jan 17 15:43:00 2017
+;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+(
+
+  (defop conf-load-rcll2017
+    :invocation ( ! (conf-load-rcll2017) )
+     :context()
+     :body (
+       (! (print "Loading configuration for rcll2017 agent"))
+       (! (config-load "/openprs-agent/rcll2017/"))
+
+       	(! (= $ccs1  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/C-CS1" string $cap-color-ccs1) ) )
+  		(! (= $ccs2  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/C-CS2" string $cap-color-ccs2) ) )
+  		(! (= $mcs1  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/M-CS1" string $cap-color-mcs1) ) )
+  		(! (= $mcs2  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/M-CS2" string $cap-color-mcs2) ) )
+
+       	(? (val $ccs1) )
+       	(? (val $ccs2) )
+       	(? (val $mcs1) )
+       	(? (val $mcs2) )
+
+       	(~> (val $ccs1) )
+       	(~> (val $ccs2) )
+       	(~> (val $mcs1) )
+       	(~> (val $mcs2) )
+
+  		(=> (cap-station "C-CS1" (make-atom (string-cat "cap_" $cap-color-ccs1))))
+  		(=> (cap-station "C-CS2" (make-atom (string-cat "cap_" $cap-color-ccs2))))
+		  (=> (cap-station "M-CS1" (make-atom (string-cat "cap_" $cap-color-mcs1))))
+      (=> (cap-station "M-CS2" (make-atom (string-cat "cap_" $cap-color-mcs2))))
+
+     )
+     :documentation "Load setting for agent."
+    )
+
+
+
+
+  )

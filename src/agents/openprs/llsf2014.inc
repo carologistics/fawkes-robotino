@@ -10,23 +10,46 @@
 ; declare and load agent-specific elements
 declare op_predicate  say
 declare op_predicate  ppgoto
+declare op_predicate  conf-load-rcll2017
+
 declare cwp           peer-id
+
 declare ff   		team-color 0
 declare ff 	 		game-time 0
 declare ff 			game-state 0
 declare ff			game-phase 0
 declare ff 			machine 1
 declare ff 			ring-station 1
+declare ff 			cap-station 1
 declare ff			order 1
 declare ff			ring 1 					;holds how much material for this ring 
+declare ff			agent-state 0
+
 declare symbol public
 declare symbol private
 declare symbol CYAN
 declare symbol MAGENTA
+declare symbol IDLE
+declare symbol WORKING
+
+;Colors for the caps
+declare symbol BLACK
+declare symbol GRAY
+declare symbol BLUE
+declare symbol GREEN
+declare symbol ORANG
+declare symbol YELLOW
+declare symbol RED
+declare symbol SILVER
+
+
+
 
 add (game-state null)
 add (game-phase null)
 
+load opf "rcll2017_config.opf"
 load db  "llsf2014.db"
 load opf "llsf2014.opf"
+load opf "production.opf"
 load opf "net.opf"
