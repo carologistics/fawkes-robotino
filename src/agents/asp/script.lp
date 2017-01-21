@@ -475,7 +475,12 @@ class Control:
 			else:
 				score = 20
 		elif task == "goto":
-			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+			if type(parameters[0]) is tuple:
+				#The normal case: Tuple ("m", ["CS", <machine>, <side>])
+				info.Location = clingo.Function(parameters[0][0], parameters[0][1])
+			else:
+				#A goto to "ins-out" doesn't make sense, but this does not hinder the solver to try so.
+				info.Location = clingo.Function(parameters[0])
 		entry.Score = score
 		plan.Score += score
 
