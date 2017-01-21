@@ -6,6 +6,12 @@ import sys
 
 from collections import namedtuple
 
+try:
+	import psutil
+	HAS_PSUTIL = True
+except ImportError:
+	HAS_PSUTIL = False
+
 FlushPrint = False
 
 def myPrint(string, flush = False):
@@ -77,6 +83,24 @@ def splitParameters(string):
 		else:
 			ret.append(s)
 	return ret
+
+def memToString(mem):
+	kib = 1024
+	mib = 1024 ** 2
+	gib = 1024 ** 3
+	if mem >= gib:
+		div = gib
+		suffix = "GiB"
+	elif mem >= mib:
+		div = mib
+		suffix = "MiB"
+	elif mem >= kib:
+		div = kib
+		suffix = "KiB"
+	else:
+		div = 1
+		suffix = "B"
+	return "%.3f %s" % (float(mem) / div, suffix)
 
 class Order:
 	def __init__(self, info):
@@ -329,6 +353,12 @@ class Control:
 		myPrint("Time for grounding base & team: %s" % str(self.GroundTime), flush = FlushPrint)
 		myPrint("Time for solving base & team:   %s" % str(self.InitialSolveTime), flush = FlushPrint)
 		myPrint("Overall startup time:           %s" % str(self.StartUpTime), flush = FlushPrint)
+		if HAS_PSUTIL:
+			p = psutil.Process()
+			mem = p.memory_info()
+			myPrint("Consumed memory at the end of the execution: %s" % memToString(mem.vms), flush = FlushPrint)
+		else:
+			myPrint("psutil is not installed, no information abour memory consumption. See README.lp for more information.", flush = FlushPrint)
 
 	def update(self, step, gt):
 		myPrint("Update on basis of step: " + str(step), flush = FlushPrint)

@@ -35,6 +35,15 @@
 % taskMountRing.lp   Contains the tasks to mount a ring on a product.
 % taskPrepareCS.lp   Contains the task to prepare a cap station.
 %
+% Explanation of the script:
+%
+% The script uses psutil, if available to print the memory consumtion. Install through pip install psutil or see
+% https://github.com/giampaolo/psutil
+%
+% The script is tested with Python 3.4.3, but should also run on Python 2.
+%
+% Explanation of the encoding:
+%
 % Overview of common programs:
 % ourTeam(t)         We know our team color, by that we can compute some facts. We could compute these facts regardless
 %                    of the team color, but than the modelling would be a bit more difficult and we had unneeded facts,
