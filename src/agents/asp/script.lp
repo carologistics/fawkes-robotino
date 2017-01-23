@@ -323,7 +323,7 @@ class Control:
 			for external in externals:
 				self.CTL.assign_external(external, True)
 
-			myPrint("Solve, starting with time step %d. (%d of %d)" % (gt, index, gameTimesCount-1), flush = FlushPrint)
+			myPrint("Solve, starting with time step %d. (%d of %d)" % (gt, index+1, gameTimesCount), flush = FlushPrint)
 			self.solve()
 			if index < gameTimesCount - 1:
 				nextGT = gameTimes[index+1]
