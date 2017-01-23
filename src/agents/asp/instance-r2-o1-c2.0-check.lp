@@ -15,10 +15,6 @@ StepSeconds = None
 StartDelivery = 240
 EndDelivery = 1140
 
-MaxFeedRS = 1
-MaxGetBase = 1
-MaxGetProduct = 2
-MaxPrepCS = 1
 MaxProducts = 5
 Robots = ["Tuvok", "T'Pol"]
 
@@ -32,17 +28,17 @@ def generateInstance():
 #end.
 
 #program testInstance.
-testTask("Tuvok", 1, prepareCS(L, 1),        L, 0) :- L = m("C", "CS2", "I").
-testTask("Tuvok", 2, getProduct(L, 1),       L, W) :- L = m("C", "CS2", "O"), W = @machineWorkingDuration("CS2").
+testTask("Tuvok", 1, prepareCS(L),          L, 0) :- L = m("C", "CS2", "I").
+testTask("Tuvok", 2, getProduct(L),         L, W) :- L = m("C", "CS2", "O"), W = @machineWorkingDuration("CS2").
 
-testTask("T'Pol", 1, getBase(L, "BLACK", 1), L, 0) :- L = m("C", "BS",  "O").
-testTask("T'Pol", 2, mountRing(L, 1, 1, 1),  L, 0) :- L = m("C", "RS2", "I").
-testTask("T'Pol", 3, getProduct(L, 1),       L, W) :- L = m("C", "RS2", "O"), W = @machineWorkingDuration("RS2").
-testTask("T'Pol", 4, mountRing(L, 1, 1, 2),  L, 0) :- L = m("C", "RS1", "I").
-testTask("T'Pol", 5, getProduct(L, 1),       L, W) :- L = m("C", "RS1", "O"), W = @machineWorkingDuration("RS1").
-testTask("T'Pol", 6, mountCap(L, 1, 1),      L, 0) :- L = m("C", "CS2", "I").
-testTask("T'Pol", 7, getProduct(L, 2),       L, W) :- L = m("C", "CS2", "O"), W = @machineWorkingDuration("CS2").
-testTask("T'Pol", 8, deliver(L, 1, 1),       L, 0) :- L = m("C", "DS",  "I").
+testTask("T'Pol", 1, getBase(L, "BLACK"),   L, 0) :- L = m("C", "BS",  "O").
+testTask("T'Pol", 2, mountRing(L, 1, 1, 1), L, 0) :- L = m("C", "RS2", "I").
+testTask("T'Pol", 3, getProduct(L),         L, W) :- L = m("C", "RS2", "O"), W = @machineWorkingDuration("RS2").
+testTask("T'Pol", 4, mountRing(L, 1, 1, 2), L, 0) :- L = m("C", "RS1", "I").
+testTask("T'Pol", 5, getProduct(L),         L, W) :- L = m("C", "RS1", "O"), W = @machineWorkingDuration("RS1").
+testTask("T'Pol", 6, mountCap(L, 1, 1),     L, 0) :- L = m("C", "CS2", "I").
+testTask("T'Pol", 7, getProduct(L),         L, W) :- L = m("C", "CS2", "O"), W = @machineWorkingDuration("CS2").
+testTask("T'Pol", 8, deliver(L, 1, 1),      L, 0) :- L = m("C", "DS",  "I").
 
 startTestTask(R, 1, 0, D) :- testTask(R, 1, Task, _, _), fullDuration(Task, "ins-out", D).
 startTestTask(R, Number, Time, Duration) :- testTask(R, Number, Task, Location, Wait),

@@ -27,17 +27,6 @@ StepSeconds = None
 StartDelivery = 240
 EndDelivery = 1140
 
-# An upper bound of the corresponding tasks per location and planning step.
-# The example below: For each time we solve the program each RS is fed at most one time with a base, each CS is prepared
-# at most one time and for each of these machines at most two products will be retrieved on the output side.
-# Each base color can be fetched two times, because the base station is usable from both sides.
-# Keep these values as low as possible but as high as needed, the higher the values, the more tasks are spawned and this
-# impacts the performance.
-MaxFeedRS = 1
-MaxGetBase = 1
-MaxGetProduct = 2
-MaxPrepCS = 1
-
 # An upper bound for the products, that are alive at any given point in time, if there are more products than this value
 # the test script will terminate and in a real scenario we have to work with a wrong world model.
 # But here also, keep the value as low as possible, higher values result in more externals
