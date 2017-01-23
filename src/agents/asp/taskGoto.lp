@@ -14,6 +14,7 @@
 % end(R, T, GT)                  Defined in state.lp
 % horizon(H)                     Defined in facts.lp
 % location(L)                    Defined in facts.lp
+% meaningfulGoto(L, GT)          Defined in machines.lp
 % robot(R)                       Defined in facts.lp
 
 
@@ -33,4 +34,4 @@ inUse(L, R, GT) :- doing(R, T, _, GT), gotoTask(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), gotoTask(T), taskLocation(T, L).
 
 possible(R, T, GT) :- gotoTask(T), robot(R), robotLocation(R, RL, GT), taskLocation(T, TL), RL != TL, horizon(H),
-                      GT = 0..H-1.
+                      GT = 0..H-1, meaningfulGoto(TL, GT).
