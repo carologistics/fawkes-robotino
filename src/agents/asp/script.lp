@@ -573,7 +573,7 @@ class Control:
 		self.LastModel = model.symbols(True)
 
 	def solve(self):
-		if StepSeconds is None:
+		if StepSeconds is None or StepSeconds < 0:
 			self.CTL.solve(self.onModel)
 		else:
 			future = self.CTL.solve_async(self.onModel)

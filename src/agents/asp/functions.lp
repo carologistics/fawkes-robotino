@@ -88,6 +88,8 @@ def getTaskDuration():
 def gameSteps():
 	if StepSeconds is None:
 		return 1
+	elif StepSeconds < 0:
+		return -StepSeconds
 	return StepSeconds
 
 def gameRange():
