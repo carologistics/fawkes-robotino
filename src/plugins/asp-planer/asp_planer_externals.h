@@ -28,10 +28,9 @@ namespace Clingo {
 class Symbol;
 }
 
-class ProductIdentifier;
 class TaskDescription;
 
-bool isValidExternal(const Clingo::Symbol& atom) noexcept;
+struct ProductIdentifier;
 
 Clingo::Symbol generateAliveExternal(const std::string& robotName);
 Clingo::Symbol generateRobotLocationExternal(const std::string& robotName, const Clingo::Symbol& location);

@@ -45,20 +45,11 @@
  * @property RobotInformation::Y
  * @brief The reported y coordinate of the robot.
  *
- * @property RobotInformation::LocationExternal
- * @brief Where the robot was reported last.
- *
  * @property RobotInformation::Holding
  * @brief Identifies what the robot is holding.
  *
- * @property RobotInformation::HoldingExternal
- * @brief What was set last time for the robot holding.
- *
  * @property RobotInformation::Doing
  * @brief Identifies which task the robot is doing right now.
- *
- * @property RobotInformation::DoingExternal
- * @brief What was set last time for the robot doing.
  */
 
 /**
@@ -110,6 +101,31 @@
  *
  * @property OrderInformation::DeliveryEnd
  * @brief The end of the delivery time window.
+ */
+
+/**
+ * @struct ProductIdentifier
+ * @brief Type safe wrapper for product id.
+ *
+ * @property ProductIdentifier::ID
+ * @brief The ID of the product, this is just an array index.
+ *
+ * @fn bool ProductIdentifier::isValid() const
+ * @brief If a valid product is identified.
+ */
+
+/**
+ * @struct Product
+ * @brief Container to track a product.
+ *
+ * @property Product::Base
+ * @brief The base color.
+ *
+ * @property Product::Rings
+ * @brief The colors of the rings.
+ *
+ * @property Product::Cap
+ * @brief The color of the cap.
  */
 
 /**

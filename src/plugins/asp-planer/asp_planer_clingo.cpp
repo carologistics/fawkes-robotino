@@ -157,47 +157,47 @@ AspPlanerThread::loopClingo(void)
 	SentCancel = false;
 	Interrupt = InterruptSolving::Not;
 
+	static std::vector<Clingo::Symbol> externals;
+
+	for ( const auto& external : externals )
+	{
+		ClingoAcc->assign_external(external, false);
+	} //for ( const auto& external : externals )
+
 	//Set "initial" state.
 	MutexLocker worldLocker(&WorldMutex);
-	auto checkAndUnset = [this](const Clingo::Symbol& external)
+	auto addExternal = [this](Clingo::Symbol&& external)
 		{
-			if ( isValidExternal(external) )
-			{
-				ClingoAcc->assign_external(external, false);
-			} //if ( isValidExternal(external) )
+			ClingoAcc->assign_external(external, true);
+			externals.push_back(std::move(external));
 			return;
 		};
-	auto checkAndSet = [this](Clingo::Symbol& external)
-		{
-			if ( isValidExternal(external) )
-			{
-				ClingoAcc->assign_external(external, true);
-				return true;
-			} //if ( isValidExternal(external) )
-			return false;
-		};
 
-	for ( auto& pair : Robots )
+	for ( const auto& pair : Robots )
 	{
-		auto& name(pair.first);
-		auto& robot(pair.second);
+		const auto& name(pair.first);
+		const auto& robot(pair.second);
 		ClingoAcc->assign_external(robot.AliveExternal, robot.Alive);
-
-		checkAndUnset(robot.LocationExternal);
-		checkAndUnset(robot.HoldingExternal);
-		checkAndUnset(robot.DoingExternal);
 
 		if ( !robot.Alive )
 		{
 			continue;
 		} //if ( !robot.Alive )
 
-		checkAndSet(robot.HoldingExternal = generateHoldingExternal(name, robot.Holding));
-		if ( !checkAndSet(robot.DoingExternal = generateDoingExternal(name, robot.Doing)) )
+		if ( robot.Holding.isValid() )
 		{
-			checkAndSet(robot.LocationExternal = generateRobotLocationExternal(name, nearestLocation(robot.X, robot.Y)));
-		} //if ( !checkAndSet(robot.DoingExternal = generateDoingExternal(name, robot.Doing)) )
-	} //for ( auto& pair : Robots )
+			addExternal(generateHoldingExternal(name, robot.Holding));
+		} //if ( robot.Holding.isValid() )
+
+		if ( robot.Doing.isValid() )
+		{
+			addExternal(generateDoingExternal(name, robot.Doing));
+		} //if ( robot.Doing.isValid() )
+		else
+		{
+			addExternal(generateRobotLocationExternal(name, nearestLocation(robot.X, robot.Y)));
+		} //else -> if ( robot.Doing.isValid() )
+	} //for ( const auto& pair : Robots )
 	worldLocker.unlock();
 
 	reqLocker.relock();

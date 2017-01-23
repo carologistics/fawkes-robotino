@@ -110,12 +110,31 @@ struct RobotPlan
 
 struct ProductIdentifier
 {
+	int ID = -1;
 
+	inline bool
+	isValid(void) const noexcept
+	{
+		return ID != -1;
+	}
+};
+
+struct Product
+{
+	const std::string Base;
+	// +1 to skip the calculation of +1 and -1 everytime we use this.
+	std::string Rings[4];
+	std::string Cap;
 };
 
 struct TaskDescription
 {
 
+	inline bool
+	isValid(void) const noexcept
+	{
+		return false; //Dummy
+	}
 };
 
 struct RobotInformation
@@ -125,11 +144,8 @@ struct RobotInformation
 	Clingo::Symbol AliveExternal;
 	float X;
 	float Y;
-	Clingo::Symbol LocationExternal;
 	ProductIdentifier Holding;
-	Clingo::Symbol HoldingExternal;
 	TaskDescription Doing;
-	Clingo::Symbol DoingExternal;
 };
 
 struct CapColorInformation
