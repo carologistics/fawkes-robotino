@@ -40,4 +40,9 @@ Clingo::Symbol generateDoingExternal(const std::string& robotName, const TaskDes
 Clingo::Symbol generateExploreLocationExternal(const unsigned int zone);
 Clingo::Symbol generateExploreTaskExternal(const unsigned int zone);
 
+Clingo::Symbol generateProductExternal(const int id);
+Clingo::Symbol generateProductBaseExternal(const int id, const std::string& base);
+Clingo::Symbol generateProductRingExternal(const int id, const int ringNumber, const std::string& color);
+Clingo::Symbol generateProductCapExternal(const int id, const std::string& cap);
+
 #endif

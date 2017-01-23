@@ -198,6 +198,27 @@ AspPlanerThread::loopClingo(void)
 			addExternal(generateRobotLocationExternal(name, nearestLocation(robot.X, robot.Y)));
 		} //else -> if ( robot.Doing.isValid() )
 	} //for ( const auto& pair : Robots )
+
+	for ( auto index = 0u; index < Products.size(); ++index )
+	{
+		const auto& product(Products[index]);
+		addExternal(generateProductExternal(index));
+		addExternal(generateProductBaseExternal(index, product.Base));
+
+		for ( auto ring = 1; ring <= 3; ++ring )
+		{
+			if ( product.Rings[ring].empty() )
+			{
+				break;
+			} //if ( product.Rings[ring].empty() )
+			addExternal(generateProductRingExternal(index, ring, product.Rings[ring]));
+		} //for ( auto ring = 1; ring <= 3; ++ring )
+
+		if ( !product.Cap.empty() )
+		{
+			addExternal(generateProductCapExternal(index, product.Cap));
+		} //if ( !product.Cap.empty() )
+	} //for ( auto index = 0u; index < Products.size(); ++index )
 	worldLocker.unlock();
 
 	reqLocker.relock();
@@ -572,8 +593,8 @@ void
 AspPlanerThread::addOrderToASP(const OrderInformation& order)
 {
 	Clingo::SymbolVector params = {Clingo::Number(order.Number), Clingo::Number(order.Quantity),
-		Clingo::String(order.Base), Clingo::String(order.Cap), Clingo::String(order.Rings[0]),
-		Clingo::String(order.Rings[1]), Clingo::String(order.Rings[2]),
+		Clingo::String(order.Base), Clingo::String(order.Cap), Clingo::String(order.Rings[1]),
+		Clingo::String(order.Rings[2]), Clingo::String(order.Rings[3]),
 		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryBegin)),
 		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryEnd))};
 	queueGround({"newOrder", params}, InterruptSolving::Critical);

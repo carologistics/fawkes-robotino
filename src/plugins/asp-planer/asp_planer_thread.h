@@ -76,6 +76,7 @@ class AspPlanerThread
 	std::vector<OrderInformation> Orders;
 	std::vector<RingColorInformation> RingColors;
 	std::unordered_map<std::string, RobotInformation> Robots;
+	std::vector<Product> Products;
 	std::vector<unsigned int> ZonesToExplore;
 
 	static constexpr auto NodePropertyASP = "ASP-Location";
