@@ -12,7 +12,7 @@ try:
 except ImportError:
 	HAS_PSUTIL = False
 
-FlushPrint = False
+FlushPrint = True
 
 def myPrint(string, flush = False):
 	print(string)
@@ -323,7 +323,7 @@ class Control:
 			for external in externals:
 				self.CTL.assign_external(external, True)
 
-			myPrint("Solve " + str(gt), flush = FlushPrint)
+			myPrint("Solve, starting with time step %d. (%d of %d)" % (gt, index, gameTimesCount-1), flush = FlushPrint)
 			self.solve()
 			if index < gameTimesCount - 1:
 				nextGT = gameTimes[index+1]
@@ -347,7 +347,8 @@ class Control:
 				myPrint("    %2d: %s" % (i, str(entry)), flush = FlushPrint)
 				i = i + 1
 
-		myPrint("Overall score: " + str(score), flush = FlushPrint)
+		myPrint("Solved for time steps %d to %d, additionally evaluated until %d. One time step stands for %d real time seconds." % (gameTimes[0], gameTimes[-1], gt + step, Res), flush = FlushPrint)
+		myPrint("Overall score: %d" % (score), flush = FlushPrint)
 		myPrint("CS prepare state: CS1: %5s CS2: %5s" % (str(self.CapStations["CS1"]), str(self.CapStations["CS2"])), flush = FlushPrint)
 		myPrint("RS fill state:    RS1: %5d RS2: %5d" % (self.RingStations["RS1"], self.RingStations["RS2"]), flush = FlushPrint)
 		myPrint("Time for grounding base & team: %s" % str(self.GroundTime), flush = FlushPrint)
