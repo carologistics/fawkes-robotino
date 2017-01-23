@@ -11,6 +11,7 @@
 % Additionally used predicates:
 % driveDuration(L1, L2, D)       Defined in facts.lp
 % horizon(H)                     Defined in facts.lp
+% oneShotTask(T)                 Defined in some task descriptions.
 % possible(R, T, GT)             Defined in all task descriptions.
 % robot(R)                       Defined in facts.lp
 % task(T)                        Defined in all task descriptions.
@@ -55,4 +56,4 @@ robotLocation(R, L, GT) :- end(R, T, GT), taskLocation(T, L).
 robotLocation(R, L, GT) :- robotLocation(R, L, GT-1), not begin(R, _, GT-1), not horizon(GT).
 
 % Update Task status.
-toBeDone(T, GT) :- toBeDone(T, GT-1), not end(_, T, GT), not horizon(GT).
+toBeDone(T, GT) :- toBeDone(T, GT-1), not end(_, T, GT), not horizon(GT), oneShotTask(T).

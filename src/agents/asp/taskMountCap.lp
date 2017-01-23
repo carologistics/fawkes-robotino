@@ -4,6 +4,7 @@
 % In this file defined predicates:
 % capMounted(M, P, GT)           Machine M mounted a cap on product P from in GT.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
+% oneShotTask(mountCap(_))       The task is only doable one time.
 % points(mountCap(_), P)         How many points are awarded for the mounting.
 % possible(R, mountCap(_), GT)   If robot R can perform the mount task at GT.
 % process(M, P, GT)              The machine M starts the processing of the product P at GT.
@@ -37,6 +38,7 @@ taskLocation(mountCap(L, O, Q), L)       :- capTask(mountCap(L, O, Q)).
 task(T)                                  :- capTask(T).
 points(T, 10)                            :- capTask(T).
 taskDuration(T, @mountCapTaskDuration()) :- capTask(T).
+oneShotTask(T)                           :- capTask(T).
 
 #external toBeDone(T, 0) : capTask(T).
 
