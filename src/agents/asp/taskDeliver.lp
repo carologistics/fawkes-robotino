@@ -3,6 +3,7 @@
 %
 % In this file defined predicates:
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
+% oneShotTask(deliver(_))        The task is only doable one time.
 % points(deliver(_), P)          How many points are awarded for the delivery.
 % possible(R, deliver(_), GT)    If robot R can perform the delivery task at GT.
 % putDown(R, GT)                 Robot R puts his product down in GT.
@@ -21,6 +22,7 @@
 % doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
+% horizon(H)                     Defined in facts.lp
 % order(O)                       Defined in facts.lp
 % orderBegin(O, B)               Defined in orders.lp
 % orderDeadline(O, D)            Defined in orders.lp
@@ -47,16 +49,17 @@ allDeliverTasks(T) :- lateDeliverTask(T).
 task(T)                                 :- allDeliverTasks(T).
 taskDuration(T, @deliverTaskDuration()) :- allDeliverTasks(T).
 taskLocation(T, L)	                    :- allDeliverTasks(T), deliverLocation(L).
+oneShotTask(T)                          :- allDeliverTasks(T).
 
 #external toBeDone(T, 0) : allDeliverTasks(T).
 
 inUse(L, R, GT) :- doing(R, T, _, GT), allDeliverTasks(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), allDeliverTasks(T), taskLocation(T, L).
 
-possible(R, T, GT) :- allDeliverTasks(T), robot(R), GT = 0..@horizon()-1, not impossible(R, T, GT).
+possible(R, T, GT) :- allDeliverTasks(T), robot(R), horizon(H), GT = 0..H-1, not impossible(R, T, GT).
 
 % The robot has to hold a product.
-impossible(R, T, GT) :- allDeliverTasks(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
+impossible(R, T, GT) :- allDeliverTasks(T), robot(R), not holding(R, _, GT), horizon(H), GT = 0..H-1.
 % The product has to have the correct base color.
 impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), base(O, B), not productBase(P, B).
 % The product has to have the correct cap color.
@@ -67,13 +70,13 @@ impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), ring
 
 % Do not deliver before its time.
 impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderBegin(O, B), B > GT + CT, robot(R),
-						GT = 0..@horizon()-1.
+						horizon(H), GT = 0..H-1.
 % Do not deliver after its time.
 impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D < GT + CT, robot(R),
-						GT = 0..@horizon()-1.
+						horizon(H), GT = 0..H-1.
 % Do not late deliver before its time.
 impossible(R, T, GT) :- lateDeliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D > GT + CT,
-						robot(R), GT = 0..@horizon()-1.
+						robot(R), horizon(H), GT = 0..H-1.
 
 
 putDown(R, GT) :- end(R, T, GT), allDeliverTasks(T).

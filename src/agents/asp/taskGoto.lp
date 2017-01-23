@@ -12,6 +12,7 @@
 % Additionally used predicates:
 % doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
+% horizon(H)                     Defined in facts.lp
 % location(L)                    Defined in facts.lp
 % robot(R)                       Defined in facts.lp
 
@@ -26,9 +27,10 @@ task(T)                  :- gotoTask(T).
 % calculations are done in the state.lp
 taskDuration(T, 0)       :- gotoTask(T).
 % The goto task is never really finished, because it has nothing to do with the orders or so.
-toBeDone(T, GT)          :- gotoTask(T), GT = 0..@horizon()-1.
+toBeDone(T, GT)          :- gotoTask(T), horizon(H), GT = 0..H-1.
 
 inUse(L, R, GT) :- doing(R, T, _, GT), gotoTask(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), gotoTask(T), taskLocation(T, L).
 
-possible(R, T, GT) :- gotoTask(T), robot(R), robotLocation(R, RL, GT), taskLocation(T, TL), RL != TL, GT = 0..@horizon()-1.
+possible(R, T, GT) :- gotoTask(T), robot(R), robotLocation(R, RL, GT), taskLocation(T, TL), RL != TL, horizon(H),
+                      GT = 0..H-1.

@@ -4,6 +4,7 @@
 %
 % In this file defined predicates:
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
+% oneShotTask(mountRing(_))      The task is only doable one time.
 % points(mountRing(_), P)        How many points are awarded for the mounting.
 % possible(R, mountRing(_), GT)  If robot R can perform the mount task at GT.
 % process(M, P, GT)              The machine M starts the processing of the product P at GT.
@@ -46,6 +47,7 @@ points(mountRing(L, O, Q, 2), 20)         :- ringTask(mountRing(L, O, Q, 2)).
 points(mountRing(L, O, Q, 3), 50)         :- ringTask(mountRing(L, O, Q, 3)).
 task(T)                                   :- ringTask(T).
 taskDuration(T, @mountRingTaskDuration()) :- ringTask(T).
+oneShotTask(T)                            :- ringTask(T).
 
 #external toBeDone(T, 0) : ringTask(T).
 
