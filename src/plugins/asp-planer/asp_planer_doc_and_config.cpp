@@ -168,6 +168,9 @@
  * @property AspPlanerThread::MaxOrders
  * @brief The maximum amount of orders we expect.
  *
+ * @property AspPlanerThread::MaxProducts
+ * @brief The maximum amount of procuts which can be alive at any given point in time.
+ *
  * @property AspPlanerThread::MaxQuantity
  * @brief The maximum quantity for an order we expect.
  *
@@ -323,6 +326,8 @@ AspPlanerThread::loadConfig(void)
 
 	std::strcpy(suffix, "max-orders");
 	MaxOrders = config->get_uint(buffer);
+	std::strcpy(suffix, "max-products");
+	MaxProducts = config->get_uint(buffer);
 	std::strcpy(suffix, "max-quantity");
 	MaxQuantity = config->get_uint(buffer);
 	std::strcpy(suffix, "look-ahaed");
