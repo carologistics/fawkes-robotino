@@ -19,17 +19,18 @@
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
 % horizon(H)                     Defined in facts.lp
+% locationToMachineMap(L, M)     Defined in facts.lp
 % productionStarted              Defined in facts.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
 % ringCost(C)                    Defined in facts.lp
-% ringLocation(M, L)             Defined in facts.lp
+% ringLocation(L)                Defined in facts.lp
 % ringStationAssignment(M, C)    Defined in facts.lp
 % robot(R)                       Defined in facts.lp
 
 
 #program ourTeam(t).
 
-feedRSTask(feedRS(L))                  :- ringLocation(_, L).
+feedRSTask(feedRS(L))                  :- ringLocation(L).
 task(T)                                :- feedRSTask(T).
 points(T, 2)                           :- feedRSTask(T).
 taskDuration(T, @feedRSTaskDuration()) :- feedRSTask(T).
@@ -40,11 +41,12 @@ inUse(L, R, GT) :- doing(R, T, _, GT), feedRSTask(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L).
 
 % Maybe get more sophisticated and only allow transparent bases for the last fillment.
-possible(R, T, GT) :- feedRSTask(T), taskLocation(T, L), robot(R), holding(R, P, GT), ringLocation(M, L),
+possible(R, T, GT) :- feedRSTask(T), taskLocation(T, L), robot(R), holding(R, P, GT), locationToMachineMap(L, M),
                       ringStationAssignment(M, Color), ringColorCost(Color, Cost), ringCost(Cost), Cost > 0,
                       rsFillState(M, FS, GT), FS < 3, horizon(H), GT = 0..H-1.
 
-rsFedByRobot(R, M, P, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L), ringLocation(M, L), holding(R, P, GT-1).
+rsFedByRobot(R, M, P, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L), locationToMachineMap(L, M),
+                             holding(R, P, GT-1).
 
 rsFed(M, GT)   :- rsFedByRobot(_, M, _, GT).
 putDown(R, GT) :- rsFedByRobot(R, _, _, GT).

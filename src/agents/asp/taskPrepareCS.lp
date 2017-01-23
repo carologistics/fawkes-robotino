@@ -23,6 +23,7 @@
 % generatedProduct(R, P, GT)     Defined in products.lp
 % holding(R, P, GT)              Defined in robots.lp
 % horizon(H)                     Defined in facts.lp
+% locationToMachineMap(L, M)     Defined in facts.lp
 % productionStarted              Defined in facts.lp
 % robot(R)                       Defined in facts.lp
 % storing(M, P, GT)              Defined in machines.lp
@@ -30,7 +31,7 @@
 
 #program ourTeam(t).
 
-prepCSTask(prepareCS(L))                  :- capLocation(_, L).
+prepCSTask(prepareCS(L))                  :- capLocation(L).
 task(T)                                   :- prepCSTask(T).
 points(T, 3)                              :- prepCSTask(T).
 taskDuration(T, @prepareCSTaskDuration()) :- prepCSTask(T).
@@ -40,10 +41,11 @@ toBeDone(T, GT)                           :- prepCSTask(T), productionStarted, h
 inUse(L, R, GT) :- doing(R, T, _, GT), prepCSTask(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), prepCSTask(T), taskLocation(T, L).
 
-possible(R, T, GT) :- prepCSTask(T), taskLocation(T, L), robot(R), not holding(R, _, GT), capLocation(M, L), horizon(H),
-                      not csPrepared(M, GT), not storing(M, _, GT), not processing(M, _, _, GT), GT = 0..H-1.
+possible(R, T, GT) :- prepCSTask(T), taskLocation(T, L), robot(R), not holding(R, _, GT), locationToMachineMap(L, M),
+                      horizon(H), not csPrepared(M, GT), not storing(M, _, GT), not processing(M, _, _, GT),
+                      GT = 0..H-1.
 
-csPreparedByRobot(R, M, GT) :- end(R, T, GT), prepCSTask(T), taskLocation(T, L), capLocation(M, L).
+csPreparedByRobot(R, M, GT) :- end(R, T, GT), prepCSTask(T), taskLocation(T, L), locationToMachineMap(L, M).
 
 csPrepared(M, GT)                     :- csPreparedByRobot(_, M, GT).
 generateProduct(R, "TRANSPARENT", GT) :- csPreparedByRobot(R, _, GT).

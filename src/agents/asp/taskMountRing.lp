@@ -20,6 +20,7 @@
 % doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
+% locationToMachineMap(L, M)     Defined in facts.lp
 % order(O)                       Defined in facts.lp
 % quantity(Q)                    Defined in facts.lp
 % productBase(P, B)              Defined in products.lp
@@ -28,7 +29,7 @@
 % quantitiy(Q)                   Defined in facts.lp
 % ring(O, R, C)                  Defined in orders.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
-% ringLocation(M, L)             Defined in facts.lp
+% ringLocation(L)                Defined in facts.lp
 % rsFillState(M, FS, GT)         Defined in machines.lp
 % storing(M, P, GT)              Defined in machines.lp
 
@@ -38,7 +39,7 @@
 % For the points we cheat a little bit. The points are only awarded for the last ring, but this is difficult to model
 % so we award for every mount and subtract the before awarded from the points for the next ring. So we don't get 80
 % points for the 3rd ring of a C3, but only 50, because we got 10 for the 1st and 20 for the 2nd, in total 80.
-ringTask(mountRing(L, O, Q, R))           :- order(O), quantity(Q), ringLocation(_, L), R = 1..3.
+ringTask(mountRing(L, O, Q, R))           :- order(O), quantity(Q), ringLocation(L), R = 1..3.
 taskLocation(mountRing(L, O, Q, R), L)	  :- ringTask(mountRing(L, O, Q, R)).
 order(mountRing(L, O, Q, R), O)           :- ringTask(mountRing(L, O, Q, R)).
 ring(mountRing(L, O, Q, R), R)            :- ringTask(mountRing(L, O, Q, R)).
@@ -57,9 +58,9 @@ inUse(L, R, GT) :- end(R, T, GT), ringTask(T), taskLocation(T, L).
 possible(R, T, GT) :- ringTask(T), robot(R), GT = 0..@horizon()-1, not impossible(R, T, GT).
 
 % The machine has to have an empty output.
-impossible(R, T, GT) :- ringTask(T), robot(R), taskLocation(T, L), ringLocation(M, L), storing(M, _, GT).
+impossible(R, T, GT) :- ringTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), storing(M, _, GT).
 % The machine has to be in idle.
-impossible(R, T, GT) :- ringTask(T), robot(R), taskLocation(T, L), ringLocation(M, L), processing(M, _, _, GT).
+impossible(R, T, GT) :- ringTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), processing(M, _, _, GT).
 % The robot has to hold a product.
 impossible(R, T, GT) :- ringTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 % The product has to have the correct base color.
@@ -68,13 +69,14 @@ impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), order(T, O), base(O, B),
 impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), productCap(P, _, GT).
 % The all lower rings has to be mounted.
 impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), order(T, O), ring(T, TaskRing), ring(O, Ring, Color),
-						Ring < TaskRing, not productRing(P, Ring, Color, GT).
+                        Ring < TaskRing, not productRing(P, Ring, Color, GT).
 % The fill state of the ring station has to be high enough.
-impossible(R, T, GT) :- ringTask(T), robot(R), ring(T, Ring), order(T, O), taskLocation(T, L), ringLocation(M, L),
-						ring(O, Ring, Color), ringColorCost(Color, Cost), rsFillState(M, FS, GT), FS < Cost.
+impossible(R, T, GT) :- ringTask(T), robot(R), ring(T, Ring), order(T, O), taskLocation(T, L),
+                        locationToMachineMap(L, M), ring(O, Ring, Color), ringColorCost(Color, Cost),
+                        rsFillState(M, FS, GT), FS < Cost.
 
-ringMountedByRobot(R, P, M, C, GT) :- end(R, T, GT), ringTask(T), taskLocation(T, L), ringLocation(M, L),
-									  holding(R, P, GT-1), order(T, O), ring(T, Ring), ring(O, Ring, C).
+ringMountedByRobot(R, P, M, C, GT) :- end(R, T, GT), ringTask(T), taskLocation(T, L), locationToMachineMap(L, M),
+                                      holding(R, P, GT-1), order(T, O), ring(T, Ring), ring(O, Ring, C).
 
 putDown(R, GT)           :- ringMountedByRobot(R, _, _, _, GT).
 ringMounted(M, P, C, GT) :- ringMountedByRobot(_, P, M, C, GT).

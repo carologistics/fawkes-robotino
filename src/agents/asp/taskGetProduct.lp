@@ -14,9 +14,10 @@
 % Additionally used predicates:
 % doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
-% getLocation(M, L)              Defined in facts.lp
+% getLocation(L)                 Defined in facts.lp
 % holding(R, P, GT)              Defined in robots.lp
 % horizon(H)                     Defined in facts.lp
+% locationToMachineMap(L, M)     Defined in facts.lp
 % productionStarted              Defined in facts.lp
 % robot(R)                       Defined in facts.lp
 % storing(M, P, GT)              Defined in machines.lp
@@ -24,7 +25,7 @@
 
 #program ourTeam(t).
 
-getProductTask(getProduct(L))              :- getLocation(_, L).
+getProductTask(getProduct(L))              :- getLocation(L).
 task(T)                                    :- getProductTask(T).
 taskDuration(T, @getProductTaskDuration()) :- getProductTask(T).
 taskLocation(getProduct(L), L)             :- task(getProduct(L)).
@@ -33,8 +34,9 @@ toBeDone(T, GT)                            :- getProductTask(T), productionStart
 inUse(L, R, GT) :- doing(R, T, _, GT), getProductTask(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), getProductTask(T), taskLocation(T, L).
 
-possible(R, T, GT) :- getProductTask(T), taskLocation(T, L), robot(R), not holding(R, _, GT), getLocation(M, L),
-                      storing(M, P, GT), horizon(H), GT = 0..H-1.
+possible(R, T, GT) :- getProductTask(T), taskLocation(T, L), robot(R), not holding(R, _, GT),
+                      locationToMachineMap(L, M), storing(M, P, GT), horizon(H), GT = 0..H-1.
 
-pickUp(R, P, GT) :- end(R, T, GT), getProductTask(T), taskLocation(T, L), getLocation(M, L), storing(M, P, GT-1).
+pickUp(R, P, GT) :- end(R, T, GT), getProductTask(T), taskLocation(T, L), locationToMachineMap(L, M),
+                    storing(M, P, GT-1).
 
