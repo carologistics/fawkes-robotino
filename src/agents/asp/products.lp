@@ -20,11 +20,11 @@
 % ringColor(C)                   Defined in facts.lp
 % ringMounted(M, P, C, GT)       Defined in mountRing.lp
 
-#external product(product(I))              : I = 0..@maxProducts().
-#external productBase(product(I), B)       : I = 0..@maxProducts(), baseColor(B).
-#external productBase(product(I), B)       : I = 0..@maxProducts(), B = "TRANSPARENT".
-#external productCap(product(I), C, 0)     : I = 0..@maxProducts(), capColor(C).
-#external productRing(product(I), R, C, 0) : I = 0..@maxProducts(), ringColor(C), R = 1..3.
+#external product(product(I))              : I = 0..@maxProducts() - 1.
+#external productBase(product(I), B)       : I = 0..@maxProducts() - 1, baseColor(B).
+#external productBase(product(I), B)       : I = 0..@maxProducts() - 1, B = "TRANSPARENT".
+#external productCap(product(I), C, 0)     : I = 0..@maxProducts() - 1, capColor(C).
+#external productRing(product(I), R, C, 0) : I = 0..@maxProducts() - 1, ringColor(C), R = 1..3.
 
 #program ourTeam(t).
 
