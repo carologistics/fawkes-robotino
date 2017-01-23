@@ -15,10 +15,6 @@ StepSeconds = None
 StartDelivery = 240
 EndDelivery = 1140
 
-MaxFeedRS = 2
-MaxGetBase = 2
-MaxGetProduct = 4
-MaxPrepCS = 1
 MaxProducts = 5
 Robots = ["Tuvok", "T'Pol", "Spock"]
 

@@ -106,16 +106,4 @@ def horizonSteps():
 def horizon():
 	return toASP(Horizon)
 
-def maxFeedRS():
-	return MaxFeedRS
-
-def maxGetBase():
-	return MaxGetBase
-
-def maxGetProduct():
-	return MaxGetProduct
-
-def maxPrepCS():
-	return MaxPrepCS
-
 #end.

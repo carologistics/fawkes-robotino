@@ -8,17 +8,17 @@
 % possible(R, feedRS(_), GT)     If robot R can perform the feed task at GT.
 % putDown(R, GT)                 Robot R puts his product down in GT.
 % rsFed(M, GT)                   Machine M was fed with a product in GT.
-% task(feedRS(L, S))             The task to feed a product into ring station L, S is to enumerate how often a robot is
-%                                able to perform this task.
+% task(feedRS(L))                The task to feed a product into ring station L.
 % taskDuration(feedRS(_), D)     How long it takes to put the product onto the ring stations slide, once the robot has
 %                                arrived.
 % taskLocation(feedRS(_), L)     Where the feeding will take place.
-% toBeDone(feedRS(_), 0)         The feed RS tasks are possible.
+% toBeDone(feedRS(_), GT)        The feed RS tasks are possible.
 %
 % Additionally used predicates:
 % doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
+% horizon(H)                     Defined in facts.lp
 % productionStarted              Defined in facts.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
 % ringCost(C)                    Defined in facts.lp
@@ -29,22 +29,22 @@
 
 #program ourTeam(t).
 
-feedRSTask(feedRS(L, S))               :- ringLocation(_, L), S = 1..@maxFeedRS().
+feedRSTask(feedRS(L))                  :- ringLocation(_, L).
 task(T)                                :- feedRSTask(T).
 points(T, 2)                           :- feedRSTask(T).
 taskDuration(T, @feedRSTaskDuration()) :- feedRSTask(T).
-taskLocation(feedRS(L, S), L)          :- task(feedRS(L, S)).
-toBeDone(T, 0)                         :- feedRSTask(T), productionStarted.
+taskLocation(feedRS(L), L)             :- task(feedRS(L)).
+toBeDone(T, GT)                        :- feedRSTask(T), productionStarted, horizon(H), GT=0..H-1.
 
-inUse(L, R, GT) :- doing(R, feedRS(L, _), _, GT).
-inUse(L, R, GT) :- end(R, feedRS(L, _), GT).
+inUse(L, R, GT) :- doing(R, T, _, GT), feedRSTask(T), taskLocation(T, L).
+inUse(L, R, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L).
 
 % Maybe get more sophisticated and only allow transparent bases for the last fillment.
-possible(R, feedRS(L, S), GT) :- task(feedRS(L, S)), robot(R), holding(R, P, GT), ringLocation(M, L),
-								 ringStationAssignment(M, Color), ringColorCost(Color, Cost), ringCost(Cost),
-								 Cost > 0, rsFillState(M, FS, GT), FS < 3, GT = 0..@horizon()-1.
+possible(R, T, GT) :- feedRSTask(T), taskLocation(T, L), robot(R), holding(R, P, GT), ringLocation(M, L),
+                      ringStationAssignment(M, Color), ringColorCost(Color, Cost), ringCost(Cost), Cost > 0,
+                      rsFillState(M, FS, GT), FS < 3, horizon(H), GT = 0..H-1.
 
-rsFedByRobot(R, M, P, GT) :- end(R, feedRS(L, _), GT), ringLocation(M, L), holding(R, P, GT-1).
+rsFedByRobot(R, M, P, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L), ringLocation(M, L), holding(R, P, GT-1).
 
 rsFed(M, GT)   :- rsFedByRobot(_, M, _, GT).
 putDown(R, GT) :- rsFedByRobot(R, _, _, GT).
