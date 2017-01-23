@@ -93,14 +93,16 @@ location(m(t, M, S)) :- deliveryStation(M), side(S).
 
 baseLocation(m(t, M, S)) :- baseStation(M), side(S).
 
-getLocation(M, m(t, M, "O")) :- capStation(M).
-getLocation(M, m(t, M, "O")) :- ringStation(M).
+getLocation(m(t, M, "O")) :- capStation(M).
+getLocation(m(t, M, "O")) :- ringStation(M).
 
 deliverLocation(m(t, M, "I")) :- deliveryStation(M).
 
-capLocation(M, m(t, M, "I")) :- capStation(M).
+capLocation(m(t, M, "I")) :- capStation(M).
 
-ringLocation(M, m(t, M, "I")) :- ringStation(M).
+ringLocation(m(t, M, "I")) :- ringStation(M).
+
+locationToMachineMap(m(t, M, S), M) :- side(S), machine(M).
 
 #program setDriveDuration(l1, l2, d).
 driveDuration(l1, l2, d).

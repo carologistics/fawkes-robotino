@@ -21,6 +21,7 @@
 % doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
+% locationToMachineMap(L, M)     Defined in facts.lp
 % order(O)                       Defined in facts.lp
 % productBase(P, B)              Defined in products.lp
 % productCap(P, C, GT)           Defined in products.lp
@@ -32,7 +33,7 @@
 
 #program ourTeam(t).
 
-capTask(mountCap(L, O, Q))               :- order(O), quantity(Q), capLocation(_, L).
+capTask(mountCap(L, O, Q))               :- order(O), quantity(Q), capLocation(L).
 order(mountCap(L, O, Q), O)              :- capTask(mountCap(L, O, Q)).
 taskLocation(mountCap(L, O, Q), L)       :- capTask(mountCap(L, O, Q)).
 task(T)                                  :- capTask(T).
@@ -48,12 +49,12 @@ inUse(L, R, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L).
 possible(R, T, GT) :- not impossible(R, T, GT), capTask(T), robot(R), GT = 0..@horizon()-1.
 
 % The machine has to have an empty output.
-impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), capLocation(M, L), storing(M, _, GT).
+impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), storing(M, _, GT).
 % The machine has to be in idle.
-impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), capLocation(M, L), processing(M, _, _, GT).
+impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), processing(M, _, _, GT).
 % The machine has to be prepared.
-impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), capLocation(M, L), not csPrepared(M, GT),
-						GT = 0..@horizon()-1.
+impossible(R, T, GT) :- capTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), not csPrepared(M, GT),
+                        GT = 0..@horizon()-1.
 % The robot has to hold a product.
 impossible(R, T, GT) :- capTask(T), robot(R), not holding(R, _, GT), GT = 0..@horizon()-1.
 % The product has to have the correct base color.
@@ -62,9 +63,10 @@ impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), base(O, B), 
 impossible(R, T, GT) :- capTask(T), holding(R, P, GT), productCap(P, _, GT).
 % The all rings has to be mounted.
 impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color),
-						not productRing(P, Ring, Color, GT).
+                        not productRing(P, Ring, Color, GT).
 
-capMountedByRobot(R, M, P, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L), capLocation(M, L), holding(R, P, GT-1).
+capMountedByRobot(R, M, P, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L), locationToMachineMap(L, M),
+                                  holding(R, P, GT-1).
 
 putDown(R, GT)       :- capMountedByRobot(R, _, _, GT).
 capMounted(M, P, GT) :- capMountedByRobot(_, M, P, GT).
