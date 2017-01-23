@@ -101,7 +101,7 @@ def gameRange():
 	return ret
 
 def horizonSteps():
-	return [0, toASP(Horizon)]
+	return [0, toASP(Horizon) - 1]
 
 def horizon():
 	return toASP(Horizon)
