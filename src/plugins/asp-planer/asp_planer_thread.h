@@ -59,6 +59,7 @@ class AspPlanerThread
 	unsigned int LookAhaed;
 	unsigned int MaxDriveDuration;
 	unsigned int MaxOrders;
+	unsigned int MaxProducts;
 	unsigned int MaxQuantity;
 	unsigned int MaxTaskDuration;
 	std::vector<std::string> PossibleRobots;

@@ -38,7 +38,11 @@ using namespace fawkes;
 unsigned int
 AspPlanerThread::realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept
 {
-	return realGameTime / TimeResolution + ((realGameTime % TimeResolution) * 2 >= TimeResolution ? 1 : 0);
+	if ( realGameTime == 0 )
+	{
+		return 0;
+	} //if ( realGameTime == 0 )
+	return std::max(1u, realGameTime / TimeResolution + ((realGameTime % TimeResolution) * 2 >= TimeResolution ? 1 : 0));
 }
 
 /**
@@ -335,7 +339,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		Unsat(false),
 		//Config
 		ExplorationTime(0), DeliverProductTaskDuration(0), FetchProductTaskDuration(0), LookAhaed(0),
-		MaxDriveDuration(0), MaxOrders(0), MaxQuantity(0), MaxTaskDuration(0), PrepareCSTaskDuration(0),
+		MaxDriveDuration(0), MaxOrders(0), MaxProducts(0), MaxQuantity(0), MaxTaskDuration(0), PrepareCSTaskDuration(0),
 		TimeResolution(0),
 		//Worldmodel
 		GameTime(0),

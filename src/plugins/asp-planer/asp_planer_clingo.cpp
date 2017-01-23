@@ -446,59 +446,16 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(FetchProductTaskDuration))});
 				return;
 			} //if ( view == "getProductTaskDuration" )
-			else if ( view == "maxFeedRS" )
-			{
-				static const unsigned int max = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 40];
-						std::strcpy(buffer, ConfigPrefix);
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-feed-rs");
-						return config->get_uint(buffer);
-					}();
-				retFunction({Clingo::Number(max)});
-				return;
-			} //if ( view == "maxFeedRS" )
-			else if ( view == "maxGetBase" )
-			{
-				static const unsigned int max = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 40];
-						std::strcpy(buffer, ConfigPrefix);
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-get-base");
-						return config->get_uint(buffer);
-					}();
-				retFunction({Clingo::Number(max)});
-				return;
-			} //if ( view == "maxGetBase" )
-			else if ( view == "maxGetProduct" )
-			{
-				static const unsigned int max = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 40];
-						std::strcpy(buffer, ConfigPrefix);
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-get-product");
-						return config->get_uint(buffer);
-					}();
-				retFunction({Clingo::Number(max)});
-				return;
-			} //if ( view == "maxGetProduct" )
-			else if ( view == "maxPrepCS" )
-			{
-				static const unsigned int max = [this](void)
-					{
-						char buffer[std::strlen(ConfigPrefix) + 40];
-						std::strcpy(buffer, ConfigPrefix);
-						std::strcpy(buffer + std::strlen(ConfigPrefix), "planer/max-prep-cs");
-						return config->get_uint(buffer);
-					}();
-				retFunction({Clingo::Number(max)});
-				return;
-			} //if ( view == "maxPrepCS" )
 			else if ( view == "maxDriveDuration" )
 			{
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxDriveDuration))});
 				return;
 			} //else if ( view == "maxDriveDuration" )
+			else if ( view == "maxProducts" )
+			{
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxProducts))});
+				return;
+			} //else if ( view == "maxProducts" )
 			else if ( view == "robots" )
 			{
 				static const auto robots = [this](void) {
@@ -555,6 +512,11 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::String(CapColors[index - 1].Color)});
 				return;
 			} //if ( view == "capColor" )
+			else if ( view == "clingoToASP" )
+			{
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(arguments[0].number()))});
+				return;
+			} //else if ( view == "clingoToASP" )
 			break;
 		} //case 1
 	} //switch ( arguments.size() )
