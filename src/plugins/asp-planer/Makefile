@@ -36,9 +36,8 @@ CFLAGS_CLINGO = -DWITH_THREADS=1 \
 	-I $(HOME)/clingo/libprogram_opts
 LDFLAGS_CLINGO = -L$(HOME)/clingo-build/bin/ -Wl,-rpath=$(HOME)/clingo-build/bin/ -lclingo
 
-#Actually we use C++14, but there is no fawkes flag for that.
-ifeq ($(HAVE_CPP11)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
-  CFLAGS  += $(CFLAGS_CPP11) \
+ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
+  CFLAGS  += $(CFLAGS_CPP14) \
 		 $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
 		 $(CFLAGS_CLINGO) -Wno-error=comment
 		 #-DNDEBUG
@@ -47,8 +46,8 @@ ifeq ($(HAVE_CPP11)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
 
   PLUGINS_all = $(PLUGINDIR)/asp-planer.$(SOEXT)
 else
-  ifneq ($(HAVE_CPP11),1)
-    WARN_TARGETS += warning_cpp11
+  ifneq ($(HAVE_CPP14),1)
+	WARN_TARGETS += warning_cpp14
   endif
   ifneq ($(HAVE_CLINGO),1)
 	WARN_TARGETS += warning_clingo
@@ -63,8 +62,8 @@ all: $(WARN_TARGETS)
 .PHONY: warning_clingo warning_cpp11
 warning_clingo:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) ($(CLINGO_ERROR))"
-warning_cpp11:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) (C++11 not supported)"
+warning_cpp14:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) (C++14 not supported)"
 
 $(WARN_TARGETS_BOOST): warning_boost_%:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) (Boost library $* not found)"
