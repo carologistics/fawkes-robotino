@@ -25,17 +25,6 @@
 #include <clingo.hh>
 
 /**
- * @brief Says if the atom is a valid external.
- * @param[in] atom The atom.
- * @return If its an external.
- */
-bool
-isValidExternal(const Clingo::Symbol& atom) noexcept
-{
-	return atom.type() == Clingo::SymbolType::Function;
-}
-
-/**
  * @brief Generates the external, used to say a robot is alive.
  * @param[in] robotName The name of the robot.
  * @return The atom for the external.
@@ -67,7 +56,7 @@ generateRobotLocationExternal(const std::string& robotName, const Clingo::Symbol
 Clingo::Symbol
 generateHoldingExternal(const std::string& robotName, const ProductIdentifier& product)
 {
-	return Clingo::Symbol();
+	return Clingo::Function("holding", {Clingo::String(robotName), Clingo::Number(product.ID), Clingo::Number(0)});
 }
 
 /**
