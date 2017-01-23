@@ -157,7 +157,8 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
 		const unsigned int delEnd(object["end"].Long() + ExplorationTime);
 
 		MutexLocker locker(&WorldMutex);
-		Orders.emplace_back(OrderInformation{number, quantity, base, cap, ring1, ring2, ring3, delBegin, delEnd});
+		Orders.push_back(
+			OrderInformation{number, quantity, base, cap, std::string(), ring1, ring2, ring3, delBegin, delEnd});
 
 		if ( RingColors.size() == 4 )
 		{

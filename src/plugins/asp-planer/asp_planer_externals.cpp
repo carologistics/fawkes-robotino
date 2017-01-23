@@ -92,3 +92,62 @@ generateExploreTaskExternal(const unsigned int zone)
 {
 	return Clingo::Function("toBeDone", {Clingo::Function("explore", {Clingo::Number(zone)}), Clingo::Number(0)});
 }
+
+/**
+ * @brief Generates the product "name" for the following product externals.
+ * @param[in] id The product ID.
+ * @return The symbol.
+ */
+static inline Clingo::Symbol
+productName(const int id)
+{
+	return Clingo::Function("product", {Clingo::Number(id)});
+}
+
+/**
+ * @brief Generates the external for a product.
+ * @param[in] id The product ID.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateProductExternal(const int id)
+{
+	return Clingo::Function("product", {productName(id)});
+}
+
+/**
+ * @brief Generates the external for a products base.
+ * @param[in] id The product ID.
+ * @param[in] base The base color.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateProductBaseExternal(const int id, const std::string& base)
+{
+	return Clingo::Function("productBase", {productName(id), Clingo::String(base)});
+}
+
+/**
+ * @brief Generates the external for a products ring.
+ * @param[in] id The product ID.
+ * @param[in] ringNumber The ring number. (Counting from 1.)
+ * @param[in] color The ring color.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateProductRingExternal(const int id, const int ringNumber, const std::string& color)
+{
+	return Clingo::Function("productRing", {productName(id), Clingo::Number(ringNumber), Clingo::String(color)});
+}
+
+/**
+ * @brief Generates the external for a products cap.
+ * @param[in] id The product ID.
+ * @param[in] cap The cap color.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateProductCapExternal(const int id, const std::string& cap)
+{
+	return Clingo::Function("productCap", {productName(id), Clingo::String(cap)});
+}

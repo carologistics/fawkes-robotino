@@ -231,6 +231,9 @@
  * @property AspPlanerThread::Robots
  * @brief The robot information in a lookup table.
  *
+ * @property AspPlanerThread::Products
+ * @brief The products currently used.
+ *
  * @property AspPlanerThread::ZonesToExplore
  * @brief Which zones we have to explore.
  */

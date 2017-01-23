@@ -167,7 +167,8 @@ struct OrderInformation
 	unsigned int Quantity;
 	std::string Base;
 	std::string Cap;
-	std::string Rings[3];
+	// +1 to skip the calculation of +1 and -1 everytime we use this.
+	std::string Rings[4];
 	unsigned int DeliveryBegin;
 	unsigned int DeliveryEnd;
 };
