@@ -19,6 +19,8 @@ End = 240
 # How many seconds the solving is allowed to run (None = no time out) and also the step for real time seconds. The
 # latter is set to 1 if StepSeconds is None. Use None for check instances and a multiple of Res for all other cases.
 # While all values are valid, the resulting program run may not.
+# Also possible are negative Values, their absolute value is used as real time seconds for the steps, but it does not
+# cause a timeout for the solver.
 StepSeconds = None
 
 # The time frame for deliveries, i.e. the production phase. Only change this, when the rules are changed.
