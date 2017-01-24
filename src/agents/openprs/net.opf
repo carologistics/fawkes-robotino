@@ -133,7 +133,8 @@
                       ;(~ (= (val @m-loaded-with) @machine-loaded-with)) 
                       ;(~ (= (val @m-pose) @machine-pose))
             (=> (machine @machine-name @machine-type @machine-state @machine-prepared @machine-zone @machine-pose @machine-loaded-with)) 
-            (! (print "updating MachineInfo"))
+            (! (printf (FORMAT "UPDATE Machine %s is %s \n" (val @machine-name) (val @machine-state) )))
+
             )
           else  
             (=> (machine @machine-name @machine-type @machine-state @machine-prepared @machine-zone @machine-pose @machine-loaded-with)) 

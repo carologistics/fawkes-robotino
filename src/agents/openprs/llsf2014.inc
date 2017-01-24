@@ -13,6 +13,7 @@ declare op_predicate  ppgoto
 declare op_predicate  conf-load-rcll2017
 declare op_predicate  bring-product-to
 declare op_predicate  get-product-from
+declare op_predicate  instruct-mps
 
 declare cwp           peer-id
 
@@ -55,3 +56,4 @@ load db  "llsf2014.db"
 load opf "llsf2014.opf"
 load opf "production.opf"
 load opf "net.opf"
+load opf "mps-instructions.opf"

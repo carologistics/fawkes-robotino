@@ -1,0 +1,52 @@
+(
+
+
+	(defop mps-instruction-base-station
+		:invocation ( !(instruct-mps machine $bs-name side $side color $color) )
+		:context( 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
+				 	(team-color $team-color)
+				  	(peer-id private $peer-id)
+				)
+
+		:body( 
+
+			(! (= @bs-inst (pb-create "llsf_msgs.PrepareInstructionBS")))
+			(! (pb-set-field @bs-inst "side" $side))
+			(! (pb-set-field @bs-inst "color" $color))
+
+			(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
+			(! (pb-set-field @instruction "instruction_bs" @bs-inst ))
+			(! (pb-set-field @instruction "team_color" $team-color))
+			(! (pb-set-field @instruction "machine" $bs-name ))
+			(! (pb-broadcast $peer-id @instruction))
+			)
+
+		:documentation "Send the Prepare instruction once to the BS"
+ 		)
+
+
+ 		(defop mps-instruction-cap-station
+ 			:invocation ( !(instruct-mps machine $cs-name operation $operation) )
+ 			:context( 	(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with)
+				  	 	(team-color $team-color)
+				  		(peer-id private $peer-id)
+				)
+ 			:body(
+ 				(! (= @cs-inst (pb-create "llsf_msgs.PrepareInstructionCS")))
+				(! (pb-set-field @cs-inst "operation" $operation)) ;TODO check if the operation is allowed
+
+				(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
+				(! (pb-set-field @instruction "instruction_cs" @cs-inst ))
+				(! (pb-set-field @instruction "team_color" $team-color))
+				(! (pb-set-field @instruction "machine" $cs-name ))
+				(! (pb-broadcast $peer-id @instruction))
+ 				)
+
+			:documentation "Send the Prepare instruction once to the CS"
+
+
+ 			)
+	;ToDo: let the instructions be send periodically on time till the machine state becomes  PROCESSING|PREPARED|READY-AT-OUTPU
+
+
+	)
