@@ -63,12 +63,14 @@ generateHoldingExternal(const std::string& robotName, const ProductIdentifier& p
  * @brief Generates the external for a robot doing a task.
  * @param[in] robotName The name of the robot.
  * @param[in] task The tasks description.
+ * @param[in] duration The remaining duration of the doing.
  * @return The external atom.
  */
 Clingo::Symbol
-generateDoingExternal(const std::string& robotName, const TaskDescription& task)
+generateDoingExternal(const std::string& robotName, const TaskDescription& task, const int duration)
 {
-	return Clingo::Symbol();
+	assert(duration > 0);
+	return Clingo::Function("robotDoing", {Clingo::String(robotName), task.TaskSymbol, Clingo::Number(duration)});
 }
 
 /**

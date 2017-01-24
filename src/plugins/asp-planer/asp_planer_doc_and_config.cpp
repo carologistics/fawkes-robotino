@@ -104,6 +104,23 @@
  */
 
 /**
+ * @struct TaskDescription
+ * @brief The description of a task, a robot is executing.
+ *
+ * @property TaskDescription::Type
+ * @brief The tasks type.
+ *
+ * @property TaskDescription::TaskSymbol
+ * @brief The clingo symbol for the task, as cached value.
+ *
+ * @property TaskDescription::EstimatedEnd
+ * @brief The real time seconds, we estimate the robot to be finished.
+ *
+ * @fn bool TaskDescription::isValid() const
+ * @brief If a valid task is identified.
+ */
+
+/**
  * @struct ProductIdentifier
  * @brief Type safe wrapper for product id.
  *
