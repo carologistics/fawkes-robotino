@@ -56,7 +56,7 @@ ClipsSmtThread::init()
     WorkingPiece workingPieceRobot("5345447");
     Robot robot(42, 1, 2, workingPieceRobot);
     _smtData._robots.push_back(robot);
- 
+
     WorkingPiece workingPieceMachine("13467");
     std::vector<WorkingPieceComponent> inputWpType = {RING_BLUE, RING_GREEN};
     std::vector<WorkingPieceComponent> inputWpContainer = {RING_GREEN};
@@ -69,7 +69,7 @@ ClipsSmtThread::init()
     Order order(30, targetPieceOrder);
     _smtData._currentOrders.push_back(order);
 
-  
+
     std::cout << _smtData.toString() << std::endl;
   }
   catch (const runtime_error& error)
@@ -77,7 +77,7 @@ ClipsSmtThread::init()
     std::cout << "Someting Bad Happend:" << std::endl;
     std::cout << error.what() << std::endl;
   }
-  
+
 }
 
 
@@ -268,31 +268,42 @@ ClipsSmtThread::clips_smt_create_formula()
 
 	return constraints;
 }
-**/
 
+z3::check_result
+clips_smt_solve_formula(z3::expr_vector formula)
+{
+    z3::optimize z3Optimizer(_z3_context);
+    //std::cout << "constraints " << formula << std::endl;
+    //std::cout << constraints << std::endl << constants << std::endl;
+    for (unsigned i = 0; i < formula.size(); i++) {
+        z3Optimizer.add(formula[i]);
+        std::cout << "constraint " << formula[i] << std::endl;
+    }
+}
+
+void
+clips_smt_react_on_result(z3::check_result result)
+{
+    z3::check_result res = z3Optimizer.check();
+    std::cout << "result: " << res << std::endl;
+    //return (z3::sat == res);
+}
+**/
 
 void
 ClipsSmtThread::clips_smt_dummy(std::string foo, std::string bar)
 {
-    /**
     // Build simple formula   INPUT
-    z3::optimize z3Optimizer(_z3_context);
-    z3::expr_vector constraintsExpression = clips_smt_create_formula();
-    //std::cout << "constraints " << constraintsExpression << std::endl;
-    //std::cout << constraints << std::endl << constants << std::endl;
-    for (unsigned i = 0; i < constraintsExpression.size(); i++) {
-        z3Optimizer.add(constraintsExpression[i]);
-        std::cout << "constraint " << constraintsExpression[i] << std::endl;
-    }
-    z3::check_result res = z3Optimizer.check();
-    std::cout << "result: " << res << std::endl;
+    std::cout << "Clips_smt: Create z3 formula" << std::endl;
+    // z3::expr_vector formula = clips_smt_create_formula();
 
-    //return (z3::sat == res);
-  // Give it to z3 solver   SOLVING
+    // Give it to z3 solver   SOLVING
+    std::cout << "Clips_smt: Solve z3 formula" << std::endl;
+    // z3:check_result result = clips_smt_solve_formula(formula);
 
-  // Evaluate               OUTPUT
-  **/
-
+    // Evaluate               OUTPUT
+    std::cout << "Clips_smt: React on solved z3 formula" << std::endl;
+    // clips_smt_react_on_result(result);
 }
 
 void

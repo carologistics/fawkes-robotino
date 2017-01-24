@@ -85,6 +85,8 @@ class ClipsSmtThread
 //  z3::context _z3_context;
   void clips_smt_dummy(std::string foo, std::string bar);
   z3::expr_vector clips_smt_create_formula();
+  z3::check_result clips_smt_solve_formula(z3::expr_vector formula);
+  void clips_smt_react_on_result(z3::check_result result);
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 
