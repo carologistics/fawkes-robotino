@@ -256,11 +256,11 @@ AspPlanerThread::loopClingo(void)
 	} //if ( GameTime >= ExplorationTime && !ProductionStarted )
 
 	const auto aspGameTime = realGameTimeToAspGameTime(GameTime);
-	StartSolvingGameTime = GameTime;
 	for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
 	{
 		ClingoAcc->release_external(currentTimeExternal(gt));
 	} //for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
+	StartSolvingGameTime = GameTime;
 	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
 	SolvingStarted = clock->now();
 	ClingoAcc->startSolving();
