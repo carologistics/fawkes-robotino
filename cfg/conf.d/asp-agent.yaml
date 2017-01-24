@@ -8,13 +8,12 @@ asp-agent:
     debug-level: 40
 
     program-path: ../src/agents/asp/
-    program-files: [delivery.lp, exploration.lp, facts.lp, feedRS.lp, getBase.lp, getProduct.lp, goal.lp, machines.lp, mountCap.lp, mountRing.lp, orders.lp, prepareCS.lp, products.lp, robots.lp, state.lp]
-    #program-files: [facts.lp, robots.lp, goal.lp, state.lp]
+    program-files: [exploration.lp, facts.lp, goal.lp, machines.lp, orders.lp, products.lp, robots.lp, state.lp, taskDeliver.lp, taskFeedRS.lp, taskGetBase.lp, taskGetProduct.lp, taskGoto.lp, taskMountCap.lp, taskMountRing.lp, taskPrepareCS.lp]
 
     #Look ahaed in real time seconds.
     look-ahaed: 300
     #How many real time seconds should be one time unit for the ASP solver.
-    time-resolution: 5
+    time-resolution: 10
     #Names of possible used robots.
     robots: [Tuvok,T'Pol,Spock]
     robot-timeout: 10
