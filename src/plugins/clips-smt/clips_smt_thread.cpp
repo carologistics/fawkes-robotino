@@ -26,6 +26,8 @@
 
 #include <clipsmm.h>
 
+//#include <z3++.h>
+
 
 using namespace fawkes;
 
@@ -213,7 +215,6 @@ ClipsSmtThread::clips_smt_unblock_edge(std::string env_name,
 }
 **/
 
-/**
 z3::expr_vector
 ClipsSmtThread::clips_smt_create_formula()
 {
@@ -269,8 +270,8 @@ ClipsSmtThread::clips_smt_create_formula()
 	return constraints;
 }
 
-z3::check_result
-clips_smt_solve_formula(z3::expr_vector formula)
+ z3::check_result
+ ClipsSmtThread::clips_smt_solve_formula(z3::expr_vector formula)
 {
     z3::optimize z3Optimizer(_z3_context);
     //std::cout << "constraints " << formula << std::endl;
@@ -279,31 +280,34 @@ clips_smt_solve_formula(z3::expr_vector formula)
         z3Optimizer.add(formula[i]);
         std::cout << "constraint " << formula[i] << std::endl;
     }
+
+    return z3Optimizer.check();
 }
 
 void
-clips_smt_react_on_result(z3::check_result result)
+ClipsSmtThread::clips_smt_react_on_result(z3::check_result result)
 {
-    z3::check_result res = z3Optimizer.check();
-    std::cout << "result: " << res << std::endl;
-    //return (z3::sat == res);
+    std::cout << "result: " << result << std::endl;
+    //return (z3::sat == result);
 }
-**/
+
 
 void
 ClipsSmtThread::clips_smt_dummy(std::string foo, std::string bar)
 {
+    std::cout << "Clips_smt: Test solving z3 formula" << std::endl;
+
     // Build simple formula   INPUT
     std::cout << "Clips_smt: Create z3 formula" << std::endl;
-    // z3::expr_vector formula = clips_smt_create_formula();
+    z3::expr_vector formula = clips_smt_create_formula();
 
     // Give it to z3 solver   SOLVING
     std::cout << "Clips_smt: Solve z3 formula" << std::endl;
-    // z3:check_result result = clips_smt_solve_formula(formula);
+    z3::check_result result = clips_smt_solve_formula(formula);
 
     // Evaluate               OUTPUT
     std::cout << "Clips_smt: React on solved z3 formula" << std::endl;
-    // clips_smt_react_on_result(result);
+    clips_smt_react_on_result(result);
 }
 
 void
