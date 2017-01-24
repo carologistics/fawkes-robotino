@@ -35,7 +35,6 @@
 
 #include <iostream>
 
-//#include <z3.h>
 #include <z3++.h>
 
 #include "clips_smt_data.h"
@@ -82,7 +81,7 @@ class ClipsSmtThread
  private:
   SmtData _smtData;
 
-//  z3::context _z3_context;
+  z3::context _z3_context;
   void clips_smt_dummy(std::string foo, std::string bar);
   z3::expr_vector clips_smt_create_formula();
   z3::check_result clips_smt_solve_formula(z3::expr_vector formula);
