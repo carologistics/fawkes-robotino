@@ -14,11 +14,7 @@
 			(! (pb-set-field @bs-inst "side" $side))
 			(! (pb-set-field @bs-inst "color" $color))
 
-			(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
-			(! (pb-set-field @instruction "instruction_bs" @bs-inst ))
-			(! (pb-set-field @instruction "team_color" $team-color))
-			(! (pb-set-field @instruction "machine" $bs-name ))
-			(! (pb-broadcast $peer-id @instruction))
+			(! (send-instruction $bs-name @bs-inst))
 			)
 
 		:documentation "Send the Prepare instruction once to the BS"
@@ -35,16 +31,44 @@
  				(! (= @cs-inst (pb-create "llsf_msgs.PrepareInstructionCS")))
 				(! (pb-set-field @cs-inst "operation" $operation)) ;TODO check if the operation is allowed
 
-				(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
-				(! (pb-set-field @instruction "instruction_cs" @cs-inst ))
-				(! (pb-set-field @instruction "team_color" $team-color))
-				(! (pb-set-field @instruction "machine" $cs-name ))
-				(! (pb-broadcast $peer-id @instruction))
+				(! (send-instruction $cs-name @cs-inst))
  				)
 
 			:documentation "Send the Prepare instruction once to the CS"
+ 			)
 
 
+ 		(defop mps-instruction-common-send-instruction
+ 			:invocation( !( send-instruction $mps-name $mps-inst) )
+ 			:context( 	(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+				  	 	(team-color $team-color)
+				  		(peer-id private $peer-id)
+				)
+ 			:body(
+ 				(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
+				(! (pb-set-field @instruction "team_color" $team-color))
+				(! (pb-set-field @instruction "machine" $mps-name ))
+
+				(if (? (= $mps-type "BS"))
+					(! (pb-set-field @instruction "instruction_bs" $mps-inst )))
+
+				(if (? (= $mps-type "DS"))
+					(! (pb-set-field @instruction "instruction_ds" $mps-inst )))
+
+				(if (? (= $mps-type "RS"))
+					(! (pb-set-field @instruction "instruction_rs" $mps-inst )))
+
+				(if (? (= $mps-type "CS"))
+					(! (pb-set-field @instruction "instruction_cs" $mps-inst )))
+				
+
+				(! (pb-broadcast $peer-id @instruction))
+				(! (pb-broadcast $peer-id @instruction))
+				(! (pb-broadcast $peer-id @instruction))
+				(! (pb-broadcast $peer-id @instruction))
+
+ 				)
+ 			:documentation "Embed the PrepareInstructionXS msg for an mps in a PrepareMachine msg and Broadcast it"
  			)
 	;ToDo: let the instructions be send periodically on time till the machine state becomes  PROCESSING|PREPARED|READY-AT-OUTPU
 

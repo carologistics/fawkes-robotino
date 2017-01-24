@@ -14,6 +14,7 @@ declare op_predicate  conf-load-rcll2017
 declare op_predicate  bring-product-to
 declare op_predicate  get-product-from
 declare op_predicate  instruct-mps
+declare op_predicate  send-instruction
 
 declare cwp           peer-id
 
