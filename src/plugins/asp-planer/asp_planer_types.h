@@ -129,11 +129,25 @@ struct Product
 
 struct TaskDescription
 {
+	const enum
+	{
+		None,
+		Deliver,
+		FeedRS,
+		GetBase,
+		GetProduct,
+		Goto,
+		MountCap,
+		MountRing,
+		PrepareCS
+	} Type = None;
+	const Clingo::Symbol TaskSymbol;
+	int EstimatedEnd;
 
 	inline bool
 	isValid(void) const noexcept
 	{
-		return false; //Dummy
+		return Type != None;
 	}
 };
 

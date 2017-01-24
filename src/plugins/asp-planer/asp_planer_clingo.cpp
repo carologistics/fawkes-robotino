@@ -191,7 +191,8 @@ AspPlanerThread::loopClingo(void)
 
 		if ( robot.Doing.isValid() )
 		{
-			addExternal(generateDoingExternal(name, robot.Doing));
+			addExternal(generateDoingExternal(name, robot.Doing,
+				realGameTimeToAspGameTime(robot.Doing.EstimatedEnd - GameTime)));
 		} //if ( robot.Doing.isValid() )
 		else
 		{
