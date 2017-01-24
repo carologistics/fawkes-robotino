@@ -349,6 +349,29 @@ class Control:
 
 		myPrint("Solved for time steps %d to %d, additionally evaluated until %d. One time step stands for %d real time seconds." % (gameTimes[0], gameTimes[-1], gt + step, Res), flush = FlushPrint)
 		myPrint("Overall score: %d" % (score), flush = FlushPrint)
+		myPrint("Products:", flush = FlushPrint)
+		for index in range(0, len(self.Products)):
+			machine = None
+			robot = None
+
+			for name in self.Machines:
+				if self.Machines[name].Storing == index:
+					machine = name
+					break
+
+			for name in self.Robots:
+				if self.Robots[name].Holding == index:
+					robot = name
+					break
+
+			if machine is None and robot is None:
+				myPrint("Product %d: %s is neither hold nor stored, this is an error!" % (index, self.Products[index]), flush = FlushPrint)
+			elif machine is not None and robot is not None:
+				myPrint("Product %d: %s is hold by %s and stored by %s, this is an error!" % (index, self.Products[index], robot, machine), flush = FlushPrint)
+			elif machine is not None:
+				myPrint("Product %d: %s stored by %s." % (index, self.Products[index], machine), flush = FlushPrint)
+			else:
+				myPrint("Product %d: %s holded by %s." % (index, self.Products[index], robot), flush = FlushPrint)
 		myPrint("CS prepare state: CS1: %5s CS2: %5s" % (str(self.CapStations["CS1"]), str(self.CapStations["CS2"])), flush = FlushPrint)
 		myPrint("RS fill state:    RS1: %5d RS2: %5d" % (self.RingStations["RS1"], self.RingStations["RS2"]), flush = FlushPrint)
 		myPrint("Time for grounding base & team: %s" % str(self.GroundTime), flush = FlushPrint)
