@@ -35,14 +35,14 @@ using namespace fawkes;
  * @param[in] realGameTime The real game time in seconds.
  * @return The ASP time units.
  */
-unsigned int
-AspPlanerThread::realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept
+int
+AspPlanerThread::realGameTimeToAspGameTime(const int realGameTime) const noexcept
 {
 	if ( realGameTime == 0 )
 	{
 		return 0;
 	} //if ( realGameTime == 0 )
-	return std::max(1u, realGameTime / TimeResolution + ((realGameTime % TimeResolution) * 2 >= TimeResolution ? 1 : 0));
+	return std::max(1, realGameTime / TimeResolution + ((realGameTime % TimeResolution) * 2 >= TimeResolution ? 1 : 0));
 }
 
 /**
@@ -50,8 +50,8 @@ AspPlanerThread::realGameTimeToAspGameTime(const unsigned int realGameTime) cons
  * @param[in] aspGameTime The ASP time units.
  * @return The real game time in seconds.
  */
-unsigned int
-AspPlanerThread::aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept
+int
+AspPlanerThread::aspGameTimeToRealGameTime(const int aspGameTime) const noexcept
 {
 	return aspGameTime * TimeResolution;
 }
@@ -111,7 +111,7 @@ AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
 	{
 		const auto object(document.getField("o"));
 		const std::string phase(object["phase"].String());
-		const unsigned int gameTime(object["time"].Long());
+		const int gameTime(object["time"].Long());
 		MutexLocker locker(&WorldMutex);
 		if ( phase == "EXPLORATION" )
 		{
@@ -145,16 +145,16 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
 	try
 	{
 		const auto object(document.getField("o"));
-		const unsigned int number(object["number"].Long());
-		const unsigned int quantity(object["quantity"].Long());
+		const int number(object["number"].Long());
+		const int quantity(object["quantity"].Long());
 		const std::string base(object["base"].String());
 		const std::string cap(object["cap"].String());
 		const auto rings(object["rings"].Array());
 		const std::string ring1(rings.size() >= 1 ? rings[0].String() : "none");
 		const std::string ring2(rings.size() >= 2 ? rings[1].String() : "none");
 		const std::string ring3(rings.size() >= 3 ? rings[2].String() : "none");
-		const unsigned int delBegin(object["begin"].Long() + ExplorationTime);
-		const unsigned int delEnd(object["end"].Long() + ExplorationTime);
+		const int delBegin(object["begin"].Long() + ExplorationTime);
+		const int delEnd(object["end"].Long() + ExplorationTime);
 
 		MutexLocker locker(&WorldMutex);
 		Orders.push_back(
@@ -201,7 +201,7 @@ AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
 	{
 		const auto object(document.getField("o"));
 		const std::string color(object["color"].String());
-		const unsigned int cost(object["cost"].Long());
+		const int cost(object["cost"].Long());
 		const std::string machine(object["machine"].String().substr(2));
 
 		MutexLocker locker(&WorldMutex);
@@ -290,7 +290,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 	{
 		const auto object(document.getField("o"));
 		const auto zonesArray(object["zones"].Array());
-		std::vector<unsigned int> zones;
+		std::vector<int> zones;
 		zones.reserve(zonesArray.size());
 		std::transform(std::begin(zonesArray), std::end(zonesArray), std::back_inserter(zones),
 			[](const mongo::BSONElement& zone)
@@ -300,7 +300,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 		const auto begin = zones.begin();
 		auto end = zones.end();
 		MutexLocker locker(&WorldMutex);
-		for ( auto zone = 1u; zone <= 24u; ++zone )
+		for ( auto zone = 1; zone <= 24; ++zone )
 		{
 			auto iter = std::find(begin, end, zone);
 			if ( iter == end )
@@ -315,7 +315,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 				 * search a smaller range. */
 				std::swap(*iter, *--end);
 			} //else -> if ( iter == end )
-		} //for ( auto zone = 1u; zone <= 24u; ++zone )
+		} //for ( auto zone = 1; zone <= 24; ++zone )
 		fillNavgraphNodesForASP(false);
 	} //try
 	catch ( const std::exception& e )

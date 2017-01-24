@@ -77,7 +77,7 @@ generateDoingExternal(const std::string& robotName, const TaskDescription& task)
  * @return The external atom.
  */
 Clingo::Symbol
-generateExploreLocationExternal(const unsigned int zone)
+generateExploreLocationExternal(const int zone)
 {
 	return Clingo::Function("location", {Clingo::Function("z", {Clingo::Number(zone)})});
 }
@@ -88,7 +88,7 @@ generateExploreLocationExternal(const unsigned int zone)
  * @return The external atom.
  */
 Clingo::Symbol
-generateExploreTaskExternal(const unsigned int zone)
+generateExploreTaskExternal(const int zone)
 {
 	return Clingo::Function("toBeDone", {Clingo::Function("explore", {Clingo::Number(zone)}), Clingo::Number(0)});
 }

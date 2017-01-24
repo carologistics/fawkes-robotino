@@ -331,10 +331,10 @@ AspPlanerThread::loadConfig(void)
 	//The plain part.
 	auto suffix = buffer + prefixLen;
 	std::strcpy(suffix, "exploration-time");
-	ExplorationTime = config->get_uint(buffer);
+	ExplorationTime = config->get_int(buffer);
 
 	std::strcpy(suffix, "production-end");
-	ProductionEnd = ExplorationTime + config->get_uint(buffer);
+	ProductionEnd = ExplorationTime + config->get_int(buffer);
 
 	//The planer part.
 	suffix = buffer + prefixLen + infixPlanerLen;
@@ -344,15 +344,15 @@ AspPlanerThread::loadConfig(void)
 	ClingoAcc->DebugLevel = static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer));
 
 	std::strcpy(suffix, "max-orders");
-	MaxOrders = config->get_uint(buffer);
+	MaxOrders = config->get_int(buffer);
 	std::strcpy(suffix, "max-products");
-	MaxProducts = config->get_uint(buffer);
+	MaxProducts = config->get_int(buffer);
 	std::strcpy(suffix, "max-quantity");
-	MaxQuantity = config->get_uint(buffer);
+	MaxQuantity = config->get_int(buffer);
 	std::strcpy(suffix, "look-ahaed");
-	LookAhaed = config->get_uint(buffer);
+	LookAhaed = config->get_int(buffer);
 	std::strcpy(suffix, "time-resolution");
-	TimeResolution = config->get_uint(buffer);
+	TimeResolution = config->get_int(buffer);
 	std::strcpy(suffix, "robots");
 	PossibleRobots = config->get_strings(buffer);
 
@@ -361,13 +361,13 @@ AspPlanerThread::loadConfig(void)
 	std::strcpy(buffer + prefixLen, infixTime);
 
 	std::strcpy(suffix, "deliver-product");
-	DeliverProductTaskDuration = config->get_uint(buffer);
+	DeliverProductTaskDuration = config->get_int(buffer);
 	std::strcpy(suffix, "fetch-product");
-	FetchProductTaskDuration = config->get_uint(buffer);
+	FetchProductTaskDuration = config->get_int(buffer);
 	std::strcpy(suffix, "max-drive-duration");
-	MaxDriveDuration = config->get_uint(buffer);
+	MaxDriveDuration = config->get_int(buffer);
 	std::strcpy(suffix, "prepare-cs");
-	PrepareCSTaskDuration = config->get_uint(buffer);
+	PrepareCSTaskDuration = config->get_int(buffer);
 
 	MaxTaskDuration = std::max({DeliverProductTaskDuration, FetchProductTaskDuration, PrepareCSTaskDuration});
 

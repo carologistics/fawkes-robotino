@@ -149,10 +149,9 @@ AspPlanerThread::updateNavgraphDistances(void)
 	auto distanceToDuration = [this](const float distance) noexcept
 		{
 			//! @todo Werte holen!
-			constexpr unsigned int constantCosts = 4;
-			constexpr unsigned int costPerDistance = 2;
-			return std::min(constantCosts + static_cast<unsigned int>(distance * costPerDistance),
-				MaxDriveDuration);
+			constexpr int constantCosts = 4;
+			constexpr int costPerDistance = 2;
+			return std::min(constantCosts + static_cast<int>(distance * costPerDistance), MaxDriveDuration);
 		};
 
 	const auto end = NavgraphNodesForASP.end();

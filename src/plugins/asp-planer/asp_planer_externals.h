@@ -28,17 +28,16 @@ namespace Clingo {
 class Symbol;
 }
 
-class TaskDescription;
-
 struct ProductIdentifier;
+struct TaskDescription;
 
 Clingo::Symbol generateAliveExternal(const std::string& robotName);
 Clingo::Symbol generateRobotLocationExternal(const std::string& robotName, const Clingo::Symbol& location);
 Clingo::Symbol generateHoldingExternal(const std::string& robotName, const ProductIdentifier& product);
 Clingo::Symbol generateDoingExternal(const std::string& robotName, const TaskDescription& task);
 
-Clingo::Symbol generateExploreLocationExternal(const unsigned int zone);
-Clingo::Symbol generateExploreTaskExternal(const unsigned int zone);
+Clingo::Symbol generateExploreLocationExternal(const  int zone);
+Clingo::Symbol generateExploreTaskExternal(const int zone);
 
 Clingo::Symbol generateProductExternal(const int id);
 Clingo::Symbol generateProductBaseExternal(const int id, const std::string& base);

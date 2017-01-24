@@ -37,7 +37,7 @@ namespace fawkes {
 	class MutexLocker;
 }
 
-enum class InterruptSolving : unsigned short
+enum class InterruptSolving : short
 {
 	Not = 0,
 	JustStarted,
@@ -48,8 +48,8 @@ enum class InterruptSolving : unsigned short
 struct BasicPlanElement
 {
 	std::string Task;
-	unsigned int Begin;
-	unsigned int End;
+	int Begin;
+	int End;
 };
 
 inline bool operator==(const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
@@ -158,19 +158,19 @@ struct RingColorInformation
 {
 	std::string Color;
 	std::string Machine;
-	unsigned int Cost;
+	int Cost;
 };
 
 struct OrderInformation
 {
-	unsigned int Number;
-	unsigned int Quantity;
+	int Number;
+	int Quantity;
 	std::string Base;
 	std::string Cap;
 	// +1 to skip the calculation of +1 and -1 everytime we use this.
 	std::string Rings[4];
-	unsigned int DeliveryBegin;
-	unsigned int DeliveryEnd;
+	int DeliveryBegin;
+	int DeliveryEnd;
 };
 
 namespace std {

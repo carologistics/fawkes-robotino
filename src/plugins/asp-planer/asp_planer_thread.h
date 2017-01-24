@@ -53,31 +53,31 @@ class AspPlanerThread
 
 	bool Unsat;
 
-	unsigned int ExplorationTime;
-	unsigned int DeliverProductTaskDuration;
-	unsigned int FetchProductTaskDuration;
-	unsigned int LookAhaed;
-	unsigned int MaxDriveDuration;
-	unsigned int MaxOrders;
-	unsigned int MaxProducts;
-	unsigned int MaxQuantity;
-	unsigned int MaxTaskDuration;
+	int ExplorationTime;
+	int DeliverProductTaskDuration;
+	int FetchProductTaskDuration;
+	int LookAhaed;
+	int MaxDriveDuration;
+	int MaxOrders;
+	int MaxProducts;
+	int MaxQuantity;
+	int MaxTaskDuration;
 	std::vector<std::string> PossibleRobots;
-	unsigned int PrepareCSTaskDuration;
-	unsigned int ProductionEnd;
-	unsigned int TimeResolution;
+	int PrepareCSTaskDuration;
+	int ProductionEnd;
+	int TimeResolution;
 
 	const std::vector<std::string> BaseColors = {"RED", "BLACK", "SILVER"};
 	const std::string SpecialBaseColor = "TRANSPARENT";
 	std::vector<CapColorInformation> CapColors;
 
 	fawkes::Mutex WorldMutex;
-	unsigned int GameTime;
+	int GameTime;
 	std::vector<OrderInformation> Orders;
 	std::vector<RingColorInformation> RingColors;
 	std::unordered_map<std::string, RobotInformation> Robots;
 	std::vector<Product> Products;
-	std::vector<unsigned int> ZonesToExplore;
+	std::vector<int> ZonesToExplore;
 
 	static constexpr auto NodePropertyASP = "ASP-Location";
 	fawkes::Mutex NavgraphDistanceMutex;
@@ -142,7 +142,7 @@ class AspPlanerThread
 
 	mutable fawkes::Mutex PlanMutex;
 	fawkes::Time LastPlan;
-	unsigned int StartSolvingGameTime;
+	int StartSolvingGameTime;
 
 	void loadConfig(void);
 
@@ -172,8 +172,8 @@ class AspPlanerThread
 	void addOrderToASP(const OrderInformation& order);
 	void addRingColorToASP(const RingColorInformation& color);
 
-	void addZoneToExplore(const unsigned int zone);
-	void releaseZone(const unsigned int zone, const bool removeAndFillNodes);
+	void addZoneToExplore(const int zone);
+	void releaseZone(const int zone, const bool removeAndFillNodes);
 
 	void initPlan(void);
 	void loopPlan(void);
@@ -206,8 +206,8 @@ class AspPlanerThread
 	void taskWasFailure(const std::string& task, unsigned int time);
 	*/
 
-	unsigned int realGameTimeToAspGameTime(const unsigned int realGameTime) const noexcept;
-	unsigned int aspGameTimeToRealGameTime(const unsigned int aspGameTime) const noexcept;
+	int realGameTimeToAspGameTime(const int realGameTime) const noexcept;
+	int aspGameTimeToRealGameTime(const int aspGameTime) const noexcept;
 
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);

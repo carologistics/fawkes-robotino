@@ -242,7 +242,7 @@ AspPlanerThread::loopClingo(void)
 	MutexLocker solvingLokcer(&SolvingMutex);
 	worldLocker.relock();
 
-	auto currentTimeExternal = [](const unsigned int time)
+	auto currentTimeExternal = [](const int time)
 		{
 			return Clingo::Function("currentTime", {Clingo::Number(time)});
 		};
@@ -317,10 +317,10 @@ void
 AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
 {
 	MutexLocker locker(&RequestMutex, lock);
-	if ( static_cast<unsigned short>(interrupt) > static_cast<unsigned short>(Interrupt) )
+	if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt) )
 	{
 		Interrupt = interrupt;
-	} //if ( static_cast<unsigned short>(interrupt) > static_cast<unsigned short>(Interrupt) )
+	} //if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt) )
 	return;
 }
 
@@ -339,7 +339,7 @@ AspPlanerThread::shouldInterrupt(void) const
 		case InterruptSolving::JustStarted :
 		{
 			static const fawkes::Time threshold(
-				config->get_uint(std::string(ConfigPrefix) + "interrupt-thresholds/just-started"), 0);
+				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/just-started"), 0);
 			MutexLocker locker(&SolvingMutex);
 			const auto diff(now - SolvingStarted);
 			return diff <= threshold;
@@ -347,7 +347,7 @@ AspPlanerThread::shouldInterrupt(void) const
 		case InterruptSolving::Normal      :
 		{
 			static const fawkes::Time threshold(
-				config->get_uint(std::string(ConfigPrefix) + "interrupt-thresholds/normal"), 0);
+				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/normal"), 0);
 			MutexLocker locker(&PlanMutex);
 			const auto diff(now - LastPlan);
 			return diff <= threshold;
@@ -422,12 +422,12 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 		{
 			if ( view == "explorationTaskDuration" )
 			{
-				static const unsigned int dur = [this](void)
+				static const int dur = [this](void)
 					{
 						char buffer[std::strlen(ConfigPrefix) + 40];
 						std::strcpy(buffer, ConfigPrefix);
 						std::strcpy(buffer + std::strlen(ConfigPrefix), "time-estimations/explore-zone");
-						return config->get_uint(buffer);
+						return config->get_int(buffer);
 					}();
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(dur))});
 				return;
@@ -651,7 +651,7 @@ AspPlanerThread::addRingColorToASP(const RingColorInformation& info)
  * @param[in] zone The zone number.
  */
 void
-AspPlanerThread::addZoneToExplore(const unsigned int zone)
+AspPlanerThread::addZoneToExplore(const int zone)
 {
 	assert(zone >= 1 && zone <= 24);
 	queueAssign(generateExploreLocationExternal(zone));
@@ -666,7 +666,7 @@ AspPlanerThread::addZoneToExplore(const unsigned int zone)
  *                               fillNavgraphNodesForASP() should be called.
  */
 void
-AspPlanerThread::releaseZone(const unsigned int zone, const bool removeAndFillNodes)
+AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 {
 	assert(zone >= 1 && zone <= 24);
 	if ( removeAndFillNodes )
