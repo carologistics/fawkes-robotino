@@ -20,6 +20,7 @@
 % holding(R, P, GT)              Defined in robots.lp
 % horizon(H)                     Defined in facts.lp
 % locationToMachineMap(L, M)     Defined in facts.lp
+% needsFillment(M)               Defined in facts.lp
 % productionStarted              Defined in facts.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
 % ringCost(C)                    Defined in facts.lp
@@ -41,13 +42,20 @@ inUse(L, R, GT) :- doing(R, T, _, GT), feedRSTask(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L).
 
 % Maybe get more sophisticated and only allow transparent bases for the last fillment.
-possible(R, T, GT) :- feedRSTask(T), taskLocation(T, L), robot(R), holding(R, P, GT), locationToMachineMap(L, M),
-                      ringStationAssignment(M, Color), ringColorCost(Color, Cost), ringCost(Cost), Cost > 0,
-                      rsFillState(M, FS, GT), FS < 3, horizon(H), GT = 0..H-1.
+possible(R, T, GT) :- feedRSTask(T), robot(R), horizon(H), GT = 0..H-1, not impossible(R, T, GT).
+
+% The robot has to hold a product.
+impossible(R, T, GT) :- feedRSTask(T), robot(R), not holding(R, _, GT), horizon(H), GT = 0..H-1.
+% The machine has to serve a color which needs fillment.
+impossible(R, T, GT) :- feedRSTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), not needsFillment(M),
+                        horizon(H), GT = 0..H-1.
+% The machine is not full yet.
+impossible(R, T, GT) :- feedRSTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), rsFillState(M, 3, GT).
+% Do not feed a product with a cap.
+impossible(R, T, GT) :- feedRSTask(T), robot(R), holding(R, P, GT), productCap(P, _, GT).
 
 rsFedByRobot(R, M, P, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L), locationToMachineMap(L, M),
                              holding(R, P, GT-1).
 
 rsFed(M, GT)   :- rsFedByRobot(_, M, _, GT).
 putDown(R, GT) :- rsFedByRobot(R, _, _, GT).
-

@@ -24,6 +24,7 @@
 % horizon(X)                     How far in the future we want to look, i.e. planning covers time steps [0,X).
 % location(m(T, M, S))           The navgraph locations for all machine sides.
 % machine(M)                     All machines (without team info).
+% needsFillment(M)               The RS M has at least one color which needs extra bases to be filled. (Task feedRS.)
 % order(O)                       All orders O.
 % productionStarted              The production phase has started.
 % quantity(Q)                    All possible quantities for orders Q.
@@ -81,6 +82,7 @@ capStationAssignment("CS2", @capColor(2)).
 
 #external ringStationAssignment(M, RingColor) : ringStation(M), ringColor(RingColor).
 #external ringColorCost(RingColor, Cost)      : ringColor(RingColor), ringCost(Cost).
+#external needsFillment(M)                    : ringStation(M).
 
 #program ourTeam(t).
 
@@ -112,6 +114,8 @@ driveDuration(l2, l1, d).
 ringStationAssignment(m, col).
 
 ringColorCost(col, cost).
+
+needsFillment(m) :- cost > 0.
 
 #program startProduction.
 productionStarted.
