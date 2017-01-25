@@ -389,6 +389,8 @@ class Control:
 			myPrint("psutil is not installed, no information abour memory consumption. See README.lp for more information.", flush = FlushPrint)
 
 	def update(self, step, gt):
+		if step + gt > maxDeliveryTime():
+			return
 		myPrint("Update on basis of step: " + str(step), flush = FlushPrint)
 		for symbol in self.LastModel:
 			if symbol.name == "doing":
