@@ -162,6 +162,15 @@ struct RobotInformation
 	TaskDescription Doing;
 };
 
+struct MachineInformation
+{
+	int BrokenUntil = 0;
+	int WorkingUntil = 0;
+	ProductIdentifier Storing;
+	int FillState = 0;
+	bool Prepared = false;
+};
+
 struct CapColorInformation
 {
 	std::string Color;

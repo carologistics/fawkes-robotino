@@ -200,11 +200,39 @@ AspPlanerThread::loopClingo(void)
 		} //else -> if ( robot.Doing.isValid() )
 	} //for ( const auto& pair : Robots )
 
-	for ( auto index = 0u; index < Products.size(); ++index )
+	for ( const auto& pair : Machines )
+	{
+		const auto& name(pair.first);
+		const auto& machine(pair.second);
+
+		auto working = machine.WorkingUntil;
+		if ( machine.BrokenUntil )
+		{
+			addExternal(generateMachineBrokenExternal(name, realGameTimeToAspGameTime(machine.BrokenUntil - GameTime)));
+			if ( working )
+			{
+				working = machine.BrokenUntil + working - GameTime;
+			} //if ( working )
+		} //if ( machine.BrokenUntil )
+
+		if ( working )
+		{
+			assert(machine.Storing.isValid());
+			addExternal(generateMachineWorkingExternal(name, realGameTimeToAspGameTime(working - GameTime),
+				machine.Storing));
+		} //if ( working )
+		else if ( machine.Storing.isValid() )
+		{
+			addExternal(generateMachineStoringExternal(name, machine.Storing));
+		} //else if ( machine.Storing.isValid() )
+	} //for ( const auto& pair : Machines )
+
+	for ( auto index = 0; index < static_cast<int>(Products.size()); ++index )
 	{
 		const auto& product(Products[index]);
-		addExternal(generateProductExternal(index));
-		addExternal(generateProductBaseExternal(index, product.Base));
+		const ProductIdentifier id{index};
+		addExternal(generateProductExternal(id));
+		addExternal(generateProductBaseExternal(id, product.Base));
 
 		for ( auto ring = 1; ring <= 3; ++ring )
 		{
@@ -212,14 +240,14 @@ AspPlanerThread::loopClingo(void)
 			{
 				break;
 			} //if ( product.Rings[ring].empty() )
-			addExternal(generateProductRingExternal(index, ring, product.Rings[ring]));
+			addExternal(generateProductRingExternal(id, ring, product.Rings[ring]));
 		} //for ( auto ring = 1; ring <= 3; ++ring )
 
 		if ( !product.Cap.empty() )
 		{
-			addExternal(generateProductCapExternal(index, product.Cap));
+			addExternal(generateProductCapExternal(id, product.Cap));
 		} //if ( !product.Cap.empty() )
-	} //for ( auto index = 0u; index < Products.size(); ++index )
+	} //for ( auto index = 0; index < static_cast<int>(Products.size()); ++index )
 	worldLocker.unlock();
 
 	reqLocker.relock();

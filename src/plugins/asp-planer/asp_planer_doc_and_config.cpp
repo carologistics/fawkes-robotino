@@ -27,6 +27,48 @@
 #include <cstring>
 
 /**
+ * @struct TaskDescription
+ * @brief The description of a task, a robot is executing.
+ *
+ * @property TaskDescription::Type
+ * @brief The tasks type.
+ *
+ * @property TaskDescription::TaskSymbol
+ * @brief The clingo symbol for the task, as cached value.
+ *
+ * @property TaskDescription::EstimatedEnd
+ * @brief The real time seconds, we estimate the robot to be finished.
+ *
+ * @fn bool TaskDescription::isValid() const
+ * @brief If a valid task is identified.
+ */
+
+/**
+ * @struct ProductIdentifier
+ * @brief Type safe wrapper for product id.
+ *
+ * @property ProductIdentifier::ID
+ * @brief The ID of the product, this is just an array index.
+ *
+ * @fn bool ProductIdentifier::isValid() const
+ * @brief If a valid product is identified.
+ */
+
+/**
+ * @struct Product
+ * @brief Container to track a product.
+ *
+ * @property Product::Base
+ * @brief The base color.
+ *
+ * @property Product::Rings
+ * @brief The colors of the rings.
+ *
+ * @property Product::Cap
+ * @brief The color of the cap.
+ */
+
+/**
  * @struct RobotInformation
  * @brief Stores information for a robot.
  *
@@ -50,6 +92,27 @@
  *
  * @property RobotInformation::Doing
  * @brief Identifies which task the robot is doing right now.
+ */
+
+/**
+ * @struct MachineInformation
+ * @brief Stores information about a machine.
+ *
+ * @property MachineInformation::BrokenUntil
+ * @brief Until when do we think the machine is broken.
+ *
+ * @property MachineInformation::WorkingUntil
+ * @brief Until when do we think the machine will work. If BrokenUntil is set we save the duration we add after the
+ *        machne is not longer broken.
+ *
+ * @property MachineInformation::Storing
+ * @brief The product which the machine processes or stores on the output side.
+ *
+ * @property MachineInformation::FillState
+ * @brief For the ring stations, how many bases are loaded in it.
+ *
+ * @property MachineInformation::Prepared
+ * @brief For the cap stations, if they are prepared to mount a cap.
  */
 
 /**
@@ -101,48 +164,6 @@
  *
  * @property OrderInformation::DeliveryEnd
  * @brief The end of the delivery time window.
- */
-
-/**
- * @struct TaskDescription
- * @brief The description of a task, a robot is executing.
- *
- * @property TaskDescription::Type
- * @brief The tasks type.
- *
- * @property TaskDescription::TaskSymbol
- * @brief The clingo symbol for the task, as cached value.
- *
- * @property TaskDescription::EstimatedEnd
- * @brief The real time seconds, we estimate the robot to be finished.
- *
- * @fn bool TaskDescription::isValid() const
- * @brief If a valid task is identified.
- */
-
-/**
- * @struct ProductIdentifier
- * @brief Type safe wrapper for product id.
- *
- * @property ProductIdentifier::ID
- * @brief The ID of the product, this is just an array index.
- *
- * @fn bool ProductIdentifier::isValid() const
- * @brief If a valid product is identified.
- */
-
-/**
- * @struct Product
- * @brief Container to track a product.
- *
- * @property Product::Base
- * @brief The base color.
- *
- * @property Product::Rings
- * @brief The colors of the rings.
- *
- * @property Product::Cap
- * @brief The color of the cap.
  */
 
 /**
@@ -247,6 +268,9 @@
  *
  * @property AspPlanerThread::Robots
  * @brief The robot information in a lookup table.
+ *
+ * @property AspPlanerThread::Machines
+ * @brief The machine information in a lookup table.
  *
  * @property AspPlanerThread::Products
  * @brief The products currently used.
