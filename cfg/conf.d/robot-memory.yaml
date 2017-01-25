@@ -32,7 +32,7 @@ plugins/robot-memory:
       port: 27021
       replica-set-name: "syncedrobmem"
       db-path: "~/.robot-memory/dbs/distributed"
-      replica-set-members: "[{_id:1,host:'172.26.108.91:27021'}, {_id:2,host:'172.26.108.92:27021'}, {_id:3, host:'172.26.108.93:27021'}]"
+      replica-set-members: "[{_id:1,host:'stargazer:27021'}, {_id:2,host:'orinoco:27021'}, {_id:3, host:'agamemnon:27021'}]"
       replica-id: 1 #this should be the robot number, override it in host.yaml
 
   computables:
@@ -49,8 +49,11 @@ plugins/robot-memory:
 plugins/mongodb/clients:
     robotmemory-synced:
       active: true
-      mode: connection
-      hostport: localhost:27021
+      mode: replica_set
+      hosts:
+        stargazer: stargazer:27021
+        orinoco: orinoco:27021
+        agamemnon: agamemnon:27021
     robotmemory-local:
       active: true
       mode: connection
