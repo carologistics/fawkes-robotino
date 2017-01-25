@@ -39,9 +39,15 @@ Clingo::Symbol generateDoingExternal(const std::string& robotName, const TaskDes
 Clingo::Symbol generateExploreLocationExternal(const  int zone);
 Clingo::Symbol generateExploreTaskExternal(const int zone);
 
-Clingo::Symbol generateProductExternal(const int id);
-Clingo::Symbol generateProductBaseExternal(const int id, const std::string& base);
-Clingo::Symbol generateProductRingExternal(const int id, const int ringNumber, const std::string& color);
-Clingo::Symbol generateProductCapExternal(const int id, const std::string& cap);
+Clingo::Symbol generateProductExternal(const ProductIdentifier& product);
+Clingo::Symbol generateProductBaseExternal(const ProductIdentifier& product, const std::string& base);
+Clingo::Symbol generateProductRingExternal(const ProductIdentifier& product, const int ringNumber,
+	const std::string& color);
+Clingo::Symbol generateProductCapExternal(const ProductIdentifier& product, const std::string& cap);
+
+Clingo::Symbol generateMachineBrokenExternal(const std::string& machineName, const int duration);
+Clingo::Symbol generateMachineWorkingExternal(const std::string& machineName, const int duration,
+	const ProductIdentifier& product);
+Clingo::Symbol generateMachineStoringExternal(const std::string& machineName, const ProductIdentifier& product);
 
 #endif

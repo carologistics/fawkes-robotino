@@ -25,6 +25,17 @@
 #include <clingo.hh>
 
 /**
+ * @brief Generates the product "name" for the following product externals.
+ * @param[in] product The product.
+ * @return The symbol.
+ */
+static inline Clingo::Symbol
+productName(const ProductIdentifier& product)
+{
+	return Clingo::Function("product", {Clingo::Number(product.ID)});
+}
+
+/**
  * @brief Generates the external, used to say a robot is alive.
  * @param[in] robotName The name of the robot.
  * @return The atom for the external.
@@ -56,7 +67,7 @@ generateRobotLocationExternal(const std::string& robotName, const Clingo::Symbol
 Clingo::Symbol
 generateHoldingExternal(const std::string& robotName, const ProductIdentifier& product)
 {
-	return Clingo::Function("holding", {Clingo::String(robotName), Clingo::Number(product.ID), Clingo::Number(0)});
+	return Clingo::Function("holding", {Clingo::String(robotName), productName(product), Clingo::Number(0)});
 }
 
 /**
@@ -96,60 +107,88 @@ generateExploreTaskExternal(const int zone)
 }
 
 /**
- * @brief Generates the product "name" for the following product externals.
- * @param[in] id The product ID.
- * @return The symbol.
- */
-static inline Clingo::Symbol
-productName(const int id)
-{
-	return Clingo::Function("product", {Clingo::Number(id)});
-}
-
-/**
  * @brief Generates the external for a product.
- * @param[in] id The product ID.
+ * @param[in] product The product..
  * @return The external atom.
  */
 Clingo::Symbol
-generateProductExternal(const int id)
+generateProductExternal(const ProductIdentifier& product)
 {
-	return Clingo::Function("product", {productName(id)});
+	return Clingo::Function("product", {productName(product)});
 }
 
 /**
  * @brief Generates the external for a products base.
- * @param[in] id The product ID.
+ * @param[in] product The product..
  * @param[in] base The base color.
  * @return The external atom.
  */
 Clingo::Symbol
-generateProductBaseExternal(const int id, const std::string& base)
+generateProductBaseExternal(const ProductIdentifier& product, const std::string& base)
 {
-	return Clingo::Function("productBase", {productName(id), Clingo::String(base)});
+	return Clingo::Function("productBase", {productName(product), Clingo::String(base)});
 }
 
 /**
  * @brief Generates the external for a products ring.
- * @param[in] id The product ID.
+ * @param[in] product The product..
  * @param[in] ringNumber The ring number. (Counting from 1.)
  * @param[in] color The ring color.
  * @return The external atom.
  */
 Clingo::Symbol
-generateProductRingExternal(const int id, const int ringNumber, const std::string& color)
+generateProductRingExternal(const ProductIdentifier& product, const int ringNumber, const std::string& color)
 {
-	return Clingo::Function("productRing", {productName(id), Clingo::Number(ringNumber), Clingo::String(color)});
+	return Clingo::Function("productRing", {productName(product), Clingo::Number(ringNumber), Clingo::String(color)});
 }
 
 /**
  * @brief Generates the external for a products cap.
- * @param[in] id The product ID.
+ * @param[in] product The product..
  * @param[in] cap The cap color.
  * @return The external atom.
  */
 Clingo::Symbol
-generateProductCapExternal(const int id, const std::string& cap)
+generateProductCapExternal(const ProductIdentifier& product, const std::string& cap)
 {
-	return Clingo::Function("productCap", {productName(id), Clingo::String(cap)});
+	return Clingo::Function("productCap", {productName(product), Clingo::String(cap)});
 }
+
+/**
+ * @brief Generates the external for a broken machine.
+ * @param[in] machineName The name of the machine.
+ * @param[in] duration How long the machine is broken.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateMachhineBrokenExternal(const std::string& machineName, const int duration)
+{
+	return Clingo::Function("broken", {Clingo::String(machineName), Clingo::Number(duration), Clingo::Number(0)});
+}
+
+/**
+ * @brief Generates the external for a working machine.
+ * @param[in] machineName The name of the machine.
+ * @param[in] duration How long the machine is working on the product.
+ * @param[in] product The product, the machine is working on.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateMachineWorkingExternal(const std::string& machineName, const int duration, const ProductIdentifier& product)
+{
+	return Clingo::Function("processing", {Clingo::String(machineName), productName(product), Clingo::Number(duration),
+		Clingo::Number(0)});
+}
+
+/**
+ * @brief Generates the external for a broken machine.
+ * @param[in] machineName The name of the machine.
+ * @param[in] duration How long the machine is broken.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateMachineStoringExternal(const std::string& machineName, const ProductIdentifier& product)
+{
+	return Clingo::Function("storing", {Clingo::String(machineName), productName(product), Clingo::Number(0)});
+}
+
