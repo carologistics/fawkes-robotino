@@ -241,7 +241,7 @@ class Control:
 				self.CTL.ground([("startProduction", [])])
 				self.CTL.release_external(clingo.Function("productionStarted", []))
 
-			while self.NextOrder < maxOrders() and gt == toASP(self.Orders[self.NextOrder].Spawn):
+			while self.NextOrder < len(self.Orders) and gt >= toASP(self.Orders[self.NextOrder].Spawn):
 				order = self.Orders[self.NextOrder]
 				self.addOrder(order)
 				self.NextOrder = self.NextOrder + 1
