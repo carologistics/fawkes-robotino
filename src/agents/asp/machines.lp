@@ -53,7 +53,8 @@ storing(M, P, GT) :- storing(M, P, GT-1), not pickUp(_, P, GT), not horizon(GT).
 storing(M, P, GT) :- processing(M, P, 1, GT-1), not deliveryStation(M), not horizon(GT).
 
 processing(M, P, D, GT) :- process(M, P, GT), D = @machineWorkingDuration(M).
-processing(M, P, D, GT) :- processing(M, P, D+1, GT-1), not horizon(GT), D != 0.
+processing(M, P, D, GT) :- processing(M, P, D+1, GT-1), not horizon(GT), D != 0, not broken(M, _, GT).
+processing(M, P, D, GT) :- processing(M, P, D, GT-1), not horizon(GT), broken(M, _, GT).
 
 meaningfulGoto(L, GT) :- processing(M, _, _, GT), locationToMachineMap(L, M), getLocation(L).
 
