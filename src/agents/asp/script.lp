@@ -130,7 +130,7 @@ class Product:
 		self.Rings = [None, None, None]
 
 	def __repr__(self):
-		return "Product(Base=%s, Rings=%s, Cap=%s)" % (self.Base, str(self.Rings), self.Cap)
+		return "Product(Base=%-11s, Rings=[%-6s, %-6s, %-6s], Cap=%-5s)" % (self.Base, str(self.Rings[0]), str(self.Rings[1]), str(self.Rings[2]), self.Cap)
 
 class Machine:
 	def __init__(self, name):
@@ -169,6 +169,7 @@ class Control:
 		self.LastModel         = None
 		self.Machines          = {}
 		self.MachineFailures   = machineFailures
+		self.MaxProductCount   = 0
 		self.ModifyCTL         = True
 		self.NextOrder         = 0
 		self.Orders            = orders
@@ -256,7 +257,7 @@ class Control:
 				self.CTL.ground([("testInstance", [])])
 
 			for external in externals:
-				myPrint("Unset external: " + str(external), flush = FlushPrint)
+				#myPrint("Unset external: " + str(external), flush = FlushPrint)
 				self.CTL.assign_external(external, False)
 			externals = []
 
@@ -277,7 +278,7 @@ class Control:
 						setLocation = False
 						external = clingo.Function("robotDoing", [robot, info.Task[0], remaining])
 						externals.append(external)
-						myPrint("Set robot task: " + str(external), flush = FlushPrint)
+						myPrint("Set robot task:     " + str(external), flush = FlushPrint)
 
 				if setLocation:
 					external = clingo.Function("robotLocation", [robot, info.Location, 0])
@@ -287,7 +288,7 @@ class Control:
 				if info.Holding is not None:
 					external = clingo.Function("holding", [robot, self.productExternal(info.Holding), 0])
 					externals.append(external)
-					myPrint("Set robot holding: " + str(external), flush = FlushPrint)
+					myPrint("Set robot holding:  " + str(external), flush = FlushPrint)
 
 				info.LastStep = -1
 
@@ -335,6 +336,8 @@ class Control:
 			self.ModifyCTL = False
 			for step in range(steps[0], steps[1] + 1):
 				self.update(step, gt)
+		else:
+			step = 0
 
 		score = 0
 		myPrint("Plan:", flush = FlushPrint)
@@ -371,16 +374,17 @@ class Control:
 			elif machine is not None:
 				myPrint("Product %d: %s stored by %s." % (index, self.Products[index], machine), flush = FlushPrint)
 			else:
-				myPrint("Product %d: %s holded by %s." % (index, self.Products[index], robot), flush = FlushPrint)
+				myPrint("Product %d: %s hold   by %s." % (index, self.Products[index], robot), flush = FlushPrint)
 		myPrint("CS prepare state: CS1: %5s CS2: %5s" % (str(self.CapStations["CS1"]), str(self.CapStations["CS2"])), flush = FlushPrint)
 		myPrint("RS fill state:    RS1: %5d RS2: %5d" % (self.RingStations["RS1"], self.RingStations["RS2"]), flush = FlushPrint)
+		myPrint("Set MaxProducts: %d Used: %d" % (maxProducts(), self.MaxProductCount), flush = FlushPrint)
 		myPrint("Time for grounding base & team: %s" % str(self.GroundTime), flush = FlushPrint)
 		myPrint("Time for solving base & team:   %s" % str(self.InitialSolveTime), flush = FlushPrint)
 		myPrint("Overall startup time:           %s" % str(self.StartUpTime), flush = FlushPrint)
 		if HAS_PSUTIL:
 			p = psutil.Process()
 			mem = p.memory_info()
-			myPrint("Consumed memory at the end of the execution: %s" % memToString(mem.vms), flush = FlushPrint)
+			myPrint("Consumed memory at the end of the execution: Virtual %s Physical %s" % (memToString(mem.vms), memToString(mem.rss)), flush = FlushPrint)
 		else:
 			myPrint("psutil is not installed, no information abour memory consumption. See README.lp for more information.", flush = FlushPrint)
 
@@ -412,6 +416,8 @@ class Control:
 		if newFillState < 0 or newFillState > 3:
 			myPrint("Invalid fill state for %s: %d!" % (machine, newFillState), flush = FlushPrint)
 			sys.exit()
+		if oldFillState == newFillState:
+			return
 		myPrint("Change fill state of " + str(machine) + " from " + str(oldFillState) + " to " + str(newFillState) + ".", flush = FlushPrint)
 		if self.ModifyCTL:
 			self.CTL.assign_external(ringStationExternal(machine, oldFillState), False)
@@ -482,6 +488,9 @@ class Control:
 			productIndex = info.Holding
 			info.Holding = None
 			self.updateFillState(machine, 1)
+			product = self.Products[productIndex]
+			if product.Cap is not None or product.Rings[1] is not None:
+				myPrint("Fed a non trivial product to RS! %s" % product, flush = FlushPrint)
 			self.destroyProduct(productIndex)
 			info.Location = clingo.Function(parameters[0][0], parameters[0][1])
 			score = 2
@@ -543,6 +552,7 @@ class Control:
 			myPrint("Trying to spawn a new product, but there already the maximum of products in use, increase MaxProducts!", flush = FlushPrint)
 			sys.exit()
 		self.Products.append(Product(base))
+		self.MaxProductCount = max(self.MaxProductCount, len(self.Products))
 		return len(self.Products) - 1
 
 	def destroyProduct(self, index):
@@ -571,6 +581,8 @@ class Control:
 				cost = info.Cost
 				break
 		self.updateFillState(machineName, -cost)
+		if self.Products[productIndex].Rings[ring-1] is not None:
+			myPrint("Overwriting a ring on a product! This should not happen! Product: %s Ring: %d New Color: %s" % (self.Products[productIndex], ring-1, str(ringColor)), flush = FlushPrint)
 		self.Products[productIndex].Rings[ring-1] = ringColor
 		if self.ModifyCTL:
 			self.CTL.release_external(self.OrdersWithTasks[(order, qty)].RingTask[ring])
