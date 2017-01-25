@@ -70,6 +70,9 @@ impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), productCap(P, _, GT).
 % The all lower rings has to be mounted.
 impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), order(T, O), ring(T, TaskRing), ring(O, Ring, Color),
                         Ring < TaskRing, not productRing(P, Ring, Color, GT).
+% No higher or the target ring can be mounted.
+impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), ring(T, TaskRing), order(T, O), ring(O, Ring, _),
+                        Ring >= TaskRing, productRing(P, Ring, _, GT).
 % The fill state of the ring station has to be high enough.
 impossible(R, T, GT) :- ringTask(T), robot(R), ring(T, Ring), order(T, O), taskLocation(T, L),
                         locationToMachineMap(L, M), ring(O, Ring, Color), ringColorCost(Color, Cost),
