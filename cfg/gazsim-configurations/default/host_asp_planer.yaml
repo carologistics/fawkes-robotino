@@ -6,6 +6,11 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 
+network:
+  fawkes:
+    tcp_port: !tcp-port 1928
+    service_name: "Fawkes on ASP global planer"
+
 webview:
   #TCP port for Webview HTTP requests; TCP port
   port: !tcp-port 8088
