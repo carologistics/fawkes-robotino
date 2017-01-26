@@ -35,6 +35,8 @@
 
 #include "asp_planer_types.h"
 
+#include <unordered_set>
+
 class AspPlanerThread
 : public fawkes::Thread,
   public fawkes::ConfigurableAspect,
@@ -86,6 +88,7 @@ class AspPlanerThread
 	fawkes::Mutex NavgraphDistanceMutex;
 	//As long as we don't have nodes for the zones we need a multimap.
 	std::unordered_multimap<std::string, Clingo::Symbol> NavgraphNodesForASP;
+	std::unordered_set<std::string> NodesToFind;
 	bool UpdateNavgraphDistances;
 	std::vector<Clingo::Symbol> NavgraphDistances;
 
