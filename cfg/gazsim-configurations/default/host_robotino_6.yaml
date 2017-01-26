@@ -72,10 +72,7 @@ clips-agent:
 plugins/tag_vision:
   shm_image_id: "tag_vision_robotino_6"
   camera: shmem:gazsim_cam:image_id=robotino6/gazsim_tag:deep_copy=true
-<<<<<<< HEAD
-=======
 
   
 plugins/robot-memory:
   database: robmem6
->>>>>>> 7cdc66a... ASP: Rename robots.

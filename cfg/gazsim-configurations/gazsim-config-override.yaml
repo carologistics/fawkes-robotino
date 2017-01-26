@@ -105,3 +105,8 @@ plugins/static-transforms:
       rot_pitch: 0 
       rot_yaw: 0
       rot_roll: 0
+
+plugins/robot-memory:
+  setup:
+    replicated:
+      replica-set-members: "[{_id:1,host:'localhost:27021'}]"

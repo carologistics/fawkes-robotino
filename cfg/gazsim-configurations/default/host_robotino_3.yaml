@@ -74,8 +74,5 @@ plugins/tag_vision:
   shm_image_id: "tag_vision_robotino_3"
   camera: shmem:gazsim_cam:image_id=robotino3/gazsim_tag:deep_copy=true
 
-webtools-bridge:
-  port: 4040
-  #port where rosbridge is expected to start. Websocket connection will be established to forward the Ros requests to the Rosbridge
-  rosbridge-port: 7070
-  rosbridge-uri: "ws://localhost:7070"
+plugins/robot-memory:
+  database: robmem3
