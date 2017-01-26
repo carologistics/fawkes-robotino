@@ -67,11 +67,12 @@ AspPlanerThread::graph_changed(void) noexcept
 	logger->log_error(LoggingComponent, "Navgraph update!");
 	for ( auto node : navgraph->nodes() )
 	{
-		logger->log_warn(LoggingComponent, "Node: %s", node.name().c_str());
 		if ( !node.has_property(NodePropertyASP) && NavgraphNodesForASP.count(node.name()) )
 		{
 			node.set_property(NodePropertyASP, true);
 			navgraph->update_node(node);
+			UpdateNavgraphDistances = true;
+			NodesToFind.erase(node.name());
 		} //if ( !node.has_property(NodePropertyASP) && NavgraphNodesForASP.count(node.name()) )
 	} //for ( auto node : navgraph->nodes() )
 
@@ -128,6 +129,7 @@ AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 		NavgraphNodesForASP.insert({dummyNode, Clingo::Function("z", {Clingo::Number(zone)})});
 //		const auto node = navgraph->closest_node(zones[zone][0], zones[zone][1], false, NodePropertyASP);
 	} //for ( auto zone : ZonesToExplore )
+
 	UpdateNavgraphDistances = true;
 	return;
 }
@@ -139,7 +141,15 @@ AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 void
 AspPlanerThread::updateNavgraphDistances(void)
 {
+	static bool done = false;
+
 	UpdateNavgraphDistances = false;
+
+	if ( done )
+	{
+		logger->log_error(LoggingComponent, "updateNavgraphDistances called, by we already released the externals!");
+		return;
+	} //if ( done )
 
 	NavgraphDistances.clear();
 	NavgraphDistances.reserve(NavgraphNodesForASP.size() * NavgraphNodesForASP.size());
@@ -189,6 +199,8 @@ AspPlanerThread::updateNavgraphDistances(void)
 			NavgraphDistances.emplace_back(Clingo::Function("driveDuration", {arguments, 3}));
 		} //for ( auto to = start; to != end; ++to )
 	} //for ( auto from = NavgraphDistances.begin(); from != end; ++from )
+
+	done = NodesToFind.empty();
 	return;
 }
 

@@ -136,15 +136,47 @@ AspPlanerThread::loopClingo(void)
 	MutexLocker navgraphLocker(&NavgraphDistanceMutex);
 	if ( UpdateNavgraphDistances )
 	{
+		const bool lastUpdate = NodesToFind.empty();
+		if ( lastUpdate )
+		{
+			MutexLocker worldLocker(&WorldMutex);
+			for ( const auto& zone : ZonesToExplore )
+			{
+				releaseZone(zone, false);
+			} //for ( const auto& zone : ZonesToExplore )
+			ZonesToExplore.clear();
+			fillNavgraphNodesForASP(false);
+		} //if ( lastUpdate )
+
 		for ( const auto& external : NavgraphDistances )
 		{
 			ClingoAcc->free_exteral(external);
 		} //for ( const auto& external : NavgraphDistances )
+
 		updateNavgraphDistances();
-		for ( const auto& external : NavgraphDistances )
+
+		if ( lastUpdate )
 		{
-			ClingoAcc->assign_external(external, true);
-		} //for ( const auto& external : NavgraphDistances )
+			logger->log_info(LoggingComponent, "All machines found, fix distances and release externals.");
+			for ( const auto& external : NavgraphDistances )
+			{
+				queueGround({"setDriveDuration", {external.arguments()}});
+				Clingo::Symbol args[3];
+				std::copy(external.arguments().begin(), external.arguments().end(), std::begin(args));
+				for ( auto d = 0; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
+				{
+					args[2] = Clingo::Number(d);
+					queueRelease(Clingo::Function(external.name(), {args, 3}));
+				} //for ( auto d = 0; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
+			} //for ( const auto& external : NavgraphDistances )
+		} //if ( lastUpdate )
+		else
+		{
+			for ( const auto& external : NavgraphDistances )
+			{
+				ClingoAcc->assign_external(external, true);
+			} //for ( const auto& external : NavgraphDistances )
+		} //else -> if ( lastUpdate )
 	} //if ( UpdateNavgraphDistances )
 	else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	{
@@ -610,6 +642,12 @@ AspPlanerThread::setTeam(void)
 	ProgramGrounded = true;
 
 	fillNavgraphNodesForASP(true);
+	NodesToFind.clear();
+	NodesToFind.reserve(6);
+	for ( const auto& machine : {"BS", "CS1", "CS2", "DS", "RS1", "RS2"} )
+	{
+		NodesToFind.insert(std::string(TeamColor) + machine + "I");
+	} //for ( const auto& machine : {"BS", "CS1", "CS2", "DS", "RS1", "RS2"} )
 	graph_changed();
 	UpdateNavgraphDistances = true;
 	return;

@@ -295,6 +295,9 @@
  * @property AspPlanerThread::NavgraphNodesForASP
  * @brief A mapping from the navgraph node name to its asp atom.
  *
+ * @property AspPlanerThread::NodesToFind
+ * @brief The navgraph nodes we still have to find. If we found all we can release the driveDruation externals.
+ *
  * @property AspPlanerThread::UpdateNavgraphDistances.
  * @brief If the distances have to be updated.
  *
