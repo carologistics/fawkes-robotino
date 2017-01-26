@@ -45,6 +45,13 @@ asp-agent:
 
     max-drive-duration: 30
 
+  #How long each machine type takes to finish it's working on a product.
+  working-durations:
+    cap-station: 20
+    ring-station: 50
+    delivery-station: 30
+    base-station: 5
+
   #real-world-setup:
   peer-address: 172.26.255.255
   peer-port: 4444

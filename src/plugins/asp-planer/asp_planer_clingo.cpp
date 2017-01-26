@@ -552,6 +552,11 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(ProductionEnd))});
 				return;
 			} //else if ( view == "maxDeliveryTime" )
+			else if ( view == "maxWorkingDuration" )
+			{
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxWorkingDuration))});
+				return;
+			} //else if ( view == "maxWorkingDuration" )
 			break;
 		} //case 0
 		case 1 :
@@ -568,6 +573,12 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 				retFunction({Clingo::Number(realGameTimeToAspGameTime(arguments[0].number()))});
 				return;
 			} //else if ( view == "clingoToASP" )
+			else if ( view == "machineWorkingDuration" )
+			{
+				const std::string machineName(arguments[0].string(), 2);
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(WorkingDurations[machineName]))});
+				return;
+			} //else if ( view == "machineWorkingDuration" )
 			break;
 		} //case 1
 	} //switch ( arguments.size() )

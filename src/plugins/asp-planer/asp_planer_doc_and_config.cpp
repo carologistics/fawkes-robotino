@@ -231,6 +231,9 @@
  * @property AspPlanerThread::MaxTaskDuration
  * @brief An upper bound on the time (in seconds) for the execution of a task.
  *
+ * @property AspPlanerThread::MaxWorkingDuration
+ * @brief The longest working duration of the machines.
+ *
  * @property AspPlanerThread::PossibleRobots
  * @brief The names of the robots we may have.
  *
@@ -242,6 +245,9 @@
  *
  * @property AspPlanerThread::TimeResolution
  * @brief How many real time seconds will be one asp time step.
+ *
+ * @property AspPlanerThread::WorkingDuration
+ * @brief The mapping from machine type to its working duration.
  */
 
 /**
@@ -361,12 +367,15 @@ AspPlanerThread::loadConfig(void)
 	constexpr auto infixPlaner = "planer/";
 	constexpr auto infixTime = "time-estimations/";
 	constexpr auto infixCapStation = "cap-station/assigned-color/";
+	constexpr auto infixWorkingDuration = "working-durations/";
 
 	constexpr auto infixPlanerLen = std::strlen(infixPlaner), infixTimeLen = std::strlen(infixTime);
 	constexpr auto infixCapStationLen = std::strlen(infixCapStation);
+	constexpr auto infixWorkingDurationLen = std::strlen(infixWorkingDuration);
 	const auto prefixLen = std::strlen(ConfigPrefix);
 
-	char buffer[prefixLen + std::max<size_t>({infixPlanerLen, infixTimeLen, infixCapStationLen}) + 20];
+	char buffer[prefixLen +
+		std::max<size_t>({infixPlanerLen, infixTimeLen, infixCapStationLen, infixWorkingDurationLen}) + 20];
 	std::strcpy(buffer, ConfigPrefix);
 
 	//The plain part.
@@ -422,5 +431,24 @@ AspPlanerThread::loadConfig(void)
 	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "C-CS1"});
 	std::strcpy(suffix, "C-CS2");
 	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "C-CS2"});
+
+	//The working-duration part.
+	suffix = buffer + prefixLen + infixWorkingDurationLen;
+	std::strcpy(buffer + prefixLen, infixWorkingDuration);
+
+	WorkingDurations.reserve(4);
+	std::strcpy(suffix, "base-station");
+	WorkingDurations.insert({"BS", config->get_int(buffer)});
+	std::strcpy(suffix, "cap-station");
+	WorkingDurations.insert({"CS", config->get_int(buffer)});
+	std::strcpy(suffix, "delivery-station");
+	WorkingDurations.insert({"DS", config->get_int(buffer)});
+	std::strcpy(suffix, "ring-station");
+	WorkingDurations.insert({"RS", config->get_int(buffer)});
+
+	for ( const auto& pair : WorkingDurations )
+	{
+		MaxWorkingDuration = std::max(MaxWorkingDuration, pair.second);
+	} //for ( const auto& pair : WorkingDurations )
 	return;
 }

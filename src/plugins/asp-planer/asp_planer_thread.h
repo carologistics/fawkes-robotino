@@ -62,10 +62,12 @@ class AspPlanerThread
 	int MaxProducts;
 	int MaxQuantity;
 	int MaxTaskDuration;
+	int MaxWorkingDuration;
 	std::vector<std::string> PossibleRobots;
 	int PrepareCSTaskDuration;
 	int ProductionEnd;
 	int TimeResolution;
+	std::unordered_map<std::string, int> WorkingDurations;
 
 	const std::vector<std::string> BaseColors = {"RED", "BLACK", "SILVER"};
 	const std::string SpecialBaseColor = "TRANSPARENT";
