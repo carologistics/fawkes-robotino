@@ -16,6 +16,8 @@ declare op_predicate  get-product-from
 declare op_predicate  instruct-mps
 declare op_predicate  send-instruction
 
+declare be  instruction-sent-ack
+
 declare cwp           peer-id
 
 declare ff   		team-color 0

@@ -14,7 +14,10 @@
 			(! (pb-set-field @bs-inst "side" $side))
 			(! (pb-set-field @bs-inst "color" $color))
 
-			(! (send-instruction $bs-name @bs-inst))
+			(! (send-instruction $bs-name (val @bs-inst)))
+			
+			(^ (instruction-sent-ack $bs-name ))
+			(~> (instruction-sent-ack $bs-name ))
 			)
 
 		:documentation "Send the Prepare instruction once to the BS"
@@ -31,7 +34,10 @@
  				(! (= @cs-inst (pb-create "llsf_msgs.PrepareInstructionCS")))
 				(! (pb-set-field @cs-inst "operation" $operation)) ;TODO check if the operation is allowed
 
-				(! (send-instruction $cs-name @cs-inst))
+				(! (send-instruction $cs-name (val @cs-inst)))
+
+				(^ (instruction-sent-ack $cs-name))
+				(~> (instruction-sent-ack $cs-name))
  				)
 
 			:documentation "Send the Prepare instruction once to the CS"
@@ -62,11 +68,20 @@
 					(! (pb-set-field @instruction "instruction_cs" $mps-inst )))
 				
 
-				(! (pb-broadcast $peer-id @instruction))
-				(! (pb-broadcast $peer-id @instruction))
-				(! (pb-broadcast $peer-id @instruction))
-				(! (pb-broadcast $peer-id @instruction))
+				(while (?	(& (machine $mps-name $mps-type @new-state @prepared @zone @pose @loaded-with)
+							 	(~ (= (val @new-state) "PREPARED"))
+								(~ (= (val @new-state) "PROCESSING"))
+								(~ (= (val @new-state) "READY-AT-OUTPUT"))  
+							) )
 
+					(! (pb-broadcast $peer-id @instruction))
+					(! (print "Broadcasting..."))
+					;just busy wait
+				)
+				
+				(! (printf (FORMAT "The instruction sent successfully..machine %s is %s \n" $mps-name @new-state) ))
+				(=> (instruction-sent-ack $mps-name))
+ 				
  				)
  			:documentation "Embed the PrepareInstructionXS msg for an mps in a PrepareMachine msg and Broadcast it"
  			)
