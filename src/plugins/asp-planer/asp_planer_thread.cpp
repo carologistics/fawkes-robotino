@@ -340,8 +340,8 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		Unsat(false),
 		//Config
 		ExplorationTime(0), DeliverProductTaskDuration(0), FetchProductTaskDuration(0), LookAhaed(0),
-		MaxDriveDuration(0), MaxOrders(0), MaxProducts(0), MaxQuantity(0), MaxTaskDuration(0), PrepareCSTaskDuration(0),
-		TimeResolution(0),
+		MaxDriveDuration(0), MaxOrders(0), MaxProducts(0), MaxQuantity(0), MaxTaskDuration(0), MaxWorkingDuration(0),
+		PrepareCSTaskDuration(0), TimeResolution(0),
 		//Worldmodel
 		GameTime(0),
 		//Distances
