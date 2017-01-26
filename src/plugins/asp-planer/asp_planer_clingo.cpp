@@ -192,7 +192,7 @@ AspPlanerThread::loopClingo(void)
 		if ( robot.Doing.isValid() )
 		{
 			addExternal(generateDoingExternal(name, robot.Doing,
-				realGameTimeToAspGameTime(robot.Doing.EstimatedEnd - GameTime)));
+				realGameTimeToAspGameTime(std::max(1, robot.Doing.EstimatedEnd - GameTime))));
 		} //if ( robot.Doing.isValid() )
 		else
 		{
@@ -208,7 +208,8 @@ AspPlanerThread::loopClingo(void)
 		auto working = machine.WorkingUntil;
 		if ( machine.BrokenUntil )
 		{
-			addExternal(generateMachineBrokenExternal(name, realGameTimeToAspGameTime(machine.BrokenUntil - GameTime)));
+			addExternal(generateMachineBrokenExternal(name,
+				std::max(1, realGameTimeToAspGameTime(machine.BrokenUntil - GameTime))));
 			if ( working )
 			{
 				working = machine.BrokenUntil + working - GameTime;
@@ -218,8 +219,8 @@ AspPlanerThread::loopClingo(void)
 		if ( working )
 		{
 			assert(machine.Storing.isValid());
-			addExternal(generateMachineWorkingExternal(name, realGameTimeToAspGameTime(working - GameTime),
-				machine.Storing));
+			addExternal(generateMachineWorkingExternal(name,
+				std::max(1, realGameTimeToAspGameTime(working - GameTime)), machine.Storing));
 		} //if ( working )
 		else if ( machine.Storing.isValid() )
 		{
