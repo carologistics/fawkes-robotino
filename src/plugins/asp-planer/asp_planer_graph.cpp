@@ -167,7 +167,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 	for ( auto from = NavgraphNodesForASP.begin(); from != end; ++from )
 	{
 		const auto& fromNode = navgraph->node(from->first);
-		for ( auto to = from; to != end; ++to )
+		for ( auto to = from; ++to != end; )
 		{
 			const auto& toNode = navgraph->node(to->first);
 
@@ -194,9 +194,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 			Clingo::Symbol arguments[3] = {from->second, to->second, Clingo::Number(duration)};
 
 			NavgraphDistances.emplace_back(Clingo::Function("driveDuration", {arguments, 3}));
-			std::swap(arguments[0], arguments[1]);
-			NavgraphDistances.emplace_back(Clingo::Function("driveDuration", {arguments, 3}));
-		} //for ( auto to = start; to != end; ++to )
+		} //for ( auto to = from; ++to != end; )
 	} //for ( auto from = NavgraphDistances.begin(); from != end; ++from )
 
 	done = NodesToFind.empty();
