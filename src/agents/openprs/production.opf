@@ -28,14 +28,8 @@
 			(! (= $slot "LEFT")) 								;dynamically dertiermine which position. 
  			(! (get-product-from place $cs-name shelf $slot))
 
-			(! (= @cs-inst (pb-create "llsf_msgs.PrepareInstructionCS")))
-			(! (pb-set-field @cs-inst "operation" RETRIEVE_CAP))
-			(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
-			(! (pb-set-field @instruction "instruction_cs" @cs-inst ))
-			(! (pb-set-field @instruction "team_color" $team-color))
-			(! (pb-set-field @instruction "machine" $cs-name ))
-			(! (pb-broadcast $peer-id @instruction))
-
+			(! (instruct-mps machine $cs-name operation RETRIEVE_CAP)) 
+		
 			(! (bring-product-to place $cs-name atmps $slot))
 
 			(! (drive-to (string-cat $cs-name "-O")))
@@ -44,29 +38,17 @@
 
 			(! (print "FETHCHING THE BASE..."))
 			(! (print (string-cat $bs-name "-I")))
-			(! (drive-to (string-cat $bs-name "-I"))) ;; todos, get the side from a fact that makes sure the active-side is updated
+			(! (drive-to (string-cat $bs-name "-I"))) ; todos, get the side from a fact that makes sure the active-side is updated
 			; todo:get the lock
-			(! (= @bs-inst (pb-create "llsf_msgs.PrepareInstructionBS")))
-			(! (pb-set-field @bs-inst "side" INPUT))
-			(! (pb-set-field @bs-inst "color" $base-color))
-			(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
-			(! (pb-set-field @instruction "instruction_bs" @bs-inst ))
-			(! (pb-set-field @instruction "team_color" $team-color))
-			(! (pb-set-field @instruction "machine" $bs-name ))
-			(! (pb-broadcast $peer-id @instruction))
+			
+			( ! (instruct-mps machine $bs-name side INPUT color $base-color ) )
 
 			(! (get-product-from place $bs-name side "input"))
 			
 			(! (print "INSETRING INTO CS..."))
 			(! (drive-to (string-cat $cs-name "-I"))) 
-
-			(! (= @cs-inst (pb-create "llsf_msgs.PrepareInstructionCS")))
-			(! (pb-set-field @cs-inst "operation" MOUNT_CAP))
-			(! (= @instruction (pb-create "llsf_msgs.PrepareMachine")))
-			(! (pb-set-field @instruction "instruction_cs" @cs-inst ))
-			(! (pb-set-field @instruction "team_color" $team-color))
-			(! (pb-set-field @instruction "machine" $cs-name ))
-			(! (pb-broadcast $peer-id @instruction))
+		
+			(! (instruct-mps machine $cs-name operation MOUNT_CAP))
 
 			(! (bring-product-to place $cs-name))
 
