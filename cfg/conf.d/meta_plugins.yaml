@@ -26,7 +26,7 @@ fawkes/meta_plugins:
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
   gazsim-meta-clips: m-clips,clips-agent
   gazsim-meta-agent: gazsim-meta-clips
-  gazsim-meta-asp-planer: ros,navgraph,m-robot-memory,m-clips,clips-agent,m-asp-planer,static-transforms
+  gazsim-meta-asp-planer: ros,navgraph,m-robot-memory,m-clips,clips-agent,m-asp-planer,static-transforms,gazebo
  
   #
   # Robotino base meta plugin
