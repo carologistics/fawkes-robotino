@@ -6,6 +6,7 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 (
+
 	(defop ppgoto
 	  :invocation (! (ppgoto $place))
 	  :call (ppgoto $place)
@@ -34,6 +35,13 @@
 	  :documentation "get product from a cap station"
 	) 
 
+	(defop bring-product-to
+	  :invocation (! (bring-product-to place $place))
+	  :call (bring-product-to place $place)
+	  :action (skill-call "bring_product_to" "place" $place)
+	  :documentation "bring the product to a station's slot"
+	) 
+	
 	(defop bring-product-to-atmps
 	  :invocation (! (bring-product-to place $place atmps $slot))
 	  :call (bring-product-to place $place atmps $slot)
@@ -41,12 +49,6 @@
 	  :documentation "bring the product to a station's slot"
 	) 
 
-	(defop bring-product-to
-	  :invocation (! (bring-product-to place $place))
-	  :call (bring-product-to place $place)
-	  :action (skill-call "bring_product_to" "place" $place)
-	  :documentation "bring the product to a station's slot"
-	) 
 
 
 

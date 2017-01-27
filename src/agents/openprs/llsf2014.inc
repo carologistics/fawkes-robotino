@@ -35,8 +35,11 @@ declare symbol public
 declare symbol private
 declare symbol CYAN
 declare symbol MAGENTA
+
+;Agent States
 declare symbol IDLE
 declare symbol WORKING
+declare symbol SKILL-EXECUTION
 
 ;Colors for the caps
 declare symbol BLACK

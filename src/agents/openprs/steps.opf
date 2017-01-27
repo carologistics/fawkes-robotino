@@ -6,3 +6,38 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(
+
+	; (defop step- 
+	; 	)
+
+	(defop step-drive-to
+		:invocation( ! (step drive-to machine $mps-name side $side) )
+		:context( (~ (agent-state SKILL-EXECUTION )) ) ; may be make it more specific what state u want to be in  
+		:body(
+			(if (? (= $side INPUT) )
+				(! (= $place (string-cat $mps-name "-I")))
+				else 
+				(! (= $place (string-cat $mps-name "-O")))
+				)
+
+			(? (agent-state $old-state))
+			(=> (agent-state SKILL-EXECUTION))
+			
+			(if (! (drive-to $place) ) 
+				(=> (agent-state SKILL-SUCESS))
+				(! (print " SKILL SUCESSEDED"))
+				(=> (agent-state $old-state))
+				else
+				(=> (agent-state SKILL-FAILED))
+				(! (print "SKILL-FAILED"))
+				(=> (agent-state $old-state))
+				(fail)
+
+			) 
+			)
+		)
+
+
+
+	)
