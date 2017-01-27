@@ -161,7 +161,7 @@ generateProductCapExternal(const ProductIdentifier& product, const std::string& 
  * @return The external atom.
  */
 Clingo::Symbol
-generateMachhineBrokenExternal(const std::string& machineName, const int duration)
+generateMachineBrokenExternal(const std::string& machineName, const int duration)
 {
 	return Clingo::Function("broken", {Clingo::String(machineName), Clingo::Number(duration), Clingo::Number(0)});
 }

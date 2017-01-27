@@ -35,6 +35,8 @@
 
 #include "asp_planer_types.h"
 
+#include <unordered_set>
+
 class AspPlanerThread
 : public fawkes::Thread,
   public fawkes::ConfigurableAspect,
@@ -62,10 +64,12 @@ class AspPlanerThread
 	int MaxProducts;
 	int MaxQuantity;
 	int MaxTaskDuration;
+	int MaxWorkingDuration;
 	std::vector<std::string> PossibleRobots;
 	int PrepareCSTaskDuration;
 	int ProductionEnd;
 	int TimeResolution;
+	std::unordered_map<std::string, int> WorkingDurations;
 
 	const std::vector<std::string> BaseColors = {"RED", "BLACK", "SILVER"};
 	const std::string SpecialBaseColor = "TRANSPARENT";
@@ -84,6 +88,7 @@ class AspPlanerThread
 	fawkes::Mutex NavgraphDistanceMutex;
 	//As long as we don't have nodes for the zones we need a multimap.
 	std::unordered_multimap<std::string, Clingo::Symbol> NavgraphNodesForASP;
+	std::unordered_set<std::string> NodesToFind;
 	bool UpdateNavgraphDistances;
 	std::vector<Clingo::Symbol> NavgraphDistances;
 

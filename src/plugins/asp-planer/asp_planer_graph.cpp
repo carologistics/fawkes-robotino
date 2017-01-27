@@ -67,11 +67,12 @@ AspPlanerThread::graph_changed(void) noexcept
 	logger->log_error(LoggingComponent, "Navgraph update!");
 	for ( auto node : navgraph->nodes() )
 	{
-		logger->log_warn(LoggingComponent, "Node: %s", node.name().c_str());
 		if ( !node.has_property(NodePropertyASP) && NavgraphNodesForASP.count(node.name()) )
 		{
 			node.set_property(NodePropertyASP, true);
 			navgraph->update_node(node);
+			UpdateNavgraphDistances = true;
+			NodesToFind.erase(node.name());
 		} //if ( !node.has_property(NodePropertyASP) && NavgraphNodesForASP.count(node.name()) )
 	} //for ( auto node : navgraph->nodes() )
 
@@ -128,6 +129,7 @@ AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 		NavgraphNodesForASP.insert({dummyNode, Clingo::Function("z", {Clingo::Number(zone)})});
 //		const auto node = navgraph->closest_node(zones[zone][0], zones[zone][1], false, NodePropertyASP);
 	} //for ( auto zone : ZonesToExplore )
+
 	UpdateNavgraphDistances = true;
 	return;
 }
@@ -139,7 +141,15 @@ AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 void
 AspPlanerThread::updateNavgraphDistances(void)
 {
+	static bool done = false;
+
 	UpdateNavgraphDistances = false;
+
+	if ( done )
+	{
+		logger->log_error(LoggingComponent, "updateNavgraphDistances called, by we already released the externals!");
+		return;
+	} //if ( done )
 
 	NavgraphDistances.clear();
 	NavgraphDistances.reserve(NavgraphNodesForASP.size() * NavgraphNodesForASP.size());
@@ -148,17 +158,16 @@ AspPlanerThread::updateNavgraphDistances(void)
 
 	auto distanceToDuration = [this](const float distance) noexcept
 		{
-			//! @todo Werte holen!
-			constexpr int constantCosts = 4;
-			constexpr int costPerDistance = 2;
-			return std::min(constantCosts + static_cast<int>(distance * costPerDistance), MaxDriveDuration);
+			constexpr float constantCosts   = 2.16988;
+			constexpr float costPerDistance = 1.55322;
+			return std::min(static_cast<int>(constantCosts + distance * costPerDistance), MaxDriveDuration);
 		};
 
 	const auto end = NavgraphNodesForASP.end();
 	for ( auto from = NavgraphNodesForASP.begin(); from != end; ++from )
 	{
 		const auto& fromNode = navgraph->node(from->first);
-		for ( auto to = from; to != end; ++to )
+		for ( auto to = from; ++to != end; )
 		{
 			const auto& toNode = navgraph->node(to->first);
 
@@ -185,10 +194,10 @@ AspPlanerThread::updateNavgraphDistances(void)
 			Clingo::Symbol arguments[3] = {from->second, to->second, Clingo::Number(duration)};
 
 			NavgraphDistances.emplace_back(Clingo::Function("driveDuration", {arguments, 3}));
-			std::swap(arguments[0], arguments[1]);
-			NavgraphDistances.emplace_back(Clingo::Function("driveDuration", {arguments, 3}));
-		} //for ( auto to = start; to != end; ++to )
+		} //for ( auto to = from; ++to != end; )
 	} //for ( auto from = NavgraphDistances.begin(); from != end; ++from )
+
+	done = NodesToFind.empty();
 	return;
 }
 
