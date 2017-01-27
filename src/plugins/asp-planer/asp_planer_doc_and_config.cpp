@@ -167,6 +167,20 @@
  */
 
 /**
+ * @struct OrderTasks
+ * @brief Stores the task externals assoziated with an order.
+ *
+ * @property OrderTasks::RingTasks
+ * @brief The tasks for the rings.
+ *
+ * @property OrderTasks::CapTask
+ * @brief The task for the cap.
+ *
+ * @property OrderTasks::DeliverTasks
+ * @brief The task for the delivery, the first is the normal and the second is the late delivery.
+ */
+
+/**
  * @enum InterruptSolving
  * @brief States the current interrupt request.
  * @note Sort by priority. We use operator> when setting the value.
@@ -283,6 +297,9 @@
  *
  * @property AspPlanerThread::ZonesToExplore
  * @brief Which zones we have to explore.
+ *
+ * @property AspPlanerThread::OrderTaskMap
+ * @brief The mapping of (order #, quantitiy #) to the task external.
  */
 
 /**

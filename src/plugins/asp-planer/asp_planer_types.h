@@ -196,6 +196,14 @@ struct OrderInformation
 	int DeliveryEnd;
 };
 
+struct OrderTasks
+{
+	// +1 to skip the calculation of +1 and -1 everytime we use this.
+	Clingo::Symbol RingTasks[4];
+	Clingo::Symbol CapTask;
+	Clingo::Symbol DeliverTasks[2];
+};
+
 namespace std {
 
 /**

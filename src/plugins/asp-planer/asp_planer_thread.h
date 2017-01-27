@@ -83,6 +83,7 @@ class AspPlanerThread
 	std::unordered_map<std::string, MachineInformation> Machines;
 	std::vector<Product> Products;
 	std::vector<int> ZonesToExplore;
+	std::unordered_map<std::pair<int, int>, OrderTasks> OrderTaskMap;
 
 	static constexpr auto NodePropertyASP = "ASP-Location";
 	fawkes::Mutex NavgraphDistanceMutex;
