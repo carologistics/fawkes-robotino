@@ -1,13 +1,22 @@
+;---------------------------------------------------------------------------
+;  mps-instructions.opf - OpenPRS OP file for RCll2017 openprs-agent
+;
+;  Created: Tue Jan 24 15:43:00 2017
+;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+;ToDo: Change the loop to a more reliable. None blocking way. 
+;		Also might add time-outs and so on..Right now if the machine. 
+;		Also Handle the Machine Broken more gracefully  (right now the intention just successes to prevent waiting)
+
 (
-
-
 	(defop mps-instruction-base-station
 		:invocation ( !(instruct-mps machine $bs-name side $side color $color) )
 		:context( 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
 				 	(team-color $team-color)
 				  	(peer-id private $peer-id)
 				)
-
 		:body( 
 
 			(! (= @bs-inst (pb-create "llsf_msgs.PrepareInstructionBS")))
@@ -16,7 +25,7 @@
 
 			(! (send-instruction $bs-name (val @bs-inst)))
 			
-			(^ (instruction-sent-ack $bs-name ))
+			(^ (instruction-sent-ack $bs-name )) ;TODO: Add time out here and fail the intention if it was timed
 			(~> (instruction-sent-ack $bs-name ))
 			)
 
@@ -32,7 +41,7 @@
 				)
  			:body(
  				(! (= @cs-inst (pb-create "llsf_msgs.PrepareInstructionCS")))
-				(! (pb-set-field @cs-inst "operation" $operation)) ;TODO check if the operation is allowed
+				(! (pb-set-field @cs-inst "operation" $operation)) ;TODO check if the operation is allowed before sending it
 
 				(! (send-instruction $cs-name (val @cs-inst)))
 
@@ -67,25 +76,27 @@
 				(if (? (= $mps-type "CS"))
 					(! (pb-set-field @instruction "instruction_cs" $mps-inst )))
 				
-
+				;todo:raplce by a neater way 
 				(while (?	(& (machine $mps-name $mps-type @new-state @prepared @zone @pose @loaded-with)
 							 	(~ (= (val @new-state) "PREPARED"))
 								(~ (= (val @new-state) "PROCESSING"))
-								(~ (= (val @new-state) "READY-AT-OUTPUT"))  
-							) )
-
+								(~ (= (val @new-state) "READY-AT-OUTPUT")) 
+								(~ (= (val @new-state) "BROKEN"))))
 					(! (pb-broadcast $peer-id @instruction))
 					(! (print "Broadcasting..."))
-					;just busy wait
-				)
-				
-				(! (printf (FORMAT "The instruction sent successfully..machine %s is %s \n" $mps-name @new-state) ))
-				(=> (instruction-sent-ack $mps-name))
+					)
+
+				(if (? (= (val @new-state) "BROKEN"))
+					(! (printf (FORMAT "Instruction failed..machine %s is %s \n" $mps-name @new-state) ))
+					else 
+					(! (printf (FORMAT "The instruction sent successfully..machine %s is %s \n" $mps-name @new-state) ))
+					)
  				
  				)
+
+			:effects  (=> (instruction-sent-ack $mps-name))
  			:documentation "Embed the PrepareInstructionXS msg for an mps in a PrepareMachine msg and Broadcast it"
  			)
-	;ToDo: let the instructions be send periodically on time till the machine state becomes  PROCESSING|PREPARED|READY-AT-OUTPU
 
 
 	)
