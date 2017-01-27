@@ -306,6 +306,9 @@
  */
 
 /**
+ * @typedef AspPlanerThread::GroundRequest
+ * @brief Holds the information to build a Clingo::Part.
+ *
  * @property AspPlanerThread::RequestMutex
  * @brief The mutex for the requests and interupt handling.
  *
