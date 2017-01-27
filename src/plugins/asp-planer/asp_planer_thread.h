@@ -130,10 +130,12 @@ class AspPlanerThread
 	bool NewSymbols;
 	*/
 
+	using GroundRequest = std::pair<const char*, Clingo::SymbolVector>;
+
 	fawkes::Mutex RequestMutex;
 	InterruptSolving Interrupt;
 	bool SentCancel;
-	std::vector<Clingo::Part> GroundRequests;
+	std::vector<GroundRequest> GroundRequests;
 	std::vector<Clingo::Symbol> ReleaseRequests;
 	std::vector<Clingo::Symbol> AssignRequests;
 
@@ -161,7 +163,7 @@ class AspPlanerThread
 	void finalizeClingo(void);
 	void loopClingo(void);
 
-	void queueGround(Clingo::Part&& part, const InterruptSolving interrupt = InterruptSolving::Not);
+	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
 	void queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
 	void queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
 	void setInterrupt(const InterruptSolving interrupt, const bool lock = true);

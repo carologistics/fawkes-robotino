@@ -145,7 +145,9 @@ AspPlanerThread::loopClingo(void)
 				releaseZone(zone, false);
 			} //for ( const auto& zone : ZonesToExplore )
 			ZonesToExplore.clear();
+			navgraphLocker.unlock();
 			fillNavgraphNodesForASP(false);
+			navgraphLocker.relock();
 		} //if ( lastUpdate )
 
 		for ( const auto& external : NavgraphDistances )
@@ -158,9 +160,11 @@ AspPlanerThread::loopClingo(void)
 		if ( lastUpdate )
 		{
 			logger->log_info(LoggingComponent, "All machines found, fix distances and release externals.");
+			reqLocker.unlock();
 			for ( const auto& external : NavgraphDistances )
 			{
-				queueGround({"setDriveDuration", {external.arguments()}});
+				queueGround({"setDriveDuration",
+					Clingo::SymbolVector(external.arguments().begin(), external.arguments().end())});
 				Clingo::Symbol args[3];
 				std::copy(external.arguments().begin(), external.arguments().end(), std::begin(args));
 				for ( auto d = 0; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
@@ -169,6 +173,8 @@ AspPlanerThread::loopClingo(void)
 					queueRelease(Clingo::Function(external.name(), {args, 3}));
 				} //for ( auto d = 0; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
 			} //for ( const auto& external : NavgraphDistances )
+			//This has to be done, because the behavior of double unlocking is undefined.
+			reqLocker.relock();
 		} //if ( lastUpdate )
 		else
 		{
@@ -284,8 +290,17 @@ AspPlanerThread::loopClingo(void)
 	worldLocker.unlock();
 
 	reqLocker.relock();
-	ClingoAcc->ground(GroundRequests);
-	GroundRequests.clear();
+	if ( !GroundRequests.empty() )
+	{
+		std::vector<Clingo::Part> parts;
+		parts.reserve(GroundRequests.size());
+		for ( const auto& request : GroundRequests )
+		{
+			parts.emplace_back(request.first, request.second);
+		} //for ( const auto& request : GroundRequests )
+		ClingoAcc->ground(parts);
+		GroundRequests.clear();
+	} //if ( !GroundRequests.empty() )
 
 	for ( const auto& atom : ReleaseRequests )
 	{
@@ -330,14 +345,14 @@ AspPlanerThread::loopClingo(void)
 
 /**
  * @brief Queues a ground request.
- * @param[in] part The program part to ground.
+ * @param[in] request The request to build a Clingo::Part to ground.
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueGround(Clingo::Part&& atom, const InterruptSolving interrupt)
+AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	GroundRequests.push_back(atom);
+	GroundRequests.push_back(request);
 	setInterrupt(interrupt, false);
 	return;
 }
@@ -646,7 +661,7 @@ AspPlanerThread::setTeam(void)
 	NodesToFind.reserve(6);
 	for ( const auto& machine : {"BS", "CS1", "CS2", "DS", "RS1", "RS2"} )
 	{
-		NodesToFind.insert(std::string(TeamColor) + machine + "I");
+		NodesToFind.insert(std::string(TeamColor) + "-" + machine + "-I");
 	} //for ( const auto& machine : {"BS", "CS1", "CS2", "DS", "RS1", "RS2"} )
 	graph_changed();
 	UpdateNavgraphDistances = true;
