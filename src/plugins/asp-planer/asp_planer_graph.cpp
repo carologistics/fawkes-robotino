@@ -75,8 +75,6 @@ AspPlanerThread::graph_changed(void) noexcept
 			NodesToFind.erase(node.name());
 		} //if ( !node.has_property(NodePropertyASP) && NavgraphNodesForASP.count(node.name()) )
 	} //for ( auto node : navgraph->nodes() )
-
-	UpdateNavgraphDistances = true;
 	return;
 }
 
