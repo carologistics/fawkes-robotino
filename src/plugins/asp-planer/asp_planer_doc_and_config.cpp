@@ -434,9 +434,9 @@ AspPlanerThread::loadConfig(void)
 	CapColors.reserve(2);
 	//We assume the distribution is the same, for CYAN and MAGENTA.
 	std::strcpy(suffix, "C-CS1");
-	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "C-CS1"});
+	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "CS1"});
 	std::strcpy(suffix, "C-CS2");
-	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "C-CS2"});
+	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "CS2"});
 
 	//The working-duration part.
 	suffix = buffer + prefixLen + infixWorkingDurationLen;
