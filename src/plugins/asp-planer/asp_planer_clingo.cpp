@@ -663,6 +663,11 @@ AspPlanerThread::setTeam(void)
 	{
 		NodesToFind.insert(std::string(TeamColor) + "-" + machine + "-I");
 	} //for ( const auto& machine : {"BS", "CS1", "CS2", "DS", "RS1", "RS2"} )
+	DeliveryLocation = generateLocationExternal(TeamColor, "DS", "I");
+	CapLocations[0]  = generateLocationExternal(TeamColor, "CS1", "I");
+	CapLocations[1]  = generateLocationExternal(TeamColor, "CS2", "I");
+	RingLocations[0] = generateLocationExternal(TeamColor, "RS1", "I");
+	RingLocations[1] = generateLocationExternal(TeamColor, "RS2", "I");
 	graph_changed();
 	UpdateNavgraphDistances = true;
 	return;
@@ -682,6 +687,7 @@ AspPlanerThread::unsetTeam(void)
 /**
  * @brief Adds an order to asp.
  * @param[in] order The order.
+ * @note Assumes the world mutex is locked!
  */
 void
 AspPlanerThread::addOrderToASP(const OrderInformation& order)
@@ -691,7 +697,7 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
 		Clingo::String(order.Rings[2]), Clingo::String(order.Rings[3]),
 		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryBegin)),
 		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryEnd))};
-	queueGround({"newOrder", params}, InterruptSolving::Critical);
+	queueGround({"newOrder", std::move(params)}, InterruptSolving::Critical);
 
 	for ( const auto& color : BaseColors )
 	{
@@ -712,9 +718,72 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
 		} //for ( auto ring = 1; ring <= 3; ++ring )
 	} //for ( const auto& color : RingColors )
 
-	for ( decltype(MaxQuantity) qty = 1; qty <= MaxQuantity; ++qty )
+	for ( auto qty = order.Quantity + 1; qty <= MaxQuantity; ++qty )
 	{
-	} //for ( decltype(MaxQuantity) qty = 1; qty <= MaxQuantity; ++qty )
+		for ( auto ring = 1; ring <= 3; ++ring )
+		{
+			for ( const auto& location : RingLocations )
+			{
+				queueRelease(generateMountRingExternal(location, order.Number, qty, ring));
+			} //for ( const auto& location : RingLocations )
+		} //for ( auto ring = 1; ring <= 3; ++ring )
+		for ( const auto& location : CapLocations )
+		{
+			queueRelease(generateMountCapExternal(location, order.Number, qty));
+		} //for ( const auto& location : CapLocations )
+		queueRelease(generateDeliverExternal(DeliveryLocation, order.Number, qty));
+		queueRelease(generateLateDeliverExternal(DeliveryLocation, order.Number, qty));
+	} //for ( auto qty = order.Quantity + 1; qty <= MaxQuantity; ++qty )
+
+	for ( auto qty = 1; qty <= order.Quantity; ++qty )
+	{
+		const auto capIndex = std::find_if(CapColors.begin(), CapColors.end(),
+			[&order](const CapColorInformation& info) noexcept
+			{
+				return info.Color == order.Cap;
+			})->Machine[2] - '1';
+
+		OrderTasks tasks{Clingo::Symbol(), Clingo::Symbol(), Clingo::Symbol(), Clingo::Symbol(),
+			generateMountCapExternal(CapLocations[capIndex], order.Number, qty),
+			generateDeliverExternal(DeliveryLocation, order.Number, qty),
+			generateLateDeliverExternal(DeliveryLocation, order.Number, qty)};
+
+		//Make an explicit copy because queueAssign takes an rvalue.
+		queueAssign(Clingo::Symbol(tasks.CapTask));
+		queueAssign(Clingo::Symbol(tasks.DeliverTasks[0]));
+		queueAssign(Clingo::Symbol(tasks.DeliverTasks[1]));
+		queueRelease(generateMountCapExternal(CapLocations[1 - capIndex], order.Number, qty));
+
+		auto ring = 1;
+		for ( ; ring <= 3; ++ring )
+		{
+			const auto& color(order.Rings[ring]);
+			if ( color == "none" )
+			{
+				break;
+			} //if ( color == "none" )
+
+			const auto ringIndex = std::find_if(RingColors.begin(), RingColors.end(),
+				[&order,&color](const RingColorInformation& info) noexcept
+				{
+					return info.Color == color;
+				})->Machine[2] - '1';
+
+			tasks.RingTasks[ring] = generateMountRingExternal(RingLocations[ringIndex], order.Number, qty, ring);
+			queueAssign(Clingo::Symbol(tasks.RingTasks[ring]));
+			queueRelease(generateMountRingExternal(RingLocations[1 - ringIndex], order.Number, qty, ring));
+		} //for ( auto ring = 1; ring <= 3; ++ring )
+
+		for ( ; ring <= 3; ++ring )
+		{
+			for ( const auto& location : RingLocations )
+			{
+				queueRelease(generateMountRingExternal(location, order.Number, qty, ring));
+			} //for ( const auto& location : RingLocations )
+		} //for ( ; ring <= 3; ++ring )
+
+		OrderTaskMap.insert({{order.Number, qty}, std::move(tasks)});
+	} //for ( auto qty = 1; qty <= order.Quantity; ++qty )
 	return;
 }
 

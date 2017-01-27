@@ -192,3 +192,82 @@ generateMachineStoringExternal(const std::string& machineName, const ProductIden
 	return Clingo::Function("storing", {Clingo::String(machineName), productName(product), Clingo::Number(0)});
 }
 
+/**
+ * @brief Generates the location external for a machine side.
+ * @param[in] teamColor The team-color of the machine.
+ * @param[in] machine The machine name.
+ * @param[in] side The side of the machine.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateLocationExternal(const char *teamColor, const char *machine, const char *side)
+{
+	return Clingo::Function("m", {Clingo::String(teamColor), Clingo::String(machine), Clingo::String(side)});
+}
+
+/**
+ * @brief Generates the to-be-done external for any given task.
+ * @param[in] task The task.
+ * @return The external atom.
+ */
+static inline Clingo::Symbol
+toBeDoneExternal(const Clingo::Symbol& task)
+{
+	return Clingo::Function("toBeDone", {task, Clingo::Number(0)});
+}
+
+/**
+ * @brief Generates the external for the mount-ring task.
+ * @param[in] location The location of the task.
+ * @param[in] orderNumber The order number of the task.
+ * @param[in] qty The quantity number of the task.
+ * @param[in] ring The ring number of the task.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateMountRingExternal(const Clingo::Symbol& location, const int orderNumber, const int qty, const int ring)
+{
+	return toBeDoneExternal(Clingo::Function("mountRing",
+		{location, Clingo::Number(orderNumber), Clingo::Number(qty), Clingo::Number(ring)}));
+}
+
+/**
+ * @brief Generates the external for the mount-cap task.
+ * @param[in] location The location of the task.
+ * @param[in] orderNumber The order number of the task.
+ * @param[in] qty The quantity number of the task.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateMountCapExternal(const Clingo::Symbol& location, const int orderNumber, const int qty)
+{
+	return toBeDoneExternal(Clingo::Function("mountCap", {location, Clingo::Number(orderNumber), Clingo::Number(qty)}));
+}
+
+/**
+ * @brief Generates the external for the deliver task.
+ * @param[in] location The location of the task.
+ * @param[in] orderNumber The order number of the task.
+ * @param[in] qty The quantity number of the task.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateDeliverExternal(const Clingo::Symbol& location, const int orderNumber, const int qty)
+{
+	return toBeDoneExternal(Clingo::Function("deliver", {location, Clingo::Number(orderNumber), Clingo::Number(qty)}));
+}
+
+/**
+ * @brief Generates the external for the late-deliver task.
+ * @param[in] location The location of the task.
+ * @param[in] orderNumber The order number of the task.
+ * @param[in] qty The quantity number of the task.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateLateDeliverExternal(const Clingo::Symbol& location, const int orderNumber, const int qty)
+{
+	return toBeDoneExternal(Clingo::Function("lateDeliver",
+		{location, Clingo::Number(orderNumber), Clingo::Number(qty)}));
+}
+

@@ -83,6 +83,7 @@ class AspPlanerThread
 	std::unordered_map<std::string, MachineInformation> Machines;
 	std::vector<Product> Products;
 	std::vector<int> ZonesToExplore;
+	std::unordered_map<std::pair<int, int>, OrderTasks> OrderTaskMap;
 
 	static constexpr auto NodePropertyASP = "ASP-Location";
 	fawkes::Mutex NavgraphDistanceMutex;
@@ -92,17 +93,9 @@ class AspPlanerThread
 	bool UpdateNavgraphDistances;
 	std::vector<Clingo::Symbol> NavgraphDistances;
 
-	/*
-	fawkes::Mutex TaskLocationMutex;
 	Clingo::Symbol DeliveryLocation;
-	std::vector<Clingo::Symbol> RingLocations;
-	std::vector<Clingo::Symbol> CapLocations;
-	std::vector<Clingo::Symbol> BaseLocations;
-	std::vector<Clingo::Symbol> GetLocations;
-	std::vector<Clingo::Symbol> Tasks;
-	std::vector<Clingo::Symbol> RingTasks[3];
-	std::vector<Clingo::Symbol> CapTasks;
-	*/
+	Clingo::Symbol RingLocations[2];
+	Clingo::Symbol CapLocations[2];
 
 	/*
 	std::unordered_map<std::string, unsigned int> NextTick;

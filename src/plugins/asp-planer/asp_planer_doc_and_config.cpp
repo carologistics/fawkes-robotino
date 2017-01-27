@@ -167,6 +167,20 @@
  */
 
 /**
+ * @struct OrderTasks
+ * @brief Stores the task externals assoziated with an order.
+ *
+ * @property OrderTasks::RingTasks
+ * @brief The tasks for the rings.
+ *
+ * @property OrderTasks::CapTask
+ * @brief The task for the cap.
+ *
+ * @property OrderTasks::DeliverTasks
+ * @brief The task for the delivery, the first is the normal and the second is the late delivery.
+ */
+
+/**
  * @enum InterruptSolving
  * @brief States the current interrupt request.
  * @note Sort by priority. We use operator> when setting the value.
@@ -283,6 +297,9 @@
  *
  * @property AspPlanerThread::ZonesToExplore
  * @brief Which zones we have to explore.
+ *
+ * @property AspPlanerThread::OrderTaskMap
+ * @brief The mapping of (order #, quantitiy #) to the task external.
  */
 
 /**
@@ -303,6 +320,17 @@
  *
  * @property AspPlanerThread::NavgraphDistances.
  * @brief The externals with the distance, we export to ASP.
+ */
+
+/**
+ * @property AspPlanerThread::DeliveryLocation
+ * @brief The location where a delivery may take place.
+ *
+ * @property AspPlanerThread::CapLocations
+ * @brief The locations where a mount cap task may take place.
+ *
+ * @property AspPlanerThread::RingLocation
+ * @brief The locations where a mount ring task may take place.
  */
 
 /**
@@ -434,9 +462,9 @@ AspPlanerThread::loadConfig(void)
 	CapColors.reserve(2);
 	//We assume the distribution is the same, for CYAN and MAGENTA.
 	std::strcpy(suffix, "C-CS1");
-	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "C-CS1"});
+	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "CS1"});
 	std::strcpy(suffix, "C-CS2");
-	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "C-CS2"});
+	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "CS2"});
 
 	//The working-duration part.
 	suffix = buffer + prefixLen + infixWorkingDurationLen;
