@@ -661,7 +661,7 @@ AspPlanerThread::setTeam(void)
 	NodesToFind.reserve(6);
 	for ( const auto& machine : {"BS", "CS1", "CS2", "DS", "RS1", "RS2"} )
 	{
-		NodesToFind.insert(std::string(TeamColor) + machine + "I");
+		NodesToFind.insert(std::string(TeamColor) + "-" + machine + "-I");
 	} //for ( const auto& machine : {"BS", "CS1", "CS2", "DS", "RS1", "RS2"} )
 	graph_changed();
 	UpdateNavgraphDistances = true;
