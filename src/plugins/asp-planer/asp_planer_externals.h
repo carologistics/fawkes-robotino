@@ -50,4 +50,6 @@ Clingo::Symbol generateMachineWorkingExternal(const std::string& machineName, co
 	const ProductIdentifier& product);
 Clingo::Symbol generateMachineStoringExternal(const std::string& machineName, const ProductIdentifier& product);
 
+Clingo::Symbol generateLocationExternal(const char *teamColor, const char *machine, const char *side);
+
 #endif

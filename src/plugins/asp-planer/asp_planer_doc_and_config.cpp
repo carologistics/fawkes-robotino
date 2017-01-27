@@ -306,6 +306,17 @@
  */
 
 /**
+ * @property AspPlanerThread::DeliveryLocation
+ * @brief The location where a delivery may take place.
+ *
+ * @property AspPlanerThread::CapLocations
+ * @brief The locations where a mount cap task may take place.
+ *
+ * @property AspPlanerThread::RingLocation
+ * @brief The locations where a mount ring task may take place.
+ */
+
+/**
  * @typedef AspPlanerThread::GroundRequest
  * @brief Holds the information to build a Clingo::Part.
  *

@@ -192,3 +192,16 @@ generateMachineStoringExternal(const std::string& machineName, const ProductIden
 	return Clingo::Function("storing", {Clingo::String(machineName), productName(product), Clingo::Number(0)});
 }
 
+/**
+ * @brief Generates the location external for a machine side.
+ * @param[in] teamColor The team-color of the machine.
+ * @param[in] machine The machine name.
+ * @param[in] side The side of the machine.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateLocationExternal(const char *teamColor, const char *machine, const char *side)
+{
+	return Clingo::Function("m", {Clingo::String(teamColor), Clingo::String(machine), Clingo::String(side)});
+}
+
