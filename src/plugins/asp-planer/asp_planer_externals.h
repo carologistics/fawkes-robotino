@@ -52,4 +52,10 @@ Clingo::Symbol generateMachineStoringExternal(const std::string& machineName, co
 
 Clingo::Symbol generateLocationExternal(const char *teamColor, const char *machine, const char *side);
 
+Clingo::Symbol generateMountRingExternal(const Clingo::Symbol& location, const int orderNumber, const int qty,
+	const int ring);
+Clingo::Symbol generateMountCapExternal(const Clingo::Symbol& location, const int orderNumber, const int qty);
+Clingo::Symbol generateDeliverExternal(const Clingo::Symbol& location, const int orderNumber, const int qty);
+Clingo::Symbol generateLateDeliverExternal(const Clingo::Symbol& location, const int orderNumber, const int qty);
+
 #endif
