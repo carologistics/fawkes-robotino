@@ -663,6 +663,11 @@ AspPlanerThread::setTeam(void)
 	{
 		NodesToFind.insert(std::string(TeamColor) + "-" + machine + "-I");
 	} //for ( const auto& machine : {"BS", "CS1", "CS2", "DS", "RS1", "RS2"} )
+	DeliveryLocation = generateLocationExternal(TeamColor, "DS", "I");
+	CapLocations[0]  = generateLocationExternal(TeamColor, "CS1", "I");
+	CapLocations[1]  = generateLocationExternal(TeamColor, "CS2", "I");
+	RingLocations[0] = generateLocationExternal(TeamColor, "RS1", "I");
+	RingLocations[1] = generateLocationExternal(TeamColor, "RS2", "I");
 	graph_changed();
 	UpdateNavgraphDistances = true;
 	return;
