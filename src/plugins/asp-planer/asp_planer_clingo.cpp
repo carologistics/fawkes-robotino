@@ -145,7 +145,9 @@ AspPlanerThread::loopClingo(void)
 				releaseZone(zone, false);
 			} //for ( const auto& zone : ZonesToExplore )
 			ZonesToExplore.clear();
+			navgraphLocker.unlock();
 			fillNavgraphNodesForASP(false);
+			navgraphLocker.relock();
 		} //if ( lastUpdate )
 
 		for ( const auto& external : NavgraphDistances )
@@ -158,6 +160,7 @@ AspPlanerThread::loopClingo(void)
 		if ( lastUpdate )
 		{
 			logger->log_info(LoggingComponent, "All machines found, fix distances and release externals.");
+			reqLocker.unlock();
 			for ( const auto& external : NavgraphDistances )
 			{
 				queueGround({"setDriveDuration", {external.arguments()}});
@@ -169,6 +172,8 @@ AspPlanerThread::loopClingo(void)
 					queueRelease(Clingo::Function(external.name(), {args, 3}));
 				} //for ( auto d = 0; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
 			} //for ( const auto& external : NavgraphDistances )
+			//This has to be done, because the behavior of double unlocking is undefined.
+			reqLocker.relock();
 		} //if ( lastUpdate )
 		else
 		{
