@@ -7,49 +7,67 @@
 ;---------------------------------------------------------------------------
 (
 
-	(defop ppgoto
-	  :invocation (! (ppgoto $place))
-	  :call (ppgoto $place)
-	  :action (skill-call "ppgoto" "place" $place)
-	  :documentation "go to a place"
-	)
+	; (defop ppgoto
+	;   :invocation (! (ppgoto $place))
+	;   :call (ppgoto $place)
+	;   :action (skill-call "ppgoto" "place" $place)
+	;   :documentation "go to a place"
+	; )
 
-	(defop drive-to
-	  :invocation (! (drive-to $place))
-	  :call (drive-to $place)
-	  :action (skill-call "drive_to" "place" $place)
-	  :documentation "Drive to a place"
-	)
+	; (defop drive-to
+	;   :invocation (! (drive-to $place))
+	;   :call (drive-to $place)
+	;   :action (skill-call "drive_to" "place" $place)
+	;   :documentation "Drive to a place"
+	; )
 
-	(defop get-product-from-side
-	  :invocation (! (get-product-from place $place side $side))
-	  :call (get-product-from place $place side $side)
-	  :action (skill-call "get_product_from" "place" $place "side" $side)
-	  :documentation "get product from a station"
-	) 
+	; (defop get-product-from-side
+	;   :invocation (! (get-product-from place $place side $side))
+	;   :call (get-product-from place $place side $side)
+	;   :action (skill-call "get_product_from" "place" $place "side" $side)
+	;   :documentation "get product from a station"
+	; ) 
 
-	(defop get-product-from-shelf
-	  :invocation (! (get-product-from place $place shelf $slot))
-	  :call (get-product-from place $place shelf $slot)
-	  :action (skill-call "get_product_from" "place" $place "shelf" $slot)
-	  :documentation "get product from a cap station"
-	) 
+	; (defop get-product-from-shelf
+	;   :invocation (! (get-product-from place $place shelf $slot))
+	;   :call (get-product-from place $place shelf $slot)
+	;   :action (skill-call "get_product_from" "place" $place "shelf" $slot)
+	;   :documentation "get product from a cap station"
+	; ) 
 
-	(defop bring-product-to
-	  :invocation (! (bring-product-to place $place))
-	  :call (bring-product-to place $place)
-	  :action (skill-call "bring_product_to" "place" $place)
-	  :documentation "bring the product to a station's slot"
-	) 
+	; (defop bring-product-to
+	;   :invocation (! (bring-product-to place $place))
+	;   :call (bring-product-to place $place)
+	;   :action (skill-call "bring_product_to" "place" $place)
+	;   :documentation "bring the product to a station's slot"
+	; ) 
 	
-	(defop bring-product-to-atmps
-	  :invocation (! (bring-product-to place $place atmps $slot))
-	  :call (bring-product-to place $place atmps $slot)
-	  :action (skill-call "bring_product_to" "place" $place "atmps" $slot)
-	  :documentation "bring the product to a station's slot"
-	) 
+	; (defop bring-product-to-atmps
+	;   :invocation (! (bring-product-to place $place atmps $slot))
+	;   :call (bring-product-to place $place atmps $slot)
+	;   :action (skill-call "bring_product_to" "place" $place "atmps" $slot)
+	;   :documentation "bring the product to a station's slot"
+	; ) 
 
+	(defop execute-skill-args_1
+	  :invocation (!(execute_h (skill $skill-name $arg_1-name $arg_1)))
+	  :call 		(execute_h (skill $skill-name $arg_1-name $arg_1))
+	  :action 			(skill-call $skill-name $arg_1-name $arg_1)
+	  :documentation "Execute Skill With One Argument"
+	  ) 
 
+	(defop execute-skill-args_2
+	  :invocation (!(execute_h (skill $skill-name $arg_1-name $arg_1 $arg_2-name $arg_2)))
+	  :call 		(execute_h (skill $skill-name $arg_1-name $arg_1 $arg_2-name $arg_2))
+	  :action 			(skill-call $skill-name $arg_1-name $arg_1 $arg_2-name $arg_2 )
+	  :documentation "Execute Skill With Two Arguments"
+	  ) 
 
+	(defop execute-skill-args_3
+	  :invocation (!(execute_h (skill $skill-name $arg_1-name $arg_1 $arg_2-name $arg_2 $arg_3-name $arg_3)))
+	  :call 		(execute_h (skill $skill-name $arg_1-name $arg_1 $arg_2-name $arg_2 $arg_3-name $arg_3))
+	  :action 			(skill-call $skill-name $arg_1-name $arg_1 $arg_2-name $arg_2 $arg_3-name $arg_3)
+	  :documentation "Execute Skill With Three Arguments"
+	  ) 
 
-	)
+)
