@@ -11,14 +11,12 @@
 declare op_predicate  say
 declare op_predicate  ppgoto
 declare op_predicate  conf-load-rcll2017
-declare op_predicate  bring-product-to
-declare op_predicate  get-product-from
+
 declare op_predicate  instruct-mps
 declare op_predicate  send-instruction
-
 declare be  instruction-sent-ack
 
-declare cwp           peer-id
+declare cwp         peer-id
 
 declare ff   		team-color 0
 declare ff 	 		game-time 0
@@ -56,6 +54,8 @@ declare symbol SILVER
 
 add (game-state null)
 add (game-phase null)
+
+include "skills.inc"
 
 load opf "rcll2017_config.opf"
 load db  "llsf2014.db"

@@ -1,5 +1,5 @@
 ;---------------------------------------------------------------------------
-;  skills.opf - OpenPRS OP file for RCll2017 openprs-agent
+;  skills.opf - OpenPRS OP file for rcll2016 openprs-agent
 ;
 ;  Created: Fri Jan 27 15:00:00 2017
 ;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
@@ -49,6 +49,26 @@
 	;   :documentation "bring the product to a station's slot"
 	; ) 
 
+	(defop skill-common-call
+		:invocation( !(execute $skill) )
+		:context( ~ (agent-state SKILL-EXECUTION) ) ;Will prevent 2 skills to be called at the same time. But u wont know why the other failed
+		:body (			
+			(? (agent-state $old-state))
+			(=> (agent-state SKILL-EXECUTION))
+			
+			(if (! (execute_h $skill)) 
+				(=> (agent-state SKILL-SUCESS))
+				(! (print " SKILL-SUCESSEDED"))
+				(=> (agent-state $old-state))
+				else
+				(=> (agent-state SKILL-FAILED))
+				(! (print "SKILL-FAILED"))
+				(=> (agent-state $old-state))
+				(fail)
+				)
+			)
+		)
+	
 	(defop execute-skill-args_1
 	  :invocation (!(execute_h (skill $skill-name $arg_1-name $arg_1)))
 	  :call 		(execute_h (skill $skill-name $arg_1-name $arg_1))
@@ -70,4 +90,4 @@
 	  :documentation "Execute Skill With Three Arguments"
 	  ) 
 
-)
+)-
