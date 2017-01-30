@@ -28,5 +28,36 @@
 			)
 		)
 
+	(defop step-fetch-base-from-bs
+		:invocation(! (step fetch-base-from-bs machine $mps-name side $side))
+		:context ( 	(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
+				 	(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ) ; meaning: The mps has to had been instructed or down
+		:body(
+			(! (printf (Format "STEP: Fetch-From-Base .. machine %s is %s \n" $mps-name  $m-s)))
+			;This could be replace by a unified checking mechanism 
+			(if (? (= $m-state "DOWN") )
+				;wait for it to be up or WATCHDOG
+				(=> (agent-state STEP-PENDING))
+				(^ (& (machine $mps-name "BS" @new-state @m-prepared @m-zone @m-pose @m-loaded-with)
+					  (MEMQ (val @new-state) (. "PROCESSING" "READY-AT-OUTPUT" .)))))
+
+			(=> (agent-state STEP-RUNNING))
+			(if (! (execute (skill "get_product_from" "place" $mps-name "side" $side)) ) 
+				(=> (agent-state STEP-FINISHD))
+				else
+				(=> (agent-state STEP-FAILD)))
+			)
+		;questions: is it better if i just passed the active side..
+		;Why is it not both active at the same time...is that like a rule or something
+		;am a little worried that i can lose the choice to 
+		;optimize this side choice thing and leave it up to the robots somehow to go to whatever side
+
+		;I can have a check for preconditions of each step and decide what to 
+		;do from a separate op where steps are maped to thier Precon.  
+		;Or just react to it from here
+		:documentation " Fetch the base from the base station. Here the robot assumed to be already at the BS and already 
+						instructed it. If Machine is DOWN or BROKEN when the goal is posted. this will fails
+						 TODO: handle what happens when BROKEN or DOWN"
+		)
 
 	)
