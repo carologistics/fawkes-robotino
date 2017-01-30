@@ -56,6 +56,7 @@
  		(defop mps-instruction-common-send-instruction
  			:invocation( !( send-instruction $mps-name $mps-inst) )
  			:context( 	(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+ 						;s(MEMQ $mps-state (. "PREPARED" "PROCESSING" "READY-AT-OUTPUT" "BROKEN" .))
 				  	 	(team-color $team-color)
 				  		(peer-id private $peer-id)
 				)
@@ -76,7 +77,7 @@
 				(if (? (= $mps-type "CS"))
 					(! (pb-set-field @instruction "instruction_cs" $mps-inst )))
 				
-				;todo:raplce by a neater way 
+				;Todo: raplce by a neater way 
 				(while (?	(& (machine $mps-name $mps-type @new-state @prepared @zone @pose @loaded-with)
 							 	(~ (= (val @new-state) "PREPARED"))
 								(~ (= (val @new-state) "PROCESSING"))
@@ -85,16 +86,21 @@
 					(! (pb-broadcast $peer-id @instruction))
 					(! (print "Broadcasting..."))
 					)
+				;This to make sure the unification is done correctly. If the while condition is not enough to bind the $new-state. The neater way should resolve that
+				(? (machine $mps-name $mps-type @new-state @prepared @zone @pose @loaded-with))
 
-				(if (? (= (val @new-state) "BROKEN"))
+				(if (? (= "BROKEN" @new-state))
 					(! (printf (FORMAT "Instruction failed..machine %s is %s \n" $mps-name @new-state) ))
+					;(fail) For now let it send the ack till I make the sending neater
 					else 
 					(! (printf (FORMAT "The instruction sent successfully..machine %s is %s \n" $mps-name @new-state) ))
 					)
  				
+ 				(=> (instruction-sent-ack $mps-name))
+ 				
  				)
 
-			:effects  (=> (instruction-sent-ack $mps-name))
+			:effects  ()
  			:documentation "Embed the PrepareInstructionXS msg for an mps in a PrepareMachine msg and Broadcast it"
  			)
 
