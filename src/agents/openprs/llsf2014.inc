@@ -7,7 +7,7 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-; declare and load agent-specific elements
+;Declare and load agent-specific elements
 declare op_predicate  say
 declare op_predicate  ppgoto
 declare op_predicate  conf-load-rcll2017
@@ -38,6 +38,12 @@ declare symbol MAGENTA
 declare symbol IDLE
 declare symbol WORKING
 declare symbol SKILL-EXECUTION
+declare symbol SKILL-FINISHED
+declare symbol SKILL-FAILED
+declare symbol STEP-RUNNING
+declare symbol STEP-PENDING
+declare symbol STEP-FINISHED
+declare symbol STEP-FAILED
 
 ;Colors for the caps
 declare symbol BLACK
@@ -49,7 +55,9 @@ declare symbol YELLOW
 declare symbol RED
 declare symbol SILVER
 
-
+;Cap Station
+declare symbol CAP_LOADED
+declare symbol CAP_NOT_LOADED
 
 
 add (game-state null)
