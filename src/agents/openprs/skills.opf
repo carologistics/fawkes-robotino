@@ -53,17 +53,12 @@
 		:invocation( !(execute $skill) )
 		:context( ~ (agent-state SKILL-EXECUTION) ) ;Will prevent 2 skills to be called at the same time. But u wont know why the other failed
 		:body (			
-			(? (agent-state $old-state))
 			(=> (agent-state SKILL-EXECUTION))
 			
 			(if (! (execute_h $skill)) 
-				(=> (agent-state SKILL-SUCESS))
-				(! (print " SKILL-SUCESSEDED"))
-				(=> (agent-state $old-state))
+				(=> (agent-state SKILL-FINISHED))
 				else
 				(=> (agent-state SKILL-FAILED))
-				(! (print "SKILL-FAILED"))
-				(=> (agent-state $old-state))
 				(fail)
 				)
 			)

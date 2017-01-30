@@ -6,6 +6,13 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+;Once a Step-Something Op is invoked, The Step Goal (! (step ..)) that caused it to fire is always
+;satisfied no matter if the step itself finished. To know if it succeeded you need to check the agent-state
+;Or device a way to make sure to react on the step-failure. { like the OPRS's Active/Passive preserve
+; (& (! (step do-something ..)) (% (predicate-to-preserve .. )) }
+;If Step Goal fails it means there is no Ops with a :context that matches the WM it was 
+;expected to be called in. And that you did something wrong assuming that :context.
+
 (
 	(defop step-drive-to
 		:invocation( ! (step drive-to machine $mps-name side $side) )
@@ -13,13 +20,13 @@
 		:body(
 			(! (printf (Format "STEP: Drive-To .. machine %s is %s \n" $mps-name  $m-s)))
 			(=> (agent-state STEP-RUNNING))
+
 			;Sides allowed
 			(? (MEMQ $side (. "input" "output" .)))
 			(if (? (= $side "input" ))
 				(! (= $place (string-cat $mps-name "-I")))
 				else 
-				(! (= $place (string-cat $mps-name "-O")))
-				)
+				(! (= $place (string-cat $mps-name "-O"))))
 
 			(if (! (execute (skill "drive_to" "place" $place) )) 
 				(=> (agent-state STEP-FINISHD))
@@ -31,15 +38,15 @@
 	(defop step-fetch-base-from-bs
 		:invocation(! (step fetch-base-from-bs machine $mps-name side $side))
 		:context ( 	(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
-				 	(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ) ; meaning: The mps has to had been instructed or down
+				 	(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ) ;The Mps Has to had been instructed or down
 		:body(
 			(! (printf (Format "STEP: Fetch-From-Base .. machine %s is %s \n" $mps-name  $m-s)))
-			;This could be replace by a unified checking mechanism 
+			;Todo: This could be replace by a unified checking mechanism 
 			(if (? (= $m-state "DOWN") )
-				;wait for it to be up or WATCHDOG
 				(=> (agent-state STEP-PENDING))
 				(^ (& (machine $mps-name "BS" @new-state @m-prepared @m-zone @m-pose @m-loaded-with)
-					  (MEMQ (val @new-state) (. "PROCESSING" "READY-AT-OUTPUT" .)))))
+					  (MEMQ (val @new-state) (. "PROCESSING" "READY-AT-OUTPUT" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
+				
 
 			(=> (agent-state STEP-RUNNING))
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" $side)) ) 
@@ -47,17 +54,39 @@
 				else
 				(=> (agent-state STEP-FAILD)))
 			)
+		:documentation " Fetch the base from the base station. Here the robot assumed to be already at the BS and already 
+						instructed it. If Machine is BROKEN when the step goal is posted. this will fails
+						 TODO: handle what happens when BROKEN"
+
 		;questions: is it better if i just passed the active side..
 		;Why is it not both active at the same time...is that like a rule or something
 		;am a little worried that i can lose the choice to 
 		;optimize this side choice thing and leave it up to the robots somehow to go to whatever side
 
 		;I can have a check for preconditions of each step and decide what to 
-		;do from a separate op where steps are maped to thier Precon.  
+		;do from a separate op where steps are mapped to their Pre-conditions.  
 		;Or just react to it from here
-		:documentation " Fetch the base from the base station. Here the robot assumed to be already at the BS and already 
-						instructed it. If Machine is DOWN or BROKEN when the goal is posted. this will fails
-						 TODO: handle what happens when BROKEN or DOWN"
 		)
 
+		(defop step-get-from-shelf
+			:invocation( ! (step get-from-shelf machine $mps-name))
+			:context ( cap-station $mps $assigned-cap-color $cap-loaded-status $caps-on-shelf )
+			:body(
+				(! (printf (Format "STEP: Get-From-Shelf \n")))
+				(=> (agent-state STEP-RUNNING))
+	
+				;TODO: dynamically determine which position. 
+			 	;Change the # on shelf even if the skill fails 
+				(if (? (= 3 $caps-on-shelf))  				(! (= $slot "LEFT")) 	(! (= $new-caps-on-shelf  2ll))
+				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "MIDDLE")) 	(! (= $new-caps-on-shelf  1ll))
+						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "RIGHT")) 	(! (= $new-caps-on-shelf  3ll)) ))) 
+			
+				(if (! (execute (skill "get_product_from" "place" $mps-name "shelf" $slot)))
+					(=> (agent-state STEP-FINISHD))
+				else
+					(=> (agent-state STEP-FAILD)))
+			
+			)
+		:effects ( (=> (cap-station $mps $assigned-cap-color $cap-loaded-status $new-caps-on-shelf)) )
+		)
 	)
