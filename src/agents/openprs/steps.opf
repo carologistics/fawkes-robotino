@@ -11,15 +11,22 @@
 		:invocation( ! (step drive-to machine $mps-name side $side) )
 		:context()  
 		:body(
+			(! (printf (Format "STEP: Drive-To .. machine %s is %s \n" $mps-name  $m-s)))
+			(=> (agent-state STEP-RUNNING))
 			;Sides allowed
-			(? (MEMQ $side (. INPUT OUTPUT .)))
-			(if (? (= $side INPUT) )
+			(? (MEMQ $side (. "input" "output" .)))
+			(if (? (= $side "input" ))
 				(! (= $place (string-cat $mps-name "-I")))
 				else 
 				(! (= $place (string-cat $mps-name "-O")))
 				)
 
-			(! (execute (skill "drive_to" "place" $place) ))  
+			(if (! (execute (skill "drive_to" "place" $place) )) 
+				(=> (agent-state STEP-FINISHD))
+				else
+				(=> (agent-state STEP-FAILD)) )
 			)
 		)
+
+
 	)
