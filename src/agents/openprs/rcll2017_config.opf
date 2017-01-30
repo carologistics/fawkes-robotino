@@ -30,11 +30,11 @@
        	(~> (val $mcs1) )
        	(~> (val $mcs2) )
 
-  		(=> (cap-station "C-CS1" (make-atom (string-cat "cap_" $cap-color-ccs1))))
-  		(=> (cap-station "C-CS2" (make-atom (string-cat "cap_" $cap-color-ccs2))))
-		  (=> (cap-station "M-CS1" (make-atom (string-cat "cap_" $cap-color-mcs1))))
-      (=> (cap-station "M-CS2" (make-atom (string-cat "cap_" $cap-color-mcs2))))
-
+  		(=> (cap-station "C-CS1" (make-atom (string-cat "cap_" $cap-color-ccs1)) CAP_NOT_LOADED 3))
+  		(=> (cap-station "C-CS2" (make-atom (string-cat "cap_" $cap-color-ccs2)) CAP_NOT_LOADED 3))
+		  (=> (cap-station "M-CS1" (make-atom (string-cat "cap_" $cap-color-mcs1)) CAP_NOT_LOADED 3))
+      (=> (cap-station "M-CS2" (make-atom (string-cat "cap_" $cap-color-mcs2)) CAP_NOT_LOADED 3))
+      
      )
      :documentation "Load setting for agent."
     )
