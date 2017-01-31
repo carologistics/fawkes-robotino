@@ -18,7 +18,7 @@
 		:invocation( ! (step drive-to machine $mps-name side $side) )
 		:context()  
 		:body(
-			(! (printf (Format "STEP: Drive-To .. machine %s is %s \n" $mps-name  $m-s)))
+			(! (printf (Format "STEP: Drive-To .. machine %s is %s \n" $mps-name)))
 			(=> (agent-state STEP-RUNNING))
 
 			;Sides allowed
@@ -38,7 +38,8 @@
 	(defop step-fetch-base-from-bs
 		:invocation(! (step fetch-base-from-bs machine $mps-name side $side))
 		:context ( 	(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
-				 	(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ) ;The Mps Has to had been instructed or down
+				 	(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ;The Mps Has to had been instructed or down
+				 	(holding NONE))
 		:body(
 			(! (printf (Format "STEP: Fetch-From-Base .. machine %s is %s \n" $mps-name  $m-s)))
 			;Todo: This could be replace by a unified checking mechanism 
@@ -51,6 +52,7 @@
 			(=> (agent-state STEP-RUNNING))
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" $side)) ) 
 				(=> (agent-state STEP-FINISHD))
+				(=> (holding BASE))
 				else
 				(=> (agent-state STEP-FAILD)))
 			)
@@ -68,9 +70,10 @@
 		;Or just react to it from here
 		)
 
-		(defop step-get-from-shelf
-			:invocation( ! (step get-from-shelf machine $mps-name))
-			:context ( cap-station $mps $assigned-cap-color $cap-loaded-status $caps-on-shelf )
+		(defop step-get-cap-from-shelf
+			:invocation( ! 	(step get-from-shelf machine $mps-name))
+			:context ( 		(cap-station $mps $assigned-cap-color $cap-loaded-status $caps-on-shelf )
+							(holding NONE))
 			:body(
 				(! (printf (Format "STEP: Get-From-Shelf \n")))
 				(=> (agent-state STEP-RUNNING))
@@ -83,10 +86,14 @@
 			
 				(if (! (execute (skill "get_product_from" "place" $mps-name "shelf" $slot)))
 					(=> (agent-state STEP-FINISHD))
+					(=> (holding CAP))
 				else
 					(=> (agent-state STEP-FAILD)))
 			
 			)
 		:effects ( (=> (cap-station $mps $assigned-cap-color $cap-loaded-status $new-caps-on-shelf)) )
 		)
+	
 	)
+
+

@@ -44,6 +44,13 @@ declare symbol STEP-RUNNING
 declare symbol STEP-PENDING
 declare symbol STEP-FINISHED
 declare symbol STEP-FAILED
+declare ff holding 0
+
+;Material Types
+declare symbol CAP
+declare symbol BASE
+declare symbol RING
+declare symbol NONE
 
 ;Colors for the caps
 declare symbol BLACK
@@ -62,6 +69,7 @@ declare symbol CAP_NOT_LOADED
 
 add (game-state null)
 add (game-phase null)
+add (holding NONE)
 
 include "skills.inc"
 
