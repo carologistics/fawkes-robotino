@@ -93,7 +93,35 @@
 			)
 		:effects ( (=> (cap-station $mps $assigned-cap-color $cap-loaded-status $new-caps-on-shelf)) )
 		)
-	
+
+		(defop step-insert-product-into-mps
+			:invocation ( ! (step insert machine $mps))
+			:context 	(  	(~ (holding NONE)) ;that should be a work-peace
+							(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
+						 	(MEMQ $mps-state (. "PREPARED" .)))
+							;Maybe check if side is empty OR handle it if not
+							;Maybe check if the holding peace is a base or product work-peace
+							;Mps has to be instructed already before u do that. 
+			:body(
+				(! (printf (FORMAT "STEP: Insert Product into %s \n" $mps)))
+				(=> (agent-state STEP-RUNNING))
+
+				(if (! (execute (skill "bring_product_to" "place" $mps)))
+					;UPDATE WORLD MODEL
+					(if (?  (cap-station $mps $cap-color $loaded-status $caps-on-shelf )) 
+						(=> (cap-station $mps $cap-color CAP_NOT_LOADED $caps-on-shelf))) 
+					(=> (agent-state STEP-FINISHD))
+					else
+					(=> (agent-state STEP-FAILD)))
+				)
+			:effects ( (=> (holding NONE)) )
+			:documentation "Insert a product work-peace in a machine's Input for processing of a production step (RS , DS , CS). 
+							Should only be called after correctly instructing the machine.
+							On succeeding, What ever processing step is assumed to be complete and the world model is updated.
+							After the call the Agent is assumed to not hold anything (even if skill failed) TODO:check if holding"
+			
+			)
+
 	)
 
 
