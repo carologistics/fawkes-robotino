@@ -26,16 +26,23 @@
 
 #include <clingo.hh>
 
+#include <chrono>
 #include <unordered_map>
+#include <type_traits>
 #include <vector>
 
-#include <libs/utils/time/time.h>
+//! @todo Replace include and using, once C++17 is implemented properly.
+#include <experimental/string_view>
+using std::experimental::string_view;
 
 class EventTrigger;
 
 namespace fawkes {
 	class MutexLocker;
 }
+
+using Clock = std::chrono::high_resolution_clock;
+using TimePoint = Clock::time_point;
 
 enum class InterruptSolving : short
 {
@@ -153,7 +160,7 @@ struct TaskDescription
 
 struct RobotInformation
 {
-	fawkes::Time LastSeen;
+	TimePoint LastSeen;
 	bool Alive;
 	Clingo::Symbol AliveExternal;
 	float X;

@@ -27,6 +27,14 @@
 #include <cstring>
 
 /**
+ * @typedef Clock
+ * @brief The used clock for real time measurment. In contrast to simulated time.
+ *
+ * @typedef TimePoint
+ * @brief The with the clock assoziated type to identify time points.
+ */
+
+/**
  * @struct TaskDescription
  * @brief The description of a task, a robot is executing.
  *

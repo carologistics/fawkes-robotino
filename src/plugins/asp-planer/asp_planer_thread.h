@@ -23,7 +23,6 @@
 #ifndef __PLUGINS_ASP_AGENT_THREAD_H_
 #define __PLUGINS_ASP_AGENT_THREAD_H_
 
-#include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <core/threading/mutex.h>
@@ -40,7 +39,6 @@
 class AspPlanerThread
 : public fawkes::Thread,
   public fawkes::ConfigurableAspect,
-  public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
   public fawkes::ASPAspect,
   public fawkes::RobotMemoryAspect,
@@ -136,14 +134,16 @@ class AspPlanerThread
 	bool ProductionStarted;
 
 	mutable fawkes::Mutex SolvingMutex;
-	fawkes::Time LastModel;
-	fawkes::Time SolvingStarted;
+	TimePoint LastModel;
+	TimePoint SolvingStarted;
 	bool NewSymbols;
 	Clingo::SymbolVector Symbols;
 
 	mutable fawkes::Mutex PlanMutex;
-	fawkes::Time LastPlan;
-	int StartSolvingGameTime;
+	TimePoint LastPlan;
+	int PlanGameTime;
+	std::size_t LookAhaedPlanSize;
+	std::unordered_map<std::string, RobotPlan> Plan;
 
 	void loadConfig(void);
 

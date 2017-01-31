@@ -28,7 +28,7 @@
 #include <cstdlib>
 #include <string>
 
-using namespace fawkes;
+using fawkes::MutexLocker;
 
 /**
  * @brief Transforms the real time to ASP time steps.
@@ -73,7 +73,6 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 		{
 			newRobot = true;
 		} //if ( !Robots.count(name) )
-		const auto& time(object["last-seen"].Array());
 		auto& info = Robots[name];
 
 		if ( newRobot )
@@ -82,7 +81,7 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 			setInterrupt(InterruptSolving::Critical);
 			info.AliveExternal = generateAliveExternal(name);
 		} //if ( newRobot )
-		info.LastSeen = Time(time.at(0).Long(), time.at(1).Long());
+		info.LastSeen = Clock::now();
 		info.Alive = true;
 		info.X = static_cast<float>(object["x"].Double());
 		info.Y = static_cast<float>(object["y"].Double());
@@ -426,8 +425,8 @@ AspPlanerThread::loop(void)
 
 	{
 		MutexLocker locker(&WorldMutex);
-		const auto now(clock->now());
-		static const Time timeOut(config->get_int(ConfigPrefix + std::string("planer/robot-timeout")), 0);
+		const auto now(Clock::now());
+		static const std::chrono::seconds timeOut(config->get_int(ConfigPrefix + std::string("planer/robot-timeout")));
 		for ( auto& pair : Robots )
 		{
 			auto& info(pair.second);
