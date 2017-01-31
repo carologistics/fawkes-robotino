@@ -122,6 +122,33 @@
 			
 			)
 
+		(defop step-insert-cap-from-shelf
+			:invocation	( !	(step insert already-at-mps machine $mps ))
+			:context 	( 	(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+							(cap-station $mps $cap-color CAP_NOT_LOADED $caps-on-shelf)
+							(MEMQ $mps-state (. "PREPARED" .))
+							(~ (holding NONE))) ;same comments from insert-product
+			:body(
+				(! (printf (FORMAT "STEP:  Insert Cap from %s  shelf \n" $mps )))
+
+				(if (? (= 3 $caps-on-shelf))  				(! (= $slot "LEFT")) 	
+				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "RIGHT")) 	
+						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "MIDDLE")) ))) 
+			
+				(if (! (execute (skill "bring_product_to" "place" $mps "atmps" $slot)))
+					(=> (cap-station $mps $cap-color CAP_LOADED $caps-on-shelf)) 
+					(=> (agent-state STEP-FINISHD))
+					else
+					(=> (agent-state STEP-FAILD))
+					)
+				)
+			:effects ((=> (holding NONE)))
+			:documentation "Insert a Caped-Base, that just been picked up from the CS shelf, into the CS to load it with that Cap
+							Should only be called after the CS has been instructed to RETRIEVE_CAP.
+							On succeeding, the cap station is assumed to be loaded with a cap
+							After the call, the agent hold nothing (even if skill failed) TODO:check if holding"
+			)
+	
 	)
 
 
