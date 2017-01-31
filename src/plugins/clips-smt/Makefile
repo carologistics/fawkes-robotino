@@ -17,11 +17,8 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/clips.mk
 include $(BUILDCONFDIR)/navgraph/navgraph.mk
 
-CFLAGS_LIBZ3  += -I/usr/local/include
-LDFLAGS_LIBZ3 += -Wl,-rpath,/usr/local/lib64
-
-CFLAGS += $(CFLAGS_LIBZ3)
-LDFLAGS += $(LDFLAGS_LIBZ3)
+CFLAGS += $(CFLAGS_LIBZ3) $(CFLAGS_LIBCARL)
+LDFLAGS += $(LDFLAGS_LIBZ3) $(LDFLAGS_LIBCARL)
 
 LIBS_clips_smt = fawkescore fawkesutils fawkesaspects \
 		      fawkesclipsaspect fawkesnavgraphaspect \
