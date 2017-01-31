@@ -22,6 +22,10 @@
 #ifndef __PLUGINS_CLIPS_SMT_CLIPS_SMT_THREAD_H_
 #define __PLUGINS_CLIPS_SMT_CLIPS_SMT_THREAD_H_
 
+//#ifndef HAVE_LIBZ3
+//#  error Cannot use create and solve formula without z3
+//#endif
+
 #include <core/threading/thread.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
@@ -36,6 +40,7 @@
 #include <iostream>
 
 #include <z3++.h>
+#include <carl/numbers/numbers.h>
 
 #include "clips_smt_data.h"
 
