@@ -105,20 +105,11 @@ class AspPlanerThread
 	bool StillNeedExploring;
 	bool CompleteRestart;
 
-	fawkes::Mutex PlanMutex;
-	fawkes::Time LastPlan;
-	std::unordered_map<std::string, RobotPlan> Plan;
-	std::size_t PlanElements;
-
 	fawkes::Mutex RobotsMutex;
 	std::unordered_map<std::string, RobotInformation> RobotInformations;
 	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskBegin;
 	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskUpdate;
 	std::unordered_multimap<unsigned int, GroundRequest> TaskSuccess;
-
-	fawkes::Mutex SymbolMutex;
-	Clingo::SymbolVector Symbols;
-	bool NewSymbols;
 	*/
 
 	using GroundRequest = std::pair<const char*, Clingo::SymbolVector>;
@@ -138,6 +129,7 @@ class AspPlanerThread
 	TimePoint SolvingStarted;
 	bool NewSymbols;
 	Clingo::SymbolVector Symbols;
+	int StartSolvingGameTime;
 
 	mutable fawkes::Mutex PlanMutex;
 	TimePoint LastPlan;
@@ -178,8 +170,10 @@ class AspPlanerThread
 
 	void initPlan(void);
 	void loopPlan(void);
-	void updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element);
-	void removeFromPlanDB(const std::string& robot, const PlanElement& element);
+	void insertPlanElement(const std::string& robot, const int elementIndex, const PlanElement& element);
+	void updatePlan(const std::string& robot, const int elementIndex, const PlanElement& element);
+	void updatePlanTiming(const std::string& robot, const int elementIndex, const PlanElement& element);
+	void removeFromPlanDB(const std::string& robot, const int elementIndex);
 
 	void planFeedbackCallback(const mongo::BSONObj document);
 	/*

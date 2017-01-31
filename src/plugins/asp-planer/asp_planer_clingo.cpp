@@ -27,11 +27,7 @@
 #include <chrono>
 #include <cstring>
 #include <sstream>
-#include <experimental/string_view>
 #include <thread>
-
-//! @todo Replace include and using, once C++17 is implemented properly.
-using std::experimental::string_view;
 
 #include <core/exception.h>
 #include <core/threading/mutex_locker.h>
@@ -317,7 +313,6 @@ AspPlanerThread::loopClingo(void)
 		ClingoAcc->assign_external(atom, true);
 	} //for ( const auto& atom : assignRequests )
 
-	MutexLocker planLocker(&PlanMutex);
 	MutexLocker solvingLokcer(&SolvingMutex);
 	worldLocker.relock();
 
