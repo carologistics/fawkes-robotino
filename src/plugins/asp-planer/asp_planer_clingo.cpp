@@ -290,30 +290,32 @@ AspPlanerThread::loopClingo(void)
 	worldLocker.unlock();
 
 	reqLocker.relock();
-	if ( !GroundRequests.empty() )
+	//Copy the requests to release the lock especially before grounding!
+	auto groundRequests(std::move(GroundRequests));
+	auto releaseRequests(std::move(ReleaseRequests));
+	auto assignRequests(std::move(AssignRequests));
+	reqLocker.unlock();
+
+	if ( !groundRequests.empty() )
 	{
 		std::vector<Clingo::Part> parts;
-		parts.reserve(GroundRequests.size());
-		for ( const auto& request : GroundRequests )
+		parts.reserve(groundRequests.size());
+		for ( const auto& request : groundRequests )
 		{
 			parts.emplace_back(request.first, request.second);
-		} //for ( const auto& request : GroundRequests )
+		} //for ( const auto& request : groundRequests )
 		ClingoAcc->ground(parts);
-		GroundRequests.clear();
-	} //if ( !GroundRequests.empty() )
+	} //if ( !groundRequests.empty() )
 
-	for ( const auto& atom : ReleaseRequests )
+	for ( const auto& atom : releaseRequests )
 	{
 		ClingoAcc->release_external(atom);
-	} //for ( const auto& atom : ReleaseRequests )
-	ReleaseRequests.clear();
+	} //for ( const auto& atom : releaseRequests )
 
-	for ( const auto& atom : AssignRequests )
+	for ( const auto& atom : assignRequests )
 	{
 		ClingoAcc->assign_external(atom, true);
-	} //for ( const auto& atom : AssignRequests )
-	AssignRequests.clear();
-	reqLocker.unlock();
+	} //for ( const auto& atom : assignRequests )
 
 	MutexLocker planLocker(&PlanMutex);
 	MutexLocker solvingLokcer(&SolvingMutex);
