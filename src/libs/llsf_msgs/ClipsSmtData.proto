@@ -1,0 +1,109 @@
+
+/***************************************************************************
+ *  ClipsSmtInfo.proto - LLSF Protocol - ClipsSmtInfo Specification message
+ *
+ *  Created: Tue Jan 31 21:08
+ *  Copyright  2017  Igor Nicolai Bongartz
+ ****************************************************************************/
+
+/*
+ * Add description
+ */
+
+package llsf_msgs;
+
+// import anything necessary?
+
+// option anything necessary?
+
+enum WorkingPieceComponent {
+    BASE_RED=0;
+    BASE_SILVER=1;
+    BASE_BLACK=2;
+	RING_BLUE=3;
+    RING_GREEN=4;
+    RING_YELLOW=5;
+    RING_ORANGE=6;
+	CAP_BLACK=7;
+    CAP_GRAY=8;
+}
+
+enum MachineType {
+    BASE=0;
+    CAP=1;
+    RING=2;
+    DELIVERY=3;
+}
+
+// types are required, optional, repeated
+
+message WorkingPiece {
+
+    // List of WorkingPieceComponents
+    repeated WorkingPieceComponent workingPieceComponents = 1;
+}
+
+message Robot {
+
+    // Id of robot
+    required string id = 1;
+
+    // Current position of robot as int
+    required string currentPosition = 2;
+    // Target position of robot as int
+    required string targetPosition = 3;
+
+    // Busy time left of robot till next possible action
+    required string busyTimeLeft = 4;
+}
+
+message Machine {
+
+    // Id of machine
+    required string id = 1;
+
+    // First position
+    required string positionA = 2;
+    // Second position for certain machines, TODO optional or required?
+    optional string positionB = 3;
+
+    // Current workingPiece
+    required WorkingPiece workingPiece = 4;
+
+    // WorkingPieceComponents needed for machine usage
+    repeated WorkingPieceComponent inputWpType = 5;
+    // WorkingPieceComponents already inside machine
+    repeated WorkingPieceComponent inputWpContainer = 6;
+
+    // WorkingPieceComponent which is produced by the machine
+    required WorkingPieceComponent outputWpType = 7;
+
+    // Default busy time of machine
+    required string defaultBusyTime = 8;
+    // Current busy time of machine
+    required string busyTimeLeft = 9;
+
+    // Type of machine
+    required MachineType machineType = 10;
+}
+
+message Order {
+
+    // Deadline of order
+    required string deadline = 1;
+
+    // Required workingPiece of order
+    required WorkingPiece targetPiece = 2;
+}
+
+message ClipsSmtData {
+
+    // List of robots
+    repeated Robot robots = 1;
+
+    // List of machines
+    repeated Machine machines = 2;
+
+    // List of current orders
+    repeated Order currentOrders = 3;
+}
