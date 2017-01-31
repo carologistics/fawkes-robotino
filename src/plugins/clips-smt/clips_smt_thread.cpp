@@ -308,6 +308,13 @@ ClipsSmtThread::clips_smt_dummy(std::string foo, std::string bar)
     // Evaluate               OUTPUT
     std::cout << "Clips_smt: React on solved z3 formula" << std::endl;
     clips_smt_react_on_result(result);
+
+
+    // Test carl
+    std::cout << "Clips_smt: Test carl" << std::endl;
+    bool b=false;
+    if(carl::highestPower(64)==64) b=true;
+    std::cout << "Hello Carl! You are " << b << std::endl;
 }
 
 void
