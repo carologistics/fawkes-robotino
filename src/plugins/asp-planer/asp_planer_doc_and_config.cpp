@@ -35,6 +35,45 @@
  */
 
 /**
+ * @struct BasicPlanElement
+ * @brief The basis of an element for the plan.
+ *
+ * @property BasicPlanElement::Task
+ * @brief The task with it's parameters.
+ *
+ * @property BasicPlanElement::Begin
+ * @brief The game time on which the task should start.
+ *
+ * @property BasicPlanElement::End
+ * @brief The estimated end time for the task, if available. If not it is set to zero.
+ */
+
+/**
+ * @struct PlanElement
+ * @brief The saved plan element.
+ *
+ * @property PlanElement::Begun
+ * @brief Wether the task execution on the robot has started or not.
+ *
+ * @property PlanElement::Done
+ * @brief Wether the task is done or not.
+ */
+
+/**
+ * @struct RobotPlan
+ * @brief The plan for a robot.
+ *
+ * @property RobotPlan::Plan
+ * @brief The list of PlanElements forming the plan.
+ *
+ * @property RobotPlan::FirstNotDone
+ * @brief The index in the plan for the first task which is not done.
+ *
+ * @property RobotPlan::CurrentTask
+ * @brief The task, the robot should be doing currently.
+ */
+
+/**
  * @struct TaskDescription
  * @brief The description of a task, a robot is executing.
  *
@@ -387,6 +426,9 @@
  *
  * @property AspPlanerThread::Symbols
  * @brief The symbols from the last model.
+ *
+ * @property AspPlanerThread::StartSolvingGameTime
+ * @brief The game time, when the solving was started.
  */
 
 /**
@@ -396,8 +438,14 @@
  * @property AspPlanerThread::LastPlan
  * @brief When we extracted the last plan.
  *
- * @property AspPlanerThread::StartSolvingGameTime
- * @brief The game time, when the solving was started.
+ * @property AspPlanerThread::PlanGameTime
+ * @brief The game time, when the model was read.
+ *
+ * @property AspPlanerThread::LookAhaedPlanSize
+ * @brief The biggest known size of a plan extracted from a model.
+ *
+ * @property AspPlanerThread::Plan
+ * @brief The plan currently deployed.
  */
 
 /**
