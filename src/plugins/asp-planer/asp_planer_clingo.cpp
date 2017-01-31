@@ -338,7 +338,7 @@ AspPlanerThread::loopClingo(void)
 	} //for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
 	StartSolvingGameTime = GameTime;
 	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
-	SolvingStarted = clock->now();
+	SolvingStarted = Clock::now();
 	ClingoAcc->startSolving();
 	return;
 }
@@ -409,22 +409,22 @@ AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
 bool
 AspPlanerThread::shouldInterrupt(void) const
 {
-	const auto now(clock->now());
+	const auto now(Clock::now());
 	switch ( Interrupt )
 	{
 		case InterruptSolving::Not         : break;
 		case InterruptSolving::JustStarted :
 		{
-			static const fawkes::Time threshold(
-				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/just-started"), 0);
+			static const std::chrono::seconds threshold(
+				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/just-started"));
 			MutexLocker locker(&SolvingMutex);
 			const auto diff(now - SolvingStarted);
 			return diff <= threshold;
 		} //case InterruptSolving::JustStarted
 		case InterruptSolving::Normal      :
 		{
-			static const fawkes::Time threshold(
-				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/normal"), 0);
+			static const std::chrono::seconds threshold(
+				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/normal"));
 			MutexLocker locker(&PlanMutex);
 			const auto diff(now - LastPlan);
 			return diff <= threshold;
@@ -445,7 +445,7 @@ AspPlanerThread::newModel(void)
 	MutexLocker locker(&SolvingMutex);
 	Symbols = ClingoAcc->modelSymbols();
 	NewSymbols = true;
-	LastModel = clock->now();
+	LastModel = Clock::now();
 	return true;
 }
 
