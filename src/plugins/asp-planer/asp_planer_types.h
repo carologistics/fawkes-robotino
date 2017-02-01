@@ -147,7 +147,7 @@ struct Product
 
 struct TaskDescription
 {
-	const enum
+	enum
 	{
 		None,
 		Deliver,
@@ -159,8 +159,8 @@ struct TaskDescription
 		MountRing,
 		PrepareCS
 	} Type = None;
-	const Clingo::Symbol TaskSymbol;
-	int EstimatedEnd;
+	Clingo::Symbol TaskSymbol;
+	int EstimatedEnd = -1;
 
 	inline bool
 	isValid(void) const noexcept
