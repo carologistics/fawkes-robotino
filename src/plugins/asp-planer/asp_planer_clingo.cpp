@@ -841,22 +841,6 @@ AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 }
 
 /**
- * @brief Called if a machine is found.
- *
-void
-AspPlanerThread::foundAMachine(void)
-{
-	if ( ++MachinesFound == 6 )
-	{
-		ClingoAcc.lock();
-		StillNeedExploring = false;
-		CompleteRestart = true;
-		ClingoAcc.unlock();
-	} //if ( ++MachinesFound == 6 )
-	return;
-}
-
-/**
  * @brief Helper function to decompose a string and transform it to a Clingo::Function.
  * @param[in] string The task string.
  *
