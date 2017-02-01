@@ -381,8 +381,7 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 			} //case 'b'
 			case 'u' :
 			{
-//				assert(robotPlan.CurrentTask == task);
-//				robotUpdatesTaskTimeEstimation(robot, task, object["time"].Long(), object["end"].Long());
+				robotUpdatesTaskTimeEstimation(robot, task, object["end"].Long());
 				break;
 			} //case 'u'
 			case 'e' :

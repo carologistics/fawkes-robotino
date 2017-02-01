@@ -1006,21 +1006,26 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
  * @brief A robot updates the time estimation for a task, add it to the program.
  * @param[in] robot The robot.
  * @param[in] task The task.
- * @param[in] time At which point in time the update was emitted.
  * @param[in] end The new estimated end time.
- *
+ */
 void
-AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task,
-		unsigned int time, unsigned int end)
+AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, int end)
 {
-	const auto duration = std::max(1u, realGameTimeToAspGameTime(end - time));
-	time = realGameTimeToAspGameTime(time);
-	end = realGameTimeToAspGameTime(end);
-	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time), Clingo::Number(duration)}};
-	MutexLocker locker(&RobotsMutex);
-	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
-	queueGround(std::move(request), InterruptSolving::Critical);
+	MutexLocker worldLocker(&WorldMutex);
+	MutexLocker planLocker(&PlanMutex);
+
+	auto& robotPlan(Plan[robot]);
+	auto& robotInfo(Robots[robot]);
+
+	assert(robotPlan.CurrentTask == task);
+	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
+	assert(robotInfo.Doing.isValid());
+
+	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].End - end;
+	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
+	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
+	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
+	robotInfo.Doing.EstimatedEnd = end;
 	return;
 }
 
