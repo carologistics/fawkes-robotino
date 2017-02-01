@@ -1194,7 +1194,10 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 		} //case TaskDescription::MountRing
 		case TaskDescription::PrepareCS :
 		{
-			//TODO
+			auto& machineInfo(Machines[machine]);
+			assert(!machineInfo.Prepared);
+			machinePickup(machine, generateProduct("TRANSPARENT"));
+			machineInfo.Prepared = true;
 			break;
 		} //case TaskDescription::PrepareCS
 	} //switch ( robotInfo.Doing.Type )
