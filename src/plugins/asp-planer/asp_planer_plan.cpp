@@ -247,7 +247,7 @@ taskASPtoCLIPS(std::string string)
  * @brief Transforms the task string from CLIPS syntax to ASP syntax.
  * @param[in] string The string to transform.
  * @return The transformed string.
- *
+ */
 static std::string
 taskCLIPStoASP(std::string string)
 {
@@ -358,7 +358,7 @@ AspPlanerThread::removeFromPlanDB(const std::string& robot, const int elementInd
 void
 AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 {
-/*	try
+	try
 	{
 		const auto object(document.getField("o"));
 		const auto action(object["action"].String());
@@ -403,7 +403,6 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 				} //if ( object["success"].String() == "FALSE" )
 				break;
 			} //case 'e'
-			case 'f' : foundAMachine(); break;
 			default : throw fawkes::Exception("Unknown action %s!", action.c_str());
 		} //switch ( action[0] )
 	} //try
@@ -417,6 +416,6 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 		logger->log_error(LoggingComponent, "Exception while extracting plan feedback.\n%s",
 			document.toString().c_str());
 	} //catch ( ... )
-	return;*/
+	return;
 }
 
