@@ -403,7 +403,6 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 				} //if ( object["success"].String() == "FALSE" )
 				break;
 			} //case 'e'
-			case 'f' : foundAMachine(); break;
 			default : throw fawkes::Exception("Unknown action %s!", action.c_str());
 		} //switch ( action[0] )
 	} //try
