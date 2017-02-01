@@ -121,7 +121,7 @@ inline bool operator!=(const PlanElement& e1, const PlanElement& e2) noexcept
 
 struct RobotPlan
 {
-	std::vector<PlanElement> Plan;
+	std::vector<PlanElement> Tasks;
 	std::size_t FirstNotDone = 0;
 	std::string CurrentTask;
 };

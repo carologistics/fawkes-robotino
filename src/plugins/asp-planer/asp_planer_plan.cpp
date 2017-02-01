@@ -136,7 +136,7 @@ AspPlanerThread::loopPlan(void)
 	for ( const auto& pair : tempPlan )
 	{
 		const auto& robotName(pair.first);
-		auto& robotPlan(Plan[robotName].Plan);
+		auto& robotPlan(Plan[robotName].Tasks);
 		const auto& tempRobotPlan(pair.second);
 
 		if ( tempRobotPlan.empty() )
@@ -369,6 +369,7 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 		auto& robotPlan(Plan[robot]);
 		logger->log_info(LoggingComponent, "Plan-Feedback, R: %s T: %s A: %s CT: %s", robot.c_str(), task.c_str(),
 			action.c_str(), robotPlan.CurrentTask.c_str());
+		planLocker.unlock();
 
 		//Switch only the first character because it is unique and we skip all the string handling.
 		switch ( action[0] )
@@ -376,31 +377,29 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 			case 'b' :
 			{
 				robotBegunWithTask(robot, task, object["begin"].Long());
-				assert(robotPlan.CurrentTask.empty());
-				robotPlan.CurrentTask = task;
 				break;
 			} //case 'b'
 			case 'u' :
 			{
-				assert(robotPlan.CurrentTask == task);
-				robotUpdatesTaskTimeEstimation(robot, task, object["time"].Long(), object["end"].Long());
+//				assert(robotPlan.CurrentTask == task);
+//				robotUpdatesTaskTimeEstimation(robot, task, object["time"].Long(), object["end"].Long());
 				break;
 			} //case 'u'
 			case 'e' :
 			{
-				assert(robotPlan.CurrentTask == task);
-				robotPlan.CurrentTask.clear();
-				auto& plan(robotPlan.Plan);
-				assert(plan[robotPlan.FirstNotDone].Task == task);
-				assert(!plan[robotPlan.FirstNotDone].Done);
-				plan[robotPlan.FirstNotDone++].Done = true;
-				const auto end(object["end"].Long());
-				robotFinishedTask(robot, task, end);
+//				assert(robotPlan.CurrentTask == task);
+//				robotPlan.CurrentTask.clear();
+//				auto& plan(robotPlan.Plan);
+//				assert(plan[robotPlan.FirstNotDone].Task == task);
+//				assert(!plan[robotPlan.FirstNotDone].Done);
+//				plan[robotPlan.FirstNotDone++].Done = true;
+//				const auto end(object["end"].Long());
+//				robotFinishedTask(robot, task, end);
 
-				if ( object["success"].String() == "FALSE" )
-				{
-					taskWasFailure(task, end);
-				} //if ( object["success"].String() == "FALSE" )
+//				if ( object["success"].String() == "FALSE" )
+//				{
+//					taskWasFailure(task, end);
+//				} //if ( object["success"].String() == "FALSE" )
 				break;
 			} //case 'e'
 			default : throw fawkes::Exception("Unknown action %s!", action.c_str());
