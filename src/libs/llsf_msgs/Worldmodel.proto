@@ -5,6 +5,7 @@
  *  Copyright  2013  Frederik Zwilling
  ****************************************************************************/
 
+syntax = "proto2";
 package llsf_msgs;
 
 message KeyValuePair {
