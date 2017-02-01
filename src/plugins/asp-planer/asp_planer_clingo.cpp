@@ -1094,6 +1094,15 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			return;
 		};
 
+	auto machinePickup = [this](const std::string& machine, const ProductIdentifier& id)
+		{
+			auto& machineInfo(Machines[machine]);
+			assert(!machineInfo.Storing.isValid());
+			machineInfo.Storing = id;
+			machineInfo.WorkingUntil = GameTime + WorkingDurations[machine];
+			return;
+		};
+
 	auto machineDrops = [this](const std::string& machine)
 		{
 			auto& machineInfo(Machines[machine]);
@@ -1155,7 +1164,15 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 		case TaskDescription::Goto : break; //The robots location will be fetched from the navgraph.
 		case TaskDescription::MountCap :
 		{
-			//TODO
+			auto& machineInfo(Machines[machine]);
+			assert(machineInfo.Prepared);
+			auto order(getOrder());
+			auto product = robotDrops();
+			assert(Products[product.ID].Cap.empty());
+			Products[product.ID].Cap = Orders[order.first].Cap;
+			queueRelease(std::move(OrderTaskMap[order].CapTask));
+			machinePickup(machine, product);
+			machineInfo.Prepared = false;
 			break;
 		} //case TaskDescription::MountCap
 		case TaskDescription::MountRing :
