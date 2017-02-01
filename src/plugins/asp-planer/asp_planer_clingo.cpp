@@ -345,7 +345,7 @@ void
 AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	GroundRequests.push_back(request);
+	GroundRequests.push_back(std::move(request));
 	setInterrupt(interrupt, false);
 	return;
 }
@@ -359,7 +359,7 @@ void
 AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	ReleaseRequests.push_back(atom);
+	ReleaseRequests.push_back(std::move(atom));
 	setInterrupt(interrupt, false);
 	return;
 }
@@ -373,7 +373,7 @@ void
 AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	AssignRequests.push_back(atom);
+	AssignRequests.push_back(std::move(atom));
 	setInterrupt(interrupt, false);
 	return;
 }
