@@ -75,7 +75,7 @@ class AspPlanerThread
 
 	fawkes::Mutex WorldMutex;
 	int GameTime;
-	std::vector<OrderInformation> Orders;
+	std::unordered_map<int, OrderInformation> Orders;
 	std::vector<RingColorInformation> RingColors;
 	std::unordered_map<std::string, RobotInformation> Robots;
 	std::unordered_map<std::string, MachineInformation> Machines;
