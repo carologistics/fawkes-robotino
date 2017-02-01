@@ -156,13 +156,13 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
 		const int delEnd(object["end"].Long() + ExplorationTime);
 
 		MutexLocker locker(&WorldMutex);
-		Orders.push_back(
-			OrderInformation{number, quantity, base, cap, std::string(), ring1, ring2, ring3, delBegin, delEnd});
+		Orders.insert({number,
+			OrderInformation{number, quantity, base, cap, std::string(), ring1, ring2, ring3, delBegin, delEnd}});
 
 		if ( RingColors.size() == 4 )
 		{
 			//Do only spawn tasks when we have the ring infos.
-			addOrderToASP(Orders.back());
+			addOrderToASP(Orders[number]);
 		} //if ( RingColors.size() > 4 )
 
 		if ( number > MaxOrders )
@@ -211,10 +211,10 @@ AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
 		if ( RingColors.size() == 4 )
 		{
 			//We have the last ring info, spawn orders we have received until now.
-			for ( const auto& order : Orders )
+			for ( const auto& pair : Orders )
 			{
-				addOrderToASP(order);
-			} //for ( const auto& order : Orders )
+				addOrderToASP(pair.second);
+			} //for ( const auto& pair : Orders )
 		} //if ( RingColors.size() == 4 )
 	} //try
 	catch ( const std::exception& e )
@@ -377,6 +377,7 @@ AspPlanerThread::init(void)
 	logger->log_info(LoggingComponent, "Initialize ASP Planer");
 	loadConfig();
 	Orders.reserve(MaxOrders);
+	OrderTaskMap.reserve(MaxOrders * MaxQuantity);
 	RingColors.reserve(4);
 	Robots.reserve(PossibleRobots.size());
 	ZonesToExplore.reserve(12);
