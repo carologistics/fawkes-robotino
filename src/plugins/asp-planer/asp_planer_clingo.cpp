@@ -841,65 +841,164 @@ AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 }
 
 /**
- * @brief Helper function to decompose a string and transform it to a Clingo::Function.
- * @param[in] string The task string.
- *
-static Clingo::Symbol
-taskStringToFunction(const std::string& string)
+ * @brief Updates all plan time estimations in a given robot plan from a index up until the end.
+ * @param[in, out] robotPlan The plan part to modify.
+ * @param[in] index The first index to modify.
+ * @param[in] offset The time to modify the plan entries.
+ */
+static inline void
+updatePlanTimes(RobotPlan& robotPlan, int index, const int offset)
 {
-	const auto paramsBegin = string.find('(');
-	const auto task(string.substr(0, paramsBegin));
-	string_view params(string);
-	params.remove_prefix(paramsBegin + 1);
-	params.remove_suffix(1);
+	const int size(robotPlan.Tasks.size());
+	for ( ; index < size; ++index )
+	{
+		robotPlan.Tasks[index].Begin += offset;
+		robotPlan.Tasks[index].End   += offset;
+	} //for ( ; index < size; ++index )
+	return;
+}
 
-	Clingo::SymbolVector arguments;
-	arguments.reserve(std::count(params.begin(), params.end(), ','));
+static inline Clingo::SymbolVector
+splitParameters(string_view string)
+{
+	std::vector<Clingo::Symbol> ret;
+	ret.reserve(std::count(string.begin(), string.end(), ','));
+	bool loop = true;
 
-	auto pos = params.find(','), lastPos = string_view::npos;
-	static_assert(string_view::npos + 1 == 0);
-
-	do
-	{ //while ( lastPos != string_view::npos )
-		const auto param = params.substr(lastPos + 1, pos - (lastPos + 1)).to_string();
-		if ( param.find('(') == std::string::npos )
+	while ( loop )
+	{
+		auto comma = string.find(',');
+		auto paranthesis = string.find('(');
+		if ( (comma != string_view::npos && comma < paranthesis) ||
+				(paranthesis == string_view::npos && comma != string_view::npos) )
 		{
+			auto param = string.substr(0,comma);
 			if ( std::isdigit(param[0]) )
 			{
 				char *unused;
-				arguments.emplace_back(Clingo::Number(std::strtol(param.c_str(), &unused, 10)));
+				ret.push_back(Clingo::Number(std::strtol(param.data(), &unused, 10)));
 			} //if ( std::isdigit(param[0]) )
 			else
 			{
-				arguments.emplace_back(Clingo::Id(param.c_str()));
+				ret.push_back(Clingo::String(param.to_string().c_str()));
 			} //else -> if ( std::isdigit(param[0]) )
-		} //if ( param.find('(') == std::string::npos )
-		else
+			string.remove_prefix(comma+1);
+		} //if ( comma != npos && comma < paranthesis || paranthesis == npos && comma != npos )
+		else if ( paranthesis != string_view::npos )
 		{
-			//The param is a function itself!
-			throw "Not implemented yet";
-		} //else -> if ( param.find('(') == std::string::npos )
-		pos = params.find(',', lastPos = pos);
-	} while ( lastPos != string_view::npos );
+			auto index = paranthesis + 1;
+			for ( auto count = 1; count != 0; ++index )
+			{
+				if ( string[index] == ')' )
+				{
+					--count;
+				} //if ( string[index] == ')' )
+				else if ( string[index] == '(' )
+				{
+					++count;
+				} //else if ( string[index] == '(' )
+			} //for ( auto count = 1u, index = paranthesis + 1; count != 0; ++index )
 
-	return Clingo::Function(task.c_str(), arguments);
+			ret.push_back(Clingo::Function(string.substr(0, paranthesis).to_string().c_str(),
+				splitParameters(string.substr(paranthesis+1, index-1))));
+			string.remove_prefix(index+1);
+		} //else if ( paranthesis != string_view::npos )
+		loop = comma != string_view::npos || paranthesis != string_view::npos;
+	} //while ( loop )
+
+	if ( string.size() != 0 )
+	{
+		ret.push_back(Clingo::String(string.to_string().c_str()));
+	} //if ( string.size() != 0 )
+
+	return ret;
 }
 
 /**
- * @brief A robot has begun with a task, add it to the program.
+ * @brief Creates a task description.
+ * @param[in] task The task as string.
+ * @param[in] end The estimated end for the task.
+ * @return The new description.
+ */
+static inline TaskDescription
+createTaskDescription(const std::string& task, const int end)
+{
+	auto type = TaskDescription::None;
+
+	string_view taskView(task);
+	const auto paramsBegin = taskView.find('(');
+	string_view taskName(taskView.substr(0, paramsBegin));
+	string_view params(taskView.substr(paramsBegin + 1));
+	//Remove the ) from the parameters.
+	params.remove_suffix(1);
+
+	if ( taskName == "deliver" || taskName == "lateDeliver" )
+	{
+		type = TaskDescription::Deliver;
+	} //if ( taskName == "deliver" || taskName == "lateDeliver" )
+	else if ( taskName == "feedRS" )
+	{
+		type = TaskDescription::FeedRS;
+	} //else if ( taskName == "feedRS" )
+	else if ( taskName == "getBase" )
+	{
+		type = TaskDescription::GetBase;
+	} //else if ( taskName == "getBase" )
+	else if ( taskName == "getProduct" )
+	{
+		type = TaskDescription::GetProduct;
+	} //else if ( taskName == "getProduct" )
+	else if ( taskName == "goto" )
+	{
+		type = TaskDescription::Goto;
+	} //else if ( taskName == "goto" )
+	else if ( taskName == "mountCap" )
+	{
+		type = TaskDescription::MountCap;
+	} //else if ( taskName == "mountCap" )
+	else if ( taskName == "mountRing" )
+	{
+		type = TaskDescription::MountRing;
+	} //else if ( taskName == "mountRing" )
+	else if ( taskName == "prepareCS" )
+	{
+		type = TaskDescription::PrepareCS;
+	} //else if ( taskName == "prepareCS" )
+	else
+	{
+		throw fawkes::Exception("Unknown task name: %s!", taskName.to_string().c_str());
+	} //else -> all tasks
+
+	return TaskDescription{type, Clingo::Function(taskName.to_string().c_str(), splitParameters(params)), end};
+}
+
+/**
+ * @brief A robot has begun with a task, modify the worldstate.
  * @param[in] robot The robot.
  * @param[in] task The task.
  * @param[in] time At which point in time the task was begun.
- *
+ */
 void
-AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time)
+AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, int time)
 {
-	time = realGameTimeToAspGameTime(time);
-	GroundRequest request{"begun", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time)}};
-	MutexLocker locker(&RobotsMutex);
-	RobotTaskBegin.insert({{Clingo::String(robot), time}, request});
-	queueGround(std::move(request), InterruptSolving::Critical);
+	MutexLocker worldLocker(&WorldMutex);
+	MutexLocker planLocker(&PlanMutex);
+
+	auto& robotPlan(Plan[robot]);
+	auto& robotInfo(Robots[robot]);
+
+	assert(robotPlan.CurrentTask.empty());
+	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
+	assert(!robotInfo.Doing.isValid());
+
+	robotPlan.CurrentTask = task;
+	robotPlan.Tasks[robotPlan.FirstNotDone].Begun = true;
+	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].Begin - time;
+	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
+	updatePlanTimes(robotPlan, robotPlan.FirstNotDone, offset);
+
+	robotInfo.Doing = createTaskDescription(task, robotPlan.Tasks[robotPlan.FirstNotDone].End);
+	logger->log_info(LoggingComponent, "Converted string %s to symbol %s.", task.c_str(), robotInfo.Doing.TaskSymbol.to_string().c_str());
 	return;
 }
 
