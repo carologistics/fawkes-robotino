@@ -1085,11 +1085,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			//TODO
 			break;
 		} //case TaskDescription::GetProduct
-		case TaskDescription::Goto :
-		{
-			//TODO
-			break;
-		} //case TaskDescription::Goto
+		case TaskDescription::Goto : break; //The robots location will be fetched from the navgraph.
 		case TaskDescription::MountCap :
 		{
 			//TODO
