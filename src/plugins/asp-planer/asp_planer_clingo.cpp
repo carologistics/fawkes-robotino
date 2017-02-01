@@ -1074,14 +1074,42 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			Products.push_back({baseColor});
 			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size())};
 		};
-	auto robotPickups = [this,&robotInfo](const ProductIdentifier& id)
+	auto destroyProduct = [this](const ProductIdentifier& id)
+		{
+			Products.erase(Products.begin() + id.ID);
+			for ( auto& pair : Robots )
+			{
+				if ( pair.second.Holding.ID > id.ID )
+				{
+					--pair.second.Holding.ID;
+				} //if ( pair.second.Holding.ID > id.ID )
+			} //for ( auto& pair : Robots )
+			for ( auto& pair : Machines )
+			{
+				if ( pair.second.Storing.ID > id.ID )
+				{
+					--pair.second.Storing.ID;
+				} //if ( pair.second.Storing.ID > id.ID )
+			} //for ( auto& pair : Machines )
+			return;
+		};
+
+	auto robotPickups = [&robotInfo](const ProductIdentifier& id)
 		{
 			assert(!robotInfo.Holding.isValid());
 			robotInfo.Holding = id;
 			return;
 		};
+	auto robotDrops = [&robotInfo](void)
+		{
+			assert(robotInfo.Holding.isValid());
+			auto id = robotInfo.Holding;
+			robotInfo.Holding = {};
+			return id;
+		};
 
-	const auto& taskArguments(robotInfo.Doing.TaskSymbol.arguments());
+	const decltype(auto) taskArguments(robotInfo.Doing.TaskSymbol.arguments());
+	const decltype(auto) machine(taskArguments[0].arguments()[1].string());
 	switch ( robotInfo.Doing.Type )
 	{
 		case TaskDescription::None : break; //Does not happen. (See assert above.)
@@ -1092,7 +1120,16 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 		} //case TaskDescription::Deliver
 		case TaskDescription::FeedRS :
 		{
-			//TODO
+			const auto& product(Products[robotInfo.Holding.ID]);
+			if ( !product.Rings[1].empty() || !product.Cap.empty() )
+			{
+				logger->log_warn(LoggingComponent, "%s used a non trivial product to feed a ring station!",
+					robot.c_str());
+			} //if ( !product.Rings[1].empty() || !product.Cap.empty() )
+			destroyProduct(robotDrops());
+			auto& info(Machines[machine]);
+			assert(info.FillState <= 3);
+			++info.FillState;
 			break;
 		} //case TaskDescription::FeedRS
 		case TaskDescription::GetBase : robotPickups(generateProduct(taskArguments[1].string())); break;
