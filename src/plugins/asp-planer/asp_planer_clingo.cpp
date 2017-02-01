@@ -1177,7 +1177,19 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 		} //case TaskDescription::MountCap
 		case TaskDescription::MountRing :
 		{
-			//TODO
+			auto order(getOrder());
+			const auto ringNumber = taskArguments[3].number();
+			auto product = robotDrops();
+			assert(Products[product.ID].Rings[ringNumber].empty());
+			const auto ringColor = Orders[order.first].Rings[ringNumber];
+			auto& machineInfo(Machines[machine]);
+			const auto ringInfo = std::find_if(RingColors.begin(), RingColors.end(),
+				[&ringColor](const RingColorInformation& info) { return info.Color == ringColor; });
+			assert(machineInfo.FillState >= ringInfo->Cost);
+			Products[product.ID].Rings[ringNumber] = Orders[order.first].Rings[ringNumber];
+			queueRelease(std::move(OrderTaskMap[order].RingTasks[ringNumber]));
+			machinePickup(machine, product);
+			machineInfo.FillState -= ringInfo->Cost;
 			break;
 		} //case TaskDescription::MountRing
 		case TaskDescription::PrepareCS :
