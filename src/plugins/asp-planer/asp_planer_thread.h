@@ -153,7 +153,7 @@ class AspPlanerThread
 
 	void robotBegunWithTask(const std::string& robot, const std::string& task, const int time);
 	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, const int end);
-	void robotFinishedTask(const std::string& robot, const std::string& task, const int time, const bool success);
+	void robotFinishedTask(const std::string& robot, const std::string& task, const int end, const bool success);
 
 	void initPlan(void);
 	void loopPlan(void);

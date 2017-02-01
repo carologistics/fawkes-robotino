@@ -386,19 +386,7 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 			} //case 'u'
 			case 'e' :
 			{
-//				assert(robotPlan.CurrentTask == task);
-//				robotPlan.CurrentTask.clear();
-//				auto& plan(robotPlan.Plan);
-//				assert(plan[robotPlan.FirstNotDone].Task == task);
-//				assert(!plan[robotPlan.FirstNotDone].Done);
-//				plan[robotPlan.FirstNotDone++].Done = true;
-//				const auto end(object["end"].Long());
-//				robotFinishedTask(robot, task, end);
-
-//				if ( object["success"].String() == "FALSE" )
-//				{
-//					taskWasFailure(task, end);
-//				} //if ( object["success"].String() == "FALSE" )
+				robotFinishedTask(robot, task, object["end"].Long(), object["success"].String() == "TRUE");
 				break;
 			} //case 'e'
 			default : throw fawkes::Exception("Unknown action %s!", action.c_str());
