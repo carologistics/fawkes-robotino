@@ -979,7 +979,7 @@ createTaskDescription(const std::string& task, const int end)
  * @param[in] time At which point in time the task was begun.
  */
 void
-AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, int time)
+AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, const int time)
 {
 	MutexLocker worldLocker(&WorldMutex);
 	MutexLocker planLocker(&PlanMutex);
@@ -1009,7 +1009,7 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
  * @param[in] end The new estimated end time.
  */
 void
-AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, int end)
+AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, const int end)
 {
 	MutexLocker worldLocker(&WorldMutex);
 	MutexLocker planLocker(&PlanMutex);
