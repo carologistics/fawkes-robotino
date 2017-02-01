@@ -1119,12 +1119,21 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 
 	const decltype(auto) taskArguments(robotInfo.Doing.TaskSymbol.arguments());
 	const decltype(auto) machine(taskArguments[0].arguments()[1].string());
+
+	auto getOrder = [&taskArguments](void)
+		{
+			return std::make_pair<int, int>(taskArguments[1].number(), taskArguments[2].number());
+		};
+
 	switch ( robotInfo.Doing.Type )
 	{
 		case TaskDescription::None : break; //Does not happen. (See assert above.)
 		case TaskDescription::Deliver :
 		{
-			//TODO
+			auto order(getOrder());
+			queueRelease(std::move(OrderTaskMap[order].DeliverTasks[0]));
+			queueRelease(std::move(OrderTaskMap[order].DeliverTasks[1]));
+			destroyProduct(robotDrops());
 			break;
 		} //case TaskDescription::Deliver
 		case TaskDescription::FeedRS :
