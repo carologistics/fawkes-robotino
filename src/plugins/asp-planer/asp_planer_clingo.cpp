@@ -1033,33 +1033,79 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
  * @brief A robot has finished a task, add it to the program.
  * @param[in] robot The robot.
  * @param[in] task The task.
- * @param[in] time At which point in time the task was finished.
- *
+ * @param[in] end At which point in time the task was finished.
+ * @param[in] success If the task was executed succesful.
+ */
 void
-AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time)
+AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& task, const int end, const bool success)
 {
-	time = realGameTimeToAspGameTime(time);
-	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time), Clingo::Number(0)}, std::string()};
-	MutexLocker locker(&RobotsMutex);
-	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
-	queueGround(std::move(request), InterruptSolving::Critical);
-	return;
-}
+	MutexLocker worldLocker(&WorldMutex);
+	MutexLocker planLocker(&PlanMutex);
 
-/**
- * @brief A task was not successfully executed.
- * @param[in] task The task.
- * @param[in] time At which point in time the task was finished.
- *
-void
-AspPlanerThread::taskWasFailure(const std::string& task, unsigned int time)
-{
-	time = realGameTimeToAspGameTime(time);
-	GroundRequest request{"failure", {taskStringToFunction(task), Clingo::Number(time)}};
-	MutexLocker locker(&RobotsMutex);
-	TaskSuccess.insert({time, request});
-	queueGround(std::move(request), InterruptSolving::Critical);
+	auto& robotPlan(Plan[robot]);
+	auto& robotInfo(Robots[robot]);
+
+	assert(robotPlan.CurrentTask == task);
+	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
+	assert(robotInfo.Doing.isValid());
+
+	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].End - end;
+	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
+	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
+	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
+
+	robotPlan.Tasks[robotPlan.FirstNotDone++].Done = true;
+	robotPlan.CurrentTask.clear();
+
+	if ( !success )
+	{
+		return;
+	} //if ( !success )
+
+	switch ( robotInfo.Doing.Type )
+	{
+		case TaskDescription::None : break; //Does not happen. (See assert above.)
+		case TaskDescription::Deliver :
+		{
+			//TODO
+			break;
+		} //case TaskDescription::Deliver
+		case TaskDescription::FeedRS :
+		{
+			//TODO
+			break;
+		} //case TaskDescription::FeedRS
+		case TaskDescription::GetBase :
+		{
+			//TODO
+			break;
+		} //case TaskDescription::GetBase
+		case TaskDescription::GetProduct :
+		{
+			//TODO
+			break;
+		} //case TaskDescription::GetProduct
+		case TaskDescription::Goto :
+		{
+			//TODO
+			break;
+		} //case TaskDescription::Goto
+		case TaskDescription::MountCap :
+		{
+			//TODO
+			break;
+		} //case TaskDescription::MountCap
+		case TaskDescription::MountRing :
+		{
+			//TODO
+			break;
+		} //case TaskDescription::MountRing
+		case TaskDescription::PrepareCS :
+		{
+			//TODO
+			break;
+		} //case TaskDescription::PrepareCS
+	} //switch ( robotInfo.Doing.Type )
+	robotInfo.Doing = {};
 	return;
 }
-*/
