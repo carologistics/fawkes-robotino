@@ -63,7 +63,7 @@
  * @struct RobotPlan
  * @brief The plan for a robot.
  *
- * @property RobotPlan::Plan
+ * @property RobotPlan::Tasks
  * @brief The list of PlanElements forming the plan.
  *
  * @property RobotPlan::FirstNotDone
