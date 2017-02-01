@@ -150,23 +150,37 @@ AspPlanerThread::loopPlan(void)
 		const auto tempEnd = tempRobotPlan.end();
 		int index = planIter - robotPlan.begin();
 
+		bool nextRobot = false;
+
 		while ( planIter != planEnd && tempIter != tempEnd )
 		{
 			if ( sameTask(*planIter, *tempIter) )
 			{
 				if ( needsUpdate(*planIter, *tempIter) )
 				{
-					//TODO: Check sanity, task schon begonnen?
 					logger->log_info(LoggingComponent, "Update time for (%s,%s,%d,%d) to (%d,%d)", robotName.c_str(),
 						planIter->Task.c_str(), planIter->Begin, planIter->End, tempIter->Begin, tempIter->End);
+					if ( planIter->Begun )
+					{
+						logger->log_warn(LoggingComponent, "The task is already started!");
+					} //if ( planIter->Begun )
 					planIter->updateTime(*tempIter);
 					updatePlanTiming(robotName, index, *planIter);
 				} //if ( needsUpdate(*planIter, *tempIter) )
 			} //if ( sameTask(*planIter, *tempIter) )
 			else
 			{
-				//TODO: Check sanity, task schon begonnen?
 				const auto robotCStr = robotName.c_str();
+				if ( planIter->Begun )
+				{
+					logger->log_error(LoggingComponent,
+						"Should change started task %s from robot %s to %s. Restart solvoing!",
+						planIter->Task.c_str(), robotCStr, tempIter->Task.c_str());
+					nextRobot = true;
+					setInterrupt(InterruptSolving::Critical);
+					break;
+				} //if ( planIter->Begun )
+
 				logger->log_info(LoggingComponent, "Change from (%s,%s,%d,%d) to (%s,%s,%d,%d).",
 					robotCStr, planIter->Task.c_str(), planIter->Begin, planIter->End,
 					robotCStr, tempIter->Task.c_str(), tempIter->Begin, tempIter->End);
@@ -177,6 +191,11 @@ AspPlanerThread::loopPlan(void)
 			++tempIter;
 			++index;
 		} //while ( planIter != planEnd && tempIter != tempEnd )
+
+		if ( nextRobot )
+		{
+			continue;
+		} //if ( nextRobot )
 
 		if ( tempIter != tempEnd )
 		{
@@ -191,7 +210,16 @@ AspPlanerThread::loopPlan(void)
 		else if ( planIter != planEnd )
 		{
 			//We have less tasks in our temp plan than in the deployed plan left.
-			//TODO: Check sanity, task schon begonnen?
+			if ( planIter->Begun )
+			{
+				//Deleting a task which is already started seems not to be the best idea, restart solving.
+				setInterrupt(InterruptSolving::Critical);
+				logger->log_error(LoggingComponent, "Should delete started task %s for robot %s! Restart solving.",
+					planIter->Task.c_str(), robotName.c_str());
+				//But continue the work for the remaining robots.
+				continue;
+			} //if ( planIter->Begun )
+
 			for ( auto iter = planIter; iter != planEnd; ++iter, ++index )
 			{
 				removeFromPlanDB(robotName, index);
