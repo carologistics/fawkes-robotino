@@ -1062,6 +1062,26 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 		return;
 	} //if ( !success )
 
+	auto generateProduct = [this](std::string&& baseColor) -> ProductIdentifier
+		{
+			if ( static_cast<int>(Products.size()) >= MaxProducts )
+			{
+				 logger->log_error(LoggingComponent, "Have to generate a product, this would be #%d alive, but only %d "
+					"are configured. This product will not be part of the ASP program until products with a lower id "
+					"will be destroyed!", Products.size() + 1, MaxProducts);
+			} //if ( static_cast<int>(Products.size()) >= MaxProducts )
+
+			Products.push_back({baseColor});
+			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size())};
+		};
+	auto robotPickups = [this,&robotInfo](const ProductIdentifier& id)
+		{
+			assert(!robotInfo.Holding.isValid());
+			robotInfo.Holding = id;
+			return;
+		};
+
+	const auto& taskArguments(robotInfo.Doing.TaskSymbol.arguments());
 	switch ( robotInfo.Doing.Type )
 	{
 		case TaskDescription::None : break; //Does not happen. (See assert above.)
@@ -1075,11 +1095,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			//TODO
 			break;
 		} //case TaskDescription::FeedRS
-		case TaskDescription::GetBase :
-		{
-			//TODO
-			break;
-		} //case TaskDescription::GetBase
+		case TaskDescription::GetBase : robotPickups(generateProduct(taskArguments[1].string())); break;
 		case TaskDescription::GetProduct :
 		{
 			//TODO
