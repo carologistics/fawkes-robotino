@@ -139,7 +139,7 @@ struct ProductIdentifier
 
 struct Product
 {
-	const std::string Base;
+	std::string Base;
 	// +1 to skip the calculation of +1 and -1 everytime we use this.
 	std::string Rings[4];
 	std::string Cap;
