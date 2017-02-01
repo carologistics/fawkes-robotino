@@ -353,9 +353,6 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		NewSymbols(false), StartSolvingGameTime(0),
 		//Plan
 		PlanGameTime(0), LookAhaedPlanSize(0)
-		/*Horizon(0), Past(0),
-		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false),
-		PlanElements(0), UpdateNavgraphDistances(false),*/
 {
 	return;
 }

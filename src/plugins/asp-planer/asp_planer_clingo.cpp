@@ -77,10 +77,6 @@ AspPlanerThread::initClingo(void)
 
 	ClingoAcc->ground({{"base", {}}});
 
-//	CapLocations.reserve(2);
-//	RingLocations.reserve(2);
-//	BaseLocations.reserve(2);
-//	GetLocations.reserve(4);
 	return;
 }
 
@@ -837,22 +833,6 @@ AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 	} //if ( removeAndFillNodes )
 	queueRelease(generateExploreLocationExternal(zone));
 	queueRelease(generateExploreTaskExternal(zone));
-	return;
-}
-
-/**
- * @brief Called if a machine is found.
- *
-void
-AspPlanerThread::foundAMachine(void)
-{
-	if ( ++MachinesFound == 6 )
-	{
-		ClingoAcc.lock();
-		StillNeedExploring = false;
-		CompleteRestart = true;
-		ClingoAcc.unlock();
-	} //if ( ++MachinesFound == 6 )
 	return;
 }
 

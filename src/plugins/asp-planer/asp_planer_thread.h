@@ -95,23 +95,6 @@ class AspPlanerThread
 	Clingo::Symbol RingLocations[2];
 	Clingo::Symbol CapLocations[2];
 
-	/*
-	std::unordered_map<std::string, unsigned int> NextTick;
-	unsigned int Horizon;
-	unsigned int Past;
-	fawkes::Time SolvingStarted;
-	fawkes::Time LastModel;
-	unsigned int MachinesFound;
-	bool StillNeedExploring;
-	bool CompleteRestart;
-
-	fawkes::Mutex RobotsMutex;
-	std::unordered_map<std::string, RobotInformation> RobotInformations;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskBegin;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskUpdate;
-	std::unordered_multimap<unsigned int, GroundRequest> TaskSuccess;
-	*/
-
 	using GroundRequest = std::pair<const char*, Clingo::SymbolVector>;
 
 	fawkes::Mutex RequestMutex;
@@ -168,6 +151,12 @@ class AspPlanerThread
 	void addZoneToExplore(const int zone);
 	void releaseZone(const int zone, const bool removeAndFillNodes);
 
+	void robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time);
+	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, unsigned int time,
+		unsigned int end);
+	void robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time);
+	void taskWasFailure(const std::string& task, unsigned int time);
+
 	void initPlan(void);
 	void loopPlan(void);
 	void insertPlanElement(const std::string& robot, const int elementIndex, const PlanElement& element);
@@ -176,30 +165,6 @@ class AspPlanerThread
 	void removeFromPlanDB(const std::string& robot, const int elementIndex);
 
 	void planFeedbackCallback(const mongo::BSONObj document);
-	/*
-	void resetClingo(fawkes::MutexLocker& aspLocker, fawkes::MutexLocker& reqLocker);
-	bool interruptSolving(void) const noexcept;
-
-	void setPast(std::vector<GroundRequest>& requests);
-
-	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
-	void releaseExternals(RobotInformation &info, const bool lock = true);
-
-	void newTeamMate(const std::string& mate, const RobotInformation& info);
-	void deadTeamMate(const std::string& mate);
-
-	void addZoneToExplore(const long zone);
-
-	void setRingColor(const RingColorInformation& info);
-	void addOrder(const OrderInformation& order);
-
-	void foundAMachine(void);
-	void robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time);
-	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, unsigned int time,
-		unsigned int end);
-	void robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time);
-	void taskWasFailure(const std::string& task, unsigned int time);
-	*/
 
 	int realGameTimeToAspGameTime(const int realGameTime) const noexcept;
 	int aspGameTimeToRealGameTime(const int aspGameTime) const noexcept;
