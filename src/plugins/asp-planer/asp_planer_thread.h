@@ -151,7 +151,7 @@ class AspPlanerThread
 	void addZoneToExplore(const int zone);
 	void releaseZone(const int zone, const bool removeAndFillNodes);
 
-	void robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time);
+	void robotBegunWithTask(const std::string& robot, const std::string& task, int time);
 	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, unsigned int time,
 		unsigned int end);
 	void robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time);
