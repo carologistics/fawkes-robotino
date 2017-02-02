@@ -119,10 +119,10 @@ AspPlanerThread::loopPlan(void)
 	std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
 	//Reserve memory to save allocations.
 	tempPlan.reserve(Robots.size());
-	for ( const auto& robot : Robots )
+	for ( const auto& robot : PossibleRobots )
 	{
-		tempPlan[robot.first].reserve(map.size());
-	} //for ( const auto& robot : Robots )
+		tempPlan[robot].reserve(map.size());
+	} //for ( const auto& robot : PossibleRobots )
 
 	for ( const auto& pair : map )
 	{
