@@ -110,3 +110,17 @@
   (robmem-insert "robmem.planer" ?doc)
   (bson-destroy ?doc)
 )
+
+(defrule machine-to-robmem
+  "Updates the machine information in the robot memory."
+  (team-color ?team)
+  (machine (team ?team) (name ?machine) (state ?state))
+  =>
+  (bind ?doc (bson-create))
+  (bson-append ?doc "relation" machine)
+  (bson-append ?doc "machine" ?machine)
+  (bson-append ?doc "state" ?state)
+  (robmem-upsert "robmem.planer" ?doc (str-cat "{\"relation\": \"machine\", \"machine\": \"" ?machine "\"}"))
+  (bson-destroy ?doc)
+)
+

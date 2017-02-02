@@ -169,6 +169,7 @@ class AspPlanerThread
 
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);
+	void machineCallback(const mongo::BSONObj document);
 	void orderCallback(const mongo::BSONObj document);
 	void ringColorCallback(const mongo::BSONObj document);
 	void teamColorCallback(const mongo::BSONObj document);
