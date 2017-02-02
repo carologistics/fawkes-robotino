@@ -76,6 +76,7 @@
 
 (deffunction asp-game-time (?gt)
   "Adds the exploration time, when we are in the production phase."
+  ;*ASP-EXPLORATION-TIME* is set to 0 before the production phase and to the correct value in the phase, so no if.
   (return (+ ?gt ?*ASP-EXPLORATION-TIME*))
 )
 
@@ -175,7 +176,7 @@
   (bind ?paramsString (sub-string (+ ?paramsBegin 1) (- (str-length ?string) 1) ?string))
   (bind ?params (explode$ ?paramsString))
   (switch ?task
-    (case "explore" then (asp-start-exploration (nth$ 1 ?params)))
+    ;(case "explore" then (asp-start-exploration (nth$ 1 ?params))) -- currently disabled
     (default (printout warn "Unknown task " ?task " cannot start!" crlf))
   )
   (return (create$ ?task ?params))
@@ -199,64 +200,48 @@
   (asp-send-feedback ?doc)
 )
 
-(defrule asp-update-time-estimation
-  "Update the time estimation if we are near the end."
-  (game-time ?gt ?)
-  ?doing <- (asp-doing (index ?idx) (end ?end&:(<= ?end (- (asp-game-time ?gt) 1))))
-  (planElement (index ?idx) (task ?task))
-  =>
-  (bind ?end (+ ?end ?*ASP-UPDATE-THRESHOLD*))
-  (modify ?doing (end ?end))
-  (bind ?gt (asp-game-time ?gt))
-  (bind ?end (asp-game-time ?end))
-  (bind ?doc (asp-create-feedback-bson update ?task))
-  (bson-append ?doc "end" ?end)
-  (bson-append ?doc "time" ?gt)
-  (asp-send-feedback ?doc)
-)
+;(defrule asp-update-time-estimation-exp
+;  "Updates the time estimation for the explore task, if we have to look for the mps light."
+;  (game-time ?gt ?t)
+;  ?doing <- (asp-doing (index ?idx) (end ?end&:(>= (abs (- ?end (+ (asp-game-time ?gt) ?*ASP-READ-MPS-LIGHT-TIME*))) ?*ASP-UPDATE-THRESHOLD*)))
+;  (planElement (index ?idx) (task ?task))
+;  (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
+;  =>
+;  (bind ?end (+ ?gt ?*ASP-READ-MPS-LIGHT-TIME*))
+;  (modify ?doing (end ?end))
+;  (bind ?gt (asp-game-time ?gt))
+;  (bind ?end (asp-game-time ?end))
+;  (bind ?doc (asp-create-feedback-bson update ?task))
+;  (bson-append ?doc "end" ?end)
+;  (bson-append ?doc "time" ?gt)
+;  (asp-send-feedback ?doc)
+;)
 
-(defrule asp-update-time-estimation-exp
-  "Updates the time estimation for the explore task, if we have to look for the mps light."
-  (game-time ?gt ?t)
-  ?doing <- (asp-doing (index ?idx) (end ?end&:(>= (abs (- ?end (+ (asp-game-time ?gt) ?*ASP-READ-MPS-LIGHT-TIME*))) ?*ASP-UPDATE-THRESHOLD*)))
-  (planElement (index ?idx) (task ?task))
-  (state EXP_WAIT_BEFORE_DRIVE_TO_OUTPUT)
-  =>
-  (bind ?end (+ ?gt ?*ASP-READ-MPS-LIGHT-TIME*))
-  (modify ?doing (end ?end))
-  (bind ?gt (asp-game-time ?gt))
-  (bind ?end (asp-game-time ?end))
-  (bind ?doc (asp-create-feedback-bson update ?task))
-  (bson-append ?doc "end" ?end)
-  (bson-append ?doc "time" ?gt)
-  (asp-send-feedback ?doc)
-)
+;(defrule asp-found-machine
+;  "Sends the information about the found machine."
+;  (declare (salience ?*PRIORITY-HIGH*))
+;  (last-zoneinfo (search-state YES))
+;  (exp-current-zone (name ?machine))
+;  =>
+;  (bind ?doc (asp-create-feedback-bson foundMachine ""))
+;  (bson-append ?doc "machine" ?machine)
+;  (asp-send-feedback ?doc)
+;)
 
-(defrule asp-found-machine
-  "Sends the information about the found machine."
-  (declare (salience ?*PRIORITY-HIGH*))
-  (last-zoneinfo (search-state YES))
-  (exp-current-zone (name ?machine))
-  =>
-  (bind ?doc (asp-create-feedback-bson foundMachine ""))
-  (bson-append ?doc "machine" ?machine)
-  (asp-send-feedback ?doc)
-)
-
-(defrule asp-end-exploration
-  "Send an end message for the explore skill."
-  (game-time ?gt ?)
-  ?doing <- (asp-doing (index ?idx))
-  ?state <- (state EXP_IDLE)
-  ?planElement <- (planElement (index ?idx) (task ?task))
-  =>
-  (bind ?gt (asp-game-time ?gt))
-  (retract ?doing ?state)
-  (modify ?planElement (done TRUE))
-  (bind ?doc (asp-create-feedback-bson end ?task))
-  (bson-append ?doc "end" ?gt)
-  ;Todo: We have to check if it was really a success!
-  (bson-append ?doc "success" TRUE)
-  (asp-send-feedback ?doc)
-)
+;(defrule asp-end-exploration
+;  "Send an end message for the explore skill."
+;  (game-time ?gt ?)
+;  ?doing <- (asp-doing (index ?idx))
+;  ?state <- (state EXP_IDLE)
+;  ?planElement <- (planElement (index ?idx) (task ?task))
+;  =>
+;  (bind ?gt (asp-game-time ?gt))
+;  (retract ?doing ?state)
+;  (modify ?planElement (done TRUE))
+;  (bind ?doc (asp-create-feedback-bson end ?task))
+;  (bson-append ?doc "end" ?gt)
+;  ;Todo: We have to check if it was really a success!
+;  (bson-append ?doc "success" TRUE)
+;  (asp-send-feedback ?doc)
+;)
 
