@@ -135,6 +135,30 @@ AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
 }
 
 /**
+ * @brief Gets called if there is a new information to a machine from the refbox.
+ * @param[in] document The information about the machine.
+ */
+void
+AspPlanerThread::machineCallback(const mongo::BSONObj document)
+{
+	try
+	{
+		logger->log_warn(LoggingComponent, "Machine Info:\n%s", document.toString().c_str());
+	} //try
+	catch ( const std::exception& e )
+	{
+		logger->log_error(LoggingComponent, "Exception while extracting machine info: %s\n%s", e.what(),
+			document.toString().c_str());
+	} //catch ( const std::exception& e )
+	catch ( ... )
+	{
+		logger->log_error(LoggingComponent, "Exception while extracting machine info.\n%s",
+			document.toString().c_str());
+	} //catch ( ... )
+	return;
+}
+
+/**
  * @brief Gets called if we got a new order.
  * @param[in] document The information about the order.
  */
@@ -353,9 +377,6 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		NewSymbols(false), StartSolvingGameTime(0),
 		//Plan
 		PlanGameTime(0), LookAhaedPlanSize(0)
-		/*Horizon(0), Past(0),
-		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false),
-		PlanElements(0), UpdateNavgraphDistances(false),*/
 {
 	return;
 }
@@ -382,7 +403,7 @@ AspPlanerThread::init(void)
 	Robots.reserve(PossibleRobots.size());
 	ZonesToExplore.reserve(12);
 
-	RobotMemoryCallbacks.reserve(7);
+	RobotMemoryCallbacks.reserve(8);
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planer",
@@ -391,6 +412,10 @@ AspPlanerThread::init(void)
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "game-time"})"), "robmem.planer",
 		&AspPlanerThread::gameTimeCallback, this));
+
+	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
+		mongo::Query(R"({"relation": "machine"})"), "robmem.planer",
+		&AspPlanerThread::machineCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "order"})"), "robmem.planer",

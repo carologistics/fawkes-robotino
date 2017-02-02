@@ -30,6 +30,11 @@ asp-agent:
   interrupt-thresholds:
     just-started: 2
     normal: 10
+    high: 5
+
+    #The interval to check if a robot is behind schedule.
+    robot-task-check: 2
+    robot-task-begind: 5
 
   exec:
     #How many seconds a task may be started before the time stated by the planer.

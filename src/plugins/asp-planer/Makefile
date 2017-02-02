@@ -39,7 +39,7 @@ LDFLAGS_CLINGO = -L$(HOME)/clingo-build/bin/ -Wl,-rpath=$(HOME)/clingo-build/bin
 ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
   CFLAGS  += $(CFLAGS_CPP14) \
 		 $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
-		 $(CFLAGS_CLINGO) -Wno-error=comment
+		 $(CFLAGS_CLINGO)
 		 #-DNDEBUG
   LDFLAGS += $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
 		 $(LDFLAGS_CLINGO)

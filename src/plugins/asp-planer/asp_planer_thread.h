@@ -135,7 +135,7 @@ class AspPlanerThread
 	void queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
 	void queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
 	void setInterrupt(const InterruptSolving interrupt, const bool lock = true);
-	bool shouldInterrupt(void) const;
+	bool shouldInterrupt(void);
 
 	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult& result);
@@ -169,6 +169,7 @@ class AspPlanerThread
 
 	void beaconCallback(const mongo::BSONObj document);
 	void gameTimeCallback(const mongo::BSONObj document);
+	void machineCallback(const mongo::BSONObj document);
 	void orderCallback(const mongo::BSONObj document);
 	void ringColorCallback(const mongo::BSONObj document);
 	void teamColorCallback(const mongo::BSONObj document);
