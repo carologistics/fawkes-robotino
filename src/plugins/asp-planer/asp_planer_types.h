@@ -26,16 +26,23 @@
 
 #include <clingo.hh>
 
+#include <chrono>
 #include <unordered_map>
+#include <type_traits>
 #include <vector>
 
-#include <libs/utils/time/time.h>
+//! @todo Replace include and using, once C++17 is implemented properly.
+#include <experimental/string_view>
+using std::experimental::string_view;
 
 class EventTrigger;
 
 namespace fawkes {
 	class MutexLocker;
 }
+
+using Clock = std::chrono::high_resolution_clock;
+using TimePoint = Clock::time_point;
 
 enum class InterruptSolving : short
 {
@@ -48,8 +55,8 @@ enum class InterruptSolving : short
 struct BasicPlanElement
 {
 	std::string Task;
-	int Begin;
-	int End;
+	int Begin = 0;
+	int End = 0;
 };
 
 inline bool operator==(const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
@@ -64,14 +71,8 @@ inline bool operator!=(const BasicPlanElement& e1, const BasicPlanElement& e2) n
 
 struct PlanElement : public BasicPlanElement
 {
+	bool Begun = false;
 	bool Done = false;
-
-	bool Visited = false;
-	enum {
-		Nothing,
-		Insert,
-		Update,
-	} Action = Nothing;
 
 	//Construct from base class.
 	inline PlanElement(const BasicPlanElement& b) noexcept : BasicPlanElement(b)
@@ -88,12 +89,29 @@ struct PlanElement : public BasicPlanElement
 	inline PlanElement(PlanElement&& e) noexcept = default;
 	inline PlanElement& operator=(const PlanElement& e) = default;
 	inline PlanElement& operator=(PlanElement&& e) noexcept = default;
+
+	inline void
+	updateTime(const BasicPlanElement& e) noexcept
+	{
+		Begin = e.Begin;
+		End = e.End;
+		return;
+	}
+
+	inline void
+	updateTimeAndTask(const BasicPlanElement& e)
+		noexcept(noexcept(std::is_nothrow_copy_assignable<decltype(e.Task)>::value))
+	{
+		updateTime(e);
+		Task = e.Task;
+		return;
+	}
 };
 
 inline bool operator==(const PlanElement& e1, const PlanElement& e2) noexcept
 {
 	return static_cast<BasicPlanElement>(e1) == static_cast<BasicPlanElement>(e2) && e1.Done == e2.Done &&
-		e1.Visited == e2.Visited && e1.Action == e2.Action;
+		e1.Begun == e2.Begun;
 }
 
 inline bool operator!=(const PlanElement& e1, const PlanElement& e2) noexcept
@@ -103,7 +121,7 @@ inline bool operator!=(const PlanElement& e1, const PlanElement& e2) noexcept
 
 struct RobotPlan
 {
-	std::vector<PlanElement> Plan;
+	std::vector<PlanElement> Tasks;
 	std::size_t FirstNotDone = 0;
 	std::string CurrentTask;
 };
@@ -121,7 +139,7 @@ struct ProductIdentifier
 
 struct Product
 {
-	const std::string Base;
+	std::string Base;
 	// +1 to skip the calculation of +1 and -1 everytime we use this.
 	std::string Rings[4];
 	std::string Cap;
@@ -129,7 +147,7 @@ struct Product
 
 struct TaskDescription
 {
-	const enum
+	enum
 	{
 		None,
 		Deliver,
@@ -141,8 +159,8 @@ struct TaskDescription
 		MountRing,
 		PrepareCS
 	} Type = None;
-	const Clingo::Symbol TaskSymbol;
-	int EstimatedEnd;
+	Clingo::Symbol TaskSymbol;
+	int EstimatedEnd = -1;
 
 	inline bool
 	isValid(void) const noexcept
@@ -153,7 +171,7 @@ struct TaskDescription
 
 struct RobotInformation
 {
-	fawkes::Time LastSeen;
+	TimePoint LastSeen;
 	bool Alive;
 	Clingo::Symbol AliveExternal;
 	float X;

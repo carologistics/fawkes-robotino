@@ -23,7 +23,6 @@
 #ifndef __PLUGINS_ASP_AGENT_THREAD_H_
 #define __PLUGINS_ASP_AGENT_THREAD_H_
 
-#include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <core/threading/mutex.h>
@@ -40,7 +39,6 @@
 class AspPlanerThread
 : public fawkes::Thread,
   public fawkes::ConfigurableAspect,
-  public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
   public fawkes::ASPAspect,
   public fawkes::RobotMemoryAspect,
@@ -77,7 +75,7 @@ class AspPlanerThread
 
 	fawkes::Mutex WorldMutex;
 	int GameTime;
-	std::vector<OrderInformation> Orders;
+	std::unordered_map<int, OrderInformation> Orders;
 	std::vector<RingColorInformation> RingColors;
 	std::unordered_map<std::string, RobotInformation> Robots;
 	std::unordered_map<std::string, MachineInformation> Machines;
@@ -97,32 +95,6 @@ class AspPlanerThread
 	Clingo::Symbol RingLocations[2];
 	Clingo::Symbol CapLocations[2];
 
-	/*
-	std::unordered_map<std::string, unsigned int> NextTick;
-	unsigned int Horizon;
-	unsigned int Past;
-	fawkes::Time SolvingStarted;
-	fawkes::Time LastModel;
-	unsigned int MachinesFound;
-	bool StillNeedExploring;
-	bool CompleteRestart;
-
-	fawkes::Mutex PlanMutex;
-	fawkes::Time LastPlan;
-	std::unordered_map<std::string, RobotPlan> Plan;
-	std::size_t PlanElements;
-
-	fawkes::Mutex RobotsMutex;
-	std::unordered_map<std::string, RobotInformation> RobotInformations;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskBegin;
-	std::unordered_map<std::pair<Clingo::Symbol, unsigned int>, GroundRequest> RobotTaskUpdate;
-	std::unordered_multimap<unsigned int, GroundRequest> TaskSuccess;
-
-	fawkes::Mutex SymbolMutex;
-	Clingo::SymbolVector Symbols;
-	bool NewSymbols;
-	*/
-
 	using GroundRequest = std::pair<const char*, Clingo::SymbolVector>;
 
 	fawkes::Mutex RequestMutex;
@@ -136,14 +108,17 @@ class AspPlanerThread
 	bool ProductionStarted;
 
 	mutable fawkes::Mutex SolvingMutex;
-	fawkes::Time LastModel;
-	fawkes::Time SolvingStarted;
+	TimePoint LastModel;
+	TimePoint SolvingStarted;
 	bool NewSymbols;
 	Clingo::SymbolVector Symbols;
+	int StartSolvingGameTime;
 
 	mutable fawkes::Mutex PlanMutex;
-	fawkes::Time LastPlan;
-	int StartSolvingGameTime;
+	TimePoint LastPlan;
+	int PlanGameTime;
+	std::size_t LookAhaedPlanSize;
+	std::unordered_map<std::string, RobotPlan> Plan;
 
 	void loadConfig(void);
 
@@ -176,36 +151,18 @@ class AspPlanerThread
 	void addZoneToExplore(const int zone);
 	void releaseZone(const int zone, const bool removeAndFillNodes);
 
+	void robotBegunWithTask(const std::string& robot, const std::string& task, const int time);
+	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, const int end);
+	void robotFinishedTask(const std::string& robot, const std::string& task, const int end, const bool success);
+
 	void initPlan(void);
 	void loopPlan(void);
-	void updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element);
-	void removeFromPlanDB(const std::string& robot, const PlanElement& element);
+	void insertPlanElement(const std::string& robot, const int elementIndex, const PlanElement& element);
+	void updatePlan(const std::string& robot, const int elementIndex, const PlanElement& element);
+	void updatePlanTiming(const std::string& robot, const int elementIndex, const PlanElement& element);
+	void removeFromPlanDB(const std::string& robot, const int elementIndex);
 
 	void planFeedbackCallback(const mongo::BSONObj document);
-	/*
-	void resetClingo(fawkes::MutexLocker& aspLocker, fawkes::MutexLocker& reqLocker);
-	bool interruptSolving(void) const noexcept;
-
-	void setPast(std::vector<GroundRequest>& requests);
-
-	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
-	void releaseExternals(RobotInformation &info, const bool lock = true);
-
-	void newTeamMate(const std::string& mate, const RobotInformation& info);
-	void deadTeamMate(const std::string& mate);
-
-	void addZoneToExplore(const long zone);
-
-	void setRingColor(const RingColorInformation& info);
-	void addOrder(const OrderInformation& order);
-
-	void foundAMachine(void);
-	void robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time);
-	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, unsigned int time,
-		unsigned int end);
-	void robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time);
-	void taskWasFailure(const std::string& task, unsigned int time);
-	*/
 
 	int realGameTimeToAspGameTime(const int realGameTime) const noexcept;
 	int aspGameTimeToRealGameTime(const int aspGameTime) const noexcept;

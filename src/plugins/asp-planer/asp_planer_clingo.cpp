@@ -27,11 +27,7 @@
 #include <chrono>
 #include <cstring>
 #include <sstream>
-#include <experimental/string_view>
 #include <thread>
-
-//! @todo Replace include and using, once C++17 is implemented properly.
-using std::experimental::string_view;
 
 #include <core/exception.h>
 #include <core/threading/mutex_locker.h>
@@ -290,32 +286,33 @@ AspPlanerThread::loopClingo(void)
 	worldLocker.unlock();
 
 	reqLocker.relock();
-	if ( !GroundRequests.empty() )
-	{
-		std::vector<Clingo::Part> parts;
-		parts.reserve(GroundRequests.size());
-		for ( const auto& request : GroundRequests )
-		{
-			parts.emplace_back(request.first, request.second);
-		} //for ( const auto& request : GroundRequests )
-		ClingoAcc->ground(parts);
-		GroundRequests.clear();
-	} //if ( !GroundRequests.empty() )
-
-	for ( const auto& atom : ReleaseRequests )
-	{
-		ClingoAcc->release_external(atom);
-	} //for ( const auto& atom : ReleaseRequests )
-	ReleaseRequests.clear();
-
-	for ( const auto& atom : AssignRequests )
-	{
-		ClingoAcc->assign_external(atom, true);
-	} //for ( const auto& atom : AssignRequests )
-	AssignRequests.clear();
+	//Copy the requests to release the lock especially before grounding!
+	auto groundRequests(std::move(GroundRequests));
+	auto releaseRequests(std::move(ReleaseRequests));
+	auto assignRequests(std::move(AssignRequests));
 	reqLocker.unlock();
 
-	MutexLocker planLocker(&PlanMutex);
+	if ( !groundRequests.empty() )
+	{
+		std::vector<Clingo::Part> parts;
+		parts.reserve(groundRequests.size());
+		for ( const auto& request : groundRequests )
+		{
+			parts.emplace_back(request.first, request.second);
+		} //for ( const auto& request : groundRequests )
+		ClingoAcc->ground(parts);
+	} //if ( !groundRequests.empty() )
+
+	for ( const auto& atom : releaseRequests )
+	{
+		ClingoAcc->release_external(atom);
+	} //for ( const auto& atom : releaseRequests )
+
+	for ( const auto& atom : assignRequests )
+	{
+		ClingoAcc->assign_external(atom, true);
+	} //for ( const auto& atom : assignRequests )
+
 	MutexLocker solvingLokcer(&SolvingMutex);
 	worldLocker.relock();
 
@@ -338,7 +335,7 @@ AspPlanerThread::loopClingo(void)
 	} //for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
 	StartSolvingGameTime = GameTime;
 	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
-	SolvingStarted = clock->now();
+	SolvingStarted = Clock::now();
 	ClingoAcc->startSolving();
 	return;
 }
@@ -352,7 +349,7 @@ void
 AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	GroundRequests.push_back(request);
+	GroundRequests.push_back(std::move(request));
 	setInterrupt(interrupt, false);
 	return;
 }
@@ -366,7 +363,7 @@ void
 AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	ReleaseRequests.push_back(atom);
+	ReleaseRequests.push_back(std::move(atom));
 	setInterrupt(interrupt, false);
 	return;
 }
@@ -380,7 +377,7 @@ void
 AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
-	AssignRequests.push_back(atom);
+	AssignRequests.push_back(std::move(atom));
 	setInterrupt(interrupt, false);
 	return;
 }
@@ -409,22 +406,22 @@ AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
 bool
 AspPlanerThread::shouldInterrupt(void) const
 {
-	const auto now(clock->now());
+	const auto now(Clock::now());
 	switch ( Interrupt )
 	{
 		case InterruptSolving::Not         : break;
 		case InterruptSolving::JustStarted :
 		{
-			static const fawkes::Time threshold(
-				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/just-started"), 0);
+			static const std::chrono::seconds threshold(
+				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/just-started"));
 			MutexLocker locker(&SolvingMutex);
 			const auto diff(now - SolvingStarted);
 			return diff <= threshold;
 		} //case InterruptSolving::JustStarted
 		case InterruptSolving::Normal      :
 		{
-			static const fawkes::Time threshold(
-				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/normal"), 0);
+			static const std::chrono::seconds threshold(
+				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/normal"));
 			MutexLocker locker(&PlanMutex);
 			const auto diff(now - LastPlan);
 			return diff <= threshold;
@@ -445,7 +442,7 @@ AspPlanerThread::newModel(void)
 	MutexLocker locker(&SolvingMutex);
 	Symbols = ClingoAcc->modelSymbols();
 	NewSymbols = true;
-	LastModel = clock->now();
+	LastModel = Clock::now();
 	return true;
 }
 
@@ -844,81 +841,164 @@ AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 }
 
 /**
- * @brief Called if a machine is found.
- *
-void
-AspPlanerThread::foundAMachine(void)
+ * @brief Updates all plan time estimations in a given robot plan from a index up until the end.
+ * @param[in, out] robotPlan The plan part to modify.
+ * @param[in] index The first index to modify.
+ * @param[in] offset The time to modify the plan entries.
+ */
+static inline void
+updatePlanTimes(RobotPlan& robotPlan, int index, const int offset)
 {
-	if ( ++MachinesFound == 6 )
+	const int size(robotPlan.Tasks.size());
+	for ( ; index < size; ++index )
 	{
-		ClingoAcc.lock();
-		StillNeedExploring = false;
-		CompleteRestart = true;
-		ClingoAcc.unlock();
-	} //if ( ++MachinesFound == 6 )
+		robotPlan.Tasks[index].Begin += offset;
+		robotPlan.Tasks[index].End   += offset;
+	} //for ( ; index < size; ++index )
 	return;
 }
 
-/**
- * @brief Helper function to decompose a string and transform it to a Clingo::Function.
- * @param[in] string The task string.
- *
-static Clingo::Symbol
-taskStringToFunction(const std::string& string)
+static inline Clingo::SymbolVector
+splitParameters(string_view string)
 {
-	const auto paramsBegin = string.find('(');
-	const auto task(string.substr(0, paramsBegin));
-	string_view params(string);
-	params.remove_prefix(paramsBegin + 1);
-	params.remove_suffix(1);
+	std::vector<Clingo::Symbol> ret;
+	ret.reserve(std::count(string.begin(), string.end(), ','));
+	bool loop = true;
 
-	Clingo::SymbolVector arguments;
-	arguments.reserve(std::count(params.begin(), params.end(), ','));
-
-	auto pos = params.find(','), lastPos = string_view::npos;
-	static_assert(string_view::npos + 1 == 0);
-
-	do
-	{ //while ( lastPos != string_view::npos )
-		const auto param = params.substr(lastPos + 1, pos - (lastPos + 1)).to_string();
-		if ( param.find('(') == std::string::npos )
+	while ( loop )
+	{
+		auto comma = string.find(',');
+		auto paranthesis = string.find('(');
+		if ( (comma != string_view::npos && comma < paranthesis) ||
+				(paranthesis == string_view::npos && comma != string_view::npos) )
 		{
+			auto param = string.substr(0,comma);
 			if ( std::isdigit(param[0]) )
 			{
 				char *unused;
-				arguments.emplace_back(Clingo::Number(std::strtol(param.c_str(), &unused, 10)));
+				ret.push_back(Clingo::Number(std::strtol(param.data(), &unused, 10)));
 			} //if ( std::isdigit(param[0]) )
 			else
 			{
-				arguments.emplace_back(Clingo::Id(param.c_str()));
+				ret.push_back(Clingo::String(param.to_string().c_str()));
 			} //else -> if ( std::isdigit(param[0]) )
-		} //if ( param.find('(') == std::string::npos )
-		else
+			string.remove_prefix(comma+1);
+		} //if ( comma != npos && comma < paranthesis || paranthesis == npos && comma != npos )
+		else if ( paranthesis != string_view::npos )
 		{
-			//The param is a function itself!
-			throw "Not implemented yet";
-		} //else -> if ( param.find('(') == std::string::npos )
-		pos = params.find(',', lastPos = pos);
-	} while ( lastPos != string_view::npos );
+			auto index = paranthesis + 1;
+			for ( auto count = 1; count != 0; ++index )
+			{
+				if ( string[index] == ')' )
+				{
+					--count;
+				} //if ( string[index] == ')' )
+				else if ( string[index] == '(' )
+				{
+					++count;
+				} //else if ( string[index] == '(' )
+			} //for ( auto count = 1u, index = paranthesis + 1; count != 0; ++index )
 
-	return Clingo::Function(task.c_str(), arguments);
+			ret.push_back(Clingo::Function(string.substr(0, paranthesis).to_string().c_str(),
+				splitParameters(string.substr(paranthesis+1, index-1))));
+			string.remove_prefix(index+1);
+		} //else if ( paranthesis != string_view::npos )
+		loop = comma != string_view::npos || paranthesis != string_view::npos;
+	} //while ( loop )
+
+	if ( string.size() != 0 )
+	{
+		ret.push_back(Clingo::String(string.to_string().c_str()));
+	} //if ( string.size() != 0 )
+
+	return ret;
 }
 
 /**
- * @brief A robot has begun with a task, add it to the program.
+ * @brief Creates a task description.
+ * @param[in] task The task as string.
+ * @param[in] end The estimated end for the task.
+ * @return The new description.
+ */
+static inline TaskDescription
+createTaskDescription(const std::string& task, const int end)
+{
+	auto type = TaskDescription::None;
+
+	string_view taskView(task);
+	const auto paramsBegin = taskView.find('(');
+	string_view taskName(taskView.substr(0, paramsBegin));
+	string_view params(taskView.substr(paramsBegin + 1));
+	//Remove the ) from the parameters.
+	params.remove_suffix(1);
+
+	if ( taskName == "deliver" || taskName == "lateDeliver" )
+	{
+		type = TaskDescription::Deliver;
+	} //if ( taskName == "deliver" || taskName == "lateDeliver" )
+	else if ( taskName == "feedRS" )
+	{
+		type = TaskDescription::FeedRS;
+	} //else if ( taskName == "feedRS" )
+	else if ( taskName == "getBase" )
+	{
+		type = TaskDescription::GetBase;
+	} //else if ( taskName == "getBase" )
+	else if ( taskName == "getProduct" )
+	{
+		type = TaskDescription::GetProduct;
+	} //else if ( taskName == "getProduct" )
+	else if ( taskName == "goto" )
+	{
+		type = TaskDescription::Goto;
+	} //else if ( taskName == "goto" )
+	else if ( taskName == "mountCap" )
+	{
+		type = TaskDescription::MountCap;
+	} //else if ( taskName == "mountCap" )
+	else if ( taskName == "mountRing" )
+	{
+		type = TaskDescription::MountRing;
+	} //else if ( taskName == "mountRing" )
+	else if ( taskName == "prepareCS" )
+	{
+		type = TaskDescription::PrepareCS;
+	} //else if ( taskName == "prepareCS" )
+	else
+	{
+		throw fawkes::Exception("Unknown task name: %s!", taskName.to_string().c_str());
+	} //else -> all tasks
+
+	return TaskDescription{type, Clingo::Function(taskName.to_string().c_str(), splitParameters(params)), end};
+}
+
+/**
+ * @brief A robot has begun with a task, modify the worldstate.
  * @param[in] robot The robot.
  * @param[in] task The task.
  * @param[in] time At which point in time the task was begun.
- *
+ */
 void
-AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, unsigned int time)
+AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, const int time)
 {
-	time = realGameTimeToAspGameTime(time);
-	GroundRequest request{"begun", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time)}};
-	MutexLocker locker(&RobotsMutex);
-	RobotTaskBegin.insert({{Clingo::String(robot), time}, request});
-	queueGround(std::move(request), InterruptSolving::Critical);
+	MutexLocker worldLocker(&WorldMutex);
+	MutexLocker planLocker(&PlanMutex);
+
+	auto& robotPlan(Plan[robot]);
+	auto& robotInfo(Robots[robot]);
+
+	assert(robotPlan.CurrentTask.empty());
+	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
+	assert(!robotInfo.Doing.isValid());
+
+	robotPlan.CurrentTask = task;
+	robotPlan.Tasks[robotPlan.FirstNotDone].Begun = true;
+	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].Begin - time;
+	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
+	updatePlanTimes(robotPlan, robotPlan.FirstNotDone, offset);
+
+	robotInfo.Doing = createTaskDescription(task, robotPlan.Tasks[robotPlan.FirstNotDone].End);
+	logger->log_info(LoggingComponent, "Converted string %s to symbol %s.", task.c_str(), robotInfo.Doing.TaskSymbol.to_string().c_str());
 	return;
 }
 
@@ -926,21 +1006,26 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
  * @brief A robot updates the time estimation for a task, add it to the program.
  * @param[in] robot The robot.
  * @param[in] task The task.
- * @param[in] time At which point in time the update was emitted.
  * @param[in] end The new estimated end time.
- *
+ */
 void
-AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task,
-		unsigned int time, unsigned int end)
+AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, const int end)
 {
-	const auto duration = std::max(1u, realGameTimeToAspGameTime(end - time));
-	time = realGameTimeToAspGameTime(time);
-	end = realGameTimeToAspGameTime(end);
-	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time), Clingo::Number(duration)}};
-	MutexLocker locker(&RobotsMutex);
-	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
-	queueGround(std::move(request), InterruptSolving::Critical);
+	MutexLocker worldLocker(&WorldMutex);
+	MutexLocker planLocker(&PlanMutex);
+
+	auto& robotPlan(Plan[robot]);
+	auto& robotInfo(Robots[robot]);
+
+	assert(robotPlan.CurrentTask == task);
+	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
+	assert(robotInfo.Doing.isValid());
+
+	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].End - end;
+	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
+	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
+	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
+	robotInfo.Doing.EstimatedEnd = end;
 	return;
 }
 
@@ -948,33 +1033,174 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
  * @brief A robot has finished a task, add it to the program.
  * @param[in] robot The robot.
  * @param[in] task The task.
- * @param[in] time At which point in time the task was finished.
- *
+ * @param[in] end At which point in time the task was finished.
+ * @param[in] success If the task was executed succesful.
+ */
 void
-AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& task, unsigned int time)
+AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& task, const int end, const bool success)
 {
-	time = realGameTimeToAspGameTime(time);
-	GroundRequest request{"update", {Clingo::String(robot), taskStringToFunction(task),
-		Clingo::Number(time), Clingo::Number(0)}, std::string()};
-	MutexLocker locker(&RobotsMutex);
-	RobotTaskUpdate.insert({{Clingo::String(robot), time}, request});
-	queueGround(std::move(request), InterruptSolving::Critical);
-	return;
-}
+	MutexLocker worldLocker(&WorldMutex);
+	MutexLocker planLocker(&PlanMutex);
 
-/**
- * @brief A task was not successfully executed.
- * @param[in] task The task.
- * @param[in] time At which point in time the task was finished.
- *
-void
-AspPlanerThread::taskWasFailure(const std::string& task, unsigned int time)
-{
-	time = realGameTimeToAspGameTime(time);
-	GroundRequest request{"failure", {taskStringToFunction(task), Clingo::Number(time)}};
-	MutexLocker locker(&RobotsMutex);
-	TaskSuccess.insert({time, request});
-	queueGround(std::move(request), InterruptSolving::Critical);
+	auto& robotPlan(Plan[robot]);
+	auto& robotInfo(Robots[robot]);
+
+	assert(robotPlan.CurrentTask == task);
+	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
+	assert(robotInfo.Doing.isValid());
+
+	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].End - end;
+	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
+	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
+	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
+
+	robotPlan.Tasks[robotPlan.FirstNotDone++].Done = true;
+	robotPlan.CurrentTask.clear();
+
+	if ( !success )
+	{
+		return;
+	} //if ( !success )
+
+	auto generateProduct = [this](std::string&& baseColor) -> ProductIdentifier
+		{
+			if ( static_cast<int>(Products.size()) >= MaxProducts )
+			{
+				 logger->log_error(LoggingComponent, "Have to generate a product, this would be #%d alive, but only %d "
+					"are configured. This product will not be part of the ASP program until products with a lower id "
+					"will be destroyed!", Products.size() + 1, MaxProducts);
+			} //if ( static_cast<int>(Products.size()) >= MaxProducts )
+
+			Products.push_back({baseColor});
+			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size())};
+		};
+	auto destroyProduct = [this](const ProductIdentifier& id)
+		{
+			Products.erase(Products.begin() + id.ID);
+			for ( auto& pair : Robots )
+			{
+				if ( pair.second.Holding.ID > id.ID )
+				{
+					--pair.second.Holding.ID;
+				} //if ( pair.second.Holding.ID > id.ID )
+			} //for ( auto& pair : Robots )
+			for ( auto& pair : Machines )
+			{
+				if ( pair.second.Storing.ID > id.ID )
+				{
+					--pair.second.Storing.ID;
+				} //if ( pair.second.Storing.ID > id.ID )
+			} //for ( auto& pair : Machines )
+			return;
+		};
+
+	auto machinePickup = [this](const std::string& machine, const ProductIdentifier& id)
+		{
+			auto& machineInfo(Machines[machine]);
+			assert(!machineInfo.Storing.isValid());
+			machineInfo.Storing = id;
+			machineInfo.WorkingUntil = GameTime + WorkingDurations[machine];
+			return;
+		};
+
+	auto machineDrops = [this](const std::string& machine)
+		{
+			auto& machineInfo(Machines[machine]);
+			assert(machineInfo.Storing.isValid());
+			auto id = machineInfo.Storing;
+			machineInfo.Storing = {};
+			return id;
+		};
+
+	auto robotPickups = [&robotInfo](const ProductIdentifier& id)
+		{
+			assert(!robotInfo.Holding.isValid());
+			robotInfo.Holding = id;
+			return;
+		};
+	auto robotDrops = [&robotInfo](void)
+		{
+			assert(robotInfo.Holding.isValid());
+			auto id = robotInfo.Holding;
+			robotInfo.Holding = {};
+			return id;
+		};
+
+	const decltype(auto) taskArguments(robotInfo.Doing.TaskSymbol.arguments());
+	const decltype(auto) machine(taskArguments[0].arguments()[1].string());
+
+	auto getOrder = [&taskArguments](void)
+		{
+			return std::make_pair<int, int>(taskArguments[1].number(), taskArguments[2].number());
+		};
+
+	switch ( robotInfo.Doing.Type )
+	{
+		case TaskDescription::None : break; //Does not happen. (See assert above.)
+		case TaskDescription::Deliver :
+		{
+			auto order(getOrder());
+			queueRelease(std::move(OrderTaskMap[order].DeliverTasks[0]));
+			queueRelease(std::move(OrderTaskMap[order].DeliverTasks[1]));
+			destroyProduct(robotDrops());
+			break;
+		} //case TaskDescription::Deliver
+		case TaskDescription::FeedRS :
+		{
+			const auto& product(Products[robotInfo.Holding.ID]);
+			if ( !product.Rings[1].empty() || !product.Cap.empty() )
+			{
+				logger->log_warn(LoggingComponent, "%s used a non trivial product to feed a ring station!",
+					robot.c_str());
+			} //if ( !product.Rings[1].empty() || !product.Cap.empty() )
+			destroyProduct(robotDrops());
+			auto& info(Machines[machine]);
+			assert(info.FillState <= 3);
+			++info.FillState;
+			break;
+		} //case TaskDescription::FeedRS
+		case TaskDescription::GetBase : robotPickups(generateProduct(taskArguments[1].string())); break;
+		case TaskDescription::GetProduct : robotPickups(machineDrops(machine)); break;
+		case TaskDescription::Goto : break; //The robots location will be fetched from the navgraph.
+		case TaskDescription::MountCap :
+		{
+			auto& machineInfo(Machines[machine]);
+			assert(machineInfo.Prepared);
+			auto order(getOrder());
+			auto product = robotDrops();
+			assert(Products[product.ID].Cap.empty());
+			Products[product.ID].Cap = Orders[order.first].Cap;
+			queueRelease(std::move(OrderTaskMap[order].CapTask));
+			machinePickup(machine, product);
+			machineInfo.Prepared = false;
+			break;
+		} //case TaskDescription::MountCap
+		case TaskDescription::MountRing :
+		{
+			auto order(getOrder());
+			const auto ringNumber = taskArguments[3].number();
+			auto product = robotDrops();
+			assert(Products[product.ID].Rings[ringNumber].empty());
+			const auto ringColor = Orders[order.first].Rings[ringNumber];
+			auto& machineInfo(Machines[machine]);
+			const auto ringInfo = std::find_if(RingColors.begin(), RingColors.end(),
+				[&ringColor](const RingColorInformation& info) { return info.Color == ringColor; });
+			assert(machineInfo.FillState >= ringInfo->Cost);
+			Products[product.ID].Rings[ringNumber] = Orders[order.first].Rings[ringNumber];
+			queueRelease(std::move(OrderTaskMap[order].RingTasks[ringNumber]));
+			machinePickup(machine, product);
+			machineInfo.FillState -= ringInfo->Cost;
+			break;
+		} //case TaskDescription::MountRing
+		case TaskDescription::PrepareCS :
+		{
+			auto& machineInfo(Machines[machine]);
+			assert(!machineInfo.Prepared);
+			machinePickup(machine, generateProduct("TRANSPARENT"));
+			machineInfo.Prepared = true;
+			break;
+		} //case TaskDescription::PrepareCS
+	} //switch ( robotInfo.Doing.Type )
+	robotInfo.Doing = {};
 	return;
 }
-*/

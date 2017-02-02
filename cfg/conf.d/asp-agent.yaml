@@ -22,6 +22,11 @@ asp-agent:
     max-quantity: 2
     max-products: 6
 
+    #How long, given in milliseconds, the planer will wait to extract a (new) plan from a model.
+    #Because clingo produces very fast the first few models, each new one with more tasks for the robots directly extracting a plan would be inefficient.
+    plan-extraction-delay: 500
+
+  #The threshold, given in seconds, the planer will interrupt clingo for new information, based on the criticalness of the information.
   interrupt-thresholds:
     just-started: 2
     normal: 10

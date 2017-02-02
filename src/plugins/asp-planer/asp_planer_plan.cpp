@@ -24,64 +24,12 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <type_traits>
 
 #include <core/threading/mutex_locker.h>
 #include <plugins/robot-memory/robot_memory.h>
 
 using fawkes::MutexLocker;
-
-/**
- * @struct BasicPlanElement
- * @brief The basis of an element for the plan.
- *
- * @property BasicPlanElement::Task
- * @brief The task with it's parameters.
- *
- * @property BasicPlanElement::Begin
- * @brief The game time on which the task should start.
- *
- * @property BasicPlanElement::End
- * @brief The estimated end time for the task, if available. If not it is set to zero.
- *
-
-/**
- * @struct PlanElement
- * @brief The saved plan element.
- *
- * @property PlanElement::Done
- * @brief Wether the task is done or not.
- *
- * @property PlanElement::Visited
- * @brief Wether this element was visited in the current sweep.
- *
- * @property PlanElement::Action
- * @brief What to do with this element in the syncronized plan.
- *
-
-/**
- * @struct RobotPlan
- * @brief The plan for a robot.
- *
- * @property RobotPlan::Plan
- * @brief The list of PlanElements forming the plan.
- *
- * @property RobotPlan::FirstNotDone
- * @brief The index in the plan for the first task which is not done.
- *
- * @property RobotPlan::CurrentTask
- * @brief The task, the robot should be doing currently.
- *
-
-/**
- * @property AspPlanerThread::PlanMutex
- * @brief The mutex for plan handling
- *
- * @property AspPlanerThread::LastPlan
- * @brief When the last plan was composed.
- *
- * @property AspPlanerThread::Plan
- * @brief The mapping from robot name to its plan.
- *
 
 /**
  * @brief Initalized plan elements.
@@ -91,6 +39,10 @@ AspPlanerThread::initPlan(void)
 {
 	//Clear old plan, if in db.
 	robot_memory->drop_collection("syncedrobmem.plan");
+	/* Assuming a task duration is equally distributed in [0,MaxTaskDuration], we take the average to compute how many
+	 * tasks there can be in a plan. If this are too much we allocate too much memory in planLoop(), but save
+	 * allocations while the plan is extracted, which is preferable. */
+	LookAhaedPlanSize = LookAhaed / (MaxTaskDuration / 2) * Robots.size();
 	return;
 }
 
@@ -100,173 +52,181 @@ AspPlanerThread::initPlan(void)
 void
 AspPlanerThread::loopPlan(void)
 {
-/*	MutexLocker symbolLocker(&SymbolMutex);
-	if ( NewSymbols )
+	MutexLocker solvingLocker(&SolvingMutex);
+	if ( !NewSymbols )
 	{
-		static const fawkes::Time planThreshold(500L);
-		if ( clock->now() - LastModel < planThreshold )
+		return;
+	} //if ( !NewSymbols )
+
+	static const std::chrono::milliseconds planThreshold(config->get_int("/asp-agent/planer/plan-extraction-delay"));
+	if ( Clock::now() - LastModel < planThreshold )
+	{
+		//The last model is fresh, maybe there is a new and better in the next loop, wait a short time.
+		return;
+	} //if ( Clock::now() - LastModel < planThreshold )
+
+	/* There is a new model and it is old enough, start with the plan extraction. Since we have no guarantees about the
+	 * ordering in the model we use a map to assemble the (robot, task, begin, end) tuples. */
+	MutexLocker planLocker(&PlanMutex);
+	std::unordered_map<std::pair<std::string, std::string>, std::pair<int, int>> map;
+	//Reserve enough space.
+	map.reserve(LookAhaedPlanSize);
+	PlanGameTime = StartSolvingGameTime;
+	for ( const auto& symbol : Symbols )
+	{
+		const string_view name(symbol.name());
+		const bool begin = name == "begin", end = name == "end";
+		if ( begin || end )
 		{
-			//The last model is fresh, maybe there is a new and better in the next loop, wait a short time.
-			return;
-		} //if ( clock->now() - LastModel < planThreshold )
+			//Assumes begin(robot, task, time) and end(robot, task, time).
+			const decltype(auto) args(symbol.arguments());
+			//If not in the map until now it will add (robot, task, 0, 0).
+			auto& pair = map[{args[0].string(), args[1].to_string()}];
+			(begin ? pair.first : pair.second) = aspGameTimeToRealGameTime(args[2].number() + PlanGameTime);
+		} //if ( begin || end )
+	} //for ( const auto& symbol : Symbols )
 
-		/* Extract the information. Since we have no guarantees about the ordering in the model we use a map to assemble
-		 * the (robot, task, begin, end) tuples. *
-		std::unordered_map<std::pair<std::string, std::string>, std::pair<unsigned int, unsigned int>> map;
-		//Reserve enough space for the known plan + 1 entry per robot.
-		map.reserve(PlanElements + Robots.size());
-		for ( const auto& symbol : Symbols )
+	NewSymbols = false;
+	solvingLocker.unlock();
+	LookAhaedPlanSize = std::max(LookAhaedPlanSize, map.size());
+	LastPlan = Clock::now();
+
+	//Some helper functions to handle plan elements.
+	//Used to sort the vector and find elements.
+	auto planBegin = [](const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
 		{
-			const bool begin = std::strcmp(symbol.name(), "begin") == 0,
-				end = std::strcmp(symbol.name(), "end") == 0;
-			if ( begin || end )
-			{
-				//Assumes begin(robot, task, time) and end(robot, task, time).
-				const decltype(auto) args(symbol.arguments());
-				//If not in the map until now it will add (robot, task, 0, 0).
-				//Because the robot name is a string in ASP .to_string() will include ", we have to remove them.
-				const auto tempRobotName(args[0].to_string());
-				auto& pair = map[{tempRobotName.substr(1, tempRobotName.size() - 2), args[1].to_string()}];
-				(begin ? pair.first : pair.second) = aspGameTimeToRealGameTime(args[2].number());
-			} //if ( begin || end )
-		} //for ( const auto& symbol : Symbols )
-
-		//Some helper functions to handle plan elements.
-		//Used to sort the vector and find elements.
-		auto planBegin = [](const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
-			{
-				return e1.Begin < e2.Begin;
-			};
-		//If two plan elements refer to the same task.
-		auto sameTask = [](const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
-			{
-				return e1.Task == e2.Task;
-			};
-		//If two plan elements are considered equal, only call if sameTask already holds.
-		//Compared are the begin and end time point.
-		auto equal = [sameTask](const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
-			{
-				assert(sameTask(e1, e2));
-				return e1.Begin == e2.Begin && e1.End == e2.End;
-			};
-
-		MutexLocker planLocker(&PlanMutex);
-		logger->log_info(LoggingComponent, "Extracted plan size: %d", map.size());
-		for ( const auto& pair : map )
+			return e1.Begin < e2.Begin;
+		};
+	//If two plan elements refer to the same task.
+	auto sameTask = [](const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
 		{
-			logger->log_info(LoggingComponent, "Plan element: (%s, %s, %d, %d)",
-				pair.first.first.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
+			return e1.Task == e2.Task;
+		};
+	//Compares the begin and end time point and if their difference is above a given threshold.
+	//This is only valid if both elements are about the same task.
+	auto needsUpdate = [this,sameTask](const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
+		{
+			assert(sameTask(e1, e2));
+			static_assert(std::is_signed<decltype(e1.Begin)>::value,
+				"For unsigned values std::abs doesn't make any sense.");
+			const auto threshold = TimeResolution / 2;
+			return std::abs(e1.Begin - e2.Begin) > threshold || std::abs(e1.End - e2.End) > threshold;
+		};
 
-			//Get the correct robot plan.
-			const auto& robot(pair.first.first);
-			const BasicPlanElement element{pair.first.second, pair.second.first, pair.second.second};
-			auto& robotPlan(Plan[robot]);
-			auto& plan(robotPlan.Plan);
+	logger->log_info(LoggingComponent, "Extracted plan size: %d", map.size());
 
-			//Search for the position in the plan of the element.
-			auto iter = std::lower_bound(plan.begin(), plan.end(), element, planBegin);
+	//Assemble a plan only based on the information from clingo.
+	std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
+	//Reserve memory to save allocations.
+	tempPlan.reserve(Robots.size());
+	for ( const auto& robot : Robots )
+	{
+		tempPlan[robot.first].reserve(map.size());
+	} //for ( const auto& robot : Robots )
 
-			if ( iter != plan.begin() && iter != plan.end() && sameTask(*iter, *(iter - 1)) )
+	for ( const auto& pair : map )
+	{
+		logger->log_info(LoggingComponent, "Plan element: (%s, %s, %d, %d)",
+			pair.first.first.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
+		auto& robotTempPlan(tempPlan[pair.first.first]);
+		BasicPlanElement e{pair.first.second, pair.second.first, pair.second.second};
+		robotTempPlan.insert(std::lower_bound(robotTempPlan.begin(), robotTempPlan.end(), e, planBegin), std::move(e));
+	} //for ( const auto& pair : map )
+
+	for ( const auto& pair : tempPlan )
+	{
+		const auto& robotName(pair.first);
+		auto& robotPlan(Plan[robotName].Tasks);
+		const auto& tempRobotPlan(pair.second);
+
+		if ( tempRobotPlan.empty() )
+		{
+			continue;
+		} //if ( tempRobotPlan.empty() )
+
+		const auto planEnd = robotPlan.end();
+		auto planIter = std::lower_bound(robotPlan.begin(), planEnd, tempRobotPlan[0], planBegin);
+		auto tempIter = tempRobotPlan.begin();
+		const auto tempEnd = tempRobotPlan.end();
+		int index = planIter - robotPlan.begin();
+
+		bool nextRobot = false;
+
+		while ( planIter != planEnd && tempIter != tempEnd )
+		{
+			if ( sameTask(*planIter, *tempIter) )
 			{
-				//We are just scheduled for later, so prevent (de-)allocations by pointing to the old location.
-				--iter;
-			} //if ( iter != plan.begin() && iter != plan.end() && sameTask(*iter, *(iter - 1)) )
-
-			if ( iter != plan.end() && sameTask(element, *iter) )
-			{
-				iter->Visited = true;
-				if ( !equal(element, *iter) )
+				if ( needsUpdate(*planIter, *tempIter) )
 				{
-					/* We have the same task, but begin and/or end differs, but the element is still sorted right in the
-					 * plan. So we only update the element. *
-					iter->Begin  = element.Begin;
-					iter->End    = element.End;
-					iter->Action = PlanElement::Update;
-				} //if ( !equal(element, *iter) )
-				//In the else case nothing is to do.
-			} //if ( iter != plan.end() && sameTask(element, *iter) )
+					logger->log_info(LoggingComponent, "Update time for (%s,%s,%d,%d) to (%d,%d)", robotName.c_str(),
+						planIter->Task.c_str(), planIter->Begin, planIter->End, tempIter->Begin, tempIter->End);
+					if ( planIter->Begun )
+					{
+						logger->log_warn(LoggingComponent, "The task is already started!");
+					} //if ( planIter->Begun )
+					planIter->updateTime(*tempIter);
+					updatePlanTiming(robotName, index, *planIter);
+				} //if ( needsUpdate(*planIter, *tempIter) )
+			} //if ( sameTask(*planIter, *tempIter) )
 			else
 			{
-				//We have a differnt task, so we add the element.
-				iter = plan.emplace(iter, element);
-				iter->Visited = true;
-				iter->Action  = PlanElement::Insert;
-			} //else -> if ( iter != plan.end() && sameTask(element, *iter) )
-		} //for ( const auto& pair : map )
+				const auto robotCStr = robotName.c_str();
+				if ( planIter->Begun )
+				{
+					logger->log_error(LoggingComponent,
+						"Should change started task %s from robot %s to %s. Restart solvoing!",
+						planIter->Task.c_str(), robotCStr, tempIter->Task.c_str());
+					nextRobot = true;
+					setInterrupt(InterruptSolving::Critical);
+					break;
+				} //if ( planIter->Begun )
 
-		PlanElements = 0;
-		//Now sweep the plan for changes.
-		for ( auto& pair : Plan )
+				logger->log_info(LoggingComponent, "Change from (%s,%s,%d,%d) to (%s,%s,%d,%d).",
+					robotCStr, planIter->Task.c_str(), planIter->Begin, planIter->End,
+					robotCStr, tempIter->Task.c_str(), tempIter->Begin, tempIter->End);
+				planIter->updateTimeAndTask(*tempIter);
+				updatePlan(robotName, index, *planIter);
+			} //else -> if ( && sameTask(*planIter, *tempIter) )
+			++planIter;
+			++tempIter;
+			++index;
+		} //while ( planIter != planEnd && tempIter != tempEnd )
+
+		if ( nextRobot )
 		{
-			const auto& robot(pair.first);
-			auto& robotPlan(pair.second);
-			auto& plan(robotPlan.Plan);
+			continue;
+		} //if ( nextRobot )
 
-			//Skip the elements we consider as done.
-			auto index = robotPlan.FirstNotDone;
-			auto iter = plan.begin() + index, end = plan.end();
-			bool newOrdering = false;
-
-			while ( iter != end )
+		if ( tempIter != tempEnd )
+		{
+			//We have more tasks in our temp plan than in the deployed plan left.
+			robotPlan.reserve(robotPlan.size() + tempEnd - tempIter);
+			std::copy(tempIter, tempEnd, std::back_inserter(robotPlan));
+			do //while ( ++index < static_cast<int>(robotPlan.size()) )
 			{
-//				static constexpr const char *action[] = {"Nothing", "Insert", "Update"};
-//				logger->log_info(LoggingComponent, "Plan Sweep %s: (%s, %d, %d, %svisited, %s) %s", robot.c_str(),
-//					iter->Task.c_str(), iter->Begin, iter->End, iter->Visited ? "" : "not ", action[iter->Action],
-//					newOrdering ? "New Order" : "");
-				if ( iter->Visited )
-				{
-					//Handle element.
-					switch ( iter->Action )
-					{
-						case PlanElement::Nothing :
-						{
-							/* We have to update the DB entry if we have a new ordering, when something before this
-							 * index was added or removed. So only break when newOrderung is not set. *
-							if ( !newOrdering )
-							{
-								break;
-							} //if ( !newOrdering )
-#if __has_cpp_attribute(fallthrough)
-							//GCC 7, Clang 3.9 or later.
-							[[fallthrough]];
-#endif
-						} //case PlanElement::Nothing
-						case PlanElement::Update : updatePlanDB(robot, index, *iter); break;
-						case PlanElement::Insert : newOrdering = true; updatePlanDB(robot, index, *iter); break;
-					} //switch ( iter->Action )
+				insertPlanElement(robotName, index, robotPlan[index]);
+			} while ( ++index < static_cast<int>(robotPlan.size()) );
+		} //if ( tempIter != tempEnd )
+		else if ( planIter != planEnd )
+		{
+			//We have less tasks in our temp plan than in the deployed plan left.
+			if ( planIter->Begun )
+			{
+				//Deleting a task which is already started seems not to be the best idea, restart solving.
+				setInterrupt(InterruptSolving::Critical);
+				logger->log_error(LoggingComponent, "Should delete started task %s for robot %s! Restart solving.",
+					planIter->Task.c_str(), robotName.c_str());
+				//But continue the work for the remaining robots.
+				continue;
+			} //if ( planIter->Begun )
 
-					//Reset element for the next run.
-					iter->Visited = false;
-					iter->Action  = PlanElement::Nothing;
-
-					//Go to the next element.
-					++iter;
-					++index;
-				} //if ( iter->Visited )
-				else
-				{
-					//The element was not visited in the plan extraction and is not done yet, so we remove it.
-					removeFromPlanDB(robot, *iter);
-
-					/* Remove also from the vector, but do not really remove, we use the erase-remove-idiom:
-					 * The element to remove is moved to the end of the range by shifting, this preserves the ordering.
-					 * iter will now point to the next element.
-					 * Std::remove gives the iterator to the first element to erase, in our case the element we wan't to
-					 * remove, so let end point to that. *
-					end = std::remove(iter, end, *iter);
-					newOrdering = true;
-				} //else -> if ( iter->Visited )
-			} //while ( iter != end )
-
-			//Now erase the elements moved to the end of the vector.
-			plan.erase(end, plan.end());
-			PlanElements += plan.size();
-		} //for ( auto& pair : Plan )
-
-		NewSymbols = false;
-		LastPlan = clock->now();
-		logger->log_info(LoggingComponent, "New composed plan size: %d", PlanElements);
-	} //if ( NewSymbols )*/
+			for ( auto iter = planIter; iter != planEnd; ++iter, ++index )
+			{
+				removeFromPlanDB(robotName, index);
+			} //for ( auto iter = planIter; iter != planEnd; ++iter, ++index )
+			robotPlan.erase(planIter, planEnd);
+		} //else if ( planIter != planEnd )
+	} //for ( const auto& pair : Plan )
 	return;
 }
 
@@ -274,7 +234,7 @@ AspPlanerThread::loopPlan(void)
  * @brief Transforms the task string from ASP syntax to CLIPS syntax.
  * @param[in] string The string to transform.
  * @return The transformed string.
- *
+ */
 static std::string
 taskASPtoCLIPS(std::string string)
 {
@@ -287,7 +247,7 @@ taskASPtoCLIPS(std::string string)
  * @brief Transforms the task string from CLIPS syntax to ASP syntax.
  * @param[in] string The string to transform.
  * @return The transformed string.
- *
+ */
 static std::string
 taskCLIPStoASP(std::string string)
 {
@@ -299,15 +259,15 @@ taskCLIPStoASP(std::string string)
 /**
  * @brief Helper function to create the query.
  * @param[in] robot For which robot the plan element is.
- * @param[in] element The element.
+ * @param[in] elementIndex The index of the element.
  * @return The MongoDB query.
- *
+ */
 static std::string
-createQuery(const std::string& robot, const PlanElement& element)
+createQuery(const std::string& robot, const int elementIndex)
 {
-	static constexpr auto queryTemplate = R"({"relation": "planElement", "robot": "%s", "task": "\"%s\""})";
-	char queryString[std::strlen(queryTemplate) + robot.size() + element.Task.size() + 5];
-	std::sprintf(queryString, queryTemplate, robot.c_str(), taskASPtoCLIPS(element.Task).c_str());
+	static constexpr auto queryTemplate = R"({"relation": "planElement", "robot": "%s", "index": "%d"})";
+	char queryString[std::strlen(queryTemplate) + robot.size() + 2 + 5];
+	std::sprintf(queryString, queryTemplate, robot.c_str(), elementIndex);
 	return queryString;
 }
 
@@ -317,7 +277,7 @@ createQuery(const std::string& robot, const PlanElement& element)
  * @param[in] elementIndex The index of the element, used for the ordering on the executive. Is ignored if set to -1.
  * @param[in] element The element.
  * @return The object.
- *
+ */
 static mongo::BSONObj
 createObject(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
@@ -333,18 +293,48 @@ createObject(const std::string& robot, const int elementIndex, const PlanElement
 }
 
 /**
- * @brief Upserts the plan element in the robot memory.
+ * @brief Inserts a new element in the plan.
  * @param[in] robot For which robot the plan element is.
  * @param[in] elementIndex The index of the element, used for the ordering on the executive.
  * @param[in] element The element.
- *
+ */
 void
-AspPlanerThread::updatePlanDB(const std::string& robot, const int elementIndex, const PlanElement& element)
+AspPlanerThread::insertPlanElement(const std::string& robot, const int elementIndex, const PlanElement& element)
+{
+	robot_memory->insert(createObject(robot, elementIndex, element), "syncedrobmem.plan");
+	return;
+}
+
+/**
+ * @brief Updates the plan element, actually replaces it.
+ * @param[in] robot For which robot the plan element is.
+ * @param[in] elementIndex The index of the element, used for the ordering on the executive.
+ * @param[in] element The element.
+ */
+void
+AspPlanerThread::updatePlan(const std::string& robot, const int elementIndex, const PlanElement& element)
+{
+	mongo::BSONObjBuilder builder;
+	builder.append("task", "\"" + taskASPtoCLIPS(element.Task) + "\"").
+		append("begin", element.Begin).append("end", element.End);
+	robot_memory->update(createQuery(robot, elementIndex), builder.obj(), "syncedrobmem.plan", true);
+	return;
+}
+
+/**
+ * @brief Updates the plan elements time in the robot memory.
+ * @param[in] robot For which robot the plan element is.
+ * @param[in] elementIndex The index of the element, used for the ordering on the executive.
+ * @param[in] element The element.
+ */
+void
+AspPlanerThread::updatePlanTiming(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
 //	logger->log_info(LoggingComponent, "Update Plan DB, Query: %s", createQuery(robot, element).c_str());
 //	logger->log_info(LoggingComponent, "Update Plan DB, Object: %s", createObject(robot, elementIndex, element).toString().c_str());
-	robot_memory->update(createQuery(robot, element), createObject(robot, elementIndex, element), "syncedrobmem.plan",
-		true);
+	mongo::BSONObjBuilder builder;
+	builder.append("begin", element.Begin).append("end", element.End);
+	robot_memory->update(createQuery(robot, elementIndex), builder.obj(), "syncedrobmem.plan", true);
 	return;
 }
 
@@ -352,12 +342,12 @@ AspPlanerThread::updatePlanDB(const std::string& robot, const int elementIndex, 
  * @brief Removes a plan element from the robot memory.
  * @param[in] robot For which robot the plan element is.
  * @param[in] element The element.
- *
+ */
 void
-AspPlanerThread::removeFromPlanDB(const std::string& robot, const PlanElement& element)
+AspPlanerThread::removeFromPlanDB(const std::string& robot, const int elementIndex)
 {
 //	logger->log_info(LoggingComponent, "Remove from Plan DB: %s", createObject(robot, -1, element).toString().c_str());
-	robot_memory->remove(createObject(robot, -1, element), "syncedrobmem.plan");
+	robot_memory->remove(createQuery(robot, elementIndex), "syncedrobmem.plan");
 	return;
 }
 
@@ -368,7 +358,7 @@ AspPlanerThread::removeFromPlanDB(const std::string& robot, const PlanElement& e
 void
 AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 {
-/*	try
+	try
 	{
 		const auto object(document.getField("o"));
 		const auto action(object["action"].String());
@@ -379,6 +369,7 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 		auto& robotPlan(Plan[robot]);
 		logger->log_info(LoggingComponent, "Plan-Feedback, R: %s T: %s A: %s CT: %s", robot.c_str(), task.c_str(),
 			action.c_str(), robotPlan.CurrentTask.c_str());
+		planLocker.unlock();
 
 		//Switch only the first character because it is unique and we skip all the string handling.
 		switch ( action[0] )
@@ -386,34 +377,18 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 			case 'b' :
 			{
 				robotBegunWithTask(robot, task, object["begin"].Long());
-				assert(robotPlan.CurrentTask.empty());
-				robotPlan.CurrentTask = task;
 				break;
 			} //case 'b'
 			case 'u' :
 			{
-				assert(robotPlan.CurrentTask == task);
-				robotUpdatesTaskTimeEstimation(robot, task, object["time"].Long(), object["end"].Long());
+				robotUpdatesTaskTimeEstimation(robot, task, object["end"].Long());
 				break;
 			} //case 'u'
 			case 'e' :
 			{
-				assert(robotPlan.CurrentTask == task);
-				robotPlan.CurrentTask.clear();
-				auto& plan(robotPlan.Plan);
-				assert(plan[robotPlan.FirstNotDone].Task == task);
-				assert(!plan[robotPlan.FirstNotDone].Done);
-				plan[robotPlan.FirstNotDone++].Done = true;
-				const auto end(object["end"].Long());
-				robotFinishedTask(robot, task, end);
-
-				if ( object["success"].String() == "FALSE" )
-				{
-					taskWasFailure(task, end);
-				} //if ( object["success"].String() == "FALSE" )
+				robotFinishedTask(robot, task, object["end"].Long(), object["success"].String() == "TRUE");
 				break;
 			} //case 'e'
-			case 'f' : foundAMachine(); break;
 			default : throw fawkes::Exception("Unknown action %s!", action.c_str());
 		} //switch ( action[0] )
 	} //try
@@ -427,6 +402,6 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 		logger->log_error(LoggingComponent, "Exception while extracting plan feedback.\n%s",
 			document.toString().c_str());
 	} //catch ( ... )
-	return;*/
+	return;
 }
 

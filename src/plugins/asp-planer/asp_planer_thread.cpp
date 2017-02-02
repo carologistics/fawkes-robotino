@@ -28,7 +28,7 @@
 #include <cstdlib>
 #include <string>
 
-using namespace fawkes;
+using fawkes::MutexLocker;
 
 /**
  * @brief Transforms the real time to ASP time steps.
@@ -73,7 +73,6 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 		{
 			newRobot = true;
 		} //if ( !Robots.count(name) )
-		const auto& time(object["last-seen"].Array());
 		auto& info = Robots[name];
 
 		if ( newRobot )
@@ -82,7 +81,7 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 			setInterrupt(InterruptSolving::Critical);
 			info.AliveExternal = generateAliveExternal(name);
 		} //if ( newRobot )
-		info.LastSeen = Time(time.at(0).Long(), time.at(1).Long());
+		info.LastSeen = Clock::now();
 		info.Alive = true;
 		info.X = static_cast<float>(object["x"].Double());
 		info.Y = static_cast<float>(object["y"].Double());
@@ -157,13 +156,13 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
 		const int delEnd(object["end"].Long() + ExplorationTime);
 
 		MutexLocker locker(&WorldMutex);
-		Orders.push_back(
-			OrderInformation{number, quantity, base, cap, std::string(), ring1, ring2, ring3, delBegin, delEnd});
+		Orders.insert({number,
+			OrderInformation{number, quantity, base, cap, std::string(), ring1, ring2, ring3, delBegin, delEnd}});
 
 		if ( RingColors.size() == 4 )
 		{
 			//Do only spawn tasks when we have the ring infos.
-			addOrderToASP(Orders.back());
+			addOrderToASP(Orders[number]);
 		} //if ( RingColors.size() > 4 )
 
 		if ( number > MaxOrders )
@@ -212,10 +211,10 @@ AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
 		if ( RingColors.size() == 4 )
 		{
 			//We have the last ring info, spawn orders we have received until now.
-			for ( const auto& order : Orders )
+			for ( const auto& pair : Orders )
 			{
-				addOrderToASP(order);
-			} //for ( const auto& order : Orders )
+				addOrderToASP(pair.second);
+			} //for ( const auto& pair : Orders )
 		} //if ( RingColors.size() == 4 )
 	} //try
 	catch ( const std::exception& e )
@@ -351,9 +350,9 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		//Solving, loop intern
 		ProgramGrounded(false), ProductionStarted(false),
 		//Solving
-		NewSymbols(false),
+		NewSymbols(false), StartSolvingGameTime(0),
 		//Plan
-		StartSolvingGameTime(0)
+		PlanGameTime(0), LookAhaedPlanSize(0)
 		/*Horizon(0), Past(0),
 		MachinesFound(0), StillNeedExploring(true), CompleteRestart(false),
 		PlanElements(0), UpdateNavgraphDistances(false),*/
@@ -378,6 +377,7 @@ AspPlanerThread::init(void)
 	logger->log_info(LoggingComponent, "Initialize ASP Planer");
 	loadConfig();
 	Orders.reserve(MaxOrders);
+	OrderTaskMap.reserve(MaxOrders * MaxQuantity);
 	RingColors.reserve(4);
 	Robots.reserve(PossibleRobots.size());
 	ZonesToExplore.reserve(12);
@@ -426,8 +426,8 @@ AspPlanerThread::loop(void)
 
 	{
 		MutexLocker locker(&WorldMutex);
-		const auto now(clock->now());
-		static const Time timeOut(config->get_int(ConfigPrefix + std::string("planer/robot-timeout")), 0);
+		const auto now(Clock::now());
+		static const std::chrono::seconds timeOut(config->get_int(ConfigPrefix + std::string("planer/robot-timeout")));
 		for ( auto& pair : Robots )
 		{
 			auto& info(pair.second);
