@@ -77,10 +77,6 @@ AspPlanerThread::initClingo(void)
 
 	ClingoAcc->ground({{"base", {}}});
 
-//	CapLocations.reserve(2);
-//	RingLocations.reserve(2);
-//	BaseLocations.reserve(2);
-//	GetLocations.reserve(4);
 	return;
 }
 
