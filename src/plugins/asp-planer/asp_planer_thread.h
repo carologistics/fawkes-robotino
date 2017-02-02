@@ -135,7 +135,7 @@ class AspPlanerThread
 	void queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
 	void queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
 	void setInterrupt(const InterruptSolving interrupt, const bool lock = true);
-	bool shouldInterrupt(void) const;
+	bool shouldInterrupt(void);
 
 	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult& result);
