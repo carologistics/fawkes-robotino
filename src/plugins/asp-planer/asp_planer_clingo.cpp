@@ -400,12 +400,51 @@ AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
  * @note Requestmutex has to be locked.
  */
 bool
-AspPlanerThread::shouldInterrupt(void) const
+AspPlanerThread::shouldInterrupt(void)
 {
 	const auto now(Clock::now());
 	switch ( Interrupt )
 	{
-		case InterruptSolving::Not         : break;
+		case InterruptSolving::Not :
+		{
+			static auto lastCheck(now);
+			static const std::chrono::seconds threshold(
+				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/robot-task-check"));
+
+			if ( lastCheck - now >= threshold )
+			{
+				lastCheck = now;
+				MutexLocker worldLocker(&WorldMutex);
+				MutexLocker planLocker(&PlanMutex);
+
+				for ( const auto& pair : Robots )
+				{
+					if ( pair.second.Alive )
+					{
+						const auto& robotPlan(Plan[pair.first]);
+						if ( !robotPlan.CurrentTask.empty() )
+						{
+							static const std::chrono::seconds threshold(
+								config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/robot-task-behind"));
+							if ( GameTime > robotPlan.Tasks[robotPlan.FirstNotDone].End + threshold.count() )
+							{
+								logger->log_warn(LoggingComponent, "Robot %s is more than %d seconds behind schedule "
+									"(and has not send an update), increase interrupt level.", pair.first.c_str(),
+									threshold.count());
+								Interrupt = InterruptSolving::High;
+							} //if ( GameTime > robotPlan.Tasks[robotPlan.FirstNotDone].End + threshold.count() )
+						} //if ( !robotPlan.CurrentTask.empty() )
+					} //if ( pair.second.Alive )
+				} //for ( const auto& pair : Robots )
+			} //if ( lastCheck - now >= threshold )
+
+			//Check down here, so we have released the locks!
+			if ( Interrupt != InterruptSolving::Not )
+			{
+				return shouldInterrupt();
+			} //if ( Interrupt != InterruptSolving::Not )
+			break;
+		} //case InterruptSolving::Not
 		case InterruptSolving::JustStarted :
 		{
 			static const std::chrono::seconds threshold(
@@ -414,7 +453,7 @@ AspPlanerThread::shouldInterrupt(void) const
 			const auto diff(now - SolvingStarted);
 			return diff <= threshold;
 		} //case InterruptSolving::JustStarted
-		case InterruptSolving::Normal      :
+		case InterruptSolving::Normal :
 		{
 			static const std::chrono::seconds threshold(
 				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/normal"));
@@ -422,7 +461,15 @@ AspPlanerThread::shouldInterrupt(void) const
 			const auto diff(now - LastPlan);
 			return diff <= threshold;
 		} //case InterruptSolving::Normal
-		case InterruptSolving::Critical    : return true;
+		case InterruptSolving::High :
+		{
+			static const std::chrono::seconds threshold(
+				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/high"));
+			MutexLocker locker(&PlanMutex);
+			const auto diff(now - LastPlan);
+			return diff <= threshold;
+		} //case InterruptSolving::High
+		case InterruptSolving::Critical : return true;
 	} //switch ( Interrupt )
 	return false;
 }

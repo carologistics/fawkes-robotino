@@ -49,6 +49,7 @@ enum class InterruptSolving : short
 	Not = 0,
 	JustStarted,
 	Normal,
+	High,
 	Critical
 };
 
