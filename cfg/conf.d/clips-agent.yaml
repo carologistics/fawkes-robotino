@@ -73,18 +73,8 @@ clips-agent:
     #distance needed before a robot releases a lock
     release-distance: 0.75
 
-    #Timeouts before the robot starts to drive into the field
-    move-into-field-waittime:
-      R-1: 0
-      R-2: 7
-      R-3: 14
-      # timeouts when testing with cyan and magenta at the same time
-      R-4: 0
-      R-5: 7
-      R-6: 14
-    
     #Timeout before the robot starts to drive into the field after its leading robot
-    #move-into-field-waittime: 2
+    move-into-field-waittime: 2
 
     #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
     cap-station:
@@ -93,9 +83,6 @@ clips-agent:
         C-CS2: BLACK
         M-CS1: GREY
         M-CS2: BLACK
-
-      #on which shelf slot are new caps to fill into the station? (LEFT, RIGHT, MIDDLE)
-      shelf-slot-new-caps: LEFT
     
     waiting-points:
       ins-1-robotino1: WAIT_FOR_INS_1_ROBOTINO_1
