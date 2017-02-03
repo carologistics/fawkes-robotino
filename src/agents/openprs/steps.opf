@@ -183,6 +183,42 @@
 							After the call, the agent hold nothing (even if skill failed) TODO:check if holding"
 			)
 
+
+		(defop step-instruct-mps
+			:invocation ( !	(step instruct-mps machine $mps-name $args))
+			:context ( (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with )
+						)
+			:body (
+				;(allowed-states IDLE BROKEN PREPARED PROCESSING PROCESSED READY-AT-OUTPUT WAIT-IDLE DOWN))
+				(! (printf (FORMAT "STEP:  Instruct %s \n" $mps-name  )))
+				(=> (agent-state STEP-RUNNING))
+
+  				;Handle unexpected calls
+				(if (? (MEMQ $mps-state (. "DOWN" "WAIT_IDE" .)))
+					( ! (printf (FORMAT "WARN: Trying to instruct %s while its %s" $mps-name $mps-state)))
+					(=> (agent-state STEP-PENDING))
+					(^ (& 	(machine $mps-name $mps-type @new-state @m-prepared @m-zone @m-pose @m-loaded-with)
+					 		(MEMQ (val @new-state) (. "DOWN" "WAIT_IDE" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
+				
+				(if (? (MEMQ $mps-state (. "PREPARED" "READY-AT-OUTPUT" "PROCESSING" "PROCESSED" .)))
+					( ! (printf (FORMAT "ERROR: Trying to instruct %s while its %s" $mps-name $mps-state)))
+					(=> (agent-state STEP-FAILD))
+					(fail))
+
+				(if (? (MEMQ $mps-state (. "BROKEN" .)))
+					( ! (printf (FORMAT "ERROR: Trying to instruct %s while its %s" $mps-name $mps-state)))
+					(=> (agent-state STEP-FAILD))
+					(fail))
+
+				(if (! (instruct-mps machine $mps-name $args ))
+					(=> (agent-state STEP-FINISHD))
+					else
+					(=> (agent-state STEP-FAILD))
+					)
+				)
+			:effects()
+			)
+
 	)
 
 
