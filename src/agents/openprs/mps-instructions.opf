@@ -12,7 +12,7 @@
 
 (
 	(defop mps-instruction-base-station
-		:invocation ( !(instruct-mps machine $bs-name side $side color $color) )
+		:invocation ( !(instruct-mps machine $bs-name (args side $side color $color)) )
 		:context( 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
 				 	(team-color $team-color)
 				  	(peer-id private $peer-id)
@@ -34,7 +34,7 @@
 
 
  		(defop mps-instruction-cap-station
- 			:invocation ( !(instruct-mps machine $cs-name operation $operation) )
+ 			:invocation ( !(instruct-mps machine $cs-name (args operation $operation)) )
  			:context( 	(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with)
 				  	 	(team-color $team-color)
 				  		(peer-id private $peer-id)
@@ -56,7 +56,7 @@
  		(defop mps-instruction-common-send-instruction
  			:invocation( !( send-instruction $mps-name $mps-inst) )
  			:context( 	(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
- 						;s(MEMQ $mps-state (. "PREPARED" "PROCESSING" "READY-AT-OUTPUT" "BROKEN" .))
+ 						;(MEMQ $mps-state (. "PREPARED" "PROCESSING" "READY-AT-OUTPUT" "BROKEN" .))
 				  	 	(team-color $team-color)
 				  		(peer-id private $peer-id)
 				)
@@ -82,7 +82,7 @@
 							 	(~ (= (val @new-state) "PREPARED"))
 								(~ (= (val @new-state) "PROCESSING"))
 								(~ (= (val @new-state) "READY-AT-OUTPUT")) 
-								(~ (= (val @new-state) "BROKEN"))))
+								(~ (= (val @new-state) "BROKEN")) )); This is wrong a bit..Make sure that u stop sending only when the state u want happens 
 					(! (pb-broadcast $peer-id @instruction))
 					(! (print "Broadcasting..."))
 					)
