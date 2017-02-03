@@ -75,6 +75,31 @@
 		)
 
 
+	(defop step-get-output 
+		:invocation( ! 	(step get-output machine $mps) )
+		:context ( 	 	(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+						(~ (= $mps-type "BS"))
+						(MEMQ $mps-state (. "READY-AT-OUTPUT" .))
+			 			(holding NONE)
+			 			)
+
+		:body(
+			(! (printf (FORMAT " STEP: get-output from \n")))
+			(=> (agent-state STEP-RUNNING))
+
+			(if (! (execute (skill "get_product_from" "place" $mps "side" "output")))
+				(=> (agent-state STEP-FINISHD))
+				(=> (holding Product))  
+				else
+				(=> (agent-state STEP-FAILD))
+				)
+			)
+		:documentation "Fetch a work-peace from an mps output (except BS, there is Fetch-base for that).
+						Only works if the machine is READY-AT-OUTPUT.
+						On succeeding, the agent is holding the work peace"; TODO:Get the id from the machine fact later on
+		)
+
+
 		(defop step-get-cap-from-shelf
 			:invocation( ! 	(step get-from-shelf machine $mps-name))
 			:context ( 		(cap-station $mps-name $assigned-cap-color $cap-loaded-status $caps-on-shelf )
