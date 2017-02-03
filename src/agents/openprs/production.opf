@@ -11,7 +11,7 @@
 	(defop produce-c0-imperative
 		:invocation	(timer "beacon" $last-sec $last-usec $seq)
 		:context(	(order $id c0 $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
-				 	(cap-station $cs-name $cap-color)
+				 	(cap-station $cs-name $cap-color $cap-loaded-status $caps-on-shelf)
 				 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
 				 	(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with)
 				 	(~ (= $cs-state BROKEN))
@@ -27,26 +27,25 @@
 			(! (kill-other-intentions))
 			(! (end-critical-section))
 			(! (print "Producing C0..."))
+			(=> (holding NONE))
 
 			(! (print "PRELOADING CAP STATION..."))
-			(! (= $slot "LEFT")) 								;dynamically dertiermine which position. 
- 			(! (get-product-from place $cs-name shelf $slot))
-			(! (instruct-mps machine $cs-name operation RETRIEVE_CAP)) 
-			(! (bring-product-to place $cs-name atmps $slot))
-			(! (drive-to (string-cat $cs-name "-O")))
-			(! (get-product-from place $cs-name side "output"))
+		  	(! (step (get-cap 		machine $cs-name)))
+			(! (step (instruct-mps 	machine $cs-name (args operation RETRIEVE_CAP)))) 
+			(! (step (insert-atmps  machine $cs-name)))
+			(! (step (drive-to		machine $cs-name side "output")))
+			(! (step (get-output 	machine $cs-name)))
 
 			(! (print "FETHCHING THE BASE..."))
-			(! (print (string-cat $bs-name "-I")))
-			(! (drive-to (string-cat $bs-name "-I"))) ; todos, get the side from a fact that makes sure the active-side is updated
-			; todo:get the lock
-			(! (instruct-mps machine $bs-name side INPUT color $base-color ))
-			(! (get-product-from place $bs-name side "input"))
+			(! (step (drive-to 			machine $bs-name side "input"))) ; todos, get the side from a fact that makes sure the active-side is updated
+			; TODO:get the lock
+			(! (step instruct-mps 		machine $bs-name (args side INPUT color $base-color) ));let input be a string or a symobol everywhere
+			(! (step fetch-base-from-bs machine $bs-name side "input"))
 			
 			(! (print "INSETRING INTO CS..."))
-			(! (drive-to (string-cat $cs-name "-I"))) 
-			(! (instruct-mps machine $cs-name operation MOUNT_CAP))
-			(! (bring-product-to place $cs-name))
+			(! (step drive-to 		machine $cs-name side "input"))
+			(! (step instruct-mps 	machine $cs-name (args operation MOUNT_CAP)));if u instructed with no cap i think it breaks it
+			(! (step insert  		machine $cs-name))
 			)
 
 

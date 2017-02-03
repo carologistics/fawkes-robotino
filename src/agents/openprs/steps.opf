@@ -14,8 +14,9 @@
 ;expected to be called in. And that you did something wrong assuming that :context.
 
 (
+
 	(defop step-drive-to
-		:invocation( !	(step drive-to machine $mps-name side $side) )
+		:invocation( !	(step (drive-to machine $mps-name side $side) ))
 		:context()  
 		:body(
 			(! (printf (Format "STEP: Drive-To .. machine %s \n" $mps-name)))
@@ -38,13 +39,13 @@
 
 
 
-	(defop step-fetch-base-from-bs
-		:invocation( !	(step fetch-base-from-bs machine $mps-name side $side))
+	(defop step-get-base
+		:invocation( !	(step (get-base machine $mps-name side $side)))
 		:context ( 		(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
 				 		(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ;The Mps Has to had been instructed or down
 				 		(holding NONE))
 		:body(
-			(! (printf (Format "STEP: Fetch-From-Base .. machine %s is %s \n" $mps-name  $m-s)))
+			(! (printf (Format "STEP: Get-Base .. machine %s is %s \n" $mps-name  $m-s)))
 			;Todo: This could be replace by a unified checking mechanism 
 			(if (? (= $m-state "DOWN") )
 				(=> (agent-state STEP-PENDING))
@@ -76,7 +77,7 @@
 
 
 	(defop step-get-output 
-		:invocation( ! 	(step get-output machine $mps) )
+		:invocation( ! 	(step (get-output machine $mps)) )
 		:context ( 	 	(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(~ (= $mps-type "BS"))
 						(MEMQ $mps-state (. "READY-AT-OUTPUT" .))
@@ -100,8 +101,8 @@
 		)
 
 
-		(defop step-get-cap-from-shelf
-			:invocation( ! 	(step get-from-shelf machine $mps-name))
+		(defop step-get-cap
+			:invocation( ! 	(step (get-cap machine $mps-name)))
 			:context ( 		(cap-station $mps-name $assigned-cap-color $cap-loaded-status $caps-on-shelf )
 							(holding NONE))
 			:body(
@@ -126,8 +127,8 @@
 
 
 
-		(defop step-insert-product-into-mps
-			:invocation ( ! (step insert machine $mps))
+		(defop step-insert
+			:invocation ( ! (step (insert machine $mps)))
 			:context 	(  	(~ (holding NONE)) ;that should be a work-peace
 							(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
 						 	(MEMQ $mps-state (. "PREPARED"  "READY-AT-OUTPUT" "DOWN" .)))
@@ -156,8 +157,8 @@
 
 
 
-		(defop step-insert-cap-from-shelf
-			:invocation	( !	(step insert machine $mps already-at-mps ))
+		(defop step-insert-atmps
+			:invocation	( !	(step (insert-atmps machine $mps)))
 			:context 	( 	(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 							(cap-station $mps $cap-color CAP_NOT_LOADED $caps-on-shelf)
 							(MEMQ $mps-state (. "PREPARED" .))
@@ -185,7 +186,7 @@
 
 
 		(defop step-instruct-mps
-			:invocation ( !	(step instruct-mps machine $mps-name $args))
+			:invocation ( !	(step (instruct-mps machine $mps-name $args)))
 			:context ( (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with )
 						)
 			:body (

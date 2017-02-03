@@ -72,6 +72,7 @@ add (game-phase null)
 add (holding NONE)
 
 include "skills.inc"
+include "steps.inc"
 
 load opf "rcll2017_config.opf"
 load db  "llsf2014.db"
