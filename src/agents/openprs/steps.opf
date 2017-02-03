@@ -15,10 +15,10 @@
 
 (
 	(defop step-drive-to
-		:invocation( ! (step drive-to machine $mps-name side $side) )
+		:invocation( !	(step drive-to machine $mps-name side $side) )
 		:context()  
 		:body(
-			(! (printf (Format "STEP: Drive-To .. machine %s is %s \n" $mps-name)))
+			(! (printf (Format "STEP: Drive-To .. machine %s \n" $mps-name)))
 			(=> (agent-state STEP-RUNNING))
 
 			;Sides allowed
@@ -28,18 +28,21 @@
 				else 
 				(! (= $place (string-cat $mps-name "-O"))))
 
-			(if (! (execute (skill "drive_to" "place" $place) )) 
+			(if (! (execute (skill "drive_to" "place" $place) ))
+				;TODO:add bs-station-side-switching 
 				(=> (agent-state STEP-FINISHD))
 				else
 				(=> (agent-state STEP-FAILD)) )
 			)
 		)
 
+
+
 	(defop step-fetch-base-from-bs
-		:invocation(! (step fetch-base-from-bs machine $mps-name side $side))
-		:context ( 	(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
-				 	(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ;The Mps Has to had been instructed or down
-				 	(holding NONE))
+		:invocation( !	(step fetch-base-from-bs machine $mps-name side $side))
+		:context ( 		(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
+				 		(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ;The Mps Has to had been instructed or down
+				 		(holding NONE))
 		:body(
 			(! (printf (Format "STEP: Fetch-From-Base .. machine %s is %s \n" $mps-name  $m-s)))
 			;Todo: This could be replace by a unified checking mechanism 
@@ -48,11 +51,12 @@
 				(^ (& (machine $mps-name "BS" @new-state @m-prepared @m-zone @m-pose @m-loaded-with)
 					  (MEMQ (val @new-state) (. "PROCESSING" "READY-AT-OUTPUT" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
 				
+			;TODO: Have the id generated on READY-AT-OUTPUT or create it here since I should only be able to fetch if there is a base
 
 			(=> (agent-state STEP-RUNNING))
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" $side)) ) 
 				(=> (agent-state STEP-FINISHD))
-				(=> (holding BASE))
+				(=> (holding BASE));put the id
 				else
 				(=> (agent-state STEP-FAILD)))
 			)
@@ -70,9 +74,10 @@
 		;Or just react to it from here
 		)
 
+
 		(defop step-get-cap-from-shelf
 			:invocation( ! 	(step get-from-shelf machine $mps-name))
-			:context ( 		(cap-station $mps $assigned-cap-color $cap-loaded-status $caps-on-shelf )
+			:context ( 		(cap-station $mps-name $assigned-cap-color $cap-loaded-status $caps-on-shelf )
 							(holding NONE))
 			:body(
 				(! (printf (Format "STEP: Get-From-Shelf \n")))
@@ -94,11 +99,13 @@
 		:effects ( (=> (cap-station $mps $assigned-cap-color $cap-loaded-status $new-caps-on-shelf)) )
 		)
 
+
+
 		(defop step-insert-product-into-mps
 			:invocation ( ! (step insert machine $mps))
 			:context 	(  	(~ (holding NONE)) ;that should be a work-peace
 							(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
-						 	(MEMQ $mps-state (. "PREPARED" .)))
+						 	(MEMQ $mps-state (. "PREPARED"  "READY-AT-OUTPUT" "DOWN" .)))
 							;Maybe check if side is empty OR handle it if not
 							;Maybe check if the holding peace is a base or product work-peace
 							;Mps has to be instructed already before u do that. 
@@ -122,8 +129,10 @@
 			
 			)
 
+
+
 		(defop step-insert-cap-from-shelf
-			:invocation	( !	(step insert already-at-mps machine $mps ))
+			:invocation	( !	(step insert machine $mps already-at-mps ))
 			:context 	( 	(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 							(cap-station $mps $cap-color CAP_NOT_LOADED $caps-on-shelf)
 							(MEMQ $mps-state (. "PREPARED" .))
@@ -148,7 +157,7 @@
 							On succeeding, the cap station is assumed to be loaded with a cap
 							After the call, the agent hold nothing (even if skill failed) TODO:check if holding"
 			)
-	
+
 	)
 
 
