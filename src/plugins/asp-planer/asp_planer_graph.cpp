@@ -191,7 +191,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 
 			Clingo::Symbol arguments[3] = {from->second, to->second, Clingo::Number(duration)};
 
-			NavgraphDistances.emplace_back(Clingo::Function("driveDuration", {arguments, 3}));
+			NavgraphDistances.emplace_back(Clingo::Function("setDriveDuration", {arguments, 3}));
 		} //for ( auto to = from; ++to != end; )
 	} //for ( auto from = NavgraphDistances.begin(); from != end; ++from )
 
