@@ -131,20 +131,33 @@ AspPlanerThread::loopClingo(void)
 		const bool lastUpdate = NodesToFind.empty();
 		if ( lastUpdate )
 		{
+			//Unlock for the release requests in releaseZone().
+			reqLocker.unlock();
 			MutexLocker worldLocker(&WorldMutex);
-			for ( const auto& zone : ZonesToExplore )
+			if ( ReceivedZonesToExplore )
 			{
-				releaseZone(zone, false);
-			} //for ( const auto& zone : ZonesToExplore )
-			ZonesToExplore.clear();
+				for ( const auto& zone : ZonesToExplore )
+				{
+					releaseZone(zone, false);
+				} //for ( const auto& zone : ZonesToExplore )
+				ZonesToExplore.clear();
+			} //if ( ReceivedZonesToExplore )
+			else
+			{
+				for ( auto zone = 1; zone <= 24; ++zone )
+				{
+					releaseZone(zone, false);
+				} //for ( auto zone = 1; zone <= 24; ++zone )
+			} //else -> if ( ReceivedZonesToExplore )
 			navgraphLocker.unlock();
 			fillNavgraphNodesForASP(false);
 			navgraphLocker.relock();
+			reqLocker.relock();
 		} //if ( lastUpdate )
 
 		for ( const auto& external : NavgraphDistances )
 		{
-			ClingoAcc->free_exteral(external);
+			ClingoAcc->assign_external(external, false);
 		} //for ( const auto& external : NavgraphDistances )
 
 		updateNavgraphDistances();
