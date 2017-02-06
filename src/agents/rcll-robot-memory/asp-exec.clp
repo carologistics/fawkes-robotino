@@ -147,6 +147,7 @@
 
 (defrule asp-plan-update
   "We have an update for our plan."
+  (declare (salience ?*PRIORITY-HIGH*))
   ?update <- (robmem-trigger (name "robmem-plan-filtered") (ptr ?obj))
   =>
   (bind ?o (bson-get ?obj "o"))
