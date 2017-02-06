@@ -192,9 +192,9 @@
   =>
   (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" crlf)
   (bind ?pair (asp-start-task ?task))
-  (bind ?task (nth$ 1 ?pair))
+  (bind ?taskName (nth$ 1 ?pair))
   (bind ?params (delete$ ?pair 1 1))
-  (assert (asp-doing (index ?idx) (task ?task) (params ?params) (begin ?gt) (end (+ (- ?gt ?begin) ?end))))
+  (assert (asp-doing (index ?idx) (task ?taskName) (params ?params) (begin ?gt) (end (+ (- ?gt ?begin) ?end))))
   (bind ?gt (asp-game-time ?gt))
   (bind ?doc (asp-create-feedback-bson begin ?task))
   (bson-append ?doc "begin" ?gt)
