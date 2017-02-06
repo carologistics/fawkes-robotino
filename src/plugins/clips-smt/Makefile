@@ -26,7 +26,7 @@ LIBS_clips_smt = fawkescore fawkesutils fawkesaspects \
 			  z3
 OBJS_clips_smt = clips_smt_plugin.o clips_smt_thread.o
 
-OBJS_all = $(OBJS_clips_navgraph)
+OBJS_all = $(OBJS_clips_smt)
 
 ifeq ($(HAVE_CPP11)$(HAVE_CLIPS)$(HAVE_NAVGRAPH),111)
   CFLAGS  += $(CFLAGS_CLIPS) $(CFLAGS_CPP11)
