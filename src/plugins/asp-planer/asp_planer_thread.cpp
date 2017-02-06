@@ -143,7 +143,39 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 {
 	try
 	{
-		logger->log_warn(LoggingComponent, "Machine Info:\n%s", document.toString().c_str());
+		const auto object(document.getField("o"));
+		const std::string machine(object["machine"].String());
+		const std::string state(object["state"].String());
+		MutexLocker locker(&WorldMutex);
+		auto& info(Machines[machine]);
+		if ( state != info.State )
+		{
+			logger->log_warn(LoggingComponent, "Machine %s from %s to %s", machine.c_str(), info.State.c_str(), state.c_str());
+			if ( state == "BROKEN" )
+			{
+				static const int brokenTime = config->get_int("/asp-agent/working-durations/broken");
+				if ( info.WorkingUntil )
+				{
+					info.WorkingUntil -= GameTime;
+				} //if ( info.WorkingUntil )
+				info.BrokenUntil = GameTime + brokenTime;
+			} //if ( state == "BROKEN" )
+			else if ( state == "PROCESSING" )
+			{
+				assert(info.WorkingUntil == 0);
+				info.WorkingUntil = WorkingDurations[machine];
+				if ( info.BrokenUntil == 0 )
+				{
+					info.WorkingUntil += GameTime;
+				} //if ( info.BrokenUntil == 0 )
+			} //else if ( state == "PROCESSING" )
+
+			if ( info.State == "BROKEN" && info.WorkingUntil )
+			{
+				info.WorkingUntil += GameTime;
+			} //if ( info.State == "BROKEN" && info.WorkingUntil )
+		} //if ( state != Machines[machine].State )
+		info.State = std::move(state);
 	} //try
 	catch ( const std::exception& e )
 	{
