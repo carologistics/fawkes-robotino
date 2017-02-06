@@ -348,6 +348,9 @@
  * @property AspPlanerThread::Products
  * @brief The products currently used.
  *
+ * @property AspPlanerThread::ReceivedZonesToExplore
+ * @brief If we have received the info which zones we have to explore.
+ *
  * @property AspPlanerThread::ZonesToExplore
  * @brief Which zones we have to explore.
  *

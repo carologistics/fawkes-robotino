@@ -80,6 +80,7 @@ class AspPlanerThread
 	std::unordered_map<std::string, RobotInformation> Robots;
 	std::unordered_map<std::string, MachineInformation> Machines;
 	std::vector<Product> Products;
+	bool ReceivedZonesToExplore;
 	std::vector<int> ZonesToExplore;
 	std::unordered_map<std::pair<int, int>, OrderTasks> OrderTaskMap;
 

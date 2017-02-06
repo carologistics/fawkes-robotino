@@ -355,6 +355,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 		const auto begin = zones.begin();
 		auto end = zones.end();
 		MutexLocker locker(&WorldMutex);
+		ReceivedZonesToExplore = true;
 		for ( auto zone = 1; zone <= 24; ++zone )
 		{
 			auto iter = std::find(begin, end, zone);
@@ -398,7 +399,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		MaxDriveDuration(0), MaxOrders(0), MaxProducts(0), MaxQuantity(0), MaxTaskDuration(0), MaxWorkingDuration(0),
 		PrepareCSTaskDuration(0), TimeResolution(0),
 		//Worldmodel
-		GameTime(0),
+		GameTime(0), ReceivedZonesToExplore(false),
 		//Distances
 		UpdateNavgraphDistances(true),
 		//Requests
