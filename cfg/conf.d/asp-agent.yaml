@@ -62,6 +62,8 @@ asp-agent:
     delivery-station: 30
     base-station: 5
 
+    broken: 45
+
   #real-world-setup:
   peer-address: 172.26.255.255
   peer-port: 4444

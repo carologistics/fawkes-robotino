@@ -86,8 +86,10 @@ capStationAssignment("CS2", @capColor(2)).
 
 #program ourTeam(t).
 
-#external driveDuration(L1, L2, D) : location(L1), location(L2), D = 0..@maxDriveDuration().
-driveDuration(L1, L2, D) :- driveDuration(L2, L1, D).
+#external setDriveDuration(L1, L2, D) : location(L1), location(L2), L1 != L2, D = 1..@maxDriveDuration().
+driveDuration(L1, L2, D) :- setDriveDuration(L1, L2, D).
+driveDuration(L1, L2, D) :- setDriveDuration(L2, L1, D).
+driveDuration(L, L, 0) :- location(L).
 
 location(m(t, M, S)) :- baseStation(M),     side(S).
 location(m(t, M, S)) :- capStation(M),      side(S).
@@ -108,7 +110,7 @@ ringLocation(m(t, M, "I")) :- ringStation(M).
 locationToMachineMap(m(t, M, S), M) :- side(S), machine(M).
 
 #program setDriveDuration(l1, l2, d).
-driveDuration(l1, l2, d).
+setDriveDuration(l1, l2, d).
 
 #program setRingInfo(col, cost, m).
 ringStationAssignment(m, col).

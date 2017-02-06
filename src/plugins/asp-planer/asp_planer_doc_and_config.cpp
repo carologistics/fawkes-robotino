@@ -160,6 +160,9 @@
  *
  * @property MachineInformation::Prepared
  * @brief For the cap stations, if they are prepared to mount a cap.
+ *
+ * @property MachineInformation::State
+ * @brief The last reported state of the machine.
  */
 
 /**
@@ -344,6 +347,9 @@
  *
  * @property AspPlanerThread::Products
  * @brief The products currently used.
+ *
+ * @property AspPlanerThread::ReceivedZonesToExplore
+ * @brief If we have received the info which zones we have to explore.
  *
  * @property AspPlanerThread::ZonesToExplore
  * @brief Which zones we have to explore.
