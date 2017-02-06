@@ -160,6 +160,9 @@
  *
  * @property MachineInformation::Prepared
  * @brief For the cap stations, if they are prepared to mount a cap.
+ *
+ * @property MachineInformation::State
+ * @brief The last reported state of the machine.
  */
 
 /**
