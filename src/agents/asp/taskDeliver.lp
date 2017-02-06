@@ -18,7 +18,6 @@
 % base(O, B)                     Defined in orders.lp
 % cap(O, C)                      Defined in orders.lp
 % deliverLocation(L)             Defined in facts.lp
-% driveDuration(L1, L2, D)       Defined in facts.lp
 % doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % holding(R, P, GT)              Defined in robots.lp
