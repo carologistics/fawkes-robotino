@@ -239,7 +239,14 @@ static std::string
 taskASPtoCLIPS(std::string string)
 {
 	std::transform(string.begin(), string.end(), string.begin(),
-		[](const char c) noexcept { return c == ',' ? ' ' : c; });
+		[](const char c) noexcept {
+			switch ( c )
+			{
+				case ',' : return ' ';
+				case '"' : return '\'';
+			} //switch ( c )
+			return c;
+		});
 	return string;
 }
 
@@ -252,7 +259,14 @@ static std::string
 taskCLIPStoASP(std::string string)
 {
 	std::transform(string.begin(), string.end(), string.begin(),
-		[](const char c) noexcept { return c == ' ' ? ',' : c; });
+		[](const char c) noexcept {
+			switch ( c )
+			{
+				case ' '  : return ',';
+				case '\'' : return '"';
+			} //switch ( c )
+			return c;
+		});
 	return string;
 }
 
