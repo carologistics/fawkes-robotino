@@ -919,16 +919,15 @@ splitParameters(string_view string)
 {
 	std::vector<Clingo::Symbol> ret;
 	ret.reserve(std::count(string.begin(), string.end(), ','));
-	bool loop = true;
 
-	while ( loop )
+	auto comma = string.find(',');
+	auto paranthesis = string.find('(');
+	while ( comma != string_view::npos || paranthesis != string_view::npos )
 	{
-		auto comma = string.find(',');
-		auto paranthesis = string.find('(');
-		if ( (comma != string_view::npos && comma < paranthesis) ||
-				(paranthesis == string_view::npos && comma != string_view::npos) )
+		if ( comma != string_view::npos && comma < paranthesis )
 		{
 			auto param = string.substr(0,comma);
+
 			if ( std::isdigit(param[0]) )
 			{
 				char *unused;
@@ -936,10 +935,11 @@ splitParameters(string_view string)
 			} //if ( std::isdigit(param[0]) )
 			else
 			{
-				ret.push_back(Clingo::String(param.to_string().c_str()));
+				assert(param[0] == '"');
+				ret.push_back(Clingo::String(std::string(param.substr(1, param.size() - 2))));
 			} //else -> if ( std::isdigit(param[0]) )
-			string.remove_prefix(comma+1);
-		} //if ( comma != npos && comma < paranthesis || paranthesis == npos && comma != npos )
+			string.remove_prefix(comma + 1);
+		} //if ( comma != string_view::npos && comma < paranthesis )
 		else if ( paranthesis != string_view::npos )
 		{
 			auto index = paranthesis + 1;
@@ -955,16 +955,27 @@ splitParameters(string_view string)
 				} //else if ( string[index] == '(' )
 			} //for ( auto count = 1u, index = paranthesis + 1; count != 0; ++index )
 
-			ret.push_back(Clingo::Function(string.substr(0, paranthesis).to_string().c_str(),
-				splitParameters(string.substr(paranthesis+1, index-1))));
-			string.remove_prefix(index+1);
+			const auto substrStart(paranthesis + 1), substrEnd(index - 1 - substrStart);
+			ret.push_back(Clingo::Function(std::string(string.substr(0, paranthesis)).c_str(),
+				splitParameters(string.substr(substrStart, substrEnd))));
+			string.remove_prefix(index);
 		} //else if ( paranthesis != string_view::npos )
-		loop = comma != string_view::npos || paranthesis != string_view::npos;
-	} //while ( loop )
+		comma = string.find(',');
+		paranthesis = string.find('(');
+	} //while ( comma != string_view::npos || paranthesis != string_view::npos )
 
 	if ( string.size() != 0 )
 	{
-		ret.push_back(Clingo::String(string.to_string().c_str()));
+		if ( std::isdigit(string[0]) )
+		{
+			char *unused;
+			ret.push_back(Clingo::Number(std::strtol(string.data(), &unused, 10)));
+		} //if ( std::isdigit(string[0]) )
+		else
+		{
+			assert(string[0] == '"');
+			ret.push_back(Clingo::String(std::string(string.substr(1, string.size() - 2))));
+		} //else -> if ( std::isdigit(string[0]) )
 	} //if ( string.size() != 0 )
 
 	return ret;
