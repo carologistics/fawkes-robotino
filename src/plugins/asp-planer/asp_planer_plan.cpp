@@ -82,7 +82,7 @@ AspPlanerThread::loopPlan(void)
 			const decltype(auto) args(symbol.arguments());
 			//If not in the map until now it will add (robot, task, 0, 0).
 			auto& pair = map[{args[0].string(), args[1].to_string()}];
-			(begin ? pair.first : pair.second) = aspGameTimeToRealGameTime(args[2].number() + PlanGameTime);
+			(begin ? pair.first : pair.second) = aspGameTimeToRealGameTime(args[2].number()) + PlanGameTime;
 		} //if ( begin || end )
 	} //for ( const auto& symbol : Symbols )
 
