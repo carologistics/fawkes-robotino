@@ -23,12 +23,14 @@
 			(! (pb-set-field @bs-inst "side" $side))
 			(! (pb-set-field @bs-inst "color" $color))
 
+			(=> (last-attempted-instruction $bs-name (args side $side color $color) ATTEMPTING))
 			(! (send-instruction $bs-name (val @bs-inst)))
 			
-			(^ (instruction-sent-ack $bs-name )) ;TODO: Add time out here and fail the intention if it was timed
-			(~> (instruction-sent-ack $bs-name ))
+			 ;TODO: Add time out here and fail the intention if it was timed
+			(^ (& 	(last-attempted-instruction $bs-name @args @state)
+					(|| (= (val @state) FAILED)
+						(= (val @state) FINISHED))))
 			)
-
 		:documentation "Send the Prepare instruction once to the BS"
  		)
 
@@ -43,12 +45,13 @@
  				(! (= @cs-inst (pb-create "llsf_msgs.PrepareInstructionCS")))
 				(! (pb-set-field @cs-inst "operation" $operation)) ;TODO check if the operation is allowed before sending it
 
+				(=> (last-attempted-instruction $cs-name (args operation $operation) ATTEMPTING))
 				(! (send-instruction $cs-name (val @cs-inst)))
 
-				(^ (instruction-sent-ack $cs-name))
-				(~> (instruction-sent-ack $cs-name))
+				(^ (& 	(last-attempted-instruction $cs-name @args @state)
+						(|| (= (val @state) FAILED)
+							(= (val @state) FINISHED))))
  				)
-
 			:documentation "Send the Prepare instruction once to the CS"
  			)
 
@@ -57,6 +60,7 @@
  			:invocation( !( send-instruction $mps-name $mps-inst) )
  			:context( 	(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
  						;(MEMQ $mps-state (. "PREPARED" "PROCESSING" "READY-AT-OUTPUT" "BROKEN" .))
+ 						(last-attempted-instruction $mps-name @args ATTEMPTING)
 				  	 	(team-color $team-color)
 				  		(peer-id private $peer-id)
 				)
@@ -76,28 +80,31 @@
 
 				(if (? (= $mps-type "CS"))
 					(! (pb-set-field @instruction "instruction_cs" $mps-inst )))
+
 				
 				;Todo: raplce by a neater way 
+				(! (printf (FORMAT "Broadcasting to machine %s ...while its %s \n " $mps-name $mps-state)))
 				(while (?	(& (machine $mps-name $mps-type @new-state @prepared @zone @pose @loaded-with)
 							 	(~ (= (val @new-state) "PREPARED"))
 								(~ (= (val @new-state) "PROCESSING"))
 								(~ (= (val @new-state) "READY-AT-OUTPUT")) 
 								(~ (= (val @new-state) "BROKEN")) )); This is wrong a bit..Make sure that u stop sending only when the state u want happens 
 					(! (pb-broadcast $peer-id @instruction))
-					(! (print "Broadcasting..."))
 					)
+				(! (print "Broadcasted"))
 				;This to make sure the unification is done correctly. If the while condition is not enough to bind the $new-state. The neater way should resolve that
 				(? (machine $mps-name $mps-type @new-state @prepared @zone @pose @loaded-with))
 
 				(if (? (= "BROKEN" @new-state))
 					(! (printf (FORMAT "Instruction failed..machine %s is %s \n" $mps-name @new-state) ))
+					(=> (last-attempted-instruction $mps-name @args FAILED))
 					;(fail) For now let it send the ack till I make the sending neater
+
 					else 
 					(! (printf (FORMAT "The instruction sent successfully..machine %s is %s \n" $mps-name @new-state) ))
-					)
- 				
- 				(=> (instruction-sent-ack $mps-name))
- 				
+					(=> (last-attempted-instruction $mps-name @args FINISHED))
+
+					) 				
  				)
 
 			:effects  ()
