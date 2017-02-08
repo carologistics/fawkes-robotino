@@ -108,6 +108,27 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   env_name)
     )
   );
+  clips->add_function("clips_smt_request",
+    sigc::slot<void, std::string>(
+      sigc::bind<0>(
+        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_request),
+  env_name)
+    )
+  );
+  clips->add_function("clips_smt_done",
+    sigc::slot<void, std::string>(
+      sigc::bind<0>(
+        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_done),
+  env_name)
+    )
+  );
+  clips->add_function("clips_smt_abort",
+    sigc::slot<void, std::string>(
+      sigc::bind<0>(
+        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_abort),
+  env_name)
+    )
+  );
 
  /**
   clips->add_function("navgraph-block-edge",
@@ -315,6 +336,24 @@ ClipsSmtThread::clips_smt_dummy(std::string foo, std::string bar)
     bool b=false;
     if(carl::highestPower(64)==64) b=true;
     std::cout << "Hello Carl! You are " << b << std::endl;
+}
+
+void
+ClipsSmtThread::clips_smt_request(std::string foo, std::string bar)
+{
+    std::cout << "Clips-smt: request with " << foo << ", " << bar << std::endl;
+}
+
+void
+ClipsSmtThread::clips_smt_done(std::string foo, std::string bar)
+{
+    std::cout << "Clips-smt: done with " << foo << ", " << bar << std::endl;
+}
+
+void
+ClipsSmtThread::clips_smt_abort(std::string foo, std::string bar)
+{
+    std::cout << "Clips-smt: abort with " << foo << ", " << bar << std::endl;
 }
 
 void
