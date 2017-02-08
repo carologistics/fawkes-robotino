@@ -84,18 +84,22 @@ class ClipsSmtThread
   void clips_smt_unblock_edge(std::string env_name, std::string from, std::string to);
 **/
  private:
-  SmtData _smtData;
 
+  // Solver logic
   z3::context _z3_context;
+  bool _solver_done;
+  z3::expr_vector clips_smt_create_formula();
+  z3::check_result clips_smt_solve_formula(z3::expr_vector formula);
+  void clips_smt_react_on_result(z3::check_result result);
 
-  void clips_smt_dummy(std::string foo, std::string bar);
+  // Communication with the agent API
   void clips_smt_request(std::string foo, std::string bar);
   void clips_smt_done(std::string foo, std::string bar);
   void clips_smt_abort(std::string foo, std::string bar);
 
-  z3::expr_vector clips_smt_create_formula();
-  z3::check_result clips_smt_solve_formula(z3::expr_vector formula);
-  void clips_smt_react_on_result(z3::check_result result);
+  // Test
+  void clips_smt_test(std::string foo, std::string bar);
+  SmtData _smtData;
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 

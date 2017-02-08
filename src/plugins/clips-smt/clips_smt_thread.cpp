@@ -26,6 +26,9 @@
 
 #include <clipsmm.h>
 
+#include <llsf_msgs/Pose2D.pb.h>
+#include <llsf_msgs/MachineInfo.pb.h>
+
 //#include <z3++.h>
 
 
@@ -53,33 +56,6 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
-  try
-  {
-    WorkingPiece workingPieceRobot("5345447");
-    Robot robot(42, 1, 2, workingPieceRobot);
-    _smtData._robots.push_back(robot);
-
-    WorkingPiece workingPieceMachine("13467");
-    std::vector<WorkingPieceComponent> inputWpType = {RING_BLUE, RING_GREEN};
-    std::vector<WorkingPieceComponent> inputWpContainer = {RING_GREEN};
-    WorkingPieceComponent outputWP = RING_ORANGE;
-    Machine machine(27,2,3,10,MachineType::cap, workingPieceMachine, inputWpType, inputWpContainer, outputWP);
-    _smtData._machines.push_back(machine);
-    if (machine.hasRecievedWorkPieceComponent(4)) std::cout<< "WorkingPieceComponent is already in Machine" << std::endl;
-
-    WorkingPiece targetPieceOrder("24468");
-    Order order(30, targetPieceOrder);
-    _smtData._currentOrders.push_back(order);
-
-
-    std::cout << _smtData.toString() << std::endl;
-  }
-  catch (const runtime_error& error)
-  {
-    std::cout << "Someting Bad Happend:" << std::endl;
-    std::cout << error.what() << std::endl;
-  }
-
 }
 
 
@@ -101,13 +77,6 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   //clips->batch_evaluate(SRCDIR"/clips/navgraph.clp");
   //clips_smt_load(clips);
 
-  clips->add_function("clips_smt_dummy",
-    sigc::slot<void, std::string>(
-      sigc::bind<0>(
-        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_dummy),
-  env_name)
-    )
-  );
   clips->add_function("clips_smt_request",
     sigc::slot<void, std::string>(
       sigc::bind<0>(
@@ -115,6 +84,7 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   env_name)
     )
   );
+
   clips->add_function("clips_smt_done",
     sigc::slot<void, std::string>(
       sigc::bind<0>(
@@ -122,6 +92,7 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   env_name)
     )
   );
+
   clips->add_function("clips_smt_abort",
     sigc::slot<void, std::string>(
       sigc::bind<0>(
@@ -236,6 +207,13 @@ ClipsSmtThread::clips_smt_unblock_edge(std::string env_name,
 }
 **/
 
+/**
+ * Solver logic
+ *  - Create_formula uses knowledge from protobuf to construct an input for the solver
+ *  - Solve_formula uses above created formula as input and outputs satisfiability
+ *  - React_on_formula let us control the executeable due to the solver solution
+ **/
+
 z3::expr_vector
 ClipsSmtThread::clips_smt_create_formula()
 {
@@ -299,7 +277,7 @@ ClipsSmtThread::clips_smt_create_formula()
     //std::cout << constraints << std::endl << constants << std::endl;
     for (unsigned i = 0; i < formula.size(); i++) {
         z3Optimizer.add(formula[i]);
-        std::cout << "constraint " << formula[i] << std::endl;
+        std::cout << "CSMT_solve:       Constraint " << formula[i] << std::endl;
     }
 
     return z3Optimizer.check();
@@ -308,55 +286,100 @@ ClipsSmtThread::clips_smt_create_formula()
 void
 ClipsSmtThread::clips_smt_react_on_result(z3::check_result result)
 {
-    std::cout << "result: " << result << std::endl;
-    //return (z3::sat == result);
+    std::cout << "CSMT_react:       Result: " << result << std::endl;
 }
 
-
-void
-ClipsSmtThread::clips_smt_dummy(std::string foo, std::string bar)
-{
-    std::cout << "Clips_smt: Test solving z3 formula" << std::endl;
-
-    // Build simple formula   INPUT
-    std::cout << "Clips_smt: Create z3 formula" << std::endl;
-    z3::expr_vector formula = clips_smt_create_formula();
-
-    // Give it to z3 solver   SOLVING
-    std::cout << "Clips_smt: Solve z3 formula" << std::endl;
-    z3::check_result result = clips_smt_solve_formula(formula);
-
-    // Evaluate               OUTPUT
-    std::cout << "Clips_smt: React on solved z3 formula" << std::endl;
-    clips_smt_react_on_result(result);
-
-
-    // Test carl
-    std::cout << "Clips_smt: Test carl" << std::endl;
-    bool b=false;
-    if(carl::highestPower(64)==64) b=true;
-    std::cout << "Hello Carl! You are " << b << std::endl;
-}
+/**
+ * Methods for Communication with the agent
+ *  - Request performs an activation of the loop function
+ *  - Done asks weather the loop is finisihed or not // TODO by Igor: Can the agent work with this value
+ *  - Abort will stop the loop function
+ **/
 
 void
 ClipsSmtThread::clips_smt_request(std::string foo, std::string bar)
 {
-    std::cout << "Clips-smt: request with " << foo << ", " << bar << std::endl;
+    // Wakeup the loop function
+    std::cout << "CSMT_request:     Wake up the loop" << std::endl;
+    wakeup();
 }
 
 void
 ClipsSmtThread::clips_smt_done(std::string foo, std::string bar)
 {
-    std::cout << "Clips-smt: done with " << foo << ", " << bar << std::endl;
+    std::cout << "CSMT_done:        Solver is " << running() << std::endl;
 }
 
 void
 ClipsSmtThread::clips_smt_abort(std::string foo, std::string bar)
 {
-    std::cout << "Clips-smt: abort with " << foo << ", " << bar << std::endl;
+    std::cout << "CSMT_abort:       Abort" << std::endl;
+    if(running()) cancel();
 }
+
+/**
+ * Loop function activated by clips_smt_request()
+ *  - Create formula
+ *  - Give formula to solver
+ *  - React on solver solution
+ **/
 
 void
 ClipsSmtThread::loop()
 {
+    std::cout << "CSMT_loop:        Test solving z3 formula with running() "<< running() << std::endl;
+
+    // Build simple formula
+    std::cout << "CSMT_loop:        Create z3 formula" << std::endl;
+    z3::expr_vector formula = clips_smt_create_formula();
+
+    // Give it to z3 solver
+    std::cout << "CSMT_loop:        Solve z3 formula" << std::endl;
+    z3::check_result result = clips_smt_solve_formula(formula);
+
+    // Evaluate
+    std::cout << "CSMT_loop:        React on solved z3 formula" << std::endl;
+    clips_smt_react_on_result(result);
+}
+
+/**
+ * Test methods
+ **/
+
+void
+ClipsSmtThread::clips_smt_test(std::string foo, std::string bar)
+{
+    try
+    {
+      // Test SmtData
+      WorkingPiece workingPieceRobot("5345447");
+      Robot robot(42, 1, 2, workingPieceRobot);
+      _smtData._robots.push_back(robot);
+
+      WorkingPiece workingPieceMachine("13467");
+      std::vector<WorkingPieceComponent> inputWpType = {RING_BLUE, RING_GREEN};
+      std::vector<WorkingPieceComponent> inputWpContainer = {RING_GREEN};
+      WorkingPieceComponent outputWP = RING_ORANGE;
+      Machine machine(27,2,3,10,MachineType::cap, workingPieceMachine, inputWpType, inputWpContainer, outputWP);
+      _smtData._machines.push_back(machine);
+      if (machine.hasRecievedWorkPieceComponent(4)) std::cout<< "CSMT_test:     WorkingPieceComponent is already in Machine" << std::endl;
+
+      WorkingPiece targetPieceOrder("24468");
+      Order order(30, targetPieceOrder);
+      _smtData._currentOrders.push_back(order);
+
+
+      std::cout << _smtData.toString() << std::endl;
+
+      // Test carl
+      std::cout << "CSMT_test:      Test carl" << std::endl;
+      bool b=false;
+      if(carl::highestPower(64)==64) b=true;
+      std::cout << "CSMT_test:      Hello Carl! You are " << b << std::endl;
+    }
+    catch (const runtime_error& error)
+    {
+      std::cout << "CSMT_test:      Someting Bad Happend:" << std::endl;
+      std::cout << error.what() << std::endl;
+    }
 }
