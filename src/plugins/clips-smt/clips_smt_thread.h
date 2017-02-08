@@ -87,7 +87,12 @@ class ClipsSmtThread
   SmtData _smtData;
 
   z3::context _z3_context;
+
   void clips_smt_dummy(std::string foo, std::string bar);
+  void clips_smt_request(std::string foo, std::string bar);
+  void clips_smt_done(std::string foo, std::string bar);
+  void clips_smt_abort(std::string foo, std::string bar);
+
   z3::expr_vector clips_smt_create_formula();
   z3::check_result clips_smt_solve_formula(z3::expr_vector formula);
   void clips_smt_react_on_result(z3::check_result result);
