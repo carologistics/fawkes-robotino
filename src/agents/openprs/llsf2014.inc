@@ -15,6 +15,7 @@ declare op_predicate  conf-load-rcll2017
 declare op_predicate  instruct-mps
 declare op_predicate  send-instruction
 declare be  instruction-sent-ack
+declare ff last-attempted-instruction 1
 
 declare cwp         peer-id
 
@@ -46,13 +47,15 @@ declare symbol STEP-FINISHED
 declare symbol STEP-FAILED
 declare ff holding 0
 
+declare ff workpiece 1
+
 ;Material Types
 declare symbol CAP
 declare symbol BASE
 declare symbol RING
 declare symbol NONE
 
-;Colors for the caps
+;Colors for the Material
 declare symbol BLACK
 declare symbol GRAY
 declare symbol BLUE
@@ -66,20 +69,23 @@ declare symbol SILVER
 declare symbol CAP_LOADED
 declare symbol CAP_NOT_LOADED
 
+declare predicate template
 
 add (game-state null)
 add (game-phase null)
 add (holding NONE)
 
+add (template (workpiece id (Base color) (rings color color color) (cap color) (place machine side)))
+
 include "skills.inc"
 include "steps.inc"
-
-load opf "rcll2017_config.opf"
-load db  "llsf2014.db"
-load opf "llsf2014.opf"
-load opf "production.opf"
 load opf "net.opf"
+load opf "llsf2014.opf"
+load db  "llsf2014.db"
+
+load opf "production.opf"
 load opf "mps-instructions.opf"
 load opf "steps.opf"
 load opf "skills.opf"
 load opf "debug.opf"
+load opf "rcll2017_config.opf"
