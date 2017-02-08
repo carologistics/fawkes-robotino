@@ -4,6 +4,9 @@
   (ff-feature smt)
   =>
   (clips_smt_dummy "1993")
+  (clips_smt_request "test-request")
+  (clips_smt_done "test-done")
+  (clips_smt_abort "test-abort")
 
   (assert (loaded interfaces))
 )
