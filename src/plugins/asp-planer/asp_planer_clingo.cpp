@@ -226,6 +226,8 @@ AspPlanerThread::loopClingo(void)
 			return;
 		};
 
+	std::vector<Clingo::Symbol> locations;
+	locations.reserve(3);
 	for ( const auto& pair : Robots )
 	{
 		const auto& name(pair.first);
@@ -249,7 +251,19 @@ AspPlanerThread::loopClingo(void)
 		} //if ( robot.Doing.isValid() )
 		else
 		{
-			addExternal(generateRobotLocationExternal(name, nearestLocation(robot.X, robot.Y)));
+			auto location = nearestLocation(robot.X, robot.Y);
+			if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+			{
+				/* Two (or more) robots "on" one locations, should only happen at game start. The robots are mapped to
+				 * a side of the near base station instead of ins-out. Change their location to ins-out, this is the
+				 * only location where multiple robots are allowed. */
+				location = Clingo::String("ins-out");
+			} //if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+			else
+			{
+				locations.push_back(location);
+			} //else -> if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+			addExternal(generateRobotLocationExternal(name, location));
 		} //else -> if ( robot.Doing.isValid() )
 	} //for ( const auto& pair : Robots )
 
