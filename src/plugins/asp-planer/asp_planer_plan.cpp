@@ -110,6 +110,12 @@ AspPlanerThread::loopPlan(void)
 			static_assert(std::is_signed<decltype(e1.Begin)>::value,
 				"For unsigned values std::abs doesn't make any sense.");
 			const auto threshold = TimeResolution / 2;
+			if ( e2.Begin == 0 )
+			{
+				/* This is a task, which was running when the solving started, since we never have a begin() the value
+				 * is not set. So just compare the end values. */
+				return std::abs(e1.End - e2.End) > threshold;
+			} //if ( e2.Begin == 0 )
 			return std::abs(e1.Begin - e2.Begin) > threshold || std::abs(e1.End - e2.End) > threshold;
 		};
 

@@ -94,7 +94,10 @@ struct PlanElement : public BasicPlanElement
 	inline void
 	updateTime(const BasicPlanElement& e) noexcept
 	{
-		Begin = e.Begin;
+		if ( e.Begin != 0 )
+		{
+			Begin = e.Begin;
+		} //if ( e.Begin != 0 )
 		End = e.End;
 		return;
 	}
