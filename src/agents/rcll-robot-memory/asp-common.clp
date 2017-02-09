@@ -7,10 +7,10 @@
   (retract ?f)
 )
 
-(defrule asp-remove-init-locking
-  "Remove every init-locking fact, we don't want to use the locking mechanism."
-  (declare (salience 10000))
-  ?f <- (init-locking)
-  =>
-  (retract ?f)
-)
+;(defrule asp-remove-init-locking
+;  "Remove every init-locking fact, we don't want to use the locking mechanism."
+;  (declare (salience 10000))
+;  ?f <- (init-locking)
+;  =>
+;  (retract ?f)
+;)
