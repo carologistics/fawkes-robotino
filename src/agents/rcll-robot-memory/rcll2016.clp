@@ -163,12 +163,12 @@
   (path-load  rcll-robot-memory/tactical-help.clp)
   (path-load  rcll-robot-memory/task.clp)
   (path-load  rcll-robot-memory/steps.clp)
-  (path-load  rcll-robot-memory/coordination.clp)
   (if
     (not (any-factp ((?conf confval))
       (and (eq ?conf:path "/clips-agent/rcll2016/load-reasoner")
         (eq ?conf:type BOOL) (eq ?conf:value FALSE))))
   then
+    (path-load  rcll-robot-memory/coordination.clp)
     (path-load  rcll-robot-memory/production.clp)
   else
     (printout t "Not loading the reasoner" crlf)
