@@ -956,7 +956,7 @@ splitParameters(string_view string)
 	{
 		if ( comma != string_view::npos && comma < paranthesis )
 		{
-			auto param = string.substr(0,comma);
+			auto param = string.substr(0, comma);
 
 			if ( std::isdigit(param[0]) )
 			{
@@ -988,7 +988,10 @@ splitParameters(string_view string)
 			const auto substrStart(paranthesis + 1), substrEnd(index - 1 - substrStart);
 			ret.push_back(Clingo::Function(std::string(string.substr(0, paranthesis)).c_str(),
 				splitParameters(string.substr(substrStart, substrEnd))));
-			string.remove_prefix(index);
+
+			/* +1 for the following comma, but when there is no comma, i.e. this function was the last parameter bound
+			 * the removed size by the strings size. Removing more is undefined. */
+			string.remove_prefix(std::min(index + 1, string.size()));
 		} //else if ( paranthesis != string_view::npos )
 		comma = string.find(',');
 		paranthesis = string.find('(');
