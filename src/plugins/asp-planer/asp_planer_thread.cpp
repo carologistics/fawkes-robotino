@@ -67,20 +67,15 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 	{
 		const auto object(document.getField("o"));
 		const std::string name(object["name"].String());
-		bool newRobot = false;
 		MutexLocker locker(&WorldMutex);
-		if ( !Robots.count(name) )
-		{
-			newRobot = true;
-		} //if ( !Robots.count(name) )
 		auto& info = Robots[name];
 
-		if ( newRobot )
+		if ( !info.Alive )
 		{
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
 			setInterrupt(InterruptSolving::Critical);
 			info.AliveExternal = generateAliveExternal(name);
-		} //if ( newRobot )
+		} //if ( !info.Alive )
 		info.LastSeen = Clock::now();
 		info.Alive = true;
 		info.X = static_cast<float>(object["x"].Double());
