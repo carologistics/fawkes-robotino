@@ -47,6 +47,7 @@ clips-agent:
   rcll2016:
     #agent-role:
     use-asp: true
+    load-reasoner: false
     
     exploration:      
       row: HIGH
