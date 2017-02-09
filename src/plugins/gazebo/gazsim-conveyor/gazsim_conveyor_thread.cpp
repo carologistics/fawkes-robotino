@@ -46,7 +46,8 @@ using namespace gazebo;
 
 GazsimConveyorThread::GazsimConveyorThread()
   : Thread("GazsimConveyorThread", Thread::OPMODE_WAITFORWAKEUP),
-    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC)
+    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC),
+    new_data_(false)
 {
   set_name("GazsimConveyorThread()");
   loopcount_ = 0;
