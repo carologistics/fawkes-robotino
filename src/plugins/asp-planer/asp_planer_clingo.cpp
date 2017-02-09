@@ -107,6 +107,7 @@ AspPlanerThread::loopClingo(void)
 {
 	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
 	MutexLocker reqLocker(&RequestMutex);
+	//Locked: ClingoAcc, RequestMutex
 
 	if ( !ProgramGrounded )
 	{
@@ -126,6 +127,7 @@ AspPlanerThread::loopClingo(void)
 	} //if ( ClingoAcc->solving() )
 
 	MutexLocker navgraphLocker(&NavgraphDistanceMutex);
+	//Locked: ClingoAcc, RequestMutex, NavgraphDistanceMutex
 	if ( UpdateNavgraphDistances )
 	{
 		const bool lastUpdate = NodesToFind.empty();
@@ -134,6 +136,7 @@ AspPlanerThread::loopClingo(void)
 			//Unlock for the release requests in releaseZone().
 			reqLocker.unlock();
 			MutexLocker worldLocker(&WorldMutex);
+			//Locked: ClingoAcc, NavgraphDistanceMutex, WorldMutex
 			if ( ReceivedZonesToExplore )
 			{
 				for ( const auto& zone : ZonesToExplore )
@@ -150,10 +153,13 @@ AspPlanerThread::loopClingo(void)
 				} //for ( auto zone = 1; zone <= 24; ++zone )
 			} //else -> if ( ReceivedZonesToExplore )
 			navgraphLocker.unlock();
+			//Locked: ClingoAcc, WorldMutex
 			fillNavgraphNodesForASP(false);
 			navgraphLocker.relock();
 			reqLocker.relock();
+			//Locked: ClingoAcc, WorldMutex, NavgraphDistanceMutex, RequestMutex
 		} //if ( lastUpdate )
+		//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
 
 		for ( const auto& external : NavgraphDistances )
 		{
@@ -166,6 +172,7 @@ AspPlanerThread::loopClingo(void)
 		{
 			logger->log_info(LoggingComponent, "All machines found, fix distances and release externals.");
 			reqLocker.unlock();
+			//Locked: ClingoAcc, NavgraphDistanceMutex
 			for ( const auto& external : NavgraphDistances )
 			{
 				queueGround({"setDriveDuration",
@@ -180,6 +187,7 @@ AspPlanerThread::loopClingo(void)
 			} //for ( const auto& external : NavgraphDistances )
 			//This has to be done, because the behavior of double unlocking is undefined.
 			reqLocker.relock();
+			//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
 		} //if ( lastUpdate )
 		else
 		{
@@ -196,6 +204,7 @@ AspPlanerThread::loopClingo(void)
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
 	reqLocker.unlock();
+	//Locked: ClingoAcc
 
 	SentCancel = false;
 	Interrupt = InterruptSolving::Not;
@@ -209,6 +218,7 @@ AspPlanerThread::loopClingo(void)
 
 	//Set "initial" state.
 	MutexLocker worldLocker(&WorldMutex);
+	//Locked: ClingoAcc, WorldMutex
 	auto addExternal = [this](Clingo::Symbol&& external)
 		{
 			ClingoAcc->assign_external(external, true);
@@ -293,13 +303,16 @@ AspPlanerThread::loopClingo(void)
 		} //if ( !product.Cap.empty() )
 	} //for ( auto index = 0; index < static_cast<int>(Products.size()); ++index )
 	worldLocker.unlock();
+	//Locked: ClingoAcc
 
 	reqLocker.relock();
+	//Locked: ClingoAcc, RequestMutex
 	//Copy the requests to release the lock especially before grounding!
 	auto groundRequests(std::move(GroundRequests));
 	auto releaseRequests(std::move(ReleaseRequests));
 	auto assignRequests(std::move(AssignRequests));
 	reqLocker.unlock();
+	//Locked: ClingoAcc
 
 	if ( !groundRequests.empty() )
 	{
@@ -324,6 +337,7 @@ AspPlanerThread::loopClingo(void)
 
 	MutexLocker solvingLokcer(&SolvingMutex);
 	worldLocker.relock();
+	//Locked: ClingoAcc, SolvingMutex, WorldMutex
 
 	auto currentTimeExternal = [](const int time)
 		{
@@ -343,6 +357,8 @@ AspPlanerThread::loopClingo(void)
 		ClingoAcc->release_external(currentTimeExternal(gt));
 	} //for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
 	StartSolvingGameTime = GameTime;
+	worldLocker.unlock();
+	//Locked: ClingoAcc, SolvingMutex
 	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
 	SolvingStarted = Clock::now();
 	ClingoAcc->startSolving();
@@ -410,7 +426,7 @@ AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
 /**
  * @brief Says if the solving process should be interrupted.
  * @return If the solving should be interrupted.
- * @note Requestmutex has to be locked.
+ * @note RequestMutex has to be locked.
  */
 bool
 AspPlanerThread::shouldInterrupt(void)
