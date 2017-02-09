@@ -1093,12 +1093,11 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 
 	robotPlan.CurrentTask = task;
 	robotPlan.Tasks[robotPlan.FirstNotDone].Begun = true;
-	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].Begin - time;
+	const auto offset = time - robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	updatePlanTimes(robotPlan, robotPlan.FirstNotDone, offset);
 
 	robotInfo.Doing = createTaskDescription(task, robotPlan.Tasks[robotPlan.FirstNotDone].End);
-	logger->log_info(LoggingComponent, "Converted string %s to symbol %s.", task.c_str(), robotInfo.Doing.TaskSymbol.to_string().c_str());
 	return;
 }
 
@@ -1121,7 +1120,7 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
 	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
 	assert(robotInfo.Doing.isValid());
 
-	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].End - end;
+	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
 	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
@@ -1149,7 +1148,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
 	assert(robotInfo.Doing.isValid());
 
-	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].End - end;
+	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
 	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
