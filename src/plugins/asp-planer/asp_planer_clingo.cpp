@@ -107,6 +107,7 @@ AspPlanerThread::loopClingo(void)
 {
 	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
 	MutexLocker reqLocker(&RequestMutex);
+	//Locked: ClingoAcc, RequestMutex
 
 	if ( !ProgramGrounded )
 	{
@@ -116,16 +117,17 @@ AspPlanerThread::loopClingo(void)
 	const auto requests = GroundRequests.size() + ReleaseRequests.size() + AssignRequests.size();
 	if ( ClingoAcc->solving() )
 	{
-		if ( requests > 0 && shouldInterrupt() && !SentCancel )
+		if ( shouldInterrupt() && !SentCancel )
 		{
 			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %d", requests);
 			ClingoAcc->cancelSolving();
 			SentCancel = true;
-		} //if ( requests > 0 && shouldInterrupt() && !SentCancel )
+		} //if ( shouldInterrupt() && !SentCancel )
 		return;
 	} //if ( ClingoAcc->solving() )
 
 	MutexLocker navgraphLocker(&NavgraphDistanceMutex);
+	//Locked: ClingoAcc, RequestMutex, NavgraphDistanceMutex
 	if ( UpdateNavgraphDistances )
 	{
 		const bool lastUpdate = NodesToFind.empty();
@@ -134,6 +136,7 @@ AspPlanerThread::loopClingo(void)
 			//Unlock for the release requests in releaseZone().
 			reqLocker.unlock();
 			MutexLocker worldLocker(&WorldMutex);
+			//Locked: ClingoAcc, NavgraphDistanceMutex, WorldMutex
 			if ( ReceivedZonesToExplore )
 			{
 				for ( const auto& zone : ZonesToExplore )
@@ -150,10 +153,13 @@ AspPlanerThread::loopClingo(void)
 				} //for ( auto zone = 1; zone <= 24; ++zone )
 			} //else -> if ( ReceivedZonesToExplore )
 			navgraphLocker.unlock();
+			//Locked: ClingoAcc, WorldMutex
 			fillNavgraphNodesForASP(false);
 			navgraphLocker.relock();
 			reqLocker.relock();
+			//Locked: ClingoAcc, WorldMutex, NavgraphDistanceMutex, RequestMutex
 		} //if ( lastUpdate )
+		//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
 
 		for ( const auto& external : NavgraphDistances )
 		{
@@ -166,6 +172,7 @@ AspPlanerThread::loopClingo(void)
 		{
 			logger->log_info(LoggingComponent, "All machines found, fix distances and release externals.");
 			reqLocker.unlock();
+			//Locked: ClingoAcc, NavgraphDistanceMutex
 			for ( const auto& external : NavgraphDistances )
 			{
 				queueGround({"setDriveDuration",
@@ -180,6 +187,7 @@ AspPlanerThread::loopClingo(void)
 			} //for ( const auto& external : NavgraphDistances )
 			//This has to be done, because the behavior of double unlocking is undefined.
 			reqLocker.relock();
+			//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
 		} //if ( lastUpdate )
 		else
 		{
@@ -196,6 +204,7 @@ AspPlanerThread::loopClingo(void)
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
 	reqLocker.unlock();
+	//Locked: ClingoAcc
 
 	SentCancel = false;
 	Interrupt = InterruptSolving::Not;
@@ -209,6 +218,7 @@ AspPlanerThread::loopClingo(void)
 
 	//Set "initial" state.
 	MutexLocker worldLocker(&WorldMutex);
+	//Locked: ClingoAcc, WorldMutex
 	auto addExternal = [this](Clingo::Symbol&& external)
 		{
 			ClingoAcc->assign_external(external, true);
@@ -216,6 +226,8 @@ AspPlanerThread::loopClingo(void)
 			return;
 		};
 
+	std::vector<Clingo::Symbol> locations;
+	locations.reserve(3);
 	for ( const auto& pair : Robots )
 	{
 		const auto& name(pair.first);
@@ -239,7 +251,19 @@ AspPlanerThread::loopClingo(void)
 		} //if ( robot.Doing.isValid() )
 		else
 		{
-			addExternal(generateRobotLocationExternal(name, nearestLocation(robot.X, robot.Y)));
+			auto location = nearestLocation(robot.X, robot.Y);
+			if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+			{
+				/* Two (or more) robots "on" one locations, should only happen at game start. The robots are mapped to
+				 * a side of the near base station instead of ins-out. Change their location to ins-out, this is the
+				 * only location where multiple robots are allowed. */
+				location = Clingo::String("ins-out");
+			} //if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+			else
+			{
+				locations.push_back(location);
+			} //else -> if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+			addExternal(generateRobotLocationExternal(name, location));
 		} //else -> if ( robot.Doing.isValid() )
 	} //for ( const auto& pair : Robots )
 
@@ -293,13 +317,16 @@ AspPlanerThread::loopClingo(void)
 		} //if ( !product.Cap.empty() )
 	} //for ( auto index = 0; index < static_cast<int>(Products.size()); ++index )
 	worldLocker.unlock();
+	//Locked: ClingoAcc
 
 	reqLocker.relock();
+	//Locked: ClingoAcc, RequestMutex
 	//Copy the requests to release the lock especially before grounding!
 	auto groundRequests(std::move(GroundRequests));
 	auto releaseRequests(std::move(ReleaseRequests));
 	auto assignRequests(std::move(AssignRequests));
 	reqLocker.unlock();
+	//Locked: ClingoAcc
 
 	if ( !groundRequests.empty() )
 	{
@@ -324,6 +351,7 @@ AspPlanerThread::loopClingo(void)
 
 	MutexLocker solvingLokcer(&SolvingMutex);
 	worldLocker.relock();
+	//Locked: ClingoAcc, SolvingMutex, WorldMutex
 
 	auto currentTimeExternal = [](const int time)
 		{
@@ -343,6 +371,8 @@ AspPlanerThread::loopClingo(void)
 		ClingoAcc->release_external(currentTimeExternal(gt));
 	} //for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
 	StartSolvingGameTime = GameTime;
+	worldLocker.unlock();
+	//Locked: ClingoAcc, SolvingMutex
 	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
 	SolvingStarted = Clock::now();
 	ClingoAcc->startSolving();
@@ -410,7 +440,7 @@ AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
 /**
  * @brief Says if the solving process should be interrupted.
  * @return If the solving should be interrupted.
- * @note Requestmutex has to be locked.
+ * @note RequestMutex has to be locked.
  */
 bool
 AspPlanerThread::shouldInterrupt(void)
@@ -926,7 +956,7 @@ splitParameters(string_view string)
 	{
 		if ( comma != string_view::npos && comma < paranthesis )
 		{
-			auto param = string.substr(0,comma);
+			auto param = string.substr(0, comma);
 
 			if ( std::isdigit(param[0]) )
 			{
@@ -958,7 +988,10 @@ splitParameters(string_view string)
 			const auto substrStart(paranthesis + 1), substrEnd(index - 1 - substrStart);
 			ret.push_back(Clingo::Function(std::string(string.substr(0, paranthesis)).c_str(),
 				splitParameters(string.substr(substrStart, substrEnd))));
-			string.remove_prefix(index);
+
+			/* +1 for the following comma, but when there is no comma, i.e. this function was the last parameter bound
+			 * the removed size by the strings size. Removing more is undefined. */
+			string.remove_prefix(std::min(index + 1, string.size()));
 		} //else if ( paranthesis != string_view::npos )
 		comma = string.find(',');
 		paranthesis = string.find('(');
@@ -1060,12 +1093,11 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 
 	robotPlan.CurrentTask = task;
 	robotPlan.Tasks[robotPlan.FirstNotDone].Begun = true;
-	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].Begin - time;
+	const auto offset = time - robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	updatePlanTimes(robotPlan, robotPlan.FirstNotDone, offset);
 
 	robotInfo.Doing = createTaskDescription(task, robotPlan.Tasks[robotPlan.FirstNotDone].End);
-	logger->log_info(LoggingComponent, "Converted string %s to symbol %s.", task.c_str(), robotInfo.Doing.TaskSymbol.to_string().c_str());
 	return;
 }
 
@@ -1088,7 +1120,7 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
 	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
 	assert(robotInfo.Doing.isValid());
 
-	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].End - end;
+	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
 	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
@@ -1116,7 +1148,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
 	assert(robotInfo.Doing.isValid());
 
-	const auto offset = robotPlan.Tasks[robotPlan.FirstNotDone].End - end;
+	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
 	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);

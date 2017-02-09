@@ -145,7 +145,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 
 	if ( done )
 	{
-		logger->log_error(LoggingComponent, "updateNavgraphDistances called, by we already released the externals!");
+		logger->log_error(LoggingComponent, "updateNavgraphDistances called, but we already released the externals!");
 		return;
 	} //if ( done )
 

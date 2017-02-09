@@ -1,6 +1,6 @@
 (deffacts asp-exec-helpers
   "Facts we don't need directly, but the used old rules need them."
-  (lock-role ASP-Exec)
+  ;(lock-role ASP-Exec)
 )
 
 (deftemplate planElement
@@ -165,21 +165,30 @@
   (bson-destroy ?obj)
 )
 
-(deffunction asp-start-exploration (?zone)
-  (assert (state EXP_LOCK_ACCEPTED))
-  (assert (exp-next-machine (sym-cat Z ?zone)))
+(deffunction asp-get-side (?string)
+  (if (eq ?string "I") then (return INPUT) else (return OUTPUT))
 )
 
-(deffunction asp-start-task (?string)
+(deffunction asp-remove-quote (?string)
+  (bind ?pos (str-index "'" ?string))
+  (while (neq ?pos FALSE) do
+    (bind ?string (str-cat (sub-string 1 (- ?pos 1) ?string) (sub-string (+ ?pos 1) (str-length ?string) ?string)))
+    (bind ?pos (str-index "'" ?string))
+  )
+  (return ?string)
+)
+
+;(deffunction asp-start-exploration (?zone)
+;  (assert (state EXP_LOCK_ACCEPTED))
+;  (assert (exp-next-machine (sym-cat Z ?zone)))
+;)
+
+(deffunction asp-start-task (?string ?index)
   "Looks at the string and asserts the facts to actually start the task."
   (bind ?paramsBegin (str-index "(" ?string))
   (bind ?task (sub-string 1 (- ?paramsBegin 1) ?string))
   (bind ?paramsString (sub-string (+ ?paramsBegin 1) (- (str-length ?string) 1) ?string))
-  (bind ?params (explode$ ?paramsString))
-  (switch ?task
-    ;(case "explore" then (asp-start-exploration (nth$ 1 ?params))) -- currently disabled
-    (default (printout warn "Unknown task " ?task " cannot start!" crlf))
-  )
+  (bind ?params (explode$ (asp-remove-quote ?paramsString)))
   (return (create$ ?task ?params))
 )
 
@@ -189,9 +198,10 @@
   (game-time ?gt ?)
   (planElement (done FALSE) (index ?idx) (task ?task) (begin ?begin&:(<= (- ?begin ?*ASP-TASK-BEGIN-TOLERANCE*) (asp-game-time ?gt))) (end ?end))
   (not (planElement (done FALSE) (index ?otherIdx&:(< ?otherIdx ?idx))))
+  ?stateAdress <- (state ?state:IDLE|MOVE_INTO_FIELD)
   =>
   (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" crlf)
-  (bind ?pair (asp-start-task ?task))
+  (bind ?pair (asp-start-task ?task ?idx))
   (bind ?taskName (nth$ 1 ?pair))
   (bind ?params (delete$ ?pair 1 1))
   (assert (asp-doing (index ?idx) (task ?taskName) (params ?params) (begin ?gt) (end (+ (- ?gt ?begin) ?end))))
@@ -199,6 +209,189 @@
   (bind ?doc (asp-create-feedback-bson begin ?task))
   (bson-append ?doc "begin" ?gt)
   (asp-send-feedback ?doc)
+  (if (eq ?state MOVE_INTO_FIELD) then
+    (retract ?stateAdress)
+    (assert (state IDLE))
+  )
+)
+
+(defrule asp-no-task-rule
+  "Matches if we have not defined a rule for a given task."
+  (declare (salience ?*PRIORITY-LOW*))
+  (asp-doing (task ?taskName))
+  (state IDLE)
+  =>
+  (printout warn "Unknown task " ?taskName " cannot start!" crlf)
+)
+
+(defrule asp-start-deliver
+  ?state <- (state IDLE)
+  ;params should look like this: m ( C DS I ) 2 1
+  (asp-doing (index ?index) (task "deliver"|"lateDeliver") (params ? ? ?team ?machine ?side ? ?order ?))
+  (order (id ?order) (delivery-gate ?gate))
+  =>
+  (bind ?machineName (sym-cat ?team - ?machine))
+  (bind ?machineSide (asp-get-side ?side))
+  (bind ?taskID (* ?index 1000))
+  (retract ?state)
+  (assert (task (id ?taskID) (name deliver) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2))))
+          (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
+          (step (id (+ ?taskID 2)) (name insert) (machine ?machineName) (side ?machineSide) (gate ?gate) (machine-feature CONVEYOR))
+          (state TASK-ORDERED)
+  )
+)
+
+(defrule asp-start-feed-rs
+  ?state <- (state IDLE)
+  ;params should look like this: m ( C RS1 I )
+  (asp-doing (index ?index) (task "feedRS") (params ? ? ?team ?machine ?side ?))
+  =>
+  (bind ?machineName (sym-cat ?team - ?machine))
+  (bind ?machineSide (asp-get-side ?side))
+  (bind ?taskID (* ?index 1000))
+  (retract ?state)
+  (assert (task (id ?taskID) (name fill-rs) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2))))
+          (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
+          (step (id (+ ?taskID 2)) (name insert) (machine ?machineName) (side ?machineSide) (machine-feature SLIDE))
+          (state TASK-ORDERED)
+  )
+)
+
+(defrule asp-start-get-base
+  ?state <- (state IDLE)
+  ;params should look like this: m ( C BS I ) "RED"
+  (asp-doing (index ?index) (task "getBase") (params ? ? ?team ?machine ?side ? ?baseColor))
+  =>
+  (bind ?baseColor (sym-cat ?baseColor))
+  (bind ?machineName (sym-cat ?team - ?machine))
+  (bind ?machineSide (asp-get-side ?side))
+  (bind ?taskID (* ?index 1000))
+  (retract ?state)
+  (assert (task (id ?taskID) (name clear-bs) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2) (+ ?taskID 3) (+ ?taskID 4))))
+          (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
+          (step (id (+ ?taskID 2)) (name acquire-lock) (lock PREPARE-BS))
+          (step (id (+ ?taskID 3)) (name instruct-mps) (machine ?machineName) (side ?machineSide) (base ?baseColor))
+          (step (id (+ ?taskID 4)) (name get-base) (machine ?machineName) (side ?machineSide) (base ?baseColor) (machine-feature CONVEYOR))
+          (state TASK-ORDERED)
+  )
+)
+
+(defrule asp-start-get-product
+  ?state <- (state IDLE)
+  ;params should look like this: m ( C RS1 O )
+  (asp-doing (index ?index) (task "getProduct") (params ? ? ?team ?machine ?side ?))
+  =>
+  (bind ?machineName (sym-cat ?team - ?machine))
+  (bind ?machineSide (asp-get-side ?side))
+  (bind ?taskID (* ?index 1000))
+  (retract ?state)
+  (assert (task (id ?taskID) (name clear-bs) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2))))
+          (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
+          (step (id (+ ?taskID 2)) (name get-output) (machine ?machineName) (side ?machineSide) (machine-feature CONVEYOR))
+          (state TASK-ORDERED)
+  )
+)
+
+(defrule asp-start-goto
+  ?state <- (state IDLE)
+  ;params should look like this: m ( C RS1 O )
+  (asp-doing (index ?index) (task "goto") (params ? ? ?team ?machine ?side ?))
+  =>
+  (bind ?machineName (sym-cat ?team - ?machine))
+  (bind ?machineSide (asp-get-side ?side))
+  (bind ?taskID (* ?index 1000))
+  (retract ?state)
+  (assert (task (id ?taskID) (name clear-bs) (state ordered) (steps (create$ (+ ?taskID 1))))
+          (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
+          (state TASK-ORDERED)
+  )
+)
+
+(defrule asp-start-mount-cap
+  ?state <- (state IDLE)
+  ;params should look like this: m ( C CS1 I ) 2 1
+  (asp-doing (index ?index) (task "mountCap") (params ? ? ?team ?machine ?side ? ?order ?))
+  =>
+  (bind ?machineName (sym-cat ?team - ?machine))
+  (bind ?machineSide (asp-get-side ?side))
+  (bind ?taskID (* ?index 1000))
+  (retract ?state)
+  (assert (task (id ?taskID) (name produce-cx) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2))))
+          (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
+          (step (id (+ ?taskID 2)) (name insert) (machine ?machineName) (side ?machineSide) (machine-feature CONVEYOR))
+          (state TASK-ORDERED)
+  )
+)
+
+(defrule asp-start-mount-ring
+  ?state <- (state IDLE)
+  ;params should look like this: m ( C CS1 I ) 2 1 3
+  (asp-doing (index ?index) (task "mountCap") (params ? ? ?team ?machine ?side ? ?order ? ?ring))
+  (order (id ?index) (product-id ?prod))
+  (product (id ?prod) (rings $?rings))
+  =>
+  (bind ?machineName (sym-cat ?team - ?machine))
+  (bind ?machineSide (asp-get-side ?side))
+  (bind ?taskID (* ?index 1000))
+  (bind ?ringColor (nth$ ?ring ?rings))
+  (retract ?state)
+  (assert (task (id ?taskID) (name add-additional-ring) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2))))
+          (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
+          (step (id (+ ?taskID 2)) (name insert) (machine ?machineName) (side ?machineSide) (machine-feature CONVEYOR) (ring ?ringColor))
+          (state TASK-ORDERED)
+  )
+)
+
+(defrule asp-start-prep-cs
+  ?state <- (state IDLE)
+  ;params should look like this: m ( C CS1 I )
+  (asp-doing (index ?index) (task "prepareCS") (params ? ? ?team ?machine ?side ?))
+  =>
+  (bind ?machineName (sym-cat ?team - ?machine))
+  (bind ?machineSide (asp-get-side ?side))
+  (bind ?taskID (* ?index 1000))
+  (retract ?state)
+  (assert (task (id ?taskID) (name fill-cap) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2) (+ ?taskID 3))))
+          (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
+          (step (id (+ ?taskID 2)) (name get-from-shelf) (machine ?machineName) (side ?machineSide) (machine-feature SHELF))
+          (step (id (+ ?taskID 3)) (name insert) (machine ?machineName) (side ?machineSide) (machine-feature CONVEYOR) (already-at-mps TRUE))
+          (state TASK-ORDERED)
+  )
+)
+
+(defrule asp-task-success
+  "Inform the planer about success."
+  ?doing <- (asp-doing (index ?idx))
+  ?state <- (state TASK-FINISHED)
+  ?pE <- (planElement (index ?idx) (task ?task))
+  (game-time ?gt ?)
+  =>
+  (printout t "Task #" ?idx " successfully executed." crlf)
+  (bind ?gt (asp-game-time ?gt))
+  (bind ?doc (asp-create-feedback-bson end ?task))
+  (bson-append ?doc "end" ?gt)
+  (bson-append ?doc "success" TRUE)
+  (asp-send-feedback ?doc)
+  (modify ?pE (done TRUE))
+  (retract ?state ?doing)
+  (assert (state IDLE))
+)
+
+(defrule asp-task-failure
+  "Inform the planer about failure."
+  ?doing <- (asp-doing (index ?idx))
+  ?state <- (state TASK-FINISHED)
+  (planElement (index ?idx) (task ?task))
+  (game-time ?gt ?)
+  =>
+  (printout t "Task #" ?idx " was a failure." crlf)
+  (bind ?gt (asp-game-time ?gt))
+  (bind ?doc (asp-create-feedback-bson end ?task))
+  (bson-append ?doc "end" ?gt)
+  (bson-append ?doc "success" FALSE)
+  (asp-send-feedback ?doc)
+  (retract ?state ?doing)
+  (assert (state IDLE))
 )
 
 ;(defrule asp-update-time-estimation-exp
@@ -245,4 +438,3 @@
 ;  (bson-append ?doc "success" TRUE)
 ;  (asp-send-feedback ?doc)
 ;)
-
