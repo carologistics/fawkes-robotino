@@ -117,12 +117,12 @@ AspPlanerThread::loopClingo(void)
 	const auto requests = GroundRequests.size() + ReleaseRequests.size() + AssignRequests.size();
 	if ( ClingoAcc->solving() )
 	{
-		if ( requests > 0 && shouldInterrupt() && !SentCancel )
+		if ( shouldInterrupt() && !SentCancel )
 		{
 			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %d", requests);
 			ClingoAcc->cancelSolving();
 			SentCancel = true;
-		} //if ( requests > 0 && shouldInterrupt() && !SentCancel )
+		} //if ( shouldInterrupt() && !SentCancel )
 		return;
 	} //if ( ClingoAcc->solving() )
 
