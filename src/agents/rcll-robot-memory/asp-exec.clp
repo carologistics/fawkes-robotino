@@ -22,6 +22,7 @@
 
 (deffacts asp-exec-init
   (not-registered-rm)
+  (never-asp-done)
 )
 
 (defglobal
@@ -183,24 +184,47 @@
 (defrule asp-choose-next-task
   "Choose the next task, if we aren't doing anything else."
   (not (asp-doing))
+  (not (asp-go-into-idle))
   (game-time ?gt ?)
   (planElement (done FALSE) (index ?idx) (task ?task) (begin ?begin&:(<= (- ?begin ?*ASP-TASK-BEGIN-TOLERANCE*) (asp-game-time ?gt))) (end ?end))
   (not (planElement (done FALSE) (index ?otherIdx&:(< ?otherIdx ?idx))))
-  ?stateAdress <- (state ?state:IDLE|MOVE_INTO_FIELD)
+  (state IDLE)
   =>
   (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" crlf)
   (bind ?pair (asp-start-task ?task ?idx))
   (bind ?taskName (nth$ 1 ?pair))
   (bind ?params (delete$ ?pair 1 1))
-  (assert (asp-doing (index ?idx) (task ?taskName) (params ?params) (begin ?gt) (end (+ (- ?gt ?begin) ?end))))
+  (bind ?end (+ (- ?gt ?begin) ?end))
+  (assert (asp-doing (index ?idx) (task ?taskName) (params ?params) (begin ?gt) (end ?end)))
   (bind ?gt (asp-game-time ?gt))
+  (bind ?end (asp-game-time ?end))
   (bind ?doc (asp-create-feedback-bson begin ?task))
   (bson-append ?doc "begin" ?gt)
+  (bson-append ?doc "end" ?end)
   (asp-send-feedback ?doc)
-  (if (eq ?state MOVE_INTO_FIELD) then
-    (retract ?stateAdress)
-    (assert (state IDLE))
+)
+
+(defrule asp-done-anything
+  "Removes the flag that the robot has never done anything."
+  ?done <- (never-asp-done)
+  (asp-doing)
+  =>
+  (retract ?done)
+)
+
+(defrule asp-move-from-into-field
+  "Moves the robot away from the into field position, because it blocks the following robots."
+  (declare (salience ?*PRIORITY-LOW*))
+  ?done <- (never-asp-done)
+  (state IDLE)
+  =>
+  (retract ?done)
+  (bind ?wait (create$))
+  (do-for-all-facts ((?wp zone-waitpoint)) TRUE
+    (bind ?wait (insert$ ?wait 1 ?wp:name))
   )
+  (bind ?wait (nth$ (random 1 (length$ ?wait)) ?wait))
+  (skill-call ppgoto place (str-cat ?wait))
 )
 
 (defrule asp-no-task-rule
