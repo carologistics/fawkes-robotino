@@ -89,7 +89,8 @@
   (bind ?query (bson-create))
   (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan-retract-fact")
   (bson-append ?query "robot" (sym-cat ?name))
-  (bind ?trigger (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan-filtered"))
+  (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan-filtered")
+  (robmem-trigger-register "syncedrobmem.stopPlan" ?query "robmem-plan-stop")
   (bson-destroy ?query)
 )
 
@@ -122,16 +123,54 @@
   (retract ?helper)
 )
 
-;Not needed as long asp-plan-retract-fact doesn't work
-(defrule asp-plan-retract-fact-cleanup
-  "Retracts the trigger fact and destroys the bson object."
-  (declare (salience ?*PRIORITY-CLEANUP*))
-  ?trigger <- (robmem-trigger (name "robmem-plan-retract-fact") (ptr ?obj))
+(defrule asp-plan-stop-task
+  "We have been signaled to stop immediately with our task."
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?trigger <- (robmem-trigger (name "robmem-plan-stop") (ptr ?obj))
   =>
-  (printout t "Retract: " (bson-tostring ?obj) crlf)
-  (printout t "ID: " (bson-tostring (bson-get (bson-get ?obj "o") "_id")) crlf)
+  (skill-call-stop)
+  (assert (asp-go-into-idle))
   (bson-destroy ?obj)
   (retract ?trigger)
+)
+
+(defrule asp-remove-task-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?task <- (task)
+  =>
+  (retract ?task)
+)
+
+(defrule asp-remove-steps-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?step <- (step)
+  =>
+  (retract ?step)
+)
+
+(defrule asp-assert-idle
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?state <- (state ~IDLE)
+  =>
+  (retract ?state)
+  (assert (state IDLE))
+)
+
+(defrule asp-remove-asp-doing-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?doing <- (asp-doing)
+  =>
+  (retract ?doing)
+)
+
+(defrule asp-cleanup-stop
+  ?idle <- (asp-go-into-idle)
+  =>
+  (retract ?idle)
 )
 
 (defrule asp-plan-update
@@ -143,14 +182,43 @@
   (bind ?op (bson-get ?obj "op"))
   (switch ?op
     (case "i" then
+      ;A new element will be just added.
       (rm-assert-from-bson ?o)
+      (bson-destroy ?obj)
     )
     (case "u" then
-      (do-for-fact ((?pE planElement)) (eq ?pE:_id (sym-cat (bson-get ?o "_id"))) (retract ?pE))
-      (rm-assert-from-bson ?o)
+      ;A update of an existing element will be handled diffentrly for already started elements.
+      (assert (updatePlanElement (sym-cat (bson-get ?o "_id")) ?obj))
+      ;(do-for-fact ((?pE planElement)) (eq ?pE:_id (sym-cat (bson-get ?o "_id"))) (retract ?pE))
+      ;(rm-assert-from-bson ?o)
     )
   )
   (retract ?update)
+)
+
+(defrule asp-plan-update-running-task
+  "We should update a running task."
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?update <- (updatePlanElement ?id ?obj)
+  (planElement (_id ?id) (index ?idx) (task ?task))
+  (asp-doing (index ?idx))
+  =>
+  (if (neq ?task (bson-get (bson-get ?obj "o") "task")) then
+    ;The task was changed, this can happen due to a race condition. Our feedback didn't arrive at the planner
+    ;before he changed the plan. It will happen and the planner will accept our running task, so drop this update.
+    (bson-destroy ?obj)
+    (retract ?update)
+  )
+)
+
+(defrule asp-plan-update-merge
+  "Update a not running task or only the time for it, this happens based on our feedback."
+  (declare (salience (- ?*PRIORITY-HIGH* 1)))
+  ?update <- (updatePlanElement ?id ?obj)
+  ?pE <- (planElement (_id ?id))
+  =>
+  (retract ?update ?pE)
+  (rm-assert-from-bson (bson-get ?obj "o"))
   (bson-destroy ?obj)
 )
 

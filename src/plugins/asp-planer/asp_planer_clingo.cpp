@@ -1076,10 +1076,11 @@ createTaskDescription(const std::string& task, const int end)
  * @brief A robot has begun with a task, modify the worldstate.
  * @param[in] robot The robot.
  * @param[in] task The task.
- * @param[in] time At which point in time the task was begun.
+ * @param[in] begin At which point in time the task was begun.
+ * @param[in] end At which point in time the task will end.
  */
 void
-AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, const int time)
+AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, const int begin, const int end)
 {
 	MutexLocker worldLocker(&WorldMutex);
 	MutexLocker planLocker(&PlanMutex);
@@ -1088,16 +1089,42 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 	auto& robotInfo(Robots[robot]);
 
 	assert(robotPlan.CurrentTask.empty());
-	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
 	assert(!robotInfo.Doing.isValid());
+
+	if ( robotPlan.Tasks[robotPlan.FirstNotDone].Task != task )
+	{
+		logger->log_info(LoggingComponent, "Plan invalid, the robot started another task.");
+		robotPlan.Tasks[robotPlan.FirstNotDone].Task = task;
+		robotPlan.Tasks[robotPlan.FirstNotDone].Begin = begin;
+		robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
+		setInterrupt(InterruptSolving::Critical);
+	} //if ( robotPlan.Tasks[robotPlan.FirstNotDone].Task != task )
 
 	robotPlan.CurrentTask = task;
 	robotPlan.Tasks[robotPlan.FirstNotDone].Begun = true;
-	const auto offset = time - robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
+	const auto offset = begin - robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	updatePlanTimes(robotPlan, robotPlan.FirstNotDone, offset);
 
 	robotInfo.Doing = createTaskDescription(task, robotPlan.Tasks[robotPlan.FirstNotDone].End);
+
+	const auto location = robotInfo.Doing.TaskSymbol.arguments().front();
+	const auto iter = LocationInUse.find(location);
+
+	if ( iter != LocationInUse.end() && iter->second != robot )
+	{
+		logger->log_warn(LoggingComponent, "The robots %s and %s are trying to use %s! Tell %s to stop immediately!",
+			iter->second.c_str(), robot.c_str(), location.to_string().c_str(), robot.c_str());
+		robotPlan.CurrentTask.clear();
+		robotPlan.Tasks[robotPlan.FirstNotDone].Begun = false;
+		robotInfo.Doing = {};
+		tellRobotToStop(robot);
+		setInterrupt(InterruptSolving::Critical);
+	} //if ( iter != LocationInUse.end() && iter->second != robot )
+	else
+	{
+		LocationInUse.insert({location, robot});
+	} //else -> if ( iter != LocationInUse.end() && iter->second != robot )
 	return;
 }
 

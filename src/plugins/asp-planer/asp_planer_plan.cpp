@@ -180,7 +180,7 @@ AspPlanerThread::loopPlan(void)
 				if ( planIter->Begun )
 				{
 					logger->log_error(LoggingComponent,
-						"Should change started task %s from robot %s to %s. Restart solvoing!",
+						"Should change started task %s from robot %s to %s. Restart solving!",
 						planIter->Task.c_str(), robotCStr, tempIter->Task.c_str());
 					nextRobot = true;
 					setInterrupt(InterruptSolving::Critical);
@@ -334,10 +334,8 @@ AspPlanerThread::insertPlanElement(const std::string& robot, const int elementIn
 void
 AspPlanerThread::updatePlan(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
-	mongo::BSONObjBuilder builder;
-	builder.append("task", "\"" + taskASPtoCLIPS(element.Task) + "\"").
-		append("begin", element.Begin).append("end", element.End);
-	robot_memory->update(createQuery(robot, elementIndex), builder.obj(), "syncedrobmem.plan", true);
+	robot_memory->update(createQuery(robot, elementIndex), createObject(robot, elementIndex, element),
+		"syncedrobmem.plan", true);
 	return;
 }
 
@@ -350,11 +348,9 @@ AspPlanerThread::updatePlan(const std::string& robot, const int elementIndex, co
 void
 AspPlanerThread::updatePlanTiming(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
-//	logger->log_info(LoggingComponent, "Update Plan DB, Query: %s", createQuery(robot, element).c_str());
-//	logger->log_info(LoggingComponent, "Update Plan DB, Object: %s", createObject(robot, elementIndex, element).toString().c_str());
-	mongo::BSONObjBuilder builder;
-	builder.append("begin", element.Begin).append("end", element.End);
-	robot_memory->update(createQuery(robot, elementIndex), builder.obj(), "syncedrobmem.plan", true);
+	/* The idea was only to update the time, but this either don't work, or my query wasn't good enough, so call the
+	 * general update method. */
+	updatePlan(robot, elementIndex, element);
 	return;
 }
 
@@ -366,8 +362,28 @@ AspPlanerThread::updatePlanTiming(const std::string& robot, const int elementInd
 void
 AspPlanerThread::removeFromPlanDB(const std::string& robot, const int elementIndex)
 {
-//	logger->log_info(LoggingComponent, "Remove from Plan DB: %s", createObject(robot, -1, element).toString().c_str());
 	robot_memory->remove(createQuery(robot, elementIndex), "syncedrobmem.plan");
+	return;
+}
+
+/**
+ * @brief Tells the robot to stop its current task and removes its plan, because the plan is corrupted.
+ * @param[in] robot The robots name.
+ * @note The plan lock has to be hold.
+ */
+void
+AspPlanerThread::tellRobotToStop(const std::string& robot)
+{
+	mongo::BSONObjBuilder builder;
+	builder.append("robot", robot).append("stop", true);
+	robot_memory->insert(builder.obj(), "syncedrobmem.stopPlan");
+
+	auto& robotPlan(Plan[robot]);
+	for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index )
+	{
+		removeFromPlanDB(robot, index);
+	} //for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index )
+	robotPlan.Tasks.erase(robotPlan.Tasks.begin() + robotPlan.FirstNotDone, robotPlan.Tasks.end());
 	return;
 }
 
@@ -396,7 +412,7 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 		{
 			case 'b' :
 			{
-				robotBegunWithTask(robot, task, object["begin"].Long());
+				robotBegunWithTask(robot, task, object["begin"].Long(), object["end"].Long());
 				break;
 			} //case 'b'
 			case 'u' :
