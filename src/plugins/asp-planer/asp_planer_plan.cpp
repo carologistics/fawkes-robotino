@@ -158,11 +158,29 @@ AspPlanerThread::loopPlan(void)
 			continue;
 		} //if ( tempRobotPlan.empty() )
 
-		const auto planEnd = robotPlan.end();
+		auto planEnd = robotPlan.end();
 		auto planIter = std::lower_bound(robotPlan.begin(), planEnd, tempRobotPlan[0], planBegin);
 		auto tempIter = tempRobotPlan.begin();
 		const auto tempEnd = tempRobotPlan.end();
 		int index = planIter - robotPlan.begin();
+
+		auto notBegun = std::find_if(robotPlan.begin(), planEnd, [](const PlanElement& e) noexcept { return !e.Begun;});
+		if ( notBegun < planIter )
+		{
+			/* There is at least one element that is before the point we want to add the new elements and not yet begun.
+			 * We have to remove this from the plan, because the new plans for the other robots do not consider this, it
+			 * could lead to conflicts, i.e. two robots trying to do the same task. Because we make so rigorous changes
+			 * we remove all not started tasks, they will be addes on demand after wards. */
+			logger->log_error(LoggingComponent, "Remove all plan elements for %s from %s %d %d on.", robotName.c_str(),
+				notBegun->Task.c_str(), notBegun->Begin, notBegun->End);
+			index = notBegun - robotPlan.begin();
+			const decltype(index) size(robotPlan.size());
+			for ( auto i = index; i < size; ++i )
+			{
+				removeFromPlanDB(robotName, i);
+			} //for ( auto i = index; i < size; ++i )
+			planIter = planEnd = robotPlan.erase(notBegun, planEnd);
+		} //if ( notBegun < planIter )
 
 		bool nextRobot = false;
 
