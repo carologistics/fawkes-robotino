@@ -44,7 +44,6 @@
   (phase PRODUCTION)
   =>
   (bind ?*ASP-EXPLORATION-TIME* ?time)
-  (printout t "Bound exp time " ?time crlf)
 )
 
 (defrule asp-bind-read-mps-light
@@ -93,18 +92,6 @@
   (bson-destroy ?query)
 )
 
-;Doesn't work :/
-(defrule asp-plan-retract-fact
-  "Retracts the plan element fact which entry was deleted in the robmem."
-  (robmem-trigger (name "robmem-plan-retract-fact") (ptr ?obj))
-  (test (eq (bson-get ?obj "op") "d"))
-  ?element <- (planElement (_id ?id))
-  (test (eq (bson-get (bson-get ?obj "o") "_id") ?id))
-  =>
-  (printout t "Delete " ?id crlf)
-  (retract ?element)
-)
-
 (defrule asp-plan-retract-prepare
   "Asserts a helper to retract a planElement."
   ?trigger <- (robmem-trigger (name "robmem-plan-retract-fact") (ptr ?obj))
@@ -113,6 +100,7 @@
     (bind ?id (bson-get (bson-get ?obj "o") "_id"))
     (assert (retractPlanElement (sym-cat ?id)))
   )
+  ;(printout t "Object: " (bson-tostring ?obj) crlf)
   (bson-destroy ?obj)
   (retract ?trigger)
 )
