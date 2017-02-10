@@ -146,7 +146,7 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 		if ( state != info.State )
 		{
 			logger->log_warn(LoggingComponent, "Machine %s from %s to %s", machine.c_str(), info.State.c_str(), state.c_str());
-			if ( state == "BROKEN" )
+			if ( state == "BROKEN" || state == "DOWN" )
 			{
 				static const int brokenTime = config->get_int("/asp-agent/working-durations/broken");
 				if ( info.WorkingUntil )
@@ -154,7 +154,7 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 					info.WorkingUntil -= GameTime;
 				} //if ( info.WorkingUntil )
 				info.BrokenUntil = GameTime + brokenTime;
-			} //if ( state == "BROKEN" )
+			} //if ( state == "BROKEN" || state == "DOWN" )
 			else if ( state == "PROCESSING" )
 			{
 				assert(info.WorkingUntil == 0);
@@ -165,10 +165,10 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 				} //if ( info.BrokenUntil == 0 )
 			} //else if ( state == "PROCESSING" )
 
-			if ( info.State == "BROKEN" && info.WorkingUntil )
+			if ( (info.State == "BROKEN" || info.State == "DOWN" ) && info.WorkingUntil )
 			{
 				info.WorkingUntil += GameTime;
-			} //if ( info.State == "BROKEN" && info.WorkingUntil )
+			} //if ( (info.State == "BROKEN" || info.State == "DOWN" ) && info.WorkingUntil )
 		} //if ( state != Machines[machine].State )
 		info.State = std::move(state);
 	} //try
