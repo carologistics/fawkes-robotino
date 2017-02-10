@@ -455,6 +455,9 @@
  *
  * @property AspPlanerThread::Plan
  * @brief The plan currently deployed.
+ *
+ * @property AspPlanerThread::LocationInUse
+ * @brief Mapping from a location to the robot which uses it, to detect errors in the plan.
  */
 
 /**

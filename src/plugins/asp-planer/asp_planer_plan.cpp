@@ -132,11 +132,19 @@ AspPlanerThread::loopPlan(void)
 
 	for ( const auto& pair : map )
 	{
+		const auto& robotName(pair.first.first);
 		logger->log_info(LoggingComponent, "Plan element: (%s, %s, %d, %d)",
-			pair.first.first.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
-		auto& robotTempPlan(tempPlan[pair.first.first]);
+			robotName.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
+		auto& robotTempPlan(tempPlan[robotName]);
 		BasicPlanElement e{pair.first.second, pair.second.first, pair.second.second};
-		robotTempPlan.insert(std::lower_bound(robotTempPlan.begin(), robotTempPlan.end(), e, planBegin), std::move(e));
+		auto iter = robotTempPlan.insert(std::lower_bound(robotTempPlan.begin(), robotTempPlan.end(), e, planBegin),
+			std::move(e));
+		if ( iter->Begin == 0 )
+		{
+			//The first entry is a already started task, fix its begin time!
+			auto& robotPlan(Plan[robotName]);
+			iter->Begin = robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
+		} //if ( iter->Begin == 0 )
 	} //for ( const auto& pair : map )
 
 	for ( const auto& pair : tempPlan )
@@ -150,11 +158,29 @@ AspPlanerThread::loopPlan(void)
 			continue;
 		} //if ( tempRobotPlan.empty() )
 
-		const auto planEnd = robotPlan.end();
+		auto planEnd = robotPlan.end();
 		auto planIter = std::lower_bound(robotPlan.begin(), planEnd, tempRobotPlan[0], planBegin);
 		auto tempIter = tempRobotPlan.begin();
 		const auto tempEnd = tempRobotPlan.end();
 		int index = planIter - robotPlan.begin();
+
+		auto notBegun = std::find_if(robotPlan.begin(), planEnd, [](const PlanElement& e) noexcept { return !e.Begun;});
+		if ( notBegun < planIter )
+		{
+			/* There is at least one element that is before the point we want to add the new elements and not yet begun.
+			 * We have to remove this from the plan, because the new plans for the other robots do not consider this, it
+			 * could lead to conflicts, i.e. two robots trying to do the same task. Because we make so rigorous changes
+			 * we remove all not started tasks, they will be addes on demand after wards. */
+			logger->log_error(LoggingComponent, "Remove all plan elements for %s from %s %d %d on.", robotName.c_str(),
+				notBegun->Task.c_str(), notBegun->Begin, notBegun->End);
+			index = notBegun - robotPlan.begin();
+			const decltype(index) size(robotPlan.size());
+			for ( auto i = index; i < size; ++i )
+			{
+				removeFromPlanDB(robotName, i);
+			} //for ( auto i = index; i < size; ++i )
+			planIter = planEnd = robotPlan.erase(notBegun, planEnd);
+		} //if ( notBegun < planIter )
 
 		bool nextRobot = false;
 
@@ -180,7 +206,7 @@ AspPlanerThread::loopPlan(void)
 				if ( planIter->Begun )
 				{
 					logger->log_error(LoggingComponent,
-						"Should change started task %s from robot %s to %s. Restart solvoing!",
+						"Should change started task %s from robot %s to %s. Restart solving!",
 						planIter->Task.c_str(), robotCStr, tempIter->Task.c_str());
 					nextRobot = true;
 					setInterrupt(InterruptSolving::Critical);
@@ -334,10 +360,8 @@ AspPlanerThread::insertPlanElement(const std::string& robot, const int elementIn
 void
 AspPlanerThread::updatePlan(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
-	mongo::BSONObjBuilder builder;
-	builder.append("task", "\"" + taskASPtoCLIPS(element.Task) + "\"").
-		append("begin", element.Begin).append("end", element.End);
-	robot_memory->update(createQuery(robot, elementIndex), builder.obj(), "syncedrobmem.plan", true);
+	robot_memory->update(createQuery(robot, elementIndex), createObject(robot, elementIndex, element),
+		"syncedrobmem.plan", true);
 	return;
 }
 
@@ -350,11 +374,9 @@ AspPlanerThread::updatePlan(const std::string& robot, const int elementIndex, co
 void
 AspPlanerThread::updatePlanTiming(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
-//	logger->log_info(LoggingComponent, "Update Plan DB, Query: %s", createQuery(robot, element).c_str());
-//	logger->log_info(LoggingComponent, "Update Plan DB, Object: %s", createObject(robot, elementIndex, element).toString().c_str());
-	mongo::BSONObjBuilder builder;
-	builder.append("begin", element.Begin).append("end", element.End);
-	robot_memory->update(createQuery(robot, elementIndex), builder.obj(), "syncedrobmem.plan", true);
+	/* The idea was only to update the time, but this either don't work, or my query wasn't good enough, so call the
+	 * general update method. */
+	updatePlan(robot, elementIndex, element);
 	return;
 }
 
@@ -366,8 +388,28 @@ AspPlanerThread::updatePlanTiming(const std::string& robot, const int elementInd
 void
 AspPlanerThread::removeFromPlanDB(const std::string& robot, const int elementIndex)
 {
-//	logger->log_info(LoggingComponent, "Remove from Plan DB: %s", createObject(robot, -1, element).toString().c_str());
 	robot_memory->remove(createQuery(robot, elementIndex), "syncedrobmem.plan");
+	return;
+}
+
+/**
+ * @brief Tells the robot to stop its current task and removes its plan, because the plan is corrupted.
+ * @param[in] robot The robots name.
+ * @note The plan lock has to be hold.
+ */
+void
+AspPlanerThread::tellRobotToStop(const std::string& robot)
+{
+	mongo::BSONObjBuilder builder;
+	builder.append("robot", robot).append("stop", true);
+	robot_memory->insert(builder.obj(), "syncedrobmem.stopPlan");
+
+	auto& robotPlan(Plan[robot]);
+	for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index )
+	{
+		removeFromPlanDB(robot, index);
+	} //for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index )
+	robotPlan.Tasks.erase(robotPlan.Tasks.begin() + robotPlan.FirstNotDone, robotPlan.Tasks.end());
 	return;
 }
 
@@ -396,7 +438,7 @@ AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
 		{
 			case 'b' :
 			{
-				robotBegunWithTask(robot, task, object["begin"].Long());
+				robotBegunWithTask(robot, task, object["begin"].Long(), object["end"].Long());
 				break;
 			} //case 'b'
 			case 'u' :

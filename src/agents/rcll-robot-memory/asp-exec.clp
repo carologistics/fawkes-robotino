@@ -22,6 +22,7 @@
 
 (deffacts asp-exec-init
   (not-registered-rm)
+  (never-asp-done)
 )
 
 (defglobal
@@ -44,7 +45,6 @@
   (phase PRODUCTION)
   =>
   (bind ?*ASP-EXPLORATION-TIME* ?time)
-  (printout t "Bound exp time " ?time crlf)
 )
 
 (defrule asp-bind-read-mps-light
@@ -89,20 +89,9 @@
   (bind ?query (bson-create))
   (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan-retract-fact")
   (bson-append ?query "robot" (sym-cat ?name))
-  (bind ?trigger (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan-filtered"))
+  (robmem-trigger-register "syncedrobmem.plan" ?query "robmem-plan-filtered")
+  (robmem-trigger-register "syncedrobmem.stopPlan" ?query "robmem-plan-stop")
   (bson-destroy ?query)
-)
-
-;Doesn't work :/
-(defrule asp-plan-retract-fact
-  "Retracts the plan element fact which entry was deleted in the robmem."
-  (robmem-trigger (name "robmem-plan-retract-fact") (ptr ?obj))
-  (test (eq (bson-get ?obj "op") "d"))
-  ?element <- (planElement (_id ?id))
-  (test (eq (bson-get (bson-get ?obj "o") "_id") ?id))
-  =>
-  (printout t "Delete " ?id crlf)
-  (retract ?element)
 )
 
 (defrule asp-plan-retract-prepare
@@ -113,6 +102,7 @@
     (bind ?id (bson-get (bson-get ?obj "o") "_id"))
     (assert (retractPlanElement (sym-cat ?id)))
   )
+  ;(printout t "Object: " (bson-tostring ?obj) crlf)
   (bson-destroy ?obj)
   (retract ?trigger)
 )
@@ -133,16 +123,54 @@
   (retract ?helper)
 )
 
-;Not needed as long asp-plan-retract-fact doesn't work
-(defrule asp-plan-retract-fact-cleanup
-  "Retracts the trigger fact and destroys the bson object."
-  (declare (salience ?*PRIORITY-CLEANUP*))
-  ?trigger <- (robmem-trigger (name "robmem-plan-retract-fact") (ptr ?obj))
+(defrule asp-plan-stop-task
+  "We have been signaled to stop immediately with our task."
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?trigger <- (robmem-trigger (name "robmem-plan-stop") (ptr ?obj))
   =>
-  (printout t "Retract: " (bson-tostring ?obj) crlf)
-  (printout t "ID: " (bson-tostring (bson-get (bson-get ?obj "o") "_id")) crlf)
+  (skill-call-stop)
+  (assert (asp-go-into-idle))
   (bson-destroy ?obj)
   (retract ?trigger)
+)
+
+(defrule asp-remove-task-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?task <- (task)
+  =>
+  (retract ?task)
+)
+
+(defrule asp-remove-steps-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?step <- (step)
+  =>
+  (retract ?step)
+)
+
+(defrule asp-assert-idle
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?state <- (state ~IDLE)
+  =>
+  (retract ?state)
+  (assert (state IDLE))
+)
+
+(defrule asp-remove-asp-doing-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?doing <- (asp-doing)
+  =>
+  (retract ?doing)
+)
+
+(defrule asp-cleanup-stop
+  ?idle <- (asp-go-into-idle)
+  =>
+  (retract ?idle)
 )
 
 (defrule asp-plan-update
@@ -154,14 +182,43 @@
   (bind ?op (bson-get ?obj "op"))
   (switch ?op
     (case "i" then
+      ;A new element will be just added.
       (rm-assert-from-bson ?o)
+      (bson-destroy ?obj)
     )
     (case "u" then
-      (do-for-fact ((?pE planElement)) (eq ?pE:_id (sym-cat (bson-get ?o "_id"))) (retract ?pE))
-      (rm-assert-from-bson ?o)
+      ;A update of an existing element will be handled diffentrly for already started elements.
+      (assert (updatePlanElement (sym-cat (bson-get ?o "_id")) ?obj))
+      ;(do-for-fact ((?pE planElement)) (eq ?pE:_id (sym-cat (bson-get ?o "_id"))) (retract ?pE))
+      ;(rm-assert-from-bson ?o)
     )
   )
   (retract ?update)
+)
+
+(defrule asp-plan-update-running-task
+  "We should update a running task."
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?update <- (updatePlanElement ?id ?obj)
+  (planElement (_id ?id) (index ?idx) (task ?task))
+  (asp-doing (index ?idx))
+  =>
+  (if (neq ?task (bson-get (bson-get ?obj "o") "task")) then
+    ;The task was changed, this can happen due to a race condition. Our feedback didn't arrive at the planner
+    ;before he changed the plan. It will happen and the planner will accept our running task, so drop this update.
+    (bson-destroy ?obj)
+    (retract ?update)
+  )
+)
+
+(defrule asp-plan-update-merge
+  "Update a not running task or only the time for it, this happens based on our feedback."
+  (declare (salience (- ?*PRIORITY-HIGH* 1)))
+  ?update <- (updatePlanElement ?id ?obj)
+  ?pE <- (planElement (_id ?id))
+  =>
+  (retract ?update ?pE)
+  (rm-assert-from-bson (bson-get ?obj "o"))
   (bson-destroy ?obj)
 )
 
@@ -195,24 +252,47 @@
 (defrule asp-choose-next-task
   "Choose the next task, if we aren't doing anything else."
   (not (asp-doing))
+  (not (asp-go-into-idle))
   (game-time ?gt ?)
   (planElement (done FALSE) (index ?idx) (task ?task) (begin ?begin&:(<= (- ?begin ?*ASP-TASK-BEGIN-TOLERANCE*) (asp-game-time ?gt))) (end ?end))
   (not (planElement (done FALSE) (index ?otherIdx&:(< ?otherIdx ?idx))))
-  ?stateAdress <- (state ?state:IDLE|MOVE_INTO_FIELD)
+  (state IDLE)
   =>
   (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" crlf)
   (bind ?pair (asp-start-task ?task ?idx))
   (bind ?taskName (nth$ 1 ?pair))
   (bind ?params (delete$ ?pair 1 1))
-  (assert (asp-doing (index ?idx) (task ?taskName) (params ?params) (begin ?gt) (end (+ (- ?gt ?begin) ?end))))
+  (bind ?end (+ (- ?gt ?begin) ?end))
+  (assert (asp-doing (index ?idx) (task ?taskName) (params ?params) (begin ?gt) (end ?end)))
   (bind ?gt (asp-game-time ?gt))
+  (bind ?end (asp-game-time ?end))
   (bind ?doc (asp-create-feedback-bson begin ?task))
   (bson-append ?doc "begin" ?gt)
+  (bson-append ?doc "end" ?end)
   (asp-send-feedback ?doc)
-  (if (eq ?state MOVE_INTO_FIELD) then
-    (retract ?stateAdress)
-    (assert (state IDLE))
+)
+
+(defrule asp-done-anything
+  "Removes the flag that the robot has never done anything."
+  ?done <- (never-asp-done)
+  (asp-doing)
+  =>
+  (retract ?done)
+)
+
+(defrule asp-move-from-into-field
+  "Moves the robot away from the into field position, because it blocks the following robots."
+  (declare (salience ?*PRIORITY-LOW*))
+  ?done <- (never-asp-done)
+  (state IDLE)
+  =>
+  (retract ?done)
+  (bind ?wait (create$))
+  (do-for-all-facts ((?wp zone-waitpoint)) TRUE
+    (bind ?wait (insert$ ?wait 1 ?wp:name))
   )
+  (bind ?wait (nth$ (random 1 (length$ ?wait)) ?wait))
+  (skill-call ppgoto place (str-cat ?wait))
 )
 
 (defrule asp-no-task-rule
