@@ -132,11 +132,19 @@ AspPlanerThread::loopPlan(void)
 
 	for ( const auto& pair : map )
 	{
+		const auto& robotName(pair.first.first);
 		logger->log_info(LoggingComponent, "Plan element: (%s, %s, %d, %d)",
-			pair.first.first.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
-		auto& robotTempPlan(tempPlan[pair.first.first]);
+			robotName.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
+		auto& robotTempPlan(tempPlan[robotName]);
 		BasicPlanElement e{pair.first.second, pair.second.first, pair.second.second};
-		robotTempPlan.insert(std::lower_bound(robotTempPlan.begin(), robotTempPlan.end(), e, planBegin), std::move(e));
+		auto iter = robotTempPlan.insert(std::lower_bound(robotTempPlan.begin(), robotTempPlan.end(), e, planBegin),
+			std::move(e));
+		if ( iter->Begin == 0 )
+		{
+			//The first entry is a already started task, fix its begin time!
+			auto& robotPlan(Plan[robotName]);
+			iter->Begin = robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
+		} //if ( iter->Begin == 0 )
 	} //for ( const auto& pair : map )
 
 	for ( const auto& pair : tempPlan )
