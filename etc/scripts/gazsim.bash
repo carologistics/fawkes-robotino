@@ -36,6 +36,8 @@ OPTIONS:
    -v                Run Fawkes in valgrind
    -t                Skip Exploration and add all navgraph points
    --asp             Run with ASP agent and global planer
+   --asp-exec        Run the ASP executive for the robots
+   --asp-planer      Start the ASP planner
 EOF
 }
 
@@ -147,6 +149,16 @@ while true; do
 	 --asp)
 	     META_PLUGIN="-m gazsim-meta-agent"
 	     START_ASP_PLANER=true
+	     ;;
+	 --asp-exec)
+	     META_PLUGIN="-m gazsim-meta-agent"
+	     ;;
+	 --asp-planer)
+	     START_ASP_PLANER=true
+	     START_GAZEBO=false
+	     NUM_ROBOTINOS=0
+	     NUM_CYAN=0
+	     NUM_MAGENTA=0
 	     ;;
 	 -o)
 	     START_GAZEBO=false
