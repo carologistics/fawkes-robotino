@@ -231,6 +231,8 @@ AspPlanerThread::loopClingo(void)
 		ClingoAcc->assign_external(external, false);
 	} //for ( const auto& external : externals )
 
+	externals.clear();
+
 	//Set "initial" state.
 	MutexLocker worldLocker(&WorldMutex);
 	//Locked: ClingoAcc, WorldMutex
