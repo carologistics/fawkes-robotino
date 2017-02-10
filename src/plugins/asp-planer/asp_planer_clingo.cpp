@@ -179,11 +179,26 @@ AspPlanerThread::loopClingo(void)
 					Clingo::SymbolVector(external.arguments().begin(), external.arguments().end())});
 				Clingo::Symbol args[3];
 				std::copy(external.arguments().begin(), external.arguments().end(), std::begin(args));
-				for ( auto d = 0; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
+
+				//In difference to assigning and grounding we need the full symmetry in releasing.
+				for ( bool swap = true; true; )
 				{
-					args[2] = Clingo::Number(d);
-					queueRelease(Clingo::Function(external.name(), {args, 3}));
-				} //for ( auto d = 0; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
+					for ( auto d = 1; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
+					{
+						args[2] = Clingo::Number(d);
+						queueRelease(Clingo::Function(external.name(), {args, 3}));
+					} //for ( auto d = 1; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
+
+					if ( swap )
+					{
+						std::swap(args[0], args[1]);
+						swap = false;
+					} //if ( swap )
+					else
+					{
+						break;
+					} //else -> if ( swap )
+				} //for ( bool swap = true; true; )
 			} //for ( const auto& external : NavgraphDistances )
 			//This has to be done, because the behavior of double unlocking is undefined.
 			reqLocker.relock();
