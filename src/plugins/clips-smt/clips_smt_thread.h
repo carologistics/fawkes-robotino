@@ -32,15 +32,15 @@
 #include <plugins/clips/aspect/clips_feature.h>
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
+#include <clipsmm.h>
+
+#include <z3++.h>
+#include <carl/numbers/numbers.h>
 
 #include <vector>
 #include <string>
 #include <map>
-
 #include <iostream>
-
-#include <z3++.h>
-#include <carl/numbers/numbers.h>
 
 #include "clips_smt_data.h"
 
@@ -93,9 +93,8 @@ class ClipsSmtThread
   void clips_smt_react_on_result(z3::check_result result);
 
   // Communication with the agent API
-  void clips_smt_request(std::string foo, std::string bar);
-  void clips_smt_done(std::string foo, std::string bar);
-  void clips_smt_abort(std::string foo, std::string bar);
+  CLIPS::Value clips_smt_request(void *msgptr);
+  CLIPS::Value clips_smt_done(std::string foo, std::string bar);
 
   // Test
   void clips_smt_test(std::string foo, std::string bar);
