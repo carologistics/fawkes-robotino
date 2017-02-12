@@ -24,13 +24,7 @@
 #include <navgraph/constraints/static_list_edge_constraint.h>
 #include <navgraph/constraints/constraint_repo.h>
 
-#include <clipsmm.h>
-
-#include <llsf_msgs/Pose2D.pb.h>
-#include <llsf_msgs/MachineInfo.pb.h>
-
-//#include <z3++.h>
-
+#include <llsf_msgs/Pose2D.pb.h> // TODO [Igor] Why is this include necessary for google::protobuf?
 
 using namespace fawkes;
 
@@ -78,25 +72,14 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   //clips_smt_load(clips);
 
   clips->add_function("clips_smt_request",
-    sigc::slot<void, std::string>(
-      sigc::bind<0>(
-        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_request),
-  env_name)
-    )
+    sigc::slot<CLIPS::Value, void *>(
+        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_request))
   );
 
   clips->add_function("clips_smt_done",
-    sigc::slot<void, std::string>(
+    sigc::slot<CLIPS::Value, std::string>(
       sigc::bind<0>(
         sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_done),
-  env_name)
-    )
-  );
-
-  clips->add_function("clips_smt_abort",
-    sigc::slot<void, std::string>(
-      sigc::bind<0>(
-        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_abort),
   env_name)
     )
   );
@@ -292,29 +275,31 @@ ClipsSmtThread::clips_smt_react_on_result(z3::check_result result)
 /**
  * Methods for Communication with the agent
  *  - Request performs an activation of the loop function
- *  - Done asks weather the loop is finisihed or not // TODO by Igor: Can the agent work with this value
- *  - Abort will stop the loop function
+ *  - Done asks weather the loop is finisihed or not
  **/
 
-void
-ClipsSmtThread::clips_smt_request(std::string foo, std::string bar)
+CLIPS::Value
+ClipsSmtThread::clips_smt_request(void *msgptr)
 {
+    // Cast clips msgptr to protobuf_data
+    std::shared_ptr<google::protobuf::Message> *m =
+      static_cast<std::shared_ptr<google::protobuf::Message> *>(msgptr);
+    if (!*m) return CLIPS::Value("INVALID-MESSAGE", CLIPS::TYPE_SYMBOL);
+
     // Wakeup the loop function
     std::cout << "CSMT_request:     Wake up the loop" << std::endl;
     wakeup();
+
+    return CLIPS::Value("Correct-Message", CLIPS::TYPE_SYMBOL);
 }
 
-void
+CLIPS::Value
 ClipsSmtThread::clips_smt_done(std::string foo, std::string bar)
 {
-    std::cout << "CSMT_done:        Solver is " << running() << std::endl;
-}
-
-void
-ClipsSmtThread::clips_smt_abort(std::string foo, std::string bar)
-{
-    std::cout << "CSMT_abort:       Abort" << std::endl;
-    if(running()) cancel();
+    std::string answer = "Solver is running (";
+    answer += std::to_string(running());
+    answer += ")";
+    return CLIPS::Value(answer, CLIPS::TYPE_SYMBOL);
 }
 
 /**
