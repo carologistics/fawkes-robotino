@@ -17,8 +17,8 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/clips.mk
 include $(BUILDCONFDIR)/navgraph/navgraph.mk
 
-CFLAGS += $(CFLAGS_LIBZ3) $(CFLAGS_LIBCARL)
-LDFLAGS += $(LDFLAGS_LIBZ3) $(LDFLAGS_LIBCARL)
+#CFLAGS += $(CFLAGS_LIBZ3) $(CFLAGS_LIBCARL)
+#LDFLAGS += $(LDFLAGS_LIBZ3) $(LDFLAGS_LIBCARL)
 
 LIBS_clips_smt = fawkescore fawkesutils fawkesaspects \
 		      fawkesclipsaspect fawkesnavgraphaspect \
@@ -28,15 +28,15 @@ OBJS_clips_smt = clips_smt_plugin.o clips_smt_thread.o
 
 OBJS_all = $(OBJS_clips_smt)
 
-ifeq ($(HAVE_CPP11)$(HAVE_CLIPS)$(HAVE_NAVGRAPH),111)
-  CFLAGS  += $(CFLAGS_CLIPS) $(CFLAGS_CPP11)
-  LDFLAGS += $(LDFLAGS_CLIPS)
+ifeq ($(SUPPORT_CPP14)$(HAVE_CLIPS)$(HAVE_NAVGRAPH)$(HAVE_LIBZ3)$(HAVE_LIBCARL),11111)
+  CFLAGS  += $(CFLAGS_CLIPS) $(CFLAGS_LIBZ3) $(CFLAGS_LIBCARL) $(CFLAGS_CPP14)
+  LDFLAGS += $(LDFLAGS_CLIPS) $(LDFLAGS_LIBZ3) $(LDFLAGS_LIBCARL)
 
   PLUGINS_all = $(PLUGINDIR)/clips-smt.$(SOEXT)
 
 else
-  ifneq ($(HAVE_CPP11),1)
-    WARN_TARGETS += warning_cpp11
+  ifneq ($(SUPPORT_CPP14),1)
+    WARN_TARGETS += warning_cpp14
   endif
   ifneq ($(HAVE_CLIPS),1)
     WARN_TARGETS = warning_clips
@@ -44,20 +44,33 @@ else
   ifneq ($(HAVE_NAVGRAPH),1)
     WARN_TARGETS = warning_navgraph
   endif
+  ifneq ($(HAVE_LIBZ3),1)
+    WARN_TARGETS = warning_z3
+  endif
+  ifneq ($(HAVE_LIBCARL),1)
+    WARN_TARGETS = warning_carl 
+  endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 
-.PHONY: warning_clips warning_cpp11
+.PHONY: warning_clips warning_cpp14 warning_z3 warning_carl 
 warning_clips:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips-smt plugin$(TNORMAL) ($(CLIPS_ERROR))"
 
-warning_cpp11:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build clips-smt plugin$(TNORMAL) (C++11 not supported)"
+warning_cpp14:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build clips-smt plugin$(TNORMAL) (C++14 not supported)"
 
 warning_navgraph:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build clips-smt plugin$(TNORMAL) (Navgraph not available)"
+
+warning_z3:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build clips-smt plugin$(TNORMAL) (Z3 Solver not available)"
+
+warning_carl:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build clips-smt plugin$(TNORMAL) (Carl libraries not available)"
+
 
 endif
 
