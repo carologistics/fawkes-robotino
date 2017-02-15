@@ -214,8 +214,13 @@ AspPlanerThread::loopClingo(void)
 	} //if ( UpdateNavgraphDistances )
 	else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	{
-		//Nothing to do.
-		return;
+		MutexLocker solvingLocker(&SolvingMutex);
+		//Locked: ClingoAcc, RequestMutex, NavgraphDistanceMutex, SolvingMutex
+		if ( Clock::now() - SolvingStarted < std::chrono::seconds(5) )
+		{
+			//Nothing to do and last solving happened within the last five seconds.
+			return;
+		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(5) )
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
 	reqLocker.unlock();
