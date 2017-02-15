@@ -78,7 +78,6 @@ AspPlanerThread::graph_changed(void) noexcept
 	return;
 }
 
-
 /**
  * @brief Fill the NavgraphNodesForASP with the nodes we export to ASP.
  * @param[in] lockWorldMutex If the world mutex should be locked.
@@ -208,8 +207,8 @@ AspPlanerThread::updateNavgraphDistances(void)
 Clingo::Symbol
 AspPlanerThread::nearestLocation(const float x, const float y)
 {
-	MutexLocker durationLocker(&NavgraphDistanceMutex);
 	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
+	MutexLocker durationLocker(&NavgraphDistanceMutex);
 	auto node = navgraph->closest_node(x, y, false, NodePropertyASP);
 	if ( !node.is_valid() )
 	{
