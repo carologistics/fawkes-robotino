@@ -231,8 +231,9 @@
   (bson-destroy ?obj)
 )
 
-(deffunction asp-get-side (?string)
-  (if (eq ?string "I") then (return INPUT) else (return OUTPUT))
+(deffunction asp-get-side (?side)
+  (printout t "get side " ?side " " "I" " " (type ?side) " " (eq ?side I) crlf)
+  (if (eq ?side I) then (return INPUT) else (return OUTPUT))
 )
 
 (deffunction asp-remove-quote (?string)
