@@ -308,13 +308,12 @@ taskCLIPStoASP(std::string string)
  * @param[in] elementIndex The index of the element.
  * @return The MongoDB query.
  */
-static std::string
+static mongo::BSONObj
 createQuery(const std::string& robot, const int elementIndex)
 {
-	static constexpr auto queryTemplate = R"({"relation": "planElement", "robot": "%s", "index": "%d"})";
-	char queryString[std::strlen(queryTemplate) + robot.size() + 2 + 5];
-	std::sprintf(queryString, queryTemplate, robot.c_str(), elementIndex);
-	return queryString;
+	mongo::BSONObjBuilder builder;
+	builder.append("relation", "planElement").append("robot", robot).append("index", elementIndex);
+	return builder.obj();
 }
 
 /**
