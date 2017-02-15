@@ -150,6 +150,15 @@
   (retract ?step)
 )
 
+(defrule asp-release-locks-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?lock <- (lock (type ACCEPT|GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
+  =>
+  (retract ?lock)
+  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
+)
+
 (defrule asp-assert-idle
   (declare (salience ?*PRIORITY-HIGH*))
   (asp-go-into-idle)
@@ -222,8 +231,9 @@
   (bson-destroy ?obj)
 )
 
-(deffunction asp-get-side (?string)
-  (if (eq ?string "I") then (return INPUT) else (return OUTPUT))
+(deffunction asp-get-side (?side)
+  (printout t "get side " ?side " " "I" " " (type ?side) " " (eq ?side I) crlf)
+  (if (eq ?side I) then (return INPUT) else (return OUTPUT))
 )
 
 (deffunction asp-remove-quote (?string)
@@ -406,7 +416,7 @@
 (defrule asp-start-mount-ring
   ?state <- (state IDLE)
   ;params should look like this: m ( C CS1 I ) 2 1 3
-  (asp-doing (index ?index) (task "mountCap") (params ? ? ?team ?machine ?side ? ?order ? ?ring))
+  (asp-doing (index ?index) (task "mountRing") (params ? ? ?team ?machine ?side ? ?order ? ?ring))
   (order (id ?index) (product-id ?prod))
   (product (id ?prod) (rings $?rings))
   =>
