@@ -150,6 +150,15 @@
   (retract ?step)
 )
 
+(defrule asp-release-locks-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?lock <- (lock (type ACCEPT|GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?res))
+  =>
+  (retract ?lock)
+  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
+)
+
 (defrule asp-assert-idle
   (declare (salience ?*PRIORITY-HIGH*))
   (asp-go-into-idle)
