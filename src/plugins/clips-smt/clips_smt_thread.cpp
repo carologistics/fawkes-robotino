@@ -24,7 +24,7 @@
 #include <navgraph/constraints/static_list_edge_constraint.h>
 #include <navgraph/constraints/constraint_repo.h>
 
-#include <llsf_msgs/Pose2D.pb.h> // TODO [Igor] Why is this include necessary for google::protobuf?
+#include <llsf_msgs/ClipsSmtData.pb.h>
 
 using namespace fawkes;
 
@@ -72,8 +72,13 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   //clips_smt_load(clips);
 
   clips->add_function("clips_smt_request",
-    sigc::slot<CLIPS::Value, void *>(
+    sigc::slot<CLIPS::Value, void *, std::string>(
         sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_request))
+  );
+
+  clips->add_function("clips_smt_get_plan",
+    sigc::slot<CLIPS::Value, void *, std::string>(
+        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_get_plan))
   );
 
   clips->add_function("clips_smt_done",
@@ -279,12 +284,15 @@ ClipsSmtThread::clips_smt_react_on_result(z3::check_result result)
  **/
 
 CLIPS::Value
-ClipsSmtThread::clips_smt_request(void *msgptr)
+ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
 {
     // Cast clips msgptr to protobuf_data
     std::shared_ptr<google::protobuf::Message> *m =
       static_cast<std::shared_ptr<google::protobuf::Message> *>(msgptr);
     if (!*m) return CLIPS::Value("INVALID-MESSAGE", CLIPS::TYPE_SYMBOL);
+
+    // Use handle to associate request to solution
+    std::cout << "Handle request_" << handle << std::endl;
 
     // Wakeup the loop function
     std::cout << "CSMT_request:     Wake up the loop" << std::endl;
@@ -294,11 +302,28 @@ ClipsSmtThread::clips_smt_request(void *msgptr)
 }
 
 CLIPS::Value
+ClipsSmtThread::clips_smt_get_plan(void *msgptr, std::string handle)
+{
+    // Cast clips msgptr to protobuf_data
+    std::shared_ptr<google::protobuf::Message> *m =
+      static_cast<std::shared_ptr<google::protobuf::Message> *>(msgptr);
+    if (!*m) return CLIPS::Value("CSMT_get_plan aborted", CLIPS::TYPE_SYMBOL);
+
+    // Use handle to associate plan to initial request
+    std::cout << "Return plan for request_" << handle << std::endl;
+
+    // Fill the empty protobuf message with the computed task
+
+    return CLIPS::Value("CSMT_get_plan finished", CLIPS::TYPE_SYMBOL);
+}
+
+CLIPS::Value
 ClipsSmtThread::clips_smt_done(std::string foo, std::string bar)
 {
     std::string answer = "Solver is running (";
     answer += std::to_string(running());
     answer += ")";
+
     return CLIPS::Value(answer, CLIPS::TYPE_SYMBOL);
 }
 

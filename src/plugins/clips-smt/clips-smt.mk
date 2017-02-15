@@ -50,4 +50,3 @@ ifeq ($(GCCVERSION),1)
 else
 	SUPPORT_CPP14=0
 endif
-

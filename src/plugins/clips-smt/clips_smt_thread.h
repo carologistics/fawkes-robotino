@@ -93,7 +93,8 @@ class ClipsSmtThread
   void clips_smt_react_on_result(z3::check_result result);
 
   // Communication with the agent API
-  CLIPS::Value clips_smt_request(void *msgptr);
+  CLIPS::Value clips_smt_request(void *msgptr, std::string handle);
+  CLIPS::Value clips_smt_get_plan(void *msgptr, std::string handle);
   CLIPS::Value clips_smt_done(std::string foo, std::string bar);
 
   // Test
