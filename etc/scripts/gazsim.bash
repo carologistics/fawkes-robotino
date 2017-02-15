@@ -68,7 +68,7 @@ SKIP_EXPLORATION=
 FAWKES_USED=false
 START_ASP_PLANER=false
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,asp" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,asp,asp-exec,asp-planer" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
