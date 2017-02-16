@@ -1258,7 +1258,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			} //if ( static_cast<int>(Products.size()) >= MaxProducts )
 
 			Products.push_back({baseColor});
-			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size())};
+			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size() - 1)};
 		};
 	auto destroyProduct = [this](const ProductIdentifier& id)
 		{
