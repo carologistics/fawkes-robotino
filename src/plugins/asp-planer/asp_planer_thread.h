@@ -51,7 +51,7 @@ class AspPlanerThread
 	std::vector<EventTrigger*> RobotMemoryCallbacks;
 	const char* TeamColor;
 
-	bool Unsat;
+	int Unsat;
 
 	int ExplorationTime;
 	int DeliverProductTaskDuration;
