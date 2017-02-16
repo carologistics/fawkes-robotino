@@ -424,7 +424,7 @@
   ?state <- (state IDLE)
   ;params should look like this: m ( C CS1 I ) 2 1 3
   (asp-doing (index ?index) (task "mountRing") (params ? ? ?team ?machine ?side ? ?order ? ?ring))
-  (order (id ?index) (product-id ?prod))
+  (order (id ?order) (product-id ?prod))
   (product (id ?prod) (rings $?rings))
   =>
   (bind ?machineName (sym-cat ?team - ?machine))
