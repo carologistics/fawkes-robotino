@@ -269,7 +269,8 @@
 
 /**
  * @property AspPlanerThread::Unsat
- * @brief The program was unsatisfiable.
+ * @brief How often we were told the program was unsatisfiable in a row. If it gets to high we have to take recovering
+ *        actions.
  *
  * @property AspPlanerThread::ExplorationTime
  * @brief The time for the exploration phase, in seconds.
@@ -449,9 +450,6 @@
  *
  * @property AspPlanerThread::PlanGameTime
  * @brief The game time, when the model was read.
- *
- * @property AspPlanerThread::LookAhaedPlanSize
- * @brief The biggest known size of a plan extracted from a model.
  *
  * @property AspPlanerThread::Plan
  * @brief The plan currently deployed.

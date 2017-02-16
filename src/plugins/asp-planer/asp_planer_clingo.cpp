@@ -248,8 +248,9 @@ AspPlanerThread::loopClingo(void)
 			return;
 		};
 
-	std::vector<Clingo::Symbol> locations;
-	locations.reserve(3);
+	auto locations(LocationInUse);
+	locations.reserve(Robots.size());
+
 	for ( const auto& pair : Robots )
 	{
 		const auto& name(pair.first);
@@ -274,17 +275,18 @@ AspPlanerThread::loopClingo(void)
 		else
 		{
 			auto location = nearestLocation(robot.X, robot.Y);
-			if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+			const auto locationRobot = locations.find(location);
+			if ( locationRobot != locations.end() && locationRobot->second != name )
 			{
 				/* Two (or more) robots "on" one locations, should only happen at game start. The robots are mapped to
 				 * a side of the near base station instead of ins-out. Change their location to ins-out, this is the
 				 * only location where multiple robots are allowed. */
 				location = Clingo::String("ins-out");
-			} //if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+			} //if ( locationRobot != locations.end() && locationRobot->second != name )
 			else
 			{
-				locations.push_back(location);
-			} //else -> if ( std::find(locations.begin(), locations.end(), location) != locations.end() )
+				locations.insert({location, name});
+			} //else -> if ( locationRobot != locations.end() && locationRobot->second != name )
 			addExternal(generateRobotLocationExternal(name, location));
 		} //else -> if ( robot.Doing.isValid() )
 	} //for ( const auto& pair : Robots )
@@ -480,25 +482,24 @@ AspPlanerThread::shouldInterrupt(void)
 			{
 				lastCheck = now;
 				MutexLocker worldLocker(&WorldMutex);
-				MutexLocker planLocker(&PlanMutex);
 
 				for ( const auto& pair : Robots )
 				{
 					if ( pair.second.Alive )
 					{
-						const auto& robotPlan(Plan[pair.first]);
-						if ( !robotPlan.CurrentTask.empty() )
+						const auto& doing(pair.second.Doing);
+						if ( doing.isValid() )
 						{
 							static const std::chrono::seconds threshold(
 								config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/robot-task-behind"));
-							if ( GameTime > robotPlan.Tasks[robotPlan.FirstNotDone].End + threshold.count() )
+							if ( GameTime > doing.EstimatedEnd + threshold.count() )
 							{
 								logger->log_warn(LoggingComponent, "Robot %s is more than %d seconds behind schedule "
 									"(and has not send an update), increase interrupt level.", pair.first.c_str(),
 									threshold.count());
 								Interrupt = InterruptSolving::High;
-							} //if ( GameTime > robotPlan.Tasks[robotPlan.FirstNotDone].End + threshold.count() )
-						} //if ( !robotPlan.CurrentTask.empty() )
+							} //if ( GameTime > doing.EstimatedEnd + threshold.count() )
+						} //if ( doing.isValid() )
 					} //if ( pair.second.Alive )
 				} //for ( const auto& pair : Robots )
 			} //if ( lastCheck - now >= threshold )
@@ -564,8 +565,13 @@ AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 {
 	if ( result.is_unsatisfiable() )
 	{
-		Unsat = true;
+		++Unsat;
+		logger->log_error(LoggingComponent, "The input is infeasiable! #%d", Unsat);
 	} //if ( result.is_unsatisfiable() )
+	else
+	{
+		Unsat = 0;
+	} //else -> if ( result.is_unsatisfiable() )
 	return;
 }
 
@@ -948,24 +954,6 @@ AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 	return;
 }
 
-/**
- * @brief Updates all plan time estimations in a given robot plan from a index up until the end.
- * @param[in, out] robotPlan The plan part to modify.
- * @param[in] index The first index to modify.
- * @param[in] offset The time to modify the plan entries.
- */
-static inline void
-updatePlanTimes(RobotPlan& robotPlan, int index, const int offset)
-{
-	const int size(robotPlan.Tasks.size());
-	for ( ; index < size; ++index )
-	{
-		robotPlan.Tasks[index].Begin += offset;
-		robotPlan.Tasks[index].End   += offset;
-	} //for ( ; index < size; ++index )
-	return;
-}
-
 static inline Clingo::SymbolVector
 splitParameters(string_view string)
 {
@@ -1095,6 +1083,34 @@ createTaskDescription(const std::string& task, const int end)
 }
 
 /**
+ * @brief Sets the interrupt flag, depending on the offset a task feedback has.
+ * @param[in] offset The offset.
+ */
+void
+AspPlanerThread::checkForInterruptBasedOnTimeOffset(int offset)
+{
+	logger->log_info(LoggingComponent, "Plan-Feedback offset is %d.", offset);
+	offset = std::abs(offset);
+	if ( offset >= 3*TimeResolution )
+	{
+		setInterrupt(InterruptSolving::Critical);
+	} //if ( offset >= 3*TimeResolution )
+	else if ( offset >= 2*TimeResolution )
+	{
+		setInterrupt(InterruptSolving::High);
+	} //else if ( offset >= 2*TimeResolution )
+	else if ( offset >= (15 * TimeResolution) / 10 )
+	{
+		setInterrupt(InterruptSolving::Normal);
+	} //else if ( offset >= (15 * TimeResolution) / 10 )
+	else if ( offset >= TimeResolution )
+	{
+		setInterrupt(InterruptSolving::JustStarted);
+	} //else if ( offset >= TimeResolution )
+	return;
+}
+
+/**
  * @brief A robot has begun with a task, modify the worldstate.
  * @param[in] robot The robot.
  * @param[in] task The task.
@@ -1126,7 +1142,11 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 	robotPlan.Tasks[robotPlan.FirstNotDone].Begun = true;
 	const auto offset = begin - robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
-	updatePlanTimes(robotPlan, robotPlan.FirstNotDone, offset);
+	planLocker.unlock();
+	worldLocker.unlock();
+	checkForInterruptBasedOnTimeOffset(offset);
+	worldLocker.relock();
+	planLocker.relock();
 
 	robotInfo.Doing = createTaskDescription(task, robotPlan.Tasks[robotPlan.FirstNotDone].End);
 
@@ -1135,13 +1155,18 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 
 	if ( iter != LocationInUse.end() && iter->second != robot )
 	{
-		logger->log_warn(LoggingComponent, "The robots %s and %s are trying to use %s! Tell %s to stop immediately!",
+		logger->log_warn(LoggingComponent,
+			"The robots %s and %s are trying to use %s! Tell %s to stop immediately and delete its current plan!",
 			iter->second.c_str(), robot.c_str(), location.to_string().c_str(), robot.c_str());
 		robotPlan.CurrentTask.clear();
 		robotPlan.Tasks[robotPlan.FirstNotDone].Begun = false;
 		robotInfo.Doing = {};
 		tellRobotToStop(robot);
 		setInterrupt(InterruptSolving::Critical);
+		for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index ) {
+			removeFromPlanDB(robot, index);
+		} //for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index )
+		robotPlan.Tasks.erase(robotPlan.Tasks.begin() + robotPlan.FirstNotDone, robotPlan.Tasks.end());
 	} //if ( iter != LocationInUse.end() && iter->second != robot )
 	else
 	{
@@ -1171,9 +1196,13 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
 
 	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
-	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
-	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
+	/* Do NOT update the end value, because we calculate the offset based on that. If we receive multiple small offsets
+	 * that do not trigger replaning this does not work as intended.
+	 * robotPlan.Tasks[robotPlan.FirstNotDone].End = end; */
 	robotInfo.Doing.EstimatedEnd = end;
+	planLocker.unlock();
+	worldLocker.unlock();
+	checkForInterruptBasedOnTimeOffset(offset);
 	return;
 }
 
@@ -1200,13 +1229,22 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
-	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
+	planLocker.unlock();
+	worldLocker.unlock();
+	checkForInterruptBasedOnTimeOffset(offset);
+	worldLocker.relock();
+	planLocker.relock();
 
 	robotPlan.Tasks[robotPlan.FirstNotDone++].Done = true;
 	robotPlan.CurrentTask.clear();
 
+	const auto location = robotInfo.Doing.TaskSymbol.arguments().front();
+	assert(LocationInUse[location] == robot);
+	LocationInUse.erase(location);
+
 	if ( !success )
 	{
+		robotInfo.Doing = {};
 		return;
 	} //if ( !success )
 
@@ -1220,7 +1258,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			} //if ( static_cast<int>(Products.size()) >= MaxProducts )
 
 			Products.push_back({baseColor});
-			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size())};
+			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size() - 1)};
 		};
 	auto destroyProduct = [this](const ProductIdentifier& id)
 		{

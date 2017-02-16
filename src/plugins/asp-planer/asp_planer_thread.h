@@ -51,7 +51,7 @@ class AspPlanerThread
 	std::vector<EventTrigger*> RobotMemoryCallbacks;
 	const char* TeamColor;
 
-	bool Unsat;
+	int Unsat;
 
 	int ExplorationTime;
 	int DeliverProductTaskDuration;
@@ -118,7 +118,6 @@ class AspPlanerThread
 	mutable fawkes::Mutex PlanMutex;
 	TimePoint LastPlan;
 	int PlanGameTime;
-	std::size_t LookAhaedPlanSize;
 	std::unordered_map<std::string, RobotPlan> Plan;
 	std::unordered_map<Clingo::Symbol, std::string> LocationInUse;
 
@@ -153,6 +152,7 @@ class AspPlanerThread
 	void addZoneToExplore(const int zone);
 	void releaseZone(const int zone, const bool removeAndFillNodes);
 
+	void checkForInterruptBasedOnTimeOffset(int offset);
 	void robotBegunWithTask(const std::string& robot, const std::string& task, const int begin, const int end);
 	void robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, const int end);
 	void robotFinishedTask(const std::string& robot, const std::string& task, const int end, const bool success);

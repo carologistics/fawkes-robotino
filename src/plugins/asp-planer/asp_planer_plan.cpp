@@ -39,10 +39,6 @@ AspPlanerThread::initPlan(void)
 {
 	//Clear old plan, if in db.
 	robot_memory->drop_collection("syncedrobmem.plan");
-	/* Assuming a task duration is equally distributed in [0,MaxTaskDuration], we take the average to compute how many
-	 * tasks there can be in a plan. If this are too much we allocate too much memory in planLoop(), but save
-	 * allocations while the plan is extracted, which is preferable. */
-	LookAhaedPlanSize = LookAhaed / (MaxTaskDuration / 2) * Robots.size();
 	return;
 }
 
@@ -68,9 +64,11 @@ AspPlanerThread::loopPlan(void)
 	/* There is a new model and it is old enough, start with the plan extraction. Since we have no guarantees about the
 	 * ordering in the model we use a map to assemble the (robot, task, begin, end) tuples. */
 	MutexLocker planLocker(&PlanMutex);
-	std::unordered_map<std::pair<std::string, std::string>, std::pair<int, int>> map;
-	//Reserve enough space.
-	map.reserve(LookAhaedPlanSize);
+
+	//Make this map static, so we do not release the needed memory everytime.
+	static std::unordered_map<std::pair<std::string, std::string>, std::pair<int, int>> map;
+	map.clear();
+
 	PlanGameTime = StartSolvingGameTime;
 	for ( const auto& symbol : Symbols )
 	{
@@ -88,7 +86,6 @@ AspPlanerThread::loopPlan(void)
 
 	NewSymbols = false;
 	solvingLocker.unlock();
-	LookAhaedPlanSize = std::max(LookAhaedPlanSize, map.size());
 	LastPlan = Clock::now();
 
 	//Some helper functions to handle plan elements.
@@ -119,17 +116,14 @@ AspPlanerThread::loopPlan(void)
 			return std::abs(e1.Begin - e2.Begin) > threshold || std::abs(e1.End - e2.End) > threshold;
 		};
 
-	logger->log_info(LoggingComponent, "Extracted plan size: %d", map.size());
-
 	//Assemble a plan only based on the information from clingo.
-	std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
-	//Reserve memory to save allocations.
-	tempPlan.reserve(Robots.size());
+	static std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
 	for ( const auto& robot : PossibleRobots )
 	{
-		tempPlan[robot].reserve(map.size());
+		tempPlan[robot].clear();
 	} //for ( const auto& robot : PossibleRobots )
 
+	logger->log_info(LoggingComponent, "Extracted plan size: %d", map.size());
 	for ( const auto& pair : map )
 	{
 		const auto& robotName(pair.first.first);
@@ -153,41 +147,64 @@ AspPlanerThread::loopPlan(void)
 		auto& robotPlan(Plan[robotName].Tasks);
 		const auto& tempRobotPlan(pair.second);
 
-		if ( tempRobotPlan.empty() )
-		{
-			continue;
-		} //if ( tempRobotPlan.empty() )
+		logger->log_info(LoggingComponent, "Update plan for %s.", robotName.c_str());
 
+		//Cache the end iterator of the old robot plan.
 		auto planEnd = robotPlan.end();
-		auto planIter = std::lower_bound(robotPlan.begin(), planEnd, tempRobotPlan[0], planBegin);
+		//Show at the first task the robot has not yet started.
+		auto notBegun = std::find_if(robotPlan.begin(), planEnd, [](const PlanElement& e) noexcept { return !e.Begun;});
+		/* Depending on the size of the new robot plan we get the iterator where we think we have to update.
+		 * If there is a new plan, just look where the first entry would land.
+		 * If there is no plan, there is no first entry, so just copy the first not done task, because we do not want
+		 * to interrupt this. */
+		auto planIter = tempPlan.empty() ? notBegun :
+			std::lower_bound(robotPlan.begin(), planEnd, tempRobotPlan[0], planBegin);
+
+		//The two iterators of the temp plan.
 		auto tempIter = tempRobotPlan.begin();
 		const auto tempEnd = tempRobotPlan.end();
+
+		//Compute the task index based on the used plan iterator.
 		int index = planIter - robotPlan.begin();
 
-		auto notBegun = std::find_if(robotPlan.begin(), planEnd, [](const PlanElement& e) noexcept { return !e.Begun;});
+		//Helping lambda to remove all tasks which index is greater or equal to the variable index.
+		auto removeAllFromIndexOn = [&](void)
+			{
+				if ( planIter == planEnd )
+				{
+					return planIter;
+				} //if ( planIter == planEnd )
+
+				logger->log_warn(LoggingComponent, "Remove all %d robot plan elements from (%s,%s,%d,%d) on.",
+					planEnd - planIter, robotName.c_str(), planIter->Task.c_str(), planIter->Begin, planIter->End);
+				const decltype(index) size(robotPlan.size());
+				for ( auto i = index; i < size; ++i )
+				{
+					removeFromPlanDB(robotName, i);
+				} //for ( auto i = index; i < size; ++i )
+				return robotPlan.erase(planIter, planEnd);
+			};
+
 		if ( notBegun < planIter )
 		{
 			/* There is at least one element that is before the point we want to add the new elements and not yet begun.
 			 * We have to remove this from the plan, because the new plans for the other robots do not consider this, it
 			 * could lead to conflicts, i.e. two robots trying to do the same task. Because we make so rigorous changes
 			 * we remove all not started tasks, they will be addes on demand after wards. */
-			logger->log_error(LoggingComponent, "Remove all plan elements for %s from %s %d %d on.", robotName.c_str(),
-				notBegun->Task.c_str(), notBegun->Begin, notBegun->End);
 			index = notBegun - robotPlan.begin();
-			const decltype(index) size(robotPlan.size());
-			for ( auto i = index; i < size; ++i )
-			{
-				removeFromPlanDB(robotName, i);
-			} //for ( auto i = index; i < size; ++i )
-			planIter = planEnd = robotPlan.erase(notBegun, planEnd);
+			planIter = notBegun;
+			planIter = planEnd = removeAllFromIndexOn();
 		} //if ( notBegun < planIter )
 
+		//Flag if we should continue this loop with the next entry after the following loop.
 		bool nextRobot = false;
 
+		//There is an entry in our old plan, which competes with an entry of the new plan for the same index.
 		while ( planIter != planEnd && tempIter != tempEnd )
 		{
 			if ( sameTask(*planIter, *tempIter) )
 			{
+				//Everything is fine, we have the same task, maybe only update the timing.
 				if ( needsUpdate(*planIter, *tempIter) )
 				{
 					logger->log_info(LoggingComponent, "Update time for (%s,%s,%d,%d) to (%d,%d)", robotName.c_str(),
@@ -202,12 +219,21 @@ AspPlanerThread::loopPlan(void)
 			} //if ( sameTask(*planIter, *tempIter) )
 			else
 			{
+				//A different task, handle differently for already started tasks.
 				const auto robotCStr = robotName.c_str();
 				if ( planIter->Begun )
 				{
 					logger->log_error(LoggingComponent,
 						"Should change started task %s from robot %s to %s. Restart solving!",
 						planIter->Task.c_str(), robotCStr, tempIter->Task.c_str());
+
+					/* Remove all following tasks from the robots plan, because they may conflict with the other new
+					 * robots plans. This task maybe do the same, but this should be detected when the other robots
+					 * want to start their tasks. */
+					++planIter;
+					++index;
+					removeAllFromIndexOn();
+
 					nextRobot = true;
 					setInterrupt(InterruptSolving::Critical);
 					break;
@@ -245,20 +271,19 @@ AspPlanerThread::loopPlan(void)
 			if ( planIter->Begun )
 			{
 				//Deleting a task which is already started seems not to be the best idea, restart solving.
-				setInterrupt(InterruptSolving::Critical);
 				logger->log_error(LoggingComponent, "Should delete started task %s for robot %s! Restart solving.",
 					planIter->Task.c_str(), robotName.c_str());
-				//But continue the work for the remaining robots.
-				continue;
+				setInterrupt(InterruptSolving::Critical);
+				//But remove all tasks after this.
+				++planIter;
+				++index;
 			} //if ( planIter->Begun )
 
-			for ( auto iter = planIter; iter != planEnd; ++iter, ++index )
-			{
-				removeFromPlanDB(robotName, index);
-			} //for ( auto iter = planIter; iter != planEnd; ++iter, ++index )
-			robotPlan.erase(planIter, planEnd);
+			removeAllFromIndexOn();
 		} //else if ( planIter != planEnd )
 	} //for ( const auto& pair : Plan )
+
+	logger->log_info(LoggingComponent, "Plan updating done.");
 	return;
 }
 

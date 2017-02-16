@@ -176,6 +176,14 @@
   (retract ?doing)
 )
 
+(defrule asp-remove-planElements-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?p <- (planElement (done FALSE))
+  =>
+  (retract ?p)
+)
+
 (defrule asp-cleanup-stop
   ?idle <- (asp-go-into-idle)
   =>
@@ -232,7 +240,6 @@
 )
 
 (deffunction asp-get-side (?side)
-  (printout t "get side " ?side " " "I" " " (type ?side) " " (eq ?side I) crlf)
   (if (eq ?side I) then (return INPUT) else (return OUTPUT))
 )
 
@@ -417,7 +424,7 @@
   ?state <- (state IDLE)
   ;params should look like this: m ( C CS1 I ) 2 1 3
   (asp-doing (index ?index) (task "mountRing") (params ? ? ?team ?machine ?side ? ?order ? ?ring))
-  (order (id ?index) (product-id ?prod))
+  (order (id ?order) (product-id ?prod))
   (product (id ?prod) (rings $?rings))
   =>
   (bind ?machineName (sym-cat ?team - ?machine))

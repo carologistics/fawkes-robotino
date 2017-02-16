@@ -154,12 +154,28 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 					info.WorkingUntil -= GameTime;
 				} //if ( info.WorkingUntil )
 				info.BrokenUntil = GameTime + brokenTime;
+				setInterrupt(InterruptSolving::Critical);
 			} //if ( state == "BROKEN" || state == "DOWN" )
 
-			if ( (info.State == "BROKEN" || info.State == "DOWN" ) && info.WorkingUntil )
+			if ( info.State == "BROKEN" || info.State == "DOWN" )
 			{
-				info.WorkingUntil += GameTime;
-			} //if ( (info.State == "BROKEN" || info.State == "DOWN" ) && info.WorkingUntil )
+				if ( info.WorkingUntil )
+				{
+					info.WorkingUntil += GameTime;
+				} //if ( info.WorkingUntil )
+
+				const auto diff(std::abs(GameTime - info.BrokenUntil));
+				info.BrokenUntil = 0;
+
+				if ( diff >= 15 )
+				{
+					setInterrupt(InterruptSolving::High);
+				} //if ( diff >= 15 )
+				else if ( diff >= 8 )
+				{
+					setInterrupt(InterruptSolving::Normal);
+				} //else if ( diff >= 8 )
+			} //if (info.State == "BROKEN" || info.State == "DOWN" )
 		} //if ( state != Machines[machine].State )
 		info.State = std::move(state);
 	} //try
@@ -379,7 +395,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_CONTINUOUS),
 		ASPAspect("ASPPlaner", "ASP-Planer"),
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr),
-		Unsat(false),
+		Unsat(0),
 		//Config
 		ExplorationTime(0), DeliverProductTaskDuration(0), FetchProductTaskDuration(0), LookAhaed(0),
 		MaxDriveDuration(0), MaxOrders(0), MaxProducts(0), MaxQuantity(0), MaxTaskDuration(0), MaxWorkingDuration(0),
@@ -395,7 +411,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		//Solving
 		NewSymbols(false), StartSolvingGameTime(0),
 		//Plan
-		PlanGameTime(0), LookAhaedPlanSize(0)
+		PlanGameTime(0)
 {
 	return;
 }
@@ -463,10 +479,10 @@ AspPlanerThread::init(void)
 void
 AspPlanerThread::loop(void)
 {
-	if ( Unsat )
+	if ( Unsat >= 8 )
 	{
 		throw fawkes::Exception("The program is infeasable! We have no way to recover!");
-	} //if ( Unsat )
+	} //if ( Unsat >= 8 )
 
 	{
 		MutexLocker locker(&WorldMutex);
