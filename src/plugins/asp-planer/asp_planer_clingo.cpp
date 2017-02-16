@@ -1140,13 +1140,18 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 
 	if ( iter != LocationInUse.end() && iter->second != robot )
 	{
-		logger->log_warn(LoggingComponent, "The robots %s and %s are trying to use %s! Tell %s to stop immediately!",
+		logger->log_warn(LoggingComponent,
+			"The robots %s and %s are trying to use %s! Tell %s to stop immediately and delete its current plan!",
 			iter->second.c_str(), robot.c_str(), location.to_string().c_str(), robot.c_str());
 		robotPlan.CurrentTask.clear();
 		robotPlan.Tasks[robotPlan.FirstNotDone].Begun = false;
 		robotInfo.Doing = {};
 		tellRobotToStop(robot);
 		setInterrupt(InterruptSolving::Critical);
+		for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index ) {
+			removeFromPlanDB(robot, index);
+		} //for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index )
+		robotPlan.Tasks.erase(robotPlan.Tasks.begin() + robotPlan.FirstNotDone, robotPlan.Tasks.end());
 	} //if ( iter != LocationInUse.end() && iter->second != robot )
 	else
 	{
