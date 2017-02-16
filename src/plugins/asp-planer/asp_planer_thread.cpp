@@ -157,10 +157,25 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 				setInterrupt(InterruptSolving::Critical);
 			} //if ( state == "BROKEN" || state == "DOWN" )
 
-			if ( (info.State == "BROKEN" || info.State == "DOWN" ) && info.WorkingUntil )
+			if ( info.State == "BROKEN" || info.State == "DOWN" )
 			{
-				info.WorkingUntil += GameTime;
-			} //if ( (info.State == "BROKEN" || info.State == "DOWN" ) && info.WorkingUntil )
+				if ( info.WorkingUntil )
+				{
+					info.WorkingUntil += GameTime;
+				} //if ( info.WorkingUntil )
+
+				const auto diff(std::abs(GameTime - info.BrokenUntil));
+				info.BrokenUntil = 0;
+
+				if ( diff >= 15 )
+				{
+					setInterrupt(InterruptSolving::High);
+				} //if ( diff >= 15 )
+				else if ( diff >= 8 )
+				{
+					setInterrupt(InterruptSolving::Normal);
+				} //else if ( diff >= 8 )
+			} //if (info.State == "BROKEN" || info.State == "DOWN" )
 		} //if ( state != Machines[machine].State )
 		info.State = std::move(state);
 	} //try
