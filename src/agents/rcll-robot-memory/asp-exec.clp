@@ -171,6 +171,14 @@
   (retract ?doing)
 )
 
+(defrule asp-remove-planElements-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?p <- (planElement (done FALSE))
+  =>
+  (retract ?p)
+)
+
 (defrule asp-cleanup-stop
   ?idle <- (asp-go-into-idle)
   =>
@@ -227,7 +235,6 @@
 )
 
 (deffunction asp-get-side (?side)
-  (printout t "get side " ?side " " "I" " " (type ?side) " " (eq ?side I) crlf)
   (if (eq ?side I) then (return INPUT) else (return OUTPUT))
 )
 
