@@ -451,9 +451,6 @@
  * @property AspPlanerThread::PlanGameTime
  * @brief The game time, when the model was read.
  *
- * @property AspPlanerThread::LookAhaedPlanSize
- * @brief The biggest known size of a plan extracted from a model.
- *
  * @property AspPlanerThread::Plan
  * @brief The plan currently deployed.
  *

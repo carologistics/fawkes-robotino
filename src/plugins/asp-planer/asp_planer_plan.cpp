@@ -39,10 +39,6 @@ AspPlanerThread::initPlan(void)
 {
 	//Clear old plan, if in db.
 	robot_memory->drop_collection("syncedrobmem.plan");
-	/* Assuming a task duration is equally distributed in [0,MaxTaskDuration], we take the average to compute how many
-	 * tasks there can be in a plan. If this are too much we allocate too much memory in planLoop(), but save
-	 * allocations while the plan is extracted, which is preferable. */
-	LookAhaedPlanSize = LookAhaed / (MaxTaskDuration / 2) * Robots.size();
 	return;
 }
 
@@ -68,9 +64,11 @@ AspPlanerThread::loopPlan(void)
 	/* There is a new model and it is old enough, start with the plan extraction. Since we have no guarantees about the
 	 * ordering in the model we use a map to assemble the (robot, task, begin, end) tuples. */
 	MutexLocker planLocker(&PlanMutex);
-	std::unordered_map<std::pair<std::string, std::string>, std::pair<int, int>> map;
-	//Reserve enough space.
-	map.reserve(LookAhaedPlanSize);
+
+	//Make this map static, so we do not release the needed memory everytime.
+	static std::unordered_map<std::pair<std::string, std::string>, std::pair<int, int>> map;
+	map.clear();
+
 	PlanGameTime = StartSolvingGameTime;
 	for ( const auto& symbol : Symbols )
 	{
@@ -88,7 +86,6 @@ AspPlanerThread::loopPlan(void)
 
 	NewSymbols = false;
 	solvingLocker.unlock();
-	LookAhaedPlanSize = std::max(LookAhaedPlanSize, map.size());
 	LastPlan = Clock::now();
 
 	//Some helper functions to handle plan elements.
@@ -119,17 +116,14 @@ AspPlanerThread::loopPlan(void)
 			return std::abs(e1.Begin - e2.Begin) > threshold || std::abs(e1.End - e2.End) > threshold;
 		};
 
-	logger->log_info(LoggingComponent, "Extracted plan size: %d", map.size());
-
 	//Assemble a plan only based on the information from clingo.
-	std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
-	//Reserve memory to save allocations.
-	tempPlan.reserve(Robots.size());
+	static std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
 	for ( const auto& robot : PossibleRobots )
 	{
-		tempPlan[robot].reserve(map.size());
+		tempPlan[robot].clear();
 	} //for ( const auto& robot : PossibleRobots )
 
+	logger->log_info(LoggingComponent, "Extracted plan size: %d", map.size());
 	for ( const auto& pair : map )
 	{
 		const auto& robotName(pair.first.first);

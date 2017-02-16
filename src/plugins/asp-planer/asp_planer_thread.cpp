@@ -395,7 +395,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		//Solving
 		NewSymbols(false), StartSolvingGameTime(0),
 		//Plan
-		PlanGameTime(0), LookAhaedPlanSize(0)
+		PlanGameTime(0)
 {
 	return;
 }
