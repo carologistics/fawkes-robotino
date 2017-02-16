@@ -564,8 +564,13 @@ AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
 {
 	if ( result.is_unsatisfiable() )
 	{
-		Unsat = true;
+		++Unsat;
+		logger->log_error(LoggingComponent, "The input is infeasiable! #%d", Unsat);
 	} //if ( result.is_unsatisfiable() )
+	else
+	{
+		Unsat = 0;
+	} //else -> if ( result.is_unsatisfiable() )
 	return;
 }
 

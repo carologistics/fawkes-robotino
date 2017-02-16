@@ -379,7 +379,7 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_CONTINUOUS),
 		ASPAspect("ASPPlaner", "ASP-Planer"),
 		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr),
-		Unsat(false),
+		Unsat(0),
 		//Config
 		ExplorationTime(0), DeliverProductTaskDuration(0), FetchProductTaskDuration(0), LookAhaed(0),
 		MaxDriveDuration(0), MaxOrders(0), MaxProducts(0), MaxQuantity(0), MaxTaskDuration(0), MaxWorkingDuration(0),
@@ -463,10 +463,10 @@ AspPlanerThread::init(void)
 void
 AspPlanerThread::loop(void)
 {
-	if ( Unsat )
+	if ( Unsat >= 8 )
 	{
 		throw fawkes::Exception("The program is infeasable! We have no way to recover!");
-	} //if ( Unsat )
+	} //if ( Unsat >= 8 )
 
 	{
 		MutexLocker locker(&WorldMutex);
