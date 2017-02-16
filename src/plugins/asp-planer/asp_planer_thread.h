@@ -118,7 +118,6 @@ class AspPlanerThread
 	mutable fawkes::Mutex PlanMutex;
 	TimePoint LastPlan;
 	int PlanGameTime;
-	std::size_t LookAhaedPlanSize;
 	std::unordered_map<std::string, RobotPlan> Plan;
 	std::unordered_map<Clingo::Symbol, std::string> LocationInUse;
 
