@@ -953,24 +953,6 @@ AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 	return;
 }
 
-/**
- * @brief Updates all plan time estimations in a given robot plan from a index up until the end.
- * @param[in, out] robotPlan The plan part to modify.
- * @param[in] index The first index to modify.
- * @param[in] offset The time to modify the plan entries.
- */
-static inline void
-updatePlanTimes(RobotPlan& robotPlan, int index, const int offset)
-{
-	const int size(robotPlan.Tasks.size());
-	for ( ; index < size; ++index )
-	{
-		robotPlan.Tasks[index].Begin += offset;
-		robotPlan.Tasks[index].End   += offset;
-	} //for ( ; index < size; ++index )
-	return;
-}
-
 static inline Clingo::SymbolVector
 splitParameters(string_view string)
 {
@@ -1100,6 +1082,34 @@ createTaskDescription(const std::string& task, const int end)
 }
 
 /**
+ * @brief Sets the interrupt flag, depending on the offset a task feedback has.
+ * @param[in] offset The offset.
+ */
+void
+AspPlanerThread::checkForInterruptBasedOnTimeOffset(int offset)
+{
+	logger->log_info(LoggingComponent, "Plan-Feedback offset is %d.", offset);
+	offset = std::abs(offset);
+	if ( offset >= 3*TimeResolution )
+	{
+		setInterrupt(InterruptSolving::Critical);
+	} //if ( offset >= 3*TimeResolution )
+	else if ( offset >= 2*TimeResolution )
+	{
+		setInterrupt(InterruptSolving::High);
+	} //else if ( offset >= 2*TimeResolution )
+	else if ( offset >= (15 * TimeResolution) / 10 )
+	{
+		setInterrupt(InterruptSolving::Normal);
+	} //else if ( offset >= (15 * TimeResolution) / 10 )
+	else if ( offset >= TimeResolution )
+	{
+		setInterrupt(InterruptSolving::JustStarted);
+	} //else if ( offset >= TimeResolution )
+	return;
+}
+
+/**
  * @brief A robot has begun with a task, modify the worldstate.
  * @param[in] robot The robot.
  * @param[in] task The task.
@@ -1131,7 +1141,11 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 	robotPlan.Tasks[robotPlan.FirstNotDone].Begun = true;
 	const auto offset = begin - robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
-	updatePlanTimes(robotPlan, robotPlan.FirstNotDone, offset);
+	planLocker.unlock();
+	worldLocker.unlock();
+	checkForInterruptBasedOnTimeOffset(offset);
+	worldLocker.relock();
+	planLocker.relock();
 
 	robotInfo.Doing = createTaskDescription(task, robotPlan.Tasks[robotPlan.FirstNotDone].End);
 
@@ -1181,9 +1195,13 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
 
 	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
-	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
-	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
+	/* Do NOT update the end value, because we calculate the offset based on that. If we receive multiple small offsets
+	 * that do not trigger replaning this does not work as intended.
+	 * robotPlan.Tasks[robotPlan.FirstNotDone].End = end; */
 	robotInfo.Doing.EstimatedEnd = end;
+	planLocker.unlock();
+	worldLocker.unlock();
+	checkForInterruptBasedOnTimeOffset(offset);
 	return;
 }
 
@@ -1210,13 +1228,22 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
-	updatePlanTimes(robotPlan, robotPlan.FirstNotDone + 1, offset);
+	planLocker.unlock();
+	worldLocker.unlock();
+	checkForInterruptBasedOnTimeOffset(offset);
+	worldLocker.relock();
+	planLocker.relock();
 
 	robotPlan.Tasks[robotPlan.FirstNotDone++].Done = true;
 	robotPlan.CurrentTask.clear();
 
+	const auto location = robotInfo.Doing.TaskSymbol.arguments().front();
+	assert(LocationInUse[location] == robot);
+	LocationInUse.erase(location);
+
 	if ( !success )
 	{
+		robotInfo.Doing = {};
 		return;
 	} //if ( !success )
 
