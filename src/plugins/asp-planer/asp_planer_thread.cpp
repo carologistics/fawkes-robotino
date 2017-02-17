@@ -139,7 +139,8 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 	try
 	{
 		const auto object(document.getField("o"));
-		const std::string machine(object["machine"].String());
+		//Remove the first 2 letters, because this is the team color and the dash. We identify by "BS" not "C-BS".
+		const std::string machine(object["machine"].String().substr(2));
 		const std::string state(object["state"].String());
 		MutexLocker locker(&WorldMutex);
 		auto& info(Machines[machine]);
