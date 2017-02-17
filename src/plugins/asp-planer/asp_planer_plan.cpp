@@ -61,6 +61,12 @@ AspPlanerThread::loopPlan(void)
 		return;
 	} //if ( Clock::now() - LastModel < planThreshold )
 
+	if ( LastModel < SolvingStarted )
+	{
+		//The last model is based on old information, do not use it! Without this there were wrong plans!
+		return;
+	} //if ( LastModel < SolvingStarted )
+
 	/* There is a new model and it is old enough, start with the plan extraction. Since we have no guarantees about the
 	 * ordering in the model we use a map to assemble the (robot, task, begin, end) tuples. */
 	MutexLocker planLocker(&PlanMutex);
