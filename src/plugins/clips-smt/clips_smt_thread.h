@@ -45,7 +45,8 @@
 #include "clips_smt_data.h"
 
 namespace fawkes {
-  class NavGraphStaticListEdgeConstraint;
+    class SubProcess;
+    class NavGraphStaticListEdgeConstraint;
 }
 
 class ClipsSmtThread
@@ -98,10 +99,15 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_done(std::string foo, std::string bar);
 
   // Test
-  void clips_smt_test(std::string foo, std::string bar);
+  void clips_smt_test_z3();
+  void clips_smt_test_carl();
+  void clips_smt_test_data();
   SmtData _smtData;
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
+
+  // SubProcess to call extern binary of z3
+  fawkes::SubProcess *proc_z3_;
 
 };
 
