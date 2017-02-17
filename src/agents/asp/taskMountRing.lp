@@ -74,12 +74,12 @@ impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), order(T, O), ring(T, Tas
 impossible(R, T, GT) :- ringTask(T), holding(R, P, GT), ring(T, TaskRing), order(T, O), ring(O, Ring, _),
                         Ring >= TaskRing, productRing(P, Ring, _, GT).
 % The fill state of the ring station has to be high enough.
-impossible(R, T, GT) :- ringTask(T), robot(R), ring(T, Ring), order(T, O), taskLocation(T, L),
-                        locationToMachineMap(L, M), ring(O, Ring, Color), ringColorCost(Color, Cost),
+impossible(R, T, GT) :- ringTask(T), robot(R), ring(T, TaskRing), order(T, O), taskLocation(T, L),
+                        locationToMachineMap(L, M), ring(O, TaskRing, Color), ringColorCost(Color, Cost),
                         rsFillState(M, FS, GT), FS < Cost.
 
 ringMountedByRobot(R, P, M, C, GT) :- end(R, T, GT), ringTask(T), taskLocation(T, L), locationToMachineMap(L, M),
-                                      holding(R, P, GT-1), order(T, O), ring(T, Ring), ring(O, Ring, C).
+                                      holding(R, P, GT-1), order(T, O), ring(T, TaskRing), ring(O, TaskRing, C).
 
 putDown(R, GT)           :- ringMountedByRobot(R, _, _, _, GT).
 ringMounted(M, P, C, GT) :- ringMountedByRobot(_, P, M, C, GT).
