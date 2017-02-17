@@ -68,6 +68,9 @@ AspPlanerThread::initClingo(void)
 	std::strcpy(suffix, "program-files");
 	const auto files = config->get_strings(buffer);
 
+	//! @todo Read # threads from config
+	ClingoAcc->setNumberOfThreads(7);
+
 	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %d", path.c_str(),
 		ClingoAcc->DebugLevel.load());
 	for ( const auto& file : files )
@@ -318,6 +321,21 @@ AspPlanerThread::loopClingo(void)
 			addExternal(generateMachineStoringExternal(name, machine.Storing));
 		} //else if ( machine.Storing.isValid() )
 	} //for ( const auto& pair : Machines )
+
+	for ( const auto& machine : {"CS1", "CS2"} )
+	{
+		const auto& info(Machines[machine]);
+		if ( info.Prepared )
+		{
+			addExternal(generatePreparedExternal(machine));
+		}
+	} //for ( const auto& machine : {"CS1", "CS2"} )
+
+	for ( const auto& machine : {"RS1", "RS2"} )
+	{
+		const auto& info(Machines[machine]);
+		addExternal(generateFillStateExternal(machine, info.FillState));
+	} //for ( const auto& machine : {"RS1", "RS2"} )
 
 	for ( auto index = 0; index < static_cast<int>(Products.size()); ++index )
 	{

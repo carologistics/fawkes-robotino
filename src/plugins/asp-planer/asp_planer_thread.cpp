@@ -139,7 +139,8 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 	try
 	{
 		const auto object(document.getField("o"));
-		const std::string machine(object["machine"].String());
+		//Remove the first 2 letters, because this is the team color and the dash. We identify by "BS" not "C-BS".
+		const std::string machine(object["machine"].String().substr(2));
 		const std::string state(object["state"].String());
 		MutexLocker locker(&WorldMutex);
 		auto& info(Machines[machine]);
@@ -498,7 +499,19 @@ AspPlanerThread::loop(void)
 				info.Alive = false;
 			} //if ( info.Alive && now - info.LastSeen >= timeOut )
 		} //for ( auto& pair : Robots )
-	} //Block for iteration over Robots
+
+		for ( auto& pair : Machines )
+		{
+			auto& info(pair.second);
+
+			//Broken handling happens in machineCallback().
+
+			if ( info.WorkingUntil && info.WorkingUntil <= GameTime )
+			{
+				info.WorkingUntil = 0;
+			} //if ( info.BrokenUntil && info.BrokenUntil <= GameTime )
+		} //for ( auto& pair : Machines )
+	} //Block for iteration over Robots & Machines
 
 	loopPlan();
 	loopClingo();
