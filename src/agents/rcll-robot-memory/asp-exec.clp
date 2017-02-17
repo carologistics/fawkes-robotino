@@ -18,6 +18,8 @@
   (multislot params)
   (slot begin (type INTEGER))
   (slot end (type INTEGER))
+  (slot moveStep (type INTEGER) (default 0))
+  (slot sentAfterMoveUpdate (allowed-symbols TRUE FALSE) (default FALSE))
 )
 
 (deffacts asp-exec-init
@@ -30,6 +32,35 @@
   ?*ASP-READ-MPS-LIGHT-TIME*  = 0
   ?*ASP-TASK-BEGIN-TOLERANCE* = 0
   ?*ASP-UPDATE-THRESHOLD*     = 0
+  ?*ASP-DELIVER-TIME*         = 0
+  ?*ASP-FEED-RS-TIME*         = 0
+  ?*ASP-GET-BASE-TIME*        = 0
+  ?*ASP-GET-PRODUCT-TIME*     = 0
+  ?*ASP-MOUNT-CAP-TIME*       = 0
+  ?*ASP-MOUNT-RING-TIME*      = 0
+  ?*ASP-PREPARE-CS-TIME*      = 0
+)
+
+(defrule asp-bind-deliver-time
+  (confval (path "/asp-agent/time-estimations/deliver-product") (type UINT) (value ?time))
+  =>
+  (bind ?*ASP-DELIVER-TIME*    ?time)
+  (bind ?*ASP-FEED-RS-TIME*    ?time)
+  (bind ?*ASP-MOUNT-CAP-TIME*  ?time)
+  (bind ?*ASP-MOUNT-RING-TIME* ?time)
+)
+
+(defrule asp-bind-get-time
+  (confval (path "/asp-agent/time-estimations/fetch-product") (type UINT) (value ?time))
+  =>
+  (bind ?*ASP-GET-BASE-TIME*    ?time)
+  (bind ?*ASP-GET-PRODUCT-TIME* ?time)
+)
+
+(defrule asp-bind-prep-cs-time
+  (confval (path "/asp-agent/time-estimations/prepare-cs") (type UINT) (value ?time))
+  =>
+  (bind ?*ASP-PREPARE-CS-TIME* ?time)
 )
 
 (defrule asp-bind-task-begin-tolerance
@@ -324,7 +355,7 @@
 (defrule asp-start-deliver
   ?state <- (state IDLE)
   ;params should look like this: m ( C DS I ) 2 1
-  (asp-doing (index ?index) (task "deliver"|"lateDeliver") (params ? ? ?team ?machine ?side ? ?order ?))
+  ?doing <- (asp-doing (index ?index) (task "deliver"|"lateDeliver") (params ? ? ?team ?machine ?side ? ?order ?))
   (order (id ?order) (delivery-gate ?gate))
   =>
   (bind ?machineName (sym-cat ?team - ?machine))
@@ -336,12 +367,13 @@
           (step (id (+ ?taskID 2)) (name insert) (machine ?machineName) (side ?machineSide) (gate ?gate) (machine-feature CONVEYOR))
           (state TASK-ORDERED)
   )
+  (modify ?doing (moveStep (+ ?taskID 1)))
 )
 
 (defrule asp-start-feed-rs
   ?state <- (state IDLE)
   ;params should look like this: m ( C RS1 I )
-  (asp-doing (index ?index) (task "feedRS") (params ? ? ?team ?machine ?side ?))
+  ?doing <- (asp-doing (index ?index) (task "feedRS") (params ? ? ?team ?machine ?side ?))
   =>
   (bind ?machineName (sym-cat ?team - ?machine))
   (bind ?machineSide (asp-get-side ?side))
@@ -352,12 +384,13 @@
           (step (id (+ ?taskID 2)) (name insert) (machine ?machineName) (side ?machineSide) (machine-feature SLIDE))
           (state TASK-ORDERED)
   )
+  (modify ?doing (moveStep (+ ?taskID 1)))
 )
 
 (defrule asp-start-get-base
   ?state <- (state IDLE)
   ;params should look like this: m ( C BS I ) "RED"
-  (asp-doing (index ?index) (task "getBase") (params ? ? ?team ?machine ?side ? ?baseColor))
+  ?doing <- (asp-doing (index ?index) (task "getBase") (params ? ? ?team ?machine ?side ? ?baseColor))
   =>
   (bind ?baseColor (sym-cat ?baseColor))
   (bind ?machineName (sym-cat ?team - ?machine))
@@ -371,12 +404,13 @@
           (step (id (+ ?taskID 4)) (name get-base) (machine ?machineName) (side ?machineSide) (base ?baseColor) (machine-feature CONVEYOR))
           (state TASK-ORDERED)
   )
+  (modify ?doing (moveStep (+ ?taskID 2)))
 )
 
 (defrule asp-start-get-product
   ?state <- (state IDLE)
   ;params should look like this: m ( C RS1 O )
-  (asp-doing (index ?index) (task "getProduct") (params ? ? ?team ?machine ?side ?))
+  ?doing <- (asp-doing (index ?index) (task "getProduct") (params ? ? ?team ?machine ?side ?))
   =>
   (bind ?machineName (sym-cat ?team - ?machine))
   (bind ?machineSide (asp-get-side ?side))
@@ -387,12 +421,13 @@
           (step (id (+ ?taskID 2)) (name get-output) (machine ?machineName) (side ?machineSide) (machine-feature CONVEYOR))
           (state TASK-ORDERED)
   )
+  (modify ?doing (moveStep (+ ?taskID 1)))
 )
 
 (defrule asp-start-goto
   ?state <- (state IDLE)
   ;params should look like this: m ( C RS1 O )
-  (asp-doing (index ?index) (task "goto") (params ? ? ?team ?machine ?side ?))
+  ?doing <- (asp-doing (index ?index) (task "goto") (params ? ? ?team ?machine ?side ?))
   =>
   (bind ?machineName (sym-cat ?team - ?machine))
   (bind ?machineSide (asp-get-side ?side))
@@ -407,7 +442,7 @@
 (defrule asp-start-mount-cap
   ?state <- (state IDLE)
   ;params should look like this: m ( C CS1 I ) 2 1
-  (asp-doing (index ?index) (task "mountCap") (params ? ? ?team ?machine ?side ? ?order ?))
+  ?doing <- (asp-doing (index ?index) (task "mountCap") (params ? ? ?team ?machine ?side ? ?order ?))
   =>
   (bind ?machineName (sym-cat ?team - ?machine))
   (bind ?machineSide (asp-get-side ?side))
@@ -418,12 +453,13 @@
           (step (id (+ ?taskID 2)) (name insert) (machine ?machineName) (side ?machineSide) (machine-feature CONVEYOR))
           (state TASK-ORDERED)
   )
+  (modify ?doing (moveStep (+ ?taskID 1)))
 )
 
 (defrule asp-start-mount-ring
   ?state <- (state IDLE)
   ;params should look like this: m ( C CS1 I ) 2 1 3
-  (asp-doing (index ?index) (task "mountRing") (params ? ? ?team ?machine ?side ? ?order ? ?ring))
+  ?doing <- (asp-doing (index ?index) (task "mountRing") (params ? ? ?team ?machine ?side ? ?order ? ?ring))
   (order (id ?order) (product-id ?prod))
   (product (id ?prod) (rings $?rings))
   =>
@@ -431,18 +467,20 @@
   (bind ?machineSide (asp-get-side ?side))
   (bind ?taskID (* ?index 1000))
   (bind ?ringColor (nth$ ?ring ?rings))
+  (printout t "MountRing Order: " ?order " Ring: " ?ring " Product-ID: " ?prod " Rings: " ?rings " RingColor: " ?ringColor crlf)
   (retract ?state)
   (assert (task (id ?taskID) (name add-additional-ring) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2))))
           (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
           (step (id (+ ?taskID 2)) (name insert) (machine ?machineName) (side ?machineSide) (machine-feature CONVEYOR) (ring ?ringColor))
           (state TASK-ORDERED)
   )
+  (modify ?doing (moveStep (+ ?taskID 1)))
 )
 
 (defrule asp-start-prep-cs
   ?state <- (state IDLE)
   ;params should look like this: m ( C CS1 I )
-  (asp-doing (index ?index) (task "prepareCS") (params ? ? ?team ?machine ?side ?))
+  ?doing <- (asp-doing (index ?index) (task "prepareCS") (params ? ? ?team ?machine ?side ?))
   =>
   (bind ?machineName (sym-cat ?team - ?machine))
   (bind ?machineSide (asp-get-side ?side))
@@ -454,6 +492,36 @@
           (step (id (+ ?taskID 3)) (name insert) (machine ?machineName) (side ?machineSide) (machine-feature CONVEYOR) (already-at-mps TRUE))
           (state TASK-ORDERED)
   )
+  (modify ?doing (moveStep (+ ?taskID 1)))
+)
+
+(defrule asp-move-step-done
+  "Update our time estimation, when we arrived at the machine."
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?doing <- (asp-doing (index ?idx) (task ?taskName) (moveStep ?stepId) (end ?end) (sentAfterMoveUpdate FALSE))
+  (planElement (index ?idx) (task ?task))
+  (step (id ?stepId) (state finished))
+  (game-time ?gt ?)
+  =>
+  (bind ?soll (switch ?taskName
+    (case "deliver"     then ?*ASP-DELIVER-TIME*)
+    (case "feedRS"      then ?*ASP-FEED-RS-TIME*)
+    (case "getBase"     then ?*ASP-GET-BASE-TIME*)
+    (case "getProduct"  then ?*ASP-GET-PRODUCT-TIME*)
+    (case "goto"        then 0)
+    (case "lateDeliver" then ?*ASP-DELIVER-TIME*)
+    (case "mountCap"    then ?*ASP-MOUNT-CAP-TIME*)
+    (case "mountRing"   then ?*ASP-MOUNT-RING-TIME*)
+    (case "prepareCS"   then ?*ASP-PREPARE-CS-TIME*)
+    (default 30)
+  ))
+  (bind ?ist (- ?end ?gt))
+  (bind ?offset (- ?soll ?ist))
+  (bind ?end (asp-game-time (+ ?end ?offset)))
+  (bind ?doc (asp-create-feedback-bson update ?task))
+  (bson-append ?doc "end" ?end)
+  (asp-send-feedback ?doc)
+  (modify ?doing (sentAfterMoveUpdate TRUE))
 )
 
 (defrule asp-task-success
