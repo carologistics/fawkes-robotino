@@ -20,6 +20,8 @@
 
 #include "clips_smt_thread.h"
 
+#include "../../../fawkes/src/plugins/openprs/utils/proc.h"
+
 #include <navgraph/navgraph.h>
 #include <navgraph/constraints/static_list_edge_constraint.h>
 #include <navgraph/constraints/constraint_repo.h>
@@ -50,6 +52,8 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
+    proc_z3_ = NULL;
+    clips_smt_test_z3();
 }
 
 
@@ -356,8 +360,25 @@ ClipsSmtThread::loop()
  * Test methods
  **/
 
+ void
+ ClipsSmtThread::clips_smt_test_z3()
+ {
+     //const char *argv[] = { "1", "2", "3",  NULL };
+     //proc_z3_ = new SubProcess("z3 binary", "$HOME/z3/bin", argv, NULL);
+ }
+
+ void
+ ClipsSmtThread::clips_smt_test_carl()
+ {
+     // Test carl
+     std::cout << "CSMT_test:      Test carl" << std::endl;
+     bool b=false;
+     if(carl::highestPower(64)==64) b=true;
+     std::cout << "CSMT_test:      Hello Carl! You are " << b << std::endl;
+ }
+
 void
-ClipsSmtThread::clips_smt_test(std::string foo, std::string bar)
+ClipsSmtThread::clips_smt_test_data()
 {
     try
     {
@@ -380,12 +401,6 @@ ClipsSmtThread::clips_smt_test(std::string foo, std::string bar)
 
 
       std::cout << _smtData.toString() << std::endl;
-
-      // Test carl
-      std::cout << "CSMT_test:      Test carl" << std::endl;
-      bool b=false;
-      if(carl::highestPower(64)==64) b=true;
-      std::cout << "CSMT_test:      Hello Carl! You are " << b << std::endl;
     }
     catch (const runtime_error& error)
     {
