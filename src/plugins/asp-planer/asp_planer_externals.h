@@ -49,6 +49,8 @@ Clingo::Symbol generateMachineBrokenExternal(const std::string& machineName, con
 Clingo::Symbol generateMachineWorkingExternal(const std::string& machineName, const int duration,
 	const ProductIdentifier& product);
 Clingo::Symbol generateMachineStoringExternal(const std::string& machineName, const ProductIdentifier& product);
+Clingo::Symbol generatePreparedExternal(const std::string& machineName);
+Clingo::Symbol generateFillStateExternal(const std::string& machineName, const int fillState);
 
 Clingo::Symbol generateLocationExternal(const char *teamColor, const char *machine, const char *side);
 
