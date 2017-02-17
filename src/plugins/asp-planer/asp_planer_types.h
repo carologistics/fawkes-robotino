@@ -191,7 +191,7 @@ struct MachineInformation
 	ProductIdentifier Storing;
 	int FillState = 0;
 	bool Prepared = false;
-	std::string State;
+	std::string State = "(not set)";
 };
 
 struct CapColorInformation
