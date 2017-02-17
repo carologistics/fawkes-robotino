@@ -499,7 +499,19 @@ AspPlanerThread::loop(void)
 				info.Alive = false;
 			} //if ( info.Alive && now - info.LastSeen >= timeOut )
 		} //for ( auto& pair : Robots )
-	} //Block for iteration over Robots
+
+		for ( auto& pair : Machines )
+		{
+			auto& info(pair.second);
+
+			//Broken handling happens in machineCallback().
+
+			if ( info.WorkingUntil && info.WorkingUntil <= GameTime )
+			{
+				info.WorkingUntil = 0;
+			} //if ( info.BrokenUntil && info.BrokenUntil <= GameTime )
+		} //for ( auto& pair : Machines )
+	} //Block for iteration over Robots & Machines
 
 	loopPlan();
 	loopClingo();
