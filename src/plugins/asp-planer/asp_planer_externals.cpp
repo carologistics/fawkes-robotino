@@ -193,6 +193,29 @@ generateMachineStoringExternal(const std::string& machineName, const ProductIden
 }
 
 /**
+ * @brief Generates the external for a prepared CS.
+ * @param[in] machineName The name of the machine.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generatePreparedExternal(const std::string& machineName)
+{
+	return Clingo::Function("csPrepared", {Clingo::String(machineName), Clingo::Number(0)});
+}
+
+/**
+ * @brief Generates the external for the fill state of a RS.
+ * @param[in] machineName The name of the machine.
+ * @param[in] fillState The fill state.
+ * @return The external atom.
+ */
+Clingo::Symbol
+generateFillStateExternal(const std::string& machineName, const int fillState)
+{
+	return Clingo::Function("rsFillState", {Clingo::String(machineName), Clingo::Number(fillState), Clingo::Number(0)});
+}
+
+/**
  * @brief Generates the location external for a machine side.
  * @param[in] teamColor The team-color of the machine.
  * @param[in] machine The machine name.

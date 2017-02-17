@@ -322,6 +322,21 @@ AspPlanerThread::loopClingo(void)
 		} //else if ( machine.Storing.isValid() )
 	} //for ( const auto& pair : Machines )
 
+	for ( const auto& machine : {"CS1", "CS2"} )
+	{
+		const auto& info(Machines[machine]);
+		if ( info.Prepared )
+		{
+			addExternal(generatePreparedExternal(machine));
+		}
+	} //for ( const auto& machine : {"CS1", "CS2"} )
+
+	for ( const auto& machine : {"RS1", "RS2"} )
+	{
+		const auto& info(Machines[machine]);
+		addExternal(generateFillStateExternal(machine, info.FillState));
+	} //for ( const auto& machine : {"RS1", "RS2"} )
+
 	for ( auto index = 0; index < static_cast<int>(Products.size()); ++index )
 	{
 		const auto& product(Products[index]);
