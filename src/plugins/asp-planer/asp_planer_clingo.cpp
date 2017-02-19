@@ -219,11 +219,11 @@ AspPlanerThread::loopClingo(void)
 	{
 		MutexLocker solvingLocker(&SolvingMutex);
 		//Locked: ClingoAcc, RequestMutex, NavgraphDistanceMutex, SolvingMutex
-		if ( Clock::now() - SolvingStarted < std::chrono::seconds(5) )
+		if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 		{
-			//Nothing to do and last solving happened within the last five seconds.
+			//Nothing to do and last solving happened within the last fifteen seconds.
 			return;
-		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(5) )
+		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
 	reqLocker.unlock();
@@ -798,6 +798,7 @@ AspPlanerThread::setTeam(void)
 	RingLocations[0] = generateLocationExternal(TeamColor, "RS1", "I");
 	RingLocations[1] = generateLocationExternal(TeamColor, "RS2", "I");
 	graph_changed();
+	logger->log_warn(LoggingComponent, "Setting UpdateNavgraphDistance from %s to true. %s", UpdateNavgraphDistances ? "true" : "false", __func__);
 	UpdateNavgraphDistances = true;
 	return;
 }
@@ -1263,6 +1264,12 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	if ( !success )
 	{
 		robotInfo.Doing = {};
+		setInterrupt(InterruptSolving::Critical);
+		for ( auto i = robotPlan.FirstNotDone; i < robotPlan.Tasks.size(); ++i )
+		{
+			removeFromPlanDB(robot, i);
+		} //for ( auto i = robotPlan.FirstNotDone; i < robotPlan.Tasks.size(); ++i )
+		robotPlan.Tasks.erase(robotPlan.Tasks.begin() + robotPlan.FirstNotDone, robotPlan.Tasks.end());
 		return;
 	} //if ( !success )
 
