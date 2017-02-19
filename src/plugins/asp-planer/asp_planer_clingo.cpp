@@ -219,11 +219,11 @@ AspPlanerThread::loopClingo(void)
 	{
 		MutexLocker solvingLocker(&SolvingMutex);
 		//Locked: ClingoAcc, RequestMutex, NavgraphDistanceMutex, SolvingMutex
-		if ( Clock::now() - SolvingStarted < std::chrono::seconds(5) )
+		if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 		{
-			//Nothing to do and last solving happened within the last five seconds.
+			//Nothing to do and last solving happened within the last fifteen seconds.
 			return;
-		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(5) )
+		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
 	reqLocker.unlock();
