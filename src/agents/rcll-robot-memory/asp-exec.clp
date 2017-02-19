@@ -545,8 +545,8 @@
 (defrule asp-task-failure
   "Inform the planer about failure."
   ?doing <- (asp-doing (index ?idx))
-  ?state <- (state TASK-FINISHED)
-  (planElement (index ?idx) (task ?task))
+  ?state <- (state TASK-FAILED)
+  ?pE <- (planElement (index ?idx) (task ?task))
   (game-time ?gt ?)
   =>
   (printout t "Task #" ?idx " was a failure." crlf)
@@ -555,7 +555,25 @@
   (bson-append ?doc "end" ?gt)
   (bson-append ?doc "success" FALSE)
   (asp-send-feedback ?doc)
+  (modify ?pE (done TRUE))
   (retract ?state ?doing)
+  (assert (state DELETE-PLAN))
+)
+
+(defrule asp-delete-plan
+  "Delete all not done plan elements."
+  (state DELETE-PLAN)
+  ?pE <- (planElement (done FALSE))
+  =>
+  (retract ?pE)
+)
+
+(defrule asp-delete-plan-to-idle
+  "Plan is deleted, change state to idle."
+  ?s <- (state DELETE-PLAN)
+  (not (planElement (done FALSE)))
+  =>
+  (retract ?s)
   (assert (state IDLE))
 )
 
