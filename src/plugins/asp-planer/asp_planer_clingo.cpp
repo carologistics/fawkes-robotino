@@ -798,6 +798,7 @@ AspPlanerThread::setTeam(void)
 	RingLocations[0] = generateLocationExternal(TeamColor, "RS1", "I");
 	RingLocations[1] = generateLocationExternal(TeamColor, "RS2", "I");
 	graph_changed();
+	logger->log_warn(LoggingComponent, "Setting UpdateNavgraphDistance from %s to true. %s", UpdateNavgraphDistances ? "true" : "false", __func__);
 	UpdateNavgraphDistances = true;
 	return;
 }

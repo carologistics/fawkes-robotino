@@ -71,8 +71,10 @@ AspPlanerThread::graph_changed(void) noexcept
 		{
 			node.set_property(NodePropertyASP, true);
 			navgraph->update_node(node);
+			logger->log_warn(LoggingComponent, "Setting UpdateNavgraphDistance from %s to true. %s", UpdateNavgraphDistances ? "true" : "false", __func__);
 			UpdateNavgraphDistances = true;
 			NodesToFind.erase(node.name());
+			logger->log_info(LoggingComponent, "graph_changed: %s", node.name().c_str());
 		} //if ( !node.has_property(NodePropertyASP) && NavgraphNodesForASP.count(node.name()) )
 	} //for ( auto node : navgraph->nodes() )
 	return;
@@ -127,6 +129,7 @@ AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 //		const auto node = navgraph->closest_node(zones[zone][0], zones[zone][1], false, NodePropertyASP);
 	} //for ( auto zone : ZonesToExplore )
 
+	logger->log_warn(LoggingComponent, "Setting UpdateNavgraphDistance from %s to true. %s", UpdateNavgraphDistances ? "true" : "false", __func__);
 	UpdateNavgraphDistances = true;
 	return;
 }
@@ -140,6 +143,7 @@ AspPlanerThread::updateNavgraphDistances(void)
 {
 	static bool done = false;
 
+	logger->log_warn(LoggingComponent, "Setting UpdateNavgraphDistance from %s to false. %s", UpdateNavgraphDistances ? "true" : "false", __func__);
 	UpdateNavgraphDistances = false;
 
 	if ( done )
