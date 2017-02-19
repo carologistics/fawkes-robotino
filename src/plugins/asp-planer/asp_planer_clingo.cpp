@@ -1263,6 +1263,12 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	if ( !success )
 	{
 		robotInfo.Doing = {};
+		setInterrupt(InterruptSolving::Critical);
+		for ( auto i = robotPlan.FirstNotDone; i < robotPlan.Tasks.size(); ++i )
+		{
+			removeFromPlanDB(robot, i);
+		} //for ( auto i = robotPlan.FirstNotDone; i < robotPlan.Tasks.size(); ++i )
+		robotPlan.Tasks.erase(robotPlan.Tasks.begin() + robotPlan.FirstNotDone, robotPlan.Tasks.end());
 		return;
 	} //if ( !success )
 
