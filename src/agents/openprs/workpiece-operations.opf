@@ -7,6 +7,70 @@
 ;---------------------------------------------------------------------------
 
 (
-	
+
+
+	; (defop CHECK-READY?
+	; 	:invocation( ! (is-ready? (NEED $resource AT $place FOR $result CONSTRAINTS $constraints) $ready-in )))
+	; 	:context ()
+	; 	:body(
+	; 		;ARE CONSRAINTS SATISFIED?
+	; 		;No-> THEN NOT-READY
+
+	; 		;YES->
+	; 		;HOW MANY MAIPULATION STEPS TP GET RESOURCE AVILBLE
+
+	; 		)
+	; 	:effects()
+	; )
+
+
+	(defop wp-somewhere-to-gripper
+		:invocation ( ! (workpiece $wp-id $base $rings $cap (place "agent" "gripper")) )
+		:context ( (holding none) )
+		:body(
+			(! (printf (FORMAT "NEED Gripp: workpiece %s %s %s %s \n"  $wp-id $base $rings $cap)))
+
+			(if (? (workpiece $wp-id $base $rings $cap (place $mps-name $side)))
+
+				(! (printf (FORMAT "NEED Gripp: Found a peace at %s %s..Going to get it \n"  $mps-name $side)))
+				(if (? (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with))
+					(! (step (drive-to machine $mps-name side $side)))
+					(if (? (= $mps-type "BS"))
+						(! (step (get-base 	machine $mps-name side $side))) )
+					(if (? (= $mps-type "RS"))
+						(! (step (get-output machine $mps-name))) )
+					(if (? (= $mps-type "CS"))
+						(if (? (& (= $base (base UNKNOWN)) (= $cap (cap $cap-color)) (~ (= $cap-color none))))
+							(! (step (get-cap machine $mps-name)))
+							else
+							(! (step (get-output machine $mps-name))) ))
+					else
+					(! (printf (FORMAT "NEED Gripp: I think the peace is lost..will just fail \n" )))
+					(fail))
+
+				else
+				(if (? (& (= $base (base $base-color)) (= $rings (rings none)) (= $cap (cap none)) ))
+					(if (? (= $base-color UNKNOWN))		
+						else
+						;TODO: match on the base station color..For now just get it from the C-BS, CORRECT THIS SOON
+						(! (step (drive-to 		machine "C-BS" side "input")))
+						(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
+						(! (step (get-base machine $mps-name side "input"))) 
+						)
+					else
+					(if (? (& (= $base (base UNKNOWN)) (= $rings (rings none)) (= $cap (cap $cap-color)) (~ (= none $cap-color)) ))
+						(? (cap-station $cs-name $cap-color $loaded-status $caps-on-shelf))
+						(! (step (drive-to 	machine $cs-name side "input")))
+						(! (step (get-cap 	machine $cs-name)))
+						)
+					)
+				)
+				;TODO: handle cases that
+				;	wp has no or differnt id but same discription and exists somewhere somewhere (could allow me to know what i want but 
+				;	not where it is or just that it will exist somewhere sitll no name)
+
+			)
+			:effects()
+			)			
 
 	)
