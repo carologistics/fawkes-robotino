@@ -313,8 +313,9 @@
   (planElement (done FALSE) (index ?idx) (task ?task) (begin ?begin&:(<= (- ?begin ?*ASP-TASK-BEGIN-TOLERANCE*) (asp-game-time ?gt))) (end ?end))
   (not (planElement (done FALSE) (index ?otherIdx&:(< ?otherIdx ?idx))))
   (state IDLE)
+  (time $?time)
   =>
-  (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" crlf)
+  (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" " " ?time crlf)
   (bind ?pair (asp-start-task ?task ?idx))
   (bind ?taskName (nth$ 1 ?pair))
   (bind ?params (delete$ ?pair 1 1))
@@ -510,7 +511,9 @@
   (planElement (index ?idx) (task ?task))
   (step (id ?stepId) (state finished))
   (game-time ?gt ?)
+  (time $?time)
   =>
+  (printout t "Begin really: " ?task " " ?time crlf)
   (bind ?soll (switch ?taskName
     (case "deliver"     then ?*ASP-DELIVER-TIME*)
     (case "feedRS"      then ?*ASP-FEED-RS-TIME*)
@@ -538,8 +541,9 @@
   ?state <- (state TASK-FINISHED)
   ?pE <- (planElement (index ?idx) (task ?task))
   (game-time ?gt ?)
+  (time $?time)
   =>
-  (printout t "Task #" ?idx " successfully executed." crlf)
+  (printout t "Task #" ?idx " successfully executed." " " ?time crlf)
   (bind ?gt (asp-game-time ?gt))
   (bind ?doc (asp-create-feedback-bson end ?task))
   (bson-append ?doc "end" ?gt)
