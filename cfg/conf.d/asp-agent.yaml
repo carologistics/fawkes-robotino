@@ -47,9 +47,9 @@ asp-agent:
   #Time estimations for tasks, given in real time seconds.
   time-estimations:
     explore-zone: 5
-    fetch-product: 10
-    deliver-product: 15
-    prepare-cs: 35 #Fetch a product from the shelf and put in into the machine.
+    fetch-product: 23
+    deliver-product: 23
+    prepare-cs: 38 #Fetch a product from the shelf and put in into the machine.
 
     read-mps-light: 10
 
