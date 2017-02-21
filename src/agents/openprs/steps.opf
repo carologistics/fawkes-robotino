@@ -21,31 +21,42 @@
 		:body(
 			(! (printf (Format "STEP: Drive-To .. machine %s \n" $mps-name)))
 			(=> (agent-state STEP-RUNNING))
-
 			;Sides allowed
 			(? (MEMQ $side (. "input" "output" .)))
 			(if (? (= $side "input" ))
 				(! (= $place (string-cat $mps-name "-I")))
 				else 
-				(! (= $place (string-cat $mps-name "-O"))))
+				(! (= $place (string-cat $mps-name "-O")))
+				)
 
 			(if (! (execute (skill "drive_to" "place" $place) ))
-				;TODO:add bs-station-side-switching 
-				(=> (agent-state STEP-FINISHD))
+				;do nothing
 				else
-				(=> (agent-state STEP-FAILD)) )
+				(=> (step-failed (drive-to machine $mps-name side $side) )) 
+				(fail)
+				)
 			)
+		:effects ( (=> (agent-state STEP-FINISHD)) )
 		)
 
+	(defop step-fail-drive-to 
+			:invocation  (step-failed (drive-to machine $mps-name side $side))
+			:context()
+			:body()
+			:effects ( (=> (agent-state STEP-FAILD)) )
+			)
 
 
 	(defop step-get-base
 		:invocation( !	(step (get-base machine $mps-name side $side)))
 		:context ( 		(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
 				 		(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ;The Mps Has to had been instructed or down
-				 		(holding NONE))
+				 		(holding NONE)
+				 		;(base-station $mps-name $active-side $failed-side)
+				 		(workpiece $ws-id  (base $base-color) (rings none) (cap none) (place $mps-name $side)) 
+				 		) 
 		:body(
-			(! (printf (Format "STEP: Get-Base .. machine %s is %s \n" $mps-name  $m-s)))
+			(! (printf (Format "STEP: Get-Base .. machine %s \n" $mps-name)))
 			;Todo: This could be replace by a unified checking mechanism 
 			(if (? (= $m-state "DOWN") )
 				(=> (agent-state STEP-PENDING))
@@ -57,8 +68,12 @@
 			(=> (agent-state STEP-RUNNING))
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" $side)) ) 
 				(=> (agent-state STEP-FINISHD))
-				(=> (holding BASE));put the id
+				(=> (workpiece $ws-id  (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
+				(=> (holding $ws-id));put the id
 				else
+				(? (machine $mps-name "BS" @m-state @m-prepared @m-zone @m-pose @m-loaded-with))
+				(if (? (~ (= (val @m-state) "READY-AT-OUTPUT")))
+					(=> (workpiece $ws-id  (base $base-color) (rings none) (cap none) (place LOST LOST))))
 				(=> (agent-state STEP-FAILD)))
 			)
 		:documentation " Fetch the base from the base station. Here the robot assumed to be already at the BS and already 
@@ -77,22 +92,27 @@
 
 
 	(defop step-get-output 
-		:invocation( ! 	(step (get-output machine $mps)) )
-		:context ( 	 	(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+		:invocation( ! 	(step (get-output machine $mps-name)) )
+		:context ( 	 	(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(~ (= $mps-type "BS"))
 						(MEMQ $mps-state (. "READY-AT-OUTPUT" .))
 			 			(holding NONE)
+			 			(workpiece $ws-id $base $rings $cap (place $mps-name "output"));If the peace is not already at output this will fail. But what if it was processing still 
 			 			)
 
 		:body(
 			(! (printf (FORMAT " STEP: get-output from \n")))
 			(=> (agent-state STEP-RUNNING))
 
-			(if (! (execute (skill "get_product_from" "place" $mps "side" "output")))
+			(if (! (execute (skill "get_product_from" "place" $mps-name "side" "output")))
 				(=> (agent-state STEP-FINISHD))
-				(=> (holding Product))  
+				(=> (workpiece $ws-id  $base $rings $cap (place "agent" "gripper")))
+				(=> (holding $ws-id))  
 				else
 				(=> (agent-state STEP-FAILD))
+				(? (machine $mps-name $mps-type @m-state @m-prepared @m-zone @m-pose @m-loaded-with))
+				(if (? (~ (= (val @m-state) "READY-AT-OUTPUT")))
+					(=> (workpiece $ws-id  (base $base-color) (rings none) (cap none) (place LOST LOST))))
 				)
 			)
 		:documentation "Fetch a work-peace from an mps output (except BS, there is Fetch-base for that).
@@ -112,40 +132,56 @@
 				;TODO: dynamically determine which position. 
 			 	;Change the # on shelf even if the skill fails 
 				(if (? (= 3 $caps-on-shelf))  				(! (= $slot "RIGHT")) 	(! (= $new-caps-on-shelf  2))
-				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "MIDDLE")) 	(! (= $new-caps-on-shelf  1))
+				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "MIDDLE")) 	(! (= $new-caps-on-shelf  1))i
 						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "LEFT")) 	(! (= $new-caps-on-shelf  3)) ))) 
 			
 				(if (! (execute (skill "get_product_from" "place" $mps-name "shelf" $slot)))
 					(=> (agent-state STEP-FINISHD))
-					(=> (holding CAP))
+					(! (= $peace-id (rand 1000)))
+					(=> (workpiece $peace-id (base UNKNOWN) (rings none) (cap $assigned-cap-color) (place "agent" "gripper") ))
+					(=> (holding $peace-id))
 				else
 					(=> (agent-state STEP-FAILD)))
 			
 			)
-		:effects ( (=> (cap-station $mps $assigned-cap-color $cap-loaded-status $new-caps-on-shelf)) )
+		:effects ( (=> (cap-station $mps-name $assigned-cap-color $cap-loaded-status $new-caps-on-shelf)) )
 		)
 
 
-
 		(defop step-insert
-			:invocation ( ! (step (insert machine $mps)))
-			:context 	(  	(~ (holding NONE)) ;that should be a work-peace
-							(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
-						 	(MEMQ $mps-state (. "PREPARED"  "READY-AT-OUTPUT" "DOWN" .)))
+			:invocation ( ! (step (insert machine $mps-name)))
+			:context 	(  	(holding $ws-id) ;that should be a work-peace
+							(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
+							(~ (= $mps-type "BS"))
+						 	(MEMQ $mps-state (. "PREPARED"  "READY-AT-OUTPUT" "DOWN" "IDLE" "WAIT-IDLE".))
+			 				(workpiece $ws-id  $base $rings $cap (place "agent" "gripper"));If the peace is not already at output this will fail. But what if it was processing still 
+						 	(~ (workpiece $ws-id $base $rings (cap $cap-color) (place  $mps-name "input")))
+						 	)
 							;Maybe check if side is empty OR handle it if not
 							;Maybe check if the holding peace is a base or product work-peace
 							;Mps has to be instructed already before u do that. 
 			:body(
-				(! (printf (FORMAT "STEP: Insert Product into %s \n" $mps)))
+				(! (printf (FORMAT "STEP: Insert Product into %s \n" $mps-name)))
 				(=> (agent-state STEP-RUNNING))
 
-				(if (! (execute (skill "bring_product_to" "place" $mps)))
+				;Moved here (from the skill sucess branch)coz the skill finishes long enough after the peace is already insterted that
+				;if that machine was instructed before the insertion..READY_AT_OUTPUT fires before the skill finishes (and before the 
+			  	; Peace place becomes output)
+				; (=> (workpiece $ws-id $base $rings $cap (place $mps-name "input")))
+				;moved baq
+				(if (! (execute (skill "bring_product_to" "place" $mps-name)))
 					;UPDATE WORLD MODEL
-					(if (?  (cap-station $mps $cap-color $loaded-status $caps-on-shelf )) 
-						(=> (cap-station $mps $cap-color CAP_NOT_LOADED $caps-on-shelf))) 
+					;Moved to On_ready-at-output
+					; (if (?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
+					; 	(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))) 
+					(=> (workpiece $ws-id $base $rings $cap (place $mps-name "input")))
 					(=> (agent-state STEP-FINISHD))
 					else
-					(=> (agent-state STEP-FAILD)))
+					;TODO: lose the workpiece after checking if still holding
+					(=> (agent-state STEP-FAILD))
+					;TODO:Check if still holding first
+					(=> (workpiece $ws-id $base $rings $cap (place LOST LOST)))
+					)
 				)
 			:effects ( (=> (holding NONE)) )
 			:documentation "Insert a product work-peace in a machine's Input for processing of a production step (RS , DS , CS). 
@@ -156,25 +192,32 @@
 			)
 
 
-
 		(defop step-insert-atmps
 			:invocation	( !	(step (insert-atmps machine $mps)))
-			:context 	( 	(machine $mps $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
-							(cap-station $mps $cap-color CAP_NOT_LOADED $caps-on-shelf)
-							(MEMQ $mps-state (. "PREPARED" .))
-							(~ (holding NONE))) ;same comments from insert-product
+			:context 	( 	(machine $mps-name "CS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+							(cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf)
+							(MEMQ $mps-state (. "PREPARED" "READY-AT-OUTPUT" "DOWN" "IDLE" "WAIT-IDLE".))
+							(~ (holding NONE))
+							(workpiece $ws-id $base $rings (cap $cap-color) (place "agent" "gripper"))
+							(~ (workpiece $ws-id $base $rings (cap $cap-color) (place  $mps-name "input")))
+							) 
+							;check the work peace more accurately..it should be what u just got from the shelf 
 			:body(
-				(! (printf (FORMAT "STEP:  Insert Cap from %s  shelf \n" $mps )))
+				(! (printf (FORMAT "STEP:  Insert Cap from %s  shelf \n" $mps-name )))
 
 				(if (? (= 3 $caps-on-shelf))  				(! (= $slot "LEFT")) 	
 				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "RIGHT")) 	
 						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "MIDDLE")) ))) 
 			
-				(if (! (execute (skill "bring_product_to" "place" $mps "atmps" $slot)))
-					(=> (cap-station $mps $cap-color CAP_LOADED $caps-on-shelf)) 
+				(if (! (execute (skill "bring_product_to" "place" $mps-name "atmps" $slot)))
+					;Moved to On_ready-at-output
+					; (=> (cap-station $mps-name $cap-color CAP_LOADED $caps-on-shelf)) 
+					(=> (workpiece $ws-id $base $rings (cap $cap-color) (place $mps-name "input")))
 					(=> (agent-state STEP-FINISHD))
 					else
 					(=> (agent-state STEP-FAILD))
+					;TODO: only lose the work peace after checking if still holding
+					(=> (workpiece $ws-id $base $rings $cap (place LOST LOST)))
 					)
 				)
 			:effects ((=> (holding NONE)))
