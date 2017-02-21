@@ -1282,11 +1282,14 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 					"will be destroyed!", Products.size() + 1, MaxProducts);
 			} //if ( static_cast<int>(Products.size()) >= MaxProducts )
 
-			Products.push_back({baseColor});
+			logger->log_info(LoggingComponent, "Generated product #%d with base color %s.", Products.size(),
+				baseColor.c_str());
+			Products.push_back({std::move(baseColor)});
 			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size() - 1)};
 		};
 	auto destroyProduct = [this](const ProductIdentifier& id)
 		{
+			logger->log_info(LoggingComponent, "Destroy product #%d.", id.ID);
 			Products.erase(Products.begin() + id.ID);
 			for ( auto& pair : Robots )
 			{
@@ -1311,6 +1314,8 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			assert(!machineInfo.Storing.isValid());
 			machineInfo.Storing = id;
 			machineInfo.WorkingUntil = GameTime + WorkingDurations[machine];
+			logger->log_info(LoggingComponent, "Machine %s works on product #%d until %d.", machine.c_str(), id.ID,
+				machineInfo.WorkingUntil);
 			return;
 		};
 
@@ -1320,20 +1325,23 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			assert(machineInfo.Storing.isValid());
 			auto id = machineInfo.Storing;
 			machineInfo.Storing = {};
+			logger->log_info(LoggingComponent, "Product #%d was taken from machine %s.", id.ID, machine.c_str());
 			return id;
 		};
 
-	auto robotPickups = [&robotInfo](const ProductIdentifier& id)
+	auto robotPickups = [this,&robotInfo,&robot](const ProductIdentifier& id)
 		{
 			assert(!robotInfo.Holding.isValid());
 			robotInfo.Holding = id;
+			logger->log_info(LoggingComponent, "Robot %s picks up product #%d.", robot.c_str(), id.ID);
 			return;
 		};
-	auto robotDrops = [&robotInfo](void)
+	auto robotDrops = [this,&robotInfo,&robot](void)
 		{
 			assert(robotInfo.Holding.isValid());
 			auto id = robotInfo.Holding;
 			robotInfo.Holding = {};
+			logger->log_info(LoggingComponent, "Robot %s drops product #%d.", robot.c_str(), id.ID);
 			return id;
 		};
 
@@ -1368,6 +1376,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			auto& info(Machines[machine]);
 			assert(info.FillState <= 3);
 			++info.FillState;
+			logger->log_info(LoggingComponent, "Fillstate of %s is now: %d", machine, info.FillState);
 			break;
 		} //case TaskDescription::FeedRS
 		case TaskDescription::GetBase : robotPickups(generateProduct(taskArguments[1].string())); break;
@@ -1384,6 +1393,8 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			queueRelease(std::move(OrderTaskMap[order].CapTask));
 			machinePickup(machine, product);
 			machineInfo.Prepared = false;
+			logger->log_info(LoggingComponent, "%s mounted a %s cap on product #%d.", machine,
+				Products[product.ID].Cap.c_str(), product.ID);
 			break;
 		} //case TaskDescription::MountCap
 		case TaskDescription::MountRing :
@@ -1401,6 +1412,9 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			queueRelease(std::move(OrderTaskMap[order].RingTasks[ringNumber]));
 			machinePickup(machine, product);
 			machineInfo.FillState -= ringInfo->Cost;
+			logger->log_info(LoggingComponent, "%s mounted the %d. ring with color %s on product #%d. "
+				"The new fillstate is %d.", machine, ringNumber, Products[product.ID].Rings[ringNumber].c_str(),
+				product.ID, machineInfo.FillState);
 			break;
 		} //case TaskDescription::MountRing
 		case TaskDescription::PrepareCS :
@@ -1409,6 +1423,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			assert(!machineInfo.Prepared);
 			machinePickup(machine, generateProduct("TRANSPARENT"));
 			machineInfo.Prepared = true;
+			logger->log_info(LoggingComponent, "Machine %s is now prepared.", machine);
 			break;
 		} //case TaskDescription::PrepareCS
 	} //switch ( robotInfo.Doing.Type )

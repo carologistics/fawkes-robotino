@@ -88,6 +88,9 @@
  *
  * @fn bool TaskDescription::isValid() const
  * @brief If a valid task is identified.
+ *
+ * @fn Clingo::Sybol TaskDescription::location() const
+ * @brief Returns the location of the task.
  */
 
 /**

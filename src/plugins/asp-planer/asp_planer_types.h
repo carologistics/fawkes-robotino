@@ -171,6 +171,13 @@ struct TaskDescription
 	{
 		return Type != None;
 	}
+
+	inline Clingo::Symbol
+	location(void) const
+	{
+		assert(isValid());
+		return TaskSymbol.arguments()[0];
+	}
 };
 
 struct RobotInformation
