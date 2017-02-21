@@ -1,31 +1,23 @@
-
-/* 
- * File:   FormulaGenerator.h
- * Author: leonard
- *
- * Created on February 15, 2017, 11:28 AM
- */
-
 #ifndef FORMULAGENERATOR_H
 #define FORMULAGENERATOR_H
+#include <vector>
+#include <iostream>
 
-using namespace carl;
-
-typedef MultivariatePolynomial<Rational> Pol;
-typedef Constraint<Pol> Constr;
-typedef Formula<Pol> FormulaT;
+#include "StepFormula.h"
 
 class FormulaGenerator {
 public:
-    FormulaGenerator();
-    FormulaGenerator(const FormulaGenerator& orig);
+    FormulaGenerator(int amount, GameData& gameData);
     virtual ~FormulaGenerator();
-    
-    FormulaT create(int steps);
-    
-private:
 
+    stepFormula_ptr getStep(int i);
+    void setSteps(int amount, GameData& gameData) ;
+private:
+    std::vector<stepFormula_ptr> steps;
 };
+
+
+
 
 #endif /* FORMULAGENERATOR_H */
 

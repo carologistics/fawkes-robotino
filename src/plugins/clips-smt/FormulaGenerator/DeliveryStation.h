@@ -8,15 +8,17 @@
  * File:   DeliveryStation.h
  * Author: leonard
  *
- * Created on February 14, 2017, 12:20 PM
+ * Created on February 18, 2017, 2:02 AM
  */
 
 #ifndef DELIVERYSTATION_H
 #define DELIVERYSTATION_H
 
 #include "Station.h"
+class DeliveryStation;
+typedef std::shared_ptr<DeliveryStation> deliveryStation_ptr;
 
-class DeliveryStation : public Station {
+class DeliveryStation : public Station{
 public:
     DeliveryStation(int id);
     virtual ~DeliveryStation();

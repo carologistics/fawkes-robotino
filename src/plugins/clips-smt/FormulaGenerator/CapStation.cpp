@@ -1,22 +1,52 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   CapStation.cpp
- * Author: leonard
- * 
- * Created on February 7, 2017, 3:56 PM
- */
-
 #include "CapStation.h"
 
-CapStation::CapStation(int id) : Station(id){
-    setType("cs");
+CapStation::CapStation(int id) : Station(id) {
+    this->setType("cs");
 }
 
 CapStation::~CapStation() {
 }
 
+void CapStation::setFeedCapTime(int time) {
+    this->feedCapTime = time;
+}
+
+void CapStation::setMountCapTime(int time) {
+    this->mountCapTime = time;
+}
+
+void CapStation::setPossibleCapColors(std::set<Workpiece::Color> possibleCapColors) {
+    this->possibleCapColors = possibleCapColors;
+}
+
+void CapStation::addPossibleCapColor(Workpiece::Color color) {
+    this->possibleCapColors.insert(color);
+}
+
+void CapStation::setFedCapColor(Workpiece::Color color) {
+    this->fedCapColor = color;
+}
+
+int CapStation::getFeedCapTime() const {
+    return this->feedCapTime;
+}
+
+int CapStation::getMountCapTime() const {
+    return this->mountCapTime;
+}
+
+std::set<Workpiece::Color> CapStation::getPossibleCapColors() const {
+    return this->possibleCapColors;
+}
+
+bool CapStation::isPossibleCapColor(Workpiece::Color Color) const {
+    return possibleCapColors.find(Color) != possibleCapColors.end();
+}
+
+Workpiece::Color CapStation::getFedCapColor() const {
+    return this->fedCapColor;
+}
+
+bool CapStation::readyToMountRing(){
+    return getFedCapColor() != Workpiece::NONE;
+}
