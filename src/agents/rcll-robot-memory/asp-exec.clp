@@ -190,6 +190,14 @@
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?res)))
 )
 
+(defrule asp-remove-wait-for-lock-after-stop
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-go-into-idle)
+  ?wait <- (wait-for-lock)
+  =>
+  (retract ?wait)
+)
+
 (defrule asp-assert-idle
   (declare (salience ?*PRIORITY-HIGH*))
   (asp-go-into-idle)
