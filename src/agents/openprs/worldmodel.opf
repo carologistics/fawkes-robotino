@@ -7,5 +7,49 @@
 ;---------------------------------------------------------------------------
 
 (
+	(defop worldmodel--on-machine-ready-for-out
+		:invocation ( time $sec $usec ) 
+		:context(   (machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+					(last-attempted-instruction $mps-name $args $state);TODO:make sure state not failed
+					(|| (workpiece $any-id $any-base $any-rings $any-cap (place $mps-name "input"))
+						(= $mps-type "BS" ) ))
+	 				
+		:body(
+			(! (printf (FORMAT "ON_READY-AT-OUTPUT: last-attempted-instruction %s \n" $state)))
+
+			(if (? (= $mps-type "BS"))
+				(! (= (args side $side color $base-color) $args))
+				(! (= $peace-id (rand 1000)))
+				(=> (workpiece $peace-id (base $base-color) (rings none) (cap none) (place $mps-name (term-string-cat $side)) ))
+				)
+
+			(if (? (workpiece $peace-id $base $rings $cap (place $mps-name "input")))
+
+				(if (? (= $mps-type "CS"))
+					(! (= (args operation $operation) $args))
+					;TODO: check if there was something at input..if not then something went wrong
+					;if there is something at output that u dont know what it was just take it and  throw it away
+					(if (? (= $operation RETRIEVE_CAP)) 
+						(?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
+						(=> (cap-station $mps-name $cap-color CAP_LOADED 	 $caps-on-shelf ))
+						(=> (workpiece $peace-id $base $rings (cap none) (place $mps-name "output") ))
+						)
+					(if (? (= $operation MOUNT_CAP))  
+						(? 	(cap-station $mps-name $cap-color $loaded-status $caps-on-shelf))
+						(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))
+						(=> (workpiece $peace-id $base $rings (cap $cap-color) (place $mps-name "output") ))
+						))
+				
+				else 
+				;If we dont know what was this work peace that is ready. Give it a negative ID representing an unknown workpiece
+				(=> (workpiece (* -1 (rand 1000)) $base $rings (cap $cap-color) (place $mps-name "output") ))
+				)
+			
+			)
+		:effects ( (~> (last-attempted-instruction $mps-name $args $state)) )
+		:documentation " Base on the last instuction for a machine and the workpiece info aviliable when it was at the input of a machine,
+						update the workpiece and the station (if affected). Excpetion :would be the base station. Just create a workpiece since
+						this piece is new "
+		)
 
 	)
