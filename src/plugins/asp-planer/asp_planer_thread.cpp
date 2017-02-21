@@ -497,6 +497,14 @@ AspPlanerThread::loop(void)
 				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", pair.first.c_str());
 				setInterrupt(InterruptSolving::Critical);
 				info.Alive = false;
+				if ( info.Doing.isValid() )
+				{
+					LocationInUse.erase(info.Doing.location());
+					info.Doing = {};
+					auto& robotPlan(Plan[pair.first]);
+					robotPlan.Tasks[robotPlan.FirstNotDone].Begun = false;
+					robotPlan.CurrentTask.clear();
+				} //if ( info.Doing.isValid() )
 			} //if ( info.Alive && now - info.LastSeen >= timeOut )
 		} //for ( auto& pair : Robots )
 
