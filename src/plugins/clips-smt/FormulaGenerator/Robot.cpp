@@ -8,13 +8,13 @@
  * File:   Robot.cpp
  * Author: leonard
  * 
- * Created on January 31, 2017, 11:38 PM
+ * Created on February 18, 2017, 12:33 AM
  */
 
 #include "Robot.h"
 
-Robot::Robot(int id) : Machine(id){
-    setType("r");
+Robot::Robot(int id) : Machine(id) {
+    this->setType("r");
 }
 
 Robot::~Robot() {

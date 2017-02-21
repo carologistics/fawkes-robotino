@@ -1,16 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   Station.h
- * Author: leonard
- *
- * Created on February 9, 2017, 3:36 PM
- */
-
 #ifndef STATION_H
 #define STATION_H
 
@@ -20,8 +7,15 @@ class Station : public Machine{
 public:
     Station(int id);
     virtual ~Station();
+    
+    void setOccupiedUntil(int time);
+    int getOccupiedUntil() const;
+    
 private:
-
+    /* If brocken do not add to GameData, or if broken and the time the machine is 
+     * available again is known, set occupiedUntil to it.
+     * */
+    int occupiedUntil;
 };
 
 #endif /* STATION_H */

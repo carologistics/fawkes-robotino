@@ -1,83 +1,96 @@
 #include <cstdlib>
-
-#include "StepFormula.h"
+#include <iostream>
+#include "FormulaGenerator.h"
+#include "GameData.h"
 #include "Workpiece.h"
+#include "Order.h"
 
+using namespace std;
 
-/*
- * 
- */
+void testPrevStep();
+GameData testGameData();
+void testWorkpiece();
+void testOrder();
+void testMachine();
+
 int main(int argc, char** argv) {
-    
-    StepFormula step0 = StepFormula(0);
-    StepFormula step1 = StepFormula(1, step0);
-    Workpiece w = Workpiece(Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER, Workpiece::BLACK, Workpiece::BLACK);
-    Robot r = Robot(2);
-    Order o = Order(3, w);
-    CapStation cs = CapStation(5);
-    cout << step1.getMountCapStepNotFinishedFormula(r, o, cs) << endl;
-    
-    /*Variable x = freshRealVariable("x");
-    Variable y = freshRealVariable("y");
-    Variable i1 = freshIntegerVariable("i1");
-    Variable i2 = freshIntegerVariable("i2");
-    Variable i3 = freshIntegerVariable("i3");
-//    Variable i = newArithmeticVariable( "i", VariableType::VT_INT );
-    Variable b = freshBooleanVariable("b");
-//    Sort sortS = newSort( "S" );
-//    Sort sortT = newSort( "T" );
-//    Variable u = VariableNamePool::getInstance().newUninterpretedVariable( "u" );
-//    Variable v = VariableNamePool::getInstance().newUninterpretedVariable( "v" );
-//    UVariable uu( u, sortS );
-//    UVariable uv( v, sortT );
-
-    // Next we see an example how to create polynomials, which form the left-hand sides of the constraints:
-    Pol px( x );
-    Pol py( y );
-    Pol lhsA = px.pow(2) - py;
-    Pol lhsB = Rational(4) * px + py - Rational(8) * py.pow(7);
-    Pol lhsD = px*py;
-    Pol pi1( i1 );
-    Pol pi2( i2 );
-    Pol pi3( i3 );
-    Pol lhsC = Rational(2) * pi1 + Rational(2) * pi2 + Rational(2) * pi3 - Rational(5);
-
-    // Constraints can then be constructed as follows:
-    Constr constraintA = Constr( lhsD, Relation::EQ );
-    EXPECT_EQ( Constr( px-Rational(1), Relation::LEQ ), Constr( x, Relation::LEQ, Rational(1) ) );
-    EXPECT_EQ( Constr( px-Rational(1), Relation::LESS ), Constr( x, Relation::LESS, Rational(1) ) );
-    EXPECT_EQ( Constr( px-Rational(1), Relation::GEQ ), Constr( x, Relation::GEQ, Rational(1) ) );
-    EXPECT_EQ( Constr( px-Rational(1), Relation::GREATER ), Constr( x, Relation::GREATER, Rational(1) ) );
-    EXPECT_EQ( Constr( px+Rational(1), Relation::LEQ ), Constr( x, Relation::LEQ, -Rational(1) ) );
-    EXPECT_EQ( Constr( px+Rational(1), Relation::LESS ), Constr( x, Relation::LESS, -Rational(1) ) );
-    EXPECT_EQ( Constr( px+Rational(1), Relation::GEQ ), Constr( x, Relation::GEQ, -Rational(1) ) );
-    EXPECT_EQ( Constr( px+Rational(1), Relation::GREATER ), Constr( x, Relation::GREATER, -Rational(1) ) );
-
-    // Uninterpreted functions are
-
-    // Now, we can construct the atoms of the Boolean Ast
-    FormulaT atomA( constraintA );
-    cout << atomA <<endl;
-    FormulaT atomB( lhsB, Relation::EQ );
-    cout << atomB <<endl;
-    FormulaT atomC( b );
-    FormulaT inEq( lhsC, Relation::EQ );
-    EXPECT_TRUE( inEq.getType() == FormulaType::FALSE );
-
-    // and the Ast itself:
-    Formulas<Pol> subAstsA;
-    subAstsA.emplace_back( FormulaType::NOT, atomC );
-    subAstsA.push_back( atomA );
-    subAstsA.push_back( atomB );
-    FormulaT phiA( FormulaType::AND, subAstsA );
-    cout << phiA <<endl;
-    FormulaT tsVarA = FormulaPool<Pol>::getInstance().createTseitinVar( phiA );
-    FormulaT phiC( FormulaType::OR, {FormulaT( FormulaType::NOT, atomA ), atomC} );
-    FormulaT tsVarC = FormulaPool<Pol>::getInstance().createTseitinVar( phiC );
-    FormulaT phiE( FormulaType::IMPLIES, {phiA, phiC} );
-    FormulaT tsVarE = FormulaPool<Pol>::getInstance().createTseitinVar( phiE );
-    FormulaT( FormulaType::XOR, {tsVarA, tsVarC, tsVarE} );*/
-    
+    testPrevStep();
     return 0;
 }
 
+GameData testGameData() {
+    GameData gM;
+
+    auto r0 = make_shared<Robot>(0);
+    auto r1 = make_shared<Robot>(1);
+    auto r2 = make_shared<Robot>(2);
+    gM.addMachine(r0);
+    gM.addMachine(r1);
+    gM.addMachine(r2);
+
+    auto bs0 = make_shared<BaseStation>(0);
+    auto bs1 = make_shared<BaseStation>(1);
+    gM.addMachine(bs0);
+    gM.addMachine(bs1);
+
+    auto rs0 = make_shared<RingStation>(0);
+    auto rs1 = make_shared<RingStation>(1);
+    gM.addMachine(rs0);
+    gM.addMachine(rs1);
+
+    auto cs0 = make_shared<CapStation>(0);
+    auto cs1 = make_shared<CapStation>(1);
+    gM.addMachine(cs0);
+    gM.addMachine(cs1);
+
+    auto ds0 = make_shared<DeliveryStation>(0);
+    gM.addMachine(ds0);
+
+    //gM.addMovingTime(*rs0, *cs1, 150000);
+    //gM.addMovingTime(*rs1, *rs0, 9986301);
+    //gM.addMovingTime(*ds0, *cs0, 2866666);
+
+    return gM;
+}
+//NONE, RED, BLACK, SILVER, TRANSPARENT, BLUE, GREEN, YELLOW, ORANGE, GREY
+void testWorkpiece(){
+    Workpiece wp;
+    cout << wp.toString() << endl;
+    wp.setBaseColor(Workpiece::RED);
+    wp.setRingColor(Workpiece::YELLOW,0);
+    wp.setCapColor(Workpiece::BLUE);
+    cout << wp.toString() << endl;
+    
+    Workpiece wp2(Workpiece::RED, {Workpiece::YELLOW}, Workpiece::BLUE);
+    cout << wp2.toString() << endl;
+}
+
+
+void testOrder(){
+    Workpiece product(Workpiece::RED, {Workpiece::YELLOW, Workpiece::BLACK}, Workpiece::BLUE);
+    Order o(555, product, 15000);
+    cout << o.toString();
+}
+
+void testPrevStep() {
+    GameData gm = testGameData();
+    FormulaGenerator formulaGenerator(3, gm);
+    cout << "Step:" << formulaGenerator.getStep(0)->getStepNumber() << endl;
+    cout << "Step:" << formulaGenerator.getStep(1)->getStepNumber() << endl;
+    cout << "PrevStep:" << formulaGenerator.getStep(1)->getPreviousStep()->getStepNumber() << endl;
+    cout << "Step:" << formulaGenerator.getStep(2)->getStepNumber() << endl;
+    cout << "PrevStep:" << formulaGenerator.getStep(2)->getPreviousStep()->getStepNumber() << endl;
+    cout << "Step:" << formulaGenerator.getStep(3)->getStepNumber() << endl;
+    cout << "PrevStep:" << formulaGenerator.getStep(3)->getPreviousStep()->getStepNumber() << endl;
+}
+
+void testMachine(){
+    auto r99 = make_shared<Robot>(99);
+    auto rs0 = make_shared<RingStation>(0);
+    auto cs5 = make_shared<RingStation>(5);
+    auto ds2 = make_shared<RingStation>(2);
+    r99->setMovingTime(*rs0, 15000);
+    r99->setMovingTime(*cs5, 90);
+    r99->setMovingTime(*ds2, 160);
+    cout << r99->toString();
+}
