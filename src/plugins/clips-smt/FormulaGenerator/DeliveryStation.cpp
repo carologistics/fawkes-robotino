@@ -8,15 +8,14 @@
  * File:   DeliveryStation.cpp
  * Author: leonard
  * 
- * Created on February 14, 2017, 12:20 PM
+ * Created on February 18, 2017, 2:02 AM
  */
 
 #include "DeliveryStation.h"
 
-DeliveryStation::DeliveryStation(int id) : Station(id){
+DeliveryStation::DeliveryStation(int id) : Station(id) {
+    this->setType("ds");
 }
-
-
 
 DeliveryStation::~DeliveryStation() {
 }

@@ -1,35 +1,70 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   Workpiece.cpp
- * Author: leonard
- * 
- * Created on January 31, 2017, 11:38 PM
- */
-
 #include "Workpiece.h"
+#include<iostream>
 
-Workpiece::Workpiece(){
-    
+int Workpiece::getMaxRingNumber(){
+    return maxRingNumber;
 }
 
-Workpiece::Workpiece(Color pBase, Color ring0, Color ring1, Color ring2, Color pCap) {
-    base = pBase;
-    std::vector<Color> ring(3);
-    ring[0] = ring0;
-    ring[1] = ring1;
-    ring[2] = ring2;
-    this->ring = ring;
-    cap = pCap;
+Workpiece::Workpiece() {
 }
 
-Workpiece::Workpiece(const Workpiece& orig) {
+Workpiece::Workpiece(Color base, std::vector<Color> rings, Color cap){
+    setBaseColor(base);
+    setRings(rings);
+    setCapColor(cap);
 }
 
 Workpiece::~Workpiece() {
 }
+
+Workpiece::Color Workpiece::getBaseColor() const {
+    return this->base;
+}
+
+Workpiece::Color Workpiece::getRingColor(int r) const {
+    return this->rings[r];
+}
+
+Workpiece::Color Workpiece::getCapColor() const {
+    return this->cap;
+}
+
+std::vector<Workpiece::Color> Workpiece::getRings() const {
+    return this->rings;
+}
+
+void Workpiece::setBaseColor(Color c) {
+    this->base = c;
+}
+
+void Workpiece::setRingColor(Color c, int i) {
+    this->rings[i] = c;
+
+}
+
+void Workpiece::setCapColor(Color c) {
+    this->cap = c;
+}
+
+void Workpiece::setRings(std::vector<Color> rings) {
+    if(this->rings.size() < rings.size()) 
+        std::cerr <<  "Workpiece::setRings(std::vector<Color> rings): GameData::maxRingNumber < rings.size()";
+    
+    for (auto i = 0; i < rings.size(); i++) {
+        this->rings[i] = rings[i];
+    }
+}
+
+std::string Workpiece::toString() {
+    std::string result;
+    result += "Base: " + ColorNames[getBaseColor()];
+    result += "\nRings: ";
+    for (auto const& r : getRings()) {
+        result += ColorNames[r] + "  ";
+    }
+    result += "\nCap: " + ColorNames[getCapColor()];
+
+    return result;
+}
+
 

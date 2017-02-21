@@ -8,22 +8,71 @@
  * File:   RingStation.cpp
  * Author: leonard
  * 
- * Created on February 9, 2017, 3:37 PM
+ * Created on February 18, 2017, 2:02 AM
  */
 
 #include "RingStation.h"
 
-RingStation::RingStation(int id) : Station(id){
-    setType("cs");
-    vector<int> reqBases(Workpiece::LAST_ENTRY);
-    for ( auto &i : reqBases ){
-        i = -1;
-    }
-    this->reqBases = reqBases;
+RingStation::RingStation(int id) : Station(id) {
+    this->setType("rs");
 }
 
 RingStation::~RingStation() {
+
 }
 
+void RingStation::setFeedBaseTime(int time) {
+    this->feedBaseTime = time;
+}
 
+void RingStation::setMountRingTime(int time) {
+    this->mountRingTime = time;
+}
 
+void RingStation::setPossibleRingColors(std::map<Workpiece::Color, int> possibleRingColors) {
+    this->possibleRingColors = possibleRingColors;
+}
+
+void RingStation::addPossibleRingColor(Workpiece::Color color, int additionalBases) {
+    this->possibleRingColors[color] = additionalBases;
+}
+
+void RingStation::setAdditinalBasesFed(int amount) {
+    this->additinalBasesFed = amount;
+}
+
+void RingStation::setRingColorSetup(Workpiece::Color color) {
+    this->ringColorSetup = color;
+}
+
+int RingStation::getFeedBaseTime() const {
+    return this->feedBaseTime;
+}
+
+int RingStation::getMountRingTime() const {
+    return this->mountRingTime;
+}
+
+std::map<Workpiece::Color, int> RingStation::getPossibleRingColors() const {
+    return this->possibleRingColors;
+}
+
+bool RingStation::isPossibleRingColor(Workpiece::Color Color) const {
+    return possibleRingColors.find(Color) != possibleRingColors.end();
+}
+
+int RingStation::getAdditinalBasesFed() const {
+    return this->additinalBasesFed;
+}
+
+Workpiece::Color RingStation::getRingColorSetup() const {
+    return this->ringColorSetup;
+}
+
+int RingStation::getNeededAdditinalBases(Workpiece::Color color) {
+    return this->possibleRingColors[color];
+}
+
+bool RingStation::readyToMountRing(){
+    return getNeededAdditinalBases(getRingColorSetup()) == getAdditinalBasesFed();
+}

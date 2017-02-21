@@ -1,60 +1,52 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   Workpiece.h
- * Author: leonard
- *
- * Created on January 31, 2017, 11:38 PM
- */
-
 #ifndef WORKPIECE_H
 #define WORKPIECE_H
-#include <vector>
 
-using namespace std;
+#include <vector>
+#include <map>
+#include <string>
 
 class Workpiece {
 public:
-    enum Color {
-        NONE,
-        RED,
-        BLACK,
-        SILVER,
-        TRANSPARENT,
-        BLUE,
-        GREEN,
-        YELLOW,
-        ORANGE,
-        GREY,
-        LAST_ENTRY = GREY
-    };
+    enum Color {NONE, RED, BLACK, SILVER, TRANSPARENT, BLUE, GREEN, YELLOW, ORANGE, GREY, LAST_ENTRY = GREY};
+    static int getMaxRingNumber();
+    
     Workpiece();
-    Workpiece(Color base, Color ring0, Color ring1, Color ring2, Color Cap);
-    Workpiece(const Workpiece& orig);
+    Workpiece(Color base, std::vector<Color> rings, Color cap);
     virtual ~Workpiece();
 
-    Color getBaseColor() {
-        return base;
-    }
-
-    Color getRingColor(int i) {
-        return ring[i];
-    }
+    Color getBaseColor() const;
+    Color getRingColor(int i) const;
+    Color getCapColor() const;
     
-    Color getCapColor() {
-        return cap;
-    }
+    std::vector<Color> getRings() const;
+    
+    void setBaseColor(Color c);
+    void setRingColor(Color c, int i);
+    void setCapColor(Color c);
+    
+    void setRings(std::vector<Color> rings); 
+    
+    std::string toString();
 
 private:
-
+    const static int maxRingNumber = 3;
     Color base = NONE;
-    vector<Color> ring;
+    std::vector<Color> rings = std::vector<Color>(getMaxRingNumber(), Color(NONE));
     Color cap = NONE;
 
+    //for toString
+    std::map<Color, std::string> ColorNames = {
+        {NONE, "NONE"},
+        {RED, "RED"},
+        {BLACK, "BLACK"},
+        {SILVER, "SILVER"},
+        {TRANSPARENT, "TRANSPARENT"},
+        {BLUE, "BLUE"},
+        {GREEN, "GREEN"},
+        {YELLOW, "YELLOW"},
+        {ORANGE, "ORANGE"},
+        {GREY, "GREY"}
+    };
 };
 
 #endif /* WORKPIECE_H */

@@ -8,18 +8,20 @@
  * File:   Station.cpp
  * Author: leonard
  * 
- * Created on February 9, 2017, 3:36 PM
+ * Created on February 18, 2017, 2:01 AM
  */
 
 #include "Station.h"
 
-Station::Station(int id) : Machine(id){
-    
-                                        
+Station::Station(int id) : Machine(id) {
 }
 
-Station::~Station(){
-    
+Station::~Station() {
 }
 
-
+void Station::setOccupiedUntil(int time){
+    this->occupiedUntil = time;
+}
+int Station::getOccupiedUntil() const{
+    return this->occupiedUntil;
+}

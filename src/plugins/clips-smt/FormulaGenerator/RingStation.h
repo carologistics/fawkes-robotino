@@ -1,31 +1,47 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   RingStation.h
- * Author: leonard
- *
- * Created on February 9, 2017, 3:37 PM
- */
-
 #ifndef RINGSTATION_H
 #define RINGSTATION_H
+
+#include <map>
 
 #include "Station.h"
 #include "Workpiece.h"
 
-class RingStation : public Station{
+class RingStation;
+typedef std::shared_ptr<RingStation> ringStation_ptr;
+
+class RingStation : public Station {
 public:
     RingStation(int id);
     virtual ~RingStation();
-    
-    int getReqBases(Workpiece::Color c){return reqBases[c];}
-    void setReqBases(Workpiece::Color c, int i){reqBases[c] = i;}
+
+    void setFeedBaseTime(int time);
+    void setMountRingTime(int time);
+    void setPossibleRingColors(std::map<Workpiece::Color, int> possibleRingColors);
+    void addPossibleRingColor(Workpiece::Color color, int additionalBases);
+    void setAdditinalBasesFed(int amount);
+    void setRingColorSetup(Workpiece::Color color);
+
+    int getFeedBaseTime() const;
+    int getMountRingTime() const;
+    std::map<Workpiece::Color, int> getPossibleRingColors() const;
+    bool isPossibleRingColor(Workpiece::Color Color) const;
+    int getAdditinalBasesFed() const;
+    Workpiece::Color getRingColorSetup() const;
+    int getNeededAdditinalBases(Workpiece::Color color);
+    bool readyToMountRing();
+   
 private:
-    vector<int> reqBases;
+    int feedBaseTime;
+    int mountRingTime;
+
+    // possible ring colors key = color, value = needed additional bases for this color
+    std::map<Workpiece::Color, int> possibleRingColors;
+    
+    //additional bases on ring station 
+    int additinalBasesFed = 0;
+    
+    //color the ring station is set up for
+    Workpiece::Color ringColorSetup = Workpiece::NONE;
 };
 
 #endif /* RINGSTATION_H */
