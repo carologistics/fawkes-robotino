@@ -163,7 +163,7 @@ AspPlanerThread::loopPlan(void)
 		 * If there is a new plan, just look where the first entry would land.
 		 * If there is no plan, there is no first entry, so just copy the first not done task, because we do not want
 		 * to interrupt this. */
-		auto planIter = tempPlan.empty() ? notBegun :
+		auto planIter = tempRobotPlan.empty() ? notBegun :
 			std::lower_bound(robotPlan.begin(), planEnd, tempRobotPlan[0], planBegin);
 
 		//The two iterators of the temp plan.
