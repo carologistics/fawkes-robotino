@@ -155,6 +155,13 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 					info.WorkingUntil -= GameTime;
 				} //if ( info.WorkingUntil )
 				info.BrokenUntil = GameTime + brokenTime;
+
+				if ( state == "BROKEN" )
+				{
+					info.Prepared = false;
+					info.FillState = 0;
+				} //if ( state == "BROKEN" )
+
 				setInterrupt(InterruptSolving::Critical);
 			} //if ( state == "BROKEN" || state == "DOWN" )
 
