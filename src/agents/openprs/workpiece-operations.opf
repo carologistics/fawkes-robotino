@@ -73,4 +73,38 @@
 			:effects()
 			)			
 
+
+	(defop wp-gripper-to-input
+		:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name "input")) )
+		:context ( 		(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
+						(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+						(holding $wp-id)
+						) 				;Maybe the input side has to be empty for that (or make a need for it)
+		:body (
+			(if (? (& (= $base (base UNKNOWN)) (= $cap (cap $cap-color)) (= $rings (rings none)) (~ (= $cap-color none)) ))
+				(if (? (cap-station $mps-name @cap-color $cap-loaded-status $caps-on-shelf))
+					(if (? (= $cap-loaded-status CAP_NOT_LOADED))
+						(! (step (insert-atmps machine $mps-name)))
+						else
+						(! (printf (FORMAT "NEED Gripper to input: Cap Is already loaded !!!!!!!..will fail\n" )))
+						; TODO: Move to a step Release puck for consistancey
+						(=> (holding none))
+						(~> (workpiece $wp-id $base $rings $cap (place "agent" "gripper")))
+						(fail); TODO: Release the puck, its just useless
+						)
+
+					else
+					(! (printf (FORMAT "NEED Gripper to input: Trying to insert a capped UNKNOWN base at %s !!!!!!!..will fail \n" $mps-name )))
+					; TODO: Move to a step Release puck for consistancey
+					(=> (holding none))
+					(~> (workpiece $wp-id $base $rings $cap (place "agent" "gripper")))
+					(fail)
+					)				
+				else 
+				(! (step (drive-to machine $mps-name side "input")))
+				(! (step (insert machine $mps-name)))
+				)
+			)
+			);TODO:DO NOT INSTER INTO CAP_STAITON IF CAP NOT LOAD
+
 	)
