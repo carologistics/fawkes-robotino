@@ -172,7 +172,60 @@
 		) 
 
 
-		(defop wp-input-to-gate--DS_Delivery
+		; (defop execute-wp-input-to-output--CS_MOUNT_CAP
+		; 	:invocation ( ! (workpiece $wp-id $base $rings (cap $cap-color) (place $mps-name "output") ) )
+		; 	:context ( 		(machine $mps-name "CS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+		; 					(cap-station $mps-name $cap-color $cap-loaded-status $caps-on-shelf)
+		; 				 	(workpiece $wp-id $base $rings (cap none) (place $mps-name "input"))
+		; 				 	(= $cap-loaded-status CAP_LOADED)
+		; 				 	(~ (= $base (base UNKNOWN)))
+		; 				 	)
+		; 	:body (
+		; 		; (if (? (= $cap-loaded-status CAP_NOT_LOADED))
+		; 		; 	(! (printf (FORMAT "NEED input-output--CS: Trying to insert WP and no CAP ....will fail\n" $mps-name )))
+		; 		; 	;may be here u need to make sure that there is a cap at the Cap station of get one urgently.
+		; 		; 	;but it the workpreace is already at the input ..it is kinda too late for that man..That means u need to remove it
+		; 		; 	;to recover from this..Maybe that is a good thing if shit happens...But this is the sort of shit that should not happen
+		; 		; 	;Would only happen if Agent THOUGHT that the cap was loaded but its not...other wise such action should not even be avilabe
+		; 		; 	;big shit case ,,should not happen..
+		; 		; 	(fail)
+		; 		; 	)
+
+		; 		;May from here I would need to handle if CS was not cleared (ie, READY_AT_OUTPUT) and issue a cleaning task right away 
+		; 		;with high urgencey sleeping this task till a good time come and attempt the instruction..
+		; 		;Good to know here is that once u have a work peace in the input..U really need it gone with a MOUNT_CAP instruction 
+		; 		;in whatever case (even if it was no longer required).  
+
+		; 		(! (step (instruct-mps  machine $mps-name (args operation MOUNT_CAP))))
+		; 		)
+		; 	:documentation "Process a Capless workpiece existing currently at the input of a CS, by instructing it with a MOUNT_CAP.
+		; 					if the instruction worked you should have the same workpiece with a cap_mounted on the output side after 
+		; 					machine is done processing.
+		; 					The goal fails if the CAP is not LOADED. Cap loading has to be insured before the goal call.Actually even
+		; 					before the the peace is at the input. Its already too late if peace is at input and there is no cap "
+		; 	)
+
+		; (defop execute-wp-input-to-output--CS_RETRIVE_CAP
+		; 	:invocation ( ! (workpiece $wp-id (base UNKNOWN) (rings none) (cap none) (place $mps-name "output") ) )
+		; 	:context ( 		(machine $mps-name "CS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+		; 					(cap-station $mps-name $cap-color $cap-loaded-status $caps-on-shelf)
+		; 				 	(workpiece $wp-id (base UNKNOWN) $rings (cap $cap-color) (place $mps-name "input"))
+		; 				 	(= $cap-loaded-status CAP_NOT_LOADED)
+		; 				 	(= $base (base UNKNOWN))
+		; 				 	)
+		; 	:body (
+		; 		;May from here I would need to handle if CS was not cleared (ie, READY_AT_OUTPUT) and issue a cleaning task right away 
+		; 		;with high urgencey sleeping this task till a good time come and attempt the instruction..
+		; 		;Good to know here is that once u have a work peace in the input..U really need it gone with the instruction 
+		; 		;in whatever case (even if it was no longer required).  
+
+		; 		(! (step (instruct-mps  machine $mps-name (args operation RETRIEVE_CAP))))
+		; 		)
+		; 	:documentation "Process a Caped-shelf-base workpiece existing currently at the input, of a CS waiting for its cap tp be retrived.
+		; 					if the instruction worked you should have the capless workpiece on the CS output side after processing is done "
+		; 	)
+
+		(defop wp-gripper-to-gate--DS_Delivery
 			:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name $gate) ) )
 			:context ( 		(machine $mps-name "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
