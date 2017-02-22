@@ -56,6 +56,27 @@
  			)
 
 
+ 		(defop mps-instruction-delivery-station
+ 			:invocation ( !(instruct-mps machine $ds-name (args gate $gate)) )
+ 			:context( 	(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
+				  	 	(team-color $team-color)
+				  		(peer-id private $peer-id)
+				)
+ 			:body(
+ 				(! (= @ds-inst (pb-create "llsf_msgs.PrepareInstructionDS")))
+				(! (pb-set-field @ds-inst "gate" $gate)) ;TODO check if the operation is allowed before sending it
+
+				(=> (last-attempted-instruction $ds-name (args gate $gate) ATTEMPTING))
+				(! (send-instruction $ds-name (val @ds-inst)))
+
+				(^ (& 	(last-attempted-instruction $ds-name @args @state)
+						(|| (= (val @state) FAILED)
+							(= (val @state) FINISHED))))
+ 				)
+			:documentation "Send the Prepare instruction once to the DS"
+ 			)
+
+
  		(defop mps-instruction-common-send-instruction
  			:invocation( !( send-instruction $mps-name $mps-inst) )
  			:context( 	(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
