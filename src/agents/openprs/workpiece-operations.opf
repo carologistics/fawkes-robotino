@@ -28,53 +28,84 @@
 		:invocation ( ! (workpiece $wp-id $base $rings $cap (place "agent" "gripper")) )
 		:context ( (holding none) )
 		:body(
-			(! (printf (FORMAT "NEED Gripp: workpiece %s %s %s %s \n"  $wp-id $base $rings $cap)))
+			(! (printf (FORMAT "WP_Place-->Gripper: workpiece %s %s %s %s \n"  $wp-id $base $rings $cap)))
 
-			(if (? (workpiece $wp-id $base $rings $cap (place $mps-name $side)))
-
-				(! (printf (FORMAT "NEED Gripp: Found a peace at %s %s..Going to get it \n"  $mps-name $side)))
+			;TODO; IF the id was not bound in the goal that fires this op. It will be matched to ANY workpiece that has the same discription...DO I REALLY WANT THIS?!
+			;TODO: there is a little problem here that the matching peace does not always exist yet..Meaning sometimes it is still processing 
+			;or the machine is down and I will only know the new place when it is ready. ..So for the old place..There is a puck with the same id
+			;But not the same discription..The condition will fail ..even thought driving there might actually be a good idea
+			(if (? (& (workpiece $wp-id $base $rings $cap (place $mps-name $side))
+						(~ (= $side "slide"))
+						))						;WP exists in the world (i,e Database)
+				(! (printf (FORMAT "WP_Place --> Gripper: Found a peace at %s %s..Going to get it \n"  $mps-name $side)))
 				(if (? (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with))
-					(! (step (drive-to machine $mps-name side $side)))
+					(! (step (drive-to machine $mps-name side $side))) 									;Common driving STEP
 					(if (? (= $mps-type "BS"))
-						(! (step (get-base 	machine $mps-name side $side))) )
+						(! (step (get-base 	machine $mps-name side $side))) 
+						(succeed)
+ 						)
 					(if (? (= $mps-type "RS"))
-						(! (step (get-output machine $mps-name))) )
+						(! (step (get-output machine $mps-name)))
+						(succeed)
+ 						)
 					(if (? (= $mps-type "CS"))
-						(if (? (& (= $base (base UNKNOWN)) (= $cap (cap $cap-color)) (~ (= $cap-color none))))
-							(! (step (get-cap machine $mps-name)))
-							else
-							(! (step (get-output machine $mps-name))) ))
-					else
-					(! (printf (FORMAT "NEED Gripp: I think the peace is lost..will just fail \n" )))
-					(fail))
-
-				else
-				(if (? (& (= $base (base $base-color)) (= $rings (rings none)) (= $cap (cap none)) ))
-					(if (? (= $base-color UNKNOWN))		
-						else
-						;TODO: match on the base station color..For now just get it from the C-BS, CORRECT THIS SOON
-						(! (step (drive-to 		machine "C-BS" side "input")))
-						(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
-						(! (step (get-base machine $mps-name side "input"))) 
+						; (if (? (& 	(= $base (base UNKNOWN))
+						; 			(= $cap (cap $cap-color)) 
+						; 			(~ (= $cap-color none))
+						; 			))
+						; 	(! (step (get-cap machine $mps-name)))	
+						; 	else
+							(! (step (get-output machine $mps-name)))
+							(succeed)
+						;	)
 						)
+					(if (? (= $mps-type "DS"))
+						(! (step (get-output machine $mps-name)))
+						(succeed)
+  						)
 					else
-					(if (? (& (= $base (base UNKNOWN)) (= $rings (rings none)) (= $cap (cap $cap-color)) (~ (= none $cap-color)) ))
-						(? (cap-station $cs-name $cap-color $loaded-status $caps-on-shelf))
-						(! (step (drive-to 	machine $cs-name side "input")))
-						(! (step (get-cap 	machine $cs-name)))
-						)
+					(! (printf (FORMAT "WP_Place --> Gripper: I think the peace is lost..will just fail \n" )))
+					(fail)
 					)
+				else																					;WP Does not exists in the world (i,e Database)
+				(if (? (& 	(= $base (base UNKNOWN)) 
+							(= $rings (rings none)) 
+							(= $cap (cap $cap-color)) (~ (= $cap-color none))
+							))																			;Its a New Caped Shelf Base, Create it
+					(? (cap-station $cs-name $cap-color $loaded-status $caps-on-shelf))
+					(! (step (drive-to 	machine $cs-name side "input")))
+					(! (step (get-cap 	machine $cs-name)))
+					(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+					(succeed)
+ 					)
+				(if (? (& 	(= $base (base $base-color)) (~ (= $base-color UNKNOWN))	
+							(= $rings (rings none))
+							(= $cap (cap none))
+							))																			;Its a New Base,Create it
+					;TODO: match on the base station color..For now just get it from the C-BS, CORRECT THIS SOON
+					(! (step (drive-to 		machine "C-BS" side "input")))
+					(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
+					(^ (workpiece $wp-id $base $rings $cap (place "C-BS" "input")));hazerdour...find a better way
+					(! (step (get-base machine $mps-name side "input")))
+					(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+					(succeed)
+ 					)
 				)
+
+				(! (printf (FORMAT "WP_Place --> Gripper: Could not handle this peace %s %s %s %s \n"  $wp-id $base $rings $cap )))
+				(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 
+				(fail)
 				;TODO: handle cases that
-				;	wp has no or differnt id but same discription and exists somewhere somewhere (could allow me to know what i want but 
-				;	not where it is or just that it will exist somewhere sitll no name)
-
+				;	wp has no or differnt id but same discription and exists somewhere (this could allow me to know what I want but 
+				;	not where it is or just that it will exist somewhere still no name)			
 			)
-			:effects()
-			)			
+		:documentation "Sends the Agent to gripp a workpiece from 'somewhere' if that workpiece exist in the world (ie,matches a WP with
+						 the same Id as in the goal, or any similar WP if the id was not bound in the goal_MIGHT CHANGE THAT SOON)
+						In case the workpiece is a New base or a New caped-shelf-base and no match found already, Grab a new one"
+		)		
 
 
-	(defop wp-gripper-to-input
+		(defop wp-gripper-to-input
 		:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name "input")) )
 		:context ( 		(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
 						(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
@@ -105,6 +136,6 @@
 				(! (step (insert machine $mps-name)))
 				)
 			)
-			);TODO:DO NOT INSTER INTO CAP_STAITON IF CAP NOT LOAD
+			);TODO:DO NOT INSTER INTO CAP_STAITON IF CAP NOT LOAD	
 
 	)
