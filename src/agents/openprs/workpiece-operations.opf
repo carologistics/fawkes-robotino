@@ -107,7 +107,7 @@
 
 	
 
-	(defop execute-wp-gripper-to-input
+	(defop wp-gripper-to-input
 		:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name "input")) )
 		:context ( 		(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
 						(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
@@ -116,13 +116,12 @@
 		:body (
 
 			(if (? 	(= $mps-type "BS"))
-				(! (printf (FORMAT "WP_GRIPPER-->INPUT: Why are you tring to insert to a BS ?!?!..Will fail \n ")))
+				(! (printf (FORMAT "WP_GRIPPER-->INPUT: Why are you trying to insert to a BS ?!?!..Will fail \n ")))
 				(fail)
 				)
 			(if (? 	(= $mps-type "RS"))
-				;Just let it pass to the insertion step 
 				(! (step (drive-to machine $mps-name side "input")))
-				(! (decide-what-to-intstruct $mps-name $args));; I want to have it as a call to be more flixable how it is done or based on what () from a subgoal, or machine handling 
+				(! (decide-what-to-intstruct $mps-name $args));; I want to have it as a call to be more fixable how it is done or based on what () from a subgoal, or machine handling 
 				(! (step (instruct-mps machine $mps-name $args)))
 				(! (step (insert machine $mps-name)))
 				)
@@ -142,7 +141,7 @@
 							(succeed)
  							else
 							(! (printf (FORMAT "WP_ GRIPPER-->INPUT: Cap Is already loaded !!!!!!!..will fail\n" )))
-							; TODO: Move to a step Release puck for consistancey
+							; TODO: Move to a step Release puck for consistency
 							(=> (holding none))
 							(=> (workpiece $wp-id $base 
 												$rings 
@@ -171,5 +170,27 @@
 			(! (step (insert machine $mps-name)))
 			)
 		) 
+
+
+		(defop decide-what-to-intstruct--RS
+			:invocation ( ! (decide-what-to-intstruct $mps-name $args))
+			:context ( 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
+						(goal-inmind (workpiece $id $goal-base $goal-rings $goal-cap (place $goal-mps $goal-feature))) 	
+						(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+						(ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $bases-loaded)
+						(or 	(& 	(= $rings (rings NONE)) 						(= $goal-rings (rings $ring-to-mount)) )
+								(& 	(= $rings (rings $first-ring)) 					(= $goal-rings (rings $first-ring $ring-to-mount)) )
+								(& 	(= $rings (rings $first-ring $second-ring)) 	(= $goal-rings (rings $first-ring $second-ring $ring-to-mount)) ) )
+						(MEMQ $ring-to-mount $avilible-colors)
+						(ring $ring-to-mount $required-bases)
+						(= $selected-color none)
+						(= $bases-loaded $required-bases)
+						)
+			:body(
+
+
+				(! (= $args (args ring_color $ring-to-mount))) 
+			)
+		)
 
 	)
