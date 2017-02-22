@@ -14,38 +14,53 @@
 				 	(cap-station $cs-name $cap-color $cap-loaded-status $caps-on-shelf)
 				 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
 				 	(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with)
+				 	(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
 				 	(~ (= $cs-state BROKEN))
 				 	(~ (= $cs-state DOWN))
 					(peer-id private $peer-id)
 				   	(team-color $team-color )
 				   	(agent-state IDLE)
+				   	(~ (in-production))
 				   	)
 
 		:body(
 			(! (start-critical-section))
-			(~> (agent-state IDLE))
+			(=> (in-production))
 			(! (kill-other-intentions))
 			(! (end-critical-section))
 			(! (print "Producing C0..."))
 			(=> (holding NONE))
 
 			(! (print "PRELOADING CAP STATION..."))
-		  	(! (step (get-cap 		machine $cs-name)))
-			(! (step (instruct-mps 	machine $cs-name (args operation RETRIEVE_CAP)))) 
-			(! (step (insert-atmps  machine $cs-name)))
-			(! (step (drive-to		machine $cs-name side "output")))
-			(! (step (get-output 	machine $cs-name)))
+		 	;(! (step (get-cap 		machine $cs-name)))
+			(! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap $cap-color) (place "agent" "gripper")))
+			;(! (step (insert-atmps  machine $cs-name)))
+			(! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap $cap-color) (place $cs-name "input")))
+
+			;(! (step (instruct-mps 	machine $cs-name (args operation RETRIEVE_CAP)))) 
+			( ^ (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place $mps-name "output") ) )
+
+			;(! (step (drive-to		machine $cs-name side "output")))
+			;(! (step (get-output 	machine $cs-name)))
+			(! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place "agent" "gripper")))
+			(=> (holding NONE)) ;FAKE knowledge to let the robot go for the base with not poblem..I want to keep the constraint of no holding to make sure what to do it i still habe
 
 			(! (print "FETHCHING THE BASE..."))
-			(! (step (drive-to 			machine $bs-name side "input"))) ; todos, get the side from a fact that makes sure the active-side is updated
+			; (! (step (drive-to 			machine $bs-name side "input"))) ; todos, get the side from a fact that makes sure the active-side is updated
 			; TODO:get the lock
-			(! (step instruct-mps 		machine $bs-name (args side INPUT color $base-color) ));let input be a string or a symobol everywhere
-			(! (step fetch-base-from-bs machine $bs-name side "input"))
+			; (! (step (instruct-mps 		machine $bs-name (args side INPUT color $base-color) )));let input be a string or a symobol everywhere
+			; (! (step (get-base			machine $bs-name side "input")))
+			(! (workpiece $new-base-id (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
+
 			
 			(! (print "INSETRING INTO CS..."))
-			(! (step drive-to 		machine $cs-name side "input"))
-			(! (step instruct-mps 	machine $cs-name (args operation MOUNT_CAP)));if u instructed with no cap i think it breaks it
-			(! (step insert  		machine $cs-name))
+			; (! (step (drive-to 		machine $cs-name 	side "input")))
+			; (! (step (insert 		machine $cs-name)))
+			(! (workpiece $new-base-id (base $base-color) (rings none) (cap none) (place $cs-name "input")))
+			; (! (step (instruct-mps 	machine $cs-name 	(args operation MOUNT_CAP))));if u instructed with no cap i think it breaks it
+			;;(! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $cs-name "output")))		
+			(^ (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $cs-name "output")))		
+
 			)
 
 
@@ -55,18 +70,5 @@
 					No locks. No coordination and everything is hard coded"
 
 	)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	)
