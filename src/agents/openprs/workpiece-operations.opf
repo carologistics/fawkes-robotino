@@ -172,7 +172,31 @@
 		) 
 
 
-		(defop decide-what-to-intstruct--RS
+		(defop wp-input-to-gate--DS_Delivery
+			:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name $gate) ) )
+			:context ( 		(machine $mps-name "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+						 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
+						 	(~ (= $gate "input"))
+						 	(~ (= $gate "output"))
+						 	)
+			:body (
+				(! (printf (FORMAT "WP_input-->Delivery: workpiece %s %s %s %s \n"  $wp-id $base $rings $cap)))
+
+				;May from here I would need to handle if CS was not cleared (ie, READY_AT_OUTPUT) and issue a cleaning task right away 
+				;with high urgencey sleeping this task till a good time come and attempt the instruction..
+				;Good to know here is that once u have a work peace in the input..U really need it gone with the instruction 
+				;in whatever case (even if it was no longer required).  
+					;Just let it pass to the insertion step 
+				(! (step (drive-to machine $mps-name side "input")))	
+				(! (step (instruct-mps  machine $mps-name (args gate $gate))))
+				
+				(! (step (insert machine $mps-name)))
+				)
+			:documentation " "
+			)
+
+
+		(defop decide-what-to-instruct--RS
 			:invocation ( ! (decide-what-to-intstruct $mps-name $args))
 			:context ( 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
 						(goal-inmind (workpiece $id $goal-base $goal-rings $goal-cap (place $goal-mps $goal-feature))) 	
