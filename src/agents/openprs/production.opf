@@ -38,6 +38,7 @@
 			(! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap $cap-color) (place $cs-name "input")))
 
 			;(! (step (instruct-mps 	machine $cs-name (args operation RETRIEVE_CAP)))) 
+			;;( ! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place $mps-name "output") ) )
 			( ^ (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place $mps-name "output") ) )
 
 			;(! (step (drive-to		machine $cs-name side "output")))
@@ -47,10 +48,12 @@
 
 			(! (print "FETHCHING THE BASE..."))
 			; (! (step (drive-to 			machine $bs-name side "input"))) ; todos, get the side from a fact that makes sure the active-side is updated
-			; TODO:get the lock
+			; ; TODO:get the lock
 			; (! (step (instruct-mps 		machine $bs-name (args side INPUT color $base-color) )));let input be a string or a symobol everywhere
 			; (! (step (get-base			machine $bs-name side "input")))
 			(! (workpiece $new-base-id (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
+			;(? (workpiece $new-id (base UNKNOWN) (rings none) (cap $cap-color) (place "agent" "gripper")))
+
 
 			
 			(! (print "INSETRING INTO CS..."))
@@ -61,6 +64,12 @@
 			;;(! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $cs-name "output")))		
 			(^ (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $cs-name "output")))		
 
+			;====Delivery
+			(! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place "agent" "gripper")))		
+			; (! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $ds-name "input")))
+			(! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $ds-name $delivery-gate)))		
+	
+
 			)
 
 
@@ -70,5 +79,6 @@
 					No locks. No coordination and everything is hard coded"
 
 	)
+
 
 	)
