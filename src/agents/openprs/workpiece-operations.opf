@@ -224,6 +224,17 @@
 		; 	:documentation "Process a Caped-shelf-base workpiece existing currently at the input, of a CS waiting for its cap tp be retrived.
 		; 					if the instruction worked you should have the capless workpiece on the CS output side after processing is done "
 		; 	)
+		(defop wp-gripper-to-slide
+			:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name "slide")) )
+			:context ( 		(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
+							(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+							(holding $wp-id)
+							) 				;Maybe the slide does not have enough rings
+			:body (
+				(! (step (insert-slide machine $mps-name)))
+				)
+			)
+		
 
 		(defop wp-gripper-to-gate--DS_Delivery
 			:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name $gate) ) )
