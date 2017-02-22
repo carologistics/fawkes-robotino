@@ -31,12 +31,12 @@
 			(! (printf (FORMAT "WP_Place-->Gripper: workpiece %s %s %s %s \n"  $wp-id $base $rings $cap)))
 
 			;TODO; IF the id was not bound in the goal that fires this op. It will be matched to ANY workpiece that has the same discription...DO I REALLY WANT THIS?!
-			;TODO: there is a little problem here that the matching peace does not always exist yet..Meaning sometimes it is still processing 
+			;TODO: there is a little problem here that the matching piece does not always exist yet..Meaning sometimes it is still processing 
 			;or the machine is down and I will only know the new place when it is ready. ..So for the old place..There is a puck with the same id
 			;But not the same discription..The condition will fail ..even thought driving there might actually be a good idea
 			(if (? (& (workpiece $wp-id $base $rings $cap (place $mps-name $side))
 						(~ (= $side "slide"))
-						))						;WP exists in the world (i,e Database)
+						))																				;WP exists in the world (i,e Database)
 				(! (printf (FORMAT "WP_Place --> Gripper: Found a peace at %s %s..Going to get it \n"  $mps-name $side)))
 				(if (? (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with))
 					(! (step (drive-to machine $mps-name side $side))) 									;Common driving STEP
@@ -85,7 +85,7 @@
 					;TODO: match on the base station color..For now just get it from the C-BS, CORRECT THIS SOON
 					(! (step (drive-to 		machine "C-BS" side "input")))
 					(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
-					(^ (workpiece $wp-id $base $rings $cap (place "C-BS" "input")));hazerdour...find a better way
+					(^ (workpiece $wp-id $base $rings $cap (place "C-BS" "input")));hazardous...find a better way
 					(! (step (get-base machine $mps-name side "input")))
 					(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
 					(succeed)
@@ -96,7 +96,7 @@
 				(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 
 				(fail)
 				;TODO: handle cases that
-				;	wp has no or differnt id but same discription and exists somewhere (this could allow me to know what I want but 
+				;	wp has no or different id but same description and exists somewhere (this could allow me to know what I want but 
 				;	not where it is or just that it will exist somewhere still no name)			
 			)
 		:documentation "Sends the Agent to gripp a workpiece from 'somewhere' if that workpiece exist in the world (ie,matches a WP with
@@ -105,37 +105,71 @@
 		)		
 
 
-		(defop wp-gripper-to-input
+	
+
+	(defop execute-wp-gripper-to-input
 		:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name "input")) )
 		:context ( 		(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
 						(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(holding $wp-id)
 						) 				;Maybe the input side has to be empty for that (or make a need for it)
 		:body (
-			(if (? (& (= $base (base UNKNOWN)) (= $cap (cap $cap-color)) (= $rings (rings none)) (~ (= $cap-color none)) ))
-				(if (? (cap-station $mps-name @cap-color $cap-loaded-status $caps-on-shelf))
-					(if (? (= $cap-loaded-status CAP_NOT_LOADED))
-						(! (step (insert-atmps machine $mps-name)))
-						else
-						(! (printf (FORMAT "NEED Gripper to input: Cap Is already loaded !!!!!!!..will fail\n" )))
-						; TODO: Move to a step Release puck for consistancey
-						(=> (holding none))
-						(~> (workpiece $wp-id $base $rings $cap (place "agent" "gripper")))
-						(fail); TODO: Release the puck, its just useless
-						)
 
-					else
-					(! (printf (FORMAT "NEED Gripper to input: Trying to insert a capped UNKNOWN base at %s !!!!!!!..will fail \n" $mps-name )))
-					; TODO: Move to a step Release puck for consistancey
-					(=> (holding none))
-					(~> (workpiece $wp-id $base $rings $cap (place "agent" "gripper")))
-					(fail)
-					)				
-				else 
+			(if (? 	(= $mps-type "BS"))
+				(! (printf (FORMAT "WP_GRIPPER-->INPUT: Why are you tring to insert to a BS ?!?!..Will fail \n ")))
+				(fail)
+				)
+			(if (? 	(= $mps-type "RS"))
+				;Just let it pass to the insertion step 
 				(! (step (drive-to machine $mps-name side "input")))
+				(! (decide-what-to-intstruct $mps-name $args));; I want to have it as a call to be more flixable how it is done or based on what () from a subgoal, or machine handling 
+				(! (step (instruct-mps machine $mps-name $args)))
 				(! (step (insert machine $mps-name)))
 				)
+			(if (? 	(= $mps-type "DS"))
+			
+				(succeed)
+ 				)
+			(if (? 	(= $mps-type "CS"))
+				(? (cap-station $mps-name $cap-color $cap-loaded-status $caps-on-shelf))
+				(if (? (& 	(= $base (base UNKNOWN)) 
+							(= $rings (rings none)) 
+							(= $cap (cap $cap-color))
+							))
+						(if (? (= $cap-loaded-status CAP_NOT_LOADED))
+							(! (step (instruct-mps  machine $mps-name (args operation RETRIEVE_CAP))))
+							(! (step (insert-atmps machine $mps-name)))
+							(succeed)
+ 							else
+							(! (printf (FORMAT "WP_ GRIPPER-->INPUT: Cap Is already loaded !!!!!!!..will fail\n" )))
+							; TODO: Move to a step Release puck for consistancey
+							(=> (holding none))
+							(=> (workpiece $wp-id $base 
+												$rings 
+												$cap 
+												(place LOST LOST)))
+							(fail)
+							)
+						)
+				(if (? (& 	(~ (= $base (base UNKNOWN))) 
+							(= $cap (cap none)) 
+							(= $cap-loaded-status CAP_LOADED) 
+							))
+
+					(! (step (drive-to machine $mps-name side "input")))
+					(! (step (instruct-mps  machine $mps-name (args operation MOUNT_CAP))))
+					(! (step (insert machine $mps-name)))
+					(succeed)
+ 					;Normal workpiece,just let it pass to the insertion step 
+					else
+					(! (printf (FORMAT " WP_GRIPPER-->INPUT: Something is not right!. CAP_NOT_LOADED or Wrong Puck!..will fail \n")))
+					(fail)
+					)
+				)
+			;Default insertion Step
+			(! (step (drive-to machine $mps-name side "input")))
+			(! (step (insert machine $mps-name)))
 			)
-			);TODO:DO NOT INSTER INTO CAP_STAITON IF CAP NOT LOAD	
+		) 
 
 	)
