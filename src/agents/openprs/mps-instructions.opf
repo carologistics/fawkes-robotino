@@ -55,6 +55,25 @@
 			:documentation "Send the Prepare instruction once to the CS"
  			)
 
+ 		(defop mps-instruction-ring-station
+ 			:invocation ( !(instruct-mps machine $rs-name (args ring-color $ring-color)) )
+ 			:context( 	(machine $rs-name "RS" $rs-state $rs-prepared $rs-zone $rs-pose $rs-loaded-with)
+				  	 	(team-color $team-color)
+				  		(peer-id private $peer-id)
+				)
+ 			:body(
+ 				(! (= @rs-inst (pb-create "llsf_msgs.PrepareInstructionRS")))
+				(! (pb-set-field @rs-inst "ring-color" $ring-color)) ;TODO check if the operation is allowed before sending it
+
+				(=> (last-attempted-instruction $rs-name (args ring-color $ring-color) ATTEMPTING))
+				(! (send-instruction $rs-name (val @rs-inst)))
+
+				(^ (& 	(last-attempted-instruction $rs-name @args @state)
+						(|| (= (val @state) FAILED)
+							(= (val @state) FINISHED))))
+ 				)
+			:documentation "Send the Prepare instruction once to the RS"
+ 			)
 
  		(defop mps-instruction-delivery-station
  			:invocation ( !(instruct-mps machine $ds-name (args gate $gate)) )
