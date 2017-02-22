@@ -143,13 +143,11 @@
 
         ;Add Information about the ring-stations 
         (if (? (= "RS" @machine-type))
-           (if (? (& (ring-station $name (avilible-colors $colors)) (= $name @machine-name)) )
+           (if (? (ring-station (val @machine-name) (avilible-colors (val @machine-ringcolors)) @selected-color @bases-loaded ) )
                 ;Do nothing. Its there already
             else
-            (if (? (= null $name))
-                (=> (ring-station @machine-name (avilible-colors @machine-ringcolors)))
+                (=> (ring-station @machine-name (avilible-colors @machine-ringcolors) NONE 0 ))
                 (! (print "added the RingStation"))
-                )
             )
           )
 
