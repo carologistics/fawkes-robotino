@@ -49,12 +49,7 @@
   :documentation "Invoke skiller to synthesize given text as speech."
 )
 
-(defop ppgoto
-  :invocation (! (ppgoto $place))
-  :call (ppgoto $place)
-  :action (skill-call "ppgoto" "place" $place)
-  :documentation "go to a place"
-)
+
 
 (defop agent-print-skiller-iface
   :invocation (bb-data "type" "SkillerInterface" "id" "Skiller" "time" $t_sec $t_usec $data)

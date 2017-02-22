@@ -6,8 +6,14 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 (
-	(defop debug-log-agent-state
-		:invocation (agent-state $some-state)
-		:body ((! (printf (Format "Agent-State: %s \n" $some-state))))
-		)
+	; (defop debug-log-agent-state
+	; 	:invocation (agent-state $some-state)
+	; 	:body ((! (printf (Format "Agent-State: %s \n" $some-state))))
+	; 	)
+
+	(defop debug-workpiece
+		:invocation (workpiece $id $base $rings $cap $place)
+		:body ((! (printf (Format "WorkPeac: ID %s  %s %s %s %s \n" $id $base $rings $cap $place))))
+	  )
+
 	)
