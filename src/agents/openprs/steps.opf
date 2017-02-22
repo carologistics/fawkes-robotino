@@ -132,7 +132,7 @@
 				;TODO: dynamically determine which position. 
 			 	;Change the # on shelf even if the skill fails 
 				(if (? (= 3 $caps-on-shelf))  				(! (= $slot "RIGHT")) 	(! (= $new-caps-on-shelf  2))
-				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "MIDDLE")) 	(! (= $new-caps-on-shelf  1))i
+				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "MIDDLE")) 	(! (= $new-caps-on-shelf  1))
 						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "LEFT")) 	(! (= $new-caps-on-shelf  3)) ))) 
 			
 				(if (! (execute (skill "get_product_from" "place" $mps-name "shelf" $slot)))
@@ -225,6 +225,43 @@
 							Should only be called after the CS has been instructed to RETRIEVE_CAP.
 							On succeeding, the cap station is assumed to be loaded with a cap
 							After the call, the agent hold nothing (even if skill failed) TODO:check if holding"
+			)
+
+
+		(defop step-insert-slide
+			:invocation ( ! (step (insert-slide machine $mps-name)))
+			:context 	(  	(holding $ws-id) ;that should be a work-peace
+							(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
+			 				(workpiece $ws-id  $base $rings $cap (place "agent" "gripper"));If the peace is not already at output this will fail. But what if it was processing still 
+							(ring-station $mps-name (avilible-colors $colors-list) $selected-color $bases-loaded)
+							(> $bases-loaded 3)
+						 	)
+							;Check if slide is already full 
+			:body(
+				(! (printf (FORMAT "STEP: Insert-slide into %s \n" $mps-name)))
+				(=> (agent-state STEP-RUNNING))
+
+				(if (! (execute (skill "bring_product_to" "place" $mps-name "slide" "TRUE")))
+					;UPDATE WORLD MODEL
+					;Moved to On_ready-at-output
+					; (if (?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
+					; 	(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))) 
+					(=> (ring-station $mps-name (avilible-colors $colors-list) $selected-color (+ $bases-loaded 1)))
+					(=> (workpiece $ws-id $base $rings $cap (place $mps-name "slide")))
+					(=> (agent-state STEP-FINISHD))
+					else
+					;TODO: lose the workpiece after checking if still holding
+					(=> (agent-state STEP-FAILD))
+					;TODO:Check if still holding first
+					(=> (workpiece $ws-id $base $rings $cap (place LOST LOST)))
+					)
+				)
+			:effects ( (=> (holding NONE)) )
+			:documentation "Insert a product work-peace in a machine's Input for processing of a production step (RS , DS , CS). 
+							Should only be called after correctly instructing the machine.
+							On succeeding, What ever processing step is assumed to be complete and the world model is updated.
+							After the call the Agent is assumed to not hold anything (even if skill failed) TODO:check if holding"
+			
 			)
 
 
