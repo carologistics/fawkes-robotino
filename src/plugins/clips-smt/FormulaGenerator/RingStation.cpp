@@ -11,6 +11,8 @@
  * Created on February 18, 2017, 2:02 AM
  */
 
+#include <assert.h> 
+
 #include "RingStation.h"
 
 RingStation::RingStation(int id) : Station(id) {
@@ -42,6 +44,8 @@ void RingStation::setAdditinalBasesFed(int amount) {
 }
 
 void RingStation::setRingColorSetup(Workpiece::Color color) {
+    //possibleRingColors has to be set before 
+    assert(isPossibleRingColor(color));
     this->ringColorSetup = color;
 }
 
@@ -61,7 +65,7 @@ bool RingStation::isPossibleRingColor(Workpiece::Color Color) const {
     return possibleRingColors.find(Color) != possibleRingColors.end();
 }
 
-int RingStation::getAdditinalBasesFed() const {
+int RingStation::getAdditionalBasesFed() const {
     return this->additinalBasesFed;
 }
 
@@ -74,5 +78,5 @@ int RingStation::getNeededAdditinalBases(Workpiece::Color color) {
 }
 
 bool RingStation::readyToMountRing(){
-    return getNeededAdditinalBases(getRingColorSetup()) == getAdditinalBasesFed();
+    return getNeededAdditinalBases(getRingColorSetup()) == getAdditionalBasesFed();
 }

@@ -25,7 +25,7 @@ public:
     int getMountRingTime() const;
     std::map<Workpiece::Color, int> getPossibleRingColors() const;
     bool isPossibleRingColor(Workpiece::Color Color) const;
-    int getAdditinalBasesFed() const;
+    int getAdditionalBasesFed() const;
     Workpiece::Color getRingColorSetup() const;
     int getNeededAdditinalBases(Workpiece::Color color);
     bool readyToMountRing();
