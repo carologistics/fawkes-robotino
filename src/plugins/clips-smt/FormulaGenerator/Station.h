@@ -3,6 +3,9 @@
 
 #include "Machine.h"
 
+class Station;
+typedef std::shared_ptr<Station> station_ptr;
+
 class Station : public Machine{
 public:
     Station(int id);

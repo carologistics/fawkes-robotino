@@ -28,7 +28,7 @@ std::vector<deliveryStation_ptr> const GameData::getDeliveryStations() const {
     return this->deliveryStations;
 }
 
-std::vector<order_ptr> const GameData::getOrderss() const{
+std::vector<order_ptr> const GameData::getOrders() const{
     return this->orders;
 }
 
@@ -116,6 +116,10 @@ std::string GameData::toString() const {
     result += "\nDeliveryStations: ";
     for (auto const& ds : getDeliveryStations()) {
         result += ds->getVarIdentifier() + " ";
+    }
+    result += "\nOrders: \n";
+    for (auto const& ds : getOrders()) {
+        result += ds->toString() + "\n ";
     }
     /*result += "\nMovingTimes: \n";
     for (auto const& mt : getMovingTimes()) {

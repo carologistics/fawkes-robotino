@@ -11,9 +11,15 @@ public:
     virtual ~FormulaGenerator();
 
     stepFormula_ptr getStep(int i);
-    void setSteps(int amount, GameData& gameData) ;
+    std::vector<stepFormula_ptr> getSteps();
+    Formula getFormula();
+    
+    void generateSteps(int amount, GameData& gameData) ;
+    Formula createFormula();
+    
 private:
     std::vector<stepFormula_ptr> steps;
+    Formula formula;
 };
 
 
