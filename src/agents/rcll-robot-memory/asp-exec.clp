@@ -267,6 +267,18 @@
   )
 )
 
+(defrule asp-plan-update-finished-task
+  "We should update a finished task."
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?update <- (updatePlanElement ?id ?obj)
+  (planElement (_id ?id) (done TRUE))
+  =>
+  ;To NOT change the planElement, the different timings do not matter anymore. The update would retract the planElement
+  ;and add a new one, where the done flag is not set and the robot would start the task again.
+  (bson-destroy ?obj)
+  (retract ?update)
+)
+
 (defrule asp-plan-update-merge
   "Update a not running task or only the time for it, this happens based on our feedback."
   (declare (salience (- ?*PRIORITY-HIGH* 1)))
