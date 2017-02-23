@@ -109,15 +109,17 @@ void
 AspPlanerThread::loopClingo(void)
 {
 	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
-	MutexLocker reqLocker(&RequestMutex);
-	//Locked: ClingoAcc, RequestMutex
+	//Locked: ClingoAcc
 
 	if ( !ProgramGrounded )
 	{
 		return;
 	} //if ( !ProgramGrounded )
 
+	MutexLocker reqLocker(&RequestMutex);
 	const auto requests = GroundRequests.size() + ReleaseRequests.size() + AssignRequests.size();
+	reqLocker.unlock();
+
 	if ( ClingoAcc->solving() )
 	{
 		if ( shouldInterrupt() && !SentCancel )
@@ -130,14 +132,12 @@ AspPlanerThread::loopClingo(void)
 	} //if ( ClingoAcc->solving() )
 
 	MutexLocker navgraphLocker(&NavgraphDistanceMutex);
-	//Locked: ClingoAcc, RequestMutex, NavgraphDistanceMutex
+	//Locked: ClingoAcc, NavgraphDistanceMutex
 	if ( UpdateNavgraphDistances )
 	{
 		const bool lastUpdate = NodesToFind.empty();
 		if ( lastUpdate )
 		{
-			//Unlock for the release requests in releaseZone().
-			reqLocker.unlock();
 			MutexLocker worldLocker(&WorldMutex);
 			//Locked: ClingoAcc, NavgraphDistanceMutex, WorldMutex
 			if ( ReceivedZonesToExplore )
@@ -159,8 +159,7 @@ AspPlanerThread::loopClingo(void)
 			//Locked: ClingoAcc, WorldMutex
 			fillNavgraphNodesForASP(false);
 			navgraphLocker.relock();
-			reqLocker.relock();
-			//Locked: ClingoAcc, WorldMutex, NavgraphDistanceMutex, RequestMutex
+			//Locked: ClingoAcc, WorldMutex, NavgraphDistanceMutex
 		} //if ( lastUpdate )
 		//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
 
@@ -174,8 +173,6 @@ AspPlanerThread::loopClingo(void)
 		if ( lastUpdate )
 		{
 			logger->log_info(LoggingComponent, "All machines found, fix distances and release externals.");
-			reqLocker.unlock();
-			//Locked: ClingoAcc, NavgraphDistanceMutex
 			for ( const auto& external : NavgraphDistances )
 			{
 				queueGround({"setDriveDuration",
@@ -203,9 +200,6 @@ AspPlanerThread::loopClingo(void)
 					} //else -> if ( swap )
 				} //for ( bool swap = true; true; )
 			} //for ( const auto& external : NavgraphDistances )
-			//This has to be done, because the behavior of double unlocking is undefined.
-			reqLocker.relock();
-			//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
 		} //if ( lastUpdate )
 		else
 		{
@@ -226,7 +220,6 @@ AspPlanerThread::loopClingo(void)
 		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
-	reqLocker.unlock();
 	//Locked: ClingoAcc
 
 	SentCancel = false;
@@ -431,7 +424,7 @@ AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving int
 {
 	MutexLocker locker(&RequestMutex);
 	GroundRequests.push_back(std::move(request));
-	setInterrupt(interrupt, false);
+	setInterrupt(interrupt);
 	return;
 }
 
@@ -445,7 +438,7 @@ AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const InterruptSolving inte
 {
 	MutexLocker locker(&RequestMutex);
 	ReleaseRequests.push_back(std::move(atom));
-	setInterrupt(interrupt, false);
+	setInterrupt(interrupt);
 	return;
 }
 
@@ -459,30 +452,27 @@ AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const InterruptSolving inter
 {
 	MutexLocker locker(&RequestMutex);
 	AssignRequests.push_back(std::move(atom));
-	setInterrupt(interrupt, false);
+	setInterrupt(interrupt);
 	return;
 }
 
 /**
  * @brief Sets the interrupt value.
  * @param[in] interrupt Which level of interrupt is requested.
- * @param[in] lock If we should lock, if set to false we expect it to be locked by the caller.
  */
 void
-AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
+AspPlanerThread::setInterrupt(const InterruptSolving interrupt)
 {
-	MutexLocker locker(&RequestMutex, lock);
-	if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt) )
+	if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt.load()) )
 	{
 		Interrupt = interrupt;
-	} //if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt) )
+	} //if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt.load()) )
 	return;
 }
 
 /**
  * @brief Says if the solving process should be interrupted.
  * @return If the solving should be interrupted.
- * @note RequestMutex has to be locked.
  */
 bool
 AspPlanerThread::shouldInterrupt(void)

@@ -397,11 +397,11 @@
  * @typedef AspPlanerThread::GroundRequest
  * @brief Holds the information to build a Clingo::Part.
  *
- * @property AspPlanerThread::RequestMutex
- * @brief The mutex for the requests and interupt handling.
- *
  * @property AspPlanerThread::Interrupt
  * @brief The current interrupt state.
+ *
+ * @property AspPlanerThread::RequestMutex
+ * @brief The mutex for the requests and interupt handling.
  *
  * @property AspPlanerThread::SentCancel
  * @brief If a cancel was sent to the solver.
