@@ -31,7 +31,7 @@ public:
     std::vector<ringStation_ptr> const getRingStations() const;
     std::vector<capStation_ptr> const getCapStations() const;
     std::vector<deliveryStation_ptr> const getDeliveryStations() const;
-    std::vector<order_ptr> const getOrderss() const;
+    std::vector<order_ptr> const getOrders() const;
     //std::map<machine_machine, int> const getMovingTimes() const;
 
     void setMachines(std::vector<robot_ptr> const robots);
@@ -62,7 +62,7 @@ private:
     std::vector<capStation_ptr> capStations;
     std::vector<deliveryStation_ptr> deliveryStations;
     std::vector<order_ptr> orders;
-    //replaced this with map in each machine
+    //replaced this with map for times in each machine
     //std::map<machine_machine, int> movingTimes;
 };
 

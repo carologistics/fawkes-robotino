@@ -1,3 +1,5 @@
+
+#include <assert.h>
 #include "CapStation.h"
 
 CapStation::CapStation(int id) : Station(id) {
@@ -24,6 +26,8 @@ void CapStation::addPossibleCapColor(Workpiece::Color color) {
 }
 
 void CapStation::setFedCapColor(Workpiece::Color color) {
+    //PossibleCapColors has to be set before
+    assert(isPossibleCapColor(color));
     this->fedCapColor = color;
 }
 

@@ -13,9 +13,10 @@ StepFormula::StepFormula(GameData& gameData) : gameData(gameData) {
 StepFormula::~StepFormula() {
 }
 //@todo
+
 std::vector<stepFormula_ptr> StepFormula::generateSteps(uint amount, GameData& gameData) {
     std::vector<stepFormula_ptr> steps;
-    std::shared_ptr<StepFormula> prevStep = std::make_shared<StepFormula>(prevStep, gameData);
+    std::shared_ptr<StepFormula> prevStep = nullptr;
 
     for (int number = 0; number <= amount; number++) {
 
@@ -23,13 +24,12 @@ std::vector<stepFormula_ptr> StepFormula::generateSteps(uint amount, GameData& g
         steps.push_back(step);
         prevStep = step;
     }
-    
     return steps;
 }
 
 //Getter
 
-stepFormula_ptr StepFormula::getPreviousStep() {
+stepFormula_ptr StepFormula::getPrevStep() {
     return this->previousStep;
 }
 
@@ -41,28 +41,81 @@ string StepFormula::getStepName() {
     return std::to_string(getStepNumber());
 }
 
-GameData StepFormula::getGameData() const{
+GameData StepFormula::getGameData() const {
     return this->gameData;
 }
 
-Variable StepFormula::getVariable(string varName){
+Variable StepFormula::getVariable(string varName) {
     Variable var;
-    if(varibles.find(varName) == varibles.end()){
+    if (varibles.find(varName) == varibles.end()) {
         var = carl::freshIntegerVariable(varName);
         varibles[varName] = var;
-    }  else{
+    } else {
         var = varibles.find(varName)->second;
     }
     return var;
 }
 
 //Setter
+
 void StepFormula::setStepNumber(int stepNumber) {
     this->stepNumber = stepNumber;
 }
 
 void StepFormula::setPreviousStep(stepFormula_ptr &previousStep) {
     this->previousStep = previousStep;
+}
+
+Formula StepFormula::createInitialStateRobots() {
+    GameData gD = getGameData();
+    std::vector<Formula> formulas;
+    for (auto const& r : gD.getRobots()) {
+        formulas.push_back(holdsBaseFormula(*r, r->getWorkpiece().getBaseColor()));
+    }
+    return Formula();
+}
+
+Formula StepFormula::createInitialStateStations() {
+    GameData gD = getGameData();
+    std::vector<Formula> formulas;
+    for (auto const& rs : gD.getRingStations()) {
+
+    }
+    for (auto const& cs : gD.getCapStations()) {
+
+    }
+    
+    return Formula();
+}
+
+Formula StepFormula::createInitialStateOrders() {
+    GameData gD = getGameData();
+    for (auto const& r : gD.getOrders()) {
+
+    }
+    return Formula();
+}
+
+Formula StepFormula::holdsWorkpiece(Machine &m, Workpiece::Color color) {
+    equation(getVarHoldsRing(m, number), color);
+}
+
+
+Formula StepFormula::createInitialState() {
+    return Formula(carl::FormulaType::AND, {createInitialStateRobots(),
+        createInitialStateStations(),
+        createInitialStateOrders()});
+}
+
+Formula StepFormula::create() {
+    if (getStepNumber() == 0)
+        return createInitialState();
+
+    std::vector<Formula> formulas;
+    for (auto const& r : getGameData().getRobots()) {
+        formulas.push_back(equation(getPrevStep()->getVarHoldsBase(*r), Workpiece::NONE));
+    }
+    return Formula(carl::FormulaType::AND, formulas);
 }
 
 Variable StepFormula::getVarHoldsBase(Machine &m) {
@@ -118,24 +171,29 @@ Formula StepFormula::equation(Variable var, int value) {
 }
 
 Formula StepFormula::equation(Variable var1, Variable var2) {
-    return Formula(Pol(var1)-Pol(var2), carl::Relation::EQ);
+    return Formula(Pol(var1) - Pol(var2), carl::Relation::EQ);
 }
 
 Formula StepFormula::equation(Variable var1, Pol pol) {
-    return Formula(Pol(var1)-pol, carl::Relation::EQ);
+    return Formula(Pol(var1) - pol, carl::Relation::EQ);
 }
+
+/*@todo generate constraints about a workpiece in separate functions to provide better readability 
+ * and exchangeability of the workpiece encoding 
+ * using StepFormula::holdsWorkpiece(Machine &m, Workpiece::Color color) 
+ */
 
 Formula StepFormula::getCollectBaseFormula(Robot &r, Workpiece::Color c) {
     Formula baseNotMounted = equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE);
     Formula baseMounted = equation(getVarHoldsBase(r), c);
-    return Formula(Formulaype::AND,{baseNotMounted, baseMounted});
+    return Formula(carl::FormulaType::AND,{baseNotMounted, baseMounted});
     //@todo getCollectBaseStepNotFinishedFormula über alle Order o mit o.getBaseColorReq() == c
 }
 
 Formula StepFormula::getCollectBaseStepNotFinishedFormula(Robot &r, Order &o) {
     Formula workstepIsNotFinished = equation(getPrevStep()->getVarBaseProgress(o), Order::NOTFINISHED);
     Formula workstepIsFinished = equation(getVarBaseProgress(o), Order::FINISHED);
-    return Formula(Formulaype::AND,{workstepIsNotFinished, workstepIsFinished});
+    return Formula(carl::FormulaType::AND,{workstepIsNotFinished, workstepIsFinished});
 }
 
 Formula StepFormula::getFeedCapFormula(Robot &r, Workpiece::Color c, CapStation &cs) {
@@ -148,7 +206,7 @@ Formula StepFormula::getFeedCapFormula(Robot &r, Workpiece::Color c, CapStation 
     Formula outputNotLoaded = equation(getPrevStep()->getVarHoldsBase(cs), Workpiece::NONE);
     Formula outputLoaded = equation(getVarHoldsBase(cs), Workpiece::TRANSPARENT);
 
-    return Formula(Formulaype::AND,
+    return Formula(carl::FormulaType::AND,
        {brHoldsNothing, 
         arHoldsNothing,
         capNotLoaded, 
@@ -161,16 +219,16 @@ Formula StepFormula::getFeedCapFormula(Robot &r, Workpiece::Color c, CapStation 
 Formula StepFormula::getFeedCapStepNotFinishedFormula(Robot &r, Order &o) {
     Formula workstepIsNotFinished = equation(getPrevStep()->getVarCapProgress(o), Order::NOTFINISHED);
     Formula workstepIsSetUp = equation(getVarCapProgress(o), Order::SETUP);
-    return Formula(Formulaype::AND, {workstepIsNotFinished, workstepIsSetUp});
+    return Formula(carl::FormulaType::AND, {workstepIsNotFinished, workstepIsSetUp});
 }
 
 Formula StepFormula::getMountCapFormula(Robot &r, CapStation &cs) {
-    Formula holdsNoWorkpiece = Formula( Formulaype::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
-    Formula isNotTransparent = Formula( Formulaype::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::TRANSPARENT));
+    Formula holdsNoWorkpiece = Formula( carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
+    Formula isNotTransparent = Formula( carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::TRANSPARENT));
 
     Formula noCap = Formula(equation(getPrevStep()->getVarHoldsCap(r), Workpiece::NONE));
     
-    Formula capLoaded = Formula( Formulaype::NOT, equation(getPrevStep()->getVarCapColor(cs), Workpiece::NONE));
+    Formula capLoaded = Formula( carl::FormulaType::NOT, equation(getPrevStep()->getVarCapColor(cs), Workpiece::NONE));
     Formula capNotLoaded = equation(getVarCapColor(cs), Workpiece::NONE);
     
     Formula noWorkpiece = equation(getPrevStep()->getVarHoldsBase(cs), Workpiece::NONE);
@@ -182,7 +240,7 @@ Formula StepFormula::getMountCapFormula(Robot &r, CapStation &cs) {
     Formula rTocsR3 = equation(getPrevStep()->getVarHoldsRing(r,2), getVarHoldsRing(cs,2));
     Formula capMounted = equation(getVarHoldsCap(cs), getPrevStep()->getVarCapColor(cs));
     
-    Formula rTocs(Formulaype::AND, {rTocsB, rTocsR1, rTocsR2, rTocsR3, capMounted});
+    Formula rTocs(carl::FormulaType::AND, {rTocsB, rTocsR1, rTocsR2, rTocsR3, capMounted});
     
     Formula rNoBase = equation(getVarHoldsBase(r), Workpiece::NONE);
     Formula rNoR1 = equation(getVarHoldsRing(r,0), Workpiece::NONE);
@@ -190,9 +248,9 @@ Formula StepFormula::getMountCapFormula(Robot &r, CapStation &cs) {
     Formula rNoR3 = equation(getVarHoldsRing(r,2), Workpiece::NONE);
     Formula rNoCap = equation(getVarHoldsCap(r), Workpiece::NONE);
     
-    Formula rNoW(Formulaype::AND, {rNoBase, rNoR1, rNoR2, rNoR3, rNoCap});
+    Formula rNoW(carl::FormulaType::AND, {rNoBase, rNoR1, rNoR2, rNoR3, rNoCap});
     
-    return Formula(Formulaype::AND, 
+    return Formula(carl::FormulaType::AND, 
        {holdsNoWorkpiece, isNotTransparent,
         capLoaded, capNotLoaded,
         noWorkpiece, WorkpieceInOutput,
@@ -212,7 +270,7 @@ Formula StepFormula::getMountCapStepNotFinishedFormula(Robot &r, Order &o, CapSt
     Formula notFinished = equation(getPrevStep()->getVarCapProgress(o), Order::NOTFINISHED);
     Formula finished = equation(getVarCapProgress(o), Order::FINISHED);
     
-    return Formula(Formulaype::AND,
+    return Formula(carl::FormulaType::AND,
        {sameBase, 
         sameR0, 
         sameR1, 
@@ -226,7 +284,7 @@ Formula StepFormula::getSetupRingColorFormula(Robot &r, Workpiece::Color c, Ring
     Formula notSetUp = equation(getPrevStep()->getVarRingColor(rs), Workpiece::NONE);
     Formula setUp = equation(getVarRingColor(rs), c);
     
-    Formula expectsAddBases = equation(getBaseReq(rs), rs.getReqBases(c));
+    Formula expectsAddBases = equation(getBaseReq(rs), rs.getNeededAdditinalBases(c));
     
     //getSetupRingColorFormula
     
@@ -242,55 +300,55 @@ Formula StepFormula::getSetupRingColorNotFinishedFormula(Robot &r, Workpiece::Co
     Formula r0NotMounted = equation(getPrevStep()->getVarRingProgress(o, 0), Order::NOTFINISHED);
     Formula r0Setup = equation(getVarRingProgress(o, 0), Order::SETUP);
     
-    Formula r0(Formulaype::AND, {correctColorR0, r0NotMounted, r0Setup, r1same, r2same});
+    Formula r0(carl::FormulaType::AND, {correctColorR0, r0NotMounted, r0Setup, r1same, r2same});
         
     Formula correctColorR1 = equation(o.getRingColorReq(1), c);
     Formula r1NotMounted = equation(getPrevStep()->getVarRingProgress(o, 1), Order::NOTFINISHED);
     Formula r1Setup = equation(getVarRingProgress(o, 1), Order::SETUP);
     
-    Formula r1(Formulaype::AND, {correctColorR1, r1NotMounted, r1Setup, r0same, r2same});
+    Formula r1(carl::FormulaType::AND, {correctColorR1, r1NotMounted, r1Setup, r0same, r2same});
     
     Formula correctColorR2 = equation(o.getRingColorReq(2), c);
     Formula r2NotMounted = equation(getPrevStep()->getVarRingProgress(o, 2), Order::NOTFINISHED);
     Formula r2Setup = equation(getVarRingProgress(o, 2), Order::SETUP);
     
-    Formula r2(Formulaype::AND, {correctColorR2, r2NotMounted, r2Setup, r0same, r1same});
+    Formula r2(carl::FormulaType::AND, {correctColorR2, r2NotMounted, r2Setup, r0same, r1same});
     
-    return Formula(Formulaype::OR, {r0, r1, r2});
+    return Formula(carl::FormulaType::OR, {r0, r1, r2});
 }
 
 Formula StepFormula::getFeedAdditionalBaseFormula(Robot &r, RingStation &rs){
-    Formula holdsBase = Formula(Formulaype::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
+    Formula holdsBase = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
     Formula holdsNothing = equation(getVarHoldsBase(r), Workpiece::NONE);
     
-    Formula needAddBases(Constr(getBaseReq(rs), Relation::GREATER, Rational(0)));
+    Formula needAddBases(Constr(getBaseReq(rs), carl::Relation::GREATER, Rational(0)));
     Formula isFeedWithAddBase = equation(getBaseReq(rs), Pol(getPrevStep()->getBaseReq(rs) - Rational(1)));
     
     Formula outputEmpty = equation(getPrevStep()->getVarHoldsBase(rs), Workpiece::NONE);
     
-    return Formula(Formulaype::AND, {holdsBase, holdsNothing, needAddBases, isFeedWithAddBase, outputEmpty});
+    return Formula(carl::FormulaType::AND, {holdsBase, holdsNothing, needAddBases, isFeedWithAddBase, outputEmpty});
 }
 
 Formula StepFormula::getMountRingFormula(Robot &r, RingStation &rs){
-    Formula holdsBase = Formula(Formulaype::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
-    Formula notTransparent = Formula(Formulaype::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::TRANSPARENT));
+    Formula holdsBase = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
+    Formula notTransparent = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::TRANSPARENT));
     Formula noCap = equation(getPrevStep()->getVarHoldsCap(r), Workpiece::NONE);
     Formula not3Rings = equation(getPrevStep()->getVarHoldsRing(r,3), Workpiece::NONE);
     
     Formula outputEmpty = equation(getPrevStep()->getVarHoldsBase(rs), Workpiece::NONE);
     
-    Formula setupForColor = Formula(Formulaype::NOT, equation(getPrevStep()->getVarRingColor(rs), Workpiece::NONE));
+    Formula setupForColor = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarRingColor(rs), Workpiece::NONE));
     Formula notSetupForColor = equation(getPrevStep()->getVarRingColor(rs), Workpiece::NONE);
     Formula addBasesReqFullfilled = equation(getPrevStep()->getBaseReq(rs), 0);
     
-    Formula cond(Formulaype::AND, {holdsBase, notTransparent, noCap, not3Rings, outputEmpty, setupForColor, notSetupForColor, addBasesReqFullfilled});
+    Formula cond(carl::FormulaType::AND, {holdsBase, notTransparent, noCap, not3Rings, outputEmpty, setupForColor, notSetupForColor, addBasesReqFullfilled});
          
     Formula holdsNothingB = equation(getVarHoldsBase(r), Workpiece::NONE);
     Formula holdsNothingR0 = equation(getVarHoldsRing(r, 0), Workpiece::NONE);
     Formula holdsNothingR1 = equation(getVarHoldsRing(r, 1), Workpiece::NONE);
     Formula holdsNothingR2 = equation(getVarHoldsRing(r, 2), Workpiece::NONE);
     Formula holdsNothingC = equation(getVarHoldsCap(r), Workpiece::NONE);
-    Formula holdsNothing(Formulaype::AND, {holdsNothingB, holdsNothingR0, holdsNothingR1, holdsNothingR2, holdsNothingC});
+    Formula holdsNothing(carl::FormulaType::AND, {holdsNothingB, holdsNothingR0, holdsNothingR1, holdsNothingR2, holdsNothingC});
     
     Formula rR0Same = equation(getPrevStep()->getVarHoldsRing(r,0), getVarHoldsRing(r,0));
     Formula rR1Same = equation(getPrevStep()->getVarHoldsRing(r,1), getVarHoldsRing(r,1));
@@ -298,19 +356,19 @@ Formula StepFormula::getMountRingFormula(Robot &r, RingStation &rs){
     
     Formula rR0None = equation(getPrevStep()->getVarHoldsRing(r,0), Workpiece::NONE);
     Formula rsMountR0 = equation(getVarHoldsRing(rs,0), getVarRingColor(rs));
-    Formula mountR0(Formulaype::AND, {rR0None, rR1Same, rR2Same, rsMountR0});
+    Formula mountR0(carl::FormulaType::AND, {rR0None, rR1Same, rR2Same, rsMountR0});
     
     Formula rR1None = equation(getPrevStep()->getVarHoldsRing(r,1), Workpiece::NONE);
     Formula rsMountR1 = equation(getVarHoldsRing(rs,1), getPrevStep()->getVarRingColor(rs));
-    Formula mountR1(Formulaype::AND, {rR1None, rR0Same, rR2Same, rsMountR1});
+    Formula mountR1(carl::FormulaType::AND, {rR1None, rR0Same, rR2Same, rsMountR1});
     
     Formula rR2None = equation(getPrevStep()->getVarHoldsRing(r,2), Workpiece::NONE);
     Formula rsMountR2 = equation(getVarHoldsRing(rs,2), getPrevStep()->getVarRingColor(rs));
-    Formula mountR2(Formulaype::AND, {rR2None, rR0Same, rR1Same, rsMountR2});
+    Formula mountR2(carl::FormulaType::AND, {rR2None, rR0Same, rR1Same, rsMountR2});
     
-    Formula mount(Formulaype::OR, {mountR0, mountR1, mountR2});
+    Formula mount(carl::FormulaType::OR, {mountR0, mountR1, mountR2});
     
-    return Formula(Formulaype::AND, {cond, holdsNothing, mount});
+    return Formula(carl::FormulaType::AND, {cond, holdsNothing, mount});
 }
 
 Formula StepFormula::getMountRingNotFinishedFormula(Robot &r, RingStation &rs, Order &o){
@@ -325,28 +383,28 @@ Formula StepFormula::getMountRingNotFinishedFormula(Robot &r, RingStation &rs, O
     Formula r0Setup = equation(getPrevStep()->getVarRingProgress(o, 0), Order::SETUP);
     Formula r0Finished = equation(getVarRingProgress(o,0), Order::FINISHED);
     
-    Formula r0Work(Formulaype::AND, {rR0None, orderR0, r0Setup, r0Finished, r1same, r2same});
+    Formula r0Work(carl::FormulaType::AND, {rR0None, orderR0, r0Setup, r0Finished, r1same, r2same});
     
     Formula rR1None = equation(getPrevStep()->getVarHoldsRing(r,1), Workpiece::NONE);
     Formula orderR1 = equation(getPrevStep()->getVarRingColor(rs), o.getRingColorReq(0));
     Formula r1Setup = equation(getPrevStep()->getVarRingProgress(o,1), Order::SETUP);
     Formula r1Finished = equation(getVarRingProgress(o,1), Order::FINISHED);
     
-    Formula r1Work(Formulaype::AND, {rR1None, orderR1, r1Setup, r1Finished, r0same, r2same});
+    Formula r1Work(carl::FormulaType::AND, {rR1None, orderR1, r1Setup, r1Finished, r0same, r2same});
     
     Formula rR2None = equation(getPrevStep()->getVarHoldsRing(r,2), Workpiece::NONE);
     Formula orderR2 = equation(getPrevStep()->getVarRingColor(rs), o.getRingColorReq(0));
     Formula r2Setup = equation(getPrevStep()->getVarRingProgress(o,2), Order::SETUP);
     Formula r2Finished = equation(getVarRingProgress(o,2), Order::FINISHED);
     
-    Formula r2Work(Formulaype::AND, {rR2None, orderR2, r2Setup, r2Finished, r0same, r1same});
+    Formula r2Work(carl::FormulaType::AND, {rR2None, orderR2, r2Setup, r2Finished, r0same, r1same});
     
-    return Formula(Formulaype::OR, {orderB, r0Work, r1Work, r2Work});
+    return Formula(carl::FormulaType::OR, {orderB, r0Work, r1Work, r2Work});
 }
 
 Formula StepFormula::getCollectWorkpieceFormula(Robot &r, Station &s){
     Formula holdsNothing = equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE);
-    Formula outputNotEmpty = Formula(Formulaype::NOT, equation(getPrevStep()->getVarHoldsBase(s), Workpiece::NONE));
+    Formula outputNotEmpty = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsBase(s), Workpiece::NONE));
     
     Formula rHoldsB = equation(getVarHoldsBase(r), getPrevStep()->getVarHoldsBase(s));
     Formula rHoldsR0 = equation(getVarHoldsRing(r,0), getPrevStep()->getVarHoldsRing(r,0));
@@ -354,7 +412,7 @@ Formula StepFormula::getCollectWorkpieceFormula(Robot &r, Station &s){
     Formula rHoldsR2 = equation(getVarHoldsRing(r,2), getPrevStep()->getVarHoldsRing(r,2));
     Formula rHoldsC = equation(getVarHoldsCap(r), getPrevStep()->getVarHoldsCap(s));
     
-    Formula rHoldsW(Formulaype::AND, {rHoldsB, rHoldsR0, rHoldsR1, rHoldsR2, rHoldsC});
+    Formula rHoldsW(carl::FormulaType::AND, {rHoldsB, rHoldsR0, rHoldsR1, rHoldsR2, rHoldsC});
     
     Formula csBEmpty = equation(getVarHoldsBase(s), Workpiece::NONE);
     Formula csR0Empty = equation(getVarHoldsRing(s,0), Workpiece::NONE);
@@ -362,14 +420,14 @@ Formula StepFormula::getCollectWorkpieceFormula(Robot &r, Station &s){
     Formula cR2BEmpty = equation(getVarHoldsRing(s,2), Workpiece::NONE);
     Formula csCEmpty = equation(getVarHoldsCap(s), Workpiece::NONE);
     
-    Formula csEmpty(Formulaype::AND, {csBEmpty, csR0Empty, csR1Empty, cR2BEmpty, csCEmpty});
+    Formula csEmpty(carl::FormulaType::AND, {csBEmpty, csR0Empty, csR1Empty, cR2BEmpty, csCEmpty});
     
-    return Formula(Formulaype::AND, {holdsNothing, outputNotEmpty, rHoldsW, csEmpty});
+    return Formula(carl::FormulaType::AND, {holdsNothing, outputNotEmpty, rHoldsW, csEmpty});
 }
 
 Formula StepFormula::getDeliverWorkpieceFormula(Robot &r, Station &d){
-    Formula hasBase = Formula(Formulaype::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
-    Formula hasCap = Formula(Formulaype::NOT, equation(getPrevStep()->getVarHoldsCap(r), Workpiece::NONE));
+    Formula hasBase = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
+    Formula hasCap = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsCap(r), Workpiece::NONE));
     
     Formula holdsNothingB = equation(getVarHoldsBase(r), Workpiece::NONE);
     Formula holdsNothingR0 = equation(getVarHoldsRing(r, 0), Workpiece::NONE);
@@ -377,9 +435,9 @@ Formula StepFormula::getDeliverWorkpieceFormula(Robot &r, Station &d){
     Formula holdsNothingR2 = equation(getVarHoldsRing(r, 2), Workpiece::NONE);
     Formula holdsNothingC = equation(getVarHoldsCap(r), Workpiece::NONE);
     
-    Formula holdsNothing(Formulaype::AND, {holdsNothingB, holdsNothingR0, holdsNothingR1, holdsNothingR2, holdsNothingC});
+    Formula holdsNothing(carl::FormulaType::AND, {holdsNothingB, holdsNothingR0, holdsNothingR1, holdsNothingR2, holdsNothingC});
     
-    return Formula(Formulaype::AND, {hasBase, hasCap, holdsNothing});
+    return Formula(carl::FormulaType::AND, {hasBase, hasCap, holdsNothing});
 }
 
 Formula StepFormula::getMarkOrderDeliveredFormula(Robot &r, Order &o){
@@ -389,7 +447,7 @@ Formula StepFormula::getMarkOrderDeliveredFormula(Robot &r, Order &o){
     Formula correctR2 = equation(getVarHoldsRing(r,2), o.getRingColorReq(2));
     Formula correctC = equation(getVarHoldsCap(r), o.getCapColorReq());
     
-    Formula correctW(Formulaype::AND, {correctB, correctR0, correctR1, correctR2, correctC});
+    Formula correctW(carl::FormulaType::AND, {correctB, correctR0, correctR1, correctR2, correctC});
     
     Formula OrderFinishedB = equation(getVarBaseProgress(o), Order::FINISHED);
     Formula OrderFinishedR0 = equation(getVarRingProgress(o,0), Order::FINISHED);
@@ -397,7 +455,7 @@ Formula StepFormula::getMarkOrderDeliveredFormula(Robot &r, Order &o){
     Formula OrderFinishedR2 = equation(getVarRingProgress(o,2), Order::FINISHED);
     Formula OrderFinishedC = equation(getVarCapProgress(o), Order::FINISHED);
     
-    Formula OrderFinished(Formulaype::AND, {OrderFinishedB, OrderFinishedR0, OrderFinishedR1, OrderFinishedR2, OrderFinishedC});
+    Formula OrderFinished(carl::FormulaType::AND, {OrderFinishedB, OrderFinishedR0, OrderFinishedR1, OrderFinishedR2, OrderFinishedC});
     
     Formula OrderDeliveredB = equation(getVarBaseProgress(o), Order::DELIVERED);
     Formula OrderDeliveredR0 = equation(getVarRingProgress(o,0), Order::DELIVERED);
@@ -405,7 +463,7 @@ Formula StepFormula::getMarkOrderDeliveredFormula(Robot &r, Order &o){
     Formula OrderDeliveredR2 = equation(getVarRingProgress(o,2), Order::DELIVERED);
     Formula OrderDeliveredC = equation(getVarCapProgress(o), Order::DELIVERED);
     
-    Formula OrderDelivered(Formulaype::AND, {OrderDeliveredB, OrderDeliveredR0, OrderDeliveredR1, OrderDeliveredR2, OrderDeliveredC});
+    Formula OrderDelivered(carl::FormulaType::AND, {OrderDeliveredB, OrderDeliveredR0, OrderDeliveredR1, OrderDeliveredR2, OrderDeliveredC});
     
-    return Formula(Formulaype::AND, {correctW, OrderFinished, OrderDelivered}); 
+    return Formula(carl::FormulaType::AND, {correctW, OrderFinished, OrderDelivered}); 
 }

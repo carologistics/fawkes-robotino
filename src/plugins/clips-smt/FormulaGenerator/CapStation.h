@@ -11,6 +11,7 @@ typedef std::shared_ptr<CapStation> capStation_ptr;
 class CapStation : public Station {
 public:
     CapStation(int id);
+    CapStation(int id, int feedCapTime);
     virtual ~CapStation();
     
     void setFeedCapTime(int time);
@@ -27,15 +28,17 @@ public:
     bool readyToMountRing();
     
 private:
+    
+    //are this times identical?
     int feedCapTime;
     int mountCapTime;  
     
-    // possible cap colors
+    //the color of the cap the station is able to mount
     std::set<Workpiece::Color> possibleCapColors;
     
     /* setup color and feed cap is encoded as monolithic action, how to react if initial 
      * state is only the setup of color without fed cap?*/
-    // color of the cap station is fed with
+    // the color of the cap the station is fed with
     Workpiece::Color fedCapColor = Workpiece::NONE;
 };
 

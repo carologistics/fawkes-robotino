@@ -28,18 +28,30 @@ public:
     StepFormula(stepFormula_ptr &previousStep, GameData& gameData);
     StepFormula(GameData& gameData);
     virtual ~StepFormula();
-    
+
     static std::vector<stepFormula_ptr> generateSteps(uint number, GameData& gameData);
 
     int getStepNumber();
     string getStepName();
-    stepFormula_ptr getPreviousStep();
+    stepFormula_ptr getPrevStep();
     GameData getGameData() const;
     Variable getVariable(string varName);
-    
+
     void setStepNumber(int stepNumber);
     void setPreviousStep(stepFormula_ptr &previousStep);
-    
+
+
+    Formula holdsBaseFormula(Machine &m, Workpiece::Color color);
+    Formula holdsRingFormula(Machine &m, Workpiece::Color number, Workpiece::Color color);
+    Formula holdsCapFormula(Machine &m, Workpiece::Color color);
+
+    Formula createInitialStateRobots();
+    Formula createInitialStateStations();
+    Formula createInitialStateOrders();
+
+    Formula createInitialState();
+    Formula create();
+
     Variable getVarHoldsBase(Machine &m);
     Variable getVarHoldsRing(Machine &m, int i);
     Variable getVarHoldsCap(Machine &m);
@@ -56,14 +68,14 @@ public:
     Variable getVarRingColor(RingStation &rs);
     Variable getBaseReq(RingStation &rs);
     Variable getVarBaseCount(RingStation &rs);
-    
-    
+
+
     Formula equation(int value1, int value2);
     Formula equation(Variable var, int value);
     Formula equation(Variable var1, Variable var2);
     Formula equation(Variable var1, Pol pol);
-    
-    
+
+
     Formula getCollectBaseFormula(Robot &r, Workpiece::Color c);
     Formula getCollectBaseStepNotFinishedFormula(Robot &r, Order &o);
 
@@ -90,7 +102,7 @@ private:
     static int newId;
     int stepNumber;
     stepFormula_ptr previousStep = nullptr;
-    
+
     GameData& gameData;
     std::map<std::string, Variable> varibles = std::map<std::string, Variable>();
 };
