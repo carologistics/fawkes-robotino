@@ -43,6 +43,190 @@ AspPlanerThread::initPlan(void)
 }
 
 /**
+ * @brief Used to sort plan elements by their beginning time.
+ * @param[in] e1 The first element.
+ * @param[in] e2 The second element.
+ * @return If e1 begins before e2.
+ */
+static inline bool
+planBegin(const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
+{
+	return e1.Begin < e2.Begin;
+}
+
+/**
+ * @brief A intermediate representation of the plan elements.
+ */
+struct IntermediatePlanElement : public BasicPlanElement {
+	/** @brief The time to compare two Elements. */
+	int *CompareTime;
+
+	IntermediatePlanElement(void) = delete;
+	IntermediatePlanElement(const IntermediatePlanElement&) = delete;
+
+	/**
+	 * @brief Move Constructor.
+	 * @param[in, out] that Moved element.
+	 */
+	IntermediatePlanElement(IntermediatePlanElement&& that) :
+			BasicPlanElement{std::move(that.Task), that.Begin, that.End},
+			CompareTime((that.CompareTime == &that.Begin) ? &Begin : &End)
+	{
+		return;
+	}
+
+	/**
+	 * @brief Constructor.
+	 * @param[in, out] task The task name.
+	 * @param[in] useBegin If the time to set is the begin time.
+	 * @param[in] time The time to set.
+	 */
+	inline IntermediatePlanElement(std::string&& task, const bool useBegin, const int time) :
+			BasicPlanElement{std::move(task)}, CompareTime(useBegin ? &Begin : &End)
+	{
+		*CompareTime = time;
+		return;
+	}
+
+	/**
+	 * @brief Move Assignment.
+	 * @param[in, out] that Moved element.
+	 * @return This.
+	 */
+	IntermediatePlanElement& operator=(IntermediatePlanElement&& that) {
+		Task = std::move(that.Task);
+		Begin = that.Begin;
+		End = that.End;
+		CompareTime = (that.CompareTime == &that.Begin) ? &Begin : &End;
+		return *this;
+	}
+};
+
+/**
+ * @brief Compares two IntermediatePlanElements for sorting.
+ * @param[in] e1 The first element.
+ * @param[in] e2 The second element.
+ * @return If e1's time is smaller than e2's.
+ */
+inline bool
+operator<(const IntermediatePlanElement& e1, const IntermediatePlanElement& e2)
+{
+	//If the times are equal we have one begin and one end, the end has to be before that.
+	return *(e1.CompareTime) < *(e2.CompareTime) || (*(e1.CompareTime) == *(e2.CompareTime) && e1.End > e2.End);
+}
+
+/**
+ * @brief Extracts the task information from the answer set and stores it in a (robot) -> (task,begin,end) map, where
+ *        only begin or end is set.
+ * @param[in] symbols The answer set.
+ * @param[out] map The map. The elements in the robot lists are sorted.
+ * @param[in] planGameTime The game time the planning was started.
+ * @param[in] transform Transforms the asp game time, to the real game time.
+ * @param[in] log Wrapper around the fawkes logger.
+ */
+static inline void
+extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, const auto& transform, const auto& log)
+{
+	for ( auto& pair : map )
+	{
+		pair.second.clear();
+	} //for ( auto& pair : map )
+
+	for ( const auto& symbol : symbols )
+	{
+		const string_view name(symbol.name());
+		const bool begin = name == "begin", end = name == "end";
+		if ( begin || end )
+		{
+			//Assumes begin(robot, task, time) and end(robot, task, time).
+			const decltype(auto) args(symbol.arguments());
+			//If not in the map until now it will add a list for the robot.
+			map[args[0].string()].emplace_back(args[1].to_string(), begin, transform(args[2].number()) + planGameTime);
+		} //if ( begin || end )
+	} //for ( const auto& symbol : symbols )
+
+	for ( auto& pair : map )
+	{
+		std::sort(pair.second.begin(), pair.second.end());
+	} //for ( auto& pair : map )
+	return;
+}
+
+/**
+ * @brief Takes the map from extractMapFromAnswerSet and assembles the tuples (robot,task,begin,end) and stores them in
+ *        sorted order in a vector for each robot.
+ * @param[in, out] map The map. Tasknames are moved out of the map.
+ * @param[out] tempPlan The temporary plan resulting from the map.
+ * @param[in] plan The currently deployed plan.
+ * @param[in] log Wrapper around the fawkes logger.
+ */
+static inline void
+assembleTemporaryPlan(auto& map, auto& tempPlan, const auto& plan, const auto& log)
+{
+	for ( auto& tempRobotPlan : tempPlan )
+	{
+		tempRobotPlan.second.clear();
+	} //for ( auto& tempRobotPlan : tempPlan )
+
+//	log("Extracted plan size: %u", map.size());
+	for ( auto& pair : map )
+	{
+		const auto& robotName(pair.first);
+		const auto robotNameCStr(robotName.c_str());
+		auto& robotTempPlan(tempPlan[robotName]);
+
+		auto iter = pair.second.begin();
+		const auto end = pair.second.end();
+
+		if ( iter != end && iter->Begin == 0 )
+		{
+			//The first entry is a already started task, fix its begin time!
+			const auto& robotPlan(plan.at(robotName));
+
+			//But the task may already be done, search from the beginning of this solve iteration.
+			auto i = robotPlan.FirstNotDoneOnSolveStart;
+			for ( ; i < robotPlan.Tasks.size(); ++i )
+			{
+				if ( iter->Task == robotPlan.Tasks[i].Task )
+				{
+					break;
+				} //if ( iter->Task == robotPlan.Tasks[i].Task )
+			} //for ( ; i < robotPlan.Tasks.size(); ++i )
+			iter->Begin = robotPlan.Tasks[i].Begin;
+
+			log("Plan element: (%s, %s, %d, %d)", robotNameCStr, iter->Task.c_str(), iter->Begin, iter->End);
+			robotTempPlan.emplace_back(std::move(*iter));
+			++iter;
+		} //if ( iter != end && iter->Begin == 0 )
+
+		while ( iter != end )
+		{
+			const auto next = iter + 1;
+			assert(iter->End == 0);
+
+			if ( next == end )
+			{
+				/* The task has only a begin time, i.e. it is started shortly before our lookahaed ends. So the end time
+				 * is out of the loohahaed. */
+
+				log("Plan element: (%s, %s, %d, 0)", robotNameCStr, iter->Task.c_str(), iter->Begin);
+				robotTempPlan.emplace_back(BasicPlanElement{std::move(iter->Task), iter->Begin, 0});
+				break;
+			} //if ( next == end )
+
+			assert(iter->Task == next->Task);
+			assert(next->Begin == 0);
+
+			log("Plan element: (%s, %s, %d, %d)", robotNameCStr, iter->Task.c_str(), iter->Begin, next->End);
+			robotTempPlan.emplace_back(BasicPlanElement{std::move(iter->Task), iter->Begin, next->End});
+
+			iter += 2;
+		} //while ( iter != end )
+	} //for ( auto& pair : map )
+	return;
+}
+
+/**
  * @brief Handles everything concerning the plan in the loop.
  */
 void
@@ -68,38 +252,27 @@ AspPlanerThread::loopPlan(void)
 	} //if ( LastModel < SolvingStarted )
 
 	/* There is a new model and it is old enough, start with the plan extraction. Since we have no guarantees about the
-	 * ordering in the model we use a map to assemble the (robot, task, begin, end) tuples. */
+	 * ordering in the model we have to create the order ourselves. */
 	MutexLocker planLocker(&PlanMutex);
 
 	//Make this map static, so we do not release the needed memory everytime.
-	static std::unordered_map<std::pair<std::string, std::string>, std::pair<int, int>> map;
-	map.clear();
+	static std::unordered_map<std::string, std::vector<IntermediatePlanElement>> map;
+
+	auto logLambda = [this](const auto... args) { logger->log_info(LoggingComponent, args...); };
 
 	PlanGameTime = StartSolvingGameTime;
-	for ( const auto& symbol : Symbols )
-	{
-		const string_view name(symbol.name());
-		const bool begin = name == "begin", end = name == "end";
-		if ( begin || end )
-		{
-			//Assumes begin(robot, task, time) and end(robot, task, time).
-			const decltype(auto) args(symbol.arguments());
-			//If not in the map until now it will add (robot, task, 0, 0).
-			auto& pair = map[{args[0].string(), args[1].to_string()}];
-			(begin ? pair.first : pair.second) = aspGameTimeToRealGameTime(args[2].number()) + PlanGameTime;
-		} //if ( begin || end )
-	} //for ( const auto& symbol : Symbols )
-
+	extractMapFromAnswerSet(Symbols, map, PlanGameTime,
+		[this](int gt) noexcept { return aspGameTimeToRealGameTime(gt); }, logLambda);
 	NewSymbols = false;
 	solvingLocker.unlock();
 	LastPlan = Clock::now();
 
+	//Assemble a plan only based on the information from clingo.
+	static std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
+
+	assembleTemporaryPlan(map, tempPlan, Plan, logLambda);
+
 	//Some helper functions to handle plan elements.
-	//Used to sort the vector and find elements.
-	auto planBegin = [](const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
-		{
-			return e1.Begin < e2.Begin;
-		};
 	//If two plan elements refer to the same task.
 	auto sameTask = [](const BasicPlanElement& e1, const BasicPlanElement& e2) noexcept
 		{
@@ -122,56 +295,35 @@ AspPlanerThread::loopPlan(void)
 			return std::abs(e1.Begin - e2.Begin) > threshold || std::abs(e1.End - e2.End) > threshold;
 		};
 
-	//Assemble a plan only based on the information from clingo.
-	static std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
-	for ( const auto& robot : PossibleRobots )
-	{
-		tempPlan[robot].clear();
-	} //for ( const auto& robot : PossibleRobots )
-
-	logger->log_info(LoggingComponent, "Extracted plan size: %d", map.size());
-	for ( const auto& pair : map )
-	{
-		const auto& robotName(pair.first.first);
-		logger->log_info(LoggingComponent, "Plan element: (%s, %s, %d, %d)",
-			robotName.c_str(), pair.first.second.c_str(), pair.second.first, pair.second.second);
-		auto& robotTempPlan(tempPlan[robotName]);
-		BasicPlanElement e{pair.first.second, pair.second.first, pair.second.second};
-		auto iter = robotTempPlan.insert(std::lower_bound(robotTempPlan.begin(), robotTempPlan.end(), e, planBegin),
-			std::move(e));
-		if ( iter->Begin == 0 )
-		{
-			//The first entry is a already started task, fix its begin time!
-			auto& robotPlan(Plan[robotName]);
-			iter->Begin = robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
-		} //if ( iter->Begin == 0 )
-	} //for ( const auto& pair : map )
-
 	for ( const auto& pair : tempPlan )
 	{
 		const auto& robotName(pair.first);
 		auto& robotPlan(Plan[robotName].Tasks);
 		const auto& tempRobotPlan(pair.second);
 
-		logger->log_info(LoggingComponent, "Update plan for %s.", robotName.c_str());
+		logger->log_info(LoggingComponent, "Update plan for %s, %lu elements.", robotName.c_str(),
+			tempRobotPlan.size());
 
-		//Cache the end iterator of the old robot plan.
-		auto planEnd = robotPlan.end();
-		//Show at the first task the robot has not yet started.
-		auto notBegun = std::find_if(robotPlan.begin(), planEnd, [](const PlanElement& e) noexcept { return !e.Begun;});
-		/* Depending on the size of the new robot plan we get the iterator where we think we have to update.
-		 * If there is a new plan, just look where the first entry would land.
-		 * If there is no plan, there is no first entry, so just copy the first not done task, because we do not want
-		 * to interrupt this. */
-		auto planIter = tempRobotPlan.empty() ? notBegun :
-			std::lower_bound(robotPlan.begin(), planEnd, tempRobotPlan[0], planBegin);
+		//Get the index from the first task regarding to this solve iteration.
+		int index = Plan[robotName].FirstNotDoneOnSolveStart;
+		//Get from that the iterator.
+		auto planIter = robotPlan.begin() + index;
+		//Cache the end iterator of the deployed robot plan.
+		const auto planEnd = robotPlan.end();
 
 		//The two iterators of the temp plan.
 		auto tempIter = tempRobotPlan.begin();
 		const auto tempEnd = tempRobotPlan.end();
 
-		//Compute the task index based on the used plan iterator.
-		int index = planIter - robotPlan.begin();
+		if ( planIter == planEnd )
+		{
+			logger->log_info(LoggingComponent, "Start at index %d, do not change the existing plan.", index);
+		} //if ( planIter == planEnd )
+		else
+		{
+			logger->log_info(LoggingComponent, "Start at index %d, first existing entry to compare is: (%s,%s,%d,%d)",
+				index, robotName.c_str(), planIter->Task.c_str(), planIter->Begin, planIter->End);
+		} //else -> if ( planIter == planEnd )
 
 		//Helping lambda to remove all tasks which index is greater or equal to the variable index.
 		auto removeAllFromIndexOn = [&](void)
@@ -201,17 +353,6 @@ AspPlanerThread::loopPlan(void)
 				return robotPlan.erase(planIter, planEnd);
 			};
 
-		if ( notBegun < planIter )
-		{
-			/* There is at least one element that is before the point we want to add the new elements and not yet begun.
-			 * We have to remove this from the plan, because the new plans for the other robots do not consider this, it
-			 * could lead to conflicts, i.e. two robots trying to do the same task. Because we make so rigorous changes
-			 * we remove all not started tasks, they will be addes on demand after wards. */
-			index = notBegun - robotPlan.begin();
-			planIter = notBegun;
-			planIter = planEnd = removeAllFromIndexOn();
-		} //if ( notBegun < planIter )
-
 		//Flag if we should continue this loop with the next entry after the following loop.
 		bool nextRobot = false;
 
@@ -232,6 +373,8 @@ AspPlanerThread::loopPlan(void)
 					planIter->updateTime(*tempIter);
 					updatePlanTiming(robotName, index, *planIter);
 				} //if ( needsUpdate(*planIter, *tempIter) )
+				else logger->log_info(LoggingComponent, "Leave (%s,%s,%d,%d) unchanged.", robotName.c_str(),
+					planIter->Task.c_str(), planIter->Begin, planIter->End);
 			} //if ( sameTask(*planIter, *tempIter) )
 			else
 			{
@@ -276,7 +419,10 @@ AspPlanerThread::loopPlan(void)
 			std::copy(tempIter, tempEnd, std::back_inserter(robotPlan));
 			do //while ( ++index < static_cast<int>(robotPlan.size()) )
 			{
-				insertPlanElement(robotName, index, robotPlan[index]);
+				const auto& entry(robotPlan[index]);
+				insertPlanElement(robotName, index, entry);
+				logger->log_info(LoggingComponent, "Add task (%s,%s,%d,%d) at index %d.", robotName.c_str(),
+					entry.Task.c_str(), entry.Begin, entry.End, index);
 			} while ( ++index < static_cast<int>(robotPlan.size()) );
 		} //if ( tempIter != tempEnd )
 		else if ( planIter != planEnd )
