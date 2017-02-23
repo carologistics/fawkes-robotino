@@ -48,6 +48,7 @@ clips-agent:
     #agent-role: P3-ONLY
     use-asp: true
     load-reasoner: false
+    move-into-field-waittime: 2
 
     exploration:      
       row: MID
