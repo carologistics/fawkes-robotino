@@ -124,7 +124,7 @@ AspPlanerThread::loopClingo(void)
 	{
 		if ( shouldInterrupt() && !SentCancel )
 		{
-			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %d", requests);
+			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %lu", requests);
 			ClingoAcc->cancelSolving();
 			SentCancel = true;
 		} //if ( shouldInterrupt() && !SentCancel )
@@ -502,7 +502,7 @@ AspPlanerThread::shouldInterrupt(void)
 								config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/robot-task-behind"));
 							if ( GameTime > doing.EstimatedEnd + threshold.count() )
 							{
-								logger->log_warn(LoggingComponent, "Robot %s is more than %d seconds behind schedule "
+								logger->log_warn(LoggingComponent, "Robot %s is more than %ld seconds behind schedule "
 									"(and has not send an update), increase interrupt level.", pair.first.c_str(),
 									threshold.count());
 								Interrupt = InterruptSolving::High;
@@ -1267,12 +1267,12 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 		{
 			if ( static_cast<int>(Products.size()) >= MaxProducts )
 			{
-				 logger->log_error(LoggingComponent, "Have to generate a product, this would be #%d alive, but only %d "
-					"are configured. This product will not be part of the ASP program until products with a lower id "
-					"will be destroyed!", Products.size() + 1, MaxProducts);
+				 logger->log_error(LoggingComponent, "Have to generate a product, this would be #%lu alive, but only "
+					"%d are configured. This product will not be part of the ASP program until products with a lower "
+					"id will be destroyed!", Products.size() + 1, MaxProducts);
 			} //if ( static_cast<int>(Products.size()) >= MaxProducts )
 
-			logger->log_info(LoggingComponent, "Generated product #%d with base color %s.", Products.size(),
+			logger->log_info(LoggingComponent, "Generated product #%lu with base color %s.", Products.size(),
 				baseColor.c_str());
 			Products.push_back({std::move(baseColor)});
 			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size() - 1)};
