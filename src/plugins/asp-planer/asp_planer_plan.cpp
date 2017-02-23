@@ -229,7 +229,7 @@ AspPlanerThread::loopPlan(void)
 				const auto robotCStr = robotName.c_str();
 				if ( planIter->Begun )
 				{
-					logger->log_error(LoggingComponent,
+					logger->log_warn(LoggingComponent,
 						"Should change started task %s from robot %s to %s. Restart solving!",
 						planIter->Task.c_str(), robotCStr, tempIter->Task.c_str());
 
@@ -277,7 +277,7 @@ AspPlanerThread::loopPlan(void)
 			if ( planIter->Begun )
 			{
 				//Deleting a task which is already started seems not to be the best idea, restart solving.
-				logger->log_error(LoggingComponent, "Should delete started task %s for robot %s! Restart solving.",
+				logger->log_warn(LoggingComponent, "Should delete started task %s for robot %s! Restart solving.",
 					planIter->Task.c_str(), robotName.c_str());
 				setInterrupt(InterruptSolving::Critical);
 				//But remove all tasks after this.
