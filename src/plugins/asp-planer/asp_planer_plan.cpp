@@ -181,7 +181,7 @@ AspPlanerThread::loopPlan(void)
 					return planIter;
 				} //if ( planIter == planEnd )
 
-				logger->log_warn(LoggingComponent, "Remove all %d robot plan elements from (%s,%s,%d,%d) on.",
+				logger->log_warn(LoggingComponent, "Remove all %lu robot plan elements from (%s,%s,%d,%d) on.",
 					planEnd - planIter, robotName.c_str(), planIter->Task.c_str(), planIter->Begin, planIter->End);
 				const decltype(index) size(robotPlan.size());
 				for ( auto i = index; i < size; ++i )
