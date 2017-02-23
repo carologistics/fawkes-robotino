@@ -127,6 +127,7 @@ struct RobotPlan
 {
 	std::vector<PlanElement> Tasks;
 	std::size_t FirstNotDone = 0;
+	std::size_t FirstNotDoneOnSolveStart = 0;
 	std::string CurrentTask;
 };
 
