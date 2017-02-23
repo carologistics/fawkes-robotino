@@ -181,6 +181,16 @@ AspPlanerThread::loopPlan(void)
 					return planIter;
 				} //if ( planIter == planEnd )
 
+				//Check that we do not delete tasks which have already been started!
+				while ( planIter->Begun )
+				{
+					++index;
+					if ( ++planIter == planEnd )
+					{
+						return planIter;
+					} //if ( ++planIter == planEnd )
+				} //while ( planIter->Begun )
+
 				logger->log_warn(LoggingComponent, "Remove all %lu robot plan elements from (%s,%s,%d,%d) on.",
 					planEnd - planIter, robotName.c_str(), planIter->Task.c_str(), planIter->Begin, planIter->End);
 				const decltype(index) size(robotPlan.size());
@@ -236,8 +246,6 @@ AspPlanerThread::loopPlan(void)
 					/* Remove all following tasks from the robots plan, because they may conflict with the other new
 					 * robots plans. This task maybe do the same, but this should be detected when the other robots
 					 * want to start their tasks. */
-					++planIter;
-					++index;
 					removeAllFromIndexOn();
 
 					nextRobot = true;
@@ -280,9 +288,6 @@ AspPlanerThread::loopPlan(void)
 				logger->log_warn(LoggingComponent, "Should delete started task %s for robot %s! Restart solving.",
 					planIter->Task.c_str(), robotName.c_str());
 				setInterrupt(InterruptSolving::Critical);
-				//But remove all tasks after this.
-				++planIter;
-				++index;
 			} //if ( planIter->Begun )
 
 			removeAllFromIndexOn();
