@@ -69,6 +69,9 @@
  * @property RobotPlan::FirstNotDone
  * @brief The index in the plan for the first task which is not done.
  *
+ * @property RobotPlan::FirstNotDoneOnSolveStart
+ * @brief The index in the plan for the first task which was not done, when the solving started.
+ *
  * @property RobotPlan::CurrentTask
  * @brief The task, the robot should be doing currently.
  */
@@ -397,11 +400,11 @@
  * @typedef AspPlanerThread::GroundRequest
  * @brief Holds the information to build a Clingo::Part.
  *
- * @property AspPlanerThread::RequestMutex
- * @brief The mutex for the requests and interupt handling.
- *
  * @property AspPlanerThread::Interrupt
  * @brief The current interrupt state.
+ *
+ * @property AspPlanerThread::RequestMutex
+ * @brief The mutex for the requests and interupt handling.
  *
  * @property AspPlanerThread::SentCancel
  * @brief If a cancel was sent to the solver.

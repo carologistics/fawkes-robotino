@@ -34,6 +34,7 @@
 
 #include "asp_planer_types.h"
 
+#include <atomic>
 #include <unordered_set>
 
 class AspPlanerThread
@@ -98,8 +99,9 @@ class AspPlanerThread
 
 	using GroundRequest = std::pair<const char*, Clingo::SymbolVector>;
 
+	std::atomic<InterruptSolving> Interrupt;
+
 	fawkes::Mutex RequestMutex;
-	InterruptSolving Interrupt;
 	bool SentCancel;
 	std::vector<GroundRequest> GroundRequests;
 	std::vector<Clingo::Symbol> ReleaseRequests;
@@ -135,7 +137,7 @@ class AspPlanerThread
 	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
 	void queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
 	void queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
-	void setInterrupt(const InterruptSolving interrupt, const bool lock = true);
+	void setInterrupt(const InterruptSolving interrupt);
 	bool shouldInterrupt(void);
 
 	bool newModel(void);

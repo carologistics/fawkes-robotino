@@ -109,20 +109,22 @@ void
 AspPlanerThread::loopClingo(void)
 {
 	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
-	MutexLocker reqLocker(&RequestMutex);
-	//Locked: ClingoAcc, RequestMutex
+	//Locked: ClingoAcc
 
 	if ( !ProgramGrounded )
 	{
 		return;
 	} //if ( !ProgramGrounded )
 
+	MutexLocker reqLocker(&RequestMutex);
 	const auto requests = GroundRequests.size() + ReleaseRequests.size() + AssignRequests.size();
+	reqLocker.unlock();
+
 	if ( ClingoAcc->solving() )
 	{
 		if ( shouldInterrupt() && !SentCancel )
 		{
-			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %d", requests);
+			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %lu", requests);
 			ClingoAcc->cancelSolving();
 			SentCancel = true;
 		} //if ( shouldInterrupt() && !SentCancel )
@@ -130,14 +132,12 @@ AspPlanerThread::loopClingo(void)
 	} //if ( ClingoAcc->solving() )
 
 	MutexLocker navgraphLocker(&NavgraphDistanceMutex);
-	//Locked: ClingoAcc, RequestMutex, NavgraphDistanceMutex
+	//Locked: ClingoAcc, NavgraphDistanceMutex
 	if ( UpdateNavgraphDistances )
 	{
 		const bool lastUpdate = NodesToFind.empty();
 		if ( lastUpdate )
 		{
-			//Unlock for the release requests in releaseZone().
-			reqLocker.unlock();
 			MutexLocker worldLocker(&WorldMutex);
 			//Locked: ClingoAcc, NavgraphDistanceMutex, WorldMutex
 			if ( ReceivedZonesToExplore )
@@ -159,8 +159,7 @@ AspPlanerThread::loopClingo(void)
 			//Locked: ClingoAcc, WorldMutex
 			fillNavgraphNodesForASP(false);
 			navgraphLocker.relock();
-			reqLocker.relock();
-			//Locked: ClingoAcc, WorldMutex, NavgraphDistanceMutex, RequestMutex
+			//Locked: ClingoAcc, WorldMutex, NavgraphDistanceMutex
 		} //if ( lastUpdate )
 		//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
 
@@ -174,8 +173,6 @@ AspPlanerThread::loopClingo(void)
 		if ( lastUpdate )
 		{
 			logger->log_info(LoggingComponent, "All machines found, fix distances and release externals.");
-			reqLocker.unlock();
-			//Locked: ClingoAcc, NavgraphDistanceMutex
 			for ( const auto& external : NavgraphDistances )
 			{
 				queueGround({"setDriveDuration",
@@ -203,9 +200,6 @@ AspPlanerThread::loopClingo(void)
 					} //else -> if ( swap )
 				} //for ( bool swap = true; true; )
 			} //for ( const auto& external : NavgraphDistances )
-			//This has to be done, because the behavior of double unlocking is undefined.
-			reqLocker.relock();
-			//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
 		} //if ( lastUpdate )
 		else
 		{
@@ -226,7 +220,6 @@ AspPlanerThread::loopClingo(void)
 		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
-	reqLocker.unlock();
 	//Locked: ClingoAcc
 
 	SentCancel = false;
@@ -416,6 +409,14 @@ AspPlanerThread::loopClingo(void)
 	worldLocker.unlock();
 	//Locked: ClingoAcc, SolvingMutex
 	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
+	MutexLocker planLocker(&PlanMutex);
+	//Locked: ClingoAcc, SolvingMutex, PlanMutex
+	for ( auto& robotPlan : Plan )
+	{
+		robotPlan.second.FirstNotDoneOnSolveStart = robotPlan.second.FirstNotDone;
+	} //for ( auto& robotPlan : Plan )
+	planLocker.unlock();
+	//Locked: ClingoAcc, SolvingMutex
 	SolvingStarted = Clock::now();
 	ClingoAcc->startSolving();
 	return;
@@ -431,7 +432,7 @@ AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving int
 {
 	MutexLocker locker(&RequestMutex);
 	GroundRequests.push_back(std::move(request));
-	setInterrupt(interrupt, false);
+	setInterrupt(interrupt);
 	return;
 }
 
@@ -445,7 +446,7 @@ AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const InterruptSolving inte
 {
 	MutexLocker locker(&RequestMutex);
 	ReleaseRequests.push_back(std::move(atom));
-	setInterrupt(interrupt, false);
+	setInterrupt(interrupt);
 	return;
 }
 
@@ -459,30 +460,27 @@ AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const InterruptSolving inter
 {
 	MutexLocker locker(&RequestMutex);
 	AssignRequests.push_back(std::move(atom));
-	setInterrupt(interrupt, false);
+	setInterrupt(interrupt);
 	return;
 }
 
 /**
  * @brief Sets the interrupt value.
  * @param[in] interrupt Which level of interrupt is requested.
- * @param[in] lock If we should lock, if set to false we expect it to be locked by the caller.
  */
 void
-AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const bool lock)
+AspPlanerThread::setInterrupt(const InterruptSolving interrupt)
 {
-	MutexLocker locker(&RequestMutex, lock);
-	if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt) )
+	if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt.load()) )
 	{
 		Interrupt = interrupt;
-	} //if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt) )
+	} //if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt.load()) )
 	return;
 }
 
 /**
  * @brief Says if the solving process should be interrupted.
  * @return If the solving should be interrupted.
- * @note RequestMutex has to be locked.
  */
 bool
 AspPlanerThread::shouldInterrupt(void)
@@ -512,7 +510,7 @@ AspPlanerThread::shouldInterrupt(void)
 								config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/robot-task-behind"));
 							if ( GameTime > doing.EstimatedEnd + threshold.count() )
 							{
-								logger->log_warn(LoggingComponent, "Robot %s is more than %d seconds behind schedule "
+								logger->log_warn(LoggingComponent, "Robot %s is more than %ld seconds behind schedule "
 									"(and has not send an update), increase interrupt level.", pair.first.c_str(),
 									threshold.count());
 								Interrupt = InterruptSolving::High;
@@ -1277,12 +1275,12 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 		{
 			if ( static_cast<int>(Products.size()) >= MaxProducts )
 			{
-				 logger->log_error(LoggingComponent, "Have to generate a product, this would be #%d alive, but only %d "
-					"are configured. This product will not be part of the ASP program until products with a lower id "
-					"will be destroyed!", Products.size() + 1, MaxProducts);
+				 logger->log_error(LoggingComponent, "Have to generate a product, this would be #%lu alive, but only "
+					"%d are configured. This product will not be part of the ASP program until products with a lower "
+					"id will be destroyed!", Products.size() + 1, MaxProducts);
 			} //if ( static_cast<int>(Products.size()) >= MaxProducts )
 
-			logger->log_info(LoggingComponent, "Generated product #%d with base color %s.", Products.size(),
+			logger->log_info(LoggingComponent, "Generated product #%lu with base color %s.", Products.size(),
 				baseColor.c_str());
 			Products.push_back({std::move(baseColor)});
 			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size() - 1)};

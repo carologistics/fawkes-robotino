@@ -48,6 +48,7 @@ clips-agent:
     #agent-role:
     use-asp: true
     load-reasoner: false
+    move-into-field-waittime: 6
     
     exploration:      
       row: LOW
