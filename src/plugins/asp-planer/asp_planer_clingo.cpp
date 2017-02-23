@@ -409,6 +409,14 @@ AspPlanerThread::loopClingo(void)
 	worldLocker.unlock();
 	//Locked: ClingoAcc, SolvingMutex
 	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
+	MutexLocker planLocker(&PlanMutex);
+	//Locked: ClingoAcc, SolvingMutex, PlanMutex
+	for ( auto& robotPlan : Plan )
+	{
+		robotPlan.second.FirstNotDoneOnSolveStart = robotPlan.second.FirstNotDone;
+	} //for ( auto& robotPlan : Plan )
+	planLocker.unlock();
+	//Locked: ClingoAcc, SolvingMutex
 	SolvingStarted = Clock::now();
 	ClingoAcc->startSolving();
 	return;

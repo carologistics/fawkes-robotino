@@ -69,6 +69,9 @@
  * @property RobotPlan::FirstNotDone
  * @brief The index in the plan for the first task which is not done.
  *
+ * @property RobotPlan::FirstNotDoneOnSolveStart
+ * @brief The index in the plan for the first task which was not done, when the solving started.
+ *
  * @property RobotPlan::CurrentTask
  * @brief The task, the robot should be doing currently.
  */
