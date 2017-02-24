@@ -73,22 +73,22 @@ do
 	     script_path=$FAWKES_DIR/bin
 	     set_pose=$script_path/ffset_pose
        if (( $CN >= 1 )); then
-			   $set_pose -r localhost:1921 -t 2.0 --  3.5  -0.5 0.0  0.0 0.0 0.7 0.7
+			   $set_pose -r localhost:1921 -t 2.0 --  4.5  0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $CN >= 2 )); then
-		     $set_pose -r localhost:1922 -t 2.0 --  4.5 -0.5 0.0  0.0 0.0 0.7 0.7
+		     $set_pose -r localhost:1922 -t 2.0 --  5.5 0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $CN >= 3 )); then
-		     $set_pose -r localhost:1923 -t 2.0 --  5.5  -0.5 0.0  0.0 0.0 0.7 0.7
+		     $set_pose -r localhost:1923 -t 2.0 --  6.5  0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $MN >= 1 )); then
-		     $set_pose -r localhost:1924 -t 2.0 -- -3.5  -0.5 0.0  0.0 0.0 0.7 0.7
+		     $set_pose -r localhost:1924 -t 2.0 -- -4.5  0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $MN >= 2 )); then
-		     $set_pose -r localhost:1925 -t 2.0 -- -4.5 -0.5 0.0  0.0 0.0 0.7 0.7
+		     $set_pose -r localhost:1925 -t 2.0 -- -5.5 0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $MN >= 3 )); then
-		     $set_pose -r localhost:1926 -t 2.0 -- -5.5  -0.5 0.0  0.0 0.0 0.7 0.7
+		     $set_pose -r localhost:1926 -t 2.0 -- -6.5  0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
 	     exit 0
 	     ;;
