@@ -165,7 +165,16 @@ void TagVisionSimThread::loop()
                               spose_tag_frame.getOrigin());
       std::string tag_frame_name = std::string("tag_")+std::to_string(if_index);
       tf::StampedTransform stamped_transform(transform,time,frame_name_,tag_frame_name);
-      tf_publisher->send_transform(stamped_transform);
+      tf::Quaternion q = stamped_transform.getRotation();
+      if(std::isnan(q.x()) || std::isnan(q.y()) || std::isnan(q.z()) || std::isnan(q.w()))
+      {
+	logger->log_info(name(), "Quaternion malformed: (%f, %f, %f, %f)",
+			 q.x(), q.y(), q.z(), q.w());
+      }
+      else
+      {
+	tf_publisher->send_transform(stamped_transform);
+      }
     }
     //clear tags which became unvisibe and count visible tags
     int number_found_tags = 0;
