@@ -35,7 +35,9 @@ declare symbol private
 declare symbol CYAN
 declare symbol MAGENTA
 
+;/////////////
 ;Agent States
+;/////////////
 declare symbol IDLE
 declare symbol WORKING
 declare symbol SKILL-EXECUTION
@@ -45,7 +47,9 @@ declare symbol STEP-RUNNING
 declare symbol STEP-PENDING
 declare symbol STEP-FINISHED
 declare symbol STEP-FAILED
+
 declare ff holding 0
+
 
 declare ff workpiece 1
 
@@ -70,6 +74,15 @@ declare symbol CAP_LOADED
 declare symbol CAP_NOT_LOADED
 
 declare predicate template
+declare cwp in-production
+
+;//////////////////
+;TEMPORAL RELATED
+;/////////////////
+;Records the time stamp the agent first 
+;realized that machine's state was READY_AT_OUTPUT
+declare ff ready-at-output-since 1 
+
 
 add (game-state null)
 add (game-phase null)
@@ -80,6 +93,7 @@ add (template (workpiece id (Base color) (rings color color color) (cap color) (
 include "skills.inc"
 include "steps.inc"
 load opf "net.opf"
+load opf "rcll2017_config.opf"
 load opf "llsf2014.opf"
 load db  "llsf2014.db"
 
@@ -88,4 +102,5 @@ load opf "mps-instructions.opf"
 load opf "steps.opf"
 load opf "skills.opf"
 load opf "debug.opf"
-load opf "rcll2017_config.opf"
+load opf "worldmodel.opf"
+load opf "workpiece-operations.opf"
