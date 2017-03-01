@@ -56,16 +56,17 @@
  			)
 
  		(defop mps-instruction-ring-station
- 			:invocation ( !(instruct-mps machine $rs-name (args ring-color $ring-color)) )
+ 			:invocation ( !(instruct-mps machine $rs-name (args ring_color $ring-color)) )
  			:context( 	(machine $rs-name "RS" $rs-state $rs-prepared $rs-zone $rs-pose $rs-loaded-with)
 				  	 	(team-color $team-color)
 				  		(peer-id private $peer-id)
 				)
  			:body(
- 				(! (= @rs-inst (pb-create "llsf_msgs.PrepareInstructionRS")))
-				(! (pb-set-field @rs-inst "ring-color" $ring-color)) ;TODO check if the operation is allowed before sending it
 
-				(=> (last-attempted-instruction $rs-name (args ring-color $ring-color) ATTEMPTING))
+ 				(! (= @rs-inst (pb-create "llsf_msgs.PrepareInstructionRS")))
+				(! (pb-set-field @rs-inst "ring_color" $ring-color)) ;TODO check if the operation is allowed before sending it
+
+				(=> (last-attempted-instruction $rs-name (args ring_color $ring-color) ATTEMPTING))
 				(! (send-instruction $rs-name (val @rs-inst)))
 
 				(^ (& 	(last-attempted-instruction $rs-name @args @state)
