@@ -133,18 +133,27 @@
 			 	;Change the # on shelf even if the skill fails 
 				(if (? (= 3 $caps-on-shelf))  				(! (= $slot "RIGHT")) 	(! (= $new-caps-on-shelf  2))
 				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "MIDDLE")) 	(! (= $new-caps-on-shelf  1))
-						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "LEFT")) 	(! (= $new-caps-on-shelf  3)) ))) 
-			
+						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "LEFT")) 	(! (= $new-caps-on-shelf  3)) )))
+
+				;If u already here..What ever failed or suceeded consider this position done. 
+				;Problem will only happen if i could not get  base but it is still there 
+				(=> (cap-station $mps-name $assigned-cap-color $cap-loaded-status $new-caps-on-shelf))
+
 				(if (! (execute (skill "get_product_from" "place" $mps-name "shelf" $slot)))
 					(=> (agent-state STEP-FINISHD))
 					(! (= $peace-id (rand 1000)))
 					(=> (workpiece $peace-id (base UNKNOWN) (rings none) (cap $assigned-cap-color) (place "agent" "gripper") ))
 					(=> (holding $peace-id))
 				else
-					(=> (agent-state STEP-FAILD)))
+					(=> (agent-state STEP-FAILD)) 
+					(! (step (get-cap machine $mps-name)))
+					)
 			
 			)
-		:effects ( (=> (cap-station $mps-name $assigned-cap-color $cap-loaded-status $new-caps-on-shelf)) )
+		:effects ( 
+		;moved after the caps-on-shelf calc.
+		;(=> (cap-station $mps-name $assigned-cap-color $cap-loaded-status $new-caps-on-shelf))
+		 )
 		)
 
 
