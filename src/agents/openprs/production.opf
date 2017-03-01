@@ -89,8 +89,10 @@
 				 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
 				 	(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with)
 				 	(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
-				 	(~ (= $cs-state BROKEN))
-				 	(~ (= $cs-state DOWN))
+				 	(machine $rs-name "RS" $rs-state $rs-prepared $rs-zone $rs-pose $rs-loaded-with)
+				 	(ring-station $rs-name (avilible-colors $colors-list)  $selected-color $bases-loaded)
+				 	(= $ring-to-mount (car $ring-colors))
+				 	(MEMQ $ring-to-mount $colors-list)
 					(peer-id private $peer-id)
 				   	(team-color $team-color )
 				   	(agent-state IDLE)
@@ -105,64 +107,67 @@
 			(! (print "Producing C1..."))
 			(=> (holding NONE))
 
-			; (! (print "PRELOADING CAP STATION..."))
-			; (! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap $cap-color) (place "agent" "gripper")))
-			; (! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap $cap-color) (place $cs-name "input")))
-			; (^ (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place $mps-name "output")))
 
-			; (! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place "agent" "gripper")))
+			(=> (goal-inmind (workpiece 0 (base $base-color) (rings $ring-to-mount) (cap $cap-color) (place $ds-name $delivery-gate))))
+
+
+			(! (print "PRELOADING CAP STATION..."))
+			(! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap $cap-color) 	(place "agent" "gripper")))
+			(! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap $cap-color) 	(place $cs-name "input")))
+
+			(^ (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) 		(place $cs-name "output") ))
+			(~> (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) 		(place $cs-name "output") ))
+			(=> (workpiece (* -1 (rand 10000)) (base UNKNOWN) (rings none) (cap none) 		(place $cs-name "output") ))
 			
-
-			(! (= $ring-to-mount (car $ring-colors)) )
-			(if (? (& 	(ring-station $rs-name (avilible-colors $colors-list) $selected-color $bases-loaded) 
-						(MEMQ $ring-to-mount $colors-list)
-				))
-				(if (? (& 	(ring $ring-to-mount $bases-req)
-							(> $bases-req 0)
-					))
-					; (! (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place $rs-name "slide")))
-					(! (workpiece $payment-base (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
-					(! (workpiece $payment-base (base $bases-color) (rings none) (cap none) (place $rs-name "slide")))
-					else 
-					(=> (holding NONE)) ;FAKE knowledge to let the robot go for the base with not poblem..I want to keep the constraint of no holding to make sure what to do it i still habe
+			;ADD BASES
+			(? (ring $ring-to-mount $bases-required))
+			(? (ring-station $rs-name (avilible-colors $colors-list)  @selected-color @bases-loaded))
+			(while (? (> $bases-required (val @bases-loaded)))
+				;If there is a negative-ID'd puck..just use it for payment
+				(if (? (& 	(workpiece $negtive-id @dontcare_base @dontcare_rings @dontcare_cap (place @dontcare_machine "output")) 
+							(< $negtive-id 0)
+							));Maybe even genralize the place to input too or even shelfs
+					(! (= @payment-base $negtive-id))
+					(! (workpiece (val @payment-base) @dontcare_base @dontcare_rings @dontcare_cap (place "agent" "gripper")))
+					else
+					(! (workpiece @payment-base (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
 					)
-			)
+					
+					(! (workpiece (val @payment-base) @dontcare_base @dontcare_rings @dontcare_cap (place $rs-name "slide")))
+					(? (ring-station $rs-name (avilible-colors $colors-list)  @selected-color @bases-loaded))
+				)
+
+			(if (? (& 	(workpiece @negtive-id @dontcare_base @dontcare_rings @dontcare_cap (place @dontcare_machine "output"))
+						(< (val @negtive-id) 0)))
+				(! (workpiece (val @negtive-id) @dontcare_base @dontcare_rings @dontcare_cap (place "agent" "gripper")))
+				(=> (workpiece (val @negtive-id) @dontcare_base @dontcare_rings @dontcare_cap (place LOST` LOST)))
+				(=> (holding NONE)) 
+				)
+
+			;alternatly u can sleep here till the bases are three then start..that is dangerous for many reasons though
 
 
 			(! (print "FETHCHING THE BASE..."))
-			; (! (step (drive-to 			machine $bs-name side "input"))) ; todos, get the side from a fact that makes sure the active-side is updated
 			; ; TODO:get the lock
-			; (! (step (instruct-mps 		machine $bs-name (args side INPUT color $base-color) )));let input be a string or a symobol everywhere
-			; (! (step (get-base			machine $bs-name side "input")))
 			(! (workpiece $new-base-id (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
 			;(? (workpiece $new-id (base UNKNOWN) (rings none) (cap $cap-color) (place "agent" "gripper")))
 
 
 			(! (print "INSETRING INTO RS..."))
-			; (! (step (drive-to 		machine $cs-name 	side "input")))
-			; (! (step (insert 		machine $cs-name)))
-			(=> (goal-inmind (workpiece $new-base-id (base $base-color) (rings $ring-to-mount) (cap none) (place $rs-name "output"))))
-			(! (workpiece $new-base-id (base $base-color) (rings none) (cap none) (place $rs-name "input")))
-			; (! (step (instruct-mps 	machine $cs-name 	(args operation MOUNT_CAP))));if u instructed with no cap i think it breaks it
-			;;(! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $cs-name "output")))		
-			(^ (workpiece $new-base-id (base $base-color) (rings $ring-to-mount) (cap none) (place $rs-name "output")))		
-			(~> (goal-inmind (workpiece $new-base-id (base $base-color) (rings $ring-to-mount) (cap none) (place $rs-name "output"))))
+			(! (workpiece $new-base-id (base $base-color) (rings none) 				(cap none) 	(place $rs-name "input")))
+			(^ (workpiece $new-base-id (base $base-color) (rings $ring-to-mount) 	(cap none) 	(place $rs-name "output")))		
+
 
 			
 			(! (print "INSETRING INTO CS..."))
-			; (! (step (drive-to 		machine $cs-name 	side "input")))
-			; (! (step (insert 		machine $cs-name)))
-			(! (workpiece $new-base-id (base $base-color) (rings $ring-to-mount) (cap none) (place $cs-name "input")))
-			; (! (step (instruct-mps 	machine $cs-name 	(args operation MOUNT_CAP))));if u instructed with no cap i think it breaks it
-			;;(! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $cs-name "output")))		
-			(^ (workpiece $new-base-id (base $base-color) (rings $ring-to-mount) (cap $cap-color) (place $cs-name "output")))		
+			(! (workpiece $new-base-id (base $base-color) $final-rings (cap none) 		(place "agent" "gripper")))
+			(! (workpiece $new-base-id (base $base-color) $final-rings (cap none) 		(place $cs-name "input")))
+			(^ (workpiece $new-base-id (base $base-color) $final-rings (cap $cap-color) (place $cs-name "output")))		
 
 			;====Delivery
-			(! (workpiece $new-base-id (base $base-color) (rings $ring-to-mount) (cap $cap-color) (place "agent" "gripper")))		
+			(! (workpiece $new-base-id (base $base-color) $final-rings (cap $cap-color) (place "agent" "gripper")))		
 			; (! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $ds-name "input")))
-			(! (workpiece $new-base-id (base $base-color) (rings $ring-to-mount) (cap $cap-color) (place $ds-name $delivery-gate)))		
-	
-
+			(! (workpiece $new-base-id (base $base-color) $final-rings (cap $cap-color) (place $ds-name $delivery-gate)))		
 			)
 
 
@@ -173,15 +178,4 @@
 
 	)
 
-
-
-
-
-
-
-
-
-
-
-
-	)
+)
