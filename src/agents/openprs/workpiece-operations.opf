@@ -131,6 +131,7 @@
 				(! (print $args ))
 				(! (step (instruct-mps machine $mps-name $args)))
 				(! (step (insert machine $mps-name)))
+				(succeed)
 				)
 			(if (? 	(= $mps-type "DS"))
 			
