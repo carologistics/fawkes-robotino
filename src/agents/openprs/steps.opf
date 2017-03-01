@@ -243,7 +243,7 @@
 							(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
 			 				(workpiece $ws-id  $base $rings $cap (place "agent" "gripper"));If the peace is not already at output this will fail. But what if it was processing still 
 							(ring-station $mps-name (avilible-colors $colors-list) $selected-color $bases-loaded)
-							(> $bases-loaded 3)
+							(< $bases-loaded 3)
 						 	)
 							;Check if slide is already full 
 			:body(
@@ -304,6 +304,7 @@
 					(=> (agent-state STEP-FINISHD))
 					else
 					(=> (agent-state STEP-FAILD))
+					
 					)
 				)
 			:effects()
