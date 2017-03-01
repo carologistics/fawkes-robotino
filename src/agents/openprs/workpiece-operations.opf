@@ -84,10 +84,15 @@
 							))
 					(! (printf (FORMAT "WP_Place --> Gripper: producing a new base \n" )))
 					;TODO: match on the base station color..For now just get it from the C-BS, CORRECT THIS SOON
-					(! (step (drive-to    machine "C-BS" side "input")))
-					(! (step (instruct-mps  machine "C-BS" (args side INPUT color $base-color)) ))
-					(^ (workpiece $wp-id $base $rings $cap (place "C-BS" "input")));hazardous...find a better way
-					(! (step (get-base machine $mps-name side "input")))
+					(! (= $bs-name "C-BS"))
+					(! (= $active-side "input"))
+					(! (step (drive-to 		machine $bs-name side $active-side)))
+					;If there is a base already-at-output, no need to instruct 
+					(if (? (~ (machine $bs-name "BS" "READY_AT_OUTPUT" $bs-prepared $bs-zone $bs-pose $bs-loaded-with)))
+						(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
+						(^ (workpiece $wp-id $base $rings $cap (place $bs-name $active-side)));hazardous...find a better way
+						)
+					(! (step (get-base machine $bs-name side $active-side)))
 					(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
 					(succeed)
  					)
@@ -123,6 +128,7 @@
 			(if (? 	(= $mps-type "RS"))
 				(! (step (drive-to machine $mps-name side "input")))
 				(! (decide-what-to-intstruct $mps-name $args));; I want to have it as a call to be more fixable how it is done or based on what () from a subgoal, or machine handling 
+				(! (print $args ))
 				(! (step (instruct-mps machine $mps-name $args)))
 				(! (step (insert machine $mps-name)))
 				)
@@ -155,6 +161,7 @@
 							(= $cap (cap none)) 
 							(= $cap-loaded-status CAP_LOADED) 
 							))
+
 					(! (step (drive-to machine $mps-name side "input")))
 					(! (step (instruct-mps  machine $mps-name (args operation MOUNT_CAP))))
 					(! (step (insert machine $mps-name)))
@@ -279,15 +286,6 @@
 					(! (printf "DECIDE WHAT TO INTSRUCT: goal-does not have rings..either wrong call or goal" ))
 					(fail)
 					)
-
-				; (if (? (= $goal-rings (rings $first-ring)))
-				; 	else
-				; 	(if (? (= $goal-rings (rings $first-ring $second-ring)))
-				; 		else
-				; 		(if (? (= $goal-rings (rings $first-ring $second-ring $third-ring)))
-				; 			)
-				; 		)
-				; 	)
 
 				(if (? (= $rings (rings none)))
 					(! (= $ring-to-mount $first-ring))
