@@ -12,6 +12,53 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; decision rules for the next most important task to propose
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defrule push-facts-to-protobuf
+  (phase PRODUCTION)
+  (team-color ?team-color&CYAN|MAGENTA)
+=>
+(printout t "Data pushing" crlf)
+(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
+(do-for-all-facts ((?active-robot active-robot)) TRUE
+		  (bind ?r (pb-create "llsf_msgs.Robot"))
+			(pb-set-field ?r "name" (str-cat ?active-robot:name))
+			(pb-set-field ?r "team_color" ?team-color)
+(pb-set-field ?r "number" ?*ROBOT-NUMBER*)
+(pb-add-list ?p "robots" ?r)
+		  )
+
+
+(do-for-all-facts ((?machine machine)) TRUE
+	 (bind ?mach (pb-create "llsf_msgs.Machine"))
+	 (pb-set-field ?mach "name" (str-cat ?machine:name))
+         (pb-set-field ?mach "type" (str-cat ?machine:mtype))
+         (pb-set-field ?mach "state" (str-cat ?machine:state))
+         (pb-set-field ?mach "team_color" (str-cat ?machine:team))
+(bind ?machine-pose (pb-field-value ?mach "pose"))
+(pb-set-field ?machine-pose "x" ?machine:x)
+(pb-set-field ?machine-pose "y" ?machine:y)
+(pb-set-field ?mach "pose" ?machine-pose)
+(pb-add-list ?p "machines" ?mach)
+)
+
+(do-for-all-facts ((?order order)) TRUE
+(printout t "idhai" ?order:id crlf)
+	 (bind ?o (pb-create "llsf_msgs.Order"))
+	 (pb-set-field ?o "id" ?order:id)
+(pb-set-field ?o "delivery_gate" ?order:delivery-gate)
+(pb-set-field ?o "quantity_requested" ?order:quantity-requested)
+(pb-set-field ?o "quantity_delivered_cyan" ?order:quantity-delivered)
+(pb-set-field ?o "delivery_period_begin" ?order:begin)
+(pb-set-field ?o "delivery_period_end" ?order:end)
+(pb-add-list ?p "orders" ?o)
+)
+
+
+
+(printout t (pb-tostring ?p) crlf)
+;(printout t "Check the return message of clips_smt_request: " (clips_smt_request ?p "test")  crlf)
+)
+
+
 (defrule prod-propose-task-idle
   "If we are idle change state to the proposed task."
   (declare (salience ?*PRIORITY-HIGH*))

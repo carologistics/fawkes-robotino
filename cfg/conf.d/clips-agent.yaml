@@ -39,7 +39,7 @@ clips-agent:
  
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  agent: test/test
+  agent: rcll2016/rcll2016
 
  
   rcll2016:

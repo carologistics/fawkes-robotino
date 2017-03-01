@@ -143,13 +143,13 @@ message ClipsSmtData {
  */
 
     // List of robots
-    repeated RobotInfo robot = 1;
+    repeated Robot robots = 1;
 
     // List of machines
-    repeated MachineInfo machine = 2;
+    repeated Machine machines = 2;
 
     // List of orders
-    repeated OrderInfo order = 3;
+    repeated Order orders = 3;
 	
     /*
     * Note: not listing RingInfo in here as
