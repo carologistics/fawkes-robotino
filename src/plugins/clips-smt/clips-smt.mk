@@ -20,12 +20,16 @@ ifneq ($(wildcard $(SYSROOT)/usr/local/include/z3++.h),)
   HAVE_LIBZ3=1
   LDFLAGS_LIBZ3 += -Wl,-rpath,/usr/local/lib64
   CFLAGS_LIBZ3 += -I/usr/local/include
-else ifneq ($(wildcard $(SYSROOT)/usr/include/z3++.h),)
+endif
+ifneq ($(wildcard $(SYSROOT)/usr/include/z3++.h),)
   HAVE_LIBZ3=1
   LDFLAGS_LIBZ3 += -Wl,-rpath,/usr/lib
   CFLAGS_LIBZ3 += -I/usr/include
-else
-  HAVE_LIBZ3=0
+endif
+ifneq ($(wildcard $(HOME)/.local/usr/include/z3++.h),)
+  HAVE_LIBZ3=1
+  LDFLAGS_LIBZ3 += -Wl,-rpath,$(HOME)/.local/usr/lib -L$(HOME)/.local/usr/lib
+  CFLAGS_LIBZ3 += -I$(HOME)/.local/usr/include
 endif
 
 # test carl
@@ -33,12 +37,16 @@ ifneq ($(wildcard $(SYSROOT)/usr/local/include/carl/numbers/numbers.h),)
   HAVE_LIBCARL=1
   LDFLAGS_LIBCARL += -L/usr/local/lib
   CFLAGS_LIBCARL += -I/usr/local/include
-else ifneq ($(wildcard $(SYSROOT)/usr/include/carl/numbers/numbers.h),)
+endif
+ifneq ($(wildcard $(SYSROOT)/usr/include/carl/numbers/numbers.h),)
   HAVE_LIBCARL=1
   LDFLAGS_LIBCARL += -L/usr/lib
   CFLAGS_LIBCARL += -I/usr/include
-else
-  HAVE_LIBCARL=0
+endif
+ifneq ($(wildcard $(HOME)/.local/usr/local/include/carl/numbers/numbers.h),)
+  HAVE_LIBCARL=1
+  LDFLAGS_LIBCARL += -L$(HOME)/.local/usr/local/lib -Wl,-rpath,$(HOME)/.local/usr/local/lib
+  CFLAGS_LIBCARL += -I$(HOME)/.local/usr/local/include
 endif
 
 #check for gcc version to support c++14
