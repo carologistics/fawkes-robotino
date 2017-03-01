@@ -70,5 +70,13 @@
 		:effects( (=> (ready-at-output-since $mps-name (mtime))))
 		)
 
+	(defop worldmodel--ready-at-output-since--retraction 
+		:invocation (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)  
+		:context	( 	(~ (= $mps-state "READY-AT-OUTPUT"))
+						(ready-at-output-since $mps-name $some-mtime) )
+		:body ()
+		:effects( (~> (ready-at-output-since $mps-name $some-mtime)))
+		)
+
 	)
 
