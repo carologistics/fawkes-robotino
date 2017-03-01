@@ -11,7 +11,7 @@
 		:invocation ( time $sec $usec ) 
 		:context(   (machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 					(last-attempted-instruction $mps-name $args $state);TODO:make sure state not failed
-					(|| (workpiece $any-id $any-base $any-rings $any-cap (place $mps-name "input"))
+					(|| (workpiece $any-id $any-base $any-rings $any-cap (place $mps-name "input"));to make sure what was at the input
 						(= $mps-type "BS" ) ))
 	 				
 		:body(
@@ -39,6 +39,16 @@
 						(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))
 						(=> (workpiece $peace-id $base $rings (cap $cap-color) (place $mps-name "output") ))
 						))
+
+				(if (? (= $mps-type "RS"))
+					(? (= (args ring_color $new-ring) $args))
+					(if (? (= $rings (rings none)))													(! (= $updated-rings (rings $new-ring) ))
+					else (if (? (& (= $rings (rings $first-ring)) (~ (= $first-ring none)) )) 		(! (= $updated-rings (rings $first-ring $new-ring) ))	
+						else (if (? (= $rings (rings $first-ring $second-ring)))					(! (= $updated-rings (rings $first-ring $second-ring $new-ring) )) 
+						)))
+					(=> (workpiece $peace-id $base $updated-rings (cap none) (place $mps-name "output") ))	
+					;TODO:UPDATE THE RING STATION
+					)
 				
 				else 
 				;If we dont know what was this work peace that is ready. Give it a negative ID representing an unknown workpiece
@@ -50,6 +60,7 @@
 		:documentation " Base on the last instuction for a machine and the workpiece info aviliable when it was at the input of a machine,
 						update the workpiece and the station (if affected). Excpetion :would be the base station. Just create a workpiece since
 						this piece is new "
-		)
+		)	
 
 	)
+
