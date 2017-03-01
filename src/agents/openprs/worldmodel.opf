@@ -60,7 +60,15 @@
 		:documentation " Base on the last instuction for a machine and the workpiece info aviliable when it was at the input of a machine,
 						update the workpiece and the station (if affected). Excpetion :would be the base station. Just create a workpiece since
 						this piece is new "
-		)	
+		)
+
+	(defop worldmodel--ready-at-output-since--assertion
+		:invocation ( time $sec $usec ) 
+		:context	( (machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+					  (~ (ready-at-output-since $mps-name $some-mtime)))
+		:body ()
+		:effects( (=> (ready-at-output-since $mps-name (mtime))))
+		)
 
 	)
 
