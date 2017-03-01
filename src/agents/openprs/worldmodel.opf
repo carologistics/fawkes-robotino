@@ -131,6 +131,25 @@
 							to find out what it is or else assert in the dataebase with a negative id and any knowledge positive knowledege
 							about it "
 		)
+
+	(defop worldmodel--investigate-unknown-piece
+		:invocation ( workpiece $id $base $rings $cap (place $mps-name $feature) )
+		:context ( (< $id 0 )
+					(machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
+					)
+		:body ( 
+
+			(! (printf (FORMAT "ON_READY-AT-OUTPUT: investigating unknown piece at %s %s\n" $mps-name $side )))
+			;( ask-other-robots (args (workpiece $id $base $rings $cap (place $mps-name $feature)))
+													;id still -ev?
+													;    /  \
+					   	;issue a remove puck urgent goal      All good.U just found what it is and no detial should still be NOT_SURE
+						;unless if base station then either 
+						;reset machine or try both sides 
+			)
+		:documentation "investigate an unknown piece trying to find out what it is and hanld it if still not known"
+		)
+
 	
 
 	)
