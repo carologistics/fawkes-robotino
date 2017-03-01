@@ -217,7 +217,7 @@ if [  $COMMAND  == start ]; then
     fi
 
     # delete old shm files. Only do this for the simulation, not on live bot.
-    rm /dev/shm/*fawkes*
+    rm /dev/shm/*fawkes* 2>&1 >/dev/null
 
     #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
 
