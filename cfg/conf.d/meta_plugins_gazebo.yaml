@@ -67,4 +67,6 @@ fawkes/meta_plugins:
     - clips-pddl-parser
     - pddl-planner
     - clips-executive
-
+  gazsim-meta-clips-smt:
+    - gazsim-meta-clips
+    - clips-smt
