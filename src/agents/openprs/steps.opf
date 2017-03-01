@@ -304,7 +304,7 @@
 					(=> (agent-state STEP-FINISHD))
 					else
 					(=> (agent-state STEP-FAILD))
-					
+					(fail)
 					)
 				)
 			:effects()
