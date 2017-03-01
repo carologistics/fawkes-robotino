@@ -10,7 +10,7 @@ fawkes/meta_plugins:
   m-fv: fvbase,fvfountain
   m-fv-vision: m-bare,m-fv,machine-signal,tag_vision,fvretriever
   m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf
-  m-clips-agent: m-clips,m-fv-vision,clips-agent
+  m-clips-agent: m-clips,m-fv-vision,clips-smt,clips-agent
   m-skiller: ros,m-fv-vision,ros-pcl,navgraph,navgraph-generator,navgraph-generator-mps,mps-laser-gen,skiller
   m-full: m-skiller,m-clips-agent
 
@@ -23,7 +23,7 @@ fawkes/meta_plugins:
   gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
   gazsim-meta-robotino-vision-low-level: fvbase,gazsim-webcam,tag_vision,gazsim-machine-signal
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
-  gazsim-meta-clips: m-clips,clips-agent
+  gazsim-meta-clips: m-clips,clips-smt,clips-agent
   gazsim-meta-agent: gazsim-meta-clips
  
   #
