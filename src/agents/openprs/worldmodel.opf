@@ -78,5 +78,60 @@
 		:effects( (~> (ready-at-output-since $mps-name $some-mtime)))
 		)
 
+
+	(defop worldmodel--on-machine-ready-at-output---unkown-piece
+		:invocation ( time $sec $usec ) 
+		:context(   (machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+					(~ (last-attempted-instruction $mps-name $args $state))
+					(~ (workpiece $any-id $any-base $any-rings $any-cap (place $mps-name $feature)))		
+					(ready-at-output-since $mps-name $recoreded-mtime)
+					(> 10000 (- (mtime) $recoreded-mtime));;only fire if
+					)
+	 				
+		:body(
+			;TODO: maybe wait a little and recheck the preconditions again. maybe it was just delayed
+			(! (printf (FORMAT "ON_READY-AT-OUTPUT: potential unknown piece at %s \n" $mps-name )))
+
+
+			(if (? (= $mps-type "BS"))
+				(=> (workpiece (* -1 (rand 1000)) (base NOT_SURE) (rings none) (cap none) (place $mps-name NOT_SURE ) ))
+				)
+
+			(if (? (= $mps-type "CS"))
+				(=> (workpiece (* -1 (rand 1000)) (base NOT_SURE) (rings NOT_SURE) (cap NOT_SURE) (place $mps-name "output") ))
+				)
+
+
+			(if (? (= $mps-type "RS"))
+				(=> (workpiece (* -1 (rand 1000)) (base NOT_SURE) (rings NOT_SURE) (cap none) (place $mps-name "output") ))
+				)
+
+			; (if (? (= $mps-type "CS"))
+			; 	(! (= (args operation $operation) $args))
+
+			; 		(if (? (= $operation RETRIEVE_CAP)) 
+			; 			(?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
+			; 			(=> (cap-station $mps-name $cap-color CAP_LOADED 	 $caps-on-shelf ))
+			; 			(=> (workpiece $peace-id $base $rings (cap none) (place $mps-name "output") ))
+			; 			)
+			; 		(if (? (= $operation MOUNT_CAP))  
+			; 			(? 	(cap-station $mps-name $cap-color $loaded-status $caps-on-shelf))
+			; 			(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))
+			; 			(=> (workpiece $peace-id $base $rings (cap $cap-color) (place $mps-name "output") ))
+			; 			))
+				
+			; 	else 
+			; 	;If we dont know what was this work peace that is ready. Give it a negative ID representing an unknown workpiece
+			; 	(=> (workpiece (* -1 (rand 1000)) $base $rings (cap $cap-color) (place $mps-name "output") ))
+				
+			
+			)
+		:effects ()
+		:documentation " If a work piece was found in an output whithout knowing what it is or where it comes from. Try 
+							to find out what it is or else assert in the dataebase with a negative id and any knowledge positive knowledege
+							about it "
+		)
+	
+
 	)
 
