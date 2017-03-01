@@ -81,10 +81,11 @@
 				(if (? (& 	(= $base (base $base-color)) (~ (= $base-color UNKNOWN))	
 							(= $rings (rings none))
 							(= $cap (cap none))
-							))																			;Its a New Base,Create it
+							))
+					(! (printf (FORMAT "WP_Place --> Gripper: producing a new base \n" )))
 					;TODO: match on the base station color..For now just get it from the C-BS, CORRECT THIS SOON
-					(! (step (drive-to 		machine "C-BS" side "input")))
-					(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
+					(! (step (drive-to    machine "C-BS" side "input")))
+					(! (step (instruct-mps  machine "C-BS" (args side INPUT color $base-color)) ))
 					(^ (workpiece $wp-id $base $rings $cap (place "C-BS" "input")));hazardous...find a better way
 					(! (step (get-base machine $mps-name side "input")))
 					(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
@@ -154,7 +155,6 @@
 							(= $cap (cap none)) 
 							(= $cap-loaded-status CAP_LOADED) 
 							))
-
 					(! (step (drive-to machine $mps-name side "input")))
 					(! (step (instruct-mps  machine $mps-name (args operation MOUNT_CAP))))
 					(! (step (insert machine $mps-name)))
@@ -263,20 +263,49 @@
 		(defop decide-what-to-instruct--RS
 			:invocation ( ! (decide-what-to-intstruct $mps-name $args))
 			:context ( 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
-						(goal-inmind (workpiece $id $goal-base $goal-rings $goal-cap (place $goal-mps $goal-feature))) 	
+						(|| (goal-inmind (workpiece $id $goal-base (rings $first-ring) $goal-cap (place $goal-mps $feature)))
+							(goal-inmind (workpiece $id $goal-base (rings $first-ring $second-ring) $goal-cap (place $goal-mps $feature)))
+							(goal-inmind (workpiece $id $goal-base (rings $first-ring $second-ring $third-ring) $goal-cap (place $goal-mps $feature)))
+							) 	
 						(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $bases-loaded)
-						(or 	(& 	(= $rings (rings NONE)) 						(= $goal-rings (rings $ring-to-mount)) )
-								(& 	(= $rings (rings $first-ring)) 					(= $goal-rings (rings $first-ring $ring-to-mount)) )
-								(& 	(= $rings (rings $first-ring $second-ring)) 	(= $goal-rings (rings $first-ring $second-ring $ring-to-mount)) ) )
-						(MEMQ $ring-to-mount $avilible-colors)
-						(ring $ring-to-mount $required-bases)
-						(= $selected-color none)
-						(= $bases-loaded $required-bases)
 						)
+						; (or 	(& 	(= $rings (rings NONE)) 						(= $goal-rings (rings $ring-to-mount)) )
+						; 		(& 	(= $rings (rings $first-ring)) 					(= $goal-rings (rings $first-ring $ring-to-mount)) )
+						; 		(& 	(= $rings (rings $first-ring $second-ring)) 	(= $goal-rings (rings $first-ring $second-ring $ring-to-mount)) ) )
+						;(= $selected-color none)
 			:body(
+				(if (? (= $first-ring NONE))
+					(! (printf "DECIDE WHAT TO INTSRUCT: goal-does not have rings..either wrong call or goal" ))
+					(fail)
+					)
 
+				; (if (? (= $goal-rings (rings $first-ring)))
+				; 	else
+				; 	(if (? (= $goal-rings (rings $first-ring $second-ring)))
+				; 		else
+				; 		(if (? (= $goal-rings (rings $first-ring $second-ring $third-ring)))
+				; 			)
+				; 		)
+				; 	)
 
+				(if (? (= $rings (rings none)))
+					(! (= $ring-to-mount $first-ring))
+					else 
+					(if (? (= $rings (rings $first-ring)))
+						(! (= $ring-to-mount $second-ring))
+						else
+						(if (? (= $rings (rings $first-ring $second-ring)))
+							(! (= $ring-to-mount $third-ring))
+							)					
+						)
+					)
+
+				(? (~ (= null $ring-to-mount)))
+				(? (MEMQ $ring-to-mount $avilible-colors))
+				(? (ring $ring-to-mount $required-bases))
+				(? (>= $bases-loaded $required-bases))
+						
 				(! (= $args (args ring_color $ring-to-mount))) 
 			)
 		)
