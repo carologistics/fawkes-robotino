@@ -27,6 +27,7 @@ public:
     virtual ~GameData();
 
     std::vector<robot_ptr> const getRobots() const;
+    std::vector<station_ptr> const getStations() const;
     std::vector<baseStation_ptr> const getBaseStations() const;
     std::vector<ringStation_ptr> const getRingStations() const;
     std::vector<capStation_ptr> const getCapStations() const;

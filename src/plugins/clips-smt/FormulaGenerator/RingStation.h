@@ -28,6 +28,7 @@ public:
     int getAdditionalBasesFed() const;
     Workpiece::Color getRingColorSetup() const;
     int getNeededAdditinalBases(Workpiece::Color color);
+    int getReqBases();
     bool readyToMountRing();
    
 private:
