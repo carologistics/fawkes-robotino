@@ -14,7 +14,7 @@ void testOrder();
 void testMachine();
 
 int main(int argc, char** argv) {
-    GameData gD = testGameData();
+    GameData gD = testGameData();  
     FormulaGenerator fg = FormulaGenerator(3, gD);
     cout << fg.createFormula();
     return 0;

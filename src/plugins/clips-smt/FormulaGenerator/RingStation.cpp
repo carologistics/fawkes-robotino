@@ -74,7 +74,14 @@ Workpiece::Color RingStation::getRingColorSetup() const {
 }
 
 int RingStation::getNeededAdditinalBases(Workpiece::Color color) {
+    if(color == Workpiece::NONE)
+        return 0;
     return this->possibleRingColors[color];
+}
+
+int RingStation::getReqBases(){
+    assert(getNeededAdditinalBases(getRingColorSetup()) - getAdditionalBasesFed() >= 0);
+    return getNeededAdditinalBases(getRingColorSetup()) - getAdditionalBasesFed();
 }
 
 bool RingStation::readyToMountRing(){

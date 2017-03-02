@@ -1,15 +1,24 @@
 #include "GameData.h"
 
-GameData::GameData(){ 
+GameData::GameData() {
 }
 
 GameData::~GameData() {
 }
 
-
-
 std::vector<robot_ptr> const GameData::getRobots() const {
     return this->robots;
+}
+
+std::vector<station_ptr> const GameData::getStations() const {
+    std::vector<station_ptr> stations;
+    stations.reserve(baseStations.size() + ringStations.size() 
+                    + capStations.size() + deliveryStations.size()); // preallocate memory
+    stations.insert(stations.end(), baseStations.begin(), baseStations.end());
+    stations.insert(stations.end(), ringStations.begin(), ringStations.end());
+    stations.insert(stations.end(), capStations.begin(), capStations.end());
+    stations.insert(stations.end(), deliveryStations.begin(), deliveryStations.end());
+    return stations;
 }
 
 std::vector<baseStation_ptr> const GameData::getBaseStations() const {
@@ -28,7 +37,7 @@ std::vector<deliveryStation_ptr> const GameData::getDeliveryStations() const {
     return this->deliveryStations;
 }
 
-std::vector<order_ptr> const GameData::getOrders() const{
+std::vector<order_ptr> const GameData::getOrders() const {
     return this->orders;
 }
 
@@ -56,7 +65,7 @@ void GameData::setMachines(std::vector<deliveryStation_ptr> const deliveryStatio
     this->deliveryStations = deliveryStations;
 }
 
-void GameData::setOrders(std::vector<order_ptr> const orders){
+void GameData::setOrders(std::vector<order_ptr> const orders) {
     this->orders = orders;
 }
 
@@ -84,7 +93,7 @@ void GameData::addMachine(deliveryStation_ptr const deliveryStation) {
     this->deliveryStations.push_back(deliveryStation);
 }
 
-void GameData::addOrder(order_ptr const order){
+void GameData::addOrder(order_ptr const order) {
     this->orders.push_back(order);
 }
 
