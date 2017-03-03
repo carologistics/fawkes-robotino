@@ -20,11 +20,11 @@
 (bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 (do-for-all-facts ((?active-robot active-robot)) TRUE
 		  (bind ?r (pb-create "llsf_msgs.Robot"))
-			(pb-set-field ?r "name" (str-cat ?active-robot:name))
-			(pb-set-field ?r "team_color" ?team-color)
+		  (pb-set-field ?r "name" ?*ROBOT-NAME*)
+	          (pb-set-field ?r "team_color" ?team-color)
 (pb-set-field ?r "number" ?*ROBOT-NUMBER*)
 (pb-add-list ?p "robots" ?r)
-		  )
+)
 
 
 (do-for-all-facts ((?machine machine)) TRUE
@@ -55,7 +55,7 @@
 
 
 (printout t (pb-tostring ?p) crlf)
-;(printout t "Check the return message of clips_smt_request: " (clips_smt_request ?p "test")  crlf)
+(printout t "Check the return message of clips_smt_request: " (clips_smt_request ?p "test")  crlf)
 )
 
 
