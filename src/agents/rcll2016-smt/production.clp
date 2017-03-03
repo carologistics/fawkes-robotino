@@ -54,7 +54,7 @@
 
 
 
-(printout t (pb-tostring ?p) crlf)
+;(printout t (pb-tostring ?p) crlf)
 (printout t "Check the return message of clips_smt_request: " (clips_smt_request ?p "test")  crlf)
 )
 
