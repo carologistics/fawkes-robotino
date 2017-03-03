@@ -23,7 +23,9 @@
 #include "../../../fawkes/src/plugins/openprs/utils/proc.h"
 
 #include <navgraph/navgraph.h>
+#include <navgraph/yaml_navgraph.h>
 #include <navgraph/constraints/static_list_edge_constraint.h>
+#include <navgraph/constraints/static_list_edge_cost_constraint.h>
 #include <navgraph/constraints/constraint_repo.h>
 
 #include <llsf_msgs/ClipsSmtData.pb.h>
@@ -52,6 +54,11 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
+    // Init navgraph
+    navgraph->add_change_listener(this);
+    clips_smt_test_navgraph();
+
+    // Test z3 extern binary
     proc_z3_ = NULL;
     clips_smt_test_z3();
 }
@@ -60,7 +67,10 @@ ClipsSmtThread::init()
 void
 ClipsSmtThread::finalize()
 {
-  envs_.clear();
+    // Remove change listener from navgraph
+    navgraph->remove_change_listener(this);
+
+    envs_.clear();
 }
 
 
@@ -357,6 +367,17 @@ ClipsSmtThread::loop()
 }
 
 /**
+ * Navgraph Methods
+ **/
+
+ void
+ ClipsSmtThread::graph_changed() throw()
+ {
+   //wakeup();
+ }
+
+
+/**
  * Test methods
  **/
 
@@ -407,4 +428,10 @@ ClipsSmtThread::clips_smt_test_data()
       std::cout << "CSMT_test:      Someting Bad Happend:" << std::endl;
       std::cout << error.what() << std::endl;
     }
+}
+
+void
+ClipsSmtThread::clips_smt_test_navgraph()
+{
+    std::cout << "CSMT_init:       Navgraph name: " << navgraph->name() << std::endl;
 }

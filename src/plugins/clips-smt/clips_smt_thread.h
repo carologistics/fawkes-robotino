@@ -54,6 +54,7 @@ class ClipsSmtThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::NavGraphAspect,
+  public fawkes::NavGraph::ChangeListener,
   public fawkes::CLIPSFeature,
   public fawkes::CLIPSFeatureAspect
 {
@@ -73,6 +74,8 @@ class ClipsSmtThread
   virtual void clips_context_init(const std::string &env_name,
 				  fawkes::LockPtr<CLIPS::Environment> &clips);
   virtual void clips_context_destroyed(const std::string &env_name);
+
+  virtual void graph_changed() throw();
 
 
  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
@@ -102,6 +105,7 @@ class ClipsSmtThread
   void clips_smt_test_z3();
   void clips_smt_test_carl();
   void clips_smt_test_data();
+  void clips_smt_test_navgraph();
   SmtData _smtData;
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
