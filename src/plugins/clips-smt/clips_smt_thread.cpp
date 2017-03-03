@@ -376,6 +376,22 @@ ClipsSmtThread::loop()
    //wakeup();
  }
 
+ void
+ ClipsSmtThread::clips_smt_compute_distances()
+ {
+     std::cout << "CSMT_test:        Compute distances of all nodes." << std::endl;
+     std::vector<NavGraphNode> nodes = navgraph->nodes();
+
+ 	for (unsigned int i = 0; i < nodes.size(); ++i) {
+ 		for (unsigned int j = 0; j < nodes.size(); ++j) {
+ 			if (i == j) continue;
+
+ 			NavGraphPath p = navgraph->search_path(nodes[i], nodes[j]);
+             std::cout << "CSMT_test:        Distance between node " << nodes[i].name() << " and " << nodes[j].name() << " is " << p.cost() << std::endl;
+ 			func(nodes[i], nodes[j], p.cost());
+ 		}
+ 	}
+ }
 
 /**
  * Test methods
@@ -433,5 +449,6 @@ ClipsSmtThread::clips_smt_test_data()
 void
 ClipsSmtThread::clips_smt_test_navgraph()
 {
-    std::cout << "CSMT_init:       Navgraph name: " << navgraph->name() << std::endl;
+    std::cout << "CSMT_test:        Navgraph name: " << navgraph->name() << std::endl;
+    //clips_smt_compute_distances();
 }
