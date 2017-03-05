@@ -54,6 +54,8 @@ public:
 
     Formula createInitialState();
     Formula create();
+    
+    Formula stationIsNotBlockedFormula(Robot& r, Station& station, int processingTime);
 
     Variable getVarHoldsBase(Machine &m);
     Variable getVarHoldsRing(Machine &m, int i);
@@ -70,41 +72,57 @@ public:
     Variable getVarCapColor(CapStation &cs);
 
     Variable getVarRingColor(RingStation &rs);
-    Variable getBaseReq(RingStation &rs);
+    Variable getVarBaseReq(RingStation &rs);
+    
+    Variable getVarReward();
 
     Formula equation(int value1, int value2);
     Formula equation(Variable var, int value);
     Formula equation(Variable var1, Variable var2);
     Formula equation(Variable var1, Pol pol);
+    
+    Formula lessEqual(Variable var1, Variable var2);
+    Formula greater(Variable var1, Variable var2);
 
+    Formula stationIsNotBlockedFormula(Robot& r, Station& s);
+    
     Formula getCollectBaseFormula();
     Formula getCollectBaseFormula(Robot &r, Workpiece::Color c, BaseStation& bs);
+    Formula getCollectBaseRewardFormula(Robot &r, Workpiece::Color c, BaseStation& bs);
+
     //Formula getCollectBaseStepNotFinishedFormula(Robot &r, Order &o);
 
     Formula getFeedCapFormula();
     Formula getFeedCapFormula(Robot &r, Workpiece::Color c, CapStation &cs);
+    Formula getFeedCapRewardFormula(Robot &r, Workpiece::Color c, CapStation &cs);
     //Formula getFeedCapStepNotFinishedFormula(Robot &r, Order &o);
     
     Formula getMountCapFormula();
     Formula getMountCapFormula(Robot &r, CapStation &cs);
+    Formula getMountCapRewardFormula(Robot &r, CapStation &cs);
     //Formula getMountCapStepNotFinishedFormula(Robot &r, Order &o, CapStation &cs);
     
     Formula getSetupRingColorFormula();
     Formula getSetupRingColorFormula(Robot &r, Workpiece::Color c, RingStation &rs);
+    Formula getSetupRingColorRewardFormula(Robot &r, Workpiece::Color c, RingStation &rs);
     //Formula getSetupRingColorNotFinishedFormula(Robot &r, Workpiece::Color c, Order &o);
     
     Formula getFeedAdditionalBaseFormula();
     Formula getFeedAdditionalBaseFormula(Robot &r, RingStation &rs);
+    Formula getFeedAdditionalBaseRewardFormula(Robot &r, RingStation &rs);
     
     Formula getMountRingFormula();
     Formula getMountRingFormula(Robot &r, RingStation &rs);
+    Formula getMountRingRewardFormula(Robot &r, RingStation &rs);
     //Formula getMountRingNotFinishedFormula(Robot &r, RingStation &rs, Order &o);
     
     Formula getCollectWorkpieceFormula();
     Formula getCollectWorkpieceFormula(Robot &r, Station &s);
+    Formula getCollectWorkpieceRewardFormula(Robot &r, Station &s);
     
     Formula getDeliverWorkpieceFormula();
     Formula getDeliverWorkpieceFormula(Robot &r, Station &d);
+    Formula getDeliverWorkpieceRewardFormula(Robot &r, Station &d);
     //Formula getMarkOrderDeliveredFormula(Robot &r, Order &o);
 
 private:

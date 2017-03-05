@@ -13,6 +13,8 @@
 #include "CapStation.h"
 #include "DeliveryStation.h"
 
+#include "Reward.h"
+
 //typedef std::pair<Machine, Machine> machine_machine;
 
 /* We represent the world state as if all robots had finished their current
@@ -55,6 +57,7 @@ public:
     //void addMovingTime(Machine const m1, Machine const m2, int movingTime);
 
     std::string toString() const;
+    Reward getReward() const;
 
 private:
     std::vector<robot_ptr> robots;
@@ -63,6 +66,8 @@ private:
     std::vector<capStation_ptr> capStations;
     std::vector<deliveryStation_ptr> deliveryStations;
     std::vector<order_ptr> orders;
+    
+    Reward reward;
     //replaced this with map for times in each machine
     //std::map<machine_machine, int> movingTimes;
 };

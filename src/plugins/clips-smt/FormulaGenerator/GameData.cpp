@@ -139,3 +139,7 @@ std::string GameData::toString() const {
     }*/
     return result;
 }
+
+Reward GameData::getReward() const {
+    return reward;
+}
