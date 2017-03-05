@@ -46,8 +46,13 @@
 					else (if (? (& (= $rings (rings $first-ring)) (~ (= $first-ring none)) )) 		(! (= $updated-rings (rings $first-ring $new-ring) ))	
 						else (if (? (= $rings (rings $first-ring $second-ring)))					(! (= $updated-rings (rings $first-ring $second-ring $new-ring) )) 
 						)))
+					
+					(? (ring $new-ring $required-bases))
+					(? (ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $bases-loaded))
+					(! (= $updated-bases-loaded (- $bases-loaded $required-bases)))
+					
+					(=> (ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $updated-bases-loaded))
 					(=> (workpiece $peace-id $base $updated-rings (cap none) (place $mps-name "output") ))	
-					;TODO:UPDATE THE RING STATION
 					)
 				
 				else 
