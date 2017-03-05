@@ -97,7 +97,7 @@ Formula StepFormula::createInitialStateStations() {
 
     for (auto const& rs : gD.getRingStations()) {
         formulas.push_back(equation(getVarRingColor(*rs), rs->getRingColorSetup()));
-        formulas.push_back(equation(getBaseReq(*rs), rs->getReqBases()));
+        formulas.push_back(equation(getVarBaseReq(*rs), rs->getReqBases()));
     }
 
     return Formula(carl::FormulaType::AND, formulas);
@@ -131,7 +131,7 @@ Formula StepFormula::createInitialState() {
 Formula StepFormula::create() {
     if (getStepNumber() == 0)
         return createInitialState();
-    
+
     std::vector<Formula> actions;
     actions.push_back(getCollectBaseFormula());
     actions.push_back(getFeedCapFormula());
@@ -141,8 +141,35 @@ Formula StepFormula::create() {
     actions.push_back(getMountRingFormula());
     actions.push_back(getCollectWorkpieceFormula());
     actions.push_back(getDeliverWorkpieceFormula());
-    
+
     return Formula(carl::FormulaType::OR, actions);
+}
+
+Formula StepFormula::stationIsNotBlockedFormula(Robot& r, Station& station, int processingTime) {
+
+    Formula timeBlockedLEQprev = lessEqual(getPrevStep()->getVarMachineOccupied(station), getPrevStep()->getVarMovingTime(r, station));
+    Formula timeBlockedLEQnext = equation(getVarMachineOccupied(station), getPrevStep()->getVarMovingTime(r, station) + Rational(processingTime));
+    Formula timeBlockedLEQ(carl::FormulaType::AND,{timeBlockedLEQprev, timeBlockedLEQnext});
+
+    Formula timeBlockedGprev = greater(getPrevStep()->getVarMachineOccupied(station), getPrevStep()->getVarMovingTime(r, station));
+    Formula timeBlockedGnext = equation(getVarMachineOccupied(station), getPrevStep()->getVarMachineOccupied(station) + Rational(processingTime));
+    Formula timeBlockedG(carl::FormulaType::AND,{timeBlockedGprev, timeBlockedGnext});
+
+    std::vector<Formula> movingTimesLEQVector;
+    std::vector<Formula> movingTimesGVector;
+
+    for (auto const& s : getGameData().getStations()) {
+        movingTimesLEQVector.push_back(equation(getVarMovingTime(r, *s), getPrevStep()->getVarMovingTime(r, station) + Rational(station.getMovingTime(*s))));
+        movingTimesGVector.push_back(equation(getVarMovingTime(r, *s), getPrevStep()->getVarMachineOccupied(station) + Rational(station.getMovingTime(*s))));
+    }
+
+    Formula movingTimesLEQ(carl::FormulaType::AND, movingTimesLEQVector);
+    Formula movingTimesG(carl::FormulaType::AND, movingTimesGVector);
+
+    Formula leqTime(carl::FormulaType::AND,{timeBlockedLEQ, movingTimesLEQ});
+    Formula greaterTime(carl::FormulaType::AND,{timeBlockedG, movingTimesG});
+
+    return Formula(carl::FormulaType::OR,{leqTime, greaterTime});
 }
 
 Variable StepFormula::getVarHoldsBase(Machine &m) {
@@ -185,8 +212,12 @@ Variable StepFormula::getVarRingColor(RingStation &rs) {
     return getVariable("RCOL(" + rs.getVarIdentifier() + "," + getStepName() + ")");
 }
 
-Variable StepFormula::getBaseReq(RingStation &rs) {
+Variable StepFormula::getVarBaseReq(RingStation &rs) {
     return getVariable("BREQ(" + rs.getVarIdentifier() + "," + getStepName() + ")");
+}
+
+Variable StepFormula::getVarReward() {
+    return getVariable("R(" + getStepName() + ")");
 }
 
 Formula StepFormula::equation(int value1, int value2) {
@@ -205,6 +236,14 @@ Formula StepFormula::equation(Variable var1, Pol pol) {
     return Formula(Pol(var1) - pol, carl::Relation::EQ);
 }
 
+Formula StepFormula::lessEqual(Variable var1, Variable var2) {
+    return Formula(Pol(var1) - Pol(var2), carl::Relation::LEQ);
+}
+
+Formula StepFormula::greater(Variable var1, Variable var2) {
+    return Formula(Pol(var1) - Pol(var2), carl::Relation::GREATER);
+}
+
 /*@todo generate constraints about a workpiece in separate functions to provide better readability 
  * and exchangeability of the workpiece encoding 
  * using StepFormula::holdsWorkpiece(Machine &m, Workpiece::Color color) 
@@ -215,6 +254,10 @@ Formula StepFormula::getCollectBaseFormula(Robot &r, Workpiece::Color c, BaseSta
     Formula baseMounted = equation(getVarHoldsBase(r), c);
     return Formula(carl::FormulaType::AND,{baseNotMounted, baseMounted});
     //@todo getCollectBaseStepNotFinishedFormula über alle Order o mit o.getBaseColorReq() == c
+}
+
+Formula StepFormula::getCollectBaseRewardFormula(Robot &r, Workpiece::Color c, BaseStation& bs) {
+    return Formula(carl::FormulaType::TRUE);
 }
 
 Formula StepFormula::getCollectBaseFormula() {
@@ -264,6 +307,10 @@ Formula StepFormula::getFeedCapFormula(Robot &r, Workpiece::Color c, CapStation 
         outputNotLoaded,
         outputLoaded});
     //@todo getCollectBaseStepNotFinishedFormula über alle Order o mit o.getRingColorReq() == c
+}
+
+Formula StepFormula::getFeedCapRewardFormula(Robot &r, Workpiece::Color c, CapStation &cs) {
+    return Formula(carl::FormulaType::TRUE);
 }
 
 /*Formula StepFormula::getFeedCapStepNotFinishedFormula(Robot &r, Order &o) {
@@ -319,6 +366,10 @@ Formula StepFormula::getMountCapFormula(Robot &r, CapStation &cs) {
     //@todo getMountCapStepNotFinishedFormula über alle Order o 
 }
 
+Formula StepFormula::getMountCapRewardFormula(Robot &r, CapStation &cs) {
+    return equation(getVarReward(), getPrevStep()->getVarReward() + Rational(getGameData().getReward().getMountCap()));
+}
+
 /*Formula StepFormula::getMountCapStepNotFinishedFormula(Robot &r, Order &o, CapStation &cs) {
     Formula sameBase = equation(getPrevStep()->getVarHoldsBase(r), o.getBaseColorReq());
     Formula sameR0 = equation(getPrevStep()->getVarHoldsRing(r, 0), o.getRingColorReq(0));
@@ -353,9 +404,12 @@ Formula StepFormula::getSetupRingColorFormula(Robot &r, Workpiece::Color c, Ring
     Formula notSetUp = equation(getPrevStep()->getVarRingColor(rs), Workpiece::NONE);
     Formula setUp = equation(getVarRingColor(rs), c);
 
-    Formula expectsAddBases = equation(getBaseReq(rs), rs.getNeededAdditinalBases(c));
+    Formula expectsAddBases = equation(getVarBaseReq(rs), rs.getNeededAdditinalBases(c));
 
-    return Formula(carl::FormulaType::OR, {notSetUp, setUp, expectsAddBases});
+    return Formula(carl::FormulaType::OR,{notSetUp, setUp, expectsAddBases});
+}
+
+Formula StepFormula::getSetupRingColorRewardFormula(Robot &r, Workpiece::Color c, RingStation &rs) {
 
 }
 
@@ -400,12 +454,16 @@ Formula StepFormula::getFeedAdditionalBaseFormula(Robot &r, RingStation &rs) {
     Formula holdsBase = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarHoldsBase(r), Workpiece::NONE));
     Formula holdsNothing = equation(getVarHoldsBase(r), Workpiece::NONE);
 
-    Formula needAddBases(Constr(getBaseReq(rs), carl::Relation::GREATER, Rational(0)));
-    Formula isFeedWithAddBase = equation(getBaseReq(rs), Pol(getPrevStep()->getBaseReq(rs) - Rational(1)));
+    Formula needAddBases(Constr(getVarBaseReq(rs), carl::Relation::GREATER, Rational(0)));
+    Formula isFeedWithAddBase = equation(getVarBaseReq(rs), Pol(getPrevStep()->getVarBaseReq(rs) - Rational(1)));
 
     Formula outputEmpty = equation(getPrevStep()->getVarHoldsBase(rs), Workpiece::NONE);
 
     return Formula(carl::FormulaType::AND,{holdsBase, holdsNothing, needAddBases, isFeedWithAddBase, outputEmpty});
+}
+
+Formula StepFormula::getFeedAdditionalBaseRewardFormula(Robot &r, RingStation &rs) {
+    return equation(getVarReward(), getPrevStep()->getVarReward() + Rational(getGameData().getReward().getAdditionalBase()));
 }
 
 Formula StepFormula::getMountRingFormula() {
@@ -428,7 +486,7 @@ Formula StepFormula::getMountRingFormula(Robot &r, RingStation &rs) {
 
     Formula setupForColor = Formula(carl::FormulaType::NOT, equation(getPrevStep()->getVarRingColor(rs), Workpiece::NONE));
     Formula notSetupForColor = equation(getPrevStep()->getVarRingColor(rs), Workpiece::NONE);
-    Formula addBasesReqFullfilled = equation(getPrevStep()->getBaseReq(rs), 0);
+    Formula addBasesReqFullfilled = equation(getPrevStep()->getVarBaseReq(rs), 0);
 
     Formula cond(carl::FormulaType::AND,{holdsBase, notTransparent, noCap, not3Rings, outputEmpty, setupForColor, notSetupForColor, addBasesReqFullfilled});
 
@@ -458,6 +516,17 @@ Formula StepFormula::getMountRingFormula(Robot &r, RingStation &rs) {
     Formula mount(carl::FormulaType::OR,{mountR0, mountR1, mountR2});
 
     return Formula(carl::FormulaType::AND,{cond, holdsNothing, mount});
+}
+
+Formula StepFormula::getMountRingRewardFormula(Robot &r, RingStation &rs) {
+    std::vector<Formula> colors;
+    for (auto const& pc : rs.getPossibleRingColors()) {
+        if(pc.first == Workpiece::NONE) continue; //@todo sollte nicht auftreten?
+        Formula color = equation(getPrevStep()->getVarRingColor(rs), pc.first);
+        Formula reward = equation(getVarReward(), getPrevStep()->getVarReward() + Rational(getGameData().getReward().getFinishCCStep(pc.second)));
+        colors.push_back(Formula(carl::FormulaType::AND, {color, reward}));
+    }
+    return Formula(carl::FormulaType::OR, colors);
 }
 
 /*Formula StepFormula::getMountRingNotFinishedFormula(Robot &r, RingStation &rs, Order &o) {
