@@ -129,11 +129,11 @@
         (if (? (machine (val @machine-name) @m-type @m-state @m-prepared @m-zone @m-pose @m-loaded-with))
           (if (? (||  (~ (= (val @m-state) @machine-state)) 
                       (~ (= (val @m-prepared) @machine-prepared))
+                      (~ (= (val @m-loaded-with) @machine-loaded-with)) 
                        ))
-                      ;(~ (= (val @m-loaded-with) @machine-loaded-with)) 
                       ;(~ (= (val @m-pose) @machine-pose))
             (=> (machine @machine-name @machine-type @machine-state @machine-prepared @machine-zone @machine-pose @machine-loaded-with)) 
-            (! (printf (FORMAT "UPDATE Machine %s is %s \n" (val @machine-name) (val @machine-state) )))
+            (! (printf (FORMAT "UPDATE Machine %s is %s %s %s  \n" (val @machine-name) (val @machine-state) (val @machine-prepared) (val @machine-loaded-with) )))
 
             )
           else  
@@ -186,16 +186,31 @@
           (! (= @delivery-period-end (pb-field-value @order "delivery_period_end")))
           (! (= @delivery-gate (pb-field-value @order "delivery_gate")))  
           
-          (if (? (~ (order (val @id) $t-complexity $t-base-color $t-ring-colors $t-cap-color $t-quantity-requested $t-quantity-delivered $t-delivery-period-begin $t-delivery-period-end $t-delivery-gate)) )
-            (if (? (= $team-color CYAN))
-              (! (= @quantity-delivered @quantity_delivered_cyan ))
+          ; (if (? (~ (order (val @id) $t-complexity $t-base-color $t-ring-colors $t-cap-color $t-quantity-requested $t-quantity-delivered $t-delivery-period-begin $t-delivery-period-end $t-delivery-gate)) )
+          ;   (if (? (= $team-color CYAN))
+          ;     (! (= @quantity-delivered @quantity_delivered_cyan ))
+          ;     else
+          ;     (! (= @quantity-delivered @quantity_delivered_magenta )) 
+          ;     )
+          ;   (! (print "Adding Order"))
+          ;   (=> (order @id @complexity @base-color @ring-colors @cap-color @quantity-requested @quantity-delivered @delivery-period-begin @delivery-period-end @delivery-gate)) 
+          ;   )
+
+          (if (? (= $team-color CYAN))
+            (! (= @quantity-delivered @quantity-delivered-cyan ))
+            else
+            (! (= @quantity-delivered @quantity-delivered-magenta )) 
+          )            
+
+          (if (? (& (order (val @id) @t-complexity @t-base-color @t-ring-colors @t-cap-color @t-quantity-requested @t-quantity-delivered @t-delivery-period-begin @t-delivery-period-end @t-delivery-gate)
+                    (= (val @t-quantity-delivered) (val @quantity-delivered))
+                    ))
+              ;The Order already exists and delivered was not changed
+              ;Quite the Op 
               else
-              (! (= @quantity-delivered @quantity_delivered_magenta )) 
-              )
-            (! (print "Adding Order"))
-            (=> (order @id @complexity @base-color @ring-colors @cap-color @quantity-requested @quantity-delivered @delivery-period-begin @delivery-period-end @delivery-gate)) 
+              (! (print "Adding Order"))
+              (=> (order (val @id) @complexity @base-color @ring-colors @cap-color @quantity-requested @quantity-delivered @delivery-period-begin @delivery-period-end @delivery-gate)) 
             )
-          
           )
         )
       :effects()
