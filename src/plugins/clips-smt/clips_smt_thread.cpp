@@ -2008,7 +2008,7 @@ z3::expr ClipsSmtThread::getVar(std::map<std::string, z3::expr>& vars, std::stri
 	}
 	else {
 		// Not found
-		logger->log_error(name(), "Variable with id %s not found", var_id);
+		logger->log_error(name(), "Variable with id %s not found", var_id.c_str());
 	}
 
 	// Return default value false
