@@ -41,9 +41,18 @@ toBeDone(T, GT)                           :- prepCSTask(T), productionStarted, h
 inUse(L, R, GT) :- doing(R, T, _, GT), prepCSTask(T), taskLocation(T, L).
 inUse(L, R, GT) :- end(R, T, GT), prepCSTask(T), taskLocation(T, L).
 
-possible(R, T, GT) :- prepCSTask(T), taskLocation(T, L), robot(R), not holding(R, _, GT), locationToMachineMap(L, M),
-                      horizon(H), not csPrepared(M, GT), not storing(M, _, GT), not processing(M, _, _, GT),
-                      GT = 0..H-1.
+possible(R, T, GT) :- not impossible(R, T, GT), prepCSTask(T), robot(R), GT = 0..@horizon()-1.
+
+% The machine has to have an empty output.
+impossible(R, T, GT) :- prepCSTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), storing(M, _, GT).
+% The machine has to be in idle.
+impossible(R, T, GT) :- prepCSTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M),
+                        processing(M, _, _, GT).
+% The machine has to be not prepared.
+impossible(R, T, GT) :- prepCSTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), csPrepared(M, GT),
+                        GT = 0..@horizon()-1.
+% The robot has to hold no product.
+impossible(R, T, GT) :- prepCSTask(T), robot(R), holding(R, _, GT), GT = 0..@horizon()-1.
 
 csPreparedByRobot(R, M, GT) :- end(R, T, GT), prepCSTask(T), taskLocation(T, L), locationToMachineMap(L, M).
 
