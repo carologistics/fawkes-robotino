@@ -295,13 +295,24 @@ AspPlanerThread::loopPlan(void)
 			return std::abs(e1.Begin - e2.Begin) > threshold || std::abs(e1.End - e2.End) > threshold;
 		};
 
+	/* We copy the deployed plan into planCopy and perform changes on it, if we do not encounter a problem with the new
+	 * plan from tempPlan we commit the changes, i.e. swap it over to the Plan and update the database. */
+	bool commit = true;
+	//Static as usual to hold onto the allocated memory.
+	static std::map<decltype(Plan)::key_type, decltype(Plan[""].Tasks)> planCopy;
+
+	for ( const auto& pair : Plan )
+	{
+		planCopy[pair.first] = pair.second.Tasks;
+	} //for ( const auto& pair : Plan )
+
 	for ( const auto& pair : tempPlan )
 	{
 		const auto& robotName(pair.first);
-		auto& robotPlan(Plan[robotName].Tasks);
+		auto& robotPlan(planCopy[robotName]);
 		const auto& tempRobotPlan(pair.second);
 
-		logger->log_info(LoggingComponent, "Update plan for %s, %lu elements.", robotName.c_str(),
+		logger->log_info(LoggingComponent, "Update plan for %s, %zu elements.", robotName.c_str(),
 			tempRobotPlan.size());
 
 		//Get the index from the first task regarding to this solve iteration.
@@ -325,37 +336,6 @@ AspPlanerThread::loopPlan(void)
 				index, robotName.c_str(), planIter->Task.c_str(), planIter->Begin, planIter->End);
 		} //else -> if ( planIter == planEnd )
 
-		//Helping lambda to remove all tasks which index is greater or equal to the variable index.
-		auto removeAllFromIndexOn = [&](void)
-			{
-				if ( planIter == planEnd )
-				{
-					return planIter;
-				} //if ( planIter == planEnd )
-
-				//Check that we do not delete tasks which have already been started!
-				while ( planIter->Begun )
-				{
-					++index;
-					if ( ++planIter == planEnd )
-					{
-						return planIter;
-					} //if ( ++planIter == planEnd )
-				} //while ( planIter->Begun )
-
-				logger->log_warn(LoggingComponent, "Remove all %lu robot plan elements from (%s,%s,%d,%d) on.",
-					planEnd - planIter, robotName.c_str(), planIter->Task.c_str(), planIter->Begin, planIter->End);
-				const decltype(index) size(robotPlan.size());
-				for ( auto i = index; i < size; ++i )
-				{
-					removeFromPlanDB(robotName, i);
-				} //for ( auto i = index; i < size; ++i )
-				return robotPlan.erase(planIter, planEnd);
-			};
-
-		//Flag if we should continue this loop with the next entry after the following loop.
-		bool nextRobot = false;
-
 		//There is an entry in our old plan, which competes with an entry of the new plan for the same index.
 		while ( planIter != planEnd && tempIter != tempEnd )
 		{
@@ -371,10 +351,12 @@ AspPlanerThread::loopPlan(void)
 						logger->log_warn(LoggingComponent, "The task is already started!");
 					} //if ( planIter->Begun )
 					planIter->updateTime(*tempIter);
-					updatePlanTiming(robotName, index, *planIter);
 				} //if ( needsUpdate(*planIter, *tempIter) )
-				else logger->log_info(LoggingComponent, "Leave (%s,%s,%d,%d) unchanged.", robotName.c_str(),
-					planIter->Task.c_str(), planIter->Begin, planIter->End);
+				else
+				{
+					logger->log_info(LoggingComponent, "Leave (%s,%s,%d,%d) unchanged.", robotName.c_str(),
+						planIter->Task.c_str(), planIter->Begin, planIter->End);
+				} //else -> if ( needsUpdate(*planIter, *tempIter) )
 			} //if ( sameTask(*planIter, *tempIter) )
 			else
 			{
@@ -386,12 +368,7 @@ AspPlanerThread::loopPlan(void)
 						"Should change started task %s from robot %s to %s. Restart solving!",
 						planIter->Task.c_str(), robotCStr, tempIter->Task.c_str());
 
-					/* Remove all following tasks from the robots plan, because they may conflict with the other new
-					 * robots plans. This task maybe do the same, but this should be detected when the other robots
-					 * want to start their tasks. */
-					removeAllFromIndexOn();
-
-					nextRobot = true;
+					commit = false;
 					setInterrupt(InterruptSolving::Critical);
 					break;
 				} //if ( planIter->Begun )
@@ -400,17 +377,17 @@ AspPlanerThread::loopPlan(void)
 					robotCStr, planIter->Task.c_str(), planIter->Begin, planIter->End,
 					robotCStr, tempIter->Task.c_str(), tempIter->Begin, tempIter->End);
 				planIter->updateTimeAndTask(*tempIter);
-				updatePlan(robotName, index, *planIter);
-			} //else -> if ( && sameTask(*planIter, *tempIter) )
+			} //else -> if ( sameTask(*planIter, *tempIter) )
 			++planIter;
 			++tempIter;
 			++index;
 		} //while ( planIter != planEnd && tempIter != tempEnd )
 
-		if ( nextRobot )
+		if ( !commit )
 		{
-			continue;
-		} //if ( nextRobot )
+			//Stop right here.
+			break;
+		} //if ( !commit )
 
 		if ( tempIter != tempEnd )
 		{
@@ -420,7 +397,6 @@ AspPlanerThread::loopPlan(void)
 			do //while ( ++index < static_cast<int>(robotPlan.size()) )
 			{
 				const auto& entry(robotPlan[index]);
-				insertPlanElement(robotName, index, entry);
 				logger->log_info(LoggingComponent, "Add task (%s,%s,%d,%d) at index %d.", robotName.c_str(),
 					entry.Task.c_str(), entry.Begin, entry.End, index);
 			} while ( ++index < static_cast<int>(robotPlan.size()) );
@@ -434,13 +410,63 @@ AspPlanerThread::loopPlan(void)
 				logger->log_warn(LoggingComponent, "Should delete started task %s for robot %s! Restart solving.",
 					planIter->Task.c_str(), robotName.c_str());
 				setInterrupt(InterruptSolving::Critical);
+				commit = false;
+				break;
 			} //if ( planIter->Begun )
 
-			removeAllFromIndexOn();
+			logger->log_info(LoggingComponent, "Remove %zu elements from (%s,%s,%d,%d) on.", planEnd - planIter,
+				robotName.c_str(), planIter->Task.c_str(), planIter->Begin, planIter->End);
+			robotPlan.erase(planIter, planEnd);
 		} //else if ( planIter != planEnd )
 	} //for ( const auto& pair : Plan )
 
-	logger->log_info(LoggingComponent, "Plan updating done.");
+	if ( commit )
+	{
+		logger->log_info(LoggingComponent, "Plan updating done, commit changes into the deployed plan.");
+
+		//To commit the changes we only have to update the database and make a swap at the end of the loop.
+		for ( const auto& pair : Robots )
+		{
+			const auto& robot(pair.first);
+			auto& deployed(Plan[robot].Tasks);
+			auto& updated(planCopy[robot]);
+
+			int index = 0;
+			const int dSize(deployed.size()), uSize(updated.size());
+			for ( ; index < dSize && index < uSize; ++index )
+			{
+				if ( sameTask(deployed[index], updated[index]) )
+				{
+					if ( needsUpdate(deployed[index], updated[index]) )
+					{
+						updatePlanTiming(robot, index, updated[index]);
+					} //if ( needsUpdate(deployed[index], updated[index]) )
+				} //if ( sameTask(deployed[index], updated[index]) )
+				else
+				{
+					updatePlan(robot, index, updated[index]);
+				} //else -> if ( sameTask(deployed[index], updated[index]) )
+			} //for ( ; index < dSize && index < uSize; ++index )
+
+			//At most one of the following loops will be executed.
+			for ( ; index < dSize; ++index )
+			{
+				removeFromPlanDB(robot, index);
+			} //for ( ; index < dSize; ++index )
+
+			for ( ; index < uSize; ++index )
+			{
+				insertPlanElement(robot, index, updated[index]);
+			} //for ( ; index < uSize; ++index )
+
+			using std::swap;
+			swap(deployed, updated);
+		} //for ( const auto& pair : Robots )
+	} //if ( commit )
+	else
+	{
+		logger->log_info(LoggingComponent, "The new plan will be discareded because of inconsistencies.");
+	} //else -> if ( commit )
 	return;
 }
 

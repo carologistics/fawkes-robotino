@@ -124,7 +124,7 @@ AspPlanerThread::loopClingo(void)
 	{
 		if ( shouldInterrupt() && !SentCancel )
 		{
-			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %lu", requests);
+			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %zu", requests);
 			ClingoAcc->cancelSolving();
 			SentCancel = true;
 		} //if ( shouldInterrupt() && !SentCancel )
@@ -678,7 +678,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			} //else if ( view == "maxDriveDuration" )
 			else if ( view == "maxProducts" )
 			{
-				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxProducts))});
+				retFunction({Clingo::Number(MaxProducts)});
 				return;
 			} //else if ( view == "maxProducts" )
 			else if ( view == "robots" )
@@ -1275,12 +1275,12 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 		{
 			if ( static_cast<int>(Products.size()) >= MaxProducts )
 			{
-				 logger->log_error(LoggingComponent, "Have to generate a product, this would be #%lu alive, but only "
+				 logger->log_error(LoggingComponent, "Have to generate a product, this would be #%zu alive, but only "
 					"%d are configured. This product will not be part of the ASP program until products with a lower "
 					"id will be destroyed!", Products.size() + 1, MaxProducts);
 			} //if ( static_cast<int>(Products.size()) >= MaxProducts )
 
-			logger->log_info(LoggingComponent, "Generated product #%lu with base color %s.", Products.size(),
+			logger->log_info(LoggingComponent, "Generated product #%zu with base color %s.", Products.size(),
 				baseColor.c_str());
 			Products.push_back({std::move(baseColor)});
 			return {static_cast<decltype(ProductIdentifier::ID)>(Products.size() - 1)};
