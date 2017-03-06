@@ -134,6 +134,7 @@ void GazsimNavgraphGeneratorThread::get_mpsID_by_tagID() {
 	if (tags_.size() != related_mps_.size()) {
 		logger->log_error(name(),
 		                  "There are %lu tags defined, but %lu!=%lu related mps!",
+
 		                  tags_.size(), related_mps_.size(), tags_.size());
 		return;
 	}

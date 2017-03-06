@@ -212,6 +212,12 @@
 	)
   (return ?o)
 )
+;MAg Notes: 
+; This is totally wrong..Each order is sent in 2 llsf.Order msgs. 
+; One that has everything but the porduct color speceficationa dn
+; the other has only the colors (without even relating to an ID).
+; Furhtermore, This function creats an order msg for all product facts in the db 
+; (Even thought this does not really have to be the case, Product means than one thing)
 
 (deffunction smt-create-orders-productcolors (?team-color)
 	(bind ?rv (create$))
@@ -305,9 +311,130 @@
 						(bind ?steps (append$ ?steps (+ ?task-id ?ai)))
 						(assert (step (name drive-to) (id (+ ?task-id ?ai))	(machine ?to) (side ?side)))
 					)
+          ;ACTION:::::GET FROM SHELF::::::
+          (case "retrive_shelf" then
+            (bind ?mps "")
+            (bind ?shelf FALSE)
+            (progn$ (?arg (pb-field-list ?a "params"))
+              (if (eq (pb-field-value ?arg "key") "mps") then
+                (bind ?mps (pb-field-value ?arg "value"))
+                (bind ?mps-splitted (str-split ?mps "-"))
+                (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+                (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+               else
+                (if (eq (pb-field-value ?arg "key") "shelf") then
+                  (bind ?shelf (pb-field-value ?arg "value"))
+                 else
+                  (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+                )
+              )
+            )
+            (printout t "Retrieving from" ?mps " at " ?side "shelf" ?shelf crlf)
+            ;Translation into Steps
+            (if (and  (neq ?shelf FALSE) 
+                      (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)  (eq ?machine:mtype CS)))
+                )
+            then
+              (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+              (assert (step (name get-from-shelf) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature SHELF)))
+            else
+                (printout t "Wrong Parameters passed to retrive_shelf Action (mps:" ?mps "side:" ?side "shelf:" ?shelf ")" crlf)
+            )
+          )
+
+          ;ACTION:::::RETRIVE::::::
+          (case "retrive" then
+            (bind ?mps "")
+            (progn$ (?arg (pb-field-list ?a "params"))
+              (if (eq (pb-field-value ?arg "key") "mps") then
+                (bind ?mps (pb-field-value ?arg "value"))
+                (bind ?mps-splitted (str-split ?mps "-"))
+                (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+                (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+              else
+                (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+              )
+            )
+            (printout t "Retrieving from" ?mps " at " ?side crlf)
+            
+            ;Translation into Steps
+            (if (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)  (eq ?machine:mtype BS)))
+              then
+              (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+              (assert (step (name get-base) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base RED) )) ;MAGNOTE_ Set the corect base color according to the goal
+              else
+              (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+              (assert (step (name get-output) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) ))
+            )  
+          )      
+          ;ACTION:::::FEED::::::
+          (case "feed" then
+            (bind ?mps "")
+            (progn$ (?arg (pb-field-list ?a "params"))
+              (if (eq (pb-field-value ?arg "key") "mps") then
+                (bind ?mps (pb-field-value ?arg "value"))
+                (bind ?mps-splitted (str-split ?mps "-"))
+                (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+                (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+              else
+                (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+              )
+            )
+            (printout t "Brining Product to" ?mps " at " ?side crlf)
+            
+            ;Translation into Steps
+            (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+            (assert (step (name insert) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
+          )
+          
+          ;ACTION:::::PREPARE::::::
+          (case "prepare" then
+            (bind ?mps "")
+            (bind ?mps-type "")
+            (progn$ (?arg (pb-field-list ?a "params"))
+              (if (eq (pb-field-value ?arg "key") "mps") then
+                (bind ?mps (pb-field-value ?arg "value"))
+                (bind ?mps-splitted (str-split ?mps "-"))
+                (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+                (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT)) 
+                (do-for-fact ((?machine machine)) (eq ?machine:name ?mps)
+                    (bind ?mps-type ?machine:mtype)
+                )   
+              else
+                (switch ?mps-type
+                  (case BS
+                    then
+                      (printout t "machine preperd as BS  " ?mps " type " ?mps-type crlf) )
+                  (case CS
+                    then
+                      (printout t "machine preperd as CS  " ?mps " type " ?mps-type crlf) )
+                  (case DS
+                    then
+                      (printout t "machine preperd as DS  " ?mps " type " ?mps-type crlf) )
+                  (case RS
+                    then
+                      (printout t "machine preperd as RS  " ?mps " type " ?mps-type crlf) )
+
+                  (default (printout warn "Machine Type Not Found ...yet! " ?actname crlf))
+                )
+
+                ; (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+              )
+
+            )
+
+            (printout t "Intructing to" ?mps " at " ?side crlf)
+            
+            ;Translation into Steps
+            ; (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+            ; (assert (step (name insert) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
+          )
+
 					(default (printout warn "Unknown action " ?actname crlf))
-				)
+				
+        )
 			)
+
 			(assert (task (id ?task-id) (state proposed) (steps ?steps) (robot ?actor-name)))
 		 else
 	  	(printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
@@ -315,6 +442,7 @@
 	)
 	(pb-destroy ?plans)
 )
+
 
 
 (defrule prod-propose-task-idle
