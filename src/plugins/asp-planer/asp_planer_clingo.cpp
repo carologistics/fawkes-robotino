@@ -678,7 +678,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			} //else if ( view == "maxDriveDuration" )
 			else if ( view == "maxProducts" )
 			{
-				retFunction({Clingo::Number(realGameTimeToAspGameTime(MaxProducts))});
+				retFunction({Clingo::Number(MaxProducts)});
 				return;
 			} //else if ( view == "maxProducts" )
 			else if ( view == "robots" )
