@@ -41,10 +41,11 @@
 )
 
 (do-for-all-facts ((?order order)) TRUE
-(printout t "idhai" ?order:id crlf)
-	 (bind ?o (pb-create "llsf_msgs.Order"))
-	 (pb-set-field ?o "id" ?order:id)
-(pb-set-field ?o "delivery_gate" ?order:delivery-gate)
+           (bind ?o (pb-create "llsf_msgs.Order"))
+	   (pb-set-field ?o "id" ?order:id)
+	   (pb-set-field ?o "delivery_gate" ?order:delivery-gate)
+	   (bind ?comp (pb-field-value ?o "Complexity"))
+	   (pb-set-field ?comp "complexity" ?order:complexity)
 (pb-set-field ?o "quantity_requested" ?order:quantity-requested)
 (pb-set-field ?o "quantity_delivered_cyan" ?order:quantity-delivered)
 (pb-set-field ?o "delivery_period_begin" ?order:begin)
@@ -54,7 +55,7 @@
 
 
 
-;(printout t (pb-tostring ?p) crlf)
+(printout t (pb-tostring ?p) crlf)
 (printout t "Check the return message of clips_smt_request: " (clips_smt_request ?p "test")  crlf)
 )
 
