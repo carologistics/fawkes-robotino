@@ -524,6 +524,8 @@ AspPlanerThread::loop(void)
 
 			if ( info.WorkingUntil && info.WorkingUntil <= GameTime )
 			{
+				logger->log_info(LoggingComponent, "Machine %s has finished working on product #%d.",
+					pair.first.c_str(), info.Storing.ID);
 				info.WorkingUntil = 0;
 			} //if ( info.BrokenUntil && info.BrokenUntil <= GameTime )
 		} //for ( auto& pair : Machines )
