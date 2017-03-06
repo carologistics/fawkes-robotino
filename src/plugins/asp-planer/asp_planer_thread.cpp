@@ -442,6 +442,7 @@ AspPlanerThread::init(void)
 	loadConfig();
 	Orders.reserve(MaxOrders);
 	OrderTaskMap.reserve(MaxOrders * MaxQuantity);
+	Products.reserve(MaxProducts);
 	RingColors.reserve(4);
 	Robots.reserve(PossibleRobots.size());
 	ZonesToExplore.reserve(12);
