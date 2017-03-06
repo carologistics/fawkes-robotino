@@ -413,7 +413,7 @@ NavgraphBrokerThread::handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
 				txt += tm->nodelist(i); txt += ",";
 			}
 			txt.erase(txt.length()-1,1); txt += "}";
-			logger->log_info( name(), "Received reservation msg from '%s'time: { sec=%d nsec=%d }", tm->robotname().c_str(), tm->sec(), tm->nsec() );
+			logger->log_info( name(), "Received reservation msg from '%s'time: { sec=%ld nsec=%ld }", tm->robotname().c_str(), tm->sec(), tm->nsec() );
 		}
 	}
 }
