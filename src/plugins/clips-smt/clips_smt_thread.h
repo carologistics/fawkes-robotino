@@ -101,6 +101,10 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_get_plan(void *msgptr, std::string handle);
   CLIPS::Value clips_smt_done(std::string foo, std::string bar);
 
+  // Navgraph
+  void clips_smt_compute_distances();
+  std::function<void (const fawkes::NavGraphNode &, const fawkes::NavGraphNode &, float)> func;
+
   // Test
   void clips_smt_test_z3();
   void clips_smt_test_carl();

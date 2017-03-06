@@ -29,6 +29,7 @@
 #include <navgraph/constraints/constraint_repo.h>
 
 #include <llsf_msgs/ClipsSmtData.pb.h>
+#include <google/protobuf/descriptor.h>
 
 using namespace fawkes;
 
@@ -56,11 +57,11 @@ ClipsSmtThread::init()
 {
     // Init navgraph
     navgraph->add_change_listener(this);
-    clips_smt_test_navgraph();
+    //clips_smt_test_navgraph();
 
     // Test z3 extern binary
     proc_z3_ = NULL;
-    clips_smt_test_z3();
+    //clips_smt_test_z3();
 }
 
 
@@ -305,12 +306,15 @@ ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
       static_cast<std::shared_ptr<google::protobuf::Message> *>(msgptr);
     if (!*m) return CLIPS::Value("INVALID-MESSAGE", CLIPS::TYPE_SYMBOL);
 
+    llsf_msgs::ClipsSmtData data;
+    data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name()
+
     // Use handle to associate request to solution
     std::cout << "Handle request_" << handle << std::endl;
 
     // Wakeup the loop function
-    std::cout << "CSMT_request:     Wake up the loop" << std::endl;
-    wakeup();
+    //std::cout << "CSMT_request:     Wake up the loop" << std::endl;
+    //wakeup();
 
     return CLIPS::Value("Correct-Message", CLIPS::TYPE_SYMBOL);
 }
