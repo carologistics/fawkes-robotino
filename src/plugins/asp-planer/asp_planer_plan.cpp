@@ -301,7 +301,7 @@ AspPlanerThread::loopPlan(void)
 		auto& robotPlan(Plan[robotName].Tasks);
 		const auto& tempRobotPlan(pair.second);
 
-		logger->log_info(LoggingComponent, "Update plan for %s, %lu elements.", robotName.c_str(),
+		logger->log_info(LoggingComponent, "Update plan for %s, %zu elements.", robotName.c_str(),
 			tempRobotPlan.size());
 
 		//Get the index from the first task regarding to this solve iteration.
