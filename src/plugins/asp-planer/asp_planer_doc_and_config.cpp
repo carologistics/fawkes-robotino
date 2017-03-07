@@ -550,15 +550,17 @@ AspPlanerThread::loadConfig(void)
 	suffix = buffer + prefixLen + infixWorkingDurationLen;
 	std::strcpy(buffer + prefixLen, infixWorkingDuration);
 
-	WorkingDurations.reserve(4);
+	WorkingDurations.reserve(6);
 	std::strcpy(suffix, "base-station");
 	WorkingDurations.insert({"BS", config->get_int(buffer)});
 	std::strcpy(suffix, "cap-station");
-	WorkingDurations.insert({"CS", config->get_int(buffer)});
+	WorkingDurations.insert({"CS1", config->get_int(buffer)});
+	WorkingDurations.insert({"CS2", config->get_int(buffer)});
 	std::strcpy(suffix, "delivery-station");
 	WorkingDurations.insert({"DS", config->get_int(buffer)});
 	std::strcpy(suffix, "ring-station");
-	WorkingDurations.insert({"RS", config->get_int(buffer)});
+	WorkingDurations.insert({"RS1", config->get_int(buffer)});
+	WorkingDurations.insert({"RS2", config->get_int(buffer)});
 
 	for ( const auto& pair : WorkingDurations )
 	{
