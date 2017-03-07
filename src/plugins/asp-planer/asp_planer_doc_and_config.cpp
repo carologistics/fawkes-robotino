@@ -255,6 +255,11 @@
  *
  * @var InterruptSolving::Critical
  * @brief Interrupt in any case.
+ *
+ * @fn const char* interruptString(const InterruptSolving)
+ * @brief Converts the enum to a string.
+ * @param[in] interrupt The enum value.
+ * @return The value represented as string.
  */
 
 /** @class AspPlanerThread "asp_planer_thread.h"
@@ -402,6 +407,9 @@
  *
  * @property AspPlanerThread::Interrupt
  * @brief The current interrupt state.
+ *
+ * @property AspPlanerThread::InterruptReason
+ * @brief The last set reason for the interrupt.
  *
  * @property AspPlanerThread::RequestMutex
  * @brief The mutex for the requests and interupt handling.
