@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <type_traits>
 
 #include <core/threading/mutex_locker.h>
@@ -127,9 +128,13 @@ operator<(const IntermediatePlanElement& e1, const IntermediatePlanElement& e2)
 static inline void
 extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, const auto& transform, const auto& log)
 {
+	int max = 0;
+	static std::unordered_map<std::string, int> maxPerRobot;
+
 	for ( auto& pair : map )
 	{
 		pair.second.clear();
+		maxPerRobot[pair.first] = 0;
 	} //for ( auto& pair : map )
 
 	for ( const auto& symbol : symbols )
@@ -140,15 +145,38 @@ extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, 
 		{
 			//Assumes begin(robot, task, time) and end(robot, task, time).
 			const decltype(auto) args(symbol.arguments());
+			const auto time = args[2].number();
+			const auto robot(args[0].string());
+
+			max = std::max(max, time);
+			maxPerRobot[robot] = std::max(maxPerRobot[robot], time);
+
 			//If not in the map until now it will add a list for the robot.
-			map[args[0].string()].emplace_back(args[1].to_string(), begin, transform(args[2].number()) + planGameTime);
+			map[robot].emplace_back(args[1].to_string(), begin, transform(time) + planGameTime);
 		} //if ( begin || end )
 	} //for ( const auto& symbol : symbols )
+
+	int size = 0;
 
 	for ( auto& pair : map )
 	{
 		std::sort(pair.second.begin(), pair.second.end());
+		size += pair.second.size();
 	} //for ( auto& pair : map )
+
+	if ( !size )
+	{
+		return;
+	} //if ( !size )
+
+	int avg = 0;
+	for ( const auto& pair : maxPerRobot )
+	{
+		avg += pair.second;
+	} //for ( const auto& pair : maxPerRobot )
+	avg /= maxPerRobot.size();
+
+	log("Extracted plan size: %d Maximum time: %d Avg. maximum time: %d", size, transform(max), transform(avg));
 	return;
 }
 
@@ -168,7 +196,8 @@ assembleTemporaryPlan(auto& map, auto& tempPlan, const auto& plan, const auto& l
 		tempRobotPlan.second.clear();
 	} //for ( auto& tempRobotPlan : tempPlan )
 
-//	log("Extracted plan size: %u", map.size());
+	std::size_t max = 0, min = std::numeric_limits<std::size_t>::max();
+
 	for ( auto& pair : map )
 	{
 		const auto& robotName(pair.first);
@@ -222,7 +251,12 @@ assembleTemporaryPlan(auto& map, auto& tempPlan, const auto& plan, const auto& l
 
 			iter += 2;
 		} //while ( iter != end )
+
+		max = std::max(max, robotTempPlan.size());
+		min = std::min(min, robotTempPlan.size());
 	} //for ( auto& pair : map )
+
+	log("Min elements per robot: %zu, max: %zu", min, max);
 	return;
 }
 
