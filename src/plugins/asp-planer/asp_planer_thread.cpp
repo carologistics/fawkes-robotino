@@ -115,6 +115,10 @@ AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
 		{
 			GameTime = ExplorationTime + gameTime;
 		} //else if ( phase == "PRODUCTION" )
+		else if ( phase == "POST_GAME" )
+		{
+			GameTime = -1;
+		} //else if ( phase == "POST_GAME" )
 	} //try
 	catch ( const std::exception& e )
 	{

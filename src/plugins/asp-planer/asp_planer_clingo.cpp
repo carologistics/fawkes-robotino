@@ -238,6 +238,13 @@ AspPlanerThread::loopClingo(void)
 
 	//Set "initial" state.
 	MutexLocker worldLocker(&WorldMutex);
+
+	if ( GameTime == -1 )
+	{
+		//The game has ended, we do not need any more planning.
+		return;
+	} //if ( GameTime == -1 )
+
 	//Locked: ClingoAcc, WorldMutex
 	auto addExternal = [this](Clingo::Symbol&& external)
 		{
