@@ -127,7 +127,8 @@ AspPlanerThread::loopClingo(void)
 	{
 		if ( shouldInterrupt() && !SentCancel )
 		{
-			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %zu", requests);
+			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %zu, interrupt level: %s, reason: %s",
+				requests, interruptString(Interrupt.load()), InterruptReason.load());
 			ClingoAcc->cancelSolving();
 			SentCancel = true;
 		} //if ( shouldInterrupt() && !SentCancel )
@@ -179,7 +180,7 @@ AspPlanerThread::loopClingo(void)
 			for ( const auto& external : NavgraphDistances )
 			{
 				queueGround({"setDriveDuration",
-					Clingo::SymbolVector(external.arguments().begin(), external.arguments().end())});
+					Clingo::SymbolVector(external.arguments().begin(), external.arguments().end())}, "");
 				Clingo::Symbol args[3];
 				std::copy(external.arguments().begin(), external.arguments().end(), std::begin(args));
 
@@ -189,7 +190,7 @@ AspPlanerThread::loopClingo(void)
 					for ( auto d = 1; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
 					{
 						args[2] = Clingo::Number(d);
-						queueRelease(Clingo::Function(external.name(), {args, 3}));
+						queueRelease(Clingo::Function(external.name(), {args, 3}), "");
 					} //for ( auto d = 1; d <= realGameTimeToAspGameTime(MaxDriveDuration); ++d )
 
 					if ( swap )
@@ -227,6 +228,7 @@ AspPlanerThread::loopClingo(void)
 
 	SentCancel = false;
 	Interrupt = InterruptSolving::Not;
+	InterruptReason = "";
 
 	static std::vector<Clingo::Symbol> externals;
 
@@ -428,55 +430,60 @@ AspPlanerThread::loopClingo(void)
 /**
  * @brief Queues a ground request.
  * @param[in] request The request to build a Clingo::Part to ground.
+ * @param[in] reason The reason for the request.
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueGround(GroundRequest&& request, const InterruptSolving interrupt)
+AspPlanerThread::queueGround(GroundRequest&& request, const char *reason, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
 	GroundRequests.push_back(std::move(request));
-	setInterrupt(interrupt);
+	setInterrupt(interrupt, reason);
 	return;
 }
 
 /**
  * @brief Queues a release request.
  * @param[in] atom The atom to release.
+ * @param[in] reason The reason for the request.
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt)
+AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const char *reason, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
 	ReleaseRequests.push_back(std::move(atom));
-	setInterrupt(interrupt);
+	setInterrupt(interrupt, reason);
 	return;
 }
 
 /**
  * @brief Queues a assign request.
  * @param[in] atom The atom to release.
+ * @param[in] reason The reason for the request.
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt)
+AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const char *reason, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
 	AssignRequests.push_back(std::move(atom));
-	setInterrupt(interrupt);
+	setInterrupt(interrupt, reason);
 	return;
 }
 
 /**
  * @brief Sets the interrupt value.
  * @param[in] interrupt Which level of interrupt is requested.
+ * @param[in] reason The reason of the interrupt.
  */
 void
-AspPlanerThread::setInterrupt(const InterruptSolving interrupt)
+AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const char* reason)
 {
 	if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt.load()) )
 	{
 		Interrupt = interrupt;
+		InterruptReason = reason;
 	} //if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt.load()) )
 	return;
 }
@@ -828,16 +835,18 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
 		Clingo::String(order.Rings[2]), Clingo::String(order.Rings[3]),
 		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryBegin)),
 		Clingo::Number(realGameTimeToAspGameTime(order.DeliveryEnd))};
-	queueGround({"newOrder", std::move(params)}, InterruptSolving::Critical);
+	constexpr const char *reason = "New order";
+
+	queueGround({"newOrder", std::move(params)}, reason, InterruptSolving::Critical);
 
 	for ( const auto& color : BaseColors )
 	{
-		queueRelease(Clingo::Function("base", {Clingo::Number(order.Number), Clingo::String(color)}));
+		queueRelease(Clingo::Function("base", {Clingo::Number(order.Number), Clingo::String(color)}), reason);
 	} //for ( const auto& color : BaseColors )
 
 	for ( const auto& color : CapColors )
 	{
-		queueRelease(Clingo::Function("cap", {Clingo::Number(order.Number), Clingo::String(color.Color)}));
+		queueRelease(Clingo::Function("cap", {Clingo::Number(order.Number), Clingo::String(color.Color)}), reason);
 	} //for ( const auto& color : CapColors )
 
 	for ( const auto& color : RingColors )
@@ -845,7 +854,7 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
 		for ( auto ring = 1; ring <= 3; ++ring )
 		{
 			queueRelease(Clingo::Function("ring",
-				{Clingo::Number(order.Number), Clingo::Number(ring), Clingo::String(color.Color)}));
+				{Clingo::Number(order.Number), Clingo::Number(ring), Clingo::String(color.Color)}), reason);
 		} //for ( auto ring = 1; ring <= 3; ++ring )
 	} //for ( const auto& color : RingColors )
 
@@ -855,15 +864,15 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
 		{
 			for ( const auto& location : RingLocations )
 			{
-				queueRelease(generateMountRingExternal(location, order.Number, qty, ring));
+				queueRelease(generateMountRingExternal(location, order.Number, qty, ring), reason);
 			} //for ( const auto& location : RingLocations )
 		} //for ( auto ring = 1; ring <= 3; ++ring )
 		for ( const auto& location : CapLocations )
 		{
-			queueRelease(generateMountCapExternal(location, order.Number, qty));
+			queueRelease(generateMountCapExternal(location, order.Number, qty), reason);
 		} //for ( const auto& location : CapLocations )
-		queueRelease(generateDeliverExternal(DeliveryLocation, order.Number, qty));
-		queueRelease(generateLateDeliverExternal(DeliveryLocation, order.Number, qty));
+		queueRelease(generateDeliverExternal(DeliveryLocation, order.Number, qty), reason);
+		queueRelease(generateLateDeliverExternal(DeliveryLocation, order.Number, qty), reason);
 	} //for ( auto qty = order.Quantity + 1; qty <= MaxQuantity; ++qty )
 
 	for ( auto qty = 1; qty <= order.Quantity; ++qty )
@@ -880,10 +889,10 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
 			generateLateDeliverExternal(DeliveryLocation, order.Number, qty)};
 
 		//Make an explicit copy because queueAssign takes an rvalue.
-		queueAssign(Clingo::Symbol(tasks.CapTask));
-		queueAssign(Clingo::Symbol(tasks.DeliverTasks[0]));
-		queueAssign(Clingo::Symbol(tasks.DeliverTasks[1]));
-		queueRelease(generateMountCapExternal(CapLocations[1 - capIndex], order.Number, qty));
+		queueAssign(Clingo::Symbol(tasks.CapTask), reason);
+		queueAssign(Clingo::Symbol(tasks.DeliverTasks[0]), reason);
+		queueAssign(Clingo::Symbol(tasks.DeliverTasks[1]), reason);
+		queueRelease(generateMountCapExternal(CapLocations[1 - capIndex], order.Number, qty), reason);
 
 		auto ring = 1;
 		for ( ; ring <= 3; ++ring )
@@ -901,15 +910,15 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
 				})->Machine[2] - '1';
 
 			tasks.RingTasks[ring] = generateMountRingExternal(RingLocations[ringIndex], order.Number, qty, ring);
-			queueAssign(Clingo::Symbol(tasks.RingTasks[ring]));
-			queueRelease(generateMountRingExternal(RingLocations[1 - ringIndex], order.Number, qty, ring));
+			queueAssign(Clingo::Symbol(tasks.RingTasks[ring]), reason);
+			queueRelease(generateMountRingExternal(RingLocations[1 - ringIndex], order.Number, qty, ring), reason);
 		} //for ( auto ring = 1; ring <= 3; ++ring )
 
 		for ( ; ring <= 3; ++ring )
 		{
 			for ( const auto& location : RingLocations )
 			{
-				queueRelease(generateMountRingExternal(location, order.Number, qty, ring));
+				queueRelease(generateMountRingExternal(location, order.Number, qty, ring), reason);
 			} //for ( const auto& location : RingLocations )
 		} //for ( ; ring <= 3; ++ring )
 
@@ -926,16 +935,17 @@ void
 AspPlanerThread::addRingColorToASP(const RingColorInformation& info)
 {
 	const auto color(Clingo::String(info.Color));
-	queueGround({"setRingInfo", {color, Clingo::Number(info.Cost), Clingo::String(info.Machine)}});
+	constexpr const char *reason = "Ring color";
+	queueGround({"setRingInfo", {color, Clingo::Number(info.Cost), Clingo::String(info.Machine)}}, reason);
 
 	for ( const auto& machine : {"RS1", "RS2"} )
 	{
-		queueRelease(Clingo::Function("ringStationAssignment", {Clingo::String(machine), color}));
+		queueRelease(Clingo::Function("ringStationAssignment", {Clingo::String(machine), color}), reason);
 	} //for ( const auto& machine : {"RS1", "RS2"} )
 
 	for ( auto cost = 0; cost <= 2; ++cost )
 	{
-		queueRelease(Clingo::Function("ringColorCost", {color, Clingo::Number(cost)}));
+		queueRelease(Clingo::Function("ringColorCost", {color, Clingo::Number(cost)}), reason);
 	} //for ( auto cost = 0; cost <= 2; ++cost )
 	return;
 }
@@ -948,8 +958,8 @@ void
 AspPlanerThread::addZoneToExplore(const int zone)
 {
 	assert(zone >= 1 && zone <= 24);
-	queueAssign(generateExploreLocationExternal(zone));
-	queueAssign(generateExploreTaskExternal(zone));
+	queueAssign(generateExploreLocationExternal(zone), "Zone added");
+	queueAssign(generateExploreTaskExternal(zone),     "Zone added");
 	return;
 }
 
@@ -969,8 +979,8 @@ AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 		ZonesToExplore.erase(std::find(ZonesToExplore.begin(), ZonesToExplore.end(), zone));
 		fillNavgraphNodesForASP(false);
 	} //if ( removeAndFillNodes )
-	queueRelease(generateExploreLocationExternal(zone));
-	queueRelease(generateExploreTaskExternal(zone));
+	queueRelease(generateExploreLocationExternal(zone), "Zone released");
+	queueRelease(generateExploreTaskExternal(zone)    , "Zone released");
 	return;
 }
 
@@ -1113,19 +1123,19 @@ AspPlanerThread::checkForInterruptBasedOnTimeOffset(int offset)
 	offset = std::abs(offset);
 	if ( offset >= 3*TimeResolution )
 	{
-		setInterrupt(InterruptSolving::Critical);
+		setInterrupt(InterruptSolving::Critical, "Very high plan offset");
 	} //if ( offset >= 3*TimeResolution )
 	else if ( offset >= 2*TimeResolution )
 	{
-		setInterrupt(InterruptSolving::High);
+		setInterrupt(InterruptSolving::High, "High plan offset");
 	} //else if ( offset >= 2*TimeResolution )
 	else if ( offset >= (15 * TimeResolution) / 10 )
 	{
-		setInterrupt(InterruptSolving::Normal);
+		setInterrupt(InterruptSolving::Normal, "Plan offset");
 	} //else if ( offset >= (15 * TimeResolution) / 10 )
 	else if ( offset >= TimeResolution )
 	{
-		setInterrupt(InterruptSolving::JustStarted);
+		setInterrupt(InterruptSolving::JustStarted, "Very small offset");
 	} //else if ( offset >= TimeResolution )
 	return;
 }
@@ -1151,11 +1161,11 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 
 	if ( robotPlan.Tasks[robotPlan.FirstNotDone].Task != task )
 	{
-		logger->log_info(LoggingComponent, "Plan invalid, the robot started another task.");
+		logger->log_error(LoggingComponent, "Plan invalid, the robot started another task.");
 		robotPlan.Tasks[robotPlan.FirstNotDone].Task = task;
 		robotPlan.Tasks[robotPlan.FirstNotDone].Begin = begin;
 		robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
-		setInterrupt(InterruptSolving::Critical);
+		setInterrupt(InterruptSolving::Critical, "Robot started \"wrong\" task");
 	} //if ( robotPlan.Tasks[robotPlan.FirstNotDone].Task != task )
 
 	robotPlan.CurrentTask = task;
@@ -1182,7 +1192,7 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 		robotPlan.Tasks[robotPlan.FirstNotDone].Begun = false;
 		robotInfo.Doing = {};
 		tellRobotToStop(robot);
-		setInterrupt(InterruptSolving::Critical);
+		setInterrupt(InterruptSolving::Critical, "Location conflict");
 		for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index ) {
 			removeFromPlanDB(robot, index);
 		} //for ( auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size(); ++index )
@@ -1265,7 +1275,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	if ( !success )
 	{
 		robotInfo.Doing = {};
-		setInterrupt(InterruptSolving::Critical);
+		setInterrupt(InterruptSolving::Critical, "Task failed");
 		for ( auto i = robotPlan.FirstNotDone; i < robotPlan.Tasks.size(); ++i )
 		{
 			removeFromPlanDB(robot, i);
@@ -1354,14 +1364,16 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			return std::make_pair<int, int>(taskArguments[1].number(), taskArguments[2].number());
 		};
 
+	constexpr const char *taskDoneReason = "Task done";
+
 	switch ( robotInfo.Doing.Type )
 	{
 		case TaskDescription::None : break; //Does not happen. (See assert above.)
 		case TaskDescription::Deliver :
 		{
 			auto order(getOrder());
-			queueRelease(std::move(OrderTaskMap[order].DeliverTasks[0]));
-			queueRelease(std::move(OrderTaskMap[order].DeliverTasks[1]));
+			queueRelease(std::move(OrderTaskMap[order].DeliverTasks[0]), taskDoneReason);
+			queueRelease(std::move(OrderTaskMap[order].DeliverTasks[1]), taskDoneReason);
 			destroyProduct(robotDrops());
 			break;
 		} //case TaskDescription::Deliver
@@ -1391,7 +1403,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			auto product = robotDrops();
 			assert(Products[product.ID].Cap.empty());
 			Products[product.ID].Cap = Orders[order.first].Cap;
-			queueRelease(std::move(OrderTaskMap[order].CapTask));
+			queueRelease(std::move(OrderTaskMap[order].CapTask), taskDoneReason);
 			machinePickup(machine, product);
 			machineInfo.Prepared = false;
 			logger->log_info(LoggingComponent, "%s mounted a %s cap on product #%d.", machine,
@@ -1410,7 +1422,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 				[&ringColor](const RingColorInformation& info) { return info.Color == ringColor; });
 			assert(machineInfo.FillState >= ringInfo->Cost);
 			Products[product.ID].Rings[ringNumber] = Orders[order.first].Rings[ringNumber];
-			queueRelease(std::move(OrderTaskMap[order].RingTasks[ringNumber]));
+			queueRelease(std::move(OrderTaskMap[order].RingTasks[ringNumber]), taskDoneReason);
 			machinePickup(machine, product);
 			machineInfo.FillState -= ringInfo->Cost;
 			logger->log_info(LoggingComponent, "%s mounted the %d. ring with color %s on product #%d. "

@@ -100,6 +100,7 @@ class AspPlanerThread
 	using GroundRequest = std::pair<const char*, Clingo::SymbolVector>;
 
 	std::atomic<InterruptSolving> Interrupt;
+	std::atomic<const char*> InterruptReason;
 
 	fawkes::Mutex RequestMutex;
 	bool SentCancel;
@@ -134,10 +135,10 @@ class AspPlanerThread
 	void finalizeClingo(void);
 	void loopClingo(void);
 
-	void queueGround(GroundRequest&& request, const InterruptSolving interrupt = InterruptSolving::Not);
-	void queueRelease(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
-	void queueAssign(Clingo::Symbol&& atom, const InterruptSolving interrupt = InterruptSolving::Not);
-	void setInterrupt(const InterruptSolving interrupt);
+	void queueGround(GroundRequest&& request, const char* reason, const InterruptSolving interrupt = InterruptSolving::Not);
+	void queueRelease(Clingo::Symbol&& atom, const char* reason, const InterruptSolving interrupt = InterruptSolving::Not);
+	void queueAssign(Clingo::Symbol&& atom, const char* reason, const InterruptSolving interrupt = InterruptSolving::Not);
+	void setInterrupt(const InterruptSolving interrupt, const char *reason);
 	bool shouldInterrupt(void);
 
 	bool newModel(void);

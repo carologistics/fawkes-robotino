@@ -369,7 +369,6 @@ AspPlanerThread::loopPlan(void)
 						planIter->Task.c_str(), robotCStr, tempIter->Task.c_str());
 
 					commit = false;
-					setInterrupt(InterruptSolving::Critical);
 					break;
 				} //if ( planIter->Begun )
 
@@ -409,7 +408,6 @@ AspPlanerThread::loopPlan(void)
 				//Deleting a task which is already started seems not to be the best idea, restart solving.
 				logger->log_warn(LoggingComponent, "Should delete started task %s for robot %s! Restart solving.",
 					planIter->Task.c_str(), robotName.c_str());
-				setInterrupt(InterruptSolving::Critical);
 				commit = false;
 				break;
 			} //if ( planIter->Begun )
@@ -465,7 +463,8 @@ AspPlanerThread::loopPlan(void)
 	} //if ( commit )
 	else
 	{
-		logger->log_info(LoggingComponent, "The new plan will be discareded because of inconsistencies.");
+		logger->log_info(LoggingComponent, "The new plan will be discarded because of inconsistencies.");
+		setInterrupt(InterruptSolving::Critical, "Inconsistent plan");
 	} //else -> if ( commit )
 	return;
 }

@@ -53,6 +53,20 @@ enum class InterruptSolving : short
 	Critical
 };
 
+inline constexpr const char*
+interruptString(const InterruptSolving interrupt)
+{
+	switch ( interrupt )
+	{
+		case InterruptSolving::Not         : return "Not";
+		case InterruptSolving::JustStarted : return "JustStarted";
+		case InterruptSolving::Normal      : return "Normal";
+		case InterruptSolving::High        : return "High";
+		case InterruptSolving::Critical    : return "Critical";
+	} //switch ( interrupt )
+	return "";
+}
+
 struct BasicPlanElement
 {
 	std::string Task;
