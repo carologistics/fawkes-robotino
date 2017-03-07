@@ -756,8 +756,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 			} //else if ( view == "clingoToASP" )
 			else if ( view == "machineWorkingDuration" )
 			{
-				const std::string machineName(arguments[0].string(), 2);
-				retFunction({Clingo::Number(realGameTimeToAspGameTime(WorkingDurations[machineName]))});
+				retFunction({Clingo::Number(realGameTimeToAspGameTime(WorkingDurations[arguments[0].string()]))});
 				return;
 			} //else if ( view == "machineWorkingDuration" )
 			break;
