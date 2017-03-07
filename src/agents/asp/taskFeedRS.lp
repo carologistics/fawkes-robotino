@@ -22,6 +22,8 @@
 % locationToMachineMap(L, M)     Defined in facts.lp
 % needsFillment(M)               Defined in facts.lp
 % productionStarted              Defined in facts.lp
+% productCap                     Defined in products.lp
+% prodcutRing                    Defined in products.lp
 % ringColorCost(Col, Cost)       Defined in facts.lp
 % ringCost(C)                    Defined in facts.lp
 % ringLocation(L)                Defined in facts.lp
@@ -53,6 +55,8 @@ impossible(R, T, GT) :- feedRSTask(T), robot(R), taskLocation(T, L), locationToM
 impossible(R, T, GT) :- feedRSTask(T), robot(R), taskLocation(T, L), locationToMachineMap(L, M), rsFillState(M, 3, GT).
 % Do not feed a product with a cap.
 impossible(R, T, GT) :- feedRSTask(T), robot(R), holding(R, P, GT), productCap(P, _, GT).
+% Do not feed a product with a ring.
+impossible(R, T, GT) :- feedRSTask(T), robot(R), holding(R, P, GT), productRing(P, 1, _, GT).
 
 rsFedByRobot(R, M, P, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L), locationToMachineMap(L, M),
                              holding(R, P, GT-1).
