@@ -10,15 +10,17 @@ std::vector<robot_ptr> const GameData::getRobots() const {
     return this->robots;
 }
 
-std::vector<station_ptr> const GameData::getStations() const {
-    std::vector<station_ptr> stations;
-    stations.reserve(baseStations.size() + ringStations.size() 
-                    + capStations.size() + deliveryStations.size()); // preallocate memory
+void const GameData::fillStations() {
+    stations.reserve(baseStations.size() + ringStations.size()
+            + capStations.size() + deliveryStations.size()); // preallocate memory
     stations.insert(stations.end(), baseStations.begin(), baseStations.end());
     stations.insert(stations.end(), ringStations.begin(), ringStations.end());
     stations.insert(stations.end(), capStations.begin(), capStations.end());
     stations.insert(stations.end(), deliveryStations.begin(), deliveryStations.end());
-    return stations;
+}
+
+std::vector<station_ptr> const GameData::getStations() {
+    return this->stations;
 }
 
 std::vector<baseStation_ptr> const GameData::getBaseStations() const {

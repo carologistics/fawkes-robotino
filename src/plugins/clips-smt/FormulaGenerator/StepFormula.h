@@ -66,8 +66,8 @@ public:
     Variable getVarRingProgress(Order &o, int i);
     Variable getVarCapProgress(Order &o);*/
 
-    Variable getVarMachineOccupied(Machine &m);//only stations
-    Variable getVarMovingTime(Robot r, Station &m);
+    Variable getVarMachineOccupied(Machine& m);//only stations
+    Variable getVarMovingTime(Robot& r, Station& m);
 
     Variable getVarCapColor(CapStation &cs);
 
@@ -77,12 +77,12 @@ public:
     Variable getVarReward();
 
     Formula equation(int value1, int value2);
-    Formula equation(Variable var, int value);
-    Formula equation(Variable var1, Variable var2);
-    Formula equation(Variable var1, Pol pol);
+    Formula equation(Variable const& var, int value);
+    Formula equation(Variable const& var1, Variable const& var2);
+    Formula equation(Variable const& var1, Pol const& pol);
     
-    Formula lessEqual(Variable var1, Variable var2);
-    Formula greater(Variable var1, Variable var2);
+    Formula lessEqual(Variable const& var1, Variable const& var2);
+    Formula greater(Variable const& var1, Variable const& var2);
 
     Formula stationIsNotBlockedFormula(Robot& r, Station& s);
     
@@ -121,8 +121,9 @@ public:
     Formula getCollectWorkpieceRewardFormula(Robot &r, Station &s);
     
     Formula getDeliverWorkpieceFormula();
-    Formula getDeliverWorkpieceFormula(Robot &r, Station &d);
+    Formula getDeliverWorkpieceFormula(Robot &r, DeliveryStation &ds);
     Formula getDeliverWorkpieceRewardFormula(Robot &r, Station &d);
+    std::map<std::string, Variable> getVariables() const;
     //Formula getMarkOrderDeliveredFormula(Robot &r, Order &o);
 
 private:
@@ -131,7 +132,9 @@ private:
     stepFormula_ptr previousStep = nullptr;
 
     GameData& gameData;
-    std::map<std::string, Variable> varibles = std::map<std::string, Variable>();
+    std::map<std::string, Variable> variables = std::map<std::string, Variable>();
+    
+    
 };
 
 #endif /* STEPFORMULA_H */
