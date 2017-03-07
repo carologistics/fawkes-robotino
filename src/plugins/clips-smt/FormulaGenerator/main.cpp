@@ -15,7 +15,7 @@ void testMachine();
 
 int main(int argc, char** argv) {
     GameData gD = testGameData();  
-    FormulaGenerator fg = FormulaGenerator(3, gD);
+    FormulaGenerator fg = FormulaGenerator(1, gD);
     cout << fg.createFormula();
     return 0;
 }
@@ -122,6 +122,8 @@ GameData testGameData() {
     gD.addOrder(o0);
     gD.addOrder(o1);
     gD.addOrder(o2);
+    
+    gD.fillStations();
     
     return gD;
 }
