@@ -73,7 +73,7 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
 		if ( !info.Alive )
 		{
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
-			setInterrupt(InterruptSolving::Critical);
+			setInterrupt(InterruptSolving::Critical, "New robot");
 			info.AliveExternal = generateAliveExternal(name);
 		} //if ( !info.Alive )
 		info.LastSeen = Clock::now();
@@ -115,6 +115,10 @@ AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
 		{
 			GameTime = ExplorationTime + gameTime;
 		} //else if ( phase == "PRODUCTION" )
+		else if ( phase == "POST_GAME" )
+		{
+			GameTime = -1;
+		} //else if ( phase == "POST_GAME" )
 	} //try
 	catch ( const std::exception& e )
 	{
@@ -162,7 +166,7 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 					info.FillState = 0;
 				} //if ( state == "BROKEN" )
 
-				setInterrupt(InterruptSolving::Critical);
+				setInterrupt(InterruptSolving::Critical, "Machine broken/down");
 			} //if ( state == "BROKEN" || state == "DOWN" )
 
 			if ( info.State == "BROKEN" || info.State == "DOWN" )
@@ -177,11 +181,11 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
 
 				if ( diff >= 15 )
 				{
-					setInterrupt(InterruptSolving::High);
+					setInterrupt(InterruptSolving::High, "Machine much earlier up again");
 				} //if ( diff >= 15 )
 				else if ( diff >= 8 )
 				{
-					setInterrupt(InterruptSolving::Normal);
+					setInterrupt(InterruptSolving::Normal, "Machine earlier up again");
 				} //else if ( diff >= 8 )
 			} //if (info.State == "BROKEN" || info.State == "DOWN" )
 		} //if ( state != Machines[machine].State )
@@ -413,7 +417,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		//Distances
 		UpdateNavgraphDistances(true),
 		//Requests
-		Interrupt(InterruptSolving::Not), SentCancel(false),
+		Interrupt(InterruptSolving::Not), InterruptReason(""), SentCancel(false),
 		//Solving, loop intern
 		ProgramGrounded(false), ProductionStarted(false),
 		//Solving
@@ -503,7 +507,7 @@ AspPlanerThread::loop(void)
 			if ( info.Alive && now - info.LastSeen >= timeOut )
 			{
 				logger->log_warn(LoggingComponent, "Robot %s is considered dead.", pair.first.c_str());
-				setInterrupt(InterruptSolving::Critical);
+				setInterrupt(InterruptSolving::Critical, "Dead robot");
 				info.Alive = false;
 				if ( info.Doing.isValid() )
 				{

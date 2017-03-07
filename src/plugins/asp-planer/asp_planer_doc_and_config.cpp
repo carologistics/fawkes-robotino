@@ -255,6 +255,11 @@
  *
  * @var InterruptSolving::Critical
  * @brief Interrupt in any case.
+ *
+ * @fn const char* interruptString(const InterruptSolving)
+ * @brief Converts the enum to a string.
+ * @param[in] interrupt The enum value.
+ * @return The value represented as string.
  */
 
 /** @class AspPlanerThread "asp_planer_thread.h"
@@ -403,6 +408,9 @@
  * @property AspPlanerThread::Interrupt
  * @brief The current interrupt state.
  *
+ * @property AspPlanerThread::InterruptReason
+ * @brief The last set reason for the interrupt.
+ *
  * @property AspPlanerThread::RequestMutex
  * @brief The mutex for the requests and interupt handling.
  *
@@ -542,15 +550,17 @@ AspPlanerThread::loadConfig(void)
 	suffix = buffer + prefixLen + infixWorkingDurationLen;
 	std::strcpy(buffer + prefixLen, infixWorkingDuration);
 
-	WorkingDurations.reserve(4);
+	WorkingDurations.reserve(6);
 	std::strcpy(suffix, "base-station");
 	WorkingDurations.insert({"BS", config->get_int(buffer)});
 	std::strcpy(suffix, "cap-station");
-	WorkingDurations.insert({"CS", config->get_int(buffer)});
+	WorkingDurations.insert({"CS1", config->get_int(buffer)});
+	WorkingDurations.insert({"CS2", config->get_int(buffer)});
 	std::strcpy(suffix, "delivery-station");
 	WorkingDurations.insert({"DS", config->get_int(buffer)});
 	std::strcpy(suffix, "ring-station");
-	WorkingDurations.insert({"RS", config->get_int(buffer)});
+	WorkingDurations.insert({"RS1", config->get_int(buffer)});
+	WorkingDurations.insert({"RS2", config->get_int(buffer)});
 
 	for ( const auto& pair : WorkingDurations )
 	{

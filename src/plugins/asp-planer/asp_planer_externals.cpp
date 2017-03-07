@@ -139,7 +139,8 @@ generateProductBaseExternal(const ProductIdentifier& product, const std::string&
 Clingo::Symbol
 generateProductRingExternal(const ProductIdentifier& product, const int ringNumber, const std::string& color)
 {
-	return Clingo::Function("productRing", {productName(product), Clingo::Number(ringNumber), Clingo::String(color)});
+	return Clingo::Function("productRing", {productName(product), Clingo::Number(ringNumber), Clingo::String(color),
+		Clingo::Number(0)});
 }
 
 /**
@@ -151,7 +152,7 @@ generateProductRingExternal(const ProductIdentifier& product, const int ringNumb
 Clingo::Symbol
 generateProductCapExternal(const ProductIdentifier& product, const std::string& cap)
 {
-	return Clingo::Function("productCap", {productName(product), Clingo::String(cap)});
+	return Clingo::Function("productCap", {productName(product), Clingo::String(cap), Clingo::Number(0)});
 }
 
 /**
