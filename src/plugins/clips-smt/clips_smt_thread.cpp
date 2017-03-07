@@ -20,16 +20,13 @@
 
 #include "clips_smt_thread.h"
 
-#include "../../../fawkes/src/plugins/openprs/utils/proc.h"
+#include <utils/sub_process/proc.h>
 
 #include <navgraph/navgraph.h>
 #include <navgraph/yaml_navgraph.h>
-#include <navgraph/constraints/static_list_edge_constraint.h>
+//#include <navgraph/constraints/static_list_edge_constraint.h>
 #include <navgraph/constraints/static_list_edge_cost_constraint.h>
 #include <navgraph/constraints/constraint_repo.h>
-
-#include <llsf_msgs/ClipsSmtData.pb.h>
-#include <google/protobuf/descriptor.h>
 
 using namespace fawkes;
 
@@ -56,8 +53,9 @@ void
 ClipsSmtThread::init()
 {
     // Init navgraph
+    edge_cost_constraint_ = new NavGraphStaticListEdgeCostConstraint("static-edge-cost");
+    navgraph->constraint_repo()->register_constraint(edge_cost_constraint_);
     navgraph->add_change_listener(this);
-    //clips_smt_test_navgraph();
 
     // Test z3 extern binary
     proc_z3_ = NULL;
@@ -68,8 +66,9 @@ ClipsSmtThread::init()
 void
 ClipsSmtThread::finalize()
 {
-    // Remove change listener from navgraph
     navgraph->remove_change_listener(this);
+    navgraph->constraint_repo()->unregister_constraint(edge_cost_constraint_->name());
+    delete edge_cost_constraint_;
 
     envs_.clear();
 }
@@ -306,15 +305,14 @@ ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
       static_cast<std::shared_ptr<google::protobuf::Message> *>(msgptr);
     if (!*m) return CLIPS::Value("INVALID-MESSAGE", CLIPS::TYPE_SYMBOL);
 
-    llsf_msgs::ClipsSmtData data;
-    data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name()
+    data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name() OR data.machines().size()
 
     // Use handle to associate request to solution
     std::cout << "Handle request_" << handle << std::endl;
 
     // Wakeup the loop function
-    //std::cout << "CSMT_request:     Wake up the loop" << std::endl;
-    //wakeup();
+    std::cout << "CSMT_request:     Wake up the loop" << std::endl;
+    wakeup();
 
     return CLIPS::Value("Correct-Message", CLIPS::TYPE_SYMBOL);
 }
@@ -355,7 +353,10 @@ ClipsSmtThread::clips_smt_done(std::string foo, std::string bar)
 void
 ClipsSmtThread::loop()
 {
-    std::cout << "CSMT_loop:        Test solving z3 formula with running() "<< running() << std::endl;
+    std::cout << "CSMT_loop:        Test solving z3 formula with running() " << running() << std::endl;
+
+    std::cout << "CSMT_loop:        Compute distances between nodes in navgraph" << std::endl;
+    clips_smt_compute_distances();
 
     // Build simple formula
     std::cout << "CSMT_loop:        Create z3 formula" << std::endl;
@@ -383,16 +384,16 @@ ClipsSmtThread::loop()
  void
  ClipsSmtThread::clips_smt_compute_distances()
  {
-     std::cout << "CSMT_test:        Compute distances of all nodes." << std::endl;
-     std::vector<NavGraphNode> nodes = navgraph->nodes();
+    std::vector<NavGraphNode> nodes = navgraph->nodes();
+    //std::cout << "CSMT_test:        Compute distances of all ["<< nodes.size() << "] nodes." << std::endl;
 
  	for (unsigned int i = 0; i < nodes.size(); ++i) {
- 		for (unsigned int j = 0; j < nodes.size(); ++j) {
+ 		for (unsigned int j = 1; j < nodes.size(); ++j) {
  			if (i == j) continue;
+            //std::pair<std::string, std::string> nodes_pair(nodes[i].name(), nodes[j].name());
 
  			NavGraphPath p = navgraph->search_path(nodes[i], nodes[j]);
-             std::cout << "CSMT_test:        Distance between node " << nodes[i].name() << " and " << nodes[j].name() << " is " << p.cost() << std::endl;
- 			func(nodes[i], nodes[j], p.cost());
+ 			// distances_[nodes_pair] = std::stof(p.cost); // TODO (Igor) save distances into map distances_
  		}
  	}
  }
@@ -454,5 +455,10 @@ void
 ClipsSmtThread::clips_smt_test_navgraph()
 {
     std::cout << "CSMT_test:        Navgraph name: " << navgraph->name() << std::endl;
-    //clips_smt_compute_distances();
+    std::vector<NavGraphEdge> edges = navgraph->edges();
+    std::cout << "CSMT_test:        Navgraph has " << edges.size() << " many edges " << std::endl;
+    for(NavGraphEdge edge: edges){
+        std::cout << "CSMT_test:        Navgraph edge from " << edge.from() << " to " << edge.to() << std::endl;
+    }
+    clips_smt_compute_distances();
 }
