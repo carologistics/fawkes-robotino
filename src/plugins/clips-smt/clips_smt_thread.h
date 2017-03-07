@@ -43,10 +43,12 @@
 #include <iostream>
 
 #include "clips_smt_data.h"
+#include <llsf_msgs/ClipsSmtData.pb.h>
+
 
 namespace fawkes {
     class SubProcess;
-    class NavGraphStaticListEdgeConstraint;
+    class NavGraphStaticListEdgeCostConstraint;
 }
 
 class ClipsSmtThread
@@ -100,10 +102,13 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_request(void *msgptr, std::string handle);
   CLIPS::Value clips_smt_get_plan(void *msgptr, std::string handle);
   CLIPS::Value clips_smt_done(std::string foo, std::string bar);
+  llsf_msgs::ClipsSmtData data;
+
 
   // Navgraph
   void clips_smt_compute_distances();
-  std::function<void (const fawkes::NavGraphNode &, const fawkes::NavGraphNode &, float)> func;
+  std::map<std::pair<std::string, std::string>, float> distances_;
+  fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
 
   // Test
   void clips_smt_test_z3();

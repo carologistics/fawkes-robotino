@@ -36,16 +36,16 @@ clips-agent:
   # This is particularly useful to kick an SkillGUI which is holding
   # the lock just due to an oversight.
   steal-skiller-control: true
- 
+
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
   agent: rcll2016/rcll2016
 
- 
+
   rcll2016:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: nothing
-        
+
     enable-sim: false
 
     #real-world-setup:
@@ -76,7 +76,7 @@ clips-agent:
         C-CS2: BLACK
         M-CS1: GREY
         M-CS2: BLACK
-    
+
     waiting-points:
       ins-1-robotino1: WAIT_FOR_INS_1_ROBOTINO_1
       ins-2-robotino1: WAIT_FOR_INS_2_ROBOTINO_1
@@ -114,10 +114,10 @@ clips-agent:
       cyan: [D1_PUCK_STORAGE_1, D1_PUCK_STORAGE_2]
       magenta: [D2_PUCK_STORAGE_1, D2_PUCK_STORAGE_2]
 
-    exploration:      
+    exploration:
       #row defined in host.yaml (this is only the default!)
       row: MID
-      
+
       row-high: ["Z16", "Z3", "Z2", "Z1", "Z13", "Z14", "Z15", "Z4"]
       row-mid: ["Z9", "Z10", "Z11", "Z12", "Z8", "Z7", "Z6", "Z5"]
       row-low: ["Z17", "Z18", "Z19", "Z20", "Z24", "Z23", "Z22", "Z21"]
@@ -126,4 +126,3 @@ clips-agent:
       latest-send-last-report-time: 210 # =3:30
 
       needed-visibility-history: 15
-
