@@ -373,6 +373,27 @@
   (printout warn "Unknown task " ?taskName " cannot start!" crlf)
 )
 
+(defrule asp-wait-with-deliver
+  (declare (salience ?*PRIORITY-HIGH*))
+  (asp-doing (task "deliver") (params ? ? ? ? ? ? ?order ?))
+  (game-time ?gt ?)
+  (order (id ?order) (begin ?begin&:(< ?gt ?begin)))
+  ?step <- (step (state wait-for-activation))
+  =>
+  (modify ?step (state inactive))
+  (assert (asp-deliver ?begin))
+)
+
+(defrule asp-deliver-now
+  (declare (salience ?*PRIORITY-HIGH*))
+  ?del <- (asp-deliver ?begin)
+  (game-time ?gt&:(>= ?gt ?begin) ?)
+  ?step <- (step (state inactive))
+  =>
+  (retract ?del)
+  (modify ?step (state wait-for-activation))
+)
+
 (defrule asp-start-deliver
   ?state <- (state IDLE)
   ;params should look like this: m ( C DS I ) 2 1
