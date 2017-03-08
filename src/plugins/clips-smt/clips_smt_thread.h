@@ -36,6 +36,9 @@
 
 #include <z3++.h>
 #include <carl/numbers/numbers.h>
+//#include <carl/core/VariablePool.h>
+//#include <carl/formula/Formula.h>
+//#include <carl/io/SMTLIBStream.h>
 
 #include <vector>
 #include <string>
@@ -102,7 +105,7 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_request(void *msgptr, std::string handle);
   CLIPS::Value clips_smt_get_plan(void *msgptr, std::string handle);
   CLIPS::Value clips_smt_done(std::string foo, std::string bar);
-  llsf_msgs::ClipsSmtData data;
+  //llsf_msgs::ClipsSmtData data;
 
 
   // Navgraph
