@@ -582,7 +582,7 @@
   (asp-send-feedback ?doc)
   (modify ?pE (done TRUE))
   (retract ?state ?doing)
-  (assert (state IDLE))
+  (assert (state CLEAN-TASK-AND-STEPS))
 )
 
 (defrule asp-task-failure
@@ -615,6 +615,29 @@
   "Plan is deleted, change state to idle."
   ?s <- (state DELETE-PLAN)
   (not (planElement (done FALSE)))
+  =>
+  (retract ?s)
+  (assert (state CLEAN-TASK-AND-STEPS))
+)
+
+(defrule asp-clean-task
+  (state CLEAN-TASK-AND-STEPS)
+  ?t <- (task)
+  =>
+  (retract ?t)
+)
+
+(defrule asp-clean-step
+  (state CLEAN-TASK-AND-STEPS)
+  ?s <- (step)
+  =>
+  (retract ?s)
+)
+
+(defrule asp-clean-to-idle
+  ?s <- (state CLEAN-TASK-AND-STEPS)
+  (not (task))
+  (not (step))
   =>
   (retract ?s)
   (assert (state IDLE))
