@@ -68,8 +68,11 @@ AspPlanerThread::initClingo(void)
 	std::strcpy(suffix, "program-files");
 	const auto files = config->get_strings(buffer);
 
-	//! @todo Read # threads from config
-	ClingoAcc->setNumberOfThreads(7);
+	std::strcpy(suffix, "threads");
+	const auto threads = config->get_int(buffer);
+	std::strcpy(suffix, "use-splitting");
+	const auto splitting = config->get_bool(buffer);
+	ClingoAcc->setNumberOfThreads(threads, splitting);
 
 	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %d", path.c_str(),
 		ClingoAcc->DebugLevel.load());

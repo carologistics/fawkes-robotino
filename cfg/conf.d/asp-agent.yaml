@@ -18,6 +18,11 @@ asp-agent:
     robots: [Tuvok,T'Pol,Spock]
     robot-timeout: 10
 
+    #How many threads clingo should use for solving.
+    threads: 7
+    #Wether splitting instead of competing for multiple threads by clingo should be used.
+    use-splitting: false
+
     max-orders: 8
     max-quantity: 2
     max-products: 6
