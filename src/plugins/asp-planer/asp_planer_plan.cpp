@@ -269,6 +269,63 @@ AspPlanerThread::loopPlan(void)
 	MutexLocker solvingLocker(&SolvingMutex);
 	if ( !NewSymbols )
 	{
+		MutexLocker worldLocker(&WorldMutex);
+		static bool once = true;
+		if ( GameTime == -1 && once )
+		{
+			MutexLocker planLocker(&PlanMutex);
+			once = false;
+
+			int totalSum = 0;
+
+			for ( const auto& pair : Plan )
+			{
+				int sum = 0, last = ReceivedZonesToExplore ? 0 : ExplorationTime, id = 0;
+				logger->log_info(LoggingComponent, "Plan & idle time for robot %s", pair.first.c_str());
+
+				constexpr const char *idleFormat = " Idle: %d seconds";
+				char idleString[std::strlen(idleFormat) + 1 + 3] = {0};
+
+				for ( const auto& task : pair.second.Tasks )
+				{
+					if ( task.Begin >= ProductionEnd )
+					{
+						//Since the end time of the last task didn't end this loop we have to add idle.
+						const int idle = task.Begin - last;
+						logger->log_info(LoggingComponent, "End game idle: %d", idle);
+						sum += idle;
+						break;
+					} //if ( task.Begin >= ProductionEnd )
+
+					if ( task.Begin > last )
+					{
+						const int idle = task.Begin - last;
+						std::sprintf(idleString, idleFormat, idle);
+						sum += idle;
+					} //if ( task.Begin > last )
+					else
+					{
+						idleString[0] = 0;
+					} //else -> if ( task.Begin > last )
+					last = task.End;
+
+					logger->log_info(LoggingComponent, "Task #%2d: (%-33s, %4d, %4d)%s", ++id, task.Task.c_str(),
+						task.Begin, task.End, idleString);
+
+					if ( task.End >= ProductionEnd )
+					{
+						//Do not consider tasks after the game time.
+						break;
+					} //if ( task.End >= ProductionEnd )
+				} //for ( const auto& task : pair.second.Tasks )
+
+				logger->log_info(LoggingComponent, "Total idle time for %s: %d", pair.first.c_str(), sum);
+				totalSum += sum;
+			} //for ( const auto& pair : Plan )
+
+			logger->log_info(LoggingComponent, "Total idle time: %d, avg. idle time: %zu", totalSum,
+				totalSum / Plan.size());
+		} //if ( GameTime == -1 && once )
 		return;
 	} //if ( !NewSymbols )
 
