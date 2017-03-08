@@ -70,6 +70,12 @@ ClipsSmtThread::finalize()
     navgraph->constraint_repo()->unregister_constraint(edge_cost_constraint_->name());
     delete edge_cost_constraint_;
 
+    if (proc_z3_) {
+      logger->log_info(name(), "Killing z3 extern bianry");
+      proc_z3_->kill(SIGINT);
+    }
+    delete proc_z3_;
+
     envs_.clear();
 }
 
@@ -405,8 +411,16 @@ ClipsSmtThread::loop()
  void
  ClipsSmtThread::clips_smt_test_z3()
  {
-     //const char *argv[] = { "1", "2", "3",  NULL };
-     //proc_z3_ = new SubProcess("z3 binary", "$HOME/z3/bin", argv, NULL);
+     /**
+     std::cout << "CSMT_test:      Test z3 extern binary" << std::endl;
+     //const char basic_boolean[] = {"(set-option :print-success false)\n(set-logic QF_UF)\n(declare-const p Bool)\n(assert (and p (not p)))\n(check-sat) ; returns 'unsat'\n(exit)"};
+     const char *argv[] = { "/home/robosim/z3/bin/z3",
+                            "-smt2",
+                            "/home/robosim/z3/bin/basic_boolean.smt",
+                            NULL };
+     proc_z3_ = new SubProcess("z3 binary", argv[0], argv, NULL, logger);
+     proc_z3_->check_proc();
+     **/
  }
 
  void
