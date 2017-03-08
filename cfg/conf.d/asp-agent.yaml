@@ -5,7 +5,7 @@
 ---
 asp-agent:
   planer:
-    debug-level: 30
+    debug-level: 20
 
     program-path: ../src/agents/asp/
     program-files: [exploration.lp, facts.lp, goal.lp, machines.lp, orders.lp, products.lp, robots.lp, state.lp, taskDeliver.lp, taskFeedRS.lp, taskGetBase.lp, taskGetProduct.lp, taskGoto.lp, taskMountCap.lp, taskMountRing.lp, taskPrepareCS.lp]
@@ -57,9 +57,9 @@ asp-agent:
 
   #How long each machine type takes to finish it's working on a product.
   working-durations:
-    cap-station: 20
-    ring-station: 50
-    delivery-station: 30
+    cap-station: 5 #20 In the moment all machines work as fast as they can.
+    ring-station: 5 #50
+    delivery-station: 5 #30
     base-station: 5
 
     broken: 45
