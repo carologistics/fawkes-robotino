@@ -76,6 +76,9 @@ ClipsSmtThread::finalize()
     }
     delete proc_z3_;
 
+    //std::remove("carl_formula.smt");
+
+
     envs_.clear();
 }
 
@@ -285,7 +288,7 @@ ClipsSmtThread::clips_smt_create_formula()
     //std::cout << constraints << std::endl << constants << std::endl;
     for (unsigned i = 0; i < formula.size(); i++) {
         z3Optimizer.add(formula[i]);
-        std::cout << "CSMT_solve:       Constraint " << formula[i] << std::endl;
+        std::cout << "CSMT_solve: Constraint " << formula[i] << std::endl;
     }
 
     return z3Optimizer.check();
@@ -294,7 +297,7 @@ ClipsSmtThread::clips_smt_create_formula()
 void
 ClipsSmtThread::clips_smt_react_on_result(z3::check_result result)
 {
-    std::cout << "CSMT_react:       Result: " << result << std::endl;
+    std::cout << "CSMT_react: Result: " << result << std::endl;
 }
 
 /**
@@ -311,13 +314,13 @@ ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
       static_cast<std::shared_ptr<google::protobuf::Message> *>(msgptr);
     if (!*m) return CLIPS::Value("INVALID-MESSAGE", CLIPS::TYPE_SYMBOL);
 
-    data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name() OR data.machines().size()
+    //data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name() OR data.machines().size()
 
     // Use handle to associate request to solution
     std::cout << "Handle request_" << handle << std::endl;
 
     // Wakeup the loop function
-    std::cout << "CSMT_request:     Wake up the loop" << std::endl;
+    std::cout << "CSMT_request: Wake up the loop" << std::endl;
     wakeup();
 
     return CLIPS::Value("Correct-Message", CLIPS::TYPE_SYMBOL);
@@ -359,21 +362,21 @@ ClipsSmtThread::clips_smt_done(std::string foo, std::string bar)
 void
 ClipsSmtThread::loop()
 {
-    std::cout << "CSMT_loop:        Test solving z3 formula with running() " << running() << std::endl;
+    std::cout << "CSMT_loop: Test solving z3 formula with running() " << running() << std::endl;
 
-    std::cout << "CSMT_loop:        Compute distances between nodes in navgraph" << std::endl;
+    std::cout << "CSMT_loop: Compute distances between nodes in navgraph" << std::endl;
     clips_smt_compute_distances();
 
     // Build simple formula
-    std::cout << "CSMT_loop:        Create z3 formula" << std::endl;
+    std::cout << "CSMT_loop: Create z3 formula" << std::endl;
     z3::expr_vector formula = clips_smt_create_formula();
 
     // Give it to z3 solver
-    std::cout << "CSMT_loop:        Solve z3 formula" << std::endl;
+    std::cout << "CSMT_loop: Solve z3 formula" << std::endl;
     z3::check_result result = clips_smt_solve_formula(formula);
 
     // Evaluate
-    std::cout << "CSMT_loop:        React on solved z3 formula" << std::endl;
+    std::cout << "CSMT_loop: React on solved z3 formula" << std::endl;
     clips_smt_react_on_result(result);
 }
 
@@ -406,17 +409,30 @@ ClipsSmtThread::loop()
 
 /**
  * Test methods
+ * - z3: Create a SubProcess and fill the z3 solver with the smtlib format of a carl formula
+ * - carl: Call a carl method and compare computed to known output
+ * - data: Fill own data structure with dummy values
+ * - navgraph: Count nodes and edges of navgraph and compute its distances
  **/
 
  void
  ClipsSmtThread::clips_smt_test_z3()
  {
      /**
-     std::cout << "CSMT_test:      Test z3 extern binary" << std::endl;
-     //const char basic_boolean[] = {"(set-option :print-success false)\n(set-logic QF_UF)\n(declare-const p Bool)\n(assert (and p (not p)))\n(check-sat) ; returns 'unsat'\n(exit)"};
+     std::cout << "CSMT_test: Test z3 extern binary" << std::endl;
+
+     carl::Variable x = carl::freshRealVariable("x");
+ 	 Rational r = 4;
+ 	 carl::MultivariatePolynomial<Rational> mp = Rational(r*r)*x*x + r*x + r;
+ 	 carl::Formula<carl::MultivariatePolynomial<Rational>> f(mp, carl::Relation::GEQ);
+
+     std::ofstream outputFile("carl_formula.smt");
+     outputFile << carl::outputSMTLIB(carl::Logic::QF_NRA, {f});
+     outputFile.close();
+
      const char *argv[] = { "/home/robosim/z3/bin/z3",
                             "-smt2",
-                            "/home/robosim/z3/bin/basic_boolean.smt",
+                            "/home/robosim/carl_test/carl_formula.smt",
                             NULL };
      proc_z3_ = new SubProcess("z3 binary", argv[0], argv, NULL, logger);
      proc_z3_->check_proc();
