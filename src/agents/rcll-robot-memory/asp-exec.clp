@@ -322,7 +322,7 @@
   (state IDLE)
   (time $?time)
   =>
-  (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" " " ?time crlf)
+  (printout t "Chose Task #" ?idx ": " ?task " (" ?begin ", " ?end ")" crlf)
   (bind ?pair (asp-start-task ?task ?idx))
   (bind ?taskName (nth$ 1 ?pair))
   (bind ?params (delete$ ?pair 1 1))
@@ -483,7 +483,6 @@
   (bind ?machineSide (asp-get-side ?side))
   (bind ?taskID (* ?index 1000))
   (bind ?ringColor (nth$ ?ring ?rings))
-  (printout t "MountRing Order: " ?order " Ring: " ?ring " Product-ID: " ?prod " Rings: " ?rings " RingColor: " ?ringColor crlf)
   (retract ?state)
   (assert (task (id ?taskID) (name add-additional-ring) (state ordered) (steps (create$ (+ ?taskID 1) (+ ?taskID 2))))
           (step (id (+ ?taskID 1)) (name drive-to) (machine ?machineName) (side ?machineSide))
@@ -520,7 +519,6 @@
   (game-time ?gt ?)
   (time $?time)
   =>
-  (printout t "Begin really: " ?task " " ?time crlf)
   (bind ?soll (switch ?taskName
     (case "deliver"     then ?*ASP-DELIVER-TIME*)
     (case "feedRS"      then ?*ASP-FEED-RS-TIME*)
@@ -550,7 +548,7 @@
   (game-time ?gt ?)
   (time $?time)
   =>
-  (printout t "Task #" ?idx " successfully executed." " " ?time crlf)
+  (printout t "Task #" ?idx " successfully executed." crlf)
   (bind ?gt (asp-game-time ?gt))
   (bind ?doc (asp-create-feedback-bson end ?task))
   (bson-append ?doc "end" ?gt)
