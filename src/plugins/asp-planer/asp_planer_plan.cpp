@@ -277,6 +277,7 @@ AspPlanerThread::loopPlan(void)
 			once = false;
 
 			int totalSum = 0;
+			bool noAdd = false;
 
 			for ( const auto& pair : Plan )
 			{
@@ -288,20 +289,24 @@ AspPlanerThread::loopPlan(void)
 
 				for ( const auto& task : pair.second.Tasks )
 				{
-					if ( task.Begin >= ProductionEnd )
+					if ( task.Begin >= ProductionEnd && !noAdd )
 					{
 						//Since the end time of the last task didn't end this loop we have to add idle.
-						const int idle = task.Begin - last;
-						logger->log_info(LoggingComponent, "End game idle: %d", idle);
+						const int idle = ProductionEnd - last;
+						logger->log_info(LoggingComponent, "Effektive end game idle: %d", idle);
 						sum += idle;
-						break;
-					} //if ( task.Begin >= ProductionEnd )
+						logger->log_info(LoggingComponent, "==== Game end ====");
+						noAdd = true;
+					} //if ( task.Begin >= ProductionEnd && !noAdd )
 
 					if ( task.Begin > last )
 					{
 						const int idle = task.Begin - last;
 						std::sprintf(idleString, idleFormat, idle);
-						sum += idle;
+						if ( !noAdd )
+						{
+							sum += idle;
+						} //if ( !noAdd )
 					} //if ( task.Begin > last )
 					else
 					{
@@ -312,11 +317,11 @@ AspPlanerThread::loopPlan(void)
 					logger->log_info(LoggingComponent, "Task #%2d: (%-33s, %4d, %4d)%s", ++id, task.Task.c_str(),
 						task.Begin, task.End, idleString);
 
-					if ( task.End >= ProductionEnd )
+					if ( task.End >= ProductionEnd && !noAdd )
 					{
-						//Do not consider tasks after the game time.
-						break;
-					} //if ( task.End >= ProductionEnd )
+						logger->log_info(LoggingComponent, "==== Game end ====");
+						noAdd = true;
+					} //if ( task.End >= ProductionEnd && !noAdd )
 				} //for ( const auto& task : pair.second.Tasks )
 
 				logger->log_info(LoggingComponent, "Total idle time for %s: %d", pair.first.c_str(), sum);
