@@ -277,6 +277,7 @@ AspPlanerThread::loopPlan(void)
 			once = false;
 
 			int totalSum = 0;
+			bool noAdd = false;
 
 			for ( const auto& pair : Plan )
 			{
@@ -288,20 +289,24 @@ AspPlanerThread::loopPlan(void)
 
 				for ( const auto& task : pair.second.Tasks )
 				{
-					if ( task.Begin >= ProductionEnd )
+					if ( task.Begin >= ProductionEnd && !noAdd )
 					{
 						//Since the end time of the last task didn't end this loop we have to add idle.
-						const int idle = task.Begin - last;
-						logger->log_info(LoggingComponent, "End game idle: %d", idle);
+						const int idle = ProductionEnd - last;
+						logger->log_info(LoggingComponent, "Effektive end game idle: %d", idle);
 						sum += idle;
-						break;
-					} //if ( task.Begin >= ProductionEnd )
+						logger->log_info(LoggingComponent, "==== Game end ====");
+						noAdd = true;
+					} //if ( task.Begin >= ProductionEnd && !noAdd )
 
 					if ( task.Begin > last )
 					{
 						const int idle = task.Begin - last;
 						std::sprintf(idleString, idleFormat, idle);
-						sum += idle;
+						if ( !noAdd )
+						{
+							sum += idle;
+						} //if ( !noAdd )
 					} //if ( task.Begin > last )
 					else
 					{
@@ -312,11 +317,11 @@ AspPlanerThread::loopPlan(void)
 					logger->log_info(LoggingComponent, "Task #%2d: (%-33s, %4d, %4d)%s", ++id, task.Task.c_str(),
 						task.Begin, task.End, idleString);
 
-					if ( task.End >= ProductionEnd )
+					if ( task.End >= ProductionEnd && !noAdd )
 					{
-						//Do not consider tasks after the game time.
-						break;
-					} //if ( task.End >= ProductionEnd )
+						logger->log_info(LoggingComponent, "==== Game end ====");
+						noAdd = true;
+					} //if ( task.End >= ProductionEnd && !noAdd )
 				} //for ( const auto& task : pair.second.Tasks )
 
 				logger->log_info(LoggingComponent, "Total idle time for %s: %d", pair.first.c_str(), sum);
@@ -325,6 +330,37 @@ AspPlanerThread::loopPlan(void)
 
 			logger->log_info(LoggingComponent, "Total idle time: %d, avg. idle time: %zu", totalSum,
 				totalSum / Plan.size());
+
+			int id = 0;
+			for ( const auto& product : Products )
+			{
+				bool found = false, hold = false;
+				string_view location;
+
+				for ( auto iter = Machines.begin(); iter != Machines.end() && !found; ++iter )
+				{
+					if ( iter->second.Storing.ID == id )
+					{
+						found = true;
+						hold = false;
+						location = iter->first;
+					} //if ( iter->second.Storing.ID == id )
+				} //for ( auto iter = Machines.begin(); iter != Machines.end() && !found; ++iter )
+
+				for ( auto iter = Robots.begin(); iter != Robots.end() && !found; ++iter )
+				{
+					if ( iter->second.Holding.ID == id )
+					{
+						found = true;
+						hold = true;
+						location = iter->first;
+					} //if ( iter->second.Holding.ID == id )
+				} //for ( auto iter = Robots.begin(); iter != Robots.end() && !found; ++iter )
+
+				logger->log_info(LoggingComponent, "Product #%d: (%-11s, %-6s, %-6s, %-6s, %-5s) %s %s.", id++,
+				    product.Base.c_str(), product.Rings[1].c_str(), product.Rings[2].c_str(), product.Rings[3].c_str(),
+				    product.Cap.c_str(), hold ? "hold  by" : "stored on", location.data());
+			} //for ( const auto& product : Products )
 		} //if ( GameTime == -1 && once )
 		return;
 	} //if ( !NewSymbols )
@@ -397,11 +433,11 @@ AspPlanerThread::loopPlan(void)
 		planCopy[pair.first] = pair.second.Tasks;
 	} //for ( const auto& pair : Plan )
 
-	for ( const auto& pair : tempPlan )
+	for ( auto& pair : tempPlan )
 	{
 		const auto& robotName(pair.first);
 		auto& robotPlan(planCopy[robotName]);
-		const auto& tempRobotPlan(pair.second);
+		auto& tempRobotPlan(pair.second);
 
 		logger->log_info(LoggingComponent, "Update plan for %s, %zu elements.", robotName.c_str(),
 			tempRobotPlan.size());
@@ -433,21 +469,24 @@ AspPlanerThread::loopPlan(void)
 			if ( sameTask(*planIter, *tempIter) )
 			{
 				//Everything is fine, we have the same task, maybe only update the timing.
-				if ( needsUpdate(*planIter, *tempIter) )
+				if ( needsUpdate(*planIter, *tempIter) && !planIter->Done )
 				{
 					logger->log_info(LoggingComponent, "Update time for (%s,%s,%d,%d) to (%d,%d)", robotName.c_str(),
 						planIter->Task.c_str(), planIter->Begin, planIter->End, tempIter->Begin, tempIter->End);
 					if ( planIter->Begun )
 					{
 						logger->log_warn(LoggingComponent, "The task is already started!");
+						/* Do not change the begin time for a already begun task, this breaks the evaluation based on
+						 * the plan. */
+						tempIter->Begin = planIter->Begin;
 					} //if ( planIter->Begun )
 					planIter->updateTime(*tempIter);
-				} //if ( needsUpdate(*planIter, *tempIter) )
+				} //if ( needsUpdate(*planIter, *tempIter) && !planIter->Done )
 				else
 				{
 					logger->log_info(LoggingComponent, "Leave (%s,%s,%d,%d) unchanged.", robotName.c_str(),
 						planIter->Task.c_str(), planIter->Begin, planIter->End);
-				} //else -> if ( needsUpdate(*planIter, *tempIter) )
+				} //else -> if ( needsUpdate(*planIter, *tempIter) && !planIter->Done )
 			} //if ( sameTask(*planIter, *tempIter) )
 			else
 			{
@@ -507,7 +546,7 @@ AspPlanerThread::loopPlan(void)
 				robotName.c_str(), planIter->Task.c_str(), planIter->Begin, planIter->End);
 			robotPlan.erase(planIter, planEnd);
 		} //else if ( planIter != planEnd )
-	} //for ( const auto& pair : Plan )
+	} //for ( auto& pair : Plan )
 
 	if ( commit )
 	{
