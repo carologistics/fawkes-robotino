@@ -25,6 +25,8 @@
 #external orderBegin(O, B) : order(O), deliveryTimes(L, U), B = L..U.
 #external orderDeadline(O, D) : order(O), deliveryTimes(L, U), D = L..U.
 
+% todo: Add orderBegin and deadline for the last order after the game. 5 minutes overtime
+
 #program newOrder(o, q, b, c, r1, r2, r3, deliveryBegin, deliveryEnd).
 orderBegin(o, deliveryBegin).
 orderDeadline(o, deliveryEnd).
