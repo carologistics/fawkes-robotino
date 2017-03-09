@@ -314,7 +314,7 @@ ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
       static_cast<std::shared_ptr<google::protobuf::Message> *>(msgptr);
     if (!*m) return CLIPS::Value("INVALID-MESSAGE", CLIPS::TYPE_SYMBOL);
 
-    //data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name() OR data.machines().size()
+    data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name() OR data.machines().size()
 
     // Use handle to associate request to solution
     std::cout << "Handle request_" << handle << std::endl;
@@ -393,16 +393,23 @@ ClipsSmtThread::loop()
  void
  ClipsSmtThread::clips_smt_compute_distances()
  {
-    std::vector<NavGraphNode> nodes = navgraph->nodes();
-    //std::cout << "CSMT_test:        Compute distances of all ["<< nodes.size() << "] nodes." << std::endl;
+    std::vector<std::string> nodes = {
+        "C-BS-I","C-BS-0",
+        "C-CS1-I","C-CS1-O","C-CS2-I","C-CS2-O",
+        "C-DS-I","C-DS-O",
+        "C-RS1-I","C-RS1-O","C-RS2-I","C-RS2-O"
+    };
+
+    // TODO (Igor) Init NavGraphNodes with robot positions
 
  	for (unsigned int i = 0; i < nodes.size(); ++i) {
  		for (unsigned int j = 1; j < nodes.size(); ++j) {
  			if (i == j) continue;
-            //std::pair<std::string, std::string> nodes_pair(nodes[i].name(), nodes[j].name());
+            std::pair<std::string, std::string> nodes_pair(nodes[i], nodes[j]);
 
  			NavGraphPath p = navgraph->search_path(nodes[i], nodes[j]);
- 			// distances_[nodes_pair] = std::stof(p.cost); // TODO (Igor) save distances into map distances_
+            //std::cout << "CSMT_test: Distance between " << nodes[i] << " and " << nodes[j] << " is " << p.cost() << std::endl;
+ 			distances_[nodes_pair] = p.cost();
  		}
  	}
  }
