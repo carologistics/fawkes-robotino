@@ -63,19 +63,21 @@ impossible(R, T, GT) :- allDeliverTasks(T), robot(R), not holding(R, _, GT), hor
 impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), base(O, B), not productBase(P, B).
 % The product has to have the correct cap color.
 impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), cap(O, C), not productCap(P, C, GT).
-% The all rings has to be mounted.
+% All rings have to be mounted.
 impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color),
-						not productRing(P, Ring, Color, GT).
+                        not productRing(P, Ring, Color, GT).
+% No other rings have to be mounted.
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), not ring(O, Ring, _), productRing(P, Ring, _, GT).
 
 % Do not deliver before its time.
 impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderBegin(O, B), B > GT + CT, robot(R),
-						horizon(H), GT = 0..H-1.
+                        horizon(H), GT = 0..H-1.
 % Do not deliver after its time.
 impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D < GT + CT, robot(R),
-						horizon(H), GT = 0..H-1.
+                        horizon(H), GT = 0..H-1.
 % Do not late deliver before its time.
 impossible(R, T, GT) :- lateDeliverTask(T), currentTime(CT), order(T, O), orderDeadline(O, D), D > GT + CT,
-						robot(R), horizon(H), GT = 0..H-1.
+                        robot(R), horizon(H), GT = 0..H-1.
 
 
 putDown(R, GT) :- end(R, T, GT), allDeliverTasks(T).

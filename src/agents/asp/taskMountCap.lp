@@ -61,9 +61,11 @@ impossible(R, T, GT) :- capTask(T), robot(R), not holding(R, _, GT), GT = 0..@ho
 impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), base(O, B), not productBase(P, B).
 % The product is not allowed to have a cap.
 impossible(R, T, GT) :- capTask(T), holding(R, P, GT), productCap(P, _, GT).
-% The all rings has to be mounted.
+% All rings have to be mounted.
 impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color),
                         not productRing(P, Ring, Color, GT).
+% No other rings have to be mounted.
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), not ring(O, Ring, _), productRing(P, Ring, _, GT).
 
 capMountedByRobot(R, M, P, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L), locationToMachineMap(L, M),
                                   holding(R, P, GT-1).
