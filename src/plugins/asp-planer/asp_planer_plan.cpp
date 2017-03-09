@@ -330,6 +330,37 @@ AspPlanerThread::loopPlan(void)
 
 			logger->log_info(LoggingComponent, "Total idle time: %d, avg. idle time: %zu", totalSum,
 				totalSum / Plan.size());
+
+			int id = 0;
+			for ( const auto& product : Products )
+			{
+				bool found = false, hold = false;
+				string_view location;
+
+				for ( auto iter = Machines.begin(); iter != Machines.end() && !found; ++iter )
+				{
+					if ( iter->second.Storing.ID == id )
+					{
+						found = true;
+						hold = false;
+						location = iter->first;
+					} //if ( iter->second.Storing.ID == id )
+				} //for ( auto iter = Machines.begin(); iter != Machines.end() && !found; ++iter )
+
+				for ( auto iter = Robots.begin(); iter != Robots.end() && !found; ++iter )
+				{
+					if ( iter->second.Holding.ID == id )
+					{
+						found = true;
+						hold = true;
+						location = iter->first;
+					} //if ( iter->second.Holding.ID == id )
+				} //for ( auto iter = Robots.begin(); iter != Robots.end() && !found; ++iter )
+
+				logger->log_info(LoggingComponent, "Product #%d: (%-11s, %-6s, %-6s, %-6s, %-5s) %s %s.", id++,
+				    product.Base.c_str(), product.Rings[1].c_str(), product.Rings[2].c_str(), product.Rings[3].c_str(),
+				    product.Cap.c_str(), hold ? "hold  by" : "stored on", location.data());
+			} //for ( const auto& product : Products )
 		} //if ( GameTime == -1 && once )
 		return;
 	} //if ( !NewSymbols )
