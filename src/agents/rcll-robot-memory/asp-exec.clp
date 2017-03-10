@@ -620,6 +620,22 @@
   (assert (state IDLE))
 )
 
+(defrule asp-delete-done-task-steps
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  (task (state finished) (steps $?steps))
+  ?step <- (step (id ?id&:(member$ ?id ?steps)))
+  =>
+  (retract ?step)
+)
+
+(defrule asp-delete-done-task
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  ?task <- (task (state finished) (steps $?steps))
+  (not (step (id ?id&:(member$ ?id ?steps))))
+  =>
+  (retract ?task)
+)
+
 ;(defrule asp-update-time-estimation-exp
 ;  "Updates the time estimation for the explore task, if we have to look for the mps light."
 ;  (game-time ?gt ?t)
