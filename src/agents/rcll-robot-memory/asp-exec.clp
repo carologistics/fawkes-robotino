@@ -582,7 +582,7 @@
   (asp-send-feedback ?doc)
   (modify ?pE (done TRUE))
   (retract ?state ?doing)
-  (assert (state CLEAN-TASK-AND-STEPS))
+  (assert (state IDLE))
 )
 
 (defrule asp-task-failure
@@ -617,30 +617,23 @@
   (not (planElement (done FALSE)))
   =>
   (retract ?s)
-  (assert (state CLEAN-TASK-AND-STEPS))
-)
-
-(defrule asp-clean-task
-  (state CLEAN-TASK-AND-STEPS)
-  ?t <- (task)
-  =>
-  (retract ?t)
-)
-
-(defrule asp-clean-step
-  (state CLEAN-TASK-AND-STEPS)
-  ?s <- (step)
-  =>
-  (retract ?s)
-)
-
-(defrule asp-clean-to-idle
-  ?s <- (state CLEAN-TASK-AND-STEPS)
-  (not (task))
-  (not (step))
-  =>
-  (retract ?s)
   (assert (state IDLE))
+)
+
+(defrule asp-delete-done-task-steps
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  (task (state finished) (steps $?steps))
+  ?step <- (step (id ?id&:(member$ ?id ?steps)))
+  =>
+  (retract ?step)
+)
+
+(defrule asp-delete-done-task
+  (declare (salience ?*PRIORITY-CLEANUP*))
+  ?task <- (task (state finished) (steps $?steps))
+  (not (step (id ?id&:(member$ ?id ?steps))))
+  =>
+  (retract ?task)
 )
 
 ;(defrule asp-update-time-estimation-exp
