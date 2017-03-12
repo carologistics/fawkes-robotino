@@ -165,7 +165,7 @@ AspPlanerThread::loopClingo(void)
 			navgraphLocker.relock();
 			//Locked: ClingoAcc, WorldMutex, NavgraphDistanceMutex
 		} //if ( lastUpdate )
-		//Locked: ClingoAcc, NavgraphDistanceMutex, RequestMutex
+		//Locked: ClingoAcc, NavgraphDistanceMutex
 
 		for ( const auto& external : NavgraphDistances )
 		{
@@ -216,12 +216,19 @@ AspPlanerThread::loopClingo(void)
 	else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	{
 		MutexLocker solvingLocker(&SolvingMutex);
-		//Locked: ClingoAcc, RequestMutex, NavgraphDistanceMutex, SolvingMutex
+		//Locked: ClingoAcc, NavgraphDistanceMutex, SolvingMutex
 		if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 		{
 			//Nothing to do and last solving happened within the last fifteen seconds.
 			return;
 		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
+		MutexLocker worldLocker(&WorldMutex);
+		//Locked: ClingoAcc, NavgraphDistanceMutex, SolvingMutex, WorldMutex
+		if ( StartSolvingGameTime == GameTime )
+		{
+			//Nothing to do and the time hasn't advanced. (Game is paused or still in setup.)
+			return;
+		} //if ( StartSolvingGameTime == GameTime )
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
 	//Locked: ClingoAcc
