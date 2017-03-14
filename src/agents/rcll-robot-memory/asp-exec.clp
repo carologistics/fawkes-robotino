@@ -585,6 +585,19 @@
   (assert (state IDLE))
 )
 
+(defrule asp-bind-product-to-order
+  "A product has to have an order number for wm-insert-product-into-ds-final to fire."
+  (declare (salience ?*PRIORITY-HIGH*))
+  (state TASK-FINISHED)
+  ;params should look like this: m ( C CS1 I ) 2 1
+  (asp-doing (task "mountCap") (params ? ? ?team ?machine ? ? ?order ?))
+  (machine (name ?mps&:(eq ?mps (sym-cat ?team - ?machine))) (produced-id ?productId))
+  (order (id ?order) (product-id ?orderProductId))
+  ?product <- (product (id ?productId) (product-id 0))
+  =>
+  (synced-modify ?product product-id ?orderProductId)
+)
+
 (defrule asp-task-failure
   "Inform the planer about failure."
   ?doing <- (asp-doing (index ?idx))

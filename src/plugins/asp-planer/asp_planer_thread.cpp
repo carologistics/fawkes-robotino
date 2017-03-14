@@ -496,7 +496,7 @@ AspPlanerThread::loop(void)
 {
 	if ( Unsat >= 8 )
 	{
-		throw fawkes::Exception("The program is infeasable! We have no way to recover!");
+		throw fawkes::Exception("The program is infeasible! We have no way to recover!");
 	} //if ( Unsat >= 8 )
 
 	{
@@ -530,8 +530,8 @@ AspPlanerThread::loop(void)
 
 			if ( info.WorkingUntil && info.WorkingUntil <= GameTime )
 			{
-				logger->log_info(LoggingComponent, "Machine %s has finished working on product #%d.",
-					pair.first.c_str(), info.Storing.ID);
+				logger->log_info(LoggingComponent, "Machine %s has finished working on product #%d at %d.",
+					pair.first.c_str(), info.Storing.ID, GameTime);
 				info.WorkingUntil = 0;
 			} //if ( info.BrokenUntil && info.BrokenUntil <= GameTime )
 		} //for ( auto& pair : Machines )
@@ -554,6 +554,7 @@ AspPlanerThread::loop(void)
 				logger->log_info(LoggingComponent, "Plan & idle time for robot %s", pair.first.c_str());
 
 				constexpr const char *idleFormat = " Idle: %d seconds";
+				constexpr const char *failed = " Failed", *notFailed = "";
 				char idleString[std::strlen(idleFormat) + 1 + 3] = {0};
 
 				for ( const auto& task : pair.second.Tasks )
@@ -583,8 +584,8 @@ AspPlanerThread::loop(void)
 					} //else -> if ( task.Begin > last )
 					last = task.End;
 
-					logger->log_info(LoggingComponent, "Task #%2d: (%-33s, %4d, %4d)%s", ++id, task.Task.c_str(),
-						task.Begin, task.End, idleString);
+					logger->log_info(LoggingComponent, "Task #%2d: (%-33s, %4d, %4d)%s%s", ++id, task.Task.c_str(),
+						task.Begin, task.End, task.Failed ? failed : notFailed, idleString);
 
 					if ( task.End >= ProductionEnd && !noAdd )
 					{

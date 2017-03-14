@@ -2,6 +2,7 @@
 % ourTeam(t)                     Setup the goto tasks, that are possible, as soon as we know the special locations.
 %
 % In this file defined predicates:
+% ignoreBrokenTask(T)            The task ignores that a machine is broken.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % possible(R, goto(_), GT)       If robot R can perform the goto task at GT.
 % task(goto(L))                  The robot goes to location L.
@@ -27,6 +28,7 @@ task(T)                  :- gotoTask(T).
 % But the sole purpose of the goto task is to go to a location, so its duration is equal to the drive duration. These
 % calculations are done in the state.lp
 taskDuration(T, 0)       :- gotoTask(T).
+ignoreBrokenTask(T)      :- gotoTask(T).
 % The goto task is never really finished, because it has nothing to do with the orders or so.
 toBeDone(T, GT)          :- gotoTask(T), horizon(H), GT = 0..H-1.
 

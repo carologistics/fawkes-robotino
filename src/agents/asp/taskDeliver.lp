@@ -67,7 +67,8 @@ impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), cap(
 impossible(R, T, GT) :- allDeliverTasks(T), holding(R, P, GT), order(T, O), ring(O, Ring, Color),
                         not productRing(P, Ring, Color, GT).
 % No other rings have to be mounted.
-impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), not ring(O, Ring, _), productRing(P, Ring, _, GT).
+impossible(R, T, GT) :- capTask(T), holding(R, P, GT), order(T, O), not ring(O, Ring, Color),
+                        productRing(P, Ring, Color, GT).
 
 % Do not deliver before its time.
 impossible(R, T, GT) :- deliverTask(T), currentTime(CT), order(T, O), orderBegin(O, B), B > GT + CT, robot(R),
