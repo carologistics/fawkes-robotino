@@ -9,8 +9,10 @@
 % toBeDone(T, GT)                Task T has still to be done at GT.
 %
 % Additionally used predicates:
+% brokenLocation(L, GT)          Defined in machines.lp
 % driveDuration(L1, L2, D)       Defined in facts.lp
 % horizon(H)                     Defined in facts.lp
+% ignoreBrokenTask(T)            Defined in some task descriptions.
 % oneShotTask(T)                 Defined in some task descriptions.
 % possible(R, T, GT)             Defined in all task descriptions.
 % robot(R)                       Defined in facts.lp
@@ -38,7 +40,12 @@ fullDuration(T, L, DD + TD) :- taskDuration(T, TD), taskLocation(T, TL), driveDu
 
 % Initialize and update doing.
 doing(R, T, D, GT) :- begin(R, T, GT), robotLocation(R, L, GT), fullDuration(T, L, D).
-doing(R, T, D, GT) :- doing(R, T, D+1, GT-1), D > 0, not horizon(GT).
+% A task ignoring the broken state of a machine just advances one step.
+doing(R, T, D, GT) :- doing(R, T, D+1, GT-1), D > 0, not horizon(GT), ignoreBrokenTask(T).
+% The not ignoring tasks have to check wether the machine is broken/down or not and only advance if not.
+doing(R, T, D, GT) :- doing(R, T, D+1, GT-1), D > 0, not horizon(GT), not ignoreBrokenTask(T), taskLocation(T, L), not brokenLocation(L, GT).
+doing(R, T, D, GT) :- doing(R, T, D,   GT-1),        not horizon(GT), not ignoreBrokenTask(T), taskLocation(T, L),     brokenLocation(L, GT).
+% External initializing of the doing predicate.
 doing(R, T, D, 0) :- robotDoing(R, T, D).
 
 % Max one robot per task.
@@ -46,8 +53,9 @@ doing(R, T, D, 0) :- robotDoing(R, T, D).
 % Max one task per robot.
 :- 2 { doing(R, T, _, GT) : task(T) }, robot(R), horizon(H), GT = 0..H-1.
 
-% Setting end.
-end(R, T, GT) :- doing(R, T, 1, GT-1), not horizon(GT).
+% Setting end, we have to do the same checks as in doing regarding brokenLocation and ignoreBrokenTask.
+end(R, T, GT) :- doing(R, T, 1, GT-1), not horizon(GT), ignoreBrokenTask(T).
+end(R, T, GT) :- doing(R, T, 1, GT-1), not horizon(GT), not ignoreBrokenTask(T), taskLocation(T, L), not brokenLocation(L, GT).
 
 % Update robot location.
 % Set robot location to location of the task it just finished.

@@ -3,6 +3,7 @@
 %
 % In this file defined predicates:
 % broken(M, D, GT)               The machine M is broken for at least D time steps.
+% brokenLocation(L, GT)          The location L is broken.
 % csPrepared(M, GT)              If the cap station M is prepared to mount a cap in GT.
 % inUse(L, R, GT)                The location L is blocked by robot R in GT.
 % meaningfulGoto(L, GT)          A goto to location L has a meaning at GT, a product will be ready soon to pick it up.
@@ -47,7 +48,8 @@ inUse(L, R, GT) :- robotLocation(R, L, GT).
 % Benchmark them against each other!
 %:- 2 { inUse(L, R, GT) : robot(R) }, L != "ins-out".
 
-broken(M, D, GT) :- broken(M, D-1, GT-1), not horizon(GT), D != 1.
+broken(M, D, GT)      :- broken(M, D-1, GT-1), not horizon(GT), D != 1.
+brokenLocation(L, GT) :- broken(M, _, GT), locationToMachineMap(L, M).
 
 storing(M, P, GT) :- storing(M, P, GT-1), not pickUp(_, P, GT), not horizon(GT).
 storing(M, P, GT) :- processing(M, P, 1, GT-1), not deliveryStation(M), not horizon(GT).
