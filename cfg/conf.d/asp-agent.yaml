@@ -36,8 +36,8 @@ asp-agent:
     high: 5
 
     #The interval to check if a robot is behind schedule.
-    robot-task-check: 2
-    robot-task-begind: 5
+    robot-task-check: 5
+    robot-task-behind: 20
 
   exec:
     #How many seconds a task may be started before the time stated by the planer.
