@@ -45,6 +45,10 @@ declare ff 		holding 0
 declare ff 		cap-station 1
 declare ff 		ring-station 1
 
+;///////////
+;Goals
+;//////
+declare ff 		goal-inmind 0
 ;//////////////////
 ;TEMPORAL RELATED
 ;/////////////////
