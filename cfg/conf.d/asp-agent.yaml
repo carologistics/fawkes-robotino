@@ -1,8 +1,6 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-#doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
----
 asp-agent:
   planer:
     debug-level: 20
