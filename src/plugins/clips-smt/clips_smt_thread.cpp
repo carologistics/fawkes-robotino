@@ -57,6 +57,10 @@ ClipsSmtThread::init()
     navgraph->constraint_repo()->register_constraint(edge_cost_constraint_);
     navgraph->add_change_listener(this);
 
+    cfg_base_frame_      = config->get_string("/frames/base");
+    cfg_global_frame_    = config->get_string("/frames/fixed");
+
+
     // Test z3 extern binary
     proc_z3_ = NULL;
     //clips_smt_test_z3();
@@ -77,7 +81,6 @@ ClipsSmtThread::finalize()
     delete proc_z3_;
 
     //std::remove("carl_formula.smt");
-
 
     envs_.clear();
 }
@@ -401,18 +404,18 @@ ClipsSmtThread::loop()
         "C-RS1-I","C-RS1-O","C-RS2-I","C-RS2-O"
     };
 
-    // TODO (Igor) Init NavGraphNodes with robot positions
-    const std::string name_test = "robot_test_1";
-    NavGraphNode * node_test = new NavGraphNode( name_test, 1, 1);
-
-    navgraph->add_node_and_connect(*node_test, NavGraph::ConnectionMode::CLOSEST_EDGE_OR_NODE);
-    // TODO (Igor) Add edges to available (closest?) nodes
+    //fawkes::tf::Stamped<fawkes::tf::Pose> pose_;
+    //tf_listener->transform_origin(cfg_base_frame_, cfg_global_frame_, pose_);
+    NavGraphNode from = navgraph->closest_node(1, 1);
+    std::cout << "CSMT_test: 'from' node is " << from.name() << " with coordinates: (" << from.x() << ", " << from.y() << ") // Closest to (1,1)" << std::endl;
 
     for (unsigned int i = 0; i < nodes.size(); ++i) {
-        std::pair<std::string, std::string> nodes_pair(node_test->name(), nodes[i]);
+        std::pair<std::string, std::string> nodes_pair(from.name(), nodes[i]);
 
-        NavGraphPath p = navgraph->search_path(name_test, nodes[i]);
-        std::cout << "CSMT_test: Distance between " << name_test << " and " << nodes[i] << " is " << p.cost() << std::endl;
+        NavGraphNode to = navgraph->node(nodes[i]);
+
+        NavGraphPath p = navgraph->search_path(from, to);
+        std::cout << "CSMT_test: Distance between " << from.name() << " and " << nodes[i] << " is " << p.cost() << std::endl;
         distances_[nodes_pair] = p.cost();
     }
 
@@ -463,11 +466,13 @@ ClipsSmtThread::loop()
  void
  ClipsSmtThread::clips_smt_test_carl()
  {
+     /**
      // Test carl
      std::cout << "CSMT_test:      Test carl" << std::endl;
      bool b=false;
      if(carl::highestPower(64)==64) b=true;
      std::cout << "CSMT_test:      Hello Carl! You are " << b << std::endl;
+     **/
  }
 
 void

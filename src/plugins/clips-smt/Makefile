@@ -48,14 +48,14 @@ else
     WARN_TARGETS = warning_z3
   endif
   ifneq ($(HAVE_LIBCARL),1)
-    WARN_TARGETS = warning_carl 
+    WARN_TARGETS = warning_carl
   endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 
-.PHONY: warning_clips warning_cpp14 warning_z3 warning_carl 
+.PHONY: warning_clips warning_cpp14 warning_z3 warning_carl
 warning_clips:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips-smt plugin$(TNORMAL) ($(CLIPS_ERROR))"
 
