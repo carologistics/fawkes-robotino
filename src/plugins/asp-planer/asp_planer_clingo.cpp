@@ -1265,20 +1265,23 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	auto& robotPlan(Plan[robot]);
 	auto& robotInfo(Robots[robot]);
 
+	auto& firstNotDoneTask(robotPlan.Tasks[robotPlan.FirstNotDone]);
+
 	assert(robotPlan.CurrentTask == task);
-	assert(robotPlan.Tasks[robotPlan.FirstNotDone].Task == task);
+	assert(firstNotDoneTask.Task == task);
 	assert(robotInfo.Doing.isValid());
 
 	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
-	robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
+	firstNotDoneTask.End = end;
 	planLocker.unlock();
 	worldLocker.unlock();
 	checkForInterruptBasedOnTimeOffset(offset);
 	worldLocker.relock();
 	planLocker.relock();
 
-	robotPlan.Tasks[robotPlan.FirstNotDone++].Done = true;
+	firstNotDoneTask.Done = true;
+	++robotPlan.FirstNotDone;
 	robotPlan.CurrentTask.clear();
 
 	const auto location = robotInfo.Doing.TaskSymbol.arguments().front();
@@ -1288,6 +1291,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	if ( !success )
 	{
 		robotInfo.Doing = {};
+		firstNotDoneTask.Failed = true;
 		setInterrupt(InterruptSolving::Critical, "Task failed");
 		for ( auto i = robotPlan.FirstNotDone; i < robotPlan.Tasks.size(); ++i )
 		{

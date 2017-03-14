@@ -88,6 +88,7 @@ struct PlanElement : public BasicPlanElement
 {
 	bool Begun = false;
 	bool Done = false;
+	bool Failed = false;
 
 	//Construct from base class.
 	inline PlanElement(const BasicPlanElement& b) noexcept : BasicPlanElement(b)

@@ -554,6 +554,7 @@ AspPlanerThread::loop(void)
 				logger->log_info(LoggingComponent, "Plan & idle time for robot %s", pair.first.c_str());
 
 				constexpr const char *idleFormat = " Idle: %d seconds";
+				constexpr const char *failed = " Failed", *notFailed = "";
 				char idleString[std::strlen(idleFormat) + 1 + 3] = {0};
 
 				for ( const auto& task : pair.second.Tasks )
@@ -583,8 +584,8 @@ AspPlanerThread::loop(void)
 					} //else -> if ( task.Begin > last )
 					last = task.End;
 
-					logger->log_info(LoggingComponent, "Task #%2d: (%-33s, %4d, %4d)%s", ++id, task.Task.c_str(),
-						task.Begin, task.End, idleString);
+					logger->log_info(LoggingComponent, "Task #%2d: (%-33s, %4d, %4d)%s%s", ++id, task.Task.c_str(),
+						task.Begin, task.End, task.Failed ? failed : notFailed, idleString);
 
 					if ( task.End >= ProductionEnd && !noAdd )
 					{
