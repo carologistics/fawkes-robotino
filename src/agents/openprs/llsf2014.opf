@@ -26,7 +26,8 @@
   :context ()
   :setting (& (setting "idle-looptime-sec" $ilt_sec) (setting "idle-looptime-usec" $ilt_usec)
 	      (setting "peer-address" $peer-addr) (setting "peer-public-send-port" $peer-send-port)
-	      (setting "peer-public-recv-port" $peer-recv-port))
+	      (setting "peer-public-recv-port" $peer-recv-port)
+        (setting "robot-name" $robot-name))
   :body (
     (! (pb-setup))
     (! (pb-peer-create-local $peer-addr $peer-send-port $peer-recv-port @peer-id))
@@ -38,7 +39,10 @@
 
 
   )
-  :effects ((~> (agent-init)) (=> (peer-id public @peer-id)) (=> (agent-state IDLE)) )
+  :effects (  (~> (agent-init))
+              (=> (peer-id public @peer-id))
+              (=> (agent-state IDLE))
+              (=> (agent-name $robot-name)) )
 )
 
 (defop say

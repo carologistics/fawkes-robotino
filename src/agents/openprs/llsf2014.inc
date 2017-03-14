@@ -24,6 +24,7 @@ declare ff 	 		game-time 0
 declare ff 			game-state 0
 declare ff			game-phase 0
 declare ff			agent-state 0
+declare ff 			agent-name 0
 
 declare symbol public
 declare symbol private
@@ -73,12 +74,13 @@ declare symbol STEP-FINISHED
 declare symbol STEP-FAILED
 
 
-
 ;///////////////
 ;Coordination
 ;/////////////
 declare ff master-of 1 
 declare ff heart-beat 1
+declare ff lock 3
+
 
 ;Material Types
 declare symbol CAP
@@ -103,6 +105,7 @@ declare symbol CAP_NOT_LOADED
 declare predicate template
 declare cwp in-production
 
+add (master-of LOCKING "R-1")
 add (game-state null)
 add (game-phase null)
 add (holding NONE)
@@ -123,3 +126,4 @@ load opf "skills.opf"
 load opf "debug.opf"
 load opf "worldmodel.opf"
 load opf "workpiece-operations.opf"
+load opf "lock.opf"
