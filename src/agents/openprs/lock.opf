@@ -6,5 +6,28 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 (
+;/////////////////////
+;MASTER LOCK HANDLING
+;////////////////////
 
-	)
+	(defop receive-LockMessage
+		:invocation (protobuf-msg "llsf_msgs.LockMessage" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
+		                        $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
+		:context ((master-of LOCKING $robot-name))
+		:setting (setting "robot-name" $robot-name)
+		:body(
+			(! (= $agent (pb-field-value $msg "agent" )) )
+			(! (= $type (pb-field-value $msg "type")) )
+			(! (= $resource (pb-field-value $msg "resource")) )
+			(! (= $priority (pb-field-value $msg "priority")) )
+
+			(if (? (~ (BOUNDP $priority)))
+				(! (= $priority 0))
+				)
+
+			(=> (lock $type $agent $resource $priority))
+			)
+      	)
+
+	
+)
