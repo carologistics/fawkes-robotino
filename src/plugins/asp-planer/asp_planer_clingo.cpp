@@ -518,7 +518,7 @@ AspPlanerThread::shouldInterrupt(void)
 			static const std::chrono::seconds threshold(
 				config->get_int(std::string(ConfigPrefix) + "interrupt-thresholds/robot-task-check"));
 
-			if ( lastCheck - now >= threshold )
+			if ( now - lastCheck >= threshold )
 			{
 				lastCheck = now;
 				MutexLocker worldLocker(&WorldMutex);
@@ -537,12 +537,12 @@ AspPlanerThread::shouldInterrupt(void)
 								logger->log_warn(LoggingComponent, "Robot %s is more than %ld seconds behind schedule "
 									"(and has not send an update), increase interrupt level.", pair.first.c_str(),
 									threshold.count());
-								Interrupt = InterruptSolving::High;
+								setInterrupt(InterruptSolving::High, "Delayed Task");
 							} //if ( GameTime > doing.EstimatedEnd + threshold.count() )
 						} //if ( doing.isValid() )
 					} //if ( pair.second.Alive )
 				} //for ( const auto& pair : Robots )
-			} //if ( lastCheck - now >= threshold )
+			} //if ( now - lastCheck >= threshold )
 
 			//Check down here, so we have released the locks!
 			if ( Interrupt != InterruptSolving::Not )
