@@ -71,6 +71,28 @@
     the private team channel has been setup periodically send the message."
 )
 
+(defop net-recv-BeaconSignal
+  :invocation (protobuf-msg "llsf_msgs.BeaconSignal" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
+                              $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
+  
+  :context ()
+  :setting (& (setting "team-name" $team-name)
+          (setting "robot-name" $robot-name) (setting "robot-number" $robot-number))
+  :body (
+    (! (= @team-name (pb-field-value $msg "team_name")))
+    (! (= @beacon-time (pb-field-value $msg "time")))
+    (! (= @sec (pb-field-value @beacon-time "sec")))
+    (! (= @nsec (pb-field-value @beacon-time "nsec")))
+    (! (= @robot-name (pb-field-value $msg "peer_name")))
+    (! (= @robot-number (pb-field-value $msg "number")))
+    (! (= @team-color (pb-field-value $msg "team_color")))
+    ; TODO: ADD LOCATION INFORMATION
+    (=> (heart-beat @robot-name @robot-number @team-name @team-color @sec @nsec))
+  )
+  :documentation "Periodically receive and process beacon signals.
+    Beacon signals are broadcasted by all robots and refbox to recognize eachother. ."
+)
+
 
  (defop net-recv-GameState
     :invocation (protobuf-msg "llsf_msgs.GameState" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec

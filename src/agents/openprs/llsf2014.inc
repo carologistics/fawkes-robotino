@@ -73,6 +73,13 @@ declare symbol STEP-FINISHED
 declare symbol STEP-FAILED
 
 
+
+;///////////////
+;Coordination
+;/////////////
+declare ff master-of 1 
+declare ff heart-beat 1
+
 ;Material Types
 declare symbol CAP
 declare symbol BASE
@@ -116,4 +123,3 @@ load opf "skills.opf"
 load opf "debug.opf"
 load opf "worldmodel.opf"
 load opf "workpiece-operations.opf"
-load opf "lock.opf"
