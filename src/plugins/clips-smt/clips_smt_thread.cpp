@@ -323,6 +323,13 @@ ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
     // Use handle to associate request to solution
     std::cout << "Handle request_" << handle << std::endl;
 
+    // Call python script
+    const char *argv[] = { "python",
+                           "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/Main.py",
+                           NULL };
+    proc_python_ = new SubProcess("python", argv[0], argv, NULL, logger);
+    proc_python_->check_proc();
+
     // Wakeup the loop function
     std::cout << "CSMT_request: Wake up the loop" << std::endl;
     wakeup();

@@ -22,10 +22,6 @@
 #ifndef __PLUGINS_CLIPS_SMT_CLIPS_SMT_THREAD_H_
 #define __PLUGINS_CLIPS_SMT_CLIPS_SMT_THREAD_H_
 
-//#ifndef HAVE_LIBZ3
-//#  error Cannot use create and solve formula without z3
-//#endif
-
 #include <core/threading/thread.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
@@ -103,6 +99,12 @@ class ClipsSmtThread
   z3::check_result clips_smt_solve_formula(z3::expr_vector formula);
   void clips_smt_react_on_result(z3::check_result result);
 
+  // SubProcess to call extern binary of z3
+  fawkes::SubProcess *proc_z3_;
+
+  // SubProcess to call python
+  fawkes::SubProcess *proc_python_;
+
   // Communication with the agent API
   CLIPS::Value clips_smt_request(void *msgptr, std::string handle);
   CLIPS::Value clips_smt_get_plan(void *msgptr, std::string handle);
@@ -116,7 +118,6 @@ class ClipsSmtThread
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
   std::string cfg_base_frame_;
   std::string cfg_global_frame_;
-  //tf::TransformListener* tf_listener_;
 
 
   // Test
@@ -127,10 +128,6 @@ class ClipsSmtThread
   SmtData _smtData;
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
-
-  // SubProcess to call extern binary of z3
-  fawkes::SubProcess *proc_z3_;
-
 };
 
 #endif
