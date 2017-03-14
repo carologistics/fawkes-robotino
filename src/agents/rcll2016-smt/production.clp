@@ -16,13 +16,17 @@
   (phase PRODUCTION)
   (team-color ?team-color&CYAN|MAGENTA)
 =>
-(printout t "Data pushing" crlf)
+
 (bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 (do-for-all-facts ((?active-robot active-robot)) TRUE
 		  (bind ?r (pb-create "llsf_msgs.Robot"))
-		  (pb-set-field ?r "name" ?*ROBOT-NAME*)
+		  (pb-set-field ?r "name" ?active-robot:name)
 	          (pb-set-field ?r "team_color" ?team-color)
-(pb-set-field ?r "number" ?*ROBOT-NUMBER*)
+		  (pb-set-field ?r "number" ?*ROBOT-NUMBER*)
+		  (bind ?robot-pose (pb-field-value ?r "pose"))
+		  (pb-set-field ?robot-pose "x" ?active-robot:x)
+		  (pb-set-field ?robot-pose "y" ?active-robot:y)
+		  (pb-set-field ?r "pose" ?robot-pose)
 (pb-add-list ?p "robots" ?r)
 )
 
@@ -69,8 +73,10 @@
   =>
   (retract ?sf)
   (assert (state TASK-PROPOSED))
-)
+  )
 
+
+	 
 (defrule prod-change-to-more-important-task-when-waiting-for-lock
   "If we run a low-priority task and look for an alternative AND a task with a higher priority is proposed, drop the current work and change to the priorized task."
   (declare (salience ?*PRIORITY-LOW*))
@@ -100,7 +106,7 @@
   ?pt <- (task (state proposed))
   =>
   (retract ?pt)
-)
+  )
 
 
 (defrule prod-prefill-cap-station
