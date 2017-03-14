@@ -46,9 +46,12 @@ declare ff 		cap-station 1
 declare ff 		ring-station 1
 
 ;///////////
-;Goals
+;Goals selection
 ;//////
 declare ff 		goal-inmind 0
+declare ff 		open-orders 0
+
+
 ;//////////////////
 ;TEMPORAL RELATED
 ;/////////////////
@@ -113,3 +116,4 @@ load opf "skills.opf"
 load opf "debug.opf"
 load opf "worldmodel.opf"
 load opf "workpiece-operations.opf"
+load opf "lock.opf"
