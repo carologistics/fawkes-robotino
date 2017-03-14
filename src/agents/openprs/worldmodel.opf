@@ -155,6 +155,17 @@
 		:documentation "investigate an unknown piece trying to find out what it is and hanld it if still not known"
 		)
 
+	(defop worldmodel--give-unknown-base-negative-id
+		:invocation (workpiece $id (base UNKOWN) (rings none) (cap none) (place cs-name "output"))
+		:context ( 	(machine $cs-name "CS" "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
+					(>= 0 $id)
+					)
+		:body( 
+			(~> (workpiece $id (base UNKOWN) (rings none) (cap none) (place $cs-name "output")))
+			(=> (workpiece (* -1 (rand 1000)) (base UNKOWN) (rings none) (cap none) (place $cs-name "output")))
+
+			)
+		)
 	
 
 	)
