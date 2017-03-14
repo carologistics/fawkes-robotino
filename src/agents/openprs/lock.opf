@@ -119,5 +119,51 @@
 			)
     	)
 
+;/////////////////////////
+;NONE MASTER LOCK HANDLING
+;/////////////////////////
+
+	(defop receive-LockMessage
+		:invocation (protobuf-msg "llsf_msgs.LockMessage" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
+		                        $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
+		:context ( 	(agent-name $robot-name)
+					(master-of LOCKING $master-name)
+					(~ (= $robot-name $master-name)))
+		:body(
+			(! (print "does it even work"))
+			(! (= $agent (pb-field-value $msg "agent" )) )
+			(if (? (~ (= $agent $robot-name )))
+				(succeed)
+				)
+
+			(! (= $type (pb-field-value $msg "type")) )
+			(! (= $resource (pb-field-value $msg "resource")) )
+			(! (= $priority (pb-field-value $msg "priority")) )
+
+			(if (? (~ (BOUNDP $priority)))
+				(! (= $priority 0))
+				)
+			(if (? (= $type RELEASE_RVCD))
+				(while (? (lock @any-type $agent $resource @priority))
+					(~> (lock (val @any-type) $agent $resource @priority))
+					)
+				)
+			(if (? (= $type ACCEPT))
+				(while (? (& 	(lock @type $agent $resource @priority)
+								(|| (= @type REFUSE)
+									(= @type GET))
+								))
+					(~> (lock (val @type) $agent $resource @priority))
+					)
+				(=> (lock ACCEPT $agent $resource $priority))
+				)
+			(if (? (= $type REFUSE))
+				(=> (lock REFUSE $agent $resource $priority))
+				)
+
+			)
+
+		)
+
 	
 )
