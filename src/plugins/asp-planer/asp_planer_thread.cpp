@@ -496,7 +496,7 @@ AspPlanerThread::loop(void)
 {
 	if ( Unsat >= 8 )
 	{
-		throw fawkes::Exception("The program is infeasable! We have no way to recover!");
+		throw fawkes::Exception("The program is infeasible! We have no way to recover!");
 	} //if ( Unsat >= 8 )
 
 	{
