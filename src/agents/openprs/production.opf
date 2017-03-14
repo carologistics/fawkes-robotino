@@ -180,6 +180,173 @@
 
 
 
+	(defop execute-goal-step
+		:invocation (! (GO))
+		:context ( 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
+				 	(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)  ) 
+		:body(
+
+			(if (? (goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)) ))
+			else  
+			(! (choose-goal-inmind) )
+			)
+			(? (goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)) ))
+
+			(? (machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with))
+			(? (machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)) 
+			(? (& 	(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with) 
+					(cap-station $cs-name $cap-color $loaded-status $caps-on-shelf)
+					(= $goal-cap (cap $cap-color))))
+
+			(if (? (= $goal-rings (rings none)))
+				else 
+				(if (? (= $goal-rings (rings $first-ring-color)))
+					else
+					(if (? (= $goal-rings (rings $first-ring-color $second-ring-color)))
+						else 
+						(if (? (= $goal-rings (rings $first-ring-color $second-ring-color $third-ring-color))))
+						)
+					)
+				)
+
+			(if (? (BOUNDP $first-ring-color))
+				(? (&	(machine $first-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+						(ring-station $first-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+						(MEMQ $first-ring-color @avilible-colors-list)
+						))
+				)
+
+			(if (? (BOUNDP $second-ring-color))
+				(? (&	(machine $second-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+						(ring-station $second-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+						(MEMQ $second-ring-color @avilible-colors-list)
+						))
+				)
+
+			(if (? (BOUNDP $third-ring-color))
+				(? (&	(machine $third-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+						(ring-station $third-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+						(MEMQ $third-ring-color @avilible-colors-list)
+						))
+				)
+
+
+			(if (? (workpiece @some-id $goal-base $goal-rings $goal-cap (place $cs-name "output")))
+				(! (workpiece (val @some-id) $goal-base $goal-rings $goal-cap (place "agent" "gripper")))
+				(! (workpiece (val @some-id) $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)))
+				(~> (goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)))) 
+				(succeed)
+				)
+
+			;Load_CAP
+			(if (? (= $loaded-status CAP_NOT_LOADED))
+				(! (workpiece @UNKNOWN-id (base UNKNOWN) (rings none) $goal-cap (place "agent" "gripper")))
+				(! (workpiece (val @UNKNOWN-id) (base UNKNOWN) (rings none) $goal-cap (place $cs-name "input")))
+				(succeed)
+				)
+
+			;cap_station
+			(if (? (workpiece @some-id $goal-base $goal-rings (cap none) (place @some-mps "output")))
+				(! (workpiece (val @some-id) $goal-base $goal-rings (cap none) (place "agent" "gripper")))
+				(! (workpiece (val @some-id) $goal-base $goal-rings (cap none) (place $cs-name "input")))
+				(succeed)
+				)
+
+			(if (? (|| 	(& (BOUNDP $third-ring-color) 		(workpiece $some-id $goal-base (rings $first-ring-color $second-ring-color) (cap none) (place @some-mps "output"))	(= @some-mps $second-rs-name) 	(= $ring-to-mount $third-ring-color) 	)
+						(& (BOUNDP $second-ring-color) 		(workpiece $some-id $goal-base (rings $first-ring-color)					(cap none) (place @some-mps "output")) 	(= @some-mps $first-rs-name) 	(= $ring-to-mount $second-ring-color)	)
+						(& (BOUNDP $first-ring-color) 	(~ 	(workpiece $some-id $goal-base (rings $first-ring-color) 					(cap none) (place @some-mps "output"))) (= @some-mps $first-rs-name)	(= $ring-to-mount $first-ring-color) 	) 
+						))
+				
+				(? (ring $ring-to-mount $bases-required))
+				(? (& 	(ring-station $rs-name (avilible-colors @colors-list)  @selected-color $bases-loaded)
+						(MEMQ $ring-to-mount @colors-list)))
+				
+				;LOAD BASES IF NEEDED
+				(if (? (< $bases-loaded $bases-required))
+					 ;TODO:Could be replaced with a check on what wp at slide
+					;USE NEGATIVE WP IF ANY 																							
+					(if (? (& 	(workpiece $negtive-id @dontcare_base @dontcare_rings @dontcare_cap (place @dontcare_machine "output")) 
+								(< $negtive-id 0)
+								));Maybe even genralize the place to input too or even shelfs
+						(! (= $payment-base $negtive-id))
+						(! (workpiece $payment-base @dontcare_base @dontcare_rings @dontcare_cap (place "agent" "gripper")))
+						else
+						(! (workpiece $payment-base (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
+						)
+					(! (workpiece $payment-base @dontcare_base @dontcare_rings @dontcare_cap (place $rs-name "slide")))
+					(succeed)
+					)
+
+				(if (? (BOUNDP $some-id))
+					(? (workpiece $some-id $goal-base $existing-rings (cap none) (place @dontcare_mps @dontcare_side)) )
+					else
+					(! (= $existing-rings (rings none) ))
+					)
+
+				(! (workpiece $some-id $goal-base $existing-rings (cap none) (place "agent" "gripper"))) 
+				(! (workpiece $some-id $goal-base $existing-rings (cap none) (place $rs-name "input")))
+				(succeed)
+				)
+
+ 			)
+		)
+
+	; (defop break-goal-needs
+	; 	:invocation ( (goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)))) )
+	; 	:context () 
+	; 	:body(
+
+	; 			(? (machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with))
+	; 			(? (machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)) 
+	; 			(? &(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with) 
+	; 				(cap-station $cs-name $cap-color $loaded-status $caps-on-shelf)
+	; 				(= $goal-cap (cap $cap-color)))
+
+	; 			(if (? (= $goal-rings (rings none)))
+	; 				else 
+	; 				(if (? (= $rings (rings $first-ring-color)))
+	; 					else
+	; 					(if (? (= $rings (rings $first-ring-color $second-ring-color)))
+	; 						else 
+	; 						(if (? (= $rings (rings $first-ring-color $second-ring-color $third-ring-color))))
+	; 						)
+	; 					)
+	; 				)
+
+	; 		(if (? (~ (BOUNDP $first-ring-color)))
+	; 			(? &	(machine $first-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+	; 					(ring-station $first-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+	; 					(MEMQ $first-ring-color @avilible-colors-list) 
+	; 			)
+
+	; 		(if (? (~ (BOUNDP $second-ring-color)))
+	; 			(? &	(machine $second-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+	; 					(ring-station $second-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+	; 					(MEMQ $second-ring-color @avilible-colors-list) 
+	; 			)
+
+	; 		(if (? (~ (BOUNDP $third-ring-color)))
+	; 			(? &	(machine $third-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+	; 					(ring-station $third-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+	; 					(MEMQ $third-ring-color @avilible-colors-list) 
+	; 			)
+
+	; 		(=> (need (workpiece 0 $goal-base $goal-rings $goal-cap (place $cs-name "output")) for (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)) ))
+
+	; 		(=> (need (workpiece 0 $goal-base $goal-rings (cap none) (place $cs-name "input"))  for (workpiece 0 $goal-base $goal-rings $goal-cap (place $cs-name "output")) ))			
+	; 		(=> (need (workpiece 0 $goal-base $goal-rings (cap none) (place "agent" "gripper")) for (workpiece 0 $goal-base $goal-rings $goal-cap (place $cs-name "input")) ))
+	; 		(=> (need (cap-station $cs-name $cap-color CAP_LOADED @DONT_CARE-on-shelf))) 		for (workpiece 0 $goal-base $goal-rings $goal-cap (place $cs-name "input")) ))
+
+
+
+	; 		)
+	; 	)
+
+
+
+
+
+
 
 	(defop produce-c3-imperative
 		:invocation	(timer "beacon" $last-sec $last-usec $seq)
@@ -342,7 +509,6 @@
 
 
 
-
 			(! (print "INSETRING INTO CS..."))
 			(! (workpiece $new-base-id (base $base-color) $final-rings (cap none) 		(place "agent" "gripper")))
 			(! (workpiece $new-base-id (base $base-color) $final-rings (cap none) 		(place $cs-name "input")))
@@ -365,7 +531,7 @@
 
 	(defop choose-goal-in-mind
 		:invocation( ! (choose-goal-inmind) )
-		:context( 	(order $id c3 $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
+		:context( 	(order $id c1 $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
 					(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
 					)
 		:body(
@@ -378,7 +544,7 @@
 			(if (? (= 2 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors) (cadr $ring-colors)))) )
 			(if (? (= 3 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors) (cadr $ring-colors) (caddr $ring-colors)))) )
 			
-			(=> (goal-inmind (workpiece $id (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)) ))
+			(=> (goal-inmind (workpiece 0 (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)) ))
 			(=> (choose-goal-inmind))
 		)
 	)
