@@ -404,10 +404,11 @@ ClipsSmtThread::loop()
         "C-RS1-I","C-RS1-O","C-RS2-I","C-RS2-O"
     };
 
-    //fawkes::tf::Stamped<fawkes::tf::Pose> pose_;
-    //tf_listener->transform_origin(cfg_base_frame_, cfg_global_frame_, pose_);
-    NavGraphNode from = navgraph->closest_node(1, 1);
-    std::cout << "CSMT_test: 'from' node is " << from.name() << " with coordinates: (" << from.x() << ", " << from.y() << ") // Closest to (1,1)" << std::endl;
+    fawkes::tf::Stamped<fawkes::tf::Pose> pose_;
+    tf_listener->transform_origin(cfg_base_frame_, cfg_global_frame_, pose_);
+    NavGraphNode from = navgraph->closest_node(pose_.getOrigin().x(), pose_.getOrigin().y());
+    // std::cout << "CSMT_test: 'from' node is " << from.name() << " with coordinates: (" << from.x() << ", " << from.y()
+    // << ") // Closest to ("<< pose_.getOrigin().x() << "," << pose_.getOrigin().y() << ")" << std::endl;
 
     for (unsigned int i = 0; i < nodes.size(); ++i) {
         std::pair<std::string, std::string> nodes_pair(from.name(), nodes[i]);

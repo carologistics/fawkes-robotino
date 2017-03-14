@@ -29,6 +29,7 @@
 #include <core/threading/thread.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
+#include <aspect/tf.h>
 #include <plugins/clips/aspect/clips_feature.h>
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
@@ -60,6 +61,7 @@ class ClipsSmtThread
   public fawkes::ConfigurableAspect,
   public fawkes::NavGraphAspect,
   public fawkes::NavGraph::ChangeListener,
+  public fawkes::TransformAspect,
   public fawkes::CLIPSFeature,
   public fawkes::CLIPSFeatureAspect
 {
