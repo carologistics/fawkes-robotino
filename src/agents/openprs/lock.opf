@@ -29,5 +29,95 @@
 			)
       	)
 
+    (defop lock-process-requests-and-releases-and-send-LockMessage
+    	:invocation ( timer "beacon" $last-sec $last-usec $seq )
+    	:context( 	(master-of LOCKING $robot-name)
+    	 			(peer-id private $peer-id))
+    	:setting(setting "robot-name" $robot-name)
+    	:body(
+    		(! (= $lock-release-list (n-all-list (. $agent $resource .) (lock RELEASE $agent $resource $priority))))
+    		(if (? (< 0 (length $lock-release-list) ))
+
+	    		(! (= @agent-list (car $lock-release-list)) )
+	    		(! (= @resource-list (cadr $lock-release-list)) )
+	    		(while (? (~ (null @agent-list)))
+	    			(! (= @agent (car @agent-list)))
+	    			(! (= @agent-list (cdr @agent-list)))
+	    			(! (= @resource (car @resource-list)))
+	    			(! (= @resource-list (cdr @resource-list))) 
+
+	    			(? (lock RELEASE (val @agent) (val @resource) @some-priority))    			
+	    			;delete any lock for this agent and resource
+	    			(while (? (lock @some-type (val @agent) (val @resource) @some-priority))
+	    				(~> (lock (val @some-type) (val @agent) (val @resource) @some-priority))  
+	    				)
+	    			(if (? (~ (= $robot-name $agent)))
+	    				(=> (lock RELEASE_RVCD @agent @resource @some-priority))
+	    				)
+	    			)
+    			
+    			)
+
+    		(! (= $lock-get-list (n-all-list (. $agent $resource .) (lock GET $agent $resource $priority))))
+    		(if (? (< 0 (length $lock-get-list))) 
+
+	    		(! (= @agent-list (car $lock-get-list)) )
+	    		(! (= @resource-list (cadr $lock-get-list)) )
+	    		(! (print @agent-list))
+	    		(! (print @resource-list))
+	    		(while (? (~ (null @agent-list)))
+	    			(! (print "i am in the loop"))
+	    			(! (= @agent (car @agent-list)))
+	    			(! (= @agent-list (cdr @agent-list)))
+	    			(! (= @resource (car @resource-list)))
+	    			(! (= @resource-list (cdr @resource-list))) 
+
+	    			(? (lock GET (val @agent) (val @resource) @priority))    				
+	    			(if (? (lock ACCEPT @locking-agent (val @resource) @some-priority))
+	    				(if (? (= (val @locking-agent) (val @agent)))
+	    					;Just Remove the GET if already ACCEPTED 
+	    					else
+	    					(=> (lock REFUSE @agent @resource (val @priority) ))
+	    					)
+	    				else
+	    				(=> (lock ACCEPT @agent @resource (val @priority)))
+	    				)
+	    			)
+	    			(~> (lock GET (val @agent) (val @resource) @priority))    				
+	    		)
+    		;Send-LockMessage-Master
+			(! (= $lock-complete-list (n-all-list (. $any-type $agent $resource .) (lock $any-type $agent $resource $priority))))
+			(if (? (< 0 (length $lock-complete-list))) 
+	    			
+				(! (= @type-list (car $lock-complete-list)))
+				(! (= @agent-list (cadr $lock-complete-list)))
+				(! (= @resource-list (caddr $lock-complete-list)))
+				
+				(while (? (~ (null @agent-list)))
+					(! (= @type (car @type-list)))
+					(! (= @agent (car @agent-list)))
+					(! (= @resource (car @resource-list)))
+					(! (= @type-list (cdr @type-list)))
+					(! (= @agent-list (cdr @agent-list)))
+					(! (= @resource-list (cdr @resource-list)))
+					
+					(if (? (|| 	(= (val @type) ACCEPT)
+								(= (val @type) REFUSE)
+								(= (val @type) RELEASE_RVCD)))
+						(! (= @msg (pb-create "llsf_msgs.LockMessage")))
+						(! (pb-set-field @msg "type" @type))
+						(! (pb-set-field @msg "agent" @agent))
+						(! (pb-set-field @msg "resource" @resource))
+						(! (print @agent))
+						(! (pb-broadcast $peer-id @msg))
+						(! (pb-destroy @msg))
+
+						)
+					)
+				)
+
+			)
+    	)
+
 	
 )
