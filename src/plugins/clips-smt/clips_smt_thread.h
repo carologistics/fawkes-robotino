@@ -35,7 +35,7 @@
 #include <clipsmm.h>
 
 #include <z3++.h>
-#include <carl/numbers/numbers.h>
+//#include <carl/numbers/numbers.h>
 //#include <carl/core/VariablePool.h>
 //#include <carl/formula/Formula.h>
 //#include <carl/io/SMTLIBStream.h>
@@ -112,6 +112,10 @@ class ClipsSmtThread
   void clips_smt_compute_distances();
   std::map<std::pair<std::string, std::string>, float> distances_;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
+  std::string cfg_base_frame_;
+  std::string cfg_global_frame_;
+  //tf::TransformListener* tf_listener_;
+
 
   // Test
   void clips_smt_test_z3();
