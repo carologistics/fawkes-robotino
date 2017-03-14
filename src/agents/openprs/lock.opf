@@ -165,5 +165,44 @@
 
 		)
 
+
+	(defop send-lockMessage-none-Master
+		:invocation( timer "beacon" $last-sec $last-usec $seq )
+		:context( 	(agent-name $robot-name)
+					(master-of LOCKING $master-name)
+					(~ (= $robot-name $master-name))
+					(peer-id private $peer-id))
+		:body(
+			(! (= $lock-list (n-all-list (. $type $resource $priority .) (lock $type $robot-name $resource $priority )) ))
+			(if (? (< 0 (length $lock-list))) 
+
+				(! (= @type-list (car $lock-list)))
+				(! (= @resource-list (cadr $lock-list)))
+				(! (= @priority-list (caddr $lock-list)))
+				
+				(while ( ? (~ (null @type-list)))
+					(! (= @type (car @type-list)))
+					(! (= @priority (car @priority-list)))
+					(! (= @resource (car @resource-list)))
+					(! (= @type-list (cdr @type-list)))
+					(! (= @priority-list (cdr @priority-list)))
+					(! (= @resource-list (cdr @resource-list)))
+					
+					(if (? (|| 	(= (val @type) GET)
+								(= (val @type) RELEASE)))
+						(! (= @msg (pb-create "llsf_msgs.LockMessage")))
+						(! (pb-set-field @msg "type" (val @type)))
+						(! (pb-set-field @msg "agent" $robot-name))
+						(! (pb-set-field @msg "resource" (val @resource)))
+						(! (pb-set-field @msg "priority"  (val @priority)))
+						(! (pb-broadcast $peer-id @msg))
+						(! (p-destory @msg))
+						)
+					)
+				)
+			)
+		
+		)
+
 	
 )
