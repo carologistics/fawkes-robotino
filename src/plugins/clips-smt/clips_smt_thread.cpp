@@ -220,6 +220,7 @@ ClipsSmtThread::clips_smt_unblock_edge(std::string env_name,
 
 /**
  * Solver logic
+ *  - convertToGameData fills the data structures used for formula generation from the protobuf message ClipsSmtData // TODO (Igor) Add
  *  - Create_formula uses knowledge from protobuf to construct an input for the solver
  *  - Solve_formula uses above created formula as input and outputs satisfiability
  *  - React_on_formula let us control the executeable due to the solver solution
@@ -401,6 +402,19 @@ ClipsSmtThread::loop()
     };
 
     // TODO (Igor) Init NavGraphNodes with robot positions
+    const std::string name_test = "robot_test_1";
+    NavGraphNode * node_test = new NavGraphNode( name_test, 1, 1);
+
+    navgraph->add_node_and_connect(*node_test, NavGraph::ConnectionMode::CLOSEST_EDGE_OR_NODE);
+    // TODO (Igor) Add edges to available (closest?) nodes
+
+    for (unsigned int i = 0; i < nodes.size(); ++i) {
+        std::pair<std::string, std::string> nodes_pair(node_test->name(), nodes[i]);
+
+        NavGraphPath p = navgraph->search_path(name_test, nodes[i]);
+        std::cout << "CSMT_test: Distance between " << name_test << " and " << nodes[i] << " is " << p.cost() << std::endl;
+        distances_[nodes_pair] = p.cost();
+    }
 
  	for (unsigned int i = 0; i < nodes.size(); ++i) {
  		for (unsigned int j = 1; j < nodes.size(); ++j) {
