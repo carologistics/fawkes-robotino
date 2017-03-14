@@ -57,6 +57,9 @@
  *
  * @property PlanElement::Done
  * @brief Wether the task is done or not.
+ *
+ * @property PlanElement::Failed
+ * @brief Wether the fask was failed or not.
  */
 
 /**
