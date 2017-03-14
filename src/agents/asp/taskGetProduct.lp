@@ -3,6 +3,7 @@
 %                                locations.
 %
 % In this file defined predicates:
+% ignoreBrokenTask(T)            The task ignores that a machine is broken.
 % inUse(L, R, GT)                The machine side L is in use by robot R for time step GT.
 % pickup(R, P, GT)               The robot R picked up product P at time step GT.
 % possible(R, getProduct(_), GT) If robot R can perform the retreival task at GT.
@@ -29,6 +30,7 @@ getProductTask(getProduct(L))              :- getLocation(L).
 task(T)                                    :- getProductTask(T).
 taskDuration(T, @getProductTaskDuration()) :- getProductTask(T).
 taskLocation(getProduct(L), L)             :- task(getProduct(L)).
+ignoreBrokenTask(T)                        :- getProductTask(T).
 toBeDone(T, GT)                            :- getProductTask(T), productionStarted, horizon(H), GT=0..H-1.
 
 inUse(L, R, GT) :- doing(R, T, _, GT), getProductTask(T), taskLocation(T, L).
