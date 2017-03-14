@@ -45,9 +45,9 @@
 #include <map>
 #include <iostream>
 
+//#include "FormulaGenerator/FormulaGenerator.h"
 #include "clips_smt_data.h"
 #include <llsf_msgs/ClipsSmtData.pb.h>
-
 
 namespace fawkes {
     class SubProcess;
