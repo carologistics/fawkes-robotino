@@ -35,7 +35,7 @@ clips-agent:
     #agent-role:
     
     exploration:      
-      row: HIGH
+      row: LOW
 
     dynamic-role-change/enabled: true
     

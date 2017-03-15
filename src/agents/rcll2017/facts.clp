@@ -25,10 +25,92 @@
 
 ; EXPLORATION
 
+; Generate zone info like this:
+; for j in `seq 8 -1 1`; do
+;   for i in `seq 1 7`; do
+;     echo -n "C-Z$i$j "
+;   done
+;   echo
+; done
+(deftemplate exploration-quadrant
+  (slot name (type SYMBOL))
+  (multislot zones (type SYMBOL)
+    (allowed-values
+      M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
+      M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
+      M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
+      M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
+      M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
+      M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
+      M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
+                        M-Z41 M-Z31 M-Z21 M-Z11
+
+      C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
+      C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
+      C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
+      C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
+      C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
+      C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
+      C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
+      C-Z11 C-Z21 C-Z31 C-Z41
+    )
+  )
+)
+
+(deffacts exploration-quadrant-definition
+  (exploration-quadrant (name Q1)
+    (zones C-Z52 C-Z62 C-Z72
+           C-Z53 C-Z63 C-Z73)
+  )
+  (exploration-quadrant (name Q2)
+      (zones C-Z33 C-Z43
+             C-Z32 C-Z42
+             C-Z31 C-Z41)
+  )
+  (exploration-quadrant (name Q3)
+      (zones C-Z13 C-Z23
+             C-Z12 C-Z22
+             C-Z11 C-Z21)
+  )
+  (exploration-quadrant (name Q4)
+      (zones M-Z23 M-Z13
+             M-Z22 M-Z12
+             M-Z21 M-Z11)
+  )
+  (exploration-quadrant (name Q5)
+      (zones M-Z43 M-Z33
+             M-Z42 M-Z32
+             M-Z41 M-Z31)
+  )
+  (exploration-quadrant (name Q6)
+      (zones M-Z73 M-Z63 M-Z53
+             M-Z72 M-Z62 M-Z52)
+  )
+)
+
 (deftemplate zone-exploration
-  (slot name (type SYMBOL) (allowed-values Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12
-					   Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
-  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS UNKNOWN) (default UNKNOWN))
+  (slot name (type SYMBOL)
+    (allowed-values
+      M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
+      M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
+      M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
+      M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
+      M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
+      M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
+      M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
+                        M-Z41 M-Z31 M-Z21 M-Z11
+
+      C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
+      C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
+      C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
+      C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
+      C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
+      C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
+      C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
+      C-Z11 C-Z21 C-Z31 C-Z41
+    )
+  )
+  (slot machine (type SYMBOL) (allowed-values NONE C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS UNKNOWN) (default UNKNOWN))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
   (slot x (type FLOAT) (default 0.0))
   (slot y (type FLOAT) (default 0.0))
@@ -38,7 +120,6 @@
   (slot current-look-pos (type INTEGER) (default 1))
   (slot recognized (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot still-to-explore (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
-  (slot next (type SYMBOL)) ;TODO delete next
 
   ; for exploration-catch-up in produciton
   (multislot incoming (type SYMBOL) (default (create$)))  
@@ -47,27 +128,37 @@
   (slot sync-id (type INTEGER) (default 0))
 )
 
-(deftemplate exp-matching
-  (slot red (type SYMBOL) (allowed-symbols ON OFF))
-  (slot yellow (type SYMBOL) (allowed-symbols ON OFF))
-  (slot green (type SYMBOL) (allowed-symbols ON OFF))
-  (slot mtype (type STRING))
-  (slot found (type SYMBOL) (allowed-symbols TRUE MAYBE FALSE) (default FALSE))
-  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS
-                                               M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS NONE) (default NONE))
-  (slot sync-id (type INTEGER) (default 0))
-)
-
 (deftemplate exploration-result
   (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
-  (slot zone (type SYMBOL) (allowed-symbols Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12
-					   Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
+  (slot zone (type SYMBOL)
+    (allowed-symbols
+      M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
+      M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
+      M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
+      M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
+      M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
+      M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
+      M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
+                        M-Z41 M-Z31 M-Z21 M-Z11
+
+      C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
+      C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
+      C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
+      C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
+      C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
+      C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
+      C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
+      C-Z11 C-Z21 C-Z31 C-Z41
+    )
+  )
   (slot mtype (type STRING) (default ""))
 )
 
 (deftemplate exp-row
   (slot name (type SYMBOL) (allowed-values HIGH MID LOW))
-  (multislot row (type SYMBOL) (allowed-symbols Z1 Z2 Z3 Z4 Z5 Z6 Z7 Z8 Z9 Z10 Z11 Z12 Z13 Z14 Z15 Z16 Z17 Z18 Z19 Z20 Z21 Z22 Z23 Z24))
+  (multislot row (type SYMBOL)
+    (allowed-symbols Q1 Q2 Q3 Q4 Q5 Q6)
+  )
 )
 
 (deftemplate found-tag
@@ -85,34 +176,6 @@
 
 (deftemplate last-navgraph-compute-msg 
   (slot id (type INTEGER))
-)
-
-(deffacts startup-exploration
-  (zone-exploration (name Z24))
-  (zone-exploration (name Z23))
-  (zone-exploration (name Z22))
-  (zone-exploration (name Z21))
-  (zone-exploration (name Z20))
-  (zone-exploration (name Z19))
-  (zone-exploration (name Z18))
-  (zone-exploration (name Z17))
-  (zone-exploration (name Z16))
-  (zone-exploration (name Z15))
-  (zone-exploration (name Z14))
-  (zone-exploration (name Z13))
-  (zone-exploration (name Z12))
-  (zone-exploration (name Z11))
-  (zone-exploration (name Z10))
-  (zone-exploration (name Z9))
-  (zone-exploration (name Z8))
-  (zone-exploration (name Z7))
-  (zone-exploration (name Z6))
-  (zone-exploration (name Z5))
-  (zone-exploration (name Z4))
-  (zone-exploration (name Z3))
-  (zone-exploration (name Z2))
-  (zone-exploration (name Z1))
-  (exp-nearing-tag FALSE)
 )
 
 
@@ -330,6 +393,83 @@
   (slot name (type SYMBOL))
 )
 
+; Default exploration situation with no swapped zones.
+; Generate like this:
+;
+; for j in `seq 1 5`; do
+;   for i in `seq 1 7`; do
+;     echo "    (zone-exploration (name M-Z$i$j) (team MAGENTA))"
+;   done
+; done
+(deffacts startup-exploration
+    (zone-exploration (name C-Z11) (team CYAN))
+    (zone-exploration (name C-Z21) (team CYAN))
+    (zone-exploration (name C-Z31) (team CYAN))
+    (zone-exploration (name C-Z41) (team CYAN))
+    (zone-exploration (name C-Z12) (team CYAN))
+    (zone-exploration (name C-Z22) (team CYAN))
+    (zone-exploration (name C-Z32) (team CYAN))
+    (zone-exploration (name C-Z42) (team CYAN))
+    (zone-exploration (name C-Z52) (team CYAN))
+    (zone-exploration (name C-Z62) (team CYAN))
+    (zone-exploration (name C-Z72) (team CYAN))
+    (zone-exploration (name C-Z13) (team CYAN))
+    (zone-exploration (name C-Z23) (team CYAN))
+    (zone-exploration (name C-Z33) (team CYAN))
+    (zone-exploration (name C-Z43) (team CYAN))
+    (zone-exploration (name C-Z53) (team CYAN))
+    (zone-exploration (name C-Z63) (team CYAN))
+    (zone-exploration (name C-Z73) (team CYAN))
+    (zone-exploration (name C-Z14) (team CYAN))
+    (zone-exploration (name C-Z24) (team CYAN))
+    (zone-exploration (name C-Z34) (team CYAN))
+    (zone-exploration (name C-Z44) (team CYAN))
+    (zone-exploration (name C-Z54) (team CYAN))
+    (zone-exploration (name C-Z64) (team CYAN))
+    (zone-exploration (name C-Z74) (team CYAN))
+    (zone-exploration (name C-Z15) (team CYAN))
+    (zone-exploration (name C-Z25) (team CYAN))
+    (zone-exploration (name C-Z35) (team CYAN))
+    (zone-exploration (name C-Z45) (team CYAN))
+    (zone-exploration (name C-Z55) (team CYAN))
+    (zone-exploration (name C-Z65) (team CYAN))
+    (zone-exploration (name C-Z75) (team CYAN))
+
+    (zone-exploration (name M-Z11) (team MAGENTA))
+    (zone-exploration (name M-Z21) (team MAGENTA))
+    (zone-exploration (name M-Z31) (team MAGENTA))
+    (zone-exploration (name M-Z41) (team MAGENTA))
+    (zone-exploration (name M-Z12) (team MAGENTA))
+    (zone-exploration (name M-Z22) (team MAGENTA))
+    (zone-exploration (name M-Z32) (team MAGENTA))
+    (zone-exploration (name M-Z42) (team MAGENTA))
+    (zone-exploration (name M-Z52) (team MAGENTA))
+    (zone-exploration (name M-Z62) (team MAGENTA))
+    (zone-exploration (name M-Z72) (team MAGENTA))
+    (zone-exploration (name M-Z13) (team MAGENTA))
+    (zone-exploration (name M-Z23) (team MAGENTA))
+    (zone-exploration (name M-Z33) (team MAGENTA))
+    (zone-exploration (name M-Z43) (team MAGENTA))
+    (zone-exploration (name M-Z53) (team MAGENTA))
+    (zone-exploration (name M-Z63) (team MAGENTA))
+    (zone-exploration (name M-Z73) (team MAGENTA))
+    (zone-exploration (name M-Z14) (team MAGENTA))
+    (zone-exploration (name M-Z24) (team MAGENTA))
+    (zone-exploration (name M-Z34) (team MAGENTA))
+    (zone-exploration (name M-Z44) (team MAGENTA))
+    (zone-exploration (name M-Z54) (team MAGENTA))
+    (zone-exploration (name M-Z64) (team MAGENTA))
+    (zone-exploration (name M-Z74) (team MAGENTA))
+    (zone-exploration (name M-Z15) (team MAGENTA))
+    (zone-exploration (name M-Z25) (team MAGENTA))
+    (zone-exploration (name M-Z35) (team MAGENTA))
+    (zone-exploration (name M-Z45) (team MAGENTA))
+    (zone-exploration (name M-Z55) (team MAGENTA))
+    (zone-exploration (name M-Z65) (team MAGENTA))
+    (zone-exploration (name M-Z75) (team MAGENTA))
+)
+
+
 (deffacts startup-facts
   (team-color nil)
   (points MAGENTA 0)
@@ -416,7 +556,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)
