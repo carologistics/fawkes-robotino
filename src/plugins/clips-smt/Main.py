@@ -272,11 +272,11 @@ def z3Optimize(o, varD, varM, n_machines):
     v2 = varD['d_2_{}'.format(n_machines)]
     v3 = varD['d_3_{}'.format(n_machines)]
 
-##    m1 = varM['m_1']
-##    m2 = varM['m_2']
-##    m3 = varM['m_3']
-##
-##    o.minimize(m1*v1 + m2*v2 + m3*v3)
+    m1 = varM['m_1']
+    m2 = varM['m_2']
+    m3 = varM['m_3']
+
+    o.minimize(m1*v1 + m2*v2 + m3*v3)
 
     o.minimize(v1+v2+v3)
 
@@ -300,8 +300,8 @@ def z3Optimize(o, varD, varM, n_machines):
 def main():
 
     ## Indices of Machines to be used in the encoding
-    indices = { '1' : 'C-BS-I' , '2' :'C-CS1-I', '3':'C-CS2-I', '4':'C-DS-I', '5':'C-RS1-I' , '6':'C-RS2-I',  '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}    
-##    indices = { '1' : 'C-BS-I' , '2' :'C-CS1-I', '3':'C-CS2-I', '4':'C-DS-I', '5':'C-RS1-I' , '6':'C-RS2-I', '7':'C-CS2-O','8':'C-DS-O', '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}
+##    indices = { '1' : 'C-BS-I' , '2' :'C-CS1-I', '3':'C-CS2-I', '4':'C-DS-I', '5':'C-RS1-I' , '6':'C-RS2-I',  '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}    
+    indices = { '1' : 'C-BS-I' , '2' :'C-CS1-I', '3':'C-CS2-I', '4':'C-DS-I', '5':'C-RS1-I' , '6':'C-RS2-I', '7':'C-CS2-O','8':'C-DS-O', '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}
 ##    indices = { '1' : 'C-BS-I' , '2' :'C-BS-O', '3':'C-CS1-I', '4':'C-CS1-O', '5':'C-CS2-I', '6':'C-CS2-O', '7':'C-DS-I', '8':'C-DS-O', '9':'C-RS1-I', '10':'C-RS1-O', '11': 'C-RS2-I', '12':'C-RS2-O', '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}
     inverted_indices = dict((v, k) for k, v in indices.items())
 
