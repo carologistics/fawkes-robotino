@@ -7,9 +7,9 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-(path-load  rcll-robot-memory/priorities.clp)
-(path-load  rcll-robot-memory/globals.clp)
-(path-load  rcll-robot-memory/facts.clp)
+(path-load  rcll2017/priorities.clp)
+(path-load  rcll2017/globals.clp)
+(path-load  rcll2017/facts.clp)
 
 (defrule load-config
   "Load configration for initialization."
@@ -32,7 +32,7 @@
   =>
   (printout t "Requesting blackboard feature" crlf)
   (ff-feature-request "blackboard")
-  (path-load "rcll-robot-memory/blackboard-init.clp")
+  (path-load "rcll2017/blackboard-init.clp")
 )
 
 (defrule enable-motor-switch
@@ -61,7 +61,7 @@
   =>
   (printout t "Requesting navgraph feature" crlf)
   (ff-feature-request "navgraph")
-  (path-load  rcll-robot-memory/navgraph.clp)
+  (path-load  rcll2017/navgraph.clp)
 )
 
 (defrule enable-tf
@@ -118,31 +118,31 @@
   (ff-feature-loaded robot_memory)
   (ff-feature navgraph)
   =>
-  (path-load  rcll-robot-memory/utils.clp)
-  (path-load  rcll-robot-memory/robot-memory.clp)
-  (path-load  rcll-robot-memory/worldmodel-synchronization.clp)
-  (path-load  rcll-robot-memory/net.clp)
-  (path-load  rcll-robot-memory/worldmodel.clp)
-  (path-load  rcll-robot-memory/skills.clp)
-  (path-load  rcll-robot-memory/lock-managing.clp)
-  (path-load  rcll-robot-memory/lock-usage.clp)
+  (path-load  rcll2017/utils.clp)
+  (path-load  rcll2017/robot-memory.clp)
+  (path-load  rcll2017/worldmodel-synchronization.clp)
+  (path-load  rcll2017/net.clp)
+  (path-load  rcll2017/worldmodel.clp)
+  (path-load  rcll2017/skills.clp)
+  (path-load  rcll2017/lock-managing.clp)
+  (path-load  rcll2017/lock-usage.clp)
   (if
     (any-factp ((?conf confval))
       (and (eq ?conf:path "/clips-agent/rcll2016/enable-sim")
 	   (eq ?conf:type BOOL) (eq ?conf:value TRUE)))
   then
     (printout t "Loading simulation" crlf)
-    (path-load  rcll-robot-memory/sim.clp)
+    (path-load  rcll2017/sim.clp)
   )
-  (path-load  rcll-robot-memory/game.clp)
-  (path-load  rcll-robot-memory/mps-instructions.clp)
-  (path-load  rcll-robot-memory/tactical-help.clp)
-  (path-load  rcll-robot-memory/task.clp)
-  (path-load  rcll-robot-memory/steps.clp)
-  (path-load  rcll-robot-memory/coordination.clp)
-  (path-load  rcll-robot-memory/production.clp)
-  (path-load  rcll-robot-memory/exploration.clp)
-  (path-load  rcll-robot-memory/config.clp)
+  (path-load  rcll2017/game.clp)
+  (path-load  rcll2017/mps-instructions.clp)
+  (path-load  rcll2017/tactical-help.clp)
+  (path-load  rcll2017/task.clp)
+  (path-load  rcll2017/steps.clp)
+  (path-load  rcll2017/coordination.clp)
+  (path-load  rcll2017/production.clp)
+  (path-load  rcll2017/exploration.clp)
+  (path-load  rcll2017/config.clp)
   (reset)
   ;(facts)
 
