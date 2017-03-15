@@ -48,16 +48,36 @@
 	    			(! (= @resource-list (cdr @resource-list))) 
 
 	    			(? (lock RELEASE (val @agent) (val @resource) @some-priority))    			
-	    			;delete any lock for this agent and resource
+	    			;Delete any lock for this agent and resource
 	    			(while (? (lock @some-type (val @agent) (val @resource) @some-priority))
 	    				(~> (lock (val @some-type) (val @agent) (val @resource) @some-priority))  
 	    				)
-	    			(if (? (~ (= $robot-name $agent)))
+	    			(if (? (~ (= $robot-name (val @agent))))
 	    				(=> (lock RELEASE_RVCD @agent @resource @some-priority))
 	    				)
 	    			)
     			
     			)
+
+   ;  		(! (= $lock-accept-list (n-all-list (. $agent $resource .) (lock ACCEPT $agent $resource $priority))))
+			; (if (? (< 0 (length $lock-accept-list))) 
+	    			
+			; 	(! (= @agent-list (car $lock-accept-list)) )
+	  ;   		(! (= @resource-list (cadr $lock-accept-list)) )
+	  ;   		(while (? (~ (null @agent-list)))
+	  ;   			(! (= @agent (car @agent-list)))
+	  ;   			(! (= @agent-list (cdr @agent-list)))
+	  ;   			(! (= @resource (car @resource-list)))
+	  ;   			(! (= @resource-list (cdr @resource-list))) 
+
+			; 		(while (? (& 	(lock @type (val @agent) (val @resource) @some-priority)
+			; 						(|| (= (val @type) GET)
+			; 							(= (val @type) REFUSE)
+			; 							)))
+	  ;   				(~> (lock (val @type) (val @agent) (val @resource) @some-priority)) 
+	  ;   				)
+			; 		)
+			; 	)
 
     		(! (= $lock-get-list (n-all-list (. $agent $resource .) (lock GET $agent $resource $priority))))
     		(if (? (< 0 (length $lock-get-list))) 
