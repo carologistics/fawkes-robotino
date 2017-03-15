@@ -131,7 +131,6 @@ message TemporalPlanAction {
 }
 
 /** Temporal plan representation.
-
  * Represents a number of actions composing a plan. Since the plan
  * steps contain dispatch time information, the plan need not be a
  * totally ordered sequence, it may have only a partial order.
@@ -162,4 +161,10 @@ message ActorSpecificPlan {
 		SequentialPlan sequential_plan = 2;
 		TemporalPlan   temporal_plan = 3;
 	}
+}
+
+/** Collect plans for a number of actors in one message.
+ */
+message ActorGroupPlan {
+	repeated ActorSpecificPlan plans = 1;
 }
