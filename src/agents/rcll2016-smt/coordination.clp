@@ -30,7 +30,7 @@
   "When all resource strings are computed we want to aquire the locks"
   ?s <- (state TASK-PROPOSED)
   (not (needed-task-lock (resource NONE)))
-  ?pt <- (task (name ?task) (state proposed))
+  ?pt <- (task (name ?task) (state proposed) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   =>
   (retract ?s)
   (assert (state TASK-PROPOSED-ASKED))
@@ -66,7 +66,7 @@
 	  (lock (type ACCEPT) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
   )
   ;there is only one asked task at a time
-  ?pt <- (task (name ?task) (state asked) (priority ?p))
+  ?pt <- (task (name ?task) (state asked) (priority ?p) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?s <- (state TASK-PROPOSED-ASKED)
   =>
   ;order taks
@@ -85,7 +85,7 @@
   "Processes refused lock. Changes proposed-task to rejected and robotino state back to IDLE. Releases the refused lock."
   (needed-task-lock (resource ?res))
   (lock (type REFUSE) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
-  ?pt <- (task (state asked))
+  ?pt <- (task (state asked)  (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?s <- (state TASK-PROPOSED-ASKED)
   =>
   (retract ?s)
@@ -127,7 +127,7 @@
 (defrule coordination-release-after-task-finished
   "If a task is finished the lock for the task is released and incoming facts are removed from the worldmodel. State is changed from TASK-FINISHED to IDLE."
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
-  ?t <- (task (name ?task) (state finished) (steps $?steps)) 
+  ?t <- (task (name ?task) (state finished) (steps $?steps)  (robot ?r&:(eq ?r ?*ROBOT-NAME*))) 
   ?s <- (state TASK-FINISHED)
   =>
   (coordination-release-all-subgoal-locks)
@@ -143,7 +143,7 @@
 (defrule coordination-release-after-task-aborted
   "If a task is finished, the task state is set to finished, although the TASK-FINISHED state in the robot is missing. Release the task and remove incoming facts in worldmodel. State is changed in production.clp."
   (declare (salience ?*PRIORITY-LOCK-LOW*))
-  ?t <- (task (name ?task) (state finished))
+  ?t <- (task (name ?task) (state finished)  (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   =>
   (coordination-release-all-subgoal-locks)
   (retract ?t)
@@ -151,7 +151,7 @@
 
 (defrule coordination-release-and-reject-task-after-failed
   "If a task has failed the task lock is released and incoming facts are removed. If needed a warning is printed and the state is changed from TASK-FAILED to IDLE. All rejected proposals are removed and failed task is rejected."
-  ?t <- (task (name ?task) (state failed)) 
+  ?t <- (task (name ?task) (state failed)  (robot ?r&:(eq ?r ?*ROBOT-NAME*))) 
   ?s <- (state TASK-FAILED)
   =>
   (coordination-release-all-subgoal-locks)
