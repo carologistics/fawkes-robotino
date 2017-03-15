@@ -55,20 +55,21 @@ function check_navgraph(self)
 end
 
 function reached_target_region(self)
-  local region_sqr = self.fsm.vars.region_trans * self.fsm.vars.region_trans
+  local region_sqr
+  if self.fsm.vars.zone then
+    region_sqr = 0.5 * 0.5
+  else
+    region_sqr = self.fsm.vars.region_trans * self.fsm.vars.region_trans
+  end
   local rel_pos = tf_mod.transform({
                       x = self.fsm.vars.x,
                       y = self.fsm.vars.y,
                       ori = self.fsm.vars.ori or 0}, 
                       "/map", "/base_link")
-  local distance_region_sqr = rel_pos.x * rel_pos.x + rel_pos.y * rel_pos.y
 
-  if distance_region_sqr > region_sqr then
-    return false
-  else
-    return true
-  end
+  return math.pow(rel_pos.x, 2) + math.pow(rel_pos.y, 2) <= region_sqr
 end
+
 
 fsm:define_states{ export_to=_M,
   closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, },
@@ -91,19 +92,29 @@ fsm:add_transitions{
 function INIT:init()
   self.fsm.vars.target_valid = true
 
-  -- if a place is given, get the point from the navgraph and use this instead of x, y, ori
   if self.fsm.vars.place ~= nil then
-    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
-    if self.fsm.vars.node:is_valid() then
-      self.fsm.vars.x = self.fsm.vars.node:x()
-      self.fsm.vars.y = self.fsm.vars.node:y()
-      if self.fsm.vars.node:has_property("orientation") then
-        self.fsm.vars.ori   = self.fsm.vars.node:property_as_float("orientation");
-      else
-        self.fsm.vars.ori   = nil   -- if orientation is not set, we don't care
+    if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
+      -- place argument is a zone, e.g. M-Z21
+      self.fsm.vars.zone = self.fsm.vars.place
+      self.fsm.vars.x = tonumber(string.sub(self.fsm.vars.place, 4, 4)) - 0.5
+      self.fsm.vars.y = tonumber(string.sub(self.fsm.vars.place, 5, 5)) - 0.5
+      if string.sub(self.fsm.vars.place, 1, 1) == "M" then
+        self.fsm.vars.x = 0 - self.fsm.vars.x
       end
     else
-      self.fsm.vars.target_valid = false
+      -- place argument is a navgraph point
+      local node = navgraph:node(self.fsm.vars.place)
+      if node:is_valid() then
+        self.fsm.vars.x = node:x()
+        self.fsm.vars.y = node:y()
+        if node:has_property("orientation") then
+          self.fsm.vars.ori = node:property_as_float("orientation");
+        else
+          self.fsm.vars.ori = nil   -- if orientation is not set, we don't care
+        end
+      else
+        self.fsm.vars.target_valid = false
+      end
     end
   end 
 
