@@ -10,7 +10,7 @@
 ;MASTER LOCK HANDLING
 ;////////////////////
 
-	(defop receive-LockMessage
+	(defop receive-LockMessage-Master
 		:invocation (protobuf-msg "llsf_msgs.LockMessage" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
 		                        $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
 		:context ((master-of LOCKING $robot-name))
@@ -28,6 +28,7 @@
 			(=> (lock $type $agent $resource $priority))
 			)
       	)
+
 
     (defop lock-process-requests-and-releases-and-send-LockMessage
     	:invocation ( timer "beacon" $last-sec $last-usec $seq )
