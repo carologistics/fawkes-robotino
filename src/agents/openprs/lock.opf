@@ -137,6 +137,10 @@
 						(! (pb-broadcast $peer-id @msg))
 						(! (pb-destroy @msg))
 
+						(if (? (= (val @type) RELEASE_RVCD) )
+							(~> (lock RELEASE_RVCD (val @agent) (val @resource) @priority))
+							)
+
 						)
 					)
 				)
