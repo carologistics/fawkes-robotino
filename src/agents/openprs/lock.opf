@@ -95,17 +95,21 @@
 
 	    			(? (lock GET (val @agent) (val @resource) @priority))    				
 	    			(if (? (lock ACCEPT @locking-agent (val @resource) @some-priority))
-	    				(if (? (= (val @locking-agent) (val @agent)))
-	    					;Just Remove the GET if already ACCEPTED 
+	    				(if (? (= (val @locking-agent) (val @agent)) )
+	    					;Just Remove the GETs and REFUSEs if already ACCEPTED 
+	    					(~> (lock GET 		(val @agent) (val @resource) @priority)) 	
+	    					(~> (lock REFUSE 	(val @agent) (val @resource) @priority)) 	
 	    					else
 	    					(=> (lock REFUSE @agent @resource (val @priority) ))
+			    			(if (? (~ (= (val @agent) $robot-name)))
+			    				(~> (lock GET (val @agent) (val @resource) @priority)) 	)
 	    					)
 	    				else
-	    				(=> (lock ACCEPT @agent @resource (val @priority)))
+	    				(=> (lock ACCEPT @agent @resource (val @priority))) 	
 	    				)
 	    			)
-	    			(~> (lock GET (val @agent) (val @resource) @priority))    				
 	    		)
+
     		;Send-LockMessage-Master
 			(! (= $lock-complete-list (n-all-list (. $any-type $agent $resource .) (lock $any-type $agent $resource $priority))))
 			(if (? (< 0 (length $lock-complete-list))) 
