@@ -183,6 +183,8 @@
 		)
 
 
+
+
 	(defop send-lockMessage-none-Master
 		:invocation( timer "beacon" $last-sec $last-usec $seq )
 		:context( 	(agent-name $robot-name)
@@ -190,6 +192,41 @@
 					(~ (= $robot-name $master-name))
 					(peer-id private $peer-id))
 		:body(
+
+			(! (= $lock-RELEASE_RVCD-list (n-all-list (. $resource .) (lock RELEASE_RVCD $robot-name $resource $priority )) ))
+			(if (? (< 0 (length $lock-RELEASE_RVCD-list))) 
+
+				(! (= @resource-list (car $lock-RELEASE_RVCD-list)))
+				
+				(while ( ? (~ (null @resource-list)))
+					(! (= @resource (car @resource-list)))
+					(! (= @resource-list (cdr @resource-list)))
+					
+					(while (? (lock @any-type $robot-name (val @resource) @some-priority))
+	    				(~> (lock (val @any-type) $robot-name (val @resource) @some-priority)) )
+					)
+			)
+
+
+			(! (= $lock-ACCEPT-list (n-all-list (. $resource .) (lock ACCEPT $robot-name $resource $priority))))
+			(if (? (< 0 (length $lock-ACCEPT-list))) 
+	    			
+				(! (= @resource-list (car $lock-ACCEPT-list)))
+				
+				(while (? (~ (null @resource-list)))
+					(! (= @resource (car @resource-list)))
+					(! (= @resource-list (cdr @resource-list)))
+					
+					(while (? (& 	(lock @type $robot-name (val @resource) @some-priority)
+									(|| (= (val @type) GET)
+										(= (val @type) REFUSE)
+										)))
+	    				(~> (lock (val @type) $robot-name (val @resource) @some-priority)) 
+	    				)
+					)
+				)
+
+
 			(! (= $lock-list (n-all-list (. $type $resource $priority .) (lock $type $robot-name $resource $priority )) ))
 			(if (? (< 0 (length $lock-list))) 
 
@@ -213,7 +250,7 @@
 						(! (pb-set-field @msg "resource" (val @resource)))
 						(! (pb-set-field @msg "priority"  (val @priority)))
 						(! (pb-broadcast $peer-id @msg))
-						(! (p-destory @msg))
+						(! (pb-destroy @msg))
 						)
 					)
 				)
