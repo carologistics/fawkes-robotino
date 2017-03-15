@@ -97,7 +97,7 @@ while true; do
 				echo "Can pass only either valgrind or GDB, not both"
         exit
        fi
-	     GDB="valgrind --verbose"
+	     GDB="valgrind --track-origins=yes"
 	     ;;
 	 -s)
 	     SHUTDOWN=,mongodb,gazsim-llsf-statistics,gazsim-llsf-control
