@@ -45,6 +45,34 @@
   )
 )
 
+(deffunction iface-get-idx (?iface-id)
+  "Return the index of BB interface names of the form /LaserLines/1 or /LaserLines/1/moving_avg"
+  (bind ?id (sub-string 2 1024 ?iface-id))
+  (bind ?id (sub-string (+ 1 (str-index "/" ?id)) 1024 ?id))
+  (if (str-index "/" ?id) then
+    (bind ?id (sub-string 1 (- (str-index "/" ?id) 1) ?id))
+  )
+  (return (string-to-field ?id))
+)
+
+(deffunction transform-safe (?from-frame ?to-frame ?timestamp ?trans ?rot)
+  (if (tf-can-transform ?from-frame ?to-frame ?timestamp) then
+    (bind ?rv (tf-transform-pose ?from-frame ?to-frame ?timestamp ?trans ?rot))
+  else
+    (if (tf-can-transform ?from-frame ?to-frame (create$ 0 0)) then
+      (bind ?rv (tf-transform-pose ?from-frame ?to-frame (create$ 0 0) ?trans ?rot))
+    else
+      (printout error "transform-safe: Failed to transform " ?from-frame " to " ?to-frame "." crlf)
+      (return FALSE)
+    )
+  )
+  (if (= (length$ ?rv) 7) then
+    (return ?rv)
+  else
+    (return FALSE)
+  )
+)
+
 (deffunction create-multifield-with-length-and-entry (?length ?entry)
   "Creates a Multifield with ?length times the entry ?entry"
   (bind $?res (create$ ))
@@ -116,6 +144,14 @@
   (bind ?round (round ?x))
   (if (< ?x ?round) then
     (return (- ?round 1))
+  )
+  (return ?round)
+)
+
+(deffunction round-up (?x)
+  (bind ?round (round ?x))
+  (if (> ?x ?round) then
+    (return (+ ?round 1))
   )
   (return ?round)
 )
@@ -366,3 +402,47 @@
   )
   (return ?res)
 )
+
+(deffunction laser-line-get-center (?iface-id ?timestamp
+  "Return the center of a laser line in map coordinates"
+  (bind ?idx (iface-get-idx ?iface-id))
+  (bind ?frame1 (str-cat "laser_line_" ?idx "_e1"))
+  (bind ?frame2 (str-cat "laser_line_" ?idx "_e2"))
+  (bind ?ep2-from-ep1 (transform-safe ?frame2 ?frame1 ?timestamp
+                                      (create$ 0 0 0) (create$ 0 0 0 1)))
+  (if (not ?ep2-from-ep1) then
+    (return FALSE)
+  )
+
+  (bind ?mid-from-ep1
+    (/ (nth$ 1 ?ep2-from-ep1) 2)
+    (/ (nth$ 2 ?ep2-from-ep1) 2)
+    (/ (nth$ 3 ?ep2-from-ep1) 2)
+  )
+  (bind ?mid-map (transform-safe ?frame1 "map" ?timestamp ?mid-from-ep1 (create$ 0 0 0 1)))
+  (return ?mid-map)
+)
+
+(deffunction get-zone ($?vector ?margin)
+  "Return the zone name for a given map coordinate $?vector if its
+   distance from the zone borders is greater or equal than ?margin."
+  (bind ?x (nth$ 1 ?vector))
+  (bind ?y (nth$ 2 ?vector))
+  (if (<= ?y 0) then
+    ; y <= 0 is outside the playing field
+    (return FALSE)
+  else
+    (bind ?y (round-up ?y))
+  )
+
+  (if (< ?x 0) then
+    (bind ?rv M-Z)
+    (bind ?x (* ?x -1))
+  else
+    (bind ?rv C-Z)
+  )
+  (bind ?x (round-up ?x))
+  (return (sym-cat ?rv ?x ?y))
+)
+
+
