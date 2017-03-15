@@ -51,7 +51,7 @@
                  (machine ?mps) (machine-feature ?feature&~SLIDE) (gate ?gate) (ring ?ring)
                  (already-at-mps ?already-at-mps))
   (machine (name ?mps) (mtype ?mtype) (state IDLE))
-  (task (name ?task-name))
+  (task (name ?task-name)  (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (game-time $?game-time)
@@ -105,7 +105,7 @@
                  (already-at-mps ?already-at-mps))
   (machine (name ?mps) (mtype ?mtype) (state ~DOWN))
   (ring-station (name ?mps) (bases-loaded ?bl&:(< ?bl 3)))
-  (task (name ?task-name))
+  (task (name ?task-name)  (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (game-time $?game-time)
@@ -170,7 +170,7 @@
 (defrule step-deliver-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  (task (name deliver) (state running))
+  (task (name deliver) (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?step <- (step (name insert) (state wait-for-activation) (task-priority ?p)
 		 (machine ?mps) (machine-feature ?feature) (base ?color))
   ?state <- (state STEP-STARTED)
@@ -501,7 +501,7 @@
    Furthermore we need to aquire the lock, to be sure noone commits to using the rs without enough bases."
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  (task (state running) (id ?task-id))
+  (task (state running) (id ?task-id)  (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   (step (name wait-for-rs) (state running) (machine ?rs) (ring ?ring))
   ?state <- (state WAIT-FOR-RS)
   (machine (name ?rs) (state IDLE) (incoming $?i&~:(member$ PROD_RING ?i)))
@@ -517,7 +517,7 @@
   "Finish after also getting the lock."
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  (task (state running) (id ?task-id))
+  (task (state running) (id ?task-id) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?step <- (step (name wait-for-rs))
   ?state <- (state WAIT-FOR-RS-LOCK)
   (needed-task-lock (task-id ?task-id) (action PROD_RING) (place ?rs) (resource ?res))
@@ -535,7 +535,7 @@
 the waiting state until we can use it again."
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  (task (state running) (id ?task-id))
+  (task (state running) (id ?task-id) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?step <- (step (name wait-for-rs))
   ?state <- (state WAIT-FOR-RS-LOCK)
   ?ntl <- (needed-task-lock (task-id ?task-id) (action PROD_RING) (place ?rs) (resource ?res))
