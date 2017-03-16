@@ -570,7 +570,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
                       else {
                           std::cout << " Variable not found!" << std::endl;
                       }
-                       constraint2 = constraint2 && ((j== u && k ==v) || variable2 != i);
+                       z3::expr variable3(_z3_context);
+                       variable3 = _z3_context.bool_val((j== u && k ==v));
+                       constraint2 = constraint2 && (variable2 != i || variable3);
                   }
                 }
                 constraint2 = constraint2 && (variable1 == i);
