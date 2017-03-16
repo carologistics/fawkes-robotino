@@ -325,6 +325,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     std::map<std::string, z3::expr>::iterator it;
     std::map<int, std::string>::iterator it2;
 
+    logger->log_info(name(), "Add variables pos_i_j");
     // Variables pos_i_j
     for(int i = 1; i < data.robots().size()+1; ++i){
         for(int j = -3; j < data.machines().size()+1; ++j) {
@@ -335,6 +336,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
 	}
 
+    logger->log_info(name(), "Add variables d_i_j");
     // Variables d_i_j
     for(int i = 1; i < data.robots().size()+1; ++i){
         for(int j = -3; j < data.machines().size()+1; ++j) {
@@ -345,6 +347,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
 	}
 
+    logger->log_info(name(), "Add variables m_i");
     // Variables m_i
     for(int i = 1; i < data.robots().size()+1; ++i){
 		z3::expr var(_z3_context);
@@ -352,7 +355,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
 		var=_z3_context.bool_const((varName).c_str());
         variables_m.insert(std::make_pair(varName, var));
 	}
+    logger->log_info(name(), "Finished creating variables");
 
+    logger->log_info(name(), "Add constraint: d_i_0 = 0");
     // Constraint: d_i_0 = 0
     for(int i = 1; i < data.robots().size()+1; ++i){
         it = variables_d.find("d_"+std::to_string(i)+"_0");
@@ -367,6 +372,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
 	}
 
+    logger->log_info(name(), "Add constraint: d_i_j <= d_i_m");
     // Constraint: d_i_j <= d_i_m
     for(int i = 1; i < data.robots().size()+1; ++i){
         for(int j = -3; j < data.machines().size()+1; ++j) {
@@ -397,6 +403,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
 	}
 
+    logger->log_info(name(), "Add constraint: pos_i_j == n for all n=-4, .., m");
     // Constraint: pos_i_j == n for all n=-4, .., m
     for(it = variables_pos.begin(); it != variables_pos.end(); ++it){
         for(int n=-4; n < data.machines().size()+1; ++n) {
@@ -406,6 +413,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
     }
 
+    logger->log_info(name(), "Add constraint: pos_1_n == -1 for all n=-3,..., -1");
     // Constraint: pos_1_n == -1 for all n=-3,..., -1
     for(it = variables_pos.begin(); it != variables_pos.end(); ++it){
         if(it->first.compare("pos_1_-1")){
@@ -455,6 +463,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
     }
 
+    logger->log_info(name(), "Add first move constraint");
     // First move constraint:
     for(int i = 1; i < data.robots().size()+1; ++i){
 
@@ -487,6 +496,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
     }
 
+    logger->log_info(name(), "Add other moves constraint");
     // Other moves constraint:
     for(int i = 1; i < data.robots().size()+1; ++i){
         for(int j = 2; j < data.machines().size()+1; ++j) {
@@ -553,8 +563,10 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
     }
 
-    // Robot can not visit the same machine twice
-    z3::expr constraint1(_z3_context);
+    /**
+    logger->log_info(name(), "Add constraint not to visit the same machine twice");
+    // Robot can not visit the same machine twice <- Problem
+    z3::expr constraintNotVisitTwice(_z3_context);
     for(int i = 1; i < data.machines().size()+1; ++i){
         for(int j = 1; j < data.robots().size()+1; ++j) {
             for(int k = 1; k < data.machines().size()+1; ++k) {
@@ -563,9 +575,11 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
                 it = variables_pos.find("pos_"+std::to_string(j)+"_"+std::to_string(k));
                 if(it != variables_pos.end()) {
                     variable1 = it->second;
+                    logger->log_info(name(), "Variable1 added");
                 }
                 else {
-                    std::cout << " Variable not found!" << std::endl;
+                    logger->log_info(name(), "Variable1 not found");
+
                 }
 
                 z3::expr constraint2(_z3_context);
@@ -576,23 +590,32 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
                       it = variables_pos.find("pos_"+std::to_string(u)+"_"+std::to_string(v));
                       if(it != variables_pos.end()) {
                           variable2 = it->second;
+                          logger->log_info(name(), "Variable2 added");
                       }
                       else {
-                          std::cout << " Variable not found!" << std::endl;
+                          logger->log_info(name(), "Variable2 not found");
                       }
                        z3::expr variable3(_z3_context);
-                       variable3 = _z3_context.bool_val((j== u && k ==v));
-                       constraint2 = constraint2 && (variable2 != i || variable3);
+                       if(j!= u || k!=v) {
+                           constraint2 = constraint2 && (variable2 != i);
+                       }
+                       logger->log_info(name(), "Constraint2 updated");
                   }
                 }
                 constraint2 = constraint2 && (variable1 == i);
-                constraint1 = constraint1 || constraint2;
+                constraintNotVisitTwice = constraintNotVisitTwice || constraint2;
+                logger->log_info(name(), "ConstraintNotVisitTwice updated");
+
             }
         }
-
-        constraints.push_back(constraint1);
     }
+    // TODO (Igor) Check if correct
+    constraints.push_back(constraintNotVisitTwice);
+    logger->log_info(name(), "ConstraintNotVisitTwice added");
+    **/
 
+    /**
+    logger->log_info(name(), "Add constraint not to visit the same machine twice..."); // <- Problem
     for(int i = 1; i < data.machines().size()+1; ++i){
 
         z3::expr constraint(_z3_context);
@@ -603,9 +626,11 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
 
         constraints.push_back(constraint);
     }
+    **/
 
-    // Encoding maximum distance
-
+    /**
+    logger->log_info(name(), "Add constraint encoding maximum distance");
+    // Encoding maximum distance <- Problem
     for(int i = 1; i < data.robots().size()+1; ++i){
 
         z3::expr variable1(_z3_context);
@@ -646,8 +671,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
 
         constraints.push_back(constraint1 || constraint2);
     }
+    **/
 
-
+    logger->log_info(name(), "Finished collecting constraints");
     return constraints;
 }
 
@@ -677,7 +703,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         d_1_M = it->second;
     }
     else {
-        std::cout << " Variable not found!" << std::endl;
+        std::cout << " Variable d_1_M not found!" << std::endl;
     }
 
     it = variables_d.find("d_"+std::to_string(2)+"_"+std::to_string(data.machines().size()));
@@ -685,7 +711,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         d_2_M = it->second;
     }
     else {
-        std::cout << " Variable not found!" << std::endl;
+        std::cout << " Variable d_2_M not found!" << std::endl;
     }
 
     it = variables_d.find("d_"+std::to_string(3)+"_"+std::to_string(data.machines().size()));
@@ -693,7 +719,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         d_3_M = it->second;
     }
     else {
-        std::cout << " Variable not found!" << std::endl;
+        std::cout << " Variable d_3_M not found!" << std::endl;
     }
 
     it = variables_m.find("m_"+std::to_string(1));
@@ -701,7 +727,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         m_1 = it->second;
     }
     else {
-        std::cout << " Variable not found!" << std::endl;
+        std::cout << " Variable m_1 not found!" << std::endl;
     }
 
     it = variables_m.find("m_"+std::to_string(2));
@@ -709,7 +735,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         m_2 = it->second;
     }
     else {
-        std::cout << " Variable not found!" << std::endl;
+        std::cout << " Variable m_2 not found!" << std::endl;
     }
 
     it = variables_m.find("m_"+std::to_string(3));
@@ -717,7 +743,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         m_3 = it->second;
     }
     else {
-        std::cout << " Variable not found!" << std::endl;
+        std::cout << " Variable m_3 not found!" << std::endl;
     }
 
     z3Optimizer.minimize(m_1*d_1_M + m_2*d_2_M + m_3*d_3_M);
@@ -818,6 +844,9 @@ ClipsSmtThread::loop()
     // Evaluate
     logger->log_info(name(), "React on solved z3 formula");
     clips_smt_react_on_result(result);
+
+    logger->log_info(name(), "Thread reached end of loop");
+
 }
 
 /**
