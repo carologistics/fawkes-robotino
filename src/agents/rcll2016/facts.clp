@@ -209,6 +209,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
+  (slot robot (type STRING) (allowed-values "R-1" "R-2" "R-3"))
   (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
@@ -216,6 +217,7 @@
   ;a task consists of multiple steps
   (slot current-step (type INTEGER) (default 0))
   (multislot steps (type INTEGER)) ;in chronological order refers to the ids of the steps
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 ; Template for a step
@@ -242,6 +244,7 @@
   (slot already-at-mps (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default OUTPUT))
   (slot lock (type SYMBOL) (default NONE))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
@@ -416,7 +419,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching task step)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)

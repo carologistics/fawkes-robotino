@@ -15,7 +15,7 @@
   "Start execution of a task by activating its first step"
   (phase PRODUCTION)
   ?state <- (state TASK-ORDERED)
-  ?task <- (task (state ordered) (steps $?steps) (name ?name))
+  ?task <- (task (state ordered) (steps $?steps) (name ?name) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?step <- (step (id ?step-id&:(eq ?step-id (nth$ 1 ?steps))) (state inactive))
   =>
   (retract ?state)
@@ -29,7 +29,7 @@
   "If a step finished, we activate the next step of the task"
   (phase PRODUCTION)
   ?state <- (state STEP-FINISHED)
-  ?task <- (task (state running) (steps $?steps) (current-step ?id-finished) (name ?name))
+  ?task <- (task (state running) (steps $?steps) (current-step ?id-finished) (name ?name) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   (step (id ?id-finished) (state finished))
   ?step-next <- (step (id ?id-next&:(eq ?id-next 
 					(nth$ (+ 1 (member$ ?id-finished ?steps)) ?steps)))
@@ -46,7 +46,7 @@
   "Finish a task if all steps finished"
   (phase PRODUCTION)
   ?state <- (state STEP-FINISHED)
-  ?task <- (task (state running) (steps $?steps) (current-step ?id-finished) (name ?task-name))
+  ?task <- (task (state running) (steps $?steps) (current-step ?id-finished) (name ?task-name) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   (step (id ?id-finished) (state finished))
   ;there is no next task
   (not (step (id ?id-next&:(eq ?id-next 
@@ -64,7 +64,7 @@
   calling two skills directly after each other"
   (phase PRODUCTION)
   ?state <- (state STEP-FAILED)
-  ?task <- (task (state running) (current-step ?id-failed) (name ?task-name))
+  ?task <- (task (state running) (current-step ?id-failed) (name ?task-name) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   (step (id ?id-failed) (state failed) (name ?step-name))
   (time $?now)
   =>

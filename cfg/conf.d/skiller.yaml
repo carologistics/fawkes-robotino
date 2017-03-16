@@ -17,4 +17,4 @@ skiller:
     navgraph:
       # Enable access to navgraph, adds a dependency on the navgraph
       # plugin such that a valid graph must be loaded first
-      enable: false
+      enable: true

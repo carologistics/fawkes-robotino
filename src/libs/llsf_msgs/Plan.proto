@@ -1,0 +1,170 @@
+
+/***************************************************************************
+ *  Plan.proto - Planning Result
+ *
+ *  Created: Wed Mar 15 13:57:13 2017
+ *  Copyright  2017  Tim Niemueller [www.niemueller.de]
+ ****************************************************************************/
+
+/*  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * - Neither the name of the authors nor the names of its contributors
+ *   may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+package llsf_msgs;
+
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "PlanProtos";
+
+/** Plan action parameter.
+ * A key/value pair denoting a single parameter.
+ */
+message PlanActionParameter {
+	required string key = 1;
+	required string value = 2;
+}
+
+/** A plan action representation.
+
+ * An action consists of an action name and a list of parameters as
+ * key/value pairs. For example, a PDDL action could be modeled in the
+ * following way:
+ * PDDL operator:
+ * (:action move
+ *   :parameters (?r - robot ?from ?to - location)
+ *   :precondition (and (robot-at ?r ?from) (location-free ?to))
+ *   :effect (and (not (robot-at ?r ?from)) (robot-at ?r ?to)
+ *                (not (location-free ?to)))
+ * )
+ *
+ * Then an instantiation of this operator (such a ground operator is
+ * an action) could be modeled as:
+ * PlanAction:
+ *   name: move
+ *   params:
+ *     - r: R-1
+ *     - from: START
+ *     - to: GOAL
+ *
+ * The params list are PlanActionParameter instances.
+ */
+message PlanAction {
+  required string name = 1;
+  repeated PlanActionParameter params = 2;
+}
+
+
+/** Sequential plan representation.
+ * Represents a sequence of actions composing a plan. This is intended
+ * to represent a linear sequence of actions with causal
+ * relations. You may impose additional assumptions on this message
+ * (if the planning and execution side agree and model the same thing)
+ * by having a specific argument of actions denote the actor. For
+ * example, you could have a "robot" argument denoting the robot that
+ * is supposed to execute the specific action. This could then be used
+ * to extract the sub-plan for a specific robot. This makes the strong
+ * assumption that there is no causal or temporal relation between the
+ * robot's plans. Therefore, we recommend using the ActorSpecificPlan
+ * message for this use case.
+ */
+message SequentialPlan {
+  repeated PlanAction actions = 1;
+}
+
+
+/** A temporal action representation.
+ * An action consists of an action name, a list of parameters as
+ * key/value pairs, and temporal information for execztion.
+ * For example, a PDDL action could be modeled in the following way:
+ *
+ * (:durative-action move
+ *   :parameters (?r - robot ?from ?to - location)
+ *   :duration (= ?duration 20)
+ *   :condition (and (at start (robot-at ?r ?from)) (at start (location-free ?to)))
+ *   :effect (and (at start (not (robot-at ?r ?from)))
+ *                (at end (robot-at ?r ?to)) (at start (not (location-free ?to))))
+ * )
+ *
+ * Then an instantiation of this operator (such a ground operator is
+ * an action) could be modeled as:
+ * TemporalPlanAction:
+ *   name: move
+ *   params:
+ *     - r: R-1
+ *     - from: START
+ *     - to: GOAL
+ *   duration: 20
+ *   dispatch_time: 0
+ *
+ * The params list are PlanActionParameter instances. The duration is in seconds.
+ * The dispatch time denotes the time after starting execution of the plan at which
+ * the action should be activated.
+ */
+message TemporalPlanAction {
+  required string name = 1;
+  repeated PlanActionParameter params = 2;
+	optional float duration = 3 [default = 0];
+	optional float dispatch_time = 4;
+}
+
+/** Temporal plan representation.
+ * Represents a number of actions composing a plan. Since the plan
+ * steps contain dispatch time information, the plan need not be a
+ * totally ordered sequence, it may have only a partial order.
+ *
+ * You may impose additional assumptions on this message (if the
+ * planning and execution side agree and model the same thing) by
+ * having a specific argument of actions denote the actor. For
+ * example, you could have a "robot" argument denoting the robot that
+ * is supposed to execute the specific action. This could then be used
+ * to extract the sub-plan for a specific robot. This makes the strong
+ * assumption that there is no causal or temporal relation between the
+ * robot's plans. Therefore, we recommend using the ActorSpecificPlan
+ * message for this use case.
+ */
+message TemporalPlan {
+  repeated TemporalPlanAction actions = 1;
+}
+
+
+/** This encodes a plan for a specific actor.
+ * This can be used to encapsulate a sequential or temporal plan for
+ * a specific actor, for example a specific robot.
+ */
+message ActorSpecificPlan {
+	required string actor_name = 1;
+
+	oneof plan {
+		SequentialPlan sequential_plan = 2;
+		TemporalPlan   temporal_plan = 3;
+	}
+}
+
+/** Collect plans for a number of actors in one message.
+ */
+message ActorGroupPlan {
+	repeated ActorSpecificPlan plans = 1;
+}
