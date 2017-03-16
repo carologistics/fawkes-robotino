@@ -46,6 +46,8 @@
 #include "clips_smt_data.h"
 #include <llsf_msgs/ClipsSmtData.pb.h>
 
+#include <boost/cerrno.hpp>
+
 namespace fawkes {
     class SubProcess;
     class NavGraphStaticListEdgeCostConstraint;
@@ -96,6 +98,7 @@ class ClipsSmtThread
   z3::context _z3_context;
   bool _solver_done;
   z3::expr_vector clips_smt_create_formula();
+  z3::expr_vector clips_smt_encoder();
   z3::check_result clips_smt_solve_formula(z3::expr_vector formula);
   void clips_smt_react_on_result(z3::check_result result);
 
@@ -104,6 +107,7 @@ class ClipsSmtThread
 
   // SubProcess to call python
   fawkes::SubProcess *proc_python_;
+
 
   // Communication with the agent API
   CLIPS::Value clips_smt_request(void *msgptr, std::string handle);
@@ -115,12 +119,14 @@ class ClipsSmtThread
   // Navgraph
   void clips_smt_compute_distances();
   std::map<std::pair<std::string, std::string>, float> distances_;
+  std::map<int, std::string> indices_;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
   std::string cfg_base_frame_;
   std::string cfg_global_frame_;
 
 
   // Test
+  void clips_smt_test_python();
   void clips_smt_test_z3();
   void clips_smt_test_carl();
   void clips_smt_test_data();

@@ -28,6 +28,7 @@
 #include <navgraph/constraints/static_list_edge_cost_constraint.h>
 #include <navgraph/constraints/constraint_repo.h>
 
+
 using namespace fawkes;
 
 /** @class ClipsNavGraphThread "clips-protobuf-thread.h"
@@ -64,6 +65,24 @@ ClipsSmtThread::init()
     // Test z3 extern binary
     proc_z3_ = NULL;
     //clips_smt_test_z3();
+
+    // Test python
+    proc_python_ = NULL;
+    //clips_smt_test_python();
+
+    indices_[0] = "C-ins-in";
+    indices_[1] = "C-BS-I";
+    indices_[2] = "C-BS-O";
+    indices_[3] = "C-CS1-I";
+    indices_[4] = "C-CS1-O";
+    indices_[5] = "C-CS2-I";
+    indices_[6] = "C-CS2-O";
+    indices_[7] = "C-DS-I";
+    indices_[8] = "C-DS-O";
+    indices_[9] = "C-RS1-I";
+    indices_[10] = "C-RS1-O";
+    indices_[11] = "C-RS2-I";
+    indices_[12] = "C-RS2-O";
 }
 
 
@@ -284,6 +303,312 @@ ClipsSmtThread::clips_smt_create_formula()
 	return constraints;
 }
 
+z3::expr_vector
+ClipsSmtThread::clips_smt_encoder()
+{
+    z3::expr_vector constraints(_z3_context);
+
+    std::map<std::string, z3::expr> variables_pos;
+    std::map<std::string, z3::expr> variables_d;
+    std::map<std::string, z3::expr> variables_m;
+
+    std::map<std::string, z3::expr>::iterator it;
+    std::map<int, std::string>::iterator it2;
+
+    // Variables pos_i_j
+    for(int i = 1; i < data.robots().size()+1; ++i){
+        for(int j = -3; j < data.machines().size()+1; ++j) {
+    		z3::expr var(_z3_context);
+    		std::string varName = "pos_" + std::to_string(i) + "_" + std::to_string(j);
+    		var=_z3_context.real_const((varName).c_str());
+    		variables_pos.insert(std::make_pair(varName, var));
+        }
+	}
+
+    // Variables d_i_j
+    for(int i = 1; i < data.robots().size()+1; ++i){
+        for(int j = -3; j < data.machines().size()+1; ++j) {
+    		z3::expr var(_z3_context);
+    		std::string varName = "d_" + std::to_string(i) + "_" + std::to_string(j);
+    		var=_z3_context.real_const((varName).c_str());
+    		variables_d.insert(std::make_pair(varName, var));
+        }
+	}
+
+    // Variables m_i
+    for(int i = 1; i < data.robots().size()+1; ++i){
+		z3::expr var(_z3_context);
+		std::string varName = "m_" + std::to_string(i);
+		var=_z3_context.bool_const((varName).c_str());
+        variables_m.insert(std::make_pair(varName, var));
+	}
+
+    // Constraint: d_i_0 = 0
+    for(int i = 1; i < data.robots().size()+1; ++i){
+        it = variables_d.find("d_"+std::to_string(i)+"_0");
+        if(it != variables_d.end()) {
+
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == 0);
+            constraints.push_back(constraint);
+        }
+        else {
+            std::cout << " Variable not found!" << std::endl;
+        }
+	}
+
+    // Constraint: d_i_j <= d_i_m
+    for(int i = 1; i < data.robots().size()+1; ++i){
+        for(int j = -3; j < data.machines().size()+1; ++j) {
+
+            z3::expr variable1(_z3_context);
+            z3::expr variable2(_z3_context);
+
+            it = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(j));
+            if(it != variables_d.end()) {
+                variable1 = it->second;
+            }
+            else {
+                std::cout << " Variable1 not found!" << std::endl;
+            }
+
+            it = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(data.machines().size()));
+            if(it != variables_d.end()) {
+                variable2 = it->second;
+            }
+            else {
+                std::cout << " Variable not found!" << std::endl;
+            }
+
+            // TODO (Igor) Check if variables are set properly
+
+            z3::expr constraint( variable1 <= variable2);
+            constraints.push_back(constraint);
+        }
+	}
+
+    // Constraint: pos_i_j == n for all n=-4, .., m
+    for(it = variables_pos.begin(); it != variables_pos.end(); ++it){
+        for(int n=-4; n < data.machines().size()+1; ++n) {
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == n);
+            constraints.push_back(constraint);
+        }
+    }
+
+    // Constraint: pos_1_n == -1 for all n=-3,..., -1
+    for(it = variables_pos.begin(); it != variables_pos.end(); ++it){
+        if(it->first.compare("pos_1_-1")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -1);
+            constraints.push_back(constraint);
+        }
+        else if(it->first.compare("pos_1_-2")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -1);
+            constraints.push_back(constraint);
+        }
+        else if(it->first.compare("pos_1_-3")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -1);
+            constraints.push_back(constraint);
+        }
+        else if(it->first.compare("pos_2_-1")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -1);
+            constraints.push_back(constraint);
+        }
+        else if(it->first.compare("pos_2_-2")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -2);
+            constraints.push_back(constraint);
+        }
+        else if(it->first.compare("pos_2_-3")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -2);
+            constraints.push_back(constraint);
+        }
+        else if(it->first.compare("pos_3_-1")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -1);
+            constraints.push_back(constraint);
+        }
+        else if(it->first.compare("pos_3_-2")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -2);
+            constraints.push_back(constraint);
+        }
+        else if(it->first.compare("pos_3_-3")){
+            z3::expr variable = it->second;
+            z3::expr constraint( variable == -3);
+            constraints.push_back(constraint);
+        }
+    }
+
+    // First move constraint:
+    for(int i = 1; i < data.robots().size()+1; ++i){
+
+        z3::expr variable1(_z3_context);
+        z3::expr variable2(_z3_context);
+
+        it = variables_pos.find("pos_"+std::to_string(i)+"_1");
+        if(it != variables_pos.end()) {
+            variable1 = it->second;
+        }
+        else {
+            std::cout << " Variable not found!" << std::endl;
+        }
+
+        it = variables_d.find("d_"+std::to_string(i)+"_1");
+        if(it != variables_pos.end()) {
+            variable2 = it->second;
+        }
+        else {
+            std::cout << " Variable not found!" << std::endl;
+        }
+
+        for(it2 = indices_.begin(); it2 != indices_.end(); ++it2){
+            float distance = distances_[std::make_pair("C-ins-in", it2->second)];
+            z3::expr distance_z3 = _z3_context.real_val((std::to_string(distance)).c_str());
+            z3::expr constraint1(variable2 == distance_z3);
+
+            z3::expr constraint2( variable1 == it2->first && constraint1);
+            constraints.push_back(constraint2);
+        }
+    }
+
+    // Other moves constraint:
+    for(int i = 1; i < data.robots().size()+1; ++i){
+        for(int j = 2; j < data.machines().size()+1; ++j) {
+
+            z3::expr variable1(_z3_context);
+            z3::expr variable2(_z3_context);
+            z3::expr variable3(_z3_context);
+            z3::expr variable4(_z3_context);
+
+            it = variables_pos.find("pos_"+std::to_string(i)+"_"+std::to_string(j));
+            if(it != variables_pos.end()) {
+                variable1 = it->second;
+            }
+            else {
+                std::cout << " Variable not found!" << std::endl;
+            }
+
+            it = variables_pos.find("pos_"+std::to_string(i)+"_"+std::to_string(j-1));
+            if(it != variables_pos.end()) {
+                variable2 = it->second;
+            }
+            else {
+                std::cout << " Variable not found!" << std::endl;
+            }
+
+            it = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(j));
+            if(it != variables_d.end()) {
+                variable3 = it->second;
+            }
+            else {
+                std::cout << " Variable not found!" << std::endl;
+            }
+
+            it = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(j-1));
+            if(it != variables_d.end()) {
+                variable4 = it->second;
+            }
+            else {
+                std::cout << " Variable not found!" << std::endl;
+            }
+
+
+            z3::expr constraint1( variable2 != 0 && variable2 != -1 && variable2 != -2 && variable2 != -3 );
+            constraints.push_back(constraint1);
+
+            z3::expr constraint2( variable1 != -4 || (variable2 == -4 && variable4 == variable3));
+            constraints.push_back(constraint2);
+
+            z3::expr constraint3( variable2 != -4 || variable4 == variable3);
+            constraints.push_back(constraint3);
+
+            for(int k = 1; k < data.machines().size()+1; ++k) {
+                z3::expr constraint4( variable1 != k || variable2 != k);
+                constraints.push_back(constraint4);
+
+                for(int l = 1; l < data.machines().size()+1; ++l) {
+                    float distance = distances_[std::make_pair(indices_[k], indices_[l])];
+                    z3::expr distance_z3 = _z3_context.real_val((std::to_string(distance)).c_str());
+
+                    z3::expr constraint5( variable1 != k || variable2 != l || variable4==variable3+distance_z3);
+                    constraints.push_back(constraint5);
+                }
+            }
+        }
+    }
+
+    // Robot can not visit the same machine twice TODO (Igor)
+    for(int i = 1; i < data.machines().size()+1; ++i){
+        for(int j = 1; j < data.robots().size()+1; ++j) {
+            for(int k = 1; k < data.machines().size()+1; ++k) {
+            }
+        }
+    }
+
+    for(int i = 1; i < data.machines().size()+1; ++i){
+
+        z3::expr constraint(_z3_context);
+
+        for(it = variables_pos.begin(); it != variables_pos.end(); ++it){
+            constraint = constraint || ( it->second == i );
+        }
+
+        constraints.push_back(constraint);
+    }
+
+    // Encoding maximum distance
+
+    for(int i = 1; i < data.robots().size()+1; ++i){
+
+        z3::expr variable1(_z3_context);
+        z3::expr variable2(_z3_context);
+
+        it = variables_m.find("m_"+std::to_string(i));
+        if(it != variables_m.end()) {
+            variable1 = it->second;
+        }
+        else {
+            std::cout << " Variable not found!" << std::endl;
+        }
+
+        it = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(data.machines().size()));
+        if(it != variables_d.end()) {
+            variable2 = it->second;
+        }
+        else {
+            std::cout << " Variable not found!" << std::endl;
+        }
+
+        z3::expr constraint1(variable1==0);
+        z3::expr constraint2(variable1==1);
+
+        for(int j = 1; j < data.machines().size()+1; ++j) {
+            z3::expr variable3(_z3_context);
+
+            it = variables_d.find("d_"+std::to_string(j)+"_"+std::to_string(data.machines().size()));
+            if(it != variables_d.end()) {
+                variable3 = it->second;
+            }
+            else {
+                std::cout << " Variable not found!" << std::endl;
+            }
+
+            constraint2 = constraint2 && variable3<variable2;
+        }
+
+        constraints.push_back(constraint1 || constraint2);
+    }
+
+
+    return constraints;
+}
+
  z3::check_result
  ClipsSmtThread::clips_smt_solve_formula(z3::expr_vector formula)
 {
@@ -322,13 +647,6 @@ ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
 
     // Use handle to associate request to solution
     std::cout << "Handle request_" << handle << std::endl;
-
-    // Call python script
-    const char *argv[] = { "python",
-                           "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/Main.py",
-                           NULL };
-    proc_python_ = new SubProcess("python", argv[0], argv, NULL, logger);
-    proc_python_->check_proc();
 
     // Wakeup the loop function
     std::cout << "CSMT_request: Wake up the loop" << std::endl;
@@ -405,7 +723,8 @@ ClipsSmtThread::loop()
  ClipsSmtThread::clips_smt_compute_distances()
  {
     std::vector<std::string> nodes = {
-        "C-BS-I","C-BS-0",
+        "C-ins-in",
+        "C-BS-I","C-BS-O",
         "C-CS1-I","C-CS1-O","C-CS2-I","C-CS2-O",
         "C-DS-I","C-DS-O",
         "C-RS1-I","C-RS1-O","C-RS2-I","C-RS2-O"
@@ -468,6 +787,22 @@ ClipsSmtThread::loop()
                             NULL };
      proc_z3_ = new SubProcess("z3 binary", argv[0], argv, NULL, logger);
      proc_z3_->check_proc();
+      **/
+ }
+
+ void
+ ClipsSmtThread::clips_smt_test_python()
+ {
+     /**
+     // Call python script
+     const char *argv[] = { "python",
+                            "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/Main.py",
+                            NULL };
+     proc_python_ = new SubProcess("python", argv[0], argv, NULL, logger);
+     proc_python_->check_proc();
+
+     //boost::asio::posix::stream_descriptor &stream_descriptor = proc_python_->sd_stdout();
+     //stream_descriptor.async_read_some(boost::asio::buffer(data_, 100), handler);
      **/
  }
 
