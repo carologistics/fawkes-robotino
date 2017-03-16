@@ -559,8 +559,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
                 }
 
                 z3::expr constraint2(_z3_context);
-                for(int u = 1; u < data.machines().size+1;++u){
-                  for(int v = 1; v < data.machines.size()+1; ++v){
+                for(int u = 1; u < data.machines().size()+1;++u){
+                  for(int v = 1; v < data.machines().size()+1; ++v){
                       z3::expr variable2(_z3_context);
 
                       it = variables_pos.find("pos_"+std::to_string(u)+"_"+std::to_string(v));
