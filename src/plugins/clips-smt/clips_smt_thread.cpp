@@ -70,6 +70,7 @@ ClipsSmtThread::init()
     proc_python_ = NULL;
     //clips_smt_test_python();
 
+    // Init indices_ mapping int to name of machines
     indices_[0] = "C-ins-in";
     indices_[1] = "C-BS-I";
     indices_[2] = "C-BS-O";
@@ -93,12 +94,21 @@ ClipsSmtThread::finalize()
     navgraph->constraint_repo()->unregister_constraint(edge_cost_constraint_->name());
     delete edge_cost_constraint_;
 
+    // Handle z3 extern binary
     if (proc_z3_) {
-      logger->log_info(name(), "Killing z3 extern bianry");
+      logger->log_info(name(), "Killing z3 extern bianry proc");
       proc_z3_->kill(SIGINT);
     }
     delete proc_z3_;
 
+    // Handle python
+    if (proc_python_) {
+      logger->log_info(name(), "Killing python proc");
+      proc_python_->kill(SIGINT);
+    }
+    delete proc_python_;
+
+    // Handle output of formula generation
     //std::remove("carl_formula.smt");
 
     envs_.clear();
@@ -649,7 +659,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     //std::cout << constraints << std::endl << constants << std::endl;
     for (unsigned i = 0; i < formula.size(); i++) {
         z3Optimizer.add(formula[i]);
-        std::cout << "CSMT_solve: Constraint " << formula[i] << std::endl;
+        logger->log_info(name(), "Solving constraint %s", formula[i]);
     }
 
     // Add objective functions
@@ -719,7 +729,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
 void
 ClipsSmtThread::clips_smt_react_on_result(z3::check_result result)
 {
-    std::cout << "CSMT_react: Result: " << result << std::endl;
+    logger->log_info(name(), "Result on solving formula is %s", result);
 }
 
 /**
@@ -739,10 +749,10 @@ ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
     data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name() OR data.machines().size()
 
     // Use handle to associate request to solution
-    std::cout << "Handle request_" << handle << std::endl;
+    logger->log_info(name(),"Handle request: %s", handle.c_str());
 
     // Wakeup the loop function
-    std::cout << "CSMT_request: Wake up the loop" << std::endl;
+    logger->log_info(name(), "At end of request, wake up the loop" );
     wakeup();
 
     return CLIPS::Value("Correct-Message", CLIPS::TYPE_SYMBOL);
@@ -757,7 +767,7 @@ ClipsSmtThread::clips_smt_get_plan(void *msgptr, std::string handle)
     if (!*m) return CLIPS::Value("CSMT_get_plan aborted", CLIPS::TYPE_SYMBOL);
 
     // Use handle to associate plan to initial request
-    std::cout << "Return plan for request_" << handle << std::endl;
+    logger->log_info(name(),"Return plan of request: %s", handle.c_str());
 
     // Fill the empty protobuf message with the computed task
 
@@ -784,13 +794,13 @@ ClipsSmtThread::clips_smt_done(std::string foo, std::string bar)
 void
 ClipsSmtThread::loop()
 {
-    std::cout << "CSMT_loop: Test solving z3 formula with running() " << running() << std::endl;
+    logger->log_info(name(), "Thread performs loop and is running [%d]", running());
 
-    std::cout << "CSMT_loop: Compute distances between nodes in navgraph" << std::endl;
+    logger->log_info(name(), "Compute distances between nodes in navgraph");
     clips_smt_compute_distances();
 
     // Build simple formula
-    std::cout << "CSMT_loop: Create z3 formula" << std::endl;
+    logger->log_info(name(), "Create z3 formula");
     //Declare variable for the Encoding
     std::map<std::string, z3::expr> variables_pos;
     std::map<std::string, z3::expr> variables_d;
@@ -800,11 +810,11 @@ ClipsSmtThread::loop()
     z3::expr_vector formula = clips_smt_encoder(variables_pos, variables_d, variables_m);
 
     // Give it to z3 solver
-    std::cout << "CSMT_loop: Solve z3 formula" << std::endl;
+    logger->log_info(name(), "Solve z3 formula");
     z3::check_result result = clips_smt_solve_formula(variables_pos, variables_d, variables_m,formula);
 
     // Evaluate
-    std::cout << "CSMT_loop: React on solved z3 formula" << std::endl;
+    logger->log_info(name(), "React on solved z3 formula");
     clips_smt_react_on_result(result);
 }
 
@@ -841,7 +851,7 @@ ClipsSmtThread::loop()
         NavGraphNode to = navgraph->node(nodes[i]);
 
         NavGraphPath p = navgraph->search_path(from, to);
-        std::cout << "CSMT_test: Distance between " << from.name() << " and " << nodes[i] << " is " << p.cost() << std::endl;
+        logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), nodes[i].c_str(), p.cost());
         distances_[nodes_pair] = p.cost();
     }
 
@@ -851,7 +861,7 @@ ClipsSmtThread::loop()
             std::pair<std::string, std::string> nodes_pair(nodes[i], nodes[j]);
 
  			NavGraphPath p = navgraph->search_path(nodes[i], nodes[j]);
-            //std::cout << "CSMT_test: Distance between " << nodes[i] << " and " << nodes[j] << " is " << p.cost() << std::endl;
+            //logger->log_info(name(), "Distance between node %s and node %s is %f", nodes[i].c_str(), nodes[j].c_str(), p.cost());
  			distances_[nodes_pair] = p.cost();
  		}
  	}
@@ -869,7 +879,7 @@ ClipsSmtThread::loop()
  ClipsSmtThread::clips_smt_test_z3()
  {
      /**
-     std::cout << "CSMT_test: Test z3 extern binary" << std::endl;
+    logger->log_info(name(), "Test z3 extern binary");
 
      carl::Variable x = carl::freshRealVariable("x");
  	 Rational r = 4;
@@ -893,6 +903,8 @@ ClipsSmtThread::loop()
  ClipsSmtThread::clips_smt_test_python()
  {
      /**
+     logger->log_info(name(), "Test python");
+
      // Call python script
      const char *argv[] = { "python",
                             "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/Main.py",
@@ -910,10 +922,10 @@ ClipsSmtThread::loop()
  {
      /**
      // Test carl
-     std::cout << "CSMT_test:      Test carl" << std::endl;
+     logger->log_info(name(), "Test carl");
      bool b=false;
      if(carl::highestPower(64)==64) b=true;
-     std::cout << "CSMT_test:      Hello Carl! You are " << b << std::endl;
+     logger->log_info(name(), "Hello carl, you are %b", b);
      **/
  }
 
@@ -933,7 +945,7 @@ ClipsSmtThread::clips_smt_test_data()
       WorkingPieceComponent outputWP = RING_ORANGE;
       Machine machine(27,2,3,10,MachineType::cap, workingPieceMachine, inputWpType, inputWpContainer, outputWP);
       _smtData._machines.push_back(machine);
-      if (machine.hasRecievedWorkPieceComponent(4)) std::cout<< "CSMT_test:     WorkingPieceComponent is already in Machine" << std::endl;
+      if (machine.hasRecievedWorkPieceComponent(4)) logger->log_info(name(), "WorkingPieceComponent is already in Machine");
 
       WorkingPiece targetPieceOrder("24468");
       Order order(30, targetPieceOrder);
@@ -944,19 +956,18 @@ ClipsSmtThread::clips_smt_test_data()
     }
     catch (const runtime_error& error)
     {
-      std::cout << "CSMT_test:      Someting Bad Happend:" << std::endl;
-      std::cout << error.what() << std::endl;
+        logger->log_error(name(), "Something bad happend, %s", error.what());
     }
 }
 
 void
 ClipsSmtThread::clips_smt_test_navgraph()
 {
-    std::cout << "CSMT_test:        Navgraph name: " << navgraph->name() << std::endl;
+    logger->log_info(name(), "Navgraph name: %s", navgraph->name().c_str());
     std::vector<NavGraphEdge> edges = navgraph->edges();
-    std::cout << "CSMT_test:        Navgraph has " << edges.size() << " many edges " << std::endl;
+    logger->log_info(name(), "Navgraph has %i many edges", edges.size());
     for(NavGraphEdge edge: edges){
-        std::cout << "CSMT_test:        Navgraph edge from " << edge.from() << " to " << edge.to() << std::endl;
+        logger->log_info(name(), "Navgraph has edge from %s to %s", edge.from().c_str(), edge.to().c_str());
     }
     clips_smt_compute_distances();
 }
