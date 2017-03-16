@@ -98,8 +98,8 @@ class ClipsSmtThread
   z3::context _z3_context;
   bool _solver_done;
   z3::expr_vector clips_smt_create_formula();
-  z3::expr_vector clips_smt_encoder();
-  z3::check_result clips_smt_solve_formula(z3::expr_vector formula);
+  z3::expr_vector clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m);
+  z3::check_result clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula);
   void clips_smt_react_on_result(z3::check_result result);
 
   // SubProcess to call extern binary of z3
