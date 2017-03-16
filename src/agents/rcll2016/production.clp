@@ -76,7 +76,7 @@
   )
 
 
-	 
+
 (defrule prod-change-to-more-important-task-when-waiting-for-lock
   "If we run a low-priority task and look for an alternative AND a task with a higher priority is proposed, drop the current work and change to the priorized task."
   (declare (salience ?*PRIORITY-LOW*))
@@ -108,39 +108,39 @@
   (retract ?pt)
   )
 
-(defrule push-facts-MachineDummy
-  (phase PRODUCTION)
-  (state IDLE)
-  =>
-  (printout t "Data pushing to Machine Dummy" crlf)
-  (bind ?md (pb-create "llsf_msgs.MachineDummyData"))
-(do-for-all-facts ((?machine machine)) TRUE
-	 (bind ?m (pb-create "llsf_msgs.Machine"))
-	 (pb-set-field ?m "name" (str-cat ?machine:name))
-	 (pb-add-list ?md "machiness" ?m)
-	 )
-(printout t "Machi" (pb-tostring ?md) crlf)
-(assert (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?md)))
-)
+;(defrule push-facts-MachineDummy
+;  (phase PRODUCTION)
+;  (state IDLE)
+;  =>
+;  (printout t "Data pushing to Machine Dummy" crlf)
+;  (bind ?md (pb-create "llsf_msgs.MachineDummyData"))
+;(do-for-all-facts ((?machine machine)) TRUE
+;	 (bind ?m (pb-create "llsf_msgs.Machine"))
+;	 (pb-set-field ?m "name" (str-cat ?machine:name))
+;	 (pb-add-list ?md "machiness" ?m)
+;	 )
+;(printout t "Machi" (pb-tostring ?md) crlf)
+;(assert (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?md)))
+;)
 
 
-(defrule get-facts-MachineDummy-Start-Task
-   (declare (salience ?*PRIORITY-HIGH*))
-  (phase PRODUCTION)
-  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
-    ?pf <- (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?p))
-  =>
-  (printout t "Task Start" crlf)
-  (foreach ?o (pb-field-list ?p "machiness")
-	   (bind ?machname (pb-field-value ?o "name"))
-	   
- (bind ?task-id (random-id))
- (assert (task (id ?task-id)(state proposed)(steps (create$ (+ ?task-id 1))))
-	  (step (name drive-to) (id (+ ?task-id 1))
-		(machine ?machname))
-	  )
-	  )
-  )
+;(defrule get-facts-MachineDummy-Start-Task
+;   (declare (salience ?*PRIORITY-HIGH*))
+;  (phase PRODUCTION)
+;  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+;    ?pf <- (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?p))
+;  =>
+;  (printout t "Task Start" crlf)
+;  (foreach ?o (pb-field-list ?p "machiness")
+;	   (bind ?machname (pb-field-value ?o "name"))
+;
+; (bind ?task-id (random-id))
+; (assert (task (id ?task-id)(state proposed)(steps (create$ (+ ?task-id 1))))
+;	  (step (name drive-to) (id (+ ?task-id 1))
+;		(machine ?machname))
+;	  )
+;	  )
+ ; )
 
 
 ; (defrule prod-prefill-cap-station
@@ -223,7 +223,7 @@
 ;     (state ~DOWN&~BROKEN))
 ;   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
 ;   (found-tag (name ?rs))
-;   (machine (mtype BS) 
+;   (machine (mtype BS)
 ;     (name ?bs) (team ?team-color)
 ;     (state ~DOWN&~BROKEN))
 ;   (base-station (name ?bs) (active-side ?bs-side) (fail-side ?fs&:(neq ?bs-side ?fs)))
@@ -270,7 +270,7 @@
 ;            (state ~DOWN&~BROKEN))
 ;   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
 ;   ;check that the task was not rejected before
-;   (not (and 
+;   (not (and
 ;     (task (robot ?robot&:(eq ?robot ?*ROBOT-NAME*)) (name fill-rs) (state rejected) (id ?rej-id))
 ;     (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
 ;   ))
@@ -279,7 +279,7 @@
 ;   =>
 ;   (printout t "PROD: INSERT unknown base " ?product-id " into " ?rs crlf)
 ;   (bind ?task-id (random-id))
-;   (assert 
+;   (assert
 ;     (task (name fill-rs) (id ?task-id) (state proposed)
 ;       (steps (create$ (+ ?task-id 1)))
 ;       (priority ?*PRIORITY-PREFILL-RS*))
@@ -304,7 +304,7 @@
 ;            (state ~DOWN&~BROKEN))
 ;   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
 ;   ;check that the task was not rejected before
-;   (not (and 
+;   (not (and
 ;     (task (robot ?robot&:(eq ?robot ?*ROBOT-NAME*)) (name fill-rs) (state rejected) (id ?rej-id))
 ;     (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
 ;   ))
@@ -313,7 +313,7 @@
 ;   =>
 ;   (printout t "PROD: INSERT unintentionally holding base " ?product-id " into " ?rs crlf)
 ;   (bind ?task-id (random-id))
-;   (assert 
+;   (assert
 ;     (task (name fill-rs) (id ?task-id) (state proposed)
 ;       (steps (create$ (+ ?task-id 1)))
 ;       (priority ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*))
@@ -376,7 +376,7 @@
 ;     (needed-task-lock (task-id ?task-id) (action CLEAR-BS) (place ?bs))
 ;   )
 ; )
-  
+
 ; (defrule prod-produce-c0
 ;   "Produce a C0"
 ;   (declare (salience ?*PRIORITY-PRODUCE-C0*))
@@ -390,7 +390,7 @@
 ;            (state ~DOWN&~BROKEN))
 ;   (cap-station (name ?cs) (cap-loaded ?cap-color) (assigned-cap-color ?cap-color))
 ;   (found-tag (name ?cs))
-;   (machine (mtype BS) 
+;   (machine (mtype BS)
 ;     (name ?bs) (team ?team-color)
 ;     (state ~DOWN&~BROKEN))
 ;   (base-station (name ?bs) (active-side ?bs-side) (fail-side ?fs&:(neq ?bs-side ?fs)))
@@ -852,7 +852,7 @@
 ;     (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?rs))
 ;   )
 ; )
- 
+
 ; (defrule prod-find-missing-mps-exploration-catch-up
 ;   "If we have not found all mps until the production phase, we have to find them now."
 ;   (declare (salience ?*PRIORITY-FIND-MISSING-MPS*))
@@ -864,7 +864,7 @@
 ;   (machine (name ?missing-mps) (team ?team-color))
 ;   (not (found-tag (name ?missing-mps)))
 ;   ; zone-to-explore
-;   ?z-f <- (zone-exploration (name ?zone) (machine ?missing-mps) 
+;   ?z-f <- (zone-exploration (name ?zone) (machine ?missing-mps)
 ;                             (still-to-explore TRUE) (team ?team-color)
 ;                             (incoming $?i&~:(member$ FIND_TAG ?i))
 ;                             (times-searched ?times-searched))
@@ -873,7 +873,7 @@
 ; 	    (step (name find-tag) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (zone ?zone))))
 ;   (not (task (robot ?robot&:(eq ?robot ?*ROBOT-NAME*)) (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-FIND-MISSING-MPS*))))
 ;   =>
-;   (printout t "PROD: " ?missing-mps " still not found!" 
+;   (printout t "PROD: " ?missing-mps " still not found!"
 ;             " Searching for it in zone " ?zone crlf)
 ;   (bind ?task-id (random-id))
 ;   (assert (task (name exploration-catch-up) (id ?task-id) (state proposed)
