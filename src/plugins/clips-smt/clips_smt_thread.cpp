@@ -563,10 +563,14 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
     }
 
-    /**
+ /*
     logger->log_info(name(), "Add constraint not to visit the same machine twice");
     // Robot can not visit the same machine twice <- Problem
-    z3::expr constraintNotVisitTwice(_z3_context);
+    // Added initialization of constraint to false.
+    // it might be the case that concat on uninitialized expr gives problems.
+    z3::expr var(_z3_context);
+    var = _z3_context.bool_val(false);
+    z3::expr constraintNotVisitTwice(var);
     for(int i = 1; i < data.machines().size()+1; ++i){
         for(int j = 1; j < data.robots().size()+1; ++j) {
             for(int k = 1; k < data.machines().size()+1; ++k) {
@@ -582,7 +586,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
 
                 }
 
-                z3::expr constraint2(_z3_context);
+                z3::expr var(_z3_context);
+                var = _z3_context.bool_val(true);
+                z3::expr constraint2(var);
                 for(int u = 1; u < data.machines().size()+1;++u){
                   for(int v = 1; v < data.machines().size()+1; ++v){
                       z3::expr variable2(_z3_context);
@@ -613,65 +619,50 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     constraints.push_back(constraintNotVisitTwice);
     logger->log_info(name(), "ConstraintNotVisitTwice added");
     **/
+    
+    // logger->log_info(name(), "Add constraint encoding maximum distance");
+    // // Encoding maximum distance <- Problem
+    // for(int i = 1; i < data.robots().size()+1; ++i){
+    //
+    //     z3::expr variable1(_z3_context);
+    //     z3::expr variable2(_z3_context);
+    //
+    //     it = variables_m.find("m_"+std::to_string(i));
+    //     if(it != variables_m.end()) {
+    //         variable1 = it->second;
+    //     }
+    //     else {
+    //         std::cout << " Variable not found!" << std::endl;
+    //     }
+    //
+    //     it = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(data.machines().size()));
+    //     if(it != variables_d.end()) {
+    //         variable2 = it->second;
+    //     }
+    //     else {
+    //         std::cout << " Variable not found!" << std::endl;
+    //     }
+    //
+    //     z3::expr constraint1(variable1==0);
+    //     z3::expr constraint2(variable1==1);
+    //
+    //     for(int j = 1; j < data.machines().size()+1; ++j) {
+    //         z3::expr variable3(_z3_context);
+    //
+    //         it = variables_d.find("d_"+std::to_string(j)+"_"+std::to_string(data.machines().size()));
+    //         if(it != variables_d.end()) {
+    //             variable3 = it->second;
+    //         }
+    //         else {
+    //             std::cout << " Variable not found!" << std::endl;
+    //         }
+    //
+    //         constraint2 = constraint2 && (variable3 < variable2);
+    //     }
+    //
+    //     constraints.push_back(constraint1 || constraint2);
+    // }
 
-    /**
-    logger->log_info(name(), "Add constraint not to visit the same machine twice..."); // <- Problem
-    for(int i = 1; i < data.machines().size()+1; ++i){
-
-        z3::expr constraint(_z3_context);
-
-        for(it = variables_pos.begin(); it != variables_pos.end(); ++it){
-            constraint = constraint || ( it->second == i );
-        }
-
-        constraints.push_back(constraint);
-    }
-    **/
-
-    /**
-    logger->log_info(name(), "Add constraint encoding maximum distance");
-    // Encoding maximum distance <- Problem
-    for(int i = 1; i < data.robots().size()+1; ++i){
-
-        z3::expr variable1(_z3_context);
-        z3::expr variable2(_z3_context);
-
-        it = variables_m.find("m_"+std::to_string(i));
-        if(it != variables_m.end()) {
-            variable1 = it->second;
-        }
-        else {
-            std::cout << " Variable not found!" << std::endl;
-        }
-
-        it = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(data.machines().size()));
-        if(it != variables_d.end()) {
-            variable2 = it->second;
-        }
-        else {
-            std::cout << " Variable not found!" << std::endl;
-        }
-
-        z3::expr constraint1(variable1==0);
-        z3::expr constraint2(variable1==1);
-
-        for(int j = 1; j < data.machines().size()+1; ++j) {
-            z3::expr variable3(_z3_context);
-
-            it = variables_d.find("d_"+std::to_string(j)+"_"+std::to_string(data.machines().size()));
-            if(it != variables_d.end()) {
-                variable3 = it->second;
-            }
-            else {
-                std::cout << " Variable not found!" << std::endl;
-            }
-
-            constraint2 = constraint2 && variable3<variable2;
-        }
-
-        constraints.push_back(constraint1 || constraint2);
-    }
-    **/
 
     logger->log_info(name(), "Finished collecting constraints");
     return constraints;
