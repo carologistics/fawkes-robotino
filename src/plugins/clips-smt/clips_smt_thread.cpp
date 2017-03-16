@@ -304,13 +304,13 @@ ClipsSmtThread::clips_smt_create_formula()
 }
 
 z3::expr_vector
-ClipsSmtThread::clips_smt_encoder()
+ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m)
 {
     z3::expr_vector constraints(_z3_context);
 
-    std::map<std::string, z3::expr> variables_pos;
-    std::map<std::string, z3::expr> variables_d;
-    std::map<std::string, z3::expr> variables_m;
+    // std::map<std::string, z3::expr> variables_pos;
+    // std::map<std::string, z3::expr> variables_d;
+    // std::map<std::string, z3::expr> variables_m;
 
     std::map<std::string, z3::expr>::iterator it;
     std::map<int, std::string>::iterator it2;
@@ -543,12 +543,42 @@ ClipsSmtThread::clips_smt_encoder()
         }
     }
 
-    // Robot can not visit the same machine twice TODO (Igor)
+    // Robot can not visit the same machine twice
+    z3::expr constraint1(_z3_context);
     for(int i = 1; i < data.machines().size()+1; ++i){
         for(int j = 1; j < data.robots().size()+1; ++j) {
             for(int k = 1; k < data.machines().size()+1; ++k) {
+                z3::expr variable1(_z3_context);
+
+                it = variables_pos.find("pos_"+std::to_string(j)+"_"+std::to_string(k));
+                if(it != variables_pos.end()) {
+                    variable1 = it->second;
+                }
+                else {
+                    std::cout << " Variable not found!" << std::endl;
+                }
+
+                z3::expr constraint2(_z3_context);
+                for(int u = 1; u < data.machines().size+1;++u){
+                  for(int v = 1; v < data.machines.size()+1; ++v){
+                      z3::expr variable2(_z3_context);
+
+                      it = variables_pos.find("pos_"+std::to_string(u)+"_"+std::to_string(v));
+                      if(it != variables_pos.end()) {
+                          variable2 = it->second;
+                      }
+                      else {
+                          std::cout << " Variable not found!" << std::endl;
+                      }
+                       constraint2 = constraint2 && ((j== u && k ==v) || variable2 != i);
+                  }
+                }
+                constraint2 = constraint2 && (variable1 == i);
+                constraint1 = constraint1 || constraint2;
             }
         }
+
+        constraints.push_back(constraint1);
     }
 
     for(int i = 1; i < data.machines().size()+1; ++i){
@@ -610,9 +640,11 @@ ClipsSmtThread::clips_smt_encoder()
 }
 
  z3::check_result
- ClipsSmtThread::clips_smt_solve_formula(z3::expr_vector formula)
+ ClipsSmtThread::clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula)
 {
     z3::optimize z3Optimizer(_z3_context);
+
+    std::map<std::string, z3::expr>::iterator it;
     //std::cout << "constraints " << formula << std::endl;
     //std::cout << constraints << std::endl << constants << std::endl;
     for (unsigned i = 0; i < formula.size(); i++) {
@@ -620,6 +652,67 @@ ClipsSmtThread::clips_smt_encoder()
         std::cout << "CSMT_solve: Constraint " << formula[i] << std::endl;
     }
 
+    // Add objective functions
+    z3::expr d_1_M(_z3_context);
+    z3::expr d_2_M(_z3_context);
+    z3::expr d_3_M(_z3_context);
+    z3::expr m_1(_z3_context);
+    z3::expr m_2(_z3_context);
+    z3::expr m_3(_z3_context);
+
+    it = variables_d.find("d_"+std::to_string(1)+"_"+std::to_string(data.machines().size()));
+    if(it != variables_d.end()) {
+        d_1_M = it->second;
+    }
+    else {
+        std::cout << " Variable not found!" << std::endl;
+    }
+
+    it = variables_d.find("d_"+std::to_string(2)+"_"+std::to_string(data.machines().size()));
+    if(it != variables_d.end()) {
+        d_2_M = it->second;
+    }
+    else {
+        std::cout << " Variable not found!" << std::endl;
+    }
+
+    it = variables_d.find("d_"+std::to_string(3)+"_"+std::to_string(data.machines().size()));
+    if(it != variables_d.end()) {
+        d_3_M = it->second;
+    }
+    else {
+        std::cout << " Variable not found!" << std::endl;
+    }
+
+    it = variables_m.find("m_"+std::to_string(1));
+    if(it != variables_m.end()) {
+        m_1 = it->second;
+    }
+    else {
+        std::cout << " Variable not found!" << std::endl;
+    }
+
+    it = variables_m.find("m_"+std::to_string(2));
+    if(it != variables_m.end()) {
+        m_2 = it->second;
+    }
+    else {
+        std::cout << " Variable not found!" << std::endl;
+    }
+
+    it = variables_m.find("m_"+std::to_string(3));
+    if(it != variables_m.end()) {
+        m_3 = it->second;
+    }
+    else {
+        std::cout << " Variable not found!" << std::endl;
+    }
+
+    z3Optimizer.minimize(m_1*d_1_M + m_2*d_2_M + m_3*d_3_M);
+    z3Optimizer.minimize(d_1_M + d_2_M + d_3_M);
+
+    //TODO
+    //Must return model: if (z3Optimizer.check() == sat) return z3Optimizer.get_model()
     return z3Optimizer.check();
 }
 
@@ -698,11 +791,17 @@ ClipsSmtThread::loop()
 
     // Build simple formula
     std::cout << "CSMT_loop: Create z3 formula" << std::endl;
-    z3::expr_vector formula = clips_smt_create_formula();
+    //Declare variable for the Encoding
+    std::map<std::string, z3::expr> variables_pos;
+    std::map<std::string, z3::expr> variables_d;
+    std::map<std::string, z3::expr> variables_m;
+
+    //z3::expr_vector formula = clips_smt_create_formula();
+    z3::expr_vector formula = clips_smt_encoder(variables_pos, variables_d, variables_m);
 
     // Give it to z3 solver
     std::cout << "CSMT_loop: Solve z3 formula" << std::endl;
-    z3::check_result result = clips_smt_solve_formula(formula);
+    z3::check_result result = clips_smt_solve_formula(variables_pos, variables_d, variables_m,formula);
 
     // Evaluate
     std::cout << "CSMT_loop: React on solved z3 formula" << std::endl;
