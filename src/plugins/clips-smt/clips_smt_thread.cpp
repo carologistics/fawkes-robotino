@@ -29,6 +29,7 @@
 #include <navgraph/constraints/static_list_edge_cost_constraint.h>
 #include <navgraph/constraints/constraint_repo.h>
 
+#include <llsf_msgs/Plan.pb.h>
 
 using namespace fawkes;
 
@@ -775,23 +776,47 @@ ClipsSmtThread::clips_smt_request(std::string handle, void *msgptr)
     logger->log_info(name(), "At end of request, wake up the loop" );
     wakeup();
 
-    return CLIPS::Value("Correct-Message", CLIPS::TYPE_SYMBOL);
+    return CLIPS::Value("RUNNING", CLIPS::TYPE_SYMBOL);
 }
 
 CLIPS::Value
 ClipsSmtThread::clips_smt_get_plan(std::string handle)
 {
-    // Cast clips msgptr to protobuf_data
-    std::shared_ptr<google::protobuf::Message> *m =
-      static_cast<std::shared_ptr<google::protobuf::Message> *>(msgptr);
-    if (!*m) return CLIPS::Value("CSMT_get_plan aborted", CLIPS::TYPE_SYMBOL);
+    // Just a simple demonstration, all robots would move to the same place...
+    std::shared_ptr<llsf_msgs::ActorGroupPlan> agplan(new llsf_msgs::ActorGroupPlan());
+    for (const auto &r : std::vector<std::string>{"R-1", "R-2", "R-3"}) {
+	    llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
+	    actor_plan->set_actor_name(r);
+	    llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
+	    llsf_msgs::PlanAction *action;
+	    llsf_msgs::PlanActionParameter *param;
 
+	    action = plan->add_actions();
+	    action->set_name("enter-field");
+
+	    action = plan->add_actions();
+	    action->set_name("move");
+	    param = action->add_params();
+	    param->set_key("to");
+	    param->set_value("C-BS-I");
+
+	    action = plan->add_actions();
+	    action->set_name("move");
+	    param = action->add_params();
+	    param->set_key("to");
+	    param->set_value("C-CS1-I");
+    }
+  
     // Use handle to associate plan to initial request
     logger->log_info(name(),"Return plan of request: %s", handle.c_str());
+    logger->log_info(name(),"Plan:\n%s", agplan->DebugString().c_str());
 
     // Fill the empty protobuf message with the computed task
 
-    return CLIPS::Value("CSMT_get_plan finished", CLIPS::TYPE_SYMBOL);
+    std::shared_ptr<google::protobuf::Message> *m =
+	    new std::shared_ptr<google::protobuf::Message>(agplan);
+
+    return CLIPS::Value(m, CLIPS::TYPE_EXTERNAL_ADDRESS);
 }
 
 CLIPS::Value
