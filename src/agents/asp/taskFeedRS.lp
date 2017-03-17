@@ -57,6 +57,8 @@ impossible(R, T, GT) :- feedRSTask(T), robot(R), taskLocation(T, L), locationToM
 impossible(R, T, GT) :- feedRSTask(T), robot(R), holding(R, P, GT), productCap(P, _, GT).
 % Do not feed a product with a ring.
 impossible(R, T, GT) :- feedRSTask(T), robot(R), holding(R, P, GT), productRing(P, 1, _, GT).
+% Do not feed a broken machine.
+impossible(R, T, GT) :- feedRSTask(T), robot(R), taskLocation(T, L), brokenLocation(L, GT).
 
 rsFedByRobot(R, M, P, GT) :- end(R, T, GT), feedRSTask(T), taskLocation(T, L), locationToMachineMap(L, M),
                              holding(R, P, GT-1).
