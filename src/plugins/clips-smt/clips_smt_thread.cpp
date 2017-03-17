@@ -21,6 +21,7 @@
 #include "clips_smt_thread.h"
 
 #include <utils/sub_process/proc.h>
+#include <core/threading/mutex_locker.h>
 
 #include <navgraph/navgraph.h>
 #include <navgraph/yaml_navgraph.h>
@@ -853,6 +854,8 @@ ClipsSmtThread::loop()
  void
  ClipsSmtThread::clips_smt_compute_distances()
  {
+	 MutexLocker lock(navgraph.objmutex_ptr());
+	 
     std::vector<std::string> nodes = {
         "C-ins-in",
         "C-BS-I","C-BS-O",
