@@ -855,13 +855,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string handle)
 	    action->set_name("move");
 	    param = action->add_params();
 	    param->set_key("to");
-	    param->set_key("C-BS-I");
+	    param->set_value("C-BS-I");
 
 	    action = plan->add_actions();
 	    action->set_name("move");
 	    param = action->add_params();
 	    param->set_key("to");
-	    param->set_key("C-CS1-I");
+	    param->set_value("C-CS1-I");
     }
   
     // Use handle to associate plan to initial request
