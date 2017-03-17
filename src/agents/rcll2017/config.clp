@@ -88,20 +88,8 @@
   (retract ?c0 ?c1 ?c2 ?c3)
 )
 
-(defrule conf-get-robot-name
-  ?cv <- (confval (path "/clips-agent/rcll2016/robot-name") (type STRING) (value ?robot-name))
-  =>
-  (assert (robot-name ?robot-name))
-  (retract ?cv)
-)
-
 (defrule conf-get-move-into-field-waittime
-  (robot-name ?robot-name)
-  ?cv <- (confval
-    (path ?path&:(eq ?path (str-cat "/clips-agent/rcll2016/move-into-field-waittime/" ?robot-name)))
-    (type UINT)
-    (value ?into-field-wait)
-  )
+  ?cv <- (confval (path "/clips-agent/rcll2016/move-into-field-waittime") (type UINT) (value ?into-field-wait))
   =>
   (assert (move-into-field-waittime ?into-field-wait))
   (retract ?cv)
