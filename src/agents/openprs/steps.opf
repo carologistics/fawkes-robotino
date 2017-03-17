@@ -13,11 +13,13 @@
 ;If Step Goal fails it means there is no Ops with a :context that matches the WM it was 
 ;expected to be called in. And that you did something wrong assuming that :context.
 
+
 (
 
 	(defop step-drive-to
 		:invocation( !	(step (drive-to machine $mps-name side $side) ))
-		:context()  
+		:context ()
+		:setting (setting "robot-name" $robot-name)  
 		:body(
 			(! (printf (Format "STEP: Drive-To .. machine %s \n" $mps-name)))
 			(=> (agent-state STEP-RUNNING))
@@ -28,6 +30,9 @@
 				else 
 				(! (= $place (string-cat $mps-name "-O")))
 				)
+			;Get the Lock
+			(! (lock ACCEPT $robot-name (place $mps-name $side) 0))
+			(? (lock ACCEPT $robot-name $place @priority)) ;to make sure if the lock was accepted 
 
 			(if (! (execute (skill "drive_to" "place" $place) ))
 				;do nothing
@@ -39,6 +44,7 @@
 		:effects ( (=> (agent-state STEP-FINISHD)) )
 		)
 
+
 	(defop step-fail-drive-to 
 			:invocation  (step-failed (drive-to machine $mps-name side $side))
 			:context()
@@ -46,7 +52,7 @@
 			:effects ( (=> (agent-state STEP-FAILD)) )
 			)
 
-
+ 	
 	(defop step-get-base
 		:invocation( !	(step (get-base machine $mps-name side $side)))
 		:context ( 		(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
