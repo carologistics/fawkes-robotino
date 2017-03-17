@@ -52,6 +52,32 @@
 			:effects ( (=> (agent-state STEP-FAILD)) )
 			)
 
+
+	(defop step-go-to-waiting-point
+		:invocation( !	(step (go-to-waiting-point machine $mps-name side $side) ))
+		:context ()
+		:setting (setting "robot-name" $robot-name)  
+		:body(
+			(! (printf (Format "STEP:Go-To-Waiting-point-of.. machine %s \n" $mps-name)))
+			(=> (agent-state STEP-RUNNING))
+			;Sides allowed
+			(? (MEMQ $side (. "input" "output" .)))
+			(if (? (= $side "input" ))
+				(! (= $place (string-cat $mps-name "-I")))
+				else 
+				(! (= $place (string-cat $mps-name "-O")))
+				)
+
+			;TODO: Tempraty waiting point till i get that right
+			(if (! (execute (skill "ppgoto" "place" "C-DS-I" ) ))
+				else
+				(=> (agent-state STEP-FAILD))
+				(fail)
+				)
+			)
+		:effects ( (=> (agent-state STEP-FINISHD)) )
+		)
+
  	
 	(defop step-get-base
 		:invocation( !	(step (get-base machine $mps-name side $side)))
