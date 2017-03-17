@@ -6,6 +6,36 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 (
+
+	(defop lock-acquire
+		:invocation (! (lock ACCEPT $robot-name (place $mps-name $side) $priority))
+		:context 	(  );TODO: check if resource is a place in case u want to enable locking of other things
+		:body(
+			;Allowed sides
+			(? (MEMQ $side (. "input" "output" .)))
+			(if (? (= $side "input" ))
+				(! (= $place (string-cat $mps-name "-I")))
+				else 
+				(! (= $place (string-cat $mps-name "-O")))
+				)
+			(=>  (lock GET $robot-name $place $priority))
+			(^ (|| 	(lock ACCEPT $robot-name $place @priority)
+					(lock REFUSE $robot-name $place @priority)))
+					;TODO: Maybe also timeout that u didnt get an answer and see what went wrong.
+			
+			(if (? (lock REFUSE $robot-name $place @priority))
+				(! (step (go-to-waiting-point machine $mps-name side $side)))
+				)
+
+			(^ (lock ACCEPT $robot-name $place @priority));TODO: Maybe also timeout or look for other tasks
+			)
+		)
+
+
+;TODO: Allow to have any thing as a resource ...if u have the string passed and then u can convert it to and from atom
+;that would allow u to always have this deuality and u can handle things just like u want..Lets play with that later 
+;work with this $place thing for testing
+
 ;/////////////////////
 ;MASTER LOCK HANDLING
 ;////////////////////
@@ -28,7 +58,6 @@
 			(=> (lock $type $agent $resource $priority))
 			)
       	)
-
 
     (defop lock-process-requests-and-releases-and-send-LockMessage
     	:invocation ( timer "beacon" $last-sec $last-usec $seq )
@@ -152,7 +181,7 @@
 ;NONE MASTER LOCK HANDLING
 ;/////////////////////////
 
-		(defop receive-LockMessage-none-Master
+	(defop receive-LockMessage-none-Master
 		:invocation (protobuf-msg "llsf_msgs.LockMessage" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec
 		                        $rcvd-from-host $rcvd-from-port $client-type $client-id $msg)
 		:context ( 	(agent-name $robot-name)
@@ -172,17 +201,15 @@
 					)
 
 				(if (? (|| 	(= $type RELEASE_RVCD)
-							(= $type ACCEPT))
+							(= $type ACCEPT)
 							(= $type REFUSE)
-							)
+							))
 					(=> (lock $type $agent $resource $priority))
 					)
 				)
 			)
 
 		)
-
-
 
 
 	(defop send-lockMessage-none-Master
