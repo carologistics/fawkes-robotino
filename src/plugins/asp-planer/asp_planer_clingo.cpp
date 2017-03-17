@@ -1286,7 +1286,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	assert(firstNotDoneTask.Task == task);
 	assert(robotInfo.Doing.isValid());
 
-	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
+	const auto offset = end - firstNotDoneTask.End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	firstNotDoneTask.End = end;
 	planLocker.unlock();
@@ -1368,6 +1368,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			assert(machineInfo.Storing.isValid());
 			auto id = machineInfo.Storing;
 			machineInfo.Storing = {};
+			machineInfo.WorkingUntil = 0;
 			logger->log_info(LoggingComponent, "Product #%d was taken from machine %s at %d.", id.ID, machine.c_str(),
 				GameTime);
 			return id;
