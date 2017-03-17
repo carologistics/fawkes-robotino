@@ -476,6 +476,17 @@
  */
 
 /**
+ * @property AspPlanerThread::RRDDef
+ * @brief The definition of the RRD data.
+ *
+ * @property AspPlanerThread::RRDGraph
+ * @brief The definition of the RRD graph.
+ *
+ * @property AspPlanerThread::RRDStepSize
+ * @brief The step size to feed RRD.
+ */
+
+/**
  * @brief Reads the config and fills the members.
  */
 void

@@ -803,7 +803,9 @@ void
 AspPlanerThread::setTeam(void)
 {
 	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
+	addRRDEntry();
 	ClingoAcc->ground({{"ourTeam", {Clingo::String(TeamColor)}}});
+	addRRDEntry();
 	ProgramGrounded = true;
 
 	fillNavgraphNodesForASP(true);
