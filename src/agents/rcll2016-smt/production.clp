@@ -174,7 +174,10 @@
 	  )
 	)
 	(printout t "Data:" (pb-tostring ?p) crlf)
-	(printout t "Check the return message of clips_smt_request: " (clips_smt_request ?p "test")  crlf)
+	(printout t "Check the return message of clips_smt_request: " (smt-request "test" ?p)  crlf)
+	(bind ?plan (smt-get-plan "test"))
+	(printout t "Plan: " (pb-tostring ?plan) crlf)
+	(pb-destroy ?plan)
 )
 
 
