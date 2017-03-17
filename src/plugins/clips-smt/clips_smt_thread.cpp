@@ -73,19 +73,27 @@ ClipsSmtThread::init()
     //clips_smt_test_python();
 
     // Init indices_ mapping int to name of machines
+    // indices_[0] = "C-ins-in";
+    // indices_[1] = "C-BS-I";
+    // indices_[2] = "C-BS-O";
+    // indices_[3] = "C-CS1-I";
+    // indices_[4] = "C-CS1-O";
+    // indices_[5] = "C-CS2-I";
+    // indices_[6] = "C-CS2-O";
+    // indices_[7] = "C-DS-I";
+    // indices_[8] = "C-DS-O";
+    // indices_[9] = "C-RS1-I";
+    // indices_[10] = "C-RS1-O";
+    // indices_[11] = "C-RS2-I";
+    // indices_[12] = "C-RS2-O";
+
     indices_[0] = "C-ins-in";
     indices_[1] = "C-BS-I";
-    indices_[2] = "C-BS-O";
-    indices_[3] = "C-CS1-I";
-    indices_[4] = "C-CS1-O";
-    indices_[5] = "C-CS2-I";
-    indices_[6] = "C-CS2-O";
-    indices_[7] = "C-DS-I";
-    indices_[8] = "C-DS-O";
-    indices_[9] = "C-RS1-I";
-    indices_[10] = "C-RS1-O";
-    indices_[11] = "C-RS2-I";
-    indices_[12] = "C-RS2-O";
+    indices_[2] = "C-CS1-I";
+    indices_[3] = "C-CS2-I";
+    indices_[4] = "C-DS-I";
+    indices_[5] = "C-RS1-I";
+    indices_[6] = "C-RS2-I";
 }
 
 
@@ -790,7 +798,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     }
 
     //z3Optimizer.minimize(m_1*d_1_M + m_2*d_2_M + m_3*d_3_M);
-    //z3Optimizer.minimize(d_1_M + d_2_M + d_3_M);
+    z3Optimizer.minimize(d_1_M + d_2_M + d_3_M);
 
     //TODO
     // std::ofstream outputFile("smt_benchmarkPlugin.smt");
@@ -805,29 +813,33 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
             z3::func_decl function = model[i];
             std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
 
-            std::string compare_with_1;
-            std::string compare_with_2;
-            std::string compare_with_3;
             std::string function_name = function.name().str();
 
-            for(int i=1; i<data.machines().size()+1; ++i){
-                compare_with_1 = "pos_1_" + i;
-                compare_with_2 = "pos_2_" + i;
-                compare_with_3 = "pos_3_" + i;
+            int interp;
+            Z3_get_numeral_int(_z3_context, model.get_const_interp(function), &interp);
 
-                if(function_name.compare(compare_with_1)==0) {
-                    if(model.get_const_interp(function)!=0 && model.get_const_interp(function)!=-4) {
-                        actions_robot_1[i] = indices_[model.get_const_interp(function)];
+            for(int j=1; j<data.machines().size()+1; ++j){
+                std::string compare_with_1 = "pos_1_";
+                compare_with_1 += std::to_string(j);
+                std::string compare_with_2 = "pos_2_";
+                compare_with_2 += std::to_string(j);
+                std::string compare_with_3 = "pos_3_";
+                compare_with_3 += std::to_string(j);
+
+                //std::cout << "Compare " << function_name << " with " << compare_with_1 << std::endl;
+
+                if(interp>0) {
+                    if(function_name.compare(compare_with_1)==0) {
+                        std::cout << "Add to actions_robot_1 with " <<  model.get_const_interp(function) << "/" << interp << std::endl;
+                        actions_robot_1[j] = indices_[interp];
                     }
-                }
-                else if(function_name.compare(compare_with_2)==0) {
-                    if(model.get_const_interp(function)!=0 && model.get_const_interp(function)!=-4) {
-                        actions_robot_2[i] = indices_[model.get_const_interp(function)];
+                    else if(function_name.compare(compare_with_2)==0) {
+                        std::cout << "Add to actions_robot_2 with " <<  model.get_const_interp(function) << "/" << interp <<std::endl;
+                        actions_robot_2[j] = indices_[interp];
                     }
-                }
-                else if(function_name.compare(compare_with_3)==0) {
-                    if(model.get_const_interp(function)!=0 && model.get_const_interp(function)!=-4) {
-                        actions_robot_3[i] = indices_[model.get_const_interp(function)];
+                    else if(function_name.compare(compare_with_3)==0) {
+                        std::cout << "Add to actions_robot_3 with " <<  model.get_const_interp(function) << "/" << interp <<std::endl;
+                        actions_robot_3[j] = indices_[interp];
                     }
                 }
             }
@@ -846,12 +858,6 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     }
 
     return z3Optimizer.check();
-}
-
-void
-ClipsSmtThread::clips_smt_react_on_result(z3::check_result result)
-{
-    logger->log_info(name(), "Result on solving formula is %s", result);
 }
 
 /**
@@ -895,19 +901,39 @@ ClipsSmtThread::clips_smt_get_plan(std::string handle)
 	    action = plan->add_actions();
 	    action->set_name("enter-field");
 
-	    action = plan->add_actions();
-	    action->set_name("move");
-	    param = action->add_params();
-	    param->set_key("to");
-	    param->set_value("C-BS-I");
+        if(r.compare("R-1")==0){
+            std::map<int, std::string>::iterator it;
+            for(it = actions_robot_1.begin(); it!=actions_robot_1.end(); ++it) {
+                action = plan->add_actions();
+        	    action->set_name("move");
+        	    param = action->add_params();
+        	    param->set_key("to");
+        	    param->set_value(it->second);
+            }
+        }
+        else if(r.compare("R-2")==0){
+            std::map<int, std::string>::iterator it;
+            for(it = actions_robot_2.begin(); it!=actions_robot_2.end(); ++it) {
+                action = plan->add_actions();
+        	    action->set_name("move");
+        	    param = action->add_params();
+        	    param->set_key("to");
+        	    param->set_value(it->second);
+            }
+        }
+        else if(r.compare("R-3")==0){
+            std::map<int, std::string>::iterator it;
+            for(it = actions_robot_3.begin(); it!=actions_robot_3.end(); ++it) {
+                action = plan->add_actions();
+        	    action->set_name("move");
+        	    param = action->add_params();
+        	    param->set_key("to");
+        	    param->set_value(it->second);
+            }
+        }
 
-	    action = plan->add_actions();
-	    action->set_name("move");
-	    param = action->add_params();
-	    param->set_key("to");
-	    param->set_value("C-CS1-I");
     }
-  
+
     // Use handle to associate plan to initial request
     logger->log_info(name(),"Return plan of request: %s", handle.c_str());
     logger->log_info(name(),"Plan:\n%s", agplan->DebugString().c_str());
@@ -953,11 +979,7 @@ ClipsSmtThread::loop()
 
     // Give it to z3 solver
     logger->log_info(name(), "Solve z3 formula");
-    z3::check_result result = clips_smt_solve_formula(variables_pos, variables_d, variables_m,formula);
-
-    // Evaluate
-    logger->log_info(name(), "React on solved z3 formula");
-    clips_smt_react_on_result(result);
+    clips_smt_solve_formula(variables_pos, variables_d, variables_m,formula);
 
     logger->log_info(name(), "Thread reached end of loop");
 
@@ -986,36 +1008,21 @@ ClipsSmtThread::loop()
         "C-RS1-I","C-RS1-O","C-RS2-I","C-RS2-O"
     };
 
-    fawkes::tf::Stamped<fawkes::tf::Pose> pose_;
-    tf_listener->transform_origin(cfg_base_frame_, cfg_global_frame_, pose_);
-    NavGraphNode from = navgraph->closest_node(pose_.getOrigin().x(), pose_.getOrigin().y());
+    NavGraphNode ins_node(navgraph->node("C-ins-in"));
+
+    NavGraphNode from = navgraph->closest_node(ins_node.x(), ins_node.y());
     // std::cout << "CSMT_test: 'from' node is " << from.name() << " with coordinates: (" << from.x() << ", " << from.y()
     // << ") // Closest to ("<< pose_.getOrigin().x() << "," << pose_.getOrigin().y() << ")" << std::endl;
 
-    // for (unsigned int i = 0; i < nodes.size(); ++i) {
-    //     std::pair<std::string, std::string> nodes_pair(from.name(), nodes[i]);
-    //
-    //     NavGraphNode to = navgraph->node(nodes[i]);
-    //     NavGraphPath p = navgraph->search_path(from, to);
-    //
-    //     logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), nodes[i].c_str(), p.cost());
-    //     distances_[nodes_pair] = p.cost();
-    // }
+    for (unsigned int i = 1; i < nodes.size(); ++i) {
+        std::pair<std::string, std::string> nodes_pair(from.name(), nodes[i]);
 
-    distances_[std::make_pair("C-ins-in","C-BS-I")] = 5;
-    distances_[std::make_pair("C-ins-in","C-BS-O")] = 5;
-    distances_[std::make_pair("C-ins-in","C-CS1-I")] = 5;
-    distances_[std::make_pair("C-ins-in","C-CS1-O")] = 5;
-    distances_[std::make_pair("C-ins-in","C-CS2-I")] = 5;
-    distances_[std::make_pair("C-ins-in","C-CS2-O")] = 5;
-    distances_[std::make_pair("C-ins-in","C-DS-I")] = 5;
-    distances_[std::make_pair("C-ins-in","C-DS-O")] = 5;
-    distances_[std::make_pair("C-ins-in","C-RS1-I")] = 5;
-    distances_[std::make_pair("C-ins-in","C-RS1-O")] = 5;
-    distances_[std::make_pair("C-ins-in","C-RS2-I")] = 5;
-    distances_[std::make_pair("C-ins-in","C-RS2-O")] = 5;
+        NavGraphNode to = navgraph->node(nodes[i]);
+        NavGraphPath p = navgraph->search_path(from, to);
 
-
+        logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), nodes[i].c_str(), p.cost());
+        distances_[nodes_pair] = p.cost() + navgraph->cost(from, ins_node);
+    }
 
  	for (unsigned int i = 1; i < nodes.size(); ++i) {
  		for (unsigned int j = 2; j < nodes.size(); ++j) {
