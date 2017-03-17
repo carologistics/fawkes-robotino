@@ -48,7 +48,7 @@ inUse(L, R, GT) :- robotLocation(R, L, GT).
 % Benchmark them against each other!
 %:- 2 { inUse(L, R, GT) : robot(R) }, L != "ins-out".
 
-broken(M, D, GT)      :- broken(M, D-1, GT-1), not horizon(GT), D != 1.
+broken(M, D, GT)      :- broken(M, D+1, GT-1), not horizon(GT), D > 0.
 brokenLocation(L, GT) :- broken(M, _, GT), locationToMachineMap(L, M).
 
 storing(M, P, GT) :- storing(M, P, GT-1), not pickUp(_, P, GT), not horizon(GT).
