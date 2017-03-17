@@ -1132,24 +1132,37 @@ createTaskDescription(const std::string& task, const int end)
 void
 AspPlanerThread::checkForInterruptBasedOnTimeOffset(int offset)
 {
+	auto getOffset = [this](const char *severity)
+		{
+			constexpr auto infix = "/interrupt-thresholds/offset-";
+			return std::min(config->get_int(std::string(ConfigPrefix) + infix + severity + "-absolute"),
+				config->get_int(std::string(ConfigPrefix) + infix + severity + "-percent") * TimeResolution / 100);
+		};
+
+	static const auto criticalOffset   = getOffset("critical");
+	static const auto highlOffset      = getOffset("high");
+	static const auto normalOffset     = getOffset("normal");
+	static const auto justStarteOffset = getOffset("started");
+
 	logger->log_info(LoggingComponent, "Plan-Feedback offset is %d.", offset);
 	offset = std::abs(offset);
-	if ( offset >= 3*TimeResolution )
+
+	if ( offset >= criticalOffset )
 	{
 		setInterrupt(InterruptSolving::Critical, "Very high plan offset");
-	} //if ( offset >= 3*TimeResolution )
-	else if ( offset >= 2*TimeResolution )
+	} //if ( offset >= criticalOffset )
+	else if ( offset >= highlOffset )
 	{
 		setInterrupt(InterruptSolving::High, "High plan offset");
-	} //else if ( offset >= 2*TimeResolution )
-	else if ( offset >= (15 * TimeResolution) / 10 )
+	} //else if ( offset >= highlOffset )
+	else if ( offset >= normalOffset )
 	{
 		setInterrupt(InterruptSolving::Normal, "Plan offset");
-	} //else if ( offset >= (15 * TimeResolution) / 10 )
-	else if ( offset >= TimeResolution )
+	} //else if ( offset >= normalOffset )
+	else if ( offset >= justStarteOffset )
 	{
 		setInterrupt(InterruptSolving::JustStarted, "Very small offset");
-	} //else if ( offset >= TimeResolution )
+	} //else if ( offset >= justStarteOffset )
 	return;
 }
 
