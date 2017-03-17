@@ -21,6 +21,7 @@
 #include "clips_smt_thread.h"
 
 #include <utils/sub_process/proc.h>
+#include <core/threading/mutex_locker.h>
 
 #include <navgraph/navgraph.h>
 #include <navgraph/yaml_navgraph.h>
@@ -54,9 +55,9 @@ void
 ClipsSmtThread::init()
 {
     // Init navgraph
-    edge_cost_constraint_ = new NavGraphStaticListEdgeCostConstraint("static-edge-cost");
-    navgraph->constraint_repo()->register_constraint(edge_cost_constraint_);
-    navgraph->add_change_listener(this);
+	  //edge_cost_constraint_ = new NavGraphStaticListEdgeCostConstraint("static-edge-cost");
+	  //navgraph->constraint_repo()->register_constraint(edge_cost_constraint_);
+	  //navgraph->add_change_listener(this);
 
     cfg_base_frame_      = config->get_string("/frames/base");
     cfg_global_frame_    = config->get_string("/frames/fixed");
@@ -90,9 +91,9 @@ ClipsSmtThread::init()
 void
 ClipsSmtThread::finalize()
 {
-    navgraph->remove_change_listener(this);
-    navgraph->constraint_repo()->unregister_constraint(edge_cost_constraint_->name());
-    delete edge_cost_constraint_;
+	//navgraph->remove_change_listener(this);
+	//navgraph->constraint_repo()->unregister_constraint(edge_cost_constraint_->name());
+	//delete edge_cost_constraint_;
 
     // Handle z3 extern binary
     if (proc_z3_) {
@@ -906,6 +907,8 @@ ClipsSmtThread::loop()
  void
  ClipsSmtThread::clips_smt_compute_distances()
  {
+	 MutexLocker lock(navgraph.objmutex_ptr());
+	 
     std::vector<std::string> nodes = {
         "C-ins-in",
         "C-BS-I","C-BS-O",
