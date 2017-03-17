@@ -9,13 +9,74 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; decision rules for the next most important task to propose
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defrule push-facts-to-protobuf
+(deffunction plan-create-actspec-sequential (?actor-name ?plan)
+	"Create ActorSpecificPlan plan from a sequential plan"
+	(bind ?ap (pb-create "llsf_msgs.ActorSpecificPlan"))
+	(pb-set-field ?ap "actor_name" ?actor-name)
+	(pb-set-field ?ap "sequential_plan" ?plan)
+	(return ?ap)
+)
+
+(deffunction plan-create-sequential ($?actions)
+	"Create a sequential plan given a number of actions"
+	(bind ?p (pb-create "llsf_msgs.SequentialPlan"))
+	(foreach ?a ?actions
+		(pb-add-list ?p "actions" ?a)
+	)
+	(return ?p)
+)
+
+; Parameters is a multi-field which must have an even number of
+; arguments which are ordered [key, value, ...]
+(deffunction plan-create-action (?name $?params)
+	"Create a PlanAction for a given ?name with specified parameters."
+	(bind ?a (pb-create "llsf_msgs.PlanAction"))
+	(pb-set-field ?a "name" ?name)
+	(if (neq (mod (length$ ?params) 2) 0)
+	 then
+		(printout error "Arguments for action " ?name " are malformed" crlf)
+		(return ?a)
+	)
+	(loop-for-count (?i 1 (/ (length$ ?params) 2))
+		(bind ?par (pb-create "llsf_msgs.PlanActionParameter"))
+		(pb-set-field ?par "key" (nth$ (- (* ?i 2) 1) ?params))
+		(pb-set-field ?par "value" (nth$ (* ?i 2) ?params))
+		(pb-add-list ?a "params" ?par)
+	)
+	(return ?a)
+)
+
+(defrule production-plan-test
   (phase PRODUCTION)
   (team-color ?team-color&CYAN|MAGENTA)
 =>
+	(bind ?ap
+	  (plan-create-actspec-sequential "R-1"
+	    (plan-create-sequential (create$
+	      (plan-create-action "move" "from" "START" "to" "C-BS-I")
+	      (plan-create-action "move" "from" "C-BS-I" "to" "C-DS-I")
+	    ))
+	  )
+	)
+	(printout t "Plan: " (pb-tostring ?ap) crlf)
+	
+	(if (pb-has-field ?ap "sequential_plan")
+	 then
+		(bind ?p (pb-field-value ?ap "sequential_plan"))
+		(printout t "Sequential plan is set:" crlf (pb-tostring ?p) crlf)
+		(foreach ?a (pb-field-list ?p "actions")
+			(bind ?actname (pb-field-value ?a "name"))
+			(printout t "  Action '" ?actname "':" crlf)
+			; Must use progn$ here, foreach cannot be nested in same scope
+			(progn$ (?p (pb-field-list ?a "params"))
+				(printout t "  - " (pb-field-value ?p "key") ": " (pb-field-value ?p "value") crlf)
+			)
+		)
+	 else
+	  (printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
+	)
+	(pb-destroy ?ap)
+)
 
 (bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 (do-for-all-facts ((?active-robot active-robot)) TRUE
