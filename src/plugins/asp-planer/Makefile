@@ -16,8 +16,9 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
+include $(BASEDIR)/fawkes/src/plugins/rrd/rrd.mk
 
-LIBS_asp_planer = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory fawkesnavgraphaspect
+LIBS_asp_planer = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory fawkesnavgraphaspect fawkesrrdaspect
 OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_clingo.o asp_planer_plan.o\
 				  asp_planer_doc_and_config.o asp_planer_externals.o asp_planer_graph.o
 
@@ -36,34 +37,39 @@ CFLAGS_CLINGO = -DWITH_THREADS=1 \
 	-I $(HOME)/clingo/libprogram_opts
 LDFLAGS_CLINGO = -L$(HOME)/clingo-build/bin/ -Wl,-rpath=$(HOME)/clingo-build/bin/ -lclingo
 
-ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
-  CFLAGS  += $(CFLAGS_CPP14) \
-		 $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
-		 $(CFLAGS_CLINGO)
-		 #-DNDEBUG
-  LDFLAGS += $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
-		 $(LDFLAGS_CLINGO)
+ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS)$(HAVE_RRD),1111)
+	CFLAGS  += $(CFLAGS_CPP14) \
+			   $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
+			   $(CFLAGS_CLINGO)
+			   #-DNDEBUG
+	LDFLAGS += $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
+			   $(LDFLAGS_CLINGO)
 
-  PLUGINS_all = $(PLUGINDIR)/asp-planer.$(SOEXT)
+	PLUGINS_all = $(PLUGINDIR)/asp-planer.$(SOEXT)
 else
-  ifneq ($(HAVE_CPP14),1)
-	WARN_TARGETS += warning_cpp14
-  endif
-  ifneq ($(HAVE_CLINGO),1)
-	WARN_TARGETS += warning_clingo
-  endif
-  ifneq ($(HAVE_BOOST_LIBS),1)
-	WARN_TARGETS_BOOST += $(foreach l,$(REQ_BOOST_LIBS),$(if $(call boost-have-lib,$l),, warning_boost_$l))
-  endif
+	ifneq ($(HAVE_CPP14),1)
+		WARN_TARGETS += warning_cpp14
+	endif
+	ifneq ($(HAVE_CLINGO),1)
+		WARN_TARGETS += warning_clingo
+	endif
+	ifneq ($(HAVE_BOOST_LIBS),1)
+		WARN_TARGETS_BOOST += $(foreach l,$(REQ_BOOST_LIBS),$(if $(call boost-have-lib,$l),, warning_boost_$l))
+	endif
+	ifneq ($(HAVE_RRD),1)
+		WARN_TARGETS += warning_rrd
+	endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_clingo warning_cpp11
+.PHONY: warning_clingo warning_cpp11 warning_rrd
 warning_clingo:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) ($(CLINGO_ERROR))"
 warning_cpp14:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) (C++14 not supported)"
+warning_rrd:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer Plugin$(TNORMAL) (rrdtool[-devel] not installed)"
 
 $(WARN_TARGETS_BOOST): warning_boost_%:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) (Boost library $* not found)"

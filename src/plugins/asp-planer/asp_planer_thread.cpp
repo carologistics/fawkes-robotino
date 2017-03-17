@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <fstream>
 #include <string>
 
 using fawkes::MutexLocker;
@@ -404,6 +405,64 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 }
 
 /**
+ * @brief Adds the current memory consumption in the RRD.
+ */
+void
+AspPlanerThread::addRRDEntry(void)
+{
+	std::ifstream file("/proc/self/status");
+
+	if ( !file.is_open() ) {
+		logger->log_error(LoggingComponent, "Could not open \"/proc/self/status\"!");
+		return;
+	} //if ( !file.is_open() )
+
+	bool done = false;
+	std::string line;
+
+	std::int64_t memory = 0;
+
+	do //while ( !file.eof() && !done )
+	{
+		std::getline(file, line);
+		if ( line.find("VmRSS:") == 0 )
+		{
+			/*The line looks like: VmRSS:	  617604 kB
+			 * Or:                  VmRSS:	10001424 kB
+			 * See the missing spaces, so we can't look from the back for ' ', but have to look for ' ' or '\t'.
+			 * There is no API in std::string for that, so we look from the front for a digit. */
+			done = true;
+
+			const auto numberPosEnd = line.rfind(' '), numberPosBegin = line.find_first_of("123456789");
+
+			const auto end = line.begin() + numberPosEnd;
+			for ( auto iter = line.begin() + numberPosBegin; iter != end; ++iter )
+			{
+				static_assert('1' - '0' == 1, "");
+				memory *= 10;
+				memory += *iter - '0';
+			} //for ( auto iter = line.begin() + numberPosBegin; iter != end; ++iter )
+
+			memory *= 1024;
+		} //if ( line.find("VmRSS:") == 0 )
+	} while ( !file.eof() && !done );
+
+	try
+	{
+		if ( memory )
+		{
+			constexpr double gebibyte = 1024. * 1024. * 1024.;
+			rrd_manager->add_data(RRDDef->get_name(), "N:%f", static_cast<double>(memory) / gebibyte);
+		} //if ( memory )
+	} //try
+	catch ( fawkes::Exception& e )
+	{
+		logger->log_error(LoggingComponent, "Error while adding entry in RRD: %s", e.what());
+	} //catch ( fawkes::Exception& e )
+	return;
+}
+
+/**
  * @brief Constructor.
  */
 AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_CONTINUOUS),
@@ -425,7 +484,9 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 		//Solving
 		NewSymbols(false), StartSolvingGameTime(0),
 		//Plan
-		PlanGameTime(0)
+		PlanGameTime(0),
+		//RRD
+		RRDDef(nullptr), RRDGraph(nullptr)
 {
 	return;
 }
@@ -435,6 +496,8 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
  */
 AspPlanerThread::~AspPlanerThread(void)
 {
+	delete RRDDef;
+	delete RRDGraph;
 	return;
 }
 
@@ -487,7 +550,38 @@ AspPlanerThread::init(void)
 		mongo::Query(), "syncedrobmem.planFeedback", &AspPlanerThread::planFeedbackCallback, this));
 
 	initPlan();
+
+	{
+		using namespace fawkes;
+		using namespace std::chrono_literals;
+
+		std::vector<RRDDataSource> rrds;
+		constexpr double max = 1024. * 1024. * 1024. * 15; //We do not excpect more than 15 GiB needed memory.
+		rrds.emplace_back("Memory", RRDDataSource::GAUGE, 2 * RRDStepSize.count(), 0., max);
+		RRDDef = new RRDDefinition("Memory", rrds, RRDStepSize.count(), true);
+		rrd_manager->add_rrd(RRDDef);
+
+		std::vector<RRDGraphDataDefinition> graphDefinitions;
+		std::vector<RRDGraphElement*> graphElements;
+
+		graphDefinitions.emplace_back("Memory", RRDArchive::AVERAGE, RRDDef);
+
+		graphElements.push_back(new RRDGraphLine("Memory", 1, "FF0000", "Memory", false));
+		graphElements.push_back(new RRDGraphGPrint("Memory", RRDArchive::MIN,     "Minimum\\:%8.2lf %s"));
+		graphElements.push_back(new RRDGraphGPrint("Memory", RRDArchive::AVERAGE, "Average\\:%8.2lf %s"));
+		graphElements.push_back(new RRDGraphGPrint("Memory", RRDArchive::MAX,     "Maximum\\:%8.2lf %s\\n"));
+
+		const auto now = std::chrono::duration_cast<std::chrono::seconds>(::Clock::now().time_since_epoch());
+		const std::chrono::seconds end = now + 20min;
+		RRDGraph = new RRDGraphDefinition("Memory", RRDDef, "Memory consumption", "Used memory (GiB)",
+			graphDefinitions, graphElements, now.count(), end.count(), RRDStepSize.count(), RRDStepSize.count(), false);
+
+		rrd_manager->add_graph(RRDGraph);
+		addRRDEntry();
+	}
+
 	initClingo();
+	addRRDEntry();
 	return;
 }
 
@@ -542,6 +636,7 @@ AspPlanerThread::loop(void)
 		static bool once = true;
 		if ( once )
 		{
+			addRRDEntry();
 			MutexLocker worldLocker(&WorldMutex), planLocker(&PlanMutex);
 			once = false;
 
@@ -631,12 +726,23 @@ AspPlanerThread::loop(void)
 					product.Base.c_str(), product.Rings[1].c_str(), product.Rings[2].c_str(), product.Rings[3].c_str(),
 					product.Cap.c_str(), hold ? "hold   by" : "stored on", location.data());
 			} //for ( const auto& product : Products )
-		} //if ( && once )
+
+			logger->log_info(LoggingComponent, "Memory graph file: %s", RRDGraph->get_filename());
+		} //if ( once )
 	} //if ( GameTime == -1 )
 	else
 	{
 		loopPlan();
 		loopClingo();
+
+		const auto now = Clock::now();
+		static std::remove_const<decltype(now)>::type lastAdd;
+
+		if ( now - lastAdd >= RRDStepSize )
+		{
+			addRRDEntry();
+			lastAdd = now;
+		} //if ( now - lastAdd >= RRDStepSize )
 	} //else -> if ( GameTime == -1 )
 	return;
 }
@@ -652,6 +758,7 @@ AspPlanerThread::finalize(void)
 	RobotMemoryCallbacks.clear();
 	finalizeClingo();
 	logger->log_info(LoggingComponent, "ASP Planer finalized");
+	rrd_manager->remove_rrd(RRDDef);
 	return;
 }
 

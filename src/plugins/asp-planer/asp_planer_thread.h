@@ -31,6 +31,7 @@
 #include <navgraph/navgraph.h>
 #include <plugins/asp/aspect/asp.h>
 #include <plugins/robot-memory/aspect/robot_memory_aspect.h>
+#include <plugins/rrd/aspect/rrd.h>
 
 #include "asp_planer_types.h"
 
@@ -44,7 +45,8 @@ class AspPlanerThread
   public fawkes::ASPAspect,
   public fawkes::RobotMemoryAspect,
   public fawkes::NavGraphAspect,
-  public fawkes::NavGraph::ChangeListener
+  public fawkes::NavGraph::ChangeListener,
+  public fawkes::RRDAspect
 {
 	private:
 	const char* const LoggingComponent;
@@ -124,6 +126,10 @@ class AspPlanerThread
 	std::unordered_map<std::string, RobotPlan> Plan;
 	std::unordered_map<Clingo::Symbol, std::string> LocationInUse;
 
+	fawkes::RRDDefinition *RRDDef;
+	fawkes::RRDGraphDefinition *RRDGraph;
+	static constexpr auto RRDStepSize = std::chrono::seconds{10};
+
 	void loadConfig(void);
 
 	void graph_changed(void) noexcept override final;
@@ -180,6 +186,8 @@ class AspPlanerThread
 	void ringColorCallback(const mongo::BSONObj document);
 	void teamColorCallback(const mongo::BSONObj document);
 	void zonesCallback(const mongo::BSONObj document);
+
+	void addRRDEntry(void);
 
 	public:
 	AspPlanerThread(void);

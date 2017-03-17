@@ -803,7 +803,9 @@ void
 AspPlanerThread::setTeam(void)
 {
 	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
+	addRRDEntry();
 	ClingoAcc->ground({{"ourTeam", {Clingo::String(TeamColor)}}});
+	addRRDEntry();
 	ProgramGrounded = true;
 
 	fillNavgraphNodesForASP(true);
@@ -1132,24 +1134,37 @@ createTaskDescription(const std::string& task, const int end)
 void
 AspPlanerThread::checkForInterruptBasedOnTimeOffset(int offset)
 {
+	auto getOffset = [this](const char *severity)
+		{
+			constexpr auto infix = "/interrupt-thresholds/offset-";
+			return std::min(config->get_int(std::string(ConfigPrefix) + infix + severity + "-absolute"),
+				config->get_int(std::string(ConfigPrefix) + infix + severity + "-percent") * TimeResolution / 100);
+		};
+
+	static const auto criticalOffset   = getOffset("critical");
+	static const auto highlOffset      = getOffset("high");
+	static const auto normalOffset     = getOffset("normal");
+	static const auto justStarteOffset = getOffset("started");
+
 	logger->log_info(LoggingComponent, "Plan-Feedback offset is %d.", offset);
 	offset = std::abs(offset);
-	if ( offset >= 3*TimeResolution )
+
+	if ( offset >= criticalOffset )
 	{
 		setInterrupt(InterruptSolving::Critical, "Very high plan offset");
-	} //if ( offset >= 3*TimeResolution )
-	else if ( offset >= 2*TimeResolution )
+	} //if ( offset >= criticalOffset )
+	else if ( offset >= highlOffset )
 	{
 		setInterrupt(InterruptSolving::High, "High plan offset");
-	} //else if ( offset >= 2*TimeResolution )
-	else if ( offset >= (15 * TimeResolution) / 10 )
+	} //else if ( offset >= highlOffset )
+	else if ( offset >= normalOffset )
 	{
 		setInterrupt(InterruptSolving::Normal, "Plan offset");
-	} //else if ( offset >= (15 * TimeResolution) / 10 )
-	else if ( offset >= TimeResolution )
+	} //else if ( offset >= normalOffset )
+	else if ( offset >= justStarteOffset )
 	{
 		setInterrupt(InterruptSolving::JustStarted, "Very small offset");
-	} //else if ( offset >= TimeResolution )
+	} //else if ( offset >= justStarteOffset )
 	return;
 }
 
@@ -1271,7 +1286,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 	assert(firstNotDoneTask.Task == task);
 	assert(robotInfo.Doing.isValid());
 
-	const auto offset = end - robotPlan.Tasks[robotPlan.FirstNotDone].End;
+	const auto offset = end - firstNotDoneTask.End;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
 	firstNotDoneTask.End = end;
 	planLocker.unlock();
@@ -1353,6 +1368,7 @@ AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& 
 			assert(machineInfo.Storing.isValid());
 			auto id = machineInfo.Storing;
 			machineInfo.Storing = {};
+			machineInfo.WorkingUntil = 0;
 			logger->log_info(LoggingComponent, "Product #%d was taken from machine %s at %d.", id.ID, machine.c_str(),
 				GameTime);
 			return id;

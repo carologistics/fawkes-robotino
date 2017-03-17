@@ -39,6 +39,18 @@ asp-agent:
     robot-task-check: 5
     robot-task-behind: 20
 
+    #The percent values relate to the time-resolution
+    #The real value used for interrupting is the minimum of the absolute value and the percent, so don't set any value to zero!
+    #If one of the lower severity values are higher, they will not be checked, so ensure critical > high > normal > started.
+    offset-critical-percent: 300
+    offset-critical-absolute: 30
+    offset-high-percent: 200
+    offset-high-absolute: 20
+    offset-normal-percent: 150
+    offset-normal-absolute: 15
+    offset-started-percent: 90
+    offset-started-absolute: 10
+
   exec:
     #How many seconds a task may be started before the time stated by the planer.
     #The concrete value will be calculated by the time-resolution / 2 + given tolerance.
