@@ -102,6 +102,10 @@ class ClipsSmtThread
   z3::check_result clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula);
   void clips_smt_react_on_result(z3::check_result result);
 
+  std::map<int ,std::string> actions_robot_1;
+  std::map<int ,std::string> actions_robot_2;
+  std::map<int ,std::string> actions_robot_3;
+
   // SubProcess to call extern binary of z3
   fawkes::SubProcess *proc_z3_;
 

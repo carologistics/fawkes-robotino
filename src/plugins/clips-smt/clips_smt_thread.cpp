@@ -799,7 +799,51 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     std::cout << "Result of z3Optimizer.check() is " << z3Optimizer.check() << std::endl;
     if (z3Optimizer.check() == z3::sat){
         z3::model model = z3Optimizer.get_model();
+
+        for(unsigned i=0; i<model.size(); ++i) {
+            z3::func_decl function = model[i];
+            std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+
+            std::string compare_with_1;
+            std::string compare_with_2;
+            std::string compare_with_3;
+            std::string function_name = function.name().str();
+
+            for(int i=1; i<data.machines().size()+1; ++i){
+                compare_with_1 = "pos_1_" + i;
+                compare_with_2 = "pos_2_" + i;
+                compare_with_3 = "pos_3_" + i;
+
+                if(function_name.compare(compare_with_1)==0) {
+                    if(model.get_const_interp(function)!=0 && model.get_const_interp(function)!=-4) {
+                        actions_robot_1[i] = indices_[model.get_const_interp(function)];
+                    }
+                }
+                else if(function_name.compare(compare_with_2)==0) {
+                    if(model.get_const_interp(function)!=0 && model.get_const_interp(function)!=-4) {
+                        actions_robot_2[i] = indices_[model.get_const_interp(function)];
+                    }
+                }
+                else if(function_name.compare(compare_with_3)==0) {
+                    if(model.get_const_interp(function)!=0 && model.get_const_interp(function)!=-4) {
+                        actions_robot_3[i] = indices_[model.get_const_interp(function)];
+                    }
+                }
+            }
+        }
     }
+
+    std::map<int, std::string>::iterator it2;
+    for(it2 = actions_robot_1.begin(); it2!=actions_robot_1.end(); ++it2) {
+        std::cout << "Move " << it2->first <<" of robot 1 goes to "<< it2->second << std::endl;
+    }
+    for(it2 = actions_robot_2.begin(); it2!=actions_robot_2.end(); ++it2) {
+        std::cout << "Move " << it2->first <<" of robot 2 goes to "<< it2->second << std::endl;
+    }
+    for(it2 = actions_robot_3.begin(); it2!=actions_robot_3.end(); ++it2) {
+        std::cout << "Move " << it2->first <<" of robot 3 goes to "<< it2->second << std::endl;
+    }
+
     return z3Optimizer.check();
 }
 
@@ -908,7 +952,7 @@ ClipsSmtThread::loop()
  ClipsSmtThread::clips_smt_compute_distances()
  {
 	 MutexLocker lock(navgraph.objmutex_ptr());
-	 
+
     std::vector<std::string> nodes = {
         "C-ins-in",
         "C-BS-I","C-BS-O",
