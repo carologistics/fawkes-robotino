@@ -17,6 +17,7 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/clips.mk
 include $(BUILDCONFDIR)/navgraph/navgraph.mk
+include $(BUILDSYSDIR)/protobuf.mk
 
 #CFLAGS += $(CFLAGS_LIBZ3) $(CFLAGS_LIBCARL)
 #LDFLAGS += $(LDFLAGS_LIBZ3) $(LDFLAGS_LIBCARL)
@@ -25,7 +26,7 @@ LIBS_clips_smt = fawkescore fawkesutils fawkesaspects \
 		      fawkesclipsaspect fawkesnavgraphaspect \
 		      fawkesnavgraph \
 			  z3 \
-			  fawkestf
+			  fawkestf llsf_msgs
 OBJS_clips_smt = clips_smt_plugin.o clips_smt_thread.o
 
 OBJS_all = $(OBJS_clips_smt)
