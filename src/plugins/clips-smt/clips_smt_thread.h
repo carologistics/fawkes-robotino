@@ -110,8 +110,8 @@ class ClipsSmtThread
 
 
   // Communication with the agent API
-  CLIPS::Value clips_smt_request(void *msgptr, std::string handle);
-  CLIPS::Value clips_smt_get_plan(void *msgptr, std::string handle);
+  CLIPS::Value clips_smt_request(std::string handle, void *msgptr);
+  CLIPS::Value clips_smt_get_plan(std::string handle);
   CLIPS::Value clips_smt_done(std::string foo, std::string bar);
   llsf_msgs::ClipsSmtData data;
 
