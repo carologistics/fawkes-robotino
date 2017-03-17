@@ -563,7 +563,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
     }
 
- /*
+
     logger->log_info(name(), "Add constraint not to visit the same machine twice");
     // Robot can not visit the same machine twice <- Problem
     // Added initialization of constraint to false.
@@ -614,12 +614,12 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
 
             }
         }
+        constraints.push_back(constraintNotVisitTwice);
     }
-    // TODO (Igor) Check if correct
-    constraints.push_back(constraintNotVisitTwice);
+
     logger->log_info(name(), "ConstraintNotVisitTwice added");
-    **/
-    
+
+
     // logger->log_info(name(), "Add constraint encoding maximum distance");
     // // Encoding maximum distance <- Problem
     // for(int i = 1; i < data.robots().size()+1; ++i){
