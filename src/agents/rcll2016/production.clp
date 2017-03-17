@@ -78,50 +78,103 @@
 	(pb-destroy ?ap)
 )
 
-(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
-(do-for-all-facts ((?active-robot active-robot)) TRUE
-		  (bind ?r (pb-create "llsf_msgs.Robot"))
-		  (pb-set-field ?r "name" ?active-robot:name)
-	          (pb-set-field ?r "team_color" ?team-color)
-		  (pb-set-field ?r "number" ?*ROBOT-NUMBER*)
-		  (bind ?robot-pose (pb-field-value ?r "pose"))
-		  (pb-set-field ?robot-pose "x" ?active-robot:x)
-		  (pb-set-field ?robot-pose "y" ?active-robot:y)
-		  (pb-set-field ?r "pose" ?robot-pose)
-(pb-add-list ?p "robots" ?r)
+(deffunction smt-create-data (?robots ?machines ?orders)
+	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
+	(foreach ?r ?robots
+		(pb-add-list ?p "robots" ?r)
+	)
+	(foreach ?m ?machines
+		(pb-add-list ?p "machines" ?m)
+	)
+	(foreach ?o ?orders
+		(pb-add-list ?p "orders" ?o)
+	)
+	(return ?p)
 )
 
-
-(do-for-all-facts ((?machine machine)) TRUE
-	 (bind ?mach (pb-create "llsf_msgs.Machine"))
-	 (pb-set-field ?mach "name" (str-cat ?machine:name))
-         (pb-set-field ?mach "type" (str-cat ?machine:mtype))
-         (pb-set-field ?mach "state" (str-cat ?machine:state))
-         (pb-set-field ?mach "team_color" (str-cat ?machine:team))
-(bind ?machine-pose (pb-field-value ?mach "pose"))
-(pb-set-field ?machine-pose "x" ?machine:x)
-(pb-set-field ?machine-pose "y" ?machine:y)
-(pb-set-field ?mach "pose" ?machine-pose)
-(pb-add-list ?p "machines" ?mach)
+(deffunction smt-create-robot (?name ?team-color ?number ?pose-x ?pose-y)
+	(bind ?r (pb-create "llsf_msgs.Robot"))
+	(pb-set-field ?r "name" ?name)
+	(pb-set-field ?r "team_color" ?team-color)
+	(pb-set-field ?r "number" ?*ROBOT-NUMBER*)
+	(bind ?pose (pb-create "llsf_msgs.Pose2D"))
+	(pb-set-field ?pose "x" ?pose-x)
+	(pb-set-field ?pose "y" ?pose-y)
+	(pb-set-field ?pose "ori" 0.0)
+	(pb-set-field ?r "pose" ?pose)
+	(return ?r)
 )
 
-(do-for-all-facts ((?order order)) TRUE
-           (bind ?o (pb-create "llsf_msgs.Order"))
-	   (pb-set-field ?o "id" ?order:id)
-	   (pb-set-field ?o "delivery_gate" ?order:delivery-gate)
-	   (bind ?comp (pb-field-value ?o "Complexity"))
-	   (pb-set-field ?comp "complexity" ?order:complexity)
-(pb-set-field ?o "quantity_requested" ?order:quantity-requested)
-(pb-set-field ?o "quantity_delivered_cyan" ?order:quantity-delivered)
-(pb-set-field ?o "delivery_period_begin" ?order:begin)
-(pb-set-field ?o "delivery_period_end" ?order:end)
-(pb-add-list ?p "orders" ?o)
+(deffunction smt-create-robots (?team-color)
+	(bind ?rv (create$))
+	(do-for-all-facts ((?r active-robot)) TRUE
+		(bind ?rv (append$ ?rv (smt-create-robot ?r:name ?team-color 0 ?r:x ?r:y)))
+	)
+	(return ?rv)
 )
 
+(deffunction smt-create-machine (?name ?mtype ?state ?team-color ?pose-x ?pose-y)
+	(bind ?m (pb-create "llsf_msgs.Machine"))
+	(pb-set-field ?m "name" (str-cat ?name))
+	(pb-set-field ?m "type" (str-cat ?mtype))
+	(pb-set-field ?m "state" (str-cat ?state))
+	(pb-set-field ?m "team_color" (str-cat ?team-color))
+	(bind ?pose (pb-create "llsf_msgs.Pose2D"))
+	(pb-set-field ?pose "x" ?pose-x)
+	(pb-set-field ?pose "y" ?pose-y)
+	(pb-set-field ?pose "ori" 0.0)
+	(pb-set-field ?m "pose" ?pose)
+	(return ?m)
+)
 
+(deffunction smt-create-machines (?team-color)
+	(bind ?rv (create$))
+	(do-for-all-facts ((?m machine)) (eq ?m:team ?team-color)
+		(bind ?rv (append$ ?rv (smt-create-machine ?m:name ?m:mtype ?m:state ?m:team ?m:x ?m:y)))
+	)
+	(return ?rv)
+)
 
-(printout t (pb-tostring ?p) crlf)
-(printout t "Check the return message of clips_smt_request: " (clips_smt_request ?p "test")  crlf)
+(deffunction smt-create-order (?id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
+	(bind ?o (pb-create "llsf_msgs.Order"))
+	(pb-set-field ?o "id" ?id)
+	(pb-set-field ?o "delivery_gate" ?gate)
+	(pb-set-field ?o "complexity" ?complexity)
+	(pb-set-field ?o "quantity_requested" ?q-req)
+	(if (eq ?team-color CYAN)
+	 then
+	  (pb-set-field ?o "quantity_delivered_cyan" ?q-del)
+	 else
+	  (pb-set-field ?o "quantity_delivered_magenta" ?q-del)
+	)
+	(pb-set-field ?o "delivery_period_begin" ?begin)
+	(pb-set-field ?o "delivery_period_end" ?end)
+	(return ?o)
+)
+
+(deffunction smt-create-orders (?team-color)
+	(bind ?rv (create$))
+	(do-for-all-facts ((?o order)) TRUE
+		(bind ?rv (append$ ?rv (smt-create-order ?o:id ?o:delivery-gate ?o:complexity
+		                                         ?o:quantity-requested ?o:quantity-delivered 
+		                                         ?o:begin ?o:end ?team-color)))
+	)
+	(return ?rv)
+)
+
+(defrule production-call-clips-smt
+  (phase PRODUCTION)
+  (team-color ?team-color&CYAN|MAGENTA)
+=>
+	(bind ?p
+	  (smt-create-data
+	    (smt-create-robots ?team-color)
+	    (smt-create-machines ?team-color)
+	    (smt-create-orders ?team-color)
+	  )
+	)
+	(printout t "Data:" (pb-tostring ?p) crlf)
+	(printout t "Check the return message of clips_smt_request: " (clips_smt_request ?p "test")  crlf)
 )
 
 
