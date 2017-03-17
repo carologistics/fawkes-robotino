@@ -127,17 +127,17 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
   //clips->batch_evaluate(SRCDIR"/clips/navgraph.clp");
   //clips_smt_load(clips);
 
-  clips->add_function("clips_smt_request",
-    sigc::slot<CLIPS::Value, void *, std::string>(
+  clips->add_function("smt-request",
+                      sigc::slot<CLIPS::Value, std::string, void *>(
         sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_request))
   );
 
-  clips->add_function("clips_smt_get_plan",
-    sigc::slot<CLIPS::Value, void *, std::string>(
+  clips->add_function("smt-get-plan",
+    sigc::slot<CLIPS::Value, std::string>(
         sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_get_plan))
   );
 
-  clips->add_function("clips_smt_done",
+  clips->add_function("smt-done",
     sigc::slot<CLIPS::Value, std::string>(
       sigc::bind<0>(
         sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_done),
@@ -759,7 +759,7 @@ ClipsSmtThread::clips_smt_react_on_result(z3::check_result result)
  **/
 
 CLIPS::Value
-ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
+ClipsSmtThread::clips_smt_request(std::string handle, void *msgptr)
 {
     // Cast clips msgptr to protobuf_data
     std::shared_ptr<google::protobuf::Message> *m =
@@ -779,7 +779,7 @@ ClipsSmtThread::clips_smt_request(void *msgptr, std::string handle)
 }
 
 CLIPS::Value
-ClipsSmtThread::clips_smt_get_plan(void *msgptr, std::string handle)
+ClipsSmtThread::clips_smt_get_plan(std::string handle)
 {
     // Cast clips msgptr to protobuf_data
     std::shared_ptr<google::protobuf::Message> *m =
