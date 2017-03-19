@@ -174,6 +174,9 @@
 (defrule production-call-clips-smt
   (phase PRODUCTION)
   (team-color ?team-color&CYAN|MAGENTA)
+	(state IDLE)
+	(not (plan-requested))
+	(test (eq ?*ROBOT-NAME* "R-1"))
 =>
 	(bind ?p
 	  (smt-create-data
@@ -182,11 +185,82 @@
 	    (smt-create-orders ?team-color)
 	  )
 	)
-	(printout t "Data:" (pb-tostring ?p) crlf)
-	(printout t "Check the return message of clips_smt_request: " (smt-request "test" ?p)  crlf)
-	(bind ?plan (smt-get-plan "test"))
-	(printout t "Plan: " (pb-tostring ?plan) crlf)
-	(pb-destroy ?plan)
+	(smt-request "test" ?p)
+	(assert (plan-requested))
+					;(smt-plan-complete "test"))
+)
+
+(defrule production-smt-plan-completed
+	(smt-plan-complete ?handle)
+	=>
+	(printout t "SMT plan handle completed " ?handle  crlf)
+	(bind ?plans (smt-get-plan ?handle))
+
+	; Assert a simple example plan with multiple goals for each robot
+	; (bind ?plans
+	;   (plan-create-actgroup
+	;   	(plan-create-actspec-sequential "R-1"
+	;     	(plan-create-sequential (create$
+	;       	(plan-create-action "move" "to" "C-BS-I")
+	;       	(plan-create-action "move" "to" "C-DS-I")
+	;     )))
+	;   	(plan-create-actspec-sequential "R-2"
+	;     	(plan-create-sequential (create$
+	;       	(plan-create-action "move" "to" "C-CS1-I")
+	;       	(plan-create-action "move" "to" "C-CS2-I")
+	;     )))
+	;   	(plan-create-actspec-sequential "R-3"
+	;     	(plan-create-sequential (create$
+	;       	(plan-create-action "move" "to" "C-RS1-I")
+	;       	(plan-create-action "move" "to" "C-RS2-I")
+	; 		)))
+	; 	)
+	; )
+
+	(printout t "Plan: " (pb-tostring ?plans) crlf)
+
+	(progn$ (?ap (pb-field-list ?plans "plans"))
+		; ?ap is of type ActorSpecificPlan
+		(bind ?actor-name (pb-field-value ?ap "actor_name"))
+		(printout t "Working on ActorSpecificPlan of " ?actor-name crlf)
+		(if (pb-has-field ?ap "sequential_plan")
+		 then
+			(bind ?p (pb-field-value ?ap "sequential_plan"))
+
+			(bind ?task-id (random-id))
+			(bind ?actions (pb-field-list ?p "actions"))
+			(bind ?steps (create$))
+
+			(loop-for-count (?ai (length$ ?actions))
+				(bind ?a (nth$ ?ai ?actions))
+				(bind ?actname (pb-field-value ?a "name"))
+				(switch ?actname
+					(case "enter-field" then (printout warn "Ignoring enter-field, done implicitly" crlf))
+					(case "move" then
+						(bind ?to "")
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "to") then
+								(bind ?to (pb-field-value ?arg "value"))
+								(bind ?to-splitted (str-split ?to "-"))
+								(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
+								(bind ?side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
+							 else
+								(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+							)
+						)
+						(printout t "Driving to " ?to " at " ?side crlf)
+						(bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+						(assert (step (name drive-to) (id (+ ?task-id ?ai))	(machine ?to) (side ?side)))
+					)
+					(default (printout warn "Unknown action " ?actname crlf))
+				)
+			)
+			(assert (task (id ?task-id) (state proposed) (steps ?steps) (robot ?actor-name)))
+		 else
+	  	(printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
+		)
+	)
+	(pb-destroy ?plans)
 )
 
 
