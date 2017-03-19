@@ -31,7 +31,8 @@ SUBDIRS	= clips-motor-switch \
 	  conveyor_vision \
 	  motor-led \
 		laser_front_dist \
-		mps-laser-gen
+		mps-laser-gen \
+		pddl-from-order
 
 include $(BUILDSYSDIR)/rules.mk
 
