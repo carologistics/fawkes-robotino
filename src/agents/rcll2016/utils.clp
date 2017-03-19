@@ -189,10 +189,19 @@
   (return ?search-tags)
 )
 
-(deffunction escape-if-string (?value)
+(deffunction escape-if-string (?f ?slot $?new-value)
   ; this function ads \" \" around a string to prevent transforming the string value
   ; into a Symbol when using the eval function
-  (if (eq STRING (type ?value)) then
+	(if (> (length$ ?new-value) 0)
+	 then
+		(bind ?value (nth$ 1 ?new-value))
+	 else
+		(bind ?value (fact-slot-value ?f ?slot))
+	)
+	(bind ?value-type (type ?value))
+	(bind ?slot-type  (nth$ 1 (deftemplate-slot-types (fact-relation ?f) ?slot)))
+	;(printout t "Value type: " ?value-type "  -- Slot " ?slot " has types " ?slot-types crlf)
+  (if (eq STRING ?value-type ?slot-type) then
     (return (str-cat "\"" ?value "\""))
   )
   (return ?value)
@@ -241,12 +250,12 @@
                              (implode$ (fact-slot-value ?f ?slot))
                              "))"))
         else ;copy singlefield
-        (bind ?acom (str-cat ?acom "(" ?slot " " 
-                             (escape-if-string (fact-slot-value ?f ?slot)) ")"))
+				(bind ?acom (str-cat ?acom "(" ?slot " " 
+														 (escape-if-string ?f ?slot) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
-                           (escape-if-string (nth$ (member$ ?slot ?slots-to-change) ?values-to-set))
+                           (escape-if-string ?f ?slot (nth$ (member$ ?slot ?slots-to-change) ?values-to-set))
                            ")"))
     )
   )
@@ -281,13 +290,13 @@
                              "))"))
         else ;copy singlefield
         (bind ?acom (str-cat ?acom "(" ?cur-slot " "
-                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
+                             (escape-if-string ?f ?cur-slot) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
                            "(create$ "
                            (implode$ (fact-slot-value ?f ?cur-slot))
-                           " " (escape-if-string ?value) ")"
+                           " " (escape-if-string ?f ?cur-slot ?value) ")"
                            ")"))
     )
   )
@@ -321,7 +330,7 @@
                              "))"))
         else ;copy singlefield
         (bind ?acom (str-cat ?acom "(" ?cur-slot " "
-                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
+                             (escape-if-string ?f ?cur-slot) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
@@ -366,7 +375,7 @@
                              "))"))
         else ;copy singlefield
         (bind ?acom (str-cat ?acom "(" ?cur-slot " "
-                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
+                             (escape-if-string ?f ?cur-slot) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
