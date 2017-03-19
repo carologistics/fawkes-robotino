@@ -11,10 +11,12 @@ plugins/pddl-planner:
 
   # Domain and problem description and location
   # Folder path needs a trailing /
-  description-folder: "@BASEDIR@/src/agents/pddl/description/"
+  description-folder: "@BASEDIR@/src/agents/rcll-robot-memory/"
   result-file: results.txt
-  domain-description: domain.pddl
-  problem-description: rcll_problem_produce_c0.pddl
+  #domain-description: pddl-domain.pddl
+  #problem-description: pddl-problem.pddl
+  domain-description: pddl-demo-domain.pddl
+  problem-description: pddl-demo-problem.pddl
 
   # optional search options for fd planner
   fd-search-opts: --heuristic "hff=ff()" --heuristic "hcea=cea()" --search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"
