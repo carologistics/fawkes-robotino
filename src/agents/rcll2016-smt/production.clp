@@ -9,6 +9,15 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(deffunction plan-create-actgroup ($?plans)
+	"Create ActorGroupPlan plan"
+	(bind ?ap (pb-create "llsf_msgs.ActorGroupPlan"))
+	(foreach ?p ?plans
+		(pb-add-list ?ap "plans" ?p)
+	)
+	(return ?ap)
+)
+
 (deffunction plan-create-actspec-sequential (?actor-name ?plan)
 	"Create ActorSpecificPlan plan from a sequential plan"
 	(bind ?ap (pb-create "llsf_msgs.ActorSpecificPlan"))
