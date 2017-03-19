@@ -32,6 +32,33 @@
   (return (str-cat ?mps "-O"))
 )
 
+(deffunction str-split (?string ?sep)
+	(bind ?s ?string)
+	(bind ?rv (create$))
+	(while (> (str-length ?s) 0)
+		(bind ?idx (str-index ?sep ?s))
+		(if ?idx then
+			(bind ?s2 (sub-string 1 (- ?idx 1) ?s))
+			(bind ?rv (append$ ?rv ?s2))
+			(bind ?s (sub-string (+ ?idx (str-length ?sep)) (str-length ?s) ?s))
+		 else
+		 	(bind ?rv (append$ ?rv ?s))
+			(bind ?s "")
+		)		
+	)
+	(return ?rv)
+)
+
+(deffunction str-join (?sep $?strings)
+	(bind ?rv "")
+	(bind ?locsep "")
+	(foreach ?s ?strings
+		(bind ?rv (str-cat ?rv ?locsep ?s))
+		(bind ?locsep ?sep)			 
+	)
+	(return ?rv)
+)
+
 (deffunction get-light-signal-side (?mps)
   "Return the navgraph point of the side where the light-signal is mounted"
   (if (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)
