@@ -49,6 +49,8 @@ PddlFromOrderThread::init()
       config->get_string(cfg_prefix + "generator-interface").c_str());
   bbil_add_data_interface(gen_if_);
 
+  blackboard->register_listener(this, BlackBoard::BBIL_FLAG_DATA);
+
   order_trigger_ = robot_memory->register_trigger(
       fromjson("{relation:\"order\"}"), cfg_wm_collection_,
       &PddlFromOrderThread::retrieve_new_order, this);
