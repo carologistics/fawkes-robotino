@@ -138,19 +138,21 @@ ClipsSmtThread::clips_context_init(const std::string &env_name,
 
   clips->add_function("smt-request",
                       sigc::slot<CLIPS::Value, std::string, void *>(
-        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_request))
+      sigc::bind<0>(
+                    sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_request), env_name))
   );
 
   clips->add_function("smt-get-plan",
     sigc::slot<CLIPS::Value, std::string>(
-        sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_get_plan))
+      sigc::bind<0>(
+                    sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_get_plan), env_name))
   );
 
   clips->add_function("smt-done",
     sigc::slot<CLIPS::Value, std::string>(
       sigc::bind<0>(
         sigc::mem_fun(*this, &ClipsSmtThread::clips_smt_done),
-  env_name)
+        env_name)
     )
   );
 
@@ -815,7 +817,7 @@ void
  **/
 
 CLIPS::Value
-ClipsSmtThread::clips_smt_request(std::string handle, void *msgptr)
+ClipsSmtThread::clips_smt_request(std::string env_name, std::string handle, void *msgptr)
 {
     // Cast clips msgptr to protobuf_data
     std::shared_ptr<google::protobuf::Message> *m =
@@ -823,6 +825,8 @@ ClipsSmtThread::clips_smt_request(std::string handle, void *msgptr)
     if (!*m) return CLIPS::Value("INVALID-MESSAGE", CLIPS::TYPE_SYMBOL);
 
     data.CopyFrom(**m); // Use data with subpoint-methods, e.g. data.robots(0).name() OR data.machines().size()
+    data_env = env_name;
+    data_handle = handle;
 
     // Use handle to associate request to solution
     logger->log_info(name(),"Handle request: %s", handle.c_str());
@@ -835,7 +839,7 @@ ClipsSmtThread::clips_smt_request(std::string handle, void *msgptr)
 }
 
 CLIPS::Value
-ClipsSmtThread::clips_smt_get_plan(std::string handle)
+ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 {
     // Just a simple demonstration, all robots would move to the same place...
     std::shared_ptr<llsf_msgs::ActorGroupPlan> agplan(new llsf_msgs::ActorGroupPlan());
@@ -928,6 +932,9 @@ ClipsSmtThread::loop()
 
     logger->log_info(name(), "Thread reached end of loop");
 
+    envs_[data_env].lock();
+    envs_[data_env]->assert_fact_f("(smt-plan-complete \"%s\")", data_handle.c_str());
+    envs_[data_env].unlock();
 }
 
 /**
