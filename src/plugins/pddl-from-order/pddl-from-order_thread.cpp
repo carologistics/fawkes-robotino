@@ -59,7 +59,6 @@ PddlFromOrderThread::loop()
 {
   if ( pddl_gen_running_ ) {
     logger->log_error(name(), "PPDL generation running, skipping loop for now.");
-    wait_for_wakeup_ = true;
     return;
   } else {
     logger->log_error(name(), "No PDDL generation running, starting loop");
@@ -72,6 +71,8 @@ PddlFromOrderThread::loop()
 void
 PddlFromOrderThread::finalize()
 {
+  blackboard->close(plan_if_);
+  blackboard->close(gen_if_);
 }
 
 void
@@ -81,22 +82,6 @@ PddlFromOrderThread::retrieve_new_order(BSONObj doc)
 
   orders_recv_++;
   logger->log_info(name(), "Received order %d", orders_recv_);
-
-  wait_for_wakeup_ = true;
-}
-
-void
-PddlFromOrderThread::try_wakeup() {
-  if ( pddl_gen_running_ ) {
-    logger->log_error(name(), "PDDL Generation running, cannot re-generate now.");
-    return;
-  }
-  if ( wait_for_wakeup_
-      && orders_recv_ >= cfg_order_plan_threshold_ ) {
-    logger->log_info(name(), "Calling plan generator with new order");
-    wakeup();
-    wait_for_wakeup_ = false;
-  }
 }
 
 void
@@ -105,11 +90,9 @@ PddlFromOrderThread::bb_interface_data_changed(Interface *interface) throw()
   if ( interface->uid() == gen_if_->uid() ) {
     gen_if_->read();
     if ( gen_if_->is_final() ) {
-      pddl_gen_running_ = false;
-      try_wakeup();
+      wakeup();
       logger->log_info(name(), "PDDL generation is finished, waking up loop.");
     } else {
-      pddl_gen_running_ = true;
       logger->log_info(name(), "PDDL generation started.");
     }
   } else {
