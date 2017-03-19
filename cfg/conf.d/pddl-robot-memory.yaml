@@ -6,7 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/pddl-robot-memory
 plugins/pddl-robot-memory:
 
   # Which collection contains the worldmodel
-  collection: "syncedrobmem.clipwm"
+  collection: "syncedrobmem.clipswm"
   # Where is the problem file to use as teplate (in src/agents) 
   input-problem-description: rcll-robot-memory/pddl-problem-template.pddl
   # Where to put the generated problem file (in src/agents) 
