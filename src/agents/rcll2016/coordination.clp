@@ -34,7 +34,7 @@
   =>
   (retract ?s)
   (assert (state TASK-PROPOSED-ASKED))
-  (modify ?pt (state asked))
+  (synced-modify ?pt state asked)
 )
 
 (defrule coordination-ask-for-lock
@@ -70,7 +70,7 @@
   ?s <- (state TASK-PROPOSED-ASKED)
   =>
   ;order taks
-  (modify ?pt (state ordered))
+  (synced-modify ?pt state ordered)
   (retract ?s)
   (assert (state TASK-ORDERED))
   ;update worldmodel
@@ -90,7 +90,7 @@
   =>
   (retract ?s)
   (assert (state IDLE));look for next task
-  (modify ?pt (state rejected))
+  (synced-modify ?pt state rejected)
   ;cleanup asks for locks
   (do-for-all-facts ((?ntl needed-task-lock) (?l lock)) (and (eq ?l:agent ?*ROBOT-NAME*)(eq ?l:resource ?ntl:resource))
     (retract ?ntl ?l)
@@ -133,9 +133,10 @@
   (coordination-release-all-subgoal-locks)
   ;remove all steps of the task
   (do-for-all-facts ((?step step)) (member$ ?step:id ?steps)
-    (retract ?step)
+    (synced-retract ?step)
   )
-  (retract ?s ?t)
+  (synced-retract ?t)
+  (retract ?s)
   (assert (state IDLE))
   (coordination-remove-old-rejected-tasks)
 )
@@ -146,7 +147,7 @@
   ?t <- (task (name ?task) (state finished)  (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   =>
   (coordination-release-all-subgoal-locks)
-  (retract ?t)
+  (synced-retract ?t)
 )
 
 (defrule coordination-release-and-reject-task-after-failed
@@ -159,5 +160,5 @@
   (assert (state IDLE))
   (coordination-remove-old-rejected-tasks)
   ;reject task because it failed
-  (modify ?t (state rejected))
+  (synced-modify ?t state rejected)
 )
