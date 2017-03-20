@@ -9,12 +9,13 @@
 (defrule step-drive-to-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name drive-to) (state wait-for-activation) (task-priority ?p)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name drive-to) (state wait-for-activation) (task-priority ?p) (id ?step-id)
     (machine ?mps) (side ?side))
   ?state <- (state STEP-STARTED)
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (if (eq ?side INPUT) then
     (bind ?place (sym-cat ?mps "-I"))
     else
@@ -29,14 +30,15 @@
 (defrule step-get-from-shelf
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf) (state wait-for-activation) (task-priority ?p)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name get-from-shelf) (state wait-for-activation) (task-priority ?p) (id ?step-id)
 		 (machine ?mps) (machine-feature SHELF))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (game-time $?game-time)
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (printout warn "TODO: Pick dynamically from different shelf positions." crlf)
   (assert (state WAIT-FOR-LOCK)
 	  (skill-to-execute (skill get_product_from) (args place ?mps shelf TRUE) (target ?mps))
@@ -47,6 +49,7 @@
 (defrule step-insert-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
                  (machine ?mps) (machine-feature ?feature&~SLIDE) (gate ?gate) (ring ?ring)
                  (already-at-mps ?already-at-mps))
@@ -57,7 +60,7 @@
   (game-time $?game-time)
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (assert (state WAIT-FOR-LOCK)
     ; default side of machine is input, thus we don't need it here
 	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-I")))
@@ -100,6 +103,7 @@
 (defrule step-insert-slide-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
                  (machine ?mps) (machine-feature SLIDE) (gate ?gate) (ring ?ring)
                  (already-at-mps ?already-at-mps))
@@ -111,7 +115,7 @@
   (game-time $?game-time)
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (assert (state WAIT-FOR-LOCK)
     ; default side of machine is input, thus we don't need it here
 	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-I")))
@@ -124,7 +128,8 @@
 (defrule step-get-output-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p) (id ?step-id)
 		 (machine ?mps) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
@@ -132,7 +137,7 @@
   (machine (name ?mps) (mtype ?type) (state IDLE))
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (if (and (eq ?type BS) (eq ?side INPUT)) then
     (bind ?res (sym-cat ?mps "-I"))
   else
@@ -147,7 +152,8 @@
 (defrule step-get-base-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name get-base) (state wait-for-activation) (task-priority ?p)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name get-base) (state wait-for-activation) (task-priority ?p) (id ?step-id)
 		 (machine ?mps) (machine-feature ?feature) (base ?color) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
@@ -155,7 +161,7 @@
   ?bsc <- (bs-side-changed)
   =>
   (retract ?state ?bsc)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (if (eq ?side INPUT) then
     (bind ?res (sym-cat ?mps "-I"))
   else
@@ -170,8 +176,8 @@
 (defrule step-deliver-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  (task (name deliver) (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
-  ?step <- (step (name insert) (state wait-for-activation) (task-priority ?p)
+  (task (name deliver) (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name insert) (state wait-for-activation) (task-priority ?p) (id ?step-id)
 		 (machine ?mps) (machine-feature ?feature) (base ?color))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
@@ -205,12 +211,13 @@
   "Open gripper to discard unknown base"
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name discard) (state wait-for-activation) (task-priority ?p))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name discard) (state wait-for-activation) (task-priority ?p) (id ?step-id))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (assert (state WAIT-FOR-LOCK)
     (skill-to-execute (skill ax12gripper) (args command OPEN) (target NONE))
     (wait-for-lock (priority ?p) (res NONE))
@@ -221,7 +228,8 @@
   "Unknown base discarded, release locks."
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name discard) (state running))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name discard) (state running) (id ?step-id))
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill ax12gripper)
 			    (args $?args) (state ?skill-finish-state&final))
@@ -233,13 +241,14 @@
     (state STEP-FINISHED)
     (holding NONE)
   )
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
 )
 
 (defrule step-find-tag-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name find-tag) (state wait-for-activation) (task-priority ?p)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name find-tag) (state wait-for-activation) (task-priority ?p) (id ?step-id)
 		 (zone ?zone) (machine ?missing-mps))
   ?state <- (state STEP-STARTED)
   (game-time $?game-time)
@@ -247,7 +256,7 @@
   ?ze <- (zone-exploration (name ?zone) (times-searched ?times-searched))
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (bind ?zone-boarders (utils-get-zone-edges ?zone))
   (bind ?search-tags (utils-get-tags-str-still-to-explore ?team))
   (assert (state WAIT-FOR-LOCK)
@@ -266,7 +275,8 @@
   "tag-find skill finished, try to find tag"
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  (step (name find-tag) (state running))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  (step (name find-tag) (state running) (id ?step-id))
   ?state <- (state SKILL-FINAL|SKILL-FAILED)
   ?ste <- (skill-to-execute (skill explore_zone)
 			    (args $?args) (state ?skill-finish-state&final|failed))
@@ -282,7 +292,8 @@
 (defrule step-find-tag-report-tag
   "Add found tag to navgraph and finish step."
   (phase PRODUCTION)
-  ?step <- (step (name find-tag) (state running) (zone ?zone))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name find-tag) (state running) (zone ?zone) (id ?step-id))
   ?ws <- (timer (name waiting-for-tag-since))
   ?s <- (state PROD_LOOKING_FOR_TAG)
   ?zone-fact <- (zone-exploration (name ?zone))
@@ -312,7 +323,7 @@
       (printout error "Check time diff between base and laptop" crlf)
       (retract ?s ?ws ?skill-finish-state)
       (assert (state STEP-FAILED))
-      (modify ?step (state failed))
+      (synced-modify ?step state failed)
       (return)
     )
   )
@@ -327,19 +338,20 @@
     (printout error "Check time diff between base and laptop" crlf)
     (retract ?s ?ws ?skill-finish-state)
     (assert (state STEP-FAILED))
-    (modify ?step (state failed))
+    (synced-modify ?step state failed)
     (return)
   )
   (retract ?s ?ws ?skill-finish-state)
   (assert (state STEP-FINISHED))
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
 
   (navgraph-add-all-new-tags)
 )
 (defrule step-find-tag-fail
   "Finish step if there is no tag in this zone."
   (phase PRODUCTION)
-  ?step <- (step (name find-tag) (state running) (zone ?zone) (machine ?machine))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name find-tag) (state running) (zone ?zone) (machine ?machine) (id ?step-id))
   (time $?now)
   ?ws <- (timer (name waiting-for-tag-since) (time $?t&:(timeout ?now ?t 3.0)))
   ?s <- (state PROD_LOOKING_FOR_TAG)
@@ -354,14 +366,15 @@
   )
   (retract ?s ?ws ?skill-finish-state)
   (assert (state STEP-FAILED))
-  (modify ?step (state failed))
+  (synced-modify ?step state failed)
 )
 (defrule step-find-tag-stop-when-other-bot-found-the-machine
   "tag-find can be stopped, because the machine we want to find
    was already found by another bot"
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name find-tag) (state running) (machine ?machine))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name find-tag) (state running) (machine ?machine) (id ?step-id))
   ?state <- (state SKILL-EXECUTION)
   ?ste <- (skill-to-execute (skill drive_to)
 			    (args $?args) (state running))
@@ -370,7 +383,7 @@
   =>
   (retract ?state ?ste)
   (assert (state STEP-FINISHED))
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
   ; skill is not properly stopped, but it should work anyway
   ; because the next skill call overrides it
 )
@@ -378,13 +391,14 @@
 (defrule step-get-product-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name get-output) (state wait-for-activation) (task-priority ?p) (id ?step-id)
 		 (machine ?mps) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (if (eq ?side INPUT) then
     (bind ?res (sym-cat ?mps "-I"))
   else
@@ -399,7 +413,8 @@
 (defrule step-instruct-mps
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name instruct-mps) (state wait-for-activation) (side ?side)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name instruct-mps) (state wait-for-activation) (side ?side) (id ?step-id)
                  (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
                  (cs-operation ?cs-op) (lock ?lock) (task-priority ?p))
   (machine (name ?mps) (mtype ?mtype) (state IDLE))
@@ -422,14 +437,15 @@
       then
       (assert (mps-instruction (machine ?mps) (ring-color ?ring))))
   )
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
   (assert (state STEP-FINISHED))
 )
 
 (defrule step-fail-machine-broken
   "Fail a step if the machine to be used becomes broken"
   (phase PRODUCTION)
-  ?step <- (step (name ?step-name) (state running) (machine ?mps)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name ?step-name) (state running) (machine ?mps) (id ?step-id)
                  (machine-feature ~SHELF))
   (machine (name ?mps) (state BROKEN))
   ?state <- (state SKILL-EXECUTION)
@@ -437,7 +453,7 @@
   ?wfl <- (wait-for-lock (state use))
   =>
   (printout t "Failing step " ?step-name " because " ?mps " is broken" crlf)
-  (modify ?step (state failed))
+  (synced-modify ?step state failed)
   (modify ?wfl (state finished))
   (retract ?state ?ste)
   (assert (state STEP-FAILED))
@@ -447,6 +463,7 @@
   "abort filling 4th base into RS (can happen because of race condition)"
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
   ?step <- (step (id ?step-id) (name insert) (state running)
                  (machine ?mps) (machine-feature SLIDE)
                  (already-at-mps ?already-at-mps))
@@ -457,13 +474,14 @@
   (printout t "Step: Abort filling 4th base into RS" crlf)
   (retract ?state ?ste)
   (assert (state STEP-FAILED))
-  (modify ?step (state failed))
+  (synced-modify ?step state failed)
 )
 
 (defrule step-fail-insert-slide
   "skip filling 4th base into RS (can happen because of race condition)"
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation)
                  (machine ?mps) (machine-feature SLIDE)
                  (already-at-mps ?already-at-mps))
@@ -471,7 +489,7 @@
   ?state <- (state STEP-STARTED)
   =>
   (retract ?state)
-  (modify ?step (state failed))
+  (synced-modify ?step state failed)
   (assert (state STEP-FAILED))
 )
 
@@ -489,7 +507,7 @@
   (place-waitpoint-assignment (place ?place&:(eq ?place (sym-cat ?mps "-I"))) (waitpoint ?waitpoint))
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (assert (state WAIT-FOR-RS)
           (timer (name wait-for-rs-dont-call-two-skills))
   )
@@ -528,7 +546,7 @@
   =>
   (retract ?state ?timer)
   (assert (state STEP-FINISHED))
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
 )
 (defrule step-wait-for-rs-lock-refused
   "When the lock is refused someone else is using the rs. Go back to
@@ -549,23 +567,25 @@ the waiting state until we can use it again."
 (defrule step-wait-for-output-start
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name wait-for-output) (state wait-for-activation) (machine ?mps))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name wait-for-output) (state wait-for-activation) (machine ?mps) (id ?step-id))
   ?state <- (state STEP-STARTED)
   =>
   (retract ?state)
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (assert (state WAIT_FOR_OUTPUT))
 )
 
 (defrule step-wait-for-output-finish
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
-  ?step <- (step (name wait-for-output) (state running) (machine ?mps))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name wait-for-output) (state running) (machine ?mps) (id ?step-id))
   ?state <- (state WAIT_FOR_OUTPUT)
   (machine (name ?mps) (state READY-AT-OUTPUT))
   =>
   (retract ?state)
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
   (assert (state STEP-FINISHED))
 )
 
@@ -584,7 +604,7 @@ the waiting state until we can use it again."
                                            (eq ?release:type RELEASE))
     (retract ?release)
   )
-  (modify ?step (state running))
+  (synced-modify ?step state running)
   (assert (state WAIT-FOR-STEP-LOCK))
 )
 
@@ -597,7 +617,7 @@ the waiting state until we can use it again."
   (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?lock))
   =>
   (retract ?state)
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
   (assert (state STEP-FINISHED))
 )
 
@@ -610,14 +630,15 @@ the waiting state until we can use it again."
   ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?lock))
   =>
   (retract ?state ?l)
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
   (assert (state STEP-FINISHED)
           (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?lock)))
 )
 (defrule step-get-base-finish-fail
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-base) (state running) (side ?side))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name get-base) (state running) (side ?side) (id ?step-id))
   ?state <- (state ?result&SKILL-FINAL|SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from)
                             (args $?args) (state final|failed))
@@ -630,11 +651,11 @@ the waiting state until we can use it again."
   (if (eq ?result SKILL-FINAL)
     then
     (assert (state STEP-FINISHED))
-    (modify ?step (state finished))
+    (synced-modify ?step state finished)
     (synced-modify ?bsf fail-side NONE)
     else
     (assert (state STEP-FAILED))
-    (modify ?step (state failed))
+    (synced-modify ?step state failed)
     (synced-modify ?bsf fail-side ?side)
   )
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
@@ -646,7 +667,8 @@ the waiting state until we can use it again."
 (defrule step-common-finish
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|drive-to) (state running))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name get-from-shelf|insert|get-output|drive-to) (state running) (id ?step-id))
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper|drive_to)
 			    (args $?args) (state final))
@@ -654,7 +676,7 @@ the waiting state until we can use it again."
   =>
   (retract ?state ?ste)
   (assert (state STEP-FINISHED))
-  (modify ?step (state finished))
+  (synced-modify ?step state finished)
 )
 
 
@@ -664,7 +686,8 @@ the waiting state until we can use it again."
 (defrule step-common-fail
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|discard|drive-to) (state running))
+  (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
+  ?step <- (step (name get-from-shelf|insert|get-output|discard|drive-to) (state running) (id ?step-id))
   ?state <- (state SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper|drive_to)
 			    (args $?args) (state failed))
@@ -672,7 +695,7 @@ the waiting state until we can use it again."
   =>
   (retract ?state ?ste)
   (assert (state STEP-FAILED))
-  (modify ?step (state failed))
+  (synced-modify ?step state failed)
 )
 
 ;;;;;;;;;;;;;;;;;
