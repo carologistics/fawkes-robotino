@@ -298,15 +298,15 @@
   )
 )
 
-(defrule prod-remove-proposed-tasks
-  "Remove all proposed tasks, when you are neither idle nor looking for an alternative."
-  (declare (salience ?*PRIORITY-LOW*))
-  (phase PRODUCTION)
-  (not (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE))
-  ?pt <- (task (robot ?robot&:(eq ?robot ?*ROBOT-NAME*)) (state proposed))
-  =>
-  (retract ?pt)
-  )
+; (defrule prod-remove-proposed-tasks
+;   "Remove all proposed tasks, when you are neither idle nor looking for an alternative."
+;   (declare (salience ?*PRIORITY-LOW*))
+;   (phase PRODUCTION)
+;   (not (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE))
+;   ?pt <- (task (robot ?robot&:(eq ?robot ?*ROBOT-NAME*)) (state proposed))
+;   =>
+;   (retract ?pt)
+; )
 
 ;(defrule push-facts-MachineDummy
 ;  (phase PRODUCTION)
