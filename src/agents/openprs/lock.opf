@@ -32,6 +32,27 @@
 		)
 
 
+	(defop lock-release
+		:invocation	(timer "beacon" $last-sec $last-usec $seq) 
+		:setting	(setting "release-distance" $release-distance)
+		:context( 	(agent-name $agent-name)
+		            (lock ACCEPT $agent-name $resource $priority)
+		            (lock-in-use $resource $res-xpos $res-ypos)
+		            (agent-pose $agent-xpos $agent-ypos)
+		         )
+		:body (
+		       (! (CAL_SQUARE_DISTANCE $agent-xpos $agent-ypos $res-xpos $res-ypos $res))
+		       (! (printf (FORMAT "%s %s %d %d %d %d\n" $agent-name $resource $agent-xpos $agent-ypos $res-xpos $res-ypos)))
+		       
+		       (! (= $release-distance-sqr (* $release-distance $release-distance)))
+		       (if (? (> $res $release-distance-sqr))
+		       	(=> (lock RELEASE $agent-name $resource $priority))
+		       )
+		)
+		:documentation "Checks every certain amount of time if still needs the lock or not
+		                if not the lock release fact is asserted to the database"
+	)
+
 ;TODO: Allow to have any thing as a resource ...if u have the string passed and then u can convert it to and from atom
 ;that would allow u to always have this deuality and u can handle things just like u want..Lets play with that later 
 ;work with this $place thing for testing

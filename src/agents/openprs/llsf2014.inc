@@ -25,6 +25,7 @@ declare ff 			game-state 0
 declare ff			game-phase 0
 declare ff			agent-state 0
 declare ff 			agent-name 0
+declare ff 			agent-pose 0
 
 declare symbol public
 declare symbol private
@@ -80,6 +81,7 @@ declare symbol STEP-FAILED
 declare ff master-of 1 
 declare ff heart-beat 1
 declare ff lock 3
+declare ff lock-in-use 0
 
 
 ;Material Types
@@ -127,3 +129,4 @@ load opf "debug.opf"
 load opf "worldmodel.opf"
 load opf "workpiece-operations.opf"
 load opf "lock.opf"
+load opf "utils.opf"
