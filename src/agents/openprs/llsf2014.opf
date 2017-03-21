@@ -32,11 +32,12 @@
     (! (pb-setup))
     (! (pb-peer-create-local $peer-addr $peer-send-port $peer-recv-port @peer-id))
     ;(! (bb-open "SkillerInterface" "Skiller" BB-READ))
+    (! (bb-open "Position3DInterface" "Pose" BB-READ))
     (! (time-set-idle-looptime $ilt_sec $ilt_usec))
     (! (navgraph-load))
     (! (conf-load-rcll2017))
     (! (print "LLSF2016 agent successfully initialized"))
-
+    (=> (setting "release-distance" 0.5))
 
   )
   :effects (  (~> (agent-init))
@@ -54,11 +55,17 @@
 )
 
 
-
 (defop agent-print-skiller-iface
   :invocation (bb-data "type" "SkillerInterface" "id" "Skiller" "time" $t_sec $t_usec $data)
   :context (blackboard-interface "SkillerInterface" "Skiller" BB-READ)
   :body ((! (bb-print "SkillerInterface" "Skiller")))
 )
+
+
+; (defop agent-print-position-iface
+;   :invocation (bb-data "type" "Position3DInterface" "id" "Pose" "time" $t_sec $t_usec $data)
+;   :context (blackboard-interface "Position3DInterface" "Pose" BB-READ)
+;   :body ((! (bb-print "Position3DInterface" "Pose")))
+; )
 
 )

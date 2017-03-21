@@ -138,11 +138,11 @@
 		)
 
 	(defop worldmodel--investigate-unknown-piece
-		:invocation ( workpiece $id $base $rings $cap (place $mps-name $feature) )
-		:context ( (< $id 0 )
+		:invocation( workpiece $id $base $rings $cap (place $mps-name $feature) )
+		:context( 	(< $id 0 )
 					(machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
 					)
-		:body ( 
+		:body( 
 
 			(! (printf (FORMAT "ON_READY-AT-OUTPUT: investigating unknown piece at %s %s\n" $mps-name $side )))
 			;( ask-other-robots (args (workpiece $id $base $rings $cap (place $mps-name $feature)))
@@ -166,6 +166,22 @@
 
 			)
 		)
+
+
+	(defop worldmodel--agent-position
+	  :invocation (bb-data "type" "Position3DInterface" "id" "Pose" "time" $t_sec $t_usec $data)
+	  :context ();do the updates on a timeout later	
+	  :body(
+		;Crashes..debug later
+		; (! (= @floatarray (bb-value $data "translation")))
+
+		( ! (= @translation-array (car (cdr (cdr (cdr (cdr (cdr (cdr (cdr  $data))))))))))
+		(! (print @translation-array))
+		(! (= $xpos (get-float-array @translation-array 0)))
+		(! (= $ypos (get-float-array @translation-array 1)))
+		(=> (agent-pose $xpos $ypos))
+	  	)
+	)
 	
 
 	)
