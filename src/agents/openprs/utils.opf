@@ -1,0 +1,23 @@
+;---------------------------------------------------------------------------
+;  utils.opf - OpenPRS OP file for RCll2017 openprs-agent
+;
+;  Created: Tue Mar 17 09:43:00 2017
+;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+(
+
+	(defop calc-dist-point-squared
+		:invocation (! (CAL_SQUARE_DISTANCE $x1 $y1 $x2 $y2 $res))
+		:body (
+		       (! (= $res (+ (* (- $x1 $x2) (- $x1 $x2)) (* (- $y1 $y2) (- $y1 $y2)))))
+		      )
+		:documentation "Calculates distance between to single points in the plain"
+	)
+
+
+
+
+
+	)
