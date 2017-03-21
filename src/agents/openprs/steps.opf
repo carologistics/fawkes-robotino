@@ -35,8 +35,12 @@
 			(? (lock ACCEPT $robot-name $place @priority)) ;to make sure if the lock was accepted 
 
 			(if (! (execute (skill "drive_to" "place" $place) ))
-				;do nothing
+				(? (agent-pose $xpos $ypos))
+				(=> (lock-in-use $place $xpos $ypos));This is just a hack till i get the right navgraph info
 				else
+				;TODO:If skill failed u need to have away of ensuring the lock will be released. 
+				;For not just release it
+				(=> (lock RELEASE $robot-name $place @priority))
 				(=> (step-failed (drive-to machine $mps-name side $side) )) 
 				(fail)
 				)
