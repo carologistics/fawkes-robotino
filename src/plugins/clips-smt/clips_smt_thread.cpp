@@ -65,8 +65,8 @@ ClipsSmtThread::init()
 
 
     // Test z3 extern binary
-    proc_z3_ = NULL;
-    //clips_smt_test_z3();
+    //proc_z3_ = NULL;
+    clips_smt_test_z3();
 
     // Test python
     proc_python_ = NULL;
@@ -1017,6 +1017,16 @@ ClipsSmtThread::clips_smt_fill_node_names()
      proc_z3_ = new SubProcess("z3 binary", argv[0], argv, NULL, logger);
      proc_z3_->check_proc();
       **/
+
+      /**
+      Z3_ast a = Z3_parse_smtlib2_file(_z3_context, "/home/robosim/carl_test/carl_formula.smt", 0, 0, 0, 0, 0, 0);
+      z3::expr e(_z3_context, a);
+
+      z3::solver s(_z3_context);
+      s.add(e);
+      if(s.check() == z3::sat) logger->log_info(name(), "Test of import .smt file into z3 constraint worked");
+      **/
+
  }
 
  void
