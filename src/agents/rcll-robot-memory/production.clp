@@ -731,7 +731,7 @@
   =>
   (printout error "Can't find any task!." crlf)
   (printout error " Waiting..." crlf)
-  (save-facts (str-cat "agent-snapshot-no-task" (nth$ 1 ?now) ".clp") visible)
+  ; (save-facts (str-cat "agent-snapshot-no-task" (nth$ 1 ?now) ".clp") visible)
 
   ;find random waiting point
   (bind ?wpts (create$))
