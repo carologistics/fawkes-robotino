@@ -270,7 +270,7 @@
   (team-color ?team-color&~nil)
   (holding NONE)
   (machine (mtype BS) (name ?bs) (team ?team-color) (state READY-AT-OUTPUT))
-  (base-station (name ?bs) (fail-side ?side))
+  (base-station (name ?bs) (fail-side ?side&~NONE))
   (not (locked-resource (resource ?res&:(eq ?res (sym-cat ?bs "-" ?side)))))
   (not (and (task (name clear-bs) (state rejected) (id ?rej-id))
             (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?bs))))
