@@ -118,12 +118,13 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_done(std::string env_name, std::string bar);
   llsf_msgs::ClipsSmtData data;
   std::string data_env;
-  std::string data_handle;  
+  std::string data_handle;
 
   // Navgraph
+  void clips_smt_fill_node_names();
   void clips_smt_compute_distances();
+  std::map<int, std::string> node_names_;
   std::map<std::pair<std::string, std::string>, float> distances_;
-  std::map<int, std::string> indices_;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
   std::string cfg_base_frame_;
   std::string cfg_global_frame_;
