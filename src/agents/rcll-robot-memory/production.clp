@@ -100,7 +100,7 @@
   (holding NONE)
   (machine (mtype CS) (loaded-id 0) (incoming $?i&~:(member$ GET-PROD ?i))
            (name ?machine) (produced-id ?produced-id&~0) (team ?team-color)
-           (state READY-AT-OUTPUT))
+           (state ~DOWN&~BROKEN))
   (product
     (id ?produced-id)
     (base UNKNOWN) ;only remove empty bases -> unknown color
