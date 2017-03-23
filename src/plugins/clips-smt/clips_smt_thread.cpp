@@ -951,14 +951,24 @@ ClipsSmtThread::clips_smt_fill_node_names()
 
 	 MutexLocker lock(navgraph.objmutex_ptr());
 
-    //  // TODO (Igor) Obtain list of machines from data
-    // std::vector<std::string> node_names_ = {
-    //     "C-ins-in",
-    //     "C-BS-I","C-BS-O",
-    //     "C-CS1-I","C-CS1-O","C-CS2-I","C-CS2-O",
-    //     "C-DS-I","C-DS-O",
-    //     "C-RS1-I","C-RS1-O","C-RS2-I","C-RS2-O"
-    // };
+    // Compute distances between robotos positions and machines
+    for(int r = 0; r < data.robots().size(); ++r){
+        std::string robot_node_name = "Robot-";
+        robot_node_name += std::to_string(r+1);
+
+        NavGraphNode robot_node(robot_node_name, data.robots(r).pose().x(), data.robots(r).pose().y());
+        NavGraphNode from = navgraph->closest_node(robot_node.x(), robot_node.y());
+
+        for (unsigned int i = 1; i < node_names_.size(); ++i) {
+            std::pair<std::string, std::string> nodes_pair(robot_node.name(), node_names_[i]);
+
+            NavGraphNode to = navgraph->node(node_names_[i]);
+            NavGraphPath p = navgraph->search_path(from, to);
+
+            // logger->log_info(name(), "Distance between node %s and node %s is %f", robot_node.name().c_str(), node_names_[i].c_str(), p.cost()+navgraph->cost(from, robot_node));
+            distances_[nodes_pair] = p.cost() + navgraph->cost(from, robot_node); // Use Robot-index to identify robots in distances_
+        }
+    }
 
     // Compute distances between unconnected C-ins-in and all other machines
     NavGraphNode ins_node(navgraph->node("C-ins-in"));
