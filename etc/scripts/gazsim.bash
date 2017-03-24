@@ -308,7 +308,7 @@ if [  $COMMAND  == start ]; then
     sleep 10s
     if $FAWKES_USED
     then
-	sleep 15s
+	sleep 5s
 	# publish initial poses
 	echo "publish initial poses"
 	$initial_pose_script_location -c $NUM_CYAN -m $NUM_MAGENTA -d
