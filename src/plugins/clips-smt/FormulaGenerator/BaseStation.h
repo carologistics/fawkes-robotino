@@ -14,10 +14,11 @@
 #ifndef BASESTATION_H
 #define BASESTATION_H
 
-#include <set>
 
 #include "Station.h"
 #include "Workpiece.h"
+#include <set>
+
 
 class BaseStation;
 typedef std::shared_ptr<BaseStation> baseStation_ptr;
