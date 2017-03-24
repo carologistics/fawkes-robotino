@@ -29,6 +29,7 @@
 #include <plugins/clips/aspect/clips_feature.h>
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
+
 #include <clipsmm.h>
 
 #include <z3++.h>
@@ -45,6 +46,8 @@
 //#include "FormulaGenerator/FormulaGenerator.h"
 #include "clips_smt_data.h"
 #include <llsf_msgs/ClipsSmtData.pb.h>
+#include "FormulaGenerator/GameData.h"
+
 
 #include <boost/cerrno.hpp>
 
@@ -117,6 +120,8 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_get_plan(std::string env_name, std::string handle);
   CLIPS::Value clips_smt_done(std::string env_name, std::string bar);
   llsf_msgs::ClipsSmtData data;
+  GameData::GameData clips_smt_convert_protobuf_to_gamedata( llsf_msgs::ClipsSmtData data);
+
   std::string data_env;
   std::string data_handle;
 

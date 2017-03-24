@@ -1,5 +1,6 @@
 #include "Machine.h"
 
+
 Machine::Machine(int id) {
     this->setId(id);
 }
