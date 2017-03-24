@@ -19,8 +19,8 @@
  */
 
 #include "clips_smt_thread.h"
-
-#include <utils/sub_process/proc.h>
+#include "../../../fawkes/src/plugins/openprs/utils/proc.h"
+//#include <utils/sub_process/proc.h>
 #include <core/threading/mutex_locker.h>
 
 #include <navgraph/navgraph.h>
@@ -1110,4 +1110,67 @@ ClipsSmtThread::clips_smt_test_navgraph()
         logger->log_info(name(), "Navgraph has edge from %s to %s", edge.from().c_str(), edge.to().c_str());
     }
     clips_smt_compute_distances();
+}
+
+
+GameData::GameData 
+ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata( llsf_msgs::ClipsSmtData data)
+{
+  
+  GameData::GameData _generatorData = GameData::GameData();
+
+  //machines
+  for (int i = 0; i < data.machines().size(); i++)
+  {
+    //name -> id
+    GameData::Machine _tmpMachine = GameData::Machine(atoi(data.machines(i).name().c_str()));
+    //type -> type
+    _tmpMachine.setType(data.machines(i).type());
+    //TODO (Lukas) WorkingPiece
+    //TODO (Lukas) Distances
+    //_generatorData.addMachine(_tmpMachine);
+  }
+
+
+  //Robots
+  for (int i = 0; i < data.robots().size(); i++)
+  {
+    //name -> id
+    GameData::Robot _tmpRobot = GameData::Robot(atoi(data.robots(i).name().c_str()));
+    //TODO (Lukas) Distances
+  }
+
+
+  //Orders
+  for (int i = 0; i < data.orders().size(); i++)
+  {
+    GameData::Workpiece _tmpWorkPiece = GameData::Workpiece();
+    //Color conversions
+    int _baseColor = data.orders(i).base_color()+1;
+    int _capColor = data.orders(i).cap_color();
+
+
+    std::vector<int> _ringColors;
+    for (int j = 0; j < data.orders(i).ring_colors().size(); j++)
+    {
+      _ringColors.push_back(data.orders(i).ring_colors(i)+1);
+    }
+
+
+    std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
+    //TODO fix this conversion:
+    /*
+    _tmpWorkPiece.setBaseColor(_baseColor);
+    _tmpWorkPiece.setCapColor(_capColor);
+    _tmpWorkPiece.setRingColor(_ringColors);
+    */
+
+
+    //GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
+    //TODO (Lukas) Distances
+  }
+
+
+
+  return _generatorData;
 }
