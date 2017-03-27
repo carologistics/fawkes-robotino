@@ -121,11 +121,13 @@
       (return)
     )
     ; create worldmodel-change-fact for synchronization
-    (assert (worldmodel-change (key (+ (* 100
-                                          (fact-slot-value ?fact sync-id))
-                                       (wm-sync-get-index-of-slot ?fact ?slot)))
-                               (value ?value))
+    (bind ?key (+ (* 100 (fact-slot-value ?fact sync-id))
+		  (wm-sync-get-index-of-slot ?fact ?slot)))
+    ; remove previous worldmodel change facts for the same key
+    (delayed-do-for-all-facts ((?wmcf worldmodel-change)) (eq ?wmcf:key ?key)
+      (retract ?wmcf)
     )
+    (assert (worldmodel-change (key ?key) (value ?value)))
   )
   ; modify the fact locally
   (return (dyn-mod ?fact ?args))

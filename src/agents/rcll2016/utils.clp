@@ -32,6 +32,33 @@
   (return (str-cat ?mps "-O"))
 )
 
+(deffunction str-split (?string ?sep)
+	(bind ?s ?string)
+	(bind ?rv (create$))
+	(while (> (str-length ?s) 0)
+		(bind ?idx (str-index ?sep ?s))
+		(if ?idx then
+			(bind ?s2 (sub-string 1 (- ?idx 1) ?s))
+			(bind ?rv (append$ ?rv ?s2))
+			(bind ?s (sub-string (+ ?idx (str-length ?sep)) (str-length ?s) ?s))
+		 else
+		 	(bind ?rv (append$ ?rv ?s))
+			(bind ?s "")
+		)		
+	)
+	(return ?rv)
+)
+
+(deffunction str-join (?sep $?strings)
+	(bind ?rv "")
+	(bind ?locsep "")
+	(foreach ?s ?strings
+		(bind ?rv (str-cat ?rv ?locsep ?s))
+		(bind ?locsep ?sep)			 
+	)
+	(return ?rv)
+)
+
 (deffunction get-light-signal-side (?mps)
   "Return the navgraph point of the side where the light-signal is mounted"
   (if (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)
@@ -162,10 +189,19 @@
   (return ?search-tags)
 )
 
-(deffunction escape-if-string (?value)
+(deffunction escape-if-string (?f ?slot $?new-value)
   ; this function ads \" \" around a string to prevent transforming the string value
   ; into a Symbol when using the eval function
-  (if (eq STRING (type ?value)) then
+	(if (> (length$ ?new-value) 0)
+	 then
+		(bind ?value (nth$ 1 ?new-value))
+	 else
+		(bind ?value (fact-slot-value ?f ?slot))
+	)
+	(bind ?value-type (type ?value))
+	(bind ?slot-type  (nth$ 1 (deftemplate-slot-types (fact-relation ?f) ?slot)))
+	;(printout t "Value type: " ?value-type "  -- Slot " ?slot " has types " ?slot-types crlf)
+  (if (eq STRING ?value-type ?slot-type) then
     (return (str-cat "\"" ?value "\""))
   )
   (return ?value)
@@ -214,12 +250,12 @@
                              (implode$ (fact-slot-value ?f ?slot))
                              "))"))
         else ;copy singlefield
-        (bind ?acom (str-cat ?acom "(" ?slot " " 
-                             (escape-if-string (fact-slot-value ?f ?slot)) ")"))
+				(bind ?acom (str-cat ?acom "(" ?slot " " 
+														 (escape-if-string ?f ?slot) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
-                           (escape-if-string (nth$ (member$ ?slot ?slots-to-change) ?values-to-set))
+                           (escape-if-string ?f ?slot (nth$ (member$ ?slot ?slots-to-change) ?values-to-set))
                            ")"))
     )
   )
@@ -254,13 +290,13 @@
                              "))"))
         else ;copy singlefield
         (bind ?acom (str-cat ?acom "(" ?cur-slot " "
-                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
+                             (escape-if-string ?f ?cur-slot) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
                            "(create$ "
                            (implode$ (fact-slot-value ?f ?cur-slot))
-                           " " (escape-if-string ?value) ")"
+                           " " (escape-if-string ?f ?cur-slot ?value) ")"
                            ")"))
     )
   )
@@ -294,7 +330,7 @@
                              "))"))
         else ;copy singlefield
         (bind ?acom (str-cat ?acom "(" ?cur-slot " "
-                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
+                             (escape-if-string ?f ?cur-slot) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "
@@ -339,7 +375,7 @@
                              "))"))
         else ;copy singlefield
         (bind ?acom (str-cat ?acom "(" ?cur-slot " "
-                             (escape-if-string (fact-slot-value ?f ?cur-slot)) ")"))
+                             (escape-if-string ?f ?cur-slot) ")"))
       )
       else
       (bind ?acom (str-cat ?acom "(" ?slot " "

@@ -99,8 +99,11 @@ class ClipsSmtThread
   bool _solver_done;
   z3::expr_vector clips_smt_create_formula();
   z3::expr_vector clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m);
-  z3::check_result clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula);
-  void clips_smt_react_on_result(z3::check_result result);
+  void clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula);
+
+  std::map<int ,std::string> actions_robot_1;
+  std::map<int ,std::string> actions_robot_2;
+  std::map<int ,std::string> actions_robot_3;
 
   // SubProcess to call extern binary of z3
   fawkes::SubProcess *proc_z3_;
@@ -110,11 +113,12 @@ class ClipsSmtThread
 
 
   // Communication with the agent API
-  CLIPS::Value clips_smt_request(std::string handle, void *msgptr);
-  CLIPS::Value clips_smt_get_plan(std::string handle);
-  CLIPS::Value clips_smt_done(std::string foo, std::string bar);
+  CLIPS::Value clips_smt_request(std::string env_name, std::string handle, void *msgptr);
+  CLIPS::Value clips_smt_get_plan(std::string env_name, std::string handle);
+  CLIPS::Value clips_smt_done(std::string env_name, std::string bar);
   llsf_msgs::ClipsSmtData data;
-
+  std::string data_env;
+  std::string data_handle;  
 
   // Navgraph
   void clips_smt_compute_distances();

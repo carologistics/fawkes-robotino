@@ -9,6 +9,15 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(deffunction plan-create-actgroup ($?plans)
+	"Create ActorGroupPlan plan"
+	(bind ?ap (pb-create "llsf_msgs.ActorGroupPlan"))
+	(foreach ?p ?plans
+		(pb-add-list ?ap "plans" ?p)
+	)
+	(return ?ap)
+)
+
 (deffunction plan-create-actspec-sequential (?actor-name ?plan)
 	"Create ActorSpecificPlan plan from a sequential plan"
 	(bind ?ap (pb-create "llsf_msgs.ActorSpecificPlan"))
@@ -46,37 +55,37 @@
 	(return ?a)
 )
 
-(defrule production-plan-test
-  (phase PRODUCTION)
-  (team-color ?team-color&CYAN|MAGENTA)
-=>
-	(bind ?ap
-	  (plan-create-actspec-sequential "R-1"
-	    (plan-create-sequential (create$
-	      (plan-create-action "move" "from" "START" "to" "C-BS-I")
-	      (plan-create-action "move" "from" "C-BS-I" "to" "C-DS-I")
-	    ))
-	  )
-	)
-	(printout t "Plan: " (pb-tostring ?ap) crlf)
+; (defrule production-plan-test
+;   (phase PRODUCTION)
+;   (team-color ?team-color&CYAN|MAGENTA)
+; =>
+; 	(bind ?ap
+; 	  (plan-create-actspec-sequential "R-1"
+; 	    (plan-create-sequential (create$
+; 	      (plan-create-action "move" "from" "START" "to" "C-BS-I")
+; 	      (plan-create-action "move" "from" "C-BS-I" "to" "C-DS-I")
+; 	    ))
+; 	  )
+; 	)
+; 	(printout t "Plan: " (pb-tostring ?ap) crlf)
 	
-	(if (pb-has-field ?ap "sequential_plan")
-	 then
-		(bind ?p (pb-field-value ?ap "sequential_plan"))
-		(printout t "Sequential plan is set:" crlf (pb-tostring ?p) crlf)
-		(foreach ?a (pb-field-list ?p "actions")
-			(bind ?actname (pb-field-value ?a "name"))
-			(printout t "  Action '" ?actname "':" crlf)
-			; Must use progn$ here, foreach cannot be nested in same scope
-			(progn$ (?p (pb-field-list ?a "params"))
-				(printout t "  - " (pb-field-value ?p "key") ": " (pb-field-value ?p "value") crlf)
-			)
-		)
-	 else
-	  (printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
-	)
-	(pb-destroy ?ap)
-)
+; 	(if (pb-has-field ?ap "sequential_plan")
+; 	 then
+; 		(bind ?p (pb-field-value ?ap "sequential_plan"))
+; 		(printout t "Sequential plan is set:" crlf (pb-tostring ?p) crlf)
+; 		(foreach ?a (pb-field-list ?p "actions")
+; 			(bind ?actname (pb-field-value ?a "name"))
+; 			(printout t "  Action '" ?actname "':" crlf)
+; 			; Must use progn$ here, foreach cannot be nested in same scope
+; 			(progn$ (?p (pb-field-list ?a "params"))
+; 				(printout t "  - " (pb-field-value ?p "key") ": " (pb-field-value ?p "value") crlf)
+; 			)
+; 		)
+; 	 else
+; 	  (printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
+; 	)
+; 	(pb-destroy ?ap)
+; )
 
 (deffunction smt-create-data (?robots ?machines ?orders)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
@@ -165,6 +174,9 @@
 (defrule production-call-clips-smt
   (phase PRODUCTION)
   (team-color ?team-color&CYAN|MAGENTA)
+	(state IDLE)
+	(not (plan-requested))
+	(test (eq ?*ROBOT-NAME* "R-1"))
 =>
 	(bind ?p
 	  (smt-create-data
@@ -173,11 +185,83 @@
 	    (smt-create-orders ?team-color)
 	  )
 	)
-	(printout t "Data:" (pb-tostring ?p) crlf)
-	(printout t "Check the return message of clips_smt_request: " (smt-request "test" ?p)  crlf)
-	(bind ?plan (smt-get-plan "test"))
-	(printout t "Plan: " (pb-tostring ?plan) crlf)
-	(pb-destroy ?plan)
+
+	(smt-request "test" ?p)
+	(assert (plan-requested))
+					;(smt-plan-complete "test"))
+)
+
+(defrule production-smt-plan-completed
+	(smt-plan-complete ?handle)
+	=>
+	(printout t "SMT plan handle completed " ?handle  crlf)
+	(bind ?plans (smt-get-plan ?handle))
+
+	; Assert a simple example plan with multiple goals for each robot
+	; (bind ?plans
+	;   (plan-create-actgroup
+	;   	(plan-create-actspec-sequential "R-1"
+	;     	(plan-create-sequential (create$
+	;       	(plan-create-action "move" "to" "C-BS-I")
+	;       	(plan-create-action "move" "to" "C-DS-I")
+	;     )))
+	;   	(plan-create-actspec-sequential "R-2"
+	;     	(plan-create-sequential (create$
+	;       	(plan-create-action "move" "to" "C-CS1-I")
+	;       	(plan-create-action "move" "to" "C-CS2-I")
+	;     )))
+	;   	(plan-create-actspec-sequential "R-3"
+	;     	(plan-create-sequential (create$
+	;       	(plan-create-action "move" "to" "C-RS1-I")
+	;       	(plan-create-action "move" "to" "C-RS2-I")
+	; 		)))
+	; 	)
+	; )
+
+	(printout t "Plan: " (pb-tostring ?plans) crlf)
+
+	(progn$ (?ap (pb-field-list ?plans "plans"))
+		; ?ap is of type ActorSpecificPlan
+		(bind ?actor-name (pb-field-value ?ap "actor_name"))
+		(printout t "Working on ActorSpecificPlan of " ?actor-name crlf)
+		(if (pb-has-field ?ap "sequential_plan")
+		 then
+			(bind ?p (pb-field-value ?ap "sequential_plan"))
+
+			(bind ?task-id (random-id))
+			(bind ?actions (pb-field-list ?p "actions"))
+			(bind ?steps (create$))
+
+			(loop-for-count (?ai (length$ ?actions))
+				(bind ?a (nth$ ?ai ?actions))
+				(bind ?actname (pb-field-value ?a "name"))
+				(switch ?actname
+					(case "enter-field" then (printout warn "Ignoring enter-field, done implicitly" crlf))
+					(case "move" then
+						(bind ?to "")
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "to") then
+								(bind ?to (pb-field-value ?arg "value"))
+								(bind ?to-splitted (str-split ?to "-"))
+								(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
+								(bind ?side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
+							 else
+								(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+							)
+						)
+						(printout t "Driving to " ?to " at " ?side crlf)
+						(bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+						(assert (step (name drive-to) (id (+ ?task-id ?ai))	(machine ?to) (side ?side)))
+					)
+					(default (printout warn "Unknown action " ?actname crlf))
+				)
+			)
+			(assert (task (id ?task-id) (state proposed) (steps ?steps) (robot ?actor-name)))
+		 else
+	  	(printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
+		)
+	)
+	(pb-destroy ?plans)
 )
 
 
@@ -215,49 +299,49 @@
   )
 )
 
-(defrule prod-remove-proposed-tasks
-  "Remove all proposed tasks, when you are neither idle nor looking for an alternative."
-  (declare (salience ?*PRIORITY-LOW*))
+; (defrule prod-remove-proposed-tasks
+;   "Remove all proposed tasks, when you are neither idle nor looking for an alternative."
+;   (declare (salience ?*PRIORITY-LOW*))
+;   (phase PRODUCTION)
+;   (not (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE))
+;   ?pt <- (task (robot ?robot&:(eq ?robot ?*ROBOT-NAME*)) (state proposed))
+;   =>
+;   (retract ?pt)
+; )
+
+(defrule push-facts-MachineDummy
   (phase PRODUCTION)
-  (not (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE))
-  ?pt <- (task (robot ?robot&:(eq ?robot ?*ROBOT-NAME*)) (state proposed))
+  (state IDLE)
   =>
-  (retract ?pt)
-  )
-
-;(defrule push-facts-MachineDummy
-;  (phase PRODUCTION)
-;  (state IDLE)
-;  =>
-;  (printout t "Data pushing to Machine Dummy" crlf)
-;  (bind ?md (pb-create "llsf_msgs.MachineDummyData"))
-;(do-for-all-facts ((?machine machine)) TRUE
-;	 (bind ?m (pb-create "llsf_msgs.Machine"))
-;	 (pb-set-field ?m "name" (str-cat ?machine:name))
-;	 (pb-add-list ?md "machiness" ?m)
-;	 )
+  (printout t "Data pushing to Machine Dummy" crlf)
+  (bind ?md (pb-create "llsf_msgs.MachineDummyData"))
+(do-for-all-facts ((?machine machine)) TRUE
+	 (bind ?m (pb-create "llsf_msgs.Machine"))
+	 (pb-set-field ?m "name" (str-cat ?machine:name))
+	 (pb-add-list ?md "machiness" ?m)
+	 )
 ;(printout t "Machi" (pb-tostring ?md) crlf)
-;(assert (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?md)))
-;)
+(assert (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?md)))
+)
 
 
-;(defrule get-facts-MachineDummy-Start-Task
-;   (declare (salience ?*PRIORITY-HIGH*))
-;  (phase PRODUCTION)
-;  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
-;    ?pf <- (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?p))
-;  =>
-;  (printout t "Task Start" crlf)
-;  (foreach ?o (pb-field-list ?p "machiness")
-;	   (bind ?machname (pb-field-value ?o "name"))
-;
-; (bind ?task-id (random-id))
-; (assert (task (id ?task-id)(state proposed)(steps (create$ (+ ?task-id 1))))
-;	  (step (name drive-to) (id (+ ?task-id 1))
-;		(machine ?machname))
-;	  )
-;	  )
- ; )
+(defrule get-facts-MachineDummy-Start-Task
+   (declare (salience ?*PRIORITY-HIGH*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+    ?pf <- (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?p))
+  =>
+  (printout t "Task Start" crlf)
+  (foreach ?o (pb-field-list ?p "machiness")
+	   (bind ?machname (pb-field-value ?o "name"))
+	   
+ (bind ?task-id (random-id))
+ (assert (task (robot ?*ROBOT-NAME*) (id ?task-id)(state proposed)(steps (create$ (+ ?task-id 1))))
+	  (step (name drive-to) (id (+ ?task-id 1))
+ 		(machine ?machname))	  
+ )
+  )
+  )
 
 
 ; (defrule prod-prefill-cap-station

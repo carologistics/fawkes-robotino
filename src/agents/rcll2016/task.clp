@@ -20,8 +20,8 @@
   =>
   (retract ?state)
   (assert (state STEP-STARTED))
-  (modify ?task (state running) (current-step (nth$ 1 ?steps)))
-  (modify ?step (state wait-for-activation))
+  (synced-modify ?task state running current-step (nth$ 1 ?steps))
+  (synced-modify ?step state wait-for-activation)
   (printout info "Timelog: Task " ?name " started." crlf)
 )
 
@@ -37,8 +37,8 @@
   =>
   (retract ?state)
   (assert (state STEP-STARTED))
-  (modify ?task (current-step ?id-next))
-  (modify ?step-next (state wait-for-activation))
+  (synced-modify ?task current-step ?id-next)
+  (synced-modify ?step-next state wait-for-activation)
   (printout info "Timelog: Task " ?name " switched to next step." crlf)
 )
 
@@ -55,7 +55,7 @@
   =>
   (retract ?state)
   (assert (state TASK-FINISHED))
-  (modify ?task (state finished))
+  (synced-modify ?task state finished)
   (printout info "Timelog: Task " ?task-name " finished." crlf)
 )
 
@@ -73,7 +73,7 @@
   (retract ?state)
   (assert (state TASK-FAILED-WAITING)
           (timer (name wait-after-fail)))
-  (modify ?task (state failed))
+  (synced-modify ?task state failed)
   (printout info "Timelog: Task " ?task-name " failed." crlf)
   (printout t "Calling motor_move to stop current skill" crlf)
   (skill-call motor_move x 0.0)

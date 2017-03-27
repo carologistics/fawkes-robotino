@@ -28,7 +28,7 @@ def declareVariables(n_robots,n_machines):
 
     # Variables pos_i_j
     varPos = {}
-    
+
     for i in range(1,n_robots+1):
         for j in range(-3,n_machines+1):
             varPos['pos_{}_{}'.format(i,j)] = Int('pos_{}_{}'.format(i,j))
@@ -103,7 +103,7 @@ def addConstraints(o,varPos, varD, varM,distances,n_robots,n_machines):
 ##                print(v == 0)
                 o.add(v == 0)
 
-    ###Constraint for the first step:  we move to the first location 
+    ###Constraint for the first step:  we move to the first location
     for i in range(1,n_robots+1):
         v1 = varPos['pos_{}_1'.format(i)]
         v2 = varD['d_{}_{}'.format(i,n_machines)]
@@ -113,7 +113,7 @@ def addConstraints(o,varPos, varD, varM,distances,n_robots,n_machines):
             v3 = distances['dist_0_{}'.format(k)]
             c2.append(And(v1 == k, v2 == v3))
         o.add(Or(c2))
-        
+
     ##Constraint  for successive steps: if a robot moves, d is incremented, otherwise it is not
     c = []
     for i in range(1,n_robots+1):
@@ -127,7 +127,7 @@ def addConstraints(o,varPos, varD, varM,distances,n_robots,n_machines):
             c.append(dst != -1)
             c.append(dst != -2)
             c.append(dst != -3)
-            
+
             c.append(Or(Not(src == -4), And(dst == -4, dist_dst == dist_src)))
             c.append(Or(Not(dst == -4), dist_dst == dist_src))
             for k in range(1,n_machines+1):
@@ -160,7 +160,7 @@ def addConstraints(o,varPos, varD, varM,distances,n_robots,n_machines):
                 c3.append(Or(Not(c1), And(c2)))
         o.add(Or(c4))
     o.add(And(c3))
-    
+
     for i in range(1,n_machines+1):
         c = []
         for j in range(1,n_robots+1):
@@ -191,7 +191,7 @@ def addConstraints(o,varPos, varD, varM,distances,n_robots,n_machines):
 ##    v2 = varD['d_2_{}'.format(n_machines)]
 ##    v3 = varD['d_3_{}'.format(n_machines)]
 ##
-##    
+##
 ##    o.add(v1+v2+v3 > 0)
 ##
 ##    while(res==sat):
@@ -239,12 +239,12 @@ def addConstraints(o,varPos, varD, varM,distances,n_robots,n_machines):
 ####        mid = round((high + 2*low)/3, 2)
 ##        mid = round((2*high+low)/3,2)
 ##        o.push()
-##        
+##
 ##        v1 = varD['d_1_{}'.format(n_machines)]
 ##        v2 = varD['d_2_{}'.format(n_machines)]
 ##        v3 = varD['d_3_{}'.format(n_machines)]
-##        
-##        
+##
+##
 ##        o.add(v1+v2+v3 >= low, v1+v2+v3 <= mid)
 ##        start = time.time()
 ##        print('Check sum >= {} & sum <= {}'.format(low,mid))
@@ -263,10 +263,10 @@ def addConstraints(o,varPos, varD, varM,distances,n_robots,n_machines):
 ##            print('Move to upper half: {} {}'.format(mid,high))
 ##            return binaryOptimize(o,mid,high,sol,varD, n_machines,epsilon)
 ##
-##    
+##
 ########################################################################################################
 ## Optimize using Z3 API#
-#########################   
+#########################
 def z3Optimize(o, varD, varM, n_machines):
     v1 = varD['d_1_{}'.format(n_machines)]
     v2 = varD['d_2_{}'.format(n_machines)]
@@ -283,16 +283,16 @@ def z3Optimize(o, varD, varM, n_machines):
 ########################################################################################################
 ## Dump smt2 encoding to file#
 ##############################
-##def toSMT2Benchmark(o, status = "", name="visit cyan input", logic=""):
-##  v = (Ast * 0)()
-##  a = o.assertions()
-##  if len(a) == 0:
-##      o = BoolVal(True)
-##  else:
-##      o = And(*a)
-##  
-##  return Z3_benchmark_to_smtlib_string(o.ctx_ref(), name, logic, status, "", 0, v, o.as_ast())
-##
+def toSMT2Benchmark(o, status = "", name="visit cyan input", logic=""):
+  v = (Ast * 0)()
+  a = o.assertions()
+  if len(a) == 0:
+      o = BoolVal(True)
+  else:
+      o = And(*a)
+
+  return Z3_benchmark_to_smtlib_string(o.ctx_ref(), name, logic, status, "", 0, v, o.as_ast())
+
 ########################################################################################################
 ## Main#
 ########
@@ -300,9 +300,9 @@ def z3Optimize(o, varD, varM, n_machines):
 def main():
 
     ## Indices of Machines to be used in the encoding
-##    indices = { '1' : 'C-BS-I' , '2' :'C-CS1-I', '3':'C-CS2-I', '4':'C-DS-I', '5':'C-RS1-I' , '6':'C-RS2-I',  '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}    
-    indices = { '1' : 'C-BS-I' , '2' :'C-CS1-I', '3':'C-CS2-I', '4':'C-DS-I', '5':'C-RS1-I' , '6':'C-RS2-I', '7':'C-CS2-O','8':'C-DS-O', '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}
-##    indices = { '1' : 'C-BS-I' , '2' :'C-BS-O', '3':'C-CS1-I', '4':'C-CS1-O', '5':'C-CS2-I', '6':'C-CS2-O', '7':'C-DS-I', '8':'C-DS-O', '9':'C-RS1-I', '10':'C-RS1-O', '11': 'C-RS2-I', '12':'C-RS2-O', '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}
+##    indices = { '1' : 'C-BS-I' , '2' :'C-CS1-I', '3':'C-CS2-I', '4':'C-DS-I', '5':'C-RS1-I' , '6':'C-RS2-I',  '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}
+##    indices = { '1' : 'C-BS-I' , '2' :'C-CS1-I', '3':'C-CS2-I', '4':'C-DS-I', '5':'C-RS1-I' , '6':'C-RS2-I', '7':'C-CS2-O','8':'C-DS-O', '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}
+    indices = { '1' : 'C-BS-I' , '2' :'C-BS-O', '3':'C-CS1-I', '4':'C-CS1-O', '5':'C-CS2-I', '6':'C-CS2-O', '7':'C-DS-I', '8':'C-DS-O', '9':'C-RS1-I', '10':'C-RS1-O', '11': 'C-RS2-I', '12':'C-RS2-O', '0':'C-ins-in', '-1':'p1', '-2':'p2', '-3':'p3'}
     inverted_indices = dict((v, k) for k, v in indices.items())
 
     ## Number of robots and machines in the arena
@@ -338,26 +338,26 @@ def main():
 ##    print('Scheduling computed:')
 ##    print(model)
 ##    print('Total cost: {} \nElapsed Time: {}'.format(totalCost, end-start))
-    
+
 ##  ###########################
 ##  ## Using optimization API##
 ##  ###########################
-    z3Optimize(o, varD, varM,n_machines)
-    start = time.time()
-    print(o.check())
-    end = time.time()
-    m = o.model()
-
-    totCost=0
-    for k,v in varD.items():
-        if '_{}'.format(n_machines) in k:
-            totCost+=float(str(m[v]))
-    print('Optimal cost: {}. Time: {}'.format(totCost,end-start))
-
-    for k,v in varPos.items():
-        print(k,m[v])
-
-
+##    z3Optimize(o, varD, varM,n_machines)
+##    start = time.time()
+##    print(o.check())
+##    end = time.time()
+##    m = o.model()
+##
+##    totCost=0
+##    for k,v in varD.items():
+##        if '_{}'.format(n_machines) in k:
+##            totCost+=float(str(m[v]))
+##    print('Optimal cost: {}. Time: {}'.format(totCost,end-start))
+##
+##    for k,v in varPos.items():
+##        print(k,m[v])
+##
+##
 ##    ##############################
 ##    ## Using simple optimization##
 ##    ##############################
@@ -372,29 +372,29 @@ def main():
 ##    ## Write to smt2 format
 ##    ##############################
 ##
-##    fo = open('smt_benchmark.smt2', 'w')
-##    fo.write(toSMT2Benchmark(o))
-##    fo.close()
-##
-##    #minimize total sum
-##    fo = open('smt_benchmark.smt2','a')
-##    con = '(minimize (+ '
-##    for i in range(1,n_robots+1):
-##        con+=' d_{}_{}'.format(i,n_machines)
-##    con+='))\n'
-##    fo.write(con)
-##
-##    
-##    con='(get-value (  '
-##    for key in varPos:
-##        if not('-' in key):
-##            con+=' {}'.format(key)
-##    con+='))\n'
-##    fo.write(con)
-##    fo.close()
-##    
+    fo = open('smt_benchmark.smt2', 'w')
+    fo.write(toSMT2Benchmark(o))
+    fo.close()
+
+    #minimize total sum
+    fo = open('smt_benchmark.smt2','a')
+    con = '(minimize (+ '
+    for i in range(1,n_robots+1):
+        con+=' d_{}_{}'.format(i,n_machines)
+    con+='))\n'
+    fo.write(con)
+
+
+    con='(get-value (  '
+    for key in varPos:
+        if not('-' in key):
+            con+=' {}'.format(key)
+    con+='))\n'
+    fo.write(con)
+    fo.close()
+
 ######################################################################################################
 
 
 if __name__ == "__main__":
-    main()  
+    main()
