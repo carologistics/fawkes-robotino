@@ -19,7 +19,6 @@
  */
 
 #include "clips_smt_thread.h"
-#include "../../../fawkes/src/plugins/openprs/utils/proc.h"
 //#include <utils/sub_process/proc.h>
 #include <core/threading/mutex_locker.h>
 
@@ -32,6 +31,7 @@
 #include <llsf_msgs/Plan.pb.h>
 
 using namespace fawkes;
+using namespace GameData;
 
 /** @class ClipsNavGraphThread "clips-protobuf-thread.h"
  * Provide protobuf functionality to CLIPS environment.
@@ -66,10 +66,10 @@ ClipsSmtThread::init()
 
     // Test z3 extern binary
     //proc_z3_ = NULL;
-    clips_smt_test_z3();
+    //clips_smt_test_z3();
 
     // Test python
-    proc_python_ = NULL;
+    //proc_python_ = NULL;
     //clips_smt_test_python();
 }
 
@@ -82,18 +82,18 @@ ClipsSmtThread::finalize()
 	//delete edge_cost_constraint_;
 
     // Handle z3 extern binary
-    if (proc_z3_) {
-      logger->log_info(name(), "Killing z3 extern bianry proc");
-      proc_z3_->kill(SIGINT);
-    }
-    delete proc_z3_;
+    // if (proc_z3_) {
+    //   logger->log_info(name(), "Killing z3 extern bianry proc");
+    //   proc_z3_->kill(SIGINT);
+    // }
+    // delete proc_z3_;
 
     // Handle python
-    if (proc_python_) {
-      logger->log_info(name(), "Killing python proc");
-      proc_python_->kill(SIGINT);
-    }
-    delete proc_python_;
+    // if (proc_python_) {
+    //   logger->log_info(name(), "Killing python proc");
+    //   proc_python_->kill(SIGINT);
+    // }
+    // delete proc_python_;
 
     // Handle output of formula generation
     //std::remove("carl_formula.smt");
@@ -966,7 +966,7 @@ ClipsSmtThread::clips_smt_fill_node_names()
             NavGraphPath p = navgraph->search_path(from, to);
 
             // logger->log_info(name(), "Distance between node %s and node %s is %f", robot_node.name().c_str(), node_names_[i].c_str(), p.cost()+navgraph->cost(from, robot_node));
-            distances_[nodes_pair] = p.cost() + navgraph->cost(from, robot_node); // Use Robot-index to identify robots in distances_
+            distances_[nodes_pair] = p.cost() + navgraph->cost(from, robot_node); // Use 'Robot-index' to identify robots in distances_
         }
     }
 
@@ -1070,37 +1070,6 @@ ClipsSmtThread::clips_smt_fill_node_names()
  }
 
 void
-ClipsSmtThread::clips_smt_test_data()
-{
-    try
-    {
-      // Test SmtData
-      WorkingPiece workingPieceRobot("5345447");
-      Robot robot(42, 1, 2, workingPieceRobot);
-      _smtData._robots.push_back(robot);
-
-      WorkingPiece workingPieceMachine("13467");
-      std::vector<WorkingPieceComponent> inputWpType = {RING_BLUE, RING_GREEN};
-      std::vector<WorkingPieceComponent> inputWpContainer = {RING_GREEN};
-      WorkingPieceComponent outputWP = RING_ORANGE;
-      Machine machine(27,2,3,10,MachineType::cap, workingPieceMachine, inputWpType, inputWpContainer, outputWP);
-      _smtData._machines.push_back(machine);
-      if (machine.hasRecievedWorkPieceComponent(4)) logger->log_info(name(), "WorkingPieceComponent is already in Machine");
-
-      WorkingPiece targetPieceOrder("24468");
-      Order order(30, targetPieceOrder);
-      _smtData._currentOrders.push_back(order);
-
-
-      std::cout << _smtData.toString() << std::endl;
-    }
-    catch (const runtime_error& error)
-    {
-        logger->log_error(name(), "Something bad happend, %s", error.what());
-    }
-}
-
-void
 ClipsSmtThread::clips_smt_test_navgraph()
 {
     logger->log_info(name(), "Navgraph name: %s", navgraph->name().c_str());
@@ -1113,64 +1082,62 @@ ClipsSmtThread::clips_smt_test_navgraph()
 }
 
 
-GameData::GameData 
-ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata( llsf_msgs::ClipsSmtData data)
-{
-  
-  GameData::GameData _generatorData = GameData::GameData();
-
-  //machines
-  for (int i = 0; i < data.machines().size(); i++)
-  {
-    //name -> id
-    GameData::Machine _tmpMachine = GameData::Machine(atoi(data.machines(i).name().c_str()));
-    //type -> type
-    _tmpMachine.setType(data.machines(i).type());
-    //TODO (Lukas) WorkingPiece
-    //TODO (Lukas) Distances
-    //_generatorData.addMachine(_tmpMachine);
-  }
-
-
-  //Robots
-  for (int i = 0; i < data.robots().size(); i++)
-  {
-    //name -> id
-    GameData::Robot _tmpRobot = GameData::Robot(atoi(data.robots(i).name().c_str()));
-    //TODO (Lukas) Distances
-  }
-
-
-  //Orders
-  for (int i = 0; i < data.orders().size(); i++)
-  {
-    GameData::Workpiece _tmpWorkPiece = GameData::Workpiece();
-    //Color conversions
-    int _baseColor = data.orders(i).base_color()+1;
-    int _capColor = data.orders(i).cap_color();
-
-
-    std::vector<int> _ringColors;
-    for (int j = 0; j < data.orders(i).ring_colors().size(); j++)
-    {
-      _ringColors.push_back(data.orders(i).ring_colors(i)+1);
-    }
-
-
-    std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
-    //TODO fix this conversion:
-    /*
-    _tmpWorkPiece.setBaseColor(_baseColor);
-    _tmpWorkPiece.setCapColor(_capColor);
-    _tmpWorkPiece.setRingColor(_ringColors);
-    */
-
-
-    //GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
-    //TODO (Lukas) Distances
-  }
-
-
-
-  return _generatorData;
-}
+// GameData::GameData
+// ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
+// {
+//
+//   GameData::GameData _generatorData = GameData::GameData();
+//
+//   //machines
+//   for (int i = 0; i < data.machines().size(); i++)
+//   {
+//     //name -> id
+//     GameData::Machine _tmpMachine = GameData::Machine(atoi(data.machines(i).name().c_str()));
+//     //type -> type
+//     _tmpMachine.setType(data.machines(i).type());
+//     //TODO (Lukas) WorkingPiece
+//     //TODO (Lukas) Distances
+//     //_generatorData.addMachine(_tmpMachine);
+//   }
+//
+//
+//   //Robots
+//   for (int i = 0; i < data.robots().size(); i++)
+//   {
+//     //name -> id
+//     GameData::Robot _tmpRobot = GameData::Robot(atoi(data.robots(i).name().c_str()));
+//     //TODO (Lukas) Distances
+//   }
+//
+//
+//   //Orders
+//   for (int i = 0; i < data.orders().size(); i++)
+//   {
+//     GameData::Workpiece _tmpWorkPiece = GameData::Workpiece();
+//     //Color conversions
+//     int _baseColor = data.orders(i).base_color()+1;
+//     int _capColor = data.orders(i).cap_color();
+//
+//
+//     std::vector<int> _ringColors;
+//     for (int j = 0; j < data.orders(i).ring_colors().size(); j++)
+//     {
+//       _ringColors.push_back(data.orders(i).ring_colors(i)+1);
+//     }
+//
+//
+//     std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
+//     //TODO fix this conversion:
+//     /*
+//     _tmpWorkPiece.setBaseColor(_baseColor);
+//     _tmpWorkPiece.setCapColor(_capColor);
+//     _tmpWorkPiece.setRingColor(_ringColors);
+//     */
+//
+//
+//     //GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
+//     //TODO (Lukas) Distances
+//   }
+//
+//   return _generatorData;
+// }

@@ -44,7 +44,6 @@
 #include <iostream>
 
 //#include "FormulaGenerator/FormulaGenerator.h"
-#include "clips_smt_data.h"
 #include <llsf_msgs/ClipsSmtData.pb.h>
 #include "FormulaGenerator/GameData.h"
 
@@ -109,10 +108,10 @@ class ClipsSmtThread
   std::map<int ,std::string> actions_robot_3;
 
   // SubProcess to call extern binary of z3
-  fawkes::SubProcess *proc_z3_;
+  // fawkes::SubProcess *proc_z3_;
 
   // SubProcess to call python
-  fawkes::SubProcess *proc_python_;
+  // fawkes::SubProcess *proc_python_;
 
 
   // Communication with the agent API
@@ -120,7 +119,7 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_get_plan(std::string env_name, std::string handle);
   CLIPS::Value clips_smt_done(std::string env_name, std::string bar);
   llsf_msgs::ClipsSmtData data;
-  GameData::GameData clips_smt_convert_protobuf_to_gamedata( llsf_msgs::ClipsSmtData data);
+  GameData::GameData clips_smt_convert_protobuf_to_gamedata();
 
   std::string data_env;
   std::string data_handle;
@@ -139,9 +138,7 @@ class ClipsSmtThread
   void clips_smt_test_python();
   void clips_smt_test_z3();
   void clips_smt_test_carl();
-  void clips_smt_test_data();
   void clips_smt_test_navgraph();
-  SmtData _smtData;
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 };
