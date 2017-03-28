@@ -1,4 +1,5 @@
 #include "Workpiece.h"
+#include "BaseStation.h"
 #include<iostream>
 
 int Workpiece::getMaxRingNumber(){
@@ -12,6 +13,15 @@ Workpiece::Workpiece(Color base, std::vector<Color> rings, Color cap){
     setBaseColor(base);
     setRings(rings);
     setCapColor(cap);
+}
+
+Workpiece::Workpiece(Color base, std::vector<Color> rings){
+    setBaseColor(base);
+    setRings(rings);
+}
+
+Workpiece::Workpiece(Color base){
+    setBaseColor(base);
 }
 
 Workpiece::~Workpiece() {

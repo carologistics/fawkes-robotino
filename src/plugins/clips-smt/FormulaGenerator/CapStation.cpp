@@ -2,8 +2,7 @@
 #include <assert.h>
 #include "CapStation.h"
 
-CapStation::CapStation(int id) : Station(id) {
-    this->setType("cs");
+CapStation::CapStation(int id) : Station(id, "cs") {
 }
 
 CapStation::~CapStation() {

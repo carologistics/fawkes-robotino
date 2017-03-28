@@ -15,8 +15,7 @@
 
 #include "RingStation.h"
 
-RingStation::RingStation(int id) : Station(id) {
-    this->setType("rs");
+RingStation::RingStation(int id) : Station(id, "rs") {
 }
 
 RingStation::~RingStation() {
@@ -73,17 +72,15 @@ Workpiece::Color RingStation::getRingColorSetup() const {
     return this->ringColorSetup;
 }
 
-int RingStation::getNeededAdditinalBases(Workpiece::Color color) {
-    if(color == Workpiece::NONE)
-        return 0;
-    return this->possibleRingColors[color];
+int RingStation::getNeededAdditinalBases(Workpiece::Color color) const {
+    return this->possibleRingColors.at(color);
 }
 
-int RingStation::getReqBases(){
+int RingStation::getReqBases() const {
     assert(getNeededAdditinalBases(getRingColorSetup()) - getAdditionalBasesFed() >= 0);
     return getNeededAdditinalBases(getRingColorSetup()) - getAdditionalBasesFed();
 }
 
-bool RingStation::readyToMountRing(){
+bool RingStation::readyToMountRing()const {
     return getNeededAdditinalBases(getRingColorSetup()) == getAdditionalBasesFed();
 }

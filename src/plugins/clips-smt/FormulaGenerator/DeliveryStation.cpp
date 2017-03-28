@@ -13,8 +13,7 @@
 
 #include "DeliveryStation.h"
 
-DeliveryStation::DeliveryStation(int id) : Station(id) {
-    this->setType("ds");
+DeliveryStation::DeliveryStation(int id) : Station(id, "ds") {
 }
 
 DeliveryStation::~DeliveryStation() {

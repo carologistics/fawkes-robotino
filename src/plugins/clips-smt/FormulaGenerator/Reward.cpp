@@ -19,8 +19,8 @@ Reward::Reward() {
 Reward::~Reward() {
 }
 
-int Reward::getDelayeDelivery() const {
-    return delayeDelivery;
+int Reward::getDelayedDelivery() const {
+    return delayedDelivery;
 }
 
 int Reward::getDelivery() const {
@@ -31,31 +31,12 @@ int Reward::getMountCap() const {
     return mountCap;
 }
 
-int Reward::getFinishC3PreCap() const {
-    return finishC3PreCap;
+int Reward::getFinishCXPreCap(int x) const {
+    return finishCXPreCap.at(x);
 }
 
-int Reward::getFinishC2PreCap() const {
-    return finishC2PreCap;
-}
-
-int Reward::getFinishC1PreCap() const {
-    return finishC1PreCap;
-}
-
-int Reward::getFinishCCStep(int i) const {
-    int result;
-    switch (i) {
-        case 0:
-            result = finishCC0Step;
-            break;
-        case 1:
-            result = finishCC1Step;
-            break;
-        case 2:
-            result = finishCC2Step;
-            break;
-    }
+int Reward::getFinishCCXStep(int x) const {
+    return finishCCXStep.at(x);
 }
 
 int Reward::getAdditionalBase() const {

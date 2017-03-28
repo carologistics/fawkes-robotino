@@ -13,7 +13,7 @@
 
 #include "Station.h"
 
-Station::Station(int id) : Machine(id) {
+Station::Station(int id, std::string type) : Machine(type, id) {
 }
 
 Station::~Station() {

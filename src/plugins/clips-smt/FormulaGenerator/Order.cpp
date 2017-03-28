@@ -54,22 +54,6 @@ std::vector<Workpiece::Color> Order::getRingColorReq() const {
     return getProduct().getRings();
 }
 
-Order::ComponentState Order::getBaseState() const {
-    return this->base;
-}
-
-Order::ComponentState Order::getRingState(int number) const {
-    return this->rings[number];
-}
-
-Order::ComponentState Order::getCapState() const {
-    return this->cap;
-}
-
-std::vector<Order::ComponentState> Order::getRingState() const {
-    return rings;
-}
-
 void Order::setId(int id) {
     this->id = id;
 }
@@ -94,17 +78,7 @@ void Order::setCapColorReq(Workpiece::Color color) {
     getProduct().setCapColor(color);
 }
 
-void Order::setBaseState(ComponentState state) {
-    this->base = state;
-}
 
-void Order::setRingState(ComponentState state, int number) {
-    this->rings[number] = state;
-}
-
-void Order::setCapState(ComponentState state) {
-    this->cap = state;
-}
 
 std::string Order::toString() {
     std::string result;
@@ -112,13 +86,6 @@ std::string Order::toString() {
     result += "\nDeadline: " + std::to_string(getDeadline());
     result += "\nRequirements:\n";
     result += getProduct().toString();
-    result += "\nState:\n";
-    result += "Base: " + ComponentStateNames[getBaseState()];
-    result += "\nRings: ";
-    for (auto i = 0; i < getRingState().size(); i++) {
-        result += ComponentStateNames[getRingState(i)] + "  ";
-    }
-    result += "\nBase: " + ComponentStateNames[getCapState()];
 
     return result;
 }

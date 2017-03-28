@@ -99,12 +99,67 @@ void GameData::addOrder(order_ptr const order) {
     this->orders.push_back(order);
 }
 
-/*void GameData::addMovingTime(Machine m1, Machine m2, int movingTime) {
-    machine_machine m1tom2(m1, m2);
-    machine_machine m2tom1(m2, m1);
-    this->movingTimes[m1tom2] = movingTime;
-    this->movingTimes[m2tom1] = movingTime;
-}*/
+bool GameData::existsOrderWithBaseReq(Workpiece::Color c) const {
+    for (auto const& o : getOrders()) {
+        if (o->getBaseColorReq() == c)
+            return true;
+    }
+    return false;
+}
+
+bool GameData::existsOrderWithRingReq(int i, Workpiece::Color c) const {
+    for (auto const& o : getOrders()) {
+        if (o->getRingColorReq(i) == c)
+            return true;
+    }
+    return false;
+}
+
+bool GameData::existsOrderWithRingReq(Workpiece::Color c) const {
+    for (int i = 0; i <= Workpiece::getMaxRingNumber(); i++) {
+        if (existsOrderWithRingReq(i, c)) return true;
+    }
+    return false;
+}
+
+bool GameData::existsOrderWithCapReq(Workpiece::Color c) const {
+    for (auto const& o : getOrders()) {
+        if (o->getCapColorReq() == c)
+            return true;
+    }
+    return false;
+}
+
+std::vector<Order> GameData::getOrdersWithBaseReq(Workpiece::Color c) const {
+    std::vector<Order> ordersReq;
+    for (auto const& o : getOrders()) {
+        if (o->getBaseColorReq() == c)
+            ordersReq.push_back(*o);
+    }
+    return ordersReq;
+}
+
+std::vector<Order> GameData::getOrdersWithRingReq(Workpiece::Color c) const {
+    std::vector<Order> ordersReq;
+    for (auto const& o : getOrders()) {
+        for (int i = 0; i <= Workpiece::getMaxRingNumber(); i++) {
+            if (o->getRingColorReq(i) == c) {
+                ordersReq.push_back(*o);
+                break;
+            }
+        }
+    }
+    return ordersReq;
+}
+
+std::vector<Order> GameData::getOrdersWithCapReq(Workpiece::Color c) const {
+    std::vector<Order> ordersReq;
+    for (auto const& o : getOrders()) {
+        if (o->getCapColorReq() == c)
+            ordersReq.push_back(*o);
+    }
+    return ordersReq;
+}
 
 std::string GameData::toString() const {
     std::string result;
