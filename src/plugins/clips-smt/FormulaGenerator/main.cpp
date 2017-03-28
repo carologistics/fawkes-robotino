@@ -28,7 +28,7 @@ GameData testGameData() {
     Workpiece pr0(Workpiece::BLACK,{}, Workpiece::NONE);
     r0->setWorkpiece(pr0);
     gD.addMachine(r0);
-    gD.addMachine(r1);
+    //gD.addMachine(r1);
 
     auto bs0 = make_shared<BaseStation>(0);
     auto bs1 = make_shared<BaseStation>(1);
@@ -37,7 +37,7 @@ GameData testGameData() {
     bs0->setDispenseBaseTime(5000);
     bs1->setDispenseBaseTime(5000);
     gD.addMachine(bs0);
-    gD.addMachine(bs1);
+    //gD.addMachine(bs1);
 
     auto rs0 = make_shared<RingStation>(0);
     auto rs1 = make_shared<RingStation>(1);

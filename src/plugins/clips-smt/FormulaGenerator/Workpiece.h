@@ -5,15 +5,21 @@
 #include <map>
 #include <string>
 
+
+
 class Workpiece {
 public:
-    enum Color {NONE, RED, BLACK, SILVER, TRANSPARENT, BLUE, GREEN, YELLOW, ORANGE, GREY, LAST_ENTRY = GREY};
+    enum Color {NONE, RED, BLACK, SILVER, TRANSPARENT, BLUE, GREEN, YELLOW, ORANGE, GREY, 
+        LAST_ENTRY = GREY};
     static int getMaxRingNumber();
     
     Workpiece();
     Workpiece(Color base, std::vector<Color> rings, Color cap);
-    virtual ~Workpiece();
+    Workpiece(Color base, std::vector<Color> rings);
+    Workpiece(Color base);
 
+    virtual ~Workpiece();
+    
     Color getBaseColor() const;
     Color getRingColor(int i) const;
     Color getCapColor() const;

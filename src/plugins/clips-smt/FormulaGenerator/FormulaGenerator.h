@@ -13,10 +13,10 @@ public:
     stepFormula_ptr getStep(int i);
     std::vector<stepFormula_ptr> getSteps();
     Formula getFormula();
-
+    
     void generateSteps(int amount, GameData& gameData) ;
     Formula createFormula();
-
+    
 private:
     std::vector<stepFormula_ptr> steps;
     Formula formula;
@@ -26,3 +26,4 @@ private:
 
 
 #endif /* FORMULAGENERATOR_H */
+
