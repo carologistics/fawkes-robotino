@@ -1,8 +1,10 @@
 #include "Machine.h"
+#include <iostream>
 
-
-Machine::Machine(int id) {
+Machine::Machine(std::string type, int id) {
     this->setId(id);
+    this->setType(type);
+    this->addMovingTime(*this, 0);
 }
 
 Machine::~Machine() {
@@ -21,12 +23,13 @@ void Machine::setType(std::string type) {
     this->type = type;
 }
 
-void Machine::addMovingTime(Machine m, int time) {
-    this->movingTimes[m] = time;
+void Machine::addMovingTime(const Machine& m, int time) {
+    this->movingTimes.emplace(m, time);
 }
 
-void Machine::setMovingTimes(std::map<Machine, int> movingTimes) {
+void Machine::setMovingTimes(const std::map<Machine, int>& movingTimes) {
     this->movingTimes = movingTimes;
+    this->movingTimes.emplace(*this, 0);
 }
 
 void Machine::setWorkpiece(Workpiece& workpiece){
@@ -37,16 +40,18 @@ int Machine::getId() const {
     return this->id;
 }
 
-std::string Machine::getType() const {
+std::string const Machine::getType() const {
     return this->type;
 }
 
-std::map<Machine, int> Machine::getMovingTimes() {
+std::map<Machine, int> Machine::getMovingTimes() const{
     return movingTimes;
 }
 
-int Machine::getMovingTime(Machine m) {
-    return movingTimes[m];
+int Machine::getMovingTime(Machine const& m) const{
+    int time;
+        time = movingTimes.at(m);
+    return time;
 }
 
 Workpiece Machine::getWorkpiece() const{
@@ -82,4 +87,12 @@ std::string Machine::toString() {
 
 bool Machine::operator<(const Machine& rhs) const {
     return this->getVarIdentifier() < rhs.getVarIdentifier();
+}
+
+bool Machine::operator==(const Machine& rhs) const {
+    return this->getVarIdentifier() == rhs.getVarIdentifier();
+}
+
+bool Machine::operator!=(const Machine& rhs) const {
+    return !(*this == rhs);
 }

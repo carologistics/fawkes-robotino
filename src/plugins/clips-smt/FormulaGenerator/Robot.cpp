@@ -12,9 +12,9 @@
  */
 
 #include "Robot.h"
+#include <assert.h>
 
-Robot::Robot(int id) : Machine(id) {
-    this->setType("r");
+Robot::Robot(int id) : Machine("r", id) {
 }
 
 Robot::~Robot() {
