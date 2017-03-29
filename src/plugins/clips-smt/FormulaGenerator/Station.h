@@ -8,7 +8,7 @@ typedef std::shared_ptr<Station> station_ptr;
 
 class Station : public Machine{
 public:
-    Station(int id);
+    Station(int id, std::string type);
     virtual ~Station();
     
     void setOccupiedUntil(int time);

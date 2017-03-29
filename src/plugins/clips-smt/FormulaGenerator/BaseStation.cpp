@@ -12,9 +12,9 @@
  */
 
 #include "BaseStation.h"
+#include <assert.h> 
 
-BaseStation::BaseStation(int id) : Station(id) {
-    this->setType("bs");
+BaseStation::BaseStation(int id) : Station(id, "bs") {
 }
 
 BaseStation::~BaseStation() {
@@ -41,4 +41,14 @@ std::set<Workpiece::Color> BaseStation::getPossibleBaseColors() const{
 
 bool BaseStation::isPossibleBaseColor(Workpiece::Color Color) const{
     return possibleBaseColors.find(Color) != possibleBaseColors.end();
+}
+
+void BaseStation::setColorForRingStation(Workpiece::Color colorForRingStation) {
+    this->colorForRingStation = colorForRingStation;
+}
+
+Workpiece::Color BaseStation::getColorForRingStation() const {
+    assert(!possibleBaseColors.empty());
+    return *possibleBaseColors.begin(); //@todo if we need 
+    //return colorForRingStation;
 }

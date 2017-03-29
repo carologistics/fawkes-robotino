@@ -34,11 +34,15 @@ public:
     void setDispenseBaseTime(int time);
     std::set<Workpiece::Color> getPossibleBaseColors() const;
     bool isPossibleBaseColor(Workpiece::Color Color) const;
+    void setColorForRingStation(Workpiece::Color colorForRingStation);
+    Workpiece::Color getColorForRingStation() const; 
 
 private:
     int dispenseBaseTime;
 
     std::set<Workpiece::Color> possibleBaseColors;
+    //which color should a robot choose if he needs a base for the additional base requirement of a ring station 
+    Workpiece::Color colorForRingStation; //@todo initialize
 
 };
 

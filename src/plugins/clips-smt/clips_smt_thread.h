@@ -29,6 +29,7 @@
 #include <plugins/clips/aspect/clips_feature.h>
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
+
 #include <clipsmm.h>
 
 #include <z3++.h>
@@ -43,8 +44,9 @@
 #include <iostream>
 
 //#include "FormulaGenerator/FormulaGenerator.h"
-#include "clips_smt_data.h"
 #include <llsf_msgs/ClipsSmtData.pb.h>
+#include "FormulaGenerator/GameData.h"
+
 
 #include <boost/cerrno.hpp>
 
@@ -106,10 +108,10 @@ class ClipsSmtThread
   std::map<int ,std::string> actions_robot_3;
 
   // SubProcess to call extern binary of z3
-  fawkes::SubProcess *proc_z3_;
+  // fawkes::SubProcess *proc_z3_;
 
   // SubProcess to call python
-  fawkes::SubProcess *proc_python_;
+  // fawkes::SubProcess *proc_python_;
 
 
   // Communication with the agent API
@@ -117,13 +119,16 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_get_plan(std::string env_name, std::string handle);
   CLIPS::Value clips_smt_done(std::string env_name, std::string bar);
   llsf_msgs::ClipsSmtData data;
+  GameData::GameData clips_smt_convert_protobuf_to_gamedata();
+
   std::string data_env;
-  std::string data_handle;  
+  std::string data_handle;
 
   // Navgraph
+  void clips_smt_fill_node_names();
   void clips_smt_compute_distances();
+  std::map<int, std::string> node_names_;
   std::map<std::pair<std::string, std::string>, float> distances_;
-  std::map<int, std::string> indices_;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
   std::string cfg_base_frame_;
   std::string cfg_global_frame_;
@@ -133,9 +138,7 @@ class ClipsSmtThread
   void clips_smt_test_python();
   void clips_smt_test_z3();
   void clips_smt_test_carl();
-  void clips_smt_test_data();
   void clips_smt_test_navgraph();
-  SmtData _smtData;
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 };

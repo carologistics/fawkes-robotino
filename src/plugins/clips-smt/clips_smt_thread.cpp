@@ -19,8 +19,7 @@
  */
 
 #include "clips_smt_thread.h"
-
-#include <utils/sub_process/proc.h>
+//#include <utils/sub_process/proc.h>
 #include <core/threading/mutex_locker.h>
 
 #include <navgraph/navgraph.h>
@@ -32,6 +31,7 @@
 #include <llsf_msgs/Plan.pb.h>
 
 using namespace fawkes;
+using namespace GameData;
 
 /** @class ClipsNavGraphThread "clips-protobuf-thread.h"
  * Provide protobuf functionality to CLIPS environment.
@@ -65,35 +65,12 @@ ClipsSmtThread::init()
 
 
     // Test z3 extern binary
-    proc_z3_ = NULL;
+    //proc_z3_ = NULL;
     //clips_smt_test_z3();
 
     // Test python
-    proc_python_ = NULL;
+    //proc_python_ = NULL;
     //clips_smt_test_python();
-
-    // Init indices_ mapping int to name of machines
-    // indices_[0] = "C-ins-in";
-    // indices_[1] = "C-BS-I";
-    // indices_[2] = "C-BS-O";
-    // indices_[3] = "C-CS1-I";
-    // indices_[4] = "C-CS1-O";
-    // indices_[5] = "C-CS2-I";
-    // indices_[6] = "C-CS2-O";
-    // indices_[7] = "C-DS-I";
-    // indices_[8] = "C-DS-O";
-    // indices_[9] = "C-RS1-I";
-    // indices_[10] = "C-RS1-O";
-    // indices_[11] = "C-RS2-I";
-    // indices_[12] = "C-RS2-O";
-
-    indices_[0] = "C-ins-in";
-    indices_[1] = "C-BS-I";
-    indices_[2] = "C-CS1-I";
-    indices_[3] = "C-CS2-I";
-    indices_[4] = "C-DS-I";
-    indices_[5] = "C-RS1-I";
-    indices_[6] = "C-RS2-I";
 }
 
 
@@ -105,18 +82,18 @@ ClipsSmtThread::finalize()
 	//delete edge_cost_constraint_;
 
     // Handle z3 extern binary
-    if (proc_z3_) {
-      logger->log_info(name(), "Killing z3 extern bianry proc");
-      proc_z3_->kill(SIGINT);
-    }
-    delete proc_z3_;
+    // if (proc_z3_) {
+    //   logger->log_info(name(), "Killing z3 extern bianry proc");
+    //   proc_z3_->kill(SIGINT);
+    // }
+    // delete proc_z3_;
 
     // Handle python
-    if (proc_python_) {
-      logger->log_info(name(), "Killing python proc");
-      proc_python_->kill(SIGINT);
-    }
-    delete proc_python_;
+    // if (proc_python_) {
+    //   logger->log_info(name(), "Killing python proc");
+    //   proc_python_->kill(SIGINT);
+    // }
+    // delete proc_python_;
 
     // Handle output of formula generation
     //std::remove("carl_formula.smt");
@@ -336,7 +313,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     z3::expr_vector constraints(_z3_context);
 
     std::map<std::string, z3::expr>::iterator it_map;
-    std::map<int, std::string>::iterator it_indices;
+    std::map<int, std::string>::iterator it_node_names;
 
     logger->log_info(name(), "Add variables");
 
@@ -517,10 +494,12 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
 
         z3::expr constraint(var_false);
 
-        for(it_indices = indices_.begin(); it_indices != indices_.end(); ++it_indices){
-            float distance = distances_[std::make_pair("C-ins-in", it_indices->second)];
-            z3::expr distance_z3 = _z3_context.real_val((std::to_string(distance)).c_str());
-            constraint = constraint || (var_pose_i_1 == it_indices->first && var_d_i_1 == distance_z3);
+        for(it_node_names = node_names_.begin(); it_node_names != node_names_.end(); ++it_node_names){
+            if(it_node_names->second.compare("C-ins-in")!=0){
+                float distance = distances_[std::make_pair("C-ins-in", it_node_names->second)];
+               z3::expr distance_z3 = _z3_context.real_val((std::to_string(distance)).c_str());
+               constraint = constraint || (var_pose_i_1 == it_node_names->first && var_d_i_1 == distance_z3);
+            }
         }
 
         constraints.push_back(constraint);
@@ -584,7 +563,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
             for(int k = 1; k < data.machines().size()+1; ++k) {
                 for(int l = 1; l < data.machines().size()+1; ++l) {
                     if(k!=l) {
-                        float distance = distances_[std::make_pair(indices_[k], indices_[l])];
+                        float distance = distances_[std::make_pair(node_names_[k], node_names_[l])];
                         z3::expr distance_z3 = _z3_context.real_val((std::to_string(distance)).c_str());
                         constraint2 = constraint2 || (var_pos_i_j_1==k && var_pose_i_j==l && var_d_i_j==(var_d_i_j_1+distance_z3));
                     }
@@ -794,13 +773,13 @@ void
 
                 if(interp>0) {
                     if(function_name.compare(compare_with_1)==0) {
-                        actions_robot_1[j] = indices_[interp];
+                        actions_robot_1[j] = node_names_[interp];
                     }
                     else if(function_name.compare(compare_with_2)==0) {
-                        actions_robot_2[j] = indices_[interp];
+                        actions_robot_2[j] = node_names_[interp];
                     }
                     else if(function_name.compare(compare_with_3)==0) {
-                        actions_robot_3[j] = indices_[interp];
+                        actions_robot_3[j] = node_names_[interp];
                     }
                 }
             }
@@ -919,6 +898,7 @@ ClipsSmtThread::loop()
     logger->log_info(name(), "Thread performs loop and is running [%d]", running());
 
     // Compute distances between nodes using navgraph
+    clips_smt_fill_node_names();
     clips_smt_compute_distances();
 
     //Declare variable for the Encoding
@@ -949,6 +929,23 @@ ClipsSmtThread::loop()
    //wakeup();
  }
 
+void
+ClipsSmtThread::clips_smt_fill_node_names()
+{
+    logger->log_info(name(), "Get name of machines using protobuf data");
+    node_names_.clear();
+
+    // C-ins-in is never in the list of machines
+    node_names_[0] = "C-ins-in";
+
+    for(int i=0; i<data.machines().size(); ++i){
+        std::string machine_name = data.machines(i).name().c_str();
+        machine_name += "-I";
+        node_names_[i+1] = machine_name;
+    }
+
+}
+
  void
  ClipsSmtThread::clips_smt_compute_distances()
  {
@@ -956,37 +953,47 @@ ClipsSmtThread::loop()
 
 	 MutexLocker lock(navgraph.objmutex_ptr());
 
-     // TODO (Igor) Obtain list of machines from data
-    std::vector<std::string> nodes = {
-        "C-ins-in",
-        "C-BS-I","C-BS-O",
-        "C-CS1-I","C-CS1-O","C-CS2-I","C-CS2-O",
-        "C-DS-I","C-DS-O",
-        "C-RS1-I","C-RS1-O","C-RS2-I","C-RS2-O"
-    };
+    // Compute distances between robotos positions and machines
+    for(int r = 0; r < data.robots().size(); ++r){
+        std::string robot_node_name = "Robot-";
+        robot_node_name += std::to_string(r+1);
+
+        NavGraphNode robot_node(robot_node_name, data.robots(r).pose().x(), data.robots(r).pose().y());
+        NavGraphNode from = navgraph->closest_node(robot_node.x(), robot_node.y());
+
+        for (unsigned int i = 1; i < node_names_.size(); ++i) {
+            std::pair<std::string, std::string> nodes_pair(robot_node.name(), node_names_[i]);
+
+            NavGraphNode to = navgraph->node(node_names_[i]);
+            NavGraphPath p = navgraph->search_path(from, to);
+
+            // logger->log_info(name(), "Distance between node %s and node %s is %f", robot_node.name().c_str(), node_names_[i].c_str(), p.cost()+navgraph->cost(from, robot_node));
+            distances_[nodes_pair] = p.cost() + navgraph->cost(from, robot_node); // Use 'Robot-index' to identify robots in distances_
+        }
+    }
 
     // Compute distances between unconnected C-ins-in and all other machines
     NavGraphNode ins_node(navgraph->node("C-ins-in"));
     NavGraphNode from = navgraph->closest_node(ins_node.x(), ins_node.y());
 
-    for (unsigned int i = 1; i < nodes.size(); ++i) {
-        std::pair<std::string, std::string> nodes_pair(from.name(), nodes[i]);
+    for (unsigned int i = 1; i < node_names_.size(); ++i) {
+        std::pair<std::string, std::string> nodes_pair(from.name(), node_names_[i]);
 
-        NavGraphNode to = navgraph->node(nodes[i]);
+        NavGraphNode to = navgraph->node(node_names_[i]);
         NavGraphPath p = navgraph->search_path(from, to);
 
-        // logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), nodes[i].c_str(), p.cost());
+        // logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), node_names_[i].c_str(), p.cost());
         distances_[nodes_pair] = p.cost() + navgraph->cost(from, ins_node);
     }
 
     // Compute distances between machines
- 	for (unsigned int i = 1; i < nodes.size(); ++i) {
- 		for (unsigned int j = 2; j < nodes.size(); ++j) {
+ 	for (unsigned int i = 1; i < node_names_.size(); ++i) {
+ 		for (unsigned int j = 2; j < node_names_.size(); ++j) {
  			if (i == j) continue;
-            std::pair<std::string, std::string> nodes_pair(nodes[i], nodes[j]);
+            std::pair<std::string, std::string> nodes_pair(node_names_[i], node_names_[j]);
 
- 			NavGraphPath p = navgraph->search_path(nodes[i], nodes[j]);
-            //logger->log_info(name(), "Distance between node %s and node %s is %f", nodes[i].c_str(), nodes[j].c_str(), p.cost());
+ 			NavGraphPath p = navgraph->search_path(node_names_[i], node_names_[j]);
+            //logger->log_info(name(), "Distance between node %s and node %s is %f", node_names_[i].c_str(), node_names_[j].c_str(), p.cost());
  			distances_[nodes_pair] = p.cost();
  		}
  	}
@@ -1022,6 +1029,16 @@ ClipsSmtThread::loop()
      proc_z3_ = new SubProcess("z3 binary", argv[0], argv, NULL, logger);
      proc_z3_->check_proc();
       **/
+
+      /**
+      Z3_ast a = Z3_parse_smtlib2_file(_z3_context, "/home/robosim/carl_test/carl_formula.smt", 0, 0, 0, 0, 0, 0);
+      z3::expr e(_z3_context, a);
+
+      z3::solver s(_z3_context);
+      s.add(e);
+      if(s.check() == z3::sat) logger->log_info(name(), "Test of import .smt file into z3 constraint worked");
+      **/
+
  }
 
  void
@@ -1055,37 +1072,6 @@ ClipsSmtThread::loop()
  }
 
 void
-ClipsSmtThread::clips_smt_test_data()
-{
-    try
-    {
-      // Test SmtData
-      WorkingPiece workingPieceRobot("5345447");
-      Robot robot(42, 1, 2, workingPieceRobot);
-      _smtData._robots.push_back(robot);
-
-      WorkingPiece workingPieceMachine("13467");
-      std::vector<WorkingPieceComponent> inputWpType = {RING_BLUE, RING_GREEN};
-      std::vector<WorkingPieceComponent> inputWpContainer = {RING_GREEN};
-      WorkingPieceComponent outputWP = RING_ORANGE;
-      Machine machine(27,2,3,10,MachineType::cap, workingPieceMachine, inputWpType, inputWpContainer, outputWP);
-      _smtData._machines.push_back(machine);
-      if (machine.hasRecievedWorkPieceComponent(4)) logger->log_info(name(), "WorkingPieceComponent is already in Machine");
-
-      WorkingPiece targetPieceOrder("24468");
-      Order order(30, targetPieceOrder);
-      _smtData._currentOrders.push_back(order);
-
-
-      std::cout << _smtData.toString() << std::endl;
-    }
-    catch (const runtime_error& error)
-    {
-        logger->log_error(name(), "Something bad happend, %s", error.what());
-    }
-}
-
-void
 ClipsSmtThread::clips_smt_test_navgraph()
 {
     logger->log_info(name(), "Navgraph name: %s", navgraph->name().c_str());
@@ -1096,3 +1082,64 @@ ClipsSmtThread::clips_smt_test_navgraph()
     }
     clips_smt_compute_distances();
 }
+
+
+// GameData::GameData
+// ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
+// {
+//
+//   GameData::GameData _generatorData = GameData::GameData();
+//
+//   //machines
+//   for (int i = 0; i < data.machines().size(); i++)
+//   {
+//     //name -> id
+//     GameData::Machine _tmpMachine = GameData::Machine(atoi(data.machines(i).name().c_str()));
+//     //type -> type
+//     _tmpMachine.setType(data.machines(i).type());
+//     //TODO (Lukas) WorkingPiece
+//     //TODO (Lukas) Distances
+//     //_generatorData.addMachine(_tmpMachine);
+//   }
+//
+//
+//   //Robots
+//   for (int i = 0; i < data.robots().size(); i++)
+//   {
+//     //name -> id
+//     GameData::Robot _tmpRobot = GameData::Robot(atoi(data.robots(i).name().c_str()));
+//     //TODO (Lukas) Distances
+//   }
+//
+//
+//   //Orders
+//   for (int i = 0; i < data.orders().size(); i++)
+//   {
+//     GameData::Workpiece _tmpWorkPiece = GameData::Workpiece();
+//     //Color conversions
+//     int _baseColor = data.orders(i).base_color()+1;
+//     int _capColor = data.orders(i).cap_color();
+//
+//
+//     std::vector<int> _ringColors;
+//     for (int j = 0; j < data.orders(i).ring_colors().size(); j++)
+//     {
+//       _ringColors.push_back(data.orders(i).ring_colors(i)+1);
+//     }
+//
+//
+//     std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
+//     //TODO fix this conversion:
+//     /*
+//     _tmpWorkPiece.setBaseColor(_baseColor);
+//     _tmpWorkPiece.setCapColor(_capColor);
+//     _tmpWorkPiece.setRingColor(_ringColors);
+//     */
+//
+//
+//     //GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
+//     //TODO (Lukas) Distances
+//   }
+//
+//   return _generatorData;
+// }
