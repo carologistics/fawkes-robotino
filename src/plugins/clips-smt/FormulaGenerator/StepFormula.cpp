@@ -23,7 +23,7 @@ std::vector<stepFormula_ptr> StepFormula::generateSteps(uint amount, GameData& g
     std::vector<stepFormula_ptr> steps;
     std::shared_ptr<StepFormula> prevStep = nullptr;
 
-    for (int number = 0; number <= amount; number++) {
+    for (uint number = 0; number <= amount; number++) {
 
         std::shared_ptr<StepFormula> step = std::make_shared<StepFormula>(prevStep, gameData);
         steps.push_back(step);
@@ -649,7 +649,7 @@ Formula StepFormula::existOrderWithRingColorReq(Workpiece::Color c){
     std::vector<Formula> formulas;
     for (auto const& o : getGameData().getOrdersWithRingReq(c))
         formulas.push_back(orderNotDeliveredPrev(o));
-    
+
     return Formula(carl::FormulaType::OR, formulas);
 }
 

@@ -37,7 +37,7 @@ endif
 # test carl
 ifneq ($(wildcard $(SYSROOT)/usr/local/include/carl/numbers/numbers.h),)
   HAVE_LIBCARL=1
-  LDFLAGS_LIBCARL += -L/usr/local/lib
+  LDFLAGS_LIBCARL += -Wl,-rpath,/usr/local/lib
   CFLAGS_LIBCARL += -I/usr/local/include
 endif
 ifneq ($(wildcard $(SYSROOT)/usr/include/carl/numbers/numbers.h),)

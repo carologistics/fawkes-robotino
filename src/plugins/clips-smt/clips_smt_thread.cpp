@@ -19,19 +19,19 @@
  */
 
 #include "clips_smt_thread.h"
-//#include <utils/sub_process/proc.h>
+// #include <utils/sub_process/proc.h>
 #include <core/threading/mutex_locker.h>
 
 #include <navgraph/navgraph.h>
 #include <navgraph/yaml_navgraph.h>
-//#include <navgraph/constraints/static_list_edge_constraint.h>
+// #include <navgraph/constraints/static_list_edge_constraint.h>
 #include <navgraph/constraints/static_list_edge_cost_constraint.h>
 #include <navgraph/constraints/constraint_repo.h>
 
 #include <llsf_msgs/Plan.pb.h>
 
 using namespace fawkes;
-using namespace GameData;
+// using Rational = mpq_class;
 
 /** @class ClipsNavGraphThread "clips-protobuf-thread.h"
  * Provide protobuf functionality to CLIPS environment.
@@ -60,13 +60,9 @@ ClipsSmtThread::init()
 	  //navgraph->constraint_repo()->register_constraint(edge_cost_constraint_);
 	  //navgraph->add_change_listener(this);
 
-    cfg_base_frame_      = config->get_string("/frames/base");
-    cfg_global_frame_    = config->get_string("/frames/fixed");
-
-
     // Test z3 extern binary
-    //proc_z3_ = NULL;
-    //clips_smt_test_z3();
+    // proc_z3_ = NULL;
+    // clips_smt_test_z3();
 
     // Test python
     //proc_python_ = NULL;
@@ -81,7 +77,7 @@ ClipsSmtThread::finalize()
 	//navgraph->constraint_repo()->unregister_constraint(edge_cost_constraint_->name());
 	//delete edge_cost_constraint_;
 
-    // Handle z3 extern binary
+    //Handle z3 extern binary
     // if (proc_z3_) {
     //   logger->log_info(name(), "Killing z3 extern bianry proc");
     //   proc_z3_->kill(SIGINT);
@@ -96,7 +92,7 @@ ClipsSmtThread::finalize()
     // delete proc_python_;
 
     // Handle output of formula generation
-    //std::remove("carl_formula.smt");
+    // std::remove("carl_formula.smt");
 
     envs_.clear();
 }
@@ -897,7 +893,8 @@ ClipsSmtThread::loop()
 
     // Compute distances between nodes using navgraph
     clips_smt_fill_node_names();
-    clips_smt_compute_distances();
+    clips_smt_compute_distances_robots();
+    clips_smt_compute_distances_machines();
 
     //Declare variable for the Encoding
     std::map<std::string, z3::expr> variables_pos;
@@ -944,31 +941,41 @@ ClipsSmtThread::clips_smt_fill_node_names()
 
 }
 
+void
+ClipsSmtThread::clips_smt_compute_distances_robots()
+{
+    logger->log_info(name(), "Compute distances between robots and machines using navgraph");
+
+    MutexLocker lock(navgraph.objmutex_ptr());
+
+   // Compute distances between robotos positions and machines
+   for(int r = 0; r < data.robots().size(); ++r){
+       std::string robot_node_name = "Robot-";
+       robot_node_name += std::to_string(r+1);
+
+       // logger->log_info(name(), "Position of robot %s is (%f,%f)", data.robots(r).name().c_str(), data.robots(r).pose().x(), data.robots(r).pose().y());
+
+       NavGraphNode robot_node(robot_node_name, data.robots(r).pose().x(), data.robots(r).pose().y());
+       NavGraphNode from = navgraph->closest_node(robot_node.x(), robot_node.y());
+
+       for (unsigned int i = 1; i < node_names_.size(); ++i) {
+           std::pair<std::string, std::string> nodes_pair(robot_node.name(), node_names_[i]);
+
+           NavGraphNode to = navgraph->node(node_names_[i]);
+           NavGraphPath p = navgraph->search_path(from, to);
+
+           // logger->log_info(name(), "Distance between node %s and node %s is %f", robot_node.name().c_str(), node_names_[i].c_str(), p.cost()+navgraph->cost(from, robot_node));
+           distances_[nodes_pair] = p.cost() + navgraph->cost(from, robot_node); // Use 'Robot-index' to identify robots in distances_
+       }
+   }
+}
+
  void
- ClipsSmtThread::clips_smt_compute_distances()
+ ClipsSmtThread::clips_smt_compute_distances_machines()
  {
-     logger->log_info(name(), "Compute distances between machines using navgraph");
+     logger->log_info(name(), "Compute distances between all machines using navgraph");
 
 	 MutexLocker lock(navgraph.objmutex_ptr());
-
-    // Compute distances between robotos positions and machines
-    for(int r = 0; r < data.robots().size(); ++r){
-        std::string robot_node_name = "Robot-";
-        robot_node_name += std::to_string(r+1);
-
-        NavGraphNode robot_node(robot_node_name, data.robots(r).pose().x(), data.robots(r).pose().y());
-        NavGraphNode from = navgraph->closest_node(robot_node.x(), robot_node.y());
-
-        for (unsigned int i = 1; i < node_names_.size(); ++i) {
-            std::pair<std::string, std::string> nodes_pair(robot_node.name(), node_names_[i]);
-
-            NavGraphNode to = navgraph->node(node_names_[i]);
-            NavGraphPath p = navgraph->search_path(from, to);
-
-            // logger->log_info(name(), "Distance between node %s and node %s is %f", robot_node.name().c_str(), node_names_[i].c_str(), p.cost()+navgraph->cost(from, robot_node));
-            distances_[nodes_pair] = p.cost() + navgraph->cost(from, robot_node); // Use 'Robot-index' to identify robots in distances_
-        }
-    }
 
     // Compute distances between unconnected C-ins-in and all other machines
     NavGraphNode ins_node(navgraph->node("C-ins-in"));
@@ -1001,41 +1008,38 @@ ClipsSmtThread::clips_smt_fill_node_names()
  * Test methods
  * - z3: Create a SubProcess and fill the z3 solver with the smtlib format of a carl formula
  * - carl: Call a carl method and compare computed to known output
- * - data: Fill own data structure with dummy values
- * - navgraph: Count nodes and edges of navgraph and compute its distances
  **/
 
  void
  ClipsSmtThread::clips_smt_test_z3()
  {
-     /**
-    logger->log_info(name(), "Test z3 extern binary");
 
-     carl::Variable x = carl::freshRealVariable("x");
- 	 Rational r = 4;
- 	 carl::MultivariatePolynomial<Rational> mp = Rational(r*r)*x*x + r*x + r;
- 	 carl::Formula<carl::MultivariatePolynomial<Rational>> f(mp, carl::Relation::GEQ);
+    // logger->log_info(name(), "Test z3 extern binary");
+    //
+    //  carl::Variable x = carl::freshRealVariable("x");
+ // 	 Rational r = 4;
+ // 	 carl::MultivariatePolynomial<Rational> mp = Rational(r*r)*x*x + r*x + r;
+ // 	 carl::Formula<carl::MultivariatePolynomial<Rational>> f(mp, carl::Relation::GEQ);
+    //
+    //  std::ofstream outputFile("carl_formula.smt");
+    //  outputFile << carl::outputSMTLIB(carl::Logic::QF_NRA, {f});
+    //  outputFile.close();
 
-     std::ofstream outputFile("carl_formula.smt");
-     outputFile << carl::outputSMTLIB(carl::Logic::QF_NRA, {f});
-     outputFile.close();
+    //  const char *argv[] = { "/home/robosim/z3/bin/z3",
+    //                         "-smt2",
+    //                         "/home/robosim/carl_test/carl_formula.smt",
+    //                         NULL };
+    //  proc_z3_ = new SubProcess("z3 binary", argv[0], argv, NULL, logger);
+    //  proc_z3_->check_proc();
 
-     const char *argv[] = { "/home/robosim/z3/bin/z3",
-                            "-smt2",
-                            "/home/robosim/carl_test/carl_formula.smt",
-                            NULL };
-     proc_z3_ = new SubProcess("z3 binary", argv[0], argv, NULL, logger);
-     proc_z3_->check_proc();
-      **/
 
-      /**
-      Z3_ast a = Z3_parse_smtlib2_file(_z3_context, "/home/robosim/carl_test/carl_formula.smt", 0, 0, 0, 0, 0, 0);
-      z3::expr e(_z3_context, a);
+    //   Z3_ast a = Z3_parse_smtlib2_file(_z3_context, "/home/robosim/fawkes-robotino/src/plugin/clips-smt/carl_formula.smt", 0, 0, 0, 0, 0, 0);
+    //   z3::expr e(_z3_context, a);
+      //
+    //   z3::solver s(_z3_context);
+    //   s.add(e);
+    //   if(s.check() == z3::sat) logger->log_info(name(), "Test of import .smt file into z3 constraint worked");
 
-      z3::solver s(_z3_context);
-      s.add(e);
-      if(s.check() == z3::sat) logger->log_info(name(), "Test of import .smt file into z3 constraint worked");
-      **/
 
  }
 
@@ -1069,75 +1073,63 @@ ClipsSmtThread::clips_smt_fill_node_names()
      **/
  }
 
-void
-ClipsSmtThread::clips_smt_test_navgraph()
+
+GameData
+ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 {
-    logger->log_info(name(), "Navgraph name: %s", navgraph->name().c_str());
-    std::vector<NavGraphEdge> edges = navgraph->edges();
-    logger->log_info(name(), "Navgraph has %i many edges", edges.size());
-    for(NavGraphEdge edge: edges){
-        logger->log_info(name(), "Navgraph has edge from %s to %s", edge.from().c_str(), edge.to().c_str());
-    }
-    clips_smt_compute_distances();
+
+  GameData _generatorData = GameData();
+
+  // //machines
+  // for (int i = 0; i < data.machines().size(); i++)
+  // {
+  //   //name -> id
+  //   GameData::Machine _tmpMachine = GameData::Machine(atoi(data.machines(i).name().c_str()));
+  //   //type -> type
+  //   _tmpMachine.setType(data.machines(i).type());
+  //   //TODO (Lukas) WorkingPiece
+  //   //TODO (Lukas) Distances
+  //   //_generatorData.addMachine(_tmpMachine);
+  // }
+  //
+  //
+  // //Robots
+  // for (int i = 0; i < data.robots().size(); i++)
+  // {
+  //   //name -> id
+  //   GameData::Robot _tmpRobot = GameData::Robot(atoi(data.robots(i).name().c_str()));
+  //   //TODO (Lukas) Distances
+  // }
+  //
+  //
+  // //Orders
+  // for (int i = 0; i < data.orders().size(); i++)
+  // {
+  //   GameData::Workpiece _tmpWorkPiece = GameData::Workpiece();
+  //   //Color conversions
+  //   int _baseColor = data.orders(i).base_color()+1;
+  //   int _capColor = data.orders(i).cap_color();
+  //
+  //
+  //   std::vector<int> _ringColors;
+  //   for (int j = 0; j < data.orders(i).ring_colors().size(); j++)
+  //   {
+  //     _ringColors.push_back(data.orders(i).ring_colors(i)+1);
+  //   }
+  //
+  //
+  //   std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
+  //   //TODO fix this conversion:
+  //   /*
+  //   _tmpWorkPiece.setBaseColor(_baseColor);
+  //   _tmpWorkPiece.setCapColor(_capColor);
+  //   _tmpWorkPiece.setRingColor(_ringColors);
+  //   */
+  //
+  //
+  //   //GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
+  //   //TODO (Lukas) Distances
+  // }
+
+  return _generatorData;
 }
-
-
-// GameData::GameData
-// ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
-// {
-//
-//   GameData::GameData _generatorData = GameData::GameData();
-//
-//   //machines
-//   for (int i = 0; i < data.machines().size(); i++)
-//   {
-//     //name -> id
-//     GameData::Machine _tmpMachine = GameData::Machine(atoi(data.machines(i).name().c_str()));
-//     //type -> type
-//     _tmpMachine.setType(data.machines(i).type());
-//     //TODO (Lukas) WorkingPiece
-//     //TODO (Lukas) Distances
-//     //_generatorData.addMachine(_tmpMachine);
-//   }
-//
-//
-//   //Robots
-//   for (int i = 0; i < data.robots().size(); i++)
-//   {
-//     //name -> id
-//     GameData::Robot _tmpRobot = GameData::Robot(atoi(data.robots(i).name().c_str()));
-//     //TODO (Lukas) Distances
-//   }
-//
-//
-//   //Orders
-//   for (int i = 0; i < data.orders().size(); i++)
-//   {
-//     GameData::Workpiece _tmpWorkPiece = GameData::Workpiece();
-//     //Color conversions
-//     int _baseColor = data.orders(i).base_color()+1;
-//     int _capColor = data.orders(i).cap_color();
-//
-//
-//     std::vector<int> _ringColors;
-//     for (int j = 0; j < data.orders(i).ring_colors().size(); j++)
-//     {
-//       _ringColors.push_back(data.orders(i).ring_colors(i)+1);
-//     }
-//
-//
-//     std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
-//     //TODO fix this conversion:
-//     /*
-//     _tmpWorkPiece.setBaseColor(_baseColor);
-//     _tmpWorkPiece.setCapColor(_capColor);
-//     _tmpWorkPiece.setRingColor(_ringColors);
-//     */
-//
-//
-//     //GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
-//     //TODO (Lukas) Distances
-//   }
-//
-//   return _generatorData;
-// }

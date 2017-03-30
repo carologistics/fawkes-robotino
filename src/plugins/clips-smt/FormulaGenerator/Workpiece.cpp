@@ -7,24 +7,49 @@ int Workpiece::getMaxRingNumber(){
 }
 
 Workpiece::Workpiece() {
+    base = NONE;
+    rings = std::vector<Color>(getMaxRingNumber(), Color(NONE));
+    cap = NONE;
+    init();
 }
 
 Workpiece::Workpiece(Color base, std::vector<Color> rings, Color cap){
     setBaseColor(base);
     setRings(rings);
     setCapColor(cap);
+    init();
 }
 
 Workpiece::Workpiece(Color base, std::vector<Color> rings){
     setBaseColor(base);
     setRings(rings);
+    cap = NONE;
+    init();
 }
 
 Workpiece::Workpiece(Color base){
     setBaseColor(base);
+    rings = std::vector<Color>(getMaxRingNumber(), Color(NONE));
+    cap = NONE;
+    init();
 }
 
 Workpiece::~Workpiece() {
+}
+
+void Workpiece::init() {
+    ColorNames = {
+        {Color::NONE, "NONE"},
+        {Color::RED, "RED"},
+        {Color::BLACK, "BLACK"},
+        {Color::SILVER, "SILVER"},
+        {Color::TRANSPARENT, "TRANSPARENT"},
+        {Color::BLUE, "BLUE"},
+        {Color::GREEN, "GREEN"},
+        {Color::YELLOW, "YELLOW"},
+        {Color::ORANGE, "ORANGE"},
+        {Color::GREY, "GREY"}
+    };
 }
 
 Workpiece::Color Workpiece::getBaseColor() const {
@@ -57,10 +82,10 @@ void Workpiece::setCapColor(Color c) {
 }
 
 void Workpiece::setRings(std::vector<Color> rings) {
-    if(this->rings.size() < rings.size()) 
+    if(this->rings.size() < rings.size())
         std::cerr <<  "Workpiece::setRings(std::vector<Color> rings): GameData::maxRingNumber < rings.size()";
-    
-    for (auto i = 0; i < rings.size(); i++) {
+
+    for (uint i = 0; i < rings.size(); i++) {
         this->rings[i] = rings[i];
     }
 }
@@ -76,5 +101,3 @@ std::string Workpiece::toString() {
 
     return result;
 }
-
-
