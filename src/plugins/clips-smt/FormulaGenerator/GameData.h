@@ -3,13 +3,15 @@
 
 #include <vector>
 #include <map>
-#include <utility> 
+#include <utility>
 #include <memory>
 
-namespace GameData {
+//namespace GameData {
 
-#include "Order.h"
 #include "Robot.h"
+#include "Order.h"
+
+#include "Station.h"
 #include "BaseStation.h"
 #include "RingStation.h"
 #include "CapStation.h"
@@ -17,11 +19,13 @@ namespace GameData {
 
 #include "Reward.h"
 
+typedef std::shared_ptr<Robot> robot_ptr;
+
     /* Contains all relevant Information about the current world state.
-     * 
+     *
      * We represent the world state as if all robots had finished their current
      * actions - even if it is not the case. For a given robot r, the moving time
-     * for each station s is set to: r->x = r->d + d->s, 
+     * for each station s is set to: r->x = r->d + d->s,
      * d denotes the station on which the robot performs its action
      */
 
@@ -77,7 +81,6 @@ namespace GameData {
         Reward reward;
     };
 
-}
+//}
 
 #endif /* GAMEDATA_H */
-
