@@ -1185,26 +1185,29 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 	assert(robotPlan.CurrentTask.empty());
 	assert(!robotInfo.Doing.isValid());
 
-	if ( robotPlan.Tasks[robotPlan.FirstNotDone].Task != task )
+	auto& firstNotDoneTask(robotPlan.Tasks[robotPlan.FirstNotDone]);
+
+	if ( firstNotDoneTask.Task != task )
 	{
 		logger->log_error(LoggingComponent, "Plan invalid, the robot started another task.");
-		robotPlan.Tasks[robotPlan.FirstNotDone].Task = task;
-		robotPlan.Tasks[robotPlan.FirstNotDone].Begin = begin;
-		robotPlan.Tasks[robotPlan.FirstNotDone].End = end;
+		firstNotDoneTask.Task = task;
+		firstNotDoneTask.Begin = begin;
+		firstNotDoneTask.End = end;
 		setInterrupt(InterruptSolving::Critical, "Robot started \"wrong\" task");
-	} //if ( robotPlan.Tasks[robotPlan.FirstNotDone].Task != task )
+	} //if ( firstNotDoneTask.Task != task )
 
 	robotPlan.CurrentTask = task;
-	robotPlan.Tasks[robotPlan.FirstNotDone].Begun = true;
-	const auto offset = begin - robotPlan.Tasks[robotPlan.FirstNotDone].Begin;
+	firstNotDoneTask.Begun = true;
+	const auto offset = begin - firstNotDoneTask.Begin;
 	static_assert(std::is_signed<decltype(offset)>::value, "Offset has to have a sign!");
+	firstNotDoneTask.Begin = begin;
 	planLocker.unlock();
 	worldLocker.unlock();
 	checkForInterruptBasedOnTimeOffset(offset);
 	worldLocker.relock();
 	planLocker.relock();
 
-	robotInfo.Doing = createTaskDescription(task, robotPlan.Tasks[robotPlan.FirstNotDone].End);
+	robotInfo.Doing = createTaskDescription(task, firstNotDoneTask.End);
 
 	const auto location = robotInfo.Doing.TaskSymbol.arguments().front();
 	const auto iter = LocationInUse.find(location);
@@ -1215,7 +1218,7 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
 			"The robots %s and %s are trying to use %s! Tell %s to stop immediately and delete its current plan!",
 			iter->second.c_str(), robot.c_str(), location.to_string().c_str(), robot.c_str());
 		robotPlan.CurrentTask.clear();
-		robotPlan.Tasks[robotPlan.FirstNotDone].Begun = false;
+		firstNotDoneTask.Begun = false;
 		robotInfo.Doing = {};
 		tellRobotToStop(robot);
 		setInterrupt(InterruptSolving::Critical, "Location conflict");
