@@ -145,7 +145,7 @@ extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, 
 			const auto robot(args[0].string());
 
 			//If not in the map until now it will add a list for the robot.
-			map[robot].emplace_back(args[1].to_string(), begin, transform(time) + planGameTime);
+			map[robot].emplace_back(args[1].to_string(), begin, std::max(transform(time) + planGameTime, 1));
 		} //if ( begin || end )
 	} //for ( const auto& symbol : symbols )
 
