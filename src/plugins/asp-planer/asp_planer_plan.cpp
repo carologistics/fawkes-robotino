@@ -128,8 +128,6 @@ operator<(const IntermediatePlanElement& e1, const IntermediatePlanElement& e2)
 static inline void
 extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, const auto& transform, const auto& log)
 {
-	int max = 0;
-
 	for ( auto& pair : map )
 	{
 		pair.second.clear();
@@ -146,10 +144,8 @@ extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, 
 			const auto time = args[2].number();
 			const auto robot(args[0].string());
 
-			max = std::max(max, time);
-
 			//If not in the map until now it will add a list for the robot.
-			map[robot].emplace_back(args[1].to_string(), begin, transform(time) + planGameTime);
+			map[robot].emplace_back(args[1].to_string(), begin, std::max(transform(time) + planGameTime, 1));
 		} //if ( begin || end )
 	} //for ( const auto& symbol : symbols )
 
