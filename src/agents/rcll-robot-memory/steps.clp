@@ -152,9 +152,9 @@
   ?state <- (state STEP-STARTED)
   (team-color ?team)
   (machine (mtype BS) (name ?mps) (state PROCESSING|READY-AT-OUTPUT))
-  ?bsc <- (bs-side-changed)
+  ;?bsc <- (bs-side-changed)
   =>
-  (retract ?state ?bsc)
+  (retract ?state)
   (modify ?step (state running))
   (if (eq ?side INPUT) then
     (bind ?res (sym-cat ?mps "-I"))
