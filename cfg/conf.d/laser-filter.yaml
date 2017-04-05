@@ -4,6 +4,7 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-filter
 ---
 plugins/laser-filter:
+  debug: false
   robot:
     active: true
 
