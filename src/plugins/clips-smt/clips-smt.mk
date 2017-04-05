@@ -23,6 +23,8 @@ ifneq ($(wildcard $(SYSROOT)/usr/local/include/z3++.h),)
 endif
 ifneq ($(wildcard $(SYSROOT)/usr/include/z3++.h),)
   HAVE_LIBZ3=1
+	LDFLAGS_LIBZ3 += -Wl,-rpath,/usr/lib
+  CFLAGS_LIBZ3 += -I/usr/include
 endif
 ifneq ($(wildcard $(HOME)/.local/usr/include/z3++.h),)
   HAVE_LIBZ3=1
