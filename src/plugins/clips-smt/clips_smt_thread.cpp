@@ -31,7 +31,7 @@
 #include <llsf_msgs/Plan.pb.h>
 
 using namespace fawkes;
-// using Rational = mpq_class;
+using Rational = mpq_class;
 
 /** @class ClipsNavGraphThread "clips-protobuf-thread.h"
  * Provide protobuf functionality to CLIPS environment.
@@ -62,7 +62,7 @@ ClipsSmtThread::init()
 
     // Test z3 extern binary
     // proc_z3_ = NULL;
-    // clips_smt_test_z3();
+    clips_smt_test_z3();
 
     // Test python
     //proc_python_ = NULL;
@@ -92,7 +92,7 @@ ClipsSmtThread::finalize()
     // delete proc_python_;
 
     // Handle output of formula generation
-    // std::remove("carl_formula.smt");
+    // std::remove("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt"); // TODO (Igor) Add functionality to remove intermediate formula.smt
 
     envs_.clear();
 }
@@ -1014,16 +1014,18 @@ ClipsSmtThread::clips_smt_compute_distances_robots()
  ClipsSmtThread::clips_smt_test_z3()
  {
 
-    // logger->log_info(name(), "Test z3 extern binary");
-    //
-    //  carl::Variable x = carl::freshRealVariable("x");
- // 	 Rational r = 4;
- // 	 carl::MultivariatePolynomial<Rational> mp = Rational(r*r)*x*x + r*x + r;
- // 	 carl::Formula<carl::MultivariatePolynomial<Rational>> f(mp, carl::Relation::GEQ);
-    //
-    //  std::ofstream outputFile("carl_formula.smt");
-    //  outputFile << carl::outputSMTLIB(carl::Logic::QF_NRA, {f});
-    //  outputFile.close();
+    logger->log_info(name(), "Test z3 extern binary");
+
+    logger->log_info(name(), "Setup carl test formula");
+     carl::Variable x = carl::freshRealVariable("x");
+ 	 Rational r = 4;
+ 	 carl::MultivariatePolynomial<Rational> mp = Rational(r*r)*x*x + r*x + r;
+ 	 carl::Formula<carl::MultivariatePolynomial<Rational>> f(mp, carl::Relation::GEQ);
+
+   logger->log_info(name(), "Export carl test formula to file carl_formula.smt");
+     std::ofstream outputFile("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt"); // TODO (Igor) Exchange path with config value
+     outputFile << carl::outputSMTLIB(carl::Logic::QF_NRA, {f});
+     outputFile.close();
 
     //  const char *argv[] = { "/home/robosim/z3/bin/z3",
     //                         "-smt2",
@@ -1033,12 +1035,16 @@ ClipsSmtThread::clips_smt_compute_distances_robots()
     //  proc_z3_->check_proc();
 
 
-    //   Z3_ast a = Z3_parse_smtlib2_file(_z3_context, "/home/robosim/fawkes-robotino/src/plugin/clips-smt/carl_formula.smt", 0, 0, 0, 0, 0, 0);
-    //   z3::expr e(_z3_context, a);
-      //
-    //   z3::solver s(_z3_context);
-    //   s.add(e);
-    //   if(s.check() == z3::sat) logger->log_info(name(), "Test of import .smt file into z3 constraint worked");
+    logger->log_info(name(), "Import carl test formula from file carl_formula.smt into z3 formula");
+
+      Z3_ast a = Z3_parse_smtlib2_file(_z3_context, "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt", 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
+      z3::expr e(_z3_context, a);
+
+      z3::solver s(_z3_context);
+      s.add(e);
+      if(s.check() == z3::sat) logger->log_info(name(), "Test of import .smt file into z3 constraint did work");
+      else     logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work");
+
 
 
  }

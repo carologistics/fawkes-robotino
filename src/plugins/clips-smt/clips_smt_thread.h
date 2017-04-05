@@ -39,10 +39,10 @@
 #endif
 
 #include <z3++.h>
-//#include <carl/numbers/numbers.h>
+#include <carl/numbers/numbers.h>
 // #include <carl/core/VariablePool.h>
-// #include <carl/formula/Formula.h>
-// #include <carl/io/SMTLIBStream.h>
+#include <carl/formula/Formula.h>
+#include <carl/io/SMTLIBStream.h>
 
 #include <vector>
 #include <string>
