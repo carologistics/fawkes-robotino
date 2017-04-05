@@ -19,6 +19,12 @@ class ZoneInterface : public Interface
   int tag_id();
   void set_tag_id(const int new_tag_id);
   int maxlenof_tag_id() const;
+  int orientation();
+  void set_orientation(const int new_orientation);
+  int maxlenof_orientation() const;
+  char * zone();
+  void set_zone(const char * new_zone);
+  int maxlenof_zone() const;
   bool                    oftype(const char *interface_type) const;
   const void *            datachunk() const;
   unsigned int            datasize() const;

@@ -38,6 +38,9 @@
   (blackboard-open "LaserLineInterface" "/laser-lines/7")
   (blackboard-open "LaserLineInterface" "/laser-lines/8")
   (blackboard-open "MotorInterface" "Robotino")
+  (blackboard-open "NavigatorInterface" "Navigator")
+  (blackboard-open "ZoneInterface" "/explore-zone/info")
+  (blackboard-open "Position3DInterface" "/explore-zone/found-tag")
 
   ;unwatch to avoid debug spam
   (unwatch rules blackboard-read)
@@ -57,6 +60,8 @@
   (unwatch rules LaserLineInterface-cleanup)
   (unwatch facts MotorInterface)
   (unwatch rules MotorInterface-cleanup)
+  (unwatch facts NavigatorInterface)
+  (unwatch rules NavigatorInterface-cleanup)
 
   (assert (loaded interfaces))
 )
