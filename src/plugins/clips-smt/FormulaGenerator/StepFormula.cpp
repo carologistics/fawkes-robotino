@@ -754,9 +754,10 @@ Formula StepFormula::mountRingAction(Robot &r, RingStation & rs) {
 Formula StepFormula::existOrderWithRingReq(Robot &r, RingStation & rs) {
     std::vector<Formula> formulas;
     for (auto const& o : getGameData().getOrders()) {
-        for (int i = 0; i < Workpiece::getMaxRingNumber(); i++)
+        for (int i = 0; i < Workpiece::getMaxRingNumber(); i++) {
             formulas.push_back(orderHasRingReq(r, rs, *o, i));
             formulas.push_back(orderNotDeliveredPrev(*o));
+          }
     }
     return Formula(carl::FormulaType::OR, formulas);
 }
