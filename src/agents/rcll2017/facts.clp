@@ -23,6 +23,12 @@
   (slot ori (type FLOAT) (default 0.0))
 )
 
+; This deftemplate is only needed because do-for-all-facts doesn't
+; work for implied deftemplates
+(deftemplate exp-next-node
+  (slot node (type STRING))
+)
+
 ; EXPLORATION
 
 ; Generate zone info like this:
@@ -112,14 +118,6 @@
   )
   (slot machine (type SYMBOL) (allowed-values NONE C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS UNKNOWN) (default UNKNOWN))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
-  (slot x (type FLOAT) (default 0.0))
-  (slot y (type FLOAT) (default 0.0))
-  ; list of positions where to search for tags (ids to pose facts)
-  (multislot look-pos (type INTEGER) (default (create$)))
-  ; index of the next lookpos to use
-  (slot current-look-pos (type INTEGER) (default 1))
-  (slot recognized (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
-  (slot still-to-explore (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
 
   ; for exploration-catch-up in produciton
   (multislot incoming (type SYMBOL) (default (create$)))  
@@ -152,6 +150,7 @@
     )
   )
   (slot mtype (type STRING) (default ""))
+  (slot orientation (type INTEGER) (default -1))
 )
 
 (deftemplate exp-row
@@ -176,6 +175,11 @@
 
 (deftemplate last-navgraph-compute-msg 
   (slot id (type INTEGER))
+)
+
+(deftemplate navigator-default-vmax
+  (slot velocity (type FLOAT))
+  (slot rotation (type FLOAT))
 )
 
 

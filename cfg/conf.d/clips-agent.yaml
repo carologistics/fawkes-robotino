@@ -39,7 +39,7 @@ clips-agent:
  
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  agent: rcll2016/rcll2016
+  agent: rcll2017/rcll2017
 
  
   rcll2016:
@@ -118,12 +118,25 @@ clips-agent:
       #row defined in host.yaml (this is only the default!)
       row: MID
       
-      row-high: ["Q6"]
-      row-mid: ["Q6"]
-      row-low: ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"]
+      route:
+        CYAN:
+          R-1: ["exp-11", "exp-12", "exp-11"]
+          R-2: ["exp-21", "exp-22", "exp-21"]
+          R-3: ["exp-31", "exp-32", "exp-31"]
+        MAGENTA:
+          R-1: ["exp-12", "exp-11", "exp-12"]
+          R-2: ["exp-22", "exp-21", "exp-22"]
+          R-3: ["exp-32", "exp-31", "exp-32"]
 
       #the time in seconds to report all machines even if we are not prepared for production
       latest-send-last-report-time: 210 # =3:30
 
       needed-visibility-history: 15
 
+      # Reduce navigator velocity while traveling the field so we can find laser-lines more reliably
+      max-velocity: 0.8
+      max-rotation: 0.4
+
+      # Center of a laser-line must be this far from the zone border before we start
+      # investigating it further (i.e. call the explore_zone skill on it)
+      zone-margin: 0.15

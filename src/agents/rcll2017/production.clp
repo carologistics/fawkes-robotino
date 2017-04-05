@@ -765,39 +765,6 @@
   )
 )
  
-(defrule prod-find-missing-mps-exploration-catch-up
-  "If we have not found all mps until the production phase, we have to find them now."
-  (declare (salience ?*PRIORITY-FIND-MISSING-MPS*))
-  (phase PRODUCTION)
-  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
-  (team-color ?team-color&~nil)
-  (holding NONE)
-  ; there is a mps not found jet
-  (machine (name ?missing-mps) (team ?team-color))
-  (not (found-tag (name ?missing-mps)))
-  ; zone-to-explore
-  ?z-f <- (zone-exploration (name ?zone) (machine ?missing-mps) 
-                            (still-to-explore TRUE) (team ?team-color)
-                            (incoming $?i&~:(member$ FIND_TAG ?i))
-                            (times-searched ?times-searched))
-  ;check that the task was not rejected before
-  (not (and (task (name exploration-catch-up) (state rejected) (id ?rej-id))
-	    (step (name find-tag) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (zone ?zone))))
-  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-FIND-MISSING-MPS*))))
-  =>
-  (printout t "PROD: " ?missing-mps " still not found!" 
-            " Searching for it in zone " ?zone crlf)
-  (bind ?task-id (random-id))
-  (assert (task (name exploration-catch-up) (id ?task-id) (state proposed)
-		(steps (create$ (+ ?task-id 1)))
-		(priority ?*PRIORITY-FIND-MISSING-MPS*))
-	  (step (name find-tag) (id (+ ?task-id 1))
-		(task-priority ?*PRIORITY-FIND-MISSING-MPS*)
-		(zone ?zone) (machine ?missing-mps))
-	  (needed-task-lock (task-id ?task-id) (action FIND_TAG) (place ?zone))
-  )
-)
-
 (defrule prod-nothing-to-do-save-factbase
   "If the agent can't find any task, save the factbase to find problems"
   (declare (salience ?*PRIORITY-NOTHING-TO-DO*))

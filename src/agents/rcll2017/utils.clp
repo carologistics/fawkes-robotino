@@ -55,14 +55,14 @@
   (return (string-to-field ?id))
 )
 
-(deffunction transform-safe (?from-frame ?to-frame ?timestamp ?trans ?rot)
-  (if (tf-can-transform ?from-frame ?to-frame ?timestamp) then
-    (bind ?rv (tf-transform-pose ?from-frame ?to-frame ?timestamp ?trans ?rot))
+(deffunction transform-safe (?to-frame ?from-frame ?timestamp ?trans ?rot)
+  (if (tf-can-transform ?to-frame ?from-frame ?timestamp) then
+    (bind ?rv (tf-transform-pose ?to-frame ?from-frame ?timestamp ?trans ?rot))
   else
-    (if (tf-can-transform ?from-frame ?to-frame (create$ 0 0)) then
-      (bind ?rv (tf-transform-pose ?from-frame ?to-frame (create$ 0 0) ?trans ?rot))
+    (if (tf-can-transform ?to-frame ?from-frame (create$ 0 0)) then
+      (bind ?rv (tf-transform-pose ?to-frame ?from-frame (create$ 0 0) ?trans ?rot))
     else
-      (printout error "transform-safe: Failed to transform " ?from-frame " to " ?to-frame "." crlf)
+      (printout error "transform-safe: Failed to transform to " ?to-frame " from " ?from-frame "." crlf)
       (return FALSE)
     )
   )
@@ -122,6 +122,15 @@
     else
     (printout t "There are no tags to add" crlf)
   )
+)
+
+(deffunction navigator-set-speed (?max-velocity ?max-rotation)
+  (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxVelocityMessage"))
+  (blackboard-set-msg-field ?msg "max_velocity" ?max-velocity)
+  (blackboard-send-msg ?msg)
+  (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxRotationMessage"))
+  (blackboard-set-msg-field ?msg "max_rotation" ?max-rotation)
+  (blackboard-send-msg ?msg)
 )
 
 (deffunction utils-remove-prefix (?string ?prefix)
@@ -403,12 +412,12 @@
   (return ?res)
 )
 
-(deffunction laser-line-get-center (?iface-id ?timestamp
+(deffunction laser-line-get-center (?iface-id ?timestamp)
   "Return the center of a laser line in map coordinates"
   (bind ?idx (iface-get-idx ?iface-id))
   (bind ?frame1 (str-cat "laser_line_" ?idx "_e1"))
   (bind ?frame2 (str-cat "laser_line_" ?idx "_e2"))
-  (bind ?ep2-from-ep1 (transform-safe ?frame2 ?frame1 ?timestamp
+  (bind ?ep2-from-ep1 (transform-safe ?frame1 ?frame2 ?timestamp
                                       (create$ 0 0 0) (create$ 0 0 0 1)))
   (if (not ?ep2-from-ep1) then
     (return FALSE)
@@ -419,20 +428,42 @@
     (/ (nth$ 2 ?ep2-from-ep1) 2)
     (/ (nth$ 3 ?ep2-from-ep1) 2)
   )
-  (bind ?mid-map (transform-safe ?frame1 "map" ?timestamp ?mid-from-ep1 (create$ 0 0 0 1)))
+  (bind ?mid-map (transform-safe "map" ?frame1 ?timestamp ?mid-from-ep1 (create$ 0 0 0 1)))
   (return ?mid-map)
 )
 
-(deffunction get-zone ($?vector ?margin)
+(deffunction other-team-name (?zn)
+  (bind ?team (sub-string 1 1 ?zn))
+  (bind ?zone (sub-string 3 99 ?zn))
+  (if (eq ?team "M") then
+    (return (sym-cat "C-" ?zone))
+  else
+    (return (sym-cat "M-" ?zone))
+  )
+)
+
+(deffunction get-zone (?margin $?vector)
   "Return the zone name for a given map coordinate $?vector if its
    distance from the zone borders is greater or equal than ?margin."
   (bind ?x (nth$ 1 ?vector))
   (bind ?y (nth$ 2 ?vector))
+  (if (not (and (numberp ?x) (numberp ?y))) then
+    (return FALSE)
+  )
+
   (if (<= ?y 0) then
     ; y <= 0 is outside the playing field
     (return FALSE)
   else
-    (bind ?y (round-up ?y))
+    (bind ?yr (round-up ?y))
+  )
+
+  (if (or (< (- ?x ?margin) (round-down ?x))
+          (> (+ ?x ?margin) (round-up ?x))
+          (< (- ?y ?margin) (round-down ?y))
+          (> (+ ?y ?margin) (round-up ?y))
+      ) then
+    (return FALSE)
   )
 
   (if (< ?x 0) then
@@ -441,8 +472,26 @@
   else
     (bind ?rv C-Z)
   )
-  (bind ?x (round-up ?x))
-  (return (sym-cat ?rv ?x ?y))
+  (bind ?xr (round-up ?x))
+
+  (return (sym-cat ?rv ?xr ?yr))
 )
 
 
+(deffunction mirror-trans ($?trans)
+  (return (create$
+    (- 0 (nth$ 1 ?trans))
+    (nth$ 2 ?trans)
+    (nth$ 3 ?trans)
+  ))
+)
+
+(deffunction mirror-rot ($?rot)
+  (bind ?yaw (tf-yaw-from-quat ?rot))
+  (bind ?yaw-mirror (+ (- 0 (- ?yaw ?*PI-HALF*)) ?*PI-HALF*))
+  (if (> ?yaw-mirror ?*PI*) then
+    (bind ?yaw-mirror (- ?yaw-mirror ?*2PI*)))
+  (if (< ?yaw-mirror (- 0 ?*PI*)) then
+    (bind ?yaw-mirror (+ ?yaw-mirror ?*2PI*)))
+  (return (tf-quat-from-yaw ?yaw-mirror))
+)

@@ -80,6 +80,8 @@
   ?*DELIVER-AHEAD-TIME* = 60
   ?*DELIVER-LATEST-TIME* = 10
   ?*DELIVER-ABORT-TIMEOUT* = 30
+
+  ?*EXP-ROUTE-IDX* = 1
 )
 
 (defrule globals-config-team-name
@@ -89,7 +91,7 @@
 )
 
 (defrule globals-config-robot-name
-  (confval (path "/clips-agent/rcll2016/robot-name") (type STRING) (value ?robot-name))
+  (robot-name ?robot-name)
   =>
   (bind ?*ROBOT-NAME* ?robot-name)
 )

@@ -107,3 +107,18 @@
   (retract ?cv)
 )
 
+(defrule conf-get-exp-vmax
+  ?cv1 <- (confval (path "/clips-agent/rcll2016/exploration/max-velocity") (type FLOAT) (value ?max-velocity))
+  ?cv2 <- (confval (path "/clips-agent/rcll2016/exploration/max-rotation") (type FLOAT) (value ?max-rotation))
+  =>
+  (assert (exp-navigator-vmax ?max-velocity ?max-rotation))
+  (retract ?cv1 ?cv2)
+)
+
+(defrule conf-get-exp-zone-margin
+  ?cv <- (confval (path "/clips-agent/rcll2016/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
+  =>
+  (assert (exp-zone-margin ?zone-margin))
+  (retract ?cv)
+)
+

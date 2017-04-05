@@ -48,6 +48,53 @@ nodes:
     pos: [1, 1]
     properties:
       - only-copy-properties
+#
+# Exploration points
+#
+  # High (far) row
+  #
+  - !unconnected
+    name: exp-11
+    pos: [5, 6]
+    properties:
+      - orientation: 0.2
+      - always-copy: true
+  - !unconnected
+    name: exp-12
+    pos: [-5.0, 6]
+    properties:
+      - orientation: 2.9
+      - always-copy: true
+
+  # Middle row
+  #
+  - !unconnected
+    name: exp-21
+    pos: [5, 3]
+    properties:
+      - orientation: 0.7
+      - always-copy: true
+  - !unconnected
+    name: exp-22
+    pos: [-5.0, 3]
+    properties:
+      - orientation: 0.85
+      - always-copy: true
+  
+  # Low (near) row
+  #
+  - !unconnected
+    name: exp-31
+    pos: [4, 2]
+    properties:
+      - orientation: 3.14
+      - always-copy: true
+  - !unconnected
+    name: exp-32
+    pos: [-4.0, 2]
+    properties:
+      - orientation: 0
+      - always-copy: true
 
 # drive into field points
 # Cyan
@@ -61,6 +108,7 @@ nodes:
     pos: [3.3, 0.75]
     properties:
       - always-copy: true
+      - orientation: 1.5
 # Magenta
   - !unconnected
     name: M-ins-out
@@ -72,6 +120,7 @@ nodes:
     pos: [-3.3, 0.75]
     properties:
       - always-copy: true
+      - orientation: 1.7
 
 # wait points
   - !unconnected

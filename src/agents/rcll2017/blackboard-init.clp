@@ -44,10 +44,10 @@
 
   ;unwatch to avoid debug spam
   (unwatch rules blackboard-read)
-  (unwatch rules RobotinoSensorInterface-cleanup)
   (unwatch facts RobotinoSensorInterface)
-  (unwatch rules Position3DInterface-cleanup)
+  (unwatch rules RobotinoSensorInterface-cleanup)
   (unwatch facts Position3DInterface)
+  (unwatch rules Position3DInterface-cleanup)
   (unwatch facts RobotinoLightInterface)
   (unwatch rules RobotinoLightInterface-cleanup)
   (unwatch facts NavGraphWithMPSGeneratorInterface)
@@ -62,6 +62,8 @@
   (unwatch rules MotorInterface-cleanup)
   (unwatch facts NavigatorInterface)
   (unwatch rules NavigatorInterface-cleanup)
+  (unwatch facts ZoneInterface)
+  (unwatch rules ZoneInterface-cleanup)
 
   (assert (loaded interfaces))
 )

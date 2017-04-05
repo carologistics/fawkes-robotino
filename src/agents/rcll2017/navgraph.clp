@@ -27,17 +27,6 @@
   (retract ?nn)
 )
 
-(defrule navgraph-set-exploration-zone-coordinates
-  "Set the coordinates of the exploration zones according to the assigned exploration points"
-  (declare (salience ?*PRIORITY-WM*))
-  ?ze <- (zone-exploration (x 0.0) (y 0.0) (look-pos $?lp&:(> (length$ ?lp) 0)))
-  =>
-  ;find the corresponding position fact
-  (do-for-fact ((?pose pose)) (eq ?pose:id (nth$ 1 ?lp))
-    (modify ?ze (x ?pose:x) (y ?pose:y))
-  )
-)
-
 (defrule navgraph-remove-navgraph-nodes ;to reduce amount of facts in clips-webview
   (declare (salience ?*PRIORITY-WM-LOW*))
   ?nn <- (navgraph-node (name ?name&~:(or (eq "C-" (sub-string 1 2 (str-cat ?name)))
@@ -54,20 +43,6 @@
   (retract ?ne)
 )
 
-(defrule navgraph-add-new-tag-exploration
-  "We got a tag from another bot (all tags from us are processed in exploration.clp with higher priority). Add the tag directly. I hope this doesn't break anything when the robot is driving"
-  (declare (salience ?*PRIORITY-LOW*))
-  ?ft <- (found-tag (name ?machine) (side ?side) (frame ?frame)
-		    (trans $?trans) (rot $?rot))
-  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
-  (not (navgraph-added-for-mps (name ?machine)))
-  =>
-  (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side 
-	    ") we got from another bot to Navgraph-generation"  crlf)
-  (printout warn "TODO: check which zone contains the machine, so we don't try to find a tag there again"  crlf)
-  
-  (navgraph-add-all-new-tags)
-)
 
 (defrule navgraph-get-zone-of-found-tag
   "For new found tags that were added to the navgraph, we want to check the zone where the machine is standing for the exploration report"
@@ -79,7 +54,7 @@
   (navgraph-node (name ?output&:(eq ?output (str-cat ?mps "-O")))
                  (pos $?pos-o))
   (team-color ?team-color)
-  (goalmachine ?zone-intended)
+  (explore-zone-target ?zone-intended)
   (not (zone-exploration (machine ?mps)))
   (phase ?phase)
   =>
@@ -111,9 +86,7 @@
         (printout t "That is behind the zone I currently explore (" 
                   ?zone-intended ")" crlf)
       )
-      (synced-modify ?ze still-to-explore FALSE
-                     recognized TRUE
-                     machine ?mps)
+      (synced-modify ?ze machine ?mps)
       (bind ?zone-color-right TRUE)
     )
   )
