@@ -87,7 +87,7 @@
 ; 	(pb-destroy ?ap)
 ; )
 
-(deffunction smt-create-data (?robots ?machines ?orders)
+(deffunction smt-create-data (?robots ?machines ?orders ?productcolors)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 	(foreach ?r ?robots
 		(pb-add-list ?p "robots" ?r)
@@ -98,6 +98,10 @@
 	(foreach ?o ?orders
 		(pb-add-list ?p "orders" ?o)
 	)
+	(foreach ?pc ?productcolors
+		(pb-add-list ?p "orders" ?pc)
+	)
+	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
 )
 
@@ -145,7 +149,7 @@
 )
 
 (deffunction smt-create-order (?id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
-	(bind ?o (pb-create "llsf_msgs.Order"))
+  (bind ?o (pb-create "llsf_msgs.Order"))
 	(pb-set-field ?o "id" ?id)
 	(pb-set-field ?o "delivery_gate" ?gate)
 	(pb-set-field ?o "complexity" ?complexity)
@@ -164,9 +168,44 @@
 (deffunction smt-create-orders (?team-color)
 	(bind ?rv (create$))
 	(do-for-all-facts ((?o order)) TRUE
-		(bind ?rv (append$ ?rv (smt-create-order ?o:id ?o:delivery-gate ?o:complexity
-		                                         ?o:quantity-requested ?o:quantity-delivered 
-		                                         ?o:begin ?o:end ?team-color)))
+		(bind ?rv (append$ ?rv (smt-create-order ?o:id ?o:delivery-gate ?o:complexity ?o:quantity-requested ?o:quantity-delivered ?o:begin ?o:end ?team-color)))
+	)
+	(return ?rv)
+)
+
+(deffunction smt-create-order-productcolors (?rcolor ?ccolor ?bcolor ?team-color)
+	(bind ?o (pb-create "llsf_msgs.Order"))
+	(bind ?rlist (create$))
+  (progn$ (?r ?rcolor)
+	(switch ?r
+		(case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
+	  (case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
+		(case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
+		(case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
+		(default (printout warn "Ring color not found" crlf))
+	)
+	)
+	(foreach ?rings ?rlist
+	 (pb-add-list ?o "ring_colors" ?rings)
+	)
+  (switch ?ccolor
+	  (case BLACK then (pb-set-field ?o "cap_color" "CAP_BLACK"))
+	  (case GREY then (pb-set-field ?o "cap_color" "CAP_GREY"))
+		(default (printout warn "Cap color not found" crlf))
+	)
+  (switch ?bcolor
+		(case BLACK then (pb-set-field ?o "base_color" "BASE_BLACK"))
+	  (case RED then (pb-set-field ?o "base_color" "BASE_RED"))
+		(case SILVER then (pb-set-field ?o "base_color" "BASE_SILVER"))
+		(default (printout warn "Base color not found" crlf))
+	)
+  (return ?o)
+)
+
+(deffunction smt-create-orders-productcolors (?team-color)
+	(bind ?rv (create$))
+	(do-for-all-facts ((?c product)) TRUE
+		(bind ?rv (append$ ?rv (smt-create-order-productcolors ?c:rings ?c:cap ?c:base ?team-color)))
 	)
 	(return ?rv)
 )
@@ -183,6 +222,7 @@
 	    (smt-create-robots ?team-color)
 	    (smt-create-machines ?team-color)
 	    (smt-create-orders ?team-color)
+			(smt-create-orders-productcolors ?team-color)
 	  )
 	)
 
@@ -308,41 +348,6 @@
 ;   =>
 ;   (retract ?pt)
 ; )
-
-(defrule push-facts-MachineDummy
-  (phase PRODUCTION)
-  (state IDLE)
-  =>
-  (printout t "Data pushing to Machine Dummy" crlf)
-  (bind ?md (pb-create "llsf_msgs.MachineDummyData"))
-(do-for-all-facts ((?machine machine)) TRUE
-	 (bind ?m (pb-create "llsf_msgs.Machine"))
-	 (pb-set-field ?m "name" (str-cat ?machine:name))
-	 (pb-add-list ?md "machiness" ?m)
-	 )
-;(printout t "Machi" (pb-tostring ?md) crlf)
-(assert (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?md)))
-)
-
-
-(defrule get-facts-MachineDummy-Start-Task
-   (declare (salience ?*PRIORITY-HIGH*))
-  (phase PRODUCTION)
-  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
-    ?pf <- (protobuf-msg (type "llsf_msgs.MachineDummyData") (ptr ?p))
-  =>
-  (printout t "Task Start" crlf)
-  (foreach ?o (pb-field-list ?p "machiness")
-	   (bind ?machname (pb-field-value ?o "name"))
-	   
- (bind ?task-id (random-id))
- (assert (task (robot ?*ROBOT-NAME*) (id ?task-id)(state proposed)(steps (create$ (+ ?task-id 1))))
-	  (step (name drive-to) (id (+ ?task-id 1))
- 		(machine ?machname))	  
- )
-  )
-  )
-
 
 ; (defrule prod-prefill-cap-station
 ;   "Feed a CS with a cap from its shelf so that afterwards it can directly put the cap on a product."
