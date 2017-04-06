@@ -85,7 +85,7 @@ local tag_utils = require("tag_utils")
 -- Tunables
 local ZONE_MARGIN = 0.05
 local CAM_ANGLE = 0.4
-local MIN_VIS_HIST = 15
+local MIN_VIS_HIST = 10
 local MAX_ATTEMPTS = 4
 
 -- Maximum reachable coordinates (i.e. usable playing field dimensions)
@@ -122,7 +122,8 @@ function line_in_zone(lines)
    for k,line in pairs(lines) do
       if line:visibility_history() >= MIN_VIS_HIST then
          local center = llutils.center(line)
-         if in_zone(center.x, center.y) then
+         local center_map = tfm.transform(center, line:frame_id(), "map")
+         if in_zone(center_map.x, center_map.y) then
             return line
          end
       end
@@ -171,14 +172,14 @@ function found_tag()
             local yaw = fawkes.tf.get_yaw(fawkes.tf.Quaternion:new(
                tag_map.ori.x, tag_map.ori.y, tag_map.ori.z, tag_map.ori.w
             ))
-            print("Yaw 1: " .. yaw)
+            print_debug("Yaw 1: " .. yaw)
             if id % 2 ~= 0 then
                yaw = math.normalize_mirror_rad(yaw + math.pi)
-               print("Yaw 2: " .. yaw)
+               print_debug("Yaw 2: " .. yaw)
             end
             if yaw < 0 then
                yaw = 2 * math.pi + yaw
-               print("Yaw 3: ".. yaw)
+               print_debug("Yaw 3: ".. yaw)
             end
             local yaw_discrete = math.round(yaw / math.pi * 4) * 45
             zone_info:set_zone(fsm.vars.zone)
@@ -221,6 +222,7 @@ fsm:define_states{ export_to=_M,
    {"WAIT_FOR_TAG", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_TAG", fail_to="FAILED"},
    {"GET_CLOSER", JumpState},
+   {"FIND_LINE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"FIND_ZONE_CORNER", JumpState},
    {"APPROACH_LINE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"APPROACH_ZONE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
@@ -229,12 +231,14 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not args_ok()", desc="invalid arguments"},
+   {"INIT", "TURN", cond="vars.line_center"},
    {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
    {"INIT", "WAIT_FOR_TAG", cond=true},
    {"WAIT_FOR_TAG", "WAIT_AMCL", cond=found_tag, desc="found tag"},
    {"WAIT_FOR_TAG", "GET_CLOSER", timeout=1},
    {"GET_CLOSER", "FAILED", cond="vars.attempts >= MAX_ATTEMPTS", desc="give up"},
    {"GET_CLOSER", "APPROACH_LINE", cond="vars.line_vista"},
+   {"GET_CLOSER", "FIND_LINE", cond="vars.cluster_vista"},
    {"GET_CLOSER", "WAIT_AMCL", cond=found_tag, desc="found tag"},
    {"GET_CLOSER", "FIND_ZONE_CORNER", timeout=2},
    {"FIND_ZONE_CORNER", "APPROACH_ZONE", cond="vars.zone_corner"},
@@ -284,22 +288,37 @@ function INIT:init()
 
    self.fsm.vars.zone_corner_idx = 1
    self.fsm.vars.attempts = 0
+
+   local line = line_in_zone(self.fsm.vars.lines)
+   if line then
+      self.fsm.vars.line_center = llutils.center(line)
+   end
 end
 
 
 function TURN:init()
-   self.args["motor_move"].ori = local_bearing(self.fsm.vars.x, self.fsm.vars.y)
+   if self.fsm.vars.line_center then
+      self.args["motor_move"].ori = math.atan2(self.fsm.vars.line_center.y, self.fsm.vars.line_center.x)
+   else
+      self.args["motor_move"].ori = local_bearing(self.fsm.vars.x, self.fsm.vars.y)
+   end
 end
 
+
+function GET_CLOSER:init()
+   self.fsm.vars.line_vista = nil
+   self.fsm.vars.cluster_vista = nil
+end
 
 function GET_CLOSER:loop()
    local line = line_in_zone(self.fsm.vars.lines)
    if line then
-      local p = llutils.point_in_front(llutis.center(line), 0.8)
+      local p = llutils.point_in_front(llutils.center(line), 0.8)
       local p_map = tfm.transform6D(
-         { x = p.x, y = p.y, z = p.z,
+         { x = p.x, y = p.y, z = 0,
            ori = fawkes.tf.create_quaternion_from_yaw(line:bearing()) },
          line:frame_id(), "map")
+      printf("p_map: %f, %f; ori = %f", p_map.x, p_map.y, fawkes.tf.get_yaw(p_map.ori))
       if within_map(p_map) then
          self.fsm.vars.line_vista = p_map
       end
@@ -308,7 +327,7 @@ function GET_CLOSER:loop()
    local cluster_map = cluster_in_zone(self.fsm.vars.clusters)
    if not self.fsm.vars.line_vista and cluster_map then
       -- No line found, but maybe we can guess something from a cluster...
-      -- so add CLUSTER_LEFT and CLUSTER_RIGHT
+      -- Compute a point left or right of the cluster from where we're standing
       local phi = local_bearing(self.fsm.vars.x, self.fsm.vars.y)
       local zone_bl = tfm.transform(
          { x = self.fsm.vars.x, y = self.fsm.vars.y, ori = 0 },
@@ -319,23 +338,30 @@ function GET_CLOSER:loop()
       local left_bl = {
          x = zone_bl.x - x,
          y = zone_bl.y + y,
-         z = 0
+         ori = 0
       }
-      left_bl.ori = fawkes.tf.create_quaternion_from_yaw(math.atan2(-y, -x))
-      left_map = tfm.transform6D(left_bl, "base_link", "map")
-      printf("left_map: %f, %f; ori = %f", left_map.x, left_map.y, fawkes.tf.get_yaw(left_map.ori))
+      left_map = tfm.transform(left_bl, "base_link", "map")
+      left_map.ori = math.atan2(
+         self.fsm.vars.y - left_map.y,
+         self.fsm.vars.x - left_map.x
+      )
       if within_map(left_map) then
-         self.fsm.vars.line_vista = left_map
+         self.fsm.vars.cluster_vista = left_map
+         print_debug("left_map: " .. left_map.x .. ", " .. left_map.y .. "; ori = " .. left_map.ori)
       else
          local right_bl = {
             x = zone_bl.x - x,
             y = zone_bl.y - y,
-            z = 0
+            ori = 0
          }
-         right_bl.ori = fawkes.tf.create_quaternion_from_yaw(math.atan2(y, -x))
-         right_map = tfm.transform6D(right_bl, "base_link", "map")
+         right_map = tfm.transform(right_bl, "base_link", "map")
+         right_map.ori = math.atan2(
+            self.fsm.vars.y - right_map.y,
+            self.fsm.vars.x - right_map.x
+         )
          if within_map(right_map) then
-            self.fsm.vars.line_vista = right_map
+            self.fsm.vars.cluster_vista = right_map
+            print_debug("right_map: " .. right_map.x .. ", " .. right_map.y .. "; ori = " .. right_map.ori)
          end
       end
    end
@@ -344,6 +370,11 @@ end
 
 function GET_CLOSER:exit()
    self.fsm.vars.attempts = self.fsm.vars.attempts + 1
+end
+
+
+function FIND_LINE:init()
+   self.args["drive_to_local"] = self.fsm.vars.cluster_vista
 end
 
 
@@ -376,7 +407,8 @@ function FIND_ZONE_CORNER:init()
       if dx ~= 0 or dy ~= 0 then
          self.fsm.vars.zone_corner = {
             x = self.fsm.vars.x + dx,
-            y = self.fsm.vars.y + dy
+            y = self.fsm.vars.y + dy,
+            ori = math.atan2(-dy, -dx)
          }
       end
       
@@ -386,11 +418,7 @@ end
 
 
 function APPROACH_ZONE:init()
-   self.args["drive_to_local"] = {
-      x = self.fsm.vars.zone_corner.x,
-      y = self.fsm.vars.zone_corner.y,
-      ori = math.atan2(-self.fsm.vars.zone_corner.x, -self.fsm.vars.zone_corner.y)
-   }
+   self.args["drive_to_local"] = self.fsm.vars.zone_corner
 end
 
 function FAILED:init()
