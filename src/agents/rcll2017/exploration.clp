@@ -222,21 +222,19 @@
 
 
 (defrule exp-mirror-tag
-  (team-color ?team-color)
-
   (found-tag (name ?machine) (side ?side) (frame ?frame) (trans $?trans) (rot $?rot))
-  (tag-matching (tag-id ?tag) (team ?team1) (machine ?machine) (side ?side))
+  ; Assuming that ?frame is always "map". Otherwise things will break rather horribly...
+  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
   (zone-exploration (name ?zn) (machine ?machine) (times-searched ?times-searched))
 
   (tag-matching (tag-id ?tag2) (side ?side)
-    (team ?team2&:(other-team-name ?team1))
-    (machine ?machine2&:(other-team-name ?machine))
+    (machine ?machine2&:(eq ?machine2 (other-team-name ?machine)))
   )
-  (not (found-tag (name ?machine2&:(other-team-name ?machine))))
-  ?ze2 <- (zone-exploration (name ?zn&:(other-team-name ?zn)))
+  (not (found-tag (name ?machine2&:(eq ?machine2 (other-team-name ?machine)))))
+  ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (other-team-name ?zn))))
 =>
   (assert
-    (found-tag (name (other-team-name ?machine)) (side ?side) (frame ?frame)
+    (found-tag (name ?machine2) (side ?side) (frame ?frame)
       (trans (mirror-trans ?trans)) (rot (mirror-rot ?rot))
     )
   )
@@ -253,7 +251,7 @@
   (tag-matching (tag-id ?tag) (team ?team-color)
     (machine ?machine) (side ?side)
   )
-  (found-tag (name ?machine2&:(other-team-name ?machine))
+  (found-tag (name ?machine2&:(eq ?machine2 (other-team-name ?machine)))
     (side ?side) (frame ?) (trans $?) (rot $?)
   )
   (tag-matching (tag-id ?tag2) (team ?team-color2&~?team-color)
