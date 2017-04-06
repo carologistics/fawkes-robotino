@@ -49,8 +49,9 @@
 #include <map>
 #include <iostream>
 
-//#include "FormulaGenerator/FormulaGenerator.h"
-#include "FormulaGenerator/GameData.h"
+//v#include "FormulaGenerator/FormulaGenerator.h"
+// #include "FormulaGenerator/GameData.h"
+#include "FormulaGenerator/formulaGeneratorTest.cpp"
 
 #include <llsf_msgs/ClipsSmtData.pb.h>
 
@@ -144,6 +145,7 @@ class ClipsSmtThread
   void clips_smt_test_python();
   void clips_smt_test_z3();
   void clips_smt_test_carl();
+  void clips_smt_test_formulaGenerator();
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 };

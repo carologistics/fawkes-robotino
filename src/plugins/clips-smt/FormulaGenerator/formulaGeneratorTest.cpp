@@ -7,7 +7,7 @@
 
 using namespace std;
 
-namespace FormulaGeneratorTest {
+class FormulaGeneratorTest {
 
 // void testPrevStep();
 // GameData testGameData2();
@@ -15,7 +15,32 @@ namespace FormulaGeneratorTest {
 // void testOrder();
 // void testMachine();
 
-GameData testGameData2() {
+
+//Creates a test Case for GameData Testing
+
+public:
+static bool run_test(){
+      std::cout << "--- FormulaGenerator Test --- Start" << std::endl;
+
+
+      std::cout << "--- Generate Formula ---" << std::endl;
+      GameData gD = createGameDataTestCase();
+      FormulaGenerator fg = FormulaGenerator(1, gD);
+      cout << fg.createFormula() << std::endl;
+
+      std::cout << "--- Workpiece Test --- Start" << std::endl;
+      testWorkpiece();
+      std::cout << "--- Order Test --- Start" << std::endl;
+      testOrder();
+      std::cout << "--- Iteration Test --- Start" << std::endl;
+      testPrevStep();
+      std::cout << "--- Machine Test --- Start" << std::endl;
+      testMachine();
+      std::cout << "--- FormulaGenerator Test --- End" << std::endl;
+      return true;
+}
+
+static GameData createGameDataTestCase() {
     GameData gD;
 
     auto r0 = make_shared<Robot>(0);
@@ -123,8 +148,10 @@ GameData testGameData2() {
     return gD;
 }
 
+private:
+//Tests Workpiece creation
 //NONE, RED, BLACK, SILVER, TRANSPARENT, BLUE, GREEN, YELLOW, ORANGE, GREY
-void testWorkpiece() {
+static void testWorkpiece() {
     Workpiece wp;
     cout << wp.toString() << endl;
     wp.setBaseColor(Workpiece::RED);
@@ -136,14 +163,16 @@ void testWorkpiece() {
     cout << wp2.toString() << endl;
 }
 
-void testOrder() {
+//Tests Workpiece creation
+static void testOrder() {
     Workpiece product(Workpiece::RED,{Workpiece::YELLOW, Workpiece::BLACK}, Workpiece::BLUE);
     Order o(555, product, 15000);
     cout << o.toString();
 }
 
-void testPrevStep() {
-    GameData gm = testGameData2();
+//Tests Step iteration of FormulaGenerator
+static void testPrevStep() {
+    GameData gm = createGameDataTestCase();
     FormulaGenerator formulaGenerator(3, gm);
     cout << "Step:" << formulaGenerator.getStep(0)->getStepNumber() << endl;
     cout << "Step:" << formulaGenerator.getStep(1)->getStepNumber() << endl;
@@ -154,7 +183,8 @@ void testPrevStep() {
     cout << "PrevStep:" << formulaGenerator.getStep(3)->getPrevStep()->getStepNumber() << endl;
 }
 
-void testMachine() {
+//Tests creation of Machines
+static void testMachine() {
     auto r99 = make_shared<Robot>(99);
     auto rs0 = make_shared<RingStation>(0);
     auto cs5 = make_shared<RingStation>(5);
@@ -172,4 +202,4 @@ void testMachine() {
 //     return 0;
 // }
 
-} // namespace
+};
