@@ -19,21 +19,23 @@ include $(BUILDSYSDIR)/clips.mk
 include $(BUILDCONFDIR)/navgraph/navgraph.mk
 include $(BUILDSYSDIR)/protobuf.mk
 
-#CFLAGS += $(CFLAGS_LIBZ3) $(CFLAGS_LIBCARL)
-#LDFLAGS += $(LDFLAGS_LIBZ3) $(LDFLAGS_LIBCARL)
-
 LIBS_clips_smt = fawkescore fawkesutils fawkesaspects \
 		      fawkesclipsaspect fawkesnavgraphaspect \
 		      fawkesnavgraph \
 			  z3 \
+			  carl gmp gmpxx \
 			  fawkestf llsf_msgs
-OBJS_clips_smt = clips_smt_plugin.o clips_smt_thread.o
+OBJS_clips_smt = clips_smt_plugin.o clips_smt_thread.o \
+			FormulaGenerator/BaseStation.o FormulaGenerator/CapStation.o FormulaGenerator/DeliveryStation.o  FormulaGenerator/RingStation.o  FormulaGenerator/Station.o \
+			FormulaGenerator/FormulaGenerator.o FormulaGenerator/GameData.o  FormulaGenerator/StepFormula.o \
+			FormulaGenerator/Machine.o FormulaGenerator/Order.o  FormulaGenerator/Robot.cpp  FormulaGenerator/Workpiece.o \
+			FormulaGenerator/Reward.o
 
 OBJS_all = $(OBJS_clips_smt)
 
-ifeq ($(SUPPORT_CPP14)$(HAVE_CLIPS)$(HAVE_NAVGRAPH)$(HAVE_LIBZ3)$(HAVE_LIBCARL)$(HAVE_TF),111111)
-  CFLAGS  += $(CFLAGS_CLIPS) $(CFLAGS_LIBZ3) $(CFLAGS_LIBCARL) $(CFLAGS_CPP14) $(CFLAGS_TF)
-  LDFLAGS += $(LDFLAGS_CLIPS) $(LDFLAGS_LIBZ3) $(LDFLAGS_LIBCARL) $(LDFLAGS_TF)
+ifeq ($(SUPPORT_CPP14)$(HAVE_CLIPS)$(HAVE_NAVGRAPH)$(HAVE_LIBZ3)$(HAVE_LIBCARL),11111)
+  CFLAGS  += $(CFLAGS_CLIPS) $(CFLAGS_LIBZ3) $(CFLAGS_LIBCARL) $(CFLAGS_CPP14)
+  LDFLAGS += $(LDFLAGS_CLIPS) $(LDFLAGS_LIBZ3) $(LDFLAGS_LIBCARL)
 
   PLUGINS_all = $(PLUGINDIR)/clips-smt.$(SOEXT)
 
@@ -53,15 +55,12 @@ else
   ifneq ($(HAVE_LIBCARL),1)
     WARN_TARGETS = warning_carl
   endif
-  ifneq ($(HAVE_TF),1)
-    WARN_TARGETS = warning_tf
-  endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 
-.PHONY: warning_clips warning_cpp14 warning_z3 warning_carl warning_tf
+.PHONY: warning_clips warning_cpp14 warning_z3 warning_carl #warning_tf
 warning_clips:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips-smt plugin$(TNORMAL) ($(CLIPS_ERROR))"
 
@@ -76,9 +75,6 @@ warning_z3:
 
 warning_carl:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build clips-smt plugin$(TNORMAL) (Carl libraries not available)"
-
-warning_tf:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph plugin$(TNORMAL) (tf not available)"
 
 endif
 

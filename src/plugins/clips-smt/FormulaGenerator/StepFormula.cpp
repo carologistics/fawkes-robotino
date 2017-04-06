@@ -23,7 +23,7 @@ std::vector<stepFormula_ptr> StepFormula::generateSteps(uint amount, GameData& g
     std::vector<stepFormula_ptr> steps;
     std::shared_ptr<StepFormula> prevStep = nullptr;
 
-    for (int number = 0; number <= amount; number++) {
+    for (uint number = 0; number <= amount; number++) {
 
         std::shared_ptr<StepFormula> step = std::make_shared<StepFormula>(prevStep, gameData);
         steps.push_back(step);
@@ -300,43 +300,43 @@ Formula StepFormula::swapCap(const Machine& m1, const Machine & m2) {
 }
 
 Variable StepFormula::getVarHoldsBase(const Machine & m) {
-    return getVariable("B(" + m.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable("B" + m.getVarIdentifier() + "_" + getStepName() + "");
 }
 
 Variable StepFormula::getVarHoldsRing(const Machine &m, int i) {
-    return getVariable("R" + std::to_string(i) + "(" + m.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable("R" + std::to_string(i) + "" + m.getVarIdentifier() + "_" + getStepName() + "");
 }
 
 Variable StepFormula::getVarHoldsCap(const Machine & m) {
-    return getVariable("C(" + m.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable("C" + m.getVarIdentifier() + "_" + getStepName() + "");
 }
 
 Variable StepFormula::getVarMachineOccupied(const Station& m) {
-    return getVariable("OCC(" + m.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable("OCC" + m.getVarIdentifier() + "_" + getStepName() + "");
 }
 
 Variable StepFormula::getVarMovingTime(const Robot &r, const Station & m) {
-    return getVariable("MOV(" + r.getVarIdentifier() + "," + m.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable("MOV" + r.getVarIdentifier() + "_" + m.getVarIdentifier() + "_" + getStepName() + "");
 }
 
 Variable StepFormula::getVarCapColor(const CapStation & cs) {
-    return getVariable("CCOL(" + cs.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable("CCOL" + cs.getVarIdentifier() + "_" + getStepName() + "");
 }
 
 Variable StepFormula::getVarRingColor(const RingStation & rs) {
-    return getVariable("RCOL(" + rs.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable("RCOL" + rs.getVarIdentifier() + "_" + getStepName() + "");
 }
 
 Variable StepFormula::getVarBaseReq(const RingStation & rs) {
-    return getVariable("BREQ(" + rs.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable("BREQ" + rs.getVarIdentifier() + "_" + getStepName() + "");
 }
 
 Variable StepFormula::getVarReward() {
-    return getVariable("R(" + getStepName() + ")");
+    return getVariable("R" + getStepName() + "");
 }
 
 Variable StepFormula::getVarOrderDelivered(const Order& o) {
-    return getVariable("OD(" + std::to_string(o.getId()) + "," + getStepName() + ")");
+    return getVariable("OD" + std::to_string(o.getId()) + "_" + getStepName() + "");
 }
 
 Formula StepFormula::equation(int value1, int value2) {
@@ -649,7 +649,7 @@ Formula StepFormula::existOrderWithRingColorReq(Workpiece::Color c){
     std::vector<Formula> formulas;
     for (auto const& o : getGameData().getOrdersWithRingReq(c))
         formulas.push_back(orderNotDeliveredPrev(o));
-    
+
     return Formula(carl::FormulaType::OR, formulas);
 }
 
@@ -754,9 +754,9 @@ Formula StepFormula::mountRingAction(Robot &r, RingStation & rs) {
 Formula StepFormula::existOrderWithRingReq(Robot &r, RingStation & rs) {
     std::vector<Formula> formulas;
     for (auto const& o : getGameData().getOrders()) {
-        for (int i = 0; i < Workpiece::getMaxRingNumber(); i++)
-            formulas.push_back(orderHasRingReq(r, rs, *o, i));
-            formulas.push_back(orderNotDeliveredPrev(*o));
+        for (int i = 0; i < Workpiece::getMaxRingNumber(); i++) formulas.push_back(orderHasRingReq(r, rs, *o, i));
+        formulas.push_back(orderNotDeliveredPrev(*o));
+
     }
     return Formula(carl::FormulaType::OR, formulas);
 }

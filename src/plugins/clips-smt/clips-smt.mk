@@ -23,6 +23,8 @@ ifneq ($(wildcard $(SYSROOT)/usr/local/include/z3++.h),)
 endif
 ifneq ($(wildcard $(SYSROOT)/usr/include/z3++.h),)
   HAVE_LIBZ3=1
+	LDFLAGS_LIBZ3 += -Wl,-rpath,/usr/lib
+  CFLAGS_LIBZ3 += -I/usr/include
 endif
 ifneq ($(wildcard $(HOME)/.local/usr/include/z3++.h),)
   HAVE_LIBZ3=1
@@ -37,7 +39,7 @@ endif
 # test carl
 ifneq ($(wildcard $(SYSROOT)/usr/local/include/carl/numbers/numbers.h),)
   HAVE_LIBCARL=1
-  LDFLAGS_LIBCARL += -L/usr/local/lib
+  LDFLAGS_LIBCARL += -Wl,-rpath,/usr/local/lib
   CFLAGS_LIBCARL += -I/usr/local/include
 endif
 ifneq ($(wildcard $(SYSROOT)/usr/include/carl/numbers/numbers.h),)

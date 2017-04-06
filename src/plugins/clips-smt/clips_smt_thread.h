@@ -25,30 +25,39 @@
 #include <core/threading/thread.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
-#include <aspect/tf.h>
+//#include <aspect/tf.h>
 #include <plugins/clips/aspect/clips_feature.h>
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
 
 #include <clipsmm.h>
+#ifdef TRUE
+#  undef TRUE
+#endif
+#ifdef FALSE
+#  undef FALSE
+#endif
 
 #include <z3++.h>
-//#include <carl/numbers/numbers.h>
-//#include <carl/core/VariablePool.h>
-//#include <carl/formula/Formula.h>
-//#include <carl/io/SMTLIBStream.h>
+#include <carl/numbers/numbers.h>
+// #include <carl/core/VariablePool.h>
+#include <carl/formula/Formula.h>
+#include <carl/io/SMTLIBStream.h>
 
 #include <vector>
 #include <string>
 #include <map>
 #include <iostream>
 
-//#include "FormulaGenerator/FormulaGenerator.h"
+//v#include "FormulaGenerator/FormulaGenerator.h"
+// #include "FormulaGenerator/GameData.h"
+#include "FormulaGenerator/formulaGeneratorTest.cpp"
+
 #include <llsf_msgs/ClipsSmtData.pb.h>
-#include "FormulaGenerator/GameData.h"
 
 
 #include <boost/cerrno.hpp>
+
 
 namespace fawkes {
     class SubProcess;
@@ -61,14 +70,11 @@ class ClipsSmtThread
   public fawkes::ConfigurableAspect,
   public fawkes::NavGraphAspect,
   public fawkes::NavGraph::ChangeListener,
-  public fawkes::TransformAspect,
+  //public fawkes::TransformAspect,
   public fawkes::CLIPSFeature,
   public fawkes::CLIPSFeatureAspect
 {
  public:
-
-  typedef float smtTime;
-  //time format used for the SMT solving is defined here
 
   ClipsSmtThread();
   virtual ~ClipsSmtThread();
@@ -107,7 +113,7 @@ class ClipsSmtThread
   std::map<int ,std::string> actions_robot_2;
   std::map<int ,std::string> actions_robot_3;
 
-  // SubProcess to call extern binary of z3
+  //SubProcess to call extern binary of z3
   // fawkes::SubProcess *proc_z3_;
 
   // SubProcess to call python
@@ -119,14 +125,15 @@ class ClipsSmtThread
   CLIPS::Value clips_smt_get_plan(std::string env_name, std::string handle);
   CLIPS::Value clips_smt_done(std::string env_name, std::string bar);
   llsf_msgs::ClipsSmtData data;
-  GameData::GameData clips_smt_convert_protobuf_to_gamedata();
+  GameData clips_smt_convert_protobuf_to_gamedata();
 
   std::string data_env;
   std::string data_handle;
 
   // Navgraph
   void clips_smt_fill_node_names();
-  void clips_smt_compute_distances();
+  void clips_smt_compute_distances_robots();
+  void clips_smt_compute_distances_machines();
   std::map<int, std::string> node_names_;
   std::map<std::pair<std::string, std::string>, float> distances_;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
@@ -138,7 +145,7 @@ class ClipsSmtThread
   void clips_smt_test_python();
   void clips_smt_test_z3();
   void clips_smt_test_carl();
-  void clips_smt_test_navgraph();
+  void clips_smt_test_formulaGenerator();
 
   std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 };
