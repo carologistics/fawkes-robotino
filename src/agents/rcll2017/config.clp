@@ -122,3 +122,9 @@
   (retract ?cv)
 )
 
+(defrule conf-get-robot-name
+  ?cv <- (confval (path "/clips-agent/rcll2016/robot-name") (type STRING) (value ?robot-name))
+  =>
+  (assert (robot-name ?robot-name))
+  (retract ?cv)
+)
