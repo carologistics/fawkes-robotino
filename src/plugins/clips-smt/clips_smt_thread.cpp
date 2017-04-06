@@ -63,6 +63,7 @@ ClipsSmtThread::init()
     // Test z3 extern binary
     // proc_z3_ = NULL;
     clips_smt_test_z3();
+    clips_smt_test_formulaGenerator();
 
     // Test python
     //proc_python_ = NULL;
@@ -90,9 +91,6 @@ ClipsSmtThread::finalize()
     //   proc_python_->kill(SIGINT);
     // }
     // delete proc_python_;
-
-    // Handle output of formula generation
-    // std::remove("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt"); // TODO (Igor) Add functionality to remove intermediate formula.smt
 
     envs_.clear();
 }
@@ -570,13 +568,12 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
     }
 
-
     // Robot can not visit the same machine twice <- Problem
     // Added initialization of constraint to false.
     // it might be the case that concat on uninitialized expr gives problems.
 
-
     for(int i = 1; i < data.machines().size()+1; ++i){
+
         z3::expr constraint1(var_false);
 
         for(int j = 1; j < data.robots().size()+1; ++j) {
@@ -610,11 +607,12 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
 
                       z3::expr var_j_u_k_v(_z3_context);
                        if(j== u && k==v) {
-                           var_j_u_k_v = _z3_context.bool_val(true);
+                           var_j_u_k_v = var_true;
                        } else {
-                           var_j_u_k_v = _z3_context.bool_val(false);
+                           var_j_u_k_v = var_false;
                        }
-                       constraint2 = constraint2 && (var_pos_u_v != i || var_j_u_k_v);
+
+                       constraint2 = constraint2 && (!(var_pos_u_v == i) || var_j_u_k_v);
                   }
                 }
                 constraint2 = constraint2 && (var_pos_i_k == i);
@@ -949,8 +947,8 @@ ClipsSmtThread::clips_smt_compute_distances_robots()
     MutexLocker lock(navgraph.objmutex_ptr());
 
    // Compute distances between robotos positions and machines
+   std::string robot_node_name = "Robot-";
    for(int r = 0; r < data.robots().size(); ++r){
-       std::string robot_node_name = "Robot-";
        robot_node_name += std::to_string(r+1);
 
        // logger->log_info(name(), "Position of robot %s is (%f,%f)", data.robots(r).name().c_str(), data.robots(r).pose().x(), data.robots(r).pose().y());
@@ -1045,8 +1043,7 @@ ClipsSmtThread::clips_smt_compute_distances_robots()
       if(s.check() == z3::sat) logger->log_info(name(), "Test of import .smt file into z3 constraint did work");
       else     logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work");
 
-
-
+      // std::remove("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt"); // TODO (Igor) Add functionality to remove intermediate formula.smt
  }
 
  void
@@ -1070,13 +1067,11 @@ ClipsSmtThread::clips_smt_compute_distances_robots()
  void
  ClipsSmtThread::clips_smt_test_carl()
  {
-     /**
      // Test carl
      logger->log_info(name(), "Test carl");
      bool b=false;
      if(carl::highestPower(64)==64) b=true;
      logger->log_info(name(), "Hello carl, you are %b", b);
-     **/
  }
 
 
@@ -1086,56 +1081,91 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 
   GameData _generatorData = GameData();
 
-  // //machines
-  // for (int i = 0; i < data.machines().size(); i++)
-  // {
-  //   //name -> id
-  //   GameData::Machine _tmpMachine = GameData::Machine(atoi(data.machines(i).name().c_str()));
-  //   //type -> type
-  //   _tmpMachine.setType(data.machines(i).type());
-  //   //TODO (Lukas) WorkingPiece
-  //   //TODO (Lukas) Distances
-  //   //_generatorData.addMachine(_tmpMachine);
-  // }
-  //
-  //
-  // //Robots
-  // for (int i = 0; i < data.robots().size(); i++)
-  // {
-  //   //name -> id
-  //   GameData::Robot _tmpRobot = GameData::Robot(atoi(data.robots(i).name().c_str()));
-  //   //TODO (Lukas) Distances
-  // }
-  //
-  //
-  // //Orders
-  // for (int i = 0; i < data.orders().size(); i++)
-  // {
-  //   GameData::Workpiece _tmpWorkPiece = GameData::Workpiece();
-  //   //Color conversions
-  //   int _baseColor = data.orders(i).base_color()+1;
-  //   int _capColor = data.orders(i).cap_color();
-  //
-  //
-  //   std::vector<int> _ringColors;
-  //   for (int j = 0; j < data.orders(i).ring_colors().size(); j++)
-  //   {
-  //     _ringColors.push_back(data.orders(i).ring_colors(i)+1);
-  //   }
-  //
-  //
-  //   std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
-  //   //TODO fix this conversion:
-  //   /*
-  //   _tmpWorkPiece.setBaseColor(_baseColor);
-  //   _tmpWorkPiece.setCapColor(_capColor);
-  //   _tmpWorkPiece.setRingColor(_ringColors);
-  //   */
-  //
-  //
-  //   //GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
-  //   //TODO (Lukas) Distances
-  // }
+  //machines
+  for (int i = 0; i < data.machines().size(); i++)
+  {
+    //name -> id
+    Machine _tmpMachine = Machine("dummy", atoi(data.machines(i).name().c_str()));
+    //type -> type
+    _tmpMachine.setType(data.machines(i).type());
+    //TODO (Lukas) WorkingPiece
+    //TODO (Lukas) Distances
+    //_generatorData.addMachine(_tmpMachine);
+  }
+
+
+  //Robots
+  for (int i = 0; i < data.robots().size(); i++)
+  {
+    //name -> id
+    Robot _tmpRobot = Robot(atoi(data.robots(i).name().c_str()));
+    //TODO (Lukas) Distances
+  }
+
+
+  //Orders
+  for (int i = 0; i < data.orders().size(); i++)
+  {
+    Workpiece _tmpWorkPiece = Workpiece();
+    //Color conversions
+    int _baseColor = data.orders(i).base_color()+1;
+    int _capColor = data.orders(i).cap_color();
+
+
+    std::vector<int> _ringColors;
+    for (int j = 0; j < data.orders(i).ring_colors().size(); j++)
+    {
+      _ringColors.push_back(data.orders(i).ring_colors(i)+1);
+    }
+
+
+    std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
+    //TODO fix this conversion:
+    /*
+    _tmpWorkPiece.setBaseColor(_baseColor);
+    _tmpWorkPiece.setCapColor(_capColor);
+    _tmpWorkPiece.setRingColor(_ringColors);
+    */
+
+
+    //GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
+    //TODO (Lukas) Distances
+  }
 
   return _generatorData;
+}
+
+
+void ClipsSmtThread::clips_smt_test_formulaGenerator()
+{
+
+  logger->log_info(name(), "Test FormulaGenerator extern binary");
+
+  GameData gD = FormulaGeneratorTest::createGameDataTestCase();
+  FormulaGenerator fg = FormulaGenerator(1, gD);
+
+  logger->log_info(name(), "Export FormulaGenerator formula to file fg_formula.smt");
+    std::ofstream outputFile("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt"); // TODO (Igor) Exchange path with config value
+    outputFile << carl::outputSMTLIB(carl::Logic::QF_LIA, {fg.createFormula()});
+    outputFile.close();
+
+   //  const char *argv[] = { "/home/robosim/z3/bin/z3",
+   //                         "-smt2",
+   //                         "/home/robosim/carl_test/carl_formula.smt",
+   //                         NULL };
+   //  proc_z3_ = new SubProcess("z3 binary", argv[0], argv, NULL, logger);
+   //  proc_z3_->check_proc();
+
+
+   logger->log_info(name(), "Import FormulaGenerator formula from file fg_formula.smt into z3 formula");
+
+     Z3_ast a = Z3_parse_smtlib2_file(_z3_context, "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt", 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
+     z3::expr e(_z3_context, a);
+
+     z3::solver s(_z3_context);
+     s.add(e);
+     if(s.check() == z3::sat) logger->log_info(name(), "Test of import fg_formula.smt file into z3 constraint did work");
+     else     logger->log_info(name(), "Test of import fg_formula.smt file into z3 constraint did NOT work");
+
+     //std::remove("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt"); // TODO (Igor) Add functionality to remove intermediate formula.smt
 }
