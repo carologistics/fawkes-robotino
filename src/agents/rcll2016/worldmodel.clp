@@ -346,9 +346,9 @@
 (defrule wm-update-pose
   (declare (salience ?*PRIORITY-CLEANUP*))
   ?pif <- (Position3DInterface (id "Pose") (translation $?pos))
-  ?pose <- (pose (x ?) (y ?))
+  ?pose <- (pose (x ?) (y ?) (name ?))
   =>
-  (modify ?pose (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)))
+  (modify ?pose (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)) (name ?*ROBOT-NAME*))
   (retract ?pif)
 )
 

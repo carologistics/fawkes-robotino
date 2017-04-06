@@ -403,7 +403,7 @@
 
   (already-received-wm-changes (create$))
 
-  (pose (x 0.0) (y 0.0))
+  (pose (x 0.0) (y 0.0) (name ?*ROBOT-NAME*))
   (puck-in-gripper FALSE)
 
   (team-robot R-1)
