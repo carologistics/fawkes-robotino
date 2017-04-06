@@ -44,63 +44,6 @@
 )
 
 
-(defrule navgraph-get-zone-of-found-tag
-  "For new found tags that were added to the navgraph, we want to check the zone where the machine is standing for the exploration report"
-  (declare (salience ?*PRIORITY-WM*))
-  (found-tag (name ?mps) (side ?side) (frame ?frame)
-             (trans $?trans) (rot $?rot))
-  (navgraph-node (name ?input&:(eq ?input (str-cat ?mps "-I")))
-                 (pos $?pos-i))
-  (navgraph-node (name ?output&:(eq ?output (str-cat ?mps "-O")))
-                 (pos $?pos-o))
-  (team-color ?team-color)
-  (explore-zone-target ?zone-intended)
-  (not (zone-exploration (machine ?mps)))
-  (phase ?phase)
-  =>
-  ; Find zone by center of the mps
-  (bind ?center (utils-get-2d-center (nth$ 1 ?pos-i) (nth$ 2 ?pos-i) 
-                                     (nth$ 1 ?pos-o) (nth$ 2 ?pos-o)))
-  (bind ?zone-y (round-down (/ (nth$ 2 ?center) ?*ZONE-HEIGHT*)))
-  (bind ?cyan-x (nth$ 1 ?center))
-  (if (< ?cyan-x 0) then
-    (bind ?cyan-x (- 0 ?cyan-x))
-  )
-  (bind ?zone-cyan-x (round-down (/ ?cyan-x ?*ZONE-WIDTH*)))
-  (bind ?zone (+ 1 ?zone-y (* 4 ?zone-cyan-x)))
-  (if (< (nth$ 1 ?center) 0) then
-    (bind ?zone (+ ?zone 12))
-  )
-
-  ;if we are currently in the exploration phase check which zone we expect the machine to be in
-  (bind ?zone-intended NONE)
-  (do-for-fact ((?cur-zone-fact exp-current-zone)) TRUE
-    (bind ?zone-intended ?cur-zone-fact:name)
-  )
-  (printout t "mps " ?mps " is in zone " ?zone crlf)
-
-  (bind ?zone-color-right FALSE)
-  (do-for-fact ((?ze zone-exploration)) (eq ?ze:name (sym-cat Z ?zone))
-    (if (or (eq ?ze:team ?team-color) (eq ?phase PRODUCTION)) then
-      (if (and (neq (sym-cat Z ?zone) ?zone-intended) (neq ?zone-intended NONE)) then
-        (printout t "That is behind the zone I currently explore (" 
-                  ?zone-intended ")" crlf)
-      )
-      (synced-modify ?ze machine ?mps)
-      (bind ?zone-color-right TRUE)
-    )
-  )
-  (if (and (not ?zone-color-right) (eq ?phase EXPLORATION))
-    then
-    (printout error "mps " ?mps " in wrong zone detected. Setting it to intended zone " ?zone-intended crlf)
-    (do-for-fact ((?ze zone-exploration)) (eq ?ze:name ?zone-intended)
-      (synced-modify ?ze still-to-explore FALSE
-                     recognized TRUE
-                     machine ?mps)
-    )
-  )
-)
-
 (defrule navgraph-generate-waiting-positions
   "To generate waiting positions in the empty zones we have to send the SetWaitZones message to the navgraph-generation interface"
   (phase PRODUCTION)
