@@ -87,10 +87,13 @@
 ; 	(pb-destroy ?ap)
 ; )
 
-(deffunction smt-create-data (?robots ?machines ?orders ?productcolors)
+(deffunction smt-create-data (?robots ?addrobots ?machines ?orders ?productcolors)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 	(foreach ?r ?robots
 		(pb-add-list ?p "robots" ?r)
+	)
+	(foreach ?ar ?addrobots
+		(pb-add-list ?p "robots" ?ar)
 	)
 	(foreach ?m ?machines
 		(pb-add-list ?p "machines" ?m)
@@ -116,6 +119,14 @@
 	(pb-set-field ?pose "ori" 0.0)
 	(pb-set-field ?r "pose" ?pose)
 	(return ?r)
+)
+
+(deffunction smt-create-additional-robots (?team-color)
+	(bind ?rv (create$))
+	(do-for-all-facts ((?p pose)) TRUE
+		(bind ?rv (append$ ?rv (smt-create-robot ?p:name ?team-color 0 ?p:x ?p:y)))
+	)
+	(return ?rv)
 )
 
 (deffunction smt-create-robots (?team-color)
@@ -219,7 +230,8 @@
 =>
 	(bind ?p
 	  (smt-create-data
-	    (smt-create-robots ?team-color)
+		  (smt-create-robots ?team-color)
+		  (smt-create-additional-robots ?team-color)
 	    (smt-create-machines ?team-color)
 	    (smt-create-orders ?team-color)
 			(smt-create-orders-productcolors ?team-color)
