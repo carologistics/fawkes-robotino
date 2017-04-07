@@ -131,6 +131,8 @@ class ClipsSmtThread
   std::string data_handle;
 
   // Navgraph
+  int number_machines;
+  int number_robots;
   void clips_smt_fill_node_names();
   void clips_smt_compute_distances_robots();
   void clips_smt_compute_distances_machines();
