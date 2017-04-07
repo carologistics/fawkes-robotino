@@ -4,7 +4,6 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-filter
 ---
 plugins/laser-filter:
-  debug: false
   robot:
     active: true
 
@@ -58,6 +57,7 @@ plugins/laser-filter:
         to: 375
 
   map:
+    debug: false
 
     # URG input interface
     in/filtered: Laser360Interface::Laser urg-filtered
