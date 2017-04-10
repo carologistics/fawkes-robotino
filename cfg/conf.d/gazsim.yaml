@@ -103,6 +103,9 @@ gazsim:
       slippery-wheels-threshold: 0.5
       moving-speed-factor: 0.98
       rotation-speed-factor: 0.98
+
+    imu:
+      frame: !frame imu
       
   comm:
     package-loss: 0.0

@@ -18,7 +18,7 @@ fawkes/meta_plugins:
   # Gazebo stuff
   #
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,gazsim-gripper,gazsim-conveyor,laser_front_dist,webview
-  gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,ros-move-base,amcl,navgraph,navgraph-generator,navgraph-generator-mps,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
+  gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-imu,ros-odometry,ros-tf,ros-laserscan,ros-move-base,amcl,navgraph,navgraph-generator,navgraph-generator-mps,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-robotino-no-ros: gazsim-meta-robotino,amcl,navgraph,navgraph-generator,navgraph-generator-mps,map-lasergen,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
   gazsim-meta-robotino-vision-low-level: fvbase,gazsim-webcam,tag_vision,gazsim-machine-signal
@@ -33,6 +33,6 @@ fawkes/meta_plugins:
   m-base-joy: m-base-bare,joystick,joystick-teleop
   m-base-joy-safe: m-base-bare,laser,laser-filter,joystick,joystick-teleop
   m-base-gripper: arduino,dynamixel,ax12_gripper
-  m-base-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan,ros-move-base
+  m-base-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan,ros-move-base,ros-imu
   m-base-laser: laser,laser-filter,m-base-ros,laser-pointclouds,laser-cluster,laser-lines,map-lasergen
   m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,colli,amcl,m-base-joy,laser_front_dist
