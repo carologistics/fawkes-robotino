@@ -148,12 +148,17 @@
   (path-load  rcll2017/steps.clp)
   (path-load  rcll2017/coordination.clp)
   (path-load  rcll2017/production.clp)
-  (path-load  rcll2017/exploration.clp)
   (path-load  rcll2017/config.clp)
   (reset)
   ;(facts)
 
   (unwatch-rules-facts)
+)
+
+(defrule load-exploration
+  (ff-feature-loaded navgraph)
+=>
+  (path-load rcll2017/exploration.clp)
 )
 
 (defrule late-silence-debug-facts
