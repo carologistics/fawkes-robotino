@@ -138,6 +138,7 @@ class ClipsSmtThread
   void clips_smt_compute_distances_machines();
   std::map<int, std::string> node_names_;
   std::map<std::pair<std::string, std::string>, float> distances_;
+  bool add_constraint_closest_node;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
   std::string cfg_base_frame_;
   std::string cfg_global_frame_;
