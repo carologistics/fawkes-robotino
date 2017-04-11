@@ -68,6 +68,8 @@ ClipsSmtThread::init()
     // Test python
     //proc_python_ = NULL;
     //clips_smt_test_python();
+
+    add_constraint_closest_node=true;
 }
 
 
@@ -668,6 +670,44 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         constraints.push_back(constraint1 || constraint2);
     }
 
+    // Additional constraint first robot goes to the closest machine pos_1_1=k and d_1_1=distances_("C-ins-in",k)
+    if(add_constraint_closest_node) {
+      float min_distance=100;
+      int min_m=0;
+
+      // Get min_distance and min_m
+      for(int m = 1; m < number_machines+1; ++m) {
+        float distance = distances_[std::make_pair("C-ins-in", node_names_[m])];
+        if(distance<min_distance) {
+          min_distance = distance;
+          min_m = m;
+        }
+      }
+
+      z3::expr var_p_1_1(_z3_context);
+      z3::expr var_d_1_1(_z3_context);
+
+      it_map = variables_pos.find("pos_"+std::to_string(1)+"_"+std::to_string(1));
+      if(it_map != variables_pos.end()) {
+          var_p_1_1 = it_map->second;
+      }
+      else {
+          logger->log_error(name(), "var_p_1_1 not found");
+      }
+
+      it_map = variables_d.find("d_"+std::to_string(1)+"_"+std::to_string(1));
+      if(it_map != variables_d.end()) {
+          var_d_1_1 = it_map->second;
+      }
+      else {
+          logger->log_error(name(), "var_d_1_1 not found");
+      }
+
+      z3::expr min_distance_z3 = _z3_context.real_val((std::to_string(min_distance)).c_str());
+      z3::expr constraint_closest_node(var_p_1_1==min_m && var_d_1_1==min_distance_z3);
+      constraints.push_back(constraint_closest_node);
+    }
+
     return constraints;
 }
 
@@ -757,7 +797,6 @@ void
     outputFile << std::endl << dt << "Scenario with " << node_names_.size()-1 << " machines" << std::endl;
 
     // Begin measuring solving time
-    double diff = 0;
     std::chrono::high_resolution_clock::time_point end;
     std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
@@ -832,11 +871,15 @@ void
         logger->log_info(name(), "Finished solving and optimizing formula with UNSAT");
     }
 
-    // Compute time for solving
-    diff = (double) std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count()/1000000;
-    logger->log_info(name(), "Time difference is %f ms", diff); // Measure time in nanoseconds but display in milliseconds for convenience
+    if(add_constraint_closest_node) outputFile << "With additional constraint_closest_node" << std::endl << std::endl;
 
-    outputFile << "Time used for solving: " << diff << " ms" << std::endl << "__________ __________ __________";
+    // Compute time for solving
+    double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
+    double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
+
+    // logger->log_info(name(), "Time difference is %f ms", diff); // Measure time in nanoseconds but display in milliseconds for convenience
+
+    outputFile << "Time used for solving: " << diff_ms << " ms, " << diff_m << " m" << std::endl << "__________ __________ __________";
     outputFile.close();
 }
 
