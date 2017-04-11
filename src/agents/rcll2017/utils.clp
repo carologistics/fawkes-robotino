@@ -432,7 +432,7 @@
   (return ?mid-map)
 )
 
-(deffunction other-team-name (?zn)
+(deffunction mirror-name (?zn)
   (bind ?team (sub-string 1 1 ?zn))
   (bind ?zone (sub-string 3 99 ?zn))
   (if (eq ?team "M") then

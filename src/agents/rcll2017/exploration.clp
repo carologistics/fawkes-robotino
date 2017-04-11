@@ -51,7 +51,9 @@
   (state EXP_IDLE)
   =>
   (do-for-all-facts ((?nn exp-next-node)) TRUE (retract ?nn))
-  (assert (exp-next-node (node (nth$ ?*EXP-ROUTE-IDX* ?route))))
+  (if (<= ?*EXP-ROUTE-IDX* (length$ ?route)) then
+    (assert (exp-next-node (node (nth$ ?*EXP-ROUTE-IDX* ?route))))
+  )
 )
 
 
@@ -59,40 +61,67 @@
   (phase EXPLORATION)
   ?s <- (state ?state&:(or (eq ?state EXP_START) (eq ?state EXP_IDLE)))
   (exp-next-node (node ?next-node))
+  (navgraph-node (name ?next-node))
   (exp-navigator-vmax ?max-velocity ?max-rotation)
   =>
   (retract ?s)
-  (assert (state EXP_GOTO_NEXT)
-    (exp-searching)
+  (assert
+    (state EXP_GOTO_NEXT)
   )
   (navigator-set-speed ?max-velocity ?max-rotation)
-  (skill-call goto place ?next-node)
+  (skill-call drive_to_local place ?next-node)
+)
+
+
+(defrule exp-node-blocked
+  (phase EXPLORATION)
+  ?s <- (state EXP_GOTO_NEXT)
+  (exp-next-node (node ?next-node))
+  (navgraph-node (name ?next-node) (pos $?node-trans))
+  (zone-exploration (name ?zn&:(eq ?zn (get-zone ?node-trans))) (machine ?machine&~UNKNOWN&~NONE))
+  (Position3DInterface (id "Pose") (translation $?pose-trans))
+  (test (< 1.5 (distance
+    (nth$ 1 ?node-trans)
+    (nth$ 2 ?node-trans)
+    (nth$ 1 ?pose-trans)
+    (nth$ 2 ?pose-trans)
+  )))
+=>
+  (printout t "Node " ?next-node " blocked by " ?machine
+    " but we got close enough. Proceeding to next node." crlf)
+  (retract ?s)
+  (skill-call relgoto x 0 y 0)
+  (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
+  (assert (state EXP_IDLE))
 )
 
 
 (defrule exp-goto-next-final
   (phase EXPLORATION)
   ?s <- (state EXP_GOTO_NEXT)
-  ?skill-f <- (skill-done (name "goto") (status ?))
+  ?skill-f <- (skill-done (name "drive_to_local") (status ?))
   (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
   =>
   (retract ?s ?skill-f)
   (navigator-set-speed ?max-velocity ?max-rotation)
   (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
-  (assert (state EXP_IDLE))
+  (assert
+    (exp-searching)
+    (state EXP_IDLE)
+  )
 )
 
 
 (defrule exp-passed-through-quadrant
   "We're driving slowly through a certain quadrant: reason enough to believe there's no machine here."
   (phase EXPLORATION)
-  (exp-searching)
+  (exp-navigator-vmax ?max-velocity ?max-rotation)
   (MotorInterface (id "Robotino")
-    (vx ?vx&:(< ?vx 0.05)) (vy ?vy&:(< ?vy 0.05)) (omega ?w&:(< ?w 0.05))
+    (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
   )
-  (Position3DInterface (id "Pose") (translation $?trans) (time $?timestamp))
+  (Position3DInterface (id "Pose") (translation $?trans) (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
   ?ze <- (zone-exploration
-    (name ?zn&:(eq ?zn (get-zone 0.07 ?trans)))
+    (name ?zn&:(eq ?zn (get-zone 0.15 ?trans)))
     (machine UNKNOWN)
     (times-searched ?times-searched)
   )
@@ -107,28 +136,78 @@
 (defrule exp-found-line
   "Found a line that is within an unexplored zone."
   (phase EXPLORATION)
-  ?srch-f <- (exp-searching)
+  (exp-searching)
   (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
   )
   (exp-zone-margin ?zone-margin)
-  (zone-exploration
+  ?ze-f <- (zone-exploration
     (name ?zn&:(eq ?zn (get-zone ?zone-margin (laser-line-get-center ?id ?timestamp))))
     (machine UNKNOWN)
+    (line-visibility ?zn-vh&:(> ?vh ?zn-vh))
   )
-  (not (locked-resource (resource ?r&:(eq ?r ?zn))))
-  ?st-f <- (state ?)
 =>
-  (printout t "Line in zone: " ?zn crlf)
-  (bind $?center (laser-line-get-center ?id ?timestamp))
-  (bind ?ori (atan (/ (nth$ 2 ?center) (nth$ 1 ?center))))
+  (printout t "EXP found line: " ?zn " vh: " ?vh crlf)
+  (modify ?ze-f (line-visibility ?vh))
+)
+
+
+;(defrule exp-log-line
+;  (phase EXPLORATION)
+;  (exp-searching)
+;  (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
+;    (visibility_history ?vh&:(>= ?vh 1))
+;    (time $?timestamp)
+;  )
+;  (exp-zone-margin ?zone-margin)
+;  (test (get-zone ?zone-margin (laser-line-get-center ?id ?timestamp)))
+;=>
+;  (bind ?zone (get-zone ?zone-margin (laser-line-get-center ?id ?timestamp)))
+;  (do-for-all-facts ((?ze zone-exploration)) (eq ?ze:name ?zone)
+;    (bind ?m ?ze:machine)
+;    (bind ?lv ?ze:line-visibility)
+;  )
+;  (printout t "EXP log line: " ?zone " " ?m " " ?lv crlf)
+;)
+
+
+(defrule exp-stop-to-investigate-zone
+  (phase EXPLORATION)
+  (exp-searching)
+  ?st-f <- (state EXP_GOTO_NEXT)
+  (zone-exploration
+    (name ?zn)
+    (machine UNKNOWN)
+    (line-visibility ?vh&:(> ?vh 0))
+  )
+  ; Use the zone with the highest line-visibility
+  (not (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 ?vh))))
+  (not (locked-resource (resource ?r&:(eq ?r ?zn))))
+=>
+  (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
+  (retract ?st-f)
+  (assert
+    (state EXP_STOPPING)
+    (explore-zone-target (zone ?zn))
+  )
+  (skill-call relgoto x 0 y 0)
+)
+
+
+(defrule exp-stopped
+  (phase EXPLORATION)
+  ?srch-f <- (exp-searching)
+  ?st-f <- (state EXP_STOPPING)
+  (explore-zone-target (zone ?zn))
+  (MotorInterface (id "Robotino")
+    (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
+  )
+=>
   (retract ?st-f ?srch-f)
   (assert (state EXP_LOCK_REQUIRED)
     (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))
-    (explore-zone-target ?zn)
   )
-  (skill-call motor_move ori ?ori)
 )
 
 
@@ -155,11 +234,11 @@
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
   ?st-f <- (state ?)
 =>
-  (skill-call-stop)
+  (skill-call relgoto x 0 y 0)
   (retract ?srch-f ?st-f)
   (assert (state EXP_LOCK_REQUIRED)
     (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))
-    (explore-zone-target ?zn)
+    (explore-zone-target (zone ?zn))
   )
 )
 
@@ -167,10 +246,12 @@
 (defrule exp-skill-explore-zone
   (phase EXPLORATION)
   ?st-f <- (state EXP_LOCK_ACCEPTED)
-  ?exp-f <- (explore-zone-target ?zn)
+  ?exp-f <- (explore-zone-target (zone ?zn))
+  (navigator-default-vmax (velocity ?trans-vmax) (rotation ?rot-vmax))
 =>
   (retract ?exp-f ?st-f)
   (assert (state EXP_EXPLORE_ZONE))
+  (navigator-set-speed ?trans-vmax ?rot-vmax)
   (skill-call explore_zone zone (str-cat ?zn))
 )
 
@@ -228,10 +309,10 @@
   (zone-exploration (name ?zn) (machine ?machine) (times-searched ?times-searched))
 
   (tag-matching (tag-id ?tag2) (side ?side)
-    (machine ?machine2&:(eq ?machine2 (other-team-name ?machine)))
+    (machine ?machine2&:(eq ?machine2 (mirror-name ?machine)))
   )
-  (not (found-tag (name ?machine2&:(eq ?machine2 (other-team-name ?machine)))))
-  ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (other-team-name ?zn))))
+  (not (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine)))))
+  ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (mirror-name ?zn))))
 =>
   (assert
     (found-tag (name ?machine2) (side ?side) (frame ?frame)
@@ -251,7 +332,7 @@
   (tag-matching (tag-id ?tag) (team ?team-color)
     (machine ?machine) (side ?side)
   )
-  (found-tag (name ?machine2&:(eq ?machine2 (other-team-name ?machine)))
+  (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine)))
     (side ?side) (frame ?) (trans $?) (rot $?)
   )
   (tag-matching (tag-id ?tag2) (team ?team-color2&~?team-color)
