@@ -70,13 +70,13 @@ nodes:
   #
   - !unconnected
     name: exp-21
-    pos: [5, 3]
+    pos: [5, 4]
     properties:
       - orientation: 0.7
       - always-copy: true
   - !unconnected
     name: exp-22
-    pos: [-5.0, 3]
+    pos: [-5.0, 4]
     properties:
       - orientation: 0.85
       - always-copy: true
