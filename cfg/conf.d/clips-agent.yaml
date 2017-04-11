@@ -134,8 +134,8 @@ clips-agent:
       needed-visibility-history: 15
 
       # Reduce navigator velocity while traveling the field so we can find laser-lines more reliably
-      max-velocity: 0.8
-      max-rotation: 0.4
+      max-velocity: 0.4
+      max-rotation: 0.5
 
       # Center of a laser-line must be this far from the zone border before we start
       # investigating it further (i.e. call the explore_zone skill on it)
