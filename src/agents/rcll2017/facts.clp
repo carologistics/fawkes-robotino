@@ -29,70 +29,11 @@
   (slot node (type STRING))
 )
 
+(deftemplate explore-zone-target
+  (slot zone (type SYMBOL))
+)
+
 ; EXPLORATION
-
-; Generate zone info like this:
-; for j in `seq 8 -1 1`; do
-;   for i in `seq 1 7`; do
-;     echo -n "C-Z$i$j "
-;   done
-;   echo
-; done
-(deftemplate exploration-quadrant
-  (slot name (type SYMBOL))
-  (multislot zones (type SYMBOL)
-    (allowed-values
-      M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
-      M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
-      M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
-      M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
-      M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
-      M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
-      M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
-                        M-Z41 M-Z31 M-Z21 M-Z11
-
-      C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
-      C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
-      C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
-      C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
-      C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
-      C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
-      C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
-      C-Z11 C-Z21 C-Z31 C-Z41
-    )
-  )
-)
-
-(deffacts exploration-quadrant-definition
-  (exploration-quadrant (name Q1)
-    (zones C-Z52 C-Z62 C-Z72
-           C-Z53 C-Z63 C-Z73)
-  )
-  (exploration-quadrant (name Q2)
-      (zones C-Z33 C-Z43
-             C-Z32 C-Z42
-             C-Z31 C-Z41)
-  )
-  (exploration-quadrant (name Q3)
-      (zones C-Z13 C-Z23
-             C-Z12 C-Z22
-             C-Z11 C-Z21)
-  )
-  (exploration-quadrant (name Q4)
-      (zones M-Z23 M-Z13
-             M-Z22 M-Z12
-             M-Z21 M-Z11)
-  )
-  (exploration-quadrant (name Q5)
-      (zones M-Z43 M-Z33
-             M-Z42 M-Z32
-             M-Z41 M-Z31)
-  )
-  (exploration-quadrant (name Q6)
-      (zones M-Z73 M-Z63 M-Z53
-             M-Z72 M-Z62 M-Z52)
-  )
-)
 
 (deftemplate zone-exploration
   (slot name (type SYMBOL)
@@ -116,6 +57,8 @@
       C-Z11 C-Z21 C-Z31 C-Z41
     )
   )
+  (slot cluster-visibility (type INTEGER) (default 0))
+  (slot line-visibility (type INTEGER) (default 0))
   (slot machine (type SYMBOL) (allowed-values NONE C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS UNKNOWN) (default UNKNOWN))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
 
@@ -400,7 +343,7 @@
 ; Default exploration situation with no swapped zones.
 ; Generate like this:
 ;
-; for j in `seq 1 5`; do
+; for j in `seq 1 8`; do
 ;   for i in `seq 1 7`; do
 ;     echo "    (zone-exploration (name M-Z$i$j) (team MAGENTA))"
 ;   done
@@ -438,6 +381,27 @@
     (zone-exploration (name C-Z55) (team CYAN))
     (zone-exploration (name C-Z65) (team CYAN))
     (zone-exploration (name C-Z75) (team CYAN))
+    (zone-exploration (name C-Z16) (team CYAN))
+    (zone-exploration (name C-Z26) (team CYAN))
+    (zone-exploration (name C-Z36) (team CYAN))
+    (zone-exploration (name C-Z46) (team CYAN))
+    (zone-exploration (name C-Z56) (team CYAN))
+    (zone-exploration (name C-Z66) (team CYAN))
+    (zone-exploration (name C-Z76) (team CYAN))
+    (zone-exploration (name C-Z17) (team CYAN))
+    (zone-exploration (name C-Z27) (team CYAN))
+    (zone-exploration (name C-Z37) (team CYAN))
+    (zone-exploration (name C-Z47) (team CYAN))
+    (zone-exploration (name C-Z57) (team CYAN))
+    (zone-exploration (name C-Z67) (team CYAN))
+    (zone-exploration (name C-Z77) (team CYAN))
+    (zone-exploration (name C-Z18) (team CYAN))
+    (zone-exploration (name C-Z28) (team CYAN))
+    (zone-exploration (name C-Z38) (team CYAN))
+    (zone-exploration (name C-Z48) (team CYAN))
+    (zone-exploration (name C-Z58) (team CYAN))
+    (zone-exploration (name C-Z68) (team CYAN))
+    (zone-exploration (name C-Z78) (team CYAN))
 
     (zone-exploration (name M-Z11) (team MAGENTA))
     (zone-exploration (name M-Z21) (team MAGENTA))
@@ -471,6 +435,27 @@
     (zone-exploration (name M-Z55) (team MAGENTA))
     (zone-exploration (name M-Z65) (team MAGENTA))
     (zone-exploration (name M-Z75) (team MAGENTA))
+    (zone-exploration (name M-Z16) (team MAGENTA))
+    (zone-exploration (name M-Z26) (team MAGENTA))
+    (zone-exploration (name M-Z36) (team MAGENTA))
+    (zone-exploration (name M-Z46) (team MAGENTA))
+    (zone-exploration (name M-Z56) (team MAGENTA))
+    (zone-exploration (name M-Z66) (team MAGENTA))
+    (zone-exploration (name M-Z76) (team MAGENTA))
+    (zone-exploration (name M-Z17) (team MAGENTA))
+    (zone-exploration (name M-Z27) (team MAGENTA))
+    (zone-exploration (name M-Z37) (team MAGENTA))
+    (zone-exploration (name M-Z47) (team MAGENTA))
+    (zone-exploration (name M-Z57) (team MAGENTA))
+    (zone-exploration (name M-Z67) (team MAGENTA))
+    (zone-exploration (name M-Z77) (team MAGENTA))
+    (zone-exploration (name M-Z18) (team MAGENTA))
+    (zone-exploration (name M-Z28) (team MAGENTA))
+    (zone-exploration (name M-Z38) (team MAGENTA))
+    (zone-exploration (name M-Z48) (team MAGENTA))
+    (zone-exploration (name M-Z58) (team MAGENTA))
+    (zone-exploration (name M-Z68) (team MAGENTA))
+    (zone-exploration (name M-Z78) (team MAGENTA))
 )
 
 
