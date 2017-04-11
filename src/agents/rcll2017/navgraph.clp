@@ -31,7 +31,9 @@
   (declare (salience ?*PRIORITY-WM-LOW*))
   ?nn <- (navgraph-node (name ?name&~:(or (eq "C-" (sub-string 1 2 (str-cat ?name)))
                                           (eq "M-" (sub-string 1 2 (str-cat ?name)))
-                                          (eq "WAIT" (sub-string 1 4 (str-cat ?name))))))
+                                          (eq "WAIT" (sub-string 1 4 (str-cat ?name)))
+                                          (eq "exp" (sub-string 1 3 (str-cat ?name)))
+  )))
   =>
   (retract ?nn)
 )
