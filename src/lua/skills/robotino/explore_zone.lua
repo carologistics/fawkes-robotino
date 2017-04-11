@@ -195,6 +195,7 @@ function found_tag()
             bb_found_tag:set_rotation(3, tag_map.ori.w)
             bb_found_tag:set_frame("map")
             bb_found_tag:set_visibility_history(tag:visibility_history())
+            fsm.vars.found_something = true
             return true
          end
       end
@@ -244,7 +245,9 @@ fsm:add_transitions{
    {"FIND_ZONE_CORNER", "APPROACH_ZONE", cond="vars.zone_corner"},
    {"FIND_ZONE_CORNER", "FAILED", cond="not vars.zone_corner"},
    {"APPROACH_ZONE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"APPROACH_ZONE", "GET_CLOSER", timeout=10},
    {"APPROACH_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"APPROACH_LINE", "GET_CLOSER", timeout=10},
    {"WAIT_AMCL", "GET_CLOSER", cond=lost_tag, desc="lost tag"},
    {"WAIT_AMCL", "FINAL", timeout=2},
 }
@@ -374,11 +377,13 @@ end
 
 
 function FIND_LINE:init()
+   self.fsm.vars.found_something = true
    self.args["drive_to_local"] = self.fsm.vars.cluster_vista
 end
 
 
 function APPROACH_LINE:init()
+   self.fsm.vars.found_something = true
    self.args["drive_to_local"] = {
       x = self.fsm.vars.line_vista.x,
       y = self.fsm.vars.line_vista.y,
@@ -397,7 +402,7 @@ function FIND_ZONE_CORNER:init()
       local dx = ZONE_CORNERS[self.fsm.vars.zone_corner_idx].x
       local dy = ZONE_CORNERS[self.fsm.vars.zone_corner_idx].y
 
-      if math.abs(self.fsm.vars.x + dx) <= X_MAX then
+      if math.abs(self.fsm.vars.x + dx) > X_MAX then
          dx = 0
       end
       if self.fsm.vars.y + dy > Y_MAX or self.fsm.vars.y + dy < Y_MIN then
@@ -422,7 +427,11 @@ function APPROACH_ZONE:init()
 end
 
 function FAILED:init()
-   zone_info:set_search_state(zone_info.NO)
+   if not self.fsm.vars.found_something then
+      zone_info:set_search_state(zone_info.NO)
+   else
+      zone_info:set_search_state(zone_info.UNKNOWN)
+   end
 end
 
 function WAIT_AMCL:loop()
