@@ -113,8 +113,9 @@
 			(=> (agent-state STEP-RUNNING))
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" $side)) ) 
 				(=> (agent-state STEP-FINISHD))
-				(=> (workpiece $ws-id  (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
-				(=> (holding $ws-id));put the id
+				(! (= $peace-id (rand 1000)))
+				(=> (workpiece $peace-id  (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
+				(=> (holding $peace-id));put the id
 				else
 				(? (machine $mps-name "BS" @m-state @m-prepared @m-zone @m-pose @m-loaded-with))
 				(if (? (~ (= (val @m-state) "READY-AT-OUTPUT")))
@@ -333,8 +334,7 @@
 					( ! (printf (FORMAT "WARN: Trying to instruct %s while its %s" $mps-name $mps-state)))
 					(=> (agent-state STEP-PENDING))
 					(^ (& 	(machine $mps-name $mps-type @new-state @m-prepared @m-zone @m-pose @m-loaded-with)
-							(MEMQ (val @new-state) (. "IDLE" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
-
+					 		(MEMQ (val @new-state) (. "IDLE" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
 				
 				(if (? (MEMQ $mps-state (. "PREPARED" "READY-AT-OUTPUT" "PROCESSING" "PROCESSED" .)))
 					( ! (printf (FORMAT "ERROR: Trying to instruct %s while its %s" $mps-name $mps-state)))
