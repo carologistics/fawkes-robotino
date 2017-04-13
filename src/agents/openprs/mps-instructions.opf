@@ -12,6 +12,56 @@
 
 (
 
+	(defop mps-instructions--receive-all-instructions
+		:invocation (protobuf-msg "llsf_msgs.PrepareMachine" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec		                        
+															$rcv-from-host $rcvd-from-port $client-type $client-id $msg)
+		:context 	(agent-name $my-name)
+		:body(
+			(! (printf (FORMAT "Received Instruction %s \n" $args)))
+
+			; (! (step (instruct-mps 	machine "C-BS" (args side INPUT color base_red )) ))
+
+			(! (= $team-color				(pb-field-value $msg 		"team_color" )))
+			(? (team-color $team-color))
+
+			(! (= $mps-name 				(pb-field-value $msg 		"machine")) )
+			(? (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with))
+
+			(if (? (= $mps-type "BS"))
+				(! (= $mps-inst				(pb-field-value $msg "instruction_bs"))) 
+				(! (= $side					(pb-field-value $mps-inst "side")))
+				(! (= $color				(pb-field-value $mps-inst "color")))
+
+				(! (= $args (args side $side color $color)))
+				)
+
+			(if (? (= $mps-type "DS"))
+				(! (= $mps-inst				(pb-field-value $msg "instruction_ds")))
+				(! (= $gate					(pb-field-value $mps-inst "gate")))
+				(! (= $args (args gate $gate)))
+				)
+
+			(if (? (= $mps-type "RS"))
+				(! (= $mps-inst				(pb-field-value $msg "instruction_rs")))
+				(! (= $ring-color			(pb-field-value $mps-inst "ring_color")))
+				(!(= $args (args ring_color $ring-color)))
+				)
+
+			(if (? (= $mps-type "CS"))
+				(! (= $mps-inst				(pb-field-value $msg "instruction_cs")))
+				(! (= $operation			(pb-field-value $mps-inst "operation")))
+				(!(= $args (args operation $operation)))
+				)
+
+				(! (printf (FORMAT "Received Instruction %s \n" $args)))
+
+				(=> (last-attempted-instruction $mps-name $args ATTEMPTING))
+
+				)
+		)
+		
+
+
 
 	(defop mps-instruction-base-station
 		:invocation ( !(instruct-mps machine $bs-name (args side $side color $color)) )
