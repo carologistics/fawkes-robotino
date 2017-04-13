@@ -38,11 +38,8 @@
 				(? (agent-pose $xpos $ypos))
 				(=> (lock-in-use $place $xpos $ypos));This is just a hack till i get the right navgraph info
 				else
-				;TODO:If skill failed u need to have away of ensuring the lock will be released. 
-				;For not just release it
-				(=> (lock RELEASE $robot-name $place @priority))
 				(=> (step-failed (drive-to machine $mps-name side $side) )) 
-				(fail)
+				(! (FAILED))
 				)
 			)
 		:effects ( (=> (agent-state STEP-FINISHD)) )
@@ -51,8 +48,20 @@
 
 	(defop step-fail-drive-to 
 			:invocation  (step-failed (drive-to machine $mps-name side $side))
-			:context()
-			:body()
+			:context(agent-namae $robot-name)
+			:body(
+				;TODO:If skill failed u need to have away of ensuring the lock will be released. 
+				;For not just release it
+
+				(? (MEMQ $side (. "input" "output" .)))
+				(if (? (= $side "input" ))
+					(! (= $place (string-cat $mps-name "-I")))
+					else 
+					(! (= $place (string-cat $mps-name "-O")))
+					)
+				
+				(=> (lock RELEASE $robot-name $place @priority))
+				)
 			:effects ( (=> (agent-state STEP-FAILD)) )
 			)
 
@@ -324,7 +333,8 @@
 					( ! (printf (FORMAT "WARN: Trying to instruct %s while its %s" $mps-name $mps-state)))
 					(=> (agent-state STEP-PENDING))
 					(^ (& 	(machine $mps-name $mps-type @new-state @m-prepared @m-zone @m-pose @m-loaded-with)
-					 		(MEMQ (val @new-state) (. "DOWN" "WAIT_IDE" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
+							(MEMQ (val @new-state) (. "DOWN" "WAIT_IDE" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
+
 				
 				(if (? (MEMQ $mps-state (. "PREPARED" "READY-AT-OUTPUT" "PROCESSING" "PROCESSED" .)))
 					( ! (printf (FORMAT "ERROR: Trying to instruct %s while its %s" $mps-name $mps-state)))
