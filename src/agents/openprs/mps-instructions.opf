@@ -11,6 +11,8 @@
 ;		Also Handle the Machine Broken more gracefully  (right now the intention just successes to prevent waiting)
 
 (
+
+
 	(defop mps-instruction-base-station
 		:invocation ( !(instruct-mps machine $bs-name (args side $side color $color)) )
 		:context( 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
@@ -130,7 +132,10 @@
 								(~ (= (val @new-state) "PROCESSING"))
 								(~ (= (val @new-state) "READY-AT-OUTPUT")) 
 								(~ (= (val @new-state) "BROKEN")) )); This is wrong a bit..Make sure that u stop sending only when the state u want happens 
-					(! (pb-broadcast $peer-id @instruction))
+						(! (pb-broadcast $peer-id @instruction))
+					  	(! (waitsec 2 "wait-begina"))
+					  	(^ (wait-done "wait-begina"))
+					  	(~> (wait-done "wait-begina"))
 					)
 				(! (print "Broadcasted"))
 				;This to make sure the unification is done correctly. If the while condition is not enough to bind the $new-state. The neater way should resolve that
