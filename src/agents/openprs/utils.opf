@@ -18,6 +18,29 @@
 
 
 
+	(defop waitsec
+	  :invocation (! (waitsec $time $name))
+	  :context ((time $secn $usecn))
+	  :body (
+	         (=> (wait $name $time $secn $usecn))
+	  ) 
+	  :documentation "Makes the agent wait inside an op for $time seconds
+	                  Usage : Post Goal, and wait for fact  (wait-done) which will
+	                  be asserted exactly after $time seconds passed. (wait-done) facts
+	                  needs to be deleted manually
+	                  Secondly one can check for presence of the 
+	                  (wait $name $time $sec $usec) predicate"
 
+	)
+
+	(defop waiting
+	 :invocation (time $sec $usec)
+	 :context ((wait $name $time $secn $usecn)
+	           (timeout $sec $usec $secn $usecn $time))
+	 :body ((~> (wait $name $time $secn $usecn))
+	        (=> (wait-done $name)) 
+	       )
+	 :documentation "Helper OP for waitsec OP"
+	)
 
 	)
