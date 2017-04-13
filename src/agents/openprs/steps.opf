@@ -329,11 +329,11 @@
 				(=> (agent-state STEP-RUNNING))
 
   				;Handle unexpected calls
-				(if (? (MEMQ $mps-state (. "DOWN" "WAIT_IDE" .)))
+				(if (? (MEMQ $mps-state (. "DOWN" "WAIT_IDLE" .)))
 					( ! (printf (FORMAT "WARN: Trying to instruct %s while its %s" $mps-name $mps-state)))
 					(=> (agent-state STEP-PENDING))
 					(^ (& 	(machine $mps-name $mps-type @new-state @m-prepared @m-zone @m-pose @m-loaded-with)
-							(MEMQ (val @new-state) (. "DOWN" "WAIT_IDE" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
+							(MEMQ (val @new-state) (. "IDLE" .))))) ;Wait for it to be UP.ToDo:WATCHDOG!
 
 				
 				(if (? (MEMQ $mps-state (. "PREPARED" "READY-AT-OUTPUT" "PROCESSING" "PROCESSED" .)))
