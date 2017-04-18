@@ -289,7 +289,10 @@
       "(rot " (implode$ ?rot) ") )")
     )
   )
-  (assert (state EXP_IDLE))
+  (assert
+    (exp-searching)
+    (state EXP_IDLE)
+  )
 )
 
 
@@ -303,7 +306,10 @@
   (if (eq ?status FINAL) then
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
   )
-  (assert (state EXP_IDLE))
+  (assert
+    (exp-searching)
+    (state EXP_IDLE)
+  )
 )
 
 
