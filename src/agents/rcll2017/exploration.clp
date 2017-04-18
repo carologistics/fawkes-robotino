@@ -20,7 +20,7 @@
     (path ?path&:(eq ?path (str-cat "/clips-agent/rcll2016/exploration/route/" ?team "/" ?robot-name)))
     (list-value $?route)
   )
-  =>
+=>
   (assert (exp-route ?route)
   )
   (printout t "Exploration route: " ?route crlf)
@@ -32,7 +32,7 @@
   ?st <- (exploration-start)
   (team-color ?team-color)
   (NavigatorInterface (id "Navigator") (max_velocity ?max-velocity) (max_rotation ?max-rotation))
-  =>
+=>
   (retract ?st)
   (assert (state EXP_IDLE)
           (timer (name send-machine-reports))
@@ -49,7 +49,7 @@
   (phase EXPLORATION)
   (exp-route $?route)
   (state EXP_IDLE)
-  =>
+=>
   (do-for-all-facts ((?nn exp-next-node)) TRUE (retract ?nn))
   (if (<= ?*EXP-ROUTE-IDX* (length$ ?route)) then
     (assert (exp-next-node (node (nth$ ?*EXP-ROUTE-IDX* ?route))))
@@ -63,7 +63,12 @@
   (exp-next-node (node ?next-node))
   (navgraph-node (name ?next-node))
   (exp-navigator-vmax ?max-velocity ?max-rotation)
-  =>
+  (or
+    (NavGraphWithMPSGeneratorInterface (final TRUE))
+    (NavGraphWithMPSGeneratorInterface (msgid 0))
+    (not (NavGraphWithMPSGeneratorInterface))
+  )
+=>
   (retract ?s)
   (assert
     (state EXP_GOTO_NEXT)
@@ -101,7 +106,7 @@
   ?s <- (state EXP_GOTO_NEXT)
   ?skill-f <- (skill-done (name "drive_to_local") (status ?))
   (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
-  =>
+=>
   (retract ?s ?skill-f)
   (navigator-set-speed ?max-velocity ?max-rotation)
   (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
@@ -324,6 +329,11 @@
 
 
 (defrule exp-report-found-tag
+  (or
+    (NavGraphWithMPSGeneratorInterface (final TRUE))
+    (NavGraphWithMPSGeneratorInterface (msgid 0))
+    (not (NavGraphWithMPSGeneratorInterface))
+  )
   (team-color ?team-color)
 
   (found-tag (name ?machine)
