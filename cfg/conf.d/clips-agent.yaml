@@ -140,3 +140,7 @@ clips-agent:
       # Center of a laser-line must be this far from the zone border before we start
       # investigating it further (i.e. call the explore_zone skill on it)
       zone-margin: 0.15
+
+      # Compensate for translational localization lag when computing which zone a laser-line is in.
+      # -1.0 means that the full translational speed vector is subtracted from the laser-line's center.
+      movement-compensation: -0.5

@@ -62,7 +62,6 @@
     (if (tf-can-transform ?to-frame ?from-frame (create$ 0 0)) then
       (bind ?rv (tf-transform-pose ?to-frame ?from-frame (create$ 0 0) ?trans ?rot))
     else
-      (printout error "transform-safe: Failed to transform to " ?to-frame " from " ?from-frame "." crlf)
       (return FALSE)
     )
   )
@@ -72,6 +71,34 @@
     (return FALSE)
   )
 )
+
+
+(deffunction compensate-movement (?factor ?v-odom ?p ?timestamp)
+  (if (eq ?p FALSE) then
+    (return FALSE)
+  )
+  (if (= 2 (length$ ?v-odom)) then
+    (bind ?v-odom (create$ (nth$ 1 ?v-odom) (nth$ 2 ?v-odom) 0))
+  )
+  (bind ?p-map (transform-safe "map" "base_link" ?timestamp (create$ 0 0 0) (create$ 0 0 0 1)))
+  (if (<> 7 (length$ ?p-map)) then
+    (return FALSE)
+  )
+  (bind ?pv-map (transform-safe "map" "base_link" ?timestamp ?v-odom (create$ 0 0 0 1)))
+  (if (<> 7 (length$ ?pv-map)) then
+    (return FALSE)
+  )
+  (bind ?v-map (create$
+    (- (nth$ 1 ?pv-map) (nth$ 1 ?p-map))
+    (- (nth$ 2 ?pv-map) (nth$ 2 ?p-map))
+  ))
+  (bind ?rv (create$
+    (+ (nth$ 1 ?p) (* ?factor (nth$ 1 ?v-map)))
+    (+ (nth$ 2 ?p) (* ?factor (nth$ 2 ?v-map)))
+  ))
+  (return ?rv)
+)
+
 
 (deffunction create-multifield-with-length-and-entry (?length ?entry)
   "Creates a Multifield with ?length times the entry ?entry"
@@ -445,6 +472,9 @@
 (deffunction get-zone (?margin $?vector)
   "Return the zone name for a given map coordinate $?vector if its
    distance from the zone borders is greater or equal than ?margin."
+  (if (eq ?vector FALSE) then
+    (return FALSE)
+  )
   (bind ?x (nth$ 1 ?vector))
   (bind ?y (nth$ 2 ?vector))
   (if (not (and (numberp ?x) (numberp ?y))) then
@@ -495,3 +525,4 @@
     (bind ?yaw-mirror (+ ?yaw-mirror ?*2PI*)))
   (return (tf-quat-from-yaw ?yaw-mirror))
 )
+

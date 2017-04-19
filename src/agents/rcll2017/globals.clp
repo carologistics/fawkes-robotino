@@ -82,6 +82,8 @@
   ?*DELIVER-ABORT-TIMEOUT* = 30
 
   ?*EXP-ROUTE-IDX* = 1
+
+  ?*EXP-MOVEMENT-COMPENSATION* = 0.0
 )
 
 (defrule globals-config-team-name
@@ -126,4 +128,11 @@
   (bind ?*SKILL-DURATION-GET-PRODUCED* ?d-get-produced)
   (bind ?*SKILL-DURATION-GET-STORED-PUCK* ?d-get-stored-puck)
   (bind ?*SKILL-DURATION-DELIVER* ?d-deliver)
+)
+
+(defrule conf-get-movement-compensation
+  ?cv <- (confval (path "/clips-agent/rcll2016/exploration/movement-compensation") (type FLOAT) (value ?mc))
+=>
+  (bind ?*EXP-MOVEMENT-COMPENSATION* ?mc)
+  (retract ?cv)
 )

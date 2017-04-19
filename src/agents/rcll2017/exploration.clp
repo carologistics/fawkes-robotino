@@ -146,9 +146,17 @@
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
   )
+  (MotorInterface (id "Robotino") (vx ?vx) (vy ?vy))
   (exp-zone-margin ?zone-margin)
   ?ze-f <- (zone-exploration
-    (name ?zn&:(eq ?zn (get-zone ?zone-margin (laser-line-get-center ?id ?timestamp))))
+    (name ?zn&:(eq ?zn (get-zone ?zone-margin
+      (compensate-movement
+        ?*EXP-MOVEMENT-COMPENSATION*
+        (create$ ?vx ?vy)
+        (laser-line-get-center ?id ?timestamp)
+        ?timestamp
+      )
+    )))
     (machine UNKNOWN)
     (line-visibility ?zn-vh&:(> ?vh ?zn-vh))
   )
