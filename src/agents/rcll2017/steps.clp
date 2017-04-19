@@ -78,23 +78,6 @@
   )
   
   (assert (skill-to-execute (skill bring_product_to) (args ?args) (target ?mps)))
-  ; check if we have to instruct an mps:
-  (if (and (eq ?mtype CS)
-           (eq ?task-name fill-cap)) then
-    (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock (sym-cat ?mps "-I"))))
-  )
-  (if (and (eq ?mtype CS)
-           (member$ ?task-name (create$ produce-c0 produce-cx deliver))) then
-    (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock (sym-cat ?mps "-I"))))
-  )
-  (if (and (eq ?mtype DS)
-           (eq ?task-name deliver)) then
-    (assert (mps-instruction (machine ?mps) (gate ?gate) (lock (sym-cat ?mps "-I"))))
-  )
-  (if (and (eq ?mtype RS)
-           (member$ ?task-name (create$ add-first-ring add-additional-ring))) then
-    (assert (mps-instruction (machine ?mps) (ring-color ?ring) (lock (sym-cat ?mps "-I"))))
-  )
 )
 
 (defrule step-insert-slide-start
