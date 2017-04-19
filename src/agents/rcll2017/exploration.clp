@@ -196,7 +196,10 @@
   )
   ; Use the zone with the highest line-visibility
   (not (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 ?vh))))
+
+  ; Neither this zone nor the opposite zone is locked
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
+  (not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
 =>
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
   (retract ?st-f)
