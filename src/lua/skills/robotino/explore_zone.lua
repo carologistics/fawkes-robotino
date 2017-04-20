@@ -101,6 +101,12 @@ local ZONE_CORNERS = {
    { x = -0.6, y = 0 }
 }
 
+-- Maximum difference between tag and line trans/rot
+local TAG_LINE_TOLERANCE = {
+   trans = 0.2,
+   rot = 0.78
+}
+
 
 function args_ok()
    return fsm.vars.zone and string.match(fsm.vars.zone, "[MC][-]Z[1-7][1-8]")
@@ -161,6 +167,27 @@ function found_tag()
       fsm.vars.tags, tag_info, fsm.vars.tag_id_set)
    for id,tag in pairs(tag_ifs) do
       if tag:visibility_history() >= MIN_VIS_HIST then
+         local line = line_in_zone(fsm.vars.lines)
+         if line and line:visibility_history() >= MIN_VIS_HIST then
+            -- IF we see a line in this zone, we make sure the tag is roughly aligned with it,
+            -- otherwise we assume the tag pose is somehow borked, e.g. flipped orientation as
+            -- it happens with the current ALVAR lib.
+            local line_c = llutils.center(line)
+
+            -- Rotate the line center 180° around the Z axis, then transform into the tag frame.
+            -- The result should be exactly the 6D distance vector between the line and the tag.
+            local line_c_tag = tfm.transform6D(
+               { x = line_c.x, y = line_c.y, z = 0,
+                 ori = fawkes.tf.create_quaternion_from_rpy(0, 0, line:bearing() - math.pi)
+               }, line:frame_id(), tag_utils.frame_for_id(fsm.vars.tags, tag_info, id)
+            )
+            local d_trans = math.vec_length(line_c_tag.x, line_c_tag.y)
+            local d_rot = line_c_tag.ori:getAngleShortestPath()
+            if d_trans > TAG_LINE_TOLERANCE.trans or d_rot > TAG_LINE_TOLERANCE.rot then
+               printf("Discarding tag #%d, misaligned by %f, %f.", id, d_trans, d_rot)
+               return false
+            end
+         end
          local tag_map = tfm.transform6D(
             { x = tag:translation(0), y = tag:translation(1), z = tag:translation(2),
                ori = {x = tag:rotation(0), y = tag:rotation(1), z = tag:rotation(2), w = tag:rotation(3)}
@@ -206,14 +233,12 @@ end
 function lost_tag()
    local tag_ifs = tag_utils.matching_tags(
       fsm.vars.tags, tag_info, fsm.vars.tag_id_set)
-   local rv = true
    for id,tag in pairs(tag_ifs) do
       if tag:visibility_history() > -3 then
-         rv = false
-         break
+         return false
       end
    end
-   return rv
+   return true
 end
 
 fsm:define_states{ export_to=_M,
@@ -242,6 +267,7 @@ fsm:add_transitions{
    {"GET_CLOSER", "FIND_LINE", cond="vars.cluster_vista"},
    {"GET_CLOSER", "WAIT_AMCL", cond=found_tag, desc="found tag"},
    {"GET_CLOSER", "FIND_ZONE_CORNER", timeout=2},
+   {"GET_CLOSER", "FAILED", cond="vars.zone_corner_idx > 1 and not vars.found_something", desc="prolly nuthn here"},
    {"FIND_ZONE_CORNER", "APPROACH_ZONE", cond="vars.zone_corner"},
    {"FIND_ZONE_CORNER", "FAILED", cond="not vars.zone_corner"},
    {"APPROACH_ZONE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
