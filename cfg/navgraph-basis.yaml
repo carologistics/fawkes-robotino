@@ -86,6 +86,14 @@ nodes:
 # Positions will be written by the generator
 # Cyan
   - !unconnected
+    name: C-SS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 193
+      - tag_output: 194
+      - output_offset_x: -0.015 #the gripper should be 2mm higher in z
+  - !unconnected
     name: C-CS1
     pos: [0, 0]
     properties:
@@ -137,6 +145,17 @@ nodes:
       - tag_output: 82
       - input_offset_x: 0.02
 #Magenta
+  - !unconnected
+    name: M-SS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 209
+      - tag_output: 210
+      - input_offset_x: -0.01
+      - input_offset_y: 0.025
+      - output_offset_x: -0.015
+      - output_offset_y: -0.035
   - !unconnected
     name: M-CS1
     pos: [0, 0]
