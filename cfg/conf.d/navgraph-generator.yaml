@@ -56,14 +56,50 @@ navgraph-generator:
     enable: true
 
 navgraph-generator-mps:
+  # Base algorithm for graph (used by navgraph-generator)
+  # This may be either voronoi or grid.
+  # For grid also see the specific parameters below.
+  # For voronoi it is recommended to set add-corners-as-obstacles to false.
+  algorithm: grid
+
   # The width (length of narrow edge) of MPS stations; m
   mps-width: 0.3
 
+  # The length (length of long edge) of MPS stations; m
+  mps-length: 0.7
+
   # The distance in which to place approach points from the machine; m
   approach-distance: 0.62
+
+  # Set to true to add the corners of an MPS as obstacles themselves.
+  # Otherwise only the center point of the MPS is added as obstacles
+  # (this is still added if corners are enabled).
+  add-corners-as-obstacles: true
+
+  # The minimum distances edges must have from any occipied cell in the map; m
+  map-cell-min-dist: 0.4
+
+  # For lines extracted out of the map, add points no further apart
+  # from each other than this value; m
+  map-point-max-dist: 0.5
 
   # A file which contains a base graph that will be (partially)
   # overlayed with the generated graph. The main purpose is to
   # provide an exploration graph for when there are no recognized
   # machines, yet.
   base-graph: navgraph-basis.yaml
+
+  bounding-box:
+    p1: [-7,0]
+    p2: [ 7,7]
+
+  # Grid algorithm specific parameters
+  grid:
+    # This is the spacing of the grid, i.e., the grid has cells of
+    # spacing x spacing size. Points are generated in the middle of
+    # the cells.
+    spacing: 1.0
+
+    # Minimum distance of any edge to an obstacle, if the distance
+    # is less than the given margin the edge is removed.
+    margin: 0.3
