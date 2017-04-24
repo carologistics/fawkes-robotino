@@ -182,9 +182,9 @@
 ; PRODUCTION
 
 (deftemplate machine
-  (slot name (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (slot name (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
-  (slot mtype (type SYMBOL) (allowed-values BS DS RS CS))
+  (slot mtype (type SYMBOL) (allowed-values BS DS RS CS SS))
   (multislot incoming (type SYMBOL))
   (multislot incoming-agent (type SYMBOL) (default (create$))) ;the agent bringing/getting the thing specified in incoming
   ;id of the loaded-puck
@@ -230,7 +230,7 @@
 
 
 (deftemplate tag-matching
-  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (slot side (type SYMBOL) (allowed-values INPUT OUTPUT))
   (slot tag-id (type INTEGER))
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
@@ -374,7 +374,7 @@
 )
 
 (deftemplate mps-instruction
-  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (multislot timer (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   ; lock that the robot needs before sending the instruction
   ; (NONE for no needed lock)
@@ -488,6 +488,7 @@
   (machine (name C-RS2) (team CYAN) (mtype RS))
   (ring-station (name C-RS2))
   (machine (name C-DS) (team CYAN) (mtype DS))
+  (machine (name C-SS) (team CYAN) (mtype SS))
 
   (machine (name M-BS) (team MAGENTA) (mtype BS))
   (base-station (name M-BS))
@@ -500,6 +501,7 @@
   (machine (name M-RS2) (team MAGENTA) (mtype RS))
   (ring-station (name M-RS2))
   (machine (name M-DS) (team MAGENTA) (mtype DS))
+  (machine (name M-SS) (team MAGENTA) (mtype SS))
 
   (tag-matching (machine C-BS) (side INPUT) (team CYAN) (tag-id 65))
   (tag-matching (machine C-CS1) (side INPUT) (team CYAN) (tag-id 1))
@@ -507,12 +509,14 @@
   (tag-matching (machine C-RS1) (side INPUT) (team CYAN) (tag-id 33))
   (tag-matching (machine C-RS2) (side INPUT) (team CYAN) (tag-id 177))
   (tag-matching (machine C-DS) (side INPUT) (team CYAN) (tag-id 81))
+  (tag-matching (machine C-SS) (side INPUT) (team CYAN) (tag-id 193))
   (tag-matching (machine C-BS) (side OUTPUT) (team CYAN) (tag-id 66))
   (tag-matching (machine C-CS1) (side OUTPUT) (team CYAN) (tag-id 2))
   (tag-matching (machine C-CS2) (side OUTPUT) (team CYAN) (tag-id 18))
   (tag-matching (machine C-RS1) (side OUTPUT) (team CYAN) (tag-id 34))
   (tag-matching (machine C-RS2) (side OUTPUT) (team CYAN) (tag-id 178))
   (tag-matching (machine C-DS) (side OUTPUT) (team CYAN) (tag-id 82))
+  (tag-matching (machine C-SS) (side OUTPUT) (team CYAN) (tag-id 194))
 
   (tag-matching (machine M-BS) (side INPUT) (team MAGENTA) (tag-id 161))
   (tag-matching (machine M-CS1) (side INPUT) (team MAGENTA) (tag-id 97))
@@ -520,12 +524,14 @@
   (tag-matching (machine M-RS1) (side INPUT) (team MAGENTA) (tag-id 129))
   (tag-matching (machine M-RS2) (side INPUT) (team MAGENTA) (tag-id 145))
   (tag-matching (machine M-DS) (side INPUT) (team MAGENTA) (tag-id 49))
+  (tag-matching (machine M-SS) (side INPUT) (team MAGENTA) (tag-id 209))
   (tag-matching (machine M-BS) (side OUTPUT) (team MAGENTA) (tag-id 162))
   (tag-matching (machine M-CS1) (side OUTPUT) (team MAGENTA) (tag-id 98))
   (tag-matching (machine M-CS2) (side OUTPUT) (team MAGENTA) (tag-id 114))
   (tag-matching (machine M-RS1) (side OUTPUT) (team MAGENTA) (tag-id 130))
   (tag-matching (machine M-RS2) (side OUTPUT) (team MAGENTA) (tag-id 146))
   (tag-matching (machine M-DS) (side OUTPUT) (team MAGENTA) (tag-id 50))
+  (tag-matching (machine M-SS) (side OUTPUT) (team MAGENTA) (tag-id 210))
 
   (state WAIT_START)
   (phase PRE_GAME)
