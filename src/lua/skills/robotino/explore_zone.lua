@@ -104,7 +104,7 @@ local ZONE_CORNERS = {
 -- Maximum difference between tag and line trans/rot
 local TAG_LINE_TOLERANCE = {
    trans = 0.2,
-   rot = 0.78
+   rot = 0.05
 }
 
 
@@ -174,56 +174,60 @@ function found_tag()
             -- it happens with the current ALVAR lib.
             local line_c = llutils.center(line)
 
-            -- Rotate the line center 180° around the Z axis, then transform into the tag frame.
-            -- The result should be exactly the 6D distance vector between the line and the tag.
+            local tag_laser = tfm.transform6D(
+               { x = 0, y = 0, z = 0, ori = fawkes.tf.create_quaternion_from_yaw(math.pi) },
+               tag_utils.frame_for_id(fsm.vars.tags, tag_info, id), line:frame_id()
+            )
             local line_c_tag = tfm.transform6D(
                { x = line_c.x, y = line_c.y, z = 0,
                  ori = fawkes.tf.create_quaternion_from_rpy(0, 0, line:bearing() - math.pi)
                }, line:frame_id(), tag_utils.frame_for_id(fsm.vars.tags, tag_info, id)
             )
             local d_trans = math.vec_length(line_c_tag.x, line_c_tag.y)
-            local d_rot = line_c_tag.ori:getAngleShortestPath()
+            local d_rot = math.angle_distance(line:bearing(), fawkes.tf.get_yaw(tag_laser.ori))
             if d_trans > TAG_LINE_TOLERANCE.trans or d_rot > TAG_LINE_TOLERANCE.rot then
                printf("Discarding tag #%d, misaligned by %f, %f.", id, d_trans, d_rot)
                return false
             end
          end
          local tag_map = tfm.transform6D(
-            { x = tag:translation(0), y = tag:translation(1), z = tag:translation(2),
-               ori = {x = tag:rotation(0), y = tag:rotation(1), z = tag:rotation(2), w = tag:rotation(3)}
+            { x = 0, y = 0, z = 0,
+               ori = fawkes.tf.Quaternion:getIdentity()
             },
             tag_utils.frame_for_id(fsm.vars.tags, tag_info, id),
             "map"
          )
          if tag_map and in_zone(tag_map.x, tag_map.y) then
-            local yaw = fawkes.tf.get_yaw(fawkes.tf.Quaternion:new(
-               tag_map.ori.x, tag_map.ori.y, tag_map.ori.z, tag_map.ori.w
-            ))
-            print_debug("Yaw 1: " .. yaw)
-            if id % 2 ~= 0 then
-               yaw = math.normalize_mirror_rad(yaw + math.pi)
-               print_debug("Yaw 2: " .. yaw)
+            local yaw = fawkes.tf.get_yaw(tag_map.ori)
+            if yaw == yaw then
+               -- Rescale & Discretize angle from 0..315°
+               print_debug("Yaw 1: " .. yaw)
+               if id % 2 == 0 then
+                  yaw = yaw + math.pi
+                  print_debug("Yaw 2: " .. yaw)
+               end
+               if yaw < 0 then
+                  yaw = 2 * math.pi + yaw
+                  print_debug("Yaw 3: ".. yaw)
+               end
+               local yaw_discrete = math.round(yaw / math.pi * 4) * 45
+               if yaw_discrete == 360 then yaw_discrete = 0 end
+               zone_info:set_zone(fsm.vars.zone)
+               zone_info:set_orientation(yaw_discrete)
+               zone_info:set_tag_id(id)
+               zone_info:set_search_state(zone_info.YES)
+               bb_found_tag:set_translation(0, tag_map.x)
+               bb_found_tag:set_translation(1, tag_map.y)
+               bb_found_tag:set_translation(2, tag_map.z)
+               bb_found_tag:set_rotation(0, tag_map.ori:x())
+               bb_found_tag:set_rotation(1, tag_map.ori:y())
+               bb_found_tag:set_rotation(2, tag_map.ori:z())
+               bb_found_tag:set_rotation(3, tag_map.ori:w())
+               bb_found_tag:set_frame("map")
+               bb_found_tag:set_visibility_history(tag:visibility_history())
+               fsm.vars.found_something = true
+               return true
             end
-            if yaw < 0 then
-               yaw = 2 * math.pi + yaw
-               print_debug("Yaw 3: ".. yaw)
-            end
-            local yaw_discrete = math.round(yaw / math.pi * 4) * 45
-            zone_info:set_zone(fsm.vars.zone)
-            zone_info:set_orientation(yaw_discrete)
-            zone_info:set_tag_id(id)
-            zone_info:set_search_state(zone_info.YES)
-            bb_found_tag:set_translation(0, tag_map.x)
-            bb_found_tag:set_translation(1, tag_map.y)
-            bb_found_tag:set_translation(2, tag_map.z)
-            bb_found_tag:set_rotation(0, tag_map.ori.x)
-            bb_found_tag:set_rotation(1, tag_map.ori.y)
-            bb_found_tag:set_rotation(2, tag_map.ori.z)
-            bb_found_tag:set_rotation(3, tag_map.ori.w)
-            bb_found_tag:set_frame("map")
-            bb_found_tag:set_visibility_history(tag:visibility_history())
-            fsm.vars.found_something = true
-            return true
          end
       end
    end
