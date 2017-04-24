@@ -71,6 +71,9 @@ NavGraphGeneratorMPSThread::init()
   cfg_mps_width_         = config->get_float("/navgraph-generator-mps/mps-width");
   cfg_mps_approach_dist_ = config->get_float("/navgraph-generator-mps/approach-distance");
 
+  cfg_map_min_dist_      = config->get_float("/navgraph-generator-mps/map-cell-min-dist");
+  cfg_map_point_max_dist_= config->get_float("/navgraph-generator-mps/map-point-max-dist");
+
   std::string base_graph_file;
   try {
     base_graph_file  = config->get_string("/navgraph-generator-mps/base-graph");
@@ -85,6 +88,13 @@ NavGraphGeneratorMPSThread::init()
   } else {
     logger->log_warn(name(), "No base graph configured");
   }
+
+  std::vector<float> p1 = config->get_floats("/navgraph-generator-mps/bounding-box/p1");
+  std::vector<float> p2 = config->get_floats("/navgraph-generator-mps/bounding-box/p2");
+  cfg_bounding_box_p1_[0] = p1[0];
+  cfg_bounding_box_p1_[1] = p1[1];
+  cfg_bounding_box_p2_[0] = p2[0];
+  cfg_bounding_box_p2_[1] = p2[1];
 
   exp_zones_.resize(24, true);
   wait_zones_.resize(24, false);
@@ -292,7 +302,8 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 {
   navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ClearMessage());
   navgen_if_->msgq_enqueue(
-    new NavGraphGeneratorInterface::SetBoundingBoxMessage(-6, 0, 6, 6));
+    new NavGraphGeneratorInterface::SetBoundingBoxMessage(cfg_bounding_box_p1_[0], cfg_bounding_box_p1_[1],
+                                                          cfg_bounding_box_p2_[0], cfg_bounding_box_p2_[1]));
 
   navgen_if_->msgq_enqueue
     (new NavGraphGeneratorInterface::SetFilterMessage
@@ -308,9 +319,9 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 
   navgen_if_->msgq_enqueue
     (new NavGraphGeneratorInterface::SetFilterParamFloatMessage
-     (NavGraphGeneratorInterface::FILTER_EDGES_BY_MAP, "distance", 0.4));
+     (NavGraphGeneratorInterface::FILTER_EDGES_BY_MAP, "distance", cfg_map_min_dist_));
 
-  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddMapObstaclesMessage(0.5));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddMapObstaclesMessage(cfg_map_point_max_dist_));
 
   navgen_if_->msgq_enqueue
     (new NavGraphGeneratorInterface::SetCopyGraphDefaultPropertiesMessage(true));

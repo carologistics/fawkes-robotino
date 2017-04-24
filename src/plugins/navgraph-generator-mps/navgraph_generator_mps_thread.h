@@ -72,10 +72,14 @@ class NavGraphGeneratorMPSThread
   virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
 
  private:
-  std::string  cfg_global_frame_;
-  float        cfg_mps_width_;
-  float        cfg_mps_approach_dist_;
-
+  std::string                                cfg_global_frame_;
+  float                                      cfg_mps_width_;
+  float                                      cfg_mps_approach_dist_;
+  float                                      cfg_map_min_dist_;
+  float                                      cfg_map_point_max_dist_;
+  Eigen::Vector2f                            cfg_bounding_box_p1_;
+  Eigen::Vector2f                            cfg_bounding_box_p2_;
+  
   unsigned int                               last_id_;
   fawkes::NavGraphGeneratorInterface        *navgen_if_;
   fawkes::NavGraphWithMPSGeneratorInterface *navgen_mps_if_;
