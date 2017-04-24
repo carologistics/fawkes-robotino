@@ -71,6 +71,10 @@
     (case BS
       then
       (bind ?instruction (mps-instruction-base-station ?machine ?team-color ?base-color ?side)))
+    ;TEMP till the SS is implemented
+    (case SS
+      then
+      (bind ?instruction (mps-instruction-base-station ?machine ?team-color ?base-color ?side)))
     (case CS
       then
       (bind ?instruction (mps-instruction-cap-station ?machine ?team-color ?cs-op)))

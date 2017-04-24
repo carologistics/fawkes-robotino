@@ -134,7 +134,8 @@
 		 (machine ?mps) (machine-feature ?feature) (base ?color) (side ?side))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
-  (machine (mtype BS) (name ?mps) (state PROCESSING|READY-AT-OUTPUT))
+  ;Accept SS for now till the SS is fully implemented 
+  (machine (mtype BS|SS) (name ?mps) (state PROCESSING|READY-AT-OUTPUT))
   ?bsc <- (bs-side-changed)
   =>
   (retract ?state ?bsc)
@@ -392,6 +393,10 @@
   (retract ?state)
   (switch ?mtype
     (case BS
+      then
+      (assert (mps-instruction (machine ?mps) (base-color ?base) (side ?side)))
+    )
+    (case SS
       then
       (assert (mps-instruction (machine ?mps) (base-color ?base) (side ?side)))
     )
