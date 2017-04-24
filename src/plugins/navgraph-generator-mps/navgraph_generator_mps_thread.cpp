@@ -74,6 +74,19 @@ NavGraphGeneratorMPSThread::init()
   cfg_map_min_dist_      = config->get_float("/navgraph-generator-mps/map-cell-min-dist");
   cfg_map_point_max_dist_= config->get_float("/navgraph-generator-mps/map-point-max-dist");
 
+  std::string algorithm  = config->get_string("/navgraph-generator-mps/algorithm");
+  if (algorithm == "voronoi") {
+	  cfg_algorithm_ = NavGraphGeneratorInterface::ALGORITHM_VORONOI;
+  } else if (algorithm == "grid") {
+	  cfg_algorithm_ = NavGraphGeneratorInterface::ALGORITHM_GRID;
+	  const std::string prefix("/navgraph-generator-mps/grid/");
+	  std::unique_ptr<Configuration::ValueIterator> i(config->search(prefix));
+	  while (i->next()) {
+		  const std::string path(i->path());
+		  cfg_algo_params_[path.substr(prefix.length())] = i->get_as_string();
+	  }
+  }
+
   std::string base_graph_file;
   try {
     base_graph_file  = config->get_string("/navgraph-generator-mps/base-graph");
@@ -301,6 +314,13 @@ void
 NavGraphGeneratorMPSThread::generate_navgraph()
 {
   navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ClearMessage());
+
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::SetAlgorithmMessage(cfg_algorithm_));
+  for (const auto &p : cfg_algo_params_) {
+	  navgen_if_->msgq_enqueue(
+		  new NavGraphGeneratorInterface::SetAlgorithmParameterMessage(p.first.c_str(), p.second.c_str()));
+  }
+
   navgen_if_->msgq_enqueue(
     new NavGraphGeneratorInterface::SetBoundingBoxMessage(cfg_bounding_box_p1_[0], cfg_bounding_box_p1_[1],
                                                           cfg_bounding_box_p2_[0], cfg_bounding_box_p2_[1]));

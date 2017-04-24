@@ -77,6 +77,8 @@ class NavGraphGeneratorMPSThread
   float                                      cfg_mps_approach_dist_;
   float                                      cfg_map_min_dist_;
   float                                      cfg_map_point_max_dist_;
+  fawkes::NavGraphGeneratorInterface::Algorithm cfg_algorithm_;
+  std::map<std::string, std::string>         cfg_algo_params_;
   Eigen::Vector2f                            cfg_bounding_box_p1_;
   Eigen::Vector2f                            cfg_bounding_box_p2_;
   
