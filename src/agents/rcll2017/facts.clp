@@ -228,6 +228,13 @@
   (slot sync-id (type INTEGER) (default 0))
 )
 
+(deftemplate storage-station
+  (slot name (type SYMBOL) (allowed-symbols C-SS M-SS))
+  (multislot filled-slot (type INTEGER) (cardinality 3 3))
+  ;id of product fact how the product should look like
+  (slot product-id (type INTEGER))
+  (slot sync-id (type INTEGER) (default 0))
+)
 
 (deftemplate tag-matching
   (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
@@ -489,6 +496,12 @@
   (ring-station (name C-RS2))
   (machine (name C-DS) (team CYAN) (mtype DS))
   (machine (name C-SS) (team CYAN) (mtype SS))
+  (storage-station (name C-SS) (filled-slot 0 0 0) (product-id 1))
+  (storage-station (name C-SS) (filled-slot 1 0 0) (product-id 2))
+  (storage-station (name C-SS) (filled-slot 2 0 0) (product-id 3))
+  (storage-station (name C-SS) (filled-slot 3 0 0) (product-id 4))
+  (storage-station (name C-SS) (filled-slot 4 0 0) (product-id 5))
+  (storage-station (name C-SS) (filled-slot 5 0 0) (product-id 6))
 
   (machine (name M-BS) (team MAGENTA) (mtype BS))
   (base-station (name M-BS))
@@ -501,7 +514,27 @@
   (machine (name M-RS2) (team MAGENTA) (mtype RS))
   (ring-station (name M-RS2))
   (machine (name M-DS) (team MAGENTA) (mtype DS))
-  (machine (name M-SS) (team MAGENTA) (mtype SS))
+  (machine (name M-SS) (team MAGENTA) (mtype SS))  
+  (storage-station (name M-SS) (filled-slot 0 0 0) (product-id 1))
+  (storage-station (name M-SS) (filled-slot 1 0 0) (product-id 2))
+  (storage-station (name M-SS) (filled-slot 2 0 0) (product-id 3))
+  (storage-station (name M-SS) (filled-slot 3 0 0) (product-id 4))
+  (storage-station (name M-SS) (filled-slot 4 0 0) (product-id 5))
+  (storage-station (name M-SS) (filled-slot 5 0 0) (product-id 6))
+
+  ;Temp products description for all posible c0. Later on load from config
+  (product (id 1) (cap GREY) (base BLACK))
+  (product (id 2) (cap GREY) (base SILVER))
+  (product (id 3) (cap GREY) (base RED))
+  (product (id 4) (cap BLACK) (base BLACK))
+  (product (id 5) (cap BLACK) (base SILVER))
+  (product (id 6) (cap BLACK) (base RED))
+
+  ; is the base from a cap-station and therefore unusable
+  ; (slot base-usable (type SYMBOL) (allowed-symbols TRUE FALSE) (default TRUE))
+  (slot sync-id (type INTEGER) (default 0))
+)
+
 
   (tag-matching (machine C-BS) (side INPUT) (team CYAN) (tag-id 65))
   (tag-matching (machine C-CS1) (side INPUT) (team CYAN) (tag-id 1))
@@ -562,7 +595,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station storage-station)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)
