@@ -103,3 +103,11 @@ navgraph-generator-mps:
     # Minimum distance of any edge to an obstacle, if the distance
     # is less than the given margin the edge is removed.
     margin: 0.3
+
+    # Set to true to create diagonal edges between the grid points.
+    # This can lead to better travel routes (less Manhattan-style) and
+    # better connected graphs (the direct edge may be discarded, but the
+    # triangle connection along the (half-)diagonals may stay intact.
+    # However, it increases the number of nodes and thus the
+    # computational overhead.
+    add-diagonals: true
