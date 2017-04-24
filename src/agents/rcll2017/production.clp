@@ -357,7 +357,70 @@
       (cs-operation MOUNT_CAP))
     (needed-task-lock (task-id ?task-id) (action PROD_CAP) (place ?cs))
   )
-  (synced-modify ?of in-production 2)
+  (synced-modify ?of in-production 2);MAG::WHY
+)
+
+(defrule prod-deliver-C0-from-storage
+  "Delivering a C0 From Storage Station"
+  (declare (salience ?*PRIORITY-DELIVER-C0-FROM-STORAGE*))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  (holding NONE)
+  (game-time $?game-time)
+  (machine (mtype SS) (name ?ss) (team ?team-color) (produced-id 0)
+           (state ~DOWN&~BROKEN))
+  (found-tag (name ?ss))
+  ;check for C0 in storage
+  (storage-station (name ?ss) (filled-slot ?x ?y ?z) (product-id ?stored-id))
+  (product (id ?stored-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color) (base ?base-color))
+  ;check that the task was not rejected before
+  (not (and (task (name deliver-c0-from-storage) (state rejected) (id ?rej-id))
+            (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?ss)))); TODO: set it right
+  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-DELIVER-C0-FROM-STORAGE*))))
+  ;check for open C0 order with more than 1 requested
+  (product (id ?product-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color) (base ?base-color))
+  ?of <- (order (product-id ?product-id)
+    (quantity-requested ?qr:(> ?qr 1)) (quantity-delivered ?qd&:(> ?qr ?qd))
+    (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*)))
+    ; (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*RETRIVE-FROM-STORAGE-TIME*))) ;Maybe add later to consider the retrivale from storage time
+     (delivery-gate ?gate) (in-production 0) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
+  )
+  =>
+  (printout t "PROD: DELIVER C0 with " ?cap-color " cap from " ?ss crlf)
+  (bind ?task-id (random-id))
+  (assert (task (name deliver-from-storage) (id ?task-id) (state proposed)
+    (steps (create$ (+ ?task-id 1) (+ ?task-id 2) (+ ?task-id 3) (+ ?task-id 4) (+ ?task-id 5) (+ ?task-id 6) (+ ?task-id 7)))
+    (priority ?*PRIORITY-DELIVER-C0-FROM-STORAGE*))
+    (step (name drive-to) (id (+ ?task-id 1))
+      (task-priority ?*PRIORITY-DELIVER-C0-FROM-STORAGE*)
+      (machine ?ss))
+    ;TODO: acquire the lock for the USE-SS and release it after either get-output or inserting (if SS)
+    (step (name acquire-lock) (id (+ ?task-id 2))
+      (task-priority ?*PRIORITY-DELIVER-C0-FROM-STORAGE*) (lock PREPARE-BS)) ;is released after get-base 
+    (step (name instruct-mps) (id (+ ?task-id 3))
+      (task-priority ?*PRIORITY-DELIVER-C0-FROM-STORAGE*)
+      (machine ?ss) (base ?base-color) (side OUTPUT))
+    ;TODO: change to get-output Later on
+    (step (name get-base) (id (+ ?task-id 4))
+      (task-priority ?*PRIORITY-DELIVER-C0-FROM-STORAGE*)
+      (machine ?ss) (machine-feature CONVEYOR)
+      (base ?base-color) (product-id ?product-id) (side OUTPUT))
+    (step (name drive-to) (id (+ ?task-id 5))
+      (task-priority ?*PRIORITY-DELIVER-C0-FROM-STORAGE*)
+      (machine ?ds)
+      (side INPUT))
+    (step (name insert) (id (+ ?task-id 6))
+      (task-priority ?*PRIORITY-DELIVER-C0-FROM-STORAGE*)
+      (machine ?ds)
+      (machine-feature CONVEYOR))
+    (step (name instruct-mps) (id (+ ?task-id 7))
+      (task-priority ?*PRIORITY-DELIVER-C0-FROM-STORAGE*)
+      (machine ?ds) (gate ?gate))
+    (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?ss))
+    (needed-task-lock (task-id ?task-id) (action DELIVER) (place ?ds))
+  )
+  ;(synced-modify ?of in-production 2)
 )
 
 (defrule prod-add-first-ring
