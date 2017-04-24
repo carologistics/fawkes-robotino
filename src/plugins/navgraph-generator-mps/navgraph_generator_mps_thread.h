@@ -74,7 +74,9 @@ class NavGraphGeneratorMPSThread
  private:
   std::string                                cfg_global_frame_;
   float                                      cfg_mps_width_;
+  float                                      cfg_mps_length_;
   float                                      cfg_mps_approach_dist_;
+  bool                                       cfg_mps_corner_obst_;
   float                                      cfg_map_min_dist_;
   float                                      cfg_map_point_max_dist_;
   fawkes::NavGraphGeneratorInterface::Algorithm cfg_algorithm_;
@@ -116,6 +118,8 @@ class NavGraphGeneratorMPSThread
     Eigen::Vector3f    output_pos;
     Eigen::Quaternionf output_ori;
     float              output_yaw;
+
+	  std::vector<Eigen::Vector2f> corners;
 
   } MPSStation;
   std::map<std::string, MPSStation> stations_;

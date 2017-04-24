@@ -69,7 +69,9 @@ NavGraphGeneratorMPSThread::init()
 {
   cfg_global_frame_      = config->get_string("/frames/fixed");
   cfg_mps_width_         = config->get_float("/navgraph-generator-mps/mps-width");
+  cfg_mps_length_        = config->get_float("/navgraph-generator-mps/mps-length");
   cfg_mps_approach_dist_ = config->get_float("/navgraph-generator-mps/approach-distance");
+  cfg_mps_corner_obst_   = config->get_bool("/navgraph-generator-mps/add-corners-as-obstacles");
 
   cfg_map_min_dist_      = config->get_float("/navgraph-generator-mps/map-cell-min-dist");
   cfg_map_point_max_dist_= config->get_float("/navgraph-generator-mps/map-point-max-dist");
@@ -272,7 +274,24 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
 		   (input_pos - proj_pos).norm(), (output_pos - proj_pos).norm());
   */
 
-  // **** 4. add to stations
+  // **** 4. (optional) calculate corner points
+  std::vector<Eigen::Vector2f> corners;
+  if (cfg_mps_corner_obst_) {
+	  corners.resize(4);
+
+	  const float mps_width_2  = cfg_mps_width_ / 2.;
+	  const float mps_length_2 = cfg_mps_length_ / 2.;
+
+	  Eigen::Rotation2Df rot(quat_yaw(pose_ori));
+	  Eigen::Vector2f center;
+	  center[0] = pose_pos[0]; center[1] = pose_pos[1];
+	  corners[0] = (rot * Eigen::Vector2f(  mps_width_2, - mps_length_2)) + center;
+	  corners[1] = (rot * Eigen::Vector2f(- mps_width_2, - mps_length_2)) + center;
+	  corners[2] = (rot * Eigen::Vector2f(- mps_width_2,   mps_length_2)) + center;
+	  corners[3] = (rot * Eigen::Vector2f(  mps_width_2,   mps_length_2)) + center;
+  }
+
+  // **** 5. add to stations
   MPSStation s;
   s.tag_frame    = frame;
   s.tag_pose_pos = pose_pos;
@@ -286,6 +305,7 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   s.output_pos   = output_pos;
   s.output_ori   = output_ori;
   s.output_yaw   = quat_yaw(output_ori);
+  s.corners      = corners;
   stations_[id]  = s;
 }
 
@@ -368,6 +388,14 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 	    (new NavGraphGeneratorInterface::SetPointOfInterestPropertyMessage
 	     (s.first.c_str(), "mps", "true"));
 
+    if (cfg_mps_corner_obst_) {
+	    for (size_t i = 0; i < s.second.corners.size(); ++i) {
+      const Eigen::Vector2f &c = s.second.corners[i];
+		    navgen_if_->msgq_enqueue
+			    (new NavGraphGeneratorInterface::AddObstacleMessage
+			     ((s.first + "-C" + std::to_string(i)).c_str(), c[0], c[1]));
+	    }
+    }
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddObstacleMessage
        ((s.first + "-C").c_str(), s.second.pose_pos[0], s.second.pose_pos[1]));
