@@ -285,6 +285,7 @@
   ; We don't check the visibility_history here since that's already done in the explore_zone skill
   (tag-matching (tag-id ?tag-id) (machine ?machine) (side ?side) (team ?team-color))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
+  (machine (name ?machine) (mtype ?mtype))
 =>
   (retract ?st-f ?skill-f)
   (assert
@@ -298,6 +299,17 @@
     (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side ")"
       "(frame \"map\") (trans " (implode$ ?trans) ") "
       "(rot " (implode$ ?rot) ") )")
+    )
+    (assert
+      (exploration-result
+        (machine ?machine) (zone ?zn2)
+        (orientation ?orientation) (team ?team-color)
+      )
+      (exploration-result
+        (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+        (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+        (team (mirror-team ?team-color))
+      )
     )
   )
   (assert
@@ -324,6 +336,54 @@
 )
 
 
+(defrule exp-report-to-refbox
+  (phase EXPLORATION)
+  (team-color ?color)
+  (exploration-result (team ?color) (machine ?machine) (zone ?zone)
+    (orientation ?orientation)
+  )
+  (time $?now)
+  ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
+  (game-time $?game-time)
+  (confval (path "/clips-agent/rcll2016/exploration/latest-send-last-report-time")
+    (value ?latest-report-time)
+  )
+  (team-color ?team-color&~nil)
+  (peer-id private ?peer)
+  (state ?s) ; TODO actually enter EXP_PREPARE_FOR_PRODUCTION_FINISHED state
+=>
+  (bind ?mr (pb-create "llsf_msgs.MachineReport"))
+  (pb-set-field ?mr "team_color" ?team-color)
+  (delayed-do-for-all-facts ((?er exploration-result)) (eq ?er:team ?team-color)
+    (bind ?n-explored (length
+      (find-all-facts ((?f zone-exploration))
+        (and (eq ?f:team ?team-color) (neq ?f:machine UNKNOWN))
+      )
+    ))
+    (bind ?n-zones (length
+      (find-all-facts ((?f zone-exploration)) (eq ?f:team ?team-color))
+    ))
+    ; send report for last machine only if the exploration phase is going to end
+    ; or we are prepared for production
+    (if
+      (or
+        (< ?n-explored (- ?n-zones 1))
+        (>= (nth$ 1 ?game-time) ?latest-report-time)
+        (eq ?s EXP_PREPARE_FOR_PRODUCTION_FINISHED)
+      )
+    then
+      (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
+      (pb-set-field ?mre "name" (str-cat ?er:machine))
+      (pb-set-field ?mre "zone" (protobuf-name ?er:zone))
+      (pb-set-field ?mre "rotation" ?er:orientation)
+      (pb-add-list ?mr "machines" ?mre)
+    )
+  )
+  (pb-broadcast ?peer ?mr)
+  (modify ?ws (time ?now) (seq (+ ?seq 1)))
+)
+
+
 (defrule exp-mirror-tag
   (found-tag (name ?machine) (side ?side) (frame ?frame) (trans $?trans) (rot $?rot))
   ; Assuming that ?frame is always "map". Otherwise things will break rather horribly...
@@ -335,17 +395,18 @@
   )
   (not (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine)))))
   ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (mirror-name ?zn))))
+  (machine (name ?machine) (mtype ?mtype))
 =>
   (assert
     (found-tag (name ?machine2) (side ?side) (frame ?frame)
-      (trans (mirror-trans ?trans)) (rot (mirror-rot ?rot))
+      (trans (mirror-trans ?trans)) (rot (mirror-rot ?mtype ?zn ?rot))
     )
   )
   (modify ?ze2 (machine ?machine2) (times-searched ?times-searched))
 )
 
 
-(defrule exp-report-found-tag
+(defrule exp-add-tag-to-navgraph
   (or
     (NavGraphWithMPSGeneratorInterface (final TRUE))
     (NavGraphWithMPSGeneratorInterface (msgid 0))

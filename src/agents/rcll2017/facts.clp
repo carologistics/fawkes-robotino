@@ -92,15 +92,8 @@
       C-Z11 C-Z21 C-Z31 C-Z41
     )
   )
-  (slot mtype (type STRING) (default ""))
   (slot orientation (type INTEGER) (default -1))
-)
-
-(deftemplate exp-row
-  (slot name (type SYMBOL) (allowed-values HIGH MID LOW))
-  (multislot row (type SYMBOL)
-    (allowed-symbols Q1 Q2 Q3 Q4 Q5 Q6)
-  )
+  (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
 (deftemplate found-tag
@@ -110,6 +103,11 @@
   (multislot trans (type FLOAT) (cardinality 3 3))
   (multislot rot (type FLOAT) (cardinality 4 4))
   (slot sync-id (type INTEGER) (default 0))
+)
+
+(deftemplate mirror-orientation
+  (slot cyan (type INTEGER))
+  (slot magenta (type INTEGER))
 )
 
 (deftemplate navgraph-added-for-mps
@@ -357,7 +355,8 @@
     (zone-exploration (name C-Z22) (team CYAN))
     (zone-exploration (name C-Z32) (team CYAN))
     (zone-exploration (name C-Z42) (team CYAN))
-    (zone-exploration (name C-Z52) (team CYAN))
+; Can't have machines in *-Z52 (see rulebook)...
+;   (zone-exploration (name C-Z52) (team CYAN))
     (zone-exploration (name C-Z62) (team CYAN))
     (zone-exploration (name C-Z72) (team CYAN))
     (zone-exploration (name C-Z13) (team CYAN))
@@ -411,7 +410,8 @@
     (zone-exploration (name M-Z22) (team MAGENTA))
     (zone-exploration (name M-Z32) (team MAGENTA))
     (zone-exploration (name M-Z42) (team MAGENTA))
-    (zone-exploration (name M-Z52) (team MAGENTA))
+; Can't have machines in *-Z52 (see rulebook)...
+;   (zone-exploration (name M-Z52) (team MAGENTA))
     (zone-exploration (name M-Z62) (team MAGENTA))
     (zone-exploration (name M-Z72) (team MAGENTA))
     (zone-exploration (name M-Z13) (team MAGENTA))
@@ -550,4 +550,12 @@
 
   (last-zoneinfo)
 
+  (mirror-orientation (cyan 0) (magenta 180))
+  (mirror-orientation (cyan 45) (magenta 135))
+  (mirror-orientation (cyan 90) (magenta 90))
+  (mirror-orientation (cyan 135) (magenta 45))
+  (mirror-orientation (cyan 180) (magenta 0))
+  (mirror-orientation (cyan 225) (magenta 315))
+  (mirror-orientation (cyan 270) (magenta 270))
+  (mirror-orientation (cyan 315) (magenta 225))
 )

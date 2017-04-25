@@ -516,13 +516,81 @@
   ))
 )
 
-(deffunction mirror-rot ($?rot)
-  (bind ?yaw (tf-yaw-from-quat ?rot))
-  (bind ?yaw-mirror (+ (- 0 (- ?yaw ?*PI-HALF*)) ?*PI-HALF*))
-  (if (> ?yaw-mirror ?*PI*) then
-    (bind ?yaw-mirror (- ?yaw-mirror ?*2PI*)))
-  (if (< ?yaw-mirror (- 0 ?*PI*)) then
-    (bind ?yaw-mirror (+ ?yaw-mirror ?*2PI*)))
-  (return (tf-quat-from-yaw ?yaw-mirror))
+
+(deffunction at-wall (?x ?y)
+  (bind ?xy (str-cat ?x ?y))
+  (return
+    (or
+      (eq ?x 7) (eq ?x -7) (eq ?y 8) (eq ?y 1)
+      (member$ ?xy (create$ "-72" "-62" "62" "72"))
+    )
+  )
 )
+
+
+(deffunction protobuf-name (?zone)
+  (return
+    (str-cat (sub-string 1 1 ?zone) "_" (sub-string 3 99 ?zone))
+  )
+)
+
+
+(deffunction want-mirrored-rotation (?mtype ?zone)
+"According to the RCLL2017 rulebook, this is when a machine is mirrored"
+  (bind ?zn (str-cat ?zone))
+  (bind ?x (eval (sub-string 4 4 ?zn)))
+  (if (eq (sub-string 1 1 ?zn) "M") then
+    (bind ?x (* -1 ?x))
+  )
+  (bind ?y (eval (sub-string 5 5 ?zn)))
+
+  (return (or (member$ ?mtype (create$ BS DS SS))
+              (not (at-wall ?x ?y))
+              (and (!= ?y 8) (!= ?y 1))
+  ))
+)
+
+
+(deffunction mirror-rot (?mtype ?zone $?rot)
+"Mirror rotation according to rules, $?rot is a quaternion"
+  (if (want-mirrored-rotation ?mtype ?zone) then
+    (bind ?yaw (tf-yaw-from-quat ?rot))
+    (bind ?yaw-mirror (+ (- 0 (- ?yaw ?*PI-HALF*)) ?*PI-HALF*))
+    (if (> ?yaw-mirror ?*PI*) then
+      (bind ?yaw-mirror (- ?yaw-mirror ?*2PI*)))
+    (if (< ?yaw-mirror (- 0 ?*PI*)) then
+      (bind ?yaw-mirror (+ ?yaw-mirror ?*2PI*)))
+    (return (tf-quat-from-yaw ?yaw-mirror))
+  else
+    (return ?rot)
+  )
+)
+
+
+(deffunction mirror-team (?team)
+  (if (eq (sym-cat ?team) CYAN) then
+    (return MAGENTA)
+  else
+    (return CYAN)
+  )
+)
+
+
+(deffunction mirror-orientation (?mtype ?zone ?ori)
+  (if (want-mirrored-rotation ?mtype ?zone) then
+    (if (eq (sub-string 1 1 ?zone) "C") then
+      (do-for-fact ((?mo mirror-orientation)) (eq ?mo:cyan ?ori)
+        (bind ?m-ori ?mo:magenta)
+      )
+    else
+      (do-for-fact ((?mo mirror-orientation)) (eq ?mo:magenta ?ori)
+        (bind ?m-ori ?mo:cyan)
+      )
+    )
+    (return ?m-ori)
+  else
+    (return ?ori)
+  )
+)
+
 
