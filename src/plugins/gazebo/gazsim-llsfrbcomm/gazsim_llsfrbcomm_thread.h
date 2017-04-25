@@ -51,8 +51,6 @@
 #include "../msgs/SimTime.pb.h"
 
 typedef const boost::shared_ptr<llsf_msgs::MachineInfo const> ConstMachineInfoPtr;
-typedef const boost::shared_ptr<llsf_msgs::PlacePuckUnderMachine const> ConstPlacePuckUnderMachinePtr;
-typedef const boost::shared_ptr<llsf_msgs::RemovePuckFromMachine const> ConstRemovePuckFromMachinePtr;
 typedef const boost::shared_ptr<gazsim_msgs::SimTime const> ConstSimTimePtr;
 typedef const boost::shared_ptr<llsf_msgs::SetGameState const> ConstSetGameStatePtr;
 typedef const boost::shared_ptr<llsf_msgs::SetGamePhase const> ConstSetGamePhasePtr;
@@ -99,16 +97,12 @@ class GazsimLLSFRbCommThread
   gazebo::transport::PublisherPtr machine_info_pub_;
   gazebo::transport::PublisherPtr game_state_pub_;
   gazebo::transport::PublisherPtr puck_info_pub_;
-  gazebo::transport::SubscriberPtr place_puck_under_machine_sub_;
-  gazebo::transport::SubscriberPtr remove_puck_under_machine_sub_;
   gazebo::transport::SubscriberPtr time_sync_sub_;
   gazebo::transport::SubscriberPtr set_game_state_sub_;
   gazebo::transport::SubscriberPtr set_game_phase_sub_;
   gazebo::transport::SubscriberPtr set_team_name_sub_;
 
   //handler methods
-  void on_puck_place_msg(ConstPlacePuckUnderMachinePtr &msg);
-  void on_puck_remove_msg(ConstRemovePuckFromMachinePtr &msg);
   void on_time_sync_msg(ConstSimTimePtr &msg);
   void on_set_game_state_msg(ConstSetGameStatePtr &msg);
   void on_set_game_phase_msg(ConstSetGamePhasePtr &msg);
