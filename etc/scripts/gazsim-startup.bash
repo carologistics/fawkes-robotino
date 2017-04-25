@@ -31,6 +31,7 @@ OPTIONS:
    -g             Run Fawkes in gdb
    -v             Run Fawkes in valgrind
    -t             Skip Exploration and add all navgraph points
+   -w             Alternative world file
   GAZEBO:
    -e arg         Record Replay
 EOF
@@ -53,8 +54,9 @@ FAWKES_BIN=$FAWKES_DIR/bin
 KEEP=
 GDB=
 SKIP_EXPLORATION=
+GAZEBO_WORLD=$GAZEBO_WORLD_PATH
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:t" -l "ros,ros-launch:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:tw:" -l "ros,ros-launch:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -95,13 +97,16 @@ while true; do
 				echo "Can pass only either valgrind or GDB, not both"
         exit
        fi
-	     GDB="valgrind --verbose"
+	     GDB="valgrind --track-origins=yes"
 	     ;;
 	 -s)
 	     SHUTDOWN=,mongodb,gazsim-llsf-statistics,gazsim-llsf-control
 	     ;;
 	 -p)
 	     PORT=$OPTARG
+	     ;;
+	 -w)
+	     GAZEBO_WORLD=$OPTARG
 	     ;;
 	 -i)
 	     ROBOTINO=$OPTARG
@@ -128,6 +133,7 @@ while true; do
 	     FAWKES_BIN=$OPTARG
 	     ;;
          --)
+             shift
              break
              ;;
      esac
@@ -153,26 +159,26 @@ fi
 case $COMMAND in
     gazebo )
 	# change Language (in german there is an error that gazebo can not use a number with comma)
-	export LANG="en_US"
-	gazebo $REPLAY $GAZEBO_WORLD_PATH
+	export LC_ALL="C"
+	gazebo $REPLAY $GAZEBO_WORLD $@
 	;;
     gzserver ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
-	export LANG="en_US"
-	gzserver $REPLAY $GAZEBO_WORLD_PATH
+	export LC_ALL="C"
+	gzserver $REPLAY $GAZEBO_WORLD $@
 	;;
     gzclient ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
-	export LANG="en_US"
+	export LC_ALL="C"
 	#use optirun if available
 	#opti=$(command -v optirun)
-	$opti gzclient
+	$opti gzclient $@
 	;;
     fawkes )
 	ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
 	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$META_PLUGIN$SKIP_EXPLORATION
-	$GDB $FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins
+	$GDB $FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins $@
 	if [ -n "$GDB" ]; then
 		echo Fawkes exited, press return to close shell
 		read
@@ -180,34 +186,35 @@ case $COMMAND in
 	;;
     comm )
 	comm_plugins=gazsim-organization$SHUTDOWN
-	$FAWKES_BIN/fawkes -p $comm_plugins
+	$FAWKES_BIN/fawkes -p $comm_plugins $@
 	;;
     roscore ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
-	roscore -p $PORT
+	roscore -p $PORT $@
 	;;
     roslaunch)
 	export ROS_MASTER_URI=http://localhost:$PORT
-	roslaunch --wait ${ROS_LAUNCH%:*} ${ROS_LAUNCH##*:}
+	roslaunch $@ --wait ${ROS_LAUNCH%:*} ${ROS_LAUNCH##*:} 
 	;;
     move_base ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
 	#rosparam set /use_sim_time true
 	export ROS_PACKAGE_PATH=$FAWKES_DIR/cfg/move_base_robotino:$ROS_PACKAGE_PATH
-	roslaunch $FAWKES_DIR/cfg/move_base_robotino/launch/move_base.launch
+	roslaunch $@ $FAWKES_DIR/cfg/move_base_robotino/launch/move_base.launch
 	;;
     refbox )
-	$LLSF_REFBOX_DIR/bin/llsf-refbox
+	$LLSF_REFBOX_DIR/bin/llsf-refbox $@
 	;;
     refbox-shell )
         # wait some time such that the terminal has the final size
 	sleep 3
-	$LLSF_REFBOX_DIR/bin/llsf-refbox-shell
+	$LLSF_REFBOX_DIR/bin/llsf-refbox-shell $@
 	;;
 esac
 
 
-if [ "$KEEP" == "yes" ]; then
+if [[ "$KEEP" == "yes" ]]; then
+	echo -n "Press ENTER to exit..."
 	read
 fi
 
