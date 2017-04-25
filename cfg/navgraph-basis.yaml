@@ -53,23 +53,23 @@ nodes:
 # Cyan
   - !unconnected
     name: C-ins-out
-    pos: [3.3, -0.55]
+    pos: [4.5, 0.5]
     properties:
       - always-copy: true
   - !unconnected
     name: C-ins-in
-    pos: [3.3, 0.75]
+    pos: [4.5, 1.7]
     properties:
       - always-copy: true
 # Magenta
   - !unconnected
     name: M-ins-out
-    pos: [-3.3, -0.55]
+    pos: [-4.5, 0.5]
     properties:
       - always-copy: true
   - !unconnected
     name: M-ins-in
-    pos: [-3.3, 0.75]
+    pos: [-4.5, 1.5]
     properties:
       - always-copy: true
 
