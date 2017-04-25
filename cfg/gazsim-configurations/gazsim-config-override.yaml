@@ -105,3 +105,17 @@ plugins/static-transforms:
       rot_pitch: 0 
       rot_yaw: 0
       rot_roll: 0
+
+plugins/mongodb/clients:
+  robotmemory-synced:
+    active: false
+  robotmemory-synced-sim:
+    active: true
+    mode: connection
+    hostport: localhost:27021
+      
+plugins/robot-memory:
+  setup:
+    mongo-client-connection-distributed: "robotmemory-synced-sim"
+    replicated:
+      replica-set-members: "[{_id:1,host:'localhost:27021'}]"
