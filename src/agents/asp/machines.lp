@@ -6,6 +6,7 @@
 % brokenLocation(L, GT)          The location L is broken.
 % csPrepared(M, GT)              If the cap station M is prepared to mount a cap in GT.
 % inUse(L, R, GT)                The location L is blocked by robot R in GT.
+% meaningfulGoto(L, GT)          A goto to location L has a meaning at GT, a product will be ready soon to pick it up.
 % processing(M, P, D, GT)        The machine M processes product P for the next D time steps from GT on.
 % rsFillState(M, S, GT)          Ring station M has S additional bases loaded in GT.
 % storing(M, P, GT)              Machine M stores product P in GT.
@@ -56,6 +57,8 @@ storing(M, P, GT) :- processing(M, P, 1, GT-1), not deliveryStation(M), not hori
 processing(M, P, D, GT) :- process(M, P, GT), D = @machineWorkingDuration(M).
 processing(M, P, D, GT) :- processing(M, P, D+1, GT-1), not horizon(GT), D != 0, not broken(M, _, GT).
 processing(M, P, D, GT) :- processing(M, P, D, GT-1), not horizon(GT), broken(M, _, GT).
+
+meaningfulGoto(L, GT) :- processing(M, _, _, GT), locationToMachineMap(L, M), getLocation(L).
 
 csPrepared(M, GT) :- csPrepared(M, GT-1), not capMounted(M, _, GT), not horizon(GT).
 
