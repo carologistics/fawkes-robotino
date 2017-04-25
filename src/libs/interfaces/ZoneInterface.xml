@@ -20,5 +20,11 @@
     <field type="int32" name="tag_id">
       The ID of the tag, if set to -1 this means no TAG is known, e.g. MPS just found maybe (with laser-lines).
     </field>
+    <field type="int32" name="orientation">
+      The discretized orientation of the MPS
+    </field>
+    <field type="string" name="zone" length="16">
+      The name of the zone we're investigating
+    </field>
   </data>
 </interface>

@@ -27,611 +27,443 @@ name               = "explore_zone"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = { "drive_to_global", "drive_to_local", "motor_move" }
 depends_interfaces = {
-  {v = "pose",      type="Position3DInterface", id="Pose"},
-  {v = "zone_info", type="ZoneInterface",       id="/explore-zone/info", writing=true},
-  {v = "zone_pose", type="Position3DInterface", id="/explore-zone/pose", writing=true},
-	{v = "tag_0", type = "Position3DInterface", id="/tag-vision/0"},
-	{v = "tag_1", type = "Position3DInterface", id="/tag-vision/1"},
-	{v = "tag_2", type = "Position3DInterface", id="/tag-vision/2"},
-	{v = "tag_3", type = "Position3DInterface", id="/tag-vision/3"},
-	{v = "tag_4", type = "Position3DInterface", id="/tag-vision/4"},
-	{v = "tag_5", type = "Position3DInterface", id="/tag-vision/5"},
-	{v = "tag_6", type = "Position3DInterface", id="/tag-vision/6"},
-	{v = "tag_7", type = "Position3DInterface", id="/tag-vision/7"},
-	{v = "tag_8", type = "Position3DInterface", id="/tag-vision/8"},
-	{v = "tag_9", type = "Position3DInterface", id="/tag-vision/9"},
-	{v = "tag_10", type = "Position3DInterface", id="/tag-vision/10"},
-	{v = "tag_11", type = "Position3DInterface", id="/tag-vision/11"},
-	{v = "tag_12", type = "Position3DInterface", id="/tag-vision/12"},
-	{v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
-	{v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
-	{v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
+   {v = "zone_info", type="ZoneInterface",       id="/explore-zone/info", writing=true},
+   {v = "bb_found_tag", type="Position3DInterface", id="/explore-zone/found-tag", writing=true},
+	{v = "tag_0",    type = "Position3DInterface", id="/tag-vision/0"},
+	{v = "tag_1",    type = "Position3DInterface", id="/tag-vision/1"},
+	{v = "tag_2",    type = "Position3DInterface", id="/tag-vision/2"},
+	{v = "tag_3",    type = "Position3DInterface", id="/tag-vision/3"},
+	{v = "tag_4",    type = "Position3DInterface", id="/tag-vision/4"},
+	{v = "tag_5",    type = "Position3DInterface", id="/tag-vision/5"},
+	{v = "tag_6",    type = "Position3DInterface", id="/tag-vision/6"},
+	{v = "tag_7",    type = "Position3DInterface", id="/tag-vision/7"},
+	{v = "tag_8",    type = "Position3DInterface", id="/tag-vision/8"},
+	{v = "tag_9",    type = "Position3DInterface", id="/tag-vision/9"},
+	{v = "tag_10",   type = "Position3DInterface", id="/tag-vision/10"},
+	{v = "tag_11",   type = "Position3DInterface", id="/tag-vision/11"},
+	{v = "tag_12",   type = "Position3DInterface", id="/tag-vision/12"},
+	{v = "tag_13",   type = "Position3DInterface", id="/tag-vision/13"},
+	{v = "tag_14",   type = "Position3DInterface", id="/tag-vision/14"},
+	{v = "tag_15",   type = "Position3DInterface", id="/tag-vision/15"},
 	{v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
-  {v = "line1",     type = "LaserLineInterface", id="/laser-lines/1"},
-  {v = "line2",     type = "LaserLineInterface", id="/laser-lines/2"},
-  {v = "line3",     type = "LaserLineInterface", id="/laser-lines/3"},
-  {v = "line4",     type = "LaserLineInterface", id="/laser-lines/4"},
-  {v = "line5",     type = "LaserLineInterface", id="/laser-lines/5"},
-  {v = "line6",     type = "LaserLineInterface", id="/laser-lines/6"},
-  {v = "line7",     type = "LaserLineInterface", id="/laser-lines/7"},
-  {v = "line8",     type = "LaserLineInterface", id="/laser-lines/8"},
-  {v = "cluster_mps_1",   type = "Position3DInterface", id="/laser-cluster/mps/1"},
-  {v = "cluster_mps_2",   type = "Position3DInterface", id="/laser-cluster/mps/2"},
-  {v = "cluster_mps_3",   type = "Position3DInterface", id="/laser-cluster/mps/3"},
-  {v = "cluster_mps_4",   type = "Position3DInterface", id="/laser-cluster/mps/4"},
-  {v = "cluster_mps_5",   type = "Position3DInterface", id="/laser-cluster/mps/5"},
-  {v = "cluster_mps_6",   type = "Position3DInterface", id="/laser-cluster/mps/6"},
-  {v = "cluster_mps_7",   type = "Position3DInterface", id="/laser-cluster/mps/7"},
-  {v = "cluster_mps_8",   type = "Position3DInterface", id="/laser-cluster/mps/8"},
-  {v = "cluster_mps_9",   type = "Position3DInterface", id="/laser-cluster/mps/9"},
-  {v = "cluster_mps_10",  type = "Position3DInterface", id="/laser-cluster/mps/10"},
+   {v = "line1",    type = "LaserLineInterface", id="/laser-lines/1"},
+   {v = "line2",    type = "LaserLineInterface", id="/laser-lines/2"},
+   {v = "line3",    type = "LaserLineInterface", id="/laser-lines/3"},
+   {v = "line4",    type = "LaserLineInterface", id="/laser-lines/4"},
+   {v = "line5",    type = "LaserLineInterface", id="/laser-lines/5"},
+   {v = "line6",    type = "LaserLineInterface", id="/laser-lines/6"},
+   {v = "line7",    type = "LaserLineInterface", id="/laser-lines/7"},
+   {v = "line8",    type = "LaserLineInterface", id="/laser-lines/8"},
+   {v = "cluster1", type = "Position3DInterface", id="/laser-cluster/mps/1"},
+   {v = "cluster2", type = "Position3DInterface", id="/laser-cluster/mps/2"},
+   {v = "cluster3", type = "Position3DInterface", id="/laser-cluster/mps/3"},
+   {v = "cluster4", type = "Position3DInterface", id="/laser-cluster/mps/4"},
+   {v = "cluster5", type = "Position3DInterface", id="/laser-cluster/mps/5"},
+   {v = "cluster6", type = "Position3DInterface", id="/laser-cluster/mps/6"},
+   {v = "cluster7", type = "Position3DInterface", id="/laser-cluster/mps/7"},
+   {v = "cluster8", type = "Position3DInterface", id="/laser-cluster/mps/8"},
+   {v = "cluster9", type = "Position3DInterface", id="/laser-cluster/mps/9"},
+   {v = "cluster10", type = "Position3DInterface", id="/laser-cluster/mps/10"},
 }
 
-local TIMEOUT = 1
-local HIST_MIN_LINE = 5
-local HIST_MIN_TAG  = 5
-local ROBOT_WALL_DIST = 0.35
-local TAG_DIST = 0.5
-local MPS_OFFSET_TO_ZONE = 0.1
-local WALL_MIN_X = -5.95
-local WALL_MAX_X =  6.0
-local WALL_MIN_Y =  0.05
-local WALL_MAX_Y =  5.95
-
 documentation      = [==[
-Explores a zone defined by (x_min, y_min) and (x_max, y_max)
 Searches for mps with the laser and tag vision
 
-@param min_x  minimal x coordinate to explore
-@param min_y  minimal y coordinate to explore
-@param max_x  maximal x coordinate to explore
-@param max_y  maximal y coordinate to explore
+@param zone          The zone to search
 
-@param change_order if set to true, the points of a zone will be in different order (in case we are unable to find machines)
-@param disable_cluster if set to true, the laser-cluster for fast decision will be disabled (in case we are unable to find machines
-
-@param search_tags   list of tags to search fore (all others will be ignored), if nil all will be used
+@param search_tags   list of tags to search for (all others will be ignored), if nil all will be used
 
 ]==]
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local tfm = require 'tf_module'
-local tfutils = require("fawkes.tfutils")
+local tfm = require("fawkes.tfutils")
+local llutils = require("fawkes.laser-lines_utils")
+local tag_utils = require("tag_utils")
 
-function signum(x)
-  if (x >= 0) then return 1 else return -1 end
+-- Tunables
+local ZONE_MARGIN = 0.05
+local CAM_ANGLE = 0.4
+local MIN_VIS_HIST = 10
+local MAX_ATTEMPTS = 4
+
+-- Maximum reachable coordinates (i.e. usable playing field dimensions)
+local X_MAX = 6.6 -- X direction is mirrored, so no minimum here
+local Y_MIN = 0.3
+local Y_MAX = 7.6
+
+-- When we can't find a laser-line in the zone, we try looking at the zone
+-- from these coordinates, relative to the center.
+local ZONE_CORNERS = {
+   { x = 0.7, y = -0.8 },
+   { x = 0.7, y = 0.8 },
+   { x = -0.6, y = 0 }
+}
+
+-- Maximum difference between tag and line trans/rot
+local TAG_LINE_TOLERANCE = {
+   trans = 0.2,
+   rot = 0.05
+}
+
+
+function args_ok()
+   return fsm.vars.zone and string.match(fsm.vars.zone, "[MC][-]Z[1-7][1-8]")
 end
 
-function mps_in_zone(self, x, y, use_offset)
---  printf("Check MPS (" .. x .. ", " .. y .. ")")
-  if use_offset == nil then
-    use_offset = true
-  end
-  mps_offset = 0
-  if use_offset then
-    mps_offset = MPS_OFFSET_TO_ZONE
-  end
-  -- x compared to the maximum - offset and minimum + offset ( depending on positive and negative numbers )
-  if x > signum(self.fsm.vars.max_x) * ( math.abs(self.fsm.vars.max_x) - mps_offset ) or
-     x < signum(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) or
-     y > signum(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) or
-     y < signum(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) then
---[[
-     printf("MPS in zone x (" .. 
-                              signum(self.fsm.vars.min_x) * ( math.abs(self.fsm.vars.min_x) + mps_offset ) ..
-                              ", " ..
-                              signum(self.fsm.vars.max_x) * ( math.abs(self.fsm.vars.max_x) - mps_offset ) ..
-                              ") y ( " ..
-                              signum(self.fsm.vars.min_y) * ( math.abs(self.fsm.vars.min_y) + mps_offset ) ..
-                              ", " ..
-                              signum(self.fsm.vars.max_y) * ( math.abs(self.fsm.vars.max_y) - mps_offset ) ..
-                              ")")
---]]
-    return false
-  end
-  return true
+
+function in_zone(x, y)
+   return math.abs(x - fsm.vars.x) < 0.5 - ZONE_MARGIN
+      and math.abs(y - fsm.vars.y) < 0.5 - ZONE_MARGIN
 end
 
-function get_tag_id(self, if_ID)
-  if_ID = string.sub(if_ID, 13)
-  
-  return tag_info:tag_id(if_ID)
+
+function within_map(p)
+   return math.abs(p.x) <= X_MAX and p.y >= Y_MIN and p.y <= Y_MAX
 end
 
-function tag_searched(self, if_ID)
-  if self.fsm.vars.search_tags == nil then
-    return true
-  end
 
-  --printf("TAG ID: " .. get_tag_id(self, if_ID))
-
-  for k,v in pairs(self.fsm.vars.search_tags) do
-    if v == get_tag_id(self, if_ID) then
-      return true
-    end
-  end
-
-  return false
-end
-
-function mps_visible_tag(self, hist_min, use_offset_to_boarder)
-  hist_min = hist_min or HIST_MIN_TAG
-  self.fsm.vars.tag_chosen = nil
-  local tags_vis = {}
-  for k,v in pairs( self.fsm.vars.tags ) do
-
-    if v:visibility_history() >= hist_min then
-      -- printf("Tag: %s vis his %u", tostring(k), v:visibility_history())
-      if tag_searched(self, v:id()) then
-        local point_on_obj = {}
-
-        local obj_map_6D = tfutils.transform6D({ x=v:translation(0), y=v:translation(1), z=v:translation(2),
-                                                 ori={x=v:rotation(0), y=v:rotation(1), z=v:rotation(2), w=v:rotation(3)}
-                                               }, v:frame(), "/base_link", v:timestamp())
-      
-        point_on_obj["frame_id"] = "/base_link"
-        point_on_obj["x"]   = obj_map_6D.x
-        point_on_obj["y"]   = obj_map_6D.y
-        local q = fawkes.tf.Quaternion:new(obj_map_6D.ori.x, obj_map_6D.ori.y, obj_map_6D.ori.z, obj_map_6D.ori.w)
-        point_on_obj["ori"] = math.normalize_mirror_rad( fawkes.tf.get_yaw(q) )
-
-        local obj_map = tfm.transform({x=point_on_obj["x"], y=point_on_obj["y"], ori=point_on_obj["ori"]}, point_on_obj["frame_id"], "/map", v:timestamp())
-        point_on_obj["x_map"]   = obj_map.x
-        point_on_obj["y_map"]   = obj_map.y
-        point_on_obj["ori_map"] = obj_map.ori
-        point_on_obj["tag_id"]  = get_tag_id(self, v:id())
-
-        if mps_in_zone(self, obj_map.x, obj_map.y, use_offset_to_boarder) then
-          table.insert( tags_vis, point_on_obj )
-          --printf("Found MPS by tag at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
-        else
-          --print("MPS not in zone")
-        end
-      else
-        --print("Not the wanted tag")
+function line_in_zone(lines)
+   for k,line in pairs(lines) do
+      if line:visibility_history() >= MIN_VIS_HIST then
+         local center = llutils.center(line)
+         local center_map = tfm.transform(center, line:frame_id(), "map")
+         if in_zone(center_map.x, center_map.y) then
+            return line
+         end
       end
-    end
-  end
-
-  if table.getn( tags_vis ) <= 0 then
-    --print("Tag not visible?")
-    return false
-  end
-
-  -- get closest
-  self.fsm.vars.tag_chosen = tags_vis[1]
-  local tag_chosen_dist = math.sqrt( self.fsm.vars.tag_chosen["x"]*self.fsm.vars.tag_chosen["x"] +
-                                     self.fsm.vars.tag_chosen["y"]*self.fsm.vars.tag_chosen["y"])
-  for k,v in pairs( tags_vis ) do
-    local v_dist = math.sqrt( v["x"]*v["x"] + v["y"]*v["y"] )
-    if tag_chosen_dist > v_dist then
-      self.fsm.vars.tag_chosen = v
-      tag_chosen_dist = v_dist
-    end
-  end
-  return true
+   end
+   return nil
 end
 
-function mps_visible_laser(self, hist_min)
-  hist_min = hist_min or HIST_MIN_LINE
-  self.fsm.vars.line_chosen = nil
-  -- visible
-  local lines_vis = {}
-  for k,v in pairs( self.fsm.vars.lines ) do
 
-    if v:visibility_history() >= hist_min then
-      local point_on_obj = {}
-      point_on_obj["frame_id"] = v:frame_id()
-      point_on_obj["x"]   = v:end_point_1(0) + ( v:end_point_2(0) - v:end_point_1(0) ) / 2
-      point_on_obj["y"]   = v:end_point_1(1) + ( v:end_point_2(1) - v:end_point_1(1) ) / 2
-      point_on_obj["ori"] = math.normalize_mirror_rad( math.pi + v:bearing() )
-      local obj_map = tfm.transform({x=point_on_obj["x"], y=point_on_obj["y"], ori=point_on_obj["ori"]}, point_on_obj["frame_id"], "/map")
-      point_on_obj["x_map"]   = obj_map.x
-      point_on_obj["y_map"]   = obj_map.y
-      point_on_obj["ori_map"] = obj_map.ori
-      point_on_obj["tag_id"]  = -1
-      
-      if mps_in_zone( self, obj_map.x, obj_map.y ) then
-        table.insert( lines_vis, point_on_obj )
-          print_debug("Found MPS by laser-lines at (%f, %f, %f)", point_on_obj["x_map"], point_on_obj["y_map"], point_on_obj["ori_map"])
+function cluster_in_zone(clusters)
+   for i,cluster in pairs(clusters) do
+      if cluster:visibility_history() >= MIN_VIS_HIST then
+         local cluster_map = tfm.transform(
+            { x = cluster:translation(0), y = cluster:translation(1), ori = 0 },
+            cluster:frame(), "map"
+         )
+         if in_zone(cluster_map.x, cluster_map.y) then
+            return cluster_map
+         end
       end
-    end
-  end
-  if table.getn( lines_vis ) <= 0 then
-    return false
-  end
-
-  -- get closest
-  self.fsm.vars.line_chosen = lines_vis[1]
-  local line_chosen_dist = math.sqrt( self.fsm.vars.line_chosen["x"]*self.fsm.vars.line_chosen["x"] +
-                                      self.fsm.vars.line_chosen["y"]*self.fsm.vars.line_chosen["y"])
-  for k,v in pairs( lines_vis ) do
-    local v_dist = math.sqrt( v["x"]*v["x"] + v["y"]*v["y"] )
-    if line_chosen_dist > v_dist then
-      self.fsm.vars.line_chosen = v
-      line_chosen_dist = v_dist
-    end
-  end
-  return true
+   end
+   return nil
 end
 
-function cluster_visible(self)
-  for k,v in pairs(self.fsm.vars.cluster) do
-    local obj_map = tfm.transform({x=v:translation(0), y=v:translation(1), ori=0}, v:frame(), "/map")
-    if v:visibility_history() > 0 and
-       mps_in_zone(self, obj_map.x, obj_map.y) then
-      return true
-    end
-  end
-  return false
+
+function local_bearing(x, y)
+   local p_bl = tfm.transform(
+      {x = x, y = y, ori = 0},
+      "map", "base_link")
+   return math.atan2(p_bl.y, p_bl.x)
 end
 
-function poses_to_check(self)
-  if table.getn(self.fsm.vars.poses_to_check) > self.fsm.vars.poses_to_check_iterator then
-    return true
-  else
-    return false
-  end
+
+function found_tag()
+   local tag_ifs = tag_utils.matching_tags(
+      fsm.vars.tags, tag_info, fsm.vars.tag_id_set)
+   for id,tag in pairs(tag_ifs) do
+      if tag:visibility_history() >= MIN_VIS_HIST then
+         local line = line_in_zone(fsm.vars.lines)
+         if line and line:visibility_history() >= MIN_VIS_HIST then
+            -- IF we see a line in this zone, we make sure the tag is roughly aligned with it,
+            -- otherwise we assume the tag pose is somehow borked, e.g. flipped orientation as
+            -- it happens with the current ALVAR lib.
+            local line_c = llutils.center(line)
+
+            local tag_laser = tfm.transform6D(
+               { x = 0, y = 0, z = 0, ori = fawkes.tf.create_quaternion_from_yaw(math.pi) },
+               tag_utils.frame_for_id(fsm.vars.tags, tag_info, id), line:frame_id()
+            )
+            local line_c_tag = tfm.transform6D(
+               { x = line_c.x, y = line_c.y, z = 0,
+                 ori = fawkes.tf.create_quaternion_from_rpy(0, 0, line:bearing() - math.pi)
+               }, line:frame_id(), tag_utils.frame_for_id(fsm.vars.tags, tag_info, id)
+            )
+            local d_trans = math.vec_length(line_c_tag.x, line_c_tag.y)
+            local d_rot = math.angle_distance(line:bearing(), fawkes.tf.get_yaw(tag_laser.ori))
+            if d_trans > TAG_LINE_TOLERANCE.trans or d_rot > TAG_LINE_TOLERANCE.rot then
+               printf("Discarding tag #%d, misaligned by %f, %f.", id, d_trans, d_rot)
+               return false
+            end
+         end
+         local tag_map = tfm.transform6D(
+            { x = 0, y = 0, z = 0,
+               ori = fawkes.tf.Quaternion:getIdentity()
+            },
+            tag_utils.frame_for_id(fsm.vars.tags, tag_info, id),
+            "map"
+         )
+         if tag_map and in_zone(tag_map.x, tag_map.y) then
+            local yaw = fawkes.tf.get_yaw(tag_map.ori)
+            if yaw == yaw then
+               -- Rescale & Discretize angle from 0..315°
+               print_debug("Yaw 1: " .. yaw)
+               if id % 2 == 0 then
+                  yaw = yaw + math.pi
+                  print_debug("Yaw 2: " .. yaw)
+               end
+               if yaw < 0 then
+                  yaw = 2 * math.pi + yaw
+                  print_debug("Yaw 3: ".. yaw)
+               end
+               local yaw_discrete = math.round(yaw / math.pi * 4) * 45
+               if yaw_discrete == 360 then yaw_discrete = 0 end
+               zone_info:set_zone(fsm.vars.zone)
+               zone_info:set_orientation(yaw_discrete)
+               zone_info:set_tag_id(id)
+               zone_info:set_search_state(zone_info.YES)
+               bb_found_tag:set_translation(0, tag_map.x)
+               bb_found_tag:set_translation(1, tag_map.y)
+               bb_found_tag:set_translation(2, tag_map.z)
+               bb_found_tag:set_rotation(0, tag_map.ori:x())
+               bb_found_tag:set_rotation(1, tag_map.ori:y())
+               bb_found_tag:set_rotation(2, tag_map.ori:z())
+               bb_found_tag:set_rotation(3, tag_map.ori:w())
+               bb_found_tag:set_frame("map")
+               bb_found_tag:set_visibility_history(tag:visibility_history())
+               fsm.vars.found_something = true
+               return true
+            end
+         end
+      end
+   end
+   return false
+end
+
+function lost_tag()
+   local tag_ifs = tag_utils.matching_tags(
+      fsm.vars.tags, tag_info, fsm.vars.tag_id_set)
+   for id,tag in pairs(tag_ifs) do
+      if tag:visibility_history() > -3 then
+         return false
+      end
+   end
+   return true
 end
 
 fsm:define_states{ export_to=_M,
-  closure={mps_visible_tag=mps_visible_tag, mps_visible_laser=mps_visible_laser,cluster_visible=cluster_visible,poses_to_check=poses_to_check, HIST_MIN_TAG=HIST_MIN_TAG, os=os},
-  {"INIT",                        JumpState},
-  {"DRIVE_TO_ZONE",               SkillJumpState, skills={{drive_to_local}}, final_to="DECIDE_CLUSTER", fail_to="FAILED"},
-  {"DECIDE_CLUSTER",              JumpState},
-  {"TIMEOUT_CLUSTER",             JumpState},
-  {"DECIDE_NEXT_POINT",           JumpState},
-  {"DRIVE_TO_NEXT_EXPLORE_POINT", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
-  {"FIX_INTERNAL_VARS",        SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
-  {"WAIT_FOR_SENSORS",            JumpState},
---  {"DRIVE_TO_POSSIBLE_MPS_PRE",   SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_SENSORS", fail_to="FAILED"},
-  {"DRIVE_TO_POSSIBLE_MPS",       SkillJumpState, skills={{drive_to_local}}, final_to="CHECK_SEE_TAG", fail_to="FAILED"},
-  {"CHECK_SEE_TAG",               JumpState},
+   closure={args_ok=args_ok, local_bearing=local_bearing, CAM_ANGLE=CAM_ANGLE, ZONE_CORNERS=ZONE_CORNERS,
+      MAX_ATTEMPTS=MAX_ATTEMPTS, found_tag=found_tag},
+   {"INIT", JumpState},
+   {"WAIT_FOR_TAG", JumpState},
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_TAG", fail_to="FAILED"},
+   {"GET_CLOSER", JumpState},
+   {"FIND_LINE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"FIND_ZONE_CORNER", JumpState},
+   {"APPROACH_LINE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"APPROACH_ZONE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"WAIT_AMCL", JumpState}
 }
 
 fsm:add_transitions{
-  {"INIT",                "FAILED",                       cond="vars.parameter_nil",                            desc="one ore more parameter are nil"},
-  {"INIT",                "DECIDE_NEXT_POINT",            cond="vars.disable_cluster ~= nil",                   desc="deactivate cluster search, directly goto 1. search point"},
-  {"INIT",                "DRIVE_TO_ZONE",                cond=true},
-  {"DRIVE_TO_ZONE",       "FIX_INTERNAL_VARS",            cond="mps_visible_laser(self, 1) and os.time() - vars.laser_lines_timeout_start >= 1",                    desc="saw line on route, drive to there"},
-  {"DECIDE_CLUSTER",      "TIMEOUT_CLUSTER",              cond=true},
-  {"TIMEOUT_CLUSTER",     "WAIT_FOR_SENSORS",             cond=cluster_visible,                                 desc="cluster in zone, start checking"},
-  --{"TIMEOUT_CLUSTER",     "FAILED",                       cond=cluster_visible,                                 desc="TODO this is for a test, remove me and add line above"},
-  {"TIMEOUT_CLUSTER",     "FINAL",                        timeout=TIMEOUT,                                      desc="saw no cluster so stop checking zone"},
-  --{"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond="table.getn(self.fsm.vars.poses_to_check) ~= 0"},
-  {"DECIDE_NEXT_POINT",   "DRIVE_TO_NEXT_EXPLORE_POINT",  cond=poses_to_check},
-  {"DECIDE_NEXT_POINT",   "FINAL",                        cond=true},
-  --{"DRIVE_TO_NEXT_EXPLORE_POINT", "FIX_INTERNAL_VARS", cond="mps_visible_tag(self, 1)",                      desc="saw tag on route, drive to there"},
-  {"DRIVE_TO_NEXT_EXPLORE_POINT", "FIX_INTERNAL_VARS",    cond="mps_visible_laser(self, 1) and os.time() - vars.laser_lines_timeout_start >= 1",                    desc="saw line on route, drive to there"},
-  {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_tag,                                 desc="saw tag, drive to"},
-  {"WAIT_FOR_SENSORS",    "DRIVE_TO_POSSIBLE_MPS",        cond=mps_visible_laser,                               desc="saw laser, drive to"},
-  {"WAIT_FOR_SENSORS",    "DECIDE_NEXT_POINT",            timeout=TIMEOUT,                                      desc="saw nothing, trying next point"},
-  {"CHECK_SEE_TAG",       "FINAL",                        cond="mps_visible_tag(self, HIST_MIN_TAG, false)",    desc="see tag after alignmend"},
-  {"CHECK_SEE_TAG",       "FAILED",                       timeout=TIMEOUT,                                      desc="can't see tag after position in front, wtf happend?"},
+   {"INIT", "FAILED", cond="not args_ok()", desc="invalid arguments"},
+   {"INIT", "TURN", cond="vars.line_center"},
+   {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
+   {"INIT", "WAIT_FOR_TAG", cond=true},
+   {"WAIT_FOR_TAG", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"WAIT_FOR_TAG", "GET_CLOSER", timeout=1},
+   {"GET_CLOSER", "FAILED", cond="vars.attempts >= MAX_ATTEMPTS", desc="give up"},
+   {"GET_CLOSER", "APPROACH_LINE", cond="vars.line_vista"},
+   {"GET_CLOSER", "FIND_LINE", cond="vars.cluster_vista"},
+   {"GET_CLOSER", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"GET_CLOSER", "FIND_ZONE_CORNER", timeout=2},
+   {"GET_CLOSER", "FAILED", cond="vars.zone_corner_idx > 1 and not vars.found_something", desc="prolly nuthn here"},
+   {"FIND_ZONE_CORNER", "APPROACH_ZONE", cond="vars.zone_corner"},
+   {"FIND_ZONE_CORNER", "FAILED", cond="not vars.zone_corner"},
+   {"APPROACH_ZONE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"APPROACH_ZONE", "GET_CLOSER", timeout=10},
+   {"APPROACH_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"APPROACH_LINE", "GET_CLOSER", timeout=10},
+   {"WAIT_AMCL", "GET_CLOSER", cond=lost_tag, desc="lost tag"},
+   {"WAIT_AMCL", "FINAL", timeout=2},
 }
 
+
 function INIT:init()
-  self.fsm.vars.parameter_nil = false
-  local wall_min_x = false
-  local wall_min_y = false
-  local wall_max_x = false
-  local wall_max_y = false
+   zone_info:set_zone(self.fsm.vars.zone)
+   zone_info:set_search_state(zone_info.UNKNOWN)
+   zone_info:set_tag_id(-1)
+   zone_info:set_orientation(-1)
 
-  -- clear interfaces
-  zone_info:set_search_state(zone_info.UNKNOWN)
-  zone_info:set_tag_id(-1)
+   bb_found_tag:set_visibility_history(-1)
 
-  zone_pose:set_visibility_history(-1)
+   self.fsm.vars.x = tonumber(string.sub(self.fsm.vars.zone, 4, 4)) - 0.5
+   self.fsm.vars.y = tonumber(string.sub(self.fsm.vars.zone, 5, 5)) - 0.5
+   if string.sub(self.fsm.vars.zone, 1, 1) == "M" then
+      self.fsm.vars.x = -self.fsm.vars.x
+   end
 
-  -- check params
-  if self.fsm.vars.min_x == nil or
-     self.fsm.vars.min_y == nil or
-     self.fsm.vars.max_x == nil or
-     self.fsm.vars.max_y == nil then
-     self.fsm.vars.parameter_nil = true
-  else
-
-    -- swap min/max if nessesary
-    if self.fsm.vars.min_x > self.fsm.vars.max_x then
-      self.fsm.vars.min_x, self.fsm.vars.max_x = self.fsm.vars.max_x, self.fsm.vars.min_x
-    end
-    if self.fsm.vars.min_y > self.fsm.vars.max_y then
-      self.fsm.vars.min_y, self.fsm.vars.max_y = self.fsm.vars.max_y, self.fsm.vars.min_y
-    end
-
-    self.fsm.vars.mid_x = self.fsm.vars.min_x + ((self.fsm.vars.max_x - self.fsm.vars.min_x) / 2)
-    self.fsm.vars.mid_y = self.fsm.vars.min_y + ((self.fsm.vars.max_y - self.fsm.vars.min_y) / 2)
-    printf("Explore zone (" .. self.fsm.vars.min_x .. ", " .. self.fsm.vars.min_y .. ") (" .. self.fsm.vars.max_x .. ", " .. self.fsm.vars.max_y .. ")")
-
-    -- check for zone at walls
-    if self.fsm.vars.min_x <= WALL_MIN_X then
-      wall_min_x = true
-    end
-    if self.fsm.vars.min_y <= WALL_MIN_Y then
-      wall_min_y = true
-    end
-    if self.fsm.vars.max_x >= WALL_MAX_X then
-      wall_max_x = true
-    end
-    if self.fsm.vars.max_y >= WALL_MAX_Y then
-      wall_max_y = true
-    end
-
-    self.fsm.vars.poses_to_check = {}
-
-    local y   = self.fsm.vars.max_y
-    local ori = -1.57
-    if wall_max_y then
-      y   = self.fsm.vars.min_y
-      ori = 1.57
-    end
-
-    -- top/bottom view form line
-    table.insert(self.fsm.vars.poses_to_check, {name  = "Lr",
-                                                x     = self.fsm.vars.max_x - ROBOT_WALL_DIST,
-                                                y     = y,
-                                                ori   = ori})
-    table.insert(self.fsm.vars.poses_to_check, {name  = "Ll",
-                                                x     = self.fsm.vars.min_x + ROBOT_WALL_DIST,
-                                                y     = y,
-                                                ori   = ori})
-
-    -- middle view
-    table.insert(self.fsm.vars.poses_to_check, {name  = "Ml",
-                                                x     = self.fsm.vars.min_x + ROBOT_WALL_DIST,
-                                                y     = self.fsm.vars.mid_y,
-                                                ori   = 0})
-    table.insert(self.fsm.vars.poses_to_check, {name  = "Mr",
-                                                x     = self.fsm.vars.max_x - ROBOT_WALL_DIST,
-                                                y     = self.fsm.vars.mid_y,
-                                                ori   = 3.14})
-    table.insert(self.fsm.vars.poses_to_check, {name  = "Mc",
-                                                x     = self.fsm.vars.mid_x,
-                                                y     = self.fsm.vars.mid_y,
-                                                ori   = 3.14})
-
-    if self.fsm.vars.change_order then
-      local poses_to_check_dir = {}
-      local size = table.getn(self.fsm.vars.poses_to_check)
-      for i = 1,size do
-        table.insert(poses_to_check_dir, self.fsm.vars.poses_to_check[size+1-i])
+   if self.fsm.vars.search_tag then
+      self.fsm.vars.tag_id_set = {}
+      for k,v in self.fsm.vars.search_tag do
+         self.fsm.vars.tag_id_set[k] = true
       end
-      self.fsm.vars.poses_to_check = poses_to_check_dir
-    end
+   end
 
-    --[[ 
-    local output = "Explore: \n"
-    for i,value in ipairs(self.fsm.vars.poses_to_check) do
-      output = output .. value.name .. ": (" .. value.x .. ", " ..value.y .. ", " .. value.ori .. ")\n"
-    end
-    printf(output)
-    --]]
-    self.fsm.vars.poses_to_check_iterator = 1
-  end
+   self.fsm.vars.lines = {}
+   self.fsm.vars.lines[line1:id()] = line1
+   self.fsm.vars.lines[line2:id()] = line2
+   self.fsm.vars.lines[line3:id()] = line3
+   self.fsm.vars.lines[line4:id()] = line4
+   self.fsm.vars.lines[line5:id()] = line5
+   self.fsm.vars.lines[line6:id()] = line6
+   self.fsm.vars.lines[line7:id()] = line7
+   self.fsm.vars.lines[line8:id()] = line8
 
-  -- point to check for clusters and to drive to with drive_to_global
-  --printf("Walls: x (" .. tostring(wall_min_x) .. tostring(wall_max_x) .. ") y (" .. tostring(wall_min_y) .. tostring(wall_max_y) .. ")")
+   self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
+      tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
+   self.fsm.vars.clusters = { cluster1, cluster2, cluster3, cluster4, cluster5,
+      cluster6, cluster7, cluster8, cluster9, cluster10 } 
 
-  self.fsm.vars.point_cluster = {}
-  if wall_max_x then
-    if wall_max_y then
-      self.fsm.vars.point_cluster.x = self.fsm.vars.min_x
-      self.fsm.vars.point_cluster.y = self.fsm.vars.min_y
-    else
-      self.fsm.vars.point_cluster.x = self.fsm.vars.min_x
-      self.fsm.vars.point_cluster.y = self.fsm.vars.max_y
-    end
-  else
-    if wall_max_y then
-      self.fsm.vars.point_cluster.x = self.fsm.vars.max_x
-      self.fsm.vars.point_cluster.y = self.fsm.vars.min_y
-    else
-      self.fsm.vars.point_cluster.x = self.fsm.vars.max_x
-      self.fsm.vars.point_cluster.y = self.fsm.vars.max_y
-    end
-  end
-  if self.fsm.vars.change_cluster_view then
-    --printf("explore_zone: change cluster view point")
-    if self.fsm.vars.point_cluster.x == self.fsm.vars.max_x then
-      self.fsm.vars.point_cluster.x = self.fsm.vars.min_x
-    else
-      self.fsm.vars.point_cluster.x = self.fsm.vars.max_x
-    end
-  end
+   self.fsm.vars.zone_corner_idx = 1
+   self.fsm.vars.attempts = 0
 
-  -- ori will be from my point towards the center
-  local dir_x = self.fsm.vars.mid_x - self.fsm.vars.point_cluster.x
-  local dir_y = self.fsm.vars.mid_y - self.fsm.vars.point_cluster.y
-  local ori = 0
-  if dir_x >= 0 then
-    ori = 0.785
-  else
-    ori = 2.355
-  end
-  if dir_y <= 0 then
-    ori = ori * (-1)
-  end
-  self.fsm.vars.point_cluster.ori = ori
-
-  -- interfaces in lists
-  self.fsm.vars.tags = {}
-  self.fsm.vars.tags[1]   = tag_0
-  self.fsm.vars.tags[2]   = tag_1
-  self.fsm.vars.tags[3]   = tag_2
-  self.fsm.vars.tags[4]   = tag_3
-  self.fsm.vars.tags[5]   = tag_4
-  self.fsm.vars.tags[6]   = tag_5
-  self.fsm.vars.tags[7]   = tag_6
-  self.fsm.vars.tags[8]   = tag_7
-  self.fsm.vars.tags[9]   = tag_8
-  self.fsm.vars.tags[10]  = tag_9
-  self.fsm.vars.tags[11]  = tag_10
-  self.fsm.vars.tags[12]  = tag_11
-  self.fsm.vars.tags[13]  = tag_12
-  self.fsm.vars.tags[14]  = tag_13
-  self.fsm.vars.tags[15]  = tag_14
-  self.fsm.vars.tags[16]  = tag_15
-  self.fsm.vars.lines = {}
-  self.fsm.vars.lines[1]  = line1
-  self.fsm.vars.lines[2]  = line2
-  self.fsm.vars.lines[3]  = line3
-  self.fsm.vars.lines[4]  = line4
-  self.fsm.vars.lines[5]  = line5
-  self.fsm.vars.lines[6]  = line6
-  self.fsm.vars.lines[7]  = line7
-  self.fsm.vars.lines[8]  = line8
-  self.fsm.vars.cluster = {}
-  self.fsm.vars.cluster[1]  = cluster_mps_1
-  self.fsm.vars.cluster[2]  = cluster_mps_2
-  self.fsm.vars.cluster[3]  = cluster_mps_3
-  self.fsm.vars.cluster[4]  = cluster_mps_4
-  self.fsm.vars.cluster[5]  = cluster_mps_5
-  self.fsm.vars.cluster[6]  = cluster_mps_6
-  self.fsm.vars.cluster[7]  = cluster_mps_7
-  self.fsm.vars.cluster[8]  = cluster_mps_8
-  self.fsm.vars.cluster[9]  = cluster_mps_9
-  self.fsm.vars.cluster[10] = cluster_mps_10
-  
-  -- set timeout for jumpscondition, to not loop with sawn laserlines
-  self.fsm.vars.laser_lines_timeout_start = os.time()
+   local line = line_in_zone(self.fsm.vars.lines)
+   if line then
+      self.fsm.vars.line_center = llutils.center(line)
+   end
 end
 
-function DRIVE_TO_ZONE:init()
-	 self.args["drive_to_local"] =
-			{ x        = self.fsm.vars.point_cluster.x,
-				y        = self.fsm.vars.point_cluster.y,
-				ori      = self.fsm.vars.point_cluster.ori,
-				just_ori = true
-			}
-	 --printf("Pre Point Zone: (" .. self.args["drive_to_global"].x .. ", " .. self.args["drive_to_global"].y .. ", " .. self.args["drive_to_global"].ori .. ")")
+
+function TURN:init()
+   if self.fsm.vars.line_center then
+      self.args["motor_move"].ori = math.atan2(self.fsm.vars.line_center.y, self.fsm.vars.line_center.x)
+   else
+      self.args["motor_move"].ori = local_bearing(self.fsm.vars.x, self.fsm.vars.y)
+   end
 end
 
-function DRIVE_TO_NEXT_EXPLORE_POINT:init()
-  --local point = table.remove(self.fsm.vars.poses_to_check, 1)
-  local point = self.fsm.vars.poses_to_check[self.fsm.vars.poses_to_check_iterator]
-  self.fsm.vars.poses_to_check_iterator = self.fsm.vars.poses_to_check_iterator + 1
-  --printf("Explore from " .. point.name .. " (" .. point.x .. ", " .. point.y .. ", " .. point.ori .. ")")
-  self.args["drive_to_local"] =
-		 { x        = point.x,
-			 y        = point.y,
-			 ori      = point.ori,
-			 just_ori = true
-		 }
-	
-  -- set timeout for jumpscondition, to not loop with sawn laserlines
-  self.fsm.vars.laser_lines_timeout_start = os.time()
+
+function GET_CLOSER:init()
+   self.fsm.vars.line_vista = nil
+   self.fsm.vars.cluster_vista = nil
 end
 
-function pose_in_front_of_mps_calculator(self, chosen, factor)
-  factor = factor or 1
-
-  x   = chosen["x_map"] + math.cos( chosen["ori_map"] ) * ( factor * TAG_DIST + ROBOT_WALL_DIST )
-  y   = chosen["y_map"] + math.sin( chosen["ori_map"] ) * ( factor * TAG_DIST + ROBOT_WALL_DIST )
-  ori = math.normalize_mirror_rad( chosen["ori_map"] + math.pi )
-  return x, y, ori
+function GET_CLOSER:loop()
+   local line = line_in_zone(self.fsm.vars.lines)
+   if line then
+      local p = llutils.point_in_front(llutils.center(line), 0.8)
+      local p_map = tfm.transform6D(
+         { x = p.x, y = p.y, z = 0,
+           ori = fawkes.tf.create_quaternion_from_yaw(line:bearing()) },
+         line:frame_id(), "map")
+      printf("p_map: %f, %f; ori = %f", p_map.x, p_map.y, fawkes.tf.get_yaw(p_map.ori))
+      if within_map(p_map) then
+         self.fsm.vars.line_vista = p_map
+      end
+   end
+   
+   local cluster_map = cluster_in_zone(self.fsm.vars.clusters)
+   if not self.fsm.vars.line_vista and cluster_map then
+      -- No line found, but maybe we can guess something from a cluster...
+      -- Compute a point left or right of the cluster from where we're standing
+      local phi = local_bearing(self.fsm.vars.x, self.fsm.vars.y)
+      local zone_bl = tfm.transform(
+         { x = self.fsm.vars.x, y = self.fsm.vars.y, ori = 0 },
+         "map", "base_link"
+      )
+      local x = 0.9 * math.sin(phi)
+      local y = 0.9 * math.cos(phi)
+      local left_bl = {
+         x = zone_bl.x - x,
+         y = zone_bl.y + y,
+         ori = 0
+      }
+      left_map = tfm.transform(left_bl, "base_link", "map")
+      left_map.ori = math.atan2(
+         self.fsm.vars.y - left_map.y,
+         self.fsm.vars.x - left_map.x
+      )
+      if within_map(left_map) then
+         self.fsm.vars.cluster_vista = left_map
+         print_debug("left_map: " .. left_map.x .. ", " .. left_map.y .. "; ori = " .. left_map.ori)
+      else
+         local right_bl = {
+            x = zone_bl.x - x,
+            y = zone_bl.y - y,
+            ori = 0
+         }
+         right_map = tfm.transform(right_bl, "base_link", "map")
+         right_map.ori = math.atan2(
+            self.fsm.vars.y - right_map.y,
+            self.fsm.vars.x - right_map.x
+         )
+         if within_map(right_map) then
+            self.fsm.vars.cluster_vista = right_map
+            print_debug("right_map: " .. right_map.x .. ", " .. right_map.y .. "; ori = " .. right_map.ori)
+         end
+      end
+   end
 end
 
-function FIX_INTERNAL_VARS:init()
-  self.fsm.vars.poses_to_check_iterator = math.max(1, self.fsm.vars.poses_to_check_iterator - 1)
---[[ this is code to turn to the possivle MPS
-  local ori = nil
-  if self.fsm.vars.line_chosen ~=nil then
-    printf("Turn to possible line")
-    ori = math.normalize_mirror_rad( math.pi + self.fsm.vars.line_chosen["ori"] )
-  elseif self.fsm.vars.tag_chosen ~= nil then
-    printf("Turn to possible to tag")
-    ori = self.fsm.vars.tag_chosen["ori"]
-  else
-    printf("Error, I have no tag and no line to turn to, continue as normal")
-    ori = 0
-  end
-	 self.args["motor_move"] = {ori = ori, ori = nil, just_ori = true}
---]]
+
+function GET_CLOSER:exit()
+   self.fsm.vars.attempts = self.fsm.vars.attempts + 1
 end
 
---[[
-function DRIVE_TO_POSSIBLE_MPS_PRE:init()
-  local x   = nil
-  local y   = nil
-  local ori = nil
-  local point_on_obj = {}
- 
-  local chosen = self.fsm.vars.tag_chosen
 
-  x, y, ori = pose_in_front_of_mps_calculator(self, chosen, 2)
-  printf("PrePoint drive: ( " .. x .. " , " .. y .. " , " .. ori .. " )")
-  
-	 self.args["drive_to_local"] = {x = x, y = y, ori = ori, just_ori = true }
-end
---]]
-
-function DRIVE_TO_POSSIBLE_MPS:init()
-  local x   = nil
-  local y   = nil
-  local ori = nil
-  local point_on_obj = {}
- 
-  local chosen = nil
-  --[[
-  if self.fsm.vars.tag_chosen ~=nil then
-    chosen = self.fsm.vars.tag_chosen
-  elseif self.fsm.vars.line_chosen ~= nil then
-    chosen = self.fsm.vars.line_chosen
-  --]]
-  if self.fsm.vars.line_chosen ~=nil then
-    printf("Drive to line")
-    chosen = self.fsm.vars.line_chosen
-  elseif self.fsm.vars.tag_chosen ~= nil then
-    printf("Drive to tag")
-    chosen = self.fsm.vars.tag_chosen
-  else
-    printf("Error, I have no tag and no line to drive to")
-  end
-
-  -- update interfaces
-  zone_info:set_search_state(zone_info.MAYBE)
-  zone_info:set_tag_id(chosen["tag_id"])
-  zone_pose:set_visibility_history(1)
-  zone_pose:set_frame("/map")
-  zone_pose:set_translation(0, chosen["x_map"])
-  zone_pose:set_translation(1, chosen["y_map"])
-  --printf("Found maybe ( " .. chosen["tag_id"] .. " ) (at far pose) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. "; " .. chosen["ori_map"] .. " )")
-  local q = fawkes.tf.create_quaternion_from_yaw( chosen["ori_map"] )
-  zone_pose:set_rotation( 0, q:x() )
-  zone_pose:set_rotation( 1, q:y() )
-  zone_pose:set_rotation( 2, q:z() )
-  zone_pose:set_rotation( 3, q:w() )
-  --printf("Found maybe (at far pose) yaw: " .. chosen["ori_map"] .. "q = ( " .. q:x() .. ", " .. q:y() .. ", " .. q:z() .. ", " .. q:w() .. ")")
-
-  -- get point to drive to (in front of MPS)
-  x, y, ori = pose_in_front_of_mps_calculator(self, chosen)
-  --printf("Point drive:  ( " .. x .. " , " .. y .. " , " .. ori .. " )")
-  
-  self.args["drive_to_local"] = { x = x, y = y, ori = ori, just_ori = true}
+function FIND_LINE:init()
+   self.fsm.vars.found_something = true
+   self.args["drive_to_local"] = self.fsm.vars.cluster_vista
 end
 
-function FINAL:init()
-  if self.fsm.vars.tag_chosen == nil then
-    -- update interfaces
-    zone_info:set_search_state(zone_info.NO)
-  else
-    local chosen = self.fsm.vars.tag_chosen
-  
-    -- update interfaces
-    zone_info:set_search_state(zone_info.YES)
-    zone_info:set_tag_id(chosen["tag_id"])
-    zone_pose:set_visibility_history(1)
-    zone_pose:set_frame("/map")
-    zone_pose:set_translation(0, chosen["x_map"])
-    zone_pose:set_translation(1, chosen["y_map"])
-    printf("Found tag ( " .. chosen["tag_id"] .. " ) at: ( " .. chosen["x_map"] .. ", " .. chosen["y_map"] .. " )")
-    local q = fawkes.tf.create_quaternion_from_yaw( chosen["ori_map"] )
-    zone_pose:set_rotation( 0, q:x() )
-    zone_pose:set_rotation( 1, q:y() )
-    zone_pose:set_rotation( 2, q:z() )
-    zone_pose:set_rotation( 3, q:w() )
-    printf("Found tag yaw: " .. chosen["ori_map"] .. "q = ( " .. q:x() .. ", " .. q:y() .. ", " .. q:z() .. ", " .. q:w() .. ")")
-  end
+
+function APPROACH_LINE:init()
+   self.fsm.vars.found_something = true
+   self.args["drive_to_local"] = {
+      x = self.fsm.vars.line_vista.x,
+      y = self.fsm.vars.line_vista.y,
+      ori = fawkes.tf.get_yaw(self.fsm.vars.line_vista.ori)
+   }
+end
+
+
+function FIND_ZONE_CORNER:init()
+   -- Make sure we don't use a zone corner coordinate that's inside a wall or
+   -- entirely outside the playing field...
+   
+   self.fsm.vars.zone_corner = nil
+
+   while not self.fsm.vars.zone_corner and self.fsm.vars.zone_corner_idx <= #ZONE_CORNERS do
+      local dx = ZONE_CORNERS[self.fsm.vars.zone_corner_idx].x
+      local dy = ZONE_CORNERS[self.fsm.vars.zone_corner_idx].y
+
+      if math.abs(self.fsm.vars.x + dx) > X_MAX then
+         dx = 0
+      end
+      if self.fsm.vars.y + dy > Y_MAX or self.fsm.vars.y + dy < Y_MIN then
+         dy = 0
+      end
+
+      if dx ~= 0 or dy ~= 0 then
+         self.fsm.vars.zone_corner = {
+            x = self.fsm.vars.x + dx,
+            y = self.fsm.vars.y + dy,
+            ori = math.atan2(-dy, -dx)
+         }
+      end
+      
+      self.fsm.vars.zone_corner_idx = self.fsm.vars.zone_corner_idx + 1
+   end
+end
+
+
+function APPROACH_ZONE:init()
+   self.args["drive_to_local"] = self.fsm.vars.zone_corner
+end
+
+function FAILED:init()
+   if not self.fsm.vars.found_something then
+      zone_info:set_search_state(zone_info.NO)
+   else
+      zone_info:set_search_state(zone_info.UNKNOWN)
+   end
+end
+
+function WAIT_AMCL:loop()
+   found_tag()
 end

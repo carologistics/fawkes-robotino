@@ -56,7 +56,9 @@ ZoneInterface::ZoneInterface() : Interface()
   enum_map_MPS_IN_ZONE[(int)MAYBE] = "MAYBE";
   add_fieldinfo(IFT_ENUM, "search_state", 1, &data->search_state, "MPS_IN_ZONE", &enum_map_MPS_IN_ZONE);
   add_fieldinfo(IFT_INT32, "tag_id", 1, &data->tag_id);
-  unsigned char tmp_hash[] = {0x65, 0x7a, 0xd0, 0x88, 0x79, 0x3d, 0x8d, 0x79, 0xe3, 0xfd, 0xb9, 0x1a, 0xfa, 0xef, 0x3d, 0x68};
+  add_fieldinfo(IFT_INT32, "orientation", 1, &data->orientation);
+  add_fieldinfo(IFT_STRING, "zone", 16, data->zone);
+  unsigned char tmp_hash[] = {0x84, 0xeb, 0x2d, 0xe5, 0xd3, 0x17, 0xe1, 0x8c, 0x75, 0xb3, 0xe0, 0x94, 0x8e, 0x5a, 0xbb, 0xc6};
   set_hash(tmp_hash);
 }
 
@@ -148,6 +150,76 @@ void
 ZoneInterface::set_tag_id(const int32_t new_tag_id)
 {
   data->tag_id = new_tag_id;
+  data_changed = true;
+}
+
+/** Get orientation value.
+ * 
+      The discretized orientation of the MPS
+    
+ * @return orientation value
+ */
+int32_t
+ZoneInterface::orientation() const
+{
+  return data->orientation;
+}
+
+/** Get maximum length of orientation value.
+ * @return length of orientation value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+ZoneInterface::maxlenof_orientation() const
+{
+  return 1;
+}
+
+/** Set orientation value.
+ * 
+      The discretized orientation of the MPS
+    
+ * @param new_orientation new orientation value
+ */
+void
+ZoneInterface::set_orientation(const int32_t new_orientation)
+{
+  data->orientation = new_orientation;
+  data_changed = true;
+}
+
+/** Get zone value.
+ * 
+      The name of the zone we're investigating
+    
+ * @return zone value
+ */
+char *
+ZoneInterface::zone() const
+{
+  return data->zone;
+}
+
+/** Get maximum length of zone value.
+ * @return length of zone value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+ZoneInterface::maxlenof_zone() const
+{
+  return 16;
+}
+
+/** Set zone value.
+ * 
+      The name of the zone we're investigating
+    
+ * @param new_zone new zone value
+ */
+void
+ZoneInterface::set_zone(const char * new_zone)
+{
+  strncpy(data->zone, new_zone, sizeof(data->zone));
   data_changed = true;
 }
 

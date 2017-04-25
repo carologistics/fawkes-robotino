@@ -190,7 +190,6 @@ function TURN_BACK:init()
    self.args["motor_move"] =
 			{ ori = self.fsm.vars.bl_target.ori,
 				vel_rot = 1.2,
-				puck = true,
 				tolerance = mm_tolerance,
 			}
 end

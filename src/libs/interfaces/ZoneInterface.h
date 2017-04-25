@@ -58,6 +58,12 @@ class ZoneInterface : public Interface
     int32_t tag_id; /**< 
       The ID of the tag, if set to -1 this means no TAG is known, e.g. MPS just found maybe (with laser-lines).
      */
+    int32_t orientation; /**< 
+      The discretized orientation of the MPS
+     */
+    char zone[16]; /**< 
+      The name of the zone we're investigating
+     */
   } ZoneInterface_data_t;
 
   ZoneInterface_data_t *data;
@@ -78,6 +84,12 @@ class ZoneInterface : public Interface
   int32_t tag_id() const;
   void set_tag_id(const int32_t new_tag_id);
   size_t maxlenof_tag_id() const;
+  int32_t orientation() const;
+  void set_orientation(const int32_t new_orientation);
+  size_t maxlenof_orientation() const;
+  char * zone() const;
+  void set_zone(const char * new_zone);
+  size_t maxlenof_zone() const;
   virtual Message * create_message(const char *type) const;
 
   virtual void copy_values(const Interface *other);
