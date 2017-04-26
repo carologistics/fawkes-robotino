@@ -37,7 +37,7 @@ hardware/laser:
 
     # Offset added to measurement timestamp in interface. Can be used to
     # account for latencies.
-    # time_offset: -0.001
+    time_offset: -0.039
 
   back:
     # Enable this configuration?
@@ -58,4 +58,4 @@ hardware/laser:
 
     # Offset added to measurement timestamp in interface. Can be used to
     # account for latencies.
-    # time_offset: -0.001
+    time_offset: -0.039
