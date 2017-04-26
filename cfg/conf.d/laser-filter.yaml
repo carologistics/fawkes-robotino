@@ -4,15 +4,10 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-filter
 ---
 plugins/laser-filter:
-  robot:
+  robot-front:
     active: true
-
-    # URG input interface
-    #in/urg: Laser360Interface::Laser urg
-    in/sick-tim55x: Laser360Interface::Laser tim55x 360
-
-    # URG filtered output interface
-    out/filtered: Laser360Interface::Laser urg-filtered
+    in/sick-tim55x: Laser360Interface::Laser front 360
+    out/filtered: Laser360Interface::Laser front-filtered
 
     filters:
 
@@ -30,12 +25,43 @@ plugins/laser-filter:
         from: 235
         to: 125
 
-  robot-1080:
+  robot-back:
+    active: true
+    in/sick-tim55x: Laser360Interface::Laser back
+    out/filtered: Laser360Interface::Laser back-filtered
+
+    filters:
+      1-min:
+        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        type: min_circle
+
+        # Radius of minimum length; m
+        radius: 0.04
+
+      2-sector:
+        # Ignore a defined range of beams (e.g. those hitting the robot itself)
+        type: circle_sector
+
+        from: 245
+        to: 135
+
+      3-projection:
+        type: projection
+        target_frame: !frame base_laser
+        not_from_x: 0.0
+        not_to_x: 0.0
+        not_from_y: 0.0
+        not_to_y: 0.0
+        only_from_z: -0.2
+        only_to_z: 0.15
+
+
+  robot-front-1080:
     active: true
 
     # URG input interface
     #in/urg: Laser360Interface::Laser urg
-    in/sick-tim55x: Laser1080Interface::Laser tim55x
+    in/sick-tim55x: Laser1080Interface::Laser front
 
     # URG filtered output interface
     out/filtered: Laser1080Interface::Laser filtered-1080
@@ -55,6 +81,16 @@ plugins/laser-filter:
 
         from: 705
         to: 375
+
+  robot-merged:
+    active: true
+    in/front: Laser360Interface::Laser front-filtered
+    in/back: Laser360Interface::Laser back-filtered
+    out/filtered: Laser360Interface::Laser urg-filtered
+    filters:
+      1-mix:
+        type: min_merge
+        timestamp_selection: first
 
   map:
     debug: false
@@ -91,10 +127,10 @@ plugins/laser-filter:
 
     # URG input interface
     #in/urg: Laser360Interface::Laser urg
-    in/sick-tim55x: Laser1080Interface::Laser tim55x
+    in/sick-tim55x: Laser1080Interface::Laser front
 
     # URG filtered output interface
-    out/filtered: Laser360Interface::Laser tim55x 360
+    out/filtered: Laser360Interface::Laser front 360
 
     filters:
       1-min:

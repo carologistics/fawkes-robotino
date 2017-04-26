@@ -15,6 +15,16 @@ plugins/static-transforms:
       trans_y: 0.0
       trans_z: 0.26
 
+    back_laser:
+      frame: !frame base_link
+      child_frame: !frame back_laser
+      trans_x: -0.145
+      trans_y: 0.0
+      trans_z: 0.315
+      rot_roll: 0.0
+      rot_pitch: 2.94
+      rot_yaw: 0.0
+
     cam_tag:
       frame: !frame base_link
       child_frame: !frame cam_tag
