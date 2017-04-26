@@ -70,7 +70,9 @@ ClipsSmtThread::init()
     //clips_smt_test_python();
 
     add_constraint_closest_node=true;
-    use_encoder_bool = true;
+    use_encoder_bool = false;
+    use_speedup=true;
+    use_furthest=false;
 }
 
 
@@ -354,6 +356,41 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     z3::expr var_true(_z3_context);
     var_true = _z3_context.bool_val(true);
 
+    // Get distances
+    float min_distance_first=100, min_distance=100, max_distance_first=0, max_distance=0;
+    int min_m_first=0, max_m_first=0;
+
+    // Get min_distance and max_distance TODO only for not from C-ins-in
+    for(int n = 0; n < number_machines+1; ++n) {
+      for(int m = 1; m < number_machines+1; ++m) {
+        if(n!=m) {
+          float distance = distances_[std::make_pair(node_names_[n], node_names_[m])];
+
+          if(distance<min_distance) {
+            min_distance = distance;
+          }
+
+          if(distance>max_distance) {
+            max_distance = distance;
+          }
+        }
+      }
+    }
+
+    // Get min_distance_first and min_m_first
+    for(int m = 1; m < number_machines+1; ++m) {
+      float distance = distances_[std::make_pair("C-ins-in", node_names_[m])];
+
+      if(distance<min_distance_first) {
+        min_distance_first = distance;
+        min_m_first = m;
+      }
+      if(distance>max_distance_first) {
+        max_distance_first = distance;
+        max_m_first = m;
+      }
+    }
+
     // Constraint: d_i_0 = 0
     for(int i = 1; i < number_robots+1; ++i){
 
@@ -397,13 +434,65 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
         }
 	}
 
+  // logger->log_info(name(), "Add constraint d_i_j >= min_distance");
+  // Constraint: d_i_j >= min_distance
+  if(use_speedup){
+    for(int i = 1; i < number_robots+1; ++i){
+        for(int j = 1; j < number_machines; ++j) { // Test j from 1 instead of 0
+
+            z3::expr var_d_i_j(_z3_context);
+
+            it_map = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(j));
+            if(it_map != variables_d.end()) {
+                var_d_i_j = it_map->second;
+            }
+            else {
+                logger->log_error(name(), "var_d_%i_%i not found", i, j);
+            }
+
+            z3::expr min_distance_z3 = _z3_context.real_val((std::to_string(min_distance)).c_str());
+            z3::expr constraint( var_d_i_j >= min_distance_z3);
+            constraints.push_back(constraint);
+        }
+    }
+
+    // logger->log_info(name(), "Add constraint d_i_j-d_i_j-1 <= max_distance");
+    // Constraint: d_i_j-d_i_j-1 <= max_distance
+    for(int i = 1; i < number_robots+1; ++i){
+        for(int j = 1; j < number_machines; ++j) {
+
+            z3::expr var_d_i_j(_z3_context);
+            z3::expr var_d_i_j_1(_z3_context);
+
+            it_map = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(j));
+            if(it_map != variables_d.end()) {
+                var_d_i_j = it_map->second;
+            }
+            else {
+                logger->log_error(name(), "var_d_%i_%i not found", i, j);
+            }
+
+            it_map = variables_d.find("d_"+std::to_string(i)+"_"+std::to_string(j-1));
+            if(it_map != variables_d.end()) {
+                var_d_i_j_1 = it_map->second;
+            }
+            else {
+                logger->log_error(name(), "var_d_%i_%i not found", i, j-1);
+            }
+
+            z3::expr max_distance_z3 = _z3_context.real_val((std::to_string(max_distance)).c_str());
+            z3::expr constraint( var_d_i_j - var_d_i_j_1 <= max_distance_z3);
+            constraints.push_back(constraint);
+        }
+    }
+  }
     // TODO (Igor) Is this constraint necessary?
     // // Constraint: pos_i_j == n for all n=-4, .., m
     // for(it_map = variables_pos.begin(); it_map != variables_pos.end(); ++it_map){
     //     for(int n=-4; n < number_machines+1; ++n) {
     //         z3::expr variable = it_map->second;
     //         z3::expr constraint( variable == n);
-    //         //constraints.push_back(constraint);
+    //         constraints.push_back(constraint);
     //     }
     // }
 
@@ -631,6 +720,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
     }
 
     // Encoding maximum distance <- Problem
+
+    z3::expr constraint_max_distance(var_false);
     for(int i = 1; i < number_robots+1; ++i){
 
         z3::expr var_m_i(_z3_context);
@@ -652,8 +743,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
             logger->log_error(name(), "var_d_%i_M not found", i);
         }
 
-        z3::expr constraint1(var_m_i==0);
-        z3::expr constraint2(var_m_i==1);
+        // z3::expr constraint1(var_m_i==0);
+        // z3::expr constraint2(var_m_i==1);
+        z3::expr constraint(var_m_i);
 
         for(int j = 1; j < number_robots+1; ++j) {
 
@@ -668,49 +760,56 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos
                     logger->log_error(name(), "var_d_%i_M not found", j);
                 }
 
-                constraint2 = constraint2 && (var_d_j_M < var_d_i_M);
+                constraint = constraint && (var_d_j_M < var_d_i_M);
             }
         }
-
-        constraints.push_back(constraint1 || constraint2);
+        constraint_max_distance = constraint_max_distance || constraint;
     }
+    constraints.push_back(constraint_max_distance);
 
     // Additional constraint first robot goes to the closest machine pos_1_1=k and d_1_1=distances_("C-ins-in",k)
     if(add_constraint_closest_node) {
-      float min_distance=100;
-      int min_m=0;
+      // z3::expr var_p_1_1(_z3_context);
+      // z3::expr var_d_1_1(_z3_context);
+      //
+      // it_map = variables_pos.find("pos_"+std::to_string(1)+"_"+std::to_string(1));
+      // if(it_map != variables_pos.end()) {
+      //     var_p_1_1 = it_map->second;
+      // }
+      // else {
+      //     logger->log_error(name(), "var_p_1_1 not found");
+      // }
+      //
+      // it_map = variables_d.find("d_"+std::to_string(1)+"_"+std::to_string(1));
+      // if(it_map != variables_d.end()) {
+      //     var_d_1_1 = it_map->second;
+      // }
+      // else {
+      //     logger->log_error(name(), "var_d_1_1 not found");
+      // }
 
-      // Get min_distance and min_m
-      for(int m = 1; m < number_machines+1; ++m) {
-        float distance = distances_[std::make_pair("C-ins-in", node_names_[m])];
-        if(distance<min_distance) {
-          min_distance = distance;
-          min_m = m;
+      // z3::expr min_distance_z3 = _z3_context.real_val((std::to_string(min_distance)).c_str());
+      // z3::expr constraint_closest_node(var_p_1_1==min_m && var_d_1_1==min_distance_z3);
+      // constraints.push_back(constraint_closest_node);
+
+      z3::expr constraint(var_false);
+
+      for(int j=1; j< number_machines+1; ++j) {
+        z3::expr var_p_1_j(_z3_context);
+
+        it_map = variables_pos.find("pos_"+std::to_string(1)+"_"+std::to_string(j));
+        if(it_map != variables_pos.end()) {
+            var_p_1_j= it_map->second;
         }
-      }
+        else {
+            logger->log_error(name(), "var_p_1_%i not found", j);
+        }
 
-      z3::expr var_p_1_1(_z3_context);
-      z3::expr var_d_1_1(_z3_context);
+        if(use_furthest) constraint = constraint || (var_p_1_j==max_m_first);
+        else constraint = constraint || (var_p_1_j==min_m_first);
 
-      it_map = variables_pos.find("pos_"+std::to_string(1)+"_"+std::to_string(1));
-      if(it_map != variables_pos.end()) {
-          var_p_1_1 = it_map->second;
       }
-      else {
-          logger->log_error(name(), "var_p_1_1 not found");
-      }
-
-      it_map = variables_d.find("d_"+std::to_string(1)+"_"+std::to_string(1));
-      if(it_map != variables_d.end()) {
-          var_d_1_1 = it_map->second;
-      }
-      else {
-          logger->log_error(name(), "var_d_1_1 not found");
-      }
-
-      z3::expr min_distance_z3 = _z3_context.real_val((std::to_string(min_distance)).c_str());
-      z3::expr constraint_closest_node(var_p_1_1==min_m && var_d_1_1==min_distance_z3);
-      constraints.push_back(constraint_closest_node);
+      constraints.push_back(constraint);
     }
 
     return constraints;
@@ -1443,7 +1542,11 @@ void
         logger->log_info(name(), "Finished solving and optimizing formula with UNSAT");
     }
 
-    if(add_constraint_closest_node && !use_encoder_bool) outputFile << "With additional constraint_closest_node" << std::endl << std::endl;
+    if(add_constraint_closest_node && !use_encoder_bool){
+      outputFile << "With additional constraint_closest_node";
+      if(use_furthest) outputFile << " [Furthest]" << std::endl << std::endl;
+      else outputFile << " [Closest]" << std::endl << std::endl;
+    }
     else if(use_encoder_bool) outputFile << "Using encoder_bool" << std::endl << std::endl;
 
     // Compute time for solving
@@ -1580,12 +1683,12 @@ ClipsSmtThread::loop()
     std::map<std::string, z3::expr> variables_m;
 
     //z3::expr_vector formula = clips_smt_create_formula();
-    z3::expr_vector formula = clips_smt_encoder_bool(variables_pos, variables_p, variables_d, variables_m);
-    // z3::expr_vector formula = clips_smt_encoder(variables_pos, variables_d, variables_m);
+    z3::expr_vector formula_bool = clips_smt_encoder_bool(variables_pos, variables_p, variables_d, variables_m);
+    z3::expr_vector formula = clips_smt_encoder(variables_pos, variables_d, variables_m);
 
     // Give it to z3 solver
-    clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula);
-
+    if(use_encoder_bool) clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula_bool);
+    else clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula);
     logger->log_info(name(), "Thread reached end of loop");
 
     envs_[data_env].lock();

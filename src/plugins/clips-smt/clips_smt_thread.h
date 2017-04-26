@@ -143,6 +143,8 @@ class ClipsSmtThread
   std::map<std::pair<std::string, std::string>, float> distances_;
   bool add_constraint_closest_node;
   bool use_encoder_bool;
+  bool use_speedup;
+  bool use_furthest;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
   std::string cfg_base_frame_;
   std::string cfg_global_frame_;
