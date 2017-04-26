@@ -166,25 +166,6 @@
 )
 
 
-;(defrule exp-log-line
-;  (phase EXPLORATION)
-;  (exp-searching)
-;  (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
-;    (visibility_history ?vh&:(>= ?vh 1))
-;    (time $?timestamp)
-;  )
-;  (exp-zone-margin ?zone-margin)
-;  (test (get-zone ?zone-margin (laser-line-get-center ?id ?timestamp)))
-;=>
-;  (bind ?zone (get-zone ?zone-margin (laser-line-get-center ?id ?timestamp)))
-;  (do-for-all-facts ((?ze zone-exploration)) (eq ?ze:name ?zone)
-;    (bind ?m ?ze:machine)
-;    (bind ?lv ?ze:line-visibility)
-;  )
-;  (printout t "EXP log line: " ?zone " " ?m " " ?lv crlf)
-;)
-
-
 (defrule exp-stop-to-investigate-zone
   (phase EXPLORATION)
   (exp-searching)
