@@ -42,18 +42,25 @@ OBJS_all = $(OBJS_conveyor_pose)
 CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) $(CFLAGS_conveyor_pose) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
 LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
 
-ifeq ($(HAVE_BULLET_VERSION),1)
-  #names of the plugins you want to build
-  PLUGINS_all = $(PLUGINDIR)/conveyor-pose.$(SOEXT)
-
+ifeq ($(HAVE_ROS),1)
+  ifeq ($(HAVE_BULLET_VERSION),1)
+    PLUGINS_all = $(PLUGINDIR)/conveyor-pose.$(SOEXT)
+  else
+    WARN_TARGETS += warning_bullet
+  endif
 else
-	WARN_TARGETS += warning_bullet
+  WARN_TARGETS += warning_ros
 endif
 
+ifeq ($(OBJSSUBMAKE),1)
+  ifneq ($(WARN_TARGETS),)
 all: $(WARN_TARGETS)
-
-.PHONY: warning_bullet
+  endif
+.PHONY: warning_bullet warning_ros
 warning_bullet:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting conveyor_pose Plugin$(TNORMAL) (bullet version < 2.82)"
+warning_ros:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting conveyor_pose Plugin$(TNORMAL) (ROS not found)"
+endif
 
 include $(BUILDSYSDIR)/base.mk
