@@ -733,7 +733,7 @@ inline float MachineSignalPipelineThread::compactness(const SignalState::signal_
 {
   //unsigned int gap1 = std::abs(s.yellow_roi->start.y - (s.red_roi->start.y + s.red_roi->height));
   //unsigned int gap2 = std::abs(s.green_roi->start.y - (s.yellow_roi->start.y + s.yellow_roi->height));
-  float h = std::abs((s.green_roi->start.y + s.green_roi->height) - s.red_roi->start.y);
+  float h = std::abs(static_cast<long>((s.green_roi->start.y + s.green_roi->height) - s.red_roi->start.y));
   //float gappitude = 1 - (float(gap1 + gap2) / h);
   float shortitude = 1 - (h / float(laser_roi.height));
   return shortitude;
