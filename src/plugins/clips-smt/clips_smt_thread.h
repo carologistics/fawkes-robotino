@@ -48,6 +48,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <math.h>
 
 //v#include "FormulaGenerator/FormulaGenerator.h"
 // #include "FormulaGenerator/GameData.h"
@@ -107,6 +108,7 @@ class ClipsSmtThread
   bool _solver_done;
   z3::expr_vector clips_smt_create_formula();
   z3::expr_vector clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m);
+  z3::expr_vector clips_smt_encoder_bool(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_p, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m);
   void clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula);
 
   std::map<int ,std::string> actions_robot_1;
@@ -131,11 +133,18 @@ class ClipsSmtThread
   std::string data_handle;
 
   // Navgraph
+  int number_machines;
+  int number_bits;
+  int number_robots;
   void clips_smt_fill_node_names();
   void clips_smt_compute_distances_robots();
   void clips_smt_compute_distances_machines();
   std::map<int, std::string> node_names_;
   std::map<std::pair<std::string, std::string>, float> distances_;
+  bool add_constraint_closest_node;
+  bool use_encoder_bool;
+  bool use_speedup;
+  bool use_furthest;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
   std::string cfg_base_frame_;
   std::string cfg_global_frame_;
