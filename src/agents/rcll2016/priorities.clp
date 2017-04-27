@@ -35,6 +35,7 @@
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-DISCARD-UNKNOWN* = 10
   ?*PRIORITY-NOTHING-TO-DO* = -1
+	?*PRIORITY-CALL-CLIPS-SMT* = 39
 
   ; tast execution order priorities
   ; (if the first subtasks are already complete, don't do them again)

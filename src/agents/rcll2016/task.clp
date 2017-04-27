@@ -19,7 +19,7 @@
   ?step <- (step (id ?step-id&:(eq ?step-id (nth$ 1 ?steps))) (state inactive))
   =>
   (retract ?state)
-  (assert (state STEP-STARTED))
+  (assert(state STEP-STARTED))
   (synced-modify ?task state running current-step (nth$ 1 ?steps))
   (synced-modify ?step state wait-for-activation)
   (printout info "Timelog: Task " ?name " started." crlf)
