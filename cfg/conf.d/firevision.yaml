@@ -14,9 +14,6 @@ firevision:
         # Camera used for firevision plugin
         string: v4l2:tag:device=/dev/video_tag
         frame: !frame base_link
-      signal:
-        string: v4l2:signal:device=/dev/video_signal
-        frame: !frame base_link
 #      conveyor:
 #        string: v4l2:conveyor:device=/dev/video_conveyor
 #        frame: !frame base_link
