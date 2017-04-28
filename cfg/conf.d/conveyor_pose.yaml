@@ -7,7 +7,7 @@ conveyor_pose:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
   # - the switch if is ignored, the plugin i running always
-  debug: false
+  debug: true
   # the point cloud that is used to detect the belt
   cloud_in: "/camera/depth/points"
 
@@ -41,7 +41,7 @@ conveyor_pose:
     ]
   
   conveyor_frame_id: conveyor_pose
-  switch_default: false
+  switch_default: true
   product_removal_default: false
   use_visualisation: false
 
@@ -62,16 +62,17 @@ conveyor_pose:
   gripper:
     y_min: -0.02
     y_max: -0.055
-    z_max: 0.135
+    #z_max: 0.135
+    z_max: 0.5
     slice:
-      y_min: -0.002
-      y_max: 0.038
+      y_min: -0.008
+      y_max: 0.035
   centroid:
     # the radius wich is not pruned around the centroid
-    radius: 0.05
+    radius: 0.04
   front:
     # the distance that is not pruned at the front of the MPS
-    space: 0.2
+    space: 0.3
     # this should be a tf, but I did not get it work :(
     offset: 0.005
   bottom:
@@ -84,8 +85,8 @@ conveyor_pose:
   plane:
     # the allowed noise for a plane
     dist_threshold: 0.0025
-    normal_z_minimum: 0.98
-    height_minimum: 0.02
+    normal_z_minimum: 0.1
+    height_minimum: 0.015
   cluster:
     tolerance: 0.0015
     size_min: 100
