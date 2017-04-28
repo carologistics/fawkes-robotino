@@ -219,6 +219,24 @@ ConveyorPoseThread::loop()
 
   bb_pose_conditional_open();
 
+  pose pose_average;
+  bool pose_average_availabe = pose_get_avg(pose_average);
+
+  if (pose_average_availabe) {
+    vis_hist_ = std::max(1, vis_hist_ + 1);
+    pose_write(pose_average);
+
+//    tf_send_from_pose_if(pose_current);
+    if (cfg_use_visualisation_) {
+      visualisation_->marker_draw(header_, pose_average.translation, pose_average.rotation);
+    }
+  } else {
+    vis_hist_ = -1;
+    pose trash;
+    trash.valid = false;
+    pose_write(trash);
+  }
+
   fawkes::LaserLineInterface * ll = NULL;
   bool use_laserline = laserline_get_best_fit( ll );
 
@@ -228,18 +246,18 @@ ConveyorPoseThread::loop()
   CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
   CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
 
-//  CloudPtr cloud_front_side(new Cloud);
-//  if ( use_laserline ) {
-//    // TODO, if this is used, a cfg values for each machine is needed
-//    cloud_front_side = cloud_remove_offset_to_left_right(cloud_pt, ll);
-//  } else {
-//    *cloud_front_side = *cloud_front;
-//  }
+  CloudPtr cloud_front_side(new Cloud);
+  if ( use_laserline ) {
+    // TODO, if this is used, a cfg values for each machine is needed
+    cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll);
+  } else {
+    *cloud_front_side = *cloud_front;
+  }
 
-  Eigen::Vector4f center;
-  pcl::compute3DCentroid<Point, float>(*cloud_front, center);
-  CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
-  CloudPtr cloud_bottom_removed = cloud_remove_offset_to_bottom(cloud_center);
+ // Eigen::Vector4f center;
+ // pcl::compute3DCentroid<Point, float>(*cloud_front, center);
+ // CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
+  CloudPtr cloud_bottom_removed = cloud_remove_offset_to_bottom(cloud_front_side);
 
   CloudPtr cloud_without_products(new Cloud);
   if ( bb_config_->is_product_removal() ) {
@@ -248,6 +266,8 @@ ConveyorPoseThread::loop()
   } else {
     *cloud_without_products = *cloud_bottom_removed;
   }
+
+  cloud_publish(cloud_without_products, cloud_out_inter_1_);
 
   // search for best plane
   CloudPtr cloud_choosen;
@@ -304,7 +324,6 @@ ConveyorPoseThread::loop()
     }
   } while (true);
 
-  cloud_publish(cloud_without_products, cloud_out_inter_1_);
   cloud_publish(cloud_choosen, cloud_out_result_);
 
   // get centroid
@@ -317,21 +336,6 @@ ConveyorPoseThread::loop()
   normal(2) = coeff->values[2];
   pose pose_current = calculate_pose(centroid, normal);;
   pose_add_element(pose_current);
-
-  pose pose_average;
-  bool pose_average_availabe = pose_get_avg(pose_average);
-
-  if (pose_average_availabe) {
-    vis_hist_ = std::max(1, vis_hist_ + 1);
-    pose_write(pose_average);
-
-    tf_send_from_pose_if(pose_current);
-    if (cfg_use_visualisation_) {
-      visualisation_->marker_draw(header_, pose_average.translation, pose_average.rotation);
-    }
-  } else {
-    vis_hist_ = -1;
-  }
 }
 
 bool
@@ -584,7 +588,7 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
 {
   CloudPtr out(new Cloud);
   for (Point p : *in) {
-    if ( ! (is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) && p.z < cfg_gripper_z_max_) )  { // remove gripper
+    if ( !(is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) && p.z < cfg_gripper_z_max_) )  { // remove gripper
       if (p.y < cfg_gripper_slice_y_max_ && p.y > cfg_gripper_slice_y_min_) { // leave just correct hight
         out->push_back(p);
       }
@@ -637,6 +641,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 {
   double space = cfg_front_space_;
   double z_min, z_max;
+  z_min = 0;	
   if ( use_ll ) {
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
     z_min = c(2) + cfg_front_offset_ - ( space / 2. );
@@ -649,7 +654,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
       }
     }
 
-    z_min = lowest_z - (lowest_z / 2.);
+   // z_min = lowest_z - (lowest_z / 2.);
   }
   z_max = z_min + space;
 
