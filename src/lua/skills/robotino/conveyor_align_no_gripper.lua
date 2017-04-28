@@ -22,13 +22,14 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "conveyor_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "ax12gripper"}
+--depends_skills     = {"motor_move", "ax12gripper"}
+depends_skills     = {"motor_move"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
    {v = "conveyor_config", type = "ConveyorConfigInterface", id="conveyor_pose/config"},
-   {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
+--   {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -51,8 +52,8 @@ local MAX_TRIES = 10
 --local X_DEST_POS = 0.08
 local X_DEST_POS = 0.14
 local Y_DEST_POS = 0.0
-local Z_DEST_POS = 0.052
-local Z_DEST_POS_WITH_PUCK = 0.056
+--local Z_DEST_POS = 0.048
+--local Z_DEST_POS_WITH_PUCK = 0.056
 local cfg_frame_ = "gripper"
 
 function no_writer()
@@ -66,7 +67,8 @@ end
 function tolerances_ok(self)
    local pose = pose_des(self)
    print("pose_y = " .. pose.y)
-   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and max_tries_not_reached(self) then
+--   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and max_tries_not_reached(self) then
+   if math.abs(pose.y) <= TOLERANCE_Y and max_tries_not_reached(self) then
       return true
    end
 end
@@ -76,9 +78,9 @@ function max_tries_not_reached(self)
 end
 
 function pose_offset(self)
-   if if_gripper:is_holds_puck() then
-      Z_DEST_POS = Z_DEST_POS_WITH_PUCK
-   end
+--   if if_gripper:is_holds_puck() then
+--      Z_DEST_POS = Z_DEST_POS_WITH_PUCK
+--   end
 
    local from = { x = if_conveyor:translation(0),
                   y = if_conveyor:translation(1),
@@ -110,7 +112,7 @@ function pose_des(self)
    local pose = pose_offset(self)
    pose.x = pose.x - X_DEST_POS
    pose.y = pose.y - Y_DEST_POS
-   pose.z = pose.z + Z_DEST_POS
+--   pose.z = pose.z + Z_DEST_POS
    return pose
 end
 
@@ -118,7 +120,8 @@ fsm:define_states{ export_to=_M,
    closure={},
    {"INIT", JumpState},
    {"CHECK_VISION", JumpState},
-   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="FAILED"},
+--   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="FAILED"},
+   {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="DECIDE_TRY", fail_to="FAILED"},
    {"DECIDE_TRY", JumpState},
 }
 
@@ -149,14 +152,14 @@ function DRIVE:init()
    local pose = pose_des(self)
 
    self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.4} --TODO set tolerances as defined in the global variable
-   local z_position = pose.z * 1000
-   print("z_pose: " .. z_position)
-   self.args["ax12gripper"].command = "RELGOTOZ"
-   if math.abs(pose.z) >= TOLERANCE_Z then
-      self.args["ax12gripper"].z_position = z_position
-   else
-      self.args["ax12gripper"].z_position = 0
-   end
+--   local z_position = pose.z * 1000
+--   print("z_pose: " .. z_position)
+--   self.args["ax12gripper"].command = "RELGOTOZ"
+--   if math.abs(pose.z) >= TOLERANCE_Z then
+--      self.args["ax12gripper"].z_position = z_position
+--   else
+--      self.args["ax12gripper"].z_position = 0
+--   end
 end
 
 function cleanup()

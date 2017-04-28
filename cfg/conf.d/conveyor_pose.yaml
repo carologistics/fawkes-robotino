@@ -43,7 +43,7 @@ conveyor_pose:
   conveyor_frame_id: conveyor_pose
   switch_default: false
   product_removal_default: false
-  use_visualisation: true
+  use_visualisation: false
 
 
   # the maximum allowed distance that the vis_hist is not resetet
@@ -62,16 +62,16 @@ conveyor_pose:
   gripper:
     y_min: -0.02
     y_max: -0.055
-    z_max: 0.11
+    z_max: 0.135
     slice:
-      y_min: -0.035
-      y_max: 0.035
+      y_min: -0.002
+      y_max: 0.038
   centroid:
     # the radius wich is not pruned around the centroid
     radius: 0.05
   front:
     # the distance that is not pruned at the front of the MPS
-    space: 0.04
+    space: 0.2
     # this should be a tf, but I did not get it work :(
     offset: 0.005
   bottom:

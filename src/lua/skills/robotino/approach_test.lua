@@ -67,14 +67,16 @@ fsm:add_transitions{
 
 function MPS_ALIGN:init()
    -- align in front of the conveyor belt
-   self.args["mps_align"].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
-   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
-      self.args["mps_align"].y = 0.02
-   else
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
-      self.args["mps_align"].y = -0.02
-   end 
+--   self.args["mps_align"].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
+--   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
+--      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
+--      self.args["mps_align"].y = 0.02
+--   else
+--      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
+--      self.args["mps_align"].y = -0.02
+--   end 
+   self.args["mps_align"].x = 0.43
+   self.args["mps_align"].y = -0.025
 end
 
 function CONVEYOR_ALIGN:init()
@@ -98,13 +100,13 @@ function SKILL_PRODUCT_PICK:init()
       if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
          self.args["product_pick"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
       else
-         self.args["product_pick"].offset_x = 0
+         self.args["product_pick"].offset_x = 0.038
       end 
    else --if no side is given get from output
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
          self.args["product_pick"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
       else
-         self.args["product_pick"].offset_x = 0
+         self.args["product_pick"].offset_x = 0.038
       end 
    end 
 end
@@ -114,13 +116,13 @@ function SKILL_PRODUCT_PUT:init()
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
          self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
       else
-         self.args["product_put"].offset_x = 0
+         self.args["product_put"].offset_x = 0.038
       end 
    else
       if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
          self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
       else
-         self.args["product_put"].offset_x = 0
-      end 
+         self.args["product_put"].offset_x = 0.038
+      end
    end 
 end
