@@ -83,9 +83,9 @@ private:
     bool sync_with_arduino();
     std::string read_packet(unsigned int timeout);
     void send_message(ArduinoComMessage &msg);
-    std::shared_ptr<ArduinoComMessage>
-    send_and_recv(ArduinoComMessage &msg);
     void process_message(ArduinoComMessage::pointer m);
+
+    bool send_one_message();
 
 private:
     std::string cfg_device_;

@@ -327,16 +327,7 @@ ArduinoComThread::flush_device()
 void
 ArduinoComThread::send_message(ArduinoComMessage &msg)
 {
-    boost::mutex::scoped_lock lock(io_mutex_);
     boost::asio::write(serial_, boost::asio::const_buffers_1(msg.buffer()));
-}
-
-std::shared_ptr<ArduinoComMessage>
-ArduinoComThread::send_and_recv(ArduinoComMessage &msg)
-{
-    boost::mutex::scoped_lock lock(io_mutex_);
-    boost::asio::write(serial_, boost::asio::const_buffers_1(msg.buffer()));
-    return NULL;
 }
 
 bool
