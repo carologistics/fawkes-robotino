@@ -103,9 +103,11 @@ ArduinoComThread::loop()
 {
     if (opened_) {
 
-            arduino_if->read();
-            if (arduino_if->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>()) {
-                ArduinoInterface::MoveUpwardsMessage *msg = arduino_if->msgq_first(msg);
+        // read result package after we received the "M..." package as a receipt
+        if (msecs_to_wait_ > 0) {
+            read_packet(msecs_to_wait_);
+            msecs_to_wait_ = 0;
+        }
 
         while (!arduino_if_->msgq_empty() && arduino_if_->is_final()) {
 
