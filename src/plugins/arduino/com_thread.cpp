@@ -66,30 +66,27 @@ void
 ArduinoComThread::init()
 {
     // -------------------------------------------------------------------------- //
-
     load_config();
 
     arduino_if_ =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
 
     joystick_if_ =
-        blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
+            blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
 
     deadline_.expires_at(boost::posix_time::pos_infin);
 
     open_device();
 
-    opened_ = true;
     open_tries_ = 0;
-    // read initial "IDLE"-message
-    read_pending_ = true;
     z_movement_pending_ = false;
 
     // Initially nullify the z-position
     move_to_z_0_pending_ = true;
-    msecs_to_wait = 0;
     current_z_position_ = 0;
-    init_pos_pending_ = true;
+    init_pos_pending_ = false;
+    set_acceleration_pending_ = false;
+    msecs_to_wait_ = 0;
 
     blackboard->register_listener(this);
 }
