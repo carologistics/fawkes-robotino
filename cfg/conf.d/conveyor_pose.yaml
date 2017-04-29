@@ -57,6 +57,7 @@ conveyor_pose:
       size: 10
       # the minimum of poses used for a successfull used average
       used_min: 3
+    allow_invalid_poses: 3
 
   # the dimensions of the gripper in the point cloud (check rotation of actual tf)
   gripper:
