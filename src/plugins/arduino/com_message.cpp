@@ -133,7 +133,13 @@ ArduinoComMessage::buffer()
 {
     // Add terminator character to the end
     data_[data_size_ - 1] = 'X';
+
+//    printf("Buffer: ");
+//    for (size_t i = 0; i < data_size_; ++i) {
+//        printf("%c", data_[i]);
 //    }
+//    printf("\n");
+
     return boost::asio::buffer(data_, data_size_);
 }
 
