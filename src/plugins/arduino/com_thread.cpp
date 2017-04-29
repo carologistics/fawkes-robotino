@@ -153,6 +153,7 @@ ArduinoComThread::loop()
         joystick_if_->read();
 
         if (set_acceleration_pending_) {
+            logger->log_debug(name(), "Set Accel to %u", cfg_accel_);
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_SET_ACCEL);
             req.set_number(cfg_accel_);
@@ -161,6 +162,7 @@ ArduinoComThread::loop()
             set_acceleration_pending_ = false;
 
         } else if (set_speed_pending_) {
+            logger->log_debug(name(), "Set Speed to %u", cfg_rpm_);
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_SET_SPEED);
             req.set_number(cfg_rpm_);
@@ -169,6 +171,7 @@ ArduinoComThread::loop()
             set_speed_pending_ = false;
 
         } else if (move_to_z_0_pending_) {
+            logger->log_debug(name(), "Request Z0 reset");
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_TO_Z_0);
             req.set_msecs(10000);
