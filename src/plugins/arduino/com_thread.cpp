@@ -363,12 +363,23 @@ ArduinoComThread::sync_with_arduino()
 }
 
 void
-handle_nodata(const boost::system::error_code &ec)
+ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
 {
-  // ec may be set if the timer is cancelled, i.e., updated
-  if (! ec) {
-    printf("No data received for too long, re-establishing connection\n");
-  }
+    // ec may be set if the timer is cancelled, i.e., updated
+    if (! ec) {
+        serial_.cancel();
+        logger->log_error(name(), "No data received for too long, re-establishing connection");
+        //        printf("No data received for too long, re-establishing connection\n");
+        logger->log_debug(name(), "BufSize: %zu\n", input_buffer_.size());
+        std::string s(boost::asio::buffer_cast<const char*>(input_buffer_.data()), input_buffer_.size());
+        logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
+        close_device();
+        open_device();
+//        for (size_t i = 0; i < s.size(); ++i) {
+//	    printf("%02x ", s[i]);
+//        }
+//        printf("\n");
+    }
 }
 
 std::string

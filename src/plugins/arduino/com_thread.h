@@ -85,6 +85,7 @@ private:
     void send_message(ArduinoComMessage &msg);
     void process_message(ArduinoComMessage::pointer m);
 
+    void handle_nodata(const boost::system::error_code &ec);
     bool send_one_message();
 
 private:
