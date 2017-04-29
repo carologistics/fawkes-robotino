@@ -115,18 +115,6 @@ ArduinoComMessage::set_command(command_id_t cmdid)
 {
     data_[3] = 0xff & (cmdid + '0');
     current_cmd_ = cmdid;
-//    cur_cmd_ = cur_data_;
-//    cur_data_ += 2;
-//    inc_payload_by(2);
-
-//    cur_cmd_[0] = 0xff & cmdid;
-//    cur_cmd_[1] = 0;
-    //        payload_size_ = 1;
-    //        std::cout << "size: " << payload_size_ << " ";
-    //        for (int i = 0; i < payload_size_; i++) {
-    //            std::cout << (int) cur_cmd_[i] << " ";
-    //        }
-    //        std::cout << std::endl;
 }
 
 void ArduinoComMessage::set_number(unsigned int number)
@@ -143,26 +131,11 @@ void ArduinoComMessage::set_number(unsigned int number)
 boost::asio::const_buffer
 ArduinoComMessage::buffer()
 {
-    //	pack();
-    //            std::cout << std::endl;
-    //            escaped_data_[0] = '5';
-    //            escaped_data_[1] = '2';
-    //            escaped_data_size_ = 2;
-    //        std::cout << "size: " << escaped_data_size_ << " " << std::endl;
-    //        for (int i = 0; i < escaped_data_size_; i++) {
-    //            std::cout << (int) escaped_data_[i] << " ";
-    //        }
-    //	return boost::asio::buffer(escaped_data_, escaped_data_size_);
+    // Add terminator character to the end
     data_[data_size_ - 1] = 'X';
-    
-//    std::cout << "buffer" << std::endl;
-//    std::cout << "echo " << data_size_ << " : " << std::endl;
-//    for (int i = 0; i < data_size_; i++) {
-//       std::cout << data_[i] << ' ';
 //    }
-//    std::cout << std::endl;
     return boost::asio::buffer(data_, data_size_);
-}}
+}
 
 void ArduinoComMessage::set_msecs(unsigned int msecs)
 {
