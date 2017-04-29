@@ -122,6 +122,8 @@ private:
     unsigned int open_tries_;
 
 
+    std::queue<ArduinoComMessage> messages_;
+
     boost::asio::io_service io_service_;
     boost::asio::serial_port serial_;
     boost::asio::deadline_timer deadline_;

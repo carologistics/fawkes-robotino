@@ -120,12 +120,12 @@ ArduinoComThread::loop()
                     if (current_z_position_ - (int) msg->num_mm() < 0) {
                         logger->log_error(name(), "Limit exceeded, min: %i, desired: %i", 0, current_z_position_ + msg->num_mm());
                     } else {
-                           ArduinoComMessage req;
-                           req.add_command(ArduinoComMessage::CMD_STEP_UP);
-                           req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
-                           msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
-                           logger->log_debug(name(), "sending: %u", msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
-                           read_pending_ = true;
+                        ArduinoComMessage req;
+                        req.set_command(ArduinoComMessage::CMD_STEP_UP);
+                        req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                        req.set_msecs(((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.);
+                        logger->log_debug(name(), "Moving up: %u steps", msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                        messages_.push(req);
                     }
                 }
 
@@ -136,12 +136,12 @@ ArduinoComThread::loop()
                     if (current_z_position_ + (int) msg->num_mm() > cfg_max_mm_) {
                         logger->log_error(name(), "Limit exceeded, max: %i, desired: %i", cfg_max_mm_, current_z_position_ + msg->num_mm());
                     } else {
-                           ArduinoComMessage req;
-                           req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
-                           req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
-                           msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
-                           logger->log_debug(name(), "sending: %u", msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
-                           read_pending_ = true;
+                        ArduinoComMessage req;
+                        req.set_command(ArduinoComMessage::CMD_STEP_DOWN);
+                        req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                        req.set_msecs(((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.);
+                        logger->log_debug(name(), "Moving down: %u steps", msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
+                        messages_.push(req);
                     }
                 }
 
@@ -155,57 +155,60 @@ ArduinoComThread::loop()
 
         if (set_acceleration_pending_) {
             ArduinoComMessage req;
-            req.add_command(ArduinoComMessage::CMD_SET_ACCEL);
+            req.set_command(ArduinoComMessage::CMD_SET_ACCEL);
             req.set_number(cfg_accel_);
+            req.set_msecs(1000);
+            messages_.push(req);
             set_acceleration_pending_ = false;
 
         } else if (set_speed_pending_) {
             ArduinoComMessage req;
-            req.add_command(ArduinoComMessage::CMD_SET_SPEED);
-            req.set_number(cfg_speed_);
+            req.set_command(ArduinoComMessage::CMD_SET_SPEED);
+            req.set_number(cfg_rpm_);
+            req.set_msecs(100);
+            messages_.push(req);
             set_speed_pending_ = false;
 
         } else if (move_to_z_0_pending_) {
             ArduinoComMessage req;
-            req.add_command(ArduinoComMessage::CMD_TO_Z_0);
-            msecs_to_wait = 10000;
+            req.set_command(ArduinoComMessage::CMD_TO_Z_0);
+            req.set_msecs(10000);
+            messages_.push(req);
             move_to_z_0_pending_ = false;
-            read_pending_ = true;
-            arduino_if->set_final(false);
 
         } else if (init_pos_pending_ && arduino_if_->is_final()) {
             ArduinoComMessage req;
-            req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
+            req.set_command(ArduinoComMessage::CMD_STEP_DOWN);
             req.set_number(cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
-            msecs_to_wait = ((double) (cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
+            req.set_msecs(((double) (cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.);
             logger->log_debug(name(), "sending: %u", cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
+            messages_.push(req);
             init_pos_pending_ = false;
-            read_pending_ = true;
+
         } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_14 &&
                 arduino_if_->is_final() && !init_pos_pending_) {
             ArduinoComMessage req;
-            req.add_command(ArduinoComMessage::CMD_STEP_UP);
+            req.set_command(ArduinoComMessage::CMD_STEP_UP);
             req.set_number(2 * ArduinoComMessage::NUM_STEPS_PER_MM);
-            msecs_to_wait = ((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
+            req.set_msecs(((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.);
             logger->log_debug(name(), "sending: %u", 2 * ArduinoComMessage::NUM_STEPS_PER_MM);
-            read_pending_ = true;
+            messages_.push(req);
             arduino_if_->set_final(false);
 
         } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_15 &&
                 arduino_if_->is_final() && !init_pos_pending_) {
             ArduinoComMessage req;
-            req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
+            req.set_command(ArduinoComMessage::CMD_STEP_DOWN);
             req.set_number(2 * ArduinoComMessage::NUM_STEPS_PER_MM);
-            msecs_to_wait = ((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
+            req.set_msecs(((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.);
             logger->log_debug(name(), "sending: %u", 2 * ArduinoComMessage::NUM_STEPS_PER_MM);
-            read_pending_ = true;
-        }
+            messages_.push(req);
 
             arduino_if_->set_final(false);
         }
 
-        if (read_pending_ || z_movement_pending) {
-            read_packet();
+        if (messages_.size() > 0) {
+            send_one_message();
         }
 
         z_movement_pending_ = current_arduino_status != 'I';
@@ -348,8 +351,19 @@ ArduinoComThread::sync_with_arduino()
     }
 }
 
+bool
+ArduinoComThread::send_one_message()
 {
+    boost::mutex::scoped_lock lock(io_mutex_);
+    if (messages_.size() > 0) {
+        ArduinoComMessage cur_msg = messages_.front();
+        messages_.pop();
+        msecs_to_wait_ = cur_msg.get_msecs();
+        send_message(cur_msg);
+
+        read_packet(1000); // read receipt
     }
+    return true;
 }
 
 void
