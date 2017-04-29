@@ -412,9 +412,27 @@ ArduinoComThread::read_packet(unsigned int timeout)
         }
     }
 
+    //Package received - analyze package
     std::string s(boost::asio::buffer_cast<const char*>(input_buffer_.data()), bytes_read_);
     input_buffer_.consume(bytes_read_);
     deadline_.cancel();
+
+    if (s.find("AT ") == std::string::npos) {
+        logger->log_error(name(), "Package error - bytes read: %zu", bytes_read_);
+    }
+    if (bytes_read_ > 4) {
+        logger->log_debug(name(), "Package received: %s:", s.c_str());
+        //        if (s.find("AT OK") == std::string::npos) {
+        // Package is no receipt for the previous sent package
+        current_arduino_status = s.at(3);
+        //        }
+    }
+    if (current_arduino_status == 'E') {
+        logger->log_error(name(), "Arduino error: %s", s.substr(4).c_str());
+    } else if (current_arduino_status == 'I') {
+        current_z_position_ = stoi(s.substr(4)) / ArduinoComMessage::NUM_STEPS_PER_MM;
+    }
+    //    read_pending_ = false;
     return s;
 }
 
