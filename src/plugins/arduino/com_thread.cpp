@@ -97,6 +97,8 @@ ArduinoComThread::init()
 void
 ArduinoComThread::finalize()
 {
+    blackboard->close(arduino_if_);
+    close_device();
 }
 
 void
