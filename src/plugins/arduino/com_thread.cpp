@@ -84,7 +84,7 @@ ArduinoComThread::init()
     // Initially nullify the z-position
     move_to_z_0_pending_ = true;
     current_z_position_ = 0;
-    init_pos_pending_ = false;
+    init_pos_pending_ = true;
     set_acceleration_pending_ = false;
     msecs_to_wait_ = 0;
 
