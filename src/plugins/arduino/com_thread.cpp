@@ -68,8 +68,8 @@ ArduinoComThread::init()
     // -------------------------------------------------------------------------- //
 
     load_config();
-    
-    arduino_if =
+
+    arduino_if_ =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
 
     joystick_if_ =
@@ -81,9 +81,9 @@ ArduinoComThread::init()
 
     opened_ = true;
     open_tries_ = 0;
-    z_movement_pending = false;
     // read initial "IDLE"-message
     read_pending_ = true;
+    z_movement_pending_ = false;
 
     // Initially nullify the z-position
     move_to_z_0_pending_ = true;
@@ -103,11 +103,16 @@ void
 ArduinoComThread::loop()
 {
     if (opened_) {
-        while (!arduino_if->msgq_empty() && arduino_if->is_final()) {
 
             arduino_if->read();
             if (arduino_if->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>()) {
                 ArduinoInterface::MoveUpwardsMessage *msg = arduino_if->msgq_first(msg);
+
+        while (!arduino_if_->msgq_empty() && arduino_if_->is_final()) {
+
+            arduino_if_->read();
+            if (arduino_if_->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>()) {
+                ArduinoInterface::MoveUpwardsMessage *msg = arduino_if_->msgq_first(msg);
 
                 if (msg->num_mm() > 0) {
                     if (current_z_position_ - (int) msg->num_mm() < 0) {
@@ -123,8 +128,8 @@ ArduinoComThread::loop()
                     }
                 }
 
-            } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>()) {
-                ArduinoInterface::MoveDownwardsMessage *msg = arduino_if->msgq_first(msg);
+            } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>()) {
+                ArduinoInterface::MoveDownwardsMessage *msg = arduino_if_->msgq_first(msg);
 
                 if (msg->num_mm() > 0) {
                     if (current_z_position_ + (int) msg->num_mm() > cfg_max_mm_) {
@@ -140,10 +145,10 @@ ArduinoComThread::loop()
                     }
                 }
 
-            } else if (arduino_if->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
+            } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
                 move_to_z_0_pending_ = true;
             }
-            arduino_if->msgq_pop();
+            arduino_if_->msgq_pop();
         }
 
         joystick_if_->read();
@@ -171,7 +176,7 @@ ArduinoComThread::loop()
             read_pending_ = true;
             arduino_if->set_final(false);
 
-        } else if (init_pos_pending_ && arduino_if->is_final()) {
+        } else if (init_pos_pending_ && arduino_if_->is_final()) {
             ArduinoComMessage req;
             req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
             req.set_number(cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
@@ -181,36 +186,38 @@ ArduinoComThread::loop()
             init_pos_pending_ = false;
             read_pending_ = true;
         } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_14 &&
-                   arduino_if->is_final() && !init_pos_pending_) {
+                arduino_if_->is_final() && !init_pos_pending_) {
             ArduinoComMessage req;
             req.add_command(ArduinoComMessage::CMD_STEP_UP);
             req.set_number(2 * ArduinoComMessage::NUM_STEPS_PER_MM);
             msecs_to_wait = ((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
             logger->log_debug(name(), "sending: %u", 2 * ArduinoComMessage::NUM_STEPS_PER_MM);
             send_and_recv(req);
-            arduino_if->set_final(false);
             read_pending_ = true;
+            arduino_if_->set_final(false);
+
         } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_15 &&
-                   arduino_if->is_final() && !init_pos_pending_) {
+                arduino_if_->is_final() && !init_pos_pending_) {
             ArduinoComMessage req;
             req.add_command(ArduinoComMessage::CMD_STEP_DOWN);
             req.set_number(2 * ArduinoComMessage::NUM_STEPS_PER_MM);
             msecs_to_wait = ((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
             logger->log_debug(name(), "sending: %u", 2 * ArduinoComMessage::NUM_STEPS_PER_MM);
             send_and_recv(req);
-            arduino_if->set_final(false);
             read_pending_ = true;
         }
 
+            arduino_if_->set_final(false);
+        }
 
         if (read_pending_ || z_movement_pending) {
             read_packet();
         }
 
-        z_movement_pending = current_arduino_status != 'I';
-        arduino_if->set_final(!z_movement_pending);
-        arduino_if->set_z_position(current_z_position_);
-        arduino_if->write();
+        z_movement_pending_ = current_arduino_status != 'I';
+        arduino_if_->set_final(!z_movement_pending_);
+        arduino_if_->set_z_position(current_z_position_);
+        arduino_if_->write();
 
     } else {
         try {

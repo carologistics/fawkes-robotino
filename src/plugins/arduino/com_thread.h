@@ -103,11 +103,11 @@ private:
     bool cfg_gripper_enabled_;
     int cfg_max_mm_;
     unsigned int cfg_init_mm_;
-    bool z_movement_pending;
+    bool z_movement_pending_;
     fawkes::Time time_to_stop_z_align;
     char current_arduino_status;
 
-    unsigned int msecs_to_wait;
+    unsigned int msecs_to_wait_;
 
     int current_z_position_;
 
@@ -127,7 +127,7 @@ private:
     boost::asio::deadline_timer deadline_;
     boost::asio::streambuf input_buffer_;
     boost::mutex io_mutex_;
-    fawkes::ArduinoInterface *arduino_if;
+    fawkes::ArduinoInterface *arduino_if_;
     fawkes::JoystickInterface *joystick_if_;
 
     void load_config();
