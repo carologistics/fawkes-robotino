@@ -123,7 +123,6 @@ ArduinoComThread::loop()
                            req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
                            msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
                            logger->log_debug(name(), "sending: %u", msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
-                           send_and_recv(req);
                            read_pending_ = true;
                     }
                 }
@@ -140,7 +139,6 @@ ArduinoComThread::loop()
                            req.set_number(msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
                            msecs_to_wait = ((double) (msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
                            logger->log_debug(name(), "sending: %u", msg->num_mm() * ArduinoComMessage::NUM_STEPS_PER_MM);
-                           send_and_recv(req);
                            read_pending_ = true;
                     }
                 }
