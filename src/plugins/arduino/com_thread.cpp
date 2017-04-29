@@ -39,12 +39,11 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/thread/thread.hpp>
 
-
 using namespace fawkes;
 
 /** @class ArduinoComThread "openarduino_com_thread.h"
- * Thread to communicate with Arduino via OpenArduino API (v1 or v2).
- * @author Tim Niemueller
+ * Thread to communicate with an Arduino Uno via boost::asio
+ * @author Tim Niemueller, Nicolas Limpert
  */
 
 /** Constructor. */
