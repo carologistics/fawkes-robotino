@@ -450,8 +450,8 @@ ArduinoComThread::load_config()
         cfg_init_mm_ = config->get_uint("/arduino/init_mm");
         cfg_ifid_joystick_ = config->get_string("/arduino/joystick_interface_id");
 
-        set_speed_pending_ = true;
-        set_acceleration_pending_ = true;
+        set_speed_pending_ = false;
+        set_acceleration_pending_ = false;
 
         // 2mm / rotation
         seconds_per_mm = (2. / cfg_rpm_) / 60.;
