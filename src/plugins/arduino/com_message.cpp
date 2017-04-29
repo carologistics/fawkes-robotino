@@ -162,4 +162,14 @@ ArduinoComMessage::buffer()
 //    }
 //    std::cout << std::endl;
     return boost::asio::buffer(data_, data_size_);
+}}
+
+void ArduinoComMessage::set_msecs(unsigned int msecs)
+{
+    msecs_to_wait_ = msecs;
+}
+
+unsigned int ArduinoComMessage::get_msecs()
+{
+    return msecs_to_wait_;
 }

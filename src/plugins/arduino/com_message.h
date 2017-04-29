@@ -61,6 +61,9 @@ class ArduinoComMessage
 
 	boost::asio::const_buffer buffer();
 
+        void set_msecs(unsigned int msecs);
+        unsigned int get_msecs();
+
  private:
 	void ctor();
   
@@ -75,6 +78,8 @@ class ArduinoComMessage
 	char *cur_data_;
         
         long steps;
+        unsigned int msecs_to_wait_;
+
 
 };
 
