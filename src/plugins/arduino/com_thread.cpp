@@ -75,6 +75,7 @@ ArduinoComThread::init()
             blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
 
     deadline_.expires_at(boost::posix_time::pos_infin);
+    opened_ = false;
 
     open_device();
 
