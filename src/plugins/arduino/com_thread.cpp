@@ -367,25 +367,8 @@ ArduinoComThread::sync_with_arduino()
     }
 }
 
-std::string
-ArduinoComThread::read_packet()
 {
-    logger->log_debug(name(), "secs to wait: %u", msecs_to_wait);
-    std::string s = read_packet(msecs_to_wait);
-    if (s.find("AT ") == std::string::npos) {
-        logger->log_error(name(), "Package error - bytes read: %zu", bytes_read_);
     }
-    if (bytes_read_ > 4) {
-        logger->log_debug(name(), "Package received: %s:", s.c_str());
-      current_arduino_status = s.at(3);
-    }
-    if (current_arduino_status == 'E') {
-        logger->log_error(name(), "Arduino error: %s", s.substr(4).c_str());
-    } else if (current_arduino_status == 'I') {
-        current_z_position_ = stoi(s.substr(4)) / ArduinoComMessage::NUM_STEPS_PER_MM;
-    }
-    read_pending_ = false;
-    return s;
 }
 
 void
