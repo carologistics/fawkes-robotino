@@ -66,18 +66,13 @@ class ArduinoComMessage
 
  private:
 	void ctor();
-  
- private:
-	mode_t mode_;
 
+ private:
 	char *data_;
 	unsigned short data_size_;
 
         unsigned int current_cmd_;
 
-	char *cur_data_;
-        
-        long steps;
         unsigned int msecs_to_wait_;
 
 
