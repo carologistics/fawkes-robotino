@@ -105,6 +105,13 @@
   (slot sync-id (type INTEGER) (default 0))
 )
 
+(deftemplate field-ground-truth
+  (slot machine (type SYMBOL))
+  (slot yaw (type FLOAT))
+  (slot zone (type SYMBOL))
+  (slot mtype (type SYMBOL))
+)
+
 (deftemplate mirror-orientation
   (slot cyan (type INTEGER))
   (slot magenta (type INTEGER))

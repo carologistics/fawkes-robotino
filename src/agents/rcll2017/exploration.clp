@@ -371,6 +371,10 @@
 (defrule exp-mirror-tag
   (found-tag (name ?machine) (side ?side) (frame ?frame) (trans $?trans) (rot $?rot))
   ; Assuming that ?frame is always "map". Otherwise things will break rather horribly...
+
+  (not (field-ground-truth (machine ?machine)))
+  ; Do not trigger while updating zones/tags from Refbox PB msg after exploration
+
   (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
   (zone-exploration (name ?zn) (machine ?machine) (times-searched ?times-searched))
 

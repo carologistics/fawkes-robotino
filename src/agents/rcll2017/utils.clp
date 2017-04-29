@@ -474,6 +474,26 @@
 )
 
 
+(deffunction tag-offset (?zone ?yaw)
+  (bind ?c (zone-center ?zone))
+  (bind ?x (nth$ 1 ?c))
+  (bind ?y (nth$ 2 ?c))
+  (bind ?x (+ ?x (* (cos ?yaw) 0.17)))
+  (bind ?y (+ ?y (* (sin ?yaw) 0.17)))
+  (return (create$ ?x ?y 0.48))
+)
+
+
+(deffunction deg-to-rad (?deg)
+  (bind ?bigrad (* (/ ?deg 360) ?*2PI*))
+  (if (> ?bigrad ?*PI*) then
+    (return (* -1 (- ?*2PI* ?bigrad)))
+  else
+    (return ?bigrad)
+  )
+)
+
+
 (deffunction mirror-name (?zn)
   (bind ?team (sub-string 1 1 ?zn))
   (bind ?zone (sub-string 3 99 ?zn))
@@ -543,9 +563,17 @@
 )
 
 
+
 (deffunction protobuf-name (?zone)
   (return
     (str-cat (sub-string 1 1 ?zone) "_" (sub-string 3 99 ?zone))
+  )
+)
+
+
+(deffunction clips-name (?zone)
+  (return
+    (sym-cat (sub-string 1 1 ?zone) "-" (sub-string 3 99 ?zone))
   )
 )
 
