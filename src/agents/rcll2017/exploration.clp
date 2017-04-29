@@ -327,7 +327,7 @@
     (orientation ?orientation)
   )
   (time $?now)
-  ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 0.5)) (seq ?seq))
+  ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
   (game-time $?game-time)
   (confval (path "/clips-agent/rcll2016/exploration/latest-send-last-report-time")
     (value ?latest-report-time)
