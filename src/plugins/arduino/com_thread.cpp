@@ -397,8 +397,10 @@ ArduinoComThread::read_packet(unsigned int timeout)
     boost::system::error_code ec = boost::asio::error::would_block;
     bytes_read_ = 0;
 
+    logger->log_debug(name(), "read_packet with timeout: %u", timeout);
+
     deadline_.expires_from_now(boost::posix_time::milliseconds(timeout));
-    deadline_.async_wait(boost::bind(handle_nodata, boost::asio::placeholders::error));
+    deadline_.async_wait(boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
 
     boost::asio::async_read_until(serial_, input_buffer_, "\r\n",
             (boost::lambda::var(ec) = boost::lambda::_1,
