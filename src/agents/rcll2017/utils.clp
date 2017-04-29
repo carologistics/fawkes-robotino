@@ -12,6 +12,10 @@
   (return (float (sqrt (float(+ (* (- ?x ?x2) (- ?x ?x2)) (* (- ?y ?y2) (- ?y ?y2)))))))
 )
 
+(deffunction distance-mf (?p1 ?p2)
+  (return (distance (nth$ 1 ?p1) (nth$ 2 ?p1) (nth$ 1 ?p2) (nth$ 2 ?p2)))
+)
+
 (deffunction is-working ($?out-of-order)
   "Check if a machine is not out of order"
   (return (eq (nth$ 1 ?out-of-order) 0))
@@ -458,6 +462,17 @@
   (bind ?mid-map (transform-safe "map" ?frame1 ?timestamp ?mid-from-ep1 (create$ 0 0 0 1)))
   (return ?mid-map)
 )
+
+
+(deffunction zone-center (?zn)
+  (bind ?x (eval (sub-string 4 4 ?zn)))
+  (bind ?y (eval (sub-string 5 5 ?zn)))
+  (if (eq (sub-string 1 1 ?zn) "M") then
+    (bind ?x (* -1 ?x))
+  )
+  (return (create$ (- ?x 0.5) (- ?y 0.5)))
+)
+
 
 (deffunction mirror-name (?zn)
   (bind ?team (sub-string 1 1 ?zn))

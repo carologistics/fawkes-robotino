@@ -141,7 +141,6 @@
 (defrule exp-found-line
   "Found a line that is within an unexplored zone."
   (phase EXPLORATION)
-  (exp-searching)
   (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
@@ -175,8 +174,12 @@
     (machine UNKNOWN)
     (line-visibility ?vh&:(> ?vh 0))
   )
-  ; Use the zone with the highest line-visibility
-  (not (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 ?vh))))
+  (Position3DInterface (id "Pose") (translation ?trans))
+
+  ; There is no zone with a line-visibility > 0 that is closer
+  (not (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
+    (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
+  ))
 
   ; Neither this zone nor the opposite zone is locked
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
