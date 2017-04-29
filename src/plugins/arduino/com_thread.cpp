@@ -339,7 +339,7 @@ ArduinoComThread::send_and_recv(ArduinoComMessage &msg)
     return NULL;
 }
 
-void
+bool
 ArduinoComThread::sync_with_arduino()
 {
     std::string s;
@@ -356,13 +356,15 @@ ArduinoComThread::sync_with_arduino()
 
     if (now - start_time >= 3.) {
         logger->log_error(name(), "Timeout reached trying to sync with arduino");
+        return false;
     }
     if (found == std::string::npos) {
         logger->log_error(name(), "Synchronization with Arduino failed, HELLO-Package not located");
+        return false;
     } else {
         logger->log_info(name(), "Synchronization with Arduino successful");
+        return true;
     }
-    return;
 }
 
 std::string

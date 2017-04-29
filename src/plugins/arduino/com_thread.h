@@ -80,8 +80,8 @@ private:
     void close_device();
     void flush_device();
 
-    void sync_with_arduino();
     std::string read_packet();
+    bool sync_with_arduino();
     std::string read_packet(unsigned int timeout);
     void send_message(ArduinoComMessage &msg);
     std::shared_ptr<ArduinoComMessage>
