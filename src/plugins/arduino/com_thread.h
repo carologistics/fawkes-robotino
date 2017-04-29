@@ -121,8 +121,6 @@ private:
     bool opened_;
     unsigned int open_tries_;
 
-    fawkes::TimeWait *time_wait_;
-    unsigned int last_seqnum_;
 
     boost::asio::io_service io_service_;
     boost::asio::serial_port serial_;

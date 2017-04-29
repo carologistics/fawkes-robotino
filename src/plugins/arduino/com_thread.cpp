@@ -67,9 +67,6 @@ ArduinoComThread::~ArduinoComThread()
 void
 ArduinoComThread::init()
 {
-    last_seqnum_ = 0;
-    time_wait_ = new TimeWait(clock, cfg_sensor_update_cycle_time_ * 1000);
-
     // -------------------------------------------------------------------------- //
 
     load_config();
@@ -102,14 +99,11 @@ ArduinoComThread::init()
 void
 ArduinoComThread::finalize()
 {
-    delete time_wait_;
 }
 
 void
 ArduinoComThread::loop()
 {
-    time_wait_->mark_start();
-
     if (opened_) {
         while (!arduino_if->msgq_empty() && arduino_if->is_final()) {
 
@@ -233,8 +227,6 @@ ArduinoComThread::loop()
             }
         }
     }
-
-    time_wait_->wait();
 }
 
 bool
