@@ -337,7 +337,8 @@ ArduinoComThread::sync_with_arduino()
 
     logger->log_debug(name(), "sync with arduino");
     do {
-        s = read_packet(3000);
+        s = read_packet(6000);
+        logger->log_debug(name(), "Read '%s'", s.c_str());
         found = s.find("AT HELLO");
         now = fawkes::Time();
     } while (found == std::string::npos && (now - start_time < 3.));
