@@ -26,6 +26,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/features/normal_3d.h>
 
 #include <pcl/ModelCoefficients.h>
@@ -108,6 +109,7 @@ ConveyorPoseThread::init()
   vis_hist_angle_diff_        = config->get_float( (cfg_prefix + "vis_hist/diff_angle").c_str() );
   cfg_pose_avg_hist_size_     = config->get_uint( (cfg_prefix + "vis_hist/average/size").c_str() );
   cfg_pose_avg_min_           = config->get_uint( (cfg_prefix + "vis_hist/average/used_min").c_str() );
+  cfg_allow_invalid_poses_    = config->get_uint( (cfg_prefix + "vis_hist/allow_invalid_poses").c_str() );
 
   cfg_enable_switch_          = config->get_bool( (cfg_prefix + "switch_default").c_str() );
   cfg_enable_product_removal_ = config->get_bool( (cfg_prefix + "product_removal_default").c_str() );
@@ -202,26 +204,25 @@ void
 ConveyorPoseThread::loop()
 {
   if_read();
-
+  //logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
   if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
       pose trash;
       trash.valid = false;
       pose_add_element(trash);
     }
-
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
 
     return;
   }
-
+  //logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or not enabled and pose enabled");
   bb_pose_conditional_open();
 
   pose pose_average;
   bool pose_average_availabe = pose_get_avg(pose_average);
-
+  //logger->log_info(name(),"CONVEYOR-POSE 3: set average");
   if (pose_average_availabe) {
     vis_hist_ = std::max(1, vis_hist_ + 1);
     pose_write(pose_average);
@@ -236,44 +237,45 @@ ConveyorPoseThread::loop()
     trash.valid = false;
     pose_write(trash);
   }
-
+// logger->log_debug(name(),"CONVEYOR-POSE 4: checked average");
   fawkes::LaserLineInterface * ll = NULL;
   bool use_laserline = laserline_get_best_fit( ll );
-
+// logger->log_debug(name(),"CONVEYOR-POSE 5: got laserline");
+  
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
+  uint in_size = cloud_in->points.size();
+  logger->log_debug(name(), "Size before voxel grid: %u", in_size);
   CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
+  uint out_size = cloud_vg->points.size();
+  logger->log_debug(name(), "Size of voxel grid: %u", out_size);
+  if (in_size == out_size) {
+    logger->log_error(name(), "Voxel Grid failed, skipping loop!");
+    return;
+  }
   CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
   CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
+  logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
 
   CloudPtr cloud_front_side(new Cloud);
-  if ( use_laserline ) {
-    // TODO, if this is used, a cfg values for each machine is needed
-    cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll);
-  } else {
-    *cloud_front_side = *cloud_front;
-  }
-
+    cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
+  
+// logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
  // Eigen::Vector4f center;
  // pcl::compute3DCentroid<Point, float>(*cloud_front, center);
  // CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
   CloudPtr cloud_bottom_removed = cloud_remove_offset_to_bottom(cloud_front_side);
 
-  CloudPtr cloud_without_products(new Cloud);
-  if ( bb_config_->is_product_removal() ) {
-    cloud_without_products = cloud_remove_products(cloud_bottom_removed);
-//    *cloud_without_products = *cloud_bottom_removed;
-  } else {
-    *cloud_without_products = *cloud_bottom_removed;
-  }
-
-  cloud_publish(cloud_without_products, cloud_out_inter_1_);
+//  logger->log_debug(name(),"CONVEYOR-POSE 8: removed products");
+  cloud_publish(cloud_bottom_removed, cloud_out_inter_1_);
 
   // search for best plane
   CloudPtr cloud_choosen;
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
   do {
-    CloudPtr cloud_plane = cloud_get_plane(cloud_without_products, coeff);
+  //  logger->log_debug(name(), "In while loop");
+    CloudPtr cloud_plane = cloud_get_plane(cloud_bottom_removed, coeff);
+  //  logger->log_debug(name(), "After getting plane");
     if ( cloud_plane == NULL || ! cloud_plane ) {
       pose trash;
       trash.valid = false;
@@ -282,15 +284,20 @@ ConveyorPoseThread::loop()
     }
 
     size_t id;
+  //  logger->log_debug(name(), "Before clustering");
     boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices = cloud_cluster(cloud_plane);
+  //  logger->log_debug(name(), "After clustering");
     if ( cluster_indices->size() <= 0 ) {
       pose trash;
       trash.valid = false;
       pose_add_element(trash);
       return;
     }
+   // logger->log_debug(name(), "Before split");
     std::vector<CloudPtr> clouds_cluster = cluster_split(cloud_plane, cluster_indices);
+   // logger->log_debug(name(), "Before finding biggest");
     cloud_choosen = cluster_find_biggest(clouds_cluster, id);
+   // logger->log_debug(name(), "After finding biggest");
 
     // check if plane is ok, otherwise remove indicies
 
@@ -313,17 +320,19 @@ ConveyorPoseThread::loop()
       boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (cloud_without_products);
+      extract.setInputCloud (cloud_bottom_removed);
       extract.setIndices( extract_indicies );
       extract.setNegative (true);
       extract.filter (*tmp);
-      *cloud_without_products = *tmp;
+      logger->log_debug(name(), "After extraction");
+      *cloud_bottom_removed = *tmp;
     } else {
       // height is ok
       break;
     }
   } while (true);
-
+  
+ // logger->log_debug(name(),"CONVEYOR-POSE 9: left while true");
   cloud_publish(cloud_choosen, cloud_out_result_);
 
   // get centroid
@@ -369,6 +378,7 @@ ConveyorPoseThread::if_read()
 
   bool rv = bb_enable_switch_->is_enabled();
   while ( ! bb_enable_switch_->msgq_empty() ) {
+    logger->log_info(name(),"RECIEVED SWITCH MESSAGE");
     if (bb_enable_switch_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
       rv = false;
     } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
@@ -397,7 +407,9 @@ ConveyorPoseThread::if_read()
   bb_config_->read();
 
   rv = bb_config_->is_product_removal();
-  while ( ! bb_config_->msgq_empty() ) {
+  while ( ! bb_config_->msgq_empty() ) 
+    {
+    logger->log_info(name(),"RECIEVED CONFIG MESSAGE");
     if (bb_config_->msgq_first_is<ConveyorConfigInterface::DisableProductRemovalMessage>()) {
       rv = false;
     } else if (bb_config_->msgq_first_is<ConveyorConfigInterface::EnableProductRemovalMessage>()) {
@@ -439,7 +451,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
     }
   }
 
-  if (invalid > 3) {
+  if (invalid > cfg_allow_invalid_poses_) {
     logger->log_warn(name(), "view unstable, got %u invalid frames", invalid);
   }
 
@@ -598,22 +610,6 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
   return out;
 }
 
-CloudPtr
-ConveyorPoseThread::cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid)
-{
-  float distance = cfg_centroid_radius_;
-
-  CloudPtr cloud_out(new Cloud);
-
-  for (Point p : *in) {
-    if ( p.x >= centroid(0) - distance && p.x <= centroid(0) + distance &&
-         p.y >= centroid(1) - distance && p.y <= centroid(1) + distance) {
-      cloud_out->push_back(p);
-    }
-  }
-
-  return cloud_out;
-}
 
 CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_bottom(CloudPtr in)
@@ -669,61 +665,32 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 }
 
 CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll)
+ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
-  double space = 0.12;
-  Eigen::Vector3f c = laserline_get_center_transformed(ll);
+  if (use_ll){
+    double space = 0.12;
+    Eigen::Vector3f c = laserline_get_center_transformed(ll);
 
-  double x_min = c(0) - ( space / 2. );
-  double x_max = c(0) + ( space / 2. );
+    double x_min = c(0) - ( space / 2. );
+    double x_max = c(0) + ( space / 2. );
 
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if ( p.x >= x_min && p.x <= x_max ) {
-      out->push_back(p);
-    }
+    CloudPtr out(new Cloud);
+      for (Point p : *in) {
+        if ( p.x >= x_min && p.x <= x_max ) {
+          out->push_back(p);
+        }
   }
-
   return out;
-}
-
-CloudPtr
-ConveyorPoseThread::cloud_remove_products(CloudPtr in)
-{
-  // Estimate point normals
-  pcl::NormalEstimation<Point, pcl::Normal> ne;
-  pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point> ());
-  ne.setSearchMethod (tree);
-  ne.setInputCloud (in);
-  ne.setKSearch (50);
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-  ne.compute (*cloud_normals);
-
-  // Create the segmentation object for cylinder segmentation and set all the parameters
-  pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg;
-  seg.setOptimizeCoefficients (true);
-  seg.setModelType (pcl::SACMODEL_CYLINDER);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setNormalDistanceWeight (cfg_product_normal_distance_weight_);
-  seg.setMaxIterations (1000);
-  seg.setDistanceThreshold (cfg_product_dist_threshold_);
-  seg.setRadiusLimits (cfg_product_radius_limit_min_, cfg_product_radius_limit_max_);
-  seg.setInputCloud (in);
-  seg.setInputNormals (cloud_normals);
-
-  // Obtain the cylinder inliers and coefficients
-  pcl::PointIndices::Ptr inliers_cylinder (new pcl::PointIndices);
-  pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
-  seg.segment (*inliers_cylinder, *coefficients_cylinder);
-
-  pcl::ExtractIndices<Point> extract;
-  extract.setInputCloud (in);
-  extract.setIndices (inliers_cylinder);
-  extract.setNegative (true);
-  CloudPtr cloud_cylinder (new Cloud ());
-  extract.filter (*cloud_cylinder);
-
-  return cloud_cylinder;
+  }else{
+    logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
+    CloudPtr out(new Cloud);
+    for (Point p : *in) {
+        if ( p.x >= -0.08 && p.x <= 0.08 ) {
+        out->push_back(p);
+      }
+    }
+    return out;
+  }
 }
 
 CloudPtr
@@ -736,7 +703,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   // Create the segmentation object
   pcl::SACSegmentation<pcl::PointXYZ> seg;
   // Optional
-//    seg.setOptimizeCoefficients (true);
+  seg.setOptimizeCoefficients (true);
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
@@ -776,7 +743,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
 boost::shared_ptr<std::vector<pcl::PointIndices>>
 ConveyorPoseThread::cloud_cluster(CloudPtr in)
 {
-  in = cloud_voxel_grid(in);
+  //in = cloud_voxel_grid(in);
   // Creating the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (in);
@@ -832,12 +799,12 @@ CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
 {
   float ls = cfg_voxel_grid_leave_size_;
-  pcl::VoxelGrid<pcl::PointXYZ> vg;
+  pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
   CloudPtr out (new Cloud);
   vg.setInputCloud (in);
+  logger->log_debug(name(), "voxel leaf size is %f", ls);
   vg.setLeafSize (ls, ls, ls);
   vg.filter (*out);
-
   return out;
 }
 

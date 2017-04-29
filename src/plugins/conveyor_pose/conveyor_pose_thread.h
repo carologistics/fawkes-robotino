@@ -120,6 +120,8 @@ private:
 
   float cfg_voxel_grid_leave_size_;
 
+  uint cfg_allow_invalid_poses_;
+
   // state vars
   bool enable_pose_;
   bool cfg_enable_switch_;
@@ -170,7 +172,7 @@ private:
  CloudPtr cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid);
  CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
  CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
- CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll);
+ CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
  CloudPtr cloud_remove_products(CloudPtr in);
  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);

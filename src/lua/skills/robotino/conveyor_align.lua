@@ -124,7 +124,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "CHECK_VISION", cond=true},
-   {"CHECK_VISION", "FAILED", timeout=10, desc="No vis_hist on conveyor vision"},
+   {"CHECK_VISION", "FAILED", timeout=20, desc="No vis_hist on conveyor vision"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DRIVE", cond=see_conveyor},
    {"DECIDE_TRY", "FINAL", cond=tolerances_ok, desc="Robot is aligned"},
