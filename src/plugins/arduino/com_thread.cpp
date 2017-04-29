@@ -242,40 +242,42 @@ ArduinoComThread::is_connected()
 void
 ArduinoComThread::open_device()
 {
-    logger->log_debug(name(), "Open device");
-    try {
-        input_buffer_.consume(input_buffer_.size());
+    if (!opened_) {
+        logger->log_debug(name(), "Open device");
+        try {
+            input_buffer_.consume(input_buffer_.size());
 
-        boost::mutex::scoped_lock lock(io_mutex_);
+            boost::mutex::scoped_lock lock(io_mutex_);
 
-        serial_.open(cfg_device_);
+            serial_.open(cfg_device_);
 
-        boost::asio::serial_port::parity PARITY(boost::asio::serial_port::parity::none);
-        boost::asio::serial_port::baud_rate BAUD(115200);
-        boost::asio::serial_port::character_size thecsize(boost::asio::serial_port::character_size(8U));
-        boost::asio::serial_port::stop_bits STOP( boost::asio::serial_port::stop_bits::one );
+            boost::asio::serial_port::parity PARITY(boost::asio::serial_port::parity::none);
+            boost::asio::serial_port::baud_rate BAUD(9600);
+            boost::asio::serial_port::character_size thecsize(boost::asio::serial_port::character_size(8U));
+            boost::asio::serial_port::stop_bits STOP( boost::asio::serial_port::stop_bits::one );
 
-        serial_.set_option(PARITY);
-        serial_.set_option(BAUD);
-        serial_.set_option(thecsize);
-        serial_.set_option(STOP);
+            serial_.set_option(PARITY);
+            serial_.set_option(BAUD);
+            serial_.set_option(thecsize);
+            serial_.set_option(STOP);
 
-        {
-            struct termios param;
-            if (tcgetattr(serial_.native_handle(), &param) == 0) {
-                // set blocking mode, seemingly needed to make Asio work properly
-                param.c_cc[VMIN] = 1;
-                param.c_cc[VTIME] = 0;
-                if (tcsetattr(serial_.native_handle(), TCSANOW, &param) != 0) {
-                    // another reason to fail...
-                }
-            } // else: BANG, cannot set VMIN/VTIME, fail
+            {
+                struct termios param;
+                if (tcgetattr(serial_.native_handle(), &param) == 0) {
+                    // set blocking mode, seemingly needed to make Asio work properly
+                    param.c_cc[VMIN] = 1;
+                    param.c_cc[VTIME] = 0;
+                    if (tcsetattr(serial_.native_handle(), TCSANOW, &param) != 0) {
+                        // another reason to fail...
+                    }
+                } // else: BANG, cannot set VMIN/VTIME, fail
+            }
+
+            opened_ = sync_with_arduino();
+
+        } catch (boost::system::system_error &e) {
+            throw Exception("Arduino failed I/O: %s", e.what());
         }
-
-        sync_with_arduino();
-
-    } catch (boost::system::system_error &e) {
-        throw Exception("Arduino failed I/O: %s", e.what());
     }
 }
 
