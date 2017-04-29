@@ -80,7 +80,7 @@ ArduinoComMessage::ArduinoComMessage(command_id_t cmdid)
 {
     ctor();
 
-    add_command(cmdid);
+    set_command(cmdid);
 }
 
 /** Constructor for incoming message.
@@ -111,7 +111,7 @@ ArduinoComMessage::ctor()
  * @param cmdid command ID to add.
  */
 void
-ArduinoComMessage::add_command(command_id_t cmdid)
+ArduinoComMessage::set_command(command_id_t cmdid)
 {
     data_[3] = 0xff & (cmdid + '0');
     current_cmd_ = cmdid;
