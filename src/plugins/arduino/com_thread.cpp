@@ -26,11 +26,9 @@
 #include <core/threading/mutex_locker.h>
 #include <utils/math/angle.h>
 #include <utils/time/wait.h>
-//#include <tf/types.h>
 
 #include <interfaces/BatteryInterface.h>
 #include <interfaces/ArduinoInterface.h>
-//#include <interfaces/IMUInterface.h>
 
 #include <unistd.h>
 
