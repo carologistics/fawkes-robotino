@@ -157,21 +157,18 @@ ArduinoComThread::loop()
             ArduinoComMessage req;
             req.add_command(ArduinoComMessage::CMD_SET_ACCEL);
             req.set_number(cfg_accel_);
-            send_and_recv(req);
             set_acceleration_pending_ = false;
 
         } else if (set_speed_pending_) {
             ArduinoComMessage req;
             req.add_command(ArduinoComMessage::CMD_SET_SPEED);
             req.set_number(cfg_speed_);
-            send_and_recv(req);
             set_speed_pending_ = false;
 
         } else if (move_to_z_0_pending_) {
             ArduinoComMessage req;
             req.add_command(ArduinoComMessage::CMD_TO_Z_0);
             msecs_to_wait = 10000;
-            send_and_recv(req);
             move_to_z_0_pending_ = false;
             read_pending_ = true;
             arduino_if->set_final(false);
@@ -182,7 +179,6 @@ ArduinoComThread::loop()
             req.set_number(cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
             msecs_to_wait = ((double) (cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
             logger->log_debug(name(), "sending: %u", cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
-            send_and_recv(req);
             init_pos_pending_ = false;
             read_pending_ = true;
         } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_14 &&
@@ -192,7 +188,6 @@ ArduinoComThread::loop()
             req.set_number(2 * ArduinoComMessage::NUM_STEPS_PER_MM);
             msecs_to_wait = ((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
             logger->log_debug(name(), "sending: %u", 2 * ArduinoComMessage::NUM_STEPS_PER_MM);
-            send_and_recv(req);
             read_pending_ = true;
             arduino_if_->set_final(false);
 
@@ -203,7 +198,6 @@ ArduinoComThread::loop()
             req.set_number(2 * ArduinoComMessage::NUM_STEPS_PER_MM);
             msecs_to_wait = ((double) (2 * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.;
             logger->log_debug(name(), "sending: %u", 2 * ArduinoComMessage::NUM_STEPS_PER_MM);
-            send_and_recv(req);
             read_pending_ = true;
         }
 
