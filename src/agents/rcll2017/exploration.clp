@@ -163,7 +163,6 @@
     (line-visibility ?zn-vh&:(> ?vh ?zn-vh))
   )
 =>
-  (printout t "EXP found line: " ?zn " vh: " ?vh crlf)
   (modify ?ze-f (line-visibility ?vh))
 )
 
@@ -188,6 +187,7 @@
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
   (not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
 =>
+  (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
   (retract ?st-f)
   (assert
