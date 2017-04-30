@@ -144,6 +144,9 @@
   (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
+    (end_point_1 $?ep1)
+    (end_point_2 $?ep2)
+    (frame_id ?frame)
   )
   (MotorInterface (id "Robotino") (vx ?vx) (vy ?vy))
   (exp-zone-margin ?zone-margin)
@@ -152,7 +155,7 @@
       (compensate-movement
         ?*EXP-MOVEMENT-COMPENSATION*
         (create$ ?vx ?vy)
-        (laser-line-get-center ?id ?timestamp)
+        (laser-line-center-map ?ep1 ?ep2 ?frame ?timestamp)
         ?timestamp
       )
     )))
