@@ -184,50 +184,61 @@ function found_tag()
                }, line:frame_id(), tag_utils.frame_for_id(fsm.vars.tags, tag_info, id)
             )
             local d_trans = math.vec_length(line_c_tag.x, line_c_tag.y)
-            local d_rot = math.angle_distance(line:bearing(), fawkes.tf.get_yaw(tag_laser.ori))
-            if d_trans > TAG_LINE_TOLERANCE.trans or d_rot > TAG_LINE_TOLERANCE.rot then
+            -- WORKAROUND: ignore ori diff, use line ori instead
+            -- local d_rot = math.angle_distance(line:bearing(), fawkes.tf.get_yaw(tag_laser.ori))
+
+            if d_trans <= TAG_LINE_TOLERANCE.trans then
+               local line_bearing_map = tfm.transform(
+                  { x = 0, y = 0, ori = line:bearing() }, line:frame_id(), "map"
+               )
+               local tag_map = tfm.transform6D(
+                  { x = 0, y = 0, z = 0,
+                     ori = fawkes.tf.Quaternion:getIdentity()
+                  },
+                  tag_utils.frame_for_id(fsm.vars.tags, tag_info, id),
+                  "map"
+               )
+               if tag_map and in_zone(tag_map.x, tag_map.y) then
+                  local yaw = fawkes.tf.get_yaw(tag_map.ori)
+                  if yaw == yaw then
+                     -- Rescale & Discretize angle from 0..315°
+                     print_debug("Yaw 1: " .. yaw)
+                     if id % 2 == 0 then
+                        yaw = yaw + math.pi
+                        print_debug("Yaw 2: " .. yaw)
+                     end
+                     if yaw < 0 then
+                        yaw = 2 * math.pi + yaw
+                        print_debug("Yaw 3: ".. yaw)
+                     end
+                     local yaw_discrete = math.round(yaw / math.pi * 4) * 45
+                     if yaw_discrete == 360 then yaw_discrete = 0 end
+                     zone_info:set_zone(fsm.vars.zone)
+                     zone_info:set_orientation(yaw_discrete)
+                     zone_info:set_tag_id(id)
+                     zone_info:set_search_state(zone_info.YES)
+                     bb_found_tag:set_translation(0, tag_map.x)
+                     bb_found_tag:set_translation(1, tag_map.y)
+                     bb_found_tag:set_translation(2, tag_map.z)
+                     local line_bearing_map_q = fawkes.tf.create_quaternion_from_yaw(line_bearing_map.ori)
+                     bb_found_tag:set_rotation(0, line_bearing_map_q:x())
+                     bb_found_tag:set_rotation(1, line_bearing_map_q:y())
+                     bb_found_tag:set_rotation(2, line_bearing_map_q:z())
+                     bb_found_tag:set_rotation(3, line_bearing_map_q:w())
+                     bb_found_tag:set_frame("map")
+                     bb_found_tag:set_visibility_history(tag:visibility_history())
+                     fsm.vars.found_something = true
+                     return true
+                  end
+               else
+                  printf("Discarding tag #%d, misaligned by %f.", id, d_trans)
+               end
+            end
+
+            --[[ if d_trans > TAG_LINE_TOLERANCE.trans or d_rot > TAG_LINE_TOLERANCE.rot then
                printf("Discarding tag #%d, misaligned by %f, %f.", id, d_trans, d_rot)
                return false
-            end
-         end
-         local tag_map = tfm.transform6D(
-            { x = 0, y = 0, z = 0,
-               ori = fawkes.tf.Quaternion:getIdentity()
-            },
-            tag_utils.frame_for_id(fsm.vars.tags, tag_info, id),
-            "map"
-         )
-         if tag_map and in_zone(tag_map.x, tag_map.y) then
-            local yaw = fawkes.tf.get_yaw(tag_map.ori)
-            if yaw == yaw then
-               -- Rescale & Discretize angle from 0..315°
-               print_debug("Yaw 1: " .. yaw)
-               if id % 2 == 0 then
-                  yaw = yaw + math.pi
-                  print_debug("Yaw 2: " .. yaw)
-               end
-               if yaw < 0 then
-                  yaw = 2 * math.pi + yaw
-                  print_debug("Yaw 3: ".. yaw)
-               end
-               local yaw_discrete = math.round(yaw / math.pi * 4) * 45
-               if yaw_discrete == 360 then yaw_discrete = 0 end
-               zone_info:set_zone(fsm.vars.zone)
-               zone_info:set_orientation(yaw_discrete)
-               zone_info:set_tag_id(id)
-               zone_info:set_search_state(zone_info.YES)
-               bb_found_tag:set_translation(0, tag_map.x)
-               bb_found_tag:set_translation(1, tag_map.y)
-               bb_found_tag:set_translation(2, tag_map.z)
-               bb_found_tag:set_rotation(0, tag_map.ori:x())
-               bb_found_tag:set_rotation(1, tag_map.ori:y())
-               bb_found_tag:set_rotation(2, tag_map.ori:z())
-               bb_found_tag:set_rotation(3, tag_map.ori:w())
-               bb_found_tag:set_frame("map")
-               bb_found_tag:set_visibility_history(tag:visibility_history())
-               fsm.vars.found_something = true
-               return true
-            end
+            end ]]--
          end
       end
    end
