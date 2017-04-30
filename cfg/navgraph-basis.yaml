@@ -70,25 +70,25 @@ nodes:
   #
   - !unconnected
     name: exp-21
-    pos: [5, 5]
+    pos: [5, 4.5]
     properties:
       - orientation: -1.8
       - always-copy: true
   - !unconnected
     name: exp-22
-    pos: [0.5, 5]
+    pos: [1, 4]
     properties:
       - orientation: -1.2
       - always-copy: true
   - !unconnected
     name: exp-23
-    pos: [0.5, 0.5]
+    pos: [1, 1]
     properties:
       - orientation: 1.2
       - always-copy: true
   - !unconnected
     name: exp-24
-    pos: [5, 0.5]
+    pos: [5, 1]
     properties:
       - orientation: 1.8
       - always-copy: true
