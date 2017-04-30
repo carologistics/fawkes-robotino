@@ -55,26 +55,26 @@ class ArduinoComMessage
 	ArduinoComMessage(command_id_t cmdid);
 	ArduinoComMessage(const unsigned char *msg, size_t msg_size);
 
-	void add_command(command_id_t cmdid);
-        
+	void set_command(command_id_t cmdid);
+
         void set_number(unsigned int number);
 
 	boost::asio::const_buffer buffer();
 
+        void set_msecs(unsigned int msecs);
+        unsigned int get_msecs();
+
  private:
 	void ctor();
-  
- private:
-	mode_t mode_;
 
+ private:
 	char *data_;
 	unsigned short data_size_;
 
         unsigned int current_cmd_;
 
-	char *cur_data_;
-        
-        long steps;
+        unsigned int msecs_to_wait_;
+
 
 };
 

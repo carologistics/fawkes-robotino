@@ -74,22 +74,19 @@ public:
     /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
 
-    virtual void run() {
-        Thread::run();
-    }
 
 private:
     void open_device();
     void close_device();
     void flush_device();
 
-    void sync_with_arduino();
-    std::string read_packet();
+    bool sync_with_arduino();
     std::string read_packet(unsigned int timeout);
     void send_message(ArduinoComMessage &msg);
-    std::shared_ptr<ArduinoComMessage>
-    send_and_recv(ArduinoComMessage &msg);
     void process_message(ArduinoComMessage::pointer m);
+
+    void handle_nodata(const boost::system::error_code &ec);
+    bool send_one_message();
 
 private:
     std::string cfg_device_;
@@ -106,11 +103,11 @@ private:
     bool cfg_gripper_enabled_;
     int cfg_max_mm_;
     unsigned int cfg_init_mm_;
-    bool z_movement_pending;
+    bool z_movement_pending_;
     fawkes::Time time_to_stop_z_align;
     char current_arduino_status;
 
-    unsigned int msecs_to_wait;
+    unsigned int msecs_to_wait_;
 
     int current_z_position_;
 
@@ -124,15 +121,15 @@ private:
     bool opened_;
     unsigned int open_tries_;
 
-    fawkes::TimeWait *time_wait_;
-    unsigned int last_seqnum_;
+
+    std::queue<ArduinoComMessage> messages_;
 
     boost::asio::io_service io_service_;
     boost::asio::serial_port serial_;
     boost::asio::deadline_timer deadline_;
     boost::asio::streambuf input_buffer_;
     boost::mutex io_mutex_;
-    fawkes::ArduinoInterface *arduino_if;
+    fawkes::ArduinoInterface *arduino_if_;
     fawkes::JoystickInterface *joystick_if_;
 
     void load_config();
