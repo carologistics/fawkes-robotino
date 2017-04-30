@@ -27,8 +27,6 @@ gazsim:
     set-game-state: "~/LLSFRbSim/SetGameState/"
     set-game-phase: "~/LLSFRbSim/SetGamePhase/"
     set-team-name: "~/LLSFRbSim/SetTeamName/"
-    place-puck-under-machine: "~/LLSFRbSim/PlacePuckUnderMachine/"
-    remove-puck-under-machine: "~/LLSFRbSim/RemovePuckFromMachine/"
     message: "~/RobotinoSim/String/"
     gripper: "~/RobotinoSim/SetGripper/"
     gripper-has-puck: "~/RobotinoSim/GripperHasPuck/"

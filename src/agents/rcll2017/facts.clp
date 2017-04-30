@@ -59,7 +59,7 @@
   )
   (slot cluster-visibility (type INTEGER) (default 0))
   (slot line-visibility (type INTEGER) (default 0))
-  (slot machine (type SYMBOL) (allowed-values NONE C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS UNKNOWN) (default UNKNOWN))
+  (slot machine (type SYMBOL) (allowed-values NONE C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS  M-SS UNKNOWN) (default UNKNOWN))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
 
   ; for exploration-catch-up in produciton
@@ -70,7 +70,7 @@
 )
 
 (deftemplate exploration-result
-  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (slot zone (type SYMBOL)
     (allowed-symbols
       M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
@@ -92,15 +92,8 @@
       C-Z11 C-Z21 C-Z31 C-Z41
     )
   )
-  (slot mtype (type STRING) (default ""))
   (slot orientation (type INTEGER) (default -1))
-)
-
-(deftemplate exp-row
-  (slot name (type SYMBOL) (allowed-values HIGH MID LOW))
-  (multislot row (type SYMBOL)
-    (allowed-symbols Q1 Q2 Q3 Q4 Q5 Q6)
-  )
+  (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
 (deftemplate found-tag
@@ -110,6 +103,18 @@
   (multislot trans (type FLOAT) (cardinality 3 3))
   (multislot rot (type FLOAT) (cardinality 4 4))
   (slot sync-id (type INTEGER) (default 0))
+)
+
+(deftemplate field-ground-truth
+  (slot machine (type SYMBOL))
+  (slot yaw (type FLOAT))
+  (slot zone (type SYMBOL))
+  (slot mtype (type SYMBOL))
+)
+
+(deftemplate mirror-orientation
+  (slot cyan (type INTEGER))
+  (slot magenta (type INTEGER))
 )
 
 (deftemplate navgraph-added-for-mps
@@ -129,9 +134,9 @@
 ; PRODUCTION
 
 (deftemplate machine
-  (slot name (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (slot name (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
-  (slot mtype (type SYMBOL) (allowed-values BS DS RS CS))
+  (slot mtype (type SYMBOL) (allowed-values BS DS RS CS SS))
   (multislot incoming (type SYMBOL))
   (multislot incoming-agent (type SYMBOL) (default (create$))) ;the agent bringing/getting the thing specified in incoming
   ;id of the loaded-puck
@@ -177,7 +182,7 @@
 
 
 (deftemplate tag-matching
-  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (slot side (type SYMBOL) (allowed-values INPUT OUTPUT))
   (slot tag-id (type INTEGER))
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
@@ -321,7 +326,10 @@
 )
 
 (deftemplate mps-instruction
-  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS))
+  (slot machine (type SYMBOL) (allowed-symbols
+    C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS
+    M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS
+  ))
   (multislot timer (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
   ; lock that the robot needs before sending the instruction
   ; (NONE for no needed lock)
@@ -357,7 +365,8 @@
     (zone-exploration (name C-Z22) (team CYAN))
     (zone-exploration (name C-Z32) (team CYAN))
     (zone-exploration (name C-Z42) (team CYAN))
-    (zone-exploration (name C-Z52) (team CYAN))
+; Can't have machines in *-Z52 (see rulebook)...
+;   (zone-exploration (name C-Z52) (team CYAN))
     (zone-exploration (name C-Z62) (team CYAN))
     (zone-exploration (name C-Z72) (team CYAN))
     (zone-exploration (name C-Z13) (team CYAN))
@@ -411,7 +420,8 @@
     (zone-exploration (name M-Z22) (team MAGENTA))
     (zone-exploration (name M-Z32) (team MAGENTA))
     (zone-exploration (name M-Z42) (team MAGENTA))
-    (zone-exploration (name M-Z52) (team MAGENTA))
+; Can't have machines in *-Z52 (see rulebook)...
+;   (zone-exploration (name M-Z52) (team MAGENTA))
     (zone-exploration (name M-Z62) (team MAGENTA))
     (zone-exploration (name M-Z72) (team MAGENTA))
     (zone-exploration (name M-Z13) (team MAGENTA))
@@ -477,6 +487,7 @@
   (machine (name C-RS2) (team CYAN) (mtype RS))
   (ring-station (name C-RS2))
   (machine (name C-DS) (team CYAN) (mtype DS))
+  (machine (name C-SS) (team CYAN) (mtype SS))
 
   (machine (name M-BS) (team MAGENTA) (mtype BS))
   (base-station (name M-BS))
@@ -489,6 +500,7 @@
   (machine (name M-RS2) (team MAGENTA) (mtype RS))
   (ring-station (name M-RS2))
   (machine (name M-DS) (team MAGENTA) (mtype DS))
+  (machine (name M-SS) (team MAGENTA) (mtype SS))
 
   (tag-matching (machine C-BS) (side INPUT) (team CYAN) (tag-id 65))
   (tag-matching (machine C-CS1) (side INPUT) (team CYAN) (tag-id 1))
@@ -496,12 +508,14 @@
   (tag-matching (machine C-RS1) (side INPUT) (team CYAN) (tag-id 33))
   (tag-matching (machine C-RS2) (side INPUT) (team CYAN) (tag-id 177))
   (tag-matching (machine C-DS) (side INPUT) (team CYAN) (tag-id 81))
+  (tag-matching (machine C-SS) (side INPUT) (team CYAN) (tag-id 193))
   (tag-matching (machine C-BS) (side OUTPUT) (team CYAN) (tag-id 66))
   (tag-matching (machine C-CS1) (side OUTPUT) (team CYAN) (tag-id 2))
   (tag-matching (machine C-CS2) (side OUTPUT) (team CYAN) (tag-id 18))
   (tag-matching (machine C-RS1) (side OUTPUT) (team CYAN) (tag-id 34))
   (tag-matching (machine C-RS2) (side OUTPUT) (team CYAN) (tag-id 178))
   (tag-matching (machine C-DS) (side OUTPUT) (team CYAN) (tag-id 82))
+  (tag-matching (machine C-SS) (side OUTPUT) (team CYAN) (tag-id 194))
 
   (tag-matching (machine M-BS) (side INPUT) (team MAGENTA) (tag-id 161))
   (tag-matching (machine M-CS1) (side INPUT) (team MAGENTA) (tag-id 97))
@@ -509,12 +523,14 @@
   (tag-matching (machine M-RS1) (side INPUT) (team MAGENTA) (tag-id 129))
   (tag-matching (machine M-RS2) (side INPUT) (team MAGENTA) (tag-id 145))
   (tag-matching (machine M-DS) (side INPUT) (team MAGENTA) (tag-id 49))
+  (tag-matching (machine M-SS) (side INPUT) (team MAGENTA) (tag-id 209))
   (tag-matching (machine M-BS) (side OUTPUT) (team MAGENTA) (tag-id 162))
   (tag-matching (machine M-CS1) (side OUTPUT) (team MAGENTA) (tag-id 98))
   (tag-matching (machine M-CS2) (side OUTPUT) (team MAGENTA) (tag-id 114))
   (tag-matching (machine M-RS1) (side OUTPUT) (team MAGENTA) (tag-id 130))
   (tag-matching (machine M-RS2) (side OUTPUT) (team MAGENTA) (tag-id 146))
   (tag-matching (machine M-DS) (side OUTPUT) (team MAGENTA) (tag-id 50))
+  (tag-matching (machine M-SS) (side OUTPUT) (team MAGENTA) (tag-id 210))
 
   (state WAIT_START)
   (phase PRE_GAME)
@@ -550,4 +566,12 @@
 
   (last-zoneinfo)
 
+  (mirror-orientation (cyan 0) (magenta 180))
+  (mirror-orientation (cyan 45) (magenta 135))
+  (mirror-orientation (cyan 90) (magenta 90))
+  (mirror-orientation (cyan 135) (magenta 45))
+  (mirror-orientation (cyan 180) (magenta 0))
+  (mirror-orientation (cyan 225) (magenta 315))
+  (mirror-orientation (cyan 270) (magenta 270))
+  (mirror-orientation (cyan 315) (magenta 225))
 )
