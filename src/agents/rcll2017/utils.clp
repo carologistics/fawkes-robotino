@@ -180,6 +180,14 @@
   (return (create$ (/ (+ ?x1 ?x2) 2) (/ (+ ?y1 ?y2) 2)))
 )
 
+
+(deffunction laser-line-center-map (?ep1 ?ep2 ?frame ?timestamp)
+  (bind ?c (utils-get-2d-center (nth$ 1 ?ep1) (nth$ 2 ?ep1) (nth$ 1 ?ep2) (nth$ 2 ?ep2)))
+  (bind ?c3 (nth$ 1 ?c) (nth$ 2 ?c) 0)
+  (return (transform-safe "map" ?frame ?timestamp ?c3 (create$ 0 0 0 1)))
+)
+
+
 (deffunction round-down (?x)
   (bind ?round (round ?x))
   (if (< ?x ?round) then
@@ -441,26 +449,6 @@
     (printout error "Assert failed : " ?fact crlf)
   )
   (return ?res)
-)
-
-(deffunction laser-line-get-center (?iface-id ?timestamp)
-  "Return the center of a laser line in map coordinates"
-  (bind ?idx (iface-get-idx ?iface-id))
-  (bind ?frame1 (str-cat "laser_line_" ?idx "_e1"))
-  (bind ?frame2 (str-cat "laser_line_" ?idx "_e2"))
-  (bind ?ep2-from-ep1 (transform-safe ?frame1 ?frame2 ?timestamp
-                                      (create$ 0 0 0) (create$ 0 0 0 1)))
-  (if (not ?ep2-from-ep1) then
-    (return FALSE)
-  )
-
-  (bind ?mid-from-ep1
-    (/ (nth$ 1 ?ep2-from-ep1) 2)
-    (/ (nth$ 2 ?ep2-from-ep1) 2)
-    (/ (nth$ 3 ?ep2-from-ep1) 2)
-  )
-  (bind ?mid-map (transform-safe "map" ?frame1 ?timestamp ?mid-from-ep1 (create$ 0 0 0 1)))
-  (return ?mid-map)
 )
 
 
