@@ -47,7 +47,7 @@ using namespace fawkes;
 /** Constructor. */
 ArduinoComThread::ArduinoComThread(std::string &cfg_name,
         std::string &cfg_prefix)
-: Thread("ArduinoComThread", Thread::OPMODE_CONTINUOUS),
+: Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
         BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_name.c_str()),
         serial_(io_service_), deadline_(io_service_)
 {
@@ -67,6 +67,8 @@ ArduinoComThread::init()
 {
     // -------------------------------------------------------------------------- //
     load_config();
+
+    set_coalesce_wakeups(true);
 
     arduino_if_ =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
@@ -89,12 +91,16 @@ ArduinoComThread::init()
     set_acceleration_pending_ = false;
     msecs_to_wait_ = 0;
 
+    bbil_add_message_interface(arduino_if_);
+
     blackboard->register_listener(this);
+    wakeup();
 }
 
 void
 ArduinoComThread::finalize()
 {
+    blackboard->unregister_listener(this);
     blackboard->close(arduino_if_);
     close_device();
 }
@@ -103,13 +109,11 @@ void
 ArduinoComThread::loop()
 {
     if (opened_) {
-
         // read result package after we received the "M..." package as a receipt
         if (msecs_to_wait_ > 0) {
             read_packet(msecs_to_wait_);
             msecs_to_wait_ = 0;
         }
-
         while (!arduino_if_->msgq_empty() && arduino_if_->is_final()) {
 
             arduino_if_->read();
@@ -232,6 +236,15 @@ ArduinoComThread::loop()
             }
         }
     }
+    if (msecs_to_wait_ > 0 ||
+            set_acceleration_pending_ ||
+            set_speed_pending_ ||
+            move_to_z_0_pending_ ||
+            init_pos_pending_) {
+        wakeup();
+    }
+
+
 }
 
 bool
@@ -458,4 +471,12 @@ ArduinoComThread::load_config()
         seconds_per_mm = (2. / cfg_rpm_) / 60.;
     } catch (Exception &e) {
     }
+}
+
+bool
+ArduinoComThread::bb_interface_message_received(Interface *interface,
+        Message *message) throw()
+{
+    wakeup();
+    return true;
 }
