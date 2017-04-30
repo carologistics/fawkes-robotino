@@ -42,7 +42,7 @@ skillenv.skill_module(_M)
 
 local x_distance = 0.07
 if config:exists("/skills/align_distance_conveyor/x") then
-   x_distance = config:get_float("/skills/align_distance_conveyor/x") - 0.01
+   x_distance = config:get_float("/skills/align_distance_conveyor/x") - 0.038
 end
 
 fsm:define_states{ export_to=_M,
@@ -60,7 +60,7 @@ fsm:add_transitions{
 
 function GOTO_SLIDE:init()
    self.args["motor_move"] =
-			{ y = -0.28, --TODO measure exact value
+			{ y = -0.275, --TODO measure exact value
 				vel_trans = 0.2,
 				tolerance = { x=0.002, y=0.002, ori=0.01 }
 			}
