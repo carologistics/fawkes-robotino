@@ -76,7 +76,6 @@ function MPS_ALIGN:init()
 --      self.args["mps_align"].y = -0.02
 --   end 
    self.args["mps_align"].x = 0.43
-   self.args["mps_align"].y = -0.025
 end
 
 function CONVEYOR_ALIGN:init()
@@ -100,13 +99,13 @@ function SKILL_PRODUCT_PICK:init()
       if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
          self.args["product_pick"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
       else
-         self.args["product_pick"].offset_x = 0.040
+         self.args["product_pick"].offset_x = 0
       end 
    else --if no side is given get from output
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
          self.args["product_pick"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
       else
-         self.args["product_pick"].offset_x = 0.040
+         self.args["product_pick"].offset_x = 0
       end 
    end 
 end
@@ -116,13 +115,13 @@ function SKILL_PRODUCT_PUT:init()
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
          self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
       else
-         self.args["product_put"].offset_x = 0.040
+         self.args["product_put"].offset_x = 0
       end 
    else
       if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
          self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
       else
-         self.args["product_put"].offset_x = 0.040
+         self.args["product_put"].offset_x = 0
       end
    end 
 end

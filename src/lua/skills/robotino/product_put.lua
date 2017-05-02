@@ -37,7 +37,7 @@ and opens the gripper
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
-local x_distance = 0.075
+local x_distance = 0.27
 if config:exists("/skills/align_distance_conveyor/x") then
       x_distance = config:get_float("/skills/align_distance_conveyor/x")
 end

@@ -66,7 +66,7 @@ conveyor_pose:
     #z_max: 0.135
     z_max: 0.5
     slice:
-      y_min: -0.008
+      y_min: 0.0
       y_max: 0.035
   centroid:
     # the radius wich is not pruned around the centroid
