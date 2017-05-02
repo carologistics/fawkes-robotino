@@ -456,13 +456,13 @@ void
 ArduinoComThread::load_config()
 {
     try {
-        cfg_device_ = config->get_string("/arduino/device");
-        cfg_rpm_ = config->get_int("/arduino/rpm");
-        cfg_speed_ = config->get_int("/arduino/speed");
-        cfg_accel_ = config->get_int("/arduino/accel");
-        cfg_max_mm_ = config->get_int("/arduino/max_mm");
-        cfg_init_mm_ = config->get_uint("/arduino/init_mm");
-        cfg_ifid_joystick_ = config->get_string("/arduino/joystick_interface_id");
+        cfg_device_ = config->get_string(cfg_prefix_ + "/device");
+        cfg_rpm_ = config->get_int(cfg_prefix_ + "/rpm");
+        cfg_speed_ = config->get_int(cfg_prefix_ + "/speed");
+        cfg_accel_ = config->get_int(cfg_prefix_ + "/accel");
+        cfg_max_mm_ = config->get_int(cfg_prefix_ + "/max_mm");
+        cfg_init_mm_ = config->get_uint(cfg_prefix_ + "/init_mm");
+        cfg_ifid_joystick_ = config->get_string(cfg_prefix_ + "/joystick_interface_id");
 
         set_speed_pending_ = false;
         set_acceleration_pending_ = false;
