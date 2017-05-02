@@ -176,7 +176,7 @@
     (machine UNKNOWN)
     (line-visibility ?vh&:(> ?vh 0))
   )
-  (Position3DInterface (id "Pose") (translation ?trans))
+  (Position3DInterface (id "Pose") (translation $?trans))
 
   ; There is no zone with a line-visibility > 0 that is closer
   (not (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
