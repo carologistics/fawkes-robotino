@@ -92,6 +92,7 @@ ArduinoComThread::init()
     msecs_to_wait_ = 0;
 
     bbil_add_message_interface(arduino_if_);
+    bbil_add_data_interface(joystick_if_);
 
     blackboard->register_listener(this);
     wakeup();
@@ -479,4 +480,10 @@ ArduinoComThread::bb_interface_message_received(Interface *interface,
 {
     wakeup();
     return true;
+}
+
+void
+ArduinoComThread::bb_interface_data_changed(Interface *interface) throw()
+{
+    wakeup();
 }
