@@ -157,6 +157,7 @@
 (defrule game-receive-field-layout-protobuf
 "At the end of the exploration phase, the Refbox sends the true field layout.
  Assert a field-ground-truth fact for each machine the Refbox told us about."
+  (declare (salience ?*PRIORITY-LOW*))
   (not (received-field-layout))
   ?msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   (phase PRODUCTION)
@@ -191,6 +192,7 @@
     )
   )
   (assert (received-field-layout))
+  (retract ?msg)
 )
 
 
