@@ -7,7 +7,7 @@ conveyor_pose:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
   # - the switch if is ignored, the plugin i running always
-  debug: false
+  debug: true
   # the point cloud that is used to detect the belt
   cloud_in: "/camera/depth/points"
 
@@ -66,7 +66,7 @@ conveyor_pose:
     #z_max: 0.135
     z_max: 0.5
     slice:
-      y_min: 0.0
+      y_min: -0.08
       y_max: 0.035
   centroid:
     # the radius wich is not pruned around the centroid

@@ -672,7 +672,7 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
 
     double x_min = c(0) - ( space / 2. );
-    double x_max = c(0) + ( space / 2. );
+    double x_max = c(0) + ( space / 2. ) - 0.06;
 
     CloudPtr out(new Cloud);
       for (Point p : *in) {
