@@ -17,6 +17,7 @@
 /plugins/
 /plugins_*
 /warnings.txt
+/cfg/host.yaml
 
 # Eclipse project files, some are using it...
 .cproject
