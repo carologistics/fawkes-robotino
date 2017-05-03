@@ -167,29 +167,66 @@
 )
 
 
-(defrule exp-stop-to-investigate-zone
+(defrule exp-try-locking-zone
   (phase EXPLORATION)
   (exp-searching)
-  ?st-f <- (state EXP_GOTO_NEXT)
+  (state EXP_GOTO_NEXT)
+  ; Not currently locked/trying to lock anything
+  (not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
+  (not (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
+
+  ; A zone for which no lock was refused yet
   (zone-exploration
     (name ?zn)
     (machine UNKNOWN)
     (line-visibility ?vh&:(> ?vh 0))
   )
-  (Position3DInterface (id "Pose") (translation $?trans))
-
-  ; There is no zone with a line-visibility > 0 that is closer
-  (not (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
-    (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
-  ))
+  (not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))
 
   ; Neither this zone nor the opposite zone is locked
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
   (not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
+
+  ; Locks for all closer zones with a line-visibility > 0 have been refused
+  (Position3DInterface (id "Pose") (translation $?trans))
+  (forall
+    (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
+      (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
+    )
+    (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))
+  )
+=>
+  (printout t "EXP trying to lock zone " ?zn crlf)
+  (assert
+    (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))
+  )
+)
+
+
+(defrule exp-tried-locking-all-zones
+  (forall
+    (zone-exploration (name ?zn) (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
+    (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))
+  )
+=>
+  (delayed-do-for-all-facts ((?l lock)) (and (eq ?l:type REFUSE) (eq ?l:agent ?*ROBOT-NAME*))
+    (retract ?l)
+  )
+)
+
+
+(defrule exp-stop-to-investigate-zone
+  "Lock for an explorable zone was accepted"
+  (phase EXPLORATION)
+  (exp-searching)
+  ?st-f <- (state EXP_GOTO_NEXT)
+
+  (zone-exploration (name ?zn))
+  ?lock-f <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))
 =>
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
-  (retract ?st-f)
+  (retract ?st-f ?lock-f)
   (assert
     (state EXP_STOPPING)
     (explore-zone-target (zone ?zn))
@@ -249,10 +286,10 @@
 (defrule exp-skill-explore-zone
   (phase EXPLORATION)
   ?st-f <- (state EXP_LOCK_ACCEPTED)
-  ?exp-f <- (explore-zone-target (zone ?zn))
+  (explore-zone-target (zone ?zn))
   (navigator-default-vmax (velocity ?trans-vmax) (rotation ?rot-vmax))
 =>
-  (retract ?exp-f ?st-f)
+  (retract ?st-f)
   (assert (state EXP_EXPLORE_ZONE))
   (navigator-set-speed ?trans-vmax ?rot-vmax)
   (skill-call explore_zone zone (str-cat ?zn))
@@ -273,8 +310,9 @@
   (tag-matching (tag-id ?tag-id) (machine ?machine) (side ?side) (team ?team-color))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
   (machine (name ?machine) (mtype ?mtype))
+  ?exp-f <- (explore-zone-target (zone ?zn))
 =>
-  (retract ?st-f ?skill-f)
+  (retract ?st-f ?skill-f ?exp-f)
   (assert
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
   )
@@ -306,15 +344,22 @@
 )
 
 
+
+
 (defrule exp-skill-explore-zone-failed
   (phase EXPLORATION)
   ?st-f <- (state EXP_EXPLORE_ZONE)
   ?skill-f <- (skill-done (name "explore_zone") (status ?status))
-  (ZoneInterface (search_state ~YES))
+  ?exp-f <- (explore-zone-target (zone ?zn))
+  (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
+  ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine))
 =>
-  (retract ?st-f ?skill-f)
+  (retract ?st-f ?skill-f ?exp-f)
   (if (eq ?status FINAL) then
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
+  )
+  (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
+    (modify ?ze (machine NONE))
   )
   (assert
     (exp-searching)
