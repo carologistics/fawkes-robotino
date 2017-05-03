@@ -33,3 +33,10 @@ ros:
     # Interval in which to post static transform updates; sec
     # This setting is only relevant is use_tf2 is set to false above.
     static-update-interval: 1.0
+
+  navigator:
+    dynreconf:
+      path: "/move_base/TebLocalPlannerROS"
+      x_vel_name: "max_vel_x"
+      y_vel_name: "max_vel_y"
+      rot_vel_name: "max_vel_theta"
