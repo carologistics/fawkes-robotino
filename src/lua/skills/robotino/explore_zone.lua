@@ -449,6 +449,10 @@ function FIND_ZONE_CORNER:init()
       if self.fsm.vars.y + dy > Y_MAX or self.fsm.vars.y + dy < Y_MIN then
          dy = 0
       end
+      if math.abs(self.fsm.vars.x + dx) > 4 and self.fsm.vars.y + dy < Y_MIN + 1 then
+         dx = 0
+         dy = 0
+      end
 
       if dx ~= 0 or dy ~= 0 then
          self.fsm.vars.zone_corner = {
