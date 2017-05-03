@@ -485,5 +485,8 @@ ArduinoComThread::bb_interface_message_received(Interface *interface,
 void
 ArduinoComThread::bb_interface_data_changed(Interface *interface) throw()
 {
+    arduino_if_->set_final(!z_movement_pending_);
+    arduino_if_->set_z_position(current_z_position_);
+    arduino_if_->write();
     wakeup();
 }
