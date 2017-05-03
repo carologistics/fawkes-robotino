@@ -69,6 +69,8 @@ ArduinoComThread::init()
     // -------------------------------------------------------------------------- //
     load_config();
 
+    set_coalesce_wakeups(true);
+
     arduino_if_ =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
 
@@ -90,12 +92,17 @@ ArduinoComThread::init()
     set_acceleration_pending_ = false;
     msecs_to_wait_ = 0;
 
+    bbil_add_message_interface(arduino_if_);
+    bbil_add_data_interface(joystick_if_);
+
     blackboard->register_listener(this);
+    wakeup();
 }
 
 void
 ArduinoComThread::finalize()
 {
+    blackboard->unregister_listener(this);
     blackboard->close(arduino_if_);
     close_device();
 }
@@ -104,13 +111,11 @@ void
 ArduinoComThread::loop()
 {
     if (opened_) {
-
         // read result package after we received the "M..." package as a receipt
         if (msecs_to_wait_ > 0) {
             read_packet(msecs_to_wait_);
             msecs_to_wait_ = 0;
         }
-
         while (!arduino_if_->msgq_empty() && arduino_if_->is_final()) {
 
             arduino_if_->read();
@@ -233,6 +238,15 @@ ArduinoComThread::loop()
             }
         }
     }
+    if (msecs_to_wait_ > 0 ||
+            set_acceleration_pending_ ||
+            set_speed_pending_ ||
+            move_to_z_0_pending_ ||
+            init_pos_pending_) {
+        wakeup();
+    }
+
+
 }
 
 bool
@@ -444,13 +458,13 @@ void
 ArduinoComThread::load_config()
 {
     try {
-        cfg_device_ = config->get_string("/arduino/device");
-        cfg_rpm_ = config->get_int("/arduino/rpm");
-        cfg_speed_ = config->get_int("/arduino/speed");
-        cfg_accel_ = config->get_int("/arduino/accel");
-        cfg_max_mm_ = config->get_int("/arduino/max_mm");
-        cfg_init_mm_ = config->get_uint("/arduino/init_mm");
-        cfg_ifid_joystick_ = config->get_string("/arduino/joystick_interface_id");
+        cfg_device_ = config->get_string(cfg_prefix_ + "/device");
+        cfg_rpm_ = config->get_int(cfg_prefix_ + "/rpm");
+        cfg_speed_ = config->get_int(cfg_prefix_ + "/speed");
+        cfg_accel_ = config->get_int(cfg_prefix_ + "/accel");
+        cfg_max_mm_ = config->get_int(cfg_prefix_ + "/max_mm");
+        cfg_init_mm_ = config->get_uint(cfg_prefix_ + "/init_mm");
+        cfg_ifid_joystick_ = config->get_string(cfg_prefix_ + "/joystick_interface_id");
 
         set_speed_pending_ = false;
         set_acceleration_pending_ = false;
@@ -459,4 +473,21 @@ ArduinoComThread::load_config()
         seconds_per_mm = (2. / cfg_rpm_) / 60.;
     } catch (Exception &e) {
     }
+}
+
+bool
+ArduinoComThread::bb_interface_message_received(Interface *interface,
+        Message *message) throw()
+{
+    wakeup();
+    return true;
+}
+
+void
+ArduinoComThread::bb_interface_data_changed(Interface *interface) throw()
+{
+    arduino_if_->set_final(!z_movement_pending_);
+    arduino_if_->set_z_position(current_z_position_);
+    arduino_if_->write();
+    wakeup();
 }
