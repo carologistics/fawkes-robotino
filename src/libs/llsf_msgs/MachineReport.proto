@@ -36,6 +36,7 @@
  */
 
 syntax = "proto2";
+
 package llsf_msgs;
 
 import "Team.proto";

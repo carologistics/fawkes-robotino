@@ -35,8 +35,10 @@
  */
 
 syntax = "proto2";
+
 package llsf_msgs;
 
+import "MachineDescription.proto";
 import "ProductColor.proto";
 import "Team.proto";
 
@@ -46,11 +48,6 @@ option java_outer_classname = "MachineInstructionProtos";
 enum MachineSide {
   INPUT  = 1;
   OUTPUT = 2;
-}
-
-enum CsOp {
-  RETRIEVE_CAP = 1;
-  MOUNT_CAP    = 2;
 }
 
 message PrepareInstructionBS {
@@ -67,7 +64,7 @@ message PrepareInstructionRS {
 }
 
 message PrepareInstructionCS {
-  required CsOp operation = 1;
+  required CSOp operation = 1;
 }
 
 message PrepareMachine {
