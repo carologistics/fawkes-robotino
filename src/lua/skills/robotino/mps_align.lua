@@ -399,7 +399,7 @@ function MATCH_AVG_LINE:loop()
             {  x = p.x,
                y = p.y + (self.fsm.vars.y or 0),
                z = 0,
-               ori = matched_line:bearing() },
+               ori = fawkes.tf.create_quaternion_from_yaw(matched_line:bearing()) },
             matched_line:frame_id(), "/odom"
          )
          if p_tag then
@@ -422,7 +422,7 @@ function ALIGN_PRECISE:init()
       self.args["motor_move"] = { 
          x = self.fsm.vars.p_tag.x,
          y = self.fsm.vars.p_tag.y,
-         ori = self.fsm.vars.p_tag.ori,
+         ori = fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori),
          frame = "/odom"
       }
    else
