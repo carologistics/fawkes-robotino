@@ -160,10 +160,38 @@
       )
     )))
     (machine UNKNOWN)
-    (line-visibility ?zn-vh&:(> ?vh ?zn-vh))
+    (line-visibility ?zn-vh&:(< ?zn-vh 1))
   )
 =>
   (modify ?ze-f (line-visibility ?vh))
+)
+
+
+(defrule exp-found-tag
+  (phase EXPLORATION)
+  ?srch-f <- (exp-searching)
+  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
+  (not (found-tag (name ?machine)))
+  (TagVisionInterface (id "/tag-vision/info")
+    (tags_visible ?num-tags&:(> ?num-tags 0))
+    (tag_id $?tag-ids&:(member$ ?tag ?tag-ids))
+  )
+  (Position3DInterface
+    (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1))))
+    (visibility_history ?vh&:(> ?vh 1))
+    (translation $?trans) (rotation $?rot)
+    (frame ?frame) (time $?timestamp)
+  )
+  (exp-zone-margin ?zone-margin)
+  ?ze-f <- (zone-exploration
+    (name ?zn&:(eq ?zn (get-zone ?zone-margin (transform-safe "map" ?frame ?timestamp ?trans ?rot))))
+    (machine UNKNOWN)
+    (line-visibility ?lv&:(< ?lv 2))
+  )
+  (not (locked-resource (resource ?r&:(eq ?r ?zn))))
+  ?st-f <- (state ?)
+=>
+  (modify ?ze-f (line-visibility (+ ?lv 1)))
 )
 
 
@@ -235,61 +263,18 @@
 )
 
 
-(defrule exp-stopped
+(defrule exp-skill-explore-zone
   (phase EXPLORATION)
   ?srch-f <- (exp-searching)
   ?st-f <- (state EXP_STOPPING)
   (explore-zone-target (zone ?zn))
+  (skill-done (name "relgoto"))
   (MotorInterface (id "Robotino")
     (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
   )
-=>
-  (retract ?st-f ?srch-f)
-  (assert (state EXP_LOCK_REQUIRED)
-    (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))
-  )
-)
-
-
-(defrule exp-found-tag
-  (phase EXPLORATION)
-  ?srch-f <- (exp-searching)
-  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
-  (not (found-tag (name ?machine)))
-  (TagVisionInterface (id "/tag-vision/info")
-    (tags_visible ?num-tags&:(> ?num-tags 0))
-    (tag_id $?tag-ids&:(member$ ?tag ?tag-ids))
-  )
-  (Position3DInterface
-    (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1))))
-    (visibility_history ?vh&:(> ?vh 1))
-    (translation $?trans) (rotation $?rot)
-    (frame ?frame) (time $?timestamp)
-  )
-  (exp-zone-margin ?zone-margin)
-  (zone-exploration
-    (name ?zn&:(eq ?zn (get-zone ?zone-margin (transform-safe "map" ?frame ?timestamp ?trans ?rot))))
-    (machine UNKNOWN)
-  )
-  (not (locked-resource (resource ?r&:(eq ?r ?zn))))
-  ?st-f <- (state ?)
-=>
-  (skill-call relgoto x 0 y 0)
-  (retract ?srch-f ?st-f)
-  (assert (state EXP_LOCK_REQUIRED)
-    (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))
-    (explore-zone-target (zone ?zn))
-  )
-)
-
-
-(defrule exp-skill-explore-zone
-  (phase EXPLORATION)
-  ?st-f <- (state EXP_LOCK_ACCEPTED)
-  (explore-zone-target (zone ?zn))
   (navigator-default-vmax (velocity ?trans-vmax) (rotation ?rot-vmax))
 =>
-  (retract ?st-f)
+  (retract ?st-f ?srch-f)
   (assert (state EXP_EXPLORE_ZONE))
   (navigator-set-speed ?trans-vmax ?rot-vmax)
   (skill-call explore_zone zone (str-cat ?zn))
@@ -466,17 +451,4 @@
 =>
   (navgraph-add-all-new-tags)
 )
-
-
-(defrule exp-check-resource-locking
-  "Handle a lock that was accepted by the master"
-  (phase EXPLORATION)
-  ?s <- (state EXP_LOCK_REQUIRED)
-  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?r))
-  =>
-  (printout t "Lock for " ?r " accepted." crlf)
-  (retract ?s ?l)
-  (assert (state EXP_LOCK_ACCEPTED))
-)
-
 
