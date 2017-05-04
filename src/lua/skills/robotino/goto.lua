@@ -146,3 +146,8 @@ function MOVING:init()
       self.fsm.vars.ori)
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
+
+function TIMEOUT:exit()
+    local frame_msg = navigator.SetTargetFrameMessage:new( "/base_link" )
+    navigator:msgq_enqueue(frame_msg)
+end
