@@ -457,8 +457,11 @@
   (bind ?y (eval (sub-string 5 5 ?zn)))
   (if (eq (sub-string 1 1 ?zn) "M") then
     (bind ?x (* -1 ?x))
+    (bind ?sgn -1)
+  else
+    (bind ?sgn 1)
   )
-  (return (create$ (- ?x 0.5) (- ?y 0.5)))
+  (return (create$ (- ?x (* ?sgn 0.5)) (- ?y 0.5)))
 )
 
 
