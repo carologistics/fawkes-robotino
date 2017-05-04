@@ -74,7 +74,7 @@
     (state EXP_GOTO_NEXT)
   )
   (navigator-set-speed ?max-velocity ?max-rotation)
-  (skill-call goto place ?next-node)
+  (skill-call drive_to_local place ?next-node)
 )
 
 
@@ -104,7 +104,7 @@
 (defrule exp-goto-next-final
   (phase EXPLORATION)
   ?s <- (state EXP_GOTO_NEXT)
-  ?skill-f <- (skill-done (name "goto") (status ?))
+  ?skill-f <- (skill-done (name "drive_to_local") (status ?))
   (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
 =>
   (retract ?s ?skill-f)
