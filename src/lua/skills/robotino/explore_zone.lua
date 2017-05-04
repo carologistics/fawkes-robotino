@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "explore_zone"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "drive_to_global", "drive_to_local", "motor_move" }
+depends_skills     = { "goto", "drive_to_local", "motor_move" }
 depends_interfaces = {
    {v = "zone_info", type="ZoneInterface",       id="/explore-zone/info", writing=true},
    {v = "bb_found_tag", type="Position3DInterface", id="/explore-zone/found-tag", writing=true},
@@ -263,10 +263,10 @@ fsm:define_states{ export_to=_M,
    {"WAIT_FOR_TAG", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_TAG", fail_to="FAILED"},
    {"GET_CLOSER", JumpState},
-   {"FIND_LINE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"FIND_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"FIND_ZONE_CORNER", JumpState},
-   {"APPROACH_LINE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
-   {"APPROACH_ZONE", SkillJumpState, skills={{drive_to_local}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"APPROACH_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"APPROACH_ZONE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"WAIT_AMCL", JumpState}
 }
 
@@ -419,13 +419,13 @@ end
 
 function FIND_LINE:init()
    self.fsm.vars.found_something = true
-   self.args["drive_to_local"] = self.fsm.vars.cluster_vista
+   self.args["goto"] = self.fsm.vars.cluster_vista
 end
 
 
 function APPROACH_LINE:init()
    self.fsm.vars.found_something = true
-   self.args["drive_to_local"] = {
+   self.args["goto"] = {
       x = self.fsm.vars.line_vista.x,
       y = self.fsm.vars.line_vista.y,
       ori = fawkes.tf.get_yaw(self.fsm.vars.line_vista.ori)
@@ -468,7 +468,7 @@ end
 
 
 function APPROACH_ZONE:init()
-   self.args["drive_to_local"] = self.fsm.vars.zone_corner
+   self.args["goto"] = self.fsm.vars.zone_corner
 end
 
 function FAILED:init()
