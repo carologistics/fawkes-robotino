@@ -61,9 +61,9 @@ conveyor_pose:
 
   # the dimensions of the gripper in the point cloud (check rotation of actual tf)
   gripper:
-    y_min: -0.02
+    y_min: -0.01
     y_max: -0.055
-    #z_max: 0.135
+    z_max: 0.135
     z_max: 0.5
     slice:
       y_min: -0.08
