@@ -652,7 +652,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 
     z_min = lowest_z - (lowest_z / 2.);
   }
-  z_max = z_min + space;
+  z_max = z_min + space - 0.15;
 
   CloudPtr out(new Cloud);
   for (Point p : *in) {

@@ -66,14 +66,14 @@ conveyor_pose:
     z_max: 0.135
     z_max: 0.5
     slice:
-      y_min: -0.08
+      y_min: -0.02
       y_max: 0.035
   centroid:
     # the radius wich is not pruned around the centroid
     radius: 0.04
   front:
     # the distance that is not pruned at the front of the MPS
-    space: 0.3
+    space: 0.4
     # this should be a tf, but I did not get it work :(
     offset: 0.005
   bottom:

@@ -52,7 +52,7 @@ local MAX_TRIES = 10
 local X_DEST_POS = 0.16
 local Y_DEST_POS = 0.0
 local Z_DEST_POS = 0.05
-local Z_DEST_POS_WITH_PUCK = 0.056
+local Z_DEST_POS_WITH_PUCK = 0.05
 local cfg_frame_ = "gripper"
 
 function no_writer()
