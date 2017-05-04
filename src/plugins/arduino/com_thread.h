@@ -73,7 +73,6 @@ public:
     // For BlackBoardInterfaceListener
     virtual bool bb_interface_message_received(fawkes::Interface *interface,
                                              fawkes::Message *message) throw();
-    virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
 
     /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
