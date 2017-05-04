@@ -89,6 +89,9 @@ function CHECK_INPUT:init()
 end
 
 function MOVING:init()
+   local frame_msg = navigator.SetTargetFrameMessage:new( "/base_link" )
+   navigator:msgq_enqueue(frame_msg)
+  
    self.fsm.vars.msgid_timeout = os.time() + 1
    if not math.isnan( self.fsm.vars.ori ) then
       local msg_ori = navigator.SetOrientationModeMessage:new( navigator.OrientAtTarget )
