@@ -29,7 +29,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "mps_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "motor_move" }
+depends_skills     = { "motor_move" , "ppgoto"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
@@ -141,7 +141,8 @@ fsm:define_states{ export_to=_M, closure={
    {"MATCH_LINE",             JumpState},
    {"NO_LINE",                JumpState},
    {"SEARCH_TAG_LINE",        SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_LINE", fail_to="CHECK_TAG"},
-   {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
+   --{"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
+   {"ALIGN_FAST",             SkillJumpState, skills={{"ppgoto"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
    {"MATCH_AVG_LINE",         JumpState},
    {"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
    {"ALIGN_TURN",             SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"}
@@ -367,17 +368,19 @@ end
 function ALIGN_FAST:init()
    local center = llutils.center(self.fsm.vars.matched_line)
    printf("center l: %f, %f, %f", center.x, center.y, center.ori)
-   local center_bl = tfm.transform(center, "/base_laser", "/base_link")
+   local center_bl = tfm.transform(center, "/base_laser", "/map")
    local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
    
    printf("p    : %f %f %f", p.x, p.y, p.ori)
 
-   self.args["motor_move"] = {
-      x = p.x,
-      y = p.y + (self.fsm.vars.y or 0),
-      ori = p.ori,
-      tolerance = { x=0.05, y=0.03, ori=0.03 }
-   }
+   self.args["ppgoto"] = {x = p.x, y = p.y, ori = p.ori}
+
+   -- self.args["motor_move"] = {
+   --   x = p.x,
+   --   y = p.y + (self.fsm.vars.y or 0),
+   --   ori = p.ori,
+   --   tolerance = { x=0.05, y=0.03, ori=0.03 }
+   --}
 end
 
 
