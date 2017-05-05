@@ -97,7 +97,6 @@ function MPS_ALIGN:init()
 end
 
 function RE_MPS_ALIGN:init()
-   self.fsm.vars.counter = self.fsm.vars.counter + 1
    local shelf_to_conveyor = 0.09 --TODO measure both values
    local shelf_distance = 0.09
    if self.fsm.vars.atmps == "LEFT" then
