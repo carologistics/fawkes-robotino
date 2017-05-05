@@ -120,7 +120,11 @@ end
 
 
 function within_map(p)
-   return math.abs(p.x) <= X_MAX and p.y >= Y_MIN and p.y <= Y_MAX
+   if math.abs(p.x) >= 5 then -- Take care of the insertion zone (|x| >= 5)!
+      return p.y >= Y_MAX + 1
+   else
+      return math.abs(p.x) <= X_MAX and p.y >= Y_MIN and p.y <= Y_MAX
+   end
 end
 
 
