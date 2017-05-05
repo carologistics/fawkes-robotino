@@ -207,10 +207,11 @@ ConveyorPoseThread::loop()
   //logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
   if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
+      vis_hist_ = -1;
       pose trash;
       trash.valid = false;
-      pose_add_element(trash);
-    }
+      pose_write(trash);
+
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
