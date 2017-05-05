@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="us">
+<head>
+
+<script type="text/javascript" src="http://cdn.robotwebtools.org/threejs/current/three.min.js"></script>
+<script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+<script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+<script type="text/javascript" src="http://cdn.robotwebtools.org/ros3djs/current/ros3d.min.js"></script>
+
+<script type="text/javascript" type="text/javascript">
+  // Connecting to ROS
+  // -----------------
+
+  var ros = new ROSLIB.Ros({
+    url : 'ws://localhost:6060'
+  });
+
+  ros.on('connection', function() {
+    console.log('Connected to websocket server.');
+  });
+
+  ros.on('error', function(error) {
+    console.log('Error connecting to websocket server: ', error);
+  });
+
+  ros.on('close', function() {
+    console.log('Connection to websocket server closed.');
+  });
+
+
+
+//=================================================DEMO start
+  
+
+  var listener3 = new ROSLIB.Topic({
+    ros : ros,
+    name : 'clips/peer-id',
+    messageType : 'mm',
+    throttle_rate:1000
+  });
+
+
+  listener3.subscribe(function(message) {
+
+    var bbDiv = document.getElementById("clips"); 
+
+    if(! this.init ){
+      this.init =true;
+
+      var title = document.createElement("h4");
+      title.innerHTML = listener3.name ;
+      
+      var content = document.createElement("div");
+      content.id= listener3.name;
+      
+      bbDiv.appendChild(title);
+      bbDiv.appendChild(content);
+    }
+
+    var data_div = document.getElementById(listener3.name); 
+    data_div.innerHTML = JSON.stringify(message, null, 5);
+
+   
+  });
+
+
+
+   var clip_State = new ROSLIB.Topic({
+    ros : ros,
+    name : 'clips/state',
+    messageType : 'mm',
+    throttle_rate:1000
+  });
+
+
+  clip_State.subscribe(function(message) {
+
+    var bbDiv = document.getElementById("clips"); 
+
+    if(! this.init ){
+      this.init =true;
+
+      var title = document.createElement("h4");
+      title.innerHTML = clip_State.name ;
+      
+      var content = document.createElement("div");
+      content.id= clip_State.name;
+      
+      bbDiv.appendChild(title);
+      bbDiv.appendChild(content);
+    }
+
+    var data_div = document.getElementById(clip_State.name); 
+    data_div.innerHTML = JSON.stringify(message, null, 5);
+
+   
+  });
+
+</script>
+
+
+
+
+
+</head>
+
+
+<body>
+
+
+<div id="clips">
+  <h1> Clips Monitor </h1>
+</div>
+
+
+</body>
+</html>

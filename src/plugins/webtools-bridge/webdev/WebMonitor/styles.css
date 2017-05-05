@@ -1,0 +1,286 @@
+html, body {
+    height : 100%;
+    margin :2px ;
+    padding: 2px;
+
+}
+
+.layout_container{
+    /*border: 3px dotted #73AD21;*/
+    margin : 6px;
+    width : 83% ;
+    min-width : 31% ;
+    position: relative;
+    left: 0%;
+}
+
+/*.layout_side{
+    width : 15% ;
+    position: absolute;
+    right: 0%;
+}*/
+
+
+/*This is avery bad css and needs to be cahnged
+ *till i do so,to decode this css u need to know all wedgits have the blocking unless  a container it had displayed in */
+.container{
+    border: 3px dotted #73AD21;
+    margin : 6px;
+    min-width : 31% ;
+    max-width : 31% ;
+    position: relative;
+    float: left;
+}
+
+.wedgit{
+    border: 3px solid #73AD21;
+    margin : 6px;
+    display:block;
+}
+
+.container_header
+{
+    border: 3px dashed #73AD21;
+    position: relative;
+    min-height: 100px
+}
+.container_header_element
+{
+   
+    display: inline-block;
+    border :none;
+    position: relative;
+}
+
+div[id^="holding__"] 
+{
+    overflow:hidden;
+    position: absolute;
+    left: 50%;
+    bottom:0%;
+}
+
+
+/*Lock Role Images and position*/
+div[id^="lock_role__"].master img
+{
+    content:url("img/master_joda.png");
+    width  : 75px ;
+    height : 75px ;
+}
+/*
+div[id^="lock_role__"].slave img
+{
+    content:url("img/slaves.jpg");
+    width  : 80px ;
+    height : 80px ;
+}*/
+
+div[id^="lock_role__"] 
+{
+    position : absolute ;
+    right: 0px;
+    top: 0px;
+}
+
+/*div[id^="lock_role__"].slave img
+{
+    pcontent:url("http://imgur.com/SZ8Cm.jpg");
+}*/
+
+/*----------------------SkillsWidgit*/
+div[id^="skills__"] h3
+{
+    display: inline-block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+}
+
+
+div[id^="skills__"] p
+{
+       display: inline-block;
+}
+
+div[id^="skills__"] p.running span
+{
+       display: inline-block;
+}
+
+div[id^="skills__"] p.done span.FINAL
+{
+       color: green;
+}
+
+div[id^="skills__"] p.done span.FAILED
+{
+       color: red;
+}
+
+#map{
+      width : 100% ;
+       display: inline-block;
+}
+
+.product{
+    border: 3px solid #73AD21;
+    margin: 3px;
+    display: inline-block;
+}
+
+.order{
+    border: 3px solid #73AD21;
+    margin: 3px;
+    display: inline-block;
+}
+
+.active-order{
+    border: 6px solid #000000;    
+}
+
+.products_cap{
+    
+	width: 50px;
+    height: 5px;
+}
+
+.products_ring{
+    
+	width: 50px;
+    height: 12px;
+}
+
+.products_base{
+    
+	width: 50px;
+    height: 17px;
+}
+
+.part_processing{
+    opacity: 0.2;
+}
+.part_complete{
+    opacity: 1;
+}
+
+.highlight{
+    background-color: #FFFF00;
+}
+
+.monitor
+{
+
+}
+.header
+{
+    border: 3px dashed #73AD21;
+    min-height: 10px;
+    position: relative;
+
+}
+
+.footer{
+   bottom: 0px;
+   position: absolute;
+}
+
+.mps.monitor{
+    border: 3px dashed #73AD21;
+    margin : 2px;
+    height: 98%;
+    min-width : 15% ;
+    position: fixed;
+    right: 0% ;
+    top: 0%;
+
+}
+
+.mps.wedgit{
+    
+    border: 3px solid #73AD21;
+    margin : 6px;
+    display:block;
+    height: 15.3% ;
+    position:  relative;
+}
+
+.row_element{
+    display: block;
+    border : 3px ;
+    margin : 6px; 
+    position: relative;
+}
+
+.col_element{
+   display: inline-block;
+    /*only allow 2 of them on the same row*/
+    width:  45% ;
+      /*border :3px ;*/
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.caps_on_shelf{
+    min-height: auto;
+    min-width: auto;
+    right: 0%;
+    
+}
+.mps_puck{
+    min-height: 20px;
+    width: 10px; 
+}
+
+.mps_exploration{
+    right: 100%;
+}
+
+
+.selected_color{
+    border: 6px solid #000000;    
+}
+
+img.done{
+    content:url("img/check.png");
+    width  : 25px ;
+    height : 25px ;
+}
+
+img.not_done{
+    content:url("img/not_check.png");
+    width  : 25px ;
+    height : 25px ;
+}
+
+
+img.loaded{
+    content:url("img/loaded.png");
+    width  : 25px ;
+    height : 25px ;
+    right : 0px;
+}
+
+img.not_loaded{
+    content:url("img/not_loaded.png");
+    width  : 25px ;
+    height : 25px ;
+    right : 0px;
+}
+
+
+/*
+.game_info.monitor{
+    position: fixed;
+    top : 0px;
+    display: block;
+    
+}*/
+.game_info .col_element
+{
+    width: 23%;
+
+}
+
+/*
+
+}

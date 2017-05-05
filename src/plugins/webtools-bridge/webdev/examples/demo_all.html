@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+
+<script src="http://cdn.robotwebtools.org/threejs/current/three.js"></script>
+<script src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+<script src="http://cdn.robotwebtools.org/roslibjs/current/roslib.js"></script>
+<script src="http://cdn.robotwebtools.org/ros3djs/current/ros3d.min.js"></script>
+
+<script>
+  /**
+   * Setup all visualization elements when the page is loaded. 
+   */
+  function init() {
+    // Connect to ROS.
+    var ros_1 = new ROSLIB.Ros({
+      url : 'ws://localhost:9090'
+    });
+
+//====================================== TFClinet for R1
+
+     // Setup a client to listen to TF of R1s.
+    var tfClient_R1 = new ROSLIB.TFClient({
+      ros : ros_1 ,
+      angularThres : 0.01,
+      transThres : 0.01,
+      fixedFrame : '/map'
+    });
+
+//============================================MAP
+    // Create the main viewer.
+    var viewer = new ROS3D.Viewer({
+      divID : 'map',
+      width : 800,
+      height : 600,
+      antialias : true
+    });
+
+    // Setup the marker client.
+    var gridClient = new ROS3D.OccupancyGridClient({
+      ros : ros_1,
+      rootObject : viewer.scene
+    });
+
+//=======Marker arrow shape to Show robot frame /base_link of TF
+    var markerClient = new ROS3D.MarkerClient({
+      ros : ros_1 ,
+      tfClient : tfClient_R1,
+      topic : '/arrow__marker',
+      rootObject : viewer.scene
+    });
+
+
+//=====Marker Arrray 
+
+    var markerArrayClient = new ROS3D.MarkerArrayClient({
+      ros : ros_1 ,
+      tfClient : tfClient_R1,
+      topic : '/visualization_marker_array',
+      rootObject : viewer.scene
+    });
+
+
+ //-=======================BB Monitor
+
+    var ros = new ROSLIB.Ros({
+      url : 'ws://localhost:6060'
+    });
+  
+ var listener = new ROSLIB.Topic({
+    ros : ros,
+    name : 'blackboard/Laser360Interface::Laser colli',
+    messageType : 'std_msgs/String',
+  throttle_rate:1000
+  });
+
+  listener.init = false;
+
+  listener.subscribe(function(message) {
+
+    var bbDiv = document.getElementById("BB"); 
+
+    if(! this.init ){
+      this.init =true;
+
+      var title = document.createElement("h4");
+      title.innerHTML = listener.name ;
+      
+      var content = document.createElement("div");
+      content.id= listener.name;
+      
+      bbDiv.appendChild(title);
+      bbDiv.appendChild(content);
+    }
+
+    var data_div = document.getElementById(listener.name); 
+    data_div.innerHTML = JSON.stringify(message);
+
+   
+  });
+
+
+  var listener1 = new ROSLIB.Topic({
+    ros : ros,
+    name : 'blackboard/Position3DInterface::Pose',
+    messageType : 'std_msgs/String',
+    throttle_rate:1000,
+  });
+
+  listener1.init = false;
+
+  listener1.subscribe(function(message) {
+
+    var bbDiv = document.getElementById("BB"); 
+
+    if(! this.init ){
+      this.init =true;
+
+      var title = document.createElement("h4");
+      title.innerHTML = listener1.name ;
+      
+      var content = document.createElement("div");
+      content.id= listener1.name;
+      
+      bbDiv.appendChild(title);
+      bbDiv.appendChild(content);
+    }
+
+    var data_div = document.getElementById(listener1.name); 
+    data_div.innerHTML = JSON.stringify(message, null,  "    ");
+
+   
+  });
+
+
+//-==========CLIPSMONITOR
+
+ var listener3 = new ROSLIB.Topic({
+    ros : ros,
+    name : 'clips/peer-id',
+    messageType : 'mm',
+    throttle_rate:1000
+  });
+
+
+  listener3.subscribe(function(message) {
+
+    var bbDiv = document.getElementById("clips"); 
+
+    if(! this.init ){
+      this.init =true;
+
+      var title = document.createElement("h4");
+      title.innerHTML = listener3.name ;
+      
+      var content = document.createElement("div");
+      content.id= listener3.name;
+      
+      bbDiv.appendChild(title);
+      bbDiv.appendChild(content);
+    }
+
+    var data_div = document.getElementById(listener3.name); 
+    data_div.innerHTML = JSON.stringify(message, null, 5);
+
+   
+  });
+
+
+
+   var clip_State = new ROSLIB.Topic({
+    ros : ros,
+    name : 'clips/state',
+    messageType : 'mm',
+    throttle_rate:1000
+  });
+
+
+  clip_State.subscribe(function(message) {
+
+    var bbDiv = document.getElementById("clips"); 
+
+    if(! this.init ){
+      this.init =true;
+
+      var title = document.createElement("h4");
+      title.innerHTML = clip_State.name ;
+      
+      var content = document.createElement("div");
+      content.id= clip_State.name;
+      
+      bbDiv.appendChild(title);
+      bbDiv.appendChild(content);
+    }
+
+    var data_div = document.getElementById(clip_State.name); 
+    data_div.innerHTML = JSON.stringify(message, null, 5);
+
+   
+  });
+
+
+
+
+  }
+
+
+</script>
+</head>
+
+<body onload="init()">
+  <h1>Simple Map Example</h1>
+  <p>
+    Run the following commands in the terminal then refresh this page. This will load a map from the
+    <tt>ros-groovy-rail-maps</tt>
+    package.
+  </p>
+  <ol>
+    <li><tt>roscore</tt></li>
+    <li><tt>rosrun map_server map_server /opt/ros/groovy/share/rail_maps/maps/ilab.pgm
+        0.05</tt></li>
+    <li><tt>roslaunch rosbridge_server rosbridge_websocket.launch</tt></li>
+  </ol>
+  <div id="map"></div>
+  <div id="BB"></div>
+  <div id="clips"></div>
+</body>
+</html>
