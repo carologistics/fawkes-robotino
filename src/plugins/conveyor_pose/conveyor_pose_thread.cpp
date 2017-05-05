@@ -728,16 +728,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   *out = *tmp;
 
   // check if cloud normal is ok
-  Eigen::Vector4f plane;
-  float coverture;
-  pcl::computePointNormal(*out, plane, coverture);
-  if ( plane(2) > cfg_normal_z_minimum_ ) {
-    return out;
-  } else {
-    logger->log_info(name(), "Discard plane, because of normal (%f\t%f\t%f)", plane(0), plane(1), plane(2));
-
-    return CloudPtr();
-  }
+  return out;
 }
 
 boost::shared_ptr<std::vector<pcl::PointIndices>>
