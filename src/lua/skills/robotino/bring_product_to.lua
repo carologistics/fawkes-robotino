@@ -57,9 +57,9 @@ end
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
-   {"RE_MPS_ALIGN", SkillJumpState, skills={{motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"}, --TODO proper handling
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"RE_MPS_ALIGN", SkillJumpState, skills={{motor_move}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"},
