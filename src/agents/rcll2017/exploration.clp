@@ -272,11 +272,11 @@
   ?st-f <- (state EXP_GOTO_NEXT)
 
   (zone-exploration (name ?zn))
-  ?lock-f <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))
+  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))
 =>
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
-  (retract ?st-f ?lock-f)
+  (retract ?st-f)
   (assert
     (state EXP_STOPPING)
     (explore-zone-target (zone ?zn))
@@ -351,8 +351,6 @@
 )
 
 
-
-
 (defrule exp-skill-explore-zone-failed
   (phase EXPLORATION)
   ?st-f <- (state EXP_EXPLORE_ZONE)
@@ -371,6 +369,7 @@
     (modify ?ze (line-visibility -1))
   )
   (assert
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
     (exp-searching)
     (state EXP_IDLE)
   )
