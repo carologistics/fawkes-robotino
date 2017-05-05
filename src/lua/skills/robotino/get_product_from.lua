@@ -67,7 +67,6 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   self.fsm.vars.counter = 0
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
 end
 
