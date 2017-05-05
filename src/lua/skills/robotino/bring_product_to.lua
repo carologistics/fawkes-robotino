@@ -96,24 +96,7 @@ end
 
 function MPS_ALIGN:init()
    self.fsm.vars.counter = self.fsm.vars.counter + 1
-   -- align in front of the conveyor belt
-   self.args["mps_align"] = {x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")}
-   if self.fsm.vars.side == "output" then
-      if navgraph:node(self.fsm.vars.place):has_property("output_offset_y") then
-         self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_y")
-      else
-         self.args["mps_align"].y = 0
-      end
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
-   else
-      if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
-         self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
-      else
-         self.args["mps_align"].y = 0
-      end
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
-   end
-   self.args["mps_align"].ori = 0
+   self.args["mps_align"].x = 0.43
 end
 
 function RE_MPS_ALIGN:init()
@@ -140,19 +123,7 @@ function RE_MPS_ALIGN:init()
 end
 
 function SKILL_PRODUCT_PUT:init()
-   if self.fsm.vars.side == "output" then
-      if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
-         self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
-      else
-         self.args["product_put"].offset_x = 0 
-      end 
-   else
-      if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
-         self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
-      else
-         self.args["product_put"].offset_x = 0 
-      end 
-   end 
+   self.args["product_put"].offset_x = 0 
 end
 
 function SKILL_SHELF_PUT:init()

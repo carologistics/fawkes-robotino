@@ -51,7 +51,7 @@ end
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},       {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},       {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
@@ -82,40 +82,11 @@ end
 
 function MPS_ALIGN:init()
    self.fsm.vars.counter = self.fsm.vars.counter + 1
-   -- align in front of the conveyor belt
-   self.args["mps_align"].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
-   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
-      if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
-         self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
-      else
-         self.args["mps_align"].y = 0
-      end
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
-   else --if no side is given get from output
-      if navgraph:node(self.fsm.vars.place):has_property("output_offset_y") then
-         self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_y")
-      else
-         self.args["mps_align"].y = 0
-      end
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
-   end
-   self.args["mps_align"].ori = 0
+   self.args["mps_align"].x = 0.43
 end
 
 function SKILL_PRODUCT_PICK:init()
-   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
-      if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
-         self.args["product_pick"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
-      else
-         self.args["product_pick"].offset_x = 0 
-      end 
-   else --if no side is given get from output
-      if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
-         self.args["product_pick"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
-      else
-         self.args["product_pick"].offset_x = 0 
-      end 
-   end
+   self.args["product_pick"].offset_x = 0 
 end
 
 function SKILL_SHELF_PICK:init()
