@@ -55,13 +55,10 @@ function check_navgraph(self)
 end
 
 function target_reached()
-   if navigator:msgid() == fsm.vars.goto_msgid then
-      if navigator:is_final() and navigator:error_code() ~= 0 then
-         return false
-      end
-      return navigator:is_final()
+   if navigator:is_final() and navigator:error_code() ~= 0 then
+      return false
    end
-   return false
+   return navigator:is_final()
 end
 
 function can_navigate()
@@ -69,10 +66,8 @@ function can_navigate()
 end
 
 function target_unreachable()
-   if navigator:msgid() == fsm.vars.goto_msgid then
-      if navigator:is_final() and navigator:error_code() ~= 0 then
-         return true
-      end
+   if navigator:is_final() and navigator:error_code() ~= 0 then
+      return true
    end
    return false
 end
