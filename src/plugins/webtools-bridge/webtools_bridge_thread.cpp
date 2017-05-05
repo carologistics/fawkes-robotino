@@ -56,9 +56,13 @@ WebtoolsBridgeThread::init()
   logger-> log_info("Webtools-Bridge-thread","initiating");
 
   int rosbridge_port= config->get_int("/webtools-bridge/rosbridge-port");
-  std::string server_bash = "../src/plugins/webtools-bridge/./launch_server.bash -p "+std::to_string (rosbridge_port );
-  system(server_bash.c_str());
-  //Maybe wait a bit after starting the servers
+  bool in_simulation = config->get_bool("/clips-agent/rcll2016/enable-sim");
+
+  if (in_simulation) { 
+    std::string server_bash = "../src/plugins/webtools-bridge/./launch_server.bash -p "+std::to_string (rosbridge_port );
+    system(server_bash.c_str());
+    //Maybe wait a bit after starting the servers
+  }
 
   bridge_manager_=std::make_shared<BridgeManager> ();
 
