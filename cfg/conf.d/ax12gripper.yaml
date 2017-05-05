@@ -77,9 +77,9 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     right_max: 2.1 # 250 degrees
 
     # Left servo default start; rad
-    left_start: 0.2
+    left_start: 0.1
     # Right servo default start; rad
-    right_start: -0.2
+    right_start: -0.1
 
     # Left torque: 0 - 1 (0% - 100%)
     left_torque: 1.0
