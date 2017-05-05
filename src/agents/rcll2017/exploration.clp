@@ -101,6 +101,28 @@
 )
 
 
+(defrule exp-goto-next-failed
+  (phase EXPLORATION)
+  ?s <- (state EXP_GOTO_NEXT)
+  ?skill-f <- (skill-done (name "goto") (status FAILED))
+  (exp-next-node (node ?node))
+  (navgraph-node (name ?node) (pos $?node-trans))
+
+  (Position3DInterface (id "Pose") (translation $?trans))
+  (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
+=>
+  (if (< (distance-mf ?node-trans ?trans) 1.5) then
+    (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
+  )
+  (retract ?s ?skill-f)
+  (navigator-set-speed ?max-velocity ?max-rotation)
+  (assert
+    (exp-searching)
+    (state EXP_IDLE)
+  )
+)
+
+
 (defrule exp-goto-next-final
   (phase EXPLORATION)
   ?s <- (state EXP_GOTO_NEXT)
@@ -451,4 +473,16 @@
 =>
   (navgraph-add-all-new-tags)
 )
+
+
+(defrule exp-exploration-ends-cleanup
+  "Clean up lock refusal facts when exploration ends"
+  (phase EXPLORATION)
+  (change-phase PRODUCTION)
+=>
+  (delayed-do-for-all-facts ((?l lock)) (eq ?l:type REFUSE)
+    (retract ?l)
+  )
+)
+
 
