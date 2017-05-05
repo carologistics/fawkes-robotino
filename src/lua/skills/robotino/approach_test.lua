@@ -78,12 +78,6 @@ function MPS_ALIGN:init()
    self.args["mps_align"].x = 0.43
 end
 
-function CONVEYOR_ALIGN:init()
-   if self.fsm.vars.option == "pick" then
-      self.args["conveyor_align"].product_present = true
-   end
-end
-
 function SKILL_SHELF_PUT:init()
    -- Just hand through the Shelf position
    self.args["shelf_put"].slot = self.fsm.vars.shelf
