@@ -367,6 +367,8 @@
   )
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
     (modify ?ze (machine NONE))
+  else
+    (modify ?ze (line-visibility -1))
   )
   (assert
     (exp-searching)
