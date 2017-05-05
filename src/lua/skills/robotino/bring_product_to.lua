@@ -120,11 +120,7 @@ function RE_MPS_ALIGN:init()
 end
 
 function SKILL_PRODUCT_PUT:init()
-<<<<<<< HEAD
-         self.args["product_put"].offset_x = 0 
-=======
    self.args["product_put"].offset_x = 0 
->>>>>>> origin/dkuenster/conveyor_pose_17
 end
 
 function SKILL_SHELF_PUT:init()
