@@ -189,7 +189,7 @@ function found_tag()
 
             if d_trans <= TAG_LINE_TOLERANCE.trans then
                local line_bearing_map = tfm.transform(
-                  { x = 0, y = 0, ori = line:bearing() }, line:frame_id(), "map"
+                  { x = 0, y = 0, ori = math.normalize_mirror_rad(line:bearing() + math.pi) }, line:frame_id(), "map"
                )
                local tag_map = tfm.transform6D(
                   { x = 0, y = 0, z = 0,
