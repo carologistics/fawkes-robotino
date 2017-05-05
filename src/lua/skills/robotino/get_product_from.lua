@@ -62,7 +62,6 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="Already in front of the mps, align"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
-   {"DECIDE_ENDSKILL", "MPS_ALIGN", cond="vars.counter <= 1", desc="Pick from shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PICK", cond="vars.shelf", desc="Pick from shelf"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PICK", cond="true", desc="Pick from conveyor"},
 }
@@ -81,7 +80,6 @@ function DRIVE_TO:init()
 end
 
 function MPS_ALIGN:init()
-   self.fsm.vars.counter = self.fsm.vars.counter + 1
    self.args["mps_align"].x = 0.43
 end
 

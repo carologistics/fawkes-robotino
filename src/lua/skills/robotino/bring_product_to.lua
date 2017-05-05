@@ -75,7 +75,6 @@ fsm:add_transitions{
    {"DRIVE_TO", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    {"MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    {"RE_MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
-   {"DECIDE_ENDSKILL", "MPS_ALIGN", cond="vars.counter <= 1", desc="Put on shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PUT", cond="vars.shelf", desc="Put on shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SLIDE_PUT", cond="vars.slide", desc="Put on slide"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PUT", cond=true, desc="Put on conveyor"}
@@ -83,7 +82,6 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
-   self.fsm.vars.counter = 0
 end
 
 function DRIVE_TO:init()
@@ -95,7 +93,6 @@ function DRIVE_TO:init()
 end
 
 function MPS_ALIGN:init()
-   self.fsm.vars.counter = self.fsm.vars.counter + 1
    self.args["mps_align"].x = 0.43
 end
 
