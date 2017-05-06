@@ -29,8 +29,9 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "mps_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "motor_move" }
+depends_skills     = { "motor_move" , "goto"}
 depends_interfaces = {
+   {v = "dynamic_reconfigure", type="DynamicReconfigureInterface", id="DynamicReconfigure"},
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
    {v = "line3", type="LaserLineInterface", id="/laser-lines/3"},
@@ -141,7 +142,8 @@ fsm:define_states{ export_to=_M, closure={
    {"MATCH_LINE",             JumpState},
    {"NO_LINE",                JumpState},
    {"SEARCH_TAG_LINE",        SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_LINE", fail_to="CHECK_TAG"},
-   {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
+   --{"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
+   {"ALIGN_FAST",             SkillJumpState, skills={{"goto"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
    {"MATCH_AVG_LINE",         JumpState},
    {"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
    {"ALIGN_TURN",             SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"}
@@ -369,8 +371,18 @@ function ALIGN_FAST:init()
    printf("center l: %f, %f, %f", center.x, center.y, center.ori)
    local center_bl = tfm.transform(center, "/base_laser", "/base_link")
    local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
+
+   -- set dynamic reconfiguration variables
+   local service = "/move_base/TebLocalPlannerROS/set_parameters"
+   local parameter = "max_vel_x"
+   local value = 0.1
    
    printf("p    : %f %f %f", p.x, p.y, p.ori)
+   printf("set dynamic reconfigure of service %s and parameter %s to value %f", service, parameter, value)
+   
+   --self.args["goto"] = { x = p.x, y = p.y + (self.fsm.vars.y or 0), ori = p.ori}
+   local msg = dynamic_reconfigure.SetFloatMessage:new(service, parameter, value)
+   dynamic_reconfigure:msgq_enqueue(msg)
 
    self.args["motor_move"] = {
       x = p.x,
