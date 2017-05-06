@@ -134,10 +134,11 @@ ConveyorPoseThread::init()
   try {
     cfg_bb_realsense_switch_name_ = config->get_string((cfg_prefix+"realsense_switch").c_str());
   } catch (Exception &e) {} // ignore, use default
-  cfg_realsense_wait_time_ = 1.f;
   try {
-    cfg_realsense_wait_time_ = config->get_float((cfg_prefix+"realsense_wait_time").c_str());
-  } catch (Exception &e) {} // ignore, use default
+    wait_time_ = Time(config->get_float((cfg_prefix+"realsense_wait_time").c_str()));
+  } catch (Exception &e) {
+    wait_time_ = Time(1.);
+  } // ignore, use default
 
   cloud_in_registered_ = false;
 
@@ -979,6 +980,6 @@ ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quat
 bool
 ConveyorPoseThread::need_to_wait()
 {
-  return Time() > wait_start_ + Time(static_cast<double>(cfg_realsense_wait_time_));
+  return Time() > wait_start_ + wait_time_;
 }
 
