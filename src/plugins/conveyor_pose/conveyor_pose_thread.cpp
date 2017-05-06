@@ -929,6 +929,6 @@ ConveyorPoseThread::start_waiting()
 bool
 ConveyorPoseThread::need_to_wait()
 {
-  return Time() > wait_start_ + wait_time_;
+  return Time() < wait_start_ + wait_time_;
 }
 
