@@ -79,6 +79,12 @@ function DRIVE_TO:init()
 end
 
 function MPS_ALIGN:init()
+   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
+      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
+   else --if no side is given get from output
+      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
+   end
+
    self.args["mps_align"].x = 0.43
 end
 
