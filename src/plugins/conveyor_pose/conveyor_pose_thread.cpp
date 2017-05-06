@@ -172,6 +172,8 @@ ConveyorPoseThread::finalize()
   pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
+  logger->log_info(name(), "Unloading, disabling %s",
+    cfg_bb_realsense_switch_name_.c_str());
   realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
   bb_pose_conditional_close();
@@ -213,27 +215,35 @@ ConveyorPoseThread::loop()
     }
     if (!bb_enable_switch_->is_enabled()) {
       if (realsense_switch_->has_writer()) {
+        logger->log_info(name(), "Disabling %s",
+          cfg_bb_realsense_switch_name_.c_str());
         realsense_switch_->msgq_enqueue(
           new SwitchInterface::DisableSwitchMessage());
       } else {
         logger->log_warn(name(),
-          "Tried to disable realsense, but no writer for interface %s",
+          "Tried to disable camera, but no writer for interface %s",
           cfg_bb_realsense_switch_name_.c_str());
       }
     }
     return;
   }
   if (!realsense_switch_->has_writer()) {
-    logger->log_error(name(), "No writer for realsense switch %s",
+    logger->log_error(name(), "No writer for camera %s",
       cfg_bb_realsense_switch_name_.c_str());
     return;
   }
   if (!realsense_switch_->is_enabled()) {
+    logger->log_info(name(), "Camera %s is disabled, enabling",
+      cfg_bb_realsense_switch_name_.c_str());
     realsense_switch_->msgq_enqueue(new SwitchInterface::EnableSwitchMessage());
     start_waiting();
     return;
   }
   if (need_to_wait()) {
+    logger->log_debug(name(),
+      "Waiting for %s for %f sec, still %f sec remaining",
+      cfg_bb_realsense_switch_name_.c_str(),
+      wait_time_.in_sec(), (wait_start_ + wait_time_ - Time()).in_sec() );
     return;
   }
   //logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or not enabled and pose enabled");
