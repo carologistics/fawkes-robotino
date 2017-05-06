@@ -185,7 +185,7 @@
     (line-visibility ?zn-vh&:(< ?zn-vh 1))
   )
 =>
-  (modify ?ze-f (line-visibility ?vh))
+  (synced-modify ?ze-f line-visibility ?vh)
 )
 
 
@@ -213,7 +213,7 @@
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
   ?st-f <- (state ?)
 =>
-  (modify ?ze-f (line-visibility (+ ?lv 1)))
+  (synced-modify ?ze-f line-visibility (+ ?lv 1))
 )
 
 
@@ -364,9 +364,9 @@
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
   )
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
-    (modify ?ze (machine NONE))
+    (synced-modify ?ze machine NONE)
   else
-    (modify ?ze (line-visibility -1))
+    (synced-modify ?ze line-visibility -1)
   )
   (assert
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
@@ -446,7 +446,7 @@
       (trans (mirror-trans ?trans)) (rot (mirror-rot ?mtype ?zn ?rot))
     )
   )
-  (modify ?ze2 (machine ?machine2) (times-searched ?times-searched))
+  (synced-modify ?ze2 machine ?machine2 times-searched ?times-searched)
 )
 
 
