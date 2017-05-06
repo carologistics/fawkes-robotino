@@ -199,6 +199,7 @@ ConveyorPoseThread::loop()
 {
   if_read();
   //logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
+  realsense_switch_->read();
   if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
       vis_hist_ = -1;
@@ -209,10 +210,23 @@ ConveyorPoseThread::loop()
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
-     realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
+    if (!bb_enable_switch_->is_enabled()) {
+      if (realsense_switch_->has_writer()) {
+        realsense_switch_->msgq_enqueue(
+          new SwitchInterface::DisableSwitchMessage());
+      } else {
+        logger->log_warn(name(),
+          "Tried to disable realsense, but no writer for interface %s",
+          cfg_bb_realsense_switch_name_.c_str());
+      }
+    }
     return;
   }
-  realsense_switch_->read();
+  if (!realsense_switch_->has_writer()) {
+    logger->log_error(name(), "No writer for realsense switch %s",
+      cfg_bb_realsense_switch_name_.c_str());
+    return;
+  }
   if (!realsense_switch_->is_enabled()) {
     realsense_switch_->msgq_enqueue(new SwitchInterface::EnableSwitchMessage());
     start_waiting();
