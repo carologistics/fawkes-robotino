@@ -130,6 +130,7 @@ class GripperAX12AThread
   float        __cfg_max_torque;
   float        __cfg_max_load;
   unsigned int __cfg_load_for_holds_puck;
+  unsigned int __cfg_num_holds_puck_obs;
   float        __cfg_angle_for_holds_puck;
   float        __cfg_center_angle_correction_amount;
   std::string  __cfg_ifid_joystick_;
@@ -143,6 +144,8 @@ class GripperAX12AThread
   bool         load_right_pending;
   bool         center_pending;
   unsigned int cur_z_goal_speed;
+  unsigned char holds_puck_counter;
+  bool         last_holds_puck;
   bool         z_alignment_pending;
   fawkes::Time time_to_stop_z_align;
   
