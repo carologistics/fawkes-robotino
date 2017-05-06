@@ -222,6 +222,30 @@ ConveyorPoseThread::loop()
 {
   if_read();
   realsense_switch_->read();
+
+  if (bb_enable_switch_->is_enabled()) {
+    if (realsense_switch_->has_writer()) {
+      if (!realsense_switch_->is_enabled()) {
+        logger->log_info(name(), "Camera %s is disabled, enabling",
+          cfg_bb_realsense_switch_name_.c_str());
+        realsense_switch_->msgq_enqueue(
+          new SwitchInterface::EnableSwitchMessage());
+        start_waiting();
+        return;
+      }
+    } else {
+      logger->log_error(name(), "No writer for camera %s",
+        cfg_bb_realsense_switch_name_.c_str());
+      return;
+    }
+  } else if (realsense_switch_->has_writer()
+      && realsense_switch_->is_enabled()) {
+    logger->log_info(name(), "Disabling %s",
+      cfg_bb_realsense_switch_name_.c_str());
+    realsense_switch_->msgq_enqueue(
+      new SwitchInterface::DisableSwitchMessage());
+  }
+
   //logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
   if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
@@ -233,30 +257,6 @@ ConveyorPoseThread::loop()
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
-    if (!bb_enable_switch_->is_enabled()) {
-      if (realsense_switch_->has_writer()) {
-        logger->log_info(name(), "Disabling %s",
-          cfg_bb_realsense_switch_name_.c_str());
-        realsense_switch_->msgq_enqueue(
-          new SwitchInterface::DisableSwitchMessage());
-      } else {
-        logger->log_warn(name(),
-          "Tried to disable camera, but no writer for interface %s",
-          cfg_bb_realsense_switch_name_.c_str());
-      }
-    }
-    return;
-  }
-  if (!realsense_switch_->has_writer()) {
-    logger->log_error(name(), "No writer for camera %s",
-      cfg_bb_realsense_switch_name_.c_str());
-    return;
-  }
-  if (!realsense_switch_->is_enabled()) {
-    logger->log_info(name(), "Camera %s is disabled, enabling",
-      cfg_bb_realsense_switch_name_.c_str());
-    realsense_switch_->msgq_enqueue(new SwitchInterface::EnableSwitchMessage());
-    start_waiting();
     return;
   }
   if (need_to_wait()) {
