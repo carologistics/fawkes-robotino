@@ -211,7 +211,7 @@ ConveyorPoseThread::loop()
       pose trash;
       trash.valid = false;
       pose_write(trash);
-
+    }
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
