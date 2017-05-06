@@ -166,6 +166,8 @@ GripperAX12AThread::init()
     goto_gripper(__cfg_left_start, __cfg_right_start);
   }
 
+  holds_puck_counter = 0;
+  last_holds_puck = false;
   bbil_add_message_interface(__gripper_if);
   bbil_add_message_interface(__leftjoint_if);
   bbil_add_message_interface(__rightjoint_if);
@@ -583,10 +585,23 @@ GripperAX12AThread::get_opening_angle()
 bool
 GripperAX12AThread::holds_puck()
 {
-  return 
-          (__servo_if_left->load()  & 0x3ff) + (__servo_if_right->load() & 0x3ff) >= __cfg_load_for_holds_puck && 
-          get_opening_angle() >= __cfg_angle_for_holds_puck &&
-          __gripper_if->is_final();
+  bool cur_holds_puck = (__servo_if_left->load()  & 0x3ff) + (__servo_if_right->load() & 0x3ff) >= __cfg_load_for_holds_puck &&
+          get_opening_angle() >= __cfg_angle_for_holds_puck;
+
+  if (cur_holds_puck == last_holds_puck) {
+     ++holds_puck_counter;
+  } else {
+     holds_puck_counter = 0;
+     last_holds_puck = cur_holds_puck;
+  }
+
+  // Only update if the measurement is considered stable in the last n observations
+  if (holds_puck_counter == __cfg_num_holds_puck_obs) {
+     holds_puck_counter = 0;
+     return cur_holds_puck;
+  } else {
+     return __gripper_if->is_holds_puck();
+  }
 }
 
 /** Handle config changes
@@ -647,6 +662,7 @@ void GripperAX12AThread::load_config()
   __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
   __cfg_ifid_joystick_         = config->get_string(__gripper_cfg_prefix + "joystick_interface_id");
 
+  __cfg_num_holds_puck_obs = config->get_uint((__gripper_cfg_prefix + "num_holds_puck_observations").c_str());
 
 #ifdef HAVE_TF
   __cfg_publish_transforms=config->get_bool((__gripper_cfg_prefix + "publish_transforms").c_str());

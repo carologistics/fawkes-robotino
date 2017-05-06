@@ -108,6 +108,9 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     # This is needed because the gripper tends to open a little on each center command otherwise
     center_angle_correction_amount: 0.1
 
+    # Number of observations to make sure that holds_puck serves a reliable information
+    num_holds_puck_observations: 30
+
     # Clockwise compliance margin for RX28 PTU
 #    cw_compl_margin: 0
     # Counter-clockwise compliance margin for RX28 PTU
