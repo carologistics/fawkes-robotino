@@ -123,8 +123,6 @@ private:
 
   uint cfg_allow_invalid_poses_;
 
-  float cfg_realsense_wait_time_;
-
   // state vars
   bool enable_pose_;
   bool cfg_enable_switch_;
@@ -155,6 +153,7 @@ private:
   std::vector<fawkes::LaserLineInterface * > laserlines_;
   fawkes::SwitchInterface *realsense_switch_;
   fawkes::Time wait_start_;
+  fawkes::Time wait_time_;
 //  fawkes::Position3DInterface * bb_tag_;
 
  /**
