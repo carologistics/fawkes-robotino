@@ -543,18 +543,6 @@
 )
 
 
-(deffunction at-wall (?x ?y)
-  (bind ?xy (str-cat ?x ?y))
-  (return
-    (or
-      (eq ?x 7) (eq ?x -7) (eq ?y 8) (eq ?y 1)
-      (member$ ?xy (create$ "-72" "-62" "62" "72"))
-    )
-  )
-)
-
-
-
 (deffunction protobuf-name (?zone)
   (return
     (str-cat (sub-string 1 1 ?zone) "_" (sub-string 3 99 ?zone))
@@ -568,22 +556,23 @@
   )
 )
 
-
 (deffunction want-mirrored-rotation (?mtype ?zone)
 "According to the RCLL2017 rulebook, this is when a machine is mirrored"
   (bind ?zn (str-cat ?zone))
   (bind ?x (eval (sub-string 4 4 ?zn)))
-  (if (eq (sub-string 1 1 ?zn) "M") then
-    (bind ?x (* -1 ?x))
-  )
   (bind ?y (eval (sub-string 5 5 ?zn)))
 
   (return (or (member$ ?mtype (create$ BS DS SS))
-              (not (at-wall ?x ?y))
-              (and (!= ?y 8) (!= ?y 1))
+              (not (or (eq ?x 7) ; left or right
+                       (eq ?y 8) ; top wall
+                       (eq ?y 1) ; bottom wall
+                       (and (member$ ?x (create$ 5 6 7)); insertion
+                            (eq ?y 2)
+                       )
+                   )
+              )
   ))
 )
-
 
 (deffunction mirror-rot (?mtype ?zone $?rot)
 "Mirror rotation according to rules, $?rot is a quaternion"
@@ -596,6 +585,24 @@
       (bind ?yaw-mirror (+ ?yaw-mirror ?*2PI*)))
     (return (tf-quat-from-yaw ?yaw-mirror))
   else
+    (bind ?zn (str-cat ?zone))
+    (bind ?t (sub-string 1 1 ?zn))
+    (bind ?x (eval (sub-string 4 4 ?zn)))
+    (bind ?y (eval (sub-string 5 5 ?zn)))
+
+    (if (eq ?y 8) then
+      (return ?*PI*)
+    )
+    (if (or (eq ?y 1) (eq ?y 2)) then
+      (return 0)
+    )
+    (if (and (eq ?x 7) (eq ?t "M")) then  ; this is the other way around, because I compare with the team color of the originalting machine
+      (return ?*PI-HALF*)
+    )
+    (if (and (eq ?x 7) (eq ?t "C")) then
+      (return (- 0 ?*PI-HALF*))
+    )
+    (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
     (return ?rot)
   )
 )
@@ -609,22 +616,40 @@
   )
 )
 
-
 (deffunction mirror-orientation (?mtype ?zone ?ori)
-  (if (want-mirrored-rotation ?mtype ?zone) then
-    (if (eq (sub-string 1 1 ?zone) "C") then
+  (bind ?zn (str-cat ?zone))
+  (bind ?t (sub-string 1 1 ?zn))
+  (if (want-mirrored-rotation ?mtype ?zone)
+   then
+    (if (eq ?t "C")
+     then
       (do-for-fact ((?mo mirror-orientation)) (eq ?mo:cyan ?ori)
         (bind ?m-ori ?mo:magenta)
-      )
-    else
+      )   
+     else
       (do-for-fact ((?mo mirror-orientation)) (eq ?mo:magenta ?ori)
         (bind ?m-ori ?mo:cyan)
-      )
-    )
+      )   
+    )   
     (return ?m-ori)
-  else
+   else
+    (bind ?x (eval (sub-string 4 4 ?zn)))
+    (bind ?y (eval (sub-string 5 5 ?zn)))
+
+    (if (eq ?y 8) then
+      (return 180)
+    )   
+    (if (or (eq ?y 1) (eq ?y 2)) then
+      (return 0)
+    )   
+    (if (and (eq ?x 7) (eq ?t "M")) then  ; this is the other way around, because I compare with the team color of the originalting machine
+      (return 90) 
+    )   
+    (if (and (eq ?x 7) (eq ?t "C")) then
+      (return 270)
+    )   
+    (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
     (return ?ori)
   )
 )
-
 
