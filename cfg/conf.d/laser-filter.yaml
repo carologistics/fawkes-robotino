@@ -52,8 +52,8 @@ plugins/laser-filter:
         not_to_x: 0.0
         not_from_y: 0.0
         not_to_y: 0.0
-        only_from_z: -0.2
-        only_to_z: 0.15
+        only_from_z: -0.17
+        only_to_z: 0.33
 
 
   robot-front-1080:
