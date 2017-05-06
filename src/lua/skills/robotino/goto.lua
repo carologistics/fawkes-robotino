@@ -126,28 +126,16 @@ function INIT:init()
     end
   end 
 
-  local frame_msg = navigator.SetTargetFrameMessage:new( "/map" )
-  navigator:msgq_enqueue(frame_msg)
-
   self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
 end
 
 function MOVING:init()
    self.fsm.vars.msgid_timeout = os.time() + 1
 
-   local msg = navigator.CartesianGotoMessage:new(
+   local msg = navigator.CartesianGotoWithFrameMessage:new(
       self.fsm.vars.x,
       self.fsm.vars.y,
-      self.fsm.vars.ori)
+      self.fsm.vars.ori,
+      "map")
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
-end
-
-function MOVING:exit()
-    local frame_msg = navigator.SetTargetFrameMessage:new( "/base_link" )
-    navigator:msgq_enqueue(frame_msg)
-end
-
-function TIMEOUT:exit()
-    local frame_msg = navigator.SetTargetFrameMessage:new( "/base_link" )
-    navigator:msgq_enqueue(frame_msg)
 end
