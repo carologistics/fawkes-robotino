@@ -67,7 +67,8 @@ using namespace fawkes;
 ConveyorPoseThread::ConveyorPoseThread() :
 		Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
-		fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
+		fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose"),
+		realsense_switch_(NULL)
 {
 
 }
@@ -129,6 +130,15 @@ ConveyorPoseThread::init()
 
   cfg_voxel_grid_leave_size_  = config->get_float( (cfg_prefix + "voxel_grid/leave_size").c_str() );
 
+  cfg_bb_realsense_switch_name_ = "realsense";
+  try {
+    cfg_bb_realsense_switch_name_ = config->get_string((cfg_prefix+"realsense_switch").c_str());
+  } catch (Exception &e) {} // ignore, use default
+  cfg_realsense_wait_time_ = 1.f;
+  try {
+    cfg_realsense_wait_time_ = config->get_float((cfg_prefix+"realsense_wait_time").c_str());
+  } catch (Exception &e) {} // ignore, use default
+
   cloud_in_registered_ = false;
 
   cloud_out_inter_1_ = new Cloud();
@@ -149,6 +159,8 @@ ConveyorPoseThread::init()
   bb_enable_switch_->set_enabled( cfg_debug_mode_ || cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug mode is used
   bb_enable_switch_->write();
 
+  realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
+
   visualisation_ = new Visualisation(rosnode);
 }
 
@@ -159,6 +171,8 @@ ConveyorPoseThread::finalize()
   pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
+  realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
+  blackboard->close(realsense_switch_);
   bb_pose_conditional_close();
 }
 
@@ -195,7 +209,16 @@ ConveyorPoseThread::loop()
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
-
+     realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
+    return;
+  }
+  realsense_switch_->read();
+  if (!realsense_switch_->is_enabled()) {
+    realsense_switch_->msgq_enqueue(new SwitchInterface::EnableSwitchMessage());
+    start_waiting();
+    return;
+  }
+  if (need_to_wait()) {
     return;
   }
   //logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or not enabled and pose enabled");
@@ -873,6 +896,11 @@ ConveyorPoseThread::pose_publish_tf(pose pose)
   tf::StampedTransform stamped_transform(transform, tf_pose_gripper.stamp, tf_pose_gripper.frame_id, "conveyor");
   tf_publisher->send_transform(stamped_transform);
 }
+void
+ConveyorPoseThread::start_waiting()
+{
+  wait_start_ = Time();
+}
 
 Eigen::Quaternion<float>
 ConveyorPoseThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet){
@@ -934,6 +962,9 @@ ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quat
   }
 }
 
-
-
+bool
+ConveyorPoseThread::need_to_wait()
+{
+  return Time() > wait_start_ + Time(static_cast<double>(cfg_realsense_wait_time_));
+}
 

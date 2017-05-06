@@ -81,6 +81,7 @@ private:
   std::string cloud_out_result_name_;
   std::string cfg_bb_conveyor_pose_name_;
   std::string cfg_bb_switch_name_;
+  std::string cfg_bb_realsense_switch_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
 
@@ -119,6 +120,8 @@ private:
 
   uint cfg_allow_invalid_poses_;
 
+  float cfg_realsense_wait_time_;
+
   // state vars
   bool enable_pose_;
   bool cfg_enable_switch_;
@@ -146,6 +149,8 @@ private:
 
   // interfaces read
   std::vector<fawkes::LaserLineInterface * > laserlines_;
+  fawkes::SwitchInterface *realsense_switch_;
+  fawkes::Time wait_start_;
 //  fawkes::Position3DInterface * bb_tag_;
 
  /**
@@ -188,6 +193,8 @@ private:
 protected:
   virtual void run() { Thread::run(); }
   void pose_publish_tf(pose pose);
+  void start_waiting();
+  bool need_to_wait();
 
 public:
   ConveyorPoseThread();
