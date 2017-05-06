@@ -70,7 +70,7 @@ fsm:add_transitions{
    {"WAIT_OPEN", "DRIVE_FORWARD", timeout=1},
    {"CHECK_PUCK", "CENTER_GRIPPER", cond="gripper_if:is_holds_puck()", desc="Got a puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
-   {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=1},
+   {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=5},
 }
 
 function OPEN_GRIPPER:init()
