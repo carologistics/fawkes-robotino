@@ -990,6 +990,6 @@ ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quat
 bool
 ConveyorPoseThread::need_to_wait()
 {
-  return Time() > wait_start_ + wait_time_;
+  return Time() < wait_start_ + wait_time_;
 }
 
