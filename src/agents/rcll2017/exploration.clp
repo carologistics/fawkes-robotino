@@ -254,6 +254,9 @@
 
 
 (defrule exp-tried-locking-all-zones
+  "There is at least one unexplored zone with a line, but locks have been denied for
+   ALL unexplored zones. So clear all REFUSEs and start requesting locks from the beginning."
+  (zone-exploration (name ?) (machine UNKNOWN) (line-visibility ?tmp&:(> ?tmp 0)))
   (forall
     (zone-exploration (name ?zn) (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
     (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))
