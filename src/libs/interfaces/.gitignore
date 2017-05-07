@@ -1,3 +1,4 @@
+ControllerInterface.h
 AX12GripperInterface.h
 LaserClusterInterface.h
 NavGraphWithMPSGeneratorInterface.h

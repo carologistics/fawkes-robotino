@@ -1,0 +1,194 @@
+
+/***************************************************************************
+ *  ControllerInterface.h - Fawkes BlackBoard Interface - ControllerInterface
+ *
+ *  Templated created:   Thu Oct 12 10:49:19 2006
+ *  Copyright  2017  Christoph Henke
+ *
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version. A runtime exception applies to
+ *  this software (see LICENSE.GPL_WRE file mentioned below for details).
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL_WRE file in the doc directory.
+ */
+
+#ifndef __INTERFACES_CONTROLLERINTERFACE_H_
+#define __INTERFACES_CONTROLLERINTERFACE_H_
+
+#include <interface/interface.h>
+#include <interface/message.h>
+#include <interface/field_iterator.h>
+
+namespace fawkes {
+
+class ControllerInterface : public Interface
+{
+ /// @cond INTERNALS
+ INTERFACE_MGMT_FRIENDS(ControllerInterface)
+ /// @endcond
+ public:
+  /* constants */
+
+ private:
+  /** Internal data storage, do NOT modify! */
+  typedef struct __attribute__((packed)) {
+    int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
+    int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
+    bool controller_running; /**< 
+      True if the controller is currently performing a control task.
+     */
+    char robot_frame[64]; /**< 
+      The current frame to control onto the target frame (an offset in x, y, ori is addable). */
+    char target_frame[64]; /**< 
+      The current target frame. */
+    float x_error; /**< 
+      The current x error between robot and target frame to be achieved. */
+    float y_error; /**< 
+      The current y error between robot and target frame to be achieved. */
+    float ori_error; /**< 
+      The current orientational error between robot and target frame to be achieved. */
+    float x_offset; /**< 
+      The current x offset between robot and target frame. */
+    float y_offset; /**< 
+      The current y offset between robot and target frame. */
+    float ori_offset; /**< 
+      The current orientational offset between robot and target frame. */
+    float kp; /**< 
+      The current proportional controller parameter. */
+    float ki; /**< 
+      The current integral controller parameter. */
+    float kd; /**< 
+      The current differential controller parameter. */
+  } ControllerInterface_data_t;
+
+  ControllerInterface_data_t *data;
+
+ public:
+  /* messages */
+  class PidControlMessage : public Message
+  {
+   private:
+    /** Internal data storage, do NOT modify! */
+    typedef struct __attribute__((packed)) {
+      int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
+      int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
+      char robot_frame[64]; /**< The frame to control onto the target frame (an offset in x, y, ori is addable). */
+      char target_frame[64]; /**< The target frame. */
+      float x_error; /**< The x error between robot and target frame to be achieved. */
+      float y_error; /**< The y error between robot and target frame to be achieved. */
+      float ori_error; /**< The orientational error between robot and target frame to be achieved. */
+      float x_offset; /**< The x offset between robot and target frame. */
+      float y_offset; /**< The y offset between robot and target frame. */
+      float ori_offset; /**< The orientational offset between robot and target frame. */
+      float kp; /**< The proportional controller parameter. */
+      float ki; /**< The integral controller parameter. */
+      float kd; /**< The differential controller parameter. */
+    } PidControlMessage_data_t;
+
+    PidControlMessage_data_t *data;
+
+   public:
+    PidControlMessage(const char * ini_robot_frame, const char * ini_target_frame, const float ini_x_error, const float ini_y_error, const float ini_ori_error, const float ini_x_offset, const float ini_y_offset, const float ini_ori_offset, const float ini_kp, const float ini_ki, const float ini_kd);
+    PidControlMessage();
+    ~PidControlMessage();
+
+    PidControlMessage(const PidControlMessage *m);
+    /* Methods */
+    char * robot_frame() const;
+    void set_robot_frame(const char * new_robot_frame);
+    size_t maxlenof_robot_frame() const;
+    char * target_frame() const;
+    void set_target_frame(const char * new_target_frame);
+    size_t maxlenof_target_frame() const;
+    float x_error() const;
+    void set_x_error(const float new_x_error);
+    size_t maxlenof_x_error() const;
+    float y_error() const;
+    void set_y_error(const float new_y_error);
+    size_t maxlenof_y_error() const;
+    float ori_error() const;
+    void set_ori_error(const float new_ori_error);
+    size_t maxlenof_ori_error() const;
+    float x_offset() const;
+    void set_x_offset(const float new_x_offset);
+    size_t maxlenof_x_offset() const;
+    float y_offset() const;
+    void set_y_offset(const float new_y_offset);
+    size_t maxlenof_y_offset() const;
+    float ori_offset() const;
+    void set_ori_offset(const float new_ori_offset);
+    size_t maxlenof_ori_offset() const;
+    float kp() const;
+    void set_kp(const float new_kp);
+    size_t maxlenof_kp() const;
+    float ki() const;
+    void set_ki(const float new_ki);
+    size_t maxlenof_ki() const;
+    float kd() const;
+    void set_kd(const float new_kd);
+    size_t maxlenof_kd() const;
+    virtual Message * clone() const;
+  };
+
+  virtual bool message_valid(const Message *message) const;
+ private:
+  ControllerInterface();
+  ~ControllerInterface();
+
+ public:
+  /* Methods */
+  bool is_controller_running() const;
+  void set_controller_running(const bool new_controller_running);
+  size_t maxlenof_controller_running() const;
+  char * robot_frame() const;
+  void set_robot_frame(const char * new_robot_frame);
+  size_t maxlenof_robot_frame() const;
+  char * target_frame() const;
+  void set_target_frame(const char * new_target_frame);
+  size_t maxlenof_target_frame() const;
+  float x_error() const;
+  void set_x_error(const float new_x_error);
+  size_t maxlenof_x_error() const;
+  float y_error() const;
+  void set_y_error(const float new_y_error);
+  size_t maxlenof_y_error() const;
+  float ori_error() const;
+  void set_ori_error(const float new_ori_error);
+  size_t maxlenof_ori_error() const;
+  float x_offset() const;
+  void set_x_offset(const float new_x_offset);
+  size_t maxlenof_x_offset() const;
+  float y_offset() const;
+  void set_y_offset(const float new_y_offset);
+  size_t maxlenof_y_offset() const;
+  float ori_offset() const;
+  void set_ori_offset(const float new_ori_offset);
+  size_t maxlenof_ori_offset() const;
+  float kp() const;
+  void set_kp(const float new_kp);
+  size_t maxlenof_kp() const;
+  float ki() const;
+  void set_ki(const float new_ki);
+  size_t maxlenof_ki() const;
+  float kd() const;
+  void set_kd(const float new_kd);
+  size_t maxlenof_kd() const;
+  virtual Message * create_message(const char *type) const;
+
+  virtual void copy_values(const Interface *other);
+  virtual const char * enum_tostring(const char *enumtype, int val) const;
+
+};
+
+} // end namespace fawkes
+
+#endif

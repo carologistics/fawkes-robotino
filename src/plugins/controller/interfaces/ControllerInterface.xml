@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ControllerInterface" author="Christoph Henke" year="2017">
+  <data>
+    <comment>
+      The interface is used for calling and parameterization of the controller plugin
+    </comment>
+    <field type="bool" name="controller_running">
+      True if the controller is currently performing a control task.
+    </field>
+    <field type="string" length="64" name="robot_frame">
+      The current frame to control onto the target frame (an offset in x, y, ori is addable).</field>
+    <field type="string" length="64" name="target_frame">
+      The current target frame.</field>
+    <field type="float" name="x_error">
+      The current x error between robot and target frame to be achieved.</field>
+    <field type="float" name="y_error">
+      The current y error between robot and target frame to be achieved.</field>
+    <field type="float" name="ori_error">
+      The current orientational error between robot and target frame to be achieved.</field>
+    <field type="float" name="x_offset">
+      The current x offset between robot and target frame.</field>
+    <field type="float" name="y_offset">
+      The current y offset between robot and target frame.</field>
+    <field type="float" name="ori_offset">
+      The current orientational offset between robot and target frame.</field>
+    <field type="float" name="kp">
+      The current proportional controller parameter.</field>
+    <field type="float" name="ki">
+      The current integral controller parameter.</field>
+    <field type="float" name="kd">
+      The current differential controller parameter.</field>
+  </data>
+  <message name="PidControl">
+    <comment>
+      Enables the detection of cycles to remove product out of the point clouds.
+    </comment>
+    <field type="string" length="64" name="robot_frame">The frame to control onto the target frame (an offset in x, y, ori is addable).</field>
+    <field type="string" length="64" name="target_frame">The target frame.</field>
+    <field type="float" name="x_error">The x error between robot and target frame to be achieved.</field>
+    <field type="float" name="y_error">The y error between robot and target frame to be achieved.</field>
+    <field type="float" name="ori_error">The orientational error between robot and target frame to be achieved.</field>
+    <field type="float" name="x_offset">The x offset between robot and target frame.</field>
+    <field type="float" name="y_offset">The y offset between robot and target frame.</field>
+    <field type="float" name="ori_offset">The orientational offset between robot and target frame.</field>
+    <field type="float" name="kp">The proportional controller parameter.</field>
+    <field type="float" name="ki">The integral controller parameter.</field>
+    <field type="float" name="kd">The differential controller parameter.</field>
+  </message>
+</interface>
