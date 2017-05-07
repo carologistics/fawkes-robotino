@@ -1,0 +1,157 @@
+$#include <interfaces/MPSRecognitionInterface.h>
+$#include <utils/time/time.h>
+$#include <utils/time/clock.h>
+$using namespace fawkes;
+namespace fawkes {
+class MPSRecognitionInterface : public Interface
+{
+
+  typedef enum {
+    NoStationDetected,
+    BS,
+    CS,
+    DS,
+    RS,
+    SS
+  } MPSType;
+
+  class ClearMessage : public Message
+  {
+    ClearMessage();
+    ~ClearMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+  };
+
+  class ComputeMessage : public Message
+  {
+    ComputeMessage();
+    ~ComputeMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+  };
+
+  class TakeDataMessage : public Message
+  {
+    TakeDataMessage();
+    ~TakeDataMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+  };
+
+  unsigned int msgid();
+  void set_msgid(const unsigned int new_msgid);
+  int maxlenof_msgid() const;
+  bool is_final();
+  void set_final(const bool new_final);
+  int maxlenof_final() const;
+  MPSType mpstype();
+  void set_mpstype(const MPSType new_mpstype);
+  int maxlenof_mpstype() const;
+  float p_correct();
+  void set_p_correct(const float new_p_correct);
+  int maxlenof_p_correct() const;
+  float ptot_mpstype(int index);
+  void set_ptot_mpstype(unsigned int index, const float new_ptot_mpstype);
+  int maxlenof_ptot_mpstype() const;
+  bool                    oftype(const char *interface_type) const;
+  const void *            datachunk() const;
+  unsigned int            datasize() const;
+  const char *            type() const;
+  const char *            id() const;
+  const char *            uid() const;
+  unsigned int            serial() const;
+  unsigned int            mem_serial() const;
+  bool                    operator== (Interface &comp) const;
+  const unsigned char *   hash() const;
+  int                     hash_size() const;
+  const char *            hash_printable() const;
+  bool                    is_writer() const;
+  void                    set_from_chunk(void *chunk);
+  virtual fawkes::Message *  create_message @ create_message_generic(const char *type) const;
+  void          read();
+  void          write();
+  bool          has_writer() const;
+  unsigned int  num_readers() const;
+  bool          changed() const;
+  const fawkes::Time *  timestamp() const;
+  void          set_auto_timestamping(bool enabled);
+  void          set_timestamp(const fawkes::Time *t);
+  void          set_clock(fawkes::Clock *clock);
+  unsigned int  msgq_enqueue_copy(Message *message);
+  void          msgq_remove(Message *message);
+  void          msgq_remove(unsigned int message_id);
+  unsigned int  msgq_size();
+  void          msgq_flush();
+  void          msgq_lock();
+  bool          msgq_try_lock();
+  void          msgq_unlock();
+  void          msgq_pop();
+  fawkes::Message * msgq_first @ msgq_first_generic();
+  bool          msgq_empty();
+
+
+};
+
+
+$[
+
+assert(fawkes.Interface.msgq_first)
+assert(fawkes.Interface.msgq_enqueue)
+assert(fawkes.Interface.create_message)
+
+fawkes.MPSRecognitionInterface.msgq_first     = fawkes.Interface.msgq_first
+fawkes.MPSRecognitionInterface.msgq_enqueue   = fawkes.Interface.msgq_enqueue
+fawkes.MPSRecognitionInterface.create_message = fawkes.Interface.create_message
+
+$]
+
+}
