@@ -77,22 +77,22 @@ void MarkerlessRecognitionThread::readImage(){
 }	
 
 void
-MarkerlessRecognitionThread::writeTotalProbability(Probability prob)
+writeTotalProbability(Score prob)
 {
 }
 
 void 
-MarkerlessRecognitionThread::writeWinProbability(float prob)
+writeWinProbability(float prob)
 {
 }
 
 void
-MarkerlessRecognitionThread::writeState(bool state)
+writeState(bool state)
 {
 }
 
 void
-MarkerlessRecognitionThread::writeWinMPS(MPSType mps)
+estimateMPStype()
 {
 }
 

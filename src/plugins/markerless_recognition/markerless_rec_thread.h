@@ -29,6 +29,11 @@
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
 
+typedef struct
+{
+	float s[5];
+}Score;
+
 namespace fawkes {
   class MPSRecognitionInterface;
 }
@@ -49,6 +54,12 @@ class MarkerlessRecognitionThread
   virtual void finalize();
   virtual void readImage();
  private:
+  void writeTotalProbability(Score prob);
+  void writeWinProbability(float prob);
+  void writeState(bool state);
+  void estimateMPStype();
+
+
   fawkes::MPSRecognitionInterface *mps_rec_if_;
 };
 
