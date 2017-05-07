@@ -28,17 +28,17 @@ using namespace fawkes;
 /** Plugin to ...
  *  * @author Daniel Habering, Sebastian Schoenitz, Carsten Stoffels
  *   */
-class Markerless_Rec_Plugin : public fawkes::Plugin
+class MarkerlessRecognitionPlugin : public fawkes::Plugin
 {
 	 public:
 	   /** Constructor.
 	   *    * @param config Fawkes configuration
 	   *       */
-	    Markerless_Rec_Plugin(Configuration *config)
+	    MarkerlessRecognitionPlugin(Configuration *config)
 	     : Plugin(config)
 	    {
-	        thread_list.push_back(new GenesisThread());
-	 }
+	       thread_list.push_back(new MarkerlessRecognitionThread());
+	    }
 };
 
 PLUGIN_DESCRIPTION("Plugin for recognizing machines using the RealSense data")
