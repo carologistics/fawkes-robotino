@@ -182,6 +182,7 @@
         (field-ground-truth
           (machine ?name)
           (yaw (deg-to-rad ?rot))
+          (orientation ?rot)
           (zone ?zone)
           (mtype ?type)
         )
@@ -196,7 +197,18 @@
 )
 
 
-(defrule game-update-with-field-ground-truth
+(defrule game-zone-exploration-mark-correct
+  ?gt <- (field-ground-truth (machine ?machine) (orientation ?ori) (zone ?zone) (mtype ?mtype))
+  (found-tag (name ?machine))
+  (exploration-result (machine ?machine) (zone ?zone) (orientation ?ori))
+  ?ze <- (zone-exploration (name ?zone))
+=>
+  (modify ?ze (correct TRUE))
+  (retract ?gt)
+)
+
+
+(defrule game-complete-zone-exploration-with-ground-truth
 "Integrate incoming field-ground-truth facts into our world model."
   ?gt <- (field-ground-truth (machine ?machine) (yaw ?yaw) (zone ?zone) (mtype ?mtype))
   (not (found-tag (name ?machine)))
@@ -204,11 +216,11 @@
 =>
   (assert
     (found-tag (name ?machine) (side INPUT) (frame "map")
-      (trans (tag-offset ?zone ?yaw))
+      (trans (tag-offset ?zone ?yaw 0.17))
       (rot (tf-quat-from-yaw ?yaw))
     )
   )
-  (modify ?ze (machine ?machine))
+  (modify ?ze (machine ?machine) (correct TRUE))
   (retract ?gt)
 )
 

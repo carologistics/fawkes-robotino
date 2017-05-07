@@ -465,12 +465,12 @@
 )
 
 
-(deffunction tag-offset (?zone ?yaw)
+(deffunction tag-offset (?zone ?yaw ?width)
   (bind ?c (zone-center ?zone))
   (bind ?x (nth$ 1 ?c))
   (bind ?y (nth$ 2 ?c))
-  (bind ?x (+ ?x (* (cos ?yaw) 0.17)))
-  (bind ?y (+ ?y (* (sin ?yaw) 0.17)))
+  (bind ?x (+ ?x (* (cos ?yaw) ?width)))
+  (bind ?y (+ ?y (* (sin ?yaw) ?width)))
   (return (create$ ?x ?y 0.48))
 )
 
@@ -591,16 +591,16 @@
     (bind ?y (eval (sub-string 5 5 ?zn)))
 
     (if (eq ?y 8) then
-      (return ?*PI*)
+      (return (tf-quat-from-yaw ?*PI*))
     )
     (if (or (eq ?y 1) (eq ?y 2)) then
-      (return 0)
+      (return (tf-quat-from-yaw 0.0))
     )
     (if (and (eq ?x 7) (eq ?t "M")) then  ; this is the other way around, because I compare with the team color of the originalting machine
-      (return ?*PI-HALF*)
+      (return (tf-quat-from-yaw ?*PI-HALF*))
     )
     (if (and (eq ?x 7) (eq ?t "C")) then
-      (return (- 0 ?*PI-HALF*))
+      (return (tf-quat-from-yaw (- 0 ?*PI-HALF*)))
     )
     (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
     (return ?rot)

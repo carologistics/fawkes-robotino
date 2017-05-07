@@ -67,6 +67,7 @@
   (multislot incoming-agent (type SYMBOL) (default (create$)))
   (slot times-searched (type INTEGER) (default 0))
   (slot sync-id (type INTEGER) (default 0))
+  (slot correct (type SYMBOL) (allowed-symbols TRUE UNKNOWN) (default UNKNOWN))
 )
 
 (deftemplate exploration-result
@@ -108,6 +109,7 @@
 (deftemplate field-ground-truth
   (slot machine (type SYMBOL))
   (slot yaw (type FLOAT))
+  (slot orientation (type INTEGER))
   (slot zone (type SYMBOL))
   (slot mtype (type SYMBOL))
 )
