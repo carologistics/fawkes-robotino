@@ -42,5 +42,5 @@ class MarkerlessRecognitionPlugin : public fawkes::Plugin
 };
 
 PLUGIN_DESCRIPTION("Plugin for recognizing machines using the RealSense data")
-EXPORT_PLUGIN(Markerless_Rec_Plugin)
+EXPORT_PLUGIN(MarkerlessRecognitionPlugin)
 	
