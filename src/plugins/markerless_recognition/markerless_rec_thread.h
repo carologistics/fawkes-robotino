@@ -48,7 +48,7 @@ class MarkerlessRecognitionThread
   virtual void loop();
   virtual void finalize();
  private:
-  fawkes::MPSRecognitionInterface *pose_if_;
+  fawkes::MPSRecognitionInterface *compute_if_;
 };
 
 #endif
