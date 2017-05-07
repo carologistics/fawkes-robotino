@@ -446,10 +446,12 @@
 =>
   (if (neq ?rot (mirror-rot ?mtype ?zn ?rot)) then
     (bind ?m-trans
-      (tag-offset
-        ?zn
-        (tf-yaw-from-quat (mirror-rot ?mtype ?zn ?rot))
-        0.34
+      (mirror-trans
+        (tag-offset
+          ?zn
+          (tf-yaw-from-quat (mirror-rot ?mtype ?zn ?rot))
+          0.34
+        )
       )
     )
   else
