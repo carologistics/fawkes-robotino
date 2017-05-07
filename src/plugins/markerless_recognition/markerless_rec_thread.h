@@ -49,7 +49,7 @@ class MarkerlessRecognitionThread
   virtual void finalize();
   virtual void readImage();
  private:
-  fawkes::MPSRecognitionInterface *compute_if_;
+  fawkes::MPSRecognitionInterface *mps_rec_if_;
 };
 
 #endif

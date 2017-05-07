@@ -27,28 +27,28 @@ void
 MarkerlessRecognitionThread::init()
 {
   readImage();
-  compute_if_ = blackboard->open_for_reading<MPSRecognitionInterface>("Compute");
+  mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("MarkerlessRecognition");
 }
 
 void
 MarkerlessRecognitionThread::finalize()
 {
- // blackboard->close(compute_if_);
+ blackboard->close(mps_rec_if_);
 }
 
 void
 MarkerlessRecognitionThread::loop()
 {
- /* if (compute_if_->has_writer()) {
-    compute_if_->read();
-    double *r = compute_if_->rotation();
-    tf::Quaternion pose_q(r[0], r[1], r[2], r[3]);
-    logger->log_info(name(), "Pose: (%f,%f,%f)", compute_if_->translation(0),
-                     compute_if_->translation(1), tf::get_yaw(pose_q));
-  } else {
-    logger->log_warn(name(), "No writer for pose interface");
+   while ( ! mps_rec_if_->msgq_empty() ) {
+    if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::ClearMessage>() ) {
+     	std::cout << "Recieved Clear Message" << std::endl;
+    } else if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::ComputeMessage>() ) {
+      	std::cout << "Recieved Compute Message" << std::endl;
+    } else if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::TakeDataMessage>() ) {
+    	std::cout << "Recieved Take Data Message" << std::endl;
+    }
+    mps_rec_if_->msgq_pop();
   }
-*/
 }
 
 void MarkerlessRecognitionThread::readImage(){ 
@@ -75,3 +75,25 @@ void MarkerlessRecognitionThread::readImage(){
   		std::cout << "exception caught: " << err_msg << std::endl;
 	}
 }	
+
+void
+MarkerlessRecognitionThread::writeTotalProbability(Probability prob)
+{
+}
+
+void 
+MarkerlessRecognitionThread::writeWinProbability(float prob)
+{
+}
+
+void
+MarkerlessRecognitionThread::writeState(bool state)
+{
+}
+
+void
+MarkerlessRecognitionThread::writeWinMPS(MPSType mps)
+{
+}
+
+
