@@ -226,8 +226,6 @@ ConveyorPoseThread::loop()
   if (bb_enable_switch_->is_enabled()) {
     if (realsense_switch_->has_writer()) {
       if (!realsense_switch_->is_enabled()) {
-        logger->log_info(name(), "Camera %s is disabled, enabling",
-          cfg_bb_realsense_switch_name_.c_str());
         realsense_switch_->msgq_enqueue(
           new SwitchInterface::EnableSwitchMessage());
         start_waiting();
@@ -240,8 +238,6 @@ ConveyorPoseThread::loop()
     }
   } else if (realsense_switch_->has_writer()
       && realsense_switch_->is_enabled()) {
-    logger->log_info(name(), "Disabling %s",
-      cfg_bb_realsense_switch_name_.c_str());
     realsense_switch_->msgq_enqueue(
       new SwitchInterface::DisableSwitchMessage());
   }
