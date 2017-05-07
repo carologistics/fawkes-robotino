@@ -4,6 +4,8 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/realsense
 ---
 realsense:
+  # If set to false, the camera is not switched on and off, but always kept on
+  use_switch: false
   # Frame ID of the PointCloud 
   frame_id: "cam_conveyor"
 
