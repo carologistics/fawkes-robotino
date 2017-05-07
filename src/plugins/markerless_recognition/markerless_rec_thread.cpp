@@ -21,7 +21,7 @@ MarkerlessRecognitionThread::MarkerlessRecognitionThread()
 }
 
 void
-GenesisThread::init()
+MarkerlessRecognitionThread::init()
 {
   pose_if_ = blackboard->open_for_reading<MPSRecognition>("Pose");
 }
@@ -33,8 +33,10 @@ GenesisThread::finalize()
 }
 
 void
-GenesisThread::loop()
+MarkerlessRecognitionThread::loop()
 {
+
+  
   if (pose_if_->has_writer()) {
     pose_if_->read();
     double *r = pose_if_->rotation();
@@ -44,4 +46,5 @@ GenesisThread::loop()
   } else {
     logger->log_warn(name(), "No writer for pose interface");
   }
+
 }
