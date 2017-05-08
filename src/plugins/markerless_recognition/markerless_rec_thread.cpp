@@ -34,7 +34,6 @@ MarkerlessRecognitionThread::finalize()
 }
 
 
-
 void MarkerlessRecognitionThread::estimate_mps_type(const Probability &prob) const {
 	float pmax = 0.;
 	float psec = 0.;
@@ -59,45 +58,44 @@ void MarkerlessRecognitionThread::estimate_mps_type(const Probability &prob) con
 	mps_rec_if_->write();
 }
 
-Probability MarkerlessRecognitionThread::recognize_current_pic(std::string image) {
+Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string image) {
 	Probability result;
+
+	// struct with 5 float values
+	// every time: bs, cs, ds, rs, ss
 
 	return result;
 }
 
 void MarkerlessRecognitionThread::recognize_mps() {
-
+	//iterates over all stored paths im imageSet_ and calls recognize_current_pic on it
+	//then decides which mps was seen in the set of images
 }
 
+	
 void MarkerlessRecognitionThread::readImage(){ 
-	 /* 
-	Mat image;
-  	image = imread("/home/casto/Carologistic/OpenTC/Training/ExperimentalTestData/BS_Depth_2682.jpg");   // Read the filemi, dev/video_tag should be the path for the RealSense
+ 
+       	
+ 	Mat image = imread("/home/casto/Carologistics/OpenTC/Training/ExperimentalTrainingData/BS/BS_Depth_2682.jpg") ; //Read the file , dev/video_tag should be the path for the RealSense
 
-	// Show it for testing reasons
-	namedWindow("image", CV_WINDOW_AUTOSIZE);
-    	imshow("image", grey);
-	*/
-	    // init firevision camera
-   	 // CAM swapping not working (??)
-        /*if(fv_cam != NULL){
-        // free the camera
-        fv_cam->stop();
-        fv_cam->flush();
-        fv_cam->dispose_buffer();
-        fv_cam->close();
-        delete fv_cam;
-        fv_cam = NULL;
-    }
-    if(fv_cam == NULL){
-      std::string connection = this->config->get_string((prefix + "camera").c_str());
-        fv_cam = vision_master->register_for_camera(connection.c_str(), this);
-        fv_cam->start();
-        fv_cam->open();
-        this->img_width = fv_cam->pixel_width();
-        this->img_height = fv_cam->pixel_height();
-    }*/
-
+	if(! image.data )                              // Check for invalid input
+   	{
+        	cout <<  "Could not open or find the image" << std::endl ;
+   	}
+	try{ // to show , doesn't work (black screen) 
+    		
+	 	double min;
+        	double max;
+       		cv::minMaxIdx(image, &min, &max);
+        	cv::Mat adjMap;
+        	cv::convertScaleAbs(image, adjMap, 255 / max);
+        	//cv::imshow("Out", adjMap);
+	}
+	catch( cv::Exception& e )
+	{
+    		const char* err_msg = e.what();
+  		std::cout << "exception caught: " << err_msg << std::endl;
+	}
 }
 
 void
