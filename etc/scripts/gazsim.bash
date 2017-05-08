@@ -262,7 +262,7 @@ if [  $COMMAND  == start ]; then
 	    # robot roscore
 	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"'"
             # move_base
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch robotino_move_base robotino_move_base_simu.launch -p 1132$ROBO $KEEP $@\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"'"
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
 	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"'"
 	fi
