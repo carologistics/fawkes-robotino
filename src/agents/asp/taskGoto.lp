@@ -11,17 +11,19 @@
 % toBeDone(goto(_), GT)          The task is possible.
 %
 % Additionally used predicates:
+% baseLocation(L)                Defined in facts.lp
 % doing(R, T, D, GT)             Defined in state.lp
 % end(R, T, GT)                  Defined in state.lp
 % getLocation(L)                 Defined in facts.lp
 % horizon(H)                     Defined in facts.lp
-% meaningfulGoto(L, GT)          Defined in machines.lp
+% meaningfulGoto(L, GT)          Defined in machines.lp and taskGetBase.lp
 % robot(R)                       Defined in facts.lp
 
 
 #program ourTeam(t).
 
 gotoTask(goto(L))        :- getLocation(L).
+gotoTask(goto(L))        :- baseLocation(L).
 taskLocation(goto(L), L) :- gotoTask(goto(L)).
 task(T)                  :- gotoTask(T).
 % The duration is 0, because the task duration says how long the task takes, once the robot has reached the location.

@@ -99,6 +99,7 @@ AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 	Clingo::Symbol arguments[3];
 	assert(TeamColor);
 	arguments[0] = Clingo::String(TeamColor);
+	decltype(NavgraphNodesForASP.begin()) lastInsertion;
 	for ( const auto& machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
 	{
 		name = TeamColor;
@@ -112,10 +113,13 @@ AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 		{
 			name.back() = side[0];
 			arguments[2] = Clingo::String(side);
-			NavgraphNodesForASP.insert({name, Clingo::Function("m", {arguments, 3})});
+			lastInsertion = NavgraphNodesForASP.insert({name, Clingo::Function("m", {arguments, 3})});
 		} //for ( const auto& side : {"I", "O"} )
 	} //for ( const auto& machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
 
+	//Remove the output side of the DS.
+	assert(lastInsertion->first == std::string(TeamColor) + "-DS-O");
+	NavgraphNodesForASP.erase(lastInsertion);
 	NavgraphNodesForASP.insert({std::string(TeamColor) + "-ins-out", Clingo::String("ins-out")});
 
 	//! @todo Do we need nodes for the zones? (I think yes.)
