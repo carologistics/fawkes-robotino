@@ -28,15 +28,26 @@
 #include <aspect/logging.h>
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
+#include <string>
 
-typedef struct
-{
-	float s[5];
-}Score;
 
 namespace fawkes {
   class MPSRecognitionInterface;
 }
+
+struct Probability
+{
+	float p[5];
+};
+
+enum MPSType {
+	NoStationDetected,
+	BS,
+	CS,
+	DS,
+	RS,
+	SS
+};
 
 class MarkerlessRecognitionThread
 : public fawkes::Thread,
@@ -46,21 +57,25 @@ class MarkerlessRecognitionThread
   public fawkes::BlackBoardAspect,
   public fawkes::BlockedTimingAspect
 {
- public:
+
+
+public:
   MarkerlessRecognitionThread();
 
   virtual void init();
   virtual void loop();
   virtual void finalize();
-  virtual void readImage();
  private:
-  void writeTotalProbability(Score prob);
-  void writeWinProbability(float prob);
-  void writeState(bool state);
-  void estimateMPStype();
-
+  void clear_data();
+  Probability recognize_current_pic(std::string image);
+  void recognize_mps();
+  void estimate_mps_type(const Probability &prob) const;
+  void readImage();	
 
   fawkes::MPSRecognitionInterface *mps_rec_if_;
+
+  float th_first = 0.8;
+  float th_sec = 0.5;
 };
 
 #endif
