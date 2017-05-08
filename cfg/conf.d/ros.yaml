@@ -40,3 +40,9 @@ ros:
       x_vel_name: "max_vel_x"
       y_vel_name: "max_vel_y"
       rot_vel_name: "max_vel_theta"
+
+    fixed_frame: "map"
+
+    # tolerances to be set determining a goal could be reached or not.
+    trans_tolerance: 0.1
+    ori_tolerance: 0.05
