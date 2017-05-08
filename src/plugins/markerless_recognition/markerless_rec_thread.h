@@ -41,12 +41,12 @@ struct Probability
 };
 
 enum MPSType {
-	NoStationDetected,
 	BS,
 	CS,
 	DS,
 	RS,
-	SS
+	SS,
+	NoStationDetected
 };
 
 class MarkerlessRecognitionThread
@@ -65,14 +65,18 @@ public:
   virtual void init();
   virtual void loop();
   virtual void finalize();
+  
  private:
   void clear_data();
-  Probability recognize_current_pic(std::string image);
+  Probability recognize_current_pic(const std::string image);
   void recognize_mps();
   void estimate_mps_type(const Probability &prob) const;
   void readImage();	
 
   fawkes::MPSRecognitionInterface *mps_rec_if_;
+
+  std::string path_prefix_;
+  std::vector<std::string> imageSet_;
 
   float th_first = 0.8;
   float th_sec = 0.5;
