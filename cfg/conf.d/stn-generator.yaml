@@ -1,0 +1,13 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/stn-generator
+---
+plugins/stn-generator:
+
+  plan:
+    collection: "robmem.pddl-plan"
+    interface: "pddl-planner"
+
+  output:
+    collection: "syncedrobmem.clipswm"
