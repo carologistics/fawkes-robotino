@@ -322,19 +322,20 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	node_names_[0] = "C-ins-in";
 
 	// Read names of machines automatically
-	// for(int i=0; i<number_machines; ++i){
-	// std::string machine_name = data.machines(i).name().c_str();
-	// machine_name += "-I";
-	// // logger->log_info(name(), "Add %s to node_names_", machine_name.c_str());
-	// node_names_[i+1] = machine_name;
-	// }
+	for(int i=0; i<number_machines; ++i){
+	std::string machine_name = data.machines(i).name().c_str();
+	machine_name += "-I";
+	// logger->log_info(name(), "Add %s to node_names_", machine_name.c_str());
+	node_names_[i+1] = machine_name;
+	}
 
-	node_names_[1] = "C-BS-I";
-	node_names_[2] = "C-RS1-I";
-	node_names_[3] = "C-RS2-I";
-	node_names_[4] = "C-CS1-I";
-	node_names_[5] = "C-CS2-I";
-	node_names_[6] = "C-DS-I";
+	// Set names of machines fix
+	// node_names_[1] = "C-BS-I";
+	// node_names_[2] = "C-RS1-I";
+	// node_names_[3] = "C-RS2-I";
+	// node_names_[4] = "C-CS1-I";
+	// node_names_[5] = "C-CS2-I";
+	// node_names_[6] = "C-DS-I";
 	// node_names_[7] = "C-BS-O";
 	// node_names_[8] = "C-RS1-O";
 	// node_names_[9] = "C-RS2-O";
@@ -1381,55 +1382,76 @@ ClipsSmtThread::clips_smt_encoder_bool(std::map<std::string, z3::expr>& variable
 GameData
 ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 {
-	GameData _generatorData = GameData();
+	GameData gD = GameData();
 
-	//machines
-	for (int i = 0; i < number_machines; i++)
-	{
-		//name -> id
-		Machine _tmpMachine = Machine("dummy", atoi(data.machines(i).name().c_str()));
-		//type -> type
-		_tmpMachine.setType(data.machines(i).type());
-		//TODO (Lukas) WorkingPiece
-		//TODO (Lukas) Distances
-		//_generatorData.addMachine(_tmpMachine);
+	// Machines
+	for (int i = 0; i < number_machines; i++){
+		std::string name_machine = data.machines(i).name();
+		if(name_machine[2] == 'B') { // BaseStation
+			auto bs_temp = std::make_shared<BaseStation>(i);
+			// bs_temp->setPossibleBaseColors(); // TODO Add all possibleBaseColors
+			bs_temp->setDispenseBaseTime(1);
+			gamedata_basestations.push_back(bs_temp);
+			gD.addMachine(bs_temp);
 		}
-
-
-		//Robots
-		for (int i = 0; i < number_robots+1; i++)
-		{
-		//name -> id
-		Robot _tmpRobot = Robot(atoi(data.robots(i).name().c_str()));
-		//TODO (Lukas) Distances
+		else if(name_machine[2] == 'R') { // RingStation
+			auto rs_temp = std::make_shared<RingStation>(i);
+			// bs_temp->setPossibleRingColors(); // TODO Add all possibleRingColors with number of bases required for production
+			rs_temp->setFeedBaseTime(1);
+			rs_temp->setMountRingTime(10); // TODO Vary for different ringstations?
+			// rs_temp->setAdditinalBasesFed(); // TODO Add additionalBasesFed
+			// rs_temp->setRingColorSetup(); // TODO Add ringColorSetup
+			gamedata_ringstations.push_back(rs_temp);
+			gD.addMachine(rs_temp);
+		}
+		else if(name_machine[2] == 'C') { // CapStation
+			auto cs_temp = std::make_shared<CapStation>(i);
+			// cs_temp->setPossibleCapColors(); // TODO Add all possibleCapColors
+			cs_temp->setFeedCapTime(1);
+			cs_temp->setMountCapTime(5); // TODO Vary for different ringstations?
+			// cs_temp->setFedCapColor(); // TODO Add fedCapColor
+			gamedata_capstations.push_back(cs_temp);
+			gD.addMachine(cs_temp);
+		}
+		else if(name_machine[2] == 'D') { // DeliveryStation
+			auto ds_temp = std::make_shared<DeliveryStation>(i);
+			gamedata_deliverystations.push_back(ds_temp);
+			gD.addMachine(ds_temp);
+		}
 	}
 
-//Orders
+
+	// Robots
+	for (int i = 0; i < number_robots+1; i++)
+	{
+		std::string name_robot = data.robots(i).name();
+		if(name_robot[0] == 'R') { // Robot and not the RefBox
+			auto r_temp = std::make_shared<Robot>(i);
+			// TODO Add Workpiece corresponding to robot
+			gamedata_robots.push_back(r_temp);
+			gD.addMachine(r_temp);
+		}
+	}
+
+	// TODO addMovingTime, think about indices, maybe change the list of stations?
+
+	// Orders
 	for (int i = 0; i < data.orders().size(); i++)
 	{
-		Workpiece _tmpWorkPiece = Workpiece();
 		//Color conversions
-		int _baseColor = data.orders(i).base_color()+1;
-		int _capColor = data.orders(i).cap_color();
-
-		std::vector<int> _ringColors;
+		Workpiece::Color bc_temp = static_cast<Workpiece::Color>(data.orders(i).base_color()+1);
+		std::vector<Workpiece::Color> rc_temps;
 		for (int j = 0; j < data.orders(i).ring_colors().size(); j++){
-			_ringColors.push_back(data.orders(i).ring_colors(i)+1);
+			rc_temps.push_back(static_cast<Workpiece::Color>(data.orders(i).ring_colors(j)+1));
 		}
+		Workpiece::Color cc_temp = static_cast<Workpiece::Color>(data.orders(i).cap_color());
 
-		std::cout << "BC" << _baseColor << "CC" << _capColor << std::endl;
-		//TODO fix this conversion:
-		/*
-		_tmpWorkPiece.setBaseColor(_baseColor);
-		_tmpWorkPiece.setCapColor(_capColor);
-		_tmpWorkPiece.setRingColor(_ringColors);
-		*/
-
-		//GameData::Order _tmpOrder = GameData::Order(data.orders(i).id());
-		//TODO (Lukas) Distances
+		Workpiece p_temp = Workpiece(bc_temp, rc_temps, cc_temp);
+		auto o_temp = std::make_shared<Order>(i, p_temp, 1); // TODO Fix third parameter
+		gD.addOrder(o_temp);
 	}
 
-	return _generatorData;
+	return gD;
 }
 
 // Solve encoding of exploration phase
@@ -1685,11 +1707,6 @@ void ClipsSmtThread::clips_smt_test_formulaGenerator()
 {
 	logger->log_info(name(), "Test FormulaGenerator extern binary");
 
-	carl::Variable x = carl::freshRealVariable("x");
-	Rational r = 4;
-	carl::MultivariatePolynomial<Rational> mp = Rational(r*r)*x*x + r*x + r;
-	carl::Formula<carl::MultivariatePolynomial<Rational>> f(mp, carl::Relation::GEQ);
-
 	GameData gD = FormulaGeneratorTest::createGameDataTestCase();
 	FormulaGenerator fg = FormulaGenerator(1, gD);
 
@@ -1705,8 +1722,18 @@ void ClipsSmtThread::clips_smt_test_formulaGenerator()
 
 	z3::solver s(_z3_context);
 	s.add(e);
+
+	// Start measuring sovling time
+	std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	if(s.check() == z3::sat) {
-		logger->log_info(name(), "Test of import fg_formula.smt file into z3 constraint did work");
+		// Stop measuring sovling time
+		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+		// Compute time for solving
+		double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
+		double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
+
+		logger->log_info(name(), "Test of import fg_formula.smt file into z3 constraint did work [%f ms, %f m]", diff_ms, diff_m);
 
 		z3::model model = s.get_model();
 		for(unsigned i=0; i<model.size(); ++i) {
