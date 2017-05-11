@@ -80,7 +80,7 @@ openprs-agent:
     robot-name: R-3
     robot-number: 3
     # Communication settings
-   peer-address: 127.0.0.1 #137.226.233.255
+    peer-address: 127.0.0.1 #137.226.233.255
     peer-public-send-port: 4423
     peer-public-recv-port: 4413
     peer-cyan-send-port: 4473
