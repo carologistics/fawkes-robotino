@@ -47,9 +47,10 @@
 					(! (= 0 1));just fail the goal
 					)
 			)
-		:documentation "Access point to the coordination by Master of reasoning Ops. Reacts on a posted ACHIEVE-WORKPIECE goal (agent and workpiece 
-						are paramters of the goal). Issues the Achieve-Workpiece request (by asserting the corresponding fact). Waits till 
-						achieve-workpiece is either SUCCEEDED of FAILED. ie, blocks till the goal is either achieved or failes"
+		:documentation "Access point to the coordination by Master of reasoning Ops. Reacts on a posted ACHIEVE-WORKPIECE goal 
+						(agent and workpiece are parameters of the goal). Issues the Achieve-Workpiece request (by asserting the
+						corresponding fact). Waits till achieve-workpiece is either SUCCEEDED of FAILED. ie, blocks till the goal
+						is either achieved or failed"
 		)
 
 
@@ -74,11 +75,132 @@
 					(! (printf  (FORMAT "Achieving Workpiece: FAILED Achieving WP %s %s %s %s %s" $id $base $rings $cap $place)))
 					)
 			)
-		:documentation " On the worker agent (slave) specified for achieving a wp. When the achieve-workpiece is started. 
-						Invokes the necessary workpiece operation by posting the 'workpiece' goal carried in the achieve-workpiece fact 
-						that was started. updates the correct state transition for the achievement facts, depending if the workpiece goal 
+		:documentation " On the worker agent (slave) specified for achieving a wp. When the achieve-workpiece is started. Invokes 
+						the necessary workpiece operation by posting the 'workpiece' goal carried in the achieve-workpiece fact that
+						was started. updates the correct state transition for the achievement facts, depending if the workpiece goal 
 						fails of succeeds"
 		)
+
+
+	;===========================================///////// AchieveMessage Handling \\\\\\\\\\======================================
+
+	(defop co--forAll--receive-AchieveMessage
+		:invocation (protobuf-msg "llsf_msgs.AchieveWorkpiece" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec		                        
+															$rcv-from-host $rcvd-from-port $client-type $client-id $msg)
+		:context 	(agent-name $my-name)
+		:body(
+			(! (= $agent 					(pb-field-value $msg 		"agent" )) )
+			(! (= $status 					(pb-field-value $msg 		"status")) )
+			(! (= $wp-msg 					(pb-field-value $msg 		"workpiece")) )
+			(! (= $base-color 				(pb-field-value $wp-msg 	"base_color")) )
+			(! (= $place-msg 				(pb-field-value $wp-msg 	"place")) )
+			(! (= $name 					(pb-field-value $place-msg 	"name")) )
+			(! (= $feature		 			(pb-field-value $place-msg 	"feature")) )
+			(if (? 	( & (= $feature "gate")	(pb-has-field 	$place-msg 	"gate")))
+				(! (= $gate 				(pb-field-value $place-msg  "gate"))) 
+				)
+			(if (? (pb-has-field 							$wp-msg 	"id"))
+				(! (= $wp-id 				(pb-field-value $wp-msg  	"id"))) 
+				)
+			(if (? (pb-has-field 							$wp-msg 	"first_ring_color"))
+				(! (= $first-ring-color 	(pb-field-value $wp-msg 	"first_ring_color")))
+				)
+			(if (? (pb-has-field 							$wp-msg 	"second_ring_color"))
+				(! (= $second-ring-color 	(pb-field-value $wp-msg 	"second_ring_color")))
+				)
+			(if (? (pb-has-field 							$wp-msg 	"third_ring_color"))
+				(! (= $third-ring-color 	(pb-field-value $wp-msg 	"third_ring_color")))
+				)
+			(if (? (pb-has-field 							$wp-msg 	"cap_color"))
+				(! (= $cap-color 			(pb-field-value $wp-msg 	"cap_color")))
+				)
+
+			(if (? (BOUNDP $first-ring-color) 	)	(! (= @rings (rings $first-ring-color))) )
+			(if (? (BOUNDP $second-ring-color) 	)	(! (= @rings (rings $first-ring-color $second-ring-color))) )
+			(if (? (BOUNDP $third-ring-color) 	)	(! (= @rings (rings $first-ring-color $second-ring-color $third-ring-color))) )
+			(if (? (~ (BOUNDP $first-ring-color)))	(! (= @rings (rings NONE))))
+			(if (? (~ (BOUNDP $cap-color)) 		)	(! (= $cap-color NONE)))
+			(if (? (~ (BOUNDP $gate))			)	
+				(! (= @feature $feature))
+				else
+				(! (= @feature $gate))
+				)
+			;matching step
+			(! (= (workpiece $wp-id (base $base-color) (val @rings) (cap $cap-color) (place $name (val @feature))) $workpiece)) 
+
+			(! (printf (FORMAT "RECEIVED achieve-workpace with status %s \n" $status )))
+			
+			(if  (? (& 	(~ (= $my-name $agent))
+						(~ (master-of REASONING $my-name))
+						(~ (= $status SUCCEEDED))
+						))
+				GOTO fin
+				)
+			
+			; ;Ignore if SAME workpiece already has any state in the db
+			; (if (? (& 	(= $status REQUESTING)
+			; 			(achieve-workpiece $agent $workpiece @any-status))) 
+			; 	GOTO fin
+			; 	)
+			; ;Ignore if DIFFERENT workpiece is still processing
+			; (if (? (& 	(= $status REQUESTING)
+			; 			(~ (= $workpiece 				@some-other-workpiece))
+			; 			(|| (achieve-workpiece $agent 	@some-other-workpiece REQUESTING) 
+			; 				(achieve-workpiece $agent 	@some-other-workpiece STARTED)))) 
+			; 	GOTO fin
+			; 	)
+
+			;Ignore IF there is ANY Achieve going on here on this agent
+			(if (? (& 	(= $status REQUESTING)
+						(achieve-workpiece $agent @workpiece @any-status))) 
+				GOTO fin
+				)
+
+			;Ignore if SAME workpiece exists with a later status
+			(if (? (& 	(= $status STARTED) 
+						(|| (achieve-workpiece $agent $workpiece STARTED)
+							(achieve-workpiece $agent $workpiece SUCCEEDED)
+							(achieve-workpiece $agent $workpiece FAILED)
+							(achieve-workpiece $agent $workpiece FINALIZING)))) 
+				GOTO fin
+				)
+			;Ignore if DIFFERENT workpiece is already started [this should not happen if slave ensures a single workpiece achievem at all points in time]
+			(if (? (& 	(= $status STATRED)
+						(~ (= $workpiece 				@some-other-workpiece)) 
+							(achieve-workpiece $agent 	@some-other-workpiece STARTED)))
+				(! (printf (FORMAT "Should not happen %s \n" $status )))
+				(fail) 
+				GOTO fin
+				)
+			;Ignore if SAME workpiece is already finalized
+			(if (? (& 	(= $status SUCCEEDED) 
+						(||	(achieve-workpiece $agent $workpiece SUCCEEDED)
+							(achieve-workpiece $agent $workpiece FINALIZING)
+							))) 
+				GOTO fin
+				)
+
+			(if (? (& 	(= $status FAILED) 
+						(||	(achieve-workpiece $agent $workpiece FAILED)
+							(achieve-workpiece $agent $workpiece FINALIZING)
+							))) 
+				GOTO fin
+				)
+
+			; (if (? (& 	(= $status FINALIZING) 
+			; 			(achieve-workpiece $agent @workpiece @stat)
+			; 			(achieve-workpiece $agent @workpiece @some-status))) 
+			; 	GOTO fin
+			; 	)
+
+			(=> (achieve-workpiece $agent $workpiece $status))
+
+			LABEL fin
+			)
+		)
+	;===========================================/////////======================================
+
+
 
 
 	)
