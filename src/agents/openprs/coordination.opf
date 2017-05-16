@@ -15,7 +15,6 @@
 					)		
 		:body (	
 
-
 				;(^ (precond)
 				(! (= (workpiece $id $base $rings $cap $place)  $workpiece ))
 				; (if (? (~ (BOUNDP $id)))
@@ -48,7 +47,7 @@
 					)
 			)
 		:documentation "Access point to the coordination by Master of reasoning Ops. Reacts on a posted ACHIEVE-WORKPIECE goal 
-						(agent and workpiece are parameters of the goal). Issues the Achieve-Workpiece request (by asserting the
+						(agent and workpiece are paramters of the goal). Issues the Achieve-Workpiece request (by asserting the
 						corresponding fact). Waits till achieve-workpiece is either SUCCEEDED of FAILED. ie, blocks till the goal
 						is either achieved or failed"
 		)
@@ -78,7 +77,7 @@
 		:documentation " On the worker agent (slave) specified for achieving a wp. When the achieve-workpiece is started. Invokes 
 						the necessary workpiece operation by posting the 'workpiece' goal carried in the achieve-workpiece fact that
 						was started. updates the correct state transition for the achievement facts, depending if the workpiece goal 
-						fails of succeeds"
+						Recfails of succeeds"
 		)
 
 
@@ -164,7 +163,7 @@
 							(achieve-workpiece $agent $workpiece FINALIZING)))) 
 				GOTO fin
 				)
-			;Ignore if DIFFERENT workpiece is already started [this should not happen if slave ensures a single workpiece achievem at all points in time]
+			;Ignore if DIFFERENT workpiece is already started [this should not happen if slave ensures a sin gle workpiece achievement at all points in time]
 			(if (? (& 	(= $status STATRED)
 						(~ (= $workpiece 				@some-other-workpiece)) 
 							(achieve-workpiece $agent 	@some-other-workpiece STARTED)))
@@ -198,9 +197,133 @@
 			LABEL fin
 			)
 		)
+
+	;//////////////
+	;Only_on MASTER
+	;//////////////
+    (defop co--Master--process-WorkpieceAchieve
+    	:invocation ( timer "beacon" $last-sec $last-usec $seq )
+    	:context	( 	(master-of REASONING $robot-name)
+    	 				(peer-id private $peer-id)
+    	 				)
+    	:setting	(setting "robot-name" $robot-name)
+    	:body(
+
+    		(! (= $SUCC-FAIL-achievments-list (n-all-list 	(. $agent $workpiece $status .) 
+    														(& 	(achieve-workpiece $agent $workpiece $status)
+    														(|| (= $status SUCCEEDED) 
+    															(= $status FAILED))))))
+    		(if (? (< 0 (length $SUCC-FAIL-achievments-list) ))
+
+	    		(! (= @agent-list 		(car $SUCC-FAIL-achievments-list)) )
+	    		(! (= @workpiece-list 	(cadr $SUCC-FAIL-achievments-list)) )
+	    		(! (= @status-list	 	(caddr $SUCC-FAIL-achievments-list)) )
+	    		(while (? (~ (null @agent-list)))
+	    			(! (= @agent 			(car @agent-list)))
+	    			(! (= @status 			(car @status-list)))
+	    			(! (= @workpiece 		(car @workpiece-list)))
+	    			(! (= @agent-list 		(cdr @agent-list)))
+	    			(! (= @status-list 		(cdr @status-list)))
+	    			(! (= @workpiece-list	(cdr @workpiece-list))) 
+	    			(if (? (= (val @status) SUCCEEDED) )
+	    				; (? (= (workpiece @id @base @rings @cap @place)  (val @workpiece) )) 
+	    				; (=> (workpiece (val @id) (val @base) (val @rings) (val @cap) (val @place)))
+	    				;Moved to Seperate Op
+	    				)
+	    			
+	    			(if (? (~ (= $robot-name (val @agent))))
+	    				(=> (achieve-workpiece (val @agent) (val @workpiece) FINALIZING))
+	    				)
+	    			;delete it if its still there
+	    			;(~> (achieve-workpiece (val @agent) (val @workpiece) (val @status)))
+	    			(!	(= (workpiece @potentially-unbound-id @base @rings @cap @place) (val @workpiece) ))
+
+	    			(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) FAILED )) 
+	    			(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) STARTED))
+	    			; (~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) SUCCEEDED))
+	    			)
+    			)
+
+
+    		(! (= $REQ-FIN-list (n-all-list (. $agent $workpiece $status .) (& 	(achieve-workpiece $agent $workpiece $status)
+    																			(|| (= $status REQUESTING) 
+    																				(= $status FINALIZING))))))
+    		; (! (print $REQ-FIN-list))
+    		(if (? (< 0 (length $REQ-FIN-list) ))
+
+	    		(! (= @agent-list 		(car $REQ-FIN-list)) )
+	    		(! (= @workpiece-list 	(cadr $REQ-FIN-list)) )
+	    		(! (= @status-list	 	(caddr $REQ-FIN-list)) )
+	    		(while (? (~ (null @agent-list)))
+	    			(! (= @agent 			(car @agent-list)))
+	    			(! (= @status 			(car @status-list)))
+	    			(! (= @workpiece 		(car @workpiece-list)))
+	    			(! (= @agent-list 		(cdr @agent-list)))
+	    			(! (= @status-list 		(cdr @status-list)))
+	    			(! (= @workpiece-list	(cdr @workpiece-list))) 
+	    			;matching step
+					(! (=  (workpiece @id (base @base-color) @rings (cap @cap-color) (place @name @feature)) (val @workpiece))) 
+
+					(! (= @place-msg (pb-create "llsf_msgs.Place")))
+					(! (pb-set-field @place-msg "name" 		(val @name)))
+					;If it was DS . Assigne Gate number in the msg
+					(if (? (machine (val @name) "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)) 
+						(! (pb-set-field @place-msg "feature" 	"gate" ))
+						(! (pb-set-field @place-msg "gate" 		(val @feature) ))
+						else
+						(! (pb-set-field @place-msg "feature" 	(val @feature)))
+						)
+					
+					; (! (pb-broadcast $peer-id (val @place-msg)))
+					(! (= @wp-msg (pb-create "llsf_msgs.Workpiece")))
+					(! (pb-set-field @wp-msg "id" 			(val @id)))
+					(! (pb-set-field @wp-msg "base_color" 	(val @base-color)))
+					(if (? (= (val @rings) (rings NONE)))
+					;Add Nothing
+					else
+					(if (? (= (val @rings) (rings @first-ring-color)))
+						(! (pb-set-field @wp-msg "first_ring_color" (val @first-ring-color)))
+						else 
+						(if (? (= (val @rings) (rings @first-ring-color @second-ring-color)))
+							(! (pb-set-field @wp-msg "first_ring_color" 	(val @first-ring-color)))
+							(! (pb-set-field @wp-msg "second_ring_color" 	(val @second-ring-color)))
+							else 
+							(if (? (= (val @rings) (rings @first-ring-color @second-ring-color @third-ring-color)))
+								(! (pb-set-field @wp-msg "first_ring_color" 	(val @first-ring-color)))
+								(! (pb-set-field @wp-msg "second_ring_color" 	(val @second-ring-color)))
+								(! (pb-set-field @wp-msg "third_ring_color" 	(val @third-ring-color)))
+								)
+							)
+						)
+					)	
+					(if (? (~ (= (val @cap-color) NONE)))
+						(! (pb-set-field @wp-msg "cap_color" (val @cap-color)))
+					)
+					(! (pb-set-field @wp-msg "place" 			(val @place-msg)))
+					; (! (pb-broadcast $peer-id (val @wp-msg)))
+					(! (= @msg (pb-create "llsf_msgs.AchieveWorkpiece")))
+					(! (pb-set-field @msg "agent" 		(val @agent)))
+					(! (pb-set-field @msg "status" 		(val @status)))
+					(! (pb-set-field @msg "workpiece" 	(val @wp-msg)))
+					(! (pb-broadcast $peer-id (val @msg)))
+					(! (pb-destroy @msg))
+					
+					;Note: this does not work for somereason. Check why 
+					; (! (pb-broadcast $peer-id (val @wp-msg)))
+					; (! (pb-set-field @wp-msg "ring_colors" 	[ (l-list RING_BLUE)| RINGBLUE | (.RING_BLUE. ) ] ))  Somthing is not working with the pb-add-list..CANT get to use it 
+					; (! (print "RING LIST"))
+					; (! (print (pb-field-list @wp-msg "ring_colors")))
+
+					;Only send finalizing once
+					(if (? (= (val @status) FINALIZING) ) 
+						(~> (achieve-workpiece (val @agent) (val @workpiece) FINALIZING))
+						)    				
+	    			)
+    			)
+    		)
+		)
+
 	;===========================================/////////======================================
-
-
-
+	
 
 	)
