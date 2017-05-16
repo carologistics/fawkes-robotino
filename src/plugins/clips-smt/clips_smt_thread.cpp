@@ -63,7 +63,7 @@ ClipsSmtThread::init()
 	// Test z3 extern binary
 	// proc_z3_ = NULL;
 	clips_smt_test_z3();
-	clips_smt_test_formulaGenerator();
+	// clips_smt_test_formulaGenerator();
 
 	// Test python
 	//proc_python_ = NULL;
@@ -276,6 +276,7 @@ ClipsSmtThread::loop()
 
 	// Compute distances between nodes using navgraph
 	clips_smt_fill_node_names();
+	clips_smt_fill_robot_names();
 	clips_smt_compute_distances_robots();
 	clips_smt_compute_distances_machines();
 
@@ -292,6 +293,12 @@ ClipsSmtThread::loop()
 	// Give it to z3 solver
 	if(use_encoder_bool) clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula_bool);
 	else clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula);
+
+	// Test formulaGenerator
+	GameData gD = clips_smt_convert_protobuf_to_gamedata();
+	clips_smt_test_formulaGenerator(gD);
+
+
 	logger->log_info(name(), "Thread reached end of loop");
 
 	envs_[data_env].lock();
@@ -342,6 +349,31 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	// node_names_[10] = "C-CS1-O";
 	// node_names_[11] = "C-CS2-O";
 	// node_names_[12] = "C-DS-O";
+}
+
+void
+ClipsSmtThread::clips_smt_fill_robot_names()
+{
+	logger->log_info(name(), "Get name of robots using protobuf data");
+	robot_names_.clear();
+
+	// Read names of robots automatically
+	int i_true=0;
+	for(int i=0; i<number_robots+1; ++i){
+		std::string robot_name = data.robots(i).name().c_str();
+
+		if(!robot_name.compare("RefBox")==0) {
+			// Not hitting 'RefBox'
+			// logger->log_info(name(), "Add %s to robot_names_", robot_name.c_str());
+			robot_names_[i_true] = robot_name;
+			i_true++;
+		}
+	}
+
+	// Set names of robots fix
+	// robot_names_[0] = "R-1";
+	// robot_names_[1] = "R-2";
+	// robot_names_[2] = "R-3";
 }
 
 void
@@ -1385,8 +1417,8 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 	GameData gD = GameData();
 
 	// Machines
-	for (int i = 0; i < number_machines; i++){
-		std::string name_machine = data.machines(i).name();
+	for (int i = 1; i < number_machines+1; i++){
+		std::string name_machine = node_names_[i];
 		if(name_machine[2] == 'B') { // BaseStation
 			auto bs_temp = std::make_shared<BaseStation>(i);
 			// bs_temp->setPossibleBaseColors(); // TODO Add all possibleBaseColors
@@ -1422,18 +1454,116 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 
 
 	// Robots
-	for (int i = 0; i < number_robots+1; i++)
+	for (int i = 0; i < number_robots; i++)
 	{
-		std::string name_robot = data.robots(i).name();
-		if(name_robot[0] == 'R') { // Robot and not the RefBox
-			auto r_temp = std::make_shared<Robot>(i);
-			// TODO Add Workpiece corresponding to robot
-			gamedata_robots.push_back(r_temp);
-			gD.addMachine(r_temp);
+		std::string name_robot = robot_names_[i];
+		auto r_temp = std::make_shared<Robot>(i);
+		// TODO Add Workpiece corresponding to robot
+		gamedata_robots.push_back(r_temp);
+		gD.addMachine(r_temp);
+	}
+
+	// TODO Test if correct machines are mapped to each other
+	// Note that index m will go over all types of stations
+	// Robot machine distance
+
+	int limit_basestation = gamedata_basestations.size();
+	int limit_ringstation = limit_basestation + gamedata_ringstations.size();
+	int limit_capstation = limit_ringstation + gamedata_capstations.size();
+	// int limit_deliverystation = limit_capstation + gamedata_deliverystations.size();
+
+	for(int r=0; r<number_robots; ++r) {
+		for(int m=1; m<number_machines+1; ++m) {
+			double distance = distances_[std::make_pair(robot_names_[r], node_names_[m])];
+			if(m<limit_basestation) {
+				// Inside gamedata_basestations
+				Machine::addMovingTime(*gamedata_robots[r], *gamedata_basestations[m], distance);
+			}
+			else if(m<limit_ringstation) {
+				// Inside gamedata_ringstations
+				int m_temp = m-gamedata_basestations.size();
+				Machine::addMovingTime(*gamedata_robots[r], *gamedata_ringstations[m_temp], distance);
+			}
+			else if(m<limit_capstation) {
+				// Inside gamedata_capstations
+				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
+				Machine::addMovingTime(*gamedata_robots[r], *gamedata_capstations[m_temp], distance);
+			}
+			else {
+				// Inside gamedata_deliverystations
+				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+				Machine::addMovingTime(*gamedata_robots[r], *gamedata_deliverystations[m_temp], distance);
+			}
 		}
 	}
 
-	// TODO addMovingTime, think about indices, maybe change the list of stations?
+	// Machine machine distance
+	for(int n=1; n<number_machines+1; ++n) {
+		for(int m=n+1; m<number_machines+1; ++m) {
+			double distance = distances_[std::make_pair(node_names_[n], node_names_[m])];
+			if(n<limit_basestation) {
+				// n is inside gamedata_basestations
+				if(m<limit_basestation) {
+					// m is inside gamedata_basestations
+					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_basestations[m], distance);
+				}
+				else if(m<limit_ringstation) {
+					// m is inside gamedata_ringstations
+					int m_temp = m-gamedata_basestations.size();
+					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_ringstations[m_temp], distance);
+				}
+				else if(m<limit_capstation) {
+					// m is inside gamedata_capstations
+					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
+					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_capstations[m_temp], distance);
+				}
+				else {
+					// m is inside gamedata_deliverystations
+					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_deliverystations[m_temp], distance);
+				}
+			}
+			else if(n<limit_ringstation) {
+				// n is inside gamedata_ringstations
+				int n_temp = n-gamedata_basestations.size();
+				if(m<limit_ringstation) {
+					// m is inside gamedata_ringstations
+					int m_temp = m-gamedata_basestations.size();
+					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_ringstations[m_temp], distance);
+				}
+				else if(m<limit_capstation) {
+					// m is inside gamedata_capstations
+					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
+					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_capstations[m_temp], distance);
+				}
+				else {
+					// m is inside gamedata_deliverystations
+					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_deliverystations[m_temp], distance);
+				}
+			}
+			else if(n<limit_capstation) {
+				// n is inside gamedata_capstations
+				int n_temp = n-gamedata_basestations.size()-gamedata_ringstations.size();
+				if(m<limit_capstation) {
+					// m is inside gamedata_capstations
+					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
+					Machine::addMovingTime(*gamedata_capstations[n_temp], *gamedata_capstations[m_temp], distance);
+				}
+				else {
+					// m is inside gamedata_deliverystations
+					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+					Machine::addMovingTime(*gamedata_capstations[n_temp], *gamedata_deliverystations[m_temp], distance);
+				}
+			}
+			else {
+				// n and m are inside gamedata_deliverystations
+				int n_temp = n-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+				Machine::addMovingTime(*gamedata_deliverystations[n_temp], *gamedata_deliverystations[m_temp], distance);
+			}
+		}
+	}
 
 	// Orders
 	for (int i = 0; i < data.orders().size(); i++)
@@ -1703,16 +1833,18 @@ ClipsSmtThread::clips_smt_test_z3()
 	// std::remove("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt"); // TODO (Igor) Add functionality to remove intermediate formula.smt
 }
 
-void ClipsSmtThread::clips_smt_test_formulaGenerator()
+void ClipsSmtThread::clips_smt_test_formulaGenerator(GameData gD_given)
 {
 	logger->log_info(name(), "Test FormulaGenerator extern binary");
 
 	GameData gD = FormulaGeneratorTest::createGameDataTestCase();
 	FormulaGenerator fg = FormulaGenerator(1, gD);
 
+	FormulaGenerator fg_given = FormulaGenerator(1, gD_given);
+
 	logger->log_info(name(), "Export FormulaGenerator formula to file fg_formula.smt");
 	std::ofstream outputFile("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt"); // TODO (Igor) Exchange path with config value
-	outputFile << carl::outputSMTLIB(carl::Logic::QF_NIRA, {fg.createFormula()});
+	outputFile << carl::outputSMTLIB(carl::Logic::QF_NIRA, {fg_given.createFormula()});
 	outputFile.close();
 
 	logger->log_info(name(), "Import FormulaGenerator formula from file fg_formula.smt into z3 formula");

@@ -143,8 +143,10 @@ private:
 	int number_bits;
 	int number_robots;
 	void clips_smt_fill_node_names();
+	void clips_smt_fill_robot_names();
 	void clips_smt_compute_distances_robots();
 	void clips_smt_compute_distances_machines();
+	std::map<int, std::string> robot_names_;
 	std::map<int, std::string> node_names_;
 	std::map<std::pair<std::string, std::string>, float> distances_;
 
@@ -156,7 +158,7 @@ private:
 	void clips_smt_test_python();
 	void clips_smt_test_z3();
 	void clips_smt_test_carl();
-	void clips_smt_test_formulaGenerator();
+	void clips_smt_test_formulaGenerator(GameData gD);
 
 	std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 };
