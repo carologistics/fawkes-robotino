@@ -75,10 +75,10 @@ declare symbol STEP-FINISHED
 declare symbol STEP-FAILED
 
 
+declare ff master-of 1
 ;///////////////
 ;Coordination
 ;/////////////
-declare ff master-of 1 
 declare ff heart-beat 1
 declare ff lock 3
 declare ff lock-in-use 0
@@ -108,6 +108,7 @@ declare predicate template
 declare cwp in-production
 
 add (master-of LOCKING "R-1")
+add (master-of REASONING "R-1")
 add (game-state null)
 add (game-phase null)
 add (holding NONE)
