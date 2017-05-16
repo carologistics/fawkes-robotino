@@ -68,7 +68,7 @@
 ; 			(! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place "agent" "gripper")))		
 ; 			; (! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $ds-name "input")))
 ; 			(! (workpiece $new-base-id (base $base-color) (rings none) (cap $cap-color) (place $ds-name $delivery-gate)))		
-	
+
 
 ; 			)
 
@@ -183,7 +183,10 @@
 	(defop execute-goal-step
 		:invocation (! (GO))
 		:context ( 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
-				 	(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)  ) 
+				 	(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with) 
+				 	(master-of REASONING $robot-name)
+				 	 )
+		:setting (setting "robot-name" $robot-name) 
 		:body(
 
 			(if (? (goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)) ))
@@ -290,7 +293,7 @@
 
  			)
 		)
-
+	
 	; (defop break-goal-needs
 	; 	:invocation ( (goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)))) )
 	; 	:context () 
@@ -336,15 +339,8 @@
 	; 		(=> (need (workpiece 0 $goal-base $goal-rings (cap none) (place $cs-name "input"))  for (workpiece 0 $goal-base $goal-rings $goal-cap (place $cs-name "output")) ))			
 	; 		(=> (need (workpiece 0 $goal-base $goal-rings (cap none) (place "agent" "gripper")) for (workpiece 0 $goal-base $goal-rings $goal-cap (place $cs-name "input")) ))
 	; 		(=> (need (cap-station $cs-name $cap-color CAP_LOADED @DONT_CARE-on-shelf))) 		for (workpiece 0 $goal-base $goal-rings $goal-cap (place $cs-name "input")) ))
-
-
-
 	; 		)
 	; 	)
-
-
-
-
 
 
 
