@@ -11,7 +11,7 @@
 		:invocation ( time $sec $usec ) 
 		:context(   (machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 					(last-attempted-instruction $mps-name $args $state);TODO:make sure state not failed
-					(|| (workpiece $any-id $any-base $any-rings $any-cap (place $mps-name "input"));to make sure what was at the input
+					(||	(workpiece $peace-id $base $rings $cap (place $mps-name "input"));to make sure what was at the input
 						(= $mps-type "BS" ) ))
 	 				
 		:body(
@@ -23,7 +23,7 @@
 				(=> (workpiece $peace-id (base $base-color) (rings none) (cap none) (place $mps-name (term-string-cat $side)) ))
 				)
 
-			(if (? (workpiece $peace-id $base $rings $cap (place $mps-name "input")))
+			; (if (? (workpiece $peace-id $base $rings $cap (place $mps-name "input")))
 
 				(if (? (= $mps-type "CS"))
 					(! (= (args operation $operation) $args))
@@ -36,7 +36,7 @@
 						)
 					(if (? (= $operation MOUNT_CAP))  
 						(? 	(cap-station $mps-name $cap-color $loaded-status $caps-on-shelf))
-						(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))
+						(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf )); To be removed
 						(=> (workpiece $peace-id $base $rings (cap $cap-color) (place $mps-name "output") ))
 						))
 
@@ -55,10 +55,10 @@
 					(=> (workpiece $peace-id $base $updated-rings (cap none) (place $mps-name "output") ))	
 					)
 				
-				else 
+				; else
 				;If we dont know what was this work peace that is ready. Give it a negative ID representing an unknown workpiece
-				(=> (workpiece (* -1 (rand 1000)) $base $rings (cap $cap-color) (place $mps-name "output") ))
-				)
+				; (=> (workpiece (* -1 (rand 1000)) $base $rings (cap $cap-color) (place $mps-name "output") ))
+				; )
 			
 			)
 		:effects ( (~> (last-attempted-instruction $mps-name $args $state)) )
