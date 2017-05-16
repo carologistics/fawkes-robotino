@@ -121,16 +121,16 @@
 
 
 			(if (? (= $mps-type "BS"))
-				(=> (workpiece (* -1 (rand 1000)) (base NOT_SURE) (rings none) (cap none) (place $mps-name NOT_SURE ) ))
+				(=> (workpiece (* -1 (rand 1000)) (base BASE_NOT_SURE) (rings none) (cap none) (place $mps-name "NOT_SURE" ) ))
 				)
 
 			(if (? (= $mps-type "CS"))
-				(=> (workpiece (* -1 (rand 1000)) (base NOT_SURE) (rings NOT_SURE) (cap NOT_SURE) (place $mps-name "output") ))
+				(=> (workpiece (* -1 (rand 1000)) (base BASE_NOT_SURE) (rings RING_NOT_SURE) (cap CAP_NOT_SURE) (place $mps-name "output") ))
 				)
 
 
 			(if (? (= $mps-type "RS"))
-				(=> (workpiece (* -1 (rand 1000)) (base NOT_SURE) (rings NOT_SURE) (cap none) (place $mps-name "output") ))
+				(=> (workpiece (* -1 (rand 1000)) (base BASE_NOT_SURE) (rings RING_NOT_SURE) (cap none) (place $mps-name "output") ))
 				)
 
 			; (if (? (= $mps-type "CS"))
