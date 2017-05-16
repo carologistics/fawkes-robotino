@@ -5,3 +5,53 @@
 ;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
+(
+
+	(defop co--Master-Achieving-workpiece-Goal
+		:invocation (! (achieve-workpiece $agent $workpiece))
+		:context ( 	(~ 	(achieve-workpiece $agent @any-workpiece STARTED))
+					(master-of REASONING $me)
+					(agent-name $me)
+					)		
+		:body (	
+
+
+				;(^ (precond)
+				(! (= (workpiece $id $base $rings $cap $place)  $workpiece ))
+				; (if (? (~ (BOUNDP $id)))
+				; 	(! (= (workpiece 0 $base $rings $cap $place)  $workpiece-to-send))
+				; 	)
+
+				(! (printf (FORMAT "Achieveing Goal on %s REQUESTING ...\n" $agent)))
+				(=> (achieve-workpiece $agent $workpiece REQUESTING))
+				
+
+				(^ ( ||	(achieve-workpiece $agent $workpiece STARTED)
+						(achieve-workpiece $agent $workpiece FAILED)
+						(achieve-workpiece $agent (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
+				;TODO: or timeout if no heartbeat for agent
+
+				(if (? (achieve-workpiece $agent $workpiece STARTED))
+					(! (printf (FORMAT "Achieveing Goal on %s STARTED ...\n" $agent)))
+					)
+
+
+				(^ ( ||	(achieve-workpiece $agent $workpiece FAILED)
+						(achieve-workpiece $agent (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
+
+				(~> (achieve-workpiece $agent $workpiece REQUESTING))
+				(~> (achieve-workpiece $agent $workpiece STARTED))
+
+				(if (! 	(achieve-workpiece $agent $workpiece FAILED)) 
+					(! (printf  (FORMAT "Achieving Workpiece: FAILED Achieving WP %s %s %s %s %s \n" $id $base $rings $cap $place)))
+					(! (= 0 1));just fail the goal
+					)
+			)
+		:documentation "Access point to the coordination by Master of reasoning Ops. Reacts on a posted ACHIEVE-WORKPIECE goal (agent and workpiece 
+						are paramters of the goal). Issues the Achieve-Workpiece request (by asserting the corresponding fact). Waits till 
+						achieve-workpiece is either SUCCEEDED of FAILED. ie, blocks till the goal is either achieved or failes"
+		)
+
+
+
+	)

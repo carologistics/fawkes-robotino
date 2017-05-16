@@ -77,11 +77,16 @@ declare symbol STEP-FAILED
 
 declare ff master-of 1
 ;///////////////
-;Coordination
+;LOCK
 ;/////////////
 declare ff heart-beat 1
 declare ff lock 3
 declare ff lock-in-use 0
+
+;////////////
+;COORDINATION
+;///////////
+declare ff achieve-workpiece 2
 
 
 ;Material Types
