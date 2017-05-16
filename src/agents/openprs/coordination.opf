@@ -198,9 +198,9 @@
 			)
 		)
 
-	;//////////////
-	;Only_on MASTER
-	;//////////////
+	;///////////////////////
+	;on MASTER-OF REASONING
+	;//////////////////////
     (defop co--Master--process-WorkpieceAchieve
     	:invocation ( timer "beacon" $last-sec $last-usec $seq )
     	:context	( 	(master-of REASONING $robot-name)
@@ -323,7 +323,119 @@
     		)
 		)
 
-	;===========================================/////////======================================
 	
+	;///////////////////////////////////////
+	;WORKER ROBOTS (Slaves or Achieving Bots) 
+	;///////////////////////////////////////
+	(defop co--Slave--proces-AchieveWorkpiece
+		:invocation (timer "beacon" $last-sec $last-usec $seq )
+		:context	(& 	(agent-name $agent)
+						(peer-id private $peer-id)
+						)
+		:body(
+			;All facts for this agent
+			(! (= $achieve-workpiece-list (n-all-list 	(. $workpiece $status .)
+														(achieve-workpiece $agent $workpiece $status))))
+				; (! (print $achieve-workpiece-list))
+			(if (? (< 0 (length $achieve-workpiece-list) ))
+
+	    		(! (= @workpiece-list 	(car $achieve-workpiece-list)) )
+	    		(! (= @status-list	 	(cadr $achieve-workpiece-list)) )
+	    		(while (? (~ (null @status-list)))
+	    			(! (= @status 			(car @status-list)))
+	    			(! (= @workpiece 		(car @workpiece-list)))
+	    			(! (= @status-list 		(cdr @status-list)))
+	    			(! (= @workpiece-list	(cdr @workpiece-list))) 
+	    		
+	    			(if (? (= (val @status) REQUESTING) )
+	    				;Fail if a differnt WP requested or started.
+	    				(if (? (& 	(|| (achieve-workpiece $agent @differnt-workpiece STARTED)
+	    								(achieve-workpiece $agent @differnt-workpiece REQUESTING))
+	    							(~ (= (val @workpiece) @differnt-workpiece))))
+							(! (printf (FORMAT "Trying to Achieve WP while something else is STARTED or REQUESTED  \n" )))
+	    					(=> (achieve-workpiece $agent (val @workpiece) FAILED))
+	    					else
+		    				;Ignore If the same wp is already started.
+		    				(if (? (~ (achieve-workpiece $agent (val @workpiece) STATRED)))
+		    					(if (? (val @workpiece))
+		    						(=> (achieve-workpiece $agent (val @workpiece) SUCCEEDED));
+		    						else 
+			    					(=> (achieve-workpiece $agent (val @workpiece) STARTED))
+		    						; (! (= $Achieve-Goal (BUILD-GOAL 
+		    						; 						(! (achieve-workpiece $agent (val @workpiece)))
+		    						; 						)))
+		    						; (! (INTENDED-GOAL $Achieve-Goal))
+		    						)
+		    					)
+		    				)
+	    				)
+
+	    			(if (? (= (val @status) FINALIZING))
+    					(!	(= (workpiece @potentially-unbound-id @base @rings @cap @place) (val @workpiece) ))
+
+    					(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) FINALIZING))
+    					(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) FAILED )) 
+    					(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) STARTED))
+    					(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) SUCCEEDED))
+    					)
+
+	    			(if (? (|| 	(= (val @status) SUCCEEDED) 
+	    						(= (val @status) FAILED) 
+	    						(= (val @status) STARTED)))
+	    				;Send it,if still in Database.
+	    				(if (?  (achieve-workpiece $agent (val @workpiece) (val @status) )) 
+							(! (= (workpiece @id (base @base-color) @rings (cap @cap-color) (place @name @feature)) (val @workpiece) )) 
+							(! (= @place-msg (pb-create "llsf_msgs.Place")))
+							(! (pb-set-field @place-msg "name" 		(val @name)))
+							;If it was DS . Assigne Gate number in the msg
+							(if (? (machine (val @name) "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)) 
+								(! (pb-set-field @place-msg "feature" 	"gate" ))
+								(! (pb-set-field @place-msg "gate" 		(val @feature) ))
+								else
+								(! (pb-set-field @place-msg "feature" 	(val @feature)))
+								)
+
+							(! (= @wp-msg (pb-create "llsf_msgs.Workpiece")))
+							(! (pb-set-field @wp-msg "id" 			(val @id)))
+							(! (pb-set-field @wp-msg "base_color" 	(val @base-color)))
+							(if (? (= (val @rings) (rings NONE)))
+								;Add Nothing
+								else
+								(if (? (= (val @rings) (rings @first-ring-color)))
+									(! (pb-set-field @wp-msg "first_ring_color" (val @first-ring-color)))
+									else
+									(if (? (= (val @rings) (rings @first-ring-color @second-ring-color)))
+										(! (pb-set-field @wp-msg "first_ring_color" 	(val @first-ring-color)))
+										(! (pb-set-field @wp-msg "second_ring_color" 	(val @second-ring-color)))
+										else 
+										(if (? (= (val @rings) (rings @first-ring-color @second-ring-color @third-ring-color)))
+											(! (pb-set-field @wp-msg "first_ring_color" 	(val @first-ring-color)))
+											(! (pb-set-field @wp-msg "second_ring_color" 	(val @second-ring-color)))
+											(! (pb-set-field @wp-msg "third_ring_color" 	(val @third-ring-color)))
+											)
+										)
+									)
+								)	
+							(if (? (~ (= (val @cap-color) NONE)))
+								(! (pb-set-field @wp-msg "cap_color" (val @cap-color)))
+								)
+							(! (pb-set-field @wp-msg "place"	(val @place-msg)))
+							
+							(! (= @msg (pb-create "llsf_msgs.AchieveWorkpiece")))
+							(! (pb-set-field @msg "agent" 		$agent))
+							(! (pb-set-field @msg "status" 		(val @status)))
+							(! (pb-set-field @msg "workpiece" 	(val @wp-msg)))
+							(! (pb-broadcast $peer-id (val @msg)))
+							(! (pb-destroy @msg))
+			  				)
+	    				)
+
+					)
+				)
+			)
+		)
+
+	;===========================================/////////======================================
+
 
 	)
