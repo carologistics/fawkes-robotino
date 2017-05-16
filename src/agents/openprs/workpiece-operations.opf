@@ -68,15 +68,23 @@
 					(! (printf (FORMAT "WP_Place --> Gripper: I think the peace is lost..will just fail \n" )))
 					(fail)
 					)
-				else																					;WP Does not exists in the world (i,e Database)
+				else
+				(! (printf (FORMAT "WP_Place --> Gripper: ;WP Does not exists in the world (i,e Database) \n" )))
 				(if (? (& 	(= $base (base UNKNOWN)) 
 							(= $rings (rings none)) 
-							(= $cap (cap $cap-color)) (~ (= $cap-color none))
-							))																			;Its a New Caped Shelf Base, Create it
+							(= (cap $cap-color) $cap)
+							(~ (= $cap-color NONE))
+							))
+					(! (printf (FORMAT "WP_Place --> Gripper: ;Its a New Caped Shelf Base, Get one \n" )))
 					(? (cap-station $cs-name $cap-color $loaded-status $caps-on-shelf))
 					(! (step (drive-to 	machine $cs-name side "input")))
 					(! (step (get-cap 	machine $cs-name)))
-					(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+					;Match to return the created id
+					(if (? (~ (BOUNDP $wp-id)))
+						(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+						else 
+						(? (workpiece $some-id $base $rings $cap (place "agent" "gripper"))) 				;The id was bound ..  but does not have to be true
+						)
 					GOTO fin
  					)
 				(if (? (& 	(= $base (base $base-color)) (~ (= $base-color UNKNOWN))	
@@ -89,12 +97,17 @@
 					(! (= $active-side "input"))
 					(! (step (drive-to 		machine $bs-name side $active-side)))
 					;If there is a base already-at-output, no need to instruct 
-					(if (? (~ (machine $bs-name "BS" "READY_AT_OUTPUT" $bs-prepared $bs-zone $bs-pose $bs-loaded-with)))
-						(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
-						(^ (workpiece $wp-id $base $rings $cap (place $bs-name $active-side)));hazardous...find a better way
+					(if (? 	 (~ (machine $bs-name "BS" "READY_AT_OUTPUT" $bs-prepared $bs-zone $bs-pose $bs-loaded-with)))
+							(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
+							(^ (workpiece 0 $base $rings $cap (place $bs-name $active-side)));hazardous...find a better way
 						)
 					(! (step (get-base machine $bs-name side $active-side)))
-					(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+					;Match to return the created id
+					(if (? (~ (BOUNDP $wp-id)))
+						(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+						else 
+						(? (workpiece $some-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+						)
 					GOTO fin
  					)
 				)
