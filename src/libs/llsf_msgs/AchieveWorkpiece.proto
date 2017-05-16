@@ -1,0 +1,86 @@
+
+/***************************************************************************
+ *  MachineInfo.proto - LLSF Protocol - Machine Specification message
+ *
+ *  Created: Web Mar 22 11:36:50 2017
+ *  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
+ ****************************************************************************/
+
+/*  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * - Neither the name of the authors nor the names of its contributors
+ *   may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+package llsf_msgs;
+
+import "ProductColor.proto";
+
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "AchieveWorkpieceProtos";
+
+enum Status {
+  REQUESTING    = 1;
+  STARTED       = 2;
+  SUCCEEDED     = 3;
+  FAILED        = 4;
+  FINALIZING    = 5; //Either Succeed of failed recieved
+}
+
+message Place {
+enum CompType {
+      COMP_ID  = 5210;
+      MSG_TYPE = 1222;
+    }
+    required string    name     = 1;
+    required string    feature  = 2;
+    optional int32     gate     = 3;
+}
+
+message Workpiece {
+enum CompType {
+      COMP_ID  = 5210;
+      MSG_TYPE = 1333;
+    }
+    optional int32        id                = 1;
+    required BaseColor    base_color        = 2;
+    optional RingColor    first_ring_color  = 3;
+    optional RingColor    second_ring_color = 4;
+    optional RingColor    third_ring_color  = 5;
+    optional CapColor     cap_color         = 6;
+    required Place        place             = 7; 
+}
+
+message AchieveWorkpiece{ 
+    enum CompType {
+      COMP_ID  = 5210;
+      MSG_TYPE = 1003;
+    }
+
+    required  string       agent        = 1;
+    required  Workpiece    workpiece    = 2;
+    required  Status       status       = 3;       
+
+}
