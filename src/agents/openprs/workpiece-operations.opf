@@ -331,6 +331,9 @@
 							)					
 						)
 					)
+				(if (? (~ (BOUNDP $ring-to-mount)))
+					(! (printf (FORMAT "DECIDE WHAT TO INTSRUCT: No Ring to mount could be concluded" )))
+					)
 
 				(? (~ (= null $ring-to-mount)))
 				(? (MEMQ $ring-to-mount $avilible-colors))
@@ -340,5 +343,6 @@
 				(! (= $args (args ring_color $ring-to-mount))) 
 			)
 		)
+
 
 	)
