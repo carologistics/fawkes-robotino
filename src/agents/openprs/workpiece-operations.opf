@@ -137,6 +137,8 @@
 						) 				;Maybe the input side has to be empty for that (or make a need for it)
 		:body (
 
+			(! (printf (FORMAT "WorkpieceOperation: GRIPPER--->INPUT \n ")))
+
 			(if (? 	(= $mps-type "BS"))
 				(! (printf (FORMAT "WP_GRIPPER-->INPUT: Why are you trying to insert to a BS ?!?!..Will fail \n ")))
 				(fail)
@@ -173,26 +175,27 @@
 												(place LOST LOST)))
 							(fail)
 							)
-						)
-				(if (? (& 	(~ (= $base (base UNKNOWN))) 
-							(= $cap (cap none)) 
-							(= $cap-loaded-status CAP_LOADED) 
-							))
 
-					(! (step (drive-to machine $mps-name side "input")))
-					(! (step (instruct-mps  machine $mps-name (args operation MOUNT_CAP))))
-					(! (step (insert machine $mps-name)))
- 					;Normal workpiece,just let it pass to the insertion step 
-					else
-					(! (printf (FORMAT " WP_GRIPPER-->INPUT: Something is not right!. CAP_NOT_LOADED or Wrong Puck!..will fail \n")))
-					(fail)
-					)
+						else
+						
+						(if (? (& 	(~ (= $base (base UNKNOWN)))
+									(= $cap (cap none))
+									(= $cap-loaded-status CAP_LOADED)
+									))
+							(! (step (drive-to machine $mps-name side "input")))
+							(! (step (instruct-mps  machine $mps-name (args operation MOUNT_CAP))))
+							(! (step (insert machine $mps-name)))
 							GOTO succeed
+		 					;Normal workpiece,just let it pass to the insertion step
+							else
+							(! (printf (FORMAT " WP_GRIPPER-->INPUT: Something is not right!. CAP_NOT_LOADED or Wrong Puck!..will fail \n")))
+							(fail))
+						)
 				
 				)
 			;Default insertion Step
-			(! (step (drive-to machine $mps-name side "input")))
-			(! (step (insert machine $mps-name)))
+			; (! (step (drive-to machine $mps-name side "input")))
+			; (! (step (insert machine $mps-name)))
 			LABEL succeed
 			)
 		) 
