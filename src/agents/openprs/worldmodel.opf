@@ -68,6 +68,27 @@
 						this piece is new "
 		)
 
+	(defop worldmodel--On-CS-OUTPUT--cap-retrived
+		:invocation (workpiece $id (base UNKOWN) (rings none) (cap none) (place $cs-name "output"))
+		:context ( 	(cap-station $cs-name $cap-color CAP_NOT_LOADED $caps-on-shelf )
+					(> $id 0)
+					)
+		:body(
+				(=> (cap-station $mps-name $cap-color CAP_LOADED $caps-on-shelf ))
+			)
+		)
+
+	(defop worldmodel--On-CS-OUTPUT--cap-mounted
+		:invocation (workpiece $id (base $base-color) @rings (cap $cap-color) (place $cs-name "output"))
+		:context ( 	(cap-station $cs-name $cap-color CAP_LOADED $caps-on-shelf )
+					(~ (= $base-color UNKOWN))
+					(> $id 0)
+					)
+		:body(
+				(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))
+			)
+		)
+	
 	(defop worldmodel--ready-at-output-since--assertion
 		:invocation ( time $sec $usec ) 
 		:context	( (machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
