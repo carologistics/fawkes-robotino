@@ -53,5 +53,32 @@
 		)
 
 
+	(defop co--on-Achieving-workpiece-Started
+		:invocation (achieve-workpiece $agent (workpiece $id $base $rings $cap $place) STARTED) 
+		:context (agent-name $agent)		
+		:body (
+				; (! (start-critical-section))
+				; (! (kill-other-intentions))
+				; (=> (achieve-workpiece $agent $workpiece STARTED))
+				; (! (end-critical-section))
+				(! (print "Achieving Goal Started..."))
+				
+				(if (? (~ (= $id 0)))
+					(! (= $completed-id $id))
+					)
+
+				(if (! (workpiece $completed-id $base $rings $cap $place)) 
+					(=> (achieve-workpiece $agent (workpiece $completed-id $base $rings $cap $place) SUCCEEDED))
+					else
+					(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap $place) FAILED))
+					(! (printf  (FORMAT "Achieving Workpiece: FAILED Achieving WP %s %s %s %s %s" $id $base $rings $cap $place)))
+					)
+			)
+		:documentation " On the worker agent (slave) specified for achieving a wp. When the achieve-workpiece is started. 
+						Invokes the necessary workpiece operation by posting the 'workpiece' goal carried in the achieve-workpiece fact 
+						that was started. updates the correct state transition for the achievement facts, depending if the workpiece goal 
+						fails of succeeds"
+		)
+
 
 	)
