@@ -19,7 +19,8 @@
 
 			(if (? (= $mps-type "BS"))
 				(! (= (args side $side color $base-color) $args))
-				(! (= $peace-id (rand 1000)))
+				; (! (= $peace-id (rand 1000)))
+				(! (= $peace-id 0))
 				(=> (workpiece $peace-id (base $base-color) (rings none) (cap none) (place $mps-name (term-string-cat $side)) ))
 				)
 
