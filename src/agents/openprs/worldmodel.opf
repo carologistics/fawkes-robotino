@@ -204,6 +204,7 @@
 		)
 
 
+	;TODO: only update or fire when some passed or some
 	(defop worldmodel--agent-position
 	  :invocation (bb-data "type" "Position3DInterface" "id" "Pose" "time" $t_sec $t_usec $data)
 	  :context ();do the updates on a timeout later	
@@ -212,13 +213,23 @@
 		; (! (= @floatarray (bb-value $data "translation")))
 
 		( ! (= @translation-array (car (cdr (cdr (cdr (cdr (cdr (cdr (cdr  $data))))))))))
-		(! (print @translation-array))
+		; (! (print @translation-array))
 		(! (= $xpos (get-float-array @translation-array 0)))
 		(! (= $ypos (get-float-array @translation-array 1)))
 		(=> (agent-pose $xpos $ypos))
 	  	)
 	)
-	
+
+
+	(defop worldmodel--Remove-Zero-id-Bases-when-pickedup
+		:invocation ( time $sec $usec )
+		:context(   (machine $bs-name "BS" "IDLE" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+					(workpiece 0 $base $rings $cap (place $bs-name $side ))
+					)
+	 	:body(
+	 		 	(~> (workpiece 0 $base $rings $cap (place $bs-name $side )))
+	 		)
+	 	)
 
 	)
 
