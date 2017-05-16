@@ -13,7 +13,13 @@
 
 	(defop debug-workpiece
 		:invocation (workpiece $id $base $rings $cap $place)
-		:body ((! (printf (Format "WorkPeac: ID %s  %s %s %s %s \n" $id $base $rings $cap $place))))
+		:body ((! (printf (Format "WorkPiece: ID %s  %s %s %s %s \n" $id $base $rings $cap $place))))
+	  )
+
+
+	(defop debug-achieveworkpiece
+		:invocation (Achieve-WorkPiece $agent (workpiece $id $base $rings $cap $place) $status)
+		:body ((! (printf (Format "Achieve-WorkPiece: %s %s %s %s %s %s %s \n" $agent $status $id $base $rings $cap $place))))
 	  )
 
 	)
