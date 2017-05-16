@@ -274,6 +274,8 @@
 						 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
 						 	(~ (= $gate "input"))
 						 	(~ (= $gate "output"))
+						 	(~ (= $gate "slide"))
+						 	(~ (= $gate "gripper"))
 						 	)
 			:body (
 				(! (printf (FORMAT "WP_input-->Delivery: workpiece %s %s %s %s \n"  $wp-id $base $rings $cap)))
@@ -283,7 +285,8 @@
 				;Good to know here is that once u have a work peace in the input..U really need it gone with the instruction 
 				;in whatever case (even if it was no longer required).  
 					;Just let it pass to the insertion step 
-				(! (step (drive-to machine $mps-name side "input")))	
+				(! (step (drive-to machine $mps-name side "input")))
+
 				(! (step (instruct-mps  machine $mps-name (args gate $gate))))
 				
 				(! (step (insert machine $mps-name)))
