@@ -43,7 +43,8 @@
   :effects (  (~> (agent-init))
               (=> (peer-id public @peer-id))
               (=> (agent-state IDLE))
-              (=> (agent-name $robot-name)) )
+              (=> (agent-name $robot-name))
+              (=> (master-of REASONING "R-1")) )
 )
 
 (defop say
