@@ -295,21 +295,26 @@
 			)
 
 
+
+
 		(defop decide-what-to-instruct--RS
 			:invocation ( ! (decide-what-to-intstruct $mps-name $args))
 			:context ( 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
-						(|| (goal-inmind (workpiece $id $goal-base (rings $first-ring) $goal-cap (place $goal-mps $feature)))
-							(goal-inmind (workpiece $id $goal-base (rings $first-ring $second-ring) $goal-cap (place $goal-mps $feature)))
-							(goal-inmind (workpiece $id $goal-base (rings $first-ring $second-ring $third-ring) $goal-cap (place $goal-mps $feature)))
+						(|| (achieve-workpiece $agent (workpiece $id $goal-base (rings $first-ring) $goal-cap (place $goal-mps $feature)) STARTED)
+							(achieve-workpiece $agent (workpiece $id $goal-base (rings $first-ring $second-ring) $goal-cap (place $goal-mps $feature)) STARTED)
+							(achieve-workpiece $agent (workpiece $id $goal-base (rings $first-ring $second-ring $third-ring) $goal-cap (place $goal-mps $feature)) STARTED)
 							) 	
 						(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $bases-loaded)
+						(agent-name $agent)
 						)
 						; (or 	(& 	(= $rings (rings NONE)) 						(= $goal-rings (rings $ring-to-mount)) )
 						; 		(& 	(= $rings (rings $first-ring)) 					(= $goal-rings (rings $first-ring $ring-to-mount)) )
 						; 		(& 	(= $rings (rings $first-ring $second-ring)) 	(= $goal-rings (rings $first-ring $second-ring $ring-to-mount)) ) )
 						;(= $selected-color none)
 			:body(
+				(! (printf (FORMAT "DECIDE WHAT TO INTSRUCT: ") ))
+
 				(if (? (= $first-ring NONE))
 					(! (printf "DECIDE WHAT TO INTSRUCT: goal-does not have rings..either wrong call or goal" ))
 					(fail)
