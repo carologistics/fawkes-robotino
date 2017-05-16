@@ -523,28 +523,26 @@
 					No locks. No coordination and everything is hard coded"
 
 	)
+	
 
+	; (defop choose-goal-in-mind
+	;     :invocation( ! (choose-goal-inmind) )
+	;     :context(   (order $id c1 $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
+	;           (machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
+	;           )
+	;     :body(
 
-	(defop choose-goal-in-mind
-		:invocation( ! (choose-goal-inmind) )
-		:context( 	(order $id c1 $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
-					(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
-					)
-		:body(
+	;       (! (= $wp-base (base $base-color)))
+	;       (! (= $wp-cap (cap $cap-color)))
+	;       (! (= @wp-rings (rings NONE))) 
 
-			(! (= $wp-base (base $base-color)))
-			(! (= $wp-cap (cap $cap-color)))
-			(! (= @wp-rings (rings NONE))) 
-
-			(if (? (= 1 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors)))) )
-			(if (? (= 2 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors) (cadr $ring-colors)))) )
-			(if (? (= 3 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors) (cadr $ring-colors) (caddr $ring-colors)))) )
-			
-			(=> (goal-inmind (workpiece 0 (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)) ))
-			(=> (choose-goal-inmind))
-		)
-	)
-
-
-
+	;       (if (? (= 1 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors)))) )
+	;       (if (? (= 2 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors) (cadr $ring-colors)))) )
+	;       (if (? (= 3 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors) (cadr $ring-colors) (caddr $ring-colors)))) )
+	      
+	;       (=> (goal-inmind (workpiece 0 (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)) ))
+	;       (=> (choose-goal-inmind))
+	;     )
+	;   )
+	
 )

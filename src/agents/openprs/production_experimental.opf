@@ -1,0 +1,43 @@
+;---------------------------------------------------------------------------
+;  production_experimental.opf - OpenPRS OP file for RCll2017 openprs-agent
+;
+;  Created: Tue FEB 17 15:43:00 2017
+;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+(
+
+	(defop choose-goal-inmind
+		:invocation( ! (choose-goal-inmind $c-type) )
+		:context( 	(order $id $c-type $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
+					(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
+					(master-of REASONING $agent)
+					(agent-name $agent)
+					(~ (choosing-goal-inmind))
+					)
+		:body(
+
+			(! (start-critical-section))
+			(=> (choosing-goal-inmind))
+ 			(! (kill-other-intentions))
+ 			(! (end-critical-section))
+ 			(! (print "Chooseing a Goal..."))
+
+
+			(! (= $wp-base (base $base-color)))
+			(! (= $wp-cap (cap $cap-color)))
+			(! (= @wp-rings (rings NONE))) 
+
+			(if (? (= 1 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors)))) )
+			(if (? (= 2 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors) (cadr $ring-colors)))) )
+			(if (? (= 3 (LENGTH $ring-colors)))  (! (= @wp-rings (rings (car $ring-colors) (cadr $ring-colors) (caddr $ring-colors)))) )
+			
+			;convert delevary gate to a string 
+			;(! (= $delivery-gate-string (term-string-cat $delivery-gate)))
+
+			(=> (goal-inmind (workpiece 0 (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)) ))
+		)
+		:effects ((~> (choosing-goal-inmind)))
+	)
+
+)
