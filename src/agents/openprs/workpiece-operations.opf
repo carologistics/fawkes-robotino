@@ -24,6 +24,137 @@
 	; )
 
 
+	
+	(defop wp--at-output
+		:invocation ( ! (workpiece $id $base $rings $cap (place $mps-name "output")))
+		:context	( 	(machine $mps-name $type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+						(agent-name $agent) )
+		:body (
+
+			(! (printf (Format "--Achieving Workpiece OUTPUT  at %s \n" $mps-name )))
+			; Get a free agent and assume its called $selected-robot..maybe even one that has this thing booked somehow
+			; Or even at this level mayb already assume u know which agent u need to have working on this shit so just go for the flow of this
+			(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) STARTED))
+			;maybe wait a bit to allow sending
+			
+			(if (? (= $type "BS"))
+				(? (= $base (base $base-color) ))
+				(if (! (step (instruct-mps machine $mps-name (args side OUTPUT color $base-color) )))
+					(^ (workpiece @id $base $rings $cap (place $mps-name "output")))
+					(=> (achieve-workpiece $agent (workpiece (val @id) $base $rings $cap (place $mps-name "output")) SUCCEEDED))
+					GOTO fin
+					))
+
+			(if (? (= $type "CS"))
+				; (! (= $precond_list (. workpiece .)))
+				;Find out what is the CAP operation and check the preconds
+				(if (? (& 	(cap-station $mps-name @cap-color CAP_NOT_LOADED @caps-on-shelf)
+							(= $cap 	(cap NONE))
+							(= $base 	(base UNKNOWN))
+							(= $rings 	(rings NONE))))
+					(! (= $current-cap (val @cap-color)))
+					(! (printf (Format "--Achieving Workpiece Retrieving Cap \n")))
+					GOTO  Achieve_CAP_STATION_Workpiece
+					)
+
+				(if (? (& 	(cap-station $mps-name @cap-color CAP_LOADED @caps-on-shelf)
+							(= $cap 	(cap @cap-color))
+							(~ (= $cap 	(cap none)))
+							))
+
+					(! (printf (Format "--Achieving Workpiece MOunting Cap \n")))
+					(! (= $current-cap NONE))
+					GOTO  Achieve_CAP_STATION_Workpiece
+					)
+				)
+
+			(if (?  (= $type "RS"))
+				; (! (= $precond_list (. workpiece .)))
+				;Find out which Ring to mount and check the preconds	
+				(if (? (= $rings (rings NONE)))
+					; Do nothing. Wrong workpiece description
+					else 
+					(if (? (= $rings (rings @ring-to-mount)))
+						(! (= $current-rings (rings NONE)))
+						(! (= $ring-to-mount (val @ring-to-mount)))
+						else
+						(if (? (= $rings (rings @first-ring @ring-to-mount)))
+							(! (= $current-rings (rings (val @first-ring))))
+							(! (= $ring-to-mount (val @ring-to-mount)))
+							else
+							(if (? (= $rings (rings @first-ring @second-ring @ring-to-mount)))
+								(! (= $current-rings (rings (val @first-ring) (val @second-ring))))
+								(! (= $ring-to-mount (val @ring-to-mount)))
+								)
+							)
+						)
+					)
+				(if(? (~ (BOUNDP $ring-to-mount)))
+					(! (printf (FORMAT "Achieving-Output: There is no ring to mount in the goal \n"  )))
+					GOTO FAIL 
+					)
+
+				(if (? (& 	(ring-station $mps-name (avilible-colors $avilible-colors) $select-ring-color $bases-loaded)
+							(MEMQ $ring-to-mount $avilible-colors)
+							(ring $ring-to-mount $required-bases)
+							(>= $bases-loaded $required-bases)
+							(workpiece $id $base $curent-rings $cap (place $name $freature) 
+							)))
+					(! (printf (FORMAT "Achieving-Output: Will Start Achieving \n"  )))
+					GOTO  Achieve_RING_STATION_Workpiece
+					)
+				)
+
+			GOTO FAIL
+
+			LABEL Achieve_CAP_STATION_Workpiece
+			(if (! (workpiece $id $base $rings (cap $current-cap) (place "agent" "gripper")))
+				(? (workpiece @some-id $base $rings (cap $current-cap) (place "agent" "gripper")))
+				(=> (Achieve-workpiece $agent (workpiece (val @some-id) $base $rings (cap $current-cap) (place "agent" "gripper")) SUCCEEDED))
+				(! (print "I have it at the gripper"))
+				(if (! (workpiece (val @some-id) $base $rings (cap $current-cap) (place $mps-name "input")))
+					(! (print "I have it at the INPUT"))
+					(=> (Achieve-workpiece $agent (workpiece (val @some-id) $base $rings (cap $current-cap) (place $mps-name "input")) SUCCEEDED))
+					;wait for the output or timeout to fail
+					(^ (workpiece (val @some-id) $base $rings $cap (place $mps-name "output")))
+					(=> (Achieve-workpiece $agent (workpiece  $some-id $base $rings $cap (place $mps-name "output")) SUCCEEDED))
+					GOTO fin
+					)
+				)
+
+			GOTO FAIL
+
+			LABEL  Achieve_RING_STATION_Workpiece
+			(if (! (workpiece $id $base $current-rings $cap (place "agent" "gripper")))
+				(=> (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place "agent" "gripper")) SUCCEEDED))
+				; (if (? (~ (master-of REASONING $agent)))
+				; 	(^ (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place "agent" "gripper")) FINALIZING))
+				; 	)
+				(! (print "I have it at the gripper"))
+				(! (workpiece $id $base $current-rings $cap (place $mps-name "input")))
+					(! (print "I have it at the INPUT"))
+					; (=> (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place $mps-name "input")) SUCCEEDED))
+					; (if (? (~ (master-of REASONING $agent)))
+					; 	(^ (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place $mps-name "input")) FINALIZING))
+					; 	)
+					; ;wait for the output or timeout to fail
+					(^ (workpiece $id $base $rings $cap (place $mps-name "output")))
+					(=> (Achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) SUCCEEDED))
+					GOTO fin
+				
+				)
+
+			LABEL FAIL
+			;Only arrives here if it was not successful
+			(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) FAILED))
+			GOTO fin
+			
+			LABEL fin
+			)
+		)
+
+
+
 	(defop wp-somewhere-to-gripper
 		:invocation ( ! (workpiece $wp-id $base $rings $cap (place "agent" "gripper")) )
 		:context ( (holding none) )
