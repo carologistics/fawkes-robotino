@@ -6,7 +6,7 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 (
-
+	
 	(defop choose-goal-inmind
 		:invocation( ! (choose-goal-inmind $c-type) )
 		:context( 	(order $id $c-type $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
@@ -41,7 +41,8 @@
 	)
 
 
-; (defop break-goal-needs
+
+	; (defop break-goal-needs
 	; 	:invocation ( (goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)))) )
 	; 	:context () 
 	; 	:body(
@@ -88,5 +89,124 @@
 	; 		(=> (need (cap-station $cs-name $cap-color CAP_LOADED @DONT_CARE-on-shelf))) 		for (workpiece 0 $goal-base $goal-rings $goal-cap (place $cs-name "input")) ))
 	; 		)
 	; 	)
+
+
+
+	(defop break-down-subgoals-tree
+		:invocation ( ! (build-tree) )
+		:context ( 	(goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)))
+					(~ (goal-tree-node $node_id $node_id 0 MAIN_BRANCH (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate) ) ))
+					)
+
+		:body(
+			; (goal-tree-node $node-id $depth $parent_id $children-list $branch-improtance (workpiece $id $base $rings $cap (place $mps-name $side) ))
+			(? (machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with))
+			(? (machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)) 
+			(? (& 	(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with) 
+					(cap-station $cs-name $cap-color $loaded-status $caps-on-shelf)
+					(= $goal-cap (cap $cap-color))))
+
+			(if (? (= $goal-rings (rings none)))
+				else 
+				(if (? (= $goal-rings (rings $first-ring-color)))
+					else
+					(if (? (= $goal-rings (rings $first-ring-color $second-ring-color)))
+						else 
+						(if (? (= $goal-rings (rings $first-ring-color $second-ring-color $third-ring-color))))
+						)
+					)
+				)
+
+			(if (? (BOUNDP $first-ring-color))
+				(? (&	(machine $first-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+						(ring-station $first-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+						(MEMQ $first-ring-color @avilible-colors-list)
+						))
+				)
+
+			(if (? (BOUNDP $second-ring-color))
+				(? (&	(machine $second-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+						(ring-station $second-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+						(MEMQ $second-ring-color @avilible-colors-list)
+						))
+				)
+
+			(if (? (BOUNDP $third-ring-cobreak-down-subgoals-treelor))
+				(? (&	(machine $third-rs-name "RS" @rs-state @rs-prepared @rs-zone @rs-pose @rs-loaded-with) 
+						(ring-station $third-rs-name (avilible-colors @avilible-colors-list) @selected-color @bases-loaded)
+						(MEMQ $third-ring-color @avilible-colors-list)
+						))
+				)
+			
+			(! (= @depth 0))
+			(! (= @parent_id 0))
+			(! (= @node_id (rand 1000)))
+
+			;===Depth 0
+			(=> (goal-tree-node @node_id @node_id @depth MAIN_BRANCH FUTURE (workpiece 0 $goal-base $goal-rings (cap $cap-color) (place $ds-name $delivery-gate) ) ))
+			(! (= @depth (+ 1(val @depth ))))			
+			(! (= @parent_id (val @node_id)))
+			(! (= @node_id (+ 1 (val @node_id))))
+			
+			;===Depth 1 
+			(=> (goal-tree-node @node_id @parent_id @depth MAIN_BRANCH FUTURE (workpiece 0 $goal-base $goal-rings (cap $cap-color) (place $cs-name "output") ) ))
+			(! (= @depth (+ 1(val @depth ))))			
+			(! (= @parent_id (val @node_id)))
+			(! (= @node_id (+ 1 (val @node_id))))
+			
+			;===Depth 2
+			(=> (goal-tree-node @node_id @parent_id @depth SUB_BRANCH FUTURE (cap-station $cs-name $cap-color CAP_LOADED @some-on-shelf) ))
+			(! (= @node_id (+ 1 (val @node_id))))
+
+
+			(if (? (BOUNDP $third-ring-color))
+				(=> (goal-tree-node @node_id @parent_id @depth MAIN_BRANCH FUTURE (workpiece 0 $goal-base $goal-rings (cap none) (place $third-rs-name "output") ) ))
+				(! (= @depth (+ 1(val @depth ))))
+				(! (= @parent_id (val @node_id)))
+				(! (= @node_id (+ 1 (val @node_id)) ))
+			;===Depth 3
+				(? (ring $third-ring-color @bases-required))
+				(while (? (< 0 (val @bases-required) ))	
+					(! (= @bases-required (- (val @bases-required) 1)))
+					(=> (goal-tree-node @node_id @parent_id @depth SUB_BRANCH FUTURE (workpiece 0 ANY ANY ANY (place $third-rs-name "slide") ) ))
+					(! (= @node_id (+ 1 (val @node_id)) ))
+					)
+				)
+
+			(if (? (BOUNDP $second-ring-color))
+				(=> (goal-tree-node @node_id @parent_id @depth MAIN_BRANCH FUTURE (workpiece 0 $goal-base (rings $first-ring-color $second-ring-color) (cap none) (place $second-rs-name "output") ) ))
+				(! (= @depth (+ 1(val @depth ))))
+				(! (= @parent_id (val @node_id)))
+				(! (= @node_id (+ 1 (val @node_id)) ))
+			;===Depth 4
+				(? (ring $second-ring-color @bases-required))
+				(while (? (< 0 (val @bases-required) ))	
+					(! (= @bases-required (- (val @bases-required) 1)))
+					(=> (goal-tree-node @node_id @parent_id @depth SUB_BRANCH FUTURE (workpiece 0 ANY ANY ANY (place $second-rs-name "slide") ) ))
+					(! (= @node_id (+ 1 (val @node_id)) ))
+					)
+				)
+
+			(if (? (BOUNDP $first-ring-color))
+				(=> (goal-tree-node @node_id @parent_id @depth MAIN_BRANCH FUTURE (workpiece 0 $goal-base (rings $first-ring-color) (cap none) (place $first-rs-name "output") ) ))
+				(! (= @depth (+ 1(val @depth ))))
+				(! (= @parent_id (val @node_id)))
+				(! (= @node_id (+ 1 (val @node_id)) ))
+			;===Depth 4
+				(? (ring $first-ring-color @bases-required))
+				(while (? (< 0 (val @bases-required)) )	
+					(! (print @bases-required))
+					(! (= @bases-required (- (val @bases-required) 1)))
+					(=> (goal-tree-node @node_id @parent_id @depth SUB_BRANCH FUTURE (workpiece 0 ANY ANY ANY (place $first-rs-name "slide") ) ))
+					(! (= @node_id (+ 1 (val @node_id)) ))
+					)
+				)
+
+			;===Depth 5
+				(=> (goal-tree-node @node_id @parent_id @depth MAIN_BRANCH FUTURE (workpiece $id $goal-base (rings none) (cap none) (place "agent" "gripper") ) ))
+
+			)
+
+		)
 
 )
