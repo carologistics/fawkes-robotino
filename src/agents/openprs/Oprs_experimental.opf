@@ -1,0 +1,458 @@
+(
+
+
+; ;-=============================================================
+(defop Experment-on-intending-main
+		:invocation( ! (achieve)  )
+		:context ()
+		:properties ((decision-procedure t))
+		:Body(
+
+			(! (print "Trying ACHIEVE"))
+
+			(! (= $first-goal (build-goal (! (first-goal)))))
+			(! (= $monitor (build-goal (! (monitor)))))
+
+			; ; (! (= $second-goal (build-goal (! (second-goal)))))
+			; ; (! (= $third-goal (build-goal (! (third-goal)))))
+			
+			; (! (INTENDED-GOAL $goal))
+			; (? (APPLICABLE-OPS-GOAL $first-goal $list-of-op-instances))
+			; (! (print $list-of-op-instances))
+
+
+			(! (INTENDED-GOAL $monitor ) )
+			(! (INTENDED-GOAL $first-goal ) )
+
+	
+
+			(^ (go-0))
+			)
+		)
+
+
+	
+	(defop Experment-mointor
+		:invocation( ! (monitor))
+		:context ()
+		:properties ((decision-procedure t))
+		:Body(
+
+			(! (print "The monitiong goal is running"))
+	
+		(! (= $first-goal (build-goal (! (first-goal)))))
+		
+		(^ (APPLICABLE-OPS-GOAL $first-goal $list-of-op-instances))
+
+
+			(! (print "FOunfdsdasdasd"))
+			(^ (go-1))
+			)
+		)
+	
+
+
+	
+	(defop Experment-on-intending-1
+		:invocation( ! (first-goal))
+		:context ()
+		:Body(
+
+			(! (print "The First goal is running"))
+			(^ (go-1))
+			)
+		)
+
+
+; ;-===========================================String Convertsion
+; 	(defop Experiment-String-to-number
+; 		:invocation (! (convert $string))
+; 		:context ()
+; 		:body(
+
+; 			(! (= $atom (make-atom $string)))
+; 			(=> (Conversion-result $atom))
+; 			)
+; 		)
+
+
+; 	(defop Expe-String-to-number--test-numer
+; 		:invocation (! (test-number))
+; 		:context ()
+; 		:body(
+
+; 				(? (Conversion-result $atom))
+				
+; 				(if (? (NUMBERP $atom))
+; 					(! (print "IT is a number"))
+; 					else 
+; 					(! (print "IT is NOT  number"))
+
+
+; 					(! (print (+ 1 $atom)))
+; 					)				
+
+; 				; (! (= $int (build_integer $atom) ))
+
+; 				; (if (? (NUMBERP $int))
+; 				; 	(! (print "IT is a number"))
+; 				; 	else 
+; 				; 	(! (print "IT is NOT  number"))
+; 				; 	)
+
+
+
+				
+; 			)
+; 		)
+
+
+
+	; (defop add-facts-fot-testing
+	; 	:invocation (! (achieve $agent ))
+	; 	:context ()
+	; 	:body(
+
+	; 			(=> (achieve-workpiece  $agent
+	; 								(workpiece 0 (base base_red) (rings none) (cap none) (place "agent" "gripper")) 
+	; 		 						REQUESTING))
+
+	; 		(=> (achieve-workpiece  "R-1"
+
+	; 								(workpiece 0 (base base_red) (rings ring_green) (cap none) (place "C-CR1" "output")) 
+	; 		 						REQUESTING))
+
+	; 		(=> (achieve-workpiece  "R-2"
+
+	; 								(workpiece 0 (base base_red) (rings RING_YEALLOW) (cap none) (place "C-CR2" "output")) 
+	; 		 						REQUESTING))
+
+	; 		(=> (achieve-workpiece  "R-1" 
+	; 								(workpiece 0 (base BASE_RED) (rings none) (cap none) (place "C-BS" "output")) 
+	; 		 						REQUESTING))
+
+	; ;(=> (workpiece 22 (base base_red) (rings none) (cap none) (place "C-BS" "output")))
+	; 		  (^ (workpiece $id (base base_red) (rings none) (cap none) (place "C-BS" "output")))
+	; 		  (=> (achieve-workpiece  "R-1" 
+	; 		  						(workpiece $id (base BASE_RED) (rings RING_GREEN) (cap none) (place "C-RS1" "output")) 
+	; 		   						REQUESTING))
+
+
+
+	; 		(=> (achieve-workpiece  "R-2" 
+	; 								(workpiece 0 (base UNKNOWN) (rings none) (cap none) (place "C-CS2" "output")) 
+	; 		 						 REQUESTING))
+	; 		 )
+	; 	)
+
+	; (defop add-facts-fot-testing
+	; 	:invocation (! (ad $agent $wp-id $name $status))
+	; 	:context ()
+	; 	:body(
+
+	; 		(=> (achieve-workpiece $agent 
+	; 								(workpiece $id (base BASE_RED) (rings RING_BLUE) (cap CAP_GREY) (place $name "output")) 
+	; 		 						$status))
+
+	; 		)
+	; 	)
+
+	; (defop add-facts-fot-testing-2
+	; 	:invocation (! (add $agent $wp-id $name $status))
+	; 	:context ()
+	; 	:body(
+
+	; 		(=> (achieve-workpiece $agent 
+	; 								(workpiece $wp-id (base BASE_RED) (rings RING_BLUE RING_YEALLOW) (cap CAP_GREY) (place $name "output")) 
+	; 		 						$status))
+
+	; 		)
+	; 	)
+
+	; (defop add-facts-fot-testing-3
+	; 	:invocation (! (addd $agent $wp-id $name $status))
+	; 	:context ()
+	; 	:body(
+
+	; 		(=> (achieve-workpiece $agent 
+	; 								(workpiece $wp-id (base BASE_RED) (rings RING_BLUE RING_YELLOW RING_GREEN) (cap CAP_GREY) (place $name "output")) 
+	; 		 						$status))
+
+	; 		)
+	; 	)
+
+	; (defop co--forAll--receivePLace
+	; 	:invocation (protobuf-msg "llsf_msgs.Place" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec		                        
+	; 														$rcv-from-host $rcvd-from-port $client-type $client-id $place-msg)
+	; 	:context 	(agent-name $agent-name)
+	; 	:body(
+	; 		(! (print "PLACE msg "))
+	; 		(! (= $name 		(pb-field-value $place-msg "name")) )
+	; 		(! (= $feature		(pb-field-value $place-msg "feature")) )
+
+	; 		(! (print $name ))
+	; 		(! (print $feature ))
+
+	; ))
+
+
+	; (defop co--forAll--receiveWP
+	; 	:invocation (protobuf-msg "llsf_msgs.Workpiece" $comp-id $msg-type $rcvd-via $rcvd-at-sec $rcvd-at-usec		                        
+	; 														$rcv-from-host $rcvd-from-port $client-type $client-id $wp-msg)
+	; 	:context 	(agent-name $agent-name)
+	; 	:body(
+	; 		(! (print "WorkPiece msg "))
+
+	; 		(! (= $wp-id 		(pb-field-value $wp-msg "id")) )
+	; 		(! (= $base-color 	(pb-field-value $wp-msg "base_color")) )
+	; 		(! (= $first-ring-color 	(pb-field-value  $wp-msg "first_ring_color")) )
+	; 		(! (= $cap-color 	(pb-field-value $wp-msg "cap_color")) )
+
+	; 		(! (print $wp-id ))
+	; 		(! (print $base-color ))
+	; 		(! (print $first-ring-color ))
+	; 		(! (print $cap-color ))
+
+	; ))
+
+	(defop co--STARTED-Achieving
+		:invocation (! (achieve-workpiece $agent $workpiece STARTED))
+		:context (agent-name $agent)		
+		:body (
+				(! (print "something here"))
+				(! (= $workpiece-goal (BUILD-GOAL (! (val $workpiece)) )))
+
+				(! (INTENDED-GOAL-WITH-PRIORITY $workpiece-goal 2))
+				(! (= $succeed-goal (BUILD-GOAL (!  (achieve-some-goal SUCCEEDED)) )))
+				(! (INTENDED-GOAL-WITH-PRIORITY $succeed-goal 3))
+			
+				
+				(=> (achieve-workpiece $agent $workpiece STARTED))
+			)
+
+		)
+
+
+	(defop co--wor-suc
+		:invocation (! (achieve-some-goal suck))
+		:context ()		
+		:body (
+			(! (= $succeed-goal (BUILD-GOAL (!  (achieve-some-goal SUCCEEDED)) )))
+				(! (INTENDED-GOAL-WITH-PRIORITY $succeed-goal 1))
+				
+				(! (print "will suck"))
+				(^ (W))
+			)
+
+		)
+	
+
+	(defop co--wor-fail
+		:invocation (! (achieve-some-goal fuck))
+		:context ()		
+		:body (
+			(! (= $succeed-goal (BUILD-GOAL (!  (achieve-some-goal SUCCEEDED)) )))
+				(! (INTENDED-GOAL-WITH-PRIORITY $succeed-goal 3))
+				
+				(! (print "will fuck"))
+				(^ (W))
+				(! (FAILED))
+
+		)
+	)
+
+
+	(defop co--COMPLETED-Achieving
+		:invocation (! (achieve-some-goal SUCCEEDED))
+		:context (agent-name $agent)		
+		:body (
+				;(if ())
+				(=> (SUCCEEDED))
+			)
+
+		)
+	
+
+;;;;;;;;==================================================================
+; 	(defop Experment-on-goal
+; 		:invocation( ! (Achieve))
+; 		:context ()
+; 		:properties ((decision-procedure t))
+; 		:Body(
+
+; 			(! (print "Trying ACHIEVE"))
+
+; 			(! (= $goal (build-goal (! (Achieve-some-goal)))))
+; 			(! (INTENDED-GOAL $goal))
+; 			(^ (go-0))
+; 			)
+; 		)
+	
+; 	(defop Experment-on-goal-achievement-dec
+; 		:invocation( ! (Achieve-some-goal))
+; 		:context ()
+; 		:properties ((DECISION-PROCEDURE T))
+; 		:Body(
+; 			(! (print "Trying the Op Number DEC"))
+; 			(^ (go-dec))
+; 			(=> (decided))
+; 			; ()
+; 			)
+; 		)
+
+; 	(defop Experment-on-goal-achievement-one
+; 		:invocation( ! (Achieve-some-goal))
+; 		:properties ((DECISION-PROCEDURE f))
+; 		:context ((decided))
+; 		:Body(
+; 			(! (print "Trying the Op Number ONE"))
+; 			(^ (go-1))
+; 			(! (failed))
+; 			)
+; 		)
+
+; 	(defop Experment-on-goal-achievement-tow
+; 		:invocation( ! (Achieve-some-goal))
+; 		:context ((decided))
+; 		:properties ((DECISION-PROCEDURE F))
+; 		:Body(
+; 			(! (print "Trying the Op Number Tow"))
+; 			(^ (go-2))
+; 			(! (succeed))
+; 			(! (failed))
+; 			)
+; 		)
+
+; 	(defop Experment-on-goal-achievement-three
+; 		:invocation( ! (Achieve-some-goal))
+; 		:properties ((DECISION-PROCEDURE F))
+; 		:context ((decided))
+; 		:Body(
+; 			(! (print "Trying the Op Number Three"))
+; 			(^ (go-3))
+; 			)
+; 		)
+; ; (defop Experment-on-goal-achievement-four
+; ; 		:invocation( ! (Achieve-some-goal))
+; ; 		:context ()
+; ; 		:Body(
+; ; 			(! (print "Trying the Op Number four"))
+; ; 			(^ (go-4))
+; ; 			(! (failed))
+; ; 			)
+; 		)
+; (defop Experment-on-goal-achievement-five
+; 		:invocation( ! (Achieve-some-goal))
+; 		:context ()
+; 		:Body(
+; 			(! (print "Trying the Op Number five"))
+; 			(^ (go-5))
+; 			(=> (Achieve-some-goal))
+; 			)
+; 		)
+;===================================================
+	; (defop Experment--when-is-goal-intended
+	; 	:invocation( ! (test-goal))
+	; 	:context ()
+	; 	:body (
+
+	; 		(! (= $goal (build-goal  (! (a-goal)))))
+	; 		(! (INTENDED-GOAL $goal ))
+	; 		(^ (wait-to-see))
+	; 		)
+	; 	)
+
+	; (defop Experment--how-does-conj-in-invocation-work
+	; 	:invocation( & 	(somefact)
+	; 					(anotherfact)
+	; 					(! (a-goal))
+	; 					)
+	; 	:context ()
+	; 	:body (
+	; 		(! (print "Conj THIS IS WORKIGN NOW"))
+	; 		)
+	; 	)
+
+	; (defop Experment--how-does-disj-in-invocation-work
+	; 	:invocation( ||	(somefact)
+	; 					(anotherfact)
+	; 					(! (a-goal))
+	; 					)
+	; 	:context ()
+	; 	:body (
+	; 		(! (print "Disj THIS IS WORKIGN NOW"))
+	; 		)
+	; 	)
+
+
+	; (defop Experment-002-_M_-How-can-I-nest-maintain-condetions-and-what-ops-fire
+	; 	:invocation (! (ex-002))
+	; 	:context 	( )
+	; 	:body 		(
+	; 					; (&	(! (some-goal))
+	; 					; 	(# (precondition $id1))
+	; 					; 	(# (precondition $id2))
+	; 					; 	(~ (= $id1 $id2)))				
+
+	; 					(&	(! (some-goal))
+	; 						(% (& 	(precondition 1 ACHIEVED)
+	; 								(precondition 2 ACHIEVED))))
+	; 					)
+	; 	)
+
+	; (defop Experment-002-_M_-How-can-I-nest-maintain-condetions-and-what-ops-fir-12
+	; 	:invocation (! (ex-002-2))
+	; 	:context 	( )
+	; 	:body 		(
+	; 					; (&	(! (some-goal))
+	; 					; 	(# (precondition $id1))
+	; 					; 	(# (precondition $id2))
+	; 					; 	(~ (= $id1 $id2)))				
+
+	; 					(&	(! (some-goal))
+	; 						(% 	(precondition 1 ACHIEVED))
+	; 						(%  (precondition 2 ACHIEVED))
+	; 						)
+	; 					)
+	; 	)
+
+	; (defop Experment-002-^W^-goal-to-achieve
+	; 	:invocation (! (some-goal))
+	; 	:context ( )
+	; 	:body (
+	; 			(! (print "ACHIEVING THE MAIN GOAL"))
+	; 			(^ (wait-to-see))
+	; 		)
+	; 	)
+
+	; (defop Experment-002-^W^-only-condition-achiever
+	; 	:invocation (! (precondition $id))
+	; 	:context ( )
+	; 	:body (
+	; 			(! (print "ACHIEVING THE PRECOND"))
+	; 		)
+	; 	)
+
+
+	; (defop Experment-002-^W^-the-whole-thing
+	; 	:invocation ( & (! 	(precondition $id1))
+	; 					(!	(precondition $id2))
+	; 					(~ (= $id1 $id2 ))
+	; 					)
+	; 	:context ( )
+	; 	:body (
+	; 			(! (print "ACHIEVING THE WHOLE THING"))
+	; 		)
+	; 	)
+		
+
+	; (defop Experment-002-^W^-condition-with-achieve-state
+	; 	:invocation (! (precondition $id1 ACHIEVED))
+	; 	:context ( )
+	; 	:body (
+	; 			(! (print "ACHIEVING The once with id"))
+	; 			(! (print $id))
+	; 		)
+	; 	)
+
+)
