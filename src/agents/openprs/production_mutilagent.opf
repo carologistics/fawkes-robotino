@@ -8,6 +8,47 @@
 
 (
 
+
+	(defop Produce-C0
+		:invocation ( timer "beacon" $last-sec $last-usec $seq)
+		
+		:context ( 	(goal-inmind (workpiece 0 (base $base-color) (rings none) (cap $cap-color) (place $ds-name $delivery-gate)))
+					(game-phase production)
+					(~ (in-production))
+					(master-of REASONING $me)
+					(agent-name $me)
+					)
+		
+		:body (
+			(! (start-critical-section))
+			(=> (in-production))
+ 			(! (kill-other-intentions))
+ 			(! (end-critical-section))
+ 			(! (print "Producing a c0..."))
+
+			; (! (choose-free-agent-for $agent))
+			; (? (cap-station $cs-name $cap-color CAP_NOT_LOADED @some-on-shelf))
+			; (=> (cap-station $cs-name $cap-color CAP_LOADED @some-on-shelf))	
+			
+			 ; (// (	
+			 ; 		(! (Task-Retrive-Cap "R-1"))
+				; 	(! (Task-Deliver "R-1"))
+				; 	(! (Task-Mount-Cap "R-2"))
+				; 	(! (Task-Clear-Cap-Station "R-1"))
+				; ))
+
+				(! (= @goal-list (. .) ))
+				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Deliver 			"R-1"))) @goal-list )))
+				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Mount-Cap 			"R-2"))) @goal-list )))
+				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Clear-Cap-Station 	"R-1"))) @goal-list )))
+			 	(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Retrive-Cap 		"R-1"))) @goal-list )))
+
+			 	(! (INTENDED-ALL-GOALS-//-AS-ROOTS (val @goal-list)))
+			)
+		:effects ()
+		)
+
+
 	(defop Task--Retrive-Cap
 		:invocation ( ! (Task-Retrive-Cap $agent) )
 		:context( 	(goal-inmind (workpiece 0 (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
@@ -28,6 +69,115 @@
 
 			)
 		)
+
+
+
+	(defop Task--Clear-Cap-Station
+		:invocation ( ! (Task-Clear-Cap-Station $agent))
+		:context(	(goal-inmind (workpiece 0 (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
+					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
+					(master-of REASONING $me)
+					(agent-name $me)
+					)
+		:body(
+
+			(^ (workpiece @id (base UNKNOWN) (rings none) (cap none) (place $cs-name "output")))
+			
+			(! (achieve-workpiece $agent (workpiece (val @id)(base UNKNOWN) (rings none) (cap none) (place "agent" "gripper"))))
+
+			(if (? (& 	(ring-station $rs-name (avilible-colors $colors-list)  $selected-color $bases-loaded)
+						(< $bases-loaded 3)))
+				(! (print "Found a RS with less that 3 bases in slide"))
+				(! (achieve-workpiece $agent (workpiece (val @id) (base UNKNOWN) (rings none) (cap none) (place $rs-name "slide"))))
+			)
+
+			)
+		)
+
+
+
+	(defop Task--Mount-Cap-c0
+		:invocation ( ! (Task-Mount-Cap $agent))
+		:context(	(goal-inmind (workpiece 0 (base $base-color) (rings none) (cap $cap-color) (place $ds-name $delivery-gate) ))
+					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
+					(machine $mps-name "BS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+					(master-of REASONING $me)
+					(agent-name $me)
+					)
+		:body(
+
+			(^ (cap-station $cs-name $cap-color CAP_LOADED @some-on-shelf))
+
+			(! (achieve-workpiece $agent (workpiece 0 (base $base-color) (rings none) (cap none) (place "agent" "gripper"))))
+
+			(^ (workpiece @id (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
+			
+			(! (achieve-workpiece $agent (workpiece (val @id) (base $base-color) (rings none) (cap none) (place $cs-name "input"))))
+			
+			)
+		)
+
+	(defop Task--Deliver
+		:invocation ( ! (Task-Deliver $agent))
+		:context(	(goal-inmind (workpiece 0 (base $base-color) $wp-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
+					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
+					(master-of REASONING $me)
+					(agent-name $me)
+					)
+		:body(
+
+			(^ (workpiece @id (base $base-color) $wp-rings (cap $cap-color) (place $cs-name "output")))
+
+			(! (achieve-workpiece $agent (workpiece (val @id) (base $base-color) $wp-rings (cap $cap-color) (place "agent" "gripper"))))
+
+			(^ (workpiece (val @id) (base $base-color) $wp-rings (cap $cap-color) (place "agent" "gripper")))
+
+			(! (printf (FORMAT "found the WP with id %s" (val @id))))
+
+			(! (achieve-workpiece $agent (workpiece (val @id) (base $base-color) $wp-rings (cap $cap-color) (place $ds-name $delivery-gate))))
+
+			)
+		)
+
+; (defop produce-c0-imperative-multiagent
+	; 	:invocation	(timer "beacon" $last-sec $last-usec $seq)
+	; 	:context(	(order $id c0 $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
+	; 			 	(cap-station $cs-name $cap-color $cap-loaded-status $caps-on-shelf)
+	; 			 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)
+	; 			 	(machine $cs-name "CS" $cs-state $cs-prepared $cs-zone $cs-pose $cs-loaded-with)
+	; 			 	(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
+	; 			 	(~ (= $cs-state BROKEN))
+	; 			 	(~ (= $cs-state DOWN))
+	; 				(peer-id private $peer-id)
+	; 			   	(team-color $team-color )
+	; 			   	(agent-state IDLE)
+	; 			   	(~ (in-production))
+	; 			   	(master-of REASONING $agent)
+	; 			   	(agent-name $agent)
+	; 			   	)
+
+	; 	:body(
+	; 		(! (start-critical-section))
+	; 		(=> (in-production))
+	; 		(! (kill-other-intentions))
+	; 		(! (end-critical-section))
+	; 		(! (print "Producing C0..."))
+	; 		(=> (holding NONE))
+
+	; 		(! (print "PRELOADING CAP STATION..."))
+	; 		(=> (achieve-workpiece "R-1" (workpiece $new-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place $cs-name "output")) REQUESTING ))
+
+	; 		(=> (achieve-workpiece "R-2" (workpiece $new base-id (base $base-color) (rings none) (cap $cap-color) (place $cs-name "output")) REQUESTING ))
+
+	; 		;clearing task
+	; 		( ^ (workpiece @some-shelf-base-id (base UNKNOWN) (rings none) (cap none) (place $cs-name "output") ) )
+	; 		(! (workpiece (val @some-shelf-base-id) (base UNKNOWN) (rings none) (cap none) (place "agent" "gripper")))
+	; 		(=> (holding NONE)) ;FAKE knowledge to let the robot goup for the base with not poblem..I want to keep the constraint of no holding to make sure what to do it i still habe
+	; )
+
+	; :effects ()
+	; )
+
 	
 
 )
