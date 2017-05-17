@@ -8,5 +8,26 @@
 
 (
 
+	(defop Task--Retrive-Cap
+		:invocation ( ! (Task-Retrive-Cap $agent) )
+		:context( 	(goal-inmind (workpiece 0 (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
+					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
+					(master-of REASONING $me)
+					(agent-name $me)
+					)
+		:body(
+
+			;Wait for preconditions
+			(^ (cap-station $cs-name $cap-color CAP_NOT_LOADED @some-on-shelf))
+
+			(! (achieve-workpiece $agent (workpiece 0 (base UNKNOWN) (rings none) (cap $cap-color) (place "agent" "gripper"))))
+
+			(^ (workpiece @id (base UNKNOWN) (rings none) (cap $cap-color) (place "agent" "gripper")))
+
+			(! (achieve-workpiece $agent (workpiece (val @id) (base UNKNOWN) (rings none) (cap $cap-color) (place $cs-name "input"))))
+
+			)
+		)
+	
 
 )
