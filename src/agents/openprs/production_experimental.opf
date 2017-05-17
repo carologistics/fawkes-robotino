@@ -209,4 +209,323 @@
 
 		)
 
+	; (defop process-tree
+	; 	:invocation ( ! (test) )
+	; 	:context  ()
+	; 	:properties ((decision-procedure t))
+	; 	:body (
+	; 		; (! (choose-goal-inmind c1))
+	; 		; (! (build-tree))
+	; 		; ;get all leafs
+	; 		(! (= $list (n-all-list (. $workpiece .)   	(& 	(goal-tree-node $leaf_id $parent_id $depth MAIN_BRANCH $workpiece)
+				
+	; 													(~ 	(goal-tree-node @node_id $leaf_id @depth @branch-type @workpiece))))))
+	; 		; (! (= $current-intention (get-current-intention)))
+	; 		(! (print $list))
+
+	; 		(! (= $goal (build-goal  (! (car (car $list))))))
+	; 		(! (INTENDED-GOAL $goal ))
+	; 		)
+
+	; 	; for each tree leaf..those are the aviliable actions.
+	; 	;What are the ready avilable actions. (precond satisfeid (all the things before. ), )
+
+	; 	;u need to  know what are u doing now and what is already done if u want to reprdouce the needs tree
+	; 	;the nice thing about needs from the top down
+	; 	;having something in my gripper is a state of the world...breaking down the tree from the top to 
+	; 	;know what would be the best thing i can do with the thing makes a lot of since to me..
+	; 	;That is...every time i want to pick an action i match my world state to all the needs till i find a for that 
+	; 	; has every thing else ready
+
+	; 	;Approach given a goal-tree:
+	; 	;Get all leafs.
+	; 	;reason what needs to be done...Main branch
+	; 		;
+	; 	)
+
+	; ;IDEA 1001
+	; ;Make 2 trees...one the truth that needs to be done to achieve this workpiece .This tree does not
+	; ;change and it has every thing that will ever happen to get this done..binding of vars is not a 
+	; ;much and u can put instrcutions in it of things maybe to take care of while ur processing this stuff
+	; ;like how to recover or even a break down for the time it should be done by or something..Another tree would
+	; ;related to time..it is what was done..or being done.right now..past and present and even maybe includes fail 
+	; ;and passed status suceed of what ever...This tree should make u know whats happing and the truth tree lets u know 
+	; ; what 'should' happen.This will make the binding clearer for the ids also btw..coz in the truth tree there could be
+	; ; a lot of unbound things and maybe even conditions on how to handle stuff and urgencey level..it is like a tree on 
+	; ; instructions of how to do things ...a belive tree if u will..
+
+
+	; (defop achieve--MAIN_BRANCH-leaf
+	; 	:invocation (&	(! (achieving-node-tree $node_id $agent))
+	; 					(goal-tree-node $node_id $parent_id $depth MAIN_BRANCH  FUTURE (workpiece $id $base $rings $cap (place $mps-name "output"))  ))
+	; 	 ; somehting that is a goal..I need it to be a goal..or i can make it statefull letting the whole thing depends on 
+	; 	:context( 	(~ (goal-tree-node @node_id $node_id @depth @brach-type  @workpiece ))
+	; 				(~ (achieving-node-tree $node_id @agent)) ); Its the leaf of the MAIN_BRANCH with no children
+	; 	:body (
+
+	; 		(=> (goal-tree-node $node_id $parent_id $depth MAIN_BRANCH    (workpiece $id $base $rings $cap (place $mps-name "output"))) 
+		
+	; 		(! (find-best-free-agent $agent))
+	; 		;lock the node and the agent and prevent a recall of the op
+	; 		(=> (achieving-node-tree $node_id $agent))
+
+	; 		;find preconditions 
+	; 		(! (= $preconditions-list (n-all-list (. $precondition .)  (goal-tree-node @node_id @parent_id @depth SUB_BRANCH ACHIEVED $precondition))))
+	; 		;TODO: make ops to make sure that ACHIEVED REMAINS ACHIEVED or change its status if went out of scope of been changed by  being used 
+	; 		;or something else that happened in the world unexpectedly or so.
+
+	; 		;Question:  do i want to when i am maintaing the precond. What is the form of the precond to be maintaed. Shoudl i maintain the tree node
+	; 		;			or the wp itself..If the workpeice then whatever that i am doing i wont know why i am doing it exsacly. Like where does this 
+	; 		;			 wp come from ..who wants it done and i will have to make the priority that should help me in the metalevel on the goal or the wp
+	; 		;I think it would be better to do it on the goal actually for some reason..but i will just do it on the wp for now
+
+	; 		;building the goals with precond maintaind
+			
+
+
+	; 		; (& (! (wp ...$mps "output")
+	; 		; 	(% (wp $id1	...$mps "slide")))
+	; 		; 	(% (wp $id2... $mps "slide")))
+	; 		; 	(% (wp $id3... $mps "slide")))
+	; 		; 	(~ (= $id1 $id2))
+	; 		; 	(% (~ (= $id1 $id2)))			
+	; 		; 	(% (cap ... $mps "slide"))))
+
+	; 		; (preconditions-achieved $goal-node)
+
+	; 		(! (build-goal (& 	(! (workpiece $id $base $rings $cap (place $mps-name "output"))  )))
+	; 							(% (preconditions-achieved $goal-node))
+	; 			)
+
+	; 		(! (INTENDED-GOAL (build-goal (! (workpiece $id $base $rings $cap (place $mps-name "output"))))))
+	; 		;make sure it is not booked already
+	; 		;find a robot 
+	; 		;book it for him
+	; 		;monitor him doing it
+
+	; 	)
+	; )
+
+	;=================================================================================
+	
+	; (defop process-tree
+	; 	:invocation ( ! (test) )
+	; 	:context  ()
+	; 	:properties ((decision-procedure t))
+	; 	:body (
+	; 		; (! (choose-goal-inmind c1))
+	; 		; (! (build-tree))
+	; 		; ;get all leafs
+	; 		(! (= $list (n-all-list (. $workpiece .)   	(& 	(goal-tree-node $leaf_id $parent_id $depth MAIN_BRANCH $workpiece)
+				
+	; 													(~ 	(goal-tree-node @node_id $leaf_id @depth @branch-type @workpiece))))))
+	; 		; (! (= $current-intention (get-current-intention)))
+	; 		(! (print $list))
+
+	; 		(! (= $goal (build-goal  (! (car (car $list))))))
+	; 		(! (INTENDED-GOAL $goal ))
+	; 		)
+
+	; 	; for each tree leaf..those are the aviliable actions.
+	; 	;What are the ready avilable actions. (precond satisfeid (all the things before. ), )
+
+	; 	;u need to  know what are u doing now and what is already done if u want to reprdouce the needs tree
+	; 	;the nice thing about needs from the top down
+	; 	;having something in my gripper is a state of the world...breaking down the tree from the top to 
+	; 	;know what would be the best thing i can do with the thing makes a lot of since to me..
+	; 	;That is...every time i want to pick an action i match my world state to all the needs till i find a for that 
+	; 	; has every thing else ready
+
+	; 	;Approach given a goal-tree:
+	; 	;Get all leafs.
+	; 	;reason what needs to be done...Main branch
+	; 		;
+	; 	)
+
+	; ;IDEA 1001
+	; ;Make 2 trees...one the truth that needs to be done to achieve this workpiece .This tree does not
+	; ;change and it has every thing that will ever happen to get this done..binding of vars is not a 
+	; ;much and u can put instrcutions in it of things maybe to take care of while ur processing this stuff
+	; ;like how to recover or even a break down for the time it should be done by or something..Another tree would
+	; ;related to time..it is what was done..or being done.right now..past and present and even maybe includes fail 
+	; ;and passed status suceed of what ever...This tree should make u know whats happing and the truth tree lets u know 
+	; ; what 'should' happen.This will make the binding clearer for the ids also btw..coz in the truth tree there could be
+	; ; a lot of unbound things and maybe even conditions on how to handle stuff and urgencey level..it is like a tree on 
+	; ; instructions of how to do things ...a belive tree if u will..
+
+
+	; (defop achieve--MAIN_BRANCH-leaf
+	; 	:invocation (&	(! (achieving-node-tree $node_id $agent))
+	; 					(goal-tree-node $node_id $parent_id $depth MAIN_BRANCH  FUTURE (workpiece $id $base $rings $cap (place $mps-name "output"))  ))
+	; 	 ; somehting that is a goal..I need it to be a goal..or i can make it statefull letting the whole thing depends on 
+	; 	:context( 	(~ (goal-tree-node @node_id $node_id @depth @brach-type  @workpiece ))
+	; 				(~ (achieving-node-tree $node_id @agent)) ); Its the leaf of the MAIN_BRANCH with no children
+	; 	:body (
+
+	; 		(=> (goal-tree-node $node_id $parent_id $depth MAIN_BRANCH    (workpiece $id $base $rings $cap (place $mps-name "output"))) 
+		
+	; 		(! (find-best-free-agent $agent))
+	; 		;lock the node and the agent and prevent a recall of the op
+	; 		(=> (achieving-node-tree $node_id $agent))
+
+	; 		;find preconditions 
+	; 		(! (= $preconditions-list (n-all-list (. $precondition .)  (goal-tree-node @node_id @parent_id @depth SUB_BRANCH ACHIEVED $precondition))))
+	; 		;TODO: make ops to make sure that ACHIEVED REMAINS ACHIEVED or change its status if went out of scope of been changed by  being used 
+	; 		;or something else that happened in the world unexpectedly or so.
+
+	; 		;Question:  do i want to when i am maintaing the precond. What is the form of the precond to be maintaed. Shoudl i maintain the tree node
+	; 		;			or the wp itself..If the workpeice then whatever that i am doing i wont know why i am doing it exsacly. Like where does this 
+	; 		;			 wp come from ..who wants it done and i will have to make the priority that should help me in the metalevel on the goal or the wp
+	; 		;I think it would be better to do it on the goal actually for some reason..but i will just do it on the wp for now
+
+	; 		;building the goals with precond maintaind
+			
+
+
+	; 		; (& (! (wp ...$mps "output")
+	; 		; 	(% (wp $id1	...$mps "slide")))
+	; 		; 	(% (wp $id2... $mps "slide")))
+	; 		; 	(% (wp $id3... $mps "slide")))
+	; 		; 	(~ (= $id1 $id2))
+	; 		; 	(% (~ (= $id1 $id2)))			
+	; 		; 	(% (cap ... $mps "slide"))))
+
+	; 		; (preconditions-achieved $goal-node)
+
+	; 		(! (build-goal (& 	(! (workpiece $id $base $rings $cap (place $mps-name "output"))  )))
+	; 							(% (preconditions-achieved $goal-node))
+	; 			)
+
+	; 		(! (INTENDED-GOAL (build-goal (! (workpiece $id $base $rings $cap (place $mps-name "output"))))))
+	; 		;make sure it is not booked already
+	; 		;find a robot 
+	; 		;book it for him
+	; 		;monitor him doing it
+
+	; 	)
+	; )
+
+
+	; ;Becasue of the confusion of ACHIEVED concept on all the nodes..For now it is clear what makes a PRECOND achieved..go with that
+	; ;A Precond is Achieved if There is a matching for it in the world and its not booked before
+	; ;Simplifing assumbsion. Once achieved u only need to check if it stays there
+	; (defop preconditions-achieved-checker
+	; 		:invocation (  ) 
+	; 		:context ()
+	; 		:body (
+
+	; 			(! (= $node-list (n-all (. $node-id $parent-id $status $precondition .)  (goal-tree-node $node_id $parent_id $depth SUB_BRANCH $status $precondition))))
+	; 			(! (= @node-list $node-list))
+
+	; 			(while (? (~ (null (val @node-list))))
+	; 				(! (= @node (car @node-list)))
+	; 				(! (= @node-list (cdr @node-list)))
+					
+	; 				(! (= @precond-node-id 		(car @node-list)))
+	; 				(! (= @owner-node-id  		(cadr @node-list)))
+	; 				(! (= @precond-node-status 	(caddr @node-list)))
+	; 				(! (= @precondition 		(cadddr @node-list)))
+
+	; 				;Owner goal NOT_ACHIEVED?
+	; 				(if (? (goal-tree-node (val @owner-node-id) @some-parent-id @some-depth MAIN_BRANCH @owner-status @some-goal)
+	; 							 (|| 	(= (@owner-status ACHIEVED)))
+	; 									(= (@owner-status PROCESSING)))));may be add past (dont_care) 
+	; 					;owner-goal node is already achieved or being achieved. Preconditions dont matter.
+	; 					else
+
+	; 					;if precond is achieved check if all related preconditions ar achieved
+	; 					(! (= @none-achieved-related-precond-list (n-all-all (. $node-id .) (& 	(goal-tree-node $node-id (val @ownr-node-id) $depth SUB_BRANCH @status $precondition)
+	; 																							(= @status NOT_ACHIEVED)
+	; 																							))))
+	; 					(! (= $lenght (LENGHT (car @none-achived-related-precond-list ))))
+
+	; 					(if (? (= $lenght 0))
+	; 						(=> (preconditions-status $parent_id ACHIEVED ))
+	; 						else
+	; 						(=> (preconditions-status $parent_id NOT_ACHIEVED ))
+	; 						)
+
+	; 					)
+
+
+	; 			)
+	; 	)
+
+
+
+	; (defop achieve-wp--at-output
+	; 	:invocation ( ! (workpiece $id $base $rings $cap (place mps-name "output")))
+	; 	:context	( (machine $mps-name $type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) )
+	; 	:body (
+
+	; 		; Get a free agent and assume its called $selected-robot..maybe even one that has this thing booked somehow
+	; 		; Or even at this level mayb already assume u know which agent u need to have working on this shit so just go for the flow of this
+
+	; 		(if (? (= $type "BS"))
+	; 			(! (= $base (base $base-color) ))
+	; 			(step (instruct-mps	side output color $base-color ))
+	; 			)
+
+	; 		(if (? (|| 	(= $type "CS")
+	; 					(= $type "RS") )) 
+
+	; 			(! (= $precond_list (. workpiece .)))
+
+	; 			(! (workpiece $id $base $rings $cap (place $selected-robot "gripper"))
+	; 			(! (workpiece $id $base $rings $cap (place mps-name "input")))
+	; 			)
+
+	; 		)
+	; 	)
+
+	; (defop wp--gripper--another-robot
+	; 	:invocation ( ! (workpiece $id $base $rings $cap (place $selected-robot "gripper")))
+	; 	:context	( 	(agent-name $robot-name)
+	; 					(master-of REASONING $robot-name)
+	; 					(~ (= $robot-name $selected-robot))
+	; 					)	 
+	; 	:properties ((decision-procedure t))
+	; 	:body (
+
+	; 			;create a msg that and send to agent
+
+	; 			(=> (Achieve $selected-robot REQUEST (workpiece $id $base $rings $cap (place $selected-robot "gripper"))  ) )
+
+	; 			(^ (|| 	(workpiece $id $base $rings $cap (place $selected-robot "gripper")
+	; 					(Achieve $selected-robot REJECTED (workpiece $id $base $rings $cap (place $selected-robot "gripper")))
+	; 					(Achieve $selected-robot FAILED (workpiece $id $base $rings $cap (place $selected-robot "gripper")))
+	; 						)));add- time outed request
+
+	; 			(? (workpiece $id $base $rings $cap (place $selected-robot "gripper"))
+			
+	; 		)
+	; 	)
+
+
+	; (defop wp--input--another-robot
+	; 	:invocation ( ! (workpiece $id $base $rings $cap (place $mps-name "input")))
+	; 	:context	( 	(agent-name $robot-name)
+	; 					(master-of REASONING $robot-name)
+	; 					)
+	; 	:body (
+
+	; 		(^ ( (workpiece $id $base $rings $cap (place $selected-robot "gripper"))))
+	; 		(if (? (~ (= $selected-robot $robot-name)))
+				
+	; 			(=> (Achieve $selected-robot REQUEST (workpiece $id $base $rings $cap (place $mps-name "input"))  ) )
+
+	; 			(^ (|| 	(workpiece $id $base $rings $cap (place $mps-name "input")
+	; 					(Achieve $selected-robot REJECTED (workpiece $id $base $rings $cap (place $mps-name "input")))
+	; 					(Achieve $selected-robot FAILED (workpiece $id $base $rings $cap (place $mps-name "input")))
+	; 						)));add- time outed request
+
+	; 			else
+	; 			;Just do the it from here 
+
+	; 			)
+
+	; 		)
+	; 	)
+
+
 )
