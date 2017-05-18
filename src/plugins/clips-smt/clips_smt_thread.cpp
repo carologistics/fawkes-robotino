@@ -63,7 +63,7 @@ ClipsSmtThread::init()
 	// Test z3 extern binary
 	// proc_z3_ = NULL;
 	clips_smt_test_z3();
-	// clips_smt_test_formulaGenerator();
+	clips_smt_test_formulaGenerator();
 
 	// Test python
 	//proc_python_ = NULL;
@@ -1432,11 +1432,11 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 			auto rs_temp = std::make_shared<RingStation>(i);
 			for(int j=0; j<data.machines(i-1).ring_colors().size(); ++j) {
 				rs_temp->addPossibleRingColor(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1), 1); // TODO Add all possibleRingColors with number of bases required for production ADD NUMBERS
+				rs_temp->setRingColorSetup(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1)); // TODO Add ringColorSetup BACK
 			}
 			rs_temp->setFeedBaseTime(1);
 			rs_temp->setMountRingTime(10);
 			rs_temp->setAdditinalBasesFed(data.machines(i-1).loaded_with());
-			// rs_temp->setRingColorSetup(Workpiece::GREEN); // TODO Add ringColorSetup BACK
 			gamedata_ringstations.push_back(rs_temp);
 			gD.addMachine(rs_temp);
 		}
@@ -1444,14 +1444,15 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 			auto cs_temp = std::make_shared<CapStation>(i);
 			if(!grey_set){
 				cs_temp->addPossibleCapColor(Workpiece::GREY);
+				cs_temp->setFedCapColor(Workpiece::GREY); // TODO Add fedCapColor BACK ONLY BUFFER
 				grey_set=true;
 			}
 			else {
 				cs_temp->addPossibleCapColor(Workpiece::BLACK);
+				cs_temp->setFedCapColor(Workpiece::BLACK); // TODO Add fedCapColor BACK ONLY BUFFER
 			}
 			cs_temp->setFeedCapTime(1);
 			cs_temp->setMountCapTime(5);
-			// cs_temp->setFedCapColor(Workpiece::GREY); // TODO Add fedCapColor BACK ONLY BUFFER
 			gamedata_capstations.push_back(cs_temp);
 			gD.addMachine(cs_temp);
 		}
@@ -1467,6 +1468,8 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 	{
 		std::string name_robot = robot_names_[i];
 		auto r_temp = std::make_shared<Robot>(i);
+		Workpiece pr0 = Workpiece(Workpiece::BLACK,{}, Workpiece::NONE);
+		r_temp->setWorkpiece(pr0);
 		// TODO Add Workpiece corresponding to robot
 		gamedata_robots.push_back(r_temp);
 		gD.addMachine(r_temp);
@@ -1605,8 +1608,9 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 
 	gD.fillStations();
 
-	logger->log_info(name(), "Test filled gD");
+	logger->log_info(name(), "Create fg with gD");
 	FormulaGenerator fg= FormulaGenerator(1, gD);
+	logger->log_info(name(), "Display fg.createFormula()");
 	cout << fg.createFormula() << std::endl;
 
 	logger->log_info(name(), "Export GameData formula to file gD_fg_formula.smt");
