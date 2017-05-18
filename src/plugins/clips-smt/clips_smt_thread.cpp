@@ -1416,32 +1416,42 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 {
 	GameData gD = GameData();
 
+	bool grey_set = false;
+
 	// Machines
 	for (int i = 1; i < number_machines+1; i++){
 		std::string name_machine = node_names_[i];
 		if(name_machine[2] == 'B') { // BaseStation
 			auto bs_temp = std::make_shared<BaseStation>(i);
-			bs_temp->setPossibleBaseColors({Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER}); // TODO Add all possibleBaseColors
+			bs_temp->setPossibleBaseColors({Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER}); // TODO Add all possibleBaseColors BACK
 			bs_temp->setDispenseBaseTime(1);
 			gamedata_basestations.push_back(bs_temp);
 			gD.addMachine(bs_temp);
 		}
 		else if(name_machine[2] == 'R') { // RingStation
 			auto rs_temp = std::make_shared<RingStation>(i);
-			rs_temp->addPossibleRingColor(Workpiece::GREEN, 1); // TODO Add all possibleRingColors with number of bases required for production
+			for(int j=0; j<data.machines(i-1).ring_colors().size(); ++j) {
+				rs_temp->addPossibleRingColor(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1), 1); // TODO Add all possibleRingColors with number of bases required for production ADD NUMBERS
+			}
 			rs_temp->setFeedBaseTime(1);
-			rs_temp->setMountRingTime(10); // TODO Vary for different ringstations?
-			rs_temp->setAdditinalBasesFed(1); // TODO Add additionalBasesFed
-			rs_temp->setRingColorSetup(Workpiece::GREEN); // TODO Add ringColorSetup
+			rs_temp->setMountRingTime(10);
+			rs_temp->setAdditinalBasesFed(data.machines(i-1).loaded_with());
+			// rs_temp->setRingColorSetup(Workpiece::GREEN); // TODO Add ringColorSetup BACK
 			gamedata_ringstations.push_back(rs_temp);
 			gD.addMachine(rs_temp);
 		}
 		else if(name_machine[2] == 'C') { // CapStation
 			auto cs_temp = std::make_shared<CapStation>(i);
-			cs_temp->addPossibleCapColor(Workpiece::GREY); // TODO Add all possibleCapColors
+			if(!grey_set){
+				cs_temp->addPossibleCapColor(Workpiece::GREY);
+				grey_set=true;
+			}
+			else {
+				cs_temp->addPossibleCapColor(Workpiece::BLACK);
+			}
 			cs_temp->setFeedCapTime(1);
-			cs_temp->setMountCapTime(5); // TODO Vary for different ringstations?
-			cs_temp->setFedCapColor(Workpiece::GREY); // TODO Add fedCapColor
+			cs_temp->setMountCapTime(5);
+			// cs_temp->setFedCapColor(Workpiece::GREY); // TODO Add fedCapColor BACK ONLY BUFFER
 			gamedata_capstations.push_back(cs_temp);
 			gD.addMachine(cs_temp);
 		}
@@ -1475,7 +1485,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 		// logger->log_info(name(), "Watch robot %i", r);
 		for(int m=0; m<number_machines; ++m) {
 			// logger->log_info(name(), "Watch machine %i named %s", m, node_names_[m+1].c_str());
-			double distance = distances_[std::make_pair(robot_names_[r], node_names_[m+1])];
+			float distance = distances_[std::make_pair(robot_names_[r], node_names_[m+1])];
 
 			// logger->log_info(name(), "Distance computed %f", distance);
 
@@ -1511,7 +1521,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 	// Machine machine distance
 	for(int n=0; n<number_machines; ++n) {
 		for(int m=n+1; m<number_machines; ++m) {
-			double distance = distances_[std::make_pair(node_names_[n+1], node_names_[+1])];
+			float distance = distances_[std::make_pair(node_names_[n+1], node_names_[+1])];
 			if(n<limit_basestation) {
 				// n is inside gamedata_basestations
 				if(m<limit_basestation) {
