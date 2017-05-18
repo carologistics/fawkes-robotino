@@ -112,7 +112,7 @@ Formula StepFormula::createInitialState() {
 
 Formula StepFormula::create() {
     if (getStepNumber() == 0)
-        return Formula(carl::FormulaType::TRUE); //createInitialState();
+        createInitialState();
 
     std::vector<Formula> actions;
     actions.push_back(collectBaseActions());
