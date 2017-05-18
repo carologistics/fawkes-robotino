@@ -63,7 +63,7 @@ ClipsSmtThread::init()
 	// Test z3 extern binary
 	// proc_z3_ = NULL;
 	clips_smt_test_z3();
-	clips_smt_test_formulaGenerator();
+	// clips_smt_test_formulaGenerator();
 
 	// Test python
 	//proc_python_ = NULL;
