@@ -87,6 +87,8 @@ Formula StepFormula::createInitialStateMovingTimes(const Robot& r) {
 }
 
 Formula StepFormula::createInitialStateStations() {
+	std::cout << "Enter createInitialStateMachines" << std::endl;
+
     GameData gD = getGameData();
     std::vector<Formula> formulas;
     for (auto const& s : getGameData().getStations()) {
@@ -94,14 +96,23 @@ Formula StepFormula::createInitialStateStations() {
         formulas.push_back(equation(getVarMachineOccupied(*s), s->getOccupiedUntil()));
     }
 
+	std::cout << "Point 1 createInitialStateMachines" << std::endl;
+
+
     for (auto const& cs : gD.getCapStations()) {
         formulas.push_back(equation(getVarCapColor(*cs), cs->getFedCapColor()));
     }
 
-    for (auto const& rs : gD.getRingStations()) {
-        formulas.push_back(equation(getVarRingColor(*rs), rs->getRingColorSetup()));
-        formulas.push_back(equation(getVarBaseReq(*rs), rs->getReqBases()));
-    }
+	std::cout << "Point 2 createInitialStateMachines" << std::endl;
+
+	// TODO Check this loop
+    // for (auto const& rs : gD.getRingStations()) {
+    //     formulas.push_back(equation(getVarRingColor(*rs), rs->getRingColorSetup()));
+    //     formulas.push_back(equation(getVarBaseReq(*rs), rs->getReqBases()));
+    // }
+
+	std::cout << "Leave createInitialStateMachines" << std::endl;
+
 
     return Formula(carl::FormulaType::AND, formulas);
 }
@@ -111,8 +122,16 @@ Formula StepFormula::createInitialState() {
 }
 
 Formula StepFormula::create() {
-    if (getStepNumber() == 0)
-        return Formula(carl::FormulaType::TRUE); //createInitialState();
+	std::cout << "Enter create" << std::endl;
+
+    if (getStepNumber() == 0) {
+		std::cout << "Case of stepnumber 0 in create" << std::endl;
+
+        return createInitialState(); //return Formula(carl::FormulaType::TRUE);
+	}
+
+	std::cout << "Case of stepnumber not 0 in create" << std::endl;
+
 
     std::vector<Formula> actions;
     actions.push_back(collectBaseActions());
