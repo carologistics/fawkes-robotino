@@ -18,6 +18,8 @@
  *Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
+
+
 #include "clips_smt_thread.h"
 // #include <utils/sub_process/proc.h>
 #include <core/threading/mutex_locker.h>
@@ -1605,8 +1607,6 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 		gD.addOrder(o_temp);
 	}
 
-
-	gD.fillStations();
 
 	logger->log_info(name(), "Create fg with gD");
 	FormulaGenerator fg= FormulaGenerator(1, gD);
