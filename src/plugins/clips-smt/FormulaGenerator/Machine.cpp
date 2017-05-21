@@ -10,7 +10,7 @@ Machine::Machine(std::string type, int id) {
 Machine::~Machine() {
 }
 
-void Machine::addMovingTime(Machine& m1, Machine& m2, int time){
+void Machine::addMovingTime(Machine& m1, Machine& m2, Time time) {
     m1.addMovingTime(m2, time);
     m2.addMovingTime(m1, time);
 }
@@ -23,16 +23,16 @@ void Machine::setType(std::string type) {
     this->type = type;
 }
 
-void Machine::addMovingTime(const Machine& m, int time) {
+void Machine::addMovingTime(const Machine& m, Time time) {
     this->movingTimes.emplace(m, time);
 }
 
-void Machine::setMovingTimes(const std::map<Machine, int>& movingTimes) {
+void Machine::setMovingTimes(const std::map<Machine, Time>& movingTimes) {
     this->movingTimes = movingTimes;
     this->movingTimes.emplace(*this, 0);
 }
 
-void Machine::setWorkpiece(Workpiece& workpiece){
+void Machine::setWorkpiece(Workpiece& workpiece) {
     this->workpiece = workpiece;
 }
 
@@ -44,17 +44,24 @@ std::string const Machine::getType() const {
     return this->type;
 }
 
-std::map<Machine, int> Machine::getMovingTimes() const{
+std::map<Machine, Time> Machine::getMovingTimes() const {
     return movingTimes;
 }
 
-int Machine::getMovingTime(Machine const& m) const{
+Time Machine::getMovingTime(Machine const& m) const {
     int time;
+    try {
         time = movingTimes.at(m);
+    } catch (const std::out_of_range& oor) {
+        std::cerr << "getMovingTime: " 
+                + m.getVarIdentifier() 
+                + " not in MovingTimes of " 
+                + this->getVarIdentifier() + "\n";
+    }
     return time;
 }
 
-Workpiece Machine::getWorkpiece() const{
+Workpiece Machine::getWorkpiece() const {
     return this->workpiece;
 }
 
@@ -78,9 +85,9 @@ std::string Machine::toString() {
     std::string result;
     result += "\nIdentifier: " + getVarIdentifier();
     result += "\nWorkpiece:\n" + getWorkpiece().toString();
-    result += "\nMovingTimes:\n" ;
+    result += "\nMovingTimes:\n";
     for (auto const& m : getMovingTimes()) {
-        result += m.first.getVarIdentifier() + ": " + std::to_string(m.second) +"\n";
+        result += m.first.getVarIdentifier() + ": " + std::to_string(m.second) + "\n";
     }
     return result;
 }

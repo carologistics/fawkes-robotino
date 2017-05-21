@@ -12,7 +12,7 @@
  */
 
 #include <assert.h> 
-
+#include <iostream>
 #include "RingStation.h"
 
 RingStation::RingStation(int id) : Station(id, "rs") {
@@ -73,7 +73,20 @@ Workpiece::Color RingStation::getRingColorSetup() const {
 }
 
 int RingStation::getNeededAdditinalBases(Workpiece::Color color) const {
-    return this->possibleRingColors.at(color);
+    int amount;
+    if (color == Workpiece::NONE) {
+        amount = 0;
+    } else {
+        try {
+            amount = possibleRingColors.at(color);
+        } catch (const std::out_of_range& oor) {
+            std::cerr << "getNeededAdditinalBases: "
+                    + std::to_string(color)
+                    + " not in possibleRingColors of "
+                    + this->getVarIdentifier() + "\n";
+        }
+    }
+    return amount;
 }
 
 int RingStation::getReqBases() const {
