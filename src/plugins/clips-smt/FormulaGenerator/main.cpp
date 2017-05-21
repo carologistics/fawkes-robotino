@@ -1,21 +1,133 @@
 #include <cstdlib>
 #include <iostream>
 #include "FormulaGenerator.h"
-//#include "GameData.h"
-// #include "Workpiece.h"
-// #include "Order.h"
+#include "GameData.h"
+#include "Workpiece.h"
+#include "Order.h"
+
+#include <z3++.h>
+#include <carl/numbers/numbers.h>
+// #include <carl/core/VariablePool.h>
+#include <carl/formula/Formula.h>
+#include <carl/io/SMTLIBStream.h>
 
 using namespace std;
 
-namespace FormulaGeneratorTest {
+void testPrevStep();
+GameData testGameData();
+GameData testGameData1();
+void testWorkpiece();
+void testOrder();
+void testMachine();
+void solve_formula_from_smt_file(std::string path);
+void smt_test_formulaGenerator();
 
-// void testPrevStep();
-// GameData testGameData2();
-// void testWorkpiece();
-// void testOrder();
-// void testMachine();
+z3::context _z3_context;
 
-GameData testGameData2() {
+int main(int argc, char** argv) {
+    /*GameData gD = testGameData1();  
+    FormulaGenerator fg = FormulaGenerator(1, gD);
+    cout << fg.createFormula();*/
+    smt_test_formulaGenerator();
+    return 0;
+    /*
+    		z3::model model = s.get_model();
+		for(unsigned i=0; i<model.size(); ++i) {
+			z3::func_decl function = model[i];
+			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+		}*/
+}
+
+void smt_test_formulaGenerator(){
+	std::cout << "Test FormulaGenerator extern binary \n";
+
+	GameData gD = testGameData1();
+	FormulaGenerator fg = FormulaGenerator(1, gD);
+
+	std::cout << "Export FormulaGenerator formula to file fg_formula.smt\n";
+	std::ofstream outputFile("/home/leonard/fg_formula.smt"); 
+	outputFile << carl::outputSMTLIB(carl::Logic::QF_NIRA, {fg.createFormula()});
+	outputFile.close();
+
+	std::cout << "Import FormulaGenerator formula from file fg_formula.smt into z3 formula\n";
+
+	solve_formula_from_smt_file("/home/leonard/fg_formula.smt");
+}
+
+void solve_formula_from_smt_file(std::string path) {
+	Z3_ast a = Z3_parse_smtlib2_file(_z3_context, path.c_str(), 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
+	z3::expr e(_z3_context, a);
+
+	z3::solver s(_z3_context);
+	s.add(e);
+
+	// Start measuring sovling time
+	std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
+	if(s.check() == z3::sat) {
+		// Stop measuring sovling time
+		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+		// Compute time for solving
+		double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
+		double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
+
+		std::cout << "Test of import .smt file into z3 constraint did work (SAT) [%f ms, %f m] \n";
+
+		z3::model model = s.get_model();
+		for(unsigned i=0; i<model.size(); ++i) {
+			z3::func_decl function = model[i];
+			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+		}
+	}
+	else std::cout << "Test of import .smt file into z3 constraint did NOT work (UNSAT)";
+}
+
+GameData testGameData1() {
+    GameData gD;
+
+    auto r0 = make_shared<Robot>(0);
+    auto r1 = make_shared<Robot>(1);
+    gD.addMachine(r0);
+    gD.addMachine(r1);
+
+    auto bs0 = make_shared<BaseStation>(0);
+    bs0->setPossibleBaseColors({Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER});
+    bs0->setDispenseBaseTime(60);
+    gD.addMachine(bs0);
+
+
+    auto cs0 = make_shared<CapStation>(0);
+    cs0->addPossibleCapColor(Workpiece::GREY);
+    cs0->setFeedCapTime(50);
+    cs0->setMountCapTime(150);
+    gD.addMachine(cs0);
+
+    auto ds0 = make_shared<DeliveryStation>(0);
+    gD.addMachine(ds0);
+    
+    Robot r = *r0;
+    Machine::addMovingTime(*r0, *bs0, 5);
+    Machine::addMovingTime(*r0, *cs0, 5);
+    Machine::addMovingTime(*r0, *ds0, 5);
+    
+    Machine::addMovingTime(*r1, *bs0, 6);
+    Machine::addMovingTime(*r1, *cs0, 6);
+    Machine::addMovingTime(*r1, *ds0, 6);
+
+    Machine::addMovingTime(*bs0, *cs0, 10);
+    Machine::addMovingTime(*bs0, *ds0, 20);
+
+    Machine::addMovingTime(*cs0, *ds0, 30);
+    
+    Workpiece p0(Workpiece::BLACK, {}, Workpiece::GREY);
+    auto o0 = make_shared<Order>(6, p0, 1000);
+    
+    gD.addOrder(o0);
+
+    return gD;
+}
+
+GameData testGameData() {
     GameData gD;
 
     auto r0 = make_shared<Robot>(0);
@@ -106,20 +218,18 @@ GameData testGameData2() {
     Machine::addMovingTime(*cs0, *ds0, 25000);
 
     Machine::addMovingTime(*cs1, *ds0, 25000);
-
+    
     Workpiece p0(Workpiece::BLACK,{Workpiece::ORANGE}, Workpiece::GREY);
     auto o0 = make_shared<Order>(6, p0, 60000);
     Workpiece p1(Workpiece::BLACK,{Workpiece::BLUE}, Workpiece::BLACK);
     auto o1 = make_shared<Order>(7, p1, 300000);
     Workpiece p2(Workpiece::SILVER,{Workpiece::ORANGE}, Workpiece::GREY);
     auto o2 = make_shared<Order>(3, p2, 15000);
-
+    
     gD.addOrder(o0);
     gD.addOrder(o1);
     gD.addOrder(o2);
-
-    gD.fillStations();
-
+    
     return gD;
 }
 
@@ -143,7 +253,7 @@ void testOrder() {
 }
 
 void testPrevStep() {
-    GameData gm = testGameData2();
+    GameData gm = testGameData();
     FormulaGenerator formulaGenerator(3, gm);
     cout << "Step:" << formulaGenerator.getStep(0)->getStepNumber() << endl;
     cout << "Step:" << formulaGenerator.getStep(1)->getStepNumber() << endl;
@@ -159,17 +269,8 @@ void testMachine() {
     auto rs0 = make_shared<RingStation>(0);
     auto cs5 = make_shared<RingStation>(5);
     auto ds2 = make_shared<RingStation>(2);
-    r99->addMovingTime(*rs0, 15000);
-    r99->addMovingTime(*cs5, 90);
-    r99->addMovingTime(*ds2, 160);
+    //r99->addMovingTime(*rs0, 15000);
+    //r99->addMovingTime(*cs5, 90);
+    //r99->addMovingTime(*ds2, 160);
     cout << r99->toString();
 }
-
-// int main(int argc, char** argv) {
-//     GameData gD = testGameData2();
-//     FormulaGenerator fg = FormulaGenerator(1, gD);
-//     cout << fg.createFormula();
-//     return 0;
-// }
-
-} // namespace

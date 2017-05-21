@@ -301,44 +301,84 @@ Formula StepFormula::swapCap(const Machine& m1, const Machine & m2) {
     return equation(getVarHoldsCap(m1), getPrevStep()->getVarHoldsCap(m2));
 }
 
-Variable StepFormula::getVarHoldsBase(const Machine & m) {
-    return getVariable("B(" + m.getVarIdentifier() + "," + getStepName() + ")");
+string StepFormula::getVarNameHoldsBase(const Machine & m , int step) {
+    return "B_" + m.getVarIdentifier() + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameHoldsRing(const Machine &m, int i, int step) {
+    return "R_" + std::to_string(i) + "_" + m.getVarIdentifier() + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameHoldsCap(const Machine & m, int step) {
+    return "C_" + m.getVarIdentifier() + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameMachineOccupied(const Station& m, int step) {
+    return "OCC_" + m.getVarIdentifier() + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameMovingTime(const Robot &r, const Station & m, int step) {
+    return "MOV_" + r.getVarIdentifier() + "_" + m.getVarIdentifier() + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameCapColor(const CapStation & cs, int step) {
+    return "CCOL_" + cs.getVarIdentifier() + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameRingColor(const RingStation & rs, int step) {
+    return "RCOL_" + rs.getVarIdentifier() + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameBaseReq(const RingStation & rs, int step) {
+    return "BREQ_" + rs.getVarIdentifier() + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameReward(int step) {
+    return "R_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameOrderDelivered(const Order& o, int step) {
+    return "OD_" + std::to_string(o.getId()) + "_" + std::to_string(step);
+}
+
+Variable StepFormula::getVarHoldsBase(const Machine &m) {
+    return getVariable(StepFormula::getVarNameHoldsBase(m, getStepNumber()));
 }
 
 Variable StepFormula::getVarHoldsRing(const Machine &m, int i) {
-    return getVariable("R" + std::to_string(i) + "(" + m.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable(StepFormula::getVarNameHoldsRing(m, i, getStepNumber()));
 }
 
-Variable StepFormula::getVarHoldsCap(const Machine & m) {
-    return getVariable("C(" + m.getVarIdentifier() + "," + getStepName() + ")");
+Variable StepFormula::getVarHoldsCap(const Machine &m) {
+    return getVariable(StepFormula::getVarNameHoldsCap(m, getStepNumber()));
 }
 
 Variable StepFormula::getVarMachineOccupied(const Station& m) {
-    return getVariable("OCC(" + m.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable(StepFormula::getVarNameMachineOccupied(m, getStepNumber()));
 }
 
 Variable StepFormula::getVarMovingTime(const Robot &r, const Station & m) {
-    return getVariable("MOV(" + r.getVarIdentifier() + "," + m.getVarIdentifier() + "," + getStepName() + ")");
+    return getVariable(StepFormula::getVarNameMovingTime(r, m, getStepNumber()));
 }
 
-Variable StepFormula::getVarCapColor(const CapStation & cs) {
-    return getVariable("CCOL(" + cs.getVarIdentifier() + "," + getStepName() + ")");
+Variable StepFormula::getVarCapColor(const CapStation &cs) {
+    return getVariable(StepFormula::getVarNameCapColor(cs, getStepNumber()));
 }
 
-Variable StepFormula::getVarRingColor(const RingStation & rs) {
-    return getVariable("RCOL(" + rs.getVarIdentifier() + "," + getStepName() + ")");
+Variable StepFormula::getVarRingColor(const RingStation &rs) {
+    return getVariable(StepFormula::getVarNameRingColor(rs, getStepNumber()));
 }
 
-Variable StepFormula::getVarBaseReq(const RingStation & rs) {
-    return getVariable("BREQ(" + rs.getVarIdentifier() + "," + getStepName() + ")");
+Variable StepFormula::getVarBaseReq(const RingStation &rs) {
+    return getVariable(StepFormula::getVarNameBaseReq(rs, getStepNumber()));
 }
 
 Variable StepFormula::getVarReward() {
-    return getVariable("R(" + getStepName() + ")");
+    return getVariable(StepFormula::getVarNameReward(getStepNumber()));
 }
 
 Variable StepFormula::getVarOrderDelivered(const Order& o) {
-    return getVariable("OD(" + std::to_string(o.getId()) + "," + getStepName() + ")");
+    return getVariable(StepFormula::getVarNameOrderDelivered(o, getStepNumber()));
 }
 
 Formula StepFormula::equation(int value1, int value2) {

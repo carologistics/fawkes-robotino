@@ -35,7 +35,7 @@ public:
     std::string toString();
 
 private:
-    const static int maxRingNumber = 3;
+    const static int maxRingNumber = 0;
     Color base = NONE;
     std::vector<Color> rings = std::vector<Color>(getMaxRingNumber(), Color(NONE));
     Color cap = NONE;

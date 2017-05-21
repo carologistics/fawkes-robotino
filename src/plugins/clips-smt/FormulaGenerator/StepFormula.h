@@ -1,7 +1,6 @@
 #ifndef STEPFORMULA_H
 #define STEPFORMULA_H
 
-#include <string>
 #include <memory>
 #include <iostream>
 #include <vector>
@@ -15,6 +14,8 @@
 //drop base from cap station or use it implementieren
 
 using Rational = mpq_class;
+
+using string = std::string;
 
 typedef carl::MultivariatePolynomial<Rational> Pol;
 typedef carl::Constraint<Pol> Constr;
@@ -35,7 +36,7 @@ public:
     StepFormula(stepFormula_ptr &previousStep, GameData& gameData);
     StepFormula(GameData& gameData);
     virtual ~StepFormula();
-    
+
     int getStepNumber();
     string getStepName();
     stepFormula_ptr getPrevStep();
@@ -54,7 +55,7 @@ public:
      * creates a formula for the step this object represents
      */
     Formula create();
-    
+
     /*
      * initial world state constraints creation, is used for the 0th step
      */
@@ -65,6 +66,21 @@ public:
     Formula createInitialStateMovingTimes(const Robot& r);
     
     /*
+     * variable names creation
+     * is used to translate a model back to a sequence of world states
+     */
+    static string getVarNameHoldsBase(const Machine & m, int step);
+    static string getVarNameHoldsRing(const Machine &m, int i, int step);
+    static string getVarNameHoldsCap(const Machine & m, int step);
+    static string getVarNameMachineOccupied(const Station& m, int step);
+    static string getVarNameMovingTime(const Robot &r, const Station & m, int step);
+    static string getVarNameCapColor(const CapStation & cs, int step);
+    static string getVarNameRingColor(const RingStation & rs, int step);
+    static string getVarNameBaseReq(const RingStation & rs, int step);
+    static string getVarNameReward(int step);
+    static string getVarNameOrderDelivered(const Order& o, int step);
+
+    /*
      * logic-variable creation
      */
     std::map<std::string, Variable> getVariables() const;
@@ -73,17 +89,17 @@ public:
     Variable getVarHoldsRing(const Machine &m, int i);
     Variable getVarHoldsCap(const Machine &m);
 
-    Variable getVarMachineOccupied(const Station& m);//only stations
+    Variable getVarMachineOccupied(const Station& m); //only stations
     Variable getVarMovingTime(const Robot& r, const Station& m);
 
     Variable getVarCapColor(const CapStation &cs);
 
     Variable getVarRingColor(const RingStation &rs);
     Variable getVarBaseReq(const RingStation &rs);
-    
+
     Variable getVarReward();
     Variable getVarOrderDelivered(const Order& o);
-    
+
     /*
      * basic constraint creation
      */
@@ -91,11 +107,11 @@ public:
     Formula equation(Variable const& var, int value);
     Formula equation(Variable const& var1, Variable const& var2);
     Formula equation(Variable const& var1, Pol const& pol);
-    
+
     Formula lessEqual(Variable const& var1, Variable const& var2);
     Formula greater(Variable const& var1, Variable const& var2);
     Formula greater(Variable const& var1, Rational const r);
-    
+
     /*
      * basic check-world-state formula creation 
      */
@@ -103,50 +119,50 @@ public:
     Formula holdsRingPrev(const Machine& m, Workpiece::Color c, int i);
     Formula holdsCapPrev(const Machine& m, Workpiece::Color c);
     Formula holdsWorkpiecePrev(const Machine& m, const Workpiece& workpiece);
-    
+
     Formula ringColorSetupPrev(const RingStation& rs, Workpiece::Color c);
     Formula needsAddBasesPrev(const RingStation& rs);
-    
+
     Formula loadCapPrev(const CapStation& cs, Workpiece::Color c);
-    
+
     Formula orderNotDeliveredPrev(const Order& o);
-    
+
     /*
      * basic changes-in-the-world-state formula creation 
-     */   
+     */
     Formula holdsBase(const Machine& m, Workpiece::Color c);
     Formula holdsRing(const Machine& m, Workpiece::Color c, int i);
     Formula holdsCap(const Machine& m, Workpiece::Color c);
     Formula holdsWorkpiece(const Machine& m, const Workpiece& workpiece);
-    
+
     Formula swapBase(const Machine& m1, const Machine& m2);
     Formula swapRing(const Machine& m1, const Machine& m2, int i);
     Formula swapCap(const Machine& m1, const Machine& m2);
     Formula swapWorkpiece(const Machine &m1, const Machine &m2);
-    
+
     Formula ringColorSetup(const RingStation& rs, Workpiece::Color c);
     Formula needsAddBases(const RingStation& rs, Workpiece::Color c);
     Formula feedAddBase(const RingStation& rs);
-    
+
     Formula loadCap(const CapStation& cs, Workpiece::Color c);
-    
+
     Formula updateReward(int value);
-    
+
     Formula orderDelivered(const Order& o);
 
     /*
      * robot-action-formulas creation,
      * 
      */
-    
+
     /*Formula to transfer the unchanging world state values to the variables of the next world state in each action formula*/
     Formula createRemainingStepConstraints(const Robot &robot, const Station &station);
     Formula createRemainingStepConstraints(const Station &station);
     Formula createRemainingStepConstraints(const Robot &robot);
-    
+
     /*Formula to update the moving times of the robot and the the time a machine is occupied after a action*/
     Formula updateTimes(const Robot& r, const Station& station, int processingTime);
-    
+
     /* creates a Formula which encodes the actions of getting a base from a base station for all robots and all base stations, 
      * checks if this action is valid and needed to fulfill an order or if a ring station needs additional bases*/
     Formula collectBaseActions();
@@ -161,7 +177,7 @@ public:
     Formula feedCapAction(Robot &r, Workpiece::Color c, CapStation &cs);
     Formula existOrderWithCapColorReq(Workpiece::Color c);
     Formula feedCapActionReward(Robot &r, Workpiece::Color c, CapStation &cs);
-   
+
     /* creates a Formula which encodes the actions of mounting a cap to a workpiece a robot holds for all robots and all cap stations, 
      * checks if this action is is valid and needed to fulfill an order*/
     Formula mountCapActions();
@@ -173,20 +189,20 @@ public:
     Formula mountCapWorkpiece(const CapStation& cs, const Robot& r);
     /* encodes the mounting of the cap in the component encoding*/
     Formula mountCapComponent(const CapStation& cs);
-    
+
     /* creates a Formula which encodes the actions of setting up a ring color for all ring stations, 
      * checks if this action is is valid and needed to fulfill an order*/
     Formula setupRingColorActions();
     Formula setupRingColorAction(Workpiece::Color c, RingStation &rs);
     Formula existOrderWithRingColorReq(Workpiece::Color c);
     Formula setupRingColorActionReward(Workpiece::Color c, RingStation &rs);
-    
+
     /* creates a Formula which encodes the actions of feeding a additional base to a ring station, 
      * checks if this action is valid and needed to fulfill an order*/
     Formula feedAdditionalBaseActions();
     Formula feedAdditionalBaseAction(Robot &r, RingStation &rs);
     Formula feedAdditionalBaseActionReward(Robot &r, RingStation &rs);
-    
+
     /* creates a Formula which encodes the actions of mounting a ring to a workpiece a robot holds 
      * checks if this action is valid and needed to fulfill an order*/
     Formula mountRingActions();
@@ -200,17 +216,17 @@ public:
     Formula mountRingRings(const RingStation& rs, const Robot& r, int i);
     /* encodes the mounting of the cap in the ring encoding*/
     Formula mountRingComponent(const RingStation& rs, int i);
-    
-    
+
+
     Formula collectWorkpieceActions();
     Formula collectWorkpieceAction(Robot &r, Station &s);
     Formula collectWorkpieceActionReward(Robot &r, Station &s);
-    
+
 
     Formula deliverWorkpieceActions();
     Formula deliverWorkpieceAction(Robot &r, DeliveryStation &ds);
     Formula deliverWorkpieceActionReward(Robot &r, Station &d);
-    
+
 private:
     static int newId;
     int stepNumber;

@@ -2,6 +2,7 @@
 #define FORMULAGENERATOR_H
 #include <vector>
 #include <iostream>
+#include <z3++.h>
 
 #include "StepFormula.h"
 
@@ -29,9 +30,16 @@ public:
     /*creates and returns the formula, the formula is saved in the formula attribute*/
     Formula createFormula();
     
+    GameData translateZ3ModelToGameData(z3::model model, int step);
+    
 private:
+    
+    void setGameData(GameData &gameData);
+    GameData getGameData();
+    
     std::vector<stepFormula_ptr> steps;
     Formula formula;
+    GameData gameData;
 };
 
 
