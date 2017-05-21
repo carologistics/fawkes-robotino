@@ -21,10 +21,11 @@ void FormulaGenerator::generateSteps(int amount, GameData& gameData) {
 }
 
 Formula FormulaGenerator::createFormula(){
-
+    
     std::vector<Formula> formulas;
     for(auto const& s : getSteps()) {
         formulas.push_back(s->create());
     }
-    return Formula(carl::FormulaType::AND,formulas);
+    formula = Formula(carl::FormulaType::AND,formulas);
+    return formula;
 }
