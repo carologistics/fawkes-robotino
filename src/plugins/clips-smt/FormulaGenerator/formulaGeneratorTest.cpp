@@ -143,7 +143,7 @@ static GameData createGameDataTestCase() {
     gD.addOrder(o1);
     gD.addOrder(o2);
 
-    gD.fillStations();
+    // gD.fillStations();
 
     return gD;
 }
@@ -189,9 +189,9 @@ static void testMachine() {
     auto rs0 = make_shared<RingStation>(0);
     auto cs5 = make_shared<RingStation>(5);
     auto ds2 = make_shared<RingStation>(2);
-    r99->addMovingTime(*rs0, 15000);
-    r99->addMovingTime(*cs5, 90);
-    r99->addMovingTime(*ds2, 160);
+    // r99->addMovingTime(*rs0, 15000);
+    // r99->addMovingTime(*cs5, 90);
+    // r99->addMovingTime(*ds2, 160);
     cout << r99->toString();
 }
 

@@ -49,13 +49,13 @@ std::map<Machine, Time> Machine::getMovingTimes() const {
 }
 
 Time Machine::getMovingTime(Machine const& m) const {
-    int time;
+    int time = 0;
     try {
         time = movingTimes.at(m);
     } catch (const std::out_of_range& oor) {
-        std::cerr << "getMovingTime: " 
-                + m.getVarIdentifier() 
-                + " not in MovingTimes of " 
+        std::cerr << "getMovingTime: "
+                + m.getVarIdentifier()
+                + " not in MovingTimes of "
                 + this->getVarIdentifier() + "\n";
     }
     return time;
