@@ -94,7 +94,7 @@ driveDuration(L, L, 0) :- location(L).
 location(m(t, M, S)) :- baseStation(M),     side(S).
 location(m(t, M, S)) :- capStation(M),      side(S).
 location(m(t, M, S)) :- ringStation(M),     side(S).
-location(m(t, M, S)) :- deliveryStation(M), side(S).
+location(m(t, M, S)) :- deliveryStation(M), S = "I". % The output side of the delivery station is not used in the game.
 
 baseLocation(m(t, M, S)) :- baseStation(M), side(S).
 
