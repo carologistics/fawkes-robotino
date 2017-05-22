@@ -4,14 +4,14 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   RingStation.cpp
  * Author: leonard
- * 
+ *
  * Created on February 18, 2017, 2:02 AM
  */
 
-#include <assert.h> 
+#include <assert.h>
 #include <iostream>
 #include "RingStation.h"
 
@@ -43,7 +43,7 @@ void RingStation::setAdditinalBasesFed(int amount) {
 }
 
 void RingStation::setRingColorSetup(Workpiece::Color color) {
-    //possibleRingColors has to be set before 
+    //possibleRingColors has to be set before
     assert(isPossibleRingColor(color));
     this->ringColorSetup = color;
 }
@@ -73,10 +73,8 @@ Workpiece::Color RingStation::getRingColorSetup() const {
 }
 
 int RingStation::getNeededAdditinalBases(Workpiece::Color color) const {
-    int amount;
-    if (color == Workpiece::NONE) {
-        amount = 0;
-    } else {
+    int amount = 0;
+    if (color != Workpiece::NONE) {
         try {
             amount = possibleRingColors.at(color);
         } catch (const std::out_of_range& oor) {

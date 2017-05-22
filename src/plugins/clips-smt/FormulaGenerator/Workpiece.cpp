@@ -57,10 +57,12 @@ void Workpiece::setCapColor(Color c) {
 }
 
 void Workpiece::setRings(std::vector<Color> rings) {
-    if(this->rings.size() < rings.size()) 
-        std::cerr <<  "Workpiece::setRings(std::vector<Color> rings): GameData::maxRingNumber < rings.size()";
-    
-    for (auto i = 0; i < rings.size(); i++) {
+    if(this->rings.size() < rings.size()) {
+        std::cerr <<  "Workpiece::setRings(std::vector<Color> rings): GameData::maxRingNumber " << this->rings.size() << " < rings.size() " << rings.size() << std::endl;
+	}
+
+	int rings_size = rings.size();
+    for (auto i = 0; i < rings_size; i++) {
         this->rings[i] = rings[i];
     }
 }
@@ -76,5 +78,3 @@ std::string Workpiece::toString() {
 
     return result;
 }
-
-
