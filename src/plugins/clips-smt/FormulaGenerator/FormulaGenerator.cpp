@@ -39,11 +39,13 @@ GameData FormulaGenerator::getGameData() {
 }
 
 GameData FormulaGenerator::translateZ3ModelToGameData(z3::model model, int step) {
-    for (int i = 0; i < model.size(); i++) {
+	int model_size = model.size();
+
+    for (int i = 0; i < model_size; i++) {
         z3::func_decl function = model[i];
-        
+
         GameData gameData = getGameData();
-        
+
         for (auto s : gameData.getStations()) {
             StepFormula::getVarNameHoldsBase(*s, step);
             for(int i = 0; i < Workpiece::getMaxRingNumber(); i++){
@@ -74,4 +76,6 @@ GameData FormulaGenerator::translateZ3ModelToGameData(z3::model model, int step)
         }
         std::cout << "Model contains [" << function.name() << "] " << model.get_const_interp(function) << std::endl;
     }
+
+	return GameData();
 }
