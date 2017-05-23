@@ -77,7 +77,7 @@
   
   :context ()
   :setting (& (setting "team-name" $team-name)
-          (setting "robot-name" $robot-name) (setting "robot-number" $robot-number))
+            (setting "robot-name" $robot-name) (setting "robot-number" $robot-number))
   :body (
     (! (= @team-name (pb-field-value $msg "team_name")))
     (! (= @beacon-time (pb-field-value $msg "time")))
@@ -88,6 +88,11 @@
     (! (= @team-color (pb-field-value $msg "team_color")))
     ; TODO: ADD LOCATION INFORMATION
     (=> (heart-beat @robot-name @robot-number @team-name @team-color @sec @nsec))
+    
+    (? (time $sec $usec))
+    (! (start-critical-section))
+    (=> (timer (val @robot-name) $sec $usec 0))
+    (! (end-critical-section))
   )
   :documentation "Periodically receive and process beacon signals.
     Beacon signals are broadcasted by all robots and refbox to recognize eachother. ."

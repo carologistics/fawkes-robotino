@@ -252,5 +252,23 @@
 	)
 
 
+	(defop wm-Announce-dead
+		  :invocation (time $sec $usec)
+		  :context (? (& (peer-id private $peer-id)
+		  				(heart-beat $agent-name @robot-number @team-name @team-color @sec @nsec)
+			         	(timer $agent-name $last-sec $last-usec $seq)
+			         	(setting "beacon-interval" $beacon-interval)
+			         	(timeout $sec $usec $last-sec $last-usec 10)))
+		  :setting ( setting "team-name" $team-name) 
+		  :body (
+
+		  	(! (printf (FORMAT "Agent %s is Dieeeeeed \n" $agent-name)))
+		  	(~> (heart-beat $agent-name @robot-number @team-name @team-color @sec @nsec))
+		  )
+		  :documentation ""
+		  ;TODO: Set a differnt intervale value for the check coz it might take longer to say he is dead in real life
+		)
+
+
 )
 
