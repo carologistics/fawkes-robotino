@@ -34,7 +34,6 @@
 					(! (printf (FORMAT "Achieveing Goal on %s STARTED ...\n" $agent)))
 					)
 
-
 				(^ ( ||	(achieve-workpiece $agent $workpiece FAILED)
 						(achieve-workpiece $agent (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
 
@@ -135,10 +134,13 @@
 
 			(! (printf (FORMAT "RECEIVED achieve-workpace with status %s \n" $status )))
 			
+			;Only Allow FINALIZE or SUCCEEDED of other achivers. (unless ur the master. allow All) 
 			(if  (? (& 	(~ (= $my-name $agent))
 						(~ (master-of REASONING $my-name))
 						(~ (= $status SUCCEEDED))
+						(~ (= $status FINALIZING))
 						))
+
 				GOTO fin
 				)
 			
@@ -245,12 +247,15 @@
 	    				;Moved to Seperate Op
 	    				)
 	    			
-	    			(if (? (~ (= $robot-name (val @agent))))
-	    				(=> (achieve-workpiece (val @agent) (val @workpiece) FINALIZING))
-	    				)
+	    			;Replaced by the new finalization 
+	    			; (if (? (~ (= $robot-name (val @agent))))
+	    			; 	(=> (achieve-workpiece (val @agent) (val @workpiece) FINALIZING))
+	    			; 	)
+
+
 	    			;delete it if its still there
 	    			;(~> (achieve-workpiece (val @agent) (val @workpiece) (val @status)))
-	    			(!	(= (workpiece @potentially-unbound-id @base @rings @cap @place) (val @workpiece) ))
+	    			(!  (= (workpiece @potentially-unbound-id @base @rings @cap @place) (val @workpiece) ))
 
 	    			(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) FAILED )) 
 	    			(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) STARTED))
@@ -337,6 +342,36 @@
     		)
 		)
 
+	(defop co--Master--Finalize-achievement
+		:invocation (timer "beacon" $last-sec $last-usec $seq)
+		:context ( 	(master-of REASONING $robot-name)
+					(achieve-workpiece $achiever-agent $workpiece SUCCEEDED)
+					(= $achievement-list (n-all-list (. $sender-name $role .)	 (achievement-acknowledgement $achiever-agent $workpiece (acknowledged-by $sender-name $role))))
+					(= $alive-list (n-all-list (. $alive-agent .) 	(& 	(heart-beat $alive-agent @robot-number @team-name @team-color @sec @nsec)
+																		(~ (= $alive-agent "RefBox")))))
+					(= $differnce-list (list-difference (car $alive-list) (car $achievement-list)))
+					(= 0 (length $differnce-list))
+					)
+		:setting (setting "robot-name" $robot-name)
+		:body (
+			(! (printf (FORMAT "COO:: Finalizing Achievement and updating world modle \n")))
+			(=> (achieve-workpiece $achiever-agent $workpiece FINALIZING))
+
+			;Matching step
+			(? (=  (workpiece $id $base $rings $cap (place $mps-name $feature)) $workpiece)) 
+			(if (? (~ (workpiece $id $base $rings $cap (place $mps-name @feature))))
+				(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
+				else
+				(if (? 	(& 	(= $feature "output") (~ (= (val @feature) "output"))))
+					(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
+					)
+				)
+
+			)
+		:documentation "Master Finalizes the Achieved workpiece and updates the master world modle.
+						Happens When each live Robot has echoed the success of the Achieve-workpiece 
+						(hence already updated thier world modles)"
+		)
 	
 	;///////////////////////////////////////
 	;WORKER ROBOTS (Slaves or Achieving Bots) 
@@ -353,7 +388,7 @@
 				; (! (print $achieve-workpiece-list))
 			(if (? (< 0 (length $achieve-workpiece-list) ))
 
-	    		(! (= @workpiece-list 	(car $achieve-workpiece-list)) )
+	    		(! (= @workpiece-list 	(car $achieve-workpiece-list)) ) 
 	    		(! (= @status-list	 	(cadr $achieve-workpiece-list)) )
 	    		(while (? (~ (null @status-list)))
 	    			(! (= @status 			(car @status-list)))
