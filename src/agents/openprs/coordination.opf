@@ -201,6 +201,14 @@
 			(=> (achieve-workpiece $agent $workpiece $status))
 
 			LABEL fin
+
+			;Master keeps track who sender of the success msg to make sure who knows and when to finalize and update his own world model
+			(if (? (& 	(master-of REASONING $my-name)
+						(BOUNDP $sender-info-msg)
+						(= $status SUCCEEDED)
+						))
+						(=> (achievement-acknowledgement $agent $workpiece (acknowledged-by $sender-name $sender-role)))
+				)
 			)
 		)
 
