@@ -73,14 +73,20 @@ enum CompType {
     required Place        place             = 7; 
 }
 
+message SenderInfo{
+  required string name = 1 ;
+  required string reasoning_role = 2; 
+}
+
 message AchieveWorkpiece{ 
     enum CompType {
       COMP_ID  = 5210;
       MSG_TYPE = 1003;
     }
-
+    
     required  string       agent        = 1;
     required  Workpiece    workpiece    = 2;
-    required  Status       status       = 3;       
+    required  Status       status       = 3; 
+    optional  SenderInfo   sender_info  = 4;
 
 }
