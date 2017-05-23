@@ -458,7 +458,112 @@
 			)
 		)
 
+	(defop co--Slave--process-others-achievements
+		:invocation (timer "beacon" $last-sec $last-usec $seq )
+		:context	(& 	(agent-name $my-name)
+						(peer-id private $peer-id)
+						)
+		:body(
+
+			(! (= $achievement-list (n-all-list (. $achieving-agent $workpiece $status .)
+							(& (achieve-workpiece $achieving-agent $workpiece $status)
+								(~ (= $my-name $achieving-agent)))
+				)))
+
+			(if (? (< 0 (length $achievement-list) ))
+
+				(! (= @achieving-agent-list (car $achievement-list)))
+				(! (= @workpiece-list 		(cadr $achievement-list)))
+				(! (= @status-list 			(caddr $achievement-list)))
+
+				(while (? (~ (null @workpiece-list)))
+		    		(! (= @workpiece 		(car @workpiece-list)))
+		    		(! (= @workpiece-list	(cdr @workpiece-list)))
+					(! (= @status 			(car @status-list)))
+		    		(! (= @status-list 		(cdr @status-list)))
+		    		(! (= @achieving-agent 	(car @achieving-agent-list)))
+		    		(! (= @status-list 		(cdr @achieving-agent-list)))
+
+	    			(if (? (= (val @status) FINALIZING))
+						;Matching step
+						(?	(= (workpiece @id @base @rings @cap @place) (val @workpiece) ))
+
+						(~> (achieve-workpiece (val @achieving-agent) (workpiece @id (val @base) (val @rings) (val @cap) (val @place)) FINALIZING))
+						(~> (achieve-workpiece (val @achieving-agent) (workpiece @id (val @base) (val @rings) (val @cap) (val @place)) FAILED ))
+						(~> (achieve-workpiece (val @achieving-agent) (workpiece @id (val @base) (val @rings) (val @cap) (val @place)) STARTED))
+						(~> (achieve-workpiece (val @achieving-agent) (workpiece @id (val @base) (val @rings) (val @cap) (val @place)) SUCCEEDED))
+						)
+
+	    			(if (? (= (val @status) SUCCEEDED))
+
+		    				;Send it,if still in Database.
+		    				(if (?  (achieve-workpiece $agent (val @workpiece) (val @status) ))
+								(! (= (workpiece @id (base @base-color) @rings (cap @cap-color) (place @name @feature)) (val @workpiece) ))
+								(! (= @place-msg (pb-create "llsf_msgs.Place")))
+								(! (pb-set-field @place-msg "name" 		(val @name)))
+								;If it was DS . Assigne Gate number in the msg
+								(if (? (machine (val @name) "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with))
+									(! (pb-set-field @place-msg "feature" 	"gate" ))
+									(! (pb-set-field @place-msg "gate" 		(val @feature) ))
+									else
+									(! (pb-set-field @place-msg "feature" 	(val @feature)))
+									)
+
+								(! (= @wp-msg (pb-create "llsf_msgs.Workpiece")))
+								(! (pb-set-field @wp-msg "id" 			(val @id)))
+								(! (pb-set-field @wp-msg "base_color" 	(val @base-color)))
+								(if (? (= (val @rings) (rings NONE)))
+									;Add Nothing
+									else
+									(if (? (= (val @rings) (rings @first-ring-color)))
+										(! (pb-set-field @wp-msg "first_ring_color" (val @first-ring-color)))
+										else
+										(if (? (= (val @rings) (rings @first-ring-color @second-ring-color)))
+											(! (pb-set-field @wp-msg "first_ring_color" 	(val @first-ring-color)))
+											(! (pb-set-field @wp-msg "second_ring_color" 	(val @second-ring-color)))
+											else 
+											(if (? (= (val @rings) (rings @first-ring-color @second-ring-color @third-ring-color)))
+												(! (pb-set-field @wp-msg "first_ring_color" 	(val @first-ring-color)))
+												(! (pb-set-field @wp-msg "second_ring_color" 	(val @second-ring-color)))
+												(! (pb-set-field @wp-msg "third_ring_color" 	(val @third-ring-color)))
+												)
+											)
+										)
+									)	
+								(if (? (~ (= (val @cap-color) NONE)))
+									(! (pb-set-field @wp-msg "cap_color" (val @cap-color)))
+									)
+								(! (pb-set-field @wp-msg "place"	(val @place-msg)))
+								
+
+								(! (= @senderinfo-msg (pb-create "llsf_msgs.SenderInfo") ))
+								(! (pb-set-field @senderinfo-msg "name" $my-name))
+
+								(if (? (master-of REQUESTING $my-name))
+									(! (pb-set-field @senderinfo-msg "reasoning_role" "master"))
+									else
+									(! (pb-set-field @senderinfo-msg "reasoning_role" "slave"))
+									)
+
+								(! (= @msg (pb-create "llsf_msgs.AchieveWorkpiece")))
+								(! (pb-set-field @msg "agent" 		$agent))
+								(! (pb-set-field @msg "status" 		(val @status)))
+								(! (pb-set-field @msg "workpiece" 	(val @wp-msg)))
+								(! (pb-set-field @msg "sender_info" (val @senderinfo-msg) ))
+								(! (pb-broadcast $peer-id (val @msg)))
+								(! (pb-destroy @msg))
+				  				)
+		    				)
+					)
+				)
+			)
+		)
+
+
+
 	;===========================================/////////======================================
+
+
 
 
 	)
