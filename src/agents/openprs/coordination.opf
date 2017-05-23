@@ -88,8 +88,14 @@
 															$rcv-from-host $rcvd-from-port $client-type $client-id $msg)
 		:context 	(agent-name $my-name)
 		:body(
+
 			(! (= $agent 					(pb-field-value $msg 		"agent" )) )
 			(! (= $status 					(pb-field-value $msg 		"status")) )
+			(if (? (pb-has-field 							$msg 		"sender_info"))
+				(! (= $sender-info-msg 		(pb-field-value $msg 		"sender_info")) )
+				(! (= $sender-name 			(pb-field-value $sender-info-msg	"name")) )
+				(! (= $sender-role 			(pb-field-value $sender-info-msg	"reasoning_role")) )			
+				)
 			(! (= $wp-msg 					(pb-field-value $msg 		"workpiece")) )
 			(! (= $base-color 				(pb-field-value $wp-msg 	"base_color")) )
 			(! (= $place-msg 				(pb-field-value $wp-msg 	"place")) )
@@ -420,11 +426,20 @@
 								(! (pb-set-field @wp-msg "cap_color" (val @cap-color)))
 								)
 							(! (pb-set-field @wp-msg "place"	(val @place-msg)))
+
+							(! (= @senderinfo-msg (pb-create "llsf_msgs.SenderInfo") ))
+							(! (pb-set-field @senderinfo-msg "name" $agent))
+							(if (? (master-of REQUESTING $agent))
+								(! (pb-set-field @senderinfo-msg "reasoning_role" "master"))
+								else
+								(! (pb-set-field @senderinfo-msg "reasoning_role" "slave"))
+								)
 							
 							(! (= @msg (pb-create "llsf_msgs.AchieveWorkpiece")))
 							(! (pb-set-field @msg "agent" 		$agent))
 							(! (pb-set-field @msg "status" 		(val @status)))
 							(! (pb-set-field @msg "workpiece" 	(val @wp-msg)))
+							(! (pb-set-field @msg "sender_info" (val @senderinfo-msg)))
 							(! (pb-broadcast $peer-id (val @msg)))
 							(! (pb-destroy @msg))
 			  				)
