@@ -5,6 +5,10 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/stn-generator
 ---
 plugins/stn-generator:
 
+  # extended domain with breakup and temporal information
+  domain-file: "@BASEDIR@/src/agents/rcll-robot-memory/extended-domain.pddl"
+  generate-classic-domain: true
+  classic-domain-file: "@BASEDIR@/src/agents/rcll-robot-memory/domain.pddl"
   plan:
     collection: "robmem.pddl-plan"
     interface: "pddl-planner"
