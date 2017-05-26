@@ -20,3 +20,18 @@ Robot::Robot(int id) : Machine("r", id) {
 Robot::~Robot() {
 }
 
+Time Robot::getFeedWorkpieceTime() const {
+    return feedWorkpieceTime;
+}
+
+void Robot::setFeedWorkpieceTime(Time feedWorkpieceTime) {
+    this->feedWorkpieceTime = feedWorkpieceTime;
+}
+
+Time Robot::getTakeWorkpieceTime() const {
+    return takeWorkpieceTime;
+}
+
+void Robot::setTakeWorkpieceTime(Time takeWorkpiece) {
+    this->takeWorkpieceTime = takeWorkpiece;
+}

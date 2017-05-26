@@ -8,11 +8,11 @@ CapStation::CapStation(int id) : Station(id, "cs") {
 CapStation::~CapStation() {
 }
 
-void CapStation::setFeedCapTime(int time) {
+void CapStation::setFeedCapTime(Time time) {
     this->feedCapTime = time;
 }
 
-void CapStation::setMountCapTime(int time) {
+void CapStation::setMountCapTime(Time time) {
     this->mountCapTime = time;
 }
 
@@ -30,11 +30,11 @@ void CapStation::setFedCapColor(Workpiece::Color color) {
     this->fedCapColor = color;
 }
 
-int CapStation::getFeedCapTime() const {
+Time CapStation::getFeedCapTime() const {
     return this->feedCapTime;
 }
 
-int CapStation::getMountCapTime() const {
+Time CapStation::getMountCapTime() const {
     return this->mountCapTime;
 }
 

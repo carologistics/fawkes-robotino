@@ -27,18 +27,18 @@ public:
     BaseStation(int id);
     virtual ~BaseStation();
 
-    int getDispenseBaseTime() const;
+    Time getDispenseBaseTime() const;
     void setPossibleBaseColors(std::set<Workpiece::Color> possibleBaseColors);
     void addPossibleBaseColor(Workpiece::Color color);
 
-    void setDispenseBaseTime(int time);
+    void setDispenseBaseTime(Time time);
     std::set<Workpiece::Color> getPossibleBaseColors() const;
     bool isPossibleBaseColor(Workpiece::Color Color) const;
     void setColorForRingStation(Workpiece::Color colorForRingStation);
     Workpiece::Color getColorForRingStation() const; 
 
 private:
-    int dispenseBaseTime;
+    Time dispenseBaseTime;
 
     std::set<Workpiece::Color> possibleBaseColors;
     //which color should a robot choose if he needs a base for the additional base requirement of a ring station 
