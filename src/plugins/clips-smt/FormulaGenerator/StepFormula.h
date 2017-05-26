@@ -60,9 +60,10 @@ public:
      * initial world state constraints creation, is used for the 0th step
      */
     Formula createInitialState();
+    Formula createInitialStateOrders();
+    Formula createInitialStateReward();
     Formula createInitialStateRobots();
     Formula createInitialStateStations();
-    Formula createInitialStateOrders();
     Formula createInitialStateMovingTimes(const Robot& r);
     
     /*
@@ -126,6 +127,7 @@ public:
     Formula loadCapPrev(const CapStation& cs, Workpiece::Color c);
 
     Formula orderNotDeliveredPrev(const Order& o);
+    Formula orderDeliveredPrev(const Order& o);
 
     /*
      * basic changes-in-the-world-state formula creation 
@@ -149,6 +151,8 @@ public:
     Formula updateReward(int value);
 
     Formula orderDelivered(const Order& o);
+    
+    Formula orderDeliveredRemains(const Order& o);
 
     /*
      * robot-action-formulas creation,
@@ -159,9 +163,11 @@ public:
     Formula createRemainingStepConstraints(const Robot &robot, const Station &station);
     Formula createRemainingStepConstraints(const Station &station);
     Formula createRemainingStepConstraints(const Robot &robot);
-
+    Formula createRemainingStepConstraintsOrders();
+    Formula createRemainingStepConstraintsOrders(Order& without);
+    
     /*Formula to update the moving times of the robot and the the time a machine is occupied after a action*/
-    Formula updateTimes(const Robot& r, const Station& station, int processingTime);
+    Formula updateTimes(const Robot& r, const Station& station, int processingTimeStation, int processingTimeRobot);
 
     /* creates a Formula which encodes the actions of getting a base from a base station for all robots and all base stations, 
      * checks if this action is valid and needed to fulfill an order or if a ring station needs additional bases*/
@@ -219,13 +225,20 @@ public:
 
 
     Formula collectWorkpieceActions();
-    Formula collectWorkpieceAction(Robot &r, Station &s);
+    Formula collectWorkpieceAction(Robot &r, CapStation & cs);
+    Formula collectWorkpieceAction(Robot &r, RingStation & rs);
+    Formula collectWorkpieceGeneralAction(Robot &r, Station &s);
     Formula collectWorkpieceActionReward(Robot &r, Station &s);
 
 
-    Formula deliverWorkpieceActions();
+    Formula deliverWorkpieceActions();   
     Formula deliverWorkpieceAction(Robot &r, DeliveryStation &ds);
     Formula deliverWorkpieceActionReward(Robot &r, Station &d);
+    Formula orderDelivered(Robot& r);
+    Formula inheritRemainingOrders(Order& o);
+    
+       
+    Formula allOrdersDelivered();
 
 private:
     static int newId;

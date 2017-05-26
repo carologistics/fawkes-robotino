@@ -49,7 +49,7 @@ std::map<Machine, Time> Machine::getMovingTimes() const {
 }
 
 Time Machine::getMovingTime(Machine const& m) const {
-    int time = 0;
+    Time time = 0;
     try {
         time = movingTimes.at(m);
     } catch (const std::out_of_range& oor) {
@@ -75,6 +75,22 @@ Workpiece::Color Machine::getRingColor(int number) const {
 
 Workpiece::Color Machine::getCapColor() const {
     return getWorkpiece().getCapColor();
+}
+
+bool Machine::isBaseStation() const{
+    return this->getType() == "bs";
+}
+
+bool Machine::isRingStation() const {
+    return this->getType() == "rs";
+}
+
+bool Machine::isCapStation() const {
+    return this->getType() == "cs";
+}
+
+bool Machine::isDeliveryStation() const {
+    return this->getType() == "ds";
 }
 
 std::string Machine::getVarIdentifier() const {

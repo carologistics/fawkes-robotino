@@ -11,14 +11,14 @@ public:
     Station(int id, std::string type);
     virtual ~Station();
     
-    void setOccupiedUntil(int time);
-    int getOccupiedUntil() const;
+    void setOccupiedUntil(Time time);
+    Time getOccupiedUntil() const;
     
 private:
     /* If brocken do not add to GameData, or if broken and the time the machine is 
      * available again is known, set occupiedUntil to it.
      * */
-    int occupiedUntil;
+    Time occupiedUntil;
 };
 
 #endif /* STATION_H */

@@ -5,19 +5,23 @@
 #include <string>
 
 #include "Workpiece.h"
+#include "Machine.h"
 
 class Order;
 typedef std::shared_ptr<Order> order_ptr;
 
 class Order {
 public:
-    enum State {NOTDELIVERED, DELIVERED};
+
+    enum State {
+        NOTDELIVERED, DELIVERED
+    };
     
-    Order(int id, Workpiece product, int deadline);
+    Order(int id, Workpiece product, Time deadline);
     virtual ~Order();
 
     int getId() const;
-    int getDeadline() const;
+    Time getDeadline() const;
     Workpiece getProduct() const;
     std::string getVarIdentifier();
 
@@ -28,7 +32,7 @@ public:
     std::vector<Workpiece::Color> getRingColorReq() const;
 
     void setId(int id);
-    void setDeadline(int deadline);
+    void setDeadline(Time deadline);
     void setProduct(Workpiece& w);
 
     void setBaseColorReq(Workpiece::Color color);
@@ -36,10 +40,13 @@ public:
     void setCapColorReq(Workpiece::Color color);
 
     std::string toString();
+    bool operator<(const Order& rhs) const;
+    bool operator==(const Order& rhs) const;
+    bool operator!=(const Order& rhs) const;
 
 private:
     int id = -1;
-    int deadline = -1;
+    Time deadline = 0;
     Workpiece product;
 };
 

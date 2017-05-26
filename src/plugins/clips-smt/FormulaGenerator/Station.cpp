@@ -19,9 +19,9 @@ Station::Station(int id, std::string type) : Machine(type, id) {
 Station::~Station() {
 }
 
-void Station::setOccupiedUntil(int time){
+void Station::setOccupiedUntil(Time time){
     this->occupiedUntil = time;
 }
-int Station::getOccupiedUntil() const{
+Time Station::getOccupiedUntil() const{
     return this->occupiedUntil;
 }

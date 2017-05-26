@@ -29,7 +29,7 @@ OBJS_clips_smt = clips_smt_plugin.o clips_smt_thread.o \
 			FormulaGenerator/BaseStation.o FormulaGenerator/CapStation.o FormulaGenerator/DeliveryStation.o  FormulaGenerator/RingStation.o  FormulaGenerator/Station.o \
 			FormulaGenerator/FormulaGenerator.o FormulaGenerator/GameData.o  FormulaGenerator/StepFormula.o \
 			FormulaGenerator/Machine.o FormulaGenerator/Order.o  FormulaGenerator/Robot.cpp  FormulaGenerator/Workpiece.o \
-			FormulaGenerator/Reward.o
+			FormulaGenerator/Reward.o FormulaGenerator/Action.o
 
 OBJS_all = $(OBJS_clips_smt)
 

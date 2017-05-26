@@ -16,7 +16,7 @@ class Machine;
 
 typedef std::shared_ptr<Machine> machine_ptr;
 
-typedef float Time;
+typedef long Time;
 
 class Machine {
 public:
@@ -37,7 +37,12 @@ public:
     Workpiece::Color getBaseColor() const;
     Workpiece::Color getRingColor(int number) const;
     Workpiece::Color getCapColor() const;
-
+    
+    bool isBaseStation() const;
+    bool isRingStation() const;
+    bool isCapStation() const;
+    bool isDeliveryStation() const;
+    
     std::string getVarIdentifier() const;
     std::string toString();
     

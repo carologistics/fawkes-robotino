@@ -4,7 +4,8 @@
 #include <iostream>
 #include <z3++.h>
 
-#include "StepFormula.h"
+
+#include "Action.h"
 
 /*
  * provides methods to generate a formula for the wished amount of steps, 
@@ -16,27 +17,50 @@
 
 class FormulaGenerator {
 public:
+
     FormulaGenerator(int amount, GameData& gameData);
     virtual ~FormulaGenerator();
 
+    /*creates and returns the formula, the formula is saved in the formula attribute*/
+    Formula createFormula();
+
+    std::vector<Action> getActions(const z3::model& model);
+    Action getAction(const z3::model& model, int step);
+    
+    std::string printActions(const z3::model& model);
+    
+    std::string printWorldStates(const z3::model& model);
+    std::string printWorldState(const z3::model& model, int);
+
+private:
+    
     stepFormula_ptr getStep(int i);
     std::vector<stepFormula_ptr> getSteps();
     Formula getFormula();
-    
+
     /* generates the needed amount of StepFormula objects 
      * based on the current world state encoded in gameData*/
-    void generateSteps(int amount, GameData& gameData) ;
-    
-    /*creates and returns the formula, the formula is saved in the formula attribute*/
-    Formula createFormula();
-    
-    GameData translateZ3ModelToGameData(z3::model model, int step);
-    
-private:
-    
-    void setGameData(GameData &gameData);
+    void generateSteps(int amount, GameData& gameData);
+
+    void setGameData(const GameData &gameData);
     GameData getGameData();
-    
+
+    std::map<string, int> transferZ3ModelToMap(const z3::model& model);
+
+    set<station_ptr> getStationOccAltered(const std::map<string, int>& model, int step);
+    set<robot_ptr> getRobotMovAltered(const std::map<string, int>& model, int step);
+    set<robot_ptr> getRobotWorkpieceAltered(const std::map<string, int>& model, int step);
+    set<capStation_ptr> getCapStationWorkpieceAltered(const std::map<string, int>& model, int step);
+    set<capStation_ptr> getCapStationCapColorAltered(const std::map<string, int>& model, int step);
+    bool checkConsistency(const std::map<string, int>& model, int step);
+
+    Action checkNoneAction(const std::map<string, int>&, int);
+    Action checkCollectBaseAction(const station_ptr&, const robot_ptr&, const std::map<string, int>&, int);
+    Action checkfeedCapAction(const station_ptr&, const robot_ptr&, const set<capStation_ptr>&, const std::map<string, int>&, int);
+    Action checkMountCapAction(const station_ptr&, const robot_ptr&, const set<capStation_ptr>&, const std::map<string, int>&, int);
+    Action checkPickWorkpieceAction(const station_ptr&, const robot_ptr&, set<capStation_ptr>, const std::map<string, int>&, int);
+    Action checkDeliverProductAction(const station_ptr&, const robot_ptr&, const std::map<string, int>&, int);
+
     std::vector<stepFormula_ptr> steps;
     Formula formula;
     GameData gameData;

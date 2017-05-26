@@ -172,7 +172,7 @@ static void testOrder() {
 
 //Tests Step iteration of FormulaGenerator
 static void testPrevStep() {
-    GameData gm = createGameDataTestCase();
+  /*   GameData gm = createGameDataTestCase();
     FormulaGenerator formulaGenerator(3, gm);
     cout << "Step:" << formulaGenerator.getStep(0)->getStepNumber() << endl;
     cout << "Step:" << formulaGenerator.getStep(1)->getStepNumber() << endl;
@@ -181,6 +181,7 @@ static void testPrevStep() {
     cout << "PrevStep:" << formulaGenerator.getStep(2)->getPrevStep()->getStepNumber() << endl;
     cout << "Step:" << formulaGenerator.getStep(3)->getStepNumber() << endl;
     cout << "PrevStep:" << formulaGenerator.getStep(3)->getPrevStep()->getStepNumber() << endl;
+  */
 }
 
 //Tests creation of Machines

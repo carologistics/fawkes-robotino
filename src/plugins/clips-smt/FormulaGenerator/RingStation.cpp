@@ -4,14 +4,14 @@
  * and open the template in the editor.
  */
 
-/*
+/* 
  * File:   RingStation.cpp
  * Author: leonard
- *
+ * 
  * Created on February 18, 2017, 2:02 AM
  */
 
-#include <assert.h>
+#include <assert.h> 
 #include <iostream>
 #include "RingStation.h"
 
@@ -22,11 +22,11 @@ RingStation::~RingStation() {
 
 }
 
-void RingStation::setFeedBaseTime(int time) {
+void RingStation::setFeedBaseTime(Time time) {
     this->feedBaseTime = time;
 }
 
-void RingStation::setMountRingTime(int time) {
+void RingStation::setMountRingTime(Time time) {
     this->mountRingTime = time;
 }
 
@@ -39,20 +39,20 @@ void RingStation::addPossibleRingColor(Workpiece::Color color, int additionalBas
 }
 
 void RingStation::setAdditinalBasesFed(int amount) {
-    this->additinalBasesFed = amount;
+    this->additionalBasesFed = amount;
 }
 
 void RingStation::setRingColorSetup(Workpiece::Color color) {
-    //possibleRingColors has to be set before
+    //possibleRingColors has to be set before 
     assert(isPossibleRingColor(color));
     this->ringColorSetup = color;
 }
 
-int RingStation::getFeedBaseTime() const {
+Time RingStation::getFeedBaseTime() const {
     return this->feedBaseTime;
 }
 
-int RingStation::getMountRingTime() const {
+Time RingStation::getMountRingTime() const {
     return this->mountRingTime;
 }
 
@@ -65,7 +65,7 @@ bool RingStation::isPossibleRingColor(Workpiece::Color Color) const {
 }
 
 int RingStation::getAdditionalBasesFed() const {
-    return this->additinalBasesFed;
+    return this->additionalBasesFed;
 }
 
 Workpiece::Color RingStation::getRingColorSetup() const {
@@ -73,8 +73,10 @@ Workpiece::Color RingStation::getRingColorSetup() const {
 }
 
 int RingStation::getNeededAdditinalBases(Workpiece::Color color) const {
-    int amount = 0;
-    if (color != Workpiece::NONE) {
+    int amount= 0;
+    if (color == Workpiece::NONE) {
+        amount = 0;
+    } else {
         try {
             amount = possibleRingColors.at(color);
         } catch (const std::out_of_range& oor) {
