@@ -19,3 +19,10 @@ DeliveryStation::DeliveryStation(int id) : Station(id, "ds") {
 DeliveryStation::~DeliveryStation() {
 }
 
+Time DeliveryStation::getDeliverProductTime() const {
+    return deliverProductTime;
+}
+
+void DeliveryStation::setDeliverProductTime(Time deliverProductTime) {
+    this->deliverProductTime = deliverProductTime;
+}

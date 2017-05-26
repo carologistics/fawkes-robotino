@@ -13,7 +13,7 @@
 
 #include "Order.h"
 
-Order::Order(int id, Workpiece product, int deadline) {
+Order::Order(int id, Workpiece product, Time deadline) {
     setId(id);
     setProduct(product);
     setDeadline(deadline);
@@ -26,7 +26,7 @@ int Order::getId() const {
     return this->id;
 }
 
-int Order::getDeadline() const {
+Time Order::getDeadline() const {
     return this->deadline;
 }
 
@@ -58,7 +58,7 @@ void Order::setId(int id) {
     this->id = id;
 }
 
-void Order::setDeadline(int deadline) {
+void Order::setDeadline(Time deadline) {
     this->deadline = deadline;
 }
 
@@ -78,8 +78,6 @@ void Order::setCapColorReq(Workpiece::Color color) {
     getProduct().setCapColor(color);
 }
 
-
-
 std::string Order::toString() {
     std::string result;
     result += "ID: " + std::to_string(getId());
@@ -88,4 +86,16 @@ std::string Order::toString() {
     result += getProduct().toString();
 
     return result;
+}
+
+bool Order::operator<(const Order& rhs) const {
+    return this->getId() < rhs.getId();
+}
+
+bool Order::operator==(const Order& rhs) const {
+    return this->getId() == rhs.getId();
+}
+
+bool Order::operator!=(const Order& rhs) const {
+    return !(*this == rhs);
 }

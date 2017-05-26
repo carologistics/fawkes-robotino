@@ -20,7 +20,7 @@ BaseStation::BaseStation(int id) : Station(id, "bs") {
 BaseStation::~BaseStation() {
 }
 
-int BaseStation::getDispenseBaseTime() const {
+Time BaseStation::getDispenseBaseTime() const {
     return this->dispenseBaseTime;
 }
 
@@ -31,7 +31,7 @@ void BaseStation::addPossibleBaseColor(Workpiece::Color color){
     this->possibleBaseColors.insert(color);
 }
 
-void BaseStation::setDispenseBaseTime(int time) {
+void BaseStation::setDispenseBaseTime(Time time) {
     this->dispenseBaseTime = time;
 }
 

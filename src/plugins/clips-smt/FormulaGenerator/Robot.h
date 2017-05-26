@@ -10,8 +10,15 @@ class Robot : public Machine{
 public:
     Robot(int id);
     virtual ~Robot();
+    
+    Time getFeedWorkpieceTime() const;
+    void setFeedWorkpieceTime(Time feedWorkpieceTime);
+    Time getTakeWorkpieceTime() const;
+    void setTakeWorkpieceTime(Time takeWorkpiece);
+    
 private:
-
+    Time feedWorkpieceTime;
+    Time takeWorkpieceTime;
 };
 
 #endif /* ROBOT_H */

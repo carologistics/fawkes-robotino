@@ -14,15 +14,15 @@ public:
     RingStation(int id);
     virtual ~RingStation();
 
-    void setFeedBaseTime(int time);
-    void setMountRingTime(int time);
+    void setFeedBaseTime(Time time);
+    void setMountRingTime(Time time);
     void setPossibleRingColors(std::map<Workpiece::Color, int> possibleRingColors);
     void addPossibleRingColor(Workpiece::Color color, int additionalBases);
     void setAdditinalBasesFed(int amount);
     void setRingColorSetup(Workpiece::Color color);
 
-    int getFeedBaseTime() const;
-    int getMountRingTime() const;
+    Time getFeedBaseTime() const;
+    Time getMountRingTime() const;
     std::map<Workpiece::Color, int> getPossibleRingColors() const;
     bool isPossibleRingColor(Workpiece::Color Color) const;
     int getAdditionalBasesFed() const;
@@ -39,7 +39,7 @@ private:
     std::map<Workpiece::Color, int> possibleRingColors;
     
     //additional bases on ring station 
-    int additinalBasesFed = 0;
+    int additionalBasesFed = 0;
     
     //color the ring station is set up for
     Workpiece::Color ringColorSetup = Workpiece::NONE;

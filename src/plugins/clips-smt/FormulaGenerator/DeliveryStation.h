@@ -22,8 +22,12 @@ class DeliveryStation : public Station{
 public:
     DeliveryStation(int id);
     virtual ~DeliveryStation();
+    
+    Time getDeliverProductTime() const;
+    void setDeliverProductTime(Time deliverProductTime);
+    
 private:
-
+    int deliverProductTime;
 };
 
 #endif /* DELIVERYSTATION_H */
