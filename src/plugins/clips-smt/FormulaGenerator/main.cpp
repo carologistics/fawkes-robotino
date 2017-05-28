@@ -42,7 +42,7 @@ void smt_test_formulaGenerator() {
     std::cout << "Test FormulaGenerator extern binary \n";
 
     GameData gD = testGameData1();
-    FormulaGenerator fg = FormulaGenerator(15, gD);
+    FormulaGenerator fg = FormulaGenerator(30, gD);
 
     std::cout << "Export FormulaGenerator formula to file fg_formula.smt\n";
     std::ofstream outputFile("/home/leonard/fg_formula.smt");
@@ -93,10 +93,9 @@ GameData testGameData1() {
     auto r2 = make_shared<Robot>(2);
     gD.addMachine(r0);
     gD.addMachine(r1);
-    gD.addMachine(r2);
+    //gD.addMachine(r2);
 
     Workpiece wr0 = Workpiece(Workpiece::BLACK);
-    Workpiece wr1 = Workpiece();
     r0->setWorkpiece(wr0);
     r0->setFeedWorkpieceTime(1);
     r0->setTakeWorkpieceTime(1);
@@ -109,6 +108,13 @@ GameData testGameData1() {
     bs0->setPossibleBaseColors({Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER});
     bs0->setDispenseBaseTime(60);
     gD.addMachine(bs0);
+    
+    auto rs0 = make_shared<RingStation>(0);
+    rs0->addPossibleRingColor(Workpiece::BLUE, 1);
+    rs0->addPossibleRingColor(Workpiece::GREEN, 2);
+    rs0->setFeedBaseTime(5000);
+    rs0->setMountRingTime(40000);
+    gD.addMachine(rs0);
 
     auto cs0 = make_shared<CapStation>(0);
     cs0->addPossibleCapColor(Workpiece::GREY);
@@ -123,23 +129,29 @@ GameData testGameData1() {
     Machine::addMovingTime(*r0, *bs0, 5);
     Machine::addMovingTime(*r0, *cs0, 5);
     Machine::addMovingTime(*r0, *ds0, 5);
+    Machine::addMovingTime(*r0, *rs0, 5);
 
     Machine::addMovingTime(*r1, *bs0, 6);
     Machine::addMovingTime(*r1, *cs0, 6);
     Machine::addMovingTime(*r1, *ds0, 6);
+    Machine::addMovingTime(*r1, *rs0, 5);
 
     Machine::addMovingTime(*bs0, *cs0, 10);
     Machine::addMovingTime(*bs0, *ds0, 20);
+    Machine::addMovingTime(*bs0, *rs0, 20);
 
     Machine::addMovingTime(*cs0, *ds0, 30);
+    Machine::addMovingTime(*cs0, *rs0, 30);
 
-    Workpiece p0(Workpiece::BLACK,{}, Workpiece::GREY);
-    Workpiece p1(Workpiece::RED,{}, Workpiece::GREY);
+    Machine::addMovingTime(*ds0, *rs0, 30);
+    
+    Workpiece p0(Workpiece::BLACK, {Workpiece::GREEN, Workpiece::BLUE, Workpiece::BLUE}, Workpiece::GREY);
+    Workpiece p1(Workpiece::RED, {}, Workpiece::GREY);
     auto o0 = make_shared<Order>(6, p0, 1000);
     auto o1 = make_shared<Order>(7, p1, 11000);
 
     gD.addOrder(o0);
-    gD.addOrder(o1);
+    //gD.addOrder(o1);
 
     return gD;
 }
