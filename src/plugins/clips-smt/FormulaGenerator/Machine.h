@@ -42,6 +42,7 @@ public:
     bool isRingStation() const;
     bool isCapStation() const;
     bool isDeliveryStation() const;
+    bool isRobot() const;
     
     std::string getVarIdentifier() const;
     std::string toString();

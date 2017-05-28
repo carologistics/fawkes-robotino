@@ -51,16 +51,25 @@ private:
     set<robot_ptr> getRobotMovAltered(const std::map<string, int>& model, int step);
     set<robot_ptr> getRobotWorkpieceAltered(const std::map<string, int>& model, int step);
     set<capStation_ptr> getCapStationWorkpieceAltered(const std::map<string, int>& model, int step);
+    set<ringStation_ptr> getRingStationWorkpieceAltered(const std::map<string, int>& model, int step);
     set<capStation_ptr> getCapStationCapColorAltered(const std::map<string, int>& model, int step);
+    set<ringStation_ptr> getRingStationRingColorAltered(const std::map<string, int>& model, int step);
+    set<ringStation_ptr> getRingStationAddBasesReqAltered(const std::map<string, int>& model, int step);
+    
     bool checkConsistency(const std::map<string, int>& model, int step);
 
     Action checkNoneAction(const std::map<string, int>&, int);
     Action checkCollectBaseAction(const station_ptr&, const robot_ptr&, const std::map<string, int>&, int);
+    Action checkSetUpRingColorAction(set<ringStation_ptr>, const std::map<string, int>&, int);
+    Action checkFeedBaseAction(const station_ptr&, const robot_ptr&, set<ringStation_ptr>, const std::map<string, int>&, int);
+    Action checkMountRingAction(const station_ptr&, set<ringStation_ptr>, const robot_ptr&, const std::map<string, int>&, int);
     Action checkfeedCapAction(const station_ptr&, const robot_ptr&, const set<capStation_ptr>&, const std::map<string, int>&, int);
     Action checkMountCapAction(const station_ptr&, const robot_ptr&, const set<capStation_ptr>&, const std::map<string, int>&, int);
-    Action checkPickWorkpieceAction(const station_ptr&, const robot_ptr&, set<capStation_ptr>, const std::map<string, int>&, int);
+    Action checkPickUpWorkpiece(const station_ptr&, const robot_ptr&, const std::map<string, int>&, int);
     Action checkDeliverProductAction(const station_ptr&, const robot_ptr&, const std::map<string, int>&, int);
 
+    std::string printWorldStateWorkpiece(std::map<string, int> model, int step, machine_ptr m);
+    
     std::vector<stepFormula_ptr> steps;
     Formula formula;
     GameData gameData;

@@ -20,26 +20,35 @@ class Action {
 public:
 
     enum ActionType {
-        NOTDEFINED= -1, NONE, COLLECTBASE, FEEDCAP, MOUNTCAP, PICKWORKPIECE, DELIVERPRODUCT
+        NOTDEFINED = -1, NONE, COLLECTBASE, SETUPRINGCOLOR, FEEDBASE, MOUNTRING, FEEDCAP, MOUNTCAP, DROPTRANSPARENTBASE, PICKWORKPIECE, DELIVERPRODUCT
     };
 
-    Action(ActionType actionType) : actionType(actionType){
+    Action(ActionType actionType) : actionType(actionType) {
     }
-    
+
     Action(ActionType actionType, robot_ptr robot, station_ptr station, Workpiece::Color color) :
     actionType(actionType), robot(robot), station(station), color(color) {
     }
 
+    Action(ActionType actionType, station_ptr station, Workpiece::Color color) :
+    actionType(actionType), station(station), color(color) {
+    }
+
+
     virtual ~Action();
-    
+
     bool isNotDefined() const;
     bool isNone() const;
     bool isCollectBase() const;
+    bool isSetUpRingColor() const;
+    bool isFeedBase() const;
+    bool isMountRing() const;
     bool isFeedCap() const;
     bool isMountCap() const;
+    bool isDropTransparentBase() const;
     bool isPickWorkpiece() const;
     bool isDeliverProduct() const;
-    
+
 
     ActionType getActionType() const;
     Workpiece::Color getColor() const;
@@ -54,7 +63,7 @@ private:
     robot_ptr robot = nullptr;
     station_ptr station = nullptr;
     Workpiece::Color color;
-    
+
     static const std::map<Action::ActionType, std::string> actionTypeNames;
 
 };

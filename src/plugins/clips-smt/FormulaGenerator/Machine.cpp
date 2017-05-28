@@ -93,6 +93,10 @@ bool Machine::isDeliveryStation() const {
     return this->getType() == "ds";
 }
 
+bool Machine::isRobot() const {
+    return this->getType() == "r";
+}
+
 std::string Machine::getVarIdentifier() const {
     return this->getType() + std::to_string(this->getId());
 }
