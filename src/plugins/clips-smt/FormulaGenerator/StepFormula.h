@@ -162,7 +162,9 @@ public:
     /*Formula to transfer the unchanging world state values to the variables of the next world state in each action formula*/
     Formula createRemainingStepConstraints(const Robot &robot, const Station &station);
     Formula createRemainingStepConstraints(const Station &station);
-    Formula createRemainingStepConstraints(const Robot &robot);
+    Formula createRemainingStepConstraintsStations(const Station &station);
+    Formula createRemainingStepConstraintsRobots(const Robot &robot);
+    Formula createRemainingStepConstraintsRobots();
     Formula createRemainingStepConstraintsOrders();
     Formula createRemainingStepConstraintsOrders(Order& without);
     
@@ -199,6 +201,7 @@ public:
     /* creates a Formula which encodes the actions of setting up a ring color for all ring stations, 
      * checks if this action is is valid and needed to fulfill an order*/
     Formula setupRingColorActions();
+    Formula timesDoNotChange();
     Formula setupRingColorAction(Workpiece::Color c, RingStation &rs);
     Formula existOrderWithRingColorReq(Workpiece::Color c);
     Formula setupRingColorActionReward(Workpiece::Color c, RingStation &rs);
@@ -223,6 +226,9 @@ public:
     /* encodes the mounting of the cap in the ring encoding*/
     Formula mountRingComponent(const RingStation& rs, int i);
 
+    Formula dropTransparentBaseActions();
+    Formula dropTransparentBaseAction(Robot &r, CapStation & cs);
+    
 
     Formula collectWorkpieceActions();
     Formula collectWorkpieceAction(Robot &r, CapStation & cs);

@@ -29,12 +29,28 @@ bool Action::isCollectBase() const {
     return getActionType() == ActionType::COLLECTBASE;
 }
 
+bool Action::isSetUpRingColor() const {
+    return getActionType() == ActionType::SETUPRINGCOLOR;
+}
+
+bool Action::isFeedBase() const {
+    return getActionType() == ActionType::FEEDBASE;
+}
+
+bool Action::isMountRing() const {
+    return getActionType() == ActionType::MOUNTRING;
+}
+
 bool Action::isFeedCap() const {
     return getActionType() == ActionType::FEEDCAP;
 }
 
 bool Action::isMountCap() const {
     return getActionType() == ActionType::MOUNTCAP;
+}
+
+bool Action::isDropTransparentBase() const {
+    return getActionType() == ActionType::DROPTRANSPARENTBASE;
 }
 
 bool Action::isPickWorkpiece() const {
@@ -74,8 +90,15 @@ string Action::toString() const {
     }
     else {
         output += Action::toString(getActionType()) + ", ";
+        
+        if(getRobot() != nullptr){
         output += getRobot()->getVarIdentifier() + ", ";
-        output += getStation()->getVarIdentifier() + ", ";
+        }
+        
+        if(getStation() != nullptr){
+            output += getStation()->getVarIdentifier() + ", ";
+        }
+        
         output += Workpiece::toString(getColor()) + ")";
     }
     return output;
@@ -85,7 +108,11 @@ const std::map<Action::ActionType, std::string> Action::actionTypeNames = {
     {Action::NOTDEFINED, "NOTDEFINED"},
     {Action::NONE, "NONE"},
     {Action::COLLECTBASE, "COLLECTBASE"},
+    {Action::SETUPRINGCOLOR, "SETUPRINGCOLOR"},
+    {Action::FEEDBASE, "FEEDBASE"},
+    {Action::MOUNTRING, "MOUNTRING"},
     {Action::FEEDCAP, "FEEDCAP"},
+    {Action::DROPTRANSPARENTBASE, "DROPTRANSPARENTBASE"},
     {Action::MOUNTCAP, "MOUNTCAP"},
     {Action::PICKWORKPIECE, "PICKWORKPIECE"},
     {Action::DELIVERPRODUCT, "DELIVERPRODUCT"},
