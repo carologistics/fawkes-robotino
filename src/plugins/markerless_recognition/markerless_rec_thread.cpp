@@ -69,7 +69,8 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 
 void  MarkerlessRecognitionThread::recognize_mps() {
 
-        mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 0 ) ;
+	cout << " Start of method recognize_mps() " << std::endl; 
+        mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 5 ) ;
 	mps_rec_if_->write();
 	
 	const char* recognizedMPS = mps_rec_if_->tostring_MPSType(mps_rec_if_->mpstype());
@@ -107,8 +108,9 @@ void MarkerlessRecognitionThread::readImage(){
 void
 MarkerlessRecognitionThread::init()
 {
-  mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
-  clear_data();
+
+      	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
+  	clear_data();
 }
 
 
@@ -117,7 +119,7 @@ void
 MarkerlessRecognitionThread::loop()
 {
 
-
+   recognize_mps(); 
    while ( ! mps_rec_if_->msgq_empty() ) {
     if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::ClearMessage>() ) {
      	std::cout << "Recieved Clear Message" << std::endl;
@@ -130,6 +132,7 @@ MarkerlessRecognitionThread::loop()
 	mps_rec_if_->set_msgid(m->id());
 	mps_rec_if_->set_final(false);
 	mps_rec_if_->write();
+	cout << " Start recognize " << std::endl; 
 	recognize_mps();
     } else if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::TakeDataMessage>() ) {
     	std::cout << "Recieved Take Data Message" << std::endl;
