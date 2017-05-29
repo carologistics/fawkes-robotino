@@ -67,7 +67,13 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	return result;
 }
 
-void MarkerlessRecognitionThread::recognize_mps() {
+void  MarkerlessRecognitionThread::recognize_mps() {
+
+        mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 0 ) ;
+	mps_rec_if_->write();
+	
+	const char* recognizedMPS = mps_rec_if_->tostring_MPSType(mps_rec_if_->mpstype());
+ 	cout << " Recognized MPS : " << recognizedMPS << std::endl; 	
 	//iterates over all stored paths im imageSet_ and calls recognize_current_pic on it
 	//then decides which mps was seen in the set of images
 }
@@ -110,6 +116,8 @@ MarkerlessRecognitionThread::init()
 void
 MarkerlessRecognitionThread::loop()
 {
+
+
    while ( ! mps_rec_if_->msgq_empty() ) {
     if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::ClearMessage>() ) {
      	std::cout << "Recieved Clear Message" << std::endl;
@@ -131,6 +139,7 @@ MarkerlessRecognitionThread::loop()
     	logger->log_warn(name(), "Unknown message received");
     }
     mps_rec_if_->msgq_pop();
+    
   }
 }
 
