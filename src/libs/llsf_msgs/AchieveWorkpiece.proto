@@ -56,7 +56,7 @@ enum CompType {
     }
     required string    name     = 1;
     required string    feature  = 2;
-    optional int32     gate     = 3;
+    optional int64     gate     = 3;
 }
 
 message Workpiece {
