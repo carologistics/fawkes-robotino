@@ -64,7 +64,7 @@ ClipsSmtThread::init()
 
 	// Test z3 extern binary
 	// proc_z3_ = NULL;
-	clips_smt_test_z3();
+	// clips_smt_test_z3();
 	// clips_smt_test_formulaGenerator();
 
 	// Test python
@@ -1880,7 +1880,41 @@ void ClipsSmtThread::clips_smt_test_formulaGenerator()
 
 	logger->log_info(name(), "Import FormulaGenerator formula from file fg_formula.smt into z3 formula");
 
-	clips_smt_solve_formula_from_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt");
+	std::string path = "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt";
+
+	// clips_smt_solve_formula_from_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt");
+
+	Z3_ast a = Z3_parse_smtlib2_file(_z3_context, path.c_str(), 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
+	z3::expr e(_z3_context, a);
+
+	z3::solver s(_z3_context);
+	s.add(e);
+
+	// Start measuring sovling time
+	std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
+	if(s.check() == z3::sat) {
+		// Stop measuring sovling time
+		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+		// Compute time for solving
+		double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
+		double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
+
+		logger->log_info(name(), "Test of import .smt file into z3 constraint did work (SAT) [%f ms, %f m]", diff_ms, diff_m);
+
+		z3::model model = s.get_model();
+		for(unsigned i=0; i<model.size(); ++i) {
+			z3::func_decl function = model[i];
+			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+		}
+		logger->log_info(name(), "Create actions with fg and model");
+		std::vector<Action> actions = fg.getActions(model);
+		logger->log_info(name(), "Print actions");
+		for(auto action: actions) {
+			logger->log_info(name(), "Action: %s", action.toString().c_str());
+		}
+	}
+	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
 }
 
 void ClipsSmtThread::clips_smt_solve_formula_from_smt_file(std::string path) {
