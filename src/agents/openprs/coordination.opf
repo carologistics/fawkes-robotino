@@ -372,6 +372,55 @@
 						Happens When each live Robot has echoed the success of the Achieve-workpiece 
 						(hence already updated thier world modles)"
 		)
+
+   (defop co--Slave--On-Succeeded-achievement
+   		:invocation	( achieve-workpiece $some-agent (workpiece $id $base $rings $cap (place $new-name $new-feature)) SUCCEEDED)
+   		:context ( 	(agent-name $my-name)
+   					(~ (master-of REASONING $my-name))
+   					(<= 0 $id)
+   					)
+   		:body 		(
+   			; Legal Transitions
+   			;	GRIPPER==> INPUT
+   			; 	GRIPPER==> SILDE
+   			; 	INPUT==> GRIPPER
+   			; 	INPUT==> OUTPUT
+   			; 	OUTPUT==>GRIPPER
+   			; 	anywhere==> LOST
+
+			(if (? (workpiece $id $base $rings $cap (place $new-name $new-feature)))
+				GOTO SKIP
+				)
+   			(if (?  (workpiece $id @base @rings @cap (place $old-name $old-feature)))
+   				(if (? (||
+   							(& (= $old-feature "gripper") (= $new-feature "input"))
+   							(& (= $old-feature "gripper") (= $new-feature "slide"))
+   							(& (= $old-feature "input") (= $new-feature "output"))
+   							(& (= $old-feature "input") (= $new-feature "gripper"))
+   							(& (= $old-feature "output") (= $new-feature "gripper"))
+   							(= $new-feature "LOST")
+   							))
+   					GOTO LEGAL
+   					)
+   				else
+   				;Nothing with same id exists
+   				GOTO LEGAL
+   				)
+
+
+   			LABEL ILLEGAL
+   			(! (printf (FORMAT "WRONG Workpiece Transitions from %s to %s" $old-feature $new-feature)))
+   			(! (printf (FORMAT "FAILED ASSERTING WP  from %s to %s" $old-feature $new-feature)))
+
+   			LABEL LEGAL
+   			(=> (workpiece $id $base $rings $cap (place $new-name $new-feature)))
+   			
+   			LABEL SKIP
+   			)
+
+  		 :documentation "On achieve-workpiece SUCCEEDED, If there is not such workpiece just assert it. 
+	  					if such a workpiece exists somewhere, Only assert if it is a legal transition"
+   	)
 	
 	;///////////////////////////////////////
 	;WORKER ROBOTS (Slaves or Achieving Bots) 

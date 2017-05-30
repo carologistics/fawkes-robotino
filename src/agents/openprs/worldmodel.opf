@@ -231,28 +231,27 @@
 	 		)
 	 	)
 
+	;Moved and rewriten at Cooperation.opf
+	; (defop co-worldmodel--On-AchieveWorkpiece-SUCCEEDED--sync-WP-AT-OUTPUT
+	;   :invocation (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name $feature)) SUCCEEDED)
+	;   :context ((agent-name $my-name)
+	;   	(~ (= $my-name $agent))
+	;   	(< 0 $id)
+	;   	)
+	;   :body(
+	;   	(if (? (~ (workpiece $id $base $rings $cap (place $mps-name @feature))))
+	; 		(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
+	; 		else
+	; 		(if (? 	(& 	(= $feature "output") (~ (= (val @feature) "output"))))
+	; 			(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
+	; 			)
+	; 		)
+ ;  		)
+	;   :documentation "On achieve-workpiece SUCCEEDED, If there is not such workpiece just assert it. 
+	;   					if such a workpiece exists somewhere, Only assert if it SUCCEEDED Newly at an OUTPUT "
+	; )
 
-	(defop co-worldmodel--On-AchieveWorkpiece-SUCCEEDED--sync-WP-AT-OUTPUT
-	  :invocation (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name $feature)) SUCCEEDED)
-	  :context ((agent-name $my-name)
-	  	(~ (= $my-name $agent))
-	  	(< 0 $id)
-	  	)
-	  :body(
-	  	(if (? (~ (workpiece $id $base $rings $cap (place $mps-name @feature))))
-			(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
-			else
-			(if (? 	(& 	(= $feature "output") (~ (= (val @feature) "output"))))
-				(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
-				)
-			)
-  		)
-	  :documentation "On achieve-workpiece SUCCEEDED, If there is not such workpiece just assert it. 
-	  					if such a workpiece exists somewhere, Only assert if it SUCCEEDED Newly at an OUTPUT "
-	)
-
-
-	(defop wm-Announce-dead
+	(defop worldmodel--Announce-Dead
 		  :invocation (time $sec $usec)
 		  :context (? (& (peer-id private $peer-id)
 		  				(heart-beat $agent-name @robot-number @team-name @team-color @sec @nsec)
