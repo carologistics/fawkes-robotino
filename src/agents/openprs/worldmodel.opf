@@ -21,10 +21,16 @@
 				(! (= (args side $side color $base-color) $args))
 				; (! (= $peace-id (rand 1000)))
 				(! (= $peace-id 0))
-				(=> (workpiece $peace-id (base $base-color) (rings none) (cap none) (place $mps-name (term-string-cat $side)) ))
+				(=> (achieve-workpiece $mps-name
+							(workpiece $peace-id 
+								(base $base-color)
+								(rings none)
+								(cap none)
+								(place $mps-name (term-string-cat $side)))
+								SUCCEEDED))
 				)
 
-			; (if (? (workpiece $peace-id $base $rings $cap (place $mps-name "input")))
+			; (if (? (workpiece $peace-id $base $rings $scap (place $mps-name "input")))
 
 				(if (? (= $mps-type "CS"))
 					(! (= (args operation $operation) $args))
@@ -33,13 +39,18 @@
 					(if (? (= $operation RETRIEVE_CAP)) 
 						(?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
 						(=> (cap-station $mps-name $cap-color CAP_LOADED 	 $caps-on-shelf ))
-						(=> (workpiece $peace-id $base $rings (cap none) (place $mps-name "output") ))
+						(=> (achieve-workpiece $mps-name
+									(workpiece $peace-id $base $rings (cap none) (place $mps-name "output"))
+									SUCCEEDED))
 						)
 					(if (? (= $operation MOUNT_CAP))  
 						(? 	(cap-station $mps-name $cap-color $loaded-status $caps-on-shelf))
 						(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf )); To be removed
-						(=> (workpiece $peace-id $base $rings (cap $cap-color) (place $mps-name "output") ))
-						))
+						(=> (achieve-workpiece $mps-name
+									(workpiece $peace-id $base $rings (cap $cap-color) (place $mps-name "output"))
+									SUCCEEDED))
+						)
+					)
 
 				(if (? (= $mps-type "RS"))
 					(? (= (args ring_color $new-ring) $args))
@@ -53,7 +64,9 @@
 					(! (= $updated-bases-loaded (- $bases-loaded $required-bases)))
 					
 					(=> (ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $updated-bases-loaded))
-					(=> (workpiece $peace-id $base $updated-rings (cap none) (place $mps-name "output") ))	
+					(=> (achieve-workpiece $mps-name
+								(workpiece $peace-id $base $updated-rings (cap none) (place $mps-name "output"))
+								SUCCEEDED))
 					)
 				
 				; else
