@@ -197,7 +197,7 @@
   						)
 					else
 					(! (printf (FORMAT "WP_Place --> Gripper: I think the peace is lost..will just fail \n" )))
-					(fail)
+					(! (FAILED))
 					)
 				else
 				(! (printf (FORMAT "WP_Place --> Gripper: ;WP Does not exists in the world (i,e Database) \n" )))
@@ -245,7 +245,7 @@
 
 				(! (printf (FORMAT "WP_Place --> Gripper: Could not handle this peace %s %s %s %s \n"  $wp-id $base $rings $cap )))
 				(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 
-				(fail)
+				(! (FAILED))
 
 				LABEL fin
 				;TODO: handle cases that
@@ -272,7 +272,7 @@
 
 			(if (? 	(= $mps-type "BS"))
 				(! (printf (FORMAT "WP_GRIPPER-->INPUT: Why are you trying to insert to a BS ?!?!..Will fail \n ")))
-				(fail)
+				(! (FAILED))
 				)
 			(if (? 	(= $mps-type "RS"))
 				(! (step (drive-to machine $mps-name side "input")))
@@ -305,6 +305,7 @@
 												$cap 
 												(place LOST LOST)))
 							(fail)
+							(! (FAILED))
 							)
 
 						else
@@ -320,9 +321,9 @@
 		 					;Normal workpiece,just let it pass to the insertion step
 							else
 							(! (printf (FORMAT " WP_GRIPPER-->INPUT: Something is not right!. CAP_NOT_LOADED or Wrong Puck!..will fail \n")))
-							(fail))
+							(! (FAILED))
+							)
 						)
-				
 				)
 			;Default insertion Step
 			; (! (step (drive-to machine $mps-name side "input")))
