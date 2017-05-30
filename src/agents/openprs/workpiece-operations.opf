@@ -266,6 +266,7 @@
 						(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(holding $wp-id)
 						) 				;Maybe the input side has to be empty for that (or make a need for it)
+		:setting 		(setting "robot-name" $agent)
 		:body (
 
 			(! (printf (FORMAT "WorkpieceOperation: GRIPPER--->INPUT \n ")))
@@ -300,11 +301,12 @@
 							(! (printf (FORMAT "WP_ GRIPPER-->INPUT: Cap Is already loaded !!!!!!!..will fail\n" )))
 							; TODO: Move to a step Release puck for consistency
 							(=> (holding none))
-							(=> (workpiece $wp-id $base 
-												$rings 
-												$cap 
-												(place LOST LOST)))
-							(fail)
+							(=> (Achieve-workpiece $agent
+										(workpiece $wp-id $base 
+														$rings 
+														$cap 
+														(place "LOST" "LOST"))
+										SUCCEEDED))
 							(! (FAILED))
 							)
 

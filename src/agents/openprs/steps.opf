@@ -98,8 +98,9 @@
 				 		(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ;The Mps Has to had been instructed or down
 				 		(holding NONE)
 				 		;(base-station $mps-name $active-side $failed-side)
-				 		(workpiece $ws-id  (base $base-color) (rings none) (cap none) (place $mps-name $side)) 
-				 		) 
+				 		(workpiece $ws-id (base $base-color) (rings none) (cap none) (place $mps-name $side)) 
+				 		)
+		:setting 		(setting "robot-name" $my-name)
 		:body(
 			(! (printf (Format "STEP: Get-Base .. machine %s \n" $mps-name)))
 			;Todo: This could be replace by a unified checking mechanism 
@@ -114,7 +115,9 @@
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" $side)) ) 
 				(=> (agent-state STEP-FINISHD))
 				(! (= $peace-id (rand 1000)))
-				(=> (workpiece $peace-id  (base $base-color) (rings none) (cap none) (place "agent" "gripper")))
+				(=> (Achieve-workpiece $my-name
+		 					(workpiece $peace-id (base $base-color) (rings none) (cap none) (place "agent" "gripper"))
+							SUCCEEDED))
 				(=> (holding $peace-id));put the id
 				else
 				(? (machine $mps-name "BS" @m-state @m-prepared @m-zone @m-pose @m-loaded-with))
@@ -155,6 +158,7 @@
 			 			(holding NONE)
 			 			(workpiece $ws-id $base $rings $cap (place $mps-name "output"));If the peace is not already at output this will fail. But what if it was processing still 
 			 			)
+		:setting 		(setting "robot-name" $my-name)
 
 		:body(
 			(! (printf (FORMAT " STEP: get-output from \n")))
@@ -162,13 +166,19 @@
 
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" "output")))
 				(=> (agent-state STEP-FINISHD))
-				(=> (workpiece $ws-id  $base $rings $cap (place "agent" "gripper")))
+				(=> (Achieve-workpiece $my-name 
+							(workpiece $ws-id  $base $rings $cap (place "agent" "gripper"))
+							SUCCEEDED))
 				(=> (holding $ws-id))  
 				else
 				(=> (agent-state STEP-FAILD))
 				(? (machine $mps-name $mps-type @m-state @m-prepared @m-zone @m-pose @m-loaded-with))
 				(if (? (~ (= (val @m-state) "READY-AT-OUTPUT")))
-					(=> (workpiece $ws-id  (base $base-color) (rings none) (cap none) (place LOST LOST))))
+					(=> (Achieve-workpiece $my-name
+								(workpiece $ws-id (base $base-color) (rings none) (cap none) (place "LOST" "LOST"))
+								SUCCEEDED))
+					)
+				(=> (agent-state STEP-FAILD))
 				(! (FAILED))
 				)
 			)
@@ -182,6 +192,7 @@
 			:invocation( ! 	(step (get-cap machine $mps-name)))
 			:context ( 		(cap-station $mps-name $assigned-cap-color $cap-loaded-status $caps-on-shelf )
 							(holding NONE))
+			:setting 	(setting "robot-name" $my-name)
 			:body(
 				(! (printf (Format "STEP: Get-From-Shelf \n")))
 				(=> (agent-state STEP-RUNNING))
@@ -199,7 +210,9 @@
 				(if (! (execute (skill "get_product_from" "place" $mps-name "shelf" $slot)))
 					(=> (agent-state STEP-FINISHD))
 					(! (= $peace-id (rand 1000)))
-					(=> (workpiece $peace-id (base UNKNOWN) (rings none) (cap $assigned-cap-color) (place "agent" "gripper") ))
+					(=> (Achieve-workpiece $my-name
+								(workpiece $peace-id (base UNKNOWN) (rings none) (cap $assigned-cap-color) (place "agent" "gripper"))
+								SUCCEEDED))
 					(=> (holding $peace-id))
 				else
 					(=> (agent-state STEP-FAILD)) 
@@ -227,6 +240,7 @@
 							;Maybe check if side is empty OR handle it if not
 							;Maybe check if the holding peace is a base or product work-peace
 							;Mps has to be instructed already before u do that. 
+			:setting 		(setting "robot-name" $my-name)
 			:body(
 				(! (printf (FORMAT "STEP: Insert Product into %s \n" $mps-name)))
 				(=> (agent-state STEP-RUNNING))
@@ -240,14 +254,18 @@
 					;UPDATE WORLD MODEL
 					;Moved to On_ready-at-output
 					; (if (?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
-					; 	(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))) 
-					(=> (workpiece $ws-id $base $rings $cap (place $mps-name "input")))
+					; 	(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf )))
+					(=> (Achieve-workpiece $my-name
+								(workpiece $ws-id $base $rings $cap (place $mps-name "input"))
+								SUCCEEDED))
 					(=> (agent-state STEP-FINISHD))
 					else
 					;TODO: lose the workpiece after checking if still holding
 					(=> (agent-state STEP-FAILD))
 					;TODO:Check if still holding first
-					(=> (workpiece $ws-id $base $rings $cap (place LOST LOST)))
+					(=> (Achieve-workpiece $my-name
+								(workpiece $ws-id $base $rings $cap (place "LOST" "LOST"))
+								SUCCEEDED))
 					(! (FAILED))
 					)
 				)
@@ -270,6 +288,7 @@
 							(~ (workpiece $ws-id $base $rings (cap $cap-color) (place  $mps-name "input")))
 							) 
 							;check the work peace more accurately..it should be what u just got from the shelf 
+			:setting 		(setting "robot-name" $agent)
 			:body(
 				(! (printf (FORMAT "STEP:  Insert Cap from %s  shelf \n" $mps-name )))
 
@@ -280,12 +299,16 @@
 				(if (! (execute (skill "bring_product_to" "place" $mps-name "atmps" $slot)))
 					;Moved to On_ready-at-output
 					; (=> (cap-station $mps-name $cap-color CAP_LOADED $caps-on-shelf)) 
-					(=> (workpiece $ws-id $base $rings (cap $cap-color) (place $mps-name "input")))
+					(=> (Achieve-workpiece $agent
+								(workpiece $ws-id $base $rings (cap $cap-color) (place $mps-name "input"))
+								SUCCEEDED))
 					(=> (agent-state STEP-FINISHD))
 					else
 					(=> (agent-state STEP-FAILD))
 					;TODO: only lose the work peace after checking if still holding
-					(=> (workpiece $ws-id $base $rings $cap (place LOST LOST)))
+					(=> (Achieve-workpiece $agent 
+								(workpiece $ws-id $base $rings $cap (place "LOST" "LOST"))
+								SUCCEEDED))
 					(! (FAILED))
 					)
 				)
@@ -306,6 +329,7 @@
 							(< $bases-loaded 3)
 						 	)
 							;Check if slide is already full 
+			:setting 	(setting "robot-name" $agent)
 			:body(
 				(! (printf (FORMAT "STEP: Insert-slide into %s \n" $mps-name)))
 				(=> (agent-state STEP-RUNNING))
@@ -316,13 +340,17 @@
 					; (if (?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
 					; 	(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))) 
 					(=> (ring-station $mps-name (avilible-colors $colors-list) $selected-color (+ $bases-loaded 1)))
-					(=> (workpiece $ws-id $base $rings $cap (place $mps-name "slide")))
+					(=> (Achieve-workpiece 
+								(workpiece $ws-id $base $rings $cap (place $mps-name "slide"))
+								SUCCEEDED))
 					(=> (agent-state STEP-FINISHD))
 					else
 					;TODO: lose the workpiece after checking if still holding
 					(=> (agent-state STEP-FAILD))
 					;TODO:Check if still holding first
-					(=> (workpiece $ws-id $base $rings $cap (place LOST LOST)))
+					(=> (Achieve-workpiece $agent
+								(workpiece $ws-id $base $rings $cap (place "LOST" "LOST"))
+								SUCCEEDED))
 					(! (FAILED))
 					)
 				)
