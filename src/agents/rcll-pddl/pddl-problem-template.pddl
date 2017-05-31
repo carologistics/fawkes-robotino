@@ -124,7 +124,7 @@
     (wp-at-bs silver-base5)
     (wp-at-bs silver-base6)
 
-    <<#AGG_ORDER|{relation:'order',aggregated: true}>>
+    <<#AGG_ORDER|{relation:'aggregated_order'}>>
     (order-complexity o<<id>> <<complexity>>)
     (order-base-color o<<id>> BASE_<<base>>)
     (order-cap-color o<<id>> CAP_<<cap>>)
@@ -143,7 +143,8 @@
     ;(wp-in-production silver-base1 RS1)
     ;(wp-in-slide RS1 TWO)
     ;(wp-in-slide RS1 ONE)
-    (order-fulfilled o0)
+    <<#GOALORDER|{relation:'order'}>>
+    (order-fulfilled o<<id>>)<</GOALORDER>>
     ;(order-fulfilled o1)
     ;(order-fulfilled o2)
     ;(order-fulfilled o3)

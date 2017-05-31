@@ -7,6 +7,8 @@
     
 		o1 - order
     
+		o6 - order
+    
 		o7 - order
     
 		red-base1 - base
@@ -34,9 +36,9 @@
     slot4 slot5 slot6 - shelf-slot
 		cc7 cc8 cc9 cc10 cc11 cc12 - cap-carrier
     
-    C-DS - DS C-RS2 - RS C-RS1 - RS C-CS2 - CS C-BS - BS C-CS1 - CS 
+    C-DS - DS C-RS2 - RS C-RS1 - RS C-CS2 - CS C-CS1 - CS C-BS - BS 
 
-    C-DS-I C-DS-O C-RS2-I C-RS2-O C-RS1-I C-RS1-O C-CS2-I C-CS2-O C-BS-I C-BS-O C-CS1-I C-CS1-O 
+    C-DS-I C-DS-O C-RS2-I C-RS2-O C-RS1-I C-RS1-O C-CS2-I C-CS2-O C-CS1-I C-CS1-O C-BS-I C-BS-O 
     INS - pos
 	)
 	 
@@ -53,27 +55,27 @@
     (pos-free C-RS1-O)(has-pos C-CS2 C-CS2-I)
     (pos-free C-CS2-I)
     (has-pos C-CS2 C-CS2-O)
-    (pos-free C-CS2-O)(has-pos C-BS C-BS-I)
-    (pos-free C-BS-I)
-    (has-pos C-BS C-BS-O)
-    (pos-free C-BS-O)(has-pos C-CS1 C-CS1-I)
+    (pos-free C-CS2-O)(has-pos C-CS1 C-CS1-I)
     (pos-free C-CS1-I)
     (has-pos C-CS1 C-CS1-O)
-    (pos-free C-CS1-O)
+    (pos-free C-CS1-O)(has-pos C-BS C-BS-I)
+    (pos-free C-BS-I)
+    (has-pos C-BS C-BS-O)
+    (pos-free C-BS-O)
     
     (idle C-DS)
     (idle C-RS2)
     (idle C-RS1)
     (idle C-CS2)
-    (idle C-BS)
     (idle C-CS1)
+    (idle C-BS)
 
     
-    (has-color-one C-RS2 RING_BLUE)
-    (has-color-two C-RS2 RING_ORANGE)
+    (has-color-one C-RS2 RING_)
+    (has-color-two C-RS2 RING_)
     
-    (has-color-one C-RS1 RING_YELLOW)
-    (has-color-two C-RS1 RING_GREEN)
+    (has-color-one C-RS1 RING_)
+    (has-color-two C-RS1 RING_)
     
 
     ;TODO translate needed-bases
@@ -151,18 +153,25 @@
 
     
     (order-complexity o1 C0)
-    (order-base-color o1 BASE_RED)
-    (order-cap-color o1 CAP_GREY)
+    (order-base-color o1 BASE_BLACK)
+    (order-cap-color o1 CAP_BLACK)
     (order-ring-one o1 RING_NONE)
     (order-ring-two o1 RING_NONE)
     (order-ring-three o1 RING_NONE)
     
+    (order-complexity o6 C2)
+    (order-base-color o6 BASE_RED)
+    (order-cap-color o6 CAP_GREY)
+    (order-ring-one o6 RING_ORANGE)
+    (order-ring-two o6 RING_BLUE)
+    (order-ring-three o6 RING_NONE)
+    
     (order-complexity o7 C3)
-    (order-base-color o7 BASE_SILVER)
+    (order-base-color o7 BASE_BLACK)
     (order-cap-color o7 CAP_BLACK)
-    (order-ring-one o7 RING_GREEN)
-    (order-ring-two o7 RING_YELLOW)
-    (order-ring-three o7 RING_BLUE)
+    (order-ring-one o7 RING_BLUE)
+    (order-ring-two o7 RING_ORANGE)
+    (order-ring-three o7 RING_YELLOW)
     
 
     (at-pos R-1 INS)
@@ -175,7 +184,10 @@
     ;(wp-in-production silver-base1 RS1)
     ;(wp-in-slide RS1 TWO)
     ;(wp-in-slide RS1 ONE)
-    (order-fulfilled o0)
+    
+    (order-fulfilled o1)
+    (order-fulfilled o6)
+    (order-fulfilled o7)
     ;(order-fulfilled o1)
     ;(order-fulfilled o2)
     ;(order-fulfilled o3)
