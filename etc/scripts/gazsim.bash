@@ -135,12 +135,6 @@ while true; do
 	     ;;
 	 -n)
 	     NUM_ROBOTINOS=$OPTARG
-	     if (( $NUM_ROBOTINOS >= 3 )); then
-		     NUM_CYAN=3
-         NUM_MAGENTA=$(expr $NUM_ROBOTINOS - 3)
-       else
-	       NUM_CYAN=$NUM_ROBOTINOS
-       fi
 	     ;;
 	 -e)
 	     REPLAY="-e $OPTARG"
@@ -190,12 +184,27 @@ then
      exit 1
 fi
 
-if [ $NUM_ROBOTINOS -lt 0 ] || [ $NUM_ROBOTINOS -gt 6 ]
+
+if [ $FIRST_ROBOTINO_NUMBER -le 0 ] || [ $FIRST_ROBOTINO_NUMBER -gt 6 ]
 then
-     echo Number Robotinos wrong
+     echo Invalid first robotino number, must be in 1..6.
+     exit 1
+fi
+if [ $NUM_ROBOTINOS -le 0 ] || [ $(($FIRST_ROBOTINO_NUMBER-1+$NUM_ROBOTINOS)) -gt 6 ]
+then
+     echo Invalid number of robotinos, must be 1..$((6-$FIRST_ROBOTINO_NUMBER+1))
      exit 1
 fi
 
+if [ $FIRST_ROBOTINO_NUMBER -gt 3 ]; then
+  NUM_CYAN=0
+else
+  NUM_CYAN=$((3 - $FIRST_ROBOTINO_NUMBER + 1))
+  if [ $NUM_CYAN -gt $NUM_ROBOTINOS ]; then
+    NUM_CYAN=$NUM_ROBOTINOS
+  fi
+fi
+NUM_MAGENTA=$(($NUM_ROBOTINOS-$NUM_CYAN))
 
 #execute command
 
