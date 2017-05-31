@@ -47,6 +47,10 @@ plugins/robot-memory:
       collections: ['robmem.blackboard','robmem.transform','robmem.test']
       priority: -10
       caching-time: 0.0
+    order:
+      collections: ['syncedrobmem.clipswm']
+      priority: -9
+      caching-time: 0.0
     
     
   
