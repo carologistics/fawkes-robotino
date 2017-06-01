@@ -123,6 +123,9 @@ private:
 
 	// Leonards formula encoding
 	GameData clips_smt_convert_protobuf_to_gamedata();
+	std::vector<int> actions_robot_fg_1;
+	std::vector<int> actions_robot_fg_2;
+	std::vector<int> actions_robot_fg_3;
 
 	// TODO (Igor) Is shared_ptr instead of make_shared ok?
 	std::vector<std::shared_ptr<Robot>> gamedata_robots;
