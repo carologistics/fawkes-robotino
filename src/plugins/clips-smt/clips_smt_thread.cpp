@@ -206,37 +206,69 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 		action->set_name("enter-field");
 
 
+		// Francesco
+		// if(r.compare("R-1")==0){
+		// 	std::map<int, std::string>::iterator it_actions;
+		// 	for(it_actions = actions_robot_1.begin(); it_actions!=actions_robot_1.end(); ++it_actions) {
+		// 		action = plan->add_actions();
+		// 		action->set_name("move");
+		// 		param = action->add_params();
+		// 		param->set_key("to");
+		// 		param->set_value(it_actions->second);
+		// 	}
+		// }
+		// else if(r.compare("R-2")==0){
+		// 	std::map<int, std::string>::iterator it_actions;
+		// 	for(it_actions = actions_robot_2.begin(); it_actions!=actions_robot_2.end(); ++it_actions) {
+		// 		action = plan->add_actions();
+		// 		action->set_name("move");
+		// 		param = action->add_params();
+		// 		param->set_key("to");
+		// 		param->set_value(it_actions->second);
+		// 	}
+		// }
+		// else if(r.compare("R-3")==0){
+		// 	std::map<int, std::string>::iterator it_actions;
+		// 	for(it_actions = actions_robot_3.begin(); it_actions!=actions_robot_3.end(); ++it_actions) {
+		// 		action = plan->add_actions();
+		// 		action->set_name("move");
+		// 		param = action->add_params();
+		// 		param->set_key("to");
+		// 		param->set_value(it_actions->second);
+		// 	}
+		// }
+
+		// Leonard
 		if(r.compare("R-1")==0){
 			std::map<int, std::string>::iterator it_actions;
-			for(it_actions = actions_robot_1.begin(); it_actions!=actions_robot_1.end(); ++it_actions) {
+			for(int move_to: actions_robot_fg_1) {
 				action = plan->add_actions();
 				action->set_name("move");
 				param = action->add_params();
 				param->set_key("to");
-				param->set_value(it_actions->second);
+				param->set_value(node_names_[move_to]);
 			}
 		}
 		else if(r.compare("R-2")==0){
 			std::map<int, std::string>::iterator it_actions;
-			for(it_actions = actions_robot_2.begin(); it_actions!=actions_robot_2.end(); ++it_actions) {
+			for(int move_to: actions_robot_fg_2) {
 				action = plan->add_actions();
 				action->set_name("move");
 				param = action->add_params();
 				param->set_key("to");
-				param->set_value(it_actions->second);
+				param->set_value(node_names_[move_to]);
 			}
 		}
 		else if(r.compare("R-3")==0){
 			std::map<int, std::string>::iterator it_actions;
-			for(it_actions = actions_robot_3.begin(); it_actions!=actions_robot_3.end(); ++it_actions) {
+			for(int move_to: actions_robot_fg_3) {
 				action = plan->add_actions();
 				action->set_name("move");
 				param = action->add_params();
 				param->set_key("to");
-				param->set_value(it_actions->second);
+				param->set_value(node_names_[move_to]);
 			}
 		}
-
 	}
 
 
@@ -282,19 +314,19 @@ ClipsSmtThread::loop()
 	clips_smt_compute_distances_robots();
 	clips_smt_compute_distances_machines();
 
-	// Declare variable for encoding
-	std::map<std::string, z3::expr> variables_pos;
-	std::map<std::string, z3::expr> variables_p;
-	std::map<std::string, z3::expr> variables_d;
-	std::map<std::string, z3::expr> variables_m;
-
-	// Declare formulas for encoding
-	z3::expr_vector formula_bool = clips_smt_encoder_bool(variables_pos, variables_p, variables_d, variables_m);
-	z3::expr_vector formula = clips_smt_encoder(variables_pos, variables_d, variables_m);
-
-	// Give it to z3 solver
-	if(use_encoder_bool) clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula_bool);
-	else clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula);
+	// // Declare variable for encoding
+	// std::map<std::string, z3::expr> variables_pos;
+	// std::map<std::string, z3::expr> variables_p;
+	// std::map<std::string, z3::expr> variables_d;
+	// std::map<std::string, z3::expr> variables_m;
+	//
+	// // Declare formulas for encoding
+	// z3::expr_vector formula_bool = clips_smt_encoder_bool(variables_pos, variables_p, variables_d, variables_m);
+	// z3::expr_vector formula = clips_smt_encoder(variables_pos, variables_d, variables_m);
+	//
+	// // Give it to z3 solver
+	// if(use_encoder_bool) clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula_bool);
+	// else clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula);
 
 	// Test formulaGenerator
 	logger->log_info(name(), "Convert protobuf to gamedata");
@@ -1642,7 +1674,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 
 
 	logger->log_info(name(), "Create fg with gD");
-	FormulaGenerator fg = FormulaGenerator(5, gD);
+	FormulaGenerator fg = FormulaGenerator(1, gD);
 	logger->log_info(name(), "Display fg.createFormula()");
 	// cout << fg.createFormula() << std::endl;
 	cout << gD.toString() << std::endl;
@@ -1979,6 +2011,26 @@ void ClipsSmtThread::clips_smt_solve_formula_from_fg_smt_file(std::string path, 
 		logger->log_info(name(), "Print actions");
 		for(auto action: actions) {
 			logger->log_info(name(), "Action: %s", action.toString().c_str());
+
+			logger->log_info(name(), "Get station_id");
+			int station_id = action.getStation()->getId();
+
+			// Extract move from actions
+			switch(action.getRobot()->getId()){
+				case 0: if(actions_robot_fg_1.empty() || actions_robot_fg_1.back() != station_id) {
+							actions_robot_fg_1.push_back(station_id);
+						}
+						break;
+				case 1: if(actions_robot_fg_2.empty() || actions_robot_fg_2.back() != station_id) {
+							actions_robot_fg_2.push_back(station_id);
+						}
+						break;
+				case 2: if(actions_robot_fg_3.empty() || actions_robot_fg_3.back() != station_id) {
+							actions_robot_fg_3.push_back(station_id);
+						}
+						break;
+				default: break;
+			}
 		}
 	}
 	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
