@@ -115,6 +115,7 @@ private:
 	z3::expr_vector clips_smt_encoder_bool(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_p, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m);
 	void clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula);
 	void clips_smt_solve_formula_from_smt_file(std::string path);
+	void clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg);
 
 	std::map<int ,std::string> actions_robot_1;
 	std::map<int ,std::string> actions_robot_2;
