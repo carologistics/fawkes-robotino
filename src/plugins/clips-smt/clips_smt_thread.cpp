@@ -1417,15 +1417,18 @@ GameData
 ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 {
 	GameData gD = GameData();
-
-	bool grey_set = false;
+	gamedata_robots.clear();
+	gamedata_basestations.clear();
+	gamedata_ringstations.clear();
+	gamedata_capstations.clear();
+	gamedata_deliverystations.clear();
 
 	// Machines
 	for (int i = 1; i < number_machines+1; i++){
 		std::string name_machine = node_names_[i];
 		if(name_machine[2] == 'B') { // BaseStation
 			auto bs_temp = std::make_shared<BaseStation>(i);
-			bs_temp->setPossibleBaseColors({Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER}); // TODO Add all possibleBaseColors BACK
+			bs_temp->setPossibleBaseColors({Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER}); // TODO Is this constant behavior
 			bs_temp->setDispenseBaseTime(1);
 			gamedata_basestations.push_back(bs_temp);
 			gD.addMachine(bs_temp);
@@ -1434,7 +1437,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 			auto rs_temp = std::make_shared<RingStation>(i);
 			for(int j=0; j<data.machines(i-1).ring_colors().size(); ++j) {
 				rs_temp->addPossibleRingColor(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1), 1); // TODO Add all possibleRingColors with number of bases required for production ADD NUMBERS
-				rs_temp->setRingColorSetup(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1)); // TODO Add ringColorSetup BACK
+				// rs_temp->setRingColorSetup(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1)); // TODO Add ringColorSetup BACK
 			}
 			rs_temp->setFeedBaseTime(1);
 			rs_temp->setMountRingTime(10);
@@ -1444,12 +1447,13 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 		}
 		else if(name_machine[2] == 'C') { // CapStation
 			auto cs_temp = std::make_shared<CapStation>(i);
-			if(!grey_set){
+			if(name_machine[4] == '1'){
+				std::cout << " Add CapStation " << name_machine.c_str() << " Color Grey" << std::endl;
 				cs_temp->addPossibleCapColor(Workpiece::GREY);
 				cs_temp->setFedCapColor(Workpiece::GREY); // TODO Add fedCapColor BACK ONLY BUFFER
-				grey_set=true;
 			}
-			else {
+			else if(name_machine[4] == '2'){
+				std::cout << " Add CapStation " << name_machine.c_str() << " Color Black" << std::endl;
 				cs_temp->addPossibleCapColor(Workpiece::BLACK);
 				cs_temp->setFedCapColor(Workpiece::BLACK); // TODO Add fedCapColor BACK ONLY BUFFER
 			}
@@ -1595,12 +1599,41 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 	for (int i = 0; i < data.orders().size(); i++)
 	{
 		//Color conversions
-		Workpiece::Color bc_temp = static_cast<Workpiece::Color>(data.orders(i).base_color()+1);
+		Workpiece::Color bc_temp = Workpiece::NONE;
+		switch(data.orders(i).base_color()){
+			case 1: bc_temp = static_cast<Workpiece::Color>(Workpiece::RED);
+					break;
+			case 2: bc_temp = static_cast<Workpiece::Color>(Workpiece::BLACK);
+					break;
+			case 3: bc_temp = static_cast<Workpiece::Color>(Workpiece::SILVER);
+					break;
+			default: break;
+		}
+
 		std::vector<Workpiece::Color> rc_temps;
 		for (int j = 0; j < data.orders(i).ring_colors().size(); j++){
-			rc_temps.push_back(static_cast<Workpiece::Color>(data.orders(i).ring_colors(j)+1));
+			switch(data.orders(i).ring_colors(j)){
+				case 1: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::BLUE));
+						break;
+				case 2: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::GREEN));
+						break;
+				case 3: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::ORANGE));
+						break;
+				case 4: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::YELLOW));
+						break;
+				default: break;
+			}
+
 		}
-		Workpiece::Color cc_temp = static_cast<Workpiece::Color>(data.orders(i).cap_color());
+
+		Workpiece::Color cc_temp = Workpiece::NONE;
+		switch(data.orders(i).cap_color()){
+			case 1: cc_temp = static_cast<Workpiece::Color>(Workpiece::BLACK);
+					break;
+			case 2: cc_temp = static_cast<Workpiece::Color>(Workpiece::GREY);
+					break;
+			default: break;
+		}
 
 		Workpiece p_temp = Workpiece(bc_temp, rc_temps, cc_temp);
 		auto o_temp = std::make_shared<Order>(i, p_temp, 1); // TODO Fix third parameter
@@ -1609,16 +1642,18 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 
 
 	logger->log_info(name(), "Create fg with gD");
-	FormulaGenerator fg= FormulaGenerator(1, gD);
+	FormulaGenerator fg = FormulaGenerator(5, gD);
 	logger->log_info(name(), "Display fg.createFormula()");
-	cout << fg.createFormula() << std::endl;
+	// cout << fg.createFormula() << std::endl;
+	cout << gD.toString() << std::endl;
 
 	logger->log_info(name(), "Export GameData formula to file gD_fg_formula.smt");
 	std::ofstream outputFile("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/gD_fg_formula.smt"); // TODO (Igor) Exchange path with config value
 	outputFile << carl::outputSMTLIB(carl::Logic::QF_NIRA, {fg.createFormula()});
 	outputFile.close();
 
-	clips_smt_solve_formula_from_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/gD_fg_formula.smt");
+	clips_smt_solve_formula_from_fg_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/gD_fg_formula.smt", fg);
+
 
 	logger->log_info(name(), "Finish extracting");
 
@@ -1880,41 +1915,8 @@ void ClipsSmtThread::clips_smt_test_formulaGenerator()
 
 	logger->log_info(name(), "Import FormulaGenerator formula from file fg_formula.smt into z3 formula");
 
-	std::string path = "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt";
 
-	// clips_smt_solve_formula_from_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt");
-
-	Z3_ast a = Z3_parse_smtlib2_file(_z3_context, path.c_str(), 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
-	z3::expr e(_z3_context, a);
-
-	z3::solver s(_z3_context);
-	s.add(e);
-
-	// Start measuring sovling time
-	std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
-	if(s.check() == z3::sat) {
-		// Stop measuring sovling time
-		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-
-		// Compute time for solving
-		double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
-		double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
-
-		logger->log_info(name(), "Test of import .smt file into z3 constraint did work (SAT) [%f ms, %f m]", diff_ms, diff_m);
-
-		z3::model model = s.get_model();
-		for(unsigned i=0; i<model.size(); ++i) {
-			z3::func_decl function = model[i];
-			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
-		}
-		logger->log_info(name(), "Create actions with fg and model");
-		std::vector<Action> actions = fg.getActions(model);
-		logger->log_info(name(), "Print actions");
-		for(auto action: actions) {
-			logger->log_info(name(), "Action: %s", action.toString().c_str());
-		}
-	}
-	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
+	clips_smt_solve_formula_from_fg_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt", fg);
 }
 
 void ClipsSmtThread::clips_smt_solve_formula_from_smt_file(std::string path) {
@@ -1945,5 +1947,41 @@ void ClipsSmtThread::clips_smt_solve_formula_from_smt_file(std::string path) {
 	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
 
 	//std::remove("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt"); // TODO (Igor) Add functionality to remove intermediate formula.smt
+}
 
+void ClipsSmtThread::clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg) {
+	Z3_ast a = Z3_parse_smtlib2_file(_z3_context, path.c_str(), 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
+	z3::expr e(_z3_context, a);
+
+	z3::solver s(_z3_context);
+	s.add(e);
+
+	// Start measuring sovling time
+	std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
+	if(s.check() == z3::sat) {
+		// Stop measuring sovling time
+		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+		// Compute time for solving
+		double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
+		double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
+
+		logger->log_info(name(), "Test of import .smt file into z3 constraint did work (SAT) [%f ms, %f m]", diff_ms, diff_m);
+
+		z3::model model = s.get_model();
+		for(unsigned i=0; i<model.size(); ++i) {
+			z3::func_decl function = model[i];
+			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+		}
+
+		logger->log_info(name(), "Create actions with fg and model");
+		std::vector<Action> actions = fg.getActions(model);
+		logger->log_info(name(), "Print actions");
+		for(auto action: actions) {
+			logger->log_info(name(), "Action: %s", action.toString().c_str());
+		}
+	}
+	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
+
+	//std::remove("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt"); // TODO (Igor) Add functionality to remove intermediate formula.smt
 }
