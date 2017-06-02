@@ -7,7 +7,7 @@ plugins/pddl-planner:
 
   # PDDL planner to be used
   # Possible values: ff, fd
-  planner: fd
+  planner: ff
 
   # Domain and problem description and location
   # Folder path needs a trailing /
@@ -15,8 +15,8 @@ plugins/pddl-planner:
   result-file: results.txt
   #domain-description: pddl-domain.pddl
   #problem-description: pddl-problem.pddl
-  domain-description: pddl-demo-domain.pddl
-  problem-description: pddl-demo-problem.pddl
+  domain-description: domain.pddl
+  problem-description: pddl-problem.pddl
 
   # optional search options for fd planner
   fd-search-opts: --heuristic "hff=ff()" --heuristic "hcea=cea()" --search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"
