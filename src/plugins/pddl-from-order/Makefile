@@ -22,6 +22,7 @@ LIBS_pddl_from_order = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 											PddlGenInterface
 
 OBJS_pddl_from_order = pddl-from-order_plugin.o pddl-from-order_thread.o
+OBJS_pddl_from_order += $(patsubst %.cpp,%.o,$(patsubst qa/%,,$(subst $(SRCDIR)/,,$(realpath $(wildcard $(SRCDIR)/computables/*.cpp)))))
 
 PLUGINS_all = $(PLUGINDIR)/pddl-from-order.$(SOEXT)
 

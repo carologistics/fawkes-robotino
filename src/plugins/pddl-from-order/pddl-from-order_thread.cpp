@@ -54,6 +54,9 @@ PddlFromOrderThread::init()
   order_trigger_ = robot_memory->register_trigger(
       fromjson("{relation:\"order\"}"), cfg_wm_collection_,
       &PddlFromOrderThread::retrieve_new_order, this);
+
+  order_computable_ = new OrderComputable(robot_memory, logger, config);
+  machine_type_computable_ = new MachineTypeComputable(robot_memory, logger, config);
 }
 
 void
@@ -75,6 +78,8 @@ PddlFromOrderThread::finalize()
 {
   blackboard->close(plan_if_);
   blackboard->close(gen_if_);
+  delete order_computable_;
+  delete machine_type_computable_;
 }
 
 void
