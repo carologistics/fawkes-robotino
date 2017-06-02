@@ -30,7 +30,7 @@
 	(:constants
 		C0 C1 C2 C3 - complexity
 		BASE_BLACK BASE_SILVER BASE_RED BASE_CLEAR - base-color
-		CAP_BLACK CAP_GRAY - cap-color
+		CAP_BLACK CAP_GREY - cap-color
 		RING_GREEN RING_ORANGE RING_BLUE RING_YELLOW RING_NONE - ring-color
 		ZERO ONE TWO THREE - ring-enum
 	)
