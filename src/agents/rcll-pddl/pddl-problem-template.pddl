@@ -4,8 +4,8 @@
 	(:objects
 		R-1 - robot
 		R-2 - robot
-    <<#ORDER|{relation:'order'}>>
-		o<<id>> - order
+    R-3 - robot
+    <<#ORDER|{relation:'order'}>>o<<id>> - order
     <</ORDER>>
 		red-base1 - base
 		red-base2 - base
@@ -32,9 +32,12 @@
     slot4 slot5 slot6 - shelf-slot
 		cc7 cc8 cc9 cc10 cc11 cc12 - cap-carrier
     
-    <<#MACHINES|{relation:'machine', team:'CYAN'}>><<name>> - <<mtype>> <</MACHINES>>
+    <<#MACHINES|{relation:'machine_type', team:'CYAN'}>><<name>> - <<mtype>>
+    <</MACHINES>>
 
-    <<#MACHINEPOS|{relation:'machine', team:'CYAN'}>><<name>>-I <<name>>-O <</MACHINEPOS>>
+    <<#MACHINEPOS|{relation:'machine', team:'CYAN'}>>
+    <<name>>-I - input-pos
+    <<name>>-O - output-pos<</MACHINEPOS>>
     INS - pos
 	)
 	 
@@ -63,9 +66,9 @@
     (has-shelf-slot C-CS2 slot4)
     (has-shelf-slot C-CS2 slot5)
     (has-shelf-slot C-CS2 slot6)
-    (has-cap cc1 CAP_GRAY)
-    (has-cap cc2 CAP_GRAY)
-    (has-cap cc3 CAP_GRAY)
+    (has-cap cc1 CAP_GREY)
+    (has-cap cc2 CAP_GREY)
+    (has-cap cc3 CAP_GREY)
     (has-cap cc4 CAP_BLACK)
     (has-cap cc5 CAP_BLACK)
     (has-cap cc6 CAP_BLACK)
@@ -76,8 +79,8 @@
     (cc-in-slot cc5 slot5)
     (cc-in-slot cc6 slot6)
 
-    (no-cap-in-slide CS1)
-    (no-cap-in-slide CS2)
+    (no-cap-in-slide C-CS1)
+    (no-cap-in-slide C-CS2)
 
     (has-color red-base1 BASE_RED)
     (has-color red-base2 BASE_RED)
@@ -135,23 +138,15 @@
 
     (at-pos R-1 INS)
     (not-holding R-1)
-    ;(at-pos R-2 INS)
-    ;(not-holding R-2)
+    (at-pos R-2 INS)
+    (not-holding R-2)
+    (at-pos R-3 INS)
+    (not-holding R-3)
 
   )
   (:goal (and
-    ;(wp-in-production silver-base1 RS1)
-    ;(wp-in-slide RS1 TWO)
-    ;(wp-in-slide RS1 ONE)
     <<#GOALORDER|{relation:'order'}>>
     (order-fulfilled o<<id>>)<</GOALORDER>>
-    ;(order-fulfilled o1)
-    ;(order-fulfilled o2)
-    ;(order-fulfilled o3)
-    ;(:goal (wp-at cc1 C-CS1 OUTPUT) )
-    ;(holding R-1 cc1)
-    ;(at-pos R-1 CS1-I)
-    ;(one-wp-in-slide RS2)
     )
   )
 )

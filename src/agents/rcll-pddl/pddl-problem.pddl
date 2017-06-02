@@ -4,12 +4,8 @@
 	(:objects
 		R-1 - robot
 		R-2 - robot
-    
-		o1 - order
-    
-		o6 - order
-    
-		o7 - order
+    R-3 - robot
+    o1 - order
     
 		red-base1 - base
 		red-base2 - base
@@ -36,9 +32,27 @@
     slot4 slot5 slot6 - shelf-slot
 		cc7 cc8 cc9 cc10 cc11 cc12 - cap-carrier
     
-    C-DS - DS C-RS2 - RS C-RS1 - RS C-CS2 - CS C-CS1 - CS C-BS - BS 
+    C-DS - delivery-station
+    C-RS2 - ring-station
+    C-RS1 - ring-station
+    C-CS2 - cap-station
+    C-CS1 - cap-station
+    C-BS - base-station
+    
 
-    C-DS-I C-DS-O C-RS2-I C-RS2-O C-RS1-I C-RS1-O C-CS2-I C-CS2-O C-CS1-I C-CS1-O C-BS-I C-BS-O 
+    
+    C-DS-I - input-pos
+    C-DS-O - output-pos
+    C-RS2-I - input-pos
+    C-RS2-O - output-pos
+    C-RS1-I - input-pos
+    C-RS1-O - output-pos
+    C-CS2-I - input-pos
+    C-CS2-O - output-pos
+    C-CS1-I - input-pos
+    C-CS1-O - output-pos
+    C-BS-I - input-pos
+    C-BS-O - output-pos
     INS - pos
 	)
 	 
@@ -71,11 +85,11 @@
     (idle C-BS)
 
     
-    (has-color-one C-RS2 RING_)
-    (has-color-two C-RS2 RING_)
+    (has-color-one C-RS2 RING_YELLOW)
+    (has-color-two C-RS2 RING_ORANGE)
     
-    (has-color-one C-RS1 RING_)
-    (has-color-two C-RS1 RING_)
+    (has-color-one C-RS1 RING_GREEN)
+    (has-color-two C-RS1 RING_BLUE)
     
 
     ;TODO translate needed-bases
@@ -90,9 +104,9 @@
     (has-shelf-slot C-CS2 slot4)
     (has-shelf-slot C-CS2 slot5)
     (has-shelf-slot C-CS2 slot6)
-    (has-cap cc1 CAP_GRAY)
-    (has-cap cc2 CAP_GRAY)
-    (has-cap cc3 CAP_GRAY)
+    (has-cap cc1 CAP_GREY)
+    (has-cap cc2 CAP_GREY)
+    (has-cap cc3 CAP_GREY)
     (has-cap cc4 CAP_BLACK)
     (has-cap cc5 CAP_BLACK)
     (has-cap cc6 CAP_BLACK)
@@ -103,8 +117,8 @@
     (cc-in-slot cc5 slot5)
     (cc-in-slot cc6 slot6)
 
-    (no-cap-in-slide CS1)
-    (no-cap-in-slide CS2)
+    (no-cap-in-slide C-CS1)
+    (no-cap-in-slide C-CS2)
 
     (has-color red-base1 BASE_RED)
     (has-color red-base2 BASE_RED)
@@ -153,48 +167,24 @@
 
     
     (order-complexity o1 C0)
-    (order-base-color o1 BASE_BLACK)
+    (order-base-color o1 BASE_RED)
     (order-cap-color o1 CAP_BLACK)
     (order-ring-one o1 RING_NONE)
     (order-ring-two o1 RING_NONE)
     (order-ring-three o1 RING_NONE)
     
-    (order-complexity o6 C2)
-    (order-base-color o6 BASE_RED)
-    (order-cap-color o6 CAP_GREY)
-    (order-ring-one o6 RING_ORANGE)
-    (order-ring-two o6 RING_BLUE)
-    (order-ring-three o6 RING_NONE)
-    
-    (order-complexity o7 C3)
-    (order-base-color o7 BASE_BLACK)
-    (order-cap-color o7 CAP_BLACK)
-    (order-ring-one o7 RING_BLUE)
-    (order-ring-two o7 RING_ORANGE)
-    (order-ring-three o7 RING_YELLOW)
-    
 
     (at-pos R-1 INS)
     (not-holding R-1)
-    ;(at-pos R-2 INS)
-    ;(not-holding R-2)
+    (at-pos R-2 INS)
+    (not-holding R-2)
+    (at-pos R-3 INS)
+    (not-holding R-3)
 
   )
   (:goal (and
-    ;(wp-in-production silver-base1 RS1)
-    ;(wp-in-slide RS1 TWO)
-    ;(wp-in-slide RS1 ONE)
     
     (order-fulfilled o1)
-    (order-fulfilled o6)
-    (order-fulfilled o7)
-    ;(order-fulfilled o1)
-    ;(order-fulfilled o2)
-    ;(order-fulfilled o3)
-    ;(:goal (wp-at cc1 C-CS1 OUTPUT) )
-    ;(holding R-1 cc1)
-    ;(at-pos R-1 CS1-I)
-    ;(one-wp-in-slide RS2)
     )
   )
 )

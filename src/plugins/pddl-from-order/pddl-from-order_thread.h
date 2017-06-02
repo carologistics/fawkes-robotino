@@ -30,7 +30,8 @@
 #include <blackboard/interface_listener.h>
 #include <interfaces/PddlPlannerInterface.h>
 #include <interfaces/PddlGenInterface.h>
-
+#include "computables/order_computable.h"
+#include "computables/machine_type_computable.h"
 
 namespace fawkes {
   // add forward declarations here, e.g., interfaces
@@ -74,6 +75,9 @@ class PddlFromOrderThread
   fawkes::PddlPlannerInterface* plan_if_;
   fawkes::PddlGenInterface* gen_if_;
   EventTrigger* order_trigger_;
+
+  OrderComputable* order_computable_;
+  MachineTypeComputable* machine_type_computable_;
   
   bool pddl_gen_running_ = false;
   bool wait_for_wakeup_ = false;
