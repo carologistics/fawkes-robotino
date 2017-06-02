@@ -210,10 +210,11 @@
 (deftemplate task
   (slot id (type INTEGER))
   (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
-  (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
+  (slot state (type SYMBOL) (allowed-symbols planned proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
   ;a task consists of multiple steps
+  (multislot predecessor (type INTEGER))
   (slot current-step (type INTEGER) (default 0))
   (multislot steps (type INTEGER)) ;in chronological order refers to the ids of the steps
 )
