@@ -9,6 +9,7 @@ plugins/stn-generator:
   domain-file: "@BASEDIR@/src/agents/rcll-pddl/extended-domain.pddl"
   generate-classic-domain: true
   classic-domain-file: "@BASEDIR@/src/agents/rcll-pddl/domain.pddl"
+  problem-file: "@BASEDIR@/src/agents/rcll-pddl/pddl-problem.pddl"
   plan:
     collection: "robmem.pddl-plan"
     interface: "pddl-planner"
