@@ -51,6 +51,10 @@ plugins/robot-memory:
       collections: ['syncedrobmem.clipswm']
       priority: -9
       caching-time: 0.0
+    machine_type:
+      collections: ['syncedrobmem.clipswm']
+      priority: -9
+      caching-time: 0.0
     
     
   
