@@ -206,6 +206,15 @@
   (slot sync-id (type INTEGER) (default 0))
 )
 
+; Template for a planned task in form of an STN representation
+(deftemplate stn-action
+  (slot id (type INTEGER))
+  (slot name (type SYMBOL))
+  (slot duration (type INTEGER))
+  (multislot cond_actions (type INTEGER))
+  (multislot opts (type SYMBOL))
+)
+
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
