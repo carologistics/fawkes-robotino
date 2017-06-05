@@ -102,8 +102,6 @@
       (not (holding ?r ?wp))
       (not-holding ?r)
     )
-    :conditional-breakup (has-pos)
-    :temporal-breakup (has-pos)
   )
   (:durative-action add-base-to-slide-two
     :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base)
@@ -158,6 +156,8 @@
         (not (at-pos ?r ?orig))
         (pos-free ?orig)
     )
+    :conditional-breakup (at-pos)
+    :temporal-breakup (at-pos)
   )
   (:durative-action move-to-position-holding
     :parameters (?r - robot ?orig - pos ?dest - pos)
@@ -172,6 +172,8 @@
         (not (at-pos ?r ?orig))
         (pos-free ?orig)
     )
+    :conditional-breakup (at-pos)
+    :temporal-breakup (at-pos)
   )
 
   (:durative-action pick-cc-from-shelf

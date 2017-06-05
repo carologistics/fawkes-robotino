@@ -5,7 +5,7 @@
 		R-1 - robot
 		R-2 - robot
     R-3 - robot
-    o1 - order
+    O1 - order
     
 		red-base1 - base
 		red-base2 - base
@@ -85,11 +85,11 @@
     (idle C-BS)
 
     
-    (has-color-one C-RS2 RING_YELLOW)
-    (has-color-two C-RS2 RING_ORANGE)
+    (has-color-one C-RS2 RING_BLUE)
+    (has-color-two C-RS2 RING_YELLOW)
     
-    (has-color-one C-RS1 RING_GREEN)
-    (has-color-two C-RS1 RING_BLUE)
+    (has-color-one C-RS1 RING_ORANGE)
+    (has-color-two C-RS1 RING_GREEN)
     
 
     ;TODO translate needed-bases
@@ -166,12 +166,12 @@
     (wp-at-bs silver-base6)
 
     
-    (order-complexity o1 C0)
-    (order-base-color o1 BASE_RED)
-    (order-cap-color o1 CAP_BLACK)
-    (order-ring-one o1 RING_NONE)
-    (order-ring-two o1 RING_NONE)
-    (order-ring-three o1 RING_NONE)
+    (order-complexity O1 C0)
+    (order-base-color O1 BASE_SILVER)
+    (order-cap-color O1 CAP_GREY)
+    (order-ring-one O1 RING_NONE)
+    (order-ring-two O1 RING_NONE)
+    (order-ring-three O1 RING_NONE)
     
 
     (at-pos R-1 INS)
@@ -184,7 +184,7 @@
   )
   (:goal (and
     
-    (order-fulfilled o1)
+    (order-fulfilled O1)
     )
   )
 )
