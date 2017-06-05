@@ -15,4 +15,5 @@ plugins/stn-generator:
     interface: "pddl-planner"
 
   output:
+    publish-to-rm: true
     collection: "syncedrobmem.clipswm"
