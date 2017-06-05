@@ -5,7 +5,7 @@
 		R-1 - robot
 		R-2 - robot
     R-3 - robot
-    <<#ORDER|{relation:'order'}>>o<<id>> - order
+    <<#ORDER|{relation:'order'}>>O<<id>> - order
     <</ORDER>>
 		red-base1 - base
 		red-base2 - base
@@ -128,12 +128,12 @@
     (wp-at-bs silver-base6)
 
     <<#AGG_ORDER|{relation:'aggregated_order'}>>
-    (order-complexity o<<id>> <<complexity>>)
-    (order-base-color o<<id>> BASE_<<base>>)
-    (order-cap-color o<<id>> CAP_<<cap>>)
-    (order-ring-one o<<id>> RING_<<rings_0>>)
-    (order-ring-two o<<id>> RING_<<rings_1>>)
-    (order-ring-three o<<id>> RING_<<rings_2>>)
+    (order-complexity O<<id>> <<complexity>>)
+    (order-base-color O<<id>> BASE_<<base>>)
+    (order-cap-color O<<id>> CAP_<<cap>>)
+    (order-ring-one O<<id>> RING_<<rings_0>>)
+    (order-ring-two O<<id>> RING_<<rings_1>>)
+    (order-ring-three O<<id>> RING_<<rings_2>>)
     <</AGG_ORDER>>
 
     (at-pos R-1 INS)
@@ -146,7 +146,7 @@
   )
   (:goal (and
     <<#GOALORDER|{relation:'order'}>>
-    (order-fulfilled o<<id>>)<</GOALORDER>>
+    (order-fulfilled O<<id>>)<</GOALORDER>>
     )
   )
 )
