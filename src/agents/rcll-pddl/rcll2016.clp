@@ -139,6 +139,7 @@
   (path-load  rcll-pddl/tactical-help.clp)
   (path-load  rcll-pddl/task.clp)
   (path-load  rcll-pddl/steps.clp)
+  (path-load  rcll-pddl/stn-action.clp)
   (path-load  rcll-pddl/coordination.clp)
   (path-load  rcll-pddl/production.clp)
   (path-load  rcll-pddl/exploration.clp)

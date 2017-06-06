@@ -32,6 +32,24 @@
   (return (str-cat ?mps "-O"))
 )
 
+(deffunction get-mps-from-place (?place)
+  "Return the MPS of a corresponding navgraph point"
+  (return (sym-cat (sub-string 1 (- (str-length ?place) 2) ?place)))
+)
+
+(deffunction get-side-from-place (?place)
+  (bind ?side (sub-string (- (str-length ?place) 1) (str-length ?place) ?place))
+  (if (eq ?side "I")
+    then
+    (return INPUT)
+  )
+  (if (eq ?side "O")
+    then
+    (return OUTPUT)
+  )
+  return FALSE
+)
+
 (deffunction get-light-signal-side (?mps)
   "Return the navgraph point of the side where the light-signal is mounted"
   (if (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)
