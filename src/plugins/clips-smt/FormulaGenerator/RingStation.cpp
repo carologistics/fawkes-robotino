@@ -72,7 +72,7 @@ Workpiece::Color RingStation::getRingColorSetup() const {
     return this->ringColorSetup;
 }
 
-int RingStation::getNeededAdditinalBases(Workpiece::Color color) const {
+int RingStation::getNeededAdditionalBases(Workpiece::Color color) const {
     int amount= 0;
     if (color == Workpiece::NONE) {
         amount = 0;
@@ -90,10 +90,22 @@ int RingStation::getNeededAdditinalBases(Workpiece::Color color) const {
 }
 
 int RingStation::getReqBases() const {
-    assert(getNeededAdditinalBases(getRingColorSetup()) - getAdditionalBasesFed() >= 0);
-    return getNeededAdditinalBases(getRingColorSetup()) - getAdditionalBasesFed();
+    assert(getNeededAdditionalBases(getRingColorSetup()) - getAdditionalBasesFed() >= 0);
+    return getNeededAdditionalBases(getRingColorSetup()) - getAdditionalBasesFed();
 }
 
 bool RingStation::readyToMountRing()const {
-    return getNeededAdditinalBases(getRingColorSetup()) == getAdditionalBasesFed();
+    return getNeededAdditionalBases(getRingColorSetup()) == getAdditionalBasesFed();
+}
+
+std::string RingStation::toString() {
+    std::string result;
+    result += this->Station::toString();
+    result += "; Feed: " + std::to_string(getFeedBaseTime());
+    result += "; Mount: " + std::to_string(getMountRingTime());
+
+    for (auto const& c : getPossibleRingColors()) {
+        result += +"; " + Workpiece::toString(c.first) + ": " + std::to_string(c.second);
+    }
+    return result;
 }

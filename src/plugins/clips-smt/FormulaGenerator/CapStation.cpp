@@ -50,6 +50,18 @@ Workpiece::Color CapStation::getFedCapColor() const {
     return this->fedCapColor;
 }
 
-bool CapStation::readyToMountRing(){
+bool CapStation::readyToMountRing() {
     return getFedCapColor() != Workpiece::NONE;
+}
+
+std::string CapStation::toString() {
+    std::string result;
+    result += this->Station::toString();
+    result += "; Feed: " + std::to_string(getFeedCapTime());
+    result += "; Mount: " + std::to_string(getMountCapTime());
+
+    for (auto const& c : getPossibleCapColors()) {
+        result += +"; " + Workpiece::toString(c);
+    }
+    return result;
 }

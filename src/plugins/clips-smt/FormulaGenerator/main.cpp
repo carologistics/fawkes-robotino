@@ -43,6 +43,8 @@ void smt_test_formulaGenerator() {
 
     GameData gD = testGameData1();
     FormulaGenerator fg = FormulaGenerator(30, gD);
+    
+    std::cout << gD.toString();
 
     std::cout << "Export FormulaGenerator formula to file fg_formula.smt\n";
     std::ofstream outputFile("/home/leonard/fg_formula.smt");
@@ -93,9 +95,9 @@ GameData testGameData1() {
     auto r2 = make_shared<Robot>(2);
     gD.addMachine(r0);
     gD.addMachine(r1);
-    //gD.addMachine(r2);
+    gD.addMachine(r2);
 
-    Workpiece wr0 = Workpiece(Workpiece::BLACK);
+    Workpiece wr0 = Workpiece();
     r0->setWorkpiece(wr0);
     r0->setFeedWorkpieceTime(1);
     r0->setTakeWorkpieceTime(1);
@@ -110,8 +112,8 @@ GameData testGameData1() {
     gD.addMachine(bs0);
     
     auto rs0 = make_shared<RingStation>(0);
-    rs0->addPossibleRingColor(Workpiece::BLUE, 1);
-    rs0->addPossibleRingColor(Workpiece::GREEN, 2);
+    rs0->addPossibleRingColor(Workpiece::BLUE, 2);
+    rs0->addPossibleRingColor(Workpiece::GREEN, 1);
     rs0->setFeedBaseTime(5000);
     rs0->setMountRingTime(40000);
     gD.addMachine(rs0);
@@ -145,13 +147,13 @@ GameData testGameData1() {
 
     Machine::addMovingTime(*ds0, *rs0, 30);
     
-    Workpiece p0(Workpiece::BLACK, {Workpiece::GREEN, Workpiece::BLUE, Workpiece::BLUE}, Workpiece::GREY);
+    Workpiece p0(Workpiece::BLACK, {Workpiece::BLUE, Workpiece::GREEN, Workpiece::BLUE}, Workpiece::GREY);
     Workpiece p1(Workpiece::RED, {}, Workpiece::GREY);
     auto o0 = make_shared<Order>(6, p0, 1000);
     auto o1 = make_shared<Order>(7, p1, 11000);
 
     gD.addOrder(o0);
-    //gD.addOrder(o1);
+    gD.addOrder(o1);
 
     return gD;
 }

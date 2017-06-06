@@ -26,3 +26,12 @@ Time DeliveryStation::getDeliverProductTime() const {
 void DeliveryStation::setDeliverProductTime(Time deliverProductTime) {
     this->deliverProductTime = deliverProductTime;
 }
+
+
+std::string DeliveryStation::toString() {
+    std::string result;
+    result += this->Station::toString();
+    result += "; Deliver: " + std::to_string(getDeliverProductTime());
+
+    return result;
+}
