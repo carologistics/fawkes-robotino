@@ -304,6 +304,10 @@ ClipsSmtThread::loop()
 {
 	logger->log_info(name(), "Thread performs loop and is running [%d]", running());
 
+	actions_robot_fg_1.clear();
+	actions_robot_fg_2.clear();
+	actions_robot_fg_3.clear();
+
 	number_robots = data.robots().size()-1;
 	number_machines = data.machines().size();
 	number_bits = ceil(log2(number_machines));
@@ -1480,12 +1484,10 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 		else if(name_machine[2] == 'C') { // CapStation
 			auto cs_temp = std::make_shared<CapStation>(i);
 			if(name_machine[4] == '1'){
-				std::cout << " Add CapStation " << name_machine.c_str() << " Color Grey" << std::endl;
 				cs_temp->addPossibleCapColor(Workpiece::GREY);
 				cs_temp->setFedCapColor(Workpiece::GREY); // TODO Add fedCapColor BACK ONLY BUFFER
 			}
 			else if(name_machine[4] == '2'){
-				std::cout << " Add CapStation " << name_machine.c_str() << " Color Black" << std::endl;
 				cs_temp->addPossibleCapColor(Workpiece::BLACK);
 				cs_temp->setFedCapColor(Workpiece::BLACK); // TODO Add fedCapColor BACK ONLY BUFFER
 			}
@@ -1674,9 +1676,10 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 
 
 	logger->log_info(name(), "Create fg with gD");
-	FormulaGenerator fg = FormulaGenerator(1, gD);
+	FormulaGenerator fg = FormulaGenerator(5, gD);
 	logger->log_info(name(), "Display fg.createFormula()");
-	// cout << fg.createFormula() << std::endl;
+	cout << fg.createFormula() << std::endl << std::endl;
+	logger->log_info(name(), "Display gD.toString()");
 	cout << gD.toString() << std::endl;
 
 	logger->log_info(name(), "Export GameData formula to file gD_fg_formula.smt");
