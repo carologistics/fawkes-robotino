@@ -34,8 +34,13 @@
     slot4 slot5 slot6 - shelf-slot
 		cc7 cc8 cc9 cc10 cc11 cc12 - cap-carrier
     
-    C-DS - DS C-RS2 - RS C-RS1 - RS C-CS2 - CS C-BS - BS C-CS1 - CS 
-
+    C-RS2 - ring-station
+    C-RS1 - ring-station
+    C-CS2 - cap-station
+    C-CS1 - cap-station
+    C-BS - base-station
+    C-DS - delivery-station
+    
     C-DS-I C-DS-O C-RS2-I C-RS2-O C-RS1-I C-RS1-O C-CS2-I C-CS2-O C-BS-I C-BS-O C-CS1-I C-CS1-O 
     INS - pos
 	)
@@ -69,10 +74,10 @@
     (idle C-CS1)
 
     
-    (has-color-one C-RS2 RING_BLUE)
-    (has-color-two C-RS2 RING_ORANGE)
+    (has-color-one C-RS2 RING_ORANGE)
+    (has-color-two C-RS2 RING_YELLOW)
     
-    (has-color-one C-RS1 RING_YELLOW)
+    (has-color-one C-RS1 RING_BLUE)
     (has-color-two C-RS1 RING_GREEN)
     
 

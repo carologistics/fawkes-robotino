@@ -210,15 +210,17 @@
 (deftemplate stn-action
   (slot id (type INTEGER))
   (slot name (type SYMBOL))
+  (slot state (type SYMBOL) (allowed-symbols pending running finished))
   (slot duration (type INTEGER))
-  (multislot cond_actions (type INTEGER))
+  (multislot cond-actions (type INTEGER))
   (multislot opts (type SYMBOL))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
+  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs pick-wp-from-bs fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols planned proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot priority (type INTEGER) (default 0))
@@ -240,6 +242,7 @@
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
+  (slot place (type SYMBOL))
   (slot machine (type SYMBOL))
   (slot zone (type SYMBOL))
   (slot product-type (type SYMBOL))

@@ -20,6 +20,7 @@
   ?*PRIORITY-LAST*    = -500
 
   ; production order priorities
+  ?*PRIORITY-TASK* = 60
   ?*PRIORITY-PREFILL-CS* = 50
   ?*PRIORITY-CLEAR-BS* = 97
   ?*PRIORITY-CLEAR-CS* = 70

@@ -52,10 +52,12 @@
   (not (step (id ?id-next&:(eq ?id-next 
 			       (nth$ (+ 1 (member$ ?id-finished ?steps)) ?steps)))
 	     (state inactive)))
+  ?sa <- (stn-action (name ?task-name))
   =>
   (retract ?state)
   (assert (state TASK-FINISHED))
   (modify ?task (state finished))
+  (synced-modify ?sa state finished)
   (printout info "Timelog: Task " ?task-name " finished." crlf)
 )
 

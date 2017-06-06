@@ -80,7 +80,7 @@
   (assert (skill-to-execute (skill bring_product_to) (args ?args) (target ?mps)))
   ; check if we have to instruct an mps:
   (if (and (eq ?mtype CS)
-           (eq ?task-name fill-cap)) then
+           (eq ?task-name load-cs)) then
     (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype CS)
