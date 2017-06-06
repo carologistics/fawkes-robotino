@@ -72,7 +72,8 @@ Formula StepFormula::createInitialStateOrders() {
     GameData gD = getGameData();
     std::vector<Formula> formulas;
     for (auto const& o : gD.getOrders()) {
-        formulas.push_back(equation(getVarOrderDelivered(*o), Order::NOTDELIVERED));
+        formulas.push_back(equation(getVarOrderMain(*o), Order::NONE));
+        formulas.push_back(equation(getVarOrderCap(*o), Order::NONE));
     }
     return Formula(carl::FormulaType::AND, formulas);
 }
@@ -133,7 +134,7 @@ Formula StepFormula::create() {
         return createInitialState();
 
     std::vector<Formula> actions;
-    actions.push_back(allOrdersDelivered());
+    //actions.push_back(allOrdersDelivered());
     actions.push_back(feedCapActions());
     actions.push_back(collectBaseActions());
     actions.push_back(mountCapActions());
@@ -223,7 +224,7 @@ Formula StepFormula::ringColorSetup(const RingStation& rs, Workpiece::Color c) {
 }
 
 Formula StepFormula::needsAddBases(const RingStation& rs, Workpiece::Color c) {
-    return equation(getVarBaseReq(rs), rs.getNeededAdditinalBases(c));
+    return equation(getVarBaseReq(rs), rs.getNeededAdditionalBases(c));
 }
 
 Formula StepFormula::needsAddBasesPrev(const RingStation& rs) {
@@ -367,6 +368,18 @@ string StepFormula::getVarNameOrderDelivered(const Order& o, int step) {
     return "OD_" + std::to_string(o.getId()) + "_" + std::to_string(step);
 }
 
+string StepFormula::getVarNameOrderMain(const Order& o, int step) {
+    return "O_Main_" + std::to_string(o.getId()) + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameOrderRing(int position, int base, const Order& o, int step) {
+    return "O_Ring" + std::to_string(position) + "_" + std::to_string(base) + "_" + std::to_string(o.getId()) + "_" + std::to_string(step);
+}
+
+string StepFormula::getVarNameOrderCap(const Order& o, int step) {
+    return "O_Cap_" + std::to_string(o.getId()) + "_" + std::to_string(step);
+}
+
 Variable StepFormula::getVarHoldsBase(const Machine &m) {
     return getVariable(StepFormula::getVarNameHoldsBase(m, getStepNumber()));
 }
@@ -405,6 +418,18 @@ Variable StepFormula::getVarReward() {
 
 Variable StepFormula::getVarOrderDelivered(const Order& o) {
     return getVariable(StepFormula::getVarNameOrderDelivered(o, getStepNumber()));
+}
+
+Variable StepFormula::getVarOrderMain(const Order& o) {
+    return getVariable(StepFormula::getVarNameOrderMain(o, getStepNumber()));
+}
+
+Variable StepFormula::getVarOrderRing(int position, int base, const Order& o) {
+    return getVariable(StepFormula::getVarNameOrderRing(position, base, o, getStepNumber()));
+}
+
+Variable StepFormula::getVarOrderCap(const Order& o) {
+    return getVariable(StepFormula::getVarNameOrderCap(o, getStepNumber()));
 }
 
 Formula StepFormula::equation(int value1, int value2) {
@@ -500,19 +525,116 @@ Formula StepFormula::createRemainingStepConstraints(const Robot &robot, const St
 Formula StepFormula::createRemainingStepConstraintsOrders() {
     std::vector<Formula> formulas;
     for (auto o : getGameData().getOrders()) {
-        formulas.push_back(orderDeliveredRemains(*o));
+        formulas.push_back(equation(getVarOrderMain(*o), getPrevStep()->getVarOrderMain(*o)));
+        formulas.push_back(equation(getVarOrderCap(*o), getPrevStep()->getVarOrderCap(*o)));
+        std::vector<Workpiece::Color> rings = o->getRingColorReq();
+        for (int position = 0; position < o->getRingCount(); position++) {
+            for (int base = 0; base < getGameData().getNeededAdditionalBases(rings[position]); base++) {
+                formulas.push_back(equation(getVarOrderRing(position, base, *o), getPrevStep()->getVarOrderRing(position, base, *o)));
+            }
+        }
     }
     return Formula(carl::FormulaType::AND, formulas);
 }
 
-Formula StepFormula::createRemainingStepConstraintsOrders(Order& without) {
+Formula StepFormula::createRemainingStepConstraintsOrders(const Order& without) {
     std::vector<Formula> formulas;
     for (auto o : getGameData().getOrders()) {
         if (*o != without) {
-            formulas.push_back(orderDeliveredRemains(*o));
+            formulas.push_back(equation(getVarOrderMain(*o), getPrevStep()->getVarOrderMain(*o)));
+            formulas.push_back(equation(getVarOrderCap(*o), getPrevStep()->getVarOrderCap(*o)));
+            std::vector<Workpiece::Color> rings = o->getRingColorReq();
+            for (int position = 0; position < o->getRingCount(); position++) {
+                for (int base = 0; base < getGameData().getNeededAdditionalBases(rings[position]); base++) {
+                    formulas.push_back(equation(getVarOrderRing(position, base, *o), getPrevStep()->getVarOrderRing(position, base, *o)));
+                }
+            }
         }
     }
     return Formula(carl::FormulaType::AND, formulas);
+}
+
+Formula StepFormula::orderNeedsAction(const Order& o, Order::State state) {
+    Formula prevProdStep = Formula(carl::FormulaType::FALSE);
+    Formula prodStep = Formula(carl::FormulaType::FALSE);
+    Formula remCons = Formula(carl::FormulaType::FALSE);
+    Formula remConsOrderMain = Formula(carl::FormulaType::FALSE);
+    Formula remConsOrderRing = Formula(carl::FormulaType::FALSE);
+    Formula remConsOrderCap = Formula(carl::FormulaType::FALSE);
+    Formula fedCap = Formula(carl::FormulaType::TRUE);
+    Formula addBase = Formula(carl::FormulaType::TRUE);
+
+    remCons = createRemainingStepConstraintsOrders(o);
+
+    remConsOrderMain = equation(getVarOrderMain(o), getPrevStep()->getVarOrderMain(o));
+    std::vector<Workpiece::Color> rings = o.getRingColorReq();
+    std::vector<Formula> remConsOrderRingList;
+    for (int position = 0; position < o.getRingCount(); position++) {
+
+        for (int base = 0; base < getGameData().getNeededAdditionalBases(rings[position]); base++) {
+            remConsOrderRingList.push_back(equation(getVarOrderRing(position, base, o), getPrevStep()->getVarOrderRing(position, base, o)));
+        }
+    }
+    remConsOrderRing = Formula(carl::FormulaType::AND, remConsOrderRingList);
+
+    remConsOrderCap = equation(getVarOrderCap(o), getPrevStep()->getVarOrderCap(o));
+
+    if (getGameData().isMainProd(o, state)) {
+        prevProdStep = equation(getPrevStep()->getVarOrderMain(o), getGameData().getPrevProductionStepMain(o, state));
+        prodStep = equation(getVarOrderMain(o), state);
+
+        if (state == Order::CAP) {
+            fedCap = equation(getPrevStep()->getVarOrderCap(o), Order::FEDCAP);
+        }
+
+        for (int position = 0; position < o.getRingCount(); position++) {
+            if (state == o.getRingId(position)) {
+                std::vector<Formula> addBaseList;
+                for (int base = 0; base < getGameData().getNeededAdditionalBases(rings[position]); base++) {
+                    addBaseList.push_back(equation(getPrevStep()->getVarOrderRing(position, base, o), o.getFedBaseId(position, base)));
+                }
+                addBase = Formula(carl::FormulaType::AND, addBaseList);
+            }
+        }
+
+        remConsOrderMain = Formula(carl::FormulaType::TRUE);
+
+    } else if (getGameData().isCapProd(state)) {
+        prevProdStep = equation(getPrevStep()->getVarOrderCap(o), getGameData().getPrevProductionStepCap(o, state));
+        prodStep = equation(getVarOrderCap(o), state);
+        remConsOrderCap = Formula(carl::FormulaType::TRUE);
+
+    } else if (getGameData().isRingProd(o, state)) {
+
+        remConsOrderRingList.clear();
+        for (int position = 0; position < o.getRingCount(); position++) {
+            for (int base = 0; base < getGameData().getNeededAdditionalBases(rings[position]); base++) {
+                if (state == o.getCollectBaseId(position, base)) {
+                    prodStep = equation(getVarOrderRing(position, base, o), state);
+                    prevProdStep = equation(getPrevStep()->getVarOrderRing(position, base, o), getGameData().getPrevProductionStepRing(o, state));
+
+                } else if (state == o.getFedBaseId(position, base)) {
+                    prodStep = equation(getVarOrderRing(position, base, o), state);
+                    Formula prevProdStepRing = equation(getPrevStep()->getVarOrderRing(position, base, o), getGameData().getPrevProductionStepRing(o, state));
+                    Formula prevProdStepMain = equation(getPrevStep()->getVarOrderMain(o), o.getSetupRingId(position));
+                    prevProdStep = Formula(carl::FormulaType::AND,{prevProdStepRing, prevProdStepMain});
+                } else {
+                    remConsOrderRingList.push_back(equation(getVarOrderRing(position, base, o), getPrevStep()->getVarOrderRing(position, base, o)));
+                }
+            }
+        }
+        remConsOrderRing = Formula(carl::FormulaType::AND, remConsOrderRingList);
+    }
+
+    return Formula(carl::FormulaType::AND,{prevProdStep, prodStep, remConsOrderMain, remConsOrderRing, remConsOrderCap, fedCap, addBase, remCons});
+}
+
+Formula StepFormula::ordersNeedsAction(const std::vector<Order> orders, Order::State state) {
+    std::vector<Formula> formulas;
+    for (auto o : orders) {
+        formulas.push_back(orderNeedsAction(o, state));
+    }
+    return Formula(carl::FormulaType::OR, formulas);
 }
 
 Formula StepFormula::updateTimes(const Robot& r, const Station& station, int processingTimeStation, int processingTimeRobot) {
@@ -548,47 +670,68 @@ Formula StepFormula::collectBaseActions() {
     for (auto const& r : getGameData().getRobots()) {
         for (auto const& bs : getGameData().getBaseStations()) {
             for (auto const& c : bs->getPossibleBaseColors()) {
-                if (getGameData().existsOrderWithBaseReq(c))
-                    formulas.push_back(collectBaseAction(*r, c, *bs));
+                if (getGameData().existsOrderWithBaseReq(c)) {
+                    Formula collectBase(carl::FormulaType::AND,{
+                        collectBaseAction(*r, c, *bs),
+                        existOrderWithBaseColorReq(*r, c)
+                    });
+                    formulas.push_back(collectBase);
+                }
             }
-            Formula forRingStation(carl::FormulaType::AND,{needsBaseForRingStation(),
-                collectBaseAction(*r, bs->getColorForRingStation(), *bs)});
+            Formula forRingStation(carl::FormulaType::AND,{
+                needsBaseForRingStation(),
+                collectBaseAction(*r, bs->getColorForRingStation(), *bs),
+                existOrderWithAddBaseReqBaseStation()
+            });
             formulas.push_back(forRingStation);
+
         }
     }
     return Formula(carl::FormulaType::OR, formulas);
 }
 
 Formula StepFormula::collectBaseAction(Robot &r, Workpiece::Color c, BaseStation & bs) {
-    Formula existOrder = existOrderWithBaseColorReq(c);
-
     Formula holdsNothingPrev = holdsBasePrev(r, Workpiece::NONE);
     Formula holdsBase = holdsWorkpiece(r, Workpiece(c));
     Formula time = updateTimes(r, bs, bs.getDispenseBaseTime(), r.getTakeWorkpieceTime());
 
     Formula reward = collectBaseActionReward(r, c, bs);
     Formula inheritRemainingState = createRemainingStepConstraints(r, bs);
-    Formula inheritOrders = createRemainingStepConstraintsOrders();
     return Formula(carl::FormulaType::AND,{
-        existOrder,
         holdsNothingPrev,
         holdsBase,
         time,
         reward,
-        inheritRemainingState,
-        inheritOrders
+        inheritRemainingState
     });
 }
 
-Formula StepFormula::existOrderWithBaseColorReq(Workpiece::Color c) {
+Formula StepFormula::existOrderWithBaseColorReq(Robot &r, Workpiece::Color c) {
     std::vector<Formula> formulas;
-    for (auto const& o : getGameData().getOrdersWithBaseReq(c))
-        formulas.push_back(orderNotDeliveredPrev(o));
+    for (auto const& o : getGameData().getOrdersWithBaseReq(c)) {
+        formulas.push_back(orderNeedsAction(o, Order::State::BASE));
+    }
     return Formula(carl::FormulaType::OR, formulas);
 }
 
-Formula StepFormula::collectBaseActionReward(Robot &r, Workpiece::Color c, BaseStation& bs) {
+Formula StepFormula::collectBaseActionReward(Robot &r, Workpiece::Color c, BaseStation & bs) {
     return updateReward(0);
+}
+
+Formula StepFormula::existOrderWithAddBaseReqBaseStation() {
+    std::vector<Formula> formulas;
+    for (auto const& o : getGameData().getOrdersWithAddBaseReq()) {
+        for (int position = 0; position < o.getRingCount(); position++) {
+            for (int base = 0; base < getGameData().getNeededAdditionalBases(o.getRingColorReq(position)); base++) {
+                formulas.push_back(orderNeedsAction(o, o.getCollectBaseId(position, base)));
+            }
+        }
+    }
+
+    if (getGameData().getOrdersWithAddBaseReq().size() == 0) {
+        return Formula(carl::FormulaType::FALSE);
+    }
+    return Formula(carl::FormulaType::OR, formulas);
 }
 
 Formula StepFormula::needsBaseForRingStation() {
@@ -627,7 +770,6 @@ Formula StepFormula::feedCapAction(Robot &r, Workpiece::Color c, CapStation & cs
     Formula time = updateTimes(r, cs, cs.getFeedCapTime(), r.getTakeWorkpieceTime() + r.getFeedWorkpieceTime());
     Formula reward = feedCapActionReward(r, c, cs);
     Formula inheritRemainingState = createRemainingStepConstraints(r, cs);
-    Formula inheritOrders = createRemainingStepConstraintsOrders();
 
     return Formula(carl::FormulaType::AND,{
         existOrder,
@@ -639,19 +781,18 @@ Formula StepFormula::feedCapAction(Robot &r, Workpiece::Color c, CapStation & cs
         outputLoaded,
         time,
         reward,
-        inheritRemainingState,
-        inheritOrders
+        inheritRemainingState
     });
 }
 
 Formula StepFormula::existOrderWithCapColorReq(Workpiece::Color c) {
     std::vector<Formula> formulas;
     for (auto const& o : getGameData().getOrdersWithCapReq(c))
-        formulas.push_back(orderNotDeliveredPrev(o));
+        formulas.push_back(orderNeedsAction(o, Order::State::FEDCAP));
     return Formula(carl::FormulaType::OR, formulas);
 }
 
-Formula StepFormula::feedCapActionReward(Robot &r, Workpiece::Color c, CapStation &cs) {
+Formula StepFormula::feedCapActionReward(Robot &r, Workpiece::Color c, CapStation & cs) {
     return updateReward(0);
 }
 
@@ -683,7 +824,7 @@ Formula StepFormula::mountCapAction(Robot &r, CapStation & cs) {
     Formula time = updateTimes(r, cs, cs.getMountCapTime(), r.getFeedWorkpieceTime());
     Formula reward = mountCapActionReward(r, cs);
     Formula inheritRemainingState = createRemainingStepConstraints(r, cs);
-    Formula inheritOrders = createRemainingStepConstraintsOrders();
+    //Formula inheritOrders = createRemainingStepConstraintsOrders();
 
     return Formula(carl::FormulaType::AND,{
         existOrder,
@@ -698,7 +839,7 @@ Formula StepFormula::mountCapAction(Robot &r, CapStation & cs) {
         time,
         reward,
         inheritRemainingState,
-        inheritOrders
+        //inheritOrders
     });
 }
 
@@ -713,11 +854,11 @@ Formula StepFormula::existOrderWithCapReq(Robot &r, CapStation & cs) {
 
 Formula StepFormula::orderHasCapReq(Robot &r, CapStation &cs, Order & o) {
     vector<Formula> formulas;
-    Formula orderNotDel = orderNotDeliveredPrev(o);
+    Formula orderAction = orderNeedsAction(o, Order::CAP);
     Formula capF = loadCapPrev(cs, o.getCapColorReq());
     Formula baseF = holdsBasePrev(r, o.getBaseColorReq());
 
-    formulas.push_back(orderNotDel);
+    formulas.push_back(orderAction);
     formulas.push_back(capF);
     formulas.push_back(baseF);
 
@@ -756,7 +897,7 @@ Formula StepFormula::timesDoNotChange() {
     return Formula(carl::FormulaType::AND, formulas);
 }
 
-Formula StepFormula::setupRingColorAction(Workpiece::Color c, RingStation& rs) {
+Formula StepFormula::setupRingColorAction(Workpiece::Color c, RingStation & rs) {
 
     Formula existsOrder = existOrderWithRingColorReq(c);
 
@@ -772,7 +913,7 @@ Formula StepFormula::setupRingColorAction(Workpiece::Color c, RingStation& rs) {
 
     Formula reward = setupRingColorActionReward(c, rs);
     Formula inheritRemainingState = createRemainingStepConstraints(rs);
-    Formula inheritOrders = createRemainingStepConstraintsOrders();
+    //Formula inheritOrders = createRemainingStepConstraintsOrders();
 
     return Formula(carl::FormulaType::AND,{
         existsOrder,
@@ -784,15 +925,17 @@ Formula StepFormula::setupRingColorAction(Workpiece::Color c, RingStation& rs) {
         time,
         reward,
         inheritRemainingState,
-        inheritOrders
+        //inheritOrders
     });
 }
 
 Formula StepFormula::existOrderWithRingColorReq(Workpiece::Color c) {
     std::vector<Formula> formulas;
-    for (auto const& o : getGameData().getOrdersWithRingReq(c))
-        formulas.push_back(orderNotDeliveredPrev(o));
-
+    for (auto const& o : getGameData().getOrdersWithRingReq(c)) {
+        for (int i = 0; i < o.getRingCount(); i++) {
+            formulas.push_back(orderNeedsAction(o, o.getSetupRingId(i)));
+        }
+    }
     return Formula(carl::FormulaType::OR, formulas);
 }
 
@@ -828,7 +971,7 @@ Formula StepFormula::feedAdditionalBaseAction(Robot &r, RingStation & rs) {
     Formula time = updateTimes(r, rs, rs.getFeedBaseTime(), r.getFeedWorkpieceTime());
     Formula reward = feedAdditionalBaseActionReward(r, rs);
     Formula inheritRemainingState = createRemainingStepConstraints(r, rs);
-    Formula inheritOrders = createRemainingStepConstraintsOrders();
+    Formula existOrder = existOrderWithAddBaseReqRingStation();
 
     return Formula(carl::FormulaType::AND,{
         rHoldsBasePrev,
@@ -839,15 +982,32 @@ Formula StepFormula::feedAdditionalBaseAction(Robot &r, RingStation & rs) {
         rHoldsNothing,
         rsHoldsNothing,
         rsIsFedWithAddBase,
-        setUp,    
+        setUp,
         time,
         reward,
         inheritRemainingState,
-        inheritOrders
+        existOrder
     });
 }
 
+Formula StepFormula::existOrderWithAddBaseReqRingStation() {
+    std::vector<Formula> formulas;
+    for (auto const& o : getGameData().getOrdersWithAddBaseReq()) {
+        for (int position = 0; position < o.getRingCount(); position++) {
+            for (int base = 0; base < getGameData().getNeededAdditionalBases(o.getRingColorReq(position)); base++) {
+                formulas.push_back(orderNeedsAction(o, o.getFedBaseId(position, base)));
+            }
+        }
+    }
+
+    if (getGameData().getOrdersWithAddBaseReq().size() == 0) {
+        return Formula(carl::FormulaType::FALSE);
+    }
+    return Formula(carl::FormulaType::OR, formulas);
+}
+
 Formula StepFormula::feedAdditionalBaseActionReward(Robot &r, RingStation & rs) {
+
     return updateReward(getGameData().getReward().getAdditionalBase());
 }
 
@@ -855,6 +1015,7 @@ Formula StepFormula::mountRingActions() {
     std::vector<Formula> formulas;
     for (auto const& r : getGameData().getRobots()) {
         for (auto const& rs : getGameData().getRingStations()) {
+
             formulas.push_back(mountRingAction(*r, *rs));
         }
     }
@@ -890,7 +1051,7 @@ Formula StepFormula::mountRingAction(Robot &r, RingStation & rs) {
     Formula time = updateTimes(r, rs, rs.getMountRingTime(), r.getFeedWorkpieceTime());
     //Formula reward = mountRingActionReward(r, rs);
     Formula inheritRemainingState = createRemainingStepConstraints(r, rs);
-    Formula inheritOrders = createRemainingStepConstraintsOrders();
+    //Formula inheritOrders = createRemainingStepConstraintsOrders();
 
     return Formula(carl::FormulaType::AND,{
         existOrder,
@@ -900,32 +1061,31 @@ Formula StepFormula::mountRingAction(Robot &r, RingStation & rs) {
         time,
         //reward,
         inheritRemainingState,
-        inheritOrders
+        //inheritOrders
     });
 }
 
 Formula StepFormula::existOrderWithRingReq(Robot &r, RingStation & rs) {
     vector<Formula> formulas;
     for (auto const& o : getGameData().getOrders()) {
-        for (int i = 0; i < Workpiece::getMaxRingNumber(); i++) {
+        for (int i = 0; i < o->getRingCount(); i++) {
+
             formulas.push_back(orderHasRingReq(r, rs, *o, i));
         }
     }
-
     return Formula(carl::FormulaType::OR, formulas);
-
 }
 
 Formula StepFormula::orderHasRingReq(Robot &r, RingStation &rs, Order &o, int position) {
     vector<Formula> formulas;
 
-    Formula notDelivered = orderNotDeliveredPrev(o);
+    Formula oNeedsAction = orderNeedsAction(o, o.getRingId(position));
     Formula reqRingMount = ringColorSetupPrev(rs, o.getRingColorReq(position));
     Formula reqRingMountFree = holdsRingPrev(r, Workpiece::NONE, position);
 
     Formula reqBaseExists = holdsBasePrev(r, o.getBaseColorReq());
 
-    formulas.push_back(notDelivered);
+    formulas.push_back(oNeedsAction);
     formulas.push_back(reqRingMount);
     formulas.push_back(reqRingMountFree);
     formulas.push_back(reqBaseExists);
@@ -941,6 +1101,7 @@ Formula StepFormula::mountRingActionReward(Robot &r, RingStation & rs) {
     std::vector<Formula> colors;
     for (auto const& pc : rs.getPossibleRingColors()) {
         for (int i = 0; i < Workpiece::getMaxRingNumber(); i++) {
+
             Formula holdsNothingPrev = holdsRingPrev(r, Workpiece::NONE, i);
             Formula holdsColor = holdsRing(rs, pc.first, i);
             int preCap = getGameData().getReward().getFinishCXPreCap(i);
@@ -956,6 +1117,7 @@ Formula StepFormula::dropTransparentBaseActions() {
     std::vector<Formula> formulas;
     for (auto const& r : getGameData().getRobots()) {
         for (auto const& cs : getGameData().getCapStations()) {
+
             formulas.push_back(dropTransparentBaseAction(*r, *cs));
         }
     }
@@ -987,12 +1149,14 @@ Formula StepFormula::dropTransparentBaseAction(Robot &r, CapStation & cs) {
 }
 
 Formula StepFormula::collectWorkpieceActions() {
+    //@todo transparente nur aufheben wenn für rs notwendig
     std::vector<Formula> formulas;
     for (auto const& r : getGameData().getRobots()) {
         for (auto const& rs : getGameData().getRingStations()) {
             formulas.push_back(collectWorkpieceAction(*r, *rs));
         }
         for (auto const& cs : getGameData().getCapStations()) {
+
             formulas.push_back(collectWorkpieceAction(*r, *cs));
         }
     }
@@ -1000,9 +1164,34 @@ Formula StepFormula::collectWorkpieceActions() {
 }
 
 Formula StepFormula::collectWorkpieceAction(Robot &r, CapStation & cs) {
+
     Formula capColor = equation(getVarCapColor(cs), getPrevStep()->getVarCapColor(cs));
     Formula collectWorkpiece = collectWorkpieceGeneralAction(r, cs);
-    return Formula(carl::FormulaType::AND,{collectWorkpiece, capColor});
+
+    Formula noTransparentBase = Formula(carl::FormulaType::NOT, holdsBasePrev(cs, Workpiece::TRANSPARENT));
+    Formula inheritOrders = createRemainingStepConstraintsOrders();
+    Formula noTransBaseInheritOrders = Formula(carl::FormulaType::AND,{noTransparentBase, inheritOrders});
+
+    Formula transparentBaseOrder = collectTransparentBaseOrder(r, cs);
+
+    Formula order = Formula(carl::FormulaType::OR,{transparentBaseOrder, noTransBaseInheritOrders});
+
+    return Formula(carl::FormulaType::AND,{collectWorkpiece, capColor, order});
+}
+
+Formula StepFormula::collectTransparentBaseOrder(Robot &r, CapStation & cs) {
+    Formula transparentBase = holdsBasePrev(cs, Workpiece::TRANSPARENT);
+
+    std::vector<Formula> formulas;
+    for (auto o : getGameData().getOrdersWithAddBaseReq()) {
+        for (int i = 0; i < o.getRingCount(); i++) {
+            formulas.push_back(orderNeedsAction(o, o.getCollectBaseId(i, 0)));
+            formulas.push_back(orderNeedsAction(o, o.getCollectBaseId(i, 1)));
+        }
+    }
+    Formula ordersNeedAction(carl::FormulaType::OR, formulas);
+
+    return Formula(carl::FormulaType::AND,{transparentBase, ordersNeedAction});
 }
 
 Formula StepFormula::collectWorkpieceAction(Robot &r, RingStation & rs) {
@@ -1010,7 +1199,9 @@ Formula StepFormula::collectWorkpieceAction(Robot &r, RingStation & rs) {
     Formula baseReq = equation(getVarBaseReq(rs), getPrevStep()->getVarBaseReq(rs));
     Formula ringColorBaseReq(carl::FormulaType::AND,{ringColor, baseReq});
     Formula collectWorkpiece = collectWorkpieceGeneralAction(r, rs);
-    return Formula(carl::FormulaType::AND,{collectWorkpiece, ringColorBaseReq});
+    Formula inheritOrders = createRemainingStepConstraintsOrders();
+
+    return Formula(carl::FormulaType::AND,{collectWorkpiece, ringColorBaseReq, inheritOrders});
 }
 
 Formula StepFormula::collectWorkpieceGeneralAction(Robot &r, Station & s) {
@@ -1020,10 +1211,10 @@ Formula StepFormula::collectWorkpieceGeneralAction(Robot &r, Station & s) {
     Formula rHoldsW = swapWorkpiece(r, s);
     Formula csEmpty = holdsWorkpiece(s, Workpiece());
 
-    Formula time = updateTimes(r, s, 0, r.getTakeWorkpieceTime()); //@todo
+    Formula time = updateTimes(r, s, 0, r.getTakeWorkpieceTime());
+
     Formula reward = collectWorkpieceActionReward(r, s);
     Formula inheritRemainingState = createRemainingStepConstraints(r, s);
-    Formula inheritOrders = createRemainingStepConstraintsOrders();
 
     return Formula(carl::FormulaType::AND,{
         holdsNothing,
@@ -1033,11 +1224,11 @@ Formula StepFormula::collectWorkpieceGeneralAction(Robot &r, Station & s) {
         time,
         reward,
         inheritRemainingState,
-        inheritOrders
     });
 }
 
-Formula StepFormula::collectWorkpieceActionReward(Robot &r, Station &s) {
+Formula StepFormula::collectWorkpieceActionReward(Robot &r, Station & s) {
+
     return updateReward(0);
 }
 
@@ -1045,6 +1236,7 @@ Formula StepFormula::deliverWorkpieceActions() {
     std::vector<Formula> formulas;
     for (auto const& r : getGameData().getRobots()) {
         for (auto const& ds : getGameData().getDeliveryStations()) {
+
             formulas.push_back(deliverWorkpieceAction(*r, *ds));
         }
     }
@@ -1063,6 +1255,7 @@ Formula StepFormula::deliverWorkpieceAction(Robot &r, DeliveryStation & ds) {
     Formula oDelivered = orderDelivered(r);
     //@todo orderDelivered
     //@todo finde zu Product Order die diese Produkt bestellt und die kleinste Deadline hat
+
     return Formula(carl::FormulaType::AND,{
         hasBase,
         hasCap,
@@ -1074,18 +1267,18 @@ Formula StepFormula::deliverWorkpieceAction(Robot &r, DeliveryStation & ds) {
     });
 }
 
-Formula StepFormula::deliverWorkpieceActionReward(Robot &r, Station &d) {
+Formula StepFormula::deliverWorkpieceActionReward(Robot &r, Station & d) {
+
     return updateReward(getGameData().getReward().getDelivery());
 }
 
-Formula StepFormula::orderDelivered(Robot& r) {
+Formula StepFormula::orderDelivered(Robot & r) {
     std::vector<Formula> formulas;
     for (auto o : getGameData().getOrders()) {
 
         Formula isOrder(carl::FormulaType::AND,{
             holdsWorkpiecePrev(r, o->getProduct()),
-            orderDelivered(*o),
-            createRemainingStepConstraintsOrders(*o)
+            orderNeedsAction(*o, Order::DELIVERED),
         });
         formulas.push_back(isOrder);
     }

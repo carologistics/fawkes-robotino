@@ -36,6 +36,8 @@ public:
     bool isPossibleBaseColor(Workpiece::Color Color) const;
     void setColorForRingStation(Workpiece::Color colorForRingStation);
     Workpiece::Color getColorForRingStation() const; 
+    
+    std::string toString();
 
 private:
     Time dispenseBaseTime;

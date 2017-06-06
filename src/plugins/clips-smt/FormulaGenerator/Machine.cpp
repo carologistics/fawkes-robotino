@@ -103,11 +103,11 @@ std::string Machine::getVarIdentifier() const {
 
 std::string Machine::toString() {
     std::string result;
-    result += "\nIdentifier: " + getVarIdentifier();
-    result += "\nWorkpiece:\n" + getWorkpiece().toString();
-    result += "\nMovingTimes:\n";
+    result += getVarIdentifier() + ": ";
+    result += getWorkpiece().toString() ;
+
     for (auto const& m : getMovingTimes()) {
-        result += m.first.getVarIdentifier() + ": " + std::to_string(m.second) + "\n";
+        result += + "; " + m.first.getVarIdentifier() + ": " + std::to_string(m.second);
     }
     return result;
 }

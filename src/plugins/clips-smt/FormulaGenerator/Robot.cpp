@@ -35,3 +35,11 @@ Time Robot::getTakeWorkpieceTime() const {
 void Robot::setTakeWorkpieceTime(Time takeWorkpiece) {
     this->takeWorkpieceTime = takeWorkpiece;
 }
+
+std::string Robot::toString(){
+    std::string result;
+    result += this->Machine::toString();
+    result += "; Feed: " + std::to_string(getFeedWorkpieceTime());
+    result += "; Take: " + std::to_string(getTakeWorkpieceTime());
+    return result;
+}

@@ -80,6 +80,10 @@ public:
     static string getVarNameBaseReq(const RingStation & rs, int step);
     static string getVarNameReward(int step);
     static string getVarNameOrderDelivered(const Order& o, int step);
+    
+    static string getVarNameOrderMain(const Order& o, int step);
+    static string getVarNameOrderRing(int position, int base, const Order& o, int step);
+    static string getVarNameOrderCap(const Order& o, int step);
 
     /*
      * logic-variable creation
@@ -100,6 +104,10 @@ public:
 
     Variable getVarReward();
     Variable getVarOrderDelivered(const Order& o);
+    
+    Variable getVarOrderMain(const Order& o);
+    Variable getVarOrderRing(int position, int base, const Order& o);
+    Variable getVarOrderCap(const Order& o);
 
     /*
      * basic constraint creation
@@ -166,7 +174,10 @@ public:
     Formula createRemainingStepConstraintsRobots(const Robot &robot);
     Formula createRemainingStepConstraintsRobots();
     Formula createRemainingStepConstraintsOrders();
-    Formula createRemainingStepConstraintsOrders(Order& without);
+    Formula createRemainingStepConstraintsOrders(const Order& without);
+    
+    Formula orderNeedsAction(const Order& o, Order::State state);
+    Formula ordersNeedsAction(const std::vector<Order> orders, Order::State state);
     
     /*Formula to update the moving times of the robot and the the time a machine is occupied after a action*/
     Formula updateTimes(const Robot& r, const Station& station, int processingTimeStation, int processingTimeRobot);
@@ -175,8 +186,9 @@ public:
      * checks if this action is valid and needed to fulfill an order or if a ring station needs additional bases*/
     Formula collectBaseActions();
     Formula collectBaseAction(Robot &r, Workpiece::Color c, BaseStation& bs);
-    Formula existOrderWithBaseColorReq(Workpiece::Color c);
+    Formula existOrderWithBaseColorReq(Robot &r, Workpiece::Color c);
     Formula collectBaseActionReward(Robot &r, Workpiece::Color c, BaseStation& bs);
+    Formula existOrderWithAddBaseReqBaseStation();
     Formula needsBaseForRingStation();
 
     /* creates a Formula which encodes the actions of feeding a cap to a cap station for all robots and all cap stations, 
@@ -210,6 +222,7 @@ public:
      * checks if this action is valid and needed to fulfill an order*/
     Formula feedAdditionalBaseActions();
     Formula feedAdditionalBaseAction(Robot &r, RingStation &rs);
+    Formula existOrderWithAddBaseReqRingStation();
     Formula feedAdditionalBaseActionReward(Robot &r, RingStation &rs);
 
     /* creates a Formula which encodes the actions of mounting a ring to a workpiece a robot holds 
@@ -233,6 +246,9 @@ public:
     Formula collectWorkpieceActions();
     Formula collectWorkpieceAction(Robot &r, CapStation & cs);
     Formula collectWorkpieceAction(Robot &r, RingStation & rs);
+    
+    Formula collectTransparentBaseOrder(Robot &r, CapStation & cs);
+    
     Formula collectWorkpieceGeneralAction(Robot &r, Station &s);
     Formula collectWorkpieceActionReward(Robot &r, Station &s);
 

@@ -27,9 +27,11 @@ public:
     bool isPossibleRingColor(Workpiece::Color Color) const;
     int getAdditionalBasesFed() const;
     Workpiece::Color getRingColorSetup() const;
-    int getNeededAdditinalBases(Workpiece::Color color) const;
+    int getNeededAdditionalBases(Workpiece::Color color) const;
     int getReqBases() const;
     bool readyToMountRing() const;
+    
+    std::string toString();
    
 private:
     int feedBaseTime;

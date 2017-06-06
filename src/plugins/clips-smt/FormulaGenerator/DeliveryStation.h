@@ -18,14 +18,16 @@
 class DeliveryStation;
 typedef std::shared_ptr<DeliveryStation> deliveryStation_ptr;
 
-class DeliveryStation : public Station{
+class DeliveryStation : public Station {
 public:
     DeliveryStation(int id);
     virtual ~DeliveryStation();
-    
+
     Time getDeliverProductTime() const;
     void setDeliverProductTime(Time deliverProductTime);
-    
+
+    std::string toString();
+
 private:
     int deliverProductTime;
 };

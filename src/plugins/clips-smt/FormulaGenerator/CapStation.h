@@ -26,6 +26,8 @@ public:
     Workpiece::Color getFedCapColor() const;
     bool readyToMountRing();
     
+    std::string toString();
+    
 private:
     
     //are this times identical?
