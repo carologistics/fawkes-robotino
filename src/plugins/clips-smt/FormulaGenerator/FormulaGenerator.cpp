@@ -162,14 +162,22 @@ std::string FormulaGenerator::printWorldState(const z3::model& z3model, int step
 
     for (auto o : getGameData().getOrders()) {
         output += "O" + std::to_string(o->getId()) + ": ";
-        int intOrder = model.at(StepFormula::getVarNameOrderDelivered(*o, step));
-        if (intOrder == 0) {
-            output += "NOTDELIVERED";
-        } else if (intOrder == 1) {
-            output += "DELIVERED";
-        } else {
-            output += "NOTDEFINED";
+        int intOrderMain;
+        int intOrderCap;
+        intOrderMain = model.at(StepFormula::getVarNameOrderMain(*o, step));
+        intOrderCap = model.at(StepFormula::getVarNameOrderCap(*o, step));
+        output += Order::toString(Order::intToState(intOrderMain)) + " ";
+        output += Order::toString(Order::intToState(intOrderCap)) + " ";
+
+        for (int position = 0; position < o->getRingCount(); position++) {
+            for (int base = 0; base < getGameData().getNeededAdditionalBases(o->getRingColorReq(position)); base++) {
+                int intOrderRing = model.at(StepFormula::getVarNameOrderRing(position, base, *o, step));
+                output += Order::toString(Order::intToState(intOrderRing)) + " ";
+            }
         }
+        
+        
+
         output += "\n";
     }
     output += "\n";
@@ -393,7 +401,7 @@ Action FormulaGenerator::getAction(const z3::model& z3model, int step) {
     std::map<string, int> model = transferZ3ModelToMap(z3model);
 
     //Check if all orders delivered and thus none action executed
-    action = checkNoneAction(model, step);
+    //action = checkNoneAction(model, step);
     if (action.isNone()) {
         //after a step without action, the world state is no longe well defined
         //therefore we have to return here

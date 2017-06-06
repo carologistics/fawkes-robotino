@@ -15,6 +15,7 @@ public:
     void setFeedWorkpieceTime(Time feedWorkpieceTime);
     Time getTakeWorkpieceTime() const;
     void setTakeWorkpieceTime(Time takeWorkpiece);
+    std::string toString();
     
 private:
     Time feedWorkpieceTime;

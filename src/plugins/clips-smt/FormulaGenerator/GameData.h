@@ -29,7 +29,7 @@ public:
     virtual ~GameData();
 
     std::vector<robot_ptr> const getRobots() const;
-    std::vector<station_ptr> const getStations();
+    std::vector<station_ptr> const getStations() const;
     std::vector<baseStation_ptr> const getBaseStations() const;
     std::vector<ringStation_ptr> const getRingStations() const;
     std::vector<capStation_ptr> const getCapStations() const;
@@ -53,14 +53,26 @@ public:
     std::vector<Order> getOrdersWithBaseReq(Workpiece::Color c) const;
     std::vector<Order> getOrdersWithRingReq(Workpiece::Color c) const;
     std::vector<Order> getOrdersWithCapReq(Workpiece::Color c) const;
+    std::vector<Order> getOrdersWithAddBaseReq() const;
+
+    int getNeededAdditionalBases(Workpiece::Color) const;
+    std::vector<Order::State> getProductionStepsRing(const Order& o, int ringPosition);
+
+    Order::State getPrevProductionStepMain(const Order& o, Order::State state);
+    Order::State getPrevProductionStepCap(const Order& o, Order::State state);
+    Order::State getPrevProductionStepRing(const Order& o, Order::State state);
+
+    bool isMainProd(Order o, Order::State state) const;
+    bool isCapProd(Order::State state) const;
+    bool isRingProd(Order o, Order::State state) const;
 
     std::string toString() const;
     Reward getReward() const;
 
 private:
-    
+
     void addStation(station_ptr const station);
-    
+
     std::vector<station_ptr> stations;
     std::vector<robot_ptr> robots;
     std::vector<baseStation_ptr> baseStations;

@@ -24,10 +24,11 @@ Time BaseStation::getDispenseBaseTime() const {
     return this->dispenseBaseTime;
 }
 
-void BaseStation::setPossibleBaseColors(std::set<Workpiece::Color> possibleBaseColors){
-     this->possibleBaseColors = possibleBaseColors;
+void BaseStation::setPossibleBaseColors(std::set<Workpiece::Color> possibleBaseColors) {
+    this->possibleBaseColors = possibleBaseColors;
 }
-void BaseStation::addPossibleBaseColor(Workpiece::Color color){
+
+void BaseStation::addPossibleBaseColor(Workpiece::Color color) {
     this->possibleBaseColors.insert(color);
 }
 
@@ -35,11 +36,11 @@ void BaseStation::setDispenseBaseTime(Time time) {
     this->dispenseBaseTime = time;
 }
 
-std::set<Workpiece::Color> BaseStation::getPossibleBaseColors() const{
-        return this->possibleBaseColors;
+std::set<Workpiece::Color> BaseStation::getPossibleBaseColors() const {
+    return this->possibleBaseColors;
 }
 
-bool BaseStation::isPossibleBaseColor(Workpiece::Color Color) const{
+bool BaseStation::isPossibleBaseColor(Workpiece::Color Color) const {
     return possibleBaseColors.find(Color) != possibleBaseColors.end();
 }
 
@@ -51,4 +52,15 @@ Workpiece::Color BaseStation::getColorForRingStation() const {
     assert(!possibleBaseColors.empty());
     return *possibleBaseColors.begin(); //@todo if we need 
     //return colorForRingStation;
+}
+
+std::string BaseStation::toString() {
+    std::string result;
+    result += this->Station::toString();
+    result += "; Dispense: " + std::to_string(getDispenseBaseTime());
+
+    for (auto const& c : getPossibleBaseColors()) {
+        result += +"; " + Workpiece::toString(c);
+    }
+    return result;
 }

@@ -12,6 +12,7 @@
  */
 
 #include "Order.h"
+#include "RingStation.h"
 
 Order::Order(int id, Workpiece product, Time deadline) {
     setId(id);
@@ -34,7 +35,7 @@ Workpiece Order::getProduct() const {
     return this->product;
 }
 
-std::string Order::getVarIdentifier(){
+std::string Order::getVarIdentifier() {
     return "o" + std::to_string(getId());
 }
 
@@ -78,12 +79,138 @@ void Order::setCapColorReq(Workpiece::Color color) {
     getProduct().setCapColor(color);
 }
 
+Order::State Order::getSetupRingId(int ringPosition) const {
+    State setupRingId = NOTDEFINED;
+    switch (ringPosition) {
+        case 0: setupRingId = SETUP_RING0;
+            break;
+        case 1: setupRingId = SETUP_RING1;
+            break;
+        case 2: setupRingId = SETUP_RING2;
+            break;
+    }
+    return setupRingId;
+}
+
+Order::State Order::getRingId(int ringPosition) const {
+    State ringId = NOTDEFINED;
+    switch (ringPosition) {
+        case 0: ringId = RING0;
+            break;
+        case 1: ringId = RING1;
+            break;
+        case 2: ringId = RING2;
+            break;
+    }
+    return ringId;
+}
+
+Order::State Order::getFedBaseId(int ringPosition, int addBaseNumber) const {
+    State fedBaseId = NOTDEFINED;
+    switch (ringPosition) {
+        case 0:
+            switch (addBaseNumber) {
+                case 0: fedBaseId = FED_BASE0_RING0;
+                    break;
+                case 1: fedBaseId = FED_BASE1_RING0;
+                    break;
+            }
+            break;
+        case 1:
+            switch (addBaseNumber) {
+                case 0: fedBaseId = FED_BASE0_RING1;
+                    break;
+                case 1: fedBaseId = FED_BASE1_RING1;
+                    break;
+            }
+            break;
+        case 2:
+            switch (addBaseNumber) {
+                case 0: fedBaseId = FED_BASE0_RING2;
+                    break;
+                case 1: fedBaseId = FED_BASE1_RING2;
+                    break;
+            }
+            break;
+    }
+    return fedBaseId;
+}
+
+Order::State Order::getCollectBaseId(int ringPosition, int addBaseNumber) const {
+    State collectBaseId = NOTDEFINED;
+    switch (ringPosition) {
+        case 0:
+            switch (addBaseNumber) {
+                case 0: collectBaseId = COLLECT_BASE0_RING0;
+                    break;
+                case 1: collectBaseId = COLLECT_BASE1_RING0;
+                    break;
+            }
+            break;
+        case 1:
+            switch (addBaseNumber) {
+                case 0: collectBaseId = COLLECT_BASE0_RING1;
+                    break;
+                case 1: collectBaseId = COLLECT_BASE1_RING1;
+                    break;
+            }
+            break;
+        case 2:
+            switch (addBaseNumber) {
+                case 0: collectBaseId = COLLECT_BASE0_RING2;
+                    break;
+                case 1: collectBaseId = COLLECT_BASE1_RING2;
+                    break;
+            }
+            break;
+    }
+    return collectBaseId;
+}
+
+int Order::getRingCount() const{
+    int amount = 0;
+    for(auto r: getRingColorReq()){
+        if(r == Workpiece::NONE) return amount;
+        amount++;
+    }
+    return amount;
+}
+
+Order::State Order::intToState(int state) {
+    switch (state) {
+        case Order::NONE:                   return Order::NONE;
+        case Order::BASE:                   return Order::BASE;
+        case Order::SETUP_RING0:            return Order::SETUP_RING0;
+        case Order::COLLECT_BASE0_RING0:    return Order::COLLECT_BASE0_RING0;
+        case Order::FED_BASE0_RING0:        return Order::FED_BASE0_RING0;
+        case Order::COLLECT_BASE1_RING0:    return Order::COLLECT_BASE1_RING0;
+        case Order::FED_BASE1_RING0:        return Order::FED_BASE1_RING0;
+        case Order::RING0:                  return Order::RING0;
+        case Order::SETUP_RING1:            return Order::SETUP_RING1;
+        case Order::COLLECT_BASE0_RING1:    return Order::COLLECT_BASE0_RING1;
+        case Order::FED_BASE0_RING1:        return Order::FED_BASE0_RING1;
+        case Order::COLLECT_BASE1_RING1:    return Order::COLLECT_BASE1_RING1;
+        case Order::FED_BASE1_RING1:        return Order::FED_BASE1_RING1;
+        case Order::RING1:                  return Order::RING1;
+        case Order::SETUP_RING2:            return Order::SETUP_RING2;
+        case Order::COLLECT_BASE0_RING2:    return Order::COLLECT_BASE0_RING2;
+        case Order::FED_BASE0_RING2:        return Order::FED_BASE0_RING2;
+        case Order::COLLECT_BASE1_RING2:    return Order::COLLECT_BASE1_RING2;
+        case Order::FED_BASE1_RING2:        return Order::FED_BASE1_RING2;
+        case Order::RING2:                  return Order::RING2;
+        case Order::FEDCAP:                 return Order::FEDCAP;
+        case Order::CAP:                    return Order::CAP;
+        case Order::DELIVERED:              return Order::DELIVERED;
+        case Order::NOTDELIVERED:           return Order::NOTDELIVERED;
+        default:                            return Order::NOTDEFINED;
+    }
+}
+
 std::string Order::toString() {
     std::string result;
-    result += "ID: " + std::to_string(getId());
-    result += "\nDeadline: " + std::to_string(getDeadline());
-    result += "\nRequirements:\n";
-    result += getProduct().toString();
+    result += "Order: " + std::to_string(getId());
+    result += "; " + getProduct().toString();
+    result += "; DL: " + std::to_string(getDeadline());
 
     return result;
 }
@@ -99,3 +226,35 @@ bool Order::operator==(const Order& rhs) const {
 bool Order::operator!=(const Order& rhs) const {
     return !(*this == rhs);
 }
+
+std::string Order::toString(State s) {
+    return stateNames.at(s);
+}
+
+const std::map<Order::State, std::string> Order::stateNames = {
+    {Order::NONE, "NONE"},
+    {Order::BASE, "BASE"},
+    {Order::SETUP_RING0, "SETUP_RING0"},
+    {Order::COLLECT_BASE0_RING0, "COLLECT_BASE0_RING0"},
+    {Order::FED_BASE0_RING0, "FED_BASE0_RING0"},
+    {Order::COLLECT_BASE1_RING0, "COLLECT_BASE1_RING0"},
+    {Order::FED_BASE1_RING0, "FED_BASE1_RING0"},
+    {Order::RING0, "RING0"},
+    {Order::SETUP_RING1, "SETUP_RING1"},
+    {Order::COLLECT_BASE0_RING1, "COLLECT_BASE0_RING1"},
+    {Order::FED_BASE0_RING1, "FED_BASE0_RING1"},
+    {Order::COLLECT_BASE1_RING1, "COLLECT_BASE1_RING1"},
+    {Order::FED_BASE1_RING1, "FED_BASE1_RING1"},
+    {Order::RING1, "RING1"},
+    {Order::SETUP_RING2, "SETUP_RING2"},
+    {Order::COLLECT_BASE0_RING2, "COLLECT_BASE0_RING2"},
+    {Order::FED_BASE0_RING2, "FED_BASE0_RING2"},
+    {Order::COLLECT_BASE1_RING2, "COLLECT_BASE1_RING2"},
+    {Order::FED_BASE1_RING2, "FED_BASE1_RING2"},
+    {Order::RING2, "RING2"},
+    {Order::FEDCAP, "FEDCAP"},
+    {Order::CAP, "CAP"},
+    {Order::DELIVERED, "DELIVERED"},
+    {Order::NOTDELIVERED, "NOTDELIVERED"},
+    {Order::NOTDEFINED, "NOTDEFINED"},
+};

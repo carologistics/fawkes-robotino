@@ -25,3 +25,10 @@ void Station::setOccupiedUntil(Time time){
 Time Station::getOccupiedUntil() const{
     return this->occupiedUntil;
 }
+
+std::string Station::toString(){
+    std::string result;
+    result += this->Machine::toString();
+    result += "; Occ: " + std::to_string(getOccupiedUntil());
+    return result;
+}
