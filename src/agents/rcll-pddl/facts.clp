@@ -209,7 +209,7 @@
 ; Template for a planned task in form of an STN representation
 (deftemplate stn-action
   (slot id (type INTEGER))
-  (slot name (type SYMBOL))
+  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs pick-wp-from-bs))
   (slot state (type SYMBOL) (allowed-symbols pending running finished))
   (slot duration (type INTEGER))
   (multislot cond-actions (type INTEGER))
@@ -223,6 +223,7 @@
   (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs pick-wp-from-bs fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols planned proposed asked rejected ordered running finished failed)
         (default proposed))
+  (slot stn-action (type INTEGER))
   (slot priority (type INTEGER) (default 0))
   ;a task consists of multiple steps
   (multislot predecessor (type INTEGER))
