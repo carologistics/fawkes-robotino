@@ -38,7 +38,8 @@
 )
 
 (deffunction get-side-from-place (?place)
-  (bind ?side (sub-string (- (str-length ?place) 1) (str-length ?place) ?place))
+  (bind ?side (sub-string (str-length ?place) (str-length ?place) ?place))
+  (printout t "Getting side " ?side " from " ?place crlf)
   (if (eq ?side "I")
     then
     (return INPUT)

@@ -46,13 +46,13 @@
   "Finish a task if all steps finished"
   (phase PRODUCTION)
   ?state <- (state STEP-FINISHED)
-  ?task <- (task (state running) (steps $?steps) (current-step ?id-finished) (name ?task-name))
+  ?task <- (task (state running) (steps $?steps) (current-step ?id-finished) (name ?task-name) (stn-action ?sa-id))
   (step (id ?id-finished) (state finished))
   ;there is no next task
   (not (step (id ?id-next&:(eq ?id-next 
 			       (nth$ (+ 1 (member$ ?id-finished ?steps)) ?steps)))
 	     (state inactive)))
-  ?sa <- (stn-action (name ?task-name))
+  ?sa <- (stn-action (id ?sa-id) (name ?task-name) (state running))
   =>
   (retract ?state)
   (assert (state TASK-FINISHED))

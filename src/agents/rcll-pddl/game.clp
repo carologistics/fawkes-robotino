@@ -64,7 +64,9 @@
   ))
   =>
   (retract ?sf ?cf)
-  (assert (state MOVE_INTO_FIELD))
+  (assert
+    (state MOVE_INTO_FIELD)
+    (at-pos INS))
   (if (eq ?phase SETUP)
     then
     (bind ?wait ?wait-cfg)

@@ -21,6 +21,7 @@
 
   ; production order priorities
   ?*PRIORITY-TASK* = 60
+  ?*PRIORITY-DRIVE* = 50
   ?*PRIORITY-PREFILL-CS* = 50
   ?*PRIORITY-CLEAR-BS* = 97
   ?*PRIORITY-CLEAR-CS* = 70

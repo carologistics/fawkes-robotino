@@ -12,8 +12,9 @@
   ?step <- (step (name drive-to) (state wait-for-activation) (task-priority ?p)
     (machine ?mps) (side ?side))
   ?state <- (state STEP-STARTED)
+  ?pos <- (at-pos ?ap)
   =>
-  (retract ?state)
+  (retract ?state ?pos)
   (modify ?step (state running))
   (if (eq ?side INPUT) then
     (bind ?place (sym-cat ?mps "-I"))
@@ -640,13 +641,30 @@ the waiting state until we can use it again."
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
 )
 
+(defrule step-drive-to-finish
+  (declare (salience ?*PRIORITY-STEP-FINISH*))
+  (phase PRODUCTION)
+  ?step <- (step (name drive-to) (state running))
+  ?state <- (state SKILL-FINAL)
+  ?ste <- (skill-to-execute (skill drive_to)
+			    (args $?args) (state final))
+  ; TODO add new skills with |skill
+  =>
+  (retract ?state ?ste)
+  (assert
+    (state STEP-FINISHED)
+    (at-pos (nth$ (+ 1 (member$ place ?args)) ?args)))
+  (modify ?step (state finished))
+)
+
+
 ;;;;;;;;;;;;;;;;
 ; common finish:
 ;;;;;;;;;;;;;;;;
 (defrule step-common-finish
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|drive-to) (state running))
+  ?step <- (step (name get-from-shelf|insert|get-output) (state running))
   ?state <- (state SKILL-FINAL)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper|drive_to)
 			    (args $?args) (state final))
