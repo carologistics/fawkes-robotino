@@ -1,0 +1,15 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+# to start fawkes, use robotino2.yaml in cfg/
+
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
+---
+
+network:
+  fawkes:
+    tcp_port: !tcp-port 1930
+    service_name: "Fawkes with STN planner"
+
+plugins/robot-memory:
+  database: planmem
