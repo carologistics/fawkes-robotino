@@ -11,7 +11,7 @@ This script starts a specified program for simulation
 OPTIONS:
   COMMON:
    -h             Show this message
-   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox_shell  
+   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox_shell|planner
                   Start specified program
    -p arg         Specify ros port
 
@@ -182,6 +182,10 @@ case $COMMAND in
 	comm_plugins=gazsim-organization$SHUTDOWN
 	$FAWKES_BIN/fawkes -p $comm_plugins
 	;;
+    planner )
+  planner_plugins=m-planner$SHUTDOWN
+  $FAWKES_BIN/fawkes -c $CONF/planner.yaml -p $planner_plugins $@
+  ;;
     roscore ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
 	roscore -p $PORT

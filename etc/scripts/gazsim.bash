@@ -35,6 +35,7 @@ OPTIONS:
    -g                Run Fawkes in gdb
    -v                Run Fawkes in valgrind
    -t                Skip Exploration and add all navgraph points
+   -z                Start centralized planner
 EOF
 }
 
@@ -59,12 +60,25 @@ REPLAY=
 FAWKES_BIN=$FAWKES_DIR/bin
 META_PLUGIN=
 START_GAZEBO=true
+START_PLANNER=false
 TERM_GEOMETRY=105x56
 GDB=
 SKIP_EXPLORATION=
 FAWKES_USED=false
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:" -- "$@")
+if [[ -n $TMUX ]]; then
+	# if $TMUX is set we're inside a tmux session
+	TERM_COMMAND=":"
+	SUBTERM_ARGS="; tmux new-window"
+else
+	TERM_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
+	SUBTERM_ARGS="--tab -e"
+fi
+
+ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
+ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
+
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt:z" -l "ros,ros-launch-main:,ros-launch:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -163,7 +177,12 @@ while true; do
 	 -p)
 	     FAWKES_BIN=$OPTARG/bin
 	     ;;
-	 --) break;
+   -z)
+       START_PLANNER=true
+       ;;
+	 --)
+	     shift
+	     break
              ;;
      esac
      shift
@@ -271,6 +290,12 @@ if [  $COMMAND  == start ]; then
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
 	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN\"'"
+    fi
+
+    if $START_PLANNER
+    then
+      #start fawkes with centralized planner
+      OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x planner $SHUTDOWN $@\"'"
     fi
 
     # open windows

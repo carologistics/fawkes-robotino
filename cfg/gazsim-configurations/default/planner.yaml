@@ -1,0 +1,16 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+
+include:
+  - !ignore-missing conf.d/
+  - gazsim-configurations/gazsim-config-override.yaml
+  - !host-specific gazsim-configurations/default/host_planner.yaml
+---
+
+fawkes:
+
+  # Main app relevant settings
+  mainapp:
+    loggers: console;file/debug:debug1.log
+
