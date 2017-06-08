@@ -1,6 +1,6 @@
 
 #include <algorithm> 
-
+#include <iostream>
 #include "GameData.h"
 
 GameData::GameData() {
@@ -167,13 +167,19 @@ std::vector<Order> GameData::getOrdersWithAddBaseReq() const {
 }
 
 int GameData::getNeededAdditionalBases(Workpiece::Color color) const {
+    int result = -1;
     
     for (auto rs : getRingStations()) {
         if (rs->isPossibleRingColor(color)) {
-            return rs->getNeededAdditionalBases(color);
+            result = rs->getNeededAdditionalBases(color);
         }
     }
-    throw "There does not exist a Ring Station with produces" + Workpiece::toString(color) + "\n";
+    
+    if(result == -1){
+        std::cout << "There does not exist a Ring Station with produces " << Workpiece::toString(color) << std::endl;
+    }
+    
+    return result;
 }
 
 std::vector<Order::State> GameData::getProductionStepsRing(const Order& o, int ringPosition) {

@@ -40,7 +40,7 @@ public:
     std::string toString();
 
 private:
-    Time dispenseBaseTime;
+    Time dispenseBaseTime = 0;
 
     std::set<Workpiece::Color> possibleBaseColors;
     //which color should a robot choose if he needs a base for the additional base requirement of a ring station 

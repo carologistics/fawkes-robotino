@@ -130,8 +130,9 @@ Formula StepFormula::createInitialState() {
 }
 
 Formula StepFormula::create() {
-    if (getStepNumber() == 0)
+    if (getStepNumber() == 0){
         return createInitialState();
+    }
 
     std::vector<Formula> actions;
     //actions.push_back(allOrdersDelivered());

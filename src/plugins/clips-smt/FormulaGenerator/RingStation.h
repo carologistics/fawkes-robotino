@@ -34,8 +34,8 @@ public:
     std::string toString();
    
 private:
-    int feedBaseTime;
-    int mountRingTime;
+    int feedBaseTime = 0;
+    int mountRingTime = 0;
 
     // possible ring colors key = color, value = needed additional bases for this color
     std::map<Workpiece::Color, int> possibleRingColors;

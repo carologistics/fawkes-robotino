@@ -18,8 +18,8 @@ public:
     std::string toString();
     
 private:
-    Time feedWorkpieceTime;
-    Time takeWorkpieceTime;
+    Time feedWorkpieceTime = 1;
+    Time takeWorkpieceTime = 1;
 };
 
 #endif /* ROBOT_H */
