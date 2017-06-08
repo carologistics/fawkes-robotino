@@ -29,7 +29,7 @@ public:
     std::string toString();
 
 private:
-    int deliverProductTime;
+    int deliverProductTime = 0;
 };
 
 #endif /* DELIVERYSTATION_H */

@@ -31,8 +31,8 @@ public:
 private:
     
     //are this times identical?
-    Time feedCapTime;
-    Time mountCapTime;  
+    Time feedCapTime = 0;
+    Time mountCapTime = 0;  
     
     //the color of the cap the station is able to mount
     std::set<Workpiece::Color> possibleCapColors;

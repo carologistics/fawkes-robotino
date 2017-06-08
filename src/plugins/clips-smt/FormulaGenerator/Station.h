@@ -20,7 +20,7 @@ private:
     /* If brocken do not add to GameData, or if broken and the time the machine is 
      * available again is known, set occupiedUntil to it.
      * */
-    Time occupiedUntil;
+    Time occupiedUntil = 0;
 };
 
 #endif /* STATION_H */
