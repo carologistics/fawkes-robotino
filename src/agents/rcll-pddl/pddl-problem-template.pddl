@@ -3,8 +3,6 @@
 
 	(:objects
 		R-1 - robot
-		R-2 - robot
-    R-3 - robot
     <<#ORDER|{relation:'order'}>>O<<id>> - order
     <</ORDER>>
 		red-base1 - base
@@ -44,8 +42,10 @@
 	(:init
     <<#MACHINEHASPOS|{relation:'machine', team:'CYAN'}>>(has-pos <<name>> <<name>>-I)
     (pos-free <<name>>-I)
+    (not-locked <<name>>-I)
     (has-pos <<name>> <<name>>-O)
-    (pos-free <<name>>-O)<</MACHINEHASPOS>>
+    (pos-free <<name>>-O)
+    (not-locked <<name>>-O)<</MACHINEHASPOS>>
     <<#MACHINEIDLE|{relation:'machine', team:'CYAN'}>>
     (idle <<name>>)<</MACHINEIDLE>>
 
@@ -138,11 +138,7 @@
 
     (at-pos R-1 INS)
     (not-holding R-1)
-    (at-pos R-2 INS)
-    (not-holding R-2)
-    (at-pos R-3 INS)
-    (not-holding R-3)
-
+    (no-lock R-1)
   )
   (:goal (and
     <<#GOALORDER|{relation:'order'}>>

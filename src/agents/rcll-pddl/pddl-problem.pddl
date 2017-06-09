@@ -3,8 +3,6 @@
 
 	(:objects
 		R-1 - robot
-		R-2 - robot
-    R-3 - robot
     O1 - order
     
 		red-base1 - base
@@ -32,64 +30,76 @@
     slot4 slot5 slot6 - shelf-slot
 		cc7 cc8 cc9 cc10 cc11 cc12 - cap-carrier
     
-    C-DS - delivery-station
-    C-RS2 - ring-station
-    C-RS1 - ring-station
     C-CS2 - cap-station
     C-CS1 - cap-station
     C-BS - base-station
+    C-DS - delivery-station
+    C-RS2 - ring-station
+    C-RS1 - ring-station
     
 
     
-    C-DS-I - input-pos
-    C-DS-O - output-pos
-    C-RS2-I - input-pos
-    C-RS2-O - output-pos
-    C-RS1-I - input-pos
-    C-RS1-O - output-pos
     C-CS2-I - input-pos
     C-CS2-O - output-pos
     C-CS1-I - input-pos
     C-CS1-O - output-pos
     C-BS-I - input-pos
     C-BS-O - output-pos
+    C-DS-I - input-pos
+    C-DS-O - output-pos
+    C-RS2-I - input-pos
+    C-RS2-O - output-pos
+    C-RS1-I - input-pos
+    C-RS1-O - output-pos
     INS - pos
 	)
 	 
 	(:init
-    (has-pos C-DS C-DS-I)
-    (pos-free C-DS-I)
-    (has-pos C-DS C-DS-O)
-    (pos-free C-DS-O)(has-pos C-RS2 C-RS2-I)
-    (pos-free C-RS2-I)
-    (has-pos C-RS2 C-RS2-O)
-    (pos-free C-RS2-O)(has-pos C-RS1 C-RS1-I)
-    (pos-free C-RS1-I)
-    (has-pos C-RS1 C-RS1-O)
-    (pos-free C-RS1-O)(has-pos C-CS2 C-CS2-I)
+    (has-pos C-CS2 C-CS2-I)
     (pos-free C-CS2-I)
+    (not-locked C-CS2-I)
     (has-pos C-CS2 C-CS2-O)
-    (pos-free C-CS2-O)(has-pos C-CS1 C-CS1-I)
+    (pos-free C-CS2-O)
+    (not-locked C-CS2-O)(has-pos C-CS1 C-CS1-I)
     (pos-free C-CS1-I)
+    (not-locked C-CS1-I)
     (has-pos C-CS1 C-CS1-O)
-    (pos-free C-CS1-O)(has-pos C-BS C-BS-I)
+    (pos-free C-CS1-O)
+    (not-locked C-CS1-O)(has-pos C-BS C-BS-I)
     (pos-free C-BS-I)
+    (not-locked C-BS-I)
     (has-pos C-BS C-BS-O)
     (pos-free C-BS-O)
+    (not-locked C-BS-O)(has-pos C-DS C-DS-I)
+    (pos-free C-DS-I)
+    (not-locked C-DS-I)
+    (has-pos C-DS C-DS-O)
+    (pos-free C-DS-O)
+    (not-locked C-DS-O)(has-pos C-RS2 C-RS2-I)
+    (pos-free C-RS2-I)
+    (not-locked C-RS2-I)
+    (has-pos C-RS2 C-RS2-O)
+    (pos-free C-RS2-O)
+    (not-locked C-RS2-O)(has-pos C-RS1 C-RS1-I)
+    (pos-free C-RS1-I)
+    (not-locked C-RS1-I)
+    (has-pos C-RS1 C-RS1-O)
+    (pos-free C-RS1-O)
+    (not-locked C-RS1-O)
     
-    (idle C-DS)
-    (idle C-RS2)
-    (idle C-RS1)
     (idle C-CS2)
     (idle C-CS1)
     (idle C-BS)
+    (idle C-DS)
+    (idle C-RS2)
+    (idle C-RS1)
 
     
     (has-color-one C-RS2 RING_BLUE)
-    (has-color-two C-RS2 RING_YELLOW)
+    (has-color-two C-RS2 RING_GREEN)
     
-    (has-color-one C-RS1 RING_ORANGE)
-    (has-color-two C-RS1 RING_GREEN)
+    (has-color-one C-RS1 RING_YELLOW)
+    (has-color-two C-RS1 RING_ORANGE)
     
 
     ;TODO translate needed-bases
@@ -167,7 +177,7 @@
 
     
     (order-complexity O1 C0)
-    (order-base-color O1 BASE_SILVER)
+    (order-base-color O1 BASE_RED)
     (order-cap-color O1 CAP_GREY)
     (order-ring-one O1 RING_NONE)
     (order-ring-two O1 RING_NONE)
@@ -176,11 +186,7 @@
 
     (at-pos R-1 INS)
     (not-holding R-1)
-    (at-pos R-2 INS)
-    (not-holding R-2)
-    (at-pos R-3 INS)
-    (not-holding R-3)
-
+    (no-lock R-1)
   )
   (:goal (and
     
