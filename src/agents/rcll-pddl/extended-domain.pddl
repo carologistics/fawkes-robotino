@@ -37,6 +37,10 @@
     CAP_BLACK CAP_GREY - cap-color
     RING_GREEN RING_ORANGE RING_BLUE RING_YELLOW RING_NONE - ring-color
     ZERO ONE TWO THREE - ring-enum
+    ADD-BASE-SLIDE-ONE ADD-BASE-SLIDE-TWO ADD-BASE-SLIDE-THREE ; MOVE-TO-EMPTY MOVE-TO-HOLDING
+    PICK-CC LOAD-CS ADD-RING-ONE ADD-RING-TWO ADD-RING-THREE RESET-SLIDE DISCARD-WP
+    PICK-FROM-CS PICK-FROM-RS PICK-FROM-BS PROD-AT-CS
+    DELIVER-C0 DELIVER-C1 DELIVER-C2 DELIVER-C3 - action
   )
   (:predicates
     (has-color-one ?rs - ring-station ?r - ring-color)
@@ -64,6 +68,12 @@
     (at-pos ?r - robot ?pos - pos)
     (pos-free ?pos - pos)
     
+    (locked ?r - robot ?action - action ?orig - pos)
+    (lock ?r - robot)
+    (not-locked ?dest - pos)
+    (no-lock ?r - robot)
+    (action-done ?action - action)
+
     (wp-in-production ?wp - workpiece ?m - machine)
     (idle ?m - machine)
 
@@ -86,6 +96,7 @@
     :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base)
     :duration (= ?duration 5)
     :precondition (and
+      (locked ?r ADD-BASE-SLIDE-ONE ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (holding ?r ?wp)
@@ -101,11 +112,13 @@
       (wp-in-slide ?m ONE)
       (not (holding ?r ?wp))
       (not-holding ?r)
+      (action-done ADD-BASE-SLIDE-ONE)
     )
   )
   (:durative-action add-base-to-slide-two
     :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base)
     :precondition (and
+      (locked ?r ADD-BASE-SLIDE-TWO ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (holding ?r ?wp)
@@ -121,11 +134,13 @@
       (wp-in-slide ?m TWO)
       (not (holding ?r ?wp))
       (not-holding ?r)
+      (action-done ADD-BASE-SLIDE-TWO)
     )
   )
   (:durative-action add-base-to-slide-three
     :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base)
     :precondition (and
+      (locked ?r ADD-BASE-SLIDE-THREE ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (holding ?r ?wp)
@@ -141,11 +156,52 @@
       (wp-in-slide ?m ONE)
       (not (holding ?r ?wp))
       (not-holding ?r)
+      (action-done ADD-BASE-SLIDE-THREE)
+    )
+  )
+  (:durative-action lock-position
+    :parameters (?r - robot ?a - action ?dest - pos)
+    :precondition (and
+      (not-locked ?dest)
+      (no-lock ?r)
+    )
+    :effect (and
+      (not (not-locked ?dest))
+      (not (no-lock ?r))
+      (locked ?r ?a ?dest)
+      (lock ?r)
+    )
+    :conditional-breakup (and (no-lock) (not-locked))
+  )
+  (:durative-action lock-change
+    :parameters (?r - robot ?old-a - action ?new-a - action ?pos - pos)
+    :precondition (and
+      (locked ?r ?old-a ?pos)
+    )
+    :effect (and
+      (not  (locked ?r ?old-a ?pos))
+      (locked ?r ?new-a ?pos)
+    )
+  )
+  (:durative-action unlock-position
+    :parameters (?r - robot ?a - action ?orig - pos)
+    :precondition (and
+      (locked ?r ?a ?orig)
+      (lock ?r)
+      (action-done ?a)
+    )
+    :effect (and
+      (not (locked ?r ?a ?orig))
+      (not (lock ?r))
+      (not (action-done ?a))
+      (not-locked ?orig)
+      (no-lock ?r)
     )
   )
   (:durative-action move-to-position-empty
-    :parameters (?r - robot ?orig - pos ?dest - pos)
+    :parameters (?r - robot ?a - action ?orig - pos ?dest - pos)
     :precondition (and
+        (locked ?r ?a ?dest)
         (at-pos ?r ?orig)
         (pos-free ?dest)
         (not-holding ?r)
@@ -156,12 +212,13 @@
         (not (at-pos ?r ?orig))
         (pos-free ?orig)
     )
-    :conditional-breakup (at-pos)
+    :conditional-breakup (and (at-pos) (not-holding))
     :temporal-breakup (at-pos)
   )
   (:durative-action move-to-position-holding
-    :parameters (?r - robot ?orig - pos ?dest - pos)
+    :parameters (?r - robot ?a - action ?orig - pos ?dest - pos)
     :precondition (and
+        (locked ?r ?a ?dest)
         (at-pos ?r ?orig)
         (pos-free ?dest)
         (not (not-holding ?r))
@@ -179,6 +236,7 @@
   (:durative-action pick-cc-from-shelf
     :parameters (?r - robot ?m - cap-station ?pos - input-pos ?ss - shelf-slot ?wp - cap-carrier)
     :precondition (and
+      (locked ?r PICK-CC ?pos)
       (at-pos ?r ?pos)
       (has-pos ?m ?pos)
       (has-shelf-slot ?m ?ss)
@@ -186,6 +244,7 @@
       (not-holding ?r)
     )
     :effect (and
+      (action-done PICK-CC)
       (holding ?r ?wp)
       (not (not-holding ?r))
       (not (cc-in-slot ?wp ?ss))
@@ -194,6 +253,7 @@
   (:durative-action load-cs
     :parameters (?r - robot ?m - cap-station ?pos - input-pos ?col - cap-color ?any-col - cap-color ?cc - cap-carrier)
     :precondition (and
+      (locked ?r LOAD-CS ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (no-cap-in-slide ?m)
@@ -202,6 +262,7 @@
       (idle ?m)
     )
     :effect (and
+      (action-done LOAD-CS)
       (not (holding ?r ?cc))
       (not-holding ?r)
       (cap-in-slide ?m ?col)
@@ -214,6 +275,7 @@
   (:durative-action add-ring-one
     :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?any-ring - ring-color ?ring-col - ring-color ?any-cap - cap-color ?base-col - base-color ?o - order ?num-bases - ring-enum)
     :precondition (and
+      (locked ?r ADD-RING-ONE ?pos)
       (idle ?m)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
@@ -228,6 +290,7 @@
       (needs-bases ?ring-col ?num-bases)
     )
     :effect (and
+      (action-done ADD-RING-ONE)
       (not (holding ?r ?wp))
       (not-holding ?r)
       (wp-in-production ?wp ?m)
@@ -239,6 +302,7 @@
   (:durative-action add-ring-two
     :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?any-ring - ring-color ?ring-col1 - ring-color ?ring-col2 - ring-color ?any-cap - cap-color ?base-col - base-color ?o - order ?num-bases - ring-enum)
     :precondition (and
+      (locked ?r ADD-RING-TWO ?pos)
       (idle ?m)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
@@ -255,6 +319,7 @@
       (needs-bases ?ring-col2 ?num-bases)
     )
     :effect (and
+      (action-done ADD-RING-TWO)
       (not (holding ?r ?wp))
       (not-holding ?r)
       (wp-in-production ?wp ?m)
@@ -266,6 +331,7 @@
   (:durative-action add-ring-three
     :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?any - workpiece ?ring-col1 - ring-color ?ring-col2 - ring-color ?ring-col3 - ring-color ?any-cap - cap-color ?base-col - base-color ?o - order ?num-bases - ring-enum)
     :precondition (and
+      (locked ?r ADD-RING-THREE ?pos)
       (idle ?m)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
@@ -283,6 +349,7 @@
       (needs-bases ?ring-col3 ?num-bases)
     )
     :effect (and
+      (action-done ADD-RING-THREE)
       (not (holding ?r ?wp))
       (not-holding ?r)
       (wp-in-production ?wp ?m)
@@ -291,16 +358,16 @@
       (has-ring-three ?wp ?ring-col3)
     )
   )
-
   (:durative-action reset-rs-slide
     ; Dummy action to reset RS to zero bases
-    :parameters (?m - ring-station)
+    :parameters (?r - robot ?m - ring-station)
     :precondition (not (wp-in-slide ?m ZERO))
     :effect (wp-in-slide ?m ZERO)
   )
   (:durative-action prod-at-cs
     :parameters (?r - robot ?m - cap-station ?pos - input-pos ?wp - workpiece ?any - workpiece ?any-cap - cap-color ?base-col - base-color ?cap-col - cap-color ?o - order)
     :precondition (and
+      (locked ?r PROD-AT-CS ?pos)
       (idle ?m)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
@@ -312,6 +379,7 @@
       (order-cap-color ?o ?cap-col)
     )
     :effect (and
+      (action-done PROD-AT-CS)
       (wp-in-production ?wp ?m)
       (not (idle ?m))
       (not (holding ?r ?wp))
@@ -324,12 +392,14 @@
   (:durative-action pick-wp-from-cs
     :parameters (?r - robot ?m - cap-station ?pos - output-pos ?wp - workpiece ?any - workpiece)
     :precondition (and
+      (locked ?r PICK-FROM-CS ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (wp-in-production ?wp ?m)
       (not-holding ?r)
     )
     :effect (and
+      (action-done PICK-FROM-CS)
       (not (wp-in-production ?wp ?m))
       (idle ?m)
       (holding ?r ?wp)
@@ -339,12 +409,14 @@
   (:durative-action pick-wp-from-rs
     :parameters (?r - robot ?m - ring-station ?pos - output-pos ?wp - base ?any - workpiece)
     :precondition (and
+      (locked ?r PICK-FROM-RS ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (wp-in-production ?wp ?m)
       (not-holding ?r)
     )
     :effect (and
+      (action-done PICK-FROM-RS)
       (not (wp-in-production ?wp ?m))
       (idle ?m)
       (holding ?r ?wp)
@@ -352,7 +424,7 @@
     )
   )
   (:durative-action discard-wp
-    :parameters (?r - robot ?wp - workpiece)
+    :parameters (?r - robot ?wp - cap-carrier)
     :precondition (holding ?r ?wp)
     :effect (and
       (not (holding ?r ?wp))
@@ -362,12 +434,14 @@
   (:durative-action pick-wp-from-bs
     :parameters (?r - robot ?m - base-station ?pos - pos ?wp - base)
     :precondition (and
+      (locked ?r PICK-FROM-BS ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (wp-at-bs ?wp)
       (not-holding ?r)
     )
     :effect (and
+      (action-done PICK-FROM-BS)
       (holding ?r ?wp)
       (not (not-holding ?r))
       (not (wp-at-bs ?wp))
@@ -376,6 +450,7 @@
   (:durative-action deliver-c0
     :parameters (?r - robot ?m - delivery-station ?pos - input-pos ?wp - base ?base-col - base-color ?cap-col - cap-color ?o - order)
     :precondition (and
+      (locked ?r DELIVER-C0 ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (has-color ?wp ?base-col)
@@ -386,6 +461,7 @@
       (order-cap-color ?o ?cap-col)
     )
     :effect (and
+      (action-done DELIVER-C0)
       (order-fulfilled ?o)
       (not (holding ?r ?wp))
       (not-holding ?r)
@@ -396,6 +472,7 @@
   (:durative-action deliver-c1
     :parameters (?r - robot ?m - delivery-station ?pos - input-pos ?wp - base ?base-col - base-color ?cap-col - cap-color ?ring-col1 - ring-color ?o - order)
     :precondition (and
+      (locked ?r DELIVER-C1 ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (has-color ?wp ?base-col)
@@ -408,6 +485,7 @@
       (order-ring-one ?o ?ring-col1)
     )
     :effect (and
+      (action-done DELIVER-C1)
       (order-fulfilled ?o)
       (not (holding ?r ?wp))
       (not-holding ?r)
@@ -419,6 +497,8 @@
   (:durative-action deliver-c2
     :parameters (?r - robot ?m - delivery-station ?pos - input-pos ?wp - base ?base-col - base-color ?cap-col - cap-color ?ring-col1 - ring-color ?ring-col2 - ring-color ?o - order)
     :precondition (and
+      (locked ?r DELIVER-C2 ?pos)
+      (has-pos ?m ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (has-color ?wp ?base-col)
@@ -433,6 +513,7 @@
       (order-ring-two ?o ?ring-col2)
     )
     :effect (and
+      (action-done DELIVER-C2)
       (order-fulfilled ?o)
       (not (holding ?r ?wp))
       (not-holding ?r)
@@ -445,6 +526,7 @@
   (:durative-action deliver-c3
     :parameters (?r - robot ?m - delivery-station ?pos - input-pos ?wp - base ?base-col - base-color ?cap-col - cap-color ?ring-col1 - ring-color ?ring-col2 - ring-color ?ring-col3 - ring-color ?o - order)
     :precondition (and
+      (locked ?r DELIVER-C3 ?pos)
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (has-color ?wp ?base-col)
@@ -461,6 +543,7 @@
       (order-ring-three ?o ?ring-col3)
     )
     :effect (and
+      (action-done DELIVER-C3)
       (order-fulfilled ?o)
       (not (holding ?r ?wp))
       (not-holding ?r)
